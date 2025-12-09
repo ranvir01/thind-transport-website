@@ -153,133 +153,135 @@ export default function ApplyPage() {
       />
 
       <div className="min-h-screen bg-[#00060D]">
-        <PageBreadcrumb pageName="Apply Now" category="Drivers" />
+        <div className="scale-90 origin-left opacity-80 mb-[-1rem]">
+           <PageBreadcrumb pageName="Apply Now" category="Drivers" />
+        </div>
         
-        {/* Hero Section with Truck Background */}
-        <section className="relative min-h-[55vh] lg:min-h-[65vh] flex items-center overflow-hidden">
-          {/* Background Image */}
-          <div className="absolute inset-0">
+        {/* Unified Hero & Form Section */}
+        <section className="relative pt-12 pb-16 lg:py-24 overflow-hidden">
+          {/* Background Image - Absolute */}
+          <div className="absolute inset-0 z-0">
             <Image
               src="/images/generated/hero-fleet-sunset.png"
               alt="Thind Transport semi trucks on highway - CDL driver jobs available"
               fill
-              className="object-cover object-center"
+              className="object-cover object-center opacity-60"
               priority
             />
-            <div className="absolute inset-0 bg-gradient-to-r from-[#00060D]/95 via-[#00060D]/85 to-[#00060D]/70" />
+            <div className="absolute inset-0 bg-gradient-to-r from-[#00060D] via-[#00060D]/90 to-[#00060D]/80" />
             <div className="absolute inset-0 bg-gradient-to-t from-[#00060D] via-transparent to-transparent" />
           </div>
           
-          <div className="container relative z-10 py-16 lg:py-24">
-            <div className="max-w-2xl">
-              {/* Urgency Badge */}
-              <div className="flex flex-wrap items-center gap-3 mb-6">
-                <div className="inline-flex items-center gap-2 bg-orange-500/20 border border-orange-500/40 backdrop-blur-sm text-orange-300 px-4 py-2 rounded-full text-sm font-bold animate-pulse">
-                  <Zap className="h-4 w-4" />
-                  Now Hiring – Immediate Openings
-                </div>
-                <div className="inline-flex items-center gap-2 bg-blue-500/20 border border-blue-500/40 backdrop-blur-sm text-blue-300 px-4 py-2 rounded-full text-sm font-bold">
-                  <Clock className="h-4 w-4" />
-                  60 Second Application
-                </div>
-              </div>
+          <div className="container relative z-10">
+            <div className="grid lg:grid-cols-12 gap-8 lg:gap-12 items-start">
               
-              {/* SEO-Optimized H1 */}
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-black text-white mb-4 leading-[1.1] tracking-tight">
-                CDL Truck Driver Jobs
-                <span className="block text-orange-400">Same Day Pay • New Equipment</span>
-              </h1>
-              
-              <p className="text-lg md:text-xl text-slate-300 mb-8 max-w-xl leading-relaxed">
-                Join {COMPANY_INFO.name} – a family-owned carrier with {new Date().getFullYear() - COMPANY_INFO.founded}+ years of excellence. Fast approval, 24/7 support, and the pay you deserve.
-              </p>
-              
-              {/* Pay Rate Highlights - Primary Value Prop */}
-              <div className="flex flex-wrap gap-4 mb-8">
-                <div className="bg-[#001F3F]/90 backdrop-blur-sm border border-orange-500/30 rounded-xl px-6 py-4 shadow-lg shadow-orange-900/20">
-                  <p className="text-xs text-orange-400 uppercase tracking-wider font-bold mb-1">Owner Operators</p>
-                  <p className="text-4xl font-black text-orange-400">91%</p>
-                  <p className="text-sm text-slate-300">Gross Revenue</p>
-                  <p className="text-xs text-orange-300 mt-1 font-semibold">Avg. $4,000-$5,500/week</p>
-                </div>
-                <div className="bg-[#001F3F]/90 backdrop-blur-sm border border-blue-500/30 rounded-xl px-6 py-4 shadow-lg shadow-blue-900/20">
-                  <p className="text-xs text-blue-400 uppercase tracking-wider font-bold mb-1">Company Drivers</p>
-                  <p className="text-4xl font-black text-blue-400">{PAY_RATES.companyDriver.otr.perMile}</p>
-                  <p className="text-sm text-slate-300">Per Mile</p>
-                  <p className="text-xs text-blue-300 mt-1 font-semibold">Avg. $1,250-$1,500/week</p>
-                </div>
-              </div>
-
-              {/* Trust Pills */}
-              <div className="flex flex-wrap gap-3">
-                {[
-                  { icon: DollarSign, text: "Same Day Pay" },
-                  { icon: Headphones, text: "24/7 Support" },
-                  { icon: Users, text: "Family Owned Since 2016" },
-                  { icon: MapPin, text: "48 State Coverage" },
-                ].map((item, i) => (
-                  <div key={i} className="flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-full px-4 py-2 text-sm text-white border border-white/10">
-                    <item.icon className="h-4 w-4 text-orange-400" />
-                    <span className="font-medium">{item.text}</span>
+              {/* Left Column - Hero Content (Desktop) / Top (Mobile) */}
+              <div className="lg:col-span-5 space-y-6 lg:sticky lg:top-24">
+                <div className="space-y-4">
+                  <div className="inline-flex items-center gap-2 bg-orange-500/20 border border-orange-500/40 backdrop-blur-sm text-orange-300 px-4 py-2 rounded-full text-sm font-bold animate-pulse">
+                    <Zap className="h-4 w-4" />
+                    Now Hiring – Immediate Openings
                   </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </section>
+                  
+                  <h1 className="text-4xl md:text-5xl lg:text-6xl font-black text-white leading-[1.1] tracking-tight">
+                    Drive For The Best. <br/>
+                    <span className="text-orange-500">Earn The Most.</span>
+                  </h1>
+                  
+                  <p className="text-lg text-slate-300 leading-relaxed">
+                    Join {COMPANY_INFO.name} – a family-owned carrier where drivers come first. 
+                    <span className="block mt-2 font-semibold text-white">
+                      Fast approval • 24/7 support • New equipment
+                    </span>
+                  </p>
+                </div>
 
-        {/* Social Proof Bar */}
-        <section className="bg-[#001326] border-y border-white/5 py-4">
-          <div className="container">
-            <div className="flex flex-wrap items-center justify-center gap-6 md:gap-12 text-sm">
-              <div className="flex items-center gap-2 text-slate-300">
-                <CheckCircle2 className="h-5 w-5 text-green-400" />
-                <span><strong className="text-white">47</strong> drivers hired this month</span>
-              </div>
-              <div className="flex items-center gap-2 text-slate-300">
-                <Star className="h-5 w-5 text-orange-400" />
-                <span><strong className="text-white">4.9/5</strong> driver satisfaction</span>
-              </div>
-              <div className="flex items-center gap-2 text-slate-300">
-                <Award className="h-5 w-5 text-blue-400" />
-                <span><strong className="text-white">A+</strong> safety rating</span>
-              </div>
-              <div className="flex items-center gap-2 text-slate-300">
-                <BadgeCheck className="h-5 w-5 text-green-400" />
-                <span>DOT# {COMPANY_INFO.dot}</span>
-              </div>
-            </div>
-          </div>
-        </section>
+                {/* Pay Highlights */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-[#001F3F]/80 backdrop-blur-sm border border-orange-500/30 rounded-xl p-4">
+                    <p className="text-xs text-orange-400 uppercase tracking-wider font-bold mb-1">Owner Ops</p>
+                    <p className="text-3xl font-black text-orange-400">91%</p>
+                    <p className="text-xs text-slate-300">Gross Revenue</p>
+                  </div>
+                  <div className="bg-[#001F3F]/80 backdrop-blur-sm border border-blue-500/30 rounded-xl p-4">
+                    <p className="text-xs text-blue-400 uppercase tracking-wider font-bold mb-1">Company</p>
+                    <p className="text-3xl font-black text-blue-400">{PAY_RATES.companyDriver.otr.perMile}</p>
+                    <p className="text-xs text-slate-300">Per Mile</p>
+                  </div>
+                </div>
 
-        {/* Application Form Section */}
-        <section className="relative py-12 lg:py-16 bg-gradient-to-b from-[#00060D] via-[#001326] to-[#00060D]">
-          <div className="container">
-            <div className="grid lg:grid-cols-3 gap-8 lg:gap-12 items-start">
-              
-              {/* Left Column - Form */}
-              <div className="lg:col-span-2 order-1">
-                {/* Form Container */}
-                <div className="bg-white rounded-2xl shadow-2xl overflow-hidden border border-slate-200" id="application-form">
-                  <div className="bg-gradient-to-r from-[#001F3F] to-[#003366] px-6 py-5 border-b border-navy-800">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h2 className="text-xl font-bold text-white">Start Your Application</h2>
-                        <p className="text-blue-200 mt-1 text-sm">Takes less than 60 seconds • Response within 2 hours</p>
-                      </div>
-                      <div className="hidden md:flex items-center gap-2 bg-green-500/20 border border-green-500/40 rounded-lg px-3 py-1.5">
-                        <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
-                        <span className="text-green-300 text-xs font-semibold">3 recruiters online</span>
+                {/* Trust Pills - Hidden on very small mobile to save space */}
+                <div className="hidden sm:flex flex-wrap gap-3">
+                  {[
+                    { icon: DollarSign, text: "Same Day Pay" },
+                    { icon: Headphones, text: "24/7 Support" },
+                    { icon: Users, text: "Family Owned" },
+                  ].map((item, i) => (
+                    <div key={i} className="flex items-center gap-2 bg-white/5 backdrop-blur-sm rounded-full px-3 py-1.5 text-xs text-slate-300 border border-white/10">
+                      <item.icon className="h-3.5 w-3.5 text-orange-400" />
+                      <span className="font-medium">{item.text}</span>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Social Proof Bar (Compact) */}
+                <div className="border-t border-white/10 pt-6 mt-6">
+                  <div className="bg-white/5 backdrop-blur-sm rounded-xl p-4 border border-white/10 flex items-center gap-4 shadow-lg">
+                    <div className="flex -space-x-3">
+                      {[1, 2, 3].map((i) => (
+                        <div key={i} className="w-10 h-10 rounded-full bg-slate-700 border-2 border-[#00060D] flex items-center justify-center text-xs font-bold text-white overflow-hidden relative">
+                           {/* Using initials/placeholders to ensure no broken images */}
+                           <span className="z-10 relative">{String.fromCharCode(64 + i)}</span>
+                           <div className="absolute inset-0 bg-gradient-to-br from-slate-600 to-slate-800" />
+                        </div>
+                      ))}
+                      <div className="w-10 h-10 rounded-full bg-orange-600 border-2 border-[#00060D] flex items-center justify-center text-xs font-bold text-white z-10">
+                        +44
                       </div>
                     </div>
+                    <div>
+                       <p className="text-white font-bold text-sm">47 drivers applied this week</p>
+                       <p className="text-green-400 text-[10px] font-medium flex items-center gap-1.5 uppercase tracking-wide mt-0.5">
+                         <span className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse"/> 
+                         High Demand
+                       </p>
+                    </div>
                   </div>
-                  <div className="p-6 md:p-8">
+                </div>
+              </div>
+
+              {/* Right Column - Form (Priority on Mobile) */}
+              <div className="lg:col-span-7" id="application-form">
+                <div className="bg-white rounded-2xl shadow-2xl overflow-hidden border border-slate-200">
+                  <div className="bg-gradient-to-r from-[#001F3F] to-[#003366] px-6 py-4 border-b border-navy-800 flex items-center justify-between">
+                    <div>
+                      <h2 className="text-lg font-bold text-white">Start Your Application</h2>
+                      <p className="text-blue-200 text-xs">Takes less than 60 seconds</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
+                      <span className="text-green-300 text-xs font-semibold">Recruiters Online</span>
+                    </div>
+                  </div>
+                  <div className="p-4 md:p-8">
                     <ApplicationForm />
                   </div>
                 </div>
+              </div>
 
-                {/* Job Description Section - SEO Content */}
-                <div className="mt-8 bg-[#001326] rounded-2xl p-6 md:p-8 border border-white/5">
+            </div>
+          </div>
+        </section>
+
+        {/* Info Section - Below the Fold */}
+        <section className="bg-[#001326] border-t border-white/5 py-12 lg:py-16">
+          <div className="container">
+            <div className="grid lg:grid-cols-3 gap-8 lg:gap-12">
+              
+              {/* Job Details */}
+              <div className="lg:col-span-2 space-y-8">
+                {/* Job Description Section */}
+                <div className="bg-[#00060D] rounded-2xl p-6 md:p-8 border border-white/5">
                   <h2 className="text-2xl font-bold text-white mb-6">About This CDL Driver Position</h2>
                   
                   <div className="grid md:grid-cols-2 gap-8">
@@ -393,44 +395,24 @@ export default function ApplyPage() {
                         a: "We operate Flatbed, Reefer, and Dry Van trailers. You can specialize in one type or diversify based on your preferences and endorsements."
                       },
                     ].map((item, i) => (
-                      <details key={i} className="group">
-                        <summary className="flex items-center justify-between cursor-pointer list-none">
-                          <h3 className="text-white font-semibold pr-4">{item.q}</h3>
-                          <ChevronRight className="h-5 w-5 text-slate-400 group-open:rotate-90 transition-transform" />
+                      <details key={i} className="group bg-white/5 rounded-xl border border-white/5 overflow-hidden transition-all hover:bg-white/10 open:bg-white/10 open:border-orange-500/30">
+                        <summary className="flex items-center justify-between cursor-pointer list-none p-4">
+                          <h3 className="text-white font-semibold pr-4 text-sm md:text-base">{item.q}</h3>
+                          <ChevronRight className="h-5 w-5 text-slate-400 group-open:rotate-90 transition-transform flex-shrink-0" />
                         </summary>
-                        <p className="text-slate-300 text-sm mt-3 pl-0 leading-relaxed">{item.a}</p>
+                        <div className="px-4 pb-4 pt-0">
+                           <p className="text-slate-300 text-sm leading-relaxed border-t border-white/5 pt-3">{item.a}</p>
+                        </div>
                       </details>
                     ))}
                   </div>
                 </div>
               </div>
 
-              {/* Right Column - Trust & Social Proof */}
-              <div className="lg:col-span-1 order-2 space-y-6 lg:sticky lg:top-24">
+              <div className="lg:col-span-1 space-y-6 lg:sticky lg:top-24">
                 
-                {/* Video Section Placeholder */}
-                <div className="bg-[#001326] rounded-2xl overflow-hidden border border-white/5">
-                  <div className="aspect-video relative bg-slate-800 flex items-center justify-center group cursor-pointer">
-                    <Image
-                      src="/images/generated/fleet-kent-wa.png"
-                      alt="Thind Transport fleet video preview"
-                      fill
-                      className="object-cover opacity-60 group-hover:opacity-40 transition-opacity"
-                    />
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="w-16 h-16 rounded-full bg-orange-500 flex items-center justify-center shadow-lg shadow-orange-900/50 group-hover:scale-110 transition-transform">
-                        <Play className="h-6 w-6 text-white ml-1" />
-                      </div>
-                    </div>
-                  </div>
-                  <div className="p-4">
-                    <p className="text-white font-semibold text-sm">See What It's Like to Drive for Thind</p>
-                    <p className="text-slate-400 text-xs mt-1">2 min video • Driver testimonials</p>
-                  </div>
-                </div>
-
                 {/* Trust Badges */}
-                <div className="bg-[#001326] rounded-2xl p-6 border border-white/5">
+                <div className="bg-[#00060D] rounded-2xl p-6 border border-white/5">
                   <h3 className="text-lg font-bold text-white mb-4">Why Drivers Choose Us</h3>
                   <div className="space-y-4">
                     {[
@@ -449,6 +431,28 @@ export default function ApplyPage() {
                         </div>
                       </div>
                     ))}
+                  </div>
+                </div>
+
+                {/* Pre-Qualify CTA */}
+                <div className="bg-gradient-to-br from-blue-900 to-slate-900 rounded-2xl p-6 text-white border border-blue-800 shadow-xl relative overflow-hidden group">
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full blur-2xl group-hover:bg-blue-500/20 transition-all" />
+                  <div className="relative z-10">
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="p-2 bg-blue-500/20 rounded-lg">
+                        <CheckCircle2 className="h-5 w-5 text-blue-400" />
+                      </div>
+                      <h3 className="font-bold text-lg text-white">Not Ready Yet?</h3>
+                    </div>
+                    <p className="text-slate-300 text-sm mb-4 leading-relaxed">
+                      Check if you qualify for our top-tier pay rates in less than 2 minutes. No commitment required.
+                    </p>
+                    <Link 
+                      href="/pre-qualify"
+                      className="flex items-center justify-center gap-2 w-full bg-blue-600 hover:bg-blue-500 text-white py-3 rounded-xl font-bold transition-all hover:shadow-lg hover:shadow-blue-500/25"
+                    >
+                      Check Eligibility <ChevronRight className="h-4 w-4" />
+                    </Link>
                   </div>
                 </div>
 
@@ -480,33 +484,6 @@ export default function ApplyPage() {
                   </div>
                 </div>
 
-                <div className="bg-gradient-to-br from-[#001F3F] to-[#001326] rounded-2xl p-6 border border-white/10 relative overflow-hidden">
-                  <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/10 rounded-full blur-2xl" />
-                  <div className="relative">
-                    <div className="flex items-center gap-1 mb-3">
-                      {[...Array(5)].map((_, i) => (
-                        <Star key={i} className="h-4 w-4 fill-orange-400 text-orange-400" />
-                      ))}
-                    </div>
-                    <blockquote className="text-slate-300 text-sm leading-relaxed mb-4">
-                      "New equipment, consistent miles, and home when I need to be. The 91% split is real – no hidden fees."
-                    </blockquote>
-                    <div className="flex items-center gap-3">
-                      <Image
-                        src="/images/generated/driver-portrait-2.png"
-                        alt="James T. - Company Driver at Thind Transport"
-                        width={40}
-                        height={40}
-                        className="rounded-full object-cover"
-                      />
-                      <div>
-                        <p className="text-white font-semibold text-sm">James T.</p>
-                        <p className="text-xs text-slate-500">Company Driver • 2 Years</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
                 {/* Phone CTA */}
                 <div className="bg-gradient-to-br from-orange-600 to-orange-700 rounded-2xl p-6 text-center shadow-lg shadow-orange-900/30">
                   <Phone className="h-8 w-8 text-white mx-auto mb-3" />
@@ -518,29 +495,6 @@ export default function ApplyPage() {
                     {COMPANY_INFO.phone}
                   </Link>
                   <p className="text-xs text-orange-200 mt-2">Mon-Fri 8AM-6PM PST</p>
-                </div>
-
-                {/* Recently Hired */}
-                <div className="bg-[#001326] rounded-2xl p-4 border border-white/5">
-                  <p className="text-xs text-slate-400 uppercase tracking-wider mb-3">Recently Hired</p>
-                  <div className="space-y-3">
-                    {[
-                      { name: "David M.", location: "Seattle, WA", type: "Owner Operator", time: "2 hours ago" },
-                      { name: "Carlos R.", location: "Portland, OR", type: "Company Driver", time: "5 hours ago" },
-                      { name: "Marcus J.", location: "Phoenix, AZ", type: "Owner Operator", time: "Yesterday" },
-                    ].map((hire, i) => (
-                      <div key={i} className="flex items-center gap-3 text-sm">
-                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-slate-700 to-slate-600 flex items-center justify-center text-white font-semibold text-xs">
-                          {hire.name.split(' ').map(n => n[0]).join('')}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-white font-medium truncate">{hire.name}</p>
-                          <p className="text-xs text-slate-500">{hire.location} • {hire.type}</p>
-                        </div>
-                        <p className="text-xs text-green-400">{hire.time}</p>
-                      </div>
-                    ))}
-                  </div>
                 </div>
               </div>
             </div>
@@ -577,3 +531,4 @@ export default function ApplyPage() {
     </>
   )
 }
+

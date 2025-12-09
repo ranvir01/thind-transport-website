@@ -156,7 +156,7 @@ export const QuickQualify = () => {
                                     <li className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4" /> Premium Equipment Assignment</li>
                                 </ul>
                             </div>
-                            <Link href="/apply">
+                            <Link href="/pre-qualify">
                                 <Button className="bg-orange-500 hover:bg-orange-600 text-white px-12 py-8 text-xl font-bold rounded-full shadow-xl shadow-orange-500/30 animate-pulse hover:scale-105 transition-transform">
                                     Start Priority Application →
                                 </Button>

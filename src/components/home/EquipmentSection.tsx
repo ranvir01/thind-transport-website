@@ -30,10 +30,10 @@ export function EquipmentSection() {
         {/* Mobile: Stack, Desktop: 3 columns */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 md:gap-8">
           <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.1 }}
+             initial={{ opacity: 0, y: 20 }}
+             whileInView={{ opacity: 1, y: 0 }}
+             viewport={{ once: true }}
+             transition={{ delay: 0.1 }}
           >
             <Card className="h-full border border-white/10 bg-white/5 hover:bg-white/[0.07] transition-all duration-300 rounded-xl sm:rounded-2xl overflow-hidden group backdrop-blur-sm">
               <CardContent className="p-4 sm:p-6 md:p-8">
@@ -71,10 +71,10 @@ export function EquipmentSection() {
           </motion.div>
 
           <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.2 }}
+             initial={{ opacity: 0, y: 20 }}
+             whileInView={{ opacity: 1, y: 0 }}
+             viewport={{ once: true }}
+             transition={{ delay: 0.2 }}
           >
             <Card className="h-full border border-white/10 bg-white/5 hover:bg-white/[0.07] transition-all duration-300 rounded-xl sm:rounded-2xl overflow-hidden group backdrop-blur-sm">
               <CardContent className="p-4 sm:p-6 md:p-8">
@@ -103,10 +103,10 @@ export function EquipmentSection() {
           </motion.div>
 
           <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.3 }}
+             initial={{ opacity: 0, y: 20 }}
+             whileInView={{ opacity: 1, y: 0 }}
+             viewport={{ once: true }}
+             transition={{ delay: 0.3 }}
           >
             <Card className="h-full border border-white/10 bg-white/5 hover:bg-white/[0.07] transition-all duration-300 rounded-xl sm:rounded-2xl overflow-hidden group backdrop-blur-sm">
               <CardContent className="p-4 sm:p-6 md:p-8">

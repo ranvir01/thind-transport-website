@@ -16,11 +16,12 @@ interface PageBreadcrumbProps {
     name: string
     href: string
   }
+  className?: string
 }
 
-export function PageBreadcrumb({ pageName, category, parentPage }: PageBreadcrumbProps) {
+export function PageBreadcrumb({ pageName, category, parentPage, className = "" }: PageBreadcrumbProps) {
   return (
-    <nav className="bg-[#001F3F]/95 backdrop-blur-xl pt-20 pb-2" aria-label="Breadcrumb">
+    <nav className={`bg-[#001F3F]/95 backdrop-blur-xl pt-20 pb-2 ${className}`} aria-label="Breadcrumb">
       <div className="container">
         <ol className="flex items-center justify-center gap-2 text-xs">
           {/* Category */}

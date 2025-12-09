@@ -363,16 +363,36 @@ export const CinematicNavbar = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null)
   const [scrolled, setScrolled] = useState(false)
+  const [hidden, setHidden] = useState(false)
+  const [lastScrollY, setLastScrollY] = useState(0)
   const pathname = usePathname()
 
-  // Handle scroll for enhanced visibility
+  // Handle scroll for enhanced visibility + hide on scroll down (mobile)
   useEffect(() => {
     const handleScroll = () => {
-      setScrolled(window.scrollY > 50)
+      const currentScrollY = window.scrollY
+      
+      // Update scrolled state for styling
+      setScrolled(currentScrollY > 50)
+      
+      // Hide on scroll down, show on scroll up (mobile only)
+      if (currentScrollY > 100) {
+        if (currentScrollY > lastScrollY && currentScrollY - lastScrollY > 10) {
+          // Scrolling down - hide on mobile
+          setHidden(true)
+        } else if (lastScrollY > currentScrollY && lastScrollY - currentScrollY > 10) {
+          // Scrolling up - show
+          setHidden(false)
+        }
+      } else {
+        setHidden(false)
+      }
+      
+      setLastScrollY(currentScrollY)
     }
-    window.addEventListener("scroll", handleScroll)
+    window.addEventListener("scroll", handleScroll, { passive: true })
     return () => window.removeEventListener("scroll", handleScroll)
-  }, [])
+  }, [lastScrollY])
 
   // Close dropdowns on route change
   useEffect(() => {
@@ -384,9 +404,9 @@ export const CinematicNavbar = () => {
     <>
       <header className={`fixed top-0 left-0 right-0 z-[100] transition-all duration-300 ${
         scrolled ? 'pt-2' : 'pt-4'
-      }`}>
+      } ${hidden ? 'md:translate-y-0 -translate-y-full' : 'translate-y-0'}`}>
         <div className="flex justify-center pointer-events-none px-4 w-full">
-          <nav className={`pointer-events-auto flex items-center justify-between md:justify-start w-auto max-w-[95%] gap-4 md:gap-6 pl-5 pr-2 py-2 md:px-6 md:py-3 rounded-full transition-all duration-300 active:scale-[0.98] md:active:scale-100 ${
+          <nav className={`pointer-events-auto flex items-center justify-between md:justify-start w-auto max-w-[98%] gap-3 md:gap-6 pl-4 pr-1.5 py-1.5 md:px-6 md:py-3 rounded-full transition-all duration-300 active:scale-[0.98] md:active:scale-100 ${
             scrolled 
               ? 'bg-[#001F3F]/95 backdrop-blur-xl shadow-2xl shadow-black/20 border border-white/10' 
               : 'bg-black/40 backdrop-blur-md border border-white/10 shadow-lg'

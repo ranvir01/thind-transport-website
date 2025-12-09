@@ -134,15 +134,17 @@ export function ApplicationForm() {
     let fieldsToValidate: (keyof FormData)[] = []
     
     if (step === 1) {
-      fieldsToValidate = ["firstName", "lastName", "email", "phone", "driverType", "experienceYears", "cdlClass"]
+      fieldsToValidate = ["driverType", "experienceYears", "cdlClass"]
     } else if (step === 2) {
+      fieldsToValidate = ["firstName", "lastName", "email", "phone"]
+    } else if (step === 3) {
       fieldsToValidate = ["cdlNumber", "availability", "routeType"]
     }
 
     const isStepValid = await trigger(fieldsToValidate)
 
     if (isStepValid) {
-      if (step === 1) {
+      if (step === 2) {
         // Capture Lead
         setIsCapturingLead(true)
         try {
@@ -153,10 +155,9 @@ export function ApplicationForm() {
           formData.append("email", values.email)
           formData.append("driverType", values.driverType)
           formData.append("experienceYears", values.experienceYears)
-          formData.append("source", "Application Form Step 1")
+          formData.append("source", "Application Form Step 2")
           
           await captureLead({ success: false, message: "" }, formData)
-          // Silent failure is okay for lead capture, we proceed anyway
         } catch (err) {
           console.error(err)
         } finally {
@@ -222,25 +223,26 @@ export function ApplicationForm() {
           })
 
           // Navigate to step with error
-          const step1Fields = ["firstName", "lastName", "email", "phone", "driverType", "experienceYears", "cdlClass"]
-          const step2Fields = ["cdlNumber", "availability", "routeType", "businessAddress", "previousEmployer", "accidents", "violations"]
+          const step1Fields = ["driverType", "experienceYears", "cdlClass"]
+          const step2Fields = ["firstName", "lastName", "email", "phone"]
+          const step3Fields = ["cdlNumber", "availability", "routeType", "businessAddress", "previousEmployer", "accidents", "violations"]
           
           const hasStep1Error = step1Fields.some(field => result.errors![field])
           const hasStep2Error = step2Fields.some(field => result.errors![field])
+          const hasStep3Error = step3Fields.some(field => result.errors![field])
           
           if (hasStep1Error) {
             setStep(1)
-            setTimeout(() => {
-              const errorElement = document.querySelector('.text-red-500')
-              errorElement?.scrollIntoView({ behavior: 'smooth', block: 'center' })
-            }, 100)
           } else if (hasStep2Error) {
             setStep(2)
-            setTimeout(() => {
-              const errorElement = document.querySelector('.text-red-500')
-              errorElement?.scrollIntoView({ behavior: 'smooth', block: 'center' })
-            }, 100)
+          } else if (hasStep3Error) {
+            setStep(3)
           }
+          
+          setTimeout(() => {
+            const errorElement = document.querySelector('.text-red-500')
+            errorElement?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+          }, 100)
         }
       }
     } catch (error) {
@@ -253,21 +255,52 @@ export function ApplicationForm() {
   }
 
   // Progress Bar
-  const progress = Math.round(((step - 1) / 3) * 100)
+  const progress = Math.round(((step - 1) / 4) * 100)
+
+  // Sticky Footer Logic
+  const showStickyFooter = true; // Always show on mobile via CSS
+  const isFormStarted = step > 1 || (watchedFields.driverType && watchedFields.driverType !== 'owner-operator-otr');
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 relative">
+      {/* Mobile Sticky Footer */}
+      <div className="fixed bottom-0 left-0 right-0 z-[100] md:hidden bg-gradient-to-r from-[#001F3F] to-[#003366] p-3 border-t border-white/10 shadow-2xl safe-area-bottom">
+        <div className="flex gap-3">
+          <a
+            href={`tel:${COMPANY_INFO.phoneFormatted}`}
+            className="flex items-center justify-center w-12 h-12 bg-white/10 rounded-xl text-white hover:bg-white/20 active:bg-white/30 transition-colors"
+          >
+            <Phone className="h-5 w-5" />
+          </a>
+          <Button
+            onClick={() => {
+               // If valid, go next, otherwise scroll to error
+               if (step === 4) {
+                 handleSubmit(onSubmit)()
+               } else {
+                 nextStep()
+               }
+            }}
+            className="flex-1 h-12 bg-orange-500 hover:bg-orange-600 text-white font-bold text-base rounded-xl shadow-lg shadow-orange-500/30"
+          >
+            {step === 4 ? "Submit Application" : "Continue Application"}
+            <ChevronRight className="ml-2 h-5 w-5" />
+          </Button>
+        </div>
+      </div>
+
       {/* Progress Steps */}
       <div className="mb-8">
         <div className="flex justify-between text-sm font-medium text-gray-500 mb-2">
           <span className={cn(step >= 1 && "text-orange-600 font-bold")}>1. Qualify</span>
-          <span className={cn(step >= 2 && "text-orange-600 font-bold")}>2. Details</span>
-          <span className={cn(step >= 3 && "text-orange-600 font-bold")}>3. Documents</span>
+          <span className={cn(step >= 2 && "text-orange-600 font-bold")}>2. Contact</span>
+          <span className={cn(step >= 3 && "text-orange-600 font-bold")}>3. Details</span>
+          <span className={cn(step >= 4 && "text-orange-600 font-bold")}>4. Docs</span>
         </div>
         <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden">
           <div 
             className="h-full bg-gradient-to-r from-orange-500 to-orange-600 transition-all duration-500 ease-out"
-            style={{ width: `${step === 1 ? 33 : step === 2 ? 66 : 100}%` }}
+            style={{ width: `${progress === 0 ? 25 : progress}%` }}
           />
         </div>
       </div>
@@ -290,17 +323,135 @@ export function ApplicationForm() {
       )}
 
       <form onSubmit={handleSubmit(onSubmit)}>
-        {/* STEP 1: THE HOOK */}
+        {/* STEP 1: PREQUALIFICATION */}
         {step === 1 && (
           <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-500">
             <div className="text-center mb-8">
-              <h2 className="text-2xl font-bold text-gray-900">See Your Earning Potential</h2>
-              <p className="text-gray-600">Tell us about yourself to get your personalized offer</p>
+              <h2 className="text-2xl font-bold text-gray-900">Step 1: Prequalification</h2>
+              <p className="text-gray-600">Let's check your eligibility first</p>
             </div>
 
-            {/* Single Column Layout for Less Friction */}
             <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <Label>Which best describes you? *</Label>
+                <div className="space-y-3 mt-2">
+                  <label className={cn(
+                    "flex items-center p-5 border-2 rounded-xl cursor-pointer transition-all hover:border-orange-400 hover:bg-orange-50 w-full group",
+                    watchedFields.driverType === "owner-operator-otr" ? "border-orange-500 bg-orange-50 ring-2 ring-orange-500" : "border-gray-200",
+                    errors.driverType ? "border-red-500" : ""
+                  )}>
+                    <input type="radio" {...register("driverType")} value="owner-operator-otr" className="sr-only" />
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between">
+                        <div className="font-bold text-gray-900 text-base">Owner Operator</div>
+                        <div className="text-xl text-green-600 font-black">91% Gross</div>
+                      </div>
+                      <div className="text-sm text-gray-500 mt-1 group-hover:text-gray-700 transition-colors">{PAY_RATES.ownerOperator.annualGross} • 2+ years OTR</div>
+                    </div>
+                    <div className={cn(
+                      "ml-4 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all",
+                      watchedFields.driverType === "owner-operator-otr" ? "border-orange-500 bg-orange-500" : "border-gray-300"
+                    )}>
+                      {watchedFields.driverType === "owner-operator-otr" && <Check className="w-4 h-4 text-white" />}
+                    </div>
+                  </label>
+                  
+                  <label className={cn(
+                    "flex items-center p-5 border-2 rounded-xl cursor-pointer transition-all hover:border-orange-400 hover:bg-orange-50 w-full group",
+                    watchedFields.driverType === "regional-company-driver" ? "border-orange-500 bg-orange-50 ring-2 ring-orange-500" : "border-gray-200",
+                    errors.driverType ? "border-red-500" : ""
+                  )}>
+                    <input type="radio" {...register("driverType")} value="regional-company-driver" className="sr-only" />
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between">
+                        <div className="font-bold text-gray-900 text-base">Company Driver</div>
+                        <div className="text-xl text-blue-600 font-black">{PAY_RATES.companyDriver.regional.perMile}/mi</div>
+                      </div>
+                      <div className="text-sm text-gray-500 mt-1 group-hover:text-gray-700 transition-colors">{PAY_RATES.companyDriver.regional.annual} • 1+ year experience</div>
+                    </div>
+                    <div className={cn(
+                      "ml-4 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all",
+                      watchedFields.driverType === "regional-company-driver" ? "border-orange-500 bg-orange-500" : "border-gray-300"
+                    )}>
+                      {watchedFields.driverType === "regional-company-driver" && <Check className="w-4 h-4 text-white" />}
+                    </div>
+                  </label>
+                </div>
+                {errors.driverType && <p className="text-xs text-red-500 mt-1">{errors.driverType.message}</p>}
+              </div>
+
+              <div className="space-y-4 pt-2">
+                <div className="space-y-2">
+                  <Label htmlFor="cdlClass">CDL Class *</Label>
+                  <div className="grid grid-cols-3 gap-3">
+                    {["Class A", "Class B", "Class C"].map((cls) => (
+                      <label key={cls} className={cn(
+                        "flex items-center justify-center p-3 border-2 rounded-xl cursor-pointer transition-all font-bold text-center",
+                        watchedFields.cdlClass === cls ? "border-orange-500 bg-orange-500 text-white shadow-md transform scale-[1.02]" : "border-gray-200 bg-white text-gray-700 hover:border-orange-300 hover:bg-orange-50",
+                        errors.cdlClass ? "border-red-500" : ""
+                      )}>
+                        <input type="radio" {...register("cdlClass")} value={cls} className="sr-only" />
+                        {cls}
+                      </label>
+                    ))}
+                  </div>
+                  {errors.cdlClass && <p className="text-xs text-red-500 mt-1">{errors.cdlClass.message}</p>}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="experienceYears">Years Experience *</Label>
+                  <div className="grid grid-cols-2 gap-3">
+                    {[
+                      { val: "1", label: "1 Year" },
+                      { val: "2", label: "2 Years" },
+                      { val: "3-5", label: "3-5 Years" },
+                      { val: "6-10", label: "6-10 Years" },
+                      { val: "10+", label: "10+ Years" }
+                    ].map((exp) => (
+                       <label key={exp.val} className={cn(
+                        "flex items-center justify-center p-3 border-2 rounded-xl cursor-pointer transition-all font-medium text-center",
+                        watchedFields.experienceYears === exp.val ? "border-orange-500 bg-orange-50 text-orange-900 ring-1 ring-orange-500 font-bold" : "border-gray-200 bg-white text-gray-700 hover:border-orange-300 hover:bg-orange-50",
+                        errors.experienceYears ? "border-red-500" : ""
+                      )}>
+                        <input type="radio" {...register("experienceYears")} value={exp.val} className="sr-only" />
+                        {exp.label}
+                      </label>
+                    ))}
+                  </div>
+                  {errors.experienceYears && <p className="text-xs text-red-500 mt-1">{errors.experienceYears.message}</p>}
+                </div>
+              </div>
+
+              <div className="space-y-3 pt-4">
+                <Button 
+                  type="button" 
+                  onClick={nextStep} 
+                  className="w-full h-14 text-lg font-bold bg-orange-500 hover:bg-orange-600 text-white shadow-lg shadow-orange-500/30 transition-all hover:shadow-xl hover:shadow-orange-500/40 hover:-translate-y-0.5"
+                  disabled={isCapturingLead}
+                >
+                    CHECK MY ELIGIBILITY <ChevronRight className="ml-2 h-5 w-5" />
+                </Button>
+                
+                {/* Security Assurance */}
+                <div className="flex items-center justify-center gap-2 text-xs text-gray-500">
+                  <Lock className="h-3.5 w-3.5" />
+                  <span>Secure Application – Your information is always confidential</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* STEP 2: CONTACT */}
+        {step === 2 && (
+          <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-500">
+            <div className="text-center mb-8">
+              <h2 className="text-2xl font-bold text-gray-900">Great News! You Qualify.</h2>
+              <p className="text-gray-600">Where should we send your offer?</p>
+            </div>
+
+            <div className="space-y-4">
+               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
                   <Label htmlFor="firstName">First Name *</Label>
                   <Input
@@ -324,7 +475,6 @@ export function ApplicationForm() {
                 </div>
               </div>
 
-              {/* Email first (less invasive), then Phone */}
               <div className="space-y-1">
                 <Label htmlFor="email">Email Address *</Label>
                 <Input
@@ -344,145 +494,44 @@ export function ApplicationForm() {
                   {...register("phone")}
                   onChange={handlePhoneChange}
                   placeholder="(555) 555-5555"
+                  type="tel"
+                  inputMode="tel"
+                  autoComplete="tel"
                   className={cn("h-12 text-base", errors.phone ? "border-red-500" : "")}
                 />
                 {errors.phone && <p className="text-xs text-red-500 mt-1">{errors.phone.message}</p>}
               </div>
-            </div>
 
-            <div className="space-y-1">
-              <Label>Which best describes you? *</Label>
-              <div className="space-y-3 mt-2">
-                <label className={cn(
-                  "flex items-center p-5 border-2 rounded-xl cursor-pointer transition-all hover:border-orange-400 hover:bg-orange-50 w-full",
-                  watchedFields.driverType === "owner-operator-otr" ? "border-orange-500 bg-orange-50 ring-2 ring-orange-500" : "border-gray-200",
-                  errors.driverType ? "border-red-500" : ""
-                )}>
-                  <input type="radio" {...register("driverType")} value="owner-operator-otr" className="sr-only" />
-                  <div className="flex-1">
-                    <div className="flex items-center justify-between">
-                      <div className="font-bold text-gray-900 text-base">Owner Operator</div>
-                      <div className="text-xl text-green-600 font-black">91% Gross</div>
-                    </div>
-                    <div className="text-sm text-gray-500 mt-1">{PAY_RATES.ownerOperator.annualGross} • 2+ years OTR</div>
-                  </div>
-                  <div className={cn(
-                    "ml-4 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all",
-                    watchedFields.driverType === "owner-operator-otr" ? "border-orange-500 bg-orange-500" : "border-gray-300"
-                  )}>
-                    {watchedFields.driverType === "owner-operator-otr" && <Check className="w-4 h-4 text-white" />}
-                  </div>
-                </label>
-                
-                <label className={cn(
-                  "flex items-center p-5 border-2 rounded-xl cursor-pointer transition-all hover:border-orange-400 hover:bg-orange-50 w-full",
-                  watchedFields.driverType === "regional-company-driver" ? "border-orange-500 bg-orange-50 ring-2 ring-orange-500" : "border-gray-200",
-                  errors.driverType ? "border-red-500" : ""
-                )}>
-                  <input type="radio" {...register("driverType")} value="regional-company-driver" className="sr-only" />
-                  <div className="flex-1">
-                    <div className="flex items-center justify-between">
-                      <div className="font-bold text-gray-900 text-base">Company Driver</div>
-                      <div className="text-xl text-blue-600 font-black">{PAY_RATES.companyDriver.regional.perMile}/mi</div>
-                    </div>
-                    <div className="text-sm text-gray-500 mt-1">{PAY_RATES.companyDriver.regional.annual} • 1+ year experience</div>
-                  </div>
-                  <div className={cn(
-                    "ml-4 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all",
-                    watchedFields.driverType === "regional-company-driver" ? "border-orange-500 bg-orange-500" : "border-gray-300"
-                  )}>
-                    {watchedFields.driverType === "regional-company-driver" && <Check className="w-4 h-4 text-white" />}
-                  </div>
-                </label>
-              </div>
-              {errors.driverType && <p className="text-xs text-red-500 mt-1">{errors.driverType.message}</p>}
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1">
-                <Label htmlFor="cdlClass">CDL Class *</Label>
-                <select
-                  id="cdlClass"
-                  {...register("cdlClass")}
-                  className={cn(
-                    "w-full h-12 px-3 py-2 rounded-md border border-gray-300 bg-white text-gray-900 text-base focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent",
-                    errors.cdlClass ? "border-red-500" : ""
-                  )}
-                >
-                  <option value="">Select Class</option>
-                  <option value="Class A">Class A</option>
-                  <option value="Class B">Class B</option>
-                  <option value="Class C">Class C</option>
-                </select>
-                {errors.cdlClass && <p className="text-xs text-red-500 mt-1">{errors.cdlClass.message}</p>}
-              </div>
-
-              <div className="space-y-1">
-                <Label htmlFor="experienceYears">Years Experience *</Label>
-                <select
-                  id="experienceYears"
-                  {...register("experienceYears")}
-                  className={cn(
-                    "w-full h-12 px-3 py-2 rounded-md border border-gray-300 bg-white text-gray-900 text-base focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent",
-                    errors.experienceYears ? "border-red-500" : ""
-                  )}
-                >
-                  <option value="">Select Experience</option>
-                  <option value="1">1 year</option>
-                  <option value="2">2 years</option>
-                  <option value="3-5">3-5 years</option>
-                  <option value="6-10">6-10 years</option>
-                  <option value="10+">10+ years</option>
-                </select>
-                {errors.experienceYears && <p className="text-xs text-red-500 mt-1">{errors.experienceYears.message}</p>}
-              </div>
-            </div>
-
-            {/* Mini Testimonial - Confidence Boost Before CTA */}
-            <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
-              <div className="flex items-start gap-3">
-                <div className="flex gap-0.5">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} className="h-4 w-4 fill-orange-400 text-orange-400" />
-                  ))}
+              <div className="space-y-3 pt-4">
+                <div className="flex gap-3">
+                  <Button type="button" variant="outline" onClick={prevStep} className="flex-1 h-14 border-gray-300 text-gray-700 hover:bg-gray-50">
+                    <ArrowLeft className="mr-2 h-4 w-4" /> Back
+                  </Button>
+                  <Button 
+                    type="button" 
+                    onClick={nextStep} 
+                    className="flex-[2] h-14 text-lg font-bold bg-orange-500 hover:bg-orange-600 text-white shadow-lg shadow-orange-500/30 transition-all hover:shadow-xl hover:shadow-orange-500/40 hover:-translate-y-0.5"
+                    disabled={isCapturingLead}
+                  >
+                    {isCapturingLead ? (
+                      <>
+                        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                        Saving...
+                      </>
+                    ) : (
+                      <>
+                        CONTINUE <ChevronRight className="ml-2 h-5 w-5" />
+                      </>
+                    )}
+                  </Button>
                 </div>
-              </div>
-              <p className="text-gray-700 text-sm mt-2 italic">
-                "I get paid on time, every time. Best decision I ever made."
-              </p>
-              <p className="text-xs text-gray-500 mt-1">— Mike R., Owner Operator</p>
-            </div>
-
-            <div className="space-y-3">
-              <Button 
-                type="button" 
-                onClick={nextStep} 
-                className="w-full h-14 text-lg font-bold bg-orange-500 hover:bg-orange-600 text-white shadow-lg shadow-orange-500/30 transition-all hover:shadow-xl hover:shadow-orange-500/40 hover:-translate-y-0.5"
-                disabled={isCapturingLead}
-              >
-                {isCapturingLead ? (
-                  <>
-                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                    Checking Eligibility...
-                  </>
-                ) : (
-                  <>
-                    CHECK MY ELIGIBILITY <ChevronRight className="ml-2 h-5 w-5" />
-                  </>
-                )}
-              </Button>
-              
-              {/* Security Assurance */}
-              <div className="flex items-center justify-center gap-2 text-xs text-gray-500">
-                <Lock className="h-3.5 w-3.5" />
-                <span>Secure Application – Your information is always confidential</span>
               </div>
             </div>
           </div>
         )}
 
-        {/* STEP 2: DETAILS */}
-        {step === 2 && (
+        {/* STEP 3: DETAILS */}
+        {step === 3 && (
           <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-500">
              <div className="text-center mb-8">
               <h2 className="text-2xl font-bold text-gray-900">Almost There!</h2>
@@ -597,8 +646,8 @@ export function ApplicationForm() {
           </div>
         )}
 
-        {/* STEP 3: DOCS & SUBMIT */}
-        {step === 3 && (
+        {/* STEP 4: DOCS & SUBMIT */}
+        {step === 4 && (
           <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-500">
             <div className="text-center mb-8">
               <h2 className="text-2xl font-bold text-gray-900">You're Almost Done!</h2>

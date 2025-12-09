@@ -3,10 +3,10 @@
 import { Badge } from "@/components/ui/badge"
 import { Card } from "@/components/ui/card"
 import { MAJOR_CLIENTS, PREMIER_BROKERS } from "@/lib/constants"
-import { Star, GripHorizontal } from "lucide-react"
+import { Star, Building2, Truck } from "lucide-react"
 import Image from "next/image"
-import { motion } from "framer-motion"
-import { useRef, useState, useEffect } from "react"
+import { motion, useAnimationControls } from "framer-motion"
+import { useEffect, useRef, useState } from "react"
 
 const BROKER_LOGOS: Record<string, string> = {
   "Landstar Inway": "/logos/landstar.svg",
@@ -30,37 +30,40 @@ function PartnerLogo({
   name,
   logoPath,
   className = "",
+  type = "client"
 }: {
   name: string
-  logoPath: string
+  logoPath?: string
   className?: string
+  type?: "client" | "broker"
 }) {
   return (
     <div
-      className={`flex-shrink-0 relative h-10 w-10 sm:h-12 sm:w-12 md:h-16 md:w-16 overflow-hidden rounded-lg sm:rounded-xl shadow-sm bg-white/5 backdrop-blur-sm border border-white/10 ${className}`}
+      className={`flex-shrink-0 relative h-10 w-10 sm:h-12 sm:w-12 md:h-16 md:w-16 overflow-hidden rounded-lg sm:rounded-xl shadow-sm bg-white/5 backdrop-blur-sm border border-white/10 flex items-center justify-center ${className}`}
     >
-      <Image
-        src={logoPath}
-        alt={`${name} logo`}
-        fill
-        priority={false}
-        sizes="(max-width: 640px) 40px, (max-width: 768px) 48px, 64px"
-        className="object-contain p-1.5 sm:p-2 opacity-90 hover:opacity-100 transition-opacity"
-      />
+      {logoPath ? (
+        <Image
+          src={logoPath}
+          alt={`${name} logo`}
+          fill
+          priority={false}
+          sizes="(max-width: 640px) 40px, (max-width: 768px) 48px, 64px"
+          className="object-contain p-1.5 sm:p-2 opacity-90 hover:opacity-100 transition-opacity"
+        />
+      ) : (
+        <div className="text-white/40">
+           {type === "broker" ? <Truck className="w-6 h-6" /> : <Building2 className="w-6 h-6" />}
+        </div>
+      )}
     </div>
   )
 }
 
-// Duplicate items for seamless loop
-function duplicateItems<T>(items: readonly T[], times: number = 2): T[] {
-  return Array(times).fill(items).flat()
-}
-
-// Auto-scrolling + Draggable carousel component
-function AutoDraggableCarousel({ 
+// Seamless infinite scroll component
+function InfiniteCarousel({ 
   children, 
   direction = "left",
-  speed = 30,
+  speed = 20,
   className = "" 
 }: { 
   children: React.ReactNode
@@ -68,69 +71,62 @@ function AutoDraggableCarousel({
   speed?: number
   className?: string 
 }) {
-  const containerRef = useRef<HTMLDivElement>(null)
-  const [isPaused, setIsPaused] = useState(false)
-  const [isDragging, setIsDragging] = useState(false)
-  const [dragOffset, setDragOffset] = useState(0)
   const [contentWidth, setContentWidth] = useState(0)
-
+  const containerRef = useRef<HTMLDivElement>(null)
+  const controls = useAnimationControls()
+  
   useEffect(() => {
     if (containerRef.current) {
-      // Get the width of half the content (since we duplicate it)
+      // Calculate single set width based on children count and approximate width
+      // Better approach: Measure the scrollWidth of the inner container
       setContentWidth(containerRef.current.scrollWidth / 2)
     }
   }, [children])
 
-  const handleDragStart = () => {
-    setIsDragging(true)
-    setIsPaused(true)
+  useEffect(() => {
+    // Start animation
+    controls.start({
+      x: direction === "left" ? "-50%" : "0%",
+      transition: {
+        duration: speed,
+        ease: "linear",
+        repeat: Infinity,
+        repeatType: "loop",
+      }
+    })
+  }, [controls, direction, speed])
+
+  const handleMouseEnter = () => {
+    controls.stop()
   }
 
-  const handleDragEnd = (_: any, info: { offset: { x: number } }) => {
-    setIsDragging(false)
-    setDragOffset(prev => prev + info.offset.x)
-    // Resume animation after a short delay
-    setTimeout(() => setIsPaused(false), 2000)
+  const handleMouseLeave = () => {
+    controls.start({
+      x: direction === "left" ? "-50%" : "0%",
+      transition: {
+        duration: speed,
+        ease: "linear",
+        repeat: Infinity,
+        repeatType: "loop",
+      }
+    })
   }
 
   return (
     <div 
-      className="relative overflow-hidden"
-      onMouseEnter={() => setIsPaused(true)}
-      onMouseLeave={() => !isDragging && setIsPaused(false)}
-      onTouchStart={() => setIsPaused(true)}
-      onTouchEnd={() => !isDragging && setTimeout(() => setIsPaused(false), 2000)}
+      className="relative overflow-hidden group"
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+      onTouchStart={handleMouseEnter}
+      onTouchEnd={handleMouseLeave}
     >
-      {/* Drag hint for mobile */}
-      <div className="flex items-center justify-center gap-1.5 text-xs text-zinc-500 mb-2 sm:hidden">
-        <GripHorizontal className="w-3.5 h-3.5" />
-        <span>Swipe or let it scroll</span>
-      </div>
-      
       <motion.div
         ref={containerRef}
-        drag="x"
-        dragConstraints={{ left: -contentWidth, right: contentWidth }}
-        dragElastic={0.1}
-        dragTransition={{ bounceStiffness: 300, bounceDamping: 30 }}
-        onDragStart={handleDragStart}
-        onDragEnd={handleDragEnd}
-        animate={!isPaused ? {
-          x: direction === "left" 
-            ? [dragOffset, dragOffset - contentWidth] 
-            : [dragOffset, dragOffset + contentWidth]
-        } : {}}
-        transition={!isPaused ? {
-          x: {
-            duration: speed,
-            repeat: Infinity,
-            ease: "linear",
-            repeatType: "loop"
-          }
-        } : {}}
-        className={`flex gap-3 sm:gap-4 md:gap-6 cursor-grab active:cursor-grabbing ${className}`}
-        style={{ touchAction: 'pan-y' }}
+        animate={controls}
+        initial={{ x: direction === "left" ? "0%" : "-50%" }}
+        className={`flex gap-4 sm:gap-6 min-w-max ${className}`}
       >
+        {children}
         {children}
       </motion.div>
       
@@ -142,9 +138,9 @@ function AutoDraggableCarousel({
 }
 
 export function PartnersShowcase() {
-  // Duplicate items for seamless infinite scroll
-  const brokerItems = duplicateItems(PREMIER_BROKERS, 3)
-  const clientItems = duplicateItems(MAJOR_CLIENTS, 3)
+  // Use original arrays, we'll duplicate them in the carousel component
+  const brokerItems = PREMIER_BROKERS
+  const clientItems = MAJOR_CLIENTS
 
   return (
     <section aria-label="Partner network" className="relative bg-[#020617] py-12 sm:py-16 md:py-24 overflow-hidden">
@@ -186,31 +182,31 @@ export function PartnersShowcase() {
             </div>
             
             <div className="rounded-xl sm:rounded-2xl border border-white/5 bg-white/[0.02] p-3 sm:p-4 md:p-6">
-              <AutoDraggableCarousel direction="left" speed={35}>
+              <InfiniteCarousel direction="left" speed={40}>
                 {brokerItems.map((broker, index) => {
                   const logoPath = BROKER_LOGOS[broker.name]
-                  if (!logoPath) return null
                   return (
                     <Card
                       key={`${broker.name}-${index}`}
-                      className="flex-shrink-0 w-[200px] sm:w-[240px] md:w-[280px] flex items-center gap-2.5 sm:gap-3 md:gap-4 border border-white/10 bg-white/5 px-3 sm:px-4 md:px-6 py-3 sm:py-4 md:py-5 shadow-lg hover:shadow-blue-500/10 transition-all duration-300 hover:border-blue-500/30 rounded-lg sm:rounded-xl"
+                      className="flex-shrink-0 w-[200px] sm:w-[240px] md:w-[280px] flex items-center gap-2.5 sm:gap-3 md:gap-4 border border-white/10 bg-white/5 px-3 sm:px-4 md:px-6 py-3 sm:py-4 md:py-5 shadow-lg hover:shadow-blue-500/10 transition-all duration-300 hover:border-blue-500/30 rounded-lg sm:rounded-xl group cursor-default"
                     >
                       <PartnerLogo
                         name={broker.name}
                         logoPath={logoPath}
+                        type="broker"
                       />
                       <div className="text-left flex-1 min-w-0">
-                        <p className="text-xs sm:text-sm md:text-base font-bold text-white truncate tracking-tight mb-1 sm:mb-2">
+                        <p className="text-xs sm:text-sm md:text-base font-bold text-white truncate tracking-tight mb-1 sm:mb-2 group-hover:text-blue-400 transition-colors">
                           {broker.name}
                         </p>
-                        <Badge className="text-[10px] sm:text-xs font-semibold px-2 sm:px-3 py-0.5 sm:py-1 bg-blue-500/20 text-blue-400 border-blue-500/30 hover:bg-blue-500/30">
+                        <Badge className="text-[10px] sm:text-xs font-semibold px-2 sm:px-3 py-0.5 sm:py-1 bg-blue-500/20 text-blue-400 border-blue-500/30">
                           {broker.tier}
                         </Badge>
                       </div>
                     </Card>
                   )
                 })}
-              </AutoDraggableCarousel>
+              </InfiniteCarousel>
             </div>
           </motion.div>
 
@@ -230,21 +226,21 @@ export function PartnersShowcase() {
             </div>
             
             <div className="rounded-xl sm:rounded-2xl border border-white/5 bg-white/[0.02] p-3 sm:p-4 md:p-6">
-              <AutoDraggableCarousel direction="right" speed={40}>
+              <InfiniteCarousel direction="right" speed={50}>
                 {clientItems.map((client, index) => {
                   const logoPath = CLIENT_LOGOS[client.name]
-                  if (!logoPath) return null
                   return (
                     <Card
                       key={`${client.name}-${index}`}
-                      className="flex-shrink-0 w-[220px] sm:w-[260px] md:w-[300px] flex items-center gap-2.5 sm:gap-3 md:gap-4 border border-white/10 bg-white/5 px-3 sm:px-4 md:px-6 py-3 sm:py-4 md:py-5 shadow-lg hover:shadow-green-500/10 transition-all duration-300 hover:border-green-500/30 rounded-lg sm:rounded-xl"
+                      className="flex-shrink-0 w-[220px] sm:w-[260px] md:w-[300px] flex items-center gap-2.5 sm:gap-3 md:gap-4 border border-white/10 bg-white/5 px-3 sm:px-4 md:px-6 py-3 sm:py-4 md:py-5 shadow-lg hover:shadow-green-500/10 transition-all duration-300 hover:border-green-500/30 rounded-lg sm:rounded-xl group cursor-default"
                     >
                       <PartnerLogo
                         name={client.name}
                         logoPath={logoPath}
+                        type="client"
                       />
                       <div className="text-left flex-1 min-w-0">
-                        <p className="text-xs sm:text-sm md:text-base font-bold truncate leading-tight mb-1 sm:mb-2 text-white">{client.name}</p>
+                        <p className="text-xs sm:text-sm md:text-base font-bold truncate leading-tight mb-1 sm:mb-2 text-white group-hover:text-green-400 transition-colors">{client.name}</p>
                         <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
                           <span className="text-[10px] sm:text-xs font-semibold text-green-400 bg-green-500/10 border border-green-500/20 px-2 sm:px-3 py-0.5 sm:py-1 rounded-md">
                             {client.duration}
@@ -257,7 +253,7 @@ export function PartnersShowcase() {
                     </Card>
                   )
                 })}
-              </AutoDraggableCarousel>
+              </InfiniteCarousel>
             </div>
           </motion.div>
         </div>

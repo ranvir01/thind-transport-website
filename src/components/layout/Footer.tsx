@@ -124,6 +124,16 @@ export function Footer() {
                   </Link>
                 </li>
                 <li>
+                  <Link href="/driver-portal" className="text-neutral-300 hover:text-yellow-300 transition-colors flex items-center gap-2 group">
+                    <span className="group-hover:translate-x-1 transition-transform">Driver Portal</span>
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/pre-qualify" className="text-neutral-300 hover:text-yellow-300 transition-colors flex items-center gap-2 group">
+                    <span className="group-hover:translate-x-1 transition-transform">Pre-Qualify</span>
+                  </Link>
+                </li>
+                <li>
                   <Link href="/apply" className="text-neutral-200 hover:text-yellow-300 transition-colors flex items-center gap-2 group font-semibold">
                     <span className="group-hover:translate-x-1 transition-transform">Apply Now</span>
                   </Link>

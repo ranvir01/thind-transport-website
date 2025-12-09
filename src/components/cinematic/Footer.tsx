@@ -1,6 +1,7 @@
 "use client"
 
-import { motion } from "framer-motion"
+import { useState } from "react"
+import { motion, AnimatePresence } from "framer-motion"
 import Link from "next/link"
 import Image from "next/image"
 import { usePathname } from "next/navigation"
@@ -24,7 +25,178 @@ import {
   Linkedin,
   Instagram,
   ExternalLink,
+  ChevronDown,
 } from "lucide-react"
+
+// Collapsible footer link section for mobile
+const FooterLinkSections = () => {
+  const [openSection, setOpenSection] = useState<string | null>(null)
+  
+  const toggleSection = (section: string) => {
+    setOpenSection(openSection === section ? null : section)
+  }
+  
+  const driverLinks = [
+    { href: "/apply", label: "Apply Now", highlight: true },
+    { href: "/pay-rates", label: "Pay Rates" },
+    { href: "/benefits", label: "Benefits" },
+    { href: "/routes", label: "Routes & Lanes" },
+    { href: "/testimonials", label: "Driver Reviews" },
+    { href: "/resources", label: "Driver Resources" },
+    { href: "/driver-portal", label: "Driver Portal" },
+  ]
+  
+  const companyLinks = [
+    { href: "/about", label: "About Us" },
+    { href: "/showcase", label: "Our Fleet" },
+    { href: "/veterans", label: "Veterans Program" },
+    { href: "https://safer.fmcsa.dot.gov/CompanySnapshot.aspx", label: "FMCSA Record", external: true },
+  ]
+  
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-0 md:gap-8">
+      {/* For Drivers - Collapsible on Mobile */}
+      <div className="border-b border-white/10 md:border-0">
+        <button 
+          onClick={() => toggleSection('drivers')}
+          className="w-full flex items-center justify-between py-4 md:py-0 md:cursor-default min-h-[44px]"
+        >
+          <h4 className="font-mono font-bold text-xs uppercase tracking-widest text-zinc-500">
+            For Drivers
+          </h4>
+          <ChevronDown className={`w-5 h-5 text-zinc-500 md:hidden transition-transform duration-200 ${openSection === 'drivers' ? 'rotate-180' : ''}`} />
+        </button>
+        
+        {/* Mobile Collapsible */}
+        <div className={`md:hidden overflow-hidden transition-all duration-300 ease-in-out ${openSection === 'drivers' ? 'max-h-96 pb-4' : 'max-h-0'}`}>
+          <ul className="space-y-3 text-sm pl-2">
+            {driverLinks.map((link) => (
+              <li key={link.href}>
+                <Link 
+                  href={link.href} 
+                  className={`${link.highlight ? 'text-zinc-300 font-semibold' : 'text-zinc-400'} hover:text-orange-500 transition-colors flex items-center gap-2 group py-1`}
+                >
+                  <span className={`w-1 h-1 rounded-full ${link.highlight ? 'bg-orange-500' : 'bg-zinc-700'} group-hover:bg-orange-500 transition-all`} />
+                  <span>{link.label}</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+        
+        {/* Desktop Always Visible */}
+        <ul className="hidden md:block space-y-3 text-sm mt-6">
+          {driverLinks.map((link) => (
+            <li key={link.href}>
+              <Link 
+                href={link.href} 
+                className={`${link.highlight ? 'text-zinc-300 font-semibold' : 'text-zinc-400'} hover:text-orange-500 transition-colors flex items-center gap-2 group`}
+              >
+                <span className={`w-1 h-1 rounded-full ${link.highlight ? 'bg-orange-500' : 'bg-zinc-700'} group-hover:bg-orange-500 group-hover:scale-150 transition-all`} />
+                <span className="group-hover:translate-x-1 transition-transform">{link.label}</span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      {/* Company - Collapsible on Mobile */}
+      <div className="border-b border-white/10 md:border-0">
+        <button 
+          onClick={() => toggleSection('company')}
+          className="w-full flex items-center justify-between py-4 md:py-0 md:cursor-default min-h-[44px]"
+        >
+          <h4 className="font-mono font-bold text-xs uppercase tracking-widest text-zinc-500">
+            Company
+          </h4>
+          <ChevronDown className={`w-5 h-5 text-zinc-500 md:hidden transition-transform duration-200 ${openSection === 'company' ? 'rotate-180' : ''}`} />
+        </button>
+        
+        {/* Mobile Collapsible */}
+        <div className={`md:hidden overflow-hidden transition-all duration-300 ease-in-out ${openSection === 'company' ? 'max-h-96 pb-4' : 'max-h-0'}`}>
+          <ul className="space-y-3 text-sm pl-2">
+            {companyLinks.map((link) => (
+              <li key={link.href}>
+                {link.external ? (
+                  <a 
+                    href={link.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-zinc-400 hover:text-orange-500 transition-colors flex items-center gap-2 group py-1"
+                  >
+                    <span className="w-1 h-1 rounded-full bg-zinc-700 group-hover:bg-orange-500 transition-colors" />
+                    <span>{link.label}</span>
+                    <ExternalLink className="w-3 h-3" />
+                  </a>
+                ) : (
+                  <Link 
+                    href={link.href}
+                    className="text-zinc-400 hover:text-orange-500 transition-colors flex items-center gap-2 group py-1"
+                  >
+                    <span className="w-1 h-1 rounded-full bg-zinc-700 group-hover:bg-orange-500 transition-colors" />
+                    <span>{link.label}</span>
+                  </Link>
+                )}
+              </li>
+            ))}
+          </ul>
+        </div>
+        
+        {/* Desktop Always Visible */}
+        <ul className="hidden md:block space-y-3 text-sm mt-6">
+          {companyLinks.map((link) => (
+            <li key={link.href}>
+              {link.external ? (
+                <a 
+                  href={link.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-zinc-400 hover:text-orange-500 transition-colors flex items-center gap-2 group"
+                >
+                  <span className="w-1 h-1 rounded-full bg-zinc-700 group-hover:bg-orange-500 transition-colors" />
+                  <span className="group-hover:translate-x-1 transition-transform">{link.label}</span>
+                  <ExternalLink className="w-3 h-3" />
+                </a>
+              ) : (
+                <Link 
+                  href={link.href}
+                  className="text-zinc-400 hover:text-orange-500 transition-colors flex items-center gap-2 group"
+                >
+                  <span className="w-1 h-1 rounded-full bg-zinc-700 group-hover:bg-orange-500 transition-colors" />
+                  <span className="group-hover:translate-x-1 transition-transform">{link.label}</span>
+                </Link>
+              )}
+            </li>
+          ))}
+        </ul>
+
+        {/* Social Media Links */}
+        <div className="mt-8">
+          <h5 className="font-mono font-bold mb-4 text-xs uppercase tracking-widest text-zinc-500">Follow Us</h5>
+          <div className="flex items-center gap-3">
+            {[
+              { href: "https://facebook.com", Icon: Facebook, label: "Facebook" },
+              { href: "https://twitter.com", Icon: Twitter, label: "Twitter" },
+              { href: "https://linkedin.com", Icon: Linkedin, label: "LinkedIn" },
+              { href: "https://instagram.com", Icon: Instagram, label: "Instagram" }
+            ].map(({ href, Icon, label }) => (
+              <a
+                key={label}
+                href={href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-10 h-10 rounded-full bg-white/5 hover:bg-orange-500 flex items-center justify-center transition-all group border border-white/5 hover:border-orange-400"
+                aria-label={label}
+              >
+                <Icon className="h-4 w-4 text-zinc-400 group-hover:text-white transition-colors" />
+              </a>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
 
 // The floating command bar
 export const CommandBar = () => {
@@ -102,6 +274,11 @@ export const CommandBar = () => {
 }
 
 export const MobileCommandBar = () => {
+  const pathname = usePathname()
+  
+  // Hide on Apply page
+  if (pathname === '/apply') return null
+
   return (
     <div className="fixed bottom-0 left-0 right-0 z-[90] md:hidden bg-gradient-to-t from-[#00060D] via-[#00060D]/98 to-[#00060D]/95 backdrop-blur-xl border-t border-white/10 safe-area-bottom">
        <div className="flex gap-3 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
@@ -205,116 +382,7 @@ export const CinematicFooter = () => {
             </div>
 
             {/* Quick Links Columns */}
-            <div className="grid grid-cols-2 gap-8">
-              {/* For Drivers */}
-              <div>
-                <h4 className="font-mono font-bold mb-6 text-xs uppercase tracking-widest text-zinc-500">
-                  For Drivers
-                </h4>
-                <ul className="space-y-3 text-sm">
-                  <li>
-                    <Link href="/apply" className="text-zinc-300 hover:text-orange-500 transition-colors flex items-center gap-2 group font-semibold">
-                      <span className="w-1 h-1 rounded-full bg-orange-500 group-hover:scale-150 transition-transform" />
-                      <span className="group-hover:translate-x-1 transition-transform">Apply Now</span>
-                    </Link>
-                  </li>
-                  <li>
-                    <Link href="/pay-rates" className="text-zinc-400 hover:text-orange-500 transition-colors flex items-center gap-2 group">
-                      <span className="w-1 h-1 rounded-full bg-zinc-700 group-hover:bg-orange-500 transition-colors" />
-                      <span className="group-hover:translate-x-1 transition-transform">Pay Rates</span>
-                    </Link>
-                  </li>
-                  <li>
-                    <Link href="/benefits" className="text-zinc-400 hover:text-orange-500 transition-colors flex items-center gap-2 group">
-                      <span className="w-1 h-1 rounded-full bg-zinc-700 group-hover:bg-orange-500 transition-colors" />
-                      <span className="group-hover:translate-x-1 transition-transform">Benefits</span>
-                    </Link>
-                  </li>
-                  <li>
-                    <Link href="/routes" className="text-zinc-400 hover:text-orange-500 transition-colors flex items-center gap-2 group">
-                      <span className="w-1 h-1 rounded-full bg-zinc-700 group-hover:bg-orange-500 transition-colors" />
-                      <span className="group-hover:translate-x-1 transition-transform">Routes & Lanes</span>
-                    </Link>
-                  </li>
-                  <li>
-                    <Link href="/testimonials" className="text-zinc-400 hover:text-orange-500 transition-colors flex items-center gap-2 group">
-                      <span className="w-1 h-1 rounded-full bg-zinc-700 group-hover:bg-orange-500 transition-colors" />
-                      <span className="group-hover:translate-x-1 transition-transform">Driver Reviews</span>
-                    </Link>
-                  </li>
-                  <li>
-                    <Link href="/resources" className="text-zinc-400 hover:text-orange-500 transition-colors flex items-center gap-2 group">
-                      <span className="w-1 h-1 rounded-full bg-zinc-700 group-hover:bg-orange-500 transition-colors" />
-                      <span className="group-hover:translate-x-1 transition-transform">Driver Resources</span>
-                    </Link>
-                  </li>
-                  <li>
-                    <Link href="/driver-portal" className="text-zinc-400 hover:text-orange-500 transition-colors flex items-center gap-2 group">
-                      <span className="w-1 h-1 rounded-full bg-zinc-700 group-hover:bg-orange-500 transition-colors" />
-                      <span className="group-hover:translate-x-1 transition-transform">Driver Portal</span>
-                    </Link>
-                  </li>
-                </ul>
-              </div>
-
-              {/* Company */}
-              <div>
-                <h4 className="font-mono font-bold mb-6 text-xs uppercase tracking-widest text-zinc-500">
-                  Company
-                </h4>
-                <ul className="space-y-3 text-sm">
-                  <li>
-                    <Link href="/about" className="text-zinc-400 hover:text-orange-500 transition-colors flex items-center gap-2 group">
-                      <span className="w-1 h-1 rounded-full bg-zinc-700 group-hover:bg-orange-500 transition-colors" />
-                      <span className="group-hover:translate-x-1 transition-transform">About Us</span>
-                    </Link>
-                  </li>
-                  <li>
-                    <Link href="/showcase" className="text-zinc-400 hover:text-orange-500 transition-colors flex items-center gap-2 group">
-                      <span className="w-1 h-1 rounded-full bg-zinc-700 group-hover:bg-orange-500 transition-colors" />
-                      <span className="group-hover:translate-x-1 transition-transform">Our Fleet</span>
-                    </Link>
-                  </li>
-                  <li>
-                    <Link href="/veterans" className="text-zinc-400 hover:text-orange-500 transition-colors flex items-center gap-2 group">
-                      <span className="w-1 h-1 rounded-full bg-zinc-700 group-hover:bg-orange-500 transition-colors" />
-                      <span className="group-hover:translate-x-1 transition-transform">Veterans Program</span>
-                    </Link>
-                  </li>
-                  <li>
-                    <a href="https://safer.fmcsa.dot.gov/CompanySnapshot.aspx" target="_blank" rel="noopener noreferrer" className="text-zinc-400 hover:text-orange-500 transition-colors flex items-center gap-2 group">
-                      <span className="w-1 h-1 rounded-full bg-zinc-700 group-hover:bg-orange-500 transition-colors" />
-                      <span className="group-hover:translate-x-1 transition-transform">FMCSA Record</span>
-                      <ExternalLink className="w-3 h-3" />
-                    </a>
-                  </li>
-                </ul>
-
-                {/* Social Media Links */}
-                <div className="mt-8">
-                  <h5 className="font-mono font-bold mb-4 text-xs uppercase tracking-widest text-zinc-500">Follow Us</h5>
-                  <div className="flex items-center gap-3">
-                    {[
-                      { href: "https://facebook.com", Icon: Facebook, label: "Facebook" },
-                      { href: "https://twitter.com", Icon: Twitter, label: "Twitter" },
-                      { href: "https://linkedin.com", Icon: Linkedin, label: "LinkedIn" },
-                      { href: "https://instagram.com", Icon: Instagram, label: "Instagram" }
-                    ].map(({ href, Icon, label }) => (
-                      <a
-                          key={label}
-                          href={href}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="w-10 h-10 rounded-full bg-white/5 hover:bg-orange-500 flex items-center justify-center transition-all group border border-white/5 hover:border-orange-400"
-                          aria-label={label}
-                      >
-                          <Icon className="h-4 w-4 text-zinc-400 group-hover:text-white transition-colors" />
-                      </a>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
+            <FooterLinkSections />
 
             {/* Certifications & Trust Column */}
             <div>

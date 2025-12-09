@@ -77,10 +77,10 @@ export const WhySwitch = () => {
           </p>
         </motion.div>
 
-        {/* Comparison Table */}
+        {/* Comparison - Card View on Mobile, Table on Desktop */}
         <div className="max-w-4xl mx-auto">
-          {/* Table Header */}
-          <div className="grid grid-cols-3 gap-4 mb-4 px-4">
+          {/* Desktop Table Header - Hidden on Mobile */}
+          <div className="hidden md:grid grid-cols-3 gap-4 mb-4 px-4">
             <div className="text-sm font-semibold text-gray-700 uppercase tracking-wider">
               Feature
             </div>
@@ -92,8 +92,46 @@ export const WhySwitch = () => {
             </div>
           </div>
 
-          {/* Table Rows */}
-          <div className="space-y-2">
+          {/* Mobile Card View */}
+          <div className="md:hidden space-y-3">
+            {comparisonData.map((row, index) => (
+              <motion.div
+                key={row.feature}
+                initial={{ opacity: 0, y: 10 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: index * 0.03 }}
+                className={`p-4 rounded-xl ${
+                  row.highlight ? 'bg-orange/5 border border-orange/20' : 'bg-neutral-50'
+                }`}
+              >
+                <div className="font-bold text-navy text-base mb-3">{row.feature}</div>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-gray-500 uppercase tracking-wider">Mega Carriers</span>
+                    <div className="flex items-center gap-1.5">
+                      {row.competitorBad && <X className="w-4 h-4 text-red-500" />}
+                      <span className={`text-sm ${row.competitorBad ? 'text-red-600' : 'text-gray-600'}`}>
+                        {row.competitor}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between bg-white rounded-lg p-2 -mx-2">
+                    <span className="text-xs text-orange uppercase tracking-wider font-semibold">Thind Transport</span>
+                    <div className="flex items-center gap-1.5">
+                      <Check className="w-4 h-4 text-green-500" />
+                      <span className={`text-sm font-bold ${row.highlight ? 'text-orange' : 'text-green-700'}`}>
+                        {row.thind}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+
+          {/* Desktop Table Rows - Hidden on Mobile */}
+          <div className="hidden md:block space-y-2">
             {comparisonData.map((row, index) => (
               <motion.div
                 key={row.feature}

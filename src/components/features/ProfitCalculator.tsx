@@ -162,7 +162,7 @@ export const ProfitCalculator = () => {
                   <button
                     key={key}
                     onClick={() => setEquipmentType(key)}
-                    className={`p-3 rounded-lg border-2 transition-all text-center ${
+                    className={`p-3 min-h-[44px] rounded-lg border-2 transition-all text-center ${
                       equipmentType === key
                         ? "border-orange bg-orange/10 text-white"
                         : "border-white/10 hover:border-white/30 text-white/70 hover:text-white"
@@ -302,10 +302,12 @@ export const ProfitCalculator = () => {
                       <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/70" />
                       <input 
                         type="number"
+                        inputMode="decimal"
+                        pattern="[0-9]*"
                         placeholder="e.g., 3500"
                         value={currentWeeklyPay || ''}
                         onChange={(e) => setCurrentWeeklyPay(Number(e.target.value))}
-                        className="w-full pl-9 pr-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder:text-white/60 focus:outline-none focus:border-orange"
+                        className="w-full pl-9 pr-4 py-3 min-h-[44px] bg-white/10 border border-white/20 rounded-lg text-white placeholder:text-white/60 focus:outline-none focus:border-orange text-base"
                       />
                     </div>
                   </div>

@@ -81,7 +81,7 @@ const BentoCard = ({ title, subtitle, icon: Icon, size = "md", delay = 0, image,
                 suppressHydrationWarning
             >
                 <Link href={href} className="absolute inset-0 z-20" suppressHydrationWarning />
-                <Content />
+                    <Content />
             </motion.div>
         )
     }
@@ -106,18 +106,18 @@ export const BentoGrid = () => {
         <section className="py-10 sm:py-16 md:py-32 px-4 md:px-8 max-w-7xl mx-auto relative z-10">
             {/* Header - Optimized for mobile */}
             <div className="mb-8 sm:mb-12 md:mb-24">
-                <motion.h2 
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
+                    <motion.h2 
+                        initial={{ opacity: 0, y: 20 }}
+                        whileInView={{ opacity: 1, y: 0 }}
                     className="text-3xl sm:text-4xl md:text-8xl font-black text-white mb-3 sm:mb-6 tracking-tighter"
-                >
-                    FLEET <span className="text-transparent stroke-text hover:text-orange-500 transition-colors duration-500">INTEL</span>
-                </motion.h2>
+                    >
+                        FLEET <span className="text-transparent stroke-text hover:text-orange-500 transition-colors duration-500">INTEL</span>
+                    </motion.h2>
                 <div className="w-16 sm:w-24 h-1 bg-orange-500 mb-4 sm:mb-6" />
                 <p className="text-zinc-300 text-sm sm:text-base md:text-lg max-w-xl leading-relaxed">
-                    Powered by cutting-edge technology and maintained by expert hands. 
-                    Experience the difference of a fleet built for performance.
-                </p>
+                        Powered by cutting-edge technology and maintained by expert hands. 
+                        Experience the difference of a fleet built for performance.
+                    </p>
                 {/* Mobile CTA Button */}
                 <Link 
                     href="/fleet" 
@@ -140,80 +140,80 @@ export const BentoGrid = () => {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
                 {/* Main Feature - Tracking (full width on mobile) */}
                 <div className="col-span-2">
-                    <BentoCard 
-                        title="Real-Time Operations" 
+                <BentoCard 
+                    title="Real-Time Operations" 
                         subtitle="24/7 GPS monitoring & advanced telematics keep your cargo visible and secure." 
-                        icon={LucideMap}
-                        size="md" 
-                        delay={0.1}
-                        image="/images/generated/fleet-aerial-view.png"
-                        cta="See Coverage Map"
-                        href="/routes"
-                    />
+                    icon={LucideMap}
+                    size="md" 
+                    delay={0.1}
+                    image="/images/generated/fleet-aerial-view.png"
+                    cta="See Coverage Map"
+                    href="/routes"
+                />
                 </div>
 
                 {/* Quick Stat - Safety */}
                 <div className="col-span-1">
-                    <BentoCard 
-                        title="Elite Safety" 
+                <BentoCard 
+                    title="Elite Safety" 
                         subtitle="Top tier FMCSA ratings." 
-                        icon={LucideShieldCheck}
-                        size="sm" 
-                        delay={0.2} 
-                        image="/images/generated/fmcsa-compliance-badge.png"
-                    />
+                    icon={LucideShieldCheck}
+                    size="sm" 
+                    delay={0.2} 
+                    image="/images/generated/fmcsa-compliance-badge.png"
+                />
                 </div>
 
                 {/* Modern Fleet */}
                 <div className="col-span-1">
-                    <BentoCard 
-                        title="2024 Cascadia" 
+                <BentoCard 
+                    title="2024 Cascadia" 
                         subtitle="Fleet age < 2 years." 
-                        icon={LucideTruck}
-                        size="sm" 
-                        delay={0.3} 
-                        image="/images/generated/truck-cascadia.png"
+                    icon={LucideTruck}
+                    size="sm" 
+                    delay={0.3} 
+                    image="/images/generated/truck-cascadia.png"
                         href="/fleet"
-                    />
+                />
                 </div>
 
                 {/* Large Feature - Network (full width on mobile) */}
                 <div className="col-span-2 md:row-span-2">
-                    <BentoCard 
-                        title="National Network" 
+                <BentoCard 
+                    title="National Network" 
                         subtitle="Strategic lanes covering 48 states. From the PNW to the East Coast." 
-                        icon={LucideBarChart}
-                        size="lg" 
-                        delay={0.4} 
-                        image="/images/generated/hero-fleet-sunset.png"
-                        cta="Explore Routes"
-                        href="/routes"
-                    />
+                    icon={LucideBarChart}
+                    size="lg" 
+                    delay={0.4} 
+                    image="/images/generated/hero-fleet-sunset.png"
+                    cta="Explore Routes"
+                    href="/routes"
+                />
                 </div>
 
                 {/* Driver Pay */}
                 <div className="col-span-1">
-                    <BentoCard 
-                        title="Top Tier Pay" 
+                <BentoCard 
+                    title="Top Tier Pay" 
                         subtitle="Quick pay & bonuses." 
-                        icon={LucideDollarSign}
-                        size="sm" 
-                        delay={0.5} 
-                        href="/pay-rates"
-                        cta="View Rates"
-                    />
+                    icon={LucideDollarSign}
+                    size="sm" 
+                    delay={0.5} 
+                    href="/pay-rates"
+                    cta="View Rates"
+                />
                 </div>
 
                 {/* Maintenance */}
                 <div className="col-span-1">
-                    <BentoCard 
-                        title="In-House Shop" 
+                <BentoCard 
+                    title="In-House Shop" 
                         subtitle="24/7 mechanics on-site." 
-                        icon={LucideWrench}
-                        size="sm" 
-                        delay={0.6} 
-                        image="/images/generated/fleet-kent-wa.png"
-                    />
+                    icon={LucideWrench}
+                    size="sm" 
+                    delay={0.6} 
+                    image="/images/generated/fleet-kent-wa.png"
+                />
                 </div>
             </div>
         </section>

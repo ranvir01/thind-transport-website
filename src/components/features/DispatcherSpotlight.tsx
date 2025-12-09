@@ -15,58 +15,63 @@ export const DispatcherSpotlight = () => {
             
             <div className="relative grid grid-cols-2 gap-3 md:gap-4">
               <div className="space-y-3 md:space-y-4 mt-8">
-                <div className="relative h-48 md:h-64 rounded-xl overflow-hidden bg-steel/20 rotate-[-2deg] hover:rotate-0 transition-transform duration-500">
+                <div className="relative h-48 md:h-64 rounded-xl overflow-hidden bg-steel/20 rotate-[-2deg] hover:rotate-0 transition-transform duration-500 group">
                   <Image 
                     src="/images/generated/dispatch-team.png" 
                     alt="Dispatch Team Member" 
                     fill 
-                    className="object-cover opacity-90 hover:opacity-100 transition-opacity"
+                    className="object-cover opacity-90 group-hover:opacity-100 transition-opacity"
                     sizes="(max-width: 768px) 50vw, 25vw"
                   />
-                  <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-navy to-transparent">
-                    <p className="font-bold text-white text-sm">Sarah M.</p>
-                    <p className="text-xs text-orange">Senior Dispatch</p>
+                  {/* Enhanced gradient overlay for better text readability */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent pointer-events-none" />
+                  <div className="absolute bottom-0 left-0 right-0 p-3">
+                    <p className="font-bold text-white text-sm drop-shadow-lg">Sarah M.</p>
+                    <p className="text-xs text-orange font-medium drop-shadow-lg">Senior Dispatch</p>
                   </div>
                 </div>
-                <div className="relative h-36 md:h-48 rounded-xl overflow-hidden bg-steel/20 rotate-[2deg] hover:rotate-0 transition-transform duration-500">
+                <div className="relative h-36 md:h-48 rounded-xl overflow-hidden bg-steel/20 rotate-[2deg] hover:rotate-0 transition-transform duration-500 group">
                   <Image 
                     src="/images/generated/fleet-manager.png" 
                     alt="Fleet Manager" 
                     fill 
-                    className="object-cover opacity-90 hover:opacity-100 transition-opacity"
+                    className="object-cover opacity-90 group-hover:opacity-100 transition-opacity"
                     sizes="(max-width: 768px) 50vw, 25vw"
                   />
-                  <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-navy to-transparent">
-                    <p className="font-bold text-white text-sm">Mike T.</p>
-                    <p className="text-xs text-orange">Fleet Manager</p>
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent pointer-events-none" />
+                  <div className="absolute bottom-0 left-0 right-0 p-3">
+                    <p className="font-bold text-white text-sm drop-shadow-lg">Mike T.</p>
+                    <p className="text-xs text-orange font-medium drop-shadow-lg">Fleet Manager</p>
                   </div>
                 </div>
               </div>
               <div className="space-y-3 md:space-y-4">
-                <div className="relative h-36 md:h-48 rounded-xl overflow-hidden bg-steel/20 rotate-[3deg] hover:rotate-0 transition-transform duration-500">
+                <div className="relative h-36 md:h-48 rounded-xl overflow-hidden bg-steel/20 rotate-[3deg] hover:rotate-0 transition-transform duration-500 group">
                   <Image 
                     src="/images/generated/fleet-kent-wa.png" 
                     alt="Kent WA Office" 
                     fill 
-                    className="object-cover opacity-90 hover:opacity-100 transition-opacity"
+                    className="object-cover opacity-90 group-hover:opacity-100 transition-opacity"
                     sizes="(max-width: 768px) 50vw, 25vw"
                   />
-                  <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-navy to-transparent">
-                    <p className="font-bold text-white text-sm">Kent, WA</p>
-                    <p className="text-xs text-orange">HQ Operations</p>
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent pointer-events-none" />
+                  <div className="absolute bottom-0 left-0 right-0 p-3">
+                    <p className="font-bold text-white text-sm drop-shadow-lg">Kent, WA</p>
+                    <p className="text-xs text-orange font-medium drop-shadow-lg">HQ Operations</p>
                   </div>
                 </div>
-                <div className="relative h-48 md:h-64 rounded-xl overflow-hidden bg-steel/20 rotate-[-3deg] hover:rotate-0 transition-transform duration-500">
+                <div className="relative h-48 md:h-64 rounded-xl overflow-hidden bg-steel/20 rotate-[-3deg] hover:rotate-0 transition-transform duration-500 group">
                   <Image 
                     src="/images/generated/driver-portrait-1.png" 
                     alt="Owner Relations" 
                     fill 
-                    className="object-cover opacity-90 hover:opacity-100 transition-opacity"
+                    className="object-cover opacity-90 group-hover:opacity-100 transition-opacity"
                     sizes="(max-width: 768px) 50vw, 25vw"
                   />
-                  <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-navy to-transparent">
-                    <p className="font-bold text-white text-sm">David R.</p>
-                    <p className="text-xs text-orange">Owner Relations</p>
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent pointer-events-none" />
+                  <div className="absolute bottom-0 left-0 right-0 p-3">
+                    <p className="font-bold text-white text-sm drop-shadow-lg">David R.</p>
+                    <p className="text-xs text-orange font-medium drop-shadow-lg">Owner Relations</p>
                   </div>
                 </div>
               </div>

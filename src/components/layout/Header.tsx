@@ -111,6 +111,7 @@ export function Header() {
              <NavLink href="/routes" label="Routes" icon={<Truck className="w-3 h-3" />} scrolled={scrolled} />
              <NavLink href="/testimonials" label="Stories" icon={<Star className="w-3 h-3" />} scrolled={scrolled} />
              <NavLink href="/driver-portal" label="Driver Portal" icon={<User className="w-3 h-3" />} scrolled={scrolled} />
+             <NavLink href="/pre-qualify" label="Pre-Qualify" icon={<FileText className="w-3 h-3" />} scrolled={scrolled} />
           </nav>
 
           {/* Right Actions */}
@@ -168,6 +169,7 @@ export function Header() {
                   <MobileNavLink href="/routes" label="Routes" onClick={() => setMobileMenuOpen(false)} />
                   <MobileNavLink href="/testimonials" label="Success Stories" onClick={() => setMobileMenuOpen(false)} />
                   <MobileNavLink href="/driver-portal" label="Driver Portal" onClick={() => setMobileMenuOpen(false)} />
+                  <MobileNavLink href="/pre-qualify" label="Pre-Qualify" onClick={() => setMobileMenuOpen(false)} />
                   <MobileNavLink href="/apply" label="Apply Now" primary onClick={() => setMobileMenuOpen(false)} />
                </nav>
             </div>

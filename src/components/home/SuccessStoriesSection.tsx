@@ -2,9 +2,10 @@
 
 import { Card, CardContent } from "@/components/ui/card"
 import { motion } from "framer-motion"
-import { Star, Quote, TrendingUp, DollarSign, Clock } from "lucide-react"
+import { Star, Quote, TrendingUp, DollarSign, Clock, ChevronLeft, ChevronRight } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
+import { useRef, useState } from "react"
 
 const stories = [
   {
@@ -43,6 +44,28 @@ const stories = [
 ]
 
 export function SuccessStoriesSection() {
+  const scrollContainerRef = useRef<HTMLDivElement>(null)
+  const [activeIndex, setActiveIndex] = useState(0)
+
+  const scrollToCard = (index: number) => {
+    if (scrollContainerRef.current) {
+      const cardWidth = scrollContainerRef.current.offsetWidth * 0.85
+      scrollContainerRef.current.scrollTo({
+        left: index * cardWidth,
+        behavior: 'smooth'
+      })
+      setActiveIndex(index)
+    }
+  }
+
+  const handleScroll = () => {
+    if (scrollContainerRef.current) {
+      const cardWidth = scrollContainerRef.current.offsetWidth * 0.85
+      const newIndex = Math.round(scrollContainerRef.current.scrollLeft / cardWidth)
+      setActiveIndex(Math.min(newIndex, stories.length - 1))
+    }
+  }
+
   return (
     <section className="py-20 md:py-28 bg-white">
       <div className="container px-4">
@@ -64,8 +87,100 @@ export function SuccessStoriesSection() {
           </p>
         </motion.div>
 
-        {/* Stories Grid */}
-        <div className="grid md:grid-cols-3 gap-6 md:gap-8 max-w-6xl mx-auto">
+        {/* Mobile Horizontal Carousel */}
+        <div className="md:hidden relative">
+          <div 
+            ref={scrollContainerRef}
+            onScroll={handleScroll}
+            className="flex overflow-x-auto snap-x snap-mandatory scrollbar-hide gap-4 pb-4 -mx-4 px-4"
+            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+          >
+            {stories.map((story, index) => {
+              const Icon = story.icon
+              return (
+                <div
+                  key={story.name}
+                  className="flex-shrink-0 w-[85%] snap-center"
+                >
+                  <Card className="h-full border border-steel/10 bg-white shadow-brand overflow-hidden">
+                    <CardContent className="p-0">
+                      {/* Header with Photo */}
+                      <div className="relative h-20 bg-navy">
+                        <div className="absolute inset-0 bg-gradient-to-r from-navy to-navy/80" />
+                        
+                        {/* 5 Stars */}
+                        <div className="absolute top-3 right-3 flex gap-0.5">
+                          {[1,2,3,4,5].map(i => (
+                            <Star key={i} className="w-3.5 h-3.5 fill-orange text-orange" />
+                          ))}
+                        </div>
+
+                        {/* Driver Photo */}
+                        <div className="absolute -bottom-8 left-6 w-16 h-16 rounded-full bg-white shadow-lg overflow-hidden border-4 border-white">
+                          <Image 
+                            src={story.image} 
+                            alt={story.name}
+                            fill
+                            className="object-cover"
+                            sizes="64px"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Content */}
+                      <div className="pt-12 px-6 pb-6">
+                        {/* Name & Role */}
+                        <div className="mb-4">
+                          <h3 className="text-lg font-bold text-navy">{story.name}</h3>
+                          <p className="text-sm text-gray-600">{story.role} • {story.location}</p>
+                          <p className="text-xs text-gray-500">{story.tenure}</p>
+                        </div>
+
+                        {/* Quote */}
+                        <div className="relative mb-6">
+                          <Quote className="absolute -top-1 -left-1 w-6 h-6 text-steel/10" />
+                          <p className="text-gray-700 text-sm leading-relaxed pl-4">
+                            "{story.quote}"
+                          </p>
+                        </div>
+
+                        {/* Metric */}
+                        <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg border border-green-100">
+                          <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
+                            <Icon className="w-5 h-5 text-green-600" />
+                          </div>
+                          <div>
+                            <p className="text-xl font-black text-green-700">{story.metric}</p>
+                            <p className="text-xs text-green-600 font-medium">{story.metricLabel}</p>
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              )
+            })}
+          </div>
+          
+          {/* Dot Indicators */}
+          <div className="flex justify-center gap-2 mt-4">
+            {stories.map((_, index) => (
+              <button
+                key={index}
+                onClick={() => scrollToCard(index)}
+                className={`w-2.5 h-2.5 rounded-full transition-all ${
+                  activeIndex === index 
+                    ? 'bg-orange w-6' 
+                    : 'bg-gray-300 hover:bg-gray-400'
+                }`}
+                aria-label={`Go to story ${index + 1}`}
+              />
+            ))}
+          </div>
+        </div>
+
+        {/* Desktop Grid - Hidden on Mobile */}
+        <div className="hidden md:grid md:grid-cols-3 gap-6 md:gap-8 max-w-6xl mx-auto">
           {stories.map((story, index) => {
             const Icon = story.icon
             return (

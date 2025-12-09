@@ -3,15 +3,14 @@ import { Inter, Space_Grotesk } from "next/font/google"
 import "./globals.css"
 import { CinematicNavbar } from "@/components/cinematic/Navbar"
 import { ActiveBackground } from "@/components/ui/ActiveBackground"
-import { CustomCursor } from "@/components/ui/CustomCursor"
 import { SmoothScroll } from "@/components/cinematic/SmoothScroll"
 import { CinematicFooter, CommandBar, MobileCommandBar } from "@/components/cinematic/Footer"
 import { LeadMagnetModal } from "@/components/shared/LeadMagnetModal"
 import { QuickContactWidget } from "@/components/shared/QuickContactWidget"
 import { ExitIntentPopup } from "@/components/shared/ExitIntentPopup"
-import { ChatWidget } from "@/components/shared/ChatWidget"
 import { StickyMobileCTA } from "@/components/shared/StickyMobileCTA"
 import { RecentlyHiredTicker } from "@/components/shared/RecentlyHiredTicker"
+import { BackToTop } from "@/components/shared/BackToTop"
 import { Toaster } from "@/components/ui/sonner"
 import { COMPANY_INFO, PAY_RATES } from "@/lib/constants"
 
@@ -346,7 +345,6 @@ export default function RootLayout({
       <body className={`${inter.className} antialiased`} suppressHydrationWarning>
         <SmoothScroll>
           <ActiveBackground />
-          <CustomCursor />
           
           {/* Skip to main content - Accessibility */}
           <a 
@@ -373,9 +371,9 @@ export default function RootLayout({
           <LeadMagnetModal />
           <QuickContactWidget />
           <ExitIntentPopup />
-          <ChatWidget />
           <StickyMobileCTA />
           <RecentlyHiredTicker variant="popup" />
+          <BackToTop />
           
           {/* Notifications */}
           <Toaster />

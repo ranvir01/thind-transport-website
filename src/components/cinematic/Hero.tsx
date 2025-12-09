@@ -36,10 +36,10 @@ export const CinematicHero = () => {
           </p>
 
           {/* Main Headline - SEO Optimized H1 */}
-          <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black text-white tracking-tight leading-[1.1] mb-6 drop-shadow-xl">
+          <h1 className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-black text-white tracking-tight leading-[1.1] mb-6 drop-shadow-xl">
             Keep <span className="text-orange">91%</span> of Your Gross.
             <br />
-            <span className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl text-white/90 block mt-2">
+            <span className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl text-white/90 block mt-2">
               Every Load. Every Week.
             </span>
           </h1>
@@ -105,12 +105,12 @@ export const CinematicHero = () => {
           </a>
         </motion.div>
 
-        {/* Recently Hired Ticker */}
+        {/* Recently Hired Ticker - Hidden on mobile to reduce clutter */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.5, delay: 0.45 }}
-          className="mb-8"
+          className="mb-8 hidden md:block"
         >
           <RecentlyHiredTicker variant="compact" className="justify-center" />
         </motion.div>

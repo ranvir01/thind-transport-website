@@ -126,6 +126,9 @@ export const PREMIER_BROKERS = [
   { name: "Schneider National", tier: "Elite Partner" },
   { name: "Coyote Logistics", tier: "Preferred Carrier" },
   { name: "DAT Power Network", tier: "Verified Carrier" },
+  { name: "TQL", tier: "Quality Carrier" },
+  { name: "XPO Logistics", tier: "Trusted Partner" },
+  { name: "Uber Freight", tier: "Digital Partner" },
 ] as const
 
 export const MAJOR_CLIENTS = [
@@ -135,4 +138,7 @@ export const MAJOR_CLIENTS = [
   { name: "Target Corporation", category: "Retail", duration: "2+ years" },
   { name: "PepsiCo Beverages", category: "Food & Beverage", duration: "3+ years" },
   { name: "The Home Depot", category: "Home Improvement", duration: "1+ years" },
+  { name: "Costco Wholesale", category: "Retail", duration: "2+ years" },
+  { name: "Kroger", category: "Grocery", duration: "2+ years" },
+  { name: "General Mills", category: "Food Production", duration: "1+ years" },
 ] as const

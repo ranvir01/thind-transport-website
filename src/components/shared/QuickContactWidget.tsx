@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
+import { usePathname } from "next/navigation"
 import { Card } from "@/components/ui/card"
 import { MessageCircle, Phone, X, Mail, Clock, FileText, ChevronRight } from "lucide-react"
 import { COMPANY_INFO } from "@/lib/constants"
@@ -10,6 +11,10 @@ import { motion, AnimatePresence } from "framer-motion"
 export function QuickContactWidget() {
   const [isOpen, setIsOpen] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
+  const pathname = usePathname()
+
+  // Hide on Apply page to reduce clutter
+  if (pathname === '/apply') return null
 
   // Detect mobile for positioning
   useEffect(() => {

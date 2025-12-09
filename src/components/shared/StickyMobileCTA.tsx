@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
+import { usePathname } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
-import { Phone, FileText, X, ChevronUp, MessageCircle, Zap } from "lucide-react"
+import { Phone, FileText, ChevronUp, MessageCircle, Zap } from "lucide-react"
 import { COMPANY_INFO } from "@/lib/constants"
 
 interface StickyMobileCTAProps {
@@ -16,24 +17,20 @@ export function StickyMobileCTA({
   showAfterScroll = 300 
 }: StickyMobileCTAProps) {
   const [isVisible, setIsVisible] = useState(false)
-  const [isDismissed, setIsDismissed] = useState(false)
   const [showExpandedOptions, setShowExpandedOptions] = useState(false)
+  const pathname = usePathname()
+
+  // Hide on Apply page as it has its own dedicated sticky footer
+  if (pathname === '/apply') return null
 
   useEffect(() => {
     const handleScroll = () => {
-      if (window.scrollY > showAfterScroll && !isDismissed) {
-        setIsVisible(true)
-      } else if (window.scrollY <= showAfterScroll) {
-        setIsVisible(false)
-        setIsDismissed(false) // Reset dismiss when scrolling back up
-      }
+      setIsVisible(window.scrollY > showAfterScroll)
     }
 
-    window.addEventListener("scroll", handleScroll)
+    window.addEventListener("scroll", handleScroll, { passive: true })
     return () => window.removeEventListener("scroll", handleScroll)
-  }, [showAfterScroll, isDismissed])
-
-  if (isDismissed) return null
+  }, [showAfterScroll])
 
   return (
     <AnimatePresence>
@@ -55,14 +52,14 @@ export function StickyMobileCTA({
               >
                 <a
                   href={`sms:${COMPANY_INFO.phoneFormatted}?body=Hi, I'm interested in driving for Thind Transport`}
-                  className="flex items-center gap-3 p-3 bg-green-50 rounded-xl text-green-700 font-semibold hover:bg-green-100 transition-colors"
+                  className="flex items-center gap-3 p-3 min-h-[44px] bg-green-50 rounded-xl text-green-700 font-semibold hover:bg-green-100 transition-colors"
                 >
                   <MessageCircle className="h-5 w-5" />
                   <span>Text Us</span>
                 </a>
                 <Link
                   href="/pay-rates#calculator"
-                  className="flex items-center gap-3 p-3 bg-blue-50 rounded-xl text-blue-700 font-semibold hover:bg-blue-100 transition-colors"
+                  className="flex items-center gap-3 p-3 min-h-[44px] bg-blue-50 rounded-xl text-blue-700 font-semibold hover:bg-blue-100 transition-colors"
                   onClick={() => setShowExpandedOptions(false)}
                 >
                   <Zap className="h-5 w-5" />
@@ -72,31 +69,14 @@ export function StickyMobileCTA({
             )}
           </AnimatePresence>
 
-          {/* Main CTA Bar */}
-          <div className="bg-gradient-to-r from-navy via-navy-600 to-navy p-3 shadow-2xl border-t border-navy-400">
-            {/* Dismiss button */}
-            <button
-              onClick={() => setIsDismissed(true)}
-              className="absolute -top-8 right-2 bg-white/90 backdrop-blur-sm rounded-full p-1.5 shadow-lg text-gray-500 hover:text-gray-700 transition-colors"
-              aria-label="Dismiss"
-            >
-              <X className="h-4 w-4" />
-            </button>
-
-            {/* Urgency Message */}
-            <div className="text-center mb-2">
-              <span className="text-xs text-orange font-semibold flex items-center justify-center gap-1">
-                <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
-                3 recruiters online now • Respond in &lt;2hrs
-              </span>
-            </div>
-
-            {/* CTA Buttons */}
+          {/* Main CTA Bar - Clean & Simple */}
+          <div className="bg-gradient-to-r from-navy via-navy-600 to-navy p-3 shadow-2xl border-t border-white/10 safe-area-bottom">
+            {/* CTA Buttons - Full Width, No Clutter */}
             <div className="flex gap-2">
               {(variant === "call" || variant === "both") && (
                 <a
                   href={`tel:${COMPANY_INFO.phoneFormatted}`}
-                  className="flex-1 flex items-center justify-center gap-2 bg-white/10 border border-white/20 text-white font-bold py-3.5 px-4 rounded-xl hover:bg-white/20 transition-colors text-sm"
+                  className="flex-1 flex items-center justify-center gap-2 bg-white/20 border border-white/30 text-white font-bold py-3.5 px-4 rounded-xl hover:bg-white/30 active:bg-white/40 transition-colors text-sm min-h-[48px]"
                 >
                   <Phone className="h-5 w-5" />
                   <span>Call Now</span>
@@ -106,17 +86,20 @@ export function StickyMobileCTA({
               {(variant === "apply" || variant === "both") && (
                 <Link
                   href="/apply"
-                  className="flex-1 flex items-center justify-center gap-2 bg-orange hover:bg-orange-600 text-white font-bold py-3.5 px-4 rounded-xl transition-colors shadow-lg shadow-orange/30 text-sm"
+                  className="flex-1 flex items-center justify-center gap-2 bg-orange hover:bg-orange-600 active:bg-orange-700 text-white font-bold py-3.5 px-4 rounded-xl transition-colors shadow-lg shadow-orange/30 text-sm min-h-[48px]"
                 >
                   <FileText className="h-5 w-5" />
-                  <span>Apply Now</span>
+                  <span className="relative">
+                    Apply Now
+                    <span className="absolute -top-1 -right-3 w-2 h-2 bg-green-400 rounded-full animate-pulse" />
+                  </span>
                 </Link>
               )}
 
               {/* Expand button */}
               <button
                 onClick={() => setShowExpandedOptions(!showExpandedOptions)}
-                className="bg-white/10 border border-white/20 text-white p-3.5 rounded-xl hover:bg-white/20 transition-colors"
+                className="bg-white/20 border border-white/30 text-white p-3.5 rounded-xl hover:bg-white/30 active:bg-white/40 transition-colors min-w-[48px] min-h-[48px] flex items-center justify-center"
                 aria-label="More options"
               >
                 <ChevronUp className={`h-5 w-5 transition-transform ${showExpandedOptions ? 'rotate-180' : ''}`} />
