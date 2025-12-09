@@ -128,8 +128,8 @@ export const ProfitCalculator = () => {
   }
 
   return (
-    <section id="calculator" className="py-20 md:py-28 bg-navy scroll-mt-20">
-      <div className="container max-w-6xl mx-auto px-4">
+    <section id="calculator" className="py-20 md:py-28 bg-navy scroll-mt-20 overflow-x-hidden">
+      <div className="container max-w-6xl mx-auto px-4 overflow-hidden">
         {/* Header */}
         <div className="text-center mb-12 md:mb-16">
           <span className="inline-block px-4 py-1.5 rounded-full bg-orange/20 text-orange font-semibold text-sm mb-4">
@@ -230,7 +230,7 @@ export const ProfitCalculator = () => {
               />
               <div className="flex justify-between text-xs text-white/70 mt-2 font-mono">
                 <span>${equipment.minRate.toFixed(2)}</span>
-                <span className="text-green-400">Current {equipment.label} Market</span>
+                <span className="text-green-400 text-center hidden sm:block">Current {equipment.label} Market</span>
                 <span>${equipment.maxRate.toFixed(2)}</span>
               </div>
             </div>
@@ -327,13 +327,13 @@ export const ProfitCalculator = () => {
 
             {/* Gross Revenue Summary */}
             <div className="bg-navy/50 rounded-xl p-4 border border-white/10 mb-4">
-              <div className="flex justify-between items-center">
-                <p className="text-white/80 text-sm">Weekly Gross Revenue</p>
-                <p className="text-2xl font-black text-white">{formatCurrency(totalGross)}</p>
+              <div className="flex justify-between items-center gap-2">
+                <p className="text-white/80 text-sm">Weekly Gross</p>
+                <p className="text-xl sm:text-2xl font-black text-white">{formatCurrency(totalGross)}</p>
               </div>
-              <div className="flex justify-between items-center text-xs text-white/70 mt-1">
+              <div className="flex flex-wrap justify-between items-center text-xs text-white/70 mt-1 gap-1">
                 <span>Linehaul: {formatCurrency(grossRevenue)}</span>
-                <span>Fuel Surcharge: +{formatCurrency(fuelSurcharge)}</span>
+                <span>Fuel: +{formatCurrency(fuelSurcharge)}</span>
               </div>
             </div>
 
@@ -383,40 +383,40 @@ export const ProfitCalculator = () => {
             <h3 className="text-lg md:text-xl font-bold text-navy mb-6 text-center">Your Weekly Take-Home</h3>
             
             {/* Main Comparison Cards */}
-            <div className="grid grid-cols-2 gap-4 mb-6">
+            <div className="grid grid-cols-2 gap-2 sm:gap-4 mb-6">
               {/* Competitor Card */}
-              <div className="bg-gray-100 rounded-xl p-4 border-2 border-gray-200">
-                <p className="text-gray-700 text-xs font-semibold uppercase tracking-wider mb-1">Other Carriers</p>
-                <p className="text-sm text-gray-600 mb-3">~72% Split</p>
+              <div className="bg-gray-100 rounded-xl p-3 sm:p-4 border-2 border-gray-200">
+                <p className="text-gray-700 text-[10px] sm:text-xs font-semibold uppercase tracking-wider mb-1">Other Carriers</p>
+                <p className="text-xs sm:text-sm text-gray-600 mb-2 sm:mb-3">~72% Split</p>
                 
                 <div className="space-y-2">
                   <div>
-                    <p className="text-xs text-gray-600">Your Cut</p>
-                    <p className="text-lg font-bold text-gray-800">{formatCurrency(competitorDriverGross)}</p>
+                    <p className="text-[10px] sm:text-xs text-gray-600">Your Cut</p>
+                    <p className="text-sm sm:text-lg font-bold text-gray-800">{formatCurrency(competitorDriverGross)}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-gray-600">After Expenses</p>
-                    <p className="text-xl font-black text-gray-800">{formatCurrency(competitorNetPay)}</p>
+                    <p className="text-[10px] sm:text-xs text-gray-600">After Expenses</p>
+                    <p className="text-base sm:text-xl font-black text-gray-800">{formatCurrency(competitorNetPay)}</p>
                   </div>
                 </div>
               </div>
 
               {/* Thind Card */}
-              <div className="bg-gradient-to-br from-orange/10 to-orange/5 rounded-xl p-4 border-2 border-orange relative overflow-hidden">
-                <div className="absolute top-0 right-0 bg-orange text-white text-[10px] font-bold px-2 py-0.5 rounded-bl-lg z-10">
+              <div className="bg-gradient-to-br from-orange/10 to-orange/5 rounded-xl p-3 sm:p-4 border-2 border-orange relative overflow-hidden">
+                <div className="absolute top-0 right-0 bg-orange text-white text-[8px] sm:text-[10px] font-bold px-1.5 sm:px-2 py-0.5 rounded-bl-lg z-10">
                   +{Math.round((0.91 - 0.72) / 0.72 * 100)}% MORE
                 </div>
-                <p className="text-orange text-xs font-semibold uppercase tracking-wider mb-1">Thind Transport</p>
-                <p className="text-sm text-orange/70 mb-3">91% Split</p>
+                <p className="text-orange text-[10px] sm:text-xs font-semibold uppercase tracking-wider mb-1">Thind Transport</p>
+                <p className="text-xs sm:text-sm text-orange/70 mb-2 sm:mb-3">91% Split</p>
                 
                 <div className="space-y-2 relative z-0">
                   <div>
-                    <p className="text-xs text-navy/80">Your Cut</p>
-                    <p className="text-base sm:text-lg font-bold text-navy">{formatCurrency(thindDriverGross)}</p>
+                    <p className="text-[10px] sm:text-xs text-navy/80">Your Cut</p>
+                    <p className="text-sm sm:text-lg font-bold text-navy">{formatCurrency(thindDriverGross)}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-navy/80">After Expenses</p>
-                    <p className="text-xl sm:text-2xl font-black text-navy">{formatCurrency(thindNetPay)}</p>
+                    <p className="text-[10px] sm:text-xs text-navy/80">After Expenses</p>
+                    <p className="text-base sm:text-2xl font-black text-navy">{formatCurrency(thindNetPay)}</p>
                   </div>
                 </div>
               </div>
@@ -426,25 +426,25 @@ export const ProfitCalculator = () => {
             <div className="mb-6">
               <p className="text-sm text-gray-700 mb-3 font-semibold">Net Weekly Comparison</p>
               <div className="space-y-2">
-                <div className="flex items-center gap-3">
-                  <span className="text-xs text-steel w-16 font-mono">72%</span>
-                  <div className="flex-1 bg-gray-100 rounded-full h-6 overflow-hidden">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-steel w-10 sm:w-16 font-mono shrink-0">72%</span>
+                  <div className="flex-1 min-w-0 bg-gray-100 rounded-full h-6 overflow-hidden">
                     <div 
                       className="h-full bg-gray-400 rounded-full transition-all duration-500 flex items-center justify-end pr-2"
                       style={{ width: `${Math.min(100, (competitorNetPay / thindNetPay) * 100)}%` }}
                     >
-                      <span className="text-xs text-white font-bold">{formatCurrency(competitorNetPay)}</span>
+                      <span className="text-[10px] sm:text-xs text-white font-bold whitespace-nowrap">{formatCurrency(competitorNetPay)}</span>
                     </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-3">
-                  <span className="text-xs text-orange font-bold w-16 font-mono">91%</span>
-                  <div className="flex-1 bg-orange/20 rounded-full h-6 overflow-hidden">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-orange font-bold w-10 sm:w-16 font-mono shrink-0">91%</span>
+                  <div className="flex-1 min-w-0 bg-orange/20 rounded-full h-6 overflow-hidden">
                     <div 
                       className="h-full bg-gradient-to-r from-orange to-orange-500 rounded-full transition-all duration-500 flex items-center justify-end pr-2"
                       style={{ width: '100%' }}
                     >
-                      <span className="text-xs text-white font-bold">{formatCurrency(thindNetPay)}</span>
+                      <span className="text-[10px] sm:text-xs text-white font-bold whitespace-nowrap">{formatCurrency(thindNetPay)}</span>
                     </div>
                   </div>
                 </div>
@@ -452,16 +452,16 @@ export const ProfitCalculator = () => {
             </div>
 
             {/* Difference Callouts */}
-            <div className="grid grid-cols-2 gap-3 mb-6">
-              <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
-                <p className="text-green-700 font-semibold text-xs mb-1 uppercase tracking-wider">Weekly Extra</p>
-                <p className="text-xl sm:text-2xl font-black text-green-600">
+            <div className="grid grid-cols-2 gap-2 sm:gap-3 mb-6">
+              <div className="bg-green-50 border border-green-200 rounded-lg p-3 sm:p-4 text-center">
+                <p className="text-green-700 font-semibold text-[10px] sm:text-xs mb-1 uppercase tracking-wider">Weekly Extra</p>
+                <p className="text-lg sm:text-2xl font-black text-green-600">
                   +{formatCurrency(weeklyDifference)}
                 </p>
               </div>
-              <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
-                <p className="text-green-700 font-semibold text-xs mb-1 uppercase tracking-wider">Annual Extra</p>
-                <p className="text-xl sm:text-2xl font-black text-green-600">
+              <div className="bg-green-50 border border-green-200 rounded-lg p-3 sm:p-4 text-center">
+                <p className="text-green-700 font-semibold text-[10px] sm:text-xs mb-1 uppercase tracking-wider">Annual Extra</p>
+                <p className="text-lg sm:text-2xl font-black text-green-600">
                   +{formatCurrency(annualDifference)}
                 </p>
               </div>
@@ -470,22 +470,22 @@ export const ProfitCalculator = () => {
             {/* Annual Summary */}
             <div className="bg-navy/5 rounded-xl p-4 mb-6 border border-navy/10">
               <p className="text-navy font-bold text-sm mb-3">Annual Projection (48 weeks)</p>
-              <div className="grid grid-cols-2 gap-4 text-center">
+              <div className="grid grid-cols-2 gap-2 sm:gap-4 text-center">
                 <div>
                   <p className="text-xs text-gray-600">Gross Revenue</p>
-                  <p className="text-lg font-black text-navy">{formatCurrency(thindAnnualGross)}</p>
+                  <p className="text-base sm:text-lg font-black text-navy">{formatCurrency(thindAnnualGross)}</p>
                 </div>
                 <div>
                   <p className="text-xs text-gray-600">Est. Net Income</p>
-                  <p className="text-lg font-black text-green-600">{formatCurrency(thindAnnualNet)}</p>
+                  <p className="text-base sm:text-lg font-black text-green-600">{formatCurrency(thindAnnualNet)}</p>
                 </div>
               </div>
             </div>
 
             {/* Benefits Reminder */}
-            <div className="flex items-start gap-3 p-3 bg-orange/5 rounded-lg mb-4 border border-orange/20">
-              <Shield className="w-5 h-5 text-orange flex-shrink-0 mt-0.5" />
-              <div className="text-xs text-gray-700">
+            <div className="flex items-start gap-2 sm:gap-3 p-3 bg-orange/5 rounded-lg mb-4 border border-orange/20">
+              <Shield className="w-4 h-4 sm:w-5 sm:h-5 text-orange flex-shrink-0 mt-0.5" />
+              <div className="text-[11px] sm:text-xs text-gray-700 min-w-0">
                 <p className="font-semibold text-navy mb-1">What's Included with Thind:</p>
                 <ul className="space-y-0.5">
                   <li>✓ 100% fuel surcharge passed through</li>
@@ -499,36 +499,36 @@ export const ProfitCalculator = () => {
             {/* CTA */}
             <Link 
               href="/apply" 
-              className="w-full py-4 bg-orange hover:bg-orange-600 text-white font-bold text-lg rounded-lg transition-all text-center shadow-cta hover:shadow-cta-hover flex items-center justify-center gap-2"
+              className="w-full py-4 bg-orange hover:bg-orange-600 text-white font-bold text-base sm:text-lg rounded-lg transition-all text-center shadow-cta hover:shadow-cta-hover flex items-center justify-center gap-2"
             >
-              <TrendingUp className="w-5 h-5" />
-              Start Earning {formatCurrency(weeklyDifference)} More Weekly
+              <TrendingUp className="w-5 h-5 shrink-0" />
+              <span className="truncate">Earn {formatCurrency(weeklyDifference)} More Weekly</span>
             </Link>
 
             {/* Save Calculation Feature */}
-            <div className="mt-4 p-4 bg-navy/5 rounded-xl border border-navy/10">
+            <div className="mt-4 p-3 sm:p-4 bg-navy/5 rounded-xl border border-navy/10">
               <p className="text-sm font-semibold text-navy mb-3 flex items-center gap-2">
-                <Mail className="w-4 h-4" />
+                <Mail className="w-4 h-4 shrink-0" />
                 Save Your Calculation
               </p>
               {emailSent ? (
                 <div className="flex items-center gap-2 text-green-600 bg-green-50 p-3 rounded-lg">
-                  <CheckCircle2 className="w-5 h-5" />
+                  <CheckCircle2 className="w-5 h-5 shrink-0" />
                   <span className="text-sm font-medium">Calculation sent! Check your inbox.</span>
                 </div>
               ) : (
-                <div className="flex gap-2">
+                <div className="flex flex-col sm:flex-row gap-2">
                   <input 
                     type="email"
                     placeholder="your@email.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-orange focus:ring-1 focus:ring-orange"
+                    className="flex-1 min-w-0 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-orange focus:ring-1 focus:ring-orange"
                   />
                   <button
                     onClick={handleSaveCalculation}
                     disabled={isSending || !email.includes('@')}
-                    className="px-4 py-2 bg-navy text-white font-semibold text-sm rounded-lg hover:bg-navy-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                    className="px-4 py-2 bg-navy text-white font-semibold text-sm rounded-lg hover:bg-navy-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shrink-0"
                   >
                     {isSending ? (
                       <span className="animate-spin">⏳</span>

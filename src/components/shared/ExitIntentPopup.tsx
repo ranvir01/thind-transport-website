@@ -84,24 +84,27 @@ export function ExitIntentPopup({ variant = "bonus" }: ExitIntentPopupProps) {
           initial={{ scale: 0.9, opacity: 0, y: 20 }}
           animate={{ scale: 1, opacity: 1, y: 0 }}
           exit={{ scale: 0.9, opacity: 0, y: 20 }}
-          className="bg-white rounded-3xl shadow-2xl max-w-lg w-full overflow-hidden relative"
+          className="bg-white rounded-3xl shadow-2xl max-w-lg w-full overflow-hidden relative max-h-[90vh] flex flex-col"
           onClick={(e) => e.stopPropagation()}
         >
-          {/* Close button */}
+          {/* Close button - always visible */}
           <button
             onClick={() => setShowPopup(false)}
-            className="absolute top-4 right-4 z-10 w-8 h-8 bg-white/80 backdrop-blur-sm rounded-full flex items-center justify-center text-gray-600 hover:text-gray-800 hover:bg-white transition-colors shadow-md"
+            className="absolute top-2 right-2 z-30 w-10 h-10 bg-white rounded-full flex items-center justify-center text-gray-700 hover:text-gray-900 hover:bg-gray-100 transition-colors shadow-lg border border-gray-200"
+            aria-label="Close popup"
           >
-            <X className="h-5 w-5" />
+            <X className="h-6 w-6" />
           </button>
 
-          {/* Urgency Banner */}
-          <div className="bg-gradient-to-r from-red-500 to-orange-500 text-white py-2 px-4 text-center">
-            <p className="text-sm font-bold flex items-center justify-center gap-2">
-              <Zap className="h-4 w-4" />
-              Limited Time: Only 3 O/O spots left for I-5 corridor!
-            </p>
-          </div>
+          {/* Scrollable content wrapper */}
+          <div className="overflow-y-auto flex-1">
+            {/* Urgency Banner */}
+            <div className="bg-gradient-to-r from-red-500 to-orange-500 text-white py-2 px-4 pr-14 text-center">
+              <p className="text-sm font-bold flex items-center justify-center gap-2">
+                <Zap className="h-4 w-4" />
+                Limited Time: Only 3 O/O spots left for I-5 corridor!
+              </p>
+            </div>
 
           {/* Header */}
           <div className="bg-gradient-to-br from-navy via-navy-600 to-navy p-6 text-white relative overflow-hidden">
@@ -225,21 +228,22 @@ export function ExitIntentPopup({ variant = "bonus" }: ExitIntentPopupProps) {
             )}
           </div>
 
-          {/* Trust Footer */}
-          <div className="bg-gray-50 px-6 py-3 border-t border-gray-100">
-            <div className="flex items-center justify-center gap-4 text-xs text-gray-500">
-              <span className="flex items-center gap-1">
-                <CheckCircle2 className="h-3 w-3 text-green-500" />
-                2hr Response
-              </span>
-              <span className="flex items-center gap-1">
-                <CheckCircle2 className="h-3 w-3 text-green-500" />
-                No Obligation
-              </span>
-              <span className="flex items-center gap-1">
-                <CheckCircle2 className="h-3 w-3 text-green-500" />
-                Secure
-              </span>
+            {/* Trust Footer */}
+            <div className="bg-gray-50 px-6 py-3 border-t border-gray-100">
+              <div className="flex items-center justify-center gap-4 text-xs text-gray-500">
+                <span className="flex items-center gap-1">
+                  <CheckCircle2 className="h-3 w-3 text-green-500" />
+                  2hr Response
+                </span>
+                <span className="flex items-center gap-1">
+                  <CheckCircle2 className="h-3 w-3 text-green-500" />
+                  No Obligation
+                </span>
+                <span className="flex items-center gap-1">
+                  <CheckCircle2 className="h-3 w-3 text-green-500" />
+                  Secure
+                </span>
+              </div>
             </div>
           </div>
         </motion.div>
