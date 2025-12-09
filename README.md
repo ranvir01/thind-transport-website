@@ -1,4 +1,4 @@
-# AR Carrier Xpress - Next.js Recruitment Website 🚛
+# Thind Transport Website - Next.js Recruitment Platform 🚛
 
 [![Next.js](https://img.shields.io/badge/Next.js-14.2-black?logo=next.js)](https://nextjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue?logo=typescript)](https://www.typescriptlang.org/)
@@ -6,6 +6,8 @@
 [![Build](https://img.shields.io/badge/Build-Passing-success)](https://github.com)
 
 > **A modern, high-converting truck driver recruitment website built with Next.js, TypeScript, and shadcn/ui components**
+
+*Last Updated: December 2025*
 
 ---
 
@@ -163,9 +165,9 @@ cp .env.local.example .env.local
 ```typescript
 // src/lib/constants.ts
 export const COMPANY_INFO = {
-  name: "AR Carrier Xpress",      // Your company name
+  name: "Thind Transport",      // Your company name
   phone: "(206) 765-9218",         // Your phone
-  email: "info@arcarrierxpress.com", // Your email
+  email: "thindcarrier@gmail.com", // Your email
   // ... more
 }
 ```
@@ -350,7 +352,7 @@ This website is designed to:
 
 ## 📝 License
 
-© 2024 AR Carrier Xpress. All rights reserved.
+© 2025 Thind Transport. All rights reserved.
 
 ---
 
@@ -380,4 +382,3 @@ npm run dev
 ---
 
 **Questions? Check `START_HERE_NEXTJS.md` for the quick start guide!**
-
