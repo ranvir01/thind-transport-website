@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card"
 import { MAJOR_CLIENTS, PREMIER_BROKERS } from "@/lib/constants"
 import { Star, GripHorizontal } from "lucide-react"
 import Image from "next/image"
-import { motion, useMotionValue, useTransform, animate } from "framer-motion"
+import { motion } from "framer-motion"
 import { useRef, useState, useEffect } from "react"
 
 const BROKER_LOGOS: Record<string, string> = {
@@ -51,51 +51,83 @@ function PartnerLogo({
   )
 }
 
-// Draggable carousel component
-function DraggableCarousel({ 
+// Duplicate items for seamless loop
+function duplicateItems<T>(items: readonly T[], times: number = 2): T[] {
+  return Array(times).fill(items).flat()
+}
+
+// Auto-scrolling + Draggable carousel component
+function AutoDraggableCarousel({ 
   children, 
+  direction = "left",
+  speed = 30,
   className = "" 
 }: { 
   children: React.ReactNode
+  direction?: "left" | "right"
+  speed?: number
   className?: string 
 }) {
   const containerRef = useRef<HTMLDivElement>(null)
-  const [constraints, setConstraints] = useState({ left: 0, right: 0 })
+  const [isPaused, setIsPaused] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
+  const [dragOffset, setDragOffset] = useState(0)
+  const [contentWidth, setContentWidth] = useState(0)
 
   useEffect(() => {
-    const updateConstraints = () => {
-      if (containerRef.current) {
-        const scrollWidth = containerRef.current.scrollWidth
-        const clientWidth = containerRef.current.clientWidth
-        setConstraints({
-          left: -(scrollWidth - clientWidth),
-          right: 0
-        })
-      }
+    if (containerRef.current) {
+      // Get the width of half the content (since we duplicate it)
+      setContentWidth(containerRef.current.scrollWidth / 2)
     }
-    
-    updateConstraints()
-    window.addEventListener('resize', updateConstraints)
-    return () => window.removeEventListener('resize', updateConstraints)
-  }, [])
+  }, [children])
+
+  const handleDragStart = () => {
+    setIsDragging(true)
+    setIsPaused(true)
+  }
+
+  const handleDragEnd = (_: any, info: { offset: { x: number } }) => {
+    setIsDragging(false)
+    setDragOffset(prev => prev + info.offset.x)
+    // Resume animation after a short delay
+    setTimeout(() => setIsPaused(false), 2000)
+  }
 
   return (
-    <div className="relative overflow-hidden">
+    <div 
+      className="relative overflow-hidden"
+      onMouseEnter={() => setIsPaused(true)}
+      onMouseLeave={() => !isDragging && setIsPaused(false)}
+      onTouchStart={() => setIsPaused(true)}
+      onTouchEnd={() => !isDragging && setTimeout(() => setIsPaused(false), 2000)}
+    >
       {/* Drag hint for mobile */}
       <div className="flex items-center justify-center gap-1.5 text-xs text-zinc-500 mb-2 sm:hidden">
         <GripHorizontal className="w-3.5 h-3.5" />
-        <span>Swipe to explore</span>
+        <span>Swipe or let it scroll</span>
       </div>
       
       <motion.div
         ref={containerRef}
         drag="x"
-        dragConstraints={constraints}
+        dragConstraints={{ left: -contentWidth, right: contentWidth }}
         dragElastic={0.1}
         dragTransition={{ bounceStiffness: 300, bounceDamping: 30 }}
-        onDragStart={() => setIsDragging(true)}
-        onDragEnd={() => setIsDragging(false)}
+        onDragStart={handleDragStart}
+        onDragEnd={handleDragEnd}
+        animate={!isPaused ? {
+          x: direction === "left" 
+            ? [dragOffset, dragOffset - contentWidth] 
+            : [dragOffset, dragOffset + contentWidth]
+        } : {}}
+        transition={!isPaused ? {
+          x: {
+            duration: speed,
+            repeat: Infinity,
+            ease: "linear",
+            repeatType: "loop"
+          }
+        } : {}}
         className={`flex gap-3 sm:gap-4 md:gap-6 cursor-grab active:cursor-grabbing ${className}`}
         style={{ touchAction: 'pan-y' }}
       >
@@ -103,13 +135,17 @@ function DraggableCarousel({
       </motion.div>
       
       {/* Fade edges */}
-      <div className="absolute inset-y-0 left-0 w-8 sm:w-12 bg-gradient-to-r from-[#020617] to-transparent pointer-events-none z-10" />
-      <div className="absolute inset-y-0 right-0 w-8 sm:w-12 bg-gradient-to-l from-[#020617] to-transparent pointer-events-none z-10" />
+      <div className="absolute inset-y-0 left-0 w-8 sm:w-16 bg-gradient-to-r from-[#020617] to-transparent pointer-events-none z-10" />
+      <div className="absolute inset-y-0 right-0 w-8 sm:w-16 bg-gradient-to-l from-[#020617] to-transparent pointer-events-none z-10" />
     </div>
   )
 }
 
 export function PartnersShowcase() {
+  // Duplicate items for seamless infinite scroll
+  const brokerItems = duplicateItems(PREMIER_BROKERS, 3)
+  const clientItems = duplicateItems(MAJOR_CLIENTS, 3)
+
   return (
     <section aria-label="Partner network" className="relative bg-[#020617] py-12 sm:py-16 md:py-24 overflow-hidden">
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-blue-900/20 via-transparent to-transparent" />
@@ -150,8 +186,8 @@ export function PartnersShowcase() {
             </div>
             
             <div className="rounded-xl sm:rounded-2xl border border-white/5 bg-white/[0.02] p-3 sm:p-4 md:p-6">
-              <DraggableCarousel>
-                {PREMIER_BROKERS.map((broker, index) => {
+              <AutoDraggableCarousel direction="left" speed={35}>
+                {brokerItems.map((broker, index) => {
                   const logoPath = BROKER_LOGOS[broker.name]
                   if (!logoPath) return null
                   return (
@@ -174,7 +210,7 @@ export function PartnersShowcase() {
                     </Card>
                   )
                 })}
-              </DraggableCarousel>
+              </AutoDraggableCarousel>
             </div>
           </motion.div>
 
@@ -194,8 +230,8 @@ export function PartnersShowcase() {
             </div>
             
             <div className="rounded-xl sm:rounded-2xl border border-white/5 bg-white/[0.02] p-3 sm:p-4 md:p-6">
-              <DraggableCarousel>
-                {MAJOR_CLIENTS.map((client, index) => {
+              <AutoDraggableCarousel direction="right" speed={40}>
+                {clientItems.map((client, index) => {
                   const logoPath = CLIENT_LOGOS[client.name]
                   if (!logoPath) return null
                   return (
@@ -221,7 +257,7 @@ export function PartnersShowcase() {
                     </Card>
                   )
                 })}
-              </DraggableCarousel>
+              </AutoDraggableCarousel>
             </div>
           </motion.div>
         </div>
