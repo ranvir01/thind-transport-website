@@ -14,11 +14,20 @@ export const CustomCursor = () => {
   const cursorX = useSpring(mouseX, springConfig)
   const cursorY = useSpring(mouseY, springConfig)
 
+  const [isVisible, setIsVisible] = useState(false)
+
   useEffect(() => {
+    // Only show custom cursor on non-touch devices
+    const isTouchDevice = window.matchMedia("(pointer: coarse)").matches
+    if (!isTouchDevice) {
+      setIsVisible(true)
+    }
+
     const moveCursor = (e: MouseEvent) => {
       mouseX.set(e.clientX - 10) // Center offset for base size (20px)
       mouseY.set(e.clientY - 10)
     }
+
 
     const handleMouseOver = (e: MouseEvent) => {
       const target = e.target as HTMLElement
@@ -43,6 +52,8 @@ export const CustomCursor = () => {
       window.removeEventListener("mouseover", handleMouseOver)
     }
   }, [mouseX, mouseY])
+
+  if (!isVisible) return null
 
   return (
     <>
