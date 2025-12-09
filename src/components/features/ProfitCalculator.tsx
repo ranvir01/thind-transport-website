@@ -403,13 +403,13 @@ export const ProfitCalculator = () => {
 
               {/* Thind Card */}
               <div className="bg-gradient-to-br from-orange/10 to-orange/5 rounded-xl p-4 border-2 border-orange relative overflow-hidden">
-                <div className="absolute top-0 right-0 bg-orange text-white text-[10px] font-bold px-2 py-0.5 rounded-bl-lg">
+                <div className="absolute top-0 right-0 bg-orange text-white text-[10px] font-bold px-2 py-0.5 rounded-bl-lg z-10">
                   +{Math.round((0.91 - 0.72) / 0.72 * 100)}% MORE
                 </div>
                 <p className="text-orange text-xs font-semibold uppercase tracking-wider mb-1">Thind Transport</p>
                 <p className="text-sm text-orange/70 mb-3">91% Split</p>
                 
-                <div className="space-y-2">
+                <div className="space-y-2 relative z-0">
                   <div>
                     <p className="text-xs text-navy/80">Your Cut</p>
                     <p className="text-base sm:text-lg font-bold text-navy">{formatCurrency(thindDriverGross)}</p>

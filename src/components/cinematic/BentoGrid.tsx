@@ -18,7 +18,7 @@ interface BentoCardProps {
 
 const BentoCard = ({ title, subtitle, icon: Icon, size = "md", delay = 0, image, href, cta }: BentoCardProps) => {
     const sizes = {
-        sm: "col-span-1 md:col-span-1 aspect-square",
+        sm: "col-span-1 md:col-span-1 aspect-[4/3] md:aspect-square",
         md: "col-span-1 md:col-span-2 aspect-[2/1]",
         lg: "col-span-1 md:col-span-2 row-span-2 aspect-square"
     }
@@ -103,18 +103,18 @@ const BentoCard = ({ title, subtitle, icon: Icon, size = "md", delay = 0, image,
 
 export const BentoGrid = () => {
     return (
-        <section className="py-24 md:py-32 px-4 md:px-8 max-w-7xl mx-auto relative z-10">
-            <div className="mb-16 md:mb-24 flex flex-col md:flex-row justify-between items-end gap-8">
+        <section className="py-16 md:py-32 px-4 md:px-8 max-w-7xl mx-auto relative z-10">
+            <div className="mb-12 md:mb-24 flex flex-col md:flex-row justify-between items-end gap-8">
                 <div>
                     <motion.h2 
                         initial={{ opacity: 0, y: 20 }}
                         whileInView={{ opacity: 1, y: 0 }}
-                        className="text-5xl md:text-8xl font-black text-white mb-6 tracking-tighter"
+                        className="text-4xl md:text-8xl font-black text-white mb-6 tracking-tighter"
                     >
                         FLEET <span className="text-transparent stroke-text hover:text-orange-500 transition-colors duration-500">INTEL</span>
                     </motion.h2>
                     <div className="w-24 h-1 bg-orange-500 mb-6" />
-                    <p className="text-zinc-300 text-lg max-w-xl">
+                    <p className="text-zinc-300 text-base md:text-lg max-w-xl">
                         Powered by cutting-edge technology and maintained by expert hands. 
                         Experience the difference of a fleet built for performance.
                     </p>
@@ -131,70 +131,82 @@ export const BentoGrid = () => {
             
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 md:gap-6 auto-rows-auto">
                 {/* Main Feature - Tracking */}
-                <BentoCard 
-                    title="Real-Time Operations" 
-                    subtitle="24/7 GPS monitoring & advanced telematics keep your cargo visible and secure. Integrated with all major logistics platforms." 
-                    icon={LucideMap}
-                    size="md" 
-                    delay={0.1}
-                    image="/images/generated/fleet-aerial-view.png"
-                    cta="See Coverage Map"
-                    href="/routes"
-                />
+                <div className="md:col-span-2">
+                    <BentoCard 
+                        title="Real-Time Operations" 
+                        subtitle="24/7 GPS monitoring & advanced telematics keep your cargo visible and secure." 
+                        icon={LucideMap}
+                        size="md" 
+                        delay={0.1}
+                        image="/images/generated/fleet-aerial-view.png"
+                        cta="See Coverage Map"
+                        href="/routes"
+                    />
+                </div>
 
                 {/* Quick Stat - Safety */}
-                <BentoCard 
-                    title="Elite Safety" 
-                    subtitle="Top tier FMCSA ratings. Safety is our culture, not just a department." 
-                    icon={LucideShieldCheck}
-                    size="sm" 
-                    delay={0.2} 
-                    image="/images/generated/fmcsa-compliance-badge.png"
-                />
+                <div className="md:col-span-1">
+                    <BentoCard 
+                        title="Elite Safety" 
+                        subtitle="Top tier FMCSA ratings. Safety is our culture." 
+                        icon={LucideShieldCheck}
+                        size="sm" 
+                        delay={0.2} 
+                        image="/images/generated/fmcsa-compliance-badge.png"
+                    />
+                </div>
 
                 {/* Modern Fleet */}
-                <BentoCard 
-                    title="2024 Cascadia" 
-                    subtitle="Average fleet age < 2 years. Detroit DD15 engines, DT12 automated transmission." 
-                    icon={LucideTruck}
-                    size="sm" 
-                    delay={0.3} 
-                    image="/images/generated/truck-cascadia.png"
-                    href="/equipment"
-                />
+                <div className="md:col-span-1">
+                    <BentoCard 
+                        title="2024 Cascadia" 
+                        subtitle="Average fleet age < 2 years." 
+                        icon={LucideTruck}
+                        size="sm" 
+                        delay={0.3} 
+                        image="/images/generated/truck-cascadia.png"
+                        href="/equipment"
+                    />
+                </div>
 
                 {/* Large Feature - Network */}
-                <BentoCard 
-                    title="National Network" 
-                    subtitle="Strategic lanes covering 48 states. From the PNW to the East Coast, we keep freight moving with consistent high-volume lanes." 
-                    icon={LucideBarChart}
-                    size="lg" 
-                    delay={0.4} 
-                    image="/images/generated/hero-fleet-sunset.png"
-                    cta="Explore Routes"
-                    href="/routes"
-                />
+                <div className="md:col-span-2 md:row-span-2">
+                    <BentoCard 
+                        title="National Network" 
+                        subtitle="Strategic lanes covering 48 states. From the PNW to the East Coast." 
+                        icon={LucideBarChart}
+                        size="lg" 
+                        delay={0.4} 
+                        image="/images/generated/hero-fleet-sunset.png"
+                        cta="Explore Routes"
+                        href="/routes"
+                    />
+                </div>
 
                 {/* Driver Pay */}
-                <BentoCard 
-                    title="Top Tier Pay" 
-                    subtitle="Quick pay options, performance bonuses, and competitive CPM rates." 
-                    icon={LucideDollarSign}
-                    size="sm" 
-                    delay={0.5} 
-                    href="/pay-rates"
-                    cta="View Rates"
-                />
+                <div className="md:col-span-1">
+                    <BentoCard 
+                        title="Top Tier Pay" 
+                        subtitle="Quick pay options, performance bonuses." 
+                        icon={LucideDollarSign}
+                        size="sm" 
+                        delay={0.5} 
+                        href="/pay-rates"
+                        cta="View Rates"
+                    />
+                </div>
 
                 {/* Maintenance */}
-                <BentoCard 
-                    title="In-House Shop" 
-                    subtitle="Kent, WA facility with 24/7 certified mechanics." 
-                    icon={LucideWrench}
-                    size="sm" 
-                    delay={0.6} 
-                    image="/images/generated/fleet-kent-wa.png"
-                />
+                <div className="md:col-span-1">
+                    <BentoCard 
+                        title="In-House Shop" 
+                        subtitle="Kent, WA facility with 24/7 mechanics." 
+                        icon={LucideWrench}
+                        size="sm" 
+                        delay={0.6} 
+                        image="/images/generated/fleet-kent-wa.png"
+                    />
+                </div>
             </div>
         </section>
     )

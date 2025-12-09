@@ -67,16 +67,20 @@ export function LeadMagnetModal() {
   if (!showPopup) return null
 
   return (
-    <div className="fixed inset-0 bg-black/80 z-[120] flex items-center justify-center p-4 animate-in fade-in duration-300 backdrop-blur-sm">
-      <div className="bg-white rounded-3xl shadow-2xl max-w-lg w-full relative animate-in zoom-in duration-300 overflow-hidden">
-        <button
-          onClick={() => setShowPopup(false)}
-          className="absolute top-4 right-4 text-gray-400 hover:text-gray-800 transition-colors z-10"
-        >
-          <X className="h-6 w-6" />
-        </button>
+    <div className="fixed inset-0 bg-black/80 z-[150] flex items-center justify-center p-4 animate-in fade-in duration-300 backdrop-blur-sm">
+      <div className="bg-white rounded-3xl shadow-2xl max-w-lg w-full relative animate-in zoom-in duration-300 overflow-hidden max-h-[85vh] flex flex-col">
+        <div className="absolute top-2 right-2 z-20">
+          <button
+            onClick={() => setShowPopup(false)}
+            className="bg-white/80 backdrop-blur-md p-2 rounded-full text-gray-500 hover:text-gray-900 transition-colors shadow-sm border border-gray-100"
+            aria-label="Close popup"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
 
-        {step === "offer" ? (
+        <div className="overflow-y-auto flex-1">
+          {step === "offer" ? (
             <div className="grid md:grid-cols-[2fr_3fr] h-full">
                 <div className="hidden md:flex bg-[#001F3F] p-8 flex-col justify-between relative overflow-hidden">
                     <div className="absolute top-0 left-0 w-full h-full bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-10"></div>
@@ -141,6 +145,7 @@ export function LeadMagnetModal() {
                  </div>
             </div>
         )}
+        </div>
       </div>
     </div>
   )
