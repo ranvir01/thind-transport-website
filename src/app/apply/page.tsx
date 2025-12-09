@@ -258,7 +258,7 @@ export default function ApplyPage() {
             <div className="grid lg:grid-cols-3 gap-8 lg:gap-12 items-start">
               
               {/* Left Column - Form */}
-              <div className="lg:col-span-2 order-2 lg:order-1">
+              <div className="lg:col-span-2 order-1">
                 {/* Form Container */}
                 <div className="bg-white rounded-2xl shadow-2xl overflow-hidden border border-slate-200" id="application-form">
                   <div className="bg-gradient-to-r from-[#001F3F] to-[#003366] px-6 py-5 border-b border-navy-800">
@@ -406,7 +406,7 @@ export default function ApplyPage() {
               </div>
 
               {/* Right Column - Trust & Social Proof */}
-              <div className="lg:col-span-1 order-1 lg:order-2 space-y-6 lg:sticky lg:top-24">
+              <div className="lg:col-span-1 order-2 space-y-6 lg:sticky lg:top-24">
                 
                 {/* Video Section Placeholder */}
                 <div className="bg-[#001326] rounded-2xl overflow-hidden border border-white/5">
