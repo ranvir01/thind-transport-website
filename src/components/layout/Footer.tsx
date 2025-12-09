@@ -85,7 +85,7 @@ export function Footer() {
                 <div className="flex items-start gap-3">
                   <MapPin className="h-4 w-4 text-yellow-300 mt-1 flex-shrink-0" />
                   <div>
-                    <p className="text-neutral-200 text-sm">{COMPANY_INFO.mailingAddress}</p>
+                    <p className="text-neutral-200 text-sm">{COMPANY_INFO.address}</p>
                     <p className="text-xs text-neutral-400">Mailing Address</p>
                   </div>
                 </div>

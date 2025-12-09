@@ -57,7 +57,8 @@ export function Stepper({
     React.Children.forEach(children, (child) => {
       if (React.isValidElement(child)) {
         if (child.type === StepperHeader) {
-          React.Children.forEach(child.props.children, (stepChild) => {
+          const headerProps = (child as React.ReactElement<StepperHeaderProps>).props
+          React.Children.forEach(headerProps.children, (stepChild) => {
             if (React.isValidElement(stepChild) && stepChild.type === Step) {
               count++
             }

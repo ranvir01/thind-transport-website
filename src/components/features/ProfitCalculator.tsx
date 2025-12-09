@@ -44,10 +44,10 @@ const EXPENSES = {
 
 export const ProfitCalculator = () => {
   const [equipmentType, setEquipmentType] = useState<EquipmentType>("dryVan")
-  const [miles, setMiles] = useState(2500)
-  const [lineHaulRate, setLineHaulRate] = useState(EQUIPMENT_RATES.dryVan.defaultRate)
+  const [miles, setMiles] = useState<number>(2500)
+  const [lineHaulRate, setLineHaulRate] = useState<number>(EQUIPMENT_RATES.dryVan.defaultRate)
   const [showExpenseBreakdown, setShowExpenseBreakdown] = useState(false)
-  const [fuelPrice, setFuelPrice] = useState(MARKET_DATA.fuel.nationalAverage)
+  const [fuelPrice, setFuelPrice] = useState<number>(MARKET_DATA.fuel.nationalAverage)
   
   // Current pay comparison
   const [showComparison, setShowComparison] = useState(false)
