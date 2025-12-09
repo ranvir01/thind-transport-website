@@ -1,8 +1,8 @@
 export const COMPANY_INFO = {
   name: "Thind Transport",
   location: "Kent, WA",
-  phone: "(206) 765-9218",
-  phoneFormatted: "+12067659218",
+  phone: "(206) 765-6300",
+  phoneFormatted: "+12067656300",
   email: "thindcarrier@gmail.com",
   address: "PO Box 5114, Kent, WA 98064",
   dot: "2893456", // Placeholder, update if actual DOT number available
