@@ -13,13 +13,13 @@ import { toast } from "sonner"
 import { 
   Loader2, Upload, FileText, CheckCircle2, User, Truck, 
   FileCheck, ChevronRight, ArrowLeft, ShieldCheck, Clock, 
-  Check, AlertCircle, Lock, Star
+  Check, AlertCircle, Lock, Star, Phone
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 import { captureLead } from "@/app/actions/capture-lead"
 import { submitApplication } from "@/app/actions/submit-application"
-import { PAY_RATES } from "@/lib/constants"
+import { PAY_RATES, COMPANY_INFO } from "@/lib/constants"
 
 // Combined Schema
 const formSchema = z.object({
