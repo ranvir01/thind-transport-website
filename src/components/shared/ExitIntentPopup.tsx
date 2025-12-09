@@ -98,13 +98,13 @@ export function ExitIntentPopup({ variant = "bonus" }: ExitIntentPopupProps) {
 
           {/* Scrollable content wrapper */}
           <div className="overflow-y-auto flex-1">
-            {/* Urgency Banner */}
+          {/* Urgency Banner */}
             <div className="bg-gradient-to-r from-red-500 to-orange-500 text-white py-2 px-4 pr-14 text-center">
-              <p className="text-sm font-bold flex items-center justify-center gap-2">
-                <Zap className="h-4 w-4" />
-                Limited Time: Only 3 O/O spots left for I-5 corridor!
-              </p>
-            </div>
+            <p className="text-sm font-bold flex items-center justify-center gap-2">
+              <Zap className="h-4 w-4" />
+              Limited Time: Only 3 O/O spots left for I-5 corridor!
+            </p>
+          </div>
 
           {/* Header */}
           <div className="bg-gradient-to-br from-navy via-navy-600 to-navy p-6 text-white relative overflow-hidden">
@@ -228,21 +228,21 @@ export function ExitIntentPopup({ variant = "bonus" }: ExitIntentPopupProps) {
             )}
           </div>
 
-            {/* Trust Footer */}
-            <div className="bg-gray-50 px-6 py-3 border-t border-gray-100">
-              <div className="flex items-center justify-center gap-4 text-xs text-gray-500">
-                <span className="flex items-center gap-1">
-                  <CheckCircle2 className="h-3 w-3 text-green-500" />
-                  2hr Response
-                </span>
-                <span className="flex items-center gap-1">
-                  <CheckCircle2 className="h-3 w-3 text-green-500" />
-                  No Obligation
-                </span>
-                <span className="flex items-center gap-1">
-                  <CheckCircle2 className="h-3 w-3 text-green-500" />
-                  Secure
-                </span>
+          {/* Trust Footer */}
+          <div className="bg-gray-50 px-6 py-3 border-t border-gray-100">
+            <div className="flex items-center justify-center gap-4 text-xs text-gray-500">
+              <span className="flex items-center gap-1">
+                <CheckCircle2 className="h-3 w-3 text-green-500" />
+                2hr Response
+              </span>
+              <span className="flex items-center gap-1">
+                <CheckCircle2 className="h-3 w-3 text-green-500" />
+                No Obligation
+              </span>
+              <span className="flex items-center gap-1">
+                <CheckCircle2 className="h-3 w-3 text-green-500" />
+                Secure
+              </span>
               </div>
             </div>
           </div>
