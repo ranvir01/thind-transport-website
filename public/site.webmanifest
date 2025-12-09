@@ -1,0 +1,67 @@
+{
+  "name": "Thind Transport LLC - Owner Operator Jobs 91% Split",
+  "short_name": "Thind Transport",
+  "description": "Family-owned trucking company offering 91% gross split for owner operators. CDL Class A jobs with 2024 equipment, no forced dispatch, weekly pay. Based in Kent, WA, hiring nationwide.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#001F3F",
+  "theme_color": "#001F3F",
+  "categories": ["business", "transportation", "logistics"],
+  "lang": "en-US",
+  "dir": "ltr",
+  "icons": [
+    {
+      "src": "/favicon-16x16.png",
+      "sizes": "16x16",
+      "type": "image/png"
+    },
+    {
+      "src": "/favicon-32x32.png",
+      "sizes": "32x32",
+      "type": "image/png"
+    },
+    {
+      "src": "/android-chrome-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/android-chrome-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Apply Now",
+      "short_name": "Apply",
+      "description": "Apply for a CDL truck driver position",
+      "url": "/apply",
+      "icons": [{ "src": "/android-chrome-192x192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Pay Rates",
+      "short_name": "Pay",
+      "description": "View driver pay rates and compensation",
+      "url": "/pay-rates",
+      "icons": [{ "src": "/android-chrome-192x192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Call Now",
+      "short_name": "Call",
+      "description": "Call our recruiting team",
+      "url": "tel:+12067659218",
+      "icons": [{ "src": "/android-chrome-192x192.png", "sizes": "192x192" }]
+    }
+  ]
+}
+

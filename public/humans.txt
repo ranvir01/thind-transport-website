@@ -1,0 +1,24 @@
+/* TEAM */
+Company: Thind Transport LLC
+Location: Kent, Washington, USA
+Founded: 2016
+Industry: Transportation & Logistics
+
+/* CONTACT */
+Phone: (206) 765-9218
+Email: thindcarrier@gmail.com
+Apply: https://thindtransport.com/apply
+
+/* SITE */
+Built with: Next.js, React, TypeScript, Tailwind CSS
+Last update: 2025/12/07
+Standards: HTML5, CSS3, ES6+
+Software: VS Code, Cursor
+Deployed on: Vercel
+
+/* ACKNOWLEDGMENTS */
+Framework: Next.js by Vercel
+UI Components: shadcn/ui
+Icons: Lucide React
+Animations: Framer Motion
+

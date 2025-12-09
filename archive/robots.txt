@@ -1,0 +1,27 @@
+User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: https://arcarrierxpress.com/sitemap.xml
+
+# Important pages - don't block
+Allow: /index.html
+Allow: /application.html
+Allow: /pay.html
+Allow: /pay-enhanced.html
+Allow: /testimonials.html
+
+# Allow CSS and JS
+Allow: /*.css$
+Allow: /*.js$
+
+# Allow images
+Allow: /*.jpg$
+Allow: /*.jpeg$
+Allow: /*.png$
+Allow: /*.gif$
+Allow: /*.svg$
+
+# Disallow admin/private areas (if any)
+Disallow: /admin/
+Disallow: /private/

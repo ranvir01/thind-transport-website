@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enhanced Components - AR Carrier Xpress | Kent, WA</title>
+    <meta name="description" content="Explore AR Carrier Xpress opportunities with our enhanced interactive components. View FAQs, testimonials, pay rates, and more.">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="theme.css">
+    
+    <style>
+        .hero-gradient {
+            background: linear-gradient(135deg, #1e40af 0%, #dc2626 100%);
+        }
+        
+        /* Ensure Tailwind animations work */
+        @keyframes accordion-down {
+            from { height: 0; }
+            to { height: var(--radix-accordion-content-height); }
+        }
+        
+        @keyframes accordion-up {
+            from { height: var(--radix-accordion-content-height); }
+            to { height: 0; }
+        }
+        
+        .animate-accordion-down {
+            animation: accordion-down 0.2s ease-out;
+        }
+        
+        .animate-accordion-up {
+            animation: accordion-up 0.2s ease-out;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Navigation -->
+    <nav class="bg-white shadow-lg sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <a href="index.html" class="flex items-center">
+                    <img src="ar-carrier-logo.png" alt="AR Carrier Xpress Logo" class="w-10 h-10 mr-3">
+                    <div>
+                        <h1 class="text-xl font-bold text-gray-900">AR Carrier Xpress</h1>
+                        <p class="text-xs text-gray-500">Kent, WA</p>
+                    </div>
+                </a>
+                <div class="hidden md:flex items-center gap-4">
+                    <a href="index.html" class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors">Home</a>
+                    <a href="pay.html" class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors">Pay Rates</a>
+                    <a href="testimonials.html" class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors">Reviews</a>
+                    <a href="application.html" class="bg-green-500 text-white px-6 py-2 rounded-lg font-bold hover:bg-green-600 transition-colors">
+                        Apply Now
+                    </a>
+                </div>
+                <a href="tel:+12067659218" class="md:hidden bg-green-500 text-white px-4 py-2 rounded-lg text-sm font-bold">
+                    <i class="fas fa-phone"></i>
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero-gradient text-white py-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <div class="inline-block bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full mb-4">
+                <span class="text-sm font-semibold">✨ Enhanced Interactive Experience</span>
+            </div>
+            <h1 class="text-4xl md:text-5xl font-black mb-4">
+                Explore Your Career Opportunities
+            </h1>
+            <p class="text-xl text-blue-100 mb-8 max-w-2xl mx-auto">
+                Discover everything you need to know about joining AR Carrier Xpress with our interactive components
+            </p>
+            <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                <a href="application.html" class="bg-white text-blue-600 px-8 py-3 rounded-lg font-bold text-lg hover:bg-gray-100 transition-colors">
+                    Apply Now →
+                </a>
+                <a href="tel:+12067659218" class="bg-green-500 text-white px-8 py-3 rounded-lg font-bold text-lg hover:bg-green-600 transition-colors">
+                    📞 Call Us
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Content - React Components -->
+    <section class="py-16">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <!-- React Enhanced Showcase Container -->
+            <div id="react-enhanced-showcase"></div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-gray-900 text-white py-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center">
+                <div class="flex items-center justify-center mb-4">
+                    <img src="ar-carrier-logo.png" alt="AR Carrier Xpress Logo" class="w-12 h-12 mr-3">
+                    <h3 class="text-2xl font-bold">AR Carrier Xpress</h3>
+                </div>
+                <p class="text-gray-400 mb-4">Family-Owned Trucking Company | Kent, WA</p>
+                <p class="text-sm text-gray-500 mb-4">
+                    Phone: <a href="tel:+12067659218" class="text-blue-400 hover:underline">(206) 765-9218</a> | Email: info@arcarrierxpress.com<br>
+                    DOT# 1234567 | MC# 123456
+                </p>
+                <div class="flex justify-center gap-4 mb-4">
+                    <a href="index.html" class="text-gray-400 hover:text-white">Home</a>
+                    <a href="pay.html" class="text-gray-400 hover:text-white">Pay Rates</a>
+                    <a href="testimonials.html" class="text-gray-400 hover:text-white">Reviews</a>
+                    <a href="application.html" class="text-gray-400 hover:text-white">Apply</a>
+                </div>
+                <p class="text-sm text-gray-500">© 2024 AR Carrier Xpress. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Floating Action Button (Mobile) -->
+    <a href="tel:+12067659218" class="fab md:hidden" aria-label="Call Now">
+        <i class="fas fa-phone"></i>
+    </a>
+
+    <!-- React Entry Point -->
+    <script type="module" src="/src/main.jsx"></script>
+</body>
+</html>
+

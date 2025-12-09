@@ -1,0 +1,8 @@
+<svg width="120" height="120" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+  <rect width="120" height="120" rx="16" fill="#005DAA"/>
+  <polygon points="60,18 69,48 101,48 75,66 84,96 60,78 36,96 45,66 19,48 51,48" fill="#FFF"/>
+  <text x="60" y="108" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="22" font-weight="700" fill="#FFF">
+    LANDSTAR
+  </text>
+</svg>
+
