@@ -13,9 +13,6 @@ export function QuickContactWidget() {
   const [isMobile, setIsMobile] = useState(false)
   const pathname = usePathname()
 
-  // Hide on Apply page to reduce clutter
-  if (pathname === '/apply') return null
-
   // Detect mobile for positioning
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 768)
@@ -32,6 +29,9 @@ export function QuickContactWidget() {
     window.addEventListener('keydown', handleEscape)
     return () => window.removeEventListener('keydown', handleEscape)
   }, [])
+
+  // Hide on Apply page to reduce clutter
+  if (pathname === '/apply') return null
 
   return (
     <>

@@ -20,9 +20,6 @@ export function StickyMobileCTA({
   const [showExpandedOptions, setShowExpandedOptions] = useState(false)
   const pathname = usePathname()
 
-  // Hide on Apply page as it has its own dedicated sticky footer
-  if (pathname === '/apply') return null
-
   useEffect(() => {
     const handleScroll = () => {
       setIsVisible(window.scrollY > showAfterScroll)
@@ -31,6 +28,9 @@ export function StickyMobileCTA({
     window.addEventListener("scroll", handleScroll, { passive: true })
     return () => window.removeEventListener("scroll", handleScroll)
   }, [showAfterScroll])
+
+  // Hide on Apply page as it has its own dedicated sticky footer
+  if (pathname === '/apply') return null
 
   return (
     <AnimatePresence>
