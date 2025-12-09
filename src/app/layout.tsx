@@ -153,7 +153,7 @@ const structuredData = {
       contactPoint: [
         {
           "@type": "ContactPoint",
-          telephone: "+1-206-765-9218",
+          telephone: "+1-206-765-6300",
           contactType: "Recruitment",
           areaServed: "US",
           availableLanguage: ["English", "Punjabi", "Hindi"],

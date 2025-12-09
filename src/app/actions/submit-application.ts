@@ -352,7 +352,7 @@ export async function submitApplication(prevState: ApplicationState, formData: F
     console.error("Submission error:", error)
     return {
       success: false,
-      message: "Something went wrong. Please try again or call us directly at (206) 765-9218.",
+      message: "Something went wrong. Please try again or call us directly at (206) 765-6300.",
     }
   }
 }

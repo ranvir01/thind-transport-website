@@ -17,10 +17,11 @@ interface BentoCardProps {
 }
 
 const BentoCard = ({ title, subtitle, icon: Icon, size = "md", delay = 0, image, href, cta }: BentoCardProps) => {
+    // Mobile: consistent aspect ratio for all cards; Desktop: varied layouts
     const sizes = {
-        sm: "col-span-1 md:col-span-1 aspect-[4/3] md:aspect-square",
-        md: "col-span-1 md:col-span-2 aspect-[2/1]",
-        lg: "col-span-1 md:col-span-2 row-span-2 aspect-square"
+        sm: "col-span-1 md:col-span-1 aspect-[3/2] md:aspect-square",
+        md: "col-span-1 md:col-span-2 aspect-[3/2] md:aspect-[2/1]",
+        lg: "col-span-1 md:col-span-2 md:row-span-2 aspect-[3/2] md:aspect-square"
     }
 
     const Content = () => (

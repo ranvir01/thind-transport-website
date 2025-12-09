@@ -165,10 +165,10 @@ export function JobDetailsDialog({ jobType = "company" }: JobDetailsDialogProps)
         
         <DialogFooter className="flex-col sm:flex-row gap-3">
           <a 
-            href="tel:+12067659218"
+            href="tel:+12067656300"
             className="w-full sm:w-auto bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors text-center"
           >
-            Call (206) 765-9218
+            Call (206) 765-6300
           </a>
           <Link 
             href="/apply"

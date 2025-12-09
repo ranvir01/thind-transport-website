@@ -34,8 +34,8 @@ export function AnnouncementAlert({ variant = "default", onClose }: Announcement
                 </svg>
               </Link>
               <span className="text-gray-500">•</span>
-              <a href="tel:+12067659218" className="text-blue-600 font-semibold hover:underline">
-                Call (206) 765-9218
+              <a href="tel:+12067656300" className="text-blue-600 font-semibold hover:underline">
+                Call (206) 765-6300
               </a>
             </div>
           </AlertDescription>

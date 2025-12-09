@@ -174,10 +174,10 @@ export function BenefitsComparison() {
         <div className="mt-12 text-center">
           <p className="text-gray-600 mb-4">Not sure which option is right for you?</p>
           <a
-            href="tel:+12067659218"
+            href="tel:+12067656300"
             className="inline-flex items-center gap-2 bg-blue-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
           >
-            📞 Call (206) 765-9218 - We'll Help You Decide
+            📞 Call (206) 765-6300 - We'll Help You Decide
           </a>
         </div>
       </div>

@@ -19,7 +19,7 @@ export const organizationSchema = {
   },
   "contactPoint": {
     "@type": "ContactPoint",
-    "telephone": "+1-206-765-9218",
+    "telephone": "+1-206-765-6300",
     "contactType": "sales",
     "email": "thindcarrier@gmail.com",
     "availableLanguage": ["English"]
@@ -43,7 +43,7 @@ export const localBusinessSchema = {
   "image": "https://thindtransport.com/ar-carrier-logo.png",
   "@id": "https://thindtransport.com",
   "url": "https://thindtransport.com",
-  "telephone": "+1-206-765-9218",
+  "telephone": "+1-206-765-6300",
   "priceRange": "$$",
   "address": {
     "@type": "PostalAddress",

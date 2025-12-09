@@ -75,7 +75,7 @@ export const CinematicHero = () => {
           </Link>
           {/* SMS Opt-in for quick callback */}
           <a 
-            href="sms:+12067659218?body=Hi,%20I'm%20interested%20in%20driving%20for%20Thind%20Transport.%20Please%20call%20me%20back."
+            href="sms:+12067656300?body=Hi,%20I'm%20interested%20in%20driving%20for%20Thind%20Transport.%20Please%20call%20me%20back."
             className="w-full sm:w-auto px-6 py-4 bg-white/10 hover:bg-white/20 border border-white/20 text-white font-bold rounded-xl transition-all flex items-center justify-center gap-2"
           >
             <MessageCircle className="w-5 h-5" />
@@ -97,11 +97,11 @@ export const CinematicHero = () => {
             Calculate Pay
           </Link>
           <a 
-            href="tel:+12067659218" 
+            href="tel:+12067656300" 
             className="flex-1 px-4 py-3 bg-white/10 border border-white/20 hover:bg-white/20 text-white font-semibold rounded-lg transition-all backdrop-blur-sm text-sm flex items-center justify-center gap-2"
           >
             <Phone className="w-4 h-4" />
-            (206) 765-9218
+            (206) 765-6300
           </a>
         </motion.div>
 

@@ -187,7 +187,7 @@ export const QuickQualify = () => {
                                         Apply Anyway
                                     </Button>
                                 </Link>
-                                <a href="tel:+12067659218">
+                                <a href="tel:+12067656300">
                                      <Button variant="outline" className="px-8 py-4 rounded-xl w-full sm:w-auto border-slate-300 hover:bg-slate-50">
                                         Talk to a Recruiter
                                     </Button>

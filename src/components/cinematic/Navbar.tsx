@@ -337,11 +337,11 @@ function MobileMenuDrawer({
             {/* Footer Actions */}
             <div className="p-4 border-t border-white/10 space-y-3 bg-[#001326]">
               <a
-                href="tel:+12067659218"
+                href="tel:+12067656300"
                 className="flex items-center justify-center gap-2 w-full py-3 px-4 bg-white/5 hover:bg-white/10 rounded-xl text-white font-medium transition-colors"
               >
                 <Phone className="w-4 h-4" />
-                (206) 765-9218
+                (206) 765-6300
               </a>
               <Link
                 href="/apply"
@@ -435,12 +435,12 @@ export const CinematicNavbar = () => {
 
             {/* Phone Number - Desktop only */}
             <a 
-              href="tel:+12067659218" 
+              href="tel:+12067656300" 
               className="hidden lg:flex items-center gap-2 px-3 py-2 text-sm font-medium text-white/80 hover:text-white transition-colors"
               data-cursor="CALL"
             >
               <Phone className="w-4 h-4" />
-              <span className="hidden xl:inline">(206) 765-9218</span>
+              <span className="hidden xl:inline">(206) 765-6300</span>
             </a>
             
             {/* Apply Button */}

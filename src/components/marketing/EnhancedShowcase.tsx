@@ -146,10 +146,10 @@ export function EnhancedShowcase() {
             Start Application →
           </Link>
           <a 
-            href="tel:+12067659218"
+            href="tel:+12067656300"
             className="bg-green-500 text-white px-8 py-3 rounded-lg font-bold text-lg hover:bg-green-600 transition-colors"
           >
-            📞 Call (206) 765-9218
+            📞 Call (206) 765-6300
           </a>
         </div>
       </section>

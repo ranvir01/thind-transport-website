@@ -38,7 +38,7 @@ const jsonLd = {
       "postalCode": "98064",
       "addressCountry": "US"
     },
-    "telephone": "+12067659218"
+    "telephone": "+12067656300"
   },
   "areaServed": {
     "@type": "Country",
