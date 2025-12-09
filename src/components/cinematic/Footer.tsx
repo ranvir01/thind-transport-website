@@ -139,7 +139,7 @@ export const CinematicFooter = () => {
   const currentYear = new Date().getFullYear()
 
   return (
-    <footer className="relative w-full bg-[#00060D] text-white border-t border-white/5">
+    <footer className="relative w-full bg-[#00060D] text-white border-t border-white/5 pb-24 md:pb-0">
       {/* Mesh Gradient Background */}
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-navy-800 via-[#00060D] to-[#00060D] opacity-50" />
       

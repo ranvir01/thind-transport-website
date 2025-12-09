@@ -14,38 +14,38 @@ export const CinematicHero = () => {
       <HeroBackground />
 
       {/* Content */}
-      <div className="relative z-10 container mx-auto px-4 text-center pt-24 pb-16">
+      <div className="relative z-10 container mx-auto px-4 text-center pt-24 pb-12 md:pt-32">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.1 }}
         >
           {/* Live Hiring Counter + Status Badge */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-6">
-            <div className="inline-flex items-center gap-2 py-2 px-5 rounded-full bg-green-500/20 border border-green-500/30 backdrop-blur-sm text-green-400 font-bold tracking-wide text-sm">
-              <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-2 mb-4">
+            <div className="inline-flex items-center gap-2 py-1.5 px-4 md:py-2 md:px-5 rounded-full bg-green-500/20 border border-green-500/30 backdrop-blur-sm text-green-400 font-bold tracking-wide text-xs md:text-sm">
+              <span className="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-green-400 animate-pulse" />
               Now Hiring • Immediate Openings
             </div>
             <div className="hidden sm:block h-4 w-px bg-white/20" />
-            <HiringCounter className="text-white/90" />
+            <HiringCounter className="text-white/90 text-sm md:text-base" />
           </div>
 
           {/* Pain Point Hook */}
-          <p className="text-lg md:text-xl text-white/90 mb-4 font-medium">
+          <p className="text-base md:text-xl text-white/90 mb-4 font-medium drop-shadow-md">
             Tired of keeping only 70%? Done with broken promises?
           </p>
 
           {/* Main Headline - SEO Optimized H1 */}
-          <h1 className="text-4xl md:text-6xl lg:text-7xl font-black text-white tracking-tight leading-[1.05] mb-6">
+          <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black text-white tracking-tight leading-[1.1] mb-6 drop-shadow-xl">
             Keep <span className="text-orange">91%</span> of Your Gross.
             <br />
-            <span className="text-3xl md:text-5xl lg:text-6xl text-white/90">
+            <span className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl text-white/90 block mt-2">
               Every Load. Every Week.
             </span>
           </h1>
 
           {/* Aggregate Rating Badge */}
-          <AggregateRating className="mb-4" />
+          <AggregateRating className="mb-4 scale-90 md:scale-100" />
         </motion.div>
 
         {/* Value Proposition */}
@@ -53,7 +53,7 @@ export const CinematicHero = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.2 }}
-          className="text-lg md:text-xl text-white/80 max-w-2xl mx-auto mb-8 leading-relaxed"
+          className="text-lg md:text-xl text-white/80 max-w-2xl mx-auto mb-8 leading-relaxed drop-shadow-md"
         >
           Family-owned since 2016. 2024 Cascadias. No forced dispatch. 
           <span className="block mt-1 text-white font-semibold">Real support from real people in Kent, WA.</span>
@@ -64,11 +64,11 @@ export const CinematicHero = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.3 }}
-          className="flex flex-col sm:flex-row gap-4 justify-center items-center w-full max-w-lg mx-auto mb-6"
+          className="flex flex-col sm:flex-row gap-3 justify-center items-center w-full max-w-lg mx-auto mb-6"
         >
           <Link 
             href="/apply" 
-            className="w-full sm:w-auto px-12 py-5 bg-orange hover:bg-orange-600 text-white font-black text-lg rounded-xl transition-all transform hover:scale-105 shadow-cta hover:shadow-cta-hover text-center uppercase tracking-wide flex items-center justify-center gap-2"
+            className="w-full sm:w-auto px-8 py-4 bg-orange hover:bg-orange-600 text-white font-black text-lg rounded-xl transition-all transform hover:scale-105 shadow-cta hover:shadow-cta-hover text-center uppercase tracking-wide flex items-center justify-center gap-2"
           >
             <TrendingUp className="w-5 h-5" />
             Apply Now — Takes 2 Min
@@ -76,7 +76,7 @@ export const CinematicHero = () => {
           {/* SMS Opt-in for quick callback */}
           <a 
             href="sms:+12067659218?body=Hi,%20I'm%20interested%20in%20driving%20for%20Thind%20Transport.%20Please%20call%20me%20back."
-            className="w-full sm:w-auto px-8 py-5 bg-white/10 hover:bg-white/20 border border-white/20 text-white font-bold rounded-xl transition-all flex items-center justify-center gap-2"
+            className="w-full sm:w-auto px-6 py-4 bg-white/10 hover:bg-white/20 border border-white/20 text-white font-bold rounded-xl transition-all flex items-center justify-center gap-2"
           >
             <MessageCircle className="w-5 h-5" />
             Text for Callback
@@ -88,17 +88,17 @@ export const CinematicHero = () => {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.5, delay: 0.4 }}
-          className="flex flex-wrap justify-center gap-4 mb-8"
+          className="flex flex-row justify-center gap-3 mb-8 w-full max-w-lg mx-auto"
         >
           <Link 
             href="#calculator" 
-            className="px-6 py-3 bg-white/10 border border-white/20 hover:bg-white/20 text-white font-semibold rounded-lg transition-all backdrop-blur-sm text-sm"
+            className="flex-1 px-4 py-3 bg-white/10 border border-white/20 hover:bg-white/20 text-white font-semibold rounded-lg transition-all backdrop-blur-sm text-sm flex items-center justify-center text-center"
           >
-            Calculate Your Pay →
+            Calculate Pay
           </Link>
           <a 
             href="tel:+12067659218" 
-            className="px-6 py-3 bg-white/10 border border-white/20 hover:bg-white/20 text-white font-semibold rounded-lg transition-all backdrop-blur-sm text-sm flex items-center gap-2"
+            className="flex-1 px-4 py-3 bg-white/10 border border-white/20 hover:bg-white/20 text-white font-semibold rounded-lg transition-all backdrop-blur-sm text-sm flex items-center justify-center gap-2"
           >
             <Phone className="w-4 h-4" />
             (206) 765-9218

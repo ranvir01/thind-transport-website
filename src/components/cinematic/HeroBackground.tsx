@@ -28,10 +28,10 @@ export const HeroBackground = memo(() => {
       >
         <source src="/images/generated/hero-american-fleet.mp4?v=3" type="video/mp4" />
       </video>
-      {/* Cinematic overlay - lighter to show more video */}
-      <div className="absolute inset-0 bg-gradient-to-b from-navy/30 via-navy/40 to-navy/90" />
-      {/* Subtle vignette effect */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_transparent_40%,_rgba(0,31,63,0.3)_100%)]" />
+      {/* Cinematic overlay - gradient for better text contrast */}
+      <div className="absolute inset-0 bg-gradient-to-b from-navy/40 via-navy/60 to-navy/95" />
+      {/* Additional high-contrast overlay for mobile text readability */}
+      <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black/80 mix-blend-multiply opacity-70" />
     </div>
   )
 })

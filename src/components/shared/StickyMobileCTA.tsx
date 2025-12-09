@@ -96,7 +96,7 @@ export function StickyMobileCTA({
               {(variant === "call" || variant === "both") && (
                 <a
                   href={`tel:${COMPANY_INFO.phoneFormatted}`}
-                  className="flex-1 flex items-center justify-center gap-2 bg-white/10 border border-white/20 text-white font-bold py-3.5 px-4 rounded-xl hover:bg-white/20 transition-colors"
+                  className="flex-1 flex items-center justify-center gap-2 bg-white/10 border border-white/20 text-white font-bold py-3.5 px-4 rounded-xl hover:bg-white/20 transition-colors text-sm"
                 >
                   <Phone className="h-5 w-5" />
                   <span>Call Now</span>
@@ -106,7 +106,7 @@ export function StickyMobileCTA({
               {(variant === "apply" || variant === "both") && (
                 <Link
                   href="/apply"
-                  className="flex-1 flex items-center justify-center gap-2 bg-orange hover:bg-orange-600 text-white font-bold py-3.5 px-4 rounded-xl transition-colors shadow-lg shadow-orange/30"
+                  className="flex-1 flex items-center justify-center gap-2 bg-orange hover:bg-orange-600 text-white font-bold py-3.5 px-4 rounded-xl transition-colors shadow-lg shadow-orange/30 text-sm"
                 >
                   <FileText className="h-5 w-5" />
                   <span>Apply Now</span>

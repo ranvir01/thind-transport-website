@@ -215,7 +215,7 @@ function MobileMenuDrawer({
                   <ChevronDown className={`w-4 h-4 transition-transform ${expandedSection === 'drivers' ? 'rotate-180' : ''}`} />
                 </button>
                 <AnimatePresence>
-                  {(expandedSection === 'drivers' || expandedSection === null) && (
+                  {expandedSection === 'drivers' && (
                     <motion.div
                       initial={{ height: 0, opacity: 0 }}
                       animate={{ height: "auto", opacity: 1 }}
@@ -279,7 +279,7 @@ function MobileMenuDrawer({
                   <ChevronDown className={`w-4 h-4 transition-transform ${expandedSection === 'company' ? 'rotate-180' : ''}`} />
                 </button>
                 <AnimatePresence>
-                  {(expandedSection === 'company' || expandedSection === null) && (
+                  {expandedSection === 'company' && (
                     <motion.div
                       initial={{ height: 0, opacity: 0 }}
                       animate={{ height: "auto", opacity: 1 }}
@@ -386,7 +386,7 @@ export const CinematicNavbar = () => {
         scrolled ? 'pt-2' : 'pt-4'
       }`}>
         <div className="flex justify-center pointer-events-none px-4 w-full">
-          <nav className={`pointer-events-auto flex items-center justify-between md:justify-start gap-4 md:gap-6 px-6 md:px-6 py-3.5 md:py-3 rounded-full transition-all duration-300 active:scale-[0.98] md:active:scale-100 ${
+          <nav className={`pointer-events-auto flex items-center justify-between md:justify-start w-auto max-w-[95%] gap-4 md:gap-6 pl-5 pr-2 py-2 md:px-6 md:py-3 rounded-full transition-all duration-300 active:scale-[0.98] md:active:scale-100 ${
             scrolled 
               ? 'bg-[#001F3F]/95 backdrop-blur-xl shadow-2xl shadow-black/20 border border-white/10' 
               : 'bg-black/40 backdrop-blur-md border border-white/10 shadow-lg'
@@ -394,10 +394,10 @@ export const CinematicNavbar = () => {
             {/* Logo */}
             <Link 
               href="/" 
-              className="text-xl md:text-xl font-bold text-white tracking-tighter hover:text-orange-400 transition-colors whitespace-nowrap" 
+              className="relative z-20 text-lg md:text-xl font-bold text-white tracking-tighter hover:text-orange-400 transition-colors whitespace-nowrap leading-none flex items-center" 
               data-cursor="HOME"
             >
-              <span className="md:hidden">THIND</span>
+              <span className="md:hidden tracking-wide">THIND TRANSPORT</span>
               <span className="hidden md:inline">THIND TRANSPORT</span>
             </Link>
 
@@ -455,7 +455,7 @@ export const CinematicNavbar = () => {
             {/* Mobile Menu Button */}
             <button
               onClick={() => setMobileMenuOpen(true)}
-              className="md:hidden p-2 rounded-full bg-white/5 hover:bg-white/10 text-white transition-colors"
+              className="md:hidden p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors flex items-center justify-center"
               aria-label="Open navigation menu"
               aria-expanded={mobileMenuOpen}
             >

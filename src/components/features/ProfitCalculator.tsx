@@ -138,20 +138,20 @@ export const ProfitCalculator = () => {
           <h2 className="text-3xl md:text-5xl font-black text-white mb-4">
             Calculate Your <span className="text-orange">Real</span> Take-Home
           </h2>
-          <p className="text-lg text-white/70 max-w-2xl mx-auto">
+          <p className="text-base md:text-lg text-white/70 max-w-2xl mx-auto">
             See the actual difference between our 91% split and the typical 70-75% split. 
             We include real operating expenses so you know exactly what to expect.
           </p>
         </div>
 
-        <div className="grid lg:grid-cols-2 gap-8 items-start">
+        <div className="grid lg:grid-cols-2 gap-6 md:gap-8 items-start">
           {/* Inputs Panel */}
-          <div className="bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 p-6 md:p-8">
+          <div className="bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 p-4 md:p-8">
             <div className="flex items-center gap-3 mb-6">
               <div className="w-10 h-10 rounded-lg bg-orange/20 flex items-center justify-center">
                 <Calculator className="w-5 h-5 text-orange" />
               </div>
-              <h3 className="text-xl font-bold text-white">Your Load Details</h3>
+              <h3 className="text-lg md:text-xl font-bold text-white">Your Load Details</h3>
             </div>
 
             {/* Equipment Type Selection */}
@@ -379,8 +379,8 @@ export const ProfitCalculator = () => {
           </div>
 
           {/* Results Panel */}
-          <div className="bg-white rounded-2xl shadow-brand-lg p-6 md:p-8 flex flex-col">
-            <h3 className="text-xl font-bold text-navy mb-6 text-center">Your Weekly Take-Home</h3>
+          <div className="bg-white rounded-2xl shadow-brand-lg p-4 md:p-8 flex flex-col">
+            <h3 className="text-lg md:text-xl font-bold text-navy mb-6 text-center">Your Weekly Take-Home</h3>
             
             {/* Main Comparison Cards */}
             <div className="grid grid-cols-2 gap-4 mb-6">
@@ -412,11 +412,11 @@ export const ProfitCalculator = () => {
                 <div className="space-y-2">
                   <div>
                     <p className="text-xs text-navy/80">Your Cut</p>
-                    <p className="text-lg font-bold text-navy">{formatCurrency(thindDriverGross)}</p>
+                    <p className="text-base sm:text-lg font-bold text-navy">{formatCurrency(thindDriverGross)}</p>
                   </div>
                   <div>
                     <p className="text-xs text-navy/80">After Expenses</p>
-                    <p className="text-2xl font-black text-navy">{formatCurrency(thindNetPay)}</p>
+                    <p className="text-xl sm:text-2xl font-black text-navy">{formatCurrency(thindNetPay)}</p>
                   </div>
                 </div>
               </div>
@@ -455,13 +455,13 @@ export const ProfitCalculator = () => {
             <div className="grid grid-cols-2 gap-3 mb-6">
               <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
                 <p className="text-green-700 font-semibold text-xs mb-1 uppercase tracking-wider">Weekly Extra</p>
-                <p className="text-2xl font-black text-green-600">
+                <p className="text-xl sm:text-2xl font-black text-green-600">
                   +{formatCurrency(weeklyDifference)}
                 </p>
               </div>
               <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
                 <p className="text-green-700 font-semibold text-xs mb-1 uppercase tracking-wider">Annual Extra</p>
-                <p className="text-2xl font-black text-green-600">
+                <p className="text-xl sm:text-2xl font-black text-green-600">
                   +{formatCurrency(annualDifference)}
                 </p>
               </div>
