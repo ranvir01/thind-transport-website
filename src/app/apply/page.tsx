@@ -198,16 +198,16 @@ export default function ApplyPage() {
                 </div>
 
                 {/* Pay Highlights */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-[#001F3F]/80 backdrop-blur-sm border border-orange-500/30 rounded-xl p-4">
-                    <p className="text-xs text-orange-400 uppercase tracking-wider font-bold mb-1">Owner Ops</p>
-                    <p className="text-3xl font-black text-orange-400">91%</p>
-                    <p className="text-xs text-slate-300">Gross Revenue</p>
+                <div className="grid grid-cols-2 gap-2 sm:gap-4">
+                  <div className="bg-[#001F3F]/80 backdrop-blur-sm border border-orange-500/30 rounded-xl p-3 sm:p-4">
+                    <p className="text-[10px] sm:text-xs text-orange-400 uppercase tracking-wider font-bold mb-0.5 sm:mb-1">Owner Ops</p>
+                    <p className="text-2xl sm:text-3xl font-black text-orange-400">91%</p>
+                    <p className="text-[10px] sm:text-xs text-slate-300">Gross Revenue</p>
                   </div>
-                  <div className="bg-[#001F3F]/80 backdrop-blur-sm border border-blue-500/30 rounded-xl p-4">
-                    <p className="text-xs text-blue-400 uppercase tracking-wider font-bold mb-1">Company</p>
-                    <p className="text-3xl font-black text-blue-400">{PAY_RATES.companyDriver.otr.perMile}</p>
-                    <p className="text-xs text-slate-300">Per Mile</p>
+                  <div className="bg-[#001F3F]/80 backdrop-blur-sm border border-blue-500/30 rounded-xl p-3 sm:p-4">
+                    <p className="text-[10px] sm:text-xs text-blue-400 uppercase tracking-wider font-bold mb-0.5 sm:mb-1">Company</p>
+                    <p className="text-2xl sm:text-3xl font-black text-blue-400">{PAY_RATES.companyDriver.otr.perMile}</p>
+                    <p className="text-[10px] sm:text-xs text-slate-300">Per Mile</p>
                   </div>
                 </div>
 
