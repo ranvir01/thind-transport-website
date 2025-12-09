@@ -162,13 +162,14 @@ export default function ApplyPage() {
           {/* Background Image - Absolute */}
           <div className="absolute inset-0 z-0">
             <Image
-              src="/images/generated/hero-fleet-sunset.png"
+              src="/resources/hero-fleet-sunset.jpg"
               alt="Thind Transport semi trucks on highway - CDL driver jobs available"
               fill
-              className="object-cover object-center opacity-60"
+              className="object-cover object-center opacity-50"
               priority
+              sizes="100vw"
             />
-            <div className="absolute inset-0 bg-gradient-to-r from-[#00060D] via-[#00060D]/90 to-[#00060D]/80" />
+            <div className="absolute inset-0 bg-gradient-to-r from-[#00060D] via-[#00060D]/85 to-[#00060D]/70" />
             <div className="absolute inset-0 bg-gradient-to-t from-[#00060D] via-transparent to-transparent" />
           </div>
           
