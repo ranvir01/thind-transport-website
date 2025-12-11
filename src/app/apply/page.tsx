@@ -219,26 +219,26 @@ export default function ApplyPage() {
 
                 {/* Pay Highlights */}
                 <div className="grid grid-cols-2 gap-2 sm:gap-4">
-                  <div className="bg-[#001F3F]/80 backdrop-blur-sm border border-orange-500/30 rounded-xl p-3 sm:p-4">
-                    <p className="text-[10px] sm:text-xs text-orange-400 uppercase tracking-wider font-bold mb-0.5 sm:mb-1">Owner Ops</p>
-                    <p className="text-2xl sm:text-3xl font-black text-orange-400">91%</p>
-                    <p className="text-[10px] sm:text-xs text-slate-300">Gross Revenue</p>
+                  <div className="bg-[#001F3F]/80 backdrop-blur-sm border border-orange-500/30 rounded-xl p-2.5 sm:p-4">
+                    <p className="text-[10px] sm:text-xs text-orange-400 uppercase tracking-wider font-bold mb-0.5 sm:mb-1 truncate">Owner Ops</p>
+                    <p className="text-xl sm:text-3xl font-black text-orange-400">91%</p>
+                    <p className="text-[10px] sm:text-xs text-slate-300 truncate">Gross Revenue</p>
                   </div>
-                  <div className="bg-[#001F3F]/80 backdrop-blur-sm border border-blue-500/30 rounded-xl p-3 sm:p-4">
-                    <p className="text-[10px] sm:text-xs text-blue-400 uppercase tracking-wider font-bold mb-0.5 sm:mb-1">Company</p>
-                    <p className="text-2xl sm:text-3xl font-black text-blue-400">{PAY_RATES.companyDriver.otr.perMile}</p>
-                    <p className="text-[10px] sm:text-xs text-slate-300">Per Mile</p>
+                  <div className="bg-[#001F3F]/80 backdrop-blur-sm border border-blue-500/30 rounded-xl p-2.5 sm:p-4">
+                    <p className="text-[10px] sm:text-xs text-blue-400 uppercase tracking-wider font-bold mb-0.5 sm:mb-1 truncate">Company</p>
+                    <p className="text-xl sm:text-3xl font-black text-blue-400">{PAY_RATES.companyDriver.otr.perMile}</p>
+                    <p className="text-[10px] sm:text-xs text-slate-300 truncate">Per Mile</p>
                   </div>
                 </div>
 
-                {/* Trust Pills - Hidden on very small mobile to save space */}
-                <div className="hidden sm:flex flex-wrap gap-3">
+                {/* Trust Pills - Visible on all sizes, wraps on mobile */}
+                <div className="flex flex-wrap gap-3">
                   {[
                     { icon: DollarSign, text: "Same Day Pay" },
                     { icon: Headphones, text: "24/7 Support" },
                     { icon: Users, text: "Family Owned" },
                   ].map((item, i) => (
-                    <div key={i} className="flex items-center gap-2 bg-white/5 backdrop-blur-sm rounded-full px-3 py-1.5 text-xs text-slate-300 border border-white/10">
+                    <div key={i} className="flex items-center gap-2 bg-white/5 backdrop-blur-sm rounded-full px-3 py-1.5 text-xs text-slate-300 border border-white/10 flex-shrink-0">
                       <item.icon className="h-3.5 w-3.5 text-orange-400" />
                       <span className="font-medium">{item.text}</span>
                     </div>
