@@ -177,6 +177,25 @@ export default function ApplyPage() {
           <div className="container relative z-10">
             <div className="flex flex-col lg:grid lg:grid-cols-12 gap-8 lg:gap-12 items-start">
               
+              {/* Right Column - Form (Priority on Mobile) */}
+              <div className="order-1 lg:order-2 lg:col-span-7 w-full" id="application-form">
+                <div className="bg-white rounded-2xl shadow-2xl overflow-hidden border border-slate-200">
+                  <div className="bg-gradient-to-r from-[#001F3F] to-[#003366] px-6 py-4 border-b border-navy-800 flex items-center justify-between">
+                    <div>
+                      <h2 className="text-lg font-bold text-white">Start Your Application</h2>
+                      <p className="text-blue-200 text-xs">Takes less than 60 seconds</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
+                      <span className="text-green-300 text-xs font-semibold">Recruiters Online</span>
+                    </div>
+                  </div>
+                  <div className="p-4 md:p-8">
+                    <ApplicationForm />
+                  </div>
+                </div>
+              </div>
+
               {/* Left Column - Hero Content (Desktop) / Top (Mobile) */}
               <div className="order-2 lg:order-1 lg:col-span-5 space-y-6 lg:sticky lg:top-24">
                 <div className="space-y-4">
@@ -248,25 +267,6 @@ export default function ApplyPage() {
                          High Demand
                        </p>
                     </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Right Column - Form (Priority on Mobile) */}
-              <div className="order-1 lg:order-2 lg:col-span-7 w-full" id="application-form">
-                <div className="bg-white rounded-2xl shadow-2xl overflow-hidden border border-slate-200">
-                  <div className="bg-gradient-to-r from-[#001F3F] to-[#003366] px-6 py-4 border-b border-navy-800 flex items-center justify-between">
-                    <div>
-                      <h2 className="text-lg font-bold text-white">Start Your Application</h2>
-                      <p className="text-blue-200 text-xs">Takes less than 60 seconds</p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
-                      <span className="text-green-300 text-xs font-semibold">Recruiters Online</span>
-                    </div>
-                  </div>
-                  <div className="p-4 md:p-8">
-                    <ApplicationForm />
                   </div>
                 </div>
               </div>
@@ -395,7 +395,7 @@ export default function ApplyPage() {
                         question: "What types of trailers do you haul?",
                         answer: "We operate Flatbed, Reefer, and Dry Van trailers. You can specialize in one type or diversify based on your preferences and endorsements."
                       },
-                    ]} darkBackground={true} />
+                    ]} darkBackground={true} gradientColor="#001326" />
                 </div>
               </div>
 
@@ -521,4 +521,3 @@ export default function ApplyPage() {
     </>
   )
 }
-

@@ -123,9 +123,10 @@ const defaultFaqs = [
 interface FAQAccordionProps {
   items?: { question: string; answer: string }[];
   darkBackground?: boolean;
+  gradientColor?: string;
 }
 
-export function FAQAccordion({ items = defaultFaqs, darkBackground = true }: FAQAccordionProps) {
+export function FAQAccordion({ items = defaultFaqs, darkBackground = true, gradientColor }: FAQAccordionProps) {
   const [mounted, setMounted] = useState(false)
   const id = useId()
   const scrollRef = useRef<HTMLDivElement>(null)
@@ -244,8 +245,14 @@ export function FAQAccordion({ items = defaultFaqs, darkBackground = true }: FAQ
         {/* Gradient fades for scroll indication */}
         {darkBackground ? (
           <>
-            <div className="absolute left-0 top-0 bottom-4 w-12 bg-gradient-to-r from-[#020617] to-transparent pointer-events-none md:w-24 z-10" />
-            <div className="absolute right-0 top-0 bottom-4 w-12 bg-gradient-to-l from-[#020617] to-transparent pointer-events-none md:w-24 z-10" />
+            <div 
+              className="absolute left-0 top-0 bottom-4 w-12 pointer-events-none md:w-24 z-10"
+              style={{ background: `linear-gradient(to right, ${gradientColor || '#020617'}, transparent)` }}
+            />
+            <div 
+              className="absolute right-0 top-0 bottom-4 w-12 pointer-events-none md:w-24 z-10"
+              style={{ background: `linear-gradient(to left, ${gradientColor || '#020617'}, transparent)` }}
+            />
           </>
         ) : (
           <>
