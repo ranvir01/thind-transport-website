@@ -145,7 +145,7 @@ export const ProfitCalculator = () => {
         </div>
 
         <div className="grid lg:grid-cols-2 gap-6 md:gap-8 items-start">
-          {/* Inputs Panel */}
+            {/* Inputs Panel */}
           <div className="bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 p-4 md:p-8">
             <div className="flex items-center gap-3 mb-6">
               <div className="w-10 h-10 rounded-lg bg-orange/20 flex items-center justify-center">
@@ -157,7 +157,7 @@ export const ProfitCalculator = () => {
             {/* Equipment Type Selection */}
             <div className="mb-6">
               <label className="font-semibold text-white/90 mb-3 block text-sm">Equipment Type</label>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                 {(Object.entries(EQUIPMENT_RATES) as [EquipmentType, typeof EQUIPMENT_RATES[EquipmentType]][]).map(([key, value]) => (
                   <button
                     key={key}
@@ -179,12 +179,12 @@ export const ProfitCalculator = () => {
 
             {/* Miles Slider */}
             <div className="mb-6">
-              <div className="flex justify-between items-center mb-3">
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 mb-3">
                 <label className="font-semibold text-white/90 text-sm flex items-center gap-2">
                   <Truck className="w-4 h-4 text-orange" />
                   Miles Per Week
                 </label>
-                <span className="font-mono font-bold text-xl text-orange">{miles.toLocaleString()}</span>
+                <span className="font-mono font-bold text-xl text-orange self-end sm:self-auto">{miles.toLocaleString()}</span>
               </div>
               <input 
                 type="range" 
@@ -206,7 +206,7 @@ export const ProfitCalculator = () => {
 
             {/* Rate Slider */}
             <div className="mb-6">
-              <div className="flex justify-between items-center mb-3">
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 mb-3">
                 <label className="font-semibold text-white/90 text-sm flex items-center gap-2">
                   <DollarSign className="w-4 h-4 text-orange" />
                   Linehaul Rate (per mile)
@@ -217,7 +217,7 @@ export const ProfitCalculator = () => {
                     </span>
                   </span>
                 </label>
-                <span className="font-mono font-bold text-xl text-orange">${lineHaulRate.toFixed(2)}</span>
+                <span className="font-mono font-bold text-xl text-orange self-end sm:self-auto">${lineHaulRate.toFixed(2)}</span>
               </div>
               <input 
                 type="range" 
@@ -237,12 +237,12 @@ export const ProfitCalculator = () => {
 
             {/* Fuel Price Slider */}
             <div className="mb-6">
-              <div className="flex justify-between items-center mb-3">
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 mb-3">
                 <label className="font-semibold text-white/90 text-sm flex items-center gap-2">
                   <Fuel className="w-4 h-4 text-orange" />
                   Diesel Price (per gallon)
                 </label>
-                <span className="font-mono font-bold text-xl text-orange">${fuelPrice.toFixed(2)}</span>
+                <span className="font-mono font-bold text-xl text-orange self-end sm:self-auto">${fuelPrice.toFixed(2)}</span>
               </div>
               <input 
                 type="range" 
@@ -428,9 +428,9 @@ export const ProfitCalculator = () => {
             <div className="mb-6">
               <p className="text-sm text-gray-700 mb-3 font-semibold">Net Weekly Comparison</p>
               <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-steel w-10 sm:w-16 font-mono shrink-0">72%</span>
-                  <div className="flex-1 min-w-0 bg-gray-100 rounded-full h-6 overflow-hidden">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+                  <span className="text-xs text-steel w-auto sm:w-16 font-mono shrink-0">72%</span>
+                  <div className="flex-1 min-w-0 bg-gray-100 rounded-full h-6 overflow-hidden w-full">
                     <div 
                       className="h-full bg-gray-400 rounded-full transition-all duration-500 flex items-center justify-end pr-2"
                       style={{ width: `${Math.min(100, (competitorNetPay / thindNetPay) * 100)}%` }}
@@ -439,9 +439,9 @@ export const ProfitCalculator = () => {
                     </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-orange font-bold w-10 sm:w-16 font-mono shrink-0">91%</span>
-                  <div className="flex-1 min-w-0 bg-orange/20 rounded-full h-6 overflow-hidden">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+                  <span className="text-xs text-orange font-bold w-auto sm:w-16 font-mono shrink-0">91%</span>
+                  <div className="flex-1 min-w-0 bg-orange/20 rounded-full h-6 overflow-hidden w-full">
                     <div 
                       className="h-full bg-gradient-to-r from-orange to-orange-500 rounded-full transition-all duration-500 flex items-center justify-end pr-2"
                       style={{ width: '100%' }}

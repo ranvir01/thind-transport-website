@@ -45,7 +45,9 @@ export default function Home() {
           SECTION 4: PROFIT CALCULATOR (THE HOOK)
           Goal: Show the $35k+ difference - conversion driver
           ================================================ */}
-      <ProfitCalculator />
+      <div className="mb-12 md:mb-20">
+        <ProfitCalculator />
+      </div>
 
       {/* ================================================
           SECTION 5: WHY SWITCH COMPARISON
@@ -137,7 +139,7 @@ export default function Home() {
         </div>
 
         <div className="container px-4 relative z-10">
-          <div className="max-w-4xl mx-auto">
+          <div className="max-w-6xl mx-auto">
             <div className="text-center mb-12">
               <span className="inline-block px-4 py-1.5 rounded-full bg-orange/20 text-orange font-semibold text-sm mb-4">
                 Takes Less Than 2 Minutes

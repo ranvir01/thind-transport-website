@@ -143,7 +143,7 @@ export function PartnersShowcase() {
   const clientItems = MAJOR_CLIENTS
 
   return (
-    <section aria-label="Partner network" className="relative bg-[#020617] py-12 sm:py-16 md:py-24 overflow-hidden">
+    <section aria-label="Partner network" className="relative bg-[#020617] py-12 sm:py-16 md:py-24 overflow-hidden w-full">
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-blue-900/20 via-transparent to-transparent" />
       
       <div className="container relative px-4">

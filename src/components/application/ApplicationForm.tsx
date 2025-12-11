@@ -458,7 +458,7 @@ export function ApplicationForm() {
                     id="firstName"
                     {...register("firstName")}
                     placeholder="John"
-                    className={cn("h-12 text-base", errors.firstName ? "border-red-500" : "")}
+                    className={cn("h-12 py-3 text-base", errors.firstName ? "border-red-500" : "")}
                   />
                   {errors.firstName && <p className="text-xs text-red-500 mt-1">{errors.firstName.message}</p>}
                 </div>
@@ -469,7 +469,7 @@ export function ApplicationForm() {
                     id="lastName"
                     {...register("lastName")}
                     placeholder="Doe"
-                    className={cn("h-12 text-base", errors.lastName ? "border-red-500" : "")}
+                    className={cn("h-12 py-3 text-base", errors.lastName ? "border-red-500" : "")}
                   />
                   {errors.lastName && <p className="text-xs text-red-500 mt-1">{errors.lastName.message}</p>}
                 </div>
@@ -482,7 +482,7 @@ export function ApplicationForm() {
                   {...register("email")}
                   placeholder="john@example.com"
                   type="email"
-                  className={cn("h-12 text-base", errors.email ? "border-red-500" : "")}
+                  className={cn("h-12 py-3 text-base", errors.email ? "border-red-500" : "")}
                 />
                 {errors.email && <p className="text-xs text-red-500 mt-1">{errors.email.message}</p>}
               </div>
@@ -497,7 +497,7 @@ export function ApplicationForm() {
                   type="tel"
                   inputMode="tel"
                   autoComplete="tel"
-                  className={cn("h-12 text-base", errors.phone ? "border-red-500" : "")}
+                  className={cn("h-12 py-3 text-base", errors.phone ? "border-red-500" : "")}
                 />
                 {errors.phone && <p className="text-xs text-red-500 mt-1">{errors.phone.message}</p>}
               </div>
@@ -546,7 +546,7 @@ export function ApplicationForm() {
                   id="cdlNumber"
                   {...register("cdlNumber")}
                   placeholder="Enter your CDL number"
-                  className={cn("h-12 text-base", errors.cdlNumber ? "border-red-500" : "")}
+                  className={cn("h-12 py-3 text-base", errors.cdlNumber ? "border-red-500" : "")}
                 />
                 {errors.cdlNumber && <p className="text-xs text-red-500 mt-1">{errors.cdlNumber.message}</p>}
               </div>
@@ -558,7 +558,7 @@ export function ApplicationForm() {
                     id="businessAddress"
                     {...register("businessAddress")}
                     placeholder="e.g., Seattle, WA"
-                    className="h-12 text-base"
+                    className="h-12 py-3 text-base"
                   />
                 </div>
                 <div className="space-y-1">
@@ -567,7 +567,7 @@ export function ApplicationForm() {
                     id="previousEmployer"
                     {...register("previousEmployer")}
                     placeholder="Company Name"
-                    className="h-12 text-base"
+                    className="h-12 py-3 text-base"
                   />
                 </div>
               </div>
@@ -579,7 +579,7 @@ export function ApplicationForm() {
                       id="availability"
                       {...register("availability")}
                       className={cn(
-                        "w-full h-12 px-3 py-2 rounded-md border border-gray-300 bg-white text-gray-900 text-base focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent",
+                        "w-full h-12 px-3 py-3 rounded-md border border-gray-300 bg-white text-gray-900 text-base focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent",
                         errors.availability ? "border-red-500" : ""
                       )}
                     >
@@ -704,7 +704,7 @@ export function ApplicationForm() {
                 id="comments" 
                 {...register("comments")} 
                 placeholder="Questions, special requests, or additional info..."
-                className="mt-1.5 min-h-[80px]" 
+                className="mt-1.5 min-h-[80px] text-base p-3" 
               />
             </div>
 

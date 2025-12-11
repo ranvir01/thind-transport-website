@@ -62,7 +62,7 @@ export function RecentlyHiredTicker({ variant = "full", className = "" }: Recent
             initial={{ x: -100, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
             exit={{ x: -100, opacity: 0 }}
-            className="hidden md:block fixed bottom-24 left-4 z-40 bg-white rounded-xl shadow-2xl border border-gray-200 p-4 max-w-xs"
+            className="hidden lg:block fixed bottom-24 left-4 z-40 bg-white rounded-xl shadow-2xl border border-gray-200 p-4 max-w-xs"
           >
             <button
               onClick={() => setShowPopup(false)}
