@@ -10,6 +10,7 @@ import {
 import { HelpCircle } from "lucide-react"
 
 const defaultFaqs = [
+  // ... (default items kept same)
   // Pay & Compensation
   {
     question: "What are the experience requirements?",
@@ -134,6 +135,12 @@ export function FAQAccordion({ items = defaultFaqs, darkBackground = true }: FAQ
     setMounted(true)
   }, [])
 
+  // Infinite scroll logic: 
+  // We will display 2 sets of items.
+  // When we scroll past the first set, we reset to 0.
+  // This creates a seamless loop.
+  const displayItems = [...items, ...items]
+
   useEffect(() => {
     if (!mounted) return
     
@@ -141,14 +148,17 @@ export function FAQAccordion({ items = defaultFaqs, darkBackground = true }: FAQ
     const scrollSpeed = 0.5 // Pixels per frame
     
     const scroll = () => {
-      if (scrollRef.current && !isPaused) {
-        // If we've reached the end, we can either stop or reset.
-        // For now, let's just stop auto-scrolling to avoid jarring resets,
-        // unless we want to implement infinite looping which requires duplicating content.
-        const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
+      const container = scrollRef.current;
+      if (container && !isPaused) {
+        container.scrollLeft += scrollSpeed;
         
-        if (scrollLeft < scrollWidth - clientWidth) {
-           scrollRef.current.scrollLeft += scrollSpeed
+        // Loop logic:
+        // Calculate the width of one set of items. 
+        // A rough approximation is totalScrollWidth / 2.
+        // We reset when scrollLeft >= scrollWidth / 2.
+        
+        if (container.scrollLeft >= container.scrollWidth / 2) {
+           container.scrollLeft = 0;
         }
       }
       animationFrameId = requestAnimationFrame(scroll)
@@ -199,7 +209,7 @@ export function FAQAccordion({ items = defaultFaqs, darkBackground = true }: FAQ
             style={{ scrollBehavior: 'auto' }} // Ensure immediate updates for auto-scroll
         >
             <Accordion type="single" collapsible className="flex flex-row gap-4 w-max px-2 items-start">
-                {items.map((faq, index) => (
+                {displayItems.map((faq, index) => (
                 <AccordionItem 
                     key={`${id}-${index}`} 
                     value={`item-${id}-${index}`}

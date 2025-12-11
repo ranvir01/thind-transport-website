@@ -153,7 +153,7 @@ export default function ApplyPage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
       />
 
-      <div className="min-h-screen bg-[#00060D]">
+      <div className="min-h-screen bg-[#00060D] overflow-x-hidden">
         <div className="scale-90 origin-left opacity-80 mb-[-1rem]">
            <PageBreadcrumb pageName="Apply Now" category="Drivers" />
         </div>

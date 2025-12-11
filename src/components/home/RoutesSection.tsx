@@ -28,10 +28,11 @@ export function RoutesSection() {
           </p>
         </motion.div>
 
-        {/* Mobile: Stack cards, Tablet+: 3 columns */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 md:gap-8">
+        {/* Mobile: Horizontal Scroll, Tablet+: 3 columns */}
+        <div className="flex md:grid md:grid-cols-3 gap-4 sm:gap-6 md:gap-8 overflow-x-auto md:overflow-visible snap-x snap-mandatory pb-6 md:pb-0 -mx-4 px-4 md:mx-0 md:px-0 no-scrollbar">
           {/* Local Routes */}
           <motion.div
+            className="min-w-[85vw] sm:min-w-[350px] md:min-w-0 snap-center"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
@@ -101,6 +102,7 @@ export function RoutesSection() {
 
           {/* Regional Routes */}
           <motion.div
+            className="min-w-[85vw] sm:min-w-[350px] md:min-w-0 snap-center"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
@@ -170,6 +172,7 @@ export function RoutesSection() {
 
           {/* OTR Routes */}
           <motion.div
+            className="min-w-[85vw] sm:min-w-[350px] md:min-w-0 snap-center"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
