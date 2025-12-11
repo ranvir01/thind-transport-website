@@ -453,7 +453,7 @@ export function ApplicationForm() {
             </div>
 
             <div className="space-y-4">
-               <div className="grid grid-cols-2 gap-4">
+               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1">
                   <Label htmlFor="firstName">First Name *</Label>
                   <Input
@@ -553,7 +553,7 @@ export function ApplicationForm() {
                 {errors.cdlNumber && <p className="text-xs text-red-500 mt-1">{errors.cdlNumber.message}</p>}
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1">
                   <Label htmlFor="businessAddress">City & State (Optional)</Label>
                   <Input
@@ -574,7 +574,7 @@ export function ApplicationForm() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1">
                     <Label htmlFor="availability">When can you start?</Label>
                     <select
@@ -617,7 +617,7 @@ export function ApplicationForm() {
                  <AlertCircle className="h-4 w-4 text-gray-500" />
                  Safety Record (Last 3 Years)
                </h4>
-               <div className="grid grid-cols-2 gap-4">
+               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                  <div>
                     <Label className="text-xs text-gray-500">Accidents</Label>
                     <Input type="number" min="0" placeholder="0" {...register("accidents")} className="bg-white h-12 text-base" />

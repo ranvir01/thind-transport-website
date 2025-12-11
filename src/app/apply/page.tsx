@@ -13,7 +13,7 @@ import {
 
 // Enhanced SEO Metadata - Competitor Analysis Based
 export const metadata: Metadata = {
-  title: `Apply Now - 60 Second Application | ${COMPANY_INFO.name}`,
+  title: `Apply Now - Quick Application | ${COMPANY_INFO.name}`,
   description: `Quick 60-second application for CDL driver positions at ${COMPANY_INFO.name}. Hiring nationwide. Owner Operators: 91% commission. Company Drivers: ${PAY_RATES.companyDriver.otr.perMile}/mi. No experience required. Start next week. Apply now!`,
   keywords: [
     "CDL truck driver jobs",
@@ -36,7 +36,7 @@ export const metadata: Metadata = {
     "apply trucking job online",
   ],
   openGraph: {
-    title: `Apply Now - 60 Second Application | ${COMPANY_INFO.name}`,
+    title: `Apply Now - Quick Application | ${COMPANY_INFO.name}`,
     description: `Quick 60-second application for CDL driver positions at ${COMPANY_INFO.name}. Hiring nationwide. Owner Operators: 91% commission. Company Drivers: ${PAY_RATES.companyDriver.otr.perMile}/mi.`,
     type: "website",
     url: "https://thindtransport.com/apply",
@@ -159,7 +159,7 @@ export default function ApplyPage() {
         </div>
         
         {/* Unified Hero & Form Section */}
-        <section className="relative pt-4 pb-16 lg:py-24 overflow-hidden">
+        <section className="relative pt-2 pb-8 lg:py-24 overflow-hidden">
           {/* Background Image - Absolute */}
           <div className="absolute inset-0 z-0 hidden md:block">
             <Image
