@@ -205,7 +205,7 @@ export function FAQAccordion({ items = defaultFaqs, darkBackground = true }: FAQ
         {/* Scroll Container */}
         <div 
             ref={scrollRef}
-            className="w-full overflow-x-auto no-scrollbar pb-4 cursor-grab active:cursor-grabbing"
+            className="w-full overflow-x-auto no-scrollbar pb-4 cursor-grab active:cursor-grabbing snap-x snap-mandatory"
             style={{ scrollBehavior: 'auto' }} // Ensure immediate updates for auto-scroll
         >
             <Accordion type="single" collapsible className="flex flex-row gap-4 w-max px-2 items-start">
@@ -213,7 +213,7 @@ export function FAQAccordion({ items = defaultFaqs, darkBackground = true }: FAQ
                 <AccordionItem 
                     key={`${id}-${index}`} 
                     value={`item-${id}-${index}`}
-                    className={`w-[300px] md:w-[350px] flex-shrink-0 border rounded-lg px-4 transition-all duration-300 h-fit ${
+                    className={`snap-center w-[300px] md:w-[350px] flex-shrink-0 border rounded-lg px-4 transition-all duration-300 h-fit ${
                       darkBackground
                         ? "border-white/10 bg-white/5 hover:bg-white/10 data-[state=open]:bg-blue-500/10 data-[state=open]:border-blue-500/30"
                         : "border-gray-200 bg-white hover:bg-gray-50 data-[state=open]:bg-blue-50 data-[state=open]:border-blue-200 data-[state=open]:shadow-md"

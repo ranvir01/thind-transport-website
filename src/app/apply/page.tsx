@@ -175,10 +175,10 @@ export default function ApplyPage() {
           </div>
           
           <div className="container relative z-10">
-            <div className="grid lg:grid-cols-12 gap-8 lg:gap-12 items-start">
+            <div className="flex flex-col lg:grid lg:grid-cols-12 gap-8 lg:gap-12 items-start">
               
               {/* Left Column - Hero Content (Desktop) / Top (Mobile) */}
-              <div className="lg:col-span-5 space-y-6 lg:sticky lg:top-24">
+              <div className="order-2 lg:order-1 lg:col-span-5 space-y-6 lg:sticky lg:top-24">
                 <div className="space-y-4">
                   <div className="inline-flex items-center gap-2 bg-orange-500/20 border border-orange-500/40 backdrop-blur-sm text-orange-300 px-4 py-2 rounded-full text-sm font-bold animate-pulse">
                     <Zap className="h-4 w-4" />
@@ -253,7 +253,7 @@ export default function ApplyPage() {
               </div>
 
               {/* Right Column - Form (Priority on Mobile) */}
-              <div className="lg:col-span-7" id="application-form">
+              <div className="order-1 lg:order-2 lg:col-span-7 w-full" id="application-form">
                 <div className="bg-white rounded-2xl shadow-2xl overflow-hidden border border-slate-200">
                   <div className="bg-gradient-to-r from-[#001F3F] to-[#003366] px-6 py-4 border-b border-navy-800 flex items-center justify-between">
                     <div>
@@ -276,8 +276,8 @@ export default function ApplyPage() {
         </section>
 
         {/* Info Section - Below the Fold */}
-        <section className="bg-[#001326] border-t border-white/5 py-12 lg:py-16">
-          <div className="container">
+        <section className="bg-[#001326] border-t border-white/5 py-12 lg:py-16 overflow-hidden">
+          <div className="container px-4 md:px-6">
             <div className="grid lg:grid-cols-3 gap-8 lg:gap-12">
               
               {/* Job Details */}
