@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useId } from "react"
+import { useState, useEffect, useRef, useId } from "react"
 import {
   Accordion,
   AccordionContent,
@@ -122,19 +122,48 @@ const faqs = [
 export function FAQAccordion() {
   const [mounted, setMounted] = useState(false)
   const id = useId()
-
+  const scrollRef = useRef<HTMLDivElement>(null)
+  const [isPaused, setIsPaused] = useState(false)
+  
   useEffect(() => {
     setMounted(true)
   }, [])
 
-  // Show a skeleton/placeholder until hydrated to prevent mismatch
+  useEffect(() => {
+    if (!mounted) return
+    
+    let animationFrameId: number
+    const scrollSpeed = 0.5 // Pixels per frame
+    
+    const scroll = () => {
+      if (scrollRef.current && !isPaused) {
+        // If we've reached the end, we can either stop or reset.
+        // For now, let's just stop auto-scrolling to avoid jarring resets,
+        // unless we want to implement infinite looping which requires duplicating content.
+        const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
+        
+        if (scrollLeft < scrollWidth - clientWidth) {
+           scrollRef.current.scrollLeft += scrollSpeed
+        }
+      }
+      animationFrameId = requestAnimationFrame(scroll)
+    }
+
+    animationFrameId = requestAnimationFrame(scroll)
+
+    return () => {
+      cancelAnimationFrame(animationFrameId)
+    }
+  }, [mounted, isPaused])
+
+  // Show a skeleton/placeholder until hydrated
   if (!mounted) {
     return (
-      <div className="w-full space-y-3">
-        {faqs.slice(0, 5).map((_, index) => (
+      <div className="w-full flex gap-4 overflow-hidden">
+        {faqs.slice(0, 3).map((_, index) => (
           <div 
             key={index}
-            className="border border-white/10 rounded-lg px-4 py-5 bg-white/5 animate-pulse"
+            className="min-w-[300px] border border-white/10 rounded-lg px-4 py-5 bg-white/5 animate-pulse"
           >
             <div className="flex items-start gap-3">
               <div className="w-5 h-5 bg-blue-500/30 rounded" />
@@ -147,27 +176,43 @@ export function FAQAccordion() {
   }
 
   return (
-    <div className="w-full space-y-2">
-      <Accordion type="single" collapsible className="w-full">
-        {faqs.map((faq, index) => (
-          <AccordionItem 
-            key={`${id}-${index}`} 
-            value={`item-${id}-${index}`}
-            className="border border-white/10 rounded-lg mb-3 px-4 bg-white/5 hover:bg-white/10 transition-colors data-[state=open]:bg-blue-500/10 data-[state=open]:border-blue-500/30"
-          >
-            <AccordionTrigger className="text-left py-5 text-white font-semibold text-base hover:text-blue-400 hover:no-underline [&[data-state=open]]:text-blue-400">
-              <div className="flex items-start gap-3 flex-1 pr-4">
-                <HelpCircle className="h-5 w-5 text-blue-500 mt-0.5 flex-shrink-0" />
-                <span className="flex-1">{faq.question}</span>
-              </div>
-            </AccordionTrigger>
-            <AccordionContent className="text-zinc-300 text-base leading-relaxed pb-5 pl-8">
-              <p className="text-zinc-300">{faq.answer}</p>
-            </AccordionContent>
-          </AccordionItem>
-        ))}
-      </Accordion>
+    <div 
+      className="group relative w-full"
+      onMouseEnter={() => setIsPaused(true)}
+      onMouseLeave={() => setIsPaused(false)}
+      onTouchStart={() => setIsPaused(true)}
+      onTouchEnd={() => setIsPaused(false)}
+    >
+        {/* Scroll Container */}
+        <div 
+            ref={scrollRef}
+            className="w-full overflow-x-auto no-scrollbar pb-4 cursor-grab active:cursor-grabbing"
+            style={{ scrollBehavior: 'auto' }} // Ensure immediate updates for auto-scroll
+        >
+            <Accordion type="single" collapsible className="flex flex-row gap-4 w-max px-2 items-start">
+                {faqs.map((faq, index) => (
+                <AccordionItem 
+                    key={`${id}-${index}`} 
+                    value={`item-${id}-${index}`}
+                    className="w-[300px] md:w-[350px] flex-shrink-0 border border-white/10 rounded-lg px-4 bg-white/5 hover:bg-white/10 transition-all duration-300 data-[state=open]:bg-blue-500/10 data-[state=open]:border-blue-500/30 data-[state=open]:shadow-[0_0_20px_rgba(59,130,246,0.15)] h-fit"
+                >
+                    <AccordionTrigger className="text-left py-5 text-white font-semibold text-base hover:text-blue-400 hover:no-underline [&[data-state=open]]:text-blue-400">
+                    <div className="flex items-start gap-3 flex-1 pr-2">
+                        <HelpCircle className="h-5 w-5 text-blue-500 mt-0.5 flex-shrink-0" />
+                        <span className="flex-1 leading-snug">{faq.question}</span>
+                    </div>
+                    </AccordionTrigger>
+                    <AccordionContent className="text-zinc-300 text-sm leading-relaxed pb-5 pl-8 pr-2">
+                    <p className="opacity-90">{faq.answer}</p>
+                    </AccordionContent>
+                </AccordionItem>
+                ))}
+            </Accordion>
+        </div>
+        
+        {/* Gradient fades for scroll indication */}
+        <div className="absolute left-0 top-0 bottom-4 w-12 bg-gradient-to-r from-[#020617] to-transparent pointer-events-none md:w-24 z-10" />
+        <div className="absolute right-0 top-0 bottom-4 w-12 bg-gradient-to-l from-[#020617] to-transparent pointer-events-none md:w-24 z-10" />
     </div>
   )
 }
-
