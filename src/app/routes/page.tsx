@@ -19,6 +19,7 @@ import {
 } from "lucide-react"
 import { COMPANY_INFO, TRUST_INDICATORS, PAY_RATES } from "@/lib/constants"
 import { RouteMapVisualization } from "@/components/features/RouteMapVisualization"
+import { FAQAccordion } from "@/components/shared/FAQAccordion"
 import { PageBreadcrumb } from "@/components/shared/PageBreadcrumb"
 import { MARKET_DATA } from "@/lib/market-data"
 
@@ -947,34 +948,8 @@ export default function RoutesPage() {
             </h2>
           </motion.div>
 
-          <div className="max-w-3xl mx-auto space-y-4">
-            {routeFAQs.map((faq, index) => (
-              <motion.div 
-                key={index}
-                variants={cardVariants}
-                initial="hidden"
-                whileInView="visible"
-                viewport={{ once: true }}
-              >
-                <Card 
-                  className="border-gray-200 overflow-hidden cursor-pointer"
-                  onClick={() => setExpandedFAQ(expandedFAQ === index ? null : index)}
-                >
-                  <div className="p-5 flex items-center justify-between">
-                    <h3 className="font-bold pr-4" style={{ color: BRAND.navy }}>{faq.question}</h3>
-                    <ChevronDown 
-                      className={`h-5 w-5 flex-shrink-0 transition-transform ${expandedFAQ === index ? 'rotate-180' : ''}`}
-                      style={{ color: BRAND.navy }}
-                    />
-                  </div>
-                  {expandedFAQ === index && (
-                    <div className="px-5 pb-5 pt-0">
-                      <p className="text-gray-600 leading-relaxed">{faq.answer}</p>
-                    </div>
-                  )}
-                </Card>
-              </motion.div>
-            ))}
+          <div className="max-w-4xl mx-auto space-y-4">
+            <FAQAccordion items={routeFAQs} darkBackground={false} />
           </div>
         </div>
       </div>

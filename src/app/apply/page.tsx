@@ -2,6 +2,7 @@ import { Metadata } from "next"
 import Link from "next/link"
 import { ApplicationForm } from "@/components/application/ApplicationForm"
 import { COMPANY_INFO, PAY_RATES } from "@/lib/constants"
+import { FAQAccordion } from "@/components/shared/FAQAccordion"
 import { PageBreadcrumb } from "@/components/shared/PageBreadcrumb"
 import Image from "next/image"
 import { 
@@ -373,40 +374,28 @@ export default function ApplyPage() {
                 <div className="mt-8 bg-[#001326] rounded-2xl p-6 md:p-8 border border-white/5">
                   <h2 className="text-2xl font-bold text-white mb-6">Frequently Asked Questions</h2>
                   
-                  <div className="space-y-6">
-                    {[
+                  <FAQAccordion items={[
                       {
-                        q: "How long does the application process take?",
-                        a: "Our online application takes just 60 seconds to complete. Most applicants receive a response within 2 hours, and qualified drivers can be on the road within 48-72 hours."
+                        question: "How long does the application process take?",
+                        answer: "Our online application takes just 60 seconds to complete. Most applicants receive a response within 2 hours, and qualified drivers can be on the road within 48-72 hours."
                       },
                       {
-                        q: "What is the pay for owner operators at Thind Transport?",
-                        a: `Owner operators earn 91% of gross revenue with no hidden fees. Most owner operators earn between $4,500-$6,000 per week, plus a $${PAY_RATES.ownerOperator.signOnBonus} sign-on bonus.`
+                        question: "What is the pay for owner operators at Thind Transport?",
+                        answer: `Owner operators earn 91% of gross revenue with no hidden fees. Most owner operators earn between $4,500-$6,000 per week, plus a $${PAY_RATES.ownerOperator.signOnBonus} sign-on bonus.`
                       },
                       {
-                        q: "Do you offer same day pay?",
-                        a: "Yes! We offer same day pay options for all drivers. Standard weekly settlements are processed every Friday via direct deposit."
+                        question: "Do you offer same day pay?",
+                        answer: "Yes! We offer same day pay options for all drivers. Standard weekly settlements are processed every Friday via direct deposit."
                       },
                       {
-                        q: "What home time options are available?",
-                        a: "We offer flexible home time: Local routes (home daily), Regional routes (home weekly), and OTR routes (home every 2-3 weeks). You choose what works for your lifestyle."
+                        question: "What home time options are available?",
+                        answer: "We offer flexible home time: Local routes (home daily), Regional routes (home weekly), and OTR routes (home every 2-3 weeks). You choose what works for your lifestyle."
                       },
                       {
-                        q: "What types of trailers do you haul?",
-                        a: "We operate Flatbed, Reefer, and Dry Van trailers. You can specialize in one type or diversify based on your preferences and endorsements."
+                        question: "What types of trailers do you haul?",
+                        answer: "We operate Flatbed, Reefer, and Dry Van trailers. You can specialize in one type or diversify based on your preferences and endorsements."
                       },
-                    ].map((item, i) => (
-                      <details key={i} className="group bg-white/5 rounded-xl border border-white/5 overflow-hidden transition-all hover:bg-white/10 open:bg-white/10 open:border-orange-500/30">
-                        <summary className="flex items-center justify-between cursor-pointer list-none p-4">
-                          <h3 className="text-white font-semibold pr-4 text-sm md:text-base">{item.q}</h3>
-                          <ChevronRight className="h-5 w-5 text-slate-400 group-open:rotate-90 transition-transform flex-shrink-0" />
-                        </summary>
-                        <div className="px-4 pb-4 pt-0">
-                           <p className="text-slate-300 text-sm leading-relaxed border-t border-white/5 pt-3">{item.a}</p>
-                        </div>
-                      </details>
-                    ))}
-                  </div>
+                    ]} darkBackground={true} />
                 </div>
               </div>
 

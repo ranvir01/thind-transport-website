@@ -45,6 +45,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { COMPANY_INFO } from "@/lib/constants"
+import { FAQAccordion } from "@/components/shared/FAQAccordion"
 import { PageBreadcrumb } from "@/components/shared/PageBreadcrumb"
 
 // Animation variants
@@ -1061,46 +1062,13 @@ export default function FleetPage() {
           </motion.div>
 
           <motion.div 
-            className="max-w-3xl mx-auto space-y-4"
+            className="max-w-4xl mx-auto space-y-4"
             variants={containerVariants}
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true }}
           >
-            {faqs.map((faq, idx) => (
-              <motion.div
-                key={idx}
-                variants={cardVariants}
-                className="bg-white rounded-xl shadow-brand border border-neutral-100 overflow-hidden"
-              >
-                <button
-                  onClick={() => setExpandedFaq(expandedFaq === idx ? null : idx)}
-                  className="w-full px-6 py-5 flex items-center justify-between text-left hover:bg-neutral-50 transition-colors"
-                >
-                  <h3 className="font-bold text-navy pr-4">{faq.question}</h3>
-                  <div className={cn(
-                    "w-8 h-8 rounded-full bg-orange/10 flex items-center justify-center flex-shrink-0 transition-transform",
-                    expandedFaq === idx && "rotate-180"
-                  )}>
-                    <ChevronDown className="h-5 w-5 text-orange" />
-                  </div>
-                </button>
-                <AnimatePresence>
-                  {expandedFaq === idx && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: "auto", opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.3 }}
-                    >
-                      <div className="px-6 pb-5 text-steel leading-relaxed border-t border-neutral-100 pt-4">
-                        {faq.answer}
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </motion.div>
-            ))}
+            <FAQAccordion items={faqs} darkBackground={false} />
           </motion.div>
         </div>
       </section>
