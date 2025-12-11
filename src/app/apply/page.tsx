@@ -159,9 +159,9 @@ export default function ApplyPage() {
         </div>
         
         {/* Unified Hero & Form Section */}
-        <section className="relative pt-12 pb-16 lg:py-24 overflow-hidden">
+        <section className="relative pt-4 pb-16 lg:py-24 overflow-hidden">
           {/* Background Image - Absolute */}
-          <div className="absolute inset-0 z-0">
+          <div className="absolute inset-0 z-0 hidden md:block">
             <Image
               src="/resources/hero-fleet-sunset.jpg"
               alt="Thind Transport semi trucks on highway - CDL driver jobs available"

@@ -262,7 +262,7 @@ export function ApplicationForm() {
   const isFormStarted = step > 1 || (watchedFields.driverType && watchedFields.driverType !== 'owner-operator-otr');
 
   return (
-    <div className="space-y-8 relative">
+    <div className="space-y-8 relative pb-24 md:pb-0">
       {/* Mobile Sticky Footer */}
       <div className="fixed bottom-0 left-0 right-0 z-[100] md:hidden bg-gradient-to-r from-[#001F3F] to-[#003366] p-3 border-t border-white/10 shadow-2xl safe-area-bottom">
         <div className="flex gap-3">
@@ -291,7 +291,10 @@ export function ApplicationForm() {
 
       {/* Progress Steps */}
       <div className="mb-8">
-        <div className="flex justify-between text-sm font-medium text-gray-500 mb-2">
+        <div className="md:hidden text-sm font-bold text-orange-600 mb-2">
+          Step {step} of 4: {["Qualify", "Contact", "Details", "Docs"][step - 1]}
+        </div>
+        <div className="hidden md:flex justify-between text-sm font-medium text-gray-500 mb-2">
           <span className={cn(step >= 1 && "text-orange-600 font-bold")}>1. Qualify</span>
           <span className={cn(step >= 2 && "text-orange-600 font-bold")}>2. Contact</span>
           <span className={cn(step >= 3 && "text-orange-600 font-bold")}>3. Details</span>
@@ -334,7 +337,7 @@ export function ApplicationForm() {
             <div className="space-y-4">
               <div className="space-y-1">
                 <Label>Which best describes you? *</Label>
-                <div className="space-y-3 mt-2">
+                <div className="flex flex-col md:flex-row gap-4 mt-2">
                   <label className={cn(
                     "flex items-center p-5 border-2 rounded-xl cursor-pointer transition-all hover:border-orange-400 hover:bg-orange-50 w-full group",
                     watchedFields.driverType === "owner-operator-otr" ? "border-orange-500 bg-orange-50 ring-2 ring-orange-500" : "border-gray-200",
@@ -355,7 +358,6 @@ export function ApplicationForm() {
                       {watchedFields.driverType === "owner-operator-otr" && <Check className="w-4 h-4 text-white" />}
                     </div>
                   </label>
-                  
                   <label className={cn(
                     "flex items-center p-5 border-2 rounded-xl cursor-pointer transition-all hover:border-orange-400 hover:bg-orange-50 w-full group",
                     watchedFields.driverType === "regional-company-driver" ? "border-orange-500 bg-orange-50 ring-2 ring-orange-500" : "border-gray-200",
