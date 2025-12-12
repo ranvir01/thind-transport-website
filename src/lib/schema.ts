@@ -7,8 +7,8 @@ export const organizationSchema = {
   "alternateName": "Thind Transport",
   "url": "https://thindtransport.com",
   "logo": "https://thindtransport.com/ar-carrier-logo.png",
-  "description": "Family-owned trucking company offering 91% gross commission for owner operators. Based in Kent, WA since 2016.",
-  "foundingDate": "2016",
+  "description": "Family-owned trucking company transporting general freight, building maintenance, beverages, paper, and more. Based in Kent, WA since 2014.",
+  "foundingDate": "2014",
   "address": {
     "@type": "PostalAddress",
     "streetAddress": "Kent",
@@ -121,7 +121,7 @@ export const faqSchema = {
       "name": "What types of freight do you haul?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "We offer three freight types: Flatbed (building materials, steel, machinery), Reefer (temperature-controlled food and pharmaceutical), and Dry Van (general freight and retail goods)."
+        "text": "We offer transportation for general freight, building maintenance, beverages, paper, and more. Our fleet includes Flatbed, Reefer, and Dry Van options."
       }
     },
     {
@@ -137,7 +137,7 @@ export const faqSchema = {
       "name": "What's your safety rating?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "We maintain an A+ safety rating with FMCSA. Zero out-of-service violations in our history. Our USDOT number is 3154006 - you can verify our record on SAFER."
+        "text": "We maintain an A+ safety rating with FMCSA. Zero out-of-service violations in our history. Our USDOT number is 2523064 - you can verify our record on SAFER."
       }
     },
     {

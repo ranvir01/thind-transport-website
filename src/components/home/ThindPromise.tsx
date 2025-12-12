@@ -33,7 +33,7 @@ export const ThindPromise = () => {
              </h2>
              <div className="space-y-6 text-lg text-zinc-600 leading-relaxed font-medium">
                 <p>
-                   "I started with one truck in 2016. I know what it’s like behind the wheel—the long hours, the missed milestones, and the feeling of just being a number."
+                   "I started with one truck in 2014. I know what it’s like behind the wheel—the long hours, the missed milestones, and the feeling of just being a number."
                 </p>
                 <p>
                    "That’s why we built Thind Transport differently. We pay 91% not because it's industry-leading, but because <strong className="text-[#001F3F]">you earned it.</strong> We invest in new equipment because your safety is my responsibility."

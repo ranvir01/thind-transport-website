@@ -40,7 +40,7 @@ export function WhyThindSection() {
           <Card className="bg-gradient-to-br from-purple-50 to-white border-2 border-purple-100">
             <CardContent className="pt-6 text-center">
               <div className="text-4xl mb-3">👨‍👩‍👧‍👦</div>
-              <h3 className="font-bold text-lg mb-2">Family Owned Since 2016</h3>
+              <h3 className="font-bold text-lg mb-2">Family Owned Since 2014</h3>
               <p className="text-2xl font-black text-purple-600 mb-2">20+ Years Experience</p>
               <p className="text-sm text-gray-600">
                 Our owner has 20+ years in trucking. We understand the business from a driver's perspective.
@@ -52,7 +52,7 @@ export function WhyThindSection() {
             <CardContent className="pt-6 text-center">
               <div className="text-4xl mb-3">📈</div>
               <h3 className="font-bold text-lg mb-2">Fast Growing</h3>
-              <p className="text-2xl font-black text-red-600 mb-2">15 Trucks</p>
+              <p className="text-2xl font-black text-red-600 mb-2">10+ Trucks</p>>
               <p className="text-sm text-gray-600">
                 Started small, growing smart. We're expanding and looking for drivers to grow with us.
               </p>

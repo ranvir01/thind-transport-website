@@ -13,7 +13,7 @@ import { PageBreadcrumb } from "@/components/shared/PageBreadcrumb"
 
 export const metadata: Metadata = {
   title: `About Us - Family-Owned Trucking Since 2016 | ${COMPANY_INFO.name}`,
-  description: `Learn about Thind Transport LLC, a family-owned trucking company based in Kent, WA. Founded in 2016 with 20+ years of industry experience. FMCSA certified, A+ safety rating, hiring nationwide.`,
+  description: `Learn about Thind Transport LLC, a family-owned trucking company based in Kent, WA. Founded in 2014 with 20+ years of industry experience. FMCSA certified, A+ safety rating, hiring nationwide.`,
   keywords: [
     "Thind Transport about us",
     "Kent WA trucking company",
@@ -26,7 +26,7 @@ export const metadata: Metadata = {
 
 const milestones = [
   {
-    year: "2016",
+    year: "2014",
     title: "Company Founded",
     description: "Thind Transport LLC established in Kent, Washington with a vision to treat drivers like family.",
   },
@@ -134,8 +134,8 @@ export default function AboutPage() {
               Family-Owned. <span className="text-orange">Driver-Focused.</span>
             </h1>
             <p className="text-xl text-white/90 leading-relaxed max-w-3xl mx-auto">
-              Since 2016, we've been building a trucking company that puts drivers first.
-              Not just words on a website - it's in everything we do.
+              Since 2014, we've been building a trucking company that puts drivers first.
+              We specialize in transporting general freight, building maintenance materials, beverages, paper, and more.
             </p>
           </div>
         </div>
@@ -146,10 +146,10 @@ export default function AboutPage() {
         <div className="container">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto">
             {[
-              { value: "2016", label: "Founded", icon: Calendar },
+              { value: "2014", label: "Founded", icon: Calendar },
               { value: "20+", label: "Years Experience", icon: Award },
-              { value: "15+", label: "Active Trucks", icon: Truck },
-              { value: "48", label: "States Covered", icon: MapPin },
+              { value: "10+", label: "Active Trucks", icon: Truck },
+              { value: "10+", label: "Active Drivers", icon: Users },
             ].map((stat) => {
               const Icon = stat.icon
               return (
@@ -178,7 +178,7 @@ export default function AboutPage() {
                 </h2>
                 <div className="space-y-4 text-gray-600 leading-relaxed">
                   <p>
-                    Thind Transport was founded in 2016 by someone who spent over two decades behind the wheel.
+                    Thind Transport was founded in 2014 by someone who spent over two decades behind the wheel.
                     After years of working for large carriers and seeing how drivers were often treated as
                     numbers rather than people, we knew there had to be a better way.
                   </p>
