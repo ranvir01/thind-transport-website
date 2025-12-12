@@ -55,7 +55,7 @@ export const CinematicHero = () => {
           transition={{ duration: 0.5, delay: 0.2 }}
           className="text-lg md:text-xl text-white/80 max-w-2xl mx-auto mb-8 leading-relaxed drop-shadow-md"
         >
-          Family-owned since 2016. 2024 Cascadias. No forced dispatch. 
+          Family-owned since 2014. 2024 Cascadias. No forced dispatch. 
           <span className="block mt-1 text-white font-semibold">Real support from real people in Kent, WA.</span>
         </motion.p>
 
@@ -155,7 +155,7 @@ export const CinematicHero = () => {
           {[
             "Weekly Direct Deposit",
             "No Hidden Fees", 
-            "USDOT #3154006",
+            "USDOT #2523064",
           ].map((item) => (
             <span key={item} className="flex items-center gap-2">
               <svg className="w-4 h-4 text-green-400" fill="currentColor" viewBox="0 0 20 20">

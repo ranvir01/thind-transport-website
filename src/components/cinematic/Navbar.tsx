@@ -33,7 +33,7 @@ const driverMenuItems = [
 ]
 
 const companyMenuItems = [
-  { href: "/about", label: "About Us", description: "Family-owned since 2016", icon: Users },
+  { href: "/about", label: "About Us", description: "Family-owned since 2014", icon: Users },
   { href: "/fleet", label: "Our Fleet", description: "2024 Cascadias", icon: Truck },
   { href: "/showcase", label: "Showcase", description: "Gallery", icon: ImageIcon },
   { href: "/veterans", label: "Veterans", description: "We honor service", icon: Shield },

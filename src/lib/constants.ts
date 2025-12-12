@@ -5,22 +5,23 @@ export const COMPANY_INFO = {
   phoneFormatted: "+12067656300",
   email: "thindcarrier@gmail.com",
   address: "PO Box 5114, Kent, WA 98064",
-  dot: "2893456", // Placeholder, update if actual DOT number available
-  mc: "123456", // Placeholder, update if actual MC number available
-  founded: 2016,
+  dot: "2523064", // Placeholder, update if actual DOT number available
+  mc: "876103", // Placeholder, update if actual MC number available
+  founded: 2014,
   ownerExperience: "20+",
 } as const
 
 export const STATS = {
-  yearsInBusiness: 9, // 2025 - 2016
-  trucksInFleet: 15,
-  activeDrivers: 15,
+  yearsInBusiness: 11, // 2025 - 2014
+  trucksInFleet: 10,
+  activeDrivers: 10,
   statesCovered: 48,
   growthRate: "Fast Growing",
 } as const
 
 export const SERVICES = {
   types: ["Flatbed", "Reefer", "Dry Van"],
+  cargo: ["General Freight", "Building Maintenance", "Beverages", "Paper"],
 } as const
 
 export const PAY_RATES = {

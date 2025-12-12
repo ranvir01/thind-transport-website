@@ -4,7 +4,7 @@
 
 ## Company Overview
 
-Thind Transport LLC is a family-owned trucking company based in Kent, Washington, founded in 2016. We specialize in freight transportation across all 48 contiguous United States, offering one of the highest owner operator commission rates in the industry at 91% of gross revenue.
+Thind Transport LLC is a family-owned trucking company based in Kent, Washington, founded in 2014. We specialize in transporting general freight, building maintenance materials, beverages, paper, and more across all 48 contiguous United States. We offer one of the highest owner operator commission rates in the industry at 91% of gross revenue.
 
 ## What We Do
 
@@ -42,8 +42,8 @@ Thind Transport LLC is a family-owned trucking company based in Kent, Washington
 
 ## Certifications
 
-- USDOT Number: 3154006
-- MC Number: Active
+- USDOT Number: 2523064
+- MC Number: 876103
 - FMCSA Safety Rating: A+
 - Insurance: Fully covered
 

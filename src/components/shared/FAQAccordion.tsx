@@ -36,7 +36,7 @@ const defaultFaqs = [
   // Freight & Operations
   {
     question: "What types of freight do you haul?",
-    answer: "We offer three freight types: Flatbed (building materials, steel, machinery), Reefer (temperature-controlled food and pharmaceutical), and Dry Van (general freight and retail goods). You can choose what fits your experience and equipment. Consistent loads year-round across all divisions. No hazmat required."
+    answer: "We haul general freight, building maintenance materials, beverages, paper, and more. Our fleet includes Flatbed, Reefer, and Dry Van equipment to handle diverse cargo needs."
   },
   {
     question: "What's the average length of haul?",
@@ -102,7 +102,7 @@ const defaultFaqs = [
   // Safety & Compliance
   {
     question: "What's your safety rating?",
-    answer: "We maintain an A+ safety rating with FMCSA. Zero out-of-service violations in our history. Our USDOT number is 3154006 - you can verify our record on SAFER. We take safety seriously because it protects you and keeps our insurance costs down (which means better pay for you)."
+    answer: "We maintain an A+ safety rating with FMCSA. Zero out-of-service violations in our history. Our USDOT number is 2523064 - you can verify our record on SAFER. We take safety seriously because it protects you and keeps our insurance costs down (which means better pay for you)."
   },
   {
     question: "What ELD do you use?",
@@ -112,7 +112,7 @@ const defaultFaqs = [
   // Company Info
   {
     question: "How long has Thind Transport been in business?",
-    answer: "Thind Transport was founded in 2016 in Kent, Washington. Our owner has 20+ years of trucking industry experience. We've grown from 1 truck to 15+ and continue to expand. Family-owned and operated - not a faceless corporation. When you call, you talk to real people who care."
+    answer: "Thind Transport was founded in 2014 in Kent, Washington. Our owner has 20+ years of trucking industry experience. We've grown from 1 truck to 10+ and continue to expand. Family-owned and operated - not a faceless corporation. When you call, you talk to real people who care."
   },
   {
     question: "Why should I choose Thind over bigger carriers?",
