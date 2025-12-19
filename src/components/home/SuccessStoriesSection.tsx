@@ -251,6 +251,43 @@ export function SuccessStoriesSection() {
           })}
         </div>
 
+        {/* Vertical Video Testimonial Placeholder */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="mt-16 flex flex-col items-center"
+        >
+          <div className="mb-6 text-center">
+            <h3 className="text-2xl font-bold text-navy">See the Real Deal</h3>
+            <p className="text-gray-600">Unscripted stories from the road</p>
+          </div>
+          <div className="relative w-full max-w-[300px] aspect-[9/16] bg-gray-900 rounded-3xl overflow-hidden shadow-2xl border-4 border-gray-800 group cursor-pointer transform transition-transform hover:scale-[1.02]">
+            {/* Video Placeholder Background */}
+            <div className="absolute inset-0 bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center">
+              <span className="text-white/30 font-bold text-lg">Video Placeholder</span>
+            </div>
+            
+            {/* Play Button */}
+            <div className="absolute inset-0 flex items-center justify-center z-10">
+              <div className="w-16 h-16 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center border-2 border-white/30 group-hover:scale-110 transition-transform">
+                <div className="w-0 h-0 border-t-[10px] border-t-transparent border-l-[18px] border-l-white border-b-[10px] border-b-transparent ml-1" />
+              </div>
+            </div>
+
+            {/* Overlay Info */}
+            <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black/90 via-black/50 to-transparent pt-24">
+              <div className="flex items-center gap-2 mb-1">
+                <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                <p className="text-white font-bold text-lg">Harpreet S.</p>
+              </div>
+              <p className="text-white/90 text-sm leading-snug">
+                "I bought my third truck last month. Thind made it possible."
+              </p>
+            </div>
+          </div>
+        </motion.div>
+
         {/* CTA */}
         <motion.div 
           initial={{ opacity: 0, y: 20 }}

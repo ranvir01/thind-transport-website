@@ -67,41 +67,33 @@ export const CinematicHero = () => {
           className="flex flex-col sm:flex-row gap-3 justify-center items-center w-full max-w-lg mx-auto mb-6"
         >
           <Link 
-            href="/apply" 
+            href="#calculator" 
             className="w-full sm:w-auto px-8 py-4 bg-orange hover:bg-orange-600 text-white font-black text-lg rounded-xl transition-all transform hover:scale-105 shadow-cta hover:shadow-cta-hover text-center uppercase tracking-wide flex items-center justify-center gap-2"
           >
             <TrendingUp className="w-5 h-5" />
-            Apply Now — Takes 2 Min
+            Calculate Your Profit
           </Link>
-          {/* SMS Opt-in for quick callback */}
-          <a 
-            href="sms:+12067656300?body=Hi,%20I'm%20interested%20in%20driving%20for%20Thind%20Transport.%20Please%20call%20me%20back."
-            className="w-full sm:w-auto px-6 py-4 bg-white/10 hover:bg-white/20 border border-white/20 text-white font-bold rounded-xl transition-all flex items-center justify-center gap-2"
+          <Link 
+            href="/apply" 
+            className="w-full sm:w-auto px-8 py-4 bg-white/10 hover:bg-white/20 border border-white/20 text-white font-bold text-lg rounded-xl transition-all text-center flex items-center justify-center gap-2"
           >
-            <MessageCircle className="w-5 h-5" />
-            Text for Callback
-          </a>
+            Apply Now
+          </Link>
         </motion.div>
 
-        {/* Secondary Actions */}
+        {/* Text Link for Callback */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.5, delay: 0.4 }}
           className="flex flex-row justify-center gap-3 mb-8 w-full max-w-lg mx-auto"
         >
-          <Link 
-            href="#calculator" 
-            className="flex-1 px-4 py-3 bg-white/10 border border-white/20 hover:bg-white/20 text-white font-semibold rounded-lg transition-all backdrop-blur-sm text-sm flex items-center justify-center text-center"
-          >
-            Calculate Pay
-          </Link>
           <a 
-            href="tel:+12067656300" 
-            className="flex-1 px-4 py-3 bg-white/10 border border-white/20 hover:bg-white/20 text-white font-semibold rounded-lg transition-all backdrop-blur-sm text-sm flex items-center justify-center gap-2"
+            href="sms:+12067656300?body=Hi,%20I'm%20interested%20in%20driving%20for%20Thind%20Transport.%20Please%20call%20me%20back."
+            className="text-white/80 hover:text-white underline underline-offset-4 text-sm font-medium flex items-center gap-2"
           >
-            <Phone className="w-4 h-4" />
-            (206) 765-6300
+            <MessageCircle className="w-4 h-4" />
+            Text for Callback
           </a>
         </motion.div>
 

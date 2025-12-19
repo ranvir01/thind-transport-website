@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { TrendingUp, Fuel, Truck, DollarSign, Calculator, Info, ChevronDown, Shield, Wrench, Send, Mail, CheckCircle2 } from "lucide-react"
+import { TrendingUp, Fuel, Truck, DollarSign, Calculator, Info, ChevronDown, Shield, Wrench, Send, Mail, CheckCircle2, Check } from "lucide-react"
 import Link from "next/link"
 import { MARKET_DATA, EquipmentType } from "@/lib/market-data"
 
@@ -484,18 +484,29 @@ export const ProfitCalculator = () => {
               </div>
             </div>
 
-            {/* Benefits Reminder */}
-            <div className="flex items-start gap-2 sm:gap-3 p-3 bg-orange/5 rounded-lg mb-4 border border-orange/20">
-              <Shield className="w-4 h-4 sm:w-5 sm:h-5 text-orange flex-shrink-0 mt-0.5" />
-              <div className="text-[11px] sm:text-xs text-gray-700 min-w-0">
-                <p className="font-semibold text-navy mb-1">What's Included with Thind:</p>
-                <ul className="space-y-0.5">
-                  <li>✓ 100% fuel surcharge passed through</li>
-                  <li>✓ No hidden fees or deductions</li>
-                  <li>✓ Weekly direct deposit settlements</li>
-                  <li>✓ Fuel card discounts available</li>
-                </ul>
-              </div>
+            {/* Transparency Guarantee */}
+            <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-xl">
+               <h4 className="flex items-center gap-2 font-bold text-green-800 mb-3">
+                 <CheckCircle2 className="w-5 h-5 text-green-600" />
+                 The "No Hidden Fees" Guarantee
+               </h4>
+               <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-2 gap-x-4">
+                 {[
+                   "No Trailer Rental Fees",
+                   "No ELD Installation Fees",
+                   "No Cargo Insurance Fees",
+                   "No Admin Fees (besides 9%)",
+                   "No Forced Dispatch",
+                   "100% Fuel Pass-through"
+                 ].map(item => (
+                   <div key={item} className="flex items-center gap-2 text-sm text-green-900/80 font-medium">
+                     <div className="w-4 h-4 rounded-full bg-green-200 flex items-center justify-center shrink-0">
+                        <Check className="w-2.5 h-2.5 text-green-700" />
+                     </div>
+                     {item}
+                   </div>
+                 ))}
+               </div>
             </div>
 
             {/* CTA */}
@@ -535,9 +546,9 @@ export const ProfitCalculator = () => {
                     {isSending ? (
                       <span className="animate-spin">⏳</span>
                     ) : (
-                      <Send className="w-4 h-4" />
+                      <Mail className="w-4 h-4" />
                     )}
-                    Send
+                    Email me this detailed breakdown
                   </button>
                 </div>
               )}

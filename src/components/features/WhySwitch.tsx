@@ -105,23 +105,30 @@ export const WhySwitch = () => {
                   row.highlight ? 'bg-orange/5 border border-orange/20' : 'bg-neutral-50'
                 }`}
               >
-                <div className="font-bold text-navy text-base mb-3">{row.feature}</div>
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-gray-500 uppercase tracking-wider">Mega Carriers</span>
-                    <div className="flex items-center gap-1.5">
-                      {row.competitorBad && <X className="w-4 h-4 text-red-500" />}
-                      <span className={`text-sm ${row.competitorBad ? 'text-red-600' : 'text-gray-600'}`}>
-                        {row.competitor}
+                <div className="font-bold text-navy text-base mb-3 border-b border-black/5 pb-2">{row.feature}</div>
+                <div className="space-y-3">
+                  {/* Thind Line (First for emphasis) */}
+                  <div className="flex items-center gap-3">
+                    <div className="w-6 h-6 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
+                      <Check className="w-4 h-4 text-green-600" />
+                    </div>
+                    <div>
+                      <span className="text-xs font-bold text-navy uppercase tracking-wider block">Thind Transport</span>
+                      <span className={`text-base font-bold ${row.highlight ? 'text-orange' : 'text-navy'}`}>
+                        {row.thind}
                       </span>
                     </div>
                   </div>
-                  <div className="flex items-center justify-between bg-white rounded-lg p-2 -mx-2">
-                    <span className="text-xs text-orange uppercase tracking-wider font-semibold">Thind Transport</span>
-                    <div className="flex items-center gap-1.5">
-                      <Check className="w-4 h-4 text-green-500" />
-                      <span className={`text-sm font-bold ${row.highlight ? 'text-orange' : 'text-green-700'}`}>
-                        {row.thind}
+
+                  {/* Competitor Line */}
+                  <div className="flex items-center gap-3 opacity-75">
+                    <div className="w-6 h-6 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
+                      <X className="w-4 h-4 text-red-500" />
+                    </div>
+                    <div>
+                      <span className="text-xs font-bold text-gray-500 uppercase tracking-wider block">Competitors</span>
+                      <span className="text-sm text-gray-600">
+                        {row.competitor}
                       </span>
                     </div>
                   </div>

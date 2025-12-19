@@ -13,6 +13,7 @@ import { RecentlyHiredTicker } from "@/components/shared/RecentlyHiredTicker"
 import { BackToTop } from "@/components/shared/BackToTop"
 import { Toaster } from "@/components/ui/sonner"
 import { COMPANY_INFO, PAY_RATES } from "@/lib/constants"
+import { SchemaMarkup } from "@/components/features/SchemaMarkup"
 
 const inter = Inter({ 
   subsets: ["latin"],
@@ -330,13 +331,8 @@ export default function RootLayout({
         <link rel="manifest" href="/site.webmanifest" />
         <meta name="msapplication-TileColor" content="#001F3F" />
         
-        {/* Structured Data */}
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify(structuredData),
-          }}
-        />
+        {/* Structured Data - Injected via SchemaMarkup component */}
+        <SchemaMarkup />
         
         {/* Preconnect for performance */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />

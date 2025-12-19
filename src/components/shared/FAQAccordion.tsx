@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef, useId } from "react"
+import { useState, useEffect, useId } from "react"
 import {
   Accordion,
   AccordionContent,
@@ -10,7 +10,6 @@ import {
 import { HelpCircle } from "lucide-react"
 
 const defaultFaqs = [
-  // ... (default items kept same)
   // Pay & Compensation
   {
     question: "What are the experience requirements?",
@@ -126,63 +125,23 @@ interface FAQAccordionProps {
   gradientColor?: string;
 }
 
-export function FAQAccordion({ items = defaultFaqs, darkBackground = true, gradientColor }: FAQAccordionProps) {
+export function FAQAccordion({ items = defaultFaqs, darkBackground = true }: FAQAccordionProps) {
   const [mounted, setMounted] = useState(false)
   const id = useId()
-  const scrollRef = useRef<HTMLDivElement>(null)
-  const [isPaused, setIsPaused] = useState(false)
-  
+
   useEffect(() => {
     setMounted(true)
   }, [])
 
-  // Infinite scroll logic: 
-  // We will display 2 sets of items.
-  // When we scroll past the first set, we reset to 0.
-  // This creates a seamless loop.
-  const displayItems = [...items, ...items]
-
-  useEffect(() => {
-    if (!mounted) return
-    
-    let animationFrameId: number
-    const scrollSpeed = 0.5 // Pixels per frame
-    
-    const scroll = () => {
-      const container = scrollRef.current;
-      if (container && !isPaused) {
-        container.scrollLeft += scrollSpeed;
-        
-        // Loop logic:
-        // Calculate the width of one set of items. 
-        // A rough approximation is totalScrollWidth / 2.
-        // We reset when scrollLeft >= scrollWidth / 2.
-        
-        if (container.scrollLeft >= container.scrollWidth / 2) {
-           container.scrollLeft = 0;
-        }
-      }
-      animationFrameId = requestAnimationFrame(scroll)
-    }
-
-    animationFrameId = requestAnimationFrame(scroll)
-
-    return () => {
-      cancelAnimationFrame(animationFrameId)
-    }
-  }, [mounted, isPaused])
-
-  // Show a skeleton/placeholder until hydrated
+  // Show a skeleton/placeholder until hydrated to prevent mismatch
   if (!mounted) {
     return (
-      <div className="w-full flex gap-4 overflow-hidden">
-        {items.slice(0, 3).map((_, index) => (
+      <div className="w-full space-y-3">
+        {items.slice(0, 5).map((_, index) => (
           <div 
             key={index}
-            className={`min-w-[300px] border rounded-lg px-4 py-5 animate-pulse ${
-              darkBackground 
-                ? "border-white/10 bg-white/5" 
-                : "border-gray-200 bg-gray-50"
+            className={`border rounded-lg px-4 py-5 animate-pulse ${
+              darkBackground ? "border-white/10 bg-white/5" : "border-gray-200 bg-gray-50"
             }`}
           >
             <div className="flex items-start gap-3">
@@ -196,70 +155,55 @@ export function FAQAccordion({ items = defaultFaqs, darkBackground = true, gradi
   }
 
   return (
-    <div 
-      className="group relative w-full"
-      onMouseEnter={() => setIsPaused(true)}
-      onMouseLeave={() => setIsPaused(false)}
-      onTouchStart={() => setIsPaused(true)}
-      onTouchEnd={() => setIsPaused(false)}
-    >
-        {/* Scroll Container */}
-        <div 
-            ref={scrollRef}
-            className="w-full overflow-x-auto no-scrollbar pb-4 cursor-grab active:cursor-grabbing snap-x snap-mandatory"
-            style={{ scrollBehavior: 'auto' }} // Ensure immediate updates for auto-scroll
-        >
-            <Accordion type="single" collapsible className="flex flex-row gap-4 w-max px-2 items-start">
-                {displayItems.map((faq, index) => (
-                <AccordionItem 
-                    key={`${id}-${index}`} 
-                    value={`item-${id}-${index}`}
-                    className={`snap-center w-[300px] md:w-[350px] flex-shrink-0 border rounded-lg px-4 transition-all duration-300 h-fit ${
-                      darkBackground
-                        ? "border-white/10 bg-white/5 hover:bg-white/10 data-[state=open]:bg-blue-500/10 data-[state=open]:border-blue-500/30"
-                        : "border-gray-200 bg-white hover:bg-gray-50 data-[state=open]:bg-blue-50 data-[state=open]:border-blue-200 data-[state=open]:shadow-md"
-                    } ${darkBackground && "data-[state=open]:shadow-[0_0_20px_rgba(59,130,246,0.15)]"}`}
-                >
-                    <AccordionTrigger className={`text-left py-5 font-semibold text-base hover:no-underline ${
-                      darkBackground
-                        ? "text-white hover:text-blue-400 [&[data-state=open]]:text-blue-400"
-                        : "text-gray-900 hover:text-blue-600 [&[data-state=open]]:text-blue-600"
-                    }`}>
-                    <div className="flex items-start gap-3 flex-1 pr-2">
-                        <HelpCircle className={`h-5 w-5 mt-0.5 flex-shrink-0 ${
-                          darkBackground ? "text-blue-500" : "text-blue-600"
-                        }`} />
-                        <span className="flex-1 leading-snug">{faq.question}</span>
-                    </div>
-                    </AccordionTrigger>
-                    <AccordionContent className={`text-sm leading-relaxed pb-5 pl-8 pr-2 ${
-                      darkBackground ? "text-zinc-300" : "text-gray-600"
-                    }`}>
-                    <p className="opacity-90">{faq.answer}</p>
-                    </AccordionContent>
-                </AccordionItem>
-                ))}
-            </Accordion>
-        </div>
-        
-        {/* Gradient fades for scroll indication */}
-        {darkBackground ? (
-          <>
-            <div 
-              className="absolute left-0 top-0 bottom-4 w-12 pointer-events-none md:w-24 z-10"
-              style={{ background: `linear-gradient(to right, ${gradientColor || '#020617'}, transparent)` }}
-            />
-            <div 
-              className="absolute right-0 top-0 bottom-4 w-12 pointer-events-none md:w-24 z-10"
-              style={{ background: `linear-gradient(to left, ${gradientColor || '#020617'}, transparent)` }}
-            />
-          </>
-        ) : (
-          <>
-            <div className="absolute left-0 top-0 bottom-4 w-12 bg-gradient-to-r from-white to-transparent pointer-events-none md:w-24 z-10" />
-            <div className="absolute right-0 top-0 bottom-4 w-12 bg-gradient-to-l from-white to-transparent pointer-events-none md:w-24 z-10" />
-          </>
-        )}
+    <div className="w-full space-y-2">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "FAQPage",
+            "mainEntity": items.map(faq => ({
+              "@type": "Question",
+              "name": faq.question,
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": faq.answer
+              }
+            }))
+          })
+        }}
+      />
+      <Accordion type="single" collapsible className="w-full">
+        {items.map((faq, index) => (
+          <AccordionItem 
+            key={`${id}-${index}`} 
+            value={`item-${id}-${index}`}
+            className={`border rounded-lg mb-3 px-4 transition-colors ${
+              darkBackground 
+                ? "border-white/10 bg-white/5 hover:bg-white/10 data-[state=open]:bg-blue-500/10 data-[state=open]:border-blue-500/30"
+                : "border-gray-200 bg-white hover:bg-gray-50 data-[state=open]:bg-blue-50 data-[state=open]:border-blue-200"
+            }`}
+          >
+            <AccordionTrigger className={`text-left py-5 font-semibold text-base hover:no-underline ${
+              darkBackground
+                ? "text-white hover:text-blue-400 [&[data-state=open]]:text-blue-400"
+                : "text-gray-900 hover:text-blue-600 [&[data-state=open]]:text-blue-600"
+            }`}>
+              <div className="flex items-start gap-3 flex-1 pr-4">
+                <HelpCircle className={`h-5 w-5 mt-0.5 flex-shrink-0 ${
+                  darkBackground ? "text-blue-500" : "text-blue-600"
+                }`} />
+                <span className="flex-1">{faq.question}</span>
+              </div>
+            </AccordionTrigger>
+            <AccordionContent className={`text-base leading-relaxed pb-5 pl-8 ${
+              darkBackground ? "text-zinc-300" : "text-gray-600"
+            }`}>
+              <p>{faq.answer}</p>
+            </AccordionContent>
+          </AccordionItem>
+        ))}
+      </Accordion>
     </div>
   )
 }

@@ -19,7 +19,7 @@ import Link from "next/link"
 
 export default function Home() {
   return (
-    <main className="relative min-h-screen bg-white selection:bg-orange selection:text-white">
+    <main className="relative min-h-screen bg-white selection:bg-orange selection:text-white pb-24 md:pb-0">
       {/* Note: Mobile CTA Bar, Exit Intent Popup, and Recently Hired Ticker 
           are rendered globally in layout.tsx */}
       

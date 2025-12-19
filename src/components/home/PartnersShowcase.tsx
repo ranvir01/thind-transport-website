@@ -127,7 +127,8 @@ function InfiniteCarousel({
         className={`flex gap-4 sm:gap-6 min-w-max ${className}`}
       >
         {children}
-        {children}
+        {/* Duplicate loop removed as per plan */}
+        {/* {children} */}
       </motion.div>
       
       {/* Fade edges */}
