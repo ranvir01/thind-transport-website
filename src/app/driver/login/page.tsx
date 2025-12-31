@@ -24,24 +24,39 @@ export default function LoginPage() {
     setLoading(true)
 
     try {
+      console.log("🔐 Attempting login for:", formData.email)
+      
       const result = await signIn("credentials", {
         email: formData.email,
         password: formData.password,
         redirect: false,
       })
 
+      console.log("Login result:", result)
+
       if (result?.error) {
+        console.log("❌ Login error:", result.error)
         toast.error("Invalid email or password")
         setLoading(false)
         return
       }
 
-      toast.success("Logged in successfully!")
-      
-      // Redirect to application page
-      window.location.href = "/driver/application"
+      if (result?.ok) {
+        console.log("✓ Login successful, redirecting...")
+        toast.success("Logged in successfully!")
+        
+        // Redirect to application page
+        setTimeout(() => {
+          window.location.href = "/driver/application"
+        }, 500)
+      } else {
+        console.log("⚠ Login returned unexpected result:", result)
+        toast.error("Login failed. Please try again.")
+        setLoading(false)
+      }
     } catch (error) {
-      toast.error("Something went wrong")
+      console.error("Login exception:", error)
+      toast.error("Something went wrong: " + String(error))
       setLoading(false)
     }
   }
