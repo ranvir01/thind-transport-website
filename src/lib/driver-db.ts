@@ -51,17 +51,8 @@ async function ensureDataDir() {
   }
 }
 
-// Read drivers from file (with fallback to env for production)
+// Read drivers from file (local development only)
 async function readDrivers(): Promise<Driver[]> {
-  // For production on Vercel, use environment variable fallback
-  if (process.env.DRIVER_ACCOUNTS) {
-    try {
-      return JSON.parse(process.env.DRIVER_ACCOUNTS)
-    } catch (error) {
-      console.error("Failed to parse DRIVER_ACCOUNTS env var:", error)
-    }
-  }
-  
   // Local development - use file system
   await ensureDataDir()
   try {
@@ -209,5 +200,20 @@ export async function updateApplicationPDFPath(applicationId: string, pdfPath: s
   if (appIndex !== -1) {
     applications[appIndex].pdfPath = pdfPath
     await writeApplications(applications)
+  }
+}
+
+// Update driver application status
+export async function updateDriverApplicationStatus(driverId: string, completed: boolean) {
+  if (usePostgres) {
+    const { updateDriverApplicationStatus: pgUpdate } = await import("./driver-db-postgres")
+    return pgUpdate(driverId, completed)
+  }
+  
+  const drivers = await readDrivers()
+  const driverIndex = drivers.findIndex((d) => d.id === driverId)
+  if (driverIndex !== -1) {
+    drivers[driverIndex].applicationCompleted = completed
+    await writeDrivers(drivers)
   }
 }
