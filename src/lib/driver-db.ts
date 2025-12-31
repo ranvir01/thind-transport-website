@@ -1,10 +1,22 @@
 /**
  * Driver Account & Application Database Functions
- * In production, replace with actual database (Prisma, MongoDB, etc.)
+ * Uses Vercel Postgres in production, JSON files in development
  */
 
 import { promises as fs } from "fs"
 import path from "path"
+
+// Try to use Postgres if available
+let usePostgres = false
+try {
+  if (process.env.POSTGRES_URL) {
+    usePostgres = true
+    // Import postgres functions dynamically
+    require("./driver-db-postgres")
+  }
+} catch (error) {
+  console.log("Postgres not available, using JSON file storage")
+}
 
 const DATA_DIR = path.join(process.cwd(), "data")
 const DRIVERS_FILE = path.join(DATA_DIR, "drivers.json")
@@ -91,6 +103,10 @@ async function writeApplications(applications: Application[]) {
 
 // Verify invitation code
 export async function verifyInvitationCode(code: string): Promise<boolean> {
+  if (usePostgres) {
+    const { verifyInvitationCode: pgVerify } = await import("./driver-db-postgres")
+    return pgVerify(code)
+  }
   // Fixed invitation code for all drivers
   return code === "THIND-2026"
 }
@@ -132,12 +148,22 @@ export async function findDriverByEmail(email: string): Promise<Driver | null> {
 
 // Find driver by ID
 export async function findDriverById(id: string): Promise<Driver | null> {
+  if (usePostgres) {
+    const { findDriverById: pgFindById } = await import("./driver-db-postgres")
+    return pgFindById(id)
+  }
+  
   const drivers = await readDrivers()
   return drivers.find((d) => d.id === id) || null
 }
 
 // Save application
 export async function saveApplication(driverId: string, applicationData: any): Promise<Application> {
+  if (usePostgres) {
+    const { saveApplication: pgSave } = await import("./driver-db-postgres")
+    return pgSave(driverId, applicationData)
+  }
+  
   const applications = await readApplications()
 
   const newApplication: Application = {
