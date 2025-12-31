@@ -73,10 +73,10 @@ async function writeApplications(applications: Application[]) {
   await fs.writeFile(APPLICATIONS_FILE, JSON.stringify(applications, null, 2))
 }
 
-// Verify invitation code (simple implementation - use DB in production)
+// Verify invitation code
 export async function verifyInvitationCode(code: string): Promise<boolean> {
-  // For demo: accept codes starting with "THIND-"
-  return code.startsWith("THIND-") && code.length > 8
+  // Fixed invitation code for all drivers
+  return code === "THIND-2026"
 }
 
 // Create driver account
