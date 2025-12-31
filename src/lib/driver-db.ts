@@ -120,6 +120,11 @@ export async function createDriver(driverData: {
   phone: string
   invitationCode: string
 }): Promise<Driver> {
+  if (usePostgres) {
+    const { createDriver: pgCreate } = await import("./driver-db-postgres")
+    return pgCreate(driverData)
+  }
+  
   const drivers = await readDrivers()
 
   // Check if email already exists
@@ -142,6 +147,11 @@ export async function createDriver(driverData: {
 
 // Find driver by email
 export async function findDriverByEmail(email: string): Promise<Driver | null> {
+  if (usePostgres) {
+    const { findDriverByEmail: pgFindByEmail } = await import("./driver-db-postgres")
+    return pgFindByEmail(email)
+  }
+  
   const drivers = await readDrivers()
   return drivers.find((d) => d.email === email) || null
 }
@@ -189,6 +199,11 @@ export async function saveApplication(driverId: string, applicationData: any): P
 
 // Update application with PDF path
 export async function updateApplicationPDFPath(applicationId: string, pdfPath: string) {
+  if (usePostgres) {
+    const { updateApplicationPDFPath: pgUpdate } = await import("./driver-db-postgres")
+    return pgUpdate(applicationId, pdfPath)
+  }
+  
   const applications = await readApplications()
   const appIndex = applications.findIndex((a) => a.id === applicationId)
   if (appIndex !== -1) {
