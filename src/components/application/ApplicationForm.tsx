@@ -13,7 +13,7 @@ import { toast } from "sonner"
 import { 
   Loader2, Upload, FileText, CheckCircle2, User, Truck, 
   FileCheck, ChevronRight, ArrowLeft, ShieldCheck, Clock, 
-  Check, AlertCircle, Lock, Star, Phone
+  Check, AlertCircle, Lock, Star, Phone, Calendar
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -200,7 +200,8 @@ export function ApplicationForm() {
       
       if (result.success) {
         toast.success(result.message)
-        // Reset or redirect could go here
+        // Show success state with next steps
+        setStep(5) // Show a success/next steps screen
       } else {
         const errorMessage = result.message || "Failed to submit application"
         toast.error(errorMessage)
@@ -247,8 +248,11 @@ export function ApplicationForm() {
       }
     } catch (error) {
       console.error("Submission error:", error)
-      toast.error("Something went wrong. Please try again.")
-      setServerError("An unexpected error occurred. Please try again.")
+      const errorMsg = error instanceof Error 
+        ? `Error: ${error.message}` 
+        : "An unexpected error occurred. Please call (206) 765-6300 for immediate assistance."
+      toast.error(errorMsg)
+      setServerError(errorMsg)
     } finally {
       setIsSubmitting(false)
     }
@@ -771,6 +775,87 @@ export function ApplicationForm() {
               <div className="flex items-center justify-center gap-2 text-xs text-gray-500">
                 <Lock className="h-3.5 w-3.5" />
                 <span>Secure Application – Your data is never sold to other carriers</span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* STEP 5: SUCCESS & NEXT STEPS */}
+        {step === 5 && (
+          <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="text-center py-8">
+              <div className="mx-auto w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mb-6">
+                <CheckCircle2 className="w-12 h-12 text-green-600" />
+              </div>
+              <h2 className="text-3xl font-bold text-gray-900 mb-3">Application Received!</h2>
+              <p className="text-lg text-gray-600 mb-8">
+                Thank you for applying to Thind Transport. Our team will review your application within 2 hours.
+              </p>
+
+              {/* Next Steps */}
+              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-6 border-2 border-blue-200 text-left mb-8">
+                <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                  <ChevronRight className="h-5 w-5 text-blue-600" />
+                  What Happens Next?
+                </h3>
+                <div className="space-y-4">
+                  <div className="flex gap-3">
+                    <div className="flex-shrink-0 w-8 h-8 bg-orange-500 text-white rounded-full flex items-center justify-center font-bold">1</div>
+                    <div>
+                      <p className="font-semibold text-gray-900">Schedule Your Meeting</p>
+                      <p className="text-sm text-gray-600">Book a 15-minute call with our owner to discuss opportunities</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-3">
+                    <div className="flex-shrink-0 w-8 h-8 bg-orange-500 text-white rounded-full flex items-center justify-center font-bold">2</div>
+                    <div>
+                      <p className="font-semibold text-gray-900">Complete DOT Application</p>
+                      <p className="text-sm text-gray-600">After approval, you'll receive a secure link to complete your full application</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-3">
+                    <div className="flex-shrink-0 w-8 h-8 bg-orange-500 text-white rounded-full flex items-center justify-center font-bold">3</div>
+                    <div>
+                      <p className="font-semibold text-gray-900">Start Driving</p>
+                      <p className="text-sm text-gray-600">Get approved and start earning with industry-leading pay rates</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* CTA Buttons */}
+              <div className="flex flex-col sm:flex-row gap-4">
+                <Button 
+                  asChild
+                  size="lg"
+                  className="flex-1 bg-orange-500 hover:bg-orange-600 text-white font-bold text-lg h-14"
+                >
+                  <a href="/schedule-meeting">
+                    <Calendar className="mr-2 h-5 w-5" />
+                    Schedule Meeting Now
+                  </a>
+                </Button>
+                <Button 
+                  asChild
+                  size="lg"
+                  variant="outline"
+                  className="flex-1 border-2 border-gray-300 text-gray-700 hover:bg-gray-50 font-bold text-lg h-14"
+                >
+                  <a href="/">
+                    Return to Home
+                  </a>
+                </Button>
+              </div>
+
+              {/* Already Approved? */}
+              <div className="mt-8 p-4 bg-gray-50 border border-gray-200 rounded-lg">
+                <p className="text-sm text-gray-600">
+                  <strong>Already had your meeting and received an invitation code?</strong>
+                  <br />
+                  <a href="/driver/register" className="text-orange-600 hover:text-orange-700 font-semibold underline mt-1 inline-block">
+                    Create your account & complete DOT application →
+                  </a>
+                </p>
               </div>
             </div>
           </div>

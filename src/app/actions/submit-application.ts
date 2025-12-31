@@ -352,9 +352,15 @@ export async function submitApplication(prevState: ApplicationState, formData: F
     }
   } catch (error) {
     console.error("Submission error:", error)
+    
+    // Provide more helpful error message
+    const errorMessage = error instanceof Error 
+      ? `Failed to send application: ${error.message}. Please call us at (206) 765-6300 or email thindcarrier@gmail.com`
+      : "Something went wrong. Please try again or call us directly at (206) 765-6300."
+    
     return {
       success: false,
-      message: "Something went wrong. Please try again or call us directly at (206) 765-6300.",
+      message: errorMessage,
     }
   }
 }
