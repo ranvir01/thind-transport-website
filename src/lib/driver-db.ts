@@ -39,8 +39,18 @@ async function ensureDataDir() {
   }
 }
 
-// Read drivers from file
+// Read drivers from file (with fallback to env for production)
 async function readDrivers(): Promise<Driver[]> {
+  // For production on Vercel, use environment variable fallback
+  if (process.env.DRIVER_ACCOUNTS) {
+    try {
+      return JSON.parse(process.env.DRIVER_ACCOUNTS)
+    } catch (error) {
+      console.error("Failed to parse DRIVER_ACCOUNTS env var:", error)
+    }
+  }
+  
+  // Local development - use file system
   await ensureDataDir()
   try {
     const data = await fs.readFile(DRIVERS_FILE, "utf-8")
@@ -50,8 +60,14 @@ async function readDrivers(): Promise<Driver[]> {
   }
 }
 
-// Write drivers to file
+// Write drivers to file (skip on Vercel production)
 async function writeDrivers(drivers: Driver[]) {
+  // On Vercel, filesystem is read-only, so skip write
+  if (process.env.VERCEL) {
+    console.warn("Skipping driver write on Vercel - filesystem is read-only")
+    return
+  }
+  
   await ensureDataDir()
   await fs.writeFile(DRIVERS_FILE, JSON.stringify(drivers, null, 2))
 }
