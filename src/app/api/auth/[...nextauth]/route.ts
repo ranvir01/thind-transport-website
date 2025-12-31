@@ -13,13 +13,19 @@ export const authConfig = {
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
+          console.log("❌ Missing credentials")
           return null
         }
 
+        console.log("🔍 Looking up driver:", credentials.email)
         const driver = await findDriverByEmail(credentials.email as string)
+        
         if (!driver) {
+          console.log("❌ Driver not found in database:", credentials.email)
           return null
         }
+
+        console.log("✓ Driver found:", driver.email, driver.id)
 
         const isValidPassword = await bcrypt.compare(
           credentials.password as string,
@@ -27,9 +33,11 @@ export const authConfig = {
         )
 
         if (!isValidPassword) {
+          console.log("❌ Invalid password for:", credentials.email)
           return null
         }
 
+        console.log("✓ Login successful for:", credentials.email)
         return {
           id: driver.id,
           email: driver.email,

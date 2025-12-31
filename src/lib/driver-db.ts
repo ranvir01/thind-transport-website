@@ -11,11 +11,14 @@ let usePostgres = false
 try {
   if (process.env.POSTGRES_URL) {
     usePostgres = true
+    console.log("✓ Using Postgres database")
     // Import postgres functions dynamically
     require("./driver-db-postgres")
+  } else {
+    console.log("⚠ POSTGRES_URL not set, using local file storage")
   }
 } catch (error) {
-  console.log("Postgres not available, using JSON file storage")
+  console.log("❌ Postgres not available, using JSON file storage:", error)
 }
 
 const DATA_DIR = path.join(process.cwd(), "data")
