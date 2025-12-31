@@ -17,8 +17,9 @@ import { DrivingRecordStep } from "@/components/driver-application/DrivingRecord
 import { ExperienceStep } from "@/components/driver-application/ExperienceStep"
 import { AuthorizationStep } from "@/components/driver-application/AuthorizationStep"
 import { ReviewStep } from "@/components/driver-application/ReviewStep"
+import { PDFPreviewStep } from "@/components/driver-application/PDFPreviewStep"
 
-const TOTAL_STEPS = 6
+const TOTAL_STEPS = 7
 
 export default function DriverApplicationPage() {
   const router = useRouter()
@@ -69,6 +70,7 @@ export default function DriverApplicationPage() {
           ...formData,
           ...finalData,
           driverId: session?.user?.id,
+          status: "under_review",
         }),
       })
 
@@ -78,11 +80,16 @@ export default function DriverApplicationPage() {
         throw new Error(data.error || "Submission failed")
       }
 
-      toast.success("Application submitted successfully!")
-      router.push("/driver/dashboard")
+      toast.success("Application submitted successfully! We'll review it within 1-2 weeks.")
+      
+      // Show success state before redirecting
+      setCurrentStep(TOTAL_STEPS + 1) // Move to success screen
+      
+      setTimeout(() => {
+        router.push("/driver/dashboard")
+      }, 3000)
     } catch (error: any) {
       toast.error(error.message || "Failed to submit application")
-    } finally {
       setIsSubmitting(false)
     }
   }
@@ -100,7 +107,36 @@ export default function DriverApplicationPage() {
       case 5:
         return <AuthorizationStep onNext={handleNext} onBack={handleBack} initialData={formData.pspAuthorization} />
       case 6:
-        return <ReviewStep formData={formData as DriverApplicationData} onBack={handleBack} onSubmit={handleSubmit} isSubmitting={isSubmitting} />
+        return <ReviewStep formData={formData as DriverApplicationData} onBack={handleBack} onSubmit={async (data) => handleNext(data)} isSubmitting={false} />
+      case 7:
+        return <PDFPreviewStep formData={formData as DriverApplicationData} onBack={handleBack} onSubmit={handleSubmit} isSubmitting={isSubmitting} />
+      case 8:
+        // Success screen
+        return (
+          <Card>
+            <CardContent className="py-12 text-center">
+              <div className="mx-auto w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mb-6">
+                <CheckCircle2 className="w-12 h-12 text-green-600" />
+              </div>
+              <h2 className="text-3xl font-bold text-gray-900 mb-3">Application Submitted!</h2>
+              <p className="text-lg text-gray-600 mb-6">
+                Thank you for completing your DOT driver application.
+              </p>
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 max-w-md mx-auto mb-6">
+                <h3 className="font-semibold text-blue-900 mb-2">What happens next?</h3>
+                <ul className="text-sm text-blue-800 text-left space-y-2">
+                  <li>✓ Your PDF application has been sent to thindcarrier@gmail.com</li>
+                  <li>✓ Our compliance team will review your application</li>
+                  <li>✓ We'll contact you within 1-2 weeks with next steps</li>
+                  <li>✓ You can check your application status in the driver dashboard</li>
+                </ul>
+              </div>
+              <p className="text-sm text-gray-500">
+                Redirecting to dashboard...
+              </p>
+            </CardContent>
+          </Card>
+        )
       default:
         return null
     }
@@ -122,18 +158,19 @@ export default function DriverApplicationPage() {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm font-semibold text-gray-700">
-                Step {currentStep} of {TOTAL_STEPS}
+                {currentStep <= TOTAL_STEPS ? `Step ${currentStep} of ${TOTAL_STEPS}` : 'Complete'}
               </span>
               <span className="text-sm text-gray-500">{Math.round(progress)}% Complete</span>
             </div>
             <Progress value={progress} className="h-2" />
             <div className="mt-4 flex justify-between text-xs text-gray-500">
-              <span className={currentStep >= 1 ? "text-orange font-semibold" : ""}>Personal Info</span>
+              <span className={currentStep >= 1 ? "text-orange font-semibold" : ""}>Personal</span>
               <span className={currentStep >= 2 ? "text-orange font-semibold" : ""}>Employment</span>
-              <span className={currentStep >= 3 ? "text-orange font-semibold" : ""}>Driving Record</span>
+              <span className={currentStep >= 3 ? "text-orange font-semibold" : ""}>Driving</span>
               <span className={currentStep >= 4 ? "text-orange font-semibold" : ""}>Experience</span>
               <span className={currentStep >= 5 ? "text-orange font-semibold" : ""}>Authorization</span>
               <span className={currentStep >= 6 ? "text-orange font-semibold" : ""}>Review</span>
+              <span className={currentStep >= 7 ? "text-orange font-semibold" : ""}>PDF Preview</span>
             </div>
           </CardContent>
         </Card>
