@@ -17,9 +17,9 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // Redirect to dashboard if already logged in and trying to access login/register
+  // Redirect to application if already logged in and trying to access login/register
   if ((pathname === "/driver/login" || pathname === "/driver/register") && token) {
-    return NextResponse.redirect(new URL("/driver/dashboard", request.url))
+    return NextResponse.redirect(new URL("/driver/application", request.url))
   }
 
   return NextResponse.next()

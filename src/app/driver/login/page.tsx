@@ -38,14 +38,10 @@ export default function LoginPage() {
 
       toast.success("Logged in successfully!")
       
-      // Small delay to ensure session is set, then redirect
-      setTimeout(() => {
-        router.push("/driver/application")
-        router.refresh()
-      }, 500)
+      // Redirect to application page
+      window.location.href = "/driver/application"
     } catch (error) {
       toast.error("Something went wrong")
-    } finally {
       setLoading(false)
     }
   }

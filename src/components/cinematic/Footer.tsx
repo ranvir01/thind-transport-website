@@ -43,7 +43,7 @@ const FooterLinkSections = () => {
     { href: "/routes", label: "Routes & Lanes" },
     { href: "/testimonials", label: "Driver Reviews" },
     { href: "/resources", label: "Driver Resources" },
-    { href: "/driver-portal", label: "Driver Portal" },
+    { href: "/driver/login", label: "Driver Login" },
   ]
   
   const companyLinks = [
@@ -205,7 +205,7 @@ export const CommandBar = () => {
   const navItems = [
     { name: 'Routes', href: '/routes' },
     { name: 'Pay', href: '/pay-rates' },
-    { name: 'Portal', href: '/driver-portal' }
+    { name: 'Login', href: '/driver/login' }
   ]
   
   return (

@@ -124,8 +124,8 @@ export function Footer() {
                   </Link>
                 </li>
                 <li>
-                  <Link href="/driver-portal" className="text-neutral-300 hover:text-yellow-300 transition-colors flex items-center gap-2 group">
-                    <span className="group-hover:translate-x-1 transition-transform">Driver Portal</span>
+                  <Link href="/driver/login" className="text-neutral-300 hover:text-yellow-300 transition-colors flex items-center gap-2 group">
+                    <span className="group-hover:translate-x-1 transition-transform">Driver Login</span>
                   </Link>
                 </li>
                 <li>
