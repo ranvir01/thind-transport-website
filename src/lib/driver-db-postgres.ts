@@ -216,3 +216,17 @@ export async function updateApplicationPDFPath(applicationId: string, pdfPath: s
   }
 }
 
+// Update driver application status
+export async function updateDriverApplicationStatus(driverId: string, completed: boolean) {
+  try {
+    await sql`
+      UPDATE drivers 
+      SET application_completed = ${completed}
+      WHERE id = ${driverId}
+    `
+  } catch (error) {
+    console.error("Update driver application status error:", error)
+    throw error
+  }
+}
+
