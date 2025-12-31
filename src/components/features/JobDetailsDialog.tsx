@@ -25,7 +25,7 @@ export function JobDetailsDialog({ jobType = "company" }: JobDetailsDialogProps)
       title: "Regional Company Truck Driver",
       type: "Full-Time",
       salary: "$55K-$72K/year",
-      description: "Join our team as a regional company driver. $0.52-0.58 per mile with excellent benefits and flexible home time.",
+      description: "Join our team as a regional company driver. $0.60-$0.65 per mile with excellent benefits and flexible home time.",
       requirements: [
         "Valid CDL Class A license",
         "Minimum 1 year company driver experience (REQUIRED)",
@@ -36,7 +36,7 @@ export function JobDetailsDialog({ jobType = "company" }: JobDetailsDialogProps)
       ],
       benefits: [
         "$1,500 sign-on bonus (first year)",
-        "$0.52-0.58 per mile (regional)",
+        "$0.60-$0.65 per mile (regional)",
         "Weekly direct deposit pay - Every Friday",
         "Flexible home time - Regional routes",
         "Home on weekends",
@@ -46,7 +46,7 @@ export function JobDetailsDialog({ jobType = "company" }: JobDetailsDialogProps)
         "Fuel card programs available"
       ],
       routes: [
-        "Regional routes: $0.52-0.58 per mile",
+        "Regional routes: $0.60-$0.65 per mile",
         "Home on weekends - Work 5 days",
         "Annual earning potential: $55K-$72K",
         "Consistent miles and freight",

@@ -93,7 +93,7 @@ export function PayCalculator() {
                 }`}
               >
                 <div className="font-black text-black">Company Driver</div>
-                <div className="text-xs text-gray-700 mt-1 font-medium">$0.50-0.60/mile</div>
+                <div className="text-xs text-gray-700 mt-1 font-medium">$0.60-$0.65/mile</div>
               </button>
               <button
                 onClick={() => setDriverType("owner")}

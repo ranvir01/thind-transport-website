@@ -47,7 +47,7 @@ export function EnhancedShowcase() {
               <div className="space-y-2 mb-4">
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-600">Annual Salary</span>
-                  <span className="font-semibold">$50K-$78K</span>
+                  <span className="font-semibold">$78K-$110K</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-600">Home Time</span>

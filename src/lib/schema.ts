@@ -89,7 +89,7 @@ export const faqSchema = {
       "name": "How much can I realistically earn?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "Company Drivers: $50K-$78K annually at $0.50-0.60 per mile. Owner Operators: $180K-$280K gross annually with 91% commission. Top O/Os gross over $250K. Pay is distributed weekly via direct deposit every Friday."
+        "text": "Company Drivers: $78K-$110K annually at $0.60-$0.65 per mile. Owner Operators: $180K-$280K gross annually with 91% commission. Top O/Os gross over $250K. Pay is distributed weekly via direct deposit every Friday."
       }
     },
     {

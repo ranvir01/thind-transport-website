@@ -35,7 +35,7 @@ const companyDriverBenefits = [
     items: [
       {
         title: "Competitive Pay",
-        description: "$0.50-$0.60 per mile, $50K-$78K annually",
+        description: "$0.60-$0.65 per mile, $78K-$110K annually",
         highlight: true,
       },
       {

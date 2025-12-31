@@ -33,10 +33,12 @@ export type ApplicationState = {
 // Email configuration
 const createTransporter = () => {
   return nodemailer.createTransport({
-    service: "gmail",
+    host: process.env.SMTP_HOST || "smtp.gmail.com",
+    port: parseInt(process.env.SMTP_PORT || "587"),
+    secure: false,
     auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS,
+      user: process.env.SMTP_USER,
+      pass: process.env.SMTP_PASS,
     },
   })
 }
@@ -310,8 +312,8 @@ export async function submitApplication(prevState: ApplicationState, formData: F
     const data = validatedData.data
 
     // Check if email credentials are configured
-    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-      console.error("Email credentials not configured. Set EMAIL_USER and EMAIL_PASS environment variables.")
+    if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
+      console.error("Email credentials not configured. Set SMTP_USER and SMTP_PASS environment variables.")
       // Still log the application for debugging
       console.log("Application Received (email not sent):", data)
       return {
@@ -327,7 +329,7 @@ export async function submitApplication(prevState: ApplicationState, formData: F
     const driverTypeShort = data.driverType === "owner-operator-otr" ? "O/O" : "Company"
     
     const mailOptions = {
-      from: `"Thind Transport Website" <${process.env.EMAIL_USER}>`,
+      from: process.env.SMTP_FROM || `"Thind Transport Website" <${process.env.SMTP_USER}>`,
       to: "thindcarrier@gmail.com",
       replyTo: data.email,
       subject: `🚛 New ${driverTypeShort} Application: ${applicantName}`,

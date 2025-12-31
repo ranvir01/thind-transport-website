@@ -17,7 +17,7 @@ const defaultFaqs = [
   },
   {
     question: "How much can I realistically earn?",
-    answer: "Company Drivers: $50K-$78K annually at $0.50-0.60 per mile (based on route type), plus $1,500 sign-on bonus first year. Owner Operators: $180K-$280K gross annually with 91% commission (you keep 91% of gross!), plus $2,500 sign-on bonus. Top O/Os gross over $250K. Pay is distributed weekly via direct deposit every Friday."
+    answer: "Company Drivers: $78K-$110K annually at $0.60-$0.65 per mile (based on route type), plus $1,500 sign-on bonus first year. Owner Operators: $180K-$280K gross annually with 91% commission (you keep 91% of gross!), plus $2,500 sign-on bonus. Top O/Os gross over $250K. Pay is distributed weekly via direct deposit every Friday."
   },
   {
     question: "What's this 91% commission for owner operators?",
@@ -85,7 +85,7 @@ const defaultFaqs = [
   },
   {
     question: "What if I don't have my own truck yet?",
-    answer: "No problem! Start as a company driver ($50K-$78K/year) while you save up and learn our operations. Many of our current owner operators started as company drivers. We can guide you through the transition when you're ready to purchase your own truck. We don't do lease-purchase (those programs often trap drivers)."
+    answer: "No problem! Start as a company driver ($78K-$110K/year) while you save up and learn our operations. Many of our current owner operators started as company drivers. We can guide you through the transition when you're ready to purchase your own truck. We don't do lease-purchase (those programs often trap drivers)."
   },
   
   // Equipment & Requirements

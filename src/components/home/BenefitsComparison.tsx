@@ -24,7 +24,7 @@ export function BenefitsComparison() {
                 <Badge className="bg-blue-600">W-2 Employee</Badge>
               </div>
               <CardDescription className="text-lg font-semibold text-blue-900">
-                $50K-$78K Annual + Benefits
+                $78K-$110K Annual + Benefits
               </CardDescription>
             </CardHeader>
             <CardContent className="pt-6">
@@ -39,7 +39,7 @@ export function BenefitsComparison() {
                   <ul className="space-y-2">
                     <li className="flex items-start gap-2">
                       <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
-                      <span><strong>$0.50-0.60 per mile</strong> all routes</span>
+                      <span><strong>$0.60-$0.65 per mile</strong> all routes</span>
                     </li>
                     <li className="flex items-start gap-2">
                       <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />

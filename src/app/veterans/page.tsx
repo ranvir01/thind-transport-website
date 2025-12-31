@@ -12,7 +12,7 @@ import { PageBreadcrumb } from "@/components/shared/PageBreadcrumb"
 
 export const metadata: Metadata = {
   title: `Military Veterans CDL Jobs | ${COMPANY_INFO.name}`,
-  description: "Thind Transport proudly hires military veterans. We value your service, discipline, and skills. CDL Class A jobs with 91% commission for O/O, $50K-$78K for company drivers. Special veteran benefits and support.",
+  description: "Thind Transport proudly hires military veterans. We value your service, discipline, and skills. CDL Class A jobs with 91% commission for O/O, $78K-$110K for company drivers. Special veteran benefits and support.",
   keywords: [
     "veteran truck driver jobs",
     "military CDL jobs",
@@ -30,7 +30,7 @@ const veteranBenefits = [
   {
     icon: DollarSign,
     title: "Competitive Veteran Pay",
-    description: "Same great rates for all: 91% commission for O/O, $50K-$78K for company drivers. Your military experience is valued.",
+    description: "Same great rates for all: 91% commission for O/O, $78K-$110K for company drivers. Your military experience is valued.",
   },
   {
     icon: Shield,
@@ -403,7 +403,7 @@ export default function VeteransPage() {
                 <ul className="space-y-3 mb-6">
                   <li className="flex items-center gap-2">
                     <CheckCircle2 className="h-4 w-4 text-green-500" />
-                    <span className="text-gray-700">$50K-$78K annually</span>
+                    <span className="text-gray-700">$78K-$110K annually</span>
                   </li>
                   <li className="flex items-center gap-2">
                     <CheckCircle2 className="h-4 w-4 text-green-500" />

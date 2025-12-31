@@ -37,7 +37,7 @@ export function HeroSection() {
               <div className="grid md:grid-cols-2 gap-4 text-sm">
                 <div>
                   <p className="font-semibold text-[#001F3F] mb-1">📦 Company Drivers:</p>
-                  <p className="text-gray-700">$65K-$95K/year • $0.50-0.60/mile</p>
+                  <p className="text-gray-700">$78K-$110K/year • $0.60-$0.65/mile</p>
                 </div>
                 <div>
                   <p className="font-semibold text-[#001F3F] mb-1">🚛 Owner Operators:</p>
