@@ -5,6 +5,7 @@ import bcrypt from "bcrypt"
 import { findDriverByEmail } from "@/lib/driver-db"
 
 export const authConfig = {
+  trustHost: true, // Required for Vercel production deployments
   providers: [
     Credentials({
       credentials: {
