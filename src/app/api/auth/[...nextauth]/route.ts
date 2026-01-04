@@ -13,43 +13,52 @@ export const authConfig = {
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
+        // #region agent log
+        const logToDebug = async (msg: string, data: any, hyp: string) => {
+          try {
+            await fetch('http://127.0.0.1:7243/ingest/4bd64d0b-61fc-4eff-91ed-d2f6838af806',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'nextauth/authorize',message:msg,data,timestamp:Date.now(),sessionId:'debug-session',hypothesisId:hyp})});
+          } catch {}
+        };
+        // #endregion
+
         if (!credentials?.email || !credentials?.password) {
-          console.log("❌ Missing credentials")
+          await logToDebug('Missing credentials', {hasEmail:!!credentials?.email,hasPass:!!credentials?.password}, 'H1');
           return null
         }
 
-        console.log("🔍 Looking up driver:", credentials.email)
+        await logToDebug('Looking up driver', {email:credentials.email}, 'H5');
         const driver = await findDriverByEmail(credentials.email as string)
         
         if (!driver) {
-          console.log("❌ Driver not found in database:", credentials.email)
+          await logToDebug('Driver not found', {email:credentials.email}, 'H5');
           return null
         }
 
-        console.log("✓ Driver found:", driver.email, driver.id)
-        console.log("Driver object keys:", Object.keys(driver))
-        console.log("passwordHash exists:", !!driver.passwordHash)
-        console.log("passwordHash type:", typeof driver.passwordHash)
+        await logToDebug('Driver found', {email:driver.email,id:driver.id,keys:Object.keys(driver),hasPasswordHash:!!driver.passwordHash,hasSnakeCase:!!(driver as any).password_hash}, 'H1,H5');
         
         // Handle both camelCase and snake_case from Postgres
         const passwordHash = driver.passwordHash || (driver as any).password_hash
         
         if (!passwordHash) {
-          console.log("❌ No password hash found for driver")
+          await logToDebug('No password hash found', {driverKeys:Object.keys(driver)}, 'H1');
           return null
         }
 
+        await logToDebug('About to compare password', {hashLength:passwordHash?.length,hashPrefix:passwordHash?.substring(0,10)}, 'H1');
+        
         const isValidPassword = await bcrypt.compare(
           credentials.password as string,
           passwordHash
         )
 
+        await logToDebug('Password comparison result', {isValid:isValidPassword}, 'H1');
+
         if (!isValidPassword) {
-          console.log("❌ Invalid password for:", credentials.email)
+          await logToDebug('Invalid password', {email:credentials.email}, 'H1');
           return null
         }
 
-        console.log("✓ Login successful for:", credentials.email)
+        await logToDebug('Login successful - returning user', {id:driver.id,email:driver.email}, 'H1,H3');
         return {
           id: driver.id,
           email: driver.email,

@@ -23,39 +23,54 @@ export default function LoginPage() {
     e.preventDefault()
     setLoading(true)
 
+    // #region agent log
+    fetch('http://127.0.0.1:7243/ingest/4bd64d0b-61fc-4eff-91ed-d2f6838af806',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'login/page.tsx:handleSubmit',message:'Login attempt started',data:{email:formData.email,hasPassword:!!formData.password},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H2'})}).catch(()=>{});
+    // #endregion
+
     try {
-      console.log("🔐 Attempting login for:", formData.email)
-      
       const result = await signIn("credentials", {
         email: formData.email,
         password: formData.password,
         redirect: false,
       })
 
-      console.log("Login result:", result)
+      // #region agent log
+      fetch('http://127.0.0.1:7243/ingest/4bd64d0b-61fc-4eff-91ed-d2f6838af806',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'login/page.tsx:afterSignIn',message:'signIn result received',data:{ok:result?.ok,error:result?.error,status:result?.status,url:result?.url,fullResult:JSON.stringify(result)},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H2'})}).catch(()=>{});
+      // #endregion
 
       if (result?.error) {
-        console.log("❌ Login error:", result.error)
+        // #region agent log
+        fetch('http://127.0.0.1:7243/ingest/4bd64d0b-61fc-4eff-91ed-d2f6838af806',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'login/page.tsx:errorBranch',message:'Error branch taken',data:{error:result.error},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H2'})}).catch(()=>{});
+        // #endregion
         toast.error("Invalid email or password")
         setLoading(false)
         return
       }
 
       if (result?.ok) {
-        console.log("✓ Login successful, redirecting...")
+        // #region agent log
+        fetch('http://127.0.0.1:7243/ingest/4bd64d0b-61fc-4eff-91ed-d2f6838af806',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'login/page.tsx:successBranch',message:'Success branch - about to redirect',data:{ok:result.ok},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H3,H4'})}).catch(()=>{});
+        // #endregion
         toast.success("Logged in successfully!")
         
         // Redirect to application page
         setTimeout(() => {
+          // #region agent log
+          fetch('http://127.0.0.1:7243/ingest/4bd64d0b-61fc-4eff-91ed-d2f6838af806',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'login/page.tsx:redirect',message:'Executing redirect now',data:{target:'/driver/application'},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H4'})}).catch(()=>{});
+          // #endregion
           window.location.href = "/driver/application"
         }, 500)
       } else {
-        console.log("⚠ Login returned unexpected result:", result)
+        // #region agent log
+        fetch('http://127.0.0.1:7243/ingest/4bd64d0b-61fc-4eff-91ed-d2f6838af806',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'login/page.tsx:unexpectedBranch',message:'Unexpected result branch',data:{result:JSON.stringify(result)},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H2'})}).catch(()=>{});
+        // #endregion
         toast.error("Login failed. Please try again.")
         setLoading(false)
       }
     } catch (error) {
-      console.error("Login exception:", error)
+      // #region agent log
+      fetch('http://127.0.0.1:7243/ingest/4bd64d0b-61fc-4eff-91ed-d2f6838af806',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'login/page.tsx:exception',message:'Exception caught',data:{error:String(error)},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H2'})}).catch(()=>{});
+      // #endregion
       toast.error("Something went wrong: " + String(error))
       setLoading(false)
     }
