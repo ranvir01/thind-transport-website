@@ -71,11 +71,15 @@ export const authConfig = {
           return null
         }
 
-        await logToDebug('Login successful - returning user', {id:driver.id,email:driver.email}, 'H1,H3');
+        // Handle both camelCase and snake_case for names
+        const firstName = driver.firstName || (driver as any).first_name || ''
+        const lastName = driver.lastName || (driver as any).last_name || ''
+        
+        await logToDebug('Login successful - returning user', {id:driver.id,email:driver.email,firstName,lastName}, 'H1,H3');
         return {
           id: driver.id,
           email: driver.email,
-          name: `${driver.firstName} ${driver.lastName}`,
+          name: `${firstName} ${lastName}`.trim() || driver.email,
         }
       },
     }),
