@@ -6,6 +6,17 @@ import { findDriverByEmail } from "@/lib/driver-db"
 
 export const authConfig = {
   trustHost: true, // Required for Vercel production deployments
+  cookies: {
+    sessionToken: {
+      name: process.env.NODE_ENV === 'production' ? '__Secure-next-auth.session-token' : 'next-auth.session-token',
+      options: {
+        httpOnly: true,
+        sameSite: 'lax' as const,
+        path: '/',
+        secure: process.env.NODE_ENV === 'production',
+      },
+    },
+  },
   providers: [
     Credentials({
       credentials: {
