@@ -27,10 +27,21 @@ export const authConfig = {
         }
 
         console.log("✓ Driver found:", driver.email, driver.id)
+        console.log("Driver object keys:", Object.keys(driver))
+        console.log("passwordHash exists:", !!driver.passwordHash)
+        console.log("passwordHash type:", typeof driver.passwordHash)
+        
+        // Handle both camelCase and snake_case from Postgres
+        const passwordHash = driver.passwordHash || (driver as any).password_hash
+        
+        if (!passwordHash) {
+          console.log("❌ No password hash found for driver")
+          return null
+        }
 
         const isValidPassword = await bcrypt.compare(
           credentials.password as string,
-          driver.passwordHash
+          passwordHash
         )
 
         if (!isValidPassword) {
