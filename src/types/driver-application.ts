@@ -73,7 +73,7 @@ export interface DriverApplicationData {
       from: string
       to: string
     }>
-    workedForCompanyBefore: boolean
+    workedForCompanyBefore?: string
     previousWorkDates?: {
       from: string
       to: string
