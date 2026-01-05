@@ -38,16 +38,20 @@ export async function POST(request: Request) {
 
     // Store reset token in database
     try {
+      // Ensure columns exist
+      await sql`ALTER TABLE drivers ADD COLUMN IF NOT EXISTS reset_token TEXT`
+      await sql`ALTER TABLE drivers ADD COLUMN IF NOT EXISTS reset_token_expiry TIMESTAMP`
+      
       await sql`
         UPDATE drivers 
         SET reset_token = ${resetToken}, 
             reset_token_expiry = ${resetTokenExpiry.toISOString()}
         WHERE email = ${email}
       `
+      console.log("[FORGOT-PASSWORD] Reset token stored for:", email)
     } catch (dbError) {
-      console.error("Database error storing reset token:", dbError)
-      // If the columns don't exist, we need to create them
-      // For now, just log and continue with a simple approach
+      console.error("[FORGOT-PASSWORD] Database error storing reset token:", dbError)
+      // Continue with email anyway - user can try again
     }
 
     // Create reset URL
