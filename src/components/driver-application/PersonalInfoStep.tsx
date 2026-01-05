@@ -82,11 +82,12 @@ type FormData = z.infer<typeof schema>
 
 interface Props {
   onNext: (data: { personalInfo: FormData }) => void
+  onSaveDraft?: (data: { personalInfo: Partial<FormData> }) => void
   initialData?: Partial<FormData>
 }
 
-export function PersonalInfoStep({ onNext, initialData }: Props) {
-  const { register, handleSubmit, formState: { errors }, setValue, watch } = useForm<FormData>({
+export function PersonalInfoStep({ onNext, onSaveDraft, initialData }: Props) {
+  const { register, handleSubmit, formState: { errors }, setValue, watch, getValues } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: initialData || {
       workedForCompanyBefore: "false",
@@ -96,6 +97,31 @@ export function PersonalInfoStep({ onNext, initialData }: Props) {
   // Debug: Log form errors when they occur
   const onError = (formErrors: any) => {
     console.log("[PersonalInfoStep] Form validation errors:", formErrors)
+  }
+
+  // Auto-save draft every 5 seconds while user is typing
+  useEffect(() => {
+    if (!onSaveDraft) return
+    
+    const interval = setInterval(() => {
+      const currentValues = getValues()
+      // Only save if there's some data entered
+      if (currentValues.firstName || currentValues.lastName || currentValues.phone) {
+        onSaveDraft({ personalInfo: currentValues })
+      }
+    }, 5000)
+
+    return () => clearInterval(interval)
+  }, [onSaveDraft, getValues])
+
+  // Also save on blur (when user leaves a field)
+  const handleFieldBlur = () => {
+    if (onSaveDraft) {
+      const currentValues = getValues()
+      if (currentValues.firstName || currentValues.lastName || currentValues.phone) {
+        onSaveDraft({ personalInfo: currentValues })
+      }
+    }
   }
 
   // Watch fields for auto-formatting
@@ -160,6 +186,7 @@ export function PersonalInfoStep({ onNext, initialData }: Props) {
               <Label className="text-gray-800 font-semibold">First Name <span className="text-red-500">*</span></Label>
               <Input 
                 {...register("firstName")} 
+                onBlur={handleFieldBlur}
                 className="mt-1 bg-gray-50 border-gray-300 focus:border-orange focus:ring-orange text-gray-900"
                 placeholder="John"
               />
@@ -169,6 +196,7 @@ export function PersonalInfoStep({ onNext, initialData }: Props) {
               <Label className="text-gray-800 font-semibold">Last Name <span className="text-red-500">*</span></Label>
               <Input 
                 {...register("lastName")} 
+                onBlur={handleFieldBlur}
                 className="mt-1 bg-gray-50 border-gray-300 focus:border-orange focus:ring-orange text-gray-900"
                 placeholder="Smith"
               />
