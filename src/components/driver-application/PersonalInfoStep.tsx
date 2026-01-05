@@ -143,7 +143,7 @@ export function PersonalInfoStep({ onNext, initialData }: Props) {
 
   const handleMonthYearChange = (field: 'currentAddress.from' | 'currentAddress.to') => (e: React.ChangeEvent<HTMLInputElement>) => {
     const formatted = formatMonthYear(e.target.value)
-    setValue(field, formatted, { shouldValidate: true })
+    setValue(field, formatted, { shouldValidate: false })
   }
 
   const handleZipChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -315,7 +315,7 @@ export function PersonalInfoStep({ onNext, initialData }: Props) {
                 <div>
                   <Label className="text-gray-800 font-semibold">From (MM/YYYY) <span className="text-red-500">*</span></Label>
                   <Input 
-                    {...register("currentAddress.from")} 
+                    value={watch('currentAddress.from') || ''}
                     onChange={handleMonthYearChange('currentAddress.from')}
                     className="mt-1 bg-gray-50 border-gray-300 focus:border-orange focus:ring-orange text-gray-900"
                     placeholder="01/2022"
@@ -326,7 +326,7 @@ export function PersonalInfoStep({ onNext, initialData }: Props) {
                 <div>
                   <Label className="text-gray-800 font-semibold">To (MM/YYYY) <span className="text-red-500">*</span></Label>
                   <Input 
-                    {...register("currentAddress.to")} 
+                    value={watch('currentAddress.to') || ''}
                     onChange={handleMonthYearChange('currentAddress.to')}
                     className="mt-1 bg-gray-50 border-gray-300 focus:border-orange focus:ring-orange text-gray-900"
                     placeholder="Present or 01/2024"
