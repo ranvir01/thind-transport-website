@@ -238,7 +238,7 @@ export function ExperienceStep({ onNext, onBack, initialData }: Props) {
                     </select>
                   </div>
                   <div>
-                    <Label className="text-gray-800 font-semibold">Type of Equipment</Label>
+                    <Label className="text-gray-800 font-semibold">Type of Equipment <span className="text-red-500">*</span></Label>
               <select
                       value={exp.typeOfEquipment}
                       onChange={(e) => updateExperience(index, "typeOfEquipment", e.target.value)}
@@ -274,7 +274,7 @@ export function ExperienceStep({ onNext, onBack, initialData }: Props) {
                     <p className="text-xs text-gray-500 mt-1">Type "Present" if current</p>
             </div>
             <div>
-                    <Label className="text-gray-800 font-semibold">Approximate Miles</Label>
+                    <Label className="text-gray-800 font-semibold">Approximate Miles <span className="text-red-500">*</span></Label>
               <Input
                       value={exp.approximateMiles}
                       onChange={(e) => updateExperience(index, "approximateMiles", e.target.value)}

@@ -303,7 +303,7 @@ export function DrivingRecordStep({ onNext, onBack, initialData }: Props) {
           <h3 className="font-bold text-lg text-gray-900">License History</h3>
           
           <div className="p-4 bg-gray-50 rounded-lg">
-            <Label className="text-gray-800 font-semibold">Have you ever been denied a license, permit or privilege to operate a motor vehicle?</Label>
+            <Label className="text-gray-800 font-semibold">Have you ever been denied a license, permit or privilege to operate a motor vehicle? <span className="text-red-500">*</span></Label>
             <div className="flex gap-6 mt-3">
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
@@ -335,7 +335,7 @@ export function DrivingRecordStep({ onNext, onBack, initialData }: Props) {
           </div>
 
           <div className="p-4 bg-gray-50 rounded-lg">
-            <Label className="text-gray-800 font-semibold">Has any license, permit or privilege ever been suspended or revoked?</Label>
+            <Label className="text-gray-800 font-semibold">Has any license, permit or privilege ever been suspended or revoked? <span className="text-red-500">*</span></Label>
             <div className="flex gap-6 mt-3">
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
@@ -367,7 +367,7 @@ export function DrivingRecordStep({ onNext, onBack, initialData }: Props) {
           </div>
 
           <div className="p-4 bg-gray-50 rounded-lg">
-            <Label className="text-gray-800 font-semibold">Have you ever been convicted of a felony?</Label>
+            <Label className="text-gray-800 font-semibold">Have you ever been convicted of a felony? <span className="text-red-500">*</span></Label>
             <div className="flex gap-6 mt-3">
               <label className="flex items-center gap-2 cursor-pointer">
                 <input

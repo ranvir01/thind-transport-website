@@ -517,7 +517,7 @@ export function PersonalInfoStep({ onNext, initialData }: Props) {
 
           {/* Previous Employment at This Company */}
           <div className="border-t border-gray-200 pt-6">
-            <Label className="text-gray-800 font-semibold">Have you worked for this company before?</Label>
+            <Label className="text-gray-800 font-semibold">Have you worked for this company before? <span className="text-red-500">*</span></Label>
             <div className="flex gap-6 mt-3">
               <label className="flex items-center gap-2 cursor-pointer">
                 <input 
@@ -580,7 +580,7 @@ export function PersonalInfoStep({ onNext, initialData }: Props) {
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div>
-                <Label className="text-gray-800 font-semibold">Grade School (1-12)</Label>
+                <Label className="text-gray-800 font-semibold">Grade School (1-12) <span className="text-red-500">*</span></Label>
                 <div className="flex flex-wrap gap-2 mt-2">
                   {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((grade) => (
                     <label key={grade} className="cursor-pointer">
