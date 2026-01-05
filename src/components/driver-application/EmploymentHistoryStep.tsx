@@ -94,9 +94,9 @@ export function EmploymentHistoryStep({ onNext, onBack, initialData }: Props) {
   }
 
   return (
-    <Card className="bg-white shadow-lg border-0">
-      <CardHeader className="bg-gradient-to-r from-navy to-navy/90 text-white rounded-t-lg">
-        <CardTitle className="flex items-center gap-2 text-xl">
+    <Card className="bg-white shadow-lg border border-gray-200">
+      <CardHeader className="bg-gray-50 border-b border-gray-200">
+        <CardTitle className="flex items-center gap-2 text-xl text-gray-900">
           <Briefcase className="h-6 w-6 text-orange" />
           Employment History (Last 3 Years Required)
         </CardTitle>

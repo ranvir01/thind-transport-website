@@ -21,10 +21,10 @@ export function PDFPreviewStep({ formData, onBack, onSubmit, isSubmitting }: Pro
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <FileText className="h-5 w-5 text-orange" />
+    <Card className="bg-white shadow-lg border border-gray-200">
+      <CardHeader className="bg-gray-50 border-b border-gray-200">
+        <CardTitle className="flex items-center gap-2 text-xl text-gray-900">
+          <FileText className="h-6 w-6 text-orange" />
           PDF Preview & Final Submission
         </CardTitle>
       </CardHeader>

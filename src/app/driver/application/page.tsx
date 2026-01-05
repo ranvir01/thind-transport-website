@@ -2,11 +2,11 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
-import { useSession } from "next-auth/react"
+import { useSession, signOut } from "next-auth/react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
-import { Loader2, CheckCircle2, AlertCircle, ChevronRight, ChevronLeft, Save } from "lucide-react"
+import { Loader2, CheckCircle2, AlertCircle, ChevronRight, ChevronLeft, Save, LogOut, User } from "lucide-react"
 import { toast } from "sonner"
 import type { DriverApplicationData } from "@/types/driver-application"
 
@@ -22,6 +22,38 @@ import { PDFPreviewStep } from "@/components/driver-application/PDFPreviewStep"
 const TOTAL_STEPS = 7
 const STORAGE_KEY = "thind_driver_application"
 
+// Safe localStorage helper
+const safeLocalStorage = {
+  getItem: (key: string): string | null => {
+    try {
+      if (typeof window !== 'undefined') {
+        return localStorage.getItem(key)
+      }
+    } catch (e) {
+      console.error("localStorage access failed:", e)
+    }
+    return null
+  },
+  setItem: (key: string, value: string): void => {
+    try {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(key, value)
+      }
+    } catch (e) {
+      console.error("localStorage write failed:", e)
+    }
+  },
+  removeItem: (key: string): void => {
+    try {
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem(key)
+      }
+    } catch (e) {
+      console.error("localStorage remove failed:", e)
+    }
+  }
+}
+
 export default function DriverApplicationPage() {
   const router = useRouter()
   const { data: session, status } = useSession()
@@ -33,7 +65,7 @@ export default function DriverApplicationPage() {
   // Load saved form data from localStorage on mount
   useEffect(() => {
     if (status === "authenticated" && session?.user?.email) {
-      const saved = localStorage.getItem(`${STORAGE_KEY}_${session.user.email}`)
+      const saved = safeLocalStorage.getItem(`${STORAGE_KEY}_${session.user.email}`)
       if (saved) {
         try {
           const parsed = JSON.parse(saved)
@@ -56,7 +88,7 @@ export default function DriverApplicationPage() {
         currentStep,
         savedAt: new Date().toISOString()
       }
-      localStorage.setItem(`${STORAGE_KEY}_${session.user.email}`, JSON.stringify(dataToSave))
+      safeLocalStorage.setItem(`${STORAGE_KEY}_${session.user.email}`, JSON.stringify(dataToSave))
     }
   }, [formData, currentStep, session?.user?.email, isLoaded])
 
@@ -72,6 +104,11 @@ export default function DriverApplicationPage() {
       router.push("/driver/login")
     }
   }, [status, router])
+
+  const handleLogout = async () => {
+    await signOut({ redirect: false })
+    router.push("/driver/login")
+  }
 
   if (status === "loading") {
     return (
@@ -121,7 +158,7 @@ export default function DriverApplicationPage() {
 
       // Clear saved form data on successful submission
       if (session?.user?.email) {
-        localStorage.removeItem(`${STORAGE_KEY}_${session.user.email}`)
+        safeLocalStorage.removeItem(`${STORAGE_KEY}_${session.user.email}`)
       }
 
       toast.success("Application submitted successfully! We'll review it within 1-2 weeks.")
@@ -189,12 +226,31 @@ export default function DriverApplicationPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-8 px-4">
       <div className="max-w-4xl mx-auto">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-black text-navy mb-2">DOT Driver Application</h1>
-          <p className="text-gray-600">
-            Complete all sections to finalize your application with Thind Transport
-          </p>
+        {/* Header with User Info and Logout */}
+        <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-black text-navy mb-2">DOT Driver Application</h1>
+            <p className="text-gray-600">
+              Complete all sections to finalize your application with Thind Transport
+            </p>
+          </div>
+          {session?.user && (
+            <div className="flex items-center gap-3 bg-white rounded-lg px-4 py-2 shadow-sm border border-gray-200">
+              <div className="flex items-center gap-2 text-gray-700">
+                <User className="h-4 w-4" />
+                <span className="text-sm font-medium">{session.user.name || session.user.email}</span>
+              </div>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={handleLogout}
+                className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
+              >
+                <LogOut className="h-4 w-4 mr-1" />
+                Logout
+              </Button>
+            </div>
+          )}
         </div>
 
         {/* Progress Bar */}
