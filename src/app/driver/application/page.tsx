@@ -90,7 +90,12 @@ export default function DriverApplicationPage() {
             try {
               const parsed = JSON.parse(saved)
               if (parsed && typeof parsed === 'object') {
-                setFormData(parsed.formData || {})
+                // Migrate old data format if needed (workedForCompanyBefore was boolean, now string)
+                const formDataToRestore = parsed.formData || {}
+                if (formDataToRestore.personalInfo && typeof formDataToRestore.personalInfo.workedForCompanyBefore === 'boolean') {
+                  formDataToRestore.personalInfo.workedForCompanyBefore = formDataToRestore.personalInfo.workedForCompanyBefore ? "true" : "false"
+                }
+                setFormData(formDataToRestore)
                 setCurrentStep(typeof parsed.currentStep === 'number' ? parsed.currentStep : 1)
                 toast.success("Your progress has been restored")
               }
