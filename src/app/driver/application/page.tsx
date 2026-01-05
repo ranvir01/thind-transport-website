@@ -1,5 +1,9 @@
 "use client"
 
+// #region agent log - module load
+fetch('http://127.0.0.1:7243/ingest/4bd64d0b-61fc-4eff-91ed-d2f6838af806',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'page.tsx:1',message:'Module loading started',data:{},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'B'})}).catch(()=>{});
+// #endregion
+
 import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { useSession, signOut } from "next-auth/react"
@@ -18,6 +22,10 @@ import { ExperienceStep } from "@/components/driver-application/ExperienceStep"
 import { AuthorizationStep } from "@/components/driver-application/AuthorizationStep"
 import { ReviewStep } from "@/components/driver-application/ReviewStep"
 import { PDFPreviewStep } from "@/components/driver-application/PDFPreviewStep"
+
+// #region agent log - imports complete
+fetch('http://127.0.0.1:7243/ingest/4bd64d0b-61fc-4eff-91ed-d2f6838af806',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'page.tsx:22',message:'All imports completed successfully',data:{},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'B'})}).catch(()=>{});
+// #endregion
 
 const TOTAL_STEPS = 7
 const STORAGE_KEY = "thind_driver_application"
@@ -55,8 +63,17 @@ const safeLocalStorage = {
 }
 
 export default function DriverApplicationPage() {
+  // #region agent log - component function start
+  fetch('http://127.0.0.1:7243/ingest/4bd64d0b-61fc-4eff-91ed-d2f6838af806',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'page.tsx:65',message:'Component function starting',data:{},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'A'})}).catch(()=>{});
+  // #endregion
+  
   const router = useRouter()
   const { data: session, status } = useSession()
+  
+  // #region agent log - session data
+  fetch('http://127.0.0.1:7243/ingest/4bd64d0b-61fc-4eff-91ed-d2f6838af806',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'page.tsx:70',message:'Session data retrieved',data:{status,hasSession:!!session,hasUser:!!session?.user,userEmail:session?.user?.email||'none',userName:session?.user?.name||'none'},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'A'})}).catch(()=>{});
+  // #endregion
+  
   const [currentStep, setCurrentStep] = useState(1)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [formData, setFormData] = useState<Partial<DriverApplicationData>>({})
@@ -64,9 +81,17 @@ export default function DriverApplicationPage() {
 
   // Load saved form data from localStorage on mount
   useEffect(() => {
+    // #region agent log - useEffect triggered
+    fetch('http://127.0.0.1:7243/ingest/4bd64d0b-61fc-4eff-91ed-d2f6838af806',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'page.tsx:useEffect',message:'useEffect triggered',data:{status,hasSession:!!session},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'C'})}).catch(()=>{});
+    // #endregion
+    
     if (status === "authenticated") {
       try {
         const userEmail = session?.user?.email
+        // #region agent log - localStorage access
+        fetch('http://127.0.0.1:7243/ingest/4bd64d0b-61fc-4eff-91ed-d2f6838af806',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'page.tsx:localStorage',message:'About to access localStorage',data:{userEmail:userEmail||'none'},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'C'})}).catch(()=>{});
+        // #endregion
+        
         if (userEmail) {
           const saved = safeLocalStorage.getItem(`${STORAGE_KEY}_${userEmail}`)
           if (saved) {
@@ -122,8 +147,15 @@ export default function DriverApplicationPage() {
     router.push("/driver/login")
   }
 
+  // #region agent log - before render checks
+  fetch('http://127.0.0.1:7243/ingest/4bd64d0b-61fc-4eff-91ed-d2f6838af806',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'page.tsx:render',message:'Before render checks',data:{status,isLoaded,currentStep},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'E'})}).catch(()=>{});
+  // #endregion
+  
   // Show loading while session is loading or waiting for localStorage to load
   if (status === "loading" || (status === "authenticated" && !isLoaded)) {
+    // #region agent log - returning loading state
+    fetch('http://127.0.0.1:7243/ingest/4bd64d0b-61fc-4eff-91ed-d2f6838af806',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'page.tsx:loading',message:'Returning loading state',data:{status,isLoaded},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'E'})}).catch(()=>{});
+    // #endregion
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
         <div className="text-center">
