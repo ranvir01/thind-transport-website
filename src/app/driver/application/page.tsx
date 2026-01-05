@@ -137,13 +137,13 @@ export default function DriverApplicationPage() {
 
   useEffect(() => {
     if (status === "unauthenticated") {
-      router.push("/driver/login")
+      window.location.href = "/driver/login"
     }
-  }, [status, router])
+  }, [status])
 
   const handleLogout = async () => {
     await signOut({ redirect: false })
-    router.push("/driver/login")
+    window.location.href = "/driver/login"
   }
 
   // #region agent log - before render checks
