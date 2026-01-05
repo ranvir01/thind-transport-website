@@ -1,9 +1,5 @@
 "use client"
 
-// #region agent log - module load
-console.log('[DEBUG-A] Module loading started', Date.now());
-// #endregion
-
 import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { useSession, signOut } from "next-auth/react"
@@ -22,10 +18,6 @@ import { ExperienceStep } from "@/components/driver-application/ExperienceStep"
 import { AuthorizationStep } from "@/components/driver-application/AuthorizationStep"
 import { ReviewStep } from "@/components/driver-application/ReviewStep"
 import { PDFPreviewStep } from "@/components/driver-application/PDFPreviewStep"
-
-// #region agent log - imports complete
-console.log('[DEBUG-B] All imports completed successfully', Date.now());
-// #endregion
 
 const TOTAL_STEPS = 7
 const STORAGE_KEY = "thind_driver_application"
