@@ -184,7 +184,18 @@ export default function DriverApplicationPage() {
   const progress = (currentStep / TOTAL_STEPS) * 100
 
   const handleNext = (stepData: any) => {
-    setFormData({ ...formData, ...stepData })
+    // For PersonalInfoStep, extract positionApplyingFor to top level
+    let updatedData = { ...stepData }
+    if (stepData.personalInfo?.positionApplyingFor) {
+      updatedData.positionApplyingFor = stepData.personalInfo.positionApplyingFor
+    }
+    
+    // Add application date if not set
+    if (!formData.applicationDate) {
+      updatedData.applicationDate = new Date().toLocaleDateString('en-US')
+    }
+    
+    setFormData({ ...formData, ...updatedData })
     if (currentStep < TOTAL_STEPS) {
       setCurrentStep(currentStep + 1)
       window.scrollTo({ top: 0, behavior: "smooth" })

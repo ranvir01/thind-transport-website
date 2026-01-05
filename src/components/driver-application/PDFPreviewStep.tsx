@@ -1,10 +1,11 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { ChevronLeft, Send, Loader2, FileText, Eye, Download } from "lucide-react"
+import { ChevronLeft, Send, Loader2, FileText, Download, Eye, CheckCircle2, RefreshCw } from "lucide-react"
 import type { DriverApplicationData } from "@/types/driver-application"
+import { generateApplicationPDF, downloadPDF } from "./PDFDocument"
 
 interface Props {
   formData: DriverApplicationData
@@ -14,7 +15,47 @@ interface Props {
 }
 
 export function PDFPreviewStep({ formData, onBack, onSubmit, isSubmitting }: Props) {
-  const [showFullPreview, setShowFullPreview] = useState(false)
+  const [pdfUrl, setPdfUrl] = useState<string | null>(null)
+  const [pdfBytes, setPdfBytes] = useState<Uint8Array | null>(null)
+  const [isGenerating, setIsGenerating] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const generatePDF = useCallback(async () => {
+    setIsGenerating(true)
+    setError(null)
+    try {
+      const bytes = await generateApplicationPDF(formData)
+      setPdfBytes(bytes)
+      
+      // Create a blob URL for preview
+      const blob = new Blob([new Uint8Array(bytes)], { type: 'application/pdf' })
+      const url = URL.createObjectURL(blob)
+      setPdfUrl(url)
+    } catch (err) {
+      console.error('Error generating PDF:', err)
+      setError('Failed to generate PDF. Please try again.')
+    } finally {
+      setIsGenerating(false)
+    }
+  }, [formData])
+
+  useEffect(() => {
+    generatePDF()
+    
+    // Cleanup blob URL on unmount
+    return () => {
+      if (pdfUrl) {
+        URL.revokeObjectURL(pdfUrl)
+      }
+    }
+  }, []) // Only run once on mount
+
+  const handleDownload = () => {
+    if (pdfBytes) {
+      const filename = `Thind_Transport_Application_${formData.personalInfo?.lastName || 'Driver'}_${new Date().toISOString().split('T')[0]}.pdf`
+      downloadPDF(pdfBytes, filename)
+    }
+  }
 
   const handleSubmit = () => {
     onSubmit(formData)
@@ -25,172 +66,161 @@ export function PDFPreviewStep({ formData, onBack, onSubmit, isSubmitting }: Pro
       <CardHeader className="bg-gray-50 border-b border-gray-200">
         <CardTitle className="flex items-center gap-2 text-xl text-gray-900">
           <FileText className="h-6 w-6 text-orange" />
-          PDF Preview & Final Submission
+          DOT Application PDF Preview
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-6">
+      <CardContent className="space-y-6 pt-6">
         <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
           <p className="text-sm text-blue-900">
-            <strong>Review your application:</strong> Below is a preview of how your DOT application will appear in the PDF document. Please review all information carefully before submitting.
+            <strong>Your DOT application is ready!</strong> Review the PDF preview below. This is the official document that will be submitted to Thind Transport LLC. You can download a copy for your records before submitting.
           </p>
         </div>
 
-        {/* PDF Preview Container */}
-        <div className="border-2 border-gray-300 rounded-lg p-6 bg-white shadow-inner max-h-[600px] overflow-y-auto">
-          <div className="space-y-6">
-            {/* Header */}
-            <div className="text-center border-b-2 border-gray-800 pb-4">
-              <h1 className="text-2xl font-bold">THIND TRANSPORT LLC</h1>
-              <p className="text-sm text-gray-600">DRIVER APPLICATION FOR EMPLOYMENT</p>
-              <p className="text-xs text-gray-500 mt-2">
-                An Equal Opportunity Employer • In compliance with DOT regulations
-              </p>
-            </div>
+        {/* PDF Generation Status */}
+        {isGenerating && (
+          <div className="flex items-center justify-center p-8 bg-gray-50 rounded-lg">
+            <Loader2 className="h-8 w-8 animate-spin text-orange mr-3" />
+            <span className="text-gray-700">Generating your DOT application PDF...</span>
+          </div>
+        )}
 
-            {/* Personal Information */}
-            <div>
-              <h2 className="text-lg font-bold border-b border-gray-400 pb-1 mb-3">PERSONAL INFORMATION</h2>
-              <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
-                <div><span className="font-semibold">Name:</span> {formData.personalInfo?.firstName} {formData.personalInfo?.lastName}</div>
-                <div><span className="font-semibold">Date of Birth:</span> {formData.personalInfo?.dateOfBirth}</div>
-                <div><span className="font-semibold">Age:</span> {formData.personalInfo?.age}</div>
-                <div><span className="font-semibold">SSN:</span> {formData.personalInfo?.socialSecurityNumber}</div>
-                <div><span className="font-semibold">Phone:</span> {formData.personalInfo?.phone}</div>
-                <div><span className="font-semibold">Emergency Phone:</span> {formData.personalInfo?.emergencyPhone}</div>
-                <div className="col-span-2"><span className="font-semibold">Physical Exam Expires:</span> {formData.personalInfo?.physicalExamExpiration}</div>
-                <div className="col-span-2"><span className="font-semibold">Current Address:</span> {formData.personalInfo?.currentAddress?.street}, {formData.personalInfo?.currentAddress?.city}, {formData.personalInfo?.currentAddress?.state} {formData.personalInfo?.currentAddress?.zip}</div>
-                <div><span className="font-semibold">Education Level:</span> {formData.personalInfo?.educationLevel}</div>
+        {error && (
+          <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-red-800">{error}</p>
+            <Button 
+              onClick={generatePDF} 
+              variant="outline" 
+              className="mt-3 border-red-300 text-red-700"
+            >
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Retry Generation
+            </Button>
+          </div>
+        )}
+
+        {/* PDF Preview */}
+        {pdfUrl && !isGenerating && (
+          <>
+            <div className="border-2 border-gray-300 rounded-lg overflow-hidden bg-gray-100">
+              <div className="bg-gray-200 px-4 py-2 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Eye className="h-4 w-4 text-gray-600" />
+                  <span className="text-sm font-medium text-gray-700">PDF Preview (7 Pages)</span>
+                </div>
+                <Button
+                  onClick={handleDownload}
+                  variant="outline"
+                  size="sm"
+                  className="border-orange text-orange hover:bg-orange hover:text-white"
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  Download PDF
+                </Button>
               </div>
+              <iframe
+                src={pdfUrl}
+                className="w-full h-[600px] bg-white"
+                title="DOT Application PDF Preview"
+              />
             </div>
 
-            {/* CDL Information */}
-            <div>
-              <h2 className="text-lg font-bold border-b border-gray-400 pb-1 mb-3">CDL INFORMATION</h2>
-              {formData.drivingRecord?.cdlLicenses?.map((license, idx) => (
-                <div key={idx} className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm mb-3">
-                  <div><span className="font-semibold">License #:</span> {license.licenseNumber}</div>
-                  <div><span className="font-semibold">State:</span> {license.state}</div>
-                  <div><span className="font-semibold">Type:</span> {license.type}</div>
-                  <div><span className="font-semibold">Expires:</span> {license.expirationDate}</div>
-                  {license.endorsements && <div className="col-span-2"><span className="font-semibold">Endorsements:</span> {license.endorsements}</div>}
+            {/* PDF Contents Summary */}
+            <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+              <h3 className="font-bold text-gray-900 mb-3 flex items-center gap-2">
+                <CheckCircle2 className="h-5 w-5 text-green-600" />
+                PDF Contents
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm text-gray-700">
+                <div className="flex items-center gap-2">
+                  <span className="w-6 h-6 rounded-full bg-orange text-white flex items-center justify-center text-xs font-bold">1</span>
+                  DQ File Checklist (Internal Use)
                 </div>
-              ))}
-            </div>
-
-            {/* Employment History */}
-            <div>
-              <h2 className="text-lg font-bold border-b border-gray-400 pb-1 mb-3">EMPLOYMENT HISTORY (Past 3 Years)</h2>
-              {formData.employmentHistory?.entries?.map((entry, idx) => (
-                <div key={idx} className="mb-4 p-3 bg-gray-50 rounded border border-gray-200">
-                  <div className="grid grid-cols-2 gap-x-6 gap-y-1 text-sm">
-                    <div className="col-span-2 font-semibold text-base">{entry.employerName}</div>
-                    <div><span className="font-semibold">From:</span> {entry.fromDate}</div>
-                    <div><span className="font-semibold">To:</span> {entry.toDate}</div>
-                    <div><span className="font-semibold">Position:</span> {entry.position}</div>
-                    <div><span className="font-semibold">Phone:</span> {entry.phone}</div>
-                    <div className="col-span-2"><span className="font-semibold">Address:</span> {entry.address}</div>
-                    {entry.reasonForLeaving && <div className="col-span-2"><span className="font-semibold">Reason for Leaving:</span> {entry.reasonForLeaving}</div>}
-                  </div>
+                <div className="flex items-center gap-2">
+                  <span className="w-6 h-6 rounded-full bg-orange text-white flex items-center justify-center text-xs font-bold">2</span>
+                  Applicant Personal Information
                 </div>
-              ))}
-            </div>
-
-            {/* Driving Experience */}
-            <div>
-              <h2 className="text-lg font-bold border-b border-gray-400 pb-1 mb-3">DRIVING EXPERIENCE</h2>
-              {formData.experienceQualifications?.drivingExperience?.map((exp, idx) => (
-                <div key={idx} className="mb-2 text-sm">
-                  <div className="grid grid-cols-3 gap-4">
-                    <div><span className="font-semibold">Equipment:</span> {exp.typeOfEquipment}</div>
-                    <div><span className="font-semibold">From:</span> {exp.dateFrom}</div>
-                    <div><span className="font-semibold">To:</span> {exp.dateTo}</div>
-                  </div>
+                <div className="flex items-center gap-2">
+                  <span className="w-6 h-6 rounded-full bg-orange text-white flex items-center justify-center text-xs font-bold">3</span>
+                  Employment History
                 </div>
-              ))}
-            </div>
-
-            {/* Accidents & Violations */}
-            {(formData.drivingRecord?.accidents?.length > 0 || formData.drivingRecord?.violations?.length > 0) && (
-              <div>
-                <h2 className="text-lg font-bold border-b border-gray-400 pb-1 mb-3">SAFETY RECORD</h2>
-                {formData.drivingRecord?.accidents?.length > 0 && (
-                  <div className="mb-3">
-                    <p className="font-semibold text-sm mb-1">Accidents:</p>
-                    {formData.drivingRecord.accidents.map((accident, idx) => (
-                      <div key={idx} className="text-sm pl-4">• {accident.date} - {accident.details}</div>
-                    ))}
-                  </div>
-                )}
-                {formData.drivingRecord?.violations?.length > 0 && (
-                  <div>
-                    <p className="font-semibold text-sm mb-1">Violations:</p>
-                    {formData.drivingRecord.violations.map((violation, idx) => (
-                      <div key={idx} className="text-sm pl-4">• {violation.date} - {violation.charge}</div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* PSP Authorization */}
-            <div>
-              <h2 className="text-lg font-bold border-b border-gray-400 pb-1 mb-3">PSP AUTHORIZATION & CERTIFICATION</h2>
-              <div className="text-sm space-y-2">
-                <p>✓ I acknowledge receipt of PSP disclosure</p>
-                <p>✓ I authorize background check and PSP report</p>
-                <p>✓ I understand crash and inspection data display</p>
-                <div className="mt-4 pt-4 border-t border-gray-300">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div><span className="font-semibold">Signature:</span> {formData.pspAuthorization?.fullName}</div>
-                    <div><span className="font-semibold">Date:</span> {formData.pspAuthorization?.signatureDate}</div>
-                  </div>
+                <div className="flex items-center gap-2">
+                  <span className="w-6 h-6 rounded-full bg-orange text-white flex items-center justify-center text-xs font-bold">4</span>
+                  CDL & Driving Record
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="w-6 h-6 rounded-full bg-orange text-white flex items-center justify-center text-xs font-bold">5</span>
+                  Experience & Qualifications
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="w-6 h-6 rounded-full bg-orange text-white flex items-center justify-center text-xs font-bold">6</span>
+                  PSP Authorization & Signature
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="w-6 h-6 rounded-full bg-gray-400 text-white flex items-center justify-center text-xs font-bold">7</span>
+                  Road Test Certificate (Internal)
                 </div>
               </div>
             </div>
+          </>
+        )}
 
-            {/* Certification Statement */}
-            <div className="p-4 bg-gray-100 border-2 border-gray-400 rounded">
-              <p className="text-xs italic">
-                I certify that all information provided in this application is true and complete to the best of my knowledge. 
-                I understand that any false statements or omissions may disqualify me from employment or result in termination. 
-                I authorize investigation of all statements contained in this application and release from liability all persons 
-                and organizations providing such information.
-              </p>
-            </div>
+        {/* Applicant Summary */}
+        <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+          <h3 className="font-bold text-green-900 mb-2 flex items-center gap-2">
+            <CheckCircle2 className="h-5 w-5" />
+            Application Ready for Submission
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-green-800">
+            <p><strong>Applicant:</strong> {formData.personalInfo?.firstName} {formData.personalInfo?.lastName}</p>
+            <p><strong>CDL:</strong> {formData.drivingRecord?.cdlLicenses?.[0]?.licenseNumber} ({formData.drivingRecord?.cdlLicenses?.[0]?.state})</p>
+            <p><strong>Signed:</strong> {formData.pspAuthorization?.fullName}</p>
+            <p><strong>Date:</strong> {formData.pspAuthorization?.signatureDate}</p>
           </div>
         </div>
 
-        {/* Action Buttons */}
-        <div className="space-y-4">
-          <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
-            <p className="text-sm text-amber-900">
-              <strong>Important:</strong> Once you click "Submit Final Application", this PDF will be generated and emailed to 
-              thindcarrier@gmail.com. You will receive a confirmation and our team will review your application within 1-2 weeks.
-            </p>
-          </div>
+        {/* Important Notice */}
+        <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
+          <p className="text-sm text-amber-900">
+            <strong>Important:</strong> Once you click "Submit Final Application", this PDF will be securely transmitted to 
+            Thind Transport LLC at thindcarrier@gmail.com. You will receive a confirmation email and our team will review 
+            your application within 1-2 weeks. We may contact you for additional information or to schedule an interview.
+          </p>
+        </div>
 
-          <div className="flex gap-4">
-            <Button variant="outline" onClick={onBack} disabled={isSubmitting} className="flex-1">
-              <ChevronLeft className="mr-2 h-4 w-4" />
-              Back to Edit
-            </Button>
-            <Button onClick={handleSubmit} disabled={isSubmitting} className="flex-1 bg-green-600 hover:bg-green-700">
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Submitting Application...
-                </>
-              ) : (
-                <>
-                  <Send className="mr-2 h-4 w-4" />
-                  Submit Final Application
-                </>
-              )}
-            </Button>
-          </div>
+        {/* Action Buttons */}
+        <div className="flex gap-4 pt-4">
+          <Button variant="outline" onClick={onBack} disabled={isSubmitting} className="flex-1 py-3">
+            <ChevronLeft className="mr-2 h-5 w-5" />
+            Back to Edit
+          </Button>
+          <Button 
+            onClick={handleDownload} 
+            disabled={!pdfBytes || isSubmitting} 
+            variant="outline"
+            className="py-3 border-orange text-orange hover:bg-orange hover:text-white"
+          >
+            <Download className="mr-2 h-5 w-5" />
+            Download Copy
+          </Button>
+          <Button 
+            onClick={handleSubmit} 
+            disabled={isSubmitting || isGenerating || !pdfBytes} 
+            className="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold py-3"
+          >
+            {isSubmitting ? (
+              <>
+                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                Submitting Application...
+              </>
+            ) : (
+              <>
+                <Send className="mr-2 h-5 w-5" />
+                Submit Final Application
+              </>
+            )}
+          </Button>
         </div>
       </CardContent>
     </Card>
   )
 }
-
