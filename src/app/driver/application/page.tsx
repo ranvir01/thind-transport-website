@@ -346,9 +346,9 @@ export default function DriverApplicationPage() {
           <div className="flex gap-3">
             <Save className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
             <div className="text-sm text-green-900">
-              <strong className="block mb-1">Your Progress is Saved</strong>
+              <strong className="block mb-1">Your Progress is Saved After Each Step</strong>
               <p>
-                Your form data is automatically saved as you fill it out. You can safely navigate away and return later - your progress will be restored when you log back in.
+                When you complete a step and click "Continue", your data is saved. You can safely log out and return later - your progress will be restored when you log back in.
               </p>
             </div>
           </div>
