@@ -74,7 +74,7 @@ const schema = z.object({
     from: z.string().min(5, "Enter as MM/YYYY"),
     to: z.string().min(5, "Enter as MM/YYYY or 'Present'"),
   }),
-  workedForCompanyBefore: z.boolean(),
+  workedForCompanyBefore: z.string().optional(),
   educationLevel: z.string().min(1, "Select education level"),
 })
 
@@ -89,9 +89,14 @@ export function PersonalInfoStep({ onNext, initialData }: Props) {
   const { register, handleSubmit, formState: { errors }, setValue, watch } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: initialData || {
-      workedForCompanyBefore: false,
+      workedForCompanyBefore: "false",
     },
   })
+
+  // Debug: Log form errors when they occur
+  const onError = (formErrors: any) => {
+    console.log("[PersonalInfoStep] Form validation errors:", formErrors)
+  }
 
   // Watch fields for auto-formatting
   const dobValue = watch('dateOfBirth')
@@ -140,7 +145,7 @@ export function PersonalInfoStep({ onNext, initialData }: Props) {
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)}>
+    <form onSubmit={handleSubmit(onSubmit, onError)}>
       <Card className="bg-white shadow-lg border border-gray-200">
         <CardHeader className="bg-gray-50 border-b border-gray-200">
           <CardTitle className="flex items-center gap-2 text-xl text-gray-900">
