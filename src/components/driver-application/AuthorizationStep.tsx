@@ -63,10 +63,48 @@ export function AuthorizationStep({ onNext, onBack, initialData }: Props) {
   ].filter(Boolean).length
 
   const handleSubmit = () => {
-    if (!allChecked) {
-      toast.error("Please review and agree to all statements, and type your full legal name to sign")
+    const errors: string[] = []
+    
+    // Check each required acknowledgement
+    if (!formData.acknowledgeDisclosure) {
+      errors.push("Acknowledge the FMCSA PSP Disclosure")
+    }
+    if (!formData.authorizeBackgroundCheck) {
+      errors.push("Authorize the background check")
+    }
+    if (!formData.understandDataQs) {
+      errors.push("Acknowledge the DataQs rights")
+    }
+    if (!formData.understandCrashDisplay) {
+      errors.push("Acknowledge understanding of crash data display")
+    }
+    if (!formData.understandInspectionDisplay) {
+      errors.push("Acknowledge understanding of inspection data display")
+    }
+    if (!formData.acknowledgeADANotice) {
+      errors.push("Acknowledge the ADA notice")
+    }
+    if (!formData.certifyInformationTrue) {
+      errors.push("Certify that all information is true and correct")
+    }
+    if (!formData.authorizeInvestigation) {
+      errors.push("Authorize investigation of statements")
+    }
+    
+    // Full legal name is required as signature
+    if (!formData.fullName || formData.fullName.trim().length < 2) {
+      errors.push("Type your full legal name as your electronic signature")
+    }
+    
+    if (errors.length > 0) {
+      const displayErrors = errors.slice(0, 3)
+      if (errors.length > 3) {
+        displayErrors.push(`...and ${errors.length - 3} more required`)
+      }
+      toast.error("Please complete all required authorizations:\n" + displayErrors.join('\n'), { duration: 5000 })
       return
     }
+    
     onNext({ pspAuthorization: formData })
   }
 

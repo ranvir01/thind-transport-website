@@ -231,3 +231,5 @@ Next.js 15, TypeScript, NextAuth v5, PostgreSQL, Tailwind CSS, Vercel, Shadcn UI
 
 *This document should be updated whenever significant changes are made to the codebase.*
 
+
+

@@ -136,11 +136,66 @@ export function DrivingRecordStep({ onNext, onBack, initialData }: Props) {
   }
 
   const handleSubmit = () => {
-    const cdl = formData.cdlLicenses[0]
-    if (!cdl.licenseNumber || !cdl.state || !cdl.expirationDate) {
-      toast.error("Please complete all required CDL fields")
+    const errors: string[] = []
+    
+    // At least one CDL is required
+    if (formData.cdlLicenses.length === 0) {
+      errors.push("At least one CDL license is required")
+    } else {
+      // Validate each CDL
+      formData.cdlLicenses.forEach((cdl, index) => {
+        const num = index + 1
+        if (!cdl.licenseNumber) {
+          errors.push(`CDL ${num}: License number is required`)
+        }
+        if (!cdl.state || cdl.state.length !== 2) {
+          errors.push(`CDL ${num}: State (2-letter code) is required`)
+        }
+        if (!cdl.type) {
+          errors.push(`CDL ${num}: License type is required`)
+        }
+        if (!cdl.expirationDate) {
+          errors.push(`CDL ${num}: Expiration date is required`)
+        }
+      })
+    }
+    
+    // Validate required yes/no questions have explanations if yes
+    if (formData.deniedLicense && !formData.deniedLicenseExplanation) {
+      errors.push("Please explain why your license was denied")
+    }
+    if (formData.suspendedLicense && !formData.suspendedLicenseExplanation) {
+      errors.push("Please explain your license suspension/revocation")
+    }
+    if (formData.felonyConviction && !formData.felonyConvictionExplanation) {
+      errors.push("Please explain your felony/DUI conviction")
+    }
+    
+    // Validate any accidents added are complete
+    formData.accidents.forEach((acc, index) => {
+      const num = index + 1
+      if (!acc.date) errors.push(`Accident ${num}: Date is required`)
+      if (!acc.location) errors.push(`Accident ${num}: Location is required`)
+      if (!acc.details) errors.push(`Accident ${num}: Description is required`)
+    })
+    
+    // Validate any violations added are complete
+    formData.violations.forEach((viol, index) => {
+      const num = index + 1
+      if (!viol.date) errors.push(`Violation ${num}: Date is required`)
+      if (!viol.location) errors.push(`Violation ${num}: Location is required`)
+      if (!viol.charge) errors.push(`Violation ${num}: Charge/offense is required`)
+    })
+    
+    if (errors.length > 0) {
+      const displayErrors = errors.slice(0, 3)
+      if (errors.length > 3) {
+        displayErrors.push(`...and ${errors.length - 3} more issues`)
+      }
+      toast.error(displayErrors.join('\n'), { duration: 5000 })
       return
     }
+    
     onNext({ drivingRecord: formData })
   }
 
@@ -184,61 +239,61 @@ export function DrivingRecordStep({ onNext, onBack, initialData }: Props) {
                 )}
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label className="text-gray-800 font-semibold">CDL Number <span className="text-red-500">*</span></Label>
-                  <Input
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label className="text-gray-800 font-semibold">CDL Number <span className="text-red-500">*</span></Label>
+              <Input
                     value={license.licenseNumber}
                     onChange={(e) => updateLicense(index, "licenseNumber", e.target.value.toUpperCase())}
                     className="mt-1 bg-white border-gray-300 focus:border-orange focus:ring-orange text-gray-900 uppercase"
-                    placeholder="WA12345678"
-                  />
-                </div>
-                <div>
-                  <Label className="text-gray-800 font-semibold">State <span className="text-red-500">*</span></Label>
-                  <Input
-                    maxLength={2}
+                placeholder="WA12345678"
+              />
+            </div>
+            <div>
+              <Label className="text-gray-800 font-semibold">State <span className="text-red-500">*</span></Label>
+              <Input
+                maxLength={2}
                     value={license.state}
                     onChange={(e) => updateLicense(index, "state", e.target.value.toUpperCase().replace(/[^A-Z]/g, '').slice(0, 2))}
                     className="mt-1 bg-white border-gray-300 focus:border-orange focus:ring-orange text-gray-900 uppercase"
-                    placeholder="WA"
-                  />
-                </div>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label className="text-gray-800 font-semibold">Type/Class <span className="text-red-500">*</span></Label>
-                  <select
+                placeholder="WA"
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label className="text-gray-800 font-semibold">Type/Class <span className="text-red-500">*</span></Label>
+              <select
                     className="w-full mt-1 bg-white border border-gray-300 rounded-md p-2.5 text-gray-900 focus:border-orange focus:ring-orange focus:outline-none"
                     value={license.type}
                     onChange={(e) => updateLicense(index, "type", e.target.value)}
-                  >
-                    <option value="Class A">Class A</option>
-                    <option value="Class B">Class B</option>
-                    <option value="Class C">Class C</option>
-                  </select>
-                </div>
-                <div>
-                  <Label className="text-gray-800 font-semibold">Endorsements</Label>
-                  <Input
+              >
+                <option value="Class A">Class A</option>
+                <option value="Class B">Class B</option>
+                <option value="Class C">Class C</option>
+              </select>
+            </div>
+            <div>
+              <Label className="text-gray-800 font-semibold">Endorsements</Label>
+              <Input
                     placeholder="H, T, N, P, X, etc."
                     value={license.endorsements}
                     onChange={(e) => updateLicense(index, "endorsements", e.target.value.toUpperCase())}
                     className="mt-1 bg-white border-gray-300 focus:border-orange focus:ring-orange text-gray-900 uppercase"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">Separate multiple with commas</p>
-                </div>
-              </div>
-              <div>
-                <Label className="text-gray-800 font-semibold">Expiration Date <span className="text-red-500">*</span></Label>
-                <Input
-                  placeholder="MM/DD/YYYY"
+              />
+              <p className="text-xs text-gray-500 mt-1">Separate multiple with commas</p>
+            </div>
+          </div>
+          <div>
+            <Label className="text-gray-800 font-semibold">Expiration Date <span className="text-red-500">*</span></Label>
+            <Input
+              placeholder="MM/DD/YYYY"
                   value={license.expirationDate}
                   onChange={(e) => updateLicense(index, "expirationDate", formatDate(e.target.value))}
                   className="mt-1 bg-white border-gray-300 focus:border-orange focus:ring-orange text-gray-900 max-w-xs"
-                />
-                <p className="text-xs text-gray-500 mt-1">Auto-formats as you type</p>
-              </div>
+            />
+            <p className="text-xs text-gray-500 mt-1">Auto-formats as you type</p>
+          </div>
             </div>
           ))}
         </div>
@@ -419,24 +474,24 @@ export function DrivingRecordStep({ onNext, onBack, initialData }: Props) {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <Label className="text-gray-800 font-semibold">Number of Fatalities</Label>
-                      <Input
-                        type="number"
-                        min="0"
+          <Input
+            type="number"
+            min="0"
                         value={accident.fatalities}
                         onChange={(e) => updateAccident(index, "fatalities", e.target.value)}
                         className="mt-1 bg-white border-gray-300 focus:border-orange focus:ring-orange text-gray-900"
-                        placeholder="0"
+            placeholder="0"
                       />
-                    </div>
-                    <div>
+        </div>
+        <div>
                       <Label className="text-gray-800 font-semibold">Number of Injuries</Label>
-                      <Input
-                        type="number"
-                        min="0"
+          <Input
+            type="number"
+            min="0"
                         value={accident.injuries}
                         onChange={(e) => updateAccident(index, "injuries", e.target.value)}
                         className="mt-1 bg-white border-gray-300 focus:border-orange focus:ring-orange text-gray-900"
-                        placeholder="0"
+            placeholder="0"
                       />
                     </div>
                   </div>

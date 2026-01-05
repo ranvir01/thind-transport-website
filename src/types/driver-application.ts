@@ -86,7 +86,7 @@ export interface DriverApplicationData {
     previousAddresses: AddressEntry[]
     
     // Previous employment with this company
-    workedForCompanyBefore: string // "true" or "false"
+    workedForCompanyBefore: 'true' | 'false' // Required answer
     previousWorkDates?: {
       from: string
       to: string

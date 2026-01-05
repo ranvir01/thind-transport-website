@@ -85,14 +85,14 @@ export function PDFPreviewStep({ formData, onBack, onSubmit, isSubmitting }: Pro
             <Loader2 className="h-10 w-10 animate-spin text-orange mb-4" />
             <span className="text-gray-700 font-medium">Filling your DOT application form...</span>
             <span className="text-gray-500 text-sm mt-2">Loading 25-page template and placing your data...</span>
-          </div>
+            </div>
         )}
 
         {error && (
           <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
             <div className="flex items-start gap-3">
               <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
-              <div>
+            <div>
                 <p className="text-red-800 font-medium">PDF Generation Error</p>
                 <p className="text-red-700 text-sm mt-1">{error}</p>
                 <Button 
@@ -105,7 +105,7 @@ export function PDFPreviewStep({ formData, onBack, onSubmit, isSubmitting }: Pro
                 </Button>
               </div>
             </div>
-          </div>
+                </div>
         )}
 
         {/* PDF Preview - Full Height for Scrolling */}
@@ -115,7 +115,7 @@ export function PDFPreviewStep({ formData, onBack, onSubmit, isSubmitting }: Pro
               <div className="bg-gray-200 px-4 py-3 flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <Eye className="h-5 w-5 text-gray-600" />
-                  <div>
+            <div>
                     <span className="text-sm font-medium text-gray-700">Official DOT Application</span>
                     <span className="text-xs text-gray-500 ml-2">(25 Pages - Scroll to view all)</span>
                   </div>
@@ -164,7 +164,7 @@ export function PDFPreviewStep({ formData, onBack, onSubmit, isSubmitting }: Pro
                 <div className="flex items-center gap-2">
                   <span className="w-6 h-6 rounded-full bg-orange text-white flex items-center justify-center text-xs font-bold">2</span>
                   Applicant Information
-                </div>
+                  </div>
                 <div className="flex items-center gap-2">
                   <span className="w-6 h-6 rounded-full bg-orange text-white flex items-center justify-center text-xs font-bold">3-4</span>
                   Employment History
@@ -172,23 +172,23 @@ export function PDFPreviewStep({ formData, onBack, onSubmit, isSubmitting }: Pro
                 <div className="flex items-center gap-2">
                   <span className="w-6 h-6 rounded-full bg-orange text-white flex items-center justify-center text-xs font-bold">5</span>
                   Accident & Violations
-                </div>
+            </div>
                 <div className="flex items-center gap-2">
                   <span className="w-6 h-6 rounded-full bg-orange text-white flex items-center justify-center text-xs font-bold">6</span>
                   CDL License Info
-                </div>
+                  </div>
                 <div className="flex items-center gap-2">
                   <span className="w-6 h-6 rounded-full bg-orange text-white flex items-center justify-center text-xs font-bold">7</span>
                   Driving Experience
-                </div>
+                  </div>
                 <div className="flex items-center gap-2">
                   <span className="w-6 h-6 rounded-full bg-orange text-white flex items-center justify-center text-xs font-bold">8</span>
                   States & Training
-                </div>
+              </div>
                 <div className="flex items-center gap-2">
                   <span className="w-6 h-6 rounded-full bg-orange text-white flex items-center justify-center text-xs font-bold">9-21</span>
                   PSP Authorization
-                </div>
+                  </div>
                 <div className="flex items-center gap-2">
                   <span className="w-6 h-6 rounded-full bg-gray-400 text-white flex items-center justify-center text-xs font-bold">22-25</span>
                   Road Test (Internal)
@@ -216,21 +216,21 @@ export function PDFPreviewStep({ formData, onBack, onSubmit, isSubmitting }: Pro
         </div>
 
         {/* Important Notice */}
-        <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
-          <p className="text-sm text-amber-900">
+          <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
+            <p className="text-sm text-amber-900">
             <strong>Important:</strong> Once you click "Submit Final Application", this complete 25-page DOT application 
             will be securely transmitted to Thind Transport LLC at thindcarrier@gmail.com. You will receive a confirmation 
             email and our compliance team will review your application within 1-2 weeks. We may contact you for additional 
             information or to schedule an interview.
-          </p>
-        </div>
+            </p>
+          </div>
 
         {/* Action Buttons */}
         <div className="flex flex-wrap gap-4 pt-4">
           <Button variant="outline" onClick={onBack} disabled={isSubmitting} className="flex-1 min-w-[140px] py-3">
             <ChevronLeft className="mr-2 h-5 w-5" />
-            Back to Edit
-          </Button>
+              Back to Edit
+            </Button>
           <Button 
             onClick={handleDownload} 
             disabled={!pdfBytes || isSubmitting} 
@@ -245,18 +245,18 @@ export function PDFPreviewStep({ formData, onBack, onSubmit, isSubmitting }: Pro
             disabled={isSubmitting || isGenerating || !pdfBytes} 
             className="flex-1 min-w-[200px] bg-green-600 hover:bg-green-700 text-white font-semibold py-3"
           >
-            {isSubmitting ? (
-              <>
+              {isSubmitting ? (
+                <>
                 <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                Submitting Application...
-              </>
-            ) : (
-              <>
+                  Submitting Application...
+                </>
+              ) : (
+                <>
                 <Send className="mr-2 h-5 w-5" />
-                Submit Final Application
-              </>
-            )}
-          </Button>
+                  Submit Final Application
+                </>
+              )}
+            </Button>
         </div>
       </CardContent>
     </Card>

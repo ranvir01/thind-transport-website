@@ -74,39 +74,41 @@ const addressSchema = z.object({
 })
 
 const schema = z.object({
-  // Position applying for
+  // Position applying for - REQUIRED
   positionApplyingFor: z.enum(['contract_driver', 'contractors_driver', 'both'], {
-    required_error: "Please select a position"
+    required_error: "Please select a position you are applying for"
   }),
   
-  // Basic info
+  // Basic info - ALL REQUIRED for DOT compliance
   firstName: z.string().min(2, "First name is required"),
   lastName: z.string().min(2, "Last name is required"),
-  dateOfBirth: z.string().regex(/^\d{2}\/\d{2}\/\d{4}$/, "Enter date as MM/DD/YYYY"),
+  dateOfBirth: z.string().regex(/^\d{2}\/\d{2}\/\d{4}$/, "Date of birth is required (MM/DD/YYYY)"),
   age: z.string().min(1, "Age is required"),
-  socialSecurityNumber: z.string().regex(/^\d{3}-\d{2}-\d{4}$/, "Enter SSN as XXX-XX-XXXX"),
-  phone: z.string().regex(/^\(\d{3}\) \d{3}-\d{4}$/, "Enter phone as (XXX) XXX-XXXX"),
-  emergencyPhone: z.string().regex(/^\(\d{3}\) \d{3}-\d{4}$/, "Enter phone as (XXX) XXX-XXXX"),
-  physicalExamExpiration: z.string().regex(/^\d{2}\/\d{2}\/\d{4}$/, "Enter date as MM/DD/YYYY"),
+  socialSecurityNumber: z.string().regex(/^\d{3}-\d{2}-\d{4}$/, "Social Security Number is required (XXX-XX-XXXX)"),
+  phone: z.string().regex(/^\(\d{3}\) \d{3}-\d{4}$/, "Phone number is required ((XXX) XXX-XXXX)"),
+  emergencyPhone: z.string().regex(/^\(\d{3}\) \d{3}-\d{4}$/, "Emergency contact phone is required ((XXX) XXX-XXXX)"),
+  physicalExamExpiration: z.string().regex(/^\d{2}\/\d{2}\/\d{4}$/, "Physical exam expiration date is required (MM/DD/YYYY)"),
   
-  // Current address
+  // Current address - REQUIRED
   currentAddress: addressSchema,
   
-  // Previous addresses (for 3 years of history)
+  // Previous addresses (for 3 years of history) - REQUIRED if less than 3 years at current address
   previousAddresses: z.array(addressSchema).optional(),
   
-  // Previous employment at this company
-  workedForCompanyBefore: z.string().optional(),
+  // Previous employment at this company - REQUIRED (must answer yes or no)
+  workedForCompanyBefore: z.enum(['true', 'false'], {
+    required_error: "Please indicate if you have worked for this company before"
+  }),
   previousWorkDates: z.object({
     from: z.string().optional(),
     to: z.string().optional(),
   }).optional(),
   reasonForLeaving: z.string().optional(),
   
-  // Education - matches PDF format (circle highest grade)
-  gradeSchool: z.number().min(1).max(12).optional(),
-  college: z.number().min(0).max(4).optional(),
-  postGraduate: z.number().min(0).max(4).optional(),
+  // Education - matches PDF format (circle highest grade) - REQUIRED
+  gradeSchool: z.number().min(1, "Indicate highest grade completed").max(12),
+  college: z.number().min(0).max(4).default(0),
+  postGraduate: z.number().min(0).max(4).default(0),
   
   // Legacy field for backwards compatibility
   educationLevel: z.string().optional(),
@@ -612,10 +614,10 @@ export function PersonalInfoStep({ onNext, initialData }: Props) {
                       </span>
                     </label>
                   ))}
-                </div>
-              </div>
-              
-              <div>
+            </div>
+          </div>
+
+          <div>
                 <Label className="text-gray-800 font-semibold">Post Graduate (1-4 years)</Label>
                 <div className="flex flex-wrap gap-2 mt-2">
                   {[0, 1, 2, 3, 4].map((year) => (

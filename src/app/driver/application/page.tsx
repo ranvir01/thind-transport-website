@@ -6,7 +6,7 @@ import { useSession, signOut } from "next-auth/react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
-import { Loader2, CheckCircle2, AlertCircle, ChevronRight, ChevronLeft, Save, LogOut, User, RotateCcw } from "lucide-react"
+import { Loader2, CheckCircle2, AlertCircle, ChevronRight, ChevronLeft, Save, LogOut, User, RotateCcw, FileText, X } from "lucide-react"
 import { toast } from "sonner"
 import type { DriverApplicationData } from "@/types/driver-application"
 
@@ -21,6 +21,17 @@ import { PDFPreviewStep } from "@/components/driver-application/PDFPreviewStep"
 
 const TOTAL_STEPS = 7
 const STORAGE_KEY = "thind_driver_application"
+
+// Step definitions for clickable navigation
+const STEPS = [
+  { num: 1, label: 'Personal' },
+  { num: 2, label: 'Employment' },
+  { num: 3, label: 'Driving' },
+  { num: 4, label: 'Experience' },
+  { num: 5, label: 'Authorization' },
+  { num: 6, label: 'Review' },
+  { num: 7, label: 'PDF Preview' },
+]
 
 // Safe localStorage helper
 const safeLocalStorage = {
@@ -70,6 +81,8 @@ export default function DriverApplicationPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [formData, setFormData] = useState<Partial<DriverApplicationData>>({})
   const [isLoaded, setIsLoaded] = useState(false)
+  const [showReference, setShowReference] = useState(false)
+  const [maxCompletedStep, setMaxCompletedStep] = useState(1)
 
   // Load saved form data from localStorage on mount
   useEffect(() => {
@@ -96,7 +109,11 @@ export default function DriverApplicationPage() {
                   formDataToRestore.personalInfo.workedForCompanyBefore = formDataToRestore.personalInfo.workedForCompanyBefore ? "true" : "false"
                 }
                 setFormData(formDataToRestore)
-                setCurrentStep(typeof parsed.currentStep === 'number' ? parsed.currentStep : 1)
+                const savedStep = typeof parsed.currentStep === 'number' ? parsed.currentStep : 1
+                setCurrentStep(savedStep)
+                // Restore max completed step - at least current step, or saved max
+                const savedMaxStep = typeof parsed.maxCompletedStep === 'number' ? parsed.maxCompletedStep : savedStep
+                setMaxCompletedStep(Math.max(savedStep, savedMaxStep))
                 toast.success("Your progress has been restored")
               }
             } catch (parseError) {
@@ -127,11 +144,12 @@ export default function DriverApplicationPage() {
       const dataToSave = {
         formData,
         currentStep,
+        maxCompletedStep,
         savedAt: new Date().toISOString()
       }
       safeLocalStorage.setItem(`${STORAGE_KEY}_${session.user.email}`, JSON.stringify(dataToSave))
     }
-  }, [formData, currentStep, session?.user?.email, isLoaded])
+  }, [formData, currentStep, maxCompletedStep, session?.user?.email, isLoaded])
 
   // Auto-save when form data changes
   useEffect(() => {
@@ -176,6 +194,7 @@ export default function DriverApplicationPage() {
       // Reset local state
       setFormData({})
       setCurrentStep(1)
+      setMaxCompletedStep(1)
       toast.success('Application data has been reset. You can start fresh!')
     } catch (error: any) {
       toast.error(error.message || 'Failed to reset application')
@@ -229,7 +248,9 @@ export default function DriverApplicationPage() {
     
     setFormData({ ...formData, ...updatedData })
     if (currentStep < TOTAL_STEPS) {
-      setCurrentStep(currentStep + 1)
+      const nextStep = currentStep + 1
+      setCurrentStep(nextStep)
+      setMaxCompletedStep(Math.max(maxCompletedStep, nextStep))
       window.scrollTo({ top: 0, behavior: "smooth" })
     }
   }
@@ -368,25 +389,55 @@ export default function DriverApplicationPage() {
           )}
         </div>
 
-        {/* Progress Bar */}
+        {/* Progress Bar with Clickable Steps */}
         <Card className="mb-6">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm font-semibold text-gray-700">
                 {currentStep <= TOTAL_STEPS ? `Step ${currentStep} of ${TOTAL_STEPS}` : 'Complete'}
               </span>
-              <span className="text-sm text-gray-500">{Math.round(progress)}% Complete</span>
+              <div className="flex items-center gap-3">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowReference(!showReference)}
+                  className="text-xs border-yellow-400 text-yellow-700 hover:bg-yellow-50"
+                >
+                  <FileText className="h-3 w-3 mr-1" />
+                  {showReference ? 'Hide' : 'View'} Original Form
+                </Button>
+                <span className="text-sm text-gray-500">{Math.round(progress)}% Complete</span>
+              </div>
             </div>
             <Progress value={progress} className="h-2" />
-            <div className="mt-4 flex justify-between text-xs text-gray-500">
-              <span className={currentStep >= 1 ? "text-orange font-semibold" : ""}>Personal</span>
-              <span className={currentStep >= 2 ? "text-orange font-semibold" : ""}>Employment</span>
-              <span className={currentStep >= 3 ? "text-orange font-semibold" : ""}>Driving</span>
-              <span className={currentStep >= 4 ? "text-orange font-semibold" : ""}>Experience</span>
-              <span className={currentStep >= 5 ? "text-orange font-semibold" : ""}>Authorization</span>
-              <span className={currentStep >= 6 ? "text-orange font-semibold" : ""}>Review</span>
-              <span className={currentStep >= 7 ? "text-orange font-semibold" : ""}>PDF Preview</span>
+            <div className="mt-4 flex justify-between text-xs">
+              {STEPS.map((step) => {
+                const isCompleted = step.num <= maxCompletedStep
+                const isCurrent = step.num === currentStep
+                const canNavigate = step.num <= maxCompletedStep
+                
+                return (
+                  <button
+                    key={step.num}
+                    type="button"
+                    onClick={() => canNavigate && setCurrentStep(step.num)}
+                    disabled={!canNavigate}
+                    className={`
+                      transition-all px-2 py-1 rounded
+                      ${isCurrent ? 'text-orange font-bold underline underline-offset-4' : ''}
+                      ${isCompleted && !isCurrent ? 'text-orange font-semibold hover:bg-orange/10 cursor-pointer' : ''}
+                      ${!isCompleted ? 'text-gray-400 cursor-not-allowed' : ''}
+                    `}
+                    title={canNavigate ? `Go to ${step.label}` : 'Complete previous steps first'}
+                  >
+                    {step.label}
+                  </button>
+                )
+              })}
             </div>
+            <p className="text-xs text-gray-400 mt-2 text-center">
+              Click any completed step to go back and edit
+            </p>
           </CardContent>
         </Card>
 
@@ -420,6 +471,31 @@ export default function DriverApplicationPage() {
           </div>
         </div>
       </div>
+
+      {/* Original PDF Reference Panel */}
+      {showReference && (
+        <div className="fixed right-0 top-16 w-[450px] h-[calc(100vh-64px)] bg-white shadow-2xl border-l border-gray-300 z-50 flex flex-col">
+          <div className="p-3 bg-yellow-50 border-b border-yellow-200 flex items-center justify-between">
+            <div>
+              <strong className="text-yellow-800 text-sm">Original Form Reference</strong>
+              <p className="text-xs text-yellow-600">Yellow highlights = Fields you need to fill</p>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowReference(false)}
+              className="text-yellow-700 hover:bg-yellow-100"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+          <iframe 
+            src="/templates/thind-transport-application-template.pdf#toolbar=1&navpanes=0"
+            className="flex-1 w-full bg-gray-100"
+            title="Original DOT Application Form Reference"
+          />
+        </div>
+      )}
     </div>
   )
 }

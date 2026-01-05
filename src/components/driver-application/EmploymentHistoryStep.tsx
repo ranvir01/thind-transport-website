@@ -57,15 +57,15 @@ export function EmploymentHistoryStep({ onNext, onBack, initialData }: Props) {
 
   const addEntry = (type: EntryType) => {
     const newEntry: EmploymentHistoryEntry = {
-      fromDate: "",
-      toDate: "",
+        fromDate: "",
+        toDate: "",
       employerName: type === 'unemployment' ? 'UNEMPLOYMENT' : (type === 'self-employment' ? '' : ''),
       position: type === 'unemployment' ? 'Unemployed' : '',
-      address: "",
-      phone: "",
-      reasonForLeaving: "",
-      subjectToFMCSR: false,
-      safetyFunctioning: false,
+        address: "",
+        phone: "",
+        reasonForLeaving: "",
+        subjectToFMCSR: false,
+        safetyFunctioning: false,
       isUnemployment: type === 'unemployment',
       isSelfEmployment: type === 'self-employment',
     }
@@ -93,18 +93,65 @@ export function EmploymentHistoryStep({ onNext, onBack, initialData }: Props) {
   }
 
   const handleSubmit = () => {
-    // Validate at least one complete entry
-    const hasValidEntry = entries.some(entry => {
-      if (entry.isUnemployment) {
-        return entry.fromDate && entry.toDate
-      }
-      return entry.employerName && entry.fromDate && entry.toDate && entry.position
-    })
+    // DOT requires comprehensive employment history
+    const errors: string[] = []
     
-    if (!hasValidEntry) {
-      toast.error("Please complete at least one employment entry with employer name, dates, and position")
+    if (entries.length === 0) {
+      toast.error("Please add at least one employment entry")
       return
     }
+    
+    // Validate each entry
+    entries.forEach((entry, index) => {
+      const entryNum = index + 1
+      
+      // All entries need dates
+      if (!entry.fromDate) {
+        errors.push(`Entry ${entryNum}: Start date (From) is required`)
+      }
+      if (!entry.toDate) {
+        errors.push(`Entry ${entryNum}: End date (To) is required - use "Present" for current`)
+      }
+      
+      if (entry.isUnemployment) {
+        // Unemployment just needs dates - already validated above
+      } else if (entry.isSelfEmployment) {
+        if (!entry.employerName) {
+          errors.push(`Entry ${entryNum}: Business name is required for self-employment`)
+        }
+        if (!entry.position) {
+          errors.push(`Entry ${entryNum}: Description of work is required`)
+        }
+      } else {
+        // Regular employment - all fields required
+        if (!entry.employerName) {
+          errors.push(`Entry ${entryNum}: Employer name is required`)
+        }
+        if (!entry.position) {
+          errors.push(`Entry ${entryNum}: Position/title is required`)
+        }
+        if (!entry.address) {
+          errors.push(`Entry ${entryNum}: Employer address is required`)
+        }
+        if (!entry.phone) {
+          errors.push(`Entry ${entryNum}: Employer phone is required`)
+        }
+        if (!entry.reasonForLeaving && entry.toDate?.toLowerCase() !== 'present') {
+          errors.push(`Entry ${entryNum}: Reason for leaving is required`)
+        }
+      }
+    })
+    
+    if (errors.length > 0) {
+      // Show first few errors
+      const displayErrors = errors.slice(0, 3)
+      if (errors.length > 3) {
+        displayErrors.push(`...and ${errors.length - 3} more issues`)
+      }
+      toast.error(displayErrors.join('\n'), { duration: 5000 })
+      return
+    }
+    
     onNext({ employmentHistory: { entries } })
   }
 
@@ -258,95 +305,95 @@ export function EmploymentHistoryStep({ onNext, onBack, initialData }: Props) {
             {/* Standard employment fields */}
             {!entry.isUnemployment && !entry.isSelfEmployment && (
               <>
-                <div>
-                  <Label className="text-gray-800 font-semibold">Employer Name <span className="text-red-500">*</span></Label>
-                  <Input
-                    value={entry.employerName}
-                    onChange={(e) => updateEntry(index, "employerName", e.target.value)}
-                    className="mt-1 bg-white border-gray-300 focus:border-orange focus:ring-orange text-gray-900"
-                    placeholder="Company Name LLC"
-                  />
-                </div>
+            <div>
+              <Label className="text-gray-800 font-semibold">Employer Name <span className="text-red-500">*</span></Label>
+              <Input
+                value={entry.employerName}
+                onChange={(e) => updateEntry(index, "employerName", e.target.value)}
+                className="mt-1 bg-white border-gray-300 focus:border-orange focus:ring-orange text-gray-900"
+                placeholder="Company Name LLC"
+              />
+            </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label className="text-gray-800 font-semibold">Position <span className="text-red-500">*</span></Label>
-                    <Input
-                      value={entry.position}
-                      onChange={(e) => updateEntry(index, "position", e.target.value)}
-                      className="mt-1 bg-white border-gray-300 focus:border-orange focus:ring-orange text-gray-900"
-                      placeholder="OTR Driver"
-                    />
-                  </div>
-                  <div>
-                    <Label className="text-gray-800 font-semibold">Phone <span className="text-red-500">*</span></Label>
-                    <Input
-                      type="tel"
-                      value={entry.phone}
-                      onChange={(e) => handlePhoneChange(index, e.target.value)}
-                      className="mt-1 bg-white border-gray-300 focus:border-orange focus:ring-orange text-gray-900"
-                      placeholder="(XXX) XXX-XXXX"
-                    />
-                    <p className="text-xs text-gray-500 mt-1">Auto-formats as you type</p>
-                  </div>
-                </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label className="text-gray-800 font-semibold">Position <span className="text-red-500">*</span></Label>
+                <Input
+                  value={entry.position}
+                  onChange={(e) => updateEntry(index, "position", e.target.value)}
+                  className="mt-1 bg-white border-gray-300 focus:border-orange focus:ring-orange text-gray-900"
+                  placeholder="OTR Driver"
+                />
+              </div>
+              <div>
+                <Label className="text-gray-800 font-semibold">Phone <span className="text-red-500">*</span></Label>
+                <Input
+                  type="tel"
+                  value={entry.phone}
+                  onChange={(e) => handlePhoneChange(index, e.target.value)}
+                  className="mt-1 bg-white border-gray-300 focus:border-orange focus:ring-orange text-gray-900"
+                  placeholder="(XXX) XXX-XXXX"
+                />
+                <p className="text-xs text-gray-500 mt-1">Auto-formats as you type</p>
+              </div>
+            </div>
 
-                <div>
-                  <Label className="text-gray-800 font-semibold">Address <span className="text-red-500">*</span></Label>
-                  <Input
-                    value={entry.address}
-                    onChange={(e) => updateEntry(index, "address", e.target.value)}
-                    className="mt-1 bg-white border-gray-300 focus:border-orange focus:ring-orange text-gray-900"
-                    placeholder="123 Main St, City, State ZIP"
-                  />
-                </div>
+            <div>
+              <Label className="text-gray-800 font-semibold">Address <span className="text-red-500">*</span></Label>
+              <Input
+                value={entry.address}
+                onChange={(e) => updateEntry(index, "address", e.target.value)}
+                className="mt-1 bg-white border-gray-300 focus:border-orange focus:ring-orange text-gray-900"
+                placeholder="123 Main St, City, State ZIP"
+              />
+            </div>
 
-                <div>
-                  <Label className="text-gray-800 font-semibold">Reason for Leaving <span className="text-red-500">*</span></Label>
-                  <Input
-                    value={entry.reasonForLeaving}
-                    onChange={(e) => updateEntry(index, "reasonForLeaving", e.target.value)}
-                    className="mt-1 bg-white border-gray-300 focus:border-orange focus:ring-orange text-gray-900"
-                    placeholder="Better opportunity, relocation, etc."
-                  />
-                </div>
+            <div>
+              <Label className="text-gray-800 font-semibold">Reason for Leaving <span className="text-red-500">*</span></Label>
+              <Input
+                value={entry.reasonForLeaving}
+                onChange={(e) => updateEntry(index, "reasonForLeaving", e.target.value)}
+                className="mt-1 bg-white border-gray-300 focus:border-orange focus:ring-orange text-gray-900"
+                placeholder="Better opportunity, relocation, etc."
+              />
+            </div>
               </>
             )}
 
             {/* FMCSR Questions - only for employment/self-employment */}
             {!entry.isUnemployment && (
-              <div className="space-y-3 pt-2 border-t border-gray-200">
-                <label className="flex items-center gap-3 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={entry.subjectToFMCSR}
-                    onChange={(e) => updateEntry(index, "subjectToFMCSR", e.target.checked)}
-                    className="w-4 h-4 text-orange focus:ring-orange border-gray-300 rounded"
-                  />
-                  <span className="text-gray-800">Were you subject to FMCSRs while employed here?</span>
-                </label>
-                <label className="flex items-center gap-3 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={entry.safetyFunctioning}
-                    onChange={(e) => updateEntry(index, "safetyFunctioning", e.target.checked)}
-                    className="w-4 h-4 text-orange focus:ring-orange border-gray-300 rounded"
-                  />
-                  <span className="text-gray-800">Was your job designated as safety-sensitive (DOT drug/alcohol testing)?</span>
-                </label>
-              </div>
+            <div className="space-y-3 pt-2 border-t border-gray-200">
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={entry.subjectToFMCSR}
+                  onChange={(e) => updateEntry(index, "subjectToFMCSR", e.target.checked)}
+                  className="w-4 h-4 text-orange focus:ring-orange border-gray-300 rounded"
+                />
+                <span className="text-gray-800">Were you subject to FMCSRs while employed here?</span>
+              </label>
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={entry.safetyFunctioning}
+                  onChange={(e) => updateEntry(index, "safetyFunctioning", e.target.checked)}
+                  className="w-4 h-4 text-orange focus:ring-orange border-gray-300 rounded"
+                />
+                <span className="text-gray-800">Was your job designated as safety-sensitive (DOT drug/alcohol testing)?</span>
+              </label>
+            </div>
             )}
           </div>
         ))}
 
         {/* Add Entry Buttons */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          <Button 
-            variant="outline" 
+        <Button 
+          variant="outline" 
             onClick={() => addEntry('employment')} 
             className="border-2 border-dashed border-gray-300 hover:border-orange hover:bg-orange/5 text-gray-700"
-          >
-            <Plus className="mr-2 h-5 w-5" />
+        >
+          <Plus className="mr-2 h-5 w-5" />
             Add Employer
           </Button>
           <Button 
@@ -364,7 +411,7 @@ export function EmploymentHistoryStep({ onNext, onBack, initialData }: Props) {
           >
             <User className="mr-2 h-5 w-5" />
             Add Self-Employment
-          </Button>
+        </Button>
         </div>
 
         <div className="flex gap-4 pt-4">

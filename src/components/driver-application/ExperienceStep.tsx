@@ -127,22 +127,49 @@ export function ExperienceStep({ onNext, onBack, initialData }: Props) {
       setFormData({
         ...formData,
         statesOperated: [...formData.statesOperated, state]
-      })
+    })
     }
   }
 
   const handleSubmit = () => {
+    const errors: string[] = []
+    
+    // States operated is required
     if (formData.statesOperated.length === 0) {
-      toast.error("Please select at least one state you have operated in")
-      return
+      errors.push("Select at least one state you have operated in")
     }
     
-    const hasValidExperience = formData.drivingExperience.some(exp => 
-      exp.classOfEquipment && exp.dateFrom && exp.dateTo
-    )
+    // At least one driving experience entry is required
+    if (formData.drivingExperience.length === 0) {
+      errors.push("Add at least one driving experience entry")
+    } else {
+      // Validate each experience entry
+      formData.drivingExperience.forEach((exp, index) => {
+        const num = index + 1
+        if (!exp.classOfEquipment) {
+          errors.push(`Experience ${num}: Class of equipment is required`)
+        }
+        if (!exp.typeOfEquipment) {
+          errors.push(`Experience ${num}: Type of equipment is required`)
+        }
+        if (!exp.dateFrom) {
+          errors.push(`Experience ${num}: Start date (From) is required`)
+        }
+        if (!exp.dateTo) {
+          errors.push(`Experience ${num}: End date (To) is required`)
+        }
+        if (!exp.approximateMiles) {
+          errors.push(`Experience ${num}: Approximate miles driven is required`)
+        }
+      })
+    }
     
-    if (!hasValidExperience) {
-      toast.error("Please complete at least one driving experience entry")
+    if (errors.length > 0) {
+      const displayErrors = errors.slice(0, 3)
+      if (errors.length > 3) {
+        displayErrors.push(`...and ${errors.length - 3} more issues`)
+      }
+      toast.error(displayErrors.join('\n'), { duration: 5000 })
       return
     }
     
@@ -212,51 +239,51 @@ export function ExperienceStep({ onNext, onBack, initialData }: Props) {
                   </div>
                   <div>
                     <Label className="text-gray-800 font-semibold">Type of Equipment</Label>
-                    <select
+              <select
                       value={exp.typeOfEquipment}
                       onChange={(e) => updateExperience(index, "typeOfEquipment", e.target.value)}
-                      className="w-full mt-1 bg-white border border-gray-300 rounded-md p-2.5 text-gray-900 focus:border-orange focus:ring-orange focus:outline-none"
-                    >
-                      <option value="">Select type...</option>
+                className="w-full mt-1 bg-white border border-gray-300 rounded-md p-2.5 text-gray-900 focus:border-orange focus:ring-orange focus:outline-none"
+              >
+                <option value="">Select type...</option>
                       {EQUIPMENT_TYPES.map(type => (
                         <option key={type.value} value={type.value}>{type.label}</option>
                       ))}
-                    </select>
-                  </div>
+              </select>
+            </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
+            <div>
                     <Label className="text-gray-800 font-semibold">From (MM/YY) <span className="text-red-500">*</span></Label>
-                    <Input
+              <Input
                       value={exp.dateFrom}
                       onChange={(e) => updateExperience(index, "dateFrom", e.target.value)}
-                      className="mt-1 bg-white border-gray-300 focus:border-orange focus:ring-orange text-gray-900"
+                className="mt-1 bg-white border-gray-300 focus:border-orange focus:ring-orange text-gray-900"
                       placeholder="01/15"
-                    />
+              />
                     <p className="text-xs text-gray-500 mt-1">Auto-formats as you type</p>
-                  </div>
-                  <div>
+            </div>
+            <div>
                     <Label className="text-gray-800 font-semibold">To (MM/YY) <span className="text-red-500">*</span></Label>
-                    <Input
+              <Input
                       value={exp.dateTo}
                       onChange={(e) => updateExperience(index, "dateTo", e.target.value)}
-                      className="mt-1 bg-white border-gray-300 focus:border-orange focus:ring-orange text-gray-900"
+                className="mt-1 bg-white border-gray-300 focus:border-orange focus:ring-orange text-gray-900"
                       placeholder="Present or 12/24"
-                    />
+              />
                     <p className="text-xs text-gray-500 mt-1">Type "Present" if current</p>
-                  </div>
-                  <div>
+            </div>
+            <div>
                     <Label className="text-gray-800 font-semibold">Approximate Miles</Label>
-                    <Input
+              <Input
                       value={exp.approximateMiles}
                       onChange={(e) => updateExperience(index, "approximateMiles", e.target.value)}
-                      className="mt-1 bg-white border-gray-300 focus:border-orange focus:ring-orange text-gray-900"
-                      placeholder="500,000"
-                    />
-                    <p className="text-xs text-gray-500 mt-1">Total miles driven</p>
-                  </div>
-                </div>
+                className="mt-1 bg-white border-gray-300 focus:border-orange focus:ring-orange text-gray-900"
+                placeholder="500,000"
+              />
+              <p className="text-xs text-gray-500 mt-1">Total miles driven</p>
+            </div>
+          </div>
               </div>
             ))}
           </div>
@@ -284,8 +311,8 @@ export function ExperienceStep({ onNext, onBack, initialData }: Props) {
                 {state}
               </button>
             ))}
-          </div>
-          
+        </div>
+
           {formData.statesOperated.length > 0 && (
             <p className="text-sm text-gray-700 mt-3">
               <strong>Selected ({formData.statesOperated.length}):</strong> {formData.statesOperated.sort().join(", ")}
@@ -296,49 +323,49 @@ export function ExperienceStep({ onNext, onBack, initialData }: Props) {
         {/* Training and Qualifications */}
         <div className="border-t border-gray-200 pt-6 space-y-4">
           <h3 className="font-bold text-lg text-gray-900">Training & Qualifications</h3>
-          
-          <div>
-            <Label className="text-gray-800 font-semibold">Special Courses or Training</Label>
-            <Textarea
+
+        <div>
+          <Label className="text-gray-800 font-semibold">Special Courses or Training</Label>
+          <Textarea
               placeholder="List any special driving courses, certifications, or training you have completed. Example: Hazmat certification, Tanker endorsement training, Smith System defensive driving, CDL training school name and date, etc."
-              value={formData.specialCourses}
-              onChange={(e) => setFormData({ ...formData, specialCourses: e.target.value })}
-              className="mt-1 bg-gray-50 border-gray-300 focus:border-orange focus:ring-orange text-gray-900"
+            value={formData.specialCourses}
+            onChange={(e) => setFormData({ ...formData, specialCourses: e.target.value })}
+            className="mt-1 bg-gray-50 border-gray-300 focus:border-orange focus:ring-orange text-gray-900"
               rows={3}
-            />
-          </div>
+          />
+        </div>
 
-          <div>
+        <div>
             <Label className="text-gray-800 font-semibold">Safe Driving Awards</Label>
-            <Textarea
+          <Textarea
               placeholder="List any safe driving awards or recognitions. Example: 1 Million Miles Safe Driving Award from XYZ Trucking (2020), Company Safety Driver of the Year (2019), etc."
-              value={formData.safetyAwards}
-              onChange={(e) => setFormData({ ...formData, safetyAwards: e.target.value })}
-              className="mt-1 bg-gray-50 border-gray-300 focus:border-orange focus:ring-orange text-gray-900"
+            value={formData.safetyAwards}
+            onChange={(e) => setFormData({ ...formData, safetyAwards: e.target.value })}
+            className="mt-1 bg-gray-50 border-gray-300 focus:border-orange focus:ring-orange text-gray-900"
               rows={3}
-            />
-          </div>
+          />
+        </div>
 
-          <div>
+        <div>
             <Label className="text-gray-800 font-semibold">Other Training/Courses</Label>
-            <Textarea
+          <Textarea
               placeholder="List any other relevant training or courses. Example: ELD training, load securement certification, first aid/CPR, forklift certification, etc."
-              value={formData.otherTraining}
-              onChange={(e) => setFormData({ ...formData, otherTraining: e.target.value })}
-              className="mt-1 bg-gray-50 border-gray-300 focus:border-orange focus:ring-orange text-gray-900"
+            value={formData.otherTraining}
+            onChange={(e) => setFormData({ ...formData, otherTraining: e.target.value })}
+            className="mt-1 bg-gray-50 border-gray-300 focus:border-orange focus:ring-orange text-gray-900"
               rows={3}
-            />
-          </div>
+          />
+        </div>
 
-          <div>
+        <div>
             <Label className="text-gray-800 font-semibold">Special Equipment or Technical Materials Experience</Label>
-            <Textarea
+          <Textarea
               placeholder="List experience with special equipment or materials. Example: Oversize/overweight loads, escort/pilot car operations, specialized trailers (lowboy, RGN, step deck), GPS/ELD systems, etc."
-              value={formData.specialEquipment}
-              onChange={(e) => setFormData({ ...formData, specialEquipment: e.target.value })}
-              className="mt-1 bg-gray-50 border-gray-300 focus:border-orange focus:ring-orange text-gray-900"
+            value={formData.specialEquipment}
+            onChange={(e) => setFormData({ ...formData, specialEquipment: e.target.value })}
+            className="mt-1 bg-gray-50 border-gray-300 focus:border-orange focus:ring-orange text-gray-900"
               rows={3}
-            />
+          />
           </div>
         </div>
 
