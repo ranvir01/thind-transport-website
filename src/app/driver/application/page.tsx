@@ -6,7 +6,7 @@ import { useSession, signOut } from "next-auth/react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
-import { Loader2, CheckCircle2, AlertCircle, ChevronRight, ChevronLeft, Save, LogOut, User } from "lucide-react"
+import { Loader2, CheckCircle2, AlertCircle, ChevronRight, ChevronLeft, Save, LogOut, User, RotateCcw } from "lucide-react"
 import { toast } from "sonner"
 import type { DriverApplicationData } from "@/types/driver-application"
 
@@ -148,6 +148,38 @@ export default function DriverApplicationPage() {
 
   const handleLogout = async () => {
     await signOut({ callbackUrl: "/driver/login" })
+  }
+
+  const handleResetApplication = async () => {
+    if (!confirm('Are you sure you want to reset your application? This will clear all your saved data and you will need to start over.')) {
+      return
+    }
+    
+    try {
+      // Clear localStorage
+      if (session?.user?.email) {
+        safeLocalStorage.removeItem(`${STORAGE_KEY}_${session.user.email}`)
+      }
+      
+      // Call API to reset server-side data
+      const response = await fetch('/api/driver/reset-application', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: session?.user?.email })
+      })
+      
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.error || 'Failed to reset application')
+      }
+      
+      // Reset local state
+      setFormData({})
+      setCurrentStep(1)
+      toast.success('Application data has been reset. You can start fresh!')
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to reset application')
+    }
   }
 
   // #region agent log - before render checks
@@ -314,6 +346,15 @@ export default function DriverApplicationPage() {
                 <User className="h-4 w-4" />
                 <span className="text-sm font-medium">{session.user.name || session.user.email}</span>
               </div>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={handleResetApplication}
+                className="text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+                title="Reset and start over"
+              >
+                <RotateCcw className="h-4 w-4" />
+              </Button>
               <Button 
                 variant="outline" 
                 size="sm" 
