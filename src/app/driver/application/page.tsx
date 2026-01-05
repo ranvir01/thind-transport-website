@@ -142,8 +142,7 @@ export default function DriverApplicationPage() {
   }, [status])
 
   const handleLogout = async () => {
-    await signOut({ redirect: false })
-    window.location.href = "/driver/login"
+    await signOut({ callbackUrl: "/driver/login" })
   }
 
   // #region agent log - before render checks

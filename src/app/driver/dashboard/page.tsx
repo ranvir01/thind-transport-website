@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { useSession, signOut } from "next-auth/react"
+import { useSession } from "next-auth/react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Loader2, CheckCircle2, FileText, Calendar, LogOut, User } from "lucide-react"
@@ -53,10 +53,7 @@ export default function DriverDashboardPage() {
             <h1 className="text-3xl font-black text-navy">Driver Portal</h1>
             <p className="text-gray-600">Welcome back, {session?.user?.name || "Driver"}!</p>
           </div>
-          <Button variant="outline" onClick={async () => {
-              await signOut({ redirect: false })
-              window.location.href = "/driver/login"
-            }}>
+          <Button variant="outline" onClick={() => router.push("/api/auth/signout")}>
             <LogOut className="mr-2 h-4 w-4" />
             Sign Out
           </Button>
