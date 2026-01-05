@@ -82,12 +82,11 @@ type FormData = z.infer<typeof schema>
 
 interface Props {
   onNext: (data: { personalInfo: FormData }) => void
-  onSaveDraft?: (data: { personalInfo: Partial<FormData> }) => void
   initialData?: Partial<FormData>
 }
 
-export function PersonalInfoStep({ onNext, onSaveDraft, initialData }: Props) {
-  const { register, handleSubmit, formState: { errors }, setValue, watch, getValues } = useForm<FormData>({
+export function PersonalInfoStep({ onNext, initialData }: Props) {
+  const { register, handleSubmit, formState: { errors }, setValue, watch } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: initialData || {
       workedForCompanyBefore: "false",
@@ -99,33 +98,13 @@ export function PersonalInfoStep({ onNext, onSaveDraft, initialData }: Props) {
     console.log("[PersonalInfoStep] Form validation errors:", formErrors)
   }
 
-  // Auto-save draft every 5 seconds while user is typing
-  useEffect(() => {
-    if (!onSaveDraft) return
-    
-    const interval = setInterval(() => {
-      const currentValues = getValues()
-      // Only save if there's some data entered
-      if (currentValues.firstName || currentValues.lastName || currentValues.phone) {
-        onSaveDraft({ personalInfo: currentValues })
-      }
-    }, 5000)
-
-    return () => clearInterval(interval)
-  }, [onSaveDraft, getValues])
-
-  // Also save on blur (when user leaves a field)
-  const handleFieldBlur = () => {
-    if (onSaveDraft) {
-      const currentValues = getValues()
-      if (currentValues.firstName || currentValues.lastName || currentValues.phone) {
-        onSaveDraft({ personalInfo: currentValues })
-      }
-    }
-  }
-
   // Watch fields for auto-formatting
   const dobValue = watch('dateOfBirth')
+
+  // Placeholder for blur handler - removed auto-save to fix hooks error
+  const handleFieldBlur = () => {
+    // Auto-save disabled - data is saved on step completion
+  }
   
   // Auto-calculate age when DOB changes
   useEffect(() => {

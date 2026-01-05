@@ -198,11 +198,6 @@ export default function DriverApplicationPage() {
     }
   }
 
-  // Handle saving draft data from step components (for auto-save while typing)
-  const handleSaveDraft = useCallback((draftData: any) => {
-    setFormData(prev => ({ ...prev, ...draftData }))
-  }, [])
-
   const handleSubmit = async (finalData: DriverApplicationData) => {
     setIsSubmitting(true)
 
@@ -246,7 +241,7 @@ export default function DriverApplicationPage() {
   const renderStep = () => {
     switch (currentStep) {
       case 1:
-        return <PersonalInfoStep onNext={handleNext} onSaveDraft={handleSaveDraft} initialData={formData.personalInfo} />
+        return <PersonalInfoStep onNext={handleNext} initialData={formData.personalInfo} />
       case 2:
         return <EmploymentHistoryStep onNext={handleNext} onBack={handleBack} initialData={formData.employmentHistory} />
       case 3:
