@@ -64,19 +64,31 @@ export default function DriverApplicationPage() {
 
   // Load saved form data from localStorage on mount
   useEffect(() => {
-    if (status === "authenticated" && session?.user?.email) {
-      const saved = safeLocalStorage.getItem(`${STORAGE_KEY}_${session.user.email}`)
-      if (saved) {
-        try {
-          const parsed = JSON.parse(saved)
-          setFormData(parsed.formData || {})
-          setCurrentStep(parsed.currentStep || 1)
-          toast.success("Your progress has been restored")
-        } catch (e) {
-          console.error("Failed to parse saved form data:", e)
+    if (status === "authenticated") {
+      try {
+        const userEmail = session?.user?.email
+        if (userEmail) {
+          const saved = safeLocalStorage.getItem(`${STORAGE_KEY}_${userEmail}`)
+          if (saved) {
+            try {
+              const parsed = JSON.parse(saved)
+              if (parsed && typeof parsed === 'object') {
+                setFormData(parsed.formData || {})
+                setCurrentStep(typeof parsed.currentStep === 'number' ? parsed.currentStep : 1)
+                toast.success("Your progress has been restored")
+              }
+            } catch (parseError) {
+              console.error("Failed to parse saved form data:", parseError)
+              // Clear corrupted data
+              safeLocalStorage.removeItem(`${STORAGE_KEY}_${userEmail}`)
+            }
+          }
         }
+      } catch (e) {
+        console.error("Error loading saved data:", e)
+      } finally {
+        setIsLoaded(true)
       }
-      setIsLoaded(true)
     }
   }, [status, session?.user?.email])
 
@@ -110,10 +122,26 @@ export default function DriverApplicationPage() {
     router.push("/driver/login")
   }
 
-  if (status === "loading") {
+  // Show loading while session is loading or waiting for localStorage to load
+  if (status === "loading" || (status === "authenticated" && !isLoaded)) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-orange" />
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin text-orange mx-auto mb-4" />
+          <p className="text-gray-600">Loading your application...</p>
+        </div>
+      </div>
+    )
+  }
+  
+  // If unauthenticated, the useEffect will redirect, show loading in the meantime
+  if (status === "unauthenticated") {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin text-orange mx-auto mb-4" />
+          <p className="text-gray-600">Redirecting to login...</p>
+        </div>
       </div>
     )
   }
