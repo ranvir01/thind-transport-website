@@ -11,6 +11,11 @@ import type { EmploymentHistoryEntry } from "@/types/driver-application"
 
 // Auto-format helpers
 const formatMonthYear = (value: string) => {
+  // Allow "Present" or any text containing letters
+  const lowerValue = value.toLowerCase()
+  if (lowerValue.startsWith('p') || lowerValue === 'present' || /[a-zA-Z]/.test(value)) {
+    return value
+  }
   const digits = value.replace(/\D/g, '').slice(0, 4)
   if (digits.length <= 2) return digits
   return `${digits.slice(0, 2)}/${digits.slice(2)}`
