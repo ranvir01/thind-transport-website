@@ -1,6 +1,7 @@
 "use client"
 
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
+import { signOut } from "next-auth/react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { AlertTriangle, RefreshCw, LogIn } from "lucide-react"
@@ -12,9 +13,14 @@ export default function Error({
   error: Error & { digest?: string }
   reset: () => void
 }) {
+  const [errorMessage, setErrorMessage] = useState<string>("")
+
   useEffect(() => {
     // Log the error to console
     console.error("Application page error:", error)
+    console.error("Error message:", error.message)
+    console.error("Error stack:", error.stack)
+    setErrorMessage(error.message || "Unknown error")
     
     // Clear any potentially corrupted localStorage data
     if (typeof window !== 'undefined') {
@@ -33,11 +39,17 @@ export default function Error({
   }, [error])
 
   const handleRetry = () => {
-    // Reset the error boundary
-    reset()
+    // Force a full page reload to clear any cached state
+    window.location.reload()
   }
 
-  const handleBackToLogin = () => {
+  const handleBackToLogin = async () => {
+    // Sign out and redirect
+    try {
+      await signOut({ redirect: false })
+    } catch (e) {
+      console.error("Sign out failed:", e)
+    }
     window.location.href = "/driver/login"
   }
 
@@ -54,6 +66,14 @@ export default function Error({
           <p className="text-gray-600">
             We encountered an error loading your application. We've automatically cleared any corrupted data.
           </p>
+          
+          {errorMessage && (
+            <div className="p-3 bg-red-50 border border-red-200 rounded text-left">
+              <p className="text-xs text-red-700 font-mono break-all">
+                Error: {errorMessage}
+              </p>
+            </div>
+          )}
           
           <div className="flex flex-col gap-2">
             <Button onClick={handleRetry} className="w-full">
