@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { ChevronLeft, Send, Loader2, CheckCircle2 } from "lucide-react"
+import { ChevronLeft, ChevronRight, Loader2, CheckCircle2, Eye } from "lucide-react"
 import type { DriverApplicationData } from "@/types/driver-application"
 
 interface Props {
@@ -18,48 +18,50 @@ export function ReviewStep({ formData, onBack, onSubmit, isSubmitting }: Props) 
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <CheckCircle2 className="h-5 w-5 text-orange" />
-          Review & Submit Application
+    <Card className="bg-white shadow-lg border-0">
+      <CardHeader className="bg-gradient-to-r from-navy to-navy/90 text-white rounded-t-lg">
+        <CardTitle className="flex items-center gap-2 text-xl">
+          <Eye className="h-6 w-6 text-orange" />
+          Review Your Application
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-6">
-        <p className="text-sm text-gray-600">
-          Please review your information before submitting. Once submitted, a PDF copy will be generated and sent to our compliance team.
-        </p>
+      <CardContent className="space-y-6 pt-6">
+        <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+          <p className="text-sm text-blue-900">
+            <strong>Almost there!</strong> Please review your information below before proceeding to the final PDF preview and submission.
+          </p>
+        </div>
 
         {/* Personal Info Summary */}
-        <div className="border-l-4 border-orange pl-4">
-          <h3 className="font-semibold mb-2">Personal Information</h3>
-          <div className="text-sm space-y-1 text-gray-700">
-            <p><strong>Name:</strong> {formData.personalInfo?.firstName} {formData.personalInfo?.lastName}</p>
-            <p><strong>DOB:</strong> {formData.personalInfo?.dateOfBirth}</p>
-            <p><strong>Phone:</strong> {formData.personalInfo?.phone}</p>
-            <p><strong>SSN:</strong> {formData.personalInfo?.socialSecurityNumber}</p>
+        <div className="border-l-4 border-orange pl-4 py-2 bg-gray-50 rounded-r-lg">
+          <h3 className="font-bold text-gray-900 mb-3">Personal Information</h3>
+          <div className="text-sm space-y-2 text-gray-700">
+            <p><span className="font-semibold text-gray-800">Name:</span> {formData.personalInfo?.firstName} {formData.personalInfo?.lastName}</p>
+            <p><span className="font-semibold text-gray-800">Date of Birth:</span> {formData.personalInfo?.dateOfBirth}</p>
+            <p><span className="font-semibold text-gray-800">Phone:</span> {formData.personalInfo?.phone}</p>
+            <p><span className="font-semibold text-gray-800">SSN:</span> •••-••-{formData.personalInfo?.socialSecurityNumber?.slice(-4)}</p>
           </div>
         </div>
 
         {/* CDL Info Summary */}
-        <div className="border-l-4 border-orange pl-4">
-          <h3 className="font-semibold mb-2">CDL Information</h3>
-          <div className="text-sm space-y-1 text-gray-700">
-            <p><strong>License:</strong> {formData.drivingRecord?.cdlLicenses?.[0]?.licenseNumber}</p>
-            <p><strong>State:</strong> {formData.drivingRecord?.cdlLicenses?.[0]?.state}</p>
-            <p><strong>Type:</strong> {formData.drivingRecord?.cdlLicenses?.[0]?.type}</p>
-            <p><strong>Expires:</strong> {formData.drivingRecord?.cdlLicenses?.[0]?.expirationDate}</p>
+        <div className="border-l-4 border-orange pl-4 py-2 bg-gray-50 rounded-r-lg">
+          <h3 className="font-bold text-gray-900 mb-3">CDL Information</h3>
+          <div className="text-sm space-y-2 text-gray-700">
+            <p><span className="font-semibold text-gray-800">License #:</span> {formData.drivingRecord?.cdlLicenses?.[0]?.licenseNumber}</p>
+            <p><span className="font-semibold text-gray-800">State:</span> {formData.drivingRecord?.cdlLicenses?.[0]?.state}</p>
+            <p><span className="font-semibold text-gray-800">Type:</span> {formData.drivingRecord?.cdlLicenses?.[0]?.type}</p>
+            <p><span className="font-semibold text-gray-800">Expires:</span> {formData.drivingRecord?.cdlLicenses?.[0]?.expirationDate}</p>
           </div>
         </div>
 
         {/* Employment History Summary */}
-        <div className="border-l-4 border-orange pl-4">
-          <h3 className="font-semibold mb-2">Employment History</h3>
-          <div className="text-sm text-gray-700">
-            <p>{formData.employmentHistory?.entries?.length || 0} employer(s) listed</p>
+        <div className="border-l-4 border-orange pl-4 py-2 bg-gray-50 rounded-r-lg">
+          <h3 className="font-bold text-gray-900 mb-3">Employment History</h3>
+          <div className="text-sm text-gray-700 space-y-2">
+            <p><span className="font-semibold text-gray-800">Employers Listed:</span> {formData.employmentHistory?.entries?.length || 0}</p>
             {formData.employmentHistory?.entries?.[0] && (
-              <p className="mt-1">
-                Most recent: {formData.employmentHistory.entries[0].employerName}
+              <p>
+                <span className="font-semibold text-gray-800">Most Recent:</span> {formData.employmentHistory.entries[0].employerName}
               </p>
             )}
           </div>
@@ -67,46 +69,54 @@ export function ReviewStep({ formData, onBack, onSubmit, isSubmitting }: Props) 
 
         {/* Certifications */}
         <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-          <h3 className="font-semibold mb-2 text-green-900">Certifications</h3>
-          <ul className="text-sm space-y-1 text-green-800">
-            <li>✓ PSP Authorization Signed: {formData.pspAuthorization?.fullName}</li>
-            <li>✓ All required disclosures acknowledged</li>
-            <li>✓ Background check authorized</li>
+          <h3 className="font-bold mb-3 text-green-900 flex items-center gap-2">
+            <CheckCircle2 className="h-5 w-5" />
+            Authorizations Complete
+          </h3>
+          <ul className="text-sm space-y-2 text-green-800">
+            <li className="flex items-center gap-2">
+              <CheckCircle2 className="h-4 w-4" />
+              PSP Authorization Signed by: <strong>{formData.pspAuthorization?.fullName}</strong>
+            </li>
+            <li className="flex items-center gap-2">
+              <CheckCircle2 className="h-4 w-4" />
+              All required disclosures acknowledged
+            </li>
+            <li className="flex items-center gap-2">
+              <CheckCircle2 className="h-4 w-4" />
+              Background check authorized
+            </li>
           </ul>
         </div>
 
         {/* Important Notice */}
         <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
           <p className="text-sm text-amber-900">
-            <strong>Before you submit:</strong> I certify that all information provided is true and complete to the best
+            <strong>Certification Statement:</strong> By proceeding, I certify that all information provided is true and complete to the best
             of my knowledge. I understand that any false statements or omissions may disqualify me from employment or
             result in termination.
           </p>
         </div>
 
-        <div className="flex gap-4">
-          <Button variant="outline" onClick={onBack} disabled={isSubmitting} className="flex-1">
-            <ChevronLeft className="mr-2 h-4 w-4" />
+        <div className="flex gap-4 pt-4">
+          <Button variant="outline" onClick={onBack} disabled={isSubmitting} className="flex-1 py-3">
+            <ChevronLeft className="mr-2 h-5 w-5" />
             Back to Edit
           </Button>
-          <Button onClick={handleSubmit} disabled={isSubmitting} className="flex-1 bg-green-600 hover:bg-green-700">
+          <Button onClick={handleSubmit} disabled={isSubmitting} className="flex-1 bg-orange hover:bg-orange/90 text-white font-semibold py-3">
             {isSubmitting ? (
               <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Submitting Application...
+                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                Processing...
               </>
             ) : (
               <>
-                <Send className="mr-2 h-4 w-4" />
-                Submit Application
+                Continue to PDF Preview
+                <ChevronRight className="ml-2 h-5 w-5" />
               </>
             )}
           </Button>
         </div>
-
-        <p className="text-xs text-center text-gray-500">
-          Submitting will generate a PDF and email it to thindcarrier@gmail.com
-        </p>
       </CardContent>
     </Card>
   )

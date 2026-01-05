@@ -1,12 +1,12 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { useSession } from "next-auth/react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
-import { Loader2, CheckCircle2, AlertCircle, ChevronRight, ChevronLeft } from "lucide-react"
+import { Loader2, CheckCircle2, AlertCircle, ChevronRight, ChevronLeft, Save } from "lucide-react"
 import { toast } from "sonner"
 import type { DriverApplicationData } from "@/types/driver-application"
 
@@ -20,6 +20,7 @@ import { ReviewStep } from "@/components/driver-application/ReviewStep"
 import { PDFPreviewStep } from "@/components/driver-application/PDFPreviewStep"
 
 const TOTAL_STEPS = 7
+const STORAGE_KEY = "thind_driver_application"
 
 export default function DriverApplicationPage() {
   const router = useRouter()
@@ -27,6 +28,44 @@ export default function DriverApplicationPage() {
   const [currentStep, setCurrentStep] = useState(1)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [formData, setFormData] = useState<Partial<DriverApplicationData>>({})
+  const [isLoaded, setIsLoaded] = useState(false)
+
+  // Load saved form data from localStorage on mount
+  useEffect(() => {
+    if (status === "authenticated" && session?.user?.email) {
+      const saved = localStorage.getItem(`${STORAGE_KEY}_${session.user.email}`)
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved)
+          setFormData(parsed.formData || {})
+          setCurrentStep(parsed.currentStep || 1)
+          toast.success("Your progress has been restored")
+        } catch (e) {
+          console.error("Failed to parse saved form data:", e)
+        }
+      }
+      setIsLoaded(true)
+    }
+  }, [status, session?.user?.email])
+
+  // Save form data to localStorage whenever it changes
+  const saveProgress = useCallback(() => {
+    if (session?.user?.email && isLoaded) {
+      const dataToSave = {
+        formData,
+        currentStep,
+        savedAt: new Date().toISOString()
+      }
+      localStorage.setItem(`${STORAGE_KEY}_${session.user.email}`, JSON.stringify(dataToSave))
+    }
+  }, [formData, currentStep, session?.user?.email, isLoaded])
+
+  // Auto-save when form data changes
+  useEffect(() => {
+    if (isLoaded) {
+      saveProgress()
+    }
+  }, [formData, currentStep, saveProgress, isLoaded])
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -78,6 +117,11 @@ export default function DriverApplicationPage() {
 
       if (!response.ok) {
         throw new Error(data.error || "Submission failed")
+      }
+
+      // Clear saved form data on successful submission
+      if (session?.user?.email) {
+        localStorage.removeItem(`${STORAGE_KEY}_${session.user.email}`)
       }
 
       toast.success("Application submitted successfully! We'll review it within 1-2 weeks.")
@@ -178,8 +222,21 @@ export default function DriverApplicationPage() {
         {/* Current Step */}
         {renderStep()}
 
+        {/* Progress Save Notice */}
+        <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+          <div className="flex gap-3">
+            <Save className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
+            <div className="text-sm text-green-900">
+              <strong className="block mb-1">Your Progress is Saved</strong>
+              <p>
+                Your form data is automatically saved as you fill it out. You can safely navigate away and return later - your progress will be restored when you log back in.
+              </p>
+            </div>
+          </div>
+        </div>
+
         {/* Help Notice */}
-        <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+        <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
           <div className="flex gap-3">
             <AlertCircle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
             <div className="text-sm text-blue-900">

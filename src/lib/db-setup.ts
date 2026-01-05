@@ -42,6 +42,15 @@ export async function setupDatabase() {
     await sql`CREATE INDEX IF NOT EXISTS idx_drivers_email ON drivers(email)`
     await sql`CREATE INDEX IF NOT EXISTS idx_applications_driver_id ON applications(driver_id)`
 
+    // Add password reset columns if they don't exist
+    try {
+      await sql`ALTER TABLE drivers ADD COLUMN IF NOT EXISTS reset_token TEXT`
+      await sql`ALTER TABLE drivers ADD COLUMN IF NOT EXISTS reset_token_expiry TIMESTAMP`
+      console.log("✓ Password reset columns added")
+    } catch (e) {
+      console.log("- Password reset columns already exist or could not be added")
+    }
+
     console.log("✓ Tables created successfully")
 
     // Migrate existing driver from JSON file
