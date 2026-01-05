@@ -33,8 +33,15 @@ const formatDate = (value: string) => {
 }
 
 const formatMonthYear = (value: string) => {
-  // Allow "Present" as valid input
-  if (value.toLowerCase().startsWith('p')) return value
+  // Allow "Present" or any variation as valid input
+  const lowerValue = value.toLowerCase()
+  if (lowerValue.startsWith('p') || lowerValue === 'present') {
+    return value
+  }
+  // If it contains letters (trying to type "present"), allow it
+  if (/[a-zA-Z]/.test(value)) {
+    return value
+  }
   const digits = value.replace(/\D/g, '').slice(0, 6)
   if (digits.length <= 2) return digits
   return `${digits.slice(0, 2)}/${digits.slice(2)}`
