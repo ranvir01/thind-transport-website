@@ -112,8 +112,15 @@ export default function DriverApplicationPage() {
       } catch (e) {
         console.error("Error loading saved data:", e)
       } finally {
+        // #region agent log - finally block
+        console.log('[DEBUG-I] Finally block reached, calling setIsLoaded(true)');
+        // #endregion
         setIsLoaded(true)
       }
+    } else {
+      // #region agent log - not authenticated in useEffect
+      console.log('[DEBUG-J] useEffect: status is NOT authenticated:', status);
+      // #endregion
     }
   }, [status, session?.user?.email])
 
