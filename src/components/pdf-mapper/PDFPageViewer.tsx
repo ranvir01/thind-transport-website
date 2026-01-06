@@ -17,6 +17,7 @@ interface PDFPageViewerProps {
   onClickField: (field: FieldDefinition) => void
   onUpdateField: (field: FieldDefinition) => void
   scale: number
+  addMode?: boolean
 }
 
 export default function PDFPageViewer({
@@ -27,6 +28,7 @@ export default function PDFPageViewer({
   onClickField,
   onUpdateField,
   scale,
+  addMode = false,
 }: PDFPageViewerProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -205,7 +207,7 @@ export default function PDFPageViewer({
 
       <div
         ref={containerRef}
-        className="relative cursor-crosshair select-none"
+        className={`relative select-none ${addMode ? 'cursor-crosshair' : 'cursor-default'}`}
         onClick={handleCanvasClick}
         style={{ width: pageWidth * scale, height: pageHeight * scale }}
       >
@@ -276,7 +278,7 @@ export default function PDFPageViewer({
       {/* Instructions */}
       {!isLoading && !error && (
         <div className="absolute bottom-2 left-2 text-xs bg-black/70 text-white px-2 py-1 rounded">
-          Click to add • Drag to move • Edges to resize • Double-click to edit
+          {addMode ? '🎯 Click to place new field' : 'Drag to move • Edges to resize • Double-click to edit'}
         </div>
       )}
     </div>

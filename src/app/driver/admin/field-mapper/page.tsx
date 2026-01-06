@@ -29,6 +29,7 @@ export default function FieldMapperPage() {
   const [showFieldList, setShowFieldList] = useState(false)
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
   const [notification, setNotification] = useState<{ type: "success" | "error"; message: string } | null>(null)
+  const [addMode, setAddMode] = useState(false) // Toggle for add field mode
 
   // Load saved fields from localStorage
   useEffect(() => {
@@ -59,8 +60,10 @@ export default function FieldMapperPage() {
     setTimeout(() => setNotification(null), 3000)
   }
 
-  // Handle click on PDF page to add new field
+  // Handle click on PDF page to add new field (only when in add mode)
   const handlePageClick = useCallback((x: number, y: number) => {
+    if (!addMode) return // Ignore clicks when not in add mode
+    
     setEditingField({
       page: currentPage,
       x,
@@ -72,7 +75,8 @@ export default function FieldMapperPage() {
       required: true,
     })
     setShowEditor(true)
-  }, [currentPage])
+    setAddMode(false) // Turn off add mode after adding
+  }, [currentPage, addMode])
 
   // Handle click on existing field to edit
   const handleFieldClick = useCallback((field: FieldDefinition) => {
@@ -272,6 +276,13 @@ export default function FieldMapperPage() {
           <div className="flex items-center gap-2">
             <Button
               size="sm"
+              onClick={() => setAddMode(!addMode)}
+              className={addMode ? "bg-green-600 hover:bg-green-700 text-white" : "bg-gray-600 hover:bg-gray-700 text-white"}
+            >
+              {addMode ? "✓ Click PDF to Add" : "+ Add Field"}
+            </Button>
+            <Button
+              size="sm"
               onClick={handleLoadTemplate}
               className="bg-purple-600 hover:bg-purple-700 text-white"
             >
@@ -335,6 +346,7 @@ export default function FieldMapperPage() {
               onClickField={handleFieldClick}
               onUpdateField={handleUpdateField}
               scale={scale}
+              addMode={addMode}
             />
           </div>
 
@@ -393,12 +405,12 @@ export default function FieldMapperPage() {
       <div className="fixed bottom-4 left-4 right-4 md:left-auto md:right-4 md:w-96 bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm">
         <h4 className="font-semibold text-blue-800 mb-2">How to Use:</h4>
         <ol className="list-decimal list-inside text-blue-700 space-y-1">
-          <li><strong>Load All Fields</strong> - Pre-populates all DOT form fields</li>
-          <li><strong>Drag fields</strong> to move them to the correct position</li>
+          <li><strong>Load All Fields</strong> - Pre-populates DOT form fields</li>
+          <li><strong>Drag fields</strong> to move them to correct positions</li>
           <li><strong>Drag edges/corner</strong> to resize fields</li>
-          <li><strong>Double-click</strong> a field to edit its properties</li>
-          <li><strong>Click empty space</strong> to add new fields</li>
-          <li><strong>Export JSON</strong> when done - place in public/field-map.json</li>
+          <li><strong>Double-click</strong> a field to edit properties</li>
+          <li><strong>+ Add Field</strong> button → then click PDF to add</li>
+          <li><strong>Export JSON</strong> when done</li>
         </ol>
       </div>
 
