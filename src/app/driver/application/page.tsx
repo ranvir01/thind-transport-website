@@ -10,8 +10,11 @@ import Script from "next/script"
 
 // SimplePDF Configuration
 // Get your free company identifier at: https://simplepdf.com
-// Sign up is free with no limits
+// Free tier includes: Unlimited users, PDFs, submissions, email notifications, webhooks
 const SIMPLEPDF_COMPANY_ID = "thindtransport" // Replace with your actual company ID from SimplePDF
+
+// The PDF template URL (hosted on your site)
+const PDF_TEMPLATE_URL = "/templates/thind-transport-application-template.pdf"
 
 export default function DriverApplicationPage() {
   const { data: session, status } = useSession()
@@ -102,19 +105,18 @@ export default function DriverApplicationPage() {
             <div className="max-w-4xl mx-auto flex flex-wrap items-center justify-between gap-3">
               <div>
                 <p className="text-yellow-800 text-sm font-medium">
-                  📝 Fill out all highlighted fields directly on the PDF below
+                  📝 Fill out all fields directly on the PDF below
                 </p>
                 <p className="text-yellow-700 text-xs">
-                  When done, click the download button in the editor to save your completed application
+                  When done: Download your completed PDF → Email to <strong>hr@thindtransport.com</strong>
                 </p>
               </div>
               <a
-                href="/templates/thind-transport-application-template.pdf"
-                download="Thind_Transport_DOT_Application.pdf"
-                className="inline-flex items-center gap-1 text-sm bg-yellow-600 text-white px-3 py-1.5 rounded hover:bg-yellow-700 transition-colors"
+                href="mailto:hr@thindtransport.com?subject=Driver Application Submission"
+                className="inline-flex items-center gap-1 text-sm bg-orange text-white px-3 py-1.5 rounded hover:bg-orange/90 transition-colors"
               >
-                <Download className="h-4 w-4" />
-                Download Blank PDF
+                <ExternalLink className="h-4 w-4" />
+                Email HR
               </a>
             </div>
           </div>
@@ -151,6 +153,16 @@ export default function DriverApplicationPage() {
                   <li>✓ Add your signature</li>
                   <li>✓ Download the completed PDF</li>
                 </ul>
+                
+                <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg text-left">
+                  <p className="text-green-800 text-sm font-medium mb-2">📧 After Completing:</p>
+                  <p className="text-green-700 text-sm">
+                    Email your completed PDF to{' '}
+                    <a href="mailto:hr@thindtransport.com?subject=Driver Application Submission" className="font-semibold underline">
+                      hr@thindtransport.com
+                    </a>
+                  </p>
+                </div>
               </div>
 
               {/* Alternative: Direct iframe embed for SimplePDF editor */}
@@ -245,9 +257,9 @@ export default function DriverApplicationPage() {
                 <div className="w-12 h-12 bg-orange/10 rounded-full flex items-center justify-center mx-auto mb-3">
                   <span className="text-2xl font-bold text-orange">3</span>
                 </div>
-                <h3 className="font-semibold text-gray-800 mb-2">Download & Submit</h3>
+                <h3 className="font-semibold text-gray-800 mb-2">Download & Email</h3>
                 <p className="text-sm text-gray-600">
-                  Download your completed PDF and email it to hr@thindtransport.com
+                  Download your completed PDF and email it to <strong>hr@thindtransport.com</strong>
                 </p>
               </div>
             </div>
