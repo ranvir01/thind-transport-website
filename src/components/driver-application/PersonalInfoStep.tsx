@@ -153,7 +153,18 @@ export function PersonalInfoStep({ onNext, initialData }: Props) {
 
   // Show error summary when form validation fails
   const onError = (formErrors: any) => {
-    console.log("[PersonalInfoStep] Form validation errors:", formErrors)
+    console.log("[PersonalInfoStep] Form validation errors:", JSON.stringify(formErrors, null, 2))
+    console.log("[PersonalInfoStep] Error keys:", Object.keys(formErrors))
+    // Log each error for debugging
+    Object.entries(formErrors).forEach(([key, error]: [string, any]) => {
+      if (error && typeof error === 'object' && !error.message) {
+        Object.entries(error).forEach(([subKey, subError]: [string, any]) => {
+          console.log(`  - ${key}.${subKey}: ${(subError as any)?.message}`)
+        })
+      } else {
+        console.log(`  - ${key}: ${error?.message}`)
+      }
+    })
     setShowErrorSummary(true)
     // Scroll to top to show errors
     window.scrollTo({ top: 0, behavior: 'smooth' })
@@ -234,23 +245,26 @@ export function PersonalInfoStep({ onNext, initialData }: Props) {
                 <div className="flex-1">
                   <h3 className="text-sm font-semibold text-red-800">Please fix the following errors:</h3>
                   <ul className="mt-2 text-sm text-red-700 list-disc list-inside space-y-1">
-                    {errors.firstName && <li>First Name: {errors.firstName.message}</li>}
-                    {errors.lastName && <li>Last Name: {errors.lastName.message}</li>}
-                    {errors.dateOfBirth && <li>Date of Birth: {errors.dateOfBirth.message}</li>}
-                    {errors.age && <li>Age: {errors.age.message}</li>}
-                    {errors.socialSecurityNumber && <li>SSN: {errors.socialSecurityNumber.message}</li>}
-                    {errors.phone && <li>Phone: {errors.phone.message}</li>}
-                    {errors.emergencyPhone && <li>Emergency Phone: {errors.emergencyPhone.message}</li>}
-                    {errors.physicalExamExpiration && <li>Physical Exam Expiration: {errors.physicalExamExpiration.message}</li>}
-                    {errors.currentAddress?.street && <li>Current Address - Street: {errors.currentAddress.street.message}</li>}
-                    {errors.currentAddress?.city && <li>Current Address - City: {errors.currentAddress.city.message}</li>}
-                    {errors.currentAddress?.state && <li>Current Address - State: {errors.currentAddress.state.message}</li>}
-                    {errors.currentAddress?.zip && <li>Current Address - ZIP: {errors.currentAddress.zip.message}</li>}
-                    {errors.currentAddress?.from && <li>Current Address - From Date: {errors.currentAddress.from.message}</li>}
-                    {errors.currentAddress?.to && <li>Current Address - To Date: {errors.currentAddress.to.message}</li>}
-                    {errors.workedForCompanyBefore && <li>Worked for Company Before: {errors.workedForCompanyBefore.message}</li>}
-                    {errors.gradeSchool && <li>Education: {errors.gradeSchool.message}</li>}
+                    {/* Dynamically show all errors */}
+                    {Object.entries(errors).map(([key, error]: [string, any]) => {
+                      // Handle nested objects like currentAddress
+                      if (error && typeof error === 'object' && !error.message) {
+                        return Object.entries(error).map(([subKey, subError]: [string, any]) => (
+                          <li key={`${key}.${subKey}`}>
+                            <strong>{key}.{subKey}:</strong> {(subError as any)?.message || 'Invalid value'}
+                          </li>
+                        ))
+                      }
+                      return (
+                        <li key={key}>
+                          <strong>{key}:</strong> {error?.message || 'Invalid value'}
+                        </li>
+                      )
+                    })}
                   </ul>
+                  <p className="mt-3 text-xs text-red-600">
+                    Check console (F12 → Console) for detailed error info
+                  </p>
                 </div>
                 <button
                   type="button"
