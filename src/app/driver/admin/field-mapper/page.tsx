@@ -5,9 +5,10 @@ import dynamic from "next/dynamic"
 import { Button } from "@/components/ui/button"
 import { 
   ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Download, 
-  Upload, Trash2, Eye, List, Save, Plus, AlertCircle
+  Upload, Trash2, List, Wand2, AlertCircle
 } from "lucide-react"
 import FieldEditor, { type FieldDefinition } from "@/components/pdf-mapper/FieldEditor"
+import { DOT_APPLICATION_FIELDS } from "@/lib/dot-application-fields"
 
 // Dynamic import to avoid SSR issues with PDF.js
 const PDFPageViewer = dynamic(
@@ -77,6 +78,12 @@ export default function FieldMapperPage() {
   const handleFieldClick = useCallback((field: FieldDefinition) => {
     setEditingField(field)
     setShowEditor(true)
+  }, [])
+
+  // Handle drag/resize update
+  const handleUpdateField = useCallback((updatedField: FieldDefinition) => {
+    setFields(prev => prev.map(f => f.id === updatedField.id ? updatedField : f))
+    setHasUnsavedChanges(true)
   }, [])
 
   // Save new or edited field
@@ -157,6 +164,16 @@ export default function FieldMapperPage() {
       showNotification("success", "All fields cleared")
     }
   }, [])
+
+  // Load template fields
+  const handleLoadTemplate = useCallback(() => {
+    if (fields.length > 0 && !confirm("This will replace all existing fields. Continue?")) {
+      return
+    }
+    setFields(DOT_APPLICATION_FIELDS)
+    setHasUnsavedChanges(true)
+    showNotification("success", `Loaded ${DOT_APPLICATION_FIELDS.length} template fields! Review and adjust positions as needed.`)
+  }, [fields.length])
 
   // Count fields per page
   const fieldsOnCurrentPage = fields.filter(f => f.page === currentPage).length
@@ -254,6 +271,14 @@ export default function FieldMapperPage() {
           {/* Actions */}
           <div className="flex items-center gap-2">
             <Button
+              size="sm"
+              onClick={handleLoadTemplate}
+              className="bg-purple-600 hover:bg-purple-700 text-white"
+            >
+              <Wand2 className="h-4 w-4 mr-1" />
+              Load All Fields
+            </Button>
+            <Button
               variant="outline"
               size="sm"
               onClick={() => setShowFieldList(!showFieldList)}
@@ -308,6 +333,7 @@ export default function FieldMapperPage() {
               fields={fields}
               onClickPage={handlePageClick}
               onClickField={handleFieldClick}
+              onUpdateField={handleUpdateField}
               scale={scale}
             />
           </div>
@@ -364,14 +390,15 @@ export default function FieldMapperPage() {
       </main>
 
       {/* Instructions */}
-      <div className="fixed bottom-4 left-4 right-4 md:left-auto md:right-4 md:w-80 bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm">
+      <div className="fixed bottom-4 left-4 right-4 md:left-auto md:right-4 md:w-96 bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm">
         <h4 className="font-semibold text-blue-800 mb-2">How to Use:</h4>
         <ol className="list-decimal list-inside text-blue-700 space-y-1">
-          <li>Navigate to a page using arrows</li>
-          <li>Click anywhere on the PDF to place a field</li>
-          <li>Configure the field properties</li>
-          <li>Click existing fields to edit them</li>
-          <li>Export JSON when done</li>
+          <li><strong>Load All Fields</strong> - Pre-populates all DOT form fields</li>
+          <li><strong>Drag fields</strong> to move them to the correct position</li>
+          <li><strong>Drag edges/corner</strong> to resize fields</li>
+          <li><strong>Double-click</strong> a field to edit its properties</li>
+          <li><strong>Click empty space</strong> to add new fields</li>
+          <li><strong>Export JSON</strong> when done - place in public/field-map.json</li>
         </ol>
       </div>
 
