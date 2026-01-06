@@ -438,12 +438,15 @@ export function drawInstructions(
   width: number,
   fontSize: number = FONT_SMALL
 ): number {
-  const words = text.split(' ')
+  // Replace newlines with spaces and normalize whitespace
+  const cleanText = text.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim()
+  const words = cleanText.split(' ')
   let line = ''
   let currentY = y
   const lineHeight = fontSize + 3
   
   for (const word of words) {
+    if (!word) continue // Skip empty words
     const testLine = line + (line ? ' ' : '') + word
     const testWidth = ctx.font.widthOfTextAtSize(testLine, fontSize)
     
