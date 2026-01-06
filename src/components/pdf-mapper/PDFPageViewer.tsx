@@ -4,9 +4,9 @@ import { useEffect, useRef, useState, useCallback } from "react"
 import * as pdfjsLib from "pdfjs-dist"
 import type { FieldDefinition } from "./FieldEditor"
 
-// Set worker path - using CDN for reliability
+// Set worker path - use local copy for version compatibility
 if (typeof window !== "undefined") {
-  pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`
+  pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs"
 }
 
 interface PDFPageViewerProps {
