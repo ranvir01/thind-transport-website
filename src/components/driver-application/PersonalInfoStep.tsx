@@ -132,18 +132,31 @@ export function PersonalInfoStep({ onNext, initialData }: Props) {
       college: 0,
       postGraduate: 0,
       previousAddresses: [],
+      currentAddress: {
+        street: '',
+        city: '',
+        state: '',
+        zip: '',
+        from: '',
+        to: 'Present', // Default to Present for current address
+      },
       ...initialData,
     },
   })
+  
+  const [showErrorSummary, setShowErrorSummary] = useState(false)
 
   const { fields: addressFields, append: appendAddress, remove: removeAddress } = useFieldArray({
     control,
     name: "previousAddresses",
   })
 
-  // Debug: Log form errors when they occur
+  // Show error summary when form validation fails
   const onError = (formErrors: any) => {
     console.log("[PersonalInfoStep] Form validation errors:", formErrors)
+    setShowErrorSummary(true)
+    // Scroll to top to show errors
+    window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
   // Watch fields for auto-formatting
@@ -209,6 +222,49 @@ export function PersonalInfoStep({ onNext, initialData }: Props) {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-6 pt-6">
+          {/* Error Summary */}
+          {showErrorSummary && Object.keys(errors).length > 0 && (
+            <div className="bg-red-50 border border-red-300 rounded-lg p-4 mb-4">
+              <div className="flex items-start gap-3">
+                <div className="flex-shrink-0">
+                  <svg className="h-5 w-5 text-red-500" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-sm font-semibold text-red-800">Please fix the following errors:</h3>
+                  <ul className="mt-2 text-sm text-red-700 list-disc list-inside space-y-1">
+                    {errors.firstName && <li>First Name: {errors.firstName.message}</li>}
+                    {errors.lastName && <li>Last Name: {errors.lastName.message}</li>}
+                    {errors.dateOfBirth && <li>Date of Birth: {errors.dateOfBirth.message}</li>}
+                    {errors.age && <li>Age: {errors.age.message}</li>}
+                    {errors.socialSecurityNumber && <li>SSN: {errors.socialSecurityNumber.message}</li>}
+                    {errors.phone && <li>Phone: {errors.phone.message}</li>}
+                    {errors.emergencyPhone && <li>Emergency Phone: {errors.emergencyPhone.message}</li>}
+                    {errors.physicalExamExpiration && <li>Physical Exam Expiration: {errors.physicalExamExpiration.message}</li>}
+                    {errors.currentAddress?.street && <li>Current Address - Street: {errors.currentAddress.street.message}</li>}
+                    {errors.currentAddress?.city && <li>Current Address - City: {errors.currentAddress.city.message}</li>}
+                    {errors.currentAddress?.state && <li>Current Address - State: {errors.currentAddress.state.message}</li>}
+                    {errors.currentAddress?.zip && <li>Current Address - ZIP: {errors.currentAddress.zip.message}</li>}
+                    {errors.currentAddress?.from && <li>Current Address - From Date: {errors.currentAddress.from.message}</li>}
+                    {errors.currentAddress?.to && <li>Current Address - To Date: {errors.currentAddress.to.message}</li>}
+                    {errors.workedForCompanyBefore && <li>Worked for Company Before: {errors.workedForCompanyBefore.message}</li>}
+                    {errors.gradeSchool && <li>Education: {errors.gradeSchool.message}</li>}
+                  </ul>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowErrorSummary(false)}
+                  className="flex-shrink-0 text-red-500 hover:text-red-700"
+                >
+                  <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Position Applying For */}
           <div className="border-b border-gray-200 pb-6">
             <Label className="text-gray-800 font-semibold text-lg">Position Applying For <span className="text-red-500">*</span></Label>
