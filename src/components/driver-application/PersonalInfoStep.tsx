@@ -107,9 +107,10 @@ const schema = z.object({
   reasonForLeaving: z.string().optional(),
   
   // Education - matches PDF format (circle highest grade) - REQUIRED
-  gradeSchool: z.number().min(1, "Indicate highest grade completed").max(12),
-  college: z.number().min(0).max(4).default(0),
-  postGraduate: z.number().min(0).max(4).default(0),
+  // Using coerce because radio buttons return strings
+  gradeSchool: z.coerce.number().min(1, "Indicate highest grade completed").max(12),
+  college: z.coerce.number().min(0).max(4).default(0),
+  postGraduate: z.coerce.number().min(0).max(4).default(0),
   
   // Legacy field for backwards compatibility
   educationLevel: z.string().optional(),
