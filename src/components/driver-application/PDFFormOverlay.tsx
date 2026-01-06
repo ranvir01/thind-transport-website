@@ -401,6 +401,9 @@ interface OverlayFieldProps {
 }
 
 function OverlayField({ field, value, onChange, onCheckboxChange, scale }: OverlayFieldProps) {
+  // Calculate responsive font size based on scale
+  const fontSize = Math.max(8, Math.min(12, (field.fontSize || 9) * scale))
+  
   const baseStyle: React.CSSProperties = {
     position: 'absolute',
     left: `${field.x}%`,
@@ -412,15 +415,44 @@ function OverlayField({ field, value, onChange, onCheckboxChange, scale }: Overl
 
   if (field.type === 'checkbox') {
     return (
-      <div style={baseStyle} className="flex items-center justify-center">
+      <div 
+        style={baseStyle} 
+        className="flex items-center justify-center"
+        title={field.label}
+      >
         <input
           type="checkbox"
           checked={value === 'X'}
           onChange={(e) => onCheckboxChange(e.target.checked)}
-          className="w-4 h-4 accent-orange cursor-pointer"
-          title={field.label}
+          className="w-3 h-3 accent-orange cursor-pointer rounded-sm border-gray-400 hover:border-orange transition-colors"
+          aria-label={field.label}
         />
       </div>
+    )
+  }
+
+  // Signature fields get special styling
+  if (field.type === 'signature') {
+    return (
+      <input
+        type="text"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={field.placeholder || 'Sign here'}
+        className={`
+          bg-transparent border-0 border-b border-gray-400
+          px-0.5 py-0 italic
+          focus:bg-yellow-50/50 focus:border-b-2 focus:border-orange focus:outline-none
+          ${field.required && !value ? 'border-red-400' : ''}
+        `}
+        style={{
+          ...baseStyle,
+          fontSize: `${fontSize}px`,
+          fontFamily: 'cursive, serif',
+          lineHeight: '1.2',
+        }}
+        title={field.label}
+      />
     )
   }
 
@@ -431,13 +463,17 @@ function OverlayField({ field, value, onChange, onCheckboxChange, scale }: Overl
       onChange={(e) => onChange(e.target.value)}
       placeholder={field.placeholder || ''}
       className={`
-        bg-yellow-50/80 border border-yellow-400 rounded px-1 text-sm
-        focus:bg-white focus:border-orange focus:ring-1 focus:ring-orange
-        ${field.required && !value ? 'border-red-400' : ''}
+        bg-yellow-100/60 border-0 border-b border-gray-400
+        px-0.5 py-0
+        focus:bg-yellow-50 focus:border-b-2 focus:border-orange focus:outline-none
+        placeholder:text-gray-400 placeholder:text-xs
+        ${field.required && !value ? 'border-red-500 bg-red-50/40' : ''}
       `}
       style={{
         ...baseStyle,
-        fontSize: `${(field.fontSize || 10) * scale}px`,
+        fontSize: `${fontSize}px`,
+        lineHeight: '1.3',
+        minHeight: '14px',
       }}
       title={field.label}
     />
