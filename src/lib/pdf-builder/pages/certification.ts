@@ -10,6 +10,7 @@ import {
   drawCompanyHeader,
   drawSectionHeader,
   drawText,
+  drawCheckbox,
   drawInstructions,
   drawSignatureLine,
   MARGIN_LEFT,
@@ -56,9 +57,7 @@ I understand and agree that, in the event of my employment, this application and
   
   // Do not contact current employer checkbox
   y -= 20
-  drawText(page, ctx, "□  Please DO NOT contact my current employer until a conditional offer of employment is made.", MARGIN_LEFT, y, { size: FONT_SMALL })
-  const dncCheckbox = ctx.form.createCheckBox("do_not_contact_current")
-  dncCheckbox.addToPage(page, { x: MARGIN_LEFT, y: y - 2, width: 12, height: 12 })
+  drawCheckbox(page, ctx, "do_not_contact_current", "Please DO NOT contact my current employer until a conditional offer of employment is made.", MARGIN_LEFT, y)
   
   // Signature section
   y -= 40
