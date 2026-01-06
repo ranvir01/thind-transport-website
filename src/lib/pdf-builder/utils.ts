@@ -30,10 +30,11 @@ export const FONT_LABEL = 10
 export const FONT_SMALL = 9
 export const FONT_TINY = 8
 
-// Line heights
-export const LINE_HEIGHT = 14
-export const FIELD_HEIGHT = 16
-export const CHECKBOX_SIZE = 12
+// Line heights - increased for better visibility
+export const LINE_HEIGHT = 16
+export const FIELD_HEIGHT = 20
+export const CHECKBOX_SIZE = 14
+export const TABLE_ROW_HEIGHT = 22
 
 // Types
 export interface PDFContext {
