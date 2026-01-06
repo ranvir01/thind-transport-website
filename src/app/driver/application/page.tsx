@@ -457,11 +457,29 @@ export default function DriverApplicationPage() {
               <X className="h-4 w-4" />
             </Button>
           </div>
-          <iframe 
-            src="/templates/thind-transport-application-template.pdf#toolbar=1&navpanes=0"
-            className="flex-1 w-full bg-gray-100"
-            title="Original DOT Application Form Reference"
-          />
+          <div className="flex-1 w-full bg-gray-100 flex flex-col">
+            <object
+              data="/templates/thind-transport-application-template.pdf#toolbar=1&navpanes=0&view=FitH"
+              type="application/pdf"
+              className="flex-1 w-full"
+              title="Original DOT Application Form Reference"
+            >
+              {/* Fallback content if PDF can't be displayed inline */}
+              <div className="flex flex-col items-center justify-center h-full p-6 text-center">
+                <FileText className="h-16 w-16 text-gray-400 mb-4" />
+                <p className="text-gray-600 mb-4">PDF preview not available in your browser.</p>
+                <a
+                  href="/templates/thind-transport-application-template.pdf"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center px-4 py-2 bg-orange text-white rounded-lg hover:bg-orange/90 transition-colors"
+                >
+                  <FileText className="h-4 w-4 mr-2" />
+                  Open PDF in New Tab
+                </a>
+              </div>
+            </object>
+          </div>
         </div>
       )}
     </div>
