@@ -13,8 +13,8 @@ import { toast } from "sonner"
 import Link from "next/link"
 
 // SimplePDF Configuration
-// Sign up free at: https://simplepdf.com to get your company identifier
-const SIMPLEPDF_COMPANY_ID = "thindtransport" // Replace with your actual company ID
+// Portal URL: https://anan293v.simplepdf.com
+const SIMPLEPDF_COMPANY_ID = "anan293v"
 
 // The PDF template URL
 const PDF_TEMPLATE_PATH = "/templates/thind-transport-application-template.pdf"
