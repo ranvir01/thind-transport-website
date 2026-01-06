@@ -73,6 +73,7 @@ export interface DriverApplicationData {
   // Step 1: Personal Information
   personalInfo: {
     firstName: string
+    middleName?: string // Optional middle name
     lastName: string
     dateOfBirth: string
     age: string

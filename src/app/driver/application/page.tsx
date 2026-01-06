@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import { useRouter } from "next/navigation"
 import { useSession, signOut } from "next-auth/react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -66,16 +65,7 @@ const safeLocalStorage = {
 }
 
 export default function DriverApplicationPage() {
-  // #region agent log - component function start
-  console.log('[DEBUG-C] Component function starting');
-  // #endregion
-  
-  const router = useRouter()
   const { data: session, status } = useSession()
-  
-  // #region agent log - session data
-  console.log('[DEBUG-D] Session data:', { status, hasSession: !!session, hasUser: !!session?.user, userEmail: session?.user?.email || 'none', userName: session?.user?.name || 'none' });
-  // #endregion
   
   const [currentStep, setCurrentStep] = useState(1)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -86,17 +76,9 @@ export default function DriverApplicationPage() {
 
   // Load saved form data from localStorage on mount
   useEffect(() => {
-    // #region agent log - useEffect triggered
-    console.log('[DEBUG-E] useEffect triggered:', { status, hasSession: !!session });
-    // #endregion
-    
     if (status === "authenticated") {
       try {
         const userEmail = session?.user?.email
-        // #region agent log - localStorage access
-        console.log('[DEBUG-F] About to access localStorage:', { userEmail: userEmail || 'none' });
-        // #endregion
-        
         if (userEmail) {
           const saved = safeLocalStorage.getItem(`${STORAGE_KEY}_${userEmail}`)
           if (saved) {
@@ -126,15 +108,8 @@ export default function DriverApplicationPage() {
       } catch (e) {
         console.error("Error loading saved data:", e)
       } finally {
-        // #region agent log - finally block
-        console.log('[DEBUG-I] Finally block reached, calling setIsLoaded(true)');
-        // #endregion
         setIsLoaded(true)
       }
-    } else {
-      // #region agent log - not authenticated in useEffect
-      console.log('[DEBUG-J] useEffect: status is NOT authenticated:', status);
-      // #endregion
     }
   }, [status, session?.user?.email])
 
@@ -201,15 +176,8 @@ export default function DriverApplicationPage() {
     }
   }
 
-  // #region agent log - before render checks
-  console.log('[DEBUG-G] Before render checks:', { status, isLoaded, currentStep });
-  // #endregion
-  
   // Show loading while session is loading or waiting for localStorage to load
   if (status === "loading" || (status === "authenticated" && !isLoaded)) {
-    // #region agent log - returning loading state
-    console.log('[DEBUG-H] Returning loading state:', { status, isLoaded });
-    // #endregion
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
         <div className="text-center">
@@ -294,7 +262,7 @@ export default function DriverApplicationPage() {
       setCurrentStep(TOTAL_STEPS + 1) // Move to success screen
       
       setTimeout(() => {
-        router.push("/driver/dashboard")
+        window.location.href = "/driver/dashboard"
       }, 3000)
     } catch (error: any) {
       toast.error(error.message || "Failed to submit application")

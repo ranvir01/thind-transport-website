@@ -259,6 +259,7 @@ export function mapFormDataToFields(formData: DriverApplicationData): Record<str
   if (formData.personalInfo) {
     fields['lastName'] = formData.personalInfo.lastName || ''
     fields['firstName'] = formData.personalInfo.firstName || ''
+    fields['middleName'] = formData.personalInfo.middleName || ''
     fields['dateOfBirth'] = formData.personalInfo.dateOfBirth || ''
     fields['age'] = formData.personalInfo.age || ''
     fields['ssn'] = formData.personalInfo.socialSecurityNumber || ''

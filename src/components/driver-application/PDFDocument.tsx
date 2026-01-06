@@ -78,12 +78,12 @@ export async function fillApplicationPDF(formData: DriverApplicationData): Promi
     const page = pages[placement.page]
     
     if (placement.isCheckbox) {
-      // Draw a checkmark if value is true
+      // Draw an X mark if value is true (✓ doesn't render reliably with Helvetica)
       if (value === true) {
-        page.drawText('✓', {
+        page.drawText('X', {
           x: placement.x,
           y: placement.y,
-          size: placement.fontSize || 12,
+          size: placement.fontSize || 10,
           font: boldFont,
           color: rgb(0, 0, 0),
         })

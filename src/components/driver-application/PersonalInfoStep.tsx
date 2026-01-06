@@ -81,6 +81,7 @@ const schema = z.object({
   
   // Basic info - ALL REQUIRED for DOT compliance
   firstName: z.string().min(2, "First name is required"),
+  middleName: z.string().optional(), // Middle name is optional
   lastName: z.string().min(2, "Last name is required"),
   dateOfBirth: z.string().regex(/^\d{2}\/\d{2}\/\d{4}$/, "Date of birth is required (MM/DD/YYYY)"),
   age: z.string().min(1, "Age is required"),
@@ -244,7 +245,7 @@ export function PersonalInfoStep({ onNext, initialData }: Props) {
           </div>
 
           {/* Basic Info */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <Label className="text-gray-800 font-semibold">First Name <span className="text-red-500">*</span></Label>
               <Input 
@@ -253,6 +254,14 @@ export function PersonalInfoStep({ onNext, initialData }: Props) {
                 placeholder="John"
               />
               {errors.firstName && <p className="text-sm text-red-600 mt-1 font-medium">{errors.firstName.message}</p>}
+            </div>
+            <div>
+              <Label className="text-gray-800 font-semibold">Middle Name</Label>
+              <Input 
+                {...register("middleName")} 
+                className="mt-1 bg-gray-50 border-gray-300 focus:border-orange focus:ring-orange text-gray-900"
+                placeholder="Michael"
+              />
             </div>
             <div>
               <Label className="text-gray-800 font-semibold">Last Name <span className="text-red-500">*</span></Label>
