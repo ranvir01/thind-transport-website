@@ -1,9 +1,10 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
-import { AlertCircle } from "lucide-react"
+import { AlertCircle, CheckCircle2, Clock } from "lucide-react"
 import type { Certification } from "@/types/driver-application-form"
 
 interface CertificationStepProps {
@@ -14,12 +15,42 @@ interface CertificationStepProps {
 
 export function CertificationStep({ data, onChange, errors = {} }: CertificationStepProps) {
   const RequiredMark = () => <span className="text-red-500 ml-1">*</span>
+  const [signatureMetadata, setSignatureMetadata] = useState<{
+    ipAddress?: string
+    userAgent?: string
+    timestamp?: string
+  }>({})
+  const [isCapturingMetadata, setIsCapturingMetadata] = useState(false)
   
   const inputClass = (field: string) => `
     w-full px-3 py-2 border rounded-lg transition-colors
     ${errors[field] ? 'border-red-500 bg-red-50' : 'border-gray-300'}
     focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent
   `
+
+  // Capture signature metadata when signature is entered
+  useEffect(() => {
+    if (data.main_signature && data.main_signature.length > 3 && !signatureMetadata.ipAddress) {
+      captureSignatureMetadata()
+    }
+  }, [data.main_signature])
+
+  const captureSignatureMetadata = async () => {
+    setIsCapturingMetadata(true)
+    try {
+      const response = await fetch('/api/get-client-info')
+      const metadata = await response.json()
+      setSignatureMetadata(metadata)
+      // Store metadata in form data for PDF generation
+      onChange('signature_ip', metadata.ipAddress)
+      onChange('signature_timestamp', metadata.timestamp)
+      onChange('signature_user_agent', metadata.userAgent)
+    } catch (error) {
+      console.error('Failed to capture signature metadata:', error)
+    } finally {
+      setIsCapturingMetadata(false)
+    }
+  }
 
   return (
     <div className="space-y-8">
@@ -105,6 +136,30 @@ export function CertificationStep({ data, onChange, errors = {} }: Certification
         </div>
       </div>
 
+      {/* E-Signature Consent */}
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <h3 className="font-semibold text-blue-800 mb-4">Electronic Signature Consent</h3>
+        <div className="space-y-3">
+          <label className="flex items-start gap-3 cursor-pointer">
+            <Checkbox
+              checked={data.e_signature_consent || false}
+              onCheckedChange={(checked) => onChange('e_signature_consent', !!checked)}
+              className="mt-0.5"
+            />
+            <span className="text-sm text-gray-700">
+              I consent to conduct this transaction and sign this document electronically. 
+              I understand that my electronic signature is legally binding and has the same 
+              effect as a handwritten signature under the ESIGN Act and FMCSA regulations.
+            </span>
+          </label>
+          {!data.e_signature_consent && (
+            <p className="text-xs text-blue-700 ml-7">
+              You must provide consent to use electronic signatures before signing this document.
+            </p>
+          )}
+        </div>
+      </div>
+
       {/* Signature Section */}
       <div className="bg-white border-2 border-orange-300 rounded-lg p-6">
         <h3 className="font-semibold text-gray-800 mb-6 text-center text-lg">
@@ -119,6 +174,26 @@ export function CertificationStep({ data, onChange, errors = {} }: Certification
               as a handwritten signature.
             </p>
           </div>
+
+          {/* Signature Metadata Display */}
+          {signatureMetadata.timestamp && (
+            <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+              <div className="flex items-start gap-2">
+                <CheckCircle2 className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
+                <div className="text-xs text-green-800">
+                  <p className="font-semibold mb-1">Signature Verified & Recorded</p>
+                  <div className="space-y-1 text-green-700">
+                    <p className="flex items-center gap-1">
+                      <Clock className="w-3 h-3" />
+                      Signed: {new Date(signatureMetadata.timestamp).toLocaleString()}
+                    </p>
+                    <p>IP Address: {signatureMetadata.ipAddress}</p>
+                    <p className="text-[10px]">This signature is legally binding and will be attached to your application.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
           <div className="grid md:grid-cols-2 gap-6">
             <div>

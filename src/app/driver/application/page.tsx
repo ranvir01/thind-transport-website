@@ -168,18 +168,56 @@ export default function DriverApplicationPage() {
         if (!formData.personal.applicant_name) {
           newErrors.applicant_name = "Name is required"
         }
+        
+        // Email validation
         if (!formData.personal.email) {
           newErrors.email = "Email is required"
+        } else {
+          const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+          if (!emailRegex.test(formData.personal.email)) {
+            newErrors.email = "Please enter a valid email address"
+          }
         }
+        
+        // Phone validation
         if (!formData.personal.phone) {
           newErrors.phone = "Phone is required"
+        } else {
+          const phoneDigits = formData.personal.phone.replace(/\D/g, '')
+          if (phoneDigits.length !== 10) {
+            newErrors.phone = "Phone must be 10 digits"
+          }
         }
+        
+        // Emergency phone validation
+        if (!formData.personal.emergency_phone) {
+          newErrors.emergency_phone = "Emergency phone is required"
+        } else {
+          const emergencyDigits = formData.personal.emergency_phone.replace(/\D/g, '')
+          if (emergencyDigits.length !== 10) {
+            newErrors.emergency_phone = "Emergency phone must be 10 digits"
+          }
+          // Check if emergency phone is different from primary
+          const phoneDigits = formData.personal.phone?.replace(/\D/g, '') || ''
+          if (emergencyDigits === phoneDigits && phoneDigits.length === 10) {
+            newErrors.emergency_phone = "Emergency phone must be different from primary phone"
+          }
+        }
+        
         if (!formData.personal.dob) {
           newErrors.dob = "Date of birth is required"
         }
+        
+        // SSN validation
         if (!formData.personal.ssn) {
           newErrors.ssn = "SSN is required"
+        } else {
+          const ssnDigits = formData.personal.ssn.replace(/\D/g, '')
+          if (ssnDigits.length !== 9) {
+            newErrors.ssn = "SSN must be 9 digits"
+          }
         }
+        
         if (!formData.personal.physical_exam_exp) {
           newErrors.physical_exam_exp = "Physical exam expiration is required"
         }
@@ -203,6 +241,9 @@ export default function DriverApplicationPage() {
         }
         break
       case 8: // Certification
+        if (!formData.certification.e_signature_consent) {
+          newErrors.e_signature_consent = "You must consent to use electronic signatures"
+        }
         if (!formData.certification.main_signature) {
           newErrors.main_signature = "Signature is required"
         }
@@ -436,8 +477,8 @@ export default function DriverApplicationPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="bg-white shadow-sm sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+      <header className="bg-white shadow-sm sticky top-0 z-50 border-b">
+        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Link href="/driver/dashboard">
               <Button variant="ghost" size="sm">
@@ -459,9 +500,11 @@ export default function DriverApplicationPage() {
               variant="ghost" 
               size="sm" 
               onClick={handleLogout}
-              className="text-gray-600"
+              className="text-gray-600 hover:text-red-600 hover:bg-red-50"
+              title="Logout"
             >
               <LogOut className="w-4 h-4" />
+              <span className="ml-1 hidden md:inline">Logout</span>
             </Button>
           </div>
         </div>
@@ -470,6 +513,14 @@ export default function DriverApplicationPage() {
       {/* Progress Bar */}
       <div className="bg-white border-b px-4 py-4">
         <div className="max-w-5xl mx-auto">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-sm font-medium text-gray-700">
+              Application Progress: {Math.round((completedSteps.length / 9) * 100)}% Complete
+            </span>
+            <span className="text-xs text-gray-500">
+              Step {currentStep} of 9
+            </span>
+          </div>
           <StepProgress
             currentStep={currentStep}
             completedSteps={completedSteps}

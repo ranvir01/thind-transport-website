@@ -1,9 +1,10 @@
 "use client"
 
+import { useEffect } from "react"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
-import { AlertCircle } from "lucide-react"
+import { AlertCircle, Lock, Shield } from "lucide-react"
 import type { PersonalInfo, Education } from "@/types/driver-application-form"
 
 interface PersonalInfoStepProps {
@@ -21,6 +22,50 @@ export function PersonalInfoStep({ data, onChange, errors = {} }: PersonalInfoSt
     focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent
   `
 
+  // Auto-calculate age from DOB
+  useEffect(() => {
+    if (data.dob) {
+      const birthDate = new Date(data.dob)
+      const today = new Date()
+      let age = today.getFullYear() - birthDate.getFullYear()
+      const monthDiff = today.getMonth() - birthDate.getMonth()
+      
+      if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+        age--
+      }
+      
+      if (age >= 0 && age <= 150) {
+        onChange('age', age.toString())
+      }
+    }
+  }, [data.dob])
+
+  // Format SSN: XXX-XX-XXXX
+  const formatSSN = (value: string) => {
+    const numbers = value.replace(/\D/g, '')
+    if (numbers.length <= 3) return numbers
+    if (numbers.length <= 5) return `${numbers.slice(0, 3)}-${numbers.slice(3)}`
+    return `${numbers.slice(0, 3)}-${numbers.slice(3, 5)}-${numbers.slice(5, 9)}`
+  }
+
+  // Format Phone: (XXX) XXX-XXXX
+  const formatPhone = (value: string) => {
+    const numbers = value.replace(/\D/g, '')
+    if (numbers.length <= 3) return numbers
+    if (numbers.length <= 6) return `(${numbers.slice(0, 3)}) ${numbers.slice(3)}`
+    return `(${numbers.slice(0, 3)}) ${numbers.slice(3, 6)}-${numbers.slice(6, 10)}`
+  }
+
+  const handleSSNChange = (value: string) => {
+    const formatted = formatSSN(value)
+    onChange('ssn', formatted)
+  }
+
+  const handlePhoneChange = (field: string, value: string) => {
+    const formatted = formatPhone(value)
+    onChange(field, formatted)
+  }
+
   return (
     <div className="space-y-8">
       {/* Section Header */}
@@ -29,6 +74,15 @@ export function PersonalInfoStep({ data, onChange, errors = {} }: PersonalInfoSt
         <p className="text-orange-100 text-sm mt-1">
           Please provide your personal details. Fields marked with * are required.
         </p>
+      </div>
+
+      {/* Security Badge */}
+      <div className="bg-green-50 border border-green-200 rounded-lg p-3 flex items-center gap-3">
+        <Shield className="w-5 h-5 text-green-600 flex-shrink-0" />
+        <div>
+          <p className="text-sm font-medium text-green-800">Secure & Encrypted Connection</p>
+          <p className="text-xs text-green-700">Your personal information is protected with SSL encryption</p>
+        </div>
       </div>
 
       {/* Position Applied For */}
@@ -112,8 +166,9 @@ export function PersonalInfoStep({ data, onChange, errors = {} }: PersonalInfoSt
             id="phone"
             type="tel"
             value={data.phone || ''}
-            onChange={(e) => onChange('phone', e.target.value)}
+            onChange={(e) => handlePhoneChange('phone', e.target.value)}
             placeholder="(555) 123-4567"
+            maxLength={14}
             className={inputClass('phone')}
           />
           {errors.phone && (
@@ -132,8 +187,9 @@ export function PersonalInfoStep({ data, onChange, errors = {} }: PersonalInfoSt
             id="emergency_phone"
             type="tel"
             value={data.emergency_phone || ''}
-            onChange={(e) => onChange('emergency_phone', e.target.value)}
+            onChange={(e) => handlePhoneChange('emergency_phone', e.target.value)}
             placeholder="(555) 987-6543"
+            maxLength={14}
             className={inputClass('emergency_phone')}
           />
           {errors.emergency_phone && (
@@ -168,28 +224,35 @@ export function PersonalInfoStep({ data, onChange, errors = {} }: PersonalInfoSt
 
         <div>
           <Label htmlFor="age" className="text-sm font-medium text-gray-700">
-            Age
+            Age (Auto-calculated)
           </Label>
           <Input
             id="age"
             value={data.age || ''}
-            onChange={(e) => onChange('age', e.target.value)}
+            readOnly
             placeholder="35"
-            className={inputClass('age')}
+            className="bg-gray-100 cursor-not-allowed"
           />
+          <p className="text-xs text-gray-500 mt-1">Automatically calculated from date of birth</p>
         </div>
 
         <div>
-          <Label htmlFor="ssn" className="text-sm font-medium text-gray-700">
+          <Label htmlFor="ssn" className="text-sm font-medium text-gray-700 flex items-center gap-2">
+            <Lock className="w-4 h-4 text-green-600" />
             Social Security Number<RequiredMark />
           </Label>
           <Input
             id="ssn"
             value={data.ssn || ''}
-            onChange={(e) => onChange('ssn', e.target.value)}
+            onChange={(e) => handleSSNChange(e.target.value)}
             placeholder="XXX-XX-XXXX"
+            maxLength={11}
             className={inputClass('ssn')}
           />
+          <p className="text-xs text-gray-500 mt-1 flex items-center gap-1">
+            <Lock className="w-3 h-3" />
+            Your SSN is encrypted and secure
+          </p>
           {errors.ssn && (
             <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
               <AlertCircle className="w-3 h-3" />

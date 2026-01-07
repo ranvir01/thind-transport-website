@@ -257,9 +257,15 @@ export interface Training {
 // Certification/Acknowledgment
 export interface Certification {
   do_not_contact_current?: boolean
+  e_signature_consent?: boolean
   main_signature?: string
   main_sign_date?: string
   main_printed_name?: string
+  
+  // E-Signature metadata (for legal compliance)
+  signature_ip?: string
+  signature_timestamp?: string
+  signature_user_agent?: string
   
   // Accident/Violation page signature
   acc_viol_signature?: string
