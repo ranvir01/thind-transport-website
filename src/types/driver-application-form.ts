@@ -232,6 +232,7 @@ export interface Training {
   training: TrainingEntry[]
   safe_driving_awards?: string
   other_qualifications?: string
+  special_equipment?: string
   
   // Military
   military_yes?: boolean

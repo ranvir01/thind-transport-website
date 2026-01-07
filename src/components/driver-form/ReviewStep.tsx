@@ -1,6 +1,8 @@
 "use client"
 
+import { useState } from "react"
 import { Button } from "@/components/ui/button"
+import { Checkbox } from "@/components/ui/checkbox"
 import { 
   CheckCircle2, 
   AlertCircle, 
@@ -14,7 +16,9 @@ import {
   Shield,
   GraduationCap,
   Award,
-  FileText
+  FileText,
+  Eye,
+  X
 } from "lucide-react"
 import type { DriverApplicationFormData } from "@/types/driver-application-form"
 
@@ -37,6 +41,30 @@ export function ReviewStep({
   isSubmitting,
   generatedPdfUrl 
 }: ReviewStepProps) {
+  const [showReviewModal, setShowReviewModal] = useState(false)
+  const [reviewChecklist, setReviewChecklist] = useState({
+    personalInfo: false,
+    employment: false,
+    accidents: false,
+    cdl: false,
+    experience: false,
+    training: false,
+    certification: false,
+    accuracy: false
+  })
+
+  const allChecklistComplete = Object.values(reviewChecklist).every(v => v)
+
+  const handleShowReview = () => {
+    setShowReviewModal(true)
+  }
+
+  const handleSubmitWithReview = () => {
+    if (allChecklistComplete) {
+      setShowReviewModal(false)
+      onSubmit()
+    }
+  }
 
   const sections = [
     {
@@ -238,30 +266,218 @@ export function ReviewStep({
               </a>
               
               <Button
-                onClick={onSubmit}
+                onClick={handleShowReview}
                 disabled={isSubmitting}
                 className="py-3 bg-orange-500 hover:bg-orange-600 text-white"
               >
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                    Submitting...
-                  </>
-                ) : (
-                  <>
-                    <CheckCircle2 className="w-5 h-5 mr-2" />
-                    Submit Application
-                  </>
-                )}
+                <Eye className="w-5 h-5 mr-2" />
+                Review & Submit Application
               </Button>
             </div>
 
             <p className="text-xs text-gray-500 text-center">
-              By submitting, your application will be sent to Thind Transport HR for review.
+              Click to review your PDF and complete the submission checklist.
             </p>
           </>
         )}
       </div>
+
+      {/* PDF Review Modal */}
+      {showReviewModal && generatedPdfUrl && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            {/* Modal Header */}
+            <div className="sticky top-0 bg-gradient-to-r from-orange-500 to-orange-600 text-white p-4 flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-bold">Review Your Application</h2>
+                <p className="text-orange-100 text-sm">Please verify all information before submitting</p>
+              </div>
+              <button
+                onClick={() => setShowReviewModal(false)}
+                className="p-2 hover:bg-white/20 rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* PDF Preview */}
+            <div className="p-6 space-y-6">
+              <div className="bg-gray-100 rounded-lg p-4 border-2 border-orange-200">
+                <div className="flex items-center gap-3 mb-3">
+                  <FileText className="w-6 h-6 text-orange-600" />
+                  <div>
+                    <h3 className="font-semibold text-gray-800">Your Generated PDF</h3>
+                    <p className="text-sm text-gray-600">Download and review before submitting</p>
+                  </div>
+                </div>
+                <a
+                  href={generatedPdfUrl}
+                  download="Thind_Transport_Application.pdf"
+                  className="flex items-center justify-center gap-2 w-full py-3 px-4 bg-orange-600 hover:bg-orange-700 text-white rounded-lg transition-colors font-medium"
+                >
+                  <Download className="w-5 h-5" />
+                  Download & Review PDF
+                </a>
+              </div>
+
+              {/* Important Fields Checklist */}
+              <div className="bg-yellow-50 border-2 border-yellow-300 rounded-lg p-4">
+                <div className="flex items-start gap-3 mb-4">
+                  <AlertCircle className="w-6 h-6 text-yellow-600 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <h3 className="font-semibold text-yellow-900">Important: Verify Required Information</h3>
+                    <p className="text-sm text-yellow-800 mt-1">
+                      Please download the PDF above and verify that all highlighted required fields are filled correctly. 
+                      Check the boxes below to confirm you have reviewed each section.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="space-y-3 ml-9">
+                  <label className="flex items-start gap-3 cursor-pointer p-2 hover:bg-yellow-100 rounded">
+                    <Checkbox
+                      checked={reviewChecklist.personalInfo}
+                      onCheckedChange={(checked) => 
+                        setReviewChecklist(prev => ({ ...prev, personalInfo: !!checked }))
+                      }
+                      className="mt-0.5"
+                    />
+                    <span className="text-sm text-gray-700">
+                      I have verified my personal information (name, SSN, DOB, contact details, medical card)
+                    </span>
+                  </label>
+
+                  <label className="flex items-start gap-3 cursor-pointer p-2 hover:bg-yellow-100 rounded">
+                    <Checkbox
+                      checked={reviewChecklist.employment}
+                      onCheckedChange={(checked) => 
+                        setReviewChecklist(prev => ({ ...prev, employment: !!checked }))
+                      }
+                      className="mt-0.5"
+                    />
+                    <span className="text-sm text-gray-700">
+                      I have reviewed my complete employment history (past 3 years minimum)
+                    </span>
+                  </label>
+
+                  <label className="flex items-start gap-3 cursor-pointer p-2 hover:bg-yellow-100 rounded">
+                    <Checkbox
+                      checked={reviewChecklist.accidents}
+                      onCheckedChange={(checked) => 
+                        setReviewChecklist(prev => ({ ...prev, accidents: !!checked }))
+                      }
+                      className="mt-0.5"
+                    />
+                    <span className="text-sm text-gray-700">
+                      I have accurately reported all accidents and traffic violations (past 3 years)
+                    </span>
+                  </label>
+
+                  <label className="flex items-start gap-3 cursor-pointer p-2 hover:bg-yellow-100 rounded">
+                    <Checkbox
+                      checked={reviewChecklist.cdl}
+                      onCheckedChange={(checked) => 
+                        setReviewChecklist(prev => ({ ...prev, cdl: !!checked }))
+                      }
+                      className="mt-0.5"
+                    />
+                    <span className="text-sm text-gray-700">
+                      I have verified my CDL information, endorsements, and license history
+                    </span>
+                  </label>
+
+                  <label className="flex items-start gap-3 cursor-pointer p-2 hover:bg-yellow-100 rounded">
+                    <Checkbox
+                      checked={reviewChecklist.experience}
+                      onCheckedChange={(checked) => 
+                        setReviewChecklist(prev => ({ ...prev, experience: !!checked }))
+                      }
+                      className="mt-0.5"
+                    />
+                    <span className="text-sm text-gray-700">
+                      I have reviewed my driving experience with different equipment types
+                    </span>
+                  </label>
+
+                  <label className="flex items-start gap-3 cursor-pointer p-2 hover:bg-yellow-100 rounded">
+                    <Checkbox
+                      checked={reviewChecklist.training}
+                      onCheckedChange={(checked) => 
+                        setReviewChecklist(prev => ({ ...prev, training: !!checked }))
+                      }
+                      className="mt-0.5"
+                    />
+                    <span className="text-sm text-gray-700">
+                      I have included all relevant training, certifications, and awards
+                    </span>
+                  </label>
+
+                  <label className="flex items-start gap-3 cursor-pointer p-2 hover:bg-yellow-100 rounded">
+                    <Checkbox
+                      checked={reviewChecklist.certification}
+                      onCheckedChange={(checked) => 
+                        setReviewChecklist(prev => ({ ...prev, certification: !!checked }))
+                      }
+                      className="mt-0.5"
+                    />
+                    <span className="text-sm text-gray-700">
+                      I have reviewed all certification statements and my electronic signature
+                    </span>
+                  </label>
+
+                  <label className="flex items-start gap-3 cursor-pointer p-3 bg-red-50 border border-red-200 rounded-lg">
+                    <Checkbox
+                      checked={reviewChecklist.accuracy}
+                      onCheckedChange={(checked) => 
+                        setReviewChecklist(prev => ({ ...prev, accuracy: !!checked }))
+                      }
+                      className="mt-0.5"
+                    />
+                    <span className="text-sm font-semibold text-red-900">
+                      I certify that all information provided is true, accurate, and complete to the best of my knowledge. 
+                      I understand that falsification of information may result in disqualification or termination.
+                    </span>
+                  </label>
+                </div>
+              </div>
+
+              {/* Submit Button */}
+              <div className="flex gap-3">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowReviewModal(false)}
+                  className="flex-1"
+                >
+                  Go Back
+                </Button>
+                <Button
+                  onClick={handleSubmitWithReview}
+                  disabled={!allChecklistComplete || isSubmitting}
+                  className="flex-1 bg-orange-500 hover:bg-orange-600 text-white disabled:bg-gray-300"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                      Submitting...
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle2 className="w-5 h-5 mr-2" />
+                      Submit Application
+                    </>
+                  )}
+                </Button>
+              </div>
+
+              {!allChecklistComplete && (
+                <p className="text-sm text-red-600 text-center">
+                  Please complete all checklist items above before submitting
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

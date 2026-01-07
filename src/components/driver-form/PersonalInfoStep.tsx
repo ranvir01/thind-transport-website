@@ -298,6 +298,70 @@ export function PersonalInfoStep({ data, onChange, errors = {} }: PersonalInfoSt
         </div>
       </div>
 
+      {/* Education History */}
+      <div className="bg-purple-50 border border-purple-200 p-4 rounded-lg">
+        <h3 className="font-semibold text-purple-800 mb-4">Education History</h3>
+        <p className="text-sm text-purple-700 mb-4">Please select the highest grade completed in each category:</p>
+        
+        <div className="space-y-4">
+          {/* Grade School */}
+          <div>
+            <Label className="text-sm font-medium text-gray-700 mb-2 block">
+              Grade School (Circle highest completed: 1-12)
+            </Label>
+            <div className="flex flex-wrap gap-2">
+              {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((grade) => (
+                <label key={grade} className="flex items-center gap-1.5 cursor-pointer">
+                  <Checkbox
+                    checked={data.edu_grade_school === grade}
+                    onCheckedChange={(checked) => {
+                      if (checked) onChange('edu_grade_school', grade)
+                    }}
+                  />
+                  <span className="text-sm">{grade}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {/* College */}
+          <div>
+            <Label className="text-sm font-medium text-gray-700 mb-2 block">
+              College (Circle highest completed: 1-4 years)
+            </Label>
+            <div className="flex flex-wrap gap-3">
+              {[1, 2, 3, 4].map((year) => (
+                <label key={year} className="flex items-center gap-1.5 cursor-pointer">
+                  <Checkbox
+                    checked={data[`edu_college_${year}` as keyof typeof data]}
+                    onCheckedChange={(checked) => onChange(`edu_college_${year}`, !!checked)}
+                  />
+                  <span className="text-sm">{year}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {/* Post Graduate */}
+          <div>
+            <Label className="text-sm font-medium text-gray-700 mb-2 block">
+              Post Graduate (Circle highest completed: 1-4 years)
+            </Label>
+            <div className="flex flex-wrap gap-3">
+              {[1, 2, 3, 4].map((year) => (
+                <label key={year} className="flex items-center gap-1.5 cursor-pointer">
+                  <Checkbox
+                    checked={data[`edu_post_grad_${year}` as keyof typeof data]}
+                    onCheckedChange={(checked) => onChange(`edu_post_grad_${year}`, !!checked)}
+                  />
+                  <span className="text-sm">{year}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Legal Status */}
       <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg">
         <h3 className="font-semibold text-blue-800 mb-4">Legal Status</h3>

@@ -149,6 +149,18 @@ export function TrainingStep({ data, onChange, errors = {} }: TrainingStepProps)
             className="mt-2 min-h-[60px]"
           />
         </div>
+
+        <div>
+          <Label className="text-sm font-medium text-gray-700">
+            Special Equipment or Technical Materials
+          </Label>
+          <Textarea
+            value={data.special_equipment || ''}
+            onChange={(e) => updateField('special_equipment', e.target.value)}
+            placeholder="List any special equipment or technical materials you can work with (e.g., GPS systems, load securing equipment, refrigeration units, etc.)..."
+            className="mt-2 min-h-[60px]"
+          />
+        </div>
       </div>
 
       {/* Military Service */}
