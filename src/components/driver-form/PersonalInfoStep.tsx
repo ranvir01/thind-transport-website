@@ -9,7 +9,7 @@ import type { PersonalInfo, Education } from "@/types/driver-application-form"
 
 interface PersonalInfoStepProps {
   data: PersonalInfo & Partial<Education>
-  onChange: (field: string, value: string | boolean) => void
+  onChange: (field: string, value: string | boolean | number) => void
   errors?: Record<string, string>
 }
 
@@ -333,7 +333,7 @@ export function PersonalInfoStep({ data, onChange, errors = {} }: PersonalInfoSt
               {[1, 2, 3, 4].map((year) => (
                 <label key={year} className="flex items-center gap-1.5 cursor-pointer">
                   <Checkbox
-                    checked={data[`edu_college_${year}` as keyof typeof data]}
+                    checked={!!data[`edu_college_${year}` as keyof typeof data]}
                     onCheckedChange={(checked) => onChange(`edu_college_${year}`, !!checked)}
                   />
                   <span className="text-sm">{year}</span>
@@ -351,8 +351,8 @@ export function PersonalInfoStep({ data, onChange, errors = {} }: PersonalInfoSt
               {[1, 2, 3, 4].map((year) => (
                 <label key={year} className="flex items-center gap-1.5 cursor-pointer">
                   <Checkbox
-                    checked={data[`edu_post_grad_${year}` as keyof typeof data]}
-                    onCheckedChange={(checked) => onChange(`edu_post_grad_${year}`, !!checked)}
+                    checked={!!data[`edu_postgrad_${year}` as keyof typeof data]}
+                    onCheckedChange={(checked) => onChange(`edu_postgrad_${year}`, !!checked)}
                   />
                   <span className="text-sm">{year}</span>
                 </label>

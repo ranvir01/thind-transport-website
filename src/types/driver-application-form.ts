@@ -57,6 +57,7 @@ export interface AddressHistory {
 
 // Education
 export interface Education {
+  edu_grade_school?: number;
   edu_grade_1?: boolean
   edu_grade_2?: boolean
   edu_grade_3?: boolean

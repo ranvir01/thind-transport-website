@@ -99,11 +99,18 @@ export default function DriverApplicationPage() {
   }
 
   // Update handlers for each section
-  const updatePersonal = (field: string, value: string | boolean) => {
-    setFormData(prev => ({
-      ...prev,
-      personal: { ...prev.personal, [field]: value }
-    }))
+  const updatePersonal = (field: string, value: string | boolean | number) => {
+    if (field.startsWith('edu_')) {
+      setFormData(prev => ({
+        ...prev,
+        education: { ...prev.education, [field]: value }
+      }))
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        personal: { ...prev.personal, [field]: value }
+      }))
+    }
     // Clear error for this field
     if (errors[field]) {
       const newErrors = { ...errors }
@@ -394,7 +401,7 @@ export default function DriverApplicationPage() {
       case 1:
         return (
           <PersonalInfoStep
-            data={formData.personal}
+            data={{ ...formData.personal, ...formData.education }}
             onChange={updatePersonal}
             errors={errors}
           />
