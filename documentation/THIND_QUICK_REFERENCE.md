@@ -14,8 +14,8 @@ Your Next.js server is running at: **http://localhost:3000**
 | **Phone** | (206) 765-9218 |
 | **Email** | thindcarrier@gmail.com |
 | **Address** | PO Box 5114, Kent, WA 98064 |
-| **DOT#** | 2893456 |
-| **MC#** | 123456 |
+| **DOT#** | 2523064 |
+| **MC#** | 876103 |
 | **Founded** | 2016 (9 years in business) |
 | **Owner Experience** | 20+ years |
 | **Fleet Size** | 15 trucks |
@@ -138,8 +138,8 @@ Visit http://localhost:3000 and verify:
 - ✅ Phone: (206) 765-9218 forwards correctly
 - ✅ Email: thindcarrier@gmail.com receives mail
 - ✅ PO Box: PO Box 5114, Kent, WA 98064 is valid
-- ✅ DOT#: 2893456 is accurate
-- ✅ MC#: 123456 is accurate
+- ✅ DOT#: 2523064 is accurate
+- ✅ MC#: 876103 is accurate
 
 ---
 

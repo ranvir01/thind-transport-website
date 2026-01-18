@@ -155,7 +155,7 @@ export default function DriverDashboardPage() {
           <CardContent className="pt-6">
             <div className="text-center text-sm text-gray-600">
               <p className="font-semibold mb-2">Thind Transport LLC</p>
-              <p>USDOT #4052236 | MC #1472882</p>
+              <p>USDOT #2523064 | MC #876103</p>
               <p className="mt-2">Questions? Email us at <a href="mailto:thindcarrier@gmail.com" className="text-orange hover:underline">thindcarrier@gmail.com</a></p>
             </div>
           </CardContent>

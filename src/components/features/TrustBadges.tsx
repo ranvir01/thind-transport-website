@@ -33,7 +33,7 @@ const badges = [
   },
   {
     icon: Building2,
-    value: "3154006",
+    value: "2523064",
     label: "USDOT",
     sublabel: "Verified carrier",
     href: "https://safer.fmcsa.dot.gov/CompanySnapshot.aspx",

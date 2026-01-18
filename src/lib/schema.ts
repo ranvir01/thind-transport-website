@@ -137,7 +137,7 @@ export const faqSchema = {
       "name": "What's your safety rating?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "We maintain an A+ safety rating with FMCSA. Zero out-of-service violations in our history. Our USDOT number is 3154006 - you can verify our record on SAFER."
+        "text": "We maintain an A+ safety rating with FMCSA. Zero out-of-service violations in our history. Our USDOT number is 2523064 - you can verify our record on SAFER."
       }
     },
     {
