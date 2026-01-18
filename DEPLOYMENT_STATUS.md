@@ -169,8 +169,8 @@ NEXTAUTH_SECRET=[generate new for production]
 
 **Email**: thindcarrier@gmail.com  
 **Phone**: (206) 765-6300  
-**USDOT**: 4052236  
-**MC**: 1472882
+**USDOT**: 2523064  
+**MC**: 876103
 
 ---
 

@@ -258,8 +258,8 @@ Current system accepts codes starting with `THIND-` (8+ characters).
 All pages show:
 - **Email**: thindcarrier@gmail.com
 - **Phone**: (206) 765-6300
-- **USDOT**: 4052236
-- **MC**: 1472882
+- **USDOT**: 2523064
+- **MC**: 876103
 
 ## 🚨 Troubleshooting
 
@@ -303,5 +303,5 @@ See `SETUP.md` for detailed technical documentation.
 
 **Test invitation code**: THIND-TEST-123 (or any code starting with "THIND-")
 
-Built for: Thind Transport LLC | USDOT #4052236 | MC #1472882
+Built for: Thind Transport LLC | USDOT #2523064 | MC #876103
 

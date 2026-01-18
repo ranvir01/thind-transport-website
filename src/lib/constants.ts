@@ -5,8 +5,8 @@ export const COMPANY_INFO = {
   phoneFormatted: "+12067656300",
   email: "thindcarrier@gmail.com",
   address: "PO Box 5114, Kent, WA 98064",
-  dot: "2893456", // Placeholder, update if actual DOT number available
-  mc: "123456", // Placeholder, update if actual MC number available
+  dot: "2523064", // Update if actual DOT number available
+  mc: "876103", // Update if actual MC number available
   founded: 2016,
   ownerExperience: "20+",
 } as const

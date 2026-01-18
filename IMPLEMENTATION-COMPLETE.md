@@ -335,8 +335,8 @@ The system accepts codes starting with `THIND-` (minimum 8 characters).
 
 **Email**: thindcarrier@gmail.com  
 **Phone**: (206) 765-6300  
-**USDOT**: 4052236  
-**MC**: 1472882
+**USDOT**: 2523064  
+**MC**: 876103
 
 ---
 
@@ -358,7 +358,7 @@ Your system is **100% operational** and ready for production use!
 ---
 
 Built for: **Thind Transport LLC**  
-USDOT #4052236 | MC #1472882
+USDOT #2523064 | MC #876103
 
 **Status**: ✅ **READY FOR PRODUCTION**
 

@@ -147,7 +147,7 @@ export const CinematicHero = () => {
           {[
             "Weekly Direct Deposit",
             "No Hidden Fees", 
-            "USDOT #3154006",
+            "USDOT #2523064",
           ].map((item) => (
             <span key={item} className="flex items-center gap-2">
               <svg className="w-4 h-4 text-green-400" fill="currentColor" viewBox="0 0 20 20">

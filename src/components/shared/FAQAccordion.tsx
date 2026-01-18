@@ -101,7 +101,7 @@ const defaultFaqs = [
   // Safety & Compliance
   {
     question: "What's your safety rating?",
-    answer: "We maintain an A+ safety rating with FMCSA. Zero out-of-service violations in our history. Our USDOT number is 3154006 - you can verify our record on SAFER. We take safety seriously because it protects you and keeps our insurance costs down (which means better pay for you)."
+    answer: "We maintain an A+ safety rating with FMCSA. Zero out-of-service violations in our history. Our USDOT number is 2523064 - you can verify our record on SAFER. We take safety seriously because it protects you and keeps our insurance costs down (which means better pay for you)."
   },
   {
     question: "What ELD do you use?",
