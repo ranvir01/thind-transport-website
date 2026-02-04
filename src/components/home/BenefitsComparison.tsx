@@ -99,7 +99,7 @@ export function BenefitsComparison() {
                 <Badge className="bg-green-600">1099 Contractor</Badge>
               </div>
               <CardDescription className="text-lg font-semibold text-green-900">
-                $180K-$280K Annual • 91% Commission
+                $250K-$300K Annual • 91% Payout
               </CardDescription>
             </CardHeader>
             <CardContent className="pt-6">

@@ -17,7 +17,7 @@ const driverTypes = [
   },
   {
     title: "Lease Purchase",
-    description: "Walk into a 2024 Cascadia with $0 down. Your path to ownership starts here.",
+    description: "Walk into a modern Cascadia with $0 down. Your path to ownership starts here.",
     image: "/images/generated/driver-portrait-3.png",
   },
   {

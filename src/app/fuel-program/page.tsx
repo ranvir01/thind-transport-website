@@ -232,7 +232,7 @@ export default function FuelProgramPage() {
               ))}
             </div>
             <p className="text-lg text-gray-700 italic mb-4">
-              "The fuel card program alone saves me over $800 per month. Combined with the high commission rates,
+              "The fuel card program alone saves me over $800 per month. Combined with the high payout rates,
               Thind Transport really looks out for their drivers' bottom line."
             </p>
             <p className="font-semibold text-gray-900">- Mike Johnson, Owner Operator</p>

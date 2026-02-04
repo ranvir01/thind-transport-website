@@ -55,7 +55,7 @@ export const CinematicHero = () => {
           transition={{ duration: 0.5, delay: 0.2 }}
           className="text-lg md:text-xl text-white/80 max-w-2xl mx-auto mb-8 leading-relaxed drop-shadow-md"
         >
-          Family-owned since 2016. 2024 Cascadias. No forced dispatch. 
+          Family-owned since 2014. Modern 2020-2022 Cascadias. No forced dispatch. 
           <span className="block mt-1 text-white font-semibold">Real support from real people in Kent, WA.</span>
         </motion.p>
 

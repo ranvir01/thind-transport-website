@@ -7,7 +7,7 @@ export const InfiniteTicker = () => {
     { label: "Owner Operator Split:", value: "91%", color: "text-orange" },
     { label: "Fuel Surcharge:", value: "100% Pass-through", color: "text-orange" },
     { label: "Safety Rating:", value: "A+ (FMCSA)", color: "text-green-400" },
-    { label: "Equipment:", value: "2024 Cascadias", color: "text-white" },
+    { label: "Equipment:", value: "2020-2022 Cascadias", color: "text-white" },
     { label: "Hiring Nationwide:", value: "All 48 States", color: "text-green-400" },
     { label: "Popular Routes:", value: "CA → TX → FL → NY", color: "text-blue-400" },
     { label: "West Coast:", value: "WA • OR • CA • NV • AZ", color: "text-white" },

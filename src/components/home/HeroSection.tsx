@@ -41,7 +41,7 @@ export function HeroSection() {
                 </div>
                 <div>
                   <p className="font-semibold text-[#001F3F] mb-1">🚛 Owner Operators:</p>
-                  <p className="text-gray-700">91% Commission • $180K-$280K/year</p>
+                  <p className="text-gray-700">91% Payout • $250K-$300K/year</p>
                 </div>
               </div>
             </div>

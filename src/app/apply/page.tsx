@@ -14,13 +14,13 @@ import {
 // Enhanced SEO Metadata - Competitor Analysis Based
 export const metadata: Metadata = {
   title: `Apply Now - Quick Application | ${COMPANY_INFO.name}`,
-  description: `Quick 60-second application for CDL driver positions at ${COMPANY_INFO.name}. Hiring nationwide. Owner Operators: 91% commission. Company Drivers: ${PAY_RATES.companyDriver.otr.perMile}/mi. No experience required. Start next week. Apply now!`,
+  description: `Quick 60-second application for CDL driver positions at ${COMPANY_INFO.name}. Hiring nationwide. Owner Operators: 91% payout. Company Drivers: ${PAY_RATES.companyDriver.otr.perMile}/mi. No experience required. Start next week. Apply now!`,
   keywords: [
     "CDL truck driver jobs",
     "owner operator jobs",
     "truck driver application",
     "trucking jobs near me",
-    "91% commission trucking",
+    "91% payout trucking",
     "CDL Class A jobs",
     "flatbed truck driver jobs",
     "reefer truck driver jobs",
@@ -37,14 +37,14 @@ export const metadata: Metadata = {
   ],
   openGraph: {
     title: `Apply Now - Quick Application | ${COMPANY_INFO.name}`,
-    description: `Quick 60-second application for CDL driver positions at ${COMPANY_INFO.name}. Hiring nationwide. Owner Operators: 91% commission. Company Drivers: ${PAY_RATES.companyDriver.otr.perMile}/mi.`,
+    description: `Quick 60-second application for CDL driver positions at ${COMPANY_INFO.name}. Hiring nationwide. Owner Operators: 91% payout. Company Drivers: ${PAY_RATES.companyDriver.otr.perMile}/mi.`,
     type: "website",
     url: "https://thindtransport.com/apply",
   },
   twitter: {
     card: "summary_large_image",
     title: `Hiring CDL Drivers NOW | ${COMPANY_INFO.name}`,
-    description: "91% Commission for O/O • Competitive Company Pay • Same Day Pay • Apply in 60 Seconds",
+    description: "91% Payout for O/O • Competitive Company Pay • Same Day Pay • Apply in 60 Seconds",
   },
   alternates: {
     canonical: "https://thindtransport.com/apply",

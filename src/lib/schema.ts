@@ -7,8 +7,8 @@ export const organizationSchema = {
   "alternateName": "Thind Transport",
   "url": "https://thindtransport.com",
   "logo": "https://thindtransport.com/ar-carrier-logo.png",
-  "description": "Family-owned trucking company offering 91% gross commission for owner operators. Based in Kent, WA since 2016.",
-  "foundingDate": "2016",
+  "description": "Family-owned trucking company offering 91% gross payout for owner operators. Based in Kent, WA since 2014.",
+  "foundingDate": "2014",
   "address": {
     "@type": "PostalAddress",
     "streetAddress": "Kent",
@@ -78,10 +78,10 @@ export const faqSchema = {
   "mainEntity": [
     {
       "@type": "Question",
-      "name": "What's the 91% commission for owner operators?",
+      "name": "What's the 91% payout for owner operators?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "You keep 91% of the gross revenue from each load - one of the highest rates in the industry! Most companies offer 70-85%. There are NO hidden fees or surprise deductions. Fuel surcharge passes through 100% to you."
+        "text": "You keep 91% of the gross revenue from each load - one of the highest payouts in the industry! Most companies offer 70-85%. There are NO hidden fees or surprise deductions. Fuel surcharge passes through 100% to you."
       }
     },
     {
@@ -89,7 +89,7 @@ export const faqSchema = {
       "name": "How much can I realistically earn?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "Company Drivers: $78K-$110K annually at $0.60-$0.65 per mile. Owner Operators: $180K-$280K gross annually with 91% commission. Top O/Os gross over $250K. Pay is distributed weekly via direct deposit every Friday."
+        "text": "Company Drivers: $78K-$110K annually at $0.60-$0.65 per mile. Owner Operators: $250K-$300K gross annually with 91% payout. Top O/Os gross over $300K. Pay is distributed weekly via direct deposit every Friday."
       }
     },
     {
@@ -153,7 +153,7 @@ export const faqSchema = {
       "name": "Why should I choose Thind over bigger carriers?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "At big carriers, you're a number. At Thind, you're family. We offer: Highest commission in the industry (91%), No forced dispatch, Transparent settlements with no hidden fees, Modern equipment, Real 24/7 support."
+        "text": "At big carriers, you're a number. At Thind, you're family. We offer: Highest payout in the industry (91%), No forced dispatch, Transparent settlements with no hidden fees, Modern equipment, Real 24/7 support."
       }
     }
   ]
@@ -162,7 +162,7 @@ export const faqSchema = {
 export const jobPostingSchema = {
   "@context": "https://schema.org",
   "@type": "JobPosting",
-  "title": "CDL-A Owner Operator - 91% Gross Commission",
+  "title": "CDL-A Owner Operator - 91% Gross Payout",
   "description": "Join Thind Transport and earn 91% of gross revenue on every load. No forced dispatch, 100% fuel surcharge pass-through, weekly settlements. 2015+ trucks accepted.",
   "datePosted": new Date().toISOString().split('T')[0],
   "validThrough": new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
@@ -187,14 +187,14 @@ export const jobPostingSchema = {
     "currency": "USD",
     "value": {
       "@type": "QuantitativeValue",
-      "minValue": 180000,
-      "maxValue": 280000,
+      "minValue": 250000,
+      "maxValue": 300000,
       "unitText": "YEAR"
     }
   },
   "qualifications": "CDL Class A, 2+ years OTR experience, Clean driving record, Truck 2015 or newer",
   "responsibilities": "Transport freight across the continental US, Maintain vehicle and logs, Communicate with dispatch",
-  "jobBenefits": "91% gross commission, No forced dispatch, 100% fuel surcharge, Weekly pay, Fuel card discounts, $2,500 sign-on bonus",
+  "jobBenefits": "91% gross payout, No forced dispatch, 100% fuel surcharge, Weekly pay, Fuel card discounts, $2,500 sign-on bonus",
   "industry": "Transportation and Trucking"
 }
 

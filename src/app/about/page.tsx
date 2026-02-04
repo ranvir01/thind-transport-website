@@ -12,8 +12,8 @@ import { COMPANY_INFO, STATS, TRUST_INDICATORS } from "@/lib/constants"
 import { PageBreadcrumb } from "@/components/shared/PageBreadcrumb"
 
 export const metadata: Metadata = {
-  title: `About Us - Family-Owned Trucking Since 2016 | ${COMPANY_INFO.name}`,
-  description: `Learn about Thind Transport LLC, a family-owned trucking company based in Kent, WA. Founded in 2016 with 20+ years of industry experience. FMCSA certified, A+ safety rating, hiring nationwide.`,
+  title: `About Us - Family-Owned Trucking Since 2014 | ${COMPANY_INFO.name}`,
+  description: `Learn about Thind Transport LLC, a family-owned trucking company based in Kent, WA. Founded in 2014 with 20+ years of industry experience. FMCSA certified, A+ safety rating, hiring nationwide.`,
   keywords: [
     "Thind Transport about us",
     "Kent WA trucking company",
@@ -26,12 +26,12 @@ export const metadata: Metadata = {
 
 const milestones = [
   {
-    year: "2016",
+    year: "2014",
     title: "Company Founded",
     description: "Thind Transport LLC established in Kent, Washington with a vision to treat drivers like family.",
   },
   {
-    year: "2018",
+    year: "2016",
     title: "Fleet Expansion",
     description: "Grew to 5 trucks and established partnerships with major brokers and shippers.",
   },
@@ -47,13 +47,13 @@ const milestones = [
   },
   {
     year: "2024",
-    title: "Fleet Modernization",
-    description: "Rolled out new 2024 Freightliner Cascadias with the latest safety and comfort features.",
+    title: "Nationwide Expansion",
+    description: "Now hiring drivers from all 48 states with continued fleet growth.",
   },
   {
-    year: "2025",
-    title: "Nationwide Expansion",
-    description: "Now hiring drivers from all 48 states with plans to double our fleet size.",
+    year: "2026",
+    title: "Continued Growth",
+    description: "Over a decade of driver-first service with plans to double our fleet size.",
   },
 ]
 
@@ -134,7 +134,7 @@ export default function AboutPage() {
               Family-Owned. <span className="text-orange">Driver-Focused.</span>
             </h1>
             <p className="text-xl text-white/90 leading-relaxed max-w-3xl mx-auto">
-              Since 2016, we've been building a trucking company that puts drivers first.
+              Since 2014, we've been building a trucking company that puts drivers first.
               Not just words on a website - it's in everything we do.
             </p>
           </div>
@@ -146,7 +146,7 @@ export default function AboutPage() {
         <div className="container">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto">
             {[
-              { value: "2016", label: "Founded", icon: Calendar },
+              { value: "2014", label: "Founded", icon: Calendar },
               { value: "20+", label: "Years Experience", icon: Award },
               { value: "15+", label: "Active Trucks", icon: Truck },
               { value: "48", label: "States Covered", icon: MapPin },
@@ -178,7 +178,7 @@ export default function AboutPage() {
                 </h2>
                 <div className="space-y-4 text-gray-600 leading-relaxed">
                   <p>
-                    Thind Transport was founded in 2016 by someone who spent over two decades behind the wheel.
+                    Thind Transport was founded in 2014 by someone who spent over two decades behind the wheel.
                     After years of working for large carriers and seeing how drivers were often treated as
                     numbers rather than people, we knew there had to be a better way.
                   </p>
@@ -188,7 +188,7 @@ export default function AboutPage() {
                     would be honored, and their concerns would be heard?
                   </p>
                   <p>
-                    Today, we're proud to offer <strong className="text-gray-900">91% commission</strong> to
+                    Today, we're proud to offer <strong className="text-gray-900">91% payout</strong> to
                     owner operators - one of the highest rates in the industry. We've maintained an{" "}
                     <strong className="text-gray-900">A+ safety rating</strong> since day one. And most
                     importantly, we've built a team that feels like family.

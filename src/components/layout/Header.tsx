@@ -98,7 +98,7 @@ export function Header() {
                 THIND TRANSPORT
               </h1>
               <p className={`text-[10px] font-medium uppercase tracking-widest transition-colors duration-300 ${scrolled ? 'text-gray-500' : 'text-white/80'}`}>
-                Est. 2016 • Kent, WA
+                Est. 2014 • Kent, WA
               </p>
             </div>
           </Link>

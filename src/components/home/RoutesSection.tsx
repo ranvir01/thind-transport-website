@@ -233,7 +233,7 @@ export function RoutesSection() {
                     <li>• 91% of gross revenue</li>
                     <li>• Avg $2.25-$3.25/mile</li>
                     <li>• Pick your own loads</li>
-                    <li>• $180K-$280K potential</li>
+                    <li>• $250K-$300K potential</li>
                   </ul>
                 </div>
               </CardContent>

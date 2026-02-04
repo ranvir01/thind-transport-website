@@ -43,7 +43,7 @@ const badges = [
     icon: Truck,
     value: "15+",
     label: "Active Trucks",
-    sublabel: "2024 Cascadias",
+    sublabel: "2020-2022 Cascadias",
   },
   {
     icon: Users,

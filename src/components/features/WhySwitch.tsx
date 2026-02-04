@@ -32,7 +32,7 @@ const comparisonData = [
   {
     feature: "Equipment Age",
     competitor: "5-10 year old trucks",
-    thind: "2024 Cascadias",
+    thind: "2020-2022 Cascadias",
     highlight: true,
   },
   {

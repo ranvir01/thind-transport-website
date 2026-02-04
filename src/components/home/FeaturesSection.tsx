@@ -19,7 +19,7 @@ export function FeaturesSection() {
       icon: DollarSign,
       title: "Industry-Leading Pay",
       description:
-        "Owner Operators earn 91% commission + $2,500 bonus. Company drivers earn $0.50-$0.60/mile + $1,000 bonus. No hidden fees.",
+        "Owner Operators earn 91% payout + $2,500 bonus. Company drivers earn $0.50-$0.60/mile + $1,000 bonus. No hidden fees.",
       link: "/pay-rates",
       linkText: "View Pay Details →",
       gradient: "from-orange-50 to-amber-50",

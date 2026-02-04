@@ -12,7 +12,7 @@ import { PageBreadcrumb } from "@/components/shared/PageBreadcrumb"
 
 export const metadata: Metadata = {
   title: `Military Veterans CDL Jobs | ${COMPANY_INFO.name}`,
-  description: "Thind Transport proudly hires military veterans. We value your service, discipline, and skills. CDL Class A jobs with 91% commission for O/O, $78K-$110K for company drivers. Special veteran benefits and support.",
+  description: "Thind Transport proudly hires military veterans. We value your service, discipline, and skills. CDL Class A jobs with 91% payout for O/O, $78K-$110K for company drivers. Special veteran benefits and support.",
   keywords: [
     "veteran truck driver jobs",
     "military CDL jobs",
@@ -30,7 +30,7 @@ const veteranBenefits = [
   {
     icon: DollarSign,
     title: "Competitive Veteran Pay",
-    description: "Same great rates for all: 91% commission for O/O, $78K-$110K for company drivers. Your military experience is valued.",
+    description: "Same great rates for all: 91% payout for O/O, $78K-$110K for company drivers. Your military experience is valued.",
   },
   {
     icon: Shield,
@@ -118,9 +118,9 @@ const testimonials = [
     name: "Marcus T.",
     branch: "U.S. Army",
     years: "8 years service",
-    quote: "After 3 deployments, I needed a career that valued discipline and gave me independence. Thind Transport delivers on both. The 91% commission is real - no games.",
+    quote: "After 3 deployments, I needed a career that valued discipline and gave me independence. Thind Transport delivers on both. The 91% payout is real - no games.",
     role: "Owner Operator",
-    earnings: "$180K first year",
+    earnings: "$250K first year",
   },
   {
     name: "Jennifer R.",
@@ -194,7 +194,7 @@ export default function VeteransPage() {
         <div className="container">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto">
             {[
-              { value: "91%", label: "Commission", sublabel: "Owner Operators" },
+              { value: "91%", label: "Payout", sublabel: "Owner Operators" },
               { value: "$78K", label: "Top Earnings", sublabel: "Company Drivers" },
               { value: "24/7", label: "Support", sublabel: "Real People" },
               { value: "48", label: "States", sublabel: "Nationwide Coverage" },
@@ -439,7 +439,7 @@ export default function VeteransPage() {
                 <ul className="space-y-3 mb-6">
                   <li className="flex items-center gap-2">
                     <CheckCircle2 className="h-4 w-4 text-green-500" />
-                    <span className="text-gray-700 font-bold">91% commission</span>
+                    <span className="text-gray-700 font-bold">91% payout</span>
                   </li>
                   <li className="flex items-center gap-2">
                     <CheckCircle2 className="h-4 w-4 text-green-500" />

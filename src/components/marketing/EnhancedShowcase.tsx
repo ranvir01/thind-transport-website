@@ -69,18 +69,18 @@ export function EnhancedShowcase() {
                 <Badge variant="secondary">Independent</Badge>
               </CardTitle>
               <CardDescription>
-                High commission rates with no forced dispatch
+                High payout rates with no forced dispatch
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-2 mb-4">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Commission</span>
+                  <span className="text-sm text-gray-600">Payout</span>
                   <span className="font-semibold">90%+</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-600">Annual Potential</span>
-                  <span className="font-semibold">$180K-$280K</span>
+                  <span className="font-semibold">$250K-$300K</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-600">Dispatch</span>

@@ -82,13 +82,13 @@ export function PayRatesTabs() {
           <CardHeader>
             <CardTitle>Owner Operator Rates</CardTitle>
             <CardDescription>
-              High commission rates with no forced dispatch
+              High payout rates with no forced dispatch
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="bg-gradient-to-r from-blue-50 to-green-50 p-6 rounded-lg border-2 border-blue-200">
               <div className="text-center mb-4">
-                <h3 className="text-3xl font-bold mb-2 text-navy-800">91% Commission Rate</h3>
+                <h3 className="text-3xl font-bold mb-2 text-navy-800">91% Payout Rate</h3>
                 <p className="text-gray-600">Industry-leading rate - Keep more of what you earn!</p>
                 <div className="mt-2">
                   <span className="inline-block bg-orange-500 text-white px-4 py-2 rounded-full font-bold text-sm shadow-md">

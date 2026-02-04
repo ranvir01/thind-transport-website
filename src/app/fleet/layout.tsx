@@ -2,11 +2,11 @@ import { Metadata } from "next"
 import { COMPANY_INFO, STATS } from "@/lib/constants"
 
 export const metadata: Metadata = {
-  title: `Fleet & Equipment | 2023-2025 Freightliner & Volvo Trucks | ${COMPANY_INFO.name}`,
-  description: `Drive the newest equipment at ${COMPANY_INFO.name}. Our fleet features 2023-2025 Freightliner Cascadias & Volvo VNL 860s with APU, inverters, and full safety suites. ${STATS.trucksInFleet}+ trucks maintained by our in-house shop. Apply today!`,
+  title: `Fleet & Equipment | 2020-2022 Freightliner & Volvo Trucks | ${COMPANY_INFO.name}`,
+  description: `Drive modern equipment at ${COMPANY_INFO.name}. Our fleet features 2020-2022 Freightliner Cascadias & Volvo VNL 860s with APU, inverters, and full safety suites. ${STATS.trucksInFleet}+ trucks maintained by our in-house shop. Apply today!`,
   keywords: [
     "trucking company equipment",
-    "Freightliner Cascadia 2024",
+    "Freightliner Cascadia 2020-2022",
     "Volvo VNL 860 trucks",
     "truck driver equipment",
     "CDL driver trucks",
@@ -20,7 +20,7 @@ export const metadata: Metadata = {
   ],
   openGraph: {
     title: `Fleet & Equipment | ${COMPANY_INFO.name}`,
-    description: `Drive 2023-2025 Freightliner Cascadias & Volvo VNL 860s. APU, inverters, full safety suites standard. ${STATS.trucksInFleet}+ trucks with 24/7 maintenance support.`,
+    description: `Drive 2020-2022 Freightliner Cascadias & Volvo VNL 860s. APU, inverters, full safety suites standard. ${STATS.trucksInFleet}+ trucks with 24/7 maintenance support.`,
     url: "https://thindtransport.com/fleet",
     siteName: COMPANY_INFO.name,
     locale: "en_US",
@@ -29,7 +29,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: `Fleet & Equipment | ${COMPANY_INFO.name}`,
-    description: "2023-2025 Freightliner & Volvo trucks. APU standard. 24/7 maintenance support.",
+    description: "2020-2022 Freightliner & Volvo trucks. APU standard. 24/7 maintenance support.",
   },
   alternates: {
     canonical: "https://thindtransport.com/fleet"
@@ -51,13 +51,13 @@ export default function FleetLayout({
             "@context": "https://schema.org",
             "@type": "ItemList",
             "name": `${COMPANY_INFO.name} Fleet Equipment`,
-            "description": "Modern trucking fleet featuring 2023-2025 Freightliner Cascadias and Volvo VNL trucks",
+            "description": "Modern trucking fleet featuring 2020-2022 Freightliner Cascadias and Volvo VNL trucks",
             "numberOfItems": STATS.trucksInFleet,
             "itemListElement": [
               {
                 "@type": "Vehicle",
                 "position": 1,
-                "name": "Freightliner Cascadia 2023-2025",
+                "name": "Freightliner Cascadia 2020-2022",
                 "vehicleConfiguration": "Semi-Truck",
                 "vehicleEngine": {
                   "@type": "EngineSpecification",
@@ -71,7 +71,7 @@ export default function FleetLayout({
               {
                 "@type": "Vehicle",
                 "position": 2,
-                "name": "Volvo VNL 860 2024-2025",
+                "name": "Volvo VNL 860 2020-2022",
                 "vehicleConfiguration": "Semi-Truck",
                 "vehicleEngine": {
                   "@type": "EngineSpecification",
@@ -127,7 +127,7 @@ export default function FleetLayout({
                 "name": "What year models are in the Thind Transport fleet?",
                 "acceptedAnswer": {
                   "@type": "Answer",
-                  "text": "Our fleet consists exclusively of 2023-2025 model year trucks. We operate Freightliner Cascadias and Volvo VNL 860s/760s. No truck in our fleet is older than 3 years, ensuring you always drive reliable, modern equipment."
+                  "text": "Our fleet consists of 2020-2022 model year trucks. We operate Freightliner Cascadias and Volvo VNL 860s/760s. All trucks are well-maintained modern equipment, ensuring you always drive reliable, comfortable trucks."
                 }
               },
               {

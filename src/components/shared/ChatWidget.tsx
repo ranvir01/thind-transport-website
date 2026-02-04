@@ -21,14 +21,14 @@ interface Message {
 }
 
 const quickReplies = [
-  "What's your commission rate?",
+  "What's your payout rate?",
   "Do you have forced dispatch?",
   "How soon can I start?",
   "Talk to a recruiter",
 ]
 
 const botResponses: Record<string, string> = {
-  "commission": "Owner Operators keep 91% of the gross revenue - one of the highest in the industry! Plus, 100% of fuel surcharge is passed through to you. Would you like to calculate your potential earnings?",
+  "payout": "Owner Operators keep 91% of the gross revenue - one of the highest in the industry! Plus, 100% of fuel surcharge is passed through to you. Would you like to calculate your potential earnings?",
   "forced dispatch": "No, never! At Thind Transport, you choose your loads. We believe in treating drivers as partners, not employees. You control your schedule.",
   "start": "You could be on the road in as little as 48-72 hours! Our onboarding process is streamlined. Would you like to speak with a recruiter to get started?",
   "recruiter": "I'll have one of our recruiters call you within the next 30 minutes. What's the best phone number to reach you?",
@@ -60,7 +60,7 @@ export function ChatWidget() {
     if (isOpen && messages.length === 0) {
       setMessages([{
         id: "1",
-        text: "Hi! 👋 I'm here to help you learn about driving for Thind Transport. Ask me anything about our 91% commission, equipment, or routes!",
+        text: "Hi! 👋 I'm here to help you learn about driving for Thind Transport. Ask me anything about our 91% payout, equipment, or routes!",
         sender: "bot",
         timestamp: new Date(),
       }])
@@ -79,8 +79,8 @@ export function ChatWidget() {
 
   const getBotResponse = (text: string): string => {
     const lower = text.toLowerCase()
-    if (lower.includes("commission") || lower.includes("91") || lower.includes("percent") || lower.includes("pay")) {
-      return botResponses["commission"]
+    if (lower.includes("commission") || lower.includes("payout") || lower.includes("91") || lower.includes("percent") || lower.includes("pay")) {
+      return botResponses["payout"]
     }
     if (lower.includes("forced") || lower.includes("dispatch")) {
       return botResponses["forced dispatch"]
@@ -153,7 +153,7 @@ export function ChatWidget() {
                 <X className="h-4 w-4" />
               </button>
               <p className="text-sm text-gray-700 font-medium">
-                👋 Hi! Have questions about our 91% commission? I'm here to help!
+                👋 Hi! Have questions about our 91% payout? I'm here to help!
               </p>
               <div className="absolute bottom-0 right-6 transform translate-y-1/2 rotate-45 w-3 h-3 bg-white border-r border-b border-gray-200" />
             </motion.div>

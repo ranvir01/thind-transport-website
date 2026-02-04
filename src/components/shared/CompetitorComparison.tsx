@@ -16,7 +16,7 @@ interface ComparisonItem {
 
 const comparisons: ComparisonItem[] = [
   { 
-    feature: "Commission Rate", 
+    feature: "Payout Rate", 
     thind: "91%", 
     competitor: "70-75%", 
     highlight: true,
@@ -55,7 +55,7 @@ const comparisons: ComparisonItem[] = [
   },
   { 
     feature: "Equipment Age", 
-    thind: "2023-2025 models", 
+    thind: "2020-2022 models", 
     competitor: "3-7+ years old",
     icon: <Truck className="h-4 w-4" />
   },

@@ -104,7 +104,7 @@ export function PayCalculator() {
                 }`}
               >
                 <div className="font-black text-black">Owner Operator</div>
-                <div className="text-xs text-gray-700 mt-1 font-medium">91% commission</div>
+                <div className="text-xs text-gray-700 mt-1 font-medium">91% payout</div>
               </button>
             </div>
           </div>
@@ -226,7 +226,7 @@ export function PayCalculator() {
                     <span className="font-black text-black">${results.grossRevenue.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
                   </div>
                   <div className="flex justify-between border-t-2 border-black/10 pt-2">
-                    <span className="text-gray-700 font-medium">Your Commission (91%):</span>
+                    <span className="text-gray-700 font-medium">Your Payout (91%):</span>
                     <span className="font-black text-green-600">${results.commission.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
                   </div>
                 </>

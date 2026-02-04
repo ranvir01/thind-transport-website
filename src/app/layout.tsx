@@ -32,7 +32,7 @@ export const metadata: Metadata = {
     default: `Owner Operator Jobs 91% Split | ${COMPANY_INFO.name} | Hiring CDL Drivers`,
     template: `%s | ${COMPANY_INFO.name}`
   },
-  description: `Keep 91% of your gross with ${COMPANY_INFO.name}. Family-owned trucking company hiring CDL Class A drivers & owner operators. 2024 Cascadias, no forced dispatch, weekly pay. Based in Kent, WA. Apply now: ${COMPANY_INFO.phone}`,
+  description: `Keep 91% of your gross with ${COMPANY_INFO.name}. Family-owned trucking company hiring CDL Class A drivers & owner operators. Modern 2020-2022 Cascadias, no forced dispatch, weekly pay. Based in Kent, WA. Apply now: ${COMPANY_INFO.phone}`,
   keywords: [
     // High-intent keywords
     "owner operator jobs 91 percent",
@@ -59,7 +59,7 @@ export const metadata: Metadata = {
     "truck driver sign on bonus",
     "no forced dispatch trucking",
     "weekly pay trucking jobs",
-    "2024 Cascadia jobs",
+    "Cascadia trucking jobs",
   ],
   authors: [{ name: `${COMPANY_INFO.name}` }],
   creator: `${COMPANY_INFO.name}`,
@@ -80,7 +80,7 @@ export const metadata: Metadata = {
         url: "/images/generated/fleet-kent-wa.png",
         width: 1200,
         height: 630,
-        alt: `${COMPANY_INFO.name} Fleet - 2024 Freightliner Cascadias`,
+        alt: `${COMPANY_INFO.name} Fleet - 2020-2022 Freightliner Cascadias`,
       }
     ],
   },
@@ -135,7 +135,7 @@ const structuredData = {
         height: 512,
       },
       description: "Family-owned trucking company offering 91% gross split for owner operators. Based in Kent, WA with nationwide operations.",
-      foundingDate: "2016",
+      foundingDate: "2014",
       founder: {
         "@type": "Person",
         name: "Thind Family",
@@ -183,7 +183,7 @@ const structuredData = {
     {
       "@type": "JobPosting",
       title: "Owner Operator - 91% Gross Split",
-      description: `${COMPANY_INFO.name} is hiring owner operators with CDL Class A. Keep 91% of your gross revenue with 100% fuel surcharge pass-through. No forced dispatch. 2024 Cascadia equipment available for lease purchase. Nationwide lanes with focus on Pacific Northwest. Weekly direct deposit.`,
+      description: `${COMPANY_INFO.name} is hiring owner operators with CDL Class A. Keep 91% of your gross revenue with 100% fuel surcharge pass-through. No forced dispatch. Modern equipment available for lease purchase. Nationwide lanes with focus on Pacific Northwest. Weekly direct deposit.`,
       identifier: {
         "@type": "PropertyValue",
         name: `${COMPANY_INFO.name}`,
@@ -229,7 +229,7 @@ const structuredData = {
     {
       "@type": "JobPosting", 
       title: "CDL Class A Company Driver",
-      description: `${COMPANY_INFO.name} hiring company drivers. Competitive pay ${PAY_RATES.companyDriver.otr.annual} annually. Drive 2024 Freightliner Cascadias. Full benefits, 401k, paid time off. No forced dispatch. Flexible home time options. Regional and OTR positions available.`,
+      description: `${COMPANY_INFO.name} hiring company drivers. Competitive pay ${PAY_RATES.companyDriver.otr.annual} annually. Drive 2020-2022 Freightliner Cascadias. Full benefits, 401k, paid time off. No forced dispatch. Flexible home time options. Regional and OTR positions available.`,
       identifier: {
         "@type": "PropertyValue",
         name: `${COMPANY_INFO.name}`,
@@ -295,7 +295,7 @@ const structuredData = {
           name: `What equipment does ${COMPANY_INFO.name} use?`,
           acceptedAnswer: {
             "@type": "Answer",
-            text: "We operate a modern fleet of 2024 Freightliner Cascadias with Detroit DD15 engines and DT12 automated transmissions. Average fleet age is under 2 years.",
+            text: "We operate a modern fleet of 2020-2022 Freightliner Cascadias with Detroit DD15 engines and DT12 automated transmissions. Average fleet age is under 2 years.",
           },
         },
         {

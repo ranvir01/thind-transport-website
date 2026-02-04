@@ -135,7 +135,7 @@ const companyDriverBenefits = [
     items: [
       {
         title: "Modern Equipment",
-        description: "2024 Freightliner Cascadias with latest tech",
+        description: "2020-2022 Freightliner Cascadias with latest tech",
         highlight: true,
       },
       {
@@ -156,12 +156,12 @@ const companyDriverBenefits = [
 
 const ownerOperatorBenefits = [
   {
-    category: "Earnings & Commission",
+    category: "Earnings & Payout",
     icon: TrendingUp,
     color: "green",
     items: [
       {
-        title: "91% Gross Commission",
+        title: "91% Gross Payout",
         description: "Industry-leading rate - you keep 91% of every load",
         highlight: true,
       },
@@ -263,7 +263,7 @@ const ownerOperatorBenefits = [
 ]
 
 const comparisonData = [
-  { feature: "Commission Rate", thind: "91%", industry: "70-85%" },
+  { feature: "Payout Rate", thind: "91%", industry: "70-85%" },
   { feature: "Fuel Surcharge", thind: "100% to driver", industry: "Varies, often split" },
   { feature: "Sign-On Bonus (O/O)", thind: "$2,500", industry: "$500-$1,500" },
   { feature: "Forced Dispatch", thind: "Never", industry: "Common" },
@@ -314,7 +314,7 @@ export default function BenefitsPage() {
         <div className="container">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto">
             {[
-              { value: "91%", label: "Commission", sublabel: "Owner Operators" },
+              { value: "91%", label: "Payout", sublabel: "Owner Operators" },
               { value: "$78K", label: "Annual Potential", sublabel: "Company Drivers" },
               { value: "100%", label: "Fuel Surcharge", sublabel: "Passed Through" },
               { value: "24/7", label: "Support", sublabel: "Real People" },
@@ -398,7 +398,7 @@ export default function BenefitsPage() {
               Maximum Earnings, Maximum Freedom
             </h2>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              91% commission, no forced dispatch, complete transparency. Run your business your way.
+              91% payout, no forced dispatch, complete transparency. Run your business your way.
             </p>
           </div>
 

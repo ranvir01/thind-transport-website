@@ -58,9 +58,9 @@ export function StatsSection() {
               <div className="bg-white p-4 rounded-lg">
                 <div className="flex items-center gap-2 text-gray-600 mb-1">
                   <Percent className="h-4 w-4" />
-                  <span className="text-xs">Commission</span>
+                  <span className="text-xs">Payout</span>
                 </div>
-                <div className="text-2xl font-bold text-gray-900">{PAY_RATES.ownerOperator.commission}</div>
+                <div className="text-2xl font-bold text-gray-900">{PAY_RATES.ownerOperator.payout}</div>
               </div>
               <div className="bg-white p-4 rounded-lg">
                 <div className="flex items-center gap-2 text-gray-600 mb-1">

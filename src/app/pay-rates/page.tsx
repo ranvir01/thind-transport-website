@@ -16,7 +16,7 @@ export const metadata: Metadata = {
   description: `Transparent trucking pay: Owner Operators keep 91% gross (${PAY_RATES.ownerOperator.annualGross}/year). Company Drivers ${PAY_RATES.companyDriver.regional.perMile}/mi (${PAY_RATES.companyDriver.regional.annual}/year). Weekly pay, no hidden fees.`,
   keywords: [
     "truck driver pay rates",
-    "owner operator commission",
+    "owner operator payout",
     "CDL driver salary",
     "trucking company pay",
     "91 percent trucking",
@@ -34,7 +34,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: `Truck Driver Pay Rates | ${COMPANY_INFO.name}`,
-    description: `91% commission for O/O • ${PAY_RATES.companyDriver.regional.perMile}/mi for company • Weekly pay • No hidden fees`,
+    description: `91% payout for O/O • ${PAY_RATES.companyDriver.regional.perMile}/mi for company • Weekly pay • No hidden fees`,
   },
   alternates: {
     canonical: "https://thindtransport.com/pay-rates",
@@ -164,7 +164,7 @@ export default function PayRatesPage() {
                   <Badge className="bg-[#001F3F] text-white px-3 py-1 font-bold">Independent</Badge>
                 </CardTitle>
                 <CardDescription className="text-base text-gray-700 font-medium">
-                  Highest earning potential with 91% commission
+                  Highest earning potential with 91% payout
                 </CardDescription>
               </CardHeader>
               <CardContent className="pt-6">
@@ -172,9 +172,9 @@ export default function PayRatesPage() {
                   <div className="flex items-center justify-between p-4 bg-gradient-to-r from-gray-50 to-orange-50 rounded-xl hover:from-orange-50 hover:to-amber-50 transition-colors group/item">
                     <div className="flex items-center gap-3">
                       <Percent className="h-5 w-5 text-orange-600" />
-                      <span className="text-sm font-medium text-gray-700">Commission</span>
+                      <span className="text-sm font-medium text-gray-700">Payout</span>
                     </div>
-                    <span className="font-black text-xl text-orange-700">{PAY_RATES.ownerOperator.commission}</span>
+                    <span className="font-black text-xl text-orange-700">{PAY_RATES.ownerOperator.payout}</span>
                   </div>
                   <div className="flex items-center justify-between p-4 bg-gradient-to-r from-gray-50 to-orange-50 rounded-xl hover:from-orange-50 hover:to-amber-50 transition-colors group/item">
                     <div className="flex items-center gap-3">

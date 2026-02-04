@@ -5,14 +5,14 @@ export const COMPANY_INFO = {
   phoneFormatted: "+12067656300",
   email: "thindcarrier@gmail.com",
   address: "PO Box 5114, Kent, WA 98064",
-  dot: "2523064", // Update if actual DOT number available
-  mc: "876103", // Update if actual MC number available
-  founded: 2016,
+  dot: "2523064",
+  mc: "876103",
+  founded: 2014,
   ownerExperience: "20+",
 } as const
 
 export const STATS = {
-  yearsInBusiness: 9, // 2025 - 2016
+  yearsInBusiness: 12, // 2026 - 2014
   trucksInFleet: 15,
   activeDrivers: 15,
   statesCovered: 48,
@@ -25,8 +25,8 @@ export const SERVICES = {
 
 export const PAY_RATES = {
   ownerOperator: {
-    commission: "91%",
-    annualGross: "$150K-$250K",
+    payout: "91%",
+    annualGross: "$250K-$300K",
     perMile: "$2.50-$3.50",
     fuelSurcharge: "100%",
     signOnBonus: "$2,500",
@@ -68,7 +68,7 @@ export const BENEFITS = {
     "Referral bonuses",
   ],
   ownerOperator: [
-    "91% commission on all loads - Industry leading!",
+    "91% payout on all loads - Industry leading!",
     "$2,500 sign-on bonus",
     "No forced dispatch - you choose your loads",
     "Weekly settlements and fast pay options",

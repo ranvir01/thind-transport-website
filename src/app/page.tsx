@@ -96,7 +96,7 @@ export default function Home() {
 
       {/* ================================================
           SECTION 10: EQUIPMENT SHOWCASE
-          Goal: 2024 Cascadias - Modern fleet proof
+          Goal: 2020-2022 Cascadias - Modern fleet proof
           ================================================ */}
       <EquipmentSection />
 

@@ -207,12 +207,12 @@ export function PayRateVisualizations() {
         </div>
       </Card>
 
-      {/* Commission Breakdown */}
+      {/* Payout Breakdown */}
       <Card className="p-6 border-2 border-black/10 bg-white">
         <div className="mb-4">
           <div className="flex items-center gap-2 mb-1">
             <div className="w-1 h-6 bg-black rounded-full"></div>
-            <h3 className="text-xl font-black text-black">Commission Rate</h3>
+            <h3 className="text-xl font-black text-black">Payout Rate</h3>
           </div>
           <p className="text-sm text-gray-600">91% vs industry average</p>
         </div>

@@ -167,7 +167,7 @@ export const BentoGrid = () => {
                 {/* Modern Fleet */}
                 <div className="col-span-1">
                 <BentoCard 
-                    title="2024 Cascadia" 
+                    title="Freightliner Cascadia" 
                         subtitle="Fleet age < 2 years." 
                     icon={LucideTruck}
                     size="sm" 

@@ -56,8 +56,8 @@ export function JobDetailsDialog({ jobType = "company" }: JobDetailsDialogProps)
     owner: {
       title: "OTR → Owner Operator",
       type: "Independent Contractor",
-      salary: "$180K-$280K/year",
-      description: "91% Paid Off! Partner with us as an OTR owner operator. Industry-leading commission with no forced dispatch and no hidden fees.",
+      salary: "$250K-$300K/year",
+      description: "91% Paid Off! Partner with us as an OTR owner operator. Industry-leading payout with no forced dispatch and no hidden fees.",
       requirements: [
         "Valid CDL Class A license",
         "Minimum 2 years OTR experience (REQUIRED)",
@@ -67,7 +67,7 @@ export function JobDetailsDialog({ jobType = "company" }: JobDetailsDialogProps)
         "MC authority (or we can help you get it)"
       ],
       benefits: [
-        "91% Paid Off - Industry-leading commission!",
+        "91% Paid Off - Industry-leading payout!",
         "$2,500 sign-on bonus",
         "No forced dispatch - you choose your loads",
         "No hidden fees or deductions",

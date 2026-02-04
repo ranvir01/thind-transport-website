@@ -17,14 +17,14 @@ const defaultFaqs = [
   },
   {
     question: "How much can I realistically earn?",
-    answer: "Company Drivers: $78K-$110K annually at $0.60-$0.65 per mile (based on route type), plus $1,500 sign-on bonus first year. Owner Operators: $180K-$280K gross annually with 91% commission (you keep 91% of gross!), plus $2,500 sign-on bonus. Top O/Os gross over $250K. Pay is distributed weekly via direct deposit every Friday."
+    answer: "Company Drivers: $78K-$110K annually at $0.60-$0.65 per mile (based on route type), plus $1,500 sign-on bonus first year. Owner Operators: $250K-$300K gross annually with 91% payout (you keep 91% of gross!), plus $2,500 sign-on bonus. Top O/Os gross over $300K. Pay is distributed weekly via direct deposit every Friday."
   },
   {
-    question: "What's this 91% commission for owner operators?",
-    answer: "You keep 91% of the gross revenue from each load - one of the highest rates in the industry! Most companies offer 70-85%. There are NO hidden fees or surprise deductions. Fuel surcharge passes through 100% to you. Your weekly settlement shows exactly where every dollar goes. Transparent accounting, no games."
+    question: "What's this 91% payout for owner operators?",
+    answer: "You keep 91% of the gross revenue from each load - one of the highest payouts in the industry! Most companies offer 70-85%. There are NO hidden fees or surprise deductions. Fuel surcharge passes through 100% to you. Your weekly settlement shows exactly where every dollar goes. Transparent accounting, no games."
   },
   {
-    question: "How does the 91% commission work exactly?",
+    question: "How does the 91% payout work exactly?",
     answer: "Simple: If a load pays $3,000 gross, you receive $2,730 (91%). We take 9% to cover our back-office, dispatch, insurance, and administrative costs. NO other deductions. Fuel surcharge? You get 100%. Accessorial charges? You get 91%. Detention, layover, TONU - all 91% to you. Clean, transparent, fair."
   },
   {
@@ -63,7 +63,7 @@ const defaultFaqs = [
   // Benefits & Perks
   {
     question: "Do company drivers get benefits?",
-    answer: "Yes! Full benefits package includes: Health, dental, and vision insurance (starts after 60 days); 401(k) retirement plan with company match; Paid time off and holiday pay; $1,500 sign-on bonus first year; Weekly direct deposit; Performance bonuses; Referral bonuses ($500+ per driver). Modern, well-maintained 2024 equipment. 24/7 dispatch support."
+    answer: "Yes! Full benefits package includes: Health, dental, and vision insurance (starts after 60 days); 401(k) retirement plan with company match; Paid time off and holiday pay; $1,500 sign-on bonus first year; Weekly direct deposit; Performance bonuses; Referral bonuses ($500+ per driver). Modern, well-maintained 2020-2022 equipment. 24/7 dispatch support."
   },
   {
     question: "What fuel programs are available for owner operators?",
@@ -91,7 +91,7 @@ const defaultFaqs = [
   // Equipment & Requirements
   {
     question: "What equipment do company drivers use?",
-    answer: "Company drivers operate our 2024 Freightliner Cascadias - fully loaded with APU, refrigerator, inverter, and premium sleeper. Automatic transmission available. All trucks maintained to the highest standards. No junk equipment - we invest in quality because it keeps you safe and efficient."
+    answer: "Company drivers operate our 2020-2022 Freightliner Cascadias - fully loaded with APU, refrigerator, inverter, and premium sleeper. Automatic transmission available. All trucks maintained to the highest standards. No junk equipment - we invest in quality because it keeps you safe and efficient."
   },
   {
     question: "What are the truck requirements for owner operators?",
@@ -111,11 +111,11 @@ const defaultFaqs = [
   // Company Info
   {
     question: "How long has Thind Transport been in business?",
-    answer: "Thind Transport was founded in 2016 in Kent, Washington. Our owner has 20+ years of trucking industry experience. We've grown from 1 truck to 15+ and continue to expand. Family-owned and operated - not a faceless corporation. When you call, you talk to real people who care."
+    answer: "Thind Transport was founded in 2014 in Kent, Washington. Our owner has 20+ years of trucking industry experience. We've grown from 1 truck to 15+ and continue to expand. Family-owned and operated - not a faceless corporation. When you call, you talk to real people who care."
   },
   {
     question: "Why should I choose Thind over bigger carriers?",
-    answer: "At big carriers, you're a number. At Thind, you're family. We offer: Highest commission in the industry (91%), No forced dispatch, Transparent settlements with no hidden fees, Modern equipment, Real 24/7 support from people who know your name, Home time that's actually honored. Many of our drivers came from mega-carriers and say they wish they'd switched sooner."
+    answer: "At big carriers, you're a number. At Thind, you're family. We offer: Highest payout in the industry (91%), No forced dispatch, Transparent settlements with no hidden fees, Modern equipment, Real 24/7 support from people who know your name, Home time that's actually honored. Many of our drivers came from mega-carriers and say they wish they'd switched sooner."
   }
 ]
 

@@ -380,7 +380,7 @@ export function MultiStepApplicationWizard() {
               <div className="grid sm:grid-cols-3 gap-3 mt-2">
                 {[
                   { value: "company", label: "Company Driver", sub: "$78K-$110K/yr" },
-                  { value: "owner", label: "Owner Operator", sub: "91% commission" },
+                  { value: "owner", label: "Owner Operator", sub: "91% payout" },
                   { value: "lease", label: "Lease Purchase", sub: "Own your truck" },
                 ].map((option) => (
                   <button

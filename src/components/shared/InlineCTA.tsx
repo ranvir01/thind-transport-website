@@ -100,7 +100,7 @@ export function InlineCTA({ variant = "default", showStats = true }: InlineCTAPr
           </div>
           <div className="text-center">
             <div className="text-2xl font-black text-blue-600">91%</div>
-            <div className="text-sm text-gray-700 font-semibold">O/O Commission</div>
+            <div className="text-sm text-gray-700 font-semibold">O/O Payout</div>
           </div>
           <div className="text-center">
             <div className="text-2xl font-black text-green-600">$1K-$2.5K</div>

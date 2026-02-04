@@ -13,7 +13,7 @@ const stories = [
     role: "Owner Operator",
     tenure: "Since 2020",
     location: "Kent, WA",
-    quote: "I started with one truck. The 91% commission and consistent freight let me grow to three trucks. My monthly revenue went from $22K to over $68K.",
+    quote: "I started with one truck. The 91% payout and consistent freight let me grow to three trucks. My monthly revenue went from $22K to over $68K.",
     metric: "$68K/mo",
     metricLabel: "Current Revenue",
     image: "/images/generated/driver-portrait-1.png",
