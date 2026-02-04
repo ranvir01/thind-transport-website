@@ -13,7 +13,7 @@ import { PageBreadcrumb } from "@/components/shared/PageBreadcrumb"
 
 export const metadata: Metadata = {
   title: `About Us - Family-Owned Trucking Since 2014 | ${COMPANY_INFO.name}`,
-  description: `Learn about Thind Transport LLC, a family-owned trucking company based in Kent, WA. Founded in 2014 with 20+ years of industry experience. FMCSA certified, A+ safety rating, hiring nationwide.`,
+  description: `Learn about Thind Transport LLC, a family-owned trucking company based in Kent, WA. Founded in 2014 with 25+ years of industry experience. FMCSA certified, A+ safety rating, hiring nationwide.`,
   keywords: [
     "Thind Transport about us",
     "Kent WA trucking company",
@@ -147,7 +147,7 @@ export default function AboutPage() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto">
             {[
               { value: "2014", label: "Founded", icon: Calendar },
-              { value: "20+", label: "Years Experience", icon: Award },
+              { value: "25+", label: "Years Experience", icon: Award },
               { value: "15+", label: "Active Trucks", icon: Truck },
               { value: "48", label: "States Covered", icon: MapPin },
             ].map((stat) => {

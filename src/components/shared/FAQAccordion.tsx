@@ -111,7 +111,7 @@ const defaultFaqs = [
   // Company Info
   {
     question: "How long has Thind Transport been in business?",
-    answer: "Thind Transport was founded in 2014 in Kent, Washington. Our owner has 20+ years of trucking industry experience. We've grown from 1 truck to 15+ and continue to expand. Family-owned and operated - not a faceless corporation. When you call, you talk to real people who care."
+    answer: "Thind Transport was founded in 2014 in Kent, Washington. Our owner has 25+ years of trucking industry experience. We've grown from 1 truck to 15+ and continue to expand. Family-owned and operated - not a faceless corporation. When you call, you talk to real people who care."
   },
   {
     question: "Why should I choose Thind over bigger carriers?",

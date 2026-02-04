@@ -8,7 +8,7 @@ export const COMPANY_INFO = {
   dot: "2523064",
   mc: "876103",
   founded: 2014,
-  ownerExperience: "20+",
+  ownerExperience: "25+",
 } as const
 
 export const STATS = {
