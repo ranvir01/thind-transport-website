@@ -8,12 +8,12 @@ export const COMPANY_INFO = {
   dot: "3154006",
   mc: "123456",
   owner: "Sukhdev Thind",
-  founded: 2016,
+  founded: 2014,
   ownerExperience: "20+",
 } as const
 
 export const STATS = {
-  yearsInBusiness: 9, // 2025 - 2016
+  yearsInBusiness: 12, // 2026 - 2014
   trucksInFleet: 15,
   activeDrivers: 15,
   statesCovered: 48,

@@ -20,104 +20,175 @@ const CARD = {
   stats: [
     { label: "Commission", value: "91%" },
     { label: "States", value: "48" },
-    { label: "Since", value: "2016" },
+    { label: "Since", value: "2014" },
   ],
+}
+
+function PhoneIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 20 20" fill="currentColor">
+      <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z" />
+    </svg>
+  )
+}
+
+function EmailIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 20 20" fill="currentColor">
+      <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
+      <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
+    </svg>
+  )
+}
+
+function GlobeIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 20 20" fill="currentColor">
+      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM4.332 8.027a6.012 6.012 0 011.912-2.706C6.512 5.73 6.974 6 7.5 6A1.5 1.5 0 019 7.5V8a2 2 0 004 0 2 2 0 011.523-1.943A5.977 5.977 0 0116 10c0 .34-.028.675-.083 1H14a2 2 0 00-2 2v2.197A5.973 5.973 0 0110 16v-2a2 2 0 00-2-2 2 2 0 01-2-2 2 2 0 00-1.668-1.973z" clipRule="evenodd" />
+    </svg>
+  )
+}
+
+function PinIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 20 20" fill="currentColor">
+      <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
+    </svg>
+  )
+}
+
+function FlatbedIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="1" y="14" width="18" height="2" rx="0.5" />
+      <path d="M19 14h2.5a1.5 1.5 0 011.5 1.5V18h-4" />
+      <circle cx="6" cy="19" r="2" fill="currentColor" stroke="none" />
+      <circle cx="18" cy="19" r="2" fill="currentColor" stroke="none" />
+      <path d="M1 14V11l3-5h5" />
+      <line x1="4" y1="8" x2="7" y2="8" />
+    </svg>
+  )
+}
+
+function ReeferIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="1" y="6" width="15" height="10" rx="1" />
+      <path d="M16 8h4.5a1.5 1.5 0 011.5 1.5V18h-6" />
+      <circle cx="6" cy="19" r="2" fill="currentColor" stroke="none" />
+      <circle cx="18" cy="19" r="2" fill="currentColor" stroke="none" />
+      <path d="M8.5 9v4M6.5 11h4" />
+    </svg>
+  )
+}
+
+function DryVanIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="1" y="5" width="15" height="12" rx="1" />
+      <path d="M16 9h4.5a1.5 1.5 0 011.5 1.5V18h-6" />
+      <circle cx="6" cy="19" r="2" fill="currentColor" stroke="none" />
+      <circle cx="18" cy="19" r="2" fill="currentColor" stroke="none" />
+      <path d="M4 5v12M8 5v12M12 5v12" opacity="0.35" />
+    </svg>
+  )
+}
+
+function StatesIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 7l3-3 4 2 4-2 4 2 3-3v13l-3 3-4-2-4 2-4-2-3 3V7z" />
+      <line x1="7" y1="4" x2="7" y2="18" opacity="0.3" />
+      <line x1="11" y1="6" x2="11" y2="20" opacity="0.3" />
+      <line x1="15" y1="4" x2="15" y2="18" opacity="0.3" />
+    </svg>
+  )
 }
 
 function CardFront() {
   return (
     <div className="relative w-full aspect-[3.46/2.32] rounded-xl overflow-hidden shadow-2xl bg-gradient-to-br from-[#001F3F] via-[#001A35] to-[#00101F]">
-      {/* Background texture */}
       <div className="absolute inset-0">
-        <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: "radial-gradient(circle at 1px 1px, white 1px, transparent 0)", backgroundSize: "24px 24px" }} />
-        <div className="absolute top-0 right-0 w-[60%] h-[60%] bg-gradient-to-bl from-orange/[0.04] to-transparent rounded-bl-full" />
+        <div className="absolute inset-0 opacity-[0.025]" style={{ backgroundImage: "radial-gradient(circle at 1px 1px, white 0.5px, transparent 0)", backgroundSize: "20px 20px" }} />
+        <div className="absolute top-0 right-0 w-[55%] h-[55%] bg-gradient-to-bl from-orange/[0.035] to-transparent rounded-bl-full" />
       </div>
 
-      {/* Orange top edge accent */}
       <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-orange via-orange-300 to-orange" />
 
-      <div className="relative z-10 h-full grid grid-cols-[1fr_auto] gap-4 p-5 sm:p-7">
-        {/* LEFT COLUMN */}
+      <div className="relative z-10 h-full grid grid-cols-[1fr_auto] gap-3 sm:gap-5 p-5 sm:p-7">
+        {/* LEFT */}
         <div className="flex flex-col justify-between min-w-0">
-          {/* Company name */}
           <div>
-            <div className="flex items-center gap-2 mb-1">
-              <span className="text-white text-base sm:text-lg font-black tracking-tight leading-none">THIND</span>
-              <span className="text-orange text-base sm:text-lg font-black tracking-tight leading-none">TRANSPORT</span>
+            <div className="flex items-center gap-1.5 mb-0.5">
+              <span className="text-white text-sm sm:text-base font-black tracking-tight leading-none">THIND</span>
+              <span className="text-orange text-sm sm:text-base font-black tracking-tight leading-none">TRANSPORT</span>
             </div>
-            <div className="w-16 h-[2px] bg-gradient-to-r from-orange to-transparent rounded-full" />
+            <div className="w-14 h-[2px] bg-gradient-to-r from-orange to-transparent rounded-full" />
           </div>
 
-          {/* Owner */}
-          <div className="mt-3 sm:mt-4">
-            <h3 className="text-white text-xl sm:text-3xl font-black tracking-tight leading-none">{CARD.owner}</h3>
-            <p className="text-orange/80 text-[9px] sm:text-[11px] font-semibold tracking-[0.25em] mt-1">{CARD.title.toUpperCase()}</p>
+          <div className="mt-2 sm:mt-3">
+            <h3 className="text-white text-xl sm:text-[28px] font-black tracking-tight leading-none">{CARD.owner}</h3>
+            <p className="text-orange/80 text-[9px] sm:text-[11px] font-semibold tracking-[0.25em] mt-0.5">{CARD.title.toUpperCase()}</p>
           </div>
 
-          {/* Stats row */}
-          <div className="flex gap-3 sm:gap-5 mt-3 sm:mt-4">
+          {/* Stats */}
+          <div className="flex gap-3 sm:gap-4 mt-2.5 sm:mt-3">
             {CARD.stats.map((s) => (
-              <div key={s.label}>
-                <p className="text-orange text-lg sm:text-2xl font-black leading-none">{s.value}</p>
-                <p className="text-white/40 text-[7px] sm:text-[9px] font-semibold tracking-wider mt-0.5">{s.label.toUpperCase()}</p>
+              <div key={s.label} className="bg-white/[0.04] rounded-lg px-2.5 sm:px-3 py-1.5 sm:py-2 border border-white/[0.06]">
+                <p className="text-orange text-base sm:text-xl font-black leading-none">{s.value}</p>
+                <p className="text-white/35 text-[6px] sm:text-[8px] font-bold tracking-wider mt-0.5">{s.label.toUpperCase()}</p>
               </div>
             ))}
           </div>
 
-          {/* Divider */}
-          <div className="w-full h-px bg-white/10 mt-3 sm:mt-4" />
+          <div className="w-full h-px bg-white/[0.08] mt-2.5 sm:mt-3" />
 
           {/* Services */}
-          <div className="mt-2 sm:mt-3">
-            <div className="flex gap-1.5 sm:gap-2 flex-wrap">
-              {CARD.services.map((s) => (
-                <span key={s} className="px-2 sm:px-3 py-0.5 sm:py-1 rounded-full bg-orange/10 border border-orange/20 text-orange text-[8px] sm:text-[10px] font-bold tracking-wider">
-                  {s.toUpperCase()}
-                </span>
-              ))}
-            </div>
+          <div className="flex gap-1 sm:gap-1.5 mt-2 sm:mt-2.5 flex-wrap">
+            {[
+              { label: "Flatbed", Icon: FlatbedIcon },
+              { label: "Reefer", Icon: ReeferIcon },
+              { label: "Dry Van", Icon: DryVanIcon },
+            ].map(({ label, Icon }) => (
+              <div key={label} className="flex items-center gap-1 px-2 sm:px-2.5 py-[3px] sm:py-1 rounded-md bg-orange/[0.08] border border-orange/15">
+                <Icon className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-orange" />
+                <span className="text-orange text-[7px] sm:text-[9px] font-bold tracking-wide">{label.toUpperCase()}</span>
+              </div>
+            ))}
           </div>
 
-          {/* Hiring / Opportunities */}
-          <div className="mt-2 sm:mt-3 space-y-1">
+          {/* Hiring */}
+          <div className="mt-1.5 sm:mt-2 space-y-0.5 sm:space-y-1">
             {CARD.hiring.map((h) => (
               <div key={h.role} className="flex items-center gap-1.5">
-                <div className={`w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full ${h.highlight ? "bg-orange" : "bg-white/40"}`} />
-                <span className="text-white/70 text-[9px] sm:text-[11px]">{h.role}</span>
-                <span className={`text-[9px] sm:text-[11px] font-bold ${h.highlight ? "text-orange" : "text-white/90"}`}>{h.pay}</span>
+                <div className={`w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full ${h.highlight ? "bg-orange" : "bg-white/30"}`} />
+                <span className="text-white/60 text-[8px] sm:text-[10px]">{h.role}</span>
+                <span className={`text-[8px] sm:text-[10px] font-bold ${h.highlight ? "text-orange" : "text-white/85"}`}>{h.pay}</span>
               </div>
             ))}
           </div>
 
-          {/* Contact row */}
-          <div className="mt-auto pt-3 sm:pt-4 grid grid-cols-2 gap-x-3 gap-y-1.5">
-            {[
-              { icon: "phone", val: CARD.phone },
-              { icon: "email", val: CARD.email },
-              { icon: "web", val: CARD.website },
-              { icon: "location", val: CARD.location },
-            ].map((c) => (
-              <div key={c.icon} className="flex items-center gap-1.5 min-w-0">
-                <CIcon type={c.icon} />
-                <span className="text-white/90 text-[8px] sm:text-[10px] font-medium truncate">{c.val}</span>
-              </div>
-            ))}
+          {/* Contact */}
+          <div className="mt-auto pt-2 sm:pt-3 grid grid-cols-2 gap-x-2 gap-y-1 sm:gap-y-1.5">
+            <ContactRow Icon={PhoneIcon} val={CARD.phone} />
+            <ContactRow Icon={EmailIcon} val={CARD.email} />
+            <ContactRow Icon={GlobeIcon} val={CARD.website} />
+            <ContactRow Icon={PinIcon} val={CARD.location} />
           </div>
 
-          {/* DOT */}
-          <p className="text-[7px] sm:text-[8px] text-white/20 mt-1.5 font-medium">{CARD.dot} &middot; FMCSA CERTIFIED</p>
+          <p className="text-[6px] sm:text-[7px] text-white/15 mt-1 font-medium tracking-wide">{CARD.dot} &middot; FMCSA CERTIFIED</p>
         </div>
 
-        {/* RIGHT COLUMN - QR */}
+        {/* RIGHT - QR */}
         <div className="flex flex-col items-center justify-end">
-          <div className="w-[72px] h-[72px] sm:w-[100px] sm:h-[100px] bg-white rounded-lg p-1 sm:p-1.5 shadow-xl shadow-black/30">
-            <div className="w-full h-full rounded-[3px] bg-white grid grid-cols-7 grid-rows-7 gap-[0.5px] sm:gap-[1px] p-0.5 sm:p-1">
+          <div className="w-[68px] h-[68px] sm:w-[96px] sm:h-[96px] bg-white rounded-lg p-1 sm:p-1.5 shadow-xl shadow-black/40 ring-1 ring-white/10">
+            <div className="w-full h-full rounded bg-white grid grid-cols-7 grid-rows-7 gap-[0.5px] sm:gap-[1px] p-0.5 sm:p-1">
               <QRPattern />
             </div>
           </div>
           <div className="mt-1.5 sm:mt-2 text-center">
-            <p className="text-orange text-[7px] sm:text-[9px] font-bold tracking-[0.1em] leading-tight">SCAN TO</p>
-            <p className="text-orange text-[7px] sm:text-[9px] font-bold tracking-[0.1em] leading-tight">APPLY NOW</p>
+            <p className="text-orange text-[6px] sm:text-[8px] font-bold tracking-[0.12em] leading-tight">SCAN TO</p>
+            <p className="text-orange text-[6px] sm:text-[8px] font-bold tracking-[0.12em] leading-tight">APPLY NOW</p>
           </div>
         </div>
       </div>
@@ -125,72 +196,78 @@ function CardFront() {
   )
 }
 
+function ContactRow({ Icon, val }: { Icon: React.FC<{ className?: string }>; val: string }) {
+  return (
+    <div className="flex items-center gap-1 sm:gap-1.5 min-w-0">
+      <div className="w-4 h-4 sm:w-5 sm:h-5 rounded bg-orange/[0.08] flex items-center justify-center flex-shrink-0 border border-orange/10">
+        <Icon className="w-2 h-2 sm:w-2.5 sm:h-2.5 text-orange" />
+      </div>
+      <span className="text-white/85 text-[7px] sm:text-[9px] font-medium truncate">{val}</span>
+    </div>
+  )
+}
+
 function CardBack() {
   return (
     <div className="relative w-full aspect-[3.46/2.32] rounded-xl overflow-hidden shadow-2xl">
-      {/* Sky gradient */}
       <div className="absolute inset-0 bg-gradient-to-b from-[#0a1628] via-[#0f2744] to-[#1a3a5c]" />
 
-      {/* Atmospheric haze near horizon */}
-      <div className="absolute bottom-[28%] left-0 right-0 h-[18%] bg-gradient-to-t from-[#2a4a6a]/40 to-transparent" />
-      <div className="absolute bottom-[25%] left-1/2 -translate-x-1/2 w-[130%] h-[8%] bg-orange/[0.06] rounded-[50%] blur-2xl" />
+      <div className="absolute bottom-[26%] left-0 right-0 h-[20%] bg-gradient-to-t from-[#2a4a6a]/30 to-transparent" />
+      <div className="absolute bottom-[24%] left-1/2 -translate-x-1/2 w-[140%] h-[6%] bg-orange/[0.05] rounded-[50%] blur-2xl" />
 
       {/* Stars */}
       <div className="absolute inset-0">
         {[
-          { x: 8, y: 5, o: 0.6 }, { x: 15, y: 12, o: 0.3 }, { x: 22, y: 3, o: 0.5 },
-          { x: 35, y: 8, o: 0.4 }, { x: 45, y: 4, o: 0.7 }, { x: 55, y: 10, o: 0.3 },
-          { x: 62, y: 3, o: 0.5 }, { x: 72, y: 7, o: 0.4 }, { x: 80, y: 5, o: 0.6 },
-          { x: 88, y: 11, o: 0.3 }, { x: 93, y: 4, o: 0.5 }, { x: 28, y: 15, o: 0.2 },
-          { x: 68, y: 14, o: 0.25 }, { x: 50, y: 6, o: 0.35 },
+          { x: 6, y: 4, o: 0.5 }, { x: 14, y: 11, o: 0.25 }, { x: 21, y: 3, o: 0.45 },
+          { x: 33, y: 7, o: 0.35 }, { x: 44, y: 3, o: 0.6 }, { x: 54, y: 9, o: 0.25 },
+          { x: 61, y: 2, o: 0.4 }, { x: 71, y: 6, o: 0.35 }, { x: 79, y: 4, o: 0.5 },
+          { x: 87, y: 10, o: 0.25 }, { x: 92, y: 3, o: 0.4 }, { x: 27, y: 14, o: 0.15 },
+          { x: 67, y: 13, o: 0.2 }, { x: 49, y: 5, o: 0.3 },
         ].map((s, i) => (
           <div key={i} className="absolute w-[1px] h-[1px] bg-white rounded-full" style={{ left: `${s.x}%`, top: `${s.y}%`, opacity: s.o }} />
         ))}
       </div>
 
-      {/* Road surface */}
+      {/* Road */}
       <div className="absolute bottom-0 left-0 right-0 h-[30%]">
         <svg viewBox="0 0 1000 300" preserveAspectRatio="none" className="absolute inset-0 w-full h-full">
           <path d="M0 80 Q250 40 500 30 Q750 20 1000 0 L1000 300 L0 300Z" fill="#1c1c1c" />
-          <path d="M0 80 Q250 40 500 30 Q750 20 1000 0" stroke="#FF9500" strokeWidth="2" fill="none" opacity="0.5" />
-          <path d="M0 170 Q250 140 500 130 Q750 120 1000 105" stroke="#FFB340" strokeWidth="2" strokeDasharray="40 25" fill="none" opacity="0.35" />
-          <path d="M0 300 L1000 300" stroke="#FF9500" strokeWidth="1.5" fill="none" opacity="0.15" />
+          <path d="M0 80 Q250 40 500 30 Q750 20 1000 0" stroke="#FF9500" strokeWidth="2" fill="none" opacity="0.4" />
+          <path d="M0 170 Q250 140 500 130 Q750 120 1000 105" stroke="#FFB340" strokeWidth="2" strokeDasharray="40 25" fill="none" opacity="0.3" />
         </svg>
       </div>
 
       <div className="relative z-10 h-full flex flex-col justify-between p-5 sm:p-7">
-        {/* Top: Company name + tagline */}
+        {/* Top */}
         <div className="text-center">
-          <h3 className="text-white text-2xl sm:text-4xl font-black tracking-tight leading-none">
+          <h3 className="text-white text-2xl sm:text-[38px] font-black tracking-tight leading-none">
             THIND <span className="text-orange">TRANSPORT</span>
           </h3>
-          <div className="mx-auto w-32 sm:w-48 h-[2px] bg-gradient-to-r from-transparent via-orange to-transparent rounded-full mt-2 sm:mt-3" />
-          <p className="text-white/50 text-[8px] sm:text-[11px] tracking-[0.35em] mt-1.5 sm:mt-2 font-medium">{CARD.tagline}</p>
+          <div className="mx-auto w-28 sm:w-44 h-[2px] bg-gradient-to-r from-transparent via-orange to-transparent rounded-full mt-2 sm:mt-2.5" />
+          <p className="text-white/40 text-[7px] sm:text-[10px] tracking-[0.4em] mt-1.5 font-medium">{CARD.tagline}</p>
         </div>
 
-        {/* Center: Truck illustration on road */}
-        <div className="flex-1 flex items-center justify-center relative -mb-4 sm:-mb-6">
+        {/* Center: Truck scene with business silhouettes */}
+        <div className="flex-1 flex items-center justify-center relative -mb-3 sm:-mb-5">
           <TruckScene />
         </div>
 
         {/* Bottom: Service badges */}
         <div className="relative z-20">
-          <div className="flex justify-center gap-1.5 sm:gap-2 mb-1.5 sm:mb-2">
+          <div className="flex justify-center gap-1 sm:gap-2 mb-1.5 sm:mb-2">
             {[
-              { label: "FLATBED", icon: "M2 8h16M4 4h12l2 4H2l2-4z" },
-              { label: "REEFER", icon: "M3 5h14a1 1 0 011 1v8a1 1 0 01-1 1H3a1 1 0 01-1-1V6a1 1 0 011-1zm7 2v6m-3-3h6" },
-              { label: "DRY VAN", icon: "M3 6h14l1 2v6a1 1 0 01-1 1H3a1 1 0 01-1-1V8l1-2zm0 3h14" },
-              { label: "48 STATES", icon: "M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1a2 2 0 002 2v1.93zM17 15.9A6.976 6.976 0 0019 12c0-.34-.04-.67-.09-1h-2.83l-4.17 4.17 1.42 1.42L17 15.9z" },
-            ].map((b) => (
-              <div key={b.label} className="flex items-center gap-1 px-2 sm:px-3 py-1 sm:py-1.5 rounded-md bg-white/[0.06] border border-white/[0.08] backdrop-blur-sm">
-                <svg className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-orange" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
-                  <path d={b.icon} strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-                <span className="text-white/70 text-[7px] sm:text-[9px] font-bold tracking-wider">{b.label}</span>
+              { label: "FLATBED", Icon: FlatbedIcon },
+              { label: "REEFER", Icon: ReeferIcon },
+              { label: "DRY VAN", Icon: DryVanIcon },
+              { label: "48 STATES", Icon: StatesIcon },
+            ].map(({ label, Icon }) => (
+              <div key={label} className="flex items-center gap-1 px-2 sm:px-3 py-1 sm:py-1.5 rounded-md bg-white/[0.04] border border-white/[0.07] backdrop-blur-sm">
+                <Icon className="w-2.5 h-2.5 sm:w-3.5 sm:h-3.5 text-orange/70" />
+                <span className="text-white/55 text-[6px] sm:text-[9px] font-bold tracking-wider">{label}</span>
               </div>
             ))}
           </div>
-          <p className="text-center text-white/25 text-[8px] sm:text-[10px] tracking-[0.2em] font-semibold">THINDTRANSPORT.COM</p>
+          <p className="text-center text-white/20 text-[7px] sm:text-[9px] tracking-[0.2em] font-semibold">THINDTRANSPORT.COM</p>
         </div>
       </div>
     </div>
@@ -199,19 +276,8 @@ function CardBack() {
 
 function TruckScene() {
   return (
-    <svg viewBox="0 0 500 200" className="w-[85%] sm:w-[80%] max-w-lg" fill="none" xmlns="http://www.w3.org/2000/svg">
-      {/* Journey trail behind truck - glowing path */}
+    <svg viewBox="0 0 560 210" className="w-[90%] sm:w-[85%] max-w-xl" fill="none" xmlns="http://www.w3.org/2000/svg">
       <defs>
-        <linearGradient id="trailGrad" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0%" stopColor="#FF9500" stopOpacity="0" />
-          <stop offset="40%" stopColor="#FF9500" stopOpacity="0.15" />
-          <stop offset="100%" stopColor="#FF9500" stopOpacity="0.4" />
-        </linearGradient>
-        <linearGradient id="trailLine" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0%" stopColor="#FF9500" stopOpacity="0" />
-          <stop offset="60%" stopColor="#FF9500" stopOpacity="0.6" />
-          <stop offset="100%" stopColor="#FF9500" stopOpacity="0.9" />
-        </linearGradient>
         <linearGradient id="bodyGrad" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor="#FF9500" />
           <stop offset="100%" stopColor="#E07800" />
@@ -220,174 +286,169 @@ function TruckScene() {
           <stop offset="0%" stopColor="#FFa520" />
           <stop offset="100%" stopColor="#E68600" />
         </linearGradient>
-        <linearGradient id="wheelGrad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#333" />
-          <stop offset="100%" stopColor="#111" />
-        </linearGradient>
         <linearGradient id="headlightGlow" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0%" stopColor="#FFEEBB" stopOpacity="0.8" />
+          <stop offset="0%" stopColor="#FFEEBB" stopOpacity="0.7" />
           <stop offset="100%" stopColor="#FFEEBB" stopOpacity="0" />
         </linearGradient>
         <filter id="glow">
-          <feGaussianBlur stdDeviation="3" result="blur" />
-          <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+          <feGaussianBlur stdDeviation="3" result="b" />
+          <feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge>
         </filter>
         <filter id="softGlow">
-          <feGaussianBlur stdDeviation="6" result="blur" />
-          <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+          <feGaussianBlur stdDeviation="5" result="b" />
+          <feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge>
         </filter>
       </defs>
 
-      {/* Journey trail - wide glow */}
-      <path d="M0 138 Q60 136 120 135 Q180 134 250 133" stroke="url(#trailGrad)" strokeWidth="18" fill="none" strokeLinecap="round" />
+      {/* === BACKGROUND BUSINESS SILHOUETTES === */}
 
-      {/* Journey trail - thin bright line */}
-      <path d="M30 138 Q90 136 150 135 Q210 134 250 133" stroke="url(#trailLine)" strokeWidth="1.5" fill="none" strokeLinecap="round" />
-
-      {/* Journey dots (waypoints fading behind) */}
-      <circle cx="60" cy="137" r="2" fill="#FF9500" opacity="0.12" />
-      <circle cx="100" cy="136" r="2.5" fill="#FF9500" opacity="0.2" />
-      <circle cx="145" cy="135.5" r="3" fill="#FF9500" opacity="0.3" />
-      <circle cx="195" cy="134.5" r="3" fill="#FF9500" opacity="0.4" />
-
-      {/* Headlight beams from front of truck */}
-      <ellipse cx="440" cy="128" rx="55" ry="8" fill="url(#headlightGlow)" filter="url(#softGlow)" />
-
-      {/* === TRUCK === */}
-      <g transform="translate(228, 78)">
-        {/* Trailer shadow */}
-        <ellipse cx="100" cy="80" rx="120" ry="6" fill="rgba(0,0,0,0.25)" />
-
-        {/* Trailer undercarriage */}
-        <rect x="2" y="52" width="148" height="6" rx="1" fill="#333" />
-
-        {/* Trailer body */}
-        <rect x="0" y="6" width="152" height="48" rx="3" fill="url(#bodyGrad)" />
-        <rect x="0" y="6" width="152" height="48" rx="3" stroke="#CC7700" strokeWidth="0.8" fill="none" />
-
-        {/* Trailer panel lines */}
-        {[20, 40, 60, 80, 100, 120].map((x) => (
-          <line key={x} x1={x} y1="8" x2={x} y2="52" stroke="#CC7700" strokeWidth="0.4" opacity="0.4" />
-        ))}
-
-        {/* Subtle shading on trailer top */}
-        <rect x="0" y="6" width="152" height="8" rx="3" fill="white" opacity="0.08" />
-
-        {/* THIND TRANSPORT on trailer */}
-        <text x="76" y="28" fontFamily="Inter, system-ui, sans-serif" fontSize="11" fontWeight="900" fill="#001F3F" textAnchor="middle" letterSpacing="0.5">THIND</text>
-        <rect x="42" y="31" width="68" height="1.5" rx="0.75" fill="#001F3F" opacity="0.3" />
-        <text x="76" y="44" fontFamily="Inter, system-ui, sans-serif" fontSize="7" fontWeight="700" fill="#001F3F" textAnchor="middle" letterSpacing="3">TRANSPORT</text>
-
-        {/* Connection plate between trailer and cab */}
-        <rect x="150" y="20" width="8" height="30" rx="1" fill="#888" />
-        <rect x="152" y="25" width="4" height="20" rx="1" fill="#666" />
-
-        {/* Cab body */}
-        <path d="M156 10 L180 10 Q200 10 210 24 L220 44 Q222 50 222 54 L222 58 Q222 60 220 60 L156 60 L156 10Z" fill="url(#cabGrad)" />
-        <path d="M156 10 L180 10 Q200 10 210 24 L220 44 Q222 50 222 54 L222 58 Q222 60 220 60 L156 60 L156 10Z" stroke="#CC7700" strokeWidth="0.8" fill="none" />
-
-        {/* Cab highlight / chrome strip */}
-        <line x1="156" y1="56" x2="222" y2="56" stroke="#FFD080" strokeWidth="1" opacity="0.4" />
-
-        {/* Windshield */}
-        <path d="M168 13 L190 13 Q204 13 212 26 L218 42 L218 48 Q218 50 216 50 L168 50 L168 13Z" fill="#0a1628" opacity="0.85" />
-        <path d="M168 13 L190 13 Q204 13 212 26 L218 42" stroke="rgba(255,255,255,0.25)" strokeWidth="0.8" fill="none" />
-        {/* Windshield reflection */}
-        <path d="M172 16 L185 16 Q196 16 204 26 L208 34" stroke="rgba(255,255,255,0.08)" strokeWidth="4" fill="none" strokeLinecap="round" />
-
-        {/* Headlights */}
-        <rect x="221" y="38" width="4" height="10" rx="1.5" fill="#FFEEBB" opacity="0.95" filter="url(#glow)" />
-        <rect x="221" y="52" width="4" height="5" rx="1" fill="#FF3333" opacity="0.8" />
-
-        {/* Side mirror */}
-        <rect x="224" y="20" width="3" height="8" rx="1" fill="#555" />
-        <rect x="225" y="21" width="2" height="5" rx="0.5" fill="#888" />
-
-        {/* Bumper */}
-        <rect x="223" y="56" width="5" height="6" rx="1" fill="#888" />
-
-        {/* Exhaust stacks */}
-        <rect x="162" y="-6" width="3.5" height="18" rx="1.5" fill="#777" />
-        <rect x="169" y="-3" width="3.5" height="15" rx="1.5" fill="#777" />
-        {/* Exhaust smoke wisps */}
-        <circle cx="164" cy="-9" r="2" fill="white" opacity="0.04" />
-        <circle cx="165" cy="-13" r="3" fill="white" opacity="0.03" />
-        <circle cx="171" cy="-7" r="2" fill="white" opacity="0.04" />
-
-        {/* Fuel tank */}
-        <rect x="156" y="48" width="18" height="10" rx="3" fill="#555" stroke="#666" strokeWidth="0.5" />
-
-        {/* Trailer wheels (tandem rear) */}
-        {[28, 48].map((cx) => (
-          <g key={cx}>
-            <circle cx={cx} cy="62" r="10" fill="url(#wheelGrad)" />
-            <circle cx={cx} cy="62" r="7" fill="#222" />
-            <circle cx={cx} cy="62" r="4.5" fill="#333" />
-            <circle cx={cx} cy="62" r="2" fill="#555" />
-            {/* Lug pattern */}
-            {[0, 60, 120, 180, 240, 300].map((angle) => (
-              <circle key={angle} cx={cx + Math.cos(angle * Math.PI / 180) * 5.5} cy={62 + Math.sin(angle * Math.PI / 180) * 5.5} r="0.6" fill="#444" />
-            ))}
-            <circle cx={cx} cy="62" r="10" fill="none" stroke="#444" strokeWidth="0.5" />
-          </g>
-        ))}
-
-        {/* Front trailer wheels */}
-        {[118, 138].map((cx) => (
-          <g key={cx}>
-            <circle cx={cx} cy="62" r="10" fill="url(#wheelGrad)" />
-            <circle cx={cx} cy="62" r="7" fill="#222" />
-            <circle cx={cx} cy="62" r="4.5" fill="#333" />
-            <circle cx={cx} cy="62" r="2" fill="#555" />
-            {[0, 60, 120, 180, 240, 300].map((angle) => (
-              <circle key={angle} cx={cx + Math.cos(angle * Math.PI / 180) * 5.5} cy={62 + Math.sin(angle * Math.PI / 180) * 5.5} r="0.6" fill="#444" />
-            ))}
-            <circle cx={cx} cy="62" r="10" fill="none" stroke="#444" strokeWidth="0.5" />
-          </g>
-        ))}
-
-        {/* Cab drive wheels */}
-        <g>
-          <circle cx="198" cy="62" r="11" fill="url(#wheelGrad)" />
-          <circle cx="198" cy="62" r="8" fill="#222" />
-          <circle cx="198" cy="62" r="5" fill="#333" />
-          <circle cx="198" cy="62" r="2.5" fill="#555" />
-          {[0, 60, 120, 180, 240, 300].map((angle) => (
-            <circle key={angle} cx={198 + Math.cos(angle * Math.PI / 180) * 6.5} cy={62 + Math.sin(angle * Math.PI / 180) * 6.5} r="0.7" fill="#444" />
-          ))}
-          <circle cx="198" cy="62" r="11" fill="none" stroke="#444" strokeWidth="0.5" />
-        </g>
-
-        {/* Mud flaps */}
-        <rect x="53" y="62" width="4" height="8" rx="0.5" fill="#333" />
-        <rect x="143" y="62" width="4" height="8" rx="0.5" fill="#333" />
+      {/* Warehouse / loading dock - far left */}
+      <g opacity="0.08">
+        <rect x="10" y="90" width="60" height="50" rx="2" fill="white" />
+        <rect x="12" y="92" width="12" height="14" rx="1" fill="white" opacity="0.5" />
+        <rect x="28" y="92" width="12" height="14" rx="1" fill="white" opacity="0.5" />
+        <rect x="10" y="120" width="20" height="20" fill="white" opacity="0.7" />
+        <rect x="35" y="120" width="20" height="20" fill="white" opacity="0.7" />
+        <path d="M5 90 L40 70 L75 90" fill="white" opacity="0.5" />
       </g>
 
-      {/* Forward journey dots (destination ahead) */}
-      <circle cx="470" cy="130" r="2.5" fill="#FF9500" opacity="0.35" />
-      <circle cx="488" cy="129" r="2" fill="#FF9500" opacity="0.2" />
-    </svg>
-  )
-}
+      {/* Forklift / maintenance person - left of warehouse */}
+      <g opacity="0.07" transform="translate(85, 108)">
+        {/* Person with wrench */}
+        <circle cx="8" cy="4" r="4" fill="white" />
+        <rect x="5" y="8" width="6" height="12" rx="2" fill="white" />
+        <rect x="2" y="12" width="4" height="8" rx="1" fill="white" />
+        <line x1="14" y1="12" x2="20" y2="8" stroke="white" strokeWidth="2" strokeLinecap="round" />
+      </g>
 
-function CIcon({ type }: { type: string }) {
-  const cls = "w-2 h-2 sm:w-2.5 sm:h-2.5 text-orange flex-shrink-0"
-  const paths: Record<string, string> = {
-    phone: "M3.654 1.328a.678.678 0 0 0-1.015-.063L1.605 2.3c-.483.484-.661 1.169-.45 1.77a17.568 17.568 0 0 0 4.168 6.608 17.569 17.569 0 0 0 6.608 4.168c.601.211 1.286.033 1.77-.45l1.034-1.034a.678.678 0 0 0-.063-1.015l-2.307-1.794a.678.678 0 0 0-.58-.122l-2.19.547a1.745 1.745 0 0 1-1.657-.459L5.482 8.062a1.745 1.745 0 0 1-.46-1.657l.548-2.19a.678.678 0 0 0-.122-.58L3.654 1.328z",
-    email: "M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V4Zm2-1a1 1 0 0 0-1 1v.217l7 4.2 7-4.2V4a1 1 0 0 0-1-1H2Zm13 2.383-4.708 2.825L15 11.105V5.383Zm-.034 6.876-5.64-3.471L8 9.583l-1.326-.795-5.64 3.47A1 1 0 0 0 2 13h12a1 1 0 0 0 .966-.741ZM1 11.105l4.708-2.897L1 5.383v5.722Z",
-    web: "M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10zm0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6z",
-    location: "M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10zm0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6z",
-  }
-  if (type === "web") {
-    return (
-      <svg className={cls} viewBox="0 0 16 16" fill="currentColor">
-        <path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8zm7.5-6.923c-.67.204-1.335.82-1.887 1.855A7.97 7.97 0 0 0 5.145 4H7.5V1.077zM4.09 4a9.267 9.267 0 0 1 .64-1.539 6.7 6.7 0 0 1 .597-.933A7.025 7.025 0 0 0 2.255 4H4.09zm-.582 3.5c.03-.877.138-1.718.312-2.5H1.674a6.958 6.958 0 0 0-.656 2.5h2.49zM4.847 5a12.5 12.5 0 0 0-.338 2.5H7.5V5H4.847zM8.5 5v2.5h2.99a12.495 12.495 0 0 0-.337-2.5H8.5zM4.51 8.5a12.5 12.5 0 0 0 .337 2.5H7.5V8.5H4.51zm3.99 0V11h2.653c.187-.765.306-1.608.338-2.5H8.5zM5.145 12c.138.386.295.744.468 1.068.552 1.035 1.218 1.65 1.887 1.855V12H5.145zm.182 2.472a6.696 6.696 0 0 1-.597-.933A9.268 9.268 0 0 1 4.09 12H2.255a7.024 7.024 0 0 0 3.072 2.472zM3.82 11a13.652 13.652 0 0 1-.312-2.5h-2.49c.062.89.291 1.733.656 2.5H3.82zm6.853 3.472A7.024 7.024 0 0 0 13.745 12H11.91a9.27 9.27 0 0 1-.64 1.539 6.688 6.688 0 0 1-.597.933zM8.5 12v2.923c.67-.204 1.335-.82 1.887-1.855.173-.324.33-.682.468-1.068H8.5zm3.68-1h2.146c.365-.767.594-1.61.656-2.5h-2.49a13.65 13.65 0 0 1-.312 2.5zm2.802-3.5a6.959 6.959 0 0 0-.656-2.5H12.18c.174.782.282 1.623.312 2.5h2.49zM11.27 2.461c.247.464.462.98.64 1.539h1.835a7.024 7.024 0 0 0-3.072-2.472c.218.284.418.598.597.933zM10.855 4a7.966 7.966 0 0 0-.468-1.068C9.835 1.897 9.17 1.282 8.5 1.077V4h2.355z" />
-      </svg>
-    )
-  }
-  return (
-    <svg className={cls} viewBox="0 0 16 16" fill="currentColor">
-      <path d={paths[type] || ""} />
+      {/* Dispatcher at desk - far left background */}
+      <g opacity="0.06" transform="translate(30, 60)">
+        <rect x="0" y="12" width="18" height="12" rx="1" fill="white" />
+        <circle cx="9" cy="6" r="4" fill="white" />
+        <rect x="2" y="10" width="14" height="2" rx="1" fill="white" opacity="0.6" />
+        <rect x="20" y="8" width="10" height="14" rx="1" fill="white" opacity="0.4" />
+      </g>
+
+      {/* Headlight beams */}
+      <ellipse cx="490" cy="133" rx="60" ry="8" fill="url(#headlightGlow)" filter="url(#softGlow)" />
+
+      {/* === TRUCK === */}
+      <g transform="translate(248, 82)">
+        <ellipse cx="100" cy="82" rx="125" ry="6" fill="rgba(0,0,0,0.2)" />
+        <rect x="2" y="54" width="150" height="6" rx="1" fill="#333" />
+
+        {/* Trailer */}
+        <rect x="0" y="6" width="154" height="50" rx="3" fill="url(#bodyGrad)" />
+        <rect x="0" y="6" width="154" height="50" rx="3" stroke="#CC7700" strokeWidth="0.8" fill="none" />
+        {[22, 44, 66, 88, 110, 132].map((x) => (
+          <line key={x} x1={x} y1="8" x2={x} y2="54" stroke="#CC7700" strokeWidth="0.4" opacity="0.3" />
+        ))}
+        <rect x="0" y="6" width="154" height="8" rx="3" fill="white" opacity="0.06" />
+
+        <text x="77" y="30" fontFamily="Inter, system-ui, sans-serif" fontSize="11" fontWeight="900" fill="#001F3F" textAnchor="middle" letterSpacing="0.5">THIND</text>
+        <rect x="44" y="33" width="66" height="1.5" rx="0.75" fill="#001F3F" opacity="0.25" />
+        <text x="77" y="46" fontFamily="Inter, system-ui, sans-serif" fontSize="7" fontWeight="700" fill="#001F3F" textAnchor="middle" letterSpacing="3">TRANSPORT</text>
+
+        {/* Fifth wheel connection */}
+        <rect x="152" y="22" width="8" height="28" rx="1.5" fill="#777" />
+        <rect x="154" y="27" width="4" height="18" rx="1" fill="#555" />
+
+        {/* Cab */}
+        <path d="M158 12 L182 12 Q202 12 212 26 L222 46 Q224 52 224 56 L224 60 Q224 62 222 62 L158 62 L158 12Z" fill="url(#cabGrad)" />
+        <path d="M158 12 L182 12 Q202 12 212 26 L222 46 Q224 52 224 56 L224 60 Q224 62 222 62 L158 62 L158 12Z" stroke="#CC7700" strokeWidth="0.8" fill="none" />
+        <line x1="158" y1="58" x2="224" y2="58" stroke="#FFD080" strokeWidth="1" opacity="0.3" />
+
+        {/* Windshield */}
+        <path d="M170 15 L192 15 Q206 15 214 28 L220 44 L220 50 Q220 52 218 52 L170 52 L170 15Z" fill="#0a1628" opacity="0.82" />
+        <path d="M170 15 L192 15 Q206 15 214 28 L220 44" stroke="rgba(255,255,255,0.2)" strokeWidth="0.8" fill="none" />
+        <path d="M174 18 L188 18 Q198 18 206 28 L210 36" stroke="rgba(255,255,255,0.06)" strokeWidth="4" fill="none" strokeLinecap="round" />
+
+        {/* Driver silhouette in cab */}
+        <g opacity="0.12">
+          <circle cx="185" cy="30" r="5" fill="white" />
+          <rect x="181" y="35" width="8" height="10" rx="3" fill="white" />
+        </g>
+
+        {/* Headlights */}
+        <rect x="223" y="40" width="4" height="10" rx="1.5" fill="#FFEEBB" opacity="0.95" filter="url(#glow)" />
+        <rect x="223" y="54" width="4" height="5" rx="1" fill="#FF3333" opacity="0.8" />
+        <rect x="226" y="58" width="5" height="6" rx="1" fill="#888" />
+
+        {/* Mirror */}
+        <rect x="226" y="22" width="3" height="8" rx="1" fill="#555" />
+        <rect x="227" y="23" width="2" height="5" rx="0.5" fill="#888" />
+
+        {/* Exhaust */}
+        <rect x="164" y="-4" width="3.5" height="18" rx="1.5" fill="#777" />
+        <rect x="171" y="-1" width="3.5" height="15" rx="1.5" fill="#777" />
+        <circle cx="166" cy="-8" r="2.5" fill="white" opacity="0.03" />
+        <circle cx="173" cy="-5" r="2" fill="white" opacity="0.03" />
+
+        {/* Fuel tank */}
+        <rect x="158" y="50" width="18" height="10" rx="3" fill="#555" stroke="#666" strokeWidth="0.5" />
+
+        {/* Wheels */}
+        {[30, 50, 120, 140].map((cx) => (
+          <g key={cx}>
+            <circle cx={cx} cy="64" r="10" fill="#1a1a1a" stroke="#444" strokeWidth="0.8" />
+            <circle cx={cx} cy="64" r="7" fill="#222" />
+            <circle cx={cx} cy="64" r="4.5" fill="#2a2a2a" />
+            <circle cx={cx} cy="64" r="2" fill="#555" />
+          </g>
+        ))}
+        <g>
+          <circle cx="200" cy="64" r="11" fill="#1a1a1a" stroke="#444" strokeWidth="0.8" />
+          <circle cx="200" cy="64" r="8" fill="#222" />
+          <circle cx="200" cy="64" r="5" fill="#2a2a2a" />
+          <circle cx="200" cy="64" r="2.5" fill="#555" />
+        </g>
+
+        <rect x="55" y="64" width="4" height="7" rx="0.5" fill="#333" />
+        <rect x="145" y="64" width="4" height="7" rx="0.5" fill="#333" />
+      </g>
+
+      {/* === BUSINESS PEOPLE SILHOUETTES - right side === */}
+
+      {/* Broker / handshake scene - far right */}
+      <g opacity="0.07" transform="translate(500, 100)">
+        {/* Person 1 */}
+        <circle cx="8" cy="4" r="4" fill="white" />
+        <rect x="4" y="8" width="8" height="14" rx="2" fill="white" />
+        <line x1="12" y1="12" x2="22" y2="14" stroke="white" strokeWidth="2" strokeLinecap="round" />
+        {/* Person 2 */}
+        <circle cx="32" cy="4" r="4" fill="white" />
+        <rect x="28" y="8" width="8" height="14" rx="2" fill="white" />
+        <line x1="28" y1="12" x2="18" y2="14" stroke="white" strokeWidth="2" strokeLinecap="round" />
+      </g>
+
+      {/* Person with clipboard (dispatcher/operations) - right side */}
+      <g opacity="0.06" transform="translate(510, 65)">
+        <circle cx="10" cy="5" r="5" fill="white" />
+        <rect x="6" y="10" width="8" height="14" rx="2" fill="white" />
+        <rect x="16" y="10" width="8" height="12" rx="1" fill="white" opacity="0.5" />
+        <line x1="18" y1="14" x2="22" y2="14" stroke="white" strokeWidth="1" opacity="0.3" />
+        <line x1="18" y1="17" x2="22" y2="17" stroke="white" strokeWidth="1" opacity="0.3" />
+      </g>
+
+      {/* Loading/unloading person with dolly - behind truck */}
+      <g opacity="0.06" transform="translate(230, 110)">
+        <circle cx="6" cy="3" r="3.5" fill="white" />
+        <rect x="3" y="7" width="6" height="10" rx="2" fill="white" />
+        {/* Dolly / hand truck */}
+        <rect x="12" y="4" width="3" height="14" rx="0.5" fill="white" />
+        <rect x="10" y="16" width="7" height="2" rx="1" fill="white" />
+        <circle cx="11" cy="20" r="2" fill="white" />
+        <circle cx="16" cy="20" r="2" fill="white" />
+      </g>
+
+      {/* Distant cityscape silhouette */}
+      <g opacity="0.04">
+        <rect x="420" y="60" width="12" height="50" rx="1" fill="white" />
+        <rect x="435" y="45" width="10" height="65" rx="1" fill="white" />
+        <rect x="448" y="55" width="14" height="55" rx="1" fill="white" />
+        <rect x="465" y="65" width="10" height="45" rx="1" fill="white" />
+        <rect x="478" y="50" width="8" height="60" rx="1" fill="white" />
+      </g>
     </svg>
   )
 }
