@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef } from "react"
 import Link from "next/link"
-import Image from "next/image"
 import { usePathname } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
 import { 
@@ -418,14 +417,7 @@ export const CinematicNavbar = () => {
               className="relative z-20 hover:opacity-90 transition-opacity whitespace-nowrap leading-none flex items-center gap-2" 
               data-cursor="HOME"
             >
-              <Image 
-                src="/branding/thind-transport-icon.svg" 
-                alt="Thind Transport" 
-                width={28} 
-                height={30} 
-                className="w-6 h-7 md:w-7 md:h-8"
-              />
-              <span className="text-lg md:text-xl font-bold text-white tracking-tighter">THIND TRANSPORT</span>
+              <span className="text-lg md:text-xl font-bold text-white tracking-tighter">THIND<span className="text-orange"> TRANSPORT</span></span>
             </Link>
 
             {/* Desktop Navigation */}

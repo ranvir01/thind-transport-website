@@ -1,194 +1,216 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1039 696" fill="none">
-  <!-- 
-    MOO Business Card Back - Thind Transport  
-    Features: Long-haul truck illustration with load route chain,
-    company branding, tagline
-  -->
   <defs>
-    <linearGradient id="skyGrad" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#001F3F"/>
-      <stop offset="40%" stop-color="#002B5C"/>
-      <stop offset="100%" stop-color="#003366"/>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0a1628"/>
+      <stop offset="45%" stop-color="#0f2744"/>
+      <stop offset="100%" stop-color="#1a3a5c"/>
     </linearGradient>
-    <linearGradient id="roadSurface" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#2a2a2a"/>
+    <linearGradient id="road" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#252525"/>
       <stop offset="100%" stop-color="#1a1a1a"/>
     </linearGradient>
-    <linearGradient id="orangeLine" x1="0" y1="0" x2="1" y2="0">
+    <linearGradient id="truckGrad" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0%" stop-color="#FF9500"/>
-      <stop offset="100%" stop-color="#FFB340"/>
+      <stop offset="100%" stop-color="#E07800"/>
     </linearGradient>
-    <linearGradient id="truckBody" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#FF9500"/>
+    <linearGradient id="cabG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FFA520"/>
       <stop offset="100%" stop-color="#E68600"/>
     </linearGradient>
-    <linearGradient id="horizonGlow" x1="0.5" y1="1" x2="0.5" y2="0">
-      <stop offset="0%" stop-color="#FF9500" stop-opacity="0.15"/>
-      <stop offset="100%" stop-color="#FF9500" stop-opacity="0"/>
+    <linearGradient id="trailG" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#FF9500" stop-opacity="0"/>
+      <stop offset="50%" stop-color="#FF9500" stop-opacity="0.15"/>
+      <stop offset="100%" stop-color="#FF9500" stop-opacity="0.5"/>
     </linearGradient>
+    <linearGradient id="trailLine" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#FF9500" stop-opacity="0"/>
+      <stop offset="60%" stop-color="#FF9500" stop-opacity="0.5"/>
+      <stop offset="100%" stop-color="#FF9500" stop-opacity="0.9"/>
+    </linearGradient>
+    <linearGradient id="headlight" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#FFEEBB" stop-opacity="0.6"/>
+      <stop offset="100%" stop-color="#FFEEBB" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="orangeAccent" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="transparent"/>
+      <stop offset="50%" stop-color="#FF9500"/>
+      <stop offset="100%" stop-color="transparent"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="4" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="softGlow">
+      <feGaussianBlur stdDeviation="10" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
   </defs>
 
-  <!-- Sky background -->
-  <rect width="1039" height="696" fill="url(#skyGrad)"/>
-  
-  <!-- Horizon glow -->
-  <ellipse cx="520" cy="420" rx="600" ry="200" fill="url(#horizonGlow)"/>
+  <!-- Sky -->
+  <rect width="1039" height="696" fill="url(#sky)"/>
 
-  <!-- Stars (subtle) -->
-  <circle cx="120" cy="60" r="1" fill="white" opacity="0.4"/>
-  <circle cx="250" cy="90" r="0.8" fill="white" opacity="0.3"/>
-  <circle cx="380" cy="45" r="1.2" fill="white" opacity="0.5"/>
-  <circle cx="500" cy="80" r="0.8" fill="white" opacity="0.3"/>
-  <circle cx="650" cy="55" r="1" fill="white" opacity="0.4"/>
-  <circle cx="780" cy="75" r="0.7" fill="white" opacity="0.3"/>
-  <circle cx="900" cy="50" r="1.1" fill="white" opacity="0.45"/>
-  <circle cx="180" cy="120" r="0.6" fill="white" opacity="0.25"/>
-  <circle cx="720" cy="100" r="0.9" fill="white" opacity="0.35"/>
+  <!-- Atmospheric haze -->
+  <ellipse cx="520" cy="440" rx="700" ry="80" fill="#2a4a6a" opacity="0.15"/>
+  <ellipse cx="520" cy="420" rx="500" ry="50" fill="#FF9500" opacity="0.04" filter="url(#softGlow)"/>
 
-  <!-- Road / Highway -->
-  <path d="M0 520 Q200 480 520 460 Q840 440 1039 420 L1039 696 L0 696 Z" fill="url(#roadSurface)"/>
-  
-  <!-- Road edge lines -->
-  <path d="M0 518 Q200 478 520 458 Q840 438 1039 418" stroke="#FF9500" stroke-width="2.5" fill="none" opacity="0.6"/>
-  <path d="M0 696 L1039 696" stroke="#FF9500" stroke-width="2" fill="none" opacity="0.3"/>
-  
-  <!-- Center road dashes -->
-  <path d="M0 570 Q200 540 520 525 Q840 510 1039 495" stroke="#FFB340" stroke-width="2" stroke-dasharray="30,20" fill="none" opacity="0.5"/>
+  <!-- Stars -->
+  <circle cx="80" cy="40" r="1" fill="white" opacity="0.6"/>
+  <circle cx="160" cy="85" r="0.7" fill="white" opacity="0.3"/>
+  <circle cx="230" cy="25" r="1" fill="white" opacity="0.5"/>
+  <circle cx="350" cy="60" r="0.8" fill="white" opacity="0.4"/>
+  <circle cx="460" cy="30" r="1.2" fill="white" opacity="0.65"/>
+  <circle cx="560" cy="75" r="0.7" fill="white" opacity="0.3"/>
+  <circle cx="640" cy="20" r="1" fill="white" opacity="0.5"/>
+  <circle cx="740" cy="55" r="0.8" fill="white" opacity="0.4"/>
+  <circle cx="830" cy="35" r="1.1" fill="white" opacity="0.55"/>
+  <circle cx="920" cy="70" r="0.7" fill="white" opacity="0.3"/>
+  <circle cx="960" cy="30" r="0.9" fill="white" opacity="0.45"/>
+  <circle cx="290" cy="100" r="0.5" fill="white" opacity="0.2"/>
+  <circle cx="700" cy="95" r="0.6" fill="white" opacity="0.25"/>
+  <circle cx="520" cy="45" r="0.8" fill="white" opacity="0.35"/>
 
-  <!-- === LONG-HAUL TRUCK ILLUSTRATION (center) === -->
-  <g transform="translate(240, 330)">
+  <!-- Road surface -->
+  <path d="M0 480 Q260 445 520 435 Q780 425 1039 410 L1039 696 L0 696Z" fill="url(#road)"/>
+  <path d="M0 478 Q260 443 520 433 Q780 423 1039 408" stroke="#FF9500" stroke-width="2" fill="none" opacity="0.45"/>
+  <path d="M0 555 Q260 530 520 522 Q780 514 1039 502" stroke="#FFB340" stroke-width="2" stroke-dasharray="35 22" fill="none" opacity="0.3"/>
+
+  <!-- Company name -->
+  <text x="520" y="80" font-family="'Inter', sans-serif" font-size="48" font-weight="900" fill="white" text-anchor="middle" letter-spacing="-0.5">THIND <tspan fill="#FF9500">TRANSPORT</tspan></text>
+  <rect x="340" y="95" width="360" height="2.5" rx="1.25" fill="url(#orangeAccent)"/>
+  <text x="520" y="122" font-family="'Inter', sans-serif" font-size="12" font-weight="500" fill="rgba(255,255,255,0.45)" text-anchor="middle" letter-spacing="5">YOUR FREIGHT, OUR COMMITMENT</text>
+
+  <!-- === TRUCK ILLUSTRATION === -->
+  <g transform="translate(250, 290)">
+    <!-- Journey trail glow -->
+    <path d="M-200 115 Q-100 112 0 110 Q80 108 140 107" stroke="url(#trailG)" stroke-width="22" fill="none" stroke-linecap="round"/>
+    <path d="M-140 115 Q-60 112 30 110 Q100 108 140 107" stroke="url(#trailLine)" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+
+    <!-- Waypoint dots fading behind -->
+    <circle cx="-60" cy="113" r="3" fill="#FF9500" opacity="0.1"/>
+    <circle cx="0" cy="111" r="3.5" fill="#FF9500" opacity="0.2"/>
+    <circle cx="60" cy="109.5" r="4" fill="#FF9500" opacity="0.3"/>
+    <circle cx="120" cy="108" r="4" fill="#FF9500" opacity="0.4"/>
+
+    <!-- Headlight beams -->
+    <ellipse cx="500" cy="102" rx="65" ry="10" fill="url(#headlight)" filter="url(#softGlow)"/>
+
     <!-- Trailer shadow -->
-    <ellipse cx="280" cy="165" rx="260" ry="12" fill="rgba(0,0,0,0.3)"/>
-    
-    <!-- === LOAD ROUTE CHAIN - Connected to back of trailer === -->
-    <!-- Chain links going backward from trailer -->
-    <g opacity="0.6">
-      <!-- Connection nodes (pipeline chain) -->
-      <circle cx="-30" cy="90" r="8" fill="none" stroke="#FF9500" stroke-width="2"/>
-      <circle cx="-30" cy="90" r="3" fill="#FF9500"/>
-      <line x1="-22" y1="90" x2="5" y2="90" stroke="#FF9500" stroke-width="2"/>
-      
-      <circle cx="-80" cy="90" r="8" fill="none" stroke="#FFB340" stroke-width="2"/>
-      <circle cx="-80" cy="90" r="3" fill="#FFB340"/>
-      <line x1="-72" y1="90" x2="-38" y2="90" stroke="#FFB340" stroke-width="2"/>
-      
-      <circle cx="-130" cy="90" r="8" fill="none" stroke="#FF9500" stroke-width="2"/>
-      <circle cx="-130" cy="90" r="3" fill="#FF9500"/>
-      <line x1="-122" y1="90" x2="-88" y2="90" stroke="#FF9500" stroke-width="2"/>
-      
-      <!-- Labels on chain nodes -->
-      <text x="-130" y="72" font-family="'Inter', Arial, sans-serif" font-size="7" font-weight="700" fill="#FF9500" text-anchor="middle">PICKUP</text>
-      <text x="-80" y="72" font-family="'Inter', Arial, sans-serif" font-size="7" font-weight="700" fill="#FFB340" text-anchor="middle">HAUL</text>
-      <text x="-30" y="72" font-family="'Inter', Arial, sans-serif" font-size="7" font-weight="700" fill="#FF9500" text-anchor="middle">LOAD</text>
-    </g>
-    
+    <ellipse cx="310" cy="135" rx="180" ry="8" fill="rgba(0,0,0,0.25)"/>
+
+    <!-- Trailer undercarriage -->
+    <rect x="142" y="100" width="192" height="8" rx="2" fill="#333"/>
+
     <!-- Trailer body -->
-    <rect x="5" y="50" width="320" height="100" rx="4" fill="url(#truckBody)"/>
-    <rect x="5" y="50" width="320" height="100" rx="4" fill="none" stroke="#E68600" stroke-width="1.5"/>
-    
-    <!-- Trailer side details (ridges) -->
-    <line x1="40" y1="55" x2="40" y2="145" stroke="#E68600" stroke-width="1" opacity="0.5"/>
-    <line x1="80" y1="55" x2="80" y2="145" stroke="#E68600" stroke-width="1" opacity="0.5"/>
-    <line x1="120" y1="55" x2="120" y2="145" stroke="#E68600" stroke-width="1" opacity="0.5"/>
-    <line x1="160" y1="55" x2="160" y2="145" stroke="#E68600" stroke-width="1" opacity="0.5"/>
-    <line x1="200" y1="55" x2="200" y2="145" stroke="#E68600" stroke-width="1" opacity="0.5"/>
-    <line x1="240" y1="55" x2="240" y2="145" stroke="#E68600" stroke-width="1" opacity="0.5"/>
-    <line x1="280" y1="55" x2="280" y2="145" stroke="#E68600" stroke-width="1" opacity="0.5"/>
-    
-    <!-- "THIND TRANSPORT" on trailer side -->
-    <text x="165" y="95" font-family="'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="22" font-weight="900" fill="#001F3F" text-anchor="middle" letter-spacing="1">THIND</text>
-    <text x="165" y="118" font-family="'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="14" font-weight="600" fill="#001F3F" text-anchor="middle" letter-spacing="4">TRANSPORT</text>
-    
-    <!-- Cab body -->
-    <path d="M325 55 L380 55 Q420 55 430 70 L445 100 Q450 110 450 120 L450 148 Q450 152 446 152 L325 152 L325 55 Z" fill="url(#truckBody)"/>
-    <path d="M325 55 L380 55 Q420 55 430 70 L445 100 Q450 110 450 120 L450 148 Q450 152 446 152 L325 152 L325 55 Z" fill="none" stroke="#E68600" stroke-width="1.5"/>
-    
+    <rect x="140" y="30" width="196" height="72" rx="4" fill="url(#truckGrad)"/>
+    <rect x="140" y="30" width="196" height="72" rx="4" stroke="#CC7700" stroke-width="1" fill="none"/>
+
+    <!-- Trailer panel lines -->
+    <line x1="170" y1="33" x2="170" y2="99" stroke="#CC7700" stroke-width="0.5" opacity="0.35"/>
+    <line x1="200" y1="33" x2="200" y2="99" stroke="#CC7700" stroke-width="0.5" opacity="0.35"/>
+    <line x1="230" y1="33" x2="230" y2="99" stroke="#CC7700" stroke-width="0.5" opacity="0.35"/>
+    <line x1="260" y1="33" x2="260" y2="99" stroke="#CC7700" stroke-width="0.5" opacity="0.35"/>
+    <line x1="290" y1="33" x2="290" y2="99" stroke="#CC7700" stroke-width="0.5" opacity="0.35"/>
+    <line x1="320" y1="33" x2="320" y2="99" stroke="#CC7700" stroke-width="0.5" opacity="0.35"/>
+
+    <!-- Top highlight -->
+    <rect x="140" y="30" width="196" height="10" rx="4" fill="white" opacity="0.06"/>
+
+    <!-- THIND TRANSPORT on trailer -->
+    <text x="238" y="62" font-family="'Inter', sans-serif" font-size="16" font-weight="900" fill="#001F3F" text-anchor="middle" letter-spacing="0.5">THIND</text>
+    <rect x="205" y="66" width="66" height="1.5" rx="0.75" fill="#001F3F" opacity="0.25"/>
+    <text x="238" y="82" font-family="'Inter', sans-serif" font-size="10" font-weight="700" fill="#001F3F" text-anchor="middle" letter-spacing="4">TRANSPORT</text>
+
+    <!-- Connection plate -->
+    <rect x="334" y="46" width="10" height="40" rx="2" fill="#888"/>
+    <rect x="337" y="52" width="4" height="28" rx="1" fill="#666"/>
+
+    <!-- Cab -->
+    <path d="M342 35 L380 35 Q410 35 425 52 L440 80 Q444 90 444 96 L444 104 Q444 107 441 107 L342 107 L342 35Z" fill="url(#cabG)"/>
+    <path d="M342 35 L380 35 Q410 35 425 52 L440 80 Q444 90 444 96 L444 104 Q444 107 441 107 L342 107 L342 35Z" stroke="#CC7700" stroke-width="1" fill="none"/>
+
+    <!-- Chrome strip -->
+    <line x1="342" y1="102" x2="444" y2="102" stroke="#FFD080" stroke-width="1.2" opacity="0.35"/>
+
     <!-- Windshield -->
-    <path d="M355 60 L395 60 Q415 60 425 75 L438 102 L438 115 Q438 118 435 118 L355 118 L355 60 Z" fill="#001F3F" opacity="0.7"/>
-    <path d="M355 60 L395 60 Q415 60 425 75 L438 102" stroke="rgba(255,255,255,0.3)" stroke-width="1" fill="none"/>
-    
+    <path d="M358 39 L392 39 Q414 39 426 55 L436 78 L436 88 Q436 90 434 90 L358 90 L358 39Z" fill="#0a1628" opacity="0.8"/>
+    <path d="M358 39 L392 39 Q414 39 426 55 L436 78" stroke="rgba(255,255,255,0.2)" stroke-width="1" fill="none"/>
+    <!-- Windshield reflection -->
+    <path d="M363 43 L385 43 Q400 43 410 55 L416 66" stroke="rgba(255,255,255,0.06)" stroke-width="5" fill="none" stroke-linecap="round"/>
+
     <!-- Headlights -->
-    <rect x="445" y="105" width="8" height="14" rx="2" fill="#FFE5BF" opacity="0.9"/>
-    <rect x="445" y="125" width="8" height="8" rx="2" fill="#FF4444" opacity="0.7"/>
-    
+    <rect x="443" y="72" width="5" height="14" rx="2" fill="#FFEEBB" opacity="0.95" filter="url(#glow)"/>
+    <rect x="443" y="92" width="5" height="7" rx="1.5" fill="#FF3333" opacity="0.8"/>
+
+    <!-- Mirror -->
+    <rect x="448" y="48" width="4" height="10" rx="1.5" fill="#555"/>
+    <rect x="449" y="49" width="3" height="7" rx="1" fill="#888"/>
+
     <!-- Bumper -->
-    <rect x="448" y="140" width="10" height="14" rx="2" fill="#888"/>
-    
+    <rect x="446" y="100" width="6" height="8" rx="1.5" fill="#888"/>
+
     <!-- Exhaust stacks -->
-    <rect x="340" y="25" width="5" height="30" rx="2" fill="#888"/>
-    <rect x="350" y="28" width="5" height="27" rx="2" fill="#888"/>
-    
-    <!-- Wheels - trailer -->
-    <circle cx="60" cy="158" r="16" fill="#1a1a1a" stroke="#555" stroke-width="2"/>
-    <circle cx="60" cy="158" r="8" fill="#333"/>
-    <circle cx="60" cy="158" r="3" fill="#888"/>
-    
-    <circle cx="100" cy="158" r="16" fill="#1a1a1a" stroke="#555" stroke-width="2"/>
-    <circle cx="100" cy="158" r="8" fill="#333"/>
-    <circle cx="100" cy="158" r="3" fill="#888"/>
-    
-    <circle cx="270" cy="158" r="16" fill="#1a1a1a" stroke="#555" stroke-width="2"/>
-    <circle cx="270" cy="158" r="8" fill="#333"/>
-    <circle cx="270" cy="158" r="3" fill="#888"/>
-    
-    <circle cx="310" cy="158" r="16" fill="#1a1a1a" stroke="#555" stroke-width="2"/>
-    <circle cx="310" cy="158" r="8" fill="#333"/>
-    <circle cx="310" cy="158" r="3" fill="#888"/>
-    
-    <!-- Wheels - cab -->
-    <circle cx="410" cy="158" r="18" fill="#1a1a1a" stroke="#555" stroke-width="2"/>
-    <circle cx="410" cy="158" r="9" fill="#333"/>
-    <circle cx="410" cy="158" r="3.5" fill="#888"/>
-    
-    <!-- === ROUTE CHAIN - Connected to front of cab === -->
-    <g opacity="0.6">
-      <line x1="458" y1="90" x2="490" y2="90" stroke="#FF9500" stroke-width="2"/>
-      <circle cx="505" cy="90" r="8" fill="none" stroke="#FF9500" stroke-width="2"/>
-      <circle cx="505" cy="90" r="3" fill="#FF9500"/>
-      
-      <line x1="513" y1="90" x2="540" y2="90" stroke="#FFB340" stroke-width="2"/>
-      <circle cx="555" cy="90" r="8" fill="none" stroke="#FFB340" stroke-width="2"/>
-      <circle cx="555" cy="90" r="3" fill="#FFB340"/>
-      
-      <line x1="563" y1="90" x2="590" y2="90" stroke="#FF9500" stroke-width="2"/>
-      <circle cx="605" cy="90" r="8" fill="none" stroke="#FF9500" stroke-width="2"/>
-      <circle cx="605" cy="90" r="3" fill="#FF9500"/>
-      
-      <!-- Labels on front chain nodes -->
-      <text x="505" y="72" font-family="'Inter', Arial, sans-serif" font-size="7" font-weight="700" fill="#FF9500" text-anchor="middle">ROUTE</text>
-      <text x="555" y="72" font-family="'Inter', Arial, sans-serif" font-size="7" font-weight="700" fill="#FFB340" text-anchor="middle">DELIVER</text>
-      <text x="605" y="72" font-family="'Inter', Arial, sans-serif" font-size="7" font-weight="700" fill="#FF9500" text-anchor="middle">SETTLE</text>
-    </g>
+    <rect x="350" y="14" width="4.5" height="24" rx="2" fill="#777"/>
+    <rect x="358" y="18" width="4.5" height="20" rx="2" fill="#777"/>
+    <!-- Subtle smoke -->
+    <circle cx="352" cy="10" r="3" fill="white" opacity="0.03"/>
+    <circle cx="354" cy="4" r="4" fill="white" opacity="0.02"/>
+    <circle cx="360" cy="13" r="2.5" fill="white" opacity="0.03"/>
+
+    <!-- Fuel tank -->
+    <rect x="342" y="88" width="24" height="14" rx="4" fill="#555" stroke="#666" stroke-width="0.5"/>
+
+    <!-- Trailer wheels (tandem rear) -->
+    <circle cx="180" cy="112" r="13" fill="#222" stroke="#444" stroke-width="1"/>
+    <circle cx="180" cy="112" r="9" fill="#1a1a1a"/>
+    <circle cx="180" cy="112" r="6" fill="#2a2a2a"/>
+    <circle cx="180" cy="112" r="2.5" fill="#555"/>
+
+    <circle cx="210" cy="112" r="13" fill="#222" stroke="#444" stroke-width="1"/>
+    <circle cx="210" cy="112" r="9" fill="#1a1a1a"/>
+    <circle cx="210" cy="112" r="6" fill="#2a2a2a"/>
+    <circle cx="210" cy="112" r="2.5" fill="#555"/>
+
+    <!-- Front trailer wheels -->
+    <circle cx="290" cy="112" r="13" fill="#222" stroke="#444" stroke-width="1"/>
+    <circle cx="290" cy="112" r="9" fill="#1a1a1a"/>
+    <circle cx="290" cy="112" r="6" fill="#2a2a2a"/>
+    <circle cx="290" cy="112" r="2.5" fill="#555"/>
+
+    <circle cx="320" cy="112" r="13" fill="#222" stroke="#444" stroke-width="1"/>
+    <circle cx="320" cy="112" r="9" fill="#1a1a1a"/>
+    <circle cx="320" cy="112" r="6" fill="#2a2a2a"/>
+    <circle cx="320" cy="112" r="2.5" fill="#555"/>
+
+    <!-- Cab drive wheels -->
+    <circle cx="410" cy="112" r="14" fill="#222" stroke="#444" stroke-width="1"/>
+    <circle cx="410" cy="112" r="10" fill="#1a1a1a"/>
+    <circle cx="410" cy="112" r="6.5" fill="#2a2a2a"/>
+    <circle cx="410" cy="112" r="3" fill="#555"/>
+
+    <!-- Mud flaps -->
+    <rect x="216" y="112" width="5" height="10" rx="1" fill="#333"/>
+    <rect x="326" y="112" width="5" height="10" rx="1" fill="#333"/>
+
+    <!-- Forward journey dots -->
+    <circle cx="470" cy="104" r="3.5" fill="#FF9500" opacity="0.3"/>
+    <circle cx="500" cy="102" r="3" fill="#FF9500" opacity="0.18"/>
+    <circle cx="525" cy="101" r="2" fill="#FF9500" opacity="0.1"/>
   </g>
 
-  <!-- Company Name - Top -->
-  <text x="520" y="85" font-family="'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="50" font-weight="900" fill="white" text-anchor="middle" letter-spacing="-1">THIND TRANSPORT</text>
-  
-  <!-- Accent bar under name -->
-  <rect x="340" y="100" width="360" height="4" rx="2" fill="url(#orangeLine)"/>
-  
-  <!-- Tagline -->
-  <text x="520" y="130" font-family="'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="14" font-weight="500" fill="rgba(255,255,255,0.7)" text-anchor="middle" letter-spacing="4">YOUR FREIGHT, OUR COMMITMENT</text>
+  <!-- Service badges at bottom -->
+  <g transform="translate(210, 610)">
+    <rect x="0" y="0" width="120" height="30" rx="6" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+    <text x="60" y="20" font-family="'Inter', sans-serif" font-size="10" font-weight="700" fill="rgba(255,255,255,0.55)" text-anchor="middle" letter-spacing="1.5">FLATBED</text>
 
-  <!-- Service badges along bottom -->
-  <g transform="translate(175, 618)">
-    <!-- Flatbed badge -->
-    <rect x="0" y="0" width="120" height="32" rx="16" fill="rgba(255,149,0,0.15)" stroke="#FF9500" stroke-width="1"/>
-    <text x="60" y="21" font-family="'Inter', Arial, sans-serif" font-size="11" font-weight="700" fill="#FF9500" text-anchor="middle" letter-spacing="1">FLATBED</text>
-    
-    <!-- Reefer badge -->
-    <rect x="140" y="0" width="120" height="32" rx="16" fill="rgba(255,149,0,0.15)" stroke="#FF9500" stroke-width="1"/>
-    <text x="200" y="21" font-family="'Inter', Arial, sans-serif" font-size="11" font-weight="700" fill="#FF9500" text-anchor="middle" letter-spacing="1">REEFER</text>
-    
-    <!-- Dry Van badge -->
-    <rect x="280" y="0" width="120" height="32" rx="16" fill="rgba(255,149,0,0.15)" stroke="#FF9500" stroke-width="1"/>
-    <text x="340" y="21" font-family="'Inter', Arial, sans-serif" font-size="11" font-weight="700" fill="#FF9500" text-anchor="middle" letter-spacing="1">DRY VAN</text>
+    <rect x="135" y="0" width="120" height="30" rx="6" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+    <text x="195" y="20" font-family="'Inter', sans-serif" font-size="10" font-weight="700" fill="rgba(255,255,255,0.55)" text-anchor="middle" letter-spacing="1.5">REEFER</text>
 
-    <!-- 48 States badge -->
-    <rect x="420" y="0" width="120" height="32" rx="16" fill="rgba(255,149,0,0.15)" stroke="#FF9500" stroke-width="1"/>
-    <text x="480" y="21" font-family="'Inter', Arial, sans-serif" font-size="11" font-weight="700" fill="#FF9500" text-anchor="middle" letter-spacing="1">48 STATES</text>
+    <rect x="270" y="0" width="120" height="30" rx="6" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+    <text x="330" y="20" font-family="'Inter', sans-serif" font-size="10" font-weight="700" fill="rgba(255,255,255,0.55)" text-anchor="middle" letter-spacing="1.5">DRY VAN</text>
+
+    <rect x="405" y="0" width="120" height="30" rx="6" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+    <text x="465" y="20" font-family="'Inter', sans-serif" font-size="10" font-weight="700" fill="rgba(255,255,255,0.55)" text-anchor="middle" letter-spacing="1.5">48 STATES</text>
   </g>
 
-  <!-- Website at bottom center -->
-  <text x="520" y="680" font-family="'Inter', Arial, sans-serif" font-size="12" font-weight="600" fill="rgba(255,255,255,0.4)" text-anchor="middle" letter-spacing="2">THINDTRANSPORT.COM</text>
+  <text x="520" y="672" font-family="'Inter', sans-serif" font-size="11" font-weight="600" fill="rgba(255,255,255,0.2)" text-anchor="middle" letter-spacing="3">THINDTRANSPORT.COM</text>
 </svg>
