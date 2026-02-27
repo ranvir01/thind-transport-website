@@ -276,7 +276,7 @@ function CardBack() {
 
 function TruckScene() {
   return (
-    <svg viewBox="0 0 560 210" className="w-[90%] sm:w-[85%] max-w-xl" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <svg viewBox="0 0 600 220" className="w-[92%] sm:w-[88%] max-w-xl" fill="none" xmlns="http://www.w3.org/2000/svg">
       <defs>
         <linearGradient id="bodyGrad" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor="#FF9500" />
@@ -287,8 +287,13 @@ function TruckScene() {
           <stop offset="100%" stopColor="#E68600" />
         </linearGradient>
         <linearGradient id="headlightGlow" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0%" stopColor="#FFEEBB" stopOpacity="0.7" />
+          <stop offset="0%" stopColor="#FFEEBB" stopOpacity="0.6" />
           <stop offset="100%" stopColor="#FFEEBB" stopOpacity="0" />
+        </linearGradient>
+        <linearGradient id="sceneVignette" x1="0.5" y1="0" x2="0.5" y2="1">
+          <stop offset="0%" stopColor="white" stopOpacity="0" />
+          <stop offset="85%" stopColor="white" stopOpacity="0" />
+          <stop offset="100%" stopColor="white" stopOpacity="0.03" />
         </linearGradient>
         <filter id="glow">
           <feGaussianBlur stdDeviation="3" result="b" />
@@ -300,154 +305,248 @@ function TruckScene() {
         </filter>
       </defs>
 
-      {/* === BACKGROUND BUSINESS SILHOUETTES === */}
+      {/* === LEFT SIDE: WAREHOUSE & OPERATIONS === */}
 
-      {/* Warehouse / loading dock - far left */}
-      <g opacity="0.08">
-        <rect x="10" y="90" width="60" height="50" rx="2" fill="white" />
-        <rect x="12" y="92" width="12" height="14" rx="1" fill="white" opacity="0.5" />
-        <rect x="28" y="92" width="12" height="14" rx="1" fill="white" opacity="0.5" />
-        <rect x="10" y="120" width="20" height="20" fill="white" opacity="0.7" />
-        <rect x="35" y="120" width="20" height="20" fill="white" opacity="0.7" />
-        <path d="M5 90 L40 70 L75 90" fill="white" opacity="0.5" />
+      {/* Warehouse building */}
+      <g opacity="0.12">
+        <rect x="8" y="72" width="80" height="68" rx="2" fill="white" />
+        <path d="M2 72 L48 48 L94 72" fill="white" opacity="0.7" />
+        {/* Windows */}
+        <rect x="14" y="78" width="14" height="16" rx="1" fill="white" opacity="0.3" />
+        <rect x="34" y="78" width="14" height="16" rx="1" fill="white" opacity="0.3" />
+        <rect x="54" y="78" width="14" height="16" rx="1" fill="white" opacity="0.3" />
+        {/* Loading bay doors */}
+        <rect x="10" y="110" width="24" height="30" rx="1" fill="white" opacity="0.5" />
+        <rect x="38" y="110" width="24" height="30" rx="1" fill="white" opacity="0.5" />
+        <rect x="66" y="110" width="18" height="30" rx="1" fill="white" opacity="0.5" />
+        {/* Door lines */}
+        <line x1="22" y1="112" x2="22" y2="140" stroke="white" strokeWidth="0.5" opacity="0.3" />
+        <line x1="50" y1="112" x2="50" y2="140" stroke="white" strokeWidth="0.3" opacity="0.3" />
       </g>
 
-      {/* Forklift / maintenance person - left of warehouse */}
-      <g opacity="0.07" transform="translate(85, 108)">
-        {/* Person with wrench */}
-        <circle cx="8" cy="4" r="4" fill="white" />
-        <rect x="5" y="8" width="6" height="12" rx="2" fill="white" />
-        <rect x="2" y="12" width="4" height="8" rx="1" fill="white" />
-        <line x1="14" y1="12" x2="20" y2="8" stroke="white" strokeWidth="2" strokeLinecap="round" />
+      {/* Forklift at warehouse */}
+      <g opacity="0.13" transform="translate(96, 112)">
+        {/* Forklift body */}
+        <rect x="0" y="10" width="18" height="14" rx="2" fill="white" />
+        <rect x="-4" y="8" width="6" height="18" rx="1" fill="white" />
+        {/* Forklift mast */}
+        <rect x="16" y="-2" width="3" height="28" rx="0.5" fill="white" />
+        <rect x="14" y="0" width="8" height="3" rx="0.5" fill="white" />
+        {/* Pallet on forks */}
+        <rect x="12" y="-6" width="14" height="8" rx="1" fill="white" opacity="0.5" />
+        {/* Wheels */}
+        <circle cx="5" cy="26" r="3" fill="white" />
+        <circle cx="14" cy="26" r="3" fill="white" />
+        {/* Driver on forklift */}
+        <circle cx="8" cy="4" r="3.5" fill="white" />
+        <rect x="5" y="7" width="6" height="5" rx="2" fill="white" />
       </g>
 
-      {/* Dispatcher at desk - far left background */}
-      <g opacity="0.06" transform="translate(30, 60)">
-        <rect x="0" y="12" width="18" height="12" rx="1" fill="white" />
-        <circle cx="9" cy="6" r="4" fill="white" />
-        <rect x="2" y="10" width="14" height="2" rx="1" fill="white" opacity="0.6" />
-        <rect x="20" y="8" width="10" height="14" rx="1" fill="white" opacity="0.4" />
+      {/* Dispatcher/office scene (upper left) */}
+      <g opacity="0.10" transform="translate(18, 35)">
+        {/* Desk */}
+        <rect x="0" y="20" width="30" height="3" rx="0.5" fill="white" />
+        <rect x="2" y="23" width="3" height="10" rx="0.5" fill="white" />
+        <rect x="25" y="23" width="3" height="10" rx="0.5" fill="white" />
+        {/* Monitor */}
+        <rect x="5" y="8" width="16" height="12" rx="1.5" fill="white" />
+        <rect x="7" y="10" width="12" height="8" rx="0.5" fill="white" opacity="0.3" />
+        <rect x="11" y="20" width="4" height="2" rx="0.5" fill="white" />
+        {/* Person at desk */}
+        <circle cx="35" cy="12" r="4.5" fill="white" />
+        <rect x="31" y="17" width="8" height="8" rx="2.5" fill="white" />
+        {/* Arm reaching to keyboard */}
+        <line x1="31" y1="20" x2="24" y2="19" stroke="white" strokeWidth="2" strokeLinecap="round" />
+        {/* Headset */}
+        <path d="M31 10 Q28 6 31 4" stroke="white" strokeWidth="1.2" fill="none" strokeLinecap="round" />
+      </g>
+
+      {/* Worker with hand truck / loading cargo */}
+      <g opacity="0.11" transform="translate(140, 108)">
+        {/* Person */}
+        <circle cx="8" cy="2" r="4" fill="white" />
+        <rect x="5" y="6" width="6" height="14" rx="2" fill="white" />
+        {/* Legs */}
+        <line x1="7" y1="20" x2="4" y2="28" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
+        <line x1="9" y1="20" x2="13" y2="28" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
+        {/* Arms pushing */}
+        <line x1="11" y1="10" x2="20" y2="8" stroke="white" strokeWidth="2" strokeLinecap="round" />
+        {/* Hand truck */}
+        <line x1="20" y1="2" x2="20" y2="24" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
+        <line x1="18" y1="24" x2="26" y2="24" stroke="white" strokeWidth="2" strokeLinecap="round" />
+        <circle cx="19" cy="27" r="2.5" fill="white" />
+        <circle cx="25" cy="27" r="2.5" fill="white" />
+        {/* Boxes on hand truck */}
+        <rect x="17" y="-2" width="10" height="8" rx="1" fill="white" opacity="0.6" />
+        <rect x="18" y="-10" width="8" height="8" rx="1" fill="white" opacity="0.4" />
+      </g>
+
+      {/* Mechanic under truck area */}
+      <g opacity="0.09" transform="translate(180, 140)">
+        {/* Person bending */}
+        <circle cx="8" cy="2" r="3.5" fill="white" />
+        <path d="M5 6 Q5 14 12 16" stroke="white" strokeWidth="3" strokeLinecap="round" fill="none" />
+        {/* Wrench */}
+        <line x1="14" y1="10" x2="24" y2="6" stroke="white" strokeWidth="2" strokeLinecap="round" />
+        <circle cx="25" cy="5" r="3" fill="none" stroke="white" strokeWidth="1.5" />
+        {/* Toolbox */}
+        <rect x="-4" y="12" width="12" height="7" rx="1" fill="white" opacity="0.5" />
+        <line x1="-4" y1="15" x2="8" y2="15" stroke="white" strokeWidth="0.5" opacity="0.3" />
       </g>
 
       {/* Headlight beams */}
-      <ellipse cx="490" cy="133" rx="60" ry="8" fill="url(#headlightGlow)" filter="url(#softGlow)" />
+      <ellipse cx="510" cy="140" rx="65" ry="9" fill="url(#headlightGlow)" filter="url(#softGlow)" />
 
-      {/* === TRUCK === */}
-      <g transform="translate(248, 82)">
-        <ellipse cx="100" cy="82" rx="125" ry="6" fill="rgba(0,0,0,0.2)" />
-        <rect x="2" y="54" width="150" height="6" rx="1" fill="#333" />
+      {/* === TRUCK (centered) === */}
+      <g transform="translate(260, 86)">
+        <ellipse cx="100" cy="84" rx="130" ry="6" fill="rgba(0,0,0,0.2)" />
+        <rect x="2" y="56" width="152" height="6" rx="1" fill="#333" />
 
         {/* Trailer */}
-        <rect x="0" y="6" width="154" height="50" rx="3" fill="url(#bodyGrad)" />
-        <rect x="0" y="6" width="154" height="50" rx="3" stroke="#CC7700" strokeWidth="0.8" fill="none" />
+        <rect x="0" y="6" width="156" height="52" rx="3" fill="url(#bodyGrad)" />
+        <rect x="0" y="6" width="156" height="52" rx="3" stroke="#CC7700" strokeWidth="0.8" fill="none" />
         {[22, 44, 66, 88, 110, 132].map((x) => (
-          <line key={x} x1={x} y1="8" x2={x} y2="54" stroke="#CC7700" strokeWidth="0.4" opacity="0.3" />
+          <line key={x} x1={x} y1="8" x2={x} y2="56" stroke="#CC7700" strokeWidth="0.4" opacity="0.25" />
         ))}
-        <rect x="0" y="6" width="154" height="8" rx="3" fill="white" opacity="0.06" />
+        <rect x="0" y="6" width="156" height="9" rx="3" fill="white" opacity="0.06" />
 
-        <text x="77" y="30" fontFamily="Inter, system-ui, sans-serif" fontSize="11" fontWeight="900" fill="#001F3F" textAnchor="middle" letterSpacing="0.5">THIND</text>
-        <rect x="44" y="33" width="66" height="1.5" rx="0.75" fill="#001F3F" opacity="0.25" />
-        <text x="77" y="46" fontFamily="Inter, system-ui, sans-serif" fontSize="7" fontWeight="700" fill="#001F3F" textAnchor="middle" letterSpacing="3">TRANSPORT</text>
+        <text x="78" y="31" fontFamily="Inter, system-ui, sans-serif" fontSize="12" fontWeight="900" fill="#001F3F" textAnchor="middle" letterSpacing="0.5">THIND</text>
+        <rect x="44" y="34" width="68" height="1.5" rx="0.75" fill="#001F3F" opacity="0.2" />
+        <text x="78" y="48" fontFamily="Inter, system-ui, sans-serif" fontSize="7" fontWeight="700" fill="#001F3F" textAnchor="middle" letterSpacing="3">TRANSPORT</text>
 
-        {/* Fifth wheel connection */}
-        <rect x="152" y="22" width="8" height="28" rx="1.5" fill="#777" />
-        <rect x="154" y="27" width="4" height="18" rx="1" fill="#555" />
+        {/* Fifth wheel */}
+        <rect x="154" y="22" width="8" height="30" rx="1.5" fill="#777" />
+        <rect x="156" y="27" width="4" height="20" rx="1" fill="#555" />
 
         {/* Cab */}
-        <path d="M158 12 L182 12 Q202 12 212 26 L222 46 Q224 52 224 56 L224 60 Q224 62 222 62 L158 62 L158 12Z" fill="url(#cabGrad)" />
-        <path d="M158 12 L182 12 Q202 12 212 26 L222 46 Q224 52 224 56 L224 60 Q224 62 222 62 L158 62 L158 12Z" stroke="#CC7700" strokeWidth="0.8" fill="none" />
-        <line x1="158" y1="58" x2="224" y2="58" stroke="#FFD080" strokeWidth="1" opacity="0.3" />
+        <path d="M160 12 L184 12 Q204 12 214 26 L224 48 Q226 54 226 58 L226 62 Q226 64 224 64 L160 64 L160 12Z" fill="url(#cabGrad)" />
+        <path d="M160 12 L184 12 Q204 12 214 26 L224 48 Q226 54 226 58 L226 62 Q226 64 224 64 L160 64 L160 12Z" stroke="#CC7700" strokeWidth="0.8" fill="none" />
+        <line x1="160" y1="60" x2="226" y2="60" stroke="#FFD080" strokeWidth="1" opacity="0.3" />
 
         {/* Windshield */}
-        <path d="M170 15 L192 15 Q206 15 214 28 L220 44 L220 50 Q220 52 218 52 L170 52 L170 15Z" fill="#0a1628" opacity="0.82" />
-        <path d="M170 15 L192 15 Q206 15 214 28 L220 44" stroke="rgba(255,255,255,0.2)" strokeWidth="0.8" fill="none" />
-        <path d="M174 18 L188 18 Q198 18 206 28 L210 36" stroke="rgba(255,255,255,0.06)" strokeWidth="4" fill="none" strokeLinecap="round" />
+        <path d="M172 15 L194 15 Q208 15 216 28 L222 46 L222 52 Q222 54 220 54 L172 54 L172 15Z" fill="#0a1628" opacity="0.82" />
+        <path d="M172 15 L194 15 Q208 15 216 28 L222 46" stroke="rgba(255,255,255,0.18)" strokeWidth="0.8" fill="none" />
+        <path d="M176 18 L190 18 Q200 18 208 28 L212 36" stroke="rgba(255,255,255,0.05)" strokeWidth="4" fill="none" strokeLinecap="round" />
 
-        {/* Driver silhouette in cab */}
-        <g opacity="0.12">
-          <circle cx="185" cy="30" r="5" fill="white" />
-          <rect x="181" y="35" width="8" height="10" rx="3" fill="white" />
+        {/* Driver in cab */}
+        <g opacity="0.15">
+          <circle cx="188" cy="30" r="5.5" fill="white" />
+          <rect x="184" y="36" width="8" height="10" rx="3" fill="white" />
+          <line x1="184" y1="38" x2="178" y2="42" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
         </g>
 
         {/* Headlights */}
-        <rect x="223" y="40" width="4" height="10" rx="1.5" fill="#FFEEBB" opacity="0.95" filter="url(#glow)" />
-        <rect x="223" y="54" width="4" height="5" rx="1" fill="#FF3333" opacity="0.8" />
-        <rect x="226" y="58" width="5" height="6" rx="1" fill="#888" />
+        <rect x="225" y="42" width="4" height="10" rx="1.5" fill="#FFEEBB" opacity="0.95" filter="url(#glow)" />
+        <rect x="225" y="56" width="4" height="5" rx="1" fill="#FF3333" opacity="0.8" />
+        <rect x="228" y="60" width="5" height="6" rx="1" fill="#888" />
 
         {/* Mirror */}
-        <rect x="226" y="22" width="3" height="8" rx="1" fill="#555" />
-        <rect x="227" y="23" width="2" height="5" rx="0.5" fill="#888" />
+        <rect x="228" y="22" width="3" height="9" rx="1" fill="#555" />
+        <rect x="229" y="23" width="2" height="6" rx="0.5" fill="#888" />
 
         {/* Exhaust */}
-        <rect x="164" y="-4" width="3.5" height="18" rx="1.5" fill="#777" />
-        <rect x="171" y="-1" width="3.5" height="15" rx="1.5" fill="#777" />
-        <circle cx="166" cy="-8" r="2.5" fill="white" opacity="0.03" />
-        <circle cx="173" cy="-5" r="2" fill="white" opacity="0.03" />
+        <rect x="166" y="-4" width="3.5" height="18" rx="1.5" fill="#777" />
+        <rect x="173" y="-1" width="3.5" height="15" rx="1.5" fill="#777" />
+        <circle cx="168" cy="-8" r="3" fill="white" opacity="0.03" />
+        <circle cx="175" cy="-5" r="2.5" fill="white" opacity="0.025" />
 
         {/* Fuel tank */}
-        <rect x="158" y="50" width="18" height="10" rx="3" fill="#555" stroke="#666" strokeWidth="0.5" />
+        <rect x="160" y="52" width="18" height="10" rx="3" fill="#555" stroke="#666" strokeWidth="0.5" />
 
         {/* Wheels */}
-        {[30, 50, 120, 140].map((cx) => (
+        {[30, 50, 122, 142].map((cx) => (
           <g key={cx}>
-            <circle cx={cx} cy="64" r="10" fill="#1a1a1a" stroke="#444" strokeWidth="0.8" />
-            <circle cx={cx} cy="64" r="7" fill="#222" />
-            <circle cx={cx} cy="64" r="4.5" fill="#2a2a2a" />
-            <circle cx={cx} cy="64" r="2" fill="#555" />
+            <circle cx={cx} cy="66" r="10" fill="#1a1a1a" stroke="#444" strokeWidth="0.8" />
+            <circle cx={cx} cy="66" r="7" fill="#222" />
+            <circle cx={cx} cy="66" r="4.5" fill="#2a2a2a" />
+            <circle cx={cx} cy="66" r="2" fill="#555" />
           </g>
         ))}
         <g>
-          <circle cx="200" cy="64" r="11" fill="#1a1a1a" stroke="#444" strokeWidth="0.8" />
-          <circle cx="200" cy="64" r="8" fill="#222" />
-          <circle cx="200" cy="64" r="5" fill="#2a2a2a" />
-          <circle cx="200" cy="64" r="2.5" fill="#555" />
+          <circle cx="202" cy="66" r="11" fill="#1a1a1a" stroke="#444" strokeWidth="0.8" />
+          <circle cx="202" cy="66" r="8" fill="#222" />
+          <circle cx="202" cy="66" r="5" fill="#2a2a2a" />
+          <circle cx="202" cy="66" r="2.5" fill="#555" />
         </g>
 
-        <rect x="55" y="64" width="4" height="7" rx="0.5" fill="#333" />
-        <rect x="145" y="64" width="4" height="7" rx="0.5" fill="#333" />
+        <rect x="55" y="66" width="4" height="7" rx="0.5" fill="#333" />
+        <rect x="147" y="66" width="4" height="7" rx="0.5" fill="#333" />
       </g>
 
-      {/* === BUSINESS PEOPLE SILHOUETTES - right side === */}
+      {/* === RIGHT SIDE: BROKERS, CLIENTS, DESTINATION === */}
 
-      {/* Broker / handshake scene - far right */}
-      <g opacity="0.07" transform="translate(500, 100)">
-        {/* Person 1 */}
-        <circle cx="8" cy="4" r="4" fill="white" />
-        <rect x="4" y="8" width="8" height="14" rx="2" fill="white" />
-        <line x1="12" y1="12" x2="22" y2="14" stroke="white" strokeWidth="2" strokeLinecap="round" />
+      {/* Distant city skyline */}
+      <g opacity="0.07">
+        <rect x="500" y="55" width="10" height="55" rx="1" fill="white" />
+        <rect x="513" y="40" width="12" height="70" rx="1" fill="white" />
+        <rect x="528" y="50" width="15" height="60" rx="1" fill="white" />
+        <rect x="546" y="60" width="10" height="50" rx="1" fill="white" />
+        <rect x="559" y="48" width="8" height="62" rx="1" fill="white" />
+        <rect x="570" y="58" width="12" height="52" rx="1" fill="white" />
+        {/* Windows on tallest building */}
+        {[46, 52, 58, 64, 70, 76, 82, 88, 94].map((y) => (
+          <g key={y}>
+            <rect x="515" y={y} width="3" height="2" rx="0.3" fill="white" opacity="0.3" />
+            <rect x="520" y={y} width="3" height="2" rx="0.3" fill="white" opacity="0.3" />
+          </g>
+        ))}
+      </g>
+
+      {/* Broker handshake deal */}
+      <g opacity="0.12" transform="translate(508, 105)">
+        {/* Person 1 - suit */}
+        <circle cx="10" cy="4" r="5" fill="white" />
+        <rect x="6" y="9" width="8" height="16" rx="2.5" fill="white" />
+        <line x1="8" y1="25" x2="5" y2="34" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
+        <line x1="12" y1="25" x2="16" y2="34" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
+        {/* Arm reaching to shake */}
+        <line x1="14" y1="14" x2="26" y2="16" stroke="white" strokeWidth="2" strokeLinecap="round" />
+
         {/* Person 2 */}
-        <circle cx="32" cy="4" r="4" fill="white" />
-        <rect x="28" y="8" width="8" height="14" rx="2" fill="white" />
-        <line x1="28" y1="12" x2="18" y2="14" stroke="white" strokeWidth="2" strokeLinecap="round" />
+        <circle cx="40" cy="4" r="5" fill="white" />
+        <rect x="36" y="9" width="8" height="16" rx="2.5" fill="white" />
+        <line x1="38" y1="25" x2="34" y2="34" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
+        <line x1="42" y1="25" x2="46" y2="34" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
+        <line x1="36" y1="14" x2="24" y2="16" stroke="white" strokeWidth="2" strokeLinecap="round" />
+
+        {/* Handshake point */}
+        <circle cx="25" cy="16" r="3" fill="white" opacity="0.5" />
       </g>
 
-      {/* Person with clipboard (dispatcher/operations) - right side */}
-      <g opacity="0.06" transform="translate(510, 65)">
-        <circle cx="10" cy="5" r="5" fill="white" />
-        <rect x="6" y="10" width="8" height="14" rx="2" fill="white" />
-        <rect x="16" y="10" width="8" height="12" rx="1" fill="white" opacity="0.5" />
-        <line x1="18" y1="14" x2="22" y2="14" stroke="white" strokeWidth="1" opacity="0.3" />
-        <line x1="18" y1="17" x2="22" y2="17" stroke="white" strokeWidth="1" opacity="0.3" />
+      {/* Person with tablet/phone (operations coordinator) */}
+      <g opacity="0.10" transform="translate(555, 96)">
+        <circle cx="8" cy="4" r="4.5" fill="white" />
+        <rect x="4" y="9" width="8" height="14" rx="2.5" fill="white" />
+        <line x1="6" y1="23" x2="3" y2="32" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
+        <line x1="10" y1="23" x2="14" y2="32" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
+        {/* Holding tablet */}
+        <rect x="14" y="10" width="7" height="10" rx="1" fill="white" opacity="0.6" />
+        <line x1="12" y1="14" x2="14" y2="12" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
+        {/* Signal lines from tablet */}
+        <path d="M19 7 Q22 5 21 2" stroke="white" strokeWidth="0.8" fill="none" opacity="0.4" />
+        <path d="M21 8 Q25 5 24 1" stroke="white" strokeWidth="0.8" fill="none" opacity="0.3" />
       </g>
 
-      {/* Loading/unloading person with dolly - behind truck */}
-      <g opacity="0.06" transform="translate(230, 110)">
-        <circle cx="6" cy="3" r="3.5" fill="white" />
-        <rect x="3" y="7" width="6" height="10" rx="2" fill="white" />
-        {/* Dolly / hand truck */}
-        <rect x="12" y="4" width="3" height="14" rx="0.5" fill="white" />
-        <rect x="10" y="16" width="7" height="2" rx="1" fill="white" />
-        <circle cx="11" cy="20" r="2" fill="white" />
-        <circle cx="16" cy="20" r="2" fill="white" />
+      {/* Loading dock worker at trailer back */}
+      <g opacity="0.10" transform="translate(236, 108)">
+        <circle cx="8" cy="2" r="4" fill="white" />
+        <rect x="5" y="6" width="6" height="12" rx="2" fill="white" />
+        <line x1="7" y1="18" x2="4" y2="26" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
+        <line x1="9" y1="18" x2="13" y2="26" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
+        {/* Clipboard in hand */}
+        <rect x="13" y="6" width="6" height="8" rx="1" fill="white" opacity="0.5" />
+        <line x1="14" y1="9" x2="18" y2="9" stroke="white" strokeWidth="0.6" opacity="0.4" />
+        <line x1="14" y1="11" x2="17" y2="11" stroke="white" strokeWidth="0.6" opacity="0.4" />
+        <line x1="11" y1="8" x2="13" y2="7" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
       </g>
 
-      {/* Distant cityscape silhouette */}
-      <g opacity="0.04">
-        <rect x="420" y="60" width="12" height="50" rx="1" fill="white" />
-        <rect x="435" y="45" width="10" height="65" rx="1" fill="white" />
-        <rect x="448" y="55" width="14" height="55" rx="1" fill="white" />
-        <rect x="465" y="65" width="10" height="45" rx="1" fill="white" />
-        <rect x="478" y="50" width="8" height="60" rx="1" fill="white" />
+      {/* Fuel pump / gas station element */}
+      <g opacity="0.08" transform="translate(95, 68)">
+        <rect x="0" y="10" width="12" height="24" rx="2" fill="white" />
+        <rect x="2" y="14" width="8" height="6" rx="1" fill="white" opacity="0.3" />
+        {/* Nozzle */}
+        <path d="M12 18 Q20 18 20 12 L20 8" stroke="white" strokeWidth="2" fill="none" strokeLinecap="round" />
+        <rect x="-2" y="34" width="16" height="3" rx="1" fill="white" />
       </g>
     </svg>
   )
