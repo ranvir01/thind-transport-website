@@ -1,0 +1,11 @@
+# Vercel Environment Variables - Import this file
+# Copy these to Vercel Dashboard → Settings → Environment Variables → Import .env
+
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=thindcarrier@gmail.com
+SMTP_PASS=ctcuolcpwdzkqibm
+SMTP_FROM=Thind Transport <noreply@thindtransport.com>
+NEXTAUTH_URL=https://thindtransport.vercel.app
+NEXTAUTH_SECRET=eCPX8pZGqJ7vR4mN2wL9sF6hK3tY5jU8aB1cD2eF3gH4
+

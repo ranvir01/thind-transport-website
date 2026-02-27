@@ -1,0 +1,208 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1039 696" fill="none">
+  <!-- 
+    MOO Business Card Front - Thind Transport
+    Bleed: 3.46" x 2.32" @ 300dpi = 1038 x 696
+    Trim: 3.30" x 2.16" @ 300dpi = 990 x 648  
+    Safe: 3.14" x 2.02" @ 300dpi = 942 x 606
+  -->
+  <defs>
+    <linearGradient id="bgGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#001F3F"/>
+      <stop offset="50%" stop-color="#00152B"/>
+      <stop offset="100%" stop-color="#001020"/>
+    </linearGradient>
+    <linearGradient id="orangeAccent" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#FF9500"/>
+      <stop offset="100%" stop-color="#FFB340"/>
+    </linearGradient>
+    <linearGradient id="roadGrad" x1="0.5" y1="1" x2="0.5" y2="0">
+      <stop offset="0%" stop-color="#FF9500" stop-opacity="0.3"/>
+      <stop offset="100%" stop-color="#FF9500" stop-opacity="0"/>
+    </linearGradient>
+    <clipPath id="cardClip">
+      <rect x="0" y="0" width="1039" height="696" rx="0"/>
+    </clipPath>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1039" height="696" fill="url(#bgGrad)" clip-path="url(#cardClip)"/>
+  
+  <!-- Subtle road/highway pattern in background -->
+  <path d="M-50 696 L350 0" stroke="rgba(255,255,255,0.03)" stroke-width="120" fill="none"/>
+  <path d="M150 696 L550 0" stroke="rgba(255,255,255,0.02)" stroke-width="80" fill="none"/>
+  
+  <!-- Highway dashes (subtle) -->
+  <line x1="100" y1="696" x2="400" y2="0" stroke="rgba(255,149,0,0.08)" stroke-width="3" stroke-dasharray="20,15"/>
+  
+  <!-- Geometric accent - top right corner -->
+  <path d="M839 0 L1039 0 L1039 200" stroke="#FF9500" stroke-width="3" fill="none" opacity="0.4"/>
+  <path d="M889 0 L1039 0 L1039 150" stroke="#FF9500" stroke-width="1.5" fill="none" opacity="0.2"/>
+  
+  <!-- Bottom left accent -->
+  <path d="M0 496 L0 696 L200 696" stroke="#FF9500" stroke-width="3" fill="none" opacity="0.4"/>
+  <path d="M0 546 L0 696 L150 696" stroke="#FF9500" stroke-width="1.5" fill="none" opacity="0.2"/>
+
+  <!-- Orange accent bar at top -->
+  <rect x="70" y="48" width="60" height="4" rx="2" fill="url(#orangeAccent)"/>
+
+  <!-- Owner Name -->
+  <text x="70" y="96" font-family="'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="36" font-weight="800" fill="white" letter-spacing="-0.5">Sukhdev Thind</text>
+  
+  <!-- Title -->
+  <text x="70" y="128" font-family="'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="16" font-weight="500" fill="#FF9500" letter-spacing="3">OWNER &amp; OPERATOR</text>
+
+  <!-- Divider line -->
+  <line x1="70" y1="155" x2="400" y2="155" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
+
+  <!-- Services section -->
+  <text x="70" y="195" font-family="'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="11" font-weight="600" fill="rgba(255,255,255,0.5)" letter-spacing="2.5">SERVICES</text>
+  
+  <!-- Service items with orange bullets -->
+  <circle cx="78" cy="222" r="3" fill="#FF9500"/>
+  <text x="90" y="226" font-family="'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="13" font-weight="500" fill="rgba(255,255,255,0.9)">Flatbed Freight</text>
+  
+  <circle cx="78" cy="248" r="3" fill="#FF9500"/>
+  <text x="90" y="252" font-family="'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="13" font-weight="500" fill="rgba(255,255,255,0.9)">Reefer / Temperature-Controlled</text>
+  
+  <circle cx="78" cy="274" r="3" fill="#FF9500"/>
+  <text x="90" y="278" font-family="'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="13" font-weight="500" fill="rgba(255,255,255,0.9)">Dry Van Shipping</text>
+
+  <circle cx="78" cy="300" r="3" fill="#FF9500"/>
+  <text x="90" y="304" font-family="'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="13" font-weight="500" fill="rgba(255,255,255,0.9)">Owner Operator Leasing (91% Commission)</text>
+
+  <!-- Opportunities section -->
+  <text x="70" y="345" font-family="'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="11" font-weight="600" fill="rgba(255,255,255,0.5)" letter-spacing="2.5">OPPORTUNITIES</text>
+  
+  <circle cx="78" cy="370" r="3" fill="#FF9500"/>
+  <text x="90" y="374" font-family="'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="13" font-weight="500" fill="rgba(255,255,255,0.9)">Company Drivers Wanted  Earn $78K-$110K/yr</text>
+  
+  <circle cx="78" cy="396" r="3" fill="#FF9500"/>
+  <text x="90" y="400" font-family="'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="13" font-weight="500" fill="rgba(255,255,255,0.9)">Owner Operators  $150K-$250K/yr Gross</text>
+
+  <circle cx="78" cy="422" r="3" fill="#FF9500"/>
+  <text x="90" y="426" font-family="'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="13" font-weight="500" fill="rgba(255,255,255,0.9)">48 States Coverage | Local, Regional &amp; OTR</text>
+
+  <!-- Divider -->
+  <line x1="70" y1="455" x2="969" y2="455" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+
+  <!-- Contact info section -->
+  <!-- Phone icon + number -->
+  <g transform="translate(70, 480)">
+    <rect width="26" height="26" rx="6" fill="rgba(255,149,0,0.15)"/>
+    <path d="M8 7.5a1 1 0 011-1h2.764a.5.5 0 01.474.342l.749 2.247a.5.5 0 01-.251.605l-1.129.565a5.521 5.521 0 002.758 2.758l.565-1.129a.5.5 0 01.605-.251l2.247.749a.5.5 0 01.342.474V15a1 1 0 01-1 1h-.5A8.021 8.021 0 018 8v-.5z" fill="#FF9500" transform="translate(2,2)"/>
+    <text x="34" y="18" font-family="'Inter', Arial, sans-serif" font-size="14" font-weight="600" fill="white">(206) 765-6300</text>
+  </g>
+  
+  <!-- Email icon + address -->
+  <g transform="translate(70, 518)">
+    <rect width="26" height="26" rx="6" fill="rgba(255,149,0,0.15)"/>
+    <rect x="5" y="7" width="16" height="12" rx="1.5" stroke="#FF9500" stroke-width="1.5" fill="none"/>
+    <path d="M5 8.5 L13 14 L21 8.5" stroke="#FF9500" stroke-width="1.5" fill="none"/>
+    <text x="34" y="18" font-family="'Inter', Arial, sans-serif" font-size="14" font-weight="600" fill="white">thindcarrier@gmail.com</text>
+  </g>
+  
+  <!-- Website icon + URL -->
+  <g transform="translate(70, 556)">
+    <rect width="26" height="26" rx="6" fill="rgba(255,149,0,0.15)"/>
+    <circle cx="13" cy="13" r="7" stroke="#FF9500" stroke-width="1.5" fill="none"/>
+    <ellipse cx="13" cy="13" rx="3.5" ry="7" stroke="#FF9500" stroke-width="1" fill="none"/>
+    <line x1="6" y1="13" x2="20" y2="13" stroke="#FF9500" stroke-width="1"/>
+    <text x="34" y="18" font-family="'Inter', Arial, sans-serif" font-size="14" font-weight="600" fill="white">thindtransport.com</text>
+  </g>
+  
+  <!-- Location -->
+  <g transform="translate(70, 594)">
+    <rect width="26" height="26" rx="6" fill="rgba(255,149,0,0.15)"/>
+    <path d="M13 6 C9.686 6 7 8.686 7 12 C7 16.5 13 22 13 22 C13 22 19 16.5 19 12 C19 8.686 16.314 6 13 6Z" stroke="#FF9500" stroke-width="1.5" fill="none"/>
+    <circle cx="13" cy="12" r="2" fill="#FF9500"/>
+    <text x="34" y="18" font-family="'Inter', Arial, sans-serif" font-size="14" font-weight="600" fill="white">Kent, WA 98064</text>
+  </g>
+
+  <!-- QR Code placeholder area (right side) -->
+  <g transform="translate(750, 480)">
+    <rect width="140" height="140" rx="12" fill="white"/>
+    <rect x="8" y="8" width="124" height="124" rx="8" fill="white" stroke="#001F3F" stroke-width="1"/>
+    <!-- QR Code pattern (stylized representation) -->
+    <g transform="translate(16, 16)">
+      <!-- Corner markers -->
+      <rect x="0" y="0" width="24" height="24" rx="2" fill="#001F3F"/>
+      <rect x="4" y="4" width="16" height="16" rx="1" fill="white"/>
+      <rect x="7" y="7" width="10" height="10" rx="1" fill="#001F3F"/>
+      
+      <rect x="84" y="0" width="24" height="24" rx="2" fill="#001F3F"/>
+      <rect x="88" y="4" width="16" height="16" rx="1" fill="white"/>
+      <rect x="91" y="7" width="10" height="10" rx="1" fill="#001F3F"/>
+      
+      <rect x="0" y="84" width="24" height="24" rx="2" fill="#001F3F"/>
+      <rect x="4" y="88" width="16" height="16" rx="1" fill="white"/>
+      <rect x="7" y="91" width="10" height="10" rx="1" fill="#001F3F"/>
+      
+      <!-- Data modules -->
+      <rect x="30" y="0" width="8" height="8" fill="#001F3F"/>
+      <rect x="42" y="0" width="8" height="8" fill="#FF9500"/>
+      <rect x="54" y="0" width="8" height="8" fill="#001F3F"/>
+      <rect x="66" y="0" width="8" height="8" fill="#FF9500"/>
+      
+      <rect x="30" y="12" width="8" height="8" fill="#FF9500"/>
+      <rect x="42" y="12" width="8" height="8" fill="#001F3F"/>
+      <rect x="54" y="12" width="8" height="8" fill="#FF9500"/>
+      <rect x="66" y="12" width="8" height="8" fill="#001F3F"/>
+      
+      <rect x="0" y="30" width="8" height="8" fill="#FF9500"/>
+      <rect x="12" y="30" width="8" height="8" fill="#001F3F"/>
+      <rect x="30" y="30" width="8" height="8" fill="#001F3F"/>
+      <rect x="42" y="30" width="8" height="8" fill="#FF9500"/>
+      <rect x="54" y="30" width="8" height="8" fill="#001F3F"/>
+      <rect x="66" y="30" width="8" height="8" fill="#001F3F"/>
+      <rect x="84" y="30" width="8" height="8" fill="#FF9500"/>
+      <rect x="96" y="30" width="8" height="8" fill="#001F3F"/>
+      
+      <rect x="0" y="42" width="8" height="8" fill="#001F3F"/>
+      <rect x="12" y="42" width="8" height="8" fill="#FF9500"/>
+      <rect x="30" y="42" width="8" height="8" fill="#FF9500"/>
+      <rect x="42" y="42" width="8" height="8" fill="#001F3F"/>
+      <rect x="54" y="42" width="8" height="8" fill="#FF9500"/>
+      <rect x="66" y="42" width="8" height="8" fill="#FF9500"/>
+      <rect x="84" y="42" width="8" height="8" fill="#001F3F"/>
+      <rect x="96" y="42" width="8" height="8" fill="#FF9500"/>
+      
+      <rect x="0" y="54" width="8" height="8" fill="#001F3F"/>
+      <rect x="12" y="54" width="8" height="8" fill="#001F3F"/>
+      <rect x="30" y="54" width="8" height="8" fill="#001F3F"/>
+      <rect x="42" y="54" width="8" height="8" fill="#FF9500"/>
+      <rect x="54" y="54" width="8" height="8" fill="#001F3F"/>
+      <rect x="66" y="54" width="8" height="8" fill="#FF9500"/>
+      <rect x="84" y="54" width="8" height="8" fill="#001F3F"/>
+      <rect x="96" y="54" width="8" height="8" fill="#FF9500"/>
+      
+      <rect x="0" y="66" width="8" height="8" fill="#FF9500"/>
+      <rect x="12" y="66" width="8" height="8" fill="#001F3F"/>
+      <rect x="30" y="66" width="8" height="8" fill="#FF9500"/>
+      <rect x="42" y="66" width="8" height="8" fill="#001F3F"/>
+      <rect x="54" y="66" width="8" height="8" fill="#FF9500"/>
+      <rect x="66" y="66" width="8" height="8" fill="#001F3F"/>
+      <rect x="84" y="66" width="8" height="8" fill="#001F3F"/>
+      <rect x="96" y="66" width="8" height="8" fill="#FF9500"/>
+      
+      <rect x="30" y="84" width="8" height="8" fill="#FF9500"/>
+      <rect x="42" y="84" width="8" height="8" fill="#001F3F"/>
+      <rect x="54" y="84" width="8" height="8" fill="#FF9500"/>
+      <rect x="66" y="84" width="8" height="8" fill="#001F3F"/>
+      <rect x="84" y="84" width="8" height="8" fill="#001F3F"/>
+      <rect x="96" y="84" width="8" height="8" fill="#FF9500"/>
+      
+      <rect x="30" y="96" width="8" height="8" fill="#001F3F"/>
+      <rect x="42" y="96" width="8" height="8" fill="#FF9500"/>
+      <rect x="54" y="96" width="8" height="8" fill="#001F3F"/>
+      <rect x="66" y="96" width="8" height="8" fill="#FF9500"/>
+      <rect x="84" y="96" width="8" height="8" fill="#FF9500"/>
+      <rect x="96" y="96" width="8" height="8" fill="#001F3F"/>
+    </g>
+    
+    <!-- Scan label -->
+    <text x="70" y="156" font-family="'Inter', Arial, sans-serif" font-size="9" font-weight="600" fill="rgba(255,255,255,0.5)" text-anchor="middle" letter-spacing="1.5">SCAN TO VISIT</text>
+  </g>
+
+  <!-- DOT / MC numbers bottom right -->
+  <text x="969" y="660" font-family="'Inter', Arial, sans-serif" font-size="10" font-weight="500" fill="rgba(255,255,255,0.3)" text-anchor="end">USDOT #3154006 | FMCSA CERTIFIED</text>
+</svg>

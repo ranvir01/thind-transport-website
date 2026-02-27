@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Apply Now - 60 Second Application | AR Carrier Xpress | Kent, WA</title>
+    <meta name="description" content="Quick 60-second application for CDL driver positions at AR Carrier Xpress in Kent, WA. No experience required. Start next week. Apply now!">
+    <meta name="keywords" content="truck driver application, CDL driver application, quick apply trucking jobs, Kent WA trucking application">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="styles.css">
+    
+    <style>
+        /* Page-specific overrides */
+        .cta-button {
+            width: 100%;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Navigation -->
+    <nav class="bg-white shadow-md sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <a href="index.html" class="flex items-center">
+                    <img src="ar-carrier-logo.png" alt="AR Carrier Xpress Logo" class="w-10 h-10 mr-3">
+                    <div>
+                        <h1 class="text-xl font-bold text-gray-900">AR Carrier Xpress</h1>
+                        <p class="text-xs text-gray-500">Kent, WA</p>
+                    </div>
+                </a>
+                <a href="tel:+12067659218" class="text-blue-600 font-semibold hover:underline">
+                    <i class="fas fa-phone mr-1"></i>(206) 765-9218
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="cta-section py-12">
+        <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <div class="mb-4">
+                <span class="trust-badge">
+                    <i class="fas fa-clock text-success"></i>Takes 60 seconds
+                </span>
+            </div>
+            <h1 class="text-3xl md:text-4xl font-black mb-4">
+                Apply Now - Start Next Week
+            </h1>
+            <p class="text-lg text-blue-100 mb-6">
+                Quick application. Fast response. Get on the road quickly.
+            </p>
+            
+            <!-- Progress Indicator -->
+            <div class="mb-4">
+                <div class="flex justify-between text-sm mb-2">
+                    <span id="stepIndicator" class="font-semibold">Step 1 of 2</span>
+                    <span id="timeEstimate" class="text-blue-200">~30 seconds remaining</span>
+                </div>
+                <div class="w-full bg-blue-400 rounded-full h-2">
+                    <div id="progressBar" class="progress-bar" style="width: 50%"></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Application Form -->
+    <section class="py-12">
+        <div class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="card">
+                <!-- Trust Signals -->
+                <div class="mb-6 p-4 rounded-lg border" style="background-color: oklch(0.93 0.04 155); border-color: oklch(0.85 0.06 155);">
+                    <div class="flex items-start gap-3">
+                        <i class="fas fa-shield-alt text-success text-xl mt-1"></i>
+                        <div>
+                            <p class="font-semibold mb-1">Secure & Confidential</p>
+                            <p class="text-sm text-muted">Your information is safe. We'll contact you within 24 hours.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <form id="applicationForm" class="space-y-6">
+                    <!-- Step 1: Contact & Basic Info -->
+                    <div id="step1" class="form-step active">
+                        <h2 class="text-xl font-bold text-gray-900 mb-6">Contact Information</h2>
+                        
+                        <div class="space-y-4">
+                            <div class="grid md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                                        First Name <span class="text-red-500">*</span>
+                                    </label>
+                                    <input type="text" name="firstName" required 
+                                           class="form-input" 
+                                           placeholder="John"
+                                           autocomplete="given-name">
+                                </div>
+                                
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                                        Last Name <span class="text-red-500">*</span>
+                                    </label>
+                                    <input type="text" name="lastName" required 
+                                           class="form-input" 
+                                           placeholder="Smith"
+                                           autocomplete="family-name">
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    Phone Number <span class="text-red-500">*</span>
+                                </label>
+                                <input type="tel" name="phone" required 
+                                       class="form-input" 
+                                       placeholder="(206) 765-9218"
+                                       autocomplete="tel">
+                                <p class="text-xs text-gray-500 mt-1">We'll call you within 24 hours</p>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    Email Address <span class="text-red-500">*</span>
+                                </label>
+                                <input type="email" name="email" required 
+                                       class="form-input" 
+                                       placeholder="john.smith@email.com"
+                                       autocomplete="email">
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    Driver Type <span class="text-red-500">*</span>
+                                </label>
+                                <div class="grid grid-cols-2 gap-3">
+                                    <label class="flex items-center p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-blue-500 transition-colors">
+                                        <input type="radio" name="driverType" value="company-driver" class="mr-3" checked>
+                                        <div>
+                                            <div class="font-semibold">Company Driver</div>
+                                            <div class="text-xs text-gray-500">$0.65/mile + benefits</div>
+                                        </div>
+                                    </label>
+                                    <label class="flex items-center p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-blue-500 transition-colors">
+                                        <input type="radio" name="driverType" value="owner-operator" class="mr-3">
+                                        <div>
+                                            <div class="font-semibold">Owner Operator</div>
+                                            <div class="text-xs text-gray-500">90%+ commission</div>
+                                        </div>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-8">
+                            <button type="button" onclick="nextStep()" class="btn btn-accent">
+                                Continue to Step 2 <i class="fas fa-arrow-right ml-2"></i>
+                            </button>
+                            <p class="text-center text-sm text-muted mt-3">
+                                <i class="fas fa-lock mr-1"></i>Your information is secure
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Step 2: Experience & Availability -->
+                    <div id="step2" class="form-step">
+                        <h2 class="text-xl font-bold text-gray-900 mb-6">Experience & Availability</h2>
+                        
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    CDL Class <span class="text-red-500">*</span>
+                                </label>
+                                <select name="cdlClass" required class="form-input">
+                                    <option value="">Select CDL Class</option>
+                                    <option value="Class A">Class A</option>
+                                    <option value="Class B">Class B</option>
+                                    <option value="Class C">Class C</option>
+                                </select>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    Years of Experience
+                                </label>
+                                <select name="experienceYears" class="form-input">
+                                    <option value="">Select Experience</option>
+                                    <option value="0-1">0-1 years</option>
+                                    <option value="2-5">2-5 years</option>
+                                    <option value="6-10">6-10 years</option>
+                                    <option value="10+">10+ years</option>
+                                </select>
+                                <p class="text-xs text-gray-500 mt-1">No experience? We still want to hear from you!</p>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    When can you start?
+                                </label>
+                                <select name="availability" class="form-input">
+                                    <option value="immediate">Immediately</option>
+                                    <option value="1week">Within 1 week</option>
+                                    <option value="2weeks">Within 2 weeks</option>
+                                    <option value="1month">Within 1 month</option>
+                                    <option value="flexible">Flexible</option>
+                                </select>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    Preferred Route Type
+                                </label>
+                                <div class="grid grid-cols-3 gap-3">
+                                    <label class="flex items-center p-3 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-blue-500 transition-colors">
+                                        <input type="radio" name="routeType" value="local" class="mr-2">
+                                        <span class="text-sm">Local</span>
+                                    </label>
+                                    <label class="flex items-center p-3 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-blue-500 transition-colors">
+                                        <input type="radio" name="routeType" value="regional" checked class="mr-2">
+                                        <span class="text-sm">Regional</span>
+                                    </label>
+                                    <label class="flex items-center p-3 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-blue-500 transition-colors">
+                                        <input type="radio" name="routeType" value="otr" class="mr-2">
+                                        <span class="text-sm">OTR</span>
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    Additional Comments (Optional)
+                                </label>
+                                <textarea name="comments" rows="3" 
+                                          class="form-input" 
+                                          placeholder="Tell us anything else you'd like us to know..."></textarea>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-8 space-y-3">
+                            <button type="button" onclick="prevStep()" class="btn w-full bg-muted text-gray-700 py-3 rounded-lg font-semibold hover:bg-gray-300 transition-colors">
+                                <i class="fas fa-arrow-left mr-2"></i>Back
+                            </button>
+                            <button type="submit" class="btn btn-accent">
+                                <i class="fas fa-paper-plane mr-2"></i>Submit Application
+                            </button>
+                            <p class="text-center text-sm text-muted">
+                                By submitting, you agree to be contacted about job opportunities
+                            </p>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            
+            <!-- Alternative Contact -->
+            <div class="mt-6 text-center">
+                <p class="text-gray-600 mb-3">Prefer to apply by phone?</p>
+                <a href="tel:+12067659218" class="btn btn-primary inline-block px-8 py-3">
+                    <i class="fas fa-phone mr-2"></i>Call (206) 765-9218
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Success Message (Hidden by default) -->
+    <div id="successMessage" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+        <div class="card max-w-md text-center">
+            <div class="text-6xl text-success mb-4">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <h2 class="text-2xl font-bold mb-2">Application Submitted!</h2>
+            <p class="text-muted mb-6">We'll contact you within 24 hours to discuss opportunities.</p>
+            <a href="index.html" class="btn btn-primary inline-block px-8 py-3">
+                Return to Home
+            </a>
+        </div>
+    </div>
+
+    <script>
+        let currentStep = 1;
+        const totalSteps = 2;
+        
+        // Auto-save form data
+        function autoSave() {
+            const formData = new FormData(document.getElementById('applicationForm'));
+            const data = Object.fromEntries(formData);
+            localStorage.setItem('arCarrierApplication', JSON.stringify(data));
+        }
+        
+        // Load saved data
+        function loadSavedData() {
+            const saved = localStorage.getItem('arCarrierApplication');
+            if (saved) {
+                const data = JSON.parse(saved);
+                Object.keys(data).forEach(key => {
+                    const input = document.querySelector(`[name="${key}"]`);
+                    if (input) {
+                        if (input.type === 'radio') {
+                            const radio = document.querySelector(`[name="${key}"][value="${data[key]}"]`);
+                            if (radio) radio.checked = true;
+                        } else {
+                            input.value = data[key];
+                        }
+                    }
+                });
+            }
+        }
+        
+        // Auto-save on input
+        document.addEventListener('DOMContentLoaded', function() {
+            loadSavedData();
+            document.querySelectorAll('input, select, textarea').forEach(input => {
+                input.addEventListener('change', autoSave);
+                input.addEventListener('input', autoSave);
+            });
+        });
+        
+        function nextStep() {
+            if (validateStep(currentStep)) {
+                document.getElementById(`step${currentStep}`).classList.remove('active');
+                currentStep++;
+                document.getElementById(`step${currentStep}`).classList.add('active');
+                updateProgress();
+            }
+        }
+        
+        function prevStep() {
+            document.getElementById(`step${currentStep}`).classList.remove('active');
+            currentStep--;
+            document.getElementById(`step${currentStep}`).classList.add('active');
+            updateProgress();
+        }
+        
+        function updateProgress() {
+            const progress = (currentStep / totalSteps) * 100;
+            document.getElementById('progressBar').style.width = progress + '%';
+            document.getElementById('stepIndicator').textContent = `Step ${currentStep} of ${totalSteps}`;
+            document.getElementById('timeEstimate').textContent = currentStep === 1 ? '~30 seconds remaining' : 'Almost done!';
+        }
+        
+        function validateStep(step) {
+            const stepElement = document.getElementById(`step${step}`);
+            const requiredFields = stepElement.querySelectorAll('[required]');
+            let isValid = true;
+            
+            requiredFields.forEach(field => {
+                if (!field.value.trim()) {
+                    field.style.borderColor = '#dc2626';
+                    isValid = false;
+                } else {
+                    field.style.borderColor = '#e5e7eb';
+                }
+            });
+            
+            if (!isValid) {
+                alert('Please fill in all required fields.');
+            }
+            
+            return isValid;
+        }
+        
+        // Form submission
+        document.getElementById('applicationForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            if (validateStep(currentStep)) {
+                // Show loading
+                const submitBtn = this.querySelector('button[type="submit"]');
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Submitting...';
+                submitBtn.disabled = true;
+                
+                // Simulate submission
+                setTimeout(() => {
+                    // Track conversion
+                    if (typeof gtag !== 'undefined') {
+                        gtag('event', 'application_submitted', {
+                            event_category: 'conversion',
+                            event_label: 'Application Form'
+                        });
+                    }
+                    
+                    // Clear saved data
+                    localStorage.removeItem('arCarrierApplication');
+                    
+                    // Show success
+                    document.getElementById('successMessage').classList.remove('hidden');
+                    
+                    // Scroll to top
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                }, 1500);
+            }
+        });
+    </script>
+    <script src="conversion-optimization.js"></script>
+    
+    <!-- Dark Mode Toggle -->
+    <button class="dark-mode-toggle" id="darkModeToggle" aria-label="Toggle Dark Mode">
+        <i class="fas fa-moon"></i>
+    </button>
+    
+    <!-- Dark Mode Toggle Script -->
+    <script>
+        const darkModeToggle = document.getElementById('darkModeToggle');
+        const html = document.documentElement;
+        const icon = darkModeToggle.querySelector('i');
+        
+        // Check for saved dark mode preference
+        const savedMode = localStorage.getItem('darkMode');
+        if (savedMode === 'enabled') {
+            html.classList.add('dark');
+            icon.classList.remove('fa-moon');
+            icon.classList.add('fa-sun');
+        }
+        
+        darkModeToggle.addEventListener('click', () => {
+            html.classList.toggle('dark');
+            
+            if (html.classList.contains('dark')) {
+                localStorage.setItem('darkMode', 'enabled');
+                icon.classList.remove('fa-moon');
+                icon.classList.add('fa-sun');
+            } else {
+                localStorage.setItem('darkMode', 'disabled');
+                icon.classList.remove('fa-sun');
+                icon.classList.add('fa-moon');
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,222 @@
+/**
+ * Driver Account & Application Database Functions
+ * Uses Vercel Postgres in production, JSON files in development
+ */
+
+import { promises as fs } from "fs"
+import path from "path"
+
+// Try to use Postgres if available
+let usePostgres = false
+try {
+  if (process.env.POSTGRES_URL) {
+    usePostgres = true
+    console.log("✓ Using Postgres database")
+    // Import postgres functions dynamically
+    require("./driver-db-postgres")
+  } else {
+    console.log("⚠ POSTGRES_URL not set, using local file storage")
+  }
+} catch (error) {
+  console.log("❌ Postgres not available, using JSON file storage:", error)
+}
+
+const DATA_DIR = path.join(process.cwd(), "data")
+const DRIVERS_FILE = path.join(DATA_DIR, "drivers.json")
+const APPLICATIONS_FILE = path.join(DATA_DIR, "applications.json")
+
+interface Driver {
+  id: string
+  email: string
+  passwordHash: string
+  firstName: string
+  lastName: string
+  phone: string
+  invitationCode: string
+  createdAt: Date
+  applicationCompleted: boolean
+}
+
+interface Application {
+  id: string
+  driverId: string
+  data: any
+  submittedAt: Date
+  pdfPath?: string
+}
+
+// Ensure data directory exists
+async function ensureDataDir() {
+  try {
+    await fs.mkdir(DATA_DIR, { recursive: true })
+  } catch (error) {
+    // Directory already exists
+  }
+}
+
+// Read drivers from file (local development only)
+async function readDrivers(): Promise<Driver[]> {
+  // Local development - use file system
+  await ensureDataDir()
+  try {
+    const data = await fs.readFile(DRIVERS_FILE, "utf-8")
+    return JSON.parse(data)
+  } catch (error) {
+    return []
+  }
+}
+
+// Write drivers to file (skip on Vercel production)
+async function writeDrivers(drivers: Driver[]) {
+  // On Vercel, filesystem is read-only, so skip write
+  if (process.env.VERCEL) {
+    console.warn("Skipping driver write on Vercel - filesystem is read-only")
+    return
+  }
+  
+  await ensureDataDir()
+  await fs.writeFile(DRIVERS_FILE, JSON.stringify(drivers, null, 2))
+}
+
+// Read applications from file
+async function readApplications(): Promise<Application[]> {
+  await ensureDataDir()
+  try {
+    const data = await fs.readFile(APPLICATIONS_FILE, "utf-8")
+    return JSON.parse(data)
+  } catch (error) {
+    return []
+  }
+}
+
+// Write applications to file
+async function writeApplications(applications: Application[]) {
+  await ensureDataDir()
+  await fs.writeFile(APPLICATIONS_FILE, JSON.stringify(applications, null, 2))
+}
+
+// Verify invitation code
+export async function verifyInvitationCode(code: string): Promise<boolean> {
+  if (usePostgres) {
+    const { verifyInvitationCode: pgVerify } = await import("./driver-db-postgres")
+    return pgVerify(code)
+  }
+  // Fixed invitation code for all drivers
+  return code === "THIND-2026"
+}
+
+// Create driver account
+export async function createDriver(driverData: {
+  email: string
+  passwordHash: string
+  firstName: string
+  lastName: string
+  phone: string
+  invitationCode: string
+}): Promise<Driver> {
+  if (usePostgres) {
+    const { createDriver: pgCreate } = await import("./driver-db-postgres")
+    return pgCreate(driverData)
+  }
+  
+  const drivers = await readDrivers()
+
+  // Check if email already exists
+  if (drivers.some((d) => d.email === driverData.email)) {
+    throw new Error("Email already registered")
+  }
+
+  const newDriver: Driver = {
+    id: `driver_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+    ...driverData,
+    createdAt: new Date(),
+    applicationCompleted: false,
+  }
+
+  drivers.push(newDriver)
+  await writeDrivers(drivers)
+
+  return newDriver
+}
+
+// Find driver by email
+export async function findDriverByEmail(email: string): Promise<Driver | null> {
+  if (usePostgres) {
+    const { findDriverByEmail: pgFindByEmail } = await import("./driver-db-postgres")
+    return pgFindByEmail(email)
+  }
+  
+  const drivers = await readDrivers()
+  return drivers.find((d) => d.email === email) || null
+}
+
+// Find driver by ID
+export async function findDriverById(id: string): Promise<Driver | null> {
+  if (usePostgres) {
+    const { findDriverById: pgFindById } = await import("./driver-db-postgres")
+    return pgFindById(id)
+  }
+  
+  const drivers = await readDrivers()
+  return drivers.find((d) => d.id === id) || null
+}
+
+// Save application
+export async function saveApplication(driverId: string, applicationData: any): Promise<Application> {
+  if (usePostgres) {
+    const { saveApplication: pgSave } = await import("./driver-db-postgres")
+    return pgSave(driverId, applicationData)
+  }
+  
+  const applications = await readApplications()
+
+  const newApplication: Application = {
+    id: `app_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+    driverId,
+    data: applicationData,
+    submittedAt: new Date(),
+  }
+
+  applications.push(newApplication)
+  await writeApplications(applications)
+
+  // Mark driver as having completed application
+  const drivers = await readDrivers()
+  const driverIndex = drivers.findIndex((d) => d.id === driverId)
+  if (driverIndex !== -1) {
+    drivers[driverIndex].applicationCompleted = true
+    await writeDrivers(drivers)
+  }
+
+  return newApplication
+}
+
+// Update application with PDF path
+export async function updateApplicationPDFPath(applicationId: string, pdfPath: string) {
+  if (usePostgres) {
+    const { updateApplicationPDFPath: pgUpdate } = await import("./driver-db-postgres")
+    return pgUpdate(applicationId, pdfPath)
+  }
+  
+  const applications = await readApplications()
+  const appIndex = applications.findIndex((a) => a.id === applicationId)
+  if (appIndex !== -1) {
+    applications[appIndex].pdfPath = pdfPath
+    await writeApplications(applications)
+  }
+}
+
+// Update driver application status
+export async function updateDriverApplicationStatus(driverId: string, completed: boolean) {
+  if (usePostgres) {
+    const { updateDriverApplicationStatus: pgUpdate } = await import("./driver-db-postgres")
+    return pgUpdate(driverId, completed)
+  }
+  
+  const drivers = await readDrivers()
+  const driverIndex = drivers.findIndex((d) => d.id === driverId)
+  if (driverIndex !== -1) {
+    drivers[driverIndex].applicationCompleted = completed
+    await writeDrivers(drivers)
+  }
+}

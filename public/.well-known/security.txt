@@ -1,0 +1,13 @@
+# Thind Transport LLC Security Contact
+# https://thindtransport.com
+
+Contact: mailto:thindcarrier@gmail.com
+Contact: tel:+1-206-765-9218
+Expires: 2026-12-31T23:59:59.000Z
+Preferred-Languages: en
+Canonical: https://thindtransport.com/.well-known/security.txt
+
+# About This Company
+# Thind Transport LLC is a trucking and logistics company.
+# We take security seriously and appreciate responsible disclosure.
+

@@ -1,0 +1,90 @@
+import Link from "next/link"
+import Image from "next/image"
+import { COMPANY_INFO } from "@/lib/constants"
+
+export function Footer() {
+  return (
+    <footer className="bg-gray-900 text-white py-12">
+      <div className="container">
+        <div className="text-center">
+          <div className="flex items-center justify-center mb-4">
+            <Image
+              src="/ar-carrier-logo.png"
+              alt={`${COMPANY_INFO.name} Logo`}
+              width={48}
+              height={48}
+              className="mr-3"
+            />
+            <h3 className="text-2xl font-bold">{COMPANY_INFO.name}</h3>
+          </div>
+          
+          <p className="text-gray-400 mb-4">
+            Family-Owned Trucking Company | Founded 2016 | 20+ Years Owner Experience
+            <br />
+            Based in {COMPANY_INFO.location} • Hiring Drivers Nationwide
+          </p>
+          
+          <p className="text-sm text-gray-500 mb-4">
+            Mailing: {COMPANY_INFO.mailingAddress}
+            <br />
+            Business: {COMPANY_INFO.businessAddress}
+            <br />
+            Phone:{" "}
+            <a
+              href={`tel:${COMPANY_INFO.phoneFormatted}`}
+              className="text-blue-400 hover:underline"
+            >
+              {COMPANY_INFO.phone}
+            </a>{" "}
+            | Email:{" "}
+            <a
+              href={`mailto:${COMPANY_INFO.email}`}
+              className="text-blue-400 hover:underline"
+            >
+              {COMPANY_INFO.email}
+            </a>
+            <br />
+            DOT# {COMPANY_INFO.dot} | MC# {COMPANY_INFO.mc}
+            <br />
+            Services: Flatbed • Reefer • Dry Van
+          </p>
+          
+          <div className="flex justify-center gap-4 mb-4 text-sm">
+            <Link href="/" className="text-gray-400 hover:text-white transition-colors">
+              Home
+            </Link>
+            <Link href="/pay-rates" className="text-gray-400 hover:text-white transition-colors">
+              Pay Rates
+            </Link>
+            <Link href="/testimonials" className="text-gray-400 hover:text-white transition-colors">
+              Reviews
+            </Link>
+            <Link href="/apply" className="text-gray-400 hover:text-white transition-colors">
+              Apply
+            </Link>
+          </div>
+          
+          <p className="text-sm text-gray-500">
+            © {new Date().getFullYear()} {COMPANY_INFO.name}. All rights reserved.
+          </p>
+        </div>
+      </div>
+      
+      {/* Floating Action Button */}
+      <a
+        href={`tel:${COMPANY_INFO.phoneFormatted}`}
+        className="fab md:hidden"
+        aria-label="Call Now"
+      >
+        <svg
+          className="w-6 h-6"
+          fill="currentColor"
+          viewBox="0 0 20 20"
+        >
+          <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z" />
+        </svg>
+      </a>
+    </footer>
+  )
+}
+

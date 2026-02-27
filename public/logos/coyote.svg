@@ -1,0 +1,8 @@
+<svg width="140" height="120" viewBox="0 0 140 120" xmlns="http://www.w3.org/2000/svg">
+  <rect width="140" height="120" rx="18" fill="#1B5E20"/>
+  <path d="M42 90 L70 30 L98 90 L70 70 Z" fill="#C8E6C9"/>
+  <text x="70" y="108" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="26" font-weight="700" fill="#FFFFFF">
+    COYOTE
+  </text>
+</svg>
+

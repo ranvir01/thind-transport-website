@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AR Carrier Xpress - Design System Documentation</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="styles.css">
+    
+    <style>
+        .color-swatch {
+            width: 100%;
+            height: 100px;
+            border-radius: var(--radius);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            color: white;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+        }
+        
+        .code-block {
+            background: oklch(0.21 0.006 285.885);
+            color: oklch(0.985 0 0);
+            padding: 1rem;
+            border-radius: var(--radius);
+            overflow-x: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 0.875rem;
+        }
+        
+        .dark .code-block {
+            background: oklch(0.15 0.005 285.823);
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="bg-white shadow-lg sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <a href="index.html" class="flex items-center">
+                    <img src="ar-carrier-logo.png" alt="AR Carrier Xpress Logo" class="w-10 h-10 mr-3">
+                    <div>
+                        <h1 class="text-xl font-bold text-gray-900">AR Carrier Xpress</h1>
+                        <p class="text-xs text-gray-500">Design System</p>
+                    </div>
+                </a>
+                <div class="flex gap-4">
+                    <a href="index.html" class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                        Back to Home
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero -->
+    <section class="hero-section py-16">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center">
+                <h1 class="text-4xl md:text-5xl font-black mb-4">
+                    <span class="gradient-text">Modern Design System</span>
+                </h1>
+                <p class="text-xl text-muted-foreground mb-6 max-w-3xl mx-auto">
+                    Built with OKLCH color space for perceptually uniform colors and better dark mode support.
+                </p>
+                <div class="inline-flex items-center gap-3">
+                    <span class="badge badge-success">
+                        <i class="fas fa-check-circle"></i>
+                        Modern Colors
+                    </span>
+                    <span class="badge badge-primary">
+                        <i class="fas fa-moon"></i>
+                        Dark Mode Ready
+                    </span>
+                    <span class="badge badge-muted">
+                        <i class="fas fa-palette"></i>
+                        Accessible
+                    </span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Color System -->
+    <section class="py-16">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <h2 class="text-3xl font-bold mb-8">Color System</h2>
+            
+            <!-- Primary Colors -->
+            <div class="mb-12">
+                <h3 class="text-2xl font-semibold mb-6">Primary Colors</h3>
+                <div class="grid md:grid-cols-3 gap-6">
+                    <div class="card">
+                        <div class="color-swatch bg-primary">Primary</div>
+                        <div class="p-4">
+                            <h4 class="font-bold mb-2">Primary</h4>
+                            <code class="text-sm">oklch(0.577 0.245 27.325)</code>
+                            <p class="text-sm text-muted-foreground mt-2">Main brand color, used for CTAs</p>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="color-swatch bg-success">Success</div>
+                        <div class="p-4">
+                            <h4 class="font-bold mb-2">Success</h4>
+                            <code class="text-sm">oklch(0.65 0.19 145)</code>
+                            <p class="text-sm text-muted-foreground mt-2">Positive actions, confirmations</p>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="color-swatch bg-warning">Warning</div>
+                        <div class="p-4">
+                            <h4 class="font-bold mb-2">Warning</h4>
+                            <code class="text-sm">oklch(0.68 0.17 65)</code>
+                            <p class="text-sm text-muted-foreground mt-2">Cautions, important notices</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Semantic Colors -->
+            <div class="mb-12">
+                <h3 class="text-2xl font-semibold mb-6">Semantic Colors</h3>
+                <div class="grid md:grid-cols-4 gap-4">
+                    <div class="card">
+                        <div class="color-swatch bg-card">Card</div>
+                        <div class="p-3">
+                            <code class="text-xs">--card</code>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="color-swatch bg-muted">Muted</div>
+                        <div class="p-3">
+                            <code class="text-xs">--muted</code>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="color-swatch bg-accent">Accent</div>
+                        <div class="p-3">
+                            <code class="text-xs">--accent</code>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="color-swatch bg-destructive">Destructive</div>
+                        <div class="p-3">
+                            <code class="text-xs">--destructive</code>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CSS Variables -->
+            <div class="card p-6 mb-12">
+                <h3 class="text-xl font-semibold mb-4">Using CSS Variables</h3>
+                <div class="code-block">
+/* Use in your CSS */
+.my-element {
+    background-color: var(--primary);
+    color: var(--primary-foreground);
+    border-radius: var(--radius);
+}
+
+/* Or use utility classes */
+&lt;div class="bg-primary text-primary-foreground rounded-default"&gt;
+    Primary colored element
+&lt;/div&gt;
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Components -->
+    <section class="py-16 bg-muted">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <h2 class="text-3xl font-bold mb-8">Components</h2>
+
+            <!-- Buttons -->
+            <div class="card p-8 mb-8">
+                <h3 class="text-2xl font-semibold mb-6">Buttons</h3>
+                <div class="flex flex-wrap gap-4 mb-6">
+                    <button class="btn btn-primary">
+                        <i class="fas fa-check"></i>
+                        Primary Button
+                    </button>
+                    <button class="btn btn-secondary">
+                        <i class="fas fa-info"></i>
+                        Secondary Button
+                    </button>
+                    <button class="btn btn-success">
+                        <i class="fas fa-thumbs-up"></i>
+                        Success Button
+                    </button>
+                </div>
+                <div class="code-block">
+&lt;button class="btn btn-primary"&gt;
+    &lt;i class="fas fa-check"&gt;&lt;/i&gt;
+    Primary Button
+&lt;/button&gt;
+                </div>
+            </div>
+
+            <!-- Badges -->
+            <div class="card p-8 mb-8">
+                <h3 class="text-2xl font-semibold mb-6">Badges</h3>
+                <div class="flex flex-wrap gap-4 mb-6">
+                    <span class="badge badge-primary">
+                        <i class="fas fa-star"></i>
+                        Primary Badge
+                    </span>
+                    <span class="badge badge-success">
+                        <i class="fas fa-check"></i>
+                        Success Badge
+                    </span>
+                    <span class="badge badge-warning">
+                        <i class="fas fa-exclamation"></i>
+                        Warning Badge
+                    </span>
+                    <span class="badge badge-muted">
+                        <i class="fas fa-info"></i>
+                        Muted Badge
+                    </span>
+                </div>
+                <div class="code-block">
+&lt;span class="badge badge-primary"&gt;
+    &lt;i class="fas fa-star"&gt;&lt;/i&gt;
+    Primary Badge
+&lt;/span&gt;
+                </div>
+            </div>
+
+            <!-- Inputs -->
+            <div class="card p-8 mb-8">
+                <h3 class="text-2xl font-semibold mb-6">Form Inputs</h3>
+                <div class="space-y-4 mb-6 max-w-md">
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Email Address</label>
+                        <input type="email" class="input" placeholder="john@example.com">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Phone Number</label>
+                        <input type="tel" class="input" placeholder="(206) 555-1234">
+                    </div>
+                </div>
+                <div class="code-block">
+&lt;input type="email" class="input" placeholder="john@example.com"&gt;
+                </div>
+            </div>
+
+            <!-- Cards -->
+            <div class="card p-8 mb-8">
+                <h3 class="text-2xl font-semibold mb-6">Cards</h3>
+                <div class="grid md:grid-cols-3 gap-6 mb-6">
+                    <div class="card p-6">
+                        <h4 class="font-bold text-lg mb-2">Regular Card</h4>
+                        <p class="text-muted-foreground">Basic card with default styling</p>
+                    </div>
+                    <div class="card card-shadow p-6">
+                        <h4 class="font-bold text-lg mb-2">Card with Shadow</h4>
+                        <p class="text-muted-foreground">Enhanced shadow effect</p>
+                    </div>
+                    <div class="card p-6 hover:shadow-xl transition-shadow">
+                        <h4 class="font-bold text-lg mb-2">Hover Card</h4>
+                        <p class="text-muted-foreground">Hover for effect</p>
+                    </div>
+                </div>
+                <div class="code-block">
+&lt;div class="card p-6"&gt;
+    &lt;h4 class="font-bold"&gt;Card Title&lt;/h4&gt;
+    &lt;p class="text-muted-foreground"&gt;Card content&lt;/p&gt;
+&lt;/div&gt;
+                </div>
+            </div>
+
+            <!-- Gradients -->
+            <div class="card p-8">
+                <h3 class="text-2xl font-semibold mb-6">Gradients</h3>
+                <div class="grid md:grid-cols-3 gap-6 mb-6">
+                    <div class="gradient-primary text-white p-6 rounded-xl">
+                        <h4 class="font-bold mb-2">Primary Gradient</h4>
+                        <p>gradient-primary</p>
+                    </div>
+                    <div class="gradient-success text-white p-6 rounded-xl">
+                        <h4 class="font-bold mb-2">Success Gradient</h4>
+                        <p>gradient-success</p>
+                    </div>
+                    <div class="gradient-brand text-white p-6 rounded-xl">
+                        <h4 class="font-bold mb-2">Brand Gradient</h4>
+                        <p>gradient-brand</p>
+                    </div>
+                </div>
+                <div class="code-block">
+&lt;div class="gradient-primary"&gt;
+    Primary gradient background
+&lt;/div&gt;
+
+&lt;h1 class="gradient-text"&gt;
+    Gradient text effect
+&lt;/h1&gt;
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Dark Mode Demo -->
+    <section class="py-16">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold mb-4">Dark Mode Support</h2>
+                <p class="text-xl text-muted-foreground mb-6">
+                    Toggle dark mode with the button in the top right corner
+                </p>
+                <button class="btn btn-primary" onclick="document.documentElement.classList.toggle('dark')">
+                    <i class="fas fa-adjust"></i>
+                    Toggle Dark Mode
+                </button>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-8">
+                <div class="card p-8">
+                    <h3 class="text-xl font-bold mb-4">Automatic Adaptation</h3>
+                    <p class="text-muted-foreground mb-4">
+                        All components automatically adapt to dark mode using CSS variables. The design system includes carefully selected OKLCH colors that maintain contrast ratios in both modes.
+                    </p>
+                    <ul class="space-y-2 text-muted-foreground">
+                        <li><i class="fas fa-check text-success mr-2"></i>Perceptually uniform colors</li>
+                        <li><i class="fas fa-check text-success mr-2"></i>Better accessibility</li>
+                        <li><i class="fas fa-check text-success mr-2"></i>Consistent experience</li>
+                    </ul>
+                </div>
+
+                <div class="card p-8 card-shadow">
+                    <h3 class="text-xl font-bold mb-4">Implementation</h3>
+                    <div class="code-block">
+/* Dark mode styles are automatically applied */
+.dark {
+  --background: oklch(0.141 0.005 285.823);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.21 0.006 285.885);
+  /* ... more variables ... */
+}
+
+/* Toggle dark mode */
+document.documentElement.classList.toggle('dark');
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Typography -->
+    <section class="py-16 bg-muted">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <h2 class="text-3xl font-bold mb-8">Typography</h2>
+            
+            <div class="card p-8">
+                <div class="space-y-6">
+                    <div>
+                        <h1 class="text-5xl font-black mb-2">Heading 1</h1>
+                        <code class="text-sm text-muted-foreground">text-5xl font-black</code>
+                    </div>
+                    <div>
+                        <h2 class="text-4xl font-bold mb-2">Heading 2</h2>
+                        <code class="text-sm text-muted-foreground">text-4xl font-bold</code>
+                    </div>
+                    <div>
+                        <h3 class="text-3xl font-bold mb-2">Heading 3</h3>
+                        <code class="text-sm text-muted-foreground">text-3xl font-bold</code>
+                    </div>
+                    <div>
+                        <h4 class="text-2xl font-semibold mb-2">Heading 4</h4>
+                        <code class="text-sm text-muted-foreground">text-2xl font-semibold</code>
+                    </div>
+                    <div>
+                        <p class="text-lg mb-2">Body Large - Perfect for introductory paragraphs and important content.</p>
+                        <code class="text-sm text-muted-foreground">text-lg</code>
+                    </div>
+                    <div>
+                        <p class="mb-2">Body Regular - Standard body text for most content. Optimized for readability.</p>
+                        <code class="text-sm text-muted-foreground">text-base (default)</code>
+                    </div>
+                    <div>
+                        <p class="text-sm text-muted-foreground mb-2">Body Small - Used for secondary information and captions.</p>
+                        <code class="text-sm text-muted-foreground">text-sm text-muted-foreground</code>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-gray-900 text-white py-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center">
+                <h3 class="text-2xl font-bold mb-4">AR Carrier Xpress Design System</h3>
+                <p class="text-gray-400 mb-4">Modern, accessible, and beautiful by design</p>
+                <div class="flex justify-center gap-4">
+                    <a href="index.html" class="text-blue-400 hover:underline">Home</a>
+                    <a href="application.html" class="text-blue-400 hover:underline">Apply Now</a>
+                    <a href="testimonials.html" class="text-blue-400 hover:underline">Reviews</a>
+                </div>
+                <p class="text-sm text-gray-500 mt-6">© 2024 AR Carrier Xpress. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Dark Mode Toggle -->
+    <button class="dark-mode-toggle" id="darkModeToggle" aria-label="Toggle Dark Mode">
+        <i class="fas fa-moon"></i>
+    </button>
+
+    <!-- Dark Mode Toggle Script -->
+    <script>
+        const darkModeToggle = document.getElementById('darkModeToggle');
+        const html = document.documentElement;
+        const icon = darkModeToggle.querySelector('i');
+        
+        // Check for saved dark mode preference
+        const savedMode = localStorage.getItem('darkMode');
+        if (savedMode === 'enabled') {
+            html.classList.add('dark');
+            icon.classList.remove('fa-moon');
+            icon.classList.add('fa-sun');
+        }
+        
+        darkModeToggle.addEventListener('click', () => {
+            html.classList.toggle('dark');
+            
+            if (html.classList.contains('dark')) {
+                localStorage.setItem('darkMode', 'enabled');
+                icon.classList.remove('fa-moon');
+                icon.classList.add('fa-sun');
+            } else {
+                localStorage.setItem('darkMode', 'disabled');
+                icon.classList.remove('fa-sun');
+                icon.classList.add('fa-moon');
+            }
+        });
+    </script>
+</body>
+</html>
+

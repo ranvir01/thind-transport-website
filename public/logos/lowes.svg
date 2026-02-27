@@ -1,0 +1,8 @@
+<svg width="160" height="120" viewBox="0 0 160 120" xmlns="http://www.w3.org/2000/svg">
+  <rect width="160" height="120" rx="18" fill="#004B8D"/>
+  <path d="M30 70 L80 32 L130 70 V88 H30 Z" fill="#FFF"/>
+  <text x="80" y="82" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="40" font-weight="700" fill="#004B8D">
+    LOWE'S
+  </text>
+</svg>
+

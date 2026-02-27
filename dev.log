@@ -1,0 +1,29 @@
+
+> ar-carrier-xpress-nextjs@1.0.0 dev
+> next dev
+
+   ▲ Next.js 16.0.7 (Turbopack)
+   - Local:         http://localhost:3000
+   - Network:       http://10.0.0.60:3000
+   - Environments: .env.local
+
+ ✓ Starting...
+ ⚠ The "middleware" file convention is deprecated. Please use "proxy" instead. Learn more: https://nextjs.org/docs/messages/middleware-to-proxy
+ ✓ Ready in 398ms
+ GET / 200 in 2.9s (compile: 2.5s, render: 353ms)
+⚠ POSTGRES_URL not set, using local file storage
+⚠ POSTGRES_URL not set, using local file storage
+[31m[auth][error][0m MissingSecret: Please define a `secret`. Read more at https://errors.authjs.dev#missingsecret
+    at assertConfig (/home/naan/thind-transport-website/.next/dev/server/chunks/node_modules_@auth_core_36df0127._.js:513:16)
+    at Auth (/home/naan/thind-transport-website/.next/dev/server/chunks/node_modules_@auth_core_36df0127._.js:5330:204)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async AppRouteRouteModule.do (/home/naan/thind-transport-website/node_modules/next/dist/compiled/next-server/app-route-turbo.runtime.dev.js:5:37789)
+ GET /api/auth/session 500 in 750ms (compile: 740ms, render: 10ms)
+[31m[auth][error][0m MissingSecret: Please define a `secret`. Read more at https://errors.authjs.dev#missingsecret
+    at assertConfig (/home/naan/thind-transport-website/.next/dev/server/chunks/node_modules_@auth_core_36df0127._.js:513:16)
+    at Auth (/home/naan/thind-transport-website/.next/dev/server/chunks/node_modules_@auth_core_36df0127._.js:5330:204)
+    at async AppRouteRouteModule.do (/home/naan/thind-transport-website/node_modules/next/dist/compiled/next-server/app-route-turbo.runtime.dev.js:5:37789)
+ GET /api/auth/session 500 in 25ms (compile: 22ms, render: 3ms)
+⚠ POSTGRES_URL not set, using local file storage
+ GET /driver/admin/create-fillable-pdf 200 in 944ms (compile: 798ms, proxy.ts: 37ms, render: 109ms)
+[?25h

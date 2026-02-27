@@ -1,0 +1,3 @@
+# Ignore data directory - we use Postgres for driver accounts
+data/
+
