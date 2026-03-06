@@ -313,10 +313,8 @@ export function PersonalInfoStep({ data, onChange, errors = {} }: PersonalInfoSt
               {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((grade) => (
                 <label key={grade} className="flex items-center gap-1.5 cursor-pointer">
                   <Checkbox
-                    checked={data.edu_grade_school === grade}
-                    onCheckedChange={(checked) => {
-                      if (checked) onChange('edu_grade_school', grade)
-                    }}
+                    checked={data[`edu_grade_${grade}` as keyof typeof data] as boolean}
+                    onCheckedChange={(checked) => onChange(`edu_grade_${grade}`, !!checked)}
                   />
                   <span className="text-sm">{grade}</span>
                 </label>
@@ -351,8 +349,8 @@ export function PersonalInfoStep({ data, onChange, errors = {} }: PersonalInfoSt
               {[1, 2, 3, 4].map((year) => (
                 <label key={year} className="flex items-center gap-1.5 cursor-pointer">
                   <Checkbox
-                    checked={data[`edu_post_grad_${year}` as keyof typeof data]}
-                    onCheckedChange={(checked) => onChange(`edu_post_grad_${year}`, !!checked)}
+                    checked={data[`edu_postgrad_${year}` as keyof typeof data]}
+                    onCheckedChange={(checked) => onChange(`edu_postgrad_${year}`, !!checked)}
                   />
                   <span className="text-sm">{year}</span>
                 </label>
