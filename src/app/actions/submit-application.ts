@@ -37,8 +37,8 @@ const createTransporter = () => {
     port: parseInt(process.env.SMTP_PORT || "587"),
     secure: false,
     auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS,
+      user: process.env.SMTP_USER || process.env.EMAIL_USER,
+      pass: process.env.SMTP_PASS || process.env.EMAIL_PASS,
     },
   })
 }
@@ -311,14 +311,15 @@ export async function submitApplication(prevState: ApplicationState, formData: F
 
     const data = validatedData.data
 
-    // Check if email credentials are configured
-    if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
-      console.error("Email credentials not configured. Set SMTP_USER and SMTP_PASS environment variables.")
-      // Still log the application for debugging
+    const smtpUser = process.env.SMTP_USER || process.env.EMAIL_USER
+    const smtpPass = process.env.SMTP_PASS || process.env.EMAIL_PASS
+
+    if (!smtpUser || !smtpPass) {
+      console.error("Email credentials not configured. Set SMTP_USER/SMTP_PASS or EMAIL_USER/EMAIL_PASS environment variables.")
       console.log("Application Received (email not sent):", data)
       return {
         success: true,
-        message: "Application submitted successfully! Our team will contact you within 2 hours.",
+        message: "Application submitted successfully! Our team will contact you shortly.",
       }
     }
 
@@ -329,7 +330,7 @@ export async function submitApplication(prevState: ApplicationState, formData: F
     const driverTypeShort = data.driverType === "owner-operator-otr" ? "O/O" : "Company"
     
     const mailOptions = {
-      from: process.env.SMTP_FROM || `"Thind Transport Website" <${process.env.SMTP_USER}>`,
+      from: process.env.SMTP_FROM || `"Thind Transport Website" <${smtpUser}>`,
       to: "thindcarrier@gmail.com",
       replyTo: data.email,
       subject: `🚛 New ${driverTypeShort} Application: ${applicantName}`,

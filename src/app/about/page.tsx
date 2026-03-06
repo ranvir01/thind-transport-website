@@ -1,161 +1,103 @@
 import { Metadata } from "next"
 import Link from "next/link"
-import Image from "next/image"
-import { 
-  Building2, Users, Truck, MapPin, Calendar, Award,
-  Shield, Heart, Phone, Mail, Clock, CheckCircle2,
-  Star, TrendingUp, Target, HeartHandshake
+import {
+  Building2,
+  Calendar,
+  MapPin,
+  Phone,
+  Mail,
+  Truck,
+  Shield,
+  Users,
 } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { COMPANY_INFO, STATS, TRUST_INDICATORS } from "@/lib/constants"
+import { COMPANY_INFO, STATS } from "@/lib/constants"
 import { PageBreadcrumb } from "@/components/shared/PageBreadcrumb"
 
 export const metadata: Metadata = {
-  title: `About Us - Family-Owned Trucking Since 2016 | ${COMPANY_INFO.name}`,
-  description: `Learn about Thind Transport LLC, a family-owned trucking company based in Kent, WA. Founded in 2016 with 20+ years of industry experience. FMCSA certified, A+ safety rating, hiring nationwide.`,
-  keywords: [
-    "Thind Transport about us",
-    "Kent WA trucking company",
-    "family owned trucking",
-    "trucking company history",
-    "FMCSA certified carrier",
-    "Washington state trucking",
-  ],
+  title: `About ${COMPANY_INFO.name}`,
+  description: `Learn about ${COMPANY_INFO.name}, a family-run trucking company based in Kent, Washington.`,
 }
 
 const milestones = [
   {
-    year: "2016",
-    title: "Company Founded",
-    description: "Thind Transport LLC established in Kent, Washington with a vision to treat drivers like family.",
+    year: String(COMPANY_INFO.founded),
+    title: "Company founded",
+    description: "Built around direct communication, straightforward settlements, and respectful driver support.",
   },
   {
     year: "2018",
-    title: "Fleet Expansion",
-    description: "Grew to 5 trucks and established partnerships with major brokers and shippers.",
-  },
-  {
-    year: "2020",
-    title: "Pandemic Resilience",
-    description: "Kept all drivers employed and busy throughout the pandemic, proving our commitment to our team.",
+    title: "Fleet growth",
+    description: "Expanded equipment and lanes while keeping a smaller-team feel for dispatch and recruiting.",
   },
   {
     year: "2022",
-    title: "Technology Upgrade",
-    description: "Invested in modern fleet management systems and upgraded to newer equipment.",
+    title: "Operations upgrades",
+    description: "Improved equipment standards and day-to-day support processes for drivers on the road.",
   },
   {
-    year: "2024",
-    title: "Fleet Modernization",
-    description: "Rolled out new 2024 Freightliner Cascadias with the latest safety and comfort features.",
-  },
-  {
-    year: "2025",
-    title: "Nationwide Expansion",
-    description: "Now hiring drivers from all 48 states with plans to double our fleet size.",
+    year: "Today",
+    title: "Serving nationwide freight",
+    description: "Continuing to support flatbed, reefer, and dry van work with a base in Kent, Washington.",
   },
 ]
 
-const values = [
+const operatingPrinciples = [
   {
-    icon: Heart,
-    title: "Family First",
-    description: "We treat every driver like family. Your success is our success, and we're here to support you every step of the way.",
+    title: "Keep communication direct",
+    description: "Drivers should know who to call and what to expect when something changes on the road.",
+    icon: Users,
   },
   {
+    title: "Keep equipment ready",
+    description: "Clean, road-ready trucks and trailers matter because downtime hurts everyone.",
+    icon: Truck,
+  },
+  {
+    title: "Keep the process straightforward",
+    description: "Clear expectations, clear settlements, and clear next steps beat flashy marketing.",
     icon: Shield,
-    title: "Integrity Always",
-    description: "No hidden fees, no broken promises. What we say is what we do. Transparent settlements, honest communication.",
-  },
-  {
-    icon: TrendingUp,
-    title: "Driver Success",
-    description: "Our business model is built around maximizing driver earnings. When you succeed, we succeed.",
-  },
-  {
-    icon: Target,
-    title: "Excellence",
-    description: "From equipment maintenance to customer service, we strive for excellence in everything we do.",
-  },
-  {
-    icon: HeartHandshake,
-    title: "Partnership",
-    description: "Whether you're a company driver or owner operator, we're your partner, not just a dispatcher.",
-  },
-  {
-    icon: Award,
-    title: "Safety",
-    description: "A+ safety rating maintained through rigorous standards and continuous improvement.",
-  },
-]
-
-const teamMembers = [
-  {
-    name: "Dispatch Team",
-    role: "24/7 Driver Support",
-    description: "Our experienced dispatch team is available around the clock to help with loads, routing, and any issues on the road.",
-  },
-  {
-    name: "Safety Department",
-    role: "Compliance & Training",
-    description: "Dedicated to maintaining our A+ safety rating and supporting drivers with compliance and training resources.",
-  },
-  {
-    name: "Recruiting Team",
-    role: "Driver Onboarding",
-    description: "Fast, respectful hiring process. We respond to every application within 24 hours because your time matters.",
-  },
-  {
-    name: "Accounting",
-    role: "Weekly Settlements",
-    description: "Transparent, accurate settlements every Friday. Questions answered promptly, no runaround.",
   },
 ]
 
 export default function AboutPage() {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-50">
+    <div className="brand-page-shell min-h-screen">
       <PageBreadcrumb pageName="About Us" category="Company" />
-      
-      {/* Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-navy via-blue-900 to-navy text-white py-24">
+
+      <section className="relative overflow-hidden bg-gradient-to-br from-navy via-blue-900 to-navy py-24 text-white">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-orange/20 via-transparent to-transparent" />
-        <div className="absolute -top-24 -right-24 w-96 h-96 bg-orange/10 rounded-full blur-3xl" />
-        <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-blue-400/10 rounded-full blur-3xl" />
-        
         <div className="container relative">
-          <div className="max-w-4xl mx-auto text-center">
-            <Badge className="mb-6 bg-white/20 backdrop-blur-md text-white border-white/30 px-5 py-2.5 text-sm font-bold">
-              <Building2 className="h-4 w-4 mr-1.5 inline" />
-              About Thind Transport
+          <div className="mx-auto max-w-4xl text-center">
+            <Badge className="mb-6 border-white/30 bg-white/20 px-5 py-2.5 text-sm font-bold text-white backdrop-blur-md">
+              <Building2 className="mr-1.5 inline h-4 w-4" />
+              About {COMPANY_INFO.name}
             </Badge>
-            <h1 className="text-5xl md:text-6xl font-black mb-6 leading-tight">
-              Family-Owned. <span className="text-orange">Driver-Focused.</span>
+            <h1 className="mb-6 text-5xl font-black leading-tight md:text-6xl">
+              Family-Run. <span className="text-orange">Built To Stay Practical.</span>
             </h1>
-            <p className="text-xl text-white/90 leading-relaxed max-w-3xl mx-auto">
-              Since 2016, we've been building a trucking company that puts drivers first.
-              Not just words on a website - it's in everything we do.
+            <p className="mx-auto max-w-3xl text-xl leading-relaxed text-white/90">
+              Since {COMPANY_INFO.founded}, {COMPANY_INFO.name} has focused on direct communication, dependable equipment, and a smaller-team approach that keeps drivers from feeling like numbers.
             </p>
           </div>
         </div>
       </section>
 
-      {/* Quick Stats */}
-      <section className="py-8 -mt-8 relative z-10">
+      <section className="relative z-10 -mt-8 py-8">
         <div className="container">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto">
+          <div className="mx-auto grid max-w-4xl grid-cols-2 gap-4 md:grid-cols-4">
             {[
-              { value: "2016", label: "Founded", icon: Calendar },
-              { value: "20+", label: "Years Experience", icon: Award },
-              { value: "15+", label: "Active Trucks", icon: Truck },
-              { value: "48", label: "States Covered", icon: MapPin },
+              { value: String(COMPANY_INFO.founded), label: "Founded", icon: Calendar },
+              { value: COMPANY_INFO.ownerExperience, label: "Owner Experience", icon: Users },
+              { value: String(STATS.trucksInFleet), label: "Trucks In Fleet", icon: Truck },
+              { value: String(STATS.statesCovered), label: "States Covered", icon: MapPin },
             ].map((stat) => {
               const Icon = stat.icon
               return (
-                <div key={stat.label} className="bg-white rounded-xl p-4 shadow-lg border border-gray-100 text-center">
-                  <Icon className="h-6 w-6 mx-auto mb-2 text-navy" />
-                  <div className="text-2xl md:text-3xl font-black text-orange">{stat.value}</div>
+                <div key={stat.label} className="rounded-xl border border-gray-100 bg-white p-4 text-center shadow-lg">
+                  <Icon className="mx-auto mb-2 h-6 w-6 text-navy" />
+                  <div className="text-2xl font-black text-orange md:text-3xl">{stat.value}</div>
                   <div className="text-sm font-bold text-gray-900">{stat.label}</div>
                 </div>
               )
@@ -164,49 +106,45 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* Our Story */}
       <section className="py-16">
         <div className="container">
-          <div className="max-w-4xl mx-auto">
-            <div className="grid md:grid-cols-2 gap-12 items-center">
-              <div>
-                <Badge className="mb-4 bg-navy text-white px-4 py-2 text-sm font-bold">
-                  Our Story
-                </Badge>
-                <h2 className="text-3xl md:text-4xl font-black text-gray-900 mb-6">
-                  Built by a Driver, <span className="text-orange">For Drivers</span>
-                </h2>
-                <div className="space-y-4 text-gray-600 leading-relaxed">
-                  <p>
-                    Thind Transport was founded in 2016 by someone who spent over two decades behind the wheel.
-                    After years of working for large carriers and seeing how drivers were often treated as
-                    numbers rather than people, we knew there had to be a better way.
-                  </p>
-                  <p>
-                    We started with a simple idea: What if a trucking company actually kept its promises?
-                    What if drivers could trust that their settlement would be accurate, their home time
-                    would be honored, and their concerns would be heard?
-                  </p>
-                  <p>
-                    Today, we're proud to offer <strong className="text-gray-900">91% commission</strong> to
-                    owner operators - one of the highest rates in the industry. We've maintained an{" "}
-                    <strong className="text-gray-900">A+ safety rating</strong> since day one. And most
-                    importantly, we've built a team that feels like family.
-                  </p>
-                </div>
+          <div className="mx-auto grid max-w-5xl items-start gap-12 md:grid-cols-2">
+            <div>
+              <Badge className="mb-4 bg-navy px-4 py-2 text-sm font-bold text-white">Our Story</Badge>
+              <h2 className="mb-6 text-3xl font-black text-gray-900 md:text-4xl">
+                A Smaller Team With a Clear Approach
+              </h2>
+              <div className="space-y-4 leading-relaxed text-gray-600">
+                <p>
+                  {COMPANY_INFO.name} was founded by {COMPANY_INFO.owner}, bringing years of hands-on industry experience into a business built around practical support rather than polished promises.
+                </p>
+                <p>
+                  The goal has stayed simple: answer the phone, keep expectations clear, and build a work environment where drivers know what they are signing up for.
+                </p>
+                <p>
+                  Today the company continues to focus on flatbed, reefer, and dry van work with a base in Kent, Washington and freight that reaches across the lower 48 states.
+                </p>
               </div>
-              <div className="relative">
-                <div className="aspect-square rounded-2xl bg-gradient-to-br from-navy to-blue-900 overflow-hidden shadow-2xl">
-                  <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-orange/30 via-transparent to-transparent" />
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="text-center text-white p-8">
-                      <div className="text-6xl font-black text-orange mb-2">20+</div>
-                      <div className="text-xl font-bold">Years of Industry Experience</div>
-                      <p className="text-white/70 mt-2">
-                        Our founder's hands-on experience shapes every decision we make
-                      </p>
-                    </div>
-                  </div>
+            </div>
+
+            <div className="rounded-2xl bg-gradient-to-br from-navy to-blue-900 p-8 text-white shadow-2xl">
+              <h3 className="mb-6 text-2xl font-black">Operating Snapshot</h3>
+              <div className="space-y-4 text-sm text-white/85">
+                <div className="flex items-start gap-3">
+                  <Truck className="mt-0.5 h-4 w-4 flex-shrink-0 text-orange" />
+                  <span>Flatbed, reefer, and dry van freight</span>
+                </div>
+                <div className="flex items-start gap-3">
+                  <MapPin className="mt-0.5 h-4 w-4 flex-shrink-0 text-orange" />
+                  <span>Based in Kent, Washington with nationwide coverage</span>
+                </div>
+                <div className="flex items-start gap-3">
+                  <Shield className="mt-0.5 h-4 w-4 flex-shrink-0 text-orange" />
+                  <span>USDOT #{COMPANY_INFO.dot} and MC authority listed in company records</span>
+                </div>
+                <div className="flex items-start gap-3">
+                  <Users className="mt-0.5 h-4 w-4 flex-shrink-0 text-orange" />
+                  <span>Direct dispatch and recruiting communication instead of a giant call-center feel</span>
                 </div>
               </div>
             </div>
@@ -214,86 +152,54 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* Company Timeline */}
-      <section className="py-16 bg-gradient-to-b from-gray-50 to-white">
+      <section className="bg-gradient-to-b from-gray-50 to-white py-16">
         <div className="container">
-          <div className="text-center mb-12">
-            <Badge className="mb-4 bg-orange text-white px-4 py-2 text-sm font-bold">
-              <Calendar className="h-4 w-4 mr-1.5 inline" />
-              Our Journey
+          <div className="mb-12 text-center">
+            <Badge className="mb-4 bg-orange px-4 py-2 text-sm font-bold text-white">
+              <Calendar className="mr-1.5 inline h-4 w-4" />
+              Company Timeline
             </Badge>
-            <h2 className="text-3xl md:text-4xl font-black text-gray-900 mb-4">
-              Growing Together
-            </h2>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              From a single truck to a growing fleet, every milestone reflects our commitment to drivers.
+            <h2 className="mb-4 text-3xl font-black text-gray-900 md:text-4xl">How We&apos;ve Grown</h2>
+            <p className="mx-auto max-w-2xl text-lg text-gray-600">
+              A steady path, a growing fleet, and the same emphasis on practical support.
             </p>
           </div>
 
-          <div className="max-w-4xl mx-auto">
-            <div className="relative">
-              {/* Timeline line */}
-              <div className="absolute left-4 md:left-1/2 top-0 bottom-0 w-0.5 bg-gradient-to-b from-orange via-navy to-orange" />
-              
-              {/* Timeline items */}
-              <div className="space-y-8">
-                {milestones.map((milestone, idx) => (
-                  <div 
-                    key={milestone.year}
-                    className={`relative flex items-start gap-8 ${
-                      idx % 2 === 0 ? 'md:flex-row' : 'md:flex-row-reverse'
-                    }`}
-                  >
-                    {/* Timeline dot */}
-                    <div className="absolute left-4 md:left-1/2 w-8 h-8 -translate-x-1/2 rounded-full bg-orange border-4 border-white shadow-lg flex items-center justify-center">
-                      <div className="w-2 h-2 rounded-full bg-white" />
-                    </div>
-                    
-                    {/* Content */}
-                    <div className={`ml-16 md:ml-0 md:w-1/2 ${idx % 2 === 0 ? 'md:pr-16 md:text-right' : 'md:pl-16'}`}>
-                      <Card className="inline-block">
-                        <CardContent className="p-6">
-                          <div className="text-3xl font-black text-orange mb-2">{milestone.year}</div>
-                          <h3 className="text-lg font-bold text-gray-900 mb-2">{milestone.title}</h3>
-                          <p className="text-gray-600">{milestone.description}</p>
-                        </CardContent>
-                      </Card>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
+          <div className="mx-auto grid max-w-5xl gap-4 md:grid-cols-2">
+            {milestones.map((milestone) => (
+              <Card key={milestone.year} className="border-gray-200">
+                <CardContent className="p-6">
+                  <div className="mb-2 text-3xl font-black text-orange">{milestone.year}</div>
+                  <h3 className="mb-2 text-lg font-bold text-gray-900">{milestone.title}</h3>
+                  <p className="text-gray-600">{milestone.description}</p>
+                </CardContent>
+              </Card>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* Our Values */}
       <section className="py-16">
         <div className="container">
-          <div className="text-center mb-12">
-            <Badge className="mb-4 bg-navy text-white px-4 py-2 text-sm font-bold">
-              <Heart className="h-4 w-4 mr-1.5 inline" />
-              Our Values
-            </Badge>
-            <h2 className="text-3xl md:text-4xl font-black text-gray-900 mb-4">
-              What We Stand For
-            </h2>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              These aren't just words on a wall - they guide every decision we make.
+          <div className="mb-12 text-center">
+            <Badge className="mb-4 bg-navy px-4 py-2 text-sm font-bold text-white">How We Operate</Badge>
+            <h2 className="mb-4 text-3xl font-black text-gray-900 md:text-4xl">What Matters Day To Day</h2>
+            <p className="mx-auto max-w-2xl text-lg text-gray-600">
+              We replaced generic corporate filler here with the things drivers actually ask about.
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
-            {values.map((value) => {
-              const Icon = value.icon
+          <div className="mx-auto grid max-w-5xl gap-6 md:grid-cols-3">
+            {operatingPrinciples.map((principle) => {
+              const Icon = principle.icon
               return (
-                <Card key={value.title} className="hover:shadow-lg transition-all border-gray-200 hover:border-orange/30">
+                <Card key={principle.title} className="border-gray-200 hover:border-orange/30 hover:shadow-lg transition-all">
                   <CardContent className="p-6">
-                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-orange/10 to-orange/5 flex items-center justify-center mb-4 border border-orange/20">
+                    <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl border border-orange/20 bg-gradient-to-br from-orange/10 to-orange/5">
                       <Icon className="h-6 w-6 text-orange" />
                     </div>
-                    <h3 className="text-lg font-bold text-gray-900 mb-2">{value.title}</h3>
-                    <p className="text-gray-600">{value.description}</p>
+                    <h3 className="mb-2 text-lg font-bold text-gray-900">{principle.title}</h3>
+                    <p className="text-gray-600">{principle.description}</p>
                   </CardContent>
                 </Card>
               )
@@ -302,80 +208,55 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* Our Team */}
-      <section className="py-16 bg-gradient-to-b from-gray-50 to-white">
+      <section className="bg-gradient-to-b from-gray-50 to-white py-16">
         <div className="container">
-          <div className="text-center mb-12">
-            <Badge className="mb-4 bg-blue-600 text-white px-4 py-2 text-sm font-bold">
-              <Users className="h-4 w-4 mr-1.5 inline" />
-              Our Team
-            </Badge>
-            <h2 className="text-3xl md:text-4xl font-black text-gray-900 mb-4">
-              Real People, Real Support
-            </h2>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              When you call, you talk to a person - not a machine. Our team is here for you 24/7.
-            </p>
-          </div>
+          <div className="mx-auto grid max-w-5xl gap-10 md:grid-cols-2">
+            <div>
+              <Badge className="mb-4 bg-navy px-4 py-2 text-sm font-bold text-white">
+                <MapPin className="mr-1.5 inline h-4 w-4" />
+                Kent, Washington
+              </Badge>
+              <h2 className="mb-6 text-3xl font-black text-gray-900 md:text-4xl">
+                Based In the Pacific Northwest
+              </h2>
+              <p className="mb-6 leading-relaxed text-gray-600">
+                Kent gives us a strong base for Pacific Northwest freight while supporting drivers and lanes that reach across the lower 48 states.
+              </p>
+              <div className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <MapPin className="h-5 w-5 text-navy" />
+                  <span className="text-gray-700">{COMPANY_INFO.address}</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Phone className="h-5 w-5 text-navy" />
+                  <a href={`tel:${COMPANY_INFO.phoneFormatted}`} className="text-orange hover:text-orange-600">
+                    {COMPANY_INFO.phone}
+                  </a>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Mail className="h-5 w-5 text-navy" />
+                  <a href={`mailto:${COMPANY_INFO.email}`} className="text-orange hover:text-orange-600">
+                    {COMPANY_INFO.email}
+                  </a>
+                </div>
+              </div>
+            </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-5xl mx-auto">
-            {teamMembers.map((member) => (
-              <Card key={member.name} className="text-center hover:shadow-lg transition-all">
-                <CardContent className="p-6">
-                  <div className="w-16 h-16 rounded-full bg-gradient-to-br from-navy to-blue-800 mx-auto mb-4 flex items-center justify-center">
-                    <Users className="h-8 w-8 text-white" />
-                  </div>
-                  <h3 className="text-lg font-bold text-gray-900 mb-1">{member.name}</h3>
-                  <p className="text-sm font-medium text-orange mb-2">{member.role}</p>
-                  <p className="text-sm text-gray-600">{member.description}</p>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Certifications */}
-      <section className="py-16">
-        <div className="container">
-          <div className="text-center mb-12">
-            <Badge className="mb-4 bg-green-600 text-white px-4 py-2 text-sm font-bold">
-              <Shield className="h-4 w-4 mr-1.5 inline" />
-              Credentials & Safety
-            </Badge>
-            <h2 className="text-3xl md:text-4xl font-black text-gray-900 mb-4">
-              Certified & Verified
-            </h2>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              We maintain the highest standards of compliance and safety in the industry.
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-5xl mx-auto">
-            {TRUST_INDICATORS.certifications.map((cert) => (
-              <Card key={cert.name} className="text-center hover:shadow-lg transition-all border-green-100 hover:border-green-200">
-                <CardContent className="p-6">
-                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-green-500/10 to-green-600/5 mx-auto mb-4 flex items-center justify-center border border-green-500/20">
-                    <CheckCircle2 className="h-6 w-6 text-green-600" />
-                  </div>
-                  <h3 className="text-lg font-bold text-gray-900 mb-1">{cert.name}</h3>
-                  <p className="text-sm text-gray-600">{cert.issuer}</p>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-
-          {/* Safety Stats */}
-          <div className="mt-12 max-w-3xl mx-auto">
-            <Card className="bg-gradient-to-br from-green-50 to-green-100/50 border-green-200">
+            <Card className="border-gray-200 bg-white shadow-lg">
               <CardContent className="p-8">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
-                  {TRUST_INDICATORS.performance.map((stat) => (
-                    <div key={stat.label}>
-                      <div className="text-2xl md:text-3xl font-black text-green-700">{stat.value}</div>
-                      <div className="text-sm text-green-800 font-medium">{stat.label}</div>
-                    </div>
-                  ))}
+                <h3 className="mb-4 text-2xl font-black text-navy">Service Footprint</h3>
+                <p className="mb-6 text-gray-600">
+                  We kept this visual simple instead of using a fake map widget. The important part is the operating footprint and how to reach the team.
+                </p>
+                <div className="grid grid-cols-2 gap-4 text-center">
+                  <div className="rounded-xl bg-gray-50 p-4">
+                    <div className="text-3xl font-black text-orange">{STATS.statesCovered}</div>
+                    <div className="text-sm font-semibold text-gray-700">States Covered</div>
+                  </div>
+                  <div className="rounded-xl bg-gray-50 p-4">
+                    <div className="text-3xl font-black text-orange">{STATS.trucksInFleet}</div>
+                    <div className="text-sm font-semibold text-gray-700">Fleet Units</div>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -383,106 +264,25 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* Location */}
-      <section className="py-16 bg-gradient-to-b from-gray-50 to-white">
+      <section className="bg-navy py-16">
         <div className="container">
-          <div className="max-w-4xl mx-auto">
-            <div className="grid md:grid-cols-2 gap-12 items-center">
-              <div>
-                <Badge className="mb-4 bg-navy text-white px-4 py-2 text-sm font-bold">
-                  <MapPin className="h-4 w-4 mr-1.5 inline" />
-                  Our Location
-                </Badge>
-                <h2 className="text-3xl md:text-4xl font-black text-gray-900 mb-6">
-                  Based in <span className="text-orange">Kent, Washington</span>
-                </h2>
-                <p className="text-gray-600 mb-6 leading-relaxed">
-                  Our headquarters in Kent, WA puts us at the heart of Pacific Northwest logistics.
-                  But our network spans all 48 contiguous states - wherever you want to drive, we have freight.
-                </p>
-                
-                <div className="space-y-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-navy/10 flex items-center justify-center">
-                      <MapPin className="h-5 w-5 text-navy" />
-                    </div>
-                    <div>
-                      <p className="font-bold text-gray-900">Mailing Address</p>
-                      <p className="text-gray-600">{COMPANY_INFO.address}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-navy/10 flex items-center justify-center">
-                      <Phone className="h-5 w-5 text-navy" />
-                    </div>
-                    <div>
-                      <p className="font-bold text-gray-900">Phone</p>
-                      <a href={`tel:${COMPANY_INFO.phoneFormatted}`} className="text-orange hover:text-orange-600">
-                        {COMPANY_INFO.phone}
-                      </a>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-navy/10 flex items-center justify-center">
-                      <Mail className="h-5 w-5 text-navy" />
-                    </div>
-                    <div>
-                      <p className="font-bold text-gray-900">Email</p>
-                      <a href={`mailto:${COMPANY_INFO.email}`} className="text-orange hover:text-orange-600">
-                        {COMPANY_INFO.email}
-                      </a>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-navy/10 flex items-center justify-center">
-                      <Clock className="h-5 w-5 text-navy" />
-                    </div>
-                    <div>
-                      <p className="font-bold text-gray-900">Dispatch Hours</p>
-                      <p className="text-gray-600">24/7 - Always available</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="relative">
-                <div className="aspect-square rounded-2xl bg-gradient-to-br from-blue-100 to-blue-200 overflow-hidden shadow-lg">
-                  {/* Map placeholder - would integrate real map in production */}
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="text-center">
-                      <MapPin className="h-16 w-16 text-navy mx-auto mb-4" />
-                      <p className="text-xl font-bold text-navy">Kent, Washington</p>
-                      <p className="text-navy/60">Serving All 48 States</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="py-16 bg-navy">
-        <div className="container">
-          <div className="max-w-3xl mx-auto text-center">
-            <h2 className="text-3xl md:text-4xl font-black text-white mb-4">
-              Ready to Join Our Family?
+          <div className="mx-auto max-w-3xl text-center">
+            <h2 className="mb-4 text-3xl font-black text-white md:text-4xl">
+              Ready to Talk With the Team?
             </h2>
-                <p className="text-lg text-white/90 mb-8">
-                  Experience the difference of working with a company that truly values its drivers.
-                  Apply today and start your journey with Thind Transport.
-                </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <p className="mb-8 text-lg text-white/90">
+              If the way we operate sounds like a better fit, reach out or start an application.
+            </p>
+            <div className="flex flex-col justify-center gap-4 sm:flex-row">
               <Link
                 href="/apply"
-                className="px-8 py-4 bg-orange hover:bg-orange-600 text-white font-bold rounded-xl transition-colors"
+                className="rounded-xl bg-orange px-8 py-4 font-bold text-white transition-colors hover:bg-orange-600"
               >
-                Apply Now — Takes 2 Minutes
+                Apply Now
               </Link>
               <a
                 href={`tel:${COMPANY_INFO.phoneFormatted}`}
-                className="px-8 py-4 bg-white/10 border border-white/20 text-white font-bold rounded-xl hover:bg-white/20 transition-colors flex items-center justify-center gap-2"
+                className="flex items-center justify-center gap-2 rounded-xl border border-white/20 bg-white/10 px-8 py-4 font-bold text-white transition-colors hover:bg-white/20"
               >
                 <Phone className="h-5 w-5" />
                 Call {COMPANY_INFO.phone}

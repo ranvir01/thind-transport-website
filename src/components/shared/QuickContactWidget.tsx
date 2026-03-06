@@ -41,7 +41,7 @@ export function QuickContactWidget() {
         className={`fixed z-[95] rounded-full shadow-2xl transition-all
           ${isMobile 
             ? 'bottom-[calc(4.5rem+env(safe-area-inset-bottom,0px))] left-4 p-3 bg-white/10 backdrop-blur-md border border-white/20 text-white hover:bg-white/20' 
-            : 'bottom-6 left-6 p-4 bg-gradient-to-r from-[#001F3F] to-[#003366] hover:from-[#003366] hover:to-[#004080] text-white'
+            : 'bottom-6 left-6 p-4 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-400 hover:to-orange-500 text-white'
           }
         `}
         whileHover={{ scale: 1.05 }}
@@ -101,16 +101,16 @@ export function QuickContactWidget() {
                 }
               `}
             >
-              <Card className="overflow-hidden border-0 bg-white dark:bg-slate-900">
+              <Card className="overflow-hidden border-0 bg-[linear-gradient(180deg,rgba(20,31,47,0.98),rgba(11,20,34,0.98))]">
                 <div className="p-5">
                   <div className="flex items-center justify-between mb-4">
                     <div>
-                      <h3 className="font-bold text-gray-900 dark:text-white">Get in Touch</h3>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">We're here to help</p>
+                      <h3 className="font-display text-2xl font-bold text-white">Get in Touch</h3>
+                      <p className="text-xs text-steel-300">We're here to help</p>
                     </div>
                     <button
                       onClick={() => setIsOpen(false)}
-                      className="p-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                      className="p-1.5 rounded-full hover:bg-white/10 text-steel-300 hover:text-white transition-colors"
                       aria-label="Close contact panel"
                     >
                       <X className="h-4 w-4" />
@@ -120,36 +120,36 @@ export function QuickContactWidget() {
                   <div className="space-y-2.5">
                     <a
                       href={`tel:${COMPANY_INFO.phoneFormatted}`}
-                      className="flex items-center gap-3 p-3 bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 rounded-xl hover:from-emerald-100 hover:to-teal-100 dark:hover:from-emerald-900/30 dark:hover:to-teal-900/30 transition-all group"
+                      className="flex items-center gap-3 p-3 bg-white/5 rounded-xl hover:bg-white/10 transition-all group border border-white/10"
                     >
-                      <div className="bg-emerald-500 p-2.5 rounded-xl group-hover:bg-emerald-600 transition-colors shadow-lg shadow-emerald-500/25">
+                      <div className="bg-orange-500 p-2.5 rounded-xl group-hover:bg-orange-600 transition-colors shadow-lg shadow-orange-500/25">
                         <Phone className="h-4 w-4 text-white" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="font-semibold text-gray-900 dark:text-white">{COMPANY_INFO.phone}</div>
-                        <div className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">Available 24/7</div>
+                        <div className="font-semibold text-white">{COMPANY_INFO.phone}</div>
+                        <div className="text-xs text-orange-300 font-medium">Available 24/7</div>
                       </div>
-                      <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-emerald-500 group-hover:translate-x-0.5 transition-all" />
+                      <ChevronRight className="w-4 h-4 text-steel-300 group-hover:text-orange-400 group-hover:translate-x-0.5 transition-all" />
                     </a>
 
                     <a
                       href={`mailto:${COMPANY_INFO.email}`}
-                      className="flex items-center gap-3 p-3 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl hover:from-blue-100 hover:to-indigo-100 dark:hover:from-blue-900/30 dark:hover:to-indigo-900/30 transition-all group"
+                      className="flex items-center gap-3 p-3 bg-white/5 rounded-xl hover:bg-white/10 transition-all group border border-white/10"
                     >
-                      <div className="bg-blue-500 p-2.5 rounded-xl group-hover:bg-blue-600 transition-colors shadow-lg shadow-blue-500/25">
+                      <div className="bg-white/10 p-2.5 rounded-xl group-hover:bg-white/15 transition-colors shadow-lg shadow-black/20">
                         <Mail className="h-4 w-4 text-white" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="font-semibold text-gray-900 dark:text-white">Email Us</div>
-                        <div className="text-xs text-gray-500 dark:text-gray-400 truncate">{COMPANY_INFO.email}</div>
+                        <div className="font-semibold text-white">Email Us</div>
+                        <div className="text-xs text-steel-300 truncate">{COMPANY_INFO.email}</div>
                       </div>
-                      <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-blue-500 group-hover:translate-x-0.5 transition-all" />
+                      <ChevronRight className="w-4 h-4 text-steel-300 group-hover:text-white group-hover:translate-x-0.5 transition-all" />
                     </a>
 
                     <Link
                       href="/apply"
                       onClick={() => setIsOpen(false)}
-                      className="flex items-center gap-3 p-3 bg-gradient-to-r from-orange-500 to-amber-500 rounded-xl hover:from-orange-600 hover:to-amber-600 transition-all group shadow-lg shadow-orange-500/25"
+                      className="flex items-center gap-3 p-3 bg-gradient-to-r from-orange-500 to-orange-600 rounded-xl hover:from-orange-400 hover:to-orange-500 transition-all group shadow-lg shadow-orange-500/25"
                     >
                       <div className="bg-white/20 p-2.5 rounded-xl">
                         <FileText className="h-4 w-4 text-white" />
@@ -162,8 +162,8 @@ export function QuickContactWidget() {
                     </Link>
                   </div>
 
-                  <div className="mt-4 pt-3 border-t border-gray-100 dark:border-slate-800">
-                    <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+                  <div className="mt-4 pt-3 border-t border-white/10">
+                    <div className="flex items-center gap-2 text-xs text-steel-300">
                       <Clock className="h-3.5 w-3.5" />
                       <span>Typical response: Within 24 hours</span>
                     </div>

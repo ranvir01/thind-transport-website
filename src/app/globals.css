@@ -16,10 +16,24 @@
     --mobile-bar-height: 4.5rem;
 
     /* Brand Colors (HSL values for compatibility) */
-    --primary: 211 100% 12%; /* #001F3F */
-    --primary-foreground: 210 40% 98%;
-    --secondary: 35 100% 50%; /* #FF9500 */
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    --primary: 217 51% 9%; /* #0B1422 */
+    --primary-foreground: 210 33% 97%;
+    --secondary: 2 66% 56%; /* #D94B45 */
+    --secondary-foreground: 210 33% 97%;
+    --brand-bg: #05080e;
+    --brand-bg-soft: #0b1422;
+    --brand-surface: #101926;
+    --brand-surface-alt: #141f2f;
+    --brand-surface-elevated: #1a2534;
+    --brand-line: rgba(214, 221, 230, 0.14);
+    --brand-line-strong: rgba(214, 221, 230, 0.22);
+    --brand-copy: #a7b0bd;
+    --brand-copy-strong: #d6dde6;
+    --brand-copy-soft: #7f8a98;
+    --brand-accent: #d94b45;
+    --brand-accent-strong: #f06b63;
+    --brand-accent-soft: rgba(217, 75, 69, 0.14);
+    --brand-shadow: 0 18px 45px rgba(3, 6, 10, 0.35);
   }
 
   .dark {
@@ -36,7 +50,7 @@
 
 @layer base {
   * {
-    border-color: #e5e7eb; /* neutral-200 but slightly lighter for softer edges */
+    border-color: var(--brand-line);
   }
   
   html {
@@ -46,17 +60,20 @@
   }
   
   body {
-    background-color: #fafafa; /* slight off-white for less harsh contrast */
-    color: #0f172a; /* slate-900 for better readability */
-    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    background:
+      radial-gradient(circle at top, rgba(217, 75, 69, 0.1), transparent 28%),
+      radial-gradient(circle at 80% 20%, rgba(214, 221, 230, 0.08), transparent 24%),
+      linear-gradient(180deg, #0b1422 0%, #070d16 35%, #05080e 100%);
+    color: var(--brand-copy-strong);
+    font-family: var(--font-rajdhani), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     font-size: 1rem;
-    line-height: 1.75;
+    line-height: 1.7;
     font-weight: 400;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    letter-spacing: -0.01em;
+    letter-spacing: 0.01em;
     overflow-x: hidden;
-    /* cursor: none; - Removed for professional feel */
+    min-height: 100vh;
   }
 
   a, button, [role="button"], input, select, textarea {
@@ -67,56 +84,65 @@
   h1 {
     font-size: clamp(2rem, 5vw, 3rem);
     font-weight: 800;
-    color: #0f172a; /* slate-900 */
+    color: #f5f7fa;
+    font-family: var(--font-teko), sans-serif;
     line-height: 1.1;
-    letter-spacing: -0.025em;
+    letter-spacing: 0.03em;
     text-wrap: balance;
+    text-transform: uppercase;
   }
   
   h2 {
     font-size: clamp(1.75rem, 4vw, 2.5rem);
     font-weight: 700;
-    color: #0f172a; /* slate-900 */
+    color: #eef2f7;
+    font-family: var(--font-teko), sans-serif;
     line-height: 1.2;
-    letter-spacing: -0.02em;
+    letter-spacing: 0.025em;
     text-wrap: balance;
+    text-transform: uppercase;
   }
   
   h3 {
     font-size: clamp(1.5rem, 3vw, 2rem);
     font-weight: 700;
-    color: #1e293b; /* slate-800 */
+    color: #dfe6ef;
+    font-family: var(--font-teko), sans-serif;
     line-height: 1.3;
-    letter-spacing: -0.01em;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
   }
   
   h4 {
     font-size: clamp(1.25rem, 2.5vw, 1.5rem);
     font-weight: 600;
-    color: #1e293b; /* slate-800 */
+    color: #d6dde6;
+    font-family: var(--font-teko), sans-serif;
     line-height: 1.4;
-    letter-spacing: -0.005em;
+    letter-spacing: 0.02em;
   }
   
   h5 {
     font-size: 1.125rem;
     font-weight: 600;
-    color: #334155; /* slate-700 */
+    color: #d6dde6;
+    font-family: var(--font-teko), sans-serif;
     line-height: 1.5;
-    letter-spacing: 0;
+    letter-spacing: 0.015em;
   }
   
   h6 {
     font-size: 1rem;
     font-weight: 600;
-    color: #334155; /* slate-700 */
+    color: #cdd5df;
+    font-family: var(--font-teko), sans-serif;
     line-height: 1.5;
-    letter-spacing: 0;
+    letter-spacing: 0.015em;
   }
   
   /* Enhanced Anchor Tag Styles */
   a {
-    color: #001F3F; /* Thind Navy Blue */
+    color: #d6dde6;
     font-weight: 500;
     text-decoration: none;
     transition: all 0.2s ease-in-out;
@@ -124,11 +150,11 @@
   }
 
   a:hover {
-    color: #FF9500; /* Thind Safety Orange */
+    color: var(--brand-accent-strong);
   }
 
   a:focus-visible {
-    outline: 2px solid #FF9500;
+    outline: 2px solid var(--brand-accent-strong);
     outline-offset: 2px;
     border-radius: 2px;
   }
@@ -136,16 +162,16 @@
   /* Enhanced Paragraph Styles */
   p {
     font-size: 1rem;
-    color: #4A4A4A; /* Thind Steel Gray */
-    line-height: 1.8;
-    letter-spacing: -0.005em;
+    color: var(--brand-copy);
+    line-height: 1.75;
+    letter-spacing: 0.01em;
   }
 
   /* Enhanced List Styles */
   ul, ol {
     font-size: 1rem;
-    color: #4A4A4A; /* Thind Steel Gray */
-    line-height: 1.8;
+    color: var(--brand-copy);
+    line-height: 1.75;
   }
 
   li {
@@ -155,7 +181,7 @@
   /* Enhanced Strong and Emphasis */
   strong {
     font-weight: 700;
-    color: #001F3F; /* Thind Navy Blue */
+    color: var(--brand-copy-strong);
   }
 
   em {
@@ -164,7 +190,7 @@
 
   /* Selection */
   ::selection {
-    background-color: #FF9500; /* Thind Safety Orange */
+    background-color: var(--brand-accent);
     color: white;
   }
 }
@@ -175,29 +201,411 @@
   }
   
   .gradient-brand {
-    @apply bg-gradient-to-br from-[#001F3F] via-[#003366] to-[#001F3F];
+    @apply bg-gradient-to-br from-[#0B1422] via-[#141f2f] to-[#05080e];
   }
   
   .gradient-accent {
-    @apply bg-gradient-to-br from-[#FF9500] via-[#FFAA33] to-[#FF9500];
+    @apply bg-gradient-to-br from-[#D94B45] via-[#F06B63] to-[#D94B45];
   }
   
   .hero-cta-button {
-    @apply w-full bg-gradient-to-r from-[#FF9500] to-[#E68600] text-white px-8 py-4 rounded-xl font-bold text-lg hover:shadow-2xl transition-all hover:from-[#FFAA33] hover:to-[#FF9500] transform hover:-translate-y-0.5;
+    @apply w-full bg-gradient-to-r from-[#D94B45] to-[#C53C37] text-white px-8 py-4 rounded-xl font-black text-lg hover:shadow-2xl transition-all hover:from-[#F06B63] hover:to-[#D94B45] transform hover:-translate-y-0.5;
+    font-family: var(--font-teko), sans-serif;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
   }
   
   /* Enhanced Card Styles */
   .card-elevated {
-    @apply bg-white rounded-2xl shadow-xl border border-gray-100 hover:shadow-2xl transition-all duration-300;
+    @apply rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300;
+    background: linear-gradient(180deg, rgba(20, 31, 47, 0.96), rgba(11, 20, 34, 0.96));
+    border: 1px solid var(--brand-line);
   }
   
   /* Enhanced Button Styles */
   .btn-primary-enhanced {
-    @apply bg-[#001F3F] text-white font-semibold px-6 py-3 rounded-xl shadow-lg hover:shadow-xl hover:bg-[#003366] transform hover:-translate-y-0.5 transition-all duration-200;
+    @apply text-white px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200;
+    background: linear-gradient(135deg, #d94b45, #c53c37);
+    font-family: var(--font-teko), sans-serif;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
   }
   
   .btn-secondary-enhanced {
-    @apply bg-white text-[#001F3F] font-semibold px-6 py-3 rounded-xl shadow-md border-2 border-[#001F3F] hover:border-[#003366] hover:shadow-lg hover:bg-gray-50 transform hover:-translate-y-0.5 transition-all duration-200;
+    @apply text-white px-6 py-3 rounded-xl shadow-md border-2 hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-200;
+    background: rgba(255, 255, 255, 0.04);
+    border-color: var(--brand-line-strong);
+    font-family: var(--font-teko), sans-serif;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .brand-page-shell {
+    background:
+      radial-gradient(circle at top, rgba(217, 75, 69, 0.09), transparent 24%),
+      linear-gradient(180deg, #0b1422 0%, #070d16 38%, #05080e 100%);
+  }
+
+  .brand-section-panel {
+    background: linear-gradient(180deg, rgba(16, 25, 38, 0.96), rgba(9, 17, 28, 0.96));
+    border-top: 1px solid var(--brand-line);
+    border-bottom: 1px solid var(--brand-line);
+  }
+
+  .brand-wordmark {
+    font-family: var(--font-teko), sans-serif;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .brand-page-shell .bg-white,
+  .brand-page-shell .bg-gray-50,
+  .brand-page-shell .bg-gray-100,
+  .brand-page-shell .bg-neutral-50,
+  .brand-page-shell .bg-slate-50,
+  .brand-page-shell .bg-blue-50,
+  .brand-page-shell .bg-indigo-50,
+  .brand-page-shell .bg-purple-50,
+  .brand-page-shell .bg-green-50,
+  .brand-page-shell .bg-red-50,
+  .brand-page-shell .bg-amber-50,
+  .brand-page-shell .bg-orange-50 {
+    background-color: rgba(16, 25, 38, 0.92);
+  }
+
+  .brand-page-shell .border-gray-100,
+  .brand-page-shell .border-gray-200,
+  .brand-page-shell .border-neutral-100,
+  .brand-page-shell .border-neutral-200,
+  .brand-page-shell .border-slate-200,
+  .brand-page-shell .border-blue-100,
+  .brand-page-shell .border-blue-200,
+  .brand-page-shell .border-indigo-200,
+  .brand-page-shell .border-green-100,
+  .brand-page-shell .border-green-200,
+  .brand-page-shell .border-red-100,
+  .brand-page-shell .border-red-200,
+  .brand-page-shell .border-orange-100,
+  .brand-page-shell .border-orange-200,
+  .brand-page-shell .border-purple-200 {
+    border-color: var(--brand-line) !important;
+  }
+
+  .brand-page-shell .text-gray-900,
+  .brand-page-shell .text-gray-800,
+  .brand-page-shell .text-navy,
+  .brand-page-shell .text-black,
+  .brand-page-shell .text-slate-900,
+  .brand-page-shell .text-slate-800,
+  .brand-page-shell .text-neutral-900,
+  .brand-page-shell .text-green-900,
+  .brand-page-shell .text-green-950,
+  .brand-page-shell .text-blue-900,
+  .brand-page-shell .text-orange-900 {
+    color: #eef2f7 !important;
+  }
+
+  .brand-page-shell .text-gray-700,
+  .brand-page-shell .text-gray-600,
+  .brand-page-shell .text-gray-500,
+  .brand-page-shell .text-steel,
+  .brand-page-shell .text-slate-700,
+  .brand-page-shell .text-slate-600,
+  .brand-page-shell .text-slate-500,
+  .brand-page-shell .text-neutral-500,
+  .brand-page-shell .text-green-800,
+  .brand-page-shell .text-green-700,
+  .brand-page-shell .text-blue-800 {
+    color: var(--brand-copy) !important;
+  }
+
+  .brand-page-shell .text-blue-600,
+  .brand-page-shell .text-blue-700,
+  .brand-page-shell .text-green-600,
+  .brand-page-shell .text-purple-600,
+  .brand-page-shell .text-purple-700,
+  .brand-page-shell .text-yellow-300,
+  .brand-page-shell .text-yellow-500,
+  .brand-page-shell .text-red-600,
+  .brand-page-shell .text-red-700,
+  .brand-page-shell .text-orange-400,
+  .brand-page-shell .text-orange-700 {
+    color: var(--brand-accent-strong) !important;
+  }
+
+  .brand-page-shell .from-white,
+  .brand-page-shell .from-gray-50,
+  .brand-page-shell .from-neutral-50,
+  .brand-page-shell .from-slate-50,
+  .brand-page-shell .from-blue-50,
+  .brand-page-shell .from-indigo-50,
+  .brand-page-shell .from-purple-50,
+  .brand-page-shell .from-green-50,
+  .brand-page-shell .from-orange-50,
+  .brand-page-shell .from-red-50 {
+    --tw-gradient-from: rgba(20, 31, 47, 0.96) var(--tw-gradient-from-position) !important;
+    --tw-gradient-to: rgba(20, 31, 47, 0) var(--tw-gradient-to-position) !important;
+    --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
+  }
+
+  .brand-page-shell .via-white,
+  .brand-page-shell .via-gray-50,
+  .brand-page-shell .via-neutral-50,
+  .brand-page-shell .via-slate-50,
+  .brand-page-shell .via-indigo-600,
+  .brand-page-shell .via-purple-600,
+  .brand-page-shell .via-blue-900,
+  .brand-page-shell .via-indigo-900,
+  .brand-page-shell .via-purple-900 {
+    --tw-gradient-stops: var(--tw-gradient-from), rgba(16, 25, 38, 0.94) var(--tw-gradient-via-position), var(--tw-gradient-to) !important;
+  }
+
+  .brand-page-shell .to-white,
+  .brand-page-shell .to-gray-50,
+  .brand-page-shell .to-neutral-50,
+  .brand-page-shell .to-slate-50,
+  .brand-page-shell .to-blue-50,
+  .brand-page-shell .to-indigo-50,
+  .brand-page-shell .to-purple-50,
+  .brand-page-shell .to-green-50,
+  .brand-page-shell .to-orange-50,
+  .brand-page-shell .to-red-50,
+  .brand-page-shell .to-purple-900 {
+    --tw-gradient-to: rgba(9, 17, 28, 0.98) var(--tw-gradient-to-position) !important;
+  }
+
+  .brand-page-shell .from-blue-900,
+  .brand-page-shell .from-indigo-900,
+  .brand-page-shell .from-purple-900,
+  .brand-page-shell .from-green-500\/10,
+  .brand-page-shell .from-blue-500\/10,
+  .brand-page-shell .from-purple-500\/10 {
+    --tw-gradient-from: rgba(11, 20, 34, 0.98) var(--tw-gradient-from-position) !important;
+    --tw-gradient-to: rgba(11, 20, 34, 0) var(--tw-gradient-to-position) !important;
+    --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
+  }
+
+  .brand-page-shell .shadow-lg,
+  .brand-page-shell .shadow-xl,
+  .brand-page-shell .shadow-2xl {
+    box-shadow: var(--brand-shadow);
+  }
+
+  /*
+   * Light-island: any element with [data-light] inside brand-page-shell
+   * keeps its real light background and dark text, opting out of the
+   * dark theme overrides applied by brand-page-shell.
+   */
+  .brand-page-shell [data-light] {
+    background-color: #ffffff !important;
+    background-image: none !important;
+  }
+
+  .brand-page-shell [data-light] input,
+  .brand-page-shell [data-light] select,
+  .brand-page-shell [data-light] textarea {
+    background-color: #ffffff !important;
+    border-color: #e2e8f0 !important;
+    color: #1e293b !important;
+  }
+
+  .brand-page-shell [data-light] input::placeholder,
+  .brand-page-shell [data-light] textarea::placeholder {
+    color: #94a3b8 !important;
+  }
+
+  .brand-page-shell [data-light] input:focus,
+  .brand-page-shell [data-light] select:focus,
+  .brand-page-shell [data-light] textarea:focus {
+    border-color: #f97316 !important;
+  }
+
+  .brand-page-shell [data-light] label {
+    color: #1e293b !important;
+  }
+
+  .brand-page-shell [data-light] .text-steel-200 {
+    color: #475569 !important;
+  }
+
+  .brand-page-shell [data-light] .border-white\/10 {
+    border-color: #e2e8f0 !important;
+  }
+
+  .brand-page-shell [data-light] .text-gray-900,
+  .brand-page-shell [data-light] .text-gray-800,
+  .brand-page-shell [data-light] .text-gray-700,
+  .brand-page-shell [data-light] .text-slate-900,
+  .brand-page-shell [data-light] .text-slate-800,
+  .brand-page-shell [data-light] .text-black,
+  .brand-page-shell [data-light] .text-navy,
+  .brand-page-shell [data-light] .text-green-950,
+  .brand-page-shell [data-light] .text-green-900,
+  .brand-page-shell [data-light] .text-orange-900,
+  .brand-page-shell [data-light] .text-neutral-900 {
+    color: #0f172a !important;
+  }
+
+  .brand-page-shell [data-light] .text-gray-600,
+  .brand-page-shell [data-light] .text-gray-500,
+  .brand-page-shell [data-light] .text-slate-700,
+  .brand-page-shell [data-light] .text-slate-600,
+  .brand-page-shell [data-light] .text-steel,
+  .brand-page-shell [data-light] .text-green-800,
+  .brand-page-shell [data-light] .text-green-700 {
+    color: #475569 !important;
+  }
+
+  .brand-page-shell [data-light] .text-green-600 {
+    color: #16a34a !important;
+  }
+
+  .brand-page-shell [data-light] .text-blue-600 {
+    color: #2563eb !important;
+  }
+
+  .brand-page-shell [data-light] .text-orange-700 {
+    color: #c2410c !important;
+  }
+
+  .brand-page-shell [data-light] .text-orange-600,
+  .brand-page-shell [data-light] .text-orange-500 {
+    color: #ea580c !important;
+  }
+
+  .brand-page-shell [data-light] .text-orange-400 {
+    color: #fb923c !important;
+  }
+
+  .brand-page-shell [data-light] .bg-green-50 {
+    background-color: #f0fdf4 !important;
+  }
+
+  .brand-page-shell [data-light] .bg-green-300 {
+    background-color: #86efac !important;
+  }
+
+  .brand-page-shell [data-light] .bg-orange-50 {
+    background-color: #fff7ed !important;
+  }
+
+  .brand-page-shell [data-light] .bg-gray-50 {
+    background-color: #f9fafb !important;
+  }
+
+  .brand-page-shell [data-light] .bg-gray-100 {
+    background-color: #f3f4f6 !important;
+  }
+
+  .brand-page-shell [data-light] .bg-white {
+    background-color: #ffffff !important;
+  }
+
+  .brand-page-shell [data-light] .bg-blue-50 {
+    background-color: #eff6ff !important;
+  }
+
+  /* Restore gradient stops to original light values inside data-light */
+  .brand-page-shell [data-light] .from-white {
+    --tw-gradient-from: #ffffff var(--tw-gradient-from-position) !important;
+    --tw-gradient-to: rgb(255 255 255 / 0) var(--tw-gradient-to-position) !important;
+    --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
+  }
+  .brand-page-shell [data-light] .from-gray-50 {
+    --tw-gradient-from: #f9fafb var(--tw-gradient-from-position) !important;
+    --tw-gradient-to: rgb(249 250 251 / 0) var(--tw-gradient-to-position) !important;
+    --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
+  }
+  .brand-page-shell [data-light] .from-blue-50 {
+    --tw-gradient-from: #eff6ff var(--tw-gradient-from-position) !important;
+    --tw-gradient-to: rgb(239 246 255 / 0) var(--tw-gradient-to-position) !important;
+    --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
+  }
+  .brand-page-shell [data-light] .from-indigo-50 {
+    --tw-gradient-from: #eef2ff var(--tw-gradient-from-position) !important;
+    --tw-gradient-to: rgb(238 242 255 / 0) var(--tw-gradient-to-position) !important;
+    --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
+  }
+  .brand-page-shell [data-light] .from-orange-50 {
+    --tw-gradient-from: #fff7ed var(--tw-gradient-from-position) !important;
+    --tw-gradient-to: rgb(255 247 237 / 0) var(--tw-gradient-to-position) !important;
+    --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
+  }
+  .brand-page-shell [data-light] .from-green-50 {
+    --tw-gradient-from: #f0fdf4 var(--tw-gradient-from-position) !important;
+    --tw-gradient-to: rgb(240 253 244 / 0) var(--tw-gradient-to-position) !important;
+    --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
+  }
+
+  .brand-page-shell [data-light] .via-white {
+    --tw-gradient-stops: var(--tw-gradient-from), #ffffff var(--tw-gradient-via-position), var(--tw-gradient-to) !important;
+  }
+  .brand-page-shell [data-light] .via-indigo-50 {
+    --tw-gradient-stops: var(--tw-gradient-from), #eef2ff var(--tw-gradient-via-position), var(--tw-gradient-to) !important;
+  }
+  .brand-page-shell [data-light] .via-amber-50 {
+    --tw-gradient-stops: var(--tw-gradient-from), #fffbeb var(--tw-gradient-via-position), var(--tw-gradient-to) !important;
+  }
+  .brand-page-shell [data-light] .via-gray-50 {
+    --tw-gradient-stops: var(--tw-gradient-from), #f9fafb var(--tw-gradient-via-position), var(--tw-gradient-to) !important;
+  }
+
+  .brand-page-shell [data-light] .to-white {
+    --tw-gradient-to: #ffffff var(--tw-gradient-to-position) !important;
+  }
+  .brand-page-shell [data-light] .to-blue-50 {
+    --tw-gradient-to: #eff6ff var(--tw-gradient-to-position) !important;
+  }
+  .brand-page-shell [data-light] .to-indigo-50 {
+    --tw-gradient-to: #eef2ff var(--tw-gradient-to-position) !important;
+  }
+  .brand-page-shell [data-light] .to-orange-50 {
+    --tw-gradient-to: #fff7ed var(--tw-gradient-to-position) !important;
+  }
+  .brand-page-shell [data-light] .to-green-50 {
+    --tw-gradient-to: #f0fdf4 var(--tw-gradient-to-position) !important;
+  }
+  .brand-page-shell [data-light] .to-gray-50 {
+    --tw-gradient-to: #f9fafb var(--tw-gradient-to-position) !important;
+  }
+
+  /* Restore border colors inside data-light */
+  .brand-page-shell [data-light] .border-green-200 {
+    border-color: #bbf7d0 !important;
+  }
+
+  .brand-page-shell [data-light] .border-gray-200,
+  .brand-page-shell [data-light] .border-gray-300 {
+    border-color: #e2e8f0 !important;
+  }
+
+  .brand-page-shell [data-light] .border-blue-100 {
+    border-color: #dbeafe !important;
+  }
+
+  .brand-page-shell [data-light] .border-blue-200 {
+    border-color: #bfdbfe !important;
+  }
+
+  .brand-page-shell [data-light] .border-orange-100 {
+    border-color: #ffedd5 !important;
+  }
+
+  .brand-page-shell [data-light] .border-orange-200 {
+    border-color: #fed7aa !important;
+  }
+
+  .brand-page-shell [data-light] .border-orange-500 {
+    border-color: #f97316 !important;
+  }
+
+  /* Restore shadow inside data-light */
+  .brand-page-shell [data-light] .shadow-lg {
+    box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1) !important;
+  }
+  .brand-page-shell [data-light] .shadow-xl,
+  .brand-page-shell [data-light] .shadow-2xl {
+    box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1) !important;
   }
 }
 
@@ -240,7 +648,8 @@
 
 /* Enhanced Floating Action Button */
 .fab {
-  @apply fixed bottom-8 right-8 bg-[#FF9500] text-white w-16 h-16 rounded-full shadow-2xl hover:bg-[#E68600] transition-all z-40 flex items-center justify-center transform hover:scale-110;
+  @apply fixed bottom-8 right-8 text-white w-16 h-16 rounded-full shadow-2xl transition-all z-40 flex items-center justify-center transform hover:scale-110;
+  background: linear-gradient(135deg, #d94b45, #c53c37);
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
 }
 
@@ -345,7 +754,7 @@
 .quick-actions-bar {
   animation: slideInBottom 0.3s ease-out;
   backdrop-filter: blur(10px);
-  background-color: rgba(255, 255, 255, 0.95);
+  background-color: rgba(11, 20, 34, 0.92);
 }
 
 /* Hover Effects */
@@ -520,16 +929,16 @@
    Targeting the button by aria-label since we can't edit the component
 */
 button[aria-label="Contact us"] {
-    background: #f97316 !important; /* Orange-500 */
-    color: black !important;
+    background: linear-gradient(135deg, #d94b45, #c53c37) !important;
+    color: white !important;
     font-weight: bold !important;
-    box-shadow: 0 0 20px rgba(249, 115, 22, 0.4) !important;
+    box-shadow: 0 0 24px rgba(217, 75, 69, 0.4) !important;
 }
 
 button[aria-label="Contact us"]:hover {
-    background: #ea580c !important; /* Orange-600 */
+    background: linear-gradient(135deg, #f06b63, #d94b45) !important;
     transform: scale(1.1) !important;
-    box-shadow: 0 0 30px rgba(249, 115, 22, 0.6) !important;
+    box-shadow: 0 0 30px rgba(217, 75, 69, 0.55) !important;
 }
 
 /* ========================================= */
@@ -585,7 +994,7 @@ button[aria-label="Contact us"]:hover {
 
 /* Focus visible improvements for accessibility */
 *:focus-visible {
-  outline: 2px solid #FF9500;
+  outline: 2px solid var(--brand-accent-strong);
   outline-offset: 2px;
 }
 

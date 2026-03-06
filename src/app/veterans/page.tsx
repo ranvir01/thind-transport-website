@@ -1,7 +1,7 @@
 import { Metadata } from "next"
 import Link from "next/link"
 import { 
-  Shield, Star, Award, Users, Truck, DollarSign,
+  Shield, Award, Users, Truck, DollarSign,
   Heart, CheckCircle2, Phone, Calendar, MapPin,
   Medal, Flag, Target, Briefcase, GraduationCap
 } from "lucide-react"
@@ -113,32 +113,6 @@ const cdlPrograms = [
   },
 ]
 
-const testimonials = [
-  {
-    name: "Marcus T.",
-    branch: "U.S. Army",
-    years: "8 years service",
-    quote: "After 3 deployments, I needed a career that valued discipline and gave me independence. Thind Transport delivers on both. The 91% commission is real - no games.",
-    role: "Owner Operator",
-    earnings: "$180K first year",
-  },
-  {
-    name: "Jennifer R.",
-    branch: "U.S. Navy",
-    years: "6 years service",
-    quote: "The transition from military to civilian life is tough. Thind Transport made it easier with honest communication and real support. They actually honor home time.",
-    role: "Company Driver",
-    earnings: "$78K first year",
-  },
-  {
-    name: "David K.",
-    branch: "U.S. Marines",
-    years: "4 years service",
-    quote: "I've worked for 3 trucking companies. Thind is the only one where the settlement matches what they promised. That military attention to detail? They have it too.",
-    role: "Owner Operator",
-    earnings: "$210K gross",
-  },
-]
 
 export default function VeteransPage() {
   return (
@@ -232,11 +206,11 @@ export default function VeteransPage() {
               return (
                 <Card key={benefit.title} className="hover:shadow-lg transition-all border-gray-200 hover:border-navy/30">
                   <CardContent className="p-6">
-                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-navy/10 to-blue-600/5 flex items-center justify-center mb-4 border border-navy/20">
-                      <Icon className="h-6 w-6 text-navy" />
+                    <div className="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center mb-4 border border-white/20">
+                      <Icon className="h-6 w-6 text-orange" />
                     </div>
-                    <h3 className="text-lg font-bold text-gray-900 mb-2">{benefit.title}</h3>
-                    <p className="text-gray-600">{benefit.description}</p>
+                    <h3 className="text-lg font-bold !text-white mb-2">{benefit.title}</h3>
+                    <p className="!text-white/70">{benefit.description}</p>
                   </CardContent>
                 </Card>
               )
@@ -262,25 +236,25 @@ export default function VeteransPage() {
           </div>
 
           <div className="max-w-4xl mx-auto">
-            <Card className="overflow-hidden border-2 border-gray-200">
+            <Card className="overflow-hidden border-2 border-white/10">
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
-                    <tr className="bg-navy text-white">
+                    <tr className="bg-orange text-white">
                       <th className="px-6 py-4 text-left font-bold">Military Skill</th>
                       <th className="px-6 py-4 text-left font-bold">Trucking Application</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-200">
+                  <tbody className="divide-y divide-white/10">
                     {militarySkillsTranslation.map((skill, idx) => (
-                      <tr key={skill.military} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                        <td className="px-6 py-4 font-medium text-gray-900">
+                      <tr key={skill.military} className={idx % 2 === 0 ? 'bg-white/5' : 'bg-white/[0.02]'}>
+                        <td className="px-6 py-4 font-medium !text-white">
                           <div className="flex items-center gap-2">
-                            <CheckCircle2 className="h-4 w-4 text-green-500" />
+                            <CheckCircle2 className="h-4 w-4 text-green-400" />
                             {skill.military}
                           </div>
                         </td>
-                        <td className="px-6 py-4 text-gray-600">{skill.trucking}</td>
+                        <td className="px-6 py-4 !text-white/70">{skill.trucking}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -311,8 +285,8 @@ export default function VeteransPage() {
             {cdlPrograms.map((program) => (
               <Card key={program.name} className="hover:shadow-lg transition-all border-gray-200">
                 <CardContent className="p-6">
-                  <h3 className="text-lg font-bold text-gray-900 mb-2">{program.name}</h3>
-                  <p className="text-gray-600">{program.description}</p>
+                  <h3 className="text-lg font-bold !text-white mb-2">{program.name}</h3>
+                  <p className="!text-white/70">{program.description}</p>
                 </CardContent>
               </Card>
             ))}
@@ -333,50 +307,6 @@ export default function VeteransPage() {
         </div>
       </section>
 
-      {/* Veteran Testimonials */}
-      <section className="py-16 bg-gradient-to-b from-gray-50 to-white">
-        <div className="container">
-          <div className="text-center mb-12">
-            <Badge className="mb-4 bg-blue-600 text-white px-4 py-2 text-sm font-bold">
-              <Star className="h-4 w-4 mr-1.5 inline" />
-              Veteran Success Stories
-            </Badge>
-            <h2 className="text-3xl md:text-4xl font-black text-gray-900 mb-4">
-              From Service to Success
-            </h2>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              Hear from veterans who made the transition to trucking with Thind Transport.
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-            {testimonials.map((testimonial) => (
-              <Card key={testimonial.name} className="hover:shadow-lg transition-all">
-                <CardContent className="p-6">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-navy to-blue-800 flex items-center justify-center">
-                      <Medal className="h-6 w-6 text-white" />
-                    </div>
-                    <div>
-                      <p className="font-bold text-gray-900">{testimonial.name}</p>
-                      <p className="text-sm text-navy font-medium">{testimonial.branch}</p>
-                      <p className="text-xs text-gray-500">{testimonial.years}</p>
-                    </div>
-                  </div>
-                  <blockquote className="text-gray-600 italic mb-4">
-                    "{testimonial.quote}"
-                  </blockquote>
-                  <div className="pt-4 border-t border-gray-200">
-                    <p className="text-sm font-medium text-gray-900">{testimonial.role}</p>
-                    <p className="text-lg font-bold text-green-600">{testimonial.earnings}</p>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* Open Positions */}
       <section className="py-16">
         <div className="container">
@@ -393,29 +323,29 @@ export default function VeteransPage() {
           <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
             <Card className="hover:shadow-xl transition-all border-2 border-blue-200 hover:border-blue-300">
               <CardHeader className="bg-gradient-to-br from-blue-50 to-blue-100/50">
-                <CardTitle className="flex items-center gap-3">
+                <CardTitle className="flex items-center gap-3 !text-navy">
                   <Shield className="h-6 w-6 text-blue-600" />
                   Company Driver
                 </CardTitle>
-                <CardDescription>Stability with great benefits</CardDescription>
+                <CardDescription className="!text-gray-600">Stability with great benefits</CardDescription>
               </CardHeader>
               <CardContent className="pt-6">
                 <ul className="space-y-3 mb-6">
                   <li className="flex items-center gap-2">
                     <CheckCircle2 className="h-4 w-4 text-green-500" />
-                    <span className="text-gray-700">$78K-$110K annually</span>
+                    <span>$78K-$110K annually</span>
                   </li>
                   <li className="flex items-center gap-2">
                     <CheckCircle2 className="h-4 w-4 text-green-500" />
-                    <span className="text-gray-700">$1,500 sign-on bonus</span>
+                    <span>$1,500 sign-on bonus</span>
                   </li>
                   <li className="flex items-center gap-2">
                     <CheckCircle2 className="h-4 w-4 text-green-500" />
-                    <span className="text-gray-700">Full benefits package</span>
+                    <span>Full benefits package</span>
                   </li>
                   <li className="flex items-center gap-2">
                     <CheckCircle2 className="h-4 w-4 text-green-500" />
-                    <span className="text-gray-700">Flexible home time</span>
+                    <span>Flexible home time</span>
                   </li>
                 </ul>
                 <Link
@@ -429,29 +359,29 @@ export default function VeteransPage() {
 
             <Card className="hover:shadow-xl transition-all border-2 border-green-200 hover:border-green-300">
               <CardHeader className="bg-gradient-to-br from-green-50 to-green-100/50">
-                <CardTitle className="flex items-center gap-3">
+                <CardTitle className="flex items-center gap-3 !text-navy">
                   <Truck className="h-6 w-6 text-green-600" />
                   Owner Operator
                 </CardTitle>
-                <CardDescription>Maximum earnings, maximum freedom</CardDescription>
+                <CardDescription className="!text-gray-600">Maximum earnings, maximum freedom</CardDescription>
               </CardHeader>
               <CardContent className="pt-6">
                 <ul className="space-y-3 mb-6">
                   <li className="flex items-center gap-2">
                     <CheckCircle2 className="h-4 w-4 text-green-500" />
-                    <span className="text-gray-700 font-bold">91% commission</span>
+                    <span className="font-bold">91% commission</span>
                   </li>
                   <li className="flex items-center gap-2">
                     <CheckCircle2 className="h-4 w-4 text-green-500" />
-                    <span className="text-gray-700">$2,500 sign-on bonus</span>
+                    <span>$2,500 sign-on bonus</span>
                   </li>
                   <li className="flex items-center gap-2">
                     <CheckCircle2 className="h-4 w-4 text-green-500" />
-                    <span className="text-gray-700">No forced dispatch</span>
+                    <span>No forced dispatch</span>
                   </li>
                   <li className="flex items-center gap-2">
                     <CheckCircle2 className="h-4 w-4 text-green-500" />
-                    <span className="text-gray-700">100% fuel surcharge</span>
+                    <span>100% fuel surcharge</span>
                   </li>
                 </ul>
                 <Link

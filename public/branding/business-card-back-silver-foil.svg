@@ -1,0 +1,97 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1039 696" width="1039" height="696">
+  <!--
+    SILVER FOIL ELEMENT FILE ? Thind Transport Business Card (Back)
+    MOO Standard: 3.46" � 2.32" (Bleed)
+    100% Black (K) = silver foil application
+    White = no foil
+    All strokes minimum 1pt thick (?4 SVG units inside scaled group)
+  -->
+
+  <!-- White background (no foil) -->
+  <rect width="1039" height="696" fill="white"/>
+
+  <!-- Truck OUTLINE strokes only (centered, scaled 1.15x) -->
+  <g transform="translate(520, 250) scale(1.15) translate(-296, -70)"
+     fill="none" stroke="black" stroke-width="4"
+     stroke-linejoin="round" stroke-linecap="round">
+
+    <!-- Trailer body outline -->
+    <rect x="140" y="30" width="196" height="72" rx="4"/>
+
+    <!-- Trailer vertical panel lines -->
+    <line x1="170" y1="33" x2="170" y2="99"/>
+    <line x1="200" y1="33" x2="200" y2="99"/>
+    <line x1="230" y1="33" x2="230" y2="99"/>
+    <line x1="260" y1="33" x2="260" y2="99"/>
+    <line x1="290" y1="33" x2="290" y2="99"/>
+    <line x1="320" y1="33" x2="320" y2="99"/>
+
+    <!-- Trailer undercarriage outline -->
+    <rect x="142" y="100" width="192" height="8" rx="2"/>
+
+    <!-- Connection plate outline -->
+    <rect x="334" y="46" width="10" height="40" rx="2"/>
+
+    <!-- Cab outline -->
+    <path d="M342 35 L380 35 Q410 35 425 52 L440 80 Q444 90 444 96 L444 104 Q444 107 441 107 L342 107 L342 35Z"/>
+
+    <!-- Windshield outline -->
+    <path d="M358 39 L392 39 Q414 39 426 55 L436 78 L436 88 Q436 90 434 90 L358 90 L358 39Z"/>
+
+    <!-- Chrome trim strip -->
+    <line x1="342" y1="102" x2="444" y2="102"/>
+
+    <!-- Headlight outlines -->
+    <rect x="443" y="72" width="5" height="14" rx="2" fill="black"/>
+    <rect x="443" y="92" width="5" height="7" rx="1.5" fill="black"/>
+
+    <!-- Mirror outline -->
+    <rect x="448" y="48" width="4" height="10" rx="1.5" fill="black"/>
+
+    <!-- Bumper outline -->
+    <rect x="446" y="100" width="6" height="8" rx="1.5"/>
+
+    <!-- Exhaust stack outlines -->
+    <rect x="350" y="14" width="4.5" height="24" rx="2" fill="black"/>
+    <rect x="358" y="18" width="4.5" height="20" rx="2" fill="black"/>
+
+    <!-- Fuel tank outline -->
+    <rect x="342" y="88" width="24" height="14" rx="4"/>
+
+    <!-- Mud flap outlines -->
+    <rect x="216" y="112" width="5" height="10" rx="1" fill="black"/>
+    <rect x="326" y="112" width="5" height="10" rx="1" fill="black"/>
+
+    <!-- === WHEEL OUTLINES === -->
+
+    <!-- Rear tandem wheel 1 -->
+    <circle cx="180" cy="112" r="13"/>
+    <circle cx="180" cy="112" r="6"/>
+    <circle cx="180" cy="112" r="2.5" fill="black" stroke="none"/>
+
+    <!-- Rear tandem wheel 2 -->
+    <circle cx="210" cy="112" r="13"/>
+    <circle cx="210" cy="112" r="6"/>
+    <circle cx="210" cy="112" r="2.5" fill="black" stroke="none"/>
+
+    <!-- Front tandem wheel 1 -->
+    <circle cx="290" cy="112" r="13"/>
+    <circle cx="290" cy="112" r="6"/>
+    <circle cx="290" cy="112" r="2.5" fill="black" stroke="none"/>
+
+    <!-- Front tandem wheel 2 -->
+    <circle cx="320" cy="112" r="13"/>
+    <circle cx="320" cy="112" r="6"/>
+    <circle cx="320" cy="112" r="2.5" fill="black" stroke="none"/>
+
+    <!-- Cab drive wheel -->
+    <circle cx="410" cy="112" r="14"/>
+    <circle cx="410" cy="112" r="6.5"/>
+    <circle cx="410" cy="112" r="3" fill="black" stroke="none"/>
+  </g>
+
+  <!-- Tagline (solid black fill for foil) -->
+  <text x="520" y="478" font-family="'Inter', 'Helvetica Neue', Arial, sans-serif"
+        font-size="11" font-weight="500" fill="black"
+        text-anchor="middle" letter-spacing="4">THE TRUCK ROLLS. THE OFFICE NEVER SLEEPS.</text>
+</svg>

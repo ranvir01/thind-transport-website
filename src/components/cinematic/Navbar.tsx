@@ -17,10 +17,10 @@ import {
   BookOpen,
   Users,
   Truck,
-  Image as ImageIcon,
   Shield,
   ChevronRight
 } from "lucide-react"
+import { COMPANY_INFO } from "@/lib/constants"
 
 // Navigation items with dropdowns
 const driverMenuItems = [
@@ -33,9 +33,8 @@ const driverMenuItems = [
 ]
 
 const companyMenuItems = [
-  { href: "/about", label: "About Us", description: "Family-owned since 2016", icon: Users },
+  { href: "/about", label: "About Us", description: `Family-run since ${COMPANY_INFO.founded}`, icon: Users },
   { href: "/fleet", label: "Our Fleet", description: "2024 Cascadias", icon: Truck },
-  { href: "/showcase", label: "Showcase", description: "Gallery", icon: ImageIcon },
   { href: "/veterans", label: "Veterans", description: "We honor service", icon: Shield },
 ]
 
@@ -96,7 +95,7 @@ function DesktopDropdown({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 8, scale: 0.96 }}
             transition={{ duration: 0.15, ease: "easeOut" }}
-            className="absolute top-full left-0 mt-2 w-64 py-2 bg-[#001F3F]/95 backdrop-blur-xl rounded-xl border border-white/10 shadow-2xl overflow-hidden"
+            className="absolute top-full left-0 mt-2 w-64 py-2 bg-[rgba(11,20,34,0.96)] backdrop-blur-xl rounded-xl border border-white/10 shadow-2xl overflow-hidden"
           >
             {items.map((item) => {
               const Icon = item.icon
@@ -187,12 +186,12 @@ function MobileMenuDrawer({
             animate={{ x: 0 }}
             exit={{ x: "100%" }}
             transition={{ type: "spring", damping: 30, stiffness: 300 }}
-            className="fixed top-0 right-0 bottom-0 w-[85vw] max-w-sm bg-[#001F3F] z-[102] flex flex-col shadow-2xl"
+            className="fixed top-0 right-0 bottom-0 w-[85vw] max-w-sm bg-[linear-gradient(180deg,#0B1422_0%,#070D16_100%)] z-[102] flex flex-col shadow-2xl"
           >
             {/* Header */}
             <div className="flex items-center justify-between p-4 border-b border-white/10">
-              <Link href="/" onClick={onClose} className="text-xl font-bold text-white tracking-tighter">
-                THIND TRANSPORT
+              <Link href="/" onClick={onClose} className="brand-wordmark text-3xl leading-none text-white">
+                THIND <span className="text-orange">TRANSPORT</span>
               </Link>
               <button
                 onClick={onClose}
@@ -335,7 +334,7 @@ function MobileMenuDrawer({
             </div>
 
             {/* Footer Actions */}
-            <div className="p-4 border-t border-white/10 space-y-3 bg-[#001326]">
+            <div className="p-4 border-t border-white/10 space-y-3 bg-[rgba(5,8,14,0.92)]">
               <a
                 href="tel:+12067656300"
                 className="flex items-center justify-center gap-2 w-full py-3 px-4 bg-white/5 hover:bg-white/10 rounded-xl text-white font-medium transition-colors"
@@ -363,36 +362,16 @@ export const CinematicNavbar = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null)
   const [scrolled, setScrolled] = useState(false)
-  const [hidden, setHidden] = useState(false)
-  const [lastScrollY, setLastScrollY] = useState(0)
   const pathname = usePathname()
 
-  // Handle scroll for enhanced visibility + hide on scroll down (mobile)
+  // Handle scroll styling
   useEffect(() => {
     const handleScroll = () => {
-      const currentScrollY = window.scrollY
-      
-      // Update scrolled state for styling
-      setScrolled(currentScrollY > 50)
-      
-      // Hide on scroll down, show on scroll up (mobile only)
-      if (currentScrollY > 100) {
-        if (currentScrollY > lastScrollY && currentScrollY - lastScrollY > 10) {
-          // Scrolling down - hide on mobile
-          setHidden(true)
-        } else if (lastScrollY > currentScrollY && lastScrollY - currentScrollY > 10) {
-          // Scrolling up - show
-          setHidden(false)
-        }
-      } else {
-        setHidden(false)
-      }
-      
-      setLastScrollY(currentScrollY)
+      setScrolled(window.scrollY > 50)
     }
     window.addEventListener("scroll", handleScroll, { passive: true })
     return () => window.removeEventListener("scroll", handleScroll)
-  }, [lastScrollY])
+  }, [])
 
   // Close dropdowns on route change
   useEffect(() => {
@@ -404,12 +383,12 @@ export const CinematicNavbar = () => {
     <>
       <header className={`fixed top-0 left-0 right-0 z-[100] transition-all duration-300 ${
         scrolled ? 'pt-2' : 'pt-4'
-      } ${hidden ? 'md:translate-y-0 -translate-y-full' : 'translate-y-0'}`}>
+      } translate-y-0`}>
         <div className="flex justify-center pointer-events-none px-4 w-full">
           <nav className={`pointer-events-auto flex items-center justify-between md:justify-start w-auto max-w-[98%] gap-3 md:gap-6 pl-4 pr-1.5 py-1.5 md:px-6 md:py-3 rounded-full transition-all duration-300 active:scale-[0.98] md:active:scale-100 ${
             scrolled 
-              ? 'bg-[#001F3F]/95 backdrop-blur-xl shadow-2xl shadow-black/20 border border-white/10' 
-              : 'bg-black/40 backdrop-blur-md border border-white/10 shadow-lg'
+              ? 'bg-[rgba(11,20,34,0.94)] backdrop-blur-xl shadow-2xl shadow-black/30 border border-white/10' 
+              : 'bg-[rgba(5,8,14,0.68)] backdrop-blur-md border border-white/10 shadow-lg'
           }`}>
             {/* Logo */}
             <Link 
@@ -417,7 +396,7 @@ export const CinematicNavbar = () => {
               className="relative z-20 hover:opacity-90 transition-opacity whitespace-nowrap leading-none flex items-center gap-2" 
               data-cursor="HOME"
             >
-              <span className="text-lg md:text-xl font-bold text-white tracking-tighter">THIND<span className="text-orange"> TRANSPORT</span></span>
+              <span className="brand-wordmark text-[1.6rem] md:text-[1.9rem] leading-none text-white">THIND<span className="text-orange"> TRANSPORT</span></span>
             </Link>
 
             {/* Desktop Navigation */}
@@ -465,7 +444,7 @@ export const CinematicNavbar = () => {
             {/* Apply Button */}
             <Link 
               href="/apply" 
-              className="hidden sm:flex px-4 md:px-5 py-2 bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-full text-xs uppercase tracking-widest transition-all hover:scale-105 active:scale-95 shadow-lg shadow-orange-500/25" 
+              className="hidden sm:flex px-4 md:px-5 py-2 bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-full text-xs uppercase tracking-widest transition-all hover:scale-105 active:scale-95 shadow-lg shadow-orange-500/25 font-display" 
               data-cursor="APPLY"
             >
               Apply Now

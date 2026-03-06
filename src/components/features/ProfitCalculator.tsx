@@ -51,7 +51,7 @@ export const ProfitCalculator = () => {
   
   // Current pay comparison
   const [showComparison, setShowComparison] = useState(false)
-  const [currentSplit, setCurrentSplit] = useState(72)
+  const [currentSplit, setCurrentSplit] = useState(91)
   const [currentWeeklyPay, setCurrentWeeklyPay] = useState(0)
   
   // Email capture for saving calculation
@@ -283,7 +283,7 @@ export const ProfitCalculator = () => {
                     <input 
                       type="range" 
                       min="60" 
-                      max="88" 
+                      max="95" 
                       step="1"
                       value={currentSplit}
                       onChange={(e) => setCurrentSplit(Number(e.target.value))}
@@ -292,7 +292,8 @@ export const ProfitCalculator = () => {
                     <div className="flex justify-between text-xs text-white/80 mt-1">
                       <span>60%</span>
                       <span>Industry: 70-75%</span>
-                      <span>88%</span>
+                      <span className="text-orange font-bold">91% Thind</span>
+                      <span>95%</span>
                     </div>
                   </div>
                   
@@ -381,7 +382,7 @@ export const ProfitCalculator = () => {
           </div>
 
           {/* Results Panel */}
-          <div className="bg-white rounded-2xl shadow-brand-lg p-4 md:p-8 flex flex-col">
+          <div className="bg-white rounded-2xl shadow-brand-lg p-4 md:p-8 flex flex-col" data-light>
             <h3 className="text-lg md:text-xl font-bold text-navy mb-6 text-center">Your Weekly Take-Home</h3>
             
             {/* Main Comparison Cards */}
@@ -486,9 +487,9 @@ export const ProfitCalculator = () => {
 
             {/* Transparency Guarantee */}
             <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-xl">
-               <h4 className="flex items-center gap-2 font-bold text-green-800 mb-3">
-                 <CheckCircle2 className="w-5 h-5 text-green-600" />
-                 The "No Hidden Fees" Guarantee
+               <h4 className="flex items-center gap-2 font-bold text-green-900 mb-3">
+                 <CheckCircle2 className="w-5 h-5 text-green-700" />
+                 The &ldquo;No Hidden Fees&rdquo; Guarantee
                </h4>
                <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-2 gap-x-4">
                  {[
@@ -499,9 +500,9 @@ export const ProfitCalculator = () => {
                    "No Forced Dispatch",
                    "100% Fuel Pass-through"
                  ].map(item => (
-                   <div key={item} className="flex items-center gap-2 text-sm text-green-900/80 font-medium">
-                     <div className="w-4 h-4 rounded-full bg-green-200 flex items-center justify-center shrink-0">
-                        <Check className="w-2.5 h-2.5 text-green-700" />
+                   <div key={item} className="flex items-center gap-2 text-sm text-green-950 font-medium">
+                     <div className="w-4 h-4 rounded-full bg-green-300 flex items-center justify-center shrink-0">
+                        <Check className="w-2.5 h-2.5 text-green-800" />
                      </div>
                      {item}
                    </div>

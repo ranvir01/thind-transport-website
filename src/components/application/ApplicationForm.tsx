@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef } from "react"
+import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
@@ -13,7 +13,7 @@ import { toast } from "sonner"
 import { 
   Loader2, Upload, FileText, CheckCircle2, User, Truck, 
   FileCheck, ChevronRight, ArrowLeft, ShieldCheck, Clock, 
-  Check, AlertCircle, Lock, Star, Phone, Calendar
+  Check, AlertCircle, Lock, Star, Phone
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -787,37 +787,38 @@ export function ApplicationForm() {
               <div className="mx-auto w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mb-6">
                 <CheckCircle2 className="w-12 h-12 text-green-600" />
               </div>
-              <h2 className="text-3xl font-bold text-gray-900 mb-3">Application Received!</h2>
-              <p className="text-lg text-gray-600 mb-8">
-                Thank you for applying to Thind Transport. Our team will review your application within 2 hours.
+              <h2 className="text-3xl font-bold text-gray-900 mb-3">Thank You for Submitting Your Info</h2>
+              <p className="text-lg text-gray-600 mb-4">
+                We will get back to you shortly, within the next 24 hours.
+              </p>
+              <p className="text-base text-gray-600 mb-8 max-w-lg mx-auto leading-relaxed">
+                We will give you a call, and you can always call us or email us &mdash; 
+                whatever you prefer to get in touch for further information.
               </p>
 
-              {/* Next Steps */}
+              {/* Contact Options */}
               <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-6 border-2 border-blue-200 text-left mb-8">
                 <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-                  <ChevronRight className="h-5 w-5 text-blue-600" />
-                  What Happens Next?
+                  <Phone className="h-5 w-5 text-blue-600" />
+                  Get In Touch
                 </h3>
                 <div className="space-y-4">
-                  <div className="flex gap-3">
-                    <div className="flex-shrink-0 w-8 h-8 bg-orange-500 text-white rounded-full flex items-center justify-center font-bold">1</div>
+                  <div className="flex gap-3 items-center">
+                    <div className="flex-shrink-0 w-10 h-10 bg-orange-500 text-white rounded-full flex items-center justify-center">
+                      <Phone className="h-5 w-5" />
+                    </div>
                     <div>
-                      <p className="font-semibold text-gray-900">Schedule Your Meeting</p>
-                      <p className="text-sm text-gray-600">Book a 15-minute call with our owner to discuss opportunities</p>
+                      <p className="font-semibold text-gray-900">Call Us</p>
+                      <a href={`tel:${COMPANY_INFO.phoneFormatted}`} className="text-orange-600 font-bold hover:underline">{COMPANY_INFO.phone}</a>
                     </div>
                   </div>
-                  <div className="flex gap-3">
-                    <div className="flex-shrink-0 w-8 h-8 bg-orange-500 text-white rounded-full flex items-center justify-center font-bold">2</div>
-                    <div>
-                      <p className="font-semibold text-gray-900">Complete DOT Application</p>
-                      <p className="text-sm text-gray-600">After approval, you'll receive a secure link to complete your full application</p>
+                  <div className="flex gap-3 items-center">
+                    <div className="flex-shrink-0 w-10 h-10 bg-blue-500 text-white rounded-full flex items-center justify-center">
+                      <Star className="h-5 w-5" />
                     </div>
-                  </div>
-                  <div className="flex gap-3">
-                    <div className="flex-shrink-0 w-8 h-8 bg-orange-500 text-white rounded-full flex items-center justify-center font-bold">3</div>
                     <div>
-                      <p className="font-semibold text-gray-900">Start Driving</p>
-                      <p className="text-sm text-gray-600">Get approved and start earning with industry-leading pay rates</p>
+                      <p className="font-semibold text-gray-900">Email Us</p>
+                      <a href={`mailto:${COMPANY_INFO.email}`} className="text-blue-600 font-bold hover:underline">{COMPANY_INFO.email}</a>
                     </div>
                   </div>
                 </div>
@@ -830,9 +831,9 @@ export function ApplicationForm() {
                   size="lg"
                   className="flex-1 bg-orange-500 hover:bg-orange-600 text-white font-bold text-lg h-14"
                 >
-                  <a href="/schedule-meeting">
-                    <Calendar className="mr-2 h-5 w-5" />
-                    Schedule Meeting Now
+                  <a href={`tel:${COMPANY_INFO.phoneFormatted}`}>
+                    <Phone className="mr-2 h-5 w-5" />
+                    Call {COMPANY_INFO.phone}
                   </a>
                 </Button>
                 <Button 
@@ -845,17 +846,6 @@ export function ApplicationForm() {
                     Return to Home
                   </a>
                 </Button>
-              </div>
-
-              {/* Already Approved? */}
-              <div className="mt-8 p-4 bg-gray-50 border border-gray-200 rounded-lg">
-                <p className="text-sm text-gray-600">
-                  <strong>Already had your meeting and received an invitation code?</strong>
-                  <br />
-                  <a href="/driver/register" className="text-orange-600 hover:text-orange-700 font-semibold underline mt-1 inline-block">
-                    Create your account & complete DOT application →
-                  </a>
-                </p>
               </div>
             </div>
           </div>

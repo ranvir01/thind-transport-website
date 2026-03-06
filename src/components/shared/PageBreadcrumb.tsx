@@ -1,12 +1,6 @@
 import Link from "next/link"
 import { ChevronRight } from "lucide-react"
 
-// Brand Colors from Master Spec
-const BRAND = {
-  navy: "#001F3F",
-  orange: "#FF9500",
-}
-
 export type PageCategory = "Drivers" | "Company" | "Portal"
 
 interface PageBreadcrumbProps {
@@ -21,11 +15,11 @@ interface PageBreadcrumbProps {
 
 export function PageBreadcrumb({ pageName, category, parentPage, className = "" }: PageBreadcrumbProps) {
   return (
-    <nav className={`bg-[#001F3F]/95 backdrop-blur-xl pt-20 pb-2 ${className}`} aria-label="Breadcrumb">
+    <nav className={`bg-[rgba(11,20,34,0.95)] backdrop-blur-xl pt-20 pb-3 border-b border-white/5 ${className}`} aria-label="Breadcrumb">
       <div className="container">
         <ol className="flex items-center justify-center gap-2 text-xs">
           {/* Category */}
-          <li className="text-white/60 font-medium uppercase tracking-wider">
+          <li className="text-orange font-display font-semibold uppercase tracking-[0.18em]">
             {category}
           </li>
           
@@ -52,7 +46,7 @@ export function PageBreadcrumb({ pageName, category, parentPage, className = "" 
           
           {/* Current Page */}
           <li 
-            className="font-bold truncate max-w-[200px] sm:max-w-none text-white"
+            className="font-display font-bold truncate max-w-[200px] sm:max-w-none text-white tracking-[0.1em]"
             aria-current="page"
           >
             {pageName}

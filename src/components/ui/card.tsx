@@ -4,14 +4,14 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 
 const cardVariants = cva(
-  "rounded-2xl border text-neutral-900 transition-all duration-300",
+  "rounded-2xl border text-white transition-all duration-300 backdrop-blur-sm",
   {
     variants: {
       variant: {
-        default: "border-gray-100 bg-white shadow-lg hover:shadow-xl",
-        elevated: "border-gray-100 bg-white shadow-xl hover:shadow-2xl hover:-translate-y-1",
+        default: "border-white/10 bg-[linear-gradient(180deg,rgba(20,31,47,0.94),rgba(11,20,34,0.96))] shadow-lg hover:shadow-xl",
+        elevated: "border-white/10 bg-[linear-gradient(180deg,rgba(20,31,47,0.98),rgba(11,20,34,0.98))] shadow-xl hover:shadow-2xl hover:-translate-y-1",
         ghost: "border-transparent bg-transparent shadow-none",
-        outline: "border-gray-200 bg-transparent shadow-sm hover:shadow-md",
+        outline: "border-white/10 bg-transparent shadow-sm hover:shadow-md",
       },
     },
     defaultVariants: {
@@ -54,7 +54,7 @@ const CardTitle = React.forwardRef<
   <h3
     ref={ref}
     className={cn(
-      "text-h3 font-semibold leading-tight text-neutral-900",
+      "text-h3 font-semibold leading-tight text-white font-display tracking-[0.04em]",
       className
     )}
     {...props}
@@ -68,7 +68,7 @@ const CardDescription = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <p
     ref={ref}
-    className={cn("text-body-sm text-neutral-600", className)}
+    className={cn("text-body-sm text-steel-200", className)}
     {...props}
   />
 ))

@@ -347,7 +347,7 @@ const colorClasses = {
 
 export default function ResourcesPage() {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-50">
+    <div className="brand-page-shell min-h-screen">
       <PageBreadcrumb pageName="Resources" category="Drivers" />
       
       {/* Hero Section */}

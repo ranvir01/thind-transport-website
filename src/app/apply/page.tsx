@@ -4,72 +4,47 @@ import { ApplicationForm } from "@/components/application/ApplicationForm"
 import { COMPANY_INFO, PAY_RATES } from "@/lib/constants"
 import { FAQAccordion } from "@/components/shared/FAQAccordion"
 import { PageBreadcrumb } from "@/components/shared/PageBreadcrumb"
-import Image from "next/image"
-import { 
-  Shield, Phone, Clock, CheckCircle2, Users, Star, DollarSign, 
-  Headphones, MapPin, Truck, Award, BadgeCheck, Play,
-  ChevronRight, Zap, Home, Route, Fuel, Wrench, CreditCard
+import {
+  BadgeCheck,
+  CheckCircle2,
+  ChevronRight,
+  Clock,
+  Headphones,
+  Phone,
+  Route,
+  Shield,
+  Truck,
 } from "lucide-react"
 
-// Enhanced SEO Metadata - Competitor Analysis Based
 export const metadata: Metadata = {
-  title: `Apply Now - Quick Application | ${COMPANY_INFO.name}`,
-  description: `Quick 60-second application for CDL driver positions at ${COMPANY_INFO.name}. Hiring nationwide. Owner Operators: 91% commission. Company Drivers: ${PAY_RATES.companyDriver.otr.perMile}/mi. No experience required. Start next week. Apply now!`,
-  keywords: [
-    "CDL truck driver jobs",
-    "owner operator jobs",
-    "truck driver application",
-    "trucking jobs near me",
-    "91% commission trucking",
-    "CDL Class A jobs",
-    "flatbed truck driver jobs",
-    "reefer truck driver jobs",
-    "dry van truck driver jobs",
-    "Kent WA trucking jobs",
-    "same day pay trucking",
-    "weekly home time trucking",
-    "truck driver sign on bonus",
-    "OTR truck driver jobs",
-    "regional truck driver jobs",
-    "local truck driver jobs",
-    "Thind Transport careers",
-    "apply trucking job online",
-  ],
-  openGraph: {
-    title: `Apply Now - Quick Application | ${COMPANY_INFO.name}`,
-    description: `Quick 60-second application for CDL driver positions at ${COMPANY_INFO.name}. Hiring nationwide. Owner Operators: 91% commission. Company Drivers: ${PAY_RATES.companyDriver.otr.perMile}/mi.`,
-    type: "website",
-    url: "https://thindtransport.com/apply",
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: `Hiring CDL Drivers NOW | ${COMPANY_INFO.name}`,
-    description: "91% Commission for O/O • Competitive Company Pay • Same Day Pay • Apply in 60 Seconds",
-  },
+  title: `Apply Now | ${COMPANY_INFO.name}`,
+  description: `Apply for CDL Class A opportunities with ${COMPANY_INFO.name}. Learn about owner-operator and company driver options, experience requirements, and next steps with our Kent, WA team.`,
   alternates: {
     canonical: "https://thindtransport.com/apply",
   },
 }
 
-// JobPosting Schema for Google Jobs
 const jobPostingSchema = {
   "@context": "https://schema.org",
   "@type": "JobPosting",
-  title: "CDL Class A Truck Driver",
-  description: "Thind Transport is hiring experienced CDL Class A drivers. Owner Operators earn 91% of gross revenue. Company drivers earn competitive CPM. Same day pay available, new equipment, flexible home time options.",
+  title: "CDL Class A Driver Opportunities",
+  description:
+    "Thind Transport is hiring experienced CDL Class A company drivers and owner operators.",
   identifier: {
     "@type": "PropertyValue",
-    name: "Thind Transport LLC",
-    value: "CDL-DRIVER-2025-001"
+    name: COMPANY_INFO.name,
+    value: "driver-opportunities",
   },
-  datePosted: new Date().toISOString().split('T')[0],
-  validThrough: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+  datePosted: new Date().toISOString().split("T")[0],
+  validThrough: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000)
+    .toISOString()
+    .split("T")[0],
   employmentType: ["FULL_TIME", "CONTRACTOR"],
   hiringOrganization: {
     "@type": "Organization",
     name: COMPANY_INFO.name,
     sameAs: "https://thindtransport.com",
-    logo: "https://thindtransport.com/branding/thind-transport-logo.svg"
+    logo: "https://thindtransport.com/branding/thind-transport-logo.svg",
   },
   jobLocation: {
     "@type": "Place",
@@ -77,12 +52,12 @@ const jobPostingSchema = {
       "@type": "PostalAddress",
       addressLocality: "Kent",
       addressRegion: "WA",
-      addressCountry: "US"
-    }
+      addressCountry: "US",
+    },
   },
   applicantLocationRequirements: {
     "@type": "Country",
-    name: "United States"
+    name: "United States",
   },
   baseSalary: {
     "@type": "MonetaryAmount",
@@ -91,332 +66,214 @@ const jobPostingSchema = {
       "@type": "QuantitativeValue",
       minValue: 65000,
       maxValue: 250000,
-      unitText: "YEAR"
-    }
+      unitText: "YEAR",
+    },
   },
-  jobBenefits: `Same day pay, $${PAY_RATES.ownerOperator.signOnBonus} sign-on bonus for owner operators, ${PAY_RATES.companyDriver.signOnBonus} sign-on bonus for company drivers, weekly home time, 24/7 dispatch support, new equipment`,
-  qualifications: "Valid CDL Class A license, clean driving record, 1-2 years experience preferred",
-  responsibilities: "Safe operation of commercial motor vehicles, timely delivery of freight, compliance with DOT regulations, professional communication with dispatch and customers",
-  directApply: true
+  qualifications:
+    "Valid CDL Class A license, recent verifiable driving experience, and a clean safety record.",
+  directApply: true,
 }
 
-// FAQ Schema for Rich Snippets
-const faqSchema = {
-  "@context": "https://schema.org",
-  "@type": "FAQPage",
-  mainEntity: [
-    {
-      "@type": "Question",
-      name: "How long does the application process take?",
-      acceptedAnswer: {
-        "@type": "Answer",
-        text: "Our online application takes just 60 seconds to complete. Most applicants receive a response within 2 hours, and qualified drivers can be on the road within 48-72 hours."
-      }
-    },
-    {
-      "@type": "Question",
-      name: "What is the pay for owner operators at Thind Transport?",
-      acceptedAnswer: {
-        "@type": "Answer",
-        text: `Owner operators at Thind Transport earn 91% of gross revenue with no hidden fees. Most owner operators earn between $4,500-$6,000 per week, plus a ${PAY_RATES.ownerOperator.signOnBonus} sign-on bonus.`
-      }
-    },
-    {
-      "@type": "Question",
-      name: "Do you offer same day pay?",
-      acceptedAnswer: {
-        "@type": "Answer",
-        text: "Yes! Thind Transport offers same day pay options for all drivers. Standard weekly settlements are processed every Friday via direct deposit."
-      }
-    },
-    {
-      "@type": "Question",
-      name: "What home time options are available?",
-      acceptedAnswer: {
-        "@type": "Answer",
-        text: "We offer flexible home time options including local routes (home daily), regional routes (home weekly), and OTR routes (home every 2-3 weeks). You choose what works for your lifestyle."
-      }
-    }
-  ]
-}
+const faqItems = [
+  {
+    question: "How long does the application take?",
+    answer:
+      "The initial form is short. Once we review it, our team follows up to confirm experience, equipment, trailer type, and preferred lanes.",
+  },
+  {
+    question: "What opportunities are available?",
+    answer:
+      "We speak with both company drivers and owner operators. Availability depends on experience, route preferences, and current equipment needs.",
+  },
+  {
+    question: "What kind of freight do you handle?",
+    answer:
+      "Our site focuses on flatbed, reefer, and dry van opportunities with a mix of local, regional, and over-the-road work.",
+  },
+  {
+    question: "How will I hear back?",
+    answer:
+      `If your background lines up with current openings, a team member will reach out by phone or email using the contact information you provide.`,
+  },
+]
 
 export default function ApplyPage() {
   return (
     <>
-      {/* Structured Data for SEO */}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jobPostingSchema) }}
       />
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
-      />
 
-      <div className="min-h-screen bg-[#00060D] overflow-x-hidden">
-        <div className="scale-90 origin-left opacity-80 mb-[-1rem]">
-           <PageBreadcrumb pageName="Apply Now" category="Drivers" />
-        </div>
-        
-        {/* Unified Hero & Form Section */}
-        <section className="relative pt-2 pb-8 lg:py-24 overflow-hidden">
-          {/* Background Image - Absolute */}
-          <div className="absolute inset-0 z-0 hidden md:block">
-            <Image
-              src="/resources/hero-fleet-sunset.jpg"
-              alt="Thind Transport semi trucks on highway - CDL driver jobs available"
-              fill
-              className="object-cover object-center opacity-50"
-              priority
-              sizes="100vw"
-            />
-            <div className="absolute inset-0 bg-gradient-to-r from-[#00060D] via-[#00060D]/85 to-[#00060D]/70" />
-            <div className="absolute inset-0 bg-gradient-to-t from-[#00060D] via-transparent to-transparent" />
-          </div>
-          
-          <div className="container relative z-10">
-            <div className="flex flex-col lg:grid lg:grid-cols-12 gap-8 lg:gap-12 items-start">
-              
-              {/* Right Column - Form (Priority on Mobile) */}
-              <div className="order-1 lg:order-2 lg:col-span-7 w-full" id="application-form">
-                <div className="bg-white rounded-2xl shadow-2xl overflow-hidden border border-slate-200">
-                  <div className="bg-gradient-to-r from-[#001F3F] to-[#003366] px-6 py-4 border-b border-navy-800 flex items-center justify-between">
-                    <div>
-                      <h2 className="text-lg font-bold text-white">Start Your Application</h2>
-                      <p className="text-blue-200 text-xs">Takes less than 60 seconds</p>
+      <div className="brand-page-shell min-h-screen overflow-x-hidden bg-[#00060D]">
+        <PageBreadcrumb pageName="Apply Now" category="Drivers" />
+
+        <section className="border-b border-white/5 bg-[#00060D] py-10 md:py-20">
+          <div className="container">
+            <div className="grid items-start gap-8 lg:grid-cols-12 lg:gap-12">
+              <div className="lg:col-span-5 lg:sticky lg:top-24 space-y-6">
+                <div className="inline-flex items-center rounded-full border border-orange-500/30 bg-orange-500/10 px-4 py-2 text-sm font-bold text-orange-300">
+                  CDL Class A Opportunities
+                </div>
+
+                <div className="space-y-4">
+                  <h1 className="text-4xl font-black leading-tight tracking-tight text-white md:text-5xl lg:text-6xl">
+                    Start the Conversation.
+                    <span className="block text-orange-500">We&apos;ll Take It From There.</span>
+                  </h1>
+                  <p className="text-lg leading-relaxed text-slate-300">
+                    Submit the short form and our team will review your experience, route preferences, and whether a company driver or owner-operator opening is the better fit.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="rounded-xl border border-orange-500/30 bg-[#001F3F]/80 p-4">
+                    <p className="text-xs font-bold uppercase tracking-wider text-orange-400">
+                      Owner Operators
+                    </p>
+                    <p className="text-3xl font-black text-orange-400">{PAY_RATES.ownerOperator.commission}</p>
+                    <p className="text-sm text-slate-300">gross split</p>
+                  </div>
+                  <div className="rounded-xl border border-blue-500/30 bg-[#001F3F]/80 p-4">
+                    <p className="text-xs font-bold uppercase tracking-wider text-blue-400">
+                      Company Drivers
+                    </p>
+                    <p className="text-3xl font-black text-blue-400">{PAY_RATES.companyDriver.otr.perMile}</p>
+                    <p className="text-sm text-slate-300">OTR pay range</p>
+                  </div>
+                </div>
+
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {[
+                    "Flatbed, reefer, and dry van opportunities",
+                    "Local, regional, and OTR conversations",
+                    "Weekly settlements and direct support",
+                    "Based in Kent, WA",
+                  ].map((item) => (
+                    <div
+                      key={item}
+                      className="flex items-start gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-200"
+                    >
+                      <CheckCircle2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-green-400" />
+                      <span>{item}</span>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
-                      <span className="text-green-300 text-xs font-semibold">Recruiters Online</span>
+                  ))}
+                </div>
+
+                <div className="rounded-2xl border border-white/10 bg-[#001326] p-6">
+                  <h2 className="mb-4 text-lg font-bold text-white">Before You Apply</h2>
+                  <div className="space-y-3 text-sm text-slate-300">
+                    <div className="flex items-start gap-3">
+                      <BadgeCheck className="mt-0.5 h-4 w-4 flex-shrink-0 text-blue-400" />
+                      <span>Valid CDL Class A license</span>
                     </div>
+                    <div className="flex items-start gap-3">
+                      <BadgeCheck className="mt-0.5 h-4 w-4 flex-shrink-0 text-blue-400" />
+                      <span>Recent verifiable driving experience</span>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <BadgeCheck className="mt-0.5 h-4 w-4 flex-shrink-0 text-blue-400" />
+                      <span>Clean MVR and ability to meet DOT requirements</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="lg:col-span-7 w-full" id="application-form">
+                <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl" data-light>
+                  <div className="border-b border-navy-800 bg-gradient-to-r from-[#001F3F] to-[#003366] px-6 py-4">
+                    <h2 className="text-lg font-bold text-white">Start Your Application</h2>
+                    <p className="text-xs text-blue-200">
+                      Share your contact information and driving background. We&apos;ll follow up from there.
+                    </p>
                   </div>
                   <div className="p-4 md:p-8">
                     <ApplicationForm />
                   </div>
                 </div>
               </div>
-
-              {/* Left Column - Hero Content (Desktop) / Top (Mobile) */}
-              <div className="order-2 lg:order-1 lg:col-span-5 space-y-6 lg:sticky lg:top-24">
-                <div className="space-y-4">
-                  <div className="inline-flex items-center gap-2 bg-orange-500/20 border border-orange-500/40 backdrop-blur-sm text-orange-300 px-4 py-2 rounded-full text-sm font-bold animate-pulse">
-                    <Zap className="h-4 w-4" />
-                    Now Hiring – Immediate Openings
-                  </div>
-                  
-                  <h1 className="text-4xl md:text-5xl lg:text-6xl font-black text-white leading-[1.1] tracking-tight">
-                    Drive For The Best. <br/>
-                    <span className="text-orange-500">Earn The Most.</span>
-                  </h1>
-                  
-                  <p className="text-lg text-slate-300 leading-relaxed">
-                    Join {COMPANY_INFO.name} – a family-owned carrier where drivers come first. 
-                    <span className="block mt-2 font-semibold text-white">
-                      Fast approval • 24/7 support • New equipment
-                    </span>
-                  </p>
-                </div>
-
-                {/* Pay Highlights */}
-                <div className="grid grid-cols-2 gap-2 sm:gap-4">
-                  <div className="bg-[#001F3F]/80 backdrop-blur-sm border border-orange-500/30 rounded-xl p-2.5 sm:p-4">
-                    <p className="text-[10px] sm:text-xs text-orange-400 uppercase tracking-wider font-bold mb-0.5 sm:mb-1 truncate">Owner Ops</p>
-                    <p className="text-xl sm:text-3xl font-black text-orange-400">91%</p>
-                    <p className="text-[10px] sm:text-xs text-slate-300 truncate">Gross Revenue</p>
-                  </div>
-                  <div className="bg-[#001F3F]/80 backdrop-blur-sm border border-blue-500/30 rounded-xl p-2.5 sm:p-4">
-                    <p className="text-[10px] sm:text-xs text-blue-400 uppercase tracking-wider font-bold mb-0.5 sm:mb-1 truncate">Company</p>
-                    <p className="text-xl sm:text-3xl font-black text-blue-400">{PAY_RATES.companyDriver.otr.perMile}</p>
-                    <p className="text-[10px] sm:text-xs text-slate-300 truncate">Per Mile</p>
-                  </div>
-                </div>
-
-                {/* Trust Pills - Visible on all sizes, wraps on mobile */}
-                <div className="flex flex-wrap gap-3">
-                  {[
-                    { icon: DollarSign, text: "Same Day Pay" },
-                    { icon: Headphones, text: "24/7 Support" },
-                    { icon: Users, text: "Family Owned" },
-                  ].map((item, i) => (
-                    <div key={i} className="flex items-center gap-2 bg-white/5 backdrop-blur-sm rounded-full px-3 py-1.5 text-xs text-slate-300 border border-white/10 flex-shrink-0">
-                      <item.icon className="h-3.5 w-3.5 text-orange-400" />
-                      <span className="font-medium">{item.text}</span>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Social Proof Bar (Compact) */}
-                <div className="border-t border-white/10 pt-6 mt-6">
-                  <div className="bg-white/5 backdrop-blur-sm rounded-xl p-4 border border-white/10 flex items-center gap-4 shadow-lg">
-                    <div className="flex -space-x-3">
-                      {[1, 2, 3].map((i) => (
-                        <div key={i} className="w-10 h-10 rounded-full bg-slate-700 border-2 border-[#00060D] flex items-center justify-center text-xs font-bold text-white overflow-hidden relative">
-                           {/* Using initials/placeholders to ensure no broken images */}
-                           <span className="z-10 relative">{String.fromCharCode(64 + i)}</span>
-                           <div className="absolute inset-0 bg-gradient-to-br from-slate-600 to-slate-800" />
-                        </div>
-                      ))}
-                      <div className="w-10 h-10 rounded-full bg-orange-600 border-2 border-[#00060D] flex items-center justify-center text-xs font-bold text-white z-10">
-                        +44
-                      </div>
-                    </div>
-                    <div>
-                       <p className="text-white font-bold text-sm">47 drivers applied this week</p>
-                       <p className="text-green-400 text-[10px] font-medium flex items-center gap-1.5 uppercase tracking-wide mt-0.5">
-                         <span className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse"/> 
-                         High Demand
-                       </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
             </div>
           </div>
         </section>
 
-        {/* Info Section - Below the Fold */}
-        <section className="bg-[#001326] border-t border-white/5 py-12 lg:py-16 overflow-hidden">
-          <div className="container px-4 md:px-6">
-            <div className="grid lg:grid-cols-3 gap-8 lg:gap-12">
-              
-              {/* Job Details */}
-              <div className="lg:col-span-2 space-y-8">
-                {/* Job Description Section */}
-                <div className="bg-[#00060D] rounded-2xl p-6 md:p-8 border border-white/5">
-                  <h2 className="text-2xl font-bold text-white mb-6">About This CDL Driver Position</h2>
-                  
-                  <div className="grid md:grid-cols-2 gap-8">
-                    {/* Position Overview */}
-                    <div>
-                      <h3 className="text-lg font-semibold text-orange-400 mb-3">Position Overview</h3>
-                      <p className="text-slate-300 text-sm leading-relaxed mb-4">
-                        {COMPANY_INFO.name} is seeking professional CDL Class A drivers for our growing fleet. 
-                        We offer both Owner Operator and Company Driver positions with industry-leading pay, 
-                        modern equipment, and genuine work-life balance.
-                      </p>
-                      <ul className="space-y-2 text-sm text-slate-300">
-                        <li className="flex items-start gap-2">
-                          <CheckCircle2 className="h-4 w-4 text-green-400 mt-0.5 flex-shrink-0" />
-                          <span>Haul freight across 48 states</span>
-                        </li>
-                        <li className="flex items-start gap-2">
-                          <CheckCircle2 className="h-4 w-4 text-green-400 mt-0.5 flex-shrink-0" />
-                          <span>Flatbed, Reefer, and Dry Van trailers</span>
-                        </li>
-                        <li className="flex items-start gap-2">
-                          <CheckCircle2 className="h-4 w-4 text-green-400 mt-0.5 flex-shrink-0" />
-                          <span>Local, Regional, and OTR routes available</span>
-                        </li>
-                        <li className="flex items-start gap-2">
-                          <CheckCircle2 className="h-4 w-4 text-green-400 mt-0.5 flex-shrink-0" />
-                          <span>No-touch freight options</span>
-                        </li>
-                      </ul>
-                    </div>
-
-                    {/* Requirements */}
-                    <div>
-                      <h3 className="text-lg font-semibold text-orange-400 mb-3">Requirements</h3>
-                      <ul className="space-y-2 text-sm text-slate-300">
-                        <li className="flex items-start gap-2">
-                          <BadgeCheck className="h-4 w-4 text-blue-400 mt-0.5 flex-shrink-0" />
-                          <span>Valid CDL Class A license</span>
-                        </li>
-                        <li className="flex items-start gap-2">
-                          <BadgeCheck className="h-4 w-4 text-blue-400 mt-0.5 flex-shrink-0" />
-                          <span>1+ year experience (Company Driver)</span>
-                        </li>
-                        <li className="flex items-start gap-2">
-                          <BadgeCheck className="h-4 w-4 text-blue-400 mt-0.5 flex-shrink-0" />
-                          <span>2+ years OTR experience (Owner Operator)</span>
-                        </li>
-                        <li className="flex items-start gap-2">
-                          <BadgeCheck className="h-4 w-4 text-blue-400 mt-0.5 flex-shrink-0" />
-                          <span>Clean MVR and DAC report</span>
-                        </li>
-                        <li className="flex items-start gap-2">
-                          <BadgeCheck className="h-4 w-4 text-blue-400 mt-0.5 flex-shrink-0" />
-                          <span>Pass DOT physical and drug screen</span>
-                        </li>
-                        <li className="flex items-start gap-2">
-                          <BadgeCheck className="h-4 w-4 text-blue-400 mt-0.5 flex-shrink-0" />
-                          <span>No DUI/DWI in last 5 years</span>
-                        </li>
-                      </ul>
-                    </div>
-                  </div>
-
-                  {/* Benefits Grid */}
-                  <div className="mt-8 pt-8 border-t border-white/10">
-                    <h3 className="text-lg font-semibold text-white mb-4">Benefits & Perks</h3>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                      {[
-                        { icon: DollarSign, text: "Same Day Pay", color: "text-green-400" },
-                        { icon: CreditCard, text: "Weekly Settlements", color: "text-blue-400" },
-                        { icon: Home, text: "Flexible Home Time", color: "text-orange-400" },
-                        { icon: Headphones, text: "24/7 Dispatch", color: "text-purple-400" },
-                        { icon: Fuel, text: "Fuel Discounts", color: "text-yellow-400" },
-                        { icon: Wrench, text: "Maintenance Discounts", color: "text-cyan-400" },
-                        { icon: Truck, text: "New Equipment", color: "text-green-400" },
-                        { icon: Route, text: "Consistent Miles", color: "text-orange-400" },
-                      ].map((item, i) => (
-                        <div key={i} className="flex items-center gap-2 text-sm text-slate-300">
-                          <item.icon className={`h-4 w-4 ${item.color} flex-shrink-0`} />
-                          <span>{item.text}</span>
+        <section className="border-t border-white/5 bg-[#001326] py-12 lg:py-16">
+          <div className="container">
+            <div className="grid gap-8 lg:grid-cols-3 lg:gap-12">
+              <div className="space-y-8 lg:col-span-2">
+                <div className="rounded-2xl border border-white/5 bg-[#00060D] p-6 md:p-8">
+                  <h2 className="mb-6 text-2xl font-bold text-white">What To Expect</h2>
+                  <div className="grid gap-6 md:grid-cols-2">
+                    <div className="space-y-3">
+                      <h3 className="text-lg font-semibold text-orange-400">The Work</h3>
+                      <div className="space-y-3 text-sm text-slate-300">
+                        <div className="flex items-start gap-3">
+                          <Truck className="mt-0.5 h-4 w-4 flex-shrink-0 text-green-400" />
+                          <span>Flatbed, reefer, and dry van freight</span>
                         </div>
-                      ))}
+                        <div className="flex items-start gap-3">
+                          <Route className="mt-0.5 h-4 w-4 flex-shrink-0 text-green-400" />
+                          <span>Local, regional, and OTR discussions based on fit</span>
+                        </div>
+                        <div className="flex items-start gap-3">
+                          <Headphones className="mt-0.5 h-4 w-4 flex-shrink-0 text-green-400" />
+                          <span>Direct communication with dispatch and recruiting</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-3">
+                      <h3 className="text-lg font-semibold text-orange-400">The Process</h3>
+                      <div className="space-y-3 text-sm text-slate-300">
+                        <div className="flex items-start gap-3">
+                          <CheckCircle2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-green-400" />
+                          <span>Submit the form with your basic information</span>
+                        </div>
+                        <div className="flex items-start gap-3">
+                          <Clock className="mt-0.5 h-4 w-4 flex-shrink-0 text-green-400" />
+                          <span>Our team reviews experience and current openings</span>
+                        </div>
+                        <div className="flex items-start gap-3">
+                          <Phone className="mt-0.5 h-4 w-4 flex-shrink-0 text-green-400" />
+                          <span>We follow up by phone or email if the fit looks strong</span>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
 
-                {/* FAQ Section - SEO Rich Snippets */}
-                <div className="mt-8 bg-[#001326] rounded-2xl p-6 md:p-8 border border-white/5">
-                  <h2 className="text-2xl font-bold text-white mb-6">Frequently Asked Questions</h2>
-                  
-                  <FAQAccordion items={[
-                      {
-                        question: "How long does the application process take?",
-                        answer: "Our online application takes just 60 seconds to complete. Most applicants receive a response within 2 hours, and qualified drivers can be on the road within 48-72 hours."
-                      },
-                      {
-                        question: "What is the pay for owner operators at Thind Transport?",
-                        answer: `Owner operators earn 91% of gross revenue with no hidden fees. Most owner operators earn between $4,500-$6,000 per week, plus a $${PAY_RATES.ownerOperator.signOnBonus} sign-on bonus.`
-                      },
-                      {
-                        question: "Do you offer same day pay?",
-                        answer: "Yes! We offer same day pay options for all drivers. Standard weekly settlements are processed every Friday via direct deposit."
-                      },
-                      {
-                        question: "What home time options are available?",
-                        answer: "We offer flexible home time: Local routes (home daily), Regional routes (home weekly), and OTR routes (home every 2-3 weeks). You choose what works for your lifestyle."
-                      },
-                      {
-                        question: "What types of trailers do you haul?",
-                        answer: "We operate Flatbed, Reefer, and Dry Van trailers. You can specialize in one type or diversify based on your preferences and endorsements."
-                      },
-                    ]} darkBackground={true} gradientColor="#001326" />
+                <div className="rounded-2xl border border-white/5 bg-[#001326] p-6 md:p-8">
+                  <h2 className="mb-6 text-2xl font-bold text-white">Frequently Asked Questions</h2>
+                  <FAQAccordion items={faqItems} darkBackground={true} gradientColor="#001326" />
                 </div>
               </div>
 
-              <div className="lg:col-span-1 space-y-6 lg:sticky lg:top-24">
-                
-                {/* Trust Badges */}
-                <div className="bg-[#00060D] rounded-2xl p-6 border border-white/5">
-                  <h3 className="text-lg font-bold text-white mb-4">Why Drivers Choose Us</h3>
+              <div className="space-y-6 lg:sticky lg:top-24">
+                <div className="rounded-2xl border border-white/5 bg-[#00060D] p-6">
+                  <h3 className="mb-4 text-lg font-bold text-white">Application Notes</h3>
                   <div className="space-y-4">
                     {[
-                      { icon: Shield, title: "Secure Application", desc: "256-bit SSL encryption", color: "bg-green-500/10 text-green-400" },
-                      { icon: Clock, title: "2-Hour Response", desc: "Personal recruiter callback", color: "bg-orange-500/10 text-orange-400" },
-                      { icon: CheckCircle2, title: "No Obligation", desc: "Review your offer first", color: "bg-blue-500/10 text-blue-400" },
-                      { icon: Award, title: "A+ Safety Rating", desc: "FMCSA Certified Carrier", color: "bg-purple-500/10 text-purple-400" },
-                    ].map((item, i) => (
-                      <div key={i} className="flex items-start gap-3">
-                        <div className={`w-10 h-10 rounded-lg ${item.color.split(' ')[0]} flex items-center justify-center flex-shrink-0`}>
-                          <item.icon className={`h-5 w-5 ${item.color.split(' ')[1]}`} />
+                      {
+                        icon: Shield,
+                        title: "Secure Form",
+                        desc: "Your information is only used for recruiting follow-up.",
+                      },
+                      {
+                        icon: CheckCircle2,
+                        title: "No Pressure",
+                        desc: "Submitting the form starts a conversation. It does not lock you into anything.",
+                      },
+                      {
+                        icon: Headphones,
+                        title: "Direct Contact",
+                        desc: "You will hear from a real team member, not an automated workflow.",
+                      },
+                    ].map((item) => (
+                      <div key={item.title} className="flex items-start gap-3">
+                        <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-white/10">
+                          <item.icon className="h-5 w-5 text-orange-400" />
                         </div>
                         <div>
-                          <p className="font-semibold text-white text-sm">{item.title}</p>
+                          <p className="text-sm font-semibold text-white">{item.title}</p>
                           <p className="text-xs text-slate-400">{item.desc}</p>
                         </div>
                       </div>
@@ -424,94 +281,24 @@ export default function ApplyPage() {
                   </div>
                 </div>
 
-                {/* Pre-Qualify CTA */}
-                <div className="bg-gradient-to-br from-blue-900 to-slate-900 rounded-2xl p-6 text-white border border-blue-800 shadow-xl relative overflow-hidden group">
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full blur-2xl group-hover:bg-blue-500/20 transition-all" />
-                  <div className="relative z-10">
-                    <div className="flex items-center gap-2 mb-3">
-                      <div className="p-2 bg-blue-500/20 rounded-lg">
-                        <CheckCircle2 className="h-5 w-5 text-blue-400" />
-                      </div>
-                      <h3 className="font-bold text-lg text-white">Not Ready Yet?</h3>
-                    </div>
-                    <p className="text-slate-300 text-sm mb-4 leading-relaxed">
-                      Check if you qualify for our top-tier pay rates in less than 2 minutes. No commitment required.
-                    </p>
-                    <Link 
-                      href="/pre-qualify"
-                      className="flex items-center justify-center gap-2 w-full bg-blue-600 hover:bg-blue-500 text-white py-3 rounded-xl font-bold transition-all hover:shadow-lg hover:shadow-blue-500/25"
-                    >
-                      Check Eligibility <ChevronRight className="h-4 w-4" />
-                    </Link>
-                  </div>
-                </div>
-
-                {/* Testimonials */}
-                <div className="bg-gradient-to-br from-[#001F3F] to-[#001326] rounded-2xl p-6 border border-white/10 relative overflow-hidden">
-                  <div className="absolute top-0 right-0 w-24 h-24 bg-orange-500/10 rounded-full blur-2xl" />
-                  <div className="relative">
-                    <div className="flex items-center gap-1 mb-3">
-                      {[...Array(5)].map((_, i) => (
-                        <Star key={i} className="h-4 w-4 fill-orange-400 text-orange-400" />
-                      ))}
-                    </div>
-                    <blockquote className="text-slate-300 text-sm leading-relaxed mb-4">
-                      "I get paid on time, every time. The dispatch team treats me like family, not just a number. Best decision I ever made."
-                    </blockquote>
-                    <div className="flex items-center gap-3">
-                      <Image
-                        src="/images/generated/driver-portrait-1.png"
-                        alt="Mike R. - Owner Operator at Thind Transport"
-                        width={40}
-                        height={40}
-                        className="rounded-full object-cover"
-                      />
-                      <div>
-                        <p className="text-white font-semibold text-sm">Mike R.</p>
-                        <p className="text-xs text-slate-500">Owner Operator • 3 Years</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Phone CTA */}
-                <div className="bg-gradient-to-br from-orange-600 to-orange-700 rounded-2xl p-6 text-center shadow-lg shadow-orange-900/30">
-                  <Phone className="h-8 w-8 text-white mx-auto mb-3" />
-                  <p className="text-white/90 text-sm mb-2">Questions? Talk to a recruiter now</p>
+                <div className="rounded-2xl bg-gradient-to-br from-orange-600 to-orange-700 p-6 text-center shadow-lg shadow-orange-900/30">
+                  <Phone className="mx-auto mb-3 h-8 w-8 text-white" />
+                  <p className="mb-2 text-sm text-white/90">Questions before you apply?</p>
                   <Link
                     href={`tel:${COMPANY_INFO.phoneFormatted}`}
-                    className="text-2xl font-black text-white hover:text-orange-200 transition-colors block"
+                    className="block text-2xl font-black text-white transition-colors hover:text-orange-200"
                   >
                     {COMPANY_INFO.phone}
                   </Link>
-                  <p className="text-xs text-orange-200 mt-2">Mon-Fri 8AM-6PM PST</p>
+                  <p className="mt-2 text-xs text-orange-100">Call or submit the form and we&apos;ll follow up.</p>
                 </div>
-              </div>
-            </div>
-          </div>
-        </section>
 
-        {/* Bottom CTA Strip */}
-        <section className="bg-gradient-to-r from-orange-600 via-orange-500 to-orange-600 py-8">
-          <div className="container">
-            <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-              <div className="text-center md:text-left">
-                <h2 className="text-2xl font-bold text-white">Ready to Start Earning More?</h2>
-                <p className="text-orange-100">Join 47+ drivers who applied this month</p>
-              </div>
-              <div className="flex items-center gap-4">
                 <Link
-                  href="#application-form"
-                  className="inline-flex items-center gap-2 bg-white text-orange-600 px-8 py-4 rounded-xl font-bold text-lg hover:bg-orange-50 transition-colors shadow-lg"
+                  href="/pre-qualify"
+                  className="flex items-center justify-center gap-2 rounded-2xl border border-blue-800 bg-blue-900 px-6 py-4 font-bold text-white transition-all hover:bg-blue-800"
                 >
-                  Apply Now <ChevronRight className="h-5 w-5" />
-                </Link>
-                <Link
-                  href={`tel:${COMPANY_INFO.phoneFormatted}`}
-                  className="inline-flex items-center gap-2 bg-orange-700 text-white px-6 py-4 rounded-xl font-bold hover:bg-orange-800 transition-colors"
-                >
-                  <Phone className="h-5 w-5" />
-                  Call
+                  Not Ready Yet? Pre-Qualify
+                  <ChevronRight className="h-4 w-4" />
                 </Link>
               </div>
             </div>

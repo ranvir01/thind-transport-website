@@ -283,7 +283,7 @@ const colorClasses = {
 
 export default function BenefitsPage() {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-50">
+    <div className="brand-page-shell min-h-screen">
       <PageBreadcrumb pageName="Benefits" category="Drivers" />
       
       {/* Hero Section */}
@@ -460,7 +460,7 @@ export default function BenefitsPage() {
               </p>
             </div>
 
-            <Card className="overflow-hidden border-2 border-gray-200">
+            <Card className="overflow-hidden border-2 border-white/10" data-light>
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
@@ -479,7 +479,7 @@ export default function BenefitsPage() {
                     {comparisonData.map((row, idx) => (
                       <tr key={row.feature} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
                         <td className="px-6 py-4 font-medium text-gray-900">{row.feature}</td>
-                        <td className="px-6 py-4 text-center font-bold text-green-600 bg-green-50/50">
+                        <td className="px-6 py-4 text-center font-bold text-green-700 bg-green-50/50">
                           {row.thind}
                         </td>
                         <td className="px-6 py-4 text-center text-gray-500">{row.industry}</td>

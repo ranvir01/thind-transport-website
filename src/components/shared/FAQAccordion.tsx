@@ -141,12 +141,12 @@ export function FAQAccordion({ items = defaultFaqs, darkBackground = true }: FAQ
           <div 
             key={index}
             className={`border rounded-lg px-4 py-5 animate-pulse ${
-              darkBackground ? "border-white/10 bg-white/5" : "border-gray-200 bg-gray-50"
+              darkBackground ? "border-white/10 bg-white/5" : "border-white/10 bg-[rgba(16,25,38,0.9)]"
             }`}
           >
             <div className="flex items-start gap-3">
-              <div className={`w-5 h-5 rounded ${darkBackground ? "bg-blue-500/30" : "bg-blue-200"}`} />
-              <div className={`flex-1 h-5 rounded ${darkBackground ? "bg-white/10" : "bg-gray-200"}`} />
+              <div className={`w-5 h-5 rounded ${darkBackground ? "bg-orange-500/30" : "bg-orange-500/20"}`} />
+              <div className={`flex-1 h-5 rounded ${darkBackground ? "bg-white/10" : "bg-white/10"}`} />
             </div>
           </div>
         ))}
@@ -180,24 +180,24 @@ export function FAQAccordion({ items = defaultFaqs, darkBackground = true }: FAQ
             value={`item-${id}-${index}`}
             className={`border rounded-lg mb-3 px-4 transition-colors ${
               darkBackground 
-                ? "border-white/10 bg-white/5 hover:bg-white/10 data-[state=open]:bg-blue-500/10 data-[state=open]:border-blue-500/30"
-                : "border-gray-200 bg-white hover:bg-gray-50 data-[state=open]:bg-blue-50 data-[state=open]:border-blue-200"
+                ? "border-white/10 bg-white/5 hover:bg-white/10 data-[state=open]:bg-orange-500/10 data-[state=open]:border-orange-500/30"
+                : "border-white/10 bg-[rgba(16,25,38,0.92)] hover:bg-[rgba(20,31,47,0.96)] data-[state=open]:bg-orange-500/10 data-[state=open]:border-orange-500/30"
             }`}
           >
             <AccordionTrigger className={`text-left py-5 font-semibold text-base hover:no-underline ${
               darkBackground
-                ? "text-white hover:text-blue-400 [&[data-state=open]]:text-blue-400"
-                : "text-gray-900 hover:text-blue-600 [&[data-state=open]]:text-blue-600"
+                ? "text-white hover:text-orange-400 [&[data-state=open]]:text-orange-400"
+                : "text-white hover:text-orange-400 [&[data-state=open]]:text-orange-400"
             }`}>
               <div className="flex items-start gap-3 flex-1 pr-4">
                 <HelpCircle className={`h-5 w-5 mt-0.5 flex-shrink-0 ${
-                  darkBackground ? "text-blue-500" : "text-blue-600"
+                  darkBackground ? "text-orange-500" : "text-orange-500"
                 }`} />
                 <span className="flex-1">{faq.question}</span>
               </div>
             </AccordionTrigger>
             <AccordionContent className={`text-base leading-relaxed pb-5 pl-8 ${
-              darkBackground ? "text-zinc-300" : "text-gray-600"
+              darkBackground ? "text-zinc-300" : "text-steel-200"
             }`}>
               <p>{faq.answer}</p>
             </AccordionContent>

@@ -4,232 +4,109 @@ import { useState } from "react"
 
 const CARD = {
   owner: "Sukhdev Thind",
-  title: "Owner",
-  company: "THIND TRANSPORT",
-  tagline: "YOUR FREIGHT, OUR COMMITMENT",
+  tagline: "THE TRUCK ROLLS. THE OFFICE NEVER SLEEPS.",
   phone: "(206) 765-6300",
   email: "thindcarrier@gmail.com",
   website: "thindtransport.com",
-  location: "Kent, WA 98064",
-  dot: "USDOT #3154006",
-  services: ["Flatbed", "Reefer", "Dry Van"],
-  hiring: [
-    { role: "Company Drivers", pay: "$78K–$110K/yr" },
-    { role: "Owner Operators", pay: "$150K–$250K/yr", highlight: true },
-  ],
-  stats: [
-    { label: "Commission", value: "91%" },
-    { label: "States", value: "48" },
-    { label: "Since", value: "2014" },
-  ],
 }
 
-function PhoneIcon({ className }: { className?: string }) {
+function MiniTruck() {
   return (
-    <svg className={className} viewBox="0 0 20 20" fill="currentColor">
-      <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z" />
-    </svg>
-  )
-}
-
-function EmailIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 20 20" fill="currentColor">
-      <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
-      <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
-    </svg>
-  )
-}
-
-function GlobeIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 20 20" fill="currentColor">
-      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM4.332 8.027a6.012 6.012 0 011.912-2.706C6.512 5.73 6.974 6 7.5 6A1.5 1.5 0 019 7.5V8a2 2 0 004 0 2 2 0 011.523-1.943A5.977 5.977 0 0116 10c0 .34-.028.675-.083 1H14a2 2 0 00-2 2v2.197A5.973 5.973 0 0110 16v-2a2 2 0 00-2-2 2 2 0 01-2-2 2 2 0 00-1.668-1.973z" clipRule="evenodd" />
-    </svg>
-  )
-}
-
-function PinIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 20 20" fill="currentColor">
-      <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
-    </svg>
-  )
-}
-
-function FlatbedIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="1" y="14" width="18" height="2" rx="0.5" />
-      <path d="M19 14h2.5a1.5 1.5 0 011.5 1.5V18h-4" />
-      <circle cx="6" cy="19" r="2" fill="currentColor" stroke="none" />
-      <circle cx="18" cy="19" r="2" fill="currentColor" stroke="none" />
-      <path d="M1 14V11l3-5h5" />
-      <line x1="4" y1="8" x2="7" y2="8" />
-    </svg>
-  )
-}
-
-function ReeferIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="1" y="6" width="15" height="10" rx="1" />
-      <path d="M16 8h4.5a1.5 1.5 0 011.5 1.5V18h-6" />
-      <circle cx="6" cy="19" r="2" fill="currentColor" stroke="none" />
-      <circle cx="18" cy="19" r="2" fill="currentColor" stroke="none" />
-      <path d="M8.5 9v4M6.5 11h4" />
-    </svg>
-  )
-}
-
-function DryVanIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="1" y="5" width="15" height="12" rx="1" />
-      <path d="M16 9h4.5a1.5 1.5 0 011.5 1.5V18h-6" />
-      <circle cx="6" cy="19" r="2" fill="currentColor" stroke="none" />
-      <circle cx="18" cy="19" r="2" fill="currentColor" stroke="none" />
-      <path d="M4 5v12M8 5v12M12 5v12" opacity="0.35" />
-    </svg>
-  )
-}
-
-function StatesIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M3 7l3-3 4 2 4-2 4 2 3-3v13l-3 3-4-2-4 2-4-2-3 3V7z" />
-      <line x1="7" y1="4" x2="7" y2="18" opacity="0.3" />
-      <line x1="11" y1="6" x2="11" y2="20" opacity="0.3" />
-      <line x1="15" y1="4" x2="15" y2="18" opacity="0.3" />
+    <svg viewBox="0 0 28 14" fill="currentColor" className="w-[3.2%] h-auto">
+      <rect x="0" y="3" width="16" height="8" rx="1" />
+      <path d="M16 5h5l3 4v2h-8V5z" />
+      <circle cx="5" cy="12.5" r="1.8" />
+      <circle cx="21" cy="12.5" r="1.8" />
     </svg>
   )
 }
 
 function CardFront() {
   return (
-    <div className="relative w-full aspect-[3.46/2.32] rounded-xl overflow-hidden shadow-2xl bg-gradient-to-br from-[#001F3F] via-[#001A35] to-[#00101F]">
-      <div className="absolute inset-0">
-        <div className="absolute inset-0 opacity-[0.025]" style={{ backgroundImage: "radial-gradient(circle at 1px 1px, white 0.5px, transparent 0)", backgroundSize: "20px 20px" }} />
-        <div className="absolute top-0 right-0 w-[55%] h-[55%] bg-gradient-to-bl from-orange/[0.035] to-transparent rounded-bl-full" />
+    <div className="relative w-full aspect-[3.46/2.32] rounded-xl overflow-hidden shadow-2xl bg-[#1a1f2e]" style={{ containerType: "inline-size" }}>
+      <div className="absolute top-0 right-0 w-[40%] h-[65%]">
+        <div className="absolute inset-0 bg-gradient-to-bl from-orange/[0.06] to-transparent" />
+        <div className="absolute top-0 left-0 w-[2px] h-full bg-orange/20 rotate-[20deg] origin-top-left" />
       </div>
 
-      <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-orange via-orange-300 to-orange" />
-
-      <div className="relative z-10 h-full grid grid-cols-[1fr_auto] gap-3 sm:gap-5 p-5 sm:p-7">
-        {/* LEFT */}
-        <div className="flex flex-col justify-between min-w-0">
-          <div>
-            <div className="flex items-center gap-1.5 mb-0.5">
-              <span className="text-white text-sm sm:text-base font-black tracking-tight leading-none">THIND</span>
-              <span className="text-orange text-sm sm:text-base font-black tracking-tight leading-none">TRANSPORT</span>
+      <div className="relative z-10 h-full flex flex-col">
+        {/* Main content: left text, right QR */}
+        <div className="flex-1 flex justify-between p-[6%] pb-[2%]">
+          {/* Left column */}
+          <div className="flex flex-col justify-between flex-1 min-w-0 pr-[5%]">
+            <div>
+              <p className="text-white font-extrabold leading-tight" style={{ fontSize: "clamp(1rem, 3.8cqi, 1.8rem)" }}>Owner / Dispatcher:</p>
+              <h3 className="text-white font-black tracking-tight leading-none mt-[0.15em]" style={{ fontSize: "clamp(1.2rem, 5cqi, 2.4rem)" }}>[{CARD.owner}]</h3>
             </div>
-            <div className="w-14 h-[2px] bg-gradient-to-r from-orange to-transparent rounded-full" />
+
+            <div className="mt-auto" style={{ fontSize: "clamp(0.7rem, 2.6cqi, 1.2rem)" }}>
+              <p className="leading-[1.7]">
+                <span className="text-orange font-bold">Cell: </span>
+                <span className="text-white">{CARD.phone}</span>
+              </p>
+              <p className="leading-[1.7]">
+                <span className="text-orange font-bold">Email: </span>
+                <span className="text-white">{CARD.email}</span>
+              </p>
+              <p className="leading-[1.7]">
+                <span className="text-orange font-bold">Website: </span>
+                <span className="text-white">{CARD.website}</span>
+              </p>
+            </div>
           </div>
 
-          <div className="mt-2 sm:mt-3">
-            <h3 className="text-white text-xl sm:text-[28px] font-black tracking-tight leading-none">{CARD.owner}</h3>
-            <p className="text-orange/80 text-[9px] sm:text-[11px] font-semibold tracking-[0.25em] mt-0.5">{CARD.title.toUpperCase()}</p>
-          </div>
-
-          {/* Stats */}
-          <div className="flex gap-3 sm:gap-4 mt-2.5 sm:mt-3">
-            {CARD.stats.map((s) => (
-              <div key={s.label} className="bg-white/[0.04] rounded-lg px-2.5 sm:px-3 py-1.5 sm:py-2 border border-white/[0.06]">
-                <p className="text-orange text-base sm:text-xl font-black leading-none">{s.value}</p>
-                <p className="text-white/35 text-[6px] sm:text-[8px] font-bold tracking-wider mt-0.5">{s.label.toUpperCase()}</p>
+          {/* Right column: QR */}
+          <div className="flex flex-col items-end flex-shrink-0 w-[28%]">
+            <p className="text-white/70 font-semibold tracking-wide text-right mb-[4%]" style={{ fontSize: "clamp(0.5rem, 1.8cqi, 0.85rem)" }}>to website</p>
+            <div className="w-full aspect-square bg-white rounded-md shadow-lg shadow-black/30 p-[6%]">
+              <div className="w-full h-full bg-white grid grid-cols-7 grid-rows-7 gap-[1px] p-[5%]">
+                <QRPattern />
               </div>
-            ))}
+            </div>
           </div>
-
-          <div className="w-full h-px bg-white/[0.08] mt-2.5 sm:mt-3" />
-
-          {/* Services */}
-          <div className="flex gap-1 sm:gap-1.5 mt-2 sm:mt-2.5 flex-wrap">
-            {[
-              { label: "Flatbed", Icon: FlatbedIcon },
-              { label: "Reefer", Icon: ReeferIcon },
-              { label: "Dry Van", Icon: DryVanIcon },
-            ].map(({ label, Icon }) => (
-              <div key={label} className="flex items-center gap-1 px-2 sm:px-2.5 py-[3px] sm:py-1 rounded-md bg-orange/[0.08] border border-orange/15">
-                <Icon className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-orange" />
-                <span className="text-orange text-[7px] sm:text-[9px] font-bold tracking-wide">{label.toUpperCase()}</span>
-              </div>
-            ))}
-          </div>
-
-          {/* Hiring */}
-          <div className="mt-1.5 sm:mt-2 space-y-0.5 sm:space-y-1">
-            {CARD.hiring.map((h) => (
-              <div key={h.role} className="flex items-center gap-1.5">
-                <div className={`w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full ${h.highlight ? "bg-orange" : "bg-white/30"}`} />
-                <span className="text-white/60 text-[8px] sm:text-[10px]">{h.role}</span>
-                <span className={`text-[8px] sm:text-[10px] font-bold ${h.highlight ? "text-orange" : "text-white/85"}`}>{h.pay}</span>
-              </div>
-            ))}
-          </div>
-
-          {/* Contact */}
-          <div className="mt-auto pt-2 sm:pt-3 grid grid-cols-2 gap-x-2 gap-y-1 sm:gap-y-1.5">
-            <ContactRow Icon={PhoneIcon} val={CARD.phone} />
-            <ContactRow Icon={EmailIcon} val={CARD.email} />
-            <ContactRow Icon={GlobeIcon} val={CARD.website} />
-            <ContactRow Icon={PinIcon} val={CARD.location} />
-          </div>
-
-          <p className="text-[6px] sm:text-[7px] text-white/15 mt-1 font-medium tracking-wide">{CARD.dot} &middot; FMCSA CERTIFIED</p>
         </div>
 
-        {/* RIGHT - QR */}
-        <div className="flex flex-col items-center justify-end">
-          <div className="w-[68px] h-[68px] sm:w-[96px] sm:h-[96px] bg-white rounded-lg p-1 sm:p-1.5 shadow-xl shadow-black/40 ring-1 ring-white/10">
-            <div className="w-full h-full rounded bg-white grid grid-cols-7 grid-rows-7 gap-[0.5px] sm:gap-[1px] p-0.5 sm:p-1">
-              <QRPattern />
-            </div>
-          </div>
-          <div className="mt-1.5 sm:mt-2 text-center">
-            <p className="text-orange text-[6px] sm:text-[8px] font-bold tracking-[0.12em] leading-tight">SCAN TO</p>
-            <p className="text-orange text-[6px] sm:text-[8px] font-bold tracking-[0.12em] leading-tight">APPLY NOW</p>
+        {/* Orange bar */}
+        <div className="bg-orange px-[6%] py-[2.5%]">
+          <p className="text-navy font-extrabold tracking-wide text-center" style={{ fontSize: "clamp(0.55rem, 2cqi, 0.95rem)" }}>
+            24/7 Dispatch &bull; Dry Van &bull; Reefer &bull; Flatbed &bull; Serving 48 States
+          </p>
+          <div className="flex items-center justify-center gap-[2%] mt-[0.4%]">
+            {Array.from({ length: 10 }).map((_, i) => (
+              <span key={i} className="flex items-center gap-[1%]">
+                <MiniTruck />
+                {i < 9 && <span className="text-navy/30" style={{ fontSize: "clamp(0.35rem, 1.2cqi, 0.55rem)" }}>&rarr;</span>}
+              </span>
+            ))}
           </div>
         </div>
       </div>
-    </div>
-  )
-}
-
-function ContactRow({ Icon, val }: { Icon: React.FC<{ className?: string }>; val: string }) {
-  return (
-    <div className="flex items-center gap-1 sm:gap-1.5 min-w-0">
-      <div className="w-4 h-4 sm:w-5 sm:h-5 rounded bg-orange/[0.08] flex items-center justify-center flex-shrink-0 border border-orange/10">
-        <Icon className="w-2 h-2 sm:w-2.5 sm:h-2.5 text-orange" />
-      </div>
-      <span className="text-white/85 text-[7px] sm:text-[9px] font-medium truncate">{val}</span>
     </div>
   )
 }
 
 function CardBack() {
   return (
-    <div className="relative w-full aspect-[3.46/2.32] rounded-xl overflow-hidden shadow-2xl">
+    <div className="relative w-full aspect-[3.46/2.32] rounded-xl overflow-hidden shadow-2xl" style={{ containerType: "inline-size" }}>
       <div className="absolute inset-0 bg-gradient-to-b from-[#0a1628] via-[#0f2744] to-[#1a3a5c]" />
 
-      <div className="absolute bottom-[26%] left-0 right-0 h-[20%] bg-gradient-to-t from-[#2a4a6a]/30 to-transparent" />
-      <div className="absolute bottom-[24%] left-1/2 -translate-x-1/2 w-[140%] h-[6%] bg-orange/[0.05] rounded-[50%] blur-2xl" />
+      <div className="absolute bottom-[20%] left-0 right-0 h-[25%] bg-gradient-to-t from-[#2a4a6a]/30 to-transparent" />
+      <div className="absolute bottom-[18%] left-1/2 -translate-x-1/2 w-[140%] h-[6%] bg-orange/[0.05] rounded-[50%] blur-2xl" />
 
       {/* Stars */}
       <div className="absolute inset-0">
         {[
-          { x: 6, y: 4, o: 0.5 }, { x: 14, y: 11, o: 0.25 }, { x: 21, y: 3, o: 0.45 },
-          { x: 33, y: 7, o: 0.35 }, { x: 44, y: 3, o: 0.6 }, { x: 54, y: 9, o: 0.25 },
-          { x: 61, y: 2, o: 0.4 }, { x: 71, y: 6, o: 0.35 }, { x: 79, y: 4, o: 0.5 },
-          { x: 87, y: 10, o: 0.25 }, { x: 92, y: 3, o: 0.4 }, { x: 27, y: 14, o: 0.15 },
-          { x: 67, y: 13, o: 0.2 }, { x: 49, y: 5, o: 0.3 },
+          { x: 6, y: 4, o: 0.5 }, { x: 14, y: 9, o: 0.25 }, { x: 21, y: 2, o: 0.45 },
+          { x: 33, y: 6, o: 0.35 }, { x: 44, y: 2, o: 0.6 }, { x: 54, y: 8, o: 0.25 },
+          { x: 61, y: 1, o: 0.4 }, { x: 71, y: 5, o: 0.35 }, { x: 79, y: 3, o: 0.5 },
+          { x: 87, y: 8, o: 0.25 }, { x: 92, y: 2, o: 0.4 }, { x: 49, y: 4, o: 0.3 },
         ].map((s, i) => (
           <div key={i} className="absolute w-[1px] h-[1px] bg-white rounded-full" style={{ left: `${s.x}%`, top: `${s.y}%`, opacity: s.o }} />
         ))}
       </div>
 
       {/* Road */}
-      <div className="absolute bottom-0 left-0 right-0 h-[30%]">
+      <div className="absolute bottom-0 left-0 right-0 h-[28%]">
         <svg viewBox="0 0 1000 300" preserveAspectRatio="none" className="absolute inset-0 w-full h-full">
           <path d="M0 80 Q250 40 500 30 Q750 20 1000 0 L1000 300 L0 300Z" fill="#1c1c1c" />
           <path d="M0 80 Q250 40 500 30 Q750 20 1000 0" stroke="#FF9500" strokeWidth="2" fill="none" opacity="0.4" />
@@ -237,37 +114,33 @@ function CardBack() {
         </svg>
       </div>
 
-      <div className="relative z-10 h-full flex flex-col justify-between p-5 sm:p-7">
-        {/* Top */}
-        <div className="text-center">
-          <h3 className="text-white text-2xl sm:text-[38px] font-black tracking-tight leading-none">
+      <div className="relative z-10 h-full flex flex-col">
+        {/* Top: Company name */}
+        <div className="text-center pt-[4%] px-[5%]">
+          <h3 className="text-white font-black tracking-tight leading-none" style={{ fontSize: "clamp(1.3rem, 5.5cqi, 2.3rem)" }}>
             THIND <span className="text-orange">TRANSPORT</span>
           </h3>
-          <div className="mx-auto w-28 sm:w-44 h-[2px] bg-gradient-to-r from-transparent via-orange to-transparent rounded-full mt-2 sm:mt-2.5" />
-          <p className="text-white/40 text-[7px] sm:text-[10px] tracking-[0.4em] mt-1.5 font-medium">{CARD.tagline}</p>
+          <div className="mx-auto w-[30%] h-[2px] bg-gradient-to-r from-transparent via-orange to-transparent rounded-full mt-[1.5%]" />
+          <p className="text-white/35 tracking-[0.35em] mt-[1%] font-medium" style={{ fontSize: "clamp(0.4rem, 1.4cqi, 0.6rem)" }}>{CARD.tagline}</p>
         </div>
 
-        {/* Center: Truck scene with business silhouettes */}
-        <div className="flex-1 flex items-center justify-center relative -mb-3 sm:-mb-5">
+        {/* Center: Truck scene */}
+        <div className="flex-1 flex items-center justify-center relative">
           <TruckScene />
         </div>
 
-        {/* Bottom: Service badges */}
-        <div className="relative z-20">
-          <div className="flex justify-center gap-1 sm:gap-2 mb-1.5 sm:mb-2">
-            {[
-              { label: "FLATBED", Icon: FlatbedIcon },
-              { label: "REEFER", Icon: ReeferIcon },
-              { label: "DRY VAN", Icon: DryVanIcon },
-              { label: "48 STATES", Icon: StatesIcon },
-            ].map(({ label, Icon }) => (
-              <div key={label} className="flex items-center gap-1 px-2 sm:px-3 py-1 sm:py-1.5 rounded-md bg-white/[0.04] border border-white/[0.07] backdrop-blur-sm">
-                <Icon className="w-2.5 h-2.5 sm:w-3.5 sm:h-3.5 text-orange/70" />
-                <span className="text-white/55 text-[6px] sm:text-[9px] font-bold tracking-wider">{label}</span>
-              </div>
-            ))}
+        {/* Bottom: Orange bar */}
+        <div className="bg-orange px-[5%] py-[2%] flex items-center justify-between">
+          <div className="flex items-center gap-[2%] text-navy" style={{ fontSize: "clamp(0.4rem, 1.4cqi, 0.6rem)" }}>
+            <span className="font-extrabold tracking-wider">FLATBED</span>
+            <span className="text-navy/40">&bull;</span>
+            <span className="font-extrabold tracking-wider">DRY VAN</span>
+            <span className="text-navy/40">&bull;</span>
+            <span className="font-extrabold tracking-wider">REEFER</span>
+            <span className="text-navy/40">&bull;</span>
+            <span className="font-extrabold tracking-wider">48 STATES</span>
           </div>
-          <p className="text-center text-white/20 text-[7px] sm:text-[9px] tracking-[0.2em] font-semibold">THINDTRANSPORT.COM</p>
+          <span className="text-navy/60 font-bold tracking-wider" style={{ fontSize: "clamp(0.35rem, 1.2cqi, 0.55rem)" }}>THINDTRANSPORT.COM</span>
         </div>
       </div>
     </div>
@@ -276,7 +149,7 @@ function CardBack() {
 
 function TruckScene() {
   return (
-    <svg viewBox="0 0 600 220" className="w-[92%] sm:w-[88%] max-w-xl" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <svg viewBox="0 0 600 220" className="w-[90%]" fill="none" xmlns="http://www.w3.org/2000/svg">
       <defs>
         <linearGradient id="bodyGrad" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor="#FF9500" />
@@ -290,11 +163,6 @@ function TruckScene() {
           <stop offset="0%" stopColor="#FFEEBB" stopOpacity="0.6" />
           <stop offset="100%" stopColor="#FFEEBB" stopOpacity="0" />
         </linearGradient>
-        <linearGradient id="sceneVignette" x1="0.5" y1="0" x2="0.5" y2="1">
-          <stop offset="0%" stopColor="white" stopOpacity="0" />
-          <stop offset="85%" stopColor="white" stopOpacity="0" />
-          <stop offset="100%" stopColor="white" stopOpacity="0.03" />
-        </linearGradient>
         <filter id="glow">
           <feGaussianBlur stdDeviation="3" result="b" />
           <feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge>
@@ -305,99 +173,70 @@ function TruckScene() {
         </filter>
       </defs>
 
-      {/* === LEFT SIDE: WAREHOUSE & OPERATIONS === */}
+      {/* Subtle ground plane connecting all zones */}
+      <line x1="0" y1="170" x2="600" y2="170" stroke="white" strokeWidth="0.5" opacity="0.06" />
 
-      {/* Warehouse building */}
-      <g opacity="0.12">
-        <rect x="8" y="72" width="80" height="68" rx="2" fill="white" />
-        <path d="M2 72 L48 48 L94 72" fill="white" opacity="0.7" />
-        {/* Windows */}
-        <rect x="14" y="78" width="14" height="16" rx="1" fill="white" opacity="0.3" />
-        <rect x="34" y="78" width="14" height="16" rx="1" fill="white" opacity="0.3" />
-        <rect x="54" y="78" width="14" height="16" rx="1" fill="white" opacity="0.3" />
-        {/* Loading bay doors */}
-        <rect x="10" y="110" width="24" height="30" rx="1" fill="white" opacity="0.5" />
-        <rect x="38" y="110" width="24" height="30" rx="1" fill="white" opacity="0.5" />
-        <rect x="66" y="110" width="18" height="30" rx="1" fill="white" opacity="0.5" />
-        {/* Door lines */}
-        <line x1="22" y1="112" x2="22" y2="140" stroke="white" strokeWidth="0.5" opacity="0.3" />
-        <line x1="50" y1="112" x2="50" y2="140" stroke="white" strokeWidth="0.3" opacity="0.3" />
+      {/* === LEFT ZONE: ORIGIN / OPERATIONS === */}
+
+      {/* Warehouse */}
+      <g opacity="0.15" transform="translate(10, 70)">
+        <rect x="0" y="22" width="85" height="58" rx="2" fill="white" />
+        <path d="M-4 22 L42.5 0 L89 22" fill="white" />
+        <rect x="8" y="50" width="28" height="30" rx="1.5" fill="white" opacity="0.35" />
+        <rect x="44" y="50" width="28" height="30" rx="1.5" fill="white" opacity="0.35" />
       </g>
 
-      {/* Forklift at warehouse */}
-      <g opacity="0.13" transform="translate(96, 112)">
-        {/* Forklift body */}
-        <rect x="0" y="10" width="18" height="14" rx="2" fill="white" />
-        <rect x="-4" y="8" width="6" height="18" rx="1" fill="white" />
-        {/* Forklift mast */}
-        <rect x="16" y="-2" width="3" height="28" rx="0.5" fill="white" />
-        <rect x="14" y="0" width="8" height="3" rx="0.5" fill="white" />
-        {/* Pallet on forks */}
-        <rect x="12" y="-6" width="14" height="8" rx="1" fill="white" opacity="0.5" />
-        {/* Wheels */}
-        <circle cx="5" cy="26" r="3" fill="white" />
-        <circle cx="14" cy="26" r="3" fill="white" />
-        {/* Driver on forklift */}
-        <circle cx="8" cy="4" r="3.5" fill="white" />
-        <rect x="5" y="7" width="6" height="5" rx="2" fill="white" />
+      {/* Forklift with operator */}
+      <g opacity="0.16" transform="translate(105, 110)">
+        <rect x="0" y="12" width="22" height="16" rx="3" fill="white" />
+        <rect x="20" y="0" width="4" height="30" rx="1" fill="white" />
+        <rect x="17" y="2" width="10" height="4" rx="1" fill="white" />
+        <rect x="16" y="-6" width="12" height="10" rx="1.5" fill="white" opacity="0.5" />
+        <circle cx="6" cy="32" r="4" fill="white" />
+        <circle cx="17" cy="32" r="4" fill="white" />
+        <circle cx="9" cy="6" r="5" fill="white" />
+        <rect x="6" y="11" width="6" height="4" rx="2" fill="white" />
       </g>
 
-      {/* Dispatcher/office scene (upper left) */}
-      <g opacity="0.10" transform="translate(18, 35)">
-        {/* Desk */}
-        <rect x="0" y="20" width="30" height="3" rx="0.5" fill="white" />
-        <rect x="2" y="23" width="3" height="10" rx="0.5" fill="white" />
-        <rect x="25" y="23" width="3" height="10" rx="0.5" fill="white" />
-        {/* Monitor */}
-        <rect x="5" y="8" width="16" height="12" rx="1.5" fill="white" />
-        <rect x="7" y="10" width="12" height="8" rx="0.5" fill="white" opacity="0.3" />
-        <rect x="11" y="20" width="4" height="2" rx="0.5" fill="white" />
-        {/* Person at desk */}
-        <circle cx="35" cy="12" r="4.5" fill="white" />
-        <rect x="31" y="17" width="8" height="8" rx="2.5" fill="white" />
-        {/* Arm reaching to keyboard */}
-        <line x1="31" y1="20" x2="24" y2="19" stroke="white" strokeWidth="2" strokeLinecap="round" />
-        {/* Headset */}
-        <path d="M31 10 Q28 6 31 4" stroke="white" strokeWidth="1.2" fill="none" strokeLinecap="round" />
+      {/* Dispatcher at desk */}
+      <g opacity="0.14" transform="translate(20, 32)">
+        <rect x="0" y="22" width="34" height="4" rx="1" fill="white" />
+        <rect x="3" y="26" width="4" height="12" rx="1" fill="white" />
+        <rect x="27" y="26" width="4" height="12" rx="1" fill="white" />
+        <rect x="5" y="8" width="20" height="14" rx="2" fill="white" />
+        <rect x="13" y="22" width="4" height="3" rx="0.5" fill="white" />
+        <circle cx="42" cy="14" r="6" fill="white" />
+        <rect x="37" y="20" width="10" height="10" rx="3" fill="white" />
+        <line x1="37" y1="24" x2="28" y2="22" stroke="white" strokeWidth="3" strokeLinecap="round" />
       </g>
 
-      {/* Worker with hand truck / loading cargo */}
-      <g opacity="0.11" transform="translate(140, 108)">
-        {/* Person */}
-        <circle cx="8" cy="2" r="4" fill="white" />
-        <rect x="5" y="6" width="6" height="14" rx="2" fill="white" />
-        {/* Legs */}
-        <line x1="7" y1="20" x2="4" y2="28" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
-        <line x1="9" y1="20" x2="13" y2="28" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
-        {/* Arms pushing */}
-        <line x1="11" y1="10" x2="20" y2="8" stroke="white" strokeWidth="2" strokeLinecap="round" />
-        {/* Hand truck */}
-        <line x1="20" y1="2" x2="20" y2="24" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
-        <line x1="18" y1="24" x2="26" y2="24" stroke="white" strokeWidth="2" strokeLinecap="round" />
-        <circle cx="19" cy="27" r="2.5" fill="white" />
-        <circle cx="25" cy="27" r="2.5" fill="white" />
-        {/* Boxes on hand truck */}
-        <rect x="17" y="-2" width="10" height="8" rx="1" fill="white" opacity="0.6" />
-        <rect x="18" y="-10" width="8" height="8" rx="1" fill="white" opacity="0.4" />
+      {/* Worker pushing hand truck */}
+      <g opacity="0.14" transform="translate(150, 104)">
+        <circle cx="8" cy="0" r="5.5" fill="white" />
+        <rect x="4" y="6" width="8" height="16" rx="3" fill="white" />
+        <line x1="6" y1="22" x2="2" y2="34" stroke="white" strokeWidth="3" strokeLinecap="round" />
+        <line x1="10" y1="22" x2="15" y2="34" stroke="white" strokeWidth="3" strokeLinecap="round" />
+        <line x1="12" y1="12" x2="22" y2="10" stroke="white" strokeWidth="3" strokeLinecap="round" />
+        <rect x="20" y="0" width="3" height="28" rx="1" fill="white" />
+        <rect x="18" y="28" width="10" height="3" rx="1" fill="white" />
+        <circle cx="20" cy="34" r="3.5" fill="white" />
+        <circle cx="27" cy="34" r="3.5" fill="white" />
+        <rect x="17" y="-4" width="10" height="8" rx="1.5" fill="white" opacity="0.5" />
       </g>
 
-      {/* Mechanic under truck area */}
-      <g opacity="0.09" transform="translate(180, 140)">
-        {/* Person bending */}
-        <circle cx="8" cy="2" r="3.5" fill="white" />
-        <path d="M5 6 Q5 14 12 16" stroke="white" strokeWidth="3" strokeLinecap="round" fill="none" />
-        {/* Wrench */}
-        <line x1="14" y1="10" x2="24" y2="6" stroke="white" strokeWidth="2" strokeLinecap="round" />
-        <circle cx="25" cy="5" r="3" fill="none" stroke="white" strokeWidth="1.5" />
-        {/* Toolbox */}
-        <rect x="-4" y="12" width="12" height="7" rx="1" fill="white" opacity="0.5" />
-        <line x1="-4" y1="15" x2="8" y2="15" stroke="white" strokeWidth="0.5" opacity="0.3" />
+      {/* Mechanic crouching with wrench */}
+      <g opacity="0.13" transform="translate(195, 148)">
+        <circle cx="10" cy="0" r="5" fill="white" />
+        <path d="M6 5 Q4 14 14 18" stroke="white" strokeWidth="4" strokeLinecap="round" fill="none" />
+        <line x1="16" y1="12" x2="28" y2="8" stroke="white" strokeWidth="3" strokeLinecap="round" />
+        <circle cx="30" cy="7" r="4" fill="none" stroke="white" strokeWidth="2.5" />
+        <rect x="-2" y="14" width="14" height="8" rx="2" fill="white" opacity="0.5" />
       </g>
 
       {/* Headlight beams */}
       <ellipse cx="510" cy="140" rx="65" ry="9" fill="url(#headlightGlow)" filter="url(#softGlow)" />
 
-      {/* === TRUCK (centered) === */}
+      {/* === CENTER: THE TRUCK === */}
       <g transform="translate(260, 86)">
         <ellipse cx="100" cy="84" rx="130" ry="6" fill="rgba(0,0,0,0.2)" />
         <rect x="2" y="56" width="152" height="6" rx="1" fill="#333" />
@@ -473,80 +312,49 @@ function TruckScene() {
         <rect x="147" y="66" width="4" height="7" rx="0.5" fill="#333" />
       </g>
 
-      {/* === RIGHT SIDE: BROKERS, CLIENTS, DESTINATION === */}
+      {/* === RIGHT ZONE: DESTINATION / BUSINESS === */}
 
-      {/* Distant city skyline */}
+      {/* City skyline */}
       <g opacity="0.07">
-        <rect x="500" y="55" width="10" height="55" rx="1" fill="white" />
-        <rect x="513" y="40" width="12" height="70" rx="1" fill="white" />
-        <rect x="528" y="50" width="15" height="60" rx="1" fill="white" />
-        <rect x="546" y="60" width="10" height="50" rx="1" fill="white" />
-        <rect x="559" y="48" width="8" height="62" rx="1" fill="white" />
-        <rect x="570" y="58" width="12" height="52" rx="1" fill="white" />
-        {/* Windows on tallest building */}
-        {[46, 52, 58, 64, 70, 76, 82, 88, 94].map((y) => (
+        <rect x="504" y="55" width="11" height="55" rx="1" fill="white" />
+        <rect x="518" y="38" width="14" height="72" rx="1" fill="white" />
+        <rect x="535" y="48" width="16" height="62" rx="1" fill="white" />
+        <rect x="554" y="58" width="11" height="52" rx="1" fill="white" />
+        <rect x="568" y="44" width="9" height="66" rx="1" fill="white" />
+        <rect x="580" y="56" width="13" height="54" rx="1" fill="white" />
+        {[44, 52, 60, 68, 76, 84, 92].map((y) => (
           <g key={y}>
-            <rect x="515" y={y} width="3" height="2" rx="0.3" fill="white" opacity="0.3" />
-            <rect x="520" y={y} width="3" height="2" rx="0.3" fill="white" opacity="0.3" />
+            <rect x="520" y={y} width="3.5" height="2.5" rx="0.5" fill="white" opacity="0.3" />
+            <rect x="526" y={y} width="3.5" height="2.5" rx="0.5" fill="white" opacity="0.3" />
           </g>
         ))}
       </g>
 
-      {/* Broker handshake deal */}
-      <g opacity="0.12" transform="translate(508, 105)">
-        {/* Person 1 - suit */}
-        <circle cx="10" cy="4" r="5" fill="white" />
-        <rect x="6" y="9" width="8" height="16" rx="2.5" fill="white" />
-        <line x1="8" y1="25" x2="5" y2="34" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
-        <line x1="12" y1="25" x2="16" y2="34" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
-        {/* Arm reaching to shake */}
-        <line x1="14" y1="14" x2="26" y2="16" stroke="white" strokeWidth="2" strokeLinecap="round" />
+      {/* Broker handshake */}
+      <g opacity="0.16" transform="translate(510, 100)">
+        <circle cx="10" cy="2" r="6" fill="white" />
+        <rect x="5" y="8" width="10" height="18" rx="3" fill="white" />
+        <line x1="7" y1="26" x2="3" y2="38" stroke="white" strokeWidth="3" strokeLinecap="round" />
+        <line x1="13" y1="26" x2="18" y2="38" stroke="white" strokeWidth="3" strokeLinecap="round" />
+        <line x1="15" y1="14" x2="28" y2="17" stroke="white" strokeWidth="3" strokeLinecap="round" />
 
-        {/* Person 2 */}
-        <circle cx="40" cy="4" r="5" fill="white" />
-        <rect x="36" y="9" width="8" height="16" rx="2.5" fill="white" />
-        <line x1="38" y1="25" x2="34" y2="34" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
-        <line x1="42" y1="25" x2="46" y2="34" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
-        <line x1="36" y1="14" x2="24" y2="16" stroke="white" strokeWidth="2" strokeLinecap="round" />
+        <circle cx="44" cy="2" r="6" fill="white" />
+        <rect x="39" y="8" width="10" height="18" rx="3" fill="white" />
+        <line x1="41" y1="26" x2="36" y2="38" stroke="white" strokeWidth="3" strokeLinecap="round" />
+        <line x1="47" y1="26" x2="52" y2="38" stroke="white" strokeWidth="3" strokeLinecap="round" />
+        <line x1="39" y1="14" x2="26" y2="17" stroke="white" strokeWidth="3" strokeLinecap="round" />
 
-        {/* Handshake point */}
-        <circle cx="25" cy="16" r="3" fill="white" opacity="0.5" />
+        <circle cx="27" cy="17" r="4" fill="white" opacity="0.45" />
       </g>
 
-      {/* Person with tablet/phone (operations coordinator) */}
-      <g opacity="0.10" transform="translate(555, 96)">
-        <circle cx="8" cy="4" r="4.5" fill="white" />
-        <rect x="4" y="9" width="8" height="14" rx="2.5" fill="white" />
-        <line x1="6" y1="23" x2="3" y2="32" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
-        <line x1="10" y1="23" x2="14" y2="32" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
-        {/* Holding tablet */}
-        <rect x="14" y="10" width="7" height="10" rx="1" fill="white" opacity="0.6" />
-        <line x1="12" y1="14" x2="14" y2="12" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
-        {/* Signal lines from tablet */}
-        <path d="M19 7 Q22 5 21 2" stroke="white" strokeWidth="0.8" fill="none" opacity="0.4" />
-        <path d="M21 8 Q25 5 24 1" stroke="white" strokeWidth="0.8" fill="none" opacity="0.3" />
-      </g>
-
-      {/* Loading dock worker at trailer back */}
-      <g opacity="0.10" transform="translate(236, 108)">
-        <circle cx="8" cy="2" r="4" fill="white" />
-        <rect x="5" y="6" width="6" height="12" rx="2" fill="white" />
-        <line x1="7" y1="18" x2="4" y2="26" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
-        <line x1="9" y1="18" x2="13" y2="26" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
-        {/* Clipboard in hand */}
-        <rect x="13" y="6" width="6" height="8" rx="1" fill="white" opacity="0.5" />
-        <line x1="14" y1="9" x2="18" y2="9" stroke="white" strokeWidth="0.6" opacity="0.4" />
-        <line x1="14" y1="11" x2="17" y2="11" stroke="white" strokeWidth="0.6" opacity="0.4" />
-        <line x1="11" y1="8" x2="13" y2="7" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
-      </g>
-
-      {/* Fuel pump / gas station element */}
-      <g opacity="0.08" transform="translate(95, 68)">
-        <rect x="0" y="10" width="12" height="24" rx="2" fill="white" />
-        <rect x="2" y="14" width="8" height="6" rx="1" fill="white" opacity="0.3" />
-        {/* Nozzle */}
-        <path d="M12 18 Q20 18 20 12 L20 8" stroke="white" strokeWidth="2" fill="none" strokeLinecap="round" />
-        <rect x="-2" y="34" width="16" height="3" rx="1" fill="white" />
+      {/* Operations coordinator with tablet */}
+      <g opacity="0.13" transform="translate(564, 90)">
+        <circle cx="8" cy="2" r="6" fill="white" />
+        <rect x="3" y="8" width="10" height="16" rx="3" fill="white" />
+        <line x1="5" y1="24" x2="1" y2="36" stroke="white" strokeWidth="3" strokeLinecap="round" />
+        <line x1="11" y1="24" x2="16" y2="36" stroke="white" strokeWidth="3" strokeLinecap="round" />
+        <rect x="15" y="10" width="8" height="12" rx="1.5" fill="white" opacity="0.55" />
+        <line x1="13" y1="15" x2="15" y2="12" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
       </g>
     </svg>
   )

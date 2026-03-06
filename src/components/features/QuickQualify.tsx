@@ -68,18 +68,18 @@ export const QuickQualify = () => {
     <section className="py-24 bg-gradient-to-b from-white to-slate-50">
         <div className="container max-w-4xl mx-auto">
             <div className="text-center mb-12">
-                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-100 text-blue-700 font-bold text-sm mb-4">
+                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-100 text-blue-800 font-bold text-sm mb-4">
                     <Clock className="w-4 h-4" /> 30-Second Pre-Check
                 </div>
                 <h2 className="text-3xl md:text-5xl font-black text-slate-900 mb-4">
-                    See If You Qualify For <span className="text-green-600">Top Tier Pay</span>
+                    See If You Qualify For <span className="text-green-700">Top Tier Pay</span>
                 </h2>
-                <p className="text-xl text-slate-600 max-w-2xl mx-auto">
+                <p className="text-xl text-slate-700 max-w-2xl mx-auto">
                     Answer 4 simple questions to unlock priority application status. No commitment required.
                 </p>
             </div>
 
-            <div className="bg-white rounded-3xl p-8 md:p-12 min-h-[450px] flex items-center justify-center relative overflow-hidden border border-slate-200 shadow-2xl shadow-slate-200/50">
+            <div className="bg-white rounded-3xl p-8 md:p-12 min-h-[450px] flex items-center justify-center relative overflow-hidden border border-slate-200 shadow-2xl shadow-slate-200/50" data-light>
                 {/* Background decoration */}
                 <div className="absolute top-0 right-0 w-64 h-64 bg-blue-50 rounded-full blur-3xl -mr-32 -mt-32 pointer-events-none opacity-50"></div>
                 <div className="absolute bottom-0 left-0 w-64 h-64 bg-orange-50 rounded-full blur-3xl -ml-32 -mb-32 pointer-events-none opacity-50"></div>

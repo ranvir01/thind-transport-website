@@ -48,18 +48,18 @@ export function StickyMobileCTA({
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 20 }}
-                className="bg-white border-t border-gray-200 shadow-lg p-4 space-y-3"
+                className="bg-[rgba(11,20,34,0.98)] border-t border-white/10 shadow-lg p-4 space-y-3"
               >
                 <a
                   href={`sms:${COMPANY_INFO.phoneFormatted}?body=Hi, I'm interested in driving for Thind Transport`}
-                  className="flex items-center gap-3 p-3 min-h-[44px] bg-green-50 rounded-xl text-green-700 font-semibold hover:bg-green-100 transition-colors"
+                  className="flex items-center gap-3 p-3 min-h-[44px] bg-white/5 rounded-xl text-white font-semibold hover:bg-white/10 transition-colors border border-white/10"
                 >
                   <MessageCircle className="h-5 w-5" />
                   <span>Text Us</span>
                 </a>
                 <Link
                   href="/pay-rates#calculator"
-                  className="flex items-center gap-3 p-3 min-h-[44px] bg-blue-50 rounded-xl text-blue-700 font-semibold hover:bg-blue-100 transition-colors"
+                  className="flex items-center gap-3 p-3 min-h-[44px] bg-white/5 rounded-xl text-white font-semibold hover:bg-white/10 transition-colors border border-white/10"
                   onClick={() => setShowExpandedOptions(false)}
                 >
                   <Zap className="h-5 w-5" />
@@ -86,7 +86,7 @@ export function StickyMobileCTA({
               {(variant === "apply" || variant === "both") && (
                 <Link
                   href="/apply"
-                  className="flex-1 flex items-center justify-center gap-2 bg-orange hover:bg-orange-600 active:bg-orange-700 text-white font-bold py-3.5 px-4 rounded-xl transition-colors shadow-lg shadow-orange/30 text-sm min-h-[48px]"
+                  className="flex-1 flex items-center justify-center gap-2 bg-orange hover:bg-orange-600 active:bg-orange-700 text-white font-bold py-3.5 px-4 rounded-xl transition-colors shadow-lg shadow-orange/30 text-sm min-h-[48px] font-display uppercase tracking-[0.08em]"
                 >
                   <FileText className="h-5 w-5" />
                   <span className="relative">

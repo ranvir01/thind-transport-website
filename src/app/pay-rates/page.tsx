@@ -43,7 +43,7 @@ export const metadata: Metadata = {
 
 export default function PayRatesPage() {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-50">
+    <div className="brand-page-shell min-h-screen">
       <PageBreadcrumb pageName="Pay Rates" category="Drivers" />
       
       {/* Enhanced Hero Section */}
@@ -77,7 +77,7 @@ export default function PayRatesPage() {
             <Badge className="mb-4 bg-[#001F3F] text-white px-4 py-2 text-xs font-bold">
               Open Positions
             </Badge>
-            <h2 className="text-4xl font-black text-[#001F3F] mb-4">
+            <h2 className="text-4xl font-black text-gray-900 mb-4">
               Choose Your Driving Career Path
             </h2>
             <p className="text-lg text-gray-700 max-w-2xl mx-auto font-medium">
@@ -86,14 +86,14 @@ export default function PayRatesPage() {
           </div>
 
           <div className="grid md:grid-cols-2 gap-8 mb-12">
-            <Card className="hover:shadow-2xl transition-all duration-300 border-2 border-blue-100 group hover:border-blue-200 hover:-translate-y-1">
+            <Card className="hover:shadow-2xl transition-all duration-300 border-2 border-blue-100 group hover:border-blue-200 hover:-translate-y-1" data-light>
               <CardHeader className="bg-gradient-to-br from-blue-50 via-indigo-50 to-blue-50 py-8 border-b-2 border-blue-100">
                 <CardTitle className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#001F3F]/10 to-blue-600/10 flex items-center justify-center border border-blue-100">
                       <Shield className="h-6 w-6 text-[#001F3F]" />
                     </div>
-                    <span className="text-xl font-black text-[#001F3F]">Company Driver</span>
+                    <span className="text-xl font-black text-gray-900">Company Driver</span>
                   </div>
                   <Badge className="bg-[#001F3F] text-white px-3 py-1 font-bold">Full-Time</Badge>
                 </CardTitle>
@@ -129,7 +129,7 @@ export default function PayRatesPage() {
                       <Calendar className="h-5 w-5 text-[#001F3F]" />
                       <span className="text-sm font-medium text-gray-700">Start Date</span>
                     </div>
-                    <span className="font-black text-xl text-green-600">Immediate</span>
+                    <span className="font-black text-xl text-orange-400">Immediate</span>
                   </div>
                 </div>
 
@@ -152,14 +152,14 @@ export default function PayRatesPage() {
               </CardContent>
             </Card>
 
-            <Card className="hover:shadow-2xl transition-all duration-300 border-2 border-orange-100 group hover:border-orange-200 hover:-translate-y-1">
+            <Card className="hover:shadow-2xl transition-all duration-300 border-2 border-orange-100 group hover:border-orange-200 hover:-translate-y-1" data-light>
               <CardHeader className="bg-gradient-to-br from-orange-50 via-amber-50 to-orange-50 py-8 border-b-2 border-orange-100">
                 <CardTitle className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500/10 to-amber-600/10 flex items-center justify-center border border-orange-100">
                       <TrendingUp className="h-6 w-6 text-orange-600" />
                     </div>
-                    <span className="text-xl font-black text-[#001F3F]">Owner Operator</span>
+                    <span className="text-xl font-black text-gray-900">Owner Operator</span>
                   </div>
                   <Badge className="bg-[#001F3F] text-white px-3 py-1 font-bold">Independent</Badge>
                 </CardTitle>
@@ -230,7 +230,7 @@ export default function PayRatesPage() {
               <Badge className="mb-4 bg-[#001F3F] text-white px-4 py-2 text-xs font-bold">
                 Visual Analytics
               </Badge>
-              <h2 className="text-4xl font-black text-[#001F3F] mb-4">
+              <h2 className="text-4xl font-black text-gray-900 mb-4">
                 See Your Earning Potential
               </h2>
               <p className="text-lg text-gray-700 max-w-2xl mx-auto font-medium">

@@ -15,7 +15,7 @@ export const metadata: Metadata = {
 
 export default function TestimonialsPage() {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-50">
+    <div className="brand-page-shell min-h-screen">
       <PageBreadcrumb pageName="Testimonials" category="Drivers" />
       
       {/* Enhanced Hero Section */}
@@ -190,13 +190,13 @@ export default function TestimonialsPage() {
                   Join the growing family of drivers who've found their home at Thind Transport
                 </p>
                 <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                  <Button asChild size="lg" className="bg-white text-indigo-700 hover:bg-gray-100 font-bold text-lg h-14 px-10 shadow-xl hover:shadow-2xl transform hover:scale-105 transition-all duration-200">
+                  <Button asChild size="lg" className="bg-orange text-white hover:bg-orange-600 font-bold text-lg h-14 px-10 shadow-xl hover:shadow-2xl transform hover:scale-105 transition-all duration-200">
                     <Link href="/apply">
                       Start Your Application
                       <ArrowRight className="ml-2 h-5 w-5" />
                     </Link>
                   </Button>
-                  <Button asChild size="lg" className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white border-2 border-white/30 font-bold text-lg h-14 px-10 shadow-xl hover:shadow-2xl">
+                  <Button asChild size="lg" variant="outline" className="border-2 border-white/30 bg-white/10 text-white font-bold text-lg h-14 px-10 shadow-xl hover:shadow-2xl">
                     <Link href={`tel:${COMPANY_INFO.phoneFormatted}`}>
                       📞 Call {COMPANY_INFO.phone}
                     </Link>

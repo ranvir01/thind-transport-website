@@ -9,6 +9,10 @@ import { PageBreadcrumb } from "@/components/shared/PageBreadcrumb"
 export const metadata: Metadata = {
   title: `Interactive Components Showcase | ${COMPANY_INFO.name}`,
   description: "Explore Thind Transport opportunities with our enhanced interactive components. View FAQs, testimonials, pay rates, and more.",
+  robots: {
+    index: false,
+    follow: false,
+  },
 }
 
 export default function ShowcasePage() {

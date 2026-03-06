@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import Link from "next/link"
-import Image from "next/image"
+
 import { usePathname } from "next/navigation"
 import {
   COMPANY_INFO,
@@ -14,16 +14,11 @@ import {
 import {
   Award,
   BadgeCheck,
-  Package,
   Shield,
   ShieldCheck,
   Phone,
   Mail,
   MapPin,
-  Facebook,
-  Twitter,
-  Linkedin,
-  Instagram,
   ExternalLink,
   ChevronDown,
 } from "lucide-react"
@@ -48,7 +43,7 @@ const FooterLinkSections = () => {
   
   const companyLinks = [
     { href: "/about", label: "About Us" },
-    { href: "/showcase", label: "Our Fleet" },
+    { href: "/fleet", label: "Our Fleet" },
     { href: "/veterans", label: "Veterans Program" },
     { href: "https://safer.fmcsa.dot.gov/CompanySnapshot.aspx", label: "FMCSA Record", external: true },
   ]
@@ -61,7 +56,7 @@ const FooterLinkSections = () => {
           onClick={() => toggleSection('drivers')}
           className="w-full flex items-center justify-between py-4 md:py-0 md:cursor-default min-h-[44px]"
         >
-          <h4 className="font-mono font-bold text-xs uppercase tracking-widest text-zinc-500">
+          <h4 className="font-display font-bold text-sm uppercase tracking-[0.18em] text-steel-300">
             For Drivers
           </h4>
           <ChevronDown className={`w-5 h-5 text-zinc-500 md:hidden transition-transform duration-200 ${openSection === 'drivers' ? 'rotate-180' : ''}`} />
@@ -74,7 +69,7 @@ const FooterLinkSections = () => {
               <li key={link.href}>
                 <Link 
                   href={link.href} 
-                  className={`${link.highlight ? 'text-zinc-300 font-semibold' : 'text-zinc-400'} hover:text-orange-500 transition-colors flex items-center gap-2 group py-1`}
+                  className={`${link.highlight ? 'text-steel-100 font-semibold' : 'text-steel-300'} hover:text-orange-500 transition-colors flex items-center gap-2 group py-1`}
                 >
                   <span className={`w-1 h-1 rounded-full ${link.highlight ? 'bg-orange-500' : 'bg-zinc-700'} group-hover:bg-orange-500 transition-all`} />
                   <span>{link.label}</span>
@@ -106,7 +101,7 @@ const FooterLinkSections = () => {
           onClick={() => toggleSection('company')}
           className="w-full flex items-center justify-between py-4 md:py-0 md:cursor-default min-h-[44px]"
         >
-          <h4 className="font-mono font-bold text-xs uppercase tracking-widest text-zinc-500">
+          <h4 className="font-display font-bold text-sm uppercase tracking-[0.18em] text-steel-300">
             Company
           </h4>
           <ChevronDown className={`w-5 h-5 text-zinc-500 md:hidden transition-transform duration-200 ${openSection === 'company' ? 'rotate-180' : ''}`} />
@@ -169,30 +164,6 @@ const FooterLinkSections = () => {
             </li>
           ))}
         </ul>
-
-        {/* Social Media Links */}
-        <div className="mt-8">
-          <h5 className="font-mono font-bold mb-4 text-xs uppercase tracking-widest text-zinc-500">Follow Us</h5>
-          <div className="flex items-center gap-3">
-            {[
-              { href: "https://facebook.com", Icon: Facebook, label: "Facebook" },
-              { href: "https://twitter.com", Icon: Twitter, label: "Twitter" },
-              { href: "https://linkedin.com", Icon: Linkedin, label: "LinkedIn" },
-              { href: "https://instagram.com", Icon: Instagram, label: "Instagram" }
-            ].map(({ href, Icon, label }) => (
-              <a
-                key={label}
-                href={href}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-10 h-10 rounded-full bg-white/5 hover:bg-orange-500 flex items-center justify-center transition-all group border border-white/5 hover:border-orange-400"
-                aria-label={label}
-              >
-                <Icon className="h-4 w-4 text-zinc-400 group-hover:text-white transition-colors" />
-              </a>
-            ))}
-          </div>
-        </div>
       </div>
     </div>
   )
@@ -213,7 +184,7 @@ export const CommandBar = () => {
         initial={{ y: 100 }}
         animate={{ y: 0 }}
         transition={{ delay: 1, type: "spring", stiffness: 200, damping: 20 }}
-        className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[90] hidden md:flex items-center gap-2 p-2 bg-[#001F3F]/90 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl ring-1 ring-white/5"
+        className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[90] hidden lg:flex items-center gap-2 p-2 bg-[#001F3F]/90 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl ring-1 ring-white/5"
     >
         <div className="flex items-center gap-4 px-4 border-r border-white/10">
             <div className="flex items-center gap-2">
@@ -330,14 +301,7 @@ export const CinematicFooter = () => {
             {/* Company Info Column */}
             <div className="space-y-6">
               <div className="flex items-center gap-3">
-                <Image
-                  src="/branding/thind-transport-icon.svg"
-                  alt={`${COMPANY_INFO.name} Logo`}
-                  width={48}
-                  height={48}
-                  className="rounded-lg opacity-90"
-                />
-                <h3 className="text-xl font-bold text-white tracking-tight">{COMPANY_INFO.name}</h3>
+                <h3 className="brand-wordmark text-3xl leading-none text-white">{COMPANY_INFO.name}</h3>
               </div>
               <p className="text-zinc-400 text-sm leading-relaxed">
                 Family-owned trucking company founded in {COMPANY_INFO.founded}. Over{" "}
@@ -386,7 +350,7 @@ export const CinematicFooter = () => {
 
             {/* Certifications & Trust Column */}
             <div>
-              <h4 className="font-mono font-bold mb-6 text-xs uppercase tracking-widest text-zinc-500">
+              <h4 className="font-display font-bold mb-6 text-sm uppercase tracking-[0.18em] text-steel-300">
                 Certifications & Safety
               </h4>
               <div className="space-y-4 text-sm">
@@ -423,8 +387,8 @@ export const CinematicFooter = () => {
 
               {/* DOT/MC Info */}
               <div className="mt-8 p-4 bg-white/5 rounded-xl border border-white/5 backdrop-blur-sm">
-                <p className="text-xs text-zinc-400 mb-2 uppercase tracking-wider font-mono">Licensed & Insured</p>
-                <div className="space-y-1 font-mono text-sm">
+                <p className="text-xs text-zinc-400 mb-2 uppercase tracking-wider font-display">Licensed & Insured</p>
+                <div className="space-y-1 font-display text-sm tracking-[0.08em]">
                   <p className="text-white">DOT# <span className="text-zinc-400">{COMPANY_INFO.dot}</span></p>
                   <p className="text-white">MC# <span className="text-zinc-400">{COMPANY_INFO.mc}</span></p>
                 </div>
@@ -441,7 +405,7 @@ export const CinematicFooter = () => {
             <p className="text-xs text-zinc-400">
               © {currentYear} {COMPANY_INFO.name}. All rights reserved.
             </p>
-            <div className="flex items-center gap-6 text-xs text-zinc-400 font-mono uppercase tracking-wider">
+            <div className="flex items-center gap-6 text-xs text-zinc-400 font-display uppercase tracking-[0.18em]">
               <span>Flatbed • Reefer • Dry Van</span>
               <span className="hidden sm:inline text-zinc-500">|</span>
               <span className="hidden sm:inline">Nationwide Service</span>

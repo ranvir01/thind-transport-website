@@ -2,10 +2,9 @@
 
 import { motion } from "framer-motion"
 import Link from "next/link"
-import { Phone, MessageCircle, Star, TrendingUp } from "lucide-react"
-import { HiringCounter, RecentlyHiredTicker } from "@/components/features/RecentlyHiredTicker"
-import { AggregateRating } from "@/components/features/ReviewBadges"
+import { MessageCircle, TrendingUp } from "lucide-react"
 import { HeroBackground } from "./HeroBackground"
+import { COMPANY_INFO } from "@/lib/constants"
 
 export const CinematicHero = () => {
   return (
@@ -20,32 +19,24 @@ export const CinematicHero = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.1 }}
         >
-          {/* Live Hiring Counter + Status Badge */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-2 mb-4">
             <div className="inline-flex items-center gap-2 py-1.5 px-4 md:py-2 md:px-5 rounded-full bg-green-500/20 border border-green-500/30 backdrop-blur-sm text-green-400 font-bold tracking-wide text-xs md:text-sm">
               <span className="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-green-400 animate-pulse" />
-              Now Hiring • Immediate Openings
+              Family-run carrier in Kent, Washington
             </div>
-            <div className="hidden sm:block h-4 w-px bg-white/20" />
-            <HiringCounter className="text-white/90 text-sm md:text-base" />
           </div>
 
-          {/* Pain Point Hook */}
           <p className="text-base md:text-xl text-white/90 mb-4 font-medium drop-shadow-md">
-            Tired of keeping only 70%? Done with broken promises?
+            Straight answers, direct dispatch support, and freight that keeps you moving.
           </p>
 
-          {/* Main Headline - SEO Optimized H1 */}
           <h1 className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-black text-white tracking-tight leading-[1.1] mb-6 drop-shadow-xl">
-            Keep <span className="text-orange">91%</span> of Your Gross.
+            The Truck <span className="text-orange">Rolls.</span>
             <br />
             <span className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl text-white/90 block mt-2">
-              Every Load. Every Week.
+              The Office Never Sleeps.
             </span>
           </h1>
-
-          {/* Aggregate Rating Badge */}
-          <AggregateRating className="mb-4 scale-90 md:scale-100" />
         </motion.div>
 
         {/* Value Proposition */}
@@ -55,8 +46,8 @@ export const CinematicHero = () => {
           transition={{ duration: 0.5, delay: 0.2 }}
           className="text-lg md:text-xl text-white/80 max-w-2xl mx-auto mb-8 leading-relaxed drop-shadow-md"
         >
-          Family-owned since 2016. 2024 Cascadias. No forced dispatch. 
-          <span className="block mt-1 text-white font-semibold">Real support from real people in Kent, WA.</span>
+          Family-owned since {COMPANY_INFO.founded}. 2024 Cascadias. No forced dispatch. 
+          <span className="block mt-1 text-white font-semibold">Call, text, or apply and talk with a real person from the team.</span>
         </motion.p>
 
         {/* Primary CTA - Single Focus */}
@@ -97,16 +88,6 @@ export const CinematicHero = () => {
           </a>
         </motion.div>
 
-        {/* Recently Hired Ticker - Hidden on mobile to reduce clutter */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.5, delay: 0.45 }}
-          className="mb-8 hidden md:block"
-        >
-          <RecentlyHiredTicker variant="compact" className="justify-center" />
-        </motion.div>
-
         {/* Stats Grid */}
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
@@ -145,9 +126,9 @@ export const CinematicHero = () => {
           className="mt-8 flex flex-wrap justify-center gap-x-6 gap-y-2 text-sm text-white/80 pb-24"
         >
           {[
-            "Weekly Direct Deposit",
-            "No Hidden Fees", 
-            "USDOT #3154006",
+            `Founded ${COMPANY_INFO.founded}`,
+            "Flatbed, Reefer, Dry Van",
+            `USDOT #${COMPANY_INFO.dot}`,
           ].map((item) => (
             <span key={item} className="flex items-center gap-2">
               <svg className="w-4 h-4 text-green-400" fill="currentColor" viewBox="0 0 20 20">

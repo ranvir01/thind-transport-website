@@ -348,7 +348,7 @@ export default function FleetPage() {
   const [selectedTruck, setSelectedTruck] = useState<number | null>(null)
 
   return (
-    <div className="min-h-screen bg-white selection:bg-orange selection:text-white">
+    <div className="brand-page-shell min-h-screen selection:bg-orange selection:text-white">
       <PageBreadcrumb pageName="Our Fleet" category="Company" />
       
       {/* Hero Section with Video Option */}
@@ -412,11 +412,11 @@ export default function FleetPage() {
             }}
           >
             <motion.div variants={fadeInUp} className="flex flex-wrap items-center gap-3 mb-6">
-              <Badge className="bg-orange/20 text-orange border-orange/30 px-4 py-2 text-sm font-bold backdrop-blur-sm">
+              <Badge variant="outline" className="bg-orange/20 text-orange border-orange/30 px-4 py-2 text-sm font-bold backdrop-blur-sm">
                 <Truck className="h-4 w-4 mr-2 inline" />
                 2023-2025 Model Fleet
               </Badge>
-              <Badge className="bg-green-500/20 text-green-400 border-green-500/30 px-4 py-2 text-sm font-bold backdrop-blur-sm">
+              <Badge variant="outline" className="bg-green-500/20 text-green-400 border-green-500/30 px-4 py-2 text-sm font-bold backdrop-blur-sm">
                 <CheckCircle2 className="h-4 w-4 mr-2 inline" />
                 All APU Equipped
               </Badge>

@@ -65,14 +65,14 @@ export function PayCalculator() {
   const results = calculateEarnings()
 
   return (
-    <Card className="p-8 bg-gradient-to-br from-blue-50 to-green-50 border-2 border-black/10">
+    <Card className="p-8 bg-[linear-gradient(180deg,rgba(20,31,47,0.98),rgba(11,20,34,0.98))] border border-white/10">
       <div className="flex items-center gap-3 mb-6">
-        <div className="bg-black p-3 rounded-lg border-2 border-black/20">
+        <div className="bg-orange p-3 rounded-lg border border-orange/30 shadow-cta">
           <Calculator className="h-6 w-6 text-white" />
         </div>
         <div>
-          <h2 className="text-2xl font-black text-black">Pay Calculator</h2>
-          <p className="text-sm text-gray-700 font-medium">Calculate your potential earnings</p>
+          <h2 className="text-2xl font-black text-white">Pay Calculator</h2>
+          <p className="text-sm text-steel-200 font-medium">Calculate your potential earnings</p>
         </div>
       </div>
 
@@ -80,7 +80,7 @@ export function PayCalculator() {
         {/* Input Section */}
         <div className="space-y-6">
           <div>
-            <Label htmlFor="driver-type" className="text-base font-black text-black mb-2 block">
+            <Label htmlFor="driver-type" className="text-base font-black text-white mb-2 block">
               Driver Type
             </Label>
             <div className="grid grid-cols-2 gap-3">
@@ -88,30 +88,30 @@ export function PayCalculator() {
                 onClick={() => setDriverType("company")}
                 className={`p-4 rounded-lg border-2 transition-all ${
                   driverType === "company"
-                    ? "border-black bg-blue-50 shadow-md"
-                    : "border-black/10 hover:border-black/20 bg-white"
+                    ? "border-orange bg-orange/10 shadow-md"
+                    : "border-white/10 hover:border-white/20 bg-white/5"
                 }`}
               >
-                <div className="font-black text-black">Company Driver</div>
-                <div className="text-xs text-gray-700 mt-1 font-medium">$0.60-$0.65/mile</div>
+                <div className="font-black text-white">Company Driver</div>
+                <div className="text-xs text-steel-200 mt-1 font-medium">$0.60-$0.65/mile</div>
               </button>
               <button
                 onClick={() => setDriverType("owner")}
                 className={`p-4 rounded-lg border-2 transition-all ${
                   driverType === "owner"
-                    ? "border-black bg-green-50 shadow-md"
-                    : "border-black/10 hover:border-black/20 bg-white"
+                    ? "border-orange bg-orange/10 shadow-md"
+                    : "border-white/10 hover:border-white/20 bg-white/5"
                 }`}
               >
-                <div className="font-black text-black">Owner Operator</div>
-                <div className="text-xs text-gray-700 mt-1 font-medium">91% commission</div>
+                <div className="font-black text-white">Owner Operator</div>
+                <div className="text-xs text-steel-200 mt-1 font-medium">91% commission</div>
               </button>
             </div>
           </div>
 
           {driverType === "company" && (
             <div>
-            <Label htmlFor="route-type" className="text-base font-black text-black mb-2 block">
+            <Label htmlFor="route-type" className="text-base font-black text-white mb-2 block">
               Route Type
             </Label>
               <Select value={routeType} onValueChange={(value: "local" | "regional" | "otr") => setRouteType(value)}>
@@ -128,7 +128,7 @@ export function PayCalculator() {
           )}
 
           <div>
-            <Label htmlFor="miles" className="text-base font-black text-black mb-2 block">
+            <Label htmlFor="miles" className="text-base font-black text-white mb-2 block">
               Average Miles Per Week
             </Label>
             <Input
@@ -139,13 +139,13 @@ export function PayCalculator() {
               placeholder="2500"
               className="text-lg border-black/20"
             />
-            <p className="text-xs text-gray-700 mt-1 font-medium">
+            <p className="text-xs text-steel-200 mt-1 font-medium">
               Typical: 2,000-3,000 miles/week
             </p>
           </div>
 
           <div>
-            <Label htmlFor="weeks" className="text-base font-black text-black mb-2 block">
+            <Label htmlFor="weeks" className="text-base font-black text-white mb-2 block">
               Weeks Worked Per Year
             </Label>
             <Input
@@ -156,17 +156,17 @@ export function PayCalculator() {
               placeholder="50"
               className="text-lg border-black/20"
             />
-            <p className="text-xs text-gray-700 mt-1 font-medium">
+            <p className="text-xs text-steel-200 mt-1 font-medium">
               Typical: 48-50 weeks/year
             </p>
           </div>
 
           {driverType === "owner" && (
-            <div className="p-4 bg-yellow-50 border-2 border-black/10 rounded-lg">
+            <div className="p-4 bg-white/5 border border-white/10 rounded-lg">
               <div className="flex items-start gap-2">
-                <AlertCircle className="h-4 w-4 text-yellow-600 mt-0.5" />
-                <div className="text-sm text-gray-800 font-medium">
-                  <strong className="text-black">Note:</strong> Owner operators keep 91% of gross revenue. 
+                <AlertCircle className="h-4 w-4 text-orange-400 mt-0.5" />
+                <div className="text-sm text-steel-200 font-medium">
+                  <strong className="text-white">Note:</strong> Owner operators keep 91% of gross revenue. 
                   Expenses (fuel, maintenance, insurance) are your responsibility.
                 </div>
               </div>
@@ -181,70 +181,70 @@ export function PayCalculator() {
               <TrendingUp className="h-3 w-3 mr-1" />
               Your Earnings Estimate
             </Badge>
-            <div className="text-4xl font-black text-black mb-1">
+            <div className="text-4xl font-black text-white mb-1">
               ${results.annual.toLocaleString(undefined, { maximumFractionDigits: 0 })}
             </div>
-            <div className="text-sm text-gray-700 font-medium">per year</div>
+            <div className="text-sm text-steel-200 font-medium">per year</div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            <Card className="p-4 bg-white border-2 border-black/5">
-              <div className="flex items-center gap-2 text-gray-700 mb-1">
+            <Card className="p-4 bg-white/5 border border-white/10">
+              <div className="flex items-center gap-2 text-steel-200 mb-1">
                 <Calendar className="h-4 w-4" />
                 <span className="text-xs font-medium">Weekly</span>
               </div>
-              <div className="text-2xl font-black text-black">
+              <div className="text-2xl font-black text-white">
                 ${results.weekly.toLocaleString(undefined, { maximumFractionDigits: 0 })}
               </div>
             </Card>
 
-            <Card className="p-4 bg-white border-2 border-black/5">
-              <div className="flex items-center gap-2 text-gray-700 mb-1">
+            <Card className="p-4 bg-white/5 border border-white/10">
+              <div className="flex items-center gap-2 text-steel-200 mb-1">
                 <Calendar className="h-4 w-4" />
                 <span className="text-xs font-medium">Monthly</span>
               </div>
-              <div className="text-2xl font-black text-black">
+              <div className="text-2xl font-black text-white">
                 ${results.monthly.toLocaleString(undefined, { maximumFractionDigits: 0 })}
               </div>
             </Card>
           </div>
 
-          <Card className="p-4 bg-white border-2 border-black/5">
+          <Card className="p-4 bg-white/5 border border-white/10">
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
-                <span className="text-gray-700 font-medium">Total Miles:</span>
-                <span className="font-black text-black">{results.totalMiles.toLocaleString()}</span>
+                <span className="text-steel-200 font-medium">Total Miles:</span>
+                <span className="font-black text-white">{results.totalMiles.toLocaleString()}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-700 font-medium">Rate per Mile:</span>
-                <span className="font-black text-black">${results.perMile.toFixed(2)}</span>
+                <span className="text-steel-200 font-medium">Rate per Mile:</span>
+                <span className="font-black text-white">${results.perMile.toFixed(2)}</span>
               </div>
               {driverType === "owner" && (
                 <>
                   <div className="flex justify-between">
-                    <span className="text-gray-700 font-medium">Gross Revenue:</span>
-                    <span className="font-black text-black">${results.grossRevenue.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
+                    <span className="text-steel-200 font-medium">Gross Revenue:</span>
+                    <span className="font-black text-white">${results.grossRevenue.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
                   </div>
-                  <div className="flex justify-between border-t-2 border-black/10 pt-2">
-                    <span className="text-gray-700 font-medium">Your Commission (91%):</span>
-                    <span className="font-black text-green-600">${results.commission.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
+                  <div className="flex justify-between border-t border-white/10 pt-2">
+                    <span className="text-steel-200 font-medium">Your Commission (91%):</span>
+                    <span className="font-black text-orange-400">${results.commission.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
                   </div>
                 </>
               )}
             </div>
           </Card>
 
-          <div className="p-4 bg-blue-50 rounded-lg border-2 border-black/10">
+          <div className="p-4 bg-white/5 rounded-lg border border-white/10">
             <div className="flex items-start gap-2">
-              <CheckCircle2 className="h-4 w-4 text-blue-600 mt-0.5" />
-              <div className="text-xs text-gray-800 font-medium">
-                <strong className="text-black">Remember:</strong> These are estimates. Actual earnings depend on 
+              <CheckCircle2 className="h-4 w-4 text-orange-400 mt-0.5" />
+              <div className="text-xs text-steel-200 font-medium">
+                <strong className="text-white">Remember:</strong> These are estimates. Actual earnings depend on 
                 load availability, fuel costs, and your driving schedule.
               </div>
             </div>
           </div>
 
-          <Button className="w-full bg-green-600 hover:bg-green-700" size="lg" asChild>
+          <Button className="w-full !bg-orange-500 !from-orange-500 !to-orange-600 hover:!bg-orange-600" size="lg" asChild>
             <a href="/apply">
               Apply Now to Start Earning
             </a>

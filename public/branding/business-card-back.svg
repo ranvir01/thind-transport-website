@@ -74,22 +74,76 @@
   <path d="M0 478 Q260 443 520 433 Q780 423 1039 408" stroke="#FF9500" stroke-width="2" fill="none" opacity="0.45"/>
   <path d="M0 555 Q260 530 520 522 Q780 514 1039 502" stroke="#FFB340" stroke-width="2" stroke-dasharray="35 22" fill="none" opacity="0.3"/>
 
-  <!-- Company name -->
-  <text x="520" y="80" font-family="'Inter', sans-serif" font-size="48" font-weight="900" fill="white" text-anchor="middle" letter-spacing="-0.5">THIND <tspan fill="#FF9500">TRANSPORT</tspan></text>
-  <rect x="340" y="95" width="360" height="2.5" rx="1.25" fill="url(#orangeAccent)"/>
-  <text x="520" y="122" font-family="'Inter', sans-serif" font-size="12" font-weight="500" fill="rgba(255,255,255,0.45)" text-anchor="middle" letter-spacing="5">YOUR FREIGHT, OUR COMMITMENT</text>
+  <!-- Company name (tight to top) -->
+  <text x="520" y="65" font-family="'Inter', sans-serif" font-size="46" font-weight="900" fill="white" text-anchor="middle" letter-spacing="-0.5">THIND <tspan fill="#FF9500">TRANSPORT</tspan></text>
+  <rect x="350" y="78" width="340" height="2.5" rx="1.25" fill="url(#orangeAccent)"/>
+  <text x="520" y="102" font-family="'Inter', sans-serif" font-size="11" font-weight="500" fill="rgba(255,255,255,0.35)" text-anchor="middle" letter-spacing="4">THE TRUCK ROLLS. THE OFFICE NEVER SLEEPS.</text>
 
-  <!-- === TRUCK ILLUSTRATION === -->
+  <!-- Ground plane connecting all zones -->
+  <line x1="0" y1="430" x2="1039" y2="430" stroke="white" stroke-width="0.8" opacity="0.06"/>
+
+  <!-- === LEFT ZONE: ORIGIN / OPERATIONS === -->
+
+  <!-- Warehouse -->
+  <g opacity="0.15" transform="translate(18, 250)">
+    <rect x="0" y="38" width="148" height="100" rx="3" fill="white"/>
+    <path d="M-7 38 L74 0 L155 38" fill="white"/>
+    <rect x="14" y="86" width="48" height="52" rx="2.5" fill="white" opacity="0.35"/>
+    <rect x="76" y="86" width="48" height="52" rx="2.5" fill="white" opacity="0.35"/>
+  </g>
+
+  <!-- Forklift with operator -->
+  <g opacity="0.16" transform="translate(182, 320)">
+    <rect x="0" y="21" width="38" height="28" rx="5" fill="white"/>
+    <rect x="35" y="0" width="7" height="52" rx="1.5" fill="white"/>
+    <rect x="30" y="3" width="17" height="7" rx="1.5" fill="white"/>
+    <rect x="28" y="-10" width="21" height="17" rx="2.5" fill="white" opacity="0.5"/>
+    <circle cx="10" cy="55" r="7" fill="white"/>
+    <circle cx="29" cy="55" r="7" fill="white"/>
+    <circle cx="16" cy="10" r="9" fill="white"/>
+    <rect x="10" y="19" width="10" height="7" rx="3" fill="white"/>
+  </g>
+
+  <!-- Dispatcher at desk -->
+  <g opacity="0.14" transform="translate(35, 185)">
+    <rect x="0" y="38" width="59" height="7" rx="1.5" fill="white"/>
+    <rect x="5" y="45" width="7" height="21" rx="1.5" fill="white"/>
+    <rect x="47" y="45" width="7" height="21" rx="1.5" fill="white"/>
+    <rect x="9" y="14" width="35" height="24" rx="3" fill="white"/>
+    <rect x="23" y="38" width="7" height="5" rx="1" fill="white"/>
+    <circle cx="73" cy="24" r="10" fill="white"/>
+    <rect x="64" y="35" width="17" height="17" rx="5" fill="white"/>
+    <line x1="64" y1="42" x2="49" y2="38" stroke="white" stroke-width="5" stroke-linecap="round"/>
+  </g>
+
+  <!-- Worker pushing hand truck -->
+  <g opacity="0.14" transform="translate(260, 310)">
+    <circle cx="14" cy="0" r="10" fill="white"/>
+    <rect x="7" y="10" width="14" height="28" rx="5" fill="white"/>
+    <line x1="10" y1="38" x2="3" y2="59" stroke="white" stroke-width="5" stroke-linecap="round"/>
+    <line x1="17" y1="38" x2="26" y2="59" stroke="white" stroke-width="5" stroke-linecap="round"/>
+    <line x1="21" y1="21" x2="38" y2="17" stroke="white" stroke-width="5" stroke-linecap="round"/>
+    <rect x="35" y="0" width="5" height="48" rx="1.5" fill="white"/>
+    <rect x="31" y="48" width="17" height="5" rx="1.5" fill="white"/>
+    <circle cx="35" cy="59" r="6" fill="white"/>
+    <circle cx="47" cy="59" r="6" fill="white"/>
+    <rect x="30" y="-7" width="17" height="14" rx="2.5" fill="white" opacity="0.5"/>
+  </g>
+
+  <!-- Mechanic crouching with wrench -->
+  <g opacity="0.13" transform="translate(340, 390)">
+    <circle cx="17" cy="0" r="9" fill="white"/>
+    <path d="M10 9 Q7 24 24 31" stroke="white" stroke-width="7" stroke-linecap="round" fill="none"/>
+    <line x1="28" y1="21" x2="49" y2="14" stroke="white" stroke-width="5" stroke-linecap="round"/>
+    <circle cx="52" cy="12" r="7" fill="none" stroke="white" stroke-width="4"/>
+    <rect x="-3" y="24" width="24" height="14" rx="3" fill="white" opacity="0.5"/>
+  </g>
+
+  <!-- === TRUCK (centered) === -->
   <g transform="translate(250, 290)">
     <!-- Journey trail glow -->
     <path d="M-200 115 Q-100 112 0 110 Q80 108 140 107" stroke="url(#trailG)" stroke-width="22" fill="none" stroke-linecap="round"/>
     <path d="M-140 115 Q-60 112 30 110 Q100 108 140 107" stroke="url(#trailLine)" stroke-width="1.5" fill="none" stroke-linecap="round"/>
-
-    <!-- Waypoint dots fading behind -->
-    <circle cx="-60" cy="113" r="3" fill="#FF9500" opacity="0.1"/>
-    <circle cx="0" cy="111" r="3.5" fill="#FF9500" opacity="0.2"/>
-    <circle cx="60" cy="109.5" r="4" fill="#FF9500" opacity="0.3"/>
-    <circle cx="120" cy="108" r="4" fill="#FF9500" opacity="0.4"/>
 
     <!-- Headlight beams -->
     <ellipse cx="500" cy="102" rx="65" ry="10" fill="url(#headlight)" filter="url(#softGlow)"/>
@@ -134,7 +188,6 @@
     <!-- Windshield -->
     <path d="M358 39 L392 39 Q414 39 426 55 L436 78 L436 88 Q436 90 434 90 L358 90 L358 39Z" fill="#0a1628" opacity="0.8"/>
     <path d="M358 39 L392 39 Q414 39 426 55 L436 78" stroke="rgba(255,255,255,0.2)" stroke-width="1" fill="none"/>
-    <!-- Windshield reflection -->
     <path d="M363 43 L385 43 Q400 43 410 55 L416 66" stroke="rgba(255,255,255,0.06)" stroke-width="5" fill="none" stroke-linecap="round"/>
 
     <!-- Headlights -->
@@ -151,7 +204,6 @@
     <!-- Exhaust stacks -->
     <rect x="350" y="14" width="4.5" height="24" rx="2" fill="#777"/>
     <rect x="358" y="18" width="4.5" height="20" rx="2" fill="#777"/>
-    <!-- Subtle smoke -->
     <circle cx="352" cy="10" r="3" fill="white" opacity="0.03"/>
     <circle cx="354" cy="4" r="4" fill="white" opacity="0.02"/>
     <circle cx="360" cy="13" r="2.5" fill="white" opacity="0.03"/>
@@ -197,20 +249,61 @@
     <circle cx="525" cy="101" r="2" fill="#FF9500" opacity="0.1"/>
   </g>
 
-  <!-- Service badges at bottom -->
-  <g transform="translate(210, 610)">
-    <rect x="0" y="0" width="120" height="30" rx="6" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
-    <text x="60" y="20" font-family="'Inter', sans-serif" font-size="10" font-weight="700" fill="rgba(255,255,255,0.55)" text-anchor="middle" letter-spacing="1.5">FLATBED</text>
+  <!-- === RIGHT ZONE: DESTINATION / BUSINESS === -->
 
-    <rect x="135" y="0" width="120" height="30" rx="6" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
-    <text x="195" y="20" font-family="'Inter', sans-serif" font-size="10" font-weight="700" fill="rgba(255,255,255,0.55)" text-anchor="middle" letter-spacing="1.5">REEFER</text>
-
-    <rect x="270" y="0" width="120" height="30" rx="6" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
-    <text x="330" y="20" font-family="'Inter', sans-serif" font-size="10" font-weight="700" fill="rgba(255,255,255,0.55)" text-anchor="middle" letter-spacing="1.5">DRY VAN</text>
-
-    <rect x="405" y="0" width="120" height="30" rx="6" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
-    <text x="465" y="20" font-family="'Inter', sans-serif" font-size="10" font-weight="700" fill="rgba(255,255,255,0.55)" text-anchor="middle" letter-spacing="1.5">48 STATES</text>
+  <!-- City skyline -->
+  <g opacity="0.07">
+    <rect x="870" y="240" width="19" height="95" rx="1.5" fill="white"/>
+    <rect x="894" y="210" width="24" height="125" rx="1.5" fill="white"/>
+    <rect x="923" y="230" width="28" height="105" rx="1.5" fill="white"/>
+    <rect x="956" y="250" width="19" height="85" rx="1.5" fill="white"/>
+    <rect x="980" y="220" width="16" height="115" rx="1.5" fill="white"/>
+    <rect x="1001" y="245" width="22" height="90" rx="1.5" fill="white"/>
+    <rect x="897" y="218" width="6" height="4" rx="0.8" fill="white" opacity="0.3"/>
+    <rect x="907" y="218" width="6" height="4" rx="0.8" fill="white" opacity="0.3"/>
+    <rect x="897" y="232" width="6" height="4" rx="0.8" fill="white" opacity="0.3"/>
+    <rect x="907" y="232" width="6" height="4" rx="0.8" fill="white" opacity="0.3"/>
+    <rect x="897" y="246" width="6" height="4" rx="0.8" fill="white" opacity="0.3"/>
+    <rect x="907" y="246" width="6" height="4" rx="0.8" fill="white" opacity="0.3"/>
+    <rect x="897" y="260" width="6" height="4" rx="0.8" fill="white" opacity="0.3"/>
+    <rect x="907" y="260" width="6" height="4" rx="0.8" fill="white" opacity="0.3"/>
   </g>
 
-  <text x="520" y="672" font-family="'Inter', sans-serif" font-size="11" font-weight="600" fill="rgba(255,255,255,0.2)" text-anchor="middle" letter-spacing="3">THINDTRANSPORT.COM</text>
+  <!-- Broker handshake -->
+  <g opacity="0.16" transform="translate(880, 340)">
+    <circle cx="17" cy="3" r="10" fill="white"/>
+    <rect x="9" y="14" width="17" height="31" rx="5" fill="white"/>
+    <line x1="12" y1="45" x2="5" y2="66" stroke="white" stroke-width="5" stroke-linecap="round"/>
+    <line x1="22" y1="45" x2="31" y2="66" stroke="white" stroke-width="5" stroke-linecap="round"/>
+    <line x1="26" y1="24" x2="48" y2="29" stroke="white" stroke-width="5" stroke-linecap="round"/>
+
+    <circle cx="76" cy="3" r="10" fill="white"/>
+    <rect x="68" y="14" width="17" height="31" rx="5" fill="white"/>
+    <line x1="71" y1="45" x2="62" y2="66" stroke="white" stroke-width="5" stroke-linecap="round"/>
+    <line x1="81" y1="45" x2="90" y2="66" stroke="white" stroke-width="5" stroke-linecap="round"/>
+    <line x1="68" y1="24" x2="45" y2="29" stroke="white" stroke-width="5" stroke-linecap="round"/>
+
+    <circle cx="47" cy="29" r="7" fill="white" opacity="0.45"/>
+  </g>
+
+  <!-- Operations coordinator with tablet -->
+  <g opacity="0.13" transform="translate(975, 305)">
+    <circle cx="14" cy="3" r="10" fill="white"/>
+    <rect x="5" y="14" width="17" height="28" rx="5" fill="white"/>
+    <line x1="9" y1="42" x2="2" y2="62" stroke="white" stroke-width="5" stroke-linecap="round"/>
+    <line x1="19" y1="42" x2="28" y2="62" stroke="white" stroke-width="5" stroke-linecap="round"/>
+    <rect x="26" y="17" width="14" height="21" rx="2.5" fill="white" opacity="0.55"/>
+    <line x1="22" y1="26" x2="26" y2="21" stroke="white" stroke-width="4" stroke-linecap="round"/>
+  </g>
+
+  <!-- Bottom orange services bar -->
+  <rect x="0" y="656" width="1039" height="40" fill="#FF9500"/>
+  <text x="120" y="681" font-family="'Inter', sans-serif" font-size="11" font-weight="800" fill="#001F3F" letter-spacing="1.5">FLATBED</text>
+  <text x="215" y="681" font-family="'Inter', sans-serif" font-size="12" fill="#001F3F" opacity="0.4">&bull;</text>
+  <text x="255" y="681" font-family="'Inter', sans-serif" font-size="11" font-weight="800" fill="#001F3F" letter-spacing="1.5">DRY VAN</text>
+  <text x="360" y="681" font-family="'Inter', sans-serif" font-size="12" fill="#001F3F" opacity="0.4">&bull;</text>
+  <text x="400" y="681" font-family="'Inter', sans-serif" font-size="11" font-weight="800" fill="#001F3F" letter-spacing="1.5">REEFER</text>
+  <text x="495" y="681" font-family="'Inter', sans-serif" font-size="12" fill="#001F3F" opacity="0.4">&bull;</text>
+  <text x="535" y="681" font-family="'Inter', sans-serif" font-size="11" font-weight="800" fill="#001F3F" letter-spacing="1.5">48 STATES</text>
+  <text x="860" y="681" font-family="'Inter', sans-serif" font-size="10" font-weight="700" fill="#001F3F" opacity="0.6" letter-spacing="1.5">THINDTRANSPORT.COM</text>
 </svg>

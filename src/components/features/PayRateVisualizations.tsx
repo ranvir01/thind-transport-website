@@ -25,11 +25,11 @@ export function PayRateVisualizations() {
   return (
     <div className="grid lg:grid-cols-2 gap-6">
       {/* Annual Earnings Comparison Chart */}
-      <Card className="p-6 border-2 border-black/10 bg-white">
+      <Card className="p-6 border-2 border-gray-200 bg-white">
         <div className="mb-4">
           <div className="flex items-center gap-2 mb-1">
-            <div className="w-1 h-6 bg-black rounded-full"></div>
-            <h3 className="text-xl font-black text-black">Annual Earnings</h3>
+            <div className="w-1 h-6 bg-orange-500 rounded-full"></div>
+            <h3 className="text-xl font-black text-gray-900">Annual Earnings</h3>
           </div>
           <p className="text-sm text-gray-600">Compare positions at a glance</p>
         </div>
@@ -38,7 +38,7 @@ export function PayRateVisualizations() {
           {/* Company Driver Routes */}
           <div>
             <div className="flex items-center justify-between mb-1.5">
-              <span className="text-sm font-semibold text-black">Company Driver - Local</span>
+              <span className="text-sm font-semibold text-gray-900">Company Driver - Local</span>
               <span className="font-black text-blue-600">$57.5K</span>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-5">
@@ -53,7 +53,7 @@ export function PayRateVisualizations() {
 
           <div>
             <div className="flex items-center justify-between mb-1.5">
-              <span className="text-sm font-semibold text-black">Company Driver - Regional</span>
+              <span className="text-sm font-semibold text-gray-900">Company Driver - Regional</span>
               <span className="font-black text-blue-600">$63.5K</span>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-5">
@@ -68,7 +68,7 @@ export function PayRateVisualizations() {
 
           <div>
             <div className="flex items-center justify-between mb-1.5">
-              <span className="text-sm font-semibold text-black">Company Driver - OTR</span>
+              <span className="text-sm font-semibold text-gray-900">Company Driver - OTR</span>
               <span className="font-black text-blue-600">$71.5K</span>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-5">
@@ -82,10 +82,10 @@ export function PayRateVisualizations() {
           </div>
 
           {/* Owner Operator */}
-          <div className="pt-3 border-t-2 border-black/10">
+          <div className="pt-3 border-t-2 border-gray-200">
             <div>
               <div className="flex items-center justify-between mb-1.5">
-                <span className="text-sm font-black text-black">Owner Operator - Average</span>
+                <span className="text-sm font-black text-gray-900">Owner Operator - Average</span>
                 <span className="font-black text-green-600 text-lg">$230K</span>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-6">
@@ -102,11 +102,11 @@ export function PayRateVisualizations() {
       </Card>
 
       {/* Weekly & Monthly Earnings */}
-      <Card className="p-6 border-2 border-black/10 bg-white">
+      <Card className="p-6 border-2 border-gray-200 bg-white">
         <div className="mb-4">
           <div className="flex items-center gap-2 mb-1">
-            <div className="w-1 h-6 bg-black rounded-full"></div>
-            <h3 className="text-xl font-black text-black">Weekly & Monthly</h3>
+            <div className="w-1 h-6 bg-orange-500 rounded-full"></div>
+            <h3 className="text-xl font-black text-gray-900">Weekly & Monthly</h3>
           </div>
           <p className="text-sm text-gray-600">Average take-home breakdown</p>
         </div>
@@ -114,46 +114,46 @@ export function PayRateVisualizations() {
         <div className="space-y-4">
           {/* Company Driver */}
           <div>
-            <h4 className="font-black text-black mb-2 text-sm uppercase tracking-wide">Company Driver</h4>
+            <h4 className="font-black text-gray-900 mb-2 text-sm uppercase tracking-wide">Company Driver</h4>
             <div className="grid grid-cols-3 gap-2">
-              <div className="text-center p-3 bg-blue-50 rounded-lg border border-black/5">
-                <div className="text-xs text-black/60 mb-1">Local</div>
-                <div className="font-black text-black">$1,346</div>
-                <div className="text-xs text-black/50">$5,833/mo</div>
+              <div className="text-center p-3 bg-blue-50 rounded-lg border border-gray-200">
+                <div className="text-xs text-gray-500 mb-1">Local</div>
+                <div className="font-black text-gray-900">$1,346</div>
+                <div className="text-xs text-gray-500">$5,833/mo</div>
               </div>
-              <div className="text-center p-3 bg-blue-50 rounded-lg border border-black/5">
-                <div className="text-xs text-black/60 mb-1">Regional</div>
-                <div className="font-black text-black">$1,442</div>
-                <div className="text-xs text-black/50">$6,250/mo</div>
+              <div className="text-center p-3 bg-blue-50 rounded-lg border border-gray-200">
+                <div className="text-xs text-gray-500 mb-1">Regional</div>
+                <div className="font-black text-gray-900">$1,442</div>
+                <div className="text-xs text-gray-500">$6,250/mo</div>
               </div>
-              <div className="text-center p-3 bg-blue-50 rounded-lg border-2 border-black/10">
-                <div className="text-xs text-black/60 mb-1">OTR</div>
+              <div className="text-center p-3 bg-blue-50 rounded-lg border-2 border-gray-200">
+                <div className="text-xs text-gray-500 mb-1">OTR</div>
                 <div className="font-black text-blue-600">$1,635</div>
-                <div className="text-xs text-black/50">$7,083/mo</div>
+                <div className="text-xs text-gray-500">$7,083/mo</div>
               </div>
             </div>
           </div>
 
           {/* Owner Operator */}
           <div>
-            <h4 className="font-black text-black mb-2 text-sm uppercase tracking-wide">Owner Operator</h4>
+            <h4 className="font-black text-gray-900 mb-2 text-sm uppercase tracking-wide">Owner Operator</h4>
             <div className="grid grid-cols-3 gap-2">
-              <div className="text-center p-3 bg-green-50 rounded-lg border border-black/5">
-                <div className="text-xs text-black/60 mb-1">Low</div>
-                <div className="font-black text-black">$2,885</div>
-                <div className="text-xs text-black/50">$12.5K/mo</div>
+              <div className="text-center p-3 bg-green-50 rounded-lg border border-gray-200">
+                <div className="text-xs text-gray-500 mb-1">Low</div>
+                <div className="font-black text-gray-900">$2,885</div>
+                <div className="text-xs text-gray-500">$12.5K/mo</div>
               </div>
-              <div className="text-center p-3 bg-green-50 rounded-lg border-2 border-black/10">
-                <div className="text-xs text-black/60 mb-1 flex items-center justify-center gap-1">
+              <div className="text-center p-3 bg-green-50 rounded-lg border-2 border-gray-200">
+                <div className="text-xs text-gray-500 mb-1 flex items-center justify-center gap-1">
                   Avg <TrendingUp className="h-3 w-3" />
                 </div>
                 <div className="font-black text-green-600 text-lg">$3,846</div>
-                <div className="text-xs text-black/50">$16.7K/mo</div>
+                <div className="text-xs text-gray-500">$16.7K/mo</div>
               </div>
-              <div className="text-center p-3 bg-green-50 rounded-lg border border-black/5">
-                <div className="text-xs text-black/60 mb-1">High</div>
-                <div className="font-black text-black">$4,808</div>
-                <div className="text-xs text-black/50">$20.8K/mo</div>
+              <div className="text-center p-3 bg-green-50 rounded-lg border border-gray-200">
+                <div className="text-xs text-gray-500 mb-1">High</div>
+                <div className="font-black text-gray-900">$4,808</div>
+                <div className="text-xs text-gray-500">$20.8K/mo</div>
               </div>
             </div>
           </div>
@@ -161,11 +161,11 @@ export function PayRateVisualizations() {
       </Card>
 
       {/* 5-Year Earnings Projection */}
-      <Card className="p-6 border-2 border-black/10 bg-gradient-to-br from-blue-50 to-green-50">
+      <Card className="p-6 border-2 border-gray-200 bg-gradient-to-br from-blue-50 to-green-50">
         <div className="mb-4">
           <div className="flex items-center gap-2 mb-1">
-            <div className="w-1 h-6 bg-black rounded-full"></div>
-            <h3 className="text-xl font-black text-black">5-Year Projection</h3>
+            <div className="w-1 h-6 bg-orange-500 rounded-full"></div>
+            <h3 className="text-xl font-black text-gray-900">5-Year Projection</h3>
           </div>
           <p className="text-sm text-gray-600">Total potential earnings</p>
         </div>
@@ -173,7 +173,7 @@ export function PayRateVisualizations() {
         <div className="space-y-4">
           <div>
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-semibold text-black">Company Driver (OTR)</span>
+              <span className="text-sm font-semibold text-gray-900">Company Driver (OTR)</span>
               <span className="text-xl font-black text-blue-600">$425K</span>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-6">
@@ -188,7 +188,7 @@ export function PayRateVisualizations() {
 
           <div>
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-black text-black">Owner Operator (Average)</span>
+              <span className="text-sm font-black text-gray-900">Owner Operator (Average)</span>
               <span className="text-2xl font-black text-green-600">$1M+</span>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-7">
@@ -208,11 +208,11 @@ export function PayRateVisualizations() {
       </Card>
 
       {/* Commission Breakdown */}
-      <Card className="p-6 border-2 border-black/10 bg-white">
+      <Card className="p-6 border-2 border-gray-200 bg-white">
         <div className="mb-4">
           <div className="flex items-center gap-2 mb-1">
-            <div className="w-1 h-6 bg-black rounded-full"></div>
-            <h3 className="text-xl font-black text-black">Commission Rate</h3>
+            <div className="w-1 h-6 bg-orange-500 rounded-full"></div>
+            <h3 className="text-xl font-black text-gray-900">Commission Rate</h3>
           </div>
           <p className="text-sm text-gray-600">91% vs industry average</p>
         </div>
@@ -220,8 +220,8 @@ export function PayRateVisualizations() {
         <div className="space-y-4">
           <div>
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-black/70">Industry Average</span>
-              <span className="font-semibold text-black">75-85%</span>
+              <span className="text-sm text-gray-600">Industry Average</span>
+              <span className="font-semibold text-gray-900">75-85%</span>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-5">
               <div 
@@ -233,7 +233,7 @@ export function PayRateVisualizations() {
 
           <div>
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-black text-black">Thind Transport</span>
+              <span className="text-sm font-black text-gray-900">Thind Transport</span>
               <span className="font-black text-green-600 text-lg">91%</span>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-6">
