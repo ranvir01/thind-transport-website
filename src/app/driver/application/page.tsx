@@ -318,6 +318,10 @@ export default function DriverApplicationPage() {
       formDataToSend.append("file", blob, "Thind_Transport_Application.pdf")
       formDataToSend.append("driverName", formData.personal.applicant_name || "Unknown")
       formDataToSend.append("driverEmail", formData.personal.email || session?.user?.email || "")
+      formDataToSend.append("driverPhone", formData.personal.phone || "")
+      // Send the full structured application so the team gets a detailed,
+      // reviewable summary in the email and the record is saved in the database.
+      formDataToSend.append("applicationData", JSON.stringify(formData))
 
       const uploadResponse = await fetch("/api/driver/upload-application", {
         method: "POST",
