@@ -265,33 +265,55 @@ export function ApplicationForm() {
   const showStickyFooter = true; // Always show on mobile via CSS
   const isFormStarted = step > 1 || (watchedFields.driverType && watchedFields.driverType !== 'owner-operator-otr');
 
+  // The mobile sticky footer should only drive the multi-step flow (steps 1-4).
+  // On the success screen (step 5) there is no "next" step, so we hide it to
+  // avoid advancing into an empty state when tapped.
+  const showMobileFooter = step >= 1 && step <= 4
+
   return (
-    <div className="space-y-8 relative pb-24 md:pb-0">
+    <div className={cn("space-y-8 relative md:pb-0", showMobileFooter ? "pb-28" : "pb-0")}>
       {/* Mobile Sticky Footer */}
-      <div className="fixed bottom-0 left-0 right-0 z-[100] md:hidden bg-gradient-to-r from-[#001F3F] to-[#003366] p-3 border-t border-white/10 shadow-2xl safe-area-bottom">
-        <div className="flex gap-3">
-          <a
-            href={`tel:${COMPANY_INFO.phoneFormatted}`}
-            className="flex items-center justify-center w-12 h-12 bg-white/10 rounded-xl text-white hover:bg-white/20 active:bg-white/30 transition-colors"
-          >
-            <Phone className="h-5 w-5" />
-          </a>
-          <Button
-            onClick={() => {
-               // If valid, go next, otherwise scroll to error
-               if (step === 4) {
-                 handleSubmit(onSubmit)()
-               } else {
-                 nextStep()
-               }
-            }}
-            className="flex-1 h-12 bg-orange-500 hover:bg-orange-600 text-white font-bold text-base rounded-xl shadow-lg shadow-orange-500/30"
-          >
-            {step === 4 ? "Submit Application" : "Continue Application"}
-            <ChevronRight className="ml-2 h-5 w-5" />
-          </Button>
+      {showMobileFooter && (
+        <div className="fixed bottom-0 left-0 right-0 z-[100] md:hidden bg-gradient-to-r from-[#001F3F] to-[#003366] p-3 border-t border-white/10 shadow-2xl safe-area-bottom">
+          <div className="flex gap-3">
+            <a
+              href={`tel:${COMPANY_INFO.phoneFormatted}`}
+              aria-label={`Call ${COMPANY_INFO.phone}`}
+              className="flex items-center justify-center w-12 h-12 bg-white/10 rounded-xl text-white hover:bg-white/20 active:bg-white/30 transition-colors"
+            >
+              <Phone className="h-5 w-5" />
+            </a>
+            <Button
+              type="button"
+              disabled={isCapturingLead || isSubmitting}
+              onClick={() => {
+                // Step 4 submits the form; earlier steps validate and advance.
+                if (step === 4) {
+                  handleSubmit(onSubmit)()
+                } else {
+                  nextStep()
+                }
+              }}
+              className="flex-1 h-12 bg-orange-500 hover:bg-orange-600 text-white font-bold text-base rounded-xl shadow-lg shadow-orange-500/30 disabled:opacity-70"
+            >
+              {isCapturingLead || isSubmitting ? (
+                <>
+                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                  {step === 4 ? "Submitting..." : "Saving..."}
+                </>
+              ) : (
+                <>
+                  {step === 1 && "Check My Eligibility"}
+                  {step === 2 && "Continue"}
+                  {step === 3 && "Continue"}
+                  {step === 4 && "Submit Application"}
+                  <ChevronRight className="ml-2 h-5 w-5" />
+                </>
+              )}
+            </Button>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Progress Steps */}
       <div className="mb-8">
