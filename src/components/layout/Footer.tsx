@@ -213,7 +213,7 @@ export function Footer() {
                 <p className="text-xs text-neutral-300 mb-2">Licensed & Insured</p>
                 <div className="space-y-1">
                   <p className="text-sm font-semibold text-white">DOT# {COMPANY_INFO.dot}</p>
-                  <p className="text-sm font-semibold text-white">MC# {COMPANY_INFO.mc}</p>
+                  <p className="text-sm font-semibold text-white">MC-{COMPANY_INFO.mc}</p>
                 </div>
               </div>
             </div>

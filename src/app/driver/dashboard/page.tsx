@@ -6,6 +6,7 @@ import { useSession } from "next-auth/react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Loader2, CheckCircle2, FileText, Calendar, LogOut, User } from "lucide-react"
+import { COMPANY_INFO } from "@/lib/constants"
 
 export default function DriverDashboardPage() {
   const router = useRouter()
@@ -155,7 +156,7 @@ export default function DriverDashboardPage() {
           <CardContent className="pt-6">
             <div className="text-center text-sm text-gray-600">
               <p className="font-semibold mb-2">Thind Transport LLC</p>
-              <p>USDOT #4052236 | MC #1472882</p>
+              <p>USDOT #{COMPANY_INFO.dot} | MC-{COMPANY_INFO.mc}</p>
               <p className="mt-2">Questions? Email us at <a href="mailto:thindcarrier@gmail.com" className="text-orange hover:underline">thindcarrier@gmail.com</a></p>
             </div>
           </CardContent>

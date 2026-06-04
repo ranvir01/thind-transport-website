@@ -36,7 +36,7 @@
 
   <!-- Stats row -->
   <g transform="translate(70, 210)">
-    <text x="0" y="0" font-family="'Inter', sans-serif" font-size="30" font-weight="900" fill="#FF9500">91%</text>
+    <text x="0" y="0" font-family="'Inter', sans-serif" font-size="30" font-weight="900" fill="#FF9500">90%</text>
     <text x="0" y="16" font-family="'Inter', sans-serif" font-size="9" font-weight="600" fill="rgba(255,255,255,0.4)" letter-spacing="2">COMMISSION</text>
 
     <text x="120" y="0" font-family="'Inter', sans-serif" font-size="30" font-weight="900" fill="#FF9500">48</text>
@@ -65,7 +65,7 @@
   <g transform="translate(70, 330)">
     <circle cx="4" cy="5" r="2" fill="rgba(255,255,255,0.4)"/>
     <text x="14" y="9" font-family="'Inter', sans-serif" font-size="12" font-weight="500" fill="rgba(255,255,255,0.7)">Company Drivers</text>
-    <text x="200" y="9" font-family="'Inter', sans-serif" font-size="12" font-weight="700" fill="rgba(255,255,255,0.9)">$78K–$110K/yr</text>
+    <text x="200" y="9" font-family="'Inter', sans-serif" font-size="12" font-weight="700" fill="rgba(255,255,255,0.9)">$0.63/mi</text>
 
     <circle cx="4" cy="30" r="2" fill="#FF9500"/>
     <text x="14" y="34" font-family="'Inter', sans-serif" font-size="12" font-weight="500" fill="rgba(255,255,255,0.7)">Owner Operators</text>
@@ -90,7 +90,7 @@
   </g>
 
   <!-- DOT -->
-  <text x="70" y="510" font-family="'Inter', sans-serif" font-size="9" font-weight="500" fill="rgba(255,255,255,0.2)">USDOT #3154006 · FMCSA CERTIFIED</text>
+  <text x="70" y="510" font-family="'Inter', sans-serif" font-size="9" font-weight="500" fill="rgba(255,255,255,0.2)">USDOT #2523064 · MC-876103 · FMCSA CERTIFIED</text>
 
   <!-- QR Code (right side) -->
   <g transform="translate(810, 380)">

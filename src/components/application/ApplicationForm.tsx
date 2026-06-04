@@ -351,7 +351,7 @@ export function ApplicationForm() {
                     <div className="flex-1">
                       <div className="flex items-center justify-between">
                         <div className="font-bold text-gray-900 text-base">Owner Operator</div>
-                        <div className="text-xl text-green-600 font-black">91% Gross</div>
+                        <div className="text-xl text-green-600 font-black">90% Gross</div>
                       </div>
                       <div className="text-sm text-gray-500 mt-1 group-hover:text-gray-700 transition-colors">{PAY_RATES.ownerOperator.annualGross} • 2+ years OTR</div>
                     </div>
@@ -743,7 +743,7 @@ export function ApplicationForm() {
                 </div>
                 <div>
                   <p className="text-gray-700 text-sm italic">
-                    "The 91% split is real – no hidden fees. I wish I'd switched sooner."
+                    "The 90% split is real – no hidden fees. I wish I'd switched sooner."
                   </p>
                   <p className="text-xs text-gray-500 mt-1">— James T., Owner Operator • 2 Years</p>
                 </div>

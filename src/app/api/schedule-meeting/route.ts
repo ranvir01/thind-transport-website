@@ -1,10 +1,34 @@
 import { NextResponse } from "next/server"
 import nodemailer from "nodemailer"
+import { COMPANY_INFO } from "@/lib/constants"
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json()
+    const body = await request.json().catch(() => null)
+
+    if (!body) {
+      return NextResponse.json({ error: "Invalid request." }, { status: 400 })
+    }
+
     const { name, email, phone, preferredDate, preferredTime, meetingType, notes } = body
+
+    // Basic validation so we never email blank requests or crash on missing fields
+    const isEmail = typeof email === "string" && /.+@.+\..+/.test(email)
+    if (!name || !isEmail || !phone || !preferredDate || !preferredTime) {
+      return NextResponse.json(
+        { error: "Please fill in your name, a valid email, phone, and a preferred date and time." },
+        { status: 400 }
+      )
+    }
+
+    const smtpUser = process.env.SMTP_USER || process.env.EMAIL_USER
+    const smtpPass = process.env.SMTP_PASS || process.env.EMAIL_PASS
+
+    // Gracefully degrade when email isn't configured (matches the server actions)
+    if (!smtpUser || !smtpPass) {
+      console.log("Meeting request received (email not configured):", { name, email, phone, preferredDate, preferredTime })
+      return NextResponse.json({ success: true })
+    }
 
     // Configure transporter
     const transporter = nodemailer.createTransport({
@@ -12,8 +36,8 @@ export async function POST(request: Request) {
       port: parseInt(process.env.SMTP_PORT || "587"),
       secure: false,
       auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS,
+        user: smtpUser,
+        pass: smtpPass,
       },
     })
 
@@ -74,10 +98,10 @@ export async function POST(request: Request) {
           <ul>
             <li>Your CDL information</li>
             <li>Recent driving experience</li>
-            <li>Questions about our 91% owner-operator program</li>
+            <li>Questions about our 90% owner-operator program</li>
           </ul>
           
-          <p>If you have urgent questions, call us at (206) 765-6300.</p>
+          <p>If you have urgent questions, call us at ${COMPANY_INFO.phone}.</p>
           
           <p>Best regards,<br>Thind Transport Team</p>
         </div>

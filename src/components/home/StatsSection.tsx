@@ -14,7 +14,7 @@ import { PAY_RATES } from "@/lib/constants"
 export function StatsSection() {
   // Calculate weekly and monthly earnings
   const ownerOperatorWeekly = Math.round((150000 + 250000) / 2 / 52)
-  const companyDriverWeekly = Math.round((65000 + 95000) / 2 / 52)
+  const companyDriverWeekly = Math.round((57000 + 82000) / 2 / 52)
   
   return (
     <section className="py-16 bg-gradient-to-b from-white to-gray-50">
@@ -120,7 +120,7 @@ export function StatsSection() {
             <div className="mb-6 p-4 bg-white rounded-lg">
               <div className="text-sm text-gray-600 mb-1">Annual Earnings</div>
               <div className="text-4xl font-black text-blue-600 mb-2">
-                $78K-$110K
+                $57K-$82K
               </div>
               <div className="flex items-center gap-2 text-sm text-gray-600">
                 <TrendingUp className="h-4 w-4 text-blue-600" />
@@ -135,7 +135,7 @@ export function StatsSection() {
                   <DollarSign className="h-4 w-4" />
                   <span className="text-xs">Per Mile</span>
                 </div>
-                <div className="text-2xl font-bold text-gray-900">$0.60-$0.65</div>
+                <div className="text-2xl font-bold text-gray-900">{PAY_RATES.companyDriver.regional.perMile}</div>
               </div>
               <div className="bg-white p-4 rounded-lg">
                 <div className="flex items-center gap-2 text-gray-600 mb-1">

@@ -4,12 +4,12 @@
 
 ## Company Overview
 
-Thind Transport LLC is a family-owned trucking company based in Kent, Washington, founded in 2016. We specialize in freight transportation across all 48 contiguous United States, offering one of the highest owner operator commission rates in the industry at 91% of gross revenue.
+Thind Transport LLC is a family-owned trucking company based in Kent, Washington, founded in 2016. We specialize in freight transportation across all 48 contiguous United States, offering one of the highest owner operator commission rates in the industry at 90% of gross revenue.
 
 ## What We Do
 
 - Freight transportation (flatbed, reefer, dry van)
-- Owner operator leasing program with 91% commission
+- Owner operator leasing program with 90% commission
 - Company driver employment
 - Nationwide freight coverage with focus on Pacific Northwest
 - Modern fleet with 2024 Freightliner Cascadia trucks
@@ -17,7 +17,7 @@ Thind Transport LLC is a family-owned trucking company based in Kent, Washington
 ## Key Offerings
 
 ### Owner Operator Program
-- 91% of gross revenue (industry-leading)
+- 90% of gross revenue (industry-leading)
 - 100% fuel surcharge pass-through
 - No forced dispatch
 - $2,500 sign-on bonus
@@ -25,8 +25,8 @@ Thind Transport LLC is a family-owned trucking company based in Kent, Washington
 - Average earnings: $150,000 - $250,000/year
 
 ### Company Driver Program
-- $0.50-0.65 per mile
-- Annual earnings: $65,000 - $95,000
+- $0.63 per mile
+- Annual earnings: $57,000 - $82,000
 - $1,000 sign-on bonus
 - Full benefits (health, dental, vision, 401k)
 - 2024 equipment
@@ -42,10 +42,11 @@ Thind Transport LLC is a family-owned trucking company based in Kent, Washington
 
 ## Certifications
 
-- USDOT Number: 3154006
-- MC Number: Active
+- USDOT Number: 2523064
+- MC Docket: MC-876103
 - FMCSA Safety Rating: A+
 - Insurance: Fully covered
+- FMCSA carrier registration: Transitioning to Motus (unified registration system) in 2026; legacy URS/FMCSA Portal being retired. Thind Transport authority remains active under USDOT 2523064 / MC-876103. Official info: https://www.fmcsa.dot.gov/registration/whats-coming
 
 ## Key Pages
 
@@ -77,7 +78,7 @@ Thind Transport LLC is a family-owned trucking company based in Kent, Washington
 ## Frequently Asked Questions
 
 Q: What commission do owner operators receive?
-A: Owner operators keep 91% of gross revenue on every load, plus 100% of fuel surcharge pass-through.
+A: Owner operators keep 90% of gross revenue on every load, plus 100% of fuel surcharge pass-through.
 
 Q: Is there forced dispatch?
 A: No, we never use forced dispatch. You choose your loads and your schedule.

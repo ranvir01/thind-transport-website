@@ -88,7 +88,7 @@ export function LeadMagnetModal() {
                         <div className="w-12 h-12 bg-orange-500 rounded-xl flex items-center justify-center mb-6 shadow-lg shadow-orange-500/20">
                             <FileText className="text-white h-6 w-6" />
                         </div>
-                        <h3 className="text-white font-bold text-2xl leading-tight mb-2">Unlock the Secrets to <span className="text-orange-500">91% Gross</span></h3>
+                        <h3 className="text-white font-bold text-2xl leading-tight mb-2">Unlock the Secrets to <span className="text-orange-500">90% Gross</span></h3>
                         <p className="text-blue-200 text-sm">Join 500+ Owner Operators who have downloaded this guide.</p>
                     </div>
                     <div className="relative z-10">
@@ -98,7 +98,7 @@ export function LeadMagnetModal() {
 
                 <div className="p-8 md:p-10">
                      <div className="md:hidden mb-6">
-                        <h3 className="text-2xl font-black text-slate-900 mb-2">Unlock the Secrets to <span className="text-orange-600">91% Gross</span></h3>
+                        <h3 className="text-2xl font-black text-slate-900 mb-2">Unlock the Secrets to <span className="text-orange-600">90% Gross</span></h3>
                         <p className="text-slate-500 text-sm">Download the Free Thind Profitability Guide.</p>
                      </div>
 

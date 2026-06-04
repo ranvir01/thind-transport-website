@@ -8,7 +8,7 @@ const comparisonData = [
   {
     feature: "Pay Split",
     competitor: "65-75% Gross",
-    thind: "91% Gross",
+    thind: "90% Gross",
     highlight: true,
   },
   {
@@ -57,23 +57,22 @@ const comparisonData = [
 
 export const WhySwitch = () => {
   return (
-    <section className="py-20 md:py-28 bg-white">
-      <div className="container px-4">
-        {/* Header */}
+    <section className="relative py-20 md:py-28 overflow-hidden">
+      <div className="accent-orb -top-10 right-0 h-72 w-72 bg-orange-600/15" />
+      <div className="accent-orb bottom-0 -left-10 h-72 w-72 bg-gold-600/10" />
+      <div className="container relative px-4">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="text-center mb-12 md:mb-16"
+          className="fleet-section-heading"
         >
-          <span className="inline-block px-4 py-1.5 rounded-full bg-orange/10 text-orange font-semibold text-sm mb-4">
-            Side-by-Side Comparison
-          </span>
-          <h2 className="text-3xl md:text-5xl font-black text-navy mb-4">
-            Why Drivers <span className="text-orange">Switch</span> to Thind
+          <span className="fleet-badge mb-4">Side-by-side comparison</span>
+          <h2 className="text-white mb-4">
+            Why drivers <span className="text-orange">switch</span> to Thind
           </h2>
-          <p className="text-lg text-steel max-w-2xl mx-auto">
-            Stop leaving money on the table. See how we stack up against the mega-carriers.
+          <p className="text-lg text-steel-300 max-w-2xl mx-auto">
+            We&apos;re not a mega-carrier call center. See how our pay and support compare.
           </p>
         </motion.div>
 
@@ -81,13 +80,13 @@ export const WhySwitch = () => {
         <div className="max-w-4xl mx-auto">
           {/* Desktop Table Header - Hidden on Mobile */}
           <div className="hidden md:grid grid-cols-3 gap-4 mb-4 px-4">
-            <div className="text-sm font-semibold text-gray-700 uppercase tracking-wider">
+            <div className="text-sm font-semibold text-steel-300 uppercase tracking-wider font-display">
               Feature
             </div>
-            <div className="text-center text-sm font-semibold text-gray-500 uppercase tracking-wider">
-              Mega Carriers
+            <div className="text-center text-sm font-semibold text-steel-500 uppercase tracking-wider font-display">
+              Mega carriers
             </div>
-            <div className="text-center text-sm font-semibold text-orange uppercase tracking-wider">
+            <div className="text-center text-sm font-semibold text-orange uppercase tracking-wider font-display">
               Thind Transport
             </div>
           </div>
@@ -101,11 +100,11 @@ export const WhySwitch = () => {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: index * 0.03 }}
-                className={`p-4 rounded-xl ${
-                  row.highlight ? 'bg-orange/5 border border-orange/20' : 'bg-neutral-50'
+                className={`p-4 rounded-fleet-lg border ${
+                  row.highlight ? 'fleet-stat-card--highlight' : 'fleet-stat-card'
                 }`}
               >
-                <div className="font-bold text-navy text-base mb-3 border-b border-black/5 pb-2">{row.feature}</div>
+                <div className="font-bold text-white text-base mb-3 border-b border-steel-700 pb-2 font-display uppercase tracking-wide text-sm">{row.feature}</div>
                 <div className="space-y-3">
                   {/* Thind Line (First for emphasis) */}
                   <div className="flex items-center gap-3">
@@ -113,8 +112,8 @@ export const WhySwitch = () => {
                       <Check className="w-4 h-4 text-green-600" />
                     </div>
                     <div>
-                      <span className="text-xs font-bold text-navy uppercase tracking-wider block">Thind Transport</span>
-                      <span className={`text-base font-bold ${row.highlight ? 'text-orange' : 'text-navy'}`}>
+                      <span className="text-xs font-bold text-orange uppercase tracking-wider block">Thind Transport</span>
+                      <span className={`text-base font-bold ${row.highlight ? 'text-orange' : 'text-white'}`}>
                         {row.thind}
                       </span>
                     </div>
@@ -146,22 +145,22 @@ export const WhySwitch = () => {
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: index * 0.05 }}
-                className={`grid grid-cols-3 gap-4 items-center p-4 rounded-xl ${
-                  row.highlight ? 'bg-orange/5 border border-orange/20' : 'bg-neutral-50'
+                className={`grid grid-cols-3 gap-4 items-center p-4 rounded-fleet-lg border ${
+                  row.highlight ? 'fleet-stat-card--highlight' : 'fleet-stat-card'
                 }`}
               >
-                <div className="font-semibold text-navy">{row.feature}</div>
+                <div className="font-semibold text-white font-display">{row.feature}</div>
                 <div className="text-center flex items-center justify-center gap-2">
                   {row.competitorBad && (
                     <X className="w-4 h-4 text-red-500 flex-shrink-0" />
                   )}
-                  <span className={`text-sm ${row.competitorBad ? 'text-red-600' : 'text-gray-600'}`}>
+                  <span className={`text-sm ${row.competitorBad ? 'text-red-400' : 'text-steel-400'}`}>
                     {row.competitor}
                   </span>
                 </div>
                 <div className="text-center flex items-center justify-center gap-2">
                   <Check className="w-4 h-4 text-green-500 flex-shrink-0" />
-                  <span className={`text-sm font-semibold ${row.highlight ? 'text-orange' : 'text-green-700'}`}>
+                  <span className={`text-sm font-semibold ${row.highlight ? 'text-orange' : 'text-green-400'}`}>
                     {row.thind}
                   </span>
                 </div>
@@ -174,14 +173,14 @@ export const WhySwitch = () => {
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="mt-8 p-6 bg-navy rounded-2xl text-center"
+            className="mt-8 p-6 fleet-panel fleet-panel-accent text-center"
           >
-            <p className="text-white/80 mb-4">
-              On average, owner operators earn <span className="text-orange font-bold">$35,000+ more per year</span> with our 91% split.
+            <p className="text-steel-200 mb-4">
+              On average, owner operators earn <span className="text-orange font-bold">$35,000+ more per year</span> with our 90% split.
             </p>
             <Link
               href="/apply"
-              className="inline-flex items-center gap-2 px-8 py-4 bg-orange hover:bg-orange-600 text-white font-bold rounded-lg transition-all shadow-cta hover:shadow-cta-hover"
+              className="inline-flex items-center gap-2 px-8 py-4 bg-orange hover:bg-orange-400 text-white font-bold rounded-fleet transition-all hover:shadow-cta-hover shadow-cta font-display uppercase tracking-wide"
             >
               Calculate Your Earnings
               <ArrowRight className="w-5 h-5" />

@@ -17,7 +17,7 @@ interface ComparisonItem {
 const comparisons: ComparisonItem[] = [
   { 
     feature: "Commission Rate", 
-    thind: "91%", 
+    thind: "90%", 
     competitor: "70-75%", 
     highlight: true,
     icon: <DollarSign className="h-4 w-4" />

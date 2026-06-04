@@ -88,7 +88,7 @@ export function PayRatesTabs() {
           <CardContent className="space-y-4">
             <div className="bg-gradient-to-r from-blue-50 to-green-50 p-6 rounded-lg border-2 border-blue-200">
               <div className="text-center mb-4">
-                <h3 className="text-3xl font-bold mb-2 text-navy-800">91% Commission Rate</h3>
+                <h3 className="text-3xl font-bold mb-2 text-navy-800">90% Commission Rate</h3>
                 <p className="text-gray-600">Industry-leading rate - Keep more of what you earn!</p>
                 <div className="mt-2">
                   <span className="inline-block bg-orange-500 text-white px-4 py-2 rounded-full font-bold text-sm shadow-md">
@@ -107,7 +107,7 @@ export function PayRatesTabs() {
                   <p className="text-sm text-gray-600">Annual potential</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-3xl font-bold text-orange-600">91%</p>
+                  <p className="text-3xl font-bold text-orange-600">90%</p>
                   <p className="text-sm text-gray-600">You keep this much</p>
                 </div>
               </div>

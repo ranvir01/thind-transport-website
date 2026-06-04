@@ -35,6 +35,20 @@ const resourceCategories = [
     color: "blue",
     resources: [
       {
+        title: "FMCSA Motus Registration (2026)",
+        description:
+          "FMCSA's new Motus system is replacing the URS and FMCSA Portal for motor carrier registration, biennial updates, and operating authority filings.",
+        details: [
+          "Motus is FMCSA's unified registration platform (phased rollout through 2026)",
+          "Existing USDOT numbers and MC authority remain valid during the transition",
+          "Carriers—not individual drivers—manage registration in Motus",
+          "Keep FMCSA Portal account and company information current before legacy systems sunset",
+          "MC docket numbers (e.g. MC-876103) are not being eliminated under current FMCSA plans",
+        ],
+        link: "https://www.fmcsa.dot.gov/registration/whats-coming",
+        external: true,
+      },
+      {
         title: "Hours of Service (HOS) Guide",
         description: "Complete breakdown of driving limits, rest requirements, and exceptions. Updated for 2024 regulations.",
         details: [

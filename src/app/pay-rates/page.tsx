@@ -12,29 +12,29 @@ import { COMPANY_INFO, PAY_RATES } from "@/lib/constants"
 import { PageBreadcrumb } from "@/components/shared/PageBreadcrumb"
 
 export const metadata: Metadata = {
-  title: `Pay Rates - 91% O/O Split, ${PAY_RATES.companyDriver.regional.perMile}/mi Company | ${COMPANY_INFO.name}`,
-  description: `Transparent trucking pay: Owner Operators keep 91% gross (${PAY_RATES.ownerOperator.annualGross}/year). Company Drivers ${PAY_RATES.companyDriver.regional.perMile}/mi (${PAY_RATES.companyDriver.regional.annual}/year). Weekly pay, no hidden fees.`,
+  title: `Pay Rates - 90% O/O Split, ${PAY_RATES.companyDriver.regional.perMile}/mi Company | ${COMPANY_INFO.name}`,
+  description: `Transparent trucking pay: Owner Operators keep 90% gross (${PAY_RATES.ownerOperator.annualGross}/year). Company Drivers ${PAY_RATES.companyDriver.regional.perMile}/mi (${PAY_RATES.companyDriver.regional.annual}/year). Weekly pay, no hidden fees.`,
   keywords: [
     "truck driver pay rates",
     "owner operator commission",
     "CDL driver salary",
     "trucking company pay",
-    "91 percent trucking",
+    "90 percent trucking",
     "truck driver weekly pay",
     "OTR driver income",
     "flatbed driver pay",
     "reefer driver pay",
   ],
   openGraph: {
-    title: `Truck Driver Pay Rates - 91% O/O | ${COMPANY_INFO.name}`,
-    description: `Owner Operators: 91% gross. Company Drivers: ${PAY_RATES.companyDriver.regional.perMile}/mi. No hidden fees. Weekly pay. See exactly what you'll earn.`,
+    title: `Truck Driver Pay Rates - 90% O/O | ${COMPANY_INFO.name}`,
+    description: `Owner Operators: 90% gross. Company Drivers: ${PAY_RATES.companyDriver.regional.perMile}/mi. No hidden fees. Weekly pay. See exactly what you'll earn.`,
     url: "https://thindtransport.com/pay-rates",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
     title: `Truck Driver Pay Rates | ${COMPANY_INFO.name}`,
-    description: `91% commission for O/O • ${PAY_RATES.companyDriver.regional.perMile}/mi for company • Weekly pay • No hidden fees`,
+    description: `90% commission for O/O • ${PAY_RATES.companyDriver.regional.perMile}/mi for company • Weekly pay • No hidden fees`,
   },
   alternates: {
     canonical: "https://thindtransport.com/pay-rates",
@@ -164,7 +164,7 @@ export default function PayRatesPage() {
                   <Badge className="bg-[#001F3F] text-white px-3 py-1 font-bold">Independent</Badge>
                 </CardTitle>
                 <CardDescription className="text-base text-gray-700 font-medium">
-                  Highest earning potential with 91% commission
+                  Highest earning potential with 90% commission
                 </CardDescription>
               </CardHeader>
               <CardContent className="pt-6">

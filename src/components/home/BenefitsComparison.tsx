@@ -24,7 +24,7 @@ export function BenefitsComparison() {
                 <Badge className="bg-blue-600">W-2 Employee</Badge>
               </div>
               <CardDescription className="text-lg font-semibold text-blue-900">
-                $78K-$110K Annual + Benefits
+                $0.63/mile + Benefits
               </CardDescription>
             </CardHeader>
             <CardContent className="pt-6">
@@ -39,7 +39,7 @@ export function BenefitsComparison() {
                   <ul className="space-y-2">
                     <li className="flex items-start gap-2">
                       <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
-                      <span><strong>$0.60-$0.65 per mile</strong> all routes</span>
+                      <span><strong>$0.63 per mile</strong> all routes</span>
                     </li>
                     <li className="flex items-start gap-2">
                       <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
@@ -99,7 +99,7 @@ export function BenefitsComparison() {
                 <Badge className="bg-green-600">1099 Contractor</Badge>
               </div>
               <CardDescription className="text-lg font-semibold text-green-900">
-                $180K-$280K Annual • 91% Commission
+                $180K-$280K Annual • 90% Commission
               </CardDescription>
             </CardHeader>
             <CardContent className="pt-6">
@@ -114,7 +114,7 @@ export function BenefitsComparison() {
                   <ul className="space-y-2">
                     <li className="flex items-start gap-2">
                       <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
-                      <span><strong>91% Paid Off</strong> - Keep 91% of gross!</span>
+                      <span><strong>90% Paid Off</strong> - Keep 90% of gross!</span>
                     </li>
                     <li className="flex items-start gap-2">
                       <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />

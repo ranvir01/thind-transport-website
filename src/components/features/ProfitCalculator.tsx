@@ -82,8 +82,8 @@ export const ProfitCalculator = () => {
   const fuelSurcharge = miles * 0.15 // ~$0.15/mile avg fuel surcharge
   const totalGross = grossRevenue + fuelSurcharge
   
-  // Thind 91% split (100% of fuel surcharge passed through)
-  const thindDriverGross = (grossRevenue * 0.91) + fuelSurcharge
+  // Thind 90% split (100% of fuel surcharge passed through)
+  const thindDriverGross = (grossRevenue * 0.90) + fuelSurcharge
   
   // Competitor 70-75% split (typical - using 72% as average, often keep some fuel surcharge)
   const competitorDriverGross = (grossRevenue * 0.72) + (fuelSurcharge * 0.80)
@@ -128,25 +128,22 @@ export const ProfitCalculator = () => {
   }
 
   return (
-    <section id="calculator" className="py-20 md:py-28 bg-navy scroll-mt-20 overflow-x-hidden">
+    <section id="calculator" className="py-20 md:py-28 brand-section-panel scroll-mt-20 overflow-x-hidden border-t-0">
       <div className="container max-w-6xl mx-auto px-4 overflow-hidden">
-        {/* Header */}
-        <div className="text-center mb-12 md:mb-16">
-          <span className="inline-block px-4 py-1.5 rounded-full bg-orange/20 text-orange font-semibold text-sm mb-4">
-            Owner Operator Earnings Calculator
-          </span>
-          <h2 className="text-3xl md:text-5xl font-black text-white mb-4">
-            Calculate Your <span className="text-orange">Real</span> Take-Home
+        <div className="fleet-section-heading">
+          <span className="fleet-badge mb-4">Owner-operator pay</span>
+          <h2 className="text-white mb-4">
+            Calculate your <span className="text-orange">real</span> take-home
           </h2>
-          <p className="text-base md:text-lg text-white/70 max-w-2xl mx-auto">
-            See the actual difference between our 91% split and the typical 70-75% split. 
+          <p className="text-base md:text-lg text-steel-300 max-w-2xl mx-auto">
+            See the actual difference between our 90% split and the typical 70-75% split. 
             We include real operating expenses so you know exactly what to expect.
           </p>
         </div>
 
         <div className="grid lg:grid-cols-2 gap-6 md:gap-8 items-start">
             {/* Inputs Panel */}
-          <div className="bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 p-4 md:p-8">
+          <div className="fleet-panel p-4 md:p-8">
             <div className="flex items-center gap-3 mb-6">
               <div className="w-10 h-10 rounded-lg bg-orange/20 flex items-center justify-center">
                 <Calculator className="w-5 h-5 text-orange" />
@@ -292,7 +289,7 @@ export const ProfitCalculator = () => {
                     <div className="flex justify-between text-xs text-white/80 mt-1">
                       <span>60%</span>
                       <span>Industry: 70-75%</span>
-                      <span className="text-orange font-bold">91% Thind</span>
+                      <span className="text-orange font-bold">90% Thind</span>
                       <span>95%</span>
                     </div>
                   </div>
@@ -316,9 +313,9 @@ export const ProfitCalculator = () => {
                   {currentWeeklyPay > 0 && (
                     <div className="p-3 bg-green-500/20 border border-green-500/30 rounded-lg">
                       <p className="text-green-400 text-sm font-semibold">
-                        With Thind's 91% split, you could earn approximately{' '}
+                        With Thind's 90% split, you could earn approximately{' '}
                         <span className="text-green-300 font-black text-lg">
-                          {formatCurrency(currentWeeklyPay * (91 / currentSplit) - currentWeeklyPay)} more
+                          {formatCurrency(currentWeeklyPay * (90 / currentSplit) - currentWeeklyPay)} more
                         </span>{' '}
                         per week!
                       </p>
@@ -407,10 +404,10 @@ export const ProfitCalculator = () => {
               {/* Thind Card */}
               <div className="bg-gradient-to-br from-orange/10 to-orange/5 rounded-xl p-3 sm:p-4 border-2 border-orange relative overflow-hidden">
                 <div className="absolute top-0 right-0 bg-orange text-white text-[8px] sm:text-[10px] font-bold px-1.5 sm:px-2 py-0.5 rounded-bl-lg z-10">
-                  +{Math.round((0.91 - 0.72) / 0.72 * 100)}% MORE
+                  +{Math.round((0.90 - 0.72) / 0.72 * 100)}% MORE
                 </div>
                 <p className="text-orange text-[10px] sm:text-xs font-semibold uppercase tracking-wider mb-1">Thind Transport</p>
-                <p className="text-xs sm:text-sm text-orange/70 mb-2 sm:mb-3">91% Split</p>
+                <p className="text-xs sm:text-sm text-orange/70 mb-2 sm:mb-3">90% Split</p>
                 
                 <div className="space-y-2 relative z-0">
                   <div>
@@ -441,7 +438,7 @@ export const ProfitCalculator = () => {
                   </div>
                 </div>
                 <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
-                  <span className="text-xs text-orange font-bold w-auto sm:w-16 font-mono shrink-0">91%</span>
+                  <span className="text-xs text-orange font-bold w-auto sm:w-16 font-mono shrink-0">90%</span>
                   <div className="flex-1 min-w-0 bg-orange/20 rounded-full h-6 overflow-hidden w-full">
                     <div 
                       className="h-full bg-gradient-to-r from-orange to-orange-500 rounded-full transition-all duration-500 flex items-center justify-end pr-2"
@@ -567,7 +564,7 @@ export const ProfitCalculator = () => {
         {/* Bottom Context */}
         <div className="mt-8 text-center">
           <p className="text-white/80 text-sm max-w-2xl mx-auto">
-            <strong className="text-white">Why 91%?</strong> Most carriers keep 25-30% of your linehaul. 
+            <strong className="text-white">Why 90%?</strong> Most carriers keep 25-30% of your linehaul. 
             We only take 9% to cover dispatch, billing, and admin — you keep the rest.
             No hidden fees, no surprises.
           </p>

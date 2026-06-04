@@ -214,7 +214,7 @@ export function PayRateVisualizations() {
             <div className="w-1 h-6 bg-orange-500 rounded-full"></div>
             <h3 className="text-xl font-black text-gray-900">Commission Rate</h3>
           </div>
-          <p className="text-sm text-gray-600">91% vs industry average</p>
+          <p className="text-sm text-gray-600">90% vs industry average</p>
         </div>
 
         <div className="space-y-4">
@@ -234,14 +234,14 @@ export function PayRateVisualizations() {
           <div>
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm font-black text-gray-900">Thind Transport</span>
-              <span className="font-black text-green-600 text-lg">91%</span>
+              <span className="font-black text-green-600 text-lg">90%</span>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-6">
               <div 
                 className="bg-gradient-to-r from-green-500 to-green-600 h-6 rounded-full flex items-center justify-end pr-2"
-                style={{ width: '91%' }}
+                style={{ width: '90%' }}
               >
-                <span className="text-xs text-white font-black">91%</span>
+                <span className="text-xs text-white font-black">90%</span>
               </div>
             </div>
             <div className="mt-2 flex items-center gap-2 text-xs text-green-700 font-semibold">

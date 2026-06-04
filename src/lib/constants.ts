@@ -5,11 +5,18 @@ export const COMPANY_INFO = {
   phoneFormatted: "+12067656300",
   email: "thindcarrier@gmail.com",
   address: "PO Box 5114, Kent, WA 98064",
-  dot: "3154006",
-  mc: "123456",
+  dot: "2523064",
+  mc: "876103",
   owner: "Sukhdev Thind",
   founded: 2014,
   ownerExperience: "20+",
+} as const
+
+/** Official FMCSA links — Motus replaces legacy URS / FMCSA Portal for carrier registration (2026). */
+export const FMCSA_LINKS = {
+  motusInfo: "https://www.fmcsa.dot.gov/registration/whats-coming",
+  safer: "https://safer.fmcsa.dot.gov/CompanySnapshot.aspx",
+  portal: "https://portal.fmcsa.dot.gov/",
 } as const
 
 export const STATS = {
@@ -26,7 +33,7 @@ export const SERVICES = {
 
 export const PAY_RATES = {
   ownerOperator: {
-    commission: "91%",
+    commission: "90%",
     annualGross: "$150K-$250K",
     perMile: "$2.50-$3.50",
     fuelSurcharge: "100%",
@@ -34,18 +41,18 @@ export const PAY_RATES = {
   },
   companyDriver: {
     local: {
-      perMile: "$0.60-$0.65",
-      annual: "$78K-$85K",
+      perMile: "$0.63",
+      annual: "$57K-$63K",
       homeTime: "Daily",
     },
     regional: {
-      perMile: "$0.60-$0.65",
-      annual: "$78K-$95K",
+      perMile: "$0.63",
+      annual: "$63K-$73K",
       homeTime: "Weekly",
     },
     otr: {
-      perMile: "$0.60-$0.65",
-      annual: "$93K-$110K",
+      perMile: "$0.63",
+      annual: "$69K-$82K",
       homeTime: "2-3 weeks",
     },
     signOnBonus: "$1,000 (First Year)",
@@ -69,7 +76,7 @@ export const BENEFITS = {
     "Referral bonuses",
   ],
   ownerOperator: [
-    "91% commission on all loads - Industry leading!",
+    "90% commission on all loads - Industry leading!",
     "$2,500 sign-on bonus",
     "No forced dispatch - you choose your loads",
     "Weekly settlements and fast pay options",

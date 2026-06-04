@@ -99,7 +99,7 @@ export function InlineCTA({ variant = "default", showStats = true }: InlineCTAPr
             <div className="text-sm text-gray-700 font-semibold">Annual Earnings</div>
           </div>
           <div className="text-center">
-            <div className="text-2xl font-black text-blue-600">91%</div>
+            <div className="text-2xl font-black text-blue-600">90%</div>
             <div className="text-sm text-gray-700 font-semibold">O/O Commission</div>
           </div>
           <div className="text-center">

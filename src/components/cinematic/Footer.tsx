@@ -45,7 +45,8 @@ const FooterLinkSections = () => {
     { href: "/about", label: "About Us" },
     { href: "/fleet", label: "Our Fleet" },
     { href: "/veterans", label: "Veterans Program" },
-    { href: "https://safer.fmcsa.dot.gov/CompanySnapshot.aspx", label: "FMCSA Record", external: true },
+    { href: "https://safer.fmcsa.dot.gov/CompanySnapshot.aspx", label: "FMCSA SAFER Record", external: true },
+    { href: "https://www.fmcsa.dot.gov/registration/whats-coming", label: "FMCSA Motus (Registration)", external: true },
   ]
   
   return (
@@ -390,7 +391,7 @@ export const CinematicFooter = () => {
                 <p className="text-xs text-zinc-400 mb-2 uppercase tracking-wider font-display">Licensed & Insured</p>
                 <div className="space-y-1 font-display text-sm tracking-[0.08em]">
                   <p className="text-white">DOT# <span className="text-zinc-400">{COMPANY_INFO.dot}</span></p>
-                  <p className="text-white">MC# <span className="text-zinc-400">{COMPANY_INFO.mc}</span></p>
+                  <p className="text-white">MC-<span className="text-zinc-400">{COMPANY_INFO.mc}</span></p>
                 </div>
               </div>
             </div>

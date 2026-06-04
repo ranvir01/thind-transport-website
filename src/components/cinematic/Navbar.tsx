@@ -25,7 +25,7 @@ import { COMPANY_INFO } from "@/lib/constants"
 // Navigation items with dropdowns
 const driverMenuItems = [
   { href: "/apply", label: "Apply Now", description: "Start your application", icon: FileText, highlight: true },
-  { href: "/pay-rates", label: "Pay Rates", description: "91% O/O split", icon: DollarSign },
+  { href: "/pay-rates", label: "Pay Rates", description: "90% O/O split", icon: DollarSign },
   { href: "/benefits", label: "Benefits", description: "Full package", icon: Heart },
   { href: "/routes", label: "Routes", description: "Nationwide lanes", icon: MapPin },
   { href: "/testimonials", label: "Testimonials", description: "Driver reviews", icon: MessageSquare },
@@ -75,10 +75,10 @@ function DesktopDropdown({
     <div ref={dropdownRef} className="relative">
       <button 
         onClick={onToggle}
-        className={`flex items-center gap-1 px-3 py-2 text-sm font-medium transition-all rounded-lg
+        className={`flex items-center gap-1 px-3 py-2 text-sm font-semibold transition-colors rounded-fleet font-display uppercase tracking-wide
           ${hasActiveItem 
-            ? 'text-white bg-white/10' 
-            : 'text-white/80 hover:text-white hover:bg-white/5'
+            ? 'text-orange bg-steel-800/80' 
+            : 'text-steel-200 hover:text-white hover:bg-steel-800/50'
           }
         `}
         aria-expanded={isOpen}
@@ -95,7 +95,7 @@ function DesktopDropdown({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 8, scale: 0.96 }}
             transition={{ duration: 0.15, ease: "easeOut" }}
-            className="absolute top-full left-0 mt-2 w-64 py-2 bg-[rgba(11,20,34,0.96)] backdrop-blur-xl rounded-xl border border-white/10 shadow-2xl overflow-hidden"
+            className="absolute top-full left-0 mt-1 w-64 py-1 bg-navy border border-steel-700 rounded-fleet-lg shadow-brand-lg overflow-hidden"
           >
             {items.map((item) => {
               const Icon = item.icon
@@ -381,22 +381,22 @@ export const CinematicNavbar = () => {
 
   return (
     <>
-      <header className={`fixed top-0 left-0 right-0 z-[100] transition-all duration-300 ${
-        scrolled ? 'pt-2' : 'pt-4'
-      } translate-y-0`}>
-        <div className="flex justify-center pointer-events-none px-4 w-full">
-          <nav className={`pointer-events-auto flex items-center justify-between md:justify-start w-auto max-w-[98%] gap-3 md:gap-6 pl-4 pr-1.5 py-1.5 md:px-6 md:py-3 rounded-full transition-all duration-300 active:scale-[0.98] md:active:scale-100 ${
-            scrolled 
-              ? 'bg-[rgba(11,20,34,0.94)] backdrop-blur-xl shadow-2xl shadow-black/30 border border-white/10' 
-              : 'bg-[rgba(5,8,14,0.68)] backdrop-blur-md border border-white/10 shadow-lg'
-          }`}>
+      <header
+        className={`fixed top-0 left-0 right-0 z-[100] border-b transition-shadow duration-300 ${
+          scrolled ? "border-steel-700 bg-navy-900/98 shadow-brand" : "border-steel-800/80 bg-navy-900/95"
+        } backdrop-blur-sm`}
+      >
+        <div className="fleet-safety-stripe" />
+        <nav className="container flex items-center justify-between gap-4 h-16 md:h-[4.25rem] px-4">
             {/* Logo */}
             <Link 
               href="/" 
               className="relative z-20 hover:opacity-90 transition-opacity whitespace-nowrap leading-none flex items-center gap-2" 
               data-cursor="HOME"
             >
-              <span className="brand-wordmark text-[1.6rem] md:text-[1.9rem] leading-none text-white">THIND<span className="text-orange"> TRANSPORT</span></span>
+              <span className="brand-wordmark text-xl md:text-2xl leading-none text-white">
+                THIND<span className="text-orange"> TRANSPORT</span>
+              </span>
             </Link>
 
             {/* Desktop Navigation */}
@@ -419,10 +419,10 @@ export const CinematicNavbar = () => {
 
               <Link 
                 href="/driver/login" 
-                className={`px-3 py-2 text-sm font-medium rounded-lg transition-all
+                className={`px-3 py-2 text-sm font-semibold rounded-fleet transition-colors font-display uppercase tracking-wide
                   ${pathname === '/driver/login' || pathname.startsWith('/driver/')
-                    ? 'text-white bg-white/10'
-                    : 'text-white/80 hover:text-white hover:bg-white/5'
+                    ? 'text-orange bg-steel-800/80'
+                    : 'text-steel-200 hover:text-white hover:bg-steel-800/50'
                   }
                 `}
                 data-cursor="VIEW"
@@ -434,7 +434,7 @@ export const CinematicNavbar = () => {
             {/* Phone Number - Desktop only */}
             <a 
               href="tel:+12067656300" 
-              className="hidden lg:flex items-center gap-2 px-3 py-2 text-sm font-medium text-white/80 hover:text-white transition-colors"
+              className="hidden lg:flex items-center gap-2 px-3 py-2 text-sm font-semibold text-steel-300 hover:text-orange transition-colors"
               data-cursor="CALL"
             >
               <Phone className="w-4 h-4" />
@@ -444,7 +444,7 @@ export const CinematicNavbar = () => {
             {/* Apply Button */}
             <Link 
               href="/apply" 
-              className="hidden sm:flex px-4 md:px-5 py-2 bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-full text-xs uppercase tracking-widest transition-all hover:scale-105 active:scale-95 shadow-lg shadow-orange-500/25 font-display" 
+              className="hidden sm:flex items-center px-5 py-2.5 bg-orange hover:bg-orange-400 text-white font-bold rounded-full text-xs uppercase tracking-widest transition-all hover:shadow-cta-hover shadow-cta font-display" 
               data-cursor="APPLY"
             >
               Apply Now
@@ -453,14 +453,13 @@ export const CinematicNavbar = () => {
             {/* Mobile Menu Button */}
             <button
               onClick={() => setMobileMenuOpen(true)}
-              className="md:hidden p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors flex items-center justify-center"
+              className="md:hidden p-2 rounded-fleet border border-steel-600 bg-steel-800/60 hover:bg-steel-700 text-white transition-colors flex items-center justify-center"
               aria-label="Open navigation menu"
               aria-expanded={mobileMenuOpen}
             >
               <Menu className="w-5 h-5" />
             </button>
-          </nav>
-        </div>
+        </nav>
       </header>
 
       {/* Mobile Menu Drawer */}

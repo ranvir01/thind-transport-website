@@ -142,7 +142,7 @@ export function ExitIntentPopup({ variant = "bonus" }: ExitIntentPopupProps) {
                 {/* Benefits */}
                 <div className="grid grid-cols-2 gap-3 mb-6">
                   {[
-                    { icon: DollarSign, label: "91% Commission", sublabel: "Industry leading" },
+                    { icon: DollarSign, label: "90% Commission", sublabel: "Industry leading" },
                     { icon: Gift, label: "$2,500 Bonus", sublabel: "Sign-on bonus" },
                     { icon: Clock, label: "Same Day Pay", sublabel: "When you need it" },
                     { icon: Truck, label: "2024 Equipment", sublabel: "Latest models" },

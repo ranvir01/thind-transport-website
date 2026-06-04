@@ -1,51 +1,22 @@
 "use client"
 
-import { motion, useMotionTemplate, useMotionValue, useSpring } from "framer-motion"
-import { useEffect } from "react"
-
+/** Static industrial backdrop: blueprint grid + soft warm accent glow. No mouse-spotlight. */
 export const ActiveBackground = () => {
-  const mouseX = useMotionValue(0)
-  const mouseY = useMotionValue(0)
-
-  // Smooth spring animation for the spotlight
-  const springX = useSpring(mouseX, { stiffness: 50, damping: 20 })
-  const springY = useSpring(mouseY, { stiffness: 50, damping: 20 })
-
-  useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      mouseX.set(e.clientX)
-      mouseY.set(e.clientY)
-    }
-    window.addEventListener("mousemove", handleMouseMove)
-    return () => window.removeEventListener("mousemove", handleMouseMove)
-  }, [mouseX, mouseY])
-
-  // Dynamic gradient background
-  const background = useMotionTemplate`radial-gradient(
-    600px circle at ${springX}px ${springY}px,
-    rgba(29, 78, 216, 0.15),
-    transparent 80%
-  )`
-
   return (
-    <div className="fixed inset-0 z-[-1] overflow-hidden bg-[#020617]">
-      {/* Mouse Follower Spotlight */}
-      <motion.div
-        className="absolute inset-0 opacity-100"
-        style={{ background }}
-      />
-
-      {/* Noise Overlay */}
-      <div 
-        className="absolute inset-0 opacity-[0.04] mix-blend-overlay pointer-events-none"
+    <div className="fixed inset-0 z-[-1] overflow-hidden bg-[#080d12]" aria-hidden>
+      {/* Blueprint grid */}
+      <div
+        className="absolute inset-0 opacity-[0.3]"
         style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='1'/%3E%3C/svg%3E")`,
+          backgroundImage: `linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px)`,
+          backgroundSize: "52px 52px",
         }}
       />
-      
-      {/* Mesh Gradient / Starfield Fallback */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900/50 via-[#020617] to-[#020617]" />
+      {/* Warm accent glows */}
+      <div className="accent-orb -top-32 -right-24 h-[28rem] w-[28rem] bg-orange-600/25 animate-pulse-glow" />
+      <div className="accent-orb top-1/3 -left-32 h-[24rem] w-[24rem] bg-gold-600/12" />
+      <div className="accent-orb bottom-0 right-1/4 h-[22rem] w-[22rem] bg-orange-700/12" />
     </div>
   )
 }
-

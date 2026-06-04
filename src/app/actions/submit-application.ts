@@ -2,6 +2,7 @@
 
 import { z } from "zod"
 import * as nodemailer from "nodemailer"
+import { COMPANY_INFO } from "@/lib/constants"
 
 // Define the schema for server-side validation (should match client-side)
 const applicationSchema = z.object({
@@ -67,7 +68,7 @@ const formatApplicationEmail = (data: z.infer<typeof applicationSchema>) => {
   <title>New Driver Application</title>
 </head>
 <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
-  <div style="background: linear-gradient(135deg, #f97316, #ea580c); padding: 30px; border-radius: 10px 10px 0 0; text-align: center;">
+  <div style="background: linear-gradient(135deg, #D94B45, #C53C37); padding: 30px; border-radius: 10px 10px 0 0; text-align: center;">
     <h1 style="color: white; margin: 0; font-size: 28px;">🚛 New Driver Application</h1>
     <p style="color: #fed7aa; margin: 10px 0 0 0;">Thind Transport LLC</p>
   </div>
@@ -356,8 +357,8 @@ export async function submitApplication(prevState: ApplicationState, formData: F
     
     // Provide more helpful error message
     const errorMessage = error instanceof Error 
-      ? `Failed to send application: ${error.message}. Please call us at (206) 765-6300 or email thindcarrier@gmail.com`
-      : "Something went wrong. Please try again or call us directly at (206) 765-6300."
+      ? `We couldn't send your application by email (${error.message}). Please call ${COMPANY_INFO.phone} or email ${COMPANY_INFO.email}.`
+      : `Something went wrong on our end. Call ${COMPANY_INFO.phone} or email ${COMPANY_INFO.email} and we'll pick it up from there.`
     
     return {
       success: false,

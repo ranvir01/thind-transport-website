@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next"
-import { Rajdhani, Teko } from "next/font/google"
+import { Barlow_Condensed, Source_Sans_3 } from "next/font/google"
 import "./globals.css"
 import { CinematicNavbar } from "@/components/cinematic/Navbar"
 import { ActiveBackground } from "@/components/ui/ActiveBackground"
@@ -11,18 +11,18 @@ import { COMPANY_INFO } from "@/lib/constants"
 import { SchemaMarkup } from "@/components/features/SchemaMarkup"
 import { Providers } from "./providers"
 
-const rajdhani = Rajdhani({
+const barlowCondensed = Barlow_Condensed({
   subsets: ["latin"],
   display: "swap",
-  variable: "--font-rajdhani",
-  weight: ["400", "500", "600", "700"],
+  variable: "--font-display",
+  weight: ["600", "700", "800"],
 })
 
-const teko = Teko({
+const sourceSans = Source_Sans_3({
   subsets: ["latin"],
   display: "swap",
-  variable: "--font-teko",
-  weight: ["500", "600", "700"],
+  variable: "--font-sans",
+  weight: ["400", "500", "600", "700"],
 })
 
 // SEO-Optimized Metadata
@@ -32,15 +32,17 @@ export const metadata: Metadata = {
     default: `${COMPANY_INFO.name} | Family-Run Trucking Company in Kent, WA`,
     template: `%s | ${COMPANY_INFO.name}`,
   },
-  description: `${COMPANY_INFO.name} is a family-run trucking company based in Kent, Washington. Learn about our fleet, routes, driver opportunities, and direct support for company drivers and owner operators.`,
+  description: `${COMPANY_INFO.name} is a family-run carrier in Kent, WA hiring CDL-A drivers. Owner operators keep 90% of gross; company drivers earn $0.63/mile. 2024 Cascadias, weekly pay, no forced dispatch, and dispatch that actually answers the phone.`,
   keywords: [
     "Thind Transport",
     "Kent WA trucking company",
     "family owned trucking company",
-    "owner operator opportunities",
-    "CDL Class A jobs",
+    "owner operator jobs 90 percent",
+    "CDL Class A jobs Washington",
+    "company driver jobs $0.63 per mile",
     "flatbed reefer dry van carrier",
-    "Pacific Northwest trucking",
+    "Pacific Northwest trucking jobs",
+    "no forced dispatch trucking",
   ],
   authors: [{ name: `${COMPANY_INFO.name}` }],
   creator: `${COMPANY_INFO.name}`,
@@ -50,8 +52,8 @@ export const metadata: Metadata = {
     email: true,
   },
   openGraph: {
-    title: `${COMPANY_INFO.name} | Kent, WA Trucking Company`,
-    description: `${COMPANY_INFO.name} is a family-run carrier serving flatbed, reefer, and dry van freight with direct dispatch support and driver-focused communication.`,
+    title: `${COMPANY_INFO.name} | Drive for a Family-Run Carrier in Kent, WA`,
+    description: `90% gross for owner operators, $0.63/mile for company drivers, 2024 Cascadias, and weekly pay. Flatbed, reefer, and dry van — with dispatch that knows your name.`,
     url: "https://thindtransport.com",
     siteName: `${COMPANY_INFO.name}`,
     locale: "en_US",
@@ -67,8 +69,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: `${COMPANY_INFO.name} | Kent, WA Trucking Company`,
-    description: "Family-run trucking company with company driver and owner-operator opportunities.",
+    title: `${COMPANY_INFO.name} | Drive for a Family-Run Carrier`,
+    description: "90% gross for owner operators, $0.63/mile for company drivers, 2024 Cascadias, weekly pay, no forced dispatch.",
     images: ["/branding/thind-transport-logo-white.svg"],
   },
   robots: {
@@ -91,7 +93,7 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 5,
-  themeColor: "#0B1422",
+  themeColor: "#0E1621",
 }
 
 export default function RootLayout({
@@ -100,7 +102,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" suppressHydrationWarning className={`scroll-smooth ${rajdhani.variable} ${teko.variable}`}>
+    <html lang="en" suppressHydrationWarning className={`scroll-smooth ${barlowCondensed.variable} ${sourceSans.variable}`}>
       <head>
         <link rel="canonical" href="https://thindtransport.com/" />
         
@@ -110,7 +112,7 @@ export default function RootLayout({
         <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
         <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
         <link rel="manifest" href="/site.webmanifest" />
-        <meta name="msapplication-TileColor" content="#0B1422" />
+        <meta name="msapplication-TileColor" content="#0E1621" />
         
         {/* Structured Data - Injected via SchemaMarkup component */}
         <SchemaMarkup />
@@ -119,7 +121,7 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
       </head>
-      <body className={`${rajdhani.className} antialiased overflow-x-hidden`} suppressHydrationWarning>
+      <body className={`${sourceSans.className} antialiased overflow-x-hidden`} suppressHydrationWarning>
         <Providers>
           <SmoothScroll>
             <ActiveBackground />

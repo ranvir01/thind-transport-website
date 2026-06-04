@@ -35,7 +35,7 @@ const companyDriverBenefits = [
     items: [
       {
         title: "Competitive Pay",
-        description: "$0.60-$0.65 per mile, $78K-$110K annually",
+        description: "$0.63 per mile, $57K-$82K annually",
         highlight: true,
       },
       {
@@ -161,8 +161,8 @@ const ownerOperatorBenefits = [
     color: "green",
     items: [
       {
-        title: "91% Gross Commission",
-        description: "Industry-leading rate - you keep 91% of every load",
+        title: "90% Gross Commission",
+        description: "Industry-leading rate - you keep 90% of every load",
         highlight: true,
       },
       {
@@ -263,7 +263,7 @@ const ownerOperatorBenefits = [
 ]
 
 const comparisonData = [
-  { feature: "Commission Rate", thind: "91%", industry: "70-85%" },
+  { feature: "Commission Rate", thind: "90%", industry: "70-85%" },
   { feature: "Fuel Surcharge", thind: "100% to driver", industry: "Varies, often split" },
   { feature: "Sign-On Bonus (O/O)", thind: "$2,500", industry: "$500-$1,500" },
   { feature: "Forced Dispatch", thind: "Never", industry: "Common" },
@@ -314,8 +314,8 @@ export default function BenefitsPage() {
         <div className="container">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto">
             {[
-              { value: "91%", label: "Commission", sublabel: "Owner Operators" },
-              { value: "$78K", label: "Annual Potential", sublabel: "Company Drivers" },
+              { value: "90%", label: "Commission", sublabel: "Owner Operators" },
+              { value: "$69K", label: "Annual Potential", sublabel: "Company Drivers" },
               { value: "100%", label: "Fuel Surcharge", sublabel: "Passed Through" },
               { value: "24/7", label: "Support", sublabel: "Real People" },
             ].map((stat) => (
@@ -398,7 +398,7 @@ export default function BenefitsPage() {
               Maximum Earnings, Maximum Freedom
             </h2>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              91% commission, no forced dispatch, complete transparency. Run your business your way.
+              90% commission, no forced dispatch, complete transparency. Run your business your way.
             </p>
           </div>
 

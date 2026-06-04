@@ -8,6 +8,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion"
 import { HelpCircle } from "lucide-react"
+import { COMPANY_INFO, FMCSA_LINKS } from "@/lib/constants"
 
 const defaultFaqs = [
   // Pay & Compensation
@@ -17,15 +18,15 @@ const defaultFaqs = [
   },
   {
     question: "How much can I realistically earn?",
-    answer: "Company Drivers: $78K-$110K annually at $0.60-$0.65 per mile (based on route type), plus $1,500 sign-on bonus first year. Owner Operators: $180K-$280K gross annually with 91% commission (you keep 91% of gross!), plus $2,500 sign-on bonus. Top O/Os gross over $250K. Pay is distributed weekly via direct deposit every Friday."
+    answer: "Company Drivers: $57K-$82K annually at $0.63 per mile (based on miles and route type), plus $1,500 sign-on bonus first year. Owner Operators: $180K-$280K gross annually with 90% commission (you keep 90% of gross!), plus $2,500 sign-on bonus. Top O/Os gross over $250K. Pay is distributed weekly via direct deposit every Friday."
   },
   {
-    question: "What's this 91% commission for owner operators?",
-    answer: "You keep 91% of the gross revenue from each load - one of the highest rates in the industry! Most companies offer 70-85%. There are NO hidden fees or surprise deductions. Fuel surcharge passes through 100% to you. Your weekly settlement shows exactly where every dollar goes. Transparent accounting, no games."
+    question: "What's this 90% commission for owner operators?",
+    answer: "You keep 90% of the gross revenue from each load - one of the highest rates in the industry! Most companies offer 70-85%. There are NO hidden fees or surprise deductions. Fuel surcharge passes through 100% to you. Your weekly settlement shows exactly where every dollar goes. Transparent accounting, no games."
   },
   {
-    question: "How does the 91% commission work exactly?",
-    answer: "Simple: If a load pays $3,000 gross, you receive $2,730 (91%). We take 9% to cover our back-office, dispatch, insurance, and administrative costs. NO other deductions. Fuel surcharge? You get 100%. Accessorial charges? You get 91%. Detention, layover, TONU - all 91% to you. Clean, transparent, fair."
+    question: "How does the 90% commission work exactly?",
+    answer: "Simple: If a load pays $3,000 gross, you receive $2,700 (90%). We take 10% to cover our back-office, dispatch, insurance, and administrative costs. NO other deductions. Fuel surcharge? You get 100%. Accessorial charges? You get 90%. Detention, layover, TONU - all 90% to you. Clean, transparent, fair."
   },
   {
     question: "What are the sign-on bonuses?",
@@ -85,7 +86,7 @@ const defaultFaqs = [
   },
   {
     question: "What if I don't have my own truck yet?",
-    answer: "No problem! Start as a company driver ($78K-$110K/year) while you save up and learn our operations. Many of our current owner operators started as company drivers. We can guide you through the transition when you're ready to purchase your own truck. We don't do lease-purchase (those programs often trap drivers)."
+    answer: "No problem! Start as a company driver ($0.63/mile) while you save up and learn our operations. Many of our current owner operators started as company drivers. We can guide you through the transition when you're ready to purchase your own truck. We don't do lease-purchase (those programs often trap drivers)."
   },
   
   // Equipment & Requirements
@@ -101,7 +102,11 @@ const defaultFaqs = [
   // Safety & Compliance
   {
     question: "What's your safety rating?",
-    answer: "We maintain an A+ safety rating with FMCSA. Zero out-of-service violations in our history. Our USDOT number is 3154006 - you can verify our record on SAFER. We take safety seriously because it protects you and keeps our insurance costs down (which means better pay for you)."
+    answer: `We maintain an A+ safety rating with FMCSA. Zero out-of-service violations in our history. Our USDOT number is ${COMPANY_INFO.dot} (MC-${COMPANY_INFO.mc}) — verify our carrier record anytime on SAFER. We take safety seriously because it protects you and keeps our insurance costs down (which means better pay for you).`,
+  },
+  {
+    question: "What is FMCSA Motus and does it change Thind Transport's authority?",
+    answer: `FMCSA is modernizing carrier registration with Motus, a new unified system replacing the legacy Unified Registration System (URS) and FMCSA Portal. Thind Transport LLC remains a federally registered motor carrier (USDOT ${COMPANY_INFO.dot}, MC-${COMPANY_INFO.mc}). Existing operating authority and safety records stay valid; carrier registration updates and biennial filings will move through Motus as FMCSA completes rollout in 2026. Individual drivers do not register in Motus — the motor carrier does. Owner operators and company drivers still complete our hiring and DOT application process with us as usual. Official transition details: ${FMCSA_LINKS.motusInfo}`,
   },
   {
     question: "What ELD do you use?",
@@ -115,7 +120,7 @@ const defaultFaqs = [
   },
   {
     question: "Why should I choose Thind over bigger carriers?",
-    answer: "At big carriers, you're a number. At Thind, you're family. We offer: Highest commission in the industry (91%), No forced dispatch, Transparent settlements with no hidden fees, Modern equipment, Real 24/7 support from people who know your name, Home time that's actually honored. Many of our drivers came from mega-carriers and say they wish they'd switched sooner."
+    answer: "At big carriers, you're a number. At Thind, you're family. We offer: Highest commission in the industry (90%), No forced dispatch, Transparent settlements with no hidden fees, Modern equipment, Real 24/7 support from people who know your name, Home time that's actually honored. Many of our drivers came from mega-carriers and say they wish they'd switched sooner."
   }
 ]
 
@@ -178,13 +183,13 @@ export function FAQAccordion({ items = defaultFaqs, darkBackground = true }: FAQ
           <AccordionItem 
             key={`${id}-${index}`} 
             value={`item-${id}-${index}`}
-            className={`border rounded-lg mb-3 px-4 transition-colors ${
+            className={`border rounded-fleet mb-2 px-4 transition-colors ${
               darkBackground 
-                ? "border-white/10 bg-white/5 hover:bg-white/10 data-[state=open]:bg-orange-500/10 data-[state=open]:border-orange-500/30"
-                : "border-white/10 bg-[rgba(16,25,38,0.92)] hover:bg-[rgba(20,31,47,0.96)] data-[state=open]:bg-orange-500/10 data-[state=open]:border-orange-500/30"
+                ? "border-steel-700 bg-navy-700/50 hover:bg-steel-800/40 data-[state=open]:bg-steel-800/60 data-[state=open]:border-orange/50"
+                : "border-steel-700 bg-navy-700/50 hover:bg-steel-800/40 data-[state=open]:bg-steel-800/60 data-[state=open]:border-orange/50"
             }`}
           >
-            <AccordionTrigger className={`text-left py-5 font-semibold text-base hover:no-underline ${
+            <AccordionTrigger className={`text-left py-5 font-semibold text-base hover:no-underline [&>svg]:text-zinc-400 [&[data-state=open]>svg]:text-orange-400 ${
               darkBackground
                 ? "text-white hover:text-orange-400 [&[data-state=open]]:text-orange-400"
                 : "text-white hover:text-orange-400 [&[data-state=open]]:text-orange-400"

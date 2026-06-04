@@ -1,13 +1,14 @@
 "use server"
 
 import { z } from "zod"
+import * as nodemailer from "nodemailer"
+import { COMPANY_INFO } from "@/lib/constants"
 
-// Schema for lead capture (quick contact form, newsletter signup, etc.)
 const leadSchema = z.object({
   name: z.string().min(2).optional(),
   email: z.string().email(),
   phone: z.string().min(10).optional(),
-  source: z.string().optional(), // Where the lead came from
+  source: z.string().optional(),
   message: z.string().optional(),
 })
 
@@ -15,6 +16,18 @@ export type LeadState = {
   success: boolean
   message: string
   errors?: Record<string, string[]>
+}
+
+const createTransporter = () => {
+  return nodemailer.createTransport({
+    host: process.env.SMTP_HOST || "smtp.gmail.com",
+    port: parseInt(process.env.SMTP_PORT || "587"),
+    secure: false,
+    auth: {
+      user: process.env.SMTP_USER || process.env.EMAIL_USER,
+      pass: process.env.SMTP_PASS || process.env.EMAIL_PASS,
+    },
+  })
 }
 
 export async function captureLead(prevState: LeadState, formData: FormData): Promise<LeadState> {
@@ -32,35 +45,45 @@ export async function captureLead(prevState: LeadState, formData: FormData): Pro
     if (!validatedData.success) {
       return {
         success: false,
-        message: "Please provide valid contact information",
+        message: "Please check your email and phone number.",
         errors: validatedData.error.flatten().fieldErrors as Record<string, string[]>,
       }
     }
 
     const data = validatedData.data
+    const smtpUser = process.env.SMTP_USER || process.env.EMAIL_USER
+    const smtpPass = process.env.SMTP_PASS || process.env.EMAIL_PASS
 
-    // Log the lead (in production, you'd save to database or CRM)
-    console.log("Lead captured:", {
-      ...data,
-      timestamp: new Date().toISOString(),
-    })
+    console.log("Lead captured:", { ...data, timestamp: new Date().toISOString() })
 
-    // In production, you might want to:
-    // 1. Save to database
-    // 2. Send to CRM (HubSpot, Salesforce, etc.)
-    // 3. Send confirmation email
-    // 4. Trigger webhook to Slack/Teams
+    if (smtpUser && smtpPass) {
+      const transporter = createTransporter()
+      await transporter.sendMail({
+        from: process.env.SMTP_FROM || `"Thind Transport Website" <${smtpUser}>`,
+        to: COMPANY_INFO.email,
+        replyTo: data.email,
+        subject: `Website lead${data.source ? ` — ${data.source}` : ""}`,
+        text: [
+          `Name: ${data.name || "—"}`,
+          `Email: ${data.email}`,
+          `Phone: ${data.phone || "—"}`,
+          `Source: ${data.source || "website"}`,
+          data.message ? `Message: ${data.message}` : "",
+        ]
+          .filter(Boolean)
+          .join("\n"),
+      })
+    }
 
     return {
       success: true,
-      message: "Thanks! We'll be in touch soon.",
+      message: "Got it — someone from our team will reach out soon.",
     }
   } catch (error) {
     console.error("Lead capture error:", error)
     return {
       success: false,
-      message: "Something went wrong. Please try again.",
+      message: `We couldn't save that just now. Call ${COMPANY_INFO.phone} and we'll help you directly.`,
     }
   }
 }
-

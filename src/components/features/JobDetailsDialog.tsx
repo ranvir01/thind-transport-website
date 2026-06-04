@@ -25,7 +25,7 @@ export function JobDetailsDialog({ jobType = "company" }: JobDetailsDialogProps)
       title: "Regional Company Truck Driver",
       type: "Full-Time",
       salary: "$55K-$72K/year",
-      description: "Join our team as a regional company driver. $0.60-$0.65 per mile with excellent benefits and flexible home time.",
+      description: "Join our team as a regional company driver. $0.63 per mile with excellent benefits and flexible home time.",
       requirements: [
         "Valid CDL Class A license",
         "Minimum 1 year company driver experience (REQUIRED)",
@@ -36,7 +36,7 @@ export function JobDetailsDialog({ jobType = "company" }: JobDetailsDialogProps)
       ],
       benefits: [
         "$1,500 sign-on bonus (first year)",
-        "$0.60-$0.65 per mile (regional)",
+        "$0.63 per mile (regional)",
         "Weekly direct deposit pay - Every Friday",
         "Flexible home time - Regional routes",
         "Home on weekends",
@@ -46,7 +46,7 @@ export function JobDetailsDialog({ jobType = "company" }: JobDetailsDialogProps)
         "Fuel card programs available"
       ],
       routes: [
-        "Regional routes: $0.60-$0.65 per mile",
+        "Regional routes: $0.63 per mile",
         "Home on weekends - Work 5 days",
         "Annual earning potential: $55K-$72K",
         "Consistent miles and freight",
@@ -57,7 +57,7 @@ export function JobDetailsDialog({ jobType = "company" }: JobDetailsDialogProps)
       title: "OTR → Owner Operator",
       type: "Independent Contractor",
       salary: "$180K-$280K/year",
-      description: "91% Paid Off! Partner with us as an OTR owner operator. Industry-leading commission with no forced dispatch and no hidden fees.",
+      description: "90% Paid Off! Partner with us as an OTR owner operator. Industry-leading commission with no forced dispatch and no hidden fees.",
       requirements: [
         "Valid CDL Class A license",
         "Minimum 2 years OTR experience (REQUIRED)",
@@ -67,7 +67,7 @@ export function JobDetailsDialog({ jobType = "company" }: JobDetailsDialogProps)
         "MC authority (or we can help you get it)"
       ],
       benefits: [
-        "91% Paid Off - Industry-leading commission!",
+        "90% Paid Off - Industry-leading commission!",
         "$2,500 sign-on bonus",
         "No forced dispatch - you choose your loads",
         "No hidden fees or deductions",
@@ -82,7 +82,7 @@ export function JobDetailsDialog({ jobType = "company" }: JobDetailsDialogProps)
       ],
       routes: [
         "OTR loads nationwide: Average $2.25-$3.25 per mile",
-        "91% of gross - YOU keep 91%!",
+        "90% of gross - YOU keep 90%!",
         "Flatbed, Reefer, or Dry Van freight",
         "No forced dispatch - pick your lanes",
         "Consistent freight year-round"

@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
 import { Shield, Award, Clock, Building2, Truck, Users, Calendar } from "lucide-react"
 import Link from "next/link"
+import { COMPANY_INFO } from "@/lib/constants"
 
 // Calculate days since last incident (Dec 7, 2025 - simulated 847 days)
 const getDaysSinceLastIncident = () => {
@@ -33,7 +34,7 @@ const badges = [
   },
   {
     icon: Building2,
-    value: "3154006",
+    value: COMPANY_INFO.dot,
     label: "USDOT",
     sublabel: "Verified carrier",
     href: "https://safer.fmcsa.dot.gov/CompanySnapshot.aspx",
@@ -53,7 +54,7 @@ const badges = [
   },
   {
     icon: Award,
-    value: "91%",
+    value: "90%",
     label: "Gross Split",
     sublabel: "Industry leading",
     highlight: true,

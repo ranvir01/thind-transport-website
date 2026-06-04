@@ -2,162 +2,113 @@
 
 import { motion } from "framer-motion"
 import Link from "next/link"
-import { MessageCircle, TrendingUp } from "lucide-react"
+import { MessageCircle, Phone, TrendingUp, Truck, ArrowRight } from "lucide-react"
 import { HeroBackground } from "./HeroBackground"
 import { COMPANY_INFO } from "@/lib/constants"
 
+const container = {
+  hidden: {},
+  show: {
+    transition: { staggerChildren: 0.08, delayChildren: 0.05 },
+  },
+}
+
+const item = {
+  hidden: { opacity: 0, y: 24 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] as const } },
+}
+
 export const CinematicHero = () => {
   return (
-    <section className="relative min-h-screen w-full flex items-center justify-center overflow-hidden bg-navy">
-      {/* Background Video - Memoized to prevent re-renders */}
+    <section className="relative min-h-[94vh] w-full flex items-end overflow-hidden bg-navy-800">
       <HeroBackground />
 
-      {/* Content */}
-      <div className="relative z-10 container mx-auto px-4 text-center pt-24 pb-12 md:pt-32">
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.1 }}
-        >
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-2 mb-4">
-            <div className="inline-flex items-center gap-2 py-1.5 px-4 md:py-2 md:px-5 rounded-full bg-green-500/20 border border-green-500/30 backdrop-blur-sm text-green-400 font-bold tracking-wide text-xs md:text-sm">
-              <span className="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-green-400 animate-pulse" />
-              Family-run carrier in Kent, Washington
-            </div>
-          </div>
+      {/* Cinematic overlays for legibility + warmth */}
+      <div className="absolute inset-0 z-[1] bg-gradient-to-r from-navy-900/95 via-navy-900/80 to-navy-900/45" />
+      <div className="absolute inset-0 z-[1] bg-gradient-to-t from-navy-900 via-transparent to-navy-900/40" />
+      <div className="accent-orb top-10 right-10 h-80 w-80 bg-orange-600/30 z-[1] animate-pulse-glow" />
 
-          <p className="text-base md:text-xl text-white/90 mb-4 font-medium drop-shadow-md">
-            Straight answers, direct dispatch support, and freight that keeps you moving.
-          </p>
-
-          <h1 className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-black text-white tracking-tight leading-[1.1] mb-6 drop-shadow-xl">
-            The Truck <span className="text-orange">Rolls.</span>
-            <br />
-            <span className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl text-white/90 block mt-2">
-              The Office Never Sleeps.
+      <div className="relative z-10 container mx-auto px-4 pt-28 pb-20 md:pt-36 md:pb-24">
+        <motion.div variants={container} initial="hidden" animate="show" className="max-w-4xl">
+          <motion.div variants={item} className="fleet-badge mb-5">
+            <span className="relative flex h-2 w-2">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-orange-400 opacity-75" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-orange-500" />
             </span>
-          </h1>
-        </motion.div>
+            Family-run carrier · Kent, Washington
+          </motion.div>
 
-        {/* Value Proposition */}
-        <motion.p
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-          className="text-lg md:text-xl text-white/80 max-w-2xl mx-auto mb-8 leading-relaxed drop-shadow-md"
-        >
-          Family-owned since {COMPANY_INFO.founded}. 2024 Cascadias. No forced dispatch. 
-          <span className="block mt-1 text-white font-semibold">Call, text, or apply and talk with a real person from the team.</span>
-        </motion.p>
+          <motion.h1 variants={item} className="text-left text-white drop-shadow-md mb-5">
+            The truck <span className="text-gradient-accent">works.</span>
+            <span className="block text-2xl sm:text-3xl md:text-4xl text-steel-200 font-bold mt-3 normal-case tracking-normal">
+              And so does the team behind it.
+            </span>
+          </motion.h1>
 
-        {/* Primary CTA - Single Focus */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.3 }}
-          className="flex flex-col sm:flex-row gap-3 justify-center items-center w-full max-w-lg mx-auto mb-6"
-        >
-          <Link 
-            href="#calculator" 
-            className="w-full sm:w-auto px-8 py-4 bg-orange hover:bg-orange-600 text-white font-black text-lg rounded-xl transition-all transform hover:scale-105 shadow-cta hover:shadow-cta-hover text-center uppercase tracking-wide flex items-center justify-center gap-2"
-          >
-            <TrendingUp className="w-5 h-5" />
-            Calculate Your Profit
-          </Link>
-          <Link 
-            href="/apply" 
-            className="w-full sm:w-auto px-8 py-4 bg-white/10 hover:bg-white/20 border border-white/20 text-white font-bold text-lg rounded-xl transition-all text-center flex items-center justify-center gap-2"
-          >
-            Apply Now
-          </Link>
-        </motion.div>
+          <motion.p variants={item} className="text-lg md:text-xl text-steel-200 max-w-2xl mb-8 leading-relaxed">
+            We&apos;re a {new Date().getFullYear() - COMPANY_INFO.founded}-year family carrier out of Kent, WA. Real
+            dispatch that picks up the phone, 2024 Cascadias, and no forced loads. You drive, we handle the rest.
+          </motion.p>
 
-        {/* Text Link for Callback */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.5, delay: 0.4 }}
-          className="flex flex-row justify-center gap-3 mb-8 w-full max-w-lg mx-auto"
-        >
-          <a 
-            href="sms:+12067656300?body=Hi,%20I'm%20interested%20in%20driving%20for%20Thind%20Transport.%20Please%20call%20me%20back."
-            className="text-white/80 hover:text-white underline underline-offset-4 text-sm font-medium flex items-center gap-2"
+          <motion.div variants={item} className="flex flex-col sm:flex-row flex-wrap gap-3 mb-7">
+            <Link
+              href="#calculator"
+              className="group inline-flex items-center justify-center gap-2 px-7 py-3.5 bg-orange hover:bg-orange-400 text-white font-bold rounded-fleet shadow-cta hover:shadow-cta-hover transition-all uppercase tracking-wide text-sm md:text-base font-display"
+            >
+              <TrendingUp className="w-5 h-5" />
+              See what you&apos;d earn
+            </Link>
+            <Link
+              href="/apply"
+              className="group inline-flex items-center justify-center gap-2 px-7 py-3.5 border border-steel-500 bg-steel-800/40 hover:bg-steel-700/60 hover:border-orange/50 text-white font-semibold rounded-fleet text-sm md:text-base transition-all"
+            >
+              Apply in 60 seconds
+              <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+            </Link>
+            <a
+              href={`tel:${COMPANY_INFO.phoneFormatted}`}
+              className="inline-flex items-center justify-center gap-2 px-5 py-3.5 text-steel-200 hover:text-orange font-semibold text-sm md:text-base transition-colors"
+            >
+              <Phone className="w-4 h-4" />
+              {COMPANY_INFO.phone}
+            </a>
+          </motion.div>
+
+          <motion.a
+            variants={item}
+            href="sms:+12067656300?body=Hi,%20I'm%20interested%20in%20driving%20for%20Thind%20Transport."
+            className="text-sm text-steel-300 hover:text-orange inline-flex items-center gap-2 mb-8"
           >
             <MessageCircle className="w-4 h-4" />
-            Text for Callback
-          </a>
-        </motion.div>
+            Rather text? We&apos;ll call you right back.
+          </motion.a>
 
-        {/* Stats Grid */}
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.5 }}
-          className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 max-w-3xl mx-auto"
-        >
-          {[
-            { value: "91%", label: "Gross Split", sublabel: "Industry leading", highlight: true },
-            { value: "100%", label: "Fuel Pass-through", sublabel: "No surprises" },
-            { value: "2024", label: "Equipment", sublabel: "Cascadias" },
-            { value: "A+", label: "Safety Rating", sublabel: "FMCSA Verified" },
-          ].map((stat) => (
-            <div 
-              key={stat.label}
-              className={`rounded-xl p-4 backdrop-blur-sm border ${
-                stat.highlight 
-                  ? 'bg-orange/20 border-orange/40' 
-                  : 'bg-white/5 border-white/10'
-              }`}
-            >
-              <div className={`text-2xl md:text-3xl font-black ${stat.highlight ? 'text-orange' : 'text-white'}`}>
-                {stat.value}
+          <motion.div variants={item} className="grid grid-cols-2 md:grid-cols-4 gap-3 max-w-3xl">
+            {[
+              { value: "90%", label: "Owner-op gross", highlight: true },
+              { value: "$0.63", label: "Company driver / mi", gold: true },
+              { value: "2024", label: "Freightliner fleet" },
+              { value: "A+", label: "FMCSA safety", gold: true },
+            ].map((stat) => (
+              <div
+                key={stat.label}
+                className={stat.highlight ? "fleet-stat-card fleet-stat-card--highlight" : "fleet-stat-card"}
+              >
+                <div
+                  className={`text-2xl md:text-3xl font-bold font-display ${
+                    stat.highlight ? "text-orange" : stat.gold ? "text-gold" : "text-white"
+                  }`}
+                >
+                  {stat.value}
+                </div>
+                <div className="text-xs text-steel-300 font-medium mt-1 uppercase tracking-wide">{stat.label}</div>
               </div>
-              <div className="text-xs text-white/90 font-semibold mt-1">{stat.label}</div>
-              <div className="text-xs text-white/70">{stat.sublabel}</div>
-            </div>
-          ))}
-        </motion.div>
-
-        {/* Trust Proof */}
-        <motion.div 
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.5, delay: 0.6 }}
-          className="mt-8 flex flex-wrap justify-center gap-x-6 gap-y-2 text-sm text-white/80 pb-24"
-        >
-          {[
-            `Founded ${COMPANY_INFO.founded}`,
-            "Flatbed, Reefer, Dry Van",
-            `USDOT #${COMPANY_INFO.dot}`,
-          ].map((item) => (
-            <span key={item} className="flex items-center gap-2">
-              <svg className="w-4 h-4 text-green-400" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-              </svg>
-              {item}
-            </span>
-          ))}
+            ))}
+          </motion.div>
         </motion.div>
       </div>
 
-      {/* Scroll Indicator - Hidden on mobile due to bottom nav */}
-      <motion.div 
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 1 }}
-        className="absolute bottom-24 md:bottom-8 left-1/2 -translate-x-1/2 z-10 hidden md:block"
-      >
-        <div className="flex flex-col items-center gap-2 text-white/70">
-          <span className="text-xs uppercase tracking-widest font-medium">Scroll to learn more</span>
-          <motion.div 
-            animate={{ y: [0, 8, 0] }}
-            transition={{ repeat: Infinity, duration: 1.5 }}
-            className="w-6 h-10 border-2 border-white/20 rounded-full flex justify-center pt-2"
-          >
-            <div className="w-1.5 h-3 bg-white/40 rounded-full" />
-          </motion.div>
-        </div>
-      </motion.div>
+      <div className="absolute bottom-0 left-0 right-0 fleet-safety-stripe z-10" />
     </section>
   )
 }

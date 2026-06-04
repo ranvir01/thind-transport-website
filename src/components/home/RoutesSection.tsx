@@ -7,23 +7,23 @@ import { motion } from "framer-motion"
 
 export function RoutesSection() {
   return (
-    <section className="relative py-12 sm:py-16 md:py-24 bg-[#020617] overflow-hidden">
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-blue-900/20 via-transparent to-transparent opacity-50" />
+    <section className="relative py-12 sm:py-16 md:py-24 overflow-hidden">
+      <div className="accent-orb top-20 -right-10 h-80 w-80 bg-orange-600/12" />
       <div className="container relative px-4">
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="text-center mb-8 sm:mb-12 md:mb-16"
+          className="fleet-section-heading mb-8 sm:mb-12 md:mb-16"
         >
-          <div className="inline-flex items-center gap-2 rounded-full bg-blue-900/30 px-4 py-1.5 sm:px-5 sm:py-2 text-xs sm:text-sm font-bold text-blue-400 mb-4 sm:mb-6 border border-blue-500/30 shadow-[0_0_15px_rgba(59,130,246,0.2)]">
-            <MapPin className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-            Routes & Lanes
+          <div className="fleet-badge mb-4 mx-auto w-fit">
+            <MapPin className="h-3.5 w-3.5" />
+            Routes & lanes
           </div>
           <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black text-white mb-3 sm:mb-6 leading-tight tracking-tight">
             Choose Your Schedule, Choose Your Life
           </h2>
-          <p className="text-sm sm:text-base md:text-xl text-zinc-300 leading-relaxed max-w-3xl mx-auto font-medium">
+          <p className="text-sm sm:text-base md:text-xl text-steel-300 leading-relaxed max-w-3xl mx-auto">
             Flexible options to fit your lifestyle - from home every night to cross-country adventures
           </p>
         </motion.div>
@@ -47,11 +47,11 @@ export function RoutesSection() {
                   <Badge className="mb-2 sm:mb-3 bg-blue-500/20 text-blue-300 border-blue-500/30 font-bold text-xs">Home Every Night</Badge>
                   <h3 className="text-xl sm:text-2xl font-black mb-2 sm:mb-3 text-white">Local Routes</h3>
                   <div className="flex flex-col items-center gap-0.5 sm:gap-1 mb-2">
-                    <span className="text-2xl sm:text-3xl font-black text-blue-400">$50K-$65K</span>
+                    <span className="text-2xl sm:text-3xl font-black text-blue-400">$57K-$63K</span>
                     <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-blue-500/80">Target Annual Pay</span>
                   </div>
                   <div className="inline-block px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-lg bg-blue-500/10 border border-blue-500/20 text-xs font-bold text-blue-300">
-                    $0.50 - $0.55 CPM
+                    $0.63 CPM
                   </div>
                 </div>
 
@@ -117,11 +117,11 @@ export function RoutesSection() {
                   <Badge className="mb-2 sm:mb-3 bg-green-500/20 text-green-300 border-green-500/30 font-bold text-xs">Home Weekly ⭐</Badge>
                   <h3 className="text-xl sm:text-2xl font-black mb-2 sm:mb-3 text-white">Regional Routes</h3>
                   <div className="flex flex-col items-center gap-0.5 sm:gap-1 mb-2">
-                    <span className="text-2xl sm:text-3xl font-black text-green-400">$55K-$72K</span>
+                    <span className="text-2xl sm:text-3xl font-black text-green-400">$63K-$73K</span>
                     <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-green-500/80">Target Annual Pay</span>
                   </div>
                   <div className="inline-block px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-lg bg-green-500/10 border border-green-500/20 text-xs font-bold text-green-300">
-                    $0.52 - $0.58 CPM
+                    $0.63 CPM
                   </div>
                 </div>
 
@@ -191,7 +191,7 @@ export function RoutesSection() {
                     <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-purple-500/80">Target Annual Pay</span>
                   </div>
                   <div className="inline-block px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-lg bg-purple-500/10 border border-purple-500/20 text-xs font-bold text-purple-300">
-                    $0.55-$0.60 CPM / 91% O/O
+                    $0.55-$0.60 CPM / 90% O/O
                   </div>
                 </div>
 
@@ -230,7 +230,7 @@ export function RoutesSection() {
                 <div className="bg-gradient-to-br from-purple-900/50 to-purple-800/50 rounded-xl sm:rounded-2xl p-3 sm:p-5 border border-purple-500/20">
                   <p className="text-xs sm:text-sm font-bold mb-2 sm:mb-3 text-purple-200">Owner Operator Benefits:</p>
                   <ul className="text-xs sm:text-sm text-purple-100/80 space-y-1 sm:space-y-2 font-medium">
-                    <li>• 91% of gross revenue</li>
+                    <li>• 90% of gross revenue</li>
                     <li>• Avg $2.25-$3.25/mile</li>
                     <li>• Pick your own loads</li>
                     <li>• $180K-$280K potential</li>

@@ -37,11 +37,11 @@ export function HeroSection() {
               <div className="grid md:grid-cols-2 gap-4 text-sm">
                 <div>
                   <p className="font-semibold text-[#001F3F] mb-1">📦 Company Drivers:</p>
-                  <p className="text-gray-700">$78K-$110K/year • $0.60-$0.65/mile</p>
+                  <p className="text-gray-700">$57K-$82K/year • $0.63/mile</p>
                 </div>
                 <div>
                   <p className="font-semibold text-[#001F3F] mb-1">🚛 Owner Operators:</p>
-                  <p className="text-gray-700">91% Commission • $180K-$280K/year</p>
+                  <p className="text-gray-700">90% Commission • $180K-$280K/year</p>
                 </div>
               </div>
             </div>
@@ -76,7 +76,7 @@ export function HeroSection() {
 
             {/* Key Benefits */}
             <div className="grid grid-cols-2 gap-3 mb-8">
-              {["$1,000 Sign-On Bonus", "91% O/O Rate", "Weekly Pay", "Flexible Home Time", "Flatbed/Reefer/Dry Van", "Fast Growing Fleet"].map(
+              {["$1,000 Sign-On Bonus", "90% O/O Rate", "Weekly Pay", "Flexible Home Time", "Flatbed/Reefer/Dry Van", "Fast Growing Fleet"].map(
                 (benefit) => (
                   <div key={benefit} className="flex items-center gap-2">
                     <CheckCircle2 className="h-5 w-5 text-green-600" />

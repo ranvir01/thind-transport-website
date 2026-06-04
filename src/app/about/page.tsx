@@ -140,7 +140,7 @@ export default function AboutPage() {
                 </div>
                 <div className="flex items-start gap-3">
                   <Shield className="mt-0.5 h-4 w-4 flex-shrink-0 text-orange" />
-                  <span>USDOT #{COMPANY_INFO.dot} and MC authority listed in company records</span>
+                  <span>USDOT #{COMPANY_INFO.dot}, MC-{COMPANY_INFO.mc} — active FMCSA authority (registration moving to Motus in 2026)</span>
                 </div>
                 <div className="flex items-start gap-3">
                   <Users className="mt-0.5 h-4 w-4 flex-shrink-0 text-orange" />

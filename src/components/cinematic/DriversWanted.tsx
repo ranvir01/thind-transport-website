@@ -7,12 +7,12 @@ import { ChevronDown } from "lucide-react"
 const driverTypes = [
   {
     title: "Owner Operators",
-    description: "Take home 91% of the gross. Total transparency. Complete freedom.",
+    description: "Take home 90% of the gross. Total transparency. Complete freedom.",
     image: "/images/generated/driver-portrait-1.png",
   },
   {
     title: "Company Drivers",
-    description: "Earn $50k - $78k annually. Full benefits, consistent miles, respect.",
+    description: "Earn $0.63/mile ($57K-$82K annually). Full benefits, consistent miles, respect.",
     image: "/images/generated/driver-portrait-2.png",
   },
   {

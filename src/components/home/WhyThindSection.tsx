@@ -19,9 +19,9 @@ export function WhyThindSection() {
             <CardContent className="pt-6 text-center">
               <div className="text-4xl mb-3">🏆</div>
               <h3 className="font-bold text-lg mb-2">Industry-Leading Commission</h3>
-              <p className="text-3xl font-black text-green-600 mb-2">91%</p>
+              <p className="text-3xl font-black text-green-600 mb-2">90%</p>
               <p className="text-sm text-gray-600">
-                Most companies offer 70-85%. We give you 91% because we believe in rewarding hard work.
+                Most companies offer 70-85%. We give you 90% because we believe in rewarding hard work.
               </p>
             </CardContent>
           </Card>
@@ -72,7 +72,7 @@ export function WhyThindSection() {
               <ul className="space-y-3">
                 <li className="flex items-start gap-2">
                   <span className="text-yellow-300 mt-1">✓</span>
-                  <span><strong>Pay 91% commission</strong> - Among highest in industry</span>
+                  <span><strong>Pay 90% commission</strong> - Among highest in industry</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-yellow-300 mt-1">✓</span>

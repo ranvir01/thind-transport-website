@@ -20,20 +20,29 @@
     --primary-foreground: 210 33% 97%;
     --secondary: 2 66% 56%; /* #D94B45 */
     --secondary-foreground: 210 33% 97%;
-    --brand-bg: #05080e;
-    --brand-bg-soft: #0b1422;
-    --brand-surface: #101926;
-    --brand-surface-alt: #141f2f;
-    --brand-surface-elevated: #1a2534;
-    --brand-line: rgba(214, 221, 230, 0.14);
-    --brand-line-strong: rgba(214, 221, 230, 0.22);
-    --brand-copy: #a7b0bd;
-    --brand-copy-strong: #d6dde6;
-    --brand-copy-soft: #7f8a98;
-    --brand-accent: #d94b45;
-    --brand-accent-strong: #f06b63;
-    --brand-accent-soft: rgba(217, 75, 69, 0.14);
-    --brand-shadow: 0 18px 45px rgba(3, 6, 10, 0.35);
+    --brand-bg: #080d12;
+    --brand-bg-soft: #0e1621;
+    --brand-surface: #141c26;
+    --brand-surface-alt: #1a2430;
+    --brand-surface-elevated: #212d3a;
+    --brand-line: rgba(180, 190, 200, 0.12);
+    --brand-line-strong: rgba(180, 190, 200, 0.22);
+    --brand-copy: #9ca8b6;
+    --brand-copy-strong: #e8edf2;
+    --brand-copy-soft: #6b7785;
+    --brand-accent: #e0392f;
+    --brand-accent-strong: #ec5a50;
+    --brand-accent-soft: rgba(224, 57, 47, 0.13);
+    --brand-gold: #f2a900;
+    --brand-gold-soft: rgba(242, 169, 0, 0.13);
+    --brand-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+    --fleet-stripe: repeating-linear-gradient(
+      -45deg,
+      transparent,
+      transparent 8px,
+      rgba(224, 57, 47, 0.05) 8px,
+      rgba(224, 57, 47, 0.05) 16px
+    );
   }
 
   .dark {
@@ -60,18 +69,20 @@
   }
   
   body {
-    background:
-      radial-gradient(circle at top, rgba(217, 75, 69, 0.1), transparent 28%),
-      radial-gradient(circle at 80% 20%, rgba(214, 221, 230, 0.08), transparent 24%),
-      linear-gradient(180deg, #0b1422 0%, #070d16 35%, #05080e 100%);
+    background-color: var(--brand-bg);
+    background-image:
+      radial-gradient(900px circle at 78% -5%, rgba(224, 57, 47, 0.12), transparent 45%),
+      radial-gradient(700px circle at 5% 8%, rgba(242, 169, 0, 0.06), transparent 40%),
+      var(--fleet-stripe);
+    background-attachment: fixed;
     color: var(--brand-copy-strong);
-    font-family: var(--font-rajdhani), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-family: var(--font-sans), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     font-size: 1rem;
-    line-height: 1.7;
+    line-height: 1.65;
     font-weight: 400;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    letter-spacing: 0.01em;
+    letter-spacing: 0;
     overflow-x: hidden;
     min-height: 100vh;
   }
@@ -82,12 +93,12 @@
   
   /* Typography Hierarchy - Enhanced Heading Styles */
   h1 {
-    font-size: clamp(2rem, 5vw, 3rem);
+    font-size: clamp(2.25rem, 5vw, 3.25rem);
     font-weight: 800;
-    color: #f5f7fa;
-    font-family: var(--font-teko), sans-serif;
-    line-height: 1.1;
-    letter-spacing: 0.03em;
+    color: #f4f6f8;
+    font-family: var(--font-display), sans-serif;
+    line-height: 1.05;
+    letter-spacing: 0.02em;
     text-wrap: balance;
     text-transform: uppercase;
   }
@@ -95,49 +106,47 @@
   h2 {
     font-size: clamp(1.75rem, 4vw, 2.5rem);
     font-weight: 700;
-    color: #eef2f7;
-    font-family: var(--font-teko), sans-serif;
-    line-height: 1.2;
-    letter-spacing: 0.025em;
+    color: #eef2f6;
+    font-family: var(--font-display), sans-serif;
+    line-height: 1.15;
+    letter-spacing: 0.02em;
     text-wrap: balance;
     text-transform: uppercase;
   }
   
   h3 {
-    font-size: clamp(1.5rem, 3vw, 2rem);
+    font-size: clamp(1.375rem, 3vw, 1.75rem);
     font-weight: 700;
-    color: #dfe6ef;
-    font-family: var(--font-teko), sans-serif;
-    line-height: 1.3;
-    letter-spacing: 0.02em;
+    color: #e4e9ef;
+    font-family: var(--font-display), sans-serif;
+    line-height: 1.25;
+    letter-spacing: 0.015em;
     text-transform: uppercase;
   }
   
   h4 {
-    font-size: clamp(1.25rem, 2.5vw, 1.5rem);
+    font-size: clamp(1.125rem, 2.5vw, 1.375rem);
     font-weight: 600;
     color: #d6dde6;
-    font-family: var(--font-teko), sans-serif;
-    line-height: 1.4;
-    letter-spacing: 0.02em;
+    font-family: var(--font-display), sans-serif;
+    line-height: 1.35;
+    letter-spacing: 0.01em;
   }
   
   h5 {
-    font-size: 1.125rem;
+    font-size: 1.0625rem;
     font-weight: 600;
     color: #d6dde6;
-    font-family: var(--font-teko), sans-serif;
-    line-height: 1.5;
-    letter-spacing: 0.015em;
+    font-family: var(--font-display), sans-serif;
+    line-height: 1.4;
   }
   
   h6 {
     font-size: 1rem;
     font-weight: 600;
     color: #cdd5df;
-    font-family: var(--font-teko), sans-serif;
-    line-height: 1.5;
-    letter-spacing: 0.015em;
+    font-family: var(--font-sans), sans-serif;
+    line-height: 1.45;
   }
   
   /* Enhanced Anchor Tag Styles */
@@ -209,9 +218,9 @@
   }
   
   .hero-cta-button {
-    @apply w-full bg-gradient-to-r from-[#D94B45] to-[#C53C37] text-white px-8 py-4 rounded-xl font-black text-lg hover:shadow-2xl transition-all hover:from-[#F06B63] hover:to-[#D94B45] transform hover:-translate-y-0.5;
-    font-family: var(--font-teko), sans-serif;
-    letter-spacing: 0.05em;
+    @apply w-full bg-orange text-white px-8 py-4 rounded-fleet font-bold text-lg shadow-cta hover:bg-orange-400 transition-colors;
+    font-family: var(--font-display), sans-serif;
+    letter-spacing: 0.06em;
     text-transform: uppercase;
   }
   
@@ -224,38 +233,126 @@
   
   /* Enhanced Button Styles */
   .btn-primary-enhanced {
-    @apply text-white px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200;
-    background: linear-gradient(135deg, #d94b45, #c53c37);
-    font-family: var(--font-teko), sans-serif;
-    letter-spacing: 0.04em;
+    @apply text-white px-6 py-3 rounded-fleet font-bold shadow-cta hover:bg-orange-400 transition-colors;
+    background: var(--brand-accent);
+    font-family: var(--font-display), sans-serif;
+    letter-spacing: 0.05em;
     text-transform: uppercase;
   }
   
   .btn-secondary-enhanced {
-    @apply text-white px-6 py-3 rounded-xl shadow-md border-2 hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-200;
-    background: rgba(255, 255, 255, 0.04);
-    border-color: var(--brand-line-strong);
-    font-family: var(--font-teko), sans-serif;
+    @apply text-white px-6 py-3 rounded-fleet border-2 border-steel-600 bg-steel-800/50 hover:bg-steel-700/60 transition-colors;
+    font-family: var(--font-display), sans-serif;
     letter-spacing: 0.04em;
     text-transform: uppercase;
   }
 
   .brand-page-shell {
-    background:
-      radial-gradient(circle at top, rgba(217, 75, 69, 0.09), transparent 24%),
-      linear-gradient(180deg, #0b1422 0%, #070d16 38%, #05080e 100%);
+    background-color: var(--brand-bg-soft);
+    background-image:
+      radial-gradient(800px circle at 80% 0%, rgba(224, 57, 47, 0.1), transparent 42%),
+      var(--fleet-stripe);
   }
 
   .brand-section-panel {
-    background: linear-gradient(180deg, rgba(16, 25, 38, 0.96), rgba(9, 17, 28, 0.96));
+    background: var(--brand-surface);
     border-top: 1px solid var(--brand-line);
     border-bottom: 1px solid var(--brand-line);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
   }
 
   .brand-wordmark {
-    font-family: var(--font-teko), sans-serif;
-    letter-spacing: 0.08em;
+    font-family: var(--font-display), sans-serif;
+    letter-spacing: 0.06em;
     text-transform: uppercase;
+  }
+
+  /* Industrial fleet UI primitives */
+  .fleet-panel {
+    @apply rounded-fleet-lg border border-steel-700/70;
+    background: linear-gradient(180deg, rgba(33, 45, 58, 0.55) 0%, rgba(20, 28, 38, 0.92) 100%);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 14px 40px rgba(0, 0, 0, 0.32);
+  }
+
+  .fleet-panel-accent {
+    position: relative;
+    overflow: hidden;
+  }
+  .fleet-panel-accent::before {
+    content: "";
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 4px;
+    background: linear-gradient(180deg, var(--brand-accent), var(--brand-gold));
+  }
+
+  .fleet-badge {
+    @apply inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider;
+    background: var(--brand-accent-soft);
+    color: var(--brand-accent-strong);
+    border: 1px solid rgba(224, 57, 47, 0.4);
+    font-family: var(--font-display), sans-serif;
+  }
+
+  .fleet-badge-gold {
+    background: var(--brand-gold-soft);
+    color: var(--brand-gold);
+    border-color: rgba(242, 169, 0, 0.4);
+  }
+
+  .fleet-stat-card {
+    @apply rounded-fleet-lg border border-steel-700/60 bg-navy-700/70 p-4 transition-transform duration-300;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  }
+  .fleet-stat-card:hover {
+    transform: translateY(-4px);
+  }
+
+  .fleet-stat-card--highlight {
+    border-color: rgba(224, 57, 47, 0.5);
+    background: linear-gradient(135deg, rgba(224, 57, 47, 0.16) 0%, rgba(14, 22, 33, 0.95) 100%);
+  }
+
+  .fleet-section-heading {
+    @apply text-center mb-10 md:mb-14;
+  }
+
+  .text-gradient-accent {
+    background: linear-gradient(100deg, var(--brand-accent-strong), var(--brand-gold));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+  }
+
+  /* Hi-vis hazard stripe — red + gold for a working-fleet feel */
+  .fleet-safety-stripe {
+    height: 4px;
+    background: repeating-linear-gradient(
+      -45deg,
+      var(--brand-accent) 0,
+      var(--brand-accent) 16px,
+      var(--brand-gold) 16px,
+      var(--brand-gold) 32px
+    );
+    opacity: 0.85;
+  }
+
+  /* Angled dividers so the page stops feeling like stacked boxes */
+  .section-clip-top {
+    clip-path: polygon(0 2.5vw, 100% 0, 100% 100%, 0 100%);
+  }
+  .section-clip-bottom {
+    clip-path: polygon(0 0, 100% 0, 100% calc(100% - 2.5vw), 0 100%);
+  }
+
+  /* Soft floating accent orbs for section backgrounds */
+  .accent-orb {
+    position: absolute;
+    border-radius: 9999px;
+    filter: blur(70px);
+    pointer-events: none;
+    opacity: 0.5;
   }
 
   .brand-page-shell .bg-white,
