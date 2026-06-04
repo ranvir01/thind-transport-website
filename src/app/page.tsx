@@ -6,6 +6,7 @@ import { FAQSection } from "@/components/home/FAQSection"
 import { SuccessStoriesSection } from "@/components/home/SuccessStoriesSection"
 import { TrustStrip } from "@/components/home/TrustStrip"
 import { ThindPromise } from "@/components/home/ThindPromise"
+import { DispatchBand } from "@/components/home/DispatchBand"
 import { FreightYouKnow } from "@/components/home/FreightYouKnow"
 import { ApplicationForm } from "@/components/application/ApplicationForm"
 import { ProfitCalculator } from "@/components/features/ProfitCalculator"
@@ -25,6 +26,8 @@ export default function Home() {
       </div>
 
       <WhySwitch />
+
+      <DispatchBand />
 
       <ThindPromise />
 

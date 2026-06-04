@@ -387,15 +387,15 @@ export const CinematicNavbar = () => {
         } backdrop-blur-sm`}
       >
         <div className="fleet-safety-stripe" />
-        <nav className="container flex items-center justify-between gap-4 h-16 md:h-[4.25rem] px-4">
-            {/* Logo */}
+        <nav className="container flex items-center justify-between gap-4 h-14 md:h-16 px-4">
+            {/* Wordmark — understated text identity, not a boxed logo */}
             <Link 
               href="/" 
-              className="relative z-20 hover:opacity-90 transition-opacity whitespace-nowrap leading-none flex items-center gap-2" 
+              className="relative z-20 hover:opacity-80 transition-opacity whitespace-nowrap leading-none flex items-center" 
               data-cursor="HOME"
             >
-              <span className="brand-wordmark text-xl md:text-2xl leading-none text-white">
-                THIND<span className="text-orange"> TRANSPORT</span>
+              <span className="brand-wordmark text-base md:text-lg font-semibold leading-none text-white tracking-[0.14em]">
+                THIND<span className="text-steel-400 font-medium"> TRANSPORT</span>
               </span>
             </Link>
 
@@ -444,7 +444,7 @@ export const CinematicNavbar = () => {
             {/* Apply Button */}
             <Link 
               href="/apply" 
-              className="hidden sm:flex items-center px-5 py-2.5 bg-orange hover:bg-orange-400 text-white font-bold rounded-full text-xs uppercase tracking-widest transition-all hover:shadow-cta-hover shadow-cta font-display" 
+              className="hidden sm:flex items-center px-4 py-2 bg-orange hover:bg-orange-400 text-white font-bold rounded-full text-xs uppercase tracking-widest transition-all hover:shadow-cta-hover shadow-cta font-display" 
               data-cursor="APPLY"
             >
               Apply Now

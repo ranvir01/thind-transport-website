@@ -20,7 +20,7 @@ const item = {
 
 export const CinematicHero = () => {
   return (
-    <section className="relative min-h-[94vh] w-full flex items-end overflow-hidden bg-navy-800">
+    <section className="relative min-h-[88vh] w-full flex items-center overflow-hidden bg-navy-800">
       <HeroBackground />
 
       {/* Cinematic overlays for legibility + warmth */}
@@ -28,26 +28,26 @@ export const CinematicHero = () => {
       <div className="absolute inset-0 z-[1] bg-gradient-to-t from-navy-900 via-transparent to-navy-900/40" />
       <div className="accent-orb top-10 right-10 h-80 w-80 bg-orange-600/30 z-[1] animate-pulse-glow" />
 
-      <div className="relative z-10 container mx-auto px-4 pt-28 pb-20 md:pt-36 md:pb-24">
+      <div className="relative z-10 container mx-auto px-4 pt-24 pb-14 md:pt-28 md:pb-16">
         <motion.div variants={container} initial="hidden" animate="show" className="max-w-4xl">
           <motion.div variants={item} className="fleet-badge mb-5">
             <span className="relative flex h-2 w-2">
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-orange-400 opacity-75" />
               <span className="relative inline-flex h-2 w-2 rounded-full bg-orange-500" />
             </span>
-            Family-run carrier · Kent, Washington
+            Family-run since {COMPANY_INFO.founded} · Kent, WA
           </motion.div>
 
           <motion.h1 variants={item} className="text-left text-white drop-shadow-md mb-5">
-            The truck <span className="text-gradient-accent">works.</span>
-            <span className="block text-2xl sm:text-3xl md:text-4xl text-steel-200 font-bold mt-3 normal-case tracking-normal">
-              And so does the team behind it.
+            Keep <span className="text-gradient-accent">90% of your gross.</span>
+            <span className="block text-xl sm:text-2xl md:text-3xl text-steel-200 font-bold mt-3 normal-case tracking-normal leading-snug">
+              Real dispatch that answers, 2024 Cascadias, and zero forced loads &mdash; from a family that drives, too.
             </span>
           </motion.h1>
 
           <motion.p variants={item} className="text-lg md:text-xl text-steel-200 max-w-2xl mb-8 leading-relaxed">
-            We&apos;re a {new Date().getFullYear() - COMPANY_INFO.founded}-year family carrier out of Kent, WA. Real
-            dispatch that picks up the phone, 2024 Cascadias, and no forced loads. You drive, we handle the rest.
+            Owner-operators keep 90% of the gross. Company drivers run new Freightliners at $0.63/mile with weekly
+            pay. {new Date().getFullYear() - COMPANY_INFO.founded} years out of Kent, WA &mdash; you drive, we handle the rest.
           </motion.p>
 
           <motion.div variants={item} className="flex flex-col sm:flex-row flex-wrap gap-3 mb-7">
@@ -83,25 +83,23 @@ export const CinematicHero = () => {
             Rather text? We&apos;ll call you right back.
           </motion.a>
 
-          <motion.div variants={item} className="grid grid-cols-2 md:grid-cols-4 gap-3 max-w-3xl">
+          <motion.div
+            variants={item}
+            className="flex flex-wrap items-center gap-x-6 gap-y-4 rounded-fleet-lg border border-steel-700/50 bg-navy-900/55 px-5 py-4 backdrop-blur-sm sm:gap-x-8 sm:px-7 md:divide-x md:divide-steel-700/50"
+          >
             {[
-              { value: "90%", label: "Owner-op gross", highlight: true },
-              { value: "$0.63", label: "Company driver / mi", gold: true },
-              { value: "2024", label: "Freightliner fleet" },
-              { value: "A+", label: "FMCSA safety", gold: true },
+              { value: "90%", label: "Owner-op gross", tone: "text-orange" },
+              { value: "$0.63", label: "Company / mile", tone: "text-gold" },
+              { value: "2024", label: "Freightliner fleet", tone: "text-white" },
+              { value: "A+", label: "FMCSA safety", tone: "text-gold" },
             ].map((stat) => (
-              <div
-                key={stat.label}
-                className={stat.highlight ? "fleet-stat-card fleet-stat-card--highlight" : "fleet-stat-card"}
-              >
-                <div
-                  className={`text-2xl md:text-3xl font-bold font-display ${
-                    stat.highlight ? "text-orange" : stat.gold ? "text-gold" : "text-white"
-                  }`}
-                >
+              <div key={stat.label} className="flex items-baseline gap-2.5 md:block md:pl-6 md:first:pl-0">
+                <span className={`font-display text-2xl font-bold leading-none md:text-3xl ${stat.tone}`}>
                   {stat.value}
-                </div>
-                <div className="text-xs text-steel-300 font-medium mt-1 uppercase tracking-wide">{stat.label}</div>
+                </span>
+                <span className="text-xs font-medium uppercase tracking-wide text-steel-300 md:mt-1 md:block">
+                  {stat.label}
+                </span>
               </div>
             ))}
           </motion.div>

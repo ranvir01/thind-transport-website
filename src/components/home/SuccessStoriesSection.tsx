@@ -3,14 +3,18 @@
 import { Card, CardContent } from "@/components/ui/card"
 import { motion } from "framer-motion"
 import { Quote } from "lucide-react"
+import Image from "next/image"
 import Link from "next/link"
 import { COMPANY_INFO } from "@/lib/constants"
 
+// PLACEHOLDER: portraits are representative driver imagery. Swap with real,
+// permission-cleared driver photos (and verified names/quotes) before launch.
 const stories = [
   {
     name: "Harpreet S.",
     role: "Owner Operator",
     location: "Kent, WA",
+    image: "/images/generated/driver-portrait-1.png",
     quote:
       "What I appreciate most is how straightforward the communication is. I know who to call, I get answers quickly, and dispatch keeps things moving.",
   },
@@ -18,6 +22,7 @@ const stories = [
     name: "Aman G.",
     role: "Company Driver",
     location: "Portland, OR",
+    image: "/images/generated/driver-portrait-2.png",
     quote:
       "The equipment is clean, the expectations are clear, and home time is discussed honestly. That matters more than flashy promises.",
   },
@@ -25,6 +30,7 @@ const stories = [
     name: "Marcus J.",
     role: "Company Driver",
     location: "Boise, ID",
+    image: "/images/generated/driver-portrait-3.png",
     quote:
       "It feels like a smaller team in the best way. You can actually get someone on the phone, and issues get handled without a bunch of back-and-forth.",
   },
@@ -61,11 +67,14 @@ export function SuccessStoriesSection() {
               <Card className="h-full fleet-panel border-steel-700 hover:border-orange/30 transition-colors">
                 <CardContent className="p-6">
                   <div className="flex items-center gap-4 mb-5">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-fleet bg-gradient-to-br from-orange-500 to-orange-700 text-sm font-bold text-white font-display shadow-glow">
-                      {story.name
-                        .split(" ")
-                        .map((part) => part[0])
-                        .join("")}
+                    <div className="relative h-14 w-14 flex-shrink-0 overflow-hidden rounded-fleet border border-steel-600 shadow-glow">
+                      <Image
+                        src={story.image}
+                        alt={`${story.name}, ${story.role} at Thind Transport`}
+                        fill
+                        sizes="56px"
+                        className="object-cover"
+                      />
                     </div>
                     <div>
                       <h3 className="text-lg font-bold text-white font-display">{story.name}</h3>

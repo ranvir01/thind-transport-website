@@ -1,141 +1,165 @@
 "use client"
 
-import { Card, CardContent } from "@/components/ui/card"
-import { CheckCircle2, Truck, Wrench, Shield } from "lucide-react"
+import Image from "next/image"
+import Link from "next/link"
+import { CheckCircle2, Truck, Wrench, ShieldCheck, ArrowRight } from "lucide-react"
 import { motion } from "framer-motion"
+
+const trailers = [
+  {
+    name: "Flatbed",
+    detail: "48–53 ft · steel, lumber & building materials",
+    image: "/images/generated/trailer-flatbed.png",
+  },
+  {
+    name: "Reefer",
+    detail: "Temp-controlled · food-grade produce & freight",
+    image: "/images/generated/trailer-reefer.png",
+  },
+  {
+    name: "Dry Van",
+    detail: "53 ft · general & palletized freight",
+    image: "/images/generated/trailer-dry-van.png",
+  },
+]
+
+const tractorPoints = [
+  "2024 Freightliner Cascadias & Volvos",
+  "APUs, inverters & modern driver comfort",
+  "Collision mitigation + lane-keep safety tech",
+  "Preventive maintenance on a fixed schedule",
+]
+
+const supportPoints = [
+  { label: "24/7 roadside assistance", icon: Wrench },
+  { label: "In-house mechanical support", icon: Wrench },
+  { label: "O/O maintenance & tire discounts", icon: Truck },
+  { label: "DOT-compliant, FMCSA safety-rated fleet", icon: ShieldCheck },
+]
 
 export function EquipmentSection() {
   return (
-    <section className="relative py-12 sm:py-16 md:py-24 brand-section-panel overflow-hidden border-t-0">
+    <section className="relative overflow-hidden border-t-0 py-12 brand-section-panel sm:py-16 md:py-24">
+      <div className="accent-orb -left-10 top-10 h-72 w-72 bg-orange-600/12" />
       <div className="container relative px-4">
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="fleet-section-heading mb-8 sm:mb-12 md:mb-16"
+          className="mb-10 max-w-3xl md:mb-14"
         >
-          <div className="fleet-badge mb-4 mx-auto w-fit">
+          <div className="fleet-badge mb-4 w-fit">
             <Truck className="h-3.5 w-3.5" />
             Our fleet
           </div>
-          <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black text-white mb-3 sm:mb-4 leading-tight tracking-tight">
-            Modern, Well-Maintained Equipment
+          <h2 className="mb-3 text-white">
+            Drive a truck that&apos;s <span className="text-gradient-accent">actually new</span>
           </h2>
-          <p className="text-sm sm:text-base md:text-lg lg:text-xl text-steel-300 leading-relaxed max-w-3xl mx-auto">
-            15 trucks and growing • Multiple trailer types • All equipment DOT compliant
+          <p className="max-w-2xl text-base text-steel-300 md:text-lg">
+            15 trucks and growing — multiple trailer types, all DOT-compliant. No 10-year-old hand-me-downs.
           </p>
         </motion.div>
 
-        {/* Mobile: Horizontal Scroll, Desktop: 3 columns */}
-        <div className="flex md:grid md:grid-cols-3 gap-4 sm:gap-6 md:gap-8 overflow-x-auto md:overflow-visible snap-x snap-mandatory pb-6 md:pb-0 -mx-4 px-4 md:mx-0 md:px-0 no-scrollbar">
-          <motion.div 
-             className="min-w-[85vw] sm:min-w-[350px] md:min-w-0 snap-center"
-             initial={{ opacity: 0, y: 20 }}
-             whileInView={{ opacity: 1, y: 0 }}
-             viewport={{ once: true }}
-             transition={{ delay: 0.1 }}
+        {/* Feature row: big tractor photo + spec list */}
+        <div className="mb-10 grid items-center gap-8 md:mb-16 md:grid-cols-2 md:gap-12">
+          <motion.div
+            initial={{ opacity: 0, x: -24 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="relative overflow-hidden rounded-fleet-lg border border-steel-700/70 shadow-2xl"
           >
-            <Card className="h-full border border-white/10 bg-white/5 hover:bg-white/[0.07] transition-all duration-300 rounded-xl sm:rounded-2xl overflow-hidden group backdrop-blur-sm">
-              <CardContent className="p-4 sm:p-6 md:p-8">
-                <div className="text-center mb-4 sm:mb-6 md:mb-8">
-                  <div className="inline-flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 md:w-20 md:h-20 bg-blue-500/10 rounded-xl sm:rounded-2xl mb-3 sm:mb-5 shadow-inner border border-blue-500/20 group-hover:scale-105 transition-all group-hover:bg-blue-500/20">
-                    <Truck className="h-7 w-7 sm:h-8 sm:w-8 md:h-10 md:w-10 text-blue-500" />
-                  </div>
-                  <h3 className="text-lg sm:text-xl md:text-2xl font-bold mb-1 sm:mb-2 text-white">Trailers & Equipment</h3>
-                </div>
-                <ul className="space-y-2 sm:space-y-3 md:space-y-4">
-                  <li className="flex items-start gap-2 sm:gap-3 md:gap-4 bg-white/[0.03] rounded-lg sm:rounded-xl p-2.5 sm:p-3 md:p-4 border border-white/5 hover:border-blue-500/30 transition-all group/item">
-                    <CheckCircle2 className="h-5 w-5 sm:h-6 sm:w-6 text-blue-500 mt-0.5 shrink-0" />
-                    <div className="flex-1 min-w-0">
-                      <span className="font-bold text-zinc-100 block mb-0.5 sm:mb-1.5 text-sm sm:text-base group-hover/item:text-blue-400 transition-colors">Flatbed Trailers</span>
-                      <p className="text-xs sm:text-sm text-zinc-400 leading-relaxed">48-53 ft • Building materials, steel</p>
-                    </div>
-                  </li>
-                  <li className="flex items-start gap-2 sm:gap-3 md:gap-4 bg-white/[0.03] rounded-lg sm:rounded-xl p-2.5 sm:p-3 md:p-4 border border-white/5 hover:border-blue-500/30 transition-all group/item">
-                    <CheckCircle2 className="h-5 w-5 sm:h-6 sm:w-6 text-blue-500 mt-0.5 shrink-0" />
-                    <div className="flex-1 min-w-0">
-                      <span className="font-bold text-zinc-100 block mb-0.5 sm:mb-1.5 text-sm sm:text-base group-hover/item:text-blue-400 transition-colors">Reefer Trailers</span>
-                      <p className="text-xs sm:text-sm text-zinc-400 leading-relaxed">Temp controlled • Food grade</p>
-                    </div>
-                  </li>
-                  <li className="flex items-start gap-2 sm:gap-3 md:gap-4 bg-white/[0.03] rounded-lg sm:rounded-xl p-2.5 sm:p-3 md:p-4 border border-white/5 hover:border-blue-500/30 transition-all group/item">
-                    <CheckCircle2 className="h-5 w-5 sm:h-6 sm:w-6 text-blue-500 mt-0.5 shrink-0" />
-                    <div className="flex-1 min-w-0">
-                      <span className="font-bold text-zinc-100 block mb-0.5 sm:mb-1.5 text-sm sm:text-base group-hover/item:text-blue-400 transition-colors">Dry Van</span>
-                      <p className="text-xs sm:text-sm text-zinc-400 leading-relaxed">53 ft • General freight</p>
-                    </div>
-                  </li>
-                </ul>
-              </CardContent>
-            </Card>
+            <div className="relative aspect-[4/3]">
+              <Image
+                src="/images/generated/truck-cascadia.png"
+                alt="2024 Freightliner Cascadia tractor from the Thind Transport fleet"
+                fill
+                sizes="(max-width: 768px) 100vw, 50vw"
+                className="object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-navy-900/80 via-transparent to-transparent" />
+            </div>
+            <div className="absolute bottom-4 left-4 right-4 flex items-center gap-2">
+              <span className="fleet-badge fleet-badge-gold">2024 model year</span>
+            </div>
           </motion.div>
 
-          <motion.div 
-             className="min-w-[85vw] sm:min-w-[350px] md:min-w-0 snap-center"
-             initial={{ opacity: 0, y: 20 }}
-             whileInView={{ opacity: 1, y: 0 }}
-             viewport={{ once: true }}
-             transition={{ delay: 0.2 }}
+          <motion.div
+            initial={{ opacity: 0, x: 24 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
           >
-            <Card className="h-full border border-white/10 bg-white/5 hover:bg-white/[0.07] transition-all duration-300 rounded-xl sm:rounded-2xl overflow-hidden group backdrop-blur-sm">
-              <CardContent className="p-4 sm:p-6 md:p-8">
-                <div className="text-center mb-4 sm:mb-6 md:mb-8">
-                  <div className="inline-flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 md:w-20 md:h-20 bg-green-500/10 rounded-xl sm:rounded-2xl mb-3 sm:mb-5 shadow-inner border border-green-500/20 group-hover:scale-105 transition-all group-hover:bg-green-500/20">
-                    <Wrench className="h-7 w-7 sm:h-8 sm:w-8 md:h-10 md:w-10 text-green-500" />
-                  </div>
-                  <h3 className="text-lg sm:text-xl md:text-2xl font-bold mb-1 sm:mb-2 text-white">Maintenance & Support</h3>
-                </div>
-                <ul className="space-y-2 sm:space-y-3">
-                  {[
-                    "Preventive maintenance schedule",
-                    "24/7 roadside assistance",
-                    "O/O maintenance discounts",
-                    "In-house mechanical support",
-                    "Modern diagnostic equipment"
-                  ].map((item, i) => (
-                    <li key={i} className="flex items-start gap-2 sm:gap-3 bg-white/[0.03] rounded-lg sm:rounded-xl p-2.5 sm:p-3 md:p-4 border border-white/5 hover:border-green-500/30 transition-all group/item">
-                      <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 text-green-500 mt-0.5 shrink-0" />
-                      <span className="text-xs sm:text-sm font-medium text-zinc-300 leading-relaxed group-hover/item:text-green-400 transition-colors">{item}</span>
-                    </li>
-                  ))}
-                </ul>
-              </CardContent>
-            </Card>
-          </motion.div>
-
-          <motion.div 
-             className="min-w-[85vw] sm:min-w-[350px] md:min-w-0 snap-center"
-             initial={{ opacity: 0, y: 20 }}
-             whileInView={{ opacity: 1, y: 0 }}
-             viewport={{ once: true }}
-             transition={{ delay: 0.3 }}
-          >
-            <Card className="h-full border border-white/10 bg-white/5 hover:bg-white/[0.07] transition-all duration-300 rounded-xl sm:rounded-2xl overflow-hidden group backdrop-blur-sm">
-              <CardContent className="p-4 sm:p-6 md:p-8">
-                <div className="text-center mb-4 sm:mb-6 md:mb-8">
-                  <div className="inline-flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 md:w-20 md:h-20 bg-purple-500/10 rounded-xl sm:rounded-2xl mb-3 sm:mb-5 shadow-inner border border-purple-500/20 group-hover:scale-105 transition-all group-hover:bg-purple-500/20">
-                    <Shield className="h-7 w-7 sm:h-8 sm:w-8 md:h-10 md:w-10 text-purple-500" />
-                  </div>
-                  <h3 className="text-lg sm:text-xl md:text-2xl font-bold mb-1 sm:mb-2 text-white">Safety & Compliance</h3>
-                </div>
-                <ul className="space-y-2 sm:space-y-3">
-                  {[
-                    "DOT compliant fleet",
-                    "FMCSA safety rated",
-                    "Regular safety training",
-                    "Modern safety features",
-                    "Insurance support for O/O"
-                  ].map((item, i) => (
-                    <li key={i} className="flex items-start gap-2 sm:gap-3 bg-white/[0.03] rounded-lg sm:rounded-xl p-2.5 sm:p-3 md:p-4 border border-white/5 hover:border-purple-500/30 transition-all group/item">
-                      <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 text-purple-500 mt-0.5 shrink-0" />
-                      <span className="text-xs sm:text-sm font-medium text-zinc-300 leading-relaxed group-hover/item:text-purple-400 transition-colors">{item}</span>
-                    </li>
-                  ))}
-                </ul>
-              </CardContent>
-            </Card>
+            <h3 className="mb-5 text-white">The tractors you&apos;ll run</h3>
+            <ul className="space-y-3">
+              {tractorPoints.map((point) => (
+                <li key={point} className="flex items-start gap-3">
+                  <CheckCircle2 className="mt-0.5 h-5 w-5 flex-shrink-0 text-orange" />
+                  <span className="text-base text-steel-200">{point}</span>
+                </li>
+              ))}
+            </ul>
+            <Link
+              href="/fleet"
+              className="group mt-6 inline-flex items-center gap-2 font-display text-sm font-bold uppercase tracking-wide text-orange transition-colors hover:text-orange-400"
+            >
+              See the full fleet
+              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+            </Link>
           </motion.div>
         </div>
+
+        {/* Trailer photo band */}
+        <div className="mb-10 grid gap-4 sm:grid-cols-3 md:mb-14 md:gap-6">
+          {trailers.map((trailer, index) => (
+            <motion.div
+              key={trailer.name}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: index * 0.1 }}
+              className="group relative overflow-hidden rounded-fleet-lg border border-steel-700/70"
+            >
+              <div className="relative aspect-[3/2]">
+                <Image
+                  src={trailer.image}
+                  alt={`${trailer.name} trailer in the Thind Transport fleet`}
+                  fill
+                  sizes="(max-width: 640px) 100vw, 33vw"
+                  className="object-cover transition-transform duration-500 group-hover:scale-105"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-navy-900 via-navy-900/30 to-transparent" />
+              </div>
+              <div className="absolute bottom-0 left-0 right-0 p-4">
+                <h4 className="font-display text-lg font-bold uppercase tracking-wide text-white">{trailer.name}</h4>
+                <p className="text-xs text-steel-300">{trailer.detail}</p>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+
+        {/* Maintenance + safety — clean inline list, not boxed cards */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="border-t border-steel-700/60 pt-8"
+        >
+          <p className="mb-5 font-display text-sm font-bold uppercase tracking-[0.2em] text-steel-400">
+            Maintenance &amp; support, handled
+          </p>
+          <div className="grid gap-x-8 gap-y-4 sm:grid-cols-2 lg:grid-cols-4">
+            {supportPoints.map((point) => {
+              const Icon = point.icon
+              return (
+                <div key={point.label} className="flex items-start gap-3">
+                  <Icon className="mt-0.5 h-5 w-5 flex-shrink-0 text-gold" />
+                  <span className="text-sm font-medium text-steel-200">{point.label}</span>
+                </div>
+              )
+            })}
+          </div>
+        </motion.div>
       </div>
     </section>
   )

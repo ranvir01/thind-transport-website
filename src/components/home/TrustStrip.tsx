@@ -1,16 +1,18 @@
 "use client"
 
 import { motion } from "framer-motion"
+import Image from "next/image"
 import { ShieldCheck, BadgeCheck, Award, Clock, MapPin, ExternalLink } from "lucide-react"
 import { COMPANY_INFO, FMCSA_LINKS, STATS } from "@/lib/constants"
 
 /**
- * Credential / trust row, inspired by the single "local · certified · approved"
- * proof line on high-trust service sites — adapted to a trucking carrier.
+ * Editorial trust bar: a real FMCSA compliance badge paired with an inline,
+ * divider-separated credential row — verifiable authority next to the CTAs,
+ * without a grid of identical bubble cards.
  *
  * Real, verifiable data is pulled from constants (USDOT, MC, location, years).
- * PLACEHOLDER stats below (on-time %, retention, safe miles) are realistic but
- * should be replaced with the carrier's actual figures before launch.
+ * PLACEHOLDER stats below (safety standing, on-time %, coverage) are realistic
+ * but should be replaced with the carrier's actual figures before launch.
  */
 
 const credentials = [
@@ -43,12 +45,6 @@ const credentials = [
     sub: "Delivery performance",
   },
   {
-    icon: ShieldCheck,
-    value: "$1M+", // PLACEHOLDER: confirm liability coverage amount
-    label: "Coverage",
-    sub: "Liability insured",
-  },
-  {
     icon: MapPin,
     value: `${new Date().getFullYear() - COMPANY_INFO.founded}+`,
     label: "Years",
@@ -60,76 +56,91 @@ export function TrustStrip() {
   return (
     <section className="relative border-b border-steel-800 py-12 md:py-16">
       <div className="container px-4">
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          className="mb-8 text-center"
-        >
-          <p className="font-display text-sm font-bold uppercase tracking-[0.25em] text-steel-400 md:text-base">
-            {COMPANY_INFO.location}-Based
-            <span className="mx-3 text-orange">·</span>
-            FMCSA-Authorized
-            <span className="mx-3 text-orange">·</span>
-            Driver-Approved
-          </p>
-        </motion.div>
+        <div className="mx-auto grid max-w-6xl items-center gap-8 lg:grid-cols-[auto_1fr] lg:gap-12">
+          {/* Real FMCSA compliance badge */}
+          <motion.a
+            href={FMCSA_LINKS.safer}
+            target="_blank"
+            rel="noopener noreferrer"
+            initial={{ opacity: 0, scale: 0.94 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+            className="group mx-auto flex items-center gap-4 lg:mx-0"
+            aria-label="Verify our FMCSA authority on SAFER"
+          >
+            <div className="relative h-24 w-24 flex-shrink-0 md:h-28 md:w-28">
+              <Image
+                src="/images/generated/fmcsa-compliance-badge.png"
+                alt="FMCSA compliance badge — verified motor carrier authority"
+                fill
+                sizes="112px"
+                className="object-contain drop-shadow-[0_6px_18px_rgba(0,0,0,0.5)]"
+              />
+            </div>
+            <div className="max-w-[12rem]">
+              <p className="font-display text-sm font-bold uppercase tracking-[0.18em] text-steel-300 transition-colors group-hover:text-orange">
+                {COMPANY_INFO.location}-Based
+              </p>
+              <p className="font-display text-lg font-bold leading-tight text-white">
+                FMCSA-Authorized, Driver-Approved
+              </p>
+              <span className="mt-1 inline-flex items-center gap-1 text-xs text-steel-400 underline-offset-2 group-hover:text-orange group-hover:underline">
+                Verify on SAFER
+                <ExternalLink className="h-3 w-3" />
+              </span>
+            </div>
+          </motion.a>
 
-        <div className="mx-auto grid max-w-6xl grid-cols-2 gap-3 md:grid-cols-3 md:gap-4 lg:grid-cols-6">
-          {credentials.map((item, index) => {
-            const Icon = item.icon
-            const card = (
-              <motion.div
-                initial={{ opacity: 0, y: 14 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: index * 0.05 }}
-                className={`group relative h-full rounded-fleet-lg border p-4 text-center transition-transform duration-300 hover:-translate-y-1 ${
-                  item.highlight
-                    ? "border-orange/50 bg-gradient-to-br from-orange-500/15 to-navy-900/90"
-                    : "border-steel-700/60 bg-navy-700/70"
-                }`}
-              >
-                <Icon
-                  className={`mx-auto mb-2 h-5 w-5 ${item.highlight ? "text-orange" : "text-gold"}`}
-                />
-                <div
-                  className={`font-display text-xl font-bold leading-none md:text-2xl ${
-                    item.highlight ? "text-orange" : "text-white"
-                  }`}
+          {/* Inline credential row — divided, not boxed */}
+          <div className="grid grid-cols-2 gap-x-6 gap-y-6 sm:grid-cols-3 lg:flex lg:flex-1 lg:items-stretch lg:justify-between lg:divide-x lg:divide-steel-700/60">
+            {credentials.map((item, index) => {
+              const Icon = item.icon
+              const inner = (
+                <motion.div
+                  initial={{ opacity: 0, y: 12 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: index * 0.05 }}
+                  className="h-full lg:px-5 lg:first:pl-0 lg:last:pr-0"
                 >
-                  {item.value}
-                </div>
-                <div className="mt-1.5 text-xs font-semibold uppercase tracking-wide text-steel-300">
-                  {item.label}
-                </div>
-                <div className="mt-0.5 text-[11px] leading-tight text-steel-400">{item.sub}</div>
-                {item.href && (
-                  <ExternalLink className="absolute right-2 top-2 h-3 w-3 text-steel-500 opacity-0 transition-opacity group-hover:opacity-100" />
-                )}
-              </motion.div>
-            )
-
-            if (item.href) {
-              return (
-                <a
-                  key={item.label}
-                  href={item.href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="block"
-                  aria-label={`${item.label} ${item.value} — verify on FMCSA SAFER`}
-                >
-                  {card}
-                </a>
+                  <div className="mb-1.5 flex items-center gap-2">
+                    <Icon className={`h-4 w-4 ${item.highlight ? "text-orange" : "text-gold"}`} />
+                    <span className="text-[11px] font-semibold uppercase tracking-wide text-steel-400">
+                      {item.label}
+                    </span>
+                  </div>
+                  <div
+                    className={`font-display text-2xl font-bold leading-none md:text-3xl ${
+                      item.highlight ? "text-orange" : "text-white"
+                    }`}
+                  >
+                    {item.value}
+                  </div>
+                  <div className="mt-1 text-xs leading-tight text-steel-400">{item.sub}</div>
+                </motion.div>
               )
-            }
 
-            return <div key={item.label}>{card}</div>
-          })}
+              if (item.href) {
+                return (
+                  <a
+                    key={item.label}
+                    href={item.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group block transition-opacity hover:opacity-80"
+                    aria-label={`${item.label} ${item.value} — verify on FMCSA SAFER`}
+                  >
+                    {inner}
+                  </a>
+                )
+              }
+
+              return <div key={item.label}>{inner}</div>
+            })}
+          </div>
         </div>
 
-        <p className="mt-6 text-center text-xs text-steel-500">
+        <p className="mt-8 text-center text-xs text-steel-500">
           USDOT #{COMPANY_INFO.dot} · MC-{COMPANY_INFO.mc} — verify our authority anytime on the{" "}
           <a
             href={FMCSA_LINKS.safer}

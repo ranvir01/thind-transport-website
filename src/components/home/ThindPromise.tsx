@@ -15,11 +15,9 @@ export const ThindPromise = () => {
 
       <div className="container relative z-10 px-4">
         <div className="grid items-center gap-10 md:grid-cols-[5fr_7fr] md:gap-16">
-          {/* Owner portrait — photo-ready frame.
-              PLACEHOLDER: To drop in a real photo of Sukhdev Thind, replace the
-              inner branded panel below with:
-              <Image src="/images/owner-sukhdev-thind.jpg" alt="Sukhdev Thind, Founder of Thind Transport" fill className="object-cover" />
-              The frame, nameplate, and decorative elements will stay the same. */}
+          {/* Home-base photo of the operation. Honest real imagery of the fleet/yard.
+              PLACEHOLDER: to feature a real photo of the owner, swap the src below
+              for a portrait of Sukhdev Thind and update the alt + caption. */}
           <motion.div
             initial={{ opacity: 0, y: 24 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -28,28 +26,23 @@ export const ThindPromise = () => {
             className="relative mx-auto w-full max-w-sm md:max-w-none"
           >
             <div className="relative aspect-[4/5] overflow-hidden rounded-fleet-lg border border-steel-700/70 shadow-2xl">
-              {/* Branded stand-in until a real owner photo is added */}
-              <div className="absolute inset-0 bg-gradient-to-br from-navy-800 via-navy-900 to-black" />
-              <div className="absolute inset-0 fleet-safety-stripe opacity-[0.06]" style={{ height: "100%" }} />
-              <div className="absolute inset-0 flex items-center justify-center p-10">
-                <Image
-                  src="/branding/thind-transport-logo-white.svg"
-                  alt="Thind Transport"
-                  width={220}
-                  height={220}
-                  className="opacity-80"
-                />
-              </div>
-              <div className="absolute inset-0 bg-gradient-to-t from-navy-900 via-navy-900/10 to-transparent" />
+              <Image
+                src="/images/generated/fleet-kent-wa.png"
+                alt="Thind Transport trucks at the Kent, Washington home base"
+                fill
+                sizes="(max-width: 768px) 90vw, 40vw"
+                className="object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-navy-900 via-navy-900/25 to-transparent" />
 
               {/* Nameplate */}
               <div className="absolute bottom-6 left-6 right-6">
                 <p className="mb-1 font-display text-xs uppercase tracking-[0.25em] text-orange">
-                  The Owner
+                  Home base
                 </p>
-                <h3 className="font-display text-2xl font-bold text-white">{COMPANY_INFO.owner}</h3>
+                <h3 className="font-display text-2xl font-bold text-white">{COMPANY_INFO.location}</h3>
                 <p className="text-sm text-steel-300">
-                  Founder · Behind the wheel since day one
+                  Family-run since {COMPANY_INFO.founded} · {yearsRunning} years on the road
                 </p>
               </div>
             </div>
