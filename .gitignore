@@ -30,6 +30,10 @@ yarn-error.log*
 .env*.local
 .env
 
+# local JSON storage (dev without Postgres)
+/data/
+/uploads/
+
 # vercel
 .vercel
 
