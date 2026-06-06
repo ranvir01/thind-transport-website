@@ -11,12 +11,13 @@ def read(name):
         return f.read()
 
 visual = read("VISUAL_GUIDE.md")
+solved = read("SOLVED_PROBLEMS.md")
 cheat = read("CHEATSHEET.md")
 worked = read("WORKED_EXAMPLES.md")
 
-# Order: visual guide (easy, diagram-driven) → reference → worked examples.
+# Order: visual guide → solved bank (diagram+walkthrough) → reference → worked examples.
 brk = "\n\n<div class='pagebreak'></div>\n\n"
-combined_md = visual + brk + cheat + brk + worked
+combined_md = visual + brk + solved + brk + cheat + brk + worked
 
 html_body = markdown.markdown(
     combined_md,
