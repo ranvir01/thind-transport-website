@@ -1,19 +1,23 @@
 # ENGR&204 — ULTIMATE FINAL EXAM CHEAT SHEET
-### Electrical Circuits (Green River College) — unlimited pages, everything you need
+### Electric Circuits (Green River College) — unlimited pages, everything you need
 
-> Emphasis weighted toward the **end of quarter**: first-order **RC/RL** transients and second-order **RLC** circuits, plus AC steady-state. DC analysis tools (nodal/mesh/Thevenin) are included because every transient problem reduces to a DC problem at t=0⁻ and t=∞.
+> **Tailored to your uploaded files.** Textbook = **Dorf & Svoboda, _Introduction to Electric Circuits_** (your solutions cite P7.5-13, P8.3-25, P8.7-1, etc.). Course flow (from your slides): nodal/mesh → source transform/Thévenin/Norton/superposition/max-power → op-amps → **first-order RC/RL** → **second-order RLC**. Past exams run **4–5 short problems**.
 >
-> **This is a starter built from the standard ENGR&204 curriculum. Upload your files to `source-materials/` and I will fold in your exact problem types, numbers, and instructor conventions, and solve any unsolved problems step-by-step.**
+> Emphasis is weighted toward the **end of quarter**: first-order **RC/RL** transients and second-order **RLC** circuits. DC tools (nodal/mesh/Thévenin) are included because every transient reduces to a DC problem at t=0⁻ and t=∞.
+>
+> **Companion file:** `WORKED_EXAMPLES.md` has full step-by-step solutions to your actual exam/HW problems (and the RLC handout problems that were left unsolved). Use this file for formulas/method; use that file to pattern-match.
 
 ---
 
 ## 0. EXAM-DAY GAME PLAN (read first)
 
-**4 questions, ~circuit-analysis. Likely mix:**
-1. DC network analysis (nodal/mesh or Thevenin/Norton + max power).
-2. First-order **RC or RL** transient (switch flips → find v(t) or i(t)).
-3. Second-order **series or parallel RLC** transient (over/under/critically damped).
-4. **AC steady-state** with phasors (impedance, divider, or **AC power** / power factor).
+**4–5 short problems. Based on your past finals + Exam 4, expect a mix heavily weighted to the back half:**
+1. **First-order RC or RL transient** — switch flips → find v(t) or i(t). (Almost guaranteed; see `WORKED_EXAMPLES.md` A1–A6.)
+2. **Second-order RLC** — characteristic equation / roots / damping case, or full response. (See B1–B4.)
+3. **RC/RL with a twist** — dependent source, op-amp, or reading L/R/C off a v(t) plot.
+4. **One earlier-quarter problem** — op-amp, superposition, Thévenin/Norton, power, or equivalent resistance (Part C).
+
+Possible extras some quarters: AC phasors / AC power (§9–10), filters (§9d), charge–energy from a graph.
 
 **Universal attack for ANY problem:**
 1. Label every node and a ground. Mark current directions and + / − on each element (passive sign convention).
@@ -186,6 +190,12 @@ Source V_s, series R, inductor L:
 - `i_L(t) = V_s/R + [i_L(0⁺) − V_s/R]e^(−tR/L)`.
 - `v_L(t) = L·di_L/dt` (jumps at 0⁺, decays to 0).
 
+### 7h. Singularity / switching functions (on your slides)
+- **Unit step** `u(t−t₀)` = 0 for t<t₀, 1 for t>t₀. A source `V₀·u(t−t₀)` turns on at t₀. `5V[1−u(t)]` = on for t<0, off after.
+- **Unit impulse** `δ(t−t₀)` = derivative of the step; `∫δ(t−t₀)dt = 1`, and `∫f(t)δ(t−t₀)dt = f(t₀)`.
+- **Unit ramp** `r(t) = ∫u(t)dt = t·u(t)`.
+- These just tell you *when* sources switch; solve each interval as its own first-/second-order problem and match values at the switching instant (continuity of v_C, i_L).
+
 ---
 
 ## 8. ⭐⭐ SECOND-ORDER CIRCUITS — RLC (HIGHEST YIELD)
@@ -232,14 +242,24 @@ s = −α ± √(α² − ω₀²)
 6. **Apply both ICs** [x(0⁺) and x′(0⁺)] to solve for the two constants.
 7. Write x(t). Sanity check limits and continuity.
 
-### 8f. Series vs Parallel summary
-| | Series RLC | Parallel RLC |
-|---|---|---|
-| α | R/(2L) | 1/(2RC) |
-| ω₀ | 1/√(LC) | 1/√(LC) |
-| State var usually solved | loop current i(t) | node voltage v(t) |
+### 8f. Series vs Parallel summary — INSTRUCTOR'S EXACT TABLE
+(Reproduced from your "Review Summary" handout — memorize this.)
 
-**Memory hook:** "Series has L on the bottom of α; Parallel has C on the bottom of α."
+| Quantity | **Parallel RLC** | **Series RLC** |
+|---|---|---|
+| Differential eq. | `d²i/dt² + (1/RC)·di/dt + (1/LC)·i = 0` | `d²v/dt² + (R/L)·dv/dt + (1/LC)·v = 0` |
+| Characteristic eq. | `s² + (1/RC)s + 1/LC = 0` | `s² + (R/L)s + 1/LC = 0` |
+| Damping coeff. α (rad/s) | `1/(2RC)` | `R/(2L)` |
+| Resonant freq. ω₀ (rad/s) | `1/√(LC)` | `1/√(LC)` |
+| Damped freq. ω_d | `√(ω₀² − α²)` | `√(ω₀² − α²)` |
+| Overdamped when | `R < ½√(L/C)` | `R > 2√(L/C)` |
+| Critically damped when | `R = ½√(L/C)` | `R = 2√(L/C)` |
+| Underdamped when | `R > ½√(L/C)` | `R < 2√(L/C)` |
+| State var usually solved | node voltage v(t) | loop current i(t) |
+
+**Memory hook:** "Series has L under α (R/2L); Parallel has C under α (1/2RC)." The damping *condition flips* between series and parallel — in **series** a big R is overdamped; in **parallel** a small R is overdamped.
+
+> **Trick for "find the characteristic equation" problems:** kill the independent sources first — the leftover R, L, C usually collapse into a clean series OR parallel loop, then just read α and ω₀ off this table. (Worked: `WORKED_EXAMPLES.md` B1 = series, B2 = parallel.)
 
 ### 8g. Source-free examples
 - **Series, underdamped:** `i(t)=e^{−αt}(B₁cos ω_d t + B₂sin ω_d t)`.
@@ -330,12 +350,25 @@ RMS sinusoid:   Vrms=Vm/√2
 
 ---
 
-## 13. HOW THIS GETS CUSTOMIZED TO YOUR EXAM
-Once you upload files to `source-materials/`, I will:
-1. Identify the exact problem types your instructor uses (and their preferred notation/conventions).
-2. Solve every unsolved problem **step-by-step** and add the worked methods here.
-3. Add a "by example" section mirroring your sample exam's 4-question structure.
-4. Re-weight emphasis to match what actually appears most (RL/RC/RLC as you noted).
-5. Add any extra topics your class covers that aren't above (e.g., mutual inductance, transformers, Bode plots, Laplace) — just upload and I'll extend it.
+## 13. PREDICTED FINAL & WHERE TO LOOK
 
-*Generated as a comprehensive ENGR&204 baseline; will be tailored to your uploaded materials.*
+Based on your uploaded Exam 4, Homework 6, and the In-Class Prep RLC packet, here's the most likely question lineup and the matching worked example:
+
+| Likely question | Method (this file) | Worked example |
+|---|---|---|
+| First-order RC, switch → v(t) | §7c recipe + master formula | `WORKED_EXAMPLES.md` A4 |
+| First-order RL, find L/R from a plot | §7c + read x(0⁺),x(∞) | A1 (Dorf P8.3-25) |
+| First-order w/ dependent source or op-amp | §7c, derive ODE | A2, A3, A5, A6 |
+| 2nd-order RLC: char. eq. + roots + damping case | §8 + instructor table §8f | B1 (series), B2 (parallel) |
+| 2nd-order full / forced response | §8d–8e | B3 |
+| RLC design (pick L,C for energy/time spec) | §2 energy + §8 | B4 (airbag) |
+| Op-amp / superposition / Thévenin / power | §4–§6 | Part C |
+
+**The 5 things you must not forget on exam day:**
+1. `x(t) = x(∞) + [x(0⁺) − x(∞)]e^(−t/τ)` — first order, everything.
+2. `v_C` and `i_L` are continuous (don't jump); everything else can jump.
+3. DC steady state: **cap = open, ind = short** (used at t=0⁻ and t=∞).
+4. RLC: kill sources → series or parallel → `α`, `ω₀` → compare → pick the case.
+5. `α_series = R/2L`, `α_parallel = 1/2RC`, `ω₀ = 1/√(LC)` for both.
+
+*Tailored to your uploaded materials (Dorf/Svoboda textbook, instructor Jae Suk's format). Re-upload anything new and I'll extend this — e.g. more AC phasor problems, mutual inductance, or Laplace if your section covers them.*
