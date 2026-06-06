@@ -227,4 +227,58 @@ These appear on your Exam 1 / Exam 2; expect at most one on the final.
 
 ---
 
-*All Part-B "★" solutions were worked from scratch (the handout gave only final answers) and verified numerically. If your exam uses different numbers, follow the same step sequence.*
+---
+
+# PART D — SECOND-ORDER COMPLETE RESPONSE, AC, POWER, Δ-Y (extra coverage)
+
+## D1. Source-free underdamped series RLC — complete response with both ICs
+
+**Given:** series `R = 2 Ω`, `L = 1 H`, `C = 1/4 F`, source removed at t=0, with `i(0) = 0` and `v_C(0) = 10 V`.
+
+**Step 1 — parameters.** `α = R/2L = 1`, `ω₀ = 1/√(LC) = 2`, `α<ω₀` ⇒ underdamped, `ω_d = √(ω₀²−α²) = √3 = 1.732`.
+Form: `i(t) = e^(−t)(B₁cos1.732t + B₂sin1.732t)`.
+
+**Step 2 — IC #1 (the value).** `i(0) = B₁ = 0`.
+
+**Step 3 — IC #2 (the derivative, from KVL).** Series loop: `L·di/dt + R·i + v_C = 0`, so
+`di/dt(0⁺) = (−R·i(0) − v_C(0))/L = (0 − 10)/1 = −10`.
+With B₁=0: `di/dt(0) = ω_d·B₂ = 1.732·B₂ = −10 ⇒ B₂ = −5.77`.
+
+**Answer:** `i(t) = −5.77 e^(−t) sin(1.732 t) A`. (Verified numerically.)
+**Lesson:** the two constants always come from `x(0⁺)` and `x′(0⁺)`; get the derivative IC from the element law + KVL/KCL.
+
+## D2. AC steady-state (phasors)
+
+**Given:** `v(t) = 20cos(2000t) V` across `R = 10 Ω` in series with `L = 5 mH`. Find `i(t)`.
+
+```
+Z_L = jωL = j(2000)(0.005) = j10 Ω
+Z = R + jZ_L = 10 + j10 = 14.14 ∠45° Ω
+I = V/Z = (20∠0°)/(14.14∠45°) = 1.414 ∠−45° A
+i(t) = 1.414 cos(2000t − 45°) A      (current lags — inductive)
+```
+
+## D3. Power-factor correction
+
+**Given:** load `P = 1000 W`, `pf = 0.7 lagging`, `V_rms = 120 V`, `f = 60 Hz`. Correct to `pf = 0.95`. Find C.
+
+```
+θ_old = cos⁻¹(0.7) = 45.6° → tanθ_old = 1.020
+θ_new = cos⁻¹(0.95) = 18.2° → tanθ_new = 0.329
+Q_C = P(tanθ_old − tanθ_new) = 1000(1.020 − 0.329) = 691 VAR
+C = Q_C/(ω V_rms²) = 691/(2π·60·120²) = 1.27×10⁻⁴ F = 127 µF
+```
+
+## D4. Δ→Y conversion (for bridge / ladder resistance)
+
+**Given:** a delta with `R_ab = 10`, `R_bc = 20`, `R_ca = 30` Ω. Convert to Y (sum = 60).
+```
+R_a = R_ab·R_ca / 60 = (10·30)/60 = 5 Ω
+R_b = R_ab·R_bc / 60 = (10·20)/60 = 3.33 Ω
+R_c = R_bc·R_ca / 60 = (20·30)/60 = 10 Ω
+```
+Now the network is series/parallel → finish normally.
+
+---
+
+*All Part-B "★" and Part-D solutions were worked from scratch and verified numerically. If your exam uses different numbers, follow the same step sequence.*

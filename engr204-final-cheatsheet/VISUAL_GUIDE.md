@@ -161,4 +161,142 @@ Common results:  Inverting  v_o = −(R_f/R_in) v_in
 
 ---
 
-*Diagrams generated for this guide; values are placeholders — drop in your exam's numbers. Full algebra for each worked example is in `WORKED_EXAMPLES.md`; all formulas in `CHEATSHEET.md`.*
+---
+
+## TYPE 7 — TWO-POSITION SWITCH / SOURCE-FREE (natural) transient
+
+<img src="assets/two_position.png" width="320" alt="two position switch" />  <img src="assets/source_free_rc.png" width="200" alt="source-free RC" />
+
+**Recognize it:** switch moves **1→2** at t=0, OR a charged C / energized L is left alone with just R (no source). This is the same first-order machine — the only change is `x(∞)`.
+
+**COPY THIS TEMPLATE:**
+```
+Position 1 "for a long time" → find the stored state at the instant of switching:
+        v_C(0) = ______  (cap charged through pos-1 path, DC)   /   i_L(0) = ______
+After switch to position 2 (or source removed):
+        If NO source remains:  x(∞) = 0   →   x(t) = x(0) e^(−t/τ)   (pure decay)
+        τ = R_th·C  or  L/R_th using the position-2 resistances = ______
+Energy released:  W_C = ½ C v_C(0)²   or   W_L = ½ L i_L(0)²  = ______ J
+```
+
+---
+
+## TYPE 8 — NORTON & SOURCE TRANSFORMATION
+
+<img src="assets/norton.png" width="320" alt="Norton equivalent" />
+
+**Recognize it:** "Norton equivalent", or you want to simplify many sources/resistors.
+
+**COPY THIS TEMPLATE:**
+```
+I_N = short-circuit current across a–b (put a wire on a–b, find i) = ______
+R_N = R_th = (independent sources off) resistance into a–b = ______
+Norton ⇄ Thévenin:   V_th = I_N · R_th ,   I_N = V_th / R_th ,   R_N = R_th
+Source transform:  [V_s in series with R]  ⇄  [I_s = V_s/R in parallel with R]
+```
+
+---
+
+## TYPE 9 — OP-AMP VARIANTS
+
+<img src="assets/noninverting_opamp.png" width="300" alt="non-inverting" />  <img src="assets/summing_opamp.png" width="300" alt="summing" />
+
+**Golden rules:** `i₊ = i₋ = 0` and `v₊ = v₋`. Then write KCL at the `−` node.
+```
+Inverting:      v_o = −(R_f/R_in) v_in
+Non-inverting:  v_o = (1 + R_f/R_in) v_in
+Buffer:         v_o = v_in
+Summing:        v_o = −R_f ( v_1/R_1 + v_2/R_2 + … )
+Difference:     v_o = (R_f/R_1)(v_2 − v_1)   [matched ratios]
+Cascade:        multiply the stage gains
+Output limited by supply rails:  V⁻ ≤ v_o ≤ V⁺  (saturation)
+```
+
+---
+
+## TYPE 10 — AC STEADY-STATE (phasors)
+
+<img src="assets/ac_series.png" width="380" alt="AC series circuit" />
+
+**Recognize it:** a sinusoidal source `V_m cos(ωt+φ)`; asked for steady-state v(t)/i(t).
+
+**COPY THIS TEMPLATE:**
+```
+1. Source → phasor:  V_m cos(ωt+φ) ⇒ V = V_m ∠φ
+2. Elements → impedance at this ω:  Z_R=R,  Z_L=jωL,  Z_C=1/(jωC)=−j/(ωC)
+3. Solve like DC but COMPLEX (Ohm V=IZ, dividers, nodal/mesh):
+        I = V / Z_total = ______ ∠ ______
+4. Back to time domain:  I_m∠θ ⇒ i(t)= I_m cos(ωt+θ)
+Complex math:  add/sub in a+jb ; mult/div in r∠θ (mags ×/÷, angles +/−)
+```
+
+---
+
+## TYPE 11 — AC POWER & POWER-FACTOR CORRECTION
+
+<img src="assets/power_triangle.png" width="320" alt="power triangle" />
+
+**Use RMS values** (`V_rms = V_m/√2`). With `θ = θ_v − θ_i`:
+```
+Real    P = V_rms I_rms cosθ   (W)      ← cosθ = power factor (pf)
+React.  Q = V_rms I_rms sinθ   (VAR)    (+ inductive/lagging, − capacitive/leading)
+Apparent S = V_rms I_rms       (VA)     Complex S = V·I* = P + jQ ;  |S|=√(P²+Q²)
+Per element:  P = I_rms²R ,  Q = I_rms²X
+PF correction (add parallel C):  Q_C = P(tanθ_old − tanθ_new),  C = Q_C/(ω V_rms²)
+```
+
+---
+
+## TYPE 12 — RESONANCE & FILTERS
+
+<img src="assets/resonance.png" width="320" alt="resonance" />  <img src="assets/filters.png" width="330" alt="filters" />
+
+```
+Resonance (series RLC): ω₀ = 1/√(LC) ; at ω₀, Z is purely real (=R), current is MAX.
+Quality factor:  Q = ω₀L/R = 1/(ω₀RC)        Bandwidth: BW = ω₀/Q
+RC filter cutoff:  f_c = 1/(2πRC)   (gain is 0.707 / −3 dB at f_c)
+Low-pass: output across C.  High-pass: output across R.  Band-pass: cascade LP+HP.
+Band-pass center (geometric mean): f_r = √(f_L · f_H)
+```
+
+---
+
+## TYPE 13 — NODAL / MESH (when there's no single divider trick)
+
+```
+NODAL (pick when fewer nodes):                 MESH (pick when fewer loops):
+1. Ground the bottom node.                      1. Clockwise mesh currents i₁,i₂…
+2. Node voltages V₁,V₂…                          2. KVL each mesh; shared R carries (i_this−i_adj)
+3. KCL each node: Σ (V_this−V_other)/R = sources 3. Supermesh if a current source is shared
+4. Supernode if a V-source links two nodes      4. Solve the linear system
+5. Solve the linear system
+```
+
+---
+
+## TYPE 14 — DIVIDERS, Δ–Y, & WHEATSTONE BRIDGE
+
+<img src="assets/voltage_divider.png" width="200" alt="voltage divider" />  <img src="assets/current_divider.png" width="240" alt="current divider" />  <img src="assets/wheatstone.png" width="250" alt="wheatstone bridge" />
+
+```
+Voltage divider (series): v_k = V_s · R_k / ΣR
+Current divider (2 parallel): i_1 = i_total · R_2/(R_1+R_2)   (current favors SMALLER R)
+Δ→Y:  R_Y = (product of the two adjacent Δ resistors) / (sum of all three Δ resistors)
+Y→Δ:  R_Δ = (sum of pairwise products of Y resistors) / (the opposite Y resistor)
+Balanced Wheatstone bridge (v_g = 0):  R_1/R_2 = R_3/R_4   (use to find an unknown R)
+```
+
+---
+
+## TYPE 15 — CHARGE & ENERGY FROM A GRAPH
+
+```
+Charge transferred:  q = ∫ i dt  = AREA under the i–t graph
+Energy:              W = ∫ p dt = ∫ v·i dt
+Method: break the graph into straight-line pieces; write v(t),i(t) for each interval;
+        multiply p=v·i; integrate each interval; add them up.
+```
+
+---
+
+*Diagrams generated for this guide; component values are placeholders — drop in your exam's numbers. Full algebra for each worked example is in `WORKED_EXAMPLES.md`; all formulas in `CHEATSHEET.md`.*

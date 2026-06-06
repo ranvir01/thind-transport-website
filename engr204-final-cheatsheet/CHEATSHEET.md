@@ -315,6 +315,39 @@ For RMS phasors `V = V_rms∠θ_v`, `I = I_rms∠θ_i`, let `θ = θ_v − θ_i`
 
 ---
 
+## 10A. DELTA–WYE (Δ–Y / π–T) CONVERSION
+For resistor networks that are neither series nor parallel (bridges, ladders).
+- **Δ → Y:** each Y resistor = (product of the two adjacent Δ resistors) / (sum of all three Δ resistors).
+  `R₁ = R_b R_c / (R_a+R_b+R_c)`, etc.
+- **Y → Δ:** each Δ resistor = (sum of pairwise products of Y resistors) / (opposite Y resistor).
+  `R_a = (R₁R₂+R₂R₃+R₃R₁)/R₁`, etc.
+- **Balanced:** if all Δ equal R_Δ, then R_Y = R_Δ/3.
+
+## 10B. COMPLEX NUMBER ARITHMETIC (for phasors)
+- Rectangular `a + jb` ↔ polar `r∠θ`: `r = √(a²+b²)`, `θ = atan2(b,a)`; `a = r cosθ`, `b = r sinθ`.
+- **Add/subtract:** use rectangular. **Multiply/divide:** use polar (`r₁r₂∠(θ₁+θ₂)`, `(r₁/r₂)∠(θ₁−θ₂)`).
+- `j = 1∠90°`, `1/j = −j = 1∠−90°`, `j² = −1`.
+- Conjugate of `a+jb` is `a−jb` (`r∠−θ`). Needed for complex power `S = V·I*`.
+- **Calculator:** set to the right mode (DEG vs RAD) and use rectangular↔polar buttons.
+
+## 10C. SECOND-ORDER INITIAL CONDITIONS (the two you must find)
+To solve for the constants you need `x(0⁺)` **and** `x′(0⁺) = dx/dt|₀⁺`:
+- Capacitor: `dv_C/dt|₀⁺ = i_C(0⁺)/C` — find `i_C(0⁺)` by KCL at t=0⁺ (using `i_L(0⁺)`, `v_C(0⁺)`).
+- Inductor: `di_L/dt|₀⁺ = v_L(0⁺)/L` — find `v_L(0⁺)` by KVL at t=0⁺.
+- Then for the overdamped/critical/underdamped form, solve the 2×2 system from `x(0⁺)` and `x′(0⁺)`.
+- **Complete response:** `x(t) = x_forced(∞) + x_natural(t)`; apply ICs to the **whole** expression.
+
+## 10D. RESONANCE, Q, BANDWIDTH, FILTERS
+- Series RLC resonance `ω₀ = 1/√(LC)`: at ω₀ the reactances cancel, `Z = R` (min), current max.
+- Quality factor: series `Q = ω₀L/R = 1/(ω₀RC)`; bandwidth `BW = ω₀/Q = R/L` (series).
+- RC/RL first-order filter cutoff: `f_c = 1/(2πRC)` or `R/(2πL)`; gain = 0.707 (−3 dB) at f_c.
+- Low-pass = output across C (or R for RL); high-pass = output across R (or L); band-pass = LP cascaded with HP, center `f_r = √(f_L f_H)`.
+
+## 10E. CHARGE & ENERGY (graph problems)
+- `q = ∫ i dt` = area under the current–time curve.
+- `W = ∫ p dt = ∫ v·i dt`. Split a piecewise-linear graph into intervals, form `p = v·i` on each, integrate, sum.
+- Power sign: `p>0` absorbed (into the element), `p<0` delivered.
+
 ## 11. QUICK FORMULA WALL (grab-and-go)
 
 ```
@@ -332,8 +365,15 @@ Impedance:      Z_R=R  Z_L=jωL  Z_C=1/(jωC)=-j/(ωC)
 Phasor power:   P=Vrms Irms cosθ   Q=Vrms Irms sinθ   S=VI*=P+jQ
                 pf=cosθ=P/S
 Max power (DC): R_L=R_th   P_max=V_th²/(4R_th)
-Thevenin:       V_th=V_oc  R_th=V_oc/I_sc
+Thevenin:       V_th=V_oc  R_th=V_oc/I_sc   Norton: I_N=V_th/R_th
 RMS sinusoid:   Vrms=Vm/√2
+Resonance:      ω0=1/√(LC)  Q=ω0L/R=1/(ω0RC)  BW=ω0/Q
+Filter cutoff:  fc=1/(2πRC)   (−3dB, gain 0.707)
+Delta→Y:        R_Y = (adjacent Δ product)/(sum of all 3 Δ)
+PF correction:  Qc=P(tanθold−tanθnew)   C=Qc/(ω Vrms²)
+Charge/energy:  q=∫i dt   W=∫v·i dt
+2nd-order ICs:  dvC/dt(0)=iC(0)/C   diL/dt(0)=vL(0)/L
+Complex:        a+jb=r∠θ  r=√(a²+b²)  θ=atan2(b,a)  j=1∠90°
 ```
 
 ---
