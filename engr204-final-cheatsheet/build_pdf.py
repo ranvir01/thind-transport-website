@@ -10,11 +10,13 @@ def read(name):
     with open(os.path.join(HERE, name), encoding="utf-8") as f:
         return f.read()
 
+visual = read("VISUAL_GUIDE.md")
 cheat = read("CHEATSHEET.md")
 worked = read("WORKED_EXAMPLES.md")
 
-# Combine. A page break is inserted before the worked-examples part.
-combined_md = cheat + "\n\n<div class='pagebreak'></div>\n\n" + worked
+# Order: visual guide (easy, diagram-driven) → reference → worked examples.
+brk = "\n\n<div class='pagebreak'></div>\n\n"
+combined_md = visual + brk + cheat + brk + worked
 
 html_body = markdown.markdown(
     combined_md,
@@ -49,6 +51,8 @@ blockquote { background: #fffbe6; border-left: 3px solid #f5c518; margin: 5px 0;
              font-size: 8.7pt; page-break-inside: avoid; }
 strong { color: #000; }
 hr { border: none; border-top: 1px solid #ccc; margin: 6px 0; }
+img { max-width: 100%; vertical-align: middle; }
+h2 + p img, h2 ~ p > img { background: #fff; }
 .pagebreak { page-break-before: always; }
 """
 
