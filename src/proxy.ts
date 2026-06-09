@@ -2,19 +2,23 @@ import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 import { getToken } from "next-auth/jwt"
 
-export async function middleware(request: NextRequest) {
+export default async function proxy(request: NextRequest) {
   const token = await getToken({
     req: request,
     secret: process.env.NEXTAUTH_SECRET,
-    cookieName: process.env.NODE_ENV === 'production' 
-      ? '__Secure-authjs.session-token' 
+    cookieName: process.env.NODE_ENV === 'production'
+      ? '__Secure-authjs.session-token'
       : 'authjs.session-token',
   })
 
   const { pathname } = request.nextUrl
 
-  // Protect driver routes
-  if (pathname.startsWith("/driver/application") || pathname.startsWith("/driver/dashboard")) {
+  // Protect driver portal and internal admin tooling
+  if (
+    pathname.startsWith("/driver/application") ||
+    pathname.startsWith("/driver/dashboard") ||
+    pathname.startsWith("/driver/admin")
+  ) {
     if (!token) {
       return NextResponse.redirect(new URL("/driver/login", request.url))
     }
@@ -31,4 +35,3 @@ export async function middleware(request: NextRequest) {
 export const config = {
   matcher: ["/driver/:path*"],
 }
-

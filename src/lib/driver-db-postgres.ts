@@ -68,7 +68,7 @@ export async function initializeDatabase() {
 
 // Verify invitation code
 export async function verifyInvitationCode(code: string): Promise<boolean> {
-  return code === "THIND-2026"
+  return code === (process.env.DRIVER_INVITATION_CODE || "THIND-2026")
 }
 
 // Create driver account

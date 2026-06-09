@@ -29,9 +29,21 @@ yarn-error.log*
 # local env files
 .env*.local
 .env
+vercel-env*.txt
 
 # vercel
 .vercel
+
+# local runtime data (JSON fallback storage + uploads)
+/data
+/uploads
+
+# bundled node distributions (never commit these)
+/node
+node*.tar.xz
+
+# local logs
+dev.log
 
 # typescript
 *.tsbuildinfo

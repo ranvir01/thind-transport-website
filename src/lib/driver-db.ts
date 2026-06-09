@@ -101,8 +101,8 @@ export async function verifyInvitationCode(code: string): Promise<boolean> {
     const { verifyInvitationCode: pgVerify } = await import("./driver-db-postgres")
     return pgVerify(code)
   }
-  // Fixed invitation code for all drivers
-  return code === "THIND-2026"
+  // Configurable invitation code (falls back to legacy fixed code)
+  return code === (process.env.DRIVER_INVITATION_CODE || "THIND-2026")
 }
 
 // Create driver account
