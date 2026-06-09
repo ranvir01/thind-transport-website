@@ -17,12 +17,27 @@ interface Driver {
   applicationCompleted: boolean
 }
 
+export type ApplicationStatus = "submitted" | "under_review" | "approved" | "needs_info"
+
 interface Application {
   id: string
   driverId: string
   data: any
   submittedAt: Date
   pdfPath?: string
+  status: ApplicationStatus
+}
+
+export interface PublicApplication {
+  id: string
+  firstName: string
+  lastName: string
+  email: string
+  phone: string
+  driverType?: string
+  data: any
+  emailDelivered: boolean
+  createdAt: Date
 }
 
 // Initialize database tables
@@ -51,13 +66,31 @@ export async function initializeDatabase() {
         data JSONB NOT NULL,
         submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         pdf_path TEXT,
+        status VARCHAR(30) DEFAULT 'submitted',
         FOREIGN KEY (driver_id) REFERENCES drivers(id)
+      )
+    `
+    await sql`ALTER TABLE applications ADD COLUMN IF NOT EXISTS status VARCHAR(30) DEFAULT 'submitted'`
+
+    // Public website applications (apply form / pre-qualify) — stored even if email fails
+    await sql`
+      CREATE TABLE IF NOT EXISTS public_applications (
+        id VARCHAR(255) PRIMARY KEY,
+        first_name VARCHAR(255) NOT NULL,
+        last_name VARCHAR(255) NOT NULL,
+        email VARCHAR(255) NOT NULL,
+        phone VARCHAR(50) NOT NULL,
+        driver_type VARCHAR(100),
+        data JSONB NOT NULL,
+        email_delivered BOOLEAN DEFAULT FALSE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `
 
     // Create indexes for performance
     await sql`CREATE INDEX IF NOT EXISTS idx_drivers_email ON drivers(email)`
     await sql`CREATE INDEX IF NOT EXISTS idx_applications_driver_id ON applications(driver_id)`
+    await sql`CREATE INDEX IF NOT EXISTS idx_public_applications_email ON public_applications(email)`
 
     console.log("Database tables initialized successfully")
   } catch (error) {
@@ -179,8 +212,8 @@ export async function saveApplication(driverId: string, applicationData: any): P
     const id = `app_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
 
     await sql`
-      INSERT INTO applications (id, driver_id, data)
-      VALUES (${id}, ${driverId}, ${JSON.stringify(applicationData)}::jsonb)
+      INSERT INTO applications (id, driver_id, data, status)
+      VALUES (${id}, ${driverId}, ${JSON.stringify(applicationData)}::jsonb, 'submitted')
     `
 
     // Mark driver's application as completed
@@ -195,11 +228,121 @@ export async function saveApplication(driverId: string, applicationData: any): P
       driverId,
       data: applicationData,
       submittedAt: new Date(),
+      status: "submitted",
     }
   } catch (error) {
     console.error("Save application error:", error)
     throw error
   }
+}
+
+// Latest application summary for a driver (dashboard / profile)
+export async function getLatestApplicationForDriver(driverId: string): Promise<{
+  id: string
+  status: ApplicationStatus
+  submittedAt: Date
+  hasPdf: boolean
+} | null> {
+  try {
+    const result = await sql`
+      SELECT id, status, submitted_at as "submittedAt", pdf_path as "pdfPath"
+      FROM applications
+      WHERE driver_id = ${driverId}
+      ORDER BY submitted_at DESC
+      LIMIT 1
+    `
+    if (result.rows.length === 0) return null
+    const row = result.rows[0]
+    return {
+      id: row.id,
+      status: (row.status || "submitted") as ApplicationStatus,
+      submittedAt: row.submittedAt,
+      hasPdf: Boolean(row.pdfPath),
+    }
+  } catch (error) {
+    console.error("Get latest application error:", error)
+    return null
+  }
+}
+
+// Store a public website application (apply form) — persistence-first, email-second
+export async function savePublicApplication(record: {
+  firstName: string
+  lastName: string
+  email: string
+  phone: string
+  driverType?: string
+  data: any
+  emailDelivered: boolean
+}): Promise<PublicApplication> {
+  const id = `pub_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+  await sql`
+    INSERT INTO public_applications (id, first_name, last_name, email, phone, driver_type, data, email_delivered)
+    VALUES (
+      ${id}, ${record.firstName}, ${record.lastName}, ${record.email.toLowerCase()},
+      ${record.phone}, ${record.driverType || null}, ${JSON.stringify(record.data)}::jsonb, ${record.emailDelivered}
+    )
+  `
+  return { id, ...record, createdAt: new Date() }
+}
+
+export async function markPublicApplicationEmailed(id: string) {
+  try {
+    await sql`UPDATE public_applications SET email_delivered = true WHERE id = ${id}`
+  } catch (error) {
+    console.error("Mark public application emailed error:", error)
+  }
+}
+
+// Has this email submitted a public application? (used to waive the invitation code)
+export async function hasPublicApplication(email: string): Promise<boolean> {
+  try {
+    const result = await sql`
+      SELECT id FROM public_applications WHERE email = ${email.toLowerCase()} LIMIT 1
+    `
+    return result.rows.length > 0
+  } catch (error) {
+    console.error("Has public application error:", error)
+    return false
+  }
+}
+
+// ---- Password reset tokens ----
+
+export async function setResetToken(email: string, token: string, expiry: Date): Promise<void> {
+  await sql`ALTER TABLE drivers ADD COLUMN IF NOT EXISTS reset_token TEXT`
+  await sql`ALTER TABLE drivers ADD COLUMN IF NOT EXISTS reset_token_expiry TIMESTAMP`
+  await sql`
+    UPDATE drivers
+    SET reset_token = ${token}, reset_token_expiry = ${expiry.toISOString()}
+    WHERE email = ${email}
+  `
+}
+
+export async function verifyResetToken(email: string, token: string): Promise<{ valid: boolean; reason?: string }> {
+  try {
+    const result = await sql`
+      SELECT reset_token, reset_token_expiry FROM drivers WHERE email = ${email}
+    `
+    if (result.rows.length === 0) return { valid: false, reason: "not_found" }
+    const row = result.rows[0]
+    if (!row.reset_token || row.reset_token !== token) return { valid: false, reason: "mismatch" }
+    if (row.reset_token_expiry && new Date(row.reset_token_expiry) < new Date()) {
+      return { valid: false, reason: "expired" }
+    }
+    return { valid: true }
+  } catch (error) {
+    console.error("Verify reset token error:", error)
+    return { valid: false, reason: "error" }
+  }
+}
+
+export async function updateDriverPassword(email: string, passwordHash: string): Promise<void> {
+  await sql`
+    UPDATE drivers
+    SET password_hash = ${passwordHash}, reset_token = NULL, reset_token_expiry = NULL
+    WHERE email = ${email}
+  `
 }
 
 // Update application PDF path

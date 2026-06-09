@@ -34,13 +34,31 @@ export async function setupDatabase() {
         data JSONB NOT NULL,
         submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         pdf_path TEXT,
+        status VARCHAR(30) DEFAULT 'submitted',
         FOREIGN KEY (driver_id) REFERENCES drivers(id) ON DELETE CASCADE
+      )
+    `
+    await sql`ALTER TABLE applications ADD COLUMN IF NOT EXISTS status VARCHAR(30) DEFAULT 'submitted'`
+
+    // Public website applications (apply form) — stored even when email delivery fails
+    await sql`
+      CREATE TABLE IF NOT EXISTS public_applications (
+        id VARCHAR(255) PRIMARY KEY,
+        first_name VARCHAR(255) NOT NULL,
+        last_name VARCHAR(255) NOT NULL,
+        email VARCHAR(255) NOT NULL,
+        phone VARCHAR(50) NOT NULL,
+        driver_type VARCHAR(100),
+        data JSONB NOT NULL,
+        email_delivered BOOLEAN DEFAULT FALSE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `
 
     // Create indexes
     await sql`CREATE INDEX IF NOT EXISTS idx_drivers_email ON drivers(email)`
     await sql`CREATE INDEX IF NOT EXISTS idx_applications_driver_id ON applications(driver_id)`
+    await sql`CREATE INDEX IF NOT EXISTS idx_public_applications_email ON public_applications(email)`
 
     // Add password reset columns if they don't exist
     try {

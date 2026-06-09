@@ -4,10 +4,9 @@
  */
 
 import { NextResponse } from "next/server"
-import { findDriverByEmail } from "@/lib/driver-db"
-import { sql } from "@vercel/postgres"
+import { findDriverByEmail, setResetToken } from "@/lib/driver-db"
 import crypto from "crypto"
-import nodemailer from "nodemailer"
+import { createMailTransport, isEmailConfigured, mailFrom } from "@/lib/mailer"
 
 export async function POST(request: Request) {
   try {
@@ -36,18 +35,9 @@ export async function POST(request: Request) {
     const resetToken = crypto.randomBytes(32).toString('hex')
     const resetTokenExpiry = new Date(Date.now() + 3600000) // 1 hour from now
 
-    // Store reset token in database
+    // Store reset token (works with Postgres or local JSON storage)
     try {
-      // Ensure columns exist
-      await sql`ALTER TABLE drivers ADD COLUMN IF NOT EXISTS reset_token TEXT`
-      await sql`ALTER TABLE drivers ADD COLUMN IF NOT EXISTS reset_token_expiry TIMESTAMP`
-      
-      await sql`
-        UPDATE drivers 
-        SET reset_token = ${resetToken}, 
-            reset_token_expiry = ${resetTokenExpiry.toISOString()}
-        WHERE email = ${email}
-      `
+      await setResetToken(email, resetToken, resetTokenExpiry)
       console.log("[FORGOT-PASSWORD] Reset token stored for:", email)
     } catch (dbError) {
       console.error("[FORGOT-PASSWORD] Database error storing reset token:", dbError)
@@ -58,19 +48,19 @@ export async function POST(request: Request) {
     const baseUrl = process.env.NEXTAUTH_URL || 'https://thindtransport.com'
     const resetUrl = `${baseUrl}/driver/reset-password?token=${resetToken}&email=${encodeURIComponent(email)}`
 
+    if (!isEmailConfigured()) {
+      console.warn("[FORGOT-PASSWORD] SMTP not configured — reset email not sent")
+      return NextResponse.json({
+        success: true,
+        message: "If an account exists with that email, a reset link has been sent.",
+      })
+    }
+
     // Send email
-    const transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST || 'smtp.gmail.com',
-      port: parseInt(process.env.SMTP_PORT || '587'),
-      secure: false,
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS,
-      },
-    })
+    const transporter = createMailTransport()
 
     await transporter.sendMail({
-      from: process.env.SMTP_FROM || '"Thind Transport" <noreply@thindtransport.com>',
+      from: mailFrom('Thind Transport'),
       to: email,
       subject: "Reset Your Thind Transport Password",
       html: `

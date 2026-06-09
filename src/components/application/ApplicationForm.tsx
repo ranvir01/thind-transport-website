@@ -780,10 +780,31 @@ export function ApplicationForm() {
               <p className="text-lg text-gray-600 mb-4">
                 We will get back to you shortly, within the next 24 hours.
               </p>
-              <p className="text-base text-gray-600 mb-8 max-w-lg mx-auto leading-relaxed">
+              <p className="text-base text-gray-600 mb-6 max-w-lg mx-auto leading-relaxed">
                 We will give you a call, and you can always call us or email us &mdash; 
                 whatever you prefer to get in touch for further information.
               </p>
+
+              {/* Portal account CTA — applicants can register without an invitation code */}
+              <div className="bg-orange-50 border-2 border-orange-200 rounded-2xl p-6 mb-8 text-left">
+                <h3 className="text-lg font-bold text-gray-900 mb-2 flex items-center gap-2">
+                  <CheckCircle2 className="h-5 w-5 text-orange-600" />
+                  Get a head start: create your driver portal account
+                </h3>
+                <p className="text-sm text-gray-600 mb-4 leading-relaxed">
+                  Track your application status and complete the official DOT paperwork online —
+                  no invitation code needed, just use the email you applied with.
+                </p>
+                <Button
+                  asChild
+                  className="w-full sm:w-auto bg-orange-500 hover:bg-orange-600 text-white font-bold"
+                >
+                  <Link href={`/driver/register?email=${encodeURIComponent(getValues("email") || "")}`}>
+                    Create Portal Account
+                    <ChevronRight className="ml-1 h-4 w-4" />
+                  </Link>
+                </Button>
+              </div>
 
               {/* Contact Options */}
               <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-6 border-2 border-blue-200 text-left mb-8">

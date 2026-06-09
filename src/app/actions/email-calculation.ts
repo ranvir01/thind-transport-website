@@ -1,8 +1,8 @@
 "use server"
 
 import { z } from "zod"
-import * as nodemailer from "nodemailer"
 import { COMPANY_INFO } from "@/lib/constants"
+import { createMailTransport, isEmailConfigured, mailFrom } from "@/lib/mailer"
 
 const calculationSchema = z.object({
   email: z.string().email(),
@@ -31,10 +31,8 @@ export async function emailCalculation(input: z.infer<typeof calculationSchema>)
   }
 
   const data = parsed.data
-  const smtpUser = process.env.SMTP_USER || process.env.EMAIL_USER
-  const smtpPass = process.env.SMTP_PASS || process.env.EMAIL_PASS
 
-  if (!smtpUser || !smtpPass) {
+  if (!isEmailConfigured()) {
     console.warn("emailCalculation: SMTP not configured — cannot send estimate")
     return {
       success: false,
@@ -43,12 +41,7 @@ export async function emailCalculation(input: z.infer<typeof calculationSchema>)
   }
 
   try {
-    const transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST || "smtp.gmail.com",
-      port: parseInt(process.env.SMTP_PORT || "587"),
-      secure: false,
-      auth: { user: smtpUser, pass: smtpPass },
-    })
+    const transporter = createMailTransport()
 
     const summaryLines = [
       `Equipment: ${data.equipment}`,
@@ -64,7 +57,7 @@ export async function emailCalculation(input: z.infer<typeof calculationSchema>)
 
     // Send the estimate to the driver
     await transporter.sendMail({
-      from: process.env.SMTP_FROM || `"${COMPANY_INFO.name}" <${smtpUser}>`,
+      from: mailFrom(COMPANY_INFO.name),
       to: data.email,
       subject: `Your earnings estimate — ${COMPANY_INFO.name}`,
       text: [
@@ -83,7 +76,7 @@ export async function emailCalculation(input: z.infer<typeof calculationSchema>)
 
     // Notify recruiting (this is a warm lead)
     await transporter.sendMail({
-      from: process.env.SMTP_FROM || `"${COMPANY_INFO.name} Website" <${smtpUser}>`,
+      from: mailFrom(`${COMPANY_INFO.name} Website`),
       to: COMPANY_INFO.email,
       replyTo: data.email,
       subject: `Calculator lead — ${data.email}`,

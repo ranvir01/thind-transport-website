@@ -1,8 +1,8 @@
 "use server"
 
 import { z } from "zod"
-import * as nodemailer from "nodemailer"
 import { COMPANY_INFO } from "@/lib/constants"
+import { createMailTransport, isEmailConfigured, mailFrom } from "@/lib/mailer"
 
 const leadSchema = z.object({
   name: z.string().min(2).optional(),
@@ -16,18 +16,6 @@ export type LeadState = {
   success: boolean
   message: string
   errors?: Record<string, string[]>
-}
-
-const createTransporter = () => {
-  return nodemailer.createTransport({
-    host: process.env.SMTP_HOST || "smtp.gmail.com",
-    port: parseInt(process.env.SMTP_PORT || "587"),
-    secure: false,
-    auth: {
-      user: process.env.SMTP_USER || process.env.EMAIL_USER,
-      pass: process.env.SMTP_PASS || process.env.EMAIL_PASS,
-    },
-  })
 }
 
 export async function captureLead(prevState: LeadState, formData: FormData): Promise<LeadState> {
@@ -51,15 +39,13 @@ export async function captureLead(prevState: LeadState, formData: FormData): Pro
     }
 
     const data = validatedData.data
-    const smtpUser = process.env.SMTP_USER || process.env.EMAIL_USER
-    const smtpPass = process.env.SMTP_PASS || process.env.EMAIL_PASS
 
     console.log("Lead captured:", { ...data, timestamp: new Date().toISOString() })
 
-    if (smtpUser && smtpPass) {
-      const transporter = createTransporter()
+    if (isEmailConfigured()) {
+      const transporter = createMailTransport()
       await transporter.sendMail({
-        from: process.env.SMTP_FROM || `"Thind Transport Website" <${smtpUser}>`,
+        from: mailFrom(),
         to: COMPANY_INFO.email,
         replyTo: data.email,
         subject: `Website lead${data.source ? ` — ${data.source}` : ""}`,

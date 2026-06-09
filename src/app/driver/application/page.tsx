@@ -318,6 +318,9 @@ export default function DriverApplicationPage() {
       formDataToSend.append("file", blob, "Thind_Transport_Application.pdf")
       formDataToSend.append("driverName", formData.personal.applicant_name || "Unknown")
       formDataToSend.append("driverEmail", formData.personal.email || session?.user?.email || "")
+      formDataToSend.append("driverPhone", formData.personal.phone || "")
+      // Full form data so the portal stores the application record, not just the PDF
+      formDataToSend.append("applicationData", JSON.stringify(formData))
 
       const uploadResponse = await fetch("/api/driver/upload-application", {
         method: "POST",
@@ -331,8 +334,14 @@ export default function DriverApplicationPage() {
       }
 
       setSubmitSuccess(true)
-      toast.success("Application submitted successfully!")
-      
+      if (result.emailSent) {
+        toast.success("Application submitted successfully!")
+      } else {
+        // Stored in the portal even though the email didn't go out — team can still see it
+        toast.success("Application submitted and saved to your portal!")
+        console.warn("Application email not delivered:", result.emailError)
+      }
+
       // Clear saved form data
       localStorage.removeItem(FORM_STORAGE_KEY)
     } catch (err: any) {

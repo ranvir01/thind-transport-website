@@ -1,7 +1,7 @@
 "use client"
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { useState, Suspense } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -10,18 +10,20 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { toast } from "sonner"
 import { Loader2, Truck, CheckCircle2, AlertCircle } from "lucide-react"
 
-export default function RegisterPage() {
+function RegisterForm() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [loading, setLoading] = useState(false)
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
-    email: "",
+    email: searchParams.get("email") || "",
     phone: "",
     password: "",
     confirmPassword: "",
     invitationCode: "",
   })
+  const cameFromApply = Boolean(searchParams.get("email"))
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -45,7 +47,14 @@ export default function RegisterPage() {
       const response = await fetch("/api/driver/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          email: formData.email,
+          phone: formData.phone,
+          password: formData.password,
+          invitationCode: formData.invitationCode,
+        }),
       })
 
       const data = await response.json()
@@ -55,9 +64,9 @@ export default function RegisterPage() {
       }
 
       toast.success("Account created! Redirecting to login...")
-      setTimeout(() => router.push("/driver/login"), 2000)
-    } catch (error: any) {
-      toast.error(error.message || "Something went wrong")
+      setTimeout(() => router.push("/driver/login"), 1500)
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : "Something went wrong")
     } finally {
       setLoading(false)
     }
@@ -72,7 +81,9 @@ export default function RegisterPage() {
           </div>
           <CardTitle className="text-2xl">Create Driver Account</CardTitle>
           <CardDescription>
-            You've been invited to join Thind Transport. Complete your registration to access your application.
+            {cameFromApply
+              ? "Thanks for applying! Create your portal account to track your application and complete onboarding."
+              : "Track your application status and complete your DOT paperwork online."}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -83,6 +94,7 @@ export default function RegisterPage() {
                 <Input
                   id="firstName"
                   required
+                  autoComplete="given-name"
                   value={formData.firstName}
                   onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
                 />
@@ -92,6 +104,7 @@ export default function RegisterPage() {
                 <Input
                   id="lastName"
                   required
+                  autoComplete="family-name"
                   value={formData.lastName}
                   onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
                 />
@@ -104,9 +117,13 @@ export default function RegisterPage() {
                 id="email"
                 type="email"
                 required
+                autoComplete="email"
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
               />
+              <p className="text-xs text-gray-500">
+                Use the same email you applied with — no invitation code needed.
+              </p>
             </div>
 
             <div className="space-y-2">
@@ -116,22 +133,28 @@ export default function RegisterPage() {
                 type="tel"
                 placeholder="(555) 555-5555"
                 required
+                autoComplete="tel"
                 value={formData.phone}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="invitationCode">Invitation Code</Label>
+              <Label htmlFor="invitationCode">
+                Invitation Code <span className="font-normal text-gray-400">(optional)</span>
+              </Label>
               <Input
                 id="invitationCode"
-                required
-                placeholder="Provided by recruiter"
+                placeholder="Only if a recruiter gave you one"
                 value={formData.invitationCode}
                 onChange={(e) => setFormData({ ...formData, invitationCode: e.target.value })}
               />
               <p className="text-xs text-gray-500">
-                You should have received this code from your recruiter
+                Haven&apos;t applied yet?{" "}
+                <Link href="/apply" className="text-orange hover:underline">
+                  Apply first
+                </Link>{" "}
+                — it takes 60 seconds.
               </p>
             </div>
 
@@ -142,6 +165,7 @@ export default function RegisterPage() {
                 type="password"
                 required
                 minLength={8}
+                autoComplete="new-password"
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
               />
@@ -154,6 +178,7 @@ export default function RegisterPage() {
                 type="password"
                 required
                 minLength={8}
+                autoComplete="new-password"
                 value={formData.confirmPassword}
                 onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
               />
@@ -186,8 +211,8 @@ export default function RegisterPage() {
               <AlertCircle className="h-5 w-5 text-blue-600 flex-shrink-0" />
               <div className="text-xs text-blue-900">
                 <strong className="block mb-1">What happens next?</strong>
-                After creating your account, you'll be redirected to complete your DOT driver application form.
-                This is required before you can access the driver portal.
+                Inside the portal you can track your application status and fill out the official DOT
+                driver application — we turn it into the signed PDF our team needs.
               </div>
             </div>
           </div>
@@ -197,3 +222,10 @@ export default function RegisterPage() {
   )
 }
 
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-navy" />}>
+      <RegisterForm />
+    </Suspense>
+  )
+}

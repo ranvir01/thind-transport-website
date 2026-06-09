@@ -24,6 +24,9 @@ try {
 const DATA_DIR = path.join(process.cwd(), "data")
 const DRIVERS_FILE = path.join(DATA_DIR, "drivers.json")
 const APPLICATIONS_FILE = path.join(DATA_DIR, "applications.json")
+const PUBLIC_APPLICATIONS_FILE = path.join(DATA_DIR, "public-applications.json")
+
+export type ApplicationStatus = "submitted" | "under_review" | "approved" | "needs_info"
 
 interface Driver {
   id: string
@@ -35,6 +38,8 @@ interface Driver {
   invitationCode: string
   createdAt: Date
   applicationCompleted: boolean
+  resetToken?: string | null
+  resetTokenExpiry?: string | null
 }
 
 interface Application {
@@ -43,6 +48,19 @@ interface Application {
   data: any
   submittedAt: Date
   pdfPath?: string
+  status?: ApplicationStatus
+}
+
+interface PublicApplication {
+  id: string
+  firstName: string
+  lastName: string
+  email: string
+  phone: string
+  driverType?: string
+  data: any
+  emailDelivered: boolean
+  createdAt: Date
 }
 
 // Ensure data directory exists
@@ -175,6 +193,7 @@ export async function saveApplication(driverId: string, applicationData: any): P
     driverId,
     data: applicationData,
     submittedAt: new Date(),
+    status: "submitted",
   }
 
   applications.push(newApplication)
@@ -217,6 +236,154 @@ export async function updateDriverApplicationStatus(driverId: string, completed:
   const driverIndex = drivers.findIndex((d) => d.id === driverId)
   if (driverIndex !== -1) {
     drivers[driverIndex].applicationCompleted = completed
+    await writeDrivers(drivers)
+  }
+}
+
+// Latest application summary for a driver (dashboard / profile)
+export async function getLatestApplicationForDriver(driverId: string): Promise<{
+  id: string
+  status: ApplicationStatus
+  submittedAt: Date
+  hasPdf: boolean
+} | null> {
+  if (usePostgres) {
+    const { getLatestApplicationForDriver: pgGet } = await import("./driver-db-postgres")
+    return pgGet(driverId)
+  }
+
+  const applications = await readApplications()
+  const mine = applications
+    .filter((a) => a.driverId === driverId)
+    .sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime())
+  if (mine.length === 0) return null
+  const latest = mine[0]
+  return {
+    id: latest.id,
+    status: latest.status || "submitted",
+    submittedAt: new Date(latest.submittedAt),
+    hasPdf: Boolean(latest.pdfPath),
+  }
+}
+
+// ---- Public website applications (apply form) ----
+
+async function readPublicApplications(): Promise<PublicApplication[]> {
+  await ensureDataDir()
+  try {
+    const data = await fs.readFile(PUBLIC_APPLICATIONS_FILE, "utf-8")
+    return JSON.parse(data)
+  } catch {
+    return []
+  }
+}
+
+async function writePublicApplications(records: PublicApplication[]) {
+  if (process.env.VERCEL) {
+    console.warn("Skipping public application write on Vercel - filesystem is read-only (configure POSTGRES_URL)")
+    return
+  }
+  await ensureDataDir()
+  await fs.writeFile(PUBLIC_APPLICATIONS_FILE, JSON.stringify(records, null, 2))
+}
+
+// Store a public website application — persistence-first, email-second
+export async function savePublicApplication(record: {
+  firstName: string
+  lastName: string
+  email: string
+  phone: string
+  driverType?: string
+  data: any
+  emailDelivered: boolean
+}): Promise<PublicApplication> {
+  if (usePostgres) {
+    const { savePublicApplication: pgSave } = await import("./driver-db-postgres")
+    return pgSave(record)
+  }
+
+  const records = await readPublicApplications()
+  const newRecord: PublicApplication = {
+    id: `pub_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+    ...record,
+    email: record.email.toLowerCase(),
+    createdAt: new Date(),
+  }
+  records.push(newRecord)
+  await writePublicApplications(records)
+  return newRecord
+}
+
+export async function markPublicApplicationEmailed(id: string) {
+  if (usePostgres) {
+    const { markPublicApplicationEmailed: pgMark } = await import("./driver-db-postgres")
+    return pgMark(id)
+  }
+
+  const records = await readPublicApplications()
+  const index = records.findIndex((r) => r.id === id)
+  if (index !== -1) {
+    records[index].emailDelivered = true
+    await writePublicApplications(records)
+  }
+}
+
+// Has this email submitted a public application? (used to waive the invitation code)
+export async function hasPublicApplication(email: string): Promise<boolean> {
+  if (usePostgres) {
+    const { hasPublicApplication: pgHas } = await import("./driver-db-postgres")
+    return pgHas(email)
+  }
+
+  const records = await readPublicApplications()
+  return records.some((r) => r.email === email.toLowerCase())
+}
+
+// ---- Password reset tokens ----
+
+export async function setResetToken(email: string, token: string, expiry: Date): Promise<void> {
+  if (usePostgres) {
+    const { setResetToken: pgSet } = await import("./driver-db-postgres")
+    return pgSet(email, token, expiry)
+  }
+
+  const drivers = await readDrivers()
+  const index = drivers.findIndex((d) => d.email === email)
+  if (index !== -1) {
+    drivers[index].resetToken = token
+    drivers[index].resetTokenExpiry = expiry.toISOString()
+    await writeDrivers(drivers)
+  }
+}
+
+export async function verifyResetToken(email: string, token: string): Promise<{ valid: boolean; reason?: string }> {
+  if (usePostgres) {
+    const { verifyResetToken: pgVerify } = await import("./driver-db-postgres")
+    return pgVerify(email, token)
+  }
+
+  const drivers = await readDrivers()
+  const driver = drivers.find((d) => d.email === email)
+  if (!driver) return { valid: false, reason: "not_found" }
+  if (!driver.resetToken || driver.resetToken !== token) return { valid: false, reason: "mismatch" }
+  if (driver.resetTokenExpiry && new Date(driver.resetTokenExpiry) < new Date()) {
+    return { valid: false, reason: "expired" }
+  }
+  return { valid: true }
+}
+
+export async function updateDriverPassword(email: string, passwordHash: string): Promise<void> {
+  if (usePostgres) {
+    const { updateDriverPassword: pgUpdate } = await import("./driver-db-postgres")
+    return pgUpdate(email, passwordHash)
+  }
+
+  const drivers = await readDrivers()
+  const index = drivers.findIndex((d) => d.email === email)
+  if (index !== -1) {
+    drivers[index].passwordHash = passwordHash
+    drivers[index].resetToken = null
+    drivers[index].resetTokenExpiry = null
     await writeDrivers(drivers)
   }
 }

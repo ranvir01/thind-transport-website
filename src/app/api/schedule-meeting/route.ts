@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
-import nodemailer from "nodemailer"
 import { COMPANY_INFO } from "@/lib/constants"
+import { createMailTransport, isEmailConfigured, mailFrom } from "@/lib/mailer"
 
 export async function POST(request: Request) {
   try {
@@ -21,29 +21,18 @@ export async function POST(request: Request) {
       )
     }
 
-    const smtpUser = process.env.SMTP_USER || process.env.EMAIL_USER
-    const smtpPass = process.env.SMTP_PASS || process.env.EMAIL_PASS
-
     // Gracefully degrade when email isn't configured (matches the server actions)
-    if (!smtpUser || !smtpPass) {
+    if (!isEmailConfigured()) {
       console.log("Meeting request received (email not configured):", { name, email, phone, preferredDate, preferredTime })
       return NextResponse.json({ success: true })
     }
 
     // Configure transporter
-    const transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST || "smtp.gmail.com",
-      port: parseInt(process.env.SMTP_PORT || "587"),
-      secure: false,
-      auth: {
-        user: smtpUser,
-        pass: smtpPass,
-      },
-    })
+    const transporter = createMailTransport()
 
     // Send email to owner
     await transporter.sendMail({
-      from: process.env.SMTP_FROM || "noreply@thindtransport.com",
+      from: mailFrom("Thind Transport"),
       to: "thindcarrier@gmail.com",
       subject: `Meeting Request - ${name}`,
       html: `
@@ -76,7 +65,7 @@ export async function POST(request: Request) {
 
     // Send confirmation to driver
     await transporter.sendMail({
-      from: process.env.SMTP_FROM || "noreply@thindtransport.com",
+      from: mailFrom("Thind Transport"),
       to: email,
       subject: "Meeting Request Received - Thind Transport",
       html: `

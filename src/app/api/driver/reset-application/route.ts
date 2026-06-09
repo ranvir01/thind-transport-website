@@ -84,7 +84,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       message: "Application data has been reset. Please also clear your browser's localStorage.",
-      clearLocalStorage: `thind_driver_application_${targetEmail}`
+      clearLocalStorage: "thind_driver_application_v2"
     })
     
   } catch (error: any) {

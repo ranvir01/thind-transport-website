@@ -1,7 +1,9 @@
 "use server"
 
 import { z } from "zod"
-import * as nodemailer from "nodemailer"
+import { COMPANY_INFO } from "@/lib/constants"
+import { createMailTransport, isEmailConfigured, mailFrom } from "@/lib/mailer"
+import { savePublicApplication, markPublicApplicationEmailed } from "@/lib/driver-db"
 
 const preQualifySchema = z.object({
   firstName: z.string().min(2, "First Name is required"),
@@ -55,16 +57,6 @@ const checkQualification = (data: any): boolean => {
   return true
 }
 
-const createTransporter = () => {
-  return nodemailer.createTransport({
-    service: "gmail",
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS,
-    },
-  })
-}
-
 export async function submitPreQualification(prevState: PreQualifyState, formData: FormData): Promise<PreQualifyState> {
   try {
     const rawData = {
@@ -102,22 +94,39 @@ export async function submitPreQualification(prevState: PreQualifyState, formDat
     }
 
     const data = validatedData.data
+    const isQualified = checkQualification(data)
 
-    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-      console.log("Pre-Qualification Received (email not sent):", data)
+    // Persist FIRST — never lose a lead because email is down.
+    let savedRecordId: string | null = null
+    try {
+      const saved = await savePublicApplication({
+        firstName: data.firstName,
+        lastName: data.lastName,
+        email: data.email,
+        phone: data.phone,
+        driverType: "pre-qualification",
+        data: { ...data, isQualified },
+        emailDelivered: false,
+      })
+      savedRecordId = saved.id
+    } catch (persistError) {
+      console.error("Failed to persist pre-qualification:", persistError)
+    }
+
+    if (!isEmailConfigured()) {
+      console.warn("SMTP not configured — pre-qualification stored but not emailed:", data.email)
       return {
         success: true,
         message: "Pre-qualification submitted successfully! We will contact you shortly.",
+        isQualified,
       }
     }
 
-    const isQualified = checkQualification(data)
-
-    const transporter = createTransporter()
+    const transporter = createMailTransport()
     
     const mailOptions = {
-      from: `"Thind Transport Website" <${process.env.EMAIL_USER}>`,
-      to: "thindcarrier@gmail.com",
+      from: mailFrom(),
+      to: COMPANY_INFO.email,
       replyTo: data.email,
       subject: `${isQualified ? "✅ QUALIFIED" : "⚠️ REVIEW NEEDED"}: New Pre-Qualification - ${data.firstName} ${data.lastName}`,
       html: `
@@ -152,7 +161,19 @@ export async function submitPreQualification(prevState: PreQualifyState, formDat
       `
     }
 
-    await transporter.sendMail(mailOptions)
+    try {
+      await transporter.sendMail(mailOptions)
+      if (savedRecordId) await markPublicApplicationEmailed(savedRecordId)
+    } catch (emailError) {
+      console.error("Pre-qualification email delivery failed (record saved):", emailError)
+      if (!savedRecordId) {
+        return {
+          success: false,
+          message: `Something went wrong on our end. Please call ${COMPANY_INFO.phone} and we'll take your info directly.`,
+        }
+      }
+      // Saved — treat as success for the driver.
+    }
 
     return {
       success: true,
@@ -163,7 +184,7 @@ export async function submitPreQualification(prevState: PreQualifyState, formDat
     console.error("Submission error:", error)
     return {
       success: false,
-      message: "Something went wrong. Please try again or call (206) 765-6300.",
+      message: `Something went wrong. Please try again or call ${COMPANY_INFO.phone}.`,
     }
   }
 }

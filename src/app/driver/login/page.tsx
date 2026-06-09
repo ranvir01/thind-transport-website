@@ -39,9 +39,9 @@ export default function LoginPage() {
       if (result?.ok) {
         toast.success("Logged in successfully!")
         
-        // Redirect to application page
+        // Land on the dashboard — it shows application status and next steps
         setTimeout(() => {
-          window.location.href = "/driver/application"
+          window.location.href = "/driver/dashboard"
         }, 500)
       } else {
         toast.error("Login failed. Please try again.")

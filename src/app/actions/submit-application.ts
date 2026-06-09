@@ -1,8 +1,9 @@
 "use server"
 
 import { z } from "zod"
-import * as nodemailer from "nodemailer"
 import { COMPANY_INFO } from "@/lib/constants"
+import { createMailTransport, isEmailConfigured, mailFrom } from "@/lib/mailer"
+import { savePublicApplication, markPublicApplicationEmailed } from "@/lib/driver-db"
 
 // Define the schema for server-side validation (should match client-side)
 const applicationSchema = z.object({
@@ -29,19 +30,6 @@ export type ApplicationState = {
   success: boolean
   message: string
   errors?: Record<string, string[]>
-}
-
-// Email configuration
-const createTransporter = () => {
-  return nodemailer.createTransport({
-    host: process.env.SMTP_HOST || "smtp.gmail.com",
-    port: parseInt(process.env.SMTP_PORT || "587"),
-    secure: false,
-    auth: {
-      user: process.env.SMTP_USER || process.env.EMAIL_USER,
-      pass: process.env.SMTP_PASS || process.env.EMAIL_PASS,
-    },
-  })
 }
 
 // Format application data into HTML email
@@ -311,58 +299,83 @@ export async function submitApplication(prevState: ApplicationState, formData: F
     }
 
     const data = validatedData.data
+    const applicantName = `${data.firstName} ${data.lastName}`
 
-    const smtpUser = process.env.SMTP_USER || process.env.EMAIL_USER
-    const smtpPass = process.env.SMTP_PASS || process.env.EMAIL_PASS
+    // 1) Persist FIRST — the application must never be lost because email is down.
+    let savedRecordId: string | null = null
+    try {
+      const saved = await savePublicApplication({
+        firstName: data.firstName,
+        lastName: data.lastName,
+        email: data.email,
+        phone: data.phone,
+        driverType: data.driverType,
+        data: { ...data, attachmentNames: attachments.map((a) => a.filename) },
+        emailDelivered: false,
+      })
+      savedRecordId = saved.id
+    } catch (persistError) {
+      console.error("Failed to persist public application:", persistError)
+    }
 
-    if (!smtpUser || !smtpPass) {
-      console.error("Email credentials not configured. Set SMTP_USER/SMTP_PASS or EMAIL_USER/EMAIL_PASS environment variables.")
-      console.log("Application Received (email not sent):", data)
+    // 2) Then attempt email delivery.
+    if (!isEmailConfigured()) {
+      console.warn("SMTP not configured — application stored but not emailed:", {
+        name: applicantName,
+        email: data.email,
+      })
       return {
         success: true,
-        message: "Application submitted successfully! Our team will contact you shortly.",
+        message: "Application received! Our team will contact you within one business day.",
       }
     }
 
-    // Create transporter and send email
-    const transporter = createTransporter()
-    
-    const applicantName = `${data.firstName} ${data.lastName}`
-    const driverTypeShort = data.driverType === "owner-operator-otr" ? "O/O" : "Company"
-    
-    const mailOptions = {
-      from: process.env.SMTP_FROM || `"Thind Transport Website" <${smtpUser}>`,
-      to: "thindcarrier@gmail.com",
-      replyTo: data.email,
-      subject: `🚛 New ${driverTypeShort} Application: ${applicantName}`,
-      html: formatApplicationEmail(data),
-      text: formatPlainTextEmail(data),
-      attachments: attachments,
-    }
+    try {
+      const transporter = createMailTransport()
+      const driverTypeShort = data.driverType === "owner-operator-otr" ? "O/O" : "Company"
 
-    await transporter.sendMail(mailOptions)
-    
-    console.log("Application submitted successfully:", {
-      name: applicantName,
-      email: data.email,
-      type: data.driverType,
-    })
+      await transporter.sendMail({
+        from: mailFrom(),
+        to: COMPANY_INFO.email,
+        replyTo: data.email,
+        subject: `🚛 New ${driverTypeShort} Application: ${applicantName}`,
+        html: formatApplicationEmail(data),
+        text: formatPlainTextEmail(data),
+        attachments: attachments,
+      })
+
+      if (savedRecordId) await markPublicApplicationEmailed(savedRecordId)
+
+      console.log("Application submitted successfully:", {
+        name: applicantName,
+        email: data.email,
+        type: data.driverType,
+      })
+    } catch (emailError) {
+      // The application is already saved — never surface SMTP internals to the driver.
+      console.error("Application email delivery failed (record saved):", emailError)
+      if (savedRecordId) {
+        return {
+          success: true,
+          message: "Application received! Our team will contact you within one business day.",
+        }
+      }
+      // Persistence AND email both failed — only now ask the driver to reach out directly.
+      return {
+        success: false,
+        message: `We hit a technical issue saving your application. Please call ${COMPANY_INFO.phone} or text us — we'll take your info directly.`,
+      }
+    }
 
     return {
       success: true,
-      message: "Application submitted successfully! Our team will contact you within 2 hours.",
+      message: "Application submitted successfully! Our team will contact you within one business day.",
     }
   } catch (error) {
     console.error("Submission error:", error)
-    
-    // Provide more helpful error message
-    const errorMessage = error instanceof Error 
-      ? `We couldn't send your application by email (${error.message}). Please call ${COMPANY_INFO.phone} or email ${COMPANY_INFO.email}.`
-      : `Something went wrong on our end. Call ${COMPANY_INFO.phone} or email ${COMPANY_INFO.email} and we'll pick it up from there.`
-    
     return {
       success: false,
-      message: errorMessage,
+      message: `Something went wrong on our end. Call ${COMPANY_INFO.phone} or email ${COMPANY_INFO.email} and we'll pick it up from there.`,
     }
   }
 }
