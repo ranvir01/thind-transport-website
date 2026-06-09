@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -13,8 +13,9 @@ interface CertificationStepProps {
   errors?: Record<string, string>
 }
 
+const RequiredMark = () => <span className="text-red-500 ml-1">*</span>
+
 export function CertificationStep({ data, onChange, errors = {} }: CertificationStepProps) {
-  const RequiredMark = () => <span className="text-red-500 ml-1">*</span>
   const [signatureMetadata, setSignatureMetadata] = useState<{
     ipAddress?: string
     userAgent?: string
@@ -28,12 +29,14 @@ export function CertificationStep({ data, onChange, errors = {} }: Certification
     focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent
   `
 
-  // Capture signature metadata when signature is entered
-  useEffect(() => {
-    if (data.main_signature && data.main_signature.length > 3 && !signatureMetadata.ipAddress) {
+  // Capture signature metadata once a real signature is typed (runs from the
+  // input handler instead of an effect, so there's no re-render loop risk)
+  const handleSignatureChange = (value: string) => {
+    onChange('main_signature', value)
+    if (value.length > 3 && !signatureMetadata.ipAddress && !isCapturingMetadata) {
       captureSignatureMetadata()
     }
-  }, [data.main_signature])
+  }
 
   const captureSignatureMetadata = async () => {
     setIsCapturingMetadata(true)
@@ -203,7 +206,7 @@ export function CertificationStep({ data, onChange, errors = {} }: Certification
               <Input
                 id="main_signature"
                 value={data.main_signature || ''}
-                onChange={(e) => onChange('main_signature', e.target.value)}
+                onChange={(e) => handleSignatureChange(e.target.value)}
                 placeholder="John Robert Smith"
                 className={`${inputClass('main_signature')} text-lg font-cursive`}
                 style={{ fontFamily: "'Brush Script MT', cursive" }}

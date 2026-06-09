@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect } from "react"
 import { signOut } from "next-auth/react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -13,28 +13,22 @@ export default function Error({
   error: Error & { digest?: string }
   reset: () => void
 }) {
-  const [errorMessage, setErrorMessage] = useState<string>("")
+  const errorMessage = error.message || "Unknown error"
 
   useEffect(() => {
     // Log the error to console
     console.error("Application page error:", error)
-    console.error("Error message:", error.message)
-    console.error("Error stack:", error.stack)
-    setErrorMessage(error.message || "Unknown error")
-    
+
     // Clear any potentially corrupted localStorage data
-    if (typeof window !== 'undefined') {
-      try {
-        const keys = Object.keys(localStorage)
-        keys.forEach(key => {
-          if (key.startsWith('thind_driver_application')) {
-            console.log("Clearing corrupted data:", key)
-            localStorage.removeItem(key)
-          }
-        })
-      } catch (e) {
-        console.error("Failed to clear localStorage:", e)
-      }
+    try {
+      const keys = Object.keys(localStorage)
+      keys.forEach(key => {
+        if (key.startsWith('thind_driver_application')) {
+          localStorage.removeItem(key)
+        }
+      })
+    } catch (e) {
+      console.error("Failed to clear localStorage:", e)
     }
   }, [error])
 

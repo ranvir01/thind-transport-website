@@ -87,33 +87,6 @@ export default function FleetLayout({
         }}
       />
       
-      {/* Organization Schema */}
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "AutoDealer",
-            "name": `${COMPANY_INFO.name} Fleet Services`,
-            "description": "Professional trucking company with modern fleet and 24/7 maintenance support",
-            "address": {
-              "@type": "PostalAddress",
-              "addressLocality": "Kent",
-              "addressRegion": "WA",
-              "addressCountry": "US"
-            },
-            "telephone": COMPANY_INFO.phone,
-            "email": COMPANY_INFO.email,
-            "openingHours": "Mo-Su 00:00-23:59",
-            "aggregateRating": {
-              "@type": "AggregateRating",
-              "ratingValue": "4.9",
-              "reviewCount": "47"
-            }
-          })
-        }}
-      />
-      
       {/* FAQ Schema */}
       <script
         type="application/ld+json"
@@ -159,7 +132,7 @@ export default function FleetLayout({
                 "name": "How often is preventive maintenance performed?",
                 "acceptedAnswer": {
                   "@type": "Answer",
-                  "text": "Every truck receives a full preventive maintenance inspection every 25,000 miles at our in-house shop. We also perform DOT inspections in advance of due dates. Our 98.5% uptime rate proves this system works."
+                  "text": "Every truck receives a full preventive maintenance inspection every 25,000 miles at our in-house shop, and we complete DOT inspections ahead of their due dates so trucks stay on the road."
                 }
               }
             ]

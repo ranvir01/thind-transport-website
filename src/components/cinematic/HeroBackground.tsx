@@ -6,12 +6,20 @@ export const HeroBackground = memo(() => {
   const videoRef = useRef<HTMLVideoElement>(null)
 
   useEffect(() => {
-    if (videoRef.current) {
-      // Slow down video slightly (75% speed)
-      videoRef.current.playbackRate = 0.75
-      // Ensure video plays
-      videoRef.current.play().catch(e => console.log("Autoplay prevented:", e))
+    const video = videoRef.current
+    if (!video) return
+
+    // Respect users who prefer reduced motion — leave the poster frame in place.
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      video.removeAttribute("autoplay")
+      video.pause()
+      return
     }
+
+    video.playbackRate = 0.75
+    video.play().catch(() => {
+      // Autoplay blocked — poster remains visible, nothing to do.
+    })
   }, [])
 
   return (
@@ -22,9 +30,9 @@ export const HeroBackground = memo(() => {
         muted
         loop
         playsInline
-        preload="auto"
-        className="w-full h-full object-cover md:object-fill"
-        poster="/images/generated/fleet-kent-wa.png"
+        preload="metadata"
+        className="w-full h-full object-cover"
+        poster="/images/generated/hero-poster.webp"
       >
         <source src="/images/generated/hero-american-fleet.mp4?v=3" type="video/mp4" />
       </video>
@@ -37,4 +45,3 @@ export const HeroBackground = memo(() => {
 })
 
 HeroBackground.displayName = "HeroBackground"
-

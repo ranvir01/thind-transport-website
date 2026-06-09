@@ -1,6 +1,8 @@
 "use client"
 
 import { useState } from "react"
+import Link from "next/link"
+import { usePathname } from "next/navigation"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
@@ -49,6 +51,7 @@ const formSchema = z.object({
 type FormData = z.infer<typeof formSchema>
 
 export function ApplicationForm() {
+  const pathname = usePathname()
   const [step, setStep] = useState(1)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isCapturingLead, setIsCapturingLead] = useState(false)
@@ -261,37 +264,40 @@ export function ApplicationForm() {
   // Progress Bar
   const progress = Math.round(((step - 1) / 4) * 100)
 
-  // Sticky Footer Logic
-  const showStickyFooter = true; // Always show on mobile via CSS
-  const isFormStarted = step > 1 || (watchedFields.driverType && watchedFields.driverType !== 'owner-operator-otr');
+  // Only pin the continue bar on the dedicated apply page — on other pages the
+  // site-wide mobile command bar already covers the CTA.
+  const showStickyFooter = pathname === "/apply" && step < 5
 
   return (
-    <div className="space-y-8 relative pb-24 md:pb-0">
+    <div className={cn("space-y-8 relative", showStickyFooter && "pb-24 md:pb-0")}>
       {/* Mobile Sticky Footer */}
-      <div className="fixed bottom-0 left-0 right-0 z-[100] md:hidden bg-gradient-to-r from-[#001F3F] to-[#003366] p-3 border-t border-white/10 shadow-2xl safe-area-bottom">
-        <div className="flex gap-3">
-          <a
-            href={`tel:${COMPANY_INFO.phoneFormatted}`}
-            className="flex items-center justify-center w-12 h-12 bg-white/10 rounded-xl text-white hover:bg-white/20 active:bg-white/30 transition-colors"
-          >
-            <Phone className="h-5 w-5" />
-          </a>
-          <Button
-            onClick={() => {
-               // If valid, go next, otherwise scroll to error
-               if (step === 4) {
-                 handleSubmit(onSubmit)()
-               } else {
-                 nextStep()
-               }
-            }}
-            className="flex-1 h-12 bg-orange-500 hover:bg-orange-600 text-white font-bold text-base rounded-xl shadow-lg shadow-orange-500/30"
-          >
-            {step === 4 ? "Submit Application" : "Continue Application"}
-            <ChevronRight className="ml-2 h-5 w-5" />
-          </Button>
+      {showStickyFooter && (
+        <div className="fixed bottom-0 left-0 right-0 z-[100] md:hidden bg-gradient-to-r from-[#001F3F] to-[#003366] p-3 border-t border-white/10 shadow-2xl safe-area-bottom">
+          <div className="flex gap-3">
+            <a
+              href={`tel:${COMPANY_INFO.phoneFormatted}`}
+              aria-label={`Call recruiting at ${COMPANY_INFO.phone}`}
+              className="flex items-center justify-center w-12 h-12 bg-white/10 rounded-xl text-white hover:bg-white/20 active:bg-white/30 transition-colors"
+            >
+              <Phone className="h-5 w-5" />
+            </a>
+            <Button
+              onClick={() => {
+                 // If valid, go next, otherwise scroll to error
+                 if (step === 4) {
+                   handleSubmit(onSubmit)()
+                 } else {
+                   nextStep()
+                 }
+              }}
+              className="flex-1 h-12 bg-orange-500 hover:bg-orange-600 text-white font-bold text-base rounded-xl shadow-lg shadow-orange-500/30"
+            >
+              {step === 4 ? "Submit Application" : "Continue Application"}
+              <ChevronRight className="ml-2 h-5 w-5" />
+            </Button>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Progress Steps */}
       <div className="mb-8">
@@ -714,40 +720,23 @@ export function ApplicationForm() {
               />
             </div>
 
-            {/* Recruiter Promise Block */}
+            {/* What happens next — real process, no inflated promises */}
             <div className="bg-gradient-to-br from-[#001F3F] to-[#001326] rounded-xl p-5 text-white border border-slate-700 shadow-xl">
-              <div className="flex items-start gap-4">
-                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center text-white font-bold text-xl flex-shrink-0">
-                  S
-                </div>
-                <div>
-                  <h4 className="font-bold text-base text-orange-400">Your Personal Recruiter</h4>
-                  <p className="text-slate-300 text-sm mt-1 leading-relaxed">
-                    "Hi, I'm Sarah. I review every app personally – no bots, no black holes. I'll text you within 2 hours."
-                  </p>
-                  <div className="flex items-center gap-4 mt-3 text-xs text-slate-400">
-                    <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> &lt; 2hr Response</span>
-                    <span className="flex items-center gap-1"><ShieldCheck className="w-3 h-3" /> Data Secured</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Final Testimonial Before Submit */}
-            <div className="bg-green-50 rounded-xl p-4 border border-green-100">
-              <div className="flex items-start gap-3">
-                <div className="flex gap-0.5 flex-shrink-0">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} className="h-4 w-4 fill-green-500 text-green-500" />
-                  ))}
-                </div>
-                <div>
-                  <p className="text-gray-700 text-sm italic">
-                    "The 90% split is real – no hidden fees. I wish I'd switched sooner."
-                  </p>
-                  <p className="text-xs text-gray-500 mt-1">— James T., Owner Operator • 2 Years</p>
-                </div>
-              </div>
+              <h4 className="font-bold text-base text-orange-400 mb-3">What happens after you submit</h4>
+              <ul className="space-y-2 text-sm text-slate-300 leading-relaxed">
+                <li className="flex items-start gap-2">
+                  <Phone className="w-4 h-4 mt-0.5 text-orange-400 flex-shrink-0" />
+                  A real person from our Kent, WA office reviews your application — no bots, no black holes.
+                </li>
+                <li className="flex items-start gap-2">
+                  <Clock className="w-4 h-4 mt-0.5 text-orange-400 flex-shrink-0" />
+                  We call or text you back within one business day to talk pay, lanes, and equipment.
+                </li>
+                <li className="flex items-start gap-2">
+                  <ShieldCheck className="w-4 h-4 mt-0.5 text-orange-400 flex-shrink-0" />
+                  Your information stays with us — it's never sold or shared with other carriers.
+                </li>
+              </ul>
             </div>
 
             <div className="space-y-3">
@@ -842,9 +831,9 @@ export function ApplicationForm() {
                   variant="outline"
                   className="flex-1 border-2 border-gray-300 text-gray-700 hover:bg-gray-50 font-bold text-lg h-14"
                 >
-                  <a href="/">
+                  <Link href="/">
                     Return to Home
-                  </a>
+                  </Link>
                 </Button>
               </div>
             </div>

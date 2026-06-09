@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useId } from "react"
+import { useId } from "react"
 import {
   Accordion,
   AccordionContent,
@@ -18,7 +18,7 @@ const defaultFaqs = [
   },
   {
     question: "How much can I realistically earn?",
-    answer: "Company Drivers: $57K-$82K annually at $0.63 per mile (based on miles and route type), plus $1,500 sign-on bonus first year. Owner Operators: $180K-$280K gross annually with 90% commission (you keep 90% of gross!), plus $2,500 sign-on bonus. Top O/Os gross over $250K. Pay is distributed weekly via direct deposit every Friday."
+    answer: "Company Drivers: $57K-$82K annually at $0.63 per mile (based on miles and route type), plus $1,000 sign-on bonus first year. Owner Operators: $150K-$250K gross annually with 90% commission (you keep 90% of gross!), plus $2,500 sign-on bonus. Pay is distributed weekly via direct deposit every Friday."
   },
   {
     question: "What's this 90% commission for owner operators?",
@@ -30,7 +30,7 @@ const defaultFaqs = [
   },
   {
     question: "What are the sign-on bonuses?",
-    answer: "Company Drivers: $1,500 sign-on bonus paid during your first year (split across first few paychecks). Owner Operators: $2,500 sign-on bonus. Bonuses are paid according to our schedule. Ask for details during your phone interview."
+    answer: "Company Drivers: $1,000 sign-on bonus paid during your first year (split across first few paychecks). Owner Operators: $2,500 sign-on bonus. Bonuses are paid according to our schedule. Ask for details during your phone interview."
   },
   
   // Freight & Operations
@@ -131,33 +131,9 @@ interface FAQAccordionProps {
 }
 
 export function FAQAccordion({ items = defaultFaqs, darkBackground = true }: FAQAccordionProps) {
-  const [mounted, setMounted] = useState(false)
+  // Rendered on the server too — questions, answers, and FAQPage schema all
+  // appear in the initial HTML so crawlers and AI assistants can read them.
   const id = useId()
-
-  useEffect(() => {
-    setMounted(true)
-  }, [])
-
-  // Show a skeleton/placeholder until hydrated to prevent mismatch
-  if (!mounted) {
-    return (
-      <div className="w-full space-y-3">
-        {items.slice(0, 5).map((_, index) => (
-          <div 
-            key={index}
-            className={`border rounded-lg px-4 py-5 animate-pulse ${
-              darkBackground ? "border-white/10 bg-white/5" : "border-white/10 bg-[rgba(16,25,38,0.9)]"
-            }`}
-          >
-            <div className="flex items-start gap-3">
-              <div className={`w-5 h-5 rounded ${darkBackground ? "bg-orange-500/30" : "bg-orange-500/20"}`} />
-              <div className={`flex-1 h-5 rounded ${darkBackground ? "bg-white/10" : "bg-white/10"}`} />
-            </div>
-          </div>
-        ))}
-      </div>
-    )
-  }
 
   return (
     <div className="w-full space-y-2">

@@ -16,7 +16,7 @@ import Link from "next/link"
 
 export default function Home() {
   return (
-    <main className="brand-page-shell relative min-h-screen selection:bg-orange selection:text-white pb-24 md:pb-0">
+    <div className="brand-page-shell relative min-h-screen selection:bg-orange selection:text-white pb-24 md:pb-0">
       <CinematicHero />
 
       <TrustStrip />
@@ -88,6 +88,6 @@ export default function Home() {
       </section>
 
       <InfiniteTicker />
-    </main>
+    </div>
   )
 }

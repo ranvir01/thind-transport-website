@@ -95,22 +95,22 @@ export const BENEFITS = {
   ],
 } as const
 
-// Keeping these for backward compatibility if used elsewhere, but values should align with above
+// Verifiable trust indicators only — no invented ratings or percentages.
 export const TRUST_INDICATORS = {
   certifications: [
     {
-      name: "FMCSA Certified",
+      name: "FMCSA Registered",
       issuer: "Federal Motor Carrier Safety Administration",
       icon: "shield-check",
     },
     {
-      name: "DOT Compliant",
+      name: `USDOT #2523064`,
       issuer: "U.S. Department of Transportation",
       icon: "badge-check",
     },
     {
-      name: "A+ Safety Rating",
-      issuer: "FMCSA CSA Program",
+      name: "No Forced Dispatch",
+      issuer: "Company policy — you choose your loads",
       icon: "award",
     },
     {
@@ -118,12 +118,6 @@ export const TRUST_INDICATORS = {
       issuer: "Commercial Insurance Carrier",
       icon: "shield",
     },
-  ],
-  performance: [
-    { label: "On-Time Delivery", value: "98.5%" },
-    { label: "DOT Violations", value: "0.0%" },
-    { label: "Safe Miles", value: "2M+" },
-    { label: "Safety Rating", value: "A+" },
   ],
 } as const
 

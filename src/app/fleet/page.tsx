@@ -279,31 +279,6 @@ const maintenanceFeatures = [
   }
 ]
 
-// Driver testimonials specific to equipment
-const equipmentTestimonials = [
-  {
-    name: "Marcus J.",
-    role: "OTR Driver, 3 Years",
-    quote: "The Cascadia's sleeper is like a hotel room. APU keeps me comfortable all night without idling. Best equipment I've ever driven.",
-    rating: 5,
-    truck: "Freightliner Cascadia"
-  },
-  {
-    name: "Sarah T.",
-    role: "Regional Driver, 2 Years", 
-    quote: "Volvo's I-Shift is incredible. My back thanks me every day. The safety features have saved me twice in bad weather.",
-    rating: 5,
-    truck: "Volvo VNL 860"
-  },
-  {
-    name: "David R.",
-    role: "Owner Operator, 5 Years",
-    quote: "When my truck needed repairs, their shop had me back on the road in 4 hours. Other companies left me sitting for days.",
-    rating: 5,
-    truck: "Fleet Maintenance"
-  }
-]
-
 // FAQ data for SEO
 const faqs = [
   {
@@ -324,7 +299,7 @@ const faqs = [
   },
   {
     question: "How often is preventive maintenance performed?",
-    answer: "Every truck receives a full preventive maintenance inspection every 25,000 miles at our in-house shop. We also perform DOT inspections in advance of due dates. Our 98.5% uptime rate proves this system works."
+    answer: "Every truck receives a full preventive maintenance inspection every 25,000 miles at our in-house shop, and we complete DOT inspections ahead of their due dates so trucks stay on the road."
   },
   {
     question: "Can I personalize my assigned truck?",
@@ -334,9 +309,9 @@ const faqs = [
 
 // Why choose our fleet stats
 const fleetStats = [
-  { value: "98.5%", label: "Fleet Uptime", icon: TrendingUp },
-  { value: "0", label: "DOT Violations (2024)", icon: Shield },
-  { value: "< 4hrs", label: "Avg Repair Response", icon: Clock },
+  { value: "15+", label: "Trucks in Fleet", icon: TrendingUp },
+  { value: "100%", label: "APU-Equipped", icon: Shield },
+  { value: "24/7", label: "Dispatch & Roadside", icon: Clock },
   { value: "2.5yr", label: "Avg Fleet Age", icon: Calendar }
 ]
 
@@ -843,61 +818,6 @@ export default function FleetPage() {
               </motion.div>
             )}
           </AnimatePresence>
-        </div>
-      </section>
-
-      {/* Driver Testimonials - Equipment Focused */}
-      <section className="py-20 bg-neutral-50">
-        <div className="container px-4">
-          <motion.div 
-            className="text-center mb-12"
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true }}
-            variants={fadeInUp}
-          >
-            <Badge className="mb-4 bg-navy text-white px-4 py-2 text-xs font-bold">
-              <Users className="h-3 w-3 mr-1.5 inline" />
-              Driver Reviews
-            </Badge>
-            <h2 className="text-3xl md:text-4xl font-black text-navy mb-4">
-              What Drivers Say About <span className="text-orange">Our Equipment</span>
-            </h2>
-            <p className="text-lg text-steel max-w-2xl mx-auto">
-              Real feedback from real drivers about the trucks they drive every day.
-            </p>
-          </motion.div>
-
-          <motion.div 
-            className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto"
-            variants={containerVariants}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true }}
-          >
-            {equipmentTestimonials.map((testimonial, idx) => (
-              <motion.div
-                key={idx}
-                variants={cardVariants}
-                className="bg-white rounded-2xl p-6 shadow-brand border border-neutral-100 hover:shadow-brand-lg transition-all duration-300"
-              >
-                <Quote className="h-8 w-8 text-orange/20 mb-4" />
-                <p className="text-steel leading-relaxed mb-6 italic">"{testimonial.quote}"</p>
-                <div className="flex items-center gap-1 mb-4">
-                  {[...Array(testimonial.rating)].map((_, i) => (
-                    <Star key={i} className="h-4 w-4 fill-orange text-orange" />
-                  ))}
-                </div>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="font-bold text-navy">{testimonial.name}</div>
-                    <div className="text-sm text-steel">{testimonial.role}</div>
-                  </div>
-                  <Badge className="bg-orange/10 text-orange text-xs">{testimonial.truck}</Badge>
-                </div>
-              </motion.div>
-            ))}
-          </motion.div>
         </div>
       </section>
 

@@ -7,7 +7,7 @@ export const InfiniteTicker = () => {
     { label: "Owner operator split:", value: "90%", accent: true },
     { label: "Company drivers:", value: "$0.63/mi", accent: true },
     { label: "Fuel surcharge:", value: "100% pass-through" },
-    { label: "Safety rating:", value: "A+ FMCSA" },
+    { label: "Forced dispatch:", value: "Never" },
     { label: "Equipment:", value: "2024 Cascadias" },
     { label: "Hiring:", value: "48 states" },
     { label: "Based in:", value: "Kent, WA" },

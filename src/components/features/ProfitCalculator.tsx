@@ -1,9 +1,10 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { TrendingUp, Fuel, Truck, DollarSign, Calculator, Info, ChevronDown, Shield, Wrench, Send, Mail, CheckCircle2, Check } from "lucide-react"
+import { TrendingUp, Fuel, Truck, DollarSign, Calculator, Info, ChevronDown, Wrench, Mail, CheckCircle2, Check } from "lucide-react"
 import Link from "next/link"
 import { MARKET_DATA, EquipmentType } from "@/lib/market-data"
+import { emailCalculation } from "@/app/actions/email-calculation"
 
 // Combine static UI data with dynamic market data
 const EQUIPMENT_RATES = {
@@ -57,22 +58,42 @@ export const ProfitCalculator = () => {
   // Email capture for saving calculation
   const [email, setEmail] = useState("")
   const [emailSent, setEmailSent] = useState(false)
+  const [emailError, setEmailError] = useState<string | null>(null)
   const [isSending, setIsSending] = useState(false)
 
   // Update rate when equipment type changes
   useEffect(() => {
     setLineHaulRate(EQUIPMENT_RATES[equipmentType].defaultRate)
   }, [equipmentType])
-  
-  // Handle email submission
+
+  // Email the visitor their estimate (and notify recruiting)
   const handleSaveCalculation = async () => {
     if (!email || !email.includes('@')) return
-    
+
     setIsSending(true)
-    // Simulate API call - in production, this would send to your backend
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    setEmailSent(true)
-    setIsSending(false)
+    setEmailError(null)
+    try {
+      const result = await emailCalculation({
+        email,
+        equipment: EQUIPMENT_RATES[equipmentType].label,
+        miles,
+        lineHaulRate,
+        fuelPrice,
+        weeklyGross: Math.round(thindDriverGross),
+        weeklyNet: Math.round(thindNetPay),
+        weeklyDifference: Math.round(weeklyDifference),
+        annualNet: Math.round(thindAnnualNet),
+      })
+      if (result.success) {
+        setEmailSent(true)
+      } else {
+        setEmailError(result.message)
+      }
+    } catch {
+      setEmailError("Something went wrong — please try again or give us a call.")
+    } finally {
+      setIsSending(false)
+    }
   }
 
   const equipment = EQUIPMENT_RATES[equipmentType]
@@ -177,13 +198,14 @@ export const ProfitCalculator = () => {
             {/* Miles Slider */}
             <div className="mb-6">
               <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 mb-3">
-                <label className="font-semibold text-white/90 text-sm flex items-center gap-2">
+                <label htmlFor="calc-miles" className="font-semibold text-white/90 text-sm flex items-center gap-2">
                   <Truck className="w-4 h-4 text-orange" />
                   Miles Per Week
                 </label>
                 <span className="font-mono font-bold text-xl text-orange self-end sm:self-auto">{miles.toLocaleString()}</span>
               </div>
               <input 
+                id="calc-miles"
                 type="range" 
                 min="1500" 
                 max="3500" 
@@ -204,7 +226,7 @@ export const ProfitCalculator = () => {
             {/* Rate Slider */}
             <div className="mb-6">
               <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 mb-3">
-                <label className="font-semibold text-white/90 text-sm flex items-center gap-2">
+                <label htmlFor="calc-rate" className="font-semibold text-white/90 text-sm flex items-center gap-2">
                   <DollarSign className="w-4 h-4 text-orange" />
                   Linehaul Rate (per mile)
                   <span className="relative group">
@@ -217,6 +239,7 @@ export const ProfitCalculator = () => {
                 <span className="font-mono font-bold text-xl text-orange self-end sm:self-auto">${lineHaulRate.toFixed(2)}</span>
               </div>
               <input 
+                id="calc-rate"
                 type="range" 
                 min={equipment.minRate} 
                 max={equipment.maxRate} 
@@ -235,13 +258,14 @@ export const ProfitCalculator = () => {
             {/* Fuel Price Slider */}
             <div className="mb-6">
               <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 mb-3">
-                <label className="font-semibold text-white/90 text-sm flex items-center gap-2">
+                <label htmlFor="calc-fuel" className="font-semibold text-white/90 text-sm flex items-center gap-2">
                   <Fuel className="w-4 h-4 text-orange" />
                   Diesel Price (per gallon)
                 </label>
                 <span className="font-mono font-bold text-xl text-orange self-end sm:self-auto">${fuelPrice.toFixed(2)}</span>
               </div>
               <input 
+                id="calc-fuel"
                 type="range" 
                 min="3.00" 
                 max="4.50" 
@@ -274,10 +298,11 @@ export const ProfitCalculator = () => {
                 <div className="mt-3 p-4 rounded-lg bg-orange/5 border border-orange/20 space-y-4">
                   <div>
                     <div className="flex justify-between items-center mb-2">
-                      <label className="text-sm text-white/90">Your current split %</label>
+                      <label htmlFor="calc-current-split" className="text-sm text-white/90">Your current split %</label>
                       <span className="font-mono font-bold text-orange">{currentSplit}%</span>
                     </div>
                     <input 
+                      id="calc-current-split"
                       type="range" 
                       min="60" 
                       max="95" 
@@ -295,10 +320,11 @@ export const ProfitCalculator = () => {
                   </div>
                   
                   <div>
-                    <label className="text-sm text-white/90 mb-2 block">Your current weekly take-home (optional)</label>
+                    <label htmlFor="calc-current-pay" className="text-sm text-white/90 mb-2 block">Your current weekly take-home (optional)</label>
                     <div className="relative">
                       <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/70" />
                       <input 
+                        id="calc-current-pay"
                         type="number"
                         inputMode="decimal"
                         pattern="[0-9]*"
@@ -403,11 +429,11 @@ export const ProfitCalculator = () => {
 
               {/* Thind Card */}
               <div className="bg-gradient-to-br from-orange/10 to-orange/5 rounded-xl p-3 sm:p-4 border-2 border-orange relative overflow-hidden">
-                <div className="absolute top-0 right-0 bg-orange text-white text-[8px] sm:text-[10px] font-bold px-1.5 sm:px-2 py-0.5 rounded-bl-lg z-10">
+                <div className="absolute top-0 right-0 bg-orange-600 text-white text-[8px] sm:text-[10px] font-bold px-1.5 sm:px-2 py-0.5 rounded-bl-lg z-10">
                   +{Math.round((0.90 - 0.72) / 0.72 * 100)}% MORE
                 </div>
-                <p className="text-orange text-[10px] sm:text-xs font-semibold uppercase tracking-wider mb-1">Thind Transport</p>
-                <p className="text-xs sm:text-sm text-orange/70 mb-2 sm:mb-3">90% Split</p>
+                <p className="text-orange-600 text-[10px] sm:text-xs font-semibold uppercase tracking-wider mb-1">Thind Transport</p>
+                <p className="text-xs sm:text-sm text-orange-700 mb-2 sm:mb-3">90% Split</p>
                 
                 <div className="space-y-2 relative z-0">
                   <div>
@@ -427,10 +453,10 @@ export const ProfitCalculator = () => {
               <p className="text-sm text-gray-700 mb-3 font-semibold">Net Weekly Comparison</p>
               <div className="space-y-2">
                 <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
-                  <span className="text-xs text-steel w-auto sm:w-16 font-mono shrink-0">72%</span>
+                  <span className="text-xs text-gray-600 w-auto sm:w-16 font-mono shrink-0">72%</span>
                   <div className="flex-1 min-w-0 bg-gray-100 rounded-full h-6 overflow-hidden w-full">
                     <div 
-                      className="h-full bg-gray-400 rounded-full transition-all duration-500 flex items-center justify-end pr-2"
+                      className="h-full bg-gray-600 rounded-full transition-all duration-500 flex items-center justify-end pr-2"
                       style={{ width: `${Math.min(100, (competitorNetPay / thindNetPay) * 100)}%` }}
                     >
                       <span className="text-[10px] sm:text-xs text-white font-bold whitespace-nowrap">{formatCurrency(competitorNetPay)}</span>
@@ -438,10 +464,10 @@ export const ProfitCalculator = () => {
                   </div>
                 </div>
                 <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
-                  <span className="text-xs text-orange font-bold w-auto sm:w-16 font-mono shrink-0">90%</span>
+                  <span className="text-xs text-orange-600 font-bold w-auto sm:w-16 font-mono shrink-0">90%</span>
                   <div className="flex-1 min-w-0 bg-orange/20 rounded-full h-6 overflow-hidden w-full">
                     <div 
-                      className="h-full bg-gradient-to-r from-orange to-orange-500 rounded-full transition-all duration-500 flex items-center justify-end pr-2"
+                      className="h-full bg-gradient-to-r from-orange-700 to-orange-600 rounded-full transition-all duration-500 flex items-center justify-end pr-2"
                       style={{ width: '100%' }}
                     >
                       <span className="text-[10px] sm:text-xs text-white font-bold whitespace-nowrap">{formatCurrency(thindNetPay)}</span>
@@ -454,14 +480,14 @@ export const ProfitCalculator = () => {
             {/* Difference Callouts */}
             <div className="grid grid-cols-2 gap-2 sm:gap-3 mb-6">
               <div className="bg-green-50 border border-green-200 rounded-lg p-3 sm:p-4 text-center">
-                <p className="text-green-700 font-semibold text-[10px] sm:text-xs mb-1 uppercase tracking-wider">Weekly Extra</p>
-                <p className="text-lg sm:text-2xl font-black text-green-600">
+                <p className="text-green-800 font-semibold text-[10px] sm:text-xs mb-1 uppercase tracking-wider">Weekly Extra</p>
+                <p className="text-lg sm:text-2xl font-black text-green-700">
                   +{formatCurrency(weeklyDifference)}
                 </p>
               </div>
               <div className="bg-green-50 border border-green-200 rounded-lg p-3 sm:p-4 text-center">
-                <p className="text-green-700 font-semibold text-[10px] sm:text-xs mb-1 uppercase tracking-wider">Annual Extra</p>
-                <p className="text-lg sm:text-2xl font-black text-green-600">
+                <p className="text-green-800 font-semibold text-[10px] sm:text-xs mb-1 uppercase tracking-wider">Annual Extra</p>
+                <p className="text-lg sm:text-2xl font-black text-green-700">
                   +{formatCurrency(annualDifference)}
                 </p>
               </div>
@@ -477,7 +503,7 @@ export const ProfitCalculator = () => {
                 </div>
                 <div>
                   <p className="text-xs text-gray-600">Est. Net Income</p>
-                  <p className="text-base sm:text-lg font-black text-green-600">{formatCurrency(thindAnnualNet)}</p>
+                  <p className="text-base sm:text-lg font-black text-green-700">{formatCurrency(thindAnnualNet)}</p>
                 </div>
               </div>
             </div>
@@ -510,7 +536,7 @@ export const ProfitCalculator = () => {
             {/* CTA */}
             <Link 
               href="/apply" 
-              className="w-full py-4 bg-orange hover:bg-orange-600 text-white font-bold text-base sm:text-lg rounded-lg transition-all text-center shadow-cta hover:shadow-cta-hover flex items-center justify-center gap-2"
+              className="w-full py-4 bg-orange-600 hover:bg-orange-700 text-white font-bold text-base sm:text-lg rounded-lg transition-all text-center shadow-cta hover:shadow-cta-hover flex items-center justify-center gap-2"
             >
               <TrendingUp className="w-5 h-5 shrink-0" />
               <span className="truncate">Earn {formatCurrency(weeklyDifference)} More Weekly</span>
@@ -523,14 +549,16 @@ export const ProfitCalculator = () => {
                 Save Your Calculation
               </p>
               {emailSent ? (
-                <div className="flex items-center gap-2 text-green-600 bg-green-50 p-3 rounded-lg">
+                <div className="flex items-center gap-2 text-green-700 bg-green-50 p-3 rounded-lg">
                   <CheckCircle2 className="w-5 h-5 shrink-0" />
-                  <span className="text-sm font-medium">Calculation sent! Check your inbox.</span>
+                  <span className="text-sm font-medium">Estimate sent! Check your inbox.</span>
                 </div>
               ) : (
                 <div className="flex flex-col sm:flex-row gap-2">
                   <input 
+                    id="calc-email"
                     type="email"
+                    aria-label="Email address for your earnings estimate"
                     placeholder="your@email.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
@@ -549,6 +577,9 @@ export const ProfitCalculator = () => {
                     Email me this detailed breakdown
                   </button>
                 </div>
+              )}
+              {emailError && (
+                <p className="text-xs text-red-600 mt-2" role="alert">{emailError}</p>
               )}
               <p className="text-xs text-gray-500 mt-2">
                 We'll email your personalized earnings estimate. No spam, ever.

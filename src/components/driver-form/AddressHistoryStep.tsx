@@ -12,8 +12,9 @@ interface AddressHistoryStepProps {
   errors?: Record<string, string>
 }
 
+const RequiredMark = () => <span className="text-red-500 ml-1">*</span>
+
 export function AddressHistoryStep({ data, onChange, errors = {} }: AddressHistoryStepProps) {
-  const RequiredMark = () => <span className="text-red-500 ml-1">*</span>
   
   const inputClass = (field: string) => `
     w-full px-3 py-2 border rounded-lg transition-colors

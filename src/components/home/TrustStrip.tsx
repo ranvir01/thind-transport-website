@@ -2,17 +2,13 @@
 
 import { motion } from "framer-motion"
 import Image from "next/image"
-import { ShieldCheck, BadgeCheck, Award, Clock, MapPin, ExternalLink } from "lucide-react"
+import { ShieldCheck, BadgeCheck, Shield, Truck, MapPin, ExternalLink } from "lucide-react"
 import { COMPANY_INFO, FMCSA_LINKS, STATS } from "@/lib/constants"
 
 /**
  * Editorial trust bar: a real FMCSA compliance badge paired with an inline,
- * divider-separated credential row — verifiable authority next to the CTAs,
- * without a grid of identical bubble cards.
- *
- * Real, verifiable data is pulled from constants (USDOT, MC, location, years).
- * PLACEHOLDER stats below (safety standing, on-time %, coverage) are realistic
- * but should be replaced with the carrier's actual figures before launch.
+ * divider-separated credential row — every figure shown here is verifiable
+ * (USDOT, MC, insurance, fleet size, years in business).
  */
 
 const credentials = [
@@ -31,18 +27,17 @@ const credentials = [
     href: FMCSA_LINKS.safer,
   },
   {
-    icon: Award,
-    value: "A+",
-    label: "Safety rating",
-    sub: "Clean CSA record", // PLACEHOLDER: confirm current FMCSA/CSA standing
-    href: FMCSA_LINKS.safer,
+    icon: Shield,
+    value: "$1M+",
+    label: "Insured",
+    sub: "Liability coverage",
     highlight: true,
   },
   {
-    icon: Clock,
-    value: "98.5%", // PLACEHOLDER: replace with real on-time delivery rate
-    label: "On-time",
-    sub: "Delivery performance",
+    icon: Truck,
+    value: `${STATS.trucksInFleet}+`,
+    label: "Trucks",
+    sub: "2024 Freightliners",
   },
   {
     icon: MapPin,

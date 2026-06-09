@@ -373,11 +373,13 @@ export const CinematicNavbar = () => {
     return () => window.removeEventListener("scroll", handleScroll)
   }, [])
 
-  // Close dropdowns on route change
-  useEffect(() => {
+  // Close dropdowns on route change (state reset during render, no effect needed)
+  const [prevPathname, setPrevPathname] = useState(pathname)
+  if (prevPathname !== pathname) {
+    setPrevPathname(pathname)
     setActiveDropdown(null)
     setMobileMenuOpen(false)
-  }, [pathname])
+  }
 
   return (
     <>

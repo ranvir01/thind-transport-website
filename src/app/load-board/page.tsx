@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
@@ -36,10 +36,27 @@ interface Load {
 
 export default function LoadBoardPage() {
   const [loads, setLoads] = useState<Load[]>([])
-  const [filteredLoads, setFilteredLoads] = useState<Load[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [equipmentFilter, setEquipmentFilter] = useState("all")
   const [isLoading, setIsLoading] = useState(true)
+
+  // Filtering is derived state — no extra useState/useEffect needed
+  const filteredLoads = useMemo(() => {
+    let filtered = loads
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase()
+      filtered = filtered.filter(
+        (load) =>
+          load.origin.toLowerCase().includes(term) ||
+          load.destination.toLowerCase().includes(term) ||
+          load.commodity.toLowerCase().includes(term),
+      )
+    }
+    if (equipmentFilter !== "all") {
+      filtered = filtered.filter((load) => load.equipmentType === equipmentFilter)
+    }
+    return filtered
+  }, [searchTerm, equipmentFilter, loads])
 
   // Simulated load data
   useEffect(() => {
@@ -131,31 +148,12 @@ export default function LoadBoardPage() {
       }
     ]
     
-    setTimeout(() => {
+    const timer = setTimeout(() => {
       setLoads(sampleLoads)
-      setFilteredLoads(sampleLoads)
       setIsLoading(false)
     }, 1000)
+    return () => clearTimeout(timer)
   }, [])
-
-  // Filter loads based on search and equipment type
-  useEffect(() => {
-    let filtered = loads
-
-    if (searchTerm) {
-      filtered = filtered.filter(load => 
-        load.origin.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        load.destination.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        load.commodity.toLowerCase().includes(searchTerm.toLowerCase())
-      )
-    }
-
-    if (equipmentFilter !== "all") {
-      filtered = filtered.filter(load => load.equipmentType === equipmentFilter)
-    }
-
-    setFilteredLoads(filtered)
-  }, [searchTerm, equipmentFilter, loads])
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-50">
@@ -173,13 +171,14 @@ export default function LoadBoardPage() {
           <div className="text-center">
             <Badge className="mb-6 bg-white/20 backdrop-blur-md text-white border-white/30 px-4 py-2 text-sm font-bold">
               <Activity className="h-4 w-4 mr-1.5 text-green-300" />
-              Live Load Board
+              Load Board Preview
             </Badge>
             <h1 className="text-5xl md:text-6xl font-black mb-6 leading-tight">
-              Real-Time <span className="text-green-400">Available Loads</span>
+              The Freight <span className="text-green-400">We Run</span>
             </h1>
             <p className="text-xl text-white/90 max-w-3xl mx-auto leading-relaxed">
-              Premium freight opportunities updated every 30 seconds. Find your next profitable haul with competitive rates.
+              A representative sample of recent lanes and rates our drivers run. Current drivers see live
+              loads through dispatch — call us and we&apos;ll walk you through what&apos;s moving this week.
             </p>
           
             {/* Quick Stats */}
@@ -204,9 +203,9 @@ export default function LoadBoardPage() {
                 <div className="text-sm text-white/95 mt-1 font-semibold">Total Value</div>
               </Card>
               <Card className="p-5 text-center bg-white/10 backdrop-blur-md border-white/20 hover:bg-white/20 transition-all duration-300 group">
-                <Clock className="h-8 w-8 text-orange-300 mx-auto mb-3 group-hover:scale-110 transition-transform animate-pulse" />
-                <div className="font-black text-2xl text-white">LIVE</div>
-                <div className="text-sm text-white/95 mt-1 font-semibold">Real-time Updates</div>
+                <Clock className="h-8 w-8 text-orange-300 mx-auto mb-3 group-hover:scale-110 transition-transform" />
+                <div className="font-black text-2xl text-white">90%</div>
+                <div className="text-sm text-white/95 mt-1 font-semibold">Your Share of Gross</div>
               </Card>
             </div>
           </div>
@@ -261,8 +260,8 @@ export default function LoadBoardPage() {
           </div>
           <div className="mt-6 p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border border-green-200">
             <div className="flex items-center gap-2 text-sm font-medium text-green-800">
-              <Clock className="h-4 w-4 text-green-600 animate-pulse" />
-              <span>Loads update every 30 seconds • Last updated: {new Date().toLocaleTimeString()}</span>
+              <Clock className="h-4 w-4 text-green-600" />
+              <span>Sample lanes based on recent freight — call dispatch for what&apos;s moving right now</span>
             </div>
           </div>
         </Card>
@@ -412,10 +411,10 @@ export default function LoadBoardPage() {
               </div>
               <h3 className="font-bold text-gray-900 mb-2">Timing Matters</h3>
               <ul className="text-sm text-gray-700 space-y-1 font-medium">
-                <li>• Loads update every 30 seconds</li>
                 <li>• Act quickly on high-value loads</li>
-                <li>• Check multiple times per day</li>
+                <li>• Check with dispatch through the day</li>
                 <li>• Best rates often go fast</li>
+                <li>• Book backhauls before you deliver</li>
               </ul>
             </div>
             <div className="bg-white p-8 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 group hover:-translate-y-1">

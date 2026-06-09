@@ -24,8 +24,9 @@ const emptyLicense: LicenseEntry = {
   exp: '',
 }
 
+const RequiredMark = () => <span className="text-red-500 ml-1">*</span>
+
 export function CDLInfoStep({ data, onChange, errors = {} }: CDLInfoStepProps) {
-  const RequiredMark = () => <span className="text-red-500 ml-1">*</span>
   
   const inputClass = `
     w-full px-3 py-2 border border-gray-300 rounded-lg transition-colors
