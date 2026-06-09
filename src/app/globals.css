@@ -547,6 +547,7 @@
   .brand-page-shell [data-light] .text-gray-500,
   .brand-page-shell [data-light] .text-slate-700,
   .brand-page-shell [data-light] .text-slate-600,
+  .brand-page-shell [data-light] .text-slate-500,
   .brand-page-shell [data-light] .text-steel,
   .brand-page-shell [data-light] .text-green-800,
   .brand-page-shell [data-light] .text-green-700 {
@@ -562,12 +563,13 @@
   }
 
   .brand-page-shell [data-light] .text-orange-700 {
-    color: #c2410c !important;
+    color: #9a3412 !important;
   }
 
+  /* AA contrast on white (4.5:1+) — #c2410c instead of stock #ea580c */
   .brand-page-shell [data-light] .text-orange-600,
   .brand-page-shell [data-light] .text-orange-500 {
-    color: #ea580c !important;
+    color: #c2410c !important;
   }
 
   .brand-page-shell [data-light] .text-orange-400 {
@@ -1107,7 +1109,9 @@ button[aria-label="Contact us"]:hover {
   }
 }
 
-/* Hero entrance — CSS-only stagger so the headline paints before hydration */
+/* Hero entrance — CSS-only stagger so the headline paints before hydration.
+   The headline and lede animate transform only (no opacity) so they register
+   as LCP candidates on first paint. */
 @keyframes hero-rise {
   from {
     opacity: 0;
@@ -1119,8 +1123,22 @@ button[aria-label="Contact us"]:hover {
   }
 }
 
+@keyframes hero-lift {
+  from {
+    transform: translateY(18px);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
 .hero-stagger > * {
   animation: hero-rise 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.hero-stagger > h1,
+.hero-stagger > p {
+  animation-name: hero-lift;
 }
 
 .hero-stagger > *:nth-child(2) { animation-delay: 0.07s; }

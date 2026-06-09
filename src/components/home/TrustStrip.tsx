@@ -61,7 +61,6 @@ export function TrustStrip() {
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true }}
             className="group mx-auto flex items-center gap-4 lg:mx-0"
-            aria-label="Verify our FMCSA authority on SAFER"
           >
             <div className="relative h-24 w-24 flex-shrink-0 md:h-28 md:w-28">
               <Image
@@ -123,7 +122,6 @@ export function TrustStrip() {
                     target="_blank"
                     rel="noopener noreferrer"
                     className="group block transition-opacity hover:opacity-80"
-                    aria-label={`${item.label} ${item.value} — verify on FMCSA SAFER`}
                   >
                     {inner}
                   </a>

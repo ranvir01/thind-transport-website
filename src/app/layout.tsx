@@ -17,11 +17,15 @@ const barlowCondensed = Barlow_Condensed({
   weight: ["600", "700", "800"],
 })
 
+// display: "optional" — the font is preloaded and almost always ready by first
+// paint; on very slow connections we keep the fallback instead of triggering a
+// late repaint of the hero copy (which would push LCP out by seconds).
 const sourceSans = Source_Sans_3({
   subsets: ["latin"],
-  display: "swap",
+  display: "optional",
   variable: "--font-sans",
   weight: ["400", "500", "600", "700"],
+  adjustFontFallback: true,
 })
 
 // SEO-Optimized Metadata

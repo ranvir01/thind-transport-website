@@ -68,8 +68,8 @@ export const QuickQualify = () => {
     <section className="py-24 bg-gradient-to-b from-white to-slate-50">
         <div className="container max-w-4xl mx-auto">
             <div className="text-center mb-12">
-                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-100 text-blue-800 font-bold text-sm mb-4">
-                    <Clock className="w-4 h-4" /> 30-Second Pre-Check
+                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-steel-700 bg-steel-800/60 text-steel-200 font-bold text-sm mb-4">
+                    <Clock className="w-4 h-4 text-orange" /> 30-Second Pre-Check
                 </div>
                 <h2 className="text-3xl md:text-5xl font-black text-slate-900 mb-4">
                     See If You Qualify For <span className="text-green-700">Top Tier Pay</span>
@@ -151,7 +151,7 @@ export const QuickQualify = () => {
                             <div className="bg-green-50 border border-green-100 rounded-xl p-6 mb-8 max-w-md mx-auto">
                                 <p className="text-green-800 font-medium mb-2">Based on your answers, you are eligible for:</p>
                                 <ul className="space-y-2 text-left text-green-900 font-bold">
-                                    <li className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4" /> $1,500 - $2,500 Sign-On Bonus</li>
+                                    <li className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4" /> $1,000 - $2,500 Sign-On Bonus</li>
                                     <li className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4" /> Immediate Orientation Scheduling</li>
                                     <li className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4" /> Premium Equipment Assignment</li>
                                 </ul>

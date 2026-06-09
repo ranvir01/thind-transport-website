@@ -202,8 +202,8 @@ export const CommandBar = () => {
                 href="/apply" 
                 className={`px-4 py-2 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all hover:scale-105 active:scale-95 shadow-[0_0_10px_rgba(249,115,22,0.4)]
                   ${pathname === '/apply' 
-                    ? 'bg-orange-600 text-white ring-2 ring-orange-400/50' 
-                    : 'bg-orange-500 hover:bg-orange-600 text-white'
+                    ? 'bg-orange-700 text-white ring-2 ring-orange-400/50' 
+                    : 'bg-orange-600 hover:bg-orange-700 text-white'
                   }
                 `}
                 data-cursor="APPLY"
@@ -233,7 +233,7 @@ export const CommandBar = () => {
         <div className="pl-2 border-l border-white/10">
             <a 
               href={`tel:${COMPANY_INFO.phoneFormatted}`} 
-              className="group flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 rounded-xl text-[10px] font-black text-white uppercase tracking-widest shadow-[0_0_20px_rgba(249,115,22,0.3)] hover:shadow-[0_0_30px_rgba(249,115,22,0.5)] transition-all hover:-translate-y-0.5 active:translate-y-0" 
+              className="group flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-800 rounded-xl text-[10px] font-black text-white uppercase tracking-widest shadow-[0_0_20px_rgba(224,57,47,0.3)] hover:shadow-[0_0_30px_rgba(224,57,47,0.5)] transition-all hover:-translate-y-0.5 active:translate-y-0" 
               data-cursor="CALL"
             >
                 <Phone className="w-3 h-3" />

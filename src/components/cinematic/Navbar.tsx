@@ -446,7 +446,7 @@ export const CinematicNavbar = () => {
             {/* Apply Button */}
             <Link 
               href="/apply" 
-              className="hidden sm:flex items-center px-4 py-2 bg-orange hover:bg-orange-400 text-white font-bold rounded-full text-xs uppercase tracking-widest transition-all hover:shadow-cta-hover shadow-cta font-display" 
+              className="hidden sm:flex items-center px-4 py-2 bg-orange-600 hover:bg-orange-500 text-white font-bold rounded-full text-xs uppercase tracking-widest transition-all hover:shadow-cta-hover shadow-cta font-display" 
               data-cursor="APPLY"
             >
               Apply Now
