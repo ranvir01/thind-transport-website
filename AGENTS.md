@@ -22,4 +22,4 @@ For any visual or page change, `thind-brand-identity` + `responsive-performance`
 - Mobile-first: verify changed pages at 390px width.
 - No new heavy dependencies, popups, or gimmick animations.
 
-Additional history and debugging notes: `AI_AGENT_INSTRUCTIONS.md`, `DOCUMENTATION.md`.
+Setup guides live in `docs/` (database, deployment, email, driver onboarding).

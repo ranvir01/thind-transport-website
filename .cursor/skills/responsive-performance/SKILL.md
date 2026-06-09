@@ -30,7 +30,7 @@ Most driver applicants browse on phones (often on truck-stop Wi-Fi or weak LTE).
 ## How to Stay in Budget (Next.js App Router specifics)
 
 - Default to Server Components. Add `"use client"` only where interactivity/framer-motion requires it, and push it to the smallest leaf component — not whole pages.
-- `next/dynamic` for below-the-fold heavy components (carousels, charts/`recharts`, PDF preview). Never dynamic-import the hero.
+- `next/dynamic` for below-the-fold heavy components (carousels, PDF preview). Never dynamic-import the hero — it is a Server Component with CSS-only entrance animations on purpose (LCP must not wait for hydration).
 - Fonts load via `next/font` CSS variables (`--font-sans`, `--font-display`) — no `<link>` font tags, no FOUT-causing additions.
 - Reserve space for all media and embeds (explicit dimensions) — CLS regressions usually come from images, ads-style banners, or late-mounting marquees.
 - Animations follow the motion-and-animation skill (transform/opacity only).

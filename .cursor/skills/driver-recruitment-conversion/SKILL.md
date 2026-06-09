@@ -28,7 +28,7 @@ Land (home / pay-rates / ad page)
 4. **A human.** Owner story, dispatch team, driver testimonials with names. Reinforce the "we lift each other up" identity.
 5. **Low-friction apply.** Mobile-first forms (drivers apply from phones in truck stops), big tap targets, progress indicator, phone number field early so dispatch can call even on abandoned applications.
 
-## Form Rules (`/apply`, `/pre-qualify`, `src/components/driver-application/`)
+## Form Rules (`/apply`, `/pre-qualify`, `src/components/application/`)
 
 - Ask the minimum legally/operationally required; the DOT PDF generator fills the rest later.
 - One question group per screen on mobile; show step X of Y.
