@@ -18,6 +18,7 @@ import { PageBreadcrumb } from "@/components/shared/PageBreadcrumb"
 export const metadata: Metadata = {
   title: `About ${COMPANY_INFO.name}`,
   description: `Learn about ${COMPANY_INFO.name}, a family-run trucking company based in Kent, Washington.`,
+  alternates: { canonical: "/about" },
 }
 
 const milestones = [

@@ -6,6 +6,7 @@ import { ArrowLeft } from "lucide-react"
 export const metadata: Metadata = {
   title: "Owner Operator Pay Breakdown | 90% Split Explained",
   description: "Detailed explanation of how our 90% split works. No hidden fees. 100% fuel surcharge pass-through. See the math behind the highest paying trucking jobs.",
+  alternates: { canonical: "/pay-breakdown" },
 }
 
 export default function PayBreakdownPage() {

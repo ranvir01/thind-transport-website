@@ -25,6 +25,7 @@ export const metadata: Metadata = {
     "driver home time",
     "fuel discount program",
   ],
+  alternates: { canonical: "/benefits" },
 }
 
 const companyDriverBenefits = [

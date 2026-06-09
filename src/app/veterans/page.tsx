@@ -24,6 +24,7 @@ export const metadata: Metadata = {
     "veteran driver benefits",
     "trucking jobs for veterans",
   ],
+  alternates: { canonical: "/veterans" },
 }
 
 const veteranBenefits = [

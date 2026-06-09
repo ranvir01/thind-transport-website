@@ -11,6 +11,7 @@ import { Star, Users, Trophy, TrendingUp, Heart, ArrowRight, Quote, ThumbsUp } f
 export const metadata: Metadata = {
   title: `Driver Reviews & Testimonials | ${COMPANY_INFO.name}`,
   description: "Read real reviews from CDL drivers at Thind Transport. See what company drivers and owner operators say about working with us in Kent, WA.",
+  alternates: { canonical: "/testimonials" },
 }
 
 export default function TestimonialsPage() {

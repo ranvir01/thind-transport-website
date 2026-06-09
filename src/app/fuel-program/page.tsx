@@ -1,3 +1,4 @@
+import { Metadata } from "next"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
@@ -9,6 +10,13 @@ import {
 } from "lucide-react"
 import { COMPANY_INFO } from "@/lib/constants"
 import { PageBreadcrumb } from "@/components/shared/PageBreadcrumb"
+
+export const metadata: Metadata = {
+  title: "Fuel Card Program | Save $0.30-$0.75/Gallon",
+  description:
+    "Thind Transport's fuel card program gives owner operators fleet-level diesel discounts at major truck stops nationwide, with 100% fuel surcharge pass-through.",
+  alternates: { canonical: "/fuel-program" },
+}
 
 export default function FuelProgramPage() {
   return (

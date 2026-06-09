@@ -26,6 +26,7 @@ export const metadata: Metadata = {
     "truck maintenance",
     "driver health wellness",
   ],
+  alternates: { canonical: "/resources" },
 }
 
 const resourceCategories = [

@@ -6,7 +6,6 @@ import { ActiveBackground } from "@/components/ui/ActiveBackground"
 import { SmoothScroll } from "@/components/cinematic/SmoothScroll"
 import { CinematicFooter, CommandBar, MobileCommandBar } from "@/components/cinematic/Footer"
 import { BackToTop } from "@/components/shared/BackToTop"
-import { Toaster } from "@/components/ui/sonner"
 import { COMPANY_INFO } from "@/lib/constants"
 import { SchemaMarkup } from "@/components/features/SchemaMarkup"
 import { Providers } from "./providers"
@@ -60,10 +59,10 @@ export const metadata: Metadata = {
     type: "website",
     images: [
       {
-        url: "/branding/thind-transport-logo-white.svg",
-        width: 512,
-        height: 512,
-        alt: `${COMPANY_INFO.name} logo`,
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: `${COMPANY_INFO.name} — keep 90% of your gross. Family-run carrier in Kent, WA.`,
       },
     ],
   },
@@ -71,7 +70,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: `${COMPANY_INFO.name} | Drive for a Family-Run Carrier`,
     description: "90% gross for owner operators, $0.63/mile for company drivers, 2024 Cascadias, weekly pay, no forced dispatch.",
-    images: ["/branding/thind-transport-logo-white.svg"],
+    images: ["/og-image.png"],
   },
   robots: {
     index: true,
@@ -85,7 +84,7 @@ export const metadata: Metadata = {
     },
   },
   alternates: {
-    canonical: "https://thindtransport.com",
+    canonical: "/",
   },
 }
 
@@ -104,8 +103,6 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning className={`scroll-smooth ${barlowCondensed.variable} ${sourceSans.variable}`}>
       <head>
-        <link rel="canonical" href="https://thindtransport.com/" />
-        
         {/* Favicons */}
         <link rel="icon" href="/favicon.ico" sizes="32x32" />
         <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
@@ -113,13 +110,9 @@ export default function RootLayout({
         <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
         <link rel="manifest" href="/site.webmanifest" />
         <meta name="msapplication-TileColor" content="#0E1621" />
-        
+
         {/* Structured Data - Injected via SchemaMarkup component */}
         <SchemaMarkup />
-        
-        {/* Preconnect for performance */}
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
       </head>
       <body className={`${sourceSans.className} antialiased overflow-x-hidden`} suppressHydrationWarning>
         <Providers>
