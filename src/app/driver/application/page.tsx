@@ -355,7 +355,7 @@ export default function DriverApplicationPage() {
   // Show loading while checking auth
   if (status === "loading" || !isLoaded) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="portal-light min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="h-8 w-8 animate-spin text-orange-500 mx-auto mb-4" />
           <p className="text-gray-600">Loading...</p>
@@ -372,7 +372,7 @@ export default function DriverApplicationPage() {
   // Success Screen
   if (submitSuccess) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+      <div className="portal-light min-h-screen bg-gray-50 flex items-center justify-center p-4">
         <div className="bg-white rounded-2xl shadow-xl p-8 max-w-lg w-full text-center">
           <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
             <CheckCircle className="w-12 h-12 text-green-500" />
@@ -484,7 +484,7 @@ export default function DriverApplicationPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="portal-light min-h-screen bg-gray-50">
       {/* Header */}
       <header className="bg-white shadow-sm sticky top-0 z-50 border-b">
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">

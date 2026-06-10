@@ -17,6 +17,10 @@ npm run lint                   # ESLint 9 flat config (eslint.config.mjs)
 npm run generate:brand-assets  # regenerate favicons + og-image from the brand system
 ```
 
+## Local email testing
+
+Run `npx maildev --smtp 1025 --web 1080`, then set `SMTP_HOST=localhost` and `SMTP_PORT=1025` in `.env.local`. Every email the site sends (applications, portal confirmations, password resets) appears at `http://localhost:1080` — no real Gmail needed.
+
 ## Environment
 
 - Copy `.env.example` → `.env.local` (it documents every variable: SMTP, NEXTAUTH, POSTGRES_URL, DRIVER_INVITATION_CODE, SETUP_DB_TOKEN). Without Postgres credentials, public pages still render; only driver-portal/auth/database features fail — don't mistake that for broken code.

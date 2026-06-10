@@ -108,7 +108,7 @@ export default function DriverDashboardPage() {
   ]
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 pt-24 pb-8 px-4">
+    <div className="portal-light min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 pt-24 pb-8 px-4">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-8">
@@ -121,7 +121,7 @@ export default function DriverDashboardPage() {
           <Button
             variant="outline"
             onClick={() => signOut({ callbackUrl: "/driver/login" })}
-            className="self-start sm:self-auto"
+            className="self-start sm:self-auto bg-white border-gray-300 text-gray-700 hover:bg-gray-50 hover:text-gray-900"
           >
             <LogOut className="mr-2 h-4 w-4" />
             Sign Out
@@ -130,7 +130,7 @@ export default function DriverDashboardPage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
           {/* Application Status Card */}
-          <Card className="lg:col-span-2">
+          <Card variant="light" className="lg:col-span-2">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <ClipboardList className="h-5 w-5 text-orange-600" />
@@ -198,7 +198,7 @@ export default function DriverDashboardPage() {
           </Card>
 
           {/* Onboarding Journey */}
-          <Card>
+          <Card variant="light">
             <CardHeader>
               <CardTitle className="text-lg">Your Onboarding</CardTitle>
             </CardHeader>
@@ -238,7 +238,7 @@ export default function DriverDashboardPage() {
 
         {/* Quick Actions */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Card>
+          <Card variant="light">
             <CardHeader>
               <CardTitle className="text-lg">Profile</CardTitle>
             </CardHeader>
@@ -267,7 +267,7 @@ export default function DriverDashboardPage() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card variant="light">
             <CardHeader>
               <CardTitle className="text-lg">DOT Application</CardTitle>
             </CardHeader>
@@ -279,7 +279,7 @@ export default function DriverDashboardPage() {
               </p>
               <Button
                 variant={submitted ? "outline" : "default"}
-                className={`w-full ${submitted ? "" : "bg-orange-500 hover:bg-orange-600 text-white"}`}
+                className={`w-full ${submitted ? "bg-white border-gray-300 text-gray-700 hover:bg-gray-50 hover:text-gray-900" : "bg-orange-500 hover:bg-orange-600 text-white"}`}
                 size="sm"
                 onClick={() => router.push("/driver/application")}
               >
@@ -289,7 +289,7 @@ export default function DriverDashboardPage() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card variant="light">
             <CardHeader>
               <CardTitle className="text-lg">Talk to Us</CardTitle>
             </CardHeader>
@@ -298,13 +298,13 @@ export default function DriverDashboardPage() {
                 Dispatch and recruiting answer the phone — days, nights, and weekends.
               </p>
               <div className="space-y-2">
-                <Button variant="outline" className="w-full" size="sm" asChild>
+                <Button variant="outline" className="w-full bg-white border-gray-300 text-gray-700 hover:bg-gray-50 hover:text-gray-900" size="sm" asChild>
                   <a href={`tel:${COMPANY_INFO.phoneFormatted}`}>
                     <Phone className="mr-2 h-4 w-4" />
                     Call {COMPANY_INFO.phone}
                   </a>
                 </Button>
-                <Button variant="outline" className="w-full" size="sm" asChild>
+                <Button variant="outline" className="w-full bg-white border-gray-300 text-gray-700 hover:bg-gray-50 hover:text-gray-900" size="sm" asChild>
                   <a href={`mailto:${COMPANY_INFO.email}`}>
                     <Mail className="mr-2 h-4 w-4" />
                     Email Us
@@ -316,7 +316,7 @@ export default function DriverDashboardPage() {
         </div>
 
         {/* Company Info */}
-        <Card className="mt-6">
+        <Card variant="light" className="mt-6">
           <CardContent className="pt-6">
             <div className="text-center text-sm text-gray-600">
               <p className="font-semibold mb-2">Thind Transport LLC</p>

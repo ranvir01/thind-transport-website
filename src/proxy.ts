@@ -3,12 +3,17 @@ import type { NextRequest } from "next/server"
 import { getToken } from "next-auth/jwt"
 
 export default async function proxy(request: NextRequest) {
+  // NextAuth prefixes the cookie with __Secure- only when running over HTTPS,
+  // so derive the name from the actual protocol — not NODE_ENV. (Using NODE_ENV
+  // broke local production builds and any http deployment.)
+  const useSecureCookies =
+    request.nextUrl.protocol === "https:" ||
+    (process.env.NEXTAUTH_URL ?? "").startsWith("https://")
+
   const token = await getToken({
     req: request,
     secret: process.env.NEXTAUTH_SECRET,
-    cookieName: process.env.NODE_ENV === 'production'
-      ? '__Secure-authjs.session-token'
-      : 'authjs.session-token',
+    cookieName: useSecureCookies ? '__Secure-authjs.session-token' : 'authjs.session-token',
   })
 
   const { pathname } = request.nextUrl

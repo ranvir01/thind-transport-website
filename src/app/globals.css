@@ -1109,6 +1109,17 @@ button[aria-label="Contact us"]:hover {
   }
 }
 
+/* Light portal pages (dashboard, DOT wizard) — reset dark-theme text colors */
+.portal-light strong {
+  color: inherit;
+}
+.portal-light h1,
+.portal-light h2,
+.portal-light h3,
+.portal-light h4 {
+  color: #0f172a;
+}
+
 /* Hero entrance — CSS-only stagger so the headline paints before hydration.
    The headline and lede animate transform only (no opacity) so they register
    as LCP candidates on first paint. */
