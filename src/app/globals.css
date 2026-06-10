@@ -36,13 +36,6 @@
     --brand-gold: #f2a900;
     --brand-gold-soft: rgba(242, 169, 0, 0.13);
     --brand-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
-    --fleet-stripe: repeating-linear-gradient(
-      -45deg,
-      transparent,
-      transparent 8px,
-      rgba(224, 57, 47, 0.05) 8px,
-      rgba(224, 57, 47, 0.05) 16px
-    );
   }
 
   .dark {
@@ -72,8 +65,7 @@
     background-color: var(--brand-bg);
     background-image:
       radial-gradient(900px circle at 78% -5%, rgba(224, 57, 47, 0.12), transparent 45%),
-      radial-gradient(700px circle at 5% 8%, rgba(242, 169, 0, 0.06), transparent 40%),
-      var(--fleet-stripe);
+      radial-gradient(700px circle at 5% 8%, rgba(242, 169, 0, 0.06), transparent 40%);
     background-attachment: fixed;
     color: var(--brand-copy-strong);
     font-family: var(--font-sans), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -250,8 +242,7 @@
   .brand-page-shell {
     background-color: var(--brand-bg-soft);
     background-image:
-      radial-gradient(800px circle at 80% 0%, rgba(224, 57, 47, 0.1), transparent 42%),
-      var(--fleet-stripe);
+      radial-gradient(800px circle at 80% 0%, rgba(224, 57, 47, 0.1), transparent 42%);
   }
 
   .brand-section-panel {
@@ -325,25 +316,34 @@
     color: transparent;
   }
 
-  /* Hi-vis hazard stripe — red + gold for a working-fleet feel */
-  .fleet-safety-stripe {
-    height: 4px;
-    background: repeating-linear-gradient(
-      -45deg,
-      var(--brand-accent) 0,
-      var(--brand-accent) 16px,
-      var(--brand-gold) 16px,
-      var(--brand-gold) 32px
-    );
-    opacity: 0.85;
+  /* True-white chip for partner/shipper logos — exempt from the dark bg-white override */
+  .logo-chip {
+    background-color: #ffffff !important;
   }
 
-  /* Angled dividers so the page stops feeling like stacked boxes */
-  .section-clip-top {
-    clip-path: polygon(0 2.5vw, 100% 0, 100% 100%, 0 100%);
+  /* Clean horizontal brand accent — replaces the old diagonal hazard stripe */
+  .fleet-accent-line {
+    height: 3px;
+    background: linear-gradient(90deg, var(--brand-accent) 0%, var(--brand-gold) 55%, transparent 100%);
   }
-  .section-clip-bottom {
-    clip-path: polygon(0 0, 100% 0, 100% calc(100% - 2.5vw), 0 100%);
+
+  /* Slow Ken Burns drift for photographic bands. Pairs with overflow-hidden parents. */
+  .photo-kenburns {
+    animation: photo-kenburns 24s ease-in-out infinite alternate;
+    will-change: transform;
+  }
+  @keyframes photo-kenburns {
+    from {
+      transform: scale(1);
+    }
+    to {
+      transform: scale(1.08);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .photo-kenburns {
+      animation: none;
+    }
   }
 
   /* Soft floating accent orbs for section backgrounds */

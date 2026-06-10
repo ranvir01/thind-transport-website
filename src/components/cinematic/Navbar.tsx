@@ -388,7 +388,7 @@ export const CinematicNavbar = () => {
           scrolled ? "border-steel-700 bg-navy-900/98 shadow-brand" : "border-steel-800/80 bg-navy-900/95"
         } backdrop-blur-sm`}
       >
-        <div className="fleet-safety-stripe" />
+        <div className="fleet-accent-line" />
         <nav className="container flex items-center justify-between gap-4 h-14 md:h-16 px-4">
             {/* Wordmark — understated text identity, not a boxed logo */}
             <Link 

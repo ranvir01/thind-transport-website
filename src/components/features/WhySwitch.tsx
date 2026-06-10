@@ -125,8 +125,8 @@ export const WhySwitch = () => {
                       <X className="w-4 h-4 text-red-500" />
                     </div>
                     <div>
-                      <span className="text-xs font-bold text-gray-500 uppercase tracking-wider block">Competitors</span>
-                      <span className="text-sm text-gray-600">
+                      <span className="text-xs font-bold text-steel-500 uppercase tracking-wider block">Competitors</span>
+                      <span className="text-sm text-steel-400">
                         {row.competitor}
                       </span>
                     </div>

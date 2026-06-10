@@ -56,7 +56,7 @@ export function FreightYouKnow() {
           {loop.map((partner, index) => (
             <div
               key={`${partner.name}-${index}`}
-              className="flex h-16 w-36 flex-shrink-0 items-center justify-center rounded-fleet border border-steel-700/60 bg-white px-5 shadow-brand md:h-20 md:w-44"
+              className="logo-chip flex h-16 w-36 flex-shrink-0 items-center justify-center rounded-fleet border border-steel-700/60 px-5 shadow-brand md:h-20 md:w-44"
               title={partner.name}
             >
               <div className="relative h-9 w-full md:h-10">

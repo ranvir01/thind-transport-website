@@ -92,7 +92,7 @@ export const CinematicHero = () => {
         </div>
       </div>
 
-      <div className="absolute bottom-0 left-0 right-0 fleet-safety-stripe z-10" />
+      <div className="absolute bottom-0 left-0 right-0 z-10 h-px bg-gradient-to-r from-transparent via-orange/50 to-transparent" />
     </section>
   )
 }

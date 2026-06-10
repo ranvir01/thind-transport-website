@@ -32,7 +32,6 @@ export const InfiniteTicker = () => {
 
   return (
     <div className="relative w-full py-4 overflow-hidden bg-navy-800 border-y border-steel-800">
-      <div className="fleet-safety-stripe absolute top-0 left-0 right-0" />
       <div className="flex whitespace-nowrap pt-1">
         <motion.div
           className="flex whitespace-nowrap items-center"

@@ -1,4 +1,5 @@
 import { Metadata } from "next"
+import Image from "next/image"
 import Link from "next/link"
 import { 
   DollarSign, Heart, Shield, Clock, Home, Truck, 
@@ -495,8 +496,17 @@ export default function BenefitsPage() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-16 bg-navy">
-        <div className="container">
+      <section className="relative overflow-hidden py-16 md:py-24 bg-navy">
+        <Image
+          src="/images/generated/yard-morning-kent.webp"
+          alt=""
+          aria-hidden
+          fill
+          sizes="100vw"
+          className="object-cover"
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-navy/90 via-navy/70 to-navy/90" />
+        <div className="container relative">
           <div className="max-w-3xl mx-auto text-center">
             <h2 className="text-3xl md:text-4xl font-black text-white mb-4">
               Ready to Experience These Benefits?

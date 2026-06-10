@@ -1,5 +1,6 @@
 import { Metadata } from "next"
 import Script from "next/script"
+import Image from "next/image"
 import Link from "next/link"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -244,18 +245,27 @@ export default function RoutesPage() {
           </div>
         </section>
 
-        <section className="bg-orange py-16">
-          <div className="container text-center">
-            <h2 className="mb-4 text-3xl font-black text-navy md:text-4xl">
+        <section className="relative overflow-hidden bg-navy py-16 md:py-24">
+          <Image
+            src="/images/generated/truck-mountain-pass.webp"
+            alt=""
+            aria-hidden
+            fill
+            sizes="100vw"
+            className="object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-navy/90 via-navy/75 to-navy/90" />
+          <div className="container relative text-center">
+            <h2 className="mb-4 text-3xl font-black text-white md:text-4xl">
               Want To Talk Through Your Best Route Fit?
             </h2>
-            <p className="mx-auto mb-8 max-w-2xl text-lg font-medium text-navy">
+            <p className="mx-auto mb-8 max-w-2xl text-lg font-medium text-white/90">
               Tell us your experience level, trailer background, and home-time preferences. We&apos;ll help you figure out which conversations make sense.
             </p>
             <div className="mb-6 flex flex-col justify-center gap-4 sm:flex-row">
               <Button
                 size="lg"
-                className="font-bold text-base !bg-[#001F3F] !from-[#001F3F] !to-[#002B5C] text-white hover:!bg-[#002B5C]"
+                className="bg-orange font-bold text-base text-white hover:bg-orange-600"
                 asChild
               >
                 <Link href="/apply">
@@ -266,7 +276,7 @@ export default function RoutesPage() {
               <Button
                 size="lg"
                 variant="outline"
-                className="border-2 border-[#001F3F] !bg-transparent font-bold text-base text-[#001F3F] hover:!bg-[#001F3F]/10"
+                className="border-2 border-white/40 !bg-white/10 font-bold text-base text-white backdrop-blur-sm hover:!bg-white/20"
                 asChild
               >
                 <Link href={`tel:${COMPANY_INFO.phoneFormatted}`}>
@@ -275,7 +285,7 @@ export default function RoutesPage() {
                 </Link>
               </Button>
             </div>
-            <div className="flex flex-wrap items-center justify-center gap-4 text-sm font-medium text-navy">
+            <div className="flex flex-wrap items-center justify-center gap-4 text-sm font-medium text-white/85">
               <span className="flex items-center gap-1">
                 <CheckCircle2 className="h-4 w-4" />
                 CDL-A required

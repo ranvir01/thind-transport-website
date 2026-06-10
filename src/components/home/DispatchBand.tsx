@@ -15,11 +15,10 @@ export function DispatchBand() {
           alt="Thind Transport dispatch team supporting drivers on the road"
           fill
           sizes="100vw"
-          className="object-cover"
+          className="photo-kenburns object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-r from-navy-900 via-navy-900/85 to-navy-900/40" />
         <div className="absolute inset-0 bg-gradient-to-t from-navy-900 via-transparent to-navy-900/30" />
-        <div className="fleet-safety-stripe absolute left-0 right-0 top-0" />
 
         <div className="container relative z-10 flex min-h-[60vh] items-center px-4 py-16 md:min-h-[70vh] md:py-24">
           <motion.div

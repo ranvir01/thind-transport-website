@@ -357,18 +357,18 @@ export default function FleetPage() {
           }}
         />
 
-        {/* Hero image - positioned right */}
-        <div className="absolute right-0 top-0 bottom-0 w-1/2 hidden lg:block">
+        {/* Hero image — full-bleed on mobile, right half on desktop */}
+        <div className="absolute inset-0 lg:left-auto lg:right-0 lg:w-1/2">
           <div className="relative h-full">
             <Image
               src="/images/generated/hero-cascadia-highway.webp"
               alt="Freightliner Cascadia from the Thind Transport fleet rolling on a Pacific Northwest highway"
               fill
-              className="object-cover object-center opacity-50"
+              className="object-cover object-center opacity-30 lg:opacity-50"
               priority
-              sizes="50vw"
+              sizes="(max-width: 1024px) 100vw, 50vw"
             />
-            <div className="absolute inset-0 bg-gradient-to-r from-navy via-navy/80 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-b from-navy/70 via-navy/60 to-navy lg:bg-gradient-to-r lg:from-navy lg:via-navy/80 lg:to-transparent" />
           </div>
         </div>
 
@@ -552,7 +552,7 @@ export default function FleetPage() {
             alt="Thind Transport Freightliner Cascadias and Volvo VNLs lined up at the Kent, Washington yard"
             fill
             sizes="100vw"
-            className="object-cover"
+            className="photo-kenburns object-cover"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-navy via-navy/30 to-navy/10" />
           <div className="absolute bottom-0 left-0 right-0">
@@ -1028,18 +1028,8 @@ export default function FleetPage() {
 
       {/* Final CTA Section */}
       <section className="py-20 md:py-28 bg-gradient-to-br from-orange via-orange-500 to-orange-600 relative overflow-hidden">
-        {/* Background pattern */}
-        <div 
-          className="absolute inset-0 opacity-10"
-          style={{
-            backgroundImage: `linear-gradient(45deg, rgba(0,0,0,0.1) 25%, transparent 25%),
-                             linear-gradient(-45deg, rgba(0,0,0,0.1) 25%, transparent 25%),
-                             linear-gradient(45deg, transparent 75%, rgba(0,0,0,0.1) 75%),
-                             linear-gradient(-45deg, transparent 75%, rgba(0,0,0,0.1) 75%)`,
-            backgroundSize: '20px 20px',
-            backgroundPosition: '0 0, 0 10px, 10px -10px, -10px 0px'
-          }}
-        />
+        {/* Soft radial glow instead of patterned backdrop */}
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(255,255,255,0.18),_transparent_60%)]" />
 
         <div className="container relative px-4">
           <motion.div 

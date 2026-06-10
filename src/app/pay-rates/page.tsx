@@ -1,4 +1,5 @@
 import { Metadata } from "next"
+import Image from "next/image"
 import { PayCalculator } from "@/components/features/PayCalculator"
 import { PayRateVisualizations } from "@/components/features/PayRateVisualizations"
 import { JobDetailsDialog } from "@/components/features/JobDetailsDialog"
@@ -47,12 +48,17 @@ export default function PayRatesPage() {
       <PageBreadcrumb pageName="Pay Rates" category="Drivers" />
       
       {/* Enhanced Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-[#001F3F] via-[#003366] to-[#001F3F] text-white py-20">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-blue-400/10 via-transparent to-transparent" />
-        
-        {/* Decorative elements */}
-        <div className="absolute -top-24 -right-24 w-96 h-96 bg-orange-500/10 rounded-full blur-3xl" />
-        <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-blue-400/10 rounded-full blur-3xl" />
+      <section className="relative overflow-hidden bg-navy text-white py-20 md:py-28">
+        <Image
+          src="/images/generated/truck-night-highway.webp"
+          alt=""
+          aria-hidden
+          fill
+          priority
+          sizes="100vw"
+          className="object-cover"
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-navy/85 via-navy/70 to-navy/95" />
         
         <div className="container relative">
           <div className="max-w-4xl mx-auto text-center">

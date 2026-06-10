@@ -27,8 +27,8 @@ export const ThindPromise = () => {
           >
             <div className="relative aspect-[4/5] overflow-hidden rounded-fleet-lg border border-steel-700/70 shadow-2xl">
               <Image
-                src="/images/generated/fleet-kent-wa.png"
-                alt="Thind Transport trucks at the Kent, Washington home base"
+                src="/images/generated/yard-morning-kent.webp"
+                alt="Sunrise over the Thind Transport yard in Kent, Washington with Mount Rainier on the horizon"
                 fill
                 sizes="(max-width: 768px) 90vw, 40vw"
                 className="object-cover"
