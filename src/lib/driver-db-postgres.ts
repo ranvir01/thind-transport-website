@@ -99,6 +99,33 @@ export async function initializeDatabase() {
   }
 }
 
+// Self-healing schema: newer tables/columns are created on demand so production
+// keeps working without a manual setup step after deploys.
+let schemaEnsured = false
+async function ensureSchema() {
+  if (schemaEnsured) return
+  try {
+    await sql`ALTER TABLE applications ADD COLUMN IF NOT EXISTS status VARCHAR(30) DEFAULT 'submitted'`
+    await sql`
+      CREATE TABLE IF NOT EXISTS public_applications (
+        id VARCHAR(255) PRIMARY KEY,
+        first_name VARCHAR(255) NOT NULL,
+        last_name VARCHAR(255) NOT NULL,
+        email VARCHAR(255) NOT NULL,
+        phone VARCHAR(50) NOT NULL,
+        driver_type VARCHAR(100),
+        data JSONB NOT NULL,
+        email_delivered BOOLEAN DEFAULT FALSE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `
+    await sql`CREATE INDEX IF NOT EXISTS idx_public_applications_email ON public_applications(email)`
+    schemaEnsured = true
+  } catch (error) {
+    console.error("Schema ensure error:", error)
+  }
+}
+
 // Verify invitation code
 export async function verifyInvitationCode(code: string): Promise<boolean> {
   return code === (process.env.DRIVER_INVITATION_CODE || "THIND-2026")
@@ -209,6 +236,7 @@ export async function findDriverById(id: string): Promise<Driver | null> {
 // Save application
 export async function saveApplication(driverId: string, applicationData: any): Promise<Application> {
   try {
+    await ensureSchema()
     const id = `app_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
 
     await sql`
@@ -244,6 +272,7 @@ export async function getLatestApplicationForDriver(driverId: string): Promise<{
   hasPdf: boolean
 } | null> {
   try {
+    await ensureSchema()
     const result = await sql`
       SELECT id, status, submitted_at as "submittedAt", pdf_path as "pdfPath"
       FROM applications
@@ -275,6 +304,7 @@ export async function savePublicApplication(record: {
   data: any
   emailDelivered: boolean
 }): Promise<PublicApplication> {
+  await ensureSchema()
   const id = `pub_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
   await sql`
     INSERT INTO public_applications (id, first_name, last_name, email, phone, driver_type, data, email_delivered)
@@ -297,6 +327,7 @@ export async function markPublicApplicationEmailed(id: string) {
 // Has this email submitted a public application? (used to waive the invitation code)
 export async function hasPublicApplication(email: string): Promise<boolean> {
   try {
+    await ensureSchema()
     const result = await sql`
       SELECT id FROM public_applications WHERE email = ${email.toLowerCase()} LIMIT 1
     `
