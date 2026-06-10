@@ -11,6 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { COMPANY_INFO, PAY_RATES, BENEFITS } from "@/lib/constants"
 import { PageBreadcrumb } from "@/components/shared/PageBreadcrumb"
+import { PageHero } from "@/components/shared/PageHero"
 
 export const metadata: Metadata = {
   title: `Driver Benefits & Perks | ${COMPANY_INFO.name}`,
@@ -289,27 +290,17 @@ export default function BenefitsPage() {
       <PageBreadcrumb pageName="Benefits" category="Drivers" />
       
       {/* Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-navy via-blue-900 to-navy text-white py-24">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-orange/20 via-transparent to-transparent" />
-        <div className="absolute -top-24 -right-24 w-96 h-96 bg-orange/10 rounded-full blur-3xl" />
-        <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-blue-400/10 rounded-full blur-3xl" />
-        
-        <div className="container relative">
-          <div className="max-w-4xl mx-auto text-center">
-            <Badge className="mb-6 bg-white/20 backdrop-blur-md text-white border-white/30 px-5 py-2.5 text-sm font-bold">
-              <Gift className="h-4 w-4 mr-1.5 inline" />
-              Industry-Leading Benefits
-            </Badge>
-            <h1 className="text-5xl md:text-6xl font-black mb-6 leading-tight">
-              Benefits That Actually <span className="text-orange">Matter</span>
-            </h1>
-            <p className="text-xl text-white/90 leading-relaxed max-w-3xl mx-auto">
-              We believe drivers deserve more than just a paycheck. From health coverage to retirement plans,
-              from flexible schedules to modern equipment - we invest in your success and wellbeing.
-            </p>
-          </div>
-        </div>
-      </section>
+      <PageHero
+        image="/images/generated/driver-cab-interior.webp"
+        imageAlt="Inside a Thind Transport sleeper cab — the equipment behind the benefits"
+        eyebrow="Driver Benefits"
+        title={
+          <>
+            Benefits That Actually <span className="text-orange">Matter</span>
+          </>
+        }
+        description="More than a paycheck: health coverage, retirement, flexible home time, and modern equipment. We invest in your success and wellbeing."
+      />
 
       {/* Quick Stats */}
       <section className="py-8 -mt-8 relative z-10">

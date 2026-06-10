@@ -15,9 +15,9 @@ photorealistic, no text baked in, no identifiable faces. New raster assets must 
 | File | Subject | Used in |
 |---|---|---|
 | `hero-poster.webp` | Hero video poster | `cinematic/HeroBackground.tsx` |
-| `hero-cascadia-highway.webp` | Cascadia on PNW highway, golden hour | `fleet/page.tsx` hero, `about/page.tsx` CTA band |
+| `hero-cascadia-highway.webp` | Cascadia on PNW highway, golden hour | `fleet/page.tsx` hero, `about/page.tsx` CTA band, `routes/page.tsx` hero |
 | `fleet-lineup-kent.webp` | 5-truck lineup at Kent yard | `fleet/page.tsx` yard band, `about/page.tsx` footprint card |
-| `driver-cab-interior.webp` | Over-shoulder sleeper cab at golden hour | `home/EquipmentSection.tsx` comfort band, `pay-breakdown/page.tsx` CTA band |
+| `driver-cab-interior.webp` | Over-shoulder sleeper cab at golden hour | `home/EquipmentSection.tsx` comfort band, `pay-breakdown/page.tsx` CTA band, `benefits/page.tsx` hero |
 | `truck-mountain-pass.webp` | Truck climbing pass, Rainier behind | `about/page.tsx` hero, `routes/page.tsx` CTA band |
 | `driver-pretrip-walkaround.webp` | Driver pre-trip inspection (no face) | `about/page.tsx` story photo, `testimonials/page.tsx` CTA band |
 | `truck-night-highway.webp` | Night lane outside Seattle | `pay-breakdown/page.tsx` hero, `pay-rates/page.tsx` hero |
@@ -34,4 +34,5 @@ photorealistic, no text baked in, no identifiable faces. New raster assets must 
 | `trailer-dry-van.png`, `trailer-reefer.png`, `trailer-flatbed.png` | `home/EquipmentSection.tsx`, `fleet/page.tsx` trailer cards |
 | `driver-portrait-1/2/3.png` | `home/SuccessStoriesSection.tsx` |
 | `fmcsa-compliance-badge.png` | `home/TrustStrip.tsx` |
-| `hero-fleet-sunset.png`, `fleet-aerial-view.png`, `fleet-manager.png`, `fleet-kent-wa.png` | Unused — candidates for removal or reuse |
+| `fleet-kent-wa.png` | `testimonials/page.tsx` hero |
+| `hero-fleet-sunset.png`, `fleet-aerial-view.png`, `fleet-manager.png` | Unused — candidates for removal or reuse |

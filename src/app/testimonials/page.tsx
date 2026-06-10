@@ -5,6 +5,7 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { COMPANY_INFO, STATS } from "@/lib/constants"
 import { PageBreadcrumb } from "@/components/shared/PageBreadcrumb"
+import { PageHero } from "@/components/shared/PageHero"
 import { Users, TrendingUp, Heart, ArrowRight, Phone } from "lucide-react"
 
 export const metadata: Metadata = {
@@ -38,21 +39,18 @@ export default function TestimonialsPage() {
       <PageBreadcrumb pageName="Testimonials" category="Drivers" />
 
       {/* Hero */}
-      <section className="relative overflow-hidden py-20 md:py-24 border-b border-steel-800">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-orange/10 via-transparent to-transparent" />
-        <div className="container relative px-4">
-          <div className="max-w-3xl mx-auto text-center">
-            <span className="fleet-badge mb-5">Driver feedback</span>
-            <h1 className="text-white mb-5">
-              Straight talk from <span className="text-orange">our drivers</span>
-            </h1>
-            <p className="text-lg md:text-xl text-steel-300 leading-relaxed">
-              No inflated numbers, no stock-photo drivers. Here&apos;s what the people who run our freight
-              say about the split, the dispatch, and the equipment.
-            </p>
-          </div>
-        </div>
-      </section>
+      <PageHero
+        image="/images/generated/fleet-kent-wa.png"
+        imageAlt="Thind Transport trucks at the Kent, Washington home base"
+        eyebrow="Driver Feedback"
+        title={
+          <>
+            Straight talk from <span className="text-orange">our drivers</span>
+          </>
+        }
+        description="No inflated numbers, no stock-photo drivers. Here's what the people who run our freight say about the split, the dispatch, and the equipment."
+        primaryLabel="Start Your Application"
+      />
 
       {/* Testimonials Carousel */}
       <section className="py-16 md:py-20">

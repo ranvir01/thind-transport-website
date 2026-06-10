@@ -19,6 +19,7 @@ import { COMPANY_INFO, PAY_RATES } from "@/lib/constants"
 import { RouteMapVisualization } from "@/components/features/RouteMapVisualization"
 import { FAQAccordion } from "@/components/shared/FAQAccordion"
 import { PageBreadcrumb } from "@/components/shared/PageBreadcrumb"
+import { PageHero } from "@/components/shared/PageHero"
 import { MARKET_DATA } from "@/lib/market-data"
 
 export const metadata: Metadata = {
@@ -110,44 +111,24 @@ export default function RoutesPage() {
       <div className="brand-page-shell min-h-screen">
         <PageBreadcrumb pageName="Routes & Lanes" category="Drivers" />
 
-        <section className="relative overflow-hidden bg-navy pb-24 pt-8 text-white">
-          <div className="absolute inset-0 opacity-10">
-            <div
-              className="absolute inset-0"
-              style={{
-                backgroundImage:
-                  "linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px)",
-                backgroundSize: "40px 40px",
-              }}
-            />
+        <PageHero
+          image="/images/generated/hero-cascadia-highway.webp"
+          imageAlt="Thind Transport truck running a Pacific Northwest highway lane"
+          eyebrow="CDL-A Route Overview"
+          title={
+            <>
+              Routes That Match <span className="text-orange">How You Want To Run</span>
+            </>
+          }
+          description="Local, regional, and OTR — the right fit depends on your experience, trailer background, and home-time needs. Here's how each one runs."
+          primaryLabel="Find Your Fit"
+        >
+          <div className="mt-8 flex flex-wrap gap-3 text-sm font-medium text-white/90">
+            <span className="rounded-lg border border-white/15 bg-white/10 px-4 py-2">48-state reach</span>
+            <span className="rounded-lg border border-white/15 bg-white/10 px-4 py-2">Flatbed, reefer, dry van</span>
+            <span className="rounded-lg border border-white/15 bg-white/10 px-4 py-2">Kent, WA base</span>
           </div>
-
-          <div className="container relative z-10">
-            <div className="mx-auto max-w-4xl text-center">
-              <Badge className="mb-4 border-0 bg-orange-500/25 px-4 py-2 text-sm font-bold text-orange-300">
-                CDL-A Route Overview
-              </Badge>
-              <h1 className="mb-4 text-4xl font-black tracking-tight md:text-6xl">
-                Routes That Match <span className="text-orange">How You Want To Run</span>
-              </h1>
-              <p className="mx-auto mb-8 max-w-3xl text-lg font-medium text-white/90">
-                We simplified this page to focus on the route types drivers actually ask about. Local, regional, and OTR discussions all depend on experience, trailer type, and current freight needs.
-              </p>
-
-              <div className="flex flex-wrap justify-center gap-4">
-                <div className="rounded-lg border border-white/10 bg-white/10 px-4 py-2">
-                  48-state reach
-                </div>
-                <div className="rounded-lg border border-white/10 bg-white/10 px-4 py-2">
-                  Flatbed, reefer, dry van
-                </div>
-                <div className="rounded-lg border border-white/10 bg-white/10 px-4 py-2">
-                  Kent, WA base
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
+        </PageHero>
 
         <section className="bg-[#101926] py-16">
           <div className="container">

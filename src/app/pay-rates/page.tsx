@@ -1,5 +1,4 @@
 import { Metadata } from "next"
-import Image from "next/image"
 import { PayCalculator } from "@/components/features/PayCalculator"
 import { PayRateVisualizations } from "@/components/features/PayRateVisualizations"
 import { JobDetailsDialog } from "@/components/features/JobDetailsDialog"
@@ -11,6 +10,7 @@ import {
 } from "lucide-react"
 import { COMPANY_INFO, PAY_RATES } from "@/lib/constants"
 import { PageBreadcrumb } from "@/components/shared/PageBreadcrumb"
+import { PageHero } from "@/components/shared/PageHero"
 
 export const metadata: Metadata = {
   title: `Pay Rates - 90% O/O Split, ${PAY_RATES.companyDriver.regional.perMile}/mi Company | ${COMPANY_INFO.name}`,
@@ -48,33 +48,19 @@ export default function PayRatesPage() {
       <PageBreadcrumb pageName="Pay Rates" category="Drivers" />
       
       {/* Enhanced Hero Section */}
-      <section className="relative overflow-hidden bg-navy text-white py-20 md:py-28">
-        <Image
-          src="/images/generated/truck-night-highway.webp"
-          alt=""
-          aria-hidden
-          fill
-          priority
-          sizes="100vw"
-          className="object-cover"
-        />
-        <div className="absolute inset-0 bg-gradient-to-b from-navy/85 via-navy/70 to-navy/95" />
-        
-        <div className="container relative">
-          <div className="max-w-4xl mx-auto text-center">
-            <Badge className="mb-6 bg-white/10 backdrop-blur-md text-white border-white/20 px-5 py-2.5 text-sm font-bold">
-              <DollarSign className="h-4 w-4 mr-1.5 inline text-orange-400" />
-              Industry-Leading Compensation
-            </Badge>
-            <h1 className="text-5xl md:text-6xl font-black mb-6 leading-tight">
-              Transparent <span className="text-orange-400">Pay Rates</span>
-            </h1>
-            <p className="text-xl text-white/90 leading-relaxed max-w-3xl mx-auto">
-              No hidden fees. No surprises. Just straightforward, competitive pay that rewards your hard work.
-            </p>
-          </div>
-        </div>
-      </section>
+      <PageHero
+        image="/images/generated/truck-night-highway.webp"
+        imageAlt="Thind Transport truck running a night lane outside Seattle"
+        eyebrow="Industry-Leading Compensation"
+        title={
+          <>
+            Transparent <span className="text-orange">Pay Rates</span>
+          </>
+        }
+        description="No hidden fees. No surprises. Just straightforward, competitive pay — 90% split for owner-operators, $0.63/mile for company drivers."
+        primaryLabel="See What You'd Earn"
+        primaryHref="/#calculator"
+      />
 
       {/* Position Cards */}
       <section className="py-16 -mt-8">

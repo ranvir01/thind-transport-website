@@ -2,7 +2,6 @@ import { Metadata } from "next"
 import Image from "next/image"
 import Link from "next/link"
 import {
-  Building2,
   Calendar,
   MapPin,
   Phone,
@@ -15,6 +14,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { COMPANY_INFO, STATS } from "@/lib/constants"
 import { PageBreadcrumb } from "@/components/shared/PageBreadcrumb"
+import { PageHero } from "@/components/shared/PageHero"
 
 export const metadata: Metadata = {
   title: `About ${COMPANY_INFO.name}`,
@@ -68,32 +68,18 @@ export default function AboutPage() {
     <div className="brand-page-shell min-h-screen">
       <PageBreadcrumb pageName="About Us" category="Company" />
 
-      <section className="relative overflow-hidden bg-navy py-28 text-white md:py-36">
-        <Image
-          src="/images/generated/truck-mountain-pass.webp"
-          alt="Thind Transport truck climbing a Washington mountain pass with Mount Rainier in the distance"
-          fill
-          priority
-          sizes="100vw"
-          className="object-cover"
-        />
-        <div className="absolute inset-0 bg-gradient-to-b from-navy/80 via-navy/60 to-navy/90" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-orange/20 via-transparent to-transparent" />
-        <div className="container relative">
-          <div className="mx-auto max-w-4xl text-center">
-            <Badge className="mb-6 border-white/30 bg-white/20 px-5 py-2.5 text-sm font-bold text-white backdrop-blur-md">
-              <Building2 className="mr-1.5 inline h-4 w-4" />
-              About {COMPANY_INFO.name}
-            </Badge>
-            <h1 className="mb-6 text-5xl font-black leading-tight md:text-6xl">
-              Family-Run. <span className="text-orange">Built To Stay Practical.</span>
-            </h1>
-            <p className="mx-auto max-w-3xl text-xl leading-relaxed text-white/90">
-              Since {COMPANY_INFO.founded}, {COMPANY_INFO.name} has focused on direct communication, dependable equipment, and a smaller-team approach that keeps drivers from feeling like numbers.
-            </p>
-          </div>
-        </div>
-      </section>
+      <PageHero
+        image="/images/generated/truck-mountain-pass.webp"
+        imageAlt="Thind Transport truck climbing a Washington mountain pass with Mount Rainier in the distance"
+        eyebrow={`About ${COMPANY_INFO.name}`}
+        title={
+          <>
+            Family-Run. <span className="text-orange">Built To Stay Practical.</span>
+          </>
+        }
+        description={`Since ${COMPANY_INFO.founded}, we've focused on direct communication, dependable equipment, and a smaller-team approach that keeps drivers from feeling like numbers.`}
+        primaryLabel="Drive With Us"
+      />
 
       <section className="relative z-10 -mt-8 py-8">
         <div className="container">
