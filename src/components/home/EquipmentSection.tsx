@@ -138,6 +138,34 @@ export function EquipmentSection() {
           ))}
         </div>
 
+        {/* Cab interior comfort band — full-width photographic break */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6 }}
+          className="relative mb-10 overflow-hidden rounded-fleet-lg border border-steel-700/70 shadow-2xl md:mb-14"
+        >
+          <div className="relative aspect-[16/9] sm:aspect-[21/9]">
+            <Image
+              src="/images/generated/driver-cab-interior.webp"
+              alt="Inside a Thind Transport Cascadia sleeper cab at golden hour — APU, fridge, and modern dash"
+              fill
+              sizes="(max-width: 1280px) 100vw, 1200px"
+              className="object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-r from-navy-900/85 via-navy-900/30 to-transparent" />
+          </div>
+          <div className="absolute bottom-0 left-0 right-0 p-5 md:p-8">
+            <p className="mb-1 font-display text-xs font-bold uppercase tracking-[0.25em] text-orange">
+              Your office
+            </p>
+            <p className="max-w-md text-sm font-semibold text-white md:text-lg">
+              APU, inverter, and fridge in every sleeper — comfortable on the clock and off it.
+            </p>
+          </div>
+        </motion.div>
+
         {/* Maintenance + safety — clean inline list, not boxed cards */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}

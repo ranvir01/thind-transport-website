@@ -1,4 +1,5 @@
 import { Metadata } from "next"
+import Image from "next/image"
 import { TestimonialsCarousel } from "@/components/shared/TestimonialsCarousel"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
@@ -91,8 +92,17 @@ export default function TestimonialsPage() {
       </section>
 
       {/* CTA */}
-      <section className="py-16 md:py-24 border-t border-steel-800">
-        <div className="container px-4">
+      <section className="relative overflow-hidden py-16 md:py-24 border-t border-steel-800">
+        <Image
+          src="/images/generated/driver-pretrip-walkaround.webp"
+          alt=""
+          aria-hidden
+          fill
+          sizes="100vw"
+          className="object-cover"
+        />
+        <div className="absolute inset-0 bg-navy-900/85" />
+        <div className="container relative px-4">
           <div className="max-w-3xl mx-auto text-center">
             <h2 className="text-white mb-4">
               See it for <span className="text-orange">yourself</span>

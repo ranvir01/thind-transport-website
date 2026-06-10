@@ -1,56 +1,36 @@
-# 🚛 Thind Transport - Image Integration Complete ✅
+# Thind Transport — Generated Media Inventory
 
-All images have been integrated into the website!
+AI-generated photographic assets. Style: golden-hour / overcast PNW light, navy/red/gold grade,
+photorealistic, no text baked in, no identifiable faces. New raster assets must be WebP ≤ 350KB
+(heroes ≤ 600KB). Update this file when adding or re-pointing assets.
 
----
+## Video
 
-## ✅ FILES INTEGRATED
+| File | Used in |
+|---|---|
+| `hero-american-fleet.mp4` | `cinematic/HeroBackground.tsx` (homepage hero), `fleet/page.tsx` (optional hero video) |
 
-### 🎬 Video
-- [x] `hero-american-fleet.mp4` → CinematicHero (autoplay background video)
+## WebP (current generation — preferred)
 
-### 🖼️ Hero / Background Images
-- [x] `hero-fleet-sunset.png` → Apply page, BentoGrid (National Network)
-- [x] `fleet-kent-wa.png` → HeroSection, BentoGrid, DispatcherSpotlight, DriversWanted
-- [x] `fleet-aerial-view.png` → BentoGrid (Real-Time Operations), DriversWanted
-- [x] `fmcsa-compliance-badge.png` → BentoGrid (Elite Safety)
+| File | Subject | Used in |
+|---|---|---|
+| `hero-poster.webp` | Hero video poster | `cinematic/HeroBackground.tsx` |
+| `hero-cascadia-highway.webp` | Cascadia on PNW highway, golden hour | `fleet/page.tsx` hero, `about/page.tsx` CTA band |
+| `fleet-lineup-kent.webp` | 5-truck lineup at Kent yard | `fleet/page.tsx` yard band, `about/page.tsx` footprint card |
+| `driver-cab-interior.webp` | Over-shoulder sleeper cab at golden hour | `home/EquipmentSection.tsx` comfort band, `pay-breakdown/page.tsx` CTA band |
+| `truck-mountain-pass.webp` | Truck climbing pass, Rainier behind | `about/page.tsx` hero |
+| `driver-pretrip-walkaround.webp` | Driver pre-trip inspection (no face) | `about/page.tsx` story photo, `testimonials/page.tsx` CTA band |
+| `truck-night-highway.webp` | Night lane outside Seattle | `pay-breakdown/page.tsx` hero |
 
-### 👤 Portrait Images (No Faces)
-- [x] `driver-portrait-1.png` → SuccessStories, DispatcherSpotlight, DriversWanted
-- [x] `driver-portrait-2.png` → SuccessStories, DriversWanted
-- [x] `driver-portrait-3.png` → SuccessStories, ThindPromise, DriversWanted
-- [x] `dispatch-team.png` → DispatcherSpotlight
-- [x] `fleet-manager.png` → DispatcherSpotlight
+## PNG (earlier generation — still in use)
 
-### 🚛 Truck Images
-- [x] `truck-cascadia.png` → Fleet page (card + hero)
-- [x] `truck-cascadia-2.png` → Fleet page
-- [x] `truck-volvo.png` → Fleet page
-- [x] `truck-volvo-2.png` → Fleet page
-
-### 📦 Trailer Images (NEW!)
-- [x] `trailer-dry-van.png` → Fleet page trailers section
-- [x] `trailer-reefer.png` → Fleet page trailers section
-- [x] `trailer-flatbed.png` → Fleet page trailers section
-
----
-
-## 📁 Components Updated
-
-| Component | Images Used |
-|-----------|-------------|
-| `CinematicHero.tsx` | hero-american-fleet.mp4 (VIDEO) |
-| `HeroSection.tsx` | fleet-kent-wa.png |
-| `BentoGrid.tsx` | fleet-aerial-view, fmcsa-compliance-badge, truck-cascadia, hero-fleet-sunset, fleet-kent-wa |
-| `SuccessStoriesSection.tsx` | driver-portrait-1, 2, 3 |
-| `ThindPromise.tsx` | driver-portrait-3 |
-| `DispatcherSpotlight.tsx` | dispatch-team, fleet-manager, fleet-kent-wa, driver-portrait-1 |
-| `DriversWanted.tsx` | driver-portrait-1, 2, 3, fleet-kent-wa, fleet-aerial-view |
-| `fleet/page.tsx` | All truck images + All trailer images |
-| `apply/page.tsx` | hero-fleet-sunset |
-
----
-
-## 🎉 Integration Complete!
-
-All 17 assets have been integrated into the website.
+| File | Used in |
+|---|---|
+| `fleet-kent-wa.png` | `home/ThindPromise.tsx` |
+| `dispatch-team.png` | `home/DispatchBand.tsx` |
+| `truck-cascadia.png` | `home/EquipmentSection.tsx`, `fleet/page.tsx` truck card |
+| `truck-cascadia-2.png`, `truck-volvo.png`, `truck-volvo-2.png` | `fleet/page.tsx` truck cards |
+| `trailer-dry-van.png`, `trailer-reefer.png`, `trailer-flatbed.png` | `home/EquipmentSection.tsx`, `fleet/page.tsx` trailer cards |
+| `driver-portrait-1/2/3.png` | `home/SuccessStoriesSection.tsx` |
+| `fmcsa-compliance-badge.png` | `home/TrustStrip.tsx` |
+| `hero-fleet-sunset.png`, `fleet-aerial-view.png`, `fleet-manager.png` | Unused — candidates for removal or reuse |

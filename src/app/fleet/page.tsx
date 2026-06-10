@@ -361,10 +361,10 @@ export default function FleetPage() {
         <div className="absolute right-0 top-0 bottom-0 w-1/2 hidden lg:block">
           <div className="relative h-full">
             <Image
-              src="/images/generated/truck-cascadia.png"
-              alt="2024 Freightliner Cascadia truck - Thind Transport fleet equipment"
+              src="/images/generated/hero-cascadia-highway.webp"
+              alt="Freightliner Cascadia from the Thind Transport fleet rolling on a Pacific Northwest highway"
               fill
-              className="object-cover object-center opacity-40"
+              className="object-cover object-center opacity-50"
               priority
               sizes="50vw"
             />
@@ -541,6 +541,39 @@ export default function FleetPage() {
               </motion.div>
             ))}
           </motion.div>
+        </div>
+      </section>
+
+      {/* Full-bleed yard photo band */}
+      <section className="relative overflow-hidden">
+        <div className="relative min-h-[45vh] w-full md:min-h-[60vh]">
+          <Image
+            src="/images/generated/fleet-lineup-kent.webp"
+            alt="Thind Transport Freightliner Cascadias and Volvo VNLs lined up at the Kent, Washington yard"
+            fill
+            sizes="100vw"
+            className="object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-navy via-navy/30 to-navy/10" />
+          <div className="absolute bottom-0 left-0 right-0">
+            <div className="container px-4 pb-10 md:pb-14">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6 }}
+                className="max-w-2xl"
+              >
+                <Badge className="mb-3 bg-orange text-white px-4 py-1.5 text-xs font-bold">
+                  The Yard — Kent, WA
+                </Badge>
+                <h2 className="text-3xl md:text-5xl font-black text-white leading-tight">
+                  Late-model power,
+                  <span className="text-orange"> lined up and ready.</span>
+                </h2>
+              </motion.div>
+            </div>
+          </div>
         </div>
       </section>
 
