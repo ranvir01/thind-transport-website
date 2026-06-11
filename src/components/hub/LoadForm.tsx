@@ -6,6 +6,7 @@ import { toast } from "sonner"
 import { Loader2, Plus, Trash2 } from "lucide-react"
 import { createLoadAction, updateLoadAction } from "@/app/hub/_actions/loads"
 import { facilityLookupAction } from "@/app/hub/_actions/facilities"
+import { customerBookingIntel } from "@/app/hub/_actions/vetting"
 import { fieldCls, labelCls, Panel } from "@/components/hub/ui"
 import { EQUIPMENT_LABELS, EQUIPMENT_TYPES } from "@/lib/hub/types"
 
@@ -86,6 +87,17 @@ export function LoadForm({
   const [pending, startTransition] = useTransition()
   // E2: per-stop facility intelligence — warns about slow docks at booking time.
   const [facilityHints, setFacilityHints] = useState<Record<number, string | null>>({})
+  // Phase 5: credit/vetting/payment-speed warnings on the customer pick.
+  const [customerWarnings, setCustomerWarnings] = useState<string[]>([])
+
+  const checkCustomer = async (customerId: string) => {
+    if (!customerId) {
+      setCustomerWarnings([])
+      return
+    }
+    const intel = await customerBookingIntel(customerId)
+    setCustomerWarnings(intel.warnings)
+  }
 
   const checkFacility = async (index: number) => {
     const stop = form.stops[index]
@@ -173,11 +185,19 @@ export function LoadForm({
             <label className={labelCls} htmlFor="customer">Customer / broker *</label>
             <select
               id="customer" required className={fieldCls} value={form.customer_id}
-              onChange={(e) => set({ customer_id: e.target.value })}
+              onChange={(e) => {
+                set({ customer_id: e.target.value })
+                checkCustomer(e.target.value)
+              }}
             >
               <option value="">Select customer…</option>
               {customers.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
             </select>
+            {customerWarnings.map((warning) => (
+              <p key={warning} className="mt-1 inline-flex rounded-full border border-orange/40 bg-orange/10 px-2.5 py-1 text-[11px] font-bold text-orange">
+                {warning}
+              </p>
+            ))}
           </div>
           <div>
             <label className={labelCls} htmlFor="customer_reference">Broker load # / reference</label>

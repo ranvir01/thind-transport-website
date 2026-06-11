@@ -10,6 +10,8 @@ import { fmtCents, loadTotalCents } from "@/lib/hub/types"
 import { Panel, PageHeader, BackLink, StatusBadge } from "@/components/hub/ui"
 import { ContactsPanel, CrmNotesPanel, type CrmActivity } from "@/components/hub/CustomerPanels"
 import { DocumentsPanel } from "@/components/hub/DocumentsPanel"
+import { VettingPanel } from "@/components/hub/VettingPanel"
+import { avgDaysToPay, fmcsaConfigured, latestVetting } from "@/lib/hub/vetting"
 
 export const dynamic = "force-dynamic"
 
@@ -19,7 +21,7 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
   const customer = await getCustomer(user.carrierId, id).catch(() => null)
   if (!customer) notFound()
 
-  const [contacts, loads, documents, activities] = await Promise.all([
+  const [contacts, loads, documents, activities, vetting, paySpeed] = await Promise.all([
     listContacts(id),
     listLoads(user.carrierId, { customerId: id, status: "all" }),
     listDocuments("customer", id),
@@ -28,6 +30,8 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
        WHERE customer_id = $1 ORDER BY created_at DESC LIMIT 25`,
       [id]
     ),
+    latestVetting(user.carrierId, id),
+    avgDaysToPay(user.carrierId, id),
   ])
 
   const revenue = loads
@@ -77,6 +81,23 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
         <div className="space-y-4">
+          <VettingPanel
+            customerId={id}
+            view={{
+              configured: fmcsaConfigured(),
+              snapshot: vetting
+                ? {
+                    allowed_to_operate: vetting.allowed_to_operate,
+                    authority_status: vetting.authority_status,
+                    legal_name: vetting.legal_name,
+                    risk_score: vetting.risk_score,
+                    risk_reasons: Array.isArray(vetting.risk_reasons) ? vetting.risk_reasons : [],
+                    checked_at: String(vetting.checked_at),
+                  }
+                : null,
+              paySpeed,
+            }}
+          />
           <ContactsPanel customerId={id} contacts={contacts} />
           <CrmNotesPanel customerId={id} activities={activities} />
           <DocumentsPanel entityType="customer" entityId={id} documents={documents} />
