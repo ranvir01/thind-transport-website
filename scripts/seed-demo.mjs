@@ -475,6 +475,23 @@ async function main() {
      VALUES ($1,'csv:Comdata','CMD-7781','Comdata',$2,$3,'Unknown stop','Fresno','CA',312,'diesel',410,127920)`,
     [CARRIER, truckIds[1], daysAgo(8, 23)]
   )
+  // Reefer + DEF purchases — visibly IFTA-exempt (excluded from MPG and tax-paid gallons).
+  for (let i = 0; i < 8; i++) {
+    const stop = fuelStops[i % fuelStops.length]
+    await q(
+      `INSERT INTO hub.fuel_transactions (carrier_id, source, external_id, card_program, truck_id, driver_id, ts,
+         merchant, city, jurisdiction, gallons, fuel_type, fuel_use, unit_price_cents, total_cents)
+       VALUES ($1,'csv:EFS',$2,'EFS',$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)`,
+      [
+        CARRIER, `EFS-R${2000 + i}`, truckIds[i % 4], driverIds[i % 4] ?? null,
+        daysAgo(80 - i * 9, 9), stop[0], stop[1].city, stop[2],
+        i % 3 === 2 ? 6 : 55 + (i % 3) * 10,
+        i % 3 === 2 ? "DEF" : "REEFER", i % 3 === 2 ? "other" : "reefer",
+        i % 3 === 2 ? 1150 : 392,
+        i % 3 === 2 ? 6900 : Math.round((55 + (i % 3) * 10) * 392),
+      ]
+    )
+  }
 
   // Tolls
   for (let i = 0; i < 8; i++) {
@@ -619,6 +636,167 @@ async function main() {
   await q(
     `INSERT INTO hub.share_links (carrier_id, load_id, token, created_by) VALUES ($1,$2,$3,$4)`,
     [CARRIER, inTransit.id, token, users.dispatcher]
+  )
+
+  // ---- Expansion modules (E1–E5) demo data ----
+  console.log("Creating comms, tasks, facilities intel, recruiting…")
+
+  // Facility notes: the tips every driver wishes existed (E2).
+  const slowFacility = await q(
+    `SELECT id FROM hub.facilities WHERE carrier_id = $1 AND name ILIKE 'Kent Distribution%' LIMIT 1`,
+    [CARRIER]
+  )
+  if (slowFacility.rows[0]) {
+    const facilityNotes = [
+      [driverIds[0], "Harpreet Singh", "Check in at guard shack first, dock doors 14-22. Lumper runs $150.", ["check-in", "lumper"]],
+      [driverIds[2], "Jasdeep Brar", "Overnight parking OK along the back fence. Receiving is slow after 14:00.", ["parking", "slow"]],
+    ]
+    for (const [driverId, name, body, tags] of facilityNotes) {
+      await q(
+        `INSERT INTO hub.facility_notes (carrier_id, facility_id, author_id, author_name, author_role, body, tags)
+         VALUES ($1,$2,$3,$4,'driver',$5,$6)`,
+        [CARRIER, slowFacility.rows[0].id, null, name, body, JSON.stringify(tags)]
+      )
+    }
+    await q(
+      `UPDATE hub.facilities SET hours = 'Mon–Fri 06:00–14:00', overnight_parking = TRUE,
+         typical_lumper_cents = 15000, notes = 'Gate code 4471. Ask for dock assignment at the shack.'
+       WHERE id = $1`,
+      [slowFacility.rows[0].id]
+    )
+  }
+
+  // Messages: a live load thread + a direct thread (E3).
+  const loadThread = await q(
+    `INSERT INTO hub.message_threads (carrier_id, kind, load_id, last_message_at) VALUES ($1,'load',$2,NOW()) RETURNING id`,
+    [CARRIER, inTransit.id]
+  )
+  const threadMsgs = [
+    [users.dispatcher, "Maya Dhillon", "dispatcher", "Receiver moved the appointment up an hour — can you make 13:00?"],
+    [users.driver, "Harpreet Singh", "driver", "Yeah, I'm ahead of schedule. Making good time through Oregon."],
+    [users.dispatcher, "Maya Dhillon", "dispatcher", "Perfect. Don't forget the lumper receipt when you're unloaded."],
+  ]
+  for (const [senderId, senderName, role, body] of threadMsgs) {
+    await q(
+      `INSERT INTO hub.messages (carrier_id, thread_id, sender_id, sender_name, sender_role, body)
+       VALUES ($1,$2,$3,$4,$5,$6)`,
+      [CARRIER, loadThread.rows[0].id, senderId, senderName, role, body]
+    )
+    await q(
+      `INSERT INTO hub.load_events (carrier_id, load_id, kind, actor_id, actor_name, payload)
+       VALUES ($1,$2,'message',$3,$4,$5)`,
+      [CARRIER, inTransit.id, senderId, senderName, JSON.stringify({ body, hasPhoto: false })]
+    )
+  }
+  await q(
+    `INSERT INTO hub.message_threads (carrier_id, kind, driver_id, last_message_at) VALUES ($1,'direct',$2,NOW() - INTERVAL '1 day')`,
+    [CARRIER, driverIds[0]]
+  )
+
+  // Announcement requiring signature — half acknowledged (E3).
+  const announcement = await q(
+    `INSERT INTO hub.announcements (carrier_id, title, body, audience, requires_ack, created_by, created_by_name)
+     VALUES ($1,'Winter chain policy','Chains required over Snoqualmie and Siskiyou starting Nov 1. Check your chain kit before every run — missing gear is an out-of-service waiting to happen.','{"roles":["driver"]}',TRUE,$2,'Maya Dhillon')
+     RETURNING id`,
+    [CARRIER, users.dispatcher]
+  )
+  await q(
+    `INSERT INTO hub.announcement_acks (announcement_id, user_id, signature) VALUES ($1,$2,'seeded')
+     ON CONFLICT DO NOTHING`,
+    [announcement.rows[0].id, users.driver]
+  )
+
+  // Document request pinned to the driver phone (E3).
+  await q(
+    `INSERT INTO hub.document_requests (carrier_id, driver_id, load_id, kind, note, requested_by, requested_by_name)
+     VALUES ($1,$2,$3,'receipt','Send me the lumper receipt from the LA drop when you have it.',$4,'Priya Kaur')`,
+    [CARRIER, driverIds[0], inTransit.id, users.accountant]
+  )
+
+  // Tasks: the office morning routine + a follow-up (E4).
+  await q(
+    `INSERT INTO hub.tasks (carrier_id, title, notes, due_at, priority, recurrence, checklist, created_by_name)
+     VALUES ($1,'Morning ops huddle','The 8am sweep — five minutes, every weekday.',
+       date_trunc('day', NOW()) + INTERVAL '8 hours', 'high', 'weekdays',
+       '[{"label":"Check overnight statuses","done":false},{"label":"Chase unconfirmed dispatches","done":false},{"label":"Review trucks going empty","done":false}]',
+       'Maya Dhillon')`,
+    [CARRIER]
+  )
+  await q(
+    `INSERT INTO hub.tasks (carrier_id, title, notes, due_at, priority, entity_type, entity_id, created_by_name)
+     VALUES ($1,'Call Pacific Crest about the overdue invoice','They are 12 days past terms — escalate politely.',
+       date_trunc('day', NOW()) + INTERVAL '15 hours', 'normal', 'invoice', 'ar', 'Priya Kaur')`,
+    [CARRIER]
+  )
+
+  // Time off: one approved (blocks the planner), one waiting on the office (E5↔E1).
+  await q(
+    `INSERT INTO hub.time_off_requests (carrier_id, driver_id, start_date, end_date, kind, reason, status, decided_by_name, decided_at)
+     VALUES ($1,$2,CURRENT_DATE + 8, CURRENT_DATE + 10,'home_time','Kid''s birthday','approved','Sukhdev Thind',NOW())`,
+    [CARRIER, driverIds[8]]
+  )
+  await q(
+    `INSERT INTO hub.time_off_requests (carrier_id, driver_id, start_date, end_date, kind, reason, status)
+     VALUES ($1,$2,CURRENT_DATE + 15, CURRENT_DATE + 18,'vacation','Family trip','requested')`,
+    [CARRIER, driverIds[1]]
+  )
+
+  // Safety: a DOT-recordable tow-away + a minor incident (E11 register).
+  await q(
+    `INSERT INTO hub.incidents (carrier_id, truck_id, driver_id, occurred_at, location, description,
+       police_report, fatality, injury_treated_away, tow_away_disabling, status, reported_by_name)
+     VALUES
+       ($1,$2,$3,$4,'I-84 EB MP 213, Baker City OR','Black ice spin-out; trailer axle damage, trailer towed. No injuries.','OSP-26-118842',FALSE,FALSE,TRUE,'under_review','Robert Castillo'),
+       ($1,$5,$6,$7,'Pilot #287, Kent WA','Backed into a bollard at the fuel island. Bumper scuff, drivable.',NULL,FALSE,FALSE,FALSE,'open','Tony Marsh')`,
+    [CARRIER, truckIds[4], driverIds[4], daysAgo(34, 6), truckIds[7], driverIds[7], daysAgo(6, 21)]
+  )
+
+  // Recruiting pipeline across stages + a referral (E5).
+  const applicantSeed = [
+    ["Dana", "Whitfield", "applied", "(206) 555-0341", 4, "public_site"],
+    ["Luis", "Herrera", "screened", "(509) 555-0117", 9, "manual"],
+    ["Pavel", "Morozov", "mvr_psp", "(253) 555-0264", 6, "manual"],
+    ["Tina", "Okafor", "offer", "(360) 555-0190", 11, "referral"],
+  ]
+  let referralApplicantId = null
+  for (const [first, last, stage, phone, years, source] of applicantSeed) {
+    const { rows } = await q(
+      `INSERT INTO hub.applicants (carrier_id, source, first_name, last_name, phone, years_experience, stage, orientation)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,
+         '[{"key":"policies","label":"Policies acknowledged (e-signed)","done":false},
+           {"key":"equipment","label":"Equipment issued (keys, cards, PPE)","done":false},
+           {"key":"eld","label":"ELD account created & login tested","done":false},
+           {"key":"fuel_card","label":"Fuel card assigned","done":false},
+           {"key":"emergency","label":"Emergency contacts on file","done":false}]')
+       RETURNING id`,
+      [CARRIER, source, first, last, phone, years, stage]
+    )
+    await q(
+      `INSERT INTO hub.applicant_events (carrier_id, applicant_id, to_stage, actor_name) VALUES ($1,$2,'applied','Maya Dhillon')`,
+      [CARRIER, rows[0].id]
+    )
+    if (source === "referral") referralApplicantId = rows[0].id
+  }
+  if (referralApplicantId) {
+    await q(
+      `INSERT INTO hub.referrals (carrier_id, referrer_driver_id, applicant_id, bonus_cents, milestone, status)
+       VALUES ($1,$2,$3,50000,'hired','pending')`,
+      [CARRIER, driverIds[0], referralApplicantId]
+    )
+    await q(
+      `INSERT INTO hub.offers (carrier_id, applicant_id, pay_summary, body, status, created_by_name)
+       VALUES ($1,$2,'$0.63/mile loaded, weekly settlements, $1,000 sign-on','We are glad to offer you a driving position. Weekly settlements, home time honored through the planner.','sent','Sukhdev Thind')`,
+      [CARRIER, referralApplicantId]
+    )
+  }
+
+  // Notifications so the bell isn't empty on first login.
+  await q(
+    `INSERT INTO hub.notifications (carrier_id, user_id, kind, title, body, link) VALUES
+       ($1,$2,'driver_document','THD-1008 — Robert Castillo sent the POD','Tap to invoice it','/hub/loads/${podLoad.id}'),
+       ($1,$2,'time_off','Gurjit Sandhu asked for time off','${"" /* body below */}Vacation, 3 days','/hub'),
+       ($1,$3,'message','Message from Harpreet Singh','Making good time through Oregon.','/hub/messages')`,
+    [CARRIER, users.dispatcher, users.owner]
   )
 
   console.log(`Done. Demo data ready.`)

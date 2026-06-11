@@ -47,6 +47,7 @@ export default async function SafetyPage() {
           </div>
           <a
             href="/api/hub/exports/accident-register"
+            download
             className="inline-flex min-h-[36px] items-center gap-1.5 rounded-lg border border-white/15 px-3 text-body-xs font-semibold text-steel-100 hover:bg-white/5"
           >
             <Download className="h-3.5 w-3.5" /> Download (auditor-ready CSV)

@@ -48,9 +48,13 @@ export function NotificationsBell({ direction = "down" }: { direction?: "down" |
   }, [])
 
   useEffect(() => {
-    refresh()
+    // Defer the first fetch out of the effect body (no sync setState cascades).
+    const initial = setTimeout(refresh, 0)
     const interval = setInterval(refresh, 60_000)
-    return () => clearInterval(interval)
+    return () => {
+      clearTimeout(initial)
+      clearInterval(interval)
+    }
   }, [refresh])
 
   useEffect(() => {
