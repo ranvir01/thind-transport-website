@@ -26,10 +26,13 @@ const OFFICE_PAGES = [
   ["fuel", "/hub/fuel"],
   ["money", "/hub/money"],
   ["compliance", "/hub/compliance"],
+  ["capacity", "/hub/capacity"],
+  ["packet", "/hub/settings/packet"],
 ]
 
 const DRIVER_PAGES = [
   ["driver-home", "/hub/driver"],
+  ["driver-dvir", "/hub/driver/dvir"],
   ["driver-messages", "/hub/driver/messages"],
   ["driver-pay", "/hub/driver/pay"],
   ["driver-timeoff", "/hub/driver/timeoff"],
