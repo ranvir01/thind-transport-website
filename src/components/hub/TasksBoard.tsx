@@ -1,0 +1,252 @@
+"use client"
+
+/**
+ * "My day" task board (E4). Sticky-note replacement: quick add at the top,
+ * overdue screams, recurring chores roll themselves forward, automation
+ * tasks deep-link straight to the record needing action.
+ */
+import { useState, useTransition } from "react"
+import Link from "next/link"
+import { useRouter } from "next/navigation"
+import { toast } from "sonner"
+import {
+  ArrowRight, Check, ChevronDown, ChevronUp, Loader2, Plus, Repeat, Trash2,
+} from "lucide-react"
+import { cn } from "@/lib/utils"
+import {
+  completeTaskAction, createTaskAction, deleteTaskAction, toggleChecklistAction,
+} from "@/app/hub/_actions/tasks"
+import { fieldCls } from "@/components/hub/ui"
+import type { Task, TaskPriority, TaskRecurrence } from "@/lib/hub/types"
+
+const PRIORITY_STYLES: Record<TaskPriority, string> = {
+  urgent: "border-red-500/40 bg-red-500/10 text-red-400",
+  high: "border-orange/40 bg-orange/10 text-orange",
+  normal: "border-white/15 bg-white/5 text-steel-300",
+  low: "border-white/10 bg-white/[0.03] text-steel-400",
+}
+
+function taskHref(task: Task): string | null {
+  if (!task.entity_type || !task.entity_id) return null
+  const map: Record<string, string> = {
+    load: `/hub/loads/${task.entity_id}`,
+    customer: `/hub/customers/${task.entity_id}`,
+    driver: `/hub/drivers/${task.entity_id}`,
+    truck: `/hub/fleet/trucks/${task.entity_id}`,
+    trailer: `/hub/fleet/trailers/${task.entity_id}`,
+    incident: `/hub/safety/${task.entity_id}`,
+    claim: "/hub/safety",
+    applicant: "/hub/recruiting",
+    fuel: "/hub/fuel",
+    compliance: "/hub/compliance",
+    invoice: "/hub/money",
+  }
+  return map[task.entity_type] ?? null
+}
+
+export function QuickAddTask() {
+  const router = useRouter()
+  const [pending, startTransition] = useTransition()
+  const [expanded, setExpanded] = useState(false)
+  const [form, setForm] = useState({
+    title: "",
+    dueAt: "",
+    priority: "normal" as TaskPriority,
+    recurrence: "none" as TaskRecurrence,
+    checklist: "",
+  })
+
+  const submit = (e: React.FormEvent) => {
+    e.preventDefault()
+    startTransition(async () => {
+      const result = await createTaskAction({
+        title: form.title,
+        dueAt: form.dueAt ? new Date(form.dueAt).toISOString() : undefined,
+        priority: form.priority,
+        recurrence: form.recurrence,
+        checklist: form.checklist.split("\n").filter((l) => l.trim()),
+      })
+      if (result.ok) {
+        toast.success(form.recurrence !== "none" ? "Recurring task created — it rolls itself forward" : "Task added")
+        setForm({ title: "", dueAt: "", priority: "normal", recurrence: "none", checklist: "" })
+        setExpanded(false)
+        router.refresh()
+      } else toast.error(result.error ?? "Could not add")
+    })
+  }
+
+  return (
+    <form onSubmit={submit} className="rounded-2xl border border-white/10 bg-navy-800/60 p-3 space-y-2">
+      <div className="flex gap-2">
+        <input
+          aria-label="New task"
+          placeholder="Add a task… (e.g. Call Pacific Crest about THD-1008)"
+          className={fieldCls}
+          value={form.title}
+          onChange={(e) => setForm({ ...form, title: e.target.value })}
+        />
+        <button
+          type="button"
+          aria-label={expanded ? "Fewer options" : "More options"}
+          onClick={() => setExpanded((v) => !v)}
+          className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-white/15 text-steel-100 hover:bg-white/5"
+        >
+          {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+        </button>
+        <button
+          type="submit"
+          disabled={pending || !form.title.trim()}
+          className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-orange text-white shadow-cta hover:bg-orange-400 disabled:opacity-50"
+        >
+          {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-5 w-5" />}
+        </button>
+      </div>
+      {expanded ? (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+          <input
+            aria-label="Due" type="datetime-local" className={fieldCls}
+            value={form.dueAt}
+            onChange={(e) => setForm({ ...form, dueAt: e.target.value })}
+          />
+          <select
+            aria-label="Priority" className={fieldCls} value={form.priority}
+            onChange={(e) => setForm({ ...form, priority: e.target.value as TaskPriority })}
+          >
+            <option value="low">Low priority</option>
+            <option value="normal">Normal priority</option>
+            <option value="high">High priority</option>
+            <option value="urgent">Urgent</option>
+          </select>
+          <select
+            aria-label="Repeats" className={fieldCls} value={form.recurrence}
+            onChange={(e) => setForm({ ...form, recurrence: e.target.value as TaskRecurrence })}
+          >
+            <option value="none">Doesn&apos;t repeat</option>
+            <option value="daily">Every day</option>
+            <option value="weekdays">Weekdays</option>
+            <option value="weekly">Every week</option>
+            <option value="monthly">Every month</option>
+          </select>
+          <textarea
+            aria-label="Checklist (one item per line)"
+            placeholder={"Checklist — one item per line (optional)\nCheck voicemail\nReview overnight statuses"}
+            rows={3}
+            className={`${fieldCls} sm:col-span-3`}
+            value={form.checklist}
+            onChange={(e) => setForm({ ...form, checklist: e.target.value })}
+          />
+        </div>
+      ) : null}
+    </form>
+  )
+}
+
+export function TaskItem({ task }: { task: Task }) {
+  const router = useRouter()
+  const [pending, startTransition] = useTransition()
+  const [showChecklist, setShowChecklist] = useState(
+    (task.checklist ?? []).length > 0 && (task.checklist ?? []).some((c) => !c.done)
+  )
+  const href = taskHref(task)
+  const overdue = task.due_at && !task.completed_at && new Date(task.due_at) < new Date()
+  const checklist = Array.isArray(task.checklist) ? task.checklist : []
+  const doneCount = checklist.filter((c) => c.done).length
+
+  const complete = () =>
+    startTransition(async () => {
+      const result = await completeTaskAction(task.id)
+      if (result.ok) {
+        toast.success(result.recurred ? "Done — next one is already on the list" : "Done")
+        router.refresh()
+      } else toast.error(result.error ?? "Could not complete")
+    })
+
+  const remove = () =>
+    startTransition(async () => {
+      const result = await deleteTaskAction(task.id)
+      if (result.ok) router.refresh()
+      else toast.error(result.error ?? "Could not delete")
+    })
+
+  const toggleItem = (index: number, done: boolean) =>
+    startTransition(async () => {
+      const result = await toggleChecklistAction(task.id, index, done)
+      if (result.ok) router.refresh()
+      else toast.error(result.error ?? "Could not update")
+    })
+
+  return (
+    <div className={cn("rounded-xl border p-3", overdue ? "border-red-500/30 bg-red-500/[0.04]" : "border-white/10 bg-white/[0.03]")}>
+      <div className="flex items-start gap-3">
+        <button
+          onClick={complete}
+          disabled={pending}
+          aria-label="Mark done"
+          className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-white/25 text-transparent hover:border-gold hover:text-gold disabled:opacity-50"
+        >
+          {pending ? <Loader2 className="h-4 w-4 animate-spin text-gold" /> : <Check className="h-4 w-4" />}
+        </button>
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="font-semibold text-white">{task.title}</p>
+            {task.recurrence !== "none" ? <Repeat className="h-3.5 w-3.5 text-steel-400" /> : null}
+            <span className={cn("rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider", PRIORITY_STYLES[task.priority])}>
+              {task.priority}
+            </span>
+            {task.automation_key ? (
+              <span className="rounded-full border border-steel-400/30 bg-steel-400/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-steel-300">
+                auto
+              </span>
+            ) : null}
+          </div>
+          {task.notes ? <p className="mt-0.5 text-body-xs text-steel-300">{task.notes}</p> : null}
+          <div className="mt-1 flex flex-wrap items-center gap-3 text-[11px] text-steel-400">
+            {task.due_at ? (
+              <span className={cn(overdue && "font-bold text-red-400")}>
+                {overdue ? "Overdue — " : "Due "}
+                {new Date(task.due_at).toLocaleString("en-US", { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
+              </span>
+            ) : null}
+            {checklist.length > 0 ? (
+              <button onClick={() => setShowChecklist((v) => !v)} className="font-semibold text-steel-300 hover:text-white">
+                Checklist {doneCount}/{checklist.length} {showChecklist ? "▾" : "▸"}
+              </button>
+            ) : null}
+            {href ? (
+              <Link href={href} className="inline-flex items-center gap-1 font-semibold text-gold hover:text-gold/80">
+                Open the record <ArrowRight className="h-3 w-3" />
+              </Link>
+            ) : null}
+          </div>
+          {showChecklist && checklist.length > 0 ? (
+            <ul className="mt-2 space-y-1">
+              {checklist.map((item, i) => (
+                <li key={i}>
+                  <label className="flex items-center gap-2 cursor-pointer min-h-[32px]">
+                    <input
+                      type="checkbox"
+                      checked={item.done}
+                      onChange={(e) => toggleItem(i, e.target.checked)}
+                      className="h-4 w-4 rounded border-white/25 accent-orange"
+                    />
+                    <span className={cn("text-sm", item.done ? "text-steel-400 line-through" : "text-steel-100")}>
+                      {item.label}
+                    </span>
+                  </label>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+        </div>
+        <button
+          onClick={remove}
+          disabled={pending}
+          aria-label="Delete task"
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-steel-400 hover:bg-white/5 hover:text-red-400"
+        >
+          <Trash2 className="h-4 w-4" />
+        </button>
+      </div>
+    </div>
+  )
+}

@@ -14,6 +14,7 @@ import { Panel, PageHeader, StatusBadge, BackLink } from "@/components/hub/ui"
 import { AdvanceStatusButton, CancelLoadButton, StopTimestampButton, CheckCallButton } from "@/components/hub/StatusActions"
 import { DocumentsPanel } from "@/components/hub/DocumentsPanel"
 import { ShareLinkPanel } from "@/components/hub/ShareLinkPanel"
+import { MessageLoadButton } from "@/components/hub/MessageLoadButton"
 import { CreateInvoiceButton } from "@/components/hub/MoneyActions"
 
 export const dynamic = "force-dynamic"
@@ -85,12 +86,15 @@ export default async function LoadDetailPage({ params }: { params: Promise<{ id:
         title={load.reference}
         subtitle={load.customer_name ? `${load.customer_name}${load.customer_reference ? ` · Ref ${load.customer_reference}` : ""}${load.factored ? " · Factored" : ""}` : undefined}
         action={
-          <Link
-            href={`/hub/loads/${id}/edit`}
-            className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-white/15 px-4 text-sm font-semibold text-steel-100 hover:bg-white/5"
-          >
-            <Pencil className="h-4 w-4" /> Edit
-          </Link>
+          <div className="flex gap-2">
+            <MessageLoadButton loadId={id} />
+            <Link
+              href={`/hub/loads/${id}/edit`}
+              className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-white/15 px-4 text-sm font-semibold text-steel-100 hover:bg-white/5"
+            >
+              <Pencil className="h-4 w-4" /> Edit
+            </Link>
+          </div>
         }
       />
 

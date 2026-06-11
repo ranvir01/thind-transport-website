@@ -8,6 +8,9 @@ import { DocumentsPanel } from "@/components/hub/DocumentsPanel"
 import { requireOfficeUser } from "@/lib/hub/session"
 import { getActivePayRules } from "@/lib/hub/pay-rules-db"
 import { describePayRules } from "@/lib/hub/pay-rules"
+import { openDocumentRequests } from "@/lib/hub/driver-app"
+import { listTimeOff } from "@/lib/hub/timeoff"
+import { RequestDocumentPanel, TimeOffDecisionPanel } from "@/components/hub/DriverOfficePanels"
 import { fmtCents, loadTotalCents } from "@/lib/hub/types"
 import Link from "next/link"
 
@@ -18,10 +21,12 @@ export default async function DriverDetailPage({ params }: { params: Promise<{ i
   const { id } = await params
   const driver = await getDriver(user.carrierId, id).catch(() => null)
   if (!driver) notFound()
-  const [documents, loads, payRules] = await Promise.all([
+  const [documents, loads, payRules, openRequests, timeOff] = await Promise.all([
     listDocuments("driver", id),
     listLoads(user.carrierId, { driverId: id, status: "all" }),
     getActivePayRules(user.carrierId, id),
+    openDocumentRequests(user.carrierId, id),
+    listTimeOff(user.carrierId, { driverId: id, status: "requested" }),
   ])
   const payDescription = payRules ? describePayRules(payRules) : null
 
@@ -53,6 +58,15 @@ export default async function DriverDetailPage({ params }: { params: Promise<{ i
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
         <DriverForm driverId={id} initial={initial} />
         <div className="space-y-4 max-w-2xl">
+          <TimeOffDecisionPanel requests={timeOff} />
+          <RequestDocumentPanel
+            driverId={id}
+            loads={loads
+              .filter((l) => !["settled", "cancelled"].includes(l.status))
+              .slice(0, 20)
+              .map((l) => ({ id: l.id, reference: l.reference }))}
+            openRequests={openRequests}
+          />
           {payDescription ? (
             <Panel className="p-4 md:p-5">
               <div className="flex items-center justify-between gap-2 mb-3">

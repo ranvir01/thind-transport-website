@@ -2,6 +2,8 @@ import { NextResponse } from "next/server"
 import { query } from "@/lib/hub/db"
 import { complianceEntries } from "@/lib/hub/compliance"
 import { runOverdueReminders } from "@/lib/hub/invoices"
+import { runTaskAutomations } from "@/lib/hub/tasks"
+import { recomputeLanes } from "@/lib/hub/lanes"
 import { getCarrierSettings } from "@/lib/hub/settings"
 import { createMailTransport, mailFrom } from "@/lib/mailer"
 
@@ -52,6 +54,12 @@ export async function GET(
         results[carrier.id] = { alerts: alerts.length }
       } else if (job === "ar-reminders") {
         results[carrier.id] = await runOverdueReminders(carrier.id)
+      } else if (job === "task-automations") {
+        // E4: every condition needing office action becomes a deep-linked task.
+        results[carrier.id] = await runTaskAutomations(carrier.id)
+      } else if (job === "recompute-lanes") {
+        // E1: lane history powers backhaul hints on the planner.
+        results[carrier.id] = await recomputeLanes(carrier.id)
       } else {
         return NextResponse.json({ error: "Unknown job" }, { status: 404 })
       }

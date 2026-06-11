@@ -7,6 +7,7 @@ import { signOut } from "next-auth/react"
 import {
   LayoutDashboard, ClipboardList, Package, Truck, Users, Building2, Map as MapIcon,
   Upload, Settings, LogOut, Menu, X, DollarSign, Fuel, ShieldCheck, BarChart3, ShieldAlert,
+  MessageSquare, CheckSquare,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { PRODUCT } from "@/lib/hub/product"
@@ -37,6 +38,8 @@ const NAV_GROUPS: NavGroup[] = [
   {
     label: "Office",
     items: [
+      { href: "/hub/messages", label: "Messages", icon: MessageSquare },
+      { href: "/hub/tasks", label: "Tasks", icon: CheckSquare },
       { href: "/hub/money", label: "Money", icon: DollarSign },
       { href: "/hub/fuel", label: "Fuel", icon: Fuel },
       { href: "/hub/reports", label: "Reports", icon: BarChart3 },
