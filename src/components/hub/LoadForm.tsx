@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { Loader2, Plus, Trash2 } from "lucide-react"
 import { createLoadAction, updateLoadAction } from "@/app/hub/_actions/loads"
+import { facilityLookupAction } from "@/app/hub/_actions/facilities"
 import { fieldCls, labelCls, Panel } from "@/components/hub/ui"
 import { EQUIPMENT_LABELS, EQUIPMENT_TYPES } from "@/lib/hub/types"
 
@@ -83,6 +84,22 @@ export function LoadForm({
   const router = useRouter()
   const [form, setForm] = useState<LoadFormInitial>(initial)
   const [pending, startTransition] = useTransition()
+  // E2: per-stop facility intelligence — warns about slow docks at booking time.
+  const [facilityHints, setFacilityHints] = useState<Record<number, string | null>>({})
+
+  const checkFacility = async (index: number) => {
+    const stop = form.stops[index]
+    if (!stop?.facility.trim()) {
+      setFacilityHints((h) => ({ ...h, [index]: null }))
+      return
+    }
+    const result = await facilityLookupAction({
+      name: stop.facility,
+      city: stop.city,
+      state: stop.state,
+    })
+    setFacilityHints((h) => ({ ...h, [index]: result.warning ?? null }))
+  }
 
   const set = (patch: Partial<LoadFormInitial>) => setForm((f) => ({ ...f, ...patch }))
   const setStop = (index: number, patch: Partial<StopForm>) =>
@@ -239,10 +256,19 @@ export function LoadForm({
               ) : null}
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <input
-                aria-label="Facility" placeholder="Facility name" className={fieldCls}
-                value={stop.facility} onChange={(e) => setStop(i, { facility: e.target.value })}
-              />
+              <div>
+                <input
+                  aria-label="Facility" placeholder="Facility name" className={fieldCls}
+                  value={stop.facility}
+                  onChange={(e) => setStop(i, { facility: e.target.value })}
+                  onBlur={() => checkFacility(i)}
+                />
+                {facilityHints[i] ? (
+                  <p className="mt-1 inline-flex rounded-full border border-orange/40 bg-orange/10 px-2.5 py-1 text-[11px] font-bold text-orange">
+                    {facilityHints[i]}
+                  </p>
+                ) : null}
+              </div>
               <input
                 aria-label="Address" placeholder="Street address" className={fieldCls}
                 value={stop.address} onChange={(e) => setStop(i, { address: e.target.value })}
