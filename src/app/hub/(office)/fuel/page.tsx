@@ -6,6 +6,8 @@ import { fmtCents, fmtCentsExact } from "@/lib/hub/types"
 import { Panel, PageHeader, EmptyState } from "@/components/hub/ui"
 import { FuelUseBadge } from "@/components/hub/FuelUseBadge"
 
+import { HelpTip } from "@/components/hub/HelpTip"
+
 export const dynamic = "force-dynamic"
 
 export default async function FuelPage() {
@@ -26,6 +28,13 @@ export default async function FuelPage() {
       <PageHeader
         title="Fuel"
         subtitle="Last 92 days across every card program."
+        titleExtra={
+          <HelpTip title="Reefer fuel & IFTA">
+            Only fuel that moves the truck is IFTA fuel. Reefer (trailer fridge) gallons are
+            tax-exempt and excluded from MPG and tax-paid credits — misclassifying them
+            quietly changes your quarterly tax. Tap any transaction&apos;s badge to fix its type.
+          </HelpTip>
+        }
         action={
           <Link
             href="/hub/import?kind=fuel"

@@ -1,4 +1,4 @@
-# HaulDesk — Demo Script (Phases 1–3 + expansion E1–E5)
+# HaulDesk — Demo Script (Phases 1–7 + expansion E1–E5, complete)
 
 HaulDesk is the multi-tenant operations product ("the Hub" in older docs); Thind
 Transport is tenant #1 and supplies the demo data. A phone-first walkthrough showing
@@ -26,8 +26,10 @@ Optional Web Push: set `VAPID_PUBLIC_KEY`/`VAPID_PRIVATE_KEY` (`npx web-push gen
 | Dispatcher | `dispatch@demo.thind` | Today, planner, dispatch, comms, recruiting (money read-only) |
 | Accountant | `accounting@demo.thind` | Money module: invoices, payments, settlements |
 | Driver | `driver@demo.thind` | **The driver app** (`/hub/driver`) — loads, chat, pay, time off |
-| Broker | `broker@demo.thind` | Welcome screen (portal lands in a later phase) |
-| Shipper | `shipper@demo.thind` | Welcome screen (portal lands in a later phase) |
+| Broker | `broker@demo.thind` | **Customer portal** — live tracking, PODs, invoice status |
+| Shipper | `shipper@demo.thind` | **Customer portal** — quote requests, tracking, PODs |
+| Tenant 2 owner | `owner@cascademo.example` | Cascade Demo Lines — proves zero data bleed |
+| Platform admin | `admin@hauldesk.app` | Tenant list + suspend/reactivate, nothing else |
 
 ## The golden path (~10 minutes)
 
@@ -95,8 +97,28 @@ Optional Web Push: set `VAPID_PUBLIC_KEY`/`VAPID_PRIVATE_KEY` (`npx web-push gen
 `CRON_SECRET`. Trigger manually:
 `curl -H "Authorization: Bearer $CRON_SECRET" localhost:3000/api/hub/cron/task-automations`
 
-## What is deliberately not built yet
+### Phases 4–7 additions (all live)
 
-Broker/shipper portals + FMCSA vetting (Phase 5), live ELD/DAT/fuel-card APIs + owner
-analytics polish (Phase 6), tenant onboarding wizard + second-tenant isolation suite
-(Phase 7), DVIRs + offline action queue (rest of Phase 4). See `docs/phases/`.
+15. **DVIR loop** — driver files a post-trip with a defect and answers "No — park it":
+    the truck flips to `shop`, a work order opens, the office certifies the repair on
+    the truck page, and the next pre-trip review sign-off releases it (396.11/.13).
+16. **Offline** — airplane-mode a driver tap: it queues with an honest banner and sends
+    itself when the signal returns. OS&D on a POD opens a draft cargo claim with the
+    Carmack deadline; receipts with an amount become reimbursable expenses; advances
+    are requested from the phone and approved in Money → Advances.
+17. **Vetting & credit** — customer page shows the FMCSA risk score (set `FMCSA_WEBKEY`),
+    days-to-pay trend, slow-payer flag; the load form warns on credit/vetting issues.
+18. **Carrier packet** — Settings → Carrier packet: upload W-9/COI/authority/NOA, email
+    the bundle in one click, request a COI, finger-sign broker agreements.
+19. **Portals** — invite from a customer page; broker tracks loads (city-level only),
+    downloads PODs/invoices; shipper requests quotes that land as `quoted` loads.
+20. **Integrations** (owner) — Settings → Integrations: encrypted credentials
+    (`CREDENTIALS_KEY`), Terminal/DAT/fuel/mailbox cards with honest pending states,
+    sync history. The docs mailbox auto-files forwarded rate cons by reference.
+21. **Onboarding** — `/hub/signup` creates a new carrier workspace self-serve; the
+    Today screen walks them live with a getting-started checklist. Cascade Demo Lines
+    is the seeded second tenant; `admin@hauldesk.app` manages tenants at `/hub/admin`.
+22. **Security** — 5 failed logins lock the email for 15 minutes (DB-backed);
+    files require a session; credentials and signatures are never logged.
+
+See `docs/sales-demo.md` for the 5-minute prospect pitch.

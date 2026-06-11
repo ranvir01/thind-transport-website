@@ -6,6 +6,8 @@ import { fmtCents } from "@/lib/hub/types"
 import { Panel, PageHeader, EmptyState } from "@/components/hub/ui"
 import { cn } from "@/lib/utils"
 
+import { HelpTip } from "@/components/hub/HelpTip"
+
 export const dynamic = "force-dynamic"
 
 const STATUS_PILL: Record<string, string> = {
@@ -28,6 +30,13 @@ export default async function MoneyPage() {
       <PageHeader
         title="Money"
         subtitle="Receivables, invoices, and driver pay."
+        titleExtra={
+          <HelpTip title="AR aging, in plain words">
+            &quot;Aging&quot; is just how long invoices have sat unpaid, bucketed by 30-day
+            steps. Current is fine; 31–60 needs a friendly call; 90+ is a collections
+            conversation. Factored loads skip dunning — the factor owns the chase.
+          </HelpTip>
+        }
         action={
           <div className="flex flex-wrap gap-2">
             <Link href="/hub/money/settlements" className="inline-flex min-h-[44px] items-center rounded-xl border border-white/15 px-4 text-sm font-semibold text-steel-100 hover:bg-white/5">

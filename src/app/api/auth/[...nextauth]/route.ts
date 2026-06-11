@@ -18,11 +18,20 @@ export const authConfig = {
           return null
         }
 
+        // Security pass (Phase 7): 5 failures in 15 minutes locks the email
+        // for 15 minutes. DB-backed so it holds on serverless.
+        const email = credentials.email as string
+        const { isLockedOut, recordAttempt } = await import("@/lib/hub/auth-throttle")
+        if (await isLockedOut(email)) {
+          return null
+        }
+
         // Hub accounts (office staff, hub drivers, broker/shipper portals) take
         // precedence; the legacy driver-portal store is the fallback.
-        const hubUser = await findHubUserByEmail(credentials.email as string)
+        const hubUser = await findHubUserByEmail(email)
         if (hubUser) {
           const valid = await bcrypt.compare(credentials.password as string, hubUser.password_hash)
+          await recordAttempt(email, valid)
           if (!valid) return null
           return {
             id: hubUser.id,
@@ -36,6 +45,7 @@ export const authConfig = {
         const driver = await findDriverByEmail(credentials.email as string)
         
         if (!driver) {
+          await recordAttempt(email, false)
           return null
         }
         
@@ -51,6 +61,7 @@ export const authConfig = {
           passwordHash
         )
 
+        await recordAttempt(email, isValidPassword)
         if (!isValidPassword) {
           return null
         }

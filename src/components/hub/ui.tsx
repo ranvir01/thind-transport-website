@@ -31,16 +31,20 @@ export function PageHeader({
   title,
   subtitle,
   action,
+  titleExtra,
 }: {
   title: string
   subtitle?: string
   action?: React.ReactNode
+  /** Inline help (HelpTip) rendered next to the title. */
+  titleExtra?: React.ReactNode
 }) {
   return (
     <div className="flex flex-wrap items-start justify-between gap-3 mb-5">
       <div>
-        <h1 className="font-display text-2xl md:text-3xl font-extrabold uppercase tracking-wide text-white">
+        <h1 className="flex items-center gap-1.5 font-display text-2xl md:text-3xl font-extrabold uppercase tracking-wide text-white">
           {title}
+          {titleExtra}
         </h1>
         {subtitle ? <p className="text-body-sm text-steel-200 mt-1">{subtitle}</p> : null}
       </div>

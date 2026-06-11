@@ -13,8 +13,13 @@ export interface GeocodeSource {
 async function nominatimLookup(city: string, state: string): Promise<{ lat: number; lng: number } | null> {
   try {
     const q = encodeURIComponent(`${city}, ${state}, USA`)
+    // GeocodeSource swap path (Phase 7): the public Nominatim instance's
+    // ~1 req/s policy is fine for one carrier, not a platform — point
+    // GEOCODER_BASE_URL at a self-hosted Nominatim (or compatible) instance
+    // and nothing else changes. The geocode_cache table absorbs repeats.
+    const base = process.env.GEOCODER_BASE_URL ?? "https://nominatim.openstreetmap.org"
     const res = await fetch(
-      `https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=1&countrycodes=us`,
+      `${base}/search?q=${q}&format=json&limit=1&countrycodes=us`,
       {
         headers: { "User-Agent": PRODUCT.userAgent },
         next: { revalidate: 86400 * 30 },

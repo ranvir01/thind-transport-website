@@ -5,6 +5,8 @@ import { requirePermissionPage } from "@/lib/hub/session"
 import { PageHeader, Panel, EmptyState } from "@/components/hub/ui"
 import { cn } from "@/lib/utils"
 
+import { HelpTip } from "@/components/hub/HelpTip"
+
 export const dynamic = "force-dynamic"
 
 const STATUS_LABEL: Record<string, string> = {
@@ -23,6 +25,14 @@ export default async function SafetyPage() {
       <PageHeader
         title="Safety"
         subtitle="Every incident on file — DOT-recordable accidents flow to the register automatically."
+        titleExtra={
+          <HelpTip title="DOT accident register">
+            49 CFR 390.5 defines an &quot;accident&quot;: a fatality, an injury treated away from
+            the scene, or a vehicle towed with disabling damage. 390.15(b) says you keep a
+            register of those for three years and hand it over on demand. The three yes/no
+            questions on every incident keep this register building itself.
+          </HelpTip>
+        }
         action={
           <Link
             href="/hub/safety/new"

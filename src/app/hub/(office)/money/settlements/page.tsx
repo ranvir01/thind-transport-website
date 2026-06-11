@@ -7,6 +7,8 @@ import { Panel, PageHeader, BackLink, EmptyState } from "@/components/hub/ui"
 import { DraftSettlementsButton } from "@/components/hub/MoneyActions"
 import { cn } from "@/lib/utils"
 
+import { HelpTip } from "@/components/hub/HelpTip"
+
 export const dynamic = "force-dynamic"
 
 const STATUS_PILL: Record<string, string> = {
@@ -27,6 +29,14 @@ export default async function SettlementsPage() {
       <BackLink href="/hub/money" label="Money" />
       <PageHeader
         title="Settlements"
+        titleExtra={
+          <HelpTip title="How settlements compute">
+            Every driver settles through their pay plan (per-mile, percentage, bonuses,
+            deductions) — the engine itemizes each line and the math is unit-tested to the
+            penny. Approving generates the PDF statement, emails it, applies advances, and
+            posts escrow.
+          </HelpTip>
+        }
         subtitle="Weekly driver pay: drafts → approval → statement PDF."
         action={can(user.role, "money:write") ? <DraftSettlementsButton /> : undefined}
       />
