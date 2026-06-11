@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { CalendarOff, ChevronRight, FileText, ShieldAlert } from "lucide-react"
+import { CalendarOff, ChevronRight, ClipboardCheck, FileText, ShieldAlert } from "lucide-react"
 import { requireDriverUser } from "@/lib/hub/session"
 import { getCarrier } from "@/lib/hub/settings"
 import { PushManager } from "@/components/hub/PushManager"
@@ -8,6 +8,7 @@ import { SignOutButton } from "@/components/hub/SignOutButton"
 export const dynamic = "force-dynamic"
 
 const LINKS = [
+  { href: "/hub/driver/dvir", label: "Vehicle inspection (DVIR)", hint: "Pre/post-trip — two minutes, phone in hand", icon: ClipboardCheck },
   { href: "/hub/driver/docs", label: "My documents", hint: "CDL, med card, expiry warnings", icon: FileText },
   { href: "/hub/driver/timeoff", label: "Time off", hint: "Ask for home time", icon: CalendarOff },
   { href: "/hub/driver/incident", label: "Report an incident", hint: "Accidents, damage, roadside events", icon: ShieldAlert },

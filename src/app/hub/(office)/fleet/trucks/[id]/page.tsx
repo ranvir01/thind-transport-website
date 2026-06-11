@@ -8,6 +8,8 @@ import { PageHeader, BackLink } from "@/components/hub/ui"
 import { TruckForm, type TruckFormState } from "@/components/hub/FleetForms"
 import { DocumentsPanel } from "@/components/hub/DocumentsPanel"
 import { MaintenancePanel, type MaintenanceRecord, type MaintenanceSchedule } from "@/components/hub/MaintenancePanel"
+import { DvirPanel } from "@/components/hub/DvirPanel"
+import { listDvirsForTruck, truckDvirState } from "@/lib/hub/dvir"
 
 export const dynamic = "force-dynamic"
 
@@ -16,9 +18,11 @@ export default async function TruckDetailPage({ params }: { params: Promise<{ id
   const { id } = await params
   const truck = await getTruck(user.carrierId, id).catch(() => null)
   if (!truck) notFound()
-  const [drivers, documents, schedules, records] = await Promise.all([
+  const [drivers, documents, dvirs, dvirState, schedules, records] = await Promise.all([
     listDrivers(user.carrierId),
     listDocuments("truck", id),
+    listDvirsForTruck(user.carrierId, id),
+    truckDvirState(user.carrierId, id),
     query<MaintenanceSchedule>(
       `SELECT id, name, interval_miles, interval_days, last_done_on FROM hub.maintenance_schedules
        WHERE carrier_id = $1 AND truck_id = $2 ORDER BY name`,
@@ -60,6 +64,7 @@ export default async function TruckDetailPage({ params }: { params: Promise<{ id
           drivers={drivers.filter((d) => d.status === "active").map((d) => ({ id: d.id, label: `${d.first_name} ${d.last_name}` }))}
         />
         <div className="max-w-2xl space-y-4">
+          <DvirPanel truckId={id} dvirs={dvirs} state={dvirState.state} openDvir={dvirState.openDvir} />
           <DocumentsPanel entityType="truck" entityId={id} documents={documents} />
           <MaintenancePanel truckId={id} schedules={schedules} records={records} />
         </div>

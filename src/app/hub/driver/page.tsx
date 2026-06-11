@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { CalendarOff, ShieldAlert, Wallet } from "lucide-react"
+import { CalendarOff, ClipboardCheck, ShieldAlert, Wallet } from "lucide-react"
 import { requireDriverUser } from "@/lib/hub/session"
 import {
   driverActiveLoads, lastPay, openDocumentRequests, driverExpiries,
@@ -88,18 +88,24 @@ export default async function DriverHomePage() {
       </div>
 
       {/* Quick actions */}
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-3 gap-2">
+        <Link
+          href="/hub/driver/dvir"
+          className="flex min-h-[52px] flex-col items-center justify-center gap-1 rounded-xl border border-white/15 px-1 font-display text-[11px] font-bold uppercase tracking-[0.04em] text-steel-100 hover:bg-white/5"
+        >
+          <ClipboardCheck className="h-4 w-4" /> Inspection
+        </Link>
         <Link
           href="/hub/driver/timeoff"
-          className="flex min-h-[52px] items-center justify-center gap-2 rounded-xl border border-white/15 font-display text-sm font-bold uppercase tracking-[0.06em] text-steel-100 hover:bg-white/5"
+          className="flex min-h-[52px] flex-col items-center justify-center gap-1 rounded-xl border border-white/15 px-1 font-display text-[11px] font-bold uppercase tracking-[0.04em] text-steel-100 hover:bg-white/5"
         >
           <CalendarOff className="h-4 w-4" /> Time off
         </Link>
         <Link
           href="/hub/driver/incident"
-          className="flex min-h-[52px] items-center justify-center gap-2 rounded-xl border border-white/15 font-display text-sm font-bold uppercase tracking-[0.06em] text-steel-100 hover:bg-white/5"
+          className="flex min-h-[52px] flex-col items-center justify-center gap-1 rounded-xl border border-white/15 px-1 font-display text-[11px] font-bold uppercase tracking-[0.04em] text-steel-100 hover:bg-white/5"
         >
-          <ShieldAlert className="h-4 w-4" /> Report incident
+          <ShieldAlert className="h-4 w-4" /> Incident
         </Link>
       </div>
 

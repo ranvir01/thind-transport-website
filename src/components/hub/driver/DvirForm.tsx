@@ -1,0 +1,190 @@
+"use client"
+
+/**
+ * Driver DVIR form (49 CFR 396.11/.13) in plain words: big OK/Problem toggles
+ * per inspection point, photos optional, safe-to-operate question, finger
+ * signature. Pre-trips show the prior post-trip + repair certification to
+ * review before signing (that signature releases a grounded truck).
+ */
+import { useState, useTransition } from "react"
+import { useRouter } from "next/navigation"
+import { toast } from "sonner"
+import { Check, Loader2, ShieldAlert, Wrench } from "lucide-react"
+import { cn } from "@/lib/utils"
+import { submitDvirAction } from "@/app/hub/_actions/dvir"
+import { SignaturePad } from "@/components/hub/SignaturePad"
+import { fieldCls, labelCls } from "@/components/hub/ui"
+import type { Dvir, DvirDefect } from "@/lib/hub/dvir"
+
+export function DvirForm({
+  truck,
+  type,
+  checklistTemplate,
+  priorDvir,
+}: {
+  truck: { id: string; unit_number: string }
+  type: "pre" | "post"
+  checklistTemplate: { key: string; label: string }[]
+  priorDvir: Dvir | null
+}) {
+  const router = useRouter()
+  const [pending, startTransition] = useTransition()
+  const [checks, setChecks] = useState<Record<string, boolean>>(
+    Object.fromEntries(checklistTemplate.map((c) => [c.key, true]))
+  )
+  const [defectNotes, setDefectNotes] = useState<Record<string, string>>({})
+  const [safeToOperate, setSafeToOperate] = useState(true)
+  const [odometer, setOdometer] = useState("")
+  const [signature, setSignature] = useState<string | null>(null)
+
+  const defects: DvirDefect[] = checklistTemplate
+    .filter((c) => !checks[c.key])
+    .map((c) => ({ label: c.label, note: defectNotes[c.key] || "" }))
+
+  const submit = () =>
+    startTransition(async () => {
+      const result = await submitDvirAction({
+        truckId: truck.id,
+        type,
+        odometer,
+        checklist: checklistTemplate.map((c) => ({ ...c, ok: checks[c.key] })),
+        defects,
+        safeToOperate: defects.length === 0 ? true : safeToOperate,
+        signature: signature ?? "",
+        priorDvirId: priorDvir?.id ?? null,
+      })
+      if (result.ok) {
+        toast.success(
+          result.grounded
+            ? "Filed — truck is grounded until the shop signs off. Good call."
+            : "Inspection filed — drive safe"
+        )
+        router.push("/hub/driver")
+        router.refresh()
+      } else toast.error(result.error ?? "Could not file")
+    })
+
+  return (
+    <div className="space-y-4">
+      {/* 396.13: review the prior post-trip + its repair certification */}
+      {type === "pre" && priorDvir ? (
+        <section className="rounded-2xl border border-gold/30 bg-gold/[0.06] p-4">
+          <p className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-gold">
+            <Wrench className="h-4 w-4" /> Review before you roll
+          </p>
+          <p className="mt-1 text-body-sm text-steel-100">
+            {priorDvir.driver_name} reported on{" "}
+            {new Date(priorDvir.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}:
+          </p>
+          <ul className="mt-1 space-y-0.5">
+            {priorDvir.defects.map((d, i) => (
+              <li key={i} className="text-body-sm text-white">• {d.label}{d.note ? ` — ${d.note}` : ""}</li>
+            ))}
+          </ul>
+          <p className={cn(
+            "mt-2 text-body-sm font-semibold",
+            priorDvir.repair_certified_at ? "text-green-400" : "text-orange"
+          )}>
+            {priorDvir.repair_certified_at
+              ? `Repairs certified by ${priorDvir.repair_certified_by_name}. Your signature below confirms the truck is good to go.`
+              : "Repairs NOT certified yet — this truck stays parked. Call the office."}
+          </p>
+        </section>
+      ) : null}
+
+      <section className="rounded-2xl border border-white/10 bg-navy-800/80 p-4">
+        <p className="font-display text-base font-bold uppercase tracking-wide text-white mb-1">
+          {type === "post" ? "End-of-day inspection" : "Pre-trip inspection"} — #{truck.unit_number}
+        </p>
+        <p className="text-body-xs text-steel-300 mb-3">Tap anything that has a problem.</p>
+        <ul className="space-y-1.5">
+          {checklistTemplate.map((item) => {
+            const ok = checks[item.key]
+            return (
+              <li key={item.key}>
+                <div className="flex items-center justify-between gap-2 min-h-[48px]">
+                  <span className="text-sm font-semibold text-white">{item.label}</span>
+                  <div className="flex rounded-xl border border-white/15 overflow-hidden">
+                    <button
+                      type="button"
+                      onClick={() => setChecks({ ...checks, [item.key]: true })}
+                      className={cn("min-h-[44px] px-4 text-sm font-bold", ok ? "bg-green-500/25 text-green-300" : "text-steel-300 hover:bg-white/5")}
+                    >
+                      OK
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setChecks({ ...checks, [item.key]: false })}
+                      className={cn("min-h-[44px] px-4 text-sm font-bold", !ok ? "bg-orange text-white" : "text-steel-300 hover:bg-white/5")}
+                    >
+                      Problem
+                    </button>
+                  </div>
+                </div>
+                {!ok ? (
+                  <input
+                    placeholder="What's wrong? (short note)"
+                    className={`${fieldCls} mt-1`}
+                    value={defectNotes[item.key] ?? ""}
+                    onChange={(e) => setDefectNotes({ ...defectNotes, [item.key]: e.target.value })}
+                  />
+                ) : null}
+              </li>
+            )
+          })}
+        </ul>
+
+        <div className="mt-3">
+          <label htmlFor="dvir-odo" className={labelCls}>Odometer (optional)</label>
+          <input
+            id="dvir-odo" inputMode="numeric" className={fieldCls} placeholder="187,450"
+            value={odometer} onChange={(e) => setOdometer(e.target.value)}
+          />
+        </div>
+      </section>
+
+      {defects.length > 0 ? (
+        <section className="rounded-2xl border border-orange/40 bg-orange/[0.07] p-4">
+          <p className="flex items-center gap-2 text-sm font-bold text-orange">
+            <ShieldAlert className="h-4 w-4" /> Is the truck still safe to drive?
+          </p>
+          <p className="mt-1 text-body-xs text-steel-200">
+            Answer honestly — &quot;No&quot; parks the truck until the shop signs off. That&apos;s the law working, not you in trouble.
+          </p>
+          <div className="mt-2 flex gap-2">
+            {[true, false].map((value) => (
+              <button
+                key={String(value)}
+                type="button"
+                onClick={() => setSafeToOperate(value)}
+                className={cn(
+                  "flex-1 min-h-[48px] rounded-xl border text-sm font-bold",
+                  safeToOperate === value
+                    ? value
+                      ? "border-green-500/50 bg-green-500/20 text-green-300"
+                      : "border-orange bg-orange text-white"
+                    : "border-white/15 text-steel-200 hover:bg-white/5"
+                )}
+              >
+                {value ? "Yes — safe to operate" : "No — park it"}
+              </button>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
+      <section className="rounded-2xl border border-white/10 bg-navy-800/80 p-4">
+        <p className={labelCls}>Sign the report</p>
+        <SignaturePad onChange={setSignature} height={110} />
+        <button
+          onClick={submit}
+          disabled={pending || !signature}
+          className="mt-3 flex w-full min-h-[56px] items-center justify-center gap-2 rounded-xl bg-orange font-display text-base font-bold uppercase tracking-[0.08em] text-white shadow-cta hover:bg-orange-400 disabled:opacity-50"
+        >
+          {pending ? <Loader2 className="h-5 w-5 animate-spin" /> : <Check className="h-5 w-5" />}
+          File the {type === "post" ? "post-trip" : "pre-trip"}
+        </button>
+      </section>
+    </div>
+  )
+}
