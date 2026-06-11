@@ -138,7 +138,7 @@ export const loadSchema = z.object({
 })
 
 export const documentUploadSchema = z.object({
-  entity_type: z.enum(["load", "truck", "trailer", "driver", "customer", "incident", "facility", "applicant", "message"]),
+  entity_type: z.enum(["load", "truck", "trailer", "driver", "customer", "incident", "facility", "applicant", "message", "carrier"]),
   entity_id: z.string().uuid(),
   kind: z.enum(DOCUMENT_KINDS),
   expiry: optionalDate,

@@ -11,6 +11,7 @@ import { Panel, PageHeader, BackLink, StatusBadge } from "@/components/hub/ui"
 import { ContactsPanel, CrmNotesPanel, type CrmActivity } from "@/components/hub/CustomerPanels"
 import { DocumentsPanel } from "@/components/hub/DocumentsPanel"
 import { VettingPanel } from "@/components/hub/VettingPanel"
+import { AgreementSignPanel } from "@/components/hub/PacketPanels"
 import { avgDaysToPay, fmcsaConfigured, latestVetting } from "@/lib/hub/vetting"
 
 export const dynamic = "force-dynamic"
@@ -97,6 +98,15 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
                 : null,
               paySpeed,
             }}
+          />
+          <AgreementSignPanel
+            customerId={id}
+            existingAgreement={(() => {
+              const agreement = documents.find((d) => d.kind === "agreement")
+              return agreement
+                ? { file_name: agreement.file_name, url: agreement.url, created_at: String(agreement.created_at) }
+                : null
+            })()}
           />
           <ContactsPanel customerId={id} contacts={contacts} />
           <CrmNotesPanel customerId={id} activities={activities} />

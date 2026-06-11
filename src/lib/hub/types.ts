@@ -91,6 +91,8 @@ export const DOCUMENT_KINDS = [
   "offer_letter",
   "drug_test",
   "road_test",
+  "authority_letter",
+  "noa",
 ] as const
 export type DocumentKind = (typeof DOCUMENT_KINDS)[number]
 
@@ -115,6 +117,8 @@ export const DOCUMENT_KIND_LABELS: Record<DocumentKind, string> = {
   offer_letter: "Offer Letter",
   drug_test: "Drug Test",
   road_test: "Road Test",
+  authority_letter: "Authority Letter",
+  noa: "Factoring NOA",
 }
 
 export interface HubUser {
@@ -285,7 +289,7 @@ export interface Load {
 
 export interface HubDocument {
   id: string
-  entity_type: "load" | "truck" | "trailer" | "driver" | "customer" | "incident" | "facility" | "applicant" | "message"
+  entity_type: "load" | "truck" | "trailer" | "driver" | "customer" | "incident" | "facility" | "applicant" | "message" | "carrier"
   entity_id: string
   kind: DocumentKind
   file_name: string

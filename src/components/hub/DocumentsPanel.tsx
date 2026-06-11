@@ -16,6 +16,7 @@ const ENTITY_DOC_KINDS: Record<string, DocumentKind[]> = {
   incident: ["incident_photo", "other"],
   facility: ["facility_photo", "other"],
   applicant: ["psp_report", "mvr", "cdl", "medical_card", "offer_letter", "drug_test", "road_test", "other"],
+  carrier: ["w9", "insurance", "authority_letter", "noa", "agreement", "other"],
 }
 
 export function DocumentsPanel({
@@ -23,7 +24,7 @@ export function DocumentsPanel({
   entityId,
   documents,
 }: {
-  entityType: "load" | "truck" | "trailer" | "driver" | "customer" | "incident" | "facility" | "applicant"
+  entityType: "load" | "truck" | "trailer" | "driver" | "customer" | "incident" | "facility" | "applicant" | "carrier"
   entityId: string
   documents: HubDocument[]
 }) {
