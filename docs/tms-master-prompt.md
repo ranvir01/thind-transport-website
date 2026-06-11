@@ -41,8 +41,10 @@ entire office of a trucking company:
   public website at thindtransport.com.
 
 The measure of success: a load that today touches one Excel sheet, four emails, and three
-apps is handled start-to-finish in the Hub, and quarter-end IFTA goes from days of
-spreadsheet work to a generated report.
+apps is handled start-to-finish in the Hub, quarter-end IFTA goes from days of
+spreadsheet work to a generated report, and the finished product can be demoed live from
+a phone like a real shipping app — installable, seeded with believable data, polished on
+a 390px screen (Section 12 defines this bar; it is acceptance criteria, not a nice-to-have).
 
 ## 2. Business context
 
@@ -338,7 +340,9 @@ build it once, well.
 
 Execute phases strictly in order. After each phase: `npm run build` passes, changed
 screens verified at 390px and 1440px, flows tested end-to-end (use maildev for email),
-and a short demo recording or screenshots produced.
+and a short demo recording or screenshots produced. Every phase must leave the Hub
+demo-able on a phone per Section 12 — seeded data intact, no dead links, no
+placeholder screens reachable from navigation.
 
 - **Phase 1 — Foundation + Dispatch.** Roles/permissions on the existing auth, Hub shell
   and navigation, migrations for the core schema, trucks/trailers/drivers/customers
@@ -366,9 +370,48 @@ and a short demo recording or screenshots produced.
   TruckX, DAT API adapter behind `LoadSource`, fuel card API adapters as credentials
   arrive, owner dashboard and reports (M10), automation polish (Section 9).
   *Acceptance: positions sync without manual import; a DAT load becomes a Hub load in
-  one click; the owner dashboard matches the underlying records.*
+  one click; the owner dashboard matches the underlying records; the full Section 12
+  phone demo passes end-to-end.*
 
-## 12. Non-negotiables & guardrails
+## 12. Demo readiness — the final result must demo on a phone like the real deal
+
+The finished Hub is not "done" when the code works — it is done when the owner can pull
+out a phone, open the Hub, and run a convincing live demo to a driver, a broker, or an
+investor with zero setup and zero excuses. Build toward this from Phase 1 and verify it
+at the end of every phase:
+
+- **Installable PWA, real-app feel.** Web app manifest with Thind branding (name, icons
+  from `public/branding/`, navy theme/background color), iOS/Android home-screen install
+  support, standalone display mode, no browser chrome in installed mode, fast loads on a
+  4G connection, and graceful offline behavior on the driver screens (cached shell +
+  clear "reconnecting" states — not blank pages).
+- **Seeded demo data that tells the story.** A `npm run seed:demo` script (idempotent,
+  clearly marked demo data, never runnable against production) populates a realistic
+  fleet matching the scale in `STATS`: trucks, trailers, company drivers and
+  owner-operators, broker/shipper customers drawn from the kinds of partners in
+  `PREMIER_BROKERS`, loads spread across the full lifecycle (some in transit right now,
+  some awaiting POD, some invoiced, some paid), a quarter of fuel transactions and
+  position pings sufficient to generate a real IFTA worksheet, settlements in the
+  approval queue, AR aging with an overdue invoice, and compliance items in red, amber,
+  and green. Every dashboard, list, and report renders with believable numbers — never
+  an empty screen during a demo.
+- **One-tap demo logins.** Seeded accounts for every role — owner, dispatcher,
+  accountant, driver, broker, shipper — with credentials documented in
+  `docs/demo-script.md`. Switching roles takes seconds on a phone.
+- **A scripted golden path.** Write `docs/demo-script.md`: a 5-minute phone walkthrough
+  — owner dashboard → dispatch board → open an in-transit load → switch to the driver
+  account, tap "arrived," camera-upload a POD → back to the office, one-click invoice →
+  show the broker portal tracking the same load → show the IFTA worksheet and a
+  settlement statement PDF. Every step in this script must work flawlessly on a 390px
+  phone screen, and the script must be re-verified (with a screen recording) before the
+  project is called complete.
+- **Phone polish is acceptance criteria, not garnish.** Touch targets ≥ 44px, no
+  horizontal scroll, no desktop-only tables (cards or column-priority layouts on
+  mobile), readable type at arm's length, PDFs open in-viewer on mobile, camera capture
+  works for document upload, and forms are usable with a thumb. Any screen that fails
+  these on 390px fails its phase.
+
+## 13. Non-negotiables & guardrails
 
 - `npm run build` must pass before every commit. Mobile-verify at 390px. No new heavy
   dependencies (`@vercel/blob` is pre-approved). Company facts from
@@ -383,8 +426,10 @@ and a short demo recording or screenshots produced.
   history, or driver personal information. Enforce at the query layer, not the UI.
 - Public site performance budgets are unaffected: the Hub is a separate route group and
   must not add weight to marketing pages.
+- The Hub must stay phone-demo-ready (Section 12) at all times: demo seed data current
+  with the schema, demo script accurate, no reachable dead ends.
 
-## 13. What Thind must provide (request these in parallel — nothing blocks Phase 1–5)
+## 14. What Thind must provide (request these in parallel — nothing blocks Phase 1–5)
 
 1. The current Excel load sheet(s) and customer/broker list for migration.
 2. Fuel card statement CSV exports (one per program) + a card→truck/driver mapping; ask
