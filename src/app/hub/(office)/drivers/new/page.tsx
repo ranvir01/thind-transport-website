@@ -1,5 +1,6 @@
 import { PageHeader, BackLink } from "@/components/hub/ui"
-import { DriverForm, emptyDriver } from "@/components/hub/DriverForm"
+import { DriverForm } from "@/components/hub/DriverForm"
+import { emptyDriver } from "@/lib/hub/form-defaults"
 
 export default function NewDriverPage() {
   return (

@@ -22,14 +22,6 @@ export interface CustomerFormState {
   notes: string
 }
 
-export function emptyCustomer(): CustomerFormState {
-  return {
-    name: "", type: "broker", mc_number: "", dot_number: "", billing_email: "",
-    billing_address: "", phone: "", payment_terms_days: "30", credit_limit: "",
-    factored: false, status: "active", notes: "",
-  }
-}
-
 export function CustomerForm({
   customerId,
   initial,

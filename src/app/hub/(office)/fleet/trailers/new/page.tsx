@@ -1,5 +1,6 @@
 import { PageHeader, BackLink } from "@/components/hub/ui"
-import { TrailerForm, emptyTrailer } from "@/components/hub/FleetForms"
+import { TrailerForm } from "@/components/hub/FleetForms"
+import { emptyTrailer } from "@/lib/hub/form-defaults"
 
 export default function NewTrailerPage() {
   return (

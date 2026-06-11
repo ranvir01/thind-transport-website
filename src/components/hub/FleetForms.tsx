@@ -27,14 +27,6 @@ export interface TruckFormState {
   notes: string
 }
 
-export function emptyTruck(): TruckFormState {
-  return {
-    unit_number: "", vin: "", plate: "", plate_state: "", year: "", make: "", model: "",
-    ownership: "company", status: "active", registration_expiry: "", inspection_due: "",
-    insurance_expiry: "", assigned_driver_id: "", notes: "",
-  }
-}
-
 export function TruckForm({
   truckId,
   initial,
@@ -204,13 +196,6 @@ export interface TrailerFormState {
   registration_expiry: string
   inspection_due: string
   notes: string
-}
-
-export function emptyTrailer(): TrailerFormState {
-  return {
-    unit_number: "", vin: "", plate: "", plate_state: "", year: "", make: "",
-    type: "dry_van", status: "active", registration_expiry: "", inspection_due: "", notes: "",
-  }
 }
 
 export function TrailerForm({

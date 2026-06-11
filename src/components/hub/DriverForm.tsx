@@ -25,15 +25,6 @@ export interface DriverFormState {
   notes: string
 }
 
-export function emptyDriver(): DriverFormState {
-  return {
-    first_name: "", last_name: "", phone: "", email: "", cdl_number: "", cdl_state: "",
-    cdl_expiry: "", medical_card_expiry: "", hire_date: "", pay_type: "per_mile",
-    pay_rate: "", status: "active", emergency_contact_name: "", emergency_contact_phone: "",
-    notes: "",
-  }
-}
-
 export function DriverForm({ driverId, initial }: { driverId?: string; initial: DriverFormState }) {
   const router = useRouter()
   const [form, setForm] = useState(initial)

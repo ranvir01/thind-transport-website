@@ -2,7 +2,8 @@ import { listCustomers } from "@/lib/hub/customers"
 import { listDrivers } from "@/lib/hub/drivers"
 import { listTrucks, listTrailers } from "@/lib/hub/fleet"
 import { PageHeader, BackLink } from "@/components/hub/ui"
-import { LoadForm, emptyLoadForm } from "@/components/hub/LoadForm"
+import { LoadForm } from "@/components/hub/LoadForm"
+import { emptyLoadForm } from "@/lib/hub/form-defaults"
 
 export const dynamic = "force-dynamic"
 

@@ -1,6 +1,7 @@
 import { listDrivers } from "@/lib/hub/drivers"
 import { PageHeader, BackLink } from "@/components/hub/ui"
-import { TruckForm, emptyTruck } from "@/components/hub/FleetForms"
+import { TruckForm } from "@/components/hub/FleetForms"
+import { emptyTruck } from "@/lib/hub/form-defaults"
 
 export const dynamic = "force-dynamic"
 

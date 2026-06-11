@@ -51,16 +51,6 @@ const EMPTY_STOP = (type: "pickup" | "delivery"): StopForm => ({
   type, facility: "", address: "", city: "", state: "", zip: "", appt_start: "", notes: "",
 })
 
-export function emptyLoadForm(): LoadFormInitial {
-  return {
-    customer_id: "", customer_reference: "", equipment: "dry_van", commodity: "",
-    weight_lbs: "", linehaul: "", fuel_surcharge: "", loaded_miles: "", deadhead_miles: "",
-    truck_id: "", trailer_id: "", driver_id: "", notes: "",
-    stops: [EMPTY_STOP("pickup"), EMPTY_STOP("delivery")],
-    accessorials: [],
-  }
-}
-
 export function LoadForm({
   loadId,
   initial,
