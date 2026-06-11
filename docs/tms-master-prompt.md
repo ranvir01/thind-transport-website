@@ -222,7 +222,8 @@ Customer directory with MC numbers, terms, credit status; contact people; activi
 (calls/notes/emails); per-customer load history with lane and rate analytics (best/worst
 lanes, average rate per mile, payment speed); flag slow payers automatically from AR
 data. New broker setup checklist (W-9, insurance certificate, broker-carrier agreement —
-stored as documents).
+stored as documents) with one-click authority verification against the free FMCSA API
+(Section 8) and a nightly authority re-check on every active customer.
 
 ### M5 — Money: invoicing, AR, and settlements
 - **Invoicing:** when a load reaches `pod_received`, one click generates a branded PDF
@@ -235,8 +236,12 @@ stored as documents).
   configured deductions (fuel advances from `fuel_transactions` if card is company-paid,
   insurance, escrow). Produces an approval queue and a PDF statement per driver, emailed
   on approval. All math traceable to load and fuel records.
+- **Factoring packet:** for factored loads, one click emails the invoice + rate con +
+  POD bundle to the factoring company and marks the load submitted.
 - **Exports:** invoices, payments, expenses, and settlements export to
-  QuickBooks-importable CSV. Per-truck P&L and fleet cost-per-mile reports.
+  QuickBooks-importable CSV. Per-truck P&L and fleet cost-per-mile reports. Year-end
+  1099-NEC totals per owner-operator (settlement gross minus reimbursements) exported
+  for the accountant.
 
 ### M6 — Fuel
 Universal fuel import: a column-mapping CSV importer that handles any card program's
@@ -247,7 +252,7 @@ truck (gallons vs. ELD odometer), price per gallon by program. Fraud flags: tran
 location vs. truck position at that timestamp (when ELD data is connected), duplicate
 transactions, gallons exceeding tank capacity.
 
-### M7 — Compliance: IFTA, tolls, and expirations
+### M7 — Compliance & safety: IFTA, tolls, expirations, incidents
 - **IFTA:** compute quarterly jurisdiction miles per truck from `position_pings`
   (great-circle distance between consecutive pings with state assignment via a
   point-in-polygon lookup against bundled state boundary data; ECM odometer used to
@@ -264,6 +269,11 @@ transactions, gallons exceeding tank capacity.
   expiry dates daily (cron) and shows red/amber/green per driver, truck, and the
   company. Email alerts at 60/30/7 days to the office; drivers see their own in the
   driver hub.
+- **Incidents & claims:** an accident/incident log per truck/driver/load — date,
+  location, description, photos from the driver's phone, police report number,
+  insurance claim number and status, cost. Drivers file the first report from the
+  driver hub at the scene; the office tracks the claim to closure. Recall notices from
+  the free NHTSA check (Section 8) land here too.
 
 ### M8 — Maintenance
 PM schedules per truck (miles- or time-based, odometer fed by ELD sync or manual entry),
@@ -316,6 +326,47 @@ admin integrations page. All API credentials live in environment variables, neve
    surface real posted capacity; shipper quote requests from the marketing site create
    CRM leads.
 
+### Free, no-contract integrations (wire these in — they cost nothing)
+
+These are government and open-data sources with free APIs (at most a free key) plus
+zero-cost techniques. They fill the gaps a paid TMS charges for, and none of them
+requires a vendor relationship:
+
+- **FMCSA QCMobile / SAFER API** (free webkey from `mobile.fmcsa.dot.gov`): look up any
+  carrier or broker by MC/DOT number. Powers the M4 broker-vetting flow — verify active
+  authority before booking — and a nightly re-check of every active customer plus
+  Thind's own authority/safety status, with alerts on any change.
+- **NHTSA vPIC + recalls API** (free, no key): adding a truck by VIN auto-fills
+  year/make/model/engine, and a periodic recall check per VIN feeds the compliance
+  dashboard.
+- **National Weather Service API** (`api.weather.gov`, free, no key): active weather
+  alerts along each in-transit load's route shown on the dispatch board and the
+  driver's load screen.
+- **EIA open-data API** (free key from `eia.gov`): weekly regional diesel prices for
+  fuel-surcharge sanity checks and lane cost estimates in M6 dashboards.
+- **OpenStreetMap stack** (free): Nominatim for geocoding stop addresses, OSRM for
+  estimated practical miles and deadhead between stops (margin math), and Leaflet + OSM
+  tiles for the live fleet map and portal tracking views — no Google Maps billing.
+  Truck-legal routing (PC*Miler) is a paid upgrade later; OSRM estimates are fine for
+  planning and margins, and navigation hands off to the driver's own app via a plain
+  maps deep link.
+- **Census TIGER/Line state boundaries** (free download, bundled at build time): the
+  point-in-state lookup behind the M7 IFTA jurisdiction-mile computation.
+- **iftach.org tax-rate matrices** (free): the quarterly `ifta_tax_rates` import.
+- **Web Push via VAPID** (free, built into browsers — no Twilio, no Firebase):
+  push notifications to the installed PWA for new dispatch, status changes, document
+  requests, and compliance alerts. SMS is an optional paid add-on later, not a
+  dependency.
+- **ICS calendar feeds** (free, generated in-app): subscribe-able calendars for
+  pickup/delivery appointments and compliance deadlines that work in Google/Apple
+  Calendar.
+- **Inbound document mailbox** (free — runs on the existing mail account): a dedicated
+  address (e.g. `docs@`) the office forwards rate cons and broker paperwork to;
+  attachments auto-file to the matching load by reference number in the subject line,
+  with an unmatched-review queue. A small IMAP client library is acceptable for this.
+- **Built-in e-signature** (free, canvas-based): signature capture for broker-carrier
+  agreements and driver acknowledgments — no DocuSign subscription.
+
 ## 9. Automations (the manual work being eliminated)
 
 - Daily compliance scan → expiry alerts (cron).
@@ -327,6 +378,11 @@ admin integrations page. All API credentials live in environment variables, neve
 - Fuel transaction far from truck's concurrent GPS position → fraud flag.
 - Nightly integration syncs with failure alerts to the admin.
 - New driver application approved on the website → driver record + hub invite.
+- Nightly FMCSA authority re-check on active brokers → alert on revocation or
+  insurance lapse before the next load is booked.
+- Weather alert intersecting an in-transit load's route → flag on the dispatch board
+  and push notification to the driver.
+- New dispatch assigned → Web Push notification to the driver's installed PWA.
 
 ## 10. Data migration
 
@@ -342,7 +398,10 @@ Execute phases strictly in order. After each phase: `npm run build` passes, chan
 screens verified at 390px and 1440px, flows tested end-to-end (use maildev for email),
 and a short demo recording or screenshots produced. Every phase must leave the Hub
 demo-able on a phone per Section 12 — seeded data intact, no dead links, no
-placeholder screens reachable from navigation.
+placeholder screens reachable from navigation. The free integrations in Section 8 are
+built in the phase that owns their module (fleet map and weather with dispatch in
+Phase 1, FMCSA vetting with CRM in Phase 5, VIN decode with fleet in Phase 1, Web Push
+with the driver hub in Phase 4) — they are cheap wins, not Phase 6 extras.
 
 - **Phase 1 — Foundation + Dispatch.** Roles/permissions on the existing auth, Hub shell
   and navigation, migrations for the core schema, trucks/trailers/drivers/customers
@@ -443,5 +502,10 @@ at the end of every phase:
 5. Toll transponder statement exports (CSV).
 6. Current IFTA tax-rate table for the active quarter (downloadable from iftach.org).
 7. List of office staff, roles, and which email each notification type should go to.
+8. Two free API keys, five minutes each: an FMCSA QCMobile webkey
+   (`mobile.fmcsa.dot.gov`) and an EIA open-data key (`eia.gov`). Everything else in
+   the free-integration list needs no signup at all.
+9. Factoring company name and submission email (if any loads are factored), and the
+   insurance agent's email for certificate requests.
 
 # PROMPT END
