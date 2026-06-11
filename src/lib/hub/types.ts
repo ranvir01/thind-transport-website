@@ -436,3 +436,209 @@ export interface IftaReportRow {
   surchargeCents: number
   netCents: number
 }
+
+// ---- Expansion spines (retrofits + E1–E5) ----
+
+export const FUEL_USES = ["tractor", "reefer", "other"] as const
+export type FuelUse = (typeof FUEL_USES)[number]
+
+export const FUEL_USE_LABELS: Record<FuelUse, string> = {
+  tractor: "Tractor (road fuel)",
+  reefer: "Reefer (IFTA-exempt)",
+  other: "Other (DEF / additives)",
+}
+
+export interface Facility {
+  id: string
+  carrier_id: string
+  name: string
+  dedupe_key: string
+  address: string | null
+  city: string | null
+  state: string | null
+  zip: string | null
+  lat: number | null
+  lng: number | null
+  type: "shipper" | "receiver" | "both"
+  hours: string | null
+  phone: string | null
+  overnight_parking: boolean | null
+  typical_lumper_cents: number | null
+  notes: string | null
+  // computed in queries
+  stop_count?: number
+  avg_dwell_minutes?: number | null
+  note_count?: number
+}
+
+export interface FacilityNote {
+  id: string
+  facility_id: string
+  author_id: string | null
+  author_name: string | null
+  author_role: string | null
+  body: string
+  tags: string[]
+  document_id: string | null
+  created_at: string
+}
+
+export const FACILITY_NOTE_TAGS = [
+  "parking", "gate", "lumper", "slow", "fast", "docks", "overnight", "check-in",
+] as const
+
+export interface Incident {
+  id: string
+  carrier_id: string
+  truck_id: string | null
+  driver_id: string | null
+  load_id: string | null
+  occurred_at: string
+  location: string | null
+  description: string | null
+  police_report: string | null
+  fatality: boolean
+  injury_treated_away: boolean
+  tow_away_disabling: boolean
+  dot_recordable: boolean
+  status: "open" | "under_review" | "closed"
+  lat: number | null
+  lng: number | null
+  reported_by_name: string | null
+  created_at: string
+  truck_unit?: string | null
+  driver_name?: string | null
+  load_reference?: string | null
+}
+
+export interface HubNotification {
+  id: number
+  kind: string
+  title: string
+  body: string | null
+  link: string | null
+  read_at: string | null
+  created_at: string
+}
+
+export const TASK_PRIORITIES = ["low", "normal", "high", "urgent"] as const
+export type TaskPriority = (typeof TASK_PRIORITIES)[number]
+
+export const TASK_RECURRENCES = ["none", "daily", "weekdays", "weekly", "monthly"] as const
+export type TaskRecurrence = (typeof TASK_RECURRENCES)[number]
+
+export interface TaskChecklistItem {
+  label: string
+  done: boolean
+}
+
+export interface Task {
+  id: string
+  title: string
+  notes: string | null
+  assignee_user_id: string | null
+  created_by_name: string | null
+  due_at: string | null
+  priority: TaskPriority
+  entity_type: string | null
+  entity_id: string | null
+  checklist: TaskChecklistItem[]
+  recurrence: TaskRecurrence
+  automation_key: string | null
+  completed_at: string | null
+  completed_by_name: string | null
+  created_at: string
+  assignee_name?: string | null
+}
+
+export interface MessageThread {
+  id: string
+  kind: "load" | "direct"
+  load_id: string | null
+  driver_id: string | null
+  last_message_at: string | null
+  // joined for lists
+  load_reference?: string | null
+  driver_name?: string | null
+  last_body?: string | null
+  unread_count?: number
+}
+
+export interface HubMessage {
+  id: number
+  thread_id: string
+  sender_id: string | null
+  sender_name: string
+  sender_role: string | null
+  body: string
+  document_id: string | null
+  document_url?: string | null
+  document_mime?: string | null
+  created_at: string
+}
+
+export interface Announcement {
+  id: string
+  title: string
+  body: string
+  audience: { all?: boolean; roles?: string[]; driverIds?: string[] }
+  requires_ack: boolean
+  created_by_name: string | null
+  expires_at: string | null
+  created_at: string
+  ack_count?: number
+  audience_count?: number
+  acked?: boolean
+}
+
+export interface DocumentRequest {
+  id: string
+  driver_id: string
+  load_id: string | null
+  kind: string
+  note: string | null
+  status: "open" | "satisfied" | "cancelled"
+  requested_by_name: string | null
+  satisfied_at: string | null
+  created_at: string
+  driver_name?: string | null
+  load_reference?: string | null
+}
+
+export interface Lane {
+  id: string
+  origin_city: string
+  origin_state: string
+  dest_city: string
+  dest_state: string
+  loads_count: number
+  revenue_cents: number
+  miles: number
+  margin_cents: number
+  avg_rpm_cents: number | null
+  last_used_at: string | null
+}
+
+export const TIME_OFF_KINDS = ["home_time", "vacation", "medical", "other"] as const
+export type TimeOffKind = (typeof TIME_OFF_KINDS)[number]
+
+export const TIME_OFF_KIND_LABELS: Record<TimeOffKind, string> = {
+  home_time: "Home time",
+  vacation: "Vacation",
+  medical: "Medical",
+  other: "Other",
+}
+
+export interface TimeOffRequest {
+  id: string
+  driver_id: string
+  start_date: string
+  end_date: string
+  kind: TimeOffKind
+  reason: string | null
+  status: "requested" | "approved" | "denied" | "cancelled"
+  decided_by_name: string | null
+  decided_at: string | null
+  created_at: string
+  driver_name?: string | null
+}

@@ -1,4 +1,5 @@
 import { hubDb, query, queryOne } from "./db"
+import { facilityDedupeKey } from "./facilities"
 import type {
   Accessorial, EquipmentType, Load, LoadEvent, LoadEventKind, LoadStatus, Stop,
 } from "./types"
@@ -155,19 +156,45 @@ export interface LoadInput {
 }
 
 async function insertStops(
-  client: { query: (q: string, p?: unknown[]) => Promise<unknown> },
+  client: { query: (q: string, p?: unknown[]) => Promise<{ rows: { id: string }[] }> },
   carrierId: string,
   loadId: string,
   stops: StopInput[]
 ): Promise<void> {
   for (let i = 0; i < stops.length; i++) {
     const s = stops[i]
+    // Facility intelligence (E2): every named stop links to its facility record
+    // (deduped by geocode bucket) so dwell history and notes accumulate.
+    let facilityId: string | null = null
+    if (s.facility?.trim()) {
+      const key = facilityDedupeKey({
+        name: s.facility,
+        lat: s.lat ?? null,
+        lng: s.lng ?? null,
+        city: s.city,
+        state: s.state,
+      })
+      const { rows } = await client.query(
+        `INSERT INTO hub.facilities (carrier_id, name, dedupe_key, address, city, state, zip, lat, lng, type)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
+         ON CONFLICT (carrier_id, dedupe_key) DO UPDATE SET
+           lat = COALESCE(hub.facilities.lat, EXCLUDED.lat),
+           lng = COALESCE(hub.facilities.lng, EXCLUDED.lng),
+           updated_at = NOW()
+         RETURNING id`,
+        [
+          carrierId, s.facility.trim(), key, s.address ?? null, s.city, s.state, s.zip ?? null,
+          s.lat ?? null, s.lng ?? null, s.type === "pickup" ? "shipper" : "receiver",
+        ]
+      )
+      facilityId = rows[0]?.id ?? null
+    }
     await client.query(
-      `INSERT INTO hub.stops (carrier_id, load_id, sequence, type, facility, address, city, state, zip,
+      `INSERT INTO hub.stops (carrier_id, load_id, sequence, type, facility, facility_id, address, city, state, zip,
          fcfs, pickup_number, po_number, appt_start, appt_end, lat, lng, notes)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)`,
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18)`,
       [
-        carrierId, loadId, i + 1, s.type, s.facility ?? null, s.address ?? null, s.city, s.state,
+        carrierId, loadId, i + 1, s.type, s.facility ?? null, facilityId, s.address ?? null, s.city, s.state,
         s.zip ?? null, s.fcfs ?? false, s.pickup_number ?? null, s.po_number ?? null,
         s.appt_start ?? null, s.appt_end ?? null, s.lat ?? null, s.lng ?? null, s.notes ?? null,
       ]

@@ -33,7 +33,7 @@ async function main() {
 
   try {
     await client.query(
-      `CREATE TABLE IF NOT EXISTS hub_migrations (
+      `CREATE TABLE IF NOT EXISTS public.hub_migrations (
         name TEXT PRIMARY KEY,
         applied_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
       )`
@@ -41,7 +41,7 @@ async function main() {
 
     const dir = path.join(process.cwd(), "migrations", "hub")
     const files = readdirSync(dir).filter((f) => f.endsWith(".sql")).sort()
-    const { rows } = await client.query("SELECT name FROM hub_migrations")
+    const { rows } = await client.query("SELECT name FROM public.hub_migrations")
     const applied = new Set(rows.map((r) => r.name))
 
     for (const file of files) {
@@ -54,7 +54,7 @@ async function main() {
       await client.query("BEGIN")
       try {
         await client.query(sql)
-        await client.query("INSERT INTO hub_migrations (name) VALUES ($1)", [file])
+        await client.query("INSERT INTO public.hub_migrations (name) VALUES ($1)", [file])
         await client.query("COMMIT")
         console.log(`✓ ${file}`)
       } catch (err) {

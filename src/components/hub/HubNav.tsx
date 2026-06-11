@@ -10,6 +10,7 @@ import {
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { PRODUCT } from "@/lib/hub/product"
+import { NotificationsBell } from "@/components/hub/NotificationsBell"
 
 interface NavItem {
   href: string
@@ -79,8 +80,13 @@ export function HubNav({ user }: { user: { name: string; role: string; carrierNa
           ))}
         </nav>
         <div className="border-t border-white/10 p-4">
-          <p className="text-sm font-semibold text-white truncate">{user.name}</p>
-          <p className="text-[11px] uppercase tracking-wider text-gold font-bold">{user.role}</p>
+          <div className="flex items-center justify-between gap-2">
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-white truncate">{user.name}</p>
+              <p className="text-[11px] uppercase tracking-wider text-gold font-bold">{user.role}</p>
+            </div>
+            <NotificationsBell direction="up" />
+          </div>
           <button
             onClick={() => signOut({ callbackUrl: "/hub/login" })}
             className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl border border-white/15 px-3 py-2 text-sm font-semibold text-steel-100 hover:bg-white/5 min-h-[44px]"
@@ -95,13 +101,16 @@ export function HubNav({ user }: { user: { name: string; role: string; carrierNa
         <Link href="/hub" className="leading-none">
           <span className="brand-wordmark text-base font-semibold text-white tracking-[0.14em]">{PRODUCT.wordmark}</span>
         </Link>
-        <button
-          aria-label={menuOpen ? "Close menu" : "Open menu"}
-          onClick={() => setMenuOpen((v) => !v)}
-          className="flex h-11 w-11 items-center justify-center rounded-xl text-steel-100 hover:bg-white/5"
-        >
-          {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-        </button>
+        <div className="flex items-center gap-1">
+          <NotificationsBell />
+          <button
+            aria-label={menuOpen ? "Close menu" : "Open menu"}
+            onClick={() => setMenuOpen((v) => !v)}
+            className="flex h-11 w-11 items-center justify-center rounded-xl text-steel-100 hover:bg-white/5"
+          >
+            {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </button>
+        </div>
       </header>
 
       {/* ---- Mobile full menu ---- */}
