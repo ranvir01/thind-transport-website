@@ -1,5 +1,7 @@
 import { hubDb, query, queryOne } from "./db"
-import { computeSettlement, type SettlementLoadInput } from "./money"
+import {
+  evaluatePayRules, legacyConfigToRuleSet, parseRuleSet, type PayLoadContext,
+} from "./pay-rules"
 import { getCarrier } from "./settings"
 import { storeGeneratedPdf } from "./documents"
 import { buildSettlementPdf } from "./pdf"
@@ -33,6 +35,47 @@ export async function getSettlementLines(settlementId: string): Promise<Settleme
 }
 
 /**
+ * Referral bonuses that became payable and have not yet been paid through a
+ * settlement (E5). Returns [] until the recruiting module's tables exist so
+ * the settlement engine never depends on a later migration.
+ */
+async function payableReferralBonuses(
+  carrierId: string,
+  driverId: string
+): Promise<{ label: string; amountCents: number; sourceId: string }[]> {
+  const exists = await queryOne<{ reg: string | null }>(
+    `SELECT to_regclass('hub.referrals')::text AS reg`
+  )
+  if (!exists?.reg) return []
+  const rows = await query<{ id: string; bonus_cents: number; applicant_name: string; milestone: string }>(
+    `SELECT r.id, r.bonus_cents, COALESCE(a.first_name || ' ' || a.last_name, 'driver') AS applicant_name, r.milestone
+     FROM hub.referrals r
+     LEFT JOIN hub.applicants a ON a.id = r.applicant_id
+     WHERE r.carrier_id = $1 AND r.referrer_driver_id = $2 AND r.status = 'payable'`,
+    [carrierId, driverId]
+  )
+  return rows.map((r) => ({
+    label: `Referral bonus — ${r.applicant_name} (${r.milestone.replace(/_/g, " ")})`,
+    amountCents: Number(r.bonus_cents),
+    sourceId: r.id,
+  }))
+}
+
+/** Latest monthly scorecard composite for scorecard_bonus rules (E5). */
+async function latestScorecardScore(carrierId: string, driverId: string): Promise<number | null> {
+  const exists = await queryOne<{ reg: string | null }>(
+    `SELECT to_regclass('hub.driver_scores')::text AS reg`
+  )
+  if (!exists?.reg) return null
+  const row = await queryOne<{ composite: string }>(
+    `SELECT composite FROM hub.driver_scores
+     WHERE carrier_id = $1 AND driver_id = $2 ORDER BY month DESC LIMIT 1`,
+    [carrierId, driverId]
+  )
+  return row ? Number(row.composite) : null
+}
+
+/**
  * Draft weekly settlements: for each active driver, gather unsettled
  * delivered+ loads, reimbursable unsettled expenses, and outstanding advances,
  * run the pure engine, and persist draft + lines.
@@ -55,8 +98,10 @@ export async function draftSettlements(
     const loads = await query<{
       id: string; reference: string; linehaul_cents: number; fuel_surcharge_cents: number
       accessorials: { amount_cents: number }[]; loaded_miles: number | null; deadhead_miles: number | null
+      stops_count: number | null
     }>(
-      `SELECT id, reference, linehaul_cents, fuel_surcharge_cents, accessorials, loaded_miles, deadhead_miles
+      `SELECT id, reference, linehaul_cents, fuel_surcharge_cents, accessorials, loaded_miles, deadhead_miles,
+         (SELECT COUNT(*)::int FROM hub.stops s WHERE s.load_id = hub.loads.id) AS stops_count
        FROM hub.loads
        WHERE carrier_id = $1 AND driver_id = $2 AND deleted_at IS NULL AND settlement_id IS NULL
          AND status IN ('delivered','pod_received','invoiced','paid')`,
@@ -87,7 +132,7 @@ export async function draftSettlements(
       [carrierId, driver.id]
     )
 
-    const loadInputs: SettlementLoadInput[] = loads.map((load) => ({
+    const loadInputs: PayLoadContext[] = loads.map((load) => ({
       id: load.id,
       reference: load.reference,
       linehaulCents: Number(load.linehaul_cents),
@@ -96,26 +141,42 @@ export async function draftSettlements(
         .reduce((sum, a) => sum + Number(a.amount_cents || 0), 0),
       loadedMiles: load.loaded_miles ?? 0,
       deadheadMiles: load.deadhead_miles ?? 0,
+      stopsCount: Number(load.stops_count ?? 0),
     }))
 
-    const draft = computeSettlement(
-      loadInputs,
-      {
-        payType: driver.pay_type,
-        payRate: Number(driver.pay_rate),
-        payLoadedMilesOnly: driver.pay_loaded_miles_only,
-        escrowWeeklyCents: driver.escrow_weekly_cents,
-        insuranceWeeklyCents: driver.insurance_weekly_cents,
-      },
-      reimbursables.map((expense) => ({
+    // The settlement engine consumes ONLY the generic pay-rules evaluator.
+    // A driver's rule set lives in hub.pay_rules (seeded from the legacy
+    // two-pay-type columns by migration 005); the legacy conversion is the
+    // fallback for drivers created before a rule set exists.
+    const ruleRow = await queryOne<{ name: string; rules: unknown; deductions: unknown }>(
+      `SELECT name, rules, deductions FROM hub.pay_rules
+       WHERE carrier_id = $1 AND driver_id = $2 AND active
+       ORDER BY updated_at DESC LIMIT 1`,
+      [carrierId, driver.id]
+    )
+    const ruleSet = ruleRow
+      ? parseRuleSet(ruleRow)
+      : legacyConfigToRuleSet({
+          payType: driver.pay_type,
+          payRate: Number(driver.pay_rate),
+          payLoadedMilesOnly: driver.pay_loaded_miles_only,
+          escrowWeeklyCents: driver.escrow_weekly_cents,
+          insuranceWeeklyCents: driver.insurance_weekly_cents,
+        })
+
+    const draft = evaluatePayRules(ruleSet, {
+      loads: loadInputs,
+      reimbursements: reimbursables.map((expense) => ({
         label: `${expense.category} reimbursement${expense.memo ? ` — ${expense.memo}` : ""}`,
         amountCents: Number(expense.amount_cents),
         sourceId: expense.id,
       })),
-      advances.map((advance) => ({
+      outstandingAdvances: advances.map((advance) => ({
         id: advance.id, reference: advance.reference, amountCents: Number(advance.amount_cents),
-      }))
-    )
+      })),
+      referralBonuses: await payableReferralBonuses(carrierId, driver.id),
+      scorecardScore: await latestScorecardScore(carrierId, driver.id),
+    })
 
     const client = await hubDb().connect()
     try {
@@ -180,6 +241,15 @@ export async function approveSettlement(
       `UPDATE hub.advances SET status = 'applied', applied_settlement_id = $1, updated_at = NOW() WHERE id = $2 AND status = 'outstanding'`,
       [settlementId, line.source_id]
     )
+  }
+  // Referral bonuses paid through this settlement flip to 'paid' (E5)
+  const referralLines = lines.filter((l) => l.source_type === "referral" && l.source_id)
+  if (referralLines.length > 0) {
+    await query(
+      `UPDATE hub.referrals SET status = 'paid', paid_settlement_id = $1, updated_at = NOW()
+       WHERE carrier_id = $2 AND id = ANY($3::uuid[]) AND status = 'payable'`,
+      [settlementId, carrierId, referralLines.map((l) => l.source_id)]
+    ).catch(() => {}) // table arrives with the recruiting module
   }
   // Append escrow ledger
   const escrowLine = lines.find((l) => l.source_type === "escrow")

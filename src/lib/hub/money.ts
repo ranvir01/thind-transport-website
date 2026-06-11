@@ -4,13 +4,12 @@
  * be verified to the penny against hand-computed fixtures.
  */
 import type { Accessorial } from "./types"
+import { evaluatePayRules, legacyConfigToRuleSet } from "./pay-rules"
+import { roundHalfAwayFromZero } from "./rounding"
 
 // ---- Rounding ----
 
-/** Round half away from zero to an integer (money rounding). */
-export function roundHalfAwayFromZero(value: number): number {
-  return Math.sign(value) * Math.round(Math.abs(value))
-}
+export { roundHalfAwayFromZero } from "./rounding"
 
 // ---- Invoice ----
 
@@ -103,12 +102,12 @@ export interface SettlementDraft {
 }
 
 /**
- * Compute a settlement draft.
+ * Compute a settlement draft from the legacy two-pay-type driver config.
  *
- * Company drivers (per_mile): miles × rate per load (loaded miles, or
- * loaded+deadhead when payLoadedMilesOnly is false).
- * Owner-operators (percentage): pct × (linehaul + accessorials) + 100% of FSC.
- * Reimbursements add; advances, escrow, and insurance deduct.
+ * This is now a thin bridge over the generic pay-rules evaluator
+ * (src/lib/hub/pay-rules.ts): the config converts to an equivalent rule set
+ * and the evaluator produces the lines. The settlement engine itself consumes
+ * the evaluator directly — pay programs are data, never code forks.
  */
 export function computeSettlement(
   loads: SettlementLoadInput[],
@@ -116,70 +115,11 @@ export function computeSettlement(
   reimbursements: { label: string; amountCents: number; sourceId?: string }[],
   outstandingAdvances: { id: string; reference: string | null; amountCents: number }[]
 ): SettlementDraft {
-  const lines: SettlementLineDraft[] = []
-
-  for (const load of loads) {
-    let amount: number
-    if (config.payType === "per_mile") {
-      const miles = config.payLoadedMilesOnly
-        ? load.loadedMiles
-        : load.loadedMiles + load.deadheadMiles
-      amount = roundHalfAwayFromZero(miles * config.payRate * 100)
-      lines.push({
-        kind: "earning",
-        label: `${load.reference} — ${miles} mi × $${config.payRate.toFixed(2)}/mi`,
-        amountCents: amount,
-        sourceType: "load",
-        sourceId: load.id,
-      })
-    } else {
-      const revenueBase = load.linehaulCents + load.accessorialCents
-      const commission = roundHalfAwayFromZero(revenueBase * config.payRate)
-      amount = commission + load.fuelSurchargeCents
-      lines.push({
-        kind: "earning",
-        label: `${load.reference} — ${Math.round(config.payRate * 100)}% of $${(revenueBase / 100).toFixed(2)} + FSC $${(load.fuelSurchargeCents / 100).toFixed(2)}`,
-        amountCents: amount,
-        sourceType: "load",
-        sourceId: load.id,
-      })
-    }
-  }
-
-  for (const r of reimbursements) {
-    lines.push({
-      kind: "reimbursement",
-      label: r.label,
-      amountCents: r.amountCents,
-      sourceType: "expense",
-      sourceId: r.sourceId,
-    })
-  }
-
-  for (const advance of outstandingAdvances) {
-    lines.push({
-      kind: "deduction",
-      label: `Advance${advance.reference ? ` (${advance.reference})` : ""}`,
-      amountCents: advance.amountCents,
-      sourceType: "advance",
-      sourceId: advance.id,
-    })
-  }
-  if (config.escrowWeeklyCents > 0 && loads.length > 0) {
-    lines.push({ kind: "deduction", label: "Escrow contribution", amountCents: config.escrowWeeklyCents, sourceType: "escrow" })
-  }
-  if (config.insuranceWeeklyCents > 0 && loads.length > 0) {
-    lines.push({ kind: "deduction", label: "Insurance", amountCents: config.insuranceWeeklyCents, sourceType: "insurance" })
-  }
-
-  const grossCents = lines
-    .filter((l) => l.kind !== "deduction")
-    .reduce((sum, l) => sum + l.amountCents, 0)
-  const deductionsCents = lines
-    .filter((l) => l.kind === "deduction")
-    .reduce((sum, l) => sum + l.amountCents, 0)
-
-  return { lines, grossCents, deductionsCents, netCents: grossCents - deductionsCents }
+  return evaluatePayRules(legacyConfigToRuleSet(config), {
+    loads,
+    reimbursements,
+    outstandingAdvances,
+  })
 }
 
 // ---- Detention ----

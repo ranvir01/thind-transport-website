@@ -6,6 +6,8 @@ import { PageHeader, BackLink, Panel, StatusBadge } from "@/components/hub/ui"
 import { DriverForm, type DriverFormState } from "@/components/hub/DriverForm"
 import { DocumentsPanel } from "@/components/hub/DocumentsPanel"
 import { requireOfficeUser } from "@/lib/hub/session"
+import { getActivePayRules } from "@/lib/hub/pay-rules-db"
+import { describePayRules } from "@/lib/hub/pay-rules"
 import { fmtCents, loadTotalCents } from "@/lib/hub/types"
 import Link from "next/link"
 
@@ -16,10 +18,12 @@ export default async function DriverDetailPage({ params }: { params: Promise<{ i
   const { id } = await params
   const driver = await getDriver(user.carrierId, id).catch(() => null)
   if (!driver) notFound()
-  const [documents, loads] = await Promise.all([
+  const [documents, loads, payRules] = await Promise.all([
     listDocuments("driver", id),
     listLoads(user.carrierId, { driverId: id, status: "all" }),
+    getActivePayRules(user.carrierId, id),
   ])
+  const payDescription = payRules ? describePayRules(payRules) : null
 
   const initial: DriverFormState = {
     first_name: driver.first_name,
@@ -49,6 +53,42 @@ export default async function DriverDetailPage({ params }: { params: Promise<{ i
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
         <DriverForm driverId={id} initial={initial} />
         <div className="space-y-4 max-w-2xl">
+          {payDescription ? (
+            <Panel className="p-4 md:p-5">
+              <div className="flex items-center justify-between gap-2 mb-3">
+                <h2 className="font-display text-base font-bold uppercase tracking-wide text-white">
+                  How {driver.first_name} gets paid
+                </h2>
+                <span className="rounded-full border border-gold/40 bg-gold/10 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-gold">
+                  {payRules!.isAuto ? "Standard plan" : "Custom plan"}
+                </span>
+              </div>
+              <ul className="space-y-1.5">
+                {payDescription.earnings.map((line) => (
+                  <li key={line} className="flex items-start gap-2 text-body-sm text-steel-100">
+                    <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-gold" /> {line}
+                  </li>
+                ))}
+              </ul>
+              {payDescription.deductions.length > 0 ? (
+                <>
+                  <p className="mt-3 text-[11px] font-bold uppercase tracking-wider text-steel-300">Comes out each settlement</p>
+                  <ul className="mt-1 space-y-1.5">
+                    {payDescription.deductions.map((line) => (
+                      <li key={line} className="flex items-start gap-2 text-body-sm text-steel-200">
+                        <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-orange" /> {line}
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              ) : null}
+              <p className="mt-3 text-body-xs text-steel-400">
+                {payRules!.isAuto
+                  ? "Set by the pay fields on this page — settlements always follow this plan."
+                  : "This driver settles under a custom pay plan; the simple pay fields are ignored."}
+              </p>
+            </Panel>
+          ) : null}
           <DocumentsPanel entityType="driver" entityId={id} documents={documents} />
           <Panel className="p-4 md:p-5">
             <h2 className="font-display text-base font-bold uppercase tracking-wide text-white mb-3">
