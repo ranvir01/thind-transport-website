@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation"
 import { signOut } from "next-auth/react"
 import {
   LayoutDashboard, ClipboardList, Package, Truck, Users, Building2, Map as MapIcon,
-  Upload, Settings, LogOut, Menu, X, DollarSign, Fuel, ShieldCheck, BarChart3,
+  Upload, Settings, LogOut, Menu, X, DollarSign, Fuel, ShieldCheck, BarChart3, ShieldAlert,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { PRODUCT } from "@/lib/hub/product"
@@ -19,21 +19,54 @@ interface NavItem {
   ownerOnly?: boolean
 }
 
-const NAV_ITEMS: NavItem[] = [
-  { href: "/hub", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/hub/dispatch", label: "Dispatch", icon: ClipboardList },
-  { href: "/hub/loads", label: "Loads", icon: Package },
-  { href: "/hub/money", label: "Money", icon: DollarSign },
-  { href: "/hub/fuel", label: "Fuel", icon: Fuel },
-  { href: "/hub/compliance", label: "Compliance", icon: ShieldCheck },
-  { href: "/hub/customers", label: "Customers", icon: Building2 },
-  { href: "/hub/drivers", label: "Drivers", icon: Users },
-  { href: "/hub/fleet", label: "Fleet", icon: Truck },
-  { href: "/hub/map", label: "Map", icon: MapIcon },
-  { href: "/hub/reports", label: "Reports", icon: BarChart3 },
-  { href: "/hub/import", label: "Import", icon: Upload },
-  { href: "/hub/settings/users", label: "Users", icon: Settings, ownerOnly: true },
+interface NavGroup {
+  label: string | null
+  items: NavItem[]
+}
+
+const NAV_GROUPS: NavGroup[] = [
+  {
+    label: null,
+    items: [
+      { href: "/hub", label: "Dashboard", icon: LayoutDashboard },
+      { href: "/hub/dispatch", label: "Dispatch", icon: ClipboardList },
+      { href: "/hub/loads", label: "Loads", icon: Package },
+      { href: "/hub/map", label: "Map", icon: MapIcon },
+    ],
+  },
+  {
+    label: "Office",
+    items: [
+      { href: "/hub/money", label: "Money", icon: DollarSign },
+      { href: "/hub/fuel", label: "Fuel", icon: Fuel },
+      { href: "/hub/reports", label: "Reports", icon: BarChart3 },
+    ],
+  },
+  {
+    label: "People & fleet",
+    items: [
+      { href: "/hub/drivers", label: "Drivers", icon: Users },
+      { href: "/hub/fleet", label: "Fleet", icon: Truck },
+      { href: "/hub/customers", label: "Customers", icon: Building2 },
+    ],
+  },
+  {
+    label: "Stay legal",
+    items: [
+      { href: "/hub/compliance", label: "Compliance", icon: ShieldCheck },
+      { href: "/hub/safety", label: "Safety", icon: ShieldAlert },
+    ],
+  },
+  {
+    label: "Admin",
+    items: [
+      { href: "/hub/import", label: "Import", icon: Upload },
+      { href: "/hub/settings/users", label: "Users", icon: Settings, ownerOnly: true },
+    ],
+  },
 ]
+
+const NAV_ITEMS: NavItem[] = NAV_GROUPS.flatMap((g) => g.items)
 
 const MOBILE_TABS = ["/hub", "/hub/dispatch", "/hub/loads", "/hub/fleet"]
 
@@ -62,22 +95,37 @@ export function HubNav({ user }: { user: { name: string; role: string; carrierNa
             </span>
           </Link>
         </div>
-        <nav className="flex-1 overflow-y-auto py-3 px-3 space-y-0.5">
-          {items.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={cn(
-                "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition-colors",
-                isActive(pathname, item.href)
-                  ? "bg-orange/15 text-white border border-orange/30"
-                  : "text-steel-200 hover:bg-white/5 hover:text-white border border-transparent"
-              )}
-            >
-              <item.icon className="h-[18px] w-[18px]" />
-              {item.label}
-            </Link>
-          ))}
+        <nav className="flex-1 overflow-y-auto py-3 px-3">
+          {NAV_GROUPS.map((group, gi) => {
+            const groupItems = group.items.filter((i) => !i.ownerOnly || user.role === "owner")
+            if (groupItems.length === 0) return null
+            return (
+              <div key={group.label ?? gi} className={gi > 0 ? "mt-3" : undefined}>
+                {group.label ? (
+                  <p className="px-3 pb-1 text-[10px] font-bold uppercase tracking-[0.2em] text-steel-400">
+                    {group.label}
+                  </p>
+                ) : null}
+                <div className="space-y-0.5">
+                  {groupItems.map((item) => (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      className={cn(
+                        "flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-semibold transition-colors",
+                        isActive(pathname, item.href)
+                          ? "bg-orange/15 text-white border border-orange/30"
+                          : "text-steel-200 hover:bg-white/5 hover:text-white border border-transparent"
+                      )}
+                    >
+                      <item.icon className="h-[18px] w-[18px]" />
+                      {item.label}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )
+          })}
         </nav>
         <div className="border-t border-white/10 p-4">
           <div className="flex items-center justify-between gap-2">

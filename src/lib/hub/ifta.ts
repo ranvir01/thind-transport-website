@@ -89,11 +89,13 @@ export async function computeIftaQuarter(
     }
   }
 
-  // 3. Tax-paid gallons by jurisdiction
+  // 3. Tax-paid gallons by jurisdiction — TRACTOR FUEL ONLY. Reefer fuel is
+  // not propulsion fuel: it is IFTA-exempt and excluded from tax-paid gallons
+  // and fleet MPG (DEF/additives are not motor fuel at all).
   const fuel = await query<{ jurisdiction: string; gallons: string }>(
     `SELECT COALESCE(jurisdiction, '??') AS jurisdiction, SUM(gallons) AS gallons
      FROM hub.fuel_transactions
-     WHERE carrier_id = $1 AND ts >= $2 AND ts < $3
+     WHERE carrier_id = $1 AND ts >= $2 AND ts < $3 AND fuel_use = 'tractor'
      GROUP BY COALESCE(jurisdiction, '??')`,
     [carrierId, start.toISOString(), end.toISOString()]
   )
@@ -185,8 +187,8 @@ export async function exportIftaSources(carrierId: string, quarter: string): Pro
      WHERE p.carrier_id = $1 AND p.ts >= $2 AND p.ts < $3 ORDER BY t.unit_number, p.ts`,
     [carrierId, start.toISOString(), end.toISOString()]
   )
-  const fuel = await query<{ unit_number: string | null; ts: string; jurisdiction: string | null; gallons: string; total_cents: number; merchant: string | null }>(
-    `SELECT t.unit_number, f.ts, f.jurisdiction, f.gallons, f.total_cents, f.merchant
+  const fuel = await query<{ unit_number: string | null; ts: string; jurisdiction: string | null; gallons: string; fuel_use: string; total_cents: number; merchant: string | null }>(
+    `SELECT t.unit_number, f.ts, f.jurisdiction, f.gallons, f.fuel_use, f.total_cents, f.merchant
      FROM hub.fuel_transactions f LEFT JOIN hub.trucks t ON t.id = f.truck_id
      WHERE f.carrier_id = $1 AND f.ts >= $2 AND f.ts < $3 ORDER BY f.ts`,
     [carrierId, start.toISOString(), end.toISOString()]
@@ -196,8 +198,8 @@ export async function exportIftaSources(carrierId: string, quarter: string): Pro
     ...pings.map((p) => `${p.unit_number},${new Date(p.ts).toISOString()},${p.lat},${p.lng},${p.odometer ?? ""}`),
   ].join("\n")
   const fuelCsv = [
-    "unit,timestamp,jurisdiction,gallons,total_usd,merchant",
-    ...fuel.map((f) => `${f.unit_number ?? ""},${new Date(f.ts).toISOString()},${f.jurisdiction ?? ""},${f.gallons},${(f.total_cents / 100).toFixed(2)},"${(f.merchant ?? "").replace(/"/g, '""')}"`),
+    "unit,timestamp,jurisdiction,gallons,fuel_use,total_usd,merchant",
+    ...fuel.map((f) => `${f.unit_number ?? ""},${new Date(f.ts).toISOString()},${f.jurisdiction ?? ""},${f.gallons},${f.fuel_use},${(f.total_cents / 100).toFixed(2)},"${(f.merchant ?? "").replace(/"/g, '""')}"`),
   ].join("\n")
   return { pingsCsv, fuelCsv }
 }

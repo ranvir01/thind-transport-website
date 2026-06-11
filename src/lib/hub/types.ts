@@ -83,6 +83,14 @@ export const DOCUMENT_KINDS = [
   "w9",
   "agreement",
   "other",
+  "incident_photo",
+  "facility_photo",
+  "message_photo",
+  "psp_report",
+  "mvr",
+  "offer_letter",
+  "drug_test",
+  "road_test",
 ] as const
 export type DocumentKind = (typeof DOCUMENT_KINDS)[number]
 
@@ -99,6 +107,14 @@ export const DOCUMENT_KIND_LABELS: Record<DocumentKind, string> = {
   w9: "W-9",
   agreement: "Agreement",
   other: "Other",
+  incident_photo: "Incident Photo",
+  facility_photo: "Facility Photo",
+  message_photo: "Photo",
+  psp_report: "PSP Report",
+  mvr: "MVR",
+  offer_letter: "Offer Letter",
+  drug_test: "Drug Test",
+  road_test: "Road Test",
 }
 
 export interface HubUser {
@@ -263,7 +279,7 @@ export interface Load {
 
 export interface HubDocument {
   id: string
-  entity_type: "load" | "truck" | "trailer" | "driver" | "customer"
+  entity_type: "load" | "truck" | "trailer" | "driver" | "customer" | "incident" | "facility" | "applicant" | "message"
   entity_id: string
   kind: DocumentKind
   file_name: string
@@ -418,6 +434,7 @@ export interface FuelTransaction {
   jurisdiction: string | null
   gallons: string
   fuel_type: string | null
+  fuel_use: "tractor" | "reefer" | "other"
   unit_price_cents: number | null
   total_cents: number
   odometer: string | null

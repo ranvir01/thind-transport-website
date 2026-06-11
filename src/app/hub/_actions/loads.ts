@@ -252,6 +252,12 @@ export async function uploadDocumentAction(formData: FormData): Promise<ActionRe
         kind: parsed.data.kind, file: file.name,
       }, { id: user.id, name: user.name })
       revalidateLoadViews(parsed.data.entity_id)
+    } else if (parsed.data.entity_type === "incident") {
+      revalidatePath(`/hub/safety/${parsed.data.entity_id}`)
+    } else if (parsed.data.entity_type === "facility") {
+      revalidatePath(`/hub/facilities/${parsed.data.entity_id}`)
+    } else if (parsed.data.entity_type === "applicant") {
+      revalidatePath(`/hub/recruiting/${parsed.data.entity_id}`)
     } else {
       revalidatePath(`/hub/${parsed.data.entity_type}s/${parsed.data.entity_id}`)
     }

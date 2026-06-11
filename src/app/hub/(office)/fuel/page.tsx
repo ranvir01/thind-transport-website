@@ -4,6 +4,7 @@ import { fuelStatsByTruck, fuelByProgram, fuelFraudFlags, listFuelTransactions, 
 import { requirePermissionPage } from "@/lib/hub/session"
 import { fmtCents, fmtCentsExact } from "@/lib/hub/types"
 import { Panel, PageHeader, EmptyState } from "@/components/hub/ui"
+import { FuelUseBadge } from "@/components/hub/FuelUseBadge"
 
 export const dynamic = "force-dynamic"
 
@@ -108,19 +109,22 @@ export default async function FuelPage() {
                   {byTruck.map((row) => {
                     const miles = Number(row.loaded_miles ?? 0)
                     const gallons = Number(row.gallons)
+                    const tractorGallons = Number(row.tractor_gallons)
                     return (
                       <tr key={row.truck_id ?? "none"} className="border-b border-white/5">
                         <td className="px-4 py-2 font-semibold text-white">{row.truck_unit ? `#${row.truck_unit}` : "Unmatched"}</td>
                         <td className="px-4 py-2 text-right text-steel-100">{Math.round(gallons).toLocaleString()}</td>
                         <td className="px-4 py-2 text-right text-gold font-semibold">{fmtCents(Number(row.total_cents))}</td>
-                        <td className="px-4 py-2 text-right text-steel-100">{miles > 0 && gallons > 0 ? (miles / gallons).toFixed(1) : "—"}</td>
+                        <td className="px-4 py-2 text-right text-steel-100">{miles > 0 && tractorGallons > 0 ? (miles / tractorGallons).toFixed(1) : "—"}</td>
                         <td className="px-4 py-2 text-right text-steel-100">{miles > 0 ? (Number(row.total_cents) / miles).toFixed(1) : "—"}</td>
                       </tr>
                     )
                   })}
                 </tbody>
               </table>
-              <p className="px-4 py-2 text-body-xs text-steel-400">* MPG from loaded miles until live odometer sync (Phase 6).</p>
+              <p className="px-4 py-2 text-body-xs text-steel-400">
+                * MPG from loaded miles ÷ road-diesel gallons (reefer fuel never counts toward MPG or IFTA).
+              </p>
             </Panel>
 
             {/* By program */}
@@ -164,7 +168,10 @@ export default async function FuelPage() {
                     {` · ${Number(tx.gallons).toFixed(1)} gal`}
                   </p>
                 </div>
-                <span className="font-display font-extrabold text-gold shrink-0">{fmtCentsExact(tx.total_cents)}</span>
+                <div className="flex items-center gap-2 shrink-0">
+                  <FuelUseBadge id={tx.id} value={tx.fuel_use} />
+                  <span className="font-display font-extrabold text-gold">{fmtCentsExact(tx.total_cents)}</span>
+                </div>
               </div>
             ))}
           </Panel>

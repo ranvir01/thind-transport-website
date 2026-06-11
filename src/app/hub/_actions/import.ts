@@ -7,6 +7,7 @@ import { createLoad } from "@/lib/hub/loads"
 import { findCustomerByName, createCustomer } from "@/lib/hub/customers"
 import { query } from "@/lib/hub/db"
 import { logAudit } from "@/lib/hub/audit"
+import { classifyFuelUse } from "@/lib/hub/fuel-core"
 import {
   parseMoney, parseIntSafe, normalizeEquipment, normalizeState, parseDateSafe,
   type ImportRow,
@@ -196,8 +197,8 @@ export async function importFuelAction(rows: GenericRow[], program: string): Pro
       const result = await query<{ id: string }>(
         `INSERT INTO hub.fuel_transactions (
            carrier_id, source, external_id, card_program, truck_id, driver_id, ts, merchant, city,
-           jurisdiction, gallons, fuel_type, unit_price_cents, total_cents, odometer, raw
-         ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)
+           jurisdiction, gallons, fuel_type, fuel_use, unit_price_cents, total_cents, odometer, raw
+         ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)
          ON CONFLICT (carrier_id, source, external_id) DO NOTHING
          RETURNING id`,
         [
@@ -207,6 +208,8 @@ export async function importFuelAction(rows: GenericRow[], program: string): Pro
           ts, row.merchant?.trim() || null, row.city?.trim() || null,
           row.jurisdiction ? normalizeState(row.jurisdiction) : null,
           gallons, row.fuel_type?.trim() || "diesel",
+          // Reefer fuel is IFTA-exempt — classify at intake, reviewable later.
+          classifyFuelUse(row.fuel_type),
           row.unit_price ? Math.round(parseMoney(row.unit_price) * 100) : null,
           totalCents,
           row.odometer ? Number(row.odometer.replace(/[^0-9.]/g, "")) || null : null,

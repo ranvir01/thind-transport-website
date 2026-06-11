@@ -26,17 +26,24 @@ export interface FuelTruckStats {
   truck_id: string | null
   truck_unit: string | null
   gallons: string
+  /** Propulsion (road) gallons only — reefer/DEF are excluded from MPG. */
+  tractor_gallons: string
   total_cents: string
   transactions: number
   loaded_miles: string | null
   avg_price_cents: string | null
 }
 
-/** Per-truck fuel stats over a window, with loaded miles for cost/mile + MPG. */
+/**
+ * Per-truck fuel stats over a window, with loaded miles for cost/mile + MPG.
+ * Spend counts every gallon; MPG only counts tractor (propulsion) fuel —
+ * reefer fuel is not propulsion fuel and would silently inflate burn rates.
+ */
 export async function fuelStatsByTruck(carrierId: string, days = 92): Promise<FuelTruckStats[]> {
   return query<FuelTruckStats>(
     `SELECT f.truck_id, t.unit_number AS truck_unit,
        SUM(f.gallons) AS gallons,
+       COALESCE(SUM(f.gallons) FILTER (WHERE f.fuel_use = 'tractor'), 0) AS tractor_gallons,
        SUM(f.total_cents) AS total_cents,
        COUNT(*)::int AS transactions,
        (SELECT SUM(l.loaded_miles) FROM hub.loads l
@@ -49,6 +56,18 @@ export async function fuelStatsByTruck(carrierId: string, days = 92): Promise<Fu
      GROUP BY f.truck_id, t.unit_number
      ORDER BY t.unit_number NULLS LAST`,
     [carrierId, days]
+  )
+}
+
+/** Manual reclassification from the review UI (pump products are messy). */
+export async function setFuelUse(
+  carrierId: string,
+  transactionId: string,
+  fuelUse: "tractor" | "reefer" | "other"
+): Promise<void> {
+  await query(
+    `UPDATE hub.fuel_transactions SET fuel_use = $3 WHERE carrier_id = $1 AND id = $2`,
+    [carrierId, transactionId, fuelUse]
   )
 }
 
