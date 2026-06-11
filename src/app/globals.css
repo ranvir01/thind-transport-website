@@ -1157,3 +1157,15 @@ button[aria-label="Contact us"]:hover {
 .hero-stagger > *:nth-child(4) { animation-delay: 0.21s; }
 .hero-stagger > *:nth-child(5) { animation-delay: 0.28s; }
 .hero-stagger > *:nth-child(6) { animation-delay: 0.35s; }
+
+/* ---- HaulDesk planner (E1) ---- */
+/* Empty days are visually loud: a soft diagonal hatch begging for a load. */
+.planner-empty-day {
+  background-image: repeating-linear-gradient(
+    -45deg,
+    transparent,
+    transparent 7px,
+    rgba(217, 164, 65, 0.07) 7px,
+    rgba(217, 164, 65, 0.07) 9px
+  );
+}

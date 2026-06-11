@@ -1,157 +1,292 @@
 import Link from "next/link"
-import { Package, TruckIcon, Users, AlertTriangle, DollarSign } from "lucide-react"
-import { getDashboardStats, listExpiringItems, listLoads } from "@/lib/hub/loads"
-import { fmtCents, loadTotalCents } from "@/lib/hub/types"
-import { Panel, PageHeader, StatusBadge, ExpiryPill, EmptyState } from "@/components/hub/ui"
+import {
+  AlertTriangle, ArrowRight, BellOff, CalendarOff, CheckSquare, DollarSign,
+  MapPin, Receipt, TruckIcon,
+} from "lucide-react"
+import { getDashboardStats } from "@/lib/hub/loads"
+import { todayData } from "@/lib/hub/today"
+import { fmtCents } from "@/lib/hub/types"
+import { Panel, PageHeader } from "@/components/hub/ui"
+import { TimeOffDecisionPanel } from "@/components/hub/DriverOfficePanels"
 import { requireOfficeUser } from "@/lib/hub/session"
+import { cn } from "@/lib/utils"
 
 export const dynamic = "force-dynamic"
 
-export default async function HubDashboardPage() {
+function countdown(iso: string | null): { label: string; urgent: boolean } {
+  if (!iso) return { label: "no appt", urgent: false }
+  const minutes = Math.round((new Date(iso).getTime() - Date.now()) / 60000)
+  if (minutes < 0) return { label: `${Math.abs(Math.round(minutes / 60))}h late`, urgent: true }
+  if (minutes < 60) return { label: `in ${minutes}m`, urgent: minutes < 30 }
+  if (minutes < 60 * 12) return { label: `in ${Math.round(minutes / 60)}h`, urgent: false }
+  return {
+    label: new Date(iso).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }),
+    urgent: false,
+  }
+}
+
+export default async function TodayPage() {
   const user = await requireOfficeUser()
-  const [stats, expiring, recentLoads] = await Promise.all([
+  const [stats, today] = await Promise.all([
     getDashboardStats(user.carrierId),
-    listExpiringItems(user.carrierId, 60),
-    listLoads(user.carrierId, { status: "active" }),
+    todayData(user.carrierId),
   ])
 
-  const kpis = [
-    { label: "Active loads", value: stats.active_loads, icon: Package, href: "/hub/dispatch" },
-    { label: "In transit", value: stats.in_transit, icon: TruckIcon, href: "/hub/dispatch" },
-    { label: "Awaiting POD", value: stats.awaiting_pod, icon: Package, href: "/hub/dispatch" },
-    { label: "Active drivers", value: stats.drivers_active, icon: Users, href: "/hub/drivers" },
-  ]
+  const allQuiet =
+    today.stopsToday.length === 0 && today.unacked.length === 0 &&
+    today.redCompliance.length === 0 && today.tasksDue.length === 0 &&
+    today.unbilled.length === 0 && today.pendingTimeOff.length === 0
 
   return (
     <div>
       <PageHeader
         title={`Good ${new Date().getHours() < 12 ? "morning" : new Date().getHours() < 17 ? "afternoon" : "evening"}, ${user.name.split(" ")[0]}`}
-        subtitle="Here's where the fleet stands right now."
+        subtitle="Today's huddle — everything that needs a human, one tap from its fix."
       />
 
-      {/* KPI cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
-        {kpis.map((kpi) => (
-          <Link key={kpi.label} href={kpi.href}>
-            <Panel className="p-4 hover:border-white/20 transition-colors h-full">
-              <div className="flex items-center justify-between">
-                <span className="text-label text-steel-300 uppercase">{kpi.label}</span>
-                <kpi.icon className="h-4 w-4 text-steel-400" />
-              </div>
-              <p className="mt-2 font-display text-3xl font-extrabold text-gold">{kpi.value}</p>
-            </Panel>
-          </Link>
-        ))}
-      </div>
-
-      {/* Money + fleet status */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-        <Panel className="p-4">
-          <span className="text-label text-steel-300 uppercase">Booked · this week</span>
-          <p className="mt-2 font-display text-2xl font-extrabold text-white">{fmtCents(Number(stats.revenue_week_cents))}</p>
-        </Panel>
-        <Panel className="p-4">
-          <span className="text-label text-steel-300 uppercase">Booked · this month</span>
-          <p className="mt-2 font-display text-2xl font-extrabold text-white">{fmtCents(Number(stats.revenue_month_cents))}</p>
+      {/* Compact KPI strip */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
+        <Link href="/hub/dispatch">
+          <Panel className="p-3.5 hover:border-white/20 h-full">
+            <span className="text-label text-steel-300 uppercase">Active loads</span>
+            <p className="mt-1 font-display text-2xl font-extrabold text-gold">{stats.active_loads}</p>
+          </Panel>
+        </Link>
+        <Panel className="p-3.5">
+          <span className="text-label text-steel-300 uppercase">Booked this week</span>
+          <p className="mt-1 font-display text-2xl font-extrabold text-white">{fmtCents(Number(stats.revenue_week_cents))}</p>
         </Panel>
         <Link href="/hub/money">
-          <Panel className="p-4 hover:border-white/20 transition-colors h-full">
-            <div className="flex items-center justify-between">
-              <span className="text-label text-steel-300 uppercase">AR open</span>
-              <DollarSign className="h-4 w-4 text-steel-400" />
-            </div>
-            <p className="mt-2 font-display text-2xl font-extrabold text-gold">{fmtCents(Number(stats.ar_open_cents))}</p>
+          <Panel className="p-3.5 hover:border-white/20 h-full">
+            <span className="text-label text-steel-300 uppercase">Owed to you</span>
+            <p className="mt-1 font-display text-2xl font-extrabold text-gold">{fmtCents(Number(stats.ar_open_cents))}</p>
           </Panel>
         </Link>
         <Link href="/hub/money/settlements">
-          <Panel className="p-4 hover:border-white/20 transition-colors h-full">
+          <Panel className="p-3.5 hover:border-white/20 h-full">
             <span className="text-label text-steel-300 uppercase">Driver pay queued</span>
-            <p className="mt-2 font-display text-2xl font-extrabold text-white">{fmtCents(Number(stats.settlement_due_cents))}</p>
+            <p className="mt-1 font-display text-2xl font-extrabold text-white">{fmtCents(Number(stats.settlement_due_cents))}</p>
           </Panel>
         </Link>
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
-        {/* Recent active loads */}
-        <div className="xl:col-span-2">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="font-display text-lg font-bold uppercase tracking-wide text-white">Active loads</h2>
-            <Link href="/hub/loads" className="text-body-sm text-gold hover:text-gold-300 font-semibold">
-              View all →
-            </Link>
-          </div>
-          {recentLoads.length === 0 ? (
-            <EmptyState
-              title="No active loads"
-              hint="Book your first load to get the board moving."
-              action={
-                <Link
-                  href="/hub/loads/paste"
-                  className="inline-flex min-h-[44px] items-center rounded-xl bg-orange px-5 font-display text-sm font-bold uppercase tracking-[0.08em] text-white shadow-cta hover:bg-orange-400"
-                >
-                  Paste a rate con
-                </Link>
-              }
-            />
-          ) : (
-            <div className="space-y-2">
-              {recentLoads.slice(0, 8).map((load) => (
-                <Link key={load.id} href={`/hub/loads/${load.id}`} className="block">
-                  <Panel className="p-3.5 hover:border-white/20 transition-colors">
-                    <div className="flex flex-wrap items-center justify-between gap-2">
+      {allQuiet ? (
+        <Panel className="p-8 text-center mb-4">
+          <p className="font-display text-xl font-extrabold text-white">All quiet. Suspiciously quiet.</p>
+          <p className="mt-1 text-body-sm text-steel-300">
+            Nothing due, nothing unconfirmed, nothing unbilled, nothing on fire. Go book some freight.
+          </p>
+        </Panel>
+      ) : null}
+
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+        {/* Appointments today */}
+        {today.stopsToday.length > 0 ? (
+          <Panel className="p-4">
+            <h2 className="flex items-center gap-2 font-display text-base font-bold uppercase tracking-wide text-white mb-2">
+              <MapPin className="h-4 w-4 text-gold" /> Due today ({today.stopsToday.length})
+            </h2>
+            <ul className="divide-y divide-white/5">
+              {today.stopsToday.map((stop) => {
+                const cd = countdown(stop.appt_start)
+                return (
+                  <li key={stop.stop_id}>
+                    <Link href={`/hub/loads/${stop.load_id}`} className="flex items-center justify-between gap-2 py-2 px-2 -mx-2 rounded-lg hover:bg-white/5">
                       <div className="min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="font-bold text-white">{load.reference}</span>
-                          <StatusBadge status={load.status} />
-                        </div>
-                        <p className="text-body-sm text-steel-200 mt-1 truncate">
-                          {load.origin_city ? `${load.origin_city}, ${load.origin_state}` : "—"}
-                          {" → "}
-                          {load.dest_city ? `${load.dest_city}, ${load.dest_state}` : "—"}
-                          {load.customer_name ? ` · ${load.customer_name}` : ""}
+                        <p className="font-semibold text-white truncate">
+                          {stop.type === "pickup" ? "PU" : "DEL"} · {stop.facility || `${stop.city}, ${stop.state}`}
+                        </p>
+                        <p className="text-body-xs text-steel-300 truncate">
+                          {stop.reference} · {stop.driver_name ?? "no driver"}{stop.truck_unit ? ` · #${stop.truck_unit}` : ""}
                         </p>
                       </div>
-                      <div className="text-right shrink-0">
-                        <p className="font-display font-extrabold text-gold">{fmtCents(loadTotalCents(load))}</p>
-                        <p className="text-body-xs text-steel-300">{load.driver_name ?? "Unassigned"}</p>
-                      </div>
-                    </div>
-                  </Panel>
-                </Link>
-              ))}
-            </div>
-          )}
-        </div>
+                      <span
+                        className={cn(
+                          "shrink-0 rounded-full border px-2.5 py-0.5 text-[11px] font-bold",
+                          stop.arrived_at
+                            ? "border-green-500/40 bg-green-500/10 text-green-400"
+                            : cd.urgent
+                              ? "border-red-500/40 bg-red-500/10 text-red-400"
+                              : "border-white/15 bg-white/5 text-steel-200"
+                        )}
+                      >
+                        {stop.arrived_at ? "arrived" : stop.fcfs ? "FCFS" : cd.label}
+                      </span>
+                    </Link>
+                  </li>
+                )
+              })}
+            </ul>
+          </Panel>
+        ) : null}
 
-        {/* Compliance: expiring soon */}
-        <div>
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <AlertTriangle className="h-4 w-4 text-gold" />
-              <h2 className="font-display text-lg font-bold uppercase tracking-wide text-white">Expiring soon</h2>
-            </div>
-            <Link href="/hub/compliance" className="text-body-sm text-gold hover:text-gold-300 font-semibold">
-              All →
-            </Link>
-          </div>
-          {expiring.length === 0 ? (
-            <Panel className="p-5 text-center">
-              <p className="text-body-sm text-steel-200">Nothing expiring. The fleet is clean.</p>
-            </Panel>
-          ) : (
-            <Panel className="divide-y divide-white/5">
-              {expiring.map((item, i) => (
-                <Link key={i} href={item.href} className="flex items-center justify-between gap-2 p-3 hover:bg-white/5">
-                  <div className="min-w-0">
-                    <p className="text-sm font-semibold text-white truncate">{item.name}</p>
-                    <p className="text-body-xs text-steel-300">{item.kind}</p>
-                  </div>
-                  <ExpiryPill date={item.due} />
-                </Link>
+        {/* Unacknowledged dispatches */}
+        {today.unacked.length > 0 ? (
+          <Panel className="p-4 border-orange/30">
+            <h2 className="flex items-center gap-2 font-display text-base font-bold uppercase tracking-wide text-white mb-2">
+              <BellOff className="h-4 w-4 text-orange" /> Driver hasn&apos;t confirmed ({today.unacked.length})
+            </h2>
+            <ul className="divide-y divide-white/5">
+              {today.unacked.map((load) => (
+                <li key={load.id}>
+                  <Link href={`/hub/loads/${load.id}`} className="flex items-center justify-between gap-2 py-2 px-2 -mx-2 rounded-lg hover:bg-white/5">
+                    <div className="min-w-0">
+                      <p className="font-semibold text-white truncate">
+                        {load.reference} · {load.origin_city} → {load.dest_city}
+                      </p>
+                      <p className="text-body-xs text-steel-300">
+                        {load.driver_name ?? "No driver"} — dispatched{" "}
+                        {new Date(load.dispatched_at).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
+                      </p>
+                    </div>
+                    <ArrowRight className="h-4 w-4 shrink-0 text-steel-400" />
+                  </Link>
+                </li>
               ))}
-            </Panel>
-          )}
-        </div>
+            </ul>
+            <p className="mt-2 text-body-xs text-steel-400">Silence is how loads get missed — call if they don&apos;t tap soon.</p>
+          </Panel>
+        ) : null}
+
+        {/* Trucks needing freight */}
+        {today.emptyTrucks.length > 0 ? (
+          <Panel className="p-4">
+            <h2 className="flex items-center gap-2 font-display text-base font-bold uppercase tracking-wide text-white mb-2">
+              <TruckIcon className="h-4 w-4 text-gold" /> Trucks needing freight ({today.emptyTrucks.length})
+            </h2>
+            <ul className="divide-y divide-white/5">
+              {today.emptyTrucks.map((truck) => (
+                <li key={`${truck.id}-${truck.when}`} className="flex items-center justify-between gap-2 py-2">
+                  <div>
+                    <p className="font-semibold text-white">
+                      #{truck.unit_number}
+                      <span className="text-steel-300 font-normal"> · {truck.driver_name ?? "no driver"}</span>
+                    </p>
+                    <p className="text-body-xs text-steel-300">
+                      {truck.where_city ? `${truck.where_city}, ${truck.where_state}` : "Location unknown"}
+                    </p>
+                  </div>
+                  <span
+                    className={cn(
+                      "shrink-0 rounded-full border px-2.5 py-0.5 text-[11px] font-bold uppercase",
+                      truck.when === "now"
+                        ? "border-orange/40 bg-orange/10 text-orange"
+                        : "border-gold/40 bg-gold/10 text-gold"
+                    )}
+                  >
+                    empty {truck.when}
+                  </span>
+                </li>
+              ))}
+            </ul>
+            <Link href="/hub/planner" className="mt-2 inline-flex items-center gap-1 text-body-xs font-semibold text-gold hover:text-gold/80">
+              Open the planner for backhaul ideas <ArrowRight className="h-3 w-3" />
+            </Link>
+          </Panel>
+        ) : null}
+
+        {/* Money you haven't invoiced */}
+        {today.unbilled.length > 0 ? (
+          <Panel className="p-4 border-gold/30">
+            <h2 className="flex items-center gap-2 font-display text-base font-bold uppercase tracking-wide text-white mb-2">
+              <Receipt className="h-4 w-4 text-gold" /> Money you haven&apos;t invoiced yet
+            </h2>
+            <ul className="divide-y divide-white/5">
+              {today.unbilled.map((load) => (
+                <li key={load.id}>
+                  <Link href={`/hub/loads/${load.id}`} className="flex items-center justify-between gap-2 py-2 px-2 -mx-2 rounded-lg hover:bg-white/5">
+                    <div className="min-w-0">
+                      <p className="font-semibold text-white truncate">{load.reference} · {load.customer_name}</p>
+                      <p className="text-body-xs text-steel-300">
+                        POD in hand{load.delivered_days_ago > 0 ? ` for ${load.delivered_days_ago} day${load.delivered_days_ago > 1 ? "s" : ""}` : ""} — one click to bill
+                      </p>
+                    </div>
+                    <span className="shrink-0 font-display font-extrabold text-gold">{fmtCents(Number(load.total_cents))}</span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </Panel>
+        ) : null}
+
+        {/* Red compliance */}
+        {today.redCompliance.length > 0 ? (
+          <Panel className="p-4 border-red-500/30">
+            <h2 className="flex items-center gap-2 font-display text-base font-bold uppercase tracking-wide text-white mb-2">
+              <AlertTriangle className="h-4 w-4 text-red-400" /> Red flags ({today.redCompliance.length})
+            </h2>
+            <ul className="divide-y divide-white/5">
+              {today.redCompliance.slice(0, 8).map((entry, i) => (
+                <li key={i}>
+                  <Link href={entry.href ?? "/hub/compliance"} className="flex items-center justify-between gap-2 py-2 px-2 -mx-2 rounded-lg hover:bg-white/5">
+                    <p className="min-w-0 truncate text-sm">
+                      <span className="font-semibold text-white">{entry.name}</span>
+                      <span className="text-steel-300"> — {entry.kind}</span>
+                    </p>
+                    <span className="shrink-0 rounded-full border border-red-500/40 bg-red-500/10 px-2.5 py-0.5 text-[11px] font-bold text-red-400">
+                      {entry.due ? new Date(entry.due).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "—"}
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </Panel>
+        ) : null}
+
+        {/* Tasks due */}
+        {today.tasksDue.length > 0 ? (
+          <Panel className="p-4">
+            <h2 className="flex items-center gap-2 font-display text-base font-bold uppercase tracking-wide text-white mb-2">
+              <CheckSquare className="h-4 w-4 text-gold" /> Tasks due ({today.tasksDue.length})
+            </h2>
+            <ul className="divide-y divide-white/5">
+              {today.tasksDue.map((task) => (
+                <li key={task.id}>
+                  <Link href="/hub/tasks" className="flex items-center justify-between gap-2 py-2 px-2 -mx-2 rounded-lg hover:bg-white/5">
+                    <p className="min-w-0 truncate text-sm font-semibold text-white">{task.title}</p>
+                    <span
+                      className={cn(
+                        "shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase",
+                        task.priority === "urgent"
+                          ? "border-red-500/40 bg-red-500/10 text-red-400"
+                          : "border-white/15 bg-white/5 text-steel-300"
+                      )}
+                    >
+                      {task.priority}
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </Panel>
+        ) : null}
+
+        {/* Time-off requests */}
+        {today.pendingTimeOff.length > 0 ? (
+          <div className="xl:col-span-2">
+            <TimeOffDecisionPanel requests={today.pendingTimeOff} />
+          </div>
+        ) : null}
+      </div>
+
+      {/* Footer quick facts */}
+      <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-1 text-body-xs text-steel-400">
+        <span className="inline-flex items-center gap-1.5">
+          <TruckIcon className="h-3.5 w-3.5" /> {stats.trucks_active}/{stats.trucks_total} trucks active
+        </span>
+        <span className="inline-flex items-center gap-1.5">
+          <DollarSign className="h-3.5 w-3.5" /> {fmtCents(Number(stats.revenue_month_cents))} booked this month
+        </span>
+        {today.openIncidents > 0 ? (
+          <Link href="/hub/safety" className="inline-flex items-center gap-1.5 text-gold hover:text-gold/80">
+            <AlertTriangle className="h-3.5 w-3.5" /> {today.openIncidents} open incident{today.openIncidents > 1 ? "s" : ""}
+          </Link>
+        ) : null}
+        {today.pendingTimeOff.length > 0 ? (
+          <span className="inline-flex items-center gap-1.5">
+            <CalendarOff className="h-3.5 w-3.5" /> {today.pendingTimeOff.length} time-off request{today.pendingTimeOff.length > 1 ? "s" : ""} waiting
+          </span>
+        ) : null}
       </div>
     </div>
   )
