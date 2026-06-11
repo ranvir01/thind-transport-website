@@ -121,6 +121,35 @@ export async function lastPay(carrierId: string, driverId: string): Promise<Sett
   )
 }
 
+export interface HosSnapshot {
+  ts: string
+  duty_status: string | null
+  drive_remaining_minutes: number | null
+  shift_remaining_minutes: number | null
+  cycle_remaining_minutes: number | null
+}
+
+/**
+ * Latest HOS clocks from the ELD sync — display only, the ELD is the legal
+ * record. Returns null until the telematics integration lands data (the
+ * table itself arrives with the integrations migration; guard with regclass).
+ */
+export async function latestHosSnapshot(
+  carrierId: string,
+  driverId: string
+): Promise<HosSnapshot | null> {
+  const exists = await queryOne<{ reg: string | null }>(
+    `SELECT to_regclass('hub.hos_snapshots')::text AS reg`
+  )
+  if (!exists?.reg) return null
+  return queryOne<HosSnapshot>(
+    `SELECT ts, duty_status, drive_remaining_minutes, shift_remaining_minutes, cycle_remaining_minutes
+     FROM hub.hos_snapshots WHERE carrier_id = $1 AND driver_id = $2
+     ORDER BY ts DESC LIMIT 1`,
+    [carrierId, driverId]
+  )
+}
+
 /** Expiring documents (CDL / med card) for the driver's own warning pills. */
 export async function driverExpiries(
   carrierId: string,

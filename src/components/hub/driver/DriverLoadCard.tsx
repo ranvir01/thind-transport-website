@@ -19,6 +19,7 @@ import {
   driverStopTimestamp, driverUploadDocument,
 } from "@/app/hub/_actions/driver"
 import { openThread } from "@/app/hub/_actions/messages"
+import { runOrQueue } from "@/components/hub/driver/offline-queue"
 import { FACILITY_NOTE_TAGS, type Stop } from "@/lib/hub/types"
 
 interface LoadForDriver {
@@ -61,30 +62,63 @@ export function DriverLoadCard({ load, detentionFreeMinutes }: { load: LoadForDr
   const router = useRouter()
   const [pending, startTransition] = useTransition()
   const [uploadKind, setUploadKind] = useState<"pod" | "receipt" | "bol">("pod")
+  const [osdFlag, setOsdFlag] = useState(false)
+  const [receiptAmount, setReceiptAmount] = useState("")
   const fileRef = useRef<HTMLInputElement>(null)
   const [notingStop, setNotingStop] = useState<Stop | null>(null)
 
-  const run = (action: () => Promise<{ ok: boolean; error?: string }>, success: string) =>
+  // Every tap runs through the offline queue: no signal, no lost updates.
+  const run = (
+    intent: { kind: "status" | "stop" | "ack"; payload: Record<string, unknown> },
+    action: () => Promise<{ ok: boolean; error?: string }>,
+    success: string
+  ) =>
     startTransition(async () => {
-      const result = await action()
-      if (result.ok) {
+      const result = await runOrQueue(intent, action)
+      if ("queued" in result && result.queued) {
+        toast.success("No signal — saved on your phone, sends automatically")
+      } else if (result.ok) {
         toast.success(success)
         router.refresh()
-      } else toast.error(result.error ?? "Something went wrong")
+      } else toast.error(("error" in result && result.error) || "Something went wrong")
     })
 
   const upload = (file: File | undefined) => {
     if (!file) return
-    const formData = new FormData()
-    formData.set("load_id", load.id)
-    formData.set("kind", uploadKind)
-    formData.set("file", file)
     startTransition(async () => {
-      const result = await driverUploadDocument(formData)
-      if (result.ok) {
-        toast.success(`${uploadKind.toUpperCase()} sent to the office`)
+      const buffer = await file.arrayBuffer()
+      const result = await runOrQueue(
+        {
+          kind: "upload",
+          payload: {
+            loadId: load.id, kind: uploadKind,
+            osd: uploadKind === "pod" && osdFlag ? 1 : undefined,
+            amount: uploadKind === "receipt" && receiptAmount ? receiptAmount : undefined,
+          },
+          file: { name: file.name, type: file.type, buffer },
+        },
+        () => {
+          const formData = new FormData()
+          formData.set("load_id", load.id)
+          formData.set("kind", uploadKind)
+          if (uploadKind === "pod" && osdFlag) formData.set("osd", "1")
+          if (uploadKind === "receipt" && receiptAmount) formData.set("amount", receiptAmount)
+          formData.set("file", file)
+          return driverUploadDocument(formData)
+        }
+      )
+      if ("queued" in result && result.queued) {
+        toast.success("No signal — photo saved, sends automatically")
+      } else if (result.ok) {
+        toast.success(
+          uploadKind === "pod" && osdFlag
+            ? "POD sent with exceptions noted — the office opened a claim file"
+            : `${uploadKind.toUpperCase()} sent to the office`
+        )
+        setOsdFlag(false)
+        setReceiptAmount("")
         router.refresh()
-      } else toast.error(result.error ?? "Upload failed")
+      } else toast.error(("error" in result && result.error) || "Upload failed")
       if (fileRef.current) fileRef.current.value = ""
     })
   }
@@ -132,7 +166,7 @@ export function DriverLoadCard({ load, detentionFreeMinutes }: { load: LoadForDr
         {/* Acknowledge */}
         {!load.acknowledged_at && load.status === "dispatched" ? (
           <button
-            onClick={() => run(() => driverAcknowledgeDispatch(load.id), "Dispatch confirmed — drive safe")}
+            onClick={() => run({ kind: "ack", payload: { loadId: load.id } }, () => driverAcknowledgeDispatch(load.id), "Dispatch confirmed — drive safe")}
             disabled={pending}
             className="flex w-full min-h-[52px] items-center justify-center gap-2 rounded-xl border border-gold/50 bg-gold/15 font-display text-sm font-bold uppercase tracking-[0.08em] text-gold hover:bg-gold/25 disabled:opacity-60"
           >
@@ -200,7 +234,7 @@ export function DriverLoadCard({ load, detentionFreeMinutes }: { load: LoadForDr
                 <div className="mt-2 flex gap-2">
                   {canArrive ? (
                     <button
-                      onClick={() => run(() => driverStopTimestamp(stop.id, load.id, "arrived_at"), "Arrival recorded")}
+                      onClick={() => run({ kind: "stop", payload: { stopId: stop.id, loadId: load.id, field: "arrived_at" } }, () => driverStopTimestamp(stop.id, load.id, "arrived_at"), "Arrival recorded")}
                       disabled={pending}
                       className="flex flex-1 min-h-[48px] items-center justify-center gap-2 rounded-xl bg-orange font-display text-sm font-bold uppercase tracking-[0.06em] text-white shadow-cta hover:bg-orange-400 disabled:opacity-60"
                     >
@@ -209,7 +243,7 @@ export function DriverLoadCard({ load, detentionFreeMinutes }: { load: LoadForDr
                   ) : null}
                   {canDepart ? (
                     <button
-                      onClick={() => run(() => driverStopTimestamp(stop.id, load.id, "departed_at"), "Departure recorded")}
+                      onClick={() => run({ kind: "stop", payload: { stopId: stop.id, loadId: load.id, field: "departed_at" } }, () => driverStopTimestamp(stop.id, load.id, "departed_at"), "Departure recorded")}
                       disabled={pending}
                       className="flex flex-1 min-h-[48px] items-center justify-center gap-2 rounded-xl bg-orange font-display text-sm font-bold uppercase tracking-[0.06em] text-white shadow-cta hover:bg-orange-400 disabled:opacity-60"
                     >
@@ -243,7 +277,7 @@ export function DriverLoadCard({ load, detentionFreeMinutes }: { load: LoadForDr
         {/* Big advance button */}
         {advance ? (
           <button
-            onClick={() => run(() => driverAdvanceStatus(load.id), "Status updated — dispatch can see it")}
+            onClick={() => run({ kind: "status", payload: { loadId: load.id } }, () => driverAdvanceStatus(load.id), "Status updated — dispatch can see it")}
             disabled={pending}
             className="flex w-full min-h-[56px] items-center justify-center gap-2 rounded-xl bg-orange font-display text-base font-bold uppercase tracking-[0.08em] text-white shadow-cta hover:bg-orange-400 disabled:opacity-60"
           >
@@ -284,6 +318,32 @@ export function DriverLoadCard({ load, detentionFreeMinutes }: { load: LoadForDr
               onChange={(e) => upload(e.target.files?.[0])}
             />
           </div>
+          {uploadKind === "pod" ? (
+            <label className="mt-2 flex items-start gap-2.5 cursor-pointer min-h-[44px]">
+              <input
+                type="checkbox"
+                checked={osdFlag}
+                onChange={(e) => setOsdFlag(e.target.checked)}
+                className="mt-0.5 h-5 w-5 rounded border-white/25 accent-orange"
+              />
+              <span>
+                <span className="block text-sm font-semibold text-white">Exceptions noted on the POD (OS&D)</span>
+                <span className="block text-body-xs text-steel-300">
+                  Shortages, damage, overages — checking this starts the claim file right now.
+                </span>
+              </span>
+            </label>
+          ) : null}
+          {uploadKind === "receipt" ? (
+            <input
+              aria-label="Receipt amount"
+              placeholder="Amount on the receipt ($) — makes it a reimbursement"
+              inputMode="decimal"
+              className="mt-2 w-full min-h-[48px] rounded-xl border border-white/15 bg-navy-900 px-3 text-sm text-white placeholder:text-steel-400"
+              value={receiptAmount}
+              onChange={(e) => setReceiptAmount(e.target.value)}
+            />
+          ) : null}
         </div>
       </div>
 

@@ -104,6 +104,9 @@ const MAX_UPLOAD_BYTES = 15 * 1024 * 1024
 /**
  * Camera/photo upload from the driver's phone: POD, BOL, receipts.
  * Auto-satisfies a matching open document request and tells the office.
+ * Extras: an OS&D toggle on PODs starts the cargo-claim clock (Carmack:
+ * delivery + 9 months), and receipts with an amount become reimbursable
+ * expense entries for office review.
  */
 export async function driverUploadDocument(formData: FormData): Promise<Result> {
   try {
@@ -111,6 +114,8 @@ export async function driverUploadDocument(formData: FormData): Promise<Result> 
     const loadId = String(formData.get("load_id") ?? "")
     const kind = String(formData.get("kind") ?? "")
     const requestId = String(formData.get("request_id") ?? "")
+    const osd = formData.get("osd") === "1"
+    const amountRaw = String(formData.get("amount") ?? "").replace(/[^0-9.]/g, "")
     if (!DRIVER_UPLOAD_KINDS.has(kind)) return { ok: false, error: "Pick what the photo is" }
     const load = await driverOwnsLoad(user.carrierId, user.driverId, loadId)
     if (!load) return { ok: false, error: "That load isn't yours" }
@@ -129,6 +134,39 @@ export async function driverUploadDocument(formData: FormData): Promise<Result> 
     await addLoadEvent(user.carrierId, loadId, "document", {
       kind, file: file.name, by: "driver",
     }, { id: user.id, name: user.name })
+
+    // OS&D on a POD: flag the load and open a draft cargo claim right now —
+    // a noted exception starts the claim clock at the moment of capture.
+    if (osd && kind === "pod") {
+      await query(
+        `UPDATE hub.loads SET osd_flagged = TRUE, updated_at = NOW() WHERE carrier_id = $1 AND id = $2`,
+        [user.carrierId, loadId]
+      )
+      await addLoadEvent(user.carrierId, loadId, "exception", {
+        osd: true, by: user.name, note: "Driver noted exceptions on the POD (OS&D)",
+      }, { id: user.id, name: user.name })
+      await query(
+        `INSERT INTO hub.claims (carrier_id, load_id, kind, status, filing_deadline, notes)
+         SELECT $1, $2, 'cargo', 'open',
+           (COALESCE(MAX(s.departed_at), MAX(s.arrived_at), NOW())::date + INTERVAL '9 months')::date,
+           'Draft claim auto-opened: driver noted OS&D exceptions on the POD.'
+         FROM hub.stops s WHERE s.load_id = $2 AND s.type = 'delivery'`,
+        [user.carrierId, loadId]
+      )
+    }
+
+    // Receipts with an amount become reimbursable expenses for office review.
+    if (kind === "receipt" && amountRaw && Number(amountRaw) > 0) {
+      await query(
+        `INSERT INTO hub.expenses (carrier_id, category, amount_cents, incurred_on, driver_id, load_id,
+           reimbursable, receipt_document_id, memo)
+         VALUES ($1, 'other', $2, CURRENT_DATE, $3, $4, TRUE, $5, $6)`,
+        [
+          user.carrierId, Math.round(Number(amountRaw) * 100), user.driverId, loadId, doc.id,
+          `Driver receipt — ${file.name}`,
+        ]
+      )
+    }
 
     // Close the loop on any matching open request (pinned on the driver home).
     if (requestId) {
@@ -151,7 +189,9 @@ export async function driverUploadDocument(formData: FormData): Promise<Result> 
     const full = await getLoad(user.carrierId, loadId)
     await notifyRoles(user.carrierId, ["owner", "dispatcher", "accountant"], {
       kind: "driver_document",
-      title: `${full?.reference ?? "Load"} — ${user.name} sent the ${kind.toUpperCase()}`,
+      title: osd
+        ? `⚠ ${full?.reference ?? "Load"} — POD with OS&D exceptions from ${user.name} (draft claim opened)`
+        : `${full?.reference ?? "Load"} — ${user.name} sent the ${kind.toUpperCase()}`,
       link: `/hub/loads/${loadId}`,
     })
     revalidatePath("/hub/driver")
@@ -223,6 +263,37 @@ export async function driverCancelTimeOff(id: string): Promise<Result> {
     return ok ? { ok: true } : { ok: false, error: "Already decided — call the office" }
   } catch (err) {
     return fail(err, "Could not cancel")
+  }
+}
+
+/** Driver asks for a cash/fuel-code advance — office approves, settlement deducts. */
+export async function driverRequestAdvance(input: {
+  amount: string
+  note?: string
+}): Promise<Result> {
+  try {
+    const user = await requireDriverUser()
+    const amountCents = Math.round(Number(input.amount.replace(/[^0-9.]/g, "")) * 100)
+    if (!Number.isFinite(amountCents) || amountCents <= 0) {
+      return { ok: false, error: "How much do you need?" }
+    }
+    if (amountCents > 100000) return { ok: false, error: "Over $1,000 — call the office instead" }
+    const rows = await query<{ id: string }>(
+      `INSERT INTO hub.advances (carrier_id, driver_id, amount_cents, issued_on, reference, status, requested_by, note)
+       VALUES ($1, $2, $3, CURRENT_DATE, 'Driver request', 'pending', $4, $5) RETURNING id`,
+      [user.carrierId, user.driverId, amountCents, user.id, input.note?.trim() || null]
+    )
+    await notifyRoles(user.carrierId, ["owner", "accountant"], {
+      kind: "advance",
+      title: `${user.name} asked for a $${(amountCents / 100).toFixed(2)} advance`,
+      body: input.note?.trim() || undefined,
+      link: "/hub/money/advances",
+    })
+    revalidatePath("/hub/driver/pay")
+    revalidatePath("/hub/money/advances")
+    return { ok: true, id: rows[0].id }
+  } catch (err) {
+    return fail(err, "Could not send the request")
   }
 }
 

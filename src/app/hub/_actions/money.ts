@@ -190,6 +190,50 @@ export async function createAdvanceAction(values: {
   }
 }
 
+/** Decide a driver-requested advance: approve → deducts on the next settlement. */
+export async function decideAdvanceAction(
+  id: string,
+  decision: "approve" | "deny"
+): Promise<ActionResult> {
+  let user
+  try {
+    user = await requirePermission("money:approve")
+  } catch (err) {
+    return asError(err, "Forbidden")
+  }
+  try {
+    const { query } = await import("@/lib/hub/db")
+    const rows = await query<{ id: string; driver_id: string; amount_cents: number }>(
+      `UPDATE hub.advances SET status = $3, updated_at = NOW()
+       WHERE carrier_id = $1 AND id = $2 AND status = 'pending'
+       RETURNING id, driver_id, amount_cents`,
+      [user.carrierId, id, decision === "approve" ? "outstanding" : "cancelled"]
+    )
+    if (rows.length === 0) return { ok: false, error: "Already decided" }
+    const { logAudit } = await import("@/lib/hub/audit")
+    await logAudit({
+      carrierId: user.carrierId, actorId: user.id, actorName: user.name,
+      entityType: "advance", entityId: id, action: decision,
+      newValue: { amountCents: rows[0].amount_cents },
+    })
+    const { notifyDriver } = await import("@/lib/hub/notify")
+    await notifyDriver(user.carrierId, rows[0].driver_id, {
+      kind: "advance",
+      title:
+        decision === "approve"
+          ? `Advance approved — $${(rows[0].amount_cents / 100).toFixed(2)} is on its way`
+          : "Advance request denied — call the office",
+      body: decision === "approve" ? "It deducts from your next settlement." : undefined,
+      link: "/hub/driver/pay",
+    })
+    revalidatePath("/hub/money/advances")
+    revalidatePath("/hub/driver/pay")
+    return { ok: true }
+  } catch (err) {
+    return asError(err, "Failed to decide the advance")
+  }
+}
+
 export async function createExpenseAction(values: {
   category: string
   amount: string

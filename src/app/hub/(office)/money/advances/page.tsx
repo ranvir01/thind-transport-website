@@ -5,6 +5,7 @@ import { can } from "@/lib/hub/permissions"
 import { fmtCentsExact } from "@/lib/hub/types"
 import { Panel, PageHeader, BackLink } from "@/components/hub/ui"
 import { AdvanceForm } from "@/components/hub/MoneyForms"
+import { AdvanceDecideButtons } from "@/components/hub/AdvanceDecideButtons"
 import { cn } from "@/lib/utils"
 
 export const dynamic = "force-dynamic"
@@ -45,9 +46,12 @@ export default async function AdvancesPage() {
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                   <span className={cn("inline-flex rounded-full border px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider", STATUS_PILL[advance.status])}>
-                    {advance.status}
+                    {advance.status === "pending" ? "driver asked" : advance.status}
                   </span>
                   <span className="font-display font-extrabold text-gold">{fmtCentsExact(advance.amount_cents)}</span>
+                  {advance.status === "pending" && can(user.role, "money:approve") ? (
+                    <AdvanceDecideButtons id={advance.id} />
+                  ) : null}
                 </div>
               </div>
             ))

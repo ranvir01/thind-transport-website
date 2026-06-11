@@ -1,13 +1,23 @@
 import { FileText } from "lucide-react"
 import { requireDriverUser } from "@/lib/hub/session"
 import { driverSettlements } from "@/lib/hub/driver-app"
-import { fmtCents } from "@/lib/hub/types"
+import { query } from "@/lib/hub/db"
+import { fmtCents, fmtCentsExact } from "@/lib/hub/types"
+import { AdvanceRequestForm } from "@/components/hub/driver/AdvanceRequestForm"
 
 export const dynamic = "force-dynamic"
 
 export default async function DriverPayPage() {
   const user = await requireDriverUser()
-  const settlements = await driverSettlements(user.carrierId, user.driverId)
+  const [settlements, advances] = await Promise.all([
+    driverSettlements(user.carrierId, user.driverId),
+    query<{ id: string; amount_cents: number; status: string; issued_on: string; note: string | null }>(
+      `SELECT id, amount_cents, status, issued_on, note FROM hub.advances
+       WHERE carrier_id = $1 AND driver_id = $2 AND status IN ('pending','outstanding')
+       ORDER BY created_at DESC LIMIT 5`,
+      [user.carrierId, user.driverId]
+    ),
+  ])
 
   return (
     <div>
@@ -15,6 +25,19 @@ export default async function DriverPayPage() {
       <p className="text-body-sm text-steel-300 mb-4">
         Every settlement, line by line — tap one to open the statement.
       </p>
+
+      <div className="mb-4 space-y-2">
+        <AdvanceRequestForm />
+        {advances.map((advance) => (
+          <p key={advance.id} className="flex items-center justify-between rounded-xl border border-white/10 bg-navy-800/80 px-3 py-2.5 text-sm">
+            <span className="text-steel-100">
+              Advance {advance.status === "pending" ? "requested" : "approved"}
+              {advance.note ? ` — ${advance.note}` : ""}
+            </span>
+            <span className="font-display font-extrabold text-gold">{fmtCentsExact(advance.amount_cents)}</span>
+          </p>
+        ))}
+      </div>
 
       {settlements.length === 0 ? (
         <section className="rounded-2xl border border-white/10 bg-navy-800/80 p-6 text-center">
