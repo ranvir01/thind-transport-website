@@ -12,6 +12,8 @@ import { ContactsPanel, CrmNotesPanel, type CrmActivity } from "@/components/hub
 import { DocumentsPanel } from "@/components/hub/DocumentsPanel"
 import { VettingPanel } from "@/components/hub/VettingPanel"
 import { AgreementSignPanel } from "@/components/hub/PacketPanels"
+import { PortalAccessPanel } from "@/components/hub/PortalAccessPanel"
+import { listPortalUsers } from "@/lib/hub/portal"
 import { avgDaysToPay, fmcsaConfigured, latestVetting } from "@/lib/hub/vetting"
 
 export const dynamic = "force-dynamic"
@@ -34,6 +36,7 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
     latestVetting(user.carrierId, id),
     avgDaysToPay(user.carrierId, id),
   ])
+  const portalUsers = await listPortalUsers(user.carrierId, id)
 
   const revenue = loads
     .filter((l) => l.status !== "cancelled")
@@ -98,6 +101,11 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
                 : null,
               paySpeed,
             }}
+          />
+          <PortalAccessPanel
+            customerId={id}
+            customerType={customer.type}
+            users={portalUsers}
           />
           <AgreementSignPanel
             customerId={id}

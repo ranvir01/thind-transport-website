@@ -1,0 +1,56 @@
+"use server"
+
+import { revalidatePath } from "next/cache"
+import { requireOfficeUser } from "@/lib/hub/session"
+import { query } from "@/lib/hub/db"
+
+interface Result {
+  ok: boolean
+  error?: string
+}
+
+export async function postCapacityAction(input: {
+  truckId?: string
+  equipment: "flatbed" | "reefer" | "dry_van"
+  availableOn: string
+  originCity: string
+  originState: string
+  destPreference?: string
+  note?: string
+}): Promise<Result> {
+  try {
+    const user = await requireOfficeUser()
+    if (!input.availableOn || !input.originCity.trim()) {
+      return { ok: false, error: "When and where is the truck available?" }
+    }
+    await query(
+      `INSERT INTO hub.capacity_postings (carrier_id, truck_id, equipment, available_on, origin_city, origin_state, dest_preference, note)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
+      [
+        user.carrierId, input.truckId || null, input.equipment, input.availableOn,
+        input.originCity.trim(), input.originState.trim().toUpperCase().slice(0, 2),
+        input.destPreference?.trim() || null, input.note?.trim() || null,
+      ]
+    )
+    revalidatePath("/hub/capacity")
+    revalidatePath("/load-board")
+    return { ok: true }
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : "Could not post" }
+  }
+}
+
+export async function removeCapacityAction(id: string): Promise<Result> {
+  try {
+    const user = await requireOfficeUser()
+    await query(
+      `UPDATE hub.capacity_postings SET active = FALSE WHERE carrier_id = $1 AND id = $2`,
+      [user.carrierId, id]
+    )
+    revalidatePath("/hub/capacity")
+    revalidatePath("/load-board")
+    return { ok: true }
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : "Could not remove" }
+  }
+}

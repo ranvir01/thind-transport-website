@@ -15,6 +15,7 @@ import {
 import { COMPANY_INFO } from "@/lib/constants"
 import { LoadBoardVisualizations } from "@/components/features/LoadBoardVisualizations"
 import { PageBreadcrumb } from "@/components/shared/PageBreadcrumb"
+import { AvailableTrucksStrip } from "@/components/features/AvailableTrucksStrip"
 
 interface Load {
   id: string
@@ -158,6 +159,7 @@ export default function LoadBoardPage() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-50">
       <PageBreadcrumb pageName="Load Board" category="Drivers" />
+      <AvailableTrucksStrip />
       
       {/* Enhanced Header */}
       <div className="relative overflow-hidden bg-gradient-to-br from-slate-900 via-green-900 to-slate-900 text-white py-20">

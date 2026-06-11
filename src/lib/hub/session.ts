@@ -57,6 +57,31 @@ export async function requireDriverUser(): Promise<DriverSessionUser> {
   return { ...user, driverId: row.driver_id }
 }
 
+export interface PortalSessionUser extends HubSessionUser {
+  customerId: string
+  portalRole: "broker" | "shipper"
+}
+
+/**
+ * Guard for the external portal: broker/shipper role with a linked customer.
+ * The customerId on the session is the isolation boundary — every portal
+ * query is scoped to it.
+ */
+export async function requirePortalUser(): Promise<PortalSessionUser> {
+  const user = await getHubUser()
+  if (!user) redirect("/hub/login")
+  if (OFFICE_ROLES.includes(user.role)) redirect("/hub")
+  if (user.role === "driver") redirect("/hub/driver")
+  if (user.role !== "broker" && user.role !== "shipper") redirect("/hub/welcome")
+  const { queryOne } = await import("./db")
+  const row = await queryOne<{ customer_id: string | null }>(
+    `SELECT customer_id FROM hub.users WHERE id = $1 AND carrier_id = $2`,
+    [user.id, user.carrierId]
+  )
+  if (!row?.customer_id) redirect("/hub/welcome")
+  return { ...user, customerId: row.customer_id, portalRole: user.role }
+}
+
 /** Owner-only guard (user management, settings). */
 export async function requireOwner(): Promise<HubSessionUser> {
   const user = await requireOfficeUser()

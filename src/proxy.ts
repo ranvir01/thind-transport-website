@@ -35,6 +35,10 @@ export default async function proxy(request: NextRequest) {
   }
 
   // ---- Hub (operations system) ----
+  // Invitation-accept pages are public by design (token-gated server-side).
+  if (pathname.startsWith("/hub/portal/accept")) {
+    return NextResponse.next()
+  }
   if (pathname.startsWith("/hub") && pathname !== "/hub/login") {
     const role = (token as { role?: string } | null)?.role
     if (!token || !role) {
@@ -43,16 +47,21 @@ export default async function proxy(request: NextRequest) {
     const officeRoles = ["owner", "dispatcher", "accountant"]
     // NOTE: /hub/driver (the driver app) vs /hub/drivers (office roster).
     const inDriverApp = pathname === "/hub/driver" || pathname.startsWith("/hub/driver/")
+    const inPortal = pathname === "/hub/portal" || pathname.startsWith("/hub/portal/")
     if (role === "driver") {
       // Drivers live in the driver app; the API routes stay shared.
       if (!inDriverApp && !pathname.startsWith("/hub/welcome")) {
         return NextResponse.redirect(new URL("/hub/driver", request.url))
       }
+    } else if (role === "broker" || role === "shipper") {
+      // External accounts live in the portal — nothing else.
+      if (!inPortal && !pathname.startsWith("/hub/welcome")) {
+        return NextResponse.redirect(new URL("/hub/portal", request.url))
+      }
     } else if (!officeRoles.includes(role) && !pathname.startsWith("/hub/welcome")) {
-      // Broker/shipper portals arrive in a later phase.
       return NextResponse.redirect(new URL("/hub/welcome", request.url))
-    } else if (officeRoles.includes(role) && inDriverApp) {
-      // Office accounts don't impersonate drivers.
+    } else if (officeRoles.includes(role) && (inDriverApp || inPortal)) {
+      // Office accounts don't impersonate drivers or customers.
       return NextResponse.redirect(new URL("/hub", request.url))
     }
   }

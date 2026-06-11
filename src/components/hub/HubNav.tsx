@@ -7,7 +7,7 @@ import { signOut } from "next-auth/react"
 import {
   LayoutDashboard, ClipboardList, Package, Truck, Users, Building2, Map as MapIcon,
   Upload, Settings, LogOut, Menu, X, DollarSign, Fuel, ShieldCheck, BarChart3, ShieldAlert,
-  MessageSquare, CheckSquare, CalendarRange, Warehouse, UserPlus, FolderLock,
+  MessageSquare, CheckSquare, CalendarRange, Warehouse, UserPlus, FolderLock, Megaphone,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { PRODUCT } from "@/lib/hub/product"
@@ -33,6 +33,7 @@ const NAV_GROUPS: NavGroup[] = [
       { href: "/hub/planner", label: "Planner", icon: CalendarRange },
       { href: "/hub/dispatch", label: "Dispatch", icon: ClipboardList },
       { href: "/hub/loads", label: "Loads", icon: Package },
+      { href: "/hub/capacity", label: "Capacity", icon: Megaphone },
       { href: "/hub/map", label: "Map", icon: MapIcon },
     ],
   },

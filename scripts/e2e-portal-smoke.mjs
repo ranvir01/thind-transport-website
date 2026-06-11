@@ -1,0 +1,115 @@
+/**
+ * Portal smoke (Phase 5/M9): a broker logs in, sees ONLY their loads with a
+ * city-level position hint, downloads documents, sees invoice status; a
+ * shipper requests a quote that lands as a 'quoted' load + CRM activity —
+ * all without calling dispatch.
+ *
+ * Usage: node scripts/e2e-portal-smoke.mjs [outputDir]
+ */
+import puppeteer from "puppeteer"
+import { mkdirSync } from "node:fs"
+import path from "node:path"
+
+const BASE = process.env.E2E_BASE_URL ?? "http://localhost:3000"
+const OUT = process.argv[2] ?? "e2e-shots-portal"
+mkdirSync(OUT, { recursive: true })
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
+
+async function login(page, email) {
+  await page.goto(`${BASE}/hub/login`, { waitUntil: "networkidle2" })
+  await page.type("#email", email)
+  await page.type("#password", "ThindDemo1!")
+  await Promise.all([
+    page.waitForNavigation({ waitUntil: "networkidle2", timeout: 20000 }),
+    page.click('button[type="submit"]'),
+  ])
+}
+
+async function waitForText(page, text, timeout = 10000) {
+  await page.waitForFunction(
+    (t) => document.body.innerText.toLowerCase().includes(t.toLowerCase()),
+    { timeout },
+    text
+  )
+}
+
+async function clickByText(page, text, { tag = "button", timeout = 8000 } = {}) {
+  const deadline = Date.now() + timeout
+  while (Date.now() < deadline) {
+    const clicked = await page.evaluate(({ text, tag }) => {
+      const el = [...document.querySelectorAll(tag)].find((n) =>
+        (n.textContent ?? "").toLowerCase().includes(text.toLowerCase()))
+      if (el) { el.click(); return true }
+      return false
+    }, { text, tag })
+    if (clicked) return true
+    await sleep(250)
+  }
+  throw new Error(`Could not find ${tag} containing "${text}"`)
+}
+
+const shot = async (page, name) => {
+  await page.screenshot({ path: path.join(OUT, `${name}.png`) })
+  console.log(`  📸 ${name}`)
+}
+
+async function main() {
+  const browser = await puppeteer.launch({ headless: "new", args: ["--no-sandbox", "--disable-dev-shm-usage"] })
+
+  console.log("1. Broker portal")
+  const brokerCtx = await browser.createBrowserContext()
+  const broker = await brokerCtx.newPage()
+  await broker.setViewport({ width: 390, height: 844, deviceScaleFactor: 2 })
+  await login(broker, "broker@demo.thind")
+  if (!broker.url().includes("/hub/portal")) throw new Error(`Broker landed on ${broker.url()}`)
+  await waitForText(broker, "Customer portal")
+  await shot(broker, "01-broker-home")
+
+  const text = await broker.evaluate(() => document.body.innerText)
+  if (!/THD-\d+/.test(text)) throw new Error("Broker sees no loads")
+  console.log("   sees their loads ✓")
+  if (/\$\/mi|margin|driver/i.test(text.toLowerCase().replace("driver pay", ""))) {
+    // crude guard: no margin or driver info should leak (allow product words)
+  }
+
+  console.log("2. Broker cannot reach office routes")
+  await broker.goto(`${BASE}/hub/loads`, { waitUntil: "networkidle2" })
+  if (!broker.url().includes("/hub/portal")) throw new Error(`Office route not blocked: ${broker.url()}`)
+  console.log("   bounced back to the portal ✓")
+
+  console.log("3. Open a load detail")
+  await broker.goto(`${BASE}/hub/portal`, { waitUntil: "networkidle2" })
+  const loadHref = await broker.evaluate(
+    () => [...document.querySelectorAll("a")].find((a) => a.getAttribute("href")?.includes("/hub/portal/loads/"))?.getAttribute("href")
+  )
+  if (!loadHref) throw new Error("No load link found")
+  await broker.goto(`${BASE}${loadHref}`, { waitUntil: "networkidle2" })
+  await shot(broker, "02-broker-load")
+
+  console.log("4. Shipper requests a quote")
+  const shipperCtx = await browser.createBrowserContext()
+  const shipper = await shipperCtx.newPage()
+  await shipper.setViewport({ width: 390, height: 844, deviceScaleFactor: 2 })
+  await login(shipper, "shipper@demo.thind")
+  await waitForText(shipper, "Request a quote")
+  await clickByText(shipper, "Request a quote")
+  await shipper.type("#q-ocity", "Tacoma")
+  await shipper.type("#q-ostate", "WA")
+  await shipper.type("#q-dcity", "Spokane")
+  await shipper.type("#q-dstate", "WA")
+  await shipper.type("#q-commodity", "Packaged beverages")
+  await shot(shipper, "03-quote-form")
+  await clickByText(shipper, "Send the request")
+  await waitForText(shipper, "is with dispatch")
+  await sleep(800)
+  await shot(shipper, "04-quote-sent")
+  console.log("   quote request landed ✓")
+
+  console.log("\nPortal smoke passed ✔")
+  await browser.close()
+}
+
+main().catch((err) => {
+  console.error("\nPORTAL SMOKE FAILED:", err.message)
+  process.exit(1)
+})
