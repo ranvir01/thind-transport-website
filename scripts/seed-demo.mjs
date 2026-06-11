@@ -79,7 +79,12 @@ async function main() {
            hub.payments, hub.invoices,
            hub.crm_activities, hub.position_pings, hub.documents, hub.share_links,
            hub.import_templates, hub.load_events, hub.stops, hub.loads, hub.contacts, hub.users,
-           hub.trucks, hub.trailers, hub.drivers, hub.customers RESTART IDENTITY CASCADE`)
+           hub.trucks, hub.trailers, hub.drivers, hub.customers,
+           hub.facility_notes, hub.facilities, hub.pay_rules, hub.notifications,
+           hub.push_subscriptions, hub.tasks, hub.message_reads, hub.messages,
+           hub.message_threads, hub.message_templates, hub.announcement_acks, hub.announcements,
+           hub.document_requests, hub.lanes, hub.time_off_requests
+           RESTART IDENTITY CASCADE`)
   await q(`DELETE FROM hub.ifta_tax_rates`)
   // Reset invoice numbering
   await q(`UPDATE hub.carrier_settings SET settings = jsonb_set(settings, '{invoice,nextNumber}', '1001')
@@ -142,6 +147,35 @@ async function main() {
     )
     driverIds.push(rows[0].id)
   }
+  // Link the demo driver login to its driver record (driver app guard reads users.driver_id).
+  await q(`UPDATE hub.users SET driver_id = $1 WHERE id = $2`, [driverIds[0], users.driver])
+
+  // Pay rule sets (retrofit E13): every driver settles through the evaluator.
+  await q(`
+    INSERT INTO hub.pay_rules (carrier_id, driver_id, name, rules, deductions)
+    SELECT d.carrier_id, d.id,
+      CASE WHEN d.pay_type = 'percentage' THEN 'Owner-operator percentage' ELSE 'Company per-mile' END,
+      CASE WHEN d.pay_type = 'percentage' THEN
+        jsonb_build_array(
+          jsonb_build_object('type','percent_linehaul','basisPoints', round(d.pay_rate * 10000)::int),
+          jsonb_build_object('type','fsc_passthrough','basisPoints', 10000),
+          jsonb_build_object('type','referral_bonus'))
+      ELSE
+        jsonb_build_array(
+          jsonb_build_object('type','per_mile','rateCentsPerMile', round(d.pay_rate * 100)::int,
+                             'loadedOnly', d.pay_loaded_miles_only),
+          jsonb_build_object('type','referral_bonus'))
+      END,
+      (SELECT COALESCE(jsonb_agg(x), '[]'::jsonb) FROM (
+        SELECT jsonb_build_object('kind','escrow','amountCents', d.escrow_weekly_cents) AS x
+        WHERE d.escrow_weekly_cents > 0
+        UNION ALL
+        SELECT jsonb_build_object('kind','insurance','amountCents', d.insurance_weekly_cents)
+        WHERE d.insurance_weekly_cents > 0
+      ) deductions)
+    FROM hub.drivers d
+    WHERE d.deleted_at IS NULL
+      AND NOT EXISTS (SELECT 1 FROM hub.pay_rules p WHERE p.driver_id = d.id)`)
 
   // ---- Trucks ----
   console.log("Creating trucks…")
@@ -518,6 +552,40 @@ async function main() {
   }
 
   // ---- Compliance items (company-level) ----
+  // ---- Facilities (E2): extract from stops exactly like migration 005 ----
+  console.log("Extracting facilities from stops…")
+  await q(`
+    INSERT INTO hub.facilities (carrier_id, name, dedupe_key, address, city, state, zip, lat, lng, type)
+    SELECT DISTINCT ON (s.carrier_id, k.dedupe_key)
+      s.carrier_id, trim(s.facility), k.dedupe_key, s.address, s.city, s.state, s.zip, s.lat, s.lng, 'both'
+    FROM hub.stops s
+    CROSS JOIN LATERAL (
+      SELECT lower(trim(s.facility)) || '|' || CASE
+        WHEN s.lat IS NOT NULL AND s.lng IS NOT NULL
+          THEN round(s.lat::numeric, 2)::text || ',' || round(s.lng::numeric, 2)::text
+        ELSE lower(coalesce(trim(s.city), '')) || ',' || lower(coalesce(trim(s.state), ''))
+      END AS dedupe_key
+    ) k
+    WHERE s.facility IS NOT NULL AND trim(s.facility) <> ''
+    ORDER BY s.carrier_id, k.dedupe_key, s.created_at
+    ON CONFLICT (carrier_id, dedupe_key) DO NOTHING`)
+  await q(`
+    UPDATE hub.stops s SET facility_id = f.id
+    FROM hub.facilities f
+    WHERE s.facility_id IS NULL AND s.facility IS NOT NULL AND trim(s.facility) <> ''
+      AND f.carrier_id = s.carrier_id
+      AND f.dedupe_key = lower(trim(s.facility)) || '|' || CASE
+        WHEN s.lat IS NOT NULL AND s.lng IS NOT NULL
+          THEN round(s.lat::numeric, 2)::text || ',' || round(s.lng::numeric, 2)::text
+        ELSE lower(coalesce(trim(s.city), '')) || ',' || lower(coalesce(trim(s.state), ''))
+      END`)
+  await q(`
+    UPDATE hub.facilities f SET type = u.observed FROM (
+      SELECT facility_id, CASE WHEN bool_and(type = 'pickup') THEN 'shipper'
+        WHEN bool_and(type = 'delivery') THEN 'receiver' ELSE 'both' END AS observed
+      FROM hub.stops WHERE facility_id IS NOT NULL GROUP BY facility_id
+    ) u WHERE f.id = u.facility_id`)
+
   console.log("Creating compliance items…")
   const items = [
     ["2290 HVUT — stamped Schedule 1 (all trucks)", 70],

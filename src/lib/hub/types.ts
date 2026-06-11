@@ -232,6 +232,11 @@ export interface Stop {
   lat: number | null
   lng: number | null
   notes: string | null
+  facility_id?: string | null
+  /** Joined: historical average dwell at this facility, minutes (E2). */
+  facility_avg_dwell?: number | null
+  /** Joined: latest crowdsourced facility notes (E2). */
+  facility_notes?: { body: string; tags: string[]; author: string | null; role: string | null }[] | null
 }
 
 export interface Accessorial {
@@ -262,6 +267,7 @@ export interface Load {
   factored: boolean
   settlement_id: string | null
   notes: string | null
+  acknowledged_at: string | null
   created_at: string
   // joined fields
   customer_name?: string | null
@@ -294,7 +300,7 @@ export interface HubDocument {
 
 export const LOAD_EVENT_KINDS = [
   "status_change", "check_call", "geo", "document", "note",
-  "weather_alert", "detention", "exception",
+  "weather_alert", "detention", "exception", "message", "task", "acknowledged",
 ] as const
 export type LoadEventKind = (typeof LOAD_EVENT_KINDS)[number]
 

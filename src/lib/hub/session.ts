@@ -35,6 +35,28 @@ export async function requireOfficeUser(): Promise<HubSessionUser> {
   return user
 }
 
+export interface DriverSessionUser extends HubSessionUser {
+  driverId: string
+}
+
+/**
+ * Guard for the driver app: signed-in driver role with a linked driver
+ * record. Office roles get bounced to their own home.
+ */
+export async function requireDriverUser(): Promise<DriverSessionUser> {
+  const user = await getHubUser()
+  if (!user) redirect("/hub/login")
+  if (OFFICE_ROLES.includes(user.role)) redirect("/hub")
+  if (user.role !== "driver") redirect("/hub/welcome")
+  const { queryOne } = await import("./db")
+  const row = await queryOne<{ driver_id: string | null }>(
+    `SELECT driver_id FROM hub.users WHERE id = $1 AND carrier_id = $2`,
+    [user.id, user.carrierId]
+  )
+  if (!row?.driver_id) redirect("/hub/welcome")
+  return { ...user, driverId: row.driver_id }
+}
+
 /** Owner-only guard (user management, settings). */
 export async function requireOwner(): Promise<HubSessionUser> {
   const user = await requireOfficeUser()

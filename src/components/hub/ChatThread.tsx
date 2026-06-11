@@ -1,0 +1,170 @@
+"use client"
+
+/**
+ * Chat view shared by the office and the driver app (E3).
+ * Plain SMS-style bubbles, photo attachments, template chips for the office.
+ */
+import { useEffect, useRef, useState, useTransition } from "react"
+import { useRouter } from "next/navigation"
+import { toast } from "sonner"
+import { Camera, Loader2, Send } from "lucide-react"
+import { cn } from "@/lib/utils"
+import { markThreadReadAction, sendMessageAction } from "@/app/hub/_actions/messages"
+import type { HubMessage } from "@/lib/hub/types"
+
+export function ChatThread({
+  threadId,
+  messages,
+  meId,
+  templates = [],
+  readUpTo = {},
+}: {
+  threadId: string
+  messages: HubMessage[]
+  meId: string
+  templates?: { id: string; label: string; body: string }[]
+  /** other participants' read positions: name → last_read_message_id */
+  readUpTo?: Record<string, number>
+}) {
+  const router = useRouter()
+  const [body, setBody] = useState("")
+  const [pending, startTransition] = useTransition()
+  const fileRef = useRef<HTMLInputElement>(null)
+  const bottomRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ block: "end" })
+    markThreadReadAction(threadId).catch(() => {})
+  }, [threadId, messages.length])
+
+  // Light polling keeps the conversation honest without sockets.
+  useEffect(() => {
+    const interval = setInterval(() => router.refresh(), 15_000)
+    return () => clearInterval(interval)
+  }, [router])
+
+  const send = (file?: File) => {
+    if (!body.trim() && !file) return
+    const formData = new FormData()
+    formData.set("thread_id", threadId)
+    formData.set("body", body)
+    if (file) formData.set("file", file)
+    startTransition(async () => {
+      const result = await sendMessageAction(formData)
+      if (result.ok) {
+        setBody("")
+        router.refresh()
+      } else toast.error(result.error ?? "Could not send")
+      if (fileRef.current) fileRef.current.value = ""
+    })
+  }
+
+  const lastMineId = [...messages].reverse().find((m) => m.sender_id === meId)?.id
+  const seenBy = lastMineId
+    ? Object.entries(readUpTo)
+        .filter(([, upTo]) => upTo >= lastMineId)
+        .map(([name]) => name)
+    : []
+
+  return (
+    <div className="flex flex-col h-[calc(100dvh-220px)] min-h-[320px]">
+      <div className="flex-1 overflow-y-auto space-y-2 pr-1">
+        {messages.length === 0 ? (
+          <p className="py-10 text-center text-body-sm text-steel-300">
+            No messages yet — say hello.
+          </p>
+        ) : (
+          messages.map((m) => {
+            const mine = m.sender_id === meId
+            return (
+              <div key={m.id} className={cn("flex", mine ? "justify-end" : "justify-start")}>
+                <div
+                  className={cn(
+                    "max-w-[80%] rounded-2xl px-3.5 py-2.5",
+                    mine ? "bg-orange/90 text-white rounded-br-md" : "bg-white/[0.07] text-steel-100 rounded-bl-md"
+                  )}
+                >
+                  {!mine ? (
+                    <p className="text-[10px] font-bold uppercase tracking-wider opacity-70 mb-0.5">{m.sender_name}</p>
+                  ) : null}
+                  {m.document_url ? (
+                    m.document_mime?.startsWith("image/") ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={m.document_url} alt="Attachment" className="mb-1.5 max-h-60 rounded-lg" />
+                    ) : (
+                      <a href={m.document_url} target="_blank" rel="noreferrer" className="block underline mb-1">
+                        Attachment
+                      </a>
+                    )
+                  ) : null}
+                  {m.body ? <p className="text-sm whitespace-pre-wrap break-words">{m.body}</p> : null}
+                  <p className={cn("mt-1 text-[10px]", mine ? "text-white/60" : "text-steel-400")}>
+                    {new Date(m.created_at).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}
+                  </p>
+                </div>
+              </div>
+            )
+          })
+        )}
+        {seenBy.length > 0 ? (
+          <p className="text-right text-[10px] text-steel-400">Seen by {seenBy.join(", ")}</p>
+        ) : null}
+        <div ref={bottomRef} />
+      </div>
+
+      {templates.length > 0 ? (
+        <div className="flex gap-1.5 overflow-x-auto py-2 -mx-1 px-1">
+          {templates.map((t) => (
+            <button
+              key={t.id}
+              onClick={() => setBody(t.body)}
+              className="shrink-0 rounded-full border border-white/15 bg-white/5 px-3 py-1.5 text-body-xs font-semibold text-steel-200 hover:bg-white/10 min-h-[32px]"
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+      ) : null}
+
+      <div className="flex items-end gap-2 pt-2 border-t border-white/10">
+        <button
+          onClick={() => fileRef.current?.click()}
+          aria-label="Attach a photo"
+          disabled={pending}
+          className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-white/15 text-steel-100 hover:bg-white/5 disabled:opacity-60"
+        >
+          <Camera className="h-5 w-5" />
+        </button>
+        <input
+          ref={fileRef}
+          type="file"
+          accept="image/*,application/pdf"
+          capture="environment"
+          className="hidden"
+          onChange={(e) => send(e.target.files?.[0] ?? undefined)}
+        />
+        <textarea
+          rows={1}
+          placeholder="Type a message…"
+          className="flex-1 resize-none rounded-xl border border-white/15 bg-navy-800 px-3 py-3 text-sm text-white placeholder:text-steel-400 min-h-[48px]"
+          value={body}
+          onChange={(e) => setBody(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && !e.shiftKey) {
+              e.preventDefault()
+              send()
+            }
+          }}
+        />
+        <button
+          onClick={() => send()}
+          aria-label="Send"
+          disabled={pending || !body.trim()}
+          className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-orange text-white shadow-cta hover:bg-orange-400 disabled:opacity-50"
+        >
+          {pending ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
+        </button>
+      </div>
+    </div>
+  )
+}

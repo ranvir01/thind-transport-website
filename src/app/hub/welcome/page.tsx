@@ -16,13 +16,24 @@ const ROLE_COPY: Record<string, { title: string; body: string }> = {
     title: "Your shipper portal is on the way",
     body: "Soon you'll request quotes, track shipments, and download delivery documents here.",
   },
+  driver: {
+    title: "Almost there",
+    body: "Your account isn't linked to a driver record yet — ask the office to connect it and your driver app unlocks.",
+  },
 }
 
 export default async function HubWelcomePage() {
   const user = await getHubUser()
   if (!user) redirect("/hub/login")
   if (OFFICE_ROLES.includes(user.role)) redirect("/hub")
-  if (user.role === "driver") redirect("/hub/driver")
+  if (user.role === "driver") {
+    const { queryOne } = await import("@/lib/hub/db")
+    const row = await queryOne<{ driver_id: string | null }>(
+      `SELECT driver_id FROM hub.users WHERE id = $1 AND carrier_id = $2`,
+      [user.id, user.carrierId]
+    )
+    if (row?.driver_id) redirect("/hub/driver")
+  }
 
   const carrier = await getCarrier(user.carrierId)
   const copy = ROLE_COPY[user.role] ?? ROLE_COPY.broker

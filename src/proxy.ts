@@ -40,11 +40,20 @@ export default async function proxy(request: NextRequest) {
     if (!token || !role) {
       return NextResponse.redirect(new URL("/hub/login", request.url))
     }
-    // Driver/broker/shipper experiences arrive in later phases — keep them in
-    // their own area instead of the office screens.
     const officeRoles = ["owner", "dispatcher", "accountant"]
-    if (!officeRoles.includes(role) && !pathname.startsWith("/hub/welcome")) {
+    // NOTE: /hub/driver (the driver app) vs /hub/drivers (office roster).
+    const inDriverApp = pathname === "/hub/driver" || pathname.startsWith("/hub/driver/")
+    if (role === "driver") {
+      // Drivers live in the driver app; the API routes stay shared.
+      if (!inDriverApp && !pathname.startsWith("/hub/welcome")) {
+        return NextResponse.redirect(new URL("/hub/driver", request.url))
+      }
+    } else if (!officeRoles.includes(role) && !pathname.startsWith("/hub/welcome")) {
+      // Broker/shipper portals arrive in a later phase.
       return NextResponse.redirect(new URL("/hub/welcome", request.url))
+    } else if (officeRoles.includes(role) && inDriverApp) {
+      // Office accounts don't impersonate drivers.
+      return NextResponse.redirect(new URL("/hub", request.url))
     }
   }
 
