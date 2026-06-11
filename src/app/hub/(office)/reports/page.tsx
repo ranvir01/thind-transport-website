@@ -3,15 +3,21 @@ import { truckPnl } from "@/lib/hub/expenses"
 import { requirePermissionPage } from "@/lib/hub/session"
 import { fmtCents } from "@/lib/hub/types"
 import { Panel, PageHeader } from "@/components/hub/ui"
+import { query } from "@/lib/hub/db"
+import type { Lane } from "@/lib/hub/types"
 
 export const dynamic = "force-dynamic"
 
 // API download endpoint (not a page) — held in a const so the page-link lint rule doesn't misfire.
 const PNL_EXPORT_URL = "/api/hub/exports/pnl"
+const LANES_EXPORT_URL = "/api/hub/exports/lanes"
 
 export default async function ReportsPage() {
   const user = await requirePermissionPage("money:read")
-  const pnl = await truckPnl(user.carrierId, 92)
+  const [pnl, lanes] = await Promise.all([
+    truckPnl(user.carrierId, 92),
+    query<Lane>(`SELECT * FROM hub.lanes WHERE carrier_id = $1 ORDER BY margin_cents DESC LIMIT 20`, [user.carrierId]),
+  ])
   const totals = pnl.reduce(
     (acc, row) => ({
       revenue: acc.revenue + Number(row.revenue_cents),
@@ -81,6 +87,55 @@ export default async function ReportsPage() {
           </tbody>
         </table>
       </Panel>
+
+      {/* Lane leaderboard (Phase 6/M10) */}
+      <div className="mt-6 flex items-center justify-between gap-2 mb-2">
+        <h2 className="font-display text-lg font-bold uppercase tracking-wide text-white">Lane leaderboard</h2>
+        <a
+          href={LANES_EXPORT_URL}
+          className="inline-flex min-h-[40px] items-center gap-2 rounded-xl border border-white/15 px-3 text-body-xs font-semibold text-steel-100 hover:bg-white/5"
+        >
+          <Download className="h-3.5 w-3.5" /> Lanes CSV
+        </a>
+      </div>
+      {lanes.length === 0 ? (
+        <Panel className="p-5">
+          <p className="text-body-sm text-steel-300">
+            Lane history builds itself from your loads — it recomputes nightly.
+          </p>
+        </Panel>
+      ) : (
+        <Panel className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-white/10 text-left text-label text-steel-300 uppercase">
+                <th className="px-4 py-3">Lane</th>
+                <th className="px-4 py-3 text-right">Loads</th>
+                <th className="px-4 py-3 text-right">Revenue</th>
+                <th className="px-4 py-3 text-right">Avg $/mi</th>
+                <th className="px-4 py-3 text-right">Est. margin</th>
+              </tr>
+            </thead>
+            <tbody>
+              {lanes.slice(0, 12).map((lane) => (
+                <tr key={lane.id} className="border-b border-white/5">
+                  <td className="px-4 py-2.5 font-semibold text-white">
+                    {lane.origin_city}, {lane.origin_state} → {lane.dest_city}, {lane.dest_state}
+                  </td>
+                  <td className="px-4 py-2.5 text-right text-steel-100">{lane.loads_count}</td>
+                  <td className="px-4 py-2.5 text-right text-gold font-semibold">{fmtCents(Number(lane.revenue_cents))}</td>
+                  <td className="px-4 py-2.5 text-right text-steel-100">
+                    {lane.avg_rpm_cents ? `$${(lane.avg_rpm_cents / 100).toFixed(2)}` : "—"}
+                  </td>
+                  <td className={`px-4 py-2.5 text-right font-semibold ${Number(lane.margin_cents) >= 0 ? "text-emerald-300" : "text-red-300"}`}>
+                    {fmtCents(Number(lane.margin_cents))}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </Panel>
+      )}
     </div>
   )
 }

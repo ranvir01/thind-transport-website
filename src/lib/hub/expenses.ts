@@ -147,6 +147,23 @@ export async function exportCsv(carrierId: string, kind: string): Promise<{ file
         ),
       }
     }
+    case "lanes": {
+      const rows = await query<Record<string, unknown>>(
+        `SELECT origin_city, origin_state, dest_city, dest_state, loads_count,
+           ROUND(revenue_cents / 100.0, 2) AS revenue, miles,
+           ROUND(margin_cents / 100.0, 2) AS est_margin,
+           ROUND(COALESCE(avg_rpm_cents, 0) / 100.0, 2) AS avg_rpm
+         FROM hub.lanes WHERE carrier_id = $1 ORDER BY margin_cents DESC`,
+        [carrierId]
+      )
+      return {
+        filename: "lanes.csv",
+        csv: toCsv(
+          ["Origin", "OriginState", "Destination", "DestState", "Loads", "Revenue", "Miles", "EstMargin", "AvgRPM"],
+          rows.map((r) => [r.origin_city, r.origin_state, r.dest_city, r.dest_state, r.loads_count, r.revenue, r.miles, r.est_margin, r.avg_rpm])
+        ),
+      }
+    }
     case "settlements": {
       const rows = await query<Record<string, unknown>>(
         `SELECT d.first_name || ' ' || d.last_name AS driver, s.period_start, s.period_end,

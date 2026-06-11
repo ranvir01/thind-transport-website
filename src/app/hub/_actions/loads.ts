@@ -5,8 +5,10 @@ import { requirePermission } from "@/lib/hub/session"
 import { loadSchema, documentUploadSchema } from "@/lib/hub/schemas"
 import {
   createLoad, updateLoad, changeLoadStatus, replaceStops, setStopTimestamp, getLoad,
-  addLoadEvent,
+  addLoadEvent, getLoadStops,
 } from "@/lib/hub/loads"
+import { getCarrierSettings } from "@/lib/hub/settings"
+import { query } from "@/lib/hub/db"
 import { saveDocument, deleteDocument } from "@/lib/hub/documents"
 import { createShareLink, revokeShareLink } from "@/lib/hub/sharelinks"
 import { logAudit } from "@/lib/hub/audit"
@@ -197,6 +199,64 @@ export async function stopTimestampAction(
     return { ok: true }
   } catch (err) {
     return asError(err, "Failed to record time")
+  }
+}
+
+/**
+ * Detention auto-draft (Phase 6 §9): dwell beyond free time becomes a
+ * Detention accessorial in one click — computed from stop timestamps and the
+ * carrier's detention settings, never typed by hand.
+ */
+export async function addDetentionAction(loadId: string): Promise<ActionResult & { amountCents?: number }> {
+  let user
+  try {
+    user = await requirePermission("loads:write")
+  } catch (err) {
+    return asError(err, "Forbidden")
+  }
+  try {
+    const load = await getLoad(user.carrierId, loadId)
+    if (!load) return { ok: false, error: "Load not found" }
+    const accessorials = Array.isArray(load.accessorials) ? load.accessorials : []
+    if (accessorials.some((a) => /detention/i.test(a.label))) {
+      return { ok: false, error: "Detention is already on this load" }
+    }
+    const settings = await getCarrierSettings(user.carrierId)
+    const stops = await getLoadStops(loadId)
+    const { detentionCents } = await import("@/lib/hub/money")
+    let total = 0
+    const detail: string[] = []
+    for (const stop of stops) {
+      if (!stop.arrived_at || !stop.departed_at) continue
+      const cents = detentionCents(
+        new Date(stop.arrived_at), new Date(stop.departed_at),
+        settings.detention.freeHours, settings.detention.ratePerHourCents
+      )
+      if (cents > 0) {
+        total += cents
+        detail.push(`${stop.city}, ${stop.state}: $${(cents / 100).toFixed(2)}`)
+      }
+    }
+    if (total === 0) return { ok: false, error: "No stop sat past the free time — nothing to bill" }
+
+    const updated = [...accessorials, { label: "Detention", amount_cents: total }]
+    await query(
+      `UPDATE hub.loads SET accessorials = $3, updated_at = NOW() WHERE carrier_id = $1 AND id = $2`,
+      [user.carrierId, loadId, JSON.stringify(updated)]
+    )
+    await addLoadEvent(user.carrierId, loadId, "detention", {
+      amount_cents: total, detail,
+      freeHours: settings.detention.freeHours, ratePerHourCents: settings.detention.ratePerHourCents,
+    }, { id: user.id, name: user.name })
+    await logAudit({
+      carrierId: user.carrierId, actorId: user.id, actorName: user.name,
+      entityType: "load", entityId: loadId, action: "detention_drafted",
+      newValue: { amountCents: total, detail },
+    })
+    revalidateLoadViews(loadId)
+    return { ok: true, amountCents: total }
+  } catch (err) {
+    return asError(err, "Could not draft detention")
   }
 }
 

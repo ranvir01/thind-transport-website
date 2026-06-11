@@ -7,6 +7,8 @@ import { recomputeLanes } from "@/lib/hub/lanes"
 import { computeDriverScores } from "@/lib/hub/recruiting"
 import { recheckActiveCustomers } from "@/lib/hub/vetting"
 import { runTelematicsSync } from "@/lib/hub/telematics"
+import { pollDocsMailbox } from "@/lib/hub/mailbox"
+import { sendOwnerDigest } from "@/lib/hub/digest"
 import { getCarrierSettings } from "@/lib/hub/settings"
 import { createMailTransport, mailFrom } from "@/lib/mailer"
 
@@ -72,6 +74,12 @@ export async function GET(
       } else if (job === "telematics-sync") {
         // Phase 6: positions/odometer/HOS from the ELD aggregator (when connected).
         results[carrier.id] = await runTelematicsSync(carrier.id)
+      } else if (job === "docs-mailbox") {
+        // Phase 6: forwarded rate cons auto-file to their loads.
+        results[carrier.id] = await pollDocsMailbox(carrier.id)
+      } else if (job === "owner-digest") {
+        // Phase 6: the Monday-morning numbers email.
+        results[carrier.id] = await sendOwnerDigest(carrier.id)
       } else {
         return NextResponse.json({ error: "Unknown job" }, { status: 404 })
       }

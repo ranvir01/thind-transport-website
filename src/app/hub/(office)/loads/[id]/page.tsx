@@ -15,6 +15,9 @@ import { AdvanceStatusButton, CancelLoadButton, StopTimestampButton, CheckCallBu
 import { DocumentsPanel } from "@/components/hub/DocumentsPanel"
 import { ShareLinkPanel } from "@/components/hub/ShareLinkPanel"
 import { MessageLoadButton } from "@/components/hub/MessageLoadButton"
+import { DetentionButton } from "@/components/hub/DetentionButton"
+import { detentionCents } from "@/lib/hub/money"
+import { getCarrierSettings } from "@/lib/hub/settings"
 import { CreateInvoiceButton } from "@/components/hub/MoneyActions"
 
 export const dynamic = "force-dynamic"
@@ -67,6 +70,7 @@ export default async function LoadDetailPage({ params }: { params: Promise<{ id:
   const load = await getLoad(user.carrierId, id).catch(() => null)
   if (!load) notFound()
 
+  const settings = await getCarrierSettings(user.carrierId)
   const [stops, events, documents, shareLinks, invoice] = await Promise.all([
     getLoadStops(id),
     getLoadEvents(id),
@@ -78,6 +82,14 @@ export default async function LoadDetailPage({ params }: { params: Promise<{ id:
   const totalCents = loadTotalCents(load)
   const rpmCents = load.loaded_miles ? totalCents / load.loaded_miles : null
   const canInvoice = can(user.role, "money:write") && load.status === "pod_received" && !invoice
+  // Detention auto-draft (Phase 6): dwell beyond free time, computed from timestamps.
+  const detentionEstimateCents = stops.reduce((sum, stop) => {
+    if (!stop.arrived_at || !stop.departed_at) return sum
+    return sum + detentionCents(
+      new Date(stop.arrived_at), new Date(stop.departed_at),
+      settings.detention.freeHours, settings.detention.ratePerHourCents
+    )
+  }, 0)
 
   return (
     <div>
@@ -110,6 +122,10 @@ export default async function LoadDetailPage({ params }: { params: Promise<{ id:
           <div className="flex flex-wrap gap-2 ml-auto">
             {canInvoice ? <CreateInvoiceButton loadId={id} /> : <AdvanceStatusButton loadId={id} status={load.status} />}
             <CheckCallButton loadId={id} />
+            {detentionEstimateCents > 0 &&
+            !(Array.isArray(load.accessorials) ? load.accessorials : []).some((a) => /detention/i.test(a.label)) ? (
+              <DetentionButton loadId={id} estimateCents={detentionEstimateCents} />
+            ) : null}
             <CancelLoadButton loadId={id} status={load.status} />
           </div>
         </div>
