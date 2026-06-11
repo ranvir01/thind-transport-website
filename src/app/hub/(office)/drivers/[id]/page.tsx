@@ -10,6 +10,7 @@ import { getActivePayRules } from "@/lib/hub/pay-rules-db"
 import { describePayRules } from "@/lib/hub/pay-rules"
 import { openDocumentRequests } from "@/lib/hub/driver-app"
 import { listTimeOff } from "@/lib/hub/timeoff"
+import { driverScoreHistory } from "@/lib/hub/recruiting"
 import { RequestDocumentPanel, TimeOffDecisionPanel } from "@/components/hub/DriverOfficePanels"
 import { fmtCents, loadTotalCents } from "@/lib/hub/types"
 import Link from "next/link"
@@ -21,12 +22,13 @@ export default async function DriverDetailPage({ params }: { params: Promise<{ i
   const { id } = await params
   const driver = await getDriver(user.carrierId, id).catch(() => null)
   if (!driver) notFound()
-  const [documents, loads, payRules, openRequests, timeOff] = await Promise.all([
+  const [documents, loads, payRules, openRequests, timeOff, scores] = await Promise.all([
     listDocuments("driver", id),
     listLoads(user.carrierId, { driverId: id, status: "all" }),
     getActivePayRules(user.carrierId, id),
     openDocumentRequests(user.carrierId, id),
     listTimeOff(user.carrierId, { driverId: id, status: "requested" }),
+    driverScoreHistory(user.carrierId, id),
   ])
   const payDescription = payRules ? describePayRules(payRules) : null
 
@@ -101,6 +103,47 @@ export default async function DriverDetailPage({ params }: { params: Promise<{ i
                   ? "Set by the pay fields on this page — settlements always follow this plan."
                   : "This driver settles under a custom pay plan; the simple pay fields are ignored."}
               </p>
+            </Panel>
+          ) : null}
+          {scores.length > 0 ? (
+            <Panel className="p-4 md:p-5">
+              <h2 className="font-display text-base font-bold uppercase tracking-wide text-white mb-1">
+                Scorecard
+              </h2>
+              <p className="text-body-xs text-steel-300 mb-3">
+                70% on-time + 30% MPG vs fleet, −15 per incident. Feeds the performance bonus pay rule.
+              </p>
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-white/10 text-left text-label text-steel-300 uppercase">
+                    <th className="py-1.5">Month</th>
+                    <th className="py-1.5 text-right">On-time</th>
+                    <th className="py-1.5 text-right">MPG</th>
+                    <th className="py-1.5 text-right">Incidents</th>
+                    <th className="py-1.5 text-right">Score</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {scores.map((score) => (
+                    <tr key={String(score.month)} className="border-b border-white/5">
+                      <td className="py-1.5 text-steel-100">
+                        {new Date(score.month).toLocaleDateString("en-US", { month: "short", year: "numeric" })}
+                      </td>
+                      <td className="py-1.5 text-right text-steel-100">
+                        {score.on_time_pct != null ? `${Number(score.on_time_pct).toFixed(0)}%` : "—"}
+                      </td>
+                      <td className="py-1.5 text-right text-steel-100">
+                        {score.mpg != null ? Number(score.mpg).toFixed(1) : "—"}
+                        {score.fleet_mpg != null ? <span className="text-steel-400"> / {Number(score.fleet_mpg).toFixed(1)}</span> : null}
+                      </td>
+                      <td className="py-1.5 text-right text-steel-100">{score.incidents}</td>
+                      <td className="py-1.5 text-right font-display font-extrabold text-gold">
+                        {Number(score.composite).toFixed(0)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </Panel>
           ) : null}
           <DocumentsPanel entityType="driver" entityId={id} documents={documents} />

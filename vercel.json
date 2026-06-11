@@ -8,7 +8,8 @@
     { "path": "/api/hub/cron/compliance-scan", "schedule": "0 14 * * *" },
     { "path": "/api/hub/cron/ar-reminders", "schedule": "30 14 * * *" },
     { "path": "/api/hub/cron/task-automations", "schedule": "15 14 * * *" },
-    { "path": "/api/hub/cron/recompute-lanes", "schedule": "45 9 * * *" }
+    { "path": "/api/hub/cron/recompute-lanes", "schedule": "45 9 * * *" },
+    { "path": "/api/hub/cron/driver-scorecards", "schedule": "0 10 1 * *" }
   ],
   "headers": [
     {
