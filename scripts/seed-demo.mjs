@@ -799,10 +799,103 @@ async function main() {
     [CARRIER, users.dispatcher, users.owner]
   )
 
+  // ---- Second tenant (Phase 7): Cascade Demo Lines — proves zero bleed ----
+  console.log("Creating second tenant (Cascade Demo Lines)…")
+  const CASCADE = "22222222-2222-2222-2222-222222222222"
+  await q(
+    `INSERT INTO hub.carriers (id, name, dot_number, mc_number, phone, email, address)
+     VALUES ($1, 'Cascade Demo Lines', '3411908', '991283', '(509) 555-0200', 'ops@cascademo.example', '88 Riverside Dr, Wenatchee, WA 98801')
+     ON CONFLICT (id) DO NOTHING`,
+    [CASCADE]
+  )
+  await q(
+    `INSERT INTO hub.carrier_settings (carrier_id, settings) VALUES ($1, $2)
+     ON CONFLICT (carrier_id) DO NOTHING`,
+    [CASCADE, JSON.stringify({
+      invoice: { prefix: "CAS-INV-", nextNumber: 5001, defaultTermsDays: 30 },
+      pay: { companyDriverPerMile: 0.6, ownerOperatorPercentage: 0.88, payLoadedMilesOnly: true },
+      detention: { freeHours: 2, ratePerHourCents: 5000 },
+      costPerMileCents: 178,
+      fsc: { baseCentsPerGallon: 125, mpg: 6.4 },
+      randomTesting: { drugPct: 50, alcoholPct: 10 },
+      factoring: { company: null, remitName: null, remitAddress: null, email: null },
+      notifications: { officeEmail: "ops@cascademo.example" },
+      branding: { accent: "#2E8B6E" },
+    })]
+  )
+  const cascadeOwner = await q(
+    `INSERT INTO hub.users (carrier_id, email, password_hash, name, role) VALUES ($1,$2,$3,$4,'owner') RETURNING id`,
+    [CASCADE, "owner@cascademo.example", hash, "Lena Vasquez"]
+  )
+  const cascadeDriverUser = await q(
+    `INSERT INTO hub.users (carrier_id, email, password_hash, name, role) VALUES ($1,$2,$3,$4,'driver') RETURNING id`,
+    [CASCADE, "driver@cascademo.example", hash, "Pete Larson"]
+  )
+  const cascadeDriver = await q(
+    `INSERT INTO hub.drivers (carrier_id, first_name, last_name, phone, cdl_number, cdl_state,
+       cdl_expiry, medical_card_expiry, hire_date, pay_type, pay_rate, status, user_id)
+     VALUES ($1,'Pete','Larson','(509) 555-0201','WDL884213','WA',$2,$3,$4,'per_mile',0.60,'active',$5)
+     RETURNING id`,
+    [CASCADE, dateOnly(daysAhead(400)), dateOnly(daysAhead(210)), dateOnly(daysAgo(500)), cascadeDriverUser.rows[0].id]
+  )
+  await q(`UPDATE hub.users SET driver_id = $1 WHERE id = $2`, [cascadeDriver.rows[0].id, cascadeDriverUser.rows[0].id])
+  const cascadeTrucks = []
+  for (const [unit, make] of [["C-01", "Volvo"], ["C-02", "Kenworth"]]) {
+    const { rows } = await q(
+      `INSERT INTO hub.trucks (carrier_id, unit_number, year, make, ownership, status, assigned_driver_id, tank_capacity_gallons)
+       VALUES ($1,$2,2022,$3,'company','active',$4,230) RETURNING id`,
+      [CASCADE, unit, make, unit === "C-01" ? cascadeDriver.rows[0].id : null]
+    )
+    cascadeTrucks.push(rows[0].id)
+  }
+  const cascadeCustomer = await q(
+    `INSERT INTO hub.customers (carrier_id, name, type, mc_number, billing_email, payment_terms_days, status)
+     VALUES ($1,'Wenatchee Produce Partners','broker','MC-44521','ap@wenatcheeproduce.example',30,'active') RETURNING id`,
+    [CASCADE]
+  )
+  const cascadeLoads = [
+    ["CAS-5001", "in_transit", cascadeTrucks[0], cascadeDriver.rows[0].id, CITY.spokane, CITY.portland, 168000, 14000, 1, 2],
+    ["CAS-5002", "pod_received", cascadeTrucks[1], null, CITY.kent, CITY.boise, 152000, 12000, 4, 3],
+  ]
+  for (const [ref, status, truckId, driverId, origin, dest, linehaul, fsc, puDays, delDays] of cascadeLoads) {
+    const { rows } = await q(
+      `INSERT INTO hub.loads (carrier_id, reference, customer_id, status, equipment, commodity,
+         linehaul_cents, fuel_surcharge_cents, loaded_miles, truck_id, driver_id, source)
+       VALUES ($1,$2,$3,$4,'reefer','Fresh produce',$5,$6,420,$7,$8,'direct') RETURNING id`,
+      [CASCADE, ref, cascadeCustomer.rows[0].id, status, linehaul, fsc, truckId, driverId]
+    )
+    await q(
+      `INSERT INTO hub.stops (carrier_id, load_id, sequence, type, facility, city, state, lat, lng, appt_start)
+       VALUES ($1,$2,1,'pickup',$3,$4,$5,$6,$7,$8), ($1,$2,2,'delivery',$9,$10,$11,$12,$13,$14)`,
+      [
+        CASCADE, rows[0].id,
+        `${origin.city} Cold Storage`, origin.city, origin.state, origin.lat, origin.lng,
+        status === "in_transit" ? daysAhead(puDays) : daysAgo(puDays),
+        `${dest.city} Distribution`, dest.city, dest.state, dest.lat, dest.lng,
+        status === "in_transit" ? daysAhead(delDays) : daysAgo(delDays - 1),
+      ]
+    )
+  }
+  await q(
+    `INSERT INTO hub.pay_rules (carrier_id, driver_id, name, rules, deductions)
+     SELECT $1, $2, 'Company per-mile',
+       '[{"type":"per_mile","rateCentsPerMile":60,"loadedOnly":true},{"type":"referral_bonus"}]', '[]'
+     WHERE NOT EXISTS (SELECT 1 FROM hub.pay_rules WHERE driver_id = $2)`,
+    [CASCADE, cascadeDriver.rows[0].id]
+  )
+
+  // Platform admin (no tenant scope — sees tenant ops only).
+  await q(
+    `INSERT INTO hub.users (email, password_hash, name, role) VALUES ($1,$2,$3,'platform_admin')`,
+    ["admin@hauldesk.app", hash, "Platform Admin"]
+  )
+
   console.log(`Done. Demo data ready.`)
   console.log(`  In-transit load: ${inTransit.reference} → tracking: /track/${token}`)
   console.log(`  Settlement-ready loads: ${settle1.reference}, ${settle2.reference} (company drv), ${settle3.reference} (O/O)`)
   console.log(`  POD-received load awaiting invoice: ${podLoad.reference}`)
+  console.log(`  Tenant 2 (Cascade Demo Lines): owner@cascademo.example / driver@cascademo.example`)
+  console.log(`  Platform admin: admin@hauldesk.app`)
   console.log("Logins (password: ThindDemo1!):")
   console.log("  owner@demo.thind / dispatch@demo.thind / accounting@demo.thind")
   console.log("  driver@demo.thind / broker@demo.thind / shipper@demo.thind")

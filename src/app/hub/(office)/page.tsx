@@ -9,6 +9,7 @@ import { fmtCents } from "@/lib/hub/types"
 import { Panel, PageHeader } from "@/components/hub/ui"
 import { TimeOffDecisionPanel } from "@/components/hub/DriverOfficePanels"
 import { requireOfficeUser } from "@/lib/hub/session"
+import { gettingStartedState } from "@/app/hub/_actions/onboarding"
 import { cn } from "@/lib/utils"
 
 export const dynamic = "force-dynamic"
@@ -27,9 +28,10 @@ function countdown(iso: string | null): { label: string; urgent: boolean } {
 
 export default async function TodayPage() {
   const user = await requireOfficeUser()
-  const [stats, today] = await Promise.all([
+  const [stats, today, started] = await Promise.all([
     getDashboardStats(user.carrierId),
     todayData(user.carrierId),
+    gettingStartedState(),
   ])
 
   const allQuiet =
@@ -69,6 +71,47 @@ export default async function TodayPage() {
           </Panel>
         </Link>
       </div>
+
+      {/* New-carrier getting-started checklist (Phase 7 onboarding) */}
+      {started && Object.values(started).some((done) => !done) ? (
+        <Panel className="p-4 md:p-5 mb-4 border-gold/40">
+          <h2 className="font-display text-base font-bold uppercase tracking-wide text-white mb-1">
+            Set up your workspace
+          </h2>
+          <p className="text-body-xs text-steel-300 mb-3">
+            Five steps and you&apos;re fully live — most carriers finish in an afternoon.
+          </p>
+          <ul className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+            {[
+              { done: started.trucks, label: "Add your trucks (VIN decode fills the details)", href: "/hub/fleet/trucks/new" },
+              { done: started.drivers, label: "Add your drivers", href: "/hub/drivers/new" },
+              { done: started.customers, label: "Add your brokers & shippers", href: "/hub/customers/new" },
+              { done: started.loads, label: "Import your load history (any spreadsheet)", href: "/hub/import" },
+              { done: started.packet, label: "Upload your carrier packet (W-9, COI)", href: "/hub/settings/packet" },
+            ].map((step) => (
+              <li key={step.label}>
+                <Link
+                  href={step.href}
+                  className={cn(
+                    "flex items-center gap-2 rounded-lg px-2.5 py-2 text-sm hover:bg-white/5 min-h-[40px]",
+                    step.done ? "text-steel-400 line-through" : "text-steel-100 font-semibold"
+                  )}
+                >
+                  <span
+                    className={cn(
+                      "flex h-5 w-5 shrink-0 items-center justify-center rounded-full border text-[10px] font-bold",
+                      step.done ? "border-green-500/50 bg-green-500/15 text-green-400" : "border-white/25 text-steel-400"
+                    )}
+                  >
+                    {step.done ? "✓" : ""}
+                  </span>
+                  {step.label}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </Panel>
+      ) : null}
 
       {allQuiet ? (
         <Panel className="p-8 text-center mb-4">

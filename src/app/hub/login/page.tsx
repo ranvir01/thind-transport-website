@@ -84,6 +84,10 @@ export default function HubLoginPage() {
         <p className="mt-6 text-center text-body-xs text-steel-300">
           Need access? Ask the office to create your account.
         </p>
+        <p className="mt-2 text-center text-body-xs text-steel-300">
+          Run a trucking company?{" "}
+          <a href="/hub/signup" className="text-gold hover:underline">Create your workspace</a>
+        </p>
       </Panel>
     </div>
   )

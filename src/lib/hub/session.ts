@@ -17,13 +17,16 @@ export async function getHubUser(): Promise<HubSessionUser | null> {
   const user = session?.user as
     | (HubSessionUser & { role?: HubRole | null; carrierId?: string | null })
     | undefined
-  if (!user?.role || !user.carrierId) return null
+  if (!user?.role) return null
+  // Platform admins are the one role without a tenant scope — they see
+  // tenant operations only, never a tenant's business data.
+  if (!user.carrierId && user.role !== "platform_admin") return null
   return {
     id: user.id,
     name: user.name ?? user.email,
     email: user.email,
     role: user.role,
-    carrierId: user.carrierId,
+    carrierId: user.carrierId ?? "",
   }
 }
 

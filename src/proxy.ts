@@ -35,8 +35,8 @@ export default async function proxy(request: NextRequest) {
   }
 
   // ---- Hub (operations system) ----
-  // Invitation-accept pages are public by design (token-gated server-side).
-  if (pathname.startsWith("/hub/portal/accept")) {
+  // Public by design: invitation-accept (token-gated) and self-serve signup.
+  if (pathname.startsWith("/hub/portal/accept") || pathname === "/hub/signup") {
     return NextResponse.next()
   }
   if (pathname.startsWith("/hub") && pathname !== "/hub/login") {
@@ -57,6 +57,11 @@ export default async function proxy(request: NextRequest) {
       // External accounts live in the portal — nothing else.
       if (!inPortal && !pathname.startsWith("/hub/welcome")) {
         return NextResponse.redirect(new URL("/hub/portal", request.url))
+      }
+    } else if (role === "platform_admin") {
+      // Platform admins see tenant ops only — never a tenant's business data.
+      if (!pathname.startsWith("/hub/admin")) {
+        return NextResponse.redirect(new URL("/hub/admin", request.url))
       }
     } else if (!officeRoles.includes(role) && !pathname.startsWith("/hub/welcome")) {
       return NextResponse.redirect(new URL("/hub/welcome", request.url))
