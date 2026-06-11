@@ -363,7 +363,7 @@ export const CinematicNavbar = () => {
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null)
   const [scrolled, setScrolled] = useState(false)
   const pathname = usePathname()
-  const isHub = pathname.startsWith("/hub")
+  const isHub = (pathname.startsWith("/hub") || pathname.startsWith("/track"))
 
   // Handle scroll styling
   useEffect(() => {

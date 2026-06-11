@@ -1,0 +1,294 @@
+/**
+ * Branded PDF generation (pdf-lib): invoices, settlement statements, and the
+ * IFTA quarterly worksheet share one simple document builder.
+ */
+import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from "pdf-lib"
+import { fmtCentsExact } from "./types"
+
+const NAVY = rgb(0.055, 0.086, 0.129)
+const GOLD = rgb(0.949, 0.663, 0)
+const GRAY = rgb(0.35, 0.39, 0.45)
+const LIGHT = rgb(0.92, 0.94, 0.96)
+
+export interface PdfBrand {
+  name: string
+  address?: string | null
+  phone?: string | null
+  email?: string | null
+  dot?: string | null
+  mc?: string | null
+}
+
+interface TableColumn {
+  header: string
+  width: number
+  align?: "left" | "right"
+}
+
+class DocBuilder {
+  page: PDFPage
+  y: number
+  constructor(
+    readonly doc: PDFDocument,
+    readonly fonts: { regular: PDFFont; bold: PDFFont }
+  ) {
+    this.page = doc.addPage([612, 792]) // US Letter
+    this.y = 740
+  }
+
+  ensureRoom(height: number) {
+    if (this.y - height < 50) {
+      this.page = this.doc.addPage([612, 792])
+      this.y = 740
+    }
+  }
+
+  header(brand: PdfBrand, title: string) {
+    this.page.drawRectangle({ x: 0, y: 752, width: 612, height: 40, color: NAVY })
+    this.page.drawText(brand.name.toUpperCase(), {
+      x: 40, y: 766, size: 16, font: this.fonts.bold, color: rgb(1, 1, 1),
+    })
+    this.page.drawText(title.toUpperCase(), {
+      x: 612 - 40 - this.fonts.bold.widthOfTextAtSize(title.toUpperCase(), 13),
+      y: 767, size: 13, font: this.fonts.bold, color: GOLD,
+    })
+    this.y = 738
+    const meta = [
+      brand.address, brand.phone, brand.email,
+      [brand.dot ? `DOT ${brand.dot}` : null, brand.mc ? `MC ${brand.mc}` : null].filter(Boolean).join(" · "),
+    ].filter((v): v is string => Boolean(v && v.length))
+    for (const line of meta) {
+      this.page.drawText(line, { x: 40, y: this.y, size: 8.5, font: this.fonts.regular, color: GRAY })
+      this.y -= 11
+    }
+    this.y -= 8
+  }
+
+  text(value: string, opts: { size?: number; bold?: boolean; color?: ReturnType<typeof rgb>; x?: number } = {}) {
+    this.ensureRoom(16)
+    this.page.drawText(value, {
+      x: opts.x ?? 40, y: this.y, size: opts.size ?? 10,
+      font: opts.bold ? this.fonts.bold : this.fonts.regular,
+      color: opts.color ?? NAVY,
+    })
+    this.y -= (opts.size ?? 10) + 5
+  }
+
+  keyValue(pairs: [string, string][], x = 40) {
+    for (const [key, value] of pairs) {
+      this.ensureRoom(14)
+      this.page.drawText(key, { x, y: this.y, size: 9, font: this.fonts.bold, color: GRAY })
+      this.page.drawText(value, { x: x + 120, y: this.y, size: 9, font: this.fonts.regular, color: NAVY })
+      this.y -= 13
+    }
+    this.y -= 4
+  }
+
+  table(columns: TableColumn[], rows: string[][]) {
+    this.ensureRoom(24)
+    let x = 40
+    this.page.drawRectangle({ x: 36, y: this.y - 4, width: 540, height: 17, color: NAVY })
+    for (const col of columns) {
+      const w = this.fonts.bold.widthOfTextAtSize(col.header, 8.5)
+      this.page.drawText(col.header, {
+        x: col.align === "right" ? x + col.width - w : x,
+        y: this.y, size: 8.5, font: this.fonts.bold, color: rgb(1, 1, 1),
+      })
+      x += col.width
+    }
+    this.y -= 18
+    let stripe = false
+    for (const row of rows) {
+      this.ensureRoom(15)
+      if (stripe) {
+        this.page.drawRectangle({ x: 36, y: this.y - 3.5, width: 540, height: 14.5, color: LIGHT })
+      }
+      stripe = !stripe
+      x = 40
+      for (let i = 0; i < columns.length; i++) {
+        const value = row[i] ?? ""
+        const col = columns[i]
+        const w = this.fonts.regular.widthOfTextAtSize(value, 8.5)
+        this.page.drawText(value, {
+          x: col.align === "right" ? x + col.width - w : x,
+          y: this.y, size: 8.5, font: this.fonts.regular, color: NAVY,
+        })
+        x += col.width
+      }
+      this.y -= 14.5
+    }
+    this.y -= 6
+  }
+
+  totalLine(label: string, value: string) {
+    this.ensureRoom(20)
+    const w = this.fonts.bold.widthOfTextAtSize(value, 12)
+    this.page.drawText(label, { x: 360, y: this.y, size: 11, font: this.fonts.bold, color: NAVY })
+    this.page.drawText(value, { x: 576 - w, y: this.y, size: 12, font: this.fonts.bold, color: NAVY })
+    this.y -= 20
+  }
+
+  box(title: string, lines: string[]) {
+    const height = 16 + lines.length * 12 + 8
+    this.ensureRoom(height)
+    this.page.drawRectangle({
+      x: 36, y: this.y - height + 12, width: 250, height,
+      borderColor: GRAY, borderWidth: 0.8,
+    })
+    this.page.drawText(title, { x: 44, y: this.y - 2, size: 9, font: this.fonts.bold, color: GRAY })
+    let ly = this.y - 16
+    for (const line of lines) {
+      this.page.drawText(line, { x: 44, y: ly, size: 9, font: this.fonts.regular, color: NAVY })
+      ly -= 12
+    }
+    this.y -= height + 6
+  }
+}
+
+async function newBuilder(): Promise<DocBuilder> {
+  const doc = await PDFDocument.create()
+  const regular = await doc.embedFont(StandardFonts.Helvetica)
+  const bold = await doc.embedFont(StandardFonts.HelveticaBold)
+  return new DocBuilder(doc, { regular, bold })
+}
+
+// ---- Invoice ----
+
+export interface InvoicePdfInput {
+  brand: PdfBrand
+  number: string
+  issuedOn: string
+  dueOn: string
+  billTo: { name: string; address?: string | null; email?: string | null }
+  loadReference: string
+  customerReference?: string | null
+  lane: string
+  lines: { label: string; amountCents: number }[]
+  totalCents: number
+  remitTo: string
+  factored: boolean
+}
+
+export async function buildInvoicePdf(input: InvoicePdfInput): Promise<Uint8Array> {
+  const b = await newBuilder()
+  b.header(input.brand, `Invoice ${input.number}`)
+  b.keyValue([
+    ["Invoice #", input.number],
+    ["Issued", input.issuedOn],
+    ["Due", input.dueOn],
+    ["Load", `${input.loadReference}${input.customerReference ? ` / ${input.customerReference}` : ""}`],
+    ["Lane", input.lane],
+  ])
+  b.text(`Bill to: ${input.billTo.name}`, { bold: true })
+  if (input.billTo.address) b.text(input.billTo.address, { size: 9, color: GRAY })
+  b.y -= 6
+  b.table(
+    [
+      { header: "DESCRIPTION", width: 420 },
+      { header: "AMOUNT", width: 120, align: "right" },
+    ],
+    input.lines.map((line) => [line.label, fmtCentsExact(line.amountCents)])
+  )
+  b.totalLine("TOTAL DUE", fmtCentsExact(input.totalCents))
+  b.box(input.factored ? "REMIT TO (FACTORED — NOTICE OF ASSIGNMENT)" : "REMIT TO", input.remitTo.split("\n"))
+  if (input.factored) {
+    b.text("This invoice has been assigned. Payment must be made to the factor above.", { size: 8.5, color: GRAY })
+  }
+  return b.doc.save()
+}
+
+// ---- Settlement statement ----
+
+export interface SettlementPdfInput {
+  brand: PdfBrand
+  driverName: string
+  periodStart: string
+  periodEnd: string
+  lines: { kind: string; label: string; amountCents: number }[]
+  grossCents: number
+  deductionsCents: number
+  netCents: number
+}
+
+export async function buildSettlementPdf(input: SettlementPdfInput): Promise<Uint8Array> {
+  const b = await newBuilder()
+  b.header(input.brand, "Driver Settlement")
+  b.keyValue([
+    ["Driver", input.driverName],
+    ["Period", `${input.periodStart} — ${input.periodEnd}`],
+  ])
+  b.table(
+    [
+      { header: "TYPE", width: 90 },
+      { header: "DESCRIPTION", width: 330 },
+      { header: "AMOUNT", width: 120, align: "right" },
+    ],
+    input.lines.map((line) => [
+      line.kind.toUpperCase(),
+      line.label,
+      `${line.kind === "deduction" ? "-" : ""}${fmtCentsExact(line.amountCents)}`,
+    ])
+  )
+  b.totalLine("GROSS", fmtCentsExact(input.grossCents))
+  b.totalLine("DEDUCTIONS", `-${fmtCentsExact(input.deductionsCents)}`)
+  b.totalLine("NET PAY", fmtCentsExact(input.netCents))
+  return b.doc.save()
+}
+
+// ---- IFTA worksheet ----
+
+export interface IftaPdfInput {
+  brand: PdfBrand
+  quarter: string
+  mileageSource: string
+  fleetMiles: number
+  fleetGallons: number
+  mpg: number
+  rows: {
+    jurisdiction: string
+    miles: number
+    taxableGallons: number
+    taxPaidGallons: number
+    rate: number
+    surchargeRate: number
+    netCents: number
+  }[]
+  netTaxCents: number
+}
+
+export async function buildIftaPdf(input: IftaPdfInput): Promise<Uint8Array> {
+  const b = await newBuilder()
+  b.header(input.brand, `IFTA Worksheet ${input.quarter}`)
+  b.keyValue([
+    ["Quarter", input.quarter],
+    ["Mileage source", input.mileageSource],
+    ["Fleet miles", input.fleetMiles.toLocaleString("en-US")],
+    ["Fleet gallons", input.fleetGallons.toLocaleString("en-US")],
+    ["Fleet MPG", input.mpg.toFixed(4)],
+  ])
+  b.table(
+    [
+      { header: "JUR", width: 50 },
+      { header: "MILES", width: 90, align: "right" },
+      { header: "TAXABLE GAL", width: 95, align: "right" },
+      { header: "TAX-PAID GAL", width: 95, align: "right" },
+      { header: "RATE", width: 70, align: "right" },
+      { header: "SURCH", width: 60, align: "right" },
+      { header: "NET TAX", width: 80, align: "right" },
+    ],
+    input.rows.map((row) => [
+      row.jurisdiction,
+      row.miles.toLocaleString("en-US"),
+      row.taxableGallons.toFixed(3),
+      row.taxPaidGallons.toFixed(3),
+      row.rate.toFixed(4),
+      row.surchargeRate ? row.surchargeRate.toFixed(4) : "—",
+      fmtCentsExact(row.netCents),
+    ])
+  )
+  b.totalLine("NET TAX DUE (CREDIT)", fmtCentsExact(input.netTaxCents))
+  b.text("Worksheet for transcription into the WA IFTA filing portal. Source data retained 4 years.", {
+    size: 8.5, color: GRAY,
+  })
+  return b.doc.save()
+}

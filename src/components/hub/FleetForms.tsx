@@ -24,6 +24,7 @@ export interface TruckFormState {
   inspection_due: string
   insurance_expiry: string
   assigned_driver_id: string
+  tank_capacity_gallons: string
   notes: string
 }
 
@@ -167,6 +168,13 @@ export function TruckForm({
             <label className={labelCls} htmlFor="insurance_expiry">Insurance expiry</label>
             <input id="insurance_expiry" type="date" className={fieldCls} value={form.insurance_expiry}
               onChange={(e) => set({ insurance_expiry: e.target.value })} />
+          </div>
+          <div>
+            <label className={labelCls} htmlFor="tank_capacity">Tank capacity (gal)</label>
+            <input id="tank_capacity" type="number" inputMode="numeric" min="0" className={fieldCls}
+              value={form.tank_capacity_gallons}
+              onChange={(e) => set({ tank_capacity_gallons: e.target.value })} />
+            <p className="mt-1 text-body-xs text-steel-400">Powers the fuel fraud flag.</p>
           </div>
         </div>
         <div>

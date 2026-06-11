@@ -1,7 +1,8 @@
 "use server"
 
+import { createHash } from "crypto"
 import { revalidatePath } from "next/cache"
-import { requireOfficeUser } from "@/lib/hub/session"
+import { requirePermission } from "@/lib/hub/session"
 import { createLoad } from "@/lib/hub/loads"
 import { findCustomerByName, createCustomer } from "@/lib/hub/customers"
 import { query } from "@/lib/hub/db"
@@ -15,30 +16,81 @@ export interface ImportResult {
   ok: boolean
   imported: number
   failed: { row: number; error: string }[]
-  customersCreated: number
+  customersCreated?: number
+  skippedDuplicates?: number
 }
 
-/**
- * Import historical loads from the mapped Excel/CSV rows. Customers are
- * created on the fly by name; drivers/trucks are matched when names line up.
- * History lands as `settled` so it never enters the active dispatch flow.
- */
+type GenericRow = Record<string, string>
+
+async function truckMap(carrierId: string): Promise<Map<string, string>> {
+  const trucks = await query<{ id: string; unit_number: string }>(
+    `SELECT id, unit_number FROM hub.trucks WHERE carrier_id = $1 AND deleted_at IS NULL`,
+    [carrierId]
+  )
+  return new Map(trucks.map((t) => [t.unit_number.toLowerCase(), t.id]))
+}
+
+async function driverMap(carrierId: string): Promise<Map<string, string>> {
+  const drivers = await query<{ id: string; name: string }>(
+    `SELECT id, LOWER(first_name || ' ' || last_name) AS name FROM hub.drivers WHERE carrier_id = $1 AND deleted_at IS NULL`,
+    [carrierId]
+  )
+  return new Map(drivers.map((d) => [d.name, d.id]))
+}
+
+function rowFingerprint(row: GenericRow): string {
+  return createHash("sha256").update(JSON.stringify(row)).digest("hex").slice(0, 32)
+}
+
+/** Save/refresh a column-mapping template for one-click re-imports. */
+export async function saveImportTemplateAction(
+  kind: "loads" | "fuel" | "tolls" | "positions",
+  name: string,
+  mapping: Record<string, number | undefined>
+): Promise<{ ok: boolean; error?: string }> {
+  let user
+  try {
+    user = await requirePermission("imports:run")
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : "Forbidden" }
+  }
+  if (!name.trim()) return { ok: false, error: "Template needs a name" }
+  await query(
+    `INSERT INTO hub.import_templates (carrier_id, kind, name, mapping)
+     VALUES ($1,$2,$3,$4)
+     ON CONFLICT (carrier_id, kind, name) DO UPDATE SET mapping = $4, updated_at = NOW()`,
+    [user.carrierId, kind, name.trim(), JSON.stringify(mapping)]
+  )
+  return { ok: true }
+}
+
+export async function listImportTemplatesAction(kind: string) {
+  const user = await requirePermission("imports:run")
+  return query<{ id: string; name: string; mapping: Record<string, number> }>(
+    `SELECT id, name, mapping FROM hub.import_templates WHERE carrier_id = $1 AND kind = $2 ORDER BY name`,
+    [user.carrierId, kind]
+  )
+}
+
+// ---- Loads (historical Excel) ----
+
 export async function importLoadsAction(
   rows: ImportRow[],
   options: { asHistory: boolean }
 ): Promise<ImportResult> {
-  const user = await requireOfficeUser()
+  let user
+  try {
+    user = await requirePermission("imports:run")
+  } catch (err) {
+    return { ok: false, imported: 0, failed: [{ row: 0, error: err instanceof Error ? err.message : "Forbidden" }] }
+  }
   const failed: { row: number; error: string }[] = []
   let imported = 0
   let customersCreated = 0
 
   const customerCache = new Map<string, string>()
-  const drivers = await query<{ id: string; name: string }>(
-    `SELECT id, LOWER(first_name || ' ' || last_name) AS name FROM hub.drivers WHERE deleted_at IS NULL`
-  )
-  const trucks = await query<{ id: string; unit_number: string }>(
-    `SELECT id, unit_number FROM hub.trucks WHERE deleted_at IS NULL`
-  )
+  const drivers = await driverMap(user.carrierId)
+  const trucks = await truckMap(user.carrierId)
 
   for (let i = 0; i < rows.length; i++) {
     const row = rows[i]
@@ -49,11 +101,11 @@ export async function importLoadsAction(
 
       let customerId = customerCache.get(name.toLowerCase())
       if (!customerId) {
-        const existing = await findCustomerByName(name)
+        const existing = await findCustomerByName(user.carrierId, name)
         if (existing) {
           customerId = existing.id
         } else {
-          const created = await createCustomer({
+          const created = await createCustomer(user.carrierId, {
             name, type: "broker", payment_terms_days: 30, factored: false, status: "active",
           })
           customerId = created.id
@@ -62,14 +114,8 @@ export async function importLoadsAction(
         customerCache.set(name.toLowerCase(), customerId)
       }
 
-      const driverId = row.driver_name
-        ? drivers.find((d) => d.name === row.driver_name!.trim().toLowerCase())?.id ?? null
-        : null
-      const truckId = row.truck_unit
-        ? trucks.find((t) => t.unit_number === row.truck_unit!.trim())?.id ?? null
-        : null
-
       await createLoad(
+        user.carrierId,
         {
           customer_id: customerId,
           customer_reference: row.customer_reference?.trim() || null,
@@ -77,12 +123,12 @@ export async function importLoadsAction(
           equipment: normalizeEquipment(row.equipment),
           commodity: row.commodity?.trim() || null,
           weight_lbs: parseIntSafe(row.weight_lbs),
-          linehaul: parseMoney(row.linehaul),
-          fuel_surcharge: parseMoney(row.fuel_surcharge),
+          linehaul_cents: Math.round(parseMoney(row.linehaul) * 100),
+          fuel_surcharge_cents: Math.round(parseMoney(row.fuel_surcharge) * 100),
           accessorials: [],
           loaded_miles: parseIntSafe(row.loaded_miles),
-          driver_id: driverId,
-          truck_id: truckId,
+          driver_id: row.driver_name ? drivers.get(row.driver_name.trim().toLowerCase()) ?? null : null,
+          truck_id: row.truck_unit ? trucks.get(row.truck_unit.trim().toLowerCase()) ?? null : null,
           source: "import",
           notes: row.notes?.trim() || null,
           stops: [
@@ -109,7 +155,7 @@ export async function importLoadsAction(
   }
 
   await logAudit({
-    actorId: user.id, actorName: user.name,
+    carrierId: user.carrierId, actorId: user.id, actorName: user.name,
     entityType: "import", entityId: new Date().toISOString(),
     action: "import_loads", newValue: { imported, failed: failed.length, customersCreated },
   })
@@ -118,4 +164,181 @@ export async function importLoadsAction(
   revalidatePath("/hub/customers")
   revalidatePath("/hub")
   return { ok: failed.length === 0, imported, failed, customersCreated }
+}
+
+// ---- Fuel ----
+
+export async function importFuelAction(rows: GenericRow[], program: string): Promise<ImportResult> {
+  let user
+  try {
+    user = await requirePermission("imports:run")
+  } catch (err) {
+    return { ok: false, imported: 0, failed: [{ row: 0, error: err instanceof Error ? err.message : "Forbidden" }] }
+  }
+  const failed: { row: number; error: string }[] = []
+  let imported = 0
+  let skippedDuplicates = 0
+  const trucks = await truckMap(user.carrierId)
+  const drivers = await driverMap(user.carrierId)
+  const source = `csv:${program || "fuel"}`
+
+  for (let i = 0; i < rows.length; i++) {
+    const row = rows[i]
+    try {
+      const ts = parseDateSafe(row.ts)
+      if (!ts) throw new Error("Bad date")
+      const gallons = Number(row.gallons?.replace(/[^0-9.]/g, ""))
+      if (!Number.isFinite(gallons) || gallons <= 0) throw new Error("Bad gallons")
+      const totalCents = Math.round(parseMoney(row.total) * 100)
+      if (totalCents <= 0) throw new Error("Bad total")
+      const externalId = row.external_id?.trim() || rowFingerprint(row)
+
+      const result = await query<{ id: string }>(
+        `INSERT INTO hub.fuel_transactions (
+           carrier_id, source, external_id, card_program, truck_id, driver_id, ts, merchant, city,
+           jurisdiction, gallons, fuel_type, unit_price_cents, total_cents, odometer, raw
+         ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)
+         ON CONFLICT (carrier_id, source, external_id) DO NOTHING
+         RETURNING id`,
+        [
+          user.carrierId, source, externalId, program || row.card_program || null,
+          row.truck_unit ? trucks.get(row.truck_unit.trim().toLowerCase()) ?? null : null,
+          row.driver_name ? drivers.get(row.driver_name.trim().toLowerCase()) ?? null : null,
+          ts, row.merchant?.trim() || null, row.city?.trim() || null,
+          row.jurisdiction ? normalizeState(row.jurisdiction) : null,
+          gallons, row.fuel_type?.trim() || "diesel",
+          row.unit_price ? Math.round(parseMoney(row.unit_price) * 100) : null,
+          totalCents,
+          row.odometer ? Number(row.odometer.replace(/[^0-9.]/g, "")) || null : null,
+          JSON.stringify(row),
+        ]
+      )
+      if (result.length === 0) skippedDuplicates++
+      else imported++
+    } catch (err) {
+      failed.push({ row: i + 1, error: err instanceof Error ? err.message : "Unknown error" })
+    }
+  }
+  revalidatePath("/hub/fuel")
+  return { ok: failed.length === 0, imported, failed, skippedDuplicates }
+}
+
+// ---- Tolls ----
+
+export async function importTollsAction(rows: GenericRow[], program: string): Promise<ImportResult> {
+  let user
+  try {
+    user = await requirePermission("imports:run")
+  } catch (err) {
+    return { ok: false, imported: 0, failed: [{ row: 0, error: err instanceof Error ? err.message : "Forbidden" }] }
+  }
+  const failed: { row: number; error: string }[] = []
+  let imported = 0
+  let skippedDuplicates = 0
+  const trucks = await truckMap(user.carrierId)
+  const source = `csv:${program || "tolls"}`
+
+  for (let i = 0; i < rows.length; i++) {
+    const row = rows[i]
+    try {
+      const ts = parseDateSafe(row.ts)
+      if (!ts) throw new Error("Bad date")
+      const amountCents = Math.round(parseMoney(row.total) * 100)
+      if (amountCents <= 0) throw new Error("Bad amount")
+      const externalId = row.external_id?.trim() || rowFingerprint(row)
+      const result = await query<{ id: string }>(
+        `INSERT INTO hub.toll_transactions (carrier_id, source, external_id, transponder, truck_id, ts, plaza, jurisdiction, amount_cents, raw)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
+         ON CONFLICT (carrier_id, source, external_id) DO NOTHING RETURNING id`,
+        [
+          user.carrierId, source, externalId, row.transponder?.trim() || null,
+          row.truck_unit ? trucks.get(row.truck_unit.trim().toLowerCase()) ?? null : null,
+          ts, row.plaza?.trim() || null,
+          row.jurisdiction ? normalizeState(row.jurisdiction) : null,
+          amountCents, JSON.stringify(row),
+        ]
+      )
+      if (result.length === 0) skippedDuplicates++
+      else imported++
+    } catch (err) {
+      failed.push({ row: i + 1, error: err instanceof Error ? err.message : "Unknown error" })
+    }
+  }
+  revalidatePath("/hub/fuel")
+  return { ok: failed.length === 0, imported, failed, skippedDuplicates }
+}
+
+// ---- Positions (ELD export) ----
+
+export async function importPositionsAction(rows: GenericRow[]): Promise<ImportResult> {
+  let user
+  try {
+    user = await requirePermission("imports:run")
+  } catch (err) {
+    return { ok: false, imported: 0, failed: [{ row: 0, error: err instanceof Error ? err.message : "Forbidden" }] }
+  }
+  const failed: { row: number; error: string }[] = []
+  let imported = 0
+  const trucks = await truckMap(user.carrierId)
+
+  for (let i = 0; i < rows.length; i++) {
+    const row = rows[i]
+    try {
+      const truckId = trucks.get(row.truck_unit?.trim().toLowerCase() ?? "")
+      if (!truckId) throw new Error(`Unknown truck unit "${row.truck_unit}"`)
+      const ts = parseDateSafe(row.ts)
+      if (!ts) throw new Error("Bad date")
+      const lat = Number(row.lat)
+      const lng = Number(row.lng)
+      if (!Number.isFinite(lat) || !Number.isFinite(lng)) throw new Error("Bad coordinates")
+      await query(
+        `INSERT INTO hub.position_pings (carrier_id, truck_id, ts, lat, lng, odometer, source)
+         VALUES ($1,$2,$3,$4,$5,$6,'import')`,
+        [user.carrierId, truckId, ts, lat, lng, row.odometer ? Number(row.odometer) || null : null]
+      )
+      imported++
+    } catch (err) {
+      failed.push({ row: i + 1, error: err instanceof Error ? err.message : "Unknown error" })
+    }
+  }
+  revalidatePath("/hub/map")
+  return { ok: failed.length === 0, imported, failed }
+}
+
+// ---- IFTA mileage (TruckX-style jurisdiction summary) ----
+
+export async function importMileageAction(rows: GenericRow[]): Promise<ImportResult> {
+  let user
+  try {
+    user = await requirePermission("imports:run")
+  } catch (err) {
+    return { ok: false, imported: 0, failed: [{ row: 0, error: err instanceof Error ? err.message : "Forbidden" }] }
+  }
+  const failed: { row: number; error: string }[] = []
+  let imported = 0
+  const trucks = await truckMap(user.carrierId)
+  const { randomUUID } = await import("crypto")
+  const runId = randomUUID()
+
+  for (let i = 0; i < rows.length; i++) {
+    const row = rows[i]
+    try {
+      const truckId = trucks.get(row.truck_unit?.trim().toLowerCase() ?? "")
+      if (!truckId) throw new Error(`Unknown truck unit "${row.truck_unit}"`)
+      const quarter = row.quarter?.trim().toUpperCase()
+      if (!/^\d{4}Q[1-4]$/.test(quarter ?? "")) throw new Error("Bad quarter (use 2026Q2)")
+      const miles = Number(row.miles?.replace(/[^0-9.]/g, ""))
+      if (!Number.isFinite(miles) || miles < 0) throw new Error("Bad miles")
+      await query(
+        `INSERT INTO hub.jurisdiction_miles (carrier_id, run_id, truck_id, quarter, jurisdiction, miles, source)
+         VALUES ($1,$2,$3,$4,$5,$6,'import')`,
+        [user.carrierId, runId, truckId, quarter, normalizeState(row.jurisdiction ?? ""), miles]
+      )
+      imported++
+    } catch (err) {
+      failed.push({ row: i + 1, error: err instanceof Error ? err.message : "Unknown error" })
+    }
+  }
+  revalidatePath("/hub/compliance/ifta")
+  return { ok: failed.length === 0, imported, failed }
 }

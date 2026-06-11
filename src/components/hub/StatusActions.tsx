@@ -2,8 +2,11 @@
 
 import { useState, useTransition } from "react"
 import { toast } from "sonner"
-import { ArrowRight, Ban, Loader2 } from "lucide-react"
-import { advanceLoadStatusAction, setLoadStatusAction, stopTimestampAction } from "@/app/hub/_actions/loads"
+import { ArrowRight, Ban, Loader2, MessageSquare } from "lucide-react"
+import {
+  advanceLoadStatusAction, logCheckCallAction, setLoadStatusAction, stopTimestampAction,
+} from "@/app/hub/_actions/loads"
+import { fieldCls } from "@/components/hub/ui"
 import { NEXT_STATUS, STATUS_LABELS, type LoadStatus } from "@/lib/hub/types"
 
 export function AdvanceStatusButton({
@@ -92,6 +95,65 @@ export function CancelLoadButton({ loadId, status }: { loadId: string; status: L
         Keep load
       </button>
     </span>
+  )
+}
+
+/** One-tap check-call logging for the brokers who still phone in. */
+export function CheckCallButton({ loadId }: { loadId: string }) {
+  const [open, setOpen] = useState(false)
+  const [note, setNote] = useState("")
+  const [pending, startTransition] = useTransition()
+
+  const log = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!note.trim()) return
+    startTransition(async () => {
+      const result = await logCheckCallAction(loadId, note)
+      if (result.ok) {
+        toast.success("Check call logged")
+        setNote("")
+        setOpen(false)
+      } else {
+        toast.error(result.error ?? "Could not log call")
+      }
+    })
+  }
+
+  if (!open) {
+    return (
+      <button
+        onClick={() => setOpen(true)}
+        className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-white/15 px-4 text-sm font-semibold text-steel-100 hover:bg-white/5"
+      >
+        <MessageSquare className="h-4 w-4" /> Check call
+      </button>
+    )
+  }
+  return (
+    <form onSubmit={log} className="flex w-full sm:w-auto items-center gap-2">
+      <input
+        autoFocus
+        aria-label="Check call note"
+        placeholder="Broker called — truck 30 min out…"
+        className={`${fieldCls} sm:w-72`}
+        value={note}
+        onChange={(e) => setNote(e.target.value)}
+      />
+      <button
+        type="submit"
+        disabled={pending || !note.trim()}
+        className="min-h-[44px] shrink-0 rounded-xl border border-gold/40 bg-gold/10 px-4 text-sm font-bold text-gold hover:bg-gold/20 disabled:opacity-50"
+      >
+        {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Log"}
+      </button>
+      <button
+        type="button"
+        onClick={() => setOpen(false)}
+        className="min-h-[44px] shrink-0 rounded-xl px-3 text-sm font-semibold text-steel-200 hover:bg-white/5"
+      >
+        Cancel
+      </button>
+    </form>
   )
 }
 

@@ -1,6 +1,7 @@
 import Link from "next/link"
 import { Plus } from "lucide-react"
 import { listDriversWithExpiry } from "@/lib/hub/drivers"
+import { requireOfficeUser } from "@/lib/hub/session"
 import { Panel, PageHeader, ExpiryPill, EmptyState } from "@/components/hub/ui"
 import { cn } from "@/lib/utils"
 
@@ -13,7 +14,8 @@ const STATUS_PILL: Record<string, string> = {
 }
 
 export default async function DriversPage() {
-  const drivers = await listDriversWithExpiry()
+  const user = await requireOfficeUser()
+  const drivers = await listDriversWithExpiry(user.carrierId)
 
   return (
     <div>

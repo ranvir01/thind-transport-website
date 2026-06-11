@@ -1,56 +1,77 @@
-# Thind Transport Hub — Demo Script (Phase 1)
+# Thind Transport Hub — Demo Script (Phases 1–3)
 
-A 5-minute walkthrough that shows the Hub running like the real deal — works on a phone
-(390px) and desktop. Run it against a database seeded with `npm run seed:demo`.
+A phone-first walkthrough showing dispatch, money, fuel, and IFTA running like the real
+deal — 390px and desktop. Run against a database seeded with `npm run seed:demo`.
 
 ## Setup
 
 ```bash
-npm run db:migrate   # apply hub schema
-npm run seed:demo    # believable fleet data (never run against production)
+npm run db:migrate   # apply hub schema (multi-tenant; Thind is tenant #1)
+npm run seed:demo    # believable fleet + money + fuel quarter (never run on production)
+npm test             # 51 unit tests: settlement/invoice/IFTA penny math, parser, role matrix
 npm run dev          # http://localhost:3000/hub
 ```
 
-On a phone: open `/hub`, then "Add to Home Screen" — the Hub installs as a standalone app
-(`/hub.webmanifest`).
+On a phone: open `/hub` → "Add to Home Screen" installs the Hub as a standalone app.
 
 ## Demo accounts (password for all: `ThindDemo1!`)
 
 | Role | Email | Sees |
 |---|---|---|
-| Owner | `owner@demo.thind` | Everything incl. Users admin |
-| Dispatcher | `dispatch@demo.thind` | Dispatch, loads, fleet, CRM |
-| Accountant | `accounting@demo.thind` | Same office screens (money module lands Phase 2) |
+| Owner | `owner@demo.thind` | Everything incl. Users admin + Price book |
+| Dispatcher | `dispatch@demo.thind` | Dispatch, loads, fleet, CRM (money is read-only) |
+| Accountant | `accounting@demo.thind` | Money module: invoices, payments, settlements |
 | Driver | `driver@demo.thind` | Welcome screen (driver hub lands Phase 4) |
 | Broker | `broker@demo.thind` | Welcome screen (portal lands Phase 5) |
 | Shipper | `shipper@demo.thind` | Welcome screen (portal lands Phase 5) |
 
-## The golden path (~5 minutes)
+## The golden path (~7 minutes)
 
-1. **Login** at `/hub/login` as `dispatch@demo.thind`.
-2. **Dashboard** — live KPIs (active loads, in transit, awaiting POD), booked revenue
-   this week/month, compliance "expiring in 60 days" with red/amber/gold pills.
-3. **Dispatch board** — columns from Booked to POD Received; each card shows lane,
-   broker, driver/truck, rate, and an RC/BOL/POD document checklist. Tap the gold
-   button on any card to advance its status without leaving the board.
-4. **Book a load** — New load → pick broker, add pickup + delivery (city/state),
-   linehaul + fuel surcharge (watch the total and $/mile compute live), assign driver,
-   truck, trailer → Book load. It appears in the Booked column instantly.
-5. **Work the load** — open it: advance Dispatched → At Pickup, tap "Mark arrived" /
-   "Mark departed" on stops (detention data starts here), upload the rate con or POD
-   straight from the phone camera, watch the status history write itself.
-6. **Fleet map** — every truck's latest position on OpenStreetMap; truck #101 shows a
-   trail running down I-5 with an in-transit reefer load.
-7. **Customers** — open Pacific Crest Logistics: revenue, load count, average $/mile,
-   contacts with tap-to-call, CRM activity log, load history.
-8. **Import** — upload a CSV exported from Excel, watch columns auto-map, preview, and
-   import history as settled loads (brokers are created automatically).
-9. **Fleet** — open a truck: registration/inspection/insurance pills, VIN decode button
-   (free NHTSA API fills year/make/model), document vault.
-10. **Switch roles** — sign out, log in as `owner@demo.thind` → Users admin appears;
-    log in as `driver@demo.thind` → drivers see their own welcome screen, not office data.
+1. **Login** as `dispatch@demo.thind` → dashboard: KPIs, booked revenue, **AR open**,
+   **driver pay queued**, compliance "expiring soon".
+2. **Dispatch board** — columns Booked → POD Received. Cards show lane, rate,
+   **estimated margin** (vs cost/mile from carrier settings), invoice state, doc
+   checklist (RC/BOL/POD), a **dispatch-legality warning** on the load assigned to the
+   driver with the expired med card, and NWS weather flags on in-transit lanes.
+3. **Paste intake** — Dispatch → "Paste rate con". Paste any rate-con text (try the
+   sample in `src/lib/hub/__tests__/parser.test.ts`): the parser pre-fills broker, ref,
+   rates, stops with confidence-coded chips → confirm → booked in under 60 seconds.
+4. **Work a load** — open THD-1005 (in transit): unified event timeline (status,
+   documents, geo, check calls), one-tap arrive/depart, camera POD upload, **check-call
+   logging**, and **tracking links** — create one, open `/track/<token>` in a private
+   window: the public broker view (status, stops, city-level position; revocable).
+5. **Invoice in one click** — open THD-1008 (POD received) as `accounting@demo.thind`
+   (or owner): "Invoice this load" → numbered branded PDF, POD+BOL attached, emailed,
+   status → invoiced. Open the factored load's invoice: **remit-to shows the factoring
+   company** (Notice of Assignment), with a one-click factoring packet.
+6. **Money** — AR aging buckets (a seeded overdue invoice sits in 1–30), record a
+   payment (partial or full — status flows partial → paid), QuickBooks CSV + 1099-NEC
+   exports.
+7. **Settlements** — "Draft this week's settlements": Harpreet (company, $0.63/mi loaded)
+   gets earnings + lumper reimbursement − $200 advance − insurance; Jasdeep (owner-op)
+   gets 90% + 100% FSC − escrow. Approve → statement PDF + email; escrow ledger updates.
+8. **Fuel** — dashboards (cost/mi, MPG, $/gal by program) from a seeded quarter of EFS
+   transactions; the 312-gallon Comdata transaction fires the **over-tank-capacity fraud
+   flag**. Import any card CSV under Import → Fuel (idempotent; mappings saved).
+9. **Compliance** — red/amber/green wall: expired med card (red), 2290/UCR/IFTA decals
+   (company items), maintenance PM due. Then **IFTA**: compute the quarter — truck 102's
+   GPS loop becomes per-jurisdiction miles via the bundled state boundaries, fuel
+   gallons credit per state, rates applied (surcharge states supported) → worksheet
+   PDF/CSV + 4-year source export. Statuses draft → reviewed → filed.
+10. **Reports** — per-truck P&L (revenue − fuel − maintenance − other), net per mile.
+11. **Roles** — owner sees Users + Price book; dispatcher gets "Forbidden" on money
+    mutations (role × resource matrix, unit-tested); driver/broker/shipper land on
+    welcome screens and cannot reach office routes.
 
-## What Phase 1 deliberately does not include
+## Cron (production)
 
-Invoicing/settlements (Phase 2), fuel + IFTA (Phase 3), driver PWA flows (Phase 4),
-external portals (Phase 5), live ELD/DAT sync (Phase 6). See `docs/tms-master-prompt.md`.
+`vercel.json` schedules `/api/hub/cron/compliance-scan` (60/30/7-day alerts) and
+`/api/hub/cron/ar-reminders` (due+3/+10/+20 dunning, factored loads skipped) daily —
+protected by `CRON_SECRET`. Trigger manually:
+`curl -H "Authorization: Bearer $CRON_SECRET" localhost:3000/api/hub/cron/ar-reminders`
+
+## What is deliberately not built yet
+
+Driver PWA actions/DVIRs/offline/push (Phase 4), portals + FMCSA vetting (Phase 5),
+live ELD/DAT/fuel-card APIs + owner analytics polish (Phase 6), tenant onboarding +
+second-tenant isolation (Phase 7). See `docs/phases/`.

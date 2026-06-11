@@ -10,7 +10,8 @@
     "lint": "eslint . --ext .ts,.tsx,.js,.jsx",
     "generate:brand-assets": "node scripts/generate-brand-assets.mjs",
     "db:migrate": "node scripts/hub-migrate.mjs",
-    "seed:demo": "node scripts/seed-demo.mjs"
+    "seed:demo": "node scripts/seed-demo.mjs",
+    "test": "vitest run"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
@@ -74,6 +75,7 @@
     "postcss": "^8.5.6",
     "puppeteer": "^24.38.0",
     "sharp": "^0.34.5",
-    "tailwindcss": "^3.4.0"
+    "tailwindcss": "^3.4.0",
+    "vitest": "^4.1.8"
   }
 }

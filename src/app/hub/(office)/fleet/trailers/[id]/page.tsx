@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation"
 import { getTrailer } from "@/lib/hub/fleet"
+import { requireOfficeUser } from "@/lib/hub/session"
 import { listDocuments } from "@/lib/hub/documents"
 import { PageHeader, BackLink } from "@/components/hub/ui"
 import { TrailerForm, type TrailerFormState } from "@/components/hub/FleetForms"
@@ -8,8 +9,9 @@ import { DocumentsPanel } from "@/components/hub/DocumentsPanel"
 export const dynamic = "force-dynamic"
 
 export default async function TrailerDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const user = await requireOfficeUser()
   const { id } = await params
-  const trailer = await getTrailer(id).catch(() => null)
+  const trailer = await getTrailer(user.carrierId, id).catch(() => null)
   if (!trailer) notFound()
   const documents = await listDocuments("trailer", id)
 

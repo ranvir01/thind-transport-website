@@ -1,13 +1,15 @@
 import { notFound } from "next/navigation"
 import { getCustomer } from "@/lib/hub/customers"
+import { requireOfficeUser } from "@/lib/hub/session"
 import { PageHeader, BackLink } from "@/components/hub/ui"
 import { CustomerForm, type CustomerFormState } from "@/components/hub/CustomerForm"
 
 export const dynamic = "force-dynamic"
 
 export default async function EditCustomerPage({ params }: { params: Promise<{ id: string }> }) {
+  const user = await requireOfficeUser()
   const { id } = await params
-  const customer = await getCustomer(id).catch(() => null)
+  const customer = await getCustomer(user.carrierId, id).catch(() => null)
   if (!customer) notFound()
 
   const initial: CustomerFormState = {
@@ -19,7 +21,7 @@ export default async function EditCustomerPage({ params }: { params: Promise<{ i
     billing_address: customer.billing_address ?? "",
     phone: customer.phone ?? "",
     payment_terms_days: customer.payment_terms_days.toString(),
-    credit_limit: customer.credit_limit ? Number(customer.credit_limit).toString() : "",
+    credit_limit: customer.credit_limit_cents != null ? (customer.credit_limit_cents / 100).toFixed(2) : "",
     factored: customer.factored,
     status: customer.status,
     notes: customer.notes ?? "",

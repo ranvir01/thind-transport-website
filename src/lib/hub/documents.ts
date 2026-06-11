@@ -26,6 +26,7 @@ async function storeFile(file: File): Promise<{ storage: "local" | "blob"; url: 
 }
 
 export async function saveDocument(input: {
+  carrierId: string
   entityType: HubDocument["entity_type"]
   entityId: string
   kind: DocumentKind
@@ -35,15 +36,32 @@ export async function saveDocument(input: {
 }): Promise<HubDocument> {
   const { storage, url } = await storeFile(input.file)
   const rows = await query<HubDocument>(
-    `INSERT INTO hub.documents (entity_type, entity_id, kind, file_name, mime_type, size_bytes, storage, url, expiry, uploaded_by)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
+    `INSERT INTO hub.documents (carrier_id, entity_type, entity_id, kind, file_name, mime_type, size_bytes, storage, url, expiry, uploaded_by)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
      RETURNING *`,
     [
-      input.entityType, input.entityId, input.kind, input.file.name, input.file.type || null,
-      input.file.size, storage, url, input.expiry ?? null, input.uploadedBy ?? null,
+      input.carrierId, input.entityType, input.entityId, input.kind, input.file.name,
+      input.file.type || null, input.file.size, storage, url, input.expiry ?? null,
+      input.uploadedBy ?? null,
     ]
   )
   return rows[0]
+}
+
+/** Store a generated file (e.g. a PDF) as a hub document URL without a DB row. */
+export async function storeGeneratedPdf(fileName: string, bytes: Uint8Array): Promise<string> {
+  const safeName = `${randomUUID()}-${fileName.replace(/[^a-zA-Z0-9._-]/g, "_")}`
+  if (process.env.BLOB_READ_WRITE_TOKEN) {
+    const { put } = await import("@vercel/blob")
+    const blob = await put(`hub/${safeName}`, Buffer.from(bytes), {
+      access: "public",
+      contentType: "application/pdf",
+    })
+    return blob.url
+  }
+  await fs.mkdir(UPLOAD_DIR, { recursive: true })
+  await fs.writeFile(path.join(UPLOAD_DIR, safeName), Buffer.from(bytes))
+  return `/api/hub/files/${safeName}`
 }
 
 export async function listDocuments(

@@ -19,6 +19,9 @@ export interface DriverFormState {
   hire_date: string
   pay_type: string
   pay_rate: string
+  pay_loaded_miles_only: boolean
+  escrow_weekly: string
+  insurance_weekly: string
   status: string
   emergency_contact_name: string
   emergency_contact_phone: string
@@ -112,6 +115,24 @@ export function DriverForm({ driverId, initial }: { driverId?: string; initial: 
               className={fieldCls} value={form.pay_rate}
               onChange={(e) => set({ pay_rate: e.target.value })} />
           </div>
+          <div>
+            <label className={labelCls} htmlFor="escrow_weekly">Escrow / week ($)</label>
+            <input id="escrow_weekly" type="number" inputMode="decimal" step="0.01" min="0"
+              className={fieldCls} value={form.escrow_weekly}
+              onChange={(e) => set({ escrow_weekly: e.target.value })} />
+          </div>
+          <div>
+            <label className={labelCls} htmlFor="insurance_weekly">Insurance / week ($)</label>
+            <input id="insurance_weekly" type="number" inputMode="decimal" step="0.01" min="0"
+              className={fieldCls} value={form.insurance_weekly}
+              onChange={(e) => set({ insurance_weekly: e.target.value })} />
+          </div>
+          <label className="flex items-center gap-2 min-h-[44px] cursor-pointer sm:mt-6">
+            <input type="checkbox" checked={form.pay_loaded_miles_only}
+              className="h-5 w-5 rounded accent-[#F2A900]"
+              onChange={(e) => set({ pay_loaded_miles_only: e.target.checked })} />
+            <span className="text-sm text-steel-100">Pay loaded miles only</span>
+          </label>
           <div>
             <label className={labelCls} htmlFor="d_status">Status</label>
             <select id="d_status" className={fieldCls} value={form.status}

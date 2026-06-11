@@ -1,11 +1,13 @@
 import { latestTruckPositions } from "@/lib/hub/fleet"
+import { requireOfficeUser } from "@/lib/hub/session"
 import { PageHeader, Panel } from "@/components/hub/ui"
 import { FleetMap } from "@/components/hub/FleetMap"
 
 export const dynamic = "force-dynamic"
 
 export default async function FleetMapPage() {
-  const positions = await latestTruckPositions()
+  const user = await requireOfficeUser()
+  const positions = await latestTruckPositions(user.carrierId)
 
   return (
     <div>

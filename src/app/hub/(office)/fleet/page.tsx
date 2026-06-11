@@ -1,6 +1,7 @@
 import Link from "next/link"
 import { Plus } from "lucide-react"
 import { listTrucks, listTrailers } from "@/lib/hub/fleet"
+import { requireOfficeUser } from "@/lib/hub/session"
 import { Panel, PageHeader, ExpiryPill, EmptyState } from "@/components/hub/ui"
 import { cn } from "@/lib/utils"
 
@@ -26,9 +27,10 @@ export default async function FleetPage({
 }: {
   searchParams: Promise<{ tab?: string }>
 }) {
+  const user = await requireOfficeUser()
   const { tab } = await searchParams
   const showTrailers = tab === "trailers"
-  const [trucks, trailers] = await Promise.all([listTrucks(), listTrailers()])
+  const [trucks, trailers] = await Promise.all([listTrucks(user.carrierId), listTrailers(user.carrierId)])
 
   return (
     <div>

@@ -1,5 +1,7 @@
 import { hubDb, query, queryOne } from "./db"
-import type { Accessorial, EquipmentType, Load, LoadStatus, Stop, StatusEvent } from "./types"
+import type {
+  Accessorial, EquipmentType, Load, LoadEvent, LoadEventKind, LoadStatus, Stop,
+} from "./types"
 
 const LOAD_SELECT = `
   SELECT l.*,
@@ -9,7 +11,8 @@ const LOAD_SELECT = `
     tr.unit_number AS trailer_unit,
     fs.city AS origin_city, fs.state AS origin_state,
     ls.city AS dest_city, ls.state AS dest_state,
-    docs.kinds AS doc_kinds
+    docs.kinds AS doc_kinds,
+    inv.id AS invoice_id, inv.status AS invoice_status
   FROM hub.loads l
   LEFT JOIN hub.customers c ON c.id = l.customer_id
   LEFT JOIN hub.drivers d ON d.id = l.driver_id
@@ -27,18 +30,23 @@ const LOAD_SELECT = `
     SELECT ARRAY_AGG(DISTINCT kind) AS kinds FROM hub.documents
     WHERE entity_type = 'load' AND entity_id = l.id
   ) docs ON TRUE
+  LEFT JOIN LATERAL (
+    SELECT id, status FROM hub.invoices WHERE load_id = l.id
+    ORDER BY created_at DESC LIMIT 1
+  ) inv ON TRUE
 `
 
 export interface LoadFilters {
   status?: LoadStatus | "active" | "all"
   customerId?: string
   driverId?: string
+  truckId?: string
   search?: string
 }
 
-export async function listLoads(filters: LoadFilters = {}): Promise<Load[]> {
-  const clauses: string[] = ["l.deleted_at IS NULL"]
-  const params: unknown[] = []
+export async function listLoads(carrierId: string, filters: LoadFilters = {}): Promise<Load[]> {
+  const params: unknown[] = [carrierId]
+  const clauses: string[] = ["l.deleted_at IS NULL", "l.carrier_id = $1"]
 
   if (filters.status && filters.status !== "all") {
     if (filters.status === "active") {
@@ -56,6 +64,10 @@ export async function listLoads(filters: LoadFilters = {}): Promise<Load[]> {
     params.push(filters.driverId)
     clauses.push(`l.driver_id = $${params.length}`)
   }
+  if (filters.truckId) {
+    params.push(filters.truckId)
+    clauses.push(`l.truck_id = $${params.length}`)
+  }
   if (filters.search) {
     params.push(`%${filters.search}%`)
     const p = `$${params.length}`
@@ -71,18 +83,36 @@ export async function listLoads(filters: LoadFilters = {}): Promise<Load[]> {
   )
 }
 
-export async function getLoad(id: string): Promise<Load | null> {
-  return queryOne<Load>(`${LOAD_SELECT} WHERE l.id = $1 AND l.deleted_at IS NULL`, [id])
+export async function getLoad(carrierId: string, id: string): Promise<Load | null> {
+  return queryOne<Load>(
+    `${LOAD_SELECT} WHERE l.id = $2 AND l.carrier_id = $1 AND l.deleted_at IS NULL`,
+    [carrierId, id]
+  )
 }
 
 export async function getLoadStops(loadId: string): Promise<Stop[]> {
   return query<Stop>(`SELECT * FROM hub.stops WHERE load_id = $1 ORDER BY sequence`, [loadId])
 }
 
-export async function getStatusEvents(loadId: string): Promise<StatusEvent[]> {
-  return query<StatusEvent>(
-    `SELECT * FROM hub.load_status_events WHERE load_id = $1 ORDER BY created_at ASC`,
+export async function getLoadEvents(loadId: string): Promise<LoadEvent[]> {
+  return query<LoadEvent>(
+    `SELECT id, load_id, kind, actor_name, payload, created_at
+     FROM hub.load_events WHERE load_id = $1 ORDER BY created_at ASC, id ASC`,
     [loadId]
+  )
+}
+
+export async function addLoadEvent(
+  carrierId: string,
+  loadId: string,
+  kind: LoadEventKind,
+  payload: Record<string, unknown>,
+  actor: { id?: string | null; name?: string | null }
+): Promise<void> {
+  await query(
+    `INSERT INTO hub.load_events (carrier_id, load_id, kind, actor_id, actor_name, payload)
+     VALUES ($1, $2, $3, $4, $5, $6)`,
+    [carrierId, loadId, kind, actor.id ?? null, actor.name ?? null, JSON.stringify(payload)]
   )
 }
 
@@ -93,6 +123,9 @@ export interface StopInput {
   city: string
   state: string
   zip?: string | null
+  fcfs?: boolean
+  pickup_number?: string | null
+  po_number?: string | null
   appt_start?: string | null
   appt_end?: string | null
   lat?: number | null
@@ -107,76 +140,79 @@ export interface LoadInput {
   equipment: EquipmentType
   commodity?: string | null
   weight_lbs?: number | null
-  linehaul: number
-  fuel_surcharge: number
+  linehaul_cents: number
+  fuel_surcharge_cents: number
   accessorials: Accessorial[]
   loaded_miles?: number | null
   deadhead_miles?: number | null
   truck_id?: string | null
   trailer_id?: string | null
   driver_id?: string | null
-  source?: "dat" | "direct" | "import"
+  source?: "dat" | "direct" | "import" | "quote"
+  factored?: boolean
   notes?: string | null
   stops: StopInput[]
 }
 
-/** Generate the next THD-NNNN reference atomically. */
-async function nextReference(client: { query: (q: string, p?: unknown[]) => Promise<{ rows: { max_ref: string | null }[] }> }): Promise<string> {
-  const { rows } = await client.query(
-    `SELECT MAX(SUBSTRING(reference FROM 5)::int)::text AS max_ref
-     FROM hub.loads WHERE reference ~ '^THD-[0-9]+$'`
-  )
-  const next = (Number(rows[0]?.max_ref ?? 1000) + 1).toString()
-  return `THD-${next}`
+async function insertStops(
+  client: { query: (q: string, p?: unknown[]) => Promise<unknown> },
+  carrierId: string,
+  loadId: string,
+  stops: StopInput[]
+): Promise<void> {
+  for (let i = 0; i < stops.length; i++) {
+    const s = stops[i]
+    await client.query(
+      `INSERT INTO hub.stops (carrier_id, load_id, sequence, type, facility, address, city, state, zip,
+         fcfs, pickup_number, po_number, appt_start, appt_end, lat, lng, notes)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)`,
+      [
+        carrierId, loadId, i + 1, s.type, s.facility ?? null, s.address ?? null, s.city, s.state,
+        s.zip ?? null, s.fcfs ?? false, s.pickup_number ?? null, s.po_number ?? null,
+        s.appt_start ?? null, s.appt_end ?? null, s.lat ?? null, s.lng ?? null, s.notes ?? null,
+      ]
+    )
+  }
 }
 
 export async function createLoad(
+  carrierId: string,
   input: LoadInput,
   actor: { id?: string | null; name?: string | null }
 ): Promise<Load> {
   const client = await hubDb().connect()
   try {
     await client.query("BEGIN")
-    const reference = await nextReference(client)
+    const { rows: refRows } = await client.query(
+      `SELECT MAX(SUBSTRING(reference FROM 5)::int)::text AS max_ref
+       FROM hub.loads WHERE carrier_id = $1 AND reference ~ '^THD-[0-9]+$'`,
+      [carrierId]
+    )
+    const reference = `THD-${Number(refRows[0]?.max_ref ?? 1000) + 1}`
     const status = input.status ?? "booked"
     const { rows } = await client.query(
       `INSERT INTO hub.loads (
-         reference, customer_reference, customer_id, status, equipment, commodity, weight_lbs,
-         linehaul, fuel_surcharge, accessorials, loaded_miles, deadhead_miles,
-         truck_id, trailer_id, driver_id, dispatcher_id, source, notes
-       ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18)
+         carrier_id, reference, customer_reference, customer_id, status, equipment, commodity, weight_lbs,
+         linehaul_cents, fuel_surcharge_cents, accessorials, loaded_miles, deadhead_miles,
+         truck_id, trailer_id, driver_id, dispatcher_id, source, factored, notes
+       ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20)
        RETURNING *`,
       [
-        reference, input.customer_reference ?? null, input.customer_id, status,
+        carrierId, reference, input.customer_reference ?? null, input.customer_id, status,
         input.equipment, input.commodity ?? null, input.weight_lbs ?? null,
-        input.linehaul, input.fuel_surcharge, JSON.stringify(input.accessorials ?? []),
+        input.linehaul_cents, input.fuel_surcharge_cents, JSON.stringify(input.accessorials ?? []),
         input.loaded_miles ?? null, input.deadhead_miles ?? null,
         input.truck_id ?? null, input.trailer_id ?? null, input.driver_id ?? null,
-        actor.id ?? null, input.source ?? "direct", input.notes ?? null,
+        actor.id ?? null, input.source ?? "direct", input.factored ?? false, input.notes ?? null,
       ]
     )
     const load = rows[0]
-
-    for (let i = 0; i < input.stops.length; i++) {
-      const s = input.stops[i]
-      await client.query(
-        `INSERT INTO hub.stops (load_id, sequence, type, facility, address, city, state, zip,
-           appt_start, appt_end, lat, lng, notes)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)`,
-        [
-          load.id, i + 1, s.type, s.facility ?? null, s.address ?? null, s.city, s.state,
-          s.zip ?? null, s.appt_start ?? null, s.appt_end ?? null, s.lat ?? null, s.lng ?? null,
-          s.notes ?? null,
-        ]
-      )
-    }
-
+    await insertStops(client, carrierId, load.id, input.stops)
     await client.query(
-      `INSERT INTO hub.load_status_events (load_id, from_status, to_status, actor_id, actor_name)
-       VALUES ($1, NULL, $2, $3, $4)`,
-      [load.id, status, actor.id ?? null, actor.name ?? null]
+      `INSERT INTO hub.load_events (carrier_id, load_id, kind, actor_id, actor_name, payload)
+       VALUES ($1, $2, 'status_change', $3, $4, $5)`,
+      [carrierId, load.id, actor.id ?? null, actor.name ?? null, JSON.stringify({ from: null, to: status })]
     )
-
     await client.query("COMMIT")
     return load as Load
   } catch (err) {
@@ -188,28 +224,30 @@ export async function createLoad(
 }
 
 export async function updateLoad(
+  carrierId: string,
   id: string,
   input: Omit<LoadInput, "stops" | "status">
 ): Promise<Load | null> {
   const rows = await query<Load>(
     `UPDATE hub.loads SET
-       customer_reference=$2, customer_id=$3, equipment=$4, commodity=$5, weight_lbs=$6,
-       linehaul=$7, fuel_surcharge=$8, accessorials=$9, loaded_miles=$10, deadhead_miles=$11,
-       truck_id=$12, trailer_id=$13, driver_id=$14, notes=$15, updated_at=NOW()
-     WHERE id=$1 AND deleted_at IS NULL
+       customer_reference=$3, customer_id=$4, equipment=$5, commodity=$6, weight_lbs=$7,
+       linehaul_cents=$8, fuel_surcharge_cents=$9, accessorials=$10, loaded_miles=$11, deadhead_miles=$12,
+       truck_id=$13, trailer_id=$14, driver_id=$15, factored=$16, notes=$17, updated_at=NOW()
+     WHERE carrier_id=$1 AND id=$2 AND deleted_at IS NULL
      RETURNING *`,
     [
-      id, input.customer_reference ?? null, input.customer_id, input.equipment,
-      input.commodity ?? null, input.weight_lbs ?? null, input.linehaul, input.fuel_surcharge,
+      carrierId, id, input.customer_reference ?? null, input.customer_id, input.equipment,
+      input.commodity ?? null, input.weight_lbs ?? null, input.linehaul_cents, input.fuel_surcharge_cents,
       JSON.stringify(input.accessorials ?? []), input.loaded_miles ?? null,
       input.deadhead_miles ?? null, input.truck_id ?? null, input.trailer_id ?? null,
-      input.driver_id ?? null, input.notes ?? null,
+      input.driver_id ?? null, input.factored ?? false, input.notes ?? null,
     ]
   )
   return rows[0] ?? null
 }
 
 export async function changeLoadStatus(
+  carrierId: string,
   id: string,
   toStatus: LoadStatus,
   actor: { id?: string | null; name?: string | null }
@@ -218,8 +256,8 @@ export async function changeLoadStatus(
   try {
     await client.query("BEGIN")
     const { rows: current } = await client.query(
-      `SELECT status FROM hub.loads WHERE id = $1 AND deleted_at IS NULL FOR UPDATE`,
-      [id]
+      `SELECT status FROM hub.loads WHERE carrier_id = $1 AND id = $2 AND deleted_at IS NULL FOR UPDATE`,
+      [carrierId, id]
     )
     if (!current[0]) {
       await client.query("ROLLBACK")
@@ -227,13 +265,13 @@ export async function changeLoadStatus(
     }
     const fromStatus = current[0].status as LoadStatus
     const { rows } = await client.query(
-      `UPDATE hub.loads SET status = $2, updated_at = NOW() WHERE id = $1 RETURNING *`,
-      [id, toStatus]
+      `UPDATE hub.loads SET status = $3, updated_at = NOW() WHERE carrier_id = $1 AND id = $2 RETURNING *`,
+      [carrierId, id, toStatus]
     )
     await client.query(
-      `INSERT INTO hub.load_status_events (load_id, from_status, to_status, actor_id, actor_name)
-       VALUES ($1, $2, $3, $4, $5)`,
-      [id, fromStatus, toStatus, actor.id ?? null, actor.name ?? null]
+      `INSERT INTO hub.load_events (carrier_id, load_id, kind, actor_id, actor_name, payload)
+       VALUES ($1, $2, 'status_change', $3, $4, $5)`,
+      [carrierId, id, actor.id ?? null, actor.name ?? null, JSON.stringify({ from: fromStatus, to: toStatus })]
     )
     await client.query("COMMIT")
     return rows[0] as Load
@@ -246,36 +284,26 @@ export async function changeLoadStatus(
 }
 
 export async function setStopTimestamp(
+  carrierId: string,
   stopId: string,
   field: "arrived_at" | "departed_at",
   value: string | null
 ): Promise<Stop | null> {
   const column = field === "arrived_at" ? "arrived_at" : "departed_at"
   const rows = await query<Stop>(
-    `UPDATE hub.stops SET ${column} = $2, updated_at = NOW() WHERE id = $1 RETURNING *`,
-    [stopId, value]
+    `UPDATE hub.stops SET ${column} = $3, updated_at = NOW()
+     WHERE id = $2 AND carrier_id = $1 RETURNING *`,
+    [carrierId, stopId, value]
   )
   return rows[0] ?? null
 }
 
-export async function replaceStops(loadId: string, stops: StopInput[]): Promise<void> {
+export async function replaceStops(carrierId: string, loadId: string, stops: StopInput[]): Promise<void> {
   const client = await hubDb().connect()
   try {
     await client.query("BEGIN")
-    await client.query(`DELETE FROM hub.stops WHERE load_id = $1`, [loadId])
-    for (let i = 0; i < stops.length; i++) {
-      const s = stops[i]
-      await client.query(
-        `INSERT INTO hub.stops (load_id, sequence, type, facility, address, city, state, zip,
-           appt_start, appt_end, lat, lng, notes)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)`,
-        [
-          loadId, i + 1, s.type, s.facility ?? null, s.address ?? null, s.city, s.state,
-          s.zip ?? null, s.appt_start ?? null, s.appt_end ?? null, s.lat ?? null, s.lng ?? null,
-          s.notes ?? null,
-        ]
-      )
-    }
+    await client.query(`DELETE FROM hub.stops WHERE load_id = $1 AND carrier_id = $2`, [loadId, carrierId])
+    await insertStops(client, carrierId, loadId, stops)
     await client.query("COMMIT")
   } catch (err) {
     await client.query("ROLLBACK")
@@ -291,39 +319,40 @@ export interface DashboardStats {
   active_loads: number
   in_transit: number
   awaiting_pod: number
-  revenue_month: string
-  revenue_week: string
+  revenue_month_cents: string
+  revenue_week_cents: string
   trucks_active: number
   trucks_total: number
   drivers_active: number
-  expiring_30: number
+  ar_open_cents: string
+  settlement_due_cents: string
 }
 
-export async function getDashboardStats(): Promise<DashboardStats> {
-  const row = await queryOne<DashboardStats>(`
+export async function getDashboardStats(carrierId: string): Promise<DashboardStats> {
+  const row = await queryOne<DashboardStats>(
+    `
     SELECT
-      (SELECT COUNT(*) FROM hub.loads WHERE deleted_at IS NULL AND status NOT IN ('settled','cancelled','paid','invoiced','quoted'))::int AS active_loads,
-      (SELECT COUNT(*) FROM hub.loads WHERE deleted_at IS NULL AND status = 'in_transit')::int AS in_transit,
-      (SELECT COUNT(*) FROM hub.loads WHERE deleted_at IS NULL AND status = 'delivered')::int AS awaiting_pod,
-      (SELECT COALESCE(SUM(linehaul + fuel_surcharge), 0) FROM hub.loads
-        WHERE deleted_at IS NULL AND status <> 'cancelled'
-        AND created_at >= date_trunc('month', NOW())) AS revenue_month,
-      (SELECT COALESCE(SUM(linehaul + fuel_surcharge), 0) FROM hub.loads
-        WHERE deleted_at IS NULL AND status <> 'cancelled'
-        AND created_at >= date_trunc('week', NOW())) AS revenue_week,
-      (SELECT COUNT(*) FROM hub.trucks WHERE deleted_at IS NULL AND status = 'active')::int AS trucks_active,
-      (SELECT COUNT(*) FROM hub.trucks WHERE deleted_at IS NULL)::int AS trucks_total,
-      (SELECT COUNT(*) FROM hub.drivers WHERE deleted_at IS NULL AND status = 'active')::int AS drivers_active,
-      (
-        (SELECT COUNT(*) FROM hub.drivers WHERE deleted_at IS NULL AND status = 'active'
-          AND (cdl_expiry <= NOW() + INTERVAL '30 days' OR medical_card_expiry <= NOW() + INTERVAL '30 days'))
-        +
-        (SELECT COUNT(*) FROM hub.trucks WHERE deleted_at IS NULL AND status <> 'retired'
-          AND (registration_expiry <= NOW() + INTERVAL '30 days'
-            OR inspection_due <= NOW() + INTERVAL '30 days'
-            OR insurance_expiry <= NOW() + INTERVAL '30 days'))
-      )::int AS expiring_30
-  `)
+      (SELECT COUNT(*) FROM hub.loads WHERE carrier_id = $1 AND deleted_at IS NULL AND status NOT IN ('settled','cancelled','paid','invoiced','quoted'))::int AS active_loads,
+      (SELECT COUNT(*) FROM hub.loads WHERE carrier_id = $1 AND deleted_at IS NULL AND status = 'in_transit')::int AS in_transit,
+      (SELECT COUNT(*) FROM hub.loads WHERE carrier_id = $1 AND deleted_at IS NULL AND status = 'delivered')::int AS awaiting_pod,
+      (SELECT COALESCE(SUM(linehaul_cents + fuel_surcharge_cents), 0) FROM hub.loads
+        WHERE carrier_id = $1 AND deleted_at IS NULL AND status <> 'cancelled'
+        AND created_at >= date_trunc('month', NOW())) AS revenue_month_cents,
+      (SELECT COALESCE(SUM(linehaul_cents + fuel_surcharge_cents), 0) FROM hub.loads
+        WHERE carrier_id = $1 AND deleted_at IS NULL AND status <> 'cancelled'
+        AND created_at >= date_trunc('week', NOW())) AS revenue_week_cents,
+      (SELECT COUNT(*) FROM hub.trucks WHERE carrier_id = $1 AND deleted_at IS NULL AND status = 'active')::int AS trucks_active,
+      (SELECT COUNT(*) FROM hub.trucks WHERE carrier_id = $1 AND deleted_at IS NULL)::int AS trucks_total,
+      (SELECT COUNT(*) FROM hub.drivers WHERE carrier_id = $1 AND deleted_at IS NULL AND status = 'active')::int AS drivers_active,
+      (SELECT COALESCE(SUM(i.amount_cents - COALESCE(p.paid, 0)), 0)
+        FROM hub.invoices i
+        LEFT JOIN LATERAL (SELECT SUM(amount_cents) AS paid FROM hub.payments WHERE invoice_id = i.id) p ON TRUE
+        WHERE i.carrier_id = $1 AND i.status NOT IN ('paid','disputed')) AS ar_open_cents,
+      (SELECT COALESCE(SUM(net_cents), 0) FROM hub.settlements
+        WHERE carrier_id = $1 AND status IN ('draft','approved')) AS settlement_due_cents
+    `,
+    [carrierId]
+  )
   return row as DashboardStats
 }
 
@@ -335,34 +364,38 @@ export interface ExpiringItem {
   href: string
 }
 
-export async function listExpiringItems(days = 60): Promise<ExpiringItem[]> {
+export async function listExpiringItems(carrierId: string, days = 60): Promise<ExpiringItem[]> {
   return query<ExpiringItem>(
     `
     SELECT * FROM (
       SELECT 'driver' AS entity, first_name || ' ' || last_name AS name, 'CDL' AS kind,
         cdl_expiry::text AS due, '/hub/drivers/' || id AS href
-      FROM hub.drivers WHERE deleted_at IS NULL AND status = 'active' AND cdl_expiry IS NOT NULL
+      FROM hub.drivers WHERE carrier_id = $1 AND deleted_at IS NULL AND status = 'active' AND cdl_expiry IS NOT NULL
       UNION ALL
       SELECT 'driver', first_name || ' ' || last_name, 'Medical Card',
         medical_card_expiry::text, '/hub/drivers/' || id
-      FROM hub.drivers WHERE deleted_at IS NULL AND status = 'active' AND medical_card_expiry IS NOT NULL
+      FROM hub.drivers WHERE carrier_id = $1 AND deleted_at IS NULL AND status = 'active' AND medical_card_expiry IS NOT NULL
       UNION ALL
       SELECT 'truck', 'Truck ' || unit_number, 'Registration',
         registration_expiry::text, '/hub/fleet/trucks/' || id
-      FROM hub.trucks WHERE deleted_at IS NULL AND status <> 'retired' AND registration_expiry IS NOT NULL
+      FROM hub.trucks WHERE carrier_id = $1 AND deleted_at IS NULL AND status <> 'retired' AND registration_expiry IS NOT NULL
       UNION ALL
       SELECT 'truck', 'Truck ' || unit_number, 'Annual Inspection',
         inspection_due::text, '/hub/fleet/trucks/' || id
-      FROM hub.trucks WHERE deleted_at IS NULL AND status <> 'retired' AND inspection_due IS NOT NULL
+      FROM hub.trucks WHERE carrier_id = $1 AND deleted_at IS NULL AND status <> 'retired' AND inspection_due IS NOT NULL
       UNION ALL
       SELECT 'truck', 'Truck ' || unit_number, 'Insurance',
         insurance_expiry::text, '/hub/fleet/trucks/' || id
-      FROM hub.trucks WHERE deleted_at IS NULL AND status <> 'retired' AND insurance_expiry IS NOT NULL
+      FROM hub.trucks WHERE carrier_id = $1 AND deleted_at IS NULL AND status <> 'retired' AND insurance_expiry IS NOT NULL
+      UNION ALL
+      SELECT 'company', 'Company', kind, due_on::text, '/hub/compliance'
+      FROM hub.compliance_items
+      WHERE carrier_id = $1 AND status = 'open' AND due_on IS NOT NULL AND entity_type = 'company'
     ) items
-    WHERE due::date <= NOW() + ($1 || ' days')::interval
+    WHERE due::date <= NOW() + ($2 || ' days')::interval
     ORDER BY due ASC
     LIMIT 20
     `,
-    [days]
+    [carrierId, days]
   )
 }

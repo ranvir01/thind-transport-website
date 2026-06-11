@@ -110,8 +110,10 @@ CREATE TABLE IF NOT EXISTS hub.contacts (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+ALTER TABLE hub.users DROP CONSTRAINT IF EXISTS users_customer_fk;
 ALTER TABLE hub.users
   ADD CONSTRAINT users_customer_fk FOREIGN KEY (customer_id) REFERENCES hub.customers(id);
+ALTER TABLE hub.users DROP CONSTRAINT IF EXISTS users_driver_fk;
 ALTER TABLE hub.users
   ADD CONSTRAINT users_driver_fk FOREIGN KEY (driver_id) REFERENCES hub.drivers(id);
 

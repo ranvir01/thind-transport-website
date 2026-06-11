@@ -8,7 +8,7 @@ export function SmoothScroll({ children }: { children: ReactNode }) {
   const pathname = usePathname()
 
   // The Hub is an app, not a marketing page — native scrolling only.
-  if (pathname.startsWith("/hub")) {
+  if ((pathname.startsWith("/hub") || pathname.startsWith("/track"))) {
     return <>{children}</>
   }
 

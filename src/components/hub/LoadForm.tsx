@@ -13,6 +13,13 @@ export interface Option {
   label: string
 }
 
+export interface PriceBookOption {
+  id: string
+  name: string
+  default_amount_cents: number
+  unit: string
+}
+
 interface StopForm {
   type: "pickup" | "delivery"
   facility: string
@@ -20,6 +27,9 @@ interface StopForm {
   city: string
   state: string
   zip: string
+  pickup_number: string
+  po_number: string
+  fcfs: boolean
   appt_start: string
   notes: string
 }
@@ -42,13 +52,15 @@ export interface LoadFormInitial {
   truck_id: string
   trailer_id: string
   driver_id: string
+  factored: boolean
   notes: string
   stops: StopForm[]
   accessorials: AccessorialForm[]
 }
 
 const EMPTY_STOP = (type: "pickup" | "delivery"): StopForm => ({
-  type, facility: "", address: "", city: "", state: "", zip: "", appt_start: "", notes: "",
+  type, facility: "", address: "", city: "", state: "", zip: "",
+  pickup_number: "", po_number: "", fcfs: false, appt_start: "", notes: "",
 })
 
 export function LoadForm({
@@ -58,6 +70,7 @@ export function LoadForm({
   drivers,
   trucks,
   trailers,
+  priceBook = [],
 }: {
   loadId?: string
   initial: LoadFormInitial
@@ -65,6 +78,7 @@ export function LoadForm({
   drivers: Option[]
   trucks: Option[]
   trailers: Option[]
+  priceBook?: PriceBookOption[]
 }) {
   const router = useRouter()
   const [form, setForm] = useState<LoadFormInitial>(initial)
@@ -80,6 +94,12 @@ export function LoadForm({
   const addStop = () => setForm((f) => ({ ...f, stops: [...f.stops, EMPTY_STOP("delivery")] }))
   const removeStop = (index: number) =>
     setForm((f) => ({ ...f, stops: f.stops.filter((_, i) => i !== index) }))
+
+  const addFromPriceBook = (entry: PriceBookOption) =>
+    setForm((f) => ({
+      ...f,
+      accessorials: [...f.accessorials, { label: entry.name, amount: (entry.default_amount_cents / 100).toFixed(2) }],
+    }))
 
   const totalRate =
     (Number(form.linehaul) || 0) +
@@ -104,10 +124,12 @@ export function LoadForm({
       truck_id: form.truck_id,
       trailer_id: form.trailer_id,
       driver_id: form.driver_id,
+      factored: form.factored,
       notes: form.notes,
       stops: form.stops.map((s) => ({
         type: s.type, facility: s.facility, address: s.address, city: s.city,
-        state: s.state, zip: s.zip, appt_start: s.appt_start, notes: s.notes,
+        state: s.state, zip: s.zip, fcfs: s.fcfs, pickup_number: s.pickup_number,
+        po_number: s.po_number, appt_start: s.appt_start, notes: s.notes,
       })),
     }
     startTransition(async () => {
@@ -172,6 +194,15 @@ export function LoadForm({
               value={form.weight_lbs} onChange={(e) => set({ weight_lbs: e.target.value })}
             />
           </div>
+          <label className="flex items-center gap-3 min-h-[44px] cursor-pointer sm:mt-6">
+            <input
+              type="checkbox"
+              checked={form.factored}
+              onChange={(e) => set({ factored: e.target.checked })}
+              className="h-5 w-5 rounded accent-[#F2A900]"
+            />
+            <span className="text-sm text-steel-100">Factored (invoice remits to the factor)</span>
+          </label>
         </div>
       </Panel>
 
@@ -231,10 +262,29 @@ export function LoadForm({
                   value={stop.zip} onChange={(e) => setStop(i, { zip: e.target.value })}
                 />
               </div>
+              <div className="grid grid-cols-2 gap-2">
+                <input
+                  aria-label="Pickup number" placeholder="PU #" className={fieldCls}
+                  value={stop.pickup_number} onChange={(e) => setStop(i, { pickup_number: e.target.value })}
+                />
+                <input
+                  aria-label="PO number" placeholder="PO #" className={fieldCls}
+                  value={stop.po_number} onChange={(e) => setStop(i, { po_number: e.target.value })}
+                />
+              </div>
               <input
                 aria-label="Appointment" type="datetime-local" className={fieldCls}
+                disabled={stop.fcfs}
                 value={stop.appt_start} onChange={(e) => setStop(i, { appt_start: e.target.value })}
               />
+              <label className="flex items-center gap-2 min-h-[44px] cursor-pointer">
+                <input
+                  type="checkbox" checked={stop.fcfs}
+                  onChange={(e) => setStop(i, { fcfs: e.target.checked, appt_start: e.target.checked ? "" : stop.appt_start })}
+                  className="h-5 w-5 rounded accent-[#F2A900]"
+                />
+                <span className="text-sm text-steel-100">FCFS (first come, first served)</span>
+              </label>
             </div>
           </div>
         ))}
@@ -275,7 +325,19 @@ export function LoadForm({
           </div>
         </div>
 
-        {/* Accessorials */}
+        {/* Accessorials with price book quick-add */}
+        {priceBook.length > 0 ? (
+          <div className="flex flex-wrap gap-1.5">
+            {priceBook.map((entry) => (
+              <button
+                key={entry.id} type="button" onClick={() => addFromPriceBook(entry)}
+                className="rounded-full border border-white/15 bg-white/5 px-3 py-1.5 text-xs font-semibold text-steel-100 hover:bg-white/10 min-h-[32px]"
+              >
+                + {entry.name}{entry.default_amount_cents ? ` $${(entry.default_amount_cents / 100).toFixed(0)}` : ""}
+              </button>
+            ))}
+          </div>
+        ) : null}
         <div className="space-y-2">
           {form.accessorials.map((acc, i) => (
             <div key={i} className="flex gap-2">
@@ -314,7 +376,7 @@ export function LoadForm({
             onClick={() => setForm((f) => ({ ...f, accessorials: [...f.accessorials, { label: "", amount: "" }] }))}
             className="inline-flex min-h-[36px] items-center gap-1 rounded-lg border border-white/15 px-3 text-xs font-semibold text-steel-100 hover:bg-white/5"
           >
-            <Plus className="h-3.5 w-3.5" /> Add accessorial
+            <Plus className="h-3.5 w-3.5" /> Custom accessorial
           </button>
         </div>
 

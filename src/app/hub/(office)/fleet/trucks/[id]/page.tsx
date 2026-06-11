@@ -1,18 +1,35 @@
 import { notFound } from "next/navigation"
 import { getTruck } from "@/lib/hub/fleet"
+import { requireOfficeUser } from "@/lib/hub/session"
 import { listDrivers } from "@/lib/hub/drivers"
 import { listDocuments } from "@/lib/hub/documents"
+import { query } from "@/lib/hub/db"
 import { PageHeader, BackLink } from "@/components/hub/ui"
 import { TruckForm, type TruckFormState } from "@/components/hub/FleetForms"
 import { DocumentsPanel } from "@/components/hub/DocumentsPanel"
+import { MaintenancePanel, type MaintenanceRecord, type MaintenanceSchedule } from "@/components/hub/MaintenancePanel"
 
 export const dynamic = "force-dynamic"
 
 export default async function TruckDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const user = await requireOfficeUser()
   const { id } = await params
-  const truck = await getTruck(id).catch(() => null)
+  const truck = await getTruck(user.carrierId, id).catch(() => null)
   if (!truck) notFound()
-  const [drivers, documents] = await Promise.all([listDrivers(), listDocuments("truck", id)])
+  const [drivers, documents, schedules, records] = await Promise.all([
+    listDrivers(user.carrierId),
+    listDocuments("truck", id),
+    query<MaintenanceSchedule>(
+      `SELECT id, name, interval_miles, interval_days, last_done_on FROM hub.maintenance_schedules
+       WHERE carrier_id = $1 AND truck_id = $2 ORDER BY name`,
+      [user.carrierId, id]
+    ),
+    query<MaintenanceRecord>(
+      `SELECT id, done_on, vendor, cost_cents, odometer, notes FROM hub.maintenance_records
+       WHERE carrier_id = $1 AND truck_id = $2 ORDER BY done_on DESC LIMIT 20`,
+      [user.carrierId, id]
+    ),
+  ])
 
   const initial: TruckFormState = {
     unit_number: truck.unit_number,
@@ -28,6 +45,7 @@ export default async function TruckDetailPage({ params }: { params: Promise<{ id
     inspection_due: truck.inspection_due?.toString().slice(0, 10) ?? "",
     insurance_expiry: truck.insurance_expiry?.toString().slice(0, 10) ?? "",
     assigned_driver_id: truck.assigned_driver_id ?? "",
+    tank_capacity_gallons: truck.tank_capacity_gallons?.toString() ?? "",
     notes: truck.notes ?? "",
   }
 
@@ -41,8 +59,9 @@ export default async function TruckDetailPage({ params }: { params: Promise<{ id
           initial={initial}
           drivers={drivers.filter((d) => d.status === "active").map((d) => ({ id: d.id, label: `${d.first_name} ${d.last_name}` }))}
         />
-        <div className="max-w-2xl">
+        <div className="max-w-2xl space-y-4">
           <DocumentsPanel entityType="truck" entityId={id} documents={documents} />
+          <MaintenancePanel truckId={id} schedules={schedules} records={records} />
         </div>
       </div>
     </div>

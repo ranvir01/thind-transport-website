@@ -1,11 +1,15 @@
 import Link from "next/link"
-import { Plus, CloudLightning } from "lucide-react"
+import { Plus, CloudLightning, ClipboardPaste, AlertTriangle } from "lucide-react"
 import { listLoads, getLoadStops } from "@/lib/hub/loads"
+import { listDrivers, dispatchLegality } from "@/lib/hub/drivers"
+import { listTrucks } from "@/lib/hub/fleet"
+import { getCarrierSettings } from "@/lib/hub/settings"
 import { getActiveAlerts, type WeatherAlert } from "@/lib/hub/weather"
+import { requireOfficeUser } from "@/lib/hub/session"
 import {
-  BOARD_STATUSES, STATUS_LABELS, formatMoney, loadTotal, type Load,
+  BOARD_STATUSES, STATUS_LABELS, fmtCents, loadTotalCents, type Load,
 } from "@/lib/hub/types"
-import { Panel, PageHeader, StatusBadge } from "@/components/hub/ui"
+import { Panel, PageHeader } from "@/components/hub/ui"
 import { AdvanceStatusButton } from "@/components/hub/StatusActions"
 
 export const dynamic = "force-dynamic"
@@ -17,7 +21,7 @@ const DOC_CHECK: { kind: string; label: string }[] = [
 ]
 
 async function weatherForLoads(loads: Load[]): Promise<Map<string, WeatherAlert>> {
-  // Check severe weather at the next stop of in-transit/dispatched loads (free NWS API).
+  // Severe weather at the next stop of moving loads (free NWS API, best-effort).
   const result = new Map<string, WeatherAlert>()
   const candidates = loads.filter((l) => ["dispatched", "at_pickup", "in_transit"].includes(l.status)).slice(0, 10)
   await Promise.all(
@@ -28,17 +32,24 @@ async function weatherForLoads(loads: Load[]): Promise<Map<string, WeatherAlert>
         if (!next) return
         const alerts = await getActiveAlerts(next.lat!, next.lng!)
         if (alerts[0]) result.set(load.id, alerts[0])
-      } catch {
-        // weather is garnish — never block the board
-      }
+      } catch { /* weather is garnish — never block the board */ }
     })
   )
   return result
 }
 
 export default async function DispatchBoardPage() {
-  const loads = await listLoads({ status: "active" })
+  const user = await requireOfficeUser()
+  const [loads, drivers, trucks, settings] = await Promise.all([
+    listLoads(user.carrierId, { status: "active" }),
+    listDrivers(user.carrierId),
+    listTrucks(user.carrierId),
+    getCarrierSettings(user.carrierId),
+  ])
   const weather = await weatherForLoads(loads)
+  const driverById = new Map(drivers.map((d) => [d.id, d]))
+  const truckById = new Map(trucks.map((t) => [t.id, t]))
+
   const byStatus = new Map<string, Load[]>()
   for (const status of BOARD_STATUSES) byStatus.set(status, [])
   for (const load of loads) {
@@ -51,12 +62,20 @@ export default async function DispatchBoardPage() {
         title="Dispatch Board"
         subtitle="Every active load, booking to POD."
         action={
-          <Link
-            href="/hub/loads/new"
-            className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-orange px-5 font-display text-sm font-bold uppercase tracking-[0.08em] text-white shadow-cta hover:bg-orange-400"
-          >
-            <Plus className="h-4 w-4" /> New load
-          </Link>
+          <div className="flex gap-2">
+            <Link
+              href="/hub/loads/paste"
+              className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-gold/40 bg-gold/10 px-4 font-display text-sm font-bold uppercase tracking-[0.08em] text-gold hover:bg-gold/20"
+            >
+              <ClipboardPaste className="h-4 w-4" /> Paste rate con
+            </Link>
+            <Link
+              href="/hub/loads/new"
+              className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-orange px-5 font-display text-sm font-bold uppercase tracking-[0.08em] text-white shadow-cta hover:bg-orange-400"
+            >
+              <Plus className="h-4 w-4" /> New load
+            </Link>
+          </div>
         }
       />
 
@@ -83,6 +102,13 @@ export default async function DispatchBoardPage() {
                   column.map((load) => {
                     const alert = weather.get(load.id)
                     const docKinds = load.doc_kinds ?? []
+                    const totalCents = loadTotalCents(load)
+                    const totalMiles = (load.loaded_miles ?? 0) + (load.deadhead_miles ?? 0)
+                    const marginCents = totalMiles > 0 ? totalCents - totalMiles * settings.costPerMileCents : null
+                    const legality = dispatchLegality(
+                      load.driver_id ? driverById.get(load.driver_id) ?? null : null,
+                      load.truck_id ? truckById.get(load.truck_id) ?? null : null
+                    )
                     return (
                       <Panel key={load.id} className="p-3.5">
                         <Link href={`/hub/loads/${load.id}`} className="block group">
@@ -91,7 +117,7 @@ export default async function DispatchBoardPage() {
                               {load.reference}
                             </span>
                             <span className="font-display font-extrabold text-gold text-sm">
-                              {formatMoney(loadTotal(load))}
+                              {fmtCents(totalCents)}
                             </span>
                           </div>
                           <p className="text-body-sm text-steel-200 mt-1">
@@ -103,7 +129,26 @@ export default async function DispatchBoardPage() {
                             {load.customer_name ?? "No customer"} · {load.driver_name ?? "Unassigned"}
                             {load.truck_unit ? ` · #${load.truck_unit}` : ""}
                           </p>
+                          {marginCents != null ? (
+                            <p className={`text-body-xs mt-0.5 font-semibold ${marginCents >= 0 ? "text-emerald-300" : "text-red-300"}`}>
+                              Est. margin {fmtCents(marginCents)} @ {fmtCents(settings.costPerMileCents)}/mi cost
+                            </p>
+                          ) : null}
+                          {load.invoice_status ? (
+                            <p className="text-body-xs text-steel-300 mt-0.5">
+                              Invoice: <span className="uppercase font-bold text-cyan-300">{load.invoice_status}</span>
+                            </p>
+                          ) : null}
                         </Link>
+                        {!legality.legal ? (
+                          <p className="mt-2 flex items-center gap-1.5 rounded-lg bg-red-500/10 border border-red-400/30 px-2 py-1 text-[11px] font-semibold text-red-300">
+                            <AlertTriangle className="h-3.5 w-3.5 shrink-0" /> {legality.stops[0]}
+                          </p>
+                        ) : legality.warnings.length > 0 ? (
+                          <p className="mt-2 flex items-center gap-1.5 rounded-lg bg-gold/10 border border-gold/30 px-2 py-1 text-[11px] font-semibold text-gold">
+                            <AlertTriangle className="h-3.5 w-3.5 shrink-0" /> {legality.warnings[0]}
+                          </p>
+                        ) : null}
                         {alert ? (
                           <p className="mt-2 flex items-center gap-1.5 rounded-lg bg-gold/10 border border-gold/30 px-2 py-1 text-[11px] font-semibold text-gold">
                             <CloudLightning className="h-3.5 w-3.5 shrink-0" /> {alert.event} on route

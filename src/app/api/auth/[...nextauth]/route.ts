@@ -29,7 +29,8 @@ export const authConfig = {
             email: hubUser.email,
             name: hubUser.name,
             role: hubUser.role,
-          } as { id: string; email: string; name: string; role: string }
+            carrierId: hubUser.carrier_id,
+          } as { id: string; email: string; name: string; role: string; carrierId: string | null }
         }
 
         const driver = await findDriverByEmail(credentials.email as string)
@@ -78,6 +79,7 @@ export const authConfig = {
       if (user) {
         token.id = user.id
         token.role = (user as { role?: string }).role ?? null
+        token.carrierId = (user as { carrierId?: string }).carrierId ?? null
       }
       return token
     },
@@ -85,6 +87,7 @@ export const authConfig = {
       if (session.user) {
         (session.user as any).id = token.id
         ;(session.user as any).role = token.role ?? null
+        ;(session.user as any).carrierId = token.carrierId ?? null
       }
       return session
     },

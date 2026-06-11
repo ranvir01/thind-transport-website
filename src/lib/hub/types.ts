@@ -1,7 +1,10 @@
 /** Shared Hub types and domain constants. */
 
-export const HUB_ROLES = ["owner", "dispatcher", "accountant", "driver", "broker", "shipper"] as const
+export const HUB_ROLES = ["owner", "dispatcher", "accountant", "driver", "broker", "shipper", "platform_admin"] as const
 export type HubRole = (typeof HUB_ROLES)[number]
+
+/** Roles assignable from the Users admin (platform_admin is reserved until Phase 7). */
+export const ASSIGNABLE_ROLES = ["owner", "dispatcher", "accountant", "driver", "broker", "shipper"] as const
 
 /** Roles allowed into the office side of the Hub (Phase 1). */
 export const OFFICE_ROLES: HubRole[] = ["owner", "dispatcher", "accountant"]
@@ -103,6 +106,7 @@ export interface HubUser {
   email: string
   name: string
   role: HubRole
+  carrier_id: string | null
   phone: string | null
   customer_id: string | null
   driver_id: string | null
@@ -124,6 +128,7 @@ export interface Truck {
   inspection_due: string | null
   insurance_expiry: string | null
   assigned_driver_id: string | null
+  tank_capacity_gallons: number | null
   driver_name?: string | null
   notes: string | null
 }
@@ -157,6 +162,9 @@ export interface Driver {
   hire_date: string | null
   pay_type: "per_mile" | "percentage"
   pay_rate: string
+  pay_loaded_miles_only: boolean
+  escrow_weekly_cents: number
+  insurance_weekly_cents: number
   status: "active" | "inactive" | "applicant"
   emergency_contact_name: string | null
   emergency_contact_phone: string | null
@@ -173,7 +181,7 @@ export interface Customer {
   billing_address: string | null
   phone: string | null
   payment_terms_days: number
-  credit_limit: string | null
+  credit_limit_cents: number | null
   factored: boolean
   status: "active" | "on_hold" | "blacklisted"
   notes: string | null
@@ -198,6 +206,9 @@ export interface Stop {
   city: string
   state: string
   zip: string | null
+  fcfs: boolean
+  pickup_number: string | null
+  po_number: string | null
   appt_start: string | null
   appt_end: string | null
   arrived_at: string | null
@@ -209,11 +220,12 @@ export interface Stop {
 
 export interface Accessorial {
   label: string
-  amount: number
+  amount_cents: number
 }
 
 export interface Load {
   id: string
+  carrier_id: string
   reference: string
   customer_reference: string | null
   customer_id: string | null
@@ -221,8 +233,8 @@ export interface Load {
   equipment: EquipmentType
   commodity: string | null
   weight_lbs: number | null
-  linehaul: string
-  fuel_surcharge: string
+  linehaul_cents: number
+  fuel_surcharge_cents: number
   accessorials: Accessorial[]
   loaded_miles: number | null
   deadhead_miles: number | null
@@ -230,7 +242,9 @@ export interface Load {
   trailer_id: string | null
   driver_id: string | null
   dispatcher_id: string | null
-  source: "dat" | "direct" | "import"
+  source: "dat" | "direct" | "import" | "quote"
+  factored: boolean
+  settlement_id: string | null
   notes: string | null
   created_at: string
   // joined fields
@@ -243,6 +257,8 @@ export interface Load {
   dest_city?: string | null
   dest_state?: string | null
   doc_kinds?: string[] | null
+  invoice_id?: string | null
+  invoice_status?: string | null
 }
 
 export interface HubDocument {
@@ -260,30 +276,163 @@ export interface HubDocument {
   created_at: string
 }
 
-export interface StatusEvent {
+export const LOAD_EVENT_KINDS = [
+  "status_change", "check_call", "geo", "document", "note",
+  "weather_alert", "detention", "exception",
+] as const
+export type LoadEventKind = (typeof LOAD_EVENT_KINDS)[number]
+
+export interface LoadEvent {
   id: number
   load_id: string
-  from_status: LoadStatus | null
-  to_status: LoadStatus
+  kind: LoadEventKind
   actor_name: string | null
+  payload: Record<string, unknown>
   created_at: string
 }
 
-export function loadTotal(load: Pick<Load, "linehaul" | "fuel_surcharge" | "accessorials">): number {
+/** Total load revenue in integer cents — the only way money is summed. */
+export function loadTotalCents(
+  load: Pick<Load, "linehaul_cents" | "fuel_surcharge_cents" | "accessorials">
+): number {
   const accessorials = Array.isArray(load.accessorials) ? load.accessorials : []
   return (
-    Number(load.linehaul || 0) +
-    Number(load.fuel_surcharge || 0) +
-    accessorials.reduce((sum, a) => sum + Number(a.amount || 0), 0)
+    Number(load.linehaul_cents || 0) +
+    Number(load.fuel_surcharge_cents || 0) +
+    accessorials.reduce((sum, a) => sum + Number(a.amount_cents || 0), 0)
   )
 }
 
-export function formatMoney(value: number | string | null | undefined): string {
-  const num = Number(value || 0)
-  return num.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 })
+export function fmtCents(cents: number | null | undefined): string {
+  return ((cents ?? 0) / 100).toLocaleString("en-US", {
+    style: "currency", currency: "USD", maximumFractionDigits: 0,
+  })
 }
 
-export function formatMoneyExact(value: number | string | null | undefined): string {
-  const num = Number(value || 0)
-  return num.toLocaleString("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 2 })
+export function fmtCentsExact(cents: number | null | undefined): string {
+  return ((cents ?? 0) / 100).toLocaleString("en-US", {
+    style: "currency", currency: "USD", minimumFractionDigits: 2,
+  })
+}
+
+/** Parse a dollars string/number from a form into integer cents (no float drift). */
+export function dollarsToCents(value: string | number | null | undefined): number {
+  if (value == null || value === "") return 0
+  const num = typeof value === "number" ? value : Number(String(value).replace(/[^0-9.\-]/g, ""))
+  if (!Number.isFinite(num)) return 0
+  return Math.round(num * 100)
+}
+
+// ---- Money domain types (Phase 2) ----
+
+export type InvoiceStatus = "draft" | "sent" | "partial" | "paid" | "overdue" | "disputed"
+
+export interface Invoice {
+  id: string
+  carrier_id: string
+  number: string
+  customer_id: string
+  load_id: string
+  amount_cents: number
+  issued_on: string
+  due_on: string
+  status: InvoiceStatus
+  factored: boolean
+  remit_to: string | null
+  pdf_url: string | null
+  sent_log: { to: string; at: string; kind: string }[]
+  customer_name?: string
+  load_reference?: string
+  paid_cents?: number
+}
+
+export interface Settlement {
+  id: string
+  carrier_id: string
+  driver_id: string
+  period_start: string
+  period_end: string
+  status: "draft" | "approved" | "paid"
+  gross_cents: number
+  deductions_cents: number
+  net_cents: number
+  statement_url: string | null
+  approved_at: string | null
+  driver_name?: string
+  pay_type?: "per_mile" | "percentage"
+}
+
+export interface SettlementLine {
+  id: string
+  settlement_id: string
+  kind: "earning" | "reimbursement" | "deduction"
+  label: string
+  amount_cents: number
+  source_type: string | null
+  source_id: string | null
+}
+
+export const EXPENSE_CATEGORIES = [
+  "fuel", "tolls", "maintenance", "insurance", "permits", "parking", "lumper", "other",
+] as const
+export type ExpenseCategory = (typeof EXPENSE_CATEGORIES)[number]
+
+export interface Expense {
+  id: string
+  category: ExpenseCategory
+  amount_cents: number
+  incurred_on: string
+  truck_id: string | null
+  driver_id: string | null
+  load_id: string | null
+  reimbursable: boolean
+  billable: boolean
+  settled_line_id: string | null
+  memo: string | null
+  truck_unit?: string | null
+  driver_name?: string | null
+}
+
+export interface Advance {
+  id: string
+  driver_id: string
+  amount_cents: number
+  issued_on: string
+  reference: string | null
+  status: "pending" | "outstanding" | "applied" | "cancelled"
+  driver_name?: string
+}
+
+// ---- Fuel / compliance domain types (Phase 3) ----
+
+export interface FuelTransaction {
+  id: string
+  source: string
+  external_id: string
+  card_program: string | null
+  truck_id: string | null
+  driver_id: string | null
+  ts: string
+  merchant: string | null
+  city: string | null
+  jurisdiction: string | null
+  gallons: string
+  fuel_type: string | null
+  unit_price_cents: number | null
+  total_cents: number
+  odometer: string | null
+  truck_unit?: string | null
+  driver_name?: string | null
+}
+
+export interface IftaReportRow {
+  jurisdiction: string
+  miles: number
+  taxableGallons: number
+  taxPaidGallons: number
+  rate: number
+  surchargeRate: number
+  taxCents: number
+  surchargeCents: number
+  netCents: number
 }

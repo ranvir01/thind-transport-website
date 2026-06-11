@@ -38,6 +38,7 @@ export const truckSchema = z.object({
   inspection_due: optionalDate,
   insurance_expiry: optionalDate,
   assigned_driver_id: optionalString,
+  tank_capacity_gallons: optionalInt,
   notes: optionalString,
 })
 
@@ -67,6 +68,9 @@ export const driverSchema = z.object({
   hire_date: optionalDate,
   pay_type: z.enum(["per_mile", "percentage"]),
   pay_rate: z.coerce.number().nonnegative("Pay rate must be 0 or more"),
+  pay_loaded_miles_only: z.coerce.boolean().default(true),
+  escrow_weekly: z.coerce.number().nonnegative().default(0),
+  insurance_weekly: z.coerce.number().nonnegative().default(0),
   status: z.enum(["active", "inactive", "applicant"]),
   emergency_contact_name: optionalString,
   emergency_contact_phone: optionalString,
@@ -103,6 +107,9 @@ export const stopSchema = z.object({
   city: z.string().trim().min(1, "City is required"),
   state: z.string().trim().min(2, "State is required").max(2, "Use 2-letter state code"),
   zip: optionalString,
+  fcfs: z.coerce.boolean().default(false),
+  pickup_number: optionalString,
+  po_number: optionalString,
   appt_start: optionalString,
   appt_end: optionalString,
   notes: optionalString,
@@ -114,6 +121,7 @@ export const loadSchema = z.object({
   equipment: z.enum(EQUIPMENT_TYPES),
   commodity: optionalString,
   weight_lbs: optionalInt,
+  // Dollars from the form; actions convert to integer cents.
   linehaul: z.coerce.number().nonnegative("Linehaul must be 0 or more"),
   fuel_surcharge: z.coerce.number().nonnegative().default(0),
   accessorials: z
@@ -124,6 +132,7 @@ export const loadSchema = z.object({
   truck_id: optionalString,
   trailer_id: optionalString,
   driver_id: optionalString,
+  factored: z.coerce.boolean().default(false),
   notes: optionalString,
   stops: z.array(stopSchema).min(2, "A load needs at least a pickup and a delivery"),
 })

@@ -174,7 +174,7 @@ const FooterLinkSections = () => {
 export const CommandBar = () => {
   const pathname = usePathname()
 
-  if (pathname.startsWith("/hub")) return null
+  if ((pathname.startsWith("/hub") || pathname.startsWith("/track"))) return null
 
   const navItems = [
     { name: 'Routes', href: '/routes' },
@@ -251,7 +251,7 @@ export const MobileCommandBar = () => {
   const pathname = usePathname()
   
   // Hide on Apply page and in the Hub (the Hub has its own bottom navigation)
-  if (pathname === '/apply' || pathname.startsWith('/hub')) return null
+  if (pathname === '/apply' || (pathname.startsWith('/hub') || pathname.startsWith('/track'))) return null
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-[90] md:hidden bg-gradient-to-t from-[#00060D] via-[#00060D]/98 to-[#00060D]/95 backdrop-blur-xl border-t border-white/10 safe-area-bottom">
@@ -281,7 +281,7 @@ export const MobileCommandBar = () => {
 // The full revealed footer
 export const CinematicFooter = () => {
   const pathname = usePathname()
-  if (pathname.startsWith("/hub")) return null
+  if ((pathname.startsWith("/hub") || pathname.startsWith("/track"))) return null
 
   const certificationIconMap = {
     "shield-check": ShieldCheck,

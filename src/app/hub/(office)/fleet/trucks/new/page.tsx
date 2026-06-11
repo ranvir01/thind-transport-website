@@ -1,4 +1,5 @@
 import { listDrivers } from "@/lib/hub/drivers"
+import { requireOfficeUser } from "@/lib/hub/session"
 import { PageHeader, BackLink } from "@/components/hub/ui"
 import { TruckForm } from "@/components/hub/FleetForms"
 import { emptyTruck } from "@/lib/hub/form-defaults"
@@ -6,7 +7,8 @@ import { emptyTruck } from "@/lib/hub/form-defaults"
 export const dynamic = "force-dynamic"
 
 export default async function NewTruckPage() {
-  const drivers = await listDrivers()
+  const user = await requireOfficeUser()
+  const drivers = await listDrivers(user.carrierId)
   return (
     <div>
       <BackLink href="/hub/fleet" label="Fleet" />

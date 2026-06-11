@@ -20,7 +20,7 @@ export function BackToTop() {
     return () => window.removeEventListener("scroll", handleScroll)
   }, [])
 
-  if (pathname.startsWith("/hub")) return null
+  if ((pathname.startsWith("/hub") || pathname.startsWith("/track"))) return null
 
   const scrollToTop = () => {
     window.scrollTo({

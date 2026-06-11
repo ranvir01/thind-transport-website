@@ -41,6 +41,55 @@ export function parseCsv(text: string): string[][] {
   return rows
 }
 
+export interface ImportFieldDef {
+  key: string
+  label: string
+  required: boolean
+}
+
+/** Field configs per import kind — the universal importer is source-agnostic. */
+export const FUEL_IMPORT_FIELDS: readonly ImportFieldDef[] = [
+  { key: "external_id", label: "Transaction ID", required: false },
+  { key: "ts", label: "Date/time", required: true },
+  { key: "truck_unit", label: "Truck unit #", required: false },
+  { key: "driver_name", label: "Driver name", required: false },
+  { key: "merchant", label: "Merchant / location", required: false },
+  { key: "city", label: "City", required: false },
+  { key: "jurisdiction", label: "State (2-letter)", required: true },
+  { key: "gallons", label: "Gallons", required: true },
+  { key: "fuel_type", label: "Fuel type", required: false },
+  { key: "unit_price", label: "Price per gallon ($)", required: false },
+  { key: "total", label: "Total ($)", required: true },
+  { key: "odometer", label: "Odometer", required: false },
+  { key: "card_program", label: "Card program", required: false },
+] as const
+
+export const TOLL_IMPORT_FIELDS: readonly ImportFieldDef[] = [
+  { key: "external_id", label: "Transaction ID", required: false },
+  { key: "ts", label: "Date/time", required: true },
+  { key: "truck_unit", label: "Truck unit #", required: false },
+  { key: "transponder", label: "Transponder", required: false },
+  { key: "plaza", label: "Plaza / road", required: false },
+  { key: "jurisdiction", label: "State (2-letter)", required: false },
+  { key: "total", label: "Amount ($)", required: true },
+] as const
+
+export const POSITION_IMPORT_FIELDS: readonly ImportFieldDef[] = [
+  { key: "truck_unit", label: "Truck unit #", required: true },
+  { key: "ts", label: "Date/time", required: true },
+  { key: "lat", label: "Latitude", required: true },
+  { key: "lng", label: "Longitude", required: true },
+  { key: "odometer", label: "ECM odometer", required: false },
+] as const
+
+/** TruckX-style IFTA mileage export: per truck per jurisdiction per quarter. */
+export const MILEAGE_IMPORT_FIELDS: readonly ImportFieldDef[] = [
+  { key: "truck_unit", label: "Truck unit #", required: true },
+  { key: "quarter", label: "Quarter (2026Q2)", required: true },
+  { key: "jurisdiction", label: "State (2-letter)", required: true },
+  { key: "miles", label: "Miles", required: true },
+] as const
+
 /** The load fields a CSV column can map to. */
 export const IMPORT_FIELDS = [
   { key: "customer_name", label: "Customer / Broker name", required: true },

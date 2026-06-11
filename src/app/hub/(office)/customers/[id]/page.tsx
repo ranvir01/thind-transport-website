@@ -5,7 +5,8 @@ import { getCustomer, listContacts } from "@/lib/hub/customers"
 import { listLoads } from "@/lib/hub/loads"
 import { listDocuments } from "@/lib/hub/documents"
 import { query } from "@/lib/hub/db"
-import { formatMoney, loadTotal } from "@/lib/hub/types"
+import { requireOfficeUser } from "@/lib/hub/session"
+import { fmtCents, loadTotalCents } from "@/lib/hub/types"
 import { Panel, PageHeader, BackLink, StatusBadge } from "@/components/hub/ui"
 import { ContactsPanel, CrmNotesPanel, type CrmActivity } from "@/components/hub/CustomerPanels"
 import { DocumentsPanel } from "@/components/hub/DocumentsPanel"
@@ -13,13 +14,14 @@ import { DocumentsPanel } from "@/components/hub/DocumentsPanel"
 export const dynamic = "force-dynamic"
 
 export default async function CustomerDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const user = await requireOfficeUser()
   const { id } = await params
-  const customer = await getCustomer(id).catch(() => null)
+  const customer = await getCustomer(user.carrierId, id).catch(() => null)
   if (!customer) notFound()
 
   const [contacts, loads, documents, activities] = await Promise.all([
     listContacts(id),
-    listLoads({ customerId: id, status: "all" }),
+    listLoads(user.carrierId, { customerId: id, status: "all" }),
     listDocuments("customer", id),
     query<CrmActivity>(
       `SELECT id, kind, body, actor_name, created_at FROM hub.crm_activities
@@ -30,13 +32,13 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
 
   const revenue = loads
     .filter((l) => l.status !== "cancelled")
-    .reduce((sum, l) => sum + loadTotal(l), 0)
+    .reduce((sum, l) => sum + loadTotalCents(l), 0)
   const avgRpm = (() => {
     const withMiles = loads.filter((l) => l.loaded_miles && l.status !== "cancelled")
     if (withMiles.length === 0) return null
-    const totalRate = withMiles.reduce((sum, l) => sum + loadTotal(l), 0)
+    const totalRate = withMiles.reduce((sum, l) => sum + loadTotalCents(l), 0)
     const totalMiles = withMiles.reduce((sum, l) => sum + (l.loaded_miles ?? 0), 0)
-    return totalMiles > 0 ? totalRate / totalMiles : null
+    return totalMiles > 0 ? totalRate / 100 / totalMiles : null
   })()
 
   return (
@@ -63,7 +65,7 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
         </Panel>
         <Panel className="p-4">
           <span className="text-label text-steel-300 uppercase">Revenue</span>
-          <p className="mt-1 font-display text-2xl font-extrabold text-gold">{formatMoney(revenue)}</p>
+          <p className="mt-1 font-display text-2xl font-extrabold text-gold">{fmtCents(revenue)}</p>
         </Panel>
         <Panel className="p-4">
           <span className="text-label text-steel-300 uppercase">Avg rate/mi</span>
@@ -99,7 +101,7 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
                       <StatusBadge status={load.status} />
-                      <span className="font-display font-extrabold text-gold text-sm">{formatMoney(loadTotal(load))}</span>
+                      <span className="font-display font-extrabold text-gold text-sm">{fmtCents(loadTotalCents(load))}</span>
                     </div>
                   </Link>
                 </li>

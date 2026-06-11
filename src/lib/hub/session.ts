@@ -1,23 +1,29 @@
 import { redirect } from "next/navigation"
 import { auth } from "@/lib/auth"
 import { OFFICE_ROLES, type HubRole } from "./types"
+import { can, type HubAction } from "./permissions"
 
 export interface HubSessionUser {
   id: string
   name: string
   email: string
   role: HubRole
+  /** Tenant scope — every data call must be scoped to this id. */
+  carrierId: string
 }
 
 export async function getHubUser(): Promise<HubSessionUser | null> {
   const session = await auth()
-  const user = session?.user as (HubSessionUser & { role?: HubRole | null }) | undefined
-  if (!user?.role) return null
+  const user = session?.user as
+    | (HubSessionUser & { role?: HubRole | null; carrierId?: string | null })
+    | undefined
+  if (!user?.role || !user.carrierId) return null
   return {
     id: user.id,
     name: user.name ?? user.email,
     email: user.email,
     role: user.role,
+    carrierId: user.carrierId,
   }
 }
 
@@ -29,9 +35,32 @@ export async function requireOfficeUser(): Promise<HubSessionUser> {
   return user
 }
 
-/** Owner-only guard (user management, money approvals later). */
+/** Owner-only guard (user management, settings). */
 export async function requireOwner(): Promise<HubSessionUser> {
   const user = await requireOfficeUser()
   if (user.role !== "owner") redirect("/hub")
+  return user
+}
+
+/**
+ * Permission guard for server actions: resolves the session and checks the
+ * role × resource matrix at the data layer, never UI-only. Throws on failure
+ * so actions return a clean error instead of partially executing.
+ */
+export async function requirePermission(action: HubAction): Promise<HubSessionUser> {
+  const user = await getHubUser()
+  if (!user) throw new Error("Not signed in")
+  if (!can(user.role, action)) throw new Error(`Forbidden: ${user.role} cannot ${action}`)
+  return user
+}
+
+/** Page-level permission guard (redirects instead of throwing). */
+export async function requirePermissionPage(action: HubAction): Promise<HubSessionUser> {
+  const user = await getHubUser()
+  if (!user) redirect("/hub/login")
+  if (!can(user.role, action)) {
+    if (!OFFICE_ROLES.includes(user.role)) redirect("/hub/welcome")
+    redirect("/hub")
+  }
   return user
 }

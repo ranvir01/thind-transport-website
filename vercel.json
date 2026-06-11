@@ -4,6 +4,10 @@
   "installCommand": "npm install",
   "framework": "nextjs",
   "regions": ["iad1"],
+  "crons": [
+    { "path": "/api/hub/cron/compliance-scan", "schedule": "0 14 * * *" },
+    { "path": "/api/hub/cron/ar-reminders", "schedule": "30 14 * * *" }
+  ],
   "headers": [
     {
       "source": "/((?!_next/static|images|logos|favicon|templates).*)",

@@ -1,7 +1,8 @@
 import Link from "next/link"
 import { Plus } from "lucide-react"
 import { listCustomers } from "@/lib/hub/customers"
-import { formatMoney } from "@/lib/hub/types"
+import { requireOfficeUser } from "@/lib/hub/session"
+import { fmtCents } from "@/lib/hub/types"
 import { Panel, PageHeader, EmptyState } from "@/components/hub/ui"
 import { cn } from "@/lib/utils"
 
@@ -14,7 +15,8 @@ const STATUS_PILL: Record<string, string> = {
 }
 
 export default async function CustomersPage() {
-  const customers = await listCustomers()
+  const user = await requireOfficeUser()
+  const customers = await listCustomers(user.carrierId)
 
   return (
     <div>
@@ -53,8 +55,8 @@ export default async function CustomersPage() {
                   {` · Net ${customer.payment_terms_days}`}
                 </p>
                 <div className="mt-3 flex items-center justify-between text-body-sm">
-                  <span className="text-steel-300">{customer.load_count} loads</span>
-                  <span className="font-display font-extrabold text-gold">{formatMoney(customer.total_revenue)}</span>
+                  <span className="text-steel-300">{customer.load_count} loads{customer.avg_days_to_pay ? ` · pays in ${Math.round(Number(customer.avg_days_to_pay))}d` : ""}</span>
+                  <span className="font-display font-extrabold text-gold">{fmtCents(Number(customer.total_revenue_cents))}</span>
                 </div>
               </Panel>
             </Link>

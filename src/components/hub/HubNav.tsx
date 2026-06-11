@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation"
 import { signOut } from "next-auth/react"
 import {
   LayoutDashboard, ClipboardList, Package, Truck, Users, Building2, Map as MapIcon,
-  Upload, Settings, LogOut, Menu, X,
+  Upload, Settings, LogOut, Menu, X, DollarSign, Fuel, ShieldCheck, BarChart3,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -21,10 +21,14 @@ const NAV_ITEMS: NavItem[] = [
   { href: "/hub", label: "Dashboard", icon: LayoutDashboard },
   { href: "/hub/dispatch", label: "Dispatch", icon: ClipboardList },
   { href: "/hub/loads", label: "Loads", icon: Package },
+  { href: "/hub/money", label: "Money", icon: DollarSign },
+  { href: "/hub/fuel", label: "Fuel", icon: Fuel },
+  { href: "/hub/compliance", label: "Compliance", icon: ShieldCheck },
   { href: "/hub/customers", label: "Customers", icon: Building2 },
   { href: "/hub/drivers", label: "Drivers", icon: Users },
   { href: "/hub/fleet", label: "Fleet", icon: Truck },
   { href: "/hub/map", label: "Map", icon: MapIcon },
+  { href: "/hub/reports", label: "Reports", icon: BarChart3 },
   { href: "/hub/import", label: "Import", icon: Upload },
   { href: "/hub/settings/users", label: "Users", icon: Settings, ownerOnly: true },
 ]

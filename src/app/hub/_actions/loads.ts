@@ -1,20 +1,26 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
-import { requireOfficeUser } from "@/lib/hub/session"
+import { requirePermission } from "@/lib/hub/session"
 import { loadSchema, documentUploadSchema } from "@/lib/hub/schemas"
 import {
   createLoad, updateLoad, changeLoadStatus, replaceStops, setStopTimestamp, getLoad,
+  addLoadEvent,
 } from "@/lib/hub/loads"
 import { saveDocument, deleteDocument } from "@/lib/hub/documents"
+import { createShareLink, revokeShareLink } from "@/lib/hub/sharelinks"
 import { logAudit } from "@/lib/hub/audit"
 import { geocodeCityState } from "@/lib/hub/geocode"
-import { NEXT_STATUS, type LoadStatus, LOAD_STATUSES } from "@/lib/hub/types"
+import { NEXT_STATUS, dollarsToCents, type LoadStatus, LOAD_STATUSES } from "@/lib/hub/types"
 import type { ActionResult } from "./fleet"
 
 function firstError(error: { issues: { path: PropertyKey[]; message: string }[] }): string {
   const issue = error.issues[0]
   return issue ? `${issue.path.join(".")}: ${issue.message}` : "Invalid input"
+}
+
+function asError(err: unknown, fallback: string): ActionResult {
+  return { ok: false, error: err instanceof Error ? err.message : fallback }
 }
 
 function revalidateLoadViews(id?: string) {
@@ -40,26 +46,52 @@ async function geocodeStops<T extends { city: string; state: string; lat?: numbe
   return result
 }
 
+function toLoadInput(parsed: ReturnType<typeof loadSchema.parse>) {
+  return {
+    customer_id: parsed.customer_id,
+    customer_reference: parsed.customer_reference,
+    equipment: parsed.equipment,
+    commodity: parsed.commodity,
+    weight_lbs: parsed.weight_lbs ?? null,
+    linehaul_cents: dollarsToCents(parsed.linehaul),
+    fuel_surcharge_cents: dollarsToCents(parsed.fuel_surcharge),
+    accessorials: parsed.accessorials.map((a) => ({ label: a.label, amount_cents: dollarsToCents(a.amount) })),
+    loaded_miles: parsed.loaded_miles ?? null,
+    deadhead_miles: parsed.deadhead_miles ?? null,
+    truck_id: parsed.truck_id,
+    trailer_id: parsed.trailer_id,
+    driver_id: parsed.driver_id,
+    factored: parsed.factored,
+    notes: parsed.notes,
+  }
+}
+
 export async function createLoadAction(values: Record<string, unknown>): Promise<ActionResult> {
-  const user = await requireOfficeUser()
+  let user
+  try {
+    user = await requirePermission("loads:write")
+  } catch (err) {
+    return asError(err, "Forbidden")
+  }
   const parsed = loadSchema.safeParse(values)
   if (!parsed.success) return { ok: false, error: firstError(parsed.error) }
 
   try {
     const stops = await geocodeStops(parsed.data.stops)
     const load = await createLoad(
-      { ...parsed.data, stops, weight_lbs: parsed.data.weight_lbs ?? null },
+      user.carrierId,
+      { ...toLoadInput(parsed.data), source: values.source === "quote" ? "quote" : "direct", stops },
       { id: user.id, name: user.name }
     )
     await logAudit({
-      actorId: user.id, actorName: user.name,
+      carrierId: user.carrierId, actorId: user.id, actorName: user.name,
       entityType: "load", entityId: load.id,
-      action: "create", newValue: { reference: load.reference, linehaul: parsed.data.linehaul },
+      action: "create", newValue: { reference: load.reference, linehaul_cents: load.linehaul_cents },
     })
     revalidateLoadViews(load.id)
     return { ok: true, id: load.id }
   } catch (err) {
-    return { ok: false, error: err instanceof Error ? err.message : "Failed to create load" }
+    return asError(err, "Failed to create load")
   }
 }
 
@@ -67,58 +99,79 @@ export async function updateLoadAction(
   id: string,
   values: Record<string, unknown>
 ): Promise<ActionResult> {
-  const user = await requireOfficeUser()
+  let user
+  try {
+    user = await requirePermission("loads:write")
+  } catch (err) {
+    return asError(err, "Forbidden")
+  }
   const parsed = loadSchema.safeParse(values)
   if (!parsed.success) return { ok: false, error: firstError(parsed.error) }
 
   try {
-    const before = await getLoad(id)
+    const before = await getLoad(user.carrierId, id)
     if (!before) return { ok: false, error: "Load not found" }
-    const { stops, ...rest } = parsed.data
-    const load = await updateLoad(id, { ...rest, weight_lbs: rest.weight_lbs ?? null })
+    const input = toLoadInput(parsed.data)
+    const load = await updateLoad(user.carrierId, id, input)
     if (!load) return { ok: false, error: "Load not found" }
-    const geocoded = await geocodeStops(stops)
-    await replaceStops(id, geocoded)
+    const geocoded = await geocodeStops(parsed.data.stops)
+    await replaceStops(user.carrierId, id, geocoded)
+    // Rate changes are money mutations — always audited with old/new values.
     await logAudit({
-      actorId: user.id, actorName: user.name,
+      carrierId: user.carrierId, actorId: user.id, actorName: user.name,
       entityType: "load", entityId: id, action: "update",
-      oldValue: { linehaul: before.linehaul, fuel_surcharge: before.fuel_surcharge },
-      newValue: { linehaul: rest.linehaul, fuel_surcharge: rest.fuel_surcharge },
+      oldValue: { linehaul_cents: before.linehaul_cents, fuel_surcharge_cents: before.fuel_surcharge_cents },
+      newValue: { linehaul_cents: input.linehaul_cents, fuel_surcharge_cents: input.fuel_surcharge_cents },
     })
     revalidateLoadViews(id)
     return { ok: true, id }
   } catch (err) {
-    return { ok: false, error: err instanceof Error ? err.message : "Failed to update load" }
+    return asError(err, "Failed to update load")
   }
 }
 
 export async function advanceLoadStatusAction(id: string): Promise<ActionResult> {
-  const user = await requireOfficeUser()
+  let user
   try {
-    const load = await getLoad(id)
+    user = await requirePermission("loads:status")
+  } catch (err) {
+    return asError(err, "Forbidden")
+  }
+  try {
+    const load = await getLoad(user.carrierId, id)
     if (!load) return { ok: false, error: "Load not found" }
     const next = NEXT_STATUS[load.status]
     if (!next) return { ok: false, error: `No next status after ${load.status}` }
-    await changeLoadStatus(id, next, { id: user.id, name: user.name })
+    // Document gates: BOL before in_transit→delivered advance, POD before pod_received.
+    const docs = load.doc_kinds ?? []
+    if (next === "pod_received" && !docs.includes("pod")) {
+      return { ok: false, error: "Upload the POD before marking POD received" }
+    }
+    await changeLoadStatus(user.carrierId, id, next, { id: user.id, name: user.name })
     revalidateLoadViews(id)
     return { ok: true, id }
   } catch (err) {
-    return { ok: false, error: err instanceof Error ? err.message : "Failed to advance status" }
+    return asError(err, "Failed to advance status")
   }
 }
 
 export async function setLoadStatusAction(id: string, status: string): Promise<ActionResult> {
-  const user = await requireOfficeUser()
+  let user
+  try {
+    user = await requirePermission("loads:status")
+  } catch (err) {
+    return asError(err, "Forbidden")
+  }
   if (!LOAD_STATUSES.includes(status as LoadStatus)) {
     return { ok: false, error: "Unknown status" }
   }
   try {
-    const updated = await changeLoadStatus(id, status as LoadStatus, { id: user.id, name: user.name })
+    const updated = await changeLoadStatus(user.carrierId, id, status as LoadStatus, { id: user.id, name: user.name })
     if (!updated) return { ok: false, error: "Load not found" }
     revalidateLoadViews(id)
     return { ok: true, id }
   } catch (err) {
-    return { ok: false, error: err instanceof Error ? err.message : "Failed to set status" }
+    return asError(err, "Failed to set status")
   }
 }
 
@@ -127,20 +180,51 @@ export async function stopTimestampAction(
   loadId: string,
   field: "arrived_at" | "departed_at"
 ): Promise<ActionResult> {
-  await requireOfficeUser()
+  let user
   try {
-    await setStopTimestamp(stopId, field, new Date().toISOString())
+    user = await requirePermission("loads:status")
+  } catch (err) {
+    return asError(err, "Forbidden")
+  }
+  try {
+    const stop = await setStopTimestamp(user.carrierId, stopId, field, new Date().toISOString())
+    if (stop) {
+      await addLoadEvent(user.carrierId, loadId, "geo", {
+        stop_id: stopId, field, city: stop.city, state: stop.state,
+      }, { id: user.id, name: user.name })
+    }
     revalidateLoadViews(loadId)
     return { ok: true }
   } catch (err) {
-    return { ok: false, error: err instanceof Error ? err.message : "Failed to record time" }
+    return asError(err, "Failed to record time")
+  }
+}
+
+export async function logCheckCallAction(loadId: string, note: string): Promise<ActionResult> {
+  let user
+  try {
+    user = await requirePermission("loads:status")
+  } catch (err) {
+    return asError(err, "Forbidden")
+  }
+  try {
+    await addLoadEvent(user.carrierId, loadId, "check_call", { note: note.trim() }, { id: user.id, name: user.name })
+    revalidateLoadViews(loadId)
+    return { ok: true }
+  } catch (err) {
+    return asError(err, "Failed to log check call")
   }
 }
 
 const MAX_UPLOAD_BYTES = 15 * 1024 * 1024
 
 export async function uploadDocumentAction(formData: FormData): Promise<ActionResult> {
-  const user = await requireOfficeUser()
+  let user
+  try {
+    user = await requirePermission("documents:write")
+  } catch (err) {
+    return asError(err, "Forbidden")
+  }
   const parsed = documentUploadSchema.safeParse({
     entity_type: formData.get("entity_type"),
     entity_id: formData.get("entity_id"),
@@ -155,6 +239,7 @@ export async function uploadDocumentAction(formData: FormData): Promise<ActionRe
 
   try {
     const doc = await saveDocument({
+      carrierId: user.carrierId,
       entityType: parsed.data.entity_type,
       entityId: parsed.data.entity_id,
       kind: parsed.data.kind,
@@ -162,11 +247,17 @@ export async function uploadDocumentAction(formData: FormData): Promise<ActionRe
       expiry: parsed.data.expiry ?? null,
       uploadedBy: user.id,
     })
-    if (parsed.data.entity_type === "load") revalidateLoadViews(parsed.data.entity_id)
-    else revalidatePath(`/hub/${parsed.data.entity_type}s/${parsed.data.entity_id}`)
+    if (parsed.data.entity_type === "load") {
+      await addLoadEvent(user.carrierId, parsed.data.entity_id, "document", {
+        kind: parsed.data.kind, file: file.name,
+      }, { id: user.id, name: user.name })
+      revalidateLoadViews(parsed.data.entity_id)
+    } else {
+      revalidatePath(`/hub/${parsed.data.entity_type}s/${parsed.data.entity_id}`)
+    }
     return { ok: true, id: doc.id }
   } catch (err) {
-    return { ok: false, error: err instanceof Error ? err.message : "Upload failed" }
+    return asError(err, "Upload failed")
   }
 }
 
@@ -175,17 +266,57 @@ export async function deleteDocumentAction(
   entityType: string,
   entityId: string
 ): Promise<ActionResult> {
-  const user = await requireOfficeUser()
+  let user
+  try {
+    user = await requirePermission("documents:write")
+  } catch (err) {
+    return asError(err, "Forbidden")
+  }
   try {
     await deleteDocument(id)
     await logAudit({
-      actorId: user.id, actorName: user.name,
+      carrierId: user.carrierId, actorId: user.id, actorName: user.name,
       entityType: "document", entityId: id, action: "delete",
       oldValue: { entityType, entityId },
     })
     if (entityType === "load") revalidateLoadViews(entityId)
     return { ok: true }
   } catch (err) {
-    return { ok: false, error: err instanceof Error ? err.message : "Delete failed" }
+    return asError(err, "Delete failed")
+  }
+}
+
+// ---- Tracking share links ----
+
+export async function createShareLinkAction(loadId: string): Promise<ActionResult & { token?: string }> {
+  let user
+  try {
+    user = await requirePermission("loads:write")
+  } catch (err) {
+    return asError(err, "Forbidden")
+  }
+  try {
+    const link = await createShareLink(user.carrierId, loadId, user.id)
+    await addLoadEvent(user.carrierId, loadId, "note", { note: "Tracking link created" }, { id: user.id, name: user.name })
+    revalidateLoadViews(loadId)
+    return { ok: true, id: link.id, token: link.token }
+  } catch (err) {
+    return asError(err, "Failed to create tracking link")
+  }
+}
+
+export async function revokeShareLinkAction(linkId: string, loadId: string): Promise<ActionResult> {
+  let user
+  try {
+    user = await requirePermission("loads:write")
+  } catch (err) {
+    return asError(err, "Forbidden")
+  }
+  try {
+    await revokeShareLink(user.carrierId, linkId)
+    revalidateLoadViews(loadId)
+    return { ok: true }
+  } catch (err) {
+    return asError(err, "Failed to revoke link")
   }
 }

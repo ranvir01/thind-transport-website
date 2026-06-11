@@ -6,7 +6,7 @@ import { toast } from "sonner"
 import { Loader2, Plus, UserCheck, UserX } from "lucide-react"
 import { createHubUserAction, setUserActiveAction } from "@/app/hub/_actions/people"
 import { fieldCls, labelCls, Panel } from "@/components/hub/ui"
-import { HUB_ROLES, type HubUser } from "@/lib/hub/types"
+import { ASSIGNABLE_ROLES, type HubUser } from "@/lib/hub/types"
 
 export function UserManager({ users, selfId }: { users: HubUser[]; selfId: string }) {
   const router = useRouter()
@@ -66,7 +66,7 @@ export function UserManager({ users, selfId }: { users: HubUser[]; selfId: strin
               <label className={labelCls} htmlFor="u_role">Role *</label>
               <select id="u_role" className={fieldCls} value={form.role}
                 onChange={(e) => setForm({ ...form, role: e.target.value })}>
-                {HUB_ROLES.map((role) => (
+                {ASSIGNABLE_ROLES.map((role) => (
                   <option key={role} value={role} className="capitalize">{role}</option>
                 ))}
               </select>

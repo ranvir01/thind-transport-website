@@ -1,14 +1,20 @@
 import Link from "next/link"
 import { notFound } from "next/navigation"
-import { MapPin, Pencil } from "lucide-react"
-import { getLoad, getLoadStops, getStatusEvents } from "@/lib/hub/loads"
+import { Pencil, FileText, MapPin, MessageSquare, CloudLightning, Camera, StickyNote } from "lucide-react"
+import { getLoad, getLoadStops, getLoadEvents } from "@/lib/hub/loads"
 import { listDocuments } from "@/lib/hub/documents"
+import { listShareLinks } from "@/lib/hub/sharelinks"
+import { getInvoiceForLoad } from "@/lib/hub/invoices"
+import { requireOfficeUser } from "@/lib/hub/session"
+import { can } from "@/lib/hub/permissions"
 import {
-  STATUS_LABELS, formatMoney, formatMoneyExact, loadTotal,
+  STATUS_LABELS, fmtCents, fmtCentsExact, loadTotalCents, type LoadEvent,
 } from "@/lib/hub/types"
 import { Panel, PageHeader, StatusBadge, BackLink } from "@/components/hub/ui"
-import { AdvanceStatusButton, CancelLoadButton, StopTimestampButton } from "@/components/hub/StatusActions"
+import { AdvanceStatusButton, CancelLoadButton, StopTimestampButton, CheckCallButton } from "@/components/hub/StatusActions"
 import { DocumentsPanel } from "@/components/hub/DocumentsPanel"
+import { ShareLinkPanel } from "@/components/hub/ShareLinkPanel"
+import { CreateInvoiceButton } from "@/components/hub/MoneyActions"
 
 export const dynamic = "force-dynamic"
 
@@ -19,24 +25,65 @@ function formatDateTime(value: string | null): string {
   })
 }
 
+function eventIcon(kind: LoadEvent["kind"]) {
+  switch (kind) {
+    case "document": return Camera
+    case "check_call": return MessageSquare
+    case "geo": return MapPin
+    case "weather_alert": return CloudLightning
+    case "note": return StickyNote
+    default: return MapPin
+  }
+}
+
+function eventText(event: LoadEvent): string {
+  const p = event.payload as Record<string, string | null>
+  switch (event.kind) {
+    case "status_change":
+      return p.from
+        ? `${STATUS_LABELS[p.from as keyof typeof STATUS_LABELS] ?? p.from} → ${STATUS_LABELS[p.to as keyof typeof STATUS_LABELS] ?? p.to}`
+        : `Created as ${STATUS_LABELS[p.to as keyof typeof STATUS_LABELS] ?? p.to}`
+    case "document":
+      return `${String(p.kind ?? "document").replace("_", " ")} uploaded (${p.file ?? ""})`
+    case "geo":
+      return `${p.field === "arrived_at" ? "Arrived" : "Departed"} ${p.city ?? ""}, ${p.state ?? ""}`
+    case "check_call":
+      return `Check call: ${p.note ?? ""}`
+    case "note":
+      return String(p.note ?? "Note")
+    case "weather_alert":
+      return `Weather: ${p.event ?? ""}`
+    case "detention":
+      return `Detention flagged`
+    default:
+      return event.kind
+  }
+}
+
 export default async function LoadDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const user = await requireOfficeUser()
   const { id } = await params
-  const load = await getLoad(id).catch(() => null)
+  const load = await getLoad(user.carrierId, id).catch(() => null)
   if (!load) notFound()
 
-  const [stops, events, documents] = await Promise.all([
-    getLoadStops(id), getStatusEvents(id), listDocuments("load", id),
+  const [stops, events, documents, shareLinks, invoice] = await Promise.all([
+    getLoadStops(id),
+    getLoadEvents(id),
+    listDocuments("load", id),
+    listShareLinks(user.carrierId, id),
+    getInvoiceForLoad(user.carrierId, id),
   ])
 
-  const total = loadTotal(load)
-  const rpm = load.loaded_miles ? total / load.loaded_miles : null
+  const totalCents = loadTotalCents(load)
+  const rpmCents = load.loaded_miles ? totalCents / load.loaded_miles : null
+  const canInvoice = can(user.role, "money:write") && load.status === "pod_received" && !invoice
 
   return (
     <div>
       <BackLink href="/hub/loads" label="Loads" />
       <PageHeader
         title={load.reference}
-        subtitle={load.customer_name ? `${load.customer_name}${load.customer_reference ? ` · Ref ${load.customer_reference}` : ""}` : undefined}
+        subtitle={load.customer_name ? `${load.customer_name}${load.customer_reference ? ` · Ref ${load.customer_reference}` : ""}${load.factored ? " · Factored" : ""}` : undefined}
         action={
           <Link
             href={`/hub/loads/${id}/edit`}
@@ -51,8 +98,14 @@ export default async function LoadDetailPage({ params }: { params: Promise<{ id:
       <Panel className="p-4 md:p-5 mb-4">
         <div className="flex flex-wrap items-center gap-3">
           <StatusBadge status={load.status} className="text-sm px-3 py-1" />
+          {invoice ? (
+            <Link href={`/hub/money/invoices/${invoice.id}`} className="inline-flex items-center gap-1.5 rounded-full border border-cyan-400/30 bg-cyan-500/10 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-cyan-300 hover:bg-cyan-500/20">
+              <FileText className="h-3.5 w-3.5" /> {invoice.number} · {invoice.status}
+            </Link>
+          ) : null}
           <div className="flex flex-wrap gap-2 ml-auto">
-            <AdvanceStatusButton loadId={id} status={load.status} />
+            {canInvoice ? <CreateInvoiceButton loadId={id} /> : <AdvanceStatusButton loadId={id} status={load.status} />}
+            <CheckCallButton loadId={id} />
             <CancelLoadButton loadId={id} status={load.status} />
           </div>
         </div>
@@ -87,11 +140,13 @@ export default async function LoadDetailPage({ params }: { params: Promise<{ id:
                       <span className="text-[11px] font-bold uppercase tracking-wider text-steel-300">
                         {stop.type}
                       </span>
-                      {stop.appt_start ? (
-                        <span className="text-body-xs text-steel-400">
-                          Appt {formatDateTime(stop.appt_start)}
-                        </span>
+                      {stop.fcfs ? (
+                        <span className="text-body-xs text-steel-400">FCFS</span>
+                      ) : stop.appt_start ? (
+                        <span className="text-body-xs text-steel-400">Appt {formatDateTime(stop.appt_start)}</span>
                       ) : null}
+                      {stop.pickup_number ? <span className="text-body-xs text-steel-400">PU# {stop.pickup_number}</span> : null}
+                      {stop.po_number ? <span className="text-body-xs text-steel-400">PO# {stop.po_number}</span> : null}
                     </div>
                     <p className="font-semibold text-white">
                       {stop.facility ? `${stop.facility} · ` : ""}
@@ -116,6 +171,9 @@ export default async function LoadDetailPage({ params }: { params: Promise<{ id:
 
           {/* Documents */}
           <DocumentsPanel entityType="load" entityId={id} documents={documents} />
+
+          {/* Tracking links */}
+          <ShareLinkPanel loadId={id} links={shareLinks} />
         </div>
 
         <div className="space-y-4">
@@ -123,22 +181,22 @@ export default async function LoadDetailPage({ params }: { params: Promise<{ id:
           <Panel className="p-4 md:p-5">
             <h2 className="font-display text-base font-bold uppercase tracking-wide text-white mb-3">Rate</h2>
             <dl className="space-y-2 text-sm">
-              <div className="flex justify-between"><dt className="text-steel-200">Linehaul</dt><dd className="text-white font-semibold">{formatMoneyExact(load.linehaul)}</dd></div>
-              <div className="flex justify-between"><dt className="text-steel-200">Fuel surcharge</dt><dd className="text-white font-semibold">{formatMoneyExact(load.fuel_surcharge)}</dd></div>
+              <div className="flex justify-between"><dt className="text-steel-200">Linehaul</dt><dd className="text-white font-semibold">{fmtCentsExact(load.linehaul_cents)}</dd></div>
+              <div className="flex justify-between"><dt className="text-steel-200">Fuel surcharge</dt><dd className="text-white font-semibold">{fmtCentsExact(load.fuel_surcharge_cents)}</dd></div>
               {(Array.isArray(load.accessorials) ? load.accessorials : []).map((acc, i) => (
                 <div key={i} className="flex justify-between">
                   <dt className="text-steel-200">{acc.label}</dt>
-                  <dd className="text-white font-semibold">{formatMoneyExact(acc.amount)}</dd>
+                  <dd className="text-white font-semibold">{fmtCentsExact(acc.amount_cents)}</dd>
                 </div>
               ))}
               <div className="flex justify-between border-t border-white/10 pt-2">
                 <dt className="text-white font-bold">Total</dt>
-                <dd className="font-display text-gold font-extrabold text-lg">{formatMoney(total)}</dd>
+                <dd className="font-display text-gold font-extrabold text-lg">{fmtCents(totalCents)}</dd>
               </div>
-              {rpm ? (
+              {rpmCents ? (
                 <div className="flex justify-between">
                   <dt className="text-steel-200">Rate per mile</dt>
-                  <dd className="text-white font-semibold">${rpm.toFixed(2)}/mi · {load.loaded_miles} mi</dd>
+                  <dd className="text-white font-semibold">${(rpmCents / 100).toFixed(2)}/mi · {load.loaded_miles} mi</dd>
                 </div>
               ) : null}
             </dl>
@@ -161,24 +219,24 @@ export default async function LoadDetailPage({ params }: { params: Promise<{ id:
             ) : null}
           </Panel>
 
-          {/* Status history */}
+          {/* Unified event timeline */}
           <Panel className="p-4 md:p-5">
-            <h2 className="font-display text-base font-bold uppercase tracking-wide text-white mb-3">History</h2>
-            <ol className="space-y-2.5">
-              {events.map((event) => (
-                <li key={event.id} className="flex items-start gap-2 text-body-sm">
-                  <MapPin className="h-3.5 w-3.5 mt-0.5 shrink-0 text-steel-400" />
-                  <div>
-                    <p className="text-white">
-                      {event.from_status ? `${STATUS_LABELS[event.from_status]} → ` : ""}
-                      <span className="font-semibold">{STATUS_LABELS[event.to_status]}</span>
-                    </p>
-                    <p className="text-body-xs text-steel-400">
-                      {formatDateTime(event.created_at)}{event.actor_name ? ` · ${event.actor_name}` : ""}
-                    </p>
-                  </div>
-                </li>
-              ))}
+            <h2 className="font-display text-base font-bold uppercase tracking-wide text-white mb-3">Timeline</h2>
+            <ol className="space-y-2.5 max-h-[420px] overflow-y-auto pr-1">
+              {[...events].reverse().map((event) => {
+                const Icon = eventIcon(event.kind)
+                return (
+                  <li key={event.id} className="flex items-start gap-2 text-body-sm">
+                    <Icon className="h-3.5 w-3.5 mt-0.5 shrink-0 text-steel-400" />
+                    <div>
+                      <p className="text-white">{eventText(event)}</p>
+                      <p className="text-body-xs text-steel-400">
+                        {formatDateTime(event.created_at)}{event.actor_name ? ` · ${event.actor_name}` : ""}
+                      </p>
+                    </div>
+                  </li>
+                )
+              })}
             </ol>
           </Panel>
         </div>

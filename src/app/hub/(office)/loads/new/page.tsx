@@ -1,15 +1,26 @@
 import { listCustomers } from "@/lib/hub/customers"
 import { listDrivers } from "@/lib/hub/drivers"
 import { listTrucks, listTrailers } from "@/lib/hub/fleet"
+import { query } from "@/lib/hub/db"
+import { requireOfficeUser } from "@/lib/hub/session"
 import { PageHeader, BackLink } from "@/components/hub/ui"
-import { LoadForm } from "@/components/hub/LoadForm"
+import { LoadForm, type PriceBookOption } from "@/components/hub/LoadForm"
 import { emptyLoadForm } from "@/lib/hub/form-defaults"
 
 export const dynamic = "force-dynamic"
 
 export default async function NewLoadPage() {
-  const [customers, drivers, trucks, trailers] = await Promise.all([
-    listCustomers(), listDrivers(), listTrucks(), listTrailers(),
+  const user = await requireOfficeUser()
+  const [customers, drivers, trucks, trailers, priceBook] = await Promise.all([
+    listCustomers(user.carrierId),
+    listDrivers(user.carrierId),
+    listTrucks(user.carrierId),
+    listTrailers(user.carrierId),
+    query<PriceBookOption>(
+      `SELECT id, name, default_amount_cents, unit FROM hub.accessorial_types
+       WHERE carrier_id = $1 AND active = TRUE ORDER BY name`,
+      [user.carrierId]
+    ),
   ])
 
   return (
@@ -28,6 +39,7 @@ export default async function NewLoadPage() {
         trailers={trailers
           .filter((t) => t.status !== "retired")
           .map((t) => ({ id: t.id, label: `#${t.unit_number} · ${t.type.replace("_", " ")}` }))}
+        priceBook={priceBook}
       />
     </div>
   )

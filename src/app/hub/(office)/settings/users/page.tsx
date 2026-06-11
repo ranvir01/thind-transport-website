@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic"
 
 export default async function UsersSettingsPage() {
   const owner = await requireOwner()
-  const users = await listHubUsers()
+  const users = await listHubUsers(owner.carrierId)
 
   return (
     <div>

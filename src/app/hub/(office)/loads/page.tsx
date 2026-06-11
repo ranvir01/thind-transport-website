@@ -1,7 +1,8 @@
 import Link from "next/link"
 import { Plus, Search } from "lucide-react"
 import { listLoads } from "@/lib/hub/loads"
-import { LOAD_STATUSES, STATUS_LABELS, formatMoney, loadTotal, type LoadStatus } from "@/lib/hub/types"
+import { requireOfficeUser } from "@/lib/hub/session"
+import { LOAD_STATUSES, STATUS_LABELS, fmtCents, loadTotalCents, type LoadStatus } from "@/lib/hub/types"
 import { Panel, PageHeader, StatusBadge, EmptyState, fieldCls } from "@/components/hub/ui"
 
 export const dynamic = "force-dynamic"
@@ -11,10 +12,11 @@ export default async function LoadsPage({
 }: {
   searchParams: Promise<{ status?: string; q?: string }>
 }) {
+  const user = await requireOfficeUser()
   const params = await searchParams
   const status = (params.status as LoadStatus | "active" | "all") || "active"
   const search = params.q?.trim() || undefined
-  const loads = await listLoads({ status, search })
+  const loads = await listLoads(user.carrierId, { status, search })
 
   return (
     <div>
@@ -75,6 +77,7 @@ export default async function LoadsPage({
                   <th className="px-4 py-3">Lane</th>
                   <th className="px-4 py-3">Customer</th>
                   <th className="px-4 py-3">Driver / Truck</th>
+                  <th className="px-4 py-3">Money</th>
                   <th className="px-4 py-3 text-right">Rate</th>
                 </tr>
               </thead>
@@ -100,8 +103,11 @@ export default async function LoadsPage({
                       {load.driver_name ?? "Unassigned"}
                       {load.truck_unit ? ` · #${load.truck_unit}` : ""}
                     </td>
+                    <td className="px-4 py-3 text-body-xs uppercase font-bold text-cyan-300">
+                      {load.invoice_status ?? (load.settlement_id ? "settled" : "—")}
+                    </td>
                     <td className="px-4 py-3 text-right font-display font-extrabold text-gold">
-                      {formatMoney(loadTotal(load))}
+                      {fmtCents(loadTotalCents(load))}
                     </td>
                   </tr>
                 ))}
@@ -127,7 +133,7 @@ export default async function LoadsPage({
                     <p className="text-body-xs text-steel-300 truncate">
                       {load.customer_name ?? "—"} · {load.driver_name ?? "Unassigned"}
                     </p>
-                    <span className="font-display font-extrabold text-gold">{formatMoney(loadTotal(load))}</span>
+                    <span className="font-display font-extrabold text-gold">{fmtCents(loadTotalCents(load))}</span>
                   </div>
                 </Panel>
               </Link>
