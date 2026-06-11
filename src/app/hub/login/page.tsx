@@ -5,6 +5,7 @@ import { signIn } from "next-auth/react"
 import { toast } from "sonner"
 import { Loader2, LogIn } from "lucide-react"
 import { fieldCls, labelCls, Panel } from "@/components/hub/ui"
+import { PRODUCT } from "@/lib/hub/product"
 
 export default function HubLoginPage() {
   const [loading, setLoading] = useState(false)
@@ -36,9 +37,9 @@ export default function HubLoginPage() {
     <div className="min-h-screen flex items-center justify-center p-4">
       <Panel className="w-full max-w-md p-6 md:p-8">
         <div className="text-center mb-6">
-          <span className="brand-wordmark text-2xl font-semibold text-white tracking-[0.14em]">THIND</span>
+          <span className="brand-wordmark text-2xl font-semibold text-white tracking-[0.14em]">{PRODUCT.wordmark}</span>
           <span className="block text-[11px] font-bold uppercase tracking-[0.3em] text-gold mt-1">
-            Transport Hub
+            {PRODUCT.tagline}
           </span>
           <p className="text-body-sm text-steel-200 mt-3">
             One login for dispatch, drivers, and partners.

@@ -1,7 +1,9 @@
-# Thind Transport Hub — Demo Script (Phases 1–3)
+# HaulDesk — Demo Script (Phases 1–3)
 
-A phone-first walkthrough showing dispatch, money, fuel, and IFTA running like the real
-deal — 390px and desktop. Run against a database seeded with `npm run seed:demo`.
+HaulDesk is the multi-tenant operations product ("the Hub" in older docs); Thind
+Transport is tenant #1 and supplies the demo data. A phone-first walkthrough showing
+dispatch, money, fuel, and IFTA running like the real deal — 390px and desktop. Run
+against a database seeded with `npm run seed:demo`.
 
 ## Setup
 

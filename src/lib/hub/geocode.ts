@@ -4,6 +4,7 @@
  * Phase 7 swaps the implementation behind this same interface.
  */
 import { query, queryOne } from "./db"
+import { PRODUCT } from "./product"
 
 export interface GeocodeSource {
   geocode(city: string, state: string): Promise<{ lat: number; lng: number } | null>
@@ -15,7 +16,7 @@ async function nominatimLookup(city: string, state: string): Promise<{ lat: numb
     const res = await fetch(
       `https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=1&countrycodes=us`,
       {
-        headers: { "User-Agent": "thindtransport.com hub (thindcarrier@gmail.com)" },
+        headers: { "User-Agent": PRODUCT.userAgent },
         next: { revalidate: 86400 * 30 },
       }
     )

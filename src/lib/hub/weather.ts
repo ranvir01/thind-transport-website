@@ -1,4 +1,5 @@
 /** Free National Weather Service alerts — no API key required. */
+import { PRODUCT } from "./product"
 
 export interface WeatherAlert {
   event: string
@@ -12,7 +13,7 @@ export async function getActiveAlerts(lat: number, lng: number): Promise<Weather
     const res = await fetch(
       `https://api.weather.gov/alerts/active?point=${lat.toFixed(4)},${lng.toFixed(4)}`,
       {
-        headers: { "User-Agent": "thindtransport.com hub (thindcarrier@gmail.com)" },
+        headers: { "User-Agent": PRODUCT.userAgent },
         next: { revalidate: 1800 },
       }
     )

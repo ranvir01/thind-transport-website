@@ -25,7 +25,7 @@ npm run dev                  # http://localhost:3000
 - **Marketing pages** — home, apply, pay rates, routes, fleet, benefits, about, testimonials, veterans, resources, fuel program, load-board preview, privacy.
 - **Lead capture** — multi-step application form, pre-qualification wizard, earnings calculator with email-an-estimate, meeting scheduler. All deliver via SMTP (server actions / API routes).
 - **Driver portal** (`/driver/*`) — registration with invitation code, login (NextAuth v5 credentials), multi-step DOT application wizard with PDF generation (`pdf-lib`), upload to HR via email.
-- **Transport Hub** (`/hub/*`) — the operations system (Phase 1): role-based login, dispatch board, load lifecycle with stops + documents, fleet/driver/customer management, CSV import, fleet map. See `docs/tms-master-prompt.md` (build plan) and `docs/demo-script.md` (demo accounts + walkthrough). Setup: `npm run db:migrate`, optional `npm run seed:demo`.
+- **HaulDesk** (`/hub/*`) — the multi-tenant operations product (dispatch, money, fuel + IFTA, compliance, driver tools) for small and mid-size carriers. Thind Transport is tenant #1. See `docs/tms-master-prompt.md` (build plan) and `docs/demo-script.md` (demo accounts + walkthrough). Setup: `npm run db:migrate`, optional `npm run seed:demo`.
 - **SEO/AEO** — per-page metadata + canonicals, Organization/LocalBusiness + WebSite JSON-LD site-wide, JobPosting on `/apply`, FAQPage schema where FAQs render, `sitemap.xml`, `robots.txt`, `llms.txt`, Open Graph image.
 
 ## Environment variables

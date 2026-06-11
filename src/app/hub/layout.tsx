@@ -1,14 +1,15 @@
 import type { Metadata, Viewport } from "next"
 import { SessionProvider } from "next-auth/react"
+import { PRODUCT } from "@/lib/hub/product"
 
 export const metadata: Metadata = {
-  title: { default: "Thind Transport Hub", template: "%s | Thind Hub" },
+  title: { default: PRODUCT.name, template: `%s | ${PRODUCT.name}` },
   robots: { index: false, follow: false },
   manifest: "/hub.webmanifest",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "Thind Hub",
+    title: PRODUCT.shortName,
   },
 }
 

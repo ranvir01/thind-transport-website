@@ -1,7 +1,7 @@
 {
-  "name": "Thind Transport Hub",
-  "short_name": "Thind Hub",
-  "description": "Dispatch, fleet, and operations hub for Thind Transport.",
+  "name": "HaulDesk",
+  "short_name": "HaulDesk",
+  "description": "Dispatch, money, compliance, and driver tools for small and mid-size trucking carriers — all in one place.",
   "start_url": "/hub",
   "scope": "/hub",
   "display": "standalone",
@@ -9,14 +9,20 @@
   "theme_color": "#0E1621",
   "icons": [
     {
-      "src": "/android-chrome-192x192.png",
+      "src": "/hub-icon-192.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "/android-chrome-512x512.png",
+      "src": "/hub-icon-512.png",
       "sizes": "512x512",
       "type": "image/png"
+    },
+    {
+      "src": "/hub-icon-512-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ]
 }

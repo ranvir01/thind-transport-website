@@ -9,6 +9,7 @@ import {
   Upload, Settings, LogOut, Menu, X, DollarSign, Fuel, ShieldCheck, BarChart3,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { PRODUCT } from "@/lib/hub/product"
 
 interface NavItem {
   href: string
@@ -39,7 +40,7 @@ function isActive(pathname: string, href: string): boolean {
   return href === "/hub" ? pathname === "/hub" : pathname.startsWith(href)
 }
 
-export function HubNav({ user }: { user: { name: string; role: string } }) {
+export function HubNav({ user }: { user: { name: string; role: string; carrierName?: string } }) {
   const pathname = usePathname()
   const [menuOpen, setMenuOpen] = useState(false)
   const items = NAV_ITEMS.filter((i) => !i.ownerOnly || user.role === "owner")
@@ -54,9 +55,9 @@ export function HubNav({ user }: { user: { name: string; role: string } }) {
       <aside className="hidden lg:flex fixed inset-y-0 left-0 z-40 w-60 flex-col border-r border-white/10 bg-navy-900/95 backdrop-blur-sm">
         <div className="px-5 py-5 border-b border-white/10">
           <Link href="/hub" className="block">
-            <span className="brand-wordmark text-lg font-semibold text-white tracking-[0.14em]">THIND</span>
-            <span className="block text-[10px] font-bold uppercase tracking-[0.3em] text-gold mt-0.5">
-              Transport Hub
+            <span className="brand-wordmark text-lg font-semibold text-white tracking-[0.14em]">{PRODUCT.wordmark}</span>
+            <span className="block text-[10px] font-bold uppercase tracking-[0.3em] text-gold mt-0.5 truncate">
+              {user.carrierName || PRODUCT.tagline}
             </span>
           </Link>
         </div>
@@ -92,8 +93,7 @@ export function HubNav({ user }: { user: { name: string; role: string } }) {
       {/* ---- Mobile top bar ---- */}
       <header className="lg:hidden fixed top-0 inset-x-0 z-40 flex h-14 items-center justify-between border-b border-white/10 bg-navy-900/95 px-4 backdrop-blur-sm">
         <Link href="/hub" className="leading-none">
-          <span className="brand-wordmark text-base font-semibold text-white tracking-[0.14em]">THIND</span>
-          <span className="ml-2 text-[9px] font-bold uppercase tracking-[0.25em] text-gold">Hub</span>
+          <span className="brand-wordmark text-base font-semibold text-white tracking-[0.14em]">{PRODUCT.wordmark}</span>
         </Link>
         <button
           aria-label={menuOpen ? "Close menu" : "Open menu"}
