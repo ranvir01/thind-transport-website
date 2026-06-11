@@ -6,6 +6,7 @@ import { runTaskAutomations } from "@/lib/hub/tasks"
 import { recomputeLanes } from "@/lib/hub/lanes"
 import { computeDriverScores } from "@/lib/hub/recruiting"
 import { recheckActiveCustomers } from "@/lib/hub/vetting"
+import { runTelematicsSync } from "@/lib/hub/telematics"
 import { getCarrierSettings } from "@/lib/hub/settings"
 import { createMailTransport, mailFrom } from "@/lib/mailer"
 
@@ -68,6 +69,9 @@ export async function GET(
       } else if (job === "fmcsa-recheck") {
         // Phase 5: nightly authority re-check — alert before the next booking.
         results[carrier.id] = await recheckActiveCustomers(carrier.id)
+      } else if (job === "telematics-sync") {
+        // Phase 6: positions/odometer/HOS from the ELD aggregator (when connected).
+        results[carrier.id] = await runTelematicsSync(carrier.id)
       } else {
         return NextResponse.json({ error: "Unknown job" }, { status: 404 })
       }

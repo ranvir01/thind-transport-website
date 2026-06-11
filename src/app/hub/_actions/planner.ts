@@ -112,6 +112,22 @@ export async function plannerMoveLoadAction(
     }
   }
 
+  // HOS estimate (Phase 6): warn when the run likely exceeds the remaining
+  // drive clock. Display-only — the ELD is authoritative.
+  if (effectiveDriverId) {
+    const miles = await queryOne<{ loaded_miles: number | null }>(
+      `SELECT loaded_miles FROM hub.loads WHERE carrier_id = $1 AND id = $2`,
+      [user.carrierId, loadId]
+    )
+    if (miles?.loaded_miles) {
+      const { hosLegalityWarning } = await import("@/lib/hub/telematics")
+      const hosWarning = await hosLegalityWarning(
+        user.carrierId, effectiveDriverId, miles.loaded_miles / 47
+      )
+      if (hosWarning) warning = [warning, hosWarning].filter(Boolean).join("; ")
+    }
+  }
+
   // Double-booking is a warning, not a wall — dispatchers stack legally all the time.
   if (window) {
     const overlapping = await queryOne<{ count: string }>(

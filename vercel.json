@@ -10,7 +10,10 @@
     { "path": "/api/hub/cron/task-automations", "schedule": "15 14 * * *" },
     { "path": "/api/hub/cron/recompute-lanes", "schedule": "45 9 * * *" },
     { "path": "/api/hub/cron/driver-scorecards", "schedule": "0 10 1 * *" },
-    { "path": "/api/hub/cron/fmcsa-recheck", "schedule": "0 11 * * *" }
+    { "path": "/api/hub/cron/fmcsa-recheck", "schedule": "0 11 * * *" },
+    { "path": "/api/hub/cron/telematics-sync", "schedule": "*/30 * * * *" },
+    { "path": "/api/hub/cron/docs-mailbox", "schedule": "*/15 * * * *" },
+    { "path": "/api/hub/cron/owner-digest", "schedule": "0 13 * * 1" }
   ],
   "headers": [
     {
