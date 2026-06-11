@@ -1,0 +1,130 @@
+"use client"
+
+import { useState, useTransition } from "react"
+import { toast } from "sonner"
+import { ArrowRight, Ban, Loader2 } from "lucide-react"
+import { advanceLoadStatusAction, setLoadStatusAction, stopTimestampAction } from "@/app/hub/_actions/loads"
+import { NEXT_STATUS, STATUS_LABELS, type LoadStatus } from "@/lib/hub/types"
+
+export function AdvanceStatusButton({
+  loadId,
+  status,
+  compact = false,
+}: {
+  loadId: string
+  status: LoadStatus
+  compact?: boolean
+}) {
+  const [pending, startTransition] = useTransition()
+  const next = NEXT_STATUS[status]
+  if (!next) return null
+
+  const advance = () =>
+    startTransition(async () => {
+      const result = await advanceLoadStatusAction(loadId)
+      if (result.ok) toast.success(`Moved to ${STATUS_LABELS[next]}`)
+      else toast.error(result.error ?? "Could not advance status")
+    })
+
+  if (compact) {
+    return (
+      <button
+        onClick={advance}
+        disabled={pending}
+        className="inline-flex min-h-[36px] items-center gap-1 rounded-lg border border-gold/40 bg-gold/10 px-2.5 text-[11px] font-bold uppercase tracking-wide text-gold hover:bg-gold/20 disabled:opacity-50"
+      >
+        {pending ? <Loader2 className="h-3 w-3 animate-spin" /> : <ArrowRight className="h-3 w-3" />}
+        {STATUS_LABELS[next]}
+      </button>
+    )
+  }
+
+  return (
+    <button
+      onClick={advance}
+      disabled={pending}
+      className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-orange px-5 font-display text-sm font-bold uppercase tracking-[0.08em] text-white shadow-cta hover:bg-orange-400 disabled:opacity-60"
+    >
+      {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4" />}
+      Mark {STATUS_LABELS[next]}
+    </button>
+  )
+}
+
+export function CancelLoadButton({ loadId, status }: { loadId: string; status: LoadStatus }) {
+  const [pending, startTransition] = useTransition()
+  const [confirming, setConfirming] = useState(false)
+  // Once money work starts (invoiced+), cancellation is an accounting decision, not a click.
+  if (["delivered", "pod_received", "invoiced", "paid", "settled", "cancelled"].includes(status)) return null
+
+  const cancel = () =>
+    startTransition(async () => {
+      const result = await setLoadStatusAction(loadId, "cancelled")
+      if (result.ok) toast.success("Load cancelled")
+      else toast.error(result.error ?? "Could not cancel load")
+      setConfirming(false)
+    })
+
+  if (!confirming) {
+    return (
+      <button
+        onClick={() => setConfirming(true)}
+        className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-red-400/30 px-4 text-sm font-semibold text-red-300 hover:bg-red-500/10"
+      >
+        <Ban className="h-4 w-4" /> Cancel load
+      </button>
+    )
+  }
+  return (
+    <span className="inline-flex items-center gap-2">
+      <button
+        onClick={cancel}
+        disabled={pending}
+        className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-red-600 px-4 text-sm font-bold text-white hover:bg-red-500 disabled:opacity-60"
+      >
+        {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Ban className="h-4 w-4" />}
+        Confirm cancel
+      </button>
+      <button
+        onClick={() => setConfirming(false)}
+        className="min-h-[44px] rounded-xl px-3 text-sm font-semibold text-steel-200 hover:bg-white/5"
+      >
+        Keep load
+      </button>
+    </span>
+  )
+}
+
+export function StopTimestampButton({
+  stopId,
+  loadId,
+  field,
+  done,
+}: {
+  stopId: string
+  loadId: string
+  field: "arrived_at" | "departed_at"
+  done: boolean
+}) {
+  const [pending, startTransition] = useTransition()
+  if (done) return null
+
+  const label = field === "arrived_at" ? "Mark arrived" : "Mark departed"
+  const record = () =>
+    startTransition(async () => {
+      const result = await stopTimestampAction(stopId, loadId, field)
+      if (result.ok) toast.success(field === "arrived_at" ? "Arrival recorded" : "Departure recorded")
+      else toast.error(result.error ?? "Could not record time")
+    })
+
+  return (
+    <button
+      onClick={record}
+      disabled={pending}
+      className="inline-flex min-h-[36px] items-center gap-1.5 rounded-lg border border-white/15 px-3 text-xs font-semibold text-steel-100 hover:bg-white/5 disabled:opacity-50"
+    >
+      {pending ? <Loader2 className="h-3 w-3 animate-spin" /> : null}
+      {label}
+    </button>
+  )
+}

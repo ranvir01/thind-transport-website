@@ -8,7 +8,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint . --ext .ts,.tsx,.js,.jsx",
-    "generate:brand-assets": "node scripts/generate-brand-assets.mjs"
+    "generate:brand-assets": "node scripts/generate-brand-assets.mjs",
+    "db:migrate": "node scripts/hub-migrate.mjs",
+    "seed:demo": "node scripts/seed-demo.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
@@ -37,18 +39,21 @@
     "@types/nodemailer": "^7.0.4",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
+    "@vercel/blob": "^2.4.0",
     "@vercel/postgres": "^0.10.0",
     "bcrypt": "^6.0.0",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.0",
     "embla-carousel-react": "^8.5.1",
     "framer-motion": "^12.23.24",
+    "leaflet": "^1.9.4",
     "lenis": "^1.3.15",
     "lucide-react": "^0.468.0",
     "next": "^16.0.7",
     "next-auth": "^5.0.0-beta.30",
     "nodemailer": "^7.0.11",
     "pdf-lib": "^1.17.1",
+    "pg": "^8.21.0",
     "react": "^19.0.1",
     "react-dom": "^19.0.1",
     "react-hook-form": "^7.69.0",
@@ -59,6 +64,8 @@
     "zod": "^3.25.76"
   },
   "devDependencies": {
+    "@types/leaflet": "^1.9.21",
+    "@types/pg": "^8.20.0",
     "autoprefixer": "^10.4.22",
     "canvas": "^3.2.0",
     "eslint": "^9.0.0",

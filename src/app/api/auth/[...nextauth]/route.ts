@@ -3,6 +3,7 @@ import type { NextAuthConfig } from "next-auth"
 import Credentials from "next-auth/providers/credentials"
 import bcrypt from "bcrypt"
 import { findDriverByEmail } from "@/lib/driver-db"
+import { findHubUserByEmail } from "@/lib/hub/users"
 
 export const authConfig = {
   trustHost: true, // Required for Vercel production deployments
@@ -15,6 +16,20 @@ export const authConfig = {
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
           return null
+        }
+
+        // Hub accounts (office staff, hub drivers, broker/shipper portals) take
+        // precedence; the legacy driver-portal store is the fallback.
+        const hubUser = await findHubUserByEmail(credentials.email as string)
+        if (hubUser) {
+          const valid = await bcrypt.compare(credentials.password as string, hubUser.password_hash)
+          if (!valid) return null
+          return {
+            id: hubUser.id,
+            email: hubUser.email,
+            name: hubUser.name,
+            role: hubUser.role,
+          } as { id: string; email: string; name: string; role: string }
         }
 
         const driver = await findDriverByEmail(credentials.email as string)
@@ -62,12 +77,14 @@ export const authConfig = {
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id
+        token.role = (user as { role?: string }).role ?? null
       }
       return token
     },
     async session({ session, token }) {
       if (session.user) {
         (session.user as any).id = token.id
+        ;(session.user as any).role = token.role ?? null
       }
       return session
     },

@@ -363,6 +363,7 @@ export const CinematicNavbar = () => {
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null)
   const [scrolled, setScrolled] = useState(false)
   const pathname = usePathname()
+  const isHub = pathname.startsWith("/hub")
 
   // Handle scroll styling
   useEffect(() => {
@@ -380,6 +381,9 @@ export const CinematicNavbar = () => {
     setActiveDropdown(null)
     setMobileMenuOpen(false)
   }
+
+  // The Hub has its own navigation shell.
+  if (isHub) return null
 
   return (
     <>

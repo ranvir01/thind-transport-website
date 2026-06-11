@@ -1,0 +1,22 @@
+{
+  "name": "Thind Transport Hub",
+  "short_name": "Thind Hub",
+  "description": "Dispatch, fleet, and operations hub for Thind Transport.",
+  "start_url": "/hub",
+  "scope": "/hub",
+  "display": "standalone",
+  "background_color": "#0E1621",
+  "theme_color": "#0E1621",
+  "icons": [
+    {
+      "src": "/android-chrome-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/android-chrome-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

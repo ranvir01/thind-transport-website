@@ -34,9 +34,27 @@ export default async function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL("/driver/application", request.url))
   }
 
+  // ---- Hub (operations system) ----
+  if (pathname.startsWith("/hub") && pathname !== "/hub/login") {
+    const role = (token as { role?: string } | null)?.role
+    if (!token || !role) {
+      return NextResponse.redirect(new URL("/hub/login", request.url))
+    }
+    // Driver/broker/shipper experiences arrive in later phases — keep them in
+    // their own area instead of the office screens.
+    const officeRoles = ["owner", "dispatcher", "accountant"]
+    if (!officeRoles.includes(role) && !pathname.startsWith("/hub/welcome")) {
+      return NextResponse.redirect(new URL("/hub/welcome", request.url))
+    }
+  }
+
+  if (pathname === "/hub/login" && (token as { role?: string } | null)?.role) {
+    return NextResponse.redirect(new URL("/hub", request.url))
+  }
+
   return NextResponse.next()
 }
 
 export const config = {
-  matcher: ["/driver/:path*"],
+  matcher: ["/driver/:path*", "/hub/:path*"],
 }
