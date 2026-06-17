@@ -7,7 +7,7 @@ entered.
 | Gate | Status | Evidence |
 |---|---|---|
 | `npm run build` | PASS | Production build completed successfully after latest changes. |
-| `npm test` | PASS | Vitest: 7 files, 59 tests passing. |
+| `npm test` | PASS | Vitest: 7 files, 61 tests passing. |
 | `npm run lint` | PASS | ESLint completed with zero errors. |
 | `npm run e2e:sweep` | PASS | Against HTTPS tunnel: owner sign-in, Today, loads, dispatch, drivers, customers, money, fleet, fuel, compliance, import, ranker, reports, report builder, onboarding, setup pages, driver PWA tabs/offline page, `/track/sandbox`, manifest, service worker, and CSV exports all returned success. |
 | HTTPS mobile tunnel | PASS | `npm run dev:mobile` created Cloudflare quick tunnel and printed public HTTPS URL. |
