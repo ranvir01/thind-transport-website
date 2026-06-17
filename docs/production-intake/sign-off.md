@@ -7,8 +7,9 @@ entered.
 | Gate | Status | Evidence |
 |---|---|---|
 | `npm run build` | PASS | Production build completed successfully after latest changes. |
-| `npm test` | PASS | Vitest: 6 files, 55 tests passing. |
+| `npm test` | PASS | Vitest: 6 files, 56 tests passing. |
 | `npm run lint` | PASS | ESLint completed with zero errors. |
+| `npm run e2e:sweep` | PASS | Against HTTPS tunnel: owner sign-in, `/hub`, `/hub/loads`, `/hub/money`, `/hub/fleet`, `/hub/ranker`, `/hub/onboarding`, setup pages, `/hub/driver`, `/track/sandbox`, manifest, service worker all returned success. |
 | HTTPS mobile tunnel | PASS | `npm run dev:mobile` created Cloudflare quick tunnel and printed public HTTPS URL. |
 | Tunnel sign-in | PASS | Script smoke signed in with sandbox driver credentials and loaded `/hub/driver`. |
 | PWA manifest/service worker | PASS | `/hub.webmanifest` and `/hub-sw.js` returned HTTP 200 over the HTTPS tunnel. |

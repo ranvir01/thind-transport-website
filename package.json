@@ -17,6 +17,7 @@
     "dev:mobile": "node scripts/dev-mobile.mjs",
     "dev:lan": "node scripts/dev-lan.mjs",
     "deploy:preview": "vercel",
+    "e2e:sweep": "node scripts/e2e-sweep.mjs",
     "test": "vitest run"
   },
   "dependencies": {
