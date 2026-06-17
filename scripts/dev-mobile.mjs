@@ -58,7 +58,7 @@ async function waitForTunnelUrl(child, label) {
     const scan = (chunk) => {
       const text = chunk.toString()
       process.stdout.write(text)
-      const url = text.match(/https:\/\/[^\s|]+/)?.[0]
+      const url = text.match(/https:\/\/[a-z0-9-]+\.trycloudflare\.com|https:\/\/[a-z0-9-]+\.loca\.lt/i)?.[0]
       if (url && !settled) {
         settled = true
         clearTimeout(timer)
