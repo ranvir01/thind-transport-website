@@ -2,6 +2,7 @@ import Link from "next/link"
 import { Plus, Search } from "lucide-react"
 import { listLoads } from "@/lib/hub/loads"
 import { requireOfficeUser } from "@/lib/hub/session"
+import { listCarriers } from "@/lib/hub/settings"
 import { LOAD_STATUSES, STATUS_LABELS, fmtCents, loadTotalCents, type LoadStatus } from "@/lib/hub/types"
 import { Panel, PageHeader, StatusBadge, EmptyState, fieldCls } from "@/components/hub/ui"
 
@@ -16,13 +17,18 @@ export default async function LoadsPage({
   const params = await searchParams
   const status = (params.status as LoadStatus | "active" | "all") || "active"
   const search = params.q?.trim() || undefined
-  const loads = await listLoads(user.carrierId, { status, search })
+  const carrierIds = user.companyScope === "all" ? user.allowedCarrierIds : [user.carrierId]
+  const carriers = await listCarriers(carrierIds)
+  const carrierNameById = new Map(carriers.map((carrier) => [carrier.id, carrier.display_name ?? carrier.name]))
+  const loads = (await Promise.all(carrierIds.map((carrierId) => listLoads(carrierId, { status, search }))))
+    .flat()
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
 
   return (
     <div>
       <PageHeader
         title="Loads"
-        subtitle="Search, filter, and manage every load."
+        subtitle={user.companyScope === "all" ? "All companies loadboard — every row is labeled by company." : "Search, filter, and manage every load."}
         action={
           <Link
             href="/hub/loads/new"
@@ -73,6 +79,7 @@ export default async function LoadsPage({
               <thead>
                 <tr className="border-b border-white/10 text-left text-label text-steel-300 uppercase">
                   <th className="px-4 py-3">Ref</th>
+                  {user.companyScope === "all" ? <th className="px-4 py-3">Company</th> : null}
                   <th className="px-4 py-3">Status</th>
                   <th className="px-4 py-3">Lane</th>
                   <th className="px-4 py-3">Customer</th>
@@ -92,6 +99,9 @@ export default async function LoadsPage({
                         <p className="text-body-xs text-steel-400">{load.customer_reference}</p>
                       ) : null}
                     </td>
+                    {user.companyScope === "all" ? (
+                      <td className="px-4 py-3 text-steel-100">{carrierNameById.get(load.carrier_id) ?? "—"}</td>
+                    ) : null}
                     <td className="px-4 py-3"><StatusBadge status={load.status} /></td>
                     <td className="px-4 py-3 text-steel-100">
                       {load.origin_city ? `${load.origin_city}, ${load.origin_state}` : "—"}
@@ -124,6 +134,11 @@ export default async function LoadsPage({
                     <span className="font-bold text-white">{load.reference}</span>
                     <StatusBadge status={load.status} />
                   </div>
+                  {user.companyScope === "all" ? (
+                    <p className="text-body-xs font-bold uppercase tracking-wide text-gold mt-1">
+                      {carrierNameById.get(load.carrier_id) ?? "Company"}
+                    </p>
+                  ) : null}
                   <p className="text-body-sm text-steel-200 mt-1">
                     {load.origin_city ? `${load.origin_city}, ${load.origin_state}` : "—"}
                     {" → "}
