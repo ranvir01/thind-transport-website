@@ -54,6 +54,9 @@ overdue, failed, or destructive.
 - Sandbox mode is visibly labeled with a `SANDBOX` badge.
 - Money columns and KPI values use tabular/right-aligned formatting where tables
   already existed in the baseline.
+- Fleet map now uses a dependency-free approximate position view instead of a
+  heavy tile-map dependency, keeping the Hub faster on mobile and avoiding API
+  key/vendor coupling until live ELD data is connected.
 - Red/orange buttons are still inherited from the prior Hub visual system; red
   decorative cleanup remains a design-hardening task.
 
