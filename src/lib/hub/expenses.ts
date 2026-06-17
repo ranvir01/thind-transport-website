@@ -1,5 +1,6 @@
-import { query } from "./db"
+import { hubDbAvailable, query } from "./db"
 import { logAudit } from "./audit"
+import { fallbackDrivers, fallbackInvoices, fallbackLoads, fallbackTrucks } from "./sandbox-fallback"
 import type { Expense, ExpenseCategory } from "./types"
 
 export async function listExpenses(carrierId: string, limit = 200): Promise<Expense[]> {
@@ -98,6 +99,7 @@ function toCsv(headers: string[], rows: unknown[][]): string {
 }
 
 export async function exportCsv(carrierId: string, kind: string): Promise<{ filename: string; csv: string }> {
+  if (!hubDbAvailable()) return exportFallbackCsv(carrierId, kind)
   switch (kind) {
     case "invoices": {
       const rows = await query<Record<string, unknown>>(
@@ -207,6 +209,97 @@ export async function exportCsv(carrierId: string, kind: string): Promise<{ file
         ),
       }
     }
+    default:
+      throw new Error(`Unknown export: ${kind}`)
+  }
+}
+
+function exportFallbackCsv(carrierId: string, kind: string): { filename: string; csv: string } {
+  const loads = fallbackLoads(carrierId)
+  const invoices = fallbackInvoices(carrierId)
+  switch (kind) {
+    case "invoices":
+      return {
+        filename: "sandbox-invoices.csv",
+        csv: toCsv(
+          ["InvoiceNo", "Customer", "Load", "InvoiceDate", "DueDate", "Amount", "Status", "Factored"],
+          invoices.map((invoice) => [
+            invoice.number,
+            invoice.customer_name,
+            invoice.load_reference,
+            invoice.issued_on,
+            invoice.due_on,
+            (invoice.amount_cents / 100).toFixed(2),
+            invoice.status,
+            invoice.factored,
+          ])
+        ),
+      }
+    case "payments":
+      return {
+        filename: "sandbox-payments.csv",
+        csv: toCsv(
+          ["InvoiceNo", "PaymentDate", "Amount", "Method", "Reference"],
+          invoices
+            .filter((invoice) => invoice.paid_cents)
+            .map((invoice) => [invoice.number, invoice.issued_on, ((invoice.paid_cents ?? 0) / 100).toFixed(2), "ACH", `SB-PMT-${invoice.number}`])
+        ),
+      }
+    case "expenses":
+      return {
+        filename: "sandbox-expenses.csv",
+        csv: toCsv(
+          ["Date", "Category", "Amount", "Truck", "Driver", "Memo"],
+          fallbackTrucks(carrierId).map((truck, index) => [
+            new Date(Date.now() - index * 86400000).toISOString().slice(0, 10),
+            index % 2 ? "tolls" : "fuel",
+            (index % 2 ? 82.5 : 428.75).toFixed(2),
+            truck.unit_number,
+            truck.driver_name,
+            "Sandbox fallback export row",
+          ])
+        ),
+      }
+    case "settlements":
+      return {
+        filename: "sandbox-settlements.csv",
+        csv: toCsv(
+          ["Driver", "PeriodStart", "PeriodEnd", "Gross", "Deductions", "NetPay", "Status"],
+          fallbackDrivers(carrierId).slice(0, 2).map((driver, index) => [
+            `${driver.first_name} ${driver.last_name}`,
+            new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10),
+            new Date().toISOString().slice(0, 10),
+            (index ? 1482.5 : 4125).toFixed(2),
+            (index ? 150 : 447).toFixed(2),
+            (index ? 1332.5 : 3678).toFixed(2),
+            "draft",
+          ])
+        ),
+      }
+    case "1099": {
+      const year = new Date().getFullYear()
+      return {
+        filename: `sandbox-1099-nec-${year}.csv`,
+        csv: toCsv(
+          ["Payee", "Box1_NonemployeeCompensation", "Year"],
+          fallbackDrivers(carrierId).map((driver, index) => [`${driver.first_name} ${driver.last_name}`, (index % 2 ? 1482.5 : 4125).toFixed(2), year])
+        ),
+      }
+    }
+    case "pnl":
+      return {
+        filename: "sandbox-per-truck-pnl.csv",
+        csv: toCsv(
+          ["Truck", "Revenue", "Fuel", "Maintenance", "OtherExpenses", "Net", "LoadedMiles", "NetPerMile"],
+          fallbackTrucks(carrierId).map((truck, index) => {
+            const revenue = loads.filter((load) => load.truck_unit === truck.unit_number).reduce((sum, load) => sum + load.linehaul_cents + load.fuel_surcharge_cents, 0)
+            const fuel = 80000 + index * 2500
+            const net = revenue - fuel - 25000
+            const miles = 1200 + index * 100
+            return [truck.unit_number, (revenue / 100).toFixed(2), (fuel / 100).toFixed(2), "250.00", "0.00", (net / 100).toFixed(2), miles, (net / 100 / miles).toFixed(2)]
+          })
+        ),
+      }
     default:
       throw new Error(`Unknown export: ${kind}`)
   }
