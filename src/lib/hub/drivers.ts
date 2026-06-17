@@ -88,6 +88,12 @@ export interface DriverWithExpiry extends Driver {
 }
 
 export async function listDriversWithExpiry(carrierId: string): Promise<DriverWithExpiry[]> {
+  if (!hubDbAvailable()) {
+    return fallbackDrivers(carrierId).map((driver) => ({
+      ...driver,
+      soonest_expiry: [driver.cdl_expiry, driver.medical_card_expiry].filter(Boolean).sort()[0] ?? null,
+    }))
+  }
   return query<DriverWithExpiry>(
     `SELECT d.*, LEAST(d.cdl_expiry, d.medical_card_expiry) AS soonest_expiry
      FROM hub.drivers d WHERE d.carrier_id = $1 AND d.deleted_at IS NULL

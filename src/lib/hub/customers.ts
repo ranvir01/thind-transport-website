@@ -1,4 +1,5 @@
-import { query, queryOne } from "./db"
+import { hubDbAvailable, query, queryOne } from "./db"
+import { fallbackCustomers } from "./sandbox-fallback"
 import type { Contact, Customer } from "./types"
 
 export interface CustomerWithStats extends Customer {
@@ -8,6 +9,7 @@ export interface CustomerWithStats extends Customer {
 }
 
 export async function listCustomers(carrierId: string): Promise<CustomerWithStats[]> {
+  if (!hubDbAvailable()) return fallbackCustomers(carrierId)
   return query<CustomerWithStats>(
     `SELECT c.*,
        COUNT(l.id) FILTER (WHERE l.deleted_at IS NULL)::int AS load_count,
@@ -25,6 +27,7 @@ export async function listCustomers(carrierId: string): Promise<CustomerWithStat
 }
 
 export async function getCustomer(carrierId: string, id: string): Promise<Customer | null> {
+  if (!hubDbAvailable()) return fallbackCustomers(carrierId).find((customer) => customer.id === id) ?? null
   return queryOne<Customer>(
     `SELECT * FROM hub.customers WHERE carrier_id = $1 AND id = $2 AND deleted_at IS NULL`,
     [carrierId, id]

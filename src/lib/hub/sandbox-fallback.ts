@@ -1,5 +1,5 @@
 import type { Carrier, CarrierSettings } from "./settings"
-import type { Driver, Invoice, Load, Trailer, Truck } from "./types"
+import type { Customer, Driver, FuelTransaction, Invoice, Load, Trailer, Truck } from "./types"
 import type { DashboardStats, ExpiringItem } from "./loads"
 import type { AgingSummary } from "./invoices"
 import type { AgingBucket } from "./money"
@@ -174,6 +174,36 @@ export function fallbackDrivers(carrierId: string): Driver[] {
   })
 }
 
+export function fallbackCustomers(carrierId: string): (Customer & { load_count: number; total_revenue_cents: string; avg_days_to_pay: string | null })[] {
+  const prefix = carrierId === ATS_SANDBOX_ID ? "ATS" : "TT"
+  const rows = [
+    ["Pacific Crest Logistics", "broker", "784512", null, 30, 2500000, true, "active", 6, 1285000, "18"],
+    ["Cascade Produce Co.", "shipper", null, "444222", 21, 1800000, false, "active", 4, 860000, "14"],
+    ["Northwest Retail Freight", "broker", "912334", null, 30, 3000000, false, "active", 7, 1510000, "23"],
+    ["Mountain West Steel", "shipper", null, "555777", 15, 2200000, true, "active", 3, 1260000, "12"],
+    ["SlowPay Sample Brokerage", "broker", "606060", null, 45, 900000, false, "on_hold", 2, 520000, "58"],
+    ["Blacklisted Sample Loads", "broker", "999001", null, 60, 0, false, "blacklisted", 1, 125000, null],
+  ] as const
+  return rows.map((row, index) => ({
+    id: `${prefix.toLowerCase()}-customer-${index}`,
+    name: row[0],
+    type: row[1],
+    mc_number: row[2],
+    dot_number: row[3],
+    billing_email: `ap+${String(row[0]).toLowerCase().replace(/[^a-z0-9]/g, "")}@example.invalid`,
+    billing_address: `${100 + index} Sample AP Way, Seattle, WA`,
+    phone: `(206) 555-1${String(index).padStart(3, "0")}`,
+    payment_terms_days: row[4],
+    credit_limit_cents: row[5],
+    factored: row[6],
+    status: row[7],
+    notes: row[7] === "blacklisted" ? "Sandbox blacklist example." : row[7] === "on_hold" ? "Sandbox slow payer example." : "Sandbox customer.",
+    load_count: row[8],
+    total_revenue_cents: String(row[9]),
+    avg_days_to_pay: row[10],
+  }))
+}
+
 export function fallbackTrucks(carrierId: string): Truck[] {
   const prefix = carrierId === ATS_SANDBOX_ID ? "ATS" : "TT"
   return [
@@ -218,6 +248,88 @@ export function fallbackTrailers(carrierId: string): Trailer[] {
     inspection_due: isoDate(35 + index * 18),
     notes: "Sandbox fallback trailer.",
   }))
+}
+
+export function fallbackFuelTransactions(carrierId: string): FuelTransaction[] {
+  const trucks = fallbackTrucks(carrierId)
+  const drivers = fallbackDrivers(carrierId)
+  return trucks.flatMap((truck, index) => {
+    const gallons = 92.5 + index * 9
+    const unit = 439 + index * 3
+    return [
+      {
+        id: `${truck.id}-fuel-1`,
+        source: "sandbox",
+        external_id: `${truck.id}-EFS-1`,
+        card_program: index % 2 ? "Comdata Sample" : "EFS Sample",
+        truck_id: truck.id,
+        driver_id: drivers[index % drivers.length]?.id ?? null,
+        ts: new Date(Date.now() - index * 86400000).toISOString(),
+        merchant: "Pacific Pride Sample",
+        city: index % 2 ? "Portland" : "Boise",
+        jurisdiction: index % 2 ? "OR" : "ID",
+        gallons: gallons.toFixed(3),
+        fuel_type: "diesel",
+        unit_price_cents: unit,
+        total_cents: Math.round(gallons * unit),
+        odometer: String((truck.current_odometer ?? 180000) + index * 450),
+        truck_unit: truck.unit_number,
+        driver_name: drivers[index % drivers.length] ? `${drivers[index % drivers.length].first_name} ${drivers[index % drivers.length].last_name}` : null,
+      },
+      {
+        id: `${truck.id}-fuel-2`,
+        source: "sandbox",
+        external_id: `${truck.id}-EFS-2`,
+        card_program: "WEX Sample",
+        truck_id: truck.id,
+        driver_id: drivers[index % drivers.length]?.id ?? null,
+        ts: new Date(Date.now() - (index + 4) * 86400000).toISOString(),
+        merchant: "Love's Sample",
+        city: index % 2 ? "Reno" : "Yakima",
+        jurisdiction: index % 2 ? "NV" : "WA",
+        gallons: (78.2 + index * 5).toFixed(3),
+        fuel_type: "diesel",
+        unit_price_cents: 421 + index * 2,
+        total_cents: Math.round((78.2 + index * 5) * (421 + index * 2)),
+        odometer: String((truck.current_odometer ?? 180000) + index * 850),
+        truck_unit: truck.unit_number,
+        driver_name: drivers[index % drivers.length] ? `${drivers[index % drivers.length].first_name} ${drivers[index % drivers.length].last_name}` : null,
+      },
+    ]
+  })
+}
+
+export function fallbackComplianceEntries(carrierId: string) {
+  const drivers = fallbackDrivers(carrierId)
+  const trucks = fallbackTrucks(carrierId)
+  return [
+    ...drivers.flatMap((driver) => [
+      {
+        entity: "driver" as const,
+        entityId: driver.id,
+        name: `${driver.first_name} ${driver.last_name}`,
+        kind: "CDL",
+        due: driver.cdl_expiry,
+        color: new Date(driver.cdl_expiry ?? "") < new Date() ? "red" as const : "green" as const,
+        href: `/hub/drivers/${driver.id}`,
+      },
+      {
+        entity: "driver" as const,
+        entityId: driver.id,
+        name: `${driver.first_name} ${driver.last_name}`,
+        kind: "Medical card",
+        due: driver.medical_card_expiry,
+        color: new Date(driver.medical_card_expiry ?? "") < new Date() ? "red" as const : new Date(driver.medical_card_expiry ?? "").getTime() - Date.now() < 30 * 86400000 ? "amber" as const : "green" as const,
+        href: `/hub/drivers/${driver.id}`,
+      },
+    ]),
+    ...trucks.flatMap((truck) => [
+      { entity: "truck" as const, entityId: truck.id, name: `Truck #${truck.unit_number}`, kind: "Registration", due: truck.registration_expiry, color: "green" as const, href: `/hub/fleet/trucks/${truck.id}` },
+      { entity: "truck" as const, entityId: truck.id, name: `Truck #${truck.unit_number}`, kind: "Annual inspection (396.17)", due: truck.inspection_due, color: "amber" as const, href: `/hub/fleet/trucks/${truck.id}` },
+    ]),
+    { entity: "company" as const, entityId: null, name: "Company", kind: "COI", due: isoDate(21), color: "amber" as const, href: "/hub/compliance", manualItemId: "fallback-coi" },
+    { entity: "company" as const, entityId: null, name: "Company", kind: "UCR", due: isoDate(120), color: "green" as const, href: "/hub/compliance", manualItemId: "fallback-ucr" },
+  ]
 }
 
 export function fallbackInvoices(carrierId: string): Invoice[] {

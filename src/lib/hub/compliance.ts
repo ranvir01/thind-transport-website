@@ -1,4 +1,5 @@
-import { query } from "./db"
+import { hubDbAvailable, query } from "./db"
+import { fallbackComplianceEntries } from "./sandbox-fallback"
 
 export type ComplianceColor = "red" | "amber" | "green"
 
@@ -26,6 +27,7 @@ function colorFor(due: string | null, now: Date): ComplianceColor {
  * maintenance due) + manual company items (IFTA decals, 2290, UCR, BOC-3…).
  */
 export async function complianceEntries(carrierId: string): Promise<ComplianceEntry[]> {
+  if (!hubDbAvailable()) return fallbackComplianceEntries(carrierId)
   const now = new Date()
   const entries: ComplianceEntry[] = []
 

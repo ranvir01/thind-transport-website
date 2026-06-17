@@ -131,6 +131,9 @@ export interface Truck {
   insurance_expiry: string | null
   assigned_driver_id: string | null
   tank_capacity_gallons: number | null
+  current_odometer?: number | null
+  eld_device_id?: string | null
+  fuel_card_last4?: string | null
   driver_name?: string | null
   notes: string | null
 }
