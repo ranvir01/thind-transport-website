@@ -21,7 +21,7 @@ export function loadEnvLocal() {
 export async function connect() {
   loadEnvLocal()
   const url = process.env.POSTGRES_URL
-  if (!url) throw new Error("POSTGRES_URL is required. Run this against your local/dev Postgres, never production go-live data.")
+  if (!url) return null
   const ssl = /localhost|127\.0\.0\.1/.test(url) ? undefined : { rejectUnauthorized: false }
   const client = new pg.Client({ connectionString: url, ssl })
   await client.connect()
@@ -85,6 +85,10 @@ export async function resetSandbox(client) {
 
 async function main() {
   const client = await connect()
+  if (!client) {
+    console.log("POSTGRES_URL is not set. No database sandbox rows exist; built-in no-DB fallback data remains available.")
+    return
+  }
   try {
     await resetSandbox(client)
     console.log("✓ Sandbox reset complete. Production carriers/data were not touched.")

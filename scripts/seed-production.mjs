@@ -16,6 +16,9 @@ async function main() {
   }
 
   const client = await connect()
+  if (!client) {
+    throw new Error("POSTGRES_URL is required for production seed. Built-in fallback is sandbox-only and never writes go-live records.")
+  }
   const q = (text, params = []) => client.query(text, params)
   try {
     await q("BEGIN")

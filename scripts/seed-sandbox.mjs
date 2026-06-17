@@ -497,6 +497,17 @@ async function seedCarrier(q, carrier) {
 
 async function main() {
   const client = await connect()
+  if (!client) {
+    console.log("\nPOSTGRES_URL is not set, so no database seed was written.")
+    console.log("HaulDesk will use the built-in no-database SANDBOX fallback dataset for immediate iPhone testing.")
+    console.log("\nSANDBOX ONLY logins:")
+    console.log(`  Owner:      ${OWNER_EMAIL} / ${OWNER_PASSWORD}`)
+    console.log(`  Dispatcher: ${DISPATCH_EMAIL} / ${DISPATCH_PASSWORD}`)
+    console.log(`  Driver PWA: ${DRIVER_EMAIL} / ${DRIVER_PASSWORD}`)
+    console.log("\nNext:")
+    console.log("  npm run dev:mobile\n")
+    return
+  }
   const q = (text, params = []) => client.query(text, params)
   try {
     await resetSandbox(client)
