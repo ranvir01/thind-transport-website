@@ -31,6 +31,7 @@ const publicPaths = [
   "/hub/driver/documents",
   "/hub/driver/pay",
   "/hub/driver/more",
+  "/hub/driver/offline",
   "/track/sandbox",
   "/hub.webmanifest",
   "/hub-sw.js",
