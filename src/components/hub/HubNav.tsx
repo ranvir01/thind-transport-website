@@ -32,6 +32,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: "/hub/reports", label: "Reports", icon: BarChart3 },
   { href: "/hub/ranker", label: "Ranker", icon: Gauge },
   { href: "/hub/import", label: "Import", icon: Upload },
+  { href: "/hub/settings/appearance", label: "Appearance", icon: Settings },
   { href: "/hub/settings/users", label: "Users", icon: Settings, ownerOnly: true },
 ]
 

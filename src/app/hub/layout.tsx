@@ -19,5 +19,22 @@ export const viewport: Viewport = {
 }
 
 export default function HubLayout({ children }: { children: React.ReactNode }) {
-  return <SessionProvider>{children}</SessionProvider>
+  const themeScript = `
+    (() => {
+      try {
+        const accent = localStorage.getItem("hauldesk-accent") || "graphite";
+        const mode = localStorage.getItem("hauldesk-mode") || "system";
+        const dark = mode === "dark" || (mode === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches);
+        document.documentElement.dataset.hauldeskAccent = accent;
+        document.documentElement.dataset.hauldeskMode = mode;
+        document.documentElement.classList.toggle("hauldesk-dark", dark);
+      } catch {}
+    })();
+  `
+  return (
+    <SessionProvider>
+      <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+      {children}
+    </SessionProvider>
+  )
 }
