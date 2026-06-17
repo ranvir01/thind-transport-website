@@ -44,6 +44,7 @@ const publicPaths = [
 ]
 
 const exportKinds = ["invoices", "payments", "expenses", "settlements", "1099", "pnl"]
+const importTemplates = ["loadboard.csv", "drivers.csv", "fuel.csv"]
 
 function cookieHeader(cookies) {
   return cookies.map((cookie) => cookie.split(";")[0]).filter(Boolean).join("; ")
@@ -109,6 +110,13 @@ async function main() {
     const csv = await res.text()
     if (!csv.includes(",")) throw new Error(`Export ${kind} did not look like CSV`)
     console.log(`✓ export ${kind}`)
+  }
+
+  for (const file of importTemplates) {
+    const res = await expectOk(`/api/hub/import-template/${file}`, { headers: { cookie } })
+    const csv = await res.text()
+    if (!csv.includes(",")) throw new Error(`Template ${file} did not look like CSV`)
+    console.log(`✓ template ${file}`)
   }
 
   console.log("Sweep complete.")
