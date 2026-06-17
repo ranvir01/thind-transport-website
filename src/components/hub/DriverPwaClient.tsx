@@ -5,12 +5,11 @@ import { Camera, CheckCircle2, RotateCcw, UploadCloud } from "lucide-react"
 
 export function DriverPwaClient() {
   const videoRef = useRef<HTMLVideoElement>(null)
-  const [secure, setSecure] = useState(false)
+  const [secure] = useState(() => typeof window !== "undefined" && window.isSecureContext)
   const [cameraState, setCameraState] = useState<"idle" | "ready" | "saved" | "error">("idle")
   const [message, setMessage] = useState("Camera is ready on HTTPS tunnel or Vercel preview.")
 
   useEffect(() => {
-    setSecure(window.isSecureContext)
     if ("serviceWorker" in navigator && window.isSecureContext) {
       navigator.serviceWorker.register("/hub-sw.js").catch(() => {
         // The page still works; install prompt may be unavailable until SW registers.
