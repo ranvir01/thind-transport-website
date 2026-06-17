@@ -28,6 +28,33 @@ export function invoiceTotalCents(inputs: InvoiceInputs): number {
   )
 }
 
+// ---- Factoring expected net ----
+
+export interface FactoringInputs {
+  grossCents: number
+  feeBps?: number | null
+  reserveBps?: number | null
+}
+
+export interface FactoringNet {
+  grossCents: number
+  feeCents: number
+  reserveCents: number
+  expectedNetCents: number
+}
+
+/** Compute factoring fee/reserve in integer cents from basis points. */
+export function factoringNetCents(inputs: FactoringInputs): FactoringNet {
+  const feeCents = roundHalfAwayFromZero(inputs.grossCents * ((inputs.feeBps ?? 0) / 10000))
+  const reserveCents = roundHalfAwayFromZero(inputs.grossCents * ((inputs.reserveBps ?? 0) / 10000))
+  return {
+    grossCents: inputs.grossCents,
+    feeCents,
+    reserveCents,
+    expectedNetCents: inputs.grossCents - feeCents - reserveCents,
+  }
+}
+
 // ---- AR aging ----
 
 export type AgingBucket = "current" | "1-30" | "31-60" | "61-90" | "90+"

@@ -344,6 +344,9 @@ export interface Invoice {
   status: InvoiceStatus
   factored: boolean
   remit_to: string | null
+  factoring_fee_cents?: number | null
+  factoring_reserve_cents?: number | null
+  expected_net_cents?: number | null
   pdf_url: string | null
   sent_log: { to: string; at: string; kind: string }[]
   customer_name?: string

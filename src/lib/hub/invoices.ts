@@ -6,7 +6,7 @@ import { getLoad, getLoadStops, changeLoadStatus } from "./loads"
 import { getCustomer } from "./customers"
 import { listDocuments, storeGeneratedPdf } from "./documents"
 import { buildInvoicePdf } from "./pdf"
-import { invoiceTotalCents, agingBucket, type AgingBucket } from "./money"
+import { invoiceTotalCents, agingBucket, factoringNetCents, type AgingBucket } from "./money"
 import { logAudit } from "./audit"
 import { createMailTransport, mailFrom } from "@/lib/mailer"
 import { loadTotalCents, type Invoice } from "./types"
@@ -91,6 +91,13 @@ export async function createInvoiceFromLoad(
   const dueOn = dueDate.toISOString().slice(0, 10)
 
   const factored = load.factored || customer.factored
+  const factoring = factored
+    ? factoringNetCents({
+        grossCents: amountCents,
+        feeBps: settings.factoring.feeBps,
+        reserveBps: settings.factoring.reserveBps,
+      })
+    : factoringNetCents({ grossCents: amountCents })
   const remitTo = factored && settings.factoring.remitName
     ? `${settings.factoring.remitName}\n${settings.factoring.remitAddress ?? ""}`.trim()
     : `${carrier.name}\n${carrier.address ?? ""}`.trim()
@@ -119,9 +126,27 @@ export async function createInvoiceFromLoad(
   const pdfUrl = await storeGeneratedPdf(`${number}.pdf`, pdfBytes)
 
   const rows = await query<Invoice>(
-    `INSERT INTO hub.invoices (carrier_id, number, customer_id, load_id, amount_cents, issued_on, due_on, status, factored, remit_to, pdf_url)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,'draft',$8,$9,$10) RETURNING *`,
-    [carrierId, number, customer.id, loadId, amountCents, issuedOn, dueOn, factored, remitTo, pdfUrl]
+    `INSERT INTO hub.invoices (
+       carrier_id, number, customer_id, load_id, amount_cents, issued_on, due_on,
+       status, factored, remit_to, pdf_url, factoring_fee_cents,
+       factoring_reserve_cents, expected_net_cents
+     )
+     VALUES ($1,$2,$3,$4,$5,$6,$7,'draft',$8,$9,$10,$11,$12,$13) RETURNING *`,
+    [
+      carrierId,
+      number,
+      customer.id,
+      loadId,
+      amountCents,
+      issuedOn,
+      dueOn,
+      factored,
+      remitTo,
+      pdfUrl,
+      factoring.feeCents,
+      factoring.reserveCents,
+      factoring.expectedNetCents,
+    ]
   )
   const invoice = rows[0]
 

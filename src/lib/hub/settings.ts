@@ -9,7 +9,14 @@ export interface CarrierSettings {
   costPerMileCents: number
   fsc: { baseCentsPerGallon: number; mpg: number }
   randomTesting: { drugPct: number; alcoholPct: number }
-  factoring: { company: string | null; remitName: string | null; remitAddress: string | null; email: string | null }
+  factoring: {
+    company: string | null
+    remitName: string | null
+    remitAddress: string | null
+    email: string | null
+    feeBps?: number | null
+    reserveBps?: number | null
+  }
   notifications: { officeEmail: string | null }
 }
 
