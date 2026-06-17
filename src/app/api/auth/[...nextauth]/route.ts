@@ -5,6 +5,32 @@ import bcrypt from "bcrypt"
 import { findDriverByEmail } from "@/lib/driver-db"
 import { findHubUserByEmail } from "@/lib/hub/users"
 
+const SANDBOX_AUTH = [
+  {
+    email: "owner@sandbox.hauldesk.local",
+    password: "SandboxOwner1!",
+    name: "Sandbox Owner",
+    role: "owner",
+  },
+  {
+    email: "dispatch@sandbox.hauldesk.local",
+    password: "SandboxDispatch1!",
+    name: "Sandbox Dispatcher",
+    role: "dispatcher",
+  },
+  {
+    email: "driver@sandbox.hauldesk.local",
+    password: "SandboxDriver1!",
+    name: "Sandbox Driver",
+    role: "driver",
+  },
+] as const
+
+const SANDBOX_CARRIER_IDS = [
+  "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+  "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
+]
+
 export const authConfig = {
   trustHost: true, // Required for Vercel production deployments
   providers: [
@@ -40,6 +66,33 @@ export const authConfig = {
             carrierId: string | null
             allowedCarrierIds: string[]
             dataMode: string
+          }
+        }
+
+        // Mobile tunnel smoke can run before a local Postgres is configured.
+        // Real sandbox records still come from npm run seed:sandbox when
+        // POSTGRES_URL exists; this fallback only unlocks /hub/driver PWA
+        // camera/service-worker verification in local HTTPS dev.
+        if (!process.env.POSTGRES_URL) {
+          const sandbox = SANDBOX_AUTH.find((entry) => entry.email === String(credentials.email).toLowerCase())
+          if (sandbox && credentials.password === sandbox.password) {
+            return {
+              id: `local-${sandbox.role}`,
+              email: sandbox.email,
+              name: sandbox.name,
+              role: sandbox.role,
+              carrierId: SANDBOX_CARRIER_IDS[0],
+              allowedCarrierIds: SANDBOX_CARRIER_IDS,
+              dataMode: "sandbox",
+            } as {
+              id: string
+              email: string
+              name: string
+              role: string
+              carrierId: string
+              allowedCarrierIds: string[]
+              dataMode: string
+            }
           }
         }
 

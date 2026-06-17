@@ -9,8 +9,8 @@ import { spawn, spawnSync } from "node:child_process"
 import { networkInterfaces } from "node:os"
 
 const PORT = process.env.PORT || "3000"
-const SANDBOX_EMAIL = process.env.SANDBOX_SMOKE_EMAIL || "owner@sandbox.hauldesk.local"
-const SANDBOX_PASSWORD = process.env.SANDBOX_SMOKE_PASSWORD || "SandboxOwner1!"
+const SANDBOX_EMAIL = process.env.SANDBOX_SMOKE_EMAIL || "driver@sandbox.hauldesk.local"
+const SANDBOX_PASSWORD = process.env.SANDBOX_SMOKE_PASSWORD || "SandboxDriver1!"
 
 const children = new Set()
 
@@ -105,7 +105,7 @@ async function smokeSignIn(baseUrl) {
     email: SANDBOX_EMAIL,
     password: SANDBOX_PASSWORD,
     csrfToken: csrf.csrfToken,
-    callbackUrl: `${baseUrl}/hub`,
+    callbackUrl: `${baseUrl}/hub/driver`,
     json: "true",
   })
 
@@ -121,7 +121,7 @@ async function smokeSignIn(baseUrl) {
 
   const loginCookies = loginRes.headers.getSetCookie?.() ?? []
   const sessionCookie = cookieHeaderFrom([...setCookie, ...loginCookies])
-  const hubRes = await fetch(`${baseUrl}/hub`, {
+  const hubRes = await fetch(`${baseUrl}/hub/driver`, {
     headers: { cookie: sessionCookie },
     redirect: "manual",
   })
@@ -177,11 +177,11 @@ async function main() {
 
   try {
     await smokeSignIn(publicUrl)
-    console.log("\n✅ Tunnel sign-in smoke passed with sandbox owner credentials.")
+    console.log("\n✅ Tunnel sign-in smoke passed with sandbox driver credentials and /hub/driver loaded.")
   } catch (error) {
     console.log("\n⚠️  Tunnel is up, but sandbox sign-in smoke did not pass.")
     console.log(`   ${error instanceof Error ? error.message : String(error)}`)
-    console.log("   Run `npm run db:migrate && npm run seed:sandbox`, then restart `npm run dev:mobile`.")
+    console.log("   Run `npm run db:migrate && npm run seed:sandbox`, then restart `npm run dev:mobile` for full office data.")
   }
 
   const lan = firstLanAddress()
@@ -189,6 +189,9 @@ async function main() {
   console.log("📱 OPEN THIS HTTPS URL ON YOUR IPHONE SAFARI")
   console.log(`\n   ${publicUrl}\n`)
   console.log("Sandbox owner login:")
+  console.log("   owner@sandbox.hauldesk.local")
+  console.log("   SandboxOwner1!")
+  console.log("Sandbox driver PWA login:")
   console.log(`   ${SANDBOX_EMAIL}`)
   console.log(`   ${SANDBOX_PASSWORD}`)
   console.log("\nQuick-tunnel URLs change every run. Use Vercel preview for a stable repeated-test URL.")
