@@ -4,6 +4,7 @@ import { complianceEntries } from "@/lib/hub/compliance"
 import { runOverdueReminders } from "@/lib/hub/invoices"
 import { getCarrierSettings } from "@/lib/hub/settings"
 import { createMailTransport, mailFrom } from "@/lib/mailer"
+import { cronAuthorized } from "@/lib/hub/cron-auth"
 
 /**
  * Vercel Cron entrypoints (secret-protected):
@@ -17,7 +18,7 @@ export async function GET(
 ) {
   const secret = process.env.CRON_SECRET
   const auth = req.headers.get("authorization")
-  if (!secret || auth !== `Bearer ${secret}`) {
+  if (!cronAuthorized(auth, secret)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
   const { job } = await params
