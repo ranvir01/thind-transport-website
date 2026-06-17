@@ -107,6 +107,8 @@ export interface HubUser {
   name: string
   role: HubRole
   carrier_id: string | null
+  allowed_carrier_ids?: string[] | null
+  data_mode?: "production" | "sandbox"
   phone: string | null
   customer_id: string | null
   driver_id: string | null

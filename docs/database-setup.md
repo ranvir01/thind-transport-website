@@ -82,10 +82,9 @@ If tables don't create automatically:
 
 ## 🔄 Migration from Old System
 
-The setup script automatically migrates your existing account:
-- **Email:** `rjkind01@gmail.com`
-- **Name:** Ranvir Thind
-- **Status:** Ready to login
+The setup script prepares the driver-account tables. Existing accounts can be
+migrated separately if needed; do not put private driver emails or passwords in
+the repository.
 
 All future registrations will be saved to Postgres automatically.
 
@@ -97,7 +96,7 @@ After setup, test the full flow:
 
 1. **Your existing account:**
    - Go to: https://thindtransport.com/driver/login
-   - Login with: `rjkind01@gmail.com`
+   - Login with your driver portal email
    - Should work immediately ✅
 
 2. **New registration:**

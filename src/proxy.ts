@@ -43,7 +43,7 @@ export default async function proxy(request: NextRequest) {
     // Driver/broker/shipper experiences arrive in later phases — keep them in
     // their own area instead of the office screens.
     const officeRoles = ["owner", "dispatcher", "accountant"]
-    if (!officeRoles.includes(role) && !pathname.startsWith("/hub/welcome")) {
+    if (!officeRoles.includes(role) && !pathname.startsWith("/hub/welcome") && !pathname.startsWith("/hub/driver")) {
       return NextResponse.redirect(new URL("/hub/welcome", request.url))
     }
   }

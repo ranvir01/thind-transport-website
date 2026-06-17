@@ -42,10 +42,10 @@ Make sure these are set for **Production** environment:
 SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
 SMTP_USER=thindcarrier@gmail.com
-SMTP_PASS=ctcuolcpwdzkqibm
+SMTP_PASS=your-gmail-app-password
 SMTP_FROM=Thind Transport <noreply@thindtransport.com>
 NEXTAUTH_URL=https://thindtransport.com
-NEXTAUTH_SECRET=eCPX8pZGqJ7vR4mN2wL9sF6hK3tY5jU8aB1cD2eF3gH4
+NEXTAUTH_SECRET=generate-with-openssl-rand-base64-32
 ```
 
 ---
@@ -73,7 +73,7 @@ If the URL doesn't match the domain you're accessing, authentication will fail s
 ## Testing
 
 **Credentials:**
-- Email: `rjkind01@gmail.com`
+- Email: your driver portal email
 - Password: (your password)
 
 **Expected Flow:**

@@ -26,16 +26,30 @@ export const DEFAULT_SETTINGS: CarrierSettings = {
 export interface Carrier {
   id: string
   name: string
+  legal_name: string | null
+  display_name: string | null
   dot_number: string | null
   mc_number: string | null
   phone: string | null
   email: string | null
   address: string | null
+  environment: "production" | "sandbox"
+  invoice_prefix: string | null
+  logo_url: string | null
+  remit_to: string | null
   status: "active" | "suspended"
 }
 
 export async function getCarrier(carrierId: string): Promise<Carrier | null> {
   return queryOne<Carrier>(`SELECT * FROM hub.carriers WHERE id = $1`, [carrierId])
+}
+
+export async function listCarriers(carrierIds: string[]): Promise<Carrier[]> {
+  if (carrierIds.length === 0) return []
+  return query<Carrier>(
+    `SELECT * FROM hub.carriers WHERE id = ANY($1::uuid[]) ORDER BY environment DESC, display_name NULLS LAST, name`,
+    [carrierIds]
+  )
 }
 
 export async function getCarrierSettings(carrierId: string): Promise<CarrierSettings> {

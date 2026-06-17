@@ -9,11 +9,41 @@ export const dynamic = "force-dynamic"
 
 export default async function HubDashboardPage() {
   const user = await requireOfficeUser()
-  const [stats, expiring, recentLoads] = await Promise.all([
-    getDashboardStats(user.carrierId),
-    listExpiringItems(user.carrierId, 60),
-    listLoads(user.carrierId, { status: "active" }),
-  ])
+  const carrierIds = user.companyScope === "all" ? user.allowedCarrierIds : [user.carrierId]
+  const dashboards = await Promise.all(
+    carrierIds.map(async (carrierId) => ({
+      carrierId,
+      stats: await getDashboardStats(carrierId),
+      expiring: await listExpiringItems(carrierId, 60),
+      loads: await listLoads(carrierId, { status: "active" }),
+    }))
+  )
+  const stats = dashboards.reduce(
+    (acc, item) => ({
+      active_loads: acc.active_loads + Number(item.stats.active_loads),
+      in_transit: acc.in_transit + Number(item.stats.in_transit),
+      awaiting_pod: acc.awaiting_pod + Number(item.stats.awaiting_pod),
+      drivers_active: acc.drivers_active + Number(item.stats.drivers_active),
+      revenue_week_cents: acc.revenue_week_cents + Number(item.stats.revenue_week_cents),
+      revenue_month_cents: acc.revenue_month_cents + Number(item.stats.revenue_month_cents),
+      ar_open_cents: acc.ar_open_cents + Number(item.stats.ar_open_cents),
+      settlement_due_cents: acc.settlement_due_cents + Number(item.stats.settlement_due_cents),
+    }),
+    {
+      active_loads: 0,
+      in_transit: 0,
+      awaiting_pod: 0,
+      drivers_active: 0,
+      revenue_week_cents: 0,
+      revenue_month_cents: 0,
+      ar_open_cents: 0,
+      settlement_due_cents: 0,
+    }
+  )
+  const expiring = dashboards.flatMap((item) => item.expiring).slice(0, 10)
+  const recentLoads = dashboards
+    .flatMap((item) => item.loads)
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
 
   const kpis = [
     { label: "Active loads", value: stats.active_loads, icon: Package, href: "/hub/dispatch" },
@@ -26,7 +56,7 @@ export default async function HubDashboardPage() {
     <div>
       <PageHeader
         title={`Good ${new Date().getHours() < 12 ? "morning" : new Date().getHours() < 17 ? "afternoon" : "evening"}, ${user.name.split(" ")[0]}`}
-        subtitle="Here's where the fleet stands right now."
+        subtitle={user.companyScope === "all" ? "All companies overview — Thind and ATS together." : "Here's where the fleet stands right now."}
       />
 
       {/* KPI cards */}
