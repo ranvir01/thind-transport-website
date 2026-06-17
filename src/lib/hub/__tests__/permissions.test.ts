@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { can, rolesAllowed, type HubAction } from "../permissions"
+import { can, isWriteAction, rolesAllowed, type HubAction } from "../permissions"
 import { HUB_ROLES } from "../types"
 
 const ALL_ACTIONS: HubAction[] = [
@@ -58,6 +58,15 @@ describe("role × resource matrix", () => {
       for (const action of ALL_ACTIONS) {
         expect(typeof can(role, action)).toBe("boolean")
       }
+    }
+  })
+
+  it("classifies all-company-safe reads vs mutations", () => {
+    for (const action of ["loads:read", "fleet:read", "drivers:read", "customers:read", "documents:read", "money:read", "fuel:read", "compliance:read"] as HubAction[]) {
+      expect(isWriteAction(action), `${action} should be all-company readable`).toBe(false)
+    }
+    for (const action of ["loads:write", "loads:status", "money:approve", "imports:run", "users:manage", "settings:manage"] as HubAction[]) {
+      expect(isWriteAction(action), `${action} must select one company before mutating`).toBe(true)
     }
   })
 })

@@ -2,7 +2,7 @@ import { redirect } from "next/navigation"
 import { cookies } from "next/headers"
 import { auth } from "@/lib/auth"
 import { OFFICE_ROLES, type HubRole } from "./types"
-import { can, type HubAction } from "./permissions"
+import { can, isWriteAction, type HubAction } from "./permissions"
 
 export interface HubSessionUser {
   id: string
@@ -74,6 +74,9 @@ export async function requirePermission(action: HubAction): Promise<HubSessionUs
   const user = await getHubUser()
   if (!user) throw new Error("Not signed in")
   if (!can(user.role, action)) throw new Error(`Forbidden: ${user.role} cannot ${action}`)
+  if (user.companyScope === "all" && isWriteAction(action)) {
+    throw new Error("Select Thind or ATS before changing data. All-companies mode is read-only.")
+  }
   return user
 }
 
@@ -85,5 +88,6 @@ export async function requirePermissionPage(action: HubAction): Promise<HubSessi
     if (!OFFICE_ROLES.includes(user.role)) redirect("/hub/welcome")
     redirect("/hub")
   }
+  if (user.companyScope === "all" && isWriteAction(action)) redirect("/hub")
   return user
 }
