@@ -40,6 +40,10 @@ function hasCommand(command) {
   return spawnSync("bash", ["-lc", `command -v ${command}`], { stdio: "ignore" }).status === 0
 }
 
+function hasNpxCloudflared() {
+  return spawnSync("npx", ["--yes", "cloudflared", "--version"], { stdio: "ignore" }).status === 0
+}
+
 function wait(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
@@ -146,15 +150,27 @@ async function main() {
   console.log("\n🚚 HaulDesk iPhone HTTPS dev tunnel\n")
   console.log("Starting tunnel first so NextAuth/server actions can trust the generated host…\n")
 
-  const useCloudflared = hasCommand("cloudflared")
-  const tunnel = useCloudflared
+  const useInstalledCloudflared = hasCommand("cloudflared")
+  const useNpxCloudflared = !useInstalledCloudflared && hasNpxCloudflared()
+  const tunnel = useInstalledCloudflared
     ? spawnTracked("cloudflared", ["tunnel", "--url", `http://localhost:${PORT}`])
-    : spawnTracked("npx", ["--yes", "localtunnel", "--port", PORT])
+    : useNpxCloudflared
+      ? spawnTracked("npx", ["--yes", "cloudflared", "tunnel", "--url", `http://localhost:${PORT}`])
+      : spawnTracked("npx", ["--yes", "localtunnel", "--port", PORT])
 
-  const publicUrl = await waitForTunnelUrl(tunnel, useCloudflared ? "cloudflared" : "localtunnel")
+  const tunnelLabel = useInstalledCloudflared || useNpxCloudflared ? "cloudflared" : "localtunnel"
+  const publicUrl = await waitForTunnelUrl(tunnel, tunnelLabel)
   const host = new URL(publicUrl).host
 
   console.log(`\nTunnel URL captured: ${publicUrl}\n`)
+  if (tunnelLabel === "localtunnel") {
+    try {
+      const password = await fetch("https://loca.lt/mytunnelpassword").then((res) => res.text())
+      console.log(`Localtunnel gateway password/IP: ${password.trim()}`)
+    } catch {
+      console.log("Localtunnel may ask for the VM public IP as a gateway password.")
+    }
+  }
   console.log("Starting Next.js with tunnel-safe auth/action origins…\n")
 
   const next = spawnTracked("npx", ["next", "dev", "-H", "0.0.0.0", "-p", PORT], {
