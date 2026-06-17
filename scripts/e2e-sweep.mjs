@@ -31,6 +31,8 @@ const publicPaths = [
   "/hub-sw.js",
 ]
 
+const exportKinds = ["invoices", "payments", "expenses", "settlements", "1099", "pnl"]
+
 function cookieHeader(cookies) {
   return cookies.map((cookie) => cookie.split(";")[0]).filter(Boolean).join("; ")
 }
@@ -86,6 +88,13 @@ async function main() {
   for (const path of publicPaths.filter((path) => path !== "/hub/driver")) {
     await expectOk(path)
     console.log(`✓ ${path}`)
+  }
+
+  for (const kind of exportKinds) {
+    const res = await expectOk(`/api/hub/exports/${kind}`, { headers: { cookie } })
+    const csv = await res.text()
+    if (!csv.includes(",")) throw new Error(`Export ${kind} did not look like CSV`)
+    console.log(`✓ export ${kind}`)
   }
 
   console.log("Sweep complete.")
