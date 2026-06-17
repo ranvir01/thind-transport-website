@@ -2,6 +2,7 @@ import Link from "next/link"
 import { redirect } from "next/navigation"
 import { getHubUser } from "@/lib/hub/session"
 import { DriverPwaClient } from "@/components/hub/DriverPwaClient"
+import { DriverBottomTabs } from "@/components/hub/DriverBottomTabs"
 
 export const dynamic = "force-dynamic"
 
@@ -45,14 +46,7 @@ export default async function HubDriverPage() {
         <DriverPwaClient />
       </div>
 
-      <nav className="fixed inset-x-0 bottom-0 border-t border-white/10 bg-navy-900/95 pb-[env(safe-area-inset-bottom)]">
-        <div className="mx-auto grid max-w-[430px] grid-cols-4 text-center text-[11px] font-black uppercase tracking-wide text-steel-200">
-          <span className="py-4 text-gold">Load</span>
-          <span className="py-4">Docs</span>
-          <span className="py-4">Pay</span>
-          <span className="py-4">More</span>
-        </div>
-      </nav>
+      <DriverBottomTabs />
     </main>
   )
 }

@@ -26,6 +26,9 @@ const officePaths = [
 
 const publicPaths = [
   "/hub/driver",
+  "/hub/driver/documents",
+  "/hub/driver/pay",
+  "/hub/driver/more",
   "/track/sandbox",
   "/hub.webmanifest",
   "/hub-sw.js",
@@ -82,10 +85,12 @@ async function main() {
   }
 
   const driverCookie = await signInDriver()
-  await expectOk("/hub/driver", { headers: { cookie: driverCookie } })
-  console.log("✓ /hub/driver")
+  for (const path of publicPaths.filter((path) => path.startsWith("/hub/driver"))) {
+    await expectOk(path, { headers: { cookie: driverCookie } })
+    console.log(`✓ ${path}`)
+  }
 
-  for (const path of publicPaths.filter((path) => path !== "/hub/driver")) {
+  for (const path of publicPaths.filter((path) => !path.startsWith("/hub/driver"))) {
     await expectOk(path)
     console.log(`✓ ${path}`)
   }
