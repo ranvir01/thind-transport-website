@@ -7,7 +7,7 @@ entered.
 | Gate | Status | Evidence |
 |---|---|---|
 | `npm run build` | PASS | Production build completed successfully after latest changes. |
-| `npm test` | PASS | Vitest: 5 files, 51 tests passing. |
+| `npm test` | PASS | Vitest: 6 files, 55 tests passing. |
 | `npm run lint` | PASS | ESLint completed with zero errors. |
 | HTTPS mobile tunnel | PASS | `npm run dev:mobile` created Cloudflare quick tunnel and printed public HTTPS URL. |
 | Tunnel sign-in | PASS | Script smoke signed in with sandbox driver credentials and loaded `/hub/driver`. |
@@ -17,8 +17,8 @@ entered.
 | Owner sandbox pages without local DB | PASS | Manual and fetch smoke verified `/hub`, `/hub/loads`, `/hub/money`, `/hub/ranker`, `/hub/fleet` render populated sandbox fallback content with no `POSTGRES_URL`. |
 | Two-company sandbox switcher | PASS | Manual test showed SANDBOX badge and All companies / Thind / ATS switcher. |
 | Production seed safety | PASS | `seed:production` is confirmation-gated and only upserts known carrier facts/blockers; it does not fabricate loads/drivers/money. |
-| Sandbox reset safety | NOT RUNTIME-VERIFIED | Script is scoped to sandbox carrier IDs/data-mode, but local Postgres is unavailable in this VM, so DB execution could not be completed here. |
-| Full seeded sandbox database | BLOCKED | Requires `POSTGRES_URL`; this VM currently has no `.env.local` or `POSTGRES_URL`. No-DB fallback covers immediate iPhone UI testing. |
+| Sandbox reset safety | PARTIAL PASS | With no `POSTGRES_URL`, reset exits cleanly without touching anything. With Postgres, script is scoped to sandbox carrier IDs/data-mode. |
+| Full seeded sandbox database | FALLBACK PASS | No `POSTGRES_URL` exists in this VM, so `seed:sandbox` now exits successfully and the app uses built-in no-DB sandbox fallback content. With Postgres, it writes the full seeded dataset. |
 | Production go-live data | BLOCKED | Owner must fill the items in `FILL-THESE-NEXT.md`. |
 
 ## Current iPhone test URL
