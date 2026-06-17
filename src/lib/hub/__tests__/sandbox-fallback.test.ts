@@ -46,7 +46,8 @@ describe("no-database sandbox fallback", () => {
   it("shows deterministic ranker math for five sample candidates", () => {
     const candidates = fallbackCandidates(THIND_SANDBOX_ID)
     expect(candidates).toHaveLength(5)
-    expect(candidates[0].score.score).toBe(91)
+    expect(candidates[0].score.score).toBe(95)
     expect(candidates[0].score.math.ratePerTotalMile).toBe("4.26")
+    expect(candidates[0].score.math.estimatedFuelCents).toBe(64960)
   })
 })

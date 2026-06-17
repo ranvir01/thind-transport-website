@@ -19,7 +19,17 @@ interface Candidate {
   fuel_surcharge_cents: number
   loaded_miles: number
   deadhead_miles: number
-  score: { score?: number; math?: { ratePerTotalMile?: string; estimatedFuel?: number; laneStrength?: string } }
+  score: {
+    score?: number
+    math?: {
+      ratePerTotalMile?: string
+      estimatedFuelCents?: number
+      estimatedTollsCents?: number
+      netAfterFuelAndTollsCents?: number
+      netPerTotalMile?: string
+      explanation?: string
+    }
+  }
 }
 
 export default async function RankerPage() {
@@ -75,11 +85,19 @@ export default async function RankerPage() {
                 </div>
                 <div className="rounded-xl bg-white/5 p-3">
                   <dt className="text-steel-300">Estimated fuel</dt>
-                  <dd className="mt-1 text-right font-bold tabular-nums text-white">{fmtCents(candidate.score?.math?.estimatedFuel ?? 0)}</dd>
+                  <dd className="mt-1 text-right font-bold tabular-nums text-white">{fmtCents(candidate.score?.math?.estimatedFuelCents ?? 0)}</dd>
+                </div>
+                <div className="rounded-xl bg-white/5 p-3">
+                  <dt className="text-steel-300">Fuel + toll net</dt>
+                  <dd className="mt-1 text-right font-bold tabular-nums text-white">{fmtCents(candidate.score?.math?.netAfterFuelAndTollsCents ?? totalCents)}</dd>
+                </div>
+                <div className="rounded-xl bg-white/5 p-3">
+                  <dt className="text-steel-300">Net / total mi</dt>
+                  <dd className="mt-1 text-right font-bold tabular-nums text-white">${candidate.score?.math?.netPerTotalMile ?? (totalCents / 100 / totalMiles).toFixed(2)}</dd>
                 </div>
               </dl>
               <p className="mt-3 rounded-xl border border-white/10 p-3 text-sm text-steel-100">
-                Lane/history factor: {candidate.score?.math?.laneStrength ?? "sample history pending"}.
+                Math shown: {candidate.score?.math?.explanation ?? "sample history pending"}.
               </p>
             </Panel>
           )

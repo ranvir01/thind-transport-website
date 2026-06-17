@@ -3,6 +3,7 @@ import type { Customer, Driver, FuelTransaction, Invoice, Load, Trailer, Truck }
 import type { DashboardStats, ExpiringItem } from "./loads"
 import type { AgingSummary } from "./invoices"
 import type { AgingBucket } from "./money"
+import { scoreLoadCandidate } from "./ranker"
 
 export const THIND_SANDBOX_ID = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
 export const ATS_SANDBOX_ID = "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"
@@ -383,11 +384,11 @@ export function fallbackAgingSummary(carrierId: string): AgingSummary {
 
 export function fallbackCandidates(carrierId: string) {
   return [
-    ["DAT", "Cascade Produce", "reefer", "Kent", "WA", "Fresno", "CA", 340000, 42000, 870, 26, 91],
-    ["Uber Freight", "PNW Retail", "dry_van", "Portland", "OR", "Reno", "NV", 275000, 26000, 575, 118, 84],
-    ["DAT", "Mountain Steel", "flatbed", "Spokane", "WA", "Denver", "CO", 410000, 50000, 1120, 72, 88],
-    ["Direct", "Valley Foods", "reefer", "Seattle", "WA", "Boise", "ID", 230000, 22000, 510, 18, 79],
-    ["DAT", "Slow Pay Sample", "dry_van", "Tacoma", "WA", "Phoenix", "AZ", 395000, 44000, 1410, 34, 63],
+    ["DAT", "Cascade Produce", "reefer", "Kent", "WA", "Fresno", "CA", 340000, 42000, 870, 26, "strong", "good", 18, false],
+    ["Uber Freight", "PNW Retail", "dry_van", "Portland", "OR", "Reno", "NV", 275000, 26000, 575, 118, "average", "neutral", 28, false],
+    ["DAT", "Mountain Steel", "flatbed", "Spokane", "WA", "Denver", "CO", 410000, 50000, 1120, 72, "strong", "neutral", 15, false],
+    ["Direct", "Valley Foods", "reefer", "Seattle", "WA", "Boise", "ID", 230000, 22000, 510, 18, "average", "good", 21, false],
+    ["DAT", "Slow Pay Sample", "dry_van", "Tacoma", "WA", "Phoenix", "AZ", 395000, 44000, 1410, 34, "weak", "bad", 58, false],
   ].map((row, index) => ({
     id: `${carrierId}-candidate-${index}`,
     carrier_id: carrierId,
@@ -399,17 +400,24 @@ export function fallbackCandidates(carrierId: string) {
     origin_state: row[4],
     dest_city: row[5],
     dest_state: row[6],
-    linehaul_cents: row[7],
-    fuel_surcharge_cents: row[8],
-    loaded_miles: row[9],
-    deadhead_miles: row[10],
-    score: {
-      score: row[11],
-      math: {
-        ratePerTotalMile: ((Number(row[7]) + Number(row[8])) / 100 / (Number(row[9]) + Number(row[10]))).toFixed(2),
-        estimatedFuel: Math.round(((Number(row[9]) + Number(row[10])) / 6) * 4.35 * 100),
-        laneStrength: Number(row[11]) > 85 ? "strong outbound history" : Number(row[11]) > 75 ? "average outbound history" : "slow payer / weak fit penalty",
-      },
-    },
+    linehaul_cents: Number(row[7]),
+    fuel_surcharge_cents: Number(row[8]),
+    loaded_miles: Number(row[9]),
+    deadhead_miles: Number(row[10]),
+    score: scoreLoadCandidate({
+      linehaulCents: Number(row[7]),
+      fuelSurchargeCents: Number(row[8]),
+      loadedMiles: Number(row[9]),
+      deadheadMiles: Number(row[10]),
+      dieselCentsPerGallon: 435,
+      mpg: 6,
+      estimatedTollsCents: index === 4 ? 32000 : 8500 + index * 2500,
+      hosHoursRemaining: 8 - index,
+      laneStrength: row[11] as "strong" | "average" | "weak",
+      homeTimeFit: row[12] as "good" | "neutral" | "bad",
+      customerPaymentDays: Number(row[13]),
+      blacklisted: Boolean(row[14]),
+      equipmentMatch: true,
+    }),
   }))
 }
