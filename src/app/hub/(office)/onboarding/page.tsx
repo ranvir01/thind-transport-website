@@ -155,6 +155,9 @@ export default async function OnboardingPage() {
                 <p className="mt-1 text-sm text-steel-200">
                   Add SMTP/IMAP/Fuel/Factoring/QBO secrets in Vercel env first. App forms only store encrypted metadata when CREDENTIALS_KEY is set.
                 </p>
+                <Link href="/hub/settings/integrations" className="mt-2 inline-flex min-h-[44px] items-center rounded-xl border border-white/15 px-4 text-sm font-semibold text-steel-100 hover:bg-white/5">
+                  Open integration settings
+                </Link>
               </div>
             </div>
           </Panel>
