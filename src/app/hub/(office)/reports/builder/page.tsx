@@ -1,4 +1,5 @@
 import Link from "next/link"
+import { revalidatePath } from "next/cache"
 import { Download, Save } from "lucide-react"
 import { requirePermissionPage } from "@/lib/hub/session"
 import { hubDbAvailable, query } from "@/lib/hub/db"
@@ -21,6 +22,30 @@ const fallbackTemplates: TemplateRow[] = [
 ]
 
 const PNL_EXPORT_URL = "/api/hub/exports/pnl"
+
+async function saveReportTemplate(formData: FormData) {
+  "use server"
+  const user = await requirePermissionPage("money:read")
+  if (!hubDbAvailable()) throw new Error("Connect POSTGRES_URL before saving report templates.")
+  const name = String(formData.get("name") || "").trim()
+  const source = String(formData.get("source") || "loads").trim()
+  const dateRange = String(formData.get("dateRange") || "This week").trim()
+  const columns = String(formData.get("columns") || "")
+    .split(",")
+    .map((column) => column.trim())
+    .filter(Boolean)
+  if (!name) throw new Error("Template name is required.")
+  await query(
+    `INSERT INTO hub.saved_report_templates (carrier_id, data_mode, name, source, mapping)
+     VALUES ($1,$2,$3,$4,$5::jsonb)
+     ON CONFLICT (carrier_id, name) DO UPDATE SET
+       source = EXCLUDED.source,
+       mapping = EXCLUDED.mapping,
+       updated_at = NOW()`,
+    [user.carrierId, user.dataMode, name, source, JSON.stringify({ columns, dateRange })]
+  )
+  revalidatePath("/hub/reports/builder")
+}
 
 export default async function ReportBuilderPage() {
   await requirePermissionPage("money:read")
@@ -49,25 +74,25 @@ export default async function ReportBuilderPage() {
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-[0.95fr_1.05fr]">
         <Panel className="p-4 md:p-5">
           <h2 className="mb-3 font-display text-lg font-bold uppercase tracking-wide text-white">New template</h2>
-          <form className="space-y-3">
+          <form action={saveReportTemplate} className="space-y-3">
             <div>
               <label htmlFor="report-name" className={labelCls}>Template name</label>
-              <input id="report-name" className={fieldCls} placeholder="Friday dispatcher report" />
+              <input id="report-name" name="name" className={fieldCls} placeholder="Friday dispatcher report" />
             </div>
             <div>
               <label htmlFor="source" className={labelCls}>Source</label>
-              <select id="source" className={fieldCls}>
-                <option>Loads</option>
-                <option>Invoices / AR</option>
-                <option>Settlements</option>
-                <option>Fuel</option>
-                <option>Tolls</option>
-                <option>Compliance</option>
+              <select id="source" name="source" className={fieldCls}>
+                <option value="loads">Loads</option>
+                <option value="invoices">Invoices / AR</option>
+                <option value="settlements">Settlements</option>
+                <option value="fuel">Fuel</option>
+                <option value="tolls">Tolls</option>
+                <option value="compliance">Compliance</option>
               </select>
             </div>
             <div>
               <label htmlFor="range" className={labelCls}>Date range</label>
-              <select id="range" className={fieldCls}>
+              <select id="range" name="dateRange" className={fieldCls}>
                 <option>This week</option>
                 <option>This month</option>
                 <option>Last quarter</option>
@@ -76,12 +101,9 @@ export default async function ReportBuilderPage() {
             </div>
             <div>
               <label htmlFor="columns" className={labelCls}>Columns</label>
-              <textarea id="columns" className={`${fieldCls} min-h-28`} placeholder="Company, Load, Broker, Lane, Gross, Driver pay, Fuel, Tolls, Net" />
+              <textarea id="columns" name="columns" className={`${fieldCls} min-h-28`} placeholder="Company, Load, Broker, Lane, Gross, Driver pay, Fuel, Tolls, Net" />
             </div>
-            <button
-              type="button"
-              className="flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl bg-orange px-5 font-display text-sm font-bold uppercase tracking-[0.08em] text-white shadow-cta"
-            >
+            <button className="flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl bg-orange px-5 font-display text-sm font-bold uppercase tracking-[0.08em] text-white shadow-cta">
               <Save className="h-4 w-4" /> Save template
             </button>
             <p className="text-xs text-steel-300">
