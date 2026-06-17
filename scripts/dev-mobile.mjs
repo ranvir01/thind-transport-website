@@ -161,6 +161,8 @@ async function main() {
     env: {
       ...process.env,
       NEXTAUTH_URL: publicUrl,
+      NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET || "local-mobile-dev-secret-change-me",
+      AUTH_SECRET: process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET || "local-mobile-dev-secret-change-me",
       NEXT_SERVER_ACTION_ALLOWED_ORIGINS: [
         host,
         process.env.NEXT_SERVER_ACTION_ALLOWED_ORIGINS,

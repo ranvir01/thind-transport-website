@@ -34,7 +34,11 @@ console.log("")
 
 const child = spawn("npx", ["next", "dev", "-H", "0.0.0.0", "-p", PORT], {
   stdio: "inherit",
-  env: process.env,
+  env: {
+    ...process.env,
+    NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET || "local-lan-dev-secret-change-me",
+    AUTH_SECRET: process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET || "local-lan-dev-secret-change-me",
+  },
 })
 
 child.on("exit", (code, signal) => {
