@@ -58,7 +58,7 @@ const setupCards = [
   { title: "Trucks", href: "/hub/fleet/trucks/new", hint: "Add unit, VIN, odometer, ELD ID, fuel-card last 4." },
   { title: "Trailers", href: "/hub/fleet/trailers/new", hint: "Add dry van, reefer, or flatbed equipment." },
   { title: "Customers", href: "/hub/customers/new", hint: "Add broker/shipper terms, factoring, slow payer, blacklist." },
-  { title: "Pay tariffs", href: "/hub/settings/pricebook", hint: "Enter plain-English rules, recurring deductions, categories." },
+  { title: "Pay tariffs", href: "/hub/settings/pay-tariffs", hint: "Enter plain-English rules, recurring deductions, categories." },
   { title: "Fuel CSVs", href: "/hub/import", hint: "Upload last full quarter EFS/WEX/Comdata files." },
 ]
 
