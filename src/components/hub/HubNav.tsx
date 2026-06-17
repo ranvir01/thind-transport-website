@@ -9,6 +9,7 @@ import {
   Upload, Settings, LogOut, Menu, X, DollarSign, Fuel, ShieldCheck, BarChart3, CheckSquare, Gauge,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { CommandPalette } from "@/components/hub/CommandPalette"
 
 interface NavItem {
   href: string
@@ -127,6 +128,9 @@ export function HubNav({
           ))}
         </nav>
         <div className="border-t border-white/10 p-4">
+          <div className="mb-3">
+            <CommandPalette />
+          </div>
           <p className="text-sm font-semibold text-white truncate">{user.name}</p>
           <p className="text-[11px] uppercase tracking-wider text-gold font-bold">{user.role}</p>
           <button
