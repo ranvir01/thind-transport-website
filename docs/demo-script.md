@@ -1,33 +1,31 @@
 # Thind Transport Hub — Demo Script (Phases 1–3)
 
 A phone-first walkthrough showing dispatch, money, fuel, and IFTA running like the real
-deal — 390px and desktop. Run against a database seeded with `npm run seed:demo`.
+deal — 390px and desktop. Run against a database seeded with `npm run seed:sandbox`.
 
 ## Setup
 
 ```bash
 npm run db:migrate   # apply hub schema (multi-tenant; Thind is tenant #1)
-npm run seed:demo    # believable fleet + money + fuel quarter (never run on production)
+npm run seed:sandbox # two companies + believable fleet/money/fuel (sandbox only)
 npm test             # 51 unit tests: settlement/invoice/IFTA penny math, parser, role matrix
-npm run dev          # http://localhost:3000/hub
+npm run dev:mobile   # prints an HTTPS iPhone URL for camera/PWA
 ```
 
-On a phone: open `/hub` → "Add to Home Screen" installs the Hub as a standalone app.
+On a phone: open the printed HTTPS URL → `/hub/driver` → "Add to Home Screen"
+installs the driver app as a standalone PWA.
 
-## Demo accounts (password for all: `ThindDemo1!`)
+## Sandbox accounts
 
 | Role | Email | Sees |
 |---|---|---|
-| Owner | `owner@demo.thind` | Everything incl. Users admin + Price book |
-| Dispatcher | `dispatch@demo.thind` | Dispatch, loads, fleet, CRM (money is read-only) |
-| Accountant | `accounting@demo.thind` | Money module: invoices, payments, settlements |
-| Driver | `driver@demo.thind` | Welcome screen (driver hub lands Phase 4) |
-| Broker | `broker@demo.thind` | Welcome screen (portal lands Phase 5) |
-| Shipper | `shipper@demo.thind` | Welcome screen (portal lands Phase 5) |
+| Owner | `owner@sandbox.hauldesk.local` / `SandboxOwner1!` | All-companies sandbox overview |
+| Dispatcher | `dispatch@sandbox.hauldesk.local` / `SandboxDispatch1!` | Dispatch, loads, fleet, CRM |
+| Driver | `driver@sandbox.hauldesk.local` / `SandboxDriver1!` | Driver PWA camera/POD test |
 
 ## The golden path (~7 minutes)
 
-1. **Login** as `dispatch@demo.thind` → dashboard: KPIs, booked revenue, **AR open**,
+1. **Login** as `dispatch@sandbox.hauldesk.local` → dashboard: KPIs, booked revenue, **AR open**,
    **driver pay queued**, compliance "expiring soon".
 2. **Dispatch board** — columns Booked → POD Received. Cards show lane, rate,
    **estimated margin** (vs cost/mile from carrier settings), invoice state, doc
@@ -40,7 +38,7 @@ On a phone: open `/hub` → "Add to Home Screen" installs the Hub as a standalon
    documents, geo, check calls), one-tap arrive/depart, camera POD upload, **check-call
    logging**, and **tracking links** — create one, open `/track/<token>` in a private
    window: the public broker view (status, stops, city-level position; revocable).
-5. **Invoice in one click** — open THD-1008 (POD received) as `accounting@demo.thind`
+5. **Invoice in one click** — open a POD received load as owner
    (or owner): "Invoice this load" → numbered branded PDF, POD+BOL attached, emailed,
    status → invoiced. Open the factored load's invoice: **remit-to shows the factoring
    company** (Notice of Assignment), with a one-click factoring packet.

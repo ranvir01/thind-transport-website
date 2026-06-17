@@ -91,7 +91,7 @@ async function main() {
 
   // ---- Users (one per role) ----
   console.log("Creating users…")
-  const hash = await bcrypt.hash("ThindDemo1!", 10)
+  const hash = await bcrypt.hash("LegacyDemoOnly1!", 10)
   const users = {}
   for (const [key, name, email, role] of [
     ["owner", "Sukhdev Thind", "owner@demo.thind", "owner"],
@@ -557,7 +557,7 @@ async function main() {
   console.log(`  In-transit load: ${inTransit.reference} → tracking: /track/${token}`)
   console.log(`  Settlement-ready loads: ${settle1.reference}, ${settle2.reference} (company drv), ${settle3.reference} (O/O)`)
   console.log(`  POD-received load awaiting invoice: ${podLoad.reference}`)
-  console.log("Logins (password: ThindDemo1!):")
+  console.log("Legacy demo logins (password: LegacyDemoOnly1!):")
   console.log("  owner@demo.thind / dispatch@demo.thind / accounting@demo.thind")
   console.log("  driver@demo.thind / broker@demo.thind / shipper@demo.thind")
   await client.end()
