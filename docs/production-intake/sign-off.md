@@ -16,6 +16,7 @@ entered.
 | Camera POD path | PARTIAL PASS | Browser called camera API over HTTPS; VM has no camera and returned “Requested device not found.” Owner must confirm on real iPhone hardware. |
 | Owner sandbox pages without local DB | PASS | Manual and fetch smoke verified `/hub`, `/hub/loads`, `/hub/money`, `/hub/ranker`, `/hub/fleet` render populated sandbox fallback content with no `POSTGRES_URL`. |
 | Two-company sandbox switcher | PASS | Manual test showed SANDBOX badge and All companies / Thind / ATS switcher. |
+| Broker tracking portal sandbox | PASS | `/track/sandbox` returned HTTP 200 over the HTTPS tunnel and rendered carrier/load tracking content without local DB. |
 | Production seed safety | PASS | `seed:production` is confirmation-gated and only upserts known carrier facts/blockers; it does not fabricate loads/drivers/money. |
 | Sandbox reset safety | PARTIAL PASS | With no `POSTGRES_URL`, reset exits cleanly without touching anything. With Postgres, script is scoped to sandbox carrier IDs/data-mode. |
 | Full seeded sandbox database | FALLBACK PASS | No `POSTGRES_URL` exists in this VM, so `seed:sandbox` now exits successfully and the app uses built-in no-DB sandbox fallback content. With Postgres, it writes the full seeded dataset. |
