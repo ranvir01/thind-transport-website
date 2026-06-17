@@ -1,5 +1,6 @@
 import { requireOfficeUser } from "@/lib/hub/session"
-import { query } from "@/lib/hub/db"
+import { hubDbAvailable, query } from "@/lib/hub/db"
+import { fallbackCandidates } from "@/lib/hub/sandbox-fallback"
 import { fmtCents } from "@/lib/hub/types"
 import { Panel, PageHeader } from "@/components/hub/ui"
 
@@ -24,13 +25,15 @@ interface Candidate {
 export default async function RankerPage() {
   const user = await requireOfficeUser()
   const carrierIds = user.companyScope === "all" ? user.allowedCarrierIds : [user.carrierId]
-  const candidates = await query<Candidate>(
-    `SELECT * FROM hub.load_candidates
-     WHERE carrier_id = ANY($1::uuid[])
-     ORDER BY COALESCE((score->>'score')::int, 0) DESC, created_at DESC
-     LIMIT 5`,
-    [carrierIds]
-  )
+  const candidates = hubDbAvailable()
+    ? await query<Candidate>(
+        `SELECT * FROM hub.load_candidates
+         WHERE carrier_id = ANY($1::uuid[])
+         ORDER BY COALESCE((score->>'score')::int, 0) DESC, created_at DESC
+         LIMIT 5`,
+        [carrierIds]
+      )
+    : carrierIds.flatMap((carrierId) => fallbackCandidates(carrierId)).slice(0, 5) as Candidate[]
 
   return (
     <div>

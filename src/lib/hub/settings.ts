@@ -1,4 +1,5 @@
-import { query, queryOne } from "./db"
+import { hubDbAvailable, query, queryOne } from "./db"
+import { fallbackCarriers, fallbackSettings } from "./sandbox-fallback"
 
 /** Typed carrier settings (stored as JSONB; merged over defaults on read). */
 export interface CarrierSettings {
@@ -41,10 +42,15 @@ export interface Carrier {
 }
 
 export async function getCarrier(carrierId: string): Promise<Carrier | null> {
+  if (!hubDbAvailable()) return fallbackCarriers.find((carrier) => carrier.id === carrierId) ?? fallbackCarriers[0]
   return queryOne<Carrier>(`SELECT * FROM hub.carriers WHERE id = $1`, [carrierId])
 }
 
 export async function listCarriers(carrierIds: string[]): Promise<Carrier[]> {
+  if (!hubDbAvailable()) {
+    const allowed = new Set(carrierIds)
+    return fallbackCarriers.filter((carrier) => allowed.has(carrier.id))
+  }
   if (carrierIds.length === 0) return []
   return query<Carrier>(
     `SELECT * FROM hub.carriers WHERE id = ANY($1::uuid[]) ORDER BY environment DESC, display_name NULLS LAST, name`,
@@ -53,6 +59,7 @@ export async function listCarriers(carrierIds: string[]): Promise<Carrier[]> {
 }
 
 export async function getCarrierSettings(carrierId: string): Promise<CarrierSettings> {
+  if (!hubDbAvailable()) return fallbackSettings
   const row = await queryOne<{ settings: Partial<CarrierSettings> }>(
     `SELECT settings FROM hub.carrier_settings WHERE carrier_id = $1`,
     [carrierId]

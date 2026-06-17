@@ -1,4 +1,5 @@
-import { hubDb, query, queryOne } from "./db"
+import { hubDb, hubDbAvailable, query, queryOne } from "./db"
+import { fallbackDashboardStats, fallbackExpiringItems, fallbackLoads } from "./sandbox-fallback"
 import type {
   Accessorial, EquipmentType, Load, LoadEvent, LoadEventKind, LoadStatus, Stop,
 } from "./types"
@@ -45,6 +46,23 @@ export interface LoadFilters {
 }
 
 export async function listLoads(carrierId: string, filters: LoadFilters = {}): Promise<Load[]> {
+  if (!hubDbAvailable()) {
+    let loads = fallbackLoads(carrierId)
+    if (filters.status && filters.status !== "all") {
+      loads = filters.status === "active"
+        ? loads.filter((load) => !["settled", "cancelled"].includes(load.status))
+        : loads.filter((load) => load.status === filters.status)
+    }
+    if (filters.search) {
+      const needle = filters.search.toLowerCase()
+      loads = loads.filter((load) =>
+        [load.reference, load.customer_reference, load.customer_name, load.commodity, load.origin_city, load.dest_city]
+          .filter(Boolean)
+          .some((value) => String(value).toLowerCase().includes(needle))
+      )
+    }
+    return loads
+  }
   const params: unknown[] = [carrierId]
   const clauses: string[] = ["l.deleted_at IS NULL", "l.carrier_id = $1"]
 
@@ -84,6 +102,7 @@ export async function listLoads(carrierId: string, filters: LoadFilters = {}): P
 }
 
 export async function getLoad(carrierId: string, id: string): Promise<Load | null> {
+  if (!hubDbAvailable()) return fallbackLoads(carrierId).find((load) => load.id === id) ?? null
   return queryOne<Load>(
     `${LOAD_SELECT} WHERE l.id = $2 AND l.carrier_id = $1 AND l.deleted_at IS NULL`,
     [carrierId, id]
@@ -91,10 +110,71 @@ export async function getLoad(carrierId: string, id: string): Promise<Load | nul
 }
 
 export async function getLoadStops(loadId: string): Promise<Stop[]> {
+  if (!hubDbAvailable()) {
+    const load = [...fallbackLoads("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"), ...fallbackLoads("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb")]
+      .find((item) => item.id === loadId)
+    if (!load) return []
+    return [
+      {
+        id: `${loadId}-pickup`,
+        load_id: loadId,
+        sequence: 1,
+        type: "pickup",
+        facility: `${load.origin_city} Sample Dock`,
+        address: null,
+        city: load.origin_city ?? "Kent",
+        state: load.origin_state ?? "WA",
+        zip: null,
+        fcfs: false,
+        pickup_number: "SB-PU-100",
+        po_number: null,
+        appt_start: new Date().toISOString(),
+        appt_end: null,
+        arrived_at: null,
+        departed_at: null,
+        lat: 47.38,
+        lng: -122.23,
+        notes: "Fallback sandbox pickup.",
+      },
+      {
+        id: `${loadId}-delivery`,
+        load_id: loadId,
+        sequence: 2,
+        type: "delivery",
+        facility: `${load.dest_city} Sample Receiver`,
+        address: null,
+        city: load.dest_city ?? "Fresno",
+        state: load.dest_state ?? "CA",
+        zip: null,
+        fcfs: false,
+        pickup_number: null,
+        po_number: "SB-PO-200",
+        appt_start: new Date(Date.now() + 86400000).toISOString(),
+        appt_end: null,
+        arrived_at: null,
+        departed_at: null,
+        lat: 36.73,
+        lng: -119.78,
+        notes: "Fallback sandbox delivery.",
+      },
+    ]
+  }
   return query<Stop>(`SELECT * FROM hub.stops WHERE load_id = $1 ORDER BY sequence`, [loadId])
 }
 
 export async function getLoadEvents(loadId: string): Promise<LoadEvent[]> {
+  if (!hubDbAvailable()) {
+    return [
+      {
+        id: 1,
+        load_id: loadId,
+        kind: "status_change",
+        actor_name: "Sandbox dispatcher",
+        payload: { to: "booked", note: "Fallback sandbox timeline event" },
+        created_at: new Date().toISOString(),
+      } as LoadEvent,
+    ]
+  }
   return query<LoadEvent>(
     `SELECT id, load_id, kind, actor_name, payload, created_at
      FROM hub.load_events WHERE load_id = $1 ORDER BY created_at ASC, id ASC`,
@@ -329,6 +409,7 @@ export interface DashboardStats {
 }
 
 export async function getDashboardStats(carrierId: string): Promise<DashboardStats> {
+  if (!hubDbAvailable()) return fallbackDashboardStats(carrierId)
   const row = await queryOne<DashboardStats>(
     `
     SELECT
@@ -365,6 +446,7 @@ export interface ExpiringItem {
 }
 
 export async function listExpiringItems(carrierId: string, days = 60): Promise<ExpiringItem[]> {
+  if (!hubDbAvailable()) return fallbackExpiringItems(carrierId).slice(0, days > 0 ? 20 : 0)
   return query<ExpiringItem>(
     `
     SELECT * FROM (

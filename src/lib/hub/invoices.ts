@@ -1,4 +1,6 @@
 import { query, queryOne } from "./db"
+import { hubDbAvailable } from "./db"
+import { fallbackAgingSummary, fallbackInvoices } from "./sandbox-fallback"
 import { getCarrier, getCarrierSettings, nextInvoiceNumber } from "./settings"
 import { getLoad, getLoadStops, changeLoadStatus } from "./loads"
 import { getCustomer } from "./customers"
@@ -21,6 +23,12 @@ export async function listInvoices(
   carrierId: string,
   filters: { status?: string } = {}
 ): Promise<Invoice[]> {
+  if (!hubDbAvailable()) {
+    const invoices = fallbackInvoices(carrierId)
+    return filters.status && filters.status !== "all"
+      ? invoices.filter((invoice) => invoice.status === filters.status)
+      : invoices
+  }
   const params: unknown[] = [carrierId]
   let where = `i.carrier_id = $1`
   if (filters.status && filters.status !== "all") {
@@ -31,6 +39,7 @@ export async function listInvoices(
 }
 
 export async function getInvoice(carrierId: string, id: string): Promise<Invoice | null> {
+  if (!hubDbAvailable()) return fallbackInvoices(carrierId).find((invoice) => invoice.id === id) ?? null
   return queryOne<Invoice>(`${INVOICE_SELECT} WHERE i.carrier_id = $1 AND i.id = $2`, [carrierId, id])
 }
 
@@ -226,6 +235,7 @@ export interface AgingSummary {
 }
 
 export async function getAgingSummary(carrierId: string): Promise<AgingSummary> {
+  if (!hubDbAvailable()) return fallbackAgingSummary(carrierId)
   const invoices = await query<Invoice>(
     `${INVOICE_SELECT} WHERE i.carrier_id = $1 AND i.status NOT IN ('paid') ORDER BY i.due_on ASC`,
     [carrierId]

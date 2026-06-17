@@ -1,0 +1,300 @@
+import type { Carrier, CarrierSettings } from "./settings"
+import type { Driver, Invoice, Load, Trailer, Truck } from "./types"
+import type { DashboardStats, ExpiringItem } from "./loads"
+import type { AgingSummary } from "./invoices"
+import type { AgingBucket } from "./money"
+
+export const THIND_SANDBOX_ID = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
+export const ATS_SANDBOX_ID = "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"
+export const SANDBOX_CARRIER_IDS = [THIND_SANDBOX_ID, ATS_SANDBOX_ID]
+
+const today = new Date()
+const isoDate = (offsetDays: number) => {
+  const date = new Date(today)
+  date.setDate(date.getDate() + offsetDays)
+  return date.toISOString().slice(0, 10)
+}
+
+export const fallbackCarriers: Carrier[] = [
+  {
+    id: THIND_SANDBOX_ID,
+    name: "SANDBOX Thind Transport LLC",
+    legal_name: "Thind Transport LLC",
+    display_name: "Thind",
+    dot_number: "2523064",
+    mc_number: "876103",
+    phone: "(206) 765-6300",
+    email: "sandbox-thind@example.invalid",
+    address: "PO Box 5114, Kent, WA 98064",
+    environment: "sandbox",
+    invoice_prefix: "SB-TT-",
+    logo_url: null,
+    remit_to: "Cascade Sample Factoring\nPO Box 1000, Seattle, WA 98101",
+    status: "active",
+  },
+  {
+    id: ATS_SANDBOX_ID,
+    name: "SANDBOX ATS Transport LLC",
+    legal_name: "ATS Transport LLC",
+    display_name: "ATS",
+    dot_number: "SAMPLE",
+    mc_number: "SAMPLE",
+    phone: "(253) 410-7259",
+    email: "sandbox-ats@example.invalid",
+    address: "SAMPLE yard address",
+    environment: "sandbox",
+    invoice_prefix: "SB-ATS-",
+    logo_url: null,
+    remit_to: "Cascade Sample Factoring\nPO Box 1000, Seattle, WA 98101",
+    status: "active",
+  },
+]
+
+export const fallbackSettings: CarrierSettings = {
+  invoice: { prefix: "SB-", nextNumber: 7001, defaultTermsDays: 30 },
+  pay: { companyDriverPerMile: 0.65, ownerOperatorPercentage: 0.88, payLoadedMilesOnly: true },
+  detention: { freeHours: 2, ratePerHourCents: 6000 },
+  costPerMileCents: 185,
+  fsc: { baseCentsPerGallon: 125, mpg: 6 },
+  randomTesting: { drugPct: 50, alcoholPct: 10 },
+  factoring: {
+    company: "Cascade Sample Factoring",
+    remitName: "Cascade Sample Factoring",
+    remitAddress: "PO Box 1000, Seattle, WA 98101",
+    email: "sandbox-factor@example.invalid",
+  },
+  notifications: { officeEmail: "sandbox-office@example.invalid" },
+}
+
+const loadRows = [
+  ["quoted", "reefer", "Frozen vegetables", 320000, 35000, 870, 28, "Kent", "WA", "Fresno", "CA", "Pacific Crest Logistics", "Harpreet Singh", "TT-231"],
+  ["booked", "dry_van", "Retail fixtures", 210000, 18000, 420, 34, "Tacoma", "WA", "Boise", "ID", "Northwest Retail Freight", "Manpreet Kaur", "TT-188"],
+  ["dispatched", "flatbed", "Steel coils", 395000, 45000, 980, 64, "Spokane", "WA", "Denver", "CO", "Mountain West Steel", "Gurpreet Gill", "TT-245"],
+  ["at_pickup", "reefer", "Apples", 245000, 26000, 510, 12, "Yakima", "WA", "Portland", "OR", "Cascade Produce Co.", "Amandeep Dhillon", "TT-207"],
+  ["in_transit", "dry_van", "Paper goods", 285000, 30000, 640, 80, "Seattle", "WA", "Reno", "NV", "Evergreen Cold Chain", "Harpreet Singh", "TT-231"],
+  ["delivered", "flatbed", "Lumber", 365000, 40000, 760, 45, "Portland", "OR", "Salt Lake City", "UT", "Valley Distribution", "Manpreet Kaur", "TT-188"],
+  ["pod_received", "reefer", "Dairy", 330000, 37000, 710, 18, "Boise", "ID", "Sacramento", "CA", "Pacific Crest Logistics", "Gurpreet Gill", "TT-245"],
+  ["invoiced", "dry_van", "E-commerce freight", 250000, 24000, 540, 38, "Kent", "WA", "Oakland", "CA", "SlowPay Sample Brokerage", "Amandeep Dhillon", "TT-207"],
+  ["paid", "reefer", "Frozen seafood", 410000, 52000, 1120, 55, "Seattle", "WA", "Los Angeles", "CA", "Northwest Retail Freight", "Harpreet Singh", "TT-231"],
+  ["settled", "flatbed", "Machinery", 455000, 60000, 1260, 70, "Reno", "NV", "Missoula", "MT", "Mountain West Steel", "Gurpreet Gill", "TT-245"],
+] as const
+
+export function fallbackLoads(carrierId: string): Load[] {
+  const prefix = carrierId === ATS_SANDBOX_ID ? "ATS" : "TT"
+  return loadRows.map((row, index) => ({
+    id: `${prefix.toLowerCase()}-fallback-load-${index + 1}`,
+    carrier_id: carrierId,
+    reference: `${prefix}-${7000 + index}`,
+    customer_reference: `BR-${prefix}-${9000 + index}`,
+    customer_id: `${prefix.toLowerCase()}-customer-${index % 6}`,
+    status: row[0],
+    equipment: row[1],
+    commodity: row[2],
+    weight_lbs: 38000 + index * 750,
+    linehaul_cents: row[3],
+    fuel_surcharge_cents: row[4],
+    accessorials: index % 3 === 0 ? [{ label: "Detention", amount_cents: 12000 }] : [],
+    loaded_miles: row[5],
+    deadhead_miles: row[6],
+    truck_id: `${prefix.toLowerCase()}-truck-${index % 4}`,
+    trailer_id: `${prefix.toLowerCase()}-trailer-${index % 4}`,
+    driver_id: `${prefix.toLowerCase()}-driver-${index % 4}`,
+    dispatcher_id: null,
+    source: index % 2 === 0 ? "dat" : "direct",
+    factored: index % 4 === 0,
+    settlement_id: row[0] === "settled" ? `${prefix.toLowerCase()}-settlement-1` : null,
+    notes: "Local no-database sandbox fallback row.",
+    created_at: new Date(Date.now() - index * 86400000).toISOString(),
+    customer_name: row[11],
+    driver_name: row[12],
+    truck_unit: row[13],
+    trailer_unit: `${prefix}-TR-${index + 1}`,
+    origin_city: row[7],
+    origin_state: row[8],
+    dest_city: row[9],
+    dest_state: row[10],
+    doc_kinds: ["rate_confirmation", ...(index > 5 ? ["pod"] : [])],
+    invoice_id: ["invoiced", "paid", "settled"].includes(row[0]) ? `${prefix.toLowerCase()}-invoice-${index}` : null,
+    invoice_status: row[0] === "invoiced" ? "overdue" : row[0] === "paid" || row[0] === "settled" ? "paid" : null,
+  }))
+}
+
+export function fallbackDashboardStats(carrierId: string): DashboardStats {
+  const loads = fallbackLoads(carrierId)
+  const openInvoices = fallbackInvoices(carrierId).filter((invoice) => invoice.status !== "paid")
+  return {
+    active_loads: loads.filter((load) => !["settled", "cancelled", "paid", "invoiced", "quoted"].includes(load.status)).length,
+    in_transit: loads.filter((load) => load.status === "in_transit").length,
+    awaiting_pod: loads.filter((load) => load.status === "delivered").length,
+    revenue_month_cents: String(loads.reduce((sum, load) => sum + load.linehaul_cents + load.fuel_surcharge_cents, 0)),
+    revenue_week_cents: String(loads.slice(0, 5).reduce((sum, load) => sum + load.linehaul_cents + load.fuel_surcharge_cents, 0)),
+    trucks_active: 4,
+    trucks_total: 4,
+    drivers_active: 4,
+    ar_open_cents: String(openInvoices.reduce((sum, invoice) => sum + invoice.amount_cents - (invoice.paid_cents ?? 0), 0)),
+    settlement_due_cents: "501050",
+  }
+}
+
+export function fallbackExpiringItems(carrierId: string): ExpiringItem[] {
+  const prefix = carrierId === ATS_SANDBOX_ID ? "ATS" : "Thind"
+  return [
+    { entity: "driver", name: `${prefix} sample driver`, kind: "Medical Card", due: isoDate(-12), href: "/hub/drivers" },
+    { entity: "company", name: `${prefix} company`, kind: "COI", due: isoDate(21), href: "/hub/compliance" },
+    { entity: "truck", name: `${prefix} Truck 231`, kind: "Annual Inspection", due: isoDate(55), href: "/hub/fleet" },
+  ]
+}
+
+export function fallbackDrivers(carrierId: string): Driver[] {
+  const prefix = carrierId === ATS_SANDBOX_ID ? "ATS" : "TT"
+  return ["Harpreet Singh", "Manpreet Kaur", "Gurpreet Gill", "Amandeep Dhillon"].map((name, index) => {
+    const [first, last] = name.split(" ")
+    return {
+      id: `${prefix.toLowerCase()}-driver-${index}`,
+      user_id: null,
+      first_name: first,
+      last_name: last,
+      phone: `(206) 555-01${String(index).padStart(2, "0")}`,
+      email: `${first.toLowerCase()}.sample@example.invalid`,
+      cdl_number: `SAMPLE-${prefix}-${index + 1}`,
+      cdl_state: "WA",
+      cdl_expiry: isoDate(220 + index * 30),
+      medical_card_expiry: index === 1 ? isoDate(-12) : isoDate(45 + index * 25),
+      hire_date: isoDate(-400 - index * 60),
+      pay_type: index % 2 === 0 ? "percentage" : "per_mile",
+      pay_rate: index % 2 === 0 ? "0.8800" : "0.6500",
+      pay_loaded_miles_only: true,
+      escrow_weekly_cents: index % 2 === 0 ? 5000 : 0,
+      insurance_weekly_cents: index % 2 === 0 ? 31200 : 0,
+      status: "active",
+      emergency_contact_name: null,
+      emergency_contact_phone: null,
+      notes: "Sandbox fallback 1099 driver.",
+    }
+  })
+}
+
+export function fallbackTrucks(carrierId: string): Truck[] {
+  const prefix = carrierId === ATS_SANDBOX_ID ? "ATS" : "TT"
+  return [
+    ["231", 2024, "Freightliner", "Cascadia", "company"],
+    ["188", 2022, "Volvo", "VNL", "owner_operator"],
+    ["245", 2025, "Freightliner", "Cascadia", "company"],
+    ["207", 2023, "Peterbilt", "579", "owner_operator"],
+  ].map((row, index) => ({
+    id: `${prefix.toLowerCase()}-truck-${index}`,
+    unit_number: `${prefix}-${row[0]}`,
+    vin: `SANDBOXVIN${prefix}${index}`,
+    plate: `SB${prefix}${index}`,
+    plate_state: "WA",
+    year: Number(row[1]),
+    make: String(row[2]),
+    model: String(row[3]),
+    ownership: row[4] as "company" | "owner_operator",
+    status: "active",
+    registration_expiry: isoDate(180 + index * 20),
+    inspection_due: isoDate(45 + index * 12),
+    insurance_expiry: isoDate(80 + index * 14),
+    assigned_driver_id: `${prefix.toLowerCase()}-driver-${index}`,
+    tank_capacity_gallons: 240,
+    driver_name: fallbackDrivers(carrierId)[index]?.first_name + " " + fallbackDrivers(carrierId)[index]?.last_name,
+    notes: "Sandbox fallback truck.",
+  }))
+}
+
+export function fallbackTrailers(carrierId: string): Trailer[] {
+  const prefix = carrierId === ATS_SANDBOX_ID ? "ATS" : "TT"
+  return ["reefer", "dry_van", "flatbed", "dry_van"].map((type, index) => ({
+    id: `${prefix.toLowerCase()}-trailer-${index}`,
+    unit_number: `${prefix}-TR-${index + 1}`,
+    vin: `SANDBOXTRL${prefix}${index}`,
+    plate: `TR${prefix}${index}`,
+    plate_state: "WA",
+    year: 2021 + index,
+    make: index % 2 ? "Wabash" : "Utility",
+    type: type as "flatbed" | "reefer" | "dry_van",
+    status: "active",
+    registration_expiry: isoDate(220 + index * 15),
+    inspection_due: isoDate(35 + index * 18),
+    notes: "Sandbox fallback trailer.",
+  }))
+}
+
+export function fallbackInvoices(carrierId: string): Invoice[] {
+  const prefix = carrierId === ATS_SANDBOX_ID ? "SB-ATS" : "SB-TT"
+  return [
+    ["current", "sent", 278000, 0, 10],
+    ["1-30", "overdue", 330000, 0, -16],
+    ["31-60", "overdue", 187500, 50000, -38],
+    ["current", "paid", 410000, 410000, 18],
+  ].map((row, index) => ({
+    id: `${prefix.toLowerCase()}-invoice-${index}`,
+    carrier_id: carrierId,
+    number: `${prefix}-${7001 + index}`,
+    customer_id: `${prefix.toLowerCase()}-customer-${index}`,
+    load_id: `${prefix.toLowerCase()}-fallback-load-${index + 7}`,
+    amount_cents: Number(row[2]),
+    issued_on: isoDate(-20 - index * 5),
+    due_on: isoDate(Number(row[4])),
+    status: row[1] as Invoice["status"],
+    factored: index % 2 === 0,
+    remit_to: "Cascade Sample Factoring\nPO Box 1000, Seattle, WA 98101",
+    pdf_url: null,
+    sent_log: [],
+    customer_name: index === 1 ? "SlowPay Sample Brokerage" : "Pacific Crest Logistics",
+    load_reference: `${prefix}-70${index}`,
+    paid_cents: Number(row[3]),
+  }))
+}
+
+export function fallbackAgingSummary(carrierId: string): AgingSummary {
+  const buckets: Record<AgingBucket, number> = { current: 0, "1-30": 0, "31-60": 0, "61-90": 0, "90+": 0 }
+  const invoices = fallbackInvoices(carrierId)
+    .filter((invoice) => invoice.status !== "paid")
+    .map((invoice) => {
+      const open_cents = invoice.amount_cents - (invoice.paid_cents ?? 0)
+      const due = new Date(invoice.due_on)
+      const daysPast = Math.floor((Date.now() - due.getTime()) / 86400000)
+      const bucket: AgingBucket = daysPast <= 0 ? "current" : daysPast <= 30 ? "1-30" : daysPast <= 60 ? "31-60" : daysPast <= 90 ? "61-90" : "90+"
+      buckets[bucket] += open_cents
+      return { ...invoice, bucket, open_cents }
+    })
+  return {
+    buckets,
+    totalOpenCents: invoices.reduce((sum, invoice) => sum + invoice.open_cents, 0),
+    invoices,
+  }
+}
+
+export function fallbackCandidates(carrierId: string) {
+  return [
+    ["DAT", "Cascade Produce", "reefer", "Kent", "WA", "Fresno", "CA", 340000, 42000, 870, 26, 91],
+    ["Uber Freight", "PNW Retail", "dry_van", "Portland", "OR", "Reno", "NV", 275000, 26000, 575, 118, 84],
+    ["DAT", "Mountain Steel", "flatbed", "Spokane", "WA", "Denver", "CO", 410000, 50000, 1120, 72, 88],
+    ["Direct", "Valley Foods", "reefer", "Seattle", "WA", "Boise", "ID", 230000, 22000, 510, 18, 79],
+    ["DAT", "Slow Pay Sample", "dry_van", "Tacoma", "WA", "Phoenix", "AZ", 395000, 44000, 1410, 34, 63],
+  ].map((row, index) => ({
+    id: `${carrierId}-candidate-${index}`,
+    carrier_id: carrierId,
+    data_mode: "sandbox",
+    source: row[0],
+    broker_name: row[1],
+    equipment: row[2],
+    origin_city: row[3],
+    origin_state: row[4],
+    dest_city: row[5],
+    dest_state: row[6],
+    linehaul_cents: row[7],
+    fuel_surcharge_cents: row[8],
+    loaded_miles: row[9],
+    deadhead_miles: row[10],
+    score: {
+      score: row[11],
+      math: {
+        ratePerTotalMile: ((Number(row[7]) + Number(row[8])) / 100 / (Number(row[9]) + Number(row[10]))).toFixed(2),
+        estimatedFuel: Math.round(((Number(row[9]) + Number(row[10])) / 6) * 4.35 * 100),
+        laneStrength: Number(row[11]) > 85 ? "strong outbound history" : Number(row[11]) > 75 ? "average outbound history" : "slow payer / weak fit penalty",
+      },
+    },
+  }))
+}
