@@ -18,6 +18,8 @@ const officePaths = [
   "/hub/money",
   "/hub/fleet",
   "/hub/ranker",
+  "/hub/reports",
+  "/hub/reports/builder",
   "/hub/onboarding",
   "/hub/settings/pay-tariffs",
   "/hub/settings/integrations",

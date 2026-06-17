@@ -58,6 +58,27 @@ export interface TruckPnl {
 }
 
 export async function truckPnl(carrierId: string, days = 92): Promise<TruckPnl[]> {
+  if (!hubDbAvailable()) {
+    const loads = fallbackLoads(carrierId)
+    return fallbackTrucks(carrierId).map((truck, index) => {
+      const truckLoads = loads.filter((load) => load.truck_unit === truck.unit_number)
+      const revenue = truckLoads.reduce((sum, load) => sum + load.linehaul_cents + load.fuel_surcharge_cents, 0)
+      const fuel = 80000 + index * 2500
+      const maintenance = 25000
+      const other = index % 2 ? 8250 : 0
+      const miles = truckLoads.reduce((sum, load) => sum + (load.loaded_miles ?? 0), 0) || (1200 + index * 100)
+      return {
+        truck_id: truck.id,
+        unit_number: truck.unit_number,
+        revenue_cents: String(revenue),
+        fuel_cents: String(fuel),
+        maintenance_cents: String(maintenance),
+        other_expense_cents: String(other),
+        loaded_miles: String(miles),
+        net_cents: revenue - fuel - maintenance - other,
+      }
+    })
+  }
   const rows = await query<TruckPnl>(
     `SELECT t.id AS truck_id, t.unit_number,
        COALESCE((SELECT SUM(l.linehaul_cents + l.fuel_surcharge_cents) FROM hub.loads l

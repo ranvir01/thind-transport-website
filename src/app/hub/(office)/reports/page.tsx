@@ -1,3 +1,4 @@
+import Link from "next/link"
 import { Download } from "lucide-react"
 import { truckPnl } from "@/lib/hub/expenses"
 import { requirePermissionPage } from "@/lib/hub/session"
@@ -29,12 +30,17 @@ export default async function ReportsPage() {
         title="Reports"
         subtitle="Per-truck P&L, last 92 days. Driver pay and fixed costs come from the accountant's books — this is the operational view."
         action={
-          <a
-            href={PNL_EXPORT_URL}
-            className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-gold/40 bg-gold/10 px-4 text-sm font-bold text-gold hover:bg-gold/20"
-          >
-            <Download className="h-4 w-4" /> P&L CSV
-          </a>
+          <div className="flex flex-wrap gap-2">
+            <Link href="/hub/reports/builder" className="inline-flex min-h-[44px] items-center rounded-xl border border-white/15 px-4 text-sm font-semibold text-steel-100 hover:bg-white/5">
+              Report builder
+            </Link>
+            <a
+              href={PNL_EXPORT_URL}
+              className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-gold/40 bg-gold/10 px-4 text-sm font-bold text-gold hover:bg-gold/20"
+            >
+              <Download className="h-4 w-4" /> P&L CSV
+            </a>
+          </div>
         }
       />
 
