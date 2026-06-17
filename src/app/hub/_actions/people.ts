@@ -9,6 +9,7 @@ import { createCustomer, updateCustomer, createContact, deleteContact } from "@/
 import { createHubUser, setHubUserActive } from "@/lib/hub/users"
 import { logAudit } from "@/lib/hub/audit"
 import { query } from "@/lib/hub/db"
+import { vetCarrierWithFmcsa } from "@/lib/hub/fmcsa"
 import { dollarsToCents } from "@/lib/hub/types"
 import type { ActionResult } from "./fleet"
 
@@ -83,6 +84,16 @@ export async function saveCustomerAction(
       entityType: "customer", entityId: customer.id,
       action: id ? "update" : "create", newValue: parsed.data,
     })
+    const vetting = await vetCarrierWithFmcsa({
+      name: customer.name,
+      dotNumber: customer.dot_number,
+      mcNumber: customer.mc_number,
+    })
+    await query(
+      `INSERT INTO hub.crm_activities (carrier_id, customer_id, kind, body, actor_id, actor_name)
+       VALUES ($1, $2, 'note', $3, $4, $5)`,
+      [user.carrierId, customer.id, vetting.note, user.id, user.name]
+    )
     revalidatePath("/hub/customers")
     return { ok: true, id: customer.id }
   } catch (err) {
