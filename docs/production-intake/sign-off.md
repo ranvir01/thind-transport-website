@@ -19,6 +19,7 @@ entered.
 | Two-company sandbox switcher | PASS | Manual test showed SANDBOX badge and All companies / Thind / ATS switcher. |
 | Broker tracking portal sandbox | PASS | `/track/sandbox` returned HTTP 200 over the HTTPS tunnel and rendered carrier/load tracking content without local DB. |
 | Production seed safety | PASS | `seed:production` is confirmation-gated and only upserts known carrier facts/blockers; it does not fabricate loads/drivers/money. |
+| Production import templates | PASS | `seed:production` writes 10 CSV templates under `docs/production-intake/templates/` for drivers, trucks, trailers, customers, pay tariffs, recurring transactions, open AR, loadboard, fuel, and tolls. |
 | Sandbox reset safety | PARTIAL PASS | With no `POSTGRES_URL`, reset exits cleanly without touching anything. With Postgres, script is scoped to sandbox carrier IDs/data-mode. |
 | Full seeded sandbox database | FALLBACK PASS | No `POSTGRES_URL` exists in this VM, so `seed:sandbox` now exits successfully and the app uses built-in no-DB sandbox fallback content. With Postgres, it writes the full seeded dataset. |
 | Production go-live data | BLOCKED | Owner must fill the items in `FILL-THESE-NEXT.md`. |

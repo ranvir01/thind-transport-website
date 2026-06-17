@@ -1,0 +1,2 @@
+company,broker,invoice_number,load_reference,amount,issued_on,due_on,status,factored,notes
+Thind Transport LLC,Example Broker,TT-2026-0001,LOAD-123,2500.00,2026-06-01,2026-07-01,sent,Y,replace this example row

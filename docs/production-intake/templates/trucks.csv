@@ -1,0 +1,2 @@
+company,unit_number,vin,year,make,model,type,eld_device_id,fuel_card_last4,tank_gallons,ownership,current_odometer,registration_expiry,inspection_due,insurance_expiry,notes
+Thind Transport LLC,TT-101,SAMPLEVIN123,2024,Freightliner,Cascadia,reefer,ELD-SAMPLE,1234,240,company,100000,2027-12-31,2027-06-30,2027-09-30,replace this example row

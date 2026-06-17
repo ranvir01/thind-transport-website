@@ -1,0 +1,2 @@
+company,name,type,mc_number,dot_number,billing_email,billing_address,phone,payment_terms_days,credit_limit,factored,status,primary_contact,tracking_app,notes
+Thind Transport LLC,Example Broker,broker,123456,,ap@examplebroker.com,"123 AP St, Seattle WA",(206) 555-0100,30,25000.00,Y,active,Jane Broker,MacroPoint,replace this example row

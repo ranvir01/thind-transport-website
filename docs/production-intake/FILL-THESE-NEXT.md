@@ -35,6 +35,21 @@ Start in the sandbox to click around. When you are ready to enter real info, sig
 11. TruckX/Terminal authorization — **Hub → Onboarding → Integration credentials** plus Vercel env if needed.
 12. IMAP docs mailbox — Vercel env vars for the mailbox that receives rate confirmations.
 
+## Import templates already in the repo
+
+If you want to prepare data in spreadsheets first, use the CSV headers in:
+
+- `docs/production-intake/templates/drivers.csv`
+- `docs/production-intake/templates/trucks.csv`
+- `docs/production-intake/templates/trailers.csv`
+- `docs/production-intake/templates/customers.csv`
+- `docs/production-intake/templates/pay-tariffs.csv`
+- `docs/production-intake/templates/recurring-transactions.csv`
+- `docs/production-intake/templates/open-ar.csv`
+- `docs/production-intake/templates/loadboard.csv`
+- `docs/production-intake/templates/fuel.csv`
+- `docs/production-intake/templates/tolls.csv`
+
 Known facts already prefilled in production settings:
 
 - Thind Transport LLC: DOT `2523064`, MC `876103`, phone `(206) 765-6300`.
