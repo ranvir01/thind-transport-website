@@ -8,6 +8,7 @@ import {
   LayoutDashboard, ClipboardList, Package, Truck, Users, Building2, Map as MapIcon,
   Upload, Settings, LogOut, Menu, X, DollarSign, Fuel, ShieldCheck, BarChart3, ShieldAlert,
   MessageSquare, CheckSquare, CalendarRange, Warehouse, UserPlus, FolderLock, Megaphone, Cable,
+  ScanLine,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { PRODUCT } from "@/lib/hub/product"
@@ -67,6 +68,7 @@ const NAV_GROUPS: NavGroup[] = [
   {
     label: "Admin",
     items: [
+      { href: "/hub/setup", label: "Smart Setup", icon: ScanLine },
       { href: "/hub/import", label: "Import", icon: Upload },
       { href: "/hub/settings/packet", label: "Carrier packet", icon: FolderLock },
       { href: "/hub/settings/integrations", label: "Integrations", icon: Cable, ownerOnly: true },

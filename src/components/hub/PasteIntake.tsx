@@ -1,6 +1,7 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
+import { consumePasteBuffer } from "@/lib/hub/doc-intake/extract-text-client"
 import { ClipboardPaste, Sparkles } from "lucide-react"
 import { parseRateCon, type ParsedRateCon, type Confidence } from "@/lib/hub/parser"
 import { fieldCls, Panel } from "@/components/hub/ui"
@@ -44,6 +45,14 @@ export function PasteIntake({
 }) {
   const [text, setText] = useState("")
   const [parsed, setParsed] = useState<ParsedRateCon | null>(null)
+
+  useEffect(() => {
+    const buffered = consumePasteBuffer()
+    if (buffered) {
+      setText(buffered)
+      setParsed(parseRateCon(buffered))
+    }
+  }, [])
 
   const initial: LoadFormInitial | null = useMemo(() => {
     if (!parsed) return null

@@ -83,18 +83,20 @@ export default async function TodayPage() {
           </p>
           <ul className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
             {[
-              { done: started.trucks, label: "Add your trucks (VIN decode fills the details)", href: "/hub/fleet/trucks/new" },
-              { done: started.drivers, label: "Add your drivers", href: "/hub/drivers/new" },
-              { done: started.customers, label: "Add your brokers & shippers", href: "/hub/customers/new" },
-              { done: started.loads, label: "Import your load history (any spreadsheet)", href: "/hub/import" },
-              { done: started.packet, label: "Upload your carrier packet (W-9, COI)", href: "/hub/settings/packet" },
+              { done: false, label: "Start Smart Setup — drop all your paperwork at once", href: "/hub/setup", highlight: true },
+              { done: started.trucks, label: "Trucks on file", href: "/hub/setup" },
+              { done: started.drivers, label: "Drivers on file", href: "/hub/setup" },
+              { done: started.customers, label: "Brokers on file (MC/DOT → FMCSA lookup)", href: "/hub/setup" },
+              { done: started.loads, label: "Load history imported", href: "/hub/import" },
+              { done: started.packet, label: "Carrier packet filed (W-9, COI)", href: "/hub/setup" },
             ].map((step) => (
               <li key={step.label}>
                 <Link
                   href={step.href}
                   className={cn(
                     "flex items-center gap-2 rounded-lg px-2.5 py-2 text-sm hover:bg-white/5 min-h-[40px]",
-                    step.done ? "text-steel-400 line-through" : "text-steel-100 font-semibold"
+                    step.done ? "text-steel-400 line-through" : "text-steel-100 font-semibold",
+                    "highlight" in step && step.highlight && !step.done ? "border border-gold/40 bg-gold/5" : ""
                   )}
                 >
                   <span

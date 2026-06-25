@@ -28,6 +28,7 @@ const OFFICE_PAGES = [
   ["compliance", "/hub/compliance"],
   ["capacity", "/hub/capacity"],
   ["packet", "/hub/settings/packet"],
+  ["setup", "/hub/setup"],
 ]
 
 const DRIVER_PAGES = [
