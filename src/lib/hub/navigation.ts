@@ -97,6 +97,8 @@ export const HUB_UTILITY_LINKS: HubNavLink[] = [
   { href: "/hub/reports", label: "Reports" },
   { href: "/hub/messages", label: "Messages" },
   { href: "/hub/tasks", label: "Tasks" },
+  { href: "/hub/guide", label: "Setup guide" },
+  { href: "/hub/help", label: "Help" },
   { href: "/hub/setup", label: "Smart Setup" },
   { href: "/hub/import", label: "Import" },
   { href: "/hub/settings/packet", label: "Carrier packet" },

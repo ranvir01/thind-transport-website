@@ -57,7 +57,7 @@ async function main() {
   await waitForText(fresh, "Set up your workspace")
   await shot(fresh, "02-getting-started")
   const checklist = await fresh.evaluate(() => document.body.innerText)
-  if (!checklist.includes("Add your trucks")) throw new Error("Getting-started checklist missing")
+  if (!checklist.includes("Smart Setup")) throw new Error("Getting-started checklist missing")
   if (checklist.includes("THD-")) throw new Error("NEW TENANT SEES THIND DATA — isolation broken!")
   console.log("   new workspace is empty + checklist shows ✓")
 

@@ -7,7 +7,9 @@ import { getDashboardStats } from "@/lib/hub/loads"
 import { todayData } from "@/lib/hub/today"
 import { fmtCents } from "@/lib/hub/types"
 import { Panel, PageHeader } from "@/components/hub/ui"
+import { SetupChecklist, SetupGuide } from "@/components/hub/SetupGuide"
 import { TimeOffDecisionPanel } from "@/components/hub/DriverOfficePanels"
+import { PRODUCT } from "@/lib/hub/product"
 import { requireOfficeUser } from "@/lib/hub/session"
 import { gettingStartedState } from "@/app/hub/_actions/onboarding"
 import { cn } from "@/lib/utils"
@@ -43,11 +45,20 @@ export default async function TodayPage() {
     <div>
       <PageHeader
         title={`Good ${new Date().getHours() < 12 ? "morning" : new Date().getHours() < 17 ? "afternoon" : "evening"}, ${user.name.split(" ")[0]}`}
-        subtitle="Today's huddle — everything that needs a human, one tap from its fix."
+        subtitle={PRODUCT.mission}
       />
 
-      {/* Compact KPI strip */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
+      {started && !Object.values(started).every(Boolean) ? (
+        <SetupChecklist progress={started} />
+      ) : (
+        <div className="mb-5">
+          <SetupGuide compact />
+        </div>
+      )}
+
+
+      {/* KPI strip — operational pulse */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5" data-tour="today-kpis">
         <Link href="/hub/dispatch">
           <Panel className="p-3.5 hover:border-border-strong h-full">
             <span className="text-label text-fg-3 uppercase">Active loads</span>
@@ -72,49 +83,6 @@ export default async function TodayPage() {
         </Link>
       </div>
 
-      {/* New-carrier getting-started checklist (Phase 7 onboarding) */}
-      {started && Object.values(started).some((done) => !done) ? (
-        <Panel className="p-4 md:p-5 mb-4 border-gold/40">
-          <h2 className="text-[13.5px] font-semibold text-fg mb-1">
-            Set up your workspace
-          </h2>
-          <p className="text-body-xs text-fg-3 mb-3">
-            Five steps and you&apos;re fully live — most carriers finish in an afternoon.
-          </p>
-          <ul className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
-            {[
-              { done: false, label: "Start Smart Setup — drop all your paperwork at once", href: "/hub/setup", highlight: true },
-              { done: started.trucks, label: "Trucks on file", href: "/hub/setup" },
-              { done: started.drivers, label: "Drivers on file", href: "/hub/setup" },
-              { done: started.customers, label: "Brokers on file (MC/DOT → FMCSA lookup)", href: "/hub/setup" },
-              { done: started.loads, label: "Load history imported", href: "/hub/import" },
-              { done: started.packet, label: "Carrier packet filed (W-9, COI)", href: "/hub/setup" },
-            ].map((step) => (
-              <li key={step.label}>
-                <Link
-                  href={step.href}
-                  className={cn(
-                    "flex items-center gap-2 rounded-lg px-2.5 py-2 text-sm hover:bg-hover min-h-[40px]",
-                    step.done ? "text-fg-3 line-through" : "text-fg-2 font-semibold",
-                    "highlight" in step && step.highlight && !step.done ? "border border-gold/40 bg-gold/5" : ""
-                  )}
-                >
-                  <span
-                    className={cn(
-                      "flex h-5 w-5 shrink-0 items-center justify-center rounded-full border text-[10px] font-bold",
-                      step.done ? "border-green-500/50 bg-green-500/15 text-green-400" : "border-border-strong text-fg-3"
-                    )}
-                  >
-                    {step.done ? "✓" : ""}
-                  </span>
-                  {step.label}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </Panel>
-      ) : null}
-
       {allQuiet ? (
         <Panel className="p-8 text-center mb-4">
           <p className="font-semibold text-xl text-fg">All quiet. Suspiciously quiet.</p>
@@ -127,7 +95,7 @@ export default async function TodayPage() {
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
         {/* Appointments today */}
         {today.stopsToday.length > 0 ? (
-          <Panel className="p-4">
+          <Panel className="p-4" data-tour="today-due">
             <h2 className="flex items-center gap-2 text-[13.5px] font-semibold text-fg mb-2">
               <MapPin className="h-4 w-4 text-gold" /> Due today ({today.stopsToday.length})
             </h2>
@@ -232,7 +200,7 @@ export default async function TodayPage() {
 
         {/* Money you haven't invoiced */}
         {today.unbilled.length > 0 ? (
-          <Panel className="p-4 border-gold/30">
+          <Panel className="p-4 border-gold/30" data-tour="today-unbilled">
             <h2 className="flex items-center gap-2 text-[13.5px] font-semibold text-fg mb-2">
               <Receipt className="h-4 w-4 text-gold" /> Money you haven&apos;t invoiced yet
             </h2>

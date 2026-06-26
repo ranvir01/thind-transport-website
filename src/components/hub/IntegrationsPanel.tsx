@@ -92,7 +92,7 @@ export function IntegrationCard({ card, encryptionReady }: { card: ProviderCard;
             {card.canSync ? (
               <button
                 onClick={syncNow} disabled={pending}
-                className="flex min-h-[40px] items-center gap-1.5 rounded-control bg-accent px-4 text-sm font-bold text-fg hover:bg-accent-hover disabled:opacity-60"
+                className="flex min-h-[40px] items-center gap-1.5 rounded-control bg-accent px-4 text-sm font-bold text-accent-fg hover:bg-accent-hover disabled:opacity-60"
               >
                 {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />} Sync now
               </button>

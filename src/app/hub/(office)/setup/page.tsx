@@ -1,7 +1,9 @@
 import { PageHeader } from "@/components/hub/ui"
+import { SetupGuide } from "@/components/hub/SetupGuide"
 import { SmartSetup } from "@/components/hub/SmartSetup"
 import { requireOfficeUser } from "@/lib/hub/session"
 import { queryOne } from "@/lib/hub/db"
+import Link from "next/link"
 
 export const dynamic = "force-dynamic"
 
@@ -20,8 +22,19 @@ export default async function SetupPage() {
     <div>
       <PageHeader
         title="Smart Setup"
-        subtitle="Upload paperwork once — HaulDesk extracts the fields, verifies brokers through FMCSA, and builds your workspace."
+        subtitle="Upload paperwork once — HaulDesk extracts the fields, verifies brokers through FMCSA, and builds your workspace. New here? Read the full playbook first."
+        action={
+          <Link
+            href="/hub/guide"
+            className="inline-flex min-h-[44px] items-center rounded-control border border-border-strong bg-surface px-4 text-sm font-semibold text-fg hover:bg-hover"
+          >
+            Setup guide
+          </Link>
+        }
       />
+      <div className="mb-6">
+        <SetupGuide compact />
+      </div>
       <SmartSetup
         progress={{
           trucks: Number(row?.trucks ?? 0),

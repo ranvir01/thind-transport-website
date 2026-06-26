@@ -15,6 +15,7 @@ import {
 import { NotificationsBell } from "@/components/hub/NotificationsBell"
 import { HubAppearanceMenu } from "@/components/hub/HubAppearanceMenu"
 import { CommandPalette } from "@/components/hub/CommandPalette"
+import { HubTourHost } from "@/components/hub/HubTour"
 
 export function HubShell({
   user,
@@ -39,7 +40,7 @@ export function HubShell({
           </span>
         </Link>
 
-        <nav className="hidden lg:flex items-center gap-0.5 ml-4 min-w-0 flex-1 overflow-x-auto">
+        <nav className="hidden lg:flex items-center gap-0.5 ml-4 min-w-0 flex-1 overflow-x-auto" data-tour="hub-primary-nav">
           {HUB_PRIMARY_SECTIONS.map((primary) => {
             const active = primary.id === section.id
             const first = primary.sub[0]?.href ?? "/hub"
@@ -58,7 +59,7 @@ export function HubShell({
           })}
         </nav>
 
-        <div className="ml-auto flex items-center gap-2 shrink-0">
+        <div className="ml-auto flex items-center gap-2 shrink-0" data-tour="hub-command-palette">
           <CommandPalette isOwner={isOwner} />
           <HubAppearanceMenu />
           <NotificationsBell direction="down" />
@@ -123,6 +124,7 @@ export function HubShell({
                 <Link
                   key={link.href}
                   href={link.href}
+                  data-tour={link.href === "/hub/guide" ? "hub-setup-guide" : undefined}
                   className={cn(
                     "block rounded-control px-2.5 py-2 text-sm transition-colors",
                     isNavActive(pathname, link.href)
@@ -138,6 +140,7 @@ export function HubShell({
         </aside>
 
         <main className="flex-1 min-w-0 px-4 py-6 md:px-8 md:py-8 pb-24 md:pb-8 max-w-[1400px]">
+          <HubTourHost />
           {children}
         </main>
       </div>

@@ -5,7 +5,7 @@ Check each gate on **production** with **real data** (not demo seed). All must p
 ## Automated
 
 - [ ] `npm run build` — zero errors
-- [ ] `npm test` — 109 tests green (requires Postgres for isolation suite)
+- [ ] `npm test` — 117 tests green (requires Postgres for isolation suite)
 - [ ] `npm run db:migrate` — clean on production DB
 - [ ] Demo accounts disabled; no `ThindDemo1!` in production
 

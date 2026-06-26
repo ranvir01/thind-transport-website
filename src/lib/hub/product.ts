@@ -16,9 +16,11 @@ export const PRODUCT = {
   shortName: "HaulDesk",
   /** Wordmark split for the two-line lockup used in nav/login. */
   wordmark: "HAULDESK",
-  tagline: "The office for your fleet",
+  tagline: "Run trucking start to finish",
   description:
-    "Dispatch, money, compliance, and driver tools for small and mid-size trucking carriers — all in one place.",
+    "Book loads, dispatch drivers, collect invoices, pay settlements, and stay compliant — laid out so anyone on your team can follow along, no TMS experience required.",
+  mission:
+    "Run your trucking company from first load to last invoice — in one calm place, no training manual required.",
   /** Used in User-Agent strings for free public APIs (Nominatim, NWS). */
   userAgent: "HaulDesk TMS (support@hauldesk.app)",
   supportEmail: "support@hauldesk.app",
