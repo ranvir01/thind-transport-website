@@ -15,11 +15,12 @@ function createPool(): Pool {
     throw new Error("POSTGRES_URL is not set — the Hub requires a Postgres database")
   }
   const isLocal = /localhost|127\.0\.0\.1/.test(url)
+  // Do not set search_path on the pool — Neon/Vercel pooled URLs reject startup
+  // parameters. All Hub SQL uses fully qualified hub.* table names.
   const pool = new Pool({
     connectionString: url,
     ssl: isLocal ? undefined : { rejectUnauthorized: false },
     max: 5,
-    options: "-c search_path=hub,public",
   })
   pool.on("error", (err) => console.error("Hub pool error:", err.message))
   return pool

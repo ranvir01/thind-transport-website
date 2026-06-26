@@ -62,8 +62,13 @@ async function main() {
   loadEnvLocal()
   const url = process.env.POSTGRES_URL
   if (!url) throw new Error("POSTGRES_URL required")
-  if (process.env.VERCEL_ENV === "production" || /thindtransport|prod/i.test(url)) {
-    throw new Error("Refusing to seed demo data into what looks like production")
+  if (
+    !process.env.DEMO_SEED_OK &&
+    (process.env.VERCEL_ENV === "production" || /thindtransport|prod/i.test(url))
+  ) {
+    throw new Error(
+      "Refusing to seed demo data into what looks like production. Set DEMO_SEED_OK=1 to override."
+    )
   }
 
   const ssl = /localhost|127\.0\.0\.1/.test(url) ? undefined : { rejectUnauthorized: false }
