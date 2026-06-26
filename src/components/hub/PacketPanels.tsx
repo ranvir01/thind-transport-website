@@ -26,10 +26,10 @@ export function SendPacketForm() {
 
   return (
     <Panel className="p-4 md:p-5">
-      <h2 className="flex items-center gap-2 font-display text-base font-bold uppercase tracking-wide text-white mb-1">
+      <h2 className="flex items-center gap-2 text-[13.5px] font-semibold text-fg mb-1">
         <Send className="h-4 w-4 text-gold" /> Send the packet
       </h2>
-      <p className="text-body-xs text-steel-300 mb-3">
+      <p className="text-body-xs text-fg-3 mb-3">
         One click emails the latest W-9, COI, authority letter, NOA, and agreement —
         onboarding speed wins loads.
       </p>
@@ -46,7 +46,7 @@ export function SendPacketForm() {
         />
         <button
           type="submit" disabled={pending || !form.to}
-          className="flex min-h-[48px] items-center gap-2 rounded-xl bg-orange px-6 font-display text-sm font-bold uppercase tracking-[0.08em] text-white shadow-cta hover:bg-orange-400 disabled:opacity-50"
+          className="flex min-h-[48px] items-center gap-2 rounded-control bg-accent px-6 font-semibold text-sm text-accent-fg hover:bg-accent-hover disabled:opacity-50"
         >
           {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Mail className="h-4 w-4" />}
           Email the packet
@@ -73,10 +73,10 @@ export function CoiRequestForm({ savedAgent }: { savedAgent: string }) {
 
   return (
     <Panel className="p-4 md:p-5">
-      <h2 className="font-display text-base font-bold uppercase tracking-wide text-white mb-1">
+      <h2 className="text-[13.5px] font-semibold text-fg mb-1">
         Request a COI
       </h2>
-      <p className="text-body-xs text-steel-300 mb-3">
+      <p className="text-body-xs text-fg-3 mb-3">
         New broker wants to be the certificate holder? One click to your agent.
       </p>
       <form onSubmit={submit} className="space-y-2">
@@ -129,7 +129,7 @@ export function AgreementSignPanel({
           Broker–carrier agreement signed{" "}
           {new Date(existingAgreement.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
         </span>
-        <a href={existingAgreement.url} target="_blank" rel="noreferrer" className="shrink-0 text-body-xs font-semibold text-steel-200 hover:text-white underline">
+        <a href={existingAgreement.url} target="_blank" rel="noreferrer" className="shrink-0 text-body-xs font-semibold text-fg-2 hover:text-fg underline">
           Open PDF
         </a>
       </p>
@@ -149,7 +149,7 @@ export function AgreementSignPanel({
 
   return (
     <div className="rounded-xl border border-gold/30 bg-gold/[0.05] p-3 space-y-2">
-      <p className="text-body-xs text-steel-200">
+      <p className="text-body-xs text-fg-2">
         The broker&apos;s rep signs with a finger — the signed PDF files itself on this customer.
       </p>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -168,7 +168,7 @@ export function AgreementSignPanel({
       <div className="flex gap-2">
         <button
           onClick={() => setOpen(false)}
-          className="flex-1 min-h-[44px] rounded-xl border border-white/15 text-sm font-semibold text-steel-100 hover:bg-white/5"
+          className="flex-1 min-h-[44px] rounded-xl border border-border-strong text-sm font-semibold text-fg-2 hover:bg-hover"
         >
           Cancel
         </button>
@@ -188,7 +188,7 @@ export function AgreementSignPanel({
             })
           }
           disabled={pending || !signature || !form.signerName.trim()}
-          className="flex flex-1 min-h-[44px] items-center justify-center gap-2 rounded-xl bg-orange text-sm font-bold text-white shadow-cta hover:bg-orange-400 disabled:opacity-50"
+          className="flex flex-1 min-h-[44px] items-center justify-center gap-2 rounded-control bg-accent text-sm font-bold text-fg hover:bg-accent-hover disabled:opacity-50"
         >
           {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : null} Sign & file
         </button>

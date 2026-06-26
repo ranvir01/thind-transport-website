@@ -31,7 +31,7 @@ export function AnnouncementComposer() {
 
   return (
     <Panel className="p-4 md:p-5">
-      <h2 className="font-display text-base font-bold uppercase tracking-wide text-white mb-3">
+      <h2 className="text-[13.5px] font-semibold text-fg mb-3">
         New announcement
       </h2>
       <form onSubmit={submit} className="space-y-3">
@@ -70,11 +70,11 @@ export function AnnouncementComposer() {
               type="checkbox"
               checked={form.requiresAck}
               onChange={(e) => setForm({ ...form, requiresAck: e.target.checked })}
-              className="h-5 w-5 rounded border-white/20 accent-orange"
+              className="h-5 w-5 rounded border-border-strong accent-orange"
             />
-            <span className="text-sm font-semibold text-white">
+            <span className="text-sm font-semibold text-fg">
               Require a signed acknowledgement
-              <span className="block text-body-xs font-normal text-steel-300">
+              <span className="block text-body-xs font-normal text-fg-3">
                 Pins it to their home screen until they sign
               </span>
             </span>
@@ -82,7 +82,7 @@ export function AnnouncementComposer() {
         </div>
         <button
           type="submit" disabled={pending}
-          className="flex min-h-[48px] items-center justify-center gap-2 rounded-xl bg-orange px-6 font-display text-sm font-bold uppercase tracking-[0.08em] text-white shadow-cta hover:bg-orange-400 disabled:opacity-60"
+          className="flex min-h-[48px] items-center justify-center gap-2 rounded-control bg-accent px-6 font-semibold text-sm text-accent-fg hover:bg-accent-hover disabled:opacity-60"
         >
           {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Megaphone className="h-4 w-4" />}
           Send announcement

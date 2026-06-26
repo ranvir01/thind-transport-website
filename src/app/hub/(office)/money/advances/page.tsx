@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils"
 export const dynamic = "force-dynamic"
 
 const STATUS_PILL: Record<string, string> = {
-  pending: "bg-steel-700/60 text-steel-200 border-steel-500/40",
+  pending: "bg-steel-700/60 text-fg-2 border-steel-500/40",
   outstanding: "bg-gold-500/15 text-gold-300 border-gold-400/30",
   applied: "bg-emerald-500/15 text-emerald-300 border-emerald-400/30",
   cancelled: "bg-red-500/15 text-red-300 border-red-400/30",
@@ -32,15 +32,15 @@ export default async function AdvancesPage() {
         {can(user.role, "money:write") ? (
           <AdvanceForm drivers={drivers.filter((d) => d.status === "active").map((d) => ({ id: d.id, label: `${d.first_name} ${d.last_name}` }))} />
         ) : null}
-        <Panel className="divide-y divide-white/5">
+        <Panel className="divide-y divide-border">
           {advances.length === 0 ? (
-            <p className="p-5 text-body-sm text-steel-300">No advances recorded.</p>
+            <p className="p-5 text-body-sm text-fg-3">No advances recorded.</p>
           ) : (
             advances.map((advance) => (
               <div key={advance.id} className="flex items-center justify-between gap-2 p-3.5 text-sm">
                 <div className="min-w-0">
-                  <p className="font-semibold text-white">{advance.driver_name}</p>
-                  <p className="text-body-xs text-steel-300">
+                  <p className="font-semibold text-fg">{advance.driver_name}</p>
+                  <p className="text-body-xs text-fg-3">
                     {String(advance.issued_on).slice(0, 10)}{advance.reference ? ` · ${advance.reference}` : ""}
                   </p>
                 </div>
@@ -48,7 +48,7 @@ export default async function AdvancesPage() {
                   <span className={cn("inline-flex rounded-full border px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider", STATUS_PILL[advance.status])}>
                     {advance.status === "pending" ? "driver asked" : advance.status}
                   </span>
-                  <span className="font-display font-extrabold text-gold">{fmtCentsExact(advance.amount_cents)}</span>
+                  <span className="font-mono font-medium text-accent-text tabular-nums">{fmtCentsExact(advance.amount_cents)}</span>
                   {advance.status === "pending" && can(user.role, "money:approve") ? (
                     <AdvanceDecideButtons id={advance.id} />
                   ) : null}

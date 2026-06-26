@@ -31,13 +31,13 @@ export default async function AnnouncementsPage() {
           {withTargets.length === 0 ? (
             <EmptyState title="Nothing sent yet" hint="Your first announcement lands on every targeted phone with a push alert." />
           ) : (
-            <Panel className="divide-y divide-white/5">
+            <Panel className="divide-y divide-border">
               {withTargets.map((a) => {
                 const complete = a.requires_ack && (a.ack_count ?? 0) >= a.audience_count
                 return (
-                  <Link key={a.id} href={`/hub/messages/announcements/${a.id}`} className="block p-4 hover:bg-white/5">
+                  <Link key={a.id} href={`/hub/messages/announcements/${a.id}`} className="block p-4 hover:bg-hover">
                     <div className="flex items-center justify-between gap-2">
-                      <p className="font-semibold text-white truncate">{a.title}</p>
+                      <p className="font-semibold text-fg truncate">{a.title}</p>
                       {a.requires_ack ? (
                         <span
                           className={cn(
@@ -50,13 +50,13 @@ export default async function AnnouncementsPage() {
                           {a.ack_count ?? 0}/{a.audience_count} signed
                         </span>
                       ) : (
-                        <span className="shrink-0 rounded-full border border-white/15 bg-white/5 px-2.5 py-0.5 text-[11px] font-bold text-steel-300">
+                        <span className="shrink-0 rounded-full border border-border-strong bg-surface-2 px-2.5 py-0.5 text-[11px] font-bold text-fg-3">
                           FYI only
                         </span>
                       )}
                     </div>
-                    <p className="mt-0.5 text-body-xs text-steel-300 truncate">{a.body}</p>
-                    <p className="mt-1 text-[11px] text-steel-400">
+                    <p className="mt-0.5 text-body-xs text-fg-3 truncate">{a.body}</p>
+                    <p className="mt-1 text-[11px] text-fg-3">
                       {new Date(a.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
                       {a.created_by_name ? ` · ${a.created_by_name}` : ""}
                     </p>

@@ -48,7 +48,7 @@ export function CapacityPanel({
   return (
     <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
       <Panel className="p-4 md:p-5">
-        <h2 className="flex items-center gap-2 font-display text-base font-bold uppercase tracking-wide text-white mb-3">
+        <h2 className="flex items-center gap-2 text-[13.5px] font-semibold text-fg mb-3">
           <Megaphone className="h-4 w-4 text-gold" /> Post available capacity
         </h2>
         <form onSubmit={submit} className="space-y-2">
@@ -77,24 +77,24 @@ export function CapacityPanel({
             className={fieldCls} value={form.destPreference}
             onChange={(e) => setForm({ ...form, destPreference: e.target.value })} />
           <button type="submit" disabled={pending}
-            className="flex min-h-[48px] items-center gap-2 rounded-xl bg-orange px-6 font-display text-sm font-bold uppercase tracking-[0.08em] text-white shadow-cta hover:bg-orange-400 disabled:opacity-60">
+            className="flex min-h-[48px] items-center gap-2 rounded-control bg-accent px-6 font-semibold text-sm text-accent-fg hover:bg-accent-hover disabled:opacity-60">
             {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : null} Post it
           </button>
         </form>
       </Panel>
 
-      <Panel className="divide-y divide-white/5">
+      <Panel className="divide-y divide-border">
         {postings.length === 0 ? (
-          <p className="p-5 text-body-sm text-steel-300">Nothing posted. Empty trucks don&apos;t pay for themselves.</p>
+          <p className="p-5 text-body-sm text-fg-3">Nothing posted. Empty trucks don&apos;t pay for themselves.</p>
         ) : (
           postings.map((posting) => (
             <div key={posting.id} className="flex items-center justify-between gap-2 p-3.5 text-sm">
               <div className="min-w-0">
-                <p className="font-semibold text-white">
+                <p className="font-semibold text-fg">
                   {posting.truck_unit ? `#${posting.truck_unit} · ` : ""}
                   {posting.equipment.replace("_", " ")} · {posting.origin_city}, {posting.origin_state}
                 </p>
-                <p className="text-body-xs text-steel-300">
+                <p className="text-body-xs text-fg-3">
                   Available {new Date(posting.available_on).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
                   {posting.dest_preference ? ` → ${posting.dest_preference}` : ""}
                 </p>
@@ -108,7 +108,7 @@ export function CapacityPanel({
                     else toast.error(result.error ?? "Failed")
                   })
                 }
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-steel-400 hover:bg-white/5 hover:text-red-400"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-fg-3 hover:bg-hover hover:text-red-400"
               >
                 <Trash2 className="h-4 w-4" />
               </button>

@@ -43,12 +43,12 @@ export function DvirPanel({
 
   return (
     <Panel className="p-4 md:p-5">
-      <h2 className="flex items-center gap-2 font-display text-base font-bold uppercase tracking-wide text-white mb-2">
+      <h2 className="flex items-center gap-2 text-[13.5px] font-semibold text-fg mb-2">
         <ClipboardCheck className="h-4 w-4 text-gold" /> Inspections (DVIR)
       </h2>
 
       {state !== "clear" && openDvir ? (
-        <div className="mb-3 rounded-xl border border-orange/40 bg-orange/[0.07] p-3">
+        <div className="mb-3 rounded-xl border border-accent/40 bg-accent/[0.07] p-3">
           <p className="text-sm font-bold text-orange">
             {state === "awaiting_repair"
               ? "Grounded — defects awaiting repair certification (396.13)"
@@ -56,12 +56,12 @@ export function DvirPanel({
           </p>
           <ul className="mt-1 space-y-0.5">
             {openDvir.defects.map((d, i) => (
-              <li key={i} className="text-body-sm text-steel-100">
+              <li key={i} className="text-body-sm text-fg-2">
                 • {d.label}{d.note ? ` — ${d.note}` : ""}
               </li>
             ))}
           </ul>
-          <p className="mt-1 text-body-xs text-steel-300">
+          <p className="mt-1 text-body-xs text-fg-3">
             Reported by {openDvir.driver_name} on{" "}
             {new Date(openDvir.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
           </p>
@@ -87,7 +87,7 @@ export function DvirPanel({
               />
               <button
                 type="submit" disabled={pending}
-                className="flex min-h-[48px] items-center gap-2 rounded-xl bg-orange px-5 font-display text-sm font-bold uppercase tracking-[0.08em] text-white shadow-cta hover:bg-orange-400 disabled:opacity-60"
+                className="flex min-h-[48px] items-center gap-2 rounded-control bg-accent px-5 font-semibold text-sm text-accent-fg hover:bg-accent-hover disabled:opacity-60"
               >
                 {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wrench className="h-4 w-4" />}
                 Certify the repair
@@ -98,15 +98,15 @@ export function DvirPanel({
       ) : null}
 
       {dvirs.length === 0 ? (
-        <p className="text-body-sm text-steel-300">
+        <p className="text-body-sm text-fg-3">
           No inspections filed yet — drivers do post-trips from their phones in about two minutes.
         </p>
       ) : (
-        <ul className="divide-y divide-white/5">
+        <ul className="divide-y divide-border">
           {dvirs.map((dvir) => (
             <li key={dvir.id} className="flex items-center justify-between gap-2 py-2 text-sm">
-              <span className="min-w-0 text-steel-100">
-                <span className="font-semibold text-white">{dvir.type === "post" ? "Post-trip" : "Pre-trip"}</span>
+              <span className="min-w-0 text-fg-2">
+                <span className="font-semibold text-fg">{dvir.type === "post" ? "Post-trip" : "Pre-trip"}</span>
                 {" · "}{dvir.driver_name}
                 {" · "}
                 {new Date(dvir.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
@@ -118,7 +118,7 @@ export function DvirPanel({
                     ? "border-green-500/40 bg-green-500/10 text-green-400"
                     : dvir.safe_to_operate
                       ? "border-gold/40 bg-gold/10 text-gold"
-                      : "border-orange/40 bg-orange/10 text-orange"
+                      : "border-accent/40 bg-accent/10 text-orange"
                 )}
               >
                 {dvir.defects.length === 0 ? (

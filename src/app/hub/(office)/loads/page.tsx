@@ -3,7 +3,18 @@ import { Plus, Search } from "lucide-react"
 import { listLoads } from "@/lib/hub/loads"
 import { requireOfficeUser } from "@/lib/hub/session"
 import { LOAD_STATUSES, STATUS_LABELS, fmtCents, loadTotalCents, type LoadStatus } from "@/lib/hub/types"
-import { Panel, PageHeader, StatusBadge, EmptyState, fieldCls } from "@/components/hub/ui"
+import {
+  btnPrimaryCls,
+  btnSecondaryCls,
+  EmptyState,
+  fieldCls,
+  linkAccentCls,
+  moneyCls,
+  PageHeader,
+  Panel,
+  StatusBadge,
+  tableHeadCls,
+} from "@/components/hub/ui"
 
 export const dynamic = "force-dynamic"
 
@@ -24,19 +35,15 @@ export default async function LoadsPage({
         title="Loads"
         subtitle="Search, filter, and manage every load."
         action={
-          <Link
-            href="/hub/loads/new"
-            className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-orange px-5 font-display text-sm font-bold uppercase tracking-[0.08em] text-white shadow-cta hover:bg-orange-400"
-          >
+          <Link href="/hub/loads/new" className={btnPrimaryCls}>
             <Plus className="h-4 w-4" /> New load
           </Link>
         }
       />
 
-      {/* Filters */}
-      <form method="GET" className="flex flex-col sm:flex-row gap-2 mb-4">
+      <form method="GET" className="mb-4 flex flex-col gap-2 sm:flex-row">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400" />
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-fg-3" />
           <input
             type="search"
             name="q"
@@ -49,13 +56,12 @@ export default async function LoadsPage({
           <option value="active">Active</option>
           <option value="all">All</option>
           {LOAD_STATUSES.map((s) => (
-            <option key={s} value={s}>{STATUS_LABELS[s]}</option>
+            <option key={s} value={s}>
+              {STATUS_LABELS[s]}
+            </option>
           ))}
         </select>
-        <button
-          type="submit"
-          className="min-h-[44px] rounded-xl border border-white/15 px-5 text-sm font-semibold text-steel-100 hover:bg-white/5"
-        >
+        <button type="submit" className={btnSecondaryCls}>
           Filter
         </button>
       </form>
@@ -67,73 +73,71 @@ export default async function LoadsPage({
         />
       ) : (
         <>
-          {/* Desktop table */}
-          <Panel className="hidden md:block overflow-x-auto">
-            <table className="w-full text-sm">
+          <Panel className="hidden overflow-x-auto md:block">
+            <table className="min-w-[900px] w-full text-sm">
               <thead>
-                <tr className="border-b border-white/10 text-left text-label text-steel-300 uppercase">
+                <tr className={tableHeadCls}>
                   <th className="px-4 py-3">Ref</th>
                   <th className="px-4 py-3">Status</th>
                   <th className="px-4 py-3">Lane</th>
                   <th className="px-4 py-3">Customer</th>
-                  <th className="px-4 py-3">Driver / Truck</th>
-                  <th className="px-4 py-3">Money</th>
+                  <th className="px-4 py-3">Driver / truck</th>
+                  <th className="px-4 py-3">Billing</th>
                   <th className="px-4 py-3 text-right">Rate</th>
                 </tr>
               </thead>
               <tbody>
                 {loads.map((load) => (
-                  <tr key={load.id} className="border-b border-white/5 hover:bg-white/5">
+                  <tr key={load.id} className="border-b border-border last:border-0 hover:bg-hover">
                     <td className="px-4 py-3">
-                      <Link href={`/hub/loads/${load.id}`} className="font-bold text-white hover:text-gold">
+                      <Link href={`/hub/loads/${load.id}`} className={`font-mono text-sm ${linkAccentCls}`}>
                         {load.reference}
                       </Link>
                       {load.customer_reference ? (
-                        <p className="text-body-xs text-steel-400">{load.customer_reference}</p>
+                        <p className="text-xs text-fg-3">{load.customer_reference}</p>
                       ) : null}
                     </td>
-                    <td className="px-4 py-3"><StatusBadge status={load.status} /></td>
-                    <td className="px-4 py-3 text-steel-100">
+                    <td className="px-4 py-3">
+                      <StatusBadge status={load.status} />
+                    </td>
+                    <td className="px-4 py-3 text-fg-2">
                       {load.origin_city ? `${load.origin_city}, ${load.origin_state}` : "—"}
                       {" → "}
                       {load.dest_city ? `${load.dest_city}, ${load.dest_state}` : "—"}
                     </td>
-                    <td className="px-4 py-3 text-steel-100">{load.customer_name ?? "—"}</td>
-                    <td className="px-4 py-3 text-steel-100">
+                    <td className="px-4 py-3 text-fg-2">{load.customer_name ?? "—"}</td>
+                    <td className="px-4 py-3 text-fg-2">
                       {load.driver_name ?? "Unassigned"}
                       {load.truck_unit ? ` · #${load.truck_unit}` : ""}
                     </td>
-                    <td className="px-4 py-3 text-body-xs uppercase font-bold text-cyan-300">
+                    <td className="px-4 py-3 text-xs font-medium uppercase text-fg-3">
                       {load.invoice_status ?? (load.settlement_id ? "settled" : "—")}
                     </td>
-                    <td className="px-4 py-3 text-right font-display font-extrabold text-gold">
-                      {fmtCents(loadTotalCents(load))}
-                    </td>
+                    <td className={`px-4 py-3 text-right text-base ${moneyCls}`}>{fmtCents(loadTotalCents(load))}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </Panel>
 
-          {/* Mobile cards */}
-          <div className="md:hidden space-y-2">
+          <div className="space-y-2 md:hidden">
             {loads.map((load) => (
               <Link key={load.id} href={`/hub/loads/${load.id}`} className="block">
-                <Panel className="p-3.5">
+                <Panel className="p-3.5 transition-colors hover:bg-hover">
                   <div className="flex items-center justify-between gap-2">
-                    <span className="font-bold text-white">{load.reference}</span>
+                    <span className="font-mono text-sm font-semibold text-fg">{load.reference}</span>
                     <StatusBadge status={load.status} />
                   </div>
-                  <p className="text-body-sm text-steel-200 mt-1">
+                  <p className="mt-1 text-sm text-fg-2">
                     {load.origin_city ? `${load.origin_city}, ${load.origin_state}` : "—"}
                     {" → "}
                     {load.dest_city ? `${load.dest_city}, ${load.dest_state}` : "—"}
                   </p>
                   <div className="mt-1.5 flex items-center justify-between gap-2">
-                    <p className="text-body-xs text-steel-300 truncate">
+                    <p className="truncate text-xs text-fg-3">
                       {load.customer_name ?? "—"} · {load.driver_name ?? "Unassigned"}
                     </p>
-                    <span className="font-display font-extrabold text-gold">{fmtCents(loadTotalCents(load))}</span>
+                    <span className={moneyCls}>{fmtCents(loadTotalCents(load))}</span>
                   </div>
                 </Panel>
               </Link>

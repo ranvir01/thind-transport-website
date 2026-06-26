@@ -72,7 +72,7 @@ export default async function DriverDetailPage({ params }: { params: Promise<{ i
           {payDescription ? (
             <Panel className="p-4 md:p-5">
               <div className="flex items-center justify-between gap-2 mb-3">
-                <h2 className="font-display text-base font-bold uppercase tracking-wide text-white">
+                <h2 className="text-[13.5px] font-semibold text-fg">
                   How {driver.first_name} gets paid
                 </h2>
                 <span className="rounded-full border border-gold/40 bg-gold/10 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-gold">
@@ -81,24 +81,24 @@ export default async function DriverDetailPage({ params }: { params: Promise<{ i
               </div>
               <ul className="space-y-1.5">
                 {payDescription.earnings.map((line) => (
-                  <li key={line} className="flex items-start gap-2 text-body-sm text-steel-100">
+                  <li key={line} className="flex items-start gap-2 text-body-sm text-fg-2">
                     <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-gold" /> {line}
                   </li>
                 ))}
               </ul>
               {payDescription.deductions.length > 0 ? (
                 <>
-                  <p className="mt-3 text-[11px] font-bold uppercase tracking-wider text-steel-300">Comes out each settlement</p>
+                  <p className="mt-3 text-[11px] font-bold uppercase tracking-wider text-fg-3">Comes out each settlement</p>
                   <ul className="mt-1 space-y-1.5">
                     {payDescription.deductions.map((line) => (
-                      <li key={line} className="flex items-start gap-2 text-body-sm text-steel-200">
-                        <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-orange" /> {line}
+                      <li key={line} className="flex items-start gap-2 text-body-sm text-fg-2">
+                        <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-accent" /> {line}
                       </li>
                     ))}
                   </ul>
                 </>
               ) : null}
-              <p className="mt-3 text-body-xs text-steel-400">
+              <p className="mt-3 text-body-xs text-fg-3">
                 {payRules!.isAuto
                   ? "Set by the pay fields on this page — settlements always follow this plan."
                   : "This driver settles under a custom pay plan; the simple pay fields are ignored."}
@@ -107,15 +107,15 @@ export default async function DriverDetailPage({ params }: { params: Promise<{ i
           ) : null}
           {scores.length > 0 ? (
             <Panel className="p-4 md:p-5">
-              <h2 className="font-display text-base font-bold uppercase tracking-wide text-white mb-1">
+              <h2 className="text-[13.5px] font-semibold text-fg mb-1">
                 Scorecard
               </h2>
-              <p className="text-body-xs text-steel-300 mb-3">
+              <p className="text-body-xs text-fg-3 mb-3">
                 70% on-time + 30% MPG vs fleet, −15 per incident. Feeds the performance bonus pay rule.
               </p>
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-white/10 text-left text-label text-steel-300 uppercase">
+                  <tr className="border-b border-border text-left text-label text-fg-3 uppercase">
                     <th className="py-1.5">Month</th>
                     <th className="py-1.5 text-right">On-time</th>
                     <th className="py-1.5 text-right">MPG</th>
@@ -125,19 +125,19 @@ export default async function DriverDetailPage({ params }: { params: Promise<{ i
                 </thead>
                 <tbody>
                   {scores.map((score) => (
-                    <tr key={String(score.month)} className="border-b border-white/5">
-                      <td className="py-1.5 text-steel-100">
+                    <tr key={String(score.month)} className="border-b border-border">
+                      <td className="py-1.5 text-fg-2">
                         {new Date(score.month).toLocaleDateString("en-US", { month: "short", year: "numeric" })}
                       </td>
-                      <td className="py-1.5 text-right text-steel-100">
+                      <td className="py-1.5 text-right text-fg-2">
                         {score.on_time_pct != null ? `${Number(score.on_time_pct).toFixed(0)}%` : "—"}
                       </td>
-                      <td className="py-1.5 text-right text-steel-100">
+                      <td className="py-1.5 text-right text-fg-2">
                         {score.mpg != null ? Number(score.mpg).toFixed(1) : "—"}
-                        {score.fleet_mpg != null ? <span className="text-steel-400"> / {Number(score.fleet_mpg).toFixed(1)}</span> : null}
+                        {score.fleet_mpg != null ? <span className="text-fg-3"> / {Number(score.fleet_mpg).toFixed(1)}</span> : null}
                       </td>
-                      <td className="py-1.5 text-right text-steel-100">{score.incidents}</td>
-                      <td className="py-1.5 text-right font-display font-extrabold text-gold">
+                      <td className="py-1.5 text-right text-fg-2">{score.incidents}</td>
+                      <td className="py-1.5 text-right font-mono font-medium text-accent-text tabular-nums">
                         {Number(score.composite).toFixed(0)}
                       </td>
                     </tr>
@@ -148,25 +148,25 @@ export default async function DriverDetailPage({ params }: { params: Promise<{ i
           ) : null}
           <DocumentsPanel entityType="driver" entityId={id} documents={documents} />
           <Panel className="p-4 md:p-5">
-            <h2 className="font-display text-base font-bold uppercase tracking-wide text-white mb-3">
+            <h2 className="text-[13.5px] font-semibold text-fg mb-3">
               Recent loads
             </h2>
             {loads.length === 0 ? (
-              <p className="text-body-sm text-steel-300">No loads yet.</p>
+              <p className="text-body-sm text-fg-3">No loads yet.</p>
             ) : (
-              <ul className="divide-y divide-white/5">
+              <ul className="divide-y divide-border">
                 {loads.slice(0, 8).map((load) => (
                   <li key={load.id}>
-                    <Link href={`/hub/loads/${load.id}`} className="flex items-center justify-between gap-2 py-2.5 hover:bg-white/5 rounded-lg px-2 -mx-2">
+                    <Link href={`/hub/loads/${load.id}`} className="flex items-center justify-between gap-2 py-2.5 hover:bg-hover rounded-lg px-2 -mx-2">
                       <div className="min-w-0">
-                        <p className="font-semibold text-white">{load.reference}</p>
-                        <p className="text-body-xs text-steel-300 truncate">
+                        <p className="font-semibold text-fg">{load.reference}</p>
+                        <p className="text-body-xs text-fg-3 truncate">
                           {load.origin_city ? `${load.origin_city}, ${load.origin_state}` : "—"} → {load.dest_city ? `${load.dest_city}, ${load.dest_state}` : "—"}
                         </p>
                       </div>
                       <div className="flex items-center gap-2 shrink-0">
                         <StatusBadge status={load.status} />
-                        <span className="font-display font-extrabold text-gold text-sm">{fmtCents(loadTotalCents(load))}</span>
+                        <span className="font-mono font-medium text-accent-text tabular-nums text-sm">{fmtCents(loadTotalCents(load))}</span>
                       </div>
                     </Link>
                   </li>

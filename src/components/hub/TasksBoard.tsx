@@ -21,9 +21,9 @@ import type { Task, TaskPriority, TaskRecurrence } from "@/lib/hub/types"
 
 const PRIORITY_STYLES: Record<TaskPriority, string> = {
   urgent: "border-red-500/40 bg-red-500/10 text-red-400",
-  high: "border-orange/40 bg-orange/10 text-orange",
-  normal: "border-white/15 bg-white/5 text-steel-300",
-  low: "border-white/10 bg-white/[0.03] text-steel-400",
+  high: "border-accent/40 bg-accent/10 text-orange",
+  normal: "border-border-strong bg-surface-2 text-fg-3",
+  low: "border-border bg-white/[0.03] text-fg-3",
 }
 
 function taskHref(task: Task): string | null {
@@ -76,7 +76,7 @@ export function QuickAddTask() {
   }
 
   return (
-    <form onSubmit={submit} className="rounded-2xl border border-white/10 bg-navy-800/60 p-3 space-y-2">
+    <form onSubmit={submit} className="rounded-2xl border border-border bg-bg-800/60 p-3 space-y-2">
       <div className="flex gap-2">
         <input
           aria-label="New task"
@@ -89,14 +89,14 @@ export function QuickAddTask() {
           type="button"
           aria-label={expanded ? "Fewer options" : "More options"}
           onClick={() => setExpanded((v) => !v)}
-          className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-white/15 text-steel-100 hover:bg-white/5"
+          className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-border-strong text-fg-2 hover:bg-hover"
         >
           {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
         </button>
         <button
           type="submit"
           disabled={pending || !form.title.trim()}
-          className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-orange text-white shadow-cta hover:bg-orange-400 disabled:opacity-50"
+          className="flex h-12 w-12 shrink-0 items-center justify-center rounded-control bg-accent text-accent-fg hover:bg-accent-hover disabled:opacity-50"
         >
           {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-5 w-5" />}
         </button>
@@ -176,31 +176,31 @@ export function TaskItem({ task }: { task: Task }) {
     })
 
   return (
-    <div className={cn("rounded-xl border p-3", overdue ? "border-red-500/30 bg-red-500/[0.04]" : "border-white/10 bg-white/[0.03]")}>
+    <div className={cn("rounded-xl border p-3", overdue ? "border-red-500/30 bg-red-500/[0.04]" : "border-border bg-white/[0.03]")}>
       <div className="flex items-start gap-3">
         <button
           onClick={complete}
           disabled={pending}
           aria-label="Mark done"
-          className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-white/25 text-transparent hover:border-gold hover:text-gold disabled:opacity-50"
+          className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-border-strong text-transparent hover:border-gold hover:text-gold disabled:opacity-50"
         >
           {pending ? <Loader2 className="h-4 w-4 animate-spin text-gold" /> : <Check className="h-4 w-4" />}
         </button>
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <p className="font-semibold text-white">{task.title}</p>
-            {task.recurrence !== "none" ? <Repeat className="h-3.5 w-3.5 text-steel-400" /> : null}
+            <p className="font-semibold text-fg">{task.title}</p>
+            {task.recurrence !== "none" ? <Repeat className="h-3.5 w-3.5 text-fg-3" /> : null}
             <span className={cn("rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider", PRIORITY_STYLES[task.priority])}>
               {task.priority}
             </span>
             {task.automation_key ? (
-              <span className="rounded-full border border-steel-400/30 bg-steel-400/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-steel-300">
+              <span className="rounded-full border border-steel-400/30 bg-steel-400/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-fg-3">
                 auto
               </span>
             ) : null}
           </div>
-          {task.notes ? <p className="mt-0.5 text-body-xs text-steel-300">{task.notes}</p> : null}
-          <div className="mt-1 flex flex-wrap items-center gap-3 text-[11px] text-steel-400">
+          {task.notes ? <p className="mt-0.5 text-body-xs text-fg-3">{task.notes}</p> : null}
+          <div className="mt-1 flex flex-wrap items-center gap-3 text-[11px] text-fg-3">
             {task.due_at ? (
               <span className={cn(overdue && "font-bold text-red-400")}>
                 {overdue ? "Overdue — " : "Due "}
@@ -208,7 +208,7 @@ export function TaskItem({ task }: { task: Task }) {
               </span>
             ) : null}
             {checklist.length > 0 ? (
-              <button onClick={() => setShowChecklist((v) => !v)} className="font-semibold text-steel-300 hover:text-white">
+              <button onClick={() => setShowChecklist((v) => !v)} className="font-semibold text-fg-3 hover:text-fg">
                 Checklist {doneCount}/{checklist.length} {showChecklist ? "▾" : "▸"}
               </button>
             ) : null}
@@ -227,9 +227,9 @@ export function TaskItem({ task }: { task: Task }) {
                       type="checkbox"
                       checked={item.done}
                       onChange={(e) => toggleItem(i, e.target.checked)}
-                      className="h-4 w-4 rounded border-white/25 accent-orange"
+                      className="h-4 w-4 rounded border-border-strong accent-orange"
                     />
-                    <span className={cn("text-sm", item.done ? "text-steel-400 line-through" : "text-steel-100")}>
+                    <span className={cn("text-sm", item.done ? "text-fg-3 line-through" : "text-fg-2")}>
                       {item.label}
                     </span>
                   </label>
@@ -242,7 +242,7 @@ export function TaskItem({ task }: { task: Task }) {
           onClick={remove}
           disabled={pending}
           aria-label="Delete task"
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-steel-400 hover:bg-white/5 hover:text-red-400"
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-fg-3 hover:bg-hover hover:text-red-400"
         >
           <Trash2 className="h-4 w-4" />
         </button>

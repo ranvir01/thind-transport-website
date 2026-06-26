@@ -39,8 +39,8 @@ export default async function SettlementDetailPage({ params }: { params: Promise
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
         <Panel className="xl:col-span-2 p-4 md:p-5">
-          <h2 className="font-display text-base font-bold uppercase tracking-wide text-white mb-3">Lines</h2>
-          <ul className="divide-y divide-white/5">
+          <h2 className="text-[13.5px] font-semibold text-fg mb-3">Lines</h2>
+          <ul className="divide-y divide-border">
             {lines.map((line) => (
               <li key={line.id} className="flex items-center justify-between gap-3 py-2.5 text-sm">
                 <div className="min-w-0">
@@ -51,12 +51,12 @@ export default async function SettlementDetailPage({ params }: { params: Promise
                   }`}>
                     {line.kind}
                   </span>
-                  <span className="text-steel-100">{line.label}</span>
+                  <span className="text-fg-2">{line.label}</span>
                   {line.source_type === "load" && line.source_id ? (
                     <Link href={`/hub/loads/${line.source_id}`} className="ml-2 text-body-xs text-gold">view load</Link>
                   ) : null}
                 </div>
-                <span className={`font-semibold shrink-0 ${line.kind === "deduction" ? "text-red-300" : "text-white"}`}>
+                <span className={`font-semibold shrink-0 ${line.kind === "deduction" ? "text-red-300" : "text-fg"}`}>
                   {line.kind === "deduction" ? "−" : ""}{fmtCentsExact(line.amount_cents)}
                 </span>
               </li>
@@ -66,12 +66,12 @@ export default async function SettlementDetailPage({ params }: { params: Promise
 
         <div className="space-y-4">
           <Panel className="p-4 md:p-5">
-            <h2 className="font-display text-base font-bold uppercase tracking-wide text-white mb-3">Totals</h2>
+            <h2 className="text-[13.5px] font-semibold text-fg mb-3">Totals</h2>
             <dl className="space-y-2 text-sm">
-              <div className="flex justify-between"><dt className="text-steel-200">Gross</dt><dd className="text-white font-semibold">{fmtCentsExact(settlement.gross_cents)}</dd></div>
-              <div className="flex justify-between"><dt className="text-steel-200">Deductions</dt><dd className="text-red-300 font-semibold">−{fmtCentsExact(settlement.deductions_cents)}</dd></div>
-              <div className="flex justify-between border-t border-white/10 pt-2">
-                <dt className="text-white font-bold">Net pay</dt>
+              <div className="flex justify-between"><dt className="text-fg-2">Gross</dt><dd className="text-fg font-semibold">{fmtCentsExact(settlement.gross_cents)}</dd></div>
+              <div className="flex justify-between"><dt className="text-fg-2">Deductions</dt><dd className="text-red-300 font-semibold">−{fmtCentsExact(settlement.deductions_cents)}</dd></div>
+              <div className="flex justify-between border-t border-border pt-2">
+                <dt className="text-fg font-bold">Net pay</dt>
                 <dd className="font-display text-gold font-extrabold text-lg">{fmtCentsExact(settlement.net_cents)}</dd>
               </div>
             </dl>
@@ -79,7 +79,7 @@ export default async function SettlementDetailPage({ params }: { params: Promise
           {can(user.role, "money:approve") ? (
             <SettlementActions settlementId={id} status={settlement.status} />
           ) : null}
-          <p className="text-body-xs text-steel-400">
+          <p className="text-body-xs text-fg-3">
             Approving applies advances, posts the escrow contribution to the ledger, generates the statement PDF, and emails the driver. Every line links to its source record.
           </p>
         </div>

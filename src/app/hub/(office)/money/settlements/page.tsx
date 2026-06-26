@@ -50,25 +50,25 @@ export default async function SettlementsPage() {
         <div className="space-y-2 mb-6">
           {settlements.map((settlement) => (
             <Link key={settlement.id} href={`/hub/money/settlements/${settlement.id}`} className="block">
-              <Panel className="p-3.5 hover:border-white/20 transition-colors">
+              <Panel className="p-3.5 hover:border-border-strong transition-colors">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div className="min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-bold text-white">{settlement.driver_name}</span>
+                      <span className="font-bold text-fg">{settlement.driver_name}</span>
                       <span className={cn("inline-flex rounded-full border px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider", STATUS_PILL[settlement.status])}>
                         {settlement.status}
                       </span>
-                      <span className="text-body-xs text-steel-400 uppercase">
+                      <span className="text-body-xs text-fg-3 uppercase">
                         {settlement.pay_type === "percentage" ? "Owner-op" : "Company"}
                       </span>
                     </div>
-                    <p className="text-body-sm text-steel-200 mt-1">
+                    <p className="text-body-sm text-fg-2 mt-1">
                       {String(settlement.period_start).slice(0, 10)} — {String(settlement.period_end).slice(0, 10)}
                     </p>
                   </div>
                   <div className="text-right shrink-0">
-                    <p className="font-display font-extrabold text-gold">{fmtCents(settlement.net_cents)}</p>
-                    <p className="text-body-xs text-steel-300">
+                    <p className="font-mono font-medium text-accent-text tabular-nums">{fmtCents(settlement.net_cents)}</p>
+                    <p className="text-body-xs text-fg-3">
                       gross {fmtCents(settlement.gross_cents)} − {fmtCents(settlement.deductions_cents)}
                     </p>
                   </div>
@@ -81,12 +81,12 @@ export default async function SettlementsPage() {
 
       {escrow.length > 0 ? (
         <>
-          <h2 className="font-display text-lg font-bold uppercase tracking-wide text-white mb-3">Escrow balances</h2>
-          <Panel className="divide-y divide-white/5">
+          <h2 className="font-display text-lg font-bold uppercase tracking-wide text-fg mb-3">Escrow balances</h2>
+          <Panel className="divide-y divide-border">
             {escrow.map((entry) => (
               <div key={entry.driver_id} className="flex items-center justify-between p-3.5 text-sm">
-                <span className="text-steel-100 font-semibold">{entry.driver_name}</span>
-                <span className="font-display font-extrabold text-white">{fmtCents(Number(entry.balance_cents))}</span>
+                <span className="text-fg-2 font-semibold">{entry.driver_name}</span>
+                <span className="font-display font-extrabold text-fg">{fmtCents(Number(entry.balance_cents))}</span>
               </div>
             ))}
           </Panel>

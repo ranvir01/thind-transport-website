@@ -42,21 +42,21 @@ export default async function HubWelcomePage() {
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
       <Panel className="w-full max-w-md p-6 md:p-8 text-center">
-        <span className="brand-wordmark text-2xl font-semibold text-white tracking-[0.14em]">{PRODUCT.wordmark}</span>
+        <span className="brand-wordmark text-2xl font-semibold text-fg tracking-[0.14em]">{PRODUCT.wordmark}</span>
         <span className="block text-[11px] font-bold uppercase tracking-[0.3em] text-gold mt-1">
           {carrier?.name ?? PRODUCT.tagline}
         </span>
         <p className="mt-6 inline-flex rounded-full border border-gold/40 bg-gold/10 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-gold">
           Coming soon
         </p>
-        <h1 className="mt-3 font-display text-xl font-extrabold uppercase tracking-wide text-white">
+        <h1 className="mt-3 font-display text-xl font-extrabold uppercase tracking-wide text-fg">
           {copy.title}
         </h1>
-        <p className="mt-2 text-body-sm text-steel-200">
+        <p className="mt-2 text-body-sm text-fg-2">
           Hi {user.name.split(" ")[0]} — you&apos;re signed in. {copy.body}
         </p>
         {phone ? (
-          <p className="mt-4 text-body-sm text-steel-200">
+          <p className="mt-4 text-body-sm text-fg-2">
             Until then, dispatch has you covered:{" "}
             <a href={`tel:${phone.replace(/[^0-9+]/g, "")}`} className="text-gold font-semibold">
               {phone}
@@ -65,7 +65,7 @@ export default async function HubWelcomePage() {
         ) : null}
         <div className="mt-6 space-y-3">
           <SignOutButton />
-          <Link href="/" className="block text-body-sm text-steel-300 hover:text-white">
+          <Link href="/" className="block text-body-sm text-fg-3 hover:text-fg">
             Back to the website
           </Link>
         </div>

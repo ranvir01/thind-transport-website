@@ -46,7 +46,7 @@ export function AdvanceStatusButton({
     <button
       onClick={advance}
       disabled={pending}
-      className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-orange px-5 font-display text-sm font-bold uppercase tracking-[0.08em] text-white shadow-cta hover:bg-orange-400 disabled:opacity-60"
+      className="inline-flex min-h-[44px] items-center gap-2 rounded-control bg-accent px-5 font-semibold text-sm text-accent-fg hover:bg-accent-hover disabled:opacity-60"
     >
       {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4" />}
       Mark {STATUS_LABELS[next]}
@@ -83,14 +83,14 @@ export function CancelLoadButton({ loadId, status }: { loadId: string; status: L
       <button
         onClick={cancel}
         disabled={pending}
-        className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-red-600 px-4 text-sm font-bold text-white hover:bg-red-500 disabled:opacity-60"
+        className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-red-600 px-4 text-sm font-bold text-fg hover:bg-red-500 disabled:opacity-60"
       >
         {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Ban className="h-4 w-4" />}
         Confirm cancel
       </button>
       <button
         onClick={() => setConfirming(false)}
-        className="min-h-[44px] rounded-xl px-3 text-sm font-semibold text-steel-200 hover:bg-white/5"
+        className="min-h-[44px] rounded-xl px-3 text-sm font-semibold text-fg-2 hover:bg-hover"
       >
         Keep load
       </button>
@@ -123,7 +123,7 @@ export function CheckCallButton({ loadId }: { loadId: string }) {
     return (
       <button
         onClick={() => setOpen(true)}
-        className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-white/15 px-4 text-sm font-semibold text-steel-100 hover:bg-white/5"
+        className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-border-strong px-4 text-sm font-semibold text-fg-2 hover:bg-hover"
       >
         <MessageSquare className="h-4 w-4" /> Check call
       </button>
@@ -149,7 +149,7 @@ export function CheckCallButton({ loadId }: { loadId: string }) {
       <button
         type="button"
         onClick={() => setOpen(false)}
-        className="min-h-[44px] shrink-0 rounded-xl px-3 text-sm font-semibold text-steel-200 hover:bg-white/5"
+        className="min-h-[44px] shrink-0 rounded-xl px-3 text-sm font-semibold text-fg-2 hover:bg-hover"
       >
         Cancel
       </button>
@@ -183,7 +183,7 @@ export function StopTimestampButton({
     <button
       onClick={record}
       disabled={pending}
-      className="inline-flex min-h-[36px] items-center gap-1.5 rounded-lg border border-white/15 px-3 text-xs font-semibold text-steel-100 hover:bg-white/5 disabled:opacity-50"
+      className="inline-flex min-h-[36px] items-center gap-1.5 rounded-lg border border-border-strong px-3 text-xs font-semibold text-fg-2 hover:bg-hover disabled:opacity-50"
     >
       {pending ? <Loader2 className="h-3 w-3 animate-spin" /> : null}
       {label}

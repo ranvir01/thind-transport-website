@@ -34,7 +34,7 @@ export default async function PlatformAdminPage() {
       <div className="mx-auto max-w-4xl">
         <div className="mb-6 flex items-center justify-between">
           <div>
-            <span className="brand-wordmark text-xl font-semibold text-white tracking-[0.14em]">
+            <span className="brand-wordmark text-xl font-semibold text-fg tracking-[0.14em]">
               {PRODUCT.wordmark}
             </span>
             <span className="ml-3 text-[10px] font-bold uppercase tracking-[0.25em] text-gold">
@@ -46,7 +46,7 @@ export default async function PlatformAdminPage() {
           </div>
         </div>
 
-        <p className="mb-4 text-body-sm text-steel-300">
+        <p className="mb-4 text-body-sm text-fg-3">
           Tenants and operational counts only — customer business data stays inside each workspace.
         </p>
 
@@ -54,11 +54,11 @@ export default async function PlatformAdminPage() {
           {tenants.map((tenant) => (
             <div key={tenant.id} className="flex flex-wrap items-center justify-between gap-2 p-4">
               <div className="min-w-0">
-                <p className="font-semibold text-white">
+                <p className="font-semibold text-fg">
                   {tenant.name}
-                  {tenant.dot_number ? <span className="text-steel-400 font-normal"> · DOT {tenant.dot_number}</span> : null}
+                  {tenant.dot_number ? <span className="text-fg-3 font-normal"> · DOT {tenant.dot_number}</span> : null}
                 </p>
-                <p className="text-body-xs text-steel-300">
+                <p className="text-body-xs text-fg-3">
                   {tenant.users} user(s) · {tenant.trucks} truck(s) · {tenant.loads_30d} load(s) last 30d ·
                   since {new Date(tenant.created_at).toLocaleDateString("en-US", { month: "short", year: "numeric" })}
                 </p>

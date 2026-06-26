@@ -45,17 +45,17 @@ export default async function ReportsPage() {
       />
 
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4">
-        <Panel className="p-4"><span className="text-label text-steel-300 uppercase">Revenue</span><p className="mt-2 font-display text-xl font-extrabold text-gold">{fmtCents(totals.revenue)}</p></Panel>
-        <Panel className="p-4"><span className="text-label text-steel-300 uppercase">Fuel</span><p className="mt-2 font-display text-xl font-extrabold text-white">{fmtCents(totals.fuel)}</p></Panel>
-        <Panel className="p-4"><span className="text-label text-steel-300 uppercase">Maintenance</span><p className="mt-2 font-display text-xl font-extrabold text-white">{fmtCents(totals.maintenance)}</p></Panel>
-        <Panel className="p-4"><span className="text-label text-steel-300 uppercase">Other</span><p className="mt-2 font-display text-xl font-extrabold text-white">{fmtCents(totals.other)}</p></Panel>
-        <Panel className="p-4"><span className="text-label text-steel-300 uppercase">Net</span><p className={`mt-2 font-display text-xl font-extrabold ${totals.net >= 0 ? "text-emerald-300" : "text-red-300"}`}>{fmtCents(totals.net)}</p></Panel>
+        <Panel className="p-4"><span className="text-label text-fg-3 uppercase">Revenue</span><p className="mt-2 font-display text-xl font-extrabold text-gold">{fmtCents(totals.revenue)}</p></Panel>
+        <Panel className="p-4"><span className="text-label text-fg-3 uppercase">Fuel</span><p className="mt-2 font-semibold text-xl text-fg">{fmtCents(totals.fuel)}</p></Panel>
+        <Panel className="p-4"><span className="text-label text-fg-3 uppercase">Maintenance</span><p className="mt-2 font-semibold text-xl text-fg">{fmtCents(totals.maintenance)}</p></Panel>
+        <Panel className="p-4"><span className="text-label text-fg-3 uppercase">Other</span><p className="mt-2 font-semibold text-xl text-fg">{fmtCents(totals.other)}</p></Panel>
+        <Panel className="p-4"><span className="text-label text-fg-3 uppercase">Net</span><p className={`mt-2 font-display text-xl font-extrabold ${totals.net >= 0 ? "text-emerald-300" : "text-red-300"}`}>{fmtCents(totals.net)}</p></Panel>
       </div>
 
       <Panel className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-white/10 text-left text-label text-steel-300 uppercase">
+            <tr className="border-b border-border text-left text-label text-fg-3 uppercase">
               <th className="px-4 py-3">Truck</th>
               <th className="px-4 py-3 text-right">Revenue</th>
               <th className="px-4 py-3 text-right">Fuel</th>
@@ -69,16 +69,16 @@ export default async function ReportsPage() {
             {pnl.map((row) => {
               const miles = Number(row.loaded_miles ?? 0)
               return (
-                <tr key={row.truck_id} className="border-b border-white/5">
-                  <td className="px-4 py-2.5 font-bold text-white">#{row.unit_number}</td>
+                <tr key={row.truck_id} className="border-b border-border">
+                  <td className="px-4 py-2.5 font-bold text-fg">#{row.unit_number}</td>
                   <td className="px-4 py-2.5 text-right text-gold font-semibold">{fmtCents(Number(row.revenue_cents))}</td>
-                  <td className="px-4 py-2.5 text-right text-steel-100">{fmtCents(Number(row.fuel_cents))}</td>
-                  <td className="px-4 py-2.5 text-right text-steel-100">{fmtCents(Number(row.maintenance_cents))}</td>
-                  <td className="px-4 py-2.5 text-right text-steel-100">{fmtCents(Number(row.other_expense_cents))}</td>
+                  <td className="px-4 py-2.5 text-right text-fg-2">{fmtCents(Number(row.fuel_cents))}</td>
+                  <td className="px-4 py-2.5 text-right text-fg-2">{fmtCents(Number(row.maintenance_cents))}</td>
+                  <td className="px-4 py-2.5 text-right text-fg-2">{fmtCents(Number(row.other_expense_cents))}</td>
                   <td className={`px-4 py-2.5 text-right font-semibold ${row.net_cents >= 0 ? "text-emerald-300" : "text-red-300"}`}>
                     {fmtCents(row.net_cents)}
                   </td>
-                  <td className="px-4 py-2.5 text-right text-steel-100">
+                  <td className="px-4 py-2.5 text-right text-fg-2">
                     {miles > 0 ? `$${(row.net_cents / 100 / miles).toFixed(2)}` : "—"}
                   </td>
                 </tr>
@@ -90,17 +90,17 @@ export default async function ReportsPage() {
 
       {/* Lane leaderboard (Phase 6/M10) */}
       <div className="mt-6 flex items-center justify-between gap-2 mb-2">
-        <h2 className="font-display text-lg font-bold uppercase tracking-wide text-white">Lane leaderboard</h2>
+        <h2 className="font-display text-lg font-bold uppercase tracking-wide text-fg">Lane leaderboard</h2>
         <a
           href={LANES_EXPORT_URL}
-          className="inline-flex min-h-[40px] items-center gap-2 rounded-xl border border-white/15 px-3 text-body-xs font-semibold text-steel-100 hover:bg-white/5"
+          className="inline-flex min-h-[40px] items-center gap-2 rounded-xl border border-border-strong px-3 text-body-xs font-semibold text-fg-2 hover:bg-hover"
         >
           <Download className="h-3.5 w-3.5" /> Lanes CSV
         </a>
       </div>
       {lanes.length === 0 ? (
         <Panel className="p-5">
-          <p className="text-body-sm text-steel-300">
+          <p className="text-body-sm text-fg-3">
             Lane history builds itself from your loads — it recomputes nightly.
           </p>
         </Panel>
@@ -108,7 +108,7 @@ export default async function ReportsPage() {
         <Panel className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-white/10 text-left text-label text-steel-300 uppercase">
+              <tr className="border-b border-border text-left text-label text-fg-3 uppercase">
                 <th className="px-4 py-3">Lane</th>
                 <th className="px-4 py-3 text-right">Loads</th>
                 <th className="px-4 py-3 text-right">Revenue</th>
@@ -118,13 +118,13 @@ export default async function ReportsPage() {
             </thead>
             <tbody>
               {lanes.slice(0, 12).map((lane) => (
-                <tr key={lane.id} className="border-b border-white/5">
-                  <td className="px-4 py-2.5 font-semibold text-white">
+                <tr key={lane.id} className="border-b border-border">
+                  <td className="px-4 py-2.5 font-semibold text-fg">
                     {lane.origin_city}, {lane.origin_state} → {lane.dest_city}, {lane.dest_state}
                   </td>
-                  <td className="px-4 py-2.5 text-right text-steel-100">{lane.loads_count}</td>
+                  <td className="px-4 py-2.5 text-right text-fg-2">{lane.loads_count}</td>
                   <td className="px-4 py-2.5 text-right text-gold font-semibold">{fmtCents(Number(lane.revenue_cents))}</td>
-                  <td className="px-4 py-2.5 text-right text-steel-100">
+                  <td className="px-4 py-2.5 text-right text-fg-2">
                     {lane.avg_rpm_cents ? `$${(lane.avg_rpm_cents / 100).toFixed(2)}` : "—"}
                   </td>
                   <td className={`px-4 py-2.5 text-right font-semibold ${Number(lane.margin_cents) >= 0 ? "text-emerald-300" : "text-red-300"}`}>

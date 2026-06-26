@@ -58,7 +58,7 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
         action={
           <Link
             href={`/hub/customers/${id}/edit`}
-            className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-white/15 px-4 text-sm font-semibold text-steel-100 hover:bg-white/5"
+            className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-border-strong px-4 text-sm font-semibold text-fg-2 hover:bg-hover"
           >
             <Pencil className="h-4 w-4" /> Edit
           </Link>
@@ -68,16 +68,16 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
       {/* Relationship stats */}
       <div className="grid grid-cols-3 gap-3 mb-4">
         <Panel className="p-4">
-          <span className="text-label text-steel-300 uppercase">Loads</span>
-          <p className="mt-1 font-display text-2xl font-extrabold text-white">{loads.length}</p>
+          <span className="text-label text-fg-3 uppercase">Loads</span>
+          <p className="mt-1 font-mono text-2xl font-medium text-fg tabular-nums">{loads.length}</p>
         </Panel>
         <Panel className="p-4">
-          <span className="text-label text-steel-300 uppercase">Revenue</span>
-          <p className="mt-1 font-display text-2xl font-extrabold text-gold">{fmtCents(revenue)}</p>
+          <span className="text-label text-fg-3 uppercase">Revenue</span>
+          <p className="mt-1 font-mono text-2xl font-medium text-fg tabular-nums">{fmtCents(revenue)}</p>
         </Panel>
         <Panel className="p-4">
-          <span className="text-label text-steel-300 uppercase">Avg rate/mi</span>
-          <p className="mt-1 font-display text-2xl font-extrabold text-white">
+          <span className="text-label text-fg-3 uppercase">Avg rate/mi</span>
+          <p className="mt-1 font-mono text-2xl font-medium text-fg tabular-nums">
             {avgRpm ? `$${avgRpm.toFixed(2)}` : "—"}
           </p>
         </Panel>
@@ -122,25 +122,25 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
         </div>
 
         <Panel className="p-4 md:p-5">
-          <h2 className="font-display text-base font-bold uppercase tracking-wide text-white mb-3">
+          <h2 className="text-[13.5px] font-semibold text-fg mb-3">
             Load history
           </h2>
           {loads.length === 0 ? (
-            <p className="text-body-sm text-steel-300">No loads with this customer yet.</p>
+            <p className="text-body-sm text-fg-3">No loads with this customer yet.</p>
           ) : (
-            <ul className="divide-y divide-white/5">
+            <ul className="divide-y divide-border">
               {loads.slice(0, 15).map((load) => (
                 <li key={load.id}>
-                  <Link href={`/hub/loads/${load.id}`} className="flex items-center justify-between gap-2 py-2.5 hover:bg-white/5 rounded-lg px-2 -mx-2">
+                  <Link href={`/hub/loads/${load.id}`} className="flex items-center justify-between gap-2 py-2.5 hover:bg-hover rounded-lg px-2 -mx-2">
                     <div className="min-w-0">
-                      <p className="font-semibold text-white">{load.reference}</p>
-                      <p className="text-body-xs text-steel-300 truncate">
+                      <p className="font-semibold text-fg">{load.reference}</p>
+                      <p className="text-body-xs text-fg-3 truncate">
                         {load.origin_city ? `${load.origin_city}, ${load.origin_state}` : "—"} → {load.dest_city ? `${load.dest_city}, ${load.dest_state}` : "—"}
                       </p>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
                       <StatusBadge status={load.status} />
-                      <span className="font-display font-extrabold text-gold text-sm">{fmtCents(loadTotalCents(load))}</span>
+                      <span className="font-mono font-medium text-accent-text tabular-nums text-sm">{fmtCents(loadTotalCents(load))}</span>
                     </div>
                   </Link>
                 </li>

@@ -34,7 +34,7 @@ export function FacilityInfoForm({
 
   return (
     <Panel className="p-4 md:p-5">
-      <h2 className="font-display text-base font-bold uppercase tracking-wide text-white mb-3">
+      <h2 className="text-[13.5px] font-semibold text-fg mb-3">
         The basics
       </h2>
       <form onSubmit={submit} className="space-y-3">
@@ -82,7 +82,7 @@ export function FacilityInfoForm({
         </div>
         <button
           type="submit" disabled={pending}
-          className="flex min-h-[48px] items-center justify-center gap-2 rounded-xl bg-orange px-6 font-display text-sm font-bold uppercase tracking-[0.08em] text-white shadow-cta hover:bg-orange-400 disabled:opacity-60"
+          className="flex min-h-[48px] items-center justify-center gap-2 rounded-control bg-accent px-6 font-semibold text-sm text-accent-fg hover:bg-accent-hover disabled:opacity-60"
         >
           {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
           Save
@@ -124,7 +124,7 @@ export function OfficeNoteComposer({ facilityId }: { facilityId: string }) {
               "rounded-full border px-2.5 py-1 text-body-xs font-semibold capitalize min-h-[32px]",
               tags.includes(tag)
                 ? "border-gold/60 bg-gold/20 text-gold"
-                : "border-white/15 bg-white/5 text-steel-300"
+                : "border-border-strong bg-surface-2 text-fg-3"
             )}
           >
             {tag}
@@ -138,7 +138,7 @@ export function OfficeNoteComposer({ facilityId }: { facilityId: string }) {
         />
         <button
           type="submit" disabled={pending || (!body.trim() && tags.length === 0)}
-          className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-orange text-white shadow-cta hover:bg-orange-400 disabled:opacity-50"
+          className="flex h-12 w-12 shrink-0 items-center justify-center rounded-control bg-accent text-accent-fg hover:bg-accent-hover disabled:opacity-50"
         >
           {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <MessageSquarePlus className="h-5 w-5" />}
         </button>

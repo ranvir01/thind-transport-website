@@ -12,9 +12,9 @@ import { reclassifyFuelUse } from "@/app/hub/_actions/fuel"
 import { FUEL_USES, type FuelUse } from "@/lib/hub/types"
 
 const STYLES: Record<FuelUse, string> = {
-  tractor: "border-white/15 bg-white/5 text-steel-200",
+  tractor: "border-border-strong bg-surface-2 text-fg-2",
   reefer: "border-gold/40 bg-gold/10 text-gold",
-  other: "border-steel-400/30 bg-steel-400/10 text-steel-300",
+  other: "border-steel-400/30 bg-steel-400/10 text-fg-3",
 }
 
 const SHORT: Record<FuelUse, string> = {
@@ -65,18 +65,18 @@ export function FuelUseBadge({ id, value }: { id: string; value: FuelUse }) {
         {SHORT[current]}
       </button>
       {open ? (
-        <div className="absolute right-0 top-9 z-30 w-56 overflow-hidden rounded-xl border border-white/10 bg-navy-900 shadow-2xl">
+        <div className="absolute right-0 top-9 z-30 w-56 overflow-hidden rounded-xl border border-border bg-surface shadow-2xl">
           {FUEL_USES.map((use) => (
             <button
               key={use}
               onClick={() => pick(use)}
               className={cn(
-                "block w-full px-3 py-2.5 text-left hover:bg-white/5 min-h-[44px]",
-                use === current && "bg-white/5"
+                "block w-full px-3 py-2.5 text-left hover:bg-hover min-h-[44px]",
+                use === current && "bg-surface-2"
               )}
             >
-              <span className="text-sm font-semibold text-white">{SHORT[use]} fuel</span>
-              <span className="block text-[11px] text-steel-300">{HINT[use]}</span>
+              <span className="text-sm font-semibold text-fg">{SHORT[use]} fuel</span>
+              <span className="block text-[11px] text-fg-3">{HINT[use]}</span>
             </button>
           ))}
         </div>

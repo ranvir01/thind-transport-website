@@ -175,13 +175,13 @@ function ScanCard({
       <div className="flex items-start justify-between gap-3 mb-3">
         <div>
           <p className="text-label text-gold uppercase">{scan.analysis.label}</p>
-          <p className="text-body-sm text-steel-200 truncate max-w-[240px]">{scan.fileName}</p>
+          <p className="text-body-sm text-fg-2 truncate max-w-[240px]">{scan.fileName}</p>
         </div>
         <button
           type="button"
           onClick={onRemove}
           disabled={scan.applied}
-          className="rounded-lg p-2 text-steel-400 hover:bg-white/5 hover:text-white min-h-[44px] min-w-[44px] flex items-center justify-center"
+          className="rounded-lg p-2 text-fg-3 hover:bg-hover hover:text-fg min-h-[44px] min-w-[44px] flex items-center justify-center"
           aria-label="Remove"
         >
           <Trash2 className="h-4 w-4" />
@@ -190,14 +190,14 @@ function ScanCard({
 
       <div className="flex flex-wrap gap-1.5 mb-3">
         {scan.analysis.summary.map((chip) => (
-          <span key={chip} className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[11px] text-steel-200">
+          <span key={chip} className="rounded-full border border-border bg-surface-2 px-2.5 py-1 text-[11px] text-fg-2">
             {chip}
           </span>
         ))}
       </div>
 
       {scan.analysis.kind === "customer" ? (
-        <p className="text-body-xs text-steel-300 mb-3">
+        <p className="text-body-xs text-fg-3 mb-3">
           Enter MC or DOT — HaulDesk pulls authority and legal name from FMCSA when you apply.
         </p>
       ) : null}
@@ -206,7 +206,7 @@ function ScanCard({
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-3">
           {fields.filter((f) => f.show).map((f) => (
             <label key={f.key} className="block">
-              <span className="text-label text-steel-400 uppercase text-[10px]">{f.label}</span>
+              <span className="text-label text-fg-3 uppercase text-[10px]">{f.label}</span>
               <input
                 className={`${fieldCls} mt-1`}
                 value={scan.edits[f.key] ?? ""}
@@ -219,13 +219,13 @@ function ScanCard({
       ) : null}
 
       {scan.analysis.kind === "rate_con" ? (
-        <p className="text-body-sm text-steel-200 mb-3">
+        <p className="text-body-sm text-fg-2 mb-3">
           Opens the paste-intake flow with this rate con pre-loaded so you can book in one minute.
         </p>
       ) : null}
 
       {scan.analysis.kind === "spreadsheet" ? (
-        <p className="text-body-sm text-steel-200 mb-3">
+        <p className="text-body-sm text-fg-2 mb-3">
           Sends you to the column-mapping import wizard — map once, reuse forever.
         </p>
       ) : null}
@@ -235,7 +235,7 @@ function ScanCard({
           type="button"
           onClick={onApply}
           disabled={pending}
-          className="inline-flex min-h-[48px] w-full sm:w-auto items-center justify-center gap-2 rounded-xl bg-orange px-6 font-display text-sm font-bold uppercase tracking-[0.08em] text-white shadow-cta hover:bg-orange-400 disabled:opacity-50"
+          className="inline-flex min-h-[48px] w-full sm:w-auto items-center justify-center gap-2 rounded-control bg-accent px-6 font-semibold text-sm text-accent-fg hover:bg-accent-hover disabled:opacity-50"
         >
           {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
           {scan.analysis.kind === "rate_con" ? "Book this load" : "Apply to HaulDesk"}
@@ -245,7 +245,7 @@ function ScanCard({
           <Check className="h-4 w-4" /> Applied
         </p>
       ) : (
-        <p className="text-body-sm text-steel-400">Could not classify — paste clearer text below and re-scan.</p>
+        <p className="text-body-sm text-fg-3">Could not classify — paste clearer text below and re-scan.</p>
       )}
     </Panel>
   )
@@ -341,25 +341,25 @@ export function SmartSetup({
       <Panel className="p-4 md:p-5 border-gold/30">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
           <div>
-            <h2 className="font-display text-base font-bold uppercase tracking-wide text-white flex items-center gap-2">
+            <h2 className="text-[13.5px] font-semibold text-fg flex items-center gap-2">
               <ScanLine className="h-5 w-5 text-gold" /> Smart Setup
             </h2>
-            <p className="text-body-sm text-steel-200 mt-1 max-w-xl">
+            <p className="text-body-sm text-fg-2 mt-1 max-w-xl">
               Drop your paperwork — rate cons, registrations, CDLs, W-9s, broker MC letters, fuel CSVs.
               HaulDesk reads them, you confirm, it creates the records. Brokers only need MC/DOT; FMCSA fills the rest.
             </p>
           </div>
           <div className="text-right shrink-0">
-            <p className="text-label text-steel-400 uppercase">Setup progress</p>
-            <p className="font-display text-2xl font-extrabold text-gold">{doneSteps}/{totalSteps}</p>
-            <p className="text-body-xs text-steel-400">trucks · drivers · brokers · packet</p>
+            <p className="text-label text-fg-3 uppercase">Setup progress</p>
+            <p className="font-mono text-2xl font-medium text-fg tabular-nums">{doneSteps}/{totalSteps}</p>
+            <p className="text-body-xs text-fg-3">trucks · drivers · brokers · packet</p>
           </div>
         </div>
       </Panel>
 
       <div
         className={cn(
-          "rounded-2xl border-2 border-dashed border-white/15 p-6 text-center cursor-pointer hover:border-gold/40 transition-colors",
+          "rounded-2xl border-2 border-dashed border-border-strong p-6 text-center cursor-pointer hover:border-gold/40 transition-colors",
           scanning && "opacity-60 pointer-events-none"
         )}
         onClick={() => inputRef.current?.click()}
@@ -382,16 +382,16 @@ export function SmartSetup({
         ) : (
           <Upload className="h-10 w-10 text-gold mx-auto mb-3" />
         )}
-        <p className="font-display font-bold text-white uppercase tracking-wide">
+        <p className="font-display font-bold text-fg uppercase tracking-wide">
           Drop files here or tap to upload
         </p>
-        <p className="text-body-sm text-steel-300 mt-1">
+        <p className="text-body-sm text-fg-3 mt-1">
           PDF, CSV, photos · batch upload OK · phone camera works
         </p>
       </div>
 
       <Panel className="p-4">
-        <h3 className="font-display text-sm font-bold uppercase text-white mb-2 flex items-center gap-2">
+        <h3 className="font-display text-sm font-bold uppercase text-fg mb-2 flex items-center gap-2">
           <FileUp className="h-4 w-4 text-gold" /> Or paste text from an email / PDF
         </h3>
         <textarea
@@ -405,7 +405,7 @@ export function SmartSetup({
           type="button"
           onClick={handlePasteScan}
           disabled={!pasteText.trim()}
-          className="mt-3 inline-flex min-h-[48px] items-center gap-2 rounded-xl border border-white/15 px-5 font-display text-sm font-bold uppercase tracking-wide text-white hover:bg-white/5 disabled:opacity-50"
+          className="mt-3 inline-flex min-h-[48px] items-center gap-2 rounded-xl border border-border-strong px-5 font-display text-sm font-bold uppercase tracking-wide text-fg hover:bg-hover disabled:opacity-50"
         >
           <Sparkles className="h-4 w-4 text-gold" /> Scan pasted text
         </button>
@@ -413,7 +413,7 @@ export function SmartSetup({
 
       {queue.length > 0 ? (
         <div className="space-y-3">
-          <h3 className="font-display text-sm font-bold uppercase text-steel-200">
+          <h3 className="font-display text-sm font-bold uppercase text-fg-2">
             Review &amp; apply ({queue.filter((s) => !s.applied).length} waiting)
           </h3>
           {queue.map((scan) => (
@@ -434,8 +434,8 @@ export function SmartSetup({
       ) : null}
 
       <Panel className="p-4 bg-white/[0.02]">
-        <p className="text-body-sm text-steel-300">
-          <strong className="text-steel-100">What Smart Setup handles:</strong> brokers (MC/DOT + FMCSA),
+        <p className="text-body-sm text-fg-3">
+          <strong className="text-fg-2">What Smart Setup handles:</strong> brokers (MC/DOT + FMCSA),
           trucks (VIN decode), drivers (CDL/med card), carrier packet (W-9/COI), load history CSV,
           rate cons → book load. Still type pay rules yourself — one paragraph per driver on their profile.
         </p>
@@ -450,7 +450,7 @@ function LinkRow({ href, label }: { href: string; label: string }) {
   return (
     <a
       href={href}
-      className="mt-2 flex items-center justify-between rounded-lg px-2 py-2 text-sm text-gold hover:bg-white/5 min-h-[44px]"
+      className="mt-2 flex items-center justify-between rounded-lg px-2 py-2 text-sm text-gold hover:bg-hover min-h-[44px]"
     >
       {label}
       <ArrowRight className="h-4 w-4" />

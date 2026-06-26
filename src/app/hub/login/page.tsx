@@ -4,7 +4,7 @@ import { useState } from "react"
 import { signIn } from "next-auth/react"
 import { toast } from "sonner"
 import { Loader2, LogIn } from "lucide-react"
-import { fieldCls, labelCls, Panel } from "@/components/hub/ui"
+import { btnPrimaryCls, fieldCls, labelCls, linkAccentCls, Panel } from "@/components/hub/ui"
 import { PRODUCT } from "@/lib/hub/product"
 
 export default function HubLoginPage() {
@@ -21,7 +21,6 @@ export default function HubLoginPage() {
         redirect: false,
       })
       if (result?.ok) {
-        // Full navigation so the proxy routes each role to the right place.
         window.location.href = "/hub"
       } else {
         toast.error("Invalid email or password")
@@ -34,21 +33,19 @@ export default function HubLoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
+    <div className="hauldesk-auth flex min-h-screen items-center justify-center p-4">
       <Panel className="w-full max-w-md p-6 md:p-8">
-        <div className="text-center mb-6">
-          <span className="brand-wordmark text-2xl font-semibold text-white tracking-[0.14em]">{PRODUCT.wordmark}</span>
-          <span className="block text-[11px] font-bold uppercase tracking-[0.3em] text-gold mt-1">
-            {PRODUCT.tagline}
-          </span>
-          <p className="text-body-sm text-steel-200 mt-3">
-            One login for dispatch, drivers, and partners.
-          </p>
+        <div className="mb-6 text-center">
+          <span className="text-2xl font-semibold tracking-tight text-fg">{PRODUCT.name}</span>
+          <span className="mt-1 block text-sm text-fg-3">{PRODUCT.tagline}</span>
+          <p className="mt-3 text-sm text-fg-2">One login for dispatch, drivers, and partners.</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label htmlFor="email" className={labelCls}>Email</label>
+            <label htmlFor="email" className={labelCls}>
+              Email
+            </label>
             <input
               id="email"
               type="email"
@@ -60,7 +57,9 @@ export default function HubLoginPage() {
             />
           </div>
           <div>
-            <label htmlFor="password" className={labelCls}>Password</label>
+            <label htmlFor="password" className={labelCls}>
+              Password
+            </label>
             <input
               id="password"
               type="password"
@@ -71,22 +70,18 @@ export default function HubLoginPage() {
               onChange={(e) => setForm({ ...form, password: e.target.value })}
             />
           </div>
-          <button
-            type="submit"
-            disabled={loading}
-            className="flex w-full min-h-[48px] items-center justify-center gap-2 rounded-xl bg-orange font-display text-sm font-bold uppercase tracking-[0.08em] text-white shadow-cta transition-all hover:bg-orange-400 disabled:opacity-60"
-          >
+          <button type="submit" disabled={loading} className={`w-full ${btnPrimaryCls}`}>
             {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <LogIn className="h-4 w-4" />}
             {loading ? "Signing in…" : "Sign in"}
           </button>
         </form>
 
-        <p className="mt-6 text-center text-body-xs text-steel-300">
-          Need access? Ask the office to create your account.
-        </p>
-        <p className="mt-2 text-center text-body-xs text-steel-300">
+        <p className="mt-6 text-center text-xs text-fg-3">Need access? Ask the office to create your account.</p>
+        <p className="mt-2 text-center text-xs text-fg-3">
           Run a trucking company?{" "}
-          <a href="/hub/signup" className="text-gold hover:underline">Create your workspace</a>
+          <a href="/hub/signup" className={linkAccentCls}>
+            Create your workspace
+          </a>
         </p>
       </Panel>
     </div>

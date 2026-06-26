@@ -52,7 +52,7 @@ export default async function FacilityDetailPage({ params }: { params: Promise<{
             className={cn(
               "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-bold",
               risk === "high"
-                ? "border-orange/40 bg-orange/10 text-orange"
+                ? "border-accent/40 bg-accent/10 text-orange"
                 : risk === "warn"
                   ? "border-gold/40 bg-gold/10 text-gold"
                   : "border-green-500/30 bg-green-500/10 text-green-400"
@@ -63,17 +63,17 @@ export default async function FacilityDetailPage({ params }: { params: Promise<{
             {risk === "high" ? " — past your free time, price detention in" : ""}
           </span>
         ) : (
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-3 py-1.5 text-sm text-steel-300">
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-border-strong bg-surface-2 px-3 py-1.5 text-sm text-fg-3">
             <Clock className="h-4 w-4" /> No dwell history yet
           </span>
         )}
-        <span className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-3 py-1.5 text-sm text-steel-200">
+        <span className="inline-flex items-center gap-1.5 rounded-full border border-border-strong bg-surface-2 px-3 py-1.5 text-sm text-fg-2">
           <Warehouse className="h-4 w-4" />
           {facility.type === "shipper" ? "Shipper" : facility.type === "receiver" ? "Receiver" : "Ships & receives"}
           {" · "}{facility.stop_count ?? 0} stops on record
         </span>
         {facility.overnight_parking != null ? (
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-3 py-1.5 text-sm text-steel-200">
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-border-strong bg-surface-2 px-3 py-1.5 text-sm text-fg-2">
             <MapPin className="h-4 w-4" />
             Overnight parking: {facility.overnight_parking ? "yes" : "no"}
           </span>
@@ -95,20 +95,20 @@ export default async function FacilityDetailPage({ params }: { params: Promise<{
         <div className="space-y-4">
           {/* Crowd-sourced notes */}
           <Panel className="p-4 md:p-5">
-            <h2 className="font-display text-base font-bold uppercase tracking-wide text-white mb-3">
+            <h2 className="text-[13.5px] font-semibold text-fg mb-3">
               Driver tips & office notes ({notes.length})
             </h2>
             <OfficeNoteComposer facilityId={id} />
             {notes.length === 0 ? (
-              <p className="mt-3 text-body-sm text-steel-300">
+              <p className="mt-3 text-body-sm text-fg-3">
                 Nothing yet — drivers get a two-tap prompt after every departure here.
               </p>
             ) : (
-              <ul className="mt-3 divide-y divide-white/5">
+              <ul className="mt-3 divide-y divide-border">
                 {notes.map((note) => (
                   <li key={note.id} className="py-2.5">
-                    <p className="text-body-sm text-steel-100">“{note.body}”</p>
-                    <p className="mt-0.5 text-[11px] text-steel-400">
+                    <p className="text-body-sm text-fg-2">“{note.body}”</p>
+                    <p className="mt-0.5 text-[11px] text-fg-3">
                       {note.author_name ?? "Someone"}
                       {note.author_role === "driver" ? " (driver)" : ""}
                       {" · "}
@@ -123,13 +123,13 @@ export default async function FacilityDetailPage({ params }: { params: Promise<{
 
           {/* Visit history */}
           <Panel className="p-4 md:p-5">
-            <h2 className="font-display text-base font-bold uppercase tracking-wide text-white mb-3">
+            <h2 className="text-[13.5px] font-semibold text-fg mb-3">
               Recent visits
             </h2>
             {recentStops.length === 0 ? (
-              <p className="text-body-sm text-steel-300">No visits on record.</p>
+              <p className="text-body-sm text-fg-3">No visits on record.</p>
             ) : (
-              <ul className="divide-y divide-white/5">
+              <ul className="divide-y divide-border">
                 {recentStops.map((stop, i) => {
                   const dwell =
                     stop.arrived_at && stop.departed_at
@@ -137,12 +137,12 @@ export default async function FacilityDetailPage({ params }: { params: Promise<{
                       : null
                   return (
                     <li key={i}>
-                      <Link href={`/hub/loads/${stop.load_id}`} className="flex items-center justify-between gap-2 py-2 px-2 -mx-2 rounded-lg hover:bg-white/5">
-                        <span className="text-sm font-semibold text-white">
+                      <Link href={`/hub/loads/${stop.load_id}`} className="flex items-center justify-between gap-2 py-2 px-2 -mx-2 rounded-lg hover:bg-hover">
+                        <span className="text-sm font-semibold text-fg">
                           {stop.reference}
-                          <span className="font-normal text-steel-300"> · {stop.type === "pickup" ? "picked up" : "delivered"}</span>
+                          <span className="font-normal text-fg-3"> · {stop.type === "pickup" ? "picked up" : "delivered"}</span>
                         </span>
-                        <span className={cn("shrink-0 text-body-xs", dwell != null && dwell >= freeMinutes ? "font-bold text-orange" : "text-steel-300")}>
+                        <span className={cn("shrink-0 text-body-xs", dwell != null && dwell >= freeMinutes ? "font-bold text-orange" : "text-fg-3")}>
                           {dwell != null ? `${formatDwell(dwell)} dock time` : stop.appt_start ? new Date(stop.appt_start).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "—"}
                         </span>
                       </Link>

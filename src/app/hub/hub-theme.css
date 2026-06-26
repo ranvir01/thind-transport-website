@@ -1,0 +1,142 @@
+/**
+ * HaulDesk software UI tokens — scoped to [data-app="hauldesk"] on <html>.
+ * Marketing site keeps navy/orange/gold; this is the operations product only.
+ */
+
+[data-app="hauldesk"],
+[data-app="hauldesk"][data-theme="indigo"] {
+  --bg: #fbfbfd;
+  --surface: #ffffff;
+  --surface-2: #f5f6f8;
+  --border: #eceef1;
+  --border-strong: #e0e3e8;
+  --text: #16181d;
+  --text-2: #565c66;
+  --text-3: #888e99;
+  --hover: #f3f4f6;
+  --accent: #5b5bd6;
+  --accent-hover: #4d4dc9;
+  --accent-fg: #ffffff;
+  --accent-soft: #eeeefa;
+  --accent-text: #4842be;
+  --ring: rgba(91, 91, 214, 0.28);
+  --green: #1a8a4f;
+  --green-soft: #e7f4ec;
+  --amber: #a9760a;
+  --amber-soft: #faf0da;
+  --red: #ce3d3d;
+  --red-soft: #fbeaea;
+  --blue: #2c6fe0;
+  --blue-soft: #e9f1fd;
+  --shadow: 0 1px 2px rgba(16, 18, 29, 0.04), 0 1px 3px rgba(16, 18, 29, 0.05);
+}
+
+[data-app="hauldesk"][data-mode="dark"],
+[data-app="hauldesk"][data-mode="dark"][data-theme="indigo"] {
+  --bg: #0b0c10;
+  --surface: #131620;
+  --surface-2: #1a1e2a;
+  --border: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.15);
+  --text: #ecedf1;
+  --text-2: #9da2ad;
+  --text-3: #6c7280;
+  --hover: rgba(255, 255, 255, 0.05);
+  --accent: #7c7dec;
+  --accent-hover: #8e8ff0;
+  --accent-fg: #0b0c10;
+  --accent-soft: rgba(124, 125, 236, 0.16);
+  --accent-text: #a6a7f2;
+  --ring: rgba(124, 125, 236, 0.35);
+  --green: #34c77b;
+  --green-soft: rgba(52, 199, 123, 0.14);
+  --amber: #e0a92e;
+  --amber-soft: rgba(224, 169, 46, 0.14);
+  --red: #f2615c;
+  --red-soft: rgba(242, 97, 92, 0.15);
+  --blue: #5e97f0;
+  --blue-soft: rgba(94, 151, 240, 0.15);
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 2px 6px rgba(0, 0, 0, 0.28);
+}
+
+[data-app="hauldesk"][data-theme="teal"] {
+  --bg: #fbfbfb;
+  --surface-2: #f5f6f6;
+  --border: #eceeee;
+  --border-strong: #dfe3e3;
+  --text: #16191a;
+  --text-2: #565b5c;
+  --text-3: #878d8e;
+  --hover: #f2f4f3;
+  --accent: #0e9384;
+  --accent-hover: #0c8175;
+  --accent-soft: #e2f3f0;
+  --accent-text: #0b6e66;
+  --ring: rgba(14, 147, 132, 0.26);
+}
+
+[data-app="hauldesk"][data-mode="dark"][data-theme="teal"] {
+  --bg: #0a0c0c;
+  --surface: #121615;
+  --surface-2: #19201d;
+  --text: #eaecec;
+  --text-2: #9ba3a0;
+  --text-3: #6b736f;
+  --accent: #22b8a6;
+  --accent-hover: #34c7b5;
+  --accent-fg: #04130f;
+  --accent-soft: rgba(34, 184, 166, 0.16);
+  --accent-text: #46cfbf;
+  --ring: rgba(34, 184, 166, 0.32);
+}
+
+[data-app="hauldesk"][data-theme="ink"] {
+  --bg: #faf9f7;
+  --surface-2: #f5f4f1;
+  --border: #eae8e4;
+  --border-strong: #dedbd5;
+  --text: #1a1814;
+  --text-2: #57534c;
+  --text-3: #8b867d;
+  --hover: #f1efeb;
+  --accent: #1c1b19;
+  --accent-hover: #000000;
+  --accent-soft: #eeedea;
+  --accent-text: #1c1b19;
+  --ring: rgba(0, 0, 0, 0.16);
+}
+
+[data-app="hauldesk"][data-mode="dark"][data-theme="ink"] {
+  --bg: #0c0b0a;
+  --surface: #141312;
+  --surface-2: #1c1a18;
+  --hover: rgba(255, 255, 255, 0.045);
+  --text: #ece9e4;
+  --text-2: #a29d95;
+  --text-3: #726d64;
+  --accent: #eceae5;
+  --accent-hover: #ffffff;
+  --accent-fg: #191714;
+  --accent-soft: rgba(255, 255, 255, 0.09);
+  --accent-text: #e7e4de;
+  --ring: rgba(255, 255, 255, 0.16);
+}
+
+[data-app="hauldesk"] {
+  background: var(--bg);
+  color: var(--text);
+  letter-spacing: -0.006em;
+}
+
+[data-app="hauldesk"] .hauldesk-shell {
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+}
+
+/* Hub auth pages (login/signup) outside the office shell */
+[data-app="hauldesk"] .hauldesk-auth {
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--text);
+}

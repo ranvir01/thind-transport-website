@@ -52,7 +52,7 @@ export function RequestDocumentPanel({
 
   return (
     <Panel className="p-4 md:p-5">
-      <h2 className="flex items-center gap-2 font-display text-base font-bold uppercase tracking-wide text-white mb-3">
+      <h2 className="flex items-center gap-2 text-[13.5px] font-semibold text-fg mb-3">
         <FileQuestion className="h-4 w-4 text-gold" /> Ask for paperwork
       </h2>
       <form onSubmit={submit} className="space-y-2">
@@ -83,7 +83,7 @@ export function RequestDocumentPanel({
           />
           <button
             type="submit" disabled={pending}
-            className="min-h-[48px] shrink-0 rounded-xl bg-orange px-5 font-display text-sm font-bold uppercase tracking-[0.06em] text-white shadow-cta hover:bg-orange-400 disabled:opacity-60"
+            className="min-h-[48px] shrink-0 rounded-control bg-accent px-5 font-display text-sm font-bold uppercase tracking-[0.06em] text-fg hover:bg-accent-hover disabled:opacity-60"
           >
             {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Send"}
           </button>
@@ -91,11 +91,11 @@ export function RequestDocumentPanel({
       </form>
 
       {openRequests.length > 0 ? (
-        <ul className="mt-3 divide-y divide-white/5">
+        <ul className="mt-3 divide-y divide-border">
           {openRequests.map((r) => (
             <li key={r.id} className="flex items-center justify-between gap-2 py-2 text-sm">
-              <span className="text-steel-100">
-                Waiting on <span className="font-semibold text-white">{r.kind.replace(/_/g, " ")}</span>
+              <span className="text-fg-2">
+                Waiting on <span className="font-semibold text-fg">{r.kind.replace(/_/g, " ")}</span>
                 {r.load_reference ? ` for ${r.load_reference}` : ""}
               </span>
               <button
@@ -106,7 +106,7 @@ export function RequestDocumentPanel({
                     else toast.error(result.error ?? "Failed")
                   })
                 }
-                className="text-body-xs font-semibold text-steel-400 hover:text-white min-h-[32px]"
+                className="text-body-xs font-semibold text-fg-3 hover:text-fg min-h-[32px]"
               >
                 Cancel
               </button>
@@ -137,17 +137,17 @@ export function TimeOffDecisionPanel({ requests }: { requests: TimeOffRequest[] 
 
   return (
     <Panel className="p-4 md:p-5 border-gold/30">
-      <h2 className="font-display text-base font-bold uppercase tracking-wide text-white mb-3">
+      <h2 className="text-[13.5px] font-semibold text-fg mb-3">
         Time-off requests waiting on you
       </h2>
       <ul className="space-y-2">
         {requests.map((r) => (
-          <li key={r.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-white/10 bg-white/[0.03] p-3">
+          <li key={r.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border bg-white/[0.03] p-3">
             <div>
-              <p className="font-semibold text-white">
+              <p className="font-semibold text-fg">
                 {r.driver_name} — {fmt(r.start_date)} to {fmt(r.end_date)}
               </p>
-              <p className="text-body-xs text-steel-300">
+              <p className="text-body-xs text-fg-3">
                 {TIME_OFF_KIND_LABELS[r.kind]}
                 {r.reason ? ` · “${r.reason}”` : ""}
               </p>
@@ -163,7 +163,7 @@ export function TimeOffDecisionPanel({ requests }: { requests: TimeOffRequest[] 
               <button
                 onClick={() => decide(r.id, "denied")}
                 disabled={pending}
-                className="flex min-h-[44px] items-center gap-1.5 rounded-xl border border-white/15 px-4 text-sm font-bold text-steel-200 hover:bg-white/5 disabled:opacity-60"
+                className="flex min-h-[44px] items-center gap-1.5 rounded-xl border border-border-strong px-4 text-sm font-bold text-fg-2 hover:bg-hover disabled:opacity-60"
               >
                 <X className="h-4 w-4" /> Deny
               </button>

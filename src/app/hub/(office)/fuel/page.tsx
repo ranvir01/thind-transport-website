@@ -38,7 +38,7 @@ export default async function FuelPage() {
         action={
           <Link
             href="/hub/import?kind=fuel"
-            className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-orange px-5 font-display text-sm font-bold uppercase tracking-[0.08em] text-white shadow-cta hover:bg-orange-400"
+            className="inline-flex min-h-[44px] items-center gap-2 rounded-control bg-accent px-5 font-semibold text-sm text-accent-fg hover:bg-accent-hover"
           >
             <Upload className="h-4 w-4" /> Import statement
           </Link>
@@ -50,7 +50,7 @@ export default async function FuelPage() {
           title="No fuel data yet"
           hint="Import any card program's statement CSV — EFS, Comdata, WEX, anything. Column mapping handles the format."
           action={
-            <Link href="/hub/import?kind=fuel" className="inline-flex min-h-[44px] items-center rounded-xl bg-orange px-5 font-display text-sm font-bold uppercase tracking-[0.08em] text-white shadow-cta hover:bg-orange-400">
+            <Link href="/hub/import?kind=fuel" className="inline-flex min-h-[44px] items-center rounded-control bg-accent px-5 font-semibold text-sm text-accent-fg hover:bg-accent-hover">
               Import fuel CSV
             </Link>
           }
@@ -60,25 +60,25 @@ export default async function FuelPage() {
           {/* Headline stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
             <Panel className="p-4">
-              <span className="text-label text-steel-300 uppercase">Fuel spend</span>
-              <p className="mt-2 font-display text-2xl font-extrabold text-gold">{fmtCents(totalCents)}</p>
+              <span className="text-label text-fg-3 uppercase">Fuel spend</span>
+              <p className="mt-2 font-mono text-2xl font-medium text-fg tabular-nums">{fmtCents(totalCents)}</p>
             </Panel>
             <Panel className="p-4">
-              <span className="text-label text-steel-300 uppercase">Gallons</span>
-              <p className="mt-2 font-display text-2xl font-extrabold text-white">{Math.round(totalGallons).toLocaleString()}</p>
+              <span className="text-label text-fg-3 uppercase">Gallons</span>
+              <p className="mt-2 font-mono text-2xl font-medium text-fg tabular-nums">{Math.round(totalGallons).toLocaleString()}</p>
             </Panel>
             <Panel className="p-4">
-              <span className="text-label text-steel-300 uppercase">Fleet avg $/gal</span>
-              <p className="mt-2 font-display text-2xl font-extrabold text-white">
+              <span className="text-label text-fg-3 uppercase">Fleet avg $/gal</span>
+              <p className="mt-2 font-mono text-2xl font-medium text-fg tabular-nums">
                 {totalGallons > 0 ? fmtCentsExact(Math.round(totalCents / totalGallons)) : "—"}
               </p>
             </Panel>
             <Panel className="p-4">
-              <span className="text-label text-steel-300 uppercase">EIA weekly diesel</span>
-              <p className="mt-2 font-display text-2xl font-extrabold text-white">
+              <span className="text-label text-fg-3 uppercase">EIA weekly diesel</span>
+              <p className="mt-2 font-mono text-2xl font-medium text-fg tabular-nums">
                 {eiaCents ? fmtCentsExact(eiaCents) : "—"}
               </p>
-              {!eiaCents ? <p className="text-body-xs text-steel-400">Set EIA_API_KEY (free) to compare</p> : null}
+              {!eiaCents ? <p className="text-body-xs text-fg-3">Set EIA_API_KEY (free) to compare</p> : null}
             </Panel>
           </div>
 
@@ -87,7 +87,7 @@ export default async function FuelPage() {
             <Panel className="p-4 mb-4 border-gold/30">
               <div className="flex items-center gap-2 mb-2">
                 <AlertTriangle className="h-4 w-4 text-gold" />
-                <h2 className="font-display text-base font-bold uppercase tracking-wide text-white">Flags</h2>
+                <h2 className="text-[13.5px] font-semibold text-fg">Flags</h2>
               </div>
               <ul className="space-y-1.5">
                 {fraudFlags.slice(0, 6).map((flag, i) => (
@@ -103,10 +103,10 @@ export default async function FuelPage() {
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 mb-4">
             {/* Per truck */}
             <Panel className="overflow-x-auto">
-              <h2 className="font-display text-base font-bold uppercase tracking-wide text-white p-4 pb-2">Per truck</h2>
+              <h2 className="text-[13.5px] font-semibold text-fg p-4 pb-2">Per truck</h2>
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-white/10 text-left text-label text-steel-300 uppercase">
+                  <tr className="border-b border-border text-left text-label text-fg-3 uppercase">
                     <th className="px-4 py-2">Truck</th>
                     <th className="px-4 py-2 text-right">Gallons</th>
                     <th className="px-4 py-2 text-right">Spend</th>
@@ -120,28 +120,28 @@ export default async function FuelPage() {
                     const gallons = Number(row.gallons)
                     const tractorGallons = Number(row.tractor_gallons)
                     return (
-                      <tr key={row.truck_id ?? "none"} className="border-b border-white/5">
-                        <td className="px-4 py-2 font-semibold text-white">{row.truck_unit ? `#${row.truck_unit}` : "Unmatched"}</td>
-                        <td className="px-4 py-2 text-right text-steel-100">{Math.round(gallons).toLocaleString()}</td>
+                      <tr key={row.truck_id ?? "none"} className="border-b border-border">
+                        <td className="px-4 py-2 font-semibold text-fg">{row.truck_unit ? `#${row.truck_unit}` : "Unmatched"}</td>
+                        <td className="px-4 py-2 text-right text-fg-2">{Math.round(gallons).toLocaleString()}</td>
                         <td className="px-4 py-2 text-right text-gold font-semibold">{fmtCents(Number(row.total_cents))}</td>
-                        <td className="px-4 py-2 text-right text-steel-100">{miles > 0 && tractorGallons > 0 ? (miles / tractorGallons).toFixed(1) : "—"}</td>
-                        <td className="px-4 py-2 text-right text-steel-100">{miles > 0 ? (Number(row.total_cents) / miles).toFixed(1) : "—"}</td>
+                        <td className="px-4 py-2 text-right text-fg-2">{miles > 0 && tractorGallons > 0 ? (miles / tractorGallons).toFixed(1) : "—"}</td>
+                        <td className="px-4 py-2 text-right text-fg-2">{miles > 0 ? (Number(row.total_cents) / miles).toFixed(1) : "—"}</td>
                       </tr>
                     )
                   })}
                 </tbody>
               </table>
-              <p className="px-4 py-2 text-body-xs text-steel-400">
+              <p className="px-4 py-2 text-body-xs text-fg-3">
                 * MPG from loaded miles ÷ road-diesel gallons (reefer fuel never counts toward MPG or IFTA).
               </p>
             </Panel>
 
             {/* By program */}
             <Panel className="overflow-x-auto">
-              <h2 className="font-display text-base font-bold uppercase tracking-wide text-white p-4 pb-2">By card program</h2>
+              <h2 className="text-[13.5px] font-semibold text-fg p-4 pb-2">By card program</h2>
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-white/10 text-left text-label text-steel-300 uppercase">
+                  <tr className="border-b border-border text-left text-label text-fg-3 uppercase">
                     <th className="px-4 py-2">Program</th>
                     <th className="px-4 py-2 text-right">Gallons</th>
                     <th className="px-4 py-2 text-right">Spend</th>
@@ -150,11 +150,11 @@ export default async function FuelPage() {
                 </thead>
                 <tbody>
                   {byProgram.map((row, i) => (
-                    <tr key={i} className="border-b border-white/5">
-                      <td className="px-4 py-2 font-semibold text-white">{row.card_program ?? "Unknown"}</td>
-                      <td className="px-4 py-2 text-right text-steel-100">{Math.round(Number(row.gallons)).toLocaleString()}</td>
+                    <tr key={i} className="border-b border-border">
+                      <td className="px-4 py-2 font-semibold text-fg">{row.card_program ?? "Unknown"}</td>
+                      <td className="px-4 py-2 text-right text-fg-2">{Math.round(Number(row.gallons)).toLocaleString()}</td>
                       <td className="px-4 py-2 text-right text-gold font-semibold">{fmtCents(Number(row.total_cents))}</td>
-                      <td className="px-4 py-2 text-right text-steel-100">{row.avg_price_cents ? fmtCentsExact(Number(row.avg_price_cents)) : "—"}</td>
+                      <td className="px-4 py-2 text-right text-fg-2">{row.avg_price_cents ? fmtCentsExact(Number(row.avg_price_cents)) : "—"}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -163,15 +163,15 @@ export default async function FuelPage() {
           </div>
 
           {/* Recent transactions */}
-          <h2 className="font-display text-lg font-bold uppercase tracking-wide text-white mb-3">Recent transactions</h2>
-          <Panel className="divide-y divide-white/5">
+          <h2 className="font-display text-lg font-bold uppercase tracking-wide text-fg mb-3">Recent transactions</h2>
+          <Panel className="divide-y divide-border">
             {transactions.slice(0, 25).map((tx) => (
               <div key={tx.id} className="flex items-center justify-between gap-2 p-3 text-sm">
                 <div className="min-w-0">
-                  <p className="font-semibold text-white truncate">
+                  <p className="font-semibold text-fg truncate">
                     {tx.merchant ?? "Fuel stop"}{tx.jurisdiction ? ` · ${tx.jurisdiction}` : ""}
                   </p>
-                  <p className="text-body-xs text-steel-300">
+                  <p className="text-body-xs text-fg-3">
                     {new Date(tx.ts).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
                     {tx.truck_unit ? ` · #${tx.truck_unit}` : " · unmatched"}
                     {` · ${Number(tx.gallons).toFixed(1)} gal`}
@@ -179,7 +179,7 @@ export default async function FuelPage() {
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                   <FuelUseBadge id={tx.id} value={tx.fuel_use} />
-                  <span className="font-display font-extrabold text-gold">{fmtCentsExact(tx.total_cents)}</span>
+                  <span className="font-mono font-medium text-accent-text tabular-nums">{fmtCentsExact(tx.total_cents)}</span>
                 </div>
               </div>
             ))}

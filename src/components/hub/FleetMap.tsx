@@ -63,7 +63,7 @@ export function FleetMap({ positions }: { positions: TruckPosition[] }) {
   return (
     <div
       ref={containerRef}
-      className="h-[60vh] min-h-[360px] w-full rounded-2xl border border-white/10 overflow-hidden z-0"
+      className="h-[60vh] min-h-[360px] w-full rounded-2xl border border-border overflow-hidden z-0"
       aria-label="Fleet map"
     />
   )

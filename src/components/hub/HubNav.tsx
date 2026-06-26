@@ -1,249 +1,170 @@
 "use client"
 
-import { useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { signOut } from "next-auth/react"
-import {
-  LayoutDashboard, ClipboardList, Package, Truck, Users, Building2, Map as MapIcon,
-  Upload, Settings, LogOut, Menu, X, DollarSign, Fuel, ShieldCheck, BarChart3, ShieldAlert,
-  MessageSquare, CheckSquare, CalendarRange, Warehouse, UserPlus, FolderLock, Megaphone, Cable,
-  ScanLine,
-} from "lucide-react"
+import { LogOut } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { PRODUCT } from "@/lib/hub/product"
+import {
+  HUB_PRIMARY_SECTIONS,
+  HUB_UTILITY_LINKS,
+  activePrimarySection,
+  isNavActive,
+} from "@/lib/hub/navigation"
 import { NotificationsBell } from "@/components/hub/NotificationsBell"
+import { HubAppearanceMenu } from "@/components/hub/HubAppearanceMenu"
+import { CommandPalette } from "@/components/hub/CommandPalette"
 
-interface NavItem {
-  href: string
-  label: string
-  icon: React.ComponentType<{ className?: string }>
-  ownerOnly?: boolean
-}
-
-interface NavGroup {
-  label: string | null
-  items: NavItem[]
-}
-
-const NAV_GROUPS: NavGroup[] = [
-  {
-    label: null,
-    items: [
-      { href: "/hub", label: "Today", icon: LayoutDashboard },
-      { href: "/hub/planner", label: "Planner", icon: CalendarRange },
-      { href: "/hub/dispatch", label: "Dispatch", icon: ClipboardList },
-      { href: "/hub/loads", label: "Loads", icon: Package },
-      { href: "/hub/capacity", label: "Capacity", icon: Megaphone },
-      { href: "/hub/map", label: "Map", icon: MapIcon },
-    ],
-  },
-  {
-    label: "Office",
-    items: [
-      { href: "/hub/messages", label: "Messages", icon: MessageSquare },
-      { href: "/hub/tasks", label: "Tasks", icon: CheckSquare },
-      { href: "/hub/money", label: "Money", icon: DollarSign },
-      { href: "/hub/fuel", label: "Fuel", icon: Fuel },
-      { href: "/hub/reports", label: "Reports", icon: BarChart3 },
-    ],
-  },
-  {
-    label: "People & fleet",
-    items: [
-      { href: "/hub/drivers", label: "Drivers", icon: Users },
-      { href: "/hub/recruiting", label: "Recruiting", icon: UserPlus },
-      { href: "/hub/fleet", label: "Fleet", icon: Truck },
-      { href: "/hub/customers", label: "Customers", icon: Building2 },
-      { href: "/hub/facilities", label: "Facilities", icon: Warehouse },
-    ],
-  },
-  {
-    label: "Stay legal",
-    items: [
-      { href: "/hub/compliance", label: "Compliance", icon: ShieldCheck },
-      { href: "/hub/safety", label: "Safety", icon: ShieldAlert },
-    ],
-  },
-  {
-    label: "Admin",
-    items: [
-      { href: "/hub/setup", label: "Smart Setup", icon: ScanLine },
-      { href: "/hub/import", label: "Import", icon: Upload },
-      { href: "/hub/settings/packet", label: "Carrier packet", icon: FolderLock },
-      { href: "/hub/settings/integrations", label: "Integrations", icon: Cable, ownerOnly: true },
-      { href: "/hub/settings/users", label: "Users", icon: Settings, ownerOnly: true },
-    ],
-  },
-]
-
-const NAV_ITEMS: NavItem[] = NAV_GROUPS.flatMap((g) => g.items)
-
-const MOBILE_TABS = ["/hub", "/hub/dispatch", "/hub/loads", "/hub/fleet"]
-
-function isActive(pathname: string, href: string): boolean {
-  return href === "/hub" ? pathname === "/hub" : pathname.startsWith(href)
-}
-
-export function HubNav({ user }: { user: { name: string; role: string; carrierName?: string } }) {
+export function HubShell({
+  user,
+  children,
+}: {
+  user: { name: string; role: string; carrierName?: string }
+  children: React.ReactNode
+}) {
   const pathname = usePathname()
-  const [menuOpen, setMenuOpen] = useState(false)
-  const items = NAV_ITEMS.filter((i) => !i.ownerOnly || user.role === "owner")
-  const mobileTabs = items.filter((i) => MOBILE_TABS.includes(i.href))
-  const moreItems = items.filter((i) => !MOBILE_TABS.includes(i.href))
-
-  const closeAnd = () => setMenuOpen(false)
+  const section = activePrimarySection(pathname)
+  const isOwner = user.role === "owner"
+  const utility = HUB_UTILITY_LINKS.filter((l) => !l.ownerOnly || isOwner)
+  const mobilePrimaries = HUB_PRIMARY_SECTIONS.slice(0, 5)
 
   return (
-    <>
-      {/* ---- Desktop sidebar ---- */}
-      <aside className="hidden lg:flex fixed inset-y-0 left-0 z-40 w-60 flex-col border-r border-white/10 bg-navy-900/95 backdrop-blur-sm">
-        <div className="px-5 py-5 border-b border-white/10">
-          <Link href="/hub" className="block">
-            <span className="brand-wordmark text-lg font-semibold text-white tracking-[0.14em]">{PRODUCT.wordmark}</span>
-            <span className="block text-[10px] font-bold uppercase tracking-[0.3em] text-gold mt-0.5 truncate">
-              {user.carrierName || PRODUCT.tagline}
-            </span>
-          </Link>
-        </div>
-        <nav className="flex-1 overflow-y-auto py-3 px-3">
-          {NAV_GROUPS.map((group, gi) => {
-            const groupItems = group.items.filter((i) => !i.ownerOnly || user.role === "owner")
-            if (groupItems.length === 0) return null
+    <div className="hauldesk-shell min-h-screen bg-bg text-fg">
+      <header className="sticky top-0 z-40 flex h-14 items-center gap-3 border-b border-border bg-surface/95 px-4 backdrop-blur-sm md:px-6">
+        <Link href="/hub" className="shrink-0 min-w-0">
+          <span className="block font-semibold text-fg tracking-tight truncate">{PRODUCT.name}</span>
+          <span className="block text-[11px] text-fg-3 truncate max-w-[140px]">
+            {user.carrierName || PRODUCT.tagline}
+          </span>
+        </Link>
+
+        <nav className="hidden lg:flex items-center gap-0.5 ml-4 min-w-0 flex-1 overflow-x-auto">
+          {HUB_PRIMARY_SECTIONS.map((primary) => {
+            const active = primary.id === section.id
+            const first = primary.sub[0]?.href ?? "/hub"
             return (
-              <div key={group.label ?? gi} className={gi > 0 ? "mt-3" : undefined}>
-                {group.label ? (
-                  <p className="px-3 pb-1 text-[10px] font-bold uppercase tracking-[0.2em] text-steel-400">
-                    {group.label}
-                  </p>
-                ) : null}
-                <div className="space-y-0.5">
-                  {groupItems.map((item) => (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      className={cn(
-                        "flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-semibold transition-colors",
-                        isActive(pathname, item.href)
-                          ? "bg-orange/15 text-white border border-orange/30"
-                          : "text-steel-200 hover:bg-white/5 hover:text-white border border-transparent"
-                      )}
-                    >
-                      <item.icon className="h-[18px] w-[18px]" />
-                      {item.label}
-                    </Link>
-                  ))}
-                </div>
-              </div>
+              <Link
+                key={primary.id}
+                href={first}
+                className={cn(
+                  "shrink-0 rounded-control px-3 py-2 text-sm font-medium transition-colors",
+                  active ? "bg-accent-soft text-accent-text" : "text-fg-2 hover:bg-hover hover:text-fg"
+                )}
+              >
+                {primary.label}
+              </Link>
             )
           })}
         </nav>
-        <div className="border-t border-white/10 p-4">
-          <div className="flex items-center justify-between gap-2">
-            <div className="min-w-0">
-              <p className="text-sm font-semibold text-white truncate">{user.name}</p>
-              <p className="text-[11px] uppercase tracking-wider text-gold font-bold">{user.role}</p>
-            </div>
-            <NotificationsBell direction="up" />
+
+        <div className="ml-auto flex items-center gap-2 shrink-0">
+          <CommandPalette isOwner={isOwner} />
+          <HubAppearanceMenu />
+          <NotificationsBell direction="down" />
+          <div className="hidden sm:block text-right max-w-[120px]">
+            <p className="text-sm font-medium text-fg truncate">{user.name.split(" ")[0]}</p>
+            <p className="text-[10px] uppercase tracking-wide text-fg-3">{user.role}</p>
           </div>
           <button
+            type="button"
             onClick={() => signOut({ callbackUrl: "/hub/login" })}
-            className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl border border-white/15 px-3 py-2 text-sm font-semibold text-steel-100 hover:bg-white/5 min-h-[44px]"
+            className="flex h-9 w-9 items-center justify-center rounded-control border border-border-strong text-fg-2 hover:bg-hover"
+            aria-label="Sign out"
           >
-            <LogOut className="h-4 w-4" /> Sign out
-          </button>
-        </div>
-      </aside>
-
-      {/* ---- Mobile top bar ---- */}
-      <header className="lg:hidden fixed top-0 inset-x-0 z-40 flex h-14 items-center justify-between border-b border-white/10 bg-navy-900/95 px-4 backdrop-blur-sm">
-        <Link href="/hub" className="leading-none">
-          <span className="brand-wordmark text-base font-semibold text-white tracking-[0.14em]">{PRODUCT.wordmark}</span>
-        </Link>
-        <div className="flex items-center gap-1">
-          <NotificationsBell />
-          <button
-            aria-label={menuOpen ? "Close menu" : "Open menu"}
-            onClick={() => setMenuOpen((v) => !v)}
-            className="flex h-11 w-11 items-center justify-center rounded-xl text-steel-100 hover:bg-white/5"
-          >
-            {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            <LogOut className="h-4 w-4" />
           </button>
         </div>
       </header>
 
-      {/* ---- Mobile full menu ---- */}
-      {menuOpen ? (
-        <div className="lg:hidden fixed inset-0 z-50 bg-navy/98 backdrop-blur-md overflow-y-auto">
-          <div className="flex h-14 items-center justify-between border-b border-white/10 px-4">
-            <span className="brand-wordmark text-base font-semibold text-white tracking-[0.14em]">MENU</span>
-            <button
-              aria-label="Close menu"
-              onClick={closeAnd}
-              className="flex h-11 w-11 items-center justify-center rounded-xl text-steel-100 hover:bg-white/5"
-            >
-              <X className="h-5 w-5" />
-            </button>
-          </div>
-          <nav className="p-4 space-y-1">
-            {items.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                onClick={closeAnd}
-                className={cn(
-                  "flex items-center gap-3 rounded-xl px-4 py-3.5 text-base font-semibold min-h-[44px]",
-                  isActive(pathname, item.href)
-                    ? "bg-orange/15 text-white border border-orange/30"
-                    : "text-steel-100 hover:bg-white/5 border border-transparent"
-                )}
-              >
-                <item.icon className="h-5 w-5" />
-                {item.label}
-              </Link>
-            ))}
-            <div className="pt-3 mt-3 border-t border-white/10">
-              <p className="px-4 text-sm font-semibold text-white">{user.name}</p>
-              <p className="px-4 text-[11px] uppercase tracking-wider text-gold font-bold">{user.role}</p>
-              <button
-                onClick={() => signOut({ callbackUrl: "/hub/login" })}
-                className="mt-3 flex w-full items-center gap-3 rounded-xl px-4 py-3.5 text-base font-semibold text-steel-100 hover:bg-white/5 min-h-[44px]"
-              >
-                <LogOut className="h-5 w-5" /> Sign out
-              </button>
-            </div>
-          </nav>
-        </div>
-      ) : null}
-
-      {/* ---- Mobile bottom tabs ---- */}
-      <nav className="lg:hidden fixed bottom-0 inset-x-0 z-40 border-t border-white/10 bg-navy-900/98 backdrop-blur-sm pb-[env(safe-area-inset-bottom)]">
-        <div className="grid grid-cols-5">
-          {mobileTabs.map((item) => (
+      {/* Mobile sub-nav */}
+      <div className="md:hidden sticky top-14 z-30 border-b border-border bg-surface overflow-x-auto">
+        <div className="flex gap-1 px-3 py-2 min-w-max">
+          {section.sub.map((link) => (
             <Link
-              key={item.href}
-              href={item.href}
+              key={link.href}
+              href={link.href}
               className={cn(
-                "flex min-h-[56px] flex-col items-center justify-center gap-1 text-[10px] font-bold uppercase tracking-wide",
-                isActive(pathname, item.href) ? "text-gold" : "text-steel-300 hover:text-white"
+                "shrink-0 rounded-pill px-3 py-1.5 text-xs font-semibold",
+                isNavActive(pathname, link.href) ? "bg-accent-soft text-accent-text" : "bg-surface-2 text-fg-2"
               )}
             >
-              <item.icon className="h-5 w-5" />
-              {item.label}
+              {link.label}
             </Link>
           ))}
-          <button
-            onClick={() => setMenuOpen(true)}
-            className={cn(
-              "flex min-h-[56px] flex-col items-center justify-center gap-1 text-[10px] font-bold uppercase tracking-wide",
-              moreItems.some((i) => isActive(pathname, i.href)) ? "text-gold" : "text-steel-300 hover:text-white"
-            )}
-          >
-            <Menu className="h-5 w-5" />
-            More
-          </button>
+        </div>
+      </div>
+
+      <div className="flex">
+        <aside className="hidden md:flex w-[212px] shrink-0 flex-col border-r border-border bg-surface sticky top-14 self-start max-h-[calc(100vh-3.5rem)] overflow-y-auto">
+          <div className="p-3">
+            <p className="px-2 pb-2 text-[11px] font-semibold uppercase tracking-wide text-fg-3">
+              {section.label}
+            </p>
+            <div className="space-y-0.5">
+              {section.sub.map((link) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className={cn(
+                    "block rounded-control px-2.5 py-2 text-sm font-medium transition-colors",
+                    isNavActive(pathname, link.href)
+                      ? "bg-accent-soft text-accent-text"
+                      : "text-fg-2 hover:bg-hover hover:text-fg"
+                  )}
+                >
+                  {link.label}
+                </Link>
+              ))}
+            </div>
+            <p className="px-2 pt-4 pb-2 text-[11px] font-semibold uppercase tracking-wide text-fg-3">More</p>
+            <div className="space-y-0.5">
+              {utility.map((link) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className={cn(
+                    "block rounded-control px-2.5 py-2 text-sm transition-colors",
+                    isNavActive(pathname, link.href)
+                      ? "bg-accent-soft text-accent-text font-medium"
+                      : "text-fg-3 hover:bg-hover hover:text-fg-2"
+                  )}
+                >
+                  {link.label}
+                </Link>
+              ))}
+            </div>
+          </div>
+        </aside>
+
+        <main className="flex-1 min-w-0 px-4 py-6 md:px-8 md:py-8 pb-24 md:pb-8 max-w-[1400px]">
+          {children}
+        </main>
+      </div>
+
+      <nav className="md:hidden fixed bottom-0 inset-x-0 z-40 border-t border-border bg-surface pb-[env(safe-area-inset-bottom)]">
+        <div className="grid grid-cols-5">
+          {mobilePrimaries.map((primary) => {
+            const active = primary.id === section.id
+            const href = primary.sub[0]?.href ?? "/hub"
+            return (
+              <Link
+                key={primary.id}
+                href={href}
+                className={cn(
+                  "flex min-h-[52px] flex-col items-center justify-center px-1 text-[10px] font-semibold",
+                  active ? "text-accent-text" : "text-fg-3"
+                )}
+              >
+                {primary.label}
+              </Link>
+            )
+          })}
         </div>
       </nav>
-    </>
+    </div>
   )
 }
+
+/** @deprecated use HubShell */
+export const HubNav = HubShell

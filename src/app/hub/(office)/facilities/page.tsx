@@ -34,7 +34,7 @@ export default async function FacilitiesPage({
           name="q"
           defaultValue={q ?? ""}
           placeholder="Search name, city, state…"
-          className="w-full min-h-[48px] rounded-xl border border-white/15 bg-navy-800 px-4 text-sm text-white placeholder:text-steel-400"
+          className="w-full min-h-[48px] rounded-xl border border-border-strong bg-bg-800 px-4 text-sm text-fg placeholder:text-fg-3"
         />
       </form>
 
@@ -44,17 +44,17 @@ export default async function FacilitiesPage({
           hint="Facilities build themselves — every stop on every load files its shipper or receiver here automatically."
         />
       ) : (
-        <Panel className="divide-y divide-white/5">
+        <Panel className="divide-y divide-border">
           {facilities.map((f) => {
             const risk = detentionRisk(f.avg_dwell_minutes, freeMinutes)
             return (
-              <Link key={f.id} href={`/hub/facilities/${f.id}`} className="flex items-center gap-3 p-3.5 hover:bg-white/5">
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/5 text-gold">
+              <Link key={f.id} href={`/hub/facilities/${f.id}`} className="flex items-center gap-3 p-3.5 hover:bg-hover">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-surface-2 text-gold">
                   <Warehouse className="h-5 w-5" />
                 </span>
                 <span className="min-w-0 flex-1">
-                  <span className="block font-semibold text-white truncate">{f.name}</span>
-                  <span className="block text-body-xs text-steel-300 truncate">
+                  <span className="block font-semibold text-fg truncate">{f.name}</span>
+                  <span className="block text-body-xs text-fg-3 truncate">
                     {[f.city, f.state].filter(Boolean).join(", ")}
                     {" · "}
                     {f.type === "shipper" ? "Shipper" : f.type === "receiver" ? "Receiver" : "Ships & receives"}
@@ -68,16 +68,16 @@ export default async function FacilitiesPage({
                     className={cn(
                       "shrink-0 rounded-full border px-2.5 py-0.5 text-[11px] font-bold",
                       risk === "high"
-                        ? "border-orange/40 bg-orange/10 text-orange"
+                        ? "border-accent/40 bg-accent/10 text-orange"
                         : risk === "warn"
                           ? "border-gold/40 bg-gold/10 text-gold"
-                          : "border-white/15 bg-white/5 text-steel-200"
+                          : "border-border-strong bg-surface-2 text-fg-2"
                     )}
                   >
                     ~{formatDwell(f.avg_dwell_minutes)} at the dock
                   </span>
                 ) : (
-                  <span className="shrink-0 text-[11px] text-steel-400">no dwell data yet</span>
+                  <span className="shrink-0 text-[11px] text-fg-3">no dwell data yet</span>
                 )}
               </Link>
             )

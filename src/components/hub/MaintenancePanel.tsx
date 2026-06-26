@@ -64,16 +64,16 @@ export function MaintenancePanel({
   return (
     <Panel className="p-4 md:p-5">
       <div className="flex items-center gap-2 mb-3">
-        <Wrench className="h-4 w-4 text-steel-300" />
-        <h2 className="font-display text-base font-bold uppercase tracking-wide text-white">Maintenance</h2>
+        <Wrench className="h-4 w-4 text-fg-3" />
+        <h2 className="text-[13.5px] font-semibold text-fg">Maintenance</h2>
       </div>
 
       {/* PM schedules */}
       {schedules.length > 0 ? (
         <ul className="mb-3 space-y-1.5">
           {schedules.map((s) => (
-            <li key={s.id} className="text-body-sm text-steel-100">
-              <span className="font-semibold text-white">{s.name}</span>
+            <li key={s.id} className="text-body-sm text-fg-2">
+              <span className="font-semibold text-fg">{s.name}</span>
               {s.interval_miles ? ` · every ${s.interval_miles.toLocaleString()} mi` : ""}
               {s.interval_days ? ` · every ${s.interval_days} days` : ""}
               {s.last_done_on ? ` · last ${String(s.last_done_on).slice(0, 10)}` : " · never done"}
@@ -89,13 +89,13 @@ export function MaintenancePanel({
         <input aria-label="Interval days" type="number" placeholder="days" className={fieldCls}
           value={schedule.intervalDays} onChange={(e) => setSchedule({ ...schedule, intervalDays: e.target.value })} />
         <button type="submit" disabled={pending}
-          className="min-h-[44px] rounded-xl border border-white/15 px-3 text-xs font-bold text-steel-100 hover:bg-white/5 disabled:opacity-50">
+          className="min-h-[44px] rounded-xl border border-border-strong px-3 text-xs font-bold text-fg-2 hover:bg-hover disabled:opacity-50">
           {pending ? <Loader2 className="mx-auto h-4 w-4 animate-spin" /> : "Add PM"}
         </button>
       </form>
 
       {/* Work order entry */}
-      <form onSubmit={addRecord} className="grid grid-cols-2 gap-2 border-t border-white/10 pt-3">
+      <form onSubmit={addRecord} className="grid grid-cols-2 gap-2 border-t border-border pt-3">
         <div>
           <label className={labelCls} htmlFor="wo_date">Work done</label>
           <input id="wo_date" type="date" className={fieldCls} value={record.doneOn}
@@ -128,13 +128,13 @@ export function MaintenancePanel({
 
       {/* History */}
       {records.length > 0 ? (
-        <ul className="mt-4 divide-y divide-white/5">
+        <ul className="mt-4 divide-y divide-border">
           {records.slice(0, 6).map((r) => (
             <li key={r.id} className="flex items-center justify-between py-2 text-body-sm">
-              <span className="text-steel-100">
+              <span className="text-fg-2">
                 {String(r.done_on).slice(0, 10)}{r.vendor ? ` · ${r.vendor}` : ""}{r.notes ? ` · ${r.notes}` : ""}
               </span>
-              <span className="font-semibold text-white">{fmtCentsExact(r.cost_cents)}</span>
+              <span className="font-semibold text-fg">{fmtCentsExact(r.cost_cents)}</span>
             </li>
           ))}
         </ul>

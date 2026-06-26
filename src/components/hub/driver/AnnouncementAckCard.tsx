@@ -32,8 +32,8 @@ export function AnnouncementAckCard({
         <Megaphone className="h-4 w-4" /> From the office
         {announcement.created_by_name ? ` · ${announcement.created_by_name}` : ""}
       </p>
-      <h2 className="mt-1 font-display text-base font-extrabold text-white">{announcement.title}</h2>
-      <p className="mt-1 text-body-sm text-steel-100 whitespace-pre-wrap">{announcement.body}</p>
+      <h2 className="mt-1 font-display text-base font-extrabold text-fg">{announcement.title}</h2>
+      <p className="mt-1 text-body-sm text-fg-2 whitespace-pre-wrap">{announcement.body}</p>
 
       {announcement.requires_ack ? (
         <div className="mt-3 space-y-2">
@@ -41,7 +41,7 @@ export function AnnouncementAckCard({
           <button
             onClick={ack}
             disabled={pending || !signature}
-            className="flex w-full min-h-[48px] items-center justify-center gap-2 rounded-xl bg-orange font-display text-sm font-bold uppercase tracking-[0.06em] text-white shadow-cta hover:bg-orange-400 disabled:opacity-50"
+            className="flex w-full min-h-[48px] items-center justify-center gap-2 rounded-control bg-accent font-display text-sm font-bold uppercase tracking-[0.06em] text-fg hover:bg-accent-hover disabled:opacity-50"
           >
             {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
             Sign & acknowledge

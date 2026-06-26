@@ -82,11 +82,11 @@ export function NotificationsBell({ direction = "down" }: { direction?: "down" |
       <button
         aria-label={unread > 0 ? `Notifications (${unread} unread)` : "Notifications"}
         onClick={toggle}
-        className="relative flex h-11 w-11 items-center justify-center rounded-xl text-steel-100 hover:bg-white/5"
+        className="relative flex h-9 w-9 items-center justify-center rounded-control border border-border-strong text-fg-2 hover:bg-hover"
       >
-        <Bell className="h-5 w-5" />
+        <Bell className="h-4 w-4" />
         {unread > 0 ? (
-          <span className="absolute top-1.5 right-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-orange px-1 text-[10px] font-bold text-white">
+          <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-pill bg-accent px-1 text-[10px] font-bold text-accent-fg">
             {unread > 9 ? "9+" : unread}
           </span>
         ) : null}
@@ -95,16 +95,16 @@ export function NotificationsBell({ direction = "down" }: { direction?: "down" |
       {open ? (
         <div
           className={cn(
-            "absolute right-0 z-50 w-[min(92vw,360px)] overflow-hidden rounded-2xl border border-white/10 bg-navy-900 shadow-2xl",
-            direction === "down" ? "top-12" : "bottom-12"
+            "absolute right-0 z-50 w-[min(92vw,360px)] overflow-hidden rounded-card border border-border bg-surface shadow-card",
+            direction === "down" ? "top-11" : "bottom-11"
           )}
         >
-          <p className="border-b border-white/10 px-4 py-3 text-[11px] font-bold uppercase tracking-wider text-gold">
+          <p className="border-b border-border px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-fg-3">
             Notifications
           </p>
           <div className="max-h-[60vh] overflow-y-auto">
             {items.length === 0 ? (
-              <p className="px-4 py-8 text-center text-body-sm text-steel-300">
+              <p className="px-4 py-8 text-center text-body-sm text-fg-3">
                 Nothing yet — alerts about dispatches, messages, and paperwork will show up here.
               </p>
             ) : (
@@ -114,13 +114,13 @@ export function NotificationsBell({ direction = "down" }: { direction?: "down" |
                   href={item.link ?? "/hub"}
                   onClick={() => setOpen(false)}
                   className={cn(
-                    "block border-b border-white/5 px-4 py-3 hover:bg-white/5",
-                    !item.read_at && "bg-orange/[0.06]"
+                    "block border-b border-border px-4 py-3 hover:bg-hover",
+                    !item.read_at && "bg-accent/[0.06]"
                   )}
                 >
-                  <p className="text-sm font-semibold text-white">{item.title}</p>
-                  {item.body ? <p className="mt-0.5 text-body-xs text-steel-200">{item.body}</p> : null}
-                  <p className="mt-1 text-[11px] text-steel-400">{timeAgo(item.created_at)}</p>
+                  <p className="text-sm font-semibold text-fg">{item.title}</p>
+                  {item.body ? <p className="mt-0.5 text-body-xs text-fg-2">{item.body}</p> : null}
+                  <p className="mt-1 text-[11px] text-fg-3">{timeAgo(item.created_at)}</p>
                 </Link>
               ))
             )}

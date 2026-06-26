@@ -36,10 +36,10 @@ export function ContactsPanel({ customerId, contacts }: { customerId: string; co
   return (
     <Panel className="p-4 md:p-5">
       <div className="flex items-center justify-between mb-3">
-        <h2 className="font-display text-base font-bold uppercase tracking-wide text-white">Contacts</h2>
+        <h2 className="text-[13.5px] font-semibold text-fg">Contacts</h2>
         <button
           onClick={() => setAdding((v) => !v)}
-          className="inline-flex min-h-[36px] items-center gap-1 rounded-lg border border-white/15 px-3 text-xs font-semibold text-steel-100 hover:bg-white/5"
+          className="inline-flex min-h-[36px] items-center gap-1 rounded-lg border border-border-strong px-3 text-xs font-semibold text-fg-2 hover:bg-hover"
         >
           <Plus className="h-3.5 w-3.5" /> Add
         </button>
@@ -65,15 +65,15 @@ export function ContactsPanel({ customerId, contacts }: { customerId: string; co
       ) : null}
 
       {contacts.length === 0 ? (
-        <p className="text-body-sm text-steel-300">No contacts yet.</p>
+        <p className="text-body-sm text-fg-3">No contacts yet.</p>
       ) : (
-        <ul className="divide-y divide-white/5">
+        <ul className="divide-y divide-border">
           {contacts.map((contact) => (
             <li key={contact.id} className="flex items-center gap-3 py-2.5">
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-semibold text-white">
+                <p className="text-sm font-semibold text-fg">
                   {contact.name}
-                  {contact.role ? <span className="text-steel-300 font-normal"> · {contact.role}</span> : null}
+                  {contact.role ? <span className="text-fg-3 font-normal"> · {contact.role}</span> : null}
                 </p>
                 <div className="flex flex-wrap gap-3 mt-0.5">
                   {contact.phone ? (
@@ -132,7 +132,7 @@ export function CrmNotesPanel({ customerId, activities }: { customerId: string; 
 
   return (
     <Panel className="p-4 md:p-5">
-      <h2 className="font-display text-base font-bold uppercase tracking-wide text-white mb-3">Activity</h2>
+      <h2 className="text-[13.5px] font-semibold text-fg mb-3">Activity</h2>
       <form onSubmit={add} className="flex flex-col sm:flex-row gap-2 mb-4">
         <select aria-label="Activity type" className={`${fieldCls} sm:w-28`} value={kind}
           onChange={(e) => setKind(e.target.value as typeof kind)}>
@@ -150,13 +150,13 @@ export function CrmNotesPanel({ customerId, activities }: { customerId: string; 
         </button>
       </form>
       {activities.length === 0 ? (
-        <p className="text-body-sm text-steel-300">Nothing logged yet.</p>
+        <p className="text-body-sm text-fg-3">Nothing logged yet.</p>
       ) : (
         <ul className="space-y-3">
           {activities.map((activity) => (
-            <li key={activity.id} className="rounded-lg bg-white/5 p-3">
-              <p className="text-sm text-steel-100">{activity.body}</p>
-              <p className="mt-1 text-body-xs text-steel-400 uppercase">
+            <li key={activity.id} className="rounded-lg bg-surface-2 p-3">
+              <p className="text-sm text-fg-2">{activity.body}</p>
+              <p className="mt-1 text-body-xs text-fg-3 uppercase">
                 {activity.kind} · {activity.actor_name ?? "—"} ·{" "}
                 {new Date(activity.created_at).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
               </p>

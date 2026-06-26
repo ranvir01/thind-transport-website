@@ -64,7 +64,7 @@ export function OfferPanel({
 
   return (
     <Panel className="p-4 md:p-5">
-      <h2 className="flex items-center gap-2 font-display text-base font-bold uppercase tracking-wide text-white mb-3">
+      <h2 className="flex items-center gap-2 text-[13.5px] font-semibold text-fg mb-3">
         <FileSignature className="h-4 w-4 text-gold" /> Offer letter
       </h2>
 
@@ -99,21 +99,21 @@ export function OfferPanel({
           </div>
           <button
             type="submit" disabled={pending}
-            className="flex min-h-[48px] items-center gap-2 rounded-xl bg-orange px-6 font-display text-sm font-bold uppercase tracking-[0.08em] text-white shadow-cta hover:bg-orange-400 disabled:opacity-60"
+            className="flex min-h-[48px] items-center gap-2 rounded-control bg-accent px-6 font-semibold text-sm text-accent-fg hover:bg-accent-hover disabled:opacity-60"
           >
             {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : null} Extend the offer
           </button>
         </form>
       ) : (
         <div className="space-y-3">
-          <div className="rounded-xl border border-white/10 bg-white/[0.03] p-3">
+          <div className="rounded-xl border border-border bg-white/[0.03] p-3">
             <p className="text-sm font-semibold text-gold">{offer.pay_summary}</p>
             {offer.start_date ? (
-              <p className="text-body-xs text-steel-300">
+              <p className="text-body-xs text-fg-3">
                 Starts {new Date(offer.start_date).toLocaleDateString("en-US", { month: "long", day: "numeric" })}
               </p>
             ) : null}
-            <p className="mt-2 text-body-sm text-steel-100 whitespace-pre-wrap">{offer.body}</p>
+            <p className="mt-2 text-body-sm text-fg-2 whitespace-pre-wrap">{offer.body}</p>
           </div>
 
           {offer.status === "signed" ? (
@@ -126,14 +126,14 @@ export function OfferPanel({
             </p>
           ) : (
             <div className="space-y-2">
-              <p className="text-body-xs text-steel-300">
+              <p className="text-body-xs text-fg-3">
                 Hand them the screen — they sign with a finger, no DocuSign account needed.
               </p>
               <SignaturePad onChange={setSignature} height={120} />
               <button
                 onClick={sign}
                 disabled={pending || !signature}
-                className="flex w-full min-h-[48px] items-center justify-center gap-2 rounded-xl bg-orange font-display text-sm font-bold uppercase tracking-[0.08em] text-white shadow-cta hover:bg-orange-400 disabled:opacity-50"
+                className="flex w-full min-h-[48px] items-center justify-center gap-2 rounded-control bg-accent font-semibold text-sm text-accent-fg hover:bg-accent-hover disabled:opacity-50"
               >
                 {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
                 Accept & sign as {applicantName}
@@ -168,24 +168,24 @@ export function OrientationPanel({
 
   return (
     <Panel className="p-4 md:p-5">
-      <h2 className="font-display text-base font-bold uppercase tracking-wide text-white mb-1">
+      <h2 className="text-[13.5px] font-semibold text-fg mb-1">
         Orientation checklist
       </h2>
-      <p className="text-body-xs text-steel-300 mb-3">
+      <p className="text-body-xs text-fg-3 mb-3">
         {doneCount}/{items.length} done — all of it, plus a signed offer, unlocks hiring.
       </p>
       <ul className="space-y-1">
         {items.map((item) => (
           <li key={item.key}>
-            <label className="flex items-center gap-3 cursor-pointer rounded-lg px-2 py-2 -mx-2 hover:bg-white/5 min-h-[44px]">
+            <label className="flex items-center gap-3 cursor-pointer rounded-lg px-2 py-2 -mx-2 hover:bg-hover min-h-[44px]">
               <input
                 type="checkbox"
                 checked={item.done}
                 disabled={pending}
                 onChange={(e) => toggle(item.key, e.target.checked)}
-                className="h-5 w-5 rounded border-white/25 accent-orange"
+                className="h-5 w-5 rounded border-border-strong accent-orange"
               />
-              <span className={cn("text-sm", item.done ? "text-steel-400 line-through" : "text-steel-100")}>
+              <span className={cn("text-sm", item.done ? "text-fg-3 line-through" : "text-fg-2")}>
                 {item.label}
               </span>
             </label>
@@ -224,7 +224,7 @@ export function ConvertPanel({
         </p>
         <button
           onClick={() => router.push(`/hub/drivers/${alreadyDriverId}`)}
-          className="mt-3 min-h-[44px] rounded-xl border border-white/15 px-4 text-sm font-semibold text-steel-100 hover:bg-white/5"
+          className="mt-3 min-h-[44px] rounded-xl border border-border-strong px-4 text-sm font-semibold text-fg-2 hover:bg-hover"
         >
           Open the driver file
         </button>
@@ -243,7 +243,7 @@ export function ConvertPanel({
 
   return (
     <Panel className={cn("p-4 md:p-5", ready ? "border-gold/40" : "opacity-80")}>
-      <h2 className="flex items-center gap-2 font-display text-base font-bold uppercase tracking-wide text-white mb-3">
+      <h2 className="flex items-center gap-2 text-[13.5px] font-semibold text-fg mb-3">
         <UserPlus className="h-4 w-4 text-gold" /> Convert to driver
       </h2>
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -282,12 +282,12 @@ export function ConvertPanel({
       <button
         onClick={convert}
         disabled={pending || !ready}
-        className="mt-3 flex w-full min-h-[52px] items-center justify-center gap-2 rounded-xl bg-orange font-display text-sm font-bold uppercase tracking-[0.08em] text-white shadow-cta hover:bg-orange-400 disabled:opacity-50"
+        className="mt-3 flex w-full min-h-[52px] items-center justify-center gap-2 rounded-control bg-accent font-semibold text-sm text-accent-fg hover:bg-accent-hover disabled:opacity-50"
       >
         {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <UserCheck className="h-4 w-4" />}
         {ready ? "Hire — create the driver file" : "Finish orientation + signed offer first"}
       </button>
-      <p className="mt-2 text-body-xs text-steel-400">
+      <p className="mt-2 text-body-xs text-fg-3">
         Creates the driver with the DQ-file checklist (391.51) pre-loaded, moves their documents
         over, sets up pay rules, and releases any referral bonus to the next settlement.
       </p>
@@ -310,7 +310,7 @@ export function ReferralPanel({
 
   if (referrerName) {
     return (
-      <p className="rounded-xl border border-gold/30 bg-gold/[0.06] px-3 py-2.5 text-sm text-steel-100">
+      <p className="rounded-xl border border-gold/30 bg-gold/[0.06] px-3 py-2.5 text-sm text-fg-2">
         Referred by <span className="font-semibold text-gold">{referrerName}</span> — bonus pays
         through their settlement when this applicant is hired.
       </p>

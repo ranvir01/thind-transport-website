@@ -70,7 +70,7 @@ export function ChatThread({
     <div className="flex flex-col h-[calc(100dvh-220px)] min-h-[320px]">
       <div className="flex-1 overflow-y-auto space-y-2 pr-1">
         {messages.length === 0 ? (
-          <p className="py-10 text-center text-body-sm text-steel-300">
+          <p className="py-10 text-center text-body-sm text-fg-3">
             No messages yet — say hello.
           </p>
         ) : (
@@ -81,7 +81,7 @@ export function ChatThread({
                 <div
                   className={cn(
                     "max-w-[80%] rounded-2xl px-3.5 py-2.5",
-                    mine ? "bg-orange/90 text-white rounded-br-md" : "bg-white/[0.07] text-steel-100 rounded-bl-md"
+                    mine ? "bg-accent text-accent-fg rounded-br-md" : "bg-white/[0.07] text-fg-2 rounded-bl-md"
                   )}
                 >
                   {!mine ? (
@@ -98,7 +98,7 @@ export function ChatThread({
                     )
                   ) : null}
                   {m.body ? <p className="text-sm whitespace-pre-wrap break-words">{m.body}</p> : null}
-                  <p className={cn("mt-1 text-[10px]", mine ? "text-white/60" : "text-steel-400")}>
+                  <p className={cn("mt-1 text-[10px]", mine ? "text-fg/60" : "text-fg-3")}>
                     {new Date(m.created_at).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}
                   </p>
                 </div>
@@ -107,7 +107,7 @@ export function ChatThread({
           })
         )}
         {seenBy.length > 0 ? (
-          <p className="text-right text-[10px] text-steel-400">Seen by {seenBy.join(", ")}</p>
+          <p className="text-right text-[10px] text-fg-3">Seen by {seenBy.join(", ")}</p>
         ) : null}
         <div ref={bottomRef} />
       </div>
@@ -118,7 +118,7 @@ export function ChatThread({
             <button
               key={t.id}
               onClick={() => setBody(t.body)}
-              className="shrink-0 rounded-full border border-white/15 bg-white/5 px-3 py-1.5 text-body-xs font-semibold text-steel-200 hover:bg-white/10 min-h-[32px]"
+              className="shrink-0 rounded-full border border-border-strong bg-surface-2 px-3 py-1.5 text-body-xs font-semibold text-fg-2 hover:bg-hover min-h-[32px]"
             >
               {t.label}
             </button>
@@ -126,12 +126,12 @@ export function ChatThread({
         </div>
       ) : null}
 
-      <div className="flex items-end gap-2 pt-2 border-t border-white/10">
+      <div className="flex items-end gap-2 pt-2 border-t border-border">
         <button
           onClick={() => fileRef.current?.click()}
           aria-label="Attach a photo"
           disabled={pending}
-          className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-white/15 text-steel-100 hover:bg-white/5 disabled:opacity-60"
+          className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-border-strong text-fg-2 hover:bg-hover disabled:opacity-60"
         >
           <Camera className="h-5 w-5" />
         </button>
@@ -146,7 +146,7 @@ export function ChatThread({
         <textarea
           rows={1}
           placeholder="Type a message…"
-          className="flex-1 resize-none rounded-xl border border-white/15 bg-navy-800 px-3 py-3 text-sm text-white placeholder:text-steel-400 min-h-[48px]"
+          className="flex-1 resize-none rounded-xl border border-border-strong bg-bg-800 px-3 py-3 text-sm text-fg placeholder:text-fg-3 min-h-[48px]"
           value={body}
           onChange={(e) => setBody(e.target.value)}
           onKeyDown={(e) => {
@@ -160,7 +160,7 @@ export function ChatThread({
           onClick={() => send()}
           aria-label="Send"
           disabled={pending || !body.trim()}
-          className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-orange text-white shadow-cta hover:bg-orange-400 disabled:opacity-50"
+          className="flex h-12 w-12 shrink-0 items-center justify-center rounded-control bg-accent text-accent-fg hover:bg-accent-hover disabled:opacity-50"
         >
           {pending ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
         </button>

@@ -34,7 +34,7 @@ export function AdvanceDecideButtons({ id }: { id: string }) {
         onClick={() => decide("deny")}
         disabled={pending}
         aria-label="Deny advance"
-        className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/15 text-steel-300 hover:bg-white/5 disabled:opacity-50"
+        className="flex h-9 w-9 items-center justify-center rounded-lg border border-border-strong text-fg-3 hover:bg-hover disabled:opacity-50"
       >
         <X className="h-4 w-4" />
       </button>

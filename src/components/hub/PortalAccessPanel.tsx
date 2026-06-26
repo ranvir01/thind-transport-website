@@ -37,10 +37,10 @@ export function PortalAccessPanel({
 
   return (
     <Panel className="p-4 md:p-5">
-      <h2 className="flex items-center gap-2 font-display text-base font-bold uppercase tracking-wide text-white mb-1">
+      <h2 className="flex items-center gap-2 text-[13.5px] font-semibold text-fg mb-1">
         <Globe className="h-4 w-4 text-gold" /> Portal access
       </h2>
-      <p className="text-body-xs text-steel-300 mb-3">
+      <p className="text-body-xs text-fg-3 mb-3">
         They track their own freight, download PODs and invoices, and stop calling dispatch.
       </p>
       <form onSubmit={invite} className="flex gap-2">
@@ -51,23 +51,23 @@ export function PortalAccessPanel({
         />
         <button
           type="submit" disabled={pending || !email}
-          className="flex min-h-[48px] shrink-0 items-center gap-2 rounded-xl bg-orange px-4 font-display text-sm font-bold uppercase tracking-[0.06em] text-white shadow-cta hover:bg-orange-400 disabled:opacity-50"
+          className="flex min-h-[48px] shrink-0 items-center gap-2 rounded-control bg-accent px-4 font-display text-sm font-bold uppercase tracking-[0.06em] text-fg hover:bg-accent-hover disabled:opacity-50"
         >
           {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />} Invite
         </button>
       </form>
       {lastLink ? (
-        <p className="mt-2 break-all rounded-lg bg-white/[0.03] px-2.5 py-1.5 text-[11px] text-steel-300">
+        <p className="mt-2 break-all rounded-lg bg-white/[0.03] px-2.5 py-1.5 text-[11px] text-fg-3">
           Backup link (if the email doesn&apos;t land): <span className="text-gold">{lastLink}</span>
         </p>
       ) : null}
       {users.length > 0 ? (
-        <ul className="mt-3 divide-y divide-white/5">
+        <ul className="mt-3 divide-y divide-border">
           {users.map((portalUser) => (
             <li key={portalUser.id} className="flex items-center justify-between py-2 text-sm">
               <span className="min-w-0 truncate">
-                <span className="font-semibold text-white">{portalUser.name}</span>
-                <span className="text-steel-300"> · {portalUser.email}</span>
+                <span className="font-semibold text-fg">{portalUser.name}</span>
+                <span className="text-fg-3"> · {portalUser.email}</span>
               </span>
               <span className="shrink-0 text-[11px] font-bold uppercase text-green-400">has access</span>
             </li>

@@ -1,0 +1,15 @@
+[package]
+name = "hauldesk-ingest"
+version = "0.1.0"
+edition = "2021"
+description = "ELD/telematics ingestion stream for HaulDesk"
+
+[dependencies]
+tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
+
+[lib]
+path = "src/lib.rs"
+
+[[bin]]
+name = "hauldesk-ingest"
+path = "src/main.rs"

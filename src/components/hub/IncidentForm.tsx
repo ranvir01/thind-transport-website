@@ -148,7 +148,7 @@ export function IncidentForm({
         </div>
 
         {/* 390.5 qualifiers */}
-        <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4 space-y-3">
+        <div className="rounded-xl border border-border bg-white/[0.03] p-4 space-y-3">
           <p className="text-[11px] font-bold uppercase tracking-wider text-gold">
             Three questions that decide if DOT counts this as an accident
           </p>
@@ -158,18 +158,18 @@ export function IncidentForm({
                 type="checkbox"
                 checked={form[q.key]}
                 onChange={(e) => setForm({ ...form, [q.key]: e.target.checked })}
-                className="mt-1 h-5 w-5 rounded border-white/20 bg-transparent accent-orange"
+                className="mt-1 h-5 w-5 rounded border-border-strong bg-transparent accent-orange"
               />
               <span>
-                <span className="block text-sm font-semibold text-white">{q.question}</span>
-                <span className="block text-body-xs text-steel-300">{q.hint}</span>
+                <span className="block text-sm font-semibold text-fg">{q.question}</span>
+                <span className="block text-body-xs text-fg-3">{q.hint}</span>
               </span>
             </label>
           ))}
           <p
             className={cn(
               "flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold",
-              recordable ? "bg-orange/15 text-orange border border-orange/30" : "bg-white/5 text-steel-200"
+              recordable ? "bg-accent/15 text-orange border border-accent/30" : "bg-surface-2 text-fg-2"
             )}
           >
             <ShieldAlert className="h-4 w-4 shrink-0" />
@@ -202,7 +202,7 @@ export function IncidentForm({
 
         <button
           type="submit" disabled={pending}
-          className="flex w-full sm:w-auto min-h-[48px] items-center justify-center gap-2 rounded-xl bg-orange px-6 font-display text-sm font-bold uppercase tracking-[0.08em] text-white shadow-cta hover:bg-orange-400 disabled:opacity-60"
+          className="flex w-full sm:w-auto min-h-[48px] items-center justify-center gap-2 rounded-control bg-accent px-6 font-semibold text-sm text-accent-fg hover:bg-accent-hover disabled:opacity-60"
         >
           {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
           {incidentId ? "Save changes" : "Log incident"}

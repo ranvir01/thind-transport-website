@@ -59,7 +59,7 @@ export default async function TasksPage() {
             if (items.length === 0) return null
             return (
               <section key={key}>
-                <h2 className={`mb-2 font-display text-sm font-bold uppercase tracking-wider ${tone ?? "text-steel-300"}`}>
+                <h2 className={`mb-2 font-display text-sm font-bold uppercase tracking-wider ${tone ?? "text-fg-3"}`}>
                   {label} ({items.length})
                 </h2>
                 <div className="space-y-2">
@@ -75,14 +75,14 @@ export default async function TasksPage() {
 
       {completed.length > 0 ? (
         <section className="mt-8">
-          <h2 className="mb-2 font-display text-sm font-bold uppercase tracking-wider text-steel-400">
+          <h2 className="mb-2 font-display text-sm font-bold uppercase tracking-wider text-fg-3">
             Recently done
           </h2>
           <ul className="space-y-1">
             {completed.map((task) => (
               <li key={task.id} className="flex items-center justify-between gap-2 rounded-lg bg-white/[0.02] px-3 py-2 text-sm">
-                <span className="text-steel-300 line-through truncate">{task.title}</span>
-                <span className="shrink-0 text-[11px] text-steel-400">
+                <span className="text-fg-3 line-through truncate">{task.title}</span>
+                <span className="shrink-0 text-[11px] text-fg-3">
                   {task.completed_by_name ?? ""}
                 </span>
               </li>

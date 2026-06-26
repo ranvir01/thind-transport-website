@@ -18,12 +18,12 @@ import type { TimeOffRequest } from "@/lib/hub/types"
 
 const LANE_HEIGHT = 46
 const STATUS_COLORS: Record<string, string> = {
-  quoted: "border-steel-400/40 bg-steel-500/20 text-steel-100",
+  quoted: "border-steel-400/40 bg-steel-500/20 text-fg-2",
   booked: "border-gold/50 bg-gold/15 text-gold",
-  dispatched: "border-orange/50 bg-orange/20 text-orange",
-  at_pickup: "border-orange/60 bg-orange/30 text-white",
+  dispatched: "border-orange/50 bg-accent/20 text-orange",
+  at_pickup: "border-accent/60 bg-accent-soft text-accent-text",
   in_transit: "border-green-500/50 bg-green-500/15 text-green-300",
-  delivered: "border-white/20 bg-white/10 text-steel-200",
+  delivered: "border-border-strong bg-surface-2 text-fg-2",
 }
 
 interface DragPayload {
@@ -146,11 +146,11 @@ export function PlannerGrid({
                 key={day}
                 className={cn(
                   "px-2 py-2 text-center text-[11px] font-bold uppercase tracking-wider",
-                  i === todayIdx ? "text-gold" : "text-steel-300"
+                  i === todayIdx ? "text-gold" : "text-fg-3"
                 )}
               >
                 {date.toLocaleDateString("en-US", { weekday: "short" })}{" "}
-                <span className={cn(i === todayIdx ? "text-white" : "text-steel-400")}>
+                <span className={cn(i === todayIdx ? "text-fg" : "text-fg-3")}>
                   {date.getDate()}
                 </span>
               </div>
@@ -193,12 +193,12 @@ export function PlannerGrid({
           {rows.map(({ truck, truckBlocks, lanes, laneCount, offDays, busyDays }) => (
             <div
               key={truck.id}
-              className="grid items-stretch rounded-xl border border-white/10 bg-navy-800/60"
+              className="grid items-stretch rounded-xl border border-border bg-bg-800/60"
               style={{ gridTemplateColumns: "200px repeat(7, 1fr)" }}
             >
               {/* Truck label */}
-              <div className="border-r border-white/10 px-3 py-2">
-                <p className="font-display text-sm font-extrabold text-white">
+              <div className="border-r border-border px-3 py-2">
+                <p className="font-display text-sm font-extrabold text-fg">
                   #{truck.unit_number}
                   {truck.status === "shop" ? (
                     <span className="ml-2 rounded-full border border-red-500/40 bg-red-500/10 px-2 py-0.5 text-[10px] font-bold uppercase text-red-400">
@@ -206,9 +206,9 @@ export function PlannerGrid({
                     </span>
                   ) : null}
                 </p>
-                <p className="truncate text-[11px] text-steel-300">{truck.driver_name ?? "No driver seated"}</p>
+                <p className="truncate text-[11px] text-fg-3">{truck.driver_name ?? "No driver seated"}</p>
                 {truck.forecast ? (
-                  <p className={cn("mt-0.5 truncate text-[10px]", truck.empty_now ? "font-bold text-gold" : "text-steel-400")}>
+                  <p className={cn("mt-0.5 truncate text-[10px]", truck.empty_now ? "font-bold text-gold" : "text-fg-3")}>
                     {truck.forecast}
                   </p>
                 ) : null}
@@ -231,10 +231,10 @@ export function PlannerGrid({
                         onDragLeave={() => setDragOver(null)}
                         onDrop={(e) => onDrop(e, truck.id, i)}
                         className={cn(
-                          "border-l border-white/5 transition-colors",
+                          "border-l border-border transition-colors",
                           i === todayIdx && "bg-white/[0.03]",
                           isEmpty && "planner-empty-day",
-                          isOver && "bg-orange/20 ring-1 ring-inset ring-orange/60"
+                          isOver && "bg-accent/20 ring-1 ring-inset ring-orange/60"
                         )}
                         title={isOff ? "Driver on approved time off" : isEmpty ? "Empty — drag a load here" : undefined}
                       >
@@ -274,7 +274,7 @@ export function PlannerGrid({
                     title={`${block.reference} · ${block.origin_city ?? "?"} → ${block.dest_city ?? "?"} · ${block.status.replace("_", " ")}${block.status === "dispatched" && !block.acknowledged_at ? " · driver hasn't confirmed yet" : ""}`}
                   >
                     {block.status === "dispatched" && !block.acknowledged_at ? (
-                      <span className="h-2 w-2 shrink-0 animate-pulse rounded-full bg-orange" title="Driver hasn't confirmed" />
+                      <span className="h-2 w-2 shrink-0 animate-pulse rounded-full bg-accent" title="Driver hasn't confirmed" />
                     ) : null}
                     <Link href={`/hub/loads/${block.id}`} className="truncate hover:underline" onClick={(e) => e.stopPropagation()}>
                       {block.reference}
@@ -290,7 +290,7 @@ export function PlannerGrid({
         </div>
       </div>
       {pending ? (
-        <p className="mt-2 flex items-center gap-2 text-body-xs text-steel-300">
+        <p className="mt-2 flex items-center gap-2 text-body-xs text-fg-3">
           <Loader2 className="h-3.5 w-3.5 animate-spin" /> Saving the move…
         </p>
       ) : null}

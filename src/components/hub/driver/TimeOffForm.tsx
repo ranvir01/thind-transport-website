@@ -26,7 +26,7 @@ export function TimeOffForm() {
   }
 
   return (
-    <form onSubmit={submit} className="rounded-2xl border border-white/10 bg-navy-800/80 p-4 space-y-3">
+    <form onSubmit={submit} className="rounded-2xl border border-border bg-surface p-4 space-y-3">
       <div className="grid grid-cols-2 gap-3">
         <div>
           <label htmlFor="to-start" className={labelCls}>First day off</label>
@@ -66,7 +66,7 @@ export function TimeOffForm() {
       </div>
       <button
         type="submit" disabled={pending}
-        className="flex w-full min-h-[52px] items-center justify-center gap-2 rounded-xl bg-orange font-display text-sm font-bold uppercase tracking-[0.08em] text-white shadow-cta hover:bg-orange-400 disabled:opacity-60"
+        className="flex w-full min-h-[52px] items-center justify-center gap-2 rounded-control bg-accent font-semibold text-sm text-accent-fg hover:bg-accent-hover disabled:opacity-60"
       >
         {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <CalendarPlus className="h-4 w-4" />}
         Ask for these days
@@ -90,7 +90,7 @@ export function CancelTimeOffButton({ id }: { id: string }) {
         })
       }
       disabled={pending}
-      className="mt-2 text-body-xs font-semibold text-steel-300 hover:text-white min-h-[36px]"
+      className="mt-2 text-body-xs font-semibold text-fg-3 hover:text-fg min-h-[36px]"
     >
       Cancel this request
     </button>

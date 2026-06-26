@@ -65,7 +65,7 @@ export function DocumentsPanel({
 
   return (
     <Panel className="p-4 md:p-5">
-      <h2 className="font-display text-base font-bold uppercase tracking-wide text-white mb-3">
+      <h2 className="text-[13.5px] font-semibold text-fg mb-3">
         Documents
       </h2>
 
@@ -86,7 +86,7 @@ export function DocumentsPanel({
           type="file"
           accept="image/*,application/pdf"
           capture="environment"
-          className={`${fieldCls} h-auto py-2 file:mr-3 file:rounded-lg file:border-0 file:bg-navy file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-white`}
+          className={`${fieldCls} h-auto py-2 file:mr-3 file:rounded-lg file:border-0 file:bg-bg file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-fg`}
         />
         <button
           type="submit"
@@ -99,22 +99,22 @@ export function DocumentsPanel({
       </form>
 
       {documents.length === 0 ? (
-        <p className="text-body-sm text-steel-300">No documents yet.</p>
+        <p className="text-body-sm text-fg-3">No documents yet.</p>
       ) : (
-        <ul className="divide-y divide-white/5">
+        <ul className="divide-y divide-border">
           {documents.map((doc) => (
             <li key={doc.id} className="flex items-center gap-3 py-2.5">
-              <FileText className="h-4 w-4 shrink-0 text-steel-300" />
+              <FileText className="h-4 w-4 shrink-0 text-fg-3" />
               <div className="min-w-0 flex-1">
                 <a
                   href={doc.url}
                   target="_blank"
                   rel="noreferrer"
-                  className="block truncate text-sm font-semibold text-white hover:text-gold"
+                  className="block truncate text-sm font-semibold text-fg hover:text-gold"
                 >
                   {doc.file_name}
                 </a>
-                <p className="text-body-xs text-steel-400">
+                <p className="text-body-xs text-fg-3">
                   {DOCUMENT_KIND_LABELS[doc.kind]} ·{" "}
                   {new Date(doc.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
                 </p>

@@ -87,18 +87,18 @@ export function SignaturePad({
       <canvas
         ref={canvasRef}
         style={{ height, touchAction: "none" }}
-        className="w-full rounded-xl border border-dashed border-white/25 bg-white/[0.04]"
+        className="w-full rounded-xl border border-dashed border-border-strong bg-white/[0.04]"
         onPointerDown={start}
         onPointerMove={move}
         onPointerUp={end}
         onPointerLeave={end}
       />
       <div className="mt-1.5 flex items-center justify-between">
-        <p className="text-body-xs text-steel-400">Sign above with your finger</p>
+        <p className="text-body-xs text-fg-3">Sign above with your finger</p>
         <button
           type="button"
           onClick={clear}
-          className="flex items-center gap-1 text-body-xs font-semibold text-steel-300 hover:text-white min-h-[32px]"
+          className="flex items-center gap-1 text-body-xs font-semibold text-fg-3 hover:text-fg min-h-[32px]"
         >
           <Eraser className="h-3.5 w-3.5" /> Clear
         </button>

@@ -72,13 +72,13 @@ export function DvirForm({
           <p className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-gold">
             <Wrench className="h-4 w-4" /> Review before you roll
           </p>
-          <p className="mt-1 text-body-sm text-steel-100">
+          <p className="mt-1 text-body-sm text-fg-2">
             {priorDvir.driver_name} reported on{" "}
             {new Date(priorDvir.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}:
           </p>
           <ul className="mt-1 space-y-0.5">
             {priorDvir.defects.map((d, i) => (
-              <li key={i} className="text-body-sm text-white">• {d.label}{d.note ? ` — ${d.note}` : ""}</li>
+              <li key={i} className="text-body-sm text-fg">• {d.label}{d.note ? ` — ${d.note}` : ""}</li>
             ))}
           </ul>
           <p className={cn(
@@ -92,30 +92,30 @@ export function DvirForm({
         </section>
       ) : null}
 
-      <section className="rounded-2xl border border-white/10 bg-navy-800/80 p-4">
-        <p className="font-display text-base font-bold uppercase tracking-wide text-white mb-1">
+      <section className="rounded-2xl border border-border bg-surface p-4">
+        <p className="text-[13.5px] font-semibold text-fg mb-1">
           {type === "post" ? "End-of-day inspection" : "Pre-trip inspection"} — #{truck.unit_number}
         </p>
-        <p className="text-body-xs text-steel-300 mb-3">Tap anything that has a problem.</p>
+        <p className="text-body-xs text-fg-3 mb-3">Tap anything that has a problem.</p>
         <ul className="space-y-1.5">
           {checklistTemplate.map((item) => {
             const ok = checks[item.key]
             return (
               <li key={item.key}>
                 <div className="flex items-center justify-between gap-2 min-h-[48px]">
-                  <span className="text-sm font-semibold text-white">{item.label}</span>
-                  <div className="flex rounded-xl border border-white/15 overflow-hidden">
+                  <span className="text-sm font-semibold text-fg">{item.label}</span>
+                  <div className="flex rounded-xl border border-border-strong overflow-hidden">
                     <button
                       type="button"
                       onClick={() => setChecks({ ...checks, [item.key]: true })}
-                      className={cn("min-h-[44px] px-4 text-sm font-bold", ok ? "bg-green-500/25 text-green-300" : "text-steel-300 hover:bg-white/5")}
+                      className={cn("min-h-[44px] px-4 text-sm font-bold", ok ? "bg-green-500/25 text-green-300" : "text-fg-3 hover:bg-hover")}
                     >
                       OK
                     </button>
                     <button
                       type="button"
                       onClick={() => setChecks({ ...checks, [item.key]: false })}
-                      className={cn("min-h-[44px] px-4 text-sm font-bold", !ok ? "bg-orange text-white" : "text-steel-300 hover:bg-white/5")}
+                      className={cn("min-h-[44px] px-4 text-sm font-bold", !ok ? "bg-accent text-accent-fg" : "text-fg-3 hover:bg-hover")}
                     >
                       Problem
                     </button>
@@ -144,11 +144,11 @@ export function DvirForm({
       </section>
 
       {defects.length > 0 ? (
-        <section className="rounded-2xl border border-orange/40 bg-orange/[0.07] p-4">
+        <section className="rounded-2xl border border-accent/40 bg-accent/[0.07] p-4">
           <p className="flex items-center gap-2 text-sm font-bold text-orange">
             <ShieldAlert className="h-4 w-4" /> Is the truck still safe to drive?
           </p>
-          <p className="mt-1 text-body-xs text-steel-200">
+          <p className="mt-1 text-body-xs text-fg-2">
             Answer honestly — &quot;No&quot; parks the truck until the shop signs off. That&apos;s the law working, not you in trouble.
           </p>
           <div className="mt-2 flex gap-2">
@@ -162,8 +162,8 @@ export function DvirForm({
                   safeToOperate === value
                     ? value
                       ? "border-green-500/50 bg-green-500/20 text-green-300"
-                      : "border-orange bg-orange text-white"
-                    : "border-white/15 text-steel-200 hover:bg-white/5"
+                      : "border-orange bg-accent text-accent-fg"
+                    : "border-border-strong text-fg-2 hover:bg-hover"
                 )}
               >
                 {value ? "Yes — safe to operate" : "No — park it"}
@@ -173,13 +173,13 @@ export function DvirForm({
         </section>
       ) : null}
 
-      <section className="rounded-2xl border border-white/10 bg-navy-800/80 p-4">
+      <section className="rounded-2xl border border-border bg-surface p-4">
         <p className={labelCls}>Sign the report</p>
         <SignaturePad onChange={setSignature} height={110} />
         <button
           onClick={submit}
           disabled={pending || !signature}
-          className="mt-3 flex w-full min-h-[56px] items-center justify-center gap-2 rounded-xl bg-orange font-display text-base font-bold uppercase tracking-[0.08em] text-white shadow-cta hover:bg-orange-400 disabled:opacity-50"
+          className="mt-3 flex w-full min-h-[56px] items-center justify-center gap-2 rounded-control bg-accent font-display text-base font-bold uppercase tracking-[0.08em] text-fg hover:bg-accent-hover disabled:opacity-50"
         >
           {pending ? <Loader2 className="h-5 w-5 animate-spin" /> : <Check className="h-5 w-5" />}
           File the {type === "post" ? "post-trip" : "pre-trip"}

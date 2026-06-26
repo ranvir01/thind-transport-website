@@ -120,7 +120,7 @@ export function OfflineSync() {
         className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-body-xs font-semibold backdrop-blur-sm ${
           online
             ? "border-gold/40 bg-gold/15 text-gold"
-            : "border-orange/40 bg-orange/15 text-orange"
+            : "border-accent/40 bg-accent/15 text-orange"
         }`}
       >
         {online ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <CloudOff className="h-3.5 w-3.5" />}

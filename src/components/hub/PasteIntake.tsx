@@ -93,10 +93,10 @@ export function PasteIntake({
   return (
     <div className="space-y-4">
       <Panel className="p-4 md:p-5">
-        <h2 className="font-display text-base font-bold uppercase tracking-wide text-white mb-1">
+        <h2 className="text-[13.5px] font-semibold text-fg mb-1">
           Paste the rate confirmation
         </h2>
-        <p className="text-body-sm text-steel-200 mb-3">
+        <p className="text-body-sm text-fg-2 mb-3">
           Copy the text of the rate con (from the email or the PDF) and paste it here — the parser pre-fills the load,
           you confirm. Booked in under a minute.
         </p>
@@ -110,14 +110,14 @@ export function PasteIntake({
         <button
           onClick={() => setParsed(parseRateCon(text))}
           disabled={!text.trim()}
-          className="mt-3 inline-flex min-h-[48px] items-center gap-2 rounded-xl bg-orange px-6 font-display text-sm font-bold uppercase tracking-[0.08em] text-white shadow-cta hover:bg-orange-400 disabled:opacity-50"
+          className="mt-3 inline-flex min-h-[48px] items-center gap-2 rounded-control bg-accent px-6 font-semibold text-sm text-accent-fg hover:bg-accent-hover disabled:opacity-50"
         >
           <Sparkles className="h-4 w-4" /> Parse it
         </button>
 
         {parsed ? (
           <div className="mt-4">
-            <p className="text-label text-steel-300 uppercase mb-2">What the parser found (confidence-coded):</p>
+            <p className="text-label text-fg-3 uppercase mb-2">What the parser found (confidence-coded):</p>
             <div className="flex flex-wrap gap-1.5">
               {parsed.brokerName ? <Chip label={`Broker: ${parsed.brokerName.value}`} confidence={parsed.brokerName.confidence} /> : null}
               {parsed.mcNumber ? <Chip label={`MC ${parsed.mcNumber.value}`} confidence={parsed.mcNumber.confidence} /> : null}
@@ -139,7 +139,7 @@ export function PasteIntake({
         <div>
           <div className="flex items-center gap-2 mb-3">
             <ClipboardPaste className="h-4 w-4 text-gold" />
-            <h2 className="font-display text-lg font-bold uppercase tracking-wide text-white">
+            <h2 className="font-display text-lg font-bold uppercase tracking-wide text-fg">
               Confirm &amp; book
             </h2>
           </div>

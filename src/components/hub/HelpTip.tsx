@@ -26,14 +26,14 @@ export function HelpTip({ title, children }: { title: string; children: React.Re
         type="button"
         aria-label={`What is ${title}?`}
         onClick={() => setOpen((v) => !v)}
-        className="inline-flex h-6 w-6 items-center justify-center rounded-full text-steel-400 hover:text-gold"
+        className="inline-flex h-6 w-6 items-center justify-center rounded-full text-fg-3 hover:text-gold"
       >
         <HelpCircle className="h-4 w-4" />
       </button>
       {open ? (
-        <span className="absolute left-1/2 top-8 z-50 w-[min(86vw,320px)] -translate-x-1/2 rounded-xl border border-white/10 bg-navy-900 p-3 shadow-2xl">
+        <span className="absolute left-1/2 top-8 z-50 w-[min(86vw,320px)] -translate-x-1/2 rounded-xl border border-border bg-surface p-3 shadow-2xl">
           <span className="block text-[11px] font-bold uppercase tracking-wider text-gold">{title}</span>
-          <span className="mt-1 block text-body-xs leading-relaxed text-steel-100">{children}</span>
+          <span className="mt-1 block text-body-xs leading-relaxed text-fg-2">{children}</span>
         </span>
       ) : null}
     </span>

@@ -102,7 +102,7 @@ export default async function LoadDetailPage({ params }: { params: Promise<{ id:
             <MessageLoadButton loadId={id} />
             <Link
               href={`/hub/loads/${id}/edit`}
-              className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-white/15 px-4 text-sm font-semibold text-steel-100 hover:bg-white/5"
+              className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-border-strong px-4 text-sm font-semibold text-fg-2 hover:bg-hover"
             >
               <Pencil className="h-4 w-4" /> Edit
             </Link>
@@ -135,7 +135,7 @@ export default async function LoadDetailPage({ params }: { params: Promise<{ id:
         <div className="xl:col-span-2 space-y-4">
           {/* Stops timeline */}
           <Panel className="p-4 md:p-5">
-            <h2 className="font-display text-base font-bold uppercase tracking-wide text-white mb-4">
+            <h2 className="text-[13.5px] font-semibold text-fg mb-4">
               Stops
             </h2>
             <ol className="space-y-4">
@@ -148,32 +148,32 @@ export default async function LoadDetailPage({ params }: { params: Promise<{ id:
                           ? "border-emerald-400/40 bg-emerald-500/15 text-emerald-300"
                           : stop.arrived_at
                             ? "border-gold/40 bg-gold/15 text-gold"
-                            : "border-white/15 bg-white/5 text-steel-200"
+                            : "border-border-strong bg-surface-2 text-fg-2"
                       }`}
                     >
                       {i + 1}
                     </span>
-                    {i < stops.length - 1 ? <span className="w-px flex-1 bg-white/10 my-1" /> : null}
+                    {i < stops.length - 1 ? <span className="w-px flex-1 bg-surface-2 my-1" /> : null}
                   </div>
                   <div className="flex-1 pb-1 min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="text-[11px] font-bold uppercase tracking-wider text-steel-300">
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-fg-3">
                         {stop.type}
                       </span>
                       {stop.fcfs ? (
-                        <span className="text-body-xs text-steel-400">FCFS</span>
+                        <span className="text-body-xs text-fg-3">FCFS</span>
                       ) : stop.appt_start ? (
-                        <span className="text-body-xs text-steel-400">Appt {formatDateTime(stop.appt_start)}</span>
+                        <span className="text-body-xs text-fg-3">Appt {formatDateTime(stop.appt_start)}</span>
                       ) : null}
-                      {stop.pickup_number ? <span className="text-body-xs text-steel-400">PU# {stop.pickup_number}</span> : null}
-                      {stop.po_number ? <span className="text-body-xs text-steel-400">PO# {stop.po_number}</span> : null}
+                      {stop.pickup_number ? <span className="text-body-xs text-fg-3">PU# {stop.pickup_number}</span> : null}
+                      {stop.po_number ? <span className="text-body-xs text-fg-3">PO# {stop.po_number}</span> : null}
                     </div>
-                    <p className="font-semibold text-white">
+                    <p className="font-semibold text-fg">
                       {stop.facility ? `${stop.facility} · ` : ""}
                       {stop.city}, {stop.state} {stop.zip ?? ""}
                     </p>
-                    {stop.address ? <p className="text-body-sm text-steel-300">{stop.address}</p> : null}
-                    <div className="mt-2 flex flex-wrap items-center gap-2 text-body-xs text-steel-300">
+                    {stop.address ? <p className="text-body-sm text-fg-3">{stop.address}</p> : null}
+                    <div className="mt-2 flex flex-wrap items-center gap-2 text-body-xs text-fg-3">
                       <span>Arrived: {formatDateTime(stop.arrived_at)}</span>
                       <span>Departed: {formatDateTime(stop.departed_at)}</span>
                     </div>
@@ -199,24 +199,24 @@ export default async function LoadDetailPage({ params }: { params: Promise<{ id:
         <div className="space-y-4">
           {/* Money */}
           <Panel className="p-4 md:p-5">
-            <h2 className="font-display text-base font-bold uppercase tracking-wide text-white mb-3">Rate</h2>
+            <h2 className="text-[13.5px] font-semibold text-fg mb-3">Rate</h2>
             <dl className="space-y-2 text-sm">
-              <div className="flex justify-between"><dt className="text-steel-200">Linehaul</dt><dd className="text-white font-semibold">{fmtCentsExact(load.linehaul_cents)}</dd></div>
-              <div className="flex justify-between"><dt className="text-steel-200">Fuel surcharge</dt><dd className="text-white font-semibold">{fmtCentsExact(load.fuel_surcharge_cents)}</dd></div>
+              <div className="flex justify-between"><dt className="text-fg-2">Linehaul</dt><dd className="text-fg font-semibold">{fmtCentsExact(load.linehaul_cents)}</dd></div>
+              <div className="flex justify-between"><dt className="text-fg-2">Fuel surcharge</dt><dd className="text-fg font-semibold">{fmtCentsExact(load.fuel_surcharge_cents)}</dd></div>
               {(Array.isArray(load.accessorials) ? load.accessorials : []).map((acc, i) => (
                 <div key={i} className="flex justify-between">
-                  <dt className="text-steel-200">{acc.label}</dt>
-                  <dd className="text-white font-semibold">{fmtCentsExact(acc.amount_cents)}</dd>
+                  <dt className="text-fg-2">{acc.label}</dt>
+                  <dd className="text-fg font-semibold">{fmtCentsExact(acc.amount_cents)}</dd>
                 </div>
               ))}
-              <div className="flex justify-between border-t border-white/10 pt-2">
-                <dt className="text-white font-bold">Total</dt>
+              <div className="flex justify-between border-t border-border pt-2">
+                <dt className="text-fg font-bold">Total</dt>
                 <dd className="font-display text-gold font-extrabold text-lg">{fmtCents(totalCents)}</dd>
               </div>
               {rpmCents ? (
                 <div className="flex justify-between">
-                  <dt className="text-steel-200">Rate per mile</dt>
-                  <dd className="text-white font-semibold">${(rpmCents / 100).toFixed(2)}/mi · {load.loaded_miles} mi</dd>
+                  <dt className="text-fg-2">Rate per mile</dt>
+                  <dd className="text-fg font-semibold">${(rpmCents / 100).toFixed(2)}/mi · {load.loaded_miles} mi</dd>
                 </div>
               ) : null}
             </dl>
@@ -224,33 +224,33 @@ export default async function LoadDetailPage({ params }: { params: Promise<{ id:
 
           {/* Assignment & details */}
           <Panel className="p-4 md:p-5">
-            <h2 className="font-display text-base font-bold uppercase tracking-wide text-white mb-3">Details</h2>
+            <h2 className="text-[13.5px] font-semibold text-fg mb-3">Details</h2>
             <dl className="space-y-2 text-sm">
-              <div className="flex justify-between"><dt className="text-steel-200">Driver</dt><dd className="text-white font-semibold">{load.driver_name ?? "Unassigned"}</dd></div>
-              <div className="flex justify-between"><dt className="text-steel-200">Truck</dt><dd className="text-white font-semibold">{load.truck_unit ? `#${load.truck_unit}` : "—"}</dd></div>
-              <div className="flex justify-between"><dt className="text-steel-200">Trailer</dt><dd className="text-white font-semibold">{load.trailer_unit ? `#${load.trailer_unit}` : "—"}</dd></div>
-              <div className="flex justify-between"><dt className="text-steel-200">Equipment</dt><dd className="text-white font-semibold capitalize">{load.equipment.replace("_", " ")}</dd></div>
-              <div className="flex justify-between"><dt className="text-steel-200">Commodity</dt><dd className="text-white font-semibold">{load.commodity ?? "—"}</dd></div>
-              <div className="flex justify-between"><dt className="text-steel-200">Weight</dt><dd className="text-white font-semibold">{load.weight_lbs ? `${load.weight_lbs.toLocaleString()} lbs` : "—"}</dd></div>
-              <div className="flex justify-between"><dt className="text-steel-200">Source</dt><dd className="text-white font-semibold uppercase">{load.source}</dd></div>
+              <div className="flex justify-between"><dt className="text-fg-2">Driver</dt><dd className="text-fg font-semibold">{load.driver_name ?? "Unassigned"}</dd></div>
+              <div className="flex justify-between"><dt className="text-fg-2">Truck</dt><dd className="text-fg font-semibold">{load.truck_unit ? `#${load.truck_unit}` : "—"}</dd></div>
+              <div className="flex justify-between"><dt className="text-fg-2">Trailer</dt><dd className="text-fg font-semibold">{load.trailer_unit ? `#${load.trailer_unit}` : "—"}</dd></div>
+              <div className="flex justify-between"><dt className="text-fg-2">Equipment</dt><dd className="text-fg font-semibold capitalize">{load.equipment.replace("_", " ")}</dd></div>
+              <div className="flex justify-between"><dt className="text-fg-2">Commodity</dt><dd className="text-fg font-semibold">{load.commodity ?? "—"}</dd></div>
+              <div className="flex justify-between"><dt className="text-fg-2">Weight</dt><dd className="text-fg font-semibold">{load.weight_lbs ? `${load.weight_lbs.toLocaleString()} lbs` : "—"}</dd></div>
+              <div className="flex justify-between"><dt className="text-fg-2">Source</dt><dd className="text-fg font-semibold uppercase">{load.source}</dd></div>
             </dl>
             {load.notes ? (
-              <p className="mt-3 rounded-lg bg-white/5 p-3 text-body-sm text-steel-100">{load.notes}</p>
+              <p className="mt-3 rounded-lg bg-surface-2 p-3 text-body-sm text-fg-2">{load.notes}</p>
             ) : null}
           </Panel>
 
           {/* Unified event timeline */}
           <Panel className="p-4 md:p-5">
-            <h2 className="font-display text-base font-bold uppercase tracking-wide text-white mb-3">Timeline</h2>
+            <h2 className="text-[13.5px] font-semibold text-fg mb-3">Timeline</h2>
             <ol className="space-y-2.5 max-h-[420px] overflow-y-auto pr-1">
               {[...events].reverse().map((event) => {
                 const Icon = eventIcon(event.kind)
                 return (
                   <li key={event.id} className="flex items-start gap-2 text-body-sm">
-                    <Icon className="h-3.5 w-3.5 mt-0.5 shrink-0 text-steel-400" />
+                    <Icon className="h-3.5 w-3.5 mt-0.5 shrink-0 text-fg-3" />
                     <div>
-                      <p className="text-white">{eventText(event)}</p>
-                      <p className="text-body-xs text-steel-400">
+                      <p className="text-fg">{eventText(event)}</p>
+                      <p className="text-body-xs text-fg-3">
                         {formatDateTime(event.created_at)}{event.actor_name ? ` · ${event.actor_name}` : ""}
                       </p>
                     </div>

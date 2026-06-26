@@ -36,7 +36,7 @@ export default async function SafetyPage() {
         action={
           <Link
             href="/hub/safety/new"
-            className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-orange px-5 font-display text-sm font-bold uppercase tracking-[0.08em] text-white shadow-cta hover:bg-orange-400"
+            className="inline-flex min-h-[44px] items-center gap-2 rounded-control bg-accent px-5 font-semibold text-sm text-accent-fg hover:bg-accent-hover"
           >
             <Plus className="h-4 w-4" /> Log incident
           </Link>
@@ -48,38 +48,38 @@ export default async function SafetyPage() {
         <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
           <div className="flex items-center gap-2">
             <ShieldAlert className="h-4 w-4 text-orange" />
-            <h2 className="font-display text-base font-bold uppercase tracking-wide text-white">
+            <h2 className="text-[13.5px] font-semibold text-fg">
               DOT accident register
             </h2>
-            <span className="rounded-full border border-white/15 bg-white/5 px-2 py-0.5 text-[11px] font-bold text-steel-200">
+            <span className="rounded-full border border-border-strong bg-surface-2 px-2 py-0.5 text-[11px] font-bold text-fg-2">
               {register.length}
             </span>
           </div>
           <a
             href="/api/hub/exports/accident-register"
             download
-            className="inline-flex min-h-[36px] items-center gap-1.5 rounded-lg border border-white/15 px-3 text-body-xs font-semibold text-steel-100 hover:bg-white/5"
+            className="inline-flex min-h-[36px] items-center gap-1.5 rounded-lg border border-border-strong px-3 text-body-xs font-semibold text-fg-2 hover:bg-hover"
           >
             <Download className="h-3.5 w-3.5" /> Download (auditor-ready CSV)
           </a>
         </div>
-        <p className="text-body-xs text-steel-300 mb-3">
+        <p className="text-body-xs text-fg-3 mb-3">
           An accident goes on the register when someone died, someone was treated away from the
           scene, or a vehicle was towed disabled (49 CFR 390.5). Keep it three years.
         </p>
         {register.length === 0 ? (
-          <p className="text-body-sm text-steel-300">Nothing on the register. Keep it that way.</p>
+          <p className="text-body-sm text-fg-3">Nothing on the register. Keep it that way.</p>
         ) : (
-          <ul className="divide-y divide-white/5">
+          <ul className="divide-y divide-border">
             {register.slice(0, 10).map((i) => (
               <li key={i.id}>
-                <Link href={`/hub/safety/${i.id}`} className="flex items-center justify-between gap-2 py-2.5 px-2 -mx-2 rounded-lg hover:bg-white/5">
+                <Link href={`/hub/safety/${i.id}`} className="flex items-center justify-between gap-2 py-2.5 px-2 -mx-2 rounded-lg hover:bg-hover">
                   <div className="min-w-0">
-                    <p className="font-semibold text-white truncate">
+                    <p className="font-semibold text-fg truncate">
                       {new Date(i.occurred_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
                       {i.location ? ` — ${i.location}` : ""}
                     </p>
-                    <p className="text-body-xs text-steel-300 truncate">
+                    <p className="text-body-xs text-fg-3 truncate">
                       {[i.driver_name, i.truck_unit ? `#${i.truck_unit}` : null, i.load_reference]
                         .filter(Boolean)
                         .join(" · ") || "Unassigned"}
@@ -98,27 +98,27 @@ export default async function SafetyPage() {
       </Panel>
 
       {/* All incidents */}
-      <h2 className="font-display text-lg font-bold uppercase tracking-wide text-white mb-3">All incidents</h2>
+      <h2 className="font-display text-lg font-bold uppercase tracking-wide text-fg mb-3">All incidents</h2>
       {incidents.length === 0 ? (
         <EmptyState
           title="No incidents on file"
           hint="Log fender-benders, cargo damage, and roadside events here — drivers can file first reports from their phones."
           action={
-            <Link href="/hub/safety/new" className="inline-flex min-h-[44px] items-center rounded-xl bg-orange px-5 font-display text-sm font-bold uppercase tracking-[0.08em] text-white shadow-cta hover:bg-orange-400">
+            <Link href="/hub/safety/new" className="inline-flex min-h-[44px] items-center rounded-control bg-accent px-5 font-semibold text-sm text-accent-fg hover:bg-accent-hover">
               Log an incident
             </Link>
           }
         />
       ) : (
-        <Panel className="divide-y divide-white/5">
+        <Panel className="divide-y divide-border">
           {incidents.map((i) => (
-            <Link key={i.id} href={`/hub/safety/${i.id}`} className="flex items-center justify-between gap-2 p-3 hover:bg-white/5">
+            <Link key={i.id} href={`/hub/safety/${i.id}`} className="flex items-center justify-between gap-2 p-3 hover:bg-hover">
               <div className="min-w-0">
-                <p className="font-semibold text-white truncate">
+                <p className="font-semibold text-fg truncate">
                   {new Date(i.occurred_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
                   {i.location ? ` — ${i.location}` : ""}
                 </p>
-                <p className="text-body-xs text-steel-300 truncate">
+                <p className="text-body-xs text-fg-3 truncate">
                   {[i.driver_name, i.truck_unit ? `#${i.truck_unit}` : null].filter(Boolean).join(" · ") || "Unassigned"}
                   {i.description ? ` · ${i.description}` : ""}
                 </p>
@@ -129,7 +129,7 @@ export default async function SafetyPage() {
                   className={cn(
                     "rounded-full border px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider",
                     i.status === "closed"
-                      ? "border-white/15 bg-white/5 text-steel-300"
+                      ? "border-border-strong bg-surface-2 text-fg-3"
                       : "border-gold/40 bg-gold/10 text-gold"
                   )}
                 >
@@ -147,7 +147,7 @@ export default async function SafetyPage() {
 function Flag({ label, tone }: { label: string; tone: "red" | "orange" | "gold" }) {
   const tones = {
     red: "border-red-500/40 bg-red-500/10 text-red-400",
-    orange: "border-orange/40 bg-orange/10 text-orange",
+    orange: "border-accent/40 bg-accent/10 text-orange",
     gold: "border-gold/40 bg-gold/10 text-gold",
   }
   return (

@@ -168,6 +168,24 @@ const config: Config = {
           900: "#7f1d1d",
           950: "#450a0a",
         },
+
+        // HaulDesk software UI (CSS variable tokens — hub only)
+        bg: "var(--bg)",
+        surface: { DEFAULT: "var(--surface)", 2: "var(--surface-2)" },
+        border: { DEFAULT: "var(--border)", strong: "var(--border-strong)" },
+        fg: { DEFAULT: "var(--text)", 2: "var(--text-2)", 3: "var(--text-3)" },
+        hover: "var(--hover)",
+        accent: {
+          DEFAULT: "var(--accent)",
+          hover: "var(--accent-hover)",
+          fg: "var(--accent-fg)",
+          soft: "var(--accent-soft)",
+          text: "var(--accent-text)",
+        },
+        ok: { DEFAULT: "var(--green)", soft: "var(--green-soft)" },
+        warn: { DEFAULT: "var(--amber)", soft: "var(--amber-soft)" },
+        bad: { DEFAULT: "var(--red)", soft: "var(--red-soft)" },
+        info: { DEFAULT: "var(--blue)", soft: "var(--blue-soft)" },
       },
       fontSize: {
         // Mobile-first typography (min 16px body)
@@ -202,14 +220,19 @@ const config: Config = {
         black: "900",
       },
       fontFamily: {
-        sans: ["var(--font-sans)", "system-ui", "sans-serif"],
+        sans: ["var(--font-geist-sans)", "var(--font-sans)", "system-ui", "sans-serif"],
+        mono: ["var(--font-geist-mono)", "ui-monospace", "monospace"],
         display: ["var(--font-display)", "Arial Narrow", "sans-serif"],
       },
       borderRadius: {
         fleet: "0.875rem",
         "fleet-lg": "1.5rem",
+        card: "14px",
+        control: "9px",
+        pill: "20px",
       },
       boxShadow: {
+        card: "var(--shadow)",
         brand: "0 10px 34px rgba(0, 0, 0, 0.4)",
         "brand-lg": "0 24px 60px rgba(0, 0, 0, 0.5)",
         cta: "0 10px 30px rgba(224, 57, 47, 0.35)",

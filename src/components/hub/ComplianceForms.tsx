@@ -37,7 +37,7 @@ export function AddComplianceItemForm() {
         onChange={(e) => setForm({ ...form, dueOn: e.target.value })}
       />
       <button type="submit" disabled={pending}
-        className="min-h-[44px] shrink-0 rounded-xl bg-orange px-5 font-display text-sm font-bold uppercase tracking-[0.08em] text-white shadow-cta hover:bg-orange-400 disabled:opacity-60">
+        className="min-h-[44px] shrink-0 rounded-control bg-accent px-5 font-semibold text-sm text-accent-fg hover:bg-accent-hover disabled:opacity-60">
         {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
       </button>
     </form>
@@ -93,7 +93,7 @@ export function IftaControls({ quarter, status }: { quarter: string; status: str
   return (
     <div className="flex flex-wrap gap-2">
       <button onClick={compute} disabled={pending}
-        className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-orange px-5 font-display text-sm font-bold uppercase tracking-[0.08em] text-white shadow-cta hover:bg-orange-400 disabled:opacity-60">
+        className="inline-flex min-h-[44px] items-center gap-2 rounded-control bg-accent px-5 font-semibold text-sm text-accent-fg hover:bg-accent-hover disabled:opacity-60">
         {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
         {status ? "Recompute" : "Compute quarter"}
       </button>

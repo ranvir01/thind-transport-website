@@ -83,24 +83,24 @@ export default async function ApplicantDetailPage({ params }: { params: Promise<
 
           {applicant.notes ? (
             <Panel className="p-4">
-              <h2 className="font-display text-base font-bold uppercase tracking-wide text-white mb-2">Notes</h2>
-              <p className="text-body-sm text-steel-100 whitespace-pre-wrap">{applicant.notes}</p>
+              <h2 className="text-[13.5px] font-semibold text-fg mb-2">Notes</h2>
+              <p className="text-body-sm text-fg-2 whitespace-pre-wrap">{applicant.notes}</p>
             </Panel>
           ) : null}
 
           <Panel className="p-4">
-            <h2 className="font-display text-base font-bold uppercase tracking-wide text-white mb-2">
+            <h2 className="text-[13.5px] font-semibold text-fg mb-2">
               Pipeline history
             </h2>
             <ul className="space-y-1.5">
               {events.map((event, i) => (
                 <li key={i} className="flex items-center justify-between gap-2 text-sm">
-                  <span className="text-steel-100">
+                  <span className="text-fg-2">
                     {event.from_stage ? `${STAGE_LABELS[event.from_stage]} → ` : ""}
-                    <span className="font-semibold text-white">{STAGE_LABELS[event.to_stage]}</span>
-                    {event.note ? <span className="text-steel-300"> — {event.note}</span> : null}
+                    <span className="font-semibold text-fg">{STAGE_LABELS[event.to_stage]}</span>
+                    {event.note ? <span className="text-fg-3"> — {event.note}</span> : null}
                   </span>
-                  <span className="shrink-0 text-[11px] text-steel-400">
+                  <span className="shrink-0 text-[11px] text-fg-3">
                     {new Date(event.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
                     {event.actor_name ? ` · ${event.actor_name}` : ""}
                   </span>
@@ -111,13 +111,13 @@ export default async function ApplicantDetailPage({ params }: { params: Promise<
 
           {applicant.application ? (
             <Panel className="p-4">
-              <h2 className="font-display text-base font-bold uppercase tracking-wide text-white mb-2">
+              <h2 className="text-[13.5px] font-semibold text-fg mb-2">
                 Website application
               </h2>
-              <p className="text-body-xs text-steel-300 mb-2">
+              <p className="text-body-xs text-fg-3 mb-2">
                 Submitted through the public DOT wizard — the full payload rides along into the DQ file.
               </p>
-              <pre className="max-h-64 overflow-auto rounded-lg bg-black/30 p-3 text-[11px] text-steel-200">
+              <pre className="max-h-64 overflow-auto rounded-lg bg-black/30 p-3 text-[11px] text-fg-2">
                 {JSON.stringify(applicant.application, null, 2)}
               </pre>
             </Panel>

@@ -46,18 +46,18 @@ export default async function MessagesPage() {
           hint="Message a driver above, or open any load and hit the chat button — drivers reply from their phones."
         />
       ) : (
-        <Panel className="divide-y divide-white/5">
+        <Panel className="divide-y divide-border">
           {threads.map((t) => (
             <Link
               key={t.id}
               href={`/hub/messages/${t.id}`}
-              className="flex items-center gap-3 p-3.5 hover:bg-white/5"
+              className="flex items-center gap-3 p-3.5 hover:bg-hover"
             >
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/5 text-gold">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-surface-2 text-gold">
                 {t.kind === "load" ? <Package className="h-5 w-5" /> : <MessageSquare className="h-5 w-5" />}
               </span>
               <span className="min-w-0 flex-1">
-                <span className="block font-semibold text-white truncate">
+                <span className="block font-semibold text-fg truncate">
                   {t.kind === "load"
                     ? `${t.load_reference ?? "Load"}${t.driver_name ? ` · ${t.driver_name}` : ""}`
                     : t.driver_name ?? "Driver"}
@@ -65,7 +65,7 @@ export default async function MessagesPage() {
                 <span
                   className={cn(
                     "block text-body-xs truncate",
-                    (t.unread_count ?? 0) > 0 ? "text-white font-semibold" : "text-steel-300"
+                    (t.unread_count ?? 0) > 0 ? "text-fg font-semibold" : "text-fg-3"
                   )}
                 >
                   {t.last_body ?? "No messages yet"}
@@ -73,12 +73,12 @@ export default async function MessagesPage() {
               </span>
               <span className="flex flex-col items-end gap-1 shrink-0">
                 {t.last_message_at ? (
-                  <span className="text-[11px] text-steel-400">
+                  <span className="text-[11px] text-fg-3">
                     {new Date(t.last_message_at).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
                   </span>
                 ) : null}
                 {(t.unread_count ?? 0) > 0 ? (
-                  <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-orange px-1.5 text-[11px] font-bold text-white">
+                  <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-accent px-1.5 text-[11px] font-bold text-fg">
                     {t.unread_count}
                   </span>
                 ) : null}

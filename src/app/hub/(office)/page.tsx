@@ -49,25 +49,25 @@ export default async function TodayPage() {
       {/* Compact KPI strip */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
         <Link href="/hub/dispatch">
-          <Panel className="p-3.5 hover:border-white/20 h-full">
-            <span className="text-label text-steel-300 uppercase">Active loads</span>
-            <p className="mt-1 font-display text-2xl font-extrabold text-gold">{stats.active_loads}</p>
+          <Panel className="p-3.5 hover:border-border-strong h-full">
+            <span className="text-label text-fg-3 uppercase">Active loads</span>
+            <p className="mt-1 font-mono text-2xl font-medium text-fg tabular-nums">{stats.active_loads}</p>
           </Panel>
         </Link>
         <Panel className="p-3.5">
-          <span className="text-label text-steel-300 uppercase">Booked this week</span>
-          <p className="mt-1 font-display text-2xl font-extrabold text-white">{fmtCents(Number(stats.revenue_week_cents))}</p>
+          <span className="text-label text-fg-3 uppercase">Booked this week</span>
+          <p className="mt-1 font-mono text-2xl font-medium text-fg tabular-nums">{fmtCents(Number(stats.revenue_week_cents))}</p>
         </Panel>
         <Link href="/hub/money">
-          <Panel className="p-3.5 hover:border-white/20 h-full">
-            <span className="text-label text-steel-300 uppercase">Owed to you</span>
-            <p className="mt-1 font-display text-2xl font-extrabold text-gold">{fmtCents(Number(stats.ar_open_cents))}</p>
+          <Panel className="p-3.5 hover:border-border-strong h-full">
+            <span className="text-label text-fg-3 uppercase">Owed to you</span>
+            <p className="mt-1 font-mono text-2xl font-medium text-fg tabular-nums">{fmtCents(Number(stats.ar_open_cents))}</p>
           </Panel>
         </Link>
         <Link href="/hub/money/settlements">
-          <Panel className="p-3.5 hover:border-white/20 h-full">
-            <span className="text-label text-steel-300 uppercase">Driver pay queued</span>
-            <p className="mt-1 font-display text-2xl font-extrabold text-white">{fmtCents(Number(stats.settlement_due_cents))}</p>
+          <Panel className="p-3.5 hover:border-border-strong h-full">
+            <span className="text-label text-fg-3 uppercase">Driver pay queued</span>
+            <p className="mt-1 font-mono text-2xl font-medium text-fg tabular-nums">{fmtCents(Number(stats.settlement_due_cents))}</p>
           </Panel>
         </Link>
       </div>
@@ -75,10 +75,10 @@ export default async function TodayPage() {
       {/* New-carrier getting-started checklist (Phase 7 onboarding) */}
       {started && Object.values(started).some((done) => !done) ? (
         <Panel className="p-4 md:p-5 mb-4 border-gold/40">
-          <h2 className="font-display text-base font-bold uppercase tracking-wide text-white mb-1">
+          <h2 className="text-[13.5px] font-semibold text-fg mb-1">
             Set up your workspace
           </h2>
-          <p className="text-body-xs text-steel-300 mb-3">
+          <p className="text-body-xs text-fg-3 mb-3">
             Five steps and you&apos;re fully live — most carriers finish in an afternoon.
           </p>
           <ul className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
@@ -94,15 +94,15 @@ export default async function TodayPage() {
                 <Link
                   href={step.href}
                   className={cn(
-                    "flex items-center gap-2 rounded-lg px-2.5 py-2 text-sm hover:bg-white/5 min-h-[40px]",
-                    step.done ? "text-steel-400 line-through" : "text-steel-100 font-semibold",
+                    "flex items-center gap-2 rounded-lg px-2.5 py-2 text-sm hover:bg-hover min-h-[40px]",
+                    step.done ? "text-fg-3 line-through" : "text-fg-2 font-semibold",
                     "highlight" in step && step.highlight && !step.done ? "border border-gold/40 bg-gold/5" : ""
                   )}
                 >
                   <span
                     className={cn(
                       "flex h-5 w-5 shrink-0 items-center justify-center rounded-full border text-[10px] font-bold",
-                      step.done ? "border-green-500/50 bg-green-500/15 text-green-400" : "border-white/25 text-steel-400"
+                      step.done ? "border-green-500/50 bg-green-500/15 text-green-400" : "border-border-strong text-fg-3"
                     )}
                   >
                     {step.done ? "✓" : ""}
@@ -117,8 +117,8 @@ export default async function TodayPage() {
 
       {allQuiet ? (
         <Panel className="p-8 text-center mb-4">
-          <p className="font-display text-xl font-extrabold text-white">All quiet. Suspiciously quiet.</p>
-          <p className="mt-1 text-body-sm text-steel-300">
+          <p className="font-semibold text-xl text-fg">All quiet. Suspiciously quiet.</p>
+          <p className="mt-1 text-body-sm text-fg-3">
             Nothing due, nothing unconfirmed, nothing unbilled, nothing on fire. Go book some freight.
           </p>
         </Panel>
@@ -128,20 +128,20 @@ export default async function TodayPage() {
         {/* Appointments today */}
         {today.stopsToday.length > 0 ? (
           <Panel className="p-4">
-            <h2 className="flex items-center gap-2 font-display text-base font-bold uppercase tracking-wide text-white mb-2">
+            <h2 className="flex items-center gap-2 text-[13.5px] font-semibold text-fg mb-2">
               <MapPin className="h-4 w-4 text-gold" /> Due today ({today.stopsToday.length})
             </h2>
-            <ul className="divide-y divide-white/5">
+            <ul className="divide-y divide-border">
               {today.stopsToday.map((stop) => {
                 const cd = countdown(stop.appt_start)
                 return (
                   <li key={stop.stop_id}>
-                    <Link href={`/hub/loads/${stop.load_id}`} className="flex items-center justify-between gap-2 py-2 px-2 -mx-2 rounded-lg hover:bg-white/5">
+                    <Link href={`/hub/loads/${stop.load_id}`} className="flex items-center justify-between gap-2 py-2 px-2 -mx-2 rounded-lg hover:bg-hover">
                       <div className="min-w-0">
-                        <p className="font-semibold text-white truncate">
+                        <p className="font-semibold text-fg truncate">
                           {stop.type === "pickup" ? "PU" : "DEL"} · {stop.facility || `${stop.city}, ${stop.state}`}
                         </p>
-                        <p className="text-body-xs text-steel-300 truncate">
+                        <p className="text-body-xs text-fg-3 truncate">
                           {stop.reference} · {stop.driver_name ?? "no driver"}{stop.truck_unit ? ` · #${stop.truck_unit}` : ""}
                         </p>
                       </div>
@@ -152,7 +152,7 @@ export default async function TodayPage() {
                             ? "border-green-500/40 bg-green-500/10 text-green-400"
                             : cd.urgent
                               ? "border-red-500/40 bg-red-500/10 text-red-400"
-                              : "border-white/15 bg-white/5 text-steel-200"
+                              : "border-border-strong bg-surface-2 text-fg-2"
                         )}
                       >
                         {stop.arrived_at ? "arrived" : stop.fcfs ? "FCFS" : cd.label}
@@ -167,47 +167,47 @@ export default async function TodayPage() {
 
         {/* Unacknowledged dispatches */}
         {today.unacked.length > 0 ? (
-          <Panel className="p-4 border-orange/30">
-            <h2 className="flex items-center gap-2 font-display text-base font-bold uppercase tracking-wide text-white mb-2">
+          <Panel className="p-4 border-accent/30">
+            <h2 className="flex items-center gap-2 text-[13.5px] font-semibold text-fg mb-2">
               <BellOff className="h-4 w-4 text-orange" /> Driver hasn&apos;t confirmed ({today.unacked.length})
             </h2>
-            <ul className="divide-y divide-white/5">
+            <ul className="divide-y divide-border">
               {today.unacked.map((load) => (
                 <li key={load.id}>
-                  <Link href={`/hub/loads/${load.id}`} className="flex items-center justify-between gap-2 py-2 px-2 -mx-2 rounded-lg hover:bg-white/5">
+                  <Link href={`/hub/loads/${load.id}`} className="flex items-center justify-between gap-2 py-2 px-2 -mx-2 rounded-lg hover:bg-hover">
                     <div className="min-w-0">
-                      <p className="font-semibold text-white truncate">
+                      <p className="font-semibold text-fg truncate">
                         {load.reference} · {load.origin_city} → {load.dest_city}
                       </p>
-                      <p className="text-body-xs text-steel-300">
+                      <p className="text-body-xs text-fg-3">
                         {load.driver_name ?? "No driver"} — dispatched{" "}
                         {new Date(load.dispatched_at).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
                       </p>
                     </div>
-                    <ArrowRight className="h-4 w-4 shrink-0 text-steel-400" />
+                    <ArrowRight className="h-4 w-4 shrink-0 text-fg-3" />
                   </Link>
                 </li>
               ))}
             </ul>
-            <p className="mt-2 text-body-xs text-steel-400">Silence is how loads get missed — call if they don&apos;t tap soon.</p>
+            <p className="mt-2 text-body-xs text-fg-3">Silence is how loads get missed — call if they don&apos;t tap soon.</p>
           </Panel>
         ) : null}
 
         {/* Trucks needing freight */}
         {today.emptyTrucks.length > 0 ? (
           <Panel className="p-4">
-            <h2 className="flex items-center gap-2 font-display text-base font-bold uppercase tracking-wide text-white mb-2">
+            <h2 className="flex items-center gap-2 text-[13.5px] font-semibold text-fg mb-2">
               <TruckIcon className="h-4 w-4 text-gold" /> Trucks needing freight ({today.emptyTrucks.length})
             </h2>
-            <ul className="divide-y divide-white/5">
+            <ul className="divide-y divide-border">
               {today.emptyTrucks.map((truck) => (
                 <li key={`${truck.id}-${truck.when}`} className="flex items-center justify-between gap-2 py-2">
                   <div>
-                    <p className="font-semibold text-white">
+                    <p className="font-semibold text-fg">
                       #{truck.unit_number}
-                      <span className="text-steel-300 font-normal"> · {truck.driver_name ?? "no driver"}</span>
+                      <span className="text-fg-3 font-normal"> · {truck.driver_name ?? "no driver"}</span>
                     </p>
-                    <p className="text-body-xs text-steel-300">
+                    <p className="text-body-xs text-fg-3">
                       {truck.where_city ? `${truck.where_city}, ${truck.where_state}` : "Location unknown"}
                     </p>
                   </div>
@@ -215,7 +215,7 @@ export default async function TodayPage() {
                     className={cn(
                       "shrink-0 rounded-full border px-2.5 py-0.5 text-[11px] font-bold uppercase",
                       truck.when === "now"
-                        ? "border-orange/40 bg-orange/10 text-orange"
+                        ? "border-accent/40 bg-accent/10 text-orange"
                         : "border-gold/40 bg-gold/10 text-gold"
                     )}
                   >
@@ -233,20 +233,20 @@ export default async function TodayPage() {
         {/* Money you haven't invoiced */}
         {today.unbilled.length > 0 ? (
           <Panel className="p-4 border-gold/30">
-            <h2 className="flex items-center gap-2 font-display text-base font-bold uppercase tracking-wide text-white mb-2">
+            <h2 className="flex items-center gap-2 text-[13.5px] font-semibold text-fg mb-2">
               <Receipt className="h-4 w-4 text-gold" /> Money you haven&apos;t invoiced yet
             </h2>
-            <ul className="divide-y divide-white/5">
+            <ul className="divide-y divide-border">
               {today.unbilled.map((load) => (
                 <li key={load.id}>
-                  <Link href={`/hub/loads/${load.id}`} className="flex items-center justify-between gap-2 py-2 px-2 -mx-2 rounded-lg hover:bg-white/5">
+                  <Link href={`/hub/loads/${load.id}`} className="flex items-center justify-between gap-2 py-2 px-2 -mx-2 rounded-lg hover:bg-hover">
                     <div className="min-w-0">
-                      <p className="font-semibold text-white truncate">{load.reference} · {load.customer_name}</p>
-                      <p className="text-body-xs text-steel-300">
+                      <p className="font-semibold text-fg truncate">{load.reference} · {load.customer_name}</p>
+                      <p className="text-body-xs text-fg-3">
                         POD in hand{load.delivered_days_ago > 0 ? ` for ${load.delivered_days_ago} day${load.delivered_days_ago > 1 ? "s" : ""}` : ""} — one click to bill
                       </p>
                     </div>
-                    <span className="shrink-0 font-display font-extrabold text-gold">{fmtCents(Number(load.total_cents))}</span>
+                    <span className="shrink-0 font-mono font-medium text-accent-text tabular-nums">{fmtCents(Number(load.total_cents))}</span>
                   </Link>
                 </li>
               ))}
@@ -257,16 +257,16 @@ export default async function TodayPage() {
         {/* Red compliance */}
         {today.redCompliance.length > 0 ? (
           <Panel className="p-4 border-red-500/30">
-            <h2 className="flex items-center gap-2 font-display text-base font-bold uppercase tracking-wide text-white mb-2">
+            <h2 className="flex items-center gap-2 text-[13.5px] font-semibold text-fg mb-2">
               <AlertTriangle className="h-4 w-4 text-red-400" /> Red flags ({today.redCompliance.length})
             </h2>
-            <ul className="divide-y divide-white/5">
+            <ul className="divide-y divide-border">
               {today.redCompliance.slice(0, 8).map((entry, i) => (
                 <li key={i}>
-                  <Link href={entry.href ?? "/hub/compliance"} className="flex items-center justify-between gap-2 py-2 px-2 -mx-2 rounded-lg hover:bg-white/5">
+                  <Link href={entry.href ?? "/hub/compliance"} className="flex items-center justify-between gap-2 py-2 px-2 -mx-2 rounded-lg hover:bg-hover">
                     <p className="min-w-0 truncate text-sm">
-                      <span className="font-semibold text-white">{entry.name}</span>
-                      <span className="text-steel-300"> — {entry.kind}</span>
+                      <span className="font-semibold text-fg">{entry.name}</span>
+                      <span className="text-fg-3"> — {entry.kind}</span>
                     </p>
                     <span className="shrink-0 rounded-full border border-red-500/40 bg-red-500/10 px-2.5 py-0.5 text-[11px] font-bold text-red-400">
                       {entry.due ? new Date(entry.due).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "—"}
@@ -281,20 +281,20 @@ export default async function TodayPage() {
         {/* Tasks due */}
         {today.tasksDue.length > 0 ? (
           <Panel className="p-4">
-            <h2 className="flex items-center gap-2 font-display text-base font-bold uppercase tracking-wide text-white mb-2">
+            <h2 className="flex items-center gap-2 text-[13.5px] font-semibold text-fg mb-2">
               <CheckSquare className="h-4 w-4 text-gold" /> Tasks due ({today.tasksDue.length})
             </h2>
-            <ul className="divide-y divide-white/5">
+            <ul className="divide-y divide-border">
               {today.tasksDue.map((task) => (
                 <li key={task.id}>
-                  <Link href="/hub/tasks" className="flex items-center justify-between gap-2 py-2 px-2 -mx-2 rounded-lg hover:bg-white/5">
-                    <p className="min-w-0 truncate text-sm font-semibold text-white">{task.title}</p>
+                  <Link href="/hub/tasks" className="flex items-center justify-between gap-2 py-2 px-2 -mx-2 rounded-lg hover:bg-hover">
+                    <p className="min-w-0 truncate text-sm font-semibold text-fg">{task.title}</p>
                     <span
                       className={cn(
                         "shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase",
                         task.priority === "urgent"
                           ? "border-red-500/40 bg-red-500/10 text-red-400"
-                          : "border-white/15 bg-white/5 text-steel-300"
+                          : "border-border-strong bg-surface-2 text-fg-3"
                       )}
                     >
                       {task.priority}
@@ -315,7 +315,7 @@ export default async function TodayPage() {
       </div>
 
       {/* Footer quick facts */}
-      <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-1 text-body-xs text-steel-400">
+      <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-1 text-body-xs text-fg-3">
         <span className="inline-flex items-center gap-1.5">
           <TruckIcon className="h-3.5 w-3.5" /> {stats.trucks_active}/{stats.trucks_total} trucks active
         </span>

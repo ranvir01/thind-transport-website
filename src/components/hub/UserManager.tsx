@@ -44,7 +44,7 @@ export function UserManager({ users, selfId }: { users: HubUser[]; selfId: strin
     <div className="space-y-4 max-w-3xl">
       <button
         onClick={() => setShowForm((v) => !v)}
-        className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-orange px-5 font-display text-sm font-bold uppercase tracking-[0.08em] text-white shadow-cta hover:bg-orange-400"
+        className="inline-flex min-h-[44px] items-center gap-2 rounded-control bg-accent px-5 font-semibold text-sm text-accent-fg hover:bg-accent-hover"
       >
         <Plus className="h-4 w-4" /> New account
       </button>
@@ -83,7 +83,7 @@ export function UserManager({ users, selfId }: { users: HubUser[]; selfId: strin
             </div>
             <div className="sm:col-span-2">
               <button type="submit" disabled={pending}
-                className="flex min-h-[48px] w-full sm:w-auto items-center justify-center gap-2 rounded-xl bg-orange px-8 font-display text-sm font-bold uppercase tracking-[0.08em] text-white shadow-cta hover:bg-orange-400 disabled:opacity-60">
+                className="flex min-h-[48px] w-full sm:w-auto items-center justify-center gap-2 rounded-control bg-accent px-8 font-semibold text-sm text-accent-fg hover:bg-accent-hover disabled:opacity-60">
                 {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
                 Create account
               </button>
@@ -92,16 +92,16 @@ export function UserManager({ users, selfId }: { users: HubUser[]; selfId: strin
         </Panel>
       ) : null}
 
-      <Panel className="divide-y divide-white/5">
+      <Panel className="divide-y divide-border">
         {users.map((user) => (
           <div key={user.id} className="flex items-center gap-3 p-3.5">
             <div className="min-w-0 flex-1">
-              <p className="font-semibold text-white truncate">
+              <p className="font-semibold text-fg truncate">
                 {user.name}
-                {user.id === selfId ? <span className="text-steel-300 font-normal"> (you)</span> : null}
+                {user.id === selfId ? <span className="text-fg-3 font-normal"> (you)</span> : null}
                 {!user.active ? <span className="ml-2 text-red-300 text-body-xs font-bold uppercase">inactive</span> : null}
               </p>
-              <p className="text-body-xs text-steel-300 truncate">{user.email}</p>
+              <p className="text-body-xs text-fg-3 truncate">{user.email}</p>
             </div>
             <span className="shrink-0 rounded-full border border-gold/40 bg-gold/10 px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider text-gold">
               {user.role}
@@ -111,7 +111,7 @@ export function UserManager({ users, selfId }: { users: HubUser[]; selfId: strin
                 aria-label={user.active ? `Deactivate ${user.name}` : `Reactivate ${user.name}`}
                 onClick={() => toggle(user)}
                 disabled={pending}
-                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-white/10 text-steel-200 hover:bg-white/5 disabled:opacity-50"
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-border text-fg-2 hover:bg-hover disabled:opacity-50"
               >
                 {user.active ? <UserX className="h-4 w-4" /> : <UserCheck className="h-4 w-4" />}
               </button>

@@ -52,3 +52,7 @@ next-env.d.ts
 # vite (legacy)
 dist-legacy
 
+# HaulDesk local artifacts
+e2e-shots*/
+services/**/target/
+

@@ -42,7 +42,7 @@ export function VettingPanel({ customerId, view }: { customerId: string; view: V
   return (
     <Panel className="p-4 md:p-5">
       <div className="flex items-center justify-between gap-2 mb-3">
-        <h2 className="flex items-center gap-2 font-display text-base font-bold uppercase tracking-wide text-white">
+        <h2 className="flex items-center gap-2 text-[13.5px] font-semibold text-fg">
           {snapshot?.allowed_to_operate === false ? (
             <ShieldX className="h-4 w-4 text-red-400" />
           ) : snapshot?.allowed_to_operate === true ? (
@@ -63,7 +63,7 @@ export function VettingPanel({ customerId, view }: { customerId: string; view: V
       </div>
 
       {!view.configured ? (
-        <p className="mb-3 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-body-xs text-steel-300">
+        <p className="mb-3 rounded-xl border border-border bg-white/[0.03] px-3 py-2 text-body-xs text-fg-3">
           Live FMCSA checks need a free webkey (5 minutes at mobile.fmcsa.dot.gov) — set
           <code className="mx-1 text-gold">FMCSA_WEBKEY</code> and every broker gets verified
           automatically, plus a nightly re-check.
@@ -82,8 +82,8 @@ export function VettingPanel({ customerId, view }: { customerId: string; view: V
               {score ?? "—"}
             </span>
             <div>
-              <p className="text-sm font-semibold text-white">Risk score / 100</p>
-              <p className="text-[11px] text-steel-400">
+              <p className="text-sm font-semibold text-fg">Risk score / 100</p>
+              <p className="text-[11px] text-fg-3">
                 Checked {new Date(snapshot.checked_at).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
                 {snapshot.legal_name ? ` · FMCSA name: ${snapshot.legal_name}` : ""}
               </p>
@@ -91,21 +91,21 @@ export function VettingPanel({ customerId, view }: { customerId: string; view: V
           </div>
           <ul className="space-y-1">
             {snapshot.risk_reasons.map((reason, i) => (
-              <li key={i} className="text-body-sm text-steel-100">• {reason}</li>
+              <li key={i} className="text-body-sm text-fg-2">• {reason}</li>
             ))}
           </ul>
         </div>
       ) : (
-        <p className="text-body-sm text-steel-300">Not verified yet.</p>
+        <p className="text-body-sm text-fg-3">Not verified yet.</p>
       )}
 
       {/* Own-receivables intelligence */}
-      <div className="mt-3 rounded-xl border border-white/10 bg-white/[0.03] p-3">
-        <p className="text-[11px] font-bold uppercase tracking-wider text-steel-300">How they pay you</p>
+      <div className="mt-3 rounded-xl border border-border bg-white/[0.03] p-3">
+        <p className="text-[11px] font-bold uppercase tracking-wider text-fg-3">How they pay you</p>
         {view.paySpeed.avgDays == null ? (
-          <p className="mt-1 text-body-sm text-steel-300">No payment history yet.</p>
+          <p className="mt-1 text-body-sm text-fg-3">No payment history yet.</p>
         ) : (
-          <p className="mt-1 text-body-sm text-steel-100">
+          <p className="mt-1 text-body-sm text-fg-2">
             Averages <span className={cn("font-bold", view.paySpeed.slowPayer ? "text-orange" : "text-green-400")}>
               {view.paySpeed.avgDays} days
             </span>{" "}
@@ -123,12 +123,12 @@ export function VettingPanel({ customerId, view }: { customerId: string; view: V
       </div>
 
       <details className="mt-3">
-        <summary className="cursor-pointer text-body-sm font-semibold text-steel-300 hover:text-white">
+        <summary className="cursor-pointer text-body-sm font-semibold text-fg-3 hover:text-fg">
           Double-brokering red flags (read before the first load)
         </summary>
         <ul className="mt-2 space-y-1">
           {DOUBLE_BROKER_CHECKLIST.map((flag) => (
-            <li key={flag} className="text-body-sm text-steel-200">⚠ {flag}</li>
+            <li key={flag} className="text-body-sm text-fg-2">⚠ {flag}</li>
           ))}
         </ul>
       </details>

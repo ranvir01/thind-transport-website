@@ -65,24 +65,24 @@ export function IntegrationCard({ card, encryptionReady }: { card: ProviderCard;
     <Panel className="p-4">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <h3 className="flex items-center gap-2 font-display text-sm font-bold uppercase tracking-wide text-white">
+          <h3 className="flex items-center gap-2 font-display text-sm font-bold uppercase tracking-wide text-fg">
             <Cable className="h-4 w-4 text-gold" /> {card.title}
           </h3>
-          <p className="mt-0.5 text-body-xs text-steel-300">{card.blurb}</p>
+          <p className="mt-0.5 text-body-xs text-fg-3">{card.blurb}</p>
         </div>
         <span
           className={cn(
             "shrink-0 rounded-full border px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider",
             card.connected
               ? "border-green-500/40 bg-green-500/10 text-green-400"
-              : "border-white/15 bg-white/5 text-steel-300"
+              : "border-border-strong bg-surface-2 text-fg-3"
           )}
         >
           {card.connected ? "connected" : "not connected"}
         </span>
       </div>
 
-      <p className="mt-2 rounded-lg bg-white/[0.03] px-2.5 py-1.5 text-[11px] text-steel-400">
+      <p className="mt-2 rounded-lg bg-white/[0.03] px-2.5 py-1.5 text-[11px] text-fg-3">
         Always works without it: {card.fallback}
       </p>
 
@@ -92,14 +92,14 @@ export function IntegrationCard({ card, encryptionReady }: { card: ProviderCard;
             {card.canSync ? (
               <button
                 onClick={syncNow} disabled={pending}
-                className="flex min-h-[40px] items-center gap-1.5 rounded-xl bg-orange px-4 text-sm font-bold text-white shadow-cta hover:bg-orange-400 disabled:opacity-60"
+                className="flex min-h-[40px] items-center gap-1.5 rounded-control bg-accent px-4 text-sm font-bold text-fg hover:bg-accent-hover disabled:opacity-60"
               >
                 {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />} Sync now
               </button>
             ) : null}
             <button
               onClick={disconnect} disabled={pending}
-              className="flex min-h-[40px] items-center gap-1.5 rounded-xl border border-white/15 px-4 text-sm font-semibold text-steel-200 hover:bg-white/5 disabled:opacity-60"
+              className="flex min-h-[40px] items-center gap-1.5 rounded-xl border border-border-strong px-4 text-sm font-semibold text-fg-2 hover:bg-hover disabled:opacity-60"
             >
               <Unplug className="h-4 w-4" /> Disconnect
             </button>
@@ -124,11 +124,11 @@ export function IntegrationCard({ card, encryptionReady }: { card: ProviderCard;
             ))}
             <div className="flex gap-2">
               <button type="button" onClick={() => setOpen(false)}
-                className="flex-1 min-h-[40px] rounded-xl border border-white/15 text-sm font-semibold text-steel-200 hover:bg-white/5">
+                className="flex-1 min-h-[40px] rounded-xl border border-border-strong text-sm font-semibold text-fg-2 hover:bg-hover">
                 Cancel
               </button>
               <button type="submit" disabled={pending || !encryptionReady}
-                className="flex flex-1 min-h-[40px] items-center justify-center gap-1.5 rounded-xl bg-orange text-sm font-bold text-white shadow-cta hover:bg-orange-400 disabled:opacity-50">
+                className="flex flex-1 min-h-[40px] items-center justify-center gap-1.5 rounded-control bg-accent text-sm font-bold text-fg hover:bg-accent-hover disabled:opacity-50">
                 {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />} Connect
               </button>
             </div>

@@ -185,7 +185,7 @@ export function ImportWizard({ initialKind = "loads" }: { initialKind?: string }
             onClick={() => { setKind(k.key); reset() }}
             className={cn(
               "min-h-[44px] rounded-xl px-4 text-sm font-bold",
-              kind === k.key ? "bg-orange/15 text-white border border-orange/30" : "text-steel-200 hover:bg-white/5 border border-white/10"
+              kind === k.key ? "bg-accent-soft text-accent-text border border-accent/30" : "text-fg-2 hover:bg-hover border border-border"
             )}
           >
             {k.label}
@@ -195,10 +195,10 @@ export function ImportWizard({ initialKind = "loads" }: { initialKind?: string }
 
       {/* Step 1: file */}
       <Panel className="p-4 md:p-5">
-        <h2 className="font-display text-base font-bold uppercase tracking-wide text-white mb-1">
+        <h2 className="text-[13.5px] font-semibold text-fg mb-1">
           1 · Upload {def.label.toLowerCase()} CSV
         </h2>
-        <p className="text-body-sm text-steel-200 mb-3">{def.hint}</p>
+        <p className="text-body-sm text-fg-2 mb-3">{def.hint}</p>
         {(kind === "fuel" || kind === "tolls") ? (
           <div className="mb-3 max-w-xs">
             <label className={labelCls} htmlFor="program">Program name (EFS, Comdata…)</label>
@@ -206,9 +206,9 @@ export function ImportWizard({ initialKind = "loads" }: { initialKind?: string }
               onChange={(e) => setProgram(e.target.value)} placeholder="EFS" />
           </div>
         ) : null}
-        <label className="flex min-h-[88px] cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-white/15 p-4 text-center hover:border-gold/40 hover:bg-white/5">
-          <FileSpreadsheet className="h-6 w-6 text-steel-300" />
-          <span className="text-sm font-semibold text-steel-100">
+        <label className="flex min-h-[88px] cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-border-strong p-4 text-center hover:border-gold/40 hover:bg-hover">
+          <FileSpreadsheet className="h-6 w-6 text-fg-3" />
+          <span className="text-sm font-semibold text-fg-2">
             {fileName ?? "Tap to choose a .csv file"}
           </span>
           <input
@@ -222,7 +222,7 @@ export function ImportWizard({ initialKind = "loads" }: { initialKind?: string }
           />
         </label>
         {rows.length > 0 ? (
-          <p className="mt-2 text-body-sm text-steel-200">
+          <p className="mt-2 text-body-sm text-fg-2">
             {rows.length} data rows · {headers.length} columns detected
           </p>
         ) : null}
@@ -232,7 +232,7 @@ export function ImportWizard({ initialKind = "loads" }: { initialKind?: string }
       {headers.length > 0 ? (
         <Panel className="p-4 md:p-5">
           <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
-            <h2 className="font-display text-base font-bold uppercase tracking-wide text-white">
+            <h2 className="text-[13.5px] font-semibold text-fg">
               2 · Map your columns
             </h2>
             {templates.length > 0 ? (
@@ -294,7 +294,7 @@ export function ImportWizard({ initialKind = "loads" }: { initialKind?: string }
             <button
               onClick={saveTemplate}
               disabled={pending}
-              className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-white/15 px-4 text-sm font-semibold text-steel-100 hover:bg-white/5 disabled:opacity-50"
+              className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-border-strong px-4 text-sm font-semibold text-fg-2 hover:bg-hover disabled:opacity-50"
             >
               <Save className="h-4 w-4" /> Save mapping
             </button>
@@ -305,7 +305,7 @@ export function ImportWizard({ initialKind = "loads" }: { initialKind?: string }
       {/* Step 3: import */}
       {headers.length > 0 && requiredMissing.length === 0 ? (
         <Panel className="p-4 md:p-5">
-          <h2 className="font-display text-base font-bold uppercase tracking-wide text-white mb-3">
+          <h2 className="text-[13.5px] font-semibold text-fg mb-3">
             3 · Import
           </h2>
           {kind === "loads" ? (
@@ -316,7 +316,7 @@ export function ImportWizard({ initialKind = "loads" }: { initialKind?: string }
                 onChange={(e) => setAsHistory(e.target.checked)}
                 className="h-5 w-5 rounded accent-[#F2A900]"
               />
-              <span className="text-sm text-steel-100">
+              <span className="text-sm text-fg-2">
                 Import as history (settled) — recommended for past loads
               </span>
             </label>
@@ -324,7 +324,7 @@ export function ImportWizard({ initialKind = "loads" }: { initialKind?: string }
           <button
             onClick={runImport}
             disabled={pending}
-            className="flex w-full sm:w-auto min-h-[48px] items-center justify-center gap-2 rounded-xl bg-orange px-8 font-display text-sm font-bold uppercase tracking-[0.08em] text-white shadow-cta hover:bg-orange-400 disabled:opacity-60"
+            className="flex w-full sm:w-auto min-h-[48px] items-center justify-center gap-2 rounded-control bg-accent px-8 font-semibold text-sm text-accent-fg hover:bg-accent-hover disabled:opacity-60"
           >
             {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
             Import {mappedRows.length} rows
@@ -341,11 +341,11 @@ export function ImportWizard({ initialKind = "loads" }: { initialKind?: string }
             ) : (
               <XCircle className="h-5 w-5 text-gold" />
             )}
-            <h2 className="font-display text-base font-bold uppercase tracking-wide text-white">
+            <h2 className="text-[13.5px] font-semibold text-fg">
               Import finished
             </h2>
           </div>
-          <p className="text-body-sm text-steel-100">
+          <p className="text-body-sm text-fg-2">
             {result.imported} imported
             {result.customersCreated != null ? ` · ${result.customersCreated} customers created` : ""}
             {result.skippedDuplicates != null ? ` · ${result.skippedDuplicates} duplicates skipped` : ""}

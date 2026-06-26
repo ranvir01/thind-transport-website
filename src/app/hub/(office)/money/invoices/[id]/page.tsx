@@ -47,27 +47,27 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
         <div className="space-y-4">
           <Panel className="p-4 md:p-5">
-            <h2 className="font-display text-base font-bold uppercase tracking-wide text-white mb-3">Summary</h2>
+            <h2 className="text-[13.5px] font-semibold text-fg mb-3">Summary</h2>
             <dl className="space-y-2 text-sm">
-              <div className="flex justify-between"><dt className="text-steel-200">Status</dt><dd className="text-white font-semibold uppercase">{invoice.status}</dd></div>
-              <div className="flex justify-between"><dt className="text-steel-200">Issued</dt><dd className="text-white font-semibold">{String(invoice.issued_on).slice(0, 10)}</dd></div>
-              <div className="flex justify-between"><dt className="text-steel-200">Due</dt><dd className="text-white font-semibold">{String(invoice.due_on).slice(0, 10)}</dd></div>
-              <div className="flex justify-between"><dt className="text-steel-200">Amount</dt><dd className="text-white font-semibold">{fmtCentsExact(invoice.amount_cents)}</dd></div>
-              <div className="flex justify-between"><dt className="text-steel-200">Paid</dt><dd className="text-white font-semibold">{fmtCentsExact(invoice.paid_cents ?? 0)}</dd></div>
-              <div className="flex justify-between border-t border-white/10 pt-2">
-                <dt className="text-white font-bold">Open balance</dt>
+              <div className="flex justify-between"><dt className="text-fg-2">Status</dt><dd className="text-fg font-semibold uppercase">{invoice.status}</dd></div>
+              <div className="flex justify-between"><dt className="text-fg-2">Issued</dt><dd className="text-fg font-semibold">{String(invoice.issued_on).slice(0, 10)}</dd></div>
+              <div className="flex justify-between"><dt className="text-fg-2">Due</dt><dd className="text-fg font-semibold">{String(invoice.due_on).slice(0, 10)}</dd></div>
+              <div className="flex justify-between"><dt className="text-fg-2">Amount</dt><dd className="text-fg font-semibold">{fmtCentsExact(invoice.amount_cents)}</dd></div>
+              <div className="flex justify-between"><dt className="text-fg-2">Paid</dt><dd className="text-fg font-semibold">{fmtCentsExact(invoice.paid_cents ?? 0)}</dd></div>
+              <div className="flex justify-between border-t border-border pt-2">
+                <dt className="text-fg font-bold">Open balance</dt>
                 <dd className="font-display text-gold font-extrabold text-lg">{fmtCentsExact(openCents)}</dd>
               </div>
             </dl>
             {invoice.remit_to ? (
-              <div className="mt-4 rounded-lg border border-white/10 p-3">
-                <p className="text-label text-steel-300 uppercase mb-1">
+              <div className="mt-4 rounded-lg border border-border p-3">
+                <p className="text-label text-fg-3 uppercase mb-1">
                   Remit to {invoice.factored ? "(factoring company — Notice of Assignment)" : ""}
                 </p>
-                <p className="text-body-sm text-steel-100 whitespace-pre-line">{invoice.remit_to}</p>
+                <p className="text-body-sm text-fg-2 whitespace-pre-line">{invoice.remit_to}</p>
               </div>
             ) : null}
-            <p className="mt-3 text-body-xs text-steel-400">
+            <p className="mt-3 text-body-xs text-fg-3">
               Load: <Link href={`/hub/loads/${invoice.load_id}`} className="text-gold">{invoice.load_reference}</Link>
             </p>
           </Panel>
@@ -76,14 +76,14 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
 
           {/* Send log */}
           <Panel className="p-4 md:p-5">
-            <h2 className="font-display text-base font-bold uppercase tracking-wide text-white mb-3">Send log</h2>
+            <h2 className="text-[13.5px] font-semibold text-fg mb-3">Send log</h2>
             {(invoice.sent_log ?? []).length === 0 ? (
-              <p className="text-body-sm text-steel-300">Not emailed yet.</p>
+              <p className="text-body-sm text-fg-3">Not emailed yet.</p>
             ) : (
               <ul className="space-y-1.5">
                 {invoice.sent_log.map((entry, i) => (
-                  <li key={i} className="text-body-sm text-steel-100">
-                    <span className="uppercase text-body-xs font-bold text-steel-300">{entry.kind}</span>{" "}
+                  <li key={i} className="text-body-sm text-fg-2">
+                    <span className="uppercase text-body-xs font-bold text-fg-3">{entry.kind}</span>{" "}
                     → {entry.to} · {new Date(entry.at).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
                   </li>
                 ))}
@@ -95,20 +95,20 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
         <div className="space-y-4">
           {canWrite && openCents > 0 ? (
             <Panel className="p-4 md:p-5">
-              <h2 className="font-display text-base font-bold uppercase tracking-wide text-white mb-3">Record payment</h2>
+              <h2 className="text-[13.5px] font-semibold text-fg mb-3">Record payment</h2>
               <RecordPaymentForm invoiceId={id} openCents={openCents} />
             </Panel>
           ) : null}
 
           <Panel className="p-4 md:p-5">
-            <h2 className="font-display text-base font-bold uppercase tracking-wide text-white mb-3">Payments</h2>
+            <h2 className="text-[13.5px] font-semibold text-fg mb-3">Payments</h2>
             {payments.length === 0 ? (
-              <p className="text-body-sm text-steel-300">No payments yet.</p>
+              <p className="text-body-sm text-fg-3">No payments yet.</p>
             ) : (
-              <ul className="divide-y divide-white/5">
+              <ul className="divide-y divide-border">
                 {payments.map((payment) => (
                   <li key={payment.id} className="flex items-center justify-between py-2.5 text-sm">
-                    <span className="text-steel-100">
+                    <span className="text-fg-2">
                       {String(payment.paid_on).slice(0, 10)}
                       {payment.method ? ` · ${payment.method}` : ""}
                       {payment.reference ? ` · ${payment.reference}` : ""}

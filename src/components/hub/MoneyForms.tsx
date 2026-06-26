@@ -28,7 +28,7 @@ export function AdvanceForm({ drivers }: { drivers: Option[] }) {
   }
   return (
     <Panel className="p-4 md:p-5">
-      <h2 className="font-display text-base font-bold uppercase tracking-wide text-white mb-3">Issue advance</h2>
+      <h2 className="text-[13.5px] font-semibold text-fg mb-3">Issue advance</h2>
       <form onSubmit={submit} className="grid grid-cols-2 gap-3">
         <div className="col-span-2 sm:col-span-1">
           <label className={labelCls} htmlFor="adv_driver">Driver *</label>
@@ -54,7 +54,7 @@ export function AdvanceForm({ drivers }: { drivers: Option[] }) {
             onChange={(e) => setForm({ ...form, reference: e.target.value })} />
         </div>
         <button type="submit" disabled={pending}
-          className="col-span-2 flex min-h-[44px] items-center justify-center gap-2 rounded-xl bg-orange px-5 font-display text-sm font-bold uppercase tracking-[0.08em] text-white shadow-cta hover:bg-orange-400 disabled:opacity-60">
+          className="col-span-2 flex min-h-[44px] items-center justify-center gap-2 rounded-control bg-accent px-5 font-semibold text-sm text-accent-fg hover:bg-accent-hover disabled:opacity-60">
           {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
           Record advance
         </button>
@@ -83,7 +83,7 @@ export function ExpenseForm({ drivers, trucks }: { drivers: Option[]; trucks: Op
   }
   return (
     <Panel className="p-4 md:p-5">
-      <h2 className="font-display text-base font-bold uppercase tracking-wide text-white mb-3">Record expense</h2>
+      <h2 className="text-[13.5px] font-semibold text-fg mb-3">Record expense</h2>
       <form onSubmit={submit} className="grid grid-cols-2 gap-3">
         <div>
           <label className={labelCls} htmlFor="exp_cat">Category</label>
@@ -126,15 +126,15 @@ export function ExpenseForm({ drivers, trucks }: { drivers: Option[]; trucks: Op
         <label className="flex items-center gap-2 min-h-[44px] cursor-pointer">
           <input type="checkbox" checked={form.reimbursable} className="h-5 w-5 rounded accent-[#F2A900]"
             onChange={(e) => setForm({ ...form, reimbursable: e.target.checked })} />
-          <span className="text-sm text-steel-100">Reimburse driver (next settlement)</span>
+          <span className="text-sm text-fg-2">Reimburse driver (next settlement)</span>
         </label>
         <label className="flex items-center gap-2 min-h-[44px] cursor-pointer">
           <input type="checkbox" checked={form.billable} className="h-5 w-5 rounded accent-[#F2A900]"
             onChange={(e) => setForm({ ...form, billable: e.target.checked })} />
-          <span className="text-sm text-steel-100">Billable to customer</span>
+          <span className="text-sm text-fg-2">Billable to customer</span>
         </label>
         <button type="submit" disabled={pending}
-          className="col-span-2 flex min-h-[44px] items-center justify-center gap-2 rounded-xl bg-orange px-5 font-display text-sm font-bold uppercase tracking-[0.08em] text-white shadow-cta hover:bg-orange-400 disabled:opacity-60">
+          className="col-span-2 flex min-h-[44px] items-center justify-center gap-2 rounded-control bg-accent px-5 font-semibold text-sm text-accent-fg hover:bg-accent-hover disabled:opacity-60">
           {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
           Save expense
         </button>
@@ -168,13 +168,13 @@ export function PriceBookEditor({ entries }: { entries: PriceBookRow[] }) {
 
   return (
     <div className="space-y-4 max-w-2xl">
-      <Panel className="divide-y divide-white/5">
+      <Panel className="divide-y divide-border">
         {entries.map((entry) => (
           <PriceBookRowEditor key={entry.id} entry={entry} onSave={save} pending={pending} />
         ))}
       </Panel>
       <Panel className="p-4">
-        <h2 className="font-display text-base font-bold uppercase tracking-wide text-white mb-3">Add accessorial type</h2>
+        <h2 className="text-[13.5px] font-semibold text-fg mb-3">Add accessorial type</h2>
         <form
           onSubmit={(e) => {
             e.preventDefault()
@@ -194,7 +194,7 @@ export function PriceBookEditor({ entries }: { entries: PriceBookRow[] }) {
             <option value="pass_through">Pass-through</option>
           </select>
           <button type="submit" disabled={pending}
-            className="min-h-[44px] shrink-0 rounded-xl bg-orange px-5 font-display text-sm font-bold uppercase tracking-[0.08em] text-white shadow-cta hover:bg-orange-400 disabled:opacity-60">
+            className="min-h-[44px] shrink-0 rounded-control bg-accent px-5 font-semibold text-sm text-accent-fg hover:bg-accent-hover disabled:opacity-60">
             Add
           </button>
         </form>
@@ -214,8 +214,8 @@ function PriceBookRowEditor({
   return (
     <div className="flex items-center gap-2 p-3">
       <div className="min-w-0 flex-1">
-        <p className="font-semibold text-white">{entry.name}</p>
-        <p className="text-body-xs text-steel-400 uppercase">{entry.unit.replace("_", " ")}</p>
+        <p className="font-semibold text-fg">{entry.name}</p>
+        <p className="text-body-xs text-fg-3 uppercase">{entry.unit.replace("_", " ")}</p>
       </div>
       <input
         aria-label={`${entry.name} default amount`}

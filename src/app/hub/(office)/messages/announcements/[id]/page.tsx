@@ -19,23 +19,23 @@ export default async function AnnouncementReportPage({ params }: { params: Promi
       <PageHeader title={announcement.title} subtitle={`Sent ${new Date(announcement.created_at).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}${announcement.created_by_name ? ` by ${announcement.created_by_name}` : ""}`} />
 
       <Panel className="p-4 md:p-5 mb-4 max-w-2xl">
-        <p className="text-body-sm text-steel-100 whitespace-pre-wrap">{announcement.body}</p>
+        <p className="text-body-sm text-fg-2 whitespace-pre-wrap">{announcement.body}</p>
       </Panel>
 
       {announcement.requires_ack ? (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-4xl">
           <Panel className="p-4">
-            <h2 className="flex items-center gap-2 font-display text-base font-bold uppercase tracking-wide text-white mb-3">
+            <h2 className="flex items-center gap-2 text-[13.5px] font-semibold text-fg mb-3">
               <Check className="h-4 w-4 text-green-400" /> Acknowledged ({report.acked.length})
             </h2>
             {report.acked.length === 0 ? (
-              <p className="text-body-sm text-steel-300">Nobody yet.</p>
+              <p className="text-body-sm text-fg-3">Nobody yet.</p>
             ) : (
-              <ul className="divide-y divide-white/5">
+              <ul className="divide-y divide-border">
                 {report.acked.map((a) => (
                   <li key={a.name} className="flex items-center justify-between py-2 text-sm">
-                    <span className="font-semibold text-white">{a.name}</span>
-                    <span className="text-body-xs text-steel-300">
+                    <span className="font-semibold text-fg">{a.name}</span>
+                    <span className="text-body-xs text-fg-3">
                       {a.signed ? "✍ signed · " : ""}
                       {new Date(a.acked_at).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
                     </span>
@@ -45,22 +45,22 @@ export default async function AnnouncementReportPage({ params }: { params: Promi
             )}
           </Panel>
           <Panel className="p-4">
-            <h2 className="flex items-center gap-2 font-display text-base font-bold uppercase tracking-wide text-white mb-3">
+            <h2 className="flex items-center gap-2 text-[13.5px] font-semibold text-fg mb-3">
               <Clock className="h-4 w-4 text-gold" /> Still waiting ({report.pending.length})
             </h2>
             {report.pending.length === 0 ? (
               <p className="text-body-sm text-green-400 font-semibold">Everyone has signed. 100%.</p>
             ) : (
-              <ul className="divide-y divide-white/5">
+              <ul className="divide-y divide-border">
                 {report.pending.map((p) => (
-                  <li key={p.name} className="py-2 text-sm font-semibold text-white">{p.name}</li>
+                  <li key={p.name} className="py-2 text-sm font-semibold text-fg">{p.name}</li>
                 ))}
               </ul>
             )}
           </Panel>
         </div>
       ) : (
-        <p className="text-body-sm text-steel-300">This was informational — no acknowledgement required.</p>
+        <p className="text-body-sm text-fg-3">This was informational — no acknowledgement required.</p>
       )}
     </div>
   )

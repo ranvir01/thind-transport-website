@@ -17,8 +17,8 @@ export default async function FleetMapPage() {
       />
       {positions.length === 0 ? (
         <Panel className="p-8 text-center">
-          <p className="text-white font-semibold">No position data yet</p>
-          <p className="text-body-sm text-steel-200 mt-1">
+          <p className="text-fg font-semibold">No position data yet</p>
+          <p className="text-body-sm text-fg-2 mt-1">
             Connect the ELD (Phase 6) or import position history to see trucks here.
           </p>
         </Panel>
@@ -28,9 +28,9 @@ export default async function FleetMapPage() {
           <div className="mt-3 grid grid-cols-2 md:grid-cols-4 gap-2">
             {positions.map((pos) => (
               <Panel key={pos.truck_id} className="p-3">
-                <p className="font-bold text-white">#{pos.unit_number}</p>
-                <p className="text-body-xs text-steel-300 truncate">{pos.driver_name ?? "No driver"}</p>
-                <p className="text-body-xs text-steel-400">
+                <p className="font-bold text-fg">#{pos.unit_number}</p>
+                <p className="text-body-xs text-fg-3 truncate">{pos.driver_name ?? "No driver"}</p>
+                <p className="text-body-xs text-fg-3">
                   {new Date(pos.ts).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
                 </p>
               </Panel>

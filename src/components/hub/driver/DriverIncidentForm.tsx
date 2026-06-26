@@ -69,7 +69,7 @@ export function DriverIncidentForm({ loads }: { loads: { id: string; reference: 
 
   return (
     <form onSubmit={submit} className="space-y-4">
-      <div className="rounded-2xl border border-white/10 bg-navy-800/80 p-4 space-y-3">
+      <div className="rounded-2xl border border-border bg-surface p-4 space-y-3">
         <div>
           <label htmlFor="inc-location" className={labelCls}>Where are you?</label>
           <div className="flex gap-2">
@@ -85,7 +85,7 @@ export function DriverIncidentForm({ loads }: { loads: { id: string; reference: 
               aria-label="Use my GPS location"
               className={cn(
                 "flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border",
-                coords ? "border-gold/50 bg-gold/15 text-gold" : "border-white/15 text-steel-100 hover:bg-white/5"
+                coords ? "border-gold/50 bg-gold/15 text-gold" : "border-border-strong text-fg-2 hover:bg-hover"
               )}
             >
               <MapPin className="h-5 w-5" />
@@ -127,14 +127,14 @@ export function DriverIncidentForm({ loads }: { loads: { id: string; reference: 
         </div>
       </div>
 
-      <div className="rounded-2xl border border-white/10 bg-navy-800/80 p-4 space-y-2">
+      <div className="rounded-2xl border border-border bg-surface p-4 space-y-2">
         <p className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-gold">
           <ShieldAlert className="h-4 w-4" /> Three quick questions — answer honestly
         </p>
         {QUESTIONS.map(({ key, q }) => (
           <div key={key} className="flex items-center justify-between gap-3 min-h-[48px]">
-            <p className="text-sm font-semibold text-white">{q}</p>
-            <div className="flex rounded-xl border border-white/15 overflow-hidden">
+            <p className="text-sm font-semibold text-fg">{q}</p>
+            <div className="flex rounded-xl border border-border-strong overflow-hidden">
               {[false, true].map((value) => (
                 <button
                   key={String(value)}
@@ -144,9 +144,9 @@ export function DriverIncidentForm({ loads }: { loads: { id: string; reference: 
                     "min-h-[44px] px-4 text-sm font-bold",
                     form[key] === value
                       ? value
-                        ? "bg-orange text-white"
-                        : "bg-white/15 text-white"
-                      : "text-steel-300 hover:bg-white/5"
+                        ? "bg-accent text-accent-fg"
+                        : "bg-white/15 text-fg"
+                      : "text-fg-3 hover:bg-hover"
                   )}
                 >
                   {value ? "Yes" : "No"}
@@ -159,12 +159,12 @@ export function DriverIncidentForm({ loads }: { loads: { id: string; reference: 
 
       <button
         type="submit" disabled={pending}
-        className="flex w-full min-h-[56px] items-center justify-center gap-2 rounded-xl bg-orange font-display text-base font-bold uppercase tracking-[0.08em] text-white shadow-cta hover:bg-orange-400 disabled:opacity-60"
+        className="flex w-full min-h-[56px] items-center justify-center gap-2 rounded-control bg-accent font-display text-base font-bold uppercase tracking-[0.08em] text-fg hover:bg-accent-hover disabled:opacity-60"
       >
         {pending ? <Loader2 className="h-5 w-5 animate-spin" /> : null}
         File the report
       </button>
-      <p className="text-center text-body-xs text-steel-400">
+      <p className="text-center text-body-xs text-fg-3">
         After filing, message dispatch any photos from the scene.
       </p>
     </form>

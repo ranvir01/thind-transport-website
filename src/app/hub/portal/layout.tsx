@@ -13,7 +13,7 @@ export default async function PortalLayout({ children }: { children: React.React
   return (
     <div className="min-h-screen bg-navy">
       <header className="fixed top-0 inset-x-0 z-40 flex h-14 items-center justify-between border-b border-white/10 bg-navy-900/95 px-4 backdrop-blur-sm">
-        <span className="brand-wordmark text-base font-semibold text-white tracking-[0.14em]">
+        <span className="brand-wordmark text-base font-semibold text-fg tracking-[0.14em]">
           {PRODUCT.wordmark}
         </span>
         <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-gold">Customer portal</span>

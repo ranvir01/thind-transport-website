@@ -38,20 +38,20 @@ export default async function PlannerPage({
             <Link
               href={`/hub/planner?week=${shiftWeek(data.weekStart, -1)}`}
               aria-label="Previous week"
-              className="flex h-11 w-11 items-center justify-center rounded-xl border border-white/15 text-steel-100 hover:bg-white/5"
+              className="flex h-11 w-11 items-center justify-center rounded-xl border border-border-strong text-fg-2 hover:bg-hover"
             >
               <ChevronLeft className="h-5 w-5" />
             </Link>
             <Link
               href={data.weekStart === thisWeek ? "/hub/planner" : `/hub/planner?week=${thisWeek}`}
-              className="flex min-h-[44px] items-center rounded-xl border border-white/15 px-4 text-sm font-semibold text-steel-100 hover:bg-white/5"
+              className="flex min-h-[44px] items-center rounded-xl border border-border-strong px-4 text-sm font-semibold text-fg-2 hover:bg-hover"
             >
               Week of {weekLabel}
             </Link>
             <Link
               href={`/hub/planner?week=${shiftWeek(data.weekStart, 1)}`}
               aria-label="Next week"
-              className="flex h-11 w-11 items-center justify-center rounded-xl border border-white/15 text-steel-100 hover:bg-white/5"
+              className="flex h-11 w-11 items-center justify-center rounded-xl border border-border-strong text-fg-2 hover:bg-hover"
             >
               <ChevronRight className="h-5 w-5" />
             </Link>
@@ -70,26 +70,26 @@ export default async function PlannerPage({
       {/* Backhaul hints */}
       {data.backhaul.length > 0 ? (
         <Panel className="mt-4 p-4 md:p-5">
-          <h2 className="flex items-center gap-2 font-display text-base font-bold uppercase tracking-wide text-white mb-1">
+          <h2 className="flex items-center gap-2 text-[13.5px] font-semibold text-fg mb-1">
             <Route className="h-4 w-4 text-gold" /> Backhaul ideas
           </h2>
-          <p className="text-body-xs text-steel-300 mb-3">
+          <p className="text-body-xs text-fg-3 mb-3">
             Where these trucks go empty, here&apos;s what has paid out of that market before — best margin first.
           </p>
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
             {data.backhaul.map((hint) => (
-              <div key={hint.truckUnit} className="rounded-xl border border-white/10 bg-white/[0.03] p-3">
+              <div key={hint.truckUnit} className="rounded-xl border border-border bg-white/[0.03] p-3">
                 <p className="text-[11px] font-bold uppercase tracking-wider text-gold">
                   #{hint.truckUnit} · empty in {hint.market}
                 </p>
                 <ul className="mt-1.5 space-y-1">
                   {hint.lanes.map((lane) => (
                     <li key={lane.id} className="flex items-center justify-between gap-2 text-sm">
-                      <span className="text-steel-100 truncate">
+                      <span className="text-fg-2 truncate">
                         {lane.origin_city} → {lane.dest_city}, {lane.dest_state}
-                        <span className="text-steel-400"> · {lane.loads_count}×</span>
+                        <span className="text-fg-3"> · {lane.loads_count}×</span>
                       </span>
-                      <span className="shrink-0 font-display font-extrabold text-gold">
+                      <span className="shrink-0 font-mono font-medium text-accent-text tabular-nums">
                         {lane.avg_rpm_cents ? `$${(lane.avg_rpm_cents / 100).toFixed(2)}/mi` : fmtCents(lane.margin_cents)}
                       </span>
                     </li>
@@ -107,7 +107,7 @@ export default async function PlannerPage({
         </Panel>
       ) : null}
 
-      <p className="mt-3 text-body-xs text-steel-400">
+      <p className="mt-3 text-body-xs text-fg-3">
         Drive-time forecasts are estimates from the last known position — the ELD is always the authority.
         Striped gold days are approved driver time off; dispatch can&apos;t book over them.
       </p>

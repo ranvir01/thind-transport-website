@@ -105,22 +105,22 @@ export default async function IntegrationsPage() {
 
         {/* Free keyed APIs configured at the environment level */}
         <Panel className="p-4">
-          <h3 className="font-display text-sm font-bold uppercase tracking-wide text-white">Free government APIs</h3>
+          <h3 className="font-display text-sm font-bold uppercase tracking-wide text-fg">Free government APIs</h3>
           <ul className="mt-2 space-y-1.5 text-body-sm">
             <li className="flex items-center justify-between">
-              <span className="text-steel-100">FMCSA QCMobile (broker vetting)</span>
-              <span className={cn("text-[11px] font-bold uppercase", fmcsaConfigured() ? "text-green-400" : "text-steel-400")}>
+              <span className="text-fg-2">FMCSA QCMobile (broker vetting)</span>
+              <span className={cn("text-[11px] font-bold uppercase", fmcsaConfigured() ? "text-green-400" : "text-fg-3")}>
                 {fmcsaConfigured() ? "configured" : "set FMCSA_WEBKEY"}
               </span>
             </li>
             <li className="flex items-center justify-between">
-              <span className="text-steel-100">EIA weekly diesel index</span>
-              <span className={cn("text-[11px] font-bold uppercase", process.env.EIA_API_KEY ? "text-green-400" : "text-steel-400")}>
+              <span className="text-fg-2">EIA weekly diesel index</span>
+              <span className={cn("text-[11px] font-bold uppercase", process.env.EIA_API_KEY ? "text-green-400" : "text-fg-3")}>
                 {process.env.EIA_API_KEY ? "configured" : "set EIA_API_KEY"}
               </span>
             </li>
             <li className="flex items-center justify-between">
-              <span className="text-steel-100">NWS weather · NHTSA VIN/recalls · OSM</span>
+              <span className="text-fg-2">NWS weather · NHTSA VIN/recalls · OSM</span>
               <span className="text-[11px] font-bold uppercase text-green-400">no key needed</span>
             </li>
           </ul>
@@ -128,19 +128,19 @@ export default async function IntegrationsPage() {
       </div>
 
       {/* Sync history */}
-      <h2 className="mt-6 mb-2 font-display text-base font-bold uppercase tracking-wide text-white">Sync history</h2>
-      <Panel className="divide-y divide-white/5">
+      <h2 className="mt-6 mb-2 text-[13.5px] font-semibold text-fg">Sync history</h2>
+      <Panel className="divide-y divide-border">
         {syncs.length === 0 ? (
-          <p className="p-4 text-body-sm text-steel-300">No syncs yet.</p>
+          <p className="p-4 text-body-sm text-fg-3">No syncs yet.</p>
         ) : (
           syncs.map((sync, i) => (
             <div key={i} className="flex items-center justify-between gap-2 p-3 text-sm">
-              <span className="min-w-0 truncate text-steel-100">
-                <span className="font-semibold text-white">{sync.source}</span>
+              <span className="min-w-0 truncate text-fg-2">
+                <span className="font-semibold text-fg">{sync.source}</span>
                 {" · "}
                 {new Date(sync.started_at).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
                 {sync.error ? <span className="text-red-400"> — {sync.error}</span> : null}
-                {sync.counts ? <span className="text-steel-400"> — {JSON.stringify(sync.counts)}</span> : null}
+                {sync.counts ? <span className="text-fg-3"> — {JSON.stringify(sync.counts)}</span> : null}
               </span>
               <span className={cn("shrink-0 text-[11px] font-bold uppercase", sync.ok ? "text-green-400" : "text-red-400")}>
                 {sync.ok ? "ok" : "failed"}

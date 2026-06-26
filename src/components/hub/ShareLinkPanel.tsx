@@ -48,7 +48,7 @@ export function ShareLinkPanel({ loadId, links }: { loadId: string; links: Share
   return (
     <Panel className="p-4 md:p-5">
       <div className="flex items-center justify-between mb-3">
-        <h2 className="font-display text-base font-bold uppercase tracking-wide text-white">
+        <h2 className="text-[13.5px] font-semibold text-fg">
           Tracking links
         </h2>
         <button
@@ -60,22 +60,22 @@ export function ShareLinkPanel({ loadId, links }: { loadId: string; links: Share
           New link
         </button>
       </div>
-      <p className="text-body-xs text-steel-300 mb-3">
+      <p className="text-body-xs text-fg-3 mb-3">
         Public, revocable status page for the broker — kills check calls. Shows status, stops, and city-level position only.
       </p>
       {active.length === 0 ? (
-        <p className="text-body-sm text-steel-300">No active links.</p>
+        <p className="text-body-sm text-fg-3">No active links.</p>
       ) : (
         <ul className="space-y-2">
           {active.map((link) => (
             <li key={link.id} className="flex items-center gap-2">
-              <code className="flex-1 truncate rounded-lg bg-white/5 px-2.5 py-2 text-body-xs text-steel-100">
+              <code className="flex-1 truncate rounded-lg bg-surface-2 px-2.5 py-2 text-body-xs text-fg-2">
                 /track/{link.token.slice(0, 12)}…
               </code>
               <button
                 aria-label="Copy link"
                 onClick={() => copy(link.token)}
-                className="flex h-10 w-10 items-center justify-center rounded-lg border border-white/10 text-steel-200 hover:bg-white/5"
+                className="flex h-10 w-10 items-center justify-center rounded-lg border border-border text-fg-2 hover:bg-hover"
               >
                 <Copy className="h-4 w-4" />
               </button>
@@ -83,7 +83,7 @@ export function ShareLinkPanel({ loadId, links }: { loadId: string; links: Share
                 href={`/track/${link.token}`}
                 target="_blank"
                 rel="noreferrer"
-                className="flex h-10 items-center rounded-lg border border-white/10 px-3 text-xs font-semibold text-steel-100 hover:bg-white/5"
+                className="flex h-10 items-center rounded-lg border border-border px-3 text-xs font-semibold text-fg-2 hover:bg-hover"
               >
                 Open
               </a>
