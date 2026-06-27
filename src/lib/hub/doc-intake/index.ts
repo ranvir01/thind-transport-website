@@ -87,6 +87,10 @@ function summarizePayload(kind: DocKind, payload: ParsedDocPayload): string[] {
   return chips.length ? chips : ["No fields extracted — paste text or try a clearer scan"]
 }
 
+export function buildDocSummary(kind: DocKind, payload: ParsedDocPayload): string[] {
+  return summarizePayload(kind, payload)
+}
+
 /** Full pipeline: classify → parse → human-readable summary. Pure — safe on server or client. */
 export function analyzeDocument(text: string, fileName?: string): DocAnalysis {
   const trimmed = text.trim()
