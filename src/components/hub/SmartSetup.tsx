@@ -9,7 +9,7 @@ import { toast } from "sonner"
 import { analyzeDocument, type DocAnalysis } from "@/lib/hub/doc-intake"
 import type { DocKind, ParsedDocPayload } from "@/lib/hub/doc-intake/types"
 import { extractTextFromFile, stashRateConForPaste } from "@/lib/hub/doc-intake/extract-text-client"
-import { applySmartScanAction } from "@/app/hub/_actions/setup"
+import { analyzeSmartSetupAction, applySmartScanAction } from "@/app/hub/_actions/setup"
 import { fieldCls, Panel } from "@/components/hub/ui"
 import { cn } from "@/lib/utils"
 
@@ -18,6 +18,7 @@ interface QueuedScan {
   fileName: string
   file: File | null
   analysis: DocAnalysis
+  aiEnhanced?: boolean
   text: string
   applied: boolean
   edits: Record<string, string>
@@ -174,7 +175,14 @@ function ScanCard({
     <Panel className={cn("p-4", scan.applied && "border-emerald-500/40 opacity-80")}>
       <div className="flex items-start justify-between gap-3 mb-3">
         <div>
-          <p className="text-label text-gold uppercase">{scan.analysis.label}</p>
+          <p className="text-label text-gold uppercase flex items-center gap-1.5">
+            {scan.analysis.label}
+            {scan.aiEnhanced ? (
+              <span className="inline-flex items-center gap-0.5 rounded-full border border-accent/30 bg-accent-soft px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-accent-text">
+                <Sparkles className="h-2.5 w-2.5" /> AI
+              </span>
+            ) : null}
+          </p>
           <p className="text-body-sm text-fg-2 truncate max-w-[240px]">{scan.fileName}</p>
         </div>
         <button
@@ -263,8 +271,16 @@ export function SmartSetup({
   const [scanning, setScanning] = useState(false)
   const [pending, startTransition] = useTransition()
 
-  const processText = useCallback((text: string, fileName: string, file: File | null) => {
-    const analysis = analyzeDocument(text, fileName)
+  const processText = useCallback(async (text: string, fileName: string, file: File | null) => {
+    let analysis = analyzeDocument(text, fileName)
+    let aiEnhanced = false
+    try {
+      const enhanced = await analyzeSmartSetupAction(text, fileName)
+      analysis = enhanced.analysis
+      aiEnhanced = enhanced.aiEnhanced
+    } catch {
+      // Offline or unauthenticated preview — heuristic only
+    }
     setQueue((q) => [
       ...q,
       {
@@ -272,6 +288,7 @@ export function SmartSetup({
         fileName,
         file,
         analysis,
+        aiEnhanced,
         text,
         applied: false,
         edits: defaultEdits(analysis.payload),
@@ -287,7 +304,7 @@ export function SmartSetup({
         const { text, warning } = await extractTextFromFile(file)
         if (warning) toast.warning(warning)
         if (text.trim()) {
-          processText(text, file.name, file)
+          await processText(text, file.name, file)
         } else if (!warning) {
           toast.error(`No text in ${file.name}`)
         }
@@ -299,7 +316,7 @@ export function SmartSetup({
 
   const handlePasteScan = () => {
     if (!pasteText.trim()) return
-    processText(pasteText, "Pasted text", null)
+    void processText(pasteText, "Pasted text", null)
     setPasteText("")
   }
 

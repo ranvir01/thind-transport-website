@@ -1,6 +1,7 @@
 import { requireOwner } from "@/lib/hub/session"
 import { credentialsConfigured, hasCredentials } from "@/lib/hub/credentials"
 import { fmcsaConfigured } from "@/lib/hub/vetting"
+import { aiParserConfigured } from "@/lib/hub/doc-intake/analyze-enhanced"
 import { query } from "@/lib/hub/db"
 import { PageHeader, Panel } from "@/components/hub/ui"
 import { IntegrationCard, type ProviderCard } from "@/components/hub/IntegrationsPanel"
@@ -117,6 +118,12 @@ export default async function IntegrationsPage() {
               <span className="text-fg-2">EIA weekly diesel index</span>
               <span className={cn("text-[11px] font-bold uppercase", process.env.EIA_API_KEY ? "text-green-400" : "text-fg-3")}>
                 {process.env.EIA_API_KEY ? "configured" : "set EIA_API_KEY"}
+              </span>
+            </li>
+            <li className="flex items-center justify-between">
+              <span className="text-fg-2">Smart Setup AI extraction (Anthropic)</span>
+              <span className={cn("text-[11px] font-bold uppercase", aiParserConfigured() ? "text-green-400" : "text-fg-3")}>
+                {aiParserConfigured() ? "configured" : "set ANTHROPIC_API_KEY"}
               </span>
             </li>
             <li className="flex items-center justify-between">

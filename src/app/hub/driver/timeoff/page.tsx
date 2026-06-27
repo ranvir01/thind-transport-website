@@ -1,3 +1,4 @@
+import { formatHubDateShort } from "@/lib/hub/format-dates"
 import { requireDriverUser } from "@/lib/hub/session"
 import { listTimeOff } from "@/lib/hub/timeoff"
 import { TimeOffForm, CancelTimeOffButton } from "@/components/hub/driver/TimeOffForm"
@@ -33,13 +34,11 @@ export default async function DriverTimeOffPage() {
         <ul className="space-y-2">
           {requests.map((r) => {
             const status = STATUS_COPY[r.status]
-            const fmt = (d: string) =>
-              new Date(`${String(d).slice(0, 10)}T12:00:00`).toLocaleDateString("en-US", { month: "short", day: "numeric" })
             return (
               <li key={r.id} className="rounded-2xl border border-white/10 bg-navy-800/80 p-4">
                 <div className="flex items-center justify-between gap-2">
                   <p className="font-semibold text-white">
-                    {fmt(r.start_date)} – {fmt(r.end_date)}
+                    {formatHubDateShort(r.start_date)} – {formatHubDateShort(r.end_date)}
                   </p>
                   <span className={cn("rounded-full border px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider", status.cls)}>
                     {status.label}

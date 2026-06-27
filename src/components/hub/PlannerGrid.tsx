@@ -14,6 +14,7 @@ import { CalendarOff, GripVertical, Loader2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { plannerMoveLoadAction } from "@/app/hub/_actions/planner"
 import type { PlannerBlock, PlannerTruck } from "@/lib/hub/planner"
+import { toIsoDateOnly } from "@/lib/hub/format-dates"
 import type { TimeOffRequest } from "@/lib/hub/types"
 
 const LANE_HEIGHT = 46
@@ -119,8 +120,11 @@ export function PlannerGrid({
         if (truck.driver_id) {
           for (const off of timeOff) {
             if (off.driver_id !== truck.driver_id) continue
-            const start = Math.max(0, dayIndex(days, `${String(off.start_date).slice(0, 10)}T00:00:00`))
-            const end = Math.min(6, dayIndex(days, `${String(off.end_date).slice(0, 10)}T23:59:00`))
+            const startIso = toIsoDateOnly(off.start_date)
+            const endIso = toIsoDateOnly(off.end_date)
+            if (!startIso || !endIso) continue
+            const start = Math.max(0, dayIndex(days, `${startIso}T00:00:00`))
+            const end = Math.min(6, dayIndex(days, `${endIso}T23:59:00`))
             for (let d = start; d <= end; d++) offDays.add(d)
           }
         }

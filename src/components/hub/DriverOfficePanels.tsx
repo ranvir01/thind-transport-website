@@ -9,6 +9,7 @@ import {
   cancelDocumentRequestAction, decideTimeOffAction, requestDocumentAction,
 } from "@/app/hub/_actions/comms"
 import { fieldCls, Panel } from "@/components/hub/ui"
+import { formatHubDateShort } from "@/lib/hub/format-dates"
 import { TIME_OFF_KIND_LABELS, type DocumentRequest, type TimeOffRequest } from "@/lib/hub/types"
 
 const REQUESTABLE = [
@@ -132,8 +133,6 @@ export function TimeOffDecisionPanel({ requests }: { requests: TimeOffRequest[] 
     })
 
   if (requests.length === 0) return null
-  const fmt = (d: string) =>
-    new Date(`${String(d).slice(0, 10)}T12:00:00`).toLocaleDateString("en-US", { month: "short", day: "numeric" })
 
   return (
     <Panel className="p-4 md:p-5 border-gold/30">
@@ -145,7 +144,7 @@ export function TimeOffDecisionPanel({ requests }: { requests: TimeOffRequest[] 
           <li key={r.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border bg-white/[0.03] p-3">
             <div>
               <p className="font-semibold text-fg">
-                {r.driver_name} — {fmt(r.start_date)} to {fmt(r.end_date)}
+                {r.driver_name} — {formatHubDateShort(r.start_date)} to {formatHubDateShort(r.end_date)}
               </p>
               <p className="text-body-xs text-fg-3">
                 {TIME_OFF_KIND_LABELS[r.kind]}

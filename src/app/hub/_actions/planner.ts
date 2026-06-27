@@ -8,6 +8,7 @@ import { revalidatePath } from "next/cache"
 import { requirePermission } from "@/lib/hub/session"
 import { addLoadEvent } from "@/lib/hub/loads"
 import { dispatchLegality } from "@/lib/hub/drivers"
+import { formatHubDateShort } from "@/lib/hub/format-dates"
 import { driverTimeOffConflict } from "@/lib/hub/timeoff"
 import { query, queryOne } from "@/lib/hub/db"
 import { logAudit } from "@/lib/hub/audit"
@@ -103,11 +104,9 @@ export async function plannerMoveLoadAction(
       user.carrierId, effectiveDriverId, window.starts, window.ends
     )
     if (conflict) {
-      const fmt = (d: string) =>
-        new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric" })
       return {
         ok: false,
-        error: `${conflict.driver_name ?? "The driver"} has approved time off ${fmt(String(conflict.start_date))} – ${fmt(String(conflict.end_date))} — pick another truck or another week`,
+        error: `${conflict.driver_name ?? "The driver"} has approved time off ${formatHubDateShort(conflict.start_date)} – ${formatHubDateShort(conflict.end_date)} — pick another truck or another week`,
       }
     }
   }

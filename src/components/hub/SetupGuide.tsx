@@ -148,8 +148,15 @@ export function SetupChecklist({
 }) {
   if (!progress) return null
   const allDone = Object.values(progress).every(Boolean)
-
   if (allDone) return null
+
+  const coreDone =
+    progress.trucks &&
+    progress.drivers &&
+    progress.customers &&
+    progress.loads
+  const onlyPacketLeft = coreDone && !progress.packet
+  if (onlyPacketLeft) return null
 
   return (
     <Panel className="p-4 md:p-5 mb-4 border-accent/20">

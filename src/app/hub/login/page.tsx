@@ -77,7 +77,20 @@ export default function HubLoginPage() {
         </form>
 
         <p className="mt-6 text-center text-xs text-fg-3">Need access? Ask the office to create your account.</p>
-        <p className="mt-2 text-center text-xs text-fg-3">
+
+        <Panel className="mt-4 border-dashed bg-surface-2 p-3 text-left">
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-fg-3">Demo access</p>
+          <p className="mt-1 text-xs text-fg-2">
+            <span className="font-mono text-fg">dispatch@demo.thind</span>
+            {" · "}
+            <span className="font-mono text-fg">ThindDemo1!</span>
+          </p>
+          <p className="mt-1 text-[11px] text-fg-3">
+            Also try owner@demo.thind, driver@demo.thind — same password.
+          </p>
+        </Panel>
+
+        <p className="mt-4 text-center text-xs text-fg-3">
           Run a trucking company?{" "}
           <a href="/hub/signup" className={linkAccentCls}>
             Create your workspace

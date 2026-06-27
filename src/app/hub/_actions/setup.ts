@@ -267,3 +267,18 @@ export async function applySmartScanAction(formData: FormData): Promise<ApplySca
     return { ok: false, error: msg }
   }
 }
+
+export interface AnalyzeScanResult {
+  analysis: import("@/lib/hub/doc-intake/types").DocAnalysis
+  aiEnhanced: boolean
+}
+
+/** Classify + parse document text; merges LLM extraction when ANTHROPIC_API_KEY is set. */
+export async function analyzeSmartSetupAction(
+  text: string,
+  fileName?: string
+): Promise<AnalyzeScanResult> {
+  await requirePermission("fleet:write")
+  const { analyzeDocumentEnhanced } = await import("@/lib/hub/doc-intake/analyze-enhanced")
+  return analyzeDocumentEnhanced(text, fileName)
+}
