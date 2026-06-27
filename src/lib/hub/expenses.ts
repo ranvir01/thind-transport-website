@@ -53,6 +53,7 @@ export interface TruckPnl {
   maintenance_cents: string
   other_expense_cents: string
   loaded_miles: string | null
+  deadhead_miles: string | null
   net_cents: number
 }
 
@@ -72,6 +73,9 @@ export async function truckPnl(carrierId: string, days = 92): Promise<TruckPnl[]
        (SELECT SUM(l.loaded_miles) FROM hub.loads l
          WHERE l.truck_id = t.id AND l.deleted_at IS NULL AND l.status <> 'cancelled'
            AND l.created_at >= NOW() - ($2 || ' days')::interval) AS loaded_miles,
+       (SELECT SUM(l.deadhead_miles) FROM hub.loads l
+         WHERE l.truck_id = t.id AND l.deleted_at IS NULL AND l.status <> 'cancelled'
+           AND l.created_at >= NOW() - ($2 || ' days')::interval) AS deadhead_miles,
        0 AS net_cents
      FROM hub.trucks t
      WHERE t.carrier_id = $1 AND t.deleted_at IS NULL

@@ -59,10 +59,12 @@ export interface TodayData {
   unbilled: UnbilledLoad[]
   pendingTimeOff: TimeOffRequest[]
   openIncidents: number
+  /** Invoices sent but unpaid for 30+ days — the cash-flow nudge. */
+  arOverdue: { count: number; cents: number }
 }
 
 export async function todayData(carrierId: string): Promise<TodayData> {
-  const [stopsToday, emptyNow, emptySoon, unacked, compliance, tasksDue, unbilled, pendingTimeOff, incidents] =
+  const [stopsToday, emptyNow, emptySoon, unacked, compliance, tasksDue, unbilled, pendingTimeOff, incidents, arOverdueRows] =
     await Promise.all([
       // Pickups & deliveries with an appointment today (or FCFS on active loads today).
       query<TodayStop>(
@@ -164,6 +166,13 @@ export async function todayData(carrierId: string): Promise<TodayData> {
         `SELECT COUNT(*) AS count FROM hub.incidents WHERE carrier_id = $1 AND status <> 'closed'`,
         [carrierId]
       ),
+      query<{ count: string; cents: string }>(
+        `SELECT COUNT(*) AS count, COALESCE(SUM(amount_cents), 0) AS cents
+         FROM hub.invoices
+         WHERE carrier_id = $1 AND status IN ('sent','partial','overdue','disputed')
+           AND issued_on < (NOW() - INTERVAL '30 days')::date`,
+        [carrierId]
+      ),
     ])
 
   const emptyTrucks: TodayTruck[] = [
@@ -187,5 +196,9 @@ export async function todayData(carrierId: string): Promise<TodayData> {
     unbilled,
     pendingTimeOff,
     openIncidents: Number(incidents[0]?.count ?? 0),
+    arOverdue: {
+      count: Number(arOverdueRows[0]?.count ?? 0),
+      cents: Number(arOverdueRows[0]?.cents ?? 0),
+    },
   }
 }

@@ -39,7 +39,8 @@ export default async function TodayPage() {
   const allQuiet =
     today.stopsToday.length === 0 && today.unacked.length === 0 &&
     today.redCompliance.length === 0 && today.tasksDue.length === 0 &&
-    today.unbilled.length === 0 && today.pendingTimeOff.length === 0
+    today.unbilled.length === 0 && today.pendingTimeOff.length === 0 &&
+    stats.awaiting_pod === 0 && today.arOverdue.count === 0
 
   return (
     <div>
@@ -82,6 +83,37 @@ export default async function TodayPage() {
           </Panel>
         </Link>
       </div>
+
+      {stats.awaiting_pod > 0 || today.arOverdue.count > 0 ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+          {stats.awaiting_pod > 0 ? (
+            <Link
+              href="/hub/loads?status=delivered"
+              className="flex items-center justify-between gap-3 rounded-card border border-warn-soft bg-warn-soft/40 px-4 py-3 hover:bg-warn-soft"
+            >
+              <div className="min-w-0">
+                <p className="font-semibold text-fg">{stats.awaiting_pod} delivered, POD not in</p>
+                <p className="text-body-xs text-fg-3">Scan or request the POD to unlock invoicing.</p>
+              </div>
+              <span className="shrink-0 rounded-pill bg-surface px-2.5 py-1 text-[11.5px] font-semibold text-fg-2">Get POD →</span>
+            </Link>
+          ) : null}
+          {today.arOverdue.count > 0 ? (
+            <Link
+              href="/hub/money/invoices"
+              className="flex items-center justify-between gap-3 rounded-card border border-bad-soft bg-bad-soft/40 px-4 py-3 hover:bg-bad-soft"
+            >
+              <div className="min-w-0">
+                <p className="font-semibold text-fg">
+                  {today.arOverdue.count} invoice{today.arOverdue.count === 1 ? "" : "s"} unpaid 30+ days · {fmtCents(today.arOverdue.cents)}
+                </p>
+                <p className="text-body-xs text-fg-3">Follow up before the receivable ages further.</p>
+              </div>
+              <span className="shrink-0 rounded-pill bg-surface px-2.5 py-1 text-[11.5px] font-semibold text-fg-2">Chase AR →</span>
+            </Link>
+          ) : null}
+        </div>
+      ) : null}
 
       {allQuiet ? (
         <Panel className="p-8 text-center mb-4">

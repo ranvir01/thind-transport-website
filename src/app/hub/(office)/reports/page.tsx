@@ -1,5 +1,6 @@
 import { Download } from "lucide-react"
 import { truckPnl } from "@/lib/hub/expenses"
+import { computeFleetKpis } from "@/lib/hub/kpi"
 import { requirePermissionPage } from "@/lib/hub/session"
 import { fmtCents } from "@/lib/hub/types"
 import { Panel, PageHeader } from "@/components/hub/ui"
@@ -29,6 +30,17 @@ export default async function ReportsPage() {
     { revenue: 0, fuel: 0, maintenance: 0, other: 0, net: 0 }
   )
 
+  const loadedMiles = pnl.reduce((s, r) => s + Number(r.loaded_miles ?? 0), 0)
+  const deadheadMiles = pnl.reduce((s, r) => s + Number(r.deadhead_miles ?? 0), 0)
+  const kpis = computeFleetKpis({
+    revenueCents: totals.revenue,
+    operatingCostCents: totals.fuel + totals.maintenance + totals.other,
+    loadedMiles,
+    deadheadMiles,
+  })
+  const perMile = (c: number | null) => (c == null ? "—" : `$${(c / 100).toFixed(2)}`)
+  const pct = (p: number | null) => (p == null ? "—" : `${p}%`)
+
   return (
     <div>
       <PageHeader
@@ -43,6 +55,32 @@ export default async function ReportsPage() {
           </a>
         }
       />
+
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-3">
+        <Panel className="p-4">
+          <span className="text-label text-fg-3 uppercase">Operating cost / mi</span>
+          <p className="mt-2 font-mono text-xl font-medium text-fg tabular-nums">{perMile(kpis.cpmCents)}</p>
+          <p className="mt-0.5 text-[11px] text-fg-3">fuel + maint + expenses</p>
+        </Panel>
+        <Panel className="p-4">
+          <span className="text-label text-fg-3 uppercase">Revenue / loaded mi</span>
+          <p className="mt-2 font-mono text-xl font-medium text-fg tabular-nums">{perMile(kpis.rpmCents)}</p>
+        </Panel>
+        <Panel className="p-4">
+          <span className="text-label text-fg-3 uppercase">Operating ratio</span>
+          <p className={`mt-2 font-mono text-xl font-medium tabular-nums ${kpis.operatingRatioPct != null && kpis.operatingRatioPct < 100 ? "text-emerald-300" : "text-red-300"}`}>{pct(kpis.operatingRatioPct)}</p>
+          <p className="mt-0.5 text-[11px] text-fg-3">cost ÷ revenue · &lt;100 = profit</p>
+        </Panel>
+        <Panel className="p-4">
+          <span className="text-label text-fg-3 uppercase">Deadhead</span>
+          <p className="mt-2 font-mono text-xl font-medium text-fg tabular-nums">{pct(kpis.deadheadPct)}</p>
+          <p className="mt-0.5 text-[11px] text-fg-3">{kpis.totalMiles > 0 ? `${kpis.totalMiles.toLocaleString()} mi total` : "add miles to loads"}</p>
+        </Panel>
+        <Panel className="p-4">
+          <span className="text-label text-fg-3 uppercase">Net margin</span>
+          <p className={`mt-2 font-mono text-xl font-medium tabular-nums ${kpis.marginPct != null && kpis.marginPct >= 0 ? "text-emerald-300" : "text-red-300"}`}>{pct(kpis.marginPct)}</p>
+        </Panel>
+      </div>
 
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4">
         <Panel className="p-4"><span className="text-label text-fg-3 uppercase">Revenue</span><p className="mt-2 font-display text-xl font-extrabold text-gold">{fmtCents(totals.revenue)}</p></Panel>

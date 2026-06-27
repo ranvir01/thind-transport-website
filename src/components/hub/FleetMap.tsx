@@ -4,7 +4,8 @@ import { useEffect, useRef } from "react"
 import "leaflet/dist/leaflet.css"
 import type { TruckPosition } from "@/lib/hub/fleet"
 
-/** Live fleet map — Leaflet + OpenStreetMap tiles (free, no API key). */
+/** Live fleet map — Leaflet with Mapbox tiles when NEXT_PUBLIC_MAPBOX_TOKEN is set, else free OSM tiles. */
+const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN
 export function FleetMap({ positions }: { positions: TruckPosition[] }) {
   const containerRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<import("leaflet").Map | null>(null)
@@ -24,10 +25,23 @@ export function FleetMap({ positions }: { positions: TruckPosition[] }) {
       })
       mapRef.current = map
 
-      L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        maxZoom: 18,
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-      }).addTo(map)
+      if (MAPBOX_TOKEN) {
+        L.tileLayer(
+          `https://api.mapbox.com/styles/v1/mapbox/streets-v12/tiles/512/{z}/{x}/{y}@2x?access_token=${MAPBOX_TOKEN}`,
+          {
+            maxZoom: 20,
+            tileSize: 512,
+            zoomOffset: -1,
+            attribution:
+              '&copy; <a href="https://www.mapbox.com/">Mapbox</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+          }
+        ).addTo(map)
+      } else {
+        L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+          maxZoom: 18,
+          attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+        }).addTo(map)
+      }
 
       const bounds: [number, number][] = []
       for (const pos of positions) {
