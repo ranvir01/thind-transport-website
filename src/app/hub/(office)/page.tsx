@@ -49,7 +49,7 @@ export default async function TodayPage() {
         subtitle={PRODUCT.mission}
       />
 
-      {started && !Object.values(started).every(Boolean) ? (
+      {started && !(started.trucks && started.drivers && started.customers && started.loads) ? (
         <SetupChecklist progress={started} />
       ) : (
         <div className="mb-5">
