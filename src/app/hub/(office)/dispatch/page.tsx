@@ -139,12 +139,12 @@ export default async function DispatchBoardPage() {
                             <AlertTriangle className="h-3.5 w-3.5 shrink-0" /> {legality.stops[0]}
                           </p>
                         ) : legality.warnings.length > 0 ? (
-                          <p className="mt-2 flex items-center gap-1.5 rounded-lg bg-gold/10 border border-gold/30 px-2 py-1 text-[11px] font-semibold text-gold">
+                          <p className="mt-2 flex items-center gap-1.5 rounded-lg bg-warn-soft border border-warn-soft px-2 py-1 text-[11px] font-semibold text-warn">
                             <AlertTriangle className="h-3.5 w-3.5 shrink-0" /> {legality.warnings[0]}
                           </p>
                         ) : null}
                         {alert ? (
-                          <p className="mt-2 flex items-center gap-1.5 rounded-lg bg-gold/10 border border-gold/30 px-2 py-1 text-[11px] font-semibold text-gold">
+                          <p className="mt-2 flex items-center gap-1.5 rounded-lg bg-warn-soft border border-warn-soft px-2 py-1 text-[11px] font-semibold text-warn">
                             <CloudLightning className="h-3.5 w-3.5 shrink-0" /> {alert.event} on route
                           </p>
                         ) : null}

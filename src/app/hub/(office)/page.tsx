@@ -129,7 +129,7 @@ export default async function TodayPage() {
         {today.stopsToday.length > 0 ? (
           <Panel className="p-4" data-tour="today-due">
             <h2 className="flex items-center gap-2 text-[13.5px] font-semibold text-fg mb-2">
-              <MapPin className="h-4 w-4 text-gold" /> Due today ({today.stopsToday.length})
+              <MapPin className="h-4 w-4 text-accent-text" /> Due today ({today.stopsToday.length})
             </h2>
             <ul className="divide-y divide-border">
               {today.stopsToday.map((stop) => {
@@ -169,7 +169,7 @@ export default async function TodayPage() {
         {today.unacked.length > 0 ? (
           <Panel className="p-4 border-accent/30">
             <h2 className="flex items-center gap-2 text-[13.5px] font-semibold text-fg mb-2">
-              <BellOff className="h-4 w-4 text-orange" /> Driver hasn&apos;t confirmed ({today.unacked.length})
+              <BellOff className="h-4 w-4 text-warn" /> Driver hasn&apos;t confirmed ({today.unacked.length})
             </h2>
             <ul className="divide-y divide-border">
               {today.unacked.map((load) => (
@@ -197,7 +197,7 @@ export default async function TodayPage() {
         {today.emptyTrucks.length > 0 ? (
           <Panel className="p-4">
             <h2 className="flex items-center gap-2 text-[13.5px] font-semibold text-fg mb-2">
-              <TruckIcon className="h-4 w-4 text-gold" /> Trucks needing freight ({today.emptyTrucks.length})
+              <TruckIcon className="h-4 w-4 text-accent-text" /> Trucks needing freight ({today.emptyTrucks.length})
             </h2>
             <ul className="divide-y divide-border">
               {today.emptyTrucks.map((truck) => (
@@ -215,8 +215,8 @@ export default async function TodayPage() {
                     className={cn(
                       "shrink-0 rounded-full border px-2.5 py-0.5 text-[11px] font-bold uppercase",
                       truck.when === "now"
-                        ? "border-accent/40 bg-accent/10 text-orange"
-                        : "border-gold/40 bg-gold/10 text-gold"
+                        ? "border-bad-soft bg-bad-soft text-bad"
+                        : "border-warn-soft bg-warn-soft text-warn"
                     )}
                   >
                     empty {truck.when}
@@ -224,7 +224,7 @@ export default async function TodayPage() {
                 </li>
               ))}
             </ul>
-            <Link href="/hub/planner" className="mt-2 inline-flex items-center gap-1 text-body-xs font-semibold text-gold hover:text-gold/80">
+            <Link href="/hub/planner" className="mt-2 inline-flex items-center gap-1 text-body-xs font-semibold text-accent-text hover:underline">
               Open the planner for backhaul ideas <ArrowRight className="h-3 w-3" />
             </Link>
           </Panel>
@@ -232,9 +232,9 @@ export default async function TodayPage() {
 
         {/* Money you haven't invoiced */}
         {today.unbilled.length > 0 ? (
-          <Panel className="p-4 border-gold/30" data-tour="today-unbilled">
+          <Panel className="p-4 border-accent/30" data-tour="today-unbilled">
             <h2 className="flex items-center gap-2 text-[13.5px] font-semibold text-fg mb-2">
-              <Receipt className="h-4 w-4 text-gold" /> Money you haven&apos;t invoiced yet
+              <Receipt className="h-4 w-4 text-accent-text" /> Money you haven&apos;t invoiced yet
             </h2>
             <ul className="divide-y divide-border">
               {today.unbilled.map((load) => (
@@ -282,7 +282,7 @@ export default async function TodayPage() {
         {today.tasksDue.length > 0 ? (
           <Panel className="p-4">
             <h2 className="flex items-center gap-2 text-[13.5px] font-semibold text-fg mb-2">
-              <CheckSquare className="h-4 w-4 text-gold" /> Tasks due ({today.tasksDue.length})
+              <CheckSquare className="h-4 w-4 text-accent-text" /> Tasks due ({today.tasksDue.length})
             </h2>
             <ul className="divide-y divide-border">
               {today.tasksDue.map((task) => (
@@ -323,7 +323,7 @@ export default async function TodayPage() {
           <DollarSign className="h-3.5 w-3.5" /> {fmtCents(Number(stats.revenue_month_cents))} booked this month
         </span>
         {today.openIncidents > 0 ? (
-          <Link href="/hub/safety" className="inline-flex items-center gap-1.5 text-gold hover:text-gold/80">
+          <Link href="/hub/safety" className="inline-flex items-center gap-1.5 text-warn hover:underline">
             <AlertTriangle className="h-3.5 w-3.5" /> {today.openIncidents} open incident{today.openIncidents > 1 ? "s" : ""}
           </Link>
         ) : null}

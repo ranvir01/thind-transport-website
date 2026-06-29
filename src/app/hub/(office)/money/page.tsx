@@ -56,7 +56,7 @@ export default async function MoneyPage() {
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4">
         {BUCKETS.map((bucket) => (
           <Panel key={bucket} className="p-4">
-            <span className={cn("text-label uppercase", bucket === "current" ? "text-fg-3" : bucket === "90+" ? "text-red-300" : "text-gold")}>
+            <span className={cn("text-label uppercase", aging.buckets[bucket] === 0 ? "text-fg-3" : bucket === "current" ? "text-fg-3" : bucket === "90+" ? "text-bad" : "text-warn")}>
               {bucket === "current" ? "Current" : `${bucket} days`}
             </span>
             <p className="mt-2 font-semibold text-xl text-fg">{fmtCents(aging.buckets[bucket])}</p>
