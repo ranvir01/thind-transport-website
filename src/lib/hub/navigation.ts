@@ -42,8 +42,9 @@ export const HUB_PRIMARY_SECTIONS: HubPrimarySection[] = [
   {
     id: "loads",
     label: "Loads",
-    match: (p) => p.startsWith("/hub/loads"),
+    match: (p) => p.startsWith("/hub/loads") || p.startsWith("/hub/loadboard"),
     sub: [
+      { href: "/hub/loadboard", label: "Load board" },
       { href: "/hub/loads", label: "All loads" },
       { href: "/hub/loads/paste", label: "Paste rate con" },
       { href: "/hub/loads/new", label: "New load" },

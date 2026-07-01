@@ -282,6 +282,8 @@ export interface Load {
   origin_state?: string | null
   dest_city?: string | null
   dest_state?: string | null
+  pickup_appt?: string | null
+  delivery_appt?: string | null
   doc_kinds?: string[] | null
   invoice_id?: string | null
   invoice_status?: string | null
@@ -347,6 +349,11 @@ export function dollarsToCents(value: string | number | null | undefined): numbe
   const num = typeof value === "number" ? value : Number(String(value).replace(/[^0-9.\-]/g, ""))
   if (!Number.isFinite(num)) return 0
   return Math.round(num * 100)
+}
+
+/** Format integer cents as a plain dollar string for CSV export. */
+export function centsToDollars(cents: number | null | undefined): string {
+  return ((cents ?? 0) / 100).toFixed(2)
 }
 
 // ---- Money domain types (Phase 2) ----

@@ -11,7 +11,9 @@ const LOAD_SELECT = `
     t.unit_number AS truck_unit,
     tr.unit_number AS trailer_unit,
     fs.city AS origin_city, fs.state AS origin_state,
+    fs.appt_start AS pickup_appt,
     ls.city AS dest_city, ls.state AS dest_state,
+    ls.appt_start AS delivery_appt,
     docs.kinds AS doc_kinds,
     inv.id AS invoice_id, inv.status AS invoice_status
   FROM hub.loads l
@@ -20,11 +22,11 @@ const LOAD_SELECT = `
   LEFT JOIN hub.trucks t ON t.id = l.truck_id
   LEFT JOIN hub.trailers tr ON tr.id = l.trailer_id
   LEFT JOIN LATERAL (
-    SELECT city, state FROM hub.stops WHERE load_id = l.id AND type = 'pickup'
+    SELECT city, state, appt_start FROM hub.stops WHERE load_id = l.id AND type = 'pickup'
     ORDER BY sequence ASC LIMIT 1
   ) fs ON TRUE
   LEFT JOIN LATERAL (
-    SELECT city, state FROM hub.stops WHERE load_id = l.id AND type = 'delivery'
+    SELECT city, state, appt_start FROM hub.stops WHERE load_id = l.id AND type = 'delivery'
     ORDER BY sequence DESC LIMIT 1
   ) ls ON TRUE
   LEFT JOIN LATERAL (
