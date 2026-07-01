@@ -1,15 +1,35 @@
 "use client"
 
-import { useState } from "react"
-import { signIn } from "next-auth/react"
+import { useEffect, useState } from "react"
+import { signIn, getSession } from "next-auth/react"
 import { toast } from "sonner"
 import { Loader2, LogIn } from "lucide-react"
 import { btnPrimaryCls, fieldCls, labelCls, linkAccentCls, Panel } from "@/components/hub/ui"
 import { PRODUCT } from "@/lib/hub/product"
+import { hubLandingPath } from "@/lib/hub/landing"
 
 export default function HubLoginPage() {
   const [loading, setLoading] = useState(false)
   const [form, setForm] = useState({ email: "", password: "" })
+  const [roleHint, setRoleHint] = useState<string | null>(null)
+
+  useEffect(() => {
+    const email = form.email.trim()
+    if (!email.includes("@")) {
+      setRoleHint(null)
+      return
+    }
+    const timer = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/hub/role-hint?email=${encodeURIComponent(email)}`)
+        const data = (await res.json()) as { label?: string | null }
+        setRoleHint(data.label ?? null)
+      } catch {
+        setRoleHint(null)
+      }
+    }, 400)
+    return () => clearTimeout(timer)
+  }, [form.email])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -21,7 +41,9 @@ export default function HubLoginPage() {
         redirect: false,
       })
       if (result?.ok) {
-        window.location.href = "/hub"
+        const session = await getSession()
+        const role = (session?.user as { role?: string } | undefined)?.role
+        window.location.href = hubLandingPath(role)
       } else {
         toast.error("Invalid email or password")
         setLoading(false)
@@ -46,15 +68,22 @@ export default function HubLoginPage() {
             <label htmlFor="email" className={labelCls}>
               Email
             </label>
-            <input
-              id="email"
-              type="email"
-              required
-              autoComplete="email"
-              className={fieldCls}
-              value={form.email}
-              onChange={(e) => setForm({ ...form, email: e.target.value })}
-            />
+            <div className="relative">
+              <input
+                id="email"
+                type="email"
+                required
+                autoComplete="email"
+                className={fieldCls}
+                value={form.email}
+                onChange={(e) => setForm({ ...form, email: e.target.value })}
+              />
+              {roleHint ? (
+                <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 rounded-full border border-border bg-surface-2 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-fg-2">
+                  {roleHint}
+                </span>
+              ) : null}
+            </div>
           </div>
           <div>
             <label htmlFor="password" className={labelCls}>

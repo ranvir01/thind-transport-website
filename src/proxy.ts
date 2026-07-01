@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 import { getToken } from "next-auth/jwt"
+import { hubLandingPath } from "@/lib/hub/landing"
 
 export default async function proxy(request: NextRequest) {
   // NextAuth prefixes the cookie with __Secure- only when running over HTTPS,
@@ -72,7 +73,8 @@ export default async function proxy(request: NextRequest) {
   }
 
   if (pathname === "/hub/login" && (token as { role?: string } | null)?.role) {
-    return NextResponse.redirect(new URL("/hub", request.url))
+    const role = (token as { role?: string }).role
+    return NextResponse.redirect(new URL(hubLandingPath(role), request.url))
   }
 
   return NextResponse.next()

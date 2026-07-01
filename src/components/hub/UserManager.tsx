@@ -6,7 +6,7 @@ import { toast } from "sonner"
 import { Loader2, Plus, UserCheck, UserX } from "lucide-react"
 import { createHubUserAction, setUserActiveAction } from "@/app/hub/_actions/people"
 import { fieldCls, labelCls, Panel } from "@/components/hub/ui"
-import { ASSIGNABLE_ROLES, type HubUser } from "@/lib/hub/types"
+import { OFFICE_INVITE_ROLES, type HubUser } from "@/lib/hub/types"
 
 export function UserManager({ users, selfId }: { users: HubUser[]; selfId: string }) {
   const router = useRouter()
@@ -19,7 +19,7 @@ export function UserManager({ users, selfId }: { users: HubUser[]; selfId: strin
     startTransition(async () => {
       const result = await createHubUserAction({ ...form })
       if (result.ok) {
-        toast.success(`Account created for ${form.name}`)
+        toast.success(`Account created for ${form.name}. Share the temp password with them.`)
         setForm({ name: "", email: "", phone: "", role: "dispatcher", password: "" })
         setShowForm(false)
         router.refresh()
@@ -66,10 +66,11 @@ export function UserManager({ users, selfId }: { users: HubUser[]; selfId: strin
               <label className={labelCls} htmlFor="u_role">Role *</label>
               <select id="u_role" className={fieldCls} value={form.role}
                 onChange={(e) => setForm({ ...form, role: e.target.value })}>
-                {ASSIGNABLE_ROLES.map((role) => (
+                {OFFICE_INVITE_ROLES.map((role) => (
                   <option key={role} value={role} className="capitalize">{role}</option>
                 ))}
               </select>
+              <p className="mt-1 text-body-xs text-fg-3">Dispatcher sees load board; accountant sees Money.</p>
             </div>
             <div>
               <label className={labelCls} htmlFor="u_phone">Phone</label>
