@@ -11,7 +11,9 @@
     "generate:brand-assets": "node scripts/generate-brand-assets.mjs",
     "db:migrate": "node scripts/hub-migrate.mjs",
     "seed:demo": "node scripts/seed-demo.mjs",
-    "test": "vitest run"
+    "test": "vitest run",
+    "go-build": "make go-build",
+    "rust-build": "make rust-build"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",

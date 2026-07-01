@@ -23,3 +23,15 @@ For any visual or page change, `thind-brand-identity` + `responsive-performance`
 - No new heavy dependencies, popups, or gimmick animations.
 
 Setup guides live in `docs/` (database, deployment, email, driver onboarding).
+
+## Language stack — TypeScript (app), Go (workers), Rust (compute)
+
+HaulDesk uses three languages with fixed boundaries (see `docs/architecture/trilingual-stack.md`):
+
+| Language | Role |
+|----------|------|
+| **TypeScript** | Next.js `/hub/*` — UI, auth, Postgres, server actions; remains the V1 API gateway on Vercel |
+| **Go** | `services/go/hauldesk-worker` — long-running workers, sync, HTTP proxies (`HAULDESK_GO_WORKER_URL`) |
+| **Rust** | `services/rust/hauldesk-compute` — IFTA math, routing compute, bulk import (`HAULDESK_RUST_COMPUTE_URL`) |
+
+Sidecars are optional: when env vars are unset, `src/lib/hub/sidecars.ts` falls back to pure TS. Do not add microservices beyond one Go + one Rust binary at V1 scale.
