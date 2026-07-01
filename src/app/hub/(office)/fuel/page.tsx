@@ -1,10 +1,12 @@
 import Link from "next/link"
 import { AlertTriangle, Upload } from "lucide-react"
-import { fuelStatsByTruck, fuelByProgram, fuelFraudFlags, listFuelTransactions, eiaDieselPriceCents } from "@/lib/hub/fuel"
+import { fuelStatsByTruck, fuelByProgram, fuelFraudFlags, listFuelTransactions, eiaDieselPriceCents, listUnassignedFuel, assignableLoadsForFuel } from "@/lib/hub/fuel"
 import { requirePermissionPage } from "@/lib/hub/session"
+import { can } from "@/lib/hub/permissions"
 import { fmtCents, fmtCentsExact } from "@/lib/hub/types"
 import { Panel, PageHeader, EmptyState } from "@/components/hub/ui"
 import { FuelUseBadge } from "@/components/hub/FuelUseBadge"
+import { UnassignedFuelPanel } from "@/components/hub/UnassignedFuelPanel"
 
 import { HelpTip } from "@/components/hub/HelpTip"
 
@@ -12,12 +14,15 @@ export const dynamic = "force-dynamic"
 
 export default async function FuelPage() {
   const user = await requirePermissionPage("fuel:read")
-  const [byTruck, byProgram, fraudFlags, transactions, eiaCents] = await Promise.all([
+  const canWrite = can(user.role, "fuel:write")
+  const [byTruck, byProgram, fraudFlags, transactions, eiaCents, unassigned, assignableLoads] = await Promise.all([
     fuelStatsByTruck(user.carrierId),
     fuelByProgram(user.carrierId),
     fuelFraudFlags(user.carrierId),
     listFuelTransactions(user.carrierId, { limit: 50 }),
     eiaDieselPriceCents(),
+    canWrite ? listUnassignedFuel(user.carrierId) : Promise.resolve([]),
+    canWrite ? assignableLoadsForFuel(user.carrierId) : Promise.resolve([]),
   ])
 
   const totalCents = byProgram.reduce((sum, p) => sum + Number(p.total_cents), 0)
@@ -99,6 +104,8 @@ export default async function FuelPage() {
               </ul>
             </Panel>
           ) : null}
+
+          <UnassignedFuelPanel transactions={unassigned} loads={assignableLoads} />
 
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 mb-4">
             {/* Per truck */}

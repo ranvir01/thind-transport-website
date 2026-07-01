@@ -64,3 +64,16 @@ export function aggregateTaxPaidGallons(rows: FuelRowForIfta[]): Record<string, 
 export function propulsionGallons(rows: FuelRowForIfta[]): number {
   return rows.reduce((sum, r) => (r.fuelUse === "tractor" ? sum + r.gallons : sum), 0)
 }
+
+/** Total pump spend in cents for a set of transactions. Pure (client + test safe). */
+export function fuelSpendCents(rows: { total_cents: number }[]): number {
+  return rows.reduce((sum, r) => sum + (r.total_cents || 0), 0)
+}
+
+/**
+ * Load economics after fuel: revenue minus the fuel actually burned on it.
+ * Shown on the load detail once pump receipts are reconciled to the load. Pure.
+ */
+export function netAfterFuelCents(revenueCents: number, fuelRows: { total_cents: number }[]): number {
+  return revenueCents - fuelSpendCents(fuelRows)
+}

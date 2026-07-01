@@ -8,7 +8,9 @@
  * gallons leak in as tractor fuel.
  */
 import { describe, expect, it } from "vitest"
-import { classifyFuelUse, aggregateTaxPaidGallons, propulsionGallons } from "../fuel-core"
+import {
+  classifyFuelUse, aggregateTaxPaidGallons, propulsionGallons, fuelSpendCents, netAfterFuelCents,
+} from "../fuel-core"
 import { computeIfta } from "../ifta-core"
 import type { FuelRowForIfta } from "../fuel-core"
 
@@ -113,5 +115,20 @@ describe("IFTA reefer exemption — golden fixture", () => {
       { jurisdiction: null, gallons: 500, fuelUse: "tractor" },
     ])
     expect(gallons).toEqual({ WA: 1200, OR: 600 })
+  })
+})
+
+describe("fuel → load economics (Phase 2 reconciliation)", () => {
+  it("sums pump spend in cents and tolerates an empty list", () => {
+    expect(fuelSpendCents([])).toBe(0)
+    expect(fuelSpendCents([{ total_cents: 45012 }, { total_cents: 38999 }])).toBe(84011)
+  })
+
+  it("revenue after fuel subtracts every linked receipt", () => {
+    expect(netAfterFuelCents(240000, [{ total_cents: 45012 }, { total_cents: 38999 }])).toBe(155989)
+  })
+
+  it("with no fuel linked, revenue after fuel equals revenue", () => {
+    expect(netAfterFuelCents(240000, [])).toBe(240000)
   })
 })

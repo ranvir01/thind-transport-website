@@ -6,6 +6,9 @@ export type HubRole = (typeof HUB_ROLES)[number]
 /** Roles assignable from the Users admin (platform_admin is reserved until Phase 7). */
 export const ASSIGNABLE_ROLES = ["owner", "dispatcher", "accountant", "driver", "broker", "shipper"] as const
 
+/** Roles the owner can invite from Settings → Users (Phase 3 office staff). */
+export const OFFICE_INVITE_ROLES = ["dispatcher", "accountant"] as const
+
 /** Roles allowed into the office side of the Hub (Phase 1). */
 export const OFFICE_ROLES: HubRole[] = ["owner", "dispatcher", "accountant"]
 
@@ -455,8 +458,11 @@ export interface FuelTransaction {
   unit_price_cents: number | null
   total_cents: number
   odometer: string | null
+  /** Load this pump receipt fueled, once reconciled (Phase 2). Optional. */
+  load_id?: string | null
   truck_unit?: string | null
   driver_name?: string | null
+  load_reference?: string | null
 }
 
 export interface IftaReportRow {

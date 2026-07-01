@@ -12,14 +12,109 @@ export async function listFuelTransactions(
     where += ` AND f.truck_id = $${params.length}`
   }
   return query<FuelTransaction>(
-    `SELECT f.*, t.unit_number AS truck_unit, d.first_name || ' ' || d.last_name AS driver_name
+    `SELECT f.*, t.unit_number AS truck_unit, d.first_name || ' ' || d.last_name AS driver_name,
+       l.reference AS load_reference
      FROM hub.fuel_transactions f
      LEFT JOIN hub.trucks t ON t.id = f.truck_id
      LEFT JOIN hub.drivers d ON d.id = f.driver_id
+     LEFT JOIN hub.loads l ON l.id = f.load_id
      WHERE ${where}
      ORDER BY f.ts DESC LIMIT ${Math.min(filters.limit ?? 200, 1000)}`,
     params
   )
+}
+
+/** Fuel receipts not yet reconciled to a load — the "match these up" inbox. */
+export async function listUnassignedFuel(
+  carrierId: string,
+  limit = 40
+): Promise<FuelTransaction[]> {
+  return query<FuelTransaction>(
+    `SELECT f.*, t.unit_number AS truck_unit, d.first_name || ' ' || d.last_name AS driver_name
+     FROM hub.fuel_transactions f
+     LEFT JOIN hub.trucks t ON t.id = f.truck_id
+     LEFT JOIN hub.drivers d ON d.id = f.driver_id
+     WHERE f.carrier_id = $1 AND f.load_id IS NULL
+     ORDER BY f.ts DESC LIMIT ${Math.min(limit, 200)}`,
+    [carrierId]
+  )
+}
+
+/** Every pump receipt reconciled to one load (load detail + all-in economics). */
+export async function fuelForLoad(carrierId: string, loadId: string): Promise<FuelTransaction[]> {
+  return query<FuelTransaction>(
+    `SELECT f.*, t.unit_number AS truck_unit, d.first_name || ' ' || d.last_name AS driver_name
+     FROM hub.fuel_transactions f
+     LEFT JOIN hub.trucks t ON t.id = f.truck_id
+     LEFT JOIN hub.drivers d ON d.id = f.driver_id
+     WHERE f.carrier_id = $1 AND f.load_id = $2
+     ORDER BY f.ts ASC`,
+    [carrierId, loadId]
+  )
+}
+
+export interface AssignableLoad {
+  id: string
+  reference: string
+  truck_id: string | null
+  origin: string | null
+  dest: string | null
+  pickup_date: string | null
+}
+
+/**
+ * Recent, still-open loads a receipt can be matched to. Kept slim for the
+ * client picker; the panel narrows the list to the receipt's truck first.
+ */
+export async function assignableLoadsForFuel(carrierId: string, days = 120): Promise<AssignableLoad[]> {
+  return query<AssignableLoad>(
+    `SELECT l.id, l.reference, l.truck_id,
+       NULLIF(CONCAT_WS(', ', fs.city, fs.state), '') AS origin,
+       NULLIF(CONCAT_WS(', ', ls.city, ls.state), '') AS dest,
+       to_char(fs.appt_start, 'YYYY-MM-DD') AS pickup_date
+     FROM hub.loads l
+     LEFT JOIN LATERAL (
+       SELECT city, state, appt_start FROM hub.stops WHERE load_id = l.id AND type = 'pickup'
+       ORDER BY sequence ASC LIMIT 1
+     ) fs ON TRUE
+     LEFT JOIN LATERAL (
+       SELECT city, state FROM hub.stops WHERE load_id = l.id AND type = 'delivery'
+       ORDER BY sequence DESC LIMIT 1
+     ) ls ON TRUE
+     WHERE l.carrier_id = $1 AND l.deleted_at IS NULL AND l.status <> 'cancelled'
+       AND l.created_at >= NOW() - ($2 || ' days')::interval
+     ORDER BY l.created_at DESC LIMIT 300`,
+    [carrierId, days]
+  )
+}
+
+/**
+ * Reconcile a receipt to a load (or clear it with loadId = null). Carrier-scoped
+ * on both the receipt and the load, so a receipt can never point at another
+ * tenant's load. Returns the number of rows touched (0 = nothing matched).
+ */
+export async function assignFuelToLoad(
+  carrierId: string,
+  transactionId: string,
+  loadId: string | null
+): Promise<number> {
+  if (loadId === null) {
+    const res = await query(
+      `UPDATE hub.fuel_transactions SET load_id = NULL
+       WHERE carrier_id = $1 AND id = $2 RETURNING id`,
+      [carrierId, transactionId]
+    )
+    return res.length
+  }
+  const res = await query(
+    `UPDATE hub.fuel_transactions f SET load_id = l.id
+     FROM hub.loads l
+     WHERE f.carrier_id = $1 AND f.id = $2
+       AND l.id = $3 AND l.carrier_id = $1 AND l.deleted_at IS NULL
+     RETURNING f.id`,
+    [carrierId, transactionId, loadId]
+  )
+  return res.length
 }
 
 export interface FuelTruckStats {

@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache"
 import { requirePermission } from "@/lib/hub/session"
-import { setFuelUse } from "@/lib/hub/fuel"
+import { setFuelUse, assignFuelToLoad } from "@/lib/hub/fuel"
 import { logAudit } from "@/lib/hub/audit"
 import { FUEL_USES, type FuelUse } from "@/lib/hub/types"
 
@@ -32,5 +32,34 @@ export async function reclassifyFuelUse(
     newValue: { fuelUse },
   })
   revalidatePath("/hub/fuel")
+  return { ok: true }
+}
+
+/** Reconcile a fuel receipt to a load (or clear with loadId = null). */
+export async function assignFuelLoadAction(
+  transactionId: string,
+  loadId: string | null
+): Promise<{ ok: boolean; error?: string }> {
+  let user
+  try {
+    user = await requirePermission("fuel:write")
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : "Forbidden" }
+  }
+  const touched = await assignFuelToLoad(user.carrierId, transactionId, loadId)
+  if (touched === 0) {
+    return { ok: false, error: "Could not match that receipt to the load" }
+  }
+  await logAudit({
+    carrierId: user.carrierId,
+    actorId: user.id,
+    actorName: user.name,
+    entityType: "fuel_transaction",
+    entityId: transactionId,
+    action: loadId ? "assign_fuel_load" : "unassign_fuel_load",
+    newValue: { loadId },
+  })
+  revalidatePath("/hub/fuel")
+  if (loadId) revalidatePath(`/hub/loads/${loadId}`)
   return { ok: true }
 }

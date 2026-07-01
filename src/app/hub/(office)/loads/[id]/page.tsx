@@ -2,6 +2,7 @@ import Link from "next/link"
 import { notFound } from "next/navigation"
 import { Pencil, FileText, MapPin, MessageSquare, CloudLightning, Camera, StickyNote } from "lucide-react"
 import { getLoad, getLoadStops, getLoadEvents } from "@/lib/hub/loads"
+import { fuelForLoad } from "@/lib/hub/fuel"
 import { listDocuments } from "@/lib/hub/documents"
 import { listShareLinks } from "@/lib/hub/sharelinks"
 import { getInvoiceForLoad } from "@/lib/hub/invoices"
@@ -19,6 +20,7 @@ import { DetentionButton } from "@/components/hub/DetentionButton"
 import { detentionCents } from "@/lib/hub/money"
 import { getCarrierSettings } from "@/lib/hub/settings"
 import { CreateInvoiceButton } from "@/components/hub/MoneyActions"
+import { LoadFuelPanel } from "@/components/hub/LoadFuelPanel"
 
 export const dynamic = "force-dynamic"
 
@@ -71,12 +73,13 @@ export default async function LoadDetailPage({ params }: { params: Promise<{ id:
   if (!load) notFound()
 
   const settings = await getCarrierSettings(user.carrierId)
-  const [stops, events, documents, shareLinks, invoice] = await Promise.all([
+  const [stops, events, documents, shareLinks, invoice, loadFuel] = await Promise.all([
     getLoadStops(id),
     getLoadEvents(id),
     listDocuments("load", id),
     listShareLinks(user.carrierId, id),
     getInvoiceForLoad(user.carrierId, id),
+    fuelForLoad(user.carrierId, id),
   ])
 
   const totalCents = loadTotalCents(load)
@@ -221,6 +224,8 @@ export default async function LoadDetailPage({ params }: { params: Promise<{ id:
               ) : null}
             </dl>
           </Panel>
+
+          <LoadFuelPanel fuel={loadFuel} revenueCents={totalCents} canWrite={can(user.role, "fuel:write")} />
 
           {/* Assignment & details */}
           <Panel className="p-4 md:p-5">
