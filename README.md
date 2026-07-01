@@ -19,6 +19,22 @@ npm run dev                  # http://localhost:3000
 | `npm run start` | Serve the production build |
 | `npm run lint` | ESLint (flat config, `eslint.config.mjs`) |
 | `npm run generate:brand-assets` | Regenerate favicons + Open Graph image from the brand system |
+| `npm run go-build` | Build Go sidecar (`services/go/hauldesk-worker`) |
+| `npm run rust-build` | Build Rust sidecar (`services/rust/hauldesk-compute`) |
+
+## Development (trilingual stack)
+
+HaulDesk V1 runs on **TypeScript** (Next.js on Vercel). Optional sidecars:
+
+```bash
+npm run dev                                              # :3000 — required
+
+# Optional local sidecars (see docs/architecture/trilingual-stack.md)
+cd services/go/hauldesk-worker && go run .             # :8081
+cd services/rust/hauldesk-compute && cargo run           # :8082
+```
+
+Set `HAULDESK_GO_WORKER_URL` and `HAULDESK_RUST_COMPUTE_URL` in `.env.local` to enable sidecar calls from `src/lib/hub/sidecars.ts`. When unset, the app uses pure TypeScript (no production behavior change).
 
 ## What's here
 

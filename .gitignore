@@ -55,5 +55,6 @@ dist-legacy
 
 # HaulDesk local artifacts
 e2e-shots*/
+/bin/
 services/**/target/
 

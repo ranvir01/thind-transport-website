@@ -218,6 +218,8 @@ Wire behind Settings → Integrations. **CSV fallback always.**
 
 Files: `src/lib/hub/routing.ts`, `src/app/hub/_actions/routing.ts`, button on load detail.
 
+**Trilingual extraction (optional):** route miles can move to the Go worker (`services/go/hauldesk-worker`, `POST /route/miles`); IFTA penny math can move to Rust (`services/rust/hauldesk-compute`, `POST /ifta/summary`). Wire via `src/lib/hub/sidecars.ts` and `HAULDESK_GO_WORKER_URL` / `HAULDESK_RUST_COMPUTE_URL`. Production stays on pure TypeScript until those env vars are set.
+
 ### Load sources (V1)
 
 1. Manual / load board / paste rate con
