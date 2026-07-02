@@ -6,6 +6,7 @@ import { useCallback, useMemo, useState, useTransition } from "react"
 import { Download, ExternalLink, Plus } from "lucide-react"
 import { toast } from "sonner"
 import { patchLoadBoardFieldAction } from "@/app/hub/_actions/loadboard"
+import { SuggestMilesInline } from "@/components/hub/SuggestMilesButton"
 import { exportLoadsCsv } from "@/lib/hub/loadboard-export"
 import {
   LOAD_STATUSES,
@@ -347,15 +348,20 @@ export function LoadBoardGrid({ loads, drivers, trucks, canEdit }: LoadBoardGrid
                   />
                 </td>
                 <td className="px-3 py-1.5 text-right">
-                  <EditableCell
-                    loadId={load.id}
-                    field="loaded_miles"
-                    display={load.loaded_miles ?? "—"}
-                    editValue={load.loaded_miles != null ? String(load.loaded_miles) : ""}
-                    type="number"
-                    canEdit={canEdit}
-                    onSaved={refresh}
-                  />
+                  <div className="flex items-center justify-end gap-0.5">
+                    {load.loaded_miles == null && canEdit ? (
+                      <SuggestMilesInline loadId={load.id} onSaved={refresh} />
+                    ) : null}
+                    <EditableCell
+                      loadId={load.id}
+                      field="loaded_miles"
+                      display={load.loaded_miles ?? "—"}
+                      editValue={load.loaded_miles != null ? String(load.loaded_miles) : ""}
+                      type="number"
+                      canEdit={canEdit}
+                      onSaved={refresh}
+                    />
+                  </div>
                 </td>
                 <td className={`px-3 py-1.5 text-right font-medium ${moneyCls}`}>
                   {fmtCents(loadTotalCents(load))}

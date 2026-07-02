@@ -16,7 +16,7 @@ export interface HubPrimarySection {
   sub: HubNavLink[]
 }
 
-export const HUB_PRIMARY_SECTIONS: HubPrimarySection[] = [
+const ALL_PRIMARY_SECTIONS: HubPrimarySection[] = [
   {
     id: "overview",
     label: "Overview",
@@ -92,7 +92,7 @@ export const HUB_PRIMARY_SECTIONS: HubPrimarySection[] = [
   },
 ]
 
-export const HUB_UTILITY_LINKS: HubNavLink[] = [
+const ALL_UTILITY_LINKS: HubNavLink[] = [
   { href: "/hub/compliance", label: "Compliance" },
   { href: "/hub/safety", label: "Safety" },
   { href: "/hub/reports", label: "Reports" },
@@ -106,6 +106,38 @@ export const HUB_UTILITY_LINKS: HubNavLink[] = [
   { href: "/hub/settings/integrations", label: "Integrations", ownerOnly: true },
   { href: "/hub/settings/users", label: "Settings", ownerOnly: true },
 ]
+
+/**
+ * Small-carrier mode (default ON) trims the nav + ⌘K down to what a single
+ * small trucking company actually runs. The hidden screens are for larger
+ * operations (dedicated planners, recruiting pipelines, facility crowd-sourcing);
+ * their ROUTES are untouched and still reachable by URL — set
+ * SMALL_CARRIER_MODE=false to surface everything again.
+ */
+export const SMALL_CARRIER_MODE = process.env.SMALL_CARRIER_MODE !== "false"
+
+const HIDDEN_IN_SMALL_CARRIER = new Set<string>([
+  "/hub/planner",
+  "/hub/capacity",
+  "/hub/recruiting",
+  "/hub/facilities",
+  "/hub/safety",
+  "/hub/tasks",
+  "/hub/messages",
+  "/hub/guide",
+  "/hub/setup",
+])
+
+function shownInNav(href: string): boolean {
+  return !SMALL_CARRIER_MODE || !HIDDEN_IN_SMALL_CARRIER.has(href)
+}
+
+/** Primary sections with hidden sub-links dropped; empty sections removed. */
+export const HUB_PRIMARY_SECTIONS: HubPrimarySection[] = ALL_PRIMARY_SECTIONS
+  .map((section) => ({ ...section, sub: section.sub.filter((link) => shownInNav(link.href)) }))
+  .filter((section) => section.sub.length > 0)
+
+export const HUB_UTILITY_LINKS: HubNavLink[] = ALL_UTILITY_LINKS.filter((link) => shownInNav(link.href))
 
 export function activePrimarySection(pathname: string): HubPrimarySection {
   return HUB_PRIMARY_SECTIONS.find((s) => s.match(pathname)) ?? HUB_PRIMARY_SECTIONS[0]

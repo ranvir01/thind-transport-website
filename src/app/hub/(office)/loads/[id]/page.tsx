@@ -21,6 +21,7 @@ import { detentionCents } from "@/lib/hub/money"
 import { getCarrierSettings } from "@/lib/hub/settings"
 import { CreateInvoiceButton } from "@/components/hub/MoneyActions"
 import { LoadFuelPanel } from "@/components/hub/LoadFuelPanel"
+import { SuggestMilesButton } from "@/components/hub/SuggestMilesButton"
 
 export const dynamic = "force-dynamic"
 
@@ -222,6 +223,10 @@ export default async function LoadDetailPage({ params }: { params: Promise<{ id:
                   <dd className="text-fg font-semibold">${(rpmCents / 100).toFixed(2)}/mi · {load.loaded_miles} mi</dd>
                 </div>
               ) : null}
+              <div className="flex items-center justify-between border-t border-border pt-2">
+                <dt className="text-fg-2">{load.loaded_miles ? "Loaded miles" : "Miles not set"}</dt>
+                <dd><SuggestMilesButton loadId={id} canWrite={can(user.role, "loads:write")} /></dd>
+              </div>
             </dl>
           </Panel>
 
