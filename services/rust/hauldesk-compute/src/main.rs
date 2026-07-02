@@ -1,5 +1,9 @@
 //! HaulDesk compute sidecar — IFTA penny math and other correctness-critical work.
 //! Mirrors `src/lib/hub/ifta-core.ts` until golden-fixture parity is verified.
+//!
+//! Security: when HAULDESK_SIDECAR_SECRET is set, every route except /health
+//! requires a matching X-Hauldesk-Secret header (sent by src/lib/hub/sidecars.ts
+//! from the same env var). Never expose this service publicly without it.
 
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet};
@@ -139,13 +143,40 @@ fn json_response(status: u16, body: &str) -> Response<std::io::Cursor<Vec<u8>>> 
         .with_header(Header::from_bytes(&b"Content-Type"[..], &b"application/json"[..]).unwrap())
 }
 
+/// Constant-time-ish comparison is overkill for a LAN sidecar, but never leak
+/// which prefix matched: compare full bytes only when lengths agree.
+fn secret_matches(request: &tiny_http::Request, secret: &str) -> bool {
+    let sent = request
+        .headers()
+        .iter()
+        .find(|h| h.field.as_str().as_str().eq_ignore_ascii_case("x-hauldesk-secret"))
+        .map(|h| h.value.as_str().to_string())
+        .unwrap_or_default();
+    sent.len() == secret.len()
+        && sent
+            .bytes()
+            .zip(secret.bytes())
+            .fold(0u8, |acc, (a, b)| acc | (a ^ b))
+            == 0
+}
+
 fn main() {
+    let secret = std::env::var("HAULDESK_SIDECAR_SECRET").unwrap_or_default();
     let server = Server::http("0.0.0.0:8082").expect("bind :8082");
-    eprintln!("hauldesk-compute listening on :8082");
+    eprintln!(
+        "hauldesk-compute listening on :8082 (auth: {})",
+        !secret.is_empty()
+    );
 
     for mut request in server.incoming_requests() {
         let path = request.url().to_string();
         let method = request.method().clone();
+
+        // /health stays open for load-balancer checks; work endpoints are gated.
+        if path != "/health" && !secret.is_empty() && !secret_matches(&request, &secret) {
+            let _ = request.respond(json_response(401, r#"{"error":"unauthorized"}"#));
+            continue;
+        }
 
         let response = match (method, path.as_str()) {
             (Method::Get, "/health") => json_response(

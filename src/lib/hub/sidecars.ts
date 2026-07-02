@@ -13,6 +13,14 @@ import { drivingMiles, type LatLng } from "./mapbox"
 const GO_WORKER_URL = process.env.HAULDESK_GO_WORKER_URL?.replace(/\/$/, "") ?? ""
 const RUST_COMPUTE_URL = process.env.HAULDESK_RUST_COMPUTE_URL?.replace(/\/$/, "") ?? ""
 
+/** Shared-secret header both sidecars verify when HAULDESK_SIDECAR_SECRET is set. */
+function sidecarHeaders(): Record<string, string> {
+  const headers: Record<string, string> = { "Content-Type": "application/json" }
+  const secret = process.env.HAULDESK_SIDECAR_SECRET
+  if (secret) headers["X-Hauldesk-Secret"] = secret
+  return headers
+}
+
 export function hasGoWorker(): boolean {
   return Boolean(GO_WORKER_URL)
 }
@@ -43,12 +51,15 @@ export async function goWorkerRouteMiles(origin: LatLng, dest: LatLng): Promise<
   try {
     const res = await fetch(`${GO_WORKER_URL}/route/miles`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: sidecarHeaders(),
       body: JSON.stringify({ origin, dest }),
       signal: AbortSignal.timeout(15_000),
     })
     if (!res.ok) return null
-    const data = (await res.json()) as { miles?: number }
+    const data = (await res.json()) as { miles?: number; source?: string }
+    // The worker labels its OSRM-down floor "haversine-fallback"; treat that as
+    // no answer so the ladder's own estimate (winding factor applied) runs.
+    if (data.source && data.source !== "osrm") return null
     if (typeof data.miles === "number" && Number.isFinite(data.miles) && data.miles > 0) {
       return Math.round(data.miles)
     }
@@ -86,7 +97,7 @@ export async function iftaSummary(inputs: IftaInputs): Promise<IftaSummaryResult
     try {
       const res = await fetch(`${RUST_COMPUTE_URL}/ifta/summary`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: sidecarHeaders(),
         body: JSON.stringify(inputs),
         signal: AbortSignal.timeout(30_000),
       })

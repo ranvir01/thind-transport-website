@@ -75,6 +75,16 @@ HAULDESK_RUST_COMPUTE_URL=http://localhost:8082
 
 Build all: `make go-build rust-build` or `npm run go-build` / `npm run rust-build`.
 
+## Security
+
+Sidecars have no user auth of their own — they trust the TS gateway. Two rules:
+
+1. **Set `HAULDESK_SIDECAR_SECRET`** (same value for Next.js and both sidecars). With it set, every
+   work endpoint requires `X-Hauldesk-Secret`; `/health` stays open for load-balancer checks.
+   Without it (local dev), everything is open — never deploy that way.
+2. **Sidecars never touch Postgres.** All tenancy/permission checks stay in the TS layer;
+   sidecars compute on what the gateway hands them and hand it back.
+
 ## Enforcement
 
 - New **UI or CRUD** → TypeScript under `src/`.
