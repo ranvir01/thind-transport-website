@@ -20,6 +20,7 @@ describe("estimateRoadMiles", () => {
 
 describe("milesSourceLabel", () => {
   it("labels each provider", () => {
+    expect(milesSourceLabel("go-worker")).toMatch(/worker/)
     expect(milesSourceLabel("osrm")).toMatch(/OSRM/)
     expect(milesSourceLabel("mapbox")).toMatch(/Mapbox/)
     expect(milesSourceLabel("estimate")).toMatch(/estimate/)

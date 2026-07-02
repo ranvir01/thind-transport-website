@@ -33,25 +33,36 @@ export interface RouteMilesResult {
   source: RouteMilesSource
 }
 
+/**
+ * Drive miles from the Go worker alone. Null when the worker is unset, down,
+ * or answers nonsense — callers pick their own fallback (routing.ts puts this
+ * at the top of the Suggest-miles ladder so the two ladders never drift).
+ */
+export async function goWorkerRouteMiles(origin: LatLng, dest: LatLng): Promise<number | null> {
+  if (!GO_WORKER_URL) return null
+  try {
+    const res = await fetch(`${GO_WORKER_URL}/route/miles`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ origin, dest }),
+      signal: AbortSignal.timeout(15_000),
+    })
+    if (!res.ok) return null
+    const data = (await res.json()) as { miles?: number }
+    if (typeof data.miles === "number" && Number.isFinite(data.miles) && data.miles > 0) {
+      return Math.round(data.miles)
+    }
+    return null
+  } catch {
+    return null
+  }
+}
+
 /** Driving miles between two coordinates. Go worker → Mapbox → haversine fallback. */
 export async function routeMiles(req: RouteMilesRequest): Promise<RouteMilesResult> {
-  if (GO_WORKER_URL) {
-    try {
-      const res = await fetch(`${GO_WORKER_URL}/route/miles`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(req),
-        signal: AbortSignal.timeout(15_000),
-      })
-      if (res.ok) {
-        const data = (await res.json()) as { miles?: number }
-        if (typeof data.miles === "number" && Number.isFinite(data.miles)) {
-          return { miles: Math.round(data.miles), source: "go-worker" }
-        }
-      }
-    } catch {
-      // fall through to TS
-    }
+  const workerMiles = await goWorkerRouteMiles(req.origin, req.dest)
+  if (workerMiles != null) {
+    return { miles: workerMiles, source: "go-worker" }
   }
 
   const mapboxMiles = await drivingMiles(req.origin, req.dest)

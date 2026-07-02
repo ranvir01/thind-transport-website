@@ -26,6 +26,13 @@ export const authConfig = {
           return null
         }
 
+        // Go-live gate: HUB_DEMO_LOGIN=false refuses the seeded demo accounts
+        // outright — the login-screen hint is hidden by the same flag.
+        const { demoLoginEnabled, isDemoEmail } = await import("@/lib/hub/demo")
+        if (isDemoEmail(email) && !demoLoginEnabled()) {
+          return null
+        }
+
         // Hub accounts (office staff, hub drivers, broker/shipper portals) take
         // precedence; the legacy driver-portal store is the fallback.
         const hubUser = await findHubUserByEmail(email)

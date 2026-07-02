@@ -8,7 +8,7 @@
  * defensible drive-mile estimate when no routing provider answers.
  */
 
-export type MilesSource = "osrm" | "mapbox" | "estimate"
+export type MilesSource = "go-worker" | "osrm" | "mapbox" | "estimate"
 
 /** Roads wind ~20% longer than straight-line for typical US intercity lanes. */
 export const ROAD_WINDING_FACTOR = 1.2
@@ -22,6 +22,7 @@ export function estimateRoadMiles(straightLineMiles: number, factor = ROAD_WINDI
 /** Plain-language provenance for the suggested number (shown next to it). */
 export function milesSourceLabel(source: MilesSource): string {
   switch (source) {
+    case "go-worker": return "OSRM routing (worker)"
     case "osrm": return "OSRM routing"
     case "mapbox": return "Mapbox routing"
     case "estimate": return "distance estimate"

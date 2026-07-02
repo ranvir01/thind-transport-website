@@ -13,6 +13,7 @@
 import { geocodeCityState } from "./geocode"
 import { haversineMiles } from "./geo"
 import { drivingMiles, hasMapbox, type LatLng } from "./mapbox"
+import { goWorkerRouteMiles } from "./sidecars"
 import { estimateRoadMiles, type MilesSource } from "./routing-core"
 
 export interface SuggestedMiles {
@@ -59,6 +60,11 @@ export async function suggestMiles(origin: LanePoint, dest: LanePoint): Promise<
     geocodeCityState(dest.city, dest.state),
   ])
   if (!a || !b) return null
+
+  // Self-hosted Go worker first when configured (it proxies OSRM without the
+  // public demo's rate limit), then the same ladder as before.
+  const worker = await goWorkerRouteMiles(a, b)
+  if (worker && worker > 0) return { miles: worker, source: "go-worker" }
 
   const osrm = await osrmMiles(a, b)
   if (osrm && osrm > 0) return { miles: osrm, source: "osrm" }
