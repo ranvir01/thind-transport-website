@@ -10,7 +10,9 @@
  *   1. every migrations/hub/*.sql file is applied (incl. 012 fuel load_id)
  *   2. fuel_transactions.load_id actually exists (the column 012 adds)
  *   3. demo accounts are locked out (HUB_DEMO_LOGIN=false) or flagged
- *   4. at least one real (non-demo) active office user exists
+ *   4. durable file storage + SMTP are configured (warn-only)
+ *   5. configured sidecars require HAULDESK_SIDECAR_SECRET (warn-only)
+ *   6. at least one real (non-demo) active office user exists
  *
  * Exit 0 = ready; exit 1 = at least one blocking failure. Warnings don't block.
  */
@@ -97,7 +99,22 @@ async function main() {
       warn("SMTP not configured", "invoices/statements must be downloaded and sent manually (set SMTP_USER/SMTP_PASS)")
     }
 
-    // 6. Real office users exist
+    // 6. Sidecar auth (Go/Rust sidecars verify HAULDESK_SIDECAR_SECRET; without it
+    //    a deployed sidecar accepts unauthenticated requests from anyone with the URL)
+    const sidecarUrls = [
+      process.env.HAULDESK_GO_WORKER_URL,
+      process.env.HAULDESK_RUST_COMPUTE_URL,
+    ].filter(Boolean)
+    if (sidecarUrls.length === 0) {
+      pass("sidecars off — pure TypeScript fallbacks in use")
+    } else if (process.env.HAULDESK_SIDECAR_SECRET) {
+      pass(`${sidecarUrls.length} sidecar(s) configured with HAULDESK_SIDECAR_SECRET`)
+    } else {
+      warn(`${sidecarUrls.length} sidecar URL(s) set but HAULDESK_SIDECAR_SECRET is not`,
+        "deployed sidecars accept unauthenticated requests — set the same secret on Next.js and both sidecars (see docs/architecture/trilingual-stack.md)")
+    }
+
+    // 7. Real office users exist
     const { rows: office } = await client.query(
       `SELECT COUNT(*)::int AS n FROM hub.users
        WHERE role IN ('owner','dispatcher','accountant') AND active AND email NOT LIKE '%@demo.thind'`
