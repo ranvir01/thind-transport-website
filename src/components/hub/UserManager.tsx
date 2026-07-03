@@ -100,11 +100,11 @@ export function UserManager({ users, selfId }: { users: HubUser[]; selfId: strin
               <p className="font-semibold text-fg truncate">
                 {user.name}
                 {user.id === selfId ? <span className="text-fg-3 font-normal"> (you)</span> : null}
-                {!user.active ? <span className="ml-2 text-red-300 text-body-xs font-bold uppercase">inactive</span> : null}
+                {!user.active ? <span className="ml-2 text-bad text-body-xs font-bold uppercase">inactive</span> : null}
               </p>
               <p className="text-body-xs text-fg-3 truncate">{user.email}</p>
             </div>
-            <span className="shrink-0 rounded-full border border-gold/40 bg-gold/10 px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider text-gold">
+            <span className="shrink-0 rounded-full border border-accent-soft bg-accent-soft px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider text-accent-text">
               {user.role}
             </span>
             {user.id !== selfId ? (

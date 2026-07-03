@@ -70,7 +70,7 @@ export function AnnouncementComposer() {
               type="checkbox"
               checked={form.requiresAck}
               onChange={(e) => setForm({ ...form, requiresAck: e.target.checked })}
-              className="h-5 w-5 rounded border-border-strong accent-orange"
+              className="h-5 w-5 rounded border-border-strong accent-accent"
             />
             <span className="text-sm font-semibold text-fg">
               Require a signed acknowledgement

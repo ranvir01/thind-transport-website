@@ -103,7 +103,7 @@ export function RecruitingBoard({ applicants }: { applicants: Applicant[] }) {
                       <Link href={`/hub/recruiting/${a.id}`} className="min-w-0 font-semibold text-fg text-sm hover:underline">
                         {a.first_name} {a.last_name}
                       </Link>
-                      <GripVertical className="h-3.5 w-3.5 shrink-0 text-steel-500" />
+                      <GripVertical className="h-3.5 w-3.5 shrink-0 text-fg-3" />
                     </div>
                     <p className="mt-0.5 text-[11px] text-fg-3 truncate">
                       {[
@@ -115,12 +115,12 @@ export function RecruitingBoard({ applicants }: { applicants: Applicant[] }) {
                         .join(" · ") || "—"}
                     </p>
                     {a.referrer_name ? (
-                      <p className="text-[10px] text-gold truncate">referred by {a.referrer_name}</p>
+                      <p className="text-[10px] text-accent-text truncate">referred by {a.referrer_name}</p>
                     ) : null}
                     {stage !== "active" ? (
                       <button
                         onClick={() => setRejecting(a)}
-                        className="mt-1 hidden items-center gap-1 text-[10px] font-semibold text-fg-3 hover:text-red-400 group-hover:flex"
+                        className="mt-1 hidden items-center gap-1 text-[10px] font-semibold text-fg-3 hover:text-bad group-hover:flex"
                       >
                         <UserX className="h-3 w-3" /> Reject
                       </button>
@@ -146,7 +146,7 @@ export function RecruitingBoard({ applicants }: { applicants: Applicant[] }) {
           </summary>
           <ul className="mt-2 space-y-1">
             {rejected.map((a) => (
-              <li key={a.id} className="flex items-center justify-between gap-2 rounded-lg bg-white/[0.02] px-3 py-2 text-sm">
+              <li key={a.id} className="flex items-center justify-between gap-2 rounded-lg bg-surface-2 px-3 py-2 text-sm">
                 <Link href={`/hub/recruiting/${a.id}`} className="text-fg-3 hover:text-fg">
                   {a.first_name} {a.last_name}
                 </Link>
@@ -282,7 +282,7 @@ export function ImportApplicantsButton() {
         })
       }
       disabled={pending}
-      className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-gold/40 bg-gold/10 px-5 font-display text-sm font-bold uppercase tracking-[0.08em] text-gold hover:bg-gold/20 disabled:opacity-60"
+      className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-accent px-5 font-display text-sm font-bold uppercase tracking-[0.08em] text-accent-fg hover:bg-accent-hover disabled:opacity-60"
     >
       {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
       Pull website applications

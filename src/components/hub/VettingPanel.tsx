@@ -44,18 +44,18 @@ export function VettingPanel({ customerId, view }: { customerId: string; view: V
       <div className="flex items-center justify-between gap-2 mb-3">
         <h2 className="flex items-center gap-2 text-[13.5px] font-semibold text-fg">
           {snapshot?.allowed_to_operate === false ? (
-            <ShieldX className="h-4 w-4 text-red-400" />
+            <ShieldX className="h-4 w-4 text-bad" />
           ) : snapshot?.allowed_to_operate === true ? (
-            <ShieldCheck className="h-4 w-4 text-green-400" />
+            <ShieldCheck className="h-4 w-4 text-ok" />
           ) : (
-            <ShieldQuestion className="h-4 w-4 text-gold" />
+            <ShieldQuestion className="h-4 w-4 text-warn" />
           )}
           Vetting
         </h2>
         <button
           onClick={verify}
           disabled={pending}
-          className="flex min-h-[40px] items-center gap-2 rounded-xl border border-gold/40 bg-gold/10 px-4 text-sm font-bold text-gold hover:bg-gold/20 disabled:opacity-60"
+          className="flex min-h-[40px] items-center gap-2 rounded-xl bg-accent px-4 text-sm font-semibold text-accent-fg hover:bg-accent-hover disabled:opacity-60"
         >
           {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
           {snapshot ? "Re-check now" : "Verify authority"}
@@ -63,9 +63,9 @@ export function VettingPanel({ customerId, view }: { customerId: string; view: V
       </div>
 
       {!view.configured ? (
-        <p className="mb-3 rounded-xl border border-border bg-white/[0.03] px-3 py-2 text-body-xs text-fg-3">
+        <p className="mb-3 rounded-xl border border-border bg-surface-2 px-3 py-2 text-body-xs text-fg-3">
           Live FMCSA checks need a free webkey (5 minutes at mobile.fmcsa.dot.gov) — set
-          <code className="mx-1 text-gold">FMCSA_WEBKEY</code> and every broker gets verified
+          <code className="mx-1 text-accent-text">FMCSA_WEBKEY</code> and every broker gets verified
           automatically, plus a nightly re-check.
         </p>
       ) : null}
@@ -76,7 +76,7 @@ export function VettingPanel({ customerId, view }: { customerId: string; view: V
             <span
               className={cn(
                 "font-display text-3xl font-extrabold",
-                (score ?? 0) >= 70 ? "text-green-400" : (score ?? 0) >= 40 ? "text-gold" : "text-red-400"
+                (score ?? 0) >= 70 ? "text-ok" : (score ?? 0) >= 40 ? "text-warn" : "text-bad"
               )}
             >
               {score ?? "—"}
@@ -100,13 +100,13 @@ export function VettingPanel({ customerId, view }: { customerId: string; view: V
       )}
 
       {/* Own-receivables intelligence */}
-      <div className="mt-3 rounded-xl border border-border bg-white/[0.03] p-3">
+      <div className="mt-3 rounded-xl border border-border bg-surface-2 p-3">
         <p className="text-[11px] font-bold uppercase tracking-wider text-fg-3">How they pay you</p>
         {view.paySpeed.avgDays == null ? (
           <p className="mt-1 text-body-sm text-fg-3">No payment history yet.</p>
         ) : (
           <p className="mt-1 text-body-sm text-fg-2">
-            Averages <span className={cn("font-bold", view.paySpeed.slowPayer ? "text-orange" : "text-green-400")}>
+            Averages <span className={cn("font-bold", view.paySpeed.slowPayer ? "text-warn" : "text-ok")}>
               {view.paySpeed.avgDays} days
             </span>{" "}
             to pay ({view.paySpeed.samples} invoices)

@@ -54,7 +54,7 @@ export function RequestDocumentPanel({
   return (
     <Panel className="p-4 md:p-5">
       <h2 className="flex items-center gap-2 text-[13.5px] font-semibold text-fg mb-3">
-        <FileQuestion className="h-4 w-4 text-gold" /> Ask for paperwork
+        <FileQuestion className="h-4 w-4 text-accent-text" /> Ask for paperwork
       </h2>
       <form onSubmit={submit} className="space-y-2">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -135,13 +135,13 @@ export function TimeOffDecisionPanel({ requests }: { requests: TimeOffRequest[] 
   if (requests.length === 0) return null
 
   return (
-    <Panel className="p-4 md:p-5 border-gold/30">
+    <Panel className="p-4 md:p-5 border-warn">
       <h2 className="text-[13.5px] font-semibold text-fg mb-3">
         Time-off requests waiting on you
       </h2>
       <ul className="space-y-2">
         {requests.map((r) => (
-          <li key={r.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border bg-white/[0.03] p-3">
+          <li key={r.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border bg-surface-2 p-3">
             <div>
               <p className="font-semibold text-fg">
                 {r.driver_name} — {formatHubDateShort(r.start_date)} to {formatHubDateShort(r.end_date)}

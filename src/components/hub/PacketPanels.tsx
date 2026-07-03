@@ -27,7 +27,7 @@ export function SendPacketForm() {
   return (
     <Panel className="p-4 md:p-5">
       <h2 className="flex items-center gap-2 text-[13.5px] font-semibold text-fg mb-1">
-        <Send className="h-4 w-4 text-gold" /> Send the packet
+        <Send className="h-4 w-4 text-accent-text" /> Send the packet
       </h2>
       <p className="text-body-xs text-fg-3 mb-3">
         One click emails the latest W-9, COI, authority letter, NOA, and agreement —
@@ -99,7 +99,7 @@ export function CoiRequestForm({ savedAgent }: { savedAgent: string }) {
         </div>
         <button
           type="submit" disabled={pending}
-          className="flex min-h-[48px] items-center gap-2 rounded-xl border border-gold/40 bg-gold/10 px-6 font-display text-sm font-bold uppercase tracking-[0.08em] text-gold hover:bg-gold/20 disabled:opacity-50"
+          className="flex min-h-[48px] items-center gap-2 rounded-xl bg-accent px-6 font-display text-sm font-bold uppercase tracking-[0.08em] text-accent-fg hover:bg-accent-hover disabled:opacity-50"
         >
           {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Mail className="h-4 w-4" />}
           Send the request
@@ -124,8 +124,8 @@ export function AgreementSignPanel({
 
   if (existingAgreement) {
     return (
-      <p className="flex items-center justify-between gap-2 rounded-xl border border-green-500/30 bg-green-500/10 px-3 py-2.5 text-sm">
-        <span className="font-semibold text-green-400">
+      <p className="flex items-center justify-between gap-2 rounded-xl border border-ok-soft bg-ok-soft px-3 py-2.5 text-sm">
+        <span className="font-semibold text-ok">
           Broker–carrier agreement signed{" "}
           {new Date(existingAgreement.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
         </span>
@@ -140,7 +140,7 @@ export function AgreementSignPanel({
     return (
       <button
         onClick={() => setOpen(true)}
-        className="flex w-full min-h-[48px] items-center justify-center gap-2 rounded-xl border border-gold/40 bg-gold/10 font-display text-sm font-bold uppercase tracking-[0.06em] text-gold hover:bg-gold/20"
+        className="flex w-full min-h-[48px] items-center justify-center gap-2 rounded-xl bg-accent font-display text-sm font-bold uppercase tracking-[0.06em] text-accent-fg hover:bg-accent-hover"
       >
         <FileSignature className="h-4 w-4" /> E-sign the broker–carrier agreement
       </button>
@@ -148,7 +148,7 @@ export function AgreementSignPanel({
   }
 
   return (
-    <div className="rounded-xl border border-gold/30 bg-gold/[0.05] p-3 space-y-2">
+    <div className="rounded-xl border border-accent-soft bg-accent-soft p-3 space-y-2">
       <p className="text-body-xs text-fg-2">
         The broker&apos;s rep signs with a finger — the signed PDF files itself on this customer.
       </p>

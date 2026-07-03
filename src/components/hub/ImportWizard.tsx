@@ -206,7 +206,7 @@ export function ImportWizard({ initialKind = "loads" }: { initialKind?: string }
               onChange={(e) => setProgram(e.target.value)} placeholder="EFS" />
           </div>
         ) : null}
-        <label className="flex min-h-[88px] cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-border-strong p-4 text-center hover:border-gold/40 hover:bg-hover">
+        <label className="flex min-h-[88px] cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-border-strong p-4 text-center hover:border-accent hover:bg-hover">
           <FileSpreadsheet className="h-6 w-6 text-fg-3" />
           <span className="text-sm font-semibold text-fg-2">
             {fileName ?? "Tap to choose a .csv file"}
@@ -279,7 +279,7 @@ export function ImportWizard({ initialKind = "loads" }: { initialKind?: string }
             ))}
           </div>
           {requiredMissing.length > 0 ? (
-            <p className="mt-3 rounded-lg border border-gold/30 bg-gold/10 p-3 text-body-sm text-gold">
+            <p className="mt-3 rounded-lg border border-warn-soft bg-warn-soft p-3 text-body-sm text-warn">
               Still needed: {requiredMissing.map((f) => f.label).join(", ")}
             </p>
           ) : null}
@@ -337,9 +337,9 @@ export function ImportWizard({ initialKind = "loads" }: { initialKind?: string }
         <Panel className="p-4 md:p-5">
           <div className="flex items-center gap-2 mb-2">
             {result.ok ? (
-              <CheckCircle2 className="h-5 w-5 text-emerald-300" />
+              <CheckCircle2 className="h-5 w-5 text-ok" />
             ) : (
-              <XCircle className="h-5 w-5 text-gold" />
+              <XCircle className="h-5 w-5 text-bad" />
             )}
             <h2 className="text-[13.5px] font-semibold text-fg">
               Import finished

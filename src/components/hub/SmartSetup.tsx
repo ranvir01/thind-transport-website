@@ -172,10 +172,10 @@ function ScanCard({
           : []
 
   return (
-    <Panel className={cn("p-4", scan.applied && "border-emerald-500/40 opacity-80")}>
+    <Panel className={cn("p-4", scan.applied && "border-ok-soft opacity-80")}>
       <div className="flex items-start justify-between gap-3 mb-3">
         <div>
-          <p className="text-label text-gold uppercase flex items-center gap-1.5">
+          <p className="text-label text-accent-text uppercase flex items-center gap-1.5">
             {scan.analysis.label}
             {scan.aiEnhanced ? (
               <span className="inline-flex items-center gap-0.5 rounded-full border border-accent-soft bg-accent-soft px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-accent-text">
@@ -355,11 +355,11 @@ export function SmartSetup({
 
   return (
     <div className="space-y-5">
-      <Panel className="p-4 md:p-5 border-gold/30">
+      <Panel className="p-4 md:p-5 border-accent-soft">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
           <div>
             <h2 className="text-[13.5px] font-semibold text-fg flex items-center gap-2">
-              <ScanLine className="h-5 w-5 text-gold" /> Smart Setup
+              <ScanLine className="h-5 w-5 text-accent-text" /> Smart Setup
             </h2>
             <p className="text-body-sm text-fg-2 mt-1 max-w-xl">
               Drop your paperwork — rate cons, registrations, CDLs, W-9s, broker MC letters, fuel CSVs.
@@ -376,7 +376,7 @@ export function SmartSetup({
 
       <div
         className={cn(
-          "rounded-2xl border-2 border-dashed border-border-strong p-6 text-center cursor-pointer hover:border-gold/40 transition-colors",
+          "rounded-2xl border-2 border-dashed border-border-strong p-6 text-center cursor-pointer hover:border-accent transition-colors",
           scanning && "opacity-60 pointer-events-none"
         )}
         onClick={() => inputRef.current?.click()}
@@ -395,9 +395,9 @@ export function SmartSetup({
           onChange={(e) => void handleFiles(e.target.files)}
         />
         {scanning ? (
-          <Loader2 className="h-10 w-10 text-gold animate-spin mx-auto mb-3" />
+          <Loader2 className="h-10 w-10 text-accent-text animate-spin mx-auto mb-3" />
         ) : (
-          <Upload className="h-10 w-10 text-gold mx-auto mb-3" />
+          <Upload className="h-10 w-10 text-accent-text mx-auto mb-3" />
         )}
         <p className="font-display font-bold text-fg uppercase tracking-wide">
           Drop files here or tap to upload
@@ -409,7 +409,7 @@ export function SmartSetup({
 
       <Panel className="p-4">
         <h3 className="font-display text-sm font-bold uppercase text-fg mb-2 flex items-center gap-2">
-          <FileUp className="h-4 w-4 text-gold" /> Or paste text from an email / PDF
+          <FileUp className="h-4 w-4 text-accent-text" /> Or paste text from an email / PDF
         </h3>
         <textarea
           rows={4}
@@ -424,7 +424,7 @@ export function SmartSetup({
           disabled={!pasteText.trim()}
           className="mt-3 inline-flex min-h-[48px] items-center gap-2 rounded-xl border border-border-strong px-5 font-display text-sm font-bold uppercase tracking-wide text-fg hover:bg-hover disabled:opacity-50"
         >
-          <Sparkles className="h-4 w-4 text-gold" /> Scan pasted text
+          <Sparkles className="h-4 w-4 text-accent-text" /> Scan pasted text
         </button>
       </Panel>
 
@@ -450,7 +450,7 @@ export function SmartSetup({
         </div>
       ) : null}
 
-      <Panel className="p-4 bg-white/[0.02]">
+      <Panel className="p-4 bg-surface-2">
         <p className="text-body-sm text-fg-3">
           <strong className="text-fg-2">What Smart Setup handles:</strong> brokers (MC/DOT + FMCSA),
           trucks (VIN decode), drivers (CDL/med card), carrier packet (W-9/COI), load history CSV,
@@ -467,7 +467,7 @@ function LinkRow({ href, label }: { href: string; label: string }) {
   return (
     <a
       href={href}
-      className="mt-2 flex items-center justify-between rounded-lg px-2 py-2 text-sm text-gold hover:bg-hover min-h-[44px]"
+      className="mt-2 flex items-center justify-between rounded-lg px-2 py-2 text-sm font-semibold text-accent-text hover:bg-hover min-h-[44px]"
     >
       {label}
       <ArrowRight className="h-4 w-4" />

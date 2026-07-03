@@ -23,7 +23,7 @@ export function DetentionButton({ loadId, estimateCents }: { loadId: string; est
         })
       }
       disabled={pending}
-      className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-gold/40 bg-gold/10 px-4 text-sm font-bold text-gold hover:bg-gold/20 disabled:opacity-60"
+      className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-accent px-4 text-sm font-semibold text-accent-fg hover:bg-accent-hover disabled:opacity-60"
     >
       {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Clock className="h-4 w-4" />}
       Add detention (~${(estimateCents / 100).toFixed(0)})

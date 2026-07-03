@@ -109,7 +109,7 @@ export default async function PlannerPage({
 
       <p className="mt-3 text-body-xs text-fg-3">
         Drive-time forecasts are estimates from the last known position — the ELD is always the authority.
-        Striped gold days are approved driver time off; dispatch can&apos;t book over them.
+        Striped amber days are approved driver time off; dispatch can&apos;t book over them.
       </p>
     </div>
   )

@@ -34,7 +34,7 @@ export function AdvanceStatusButton({
       <button
         onClick={advance}
         disabled={pending}
-        className="inline-flex min-h-[36px] items-center gap-1 rounded-lg border border-gold/40 bg-gold/10 px-2.5 text-[11px] font-bold uppercase tracking-wide text-gold hover:bg-gold/20 disabled:opacity-50"
+        className="inline-flex min-h-[36px] items-center gap-1 rounded-lg bg-accent px-2.5 text-[11px] font-semibold uppercase tracking-wide text-accent-fg hover:bg-accent-hover disabled:opacity-50"
       >
         {pending ? <Loader2 className="h-3 w-3 animate-spin" /> : <ArrowRight className="h-3 w-3" />}
         {STATUS_LABELS[next]}
@@ -142,7 +142,7 @@ export function CheckCallButton({ loadId }: { loadId: string }) {
       <button
         type="submit"
         disabled={pending || !note.trim()}
-        className="min-h-[44px] shrink-0 rounded-xl border border-gold/40 bg-gold/10 px-4 text-sm font-bold text-gold hover:bg-gold/20 disabled:opacity-50"
+        className="min-h-[44px] shrink-0 rounded-xl bg-accent px-4 text-sm font-semibold text-accent-fg hover:bg-accent-hover disabled:opacity-50"
       >
         {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Log"}
       </button>

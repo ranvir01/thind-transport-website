@@ -140,7 +140,7 @@ export function IftaRatesImporter({ quarter }: { quarter: string }) {
           })
         }
         disabled={pending || !text.trim()}
-        className="mt-2 inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-gold/40 bg-gold/10 px-4 text-sm font-bold text-gold hover:bg-gold/20 disabled:opacity-50"
+        className="mt-2 inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-accent px-4 text-sm font-semibold text-accent-fg hover:bg-accent-hover disabled:opacity-50"
       >
         {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
         Save rates

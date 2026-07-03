@@ -148,8 +148,8 @@ export function IncidentForm({
         </div>
 
         {/* 390.5 qualifiers */}
-        <div className="rounded-xl border border-border bg-white/[0.03] p-4 space-y-3">
-          <p className="text-[11px] font-bold uppercase tracking-wider text-gold">
+        <div className="rounded-xl border border-border bg-surface-2 p-4 space-y-3">
+          <p className="text-[11px] font-bold uppercase tracking-wider text-accent-text">
             Three questions that decide if DOT counts this as an accident
           </p>
           {QUALIFIERS.map((q) => (
@@ -158,7 +158,7 @@ export function IncidentForm({
                 type="checkbox"
                 checked={form[q.key]}
                 onChange={(e) => setForm({ ...form, [q.key]: e.target.checked })}
-                className="mt-1 h-5 w-5 rounded border-border-strong bg-transparent accent-orange"
+                className="mt-1 h-5 w-5 rounded border-border-strong bg-transparent accent-accent"
               />
               <span>
                 <span className="block text-sm font-semibold text-fg">{q.question}</span>

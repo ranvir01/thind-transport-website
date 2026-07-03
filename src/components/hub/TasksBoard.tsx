@@ -20,10 +20,10 @@ import { fieldCls } from "@/components/hub/ui"
 import type { Task, TaskPriority, TaskRecurrence } from "@/lib/hub/types"
 
 const PRIORITY_STYLES: Record<TaskPriority, string> = {
-  urgent: "border-red-500/40 bg-red-500/10 text-red-400",
+  urgent: "border-bad-soft bg-bad-soft text-bad",
   high: "border-warn-soft bg-warn-soft text-warn",
   normal: "border-border-strong bg-surface-2 text-fg-3",
-  low: "border-border bg-white/[0.03] text-fg-3",
+  low: "border-border bg-surface-2 text-fg-3",
 }
 
 function taskHref(task: Task): string | null {
@@ -176,15 +176,15 @@ export function TaskItem({ task }: { task: Task }) {
     })
 
   return (
-    <div className={cn("rounded-xl border p-3", overdue ? "border-red-500/30 bg-red-500/[0.04]" : "border-border bg-white/[0.03]")}>
+    <div className={cn("rounded-xl border p-3", overdue ? "border-bad-soft bg-bad-soft" : "border-border bg-surface-2")}>
       <div className="flex items-start gap-3">
         <button
           onClick={complete}
           disabled={pending}
           aria-label="Mark done"
-          className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-border-strong text-transparent hover:border-gold hover:text-gold disabled:opacity-50"
+          className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-border-strong text-transparent hover:border-accent hover:text-accent-text disabled:opacity-50"
         >
-          {pending ? <Loader2 className="h-4 w-4 animate-spin text-gold" /> : <Check className="h-4 w-4" />}
+          {pending ? <Loader2 className="h-4 w-4 animate-spin text-accent-text" /> : <Check className="h-4 w-4" />}
         </button>
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
@@ -194,7 +194,7 @@ export function TaskItem({ task }: { task: Task }) {
               {task.priority}
             </span>
             {task.automation_key ? (
-              <span className="rounded-full border border-steel-400/30 bg-steel-400/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-fg-3">
+              <span className="rounded-full border border-border bg-surface-2 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-fg-3">
                 auto
               </span>
             ) : null}
@@ -202,7 +202,7 @@ export function TaskItem({ task }: { task: Task }) {
           {task.notes ? <p className="mt-0.5 text-body-xs text-fg-3">{task.notes}</p> : null}
           <div className="mt-1 flex flex-wrap items-center gap-3 text-[11px] text-fg-3">
             {task.due_at ? (
-              <span className={cn(overdue && "font-bold text-red-400")}>
+              <span className={cn(overdue && "font-bold text-bad")}>
                 {overdue ? "Overdue — " : "Due "}
                 {new Date(task.due_at).toLocaleString("en-US", { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
               </span>
@@ -213,7 +213,7 @@ export function TaskItem({ task }: { task: Task }) {
               </button>
             ) : null}
             {href ? (
-              <Link href={href} className="inline-flex items-center gap-1 font-semibold text-gold hover:text-gold/80">
+              <Link href={href} className="inline-flex items-center gap-1 font-semibold text-accent-text hover:underline">
                 Open the record <ArrowRight className="h-3 w-3" />
               </Link>
             ) : null}
@@ -227,7 +227,7 @@ export function TaskItem({ task }: { task: Task }) {
                       type="checkbox"
                       checked={item.done}
                       onChange={(e) => toggleItem(i, e.target.checked)}
-                      className="h-4 w-4 rounded border-border-strong accent-orange"
+                      className="h-4 w-4 rounded border-border-strong accent-accent"
                     />
                     <span className={cn("text-sm", item.done ? "text-fg-3 line-through" : "text-fg-2")}>
                       {item.label}
@@ -242,7 +242,7 @@ export function TaskItem({ task }: { task: Task }) {
           onClick={remove}
           disabled={pending}
           aria-label="Delete task"
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-fg-3 hover:bg-hover hover:text-red-400"
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-fg-3 hover:bg-hover hover:text-bad"
         >
           <Trash2 className="h-4 w-4" />
         </button>

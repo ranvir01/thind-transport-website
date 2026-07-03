@@ -95,7 +95,7 @@ export function TruckForm({
               <input id="vin" className={fieldCls} value={form.vin}
                 onChange={(e) => set({ vin: e.target.value.toUpperCase() })} />
               <button type="button" onClick={decode} disabled={decoding}
-                className="inline-flex h-11 shrink-0 items-center gap-1.5 rounded-xl border border-gold/40 bg-gold/10 px-3 text-xs font-bold text-gold hover:bg-gold/20 disabled:opacity-50">
+                className="inline-flex h-11 shrink-0 items-center gap-1.5 rounded-xl bg-accent px-3 text-xs font-semibold text-accent-fg hover:bg-accent-hover disabled:opacity-50">
                 {decoding ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ScanSearch className="h-3.5 w-3.5" />}
                 Decode
               </button>

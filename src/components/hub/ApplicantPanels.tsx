@@ -65,7 +65,7 @@ export function OfferPanel({
   return (
     <Panel className="p-4 md:p-5">
       <h2 className="flex items-center gap-2 text-[13.5px] font-semibold text-fg mb-3">
-        <FileSignature className="h-4 w-4 text-gold" /> Offer letter
+        <FileSignature className="h-4 w-4 text-accent-text" /> Offer letter
       </h2>
 
       {!offer ? (
@@ -106,8 +106,8 @@ export function OfferPanel({
         </form>
       ) : (
         <div className="space-y-3">
-          <div className="rounded-xl border border-border bg-white/[0.03] p-3">
-            <p className="text-sm font-semibold text-gold">{offer.pay_summary}</p>
+          <div className="rounded-xl border border-border bg-surface-2 p-3">
+            <p className="text-sm font-semibold text-accent-text">{offer.pay_summary}</p>
             {offer.start_date ? (
               <p className="text-body-xs text-fg-3">
                 Starts {new Date(offer.start_date).toLocaleDateString("en-US", { month: "long", day: "numeric" })}
@@ -117,7 +117,7 @@ export function OfferPanel({
           </div>
 
           {offer.status === "signed" ? (
-            <p className="flex items-center gap-2 rounded-xl border border-green-500/30 bg-green-500/10 px-3 py-2.5 text-sm font-semibold text-green-400">
+            <p className="flex items-center gap-2 rounded-xl border border-ok-soft bg-ok-soft px-3 py-2.5 text-sm font-semibold text-ok">
               <Check className="h-4 w-4" />
               Signed by {offer.signed_name}
               {offer.signed_at
@@ -183,7 +183,7 @@ export function OrientationPanel({
                 checked={item.done}
                 disabled={pending}
                 onChange={(e) => toggle(item.key, e.target.checked)}
-                className="h-5 w-5 rounded border-border-strong accent-orange"
+                className="h-5 w-5 rounded border-border-strong accent-accent"
               />
               <span className={cn("text-sm", item.done ? "text-fg-3 line-through" : "text-fg-2")}>
                 {item.label}
@@ -193,7 +193,7 @@ export function OrientationPanel({
         ))}
       </ul>
       {!offerSigned ? (
-        <p className="mt-2 text-body-xs text-gold">Waiting on the signed offer.</p>
+        <p className="mt-2 text-body-xs text-warn">Waiting on the signed offer.</p>
       ) : null}
     </Panel>
   )
@@ -218,8 +218,8 @@ export function ConvertPanel({
 
   if (alreadyDriverId) {
     return (
-      <Panel className="p-4 md:p-5 border-green-500/30">
-        <p className="flex items-center gap-2 text-sm font-semibold text-green-400">
+      <Panel className="p-4 md:p-5 border-ok-soft">
+        <p className="flex items-center gap-2 text-sm font-semibold text-ok">
           <UserCheck className="h-4 w-4" /> Hired — driver record created.
         </p>
         <button
@@ -242,9 +242,9 @@ export function ConvertPanel({
     })
 
   return (
-    <Panel className={cn("p-4 md:p-5", ready ? "border-gold/40" : "opacity-80")}>
+    <Panel className={cn("p-4 md:p-5", ready ? "border-accent" : "opacity-80")}>
       <h2 className="flex items-center gap-2 text-[13.5px] font-semibold text-fg mb-3">
-        <UserPlus className="h-4 w-4 text-gold" /> Convert to driver
+        <UserPlus className="h-4 w-4 text-accent-text" /> Convert to driver
       </h2>
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <div>
@@ -310,8 +310,8 @@ export function ReferralPanel({
 
   if (referrerName) {
     return (
-      <p className="rounded-xl border border-gold/30 bg-gold/[0.06] px-3 py-2.5 text-sm text-fg-2">
-        Referred by <span className="font-semibold text-gold">{referrerName}</span> — bonus pays
+      <p className="rounded-xl border border-accent-soft bg-accent-soft px-3 py-2.5 text-sm text-fg-2">
+        Referred by <span className="font-semibold text-accent-text">{referrerName}</span> — bonus pays
         through their settlement when this applicant is hired.
       </p>
     )
@@ -344,7 +344,7 @@ export function ReferralPanel({
           })
         }
         disabled={pending || !form.driverId}
-        className="min-h-[48px] rounded-xl border border-gold/40 bg-gold/10 px-4 text-sm font-bold text-gold hover:bg-gold/20 disabled:opacity-50"
+        className="min-h-[48px] rounded-xl bg-accent px-4 text-sm font-semibold text-accent-fg hover:bg-accent-hover disabled:opacity-50"
       >
         Attach referral
       </button>

@@ -49,7 +49,7 @@ export function CapacityPanel({
     <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
       <Panel className="p-4 md:p-5">
         <h2 className="flex items-center gap-2 text-[13.5px] font-semibold text-fg mb-3">
-          <Megaphone className="h-4 w-4 text-gold" /> Post available capacity
+          <Megaphone className="h-4 w-4 text-accent-text" /> Post available capacity
         </h2>
         <form onSubmit={submit} className="space-y-2">
           <div className="grid grid-cols-2 gap-2">

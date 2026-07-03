@@ -123,7 +123,7 @@ export function OfficeNoteComposer({ facilityId }: { facilityId: string }) {
             className={cn(
               "rounded-full border px-2.5 py-1 text-body-xs font-semibold capitalize min-h-[32px]",
               tags.includes(tag)
-                ? "border-gold/60 bg-gold/20 text-gold"
+                ? "border-accent bg-accent-soft text-accent-text"
                 : "border-border-strong bg-surface-2 text-fg-3"
             )}
           >

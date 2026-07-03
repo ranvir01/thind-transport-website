@@ -44,7 +44,7 @@ export function DvirPanel({
   return (
     <Panel className="p-4 md:p-5">
       <h2 className="flex items-center gap-2 text-[13.5px] font-semibold text-fg mb-2">
-        <ClipboardCheck className="h-4 w-4 text-gold" /> Inspections (DVIR)
+        <ClipboardCheck className="h-4 w-4 text-accent-text" /> Inspections (DVIR)
       </h2>
 
       {state !== "clear" && openDvir ? (
@@ -115,9 +115,9 @@ export function DvirPanel({
                 className={cn(
                   "shrink-0 inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[11px] font-bold",
                   dvir.defects.length === 0
-                    ? "border-green-500/40 bg-green-500/10 text-green-400"
+                    ? "border-ok-soft bg-ok-soft text-ok"
                     : dvir.safe_to_operate
-                      ? "border-gold/40 bg-gold/10 text-gold"
+                      ? "border-warn-soft bg-warn-soft text-warn"
                       : "border-bad-soft bg-bad-soft text-bad"
                 )}
               >

@@ -227,7 +227,7 @@ function PriceBookRowEditor({
       <button
         onClick={() => onSave({ id: entry.id, name: entry.name, amount, unit: entry.unit })}
         disabled={pending}
-        className="min-h-[44px] shrink-0 rounded-xl border border-gold/40 bg-gold/10 px-4 text-sm font-bold text-gold hover:bg-gold/20 disabled:opacity-50"
+        className="min-h-[44px] shrink-0 rounded-xl bg-accent px-4 text-sm font-semibold text-accent-fg hover:bg-accent-hover disabled:opacity-50"
       >
         Save
       </button>

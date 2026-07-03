@@ -9,9 +9,9 @@ import { LoadForm, type LoadFormInitial, type Option, type PriceBookOption } fro
 import { emptyLoadForm } from "@/lib/hub/form-defaults"
 
 const CONFIDENCE_CLS: Record<Confidence, string> = {
-  high: "border-emerald-400/40 bg-emerald-500/15 text-emerald-300",
-  medium: "border-gold/40 bg-gold/15 text-gold",
-  low: "border-red-400/40 bg-red-500/15 text-red-300",
+  high: "border-ok-soft bg-ok-soft text-ok",
+  medium: "border-warn-soft bg-warn-soft text-warn",
+  low: "border-bad-soft bg-bad-soft text-bad",
 }
 
 function Chip({ label, confidence }: { label: string; confidence: Confidence }) {
@@ -135,7 +135,7 @@ export function PasteIntake({
       {parsed && initial ? (
         <div>
           <div className="flex items-center gap-2 mb-3">
-            <ClipboardPaste className="h-4 w-4 text-gold" />
+            <ClipboardPaste className="h-4 w-4 text-accent-text" />
             <h2 className="font-display text-lg font-bold uppercase tracking-wide text-fg">
               Confirm &amp; book
             </h2>

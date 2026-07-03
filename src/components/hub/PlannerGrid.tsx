@@ -18,13 +18,14 @@ import { toIsoDateOnly } from "@/lib/hub/format-dates"
 import type { TimeOffRequest } from "@/lib/hub/types"
 
 const LANE_HEIGHT = 46
+// Same status→tone language as StatusBadge in ui.tsx (STATUS_TONE), with borders.
 const STATUS_COLORS: Record<string, string> = {
-  quoted: "border-steel-400/40 bg-steel-500/20 text-fg-2",
-  booked: "border-gold/50 bg-gold/15 text-gold",
-  dispatched: "border-orange/50 bg-orange/15 text-orange",
-  at_pickup: "border-accent-soft bg-accent-soft text-accent-text",
-  in_transit: "border-green-500/50 bg-green-500/15 text-green-300",
-  delivered: "border-border-strong bg-surface-2 text-fg-2",
+  quoted: "border-border bg-surface-2 text-fg-2",
+  booked: "border-border-strong bg-surface-2 text-fg",
+  dispatched: "border-accent-soft bg-accent-soft text-accent-text",
+  at_pickup: "border-warn-soft bg-warn-soft text-warn",
+  in_transit: "border-info-soft bg-info-soft text-info",
+  delivered: "border-ok-soft bg-ok-soft text-ok",
 }
 
 interface DragPayload {
@@ -150,7 +151,7 @@ export function PlannerGrid({
                 key={day}
                 className={cn(
                   "px-2 py-2 text-center text-[11px] font-bold uppercase tracking-wider",
-                  i === todayIdx ? "text-gold" : "text-fg-3"
+                  i === todayIdx ? "text-accent-text" : "text-fg-3"
                 )}
               >
                 {date.toLocaleDateString("en-US", { weekday: "short" })}{" "}
@@ -164,8 +165,8 @@ export function PlannerGrid({
 
         {/* Unassigned tray */}
         {unassigned.length > 0 ? (
-          <div className="mb-2 rounded-xl border border-dashed border-gold/40 bg-gold/[0.05] p-2">
-            <p className="px-1 pb-1 text-[10px] font-bold uppercase tracking-[0.2em] text-gold">
+          <div className="mb-2 rounded-xl border border-dashed border-warn bg-warn-soft p-2">
+            <p className="px-1 pb-1 text-[10px] font-bold uppercase tracking-[0.2em] text-warn">
               Needs a truck — drag onto the grid
             </p>
             <div className="flex flex-wrap gap-2">
@@ -205,14 +206,14 @@ export function PlannerGrid({
                 <p className="font-display text-sm font-extrabold text-fg">
                   #{truck.unit_number}
                   {truck.status === "shop" ? (
-                    <span className="ml-2 rounded-full border border-red-500/40 bg-red-500/10 px-2 py-0.5 text-[10px] font-bold uppercase text-red-400">
+                    <span className="ml-2 rounded-full border border-bad-soft bg-bad-soft px-2 py-0.5 text-[10px] font-bold uppercase text-bad">
                       shop
                     </span>
                   ) : null}
                 </p>
                 <p className="truncate text-[11px] text-fg-3">{truck.driver_name ?? "No driver seated"}</p>
                 {truck.forecast ? (
-                  <p className={cn("mt-0.5 truncate text-[10px]", truck.empty_now ? "font-bold text-gold" : "text-fg-3")}>
+                  <p className={cn("mt-0.5 truncate text-[10px]", truck.empty_now ? "font-bold text-warn" : "text-fg-3")}>
                     {truck.forecast}
                   </p>
                 ) : null}
@@ -236,15 +237,15 @@ export function PlannerGrid({
                         onDrop={(e) => onDrop(e, truck.id, i)}
                         className={cn(
                           "border-l border-border transition-colors",
-                          i === todayIdx && "bg-white/[0.03]",
+                          i === todayIdx && "bg-surface-2",
                           isEmpty && "planner-empty-day",
-                          isOver && "bg-accent-soft ring-1 ring-inset ring-orange/60"
+                          isOver && "bg-accent-soft ring-1 ring-inset ring-accent"
                         )}
                         title={isOff ? "Driver on approved time off" : isEmpty ? "Empty — drag a load here" : undefined}
                       >
                         {isOff ? (
-                          <div className="flex h-full items-center justify-center bg-gold/[0.08]">
-                            <CalendarOff className="h-3.5 w-3.5 text-gold/70" />
+                          <div className="flex h-full items-center justify-center bg-warn-soft">
+                            <CalendarOff className="h-3.5 w-3.5 text-warn" />
                           </div>
                         ) : null}
                       </div>

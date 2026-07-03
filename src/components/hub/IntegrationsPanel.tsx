@@ -66,7 +66,7 @@ export function IntegrationCard({ card, encryptionReady }: { card: ProviderCard;
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <h3 className="flex items-center gap-2 font-display text-sm font-bold uppercase tracking-wide text-fg">
-            <Cable className="h-4 w-4 text-gold" /> {card.title}
+            <Cable className="h-4 w-4 text-accent-text" /> {card.title}
           </h3>
           <p className="mt-0.5 text-body-xs text-fg-3">{card.blurb}</p>
         </div>
@@ -82,7 +82,7 @@ export function IntegrationCard({ card, encryptionReady }: { card: ProviderCard;
         </span>
       </div>
 
-      <p className="mt-2 rounded-lg bg-white/[0.03] px-2.5 py-1.5 text-[11px] text-fg-3">
+      <p className="mt-2 rounded-lg bg-surface-2 px-2.5 py-1.5 text-[11px] text-fg-3">
         Always works without it: {card.fallback}
       </p>
 
@@ -107,7 +107,7 @@ export function IntegrationCard({ card, encryptionReady }: { card: ProviderCard;
         ) : open ? (
           <form onSubmit={save} className="w-full space-y-2">
             {!encryptionReady ? (
-              <p className="rounded-lg border border-gold/30 bg-gold/[0.06] px-2.5 py-1.5 text-[11px] text-gold">
+              <p className="rounded-lg border border-warn-soft bg-warn-soft px-2.5 py-1.5 text-[11px] text-warn">
                 Set <code>CREDENTIALS_KEY</code> in the environment first — credentials are encrypted at rest.
               </p>
             ) : null}
@@ -136,7 +136,7 @@ export function IntegrationCard({ card, encryptionReady }: { card: ProviderCard;
         ) : (
           <button
             onClick={() => setOpen(true)}
-            className="flex min-h-[40px] items-center gap-1.5 rounded-xl border border-gold/40 bg-gold/10 px-4 text-sm font-bold text-gold hover:bg-gold/20"
+            className="flex min-h-[40px] items-center gap-1.5 rounded-xl bg-accent px-4 text-sm font-semibold text-accent-fg hover:bg-accent-hover"
           >
             Connect
           </button>

@@ -38,7 +38,7 @@ export function PortalAccessPanel({
   return (
     <Panel className="p-4 md:p-5">
       <h2 className="flex items-center gap-2 text-[13.5px] font-semibold text-fg mb-1">
-        <Globe className="h-4 w-4 text-gold" /> Portal access
+        <Globe className="h-4 w-4 text-accent-text" /> Portal access
       </h2>
       <p className="text-body-xs text-fg-3 mb-3">
         They track their own freight, download PODs and invoices, and stop calling dispatch.
@@ -57,8 +57,8 @@ export function PortalAccessPanel({
         </button>
       </form>
       {lastLink ? (
-        <p className="mt-2 break-all rounded-lg bg-white/[0.03] px-2.5 py-1.5 text-[11px] text-fg-3">
-          Backup link (if the email doesn&apos;t land): <span className="text-gold">{lastLink}</span>
+        <p className="mt-2 break-all rounded-lg bg-surface-2 px-2.5 py-1.5 text-[11px] text-fg-3">
+          Backup link (if the email doesn&apos;t land): <span className="text-accent-text">{lastLink}</span>
         </p>
       ) : null}
       {users.length > 0 ? (

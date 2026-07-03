@@ -58,7 +58,7 @@ export function ContactsPanel({ customerId, contacts }: { customerId: string; co
               onChange={(e) => setForm({ ...form, email: e.target.value })} />
           </div>
           <button type="submit" disabled={pending}
-            className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-gold/40 bg-gold/10 px-4 text-sm font-bold text-gold hover:bg-gold/20 disabled:opacity-50">
+            className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-accent px-4 text-sm font-semibold text-accent-fg hover:bg-accent-hover disabled:opacity-50">
             {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : null} Save contact
           </button>
         </form>
@@ -77,12 +77,12 @@ export function ContactsPanel({ customerId, contacts }: { customerId: string; co
                 </p>
                 <div className="flex flex-wrap gap-3 mt-0.5">
                   {contact.phone ? (
-                    <a href={`tel:${contact.phone}`} className="inline-flex items-center gap-1 text-body-xs text-gold">
+                    <a href={`tel:${contact.phone}`} className="inline-flex items-center gap-1 text-body-xs text-accent-text">
                       <Phone className="h-3 w-3" /> {contact.phone}
                     </a>
                   ) : null}
                   {contact.email ? (
-                    <a href={`mailto:${contact.email}`} className="inline-flex items-center gap-1 text-body-xs text-gold">
+                    <a href={`mailto:${contact.email}`} className="inline-flex items-center gap-1 text-body-xs text-accent-text">
                       <Mail className="h-3 w-3" /> {contact.email}
                     </a>
                   ) : null}
@@ -145,7 +145,7 @@ export function CrmNotesPanel({ customerId, activities }: { customerId: string; 
           className={fieldCls} value={body} onChange={(e) => setBody(e.target.value)}
         />
         <button type="submit" disabled={pending || !body.trim()}
-          className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl border border-gold/40 bg-gold/10 px-4 text-sm font-bold text-gold hover:bg-gold/20 disabled:opacity-50">
+          className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl bg-accent px-4 text-sm font-semibold text-accent-fg hover:bg-accent-hover disabled:opacity-50">
           {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : null} Log
         </button>
       </form>
