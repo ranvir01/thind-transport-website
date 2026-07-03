@@ -37,7 +37,7 @@ export function AnnouncementAckCard({
 
       {announcement.requires_ack ? (
         <div className="mt-3 space-y-2">
-          <SignaturePad onChange={setSignature} height={110} />
+          <SignaturePad onChange={setSignature} height={110} variant="dark" />
           <button
             onClick={ack}
             disabled={pending || !signature}
