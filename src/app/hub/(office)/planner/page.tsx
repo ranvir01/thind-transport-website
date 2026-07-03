@@ -71,7 +71,7 @@ export default async function PlannerPage({
       {data.backhaul.length > 0 ? (
         <Panel className="mt-4 p-4 md:p-5">
           <h2 className="flex items-center gap-2 text-[13.5px] font-semibold text-fg mb-1">
-            <Route className="h-4 w-4 text-gold" /> Backhaul ideas
+            <Route className="h-4 w-4 text-accent-text" /> Backhaul ideas
           </h2>
           <p className="text-body-xs text-fg-3 mb-3">
             Where these trucks go empty, here&apos;s what has paid out of that market before — best margin first.
@@ -79,7 +79,7 @@ export default async function PlannerPage({
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
             {data.backhaul.map((hint) => (
               <div key={hint.truckUnit} className="rounded-xl border border-border bg-white/[0.03] p-3">
-                <p className="text-[11px] font-bold uppercase tracking-wider text-gold">
+                <p className="text-[11px] font-bold uppercase tracking-wider text-accent-text">
                   #{hint.truckUnit} · empty in {hint.market}
                 </p>
                 <ul className="mt-1.5 space-y-1">
@@ -97,7 +97,7 @@ export default async function PlannerPage({
                 </ul>
                 <Link
                   href="/hub/loads/new"
-                  className="mt-2 inline-flex text-body-xs font-semibold text-gold hover:text-gold/80"
+                  className="mt-2 inline-flex text-body-xs font-semibold text-accent-text hover:underline"
                 >
                   Book something like this →
                 </Link>
@@ -109,7 +109,7 @@ export default async function PlannerPage({
 
       <p className="mt-3 text-body-xs text-fg-3">
         Drive-time forecasts are estimates from the last known position — the ELD is always the authority.
-        Striped gold days are approved driver time off; dispatch can&apos;t book over them.
+        Striped amber days are approved driver time off; dispatch can&apos;t book over them.
       </p>
     </div>
   )

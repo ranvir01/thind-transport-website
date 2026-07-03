@@ -49,7 +49,7 @@ export default async function FacilitiesPage({
             const risk = detentionRisk(f.avg_dwell_minutes, freeMinutes)
             return (
               <Link key={f.id} href={`/hub/facilities/${f.id}`} className="flex items-center gap-3 p-3.5 hover:bg-hover">
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-surface-2 text-gold">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-surface-2 text-accent-text">
                   <Warehouse className="h-5 w-5" />
                 </span>
                 <span className="min-w-0 flex-1">
@@ -70,7 +70,7 @@ export default async function FacilitiesPage({
                       risk === "high"
                         ? "border-accent/40 bg-accent/10 text-orange"
                         : risk === "warn"
-                          ? "border-gold/40 bg-gold/10 text-gold"
+                          ? "border-warn/40 bg-warn-soft text-warn"
                           : "border-border-strong bg-surface-2 text-fg-2"
                     )}
                   >

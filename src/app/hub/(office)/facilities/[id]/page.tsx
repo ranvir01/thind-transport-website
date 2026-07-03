@@ -54,7 +54,7 @@ export default async function FacilityDetailPage({ params }: { params: Promise<{
               risk === "high"
                 ? "border-accent/40 bg-accent/10 text-orange"
                 : risk === "warn"
-                  ? "border-gold/40 bg-gold/10 text-gold"
+                  ? "border-warn/40 bg-warn-soft text-warn"
                   : "border-green-500/30 bg-green-500/10 text-green-400"
             )}
           >

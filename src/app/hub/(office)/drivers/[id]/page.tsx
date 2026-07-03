@@ -75,14 +75,14 @@ export default async function DriverDetailPage({ params }: { params: Promise<{ i
                 <h2 className="text-[13.5px] font-semibold text-fg">
                   How {driver.first_name} gets paid
                 </h2>
-                <span className="rounded-full border border-gold/40 bg-gold/10 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-gold">
+                <span className="rounded-full border border-accent/30 bg-accent-soft px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-accent-text">
                   {payRules!.isAuto ? "Standard plan" : "Custom plan"}
                 </span>
               </div>
               <ul className="space-y-1.5">
                 {payDescription.earnings.map((line) => (
                   <li key={line} className="flex items-start gap-2 text-body-sm text-fg-2">
-                    <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-gold" /> {line}
+                    <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-accent" /> {line}
                   </li>
                 ))}
               </ul>

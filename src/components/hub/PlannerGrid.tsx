@@ -19,8 +19,8 @@ import type { TimeOffRequest } from "@/lib/hub/types"
 
 const LANE_HEIGHT = 46
 const STATUS_COLORS: Record<string, string> = {
-  quoted: "border-steel-400/40 bg-steel-500/20 text-fg-2",
-  booked: "border-gold/50 bg-gold/15 text-gold",
+  quoted: "border-border bg-surface-2 text-fg-3",
+  booked: "border-warn/40 bg-warn-soft text-warn",
   dispatched: "border-orange/50 bg-accent/20 text-orange",
   at_pickup: "border-accent/60 bg-accent-soft text-accent-text",
   in_transit: "border-green-500/50 bg-green-500/15 text-green-300",
@@ -150,7 +150,7 @@ export function PlannerGrid({
                 key={day}
                 className={cn(
                   "px-2 py-2 text-center text-[11px] font-bold uppercase tracking-wider",
-                  i === todayIdx ? "text-gold" : "text-fg-3"
+                  i === todayIdx ? "text-accent-text" : "text-fg-3"
                 )}
               >
                 {date.toLocaleDateString("en-US", { weekday: "short" })}{" "}
@@ -164,8 +164,8 @@ export function PlannerGrid({
 
         {/* Unassigned tray */}
         {unassigned.length > 0 ? (
-          <div className="mb-2 rounded-xl border border-dashed border-gold/40 bg-gold/[0.05] p-2">
-            <p className="px-1 pb-1 text-[10px] font-bold uppercase tracking-[0.2em] text-gold">
+          <div className="mb-2 rounded-xl border border-dashed border-warn/40 bg-warn-soft p-2">
+            <p className="px-1 pb-1 text-[10px] font-bold uppercase tracking-[0.2em] text-warn">
               Needs a truck — drag onto the grid
             </p>
             <div className="flex flex-wrap gap-2">
@@ -212,7 +212,7 @@ export function PlannerGrid({
                 </p>
                 <p className="truncate text-[11px] text-fg-3">{truck.driver_name ?? "No driver seated"}</p>
                 {truck.forecast ? (
-                  <p className={cn("mt-0.5 truncate text-[10px]", truck.empty_now ? "font-bold text-gold" : "text-fg-3")}>
+                  <p className={cn("mt-0.5 truncate text-[10px]", truck.empty_now ? "font-bold text-warn" : "text-fg-3")}>
                     {truck.forecast}
                   </p>
                 ) : null}
@@ -243,8 +243,8 @@ export function PlannerGrid({
                         title={isOff ? "Driver on approved time off" : isEmpty ? "Empty — drag a load here" : undefined}
                       >
                         {isOff ? (
-                          <div className="flex h-full items-center justify-center bg-gold/[0.08]">
-                            <CalendarOff className="h-3.5 w-3.5 text-gold/70" />
+                          <div className="flex h-full items-center justify-center bg-warn-soft">
+                            <CalendarOff className="h-3.5 w-3.5 text-warn" />
                           </div>
                         ) : null}
                       </div>
