@@ -35,3 +35,39 @@ HaulDesk uses three languages with fixed boundaries (see `docs/architecture/tril
 | **Rust** | `services/rust/hauldesk-compute` — IFTA math, routing compute, bulk import (`HAULDESK_RUST_COMPUTE_URL`) |
 
 Sidecars are optional: when env vars are unset, `src/lib/hub/sidecars.ts` falls back to pure TS. Do not add microservices beyond one Go + one Rust binary at V1 scale.
+
+## HaulDesk hub — standing rules (learned in production, do not regress)
+
+- **Money is integer cents** everywhere; user input goes through `dollarsToCents`; rounding via
+  `roundHalfAwayFromZero`.
+- **Permissions are enforced in server actions** (`requirePermission` in `src/app/hub/_actions/*`),
+  never UI-only. Money-adjacent mutations are audited via `logAudit`.
+- **Every query is carrier-scoped** (`carrier_id = $1`) — cross-table writes must guard tenancy on
+  BOTH sides (see `assignFuelToLoad`).
+- **No mode-dependent tokens on forced-dark surfaces**: `/hub/driver/*` and `/hub/portal/*` never use
+  `text-fg*`, `bg-surface*`, `border-border*` — they use `text-white` / `text-steel-*` / `bg-navy-*` /
+  `border-white/*`. (The fg tokens resolve to light-mode values there and made text invisible.)
+- **Office screens use only semantic tokens**: `accent-text` for money/links, `warn`/`warn-soft` for
+  needs-attention, `bad` for red, surface/border/fg scales for the rest. No `gold`/`navy`/`steel` in
+  `(office)` routes.
+- **Never `bg-surface/95`-style opacity modifiers on CSS-var colors** — Tailwind drops the class silently.
+- **Rust/TS golden parity**: any change to `ifta.test.ts` fixtures must update
+  `services/rust/hauldesk-compute` tests in the same commit (`npm run test:sidecars`).
+- **Migrations**: append-only `migrations/hub/NNN_*.sql`, idempotent (`IF NOT EXISTS`), applied via
+  `npm run db:migrate`; production readiness is checked with `npm run go-live:check`.
+
+## The improvement loop (how this codebase self-improves)
+
+Every change, agent or human, walks the same loop — see `docs/agent-improvement-loop.md` for the
+full playbook and ready-made prompts:
+
+1. **Sync** — `git pull`; read the newest commits before assuming anything.
+2. **Pick** — take the top item from the backlog section of the latest brief/commit, or run a debug
+   sweep to find one.
+3. **Build** — smallest change that ships value; follow the standing rules above.
+4. **Verify** — `npm run build` + `npx vitest run` (+ `npm run test:sidecars` if Go/Rust touched)
+   + visual check of changed screens (local Postgres: `npm run db:migrate && npm run seed:demo`,
+   then drive the real UI — demo logins in `scripts/seed-demo.mjs`).
+5. **Ship** — commit with a one-line why, push, merge to `main` (Vercel deploys `main`).
+6. **Record** — end the commit body or PR with a `Backlog:` list of follow-ups you saw but didn't
+   take; the next agent starts there. Never leave discovered defects unrecorded.
