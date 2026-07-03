@@ -89,7 +89,7 @@ export default async function TodayPage() {
           {stats.awaiting_pod > 0 ? (
             <Link
               href="/hub/loads?status=delivered"
-              className="flex items-center justify-between gap-3 rounded-card border border-warn-soft bg-warn-soft/40 px-4 py-3 hover:bg-warn-soft"
+              className="flex items-center justify-between gap-3 rounded-card border border-warn-soft bg-warn-soft px-4 py-3 hover:border-warn"
             >
               <div className="min-w-0">
                 <p className="font-semibold text-fg">{stats.awaiting_pod} delivered, POD not in</p>
@@ -101,7 +101,7 @@ export default async function TodayPage() {
           {today.arOverdue.count > 0 ? (
             <Link
               href="/hub/money/invoices"
-              className="flex items-center justify-between gap-3 rounded-card border border-bad-soft bg-bad-soft/40 px-4 py-3 hover:bg-bad-soft"
+              className="flex items-center justify-between gap-3 rounded-card border border-bad-soft bg-bad-soft px-4 py-3 hover:border-bad"
             >
               <div className="min-w-0">
                 <p className="font-semibold text-fg">
@@ -167,7 +167,7 @@ export default async function TodayPage() {
 
         {/* Unacknowledged dispatches */}
         {today.unacked.length > 0 ? (
-          <Panel className="p-4 border-accent/30">
+          <Panel className="p-4 border-accent">
             <h2 className="flex items-center gap-2 text-[13.5px] font-semibold text-fg mb-2">
               <BellOff className="h-4 w-4 text-warn" /> Driver hasn&apos;t confirmed ({today.unacked.length})
             </h2>
@@ -232,7 +232,7 @@ export default async function TodayPage() {
 
         {/* Money you haven't invoiced */}
         {today.unbilled.length > 0 ? (
-          <Panel className="p-4 border-accent/30" data-tour="today-unbilled">
+          <Panel className="p-4 border-accent" data-tour="today-unbilled">
             <h2 className="flex items-center gap-2 text-[13.5px] font-semibold text-fg mb-2">
               <Receipt className="h-4 w-4 text-accent-text" /> Money you haven&apos;t invoiced yet
             </h2>

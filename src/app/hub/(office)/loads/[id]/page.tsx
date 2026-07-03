@@ -151,7 +151,7 @@ export default async function LoadDetailPage({ params }: { params: Promise<{ id:
                         stop.departed_at
                           ? "border-emerald-400/40 bg-emerald-500/15 text-emerald-300"
                           : stop.arrived_at
-                            ? "border-warn/40 bg-warn-soft text-warn"
+                            ? "border-warn-soft bg-warn-soft text-warn"
                             : "border-border-strong bg-surface-2 text-fg-2"
                       }`}
                     >

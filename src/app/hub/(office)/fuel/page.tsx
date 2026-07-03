@@ -89,7 +89,7 @@ export default async function FuelPage() {
 
           {/* Fraud flags */}
           {fraudFlags.length > 0 ? (
-            <Panel className="p-4 mb-4 border-warn/30">
+            <Panel className="p-4 mb-4 border-warn">
               <div className="flex items-center gap-2 mb-2">
                 <AlertTriangle className="h-4 w-4 text-warn" />
                 <h2 className="text-[13.5px] font-semibold text-fg">Flags</h2>

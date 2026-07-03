@@ -96,7 +96,7 @@ export default async function IftaPage({
           </div>
 
           {(report.report?.missingRates?.length ?? 0) > 0 ? (
-            <Panel className="p-4 mb-4 border-warn/30">
+            <Panel className="p-4 mb-4 border-warn">
               <p className="text-body-sm text-warn font-semibold">
                 Missing rates for: {report.report.missingRates!.join(", ")} — import below and recompute.
               </p>

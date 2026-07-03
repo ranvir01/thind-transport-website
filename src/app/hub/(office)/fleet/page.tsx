@@ -53,7 +53,7 @@ export default async function FleetPage({
           href="/hub/fleet"
           className={cn(
             "min-h-[44px] inline-flex items-center rounded-xl px-5 text-sm font-bold",
-            !showTrailers ? "bg-accent-soft text-accent-text border border-accent/30" : "text-fg-2 hover:bg-hover border border-border"
+            !showTrailers ? "bg-accent-soft text-accent-text border border-accent-soft" : "text-fg-2 hover:bg-hover border border-border"
           )}
         >
           Trucks ({trucks.length})
@@ -62,7 +62,7 @@ export default async function FleetPage({
           href="/hub/fleet?tab=trailers"
           className={cn(
             "min-h-[44px] inline-flex items-center rounded-xl px-5 text-sm font-bold",
-            showTrailers ? "bg-accent-soft text-accent-text border border-accent/30" : "text-fg-2 hover:bg-hover border border-border"
+            showTrailers ? "bg-accent-soft text-accent-text border border-accent-soft" : "text-fg-2 hover:bg-hover border border-border"
           )}
         >
           Trailers ({trailers.length})

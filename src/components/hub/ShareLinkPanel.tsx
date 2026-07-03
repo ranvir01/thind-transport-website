@@ -100,7 +100,7 @@ export function ShareLinkPanel({ loadId, links }: { loadId: string; links: Share
         </ul>
       )}
       {latestToken ? (
-        <p className="mt-3 rounded-lg border border-accent/30 bg-accent-soft p-2.5 text-body-xs text-accent-text break-all">
+        <p className="mt-3 rounded-lg border border-accent-soft bg-accent-soft p-2.5 text-body-xs text-accent-text break-all">
           {typeof window !== "undefined" ? `${window.location.origin}/track/${latestToken}` : `/track/${latestToken}`}
         </p>
       ) : null}

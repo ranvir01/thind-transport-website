@@ -50,7 +50,7 @@ export default async function CompliancePage() {
           <span className="text-label text-red-300 uppercase">Expired / overdue</span>
           <p className="mt-2 font-display text-3xl font-extrabold text-red-300">{summary.red}</p>
         </Panel>
-        <Panel className="p-4 border-warn/30">
+        <Panel className="p-4 border-warn-soft">
           <span className="text-label text-warn uppercase">Due in 30 days</span>
           <p className="mt-2 font-display text-3xl font-extrabold text-warn">{summary.amber}</p>
         </Panel>
