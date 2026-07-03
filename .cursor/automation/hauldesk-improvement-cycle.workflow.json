@@ -1,0 +1,28 @@
+{
+  "name": "HaulDesk improvement cycle (3a)",
+  "description": "After each push to main, run one ranked backlog item (prompt 3a). Skips when nothing actionable remains.",
+  "workflow": {
+    "triggers": [
+      {
+        "git": {
+          "push": {
+            "repo": "ranvir01/thind-transport-website",
+            "branch": "main"
+          }
+        }
+      }
+    ],
+    "actions": [],
+    "prompts": [
+      "Run the HaulDesk improvement cycle (prompt 3a).\n\nRead AGENTS.md standing rules and execute every step in .cursor/automation/hauldesk-improvement-cycle.prompt.md.\n\nRepo: ranvir01/thind-transport-website, branch main.\n\nAfter shipping (or skipping), post a short summary: item picked or skip reason, verify results, remaining Backlog."
+    ],
+    "gitConfig": {
+      "repo": "ranvir01/thind-transport-website",
+      "branch": "main"
+    },
+    "agentOptions": {
+      "skipInstall": false
+    },
+    "memoryEnabled": true
+  }
+}

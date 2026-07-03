@@ -1,0 +1,58 @@
+# Launches a Cursor cloud agent to run prompt 3a after each push to main.
+# Requires CURSOR_API_KEY in repo secrets (Cursor Dashboard → API Keys).
+# Anti-loop: skips commits whose subject starts with "Improvement cycle:".
+name: HaulDesk improvement cycle (3a)
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: hauldesk-improvement-cycle
+  cancel-in-progress: false
+
+jobs:
+  launch:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (
+        github.event.head_commit != null &&
+        !startsWith(github.event.head_commit.message, 'Improvement cycle:') &&
+        !contains(github.event.head_commit.message, '[skip-improvement-cycle]')
+      )
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Launch Cursor cloud agent
+        env:
+          CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${CURSOR_API_KEY:-}" ]; then
+            echo "::notice::CURSOR_API_KEY is not set. Add it under Settings → Secrets → Actions to enable automatic improvement cycles."
+            exit 0
+          fi
+
+          jq -n \
+            --rawfile text .cursor/automation/hauldesk-improvement-cycle.prompt.md \
+            '{
+              name: "HaulDesk improvement cycle (3a)",
+              prompt: { text: $text },
+              repos: [{
+                url: "https://github.com/ranvir01/thind-transport-website",
+                startingRef: "main"
+              }],
+              workOnCurrentBranch: true,
+              autoCreatePR: false
+            }' > /tmp/agent-payload.json
+
+          response="$(curl -fsS --request POST \
+            --url https://api.cursor.com/v1/agents \
+            -u "${CURSOR_API_KEY}:" \
+            --header 'Content-Type: application/json' \
+            --data @/tmp/agent-payload.json)"
+
+          echo "$response" | jq -r '.agent.id // .id // "launched"' | xargs -I{} echo "Cursor agent launched: {}"

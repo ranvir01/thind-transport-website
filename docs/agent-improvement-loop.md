@@ -93,12 +93,15 @@ Launch together, merge in any order.
 > build it under AGENTS.md rules; verify (build, tests, sidecars if touched, visual if UI); push to main;
 > end your commit body with an updated `Backlog:`. One item per cycle — small and shippable beats big.
 
-**Cursor Automation (background):** A cloud agent can run 3a automatically after each push to `main`.
-Prompt lives at `.cursor/automation/hauldesk-improvement-cycle.prompt.md`. In Cursor → Automations,
-create a **Push to branch** trigger on `ranvir01/thind-transport-website` / `main`, point the agent at
-that repo, and paste the prompt file contents (or `@` mention the file). Enable Cloud compute. The agent
-includes an anti-loop guard: it skips when backlog is polish-only or HEAD is already an improvement-cycle
-commit with no P0/P1 items left.
+**Background automation (two paths):**
+
+| Path | How |
+|------|-----|
+| **GitHub Action** (recommended) | `.github/workflows/hauldesk-improvement-cycle.yml` — add `CURSOR_API_KEY` to repo secrets; runs on every push to `main`. Setup: `.cursor/automation/README.md` |
+| **Cursor Automations UI** | Push-to-`main` trigger; draft in `.cursor/automation/hauldesk-improvement-cycle.workflow.json`; prompt in `hauldesk-improvement-cycle.prompt.md` |
+
+Both use the same prompt and anti-loop rules: skip when backlog is polish-only, or when HEAD is
+already an `Improvement cycle:` commit with no P0/P1 items left.
 
 ### 3b. Release gate (before any deploy is called done)
 > Verify the release: `npm run build`, `npx vitest run`, `npm run test:sidecars`; then against production
