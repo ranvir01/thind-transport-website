@@ -8,6 +8,7 @@ import { Panel, PageHeader, BackLink } from "@/components/hub/ui"
 import { AdvanceForm } from "@/components/hub/MoneyForms"
 import { AdvanceDecideButtons } from "@/components/hub/AdvanceDecideButtons"
 import { cn } from "@/lib/utils"
+import { formatHubDateShort } from "@/lib/hub/format-dates"
 
 export const dynamic = "force-dynamic"
 
@@ -64,7 +65,7 @@ export default async function AdvancesPage() {
                 <div className="min-w-0">
                   <p className="font-semibold text-fg">{advance.driver_name}</p>
                   <p className="text-body-xs text-fg-3">
-                    {String(advance.issued_on).slice(0, 10)}{advance.reference ? ` · ${advance.reference}` : ""}
+                    {formatHubDateShort(advance.issued_on)}{advance.reference ? ` · ${advance.reference}` : ""}
                   </p>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">

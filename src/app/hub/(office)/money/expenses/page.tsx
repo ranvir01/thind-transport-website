@@ -4,6 +4,7 @@ import { listTrucks } from "@/lib/hub/fleet"
 import { requirePermissionPage } from "@/lib/hub/session"
 import { can } from "@/lib/hub/permissions"
 import { fmtCentsExact } from "@/lib/hub/types"
+import { formatHubDateShort } from "@/lib/hub/format-dates"
 import { Panel, PageHeader, BackLink } from "@/components/hub/ui"
 import { ExpenseForm } from "@/components/hub/MoneyForms"
 
@@ -40,7 +41,7 @@ export default async function ExpensesPage() {
                     {expense.memo ? <span className="font-normal text-fg-2"> — {expense.memo}</span> : null}
                   </p>
                   <p className="text-body-xs text-fg-3">
-                    {String(expense.incurred_on).slice(0, 10)}
+                    {formatHubDateShort(expense.incurred_on)}
                     {expense.truck_unit ? ` · #${expense.truck_unit}` : ""}
                     {expense.driver_name ? ` · ${expense.driver_name}` : ""}
                     {expense.reimbursable ? ` · reimbursable${expense.settled_line_id ? " (settled)" : ""}` : ""}

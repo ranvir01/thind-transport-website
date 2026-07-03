@@ -6,6 +6,7 @@ import { query } from "@/lib/hub/db"
 import { requirePermissionPage } from "@/lib/hub/session"
 import { can } from "@/lib/hub/permissions"
 import { fmtCentsExact } from "@/lib/hub/types"
+import { formatHubDateShort } from "@/lib/hub/format-dates"
 import { Panel, PageHeader, BackLink } from "@/components/hub/ui"
 import { RecordPaymentForm, InvoiceActions } from "@/components/hub/MoneyActions"
 
@@ -50,8 +51,8 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
             <h2 className="text-[13.5px] font-semibold text-fg mb-3">Summary</h2>
             <dl className="space-y-2 text-sm">
               <div className="flex justify-between"><dt className="text-fg-2">Status</dt><dd className="text-fg font-semibold uppercase">{invoice.status}</dd></div>
-              <div className="flex justify-between"><dt className="text-fg-2">Issued</dt><dd className="text-fg font-semibold">{String(invoice.issued_on).slice(0, 10)}</dd></div>
-              <div className="flex justify-between"><dt className="text-fg-2">Due</dt><dd className="text-fg font-semibold">{String(invoice.due_on).slice(0, 10)}</dd></div>
+              <div className="flex justify-between"><dt className="text-fg-2">Issued</dt><dd className="text-fg font-semibold">{formatHubDateShort(invoice.issued_on)}</dd></div>
+              <div className="flex justify-between"><dt className="text-fg-2">Due</dt><dd className="text-fg font-semibold">{formatHubDateShort(invoice.due_on)}</dd></div>
               <div className="flex justify-between"><dt className="text-fg-2">Amount</dt><dd className="text-fg font-semibold">{fmtCentsExact(invoice.amount_cents)}</dd></div>
               <div className="flex justify-between"><dt className="text-fg-2">Paid</dt><dd className="text-fg font-semibold">{fmtCentsExact(invoice.paid_cents ?? 0)}</dd></div>
               <div className="flex justify-between border-t border-border pt-2">
@@ -109,7 +110,7 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
                 {payments.map((payment) => (
                   <li key={payment.id} className="flex items-center justify-between py-2.5 text-sm">
                     <span className="text-fg-2">
-                      {String(payment.paid_on).slice(0, 10)}
+                      {formatHubDateShort(payment.paid_on)}
                       {payment.method ? ` · ${payment.method}` : ""}
                       {payment.reference ? ` · ${payment.reference}` : ""}
                     </span>

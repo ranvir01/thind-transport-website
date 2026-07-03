@@ -6,6 +6,7 @@ import { fmtCents } from "@/lib/hub/types"
 import { Panel, PageHeader, BackLink, EmptyState } from "@/components/hub/ui"
 import { DraftSettlementsButton } from "@/components/hub/MoneyActions"
 import { cn } from "@/lib/utils"
+import { formatHubDateShort } from "@/lib/hub/format-dates"
 
 import { HelpTip } from "@/components/hub/HelpTip"
 
@@ -63,7 +64,7 @@ export default async function SettlementsPage() {
                       </span>
                     </div>
                     <p className="text-body-sm text-fg-2 mt-1">
-                      {String(settlement.period_start).slice(0, 10)} — {String(settlement.period_end).slice(0, 10)}
+                      {formatHubDateShort(settlement.period_start)} — {formatHubDateShort(settlement.period_end)}
                     </p>
                   </div>
                   <div className="text-right shrink-0">
