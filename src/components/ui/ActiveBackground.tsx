@@ -5,10 +5,10 @@ import { usePathname } from "next/navigation"
 /** Static industrial backdrop: blueprint grid + soft warm accent glow. No mouse-spotlight. */
 export const ActiveBackground = () => {
   const pathname = usePathname()
-  // The hub is an app with its own bg (bg-bg / forced navy) — the marketing orbs and
-  // grid must not glow through behind it. /track keeps the backdrop: that page has no
-  // background of its own and is styled white-on-dark against this one.
-  if (pathname.startsWith("/hub")) return null
+  // The hub is an app with its own bg (bg-bg / forced navy) and /track carries its
+  // own dark canvas (src/app/track/layout.tsx) — the marketing orbs and grid must
+  // not glow through behind either.
+  if (pathname.startsWith("/hub") || pathname.startsWith("/track")) return null
   return (
     <div className="fixed inset-0 z-[-1] overflow-hidden bg-[#080d12]" aria-hidden>
       {/* Blueprint grid */}
