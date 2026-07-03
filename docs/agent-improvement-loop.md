@@ -95,10 +95,10 @@ Launch together, merge in any order.
 
 **Background automation (subscription — no API key):**
 
-Use **Cursor Automations** so runs draw from your plan’s Auto/Composer/cloud-agent usage, not a
-separate API bill. Setup: `.cursor/automation/README.md` — trigger **Push to branch** on
-`ranvir01/thind-transport-website` / `main`, prompt from `hauldesk-improvement-cycle.prompt.md`,
-draft in `hauldesk-improvement-cycle.workflow.json`. Anti-loop rules are in the prompt file.
+Use **Cursor Automations** on an **hourly schedule** (`59 * * * *`, model **Auto**, repo
+`ranvir01/thind-transport-website` / `main`). Setup: `.cursor/automation/README.md` — prompt in
+`hauldesk-improvement-cycle.prompt.md`, editor draft in `hauldesk-improvement-cycle.workflow.json`.
+Each run merges `claude/hauldesk-project-setup-l1luoo` when ahead of `main`, then ships one backlog item or stops if green and empty.
 
 ### 3b. Release gate (before any deploy is called done)
 > Verify the release: `npm run build`, `npx vitest run`, `npm run test:sidecars`; then against production
