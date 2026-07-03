@@ -85,6 +85,14 @@ Sidecars have no user auth of their own — they trust the TS gateway. Two rules
 2. **Sidecars never touch Postgres.** All tenancy/permission checks stay in the TS layer;
    sidecars compute on what the gateway hands them and hand it back.
 
+## Golden parity
+
+The Rust IFTA engine carries the TS golden fixtures as `cargo test` (`make rust-test` /
+`npm run test:sidecars`): the hand-computed surcharge quarter, the reefer-exemption
+fixture, missing-rate flagging, and a JSON contract test that parses the exact camelCase
+payload `sidecars.ts` sends. Keep the two test suites in lockstep — a change to
+`ifta.test.ts` numbers must land here in the same commit.
+
 ## Enforcement
 
 - New **UI or CRUD** → TypeScript under `src/`.

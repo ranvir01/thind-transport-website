@@ -1,5 +1,7 @@
 //! HaulDesk compute sidecar — IFTA penny math and other correctness-critical work.
-//! Mirrors `src/lib/hub/ifta-core.ts` until golden-fixture parity is verified.
+//! Mirrors `src/lib/hub/ifta-core.ts`; golden-fixture parity is enforced by the
+//! test module below (`cargo test`), which copies every fixture and expected
+//! penny from the TS suites.
 //!
 //! Security: when HAULDESK_SIDECAR_SECRET is set, every route except /health
 //! requires a matching X-Hauldesk-Secret header (sent by src/lib/hub/sidecars.ts
@@ -18,6 +20,7 @@ struct IftaInputs {
 }
 
 #[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
 struct RateEntry {
     rate: f64,
     #[serde(default)]
@@ -58,7 +61,7 @@ fn round_half_away_from_zero(x: f64) -> i64 {
     }
 }
 
-/// Port of `computeIfta` in `src/lib/hub/ifta-core.ts` (stub — verify against golden fixtures).
+/// Port of `computeIfta` in `src/lib/hub/ifta-core.ts` (golden parity: see tests).
 fn compute_ifta(inputs: &IftaInputs) -> IftaResult {
     let mut jurisdictions = BTreeSet::new();
     jurisdictions.extend(inputs.miles_by_jurisdiction.keys().cloned());
@@ -133,7 +136,7 @@ fn compute_ifta(inputs: &IftaInputs) -> IftaResult {
         rows,
         net_tax_cents,
         missing_rates,
-        source: "rust-compute-stub",
+        source: "rust-compute",
     }
 }
 
@@ -204,5 +207,151 @@ fn main() {
         };
 
         let _ = request.respond(response);
+    }
+}
+#[cfg(test)]
+mod tests {
+    //! Golden-parity suite: every fixture and expected penny below is copied
+    //! from `src/lib/hub/__tests__/ifta.test.ts` and `fuel-use.test.ts`.
+    //! If these pass, the Rust engine is line-for-line compatible with the TS
+    //! engine — the precondition for ever setting HAULDESK_RUST_COMPUTE_URL
+    //! in production. Change a number here only when the TS golden changes.
+    use super::*;
+
+    fn inputs(
+        miles: &[(&str, f64)],
+        gallons: &[(&str, f64)],
+        rates: &[(&str, f64, Option<f64>)],
+    ) -> IftaInputs {
+        IftaInputs {
+            miles_by_jurisdiction: miles.iter().map(|(j, m)| (j.to_string(), *m)).collect(),
+            gallons_by_jurisdiction: gallons.iter().map(|(j, g)| (j.to_string(), *g)).collect(),
+            rates: rates
+                .iter()
+                .map(|(j, r, s)| {
+                    (
+                        j.to_string(),
+                        RateEntry {
+                            rate: *r,
+                            surcharge_rate: *s,
+                        },
+                    )
+                })
+                .collect(),
+        }
+    }
+
+    fn row<'a>(result: &'a IftaResult, jurisdiction: &str) -> &'a IftaReportRow {
+        result
+            .rows
+            .iter()
+            .find(|r| r.jurisdiction == jurisdiction)
+            .unwrap_or_else(|| panic!("missing row {jurisdiction}"))
+    }
+
+    /// ifta.test.ts "IFTA golden fixture (hand-computed, surcharge state included)"
+    #[test]
+    fn golden_fixture_surcharge_quarter() {
+        let result = compute_ifta(&inputs(
+            &[("WA", 4000.0), ("ID", 1000.0), ("IN", 2000.0)],
+            &[("WA", 600.0), ("ID", 100.0), ("IN", 300.0)],
+            &[
+                ("WA", 0.494, None),
+                ("ID", 0.33, None),
+                ("IN", 0.55, Some(0.11)),
+            ],
+        ));
+
+        assert_eq!(result.fleet_miles, 7000.0);
+        assert_eq!(result.fleet_gallons, 1000.0);
+        assert_eq!(result.mpg, 7.0);
+
+        let wa = row(&result, "WA");
+        assert_eq!(wa.tax_cents, -1411);
+        assert_eq!(wa.surcharge_cents, 0);
+
+        assert_eq!(row(&result, "ID").tax_cents, 1414);
+
+        let indiana = row(&result, "IN");
+        assert_eq!(indiana.tax_cents, -786);
+        assert_eq!(indiana.surcharge_cents, 3143);
+        assert_eq!(indiana.net_cents, 2357);
+
+        assert_eq!(result.net_tax_cents, 2360); // $23.60 due
+        assert!(result.missing_rates.is_empty());
+    }
+
+    /// ifta.test.ts "flags jurisdictions traveled without a rate on file"
+    #[test]
+    fn missing_rates_flagged() {
+        let result = compute_ifta(&inputs(
+            &[("WA", 100.0), ("MT", 50.0)],
+            &[("WA", 20.0)],
+            &[("WA", 0.494, None)],
+        ));
+        assert_eq!(result.missing_rates, vec!["MT".to_string()]);
+        assert_eq!(row(&result, "MT").net_cents, 0);
+    }
+
+    /// fuel-use.test.ts reefer-exemption golden: correctly classified reefer
+    /// gallons (absent from tax-paid) vs the bug where they leak in as tractor.
+    #[test]
+    fn reefer_exemption_parity() {
+        let miles = [("WA", 9000.0), ("OR", 4500.0)];
+        let rates = [("WA", 0.494, None), ("OR", 0.0, None)];
+
+        // Correct: 13,500 mi ÷ 1,800 gal = 7.5 MPG; WA credit == taxable → $0.00.
+        let correct = compute_ifta(&inputs(&miles, &[("WA", 1200.0), ("OR", 600.0)], &rates));
+        assert_eq!(correct.mpg, 7.5);
+        assert_eq!(correct.fleet_gallons, 1800.0);
+        assert_eq!(row(&correct, "WA").net_cents, 0);
+
+        // Buggy: reefer gallons counted → 2,040 gal; WA owes $4.94 that isn't real.
+        let buggy = compute_ifta(&inputs(&miles, &[("WA", 1350.0), ("OR", 690.0)], &rates));
+        assert_eq!(buggy.fleet_gallons, 2040.0);
+        assert_eq!(row(&buggy, "WA").net_cents, 494);
+        assert!(buggy.mpg < correct.mpg);
+    }
+
+    /// No gallons at all: MPG 0, nothing taxable, nothing owed (no divide-by-zero).
+    #[test]
+    fn zero_gallons_zero_mpg() {
+        let result = compute_ifta(&inputs(&[("WA", 500.0)], &[], &[("WA", 0.494, None)]));
+        assert_eq!(result.mpg, 0.0);
+        assert_eq!(row(&result, "WA").taxable_gallons, 0.0);
+        assert_eq!(result.net_tax_cents, 0);
+    }
+
+    /// The exact camelCase JSON the TS gateway (sidecars.ts) sends must parse,
+    /// and the reply must serialize with the field names IftaResult uses in TS.
+    #[test]
+    fn json_contract_matches_ts_gateway() {
+        let body = r#"{
+            "milesByJurisdiction": {"WA": 4000, "ID": 1000, "IN": 2000},
+            "gallonsByJurisdiction": {"WA": 600, "ID": 100, "IN": 300},
+            "rates": {
+                "WA": {"rate": 0.494},
+                "ID": {"rate": 0.33},
+                "IN": {"rate": 0.55, "surchargeRate": 0.11}
+            }
+        }"#;
+        let parsed: IftaInputs = serde_json::from_str(body).expect("gateway JSON must parse");
+        let result = compute_ifta(&parsed);
+        assert_eq!(result.net_tax_cents, 2360);
+
+        let json = serde_json::to_string(&result).expect("must serialize");
+        for key in [
+            "fleetMiles",
+            "fleetGallons",
+            "mpg",
+            "taxableGallons",
+            "taxPaidGallons",
+            "surchargeCents",
+            "netCents",
+            "netTaxCents",
+            "missingRates",
+        ] {
+            assert!(json.contains(key), "missing camelCase key {key} in {json}");
+        }
     }
 }

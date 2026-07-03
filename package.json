@@ -14,7 +14,8 @@
     "seed:demo": "node scripts/seed-demo.mjs",
     "test": "vitest run",
     "go-build": "make go-build",
-    "rust-build": "make rust-build"
+    "rust-build": "make rust-build",
+    "test:sidecars": "make test-sidecars"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
