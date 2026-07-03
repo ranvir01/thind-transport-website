@@ -34,7 +34,7 @@ export default async function PlatformAdminPage() {
       <div className="mx-auto max-w-4xl">
         <div className="mb-6 flex items-center justify-between">
           <div>
-            <span className="brand-wordmark text-xl font-semibold text-fg tracking-[0.14em]">
+            <span className="brand-wordmark text-xl font-semibold text-white tracking-[0.14em]">
               {PRODUCT.wordmark}
             </span>
             <span className="ml-3 text-[10px] font-bold uppercase tracking-[0.25em] text-gold">
@@ -42,11 +42,11 @@ export default async function PlatformAdminPage() {
             </span>
           </div>
           <div className="w-40">
-            <SignOutButton />
+            <SignOutButton variant="dark" />
           </div>
         </div>
 
-        <p className="mb-4 text-body-sm text-fg-3">
+        <p className="mb-4 text-body-sm text-steel-300">
           Tenants and operational counts only — customer business data stays inside each workspace.
         </p>
 
@@ -68,8 +68,8 @@ export default async function PlatformAdminPage() {
                   className={cn(
                     "rounded-full border px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider",
                     tenant.status === "active"
-                      ? "border-green-500/40 bg-green-500/10 text-green-400"
-                      : "border-red-500/40 bg-red-500/10 text-red-400"
+                      ? "border-ok-soft bg-ok-soft text-ok"
+                      : "border-bad-soft bg-bad-soft text-bad"
                   )}
                 >
                   {tenant.status}
