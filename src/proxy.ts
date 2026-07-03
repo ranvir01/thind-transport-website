@@ -13,7 +13,8 @@ export default async function proxy(request: NextRequest) {
 
   const token = await getToken({
     req: request,
-    secret: process.env.NEXTAUTH_SECRET,
+    // Auth.js v5 reads AUTH_SECRET; legacy deploys still set NEXTAUTH_SECRET.
+    secret: process.env.NEXTAUTH_SECRET ?? process.env.AUTH_SECRET,
     cookieName: useSecureCookies ? '__Secure-authjs.session-token' : 'authjs.session-token',
   })
 
