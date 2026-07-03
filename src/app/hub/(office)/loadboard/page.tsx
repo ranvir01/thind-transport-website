@@ -1,3 +1,4 @@
+import Link from "next/link"
 import { Search } from "lucide-react"
 import { LoadBoardGrid } from "@/components/hub/LoadBoardGrid"
 import { EmptyState, PageHeader, fieldCls, btnSecondaryCls } from "@/components/hub/ui"
@@ -67,9 +68,9 @@ export default async function LoadBoardPage({
           title="No loads on the board"
           hint="Book a load, paste a rate con, or import your spreadsheet history."
           action={
-            <a href="/hub/loads/new" className={btnSecondaryCls}>
+            <Link href="/hub/loads/new" className={btnSecondaryCls}>
               New load
-            </a>
+            </Link>
           }
         />
       ) : (

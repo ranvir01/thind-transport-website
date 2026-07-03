@@ -77,7 +77,8 @@ export function HubTourOverlay({
   }, [step.target])
 
   useLayoutEffect(() => {
-    reposition()
+    const frame = requestAnimationFrame(() => reposition())
+    return () => cancelAnimationFrame(frame)
   }, [reposition, stepIndex])
 
   useEffect(() => {
@@ -211,10 +212,7 @@ function HubTourHostInner() {
   const [active, setActive] = useState<HubTourDef | null>(null)
 
   useEffect(() => {
-    if (!tourId) {
-      setActive(null)
-      return
-    }
+    if (!tourId) return
     const tour = getTour(tourId)
     if (!tour) return
     if (pathname !== tour.startPath) {
@@ -225,7 +223,7 @@ function HubTourHostInner() {
     return () => window.clearTimeout(t)
   }, [tourId, pathname, router])
 
-  if (!active) return null
+  if (!tourId || !active) return null
 
   const finish = () => {
     markTourCompleted(active.id)

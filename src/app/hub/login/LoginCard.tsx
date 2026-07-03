@@ -14,12 +14,11 @@ export function LoginCard({ showDemo }: { showDemo: boolean }) {
   const [form, setForm] = useState({ email: "", password: "" })
   const [roleHint, setRoleHint] = useState<string | null>(null)
 
+  const displayRoleHint = form.email.trim().includes("@") ? roleHint : null
+
   useEffect(() => {
     const email = form.email.trim()
-    if (!email.includes("@")) {
-      setRoleHint(null)
-      return
-    }
+    if (!email.includes("@")) return
     const timer = setTimeout(async () => {
       try {
         const res = await fetch(`/api/hub/role-hint?email=${encodeURIComponent(email)}`)
@@ -79,9 +78,9 @@ export function LoginCard({ showDemo }: { showDemo: boolean }) {
                 value={form.email}
                 onChange={(e) => setForm({ ...form, email: e.target.value })}
               />
-              {roleHint ? (
+              {displayRoleHint ? (
                 <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 rounded-full border border-border bg-surface-2 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-fg-2">
-                  {roleHint}
+                  {displayRoleHint}
                 </span>
               ) : null}
             </div>

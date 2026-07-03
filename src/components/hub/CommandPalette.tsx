@@ -34,7 +34,10 @@ export function CommandPalette({ isOwner }: { isOwner: boolean }) {
     const onKey = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
         e.preventDefault()
-        setOpen((v) => !v)
+        setOpen((v) => {
+          if (v) setQuery("")
+          return !v
+        })
       }
       if (e.key === "Escape") setOpen(false)
     }
@@ -43,18 +46,19 @@ export function CommandPalette({ isOwner }: { isOwner: boolean }) {
   }, [])
 
   useEffect(() => {
-    if (open) {
-      const t = window.setTimeout(() => document.getElementById("hauldesk-cmd-input")?.focus(), 0)
-      return () => window.clearTimeout(t)
-    }
-    setQuery("")
+    if (!open) return
+    const t = window.setTimeout(() => document.getElementById("hauldesk-cmd-input")?.focus(), 0)
+    return () => window.clearTimeout(t)
   }, [open])
 
   return (
     <>
       <button
         type="button"
-        onClick={() => setOpen(true)}
+        onClick={() => {
+          setQuery("")
+          setOpen(true)
+        }}
         className="hidden md:flex h-9 min-w-[220px] items-center gap-2 rounded-control border border-border-strong bg-surface px-3 text-sm text-fg-3 hover:bg-hover"
       >
         <Search className="h-4 w-4 shrink-0" />
