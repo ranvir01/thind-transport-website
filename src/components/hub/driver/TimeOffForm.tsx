@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { CalendarPlus, Loader2 } from "lucide-react"
 import { driverCancelTimeOff, driverRequestTimeOff } from "@/app/hub/_actions/driver"
-import { fieldCls, labelCls } from "@/components/hub/ui"
+import { fieldDarkCls, labelDarkCls } from "@/components/hub/ui"
 import { TIME_OFF_KINDS, TIME_OFF_KIND_LABELS } from "@/lib/hub/types"
 
 export function TimeOffForm() {
@@ -26,29 +26,29 @@ export function TimeOffForm() {
   }
 
   return (
-    <form onSubmit={submit} className="rounded-2xl border border-border bg-surface p-4 space-y-3">
+    <form onSubmit={submit} className="rounded-2xl border border-white/10 bg-navy-800/80 p-4 space-y-3">
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label htmlFor="to-start" className={labelCls}>First day off</label>
+          <label htmlFor="to-start" className={labelDarkCls}>First day off</label>
           <input
-            id="to-start" type="date" required className={fieldCls}
+            id="to-start" type="date" required className={fieldDarkCls}
             value={form.startDate}
             onChange={(e) => setForm({ ...form, startDate: e.target.value, endDate: form.endDate || e.target.value })}
           />
         </div>
         <div>
-          <label htmlFor="to-end" className={labelCls}>Last day off</label>
+          <label htmlFor="to-end" className={labelDarkCls}>Last day off</label>
           <input
-            id="to-end" type="date" required className={fieldCls} min={form.startDate}
+            id="to-end" type="date" required className={fieldDarkCls} min={form.startDate}
             value={form.endDate}
             onChange={(e) => setForm({ ...form, endDate: e.target.value })}
           />
         </div>
       </div>
       <div>
-        <label htmlFor="to-kind" className={labelCls}>What kind</label>
+        <label htmlFor="to-kind" className={labelDarkCls}>What kind</label>
         <select
-          id="to-kind" className={fieldCls} value={form.kind}
+          id="to-kind" className={fieldDarkCls} value={form.kind}
           onChange={(e) => setForm({ ...form, kind: e.target.value })}
         >
           {TIME_OFF_KINDS.map((k) => (
@@ -57,9 +57,9 @@ export function TimeOffForm() {
         </select>
       </div>
       <div>
-        <label htmlFor="to-reason" className={labelCls}>Anything the office should know? (optional)</label>
+        <label htmlFor="to-reason" className={labelDarkCls}>Anything the office should know? (optional)</label>
         <input
-          id="to-reason" className={fieldCls} placeholder="Kid's birthday, doctor, family…"
+          id="to-reason" className={fieldDarkCls} placeholder="Kid's birthday, doctor, family…"
           value={form.reason}
           onChange={(e) => setForm({ ...form, reason: e.target.value })}
         />
@@ -90,7 +90,7 @@ export function CancelTimeOffButton({ id }: { id: string }) {
         })
       }
       disabled={pending}
-      className="mt-2 text-body-xs font-semibold text-fg-3 hover:text-fg min-h-[36px]"
+      className="mt-2 text-body-xs font-semibold text-steel-400 hover:text-white min-h-[36px]"
     >
       Cancel this request
     </button>

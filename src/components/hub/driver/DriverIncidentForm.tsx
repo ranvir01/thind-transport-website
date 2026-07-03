@@ -10,7 +10,7 @@ import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { Loader2, MapPin, ShieldAlert } from "lucide-react"
 import { fileDriverIncidentReport } from "@/app/hub/_actions/safety"
-import { fieldCls, labelCls } from "@/components/hub/ui"
+import { fieldDarkCls, labelDarkCls } from "@/components/hub/ui"
 import { cn } from "@/lib/utils"
 
 const QUESTIONS = [
@@ -69,12 +69,12 @@ export function DriverIncidentForm({ loads }: { loads: { id: string; reference: 
 
   return (
     <form onSubmit={submit} className="space-y-4">
-      <div className="rounded-2xl border border-border bg-surface p-4 space-y-3">
+      <div className="rounded-2xl border border-white/10 bg-navy-800/80 p-4 space-y-3">
         <div>
-          <label htmlFor="inc-location" className={labelCls}>Where are you?</label>
+          <label htmlFor="inc-location" className={labelDarkCls}>Where are you?</label>
           <div className="flex gap-2">
             <input
-              id="inc-location" required className={fieldCls}
+              id="inc-location" required className={fieldDarkCls}
               placeholder="I-90 EB near exit 110, Ellensburg WA"
               value={form.location}
               onChange={(e) => setForm({ ...form, location: e.target.value })}
@@ -85,7 +85,7 @@ export function DriverIncidentForm({ loads }: { loads: { id: string; reference: 
               aria-label="Use my GPS location"
               className={cn(
                 "flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border",
-                coords ? "border-gold/50 bg-gold/15 text-gold" : "border-border-strong text-fg-2 hover:bg-hover"
+                coords ? "border-gold/50 bg-gold/15 text-gold" : "border-white/15 text-steel-200 hover:bg-white/5"
               )}
             >
               <MapPin className="h-5 w-5" />
@@ -94,9 +94,9 @@ export function DriverIncidentForm({ loads }: { loads: { id: string; reference: 
         </div>
 
         <div>
-          <label htmlFor="inc-desc" className={labelCls}>What happened?</label>
+          <label htmlFor="inc-desc" className={labelDarkCls}>What happened?</label>
           <textarea
-            id="inc-desc" rows={3} required className={fieldCls}
+            id="inc-desc" rows={3} required className={fieldDarkCls}
             placeholder="Plain words. What, who, road conditions…"
             value={form.description}
             onChange={(e) => setForm({ ...form, description: e.target.value })}
@@ -105,9 +105,9 @@ export function DriverIncidentForm({ loads }: { loads: { id: string; reference: 
 
         {loads.length > 0 ? (
           <div>
-            <label htmlFor="inc-load" className={labelCls}>On a load?</label>
+            <label htmlFor="inc-load" className={labelDarkCls}>On a load?</label>
             <select
-              id="inc-load" className={fieldCls} value={form.loadId}
+              id="inc-load" className={fieldDarkCls} value={form.loadId}
               onChange={(e) => setForm({ ...form, loadId: e.target.value })}
             >
               <option value="">Not on a load</option>
@@ -119,22 +119,22 @@ export function DriverIncidentForm({ loads }: { loads: { id: string; reference: 
         ) : null}
 
         <div>
-          <label htmlFor="inc-police" className={labelCls}>Police report # (if they gave you one)</label>
+          <label htmlFor="inc-police" className={labelDarkCls}>Police report # (if they gave you one)</label>
           <input
-            id="inc-police" className={fieldCls} value={form.policeReport}
+            id="inc-police" className={fieldDarkCls} value={form.policeReport}
             onChange={(e) => setForm({ ...form, policeReport: e.target.value })}
           />
         </div>
       </div>
 
-      <div className="rounded-2xl border border-border bg-surface p-4 space-y-2">
+      <div className="rounded-2xl border border-white/10 bg-navy-800/80 p-4 space-y-2">
         <p className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-gold">
           <ShieldAlert className="h-4 w-4" /> Three quick questions — answer honestly
         </p>
         {QUESTIONS.map(({ key, q }) => (
           <div key={key} className="flex items-center justify-between gap-3 min-h-[48px]">
-            <p className="text-sm font-semibold text-fg">{q}</p>
-            <div className="flex rounded-xl border border-border-strong overflow-hidden">
+            <p className="text-sm font-semibold text-white">{q}</p>
+            <div className="flex rounded-xl border border-white/15 overflow-hidden">
               {[false, true].map((value) => (
                 <button
                   key={String(value)}
@@ -145,8 +145,8 @@ export function DriverIncidentForm({ loads }: { loads: { id: string; reference: 
                     form[key] === value
                       ? value
                         ? "bg-accent text-accent-fg"
-                        : "bg-white/15 text-fg"
-                      : "text-fg-3 hover:bg-hover"
+                        : "bg-white/15 text-white"
+                      : "text-steel-400 hover:bg-white/5"
                   )}
                 >
                   {value ? "Yes" : "No"}
@@ -159,12 +159,12 @@ export function DriverIncidentForm({ loads }: { loads: { id: string; reference: 
 
       <button
         type="submit" disabled={pending}
-        className="flex w-full min-h-[56px] items-center justify-center gap-2 rounded-control bg-accent font-display text-base font-bold uppercase tracking-[0.08em] text-fg hover:bg-accent-hover disabled:opacity-60"
+        className="flex w-full min-h-[56px] items-center justify-center gap-2 rounded-control bg-accent font-display text-base font-bold uppercase tracking-[0.08em] text-accent-fg hover:bg-accent-hover disabled:opacity-60"
       >
         {pending ? <Loader2 className="h-5 w-5 animate-spin" /> : null}
         File the report
       </button>
-      <p className="text-center text-body-xs text-fg-3">
+      <p className="text-center text-body-xs text-steel-400">
         After filing, message dispatch any photos from the scene.
       </p>
     </form>

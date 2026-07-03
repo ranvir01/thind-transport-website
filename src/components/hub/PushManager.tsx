@@ -80,14 +80,14 @@ export function PushManager({ compact = false }: { compact?: boolean }) {
   if (state === "unsupported" || state === "loading") return null
   if (state === "on") {
     return compact ? null : (
-      <p className="flex items-center gap-2 text-body-xs text-fg-3">
+      <p className="flex items-center gap-2 text-body-xs text-steel-400">
         <Check className="h-3.5 w-3.5 text-gold" /> Alerts are on for this device
       </p>
     )
   }
   if (state === "denied") {
     return compact ? null : (
-      <p className="text-body-xs text-fg-3">
+      <p className="text-body-xs text-steel-400">
         Alerts are blocked — allow notifications for this site in your phone settings.
       </p>
     )

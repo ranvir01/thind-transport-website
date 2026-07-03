@@ -8,6 +8,18 @@ export const fieldCls =
 
 export const labelCls = "block text-[11px] font-semibold uppercase tracking-wide text-fg-3 mb-1.5"
 
+/**
+ * Form controls for the forced-dark driver/portal chrome. Those surfaces are
+ * always navy regardless of the office mode toggle, so the mode-dependent
+ * surface/fg tokens above render light-mode values there (near-black text on
+ * navy). See AGENTS.md "No mode-dependent tokens on forced-dark surfaces".
+ */
+export const fieldDarkCls =
+  "flex h-[34px] w-full rounded-control border border-white/15 bg-white/5 px-3 text-sm text-white shadow-none transition-colors placeholder:text-steel-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/25 focus-visible:border-white/40 disabled:cursor-not-allowed disabled:opacity-50"
+
+export const labelDarkCls =
+  "block text-[11px] font-semibold uppercase tracking-wide text-steel-400 mb-1.5"
+
 /** Primary action — accent fill (replaces marketing red CTAs inside hub). */
 export const btnPrimaryCls =
   "inline-flex min-h-[44px] items-center justify-center gap-2 rounded-control bg-accent px-4 text-sm font-semibold text-accent-fg hover:bg-accent-hover transition-colors disabled:opacity-50"

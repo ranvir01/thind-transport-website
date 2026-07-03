@@ -13,7 +13,7 @@ import { Check, Loader2, ShieldAlert, Wrench } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { submitDvirAction } from "@/app/hub/_actions/dvir"
 import { SignaturePad } from "@/components/hub/SignaturePad"
-import { fieldCls, labelCls } from "@/components/hub/ui"
+import { fieldDarkCls, labelDarkCls } from "@/components/hub/ui"
 import type { Dvir, DvirDefect } from "@/lib/hub/dvir"
 
 export function DvirForm({
@@ -72,13 +72,13 @@ export function DvirForm({
           <p className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-gold">
             <Wrench className="h-4 w-4" /> Review before you roll
           </p>
-          <p className="mt-1 text-body-sm text-fg-2">
+          <p className="mt-1 text-body-sm text-steel-200">
             {priorDvir.driver_name} reported on{" "}
             {new Date(priorDvir.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}:
           </p>
           <ul className="mt-1 space-y-0.5">
             {priorDvir.defects.map((d, i) => (
-              <li key={i} className="text-body-sm text-fg">• {d.label}{d.note ? ` — ${d.note}` : ""}</li>
+              <li key={i} className="text-body-sm text-white">• {d.label}{d.note ? ` — ${d.note}` : ""}</li>
             ))}
           </ul>
           <p className={cn(
@@ -92,30 +92,30 @@ export function DvirForm({
         </section>
       ) : null}
 
-      <section className="rounded-2xl border border-border bg-surface p-4">
-        <p className="text-[13.5px] font-semibold text-fg mb-1">
+      <section className="rounded-2xl border border-white/10 bg-navy-800/80 p-4">
+        <p className="text-[13.5px] font-semibold text-white mb-1">
           {type === "post" ? "End-of-day inspection" : "Pre-trip inspection"} — #{truck.unit_number}
         </p>
-        <p className="text-body-xs text-fg-3 mb-3">Tap anything that has a problem.</p>
+        <p className="text-body-xs text-steel-400 mb-3">Tap anything that has a problem.</p>
         <ul className="space-y-1.5">
           {checklistTemplate.map((item) => {
             const ok = checks[item.key]
             return (
               <li key={item.key}>
                 <div className="flex items-center justify-between gap-2 min-h-[48px]">
-                  <span className="text-sm font-semibold text-fg">{item.label}</span>
-                  <div className="flex rounded-xl border border-border-strong overflow-hidden">
+                  <span className="text-sm font-semibold text-white">{item.label}</span>
+                  <div className="flex rounded-xl border border-white/15 overflow-hidden">
                     <button
                       type="button"
                       onClick={() => setChecks({ ...checks, [item.key]: true })}
-                      className={cn("min-h-[44px] px-4 text-sm font-bold", ok ? "bg-green-500/25 text-green-300" : "text-fg-3 hover:bg-hover")}
+                      className={cn("min-h-[44px] px-4 text-sm font-bold", ok ? "bg-green-500/25 text-green-300" : "text-steel-400 hover:bg-white/5")}
                     >
                       OK
                     </button>
                     <button
                       type="button"
                       onClick={() => setChecks({ ...checks, [item.key]: false })}
-                      className={cn("min-h-[44px] px-4 text-sm font-bold", !ok ? "bg-accent text-accent-fg" : "text-fg-3 hover:bg-hover")}
+                      className={cn("min-h-[44px] px-4 text-sm font-bold", !ok ? "bg-accent text-accent-fg" : "text-steel-400 hover:bg-white/5")}
                     >
                       Problem
                     </button>
@@ -124,7 +124,7 @@ export function DvirForm({
                 {!ok ? (
                   <input
                     placeholder="What's wrong? (short note)"
-                    className={`${fieldCls} mt-1`}
+                    className={`${fieldDarkCls} mt-1`}
                     value={defectNotes[item.key] ?? ""}
                     onChange={(e) => setDefectNotes({ ...defectNotes, [item.key]: e.target.value })}
                   />
@@ -135,9 +135,9 @@ export function DvirForm({
         </ul>
 
         <div className="mt-3">
-          <label htmlFor="dvir-odo" className={labelCls}>Odometer (optional)</label>
+          <label htmlFor="dvir-odo" className={labelDarkCls}>Odometer (optional)</label>
           <input
-            id="dvir-odo" inputMode="numeric" className={fieldCls} placeholder="187,450"
+            id="dvir-odo" inputMode="numeric" className={fieldDarkCls} placeholder="187,450"
             value={odometer} onChange={(e) => setOdometer(e.target.value)}
           />
         </div>
@@ -148,7 +148,7 @@ export function DvirForm({
           <p className="flex items-center gap-2 text-sm font-bold text-orange">
             <ShieldAlert className="h-4 w-4" /> Is the truck still safe to drive?
           </p>
-          <p className="mt-1 text-body-xs text-fg-2">
+          <p className="mt-1 text-body-xs text-steel-200">
             Answer honestly — &quot;No&quot; parks the truck until the shop signs off. That&apos;s the law working, not you in trouble.
           </p>
           <div className="mt-2 flex gap-2">
@@ -163,7 +163,7 @@ export function DvirForm({
                     ? value
                       ? "border-green-500/50 bg-green-500/20 text-green-300"
                       : "border-orange bg-accent text-accent-fg"
-                    : "border-border-strong text-fg-2 hover:bg-hover"
+                    : "border-white/15 text-steel-200 hover:bg-white/5"
                 )}
               >
                 {value ? "Yes — safe to operate" : "No — park it"}
@@ -173,13 +173,13 @@ export function DvirForm({
         </section>
       ) : null}
 
-      <section className="rounded-2xl border border-border bg-surface p-4">
-        <p className={labelCls}>Sign the report</p>
+      <section className="rounded-2xl border border-white/10 bg-navy-800/80 p-4">
+        <p className={labelDarkCls}>Sign the report</p>
         <SignaturePad onChange={setSignature} height={110} />
         <button
           onClick={submit}
           disabled={pending || !signature}
-          className="mt-3 flex w-full min-h-[56px] items-center justify-center gap-2 rounded-control bg-accent font-display text-base font-bold uppercase tracking-[0.08em] text-fg hover:bg-accent-hover disabled:opacity-50"
+          className="mt-3 flex w-full min-h-[56px] items-center justify-center gap-2 rounded-control bg-accent font-display text-base font-bold uppercase tracking-[0.08em] text-accent-fg hover:bg-accent-hover disabled:opacity-50"
         >
           {pending ? <Loader2 className="h-5 w-5 animate-spin" /> : <Check className="h-5 w-5" />}
           File the {type === "post" ? "post-trip" : "pre-trip"}

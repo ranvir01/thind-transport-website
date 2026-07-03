@@ -134,17 +134,17 @@ export function DriverLoadCard({ load, detentionFreeMinutes }: { load: LoadForDr
   const hasPod = (load.doc_kinds ?? []).includes("pod")
 
   return (
-    <section className="rounded-2xl border border-border bg-surface overflow-hidden">
+    <section className="rounded-2xl border border-white/10 bg-navy-800/80 overflow-hidden">
       {/* Banner */}
-      <div className="flex items-center justify-between gap-2 border-b border-border bg-white/[0.03] px-4 py-3">
+      <div className="flex items-center justify-between gap-2 border-b border-white/10 bg-white/[0.03] px-4 py-3">
         <div>
           <p className="text-[11px] font-bold uppercase tracking-wider text-gold">{STATUS_BANNER[load.status] ?? load.status}</p>
-          <p className="font-semibold text-lg text-fg">{load.reference}</p>
+          <p className="font-semibold text-lg text-white">{load.reference}</p>
         </div>
         <button
           onClick={message}
           aria-label="Message dispatch about this load"
-          className="flex h-11 w-11 items-center justify-center rounded-xl border border-border-strong text-fg-2 hover:bg-hover"
+          className="flex h-11 w-11 items-center justify-center rounded-xl border border-white/15 text-steel-200 hover:bg-white/5"
         >
           <MessageSquarePlus className="h-5 w-5" />
         </button>
@@ -152,13 +152,13 @@ export function DriverLoadCard({ load, detentionFreeMinutes }: { load: LoadForDr
 
       <div className="p-4 space-y-4">
         {/* What you're hauling */}
-        <p className="text-body-sm text-fg-2">
+        <p className="text-body-sm text-steel-200">
           {load.commodity ?? "Freight"} · {load.equipment.replace("_", " ")}
           {load.truck_unit ? ` · Truck #${load.truck_unit}` : ""}
           {load.trailer_unit ? ` · Trailer #${load.trailer_unit}` : ""}
         </p>
         {load.notes ? (
-          <p className="rounded-xl bg-white/[0.04] border border-border px-3 py-2 text-body-sm text-fg-2">
+          <p className="rounded-xl bg-white/[0.04] border border-white/10 px-3 py-2 text-body-sm text-steel-200">
             Dispatch notes: {load.notes}
           </p>
         ) : null}
@@ -185,21 +185,21 @@ export function DriverLoadCard({ load, detentionFreeMinutes }: { load: LoadForDr
               [stop.address, stop.city, stop.state, stop.zip].filter(Boolean).join(", ")
             )}`
             return (
-              <li key={stop.id} className={cn("rounded-xl border p-3", done ? "border-border bg-white/[0.02] opacity-70" : "border-border bg-white/[0.04]")}>
+              <li key={stop.id} className={cn("rounded-xl border p-3", done ? "border-white/10 bg-white/[0.02] opacity-70" : "border-white/10 bg-white/[0.04]")}>
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
-                    <p className="text-[11px] font-bold uppercase tracking-wider text-fg-3">
+                    <p className="text-[11px] font-bold uppercase tracking-wider text-steel-400">
                       {stop.type === "pickup" ? "Pick up" : "Deliver"}
                     </p>
-                    <p className="font-semibold text-fg">
+                    <p className="font-semibold text-white">
                       {stop.facility || `${stop.city}, ${stop.state}`}
                     </p>
-                    <p className="text-body-xs text-fg-3">
+                    <p className="text-body-xs text-steel-400">
                       {stop.city}, {stop.state}
                       {stop.pickup_number ? ` · PU# ${stop.pickup_number}` : ""}
                       {stop.po_number ? ` · PO# ${stop.po_number}` : ""}
                     </p>
-                    <p className="mt-1 flex items-center gap-1 text-body-xs text-fg-2">
+                    <p className="mt-1 flex items-center gap-1 text-body-xs text-steel-200">
                       <Clock className="h-3.5 w-3.5 text-gold" /> {fmtAppt(stop.appt_start, stop.appt_end, stop.fcfs)}
                     </p>
                     {slow ? (
@@ -207,13 +207,13 @@ export function DriverLoadCard({ load, detentionFreeMinutes }: { load: LoadForDr
                         Heads up: usually slow here (~{Math.round((stop.facility_avg_dwell ?? 0) / 60 * 10) / 10}h at the dock)
                       </p>
                     ) : null}
-                    {stop.notes ? <p className="mt-1 text-body-xs text-fg-3">{stop.notes}</p> : null}
+                    {stop.notes ? <p className="mt-1 text-body-xs text-steel-400">{stop.notes}</p> : null}
                     {(stop.facility_notes ?? []).length > 0 ? (
-                      <div className="mt-1.5 space-y-1 rounded-lg border border-border bg-white/[0.03] p-2">
+                      <div className="mt-1.5 space-y-1 rounded-lg border border-white/10 bg-white/[0.03] p-2">
                         <p className="text-[10px] font-bold uppercase tracking-wider text-gold">Driver tips</p>
                         {(stop.facility_notes ?? []).map((note, i) => (
-                          <p key={i} className="text-body-xs text-fg-2">
-                            “{note.body}”{note.author ? <span className="text-fg-3"> — {note.author}</span> : null}
+                          <p key={i} className="text-body-xs text-steel-200">
+                            “{note.body}”{note.author ? <span className="text-steel-400"> — {note.author}</span> : null}
                           </p>
                         ))}
                       </div>
@@ -224,7 +224,7 @@ export function DriverLoadCard({ load, detentionFreeMinutes }: { load: LoadForDr
                     target="_blank"
                     rel="noreferrer"
                     aria-label="Navigate"
-                    className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-border-strong text-fg-2 hover:bg-hover"
+                    className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-white/15 text-steel-200 hover:bg-white/5"
                   >
                     <Navigation className="h-5 w-5" />
                   </a>
@@ -236,7 +236,7 @@ export function DriverLoadCard({ load, detentionFreeMinutes }: { load: LoadForDr
                     <button
                       onClick={() => run({ kind: "stop", payload: { stopId: stop.id, loadId: load.id, field: "arrived_at" } }, () => driverStopTimestamp(stop.id, load.id, "arrived_at"), "Arrival recorded")}
                       disabled={pending}
-                      className="flex flex-1 min-h-[48px] items-center justify-center gap-2 rounded-control bg-accent font-display text-sm font-bold uppercase tracking-[0.06em] text-fg hover:bg-accent-hover disabled:opacity-60"
+                      className="flex flex-1 min-h-[48px] items-center justify-center gap-2 rounded-control bg-accent font-display text-sm font-bold uppercase tracking-[0.06em] text-accent-fg hover:bg-accent-hover disabled:opacity-60"
                     >
                       <MapPin className="h-4 w-4" /> I&apos;m here
                     </button>
@@ -245,13 +245,13 @@ export function DriverLoadCard({ load, detentionFreeMinutes }: { load: LoadForDr
                     <button
                       onClick={() => run({ kind: "stop", payload: { stopId: stop.id, loadId: load.id, field: "departed_at" } }, () => driverStopTimestamp(stop.id, load.id, "departed_at"), "Departure recorded")}
                       disabled={pending}
-                      className="flex flex-1 min-h-[48px] items-center justify-center gap-2 rounded-control bg-accent font-display text-sm font-bold uppercase tracking-[0.06em] text-fg hover:bg-accent-hover disabled:opacity-60"
+                      className="flex flex-1 min-h-[48px] items-center justify-center gap-2 rounded-control bg-accent font-display text-sm font-bold uppercase tracking-[0.06em] text-accent-fg hover:bg-accent-hover disabled:opacity-60"
                     >
                       <ChevronRight className="h-4 w-4" /> Leaving now
                     </button>
                   ) : null}
                   {done ? (
-                    <p className="flex items-center gap-1.5 text-body-xs text-fg-3">
+                    <p className="flex items-center gap-1.5 text-body-xs text-steel-400">
                       <Check className="h-3.5 w-3.5 text-gold" />
                       In {new Date(stop.arrived_at!).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })},
                       out {new Date(stop.departed_at!).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}
@@ -279,7 +279,7 @@ export function DriverLoadCard({ load, detentionFreeMinutes }: { load: LoadForDr
           <button
             onClick={() => run({ kind: "status", payload: { loadId: load.id } }, () => driverAdvanceStatus(load.id), "Status updated — dispatch can see it")}
             disabled={pending}
-            className="flex w-full min-h-[56px] items-center justify-center gap-2 rounded-control bg-accent font-display text-base font-bold uppercase tracking-[0.08em] text-fg hover:bg-accent-hover disabled:opacity-60"
+            className="flex w-full min-h-[56px] items-center justify-center gap-2 rounded-control bg-accent font-display text-base font-bold uppercase tracking-[0.08em] text-accent-fg hover:bg-accent-hover disabled:opacity-60"
           >
             {pending ? <Loader2 className="h-5 w-5 animate-spin" /> : <ChevronRight className="h-5 w-5" />}
             {advance}
@@ -287,14 +287,14 @@ export function DriverLoadCard({ load, detentionFreeMinutes }: { load: LoadForDr
         ) : null}
 
         {/* Camera upload */}
-        <div className="rounded-xl border border-border bg-white/[0.03] p-3">
-          <p className="text-[11px] font-bold uppercase tracking-wider text-fg-3 mb-2">
+        <div className="rounded-xl border border-white/10 bg-white/[0.03] p-3">
+          <p className="text-[11px] font-bold uppercase tracking-wider text-steel-400 mb-2">
             Send paperwork {load.status === "delivered" && !hasPod ? "— the office needs the POD to bill this load" : ""}
           </p>
           <div className="flex gap-2">
             <select
               aria-label="What is the photo"
-              className="min-h-[48px] rounded-xl border border-border-strong bg-surface px-3 text-sm font-semibold text-fg"
+              className="min-h-[48px] rounded-xl border border-white/15 bg-navy-600 px-3 text-sm font-semibold text-white"
               value={uploadKind}
               onChange={(e) => setUploadKind(e.target.value as "pod" | "receipt" | "bol")}
             >
@@ -324,11 +324,11 @@ export function DriverLoadCard({ load, detentionFreeMinutes }: { load: LoadForDr
                 type="checkbox"
                 checked={osdFlag}
                 onChange={(e) => setOsdFlag(e.target.checked)}
-                className="mt-0.5 h-5 w-5 rounded border-border-strong accent-orange"
+                className="mt-0.5 h-5 w-5 rounded border-white/15 accent-orange"
               />
               <span>
-                <span className="block text-sm font-semibold text-fg">Exceptions noted on the POD (OS&D)</span>
-                <span className="block text-body-xs text-fg-3">
+                <span className="block text-sm font-semibold text-white">Exceptions noted on the POD (OS&D)</span>
+                <span className="block text-body-xs text-steel-400">
                   Shortages, damage, overages — checking this starts the claim file right now.
                 </span>
               </span>
@@ -339,7 +339,7 @@ export function DriverLoadCard({ load, detentionFreeMinutes }: { load: LoadForDr
               aria-label="Receipt amount"
               placeholder="Amount on the receipt ($) — makes it a reimbursement"
               inputMode="decimal"
-              className="mt-2 w-full min-h-[48px] rounded-xl border border-border-strong bg-surface px-3 text-sm text-fg placeholder:text-fg-3"
+              className="mt-2 w-full min-h-[48px] rounded-xl border border-white/15 bg-white/5 px-3 text-sm text-white placeholder:text-steel-400"
               value={receiptAmount}
               onChange={(e) => setReceiptAmount(e.target.value)}
             />
@@ -393,13 +393,13 @@ function FacilityNoteSheet({
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60" onClick={onClose}>
       <div
-        className="w-full max-w-lg rounded-t-2xl border-t border-border bg-surface p-4 pb-[max(16px,env(safe-area-inset-bottom))]"
+        className="w-full max-w-lg rounded-t-2xl border-t border-white/10 bg-navy-600 p-4 pb-[max(16px,env(safe-area-inset-bottom))]"
         onClick={(e) => e.stopPropagation()}
       >
-        <p className="text-[13.5px] font-semibold text-fg">
+        <p className="text-[13.5px] font-semibold text-white">
           How was {stop.facility || `${stop.city}, ${stop.state}`}?
         </p>
-        <p className="text-body-xs text-fg-3 mb-3">Tap what applies — that&apos;s all it takes.</p>
+        <p className="text-body-xs text-steel-400 mb-3">Tap what applies — that&apos;s all it takes.</p>
         <div className="flex flex-wrap gap-2 mb-3">
           {FACILITY_NOTE_TAGS.map((tag) => (
             <button
@@ -409,7 +409,7 @@ function FacilityNoteSheet({
                 "rounded-full border px-3 py-2 text-sm font-semibold capitalize min-h-[40px]",
                 tags.includes(tag)
                   ? "border-gold/60 bg-gold/20 text-gold"
-                  : "border-border-strong bg-surface-2 text-fg-2"
+                  : "border-white/15 bg-white/5 text-steel-200"
               )}
             >
               {tag}
@@ -419,21 +419,21 @@ function FacilityNoteSheet({
         <textarea
           rows={2}
           placeholder="Anything else? (optional)"
-          className="w-full rounded-xl border border-border-strong bg-surface px-3 py-2.5 text-sm text-fg placeholder:text-fg-3"
+          className="w-full rounded-xl border border-white/15 bg-white/5 px-3 py-2.5 text-sm text-white placeholder:text-steel-400"
           value={body}
           onChange={(e) => setBody(e.target.value)}
         />
         <div className="mt-3 flex gap-2">
           <button
             onClick={onClose}
-            className="flex-1 min-h-[48px] rounded-xl border border-border-strong font-display text-sm font-bold uppercase tracking-[0.06em] text-fg-2 hover:bg-hover"
+            className="flex-1 min-h-[48px] rounded-xl border border-white/15 font-display text-sm font-bold uppercase tracking-[0.06em] text-steel-200 hover:bg-white/5"
           >
             Skip
           </button>
           <button
             onClick={() => onSave(body, tags)}
             disabled={pending || (tags.length === 0 && !body.trim())}
-            className="flex-1 min-h-[48px] rounded-control bg-accent font-display text-sm font-bold uppercase tracking-[0.06em] text-fg hover:bg-accent-hover disabled:opacity-50"
+            className="flex-1 min-h-[48px] rounded-control bg-accent font-display text-sm font-bold uppercase tracking-[0.06em] text-accent-fg hover:bg-accent-hover disabled:opacity-50"
           >
             Save tip
           </button>
