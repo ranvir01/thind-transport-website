@@ -12,7 +12,7 @@ export const dynamic = "force-dynamic"
 
 const COLOR_DOT: Record<string, string> = {
   red: "bg-red-400",
-  amber: "bg-gold",
+  amber: "bg-warn",
   green: "bg-emerald-400",
 }
 
@@ -50,9 +50,9 @@ export default async function CompliancePage() {
           <span className="text-label text-red-300 uppercase">Expired / overdue</span>
           <p className="mt-2 font-display text-3xl font-extrabold text-red-300">{summary.red}</p>
         </Panel>
-        <Panel className="p-4 border-gold/30">
-          <span className="text-label text-gold uppercase">Due in 30 days</span>
-          <p className="mt-2 font-display text-3xl font-extrabold text-gold">{summary.amber}</p>
+        <Panel className="p-4 border-warn/30">
+          <span className="text-label text-warn uppercase">Due in 30 days</span>
+          <p className="mt-2 font-display text-3xl font-extrabold text-warn">{summary.amber}</p>
         </Panel>
         <Panel className="p-4 border-emerald-400/30">
           <span className="text-label text-emerald-300 uppercase">Clean</span>
@@ -77,7 +77,7 @@ export default async function CompliancePage() {
               {entry.manualItemId ? (
                 <p className="text-sm font-semibold text-fg truncate">{entry.kind}</p>
               ) : (
-                <Link href={entry.href} className="text-sm font-semibold text-fg hover:text-gold truncate block">
+                <Link href={entry.href} className="text-sm font-semibold text-fg hover:text-accent-text truncate block">
                   {entry.name} — {entry.kind}
                 </Link>
               )}

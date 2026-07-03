@@ -12,8 +12,8 @@ import { cn } from "@/lib/utils"
 export const dynamic = "force-dynamic"
 
 const STATUS_PILL: Record<string, string> = {
-  pending: "bg-steel-700/60 text-fg-2 border-steel-500/40",
-  outstanding: "bg-gold-500/15 text-gold-300 border-gold-400/30",
+  pending: "bg-surface-2 text-fg-2 border-border-strong",
+  outstanding: "bg-warn-soft text-warn border-warn-soft",
   applied: "bg-emerald-500/15 text-emerald-300 border-emerald-400/30",
   cancelled: "bg-red-500/15 text-red-300 border-red-400/30",
 }

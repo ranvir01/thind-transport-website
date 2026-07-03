@@ -36,7 +36,7 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
               href={invoice.pdf_url}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-gold/40 bg-gold/10 px-4 text-sm font-bold text-gold hover:bg-gold/20"
+              className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-border-strong bg-surface px-4 text-sm font-semibold text-fg-2 hover:bg-hover"
             >
               <FileText className="h-4 w-4" /> Invoice PDF
             </a>
@@ -56,7 +56,7 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
               <div className="flex justify-between"><dt className="text-fg-2">Paid</dt><dd className="text-fg font-semibold">{fmtCentsExact(invoice.paid_cents ?? 0)}</dd></div>
               <div className="flex justify-between border-t border-border pt-2">
                 <dt className="text-fg font-bold">Open balance</dt>
-                <dd className="font-display text-gold font-extrabold text-lg">{fmtCentsExact(openCents)}</dd>
+                <dd className="font-display text-accent-text font-extrabold text-lg">{fmtCentsExact(openCents)}</dd>
               </div>
             </dl>
             {invoice.remit_to ? (
@@ -68,7 +68,7 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
               </div>
             ) : null}
             <p className="mt-3 text-body-xs text-fg-3">
-              Load: <Link href={`/hub/loads/${invoice.load_id}`} className="text-gold">{invoice.load_reference}</Link>
+              Load: <Link href={`/hub/loads/${invoice.load_id}`} className="text-accent-text">{invoice.load_reference}</Link>
             </p>
           </Panel>
 

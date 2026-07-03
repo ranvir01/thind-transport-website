@@ -11,9 +11,9 @@ import { HelpTip } from "@/components/hub/HelpTip"
 export const dynamic = "force-dynamic"
 
 const STATUS_PILL: Record<string, string> = {
-  draft: "bg-steel-700/60 text-fg-2 border-steel-500/40",
+  draft: "bg-surface-2 text-fg-2 border-border-strong",
   sent: "bg-sky-500/15 text-sky-300 border-sky-400/30",
-  partial: "bg-gold-500/15 text-gold-300 border-gold-400/30",
+  partial: "bg-warn-soft text-warn border-warn-soft",
   paid: "bg-emerald-500/15 text-emerald-300 border-emerald-400/30",
   overdue: "bg-red-500/15 text-red-300 border-red-400/30",
   disputed: "bg-violet-500/15 text-violet-300 border-violet-400/30",
@@ -111,7 +111,7 @@ export default async function MoneyPage() {
                       <Link href={`/hub/money/invoices/${invoice.id}`} className="font-semibold text-accent-text hover:underline">
                         {invoice.number}
                       </Link>
-                      {invoice.factored ? <span className="ml-2 text-body-xs text-gold font-bold">FACTORED</span> : null}
+                      {invoice.factored ? <span className="ml-2 text-body-xs text-accent-text font-bold">FACTORED</span> : null}
                     </td>
                     <td className="px-4 py-3 text-fg-2">{invoice.customer_name}</td>
                     <td className="px-4 py-3 text-fg-2">{invoice.load_reference}</td>

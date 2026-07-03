@@ -49,7 +49,7 @@ export default async function ReportsPage() {
         action={
           <a
             href={PNL_EXPORT_URL}
-            className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-gold/40 bg-gold/10 px-4 text-sm font-bold text-gold hover:bg-gold/20"
+            className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-border-strong bg-surface px-4 text-sm font-semibold text-fg-2 hover:bg-hover"
           >
             <Download className="h-4 w-4" /> P&L CSV
           </a>
@@ -83,7 +83,7 @@ export default async function ReportsPage() {
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4">
-        <Panel className="p-4"><span className="text-label text-fg-3 uppercase">Revenue</span><p className="mt-2 font-display text-xl font-extrabold text-gold">{fmtCents(totals.revenue)}</p></Panel>
+        <Panel className="p-4"><span className="text-label text-fg-3 uppercase">Revenue</span><p className="mt-2 font-display text-xl font-extrabold text-accent-text">{fmtCents(totals.revenue)}</p></Panel>
         <Panel className="p-4"><span className="text-label text-fg-3 uppercase">Fuel</span><p className="mt-2 font-semibold text-xl text-fg">{fmtCents(totals.fuel)}</p></Panel>
         <Panel className="p-4"><span className="text-label text-fg-3 uppercase">Maintenance</span><p className="mt-2 font-semibold text-xl text-fg">{fmtCents(totals.maintenance)}</p></Panel>
         <Panel className="p-4"><span className="text-label text-fg-3 uppercase">Other</span><p className="mt-2 font-semibold text-xl text-fg">{fmtCents(totals.other)}</p></Panel>
@@ -109,7 +109,7 @@ export default async function ReportsPage() {
               return (
                 <tr key={row.truck_id} className="border-b border-border">
                   <td className="px-4 py-2.5 font-bold text-fg">#{row.unit_number}</td>
-                  <td className="px-4 py-2.5 text-right text-gold font-semibold">{fmtCents(Number(row.revenue_cents))}</td>
+                  <td className="px-4 py-2.5 text-right text-accent-text font-semibold">{fmtCents(Number(row.revenue_cents))}</td>
                   <td className="px-4 py-2.5 text-right text-fg-2">{fmtCents(Number(row.fuel_cents))}</td>
                   <td className="px-4 py-2.5 text-right text-fg-2">{fmtCents(Number(row.maintenance_cents))}</td>
                   <td className="px-4 py-2.5 text-right text-fg-2">{fmtCents(Number(row.other_expense_cents))}</td>
@@ -161,7 +161,7 @@ export default async function ReportsPage() {
                     {lane.origin_city}, {lane.origin_state} → {lane.dest_city}, {lane.dest_state}
                   </td>
                   <td className="px-4 py-2.5 text-right text-fg-2">{lane.loads_count}</td>
-                  <td className="px-4 py-2.5 text-right text-gold font-semibold">{fmtCents(Number(lane.revenue_cents))}</td>
+                  <td className="px-4 py-2.5 text-right text-accent-text font-semibold">{fmtCents(Number(lane.revenue_cents))}</td>
                   <td className="px-4 py-2.5 text-right text-fg-2">
                     {lane.avg_rpm_cents ? `$${(lane.avg_rpm_cents / 100).toFixed(2)}` : "—"}
                   </td>

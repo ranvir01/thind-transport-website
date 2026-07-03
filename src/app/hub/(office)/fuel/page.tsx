@@ -89,14 +89,14 @@ export default async function FuelPage() {
 
           {/* Fraud flags */}
           {fraudFlags.length > 0 ? (
-            <Panel className="p-4 mb-4 border-gold/30">
+            <Panel className="p-4 mb-4 border-warn/30">
               <div className="flex items-center gap-2 mb-2">
-                <AlertTriangle className="h-4 w-4 text-gold" />
+                <AlertTriangle className="h-4 w-4 text-warn" />
                 <h2 className="text-[13.5px] font-semibold text-fg">Flags</h2>
               </div>
               <ul className="space-y-1.5">
                 {fraudFlags.slice(0, 6).map((flag, i) => (
-                  <li key={i} className="text-body-sm text-gold">
+                  <li key={i} className="text-body-sm text-warn">
                     <span className="uppercase text-body-xs font-bold">{flag.kind.replace("_", " ")}</span>
                     {flag.truck_unit ? ` · #${flag.truck_unit}` : ""} — {flag.detail}
                   </li>
@@ -130,7 +130,7 @@ export default async function FuelPage() {
                       <tr key={row.truck_id ?? "none"} className="border-b border-border">
                         <td className="px-4 py-2 font-semibold text-fg">{row.truck_unit ? `#${row.truck_unit}` : "Unmatched"}</td>
                         <td className="px-4 py-2 text-right text-fg-2">{Math.round(gallons).toLocaleString()}</td>
-                        <td className="px-4 py-2 text-right text-gold font-semibold">{fmtCents(Number(row.total_cents))}</td>
+                        <td className="px-4 py-2 text-right text-accent-text font-semibold">{fmtCents(Number(row.total_cents))}</td>
                         <td className="px-4 py-2 text-right text-fg-2">{miles > 0 && tractorGallons > 0 ? (miles / tractorGallons).toFixed(1) : "—"}</td>
                         <td className="px-4 py-2 text-right text-fg-2">{miles > 0 ? (Number(row.total_cents) / miles).toFixed(1) : "—"}</td>
                       </tr>
@@ -160,7 +160,7 @@ export default async function FuelPage() {
                     <tr key={i} className="border-b border-border">
                       <td className="px-4 py-2 font-semibold text-fg">{row.card_program ?? "Unknown"}</td>
                       <td className="px-4 py-2 text-right text-fg-2">{Math.round(Number(row.gallons)).toLocaleString()}</td>
-                      <td className="px-4 py-2 text-right text-gold font-semibold">{fmtCents(Number(row.total_cents))}</td>
+                      <td className="px-4 py-2 text-right text-accent-text font-semibold">{fmtCents(Number(row.total_cents))}</td>
                       <td className="px-4 py-2 text-right text-fg-2">{row.avg_price_cents ? fmtCentsExact(Number(row.avg_price_cents)) : "—"}</td>
                     </tr>
                   ))}

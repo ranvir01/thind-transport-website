@@ -55,7 +55,7 @@ export default async function IftaPage({
         <IftaControls quarter={quarter} status={report?.status ?? null} />
         {report ? (
           <div className="flex gap-2">
-            <a href={`/api/hub/ifta/${quarter}/worksheet.pdf`} className="inline-flex min-h-[44px] items-center gap-1.5 rounded-xl border border-gold/40 bg-gold/10 px-4 text-sm font-bold text-gold hover:bg-gold/20">
+            <a href={`/api/hub/ifta/${quarter}/worksheet.pdf`} className="inline-flex min-h-[44px] items-center gap-1.5 rounded-xl border border-border-strong bg-surface px-4 text-sm font-semibold text-fg-2 hover:bg-hover">
               <Download className="h-4 w-4" /> Worksheet PDF
             </a>
             <a href={`/api/hub/ifta/${quarter}/worksheet.csv`} className="inline-flex min-h-[44px] items-center gap-1.5 rounded-xl border border-border-strong px-4 text-sm font-semibold text-fg-2 hover:bg-hover">
@@ -89,15 +89,15 @@ export default async function IftaPage({
             </Panel>
             <Panel className="p-4">
               <span className="text-label text-fg-3 uppercase">Net tax</span>
-              <p className={`mt-1 font-display text-lg font-extrabold ${Number(report.net_tax_cents) >= 0 ? "text-gold" : "text-emerald-300"}`}>
+              <p className={`mt-1 font-display text-lg font-extrabold ${Number(report.net_tax_cents) >= 0 ? "text-warn" : "text-emerald-300"}`}>
                 {fmtCentsExact(Number(report.net_tax_cents))}
               </p>
             </Panel>
           </div>
 
           {(report.report?.missingRates?.length ?? 0) > 0 ? (
-            <Panel className="p-4 mb-4 border-gold/40">
-              <p className="text-body-sm text-gold font-semibold">
+            <Panel className="p-4 mb-4 border-warn/30">
+              <p className="text-body-sm text-warn font-semibold">
                 Missing rates for: {report.report.missingRates!.join(", ")} — import below and recompute.
               </p>
             </Panel>
@@ -125,7 +125,7 @@ export default async function IftaPage({
                     <td className="px-4 py-2.5 text-right text-fg-2">{row.taxPaidGallons.toFixed(3)}</td>
                     <td className="px-4 py-2.5 text-right text-fg-2">{Number(row.rate).toFixed(4)}</td>
                     <td className="px-4 py-2.5 text-right text-fg-2">{row.surchargeRate ? Number(row.surchargeRate).toFixed(4) : "—"}</td>
-                    <td className={`px-4 py-2.5 text-right font-semibold ${row.netCents >= 0 ? "text-gold" : "text-emerald-300"}`}>
+                    <td className={`px-4 py-2.5 text-right font-semibold ${row.netCents >= 0 ? "text-warn" : "text-emerald-300"}`}>
                       {fmtCentsExact(row.netCents)}
                     </td>
                   </tr>

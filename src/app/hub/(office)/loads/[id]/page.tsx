@@ -151,7 +151,7 @@ export default async function LoadDetailPage({ params }: { params: Promise<{ id:
                         stop.departed_at
                           ? "border-emerald-400/40 bg-emerald-500/15 text-emerald-300"
                           : stop.arrived_at
-                            ? "border-gold/40 bg-gold/15 text-gold"
+                            ? "border-warn/40 bg-warn-soft text-warn"
                             : "border-border-strong bg-surface-2 text-fg-2"
                       }`}
                     >
@@ -215,7 +215,7 @@ export default async function LoadDetailPage({ params }: { params: Promise<{ id:
               ))}
               <div className="flex justify-between border-t border-border pt-2">
                 <dt className="text-fg font-bold">Total</dt>
-                <dd className="font-display text-gold font-extrabold text-lg">{fmtCents(totalCents)}</dd>
+                <dd className="font-display text-accent-text font-extrabold text-lg">{fmtCents(totalCents)}</dd>
               </div>
               {rpmCents ? (
                 <div className="flex justify-between">

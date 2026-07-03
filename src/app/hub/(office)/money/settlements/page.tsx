@@ -12,7 +12,7 @@ import { HelpTip } from "@/components/hub/HelpTip"
 export const dynamic = "force-dynamic"
 
 const STATUS_PILL: Record<string, string> = {
-  draft: "bg-gold-500/15 text-gold-300 border-gold-400/30",
+  draft: "bg-warn-soft text-warn border-warn-soft",
   approved: "bg-sky-500/15 text-sky-300 border-sky-400/30",
   paid: "bg-emerald-500/15 text-emerald-300 border-emerald-400/30",
 }

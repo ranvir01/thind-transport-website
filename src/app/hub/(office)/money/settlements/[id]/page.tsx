@@ -29,7 +29,7 @@ export default async function SettlementDetailPage({ params }: { params: Promise
               href={settlement.statement_url}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-gold/40 bg-gold/10 px-4 text-sm font-bold text-gold hover:bg-gold/20"
+              className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-border-strong bg-surface px-4 text-sm font-semibold text-fg-2 hover:bg-hover"
             >
               <FileText className="h-4 w-4" /> Statement PDF
             </a>
@@ -53,7 +53,7 @@ export default async function SettlementDetailPage({ params }: { params: Promise
                   </span>
                   <span className="text-fg-2">{line.label}</span>
                   {line.source_type === "load" && line.source_id ? (
-                    <Link href={`/hub/loads/${line.source_id}`} className="ml-2 text-body-xs text-gold">view load</Link>
+                    <Link href={`/hub/loads/${line.source_id}`} className="ml-2 text-body-xs text-accent-text">view load</Link>
                   ) : null}
                 </div>
                 <span className={`font-semibold shrink-0 ${line.kind === "deduction" ? "text-red-300" : "text-fg"}`}>
@@ -72,7 +72,7 @@ export default async function SettlementDetailPage({ params }: { params: Promise
               <div className="flex justify-between"><dt className="text-fg-2">Deductions</dt><dd className="text-red-300 font-semibold">−{fmtCentsExact(settlement.deductions_cents)}</dd></div>
               <div className="flex justify-between border-t border-border pt-2">
                 <dt className="text-fg font-bold">Net pay</dt>
-                <dd className="font-display text-gold font-extrabold text-lg">{fmtCentsExact(settlement.net_cents)}</dd>
+                <dd className="font-display text-accent-text font-extrabold text-lg">{fmtCentsExact(settlement.net_cents)}</dd>
               </div>
             </dl>
           </Panel>
