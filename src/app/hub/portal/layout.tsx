@@ -21,7 +21,7 @@ export default async function PortalLayout({ children }: { children: React.React
       <main className="pt-20 pb-12 px-4 mx-auto w-full max-w-3xl">{children}</main>
       <footer className="pb-8 px-4 mx-auto w-full max-w-3xl">
         <div className="max-w-[200px]">
-          <SignOutButton />
+          <SignOutButton variant="dark" />
         </div>
       </footer>
     </div>
