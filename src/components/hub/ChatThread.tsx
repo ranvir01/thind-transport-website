@@ -11,6 +11,7 @@ import { Camera, Loader2, Send } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { markThreadReadAction, sendMessageAction } from "@/app/hub/_actions/messages"
 import type { HubMessage } from "@/lib/hub/types"
+import { fieldDarkCls } from "@/components/hub/ui"
 
 export function ChatThread({
   threadId,
@@ -18,6 +19,7 @@ export function ChatThread({
   meId,
   templates = [],
   readUpTo = {},
+  variant = "office",
 }: {
   threadId: string
   messages: HubMessage[]
@@ -25,7 +27,10 @@ export function ChatThread({
   templates?: { id: string; label: string; body: string }[]
   /** other participants' read positions: name → last_read_message_id */
   readUpTo?: Record<string, number>
+  /** Office uses semantic tokens; driver/portal forced-dark chrome uses fixed palette. */
+  variant?: "office" | "dark"
 }) {
+  const dark = variant === "dark"
   const router = useRouter()
   const [body, setBody] = useState("")
   const [pending, startTransition] = useTransition()
@@ -70,7 +75,7 @@ export function ChatThread({
     <div className="flex flex-col h-[calc(100dvh-220px)] min-h-[320px]">
       <div className="flex-1 overflow-y-auto space-y-2 pr-1">
         {messages.length === 0 ? (
-          <p className="py-10 text-center text-body-sm text-fg-3">
+          <p className={cn("py-10 text-center text-body-sm", dark ? "text-steel-400" : "text-fg-3")}>
             No messages yet — say hello.
           </p>
         ) : (
@@ -81,7 +86,11 @@ export function ChatThread({
                 <div
                   className={cn(
                     "max-w-[80%] rounded-2xl px-3.5 py-2.5",
-                    mine ? "bg-accent text-accent-fg rounded-br-md" : "bg-white/[0.07] text-fg-2 rounded-bl-md"
+                    mine
+                      ? "bg-accent text-accent-fg rounded-br-md"
+                      : dark
+                        ? "bg-white/[0.07] text-steel-200 rounded-bl-md"
+                        : "bg-surface-2 text-fg-2 rounded-bl-md"
                   )}
                 >
                   {!mine ? (
@@ -98,7 +107,7 @@ export function ChatThread({
                     )
                   ) : null}
                   {m.body ? <p className="text-sm whitespace-pre-wrap break-words">{m.body}</p> : null}
-                  <p className={cn("mt-1 text-[10px]", mine ? "opacity-60" : "text-fg-3")}>
+                  <p className={cn("mt-1 text-[10px]", mine ? "opacity-60" : dark ? "text-steel-400" : "text-fg-3")}>
                     {new Date(m.created_at).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}
                   </p>
                 </div>
@@ -107,7 +116,9 @@ export function ChatThread({
           })
         )}
         {seenBy.length > 0 ? (
-          <p className="text-right text-[10px] text-fg-3">Seen by {seenBy.join(", ")}</p>
+          <p className={cn("text-right text-[10px]", dark ? "text-steel-400" : "text-fg-3")}>
+            Seen by {seenBy.join(", ")}
+          </p>
         ) : null}
         <div ref={bottomRef} />
       </div>
@@ -126,12 +137,19 @@ export function ChatThread({
         </div>
       ) : null}
 
-      <div className="flex items-end gap-2 pt-2 border-t border-border">
+      <div
+        className={cn("flex items-end gap-2 pt-2 border-t", dark ? "border-white/10" : "border-border")}
+      >
         <button
           onClick={() => fileRef.current?.click()}
           aria-label="Attach a photo"
           disabled={pending}
-          className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-border-strong text-fg-2 hover:bg-hover disabled:opacity-60"
+          className={cn(
+            "flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border disabled:opacity-60",
+            dark
+              ? "border-white/15 text-steel-200 hover:bg-white/5"
+              : "border-border-strong text-fg-2 hover:bg-hover"
+          )}
         >
           <Camera className="h-5 w-5" />
         </button>
@@ -146,7 +164,12 @@ export function ChatThread({
         <textarea
           rows={1}
           placeholder="Type a message…"
-          className="flex-1 resize-none rounded-xl border border-border-strong bg-surface px-3 py-3 text-sm text-fg placeholder:text-fg-3 min-h-[48px]"
+          className={cn(
+            "flex-1 resize-none rounded-xl px-3 py-3 text-sm min-h-[48px]",
+            dark
+              ? cn(fieldDarkCls, "h-auto min-h-[48px] py-3")
+              : "border border-border-strong bg-surface text-fg placeholder:text-fg-3"
+          )}
           value={body}
           onChange={(e) => setBody(e.target.value)}
           onKeyDown={(e) => {

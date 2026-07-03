@@ -47,7 +47,7 @@ export default async function DriverThreadPage({ params }: { params: Promise<{ i
           {thread.kind === "direct" ? "Dispatch / office" : `Load ${thread.load_reference ?? ""}`}
         </h1>
       </div>
-      <ChatThread threadId={id} messages={messages} meId={user.id} readUpTo={readUpTo} />
+      <ChatThread threadId={id} messages={messages} meId={user.id} readUpTo={readUpTo} variant="dark" />
     </div>
   )
 }
