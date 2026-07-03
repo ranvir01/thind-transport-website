@@ -93,6 +93,13 @@ Launch together, merge in any order.
 > build it under AGENTS.md rules; verify (build, tests, sidecars if touched, visual if UI); push to main;
 > end your commit body with an updated `Backlog:`. One item per cycle — small and shippable beats big.
 
+**Cursor Automation (background):** A cloud agent can run 3a automatically after each push to `main`.
+Prompt lives at `.cursor/automation/hauldesk-improvement-cycle.prompt.md`. In Cursor → Automations,
+create a **Push to branch** trigger on `ranvir01/thind-transport-website` / `main`, point the agent at
+that repo, and paste the prompt file contents (or `@` mention the file). Enable Cloud compute. The agent
+includes an anti-loop guard: it skips when backlog is polish-only or HEAD is already an improvement-cycle
+commit with no P0/P1 items left.
+
 ### 3b. Release gate (before any deploy is called done)
 > Verify the release: `npm run build`, `npx vitest run`, `npm run test:sidecars`; then against production
 > Postgres `POSTGRES_URL=<prod> HUB_DEMO_LOGIN=false npm run go-live:check` and fix anything red.
