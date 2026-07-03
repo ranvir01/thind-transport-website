@@ -8,9 +8,9 @@ import { cn } from "@/lib/utils"
 export const dynamic = "force-dynamic"
 
 const STATUS_PILL: Record<string, string> = {
-  active: "bg-emerald-500/15 text-emerald-300 border-emerald-400/30",
+  active: "bg-ok-soft text-ok border-ok-soft",
   inactive: "bg-surface-2 text-fg-3 border-border-strong",
-  applicant: "bg-sky-500/15 text-sky-300 border-sky-400/30",
+  applicant: "bg-info-soft text-info border-info-soft",
 }
 
 export default async function DriversPage() {

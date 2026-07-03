@@ -269,7 +269,7 @@ export function LoadForm({
               {form.stops.length > 2 ? (
                 <button
                   type="button" aria-label="Remove stop" onClick={() => removeStop(i)}
-                  className="flex h-10 w-10 items-center justify-center rounded-lg text-red-300 hover:bg-red-500/10"
+                  className="flex h-10 w-10 items-center justify-center rounded-lg text-bad hover:bg-bad-soft"
                 >
                   <Trash2 className="h-4 w-4" />
                 </button>
@@ -411,7 +411,7 @@ export function LoadForm({
               <button
                 type="button" aria-label="Remove accessorial"
                 onClick={() => setForm((f) => ({ ...f, accessorials: f.accessorials.filter((_, j) => j !== i) }))}
-                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-red-300 hover:bg-red-500/10"
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-bad hover:bg-bad-soft"
               >
                 <Trash2 className="h-4 w-4" />
               </button>

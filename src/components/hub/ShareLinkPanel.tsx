@@ -91,7 +91,7 @@ export function ShareLinkPanel({ loadId, links }: { loadId: string; links: Share
                 aria-label="Revoke link"
                 onClick={() => revoke(link.id)}
                 disabled={pending}
-                className="flex h-10 w-10 items-center justify-center rounded-lg text-red-300 hover:bg-red-500/10 disabled:opacity-50"
+                className="flex h-10 w-10 items-center justify-center rounded-lg text-bad hover:bg-bad-soft disabled:opacity-50"
               >
                 <XCircle className="h-4 w-4" />
               </button>

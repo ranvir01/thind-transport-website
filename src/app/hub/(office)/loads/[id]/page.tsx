@@ -149,7 +149,7 @@ export default async function LoadDetailPage({ params }: { params: Promise<{ id:
                     <span
                       className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full border text-xs font-bold ${
                         stop.departed_at
-                          ? "border-emerald-400/40 bg-emerald-500/15 text-emerald-300"
+                          ? "border-ok-soft bg-ok-soft text-ok"
                           : stop.arrived_at
                             ? "border-warn-soft bg-warn-soft text-warn"
                             : "border-border-strong bg-surface-2 text-fg-2"

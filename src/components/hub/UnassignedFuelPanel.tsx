@@ -49,7 +49,7 @@ function FuelRow({ tx, loads }: { tx: FuelTransaction; loads: AssignableLoad[] }
         <span className="truncate">
           {tx.merchant ?? "Fuel stop"} · {fmtCentsExact(tx.total_cents)}
         </span>
-        <span className="shrink-0 text-emerald-400">Linked to {done}</span>
+        <span className="shrink-0 text-ok">Linked to {done}</span>
       </div>
     )
   }

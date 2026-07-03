@@ -55,7 +55,7 @@ export default async function FacilityDetailPage({ params }: { params: Promise<{
                 ? "border-bad-soft bg-bad-soft text-bad"
                 : risk === "warn"
                   ? "border-warn-soft bg-warn-soft text-warn"
-                  : "border-green-500/30 bg-green-500/10 text-green-400"
+                  : "border-ok-soft bg-ok-soft text-ok"
             )}
           >
             <Clock className="h-4 w-4" />

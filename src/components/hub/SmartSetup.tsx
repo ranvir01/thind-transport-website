@@ -249,7 +249,7 @@ function ScanCard({
           {scan.analysis.kind === "rate_con" ? "Book this load" : "Apply to HaulDesk"}
         </button>
       ) : scan.applied ? (
-        <p className="text-sm font-semibold text-emerald-300 flex items-center gap-2">
+        <p className="text-sm font-semibold text-ok flex items-center gap-2">
           <Check className="h-4 w-4" /> Applied
         </p>
       ) : (

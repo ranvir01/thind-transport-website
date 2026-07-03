@@ -149,9 +149,9 @@ export default async function TodayPage() {
                         className={cn(
                           "shrink-0 rounded-full border px-2.5 py-0.5 text-[11px] font-bold",
                           stop.arrived_at
-                            ? "border-green-500/40 bg-green-500/10 text-green-400"
+                            ? "border-ok-soft bg-ok-soft text-ok"
                             : cd.urgent
-                              ? "border-red-500/40 bg-red-500/10 text-red-400"
+                              ? "border-bad-soft bg-bad-soft text-bad"
                               : "border-border-strong bg-surface-2 text-fg-2"
                         )}
                       >
@@ -256,9 +256,9 @@ export default async function TodayPage() {
 
         {/* Red compliance */}
         {today.redCompliance.length > 0 ? (
-          <Panel className="p-4 border-red-500/30">
+          <Panel className="p-4 border-bad-soft">
             <h2 className="flex items-center gap-2 text-[13.5px] font-semibold text-fg mb-2">
-              <AlertTriangle className="h-4 w-4 text-red-400" /> Red flags ({today.redCompliance.length})
+              <AlertTriangle className="h-4 w-4 text-bad" /> Red flags ({today.redCompliance.length})
             </h2>
             <ul className="divide-y divide-border">
               {today.redCompliance.slice(0, 8).map((entry, i) => (
@@ -268,7 +268,7 @@ export default async function TodayPage() {
                       <span className="font-semibold text-fg">{entry.name}</span>
                       <span className="text-fg-3"> — {entry.kind}</span>
                     </p>
-                    <span className="shrink-0 rounded-full border border-red-500/40 bg-red-500/10 px-2.5 py-0.5 text-[11px] font-bold text-red-400">
+                    <span className="shrink-0 rounded-full border border-bad-soft bg-bad-soft px-2.5 py-0.5 text-[11px] font-bold text-bad">
                       {entry.due ? new Date(entry.due).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "—"}
                     </span>
                   </Link>
@@ -293,7 +293,7 @@ export default async function TodayPage() {
                       className={cn(
                         "shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase",
                         task.priority === "urgent"
-                          ? "border-red-500/40 bg-red-500/10 text-red-400"
+                          ? "border-bad-soft bg-bad-soft text-bad"
                           : "border-border-strong bg-surface-2 text-fg-3"
                       )}
                     >

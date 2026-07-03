@@ -11,9 +11,9 @@ import { HelpTip } from "@/components/hub/HelpTip"
 export const dynamic = "force-dynamic"
 
 const COLOR_DOT: Record<string, string> = {
-  red: "bg-red-400",
+  red: "bg-bad",
   amber: "bg-warn",
-  green: "bg-emerald-400",
+  green: "bg-ok",
 }
 
 export default async function CompliancePage() {

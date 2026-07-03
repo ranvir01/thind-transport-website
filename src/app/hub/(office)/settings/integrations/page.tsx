@@ -110,25 +110,25 @@ export default async function IntegrationsPage() {
           <ul className="mt-2 space-y-1.5 text-body-sm">
             <li className="flex items-center justify-between">
               <span className="text-fg-2">FMCSA QCMobile (broker vetting)</span>
-              <span className={cn("text-[11px] font-bold uppercase", fmcsaConfigured() ? "text-green-400" : "text-fg-3")}>
+              <span className={cn("text-[11px] font-bold uppercase", fmcsaConfigured() ? "text-ok" : "text-fg-3")}>
                 {fmcsaConfigured() ? "configured" : "set FMCSA_WEBKEY"}
               </span>
             </li>
             <li className="flex items-center justify-between">
               <span className="text-fg-2">EIA weekly diesel index</span>
-              <span className={cn("text-[11px] font-bold uppercase", process.env.EIA_API_KEY ? "text-green-400" : "text-fg-3")}>
+              <span className={cn("text-[11px] font-bold uppercase", process.env.EIA_API_KEY ? "text-ok" : "text-fg-3")}>
                 {process.env.EIA_API_KEY ? "configured" : "set EIA_API_KEY"}
               </span>
             </li>
             <li className="flex items-center justify-between">
               <span className="text-fg-2">Smart Setup AI extraction (Anthropic)</span>
-              <span className={cn("text-[11px] font-bold uppercase", aiParserConfigured() ? "text-green-400" : "text-fg-3")}>
+              <span className={cn("text-[11px] font-bold uppercase", aiParserConfigured() ? "text-ok" : "text-fg-3")}>
                 {aiParserConfigured() ? "configured" : "set ANTHROPIC_API_KEY"}
               </span>
             </li>
             <li className="flex items-center justify-between">
               <span className="text-fg-2">NWS weather · NHTSA VIN/recalls · OSM</span>
-              <span className="text-[11px] font-bold uppercase text-green-400">no key needed</span>
+              <span className="text-[11px] font-bold uppercase text-ok">no key needed</span>
             </li>
           </ul>
         </Panel>
@@ -146,10 +146,10 @@ export default async function IntegrationsPage() {
                 <span className="font-semibold text-fg">{sync.source}</span>
                 {" · "}
                 {new Date(sync.started_at).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
-                {sync.error ? <span className="text-red-400"> — {sync.error}</span> : null}
+                {sync.error ? <span className="text-bad"> — {sync.error}</span> : null}
                 {sync.counts ? <span className="text-fg-3"> — {JSON.stringify(sync.counts)}</span> : null}
               </span>
-              <span className={cn("shrink-0 text-[11px] font-bold uppercase", sync.ok ? "text-green-400" : "text-red-400")}>
+              <span className={cn("shrink-0 text-[11px] font-bold uppercase", sync.ok ? "text-ok" : "text-bad")}>
                 {sync.ok ? "ok" : "failed"}
               </span>
             </div>

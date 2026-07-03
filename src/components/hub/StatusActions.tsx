@@ -72,7 +72,7 @@ export function CancelLoadButton({ loadId, status }: { loadId: string; status: L
     return (
       <button
         onClick={() => setConfirming(true)}
-        className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-red-400/30 px-4 text-sm font-semibold text-red-300 hover:bg-red-500/10"
+        className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-bad-soft px-4 text-sm font-semibold text-bad hover:bg-bad-soft"
       >
         <Ban className="h-4 w-4" /> Cancel load
       </button>
@@ -83,7 +83,7 @@ export function CancelLoadButton({ loadId, status }: { loadId: string; status: L
       <button
         onClick={cancel}
         disabled={pending}
-        className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-red-600 px-4 text-sm font-bold text-fg hover:bg-red-500 disabled:opacity-60"
+        className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-bad px-4 text-sm font-bold text-white hover:opacity-90 disabled:opacity-60"
       >
         {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Ban className="h-4 w-4" />}
         Confirm cancel

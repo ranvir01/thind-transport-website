@@ -123,7 +123,7 @@ export function DocumentsPanel({
                 aria-label={`Delete ${doc.file_name}`}
                 onClick={() => remove(doc)}
                 disabled={pending}
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-red-300 hover:bg-red-500/10 disabled:opacity-50"
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-bad hover:bg-bad-soft disabled:opacity-50"
               >
                 <Trash2 className="h-4 w-4" />
               </button>
