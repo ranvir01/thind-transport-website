@@ -175,7 +175,7 @@ export function DvirForm({
 
       <section className="rounded-2xl border border-white/10 bg-navy-800/80 p-4">
         <p className={labelDarkCls}>Sign the report</p>
-        <SignaturePad onChange={setSignature} height={110} />
+        <SignaturePad onChange={setSignature} height={110} variant="dark" />
         <button
           onClick={submit}
           disabled={pending || !signature}
