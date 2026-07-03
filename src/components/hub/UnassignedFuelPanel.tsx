@@ -103,6 +103,9 @@ function FuelRow({ tx, loads }: { tx: FuelTransaction; loads: AssignableLoad[] }
   )
 }
 
+/** Newest receipts are the ones being reconciled this week — show those, fold the backlog. */
+const COLLAPSED_COUNT = 8
+
 export function UnassignedFuelPanel({
   transactions,
   loads,
@@ -110,7 +113,11 @@ export function UnassignedFuelPanel({
   transactions: FuelTransaction[]
   loads: AssignableLoad[]
 }) {
+  const [showAll, setShowAll] = useState(false)
   if (transactions.length === 0) return null
+
+  const visible = showAll ? transactions : transactions.slice(0, COLLAPSED_COUNT)
+  const hidden = transactions.length - visible.length
 
   return (
     <div className="mb-4 rounded-card border border-border bg-surface shadow-card">
@@ -122,10 +129,18 @@ export function UnassignedFuelPanel({
         <p className="ml-auto text-body-xs text-fg-3">Match receipts to loads for true cost/load</p>
       </div>
       <div className="divide-y divide-border">
-        {transactions.map((tx) => (
+        {visible.map((tx) => (
           <FuelRow key={tx.id} tx={tx} loads={loads} />
         ))}
       </div>
+      {hidden > 0 || showAll ? (
+        <button
+          onClick={() => setShowAll((v) => !v)}
+          className="block w-full border-t border-border p-3 text-center text-body-xs font-semibold text-accent-text hover:bg-hover"
+        >
+          {showAll ? "Show fewer" : `Show ${hidden} older receipt${hidden === 1 ? "" : "s"}`}
+        </button>
+      ) : null}
     </div>
   )
 }
