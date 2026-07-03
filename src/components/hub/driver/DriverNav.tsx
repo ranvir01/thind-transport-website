@@ -27,19 +27,22 @@ export function DriverNav({ firstName }: { firstName: string }) {
 
   return (
     <>
-      <header className="fixed top-0 inset-x-0 z-40 flex h-14 items-center justify-between border-b border-border bg-surface/95 px-4 backdrop-blur-sm">
+      {/* The driver app is deliberately dark (cab use at night), so its chrome
+          uses fixed dark colors — the mode-dependent surface/fg tokens resolve
+          to light values here and made the wordmark invisible. */}
+      <header className="fixed top-0 inset-x-0 z-40 flex h-14 items-center justify-between border-b border-white/10 bg-navy-600/95 px-4 backdrop-blur-sm">
         <Link href="/hub/driver" className="leading-none">
-          <span className="brand-wordmark text-base font-semibold text-fg tracking-[0.14em]">
+          <span className="brand-wordmark text-base font-semibold text-white tracking-[0.14em]">
             {PRODUCT.wordmark}
           </span>
         </Link>
         <div className="flex items-center gap-2">
-          <span className="text-body-sm text-fg-2">Hey, {firstName}</span>
+          <span className="text-body-sm text-steel-100">Hey, {firstName}</span>
           <NotificationsBell />
         </div>
       </header>
 
-      <nav className="fixed bottom-0 inset-x-0 z-40 border-t border-border bg-surface/98 backdrop-blur-sm pb-[env(safe-area-inset-bottom)]">
+      <nav className="fixed bottom-0 inset-x-0 z-40 border-t border-white/10 bg-navy-600/95 backdrop-blur-sm pb-[env(safe-area-inset-bottom)]">
         <div className="mx-auto grid max-w-lg grid-cols-4">
           {TABS.map((tab) => (
             <Link
@@ -47,7 +50,7 @@ export function DriverNav({ firstName }: { firstName: string }) {
               href={tab.href}
               className={cn(
                 "flex min-h-[60px] flex-col items-center justify-center gap-1 text-[10px] font-bold uppercase tracking-wide",
-                isActive(pathname, tab.href) ? "text-gold" : "text-fg-3 hover:text-fg"
+                isActive(pathname, tab.href) ? "text-gold" : "text-steel-400 hover:text-white"
               )}
             >
               <tab.icon className="h-5 w-5" />

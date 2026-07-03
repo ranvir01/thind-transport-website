@@ -10,12 +10,12 @@ import { cn } from "@/lib/utils"
 export const dynamic = "force-dynamic"
 
 const INVOICE_STATUS_COPY: Record<string, { label: string; cls: string }> = {
-  draft: { label: "Preparing", cls: "border-white/15 bg-white/5 text-fg-3" },
+  draft: { label: "Preparing", cls: "border-white/15 bg-white/5 text-steel-400" },
   sent: { label: "Awaiting payment", cls: "border-gold/40 bg-gold/10 text-gold" },
   partial: { label: "Partially paid", cls: "border-gold/40 bg-gold/10 text-gold" },
   paid: { label: "Paid — thank you", cls: "border-green-500/40 bg-green-500/10 text-green-400" },
   overdue: { label: "Past due", cls: "border-red-500/40 bg-red-500/10 text-red-400" },
-  disputed: { label: "In review", cls: "border-white/15 bg-white/5 text-fg-3" },
+  disputed: { label: "In review", cls: "border-white/15 bg-white/5 text-steel-400" },
 }
 
 export default async function PortalHomePage() {
@@ -32,10 +32,10 @@ export default async function PortalHomePage() {
   return (
     <div className="space-y-5">
       <div>
-        <h1 className="font-display text-xl font-extrabold uppercase tracking-wide text-fg">
+        <h1 className="font-display text-xl font-extrabold uppercase tracking-wide text-white">
           {carrier?.name ?? "Your carrier"}
         </h1>
-        <p className="text-body-sm text-fg-3">
+        <p className="text-body-sm text-steel-400">
           Hi {user.name.split(" ")[0]} — live freight, documents, and payment status. No checking calls needed.
         </p>
       </div>
@@ -48,7 +48,7 @@ export default async function PortalHomePage() {
           Moving now ({inTransit.length})
         </h2>
         {inTransit.length === 0 ? (
-          <p className="rounded-xl border border-white/10 bg-navy-800/80 px-4 py-3 text-body-sm text-fg-3">
+          <p className="rounded-xl border border-white/10 bg-navy-800/80 px-4 py-3 text-body-sm text-steel-400">
             Nothing on the road right now.
           </p>
         ) : (
@@ -60,15 +60,15 @@ export default async function PortalHomePage() {
                   className="block rounded-2xl border border-white/10 bg-navy-800/80 p-4 hover:bg-white/5"
                 >
                   <div className="flex items-center justify-between gap-2">
-                    <p className="font-semibold text-fg">
+                    <p className="font-semibold text-white">
                       {load.reference}
-                      {load.customer_reference ? <span className="text-fg-3 font-normal"> · your ref {load.customer_reference}</span> : null}
+                      {load.customer_reference ? <span className="text-steel-400 font-normal"> · your ref {load.customer_reference}</span> : null}
                     </p>
                     <span className="shrink-0 rounded-full border border-green-500/40 bg-green-500/10 px-2.5 py-0.5 text-[11px] font-bold text-green-400">
                       {STATUS_LABELS[load.status as LoadStatus] ?? load.status}
                     </span>
                   </div>
-                  <p className="mt-0.5 text-body-sm text-fg-2">
+                  <p className="mt-0.5 text-body-sm text-steel-200">
                     {load.origin_city}, {load.origin_state} → {load.dest_city}, {load.dest_state}
                   </p>
                   {load.position_hint ? (
@@ -91,8 +91,8 @@ export default async function PortalHomePage() {
               return (
                 <li key={invoice.id} className="flex items-center justify-between gap-2 p-3.5 text-sm">
                   <div className="min-w-0">
-                    <p className="font-semibold text-fg">{invoice.number} · {invoice.load_reference}</p>
-                    <p className="text-body-xs text-fg-3">
+                    <p className="font-semibold text-white">{invoice.number} · {invoice.load_reference}</p>
+                    <p className="text-body-xs text-steel-400">
                       Due {new Date(invoice.due_on).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
                     </p>
                   </div>
@@ -103,7 +103,7 @@ export default async function PortalHomePage() {
                     <span className="font-display font-extrabold text-gold">{fmtCents(invoice.amount_cents)}</span>
                     {invoice.pdf_url ? (
                       <a href={invoice.pdf_url} target="_blank" rel="noreferrer" aria-label="Download invoice"
-                        className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/15 text-fg-2 hover:bg-white/5">
+                        className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/15 text-steel-200 hover:bg-white/5">
                         <FileText className="h-4 w-4" />
                       </a>
                     ) : null}
@@ -118,7 +118,7 @@ export default async function PortalHomePage() {
       {/* History */}
       {recent.length > 0 ? (
         <section>
-          <h2 className="mb-2 font-display text-sm font-bold uppercase tracking-wider text-fg-3">
+          <h2 className="mb-2 font-display text-sm font-bold uppercase tracking-wider text-steel-400">
             Recent shipments
           </h2>
           <ul className="divide-y divide-white/5 rounded-2xl border border-white/10 bg-navy-800/80">
@@ -126,10 +126,10 @@ export default async function PortalHomePage() {
               <li key={load.id}>
                 <Link href={`/hub/portal/loads/${load.id}`} className="flex items-center justify-between gap-2 p-3.5 hover:bg-white/5">
                   <span className="min-w-0 text-sm">
-                    <span className="font-semibold text-fg">{load.reference}</span>
-                    <span className="text-fg-3"> · {load.origin_city} → {load.dest_city}</span>
+                    <span className="font-semibold text-white">{load.reference}</span>
+                    <span className="text-steel-400"> · {load.origin_city} → {load.dest_city}</span>
                   </span>
-                  <span className="shrink-0 flex items-center gap-1.5 text-[11px] font-bold text-fg-3">
+                  <span className="shrink-0 flex items-center gap-1.5 text-[11px] font-bold text-steel-400">
                     <Package className="h-3.5 w-3.5" /> {STATUS_LABELS[load.status as LoadStatus] ?? load.status}
                   </span>
                 </Link>
@@ -142,14 +142,14 @@ export default async function PortalHomePage() {
       {/* Carrier paperwork */}
       {packet.length > 0 ? (
         <section>
-          <h2 className="mb-2 font-display text-sm font-bold uppercase tracking-wider text-fg-3">
+          <h2 className="mb-2 font-display text-sm font-bold uppercase tracking-wider text-steel-400">
             Carrier paperwork
           </h2>
           <div className="flex flex-wrap gap-2">
             {packet.map((doc) => (
               <a
                 key={doc.id} href={doc.url} target="_blank" rel="noreferrer"
-                className="inline-flex min-h-[40px] items-center gap-1.5 rounded-xl border border-white/15 px-3 text-body-xs font-semibold text-fg-2 hover:bg-white/5"
+                className="inline-flex min-h-[40px] items-center gap-1.5 rounded-xl border border-white/15 px-3 text-body-xs font-semibold text-steel-200 hover:bg-white/5"
               >
                 <FileText className="h-3.5 w-3.5" />
                 {doc.kind === "insurance" ? "Certificate of insurance" : doc.kind === "w9" ? "W-9" : "Authority letter"}
