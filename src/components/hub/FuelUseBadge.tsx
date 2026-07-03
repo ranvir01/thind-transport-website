@@ -13,7 +13,7 @@ import { FUEL_USES, type FuelUse } from "@/lib/hub/types"
 
 const STYLES: Record<FuelUse, string> = {
   tractor: "border-border-strong bg-surface-2 text-fg-2",
-  reefer: "border-warn/40 bg-warn-soft text-warn",
+  reefer: "border-warn-soft bg-warn-soft text-warn",
   other: "border-border-strong bg-surface-2 text-fg-3",
 }
 

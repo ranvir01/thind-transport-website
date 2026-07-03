@@ -32,7 +32,7 @@ export function HubShell({
 
   return (
     <div className="hauldesk-shell min-h-screen bg-bg text-fg">
-      <header className="sticky top-0 z-40 flex h-14 items-center gap-3 border-b border-border bg-surface/95 px-4 backdrop-blur-sm md:px-6">
+      <header className="sticky top-0 z-40 flex h-14 items-center gap-3 border-b border-border bg-surface px-4 md:px-6">
         <Link href="/hub" className="shrink-0 min-w-0">
           <span className="block font-semibold text-fg tracking-tight truncate">{PRODUCT.name}</span>
           <span className="block text-[11px] text-fg-3 truncate max-w-[140px]">

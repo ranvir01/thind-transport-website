@@ -98,7 +98,7 @@ export function ChatThread({
                     )
                   ) : null}
                   {m.body ? <p className="text-sm whitespace-pre-wrap break-words">{m.body}</p> : null}
-                  <p className={cn("mt-1 text-[10px]", mine ? "text-fg/60" : "text-fg-3")}>
+                  <p className={cn("mt-1 text-[10px]", mine ? "opacity-60" : "text-fg-3")}>
                     {new Date(m.created_at).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}
                   </p>
                 </div>
@@ -146,7 +146,7 @@ export function ChatThread({
         <textarea
           rows={1}
           placeholder="Type a message…"
-          className="flex-1 resize-none rounded-xl border border-border-strong bg-bg-800 px-3 py-3 text-sm text-fg placeholder:text-fg-3 min-h-[48px]"
+          className="flex-1 resize-none rounded-xl border border-border-strong bg-surface px-3 py-3 text-sm text-fg placeholder:text-fg-3 min-h-[48px]"
           value={body}
           onChange={(e) => setBody(e.target.value)}
           onKeyDown={(e) => {

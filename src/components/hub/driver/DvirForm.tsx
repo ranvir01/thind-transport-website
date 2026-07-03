@@ -144,7 +144,7 @@ export function DvirForm({
       </section>
 
       {defects.length > 0 ? (
-        <section className="rounded-2xl border border-accent/40 bg-accent/[0.07] p-4">
+        <section className="rounded-2xl border border-orange/40 bg-orange/[0.07] p-4">
           <p className="flex items-center gap-2 text-sm font-bold text-orange">
             <ShieldAlert className="h-4 w-4" /> Is the truck still safe to drive?
           </p>

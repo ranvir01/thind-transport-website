@@ -185,7 +185,7 @@ export function ImportWizard({ initialKind = "loads" }: { initialKind?: string }
             onClick={() => { setKind(k.key); reset() }}
             className={cn(
               "min-h-[44px] rounded-xl px-4 text-sm font-bold",
-              kind === k.key ? "bg-accent-soft text-accent-text border border-accent/30" : "text-fg-2 hover:bg-hover border border-border"
+              kind === k.key ? "bg-accent-soft text-accent-text border border-accent-soft" : "text-fg-2 hover:bg-hover border border-border"
             )}
           >
             {k.label}

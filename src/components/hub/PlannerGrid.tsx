@@ -21,8 +21,8 @@ const LANE_HEIGHT = 46
 const STATUS_COLORS: Record<string, string> = {
   quoted: "border-steel-400/40 bg-steel-500/20 text-fg-2",
   booked: "border-gold/50 bg-gold/15 text-gold",
-  dispatched: "border-orange/50 bg-accent/20 text-orange",
-  at_pickup: "border-accent/60 bg-accent-soft text-accent-text",
+  dispatched: "border-orange/50 bg-orange/15 text-orange",
+  at_pickup: "border-accent-soft bg-accent-soft text-accent-text",
   in_transit: "border-green-500/50 bg-green-500/15 text-green-300",
   delivered: "border-border-strong bg-surface-2 text-fg-2",
 }
@@ -197,7 +197,7 @@ export function PlannerGrid({
           {rows.map(({ truck, truckBlocks, lanes, laneCount, offDays, busyDays }) => (
             <div
               key={truck.id}
-              className="grid items-stretch rounded-xl border border-border bg-bg-800/60"
+              className="grid items-stretch rounded-xl border border-border bg-surface"
               style={{ gridTemplateColumns: "200px repeat(7, 1fr)" }}
             >
               {/* Truck label */}
@@ -238,7 +238,7 @@ export function PlannerGrid({
                           "border-l border-border transition-colors",
                           i === todayIdx && "bg-white/[0.03]",
                           isEmpty && "planner-empty-day",
-                          isOver && "bg-accent/20 ring-1 ring-inset ring-orange/60"
+                          isOver && "bg-accent-soft ring-1 ring-inset ring-orange/60"
                         )}
                         title={isOff ? "Driver on approved time off" : isEmpty ? "Empty — drag a load here" : undefined}
                       >

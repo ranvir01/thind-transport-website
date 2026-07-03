@@ -194,7 +194,7 @@ export function LoadForm({
               {customers.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
             </select>
             {customerWarnings.map((warning) => (
-              <p key={warning} className="mt-1 inline-flex rounded-full border border-accent/40 bg-accent/10 px-2.5 py-1 text-[11px] font-bold text-orange">
+              <p key={warning} className="mt-1 inline-flex rounded-full border border-warn-soft bg-warn-soft px-2.5 py-1 text-[11px] font-bold text-warn">
                 {warning}
               </p>
             ))}
@@ -284,7 +284,7 @@ export function LoadForm({
                   onBlur={() => checkFacility(i)}
                 />
                 {facilityHints[i] ? (
-                  <p className="mt-1 inline-flex rounded-full border border-accent/40 bg-accent/10 px-2.5 py-1 text-[11px] font-bold text-orange">
+                  <p className="mt-1 inline-flex rounded-full border border-warn-soft bg-warn-soft px-2.5 py-1 text-[11px] font-bold text-warn">
                     {facilityHints[i]}
                   </p>
                 ) : null}

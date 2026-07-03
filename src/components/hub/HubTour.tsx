@@ -117,7 +117,7 @@ export function HubTourOverlay({
   return (
     <div className="fixed inset-0 z-[100]" role="dialog" aria-modal="true" aria-labelledby="hub-tour-title">
       <div
-        className="absolute inset-0 bg-fg/40 transition-opacity motion-reduce:transition-none"
+        className="absolute inset-0 bg-black/40 transition-opacity motion-reduce:transition-none"
         onClick={onClose}
         aria-hidden
       />

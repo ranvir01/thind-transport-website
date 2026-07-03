@@ -115,7 +115,7 @@ export function NotificationsBell({ direction = "down" }: { direction?: "down" |
                   onClick={() => setOpen(false)}
                   className={cn(
                     "block border-b border-border px-4 py-3 hover:bg-hover",
-                    !item.read_at && "bg-accent/[0.06]"
+                    !item.read_at && "bg-accent-soft"
                   )}
                 >
                   <p className="text-sm font-semibold text-fg">{item.title}</p>

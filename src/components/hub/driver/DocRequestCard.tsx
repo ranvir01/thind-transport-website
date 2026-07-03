@@ -43,7 +43,7 @@ export function DocRequestCard({
   }
 
   return (
-    <section className="rounded-2xl border border-accent/30 bg-accent/[0.06] p-4">
+    <section className="rounded-2xl border border-orange/30 bg-orange/[0.06] p-4">
       <p className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-orange">
         <FileQuestion className="h-4 w-4" /> The office needs something
       </p>

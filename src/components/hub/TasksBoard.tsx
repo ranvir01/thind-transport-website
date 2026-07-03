@@ -21,7 +21,7 @@ import type { Task, TaskPriority, TaskRecurrence } from "@/lib/hub/types"
 
 const PRIORITY_STYLES: Record<TaskPriority, string> = {
   urgent: "border-red-500/40 bg-red-500/10 text-red-400",
-  high: "border-accent/40 bg-accent/10 text-orange",
+  high: "border-warn-soft bg-warn-soft text-warn",
   normal: "border-border-strong bg-surface-2 text-fg-3",
   low: "border-border bg-white/[0.03] text-fg-3",
 }
@@ -76,7 +76,7 @@ export function QuickAddTask() {
   }
 
   return (
-    <form onSubmit={submit} className="rounded-2xl border border-border bg-bg-800/60 p-3 space-y-2">
+    <form onSubmit={submit} className="rounded-2xl border border-border bg-surface-2 p-3 space-y-2">
       <div className="flex gap-2">
         <input
           aria-label="New task"

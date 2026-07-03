@@ -34,7 +34,7 @@ export default async function FacilitiesPage({
           name="q"
           defaultValue={q ?? ""}
           placeholder="Search name, city, state…"
-          className="w-full min-h-[48px] rounded-xl border border-border-strong bg-bg-800 px-4 text-sm text-fg placeholder:text-fg-3"
+          className="w-full min-h-[48px] rounded-xl border border-border-strong bg-surface px-4 text-sm text-fg placeholder:text-fg-3"
         />
       </form>
 

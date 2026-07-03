@@ -48,8 +48,8 @@ export function DvirPanel({
       </h2>
 
       {state !== "clear" && openDvir ? (
-        <div className="mb-3 rounded-xl border border-accent/40 bg-accent/[0.07] p-3">
-          <p className="text-sm font-bold text-orange">
+        <div className="mb-3 rounded-xl border border-warn bg-warn-soft p-3">
+          <p className="text-sm font-bold text-warn">
             {state === "awaiting_repair"
               ? "Grounded — defects awaiting repair certification (396.13)"
               : "Repair certified — waiting on the next driver's pre-trip sign-off"}
@@ -118,7 +118,7 @@ export function DvirPanel({
                     ? "border-green-500/40 bg-green-500/10 text-green-400"
                     : dvir.safe_to_operate
                       ? "border-gold/40 bg-gold/10 text-gold"
-                      : "border-accent/40 bg-accent/10 text-orange"
+                      : "border-bad-soft bg-bad-soft text-bad"
                 )}
               >
                 {dvir.defects.length === 0 ? (

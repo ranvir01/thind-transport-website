@@ -169,7 +169,7 @@ export function IncidentForm({
           <p
             className={cn(
               "flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold",
-              recordable ? "bg-accent/15 text-orange border border-accent/30" : "bg-surface-2 text-fg-2"
+              recordable ? "bg-warn-soft text-warn border border-warn-soft" : "bg-surface-2 text-fg-2"
             )}
           >
             <ShieldAlert className="h-4 w-4 shrink-0" />
