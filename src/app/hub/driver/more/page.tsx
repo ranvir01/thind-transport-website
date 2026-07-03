@@ -57,7 +57,7 @@ export default async function DriverMorePage() {
       <div className="rounded-2xl border border-white/10 bg-navy-800/80 p-4">
         <p className="text-sm font-semibold text-white">{user.name}</p>
         <p className="text-body-xs text-steel-300 mb-3">{user.email} · {carrier?.name}</p>
-        <SignOutButton />
+        <SignOutButton variant="dark" />
       </div>
     </div>
   )
