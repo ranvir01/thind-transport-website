@@ -9,9 +9,9 @@ import { cn } from "@/lib/utils"
 export const dynamic = "force-dynamic"
 
 const STATUS_PILL: Record<string, string> = {
-  active: "bg-emerald-500/15 text-emerald-300 border-emerald-400/30",
+  active: "bg-ok-soft text-ok border-ok-soft",
   on_hold: "bg-warn-soft text-warn border-warn-soft",
-  blacklisted: "bg-red-500/15 text-red-300 border-red-400/30",
+  blacklisted: "bg-bad-soft text-bad border-bad-soft",
 }
 
 export default async function CustomersPage() {

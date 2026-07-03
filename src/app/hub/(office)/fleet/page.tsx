@@ -8,10 +8,10 @@ import { cn } from "@/lib/utils"
 export const dynamic = "force-dynamic"
 
 const STATUS_PILL: Record<string, string> = {
-  active: "bg-emerald-500/15 text-emerald-300 border-emerald-400/30",
+  active: "bg-ok-soft text-ok border-ok-soft",
   shop: "bg-warn-soft text-warn border-warn-soft",
   idle: "bg-surface-2 text-fg-3 border-border-strong",
-  retired: "bg-red-500/15 text-red-300 border-red-400/30",
+  retired: "bg-bad-soft text-bad border-bad-soft",
 }
 
 function StatusPill({ status }: { status: string }) {

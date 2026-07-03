@@ -89,7 +89,7 @@ export default async function IftaPage({
             </Panel>
             <Panel className="p-4">
               <span className="text-label text-fg-3 uppercase">Net tax</span>
-              <p className={`mt-1 font-display text-lg font-extrabold ${Number(report.net_tax_cents) >= 0 ? "text-warn" : "text-emerald-300"}`}>
+              <p className={`mt-1 font-display text-lg font-extrabold ${Number(report.net_tax_cents) >= 0 ? "text-warn" : "text-ok"}`}>
                 {fmtCentsExact(Number(report.net_tax_cents))}
               </p>
             </Panel>
@@ -125,7 +125,7 @@ export default async function IftaPage({
                     <td className="px-4 py-2.5 text-right text-fg-2">{row.taxPaidGallons.toFixed(3)}</td>
                     <td className="px-4 py-2.5 text-right text-fg-2">{Number(row.rate).toFixed(4)}</td>
                     <td className="px-4 py-2.5 text-right text-fg-2">{row.surchargeRate ? Number(row.surchargeRate).toFixed(4) : "—"}</td>
-                    <td className={`px-4 py-2.5 text-right font-semibold ${row.netCents >= 0 ? "text-warn" : "text-emerald-300"}`}>
+                    <td className={`px-4 py-2.5 text-right font-semibold ${row.netCents >= 0 ? "text-warn" : "text-ok"}`}>
                       {fmtCentsExact(row.netCents)}
                     </td>
                   </tr>

@@ -119,7 +119,7 @@ export function SuggestMilesInline({ loadId, onSaved }: { loadId: string; onSave
           onClick={apply}
           disabled={pending}
           aria-label={`Save ${suggestion.miles} miles`}
-          className="rounded p-0.5 text-emerald-400 hover:bg-hover disabled:opacity-50"
+          className="rounded p-0.5 text-ok hover:bg-hover disabled:opacity-50"
         >
           <Check className="h-3.5 w-3.5" />
         </button>

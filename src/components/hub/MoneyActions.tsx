@@ -125,7 +125,7 @@ export function InvoiceActions({ invoiceId, factored, disputed }: { invoiceId: s
             })
           }
           disabled={pending}
-          className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-red-400/30 px-4 text-sm font-semibold text-red-300 hover:bg-red-500/10 disabled:opacity-50"
+          className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-bad-soft px-4 text-sm font-semibold text-bad hover:bg-bad-soft disabled:opacity-50"
         >
           Mark disputed
         </button>
@@ -194,7 +194,7 @@ export function SettlementActions({ settlementId, status }: { settlementId: stri
             })
           }
           disabled={pending}
-          className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-emerald-400/40 bg-emerald-500/10 px-4 text-sm font-bold text-emerald-300 hover:bg-emerald-500/20 disabled:opacity-50"
+          className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-ok-soft bg-ok-soft px-4 text-sm font-bold text-ok hover:opacity-90 disabled:opacity-50"
         >
           {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
           Mark paid

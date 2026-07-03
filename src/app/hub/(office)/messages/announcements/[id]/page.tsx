@@ -26,7 +26,7 @@ export default async function AnnouncementReportPage({ params }: { params: Promi
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-4xl">
           <Panel className="p-4">
             <h2 className="flex items-center gap-2 text-[13.5px] font-semibold text-fg mb-3">
-              <Check className="h-4 w-4 text-green-400" /> Acknowledged ({report.acked.length})
+              <Check className="h-4 w-4 text-ok" /> Acknowledged ({report.acked.length})
             </h2>
             {report.acked.length === 0 ? (
               <p className="text-body-sm text-fg-3">Nobody yet.</p>
@@ -49,7 +49,7 @@ export default async function AnnouncementReportPage({ params }: { params: Promi
               <Clock className="h-4 w-4 text-warn" /> Still waiting ({report.pending.length})
             </h2>
             {report.pending.length === 0 ? (
-              <p className="text-body-sm text-green-400 font-semibold">Everyone has signed. 100%.</p>
+              <p className="text-body-sm text-ok font-semibold">Everyone has signed. 100%.</p>
             ) : (
               <ul className="divide-y divide-border">
                 {report.pending.map((p) => (

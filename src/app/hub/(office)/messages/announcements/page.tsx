@@ -43,7 +43,7 @@ export default async function AnnouncementsPage() {
                           className={cn(
                             "shrink-0 rounded-full border px-2.5 py-0.5 text-[11px] font-bold",
                             complete
-                              ? "border-green-500/40 bg-green-500/10 text-green-400"
+                              ? "border-ok-soft bg-ok-soft text-ok"
                               : "border-warn-soft bg-warn-soft text-warn"
                           )}
                         >

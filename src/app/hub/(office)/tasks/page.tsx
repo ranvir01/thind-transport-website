@@ -23,7 +23,7 @@ function bucketize(tasks: Task[]) {
 }
 
 const SECTIONS: { key: keyof ReturnType<typeof bucketize>; label: string; tone?: string }[] = [
-  { key: "overdue", label: "Overdue", tone: "text-red-400" },
+  { key: "overdue", label: "Overdue", tone: "text-bad" },
   { key: "today", label: "Today" },
   { key: "later", label: "Coming up" },
   { key: "someday", label: "No date" },

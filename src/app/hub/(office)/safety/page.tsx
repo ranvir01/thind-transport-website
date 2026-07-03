@@ -146,7 +146,7 @@ export default async function SafetyPage() {
 
 function Flag({ label, tone }: { label: string; tone: "red" | "orange" | "warn" }) {
   const tones = {
-    red: "border-red-500/40 bg-red-500/10 text-red-400",
+    red: "border-bad-soft bg-bad-soft text-bad",
     orange: "border-orange/40 bg-orange/10 text-orange",
     warn: "border-warn-soft bg-warn-soft text-warn",
   }

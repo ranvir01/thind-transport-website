@@ -68,7 +68,7 @@ export default async function ReportsPage() {
         </Panel>
         <Panel className="p-4">
           <span className="text-label text-fg-3 uppercase">Operating ratio</span>
-          <p className={`mt-2 font-mono text-xl font-medium tabular-nums ${kpis.operatingRatioPct != null && kpis.operatingRatioPct < 100 ? "text-emerald-300" : "text-red-300"}`}>{pct(kpis.operatingRatioPct)}</p>
+          <p className={`mt-2 font-mono text-xl font-medium tabular-nums ${kpis.operatingRatioPct != null && kpis.operatingRatioPct < 100 ? "text-ok" : "text-bad"}`}>{pct(kpis.operatingRatioPct)}</p>
           <p className="mt-0.5 text-[11px] text-fg-3">cost ÷ revenue · &lt;100 = profit</p>
         </Panel>
         <Panel className="p-4">
@@ -78,7 +78,7 @@ export default async function ReportsPage() {
         </Panel>
         <Panel className="p-4">
           <span className="text-label text-fg-3 uppercase">Net margin</span>
-          <p className={`mt-2 font-mono text-xl font-medium tabular-nums ${kpis.marginPct != null && kpis.marginPct >= 0 ? "text-emerald-300" : "text-red-300"}`}>{pct(kpis.marginPct)}</p>
+          <p className={`mt-2 font-mono text-xl font-medium tabular-nums ${kpis.marginPct != null && kpis.marginPct >= 0 ? "text-ok" : "text-bad"}`}>{pct(kpis.marginPct)}</p>
         </Panel>
       </div>
 
@@ -87,7 +87,7 @@ export default async function ReportsPage() {
         <Panel className="p-4"><span className="text-label text-fg-3 uppercase">Fuel</span><p className="mt-2 font-semibold text-xl text-fg">{fmtCents(totals.fuel)}</p></Panel>
         <Panel className="p-4"><span className="text-label text-fg-3 uppercase">Maintenance</span><p className="mt-2 font-semibold text-xl text-fg">{fmtCents(totals.maintenance)}</p></Panel>
         <Panel className="p-4"><span className="text-label text-fg-3 uppercase">Other</span><p className="mt-2 font-semibold text-xl text-fg">{fmtCents(totals.other)}</p></Panel>
-        <Panel className="p-4"><span className="text-label text-fg-3 uppercase">Net</span><p className={`mt-2 font-display text-xl font-extrabold ${totals.net >= 0 ? "text-emerald-300" : "text-red-300"}`}>{fmtCents(totals.net)}</p></Panel>
+        <Panel className="p-4"><span className="text-label text-fg-3 uppercase">Net</span><p className={`mt-2 font-display text-xl font-extrabold ${totals.net >= 0 ? "text-ok" : "text-bad"}`}>{fmtCents(totals.net)}</p></Panel>
       </div>
 
       <Panel className="overflow-x-auto">
@@ -113,7 +113,7 @@ export default async function ReportsPage() {
                   <td className="px-4 py-2.5 text-right text-fg-2">{fmtCents(Number(row.fuel_cents))}</td>
                   <td className="px-4 py-2.5 text-right text-fg-2">{fmtCents(Number(row.maintenance_cents))}</td>
                   <td className="px-4 py-2.5 text-right text-fg-2">{fmtCents(Number(row.other_expense_cents))}</td>
-                  <td className={`px-4 py-2.5 text-right font-semibold ${row.net_cents >= 0 ? "text-emerald-300" : "text-red-300"}`}>
+                  <td className={`px-4 py-2.5 text-right font-semibold ${row.net_cents >= 0 ? "text-ok" : "text-bad"}`}>
                     {fmtCents(row.net_cents)}
                   </td>
                   <td className="px-4 py-2.5 text-right text-fg-2">
@@ -165,7 +165,7 @@ export default async function ReportsPage() {
                   <td className="px-4 py-2.5 text-right text-fg-2">
                     {lane.avg_rpm_cents ? `$${(lane.avg_rpm_cents / 100).toFixed(2)}` : "—"}
                   </td>
-                  <td className={`px-4 py-2.5 text-right font-semibold ${Number(lane.margin_cents) >= 0 ? "text-emerald-300" : "text-red-300"}`}>
+                  <td className={`px-4 py-2.5 text-right font-semibold ${Number(lane.margin_cents) >= 0 ? "text-ok" : "text-bad"}`}>
                     {fmtCents(Number(lane.margin_cents))}
                   </td>
                 </tr>

@@ -74,7 +74,7 @@ export function IntegrationCard({ card, encryptionReady }: { card: ProviderCard;
           className={cn(
             "shrink-0 rounded-full border px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider",
             card.connected
-              ? "border-green-500/40 bg-green-500/10 text-green-400"
+              ? "border-ok-soft bg-ok-soft text-ok"
               : "border-border-strong bg-surface-2 text-fg-3"
           )}
         >

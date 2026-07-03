@@ -352,7 +352,7 @@ export function ImportWizard({ initialKind = "loads" }: { initialKind?: string }
             {` · ${result.failed.length} failed`}
           </p>
           {result.failed.length > 0 ? (
-            <ul className="mt-2 space-y-1 text-body-xs text-red-300">
+            <ul className="mt-2 space-y-1 text-body-xs text-bad">
               {result.failed.slice(0, 10).map((f) => (
                 <li key={f.row}>Row {f.row}: {f.error}</li>
               ))}

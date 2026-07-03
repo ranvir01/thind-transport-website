@@ -69,7 +69,7 @@ export function PortalAccessPanel({
                 <span className="font-semibold text-fg">{portalUser.name}</span>
                 <span className="text-fg-3"> · {portalUser.email}</span>
               </span>
-              <span className="shrink-0 text-[11px] font-bold uppercase text-green-400">has access</span>
+              <span className="shrink-0 text-[11px] font-bold uppercase text-ok">has access</span>
             </li>
           ))}
         </ul>

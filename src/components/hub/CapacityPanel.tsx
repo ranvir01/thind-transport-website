@@ -108,7 +108,7 @@ export function CapacityPanel({
                     else toast.error(result.error ?? "Failed")
                   })
                 }
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-fg-3 hover:bg-hover hover:text-red-400"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-fg-3 hover:bg-hover hover:text-bad"
               >
                 <Trash2 className="h-4 w-4" />
               </button>

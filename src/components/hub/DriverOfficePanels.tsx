@@ -155,7 +155,7 @@ export function TimeOffDecisionPanel({ requests }: { requests: TimeOffRequest[] 
               <button
                 onClick={() => decide(r.id, "approved")}
                 disabled={pending}
-                className="flex min-h-[44px] items-center gap-1.5 rounded-xl border border-green-500/40 bg-green-500/10 px-4 text-sm font-bold text-green-400 hover:bg-green-500/20 disabled:opacity-60"
+                className="flex min-h-[44px] items-center gap-1.5 rounded-xl border border-ok-soft bg-ok-soft px-4 text-sm font-bold text-ok hover:opacity-90 disabled:opacity-60"
               >
                 <Check className="h-4 w-4" /> Approve
               </button>
