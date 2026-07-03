@@ -6,6 +6,7 @@ import { ActiveBackground } from "@/components/ui/ActiveBackground"
 import { SmoothScroll } from "@/components/cinematic/SmoothScroll"
 import { CinematicFooter, CommandBar, MobileCommandBar } from "@/components/cinematic/Footer"
 import { BackToTop } from "@/components/shared/BackToTop"
+import { SkipLink } from "@/components/shared/SkipLink"
 import { COMPANY_INFO } from "@/lib/constants"
 import { SchemaMarkup } from "@/components/features/SchemaMarkup"
 import { Providers } from "./providers"
@@ -124,12 +125,7 @@ export default function RootLayout({
             <ActiveBackground />
           
           {/* Skip to main content - Accessibility */}
-          <a 
-            href="#main-content" 
-            className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-orange focus:text-white focus:rounded-lg focus:shadow-lg focus:font-semibold focus:font-display"
-          >
-            Skip to main content
-          </a>
+          <SkipLink />
 
           {/* Header Navigation */}
           <CinematicNavbar />
