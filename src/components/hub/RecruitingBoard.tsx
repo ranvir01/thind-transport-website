@@ -80,8 +80,8 @@ export function RecruitingBoard({ applicants }: { applicants: Applicant[] }) {
               onDragLeave={() => setDragOver(null)}
               onDrop={(e) => drop(e, stage)}
               className={cn(
-                "w-[225px] shrink-0 rounded-xl border bg-bg-800/50 p-2 transition-colors",
-                dragOver === stage ? "border-accent/60 bg-accent/[0.06]" : "border-border"
+                "w-[225px] shrink-0 rounded-xl border bg-surface-2 p-2 transition-colors",
+                dragOver === stage ? "border-accent bg-accent-soft" : "border-border"
               )}
             >
               <p className="flex items-center justify-between px-1 pb-2 text-[11px] font-bold uppercase tracking-wider text-fg-3">

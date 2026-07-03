@@ -178,7 +178,7 @@ function ScanCard({
           <p className="text-label text-gold uppercase flex items-center gap-1.5">
             {scan.analysis.label}
             {scan.aiEnhanced ? (
-              <span className="inline-flex items-center gap-0.5 rounded-full border border-accent/30 bg-accent-soft px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-accent-text">
+              <span className="inline-flex items-center gap-0.5 rounded-full border border-accent-soft bg-accent-soft px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-accent-text">
                 <Sparkles className="h-2.5 w-2.5" /> AI
               </span>
             ) : null}

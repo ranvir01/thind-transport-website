@@ -203,7 +203,7 @@ export function DriverLoadCard({ load, detentionFreeMinutes }: { load: LoadForDr
                       <Clock className="h-3.5 w-3.5 text-gold" /> {fmtAppt(stop.appt_start, stop.appt_end, stop.fcfs)}
                     </p>
                     {slow ? (
-                      <p className="mt-1 inline-flex items-center gap-1 rounded-full border border-accent/40 bg-accent/10 px-2 py-0.5 text-[11px] font-bold text-orange">
+                      <p className="mt-1 inline-flex items-center gap-1 rounded-full border border-orange/40 bg-orange/10 px-2 py-0.5 text-[11px] font-bold text-orange">
                         Heads up: usually slow here (~{Math.round((stop.facility_avg_dwell ?? 0) / 60 * 10) / 10}h at the dock)
                       </p>
                     ) : null}
@@ -419,7 +419,7 @@ function FacilityNoteSheet({
         <textarea
           rows={2}
           placeholder="Anything else? (optional)"
-          className="w-full rounded-xl border border-border-strong bg-bg-800 px-3 py-2.5 text-sm text-fg placeholder:text-fg-3"
+          className="w-full rounded-xl border border-border-strong bg-surface px-3 py-2.5 text-sm text-fg placeholder:text-fg-3"
           value={body}
           onChange={(e) => setBody(e.target.value)}
         />

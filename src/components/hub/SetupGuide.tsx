@@ -71,7 +71,7 @@ export function SetupGuide({
             {phase.steps.map((step) => {
               const done = step.progressKey && progress?.[step.progressKey]
               return (
-                <Panel key={step.id} className="p-4 transition-colors hover:bg-hover/50">
+                <Panel key={step.id} className="p-4 transition-colors hover:bg-hover">
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
@@ -80,7 +80,7 @@ export function SetupGuide({
                             className={cn(
                               "flex h-5 w-5 shrink-0 items-center justify-center rounded-full border text-[10px]",
                               done
-                                ? "border-ok/40 bg-ok-soft text-ok"
+                                ? "border-ok-soft bg-ok-soft text-ok"
                                 : "border-border-strong text-fg-3"
                             )}
                           >
@@ -159,7 +159,7 @@ export function SetupChecklist({
   if (onlyPacketLeft) return null
 
   return (
-    <Panel className="p-4 md:p-5 mb-4 border-accent/20">
+    <Panel className="p-4 md:p-5 mb-4 border-accent">
       <h2 className="text-[13.5px] font-semibold text-fg mb-1">Set up your workspace</h2>
       <p className="text-xs text-fg-3 mb-3">
         About an afternoon for most carriers. Need the full picture?{" "}
@@ -181,13 +181,13 @@ export function SetupChecklist({
                 className={cn(
                   "flex items-center gap-2 rounded-control px-2.5 py-2 text-sm hover:bg-hover min-h-[40px]",
                   done ? "text-fg-3 line-through" : "text-fg-2 font-medium",
-                  step.highlight && !done ? "border border-accent/30 bg-accent-soft/50" : ""
+                  step.highlight && !done ? "border border-accent-soft bg-accent-soft" : ""
                 )}
               >
                 <span
                   className={cn(
                     "flex h-5 w-5 shrink-0 items-center justify-center rounded-full border text-[10px] font-bold",
-                    done ? "border-ok/40 bg-ok-soft text-ok" : "border-border-strong text-fg-3"
+                    done ? "border-ok-soft bg-ok-soft text-ok" : "border-border-strong text-fg-3"
                   )}
                 >
                   {done ? "✓" : ""}
