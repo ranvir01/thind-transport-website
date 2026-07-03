@@ -46,7 +46,7 @@ export default async function AnnouncementReportPage({ params }: { params: Promi
           </Panel>
           <Panel className="p-4">
             <h2 className="flex items-center gap-2 text-[13.5px] font-semibold text-fg mb-3">
-              <Clock className="h-4 w-4 text-gold" /> Still waiting ({report.pending.length})
+              <Clock className="h-4 w-4 text-warn" /> Still waiting ({report.pending.length})
             </h2>
             {report.pending.length === 0 ? (
               <p className="text-body-sm text-green-400 font-semibold">Everyone has signed. 100%.</p>

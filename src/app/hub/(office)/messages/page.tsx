@@ -3,7 +3,7 @@ import { Megaphone, MessageSquare, Package } from "lucide-react"
 import { requireOfficeUser } from "@/lib/hub/session"
 import { ensureDefaultTemplates, listThreadsForOffice } from "@/lib/hub/messages"
 import { listDrivers } from "@/lib/hub/drivers"
-import { PageHeader, Panel, EmptyState } from "@/components/hub/ui"
+import { PageHeader, Panel, EmptyState, btnSecondaryCls } from "@/components/hub/ui"
 import { NewDirectThread } from "@/components/hub/NewDirectThread"
 import { cn } from "@/lib/utils"
 
@@ -25,7 +25,7 @@ export default async function MessagesPage() {
         action={
           <Link
             href="/hub/messages/announcements"
-            className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-gold/40 bg-gold/10 px-5 font-display text-sm font-bold uppercase tracking-[0.08em] text-gold hover:bg-gold/20"
+            className={btnSecondaryCls}
           >
             <Megaphone className="h-4 w-4" /> Announcements
           </Link>
@@ -53,7 +53,7 @@ export default async function MessagesPage() {
               href={`/hub/messages/${t.id}`}
               className="flex items-center gap-3 p-3.5 hover:bg-hover"
             >
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-surface-2 text-gold">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-surface-2 text-accent-text">
                 {t.kind === "load" ? <Package className="h-5 w-5" /> : <MessageSquare className="h-5 w-5" />}
               </span>
               <span className="min-w-0 flex-1">

@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic"
 
 const STATUS_PILL: Record<string, string> = {
   active: "bg-emerald-500/15 text-emerald-300 border-emerald-400/30",
-  inactive: "bg-steel-700/60 text-fg-2 border-steel-500/40",
+  inactive: "bg-surface-2 text-fg-3 border-border-strong",
   applicant: "bg-sky-500/15 text-sky-300 border-sky-400/30",
 }
 

@@ -88,7 +88,7 @@ export default async function SafetyPage() {
                   <div className="flex items-center gap-1.5 shrink-0">
                     {i.fatality ? <Flag label="Fatality" tone="red" /> : null}
                     {i.injury_treated_away ? <Flag label="Injury" tone="orange" /> : null}
-                    {i.tow_away_disabling ? <Flag label="Tow-away" tone="gold" /> : null}
+                    {i.tow_away_disabling ? <Flag label="Tow-away" tone="warn" /> : null}
                   </div>
                 </Link>
               </li>
@@ -130,7 +130,7 @@ export default async function SafetyPage() {
                     "rounded-full border px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider",
                     i.status === "closed"
                       ? "border-border-strong bg-surface-2 text-fg-3"
-                      : "border-gold/40 bg-gold/10 text-gold"
+                      : "border-warn-soft bg-warn-soft text-warn"
                   )}
                 >
                   {STATUS_LABEL[i.status]}
@@ -144,11 +144,11 @@ export default async function SafetyPage() {
   )
 }
 
-function Flag({ label, tone }: { label: string; tone: "red" | "orange" | "gold" }) {
+function Flag({ label, tone }: { label: string; tone: "red" | "orange" | "warn" }) {
   const tones = {
     red: "border-red-500/40 bg-red-500/10 text-red-400",
-    orange: "border-accent/40 bg-accent/10 text-orange",
-    gold: "border-gold/40 bg-gold/10 text-gold",
+    orange: "border-orange/40 bg-orange/10 text-orange",
+    warn: "border-warn-soft bg-warn-soft text-warn",
   }
   return (
     <span className={cn("rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider", tones[tone])}>

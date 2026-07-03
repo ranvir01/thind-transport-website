@@ -44,7 +44,7 @@ export default async function AnnouncementsPage() {
                             "shrink-0 rounded-full border px-2.5 py-0.5 text-[11px] font-bold",
                             complete
                               ? "border-green-500/40 bg-green-500/10 text-green-400"
-                              : "border-gold/40 bg-gold/10 text-gold"
+                              : "border-warn-soft bg-warn-soft text-warn"
                           )}
                         >
                           {a.ack_count ?? 0}/{a.audience_count} signed

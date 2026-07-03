@@ -9,8 +9,8 @@ export const dynamic = "force-dynamic"
 
 const STATUS_PILL: Record<string, string> = {
   active: "bg-emerald-500/15 text-emerald-300 border-emerald-400/30",
-  shop: "bg-gold-500/15 text-gold-300 border-gold-400/30",
-  idle: "bg-steel-700/60 text-fg-2 border-steel-500/40",
+  shop: "bg-warn-soft text-warn border-warn-soft",
+  idle: "bg-surface-2 text-fg-3 border-border-strong",
   retired: "bg-red-500/15 text-red-300 border-red-400/30",
 }
 

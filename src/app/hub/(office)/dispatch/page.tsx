@@ -107,7 +107,7 @@ export default async function DispatchBoardPage() {
                       <Panel key={load.id} className="p-3.5">
                         <Link href={`/hub/loads/${load.id}`} className="block group">
                           <div className="flex items-center justify-between gap-2">
-                            <span className="font-bold text-fg group-hover:text-gold transition-colors">
+                            <span className="font-bold text-fg group-hover:text-accent-text transition-colors">
                               {load.reference}
                             </span>
                             <span className="font-mono font-medium text-accent-text tabular-nums text-sm">
@@ -179,7 +179,7 @@ export default async function DispatchBoardPage() {
         <Panel className="p-8 text-center mt-2">
           <p className="text-fg font-semibold">The board is clear.</p>
           <p className="text-body-sm text-fg-2 mt-1">
-            Book a load or <Link href="/hub/import" className="text-gold font-semibold">import your spreadsheet</Link> to get rolling.
+            Book a load or <Link href="/hub/import" className="text-accent-text font-semibold">import your spreadsheet</Link> to get rolling.
           </p>
         </Panel>
       ) : null}

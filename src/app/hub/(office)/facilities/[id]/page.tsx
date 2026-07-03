@@ -52,9 +52,9 @@ export default async function FacilityDetailPage({ params }: { params: Promise<{
             className={cn(
               "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-bold",
               risk === "high"
-                ? "border-accent/40 bg-accent/10 text-orange"
+                ? "border-bad-soft bg-bad-soft text-bad"
                 : risk === "warn"
-                  ? "border-gold/40 bg-gold/10 text-gold"
+                  ? "border-warn-soft bg-warn-soft text-warn"
                   : "border-green-500/30 bg-green-500/10 text-green-400"
             )}
           >
