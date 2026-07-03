@@ -126,9 +126,10 @@ export async function createInvoiceFromLoad(
   let emailed = false
   let error: string | undefined
   if (!isEmailConfigured()) {
-    return { invoice, emailed: false, error: "Email not configured (set SMTP_USER/SMTP_PASS) — download the PDF and send it manually." }
-  }
-  if (customer.billing_email) {
+    // Skip sending but DON'T return early — the load must still move to
+    // "invoiced" below, or the UI keeps offering invoice creation forever.
+    error = "Email not configured (set SMTP_USER/SMTP_PASS) — download the PDF and send it manually."
+  } else if (customer.billing_email) {
     try {
       const docs = await listDocuments("load", loadId)
       const attachments: { filename: string; content: Buffer; contentType?: string }[] = [
