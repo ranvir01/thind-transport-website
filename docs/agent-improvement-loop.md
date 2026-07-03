@@ -93,15 +93,12 @@ Launch together, merge in any order.
 > build it under AGENTS.md rules; verify (build, tests, sidecars if touched, visual if UI); push to main;
 > end your commit body with an updated `Backlog:`. One item per cycle — small and shippable beats big.
 
-**Background automation (two paths):**
+**Background automation (subscription — no API key):**
 
-| Path | How |
-|------|-----|
-| **GitHub Action** (recommended) | `.github/workflows/hauldesk-improvement-cycle.yml` — add `CURSOR_API_KEY` to repo secrets; runs on every push to `main`. Setup: `.cursor/automation/README.md` |
-| **Cursor Automations UI** | Push-to-`main` trigger; draft in `.cursor/automation/hauldesk-improvement-cycle.workflow.json`; prompt in `hauldesk-improvement-cycle.prompt.md` |
-
-Both use the same prompt and anti-loop rules: skip when backlog is polish-only, or when HEAD is
-already an `Improvement cycle:` commit with no P0/P1 items left.
+Use **Cursor Automations** so runs draw from your plan’s Auto/Composer/cloud-agent usage, not a
+separate API bill. Setup: `.cursor/automation/README.md` — trigger **Push to branch** on
+`ranvir01/thind-transport-website` / `main`, prompt from `hauldesk-improvement-cycle.prompt.md`,
+draft in `hauldesk-improvement-cycle.workflow.json`. Anti-loop rules are in the prompt file.
 
 ### 3b. Release gate (before any deploy is called done)
 > Verify the release: `npm run build`, `npx vitest run`, `npm run test:sidecars`; then against production

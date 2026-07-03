@@ -1,6 +1,6 @@
 {
   "name": "HaulDesk improvement cycle (3a)",
-  "description": "After each push to main, run one ranked backlog item (prompt 3a). Skips when nothing actionable remains.",
+  "description": "After each push to main, run one ranked backlog item (prompt 3a) using Cursor Automations on your subscription — no API key.",
   "workflow": {
     "triggers": [
       {

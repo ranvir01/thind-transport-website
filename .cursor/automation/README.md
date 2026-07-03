@@ -1,56 +1,51 @@
-# HaulDesk improvement cycle — background automation
+# HaulDesk improvement cycle — Cursor Automation (subscription)
 
-Runs **prompt 3a** from `docs/agent-improvement-loop.md` automatically: one ranked
-`Backlog:` item per cycle, anti-loop guards, push to `main`.
+Runs **prompt 3a** from `docs/agent-improvement-loop.md` on your **Cursor plan usage**
+(Auto / Composer / cloud agents included in your subscription). **Do not** use a separate
+`CURSOR_API_KEY` or the Cloud Agents API — that bills outside your plan.
 
-Prompt file: `hauldesk-improvement-cycle.prompt.md`
-
----
-
-## Option A — GitHub Action (recommended, fully in-repo)
-
-Already wired: `.github/workflows/hauldesk-improvement-cycle.yml`
-
-**One-time setup (2 minutes):**
-
-1. Open [Cursor Dashboard → API Keys](https://cursor.com/dashboard?tab=settings) and create a key.
-2. In GitHub: **ranvir01/thind-transport-website → Settings → Secrets and variables → Actions**
-3. New repository secret: `CURSOR_API_KEY` = your key.
-4. Merge this workflow to `main`.
-
-**Behavior:**
-
-- Fires on every push to `main` (and manual **Run workflow** from Actions tab).
-- Skips commits whose subject starts with `Improvement cycle:` (anti-loop).
-- Skips commits containing `[skip-improvement-cycle]` in the message.
-- Launches a Cursor cloud agent with `workOnCurrentBranch: true` so it commits directly to `main`.
-- If the secret is missing, the workflow prints a notice and exits cleanly (does not fail CI).
+Prompt file: `hauldesk-improvement-cycle.prompt.md`  
+Draft for the editor: `hauldesk-improvement-cycle.workflow.json`
 
 ---
 
-## Option B — Cursor Automations UI (native git trigger)
+## One-time setup (≈2 minutes)
 
-Use this if you prefer Cursor's built-in Automations over the GitHub Action.
+1. Open **Cursor → Automations → New** (or run `/automate` in the Agents Window).
+2. Configure:
+   - **Trigger:** GitHub → **Push to branch** → `ranvir01/thind-transport-website` / `main`
+   - **Repository:** same repo, branch `main`
+   - **Model:** your usual Auto / Composer model (draws from subscription, not API keys)
+   - **Prompt:** paste the contents of `hauldesk-improvement-cycle.prompt.md` (or `@` that file in the Agents Window)
+   - **Cloud compute:** enabled (required for repo-backed automations)
+3. **Save and activate.**
 
-1. In Cursor: **Automations → New automation** (or run `/automate` in the Agents Window).
-2. Import the draft from `hauldesk-improvement-cycle.workflow.json` if the editor offers prefill,
-   or set manually:
-   - **Trigger:** Push to branch → `ranvir01/thind-transport-website` / `main`
-   - **Repo:** same repo, branch `main`
-   - **Prompt:** paste contents of `hauldesk-improvement-cycle.prompt.md`
-   - **Cloud compute:** enabled
-3. Save and activate.
-
-Optional: add a **Scheduled** trigger (weekdays 9:00) as a fallback when nothing has merged.
+Optional: add a **Scheduled** trigger (e.g. weekdays 9:00) as a quiet fallback when nothing has merged.
 
 ---
 
-## Manual run
+## What it does
 
-```bash
-# From Cursor chat or a cloud agent session:
-# Paste prompt 3a from docs/agent-improvement-loop.md section 3a,
-# or @-mention hauldesk-improvement-cycle.prompt.md
-```
+After each push to `main`, a cloud agent:
 
-Or trigger the GitHub Action manually: **Actions → HaulDesk improvement cycle (3a) → Run workflow**.
+1. Pulls latest `main`
+2. Reads `Backlog:` trailers from recent commits
+3. Ships **one** top-ranked item (or skips if nothing actionable)
+4. Verifies build + tests, commits with `Improvement cycle: …`, pushes to `main`
+
+**Anti-loop:** the prompt skips when backlog is polish-only, or when HEAD is already an
+`Improvement cycle:` commit with no P0/P1 items left.
+
+---
+
+## Manual run (same subscription)
+
+In any Cursor agent chat on this repo, `@` mention `hauldesk-improvement-cycle.prompt.md` or paste
+prompt **3a** from `docs/agent-improvement-loop.md`. Uses your normal Auto/Composer session — no API key.
+
+---
+
+## Do not use
+
+- ~~GitHub Action + `CURSOR_API_KEY`~~ — removed; that path bills via the Cloud Agents API, not your subscription.
+- ~~`curl api.cursor.com/v1/agents`~~ — same extra API billing.
