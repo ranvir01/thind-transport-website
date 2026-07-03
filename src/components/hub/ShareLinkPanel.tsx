@@ -54,7 +54,7 @@ export function ShareLinkPanel({ loadId, links }: { loadId: string; links: Share
         <button
           onClick={create}
           disabled={pending}
-          className="inline-flex min-h-[36px] items-center gap-1.5 rounded-lg border border-gold/40 bg-gold/10 px-3 text-xs font-bold text-gold hover:bg-gold/20 disabled:opacity-50"
+          className="inline-flex min-h-[36px] items-center gap-1.5 rounded-control bg-accent px-3 text-xs font-semibold text-accent-fg hover:bg-accent-hover transition-colors disabled:opacity-50"
         >
           {pending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Link2 className="h-3.5 w-3.5" />}
           New link
@@ -100,7 +100,7 @@ export function ShareLinkPanel({ loadId, links }: { loadId: string; links: Share
         </ul>
       )}
       {latestToken ? (
-        <p className="mt-3 rounded-lg border border-gold/30 bg-gold/10 p-2.5 text-body-xs text-gold break-all">
+        <p className="mt-3 rounded-lg border border-accent/30 bg-accent-soft p-2.5 text-body-xs text-accent-text break-all">
           {typeof window !== "undefined" ? `${window.location.origin}/track/${latestToken}` : `/track/${latestToken}`}
         </p>
       ) : null}

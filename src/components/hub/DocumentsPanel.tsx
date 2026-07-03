@@ -4,7 +4,7 @@ import { useRef, useState, useTransition } from "react"
 import { toast } from "sonner"
 import { FileText, Loader2, Trash2, Upload } from "lucide-react"
 import { uploadDocumentAction, deleteDocumentAction } from "@/app/hub/_actions/loads"
-import { fieldCls, Panel } from "@/components/hub/ui"
+import { btnPrimaryCls, fieldCls, Panel } from "@/components/hub/ui"
 import { DOCUMENT_KIND_LABELS, type DocumentKind, type HubDocument } from "@/lib/hub/types"
 
 const ENTITY_DOC_KINDS: Record<string, DocumentKind[]> = {
@@ -91,7 +91,7 @@ export function DocumentsPanel({
         <button
           type="submit"
           disabled={pending}
-          className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl border border-gold/40 bg-gold/10 px-4 text-sm font-bold text-gold hover:bg-gold/20 disabled:opacity-50"
+          className={btnPrimaryCls}
         >
           {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
           Upload
@@ -110,7 +110,7 @@ export function DocumentsPanel({
                   href={doc.url}
                   target="_blank"
                   rel="noreferrer"
-                  className="block truncate text-sm font-semibold text-fg hover:text-gold"
+                  className="block truncate text-sm font-semibold text-fg hover:text-accent-text"
                 >
                   {doc.file_name}
                 </a>
