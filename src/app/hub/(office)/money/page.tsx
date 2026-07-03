@@ -13,11 +13,11 @@ export const dynamic = "force-dynamic"
 
 const STATUS_PILL: Record<string, string> = {
   draft: "bg-surface-2 text-fg-2 border-border-strong",
-  sent: "bg-sky-500/15 text-sky-300 border-sky-400/30",
+  sent: "bg-info-soft text-info border-info-soft",
   partial: "bg-warn-soft text-warn border-warn-soft",
-  paid: "bg-emerald-500/15 text-emerald-300 border-emerald-400/30",
-  overdue: "bg-red-500/15 text-red-300 border-red-400/30",
-  disputed: "bg-violet-500/15 text-violet-300 border-violet-400/30",
+  paid: "bg-ok-soft text-ok border-ok-soft",
+  overdue: "bg-bad-soft text-bad border-bad-soft",
+  disputed: "bg-accent-soft text-accent-text border-accent-soft",
 }
 
 const BUCKETS = ["current", "1-30", "31-60", "61-90", "90+"] as const

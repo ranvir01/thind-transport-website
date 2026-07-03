@@ -14,8 +14,8 @@ export const dynamic = "force-dynamic"
 
 const STATUS_PILL: Record<string, string> = {
   draft: "bg-warn-soft text-warn border-warn-soft",
-  approved: "bg-sky-500/15 text-sky-300 border-sky-400/30",
-  paid: "bg-emerald-500/15 text-emerald-300 border-emerald-400/30",
+  approved: "bg-info-soft text-info border-info-soft",
+  paid: "bg-ok-soft text-ok border-ok-soft",
 }
 
 export default async function SettlementsPage() {

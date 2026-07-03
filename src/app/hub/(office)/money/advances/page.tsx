@@ -15,8 +15,8 @@ export const dynamic = "force-dynamic"
 const STATUS_PILL: Record<string, string> = {
   pending: "bg-surface-2 text-fg-2 border-border-strong",
   outstanding: "bg-warn-soft text-warn border-warn-soft",
-  applied: "bg-emerald-500/15 text-emerald-300 border-emerald-400/30",
-  cancelled: "bg-red-500/15 text-red-300 border-red-400/30",
+  applied: "bg-ok-soft text-ok border-ok-soft",
+  cancelled: "bg-bad-soft text-bad border-bad-soft",
 }
 
 export default async function AdvancesPage() {

@@ -45,9 +45,9 @@ export default async function SettlementDetailPage({ params }: { params: Promise
               <li key={line.id} className="flex items-center justify-between gap-3 py-2.5 text-sm">
                 <div className="min-w-0">
                   <span className={`mr-2 inline-flex rounded-md px-1.5 py-0.5 text-[10px] font-bold uppercase border ${
-                    line.kind === "earning" ? "bg-emerald-500/15 text-emerald-300 border-emerald-400/30"
-                    : line.kind === "reimbursement" ? "bg-sky-500/15 text-sky-300 border-sky-400/30"
-                    : "bg-red-500/15 text-red-300 border-red-400/30"
+                    line.kind === "earning" ? "bg-ok-soft text-ok border-ok-soft"
+                    : line.kind === "reimbursement" ? "bg-info-soft text-info border-info-soft"
+                    : "bg-bad-soft text-bad border-bad-soft"
                   }`}>
                     {line.kind}
                   </span>
@@ -56,7 +56,7 @@ export default async function SettlementDetailPage({ params }: { params: Promise
                     <Link href={`/hub/loads/${line.source_id}`} className="ml-2 text-body-xs text-accent-text">view load</Link>
                   ) : null}
                 </div>
-                <span className={`font-semibold shrink-0 ${line.kind === "deduction" ? "text-red-300" : "text-fg"}`}>
+                <span className={`font-semibold shrink-0 ${line.kind === "deduction" ? "text-bad" : "text-fg"}`}>
                   {line.kind === "deduction" ? "−" : ""}{fmtCentsExact(line.amount_cents)}
                 </span>
               </li>
@@ -69,7 +69,7 @@ export default async function SettlementDetailPage({ params }: { params: Promise
             <h2 className="text-[13.5px] font-semibold text-fg mb-3">Totals</h2>
             <dl className="space-y-2 text-sm">
               <div className="flex justify-between"><dt className="text-fg-2">Gross</dt><dd className="text-fg font-semibold">{fmtCentsExact(settlement.gross_cents)}</dd></div>
-              <div className="flex justify-between"><dt className="text-fg-2">Deductions</dt><dd className="text-red-300 font-semibold">−{fmtCentsExact(settlement.deductions_cents)}</dd></div>
+              <div className="flex justify-between"><dt className="text-fg-2">Deductions</dt><dd className="text-bad font-semibold">−{fmtCentsExact(settlement.deductions_cents)}</dd></div>
               <div className="flex justify-between border-t border-border pt-2">
                 <dt className="text-fg font-bold">Net pay</dt>
                 <dd className="font-display text-accent-text font-extrabold text-lg">{fmtCentsExact(settlement.net_cents)}</dd>

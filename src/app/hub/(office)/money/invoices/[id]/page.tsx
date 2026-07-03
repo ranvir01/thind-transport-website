@@ -114,7 +114,7 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
                       {payment.method ? ` · ${payment.method}` : ""}
                       {payment.reference ? ` · ${payment.reference}` : ""}
                     </span>
-                    <span className="font-semibold text-emerald-300">{fmtCentsExact(payment.amount_cents)}</span>
+                    <span className="font-semibold text-ok">{fmtCentsExact(payment.amount_cents)}</span>
                   </li>
                 ))}
               </ul>
