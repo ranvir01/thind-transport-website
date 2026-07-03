@@ -59,3 +59,4 @@ e2e-shots*/
 services/**/target/
 services/go/hauldesk-worker/hauldesk-worker
 
+*.deb
