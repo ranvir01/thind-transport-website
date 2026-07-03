@@ -154,6 +154,13 @@ Lift these from the prototype — every value is already in the tokens above:
 
 ## 4. Stack — TypeScript + Go + Rust
 
+> **SUPERSEDED (kept for history).** The contract-first service-mesh below (`services/api`,
+> `services/optimizer`, `services/ingest`, gRPC, Postgres-owning Go core) was never wired
+> and its stubs have been removed. The live architecture is TypeScript as the V1 gateway and
+> system of record, with **two optional sidecars** — `services/go/hauldesk-worker` and
+> `services/rust/hauldesk-compute` — called over HTTP only when enabled. See
+> `docs/architecture/trilingual-stack.md` for the current design.
+
 The repo is **Next.js (App Router) + TypeScript** today; keep that for the web app — the prototype maps 1:1 onto `src/app/hub/*` + `src/components/hub/*`. Add **Go** and **Rust** as backend services behind a contract-first API.
 
 - **TypeScript / Next.js** — web app (this UI), thin BFF/route handlers, auth session, SSR. Generates its API types from the backend contract (no hand-written DTOs).

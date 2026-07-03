@@ -16,7 +16,7 @@ HaulDesk is built in **three languages** with clear ownership boundaries. TypeSc
 2. **No microservice sprawl.** At ~15 trucks: one Go worker (`services/go/hauldesk-worker`) and one Rust compute binary (`services/rust/hauldesk-compute`). No per-feature services.
 3. **Import-first integrations stay in TS** until a Go worker exists (CSV fallbacks always work).
 4. **Production unchanged when sidecars are off.** Missing `HAULDESK_GO_WORKER_URL` / `HAULDESK_RUST_COMPUTE_URL` → pure TypeScript paths (`mapbox.ts`, `ifta-core.ts`, etc.).
-5. **Older proto stubs** under `services/api`, `services/optimizer`, `services/ingest` remain contract placeholders; V1 sidecars above are the active extraction targets.
+5. **Two sidecars only.** The June contract stubs (`services/api`, `services/optimizer`, `services/ingest`, `proto/`, `src/lib/hub/api/`) were removed as dead code — recover from git history if ever needed. The Go worker and Rust compute binaries above are the only backend services.
 
 ## Call flow
 

@@ -1,14 +1,16 @@
 # HaulDesk backend services
 
-Contract-first stack behind the Next.js `/hub` app.
+Optional sidecars behind the Next.js `/hub` app. TypeScript owns the data layer
+(Postgres, auth, server actions) and is the V1 API gateway on Vercel; these two
+binaries are called over HTTP from `src/lib/hub/sidecars.ts` only when their env
+vars are set. When the vars are unset, the app runs on pure-TypeScript fallbacks.
 
-| Layer | Path | Role |
-|-------|------|------|
-| **TypeScript** | `src/lib/hub/api/` | Typed client; server actions today, `FetchHaulDeskApi` when `HAULDESK_API_URL` is set |
-| **Go** | `services/api/` | Core TMS REST + gRPC, Postgres system of record |
-| **Rust** | `services/optimizer/`, `services/ingest/` | Routing/ETA/IFTA and ELD ingestion |
+| Language | Path | Role |
+|----------|------|------|
+| **Go** | `services/go/hauldesk-worker/` | Long-running workers, integration sync, HTTP proxies (e.g. OSRM routing) |
+| **Rust** | `services/rust/hauldesk-compute/` | CPU-heavy correctness-critical compute (IFTA math, routing, bulk import) |
 
-Protobuf contracts: `proto/hauldesk/v1/`. See `proto/README.md` for code generation.
+Architecture and boundaries: `docs/architecture/trilingual-stack.md`.
 
 ## Prerequisites
 
@@ -19,30 +21,37 @@ sudo apt install golang-go   # or https://go.dev/dl/
 # Rust (stable)
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 source "$HOME/.cargo/env"
-
-# protoc (for Rust optimizer build.rs)
-sudo apt install protobuf-compiler
 ```
 
-## Verify stubs
+## Build & test
 
 ```bash
-# Go API — listens :8080, GET /health
-cd services/api && go run ./cmd/server
-
-# Rust ingest
-cd services/ingest && cargo run
-
-# Rust optimizer (needs protoc)
-cd services/optimizer && cargo run
+make go-build rust-build       # or: npm run go-build / npm run rust-build
+make rust-test                 # or: npm run test:sidecars (Rust IFTA golden parity)
 ```
 
-## Wire to Next.js
+## Run locally (optional)
 
-Set in `.env.local` when the Go API is running locally:
+```bash
+# Go worker — listens :8081, GET /health, POST /route/miles
+cd services/go/hauldesk-worker && go run .
+
+# Rust compute — listens :8082, GET /health, POST /ifta/summary
+cd services/rust/hauldesk-compute && cargo run
+```
+
+Set in `.env.local` when the sidecars are running:
 
 ```
-HAULDESK_API_URL=http://127.0.0.1:8080
+HAULDESK_GO_WORKER_URL=http://localhost:8081
+HAULDESK_RUST_COMPUTE_URL=http://localhost:8082
+HAULDESK_SIDECAR_SECRET=<same value for Next.js and both sidecars>
 ```
 
-UI code can call `createHaulDeskApi()` from `src/lib/hub/api/client.ts`; until then, existing server actions remain the data layer.
+## Removed (June contract stubs)
+
+The earlier contract-first placeholders — `services/api` (Go), `services/optimizer` +
+`services/ingest` (Rust), `proto/`, and the `src/lib/hub/api/` client — were removed as
+dead code; they had zero importers and contradicted the trilingual rule that sidecars
+never touch Postgres. Recover any of them from git history if a wire contract is wanted
+back (`git log -- services/api`).

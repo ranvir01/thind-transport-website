@@ -120,7 +120,7 @@ Printable owner guide: `docs/production-intake/thind-transport.md`
 - Portal smoke — broker tracking  
 - Driver smoke — dispatch confirm → arrive → POD flow (after demo re-seed)  
 - UI — HaulDesk redesign shell (light/dark, top nav, ⌘K)  
-- Contract stubs — `proto/`, `services/api` (Go), `services/optimizer` + `services/ingest` (Rust), `src/lib/hub/api/` (TS)
+- Sidecars — `services/go/hauldesk-worker` (Go) and `services/rust/hauldesk-compute` (Rust), optional and off by default (see `docs/architecture/trilingual-stack.md`)
 
 ---
 
