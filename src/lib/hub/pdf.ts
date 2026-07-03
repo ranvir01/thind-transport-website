@@ -5,6 +5,27 @@
 import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from "pdf-lib"
 import { fmtCentsExact } from "./types"
 
+/**
+ * pdf-lib's StandardFonts use WinAnsi encoding and THROW on characters outside
+ * it ("WinAnsi cannot encode \u{2192}") — which took down invoice creation for
+ * every load, because lanes are rendered "Kent, WA \u{2192} Boise, ID". App strings
+ * keep their typography; this sanitizer runs at the PDF boundary only.
+ */
+const WINANSI_MAP: Record<string, string> = {
+  "\u2192": "->", "\u2190": "<-", "\u2194": "<->",
+  "\u2013": "-", "\u2014": "-", "\u2212": "-",
+  "\u2018": "'", "\u2019": "'", "\u201C": '"', "\u201D": '"',
+  "\u2026": "...", "\u2022": "-", "\u00A0": " ",
+}
+
+export function winAnsiSafe(value: string): string {
+  let out = value.replace(/[\u2190\u2192\u2194\u2013\u2014\u2212\u2018\u2019\u201C\u201D\u2026\u2022\u00A0]/g, (ch) => WINANSI_MAP[ch] ?? "?")
+  // De-accent anything decomposable (NFKD strips combining marks), then drop
+  // whatever still falls outside Latin-1 — a "?" beats a crashed invoice.
+  out = out.normalize("NFKD").replace(/[\u0300-\u036f]/g, "")
+  return out.replace(/[^\x00-\xFF]/g, "?")
+}
+
 const NAVY = rgb(0.055, 0.086, 0.129)
 const GOLD = rgb(0.949, 0.663, 0)
 const GRAY = rgb(0.35, 0.39, 0.45)
@@ -43,7 +64,15 @@ class DocBuilder {
     }
   }
 
-  header(brand: PdfBrand, title: string) {
+  header(rawBrand: PdfBrand, rawTitle: string) {
+    const brand: PdfBrand = {
+      ...rawBrand,
+      name: winAnsiSafe(rawBrand.name),
+      address: rawBrand.address ? winAnsiSafe(rawBrand.address) : rawBrand.address,
+      phone: rawBrand.phone ? winAnsiSafe(rawBrand.phone) : rawBrand.phone,
+      email: rawBrand.email ? winAnsiSafe(rawBrand.email) : rawBrand.email,
+    }
+    const title = winAnsiSafe(rawTitle)
     this.page.drawRectangle({ x: 0, y: 752, width: 612, height: 40, color: NAVY })
     this.page.drawText(brand.name.toUpperCase(), {
       x: 40, y: 766, size: 16, font: this.fonts.bold, color: rgb(1, 1, 1),
@@ -64,7 +93,8 @@ class DocBuilder {
     this.y -= 8
   }
 
-  text(value: string, opts: { size?: number; bold?: boolean; color?: ReturnType<typeof rgb>; x?: number } = {}) {
+  text(rawValue: string, opts: { size?: number; bold?: boolean; color?: ReturnType<typeof rgb>; x?: number } = {}) {
+    const value = winAnsiSafe(rawValue)
     this.ensureRoom(16)
     this.page.drawText(value, {
       x: opts.x ?? 40, y: this.y, size: opts.size ?? 10,
@@ -74,7 +104,8 @@ class DocBuilder {
     this.y -= (opts.size ?? 10) + 5
   }
 
-  keyValue(pairs: [string, string][], x = 40) {
+  keyValue(rawPairs: [string, string][], x = 40) {
+    const pairs = rawPairs.map(([k, v]) => [winAnsiSafe(k), winAnsiSafe(v)] as [string, string])
     for (const [key, value] of pairs) {
       this.ensureRoom(14)
       this.page.drawText(key, { x, y: this.y, size: 9, font: this.fonts.bold, color: GRAY })
@@ -84,7 +115,9 @@ class DocBuilder {
     this.y -= 4
   }
 
-  table(columns: TableColumn[], rows: string[][]) {
+  table(rawColumns: TableColumn[], rawRows: string[][]) {
+    const columns = rawColumns.map((c) => ({ ...c, header: winAnsiSafe(c.header) }))
+    const rows = rawRows.map((r) => r.map((v) => winAnsiSafe(v ?? "")))
     this.ensureRoom(24)
     let x = 40
     this.page.drawRectangle({ x: 36, y: this.y - 4, width: 540, height: 17, color: NAVY })
@@ -120,7 +153,9 @@ class DocBuilder {
     this.y -= 6
   }
 
-  totalLine(label: string, value: string) {
+  totalLine(rawLabel: string, rawValue: string) {
+    const label = winAnsiSafe(rawLabel)
+    const value = winAnsiSafe(rawValue)
     this.ensureRoom(20)
     const w = this.fonts.bold.widthOfTextAtSize(value, 12)
     this.page.drawText(label, { x: 360, y: this.y, size: 11, font: this.fonts.bold, color: NAVY })
@@ -128,7 +163,9 @@ class DocBuilder {
     this.y -= 20
   }
 
-  box(title: string, lines: string[]) {
+  box(rawTitle: string, rawLines: string[]) {
+    const title = winAnsiSafe(rawTitle)
+    const lines = rawLines.map((l) => winAnsiSafe(l))
     const height = 16 + lines.length * 12 + 8
     this.ensureRoom(height)
     this.page.drawRectangle({

@@ -6,7 +6,7 @@ import { listDocuments, storeGeneratedPdf } from "./documents"
 import { buildInvoicePdf } from "./pdf"
 import { invoiceTotalCents, agingBucket, type AgingBucket } from "./money"
 import { logAudit } from "./audit"
-import { createMailTransport, mailFrom } from "@/lib/mailer"
+import { createMailTransport, isEmailConfigured, mailFrom } from "@/lib/mailer"
 import { loadTotalCents, type Invoice } from "./types"
 
 const INVOICE_SELECT = `
@@ -125,6 +125,9 @@ export async function createInvoiceFromLoad(
   // Email with POD + BOL attached (best effort; invoice stays usable without SMTP)
   let emailed = false
   let error: string | undefined
+  if (!isEmailConfigured()) {
+    return { invoice, emailed: false, error: "Email not configured (set SMTP_USER/SMTP_PASS) — download the PDF and send it manually." }
+  }
   if (customer.billing_email) {
     try {
       const docs = await listDocuments("load", loadId)

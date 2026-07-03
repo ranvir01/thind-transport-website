@@ -81,7 +81,23 @@ async function main() {
         "set HUB_DEMO_LOGIN=false in Vercel (hides the hint AND refuses demo sign-in)")
     }
 
-    // 4. Real office users exist
+    // 4. Durable file storage (Vercel's filesystem is ephemeral — POD uploads
+    //    and invoice/settlement PDFs vanish without Blob storage)
+    if (process.env.BLOB_READ_WRITE_TOKEN) {
+      pass("BLOB_READ_WRITE_TOKEN set — uploads/PDFs stored durably")
+    } else {
+      warn("BLOB_READ_WRITE_TOKEN not set",
+        "on Vercel, POD uploads and generated PDFs will be lost between invocations — add Vercel Blob")
+    }
+
+    // 5. Email (invoices/settlements email themselves; without SMTP they fall back to manual send)
+    if ((process.env.SMTP_USER || process.env.EMAIL_USER) && (process.env.SMTP_PASS || process.env.EMAIL_PASS)) {
+      pass("SMTP configured — invoices/settlement statements email automatically")
+    } else {
+      warn("SMTP not configured", "invoices/statements must be downloaded and sent manually (set SMTP_USER/SMTP_PASS)")
+    }
+
+    // 6. Real office users exist
     const { rows: office } = await client.query(
       `SELECT COUNT(*)::int AS n FROM hub.users
        WHERE role IN ('owner','dispatcher','accountant') AND active AND email NOT LIKE '%@demo.thind'`

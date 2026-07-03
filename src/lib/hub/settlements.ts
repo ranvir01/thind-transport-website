@@ -6,7 +6,7 @@ import { getCarrier } from "./settings"
 import { storeGeneratedPdf } from "./documents"
 import { buildSettlementPdf } from "./pdf"
 import { logAudit } from "./audit"
-import { createMailTransport, mailFrom } from "@/lib/mailer"
+import { createMailTransport, isEmailConfigured, mailFrom } from "@/lib/mailer"
 import type { Advance, Driver, Settlement, SettlementLine } from "./types"
 
 export async function listSettlements(carrierId: string): Promise<Settlement[]> {
@@ -293,7 +293,7 @@ export async function approveSettlement(
   })
 
   let emailed = false
-  if (driver?.email) {
+  if (driver?.email && isEmailConfigured()) {
     try {
       const transport = createMailTransport()
       await transport.sendMail({
