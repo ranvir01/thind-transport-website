@@ -3,6 +3,7 @@ import { Download } from "lucide-react"
 import { getAgingSummary } from "@/lib/hub/invoices"
 import { requirePermissionPage } from "@/lib/hub/session"
 import { fmtCents } from "@/lib/hub/types"
+import { formatHubDateShort } from "@/lib/hub/format-dates"
 import { Panel, PageHeader, EmptyState } from "@/components/hub/ui"
 import { cn } from "@/lib/utils"
 
@@ -115,7 +116,7 @@ export default async function MoneyPage() {
                     </td>
                     <td className="px-4 py-3 text-fg-2">{invoice.customer_name}</td>
                     <td className="px-4 py-3 text-fg-2">{invoice.load_reference}</td>
-                    <td className="px-4 py-3 text-fg-2">{String(invoice.due_on).slice(0, 10)}</td>
+                    <td className="px-4 py-3 text-fg-2">{formatHubDateShort(invoice.due_on)}</td>
                     <td className="px-4 py-3">
                       <span className={cn("inline-flex rounded-full border px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider", STATUS_PILL[invoice.status])}>
                         {invoice.status}
@@ -139,7 +140,7 @@ export default async function MoneyPage() {
                     </span>
                   </div>
                   <p className="text-body-sm text-fg-2 mt-1 truncate">
-                    {invoice.customer_name} · {invoice.load_reference} · due {String(invoice.due_on).slice(0, 10)}
+                    {invoice.customer_name} · {invoice.load_reference} · due {formatHubDateShort(invoice.due_on)}
                   </p>
                   <div className="mt-1.5 flex items-center justify-between">
                     <span className="text-body-xs text-fg-3">{invoice.bucket}</span>
