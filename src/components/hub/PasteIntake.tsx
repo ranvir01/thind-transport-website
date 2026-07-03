@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useMemo, useState } from "react"
 import { consumePasteBuffer } from "@/lib/hub/doc-intake/extract-text-client"
 import { ClipboardPaste, Sparkles } from "lucide-react"
 import { parseRateCon, type ParsedRateCon, type Confidence } from "@/lib/hub/parser"
@@ -43,16 +43,13 @@ export function PasteIntake({
   trailers: Option[]
   priceBook: PriceBookOption[]
 }) {
-  const [text, setText] = useState("")
-  const [parsed, setParsed] = useState<ParsedRateCon | null>(null)
-
-  useEffect(() => {
+  const [{ text, parsed }, setPasteState] = useState(() => {
     const buffered = consumePasteBuffer()
-    if (buffered) {
-      setText(buffered)
-      setParsed(parseRateCon(buffered))
-    }
-  }, [])
+    if (!buffered) return { text: "", parsed: null as ParsedRateCon | null }
+    return { text: buffered, parsed: parseRateCon(buffered) }
+  })
+  const setText = (next: string) => setPasteState((s) => ({ ...s, text: next }))
+  const setParsed = (next: ParsedRateCon | null) => setPasteState((s) => ({ ...s, parsed: next }))
 
   const initial: LoadFormInitial | null = useMemo(() => {
     if (!parsed) return null

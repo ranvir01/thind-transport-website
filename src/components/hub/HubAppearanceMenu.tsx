@@ -13,15 +13,9 @@ import { cn } from "@/lib/utils"
 
 export function HubAppearanceMenu() {
   const [open, setOpen] = useState(false)
-  const [mode, setMode] = useState<HubColorMode>("light")
-  const [theme, setTheme] = useState<HubAccentTheme>("indigo")
+  const [mode, setMode] = useState<HubColorMode>(() => readAppearance().mode)
+  const [theme, setTheme] = useState<HubAccentTheme>(() => readAppearance().theme)
   const ref = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    const current = readAppearance()
-    setMode(current.mode)
-    setTheme(current.theme)
-  }, [])
 
   useEffect(() => {
     if (!open) return
