@@ -127,3 +127,37 @@ Each run merges `claude/hauldesk-project-setup-l1luoo` when ahead of `main`, the
    (append a new one instead), the do-not-build list in `docs/small-carrier-v1-master-prompt.md`.
 4. **Record everything discovered** — `Backlog:` trailer in every commit; the loop dies without it.
 5. Ambiguity about money, permissions, or data deletion → stop and ask the owner instead of guessing.
+
+---
+
+## 5 · Claude routine fleet (parallel Fable agents, collision-proof)
+
+Many routines run concurrently, so each **lane owns a file territory and its own branch** —
+`claude/lane-<name>`. Nobody edits shared files (`types.ts`, `permissions.ts`, `navigation.ts`,
+`AGENTS.md`, migrations) except through the **integrator**. The flow:
+
+```
+lane routines ──push──▶ claude/lane-*  ──reviewed+merged──▶ claude/hauldesk-project-setup-l1luoo
+   (hourly-ish, staggered)      (integrator routine, every ~2h)            │
+                                                     Cursor automation ──▶ main ──▶ Vercel
+```
+
+| Lane branch | Territory (only these paths) | Mission |
+|---|---|---|
+| `claude/lane-office` | `src/app/hub/(office)/**`, office components in `src/components/hub/*` (not `driver/`) | finish token doctrine, UX friction, empty states |
+| `claude/lane-driver` | `src/app/hub/driver/**`, `src/components/hub/driver/**` | PWA polish at 390px, forced-dark rules, offline queue |
+| `claude/lane-portal` | `src/app/hub/portal/**`, `src/app/track/**`, sharelink components | broker/shipper surface readability + tracking page |
+| `claude/lane-sidecars` | `services/**`, `src/lib/hub/sidecars.ts`, `Makefile` | Go/Rust test coverage, golden parity, worker features |
+| `claude/lane-tests` | `src/lib/hub/__tests__/**`, `scripts/e2e-*.mjs` ONLY (never product code) | raise coverage on untested lib modules + E2E drives |
+| `claude/lane-compliance` | `src/app/hub/(office)/compliance/**`, `src/lib/hub/ifta*.ts`, `src/app/api/hub/ifta/**` | IFTA generate entry point, worksheet flows, doc expiry |
+| `claude/lane-docs` | `docs/**`, `.env.example`, README, `scripts/go-live-check.mjs` | docs drift, runbooks, staff how-to guides |
+
+**Lane rules:** one finished item per run; build + `vitest` green before pushing; UI work is
+Playwright-verified on the local rig; end every commit with `Backlog:`. If your item requires
+touching a shared file, DON'T — write the need into `Backlog:` for the integrator.
+
+**Integrator (its own routine):** fetch all `claude/lane-*` branches ahead of the integration
+branch; review each against AGENTS.md; merge clean lanes into
+`claude/hauldesk-project-setup-l1luoo` (octopus or sequential; rebuild + full tests after EACH
+merge); a lane that breaks the build gets its merge skipped and the reason pushed to its
+`Backlog:`. Shared-file changes requested in lane backlogs are made here, once, coherently.
