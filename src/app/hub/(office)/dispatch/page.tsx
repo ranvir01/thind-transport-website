@@ -124,18 +124,18 @@ export default async function DispatchBoardPage() {
                             {load.truck_unit ? ` · #${load.truck_unit}` : ""}
                           </p>
                           {marginCents != null ? (
-                            <p className={`text-body-xs mt-0.5 font-semibold ${marginCents >= 0 ? "text-emerald-300" : "text-red-300"}`}>
+                            <p className={`text-body-xs mt-0.5 font-semibold ${marginCents >= 0 ? "text-ok" : "text-bad"}`}>
                               Est. margin {fmtCents(marginCents)} @ {fmtCents(settings.costPerMileCents)}/mi cost
                             </p>
                           ) : null}
                           {load.invoice_status ? (
                             <p className="text-body-xs text-fg-3 mt-0.5">
-                              Invoice: <span className="uppercase font-bold text-cyan-300">{load.invoice_status}</span>
+                              Invoice: <span className="uppercase font-bold text-accent-text">{load.invoice_status}</span>
                             </p>
                           ) : null}
                         </Link>
                         {!legality.legal ? (
-                          <p className="mt-2 flex items-center gap-1.5 rounded-lg bg-red-500/10 border border-red-400/30 px-2 py-1 text-[11px] font-semibold text-red-300">
+                          <p className="mt-2 flex items-center gap-1.5 rounded-lg bg-bad-soft border border-bad-soft px-2 py-1 text-[11px] font-semibold text-bad">
                             <AlertTriangle className="h-3.5 w-3.5 shrink-0" /> {legality.stops[0]}
                           </p>
                         ) : legality.warnings.length > 0 ? (
@@ -155,7 +155,7 @@ export default async function DispatchBoardPage() {
                                 key={doc.kind}
                                 className={`rounded-md px-1.5 py-0.5 text-[10px] font-bold uppercase border ${
                                   docKinds.includes(doc.kind)
-                                    ? "bg-emerald-500/15 text-emerald-300 border-emerald-400/30"
+                                    ? "bg-ok-soft text-ok border-ok-soft"
                                     : "bg-surface-2 text-fg-3 border-border"
                                 }`}
                               >
