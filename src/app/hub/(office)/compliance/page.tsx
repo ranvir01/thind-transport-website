@@ -46,17 +46,17 @@ export default async function CompliancePage() {
 
       {/* Red / amber / green summary */}
       <div className="grid grid-cols-3 gap-3 mb-4">
-        <Panel className="p-4 border-red-400/30">
-          <span className="text-label text-red-300 uppercase">Expired / overdue</span>
-          <p className="mt-2 font-display text-3xl font-extrabold text-red-300">{summary.red}</p>
+        <Panel className="p-4 border-bad-soft">
+          <span className="text-label text-bad uppercase">Expired / overdue</span>
+          <p className="mt-2 font-display text-3xl font-extrabold text-bad">{summary.red}</p>
         </Panel>
         <Panel className="p-4 border-warn-soft">
           <span className="text-label text-warn uppercase">Due in 30 days</span>
           <p className="mt-2 font-display text-3xl font-extrabold text-warn">{summary.amber}</p>
         </Panel>
-        <Panel className="p-4 border-emerald-400/30">
-          <span className="text-label text-emerald-300 uppercase">Clean</span>
-          <p className="mt-2 font-display text-3xl font-extrabold text-emerald-300">{summary.green}</p>
+        <Panel className="p-4 border-ok-soft">
+          <span className="text-label text-ok uppercase">Clean</span>
+          <p className="mt-2 font-display text-3xl font-extrabold text-ok">{summary.green}</p>
         </Panel>
       </div>
 
