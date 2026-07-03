@@ -145,6 +145,9 @@ export function activePrimarySection(pathname: string): HubPrimarySection {
 
 export function isNavActive(pathname: string, href: string): boolean {
   if (href === "/hub") return pathname === "/hub"
+  // Money overview is a sibling of invoices/settlements/etc — prefix match would
+  // keep "Overview" highlighted on every /hub/money/* sub-page.
+  if (href === "/hub/money") return pathname === "/hub/money"
   return pathname === href || pathname.startsWith(`${href}/`)
 }
 
