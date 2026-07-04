@@ -5,7 +5,8 @@
  * brokers/shippers, loads across the whole lifecycle (integer cents), invoices
  * (sent / overdue / paid / factored), payments, a settlement queue, advances,
  * escrow, expenses, a quarter of fuel transactions + position pings, IFTA tax
- * rates, compliance items in all colors, maintenance, and a live share link.
+ * rates, compliance items in all colors, maintenance, demo documents (CDL,
+ * medical card, POD, carrier packet), and a live share link.
  *
  * Idempotent: wipes and re-creates hub.* data. Refuses to run on production.
  * Usage: npm run seed:demo
@@ -690,6 +691,28 @@ async function main() {
   await q(
     `INSERT INTO hub.share_links (carrier_id, load_id, token, created_by) VALUES ($1,$2,$3,$4)`,
     [CARRIER, inTransit.id, token, users.dispatcher]
+  )
+
+  // ---- Demo documents: driver wallet, load POD, carrier packet (portal + settings) ----
+  console.log("Creating demo documents…")
+  const demoDocUrl = (name) => `/api/hub/files/${name}`
+  await q(
+    `INSERT INTO hub.documents (carrier_id, entity_type, entity_id, kind, file_name, mime_type, storage, url, expiry, uploaded_by)
+     VALUES
+       ($1,'driver',$2,'cdl','harpreet-cdl.pdf','application/pdf','local',$3,$4,$5),
+       ($1,'driver',$2,'medical_card','harpreet-medical.pdf','application/pdf','local',$6,$7,$5),
+       ($1,'load',$8,'pod','${podLoad.reference}-pod.pdf','application/pdf','local',$9,NULL,$5),
+       ($1,'carrier',$1,'w9','thind-w9.pdf','application/pdf','local',$10,NULL,$5),
+       ($1,'carrier',$1,'insurance','thind-coi.pdf','application/pdf','local',$11,NULL,$5),
+       ($1,'carrier',$1,'authority_letter','thind-authority.pdf','application/pdf','local',$12,NULL,$5)`,
+    [
+      CARRIER, driverIds[0],
+      demoDocUrl("harpreet-cdl.pdf"), dateOnly(daysAhead(320)),
+      users.owner,
+      demoDocUrl("harpreet-medical.pdf"), dateOnly(daysAhead(95)),
+      podLoad.id, demoDocUrl(`${podLoad.reference}-pod.pdf`),
+      demoDocUrl("thind-w9.pdf"), demoDocUrl("thind-coi.pdf"), demoDocUrl("thind-authority.pdf"),
+    ]
   )
 
   // ---- Expansion modules (E1–E5) demo data ----
