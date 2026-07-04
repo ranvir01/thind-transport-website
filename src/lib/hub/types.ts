@@ -40,6 +40,19 @@ export const NEXT_STATUS: Partial<Record<LoadStatus, LoadStatus>> = {
   paid: "settled",
 }
 
+/**
+ * Once delivery/money work starts, cancellation is an accounting decision
+ * (void/credit memo through the invoice flow), not a status click. Enforced
+ * server-side in setLoadStatusAction and mirrored by CancelLoadButton.
+ */
+export const CANCEL_LOCKED_STATUSES: readonly LoadStatus[] = [
+  "delivered", "pod_received", "invoiced", "paid", "settled", "cancelled",
+]
+
+export function canCancelLoad(status: LoadStatus): boolean {
+  return !CANCEL_LOCKED_STATUSES.includes(status)
+}
+
 export const STATUS_LABELS: Record<LoadStatus, string> = {
   quoted: "Quoted",
   booked: "Booked",

@@ -16,7 +16,7 @@ import { assertCarrierRefs, type CarrierRefField } from "@/lib/hub/tenancy"
 import { createShareLink, revokeShareLink } from "@/lib/hub/sharelinks"
 import { logAudit } from "@/lib/hub/audit"
 import { geocodeCityState } from "@/lib/hub/geocode"
-import { NEXT_STATUS, dollarsToCents, type LoadStatus, LOAD_STATUSES } from "@/lib/hub/types"
+import { NEXT_STATUS, STATUS_LABELS, canCancelLoad, dollarsToCents } from "@/lib/hub/types"
 import type { ActionResult } from "./fleet"
 
 function firstError(error: { issues: { path: PropertyKey[]; message: string }[] }): string {
@@ -172,6 +172,11 @@ export async function advanceLoadStatusAction(id: string): Promise<ActionResult>
   }
 }
 
+/**
+ * Cancel-only: forward moves must go through advanceLoadStatusAction (legality
+ * + document gates) and money statuses are set by the invoice/settlement flow,
+ * so any other target is refused regardless of what the caller sends.
+ */
 export async function setLoadStatusAction(id: string, status: string): Promise<ActionResult> {
   let user
   try {
@@ -179,11 +184,16 @@ export async function setLoadStatusAction(id: string, status: string): Promise<A
   } catch (err) {
     return asError(err, "Forbidden")
   }
-  if (!LOAD_STATUSES.includes(status as LoadStatus)) {
-    return { ok: false, error: "Unknown status" }
+  if (status !== "cancelled") {
+    return { ok: false, error: "Only cancellation is allowed here — use Advance for forward moves" }
   }
   try {
-    const updated = await changeLoadStatus(user.carrierId, id, status as LoadStatus, { id: user.id, name: user.name })
+    const load = await getLoad(user.carrierId, id)
+    if (!load) return { ok: false, error: "Load not found" }
+    if (!canCancelLoad(load.status)) {
+      return { ok: false, error: `Cannot cancel a load that is ${STATUS_LABELS[load.status].toLowerCase()}` }
+    }
+    const updated = await changeLoadStatus(user.carrierId, id, "cancelled", { id: user.id, name: user.name })
     if (!updated) return { ok: false, error: "Load not found" }
     revalidateLoadViews(id)
     return { ok: true, id }
