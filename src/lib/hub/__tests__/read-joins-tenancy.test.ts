@@ -23,6 +23,8 @@ import { listAdvances, listSettlements, escrowBalances } from "../settlements"
 import { listCustomers } from "../customers"
 import { listTasks } from "../tasks"
 import { listFacilityNotes } from "../facilities"
+import { driverActiveLoads, driverDocuments, openDocumentRequests } from "../driver-app"
+import { portalLoads, portalLoadDocuments } from "../portal"
 
 const queryMock = vi.mocked(query)
 const queryOneMock = vi.mocked(queryOne)
@@ -122,5 +124,37 @@ describe("read queries carrier-guard their joins (both-sides tenancy)", () => {
   it("facility notes guard the document join", async () => {
     await listFacilityNotes(CARRIER, "f1")
     expect(lastSql()).toContain("ON d.id = n.document_id AND d.carrier_id = n.carrier_id")
+  })
+
+  it("driver active loads guard customer/truck/trailer joins and doc-kinds lateral", async () => {
+    await driverActiveLoads(CARRIER, "d1")
+    const sql = lastSql()
+    expect(sql).toContain("ON c.id = l.customer_id AND c.carrier_id = l.carrier_id")
+    expect(sql).toContain("ON t.id = l.truck_id AND t.carrier_id = l.carrier_id")
+    expect(sql).toContain("ON tr.id = l.trailer_id AND tr.carrier_id = l.carrier_id")
+    expect(sql).toContain("d.entity_type = 'load' AND d.entity_id = l.id AND d.carrier_id = l.carrier_id")
+  })
+
+  it("driver documents are carrier-scoped, not entity-id-only", async () => {
+    await driverDocuments(CARRIER, "d1")
+    const sql = lastSql()
+    expect(sql).toContain("carrier_id = $1 AND entity_type = 'driver' AND entity_id = $2")
+  })
+
+  it("driver open document requests guard the load-reference join", async () => {
+    await openDocumentRequests(CARRIER, "d1")
+    expect(lastSql()).toContain("ON l.id = r.load_id AND l.carrier_id = r.carrier_id")
+  })
+
+  it("portal load list guards its stop laterals", async () => {
+    await portalLoads(CARRIER, "c1")
+    const sql = lastSql()
+    expect(sql).toContain("WHERE load_id = l.id AND carrier_id = l.carrier_id AND type = 'pickup'")
+    expect(sql).toContain("WHERE load_id = l.id AND carrier_id = l.carrier_id AND type = 'delivery'")
+  })
+
+  it("portal load documents guard the document side of the loads join", async () => {
+    await portalLoadDocuments(CARRIER, "c1", "l1")
+    expect(lastSql()).toContain("ON l.id = d.entity_id AND d.entity_type = 'load' AND d.carrier_id = l.carrier_id")
   })
 })

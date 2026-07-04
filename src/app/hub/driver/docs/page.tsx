@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic"
 export default async function DriverDocsPage() {
   const user = await requireDriverUser()
   const [documents, expiries] = await Promise.all([
-    driverDocuments(user.driverId),
+    driverDocuments(user.carrierId, user.driverId),
     driverExpiries(user.carrierId, user.driverId),
   ])
 

@@ -27,12 +27,12 @@ export async function driverActiveLoads(carrierId: string, driverId: string): Pr
        t.unit_number AS truck_unit, tr.unit_number AS trailer_unit,
        docs.kinds AS doc_kinds
      FROM hub.loads l
-     LEFT JOIN hub.customers c ON c.id = l.customer_id
-     LEFT JOIN hub.trucks t ON t.id = l.truck_id
-     LEFT JOIN hub.trailers tr ON tr.id = l.trailer_id
+     LEFT JOIN hub.customers c ON c.id = l.customer_id AND c.carrier_id = l.carrier_id
+     LEFT JOIN hub.trucks t ON t.id = l.truck_id AND t.carrier_id = l.carrier_id
+     LEFT JOIN hub.trailers tr ON tr.id = l.trailer_id AND tr.carrier_id = l.carrier_id
      LEFT JOIN LATERAL (
        SELECT ARRAY_AGG(DISTINCT d.kind) AS kinds FROM hub.documents d
-       WHERE d.entity_type = 'load' AND d.entity_id = l.id
+       WHERE d.entity_type = 'load' AND d.entity_id = l.id AND d.carrier_id = l.carrier_id
      ) docs ON TRUE
      WHERE l.carrier_id = $1 AND l.driver_id = $2 AND l.deleted_at IS NULL
        AND l.status IN ('dispatched','at_pickup','in_transit','delivered')
@@ -46,7 +46,8 @@ export async function driverActiveLoads(carrierId: string, driverId: string): Pr
        LEFT JOIN LATERAL (
          SELECT ROUND(AVG(EXTRACT(EPOCH FROM (x.departed_at - x.arrived_at)) / 60))::int AS avg_dwell
          FROM hub.stops x
-         WHERE x.facility_id = s.facility_id AND x.arrived_at IS NOT NULL AND x.departed_at IS NOT NULL
+         WHERE x.facility_id = s.facility_id AND x.carrier_id = s.carrier_id
+           AND x.arrived_at IS NOT NULL AND x.departed_at IS NOT NULL
            AND x.departed_at > x.arrived_at AND s.facility_id IS NOT NULL
        ) f ON TRUE
        LEFT JOIN LATERAL (
@@ -54,11 +55,12 @@ export async function driverActiveLoads(carrierId: string, driverId: string): Pr
                   'body', fn.body, 'tags', fn.tags, 'author', fn.author_name,
                   'role', fn.author_role) ORDER BY fn.created_at DESC) AS notes
          FROM (SELECT * FROM hub.facility_notes y
-               WHERE y.facility_id = s.facility_id ORDER BY y.created_at DESC LIMIT 3) fn
+               WHERE y.facility_id = s.facility_id AND y.carrier_id = s.carrier_id
+               ORDER BY y.created_at DESC LIMIT 3) fn
          WHERE s.facility_id IS NOT NULL
        ) n ON TRUE
-       WHERE s.load_id = $1 ORDER BY s.sequence`,
-      [load.id]
+       WHERE s.load_id = $1 AND s.carrier_id = $2 ORDER BY s.sequence`,
+      [load.id, carrierId]
     )
   }
   return loads
@@ -90,10 +92,11 @@ export async function driverSettlements(
   )
 }
 
-export async function driverDocuments(driverId: string): Promise<HubDocument[]> {
+export async function driverDocuments(carrierId: string, driverId: string): Promise<HubDocument[]> {
   return query<HubDocument>(
-    `SELECT * FROM hub.documents WHERE entity_type = 'driver' AND entity_id = $1 ORDER BY created_at DESC`,
-    [driverId]
+    `SELECT * FROM hub.documents
+     WHERE carrier_id = $1 AND entity_type = 'driver' AND entity_id = $2 ORDER BY created_at DESC`,
+    [carrierId, driverId]
   )
 }
 
@@ -104,7 +107,7 @@ export async function openDocumentRequests(
   return query<DocumentRequest>(
     `SELECT r.*, l.reference AS load_reference
      FROM hub.document_requests r
-     LEFT JOIN hub.loads l ON l.id = r.load_id
+     LEFT JOIN hub.loads l ON l.id = r.load_id AND l.carrier_id = r.carrier_id
      WHERE r.carrier_id = $1 AND r.driver_id = $2 AND r.status = 'open'
      ORDER BY r.created_at`,
     [carrierId, driverId]

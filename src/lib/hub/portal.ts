@@ -108,8 +108,8 @@ export async function portalLoads(
        ls.city AS dest_city, ls.state AS dest_state,
        fs.appt_start AS pickup_at, COALESCE(ls.appt_end, ls.appt_start) AS delivery_at
      FROM hub.loads l
-     LEFT JOIN LATERAL (SELECT city, state, appt_start FROM hub.stops WHERE load_id = l.id AND type = 'pickup' ORDER BY sequence LIMIT 1) fs ON TRUE
-     LEFT JOIN LATERAL (SELECT city, state, appt_start, appt_end FROM hub.stops WHERE load_id = l.id AND type = 'delivery' ORDER BY sequence DESC LIMIT 1) ls ON TRUE
+     LEFT JOIN LATERAL (SELECT city, state, appt_start FROM hub.stops WHERE load_id = l.id AND carrier_id = l.carrier_id AND type = 'pickup' ORDER BY sequence LIMIT 1) fs ON TRUE
+     LEFT JOIN LATERAL (SELECT city, state, appt_start, appt_end FROM hub.stops WHERE load_id = l.id AND carrier_id = l.carrier_id AND type = 'delivery' ORDER BY sequence DESC LIMIT 1) ls ON TRUE
      WHERE l.carrier_id = $1 AND l.customer_id = $2 AND l.deleted_at IS NULL
        AND l.status <> 'cancelled'
      ORDER BY l.created_at DESC LIMIT $3`,
@@ -143,7 +143,7 @@ export async function portalLoadDocuments(
   return query(
     `SELECT d.id, d.kind, d.file_name, d.url
      FROM hub.documents d
-     JOIN hub.loads l ON l.id = d.entity_id AND d.entity_type = 'load'
+     JOIN hub.loads l ON l.id = d.entity_id AND d.entity_type = 'load' AND d.carrier_id = l.carrier_id
      WHERE l.carrier_id = $1 AND l.customer_id = $2 AND l.id = $3 AND l.deleted_at IS NULL
        AND d.kind IN ('pod','bol')
      ORDER BY d.created_at DESC`,
