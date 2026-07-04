@@ -20,14 +20,14 @@ const DOC_CHECK: { kind: string; label: string }[] = [
   { kind: "pod", label: "POD" },
 ]
 
-async function weatherForLoads(loads: Load[]): Promise<Map<string, WeatherAlert>> {
+async function weatherForLoads(carrierId: string, loads: Load[]): Promise<Map<string, WeatherAlert>> {
   // Severe weather at the next stop of moving loads (free NWS API, best-effort).
   const result = new Map<string, WeatherAlert>()
   const candidates = loads.filter((l) => ["dispatched", "at_pickup", "in_transit"].includes(l.status)).slice(0, 10)
   await Promise.all(
     candidates.map(async (load) => {
       try {
-        const stops = await getLoadStops(load.id)
+        const stops = await getLoadStops(carrierId, load.id)
         const next = stops.find((s) => !s.departed_at && s.lat != null && s.lng != null)
         if (!next) return
         const alerts = await getActiveAlerts(next.lat!, next.lng!)
@@ -46,7 +46,7 @@ export default async function DispatchBoardPage() {
     listTrucks(user.carrierId),
     getCarrierSettings(user.carrierId),
   ])
-  const weather = await weatherForLoads(loads)
+  const weather = await weatherForLoads(user.carrierId, loads)
   const driverById = new Map(drivers.map((d) => [d.id, d]))
   const truckById = new Map(trucks.map((t) => [t.id, t]))
 

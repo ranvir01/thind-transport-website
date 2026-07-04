@@ -75,8 +75,8 @@ export default async function LoadDetailPage({ params }: { params: Promise<{ id:
 
   const settings = await getCarrierSettings(user.carrierId)
   const [stops, events, documents, shareLinks, invoice, loadFuel] = await Promise.all([
-    getLoadStops(id),
-    getLoadEvents(id),
+    getLoadStops(user.carrierId, id),
+    getLoadEvents(user.carrierId, id),
     listDocuments("load", id),
     listShareLinks(user.carrierId, id),
     getInvoiceForLoad(user.carrierId, id),

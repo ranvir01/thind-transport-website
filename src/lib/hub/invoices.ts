@@ -63,7 +63,7 @@ export async function createInvoiceFromLoad(
     getCarrier(carrierId),
     getCarrierSettings(carrierId),
     getCustomer(carrierId, load.customer_id),
-    getLoadStops(loadId),
+    getLoadStops(carrierId, loadId),
   ])
   if (!carrier || !customer) throw new Error("Carrier or customer missing")
 

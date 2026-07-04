@@ -36,7 +36,7 @@ async function updateStopLane(
   type: "pickup" | "delivery",
   patch: { city?: string; state?: string; appt_start?: string | null }
 ): Promise<void> {
-  const stops = await getLoadStops(loadId)
+  const stops = await getLoadStops(carrierId, loadId)
   const target =
     type === "pickup"
       ? stops.find((s) => s.type === "pickup")

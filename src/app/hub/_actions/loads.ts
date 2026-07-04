@@ -222,7 +222,7 @@ export async function addDetentionAction(loadId: string): Promise<ActionResult &
       return { ok: false, error: "Detention is already on this load" }
     }
     const settings = await getCarrierSettings(user.carrierId)
-    const stops = await getLoadStops(loadId)
+    const stops = await getLoadStops(user.carrierId, loadId)
     const { detentionCents } = await import("@/lib/hub/money")
     let total = 0
     const detail: string[] = []

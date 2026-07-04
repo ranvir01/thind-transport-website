@@ -94,15 +94,18 @@ export async function getLoad(carrierId: string, id: string): Promise<Load | nul
   )
 }
 
-export async function getLoadStops(loadId: string): Promise<Stop[]> {
-  return query<Stop>(`SELECT * FROM hub.stops WHERE load_id = $1 ORDER BY sequence`, [loadId])
+export async function getLoadStops(carrierId: string, loadId: string): Promise<Stop[]> {
+  return query<Stop>(
+    `SELECT * FROM hub.stops WHERE carrier_id = $1 AND load_id = $2 ORDER BY sequence`,
+    [carrierId, loadId]
+  )
 }
 
-export async function getLoadEvents(loadId: string): Promise<LoadEvent[]> {
+export async function getLoadEvents(carrierId: string, loadId: string): Promise<LoadEvent[]> {
   return query<LoadEvent>(
     `SELECT id, load_id, kind, actor_name, payload, created_at
-     FROM hub.load_events WHERE load_id = $1 ORDER BY created_at ASC, id ASC`,
-    [loadId]
+     FROM hub.load_events WHERE carrier_id = $1 AND load_id = $2 ORDER BY created_at ASC, id ASC`,
+    [carrierId, loadId]
   )
 }
 
