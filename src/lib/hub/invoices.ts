@@ -131,7 +131,7 @@ export async function createInvoiceFromLoad(
     error = "Email not configured (set SMTP_USER/SMTP_PASS) — download the PDF and send it manually."
   } else if (customer.billing_email) {
     try {
-      const docs = await listDocuments("load", loadId)
+      const docs = await listDocuments(carrierId, "load", loadId)
       const attachments: { filename: string; content: Buffer; contentType?: string }[] = [
         { filename: `${number}.pdf`, content: Buffer.from(pdfBytes), contentType: "application/pdf" },
       ]
@@ -310,7 +310,7 @@ export async function sendFactoringPacket(
     } catch { /* best effort */ }
   }
   if (invoice.pdf_url) await fetchDoc(invoice.pdf_url, `${invoice.number}.pdf`)
-  const docs = await listDocuments("load", invoice.load_id)
+  const docs = await listDocuments(carrierId, "load", invoice.load_id)
   for (const doc of docs.filter((d) => ["rate_confirmation", "pod"].includes(d.kind))) {
     await fetchDoc(doc.url, `${doc.kind}-${doc.file_name}`)
   }

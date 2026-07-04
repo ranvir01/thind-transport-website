@@ -42,6 +42,24 @@ describe("assertCarrierRefs", () => {
     await expect(assertCarrierRefs(CARRIER, { load_id: REF })).rejects.toThrow("Load not found")
   })
 
+  it("guards hard-delete tables without a deleted_at clause", async () => {
+    queryMock.mockResolvedValue([{ id: REF }])
+    await assertCarrierRefs(CARRIER, { schedule_id: REF })
+    const [sql, params] = queryMock.mock.calls[0]
+    expect(sql).toContain("hub.maintenance_schedules")
+    expect(sql).toContain("carrier_id = $1")
+    expect(sql).not.toContain("deleted_at")
+    expect(params).toEqual([CARRIER, REF])
+  })
+
+  it("throws for cross-carrier refs on the newer ref tables", async () => {
+    await expect(assertCarrierRefs(CARRIER, { schedule_id: REF })).rejects.toThrow("Maintenance schedule not found")
+    await expect(assertCarrierRefs(CARRIER, { incident_id: REF })).rejects.toThrow("Incident not found")
+    await expect(assertCarrierRefs(CARRIER, { applicant_id: REF })).rejects.toThrow("Applicant not found")
+    await expect(assertCarrierRefs(CARRIER, { facility_id: REF })).rejects.toThrow("Facility not found")
+    await expect(assertCarrierRefs(CARRIER, { message_thread_id: REF })).rejects.toThrow("Thread not found")
+  })
+
   it("checks each provided ref against its own table", async () => {
     queryMock.mockResolvedValue([{ id: REF }])
     await assertCarrierRefs(CARRIER, { customer_id: REF, driver_id: REF, truck_id: REF, trailer_id: REF, load_id: REF })

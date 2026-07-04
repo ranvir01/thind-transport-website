@@ -65,17 +65,22 @@ export async function storeGeneratedPdf(fileName: string, bytes: Uint8Array): Pr
 }
 
 export async function listDocuments(
+  carrierId: string,
   entityType: HubDocument["entity_type"],
   entityId: string
 ): Promise<HubDocument[]> {
   return query<HubDocument>(
-    `SELECT * FROM hub.documents WHERE entity_type = $1 AND entity_id = $2 ORDER BY created_at DESC`,
-    [entityType, entityId]
+    `SELECT * FROM hub.documents WHERE carrier_id = $1 AND entity_type = $2 AND entity_id = $3 ORDER BY created_at DESC`,
+    [carrierId, entityType, entityId]
   )
 }
 
-export async function deleteDocument(id: string): Promise<void> {
-  await query(`DELETE FROM hub.documents WHERE id = $1`, [id])
+export async function deleteDocument(carrierId: string, id: string): Promise<boolean> {
+  const rows = await query<{ id: string }>(
+    `DELETE FROM hub.documents WHERE carrier_id = $1 AND id = $2 RETURNING id`,
+    [carrierId, id]
+  )
+  return rows.length > 0
 }
 
 export function localUploadPath(fileName: string): string {

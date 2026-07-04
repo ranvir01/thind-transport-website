@@ -23,7 +23,7 @@ export default async function DriverDetailPage({ params }: { params: Promise<{ i
   const driver = await getDriver(user.carrierId, id).catch(() => null)
   if (!driver) notFound()
   const [documents, loads, payRules, openRequests, timeOff, scores] = await Promise.all([
-    listDocuments("driver", id),
+    listDocuments(user.carrierId, "driver", id),
     listLoads(user.carrierId, { driverId: id, status: "all" }),
     getActivePayRules(user.carrierId, id),
     openDocumentRequests(user.carrierId, id),

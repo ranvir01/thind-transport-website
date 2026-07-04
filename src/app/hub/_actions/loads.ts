@@ -10,6 +10,7 @@ import {
 import { getCarrierSettings } from "@/lib/hub/settings"
 import { query } from "@/lib/hub/db"
 import { saveDocument, deleteDocument } from "@/lib/hub/documents"
+import { assertCarrierRefs, type CarrierRefField } from "@/lib/hub/tenancy"
 import { createShareLink, revokeShareLink } from "@/lib/hub/sharelinks"
 import { logAudit } from "@/lib/hub/audit"
 import { geocodeCityState } from "@/lib/hub/geocode"
@@ -278,6 +279,13 @@ export async function logCheckCallAction(loadId: string, note: string): Promise<
 
 const MAX_UPLOAD_BYTES = 15 * 1024 * 1024
 
+/** Tenancy guard: entity_id comes from the client, so it must be proven to belong to the carrier. */
+const DOCUMENT_ENTITY_REF: Record<string, CarrierRefField> = {
+  load: "load_id", truck: "truck_id", trailer: "trailer_id", driver: "driver_id",
+  customer: "customer_id", incident: "incident_id", facility: "facility_id",
+  applicant: "applicant_id", message: "message_thread_id",
+}
+
 export async function uploadDocumentAction(formData: FormData): Promise<ActionResult> {
   let user
   try {
@@ -298,6 +306,13 @@ export async function uploadDocumentAction(formData: FormData): Promise<ActionRe
   if (file.size > MAX_UPLOAD_BYTES) return { ok: false, error: "File is over the 15MB limit" }
 
   try {
+    if (parsed.data.entity_type === "carrier") {
+      if (parsed.data.entity_id !== user.carrierId) return { ok: false, error: "Not found" }
+    } else {
+      await assertCarrierRefs(user.carrierId, {
+        [DOCUMENT_ENTITY_REF[parsed.data.entity_type]]: parsed.data.entity_id,
+      })
+    }
     const doc = await saveDocument({
       carrierId: user.carrierId,
       entityType: parsed.data.entity_type,
@@ -339,7 +354,8 @@ export async function deleteDocumentAction(
     return asError(err, "Forbidden")
   }
   try {
-    await deleteDocument(id)
+    const deleted = await deleteDocument(user.carrierId, id)
+    if (!deleted) return { ok: false, error: "Document not found" }
     await logAudit({
       carrierId: user.carrierId, actorId: user.id, actorName: user.name,
       entityType: "document", entityId: id, action: "delete",
