@@ -607,20 +607,25 @@ async function main() {
     )
   }
 
-  // ---- IFTA tax rates for the current quarter (plausible demo rates) ----
+  // ---- IFTA tax rates for current + prior quarter (demo pings/fuel span both) ----
   console.log("Creating IFTA rates…")
-  const quarter = quarterKey()
-  const rates = [
+  const rateMatrix = [
     ["WA", 0.494, 0], ["OR", 0, 0], ["ID", 0.33, 0], ["CA", 0.908, 0], ["NV", 0.27, 0],
     ["UT", 0.365, 0], ["CO", 0.225, 0], ["AZ", 0.26, 0], ["MT", 0.2975, 0],
     ["IN", 0.55, 0.11], ["KY", 0.226, 0.102], ["VA", 0.382, 0],
   ]
-  for (const [jur, rate, surcharge] of rates) {
-    await q(
-      `INSERT INTO hub.ifta_tax_rates (jurisdiction, quarter, rate, surcharge_rate) VALUES ($1,$2,$3,$4)
-       ON CONFLICT (jurisdiction, quarter) DO UPDATE SET rate = $3, surcharge_rate = $4`,
-      [jur, quarter, rate, surcharge]
-    )
+  const rateQuarters = [quarterKey()]
+  const priorQuarter = new Date()
+  priorQuarter.setUTCMonth(priorQuarter.getUTCMonth() - 3)
+  rateQuarters.push(quarterKey(priorQuarter))
+  for (const quarter of [...new Set(rateQuarters)]) {
+    for (const [jur, rate, surcharge] of rateMatrix) {
+      await q(
+        `INSERT INTO hub.ifta_tax_rates (jurisdiction, quarter, rate, surcharge_rate) VALUES ($1,$2,$3,$4)
+         ON CONFLICT (jurisdiction, quarter) DO UPDATE SET rate = $3, surcharge_rate = $4`,
+        [jur, quarter, rate, surcharge]
+      )
+    }
   }
 
   // ---- Compliance items (company-level) ----
