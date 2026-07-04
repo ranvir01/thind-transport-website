@@ -7,8 +7,8 @@ export async function listExpenses(carrierId: string, limit = 200): Promise<Expe
   return query<Expense>(
     `SELECT e.*, t.unit_number AS truck_unit, d.first_name || ' ' || d.last_name AS driver_name
      FROM hub.expenses e
-     LEFT JOIN hub.trucks t ON t.id = e.truck_id
-     LEFT JOIN hub.drivers d ON d.id = e.driver_id
+     LEFT JOIN hub.trucks t ON t.id = e.truck_id AND t.carrier_id = e.carrier_id
+     LEFT JOIN hub.drivers d ON d.id = e.driver_id AND d.carrier_id = e.carrier_id
      WHERE e.carrier_id = $1 ORDER BY e.incurred_on DESC, e.created_at DESC LIMIT ${Math.min(limit, 1000)}`,
     [carrierId]
   )
@@ -145,7 +145,8 @@ export async function exportCsv(carrierId: string, kind: string): Promise<{ file
         `SELECT e.incurred_on, e.category, ROUND(e.amount_cents / 100.0, 2) AS amount,
            t.unit_number AS truck, d.first_name || ' ' || d.last_name AS driver, e.memo
          FROM hub.expenses e
-         LEFT JOIN hub.trucks t ON t.id = e.truck_id LEFT JOIN hub.drivers d ON d.id = e.driver_id
+         LEFT JOIN hub.trucks t ON t.id = e.truck_id AND t.carrier_id = e.carrier_id
+         LEFT JOIN hub.drivers d ON d.id = e.driver_id AND d.carrier_id = e.carrier_id
          WHERE e.carrier_id = $1 ORDER BY e.incurred_on`,
         [carrierId]
       )

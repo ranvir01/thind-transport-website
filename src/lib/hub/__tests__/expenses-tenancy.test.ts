@@ -5,7 +5,7 @@ vi.mock("../audit", () => ({ logAudit: vi.fn(async () => undefined) }))
 
 import { query } from "../db"
 import { logAudit } from "../audit"
-import { createExpense } from "../expenses"
+import { createExpense, exportCsv, listExpenses } from "../expenses"
 import { createAdvance } from "../settlements"
 
 const queryMock = vi.mocked(query)
@@ -57,6 +57,27 @@ describe("createExpense cross-table tenancy (AGENTS.md both-sides rule)", () => 
     await createExpense(CARRIER, expenseInput, ACTOR)
     const selects = queryMock.mock.calls.filter(([sql]) => String(sql).trim().startsWith("SELECT"))
     expect(selects).toHaveLength(0)
+  })
+})
+
+describe("expense reads carrier-guard their truck/driver joins", () => {
+  beforeEach(() => {
+    queryMock.mockReset()
+    queryMock.mockResolvedValue([])
+  })
+
+  it("listExpenses joins trucks and drivers on the expense's carrier", async () => {
+    await listExpenses(CARRIER)
+    const sql = String(queryMock.mock.calls[0][0])
+    expect(sql).toContain("ON t.id = e.truck_id AND t.carrier_id = e.carrier_id")
+    expect(sql).toContain("ON d.id = e.driver_id AND d.carrier_id = e.carrier_id")
+  })
+
+  it("expenses CSV export joins trucks and drivers on the expense's carrier", async () => {
+    await exportCsv(CARRIER, "expenses")
+    const sql = String(queryMock.mock.calls[0][0])
+    expect(sql).toContain("ON t.id = e.truck_id AND t.carrier_id = e.carrier_id")
+    expect(sql).toContain("ON d.id = e.driver_id AND d.carrier_id = e.carrier_id")
   })
 })
 
