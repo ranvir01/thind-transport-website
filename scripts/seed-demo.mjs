@@ -378,14 +378,15 @@ async function main() {
     [0, CITY.kent, CITY.losangeles, "reefer", 350000, 38000, 1135],
     [3, CITY.spokane, CITY.billings, "dry_van", 145000, 16000, 540],
   ]
+  const histLoads = []
   for (let i = 0; i < histLanes.length; i++) {
     const [cust, origin, dest, equip, lh, fsc, miles] = histLanes[i]
-    await makeLoad({
+    histLoads.push(await makeLoad({
       customer: cust, status: "settled", equipment: equip, commodity: "Mixed freight",
       weight: 36000 + i * 800, linehaulCents: lh, fscCents: fsc, miles,
       driver: i % driverIds.length, truck: i % truckIds.length, trailer: i % trailerIds.length,
       origin, dest, pickupDaysAgo: 20 + i * 6, deliverDaysAgo: 18 + i * 6, source: "import",
-    })
+    }))
   }
   await makeLoad({ customer: 2, status: "quoted", equipment: "reefer", commodity: "Onions", weight: 40000, linehaulCents: 260000, fscCents: 0, miles: 640, origin: CITY.yakima, dest: CITY.oakland, pickupDaysAgo: -4, deliverDaysAgo: -6, source: "quote" })
 
@@ -448,6 +449,34 @@ async function main() {
       [CARRIER, driverIds[idx], 150000]
     )
   }
+
+  // ---- One completed settlement (Jasdeep Brar, O/O percentage) ----
+  // Lines mirror what evaluatePayRules produces for his rule set
+  // (90% of linehaul + FSC passthrough − weekly escrow) so the demo
+  // matches a real engine run to the penny.
+  console.log("Creating a paid settlement…")
+  const settledLoad = histLoads[2] // Kent → Boise reefer: $2,350.00 + $260.00 FSC
+  const { rows: settlementRows } = await q(
+    `INSERT INTO hub.settlements (carrier_id, driver_id, period_start, period_end, status,
+       gross_cents, deductions_cents, net_cents, approved_by, approved_at)
+     VALUES ($1,$2,$3,$4,'paid',237500,5000,232500,$5,$6) RETURNING id`,
+    [CARRIER, driverIds[2], dateOnly(daysAgo(36)), dateOnly(daysAgo(30)), users.owner, daysAgo(29, 10)]
+  )
+  const settlementId = settlementRows[0].id
+  await q(
+    `INSERT INTO hub.settlement_lines (settlement_id, kind, label, amount_cents, source_type, source_id)
+     VALUES ($1,'earning',$2,211500,'load',$3),
+            ($1,'earning',$4,26000,'load',$3),
+            ($1,'deduction','Escrow contribution',5000,'escrow',NULL)`,
+    [settlementId, `${settledLoad.reference} — 90% of $2350.00`, settledLoad.id,
+     `${settledLoad.reference} — fuel surcharge $260.00`]
+  )
+  await q(`UPDATE hub.loads SET settlement_id = $1 WHERE id = $2`, [settlementId, settledLoad.id])
+  await q(
+    `INSERT INTO hub.escrow_ledger (carrier_id, driver_id, amount_cents, balance_cents, note, settlement_id)
+     VALUES ($1,$2,5000,155000,'Weekly contribution',$3)`,
+    [CARRIER, driverIds[2], settlementId]
+  )
 
   // ---- Fuel: a quarter of transactions ----
   console.log("Creating fuel transactions…")

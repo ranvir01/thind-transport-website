@@ -7,6 +7,7 @@ import { can } from "@/lib/hub/permissions"
 import { fmtCentsExact } from "@/lib/hub/types"
 import { Panel, PageHeader, BackLink } from "@/components/hub/ui"
 import { SettlementActions } from "@/components/hub/MoneyActions"
+import { formatHubDateShort } from "@/lib/hub/format-dates"
 
 export const dynamic = "force-dynamic"
 
@@ -21,7 +22,7 @@ export default async function SettlementDetailPage({ params }: { params: Promise
     <div>
       <BackLink href="/hub/money/settlements" label="Settlements" />
       <PageHeader
-        title={`${settlement.driver_name} — ${String(settlement.period_start).slice(5, 10)} → ${String(settlement.period_end).slice(5, 10)}`}
+        title={`${settlement.driver_name} — ${formatHubDateShort(settlement.period_start)} → ${formatHubDateShort(settlement.period_end)}`}
         subtitle={`Status: ${settlement.status}${settlement.pay_type === "percentage" ? " · Owner-operator (90% + 100% FSC)" : " · Company driver (per mile)"}`}
         action={
           settlement.statement_url ? (

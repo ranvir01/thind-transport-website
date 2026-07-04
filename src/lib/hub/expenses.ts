@@ -1,6 +1,7 @@
 import { query } from "./db"
 import { logAudit } from "./audit"
 import { assertCarrierRefs } from "./tenancy"
+import { toIsoDateOnly } from "./format-dates"
 import type { Expense, ExpenseCategory } from "./types"
 
 export async function listExpenses(carrierId: string, limit = 200): Promise<Expense[]> {
@@ -188,7 +189,7 @@ export async function exportCsv(carrierId: string, kind: string): Promise<{ file
         filename: "settlements.csv",
         csv: toCsv(
           ["Driver", "PeriodStart", "PeriodEnd", "Gross", "Deductions", "NetPay", "Status"],
-          rows.map((r) => [r.driver, String(r.period_start).slice(0, 10), String(r.period_end).slice(0, 10), r.gross, r.deductions, r.net, r.status])
+          rows.map((r) => [r.driver, toIsoDateOnly(r.period_start) ?? "", toIsoDateOnly(r.period_end) ?? "", r.gross, r.deductions, r.net, r.status])
         ),
       }
     }

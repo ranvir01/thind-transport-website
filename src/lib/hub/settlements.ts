@@ -7,6 +7,7 @@ import { storeGeneratedPdf } from "./documents"
 import { buildSettlementPdf } from "./pdf"
 import { logAudit } from "./audit"
 import { assertCarrierRefs } from "./tenancy"
+import { toIsoDateOnly } from "./format-dates"
 import { createMailTransport, isEmailConfigured, mailFrom } from "@/lib/mailer"
 import type { Advance, Driver, Settlement, SettlementLine } from "./types"
 
@@ -273,8 +274,8 @@ export async function approveSettlement(
       email: carrier?.email, dot: carrier?.dot_number, mc: carrier?.mc_number,
     },
     driverName: settlement.driver_name ?? "Driver",
-    periodStart: String(settlement.period_start).slice(0, 10),
-    periodEnd: String(settlement.period_end).slice(0, 10),
+    periodStart: toIsoDateOnly(settlement.period_start) ?? "",
+    periodEnd: toIsoDateOnly(settlement.period_end) ?? "",
     lines: lines.map((l) => ({ kind: l.kind, label: l.label, amountCents: l.amount_cents })),
     grossCents: settlement.gross_cents,
     deductionsCents: settlement.deductions_cents,
@@ -300,7 +301,7 @@ export async function approveSettlement(
       await transport.sendMail({
         from: mailFrom(carrier?.name ?? "Payroll"),
         to: driver.email,
-        subject: `Settlement ${String(settlement.period_start).slice(0, 10)} — ${String(settlement.period_end).slice(0, 10)}: $${(settlement.net_cents / 100).toFixed(2)}`,
+        subject: `Settlement ${toIsoDateOnly(settlement.period_start) ?? ""} — ${toIsoDateOnly(settlement.period_end) ?? ""}: $${(settlement.net_cents / 100).toFixed(2)}`,
         text: `Your settlement statement is attached.\n\nGross: $${(settlement.gross_cents / 100).toFixed(2)}\nDeductions: $${(settlement.deductions_cents / 100).toFixed(2)}\nNet pay: $${(settlement.net_cents / 100).toFixed(2)}\n\n${carrier?.name ?? ""}`,
         attachments: [{ filename: "settlement.pdf", content: Buffer.from(pdfBytes), contentType: "application/pdf" }],
       })
