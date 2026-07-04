@@ -49,6 +49,17 @@ describe("IFTA golden fixture (hand-computed, surcharge state included)", () => 
     })
     expect(withMissing.missingRates).toEqual(["MT"])
   })
+
+  it("flags purchases-only jurisdictions without a rate on file", () => {
+    // Fuel bought in CA but no CA miles pinged: without a rate the tax-paid
+    // credit silently becomes $0, so the missing rate must still be surfaced.
+    const withMissing = computeIfta({
+      milesByJurisdiction: { WA: 100 },
+      gallonsByJurisdiction: { WA: 20, CA: 30 },
+      rates: { WA: { rate: 0.494 } },
+    })
+    expect(withMissing.missingRates).toEqual(["CA"])
+  })
 })
 
 describe("quarter helpers", () => {

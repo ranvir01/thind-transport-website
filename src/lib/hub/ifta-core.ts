@@ -30,7 +30,7 @@ export interface IftaResult {
   mpg: number
   rows: IftaReportRow[]
   netTaxCents: number
-  /** Jurisdictions traveled with no rate on file (must be resolved before filing). */
+  /** Jurisdictions traveled or fueled in with no rate on file (must be resolved before filing). */
   missingRates: string[]
 }
 
@@ -52,7 +52,9 @@ export function computeIfta(inputs: IftaInputs): IftaResult {
     const taxPaidGallons = inputs.gallonsByJurisdiction[jurisdiction] ?? 0
     const rateEntry = inputs.rates[jurisdiction]
     if (!rateEntry) {
-      if (miles > 0) missingRates.push(jurisdiction)
+      // Purchases-only jurisdictions matter too: without a rate their tax-paid
+      // credit silently computes to $0, understating the fleet's refund.
+      if (miles > 0 || taxPaidGallons > 0) missingRates.push(jurisdiction)
       rows.push({
         jurisdiction, miles, taxPaidGallons,
         taxableGallons: mpg > 0 ? miles / mpg : 0,

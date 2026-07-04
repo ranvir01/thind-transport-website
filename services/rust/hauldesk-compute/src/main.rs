@@ -86,7 +86,9 @@ fn compute_ifta(inputs: &IftaInputs) -> IftaResult {
             .unwrap_or(&0.0);
 
         let Some(rate_entry) = inputs.rates.get(&jurisdiction) else {
-            if miles > 0.0 {
+            // Purchases-only jurisdictions matter too: without a rate their
+            // tax-paid credit silently computes to $0 (parity with ifta-core.ts).
+            if miles > 0.0 || tax_paid_gallons > 0.0 {
                 missing_rates.push(jurisdiction.clone());
             }
             rows.push(IftaReportRow {
@@ -291,6 +293,18 @@ mod tests {
         ));
         assert_eq!(result.missing_rates, vec!["MT".to_string()]);
         assert_eq!(row(&result, "MT").net_cents, 0);
+    }
+
+    /// ifta.test.ts "flags purchases-only jurisdictions without a rate on file"
+    #[test]
+    fn missing_rates_flagged_for_purchases_only() {
+        let result = compute_ifta(&inputs(
+            &[("WA", 100.0)],
+            &[("WA", 20.0), ("CA", 30.0)],
+            &[("WA", 0.494, None)],
+        ));
+        assert_eq!(result.missing_rates, vec!["CA".to_string()]);
+        assert_eq!(row(&result, "CA").net_cents, 0);
     }
 
     /// fuel-use.test.ts reefer-exemption golden: correctly classified reefer
