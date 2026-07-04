@@ -39,15 +39,17 @@ describe("assertCarrierRefs", () => {
     await expect(assertCarrierRefs(CARRIER, { truck_id: REF })).rejects.toThrow("Truck not found")
     await expect(assertCarrierRefs(CARRIER, { trailer_id: REF })).rejects.toThrow("Trailer not found")
     await expect(assertCarrierRefs(CARRIER, { customer_id: REF })).rejects.toThrow("Customer not found")
+    await expect(assertCarrierRefs(CARRIER, { load_id: REF })).rejects.toThrow("Load not found")
   })
 
   it("checks each provided ref against its own table", async () => {
     queryMock.mockResolvedValue([{ id: REF }])
-    await assertCarrierRefs(CARRIER, { customer_id: REF, driver_id: REF, truck_id: REF, trailer_id: REF })
+    await assertCarrierRefs(CARRIER, { customer_id: REF, driver_id: REF, truck_id: REF, trailer_id: REF, load_id: REF })
     const tables = queryMock.mock.calls.map(([sql]) => String(sql))
     expect(tables.some((s) => s.includes("hub.customers"))).toBe(true)
     expect(tables.some((s) => s.includes("hub.drivers"))).toBe(true)
     expect(tables.some((s) => s.includes("hub.trucks"))).toBe(true)
     expect(tables.some((s) => s.includes("hub.trailers"))).toBe(true)
+    expect(tables.some((s) => s.includes("hub.loads"))).toBe(true)
   })
 })
