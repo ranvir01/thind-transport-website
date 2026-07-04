@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
 import { signIn, getSession } from "next-auth/react"
 import { toast } from "sonner"
 import { Loader2, LogIn } from "lucide-react"
@@ -24,6 +25,7 @@ async function sessionAfterLogin() {
 
 /** Client login card. `showDemo` comes from the server page (HUB_DEMO_LOGIN). */
 export function LoginCard({ showDemo }: { showDemo: boolean }) {
+  const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [form, setForm] = useState({ email: "", password: "" })
   const [roleHint, setRoleHint] = useState<string | null>(null)
@@ -57,10 +59,10 @@ export function LoginCard({ showDemo }: { showDemo: boolean }) {
       if (result?.ok) {
         const session = await sessionAfterLogin()
         const role = (session?.user as { role?: string } | undefined)?.role
-        // signIn already refreshed the session, but SessionProvider may still have an
-        // un-awaited mount/poll fetch; defer hard navigation so it is not aborted.
-        await new Promise((r) => setTimeout(r, 50))
-        window.location.href = hubLandingPath(role)
+        // Client navigation keeps hub SessionProvider mounted so its session fetch
+        // is not aborted (window.location.href caused authjs "Failed to fetch" noise).
+        router.push(hubLandingPath(role))
+        router.refresh()
       } else {
         toast.error("Invalid email or password")
         setLoading(false)
