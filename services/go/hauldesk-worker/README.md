@@ -15,14 +15,22 @@ go build -o hauldesk-worker .
 
 | Method | Path | Description |
 |--------|------|-------------|
-| GET | `/health` | Liveness |
-| POST | `/route/miles` | `{"origin":{"lat","lng"},"dest":{"lat","lng"}}` → driving miles (stub: haversine) |
+| GET | `/health` | Liveness (always open, even with the secret set) |
+| POST | `/route/miles` | `{"origin":{"lat","lng"},"dest":{"lat","lng"}}` → driving miles via OSRM (`OSRM_URL`); replies `source: "haversine-fallback"` with great-circle miles when OSRM is unreachable |
+
+When `HAULDESK_SIDECAR_SECRET` is set, every route except `/health` requires a
+matching `X-Hauldesk-Secret` header (constant-time compare).
+
+## Test
+
+```bash
+go vet ./... && go test ./...   # or: make go-test / npm run test:sidecars
+```
 
 ## Planned extraction targets
 
 - Terminal / TruckX position sync
 - DAT webhook receiver
-- OSRM `route/v1/driving` proxy (replace haversine stub)
 - `/api/hub/cron` long jobs
 
 See `docs/architecture/trilingual-stack.md`.

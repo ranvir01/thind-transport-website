@@ -35,13 +35,18 @@ type routeMilesRequest struct {
 }
 
 func main() {
+	addr := ":8081"
+	log.Printf("hauldesk-worker listening on %s (auth: %v)", addr, os.Getenv("HAULDESK_SIDECAR_SECRET") != "")
+	log.Fatal(http.ListenAndServe(addr, newMux()))
+}
+
+// newMux wires all routes; main and the test suite share this exact wiring
+// so the /health-stays-open and secret-gating properties are tested as built.
+func newMux() *http.ServeMux {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/health", healthHandler)
 	mux.Handle("/route/miles", requireSecret(http.HandlerFunc(routeMilesHandler)))
-
-	addr := ":8081"
-	log.Printf("hauldesk-worker listening on %s (auth: %v)", addr, os.Getenv("HAULDESK_SIDECAR_SECRET") != "")
-	log.Fatal(http.ListenAndServe(addr, mux))
+	return mux
 }
 
 // requireSecret gates work endpoints behind HAULDESK_SIDECAR_SECRET when set.
