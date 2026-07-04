@@ -79,6 +79,18 @@ describe("expense reads carrier-guard their truck/driver joins", () => {
     expect(sql).toContain("ON t.id = e.truck_id AND t.carrier_id = e.carrier_id")
     expect(sql).toContain("ON d.id = e.driver_id AND d.carrier_id = e.carrier_id")
   })
+
+  it("settlements CSV export joins drivers on the settlement's carrier", async () => {
+    await exportCsv(CARRIER, "settlements")
+    const sql = String(queryMock.mock.calls[0][0])
+    expect(sql).toContain("ON d.id = s.driver_id AND d.carrier_id = s.carrier_id")
+  })
+
+  it("1099 CSV export joins drivers on the settlement's carrier", async () => {
+    await exportCsv(CARRIER, "1099")
+    const sql = String(queryMock.mock.calls[0][0])
+    expect(sql).toContain("ON d.id = s.driver_id AND d.carrier_id = s.carrier_id")
+  })
 })
 
 describe("createAdvance cross-table tenancy", () => {

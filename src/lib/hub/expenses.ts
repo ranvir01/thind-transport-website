@@ -181,7 +181,7 @@ export async function exportCsv(carrierId: string, kind: string): Promise<{ file
         `SELECT d.first_name || ' ' || d.last_name AS driver, s.period_start, s.period_end,
            ROUND(s.gross_cents / 100.0, 2) AS gross, ROUND(s.deductions_cents / 100.0, 2) AS deductions,
            ROUND(s.net_cents / 100.0, 2) AS net, s.status
-         FROM hub.settlements s JOIN hub.drivers d ON d.id = s.driver_id
+         FROM hub.settlements s JOIN hub.drivers d ON d.id = s.driver_id AND d.carrier_id = s.carrier_id
          WHERE s.carrier_id = $1 ORDER BY s.period_end`,
         [carrierId]
       )
@@ -199,7 +199,7 @@ export async function exportCsv(carrierId: string, kind: string): Promise<{ file
         `SELECT d.first_name || ' ' || d.last_name AS payee,
            ROUND(SUM(s.gross_cents - COALESCE(reimb.cents, 0)) / 100.0, 2) AS nonemployee_compensation
          FROM hub.settlements s
-         JOIN hub.drivers d ON d.id = s.driver_id AND d.pay_type = 'percentage'
+         JOIN hub.drivers d ON d.id = s.driver_id AND d.carrier_id = s.carrier_id AND d.pay_type = 'percentage'
          LEFT JOIN LATERAL (
            SELECT SUM(amount_cents) AS cents FROM hub.settlement_lines
            WHERE settlement_id = s.id AND kind = 'reimbursement'
