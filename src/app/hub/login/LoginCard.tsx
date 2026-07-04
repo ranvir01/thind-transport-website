@@ -41,7 +41,11 @@ export function LoginCard({ showDemo }: { showDemo: boolean }) {
         redirect: false,
       })
       if (result?.ok) {
-        const session = await getSession()
+        // broadcast:false — the default broadcast makes SessionProvider start a second,
+        // un-awaited session fetch that the hard navigation below aborts, logging a
+        // transient authjs "Failed to fetch" ClientSessionError. The full page load
+        // makes this tab's provider update unnecessary anyway.
+        const session = await getSession({ broadcast: false })
         const role = (session?.user as { role?: string } | undefined)?.role
         window.location.href = hubLandingPath(role)
       } else {
