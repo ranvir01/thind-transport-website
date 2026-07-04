@@ -6,6 +6,7 @@ import { getCarrier } from "./settings"
 import { storeGeneratedPdf } from "./documents"
 import { buildSettlementPdf } from "./pdf"
 import { logAudit } from "./audit"
+import { assertCarrierRefs } from "./tenancy"
 import { createMailTransport, isEmailConfigured, mailFrom } from "@/lib/mailer"
 import type { Advance, Driver, Settlement, SettlementLine } from "./types"
 
@@ -350,6 +351,7 @@ export async function createAdvance(
   input: { driverId: string; amountCents: number; issuedOn: string; reference?: string | null },
   actor: { id: string; name: string }
 ): Promise<void> {
+  await assertCarrierRefs(carrierId, { driver_id: input.driverId })
   const rows = await query<{ id: string }>(
     `INSERT INTO hub.advances (carrier_id, driver_id, amount_cents, issued_on, reference, status)
      VALUES ($1,$2,$3,$4,$5,'outstanding') RETURNING id`,

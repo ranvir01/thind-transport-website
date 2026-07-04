@@ -1,5 +1,6 @@
 import { query } from "./db"
 import { logAudit } from "./audit"
+import { assertCarrierRefs } from "./tenancy"
 import type { Expense, ExpenseCategory } from "./types"
 
 export async function listExpenses(carrierId: string, limit = 200): Promise<Expense[]> {
@@ -28,6 +29,11 @@ export async function createExpense(
   },
   actor: { id: string; name: string }
 ): Promise<void> {
+  await assertCarrierRefs(carrierId, {
+    truck_id: input.truckId,
+    driver_id: input.driverId,
+    load_id: input.loadId,
+  })
   const rows = await query<{ id: string }>(
     `INSERT INTO hub.expenses (carrier_id, category, amount_cents, incurred_on, truck_id, driver_id, load_id, reimbursable, billable, memo)
      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING id`,

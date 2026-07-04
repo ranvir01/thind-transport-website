@@ -12,6 +12,7 @@ const REF_TABLES = {
   driver_id: { table: "hub.drivers", label: "Driver" },
   truck_id: { table: "hub.trucks", label: "Truck" },
   trailer_id: { table: "hub.trailers", label: "Trailer" },
+  load_id: { table: "hub.loads", label: "Load" },
 } as const
 
 export type CarrierRefField = keyof typeof REF_TABLES
