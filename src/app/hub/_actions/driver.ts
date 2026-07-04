@@ -16,7 +16,7 @@ import { createTimeOffRequest, cancelTimeOff } from "@/lib/hub/timeoff"
 import { acknowledgeAnnouncement } from "@/lib/hub/announcements"
 import { notifyRoles } from "@/lib/hub/notify"
 import { query, queryOne } from "@/lib/hub/db"
-import type { LoadStatus } from "@/lib/hub/types"
+import { dollarsToCents, type LoadStatus } from "@/lib/hub/types"
 
 interface Result {
   ok: boolean
@@ -273,8 +273,8 @@ export async function driverRequestAdvance(input: {
 }): Promise<Result> {
   try {
     const user = await requireDriverUser()
-    const amountCents = Math.round(Number(input.amount.replace(/[^0-9.]/g, "")) * 100)
-    if (!Number.isFinite(amountCents) || amountCents <= 0) {
+    const amountCents = dollarsToCents(input.amount)
+    if (amountCents <= 0) {
       return { ok: false, error: "How much do you need?" }
     }
     if (amountCents > 100000) return { ok: false, error: "Over $1,000 — call the office instead" }
