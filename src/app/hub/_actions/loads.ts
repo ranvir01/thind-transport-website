@@ -8,6 +8,8 @@ import {
   addLoadEvent, getLoadStops,
 } from "@/lib/hub/loads"
 import { getCarrierSettings } from "@/lib/hub/settings"
+import { getDriver, dispatchLegality } from "@/lib/hub/drivers"
+import { getTruck } from "@/lib/hub/fleet"
 import { query } from "@/lib/hub/db"
 import { saveDocument, deleteDocument } from "@/lib/hub/documents"
 import { assertCarrierRefs, type CarrierRefField } from "@/lib/hub/tenancy"
@@ -145,6 +147,18 @@ export async function advanceLoadStatusAction(id: string): Promise<ActionResult>
     if (!load) return { ok: false, error: "Load not found" }
     const next = NEXT_STATUS[load.status]
     if (!next) return { ok: false, error: `No next status after ${load.status}` }
+    // Legality gate: the board shows hard stops (expired CDL/medical, truck in shop)
+    // but dispatch must be refused server-side, same as the planner assignment path.
+    if (next === "dispatched") {
+      const [driver, truck] = await Promise.all([
+        load.driver_id ? getDriver(user.carrierId, load.driver_id) : null,
+        load.truck_id ? getTruck(user.carrierId, load.truck_id) : null,
+      ])
+      const legality = dispatchLegality(driver, truck)
+      if (!legality.legal) {
+        return { ok: false, error: legality.stops.join("; ") }
+      }
+    }
     // Document gates: BOL before in_transit→delivered advance, POD before pod_received.
     const docs = load.doc_kinds ?? []
     if (next === "pod_received" && !docs.includes("pod")) {
