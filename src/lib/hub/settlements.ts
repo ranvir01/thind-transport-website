@@ -29,10 +29,12 @@ export async function getSettlement(carrierId: string, id: string): Promise<Sett
   )
 }
 
-export async function getSettlementLines(settlementId: string): Promise<SettlementLine[]> {
+export async function getSettlementLines(carrierId: string, settlementId: string): Promise<SettlementLine[]> {
   return query<SettlementLine>(
-    `SELECT * FROM hub.settlement_lines WHERE settlement_id = $1 ORDER BY kind, created_at`,
-    [settlementId]
+    `SELECT sl.* FROM hub.settlement_lines sl
+     JOIN hub.settlements s ON s.id = sl.settlement_id AND s.carrier_id = $1
+     WHERE sl.settlement_id = $2 ORDER BY sl.kind, sl.created_at`,
+    [carrierId, settlementId]
   )
 }
 
@@ -233,7 +235,7 @@ export async function approveSettlement(
   const settlement = await getSettlement(carrierId, settlementId)
   if (!settlement) throw new Error("Settlement not found")
   if (settlement.status !== "draft") throw new Error("Only drafts can be approved")
-  const lines = await getSettlementLines(settlementId)
+  const lines = await getSettlementLines(carrierId, settlementId)
   const driver = await queryOne<Driver>(
     `SELECT * FROM hub.drivers WHERE id = $1 AND carrier_id = $2`,
     [settlement.driver_id, carrierId]

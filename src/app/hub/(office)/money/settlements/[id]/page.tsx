@@ -18,7 +18,7 @@ export default async function SettlementDetailPage({ params }: { params: Promise
   const { id } = await params
   const settlement = await getSettlement(user.carrierId, id).catch(() => null)
   if (!settlement) notFound()
-  const lines = await getSettlementLines(id)
+  const lines = await getSettlementLines(user.carrierId, id)
 
   // Describe the driver's actual pay program rather than assuming the legacy
   // 90%/100%-FSC split (custom rule sets and other rates exist).

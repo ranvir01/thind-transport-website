@@ -16,7 +16,7 @@ vi.mock("@/lib/mailer", () => ({
 }))
 
 import { query, queryOne } from "../db"
-import { approveSettlement } from "../settlements"
+import { approveSettlement, getSettlementLines } from "../settlements"
 
 const queryMock = vi.mocked(query)
 const queryOneMock = vi.mocked(queryOne)
@@ -61,5 +61,22 @@ describe("approveSettlement carrier-guards driver read", () => {
     )
     expect(driverLookup).toBeDefined()
     expect(driverLookup![1]).toEqual([DRIVER, CARRIER])
+  })
+})
+
+describe("getSettlementLines carrier-guards via settlements join", () => {
+  beforeEach(() => {
+    queryMock.mockReset()
+    queryMock.mockResolvedValue([])
+  })
+
+  it("joins hub.settlements on carrier_id = $1 (not settlement-id-only)", async () => {
+    await getSettlementLines(CARRIER, SETTLEMENT)
+    const linesLookup = queryMock.mock.calls.find(([sql]) =>
+      String(sql).includes("FROM hub.settlement_lines")
+    )
+    expect(linesLookup).toBeDefined()
+    expect(String(linesLookup![0])).toContain("JOIN hub.settlements s ON s.id = sl.settlement_id AND s.carrier_id = $1")
+    expect(linesLookup![1]).toEqual([CARRIER, SETTLEMENT])
   })
 })
