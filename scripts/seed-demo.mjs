@@ -478,6 +478,26 @@ async function main() {
     [CARRIER, driverIds[2], settlementId]
   )
 
+  // ---- Paid settlement for demo driver login (Harpreet, company per-mile) ----
+  // Keeps settle1/settle2 in the office queue; gives the driver PWA a real pay summary.
+  // Lines mirror evaluatePayRules for histLoads[0] (175 loaded mi @ $0.63) minus insurance.
+  console.log("Creating Harpreet's paid settlement…")
+  const harpreetPaidLoad = histLoads[0] // Kent → Portland dry van, 175 mi
+  const { rows: harpreetSettlementRows } = await q(
+    `INSERT INTO hub.settlements (carrier_id, driver_id, period_start, period_end, status,
+       gross_cents, deductions_cents, net_cents, approved_by, approved_at)
+     VALUES ($1,$2,$3,$4,'paid',11025,7500,3525,$5,$6) RETURNING id`,
+    [CARRIER, driverIds[0], dateOnly(daysAgo(20)), dateOnly(daysAgo(14)), users.owner, daysAgo(13, 10)]
+  )
+  const harpreetSettlementId = harpreetSettlementRows[0].id
+  await q(
+    `INSERT INTO hub.settlement_lines (settlement_id, kind, label, amount_cents, source_type, source_id)
+     VALUES ($1,'earning',$2,11025,'load',$3),
+            ($1,'deduction','Insurance',7500,'insurance',NULL)`,
+    [harpreetSettlementId, `${harpreetPaidLoad.reference} — 175 loaded mi @ $0.63/mi`, harpreetPaidLoad.id]
+  )
+  await q(`UPDATE hub.loads SET settlement_id = $1 WHERE id = $2`, [harpreetSettlementId, harpreetPaidLoad.id])
+
   // ---- Fuel: a quarter of transactions ----
   console.log("Creating fuel transactions…")
   const fuelStops = [
