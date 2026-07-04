@@ -22,7 +22,7 @@ export default async function ApplicantDetailPage({ params }: { params: Promise<
   const [events, offer, documents, drivers] = await Promise.all([
     applicantEvents(user.carrierId, id),
     latestOffer(user.carrierId, id),
-    listDocuments("applicant", id),
+    listDocuments(user.carrierId, "applicant", id),
     listDrivers(user.carrierId),
   ])
 

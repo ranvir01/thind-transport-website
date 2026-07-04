@@ -20,7 +20,7 @@ export default async function TruckDetailPage({ params }: { params: Promise<{ id
   if (!truck) notFound()
   const [drivers, documents, dvirs, dvirState, schedules, records] = await Promise.all([
     listDrivers(user.carrierId),
-    listDocuments("truck", id),
+    listDocuments(user.carrierId, "truck", id),
     listDvirsForTruck(user.carrierId, id),
     truckDvirState(user.carrierId, id),
     query<MaintenanceSchedule>(

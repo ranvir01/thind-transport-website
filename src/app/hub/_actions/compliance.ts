@@ -5,6 +5,7 @@ import { requirePermission } from "@/lib/hub/session"
 import { addComplianceItem, resolveComplianceItem } from "@/lib/hub/compliance"
 import { computeIftaQuarter, importIftaRates, setIftaStatus } from "@/lib/hub/ifta"
 import { query } from "@/lib/hub/db"
+import { assertCarrierRefs } from "@/lib/hub/tenancy"
 import { dollarsToCents } from "@/lib/hub/types"
 import type { ActionResult } from "./fleet"
 
@@ -136,6 +137,7 @@ export async function addMaintenanceScheduleAction(values: {
   }
   if (!values.name.trim()) return { ok: false, error: "Name the PM item" }
   try {
+    await assertCarrierRefs(user.carrierId, { truck_id: values.truckId })
     await query(
       `INSERT INTO hub.maintenance_schedules (carrier_id, truck_id, name, interval_miles, interval_days, last_done_on)
        VALUES ($1,$2,$3,$4,$5,$6)`,
@@ -170,6 +172,10 @@ export async function addMaintenanceRecordAction(values: {
     return asError(err, "Forbidden")
   }
   try {
+    await assertCarrierRefs(user.carrierId, {
+      truck_id: values.truckId,
+      schedule_id: values.scheduleId || null,
+    })
     await query(
       `INSERT INTO hub.maintenance_records (carrier_id, truck_id, schedule_id, done_on, odometer, vendor, cost_cents, notes)
        VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
@@ -182,8 +188,9 @@ export async function addMaintenanceRecordAction(values: {
     )
     if (values.scheduleId) {
       await query(
-        `UPDATE hub.maintenance_schedules SET last_done_on = $2, last_done_odometer = $3, updated_at = NOW() WHERE id = $1`,
-        [values.scheduleId, values.doneOn, values.odometer ? Number(values.odometer) : null]
+        `UPDATE hub.maintenance_schedules SET last_done_on = $2, last_done_odometer = $3, updated_at = NOW()
+         WHERE id = $1 AND carrier_id = $4`,
+        [values.scheduleId, values.doneOn, values.odometer ? Number(values.odometer) : null, user.carrierId]
       )
     }
     revalidatePath(`/hub/fleet/trucks/${values.truckId}`)

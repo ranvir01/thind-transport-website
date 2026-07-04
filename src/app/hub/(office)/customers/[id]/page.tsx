@@ -27,7 +27,7 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
   const [contacts, loads, documents, activities, vetting, paySpeed] = await Promise.all([
     listContacts(id),
     listLoads(user.carrierId, { customerId: id, status: "all" }),
-    listDocuments("customer", id),
+    listDocuments(user.carrierId, "customer", id),
     query<CrmActivity>(
       `SELECT id, kind, body, actor_name, created_at FROM hub.crm_activities
        WHERE customer_id = $1 ORDER BY created_at DESC LIMIT 25`,

@@ -24,7 +24,7 @@ export default async function IncidentDetailPage({ params }: { params: Promise<{
   const [drivers, trucks, documents] = await Promise.all([
     listDrivers(user.carrierId),
     listTrucks(user.carrierId),
-    listDocuments("incident", id),
+    listDocuments(user.carrierId, "incident", id),
   ])
 
   return (
