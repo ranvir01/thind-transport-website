@@ -236,7 +236,7 @@ export function LoadForm({
               type="checkbox"
               checked={form.factored}
               onChange={(e) => set({ factored: e.target.checked })}
-              className="h-5 w-5 rounded accent-[#F2A900]"
+              className="h-5 w-5 rounded border-border-strong accent-accent"
             />
             <span className="text-sm text-fg-2">Factored (invoice remits to the factor)</span>
           </label>
@@ -327,7 +327,7 @@ export function LoadForm({
                 <input
                   type="checkbox" checked={stop.fcfs}
                   onChange={(e) => setStop(i, { fcfs: e.target.checked, appt_start: e.target.checked ? "" : stop.appt_start })}
-                  className="h-5 w-5 rounded accent-[#F2A900]"
+                  className="h-5 w-5 rounded border-border-strong accent-accent"
                 />
                 <span className="text-sm text-fg-2">FCFS (first come, first served)</span>
               </label>

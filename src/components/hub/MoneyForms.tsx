@@ -124,12 +124,12 @@ export function ExpenseForm({ drivers, trucks }: { drivers: Option[]; trucks: Op
             onChange={(e) => setForm({ ...form, memo: e.target.value })} />
         </div>
         <label className="flex items-center gap-2 min-h-[44px] cursor-pointer">
-          <input type="checkbox" checked={form.reimbursable} className="h-5 w-5 rounded accent-[#F2A900]"
+          <input type="checkbox" checked={form.reimbursable} className="h-5 w-5 rounded border-border-strong accent-accent"
             onChange={(e) => setForm({ ...form, reimbursable: e.target.checked })} />
           <span className="text-sm text-fg-2">Reimburse driver (next settlement)</span>
         </label>
         <label className="flex items-center gap-2 min-h-[44px] cursor-pointer">
-          <input type="checkbox" checked={form.billable} className="h-5 w-5 rounded accent-[#F2A900]"
+          <input type="checkbox" checked={form.billable} className="h-5 w-5 rounded border-border-strong accent-accent"
             onChange={(e) => setForm({ ...form, billable: e.target.checked })} />
           <span className="text-sm text-fg-2">Billable to customer</span>
         </label>
