@@ -1,5 +1,6 @@
 import { hubDb, query, queryOne } from "./db"
 import { facilityDedupeKey } from "./facilities"
+import { assertCarrierRefs } from "./tenancy"
 import type {
   Accessorial, EquipmentType, Load, LoadEvent, LoadEventKind, LoadStatus, Stop,
 } from "./types"
@@ -209,6 +210,12 @@ export async function createLoad(
   input: LoadInput,
   actor: { id?: string | null; name?: string | null }
 ): Promise<Load> {
+  await assertCarrierRefs(carrierId, {
+    customer_id: input.customer_id,
+    driver_id: input.driver_id,
+    truck_id: input.truck_id,
+    trailer_id: input.trailer_id,
+  })
   const client = await hubDb().connect()
   try {
     await client.query("BEGIN")
@@ -257,6 +264,12 @@ export async function updateLoad(
   id: string,
   input: Omit<LoadInput, "stops" | "status">
 ): Promise<Load | null> {
+  await assertCarrierRefs(carrierId, {
+    customer_id: input.customer_id,
+    driver_id: input.driver_id,
+    truck_id: input.truck_id,
+    trailer_id: input.trailer_id,
+  })
   const rows = await query<Load>(
     `UPDATE hub.loads SET
        customer_reference=$3, customer_id=$4, equipment=$5, commodity=$6, weight_lbs=$7,

@@ -145,6 +145,27 @@ suite("portal + tenant isolation (query layer)", () => {
     expect(own.map((i) => i.number)).toContain(`ISO-INV-${suffix}`)
   })
 
+  it("a load can never be assigned another tenant's driver", async () => {
+    const loadboard = await import("../loadboard")
+    const d = await db.query<{ id: string }>(
+      `INSERT INTO hub.drivers (carrier_id, first_name, last_name) VALUES ($1, 'Iso', $2) RETURNING id`,
+      [tenant2, `Driver ${suffix}`]
+    )
+    const t2Driver = d[0].id
+    try {
+      await expect(
+        loadboard.patchLoadBoardField(T1, loadA, "driver_id", t2Driver, { id: null, name: null })
+      ).rejects.toThrow(/not found/i)
+      const rows = await db.query<{ driver_id: string | null }>(
+        `SELECT driver_id FROM hub.loads WHERE id = $1`,
+        [loadA]
+      )
+      expect(rows[0].driver_id).toBeNull()
+    } finally {
+      await db.query(`DELETE FROM hub.drivers WHERE id = $1`, [t2Driver])
+    }
+  })
+
   it("tenant 1 office queries never return tenant 2 loads (both directions)", async () => {
     const t1Loads = await loadsLib.listLoads(T1, { status: "all" })
     expect(t1Loads.map((l) => l.reference)).not.toContain(`ISO-T2-${suffix}`)

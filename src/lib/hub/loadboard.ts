@@ -1,4 +1,5 @@
 import { changeLoadStatus, getLoad, getLoadStops } from "./loads"
+import { assertCarrierRefs } from "./tenancy"
 import { query } from "./db"
 import { geocodeCityState } from "./geocode"
 import type { Load, LoadStatus } from "./types"
@@ -109,6 +110,7 @@ export async function patchLoadBoardField(
       break
     case "driver_id": {
       const value = rawValue.trim() || null
+      await assertCarrierRefs(carrierId, { driver_id: value })
       await query(
         `UPDATE hub.loads SET driver_id = $3, updated_at = NOW()
          WHERE carrier_id = $1 AND id = $2 AND deleted_at IS NULL`,
@@ -118,6 +120,7 @@ export async function patchLoadBoardField(
     }
     case "truck_id": {
       const value = rawValue.trim() || null
+      await assertCarrierRefs(carrierId, { truck_id: value })
       await query(
         `UPDATE hub.loads SET truck_id = $3, updated_at = NOW()
          WHERE carrier_id = $1 AND id = $2 AND deleted_at IS NULL`,
