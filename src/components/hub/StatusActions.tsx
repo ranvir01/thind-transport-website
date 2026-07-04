@@ -7,7 +7,7 @@ import {
   advanceLoadStatusAction, logCheckCallAction, setLoadStatusAction, stopTimestampAction,
 } from "@/app/hub/_actions/loads"
 import { fieldCls } from "@/components/hub/ui"
-import { NEXT_STATUS, STATUS_LABELS, type LoadStatus } from "@/lib/hub/types"
+import { NEXT_STATUS, STATUS_LABELS, canCancelLoad, type LoadStatus } from "@/lib/hub/types"
 
 export function AdvanceStatusButton({
   loadId,
@@ -58,7 +58,7 @@ export function CancelLoadButton({ loadId, status }: { loadId: string; status: L
   const [pending, startTransition] = useTransition()
   const [confirming, setConfirming] = useState(false)
   // Once money work starts (invoiced+), cancellation is an accounting decision, not a click.
-  if (["delivered", "pod_received", "invoiced", "paid", "settled", "cancelled"].includes(status)) return null
+  if (!canCancelLoad(status)) return null
 
   const cancel = () =>
     startTransition(async () => {
