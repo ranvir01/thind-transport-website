@@ -57,6 +57,9 @@ export function LoginCard({ showDemo }: { showDemo: boolean }) {
       if (result?.ok) {
         const session = await sessionAfterLogin()
         const role = (session?.user as { role?: string } | undefined)?.role
+        // signIn already refreshed the session, but SessionProvider may still have an
+        // un-awaited mount/poll fetch; defer hard navigation so it is not aborted.
+        await new Promise((r) => setTimeout(r, 50))
         window.location.href = hubLandingPath(role)
       } else {
         toast.error("Invalid email or password")
