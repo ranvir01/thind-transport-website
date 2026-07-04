@@ -3,7 +3,7 @@ import { assertCarrierRefs } from "./tenancy"
 import { query } from "./db"
 import { geocodeCityState } from "./geocode"
 import type { Load, LoadStatus } from "./types"
-import { LOAD_STATUSES } from "./types"
+import { dollarsToCents, LOAD_STATUSES } from "./types"
 
 export type LoadBoardField =
   | "customer_reference"
@@ -132,8 +132,9 @@ export async function patchLoadBoardField(
       await updateStopLane(carrierId, loadId, "pickup", { appt_start: parsePickupDate(rawValue) })
       break
     case "linehaul": {
-      const cents = Math.round(Number(rawValue.replace(/[^0-9.\-]/g, "")) * 100)
-      if (!Number.isFinite(cents)) throw new Error("Invalid linehaul amount")
+      const cleaned = rawValue.replace(/[^0-9.\-]/g, "")
+      if (cleaned !== "" && !Number.isFinite(Number(cleaned))) throw new Error("Invalid linehaul amount")
+      const cents = dollarsToCents(rawValue)
       await query(
         `UPDATE hub.loads SET linehaul_cents = $3, updated_at = NOW()
          WHERE carrier_id = $1 AND id = $2 AND deleted_at IS NULL`,
@@ -142,8 +143,9 @@ export async function patchLoadBoardField(
       break
     }
     case "fuel_surcharge": {
-      const cents = Math.round(Number(rawValue.replace(/[^0-9.\-]/g, "")) * 100)
-      if (!Number.isFinite(cents)) throw new Error("Invalid fuel surcharge amount")
+      const cleaned = rawValue.replace(/[^0-9.\-]/g, "")
+      if (cleaned !== "" && !Number.isFinite(Number(cleaned))) throw new Error("Invalid fuel surcharge amount")
+      const cents = dollarsToCents(rawValue)
       await query(
         `UPDATE hub.loads SET fuel_surcharge_cents = $3, updated_at = NOW()
          WHERE carrier_id = $1 AND id = $2 AND deleted_at IS NULL`,
