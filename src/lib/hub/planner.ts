@@ -73,10 +73,10 @@ const BLOCK_SELECT = `
     COALESCE(fs.appt_start, l.created_at) AS starts_at,
     COALESCE(ls.appt_end, ls.appt_start, fs.appt_start + INTERVAL '1 day', l.created_at + INTERVAL '1 day') AS ends_at
   FROM hub.loads l
-  LEFT JOIN hub.customers c ON c.id = l.customer_id
-  LEFT JOIN hub.drivers d ON d.id = l.driver_id
-  LEFT JOIN LATERAL (SELECT * FROM hub.stops WHERE load_id = l.id AND type = 'pickup' ORDER BY sequence LIMIT 1) fs ON TRUE
-  LEFT JOIN LATERAL (SELECT * FROM hub.stops WHERE load_id = l.id AND type = 'delivery' ORDER BY sequence DESC LIMIT 1) ls ON TRUE`
+  LEFT JOIN hub.customers c ON c.id = l.customer_id AND c.carrier_id = l.carrier_id
+  LEFT JOIN hub.drivers d ON d.id = l.driver_id AND d.carrier_id = l.carrier_id
+  LEFT JOIN LATERAL (SELECT * FROM hub.stops WHERE load_id = l.id AND carrier_id = l.carrier_id AND type = 'pickup' ORDER BY sequence LIMIT 1) fs ON TRUE
+  LEFT JOIN LATERAL (SELECT * FROM hub.stops WHERE load_id = l.id AND carrier_id = l.carrier_id AND type = 'delivery' ORDER BY sequence DESC LIMIT 1) ls ON TRUE`
 
 export async function plannerData(carrierId: string, weekStartISO?: string): Promise<PlannerData> {
   const weekStart = weekStartISO
@@ -98,7 +98,7 @@ export async function plannerData(carrierId: string, weekStartISO?: string): Pro
     }>(
       `SELECT t.id, t.unit_number, t.status, t.assigned_driver_id AS driver_id,
          d.first_name || ' ' || d.last_name AS driver_name
-       FROM hub.trucks t LEFT JOIN hub.drivers d ON d.id = t.assigned_driver_id
+       FROM hub.trucks t LEFT JOIN hub.drivers d ON d.id = t.assigned_driver_id AND d.carrier_id = t.carrier_id
        WHERE t.carrier_id = $1 AND t.deleted_at IS NULL AND t.status <> 'retired'
        ORDER BY t.unit_number`,
       [carrierId]
@@ -140,7 +140,7 @@ export async function plannerData(carrierId: string, weekStartISO?: string): Pro
       // Empty now: where did it last deliver?
       const lastDelivery = await query<{ city: string; state: string }>(
         `SELECT s.city, s.state FROM hub.stops s
-         JOIN hub.loads l ON l.id = s.load_id
+         JOIN hub.loads l ON l.id = s.load_id AND l.carrier_id = s.carrier_id
          WHERE l.carrier_id = $1 AND l.truck_id = $2 AND s.type = 'delivery' AND s.departed_at IS NOT NULL
          ORDER BY s.departed_at DESC LIMIT 1`,
         [carrierId, truck.id]

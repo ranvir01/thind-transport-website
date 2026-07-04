@@ -13,10 +13,10 @@ export async function listCustomers(carrierId: string): Promise<CustomerWithStat
        COUNT(l.id) FILTER (WHERE l.deleted_at IS NULL)::int AS load_count,
        COALESCE(SUM(l.linehaul_cents + l.fuel_surcharge_cents) FILTER (WHERE l.deleted_at IS NULL AND l.status <> 'cancelled'), 0) AS total_revenue_cents,
        (SELECT AVG(p.paid_on - i.issued_on)
-          FROM hub.invoices i JOIN hub.payments p ON p.invoice_id = i.id
-          WHERE i.customer_id = c.id) AS avg_days_to_pay
+          FROM hub.invoices i JOIN hub.payments p ON p.invoice_id = i.id AND p.carrier_id = i.carrier_id
+          WHERE i.customer_id = c.id AND i.carrier_id = c.carrier_id) AS avg_days_to_pay
      FROM hub.customers c
-     LEFT JOIN hub.loads l ON l.customer_id = c.id
+     LEFT JOIN hub.loads l ON l.customer_id = c.id AND l.carrier_id = c.carrier_id
      WHERE c.carrier_id = $1 AND c.deleted_at IS NULL
      GROUP BY c.id
      ORDER BY c.name`,

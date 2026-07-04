@@ -40,7 +40,7 @@ export function nextOccurrence(due: Date, recurrence: TaskRecurrence): Date | nu
 const TASK_SELECT = `
   SELECT t.*, u.name AS assignee_name
   FROM hub.tasks t
-  LEFT JOIN hub.users u ON u.id = t.assignee_user_id`
+  LEFT JOIN hub.users u ON u.id = t.assignee_user_id AND u.carrier_id = t.carrier_id`
 
 export interface TaskFilters {
   assigneeUserId?: string

@@ -7,7 +7,7 @@ export async function listTrucks(carrierId: string): Promise<Truck[]> {
   return query<Truck>(
     `SELECT t.*, d.first_name || ' ' || d.last_name AS driver_name
      FROM hub.trucks t
-     LEFT JOIN hub.drivers d ON d.id = t.assigned_driver_id
+     LEFT JOIN hub.drivers d ON d.id = t.assigned_driver_id AND d.carrier_id = t.carrier_id
      WHERE t.carrier_id = $1 AND t.deleted_at IS NULL
      ORDER BY t.unit_number`,
     [carrierId]
@@ -18,7 +18,7 @@ export async function getTruck(carrierId: string, id: string): Promise<Truck | n
   return queryOne<Truck>(
     `SELECT t.*, d.first_name || ' ' || d.last_name AS driver_name
      FROM hub.trucks t
-     LEFT JOIN hub.drivers d ON d.id = t.assigned_driver_id
+     LEFT JOIN hub.drivers d ON d.id = t.assigned_driver_id AND d.carrier_id = t.carrier_id
      WHERE t.carrier_id = $1 AND t.id = $2 AND t.deleted_at IS NULL`,
     [carrierId, id]
   )
@@ -158,8 +158,8 @@ export async function latestTruckPositions(carrierId: string): Promise<TruckPosi
        d.first_name || ' ' || d.last_name AS driver_name,
        p.lat, p.lng, p.ts
      FROM hub.position_pings p
-     JOIN hub.trucks t ON t.id = p.truck_id AND t.deleted_at IS NULL
-     LEFT JOIN hub.drivers d ON d.id = t.assigned_driver_id
+     JOIN hub.trucks t ON t.id = p.truck_id AND t.carrier_id = p.carrier_id AND t.deleted_at IS NULL
+     LEFT JOIN hub.drivers d ON d.id = t.assigned_driver_id AND d.carrier_id = t.carrier_id
      WHERE p.carrier_id = $1
      ORDER BY p.truck_id, p.ts DESC`,
     [carrierId]

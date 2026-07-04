@@ -13,7 +13,7 @@ import type { Advance, Driver, Settlement, SettlementLine } from "./types"
 export async function listSettlements(carrierId: string): Promise<Settlement[]> {
   return query<Settlement>(
     `SELECT s.*, d.first_name || ' ' || d.last_name AS driver_name, d.pay_type
-     FROM hub.settlements s JOIN hub.drivers d ON d.id = s.driver_id
+     FROM hub.settlements s JOIN hub.drivers d ON d.id = s.driver_id AND d.carrier_id = s.carrier_id
      WHERE s.carrier_id = $1 ORDER BY s.period_end DESC, driver_name LIMIT 200`,
     [carrierId]
   )
@@ -22,7 +22,7 @@ export async function listSettlements(carrierId: string): Promise<Settlement[]> 
 export async function getSettlement(carrierId: string, id: string): Promise<Settlement | null> {
   return queryOne<Settlement>(
     `SELECT s.*, d.first_name || ' ' || d.last_name AS driver_name, d.pay_type
-     FROM hub.settlements s JOIN hub.drivers d ON d.id = s.driver_id
+     FROM hub.settlements s JOIN hub.drivers d ON d.id = s.driver_id AND d.carrier_id = s.carrier_id
      WHERE s.carrier_id = $1 AND s.id = $2`,
     [carrierId, id]
   )
@@ -51,7 +51,7 @@ async function payableReferralBonuses(
   const rows = await query<{ id: string; bonus_cents: number; applicant_name: string; milestone: string }>(
     `SELECT r.id, r.bonus_cents, COALESCE(a.first_name || ' ' || a.last_name, 'driver') AS applicant_name, r.milestone
      FROM hub.referrals r
-     LEFT JOIN hub.applicants a ON a.id = r.applicant_id
+     LEFT JOIN hub.applicants a ON a.id = r.applicant_id AND a.carrier_id = r.carrier_id
      WHERE r.carrier_id = $1 AND r.referrer_driver_id = $2 AND r.status = 'payable'`,
     [carrierId, driverId]
   )
@@ -340,7 +340,7 @@ export async function markSettlementPaid(
 export async function listAdvances(carrierId: string): Promise<Advance[]> {
   return query<Advance>(
     `SELECT a.*, d.first_name || ' ' || d.last_name AS driver_name
-     FROM hub.advances a JOIN hub.drivers d ON d.id = a.driver_id
+     FROM hub.advances a JOIN hub.drivers d ON d.id = a.driver_id AND d.carrier_id = a.carrier_id
      WHERE a.carrier_id = $1 ORDER BY a.created_at DESC LIMIT 200`,
     [carrierId]
   )
@@ -374,7 +374,7 @@ export async function escrowBalances(carrierId: string): Promise<EscrowBalance[]
   return query<EscrowBalance>(
     `SELECT DISTINCT ON (e.driver_id) e.driver_id,
        d.first_name || ' ' || d.last_name AS driver_name, e.balance_cents
-     FROM hub.escrow_ledger e JOIN hub.drivers d ON d.id = e.driver_id
+     FROM hub.escrow_ledger e JOIN hub.drivers d ON d.id = e.driver_id AND d.carrier_id = e.carrier_id
      WHERE e.carrier_id = $1
      ORDER BY e.driver_id, e.id DESC`,
     [carrierId]

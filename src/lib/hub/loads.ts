@@ -18,24 +18,24 @@ const LOAD_SELECT = `
     docs.kinds AS doc_kinds,
     inv.id AS invoice_id, inv.status AS invoice_status
   FROM hub.loads l
-  LEFT JOIN hub.customers c ON c.id = l.customer_id
-  LEFT JOIN hub.drivers d ON d.id = l.driver_id
-  LEFT JOIN hub.trucks t ON t.id = l.truck_id
-  LEFT JOIN hub.trailers tr ON tr.id = l.trailer_id
+  LEFT JOIN hub.customers c ON c.id = l.customer_id AND c.carrier_id = l.carrier_id
+  LEFT JOIN hub.drivers d ON d.id = l.driver_id AND d.carrier_id = l.carrier_id
+  LEFT JOIN hub.trucks t ON t.id = l.truck_id AND t.carrier_id = l.carrier_id
+  LEFT JOIN hub.trailers tr ON tr.id = l.trailer_id AND tr.carrier_id = l.carrier_id
   LEFT JOIN LATERAL (
-    SELECT city, state, appt_start FROM hub.stops WHERE load_id = l.id AND type = 'pickup'
+    SELECT city, state, appt_start FROM hub.stops WHERE load_id = l.id AND carrier_id = l.carrier_id AND type = 'pickup'
     ORDER BY sequence ASC LIMIT 1
   ) fs ON TRUE
   LEFT JOIN LATERAL (
-    SELECT city, state, appt_start FROM hub.stops WHERE load_id = l.id AND type = 'delivery'
+    SELECT city, state, appt_start FROM hub.stops WHERE load_id = l.id AND carrier_id = l.carrier_id AND type = 'delivery'
     ORDER BY sequence DESC LIMIT 1
   ) ls ON TRUE
   LEFT JOIN LATERAL (
     SELECT ARRAY_AGG(DISTINCT kind) AS kinds FROM hub.documents
-    WHERE entity_type = 'load' AND entity_id = l.id
+    WHERE entity_type = 'load' AND entity_id = l.id AND carrier_id = l.carrier_id
   ) docs ON TRUE
   LEFT JOIN LATERAL (
-    SELECT id, status FROM hub.invoices WHERE load_id = l.id
+    SELECT id, status FROM hub.invoices WHERE load_id = l.id AND carrier_id = l.carrier_id
     ORDER BY created_at DESC LIMIT 1
   ) inv ON TRUE
 `

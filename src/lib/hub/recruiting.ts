@@ -18,10 +18,10 @@ export async function listApplicants(carrierId: string): Promise<Applicant[]> {
        rd.first_name || ' ' || rd.last_name AS referrer_name,
        o.status AS offer_status
      FROM hub.applicants a
-     LEFT JOIN hub.referrals r ON r.applicant_id = a.id
-     LEFT JOIN hub.drivers rd ON rd.id = r.referrer_driver_id
+     LEFT JOIN hub.referrals r ON r.applicant_id = a.id AND r.carrier_id = a.carrier_id
+     LEFT JOIN hub.drivers rd ON rd.id = r.referrer_driver_id AND rd.carrier_id = a.carrier_id
      LEFT JOIN LATERAL (
-       SELECT status FROM hub.offers WHERE applicant_id = a.id ORDER BY created_at DESC LIMIT 1
+       SELECT status FROM hub.offers WHERE applicant_id = a.id AND carrier_id = a.carrier_id ORDER BY created_at DESC LIMIT 1
      ) o ON TRUE
      WHERE a.carrier_id = $1
      ORDER BY a.created_at DESC
@@ -36,10 +36,10 @@ export async function getApplicant(carrierId: string, id: string): Promise<Appli
        rd.first_name || ' ' || rd.last_name AS referrer_name,
        o.status AS offer_status
      FROM hub.applicants a
-     LEFT JOIN hub.referrals r ON r.applicant_id = a.id
-     LEFT JOIN hub.drivers rd ON rd.id = r.referrer_driver_id
+     LEFT JOIN hub.referrals r ON r.applicant_id = a.id AND r.carrier_id = a.carrier_id
+     LEFT JOIN hub.drivers rd ON rd.id = r.referrer_driver_id AND rd.carrier_id = a.carrier_id
      LEFT JOIN LATERAL (
-       SELECT status FROM hub.offers WHERE applicant_id = a.id ORDER BY created_at DESC LIMIT 1
+       SELECT status FROM hub.offers WHERE applicant_id = a.id AND carrier_id = a.carrier_id ORDER BY created_at DESC LIMIT 1
      ) o ON TRUE
      WHERE a.carrier_id = $1 AND a.id = $2`,
     [carrierId, id]
@@ -402,10 +402,10 @@ export async function computeDriverScores(
       delivered: string; on_time: string; miles: string | null; gallons: string | null; incidents: string
     }>(
       `SELECT
-         (SELECT COUNT(*) FROM hub.stops s JOIN hub.loads l ON l.id = s.load_id
+         (SELECT COUNT(*) FROM hub.stops s JOIN hub.loads l ON l.id = s.load_id AND l.carrier_id = s.carrier_id
            WHERE l.carrier_id = $1 AND l.driver_id = $2 AND s.type = 'delivery' AND s.arrived_at IS NOT NULL
              AND s.arrived_at >= $3::date AND s.arrived_at < $3::date + INTERVAL '1 month') AS delivered,
-         (SELECT COUNT(*) FROM hub.stops s JOIN hub.loads l ON l.id = s.load_id
+         (SELECT COUNT(*) FROM hub.stops s JOIN hub.loads l ON l.id = s.load_id AND l.carrier_id = s.carrier_id
            WHERE l.carrier_id = $1 AND l.driver_id = $2 AND s.type = 'delivery' AND s.arrived_at IS NOT NULL
              AND s.arrived_at >= $3::date AND s.arrived_at < $3::date + INTERVAL '1 month'
              AND (s.appt_start IS NULL OR s.arrived_at <= COALESCE(s.appt_end, s.appt_start + INTERVAL '2 hours'))) AS on_time,

@@ -15,9 +15,9 @@ export async function listFuelTransactions(
     `SELECT f.*, t.unit_number AS truck_unit, d.first_name || ' ' || d.last_name AS driver_name,
        l.reference AS load_reference
      FROM hub.fuel_transactions f
-     LEFT JOIN hub.trucks t ON t.id = f.truck_id
-     LEFT JOIN hub.drivers d ON d.id = f.driver_id
-     LEFT JOIN hub.loads l ON l.id = f.load_id
+     LEFT JOIN hub.trucks t ON t.id = f.truck_id AND t.carrier_id = f.carrier_id
+     LEFT JOIN hub.drivers d ON d.id = f.driver_id AND d.carrier_id = f.carrier_id
+     LEFT JOIN hub.loads l ON l.id = f.load_id AND l.carrier_id = f.carrier_id
      WHERE ${where}
      ORDER BY f.ts DESC LIMIT ${Math.min(filters.limit ?? 200, 1000)}`,
     params
@@ -32,8 +32,8 @@ export async function listUnassignedFuel(
   return query<FuelTransaction>(
     `SELECT f.*, t.unit_number AS truck_unit, d.first_name || ' ' || d.last_name AS driver_name
      FROM hub.fuel_transactions f
-     LEFT JOIN hub.trucks t ON t.id = f.truck_id
-     LEFT JOIN hub.drivers d ON d.id = f.driver_id
+     LEFT JOIN hub.trucks t ON t.id = f.truck_id AND t.carrier_id = f.carrier_id
+     LEFT JOIN hub.drivers d ON d.id = f.driver_id AND d.carrier_id = f.carrier_id
      WHERE f.carrier_id = $1 AND f.load_id IS NULL
      ORDER BY f.ts DESC LIMIT ${Math.min(limit, 200)}`,
     [carrierId]
@@ -45,8 +45,8 @@ export async function fuelForLoad(carrierId: string, loadId: string): Promise<Fu
   return query<FuelTransaction>(
     `SELECT f.*, t.unit_number AS truck_unit, d.first_name || ' ' || d.last_name AS driver_name
      FROM hub.fuel_transactions f
-     LEFT JOIN hub.trucks t ON t.id = f.truck_id
-     LEFT JOIN hub.drivers d ON d.id = f.driver_id
+     LEFT JOIN hub.trucks t ON t.id = f.truck_id AND t.carrier_id = f.carrier_id
+     LEFT JOIN hub.drivers d ON d.id = f.driver_id AND d.carrier_id = f.carrier_id
      WHERE f.carrier_id = $1 AND f.load_id = $2
      ORDER BY f.ts ASC`,
     [carrierId, loadId]
@@ -142,11 +142,11 @@ export async function fuelStatsByTruck(carrierId: string, days = 92): Promise<Fu
        SUM(f.total_cents) AS total_cents,
        COUNT(*)::int AS transactions,
        (SELECT SUM(l.loaded_miles) FROM hub.loads l
-         WHERE l.truck_id = f.truck_id AND l.deleted_at IS NULL AND l.status <> 'cancelled'
+         WHERE l.truck_id = f.truck_id AND l.carrier_id = $1 AND l.deleted_at IS NULL AND l.status <> 'cancelled'
            AND l.created_at >= NOW() - ($2 || ' days')::interval) AS loaded_miles,
        (SUM(f.total_cents) / NULLIF(SUM(f.gallons), 0))::int AS avg_price_cents
      FROM hub.fuel_transactions f
-     LEFT JOIN hub.trucks t ON t.id = f.truck_id
+     LEFT JOIN hub.trucks t ON t.id = f.truck_id AND t.carrier_id = f.carrier_id
      WHERE f.carrier_id = $1 AND f.ts >= NOW() - ($2 || ' days')::interval
      GROUP BY f.truck_id, t.unit_number
      ORDER BY t.unit_number NULLS LAST`,
@@ -202,7 +202,7 @@ export async function fuelFraudFlags(carrierId: string, days = 92): Promise<Fuel
        AND f2.total_cents = f1.total_cents
        AND ABS(EXTRACT(EPOCH FROM (f2.ts - f1.ts))) < 3600
        AND COALESCE(f2.truck_id::text, '') = COALESCE(f1.truck_id::text, '')
-     LEFT JOIN hub.trucks t ON t.id = f1.truck_id
+     LEFT JOIN hub.trucks t ON t.id = f1.truck_id AND t.carrier_id = f1.carrier_id
      WHERE f1.carrier_id = $1 AND f1.ts >= NOW() - ($2 || ' days')::interval`,
     [carrierId, days]
   )
@@ -211,7 +211,7 @@ export async function fuelFraudFlags(carrierId: string, days = 92): Promise<Fuel
        ROUND(f.gallons, 1) || ' gal exceeds ' || t.tank_capacity_gallons || ' gal tank' AS detail,
        f.ts::text AS ts, t.unit_number AS truck_unit
      FROM hub.fuel_transactions f
-     JOIN hub.trucks t ON t.id = f.truck_id
+     JOIN hub.trucks t ON t.id = f.truck_id AND t.carrier_id = f.carrier_id
      WHERE f.carrier_id = $1 AND t.tank_capacity_gallons IS NOT NULL
        AND f.gallons > t.tank_capacity_gallons
        AND f.ts >= NOW() - ($2 || ' days')::interval`,

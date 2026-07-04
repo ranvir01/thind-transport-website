@@ -141,7 +141,7 @@ export async function listFacilityNotes(
   return query<FacilityNote>(
     `SELECT n.*, d.url AS document_url
      FROM hub.facility_notes n
-     LEFT JOIN hub.documents d ON d.id = n.document_id
+     LEFT JOIN hub.documents d ON d.id = n.document_id AND d.carrier_id = n.carrier_id
      WHERE n.carrier_id = $1 AND n.facility_id = $2
      ORDER BY n.created_at DESC LIMIT $3`,
     [carrierId, facilityId, limit]

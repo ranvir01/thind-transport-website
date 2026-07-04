@@ -37,8 +37,8 @@ export async function getThread(carrierId: string, threadId: string): Promise<Me
     `SELECT t.*, l.reference AS load_reference,
        d.first_name || ' ' || d.last_name AS driver_name
      FROM hub.message_threads t
-     LEFT JOIN hub.loads l ON l.id = t.load_id
-     LEFT JOIN hub.drivers d ON d.id = t.driver_id
+     LEFT JOIN hub.loads l ON l.id = t.load_id AND l.carrier_id = t.carrier_id
+     LEFT JOIN hub.drivers d ON d.id = t.driver_id AND d.carrier_id = t.carrier_id
      WHERE t.carrier_id = $1 AND t.id = $2`,
     [carrierId, threadId]
   )
@@ -59,9 +59,9 @@ export async function listThreadsForOffice(
                                 WHERE r.thread_id = t.id AND r.user_id = $2), 0)
            AND m.sender_id IS DISTINCT FROM $2) AS unread_count
      FROM hub.message_threads t
-     LEFT JOIN hub.loads l ON l.id = t.load_id
-     LEFT JOIN hub.drivers d ON d.id = t.driver_id
-     LEFT JOIN hub.drivers ld ON ld.id = l.driver_id
+     LEFT JOIN hub.loads l ON l.id = t.load_id AND l.carrier_id = t.carrier_id
+     LEFT JOIN hub.drivers d ON d.id = t.driver_id AND d.carrier_id = t.carrier_id
+     LEFT JOIN hub.drivers ld ON ld.id = l.driver_id AND ld.carrier_id = t.carrier_id
      LEFT JOIN LATERAL (
        SELECT body FROM hub.messages m WHERE m.thread_id = t.id ORDER BY m.id DESC LIMIT 1
      ) lm ON TRUE
@@ -88,8 +88,8 @@ export async function listThreadsForDriver(
                                 WHERE r.thread_id = t.id AND r.user_id = $3), 0)
            AND m.sender_id IS DISTINCT FROM $3) AS unread_count
      FROM hub.message_threads t
-     LEFT JOIN hub.loads l ON l.id = t.load_id
-     LEFT JOIN hub.drivers d ON d.id = t.driver_id
+     LEFT JOIN hub.loads l ON l.id = t.load_id AND l.carrier_id = t.carrier_id
+     LEFT JOIN hub.drivers d ON d.id = t.driver_id AND d.carrier_id = t.carrier_id
      LEFT JOIN LATERAL (
        SELECT body FROM hub.messages m WHERE m.thread_id = t.id ORDER BY m.id DESC LIMIT 1
      ) lm ON TRUE
@@ -109,7 +109,7 @@ export async function listMessages(
   return query<HubMessage>(
     `SELECT m.*, doc.url AS document_url, doc.mime_type AS document_mime
      FROM hub.messages m
-     LEFT JOIN hub.documents doc ON doc.id = m.document_id
+     LEFT JOIN hub.documents doc ON doc.id = m.document_id AND doc.carrier_id = m.carrier_id
      WHERE m.carrier_id = $1 AND m.thread_id = $2
      ORDER BY m.id ASC
      LIMIT $3`,
@@ -191,7 +191,7 @@ export async function totalUnreadMessages(carrierId: string, userId: string): Pr
   const row = await queryOne<{ count: string }>(
     `SELECT COUNT(*) AS count
      FROM hub.messages m
-     JOIN hub.message_threads t ON t.id = m.thread_id
+     JOIN hub.message_threads t ON t.id = m.thread_id AND t.carrier_id = m.carrier_id
      WHERE t.carrier_id = $1
        AND m.sender_id IS DISTINCT FROM $2
        AND m.id > COALESCE((SELECT r.last_read_message_id FROM hub.message_reads r

@@ -13,9 +13,9 @@ const INCIDENT_SELECT = `
     d.first_name || ' ' || d.last_name AS driver_name,
     l.reference AS load_reference
   FROM hub.incidents i
-  LEFT JOIN hub.trucks t ON t.id = i.truck_id
-  LEFT JOIN hub.drivers d ON d.id = i.driver_id
-  LEFT JOIN hub.loads l ON l.id = i.load_id`
+  LEFT JOIN hub.trucks t ON t.id = i.truck_id AND t.carrier_id = i.carrier_id
+  LEFT JOIN hub.drivers d ON d.id = i.driver_id AND d.carrier_id = i.carrier_id
+  LEFT JOIN hub.loads l ON l.id = i.load_id AND l.carrier_id = i.carrier_id`
 
 export async function listIncidents(
   carrierId: string,
