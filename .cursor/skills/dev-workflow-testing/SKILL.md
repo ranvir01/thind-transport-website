@@ -17,6 +17,20 @@ npm run lint                   # ESLint 9 flat config (eslint.config.mjs)
 npm run generate:brand-assets  # regenerate favicons + og-image from the brand system
 ```
 
+## Linux native deps (canvas)
+
+The devDependency `canvas` (used by `scripts/extract-pdf-pages.mjs`) compiles native bindings.
+On Debian/Ubuntu — including Cursor Cloud Agent containers — install system libraries **before**
+`npm ci` / `npm install` or the build fails with missing `pango` / `gif` headers:
+
+```bash
+sudo apt-get update
+sudo apt-get install -y build-essential libcairo2-dev libpango1.0-dev libjpeg-dev libgif-dev librsvg2-dev
+```
+
+macOS: `brew install pkg-config cairo pango libpng jpeg giflib librsvg`. The Next.js app itself
+aliases `canvas` to `false` in `next.config.mjs`; only local scripts need the native module.
+
 ## Local email testing
 
 Run `npx maildev --smtp 1025 --web 1080`, then set `SMTP_HOST=localhost` and `SMTP_PORT=1025` in `.env.local`. Every email the site sends (applications, portal confirmations, password resets) appears at `http://localhost:1080` — no real Gmail needed.
