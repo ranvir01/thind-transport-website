@@ -501,10 +501,12 @@ async function main() {
 
   // ---- Fuel: a quarter of transactions ----
   console.log("Creating fuel transactions…")
+  // WA/OR/ID only — pings on truck 102 never enter CA/NV/UT, so fuel here must
+  // match the loop or the IFTA worksheet is dominated by purchases-only credits.
   const fuelStops = [
     ["Pilot #287", CITY.kent, "WA"], ["Loves #441", CITY.portland, "OR"],
-    ["TA Boise", CITY.boise, "ID"], ["Petro Sacramento", CITY.sacramento, "CA"],
-    ["Flying J Reno", CITY.reno, "NV"], ["Pilot SLC", CITY.saltlake, "UT"],
+    ["TA Boise", CITY.boise, "ID"], ["Pilot Spokane", CITY.spokane, "WA"],
+    ["Loves Medford", CITY.medford, "OR"], ["Flying J Yakima", CITY.yakima, "WA"],
   ]
   let fuelN = 0
   for (let day = 84; day >= 2; day -= 3) {
@@ -527,7 +529,7 @@ async function main() {
   // One over-capacity transaction → fraud flag (tank 240, gallons 312)
   await q(
     `INSERT INTO hub.fuel_transactions (carrier_id, source, external_id, card_program, truck_id, ts, merchant, city, jurisdiction, gallons, fuel_type, unit_price_cents, total_cents)
-     VALUES ($1,'csv:Comdata','CMD-7781','Comdata',$2,$3,'Unknown stop','Fresno','CA',312,'diesel',410,127920)`,
+     VALUES ($1,'csv:Comdata','CMD-7781','Comdata',$2,$3,'Unknown stop','Yakima','WA',312,'diesel',410,127920)`,
     [CARRIER, truckIds[1], daysAgo(8, 23)]
   )
   // Reefer + DEF purchases — visibly IFTA-exempt (excluded from MPG and tax-paid gallons).
