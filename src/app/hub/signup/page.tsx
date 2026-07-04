@@ -13,7 +13,7 @@ export default function SignupPage() {
           <span className="brand-wordmark text-2xl font-semibold text-fg tracking-[0.14em]">
             {PRODUCT.wordmark}
           </span>
-          <span className="block text-[11px] font-bold uppercase tracking-[0.3em] text-gold mt-1">
+          <span className="block text-[11px] font-bold uppercase tracking-[0.3em] text-accent-text mt-1">
             {PRODUCT.tagline}
           </span>
           <p className="text-body-sm text-fg-2 mt-3">
@@ -23,7 +23,7 @@ export default function SignupPage() {
         </div>
         <SignupForm />
         <p className="mt-6 text-center text-body-xs text-fg-3">
-          Already set up? <Link href="/hub/login" className="text-gold hover:underline">Sign in</Link>
+          Already set up? <Link href="/hub/login" className="text-accent-text hover:underline">Sign in</Link>
         </p>
       </Panel>
     </div>
