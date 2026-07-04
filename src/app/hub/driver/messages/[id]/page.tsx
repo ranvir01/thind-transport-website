@@ -26,7 +26,7 @@ export default async function DriverThreadPage({ params }: { params: Promise<{ i
 
   const [messages, reads] = await Promise.all([
     listMessages(user.carrierId, id),
-    threadReads(id),
+    threadReads(user.carrierId, id),
   ])
   const readUpTo: Record<string, number> = {}
   for (const r of reads) {

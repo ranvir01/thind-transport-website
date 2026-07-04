@@ -16,7 +16,7 @@ export default async function OfficeThreadPage({ params }: { params: Promise<{ i
   const [messages, templates, reads] = await Promise.all([
     listMessages(user.carrierId, id),
     listTemplates(user.carrierId),
-    threadReads(id),
+    threadReads(user.carrierId, id),
   ])
   const readUpTo: Record<string, number> = {}
   for (const r of reads) {

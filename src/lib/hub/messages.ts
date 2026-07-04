@@ -177,13 +177,16 @@ export async function markThreadRead(threadId: string, userId: string): Promise<
 
 /** Read receipt for the chat view: who has seen up to which message. */
 export async function threadReads(
+  carrierId: string,
   threadId: string
 ): Promise<{ user_id: string; name: string; last_read_message_id: number }[]> {
   return query(
     `SELECT r.user_id, u.name, r.last_read_message_id
-     FROM hub.message_reads r JOIN hub.users u ON u.id = r.user_id
-     WHERE r.thread_id = $1`,
-    [threadId]
+     FROM hub.message_reads r
+     JOIN hub.message_threads t ON t.id = r.thread_id AND t.carrier_id = $1
+     JOIN hub.users u ON u.id = r.user_id AND u.carrier_id = t.carrier_id
+     WHERE r.thread_id = $2`,
+    [carrierId, threadId]
   )
 }
 

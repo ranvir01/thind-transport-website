@@ -15,7 +15,7 @@ vi.mock("../db", () => ({
 import { query, queryOne } from "../db"
 import { listFuelTransactions } from "../fuel"
 import { listIncidents } from "../incidents"
-import { getThread, listMessages, listThreadsForOffice } from "../messages"
+import { getThread, listMessages, listThreadsForOffice, threadReads } from "../messages"
 import { listLoads } from "../loads"
 import { listTrucks, latestTruckPositions } from "../fleet"
 import { listApplicants } from "../recruiting"
@@ -66,6 +66,10 @@ describe("read queries carrier-guard their joins (both-sides tenancy)", () => {
     expect(lastSql()).toContain("ON ld.id = l.driver_id AND ld.carrier_id = t.carrier_id")
     await listMessages(CARRIER, "t1")
     expect(lastSql()).toContain("ON doc.id = m.document_id AND doc.carrier_id = m.carrier_id")
+    await threadReads(CARRIER, "t1")
+    const readsSql = lastSql()
+    expect(readsSql).toContain("JOIN hub.message_threads t ON t.id = r.thread_id AND t.carrier_id = $1")
+    expect(readsSql).toContain("JOIN hub.users u ON u.id = r.user_id AND u.carrier_id = t.carrier_id")
   })
 
   it("load list guards customer/driver/truck/trailer joins and lateral subqueries", async () => {
