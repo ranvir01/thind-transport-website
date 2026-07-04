@@ -162,7 +162,7 @@ export async function driverUploadDocument(formData: FormData): Promise<Result> 
            reimbursable, receipt_document_id, memo)
          VALUES ($1, 'other', $2, CURRENT_DATE, $3, $4, TRUE, $5, $6)`,
         [
-          user.carrierId, Math.round(Number(amountRaw) * 100), user.driverId, loadId, doc.id,
+          user.carrierId, dollarsToCents(amountRaw), user.driverId, loadId, doc.id,
           `Driver receipt — ${file.name}`,
         ]
       )
