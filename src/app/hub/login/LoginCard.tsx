@@ -8,6 +8,20 @@ import { btnPrimaryCls, fieldCls, labelCls, linkAccentCls, Panel } from "@/compo
 import { PRODUCT } from "@/lib/hub/product"
 import { hubLandingPath } from "@/lib/hub/landing"
 
+/** Session fetch can race the post-login hard navigation; one retry covers it. */
+async function sessionAfterLogin() {
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const session = await getSession({ broadcast: false })
+      if (session) return session
+    } catch {
+      // transient authjs fetch abort — retry once before redirect
+    }
+    if (attempt === 0) await new Promise((r) => setTimeout(r, 150))
+  }
+  return null
+}
+
 /** Client login card. `showDemo` comes from the server page (HUB_DEMO_LOGIN). */
 export function LoginCard({ showDemo }: { showDemo: boolean }) {
   const [loading, setLoading] = useState(false)
@@ -41,11 +55,7 @@ export function LoginCard({ showDemo }: { showDemo: boolean }) {
         redirect: false,
       })
       if (result?.ok) {
-        // broadcast:false — the default broadcast makes SessionProvider start a second,
-        // un-awaited session fetch that the hard navigation below aborts, logging a
-        // transient authjs "Failed to fetch" ClientSessionError. The full page load
-        // makes this tab's provider update unnecessary anyway.
-        const session = await getSession({ broadcast: false })
+        const session = await sessionAfterLogin()
         const role = (session?.user as { role?: string } | undefined)?.role
         window.location.href = hubLandingPath(role)
       } else {
