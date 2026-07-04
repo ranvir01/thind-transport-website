@@ -117,7 +117,7 @@ export function CustomerForm({
             type="checkbox"
             checked={form.factored}
             onChange={(e) => set({ factored: e.target.checked })}
-            className="h-5 w-5 rounded border-border-strong bg-surface-2 accent-[#F2A900]"
+            className="h-5 w-5 rounded border-border-strong bg-surface-2 accent-accent"
           />
           <span className="text-sm text-fg-2">Loads from this customer are factored</span>
         </label>

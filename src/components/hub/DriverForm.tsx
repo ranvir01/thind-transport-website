@@ -129,7 +129,7 @@ export function DriverForm({ driverId, initial }: { driverId?: string; initial: 
           </div>
           <label className="flex items-center gap-2 min-h-[44px] cursor-pointer sm:mt-6">
             <input type="checkbox" checked={form.pay_loaded_miles_only}
-              className="h-5 w-5 rounded accent-[#F2A900]"
+              className="h-5 w-5 rounded border-border-strong accent-accent"
               onChange={(e) => set({ pay_loaded_miles_only: e.target.checked })} />
             <span className="text-sm text-fg-2">Pay loaded miles only</span>
           </label>

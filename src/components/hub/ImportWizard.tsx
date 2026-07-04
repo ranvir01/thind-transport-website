@@ -314,7 +314,7 @@ export function ImportWizard({ initialKind = "loads" }: { initialKind?: string }
                 type="checkbox"
                 checked={asHistory}
                 onChange={(e) => setAsHistory(e.target.checked)}
-                className="h-5 w-5 rounded accent-[#F2A900]"
+                className="h-5 w-5 rounded border-border-strong accent-accent"
               />
               <span className="text-sm text-fg-2">
                 Import as history (settled) — recommended for past loads
