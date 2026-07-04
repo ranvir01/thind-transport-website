@@ -234,7 +234,10 @@ export async function approveSettlement(
   if (!settlement) throw new Error("Settlement not found")
   if (settlement.status !== "draft") throw new Error("Only drafts can be approved")
   const lines = await getSettlementLines(settlementId)
-  const driver = await queryOne<Driver>(`SELECT * FROM hub.drivers WHERE id = $1`, [settlement.driver_id])
+  const driver = await queryOne<Driver>(
+    `SELECT * FROM hub.drivers WHERE id = $1 AND carrier_id = $2`,
+    [settlement.driver_id, carrierId]
+  )
   const carrier = await getCarrier(carrierId)
 
   // Apply advances
