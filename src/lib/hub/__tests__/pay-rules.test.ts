@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest"
 import { computeSettlement } from "../money"
 import {
-  evaluatePayRules, legacyConfigToRuleSet, parseRuleSet,
+  evaluatePayRules, legacyConfigToRuleSet, parseRuleSet, summarizePayRules,
   type PayLoadContext, type PayRuleSet,
 } from "../pay-rules"
 
@@ -207,5 +207,42 @@ describe("parseRuleSet — defensive JSONB parse", () => {
     const parsed = parseRuleSet({ name: "x", rules: "garbage", deductions: null })
     expect(parsed.rules).toEqual([])
     expect(parsed.deductions).toEqual([])
+  })
+})
+
+describe("summarizePayRules — compact subtitle summary", () => {
+  it("summarizes the legacy owner-operator program with its real percentages", () => {
+    const ruleSet = legacyConfigToRuleSet({
+      payType: "percentage", payRate: 0.85, payLoadedMilesOnly: true,
+      escrowWeeklyCents: 0, insuranceWeeklyCents: 0,
+    })
+    expect(summarizePayRules(ruleSet)).toBe("85% linehaul + 100% FSC")
+  })
+
+  it("summarizes the legacy per-mile program with its real rate", () => {
+    const ruleSet = legacyConfigToRuleSet({
+      payType: "per_mile", payRate: 0.63, payLoadedMilesOnly: true,
+      escrowWeeklyCents: 0, insuranceWeeklyCents: 0,
+    })
+    expect(summarizePayRules(ruleSet)).toBe("$0.63/loaded mi")
+  })
+
+  it("covers custom rule shapes and omits situational bonuses", () => {
+    const ruleSet: PayRuleSet = {
+      name: "custom",
+      rules: [
+        { type: "percent_total", basisPoints: 7250 },
+        { type: "flat_per_load", amountCents: 5000 },
+        { type: "per_stop", amountCents: 2500 },
+        { type: "referral_bonus" },
+        { type: "scorecard_bonus", tiers: [{ minScore: 90, amountCents: 10000 }] },
+      ],
+      deductions: [],
+    }
+    expect(summarizePayRules(ruleSet)).toBe("72.50% all-in + $50.00/load + $25.00/extra stop")
+  })
+
+  it("returns an empty string when only bonus rules exist", () => {
+    expect(summarizePayRules({ name: "b", rules: [{ type: "referral_bonus" }], deductions: [] })).toBe("")
   })
 })

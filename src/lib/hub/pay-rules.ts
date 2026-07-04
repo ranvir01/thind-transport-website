@@ -349,6 +349,42 @@ export function describePayRules(ruleSet: PayRuleSet): { earnings: string[]; ded
   return { earnings, deductions }
 }
 
+/**
+ * Compact one-line summary of a rule set's earning rules for headers and
+ * subtitles (e.g. "90% linehaul + 100% FSC", "$0.63/loaded mi"). Situational
+ * bonus rules (referral, scorecard) are omitted — they don't describe the
+ * base pay program.
+ */
+export function summarizePayRules(ruleSet: PayRuleSet): string {
+  const parts: string[] = []
+  for (const rule of ruleSet.rules) {
+    switch (rule.type) {
+      case "per_mile":
+        parts.push(`${dollars(rule.rateCentsPerMile)}/${rule.loadedOnly === false ? "all mi" : "loaded mi"}`)
+        break
+      case "percent_linehaul":
+        parts.push(`${pct(rule.basisPoints)} linehaul`)
+        break
+      case "percent_total":
+        parts.push(`${pct(rule.basisPoints)} all-in`)
+        break
+      case "percent_accessorials":
+        parts.push(`${pct(rule.basisPoints)} accessorials`)
+        break
+      case "fsc_passthrough":
+        parts.push(`${pct(rule.basisPoints)} FSC`)
+        break
+      case "flat_per_load":
+        parts.push(`${dollars(rule.amountCents)}/load`)
+        break
+      case "per_stop":
+        parts.push(`${dollars(rule.amountCents)}/extra stop`)
+        break
+    }
+  }
+  return parts.join(" + ")
+}
+
 /** Validate/normalize a rules JSONB payload from the DB (defensive parse). */
 export function parseRuleSet(row: {
   name: string

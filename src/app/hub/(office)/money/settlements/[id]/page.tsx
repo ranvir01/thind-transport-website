@@ -2,6 +2,8 @@ import Link from "next/link"
 import { notFound } from "next/navigation"
 import { FileText } from "lucide-react"
 import { getSettlement, getSettlementLines } from "@/lib/hub/settlements"
+import { getActivePayRules } from "@/lib/hub/pay-rules-db"
+import { summarizePayRules } from "@/lib/hub/pay-rules"
 import { requirePermissionPage } from "@/lib/hub/session"
 import { can } from "@/lib/hub/permissions"
 import { fmtCentsExact } from "@/lib/hub/types"
@@ -18,12 +20,20 @@ export default async function SettlementDetailPage({ params }: { params: Promise
   if (!settlement) notFound()
   const lines = await getSettlementLines(id)
 
+  // Describe the driver's actual pay program rather than assuming the legacy
+  // 90%/100%-FSC split (custom rule sets and other rates exist).
+  const ruleSet = await getActivePayRules(user.carrierId, settlement.driver_id).catch(() => null)
+  const ruleSummary = ruleSet ? summarizePayRules(ruleSet) : ""
+  const payLabel = ruleSet
+    ? `${ruleSet.name}${ruleSummary ? ` (${ruleSummary})` : ""}`
+    : settlement.pay_type === "percentage" ? "Owner-operator (percentage)" : "Company driver (per mile)"
+
   return (
     <div>
       <BackLink href="/hub/money/settlements" label="Settlements" />
       <PageHeader
         title={`${settlement.driver_name} — ${formatHubDateShort(settlement.period_start)} → ${formatHubDateShort(settlement.period_end)}`}
-        subtitle={`Status: ${settlement.status}${settlement.pay_type === "percentage" ? " · Owner-operator (90% + 100% FSC)" : " · Company driver (per mile)"}`}
+        subtitle={`Status: ${settlement.status} · ${payLabel}`}
         action={
           settlement.statement_url ? (
             <a
