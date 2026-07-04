@@ -7,7 +7,7 @@ import {
 import { getActiveAlerts } from "@/lib/hub/weather"
 import { pendingAnnouncementsForUser } from "@/lib/hub/announcements"
 import { getCarrierSettings } from "@/lib/hub/settings"
-import { fmtCents } from "@/lib/hub/types"
+import { fmtCentsExact } from "@/lib/hub/types"
 import { DriverLoadCard } from "@/components/hub/driver/DriverLoadCard"
 import { AnnouncementAckCard } from "@/components/hub/driver/AnnouncementAckCard"
 import { DocRequestCard } from "@/components/hub/driver/DocRequestCard"
@@ -83,7 +83,7 @@ export default async function DriverHomePage() {
             <Wallet className="h-3.5 w-3.5" /> Last pay
           </p>
           <p className="mt-1 font-display text-xl font-extrabold text-gold">
-            {pay ? fmtCents(pay.net_cents) : "—"}
+            {pay ? fmtCentsExact(pay.net_cents) : "—"}
           </p>
           {pay ? (
             <p className="text-body-xs text-steel-400">

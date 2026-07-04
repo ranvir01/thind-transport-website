@@ -2,7 +2,7 @@ import { FileText } from "lucide-react"
 import { requireDriverUser } from "@/lib/hub/session"
 import { driverSettlements } from "@/lib/hub/driver-app"
 import { query } from "@/lib/hub/db"
-import { fmtCents, fmtCentsExact } from "@/lib/hub/types"
+import { fmtCentsExact } from "@/lib/hub/types"
 import { AdvanceRequestForm } from "@/components/hub/driver/AdvanceRequestForm"
 
 export const dynamic = "force-dynamic"
@@ -61,7 +61,7 @@ export default async function DriverPayPage() {
                     {s.status === "paid" ? "Paid" : "Approved — payment on the way"}
                   </p>
                 </div>
-                <p className="font-display text-xl font-extrabold text-gold">{fmtCents(s.net_cents)}</p>
+                <p className="font-display text-xl font-extrabold text-gold">{fmtCentsExact(s.net_cents)}</p>
               </div>
               {s.statement_url ? (
                 <a
