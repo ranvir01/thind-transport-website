@@ -65,14 +65,14 @@ export default function HubError({
             <button
               type="button"
               onClick={() => reset()}
-              className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-control bg-accent px-4 text-sm font-semibold text-accent-fg hover:bg-accent-hover"
+              className="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-xl border border-gold/50 bg-gold/10 px-4 font-display text-sm font-bold uppercase tracking-[0.06em] text-gold hover:bg-gold/20"
             >
               <RefreshCw className="h-4 w-4" />
               Try again
             </button>
             <Link
               href={home.href}
-              className="inline-flex min-h-[44px] items-center justify-center rounded-control border border-white/15 px-4 text-sm font-semibold text-steel-100 hover:bg-white/5"
+              className="inline-flex min-h-[48px] items-center justify-center rounded-xl border border-white/15 px-4 text-sm font-semibold text-steel-100 hover:bg-white/5"
             >
               {home.label}
             </Link>
