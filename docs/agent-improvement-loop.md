@@ -151,6 +151,9 @@ lane routines ──push──▶ claude/lane-*  ──reviewed+merged──▶ 
 | `claude/lane-tests` | `src/lib/hub/__tests__/**`, `scripts/e2e-*.mjs` ONLY (never product code) | raise coverage on untested lib modules + E2E drives |
 | `claude/lane-compliance` | `src/app/hub/(office)/compliance/**`, `src/lib/hub/ifta*.ts`, `src/app/api/hub/ifta/**` | IFTA generate entry point, worksheet flows, doc expiry |
 | `claude/lane-docs` | `docs/**`, `.env.example`, README, `scripts/go-live-check.mjs` | docs drift, runbooks, staff how-to guides |
+| `claude/lane-integrations` | `src/lib/hub/integrations/**`, provider adapters (`telematics.ts`-style), `src/app/api/hub/webhooks/**`, settings/integrations UI, `credentials.ts` | work docs/integrations/creds-shopping-list.md order: one adapter slice per run, mock+contract-tested, CSV fallback intact |
+| `claude/lane-saas` | onboarding, `hub/admin/**`, per-tenant branding, isolation tests | SaaS-ready hardening — NO billing code |
+| `claude/lane-analytics` | `(office)/reports/**`, new dashboard routes, kpi libs | M10 owner dashboard: revenue, CPM, deadhead %, lane leaderboard, AR trend |
 | `claude/lane-roadmap` | new feature files within any ONE existing territory per run | NEW capability from `docs/hauldesk-gap-report`-style gaps: pick the top unbuilt feature a 15-truck carrier needs, build it complete with tests + E2E |
 
 **Prod smoke (routine, hourly):** with the Vercel connector, check the newest production deployment

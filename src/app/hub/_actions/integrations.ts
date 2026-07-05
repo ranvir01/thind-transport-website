@@ -5,6 +5,7 @@ import { requireOwner } from "@/lib/hub/session"
 import {
   credentialsConfigured, deleteCredentials, saveCredentials, type IntegrationProvider,
 } from "@/lib/hub/credentials"
+import { allowedFields } from "@/lib/hub/integrations/registry"
 import { runTelematicsSync } from "@/lib/hub/telematics"
 import { logAudit } from "@/lib/hub/audit"
 import { query } from "@/lib/hub/db"
@@ -14,15 +15,8 @@ interface Result {
   error?: string
 }
 
-const ALLOWED_FIELDS: Record<string, string[]> = {
-  terminal: ["apiKey", "connectionToken"],
-  truckercloud: ["apiKey"],
-  dat: ["serviceAccountEmail", "password"],
-  efs: ["feedUser", "feedPassword"],
-  wex: ["feedUser", "feedPassword"],
-  comdata: ["apiKey", "apiSecret"],
-  mailbox: ["host", "port", "user", "password", "folder"],
-}
+// Field allowlist comes from the provider registry — one source of truth
+// (src/lib/hub/integrations/registry.ts) for the form, the action, and docs.
 
 export async function saveIntegrationCredentialsAction(
   provider: IntegrationProvider,
@@ -33,7 +27,7 @@ export async function saveIntegrationCredentialsAction(
     if (!credentialsConfigured()) {
       return { ok: false, error: "Set CREDENTIALS_KEY (32+ random chars) in the environment first — credentials are encrypted at rest" }
     }
-    const allowed = ALLOWED_FIELDS[provider] ?? []
+    const allowed = allowedFields(provider)
     const clean: Record<string, string> = {}
     for (const field of allowed) {
       if (payload[field]?.trim()) clean[field] = payload[field].trim()
