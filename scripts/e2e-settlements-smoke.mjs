@@ -7,11 +7,14 @@
  * the O/O percentage draft posts exactly one weekly escrow contribution, and a
  * dispatcher (money:read only) sees everything read-only.
  *
+ * Reseeds demo data first (see reseed in e2e-lib.mjs) — the run applies the
+ * seeded EFS advance and settles the pod_received loads.
+ *
  * Usage: node scripts/e2e-settlements-smoke.mjs [outputDir]
  */
 import puppeteer from "puppeteer"
 import { mkdirSync } from "node:fs"
-import { BASE, sleep, failures, check, waitForText, login, makeShot, clickByText } from "./e2e-lib.mjs"
+import { BASE, sleep, failures, check, waitForText, login, makeShot, clickByText, reseed } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-settlements"
 mkdirSync(OUT, { recursive: true })
@@ -57,6 +60,7 @@ const settlementLinks = (page, needles) =>
   }, needles)
 
 async function main() {
+  reseed()
   const browser = await puppeteer.launch({
     headless: "new",
     args: ["--no-sandbox", "--disable-dev-shm-usage"],

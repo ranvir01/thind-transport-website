@@ -8,15 +8,15 @@
  * no write/approve) gets a read-only page, and the driver's pay screen
  * reflects the decisions.
  *
- * Assumes a fresh `npm run seed:demo` (consumes no loads — safe to run after
- * the other smokes, but exposure totals assume Harpreet's seeded $200
- * outstanding advance has not been applied by a settlements run).
+ * Reseeds demo data first (see reseed in e2e-lib.mjs) — exposure totals
+ * assume Harpreet's seeded $200 outstanding advance has not been applied by
+ * a settlements run.
  *
  * Usage: node scripts/e2e-advances-smoke.mjs [outputDir]
  */
 import puppeteer from "puppeteer"
 import { mkdirSync } from "node:fs"
-import { BASE, sleep, failures, check, waitForText, login, makeShot, clickByText } from "./e2e-lib.mjs"
+import { BASE, sleep, failures, check, waitForText, login, makeShot, clickByText, reseed } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-advances"
 mkdirSync(OUT, { recursive: true })
@@ -60,6 +60,7 @@ const decideRow = (page, needle, label) =>
   )
 
 async function main() {
+  reseed()
   const browser = await puppeteer.launch({
     headless: "new",
     args: ["--no-sandbox", "--disable-dev-shm-usage"],
