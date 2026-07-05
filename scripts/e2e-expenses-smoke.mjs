@@ -5,11 +5,15 @@
  * next settlement, and a dispatcher (money:read only) sees the list but no
  * record form.
  *
+ * Reseeds demo data first (see reseed in e2e-lib.mjs) — each run records the
+ * same $84.37 toll, so without a reseed duplicates pile up and the CSV/P&L
+ * row matching turns ambiguous.
+ *
  * Usage: node scripts/e2e-expenses-smoke.mjs [outputDir]
  */
 import puppeteer from "puppeteer"
 import { mkdirSync } from "node:fs"
-import { BASE, sleep, failures, check, waitForText, login, makeShot } from "./e2e-lib.mjs"
+import { BASE, sleep, failures, check, waitForText, login, makeShot, reseed } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-expenses"
 mkdirSync(OUT, { recursive: true })
@@ -39,6 +43,7 @@ const pnlOtherCents = (csv, unit) => {
 }
 
 async function main() {
+  reseed()
   const browser = await puppeteer.launch({
     headless: "new",
     args: ["--no-sandbox", "--disable-dev-shm-usage"],

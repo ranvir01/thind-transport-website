@@ -8,11 +8,15 @@
  * and the "Seen by" receipt. Driver logins are refused the office messages
  * routes (list and thread deep link).
  *
+ * Reseeds demo data first (see reseed in e2e-lib.mjs) — the list check pins
+ * the seeded "lumper receipt" preview as the last message, and a prior run's
+ * markers replace it and leave stale unread badges.
+ *
  * Usage: node scripts/e2e-messages-smoke.mjs [outputDir]
  */
 import puppeteer from "puppeteer"
 import { mkdirSync } from "node:fs"
-import { BASE, sleep, failures, check, waitForText, login, makeShot } from "./e2e-lib.mjs"
+import { BASE, sleep, failures, check, waitForText, login, makeShot, reseed } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-messages"
 mkdirSync(OUT, { recursive: true })
@@ -32,6 +36,7 @@ async function sendChat(page, text) {
 }
 
 async function main() {
+  reseed()
   const browser = await puppeteer.launch({
     headless: "new",
     args: ["--no-sandbox", "--disable-dev-shm-usage"],

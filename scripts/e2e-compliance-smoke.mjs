@@ -5,12 +5,16 @@
  * expired rows (Amrit Bains med card, Truck #107 registration) show expiry
  * pills; the driver app login cannot reach the office compliance wall.
  *
+ * Reseeds demo data first (see reseed in e2e-lib.mjs) — the run resolves the
+ * seeded "Drug & alcohol consortium" item and asserts the red tile drops by
+ * one, so a prior run leaves nothing to resolve.
+ *
  * Usage: node scripts/e2e-compliance-smoke.mjs [outputDir]
  */
 import puppeteer from "puppeteer"
 import { mkdirSync, writeFileSync } from "node:fs"
 import path from "node:path"
-import { BASE, sleep, failures, check, waitForText, login, makeShot } from "./e2e-lib.mjs"
+import { BASE, sleep, failures, check, waitForText, login, makeShot, reseed } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-compliance"
 mkdirSync(OUT, { recursive: true })
@@ -41,6 +45,7 @@ const resolveManualItem = (page, kindText) =>
   }, kindText)
 
 async function main() {
+  reseed()
   const browser = await puppeteer.launch({
     headless: "new",
     args: ["--no-sandbox", "--disable-dev-shm-usage"],
