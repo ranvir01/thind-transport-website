@@ -7,58 +7,11 @@
  */
 import puppeteer from "puppeteer"
 import { mkdirSync } from "node:fs"
-import path from "node:path"
+import { BASE, sleep, clickByText, waitForText, login, makeShot } from "./e2e-lib.mjs"
 
-const BASE = process.env.E2E_BASE_URL ?? "http://localhost:3000"
 const OUT = process.argv[2] ?? "e2e-shots-office"
 mkdirSync(OUT, { recursive: true })
-
-const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
-
-async function clickByText(page, text, { tag = "button", timeout = 8000 } = {}) {
-  const deadline = Date.now() + timeout
-  while (Date.now() < deadline) {
-    const clicked = await page.evaluate(
-      ({ text, tag }) => {
-        const el = [...document.querySelectorAll(tag)].find((n) =>
-          (n.textContent ?? "").toLowerCase().includes(text.toLowerCase())
-        )
-        if (el) {
-          el.click()
-          return true
-        }
-        return false
-      },
-      { text, tag }
-    )
-    if (clicked) return true
-    await sleep(250)
-  }
-  throw new Error(`Could not find ${tag} containing "${text}"`)
-}
-
-async function waitForText(page, text, timeout = 10000) {
-  await page.waitForFunction(
-    (t) => document.body.innerText.toLowerCase().includes(t.toLowerCase()),
-    { timeout },
-    text
-  )
-}
-
-async function login(page, email) {
-  await page.goto(`${BASE}/hub/login`, { waitUntil: "networkidle2" })
-  await page.type("#email", email)
-  await page.type("#password", "ThindDemo1!")
-  await Promise.all([
-    page.waitForNavigation({ waitUntil: "networkidle2", timeout: 20000 }),
-    page.click('button[type="submit"]'),
-  ])
-}
-
-async function shot(page, name) {
-  await page.screenshot({ path: path.join(OUT, `${name}.png`) })
-  console.log(`  📸 ${name}`)
-}
+const shot = makeShot(OUT)
 
 async function main() {
   const browser = await puppeteer.launch({ headless: "new", args: ["--no-sandbox", "--disable-dev-shm-usage"] })

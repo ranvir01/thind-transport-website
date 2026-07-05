@@ -8,19 +8,10 @@
 import puppeteer from "puppeteer"
 import { mkdirSync } from "node:fs"
 import path from "node:path"
+import { BASE, sleep, waitForText, login } from "./e2e-lib.mjs"
 
-const BASE = process.env.E2E_BASE_URL ?? "http://localhost:3000"
 const OUT = process.argv[2] ?? "e2e-shots-planner"
 mkdirSync(OUT, { recursive: true })
-const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
-
-async function waitForText(page, text, timeout = 10000) {
-  await page.waitForFunction(
-    (t) => document.body.innerText.toLowerCase().includes(t.toLowerCase()),
-    { timeout },
-    text
-  )
-}
 
 /** Synthetic HTML5 drag-and-drop (puppeteer mouse events don't carry DataTransfer). */
 async function syntheticDrag(page, sourceSelectorText, targetTruckUnit, targetDayIdx) {
@@ -56,16 +47,13 @@ async function main() {
   await page.setViewport({ width: 1440, height: 950 })
 
   console.log("1. Login as dispatcher")
-  await page.goto(`${BASE}/hub/login`, { waitUntil: "networkidle2" })
-  await page.type("#email", "dispatch@demo.thind")
-  await page.type("#password", "ThindDemo1!")
-  await Promise.all([
-    page.waitForNavigation({ waitUntil: "networkidle2", timeout: 20000 }),
-    page.click('button[type="submit"]'),
-  ])
+  await login(page, "dispatch@demo.thind")
 
   console.log("2. Today command center")
-  await waitForText(page, "Today's huddle")
+  // Dispatchers land on /hub/loadboard since Phase 3 (hubLandingPath) — the
+  // Today page lives at /hub and greets with the product mission line.
+  await page.goto(`${BASE}/hub`, { waitUntil: "networkidle2" })
+  await waitForText(page, "first load to last invoice")
   await page.screenshot({ path: path.join(OUT, "01-today.png"), fullPage: true })
   console.log("  📸 01-today")
 

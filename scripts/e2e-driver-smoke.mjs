@@ -8,47 +8,11 @@
  */
 import puppeteer from "puppeteer"
 import { mkdirSync } from "node:fs"
-import path from "node:path"
+import { BASE, sleep, clickByText, waitForText, makeShot } from "./e2e-lib.mjs"
 
-const BASE = process.env.E2E_BASE_URL ?? "http://localhost:3000"
 const OUT = process.argv[2] ?? "e2e-shots"
 mkdirSync(OUT, { recursive: true })
-
-const shot = async (page, name) => {
-  await page.screenshot({ path: path.join(OUT, `${name}.png`), fullPage: false })
-  console.log(`  📸 ${name}`)
-}
-
-const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
-
-async function clickByText(page, text, { tag = "button", timeout = 8000 } = {}) {
-  const deadline = Date.now() + timeout
-  while (Date.now() < deadline) {
-    const clicked = await page.evaluate(
-      ({ text, tag }) => {
-        const nodes = [...document.querySelectorAll(tag)]
-        const el = nodes.find((n) => (n.textContent ?? "").toLowerCase().includes(text.toLowerCase()))
-        if (el) {
-          el.click()
-          return true
-        }
-        return false
-      },
-      { text, tag }
-    )
-    if (clicked) return true
-    await sleep(250)
-  }
-  throw new Error(`Could not find ${tag} containing "${text}"`)
-}
-
-async function waitForText(page, text, timeout = 8000) {
-  await page.waitForFunction(
-    (t) => document.body.innerText.toLowerCase().includes(t.toLowerCase()),
-    { timeout },
-    text
-  )
-}
+const shot = makeShot(OUT)
 
 async function main() {
   const browser = await puppeteer.launch({

@@ -10,40 +10,11 @@
 import puppeteer from "puppeteer"
 import { mkdirSync, writeFileSync } from "node:fs"
 import path from "node:path"
+import { BASE, sleep, failures, check, waitForText, login, makeShot } from "./e2e-lib.mjs"
 
-const BASE = process.env.E2E_BASE_URL ?? "http://localhost:3000"
 const OUT = process.argv[2] ?? "e2e-shots-compliance"
 mkdirSync(OUT, { recursive: true })
-
-const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
-const failures = []
-const check = (ok, label) => {
-  console.log(`  ${ok ? "✅" : "❌"} ${label}`)
-  if (!ok) failures.push(label)
-}
-
-async function waitForText(page, text, timeout = 15000) {
-  await page.waitForFunction(
-    (t) => document.body.innerText.toLowerCase().includes(t.toLowerCase()),
-    { timeout },
-    text
-  )
-}
-
-async function login(page, email) {
-  await page.goto(`${BASE}/hub/login`, { waitUntil: "networkidle2" })
-  await page.type("#email", email)
-  await page.type("#password", "ThindDemo1!")
-  await Promise.all([
-    page.waitForNavigation({ waitUntil: "networkidle2", timeout: 20000 }),
-    page.click('button[type="submit"]'),
-  ])
-}
-
-async function shot(page, name) {
-  await page.screenshot({ path: path.join(OUT, `${name}.png`), fullPage: true })
-  console.log(`  📸 ${name}`)
-}
+const shot = makeShot(OUT, { fullPage: true })
 
 const readSummary = (page) =>
   page.evaluate(() => {
