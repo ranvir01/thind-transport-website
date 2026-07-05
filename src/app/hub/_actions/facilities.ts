@@ -8,6 +8,7 @@ import {
 } from "@/lib/hub/facilities"
 import { getCarrierSettings } from "@/lib/hub/settings"
 import { queryOne } from "@/lib/hub/db"
+import { dollarsToCents } from "@/lib/hub/types"
 
 interface Result {
   ok: boolean
@@ -84,9 +85,7 @@ export async function updateFacilityAction(
       phone: patch.phone?.trim() || null,
       overnightParking:
         patch.overnightParking === "yes" ? true : patch.overnightParking === "no" ? false : null,
-      typicalLumperCents: patch.typicalLumper
-        ? Math.round(Number(patch.typicalLumper.replace(/[^0-9.]/g, "")) * 100) || null
-        : null,
+      typicalLumperCents: patch.typicalLumper ? dollarsToCents(patch.typicalLumper) : null,
       notes: patch.notes?.trim() || null,
     })
     revalidatePath(`/hub/facilities/${id}`)

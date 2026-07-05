@@ -87,7 +87,7 @@ export default async function FacilityDetailPage({ params }: { params: Promise<{
             hours: facility.hours ?? "",
             phone: facility.phone ?? "",
             overnightParking: facility.overnight_parking == null ? "" : facility.overnight_parking ? "yes" : "no",
-            typicalLumper: facility.typical_lumper_cents ? (facility.typical_lumper_cents / 100).toFixed(2) : "",
+            typicalLumper: facility.typical_lumper_cents != null ? (facility.typical_lumper_cents / 100).toFixed(2) : "",
             notes: facility.notes ?? "",
           }}
         />
