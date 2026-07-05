@@ -98,6 +98,12 @@ export function quarterKey(date: Date): string {
   return `${date.getUTCFullYear()}Q${Math.floor(date.getUTCMonth() / 3) + 1}`
 }
 
+/** Most recently completed quarter before `date` — the one a filing is actually due for. */
+export function lastCompletedQuarterKey(date: Date): string {
+  const q = Math.floor(date.getUTCMonth() / 3)
+  return q === 0 ? `${date.getUTCFullYear() - 1}Q4` : `${date.getUTCFullYear()}Q${q}`
+}
+
 export function quarterRange(quarter: string): { start: Date; end: Date } {
   const match = quarter.match(/^(\d{4})Q([1-4])$/)
   if (!match) throw new Error(`Bad quarter key: ${quarter}`)

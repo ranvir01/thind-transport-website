@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { computeIfta, iftaDueDate, quarterKey, quarterRange } from "../ifta-core"
+import { computeIfta, iftaDueDate, lastCompletedQuarterKey, quarterKey, quarterRange } from "../ifta-core"
 import { haversineMiles, jurisdictionMilesFromPings, stateForPoint } from "../geo"
 
 describe("IFTA golden fixture (hand-computed, surcharge state included)", () => {
@@ -67,6 +67,12 @@ describe("quarter helpers", () => {
     expect(quarterKey(new Date(Date.UTC(2026, 4, 15)))).toBe("2026Q2")
     expect(quarterKey(new Date(Date.UTC(2026, 0, 1)))).toBe("2026Q1")
     expect(quarterKey(new Date(Date.UTC(2026, 11, 31)))).toBe("2026Q4")
+  })
+  it("lastCompletedQuarterKey", () => {
+    expect(lastCompletedQuarterKey(new Date(Date.UTC(2026, 6, 5)))).toBe("2026Q2")
+    expect(lastCompletedQuarterKey(new Date(Date.UTC(2026, 8, 30)))).toBe("2026Q2")
+    expect(lastCompletedQuarterKey(new Date(Date.UTC(2026, 9, 1)))).toBe("2026Q3")
+    expect(lastCompletedQuarterKey(new Date(Date.UTC(2026, 1, 15)))).toBe("2025Q4")
   })
   it("quarterRange", () => {
     const { start, end } = quarterRange("2026Q2")

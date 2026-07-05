@@ -1,6 +1,6 @@
 import { Download } from "lucide-react"
 import { getIftaReport, listIftaRates } from "@/lib/hub/ifta"
-import { quarterKey, iftaDueDate } from "@/lib/hub/ifta-core"
+import { quarterKey, lastCompletedQuarterKey, iftaDueDate } from "@/lib/hub/ifta-core"
 import { requirePermissionPage } from "@/lib/hub/session"
 import { fmtCentsExact, type IftaReportRow } from "@/lib/hub/types"
 import { Panel, PageHeader, BackLink, fieldCls } from "@/components/hub/ui"
@@ -26,7 +26,9 @@ export default async function IftaPage({
 }) {
   const user = await requirePermissionPage("compliance:read")
   const params = await searchParams
-  const quarter = /^\d{4}Q[1-4]$/.test(params.q ?? "") ? params.q! : quarterKey(new Date())
+  // Default to the last completed quarter — the filing that is actually due;
+  // a days-old in-progress quarter is a misleading landing view.
+  const quarter = /^\d{4}Q[1-4]$/.test(params.q ?? "") ? params.q! : lastCompletedQuarterKey(new Date())
   const [report, rates] = await Promise.all([
     getIftaReport(user.carrierId, quarter),
     listIftaRates(quarter),
