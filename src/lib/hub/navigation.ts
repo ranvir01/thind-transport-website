@@ -1,5 +1,5 @@
 /**
- * HaulDesk IA — 6 primary areas + utility links (HANDOFF.md §2).
+ * LoadOff IA — 6 primary areas + utility links (HANDOFF.md §2).
  * Maps existing routes; placeholder labels point at nearest live screen.
  */
 

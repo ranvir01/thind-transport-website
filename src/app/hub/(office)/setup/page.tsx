@@ -22,7 +22,7 @@ export default async function SetupPage() {
     <div>
       <PageHeader
         title="Smart Setup"
-        subtitle="Upload paperwork once — HaulDesk extracts the fields, verifies brokers through FMCSA, and builds your workspace. New here? Read the full playbook first."
+        subtitle="Upload paperwork once — LoadOff extracts the fields, verifies brokers through FMCSA, and builds your workspace. New here? Read the full playbook first."
         action={
           <Link
             href="/hub/guide"

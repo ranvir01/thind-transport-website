@@ -1,6 +1,6 @@
 {
-  "name": "HaulDesk",
-  "short_name": "HaulDesk",
+  "name": "LoadOff",
+  "short_name": "LoadOff",
   "description": "Dispatch, money, compliance, and driver tools for small and mid-size trucking carriers — all in one place.",
   "start_url": "/hub",
   "scope": "/hub",

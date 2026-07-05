@@ -134,7 +134,7 @@ export async function signBrokerAgreement(
     y -= dims.height + 8
   }
   draw(`Signed: ${input.signerName} (${input.signerTitle}) — ${new Date().toLocaleDateString("en-US")}`, { gap: 14 })
-  draw(`Recorded in HaulDesk by ${actor.name}.`, { size: 8, gap: 0 })
+  draw(`Recorded in LoadOff by ${actor.name}.`, { size: 8, gap: 0 })
 
   const bytes = await pdf.save()
   const file = new File([Buffer.from(bytes)], `broker-carrier-agreement-${customerName.replace(/[^a-zA-Z0-9]/g, "-")}.pdf`, {

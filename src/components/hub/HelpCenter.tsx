@@ -15,7 +15,7 @@ export function HelpCenter() {
           <CircleHelp className="h-4 w-4" />
           Help
         </p>
-        <h1 className="mt-1 text-[22px] font-semibold tracking-tight text-fg">How to use HaulDesk</h1>
+        <h1 className="mt-1 text-[22px] font-semibold tracking-tight text-fg">How to use LoadOff</h1>
         <p className="mt-2 text-sm text-fg-2 leading-relaxed">{HAULDESK_MISSION}</p>
       </header>
 

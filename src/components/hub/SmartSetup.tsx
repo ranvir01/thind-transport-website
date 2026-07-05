@@ -206,7 +206,7 @@ function ScanCard({
 
       {scan.analysis.kind === "customer" ? (
         <p className="text-body-xs text-fg-3 mb-3">
-          Enter MC or DOT — HaulDesk pulls authority and legal name from FMCSA when you apply.
+          Enter MC or DOT — LoadOff pulls authority and legal name from FMCSA when you apply.
         </p>
       ) : null}
 
@@ -246,7 +246,7 @@ function ScanCard({
           className="inline-flex min-h-[48px] w-full sm:w-auto items-center justify-center gap-2 rounded-control bg-accent px-6 font-semibold text-sm text-accent-fg hover:bg-accent-hover disabled:opacity-50"
         >
           {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
-          {scan.analysis.kind === "rate_con" ? "Book this load" : "Apply to HaulDesk"}
+          {scan.analysis.kind === "rate_con" ? "Book this load" : "Apply to LoadOff"}
         </button>
       ) : scan.applied ? (
         <p className="text-sm font-semibold text-ok flex items-center gap-2">
@@ -363,7 +363,7 @@ export function SmartSetup({
             </h2>
             <p className="text-body-sm text-fg-2 mt-1 max-w-xl">
               Drop your paperwork — rate cons, registrations, CDLs, W-9s, broker MC letters, fuel CSVs.
-              HaulDesk reads them, you confirm, it creates the records. Brokers only need MC/DOT; FMCSA fills the rest.
+              LoadOff reads them, you confirm, it creates the records. Brokers only need MC/DOT; FMCSA fills the rest.
             </p>
           </div>
           <div className="text-right shrink-0">
