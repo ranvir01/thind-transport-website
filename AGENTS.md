@@ -26,7 +26,7 @@ Setup guides live in `docs/` (database, deployment, email, driver onboarding).
 
 ## Language stack — TypeScript (app), Go (workers), Rust (compute)
 
-HaulDesk uses three languages with fixed boundaries (see `docs/architecture/trilingual-stack.md`):
+LoadOff uses three languages with fixed boundaries (see `docs/architecture/trilingual-stack.md`):
 
 | Language | Role |
 |----------|------|
@@ -36,7 +36,7 @@ HaulDesk uses three languages with fixed boundaries (see `docs/architecture/tril
 
 Sidecars are optional: when env vars are unset, `src/lib/hub/sidecars.ts` falls back to pure TS. Do not add microservices beyond one Go + one Rust binary at V1 scale.
 
-## HaulDesk hub — standing rules (learned in production, do not regress)
+## LoadOff hub — standing rules (learned in production, do not regress)
 
 - **Money is integer cents** everywhere; user input goes through `dollarsToCents`; rounding via
   `roundHalfAwayFromZero`.

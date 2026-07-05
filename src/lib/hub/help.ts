@@ -41,7 +41,7 @@ export const HELP_TOPICS: HelpTopic[] = [
     id: "paste-rate-con",
     question: "How do I enter a load from a broker email?",
     answer:
-      "Copy the rate confirmation text and paste it on Paste rate con. HaulDesk pulls lane, rate, stops, and broker — you confirm and save.",
+      "Copy the rate confirmation text and paste it on Paste rate con. LoadOff pulls lane, rate, stops, and broker — you confirm and save.",
     href: "/hub/loads/paste",
     hrefLabel: "Paste rate con",
   },
@@ -102,7 +102,7 @@ export const HUB_TOURS: HubTour[] = [
     steps: [
       {
         id: "welcome",
-        title: "Welcome to HaulDesk",
+        title: "Welcome to LoadOff",
         body: "This quick tour shows how a dispatcher uses Today each morning. Use Next to continue — you can exit anytime with Esc.",
       },
       {

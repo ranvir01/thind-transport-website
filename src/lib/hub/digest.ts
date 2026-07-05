@@ -56,7 +56,7 @@ export async function sendOwnerDigest(carrierId: string): Promise<{ sent: boolea
 
   const { createMailTransport, mailFrom } = await import("@/lib/mailer")
   await createMailTransport().sendMail({
-    from: mailFrom(carrier?.name ?? "HaulDesk"),
+    from: mailFrom(carrier?.name ?? "LoadOff"),
     to,
     subject: `${carrier?.name ?? "Fleet"} — your Monday numbers`,
     text: `${lines.join("\n")}\n\nOpen the Hub: ${process.env.NEXTAUTH_URL ?? ""}/hub`,

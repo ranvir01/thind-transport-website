@@ -26,7 +26,7 @@ export function SetupGuide({
           <div className="min-w-0">
             <p className="flex items-center gap-2 text-[13.5px] font-semibold text-fg">
               <BookOpen className="h-4 w-4 text-accent-text shrink-0" />
-              How HaulDesk works
+              How LoadOff works
             </p>
             <p className="mt-1 text-sm text-fg-2 max-w-xl">{HAULDESK_MISSION}</p>
           </div>

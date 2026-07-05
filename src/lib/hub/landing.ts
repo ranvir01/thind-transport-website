@@ -1,6 +1,6 @@
 import type { HubRole } from "./types"
 
-/** Post-login home for each HaulDesk role (Phase 3). */
+/** Post-login home for each LoadOff role (Phase 3). */
 export function hubLandingPath(role: HubRole | string | null | undefined): string {
   switch (role) {
     case "accountant":

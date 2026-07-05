@@ -1,7 +1,7 @@
 /**
  * Demo-login gate (Phase 6 go-live hardening).
  *
- * The seeded demo accounts (…@demo.thind) are great for evaluating HaulDesk and
+ * The seeded demo accounts (…@demo.thind) are great for evaluating LoadOff and
  * dangerous on a production system of record: the credentials are printed on
  * the login screen. Setting HUB_DEMO_LOGIN=false does two things at once —
  * hides the credentials card AND refuses authentication for demo emails, so

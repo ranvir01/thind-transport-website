@@ -1,5 +1,5 @@
 /**
- * HaulDesk operational journey — single source for in-app setup guide,
+ * LoadOff operational journey — single source for in-app setup guide,
  * Today checklist, and docs/hub-setup-guide.md. Plain language first:
  * anyone should run trucking start-to-finish without prior TMS experience.
  */
@@ -35,7 +35,7 @@ export const OPERATIONS_PHASES: GuidePhase[] = [
   {
     number: 1,
     title: "Set up your company",
-    intro: "Drop your paperwork once. HaulDesk reads it so you are not re-typing spreadsheets.",
+    intro: "Drop your paperwork once. LoadOff reads it so you are not re-typing spreadsheets.",
     steps: [
       {
         id: "smart-setup",
@@ -76,7 +76,7 @@ export const OPERATIONS_PHASES: GuidePhase[] = [
         id: "paste-rate-con",
         phase: 2,
         title: "Paste a rate confirmation",
-        summary: "Copy text from the broker email — HaulDesk builds the load with lane, rate, and stops.",
+        summary: "Copy text from the broker email — LoadOff builds the load with lane, rate, and stops.",
         who: "Dispatcher",
         href: "/hub/loads/paste",
         cta: "Paste rate con",

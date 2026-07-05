@@ -1,7 +1,7 @@
 /**
  * Money — integer-cent value object. The non-negotiable money rule, made explicit.
  *
- * All HaulDesk money is stored and computed in integer cents (bigint columns);
+ * All LoadOff money is stored and computed in integer cents (bigint columns);
  * this class makes that discipline enforceable in code: construction rejects
  * non-integer cents, arithmetic stays in cents, and rounding happens only at the
  * final multiply/allocate step. A floating-point cent error in driver pay or a
