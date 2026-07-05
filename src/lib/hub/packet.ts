@@ -88,11 +88,14 @@ export async function signBrokerAgreement(
   actor: { id: string; name: string }
 ): Promise<HubDocument> {
   const carrier = await getCarrier(carrierId)
+  // Tenancy hard-fail (AGENTS.md): a foreign or deleted customer id must not get an
+  // agreement PDF, document row, or CRM note attached to it — refuse before any write.
   const customer = await query<{ name: string; mc_number: string | null }>(
-    `SELECT name, mc_number FROM hub.customers WHERE carrier_id = $1 AND id = $2`,
+    `SELECT name, mc_number FROM hub.customers WHERE carrier_id = $1 AND id = $2 AND deleted_at IS NULL`,
     [carrierId, customerId]
   )
-  const customerName = customer[0]?.name ?? "Customer"
+  if (!customer[0]) throw new Error("Customer not found")
+  const customerName = customer[0].name
 
   const pdf = await PDFDocument.create()
   const page = pdf.addPage([612, 792])
@@ -110,7 +113,7 @@ export async function signBrokerAgreement(
 
   draw("BROKER–CARRIER AGREEMENT", { bold: true, size: 16, gap: 26 })
   draw(`Carrier: ${carrier?.name ?? ""}  ·  DOT ${carrier?.dot_number ?? "—"}  ·  MC ${carrier?.mc_number ?? "—"}`, { gap: 16 })
-  draw(`Broker: ${customerName}${customer[0]?.mc_number ? `  ·  MC ${customer[0].mc_number}` : ""}`, { gap: 24 })
+  draw(`Broker: ${customerName}${customer[0].mc_number ? `  ·  MC ${customer[0].mc_number}` : ""}`, { gap: 24 })
   const terms = [
     "1. Broker is a licensed property broker; Carrier is an authorized motor carrier. Each party",
     "   warrants its operating authority is active and will notify the other of any change.",
