@@ -4,6 +4,11 @@
  * and a body-text sanity check at every width (a screen that renders an
  * error boundary, a 404, or a blank page must fail the sweep, not pass it).
  *
+ * Each page also declares an ANCHOR — a fragment of its own content (page
+ * subtitle or an always-rendered label, never a nav-chrome word) that must
+ * appear in the body text. This is what catches a page stuck on a loading
+ * spinner: nav chrome alone supplies 40+ chars, but never the anchor.
+ *
  * Usage: node scripts/e2e-sweep.mjs [outputDir]
  */
 import puppeteer from "puppeteer"
@@ -14,33 +19,35 @@ import { BASE, sleep, login } from "./e2e-lib.mjs"
 const OUT = process.argv[2] ?? "e2e-sweep"
 mkdirSync(OUT, { recursive: true })
 
+// [name, url, anchor] — anchor is lowercase page-content text (subtitles,
+// always-rendered labels). Never use a word the sidebar/bottom-nav renders.
 const OFFICE_PAGES = [
-  ["today", "/hub"],
-  ["planner", "/hub/planner"],
-  ["dispatch", "/hub/dispatch"],
-  ["messages", "/hub/messages"],
-  ["announcements", "/hub/messages/announcements"],
-  ["tasks", "/hub/tasks"],
-  ["facilities", "/hub/facilities"],
-  ["recruiting", "/hub/recruiting"],
-  ["safety", "/hub/safety"],
-  ["fuel", "/hub/fuel"],
-  ["money", "/hub/money"],
-  ["compliance", "/hub/compliance"],
-  ["capacity", "/hub/capacity"],
-  ["packet", "/hub/settings/packet"],
-  ["setup", "/hub/setup"],
+  ["today", "/hub", "in one calm place"],
+  ["planner", "/hub/planner", "whole week at a glance"],
+  ["dispatch", "/hub/dispatch", "every active load, booking to pod"],
+  ["messages", "/hub/messages", "no personal phone numbers"],
+  ["announcements", "/hub/messages/announcements", "proof everyone saw them"],
+  ["tasks", "/hub/tasks", "minus the sticky notes"],
+  ["facilities", "/hub/facilities", "dwell history and driver tips"],
+  ["recruiting", "/hub/recruiting", "drag between stages"],
+  ["safety", "/hub/safety", "flow to the register automatically"],
+  ["fuel", "/hub/fuel", "last 92 days across every card program"],
+  ["money", "/hub/money", "receivables, invoices, and driver pay"],
+  ["compliance", "/hub/compliance", "expired / overdue"],
+  ["capacity", "/hub/capacity", "empty trucks, advertised"],
+  ["packet", "/hub/settings/packet", "stored once, sent in one click"],
+  ["setup", "/hub/setup", "upload paperwork once"],
 ]
 
 const DRIVER_PAGES = [
-  ["driver-home", "/hub/driver"],
-  ["driver-dvir", "/hub/driver/dvir"],
-  ["driver-messages", "/hub/driver/messages"],
-  ["driver-pay", "/hub/driver/pay"],
-  ["driver-timeoff", "/hub/driver/timeoff"],
-  ["driver-incident", "/hub/driver/incident"],
-  ["driver-docs", "/hub/driver/docs"],
-  ["driver-more", "/hub/driver/more"],
+  ["driver-home", "/hub/driver", "my cards"],
+  ["driver-dvir", "/hub/driver/dvir", "vehicle inspection"],
+  ["driver-messages", "/hub/driver/messages", "no phone numbers needed"],
+  ["driver-pay", "/hub/driver/pay", "line by line"],
+  ["driver-timeoff", "/hub/driver/timeoff", "book you over it"],
+  ["driver-incident", "/hub/driver/incident", "report an incident"],
+  ["driver-docs", "/hub/driver/docs", "my documents"],
+  ["driver-more", "/hub/driver/more", "ask for home time"],
 ]
 
 // Phrases that only appear on dead screens: Next.js's default client-exception
@@ -57,17 +64,20 @@ const ERROR_MARKERS = [
 
 async function sweep(page, pages, prefix, width) {
   const problems = []
-  for (const [name, url] of pages) {
+  for (const [name, url, anchor] of pages) {
     await page.goto(`${BASE}${url}`, { waitUntil: "networkidle2" })
     await sleep(600)
     if (page.url().includes("/hub/login")) {
       problems.push(`${name}: bounced to login at ${width}px (session lost)`)
     } else {
       const text = await page.evaluate(() => (document.body?.innerText ?? "").trim())
-      const marker = ERROR_MARKERS.find((m) => text.toLowerCase().includes(m))
+      const lower = text.toLowerCase()
+      const marker = ERROR_MARKERS.find((m) => lower.includes(m))
       if (marker) problems.push(`${name}: error state at ${width}px ("${marker}")`)
       else if (text.length < 40)
         problems.push(`${name}: near-blank page at ${width}px (${text.length} chars of body text)`)
+      else if (!lower.includes(anchor))
+        problems.push(`${name}: page content missing at ${width}px (no "${anchor}" — stuck on a spinner?)`)
     }
     if (width === 390) {
       const overflow = await page.evaluate(
