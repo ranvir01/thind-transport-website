@@ -391,7 +391,7 @@ export async function getDashboardStats(carrierId: string): Promise<DashboardSta
       (SELECT COUNT(*) FROM hub.drivers WHERE carrier_id = $1 AND deleted_at IS NULL AND status = 'active')::int AS drivers_active,
       (SELECT COALESCE(SUM(i.amount_cents - COALESCE(p.paid, 0)), 0)
         FROM hub.invoices i
-        LEFT JOIN LATERAL (SELECT SUM(amount_cents) AS paid FROM hub.payments WHERE invoice_id = i.id) p ON TRUE
+        LEFT JOIN LATERAL (SELECT SUM(amount_cents) AS paid FROM hub.payments WHERE invoice_id = i.id AND carrier_id = i.carrier_id) p ON TRUE
         WHERE i.carrier_id = $1 AND i.status NOT IN ('paid','disputed')) AS ar_open_cents,
       (SELECT COALESCE(SUM(net_cents), 0) FROM hub.settlements
         WHERE carrier_id = $1 AND status IN ('draft','approved')) AS settlement_due_cents

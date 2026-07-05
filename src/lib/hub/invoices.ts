@@ -11,7 +11,7 @@ import { loadTotalCents, type Invoice } from "./types"
 
 const INVOICE_SELECT = `
   SELECT i.*, c.name AS customer_name, l.reference AS load_reference,
-    COALESCE((SELECT SUM(amount_cents) FROM hub.payments WHERE invoice_id = i.id), 0)::int AS paid_cents
+    COALESCE((SELECT SUM(amount_cents) FROM hub.payments WHERE invoice_id = i.id AND carrier_id = i.carrier_id), 0)::int AS paid_cents
   FROM hub.invoices i
   JOIN hub.customers c ON c.id = i.customer_id
   JOIN hub.loads l ON l.id = i.load_id
@@ -32,6 +32,22 @@ export async function listInvoices(
 
 export async function getInvoice(carrierId: string, id: string): Promise<Invoice | null> {
   return queryOne<Invoice>(`${INVOICE_SELECT} WHERE i.carrier_id = $1 AND i.id = $2`, [carrierId, id])
+}
+
+export interface InvoicePayment {
+  id: string
+  amount_cents: number
+  paid_on: string
+  method: string | null
+  reference: string | null
+}
+
+export async function listInvoicePayments(carrierId: string, invoiceId: string): Promise<InvoicePayment[]> {
+  return query<InvoicePayment>(
+    `SELECT id, amount_cents, paid_on, method, reference FROM hub.payments
+     WHERE carrier_id = $1 AND invoice_id = $2 ORDER BY paid_on`,
+    [carrierId, invoiceId]
+  )
 }
 
 export async function getInvoiceForLoad(carrierId: string, loadId: string): Promise<Invoice | null> {
@@ -187,7 +203,7 @@ export async function recordPayment(
   )
   const paidTotal = (invoice.paid_cents ?? 0) + input.amountCents
   const newStatus = paidTotal >= invoice.amount_cents ? "paid" : "partial"
-  await query(`UPDATE hub.invoices SET status = $2, updated_at = NOW() WHERE id = $1`, [invoiceId, newStatus])
+  await query(`UPDATE hub.invoices SET status = $2, updated_at = NOW() WHERE id = $1 AND carrier_id = $3`, [invoiceId, newStatus, carrierId])
   await logAudit({
     carrierId, actorId: actor.id, actorName: actor.name,
     entityType: "payment", entityId: invoiceId, action: "record",

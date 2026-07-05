@@ -1,8 +1,7 @@
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import { FileText } from "lucide-react"
-import { getInvoice } from "@/lib/hub/invoices"
-import { query } from "@/lib/hub/db"
+import { getInvoice, listInvoicePayments } from "@/lib/hub/invoices"
 import { requirePermissionPage } from "@/lib/hub/session"
 import { can } from "@/lib/hub/permissions"
 import { fmtCentsExact } from "@/lib/hub/types"
@@ -18,10 +17,7 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
   const invoice = await getInvoice(user.carrierId, id).catch(() => null)
   if (!invoice) notFound()
 
-  const payments = await query<{ id: string; amount_cents: number; paid_on: string; method: string | null; reference: string | null }>(
-    `SELECT id, amount_cents, paid_on, method, reference FROM hub.payments WHERE invoice_id = $1 ORDER BY paid_on`,
-    [id]
-  )
+  const payments = await listInvoicePayments(user.carrierId, id)
   const openCents = invoice.amount_cents - (invoice.paid_cents ?? 0)
   const canWrite = can(user.role, "money:write")
 
