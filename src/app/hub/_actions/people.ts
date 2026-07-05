@@ -5,10 +5,9 @@ import bcrypt from "bcrypt"
 import { requirePermission } from "@/lib/hub/session"
 import { driverSchema, customerSchema, contactSchema, hubUserSchema } from "@/lib/hub/schemas"
 import { createDriver, updateDriver } from "@/lib/hub/drivers"
-import { createCustomer, updateCustomer, createContact, deleteContact } from "@/lib/hub/customers"
+import { createCustomer, updateCustomer, createContact, deleteContact, addCrmActivity } from "@/lib/hub/customers"
 import { createHubUser, setHubUserActive } from "@/lib/hub/users"
 import { logAudit } from "@/lib/hub/audit"
-import { query } from "@/lib/hub/db"
 import { dollarsToCents } from "@/lib/hub/types"
 import type { ActionResult } from "./fleet"
 
@@ -101,6 +100,7 @@ export async function addContactAction(values: Record<string, unknown>): Promise
   if (!parsed.success) return { ok: false, error: firstError(parsed.error) }
   try {
     const contact = await createContact(user.carrierId, parsed.data)
+    if (!contact) return { ok: false, error: "Customer not found" }
     revalidatePath(`/hub/customers/${parsed.data.customer_id}`)
     return { ok: true, id: contact.id }
   } catch (err) {
@@ -137,11 +137,14 @@ export async function addCrmNoteAction(input: {
   }
   if (!input.body.trim()) return { ok: false, error: "Note cannot be empty" }
   try {
-    await query(
-      `INSERT INTO hub.crm_activities (carrier_id, customer_id, kind, body, actor_id, actor_name)
-       VALUES ($1, $2, $3, $4, $5, $6)`,
-      [user.carrierId, input.customerId, input.kind, input.body.trim(), user.id, user.name]
-    )
+    const inserted = await addCrmActivity(user.carrierId, {
+      customer_id: input.customerId,
+      kind: input.kind,
+      body: input.body.trim(),
+      actor_id: user.id,
+      actor_name: user.name,
+    })
+    if (!inserted) return { ok: false, error: "Customer not found" }
     revalidatePath(`/hub/customers/${input.customerId}`)
     return { ok: true }
   } catch (err) {

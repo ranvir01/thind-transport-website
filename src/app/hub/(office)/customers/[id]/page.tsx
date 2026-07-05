@@ -1,14 +1,13 @@
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import { Pencil } from "lucide-react"
-import { getCustomer, listContacts } from "@/lib/hub/customers"
+import { getCustomer, listContacts, listCrmActivities } from "@/lib/hub/customers"
 import { listLoads } from "@/lib/hub/loads"
 import { listDocuments } from "@/lib/hub/documents"
-import { query } from "@/lib/hub/db"
 import { requireOfficeUser } from "@/lib/hub/session"
 import { fmtCents, loadTotalCents } from "@/lib/hub/types"
 import { Panel, PageHeader, BackLink, StatusBadge } from "@/components/hub/ui"
-import { ContactsPanel, CrmNotesPanel, type CrmActivity } from "@/components/hub/CustomerPanels"
+import { ContactsPanel, CrmNotesPanel } from "@/components/hub/CustomerPanels"
 import { DocumentsPanel } from "@/components/hub/DocumentsPanel"
 import { VettingPanel } from "@/components/hub/VettingPanel"
 import { AgreementSignPanel } from "@/components/hub/PacketPanels"
@@ -25,14 +24,10 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
   if (!customer) notFound()
 
   const [contacts, loads, documents, activities, vetting, paySpeed] = await Promise.all([
-    listContacts(id),
+    listContacts(user.carrierId, id),
     listLoads(user.carrierId, { customerId: id, status: "all" }),
     listDocuments(user.carrierId, "customer", id),
-    query<CrmActivity>(
-      `SELECT id, kind, body, actor_name, created_at FROM hub.crm_activities
-       WHERE customer_id = $1 ORDER BY created_at DESC LIMIT 25`,
-      [id]
-    ),
+    listCrmActivities(user.carrierId, id),
     latestVetting(user.carrierId, id),
     avgDaysToPay(user.carrierId, id),
   ])
