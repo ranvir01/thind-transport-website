@@ -93,6 +93,31 @@ describe("expense reads carrier-guard their truck/driver joins", () => {
   })
 })
 
+describe("exportCsv date columns (QuickBooks-importable ISO)", () => {
+  beforeEach(() => {
+    queryMock.mockReset()
+  })
+
+  it.each([
+    ["invoices", "invoices", new Date("2026-07-04T00:00:00.000Z"), "InvoiceDate"],
+    ["payments", "payments", new Date("2026-06-15T00:00:00.000Z"), "PaymentDate"],
+    ["expenses", "expenses", new Date("2026-05-20T00:00:00.000Z"), "Date"],
+  ])("%s export renders %s as YYYY-MM-DD, not Date.toString", async (_label, kind, pgDate, header) => {
+    queryMock.mockResolvedValue([
+      kind === "invoices"
+        ? { number: "INV-1", customer: "Acme", load: "LD-1", issued_on: pgDate, due_on: pgDate, amount: 100, status: "open", factored: false }
+        : kind === "payments"
+          ? { number: "INV-1", paid_on: pgDate, amount: 50, method: "ach", reference: "ref" }
+          : { incurred_on: pgDate, category: "tolls", amount: 12.5, truck: "101", driver: "Test Driver", memo: "memo" },
+    ])
+    const { csv } = await exportCsv(CARRIER, kind)
+    const lines = csv.trim().split("\n")
+    expect(lines[0]).toContain(header)
+    expect(lines[1]).toMatch(/2026-\d{2}-\d{2}/)
+    expect(lines[1]).not.toMatch(/Mon|Tue|Wed|Thu|Fri|Sat|Sun/)
+  })
+})
+
 describe("createAdvance cross-table tenancy", () => {
   beforeEach(() => {
     queryMock.mockReset()

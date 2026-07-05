@@ -122,7 +122,7 @@ export async function exportCsv(carrierId: string, kind: string): Promise<{ file
         filename: "invoices.csv",
         csv: toCsv(
           ["InvoiceNo", "Customer", "Load", "InvoiceDate", "DueDate", "Amount", "Status", "Factored"],
-          rows.map((r) => [r.number, r.customer, r.load, String(r.issued_on).slice(0, 10), String(r.due_on).slice(0, 10), r.amount, r.status, r.factored])
+          rows.map((r) => [r.number, r.customer, r.load, toIsoDateOnly(r.issued_on) ?? "", toIsoDateOnly(r.due_on) ?? "", r.amount, r.status, r.factored])
         ),
       }
     }
@@ -137,7 +137,7 @@ export async function exportCsv(carrierId: string, kind: string): Promise<{ file
         filename: "payments.csv",
         csv: toCsv(
           ["InvoiceNo", "PaymentDate", "Amount", "Method", "Reference"],
-          rows.map((r) => [r.number, String(r.paid_on).slice(0, 10), r.amount, r.method, r.reference])
+          rows.map((r) => [r.number, toIsoDateOnly(r.paid_on) ?? "", r.amount, r.method, r.reference])
         ),
       }
     }
@@ -155,7 +155,7 @@ export async function exportCsv(carrierId: string, kind: string): Promise<{ file
         filename: "expenses.csv",
         csv: toCsv(
           ["Date", "Category", "Amount", "Truck", "Driver", "Memo"],
-          rows.map((r) => [String(r.incurred_on).slice(0, 10), r.category, r.amount, r.truck, r.driver, r.memo])
+          rows.map((r) => [toIsoDateOnly(r.incurred_on) ?? "", r.category, r.amount, r.truck, r.driver, r.memo])
         ),
       }
     }
