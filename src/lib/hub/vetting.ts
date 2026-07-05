@@ -163,7 +163,7 @@ export interface PaymentSpeed {
 export async function avgDaysToPay(carrierId: string, customerId: string): Promise<PaymentSpeed> {
   const rows = await query<{ days: string; paid_on: string }>(
     `SELECT EXTRACT(DAY FROM p.paid_on::timestamp - i.issued_on::timestamp)::numeric AS days, p.paid_on
-     FROM hub.payments p JOIN hub.invoices i ON i.id = p.invoice_id
+     FROM hub.payments p JOIN hub.invoices i ON i.id = p.invoice_id AND i.carrier_id = p.carrier_id
      WHERE i.carrier_id = $1 AND i.customer_id = $2
      ORDER BY p.paid_on DESC LIMIT 24`,
     [carrierId, customerId]
@@ -199,7 +199,7 @@ export async function creditExposure(
     `SELECT
        COALESCE((SELECT SUM(i.amount_cents - COALESCE(p.paid, 0))
          FROM hub.invoices i
-         LEFT JOIN LATERAL (SELECT SUM(amount_cents) AS paid FROM hub.payments WHERE invoice_id = i.id) p ON TRUE
+         LEFT JOIN LATERAL (SELECT SUM(amount_cents) AS paid FROM hub.payments WHERE invoice_id = i.id AND carrier_id = i.carrier_id) p ON TRUE
          WHERE i.carrier_id = $1 AND i.customer_id = $2 AND i.status NOT IN ('paid','disputed')), 0) AS open_cents,
        (SELECT credit_limit_cents FROM hub.customers WHERE carrier_id = $1 AND id = $2) AS credit_limit_cents`,
     [carrierId, customerId]
