@@ -6,11 +6,14 @@
  * cancel-only status action (5656a5f); an accountant (no loads:status) is
  * refused by requirePermission when clicking Advance.
  *
+ * Reseeds demo data first (see reseed in e2e-lib.mjs) — the run advances the
+ * legal booked load and cancels another.
+ *
  * Usage: node scripts/e2e-dispatch-smoke.mjs [outputDir]
  */
 import puppeteer from "puppeteer"
 import { mkdirSync } from "node:fs"
-import { BASE, sleep, failures, check, waitForText, login, makeShot } from "./e2e-lib.mjs"
+import { BASE, sleep, failures, check, waitForText, login, makeShot, reseed } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-dispatch"
 mkdirSync(OUT, { recursive: true })
@@ -81,6 +84,7 @@ const LEGAL = "Sacramento"
 const ILLEGAL = "Portland, OR → Boise"
 
 async function main() {
+  reseed()
   const browser = await puppeteer.launch({
     headless: "new",
     args: ["--no-sandbox", "--disable-dev-shm-usage"],

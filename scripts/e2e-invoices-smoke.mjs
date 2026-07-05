@@ -7,11 +7,14 @@
  * dispatcher (money:read only) sees the detail but no payment form or
  * invoice actions.
  *
+ * Reseeds demo data first (see reseed in e2e-lib.mjs) — the run consumes the
+ * pod_received steel-beams load.
+ *
  * Usage: node scripts/e2e-invoices-smoke.mjs [outputDir]
  */
 import puppeteer from "puppeteer"
 import { mkdirSync } from "node:fs"
-import { BASE, sleep, failures, check, waitForText, login, makeShot, clickByText } from "./e2e-lib.mjs"
+import { BASE, sleep, failures, check, waitForText, login, makeShot, clickByText, reseed } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-invoices"
 mkdirSync(OUT, { recursive: true })
@@ -44,6 +47,7 @@ async function recordPayment(page, dollars) {
 }
 
 async function main() {
+  reseed()
   const browser = await puppeteer.launch({
     headless: "new",
     args: ["--no-sandbox", "--disable-dev-shm-usage"],
