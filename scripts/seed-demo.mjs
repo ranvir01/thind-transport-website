@@ -237,13 +237,13 @@ async function main() {
   console.log("Creating customers…")
   const customerSeed = [
     // name, type, mc, terms, factored
-    ["Pacific Crest Logistics", "broker", "MC-784512", 30, false],
-    ["Evergreen Freight Partners", "broker", "MC-651203", 30, false],
+    ["Pacific Crest Logistics", "broker", "784512", 30, false],
+    ["Evergreen Freight Partners", "broker", "651203", 30, false],
     ["Cascade Produce Co.", "shipper", null, 21, false],
-    ["Summit Brokerage Group", "broker", "MC-912844", 45, true], // factored relationship
+    ["Summit Brokerage Group", "broker", "912844", 45, true], // factored relationship
     ["Rainier Building Supply", "shipper", null, 30, false],
-    ["BlueLine Transportation Svcs", "broker", "MC-447190", 30, false],
-    ["High Desert Freight", "broker", "MC-583321", 60, false],
+    ["BlueLine Transportation Svcs", "broker", "447190", 30, false],
+    ["High Desert Freight", "broker", "583321", 60, false],
   ]
   const customerIds = []
   for (const [name, type, mc, terms, factored] of customerSeed) {
@@ -939,7 +939,7 @@ async function main() {
   }
   const cascadeCustomer = await q(
     `INSERT INTO hub.customers (carrier_id, name, type, mc_number, billing_email, payment_terms_days, status)
-     VALUES ($1,'Wenatchee Produce Partners','broker','MC-44521','ap@wenatcheeproduce.example',30,'active') RETURNING id`,
+     VALUES ($1,'Wenatchee Produce Partners','broker','44521','ap@wenatcheeproduce.example',30,'active') RETURNING id`,
     [CASCADE]
   )
   const cascadeLoads = [

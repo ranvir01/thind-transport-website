@@ -46,6 +46,15 @@ export interface CustomerInput {
   notes?: string | null
 }
 
+/** MC numbers are stored bare ("784512"): UI labels and FMCSA QCMobile docket
+ *  URLs add their own "MC " prefix, so a stored prefix renders doubled and
+ *  breaks authority lookups. Strips a leading "MC" plus separators. */
+export function normalizeMcNumber(value: string | null | undefined): string | null {
+  if (!value) return null
+  const bare = value.trim().replace(/^mc[\s#:.-]*/i, "").trim()
+  return bare.length > 0 ? bare : null
+}
+
 export async function createCustomer(carrierId: string, input: CustomerInput): Promise<Customer> {
   const rows = await query<Customer>(
     `INSERT INTO hub.customers (
@@ -54,7 +63,7 @@ export async function createCustomer(carrierId: string, input: CustomerInput): P
      ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
      RETURNING *`,
     [
-      carrierId, input.name, input.type, input.mc_number ?? null, input.dot_number ?? null,
+      carrierId, input.name, input.type, normalizeMcNumber(input.mc_number), input.dot_number ?? null,
       input.billing_email ?? null, input.billing_address ?? null, input.phone ?? null,
       input.payment_terms_days, input.credit_limit_cents ?? null, input.factored, input.status,
       input.notes ?? null,
@@ -72,7 +81,7 @@ export async function updateCustomer(carrierId: string, id: string, input: Custo
      WHERE carrier_id=$1 AND id=$2 AND deleted_at IS NULL
      RETURNING *`,
     [
-      carrierId, id, input.name, input.type, input.mc_number ?? null, input.dot_number ?? null,
+      carrierId, id, input.name, input.type, normalizeMcNumber(input.mc_number), input.dot_number ?? null,
       input.billing_email ?? null, input.billing_address ?? null, input.phone ?? null,
       input.payment_terms_days, input.credit_limit_cents ?? null, input.factored, input.status,
       input.notes ?? null,
