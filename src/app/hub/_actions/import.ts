@@ -8,8 +8,9 @@ import { findCustomerByName, createCustomer } from "@/lib/hub/customers"
 import { query } from "@/lib/hub/db"
 import { logAudit } from "@/lib/hub/audit"
 import { classifyFuelUse } from "@/lib/hub/fuel-core"
+import { dollarsToCents } from "@/lib/hub/types"
 import {
-  parseMoney, parseIntSafe, normalizeEquipment, normalizeState, parseDateSafe,
+  parseIntSafe, normalizeEquipment, normalizeState, parseDateSafe,
   type ImportRow,
 } from "@/lib/hub/csv"
 
@@ -124,8 +125,8 @@ export async function importLoadsAction(
           equipment: normalizeEquipment(row.equipment),
           commodity: row.commodity?.trim() || null,
           weight_lbs: parseIntSafe(row.weight_lbs),
-          linehaul_cents: Math.round(parseMoney(row.linehaul) * 100),
-          fuel_surcharge_cents: Math.round(parseMoney(row.fuel_surcharge) * 100),
+          linehaul_cents: dollarsToCents(row.linehaul),
+          fuel_surcharge_cents: dollarsToCents(row.fuel_surcharge),
           accessorials: [],
           loaded_miles: parseIntSafe(row.loaded_miles),
           driver_id: row.driver_name ? drivers.get(row.driver_name.trim().toLowerCase()) ?? null : null,
@@ -190,7 +191,7 @@ export async function importFuelAction(rows: GenericRow[], program: string): Pro
       if (!ts) throw new Error("Bad date")
       const gallons = Number(row.gallons?.replace(/[^0-9.]/g, ""))
       if (!Number.isFinite(gallons) || gallons <= 0) throw new Error("Bad gallons")
-      const totalCents = Math.round(parseMoney(row.total) * 100)
+      const totalCents = dollarsToCents(row.total)
       if (totalCents <= 0) throw new Error("Bad total")
       const externalId = row.external_id?.trim() || rowFingerprint(row)
 
@@ -210,7 +211,7 @@ export async function importFuelAction(rows: GenericRow[], program: string): Pro
           gallons, row.fuel_type?.trim() || "diesel",
           // Reefer fuel is IFTA-exempt — classify at intake, reviewable later.
           classifyFuelUse(row.fuel_type),
-          row.unit_price ? Math.round(parseMoney(row.unit_price) * 100) : null,
+          row.unit_price ? dollarsToCents(row.unit_price) : null,
           totalCents,
           row.odometer ? Number(row.odometer.replace(/[^0-9.]/g, "")) || null : null,
           JSON.stringify(row),
@@ -246,7 +247,7 @@ export async function importTollsAction(rows: GenericRow[], program: string): Pr
     try {
       const ts = parseDateSafe(row.ts)
       if (!ts) throw new Error("Bad date")
-      const amountCents = Math.round(parseMoney(row.total) * 100)
+      const amountCents = dollarsToCents(row.total)
       if (amountCents <= 0) throw new Error("Bad amount")
       const externalId = row.external_id?.trim() || rowFingerprint(row)
       const result = await query<{ id: string }>(

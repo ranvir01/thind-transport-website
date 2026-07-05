@@ -8,7 +8,7 @@ import {
   type ApplicantStage,
 } from "@/lib/hub/recruiting"
 import { logAudit } from "@/lib/hub/audit"
-import { parseMoney } from "@/lib/hub/csv"
+import { dollarsToCents } from "@/lib/hub/types"
 
 interface Result {
   ok: boolean
@@ -173,7 +173,7 @@ export async function attachReferralAction(
 ): Promise<Result> {
   try {
     const user = await requireOfficeUser()
-    const bonusCents = Math.round(parseMoney(bonus) * 100)
+    const bonusCents = dollarsToCents(bonus)
     if (!referrerDriverId) return { ok: false, error: "Pick the referring driver" }
     if (bonusCents <= 0) return { ok: false, error: "Set the bonus amount" }
     await attachReferral(user.carrierId, applicantId, referrerDriverId, bonusCents)

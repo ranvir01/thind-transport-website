@@ -6,7 +6,7 @@ import { certifyRepair, submitDvir, type DvirDefect } from "@/lib/hub/dvir"
 import { notifyRoles } from "@/lib/hub/notify"
 import { logAudit } from "@/lib/hub/audit"
 import { queryOne } from "@/lib/hub/db"
-import { parseMoney } from "@/lib/hub/csv"
+import { dollarsToCents } from "@/lib/hub/types"
 
 interface Result {
   ok: boolean
@@ -86,7 +86,7 @@ export async function certifyRepairAction(
       dvirId,
       {
         vendor: input.vendor.trim(),
-        costCents: Math.round(parseMoney(input.cost) * 100),
+        costCents: dollarsToCents(input.cost),
         notes: input.notes.trim() || "Repair completed",
       },
       { id: user.id, name: user.name }
