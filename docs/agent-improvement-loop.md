@@ -151,6 +151,19 @@ lane routines ──push──▶ claude/lane-*  ──reviewed+merged──▶ 
 | `claude/lane-tests` | `src/lib/hub/__tests__/**`, `scripts/e2e-*.mjs` ONLY (never product code) | raise coverage on untested lib modules + E2E drives |
 | `claude/lane-compliance` | `src/app/hub/(office)/compliance/**`, `src/lib/hub/ifta*.ts`, `src/app/api/hub/ifta/**` | IFTA generate entry point, worksheet flows, doc expiry |
 | `claude/lane-docs` | `docs/**`, `.env.example`, README, `scripts/go-live-check.mjs` | docs drift, runbooks, staff how-to guides |
+| `claude/lane-roadmap` | new feature files within any ONE existing territory per run | NEW capability from `docs/hauldesk-gap-report`-style gaps: pick the top unbuilt feature a 15-truck carrier needs, build it complete with tests + E2E |
+
+**Prod smoke (routine, hourly):** with the Vercel connector, check the newest production deployment
+state and error clusters since the last hour; fetch the live login page (expect 200). Any failure →
+diagnose, fix forward per AGENTS.md, push. Healthy → exit in one line. This is the fleet's
+no-human rollback trigger: a broken deploy is found within the hour, not the next morning.
+
+**Meta-governor (routine, weekly):** audit the LOOP itself over the past week: commits per agent,
+reverts, test-count trend, build breakages on main, churn (files edited by 3+ agents), busywork
+(commits with no user-visible or correctness value). Prune: propose deleting or slowing any routine
+producing churn; tighten any guardrail that was violated. The governor's output is a Backlog: of
+loop-configuration changes for the owner — the one thing agents never change unilaterally is the
+fleet configuration itself.
 
 **Lane rules:** one finished item per run; build + `vitest` green before pushing; UI work is
 Playwright-verified on the local rig; end every commit with `Backlog:`. If your item requires
