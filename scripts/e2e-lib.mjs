@@ -2,6 +2,16 @@
  * Shared helpers for the scripts/e2e-*.mjs Puppeteer smokes. Every smoke
  * script had its own copy of these; behavior differences that matter are
  * per-call (timeouts, fullPage) — pass them at the call site.
+ *
+ * Prerequisites (the Next.js server must already be running — `npm run dev`
+ * or `npm run start` after `npm run build`):
+ *
+ *   POSTGRES_URL=<url> npm run db:migrate && npm run seed:demo
+ *   NEXTAUTH_SECRET=<secret>   # or AUTH_SECRET — hub login 401s with MissingSecret if blank
+ *
+ * Copy `.env.example` → `.env.local` for local runs (Next reads it; these scripts
+ * do not load `.env.local` themselves). Export vars in the shell when driving
+ * against a remote base URL: E2E_BASE_URL=https://… POSTGRES_URL=… NEXTAUTH_SECRET=…
  */
 import path from "node:path"
 
