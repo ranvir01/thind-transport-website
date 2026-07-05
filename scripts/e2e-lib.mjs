@@ -10,8 +10,8 @@
  *   NEXTAUTH_SECRET=<secret>   # or AUTH_SECRET — hub login 401s with MissingSecret if blank
  *
  * State-consuming smokes (dispatch, invoices, settlements, advances,
- * compliance, messages, expenses) call reseed() themselves, so no manual
- * seed:demo between runs on a local rig.
+ * compliance, messages, expenses, fuel) call reseed() themselves, so no
+ * manual seed:demo between runs on a local rig.
  *
  * Copy `.env.example` → `.env.local` for local runs (Next reads it; these scripts
  * do not load `.env.local` themselves). Export vars in the shell when driving
@@ -27,8 +27,9 @@ export const BASE = process.env.E2E_BASE_URL ?? "http://localhost:3000"
  * loads, invoices consumes the pod_received steel-beams load, settlements
  * applies advances, advances decides requests, compliance resolves the seeded
  * consortium item, messages buries the seeded thread preview, expenses piles
- * up duplicate rows) start from the exposure totals and load lifecycle the
- * seed pins. Runs only against a localhost BASE — a
+ * up duplicate rows, fuel drains the unassigned inbox and flips road badges
+ * to reefer) start from the exposure totals and load lifecycle the seed
+ * pins. Runs only against a localhost BASE — a
  * remote E2E_BASE_URL means the local POSTGRES_URL is not that server's
  * database, so reseeding would either miss or hit the wrong one; set
  * E2E_RESEED=1 to force it when the local DB really does back the remote URL.
