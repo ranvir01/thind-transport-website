@@ -503,13 +503,16 @@ async function main() {
   console.log("Creating fuel transactions…")
   // WA/OR/ID only — pings on truck 102 never enter CA/NV/UT, so fuel here must
   // match the loop or the IFTA worksheet is dominated by purchases-only credits.
+  // Window 83→5 days ago mirrors the truck-102 ping loop (82→~5 days ago):
+  // purchases without pings in the same window read as fuel with no miles and
+  // wreck fleet MPG for whichever quarter the mismatch straddles.
   const fuelStops = [
     ["Pilot #287", CITY.kent, "WA"], ["Loves #441", CITY.portland, "OR"],
     ["TA Boise", CITY.boise, "ID"], ["Pilot Spokane", CITY.spokane, "WA"],
     ["Loves Medford", CITY.medford, "OR"], ["Flying J Yakima", CITY.yakima, "WA"],
   ]
   let fuelN = 0
-  for (let day = 84; day >= 2; day -= 3) {
+  for (let day = 83; day >= 5; day -= 3) {
     const truckIdx = fuelN % 8 // active trucks
     const stop = fuelStops[fuelN % fuelStops.length]
     const gallons = 95 + (fuelN % 5) * 12
@@ -521,7 +524,7 @@ async function main() {
       [
         CARRIER, `EFS-${10000 + fuelN}`, truckIds[truckIdx], driverIds[truckIdx] ?? null,
         daysAgo(day, 7 + (fuelN % 9)), stop[0], stop[1].city, stop[2],
-        gallons, ppgCents, Math.round(gallons * ppgCents), 95000 + truckIdx * 8000 + (84 - day) * 450,
+        gallons, ppgCents, Math.round(gallons * ppgCents), 95000 + truckIdx * 8000 + (83 - day) * 450,
       ]
     )
     fuelN++
