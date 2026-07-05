@@ -38,7 +38,7 @@ export default async function ExpensesPage() {
                 <div className="min-w-0">
                   <p className="font-semibold text-fg capitalize">
                     {expense.category}
-                    {expense.memo ? <span className="font-normal text-fg-2"> — {expense.memo}</span> : null}
+                    {expense.memo ? <span className="font-normal normal-case text-fg-2"> — {expense.memo}</span> : null}
                   </p>
                   <p className="text-body-xs text-fg-3">
                     {formatHubDateShort(expense.incurred_on)}
