@@ -74,9 +74,19 @@ export async function queueCount(): Promise<number> {
 
 /** Does this error smell like "no signal" rather than a real rejection? */
 export function isOfflineError(err: unknown): boolean {
-  if (typeof navigator !== "undefined" && !navigator.onLine) return true
+  // Explicit === false: some runtimes (Node 21+) expose navigator without
+  // onLine, and "no signal" must never become the default classification.
+  if (typeof navigator !== "undefined" && navigator.onLine === false) return true
+  // An aborted or timed-out request on a moving truck is a connectivity
+  // failure, not a rejection — queuing is always safe (replays are
+  // conflict-safe), while a hard error loses the driver's tap. AbortError /
+  // TimeoutError are DOMExceptions, so match by name rather than instanceof.
+  const name = err && typeof err === "object" ? (err as { name?: unknown }).name : undefined
+  if (name === "AbortError" || name === "TimeoutError") return true
   const message = err instanceof Error ? err.message : String(err)
-  return /fetch failed|failed to fetch|network|load failed|ERR_INTERNET/i.test(message)
+  return /fetch failed|failed to fetch|network|load failed|ERR_INTERNET|timed? ?out|ETIMEDOUT|ECONNRESET/i.test(
+    message
+  )
 }
 
 /**
@@ -87,7 +97,7 @@ export async function runOrQueue<T extends { ok: boolean; error?: string }>(
   intent: Omit<QueuedIntent, "id" | "queuedAt">,
   exec: () => Promise<T>
 ): Promise<T | { ok: true; queued: true }> {
-  if (typeof navigator !== "undefined" && !navigator.onLine) {
+  if (typeof navigator !== "undefined" && navigator.onLine === false) {
     await enqueueIntent(intent)
     return { ok: true, queued: true }
   }
