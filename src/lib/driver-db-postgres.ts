@@ -3,7 +3,13 @@
  * Production-ready with automatic persistence
  */
 
-import { sql } from "@vercel/postgres"
+import { sql as vercelSql } from "@vercel/postgres"
+import { isLocalPostgresUrl, localSql } from "./driver-db-local"
+
+// Vercel/Neon URLs use the serverless driver; local TCP URLs (dev rig) fall
+// back to a node-postgres pool — @vercel/postgres rejects them outright.
+const sql: (strings: TemplateStringsArray, ...values: any[]) => Promise<{ rows: any[] }> =
+  isLocalPostgresUrl(process.env.POSTGRES_URL) ? localSql : vercelSql
 
 interface Driver {
   id: string

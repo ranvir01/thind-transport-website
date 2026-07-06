@@ -44,7 +44,10 @@ export async function POST(request: NextRequest) {
     
     // Try to use Postgres if available
     if (process.env.POSTGRES_URL) {
-      const { sql } = await import("@vercel/postgres")
+      const { isLocalPostgresUrl, localSql } = await import("@/lib/driver-db-local")
+      const sql = isLocalPostgresUrl(process.env.POSTGRES_URL)
+        ? localSql
+        : (await import("@vercel/postgres")).sql
       
       // Delete any applications for this driver
       await sql`DELETE FROM applications WHERE driver_id = ${driver.id}`

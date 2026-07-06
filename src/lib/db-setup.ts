@@ -3,9 +3,14 @@
  * Run this once to initialize tables and migrate existing data
  */
 
-import { sql } from "@vercel/postgres"
+import { sql as vercelSql } from "@vercel/postgres"
+import { isLocalPostgresUrl, localSql } from "./driver-db-local"
 import { readFileSync } from "fs"
 import { join } from "path"
+
+// Local TCP URLs (dev rig) can't use @vercel/postgres — route through pg.
+const sql: (strings: TemplateStringsArray, ...values: any[]) => Promise<{ rows: any[] }> =
+  isLocalPostgresUrl(process.env.POSTGRES_URL) ? localSql : vercelSql
 
 export async function setupDatabase() {
   try {
