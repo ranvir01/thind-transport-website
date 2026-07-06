@@ -40,6 +40,7 @@ Run `npx maildev --smtp 1025 --web 1080`, then set `SMTP_HOST=localhost` and `SM
 - Copy `.env.example` → `.env.local` (it documents every variable: SMTP, NEXTAUTH, POSTGRES_URL, DRIVER_INVITATION_CODE, SETUP_DB_TOKEN). Without Postgres credentials, public pages still render; only driver-portal/auth/database features fail — don't mistake that for broken code.
 - **Hub login requires a session secret.** Set `NEXTAUTH_SECRET` (or Auth.js v5's `AUTH_SECRET`) in `.env.local` — generate with `openssl rand -base64 32`. If it is blank, `/hub/login` redirects to `/api/auth/error` with Auth.js `MissingSecret`; public marketing pages still work.
 - Never commit secrets. Production env lives in Vercel. `vercel-env*.txt` is gitignored for a reason — a real password was once committed in one.
+- **The legacy `/driver/register` + `/driver/login` portal** (pre-Hub, `src/lib/driver-db-postgres.ts`) reads/writes `drivers`/`applications`/`public_applications` tables that `npm run db:migrate` does **not** create — those come from `setupDatabase()` (`src/lib/db-setup.ts`), exposed at `GET /api/setup-db` and gated by `SETUP_DB_TOKEN`. Set `SETUP_DB_TOKEN` in `.env.local` and hit that endpoint once before exercising this flow locally, or registration 500s with `relation "drivers" does not exist`.
 
 ## Key Map
 
