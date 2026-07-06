@@ -10,9 +10,10 @@
  *
  * Auth is OAuth2 refresh-token grant (docs.developer.intuit.com): the refresh
  * token exchanges for a short-lived bearer access token on every sync, mirroring
- * telematics.ts's TruckerCloud client-credentials pattern (no caching yet).
- * QBO rotates the refresh token on each use in production — persisting the
- * rotated token back to credentials storage is NOT done yet (see Backlog).
+ * telematics.ts's TruckerCloud client-credentials pattern (no caching yet). QBO
+ * rotates the refresh token on each use in production, so every successful
+ * exchange that returns a *different* refresh_token persists it back to
+ * `hub.api_credentials` via `saveCredentials` before the next sync needs it.
  *
  * A QBO Payment links to an Invoice by QBO's internal Id, not our invoice
  * number, so `pull()` does a second query resolving those internal ids to
@@ -22,7 +23,7 @@
  * matching DocNumber come back with `invoiceNumber: null` and are reported as
  * unmatched rather than guessed.
  */
-import { getCredentials, hasCredentials } from "../credentials"
+import { getCredentials, hasCredentials, saveCredentials } from "../credentials"
 import { queryOne } from "../db"
 import { recordPayment } from "../invoices"
 import { dollarsToCents } from "../types"
@@ -61,7 +62,9 @@ export function normalizeQboPayment(
   }
 }
 
-async function refreshAccessToken(creds: Record<string, string>): Promise<string> {
+async function refreshAccessToken(
+  creds: Record<string, string>
+): Promise<{ accessToken: string; rotatedRefreshToken: string | null }> {
   const authBase = process.env.QBO_OAUTH_BASE ?? "https://oauth.platform.intuit.com/oauth2/v1/tokens/bearer"
   const basic = Buffer.from(`${creds.clientId}:${creds.clientSecret}`).toString("base64")
   const response = await fetch(authBase, {
@@ -75,9 +78,26 @@ async function refreshAccessToken(creds: Record<string, string>): Promise<string
     signal: AbortSignal.timeout(15000),
   })
   if (!response.ok) throw new Error(`QuickBooks token → HTTP ${response.status}`)
-  const json = (await response.json()) as { access_token?: string }
+  const json = (await response.json()) as { access_token?: string; refresh_token?: string }
   if (!json.access_token) throw new Error("QuickBooks token response missing access_token")
-  return json.access_token
+  const rotatedRefreshToken =
+    json.refresh_token && json.refresh_token !== creds.refreshToken ? json.refresh_token : null
+  return { accessToken: json.access_token, rotatedRefreshToken }
+}
+
+/**
+ * QBO issues a new refresh_token on (most) redemptions and invalidates the
+ * old one — a sync that doesn't persist the rotation will work once, then
+ * fail the next time with a stale token. Only writes when the token actually
+ * changed, so this never fires against providers/creds shapes without OAuth.
+ */
+async function persistRotatedRefreshToken(
+  carrierId: string,
+  creds: Record<string, string>,
+  rotatedRefreshToken: string | null
+): Promise<void> {
+  if (!rotatedRefreshToken) return
+  await saveCredentials(carrierId, "qbo", { ...creds, refreshToken: rotatedRefreshToken }, "system:qbo")
 }
 
 async function qboEntityQuery(
@@ -111,8 +131,9 @@ export function qboSource(carrierId: string): SyncSource<QboPaymentRow> {
       if (!creds?.clientId || !creds?.clientSecret || !creds?.refreshToken || !creds?.realmId) {
         throw new Error("qbo is not connected")
       }
-      const token = await refreshAccessToken(creds)
-      const payments = await qboEntityQuery(base, creds.realmId, token, "Payment", "SELECT * FROM Payment MAXRESULTS 100")
+      const { accessToken, rotatedRefreshToken } = await refreshAccessToken(creds)
+      await persistRotatedRefreshToken(carrierId, creds, rotatedRefreshToken)
+      const payments = await qboEntityQuery(base, creds.realmId, accessToken, "Payment", "SELECT * FROM Payment MAXRESULTS 100")
 
       const txnIds = [
         ...new Set(
@@ -129,7 +150,7 @@ export function qboSource(carrierId: string): SyncSource<QboPaymentRow> {
       const invoiceNumberByTxnId = new Map<string, string>()
       if (txnIds.length > 0) {
         const idList = txnIds.map((id) => `'${id.replace(/'/g, "")}'`).join(",")
-        const invoices = await qboEntityQuery(base, creds.realmId, token, "Invoice", `SELECT Id, DocNumber FROM Invoice WHERE Id IN (${idList})`)
+        const invoices = await qboEntityQuery(base, creds.realmId, accessToken, "Invoice", `SELECT Id, DocNumber FROM Invoice WHERE Id IN (${idList})`)
         for (const invoice of invoices) {
           if (invoice.Id != null && invoice.DocNumber != null) {
             invoiceNumberByTxnId.set(String(invoice.Id), String(invoice.DocNumber))

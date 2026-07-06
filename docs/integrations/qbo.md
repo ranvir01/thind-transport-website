@@ -45,11 +45,12 @@ exchanges it for a short-lived (1hr) bearer token via
 mirroring `telematics.ts`'s TruckerCloud client-credentials pattern (no
 caching yet).
 
-**Known gap:** QBO rotates the refresh token on every redemption in
-production. This adapter does not yet persist the rotated token back to
-`hub.api_credentials` — after ~100 days (or on first rotation, depending on
-Intuit's app settings) the stored refresh token could go stale. Wiring
-`saveCredentials` after a successful refresh is the next QBO pass.
+QBO rotates the refresh token on (most) redemptions in production. Every
+`refreshAccessToken` call compares the response's `refresh_token` against the
+one just used; when Intuit returned a different value, `pull()` writes it
+back to `hub.api_credentials` via `saveCredentials` before returning, so the
+next sync redeems the current token instead of a stale, already-invalidated
+one.
 
 ## Assumed feed shape (unconfirmed — adjust on first real sandbox response)
 
@@ -82,6 +83,5 @@ one code path. QuickBooks CSV export stays the fallback.
   `DocNumber` set to our invoice number when we invoice a load. Until this
   exists, payments against invoices QBO doesn't know under a matching
   `DocNumber` come back `invoiceNumber: null` and are reported unmatched.
-- Persist the rotated refresh token after each `refreshAccessToken` call.
 - Confirm the real sandbox response shape and flip `registry.ts` status to
   `live`.
