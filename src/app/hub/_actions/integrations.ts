@@ -7,6 +7,7 @@ import {
 } from "@/lib/hub/credentials"
 import { runTelematicsSync } from "@/lib/hub/telematics"
 import { runEfsSync } from "@/lib/hub/integrations/efs"
+import { runComdataSync } from "@/lib/hub/integrations/comdata"
 import { logAudit } from "@/lib/hub/audit"
 import { query } from "@/lib/hub/db"
 
@@ -126,6 +127,40 @@ export async function syncEfsNowAction(): Promise<Result & { summary?: string }>
       await query(
         `INSERT INTO hub.integration_syncs (carrier_id, source, started_at, finished_at, ok, error)
          VALUES ($1, 'efs', $2, NOW(), FALSE, $3)`,
+        [user.carrierId, started.toISOString(), err instanceof Error ? err.message : "unknown"]
+      )
+      throw err
+    }
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : "Sync failed" }
+  }
+}
+
+/** Manual "sync now" for the Comdata fuel feed. */
+export async function syncComdataNowAction(): Promise<Result & { summary?: string }> {
+  try {
+    const user = await requireOwner()
+    const started = new Date()
+    try {
+      const result = await runComdataSync(user.carrierId)
+      if (!result.connected) {
+        return { ok: false, error: "Comdata isn't connected yet — save API credentials first. Fuel CSV import keeps working meanwhile." }
+      }
+      await query(
+        `INSERT INTO hub.integration_syncs (carrier_id, source, started_at, finished_at, ok, counts)
+         VALUES ($1, 'comdata', $2, NOW(), TRUE, $3)`,
+        [user.carrierId, started.toISOString(), JSON.stringify(result)]
+      )
+      revalidatePath("/hub/settings/integrations")
+      revalidatePath("/hub/fuel")
+      return {
+        ok: true,
+        summary: `${result.imported ?? 0} transactions, ${result.skipped ?? 0} already on file${result.unmatched?.length ? `, unmatched units: ${result.unmatched.join(", ")}` : ""}`,
+      }
+    } catch (err) {
+      await query(
+        `INSERT INTO hub.integration_syncs (carrier_id, source, started_at, finished_at, ok, error)
+         VALUES ($1, 'comdata', $2, NOW(), FALSE, $3)`,
         [user.carrierId, started.toISOString(), err instanceof Error ? err.message : "unknown"]
       )
       throw err

@@ -12,7 +12,7 @@ import { Cable, Check, Loader2, RefreshCw, Unplug } from "lucide-react"
 import { cn } from "@/lib/utils"
 import {
   disconnectIntegrationAction, saveIntegrationCredentialsAction,
-  syncEfsNowAction, syncTelematicsNowAction,
+  syncComdataNowAction, syncEfsNowAction, syncTelematicsNowAction,
 } from "@/app/hub/_actions/integrations"
 import { fieldCls, Panel } from "@/components/hub/ui"
 
@@ -30,6 +30,7 @@ export interface ProviderCard {
 const SYNC_ACTIONS: Partial<Record<ProviderCard["provider"], () => Promise<{ ok: boolean; error?: string; summary?: string }>>> = {
   terminal: syncTelematicsNowAction,
   efs: syncEfsNowAction,
+  comdata: syncComdataNowAction,
 }
 
 export function IntegrationCard({ card, encryptionReady }: { card: ProviderCard; encryptionReady: boolean }) {

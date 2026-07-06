@@ -70,6 +70,7 @@ export default async function IntegrationsPage() {
         { key: "apiSecret", label: "API secret", type: "password" },
       ],
       connected: comdata,
+      canSync: true,
     },
     {
       provider: "mailbox",
