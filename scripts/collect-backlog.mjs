@@ -24,30 +24,6 @@ function git(cmd) {
 
 const RECORD_SEP = "\x1eCOMMIT\x1e"
 
-/** Join wrapped bullets: continuation lines lack a leading "- " / "* ". */
-export function parseBacklogBullets(backlogBlock) {
-  const bullets = []
-  let current = null
-
-  for (const line of backlogBlock.split("\n")) {
-    const trimmed = line.trim()
-    if (!trimmed) continue
-
-    if (/^[-*]\s/.test(line)) {
-      if (current) bullets.push(current)
-      current = line.replace(/^[-*]\s*/, "").trim()
-      continue
-    }
-
-    if (current) {
-      current = `${current} ${trimmed}`
-    }
-  }
-
-  if (current) bullets.push(current)
-  return bullets
-}
-
 function collectItems() {
   git("fetch origin --quiet")
   const out = git(`log ${ref} -n ${limit} --format=%H---%s---%B${RECORD_SEP}`)
