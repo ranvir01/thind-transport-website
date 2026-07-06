@@ -5,7 +5,7 @@ vi.mock("../audit", () => ({ logAudit: vi.fn(async () => undefined) }))
 
 import { query } from "../db"
 import { logAudit } from "../audit"
-import { createExpense, exportCsv, exportQboIif, listExpenses } from "../expenses"
+import { createExpense, exportCsv, exportQboArIif, exportQboIif, listExpenses } from "../expenses"
 import { createAdvance } from "../settlements"
 
 const queryMock = vi.mocked(query)
@@ -197,5 +197,80 @@ describe("exportQboIif (QuickBooks Desktop general journal)", () => {
     const spl = iif.split("\r\n").find((l) => l.startsWith("SPL\t"))
     expect(spl?.split("\t")).toHaveLength(9)
     expect(spl).toContain("line1 line2 line3")
+  })
+})
+
+describe("exportQboArIif (QuickBooks Desktop invoices + payments)", () => {
+  beforeEach(() => {
+    queryMock.mockReset()
+  })
+
+  it("carrier-guards every join on both queries", async () => {
+    queryMock.mockResolvedValue([])
+    await exportQboArIif(CARRIER)
+    const invoiceSql = String(queryMock.mock.calls[0][0])
+    const paymentSql = String(queryMock.mock.calls[1][0])
+    expect(invoiceSql).toContain("ON c.id = i.customer_id AND c.carrier_id = i.carrier_id")
+    expect(invoiceSql).toContain("ON l.id = i.load_id AND l.carrier_id = i.carrier_id")
+    expect(paymentSql).toContain("ON i.id = p.invoice_id AND i.carrier_id = p.carrier_id")
+    expect(paymentSql).toContain("ON c.id = i.customer_id AND c.carrier_id = i.carrier_id")
+    expect(queryMock.mock.calls[0][1]).toEqual([CARRIER])
+    expect(queryMock.mock.calls[1][1]).toEqual([CARRIER])
+  })
+
+  it("emits a balanced INVOICE block posting A/R against Freight Income with DOCNUM", async () => {
+    queryMock
+      .mockResolvedValueOnce([
+        {
+          number: "INV-1042",
+          customer: "Cascade Produce",
+          load: "TT-2201",
+          issued_on: new Date("2026-07-01T00:00:00.000Z"),
+          amount_cents: 185000,
+        },
+      ])
+      .mockResolvedValueOnce([])
+    const { filename, iif } = await exportQboArIif(CARRIER)
+    expect(filename).toBe("invoices-payments-qbo.iif")
+    const lines = iif.trim().split("\r\n")
+    expect(lines[0]).toBe("!TRNS\tTRNSID\tTRNSTYPE\tDATE\tACCNT\tNAME\tCLASS\tAMOUNT\tDOCNUM\tMEMO")
+    const trns = lines.find((l) => l.startsWith("TRNS\t"))
+    const spl = lines.find((l) => l.startsWith("SPL\t"))
+    expect(lines).toContain("ENDTRNS")
+    expect(trns).toContain("INVOICE")
+    expect(trns).toContain("07/01/2026")
+    expect(trns).toContain("Accounts Receivable")
+    expect(trns).toContain("\t1850.00\t")
+    expect(trns).toContain("INV-1042")
+    expect(spl).toContain("Freight Income")
+    expect(spl).toContain("\t-1850.00\t")
+    expect(spl).toContain("Load TT-2201")
+    expect(trns?.split("\t")).toHaveLength(10)
+  })
+
+  it("emits a balanced PAYMENT block clearing A/R into the offset account", async () => {
+    queryMock
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([
+        {
+          number: "INV-1042",
+          customer: "Cascade Produce",
+          paid_on: new Date("2026-07-05T00:00:00.000Z"),
+          amount_cents: 185000,
+          method: "ach",
+          reference: "ACH-889",
+        },
+      ])
+    const { iif } = await exportQboArIif(CARRIER)
+    const lines = iif.trim().split("\r\n")
+    const trns = lines.find((l) => l.startsWith("TRNS\t"))
+    const spl = lines.find((l) => l.startsWith("SPL\t"))
+    expect(trns).toContain("PAYMENT")
+    expect(trns).toContain("Business Checking")
+    expect(trns).toContain("\t1850.00\t")
+    expect(trns).toContain("ach ACH-889")
+    expect(spl).toContain("Accounts Receivable")
+    expect(spl).toContain("\t-1850.00\t")
+    expect(spl).toContain("INV-1042")
   })
 })

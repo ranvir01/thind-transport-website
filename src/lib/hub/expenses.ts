@@ -309,3 +309,70 @@ export async function exportQboIif(carrierId: string): Promise<{ filename: strin
   }
   return { filename: "expenses-qbo.iif", iif: lines.join("\r\n") + "\r\n" }
 }
+
+// AR side of the same IIF story: invoices post to Accounts Receivable against
+// Freight Income (QBO push uses the "Freight Service" item — same name-string
+// convention), payments clear A/R into the offset account the expense journal
+// already uses. DOCNUM carries the invoice number so QuickBooks Desktop links
+// the PAYMENT to its INVOICE.
+const QBO_AR_ACCOUNT = "Accounts Receivable"
+const QBO_INCOME_ACCOUNT = "Freight Income"
+
+export async function exportQboArIif(carrierId: string): Promise<{ filename: string; iif: string }> {
+  const invoices = await query<{
+    number: string
+    customer: string
+    load: string | null
+    issued_on: string
+    amount_cents: number
+  }>(
+    `SELECT i.number, c.name AS customer, l.reference AS load, i.issued_on, i.amount_cents
+     FROM hub.invoices i
+     JOIN hub.customers c ON c.id = i.customer_id AND c.carrier_id = i.carrier_id
+     JOIN hub.loads l ON l.id = i.load_id AND l.carrier_id = i.carrier_id
+     WHERE i.carrier_id = $1 ORDER BY i.issued_on, i.number`,
+    [carrierId]
+  )
+  const payments = await query<{
+    number: string
+    customer: string
+    paid_on: string
+    amount_cents: number
+    method: string | null
+    reference: string | null
+  }>(
+    `SELECT i.number, c.name AS customer, p.paid_on, p.amount_cents, p.method, p.reference
+     FROM hub.payments p
+     JOIN hub.invoices i ON i.id = p.invoice_id AND i.carrier_id = p.carrier_id
+     JOIN hub.customers c ON c.id = i.customer_id AND c.carrier_id = i.carrier_id
+     WHERE p.carrier_id = $1 ORDER BY p.paid_on, i.number`,
+    [carrierId]
+  )
+
+  const lines: string[] = [
+    "!TRNS\tTRNSID\tTRNSTYPE\tDATE\tACCNT\tNAME\tCLASS\tAMOUNT\tDOCNUM\tMEMO",
+    "!SPL\tSPLID\tTRNSTYPE\tDATE\tACCNT\tNAME\tCLASS\tAMOUNT\tDOCNUM\tMEMO",
+    "!ENDTRNS",
+  ]
+  for (const r of invoices) {
+    const date = iifDate(r.issued_on)
+    const amount = (r.amount_cents / 100).toFixed(2)
+    const name = iifField(r.customer)
+    const doc = iifField(r.number)
+    const memo = iifField(r.load ? `Load ${r.load}` : "")
+    lines.push(`TRNS\t\tINVOICE\t${date}\t${QBO_AR_ACCOUNT}\t${name}\t\t${amount}\t${doc}\t${memo}`)
+    lines.push(`SPL\t\tINVOICE\t${date}\t${QBO_INCOME_ACCOUNT}\t${name}\t\t-${amount}\t${doc}\t${memo}`)
+    lines.push("ENDTRNS")
+  }
+  for (const r of payments) {
+    const date = iifDate(r.paid_on)
+    const amount = (r.amount_cents / 100).toFixed(2)
+    const name = iifField(r.customer)
+    const doc = iifField(r.number)
+    const memo = iifField([r.method, r.reference].filter(Boolean).join(" "))
+    lines.push(`TRNS\t\tPAYMENT\t${date}\t${QBO_OFFSET_ACCOUNT}\t${name}\t\t${amount}\t${doc}\t${memo}`)
+    lines.push(`SPL\t\tPAYMENT\t${date}\t${QBO_AR_ACCOUNT}\t${name}\t\t-${amount}\t${doc}\t${memo}`)
+    lines.push("ENDTRNS")
+  }
+  return { filename: "invoices-payments-qbo.iif", iif: lines.join("\r\n") + "\r\n" }
+}
