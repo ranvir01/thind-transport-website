@@ -103,7 +103,9 @@ async function runProviderSync(
   provider: IntegrationProvider,
   carrierId: string
 ): Promise<{ connected: boolean; summary?: string }> {
-  if (provider === "terminal") {
+  if (provider === "terminal" || provider === "truckercloud") {
+    // Both aggregators share one sync loop — runTelematicsSync picks
+    // whichever of the two the carrier actually connected.
     const result = await runTelematicsSync(carrierId)
     return {
       connected: result.connected,
