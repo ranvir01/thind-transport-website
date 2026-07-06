@@ -584,27 +584,31 @@ async function main() {
         i5Trail[i][0], i5Trail[i][1], 182000 + i * 38]
     )
   }
-  // Quarter-long WA/OR/ID loop for IFTA computation on truck 102. 13 passes
-  // ≈ 22,500 haversine miles against ~3,500 tax-paid gallons in the same
-  // window → fleet MPG ≈ 6.4, so the IFTA screen demos a credible tractor.
+  // Quarter-long WA/OR/ID loops for IFTA computation. The whole active fleet
+  // runs passes (not just truck 102) so ping miles match the diesel the fleet
+  // buys: ~1,720 straight-line mi/pass × 13 passes ≈ 22,300 mi against ~3,500
+  // tax-paid gallons → fleet MPG lands near a real tractor's ~6.5.
   const loop = [
     CITY.kent, CITY.portland, CITY.medford, CITY.portland, CITY.kent, CITY.spokane, CITY.boise, CITY.spokane, CITY.kent,
   ]
-  let odo = 142000
-  for (let pass = 0; pass < 13; pass++) {
-    for (let i = 0; i < loop.length - 1; i++) {
-      const a = loop[i]; const b = loop[i + 1]
-      for (let s = 0; s <= 4; s++) {
-        const lat = a.lat + ((b.lat - a.lat) * s) / 4
-        const lng = a.lng + ((b.lng - a.lng) * s) / 4
-        odo += 54
-        await q(
-          `INSERT INTO hub.position_pings (carrier_id, truck_id, ts, lat, lng, odometer, source)
-           VALUES ($1,$2,$3,$4,$5,$6,'demo')`,
-          [CARRIER, truckIds[1],
-            new Date(Date.now() - (82 - pass * 6 - i * 0.75) * 86400000 + s * 7200000).toISOString(),
-            lat, lng, odo]
-        )
+  const loopPassesByTruck = [0, 3, 2, 2, 2, 2, 1, 1] // truck 102 leads; 13 passes total
+  for (let t = 0; t < loopPassesByTruck.length; t++) {
+    let odo = 118000 + t * 7000
+    for (let pass = 0; pass < loopPassesByTruck[t]; pass++) {
+      for (let i = 0; i < loop.length - 1; i++) {
+        const a = loop[i]; const b = loop[i + 1]
+        for (let s = 0; s <= 4; s++) {
+          const lat = a.lat + ((b.lat - a.lat) * s) / 4
+          const lng = a.lng + ((b.lng - a.lng) * s) / 4
+          odo += 43
+          await q(
+            `INSERT INTO hub.position_pings (carrier_id, truck_id, ts, lat, lng, odometer, source)
+             VALUES ($1,$2,$3,$4,$5,$6,'demo')`,
+            [CARRIER, truckIds[t],
+              new Date(Date.now() - (88 - t - pass * 30 - i * 3) * 86400000 + s * 7200000).toISOString(),
+              lat, lng, odo]
+          )
+        }
       }
     }
   }
