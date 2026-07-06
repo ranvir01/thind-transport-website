@@ -105,10 +105,16 @@ export function IntegrationCard({ card, encryptionReady }: { card: ProviderCard;
         Always works without it: {card.fallback}
       </p>
 
-      {card.status !== "live" ? (
+      {card.status === "stub" ? (
         <p className="mt-2 text-[11px] text-fg-3">
           The sync client is still being built — credentials you save now are stored encrypted and
           activate automatically when it ships. The fallback above works today.
+        </p>
+      ) : null}
+
+      {card.status === "planned" ? (
+        <p className="mt-2 text-[11px] text-fg-3">
+          Not built yet — nothing to connect. The fallback above works today.
         </p>
       ) : null}
 
@@ -153,7 +159,7 @@ export function IntegrationCard({ card, encryptionReady }: { card: ProviderCard;
               <Unplug className="h-4 w-4" /> Disconnect
             </button>
           </>
-        ) : open ? (
+        ) : card.status === "planned" ? null : open ? (
           <form onSubmit={save} className="w-full space-y-2">
             {!encryptionReady ? (
               <p className="rounded-lg border border-warn-soft bg-warn-soft px-2.5 py-1.5 text-[11px] text-warn">

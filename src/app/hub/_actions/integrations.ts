@@ -5,7 +5,7 @@ import { requireOwner } from "@/lib/hub/session"
 import {
   credentialsConfigured, deleteCredentials, getCredentials, saveCredentials, type IntegrationProvider,
 } from "@/lib/hub/credentials"
-import { allowedFields } from "@/lib/hub/integrations/registry"
+import { allowedFields, providerSpec } from "@/lib/hub/integrations/registry"
 import { runTelematicsSync } from "@/lib/hub/telematics"
 import { runEfsSync } from "@/lib/hub/integrations/efs"
 import { runComdataSync } from "@/lib/hub/integrations/comdata"
@@ -32,6 +32,12 @@ export async function saveIntegrationCredentialsAction(
     const user = await requireOwner()
     if (!credentialsConfigured()) {
       return { ok: false, error: "Set CREDENTIALS_KEY (32+ random chars) in the environment first — credentials are encrypted at rest" }
+    }
+    // "planned" providers (qbo, factor, truckstop) have no client built yet and
+    // aren't in the hub.api_credentials provider CHECK constraint — saving would
+    // otherwise surface a raw DB constraint error instead of an honest message.
+    if (providerSpec(provider)?.status === "planned") {
+      return { ok: false, error: "This integration isn't built yet — nothing to connect" }
     }
     const allowed = allowedFields(provider)
     const clean: Record<string, string> = {}
