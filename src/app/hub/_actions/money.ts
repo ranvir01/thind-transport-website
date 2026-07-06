@@ -10,6 +10,7 @@ import {
 } from "@/lib/hub/settlements"
 import { createExpense } from "@/lib/hub/expenses"
 import { submitInvoiceToFactor } from "@/lib/hub/integrations/factor"
+import { pushInvoiceToQbo } from "@/lib/hub/integrations/qbo"
 import { logAudit } from "@/lib/hub/audit"
 import { query } from "@/lib/hub/db"
 import { dollarsToCents, EXPENSE_CATEGORIES, type ExpenseCategory } from "@/lib/hub/types"
@@ -125,6 +126,34 @@ export async function submitInvoiceToFactorAction(invoiceId: string): Promise<Ac
     return { ok: true }
   } catch (err) {
     return asError(err, "Failed to submit invoice to factor")
+  }
+}
+
+export async function pushInvoiceToQboAction(
+  invoiceId: string
+): Promise<ActionResult & { alreadyPushed?: boolean; updated?: boolean }> {
+  let user
+  try {
+    user = await requirePermission("money:write")
+  } catch (err) {
+    return asError(err, "Forbidden")
+  }
+  try {
+    const result = await pushInvoiceToQbo(user.carrierId, invoiceId, user)
+    if (!result.connected) {
+      return {
+        ok: false,
+        error: "QuickBooks Online isn't connected yet — save credentials under Settings → Integrations.",
+      }
+    }
+    if (result.alreadyPushed) {
+      return { ok: true, alreadyPushed: true }
+    }
+    revalidateMoney()
+    revalidatePath(`/hub/money/invoices/${invoiceId}`)
+    return { ok: true, updated: result.updated }
+  } catch (err) {
+    return asError(err, "Failed to push invoice to QuickBooks")
   }
 }
 

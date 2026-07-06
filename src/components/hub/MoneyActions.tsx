@@ -3,11 +3,11 @@
 import { useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
-import { CheckCircle2, FileText, Loader2, Send } from "lucide-react"
+import { CheckCircle2, CloudUpload, FileText, Loader2, Send } from "lucide-react"
 import {
   approveSettlementAction, createInvoiceAction, disputeInvoiceAction,
   draftSettlementsAction, factoringPacketAction, markSettlementPaidAction,
-  recordPaymentAction, submitInvoiceToFactorAction,
+  pushInvoiceToQboAction, recordPaymentAction, submitInvoiceToFactorAction,
 } from "@/app/hub/_actions/money"
 import { fieldCls, labelCls } from "@/components/hub/ui"
 
@@ -107,6 +107,28 @@ export function InvoiceActions({
   const [pending, startTransition] = useTransition()
   return (
     <div className="flex flex-wrap gap-2">
+      <button
+        onClick={() =>
+          startTransition(async () => {
+            const result = await pushInvoiceToQboAction(invoiceId)
+            if (result.ok) {
+              if (result.alreadyPushed) {
+                toast.success("Already synced to QuickBooks — amount unchanged")
+              } else if (result.updated) {
+                toast.success("Updated in QuickBooks")
+              } else {
+                toast.success("Pushed to QuickBooks")
+              }
+              router.refresh()
+            } else toast.error(result.error ?? "Could not push to QuickBooks")
+          })
+        }
+        disabled={pending}
+        className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-border-strong bg-surface px-4 text-sm font-semibold text-fg-2 hover:bg-hover disabled:opacity-50"
+      >
+        {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <CloudUpload className="h-4 w-4" />}
+        Push to QBO
+      </button>
       {factored ? (
         <>
           <button
