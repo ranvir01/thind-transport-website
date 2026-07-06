@@ -4,17 +4,19 @@ vi.mock("../db", () => ({ queryOne: vi.fn(async () => null) }))
 vi.mock("../credentials", () => ({
   getCredentials: vi.fn(async () => null),
   hasCredentials: vi.fn(async () => false),
+  saveCredentials: vi.fn(async () => undefined),
 }))
 vi.mock("../invoices", () => ({ recordPayment: vi.fn(async () => ({})) }))
 
 import { queryOne } from "../db"
-import { getCredentials, hasCredentials } from "../credentials"
+import { getCredentials, hasCredentials, saveCredentials } from "../credentials"
 import { recordPayment } from "../invoices"
 import { normalizeQboPayment, qboSource, runQboSync } from "../integrations/qbo"
 
 const queryOneMock = vi.mocked(queryOne)
 const getCredentialsMock = vi.mocked(getCredentials)
 const hasCredentialsMock = vi.mocked(hasCredentials)
+const saveCredentialsMock = vi.mocked(saveCredentials)
 const recordPaymentMock = vi.mocked(recordPayment)
 const CARRIER = "33333333-3333-3333-3333-333333333333"
 
@@ -62,6 +64,7 @@ describe("qboSource (SyncSource<QboPaymentRow> contract)", () => {
   beforeEach(() => {
     getCredentialsMock.mockReset()
     hasCredentialsMock.mockReset()
+    saveCredentialsMock.mockClear()
   })
 
   it("reports not connected without credentials, and pull refuses instead of guessing", async () => {
@@ -112,6 +115,44 @@ describe("qboSource (SyncSource<QboPaymentRow> contract)", () => {
     getCredentialsMock.mockResolvedValue(CREDS)
     mockFetchSequence({ ok: false, status: 401, json: async () => ({}) })
     await expect(qboSource(CARRIER).pull()).rejects.toThrow(/401/)
+  })
+
+  it("persists a rotated refresh token so the next sync doesn't redeem a stale one", async () => {
+    hasCredentialsMock.mockResolvedValue(true)
+    getCredentialsMock.mockResolvedValue(CREDS)
+    mockFetchSequence(
+      { ok: true, json: async () => ({ access_token: "tok", refresh_token: "rtok-new" }) },
+      { ok: true, json: async () => ({ QueryResponse: { Payment: [] } }) }
+    )
+    await qboSource(CARRIER).pull()
+    expect(saveCredentialsMock).toHaveBeenCalledWith(
+      CARRIER,
+      "qbo",
+      { ...CREDS, refreshToken: "rtok-new" },
+      "system:qbo"
+    )
+  })
+
+  it("does not write credentials back when QBO returns the same refresh token", async () => {
+    hasCredentialsMock.mockResolvedValue(true)
+    getCredentialsMock.mockResolvedValue(CREDS)
+    mockFetchSequence(
+      { ok: true, json: async () => ({ access_token: "tok", refresh_token: CREDS.refreshToken }) },
+      { ok: true, json: async () => ({ QueryResponse: { Payment: [] } }) }
+    )
+    await qboSource(CARRIER).pull()
+    expect(saveCredentialsMock).not.toHaveBeenCalled()
+  })
+
+  it("does not write credentials back when the token response omits refresh_token", async () => {
+    hasCredentialsMock.mockResolvedValue(true)
+    getCredentialsMock.mockResolvedValue(CREDS)
+    mockFetchSequence(
+      { ok: true, json: async () => ({ access_token: "tok" }) },
+      { ok: true, json: async () => ({ QueryResponse: { Payment: [] } }) }
+    )
+    await qboSource(CARRIER).pull()
+    expect(saveCredentialsMock).not.toHaveBeenCalled()
   })
 })
 
