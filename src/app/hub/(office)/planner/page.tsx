@@ -1,9 +1,9 @@
 import Link from "next/link"
-import { ChevronLeft, ChevronRight, Route } from "lucide-react"
+import { ChevronLeft, ChevronRight, Route, Plus } from "lucide-react"
 import { requirePermissionPage } from "@/lib/hub/session"
 import { plannerData, weekStartOf } from "@/lib/hub/planner"
 import { fmtCents } from "@/lib/hub/types"
-import { PageHeader, Panel } from "@/components/hub/ui"
+import { PageHeader, Panel, EmptyState } from "@/components/hub/ui"
 import { PlannerGrid } from "@/components/hub/PlannerGrid"
 
 export const dynamic = "force-dynamic"
@@ -59,13 +59,28 @@ export default async function PlannerPage({
         }
       />
 
-      <PlannerGrid
-        days={data.days}
-        trucks={data.trucks}
-        blocks={data.blocks}
-        unassigned={data.unassigned}
-        timeOff={data.timeOff}
-      />
+      {data.trucks.length === 0 ? (
+        <EmptyState
+          title="No trucks yet"
+          hint="Add your first truck to start planning its week."
+          action={
+            <Link
+              href="/hub/fleet/trucks/new"
+              className="inline-flex min-h-[44px] items-center gap-2 rounded-control bg-accent px-5 font-semibold text-sm text-accent-fg hover:bg-accent-hover"
+            >
+              <Plus className="h-4 w-4" /> Add truck
+            </Link>
+          }
+        />
+      ) : (
+        <PlannerGrid
+          days={data.days}
+          trucks={data.trucks}
+          blocks={data.blocks}
+          unassigned={data.unassigned}
+          timeOff={data.timeOff}
+        />
+      )}
 
       {/* Backhaul hints */}
       {data.backhaul.length > 0 ? (
