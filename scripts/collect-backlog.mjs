@@ -7,6 +7,7 @@
  *   node scripts/collect-backlog.mjs origin/main 50
  */
 import { execSync } from "node:child_process"
+import { pathToFileURL } from "node:url"
 
 const ref = process.argv[2] ?? "origin/main"
 const limit = Number(process.argv[3] ?? "30")
@@ -24,6 +25,32 @@ function git(cmd) {
 
 const RECORD_SEP = "\x1eCOMMIT\x1e"
 
+/**
+ * Pull the Backlog: bullet list out of one commit body. Bullets wrapped over
+ * multiple lines (continuation lines with no leading -/*) are joined back
+ * into a single item; a git trailer line (Co-authored-by: etc.) ends the
+ * block even when no blank line precedes it.
+ */
+export function parseBacklogItems(body) {
+  const match = body.match(/(?:^|\n)Backlog:\s*\n([\s\S]*)/i)
+  if (!match) return []
+  const block = match[1].split(/\n\n/)[0]
+  const items = []
+  for (const line of block.split("\n")) {
+    const bullet = line.match(/^\s*[-*]\s+(.*)$/)
+    if (bullet) {
+      items.push(bullet[1].trim())
+      continue
+    }
+    const text = line.trim()
+    if (!text) continue
+    if (/^[A-Za-z][\w-]*:\s/.test(text)) break
+    if (items.length) items[items.length - 1] += ` ${text}`
+    else items.push(text)
+  }
+  return items.filter(Boolean)
+}
+
 function collectItems() {
   git("fetch origin --quiet")
   const out = git(`log ${ref} -n ${limit} --format=%H---%s---%B${RECORD_SEP}`)
@@ -38,12 +65,8 @@ function collectItems() {
     const header = trimmed.match(/^([a-f0-9]+)---(.+?)---([\s\S]*)$/i)
     if (!header) continue
     const [, hash, subject, body] = header
-    const match = body.match(/(?:^|\n)Backlog:\s*\n([\s\S]*)/i)
-    if (!match) continue
-    const backlogBlock = match[1].split(/\n\n/)[0]
-    for (const line of backlogBlock.split("\n")) {
-      const text = line.replace(/^[-*]\s*/, "").trim()
-      if (!text || seen.has(text.toLowerCase())) continue
+    for (const text of parseBacklogItems(body)) {
+      if (seen.has(text.toLowerCase())) continue
       seen.add(text.toLowerCase())
       items.push({ text, hash: hash.slice(0, 7), subject })
     }
@@ -85,4 +108,5 @@ function main() {
   console.log(items[0].text)
 }
 
-main()
+// Importable for tests: only run when executed directly (node scripts/collect-backlog.mjs).
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) main()
