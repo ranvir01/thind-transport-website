@@ -112,7 +112,7 @@ export const PROVIDERS: readonly ProviderSpec[] = [
       { key: "apiKey", label: "API key", secret: true },
       { key: "apiSecret", label: "API secret", secret: true },
     ],
-    fallback: "Fuel statement CSV import", sync: "poll", status: "stub",
+    fallback: "Fuel statement CSV import", sync: "poll", status: "live", cronJob: "comdata-sync",
   },
   {
     id: "qbo", label: "QuickBooks Online", domain: "accounting",
