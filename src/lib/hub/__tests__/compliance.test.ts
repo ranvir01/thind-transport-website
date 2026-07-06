@@ -1,11 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
-vi.mock("../db", () => ({ query: vi.fn(async () => []) }))
+vi.mock("../db", () => ({ query: vi.fn(async () => []), queryOne: vi.fn(async () => null) }))
 
-import { query } from "../db"
-import { addComplianceItem, complianceEntries, resolveComplianceItem, summarize } from "../compliance"
+import { query, queryOne } from "../db"
+import { addComplianceItem, complianceEntries, iftaFilingComplianceEntry, resolveComplianceItem, summarize } from "../compliance"
 
 const queryMock = vi.mocked(query)
+const queryOneMock = vi.mocked(queryOne)
 
 const CARRIER = "11111111-1111-1111-1111-111111111111"
 
@@ -15,6 +16,7 @@ function mockRowsBySql(rows: {
   trailers?: unknown[]
   maintenance?: unknown[]
   manual?: unknown[]
+  iftaReport?: { status: string } | null
 }) {
   queryMock.mockImplementation(async (sql: string) => {
     const s = String(sql)
@@ -25,10 +27,20 @@ function mockRowsBySql(rows: {
     if (s.includes("FROM hub.compliance_items")) return rows.manual ?? []
     return []
   })
+  queryOneMock.mockImplementation(async (sql: string) => {
+    if (String(sql).includes("FROM hub.ifta_reports")) {
+      if (rows.iftaReport === undefined) return { status: "filed" }
+      return rows.iftaReport
+    }
+    return null
+  })
 }
 
 describe("complianceEntries color thresholds (colorFor)", () => {
-  beforeEach(() => queryMock.mockReset())
+  beforeEach(() => {
+    queryMock.mockReset()
+    queryOneMock.mockReset()
+  })
 
   it("colors a past due date red, a date inside 30 days amber, and a far-out date green", async () => {
     const now = Date.now()
@@ -89,7 +101,10 @@ describe("complianceEntries color thresholds (colorFor)", () => {
 })
 
 describe("complianceEntries trailers", () => {
-  beforeEach(() => queryMock.mockReset())
+  beforeEach(() => {
+    queryMock.mockReset()
+    queryOneMock.mockReset()
+  })
 
   it("surfaces trailer registration and inspection expiries, same as trucks", async () => {
     mockRowsBySql({
@@ -127,7 +142,10 @@ describe("complianceEntries trailers", () => {
 })
 
 describe("complianceEntries carrier scoping", () => {
-  beforeEach(() => queryMock.mockReset())
+  beforeEach(() => {
+    queryMock.mockReset()
+    queryOneMock.mockReset()
+  })
 
   it("scopes every underlying query to the given carrier_id", async () => {
     mockRowsBySql({})
@@ -137,6 +155,9 @@ describe("complianceEntries carrier scoping", () => {
       expect(params).toEqual([CARRIER])
     }
     expect(queryMock).toHaveBeenCalledTimes(5)
+    const iftaCall = queryOneMock.mock.calls.find(([sql]) => String(sql).includes("FROM hub.ifta_reports"))
+    expect(iftaCall).toBeDefined()
+    expect(iftaCall![1]).toEqual([CARRIER, expect.stringMatching(/^\d{4}Q[1-4]$/)])
   })
 
   it("excludes soft-deleted drivers/trucks and inactive/retired records", async () => {
@@ -158,7 +179,10 @@ describe("complianceEntries carrier scoping", () => {
 })
 
 describe("addComplianceItem / resolveComplianceItem", () => {
-  beforeEach(() => queryMock.mockReset())
+  beforeEach(() => {
+    queryMock.mockReset()
+    queryOneMock.mockReset()
+  })
 
   it("inserts a company-level item scoped to the carrier", async () => {
     queryMock.mockResolvedValue([])
@@ -175,6 +199,42 @@ describe("addComplianceItem / resolveComplianceItem", () => {
     const [sql, params] = queryMock.mock.calls[0]
     expect(String(sql)).toContain("carrier_id = $1 AND id = $2")
     expect(params).toEqual([CARRIER, "item-1"])
+  })
+})
+
+describe("iftaFilingComplianceEntry", () => {
+  beforeEach(() => {
+    queryMock.mockReset()
+    queryOneMock.mockReset()
+  })
+
+  it("returns null when the due quarter is already filed", async () => {
+    queryOneMock.mockResolvedValue({ status: "filed" })
+    const entry = await iftaFilingComplianceEntry(CARRIER, new Date("2026-05-15T12:00:00Z"))
+    expect(entry).toBeNull()
+    const [sql, params] = queryOneMock.mock.calls[0]
+    expect(String(sql)).toContain("carrier_id = $1 AND quarter = $2")
+    expect(params![0]).toBe(CARRIER)
+    expect(params![1]).toBe("2026Q1")
+  })
+
+  it("surfaces an overdue unfiled quarter as red on the compliance wall", async () => {
+    queryOneMock.mockResolvedValue({ status: "draft" })
+    const entry = await iftaFilingComplianceEntry(CARRIER, new Date("2026-05-15T12:00:00Z"))
+    expect(entry).toMatchObject({
+      entity: "company",
+      kind: "IFTA filing (2026Q1)",
+      due: "2026-04-30",
+      color: "red",
+      href: "/hub/compliance/ifta?q=2026Q1",
+    })
+  })
+
+  it("shows amber when filing is due within 30 days but not yet overdue", async () => {
+    queryOneMock.mockResolvedValue(null)
+    const entry = await iftaFilingComplianceEntry(CARRIER, new Date("2026-04-10T12:00:00Z"))
+    expect(entry?.color).toBe("amber")
+    expect(entry?.due).toBe("2026-04-30")
   })
 })
 
