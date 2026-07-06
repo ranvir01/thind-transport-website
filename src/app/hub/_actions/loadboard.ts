@@ -41,7 +41,7 @@ export async function patchLoadBoardFieldAction(
 
   let user
   try {
-    user = await requirePermission("loads:write")
+    user = await requirePermission(field === "status" ? "loads:status" : "loads:write")
   } catch (err) {
     return { ok: false, error: err instanceof Error ? err.message : "Forbidden" }
   }

@@ -1,7 +1,7 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
-import { requireOfficeUser } from "@/lib/hub/session"
+import { requireOfficeUser, requirePermission } from "@/lib/hub/session"
 import { avgDaysToPay, creditExposure, latestVetting, vetCustomer, fmcsaConfigured } from "@/lib/hub/vetting"
 import { logAudit } from "@/lib/hub/audit"
 
@@ -12,7 +12,7 @@ interface Result {
 
 export async function vetCustomerAction(customerId: string): Promise<Result> {
   try {
-    const user = await requireOfficeUser()
+    const user = await requirePermission("customers:write")
     if (!fmcsaConfigured()) {
       return {
         ok: false,

@@ -1,4 +1,5 @@
 import { query, queryOne } from "./db"
+import { assertCarrierRefs } from "./tenancy"
 import type { Trailer, Truck } from "./types"
 
 // ---- Trucks ----
@@ -43,6 +44,7 @@ export interface TruckInput {
 }
 
 export async function createTruck(carrierId: string, input: TruckInput): Promise<Truck> {
+  await assertCarrierRefs(carrierId, { driver_id: input.assigned_driver_id })
   const rows = await query<Truck>(
     `INSERT INTO hub.trucks (
        carrier_id, unit_number, vin, plate, plate_state, year, make, model, ownership, status,
@@ -60,6 +62,7 @@ export async function createTruck(carrierId: string, input: TruckInput): Promise
 }
 
 export async function updateTruck(carrierId: string, id: string, input: TruckInput): Promise<Truck | null> {
+  await assertCarrierRefs(carrierId, { driver_id: input.assigned_driver_id })
   const rows = await query<Truck>(
     `UPDATE hub.trucks SET
        unit_number=$3, vin=$4, plate=$5, plate_state=$6, year=$7, make=$8, model=$9,

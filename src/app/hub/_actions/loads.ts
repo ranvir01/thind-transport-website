@@ -214,7 +214,7 @@ export async function stopTimestampAction(
     return asError(err, "Forbidden")
   }
   try {
-    const stop = await setStopTimestamp(user.carrierId, stopId, field, new Date().toISOString())
+    const stop = await setStopTimestamp(user.carrierId, stopId, loadId, field, new Date().toISOString())
     if (stop) {
       await addLoadEvent(user.carrierId, loadId, "geo", {
         stop_id: stopId, field, city: stop.city, state: stop.state,

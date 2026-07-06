@@ -159,11 +159,12 @@ export async function setFuelUse(
   carrierId: string,
   transactionId: string,
   fuelUse: "tractor" | "reefer" | "other"
-): Promise<void> {
-  await query(
-    `UPDATE hub.fuel_transactions SET fuel_use = $3 WHERE carrier_id = $1 AND id = $2`,
+): Promise<boolean> {
+  const rows = await query(
+    `UPDATE hub.fuel_transactions SET fuel_use = $3 WHERE carrier_id = $1 AND id = $2 RETURNING id`,
     [carrierId, transactionId, fuelUse]
   )
+  return rows.length > 0
 }
 
 export interface FuelByProgram {

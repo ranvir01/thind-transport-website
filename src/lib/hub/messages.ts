@@ -4,10 +4,12 @@
  * messages append to load_events — they are part of the permanent record.
  */
 import { hubDb, query, queryOne } from "./db"
+import { assertCarrierRefs } from "./tenancy"
 import type { HubMessage, MessageThread } from "./types"
 
 /** Find or create the thread for a load. */
 export async function ensureLoadThread(carrierId: string, loadId: string): Promise<string> {
+  await assertCarrierRefs(carrierId, { load_id: loadId })
   const row = await queryOne<{ id: string }>(
     `INSERT INTO hub.message_threads (carrier_id, kind, load_id)
      VALUES ($1, 'load', $2)
@@ -21,6 +23,7 @@ export async function ensureLoadThread(carrierId: string, loadId: string): Promi
 
 /** Find or create the direct office↔driver thread. */
 export async function ensureDirectThread(carrierId: string, driverId: string): Promise<string> {
+  await assertCarrierRefs(carrierId, { driver_id: driverId })
   const row = await queryOne<{ id: string }>(
     `INSERT INTO hub.message_threads (carrier_id, kind, driver_id)
      VALUES ($1, 'direct', $2)

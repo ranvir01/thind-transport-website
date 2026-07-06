@@ -21,7 +21,8 @@ export async function reclassifyFuelUse(
     return { ok: false, error: err instanceof Error ? err.message : "Forbidden" }
   }
   if (!FUEL_USES.includes(fuelUse)) return { ok: false, error: "Bad fuel use" }
-  await setFuelUse(user.carrierId, transactionId, fuelUse)
+  const changed = await setFuelUse(user.carrierId, transactionId, fuelUse)
+  if (!changed) return { ok: false, error: "Receipt not found" }
   await logAudit({
     carrierId: user.carrierId,
     actorId: user.id,

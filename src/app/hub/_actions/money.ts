@@ -9,6 +9,7 @@ import {
   approveSettlement, createAdvance, draftSettlements, markSettlementPaid,
 } from "@/lib/hub/settlements"
 import { createExpense } from "@/lib/hub/expenses"
+import { logAudit } from "@/lib/hub/audit"
 import { query } from "@/lib/hub/db"
 import { dollarsToCents, EXPENSE_CATEGORIES, type ExpenseCategory } from "@/lib/hub/types"
 import type { ActionResult } from "./fleet"
@@ -153,7 +154,8 @@ export async function markSettlementPaidAction(settlementId: string): Promise<Ac
     return asError(err, "Forbidden")
   }
   try {
-    await markSettlementPaid(user.carrierId, settlementId, user)
+    const paid = await markSettlementPaid(user.carrierId, settlementId, user)
+    if (!paid) return { ok: false, error: "Settlement not found or not approved" }
     revalidateMoney()
     revalidatePath(`/hub/money/settlements/${settlementId}`)
     return { ok: true }
@@ -309,6 +311,11 @@ export async function savePriceBookEntryAction(values: {
         [user.carrierId, values.name.trim(), amountCents, values.unit]
       )
     }
+    await logAudit({
+      carrierId: user.carrierId, actorId: user.id, actorName: user.name,
+      entityType: "accessorial_type", entityId: values.id ?? values.name.trim(), action: "saved",
+      newValue: { name: values.name.trim(), amountCents, unit: values.unit },
+    })
     revalidatePath("/hub/settings/pricebook")
     return { ok: true }
   } catch (err) {

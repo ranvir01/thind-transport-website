@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache"
 import { requireOfficeUser } from "@/lib/hub/session"
 import { query } from "@/lib/hub/db"
+import { assertCarrierRefs } from "@/lib/hub/tenancy"
 
 interface Result {
   ok: boolean
@@ -23,6 +24,7 @@ export async function postCapacityAction(input: {
     if (!input.availableOn || !input.originCity.trim()) {
       return { ok: false, error: "When and where is the truck available?" }
     }
+    await assertCarrierRefs(user.carrierId, { truck_id: input.truckId })
     await query(
       `INSERT INTO hub.capacity_postings (carrier_id, truck_id, equipment, available_on, origin_city, origin_state, dest_preference, note)
        VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
