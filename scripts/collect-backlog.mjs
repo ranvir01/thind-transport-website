@@ -41,14 +41,35 @@ function collectItems() {
     const match = body.match(/(?:^|\n)Backlog:\s*\n([\s\S]*)/i)
     if (!match) continue
     const backlogBlock = match[1].split(/\n\n/)[0]
-    for (const line of backlogBlock.split("\n")) {
-      const text = line.replace(/^[-*]\s*/, "").trim()
+    for (const text of parseBacklogBullets(backlogBlock)) {
       if (!text || seen.has(text.toLowerCase())) continue
       seen.add(text.toLowerCase())
       items.push({ text, hash: hash.slice(0, 7), subject })
     }
   }
   return items
+}
+
+/** Join wrapped continuation lines onto the preceding `-` bullet. */
+function parseBacklogBullets(block) {
+  const bullets = []
+  let current = null
+
+  for (const line of block.split("\n")) {
+    const bullet = line.match(/^[-*]\s*(.*)/)
+    if (bullet) {
+      const text = bullet[1].trim()
+      if (text) {
+        if (current) bullets.push(current)
+        current = text
+      }
+      continue
+    }
+    const cont = line.trim()
+    if (cont && current) current = `${current} ${cont}`
+  }
+  if (current) bullets.push(current)
+  return bullets
 }
 
 function rankItem(text) {
