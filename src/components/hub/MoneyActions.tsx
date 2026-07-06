@@ -97,40 +97,16 @@ export function InvoiceActions({
   factored,
   disputed,
   factorSubmitted,
-  qboPushed,
 }: {
   invoiceId: string
   factored: boolean
   disputed: boolean
   factorSubmitted?: boolean
-  qboPushed?: boolean
 }) {
   const router = useRouter()
   const [pending, startTransition] = useTransition()
   return (
     <div className="flex flex-wrap gap-2">
-      <button
-        onClick={() =>
-          startTransition(async () => {
-            const result = await pushInvoiceToQboAction(invoiceId)
-            if (result.ok) {
-              if (result.alreadyPushed) {
-                toast.success("Already synced to QuickBooks — amount unchanged")
-              } else if (result.updated) {
-                toast.success("Updated in QuickBooks")
-              } else {
-                toast.success("Pushed to QuickBooks")
-              }
-              router.refresh()
-            } else toast.error(result.error ?? "Could not push to QuickBooks")
-          })
-        }
-        disabled={pending}
-        className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-border-strong bg-surface px-4 text-sm font-semibold text-fg-2 hover:bg-hover disabled:opacity-50"
-      >
-        {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <CloudUpload className="h-4 w-4" />}
-        Push to QBO
-      </button>
       {factored ? (
         <>
           <button
@@ -171,28 +147,28 @@ export function InvoiceActions({
           ) : null}
         </>
       ) : null}
-      {!qboPushed ? (
-        <button
-          onClick={() =>
-            startTransition(async () => {
-              const result = await pushInvoiceToQboAction(invoiceId)
-              if (result.ok) {
-                toast.success(
-                  result.alreadyPushed
-                    ? "Already pushed to QuickBooks"
-                    : "Invoice pushed to QuickBooks"
-                )
-                router.refresh()
-              } else toast.error(result.error ?? "Could not push to QuickBooks")
-            })
-          }
-          disabled={pending}
-          className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-border-strong bg-surface px-4 text-sm font-semibold text-fg-2 hover:bg-hover disabled:opacity-50"
-        >
-          {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-          Push to QuickBooks
-        </button>
-      ) : null}
+      <button
+        onClick={() =>
+          startTransition(async () => {
+            const result = await pushInvoiceToQboAction(invoiceId)
+            if (result.ok) {
+              if (result.alreadyPushed) {
+                toast.success("Already synced to QuickBooks — amount unchanged")
+              } else if (result.updated) {
+                toast.success("Updated in QuickBooks")
+              } else {
+                toast.success("Pushed to QuickBooks")
+              }
+              router.refresh()
+            } else toast.error(result.error ?? "Could not push to QuickBooks")
+          })
+        }
+        disabled={pending}
+        className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-border-strong bg-surface px-4 text-sm font-semibold text-fg-2 hover:bg-hover disabled:opacity-50"
+      >
+        {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <CloudUpload className="h-4 w-4" />}
+        Push to QBO
+      </button>
       {!disputed ? (
         <button
           onClick={() =>
