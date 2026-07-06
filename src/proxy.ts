@@ -47,8 +47,8 @@ export default async function proxy(request: NextRequest) {
       return NextResponse.redirect(new URL("/hub/login", request.url))
     }
     if (!role) {
-      // Legacy driver-portal JWT (no hub.role) — avoid /hub ↔ /hub/login bounce.
-      return NextResponse.redirect(new URL("/driver/application", request.url))
+      // Legacy driver-portal JWT (no hub.role) — same destination as /hub/login post-auth.
+      return NextResponse.redirect(new URL(postLoginPath(role), request.url))
     }
     const officeRoles = ["owner", "dispatcher", "accountant"]
     // NOTE: /hub/driver (the driver app) vs /hub/drivers (office roster).
