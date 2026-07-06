@@ -2,6 +2,7 @@ import Link from "next/link"
 import { notFound } from "next/navigation"
 import { FileText } from "lucide-react"
 import { getInvoice, listInvoicePayments } from "@/lib/hub/invoices"
+import { hasCredentials } from "@/lib/hub/credentials"
 import { requirePermissionPage } from "@/lib/hub/session"
 import { can } from "@/lib/hub/permissions"
 import { fmtCentsExact } from "@/lib/hub/types"
@@ -20,6 +21,7 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
   const payments = await listInvoicePayments(user.carrierId, id)
   const openCents = invoice.amount_cents - (invoice.paid_cents ?? 0)
   const canWrite = can(user.role, "money:write")
+  const factorConnected = invoice.factored ? await hasCredentials(user.carrierId, "factor") : false
 
   return (
     <div>
@@ -69,7 +71,7 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
             </p>
           </Panel>
 
-          {canWrite ? <InvoiceActions invoiceId={id} factored={invoice.factored} disputed={invoice.status === "disputed"} /> : null}
+          {canWrite ? <InvoiceActions invoiceId={id} factored={invoice.factored} disputed={invoice.status === "disputed"} factorConnected={factorConnected} /> : null}
 
           {/* Send log */}
           <Panel className="p-4 md:p-5">
