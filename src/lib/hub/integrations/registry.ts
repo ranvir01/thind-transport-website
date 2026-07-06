@@ -116,14 +116,14 @@ export const PROVIDERS: readonly ProviderSpec[] = [
   },
   {
     id: "qbo", label: "QuickBooks Online", domain: "accounting",
-    blurb: "Invoices and payments sync both ways — no more CSV re-keying.",
+    blurb: "Pulls QBO payments onto matching invoices by number (recordPayment path — status + audit + load cascade). Invoice push to QBO not built yet.",
     fields: [
       { key: "clientId", label: "Client ID" },
       { key: "clientSecret", label: "Client secret", secret: true },
       { key: "refreshToken", label: "Refresh token", secret: true },
       { key: "realmId", label: "Realm (company) ID" },
     ],
-    fallback: "QuickBooks CSV export", sync: "poll", status: "planned",
+    fallback: "QuickBooks CSV export", sync: "poll", status: "stub",
   },
   {
     id: "factor", label: "Factoring company", domain: "factoring",
