@@ -10,7 +10,8 @@
  *   NEXTAUTH_SECRET=<secret>   # or AUTH_SECRET — hub login 401s with MissingSecret if blank
  *
  * State-consuming smokes (dispatch, invoices, settlements, advances,
- * compliance, messages, expenses, fuel, customers, loads, fleet, tasks) call
+ * compliance, messages, expenses, fuel, customers, loads, fleet, tasks,
+ * safety) call
  * reseed() themselves, so no manual seed:demo between runs on a local rig.
  *
  * Copy `.env.example` → `.env.local` for local runs (Next reads it; these scripts
