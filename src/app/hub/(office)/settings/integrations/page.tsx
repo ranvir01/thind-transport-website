@@ -13,7 +13,7 @@ export const dynamic = "force-dynamic"
 // Providers with a manual "sync now" server action wired in IntegrationsPanel's
 // SYNC_ACTIONS map — kept in sync with that map by hand since one lives on each
 // side of the server/client boundary.
-const MANUAL_SYNC_PROVIDERS = new Set(["terminal", "efs", "comdata", "wex", "qbo"])
+const MANUAL_SYNC_PROVIDERS = new Set(["terminal", "truckercloud", "efs", "comdata", "wex", "qbo"])
 
 // Providers with a webhook event processor (src/app/api/hub/webhooks/[provider]/route.ts's
 // EVENT_PROCESSORS) get a "retry unprocessed" surface — an event that couldn't
