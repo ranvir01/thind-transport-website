@@ -9,6 +9,7 @@ import {
   approveSettlement, createAdvance, draftSettlements, markSettlementPaid,
 } from "@/lib/hub/settlements"
 import { createExpense } from "@/lib/hub/expenses"
+import { submitInvoiceToFactor } from "@/lib/hub/integrations/factor"
 import { logAudit } from "@/lib/hub/audit"
 import { query } from "@/lib/hub/db"
 import { dollarsToCents, EXPENSE_CATEGORIES, type ExpenseCategory } from "@/lib/hub/types"
@@ -98,6 +99,27 @@ export async function factoringPacketAction(invoiceId: string): Promise<ActionRe
     return { ok: true, error: undefined, id: to }
   } catch (err) {
     return asError(err, "Failed to send factoring packet")
+  }
+}
+
+export async function submitToFactorAction(
+  invoiceId: string
+): Promise<ActionResult & { alreadySubmitted?: boolean }> {
+  let user
+  try {
+    user = await requirePermission("money:write")
+  } catch (err) {
+    return asError(err, "Forbidden")
+  }
+  try {
+    const result = await submitInvoiceToFactor(user.carrierId, invoiceId, user)
+    if (!result.connected) {
+      return { ok: false, error: "Factoring integration is not connected — add credentials in Settings → Integrations" }
+    }
+    revalidatePath(`/hub/money/invoices/${invoiceId}`)
+    return { ok: true, alreadySubmitted: result.alreadySubmitted }
+  } catch (err) {
+    return asError(err, "Failed to submit to factor")
   }
 }
 

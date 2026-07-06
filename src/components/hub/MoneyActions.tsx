@@ -7,7 +7,7 @@ import { CheckCircle2, FileText, Loader2, Send } from "lucide-react"
 import {
   approveSettlementAction, createInvoiceAction, disputeInvoiceAction,
   draftSettlementsAction, factoringPacketAction, markSettlementPaidAction,
-  recordPaymentAction,
+  recordPaymentAction, submitToFactorAction,
 } from "@/app/hub/_actions/money"
 import { fieldCls, labelCls } from "@/components/hub/ui"
 
@@ -92,11 +92,35 @@ export function RecordPaymentForm({ invoiceId, openCents }: { invoiceId: string;
   )
 }
 
-export function InvoiceActions({ invoiceId, factored, disputed }: { invoiceId: string; factored: boolean; disputed: boolean }) {
+export function InvoiceActions({ invoiceId, factored, disputed, factorConnected, factorSubmitted }: {
+  invoiceId: string
+  factored: boolean
+  disputed: boolean
+  factorConnected?: boolean
+  factorSubmitted?: boolean
+}) {
   const router = useRouter()
   const [pending, startTransition] = useTransition()
   return (
     <div className="flex flex-wrap gap-2">
+      {factored && factorConnected && !factorSubmitted ? (
+        <button
+          onClick={() =>
+            startTransition(async () => {
+              const result = await submitToFactorAction(invoiceId)
+              if (result.ok) {
+                toast.success(result.alreadySubmitted ? "Already submitted to the factor" : "Invoice submitted to the factor")
+                router.refresh()
+              } else toast.error(result.error ?? "Could not submit to factor")
+            })
+          }
+          disabled={pending}
+          className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-accent px-4 text-sm font-semibold text-accent-fg hover:bg-accent-hover disabled:opacity-50"
+        >
+          {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+          Submit to factor
+        </button>
+      ) : null}
       {factored ? (
         <button
           onClick={() =>
