@@ -31,9 +31,11 @@ function collectItems() {
   const items = []
 
   for (const chunk of out.split(RECORD_SEP)) {
-    if (!chunk.trim()) continue
+    const trimmed = chunk.trim()
+    if (!trimmed) continue
     // %B follows the third --- with no newline (unlike %b); subject must be non-greedy.
-    const header = chunk.match(/^([a-f0-9]+)---(.+?)---([\s\S]*)$/i)
+    // git log inserts a newline between formatted records when %B ends with \n — trim each chunk.
+    const header = trimmed.match(/^([a-f0-9]+)---(.+?)---([\s\S]*)$/i)
     if (!header) continue
     const [, hash, subject, body] = header
     const match = body.match(/(?:^|\n)Backlog:\s*\n([\s\S]*)/i)
