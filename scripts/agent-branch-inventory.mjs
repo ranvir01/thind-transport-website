@@ -54,15 +54,21 @@ function tip(ref) {
   return { hash, subject, date }
 }
 
+/**
+ * Count unpicked commits from `git cherry <upstream> <head>` output.
+ * git cherry prefixes: "+" = NOT in upstream (unpicked), "-" = a
+ * patch-equivalent commit IS already in upstream (picked). Counting "-"
+ * here (the original bug) made the integrator re-merge already-landed
+ * branches and hide genuinely new work as "on main".
+ */
+export function countUnpickedFromCherry(out) {
+  return out.split("\n").filter((l) => l.startsWith("+")).length
+}
+
 function unpickedCommitCount(ref, base) {
   const out = git(`cherry ${base} ${ref}`)
   if (!out) return revCount(base, ref)
-  const lines = out.split("\n").filter(Boolean)
-  // git cherry: "+" = commit NOT in base (unpicked); "-" = change already in
-  // base (cherry-equivalent, picked). Counting "-" inverted the queue: new
-  // branches read as absorbed, absorbed ones as pending.
-  const unpicked = lines.filter((l) => l.startsWith("+")).length
-  return unpicked
+  return countUnpickedFromCherry(out)
 }
 
 function buildInventory({ pendingOnly }) {
@@ -146,4 +152,5 @@ function main() {
   console.log(`  git merge origin/${top.branch.split("/").slice(1).join("/")}`)
 }
 
-main()
+// import-safe: only run when executed directly (tests import countUnpickedFromCherry)
+if (process.argv[1] && import.meta.url === new URL(`file://${process.argv[1]}`).href) main()
