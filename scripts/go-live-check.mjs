@@ -13,6 +13,8 @@
  *   4. durable file storage + SMTP are configured (warn-only)
  *   5. configured sidecars require HAULDESK_SIDECAR_SECRET (warn-only)
  *   6. at least one real (non-demo) active office user exists
+ *   7. NEXTAUTH_SECRET/AUTH_SECRET, CREDENTIALS_KEY, CRON_SECRET are set
+ *      (docs/hub-go-live-requirements.md §1 lists all three as required before login)
  *
  * Exit 0 = ready; exit 1 = at least one blocking failure. Warnings don't block.
  */
@@ -121,6 +123,26 @@ async function main() {
     )
     if (office[0].n > 0) pass(`${office[0].n} real office user(s) can sign in`)
     else fail("no real office users", "create the owner via /hub/signup, then invite staff in Settings → Users")
+
+    // 8. Auth/credentials/cron secrets (all "required before anyone logs in" per
+    //    docs/hub-go-live-requirements.md §1, but none were verified until now)
+    if (process.env.NEXTAUTH_SECRET || process.env.AUTH_SECRET) {
+      pass("NEXTAUTH_SECRET/AUTH_SECRET set — sessions signed")
+    } else {
+      fail("NEXTAUTH_SECRET/AUTH_SECRET not set", "set one (openssl rand -base64 32) — Auth.js can't sign sessions without it")
+    }
+
+    if (process.env.CREDENTIALS_KEY && process.env.CREDENTIALS_KEY.length >= 16) {
+      pass("CREDENTIALS_KEY set — integration credentials encrypt at rest")
+    } else {
+      fail("CREDENTIALS_KEY not set (32+ chars)", "without it, credential storage is disabled and every integration stays on the CSV path")
+    }
+
+    if (process.env.CRON_SECRET) {
+      pass("CRON_SECRET set — /api/hub/cron/* protected")
+    } else {
+      fail("CRON_SECRET not set", "cron routes (compliance scan, AR reminders, mailbox, FMCSA recheck) accept unauthenticated requests")
+    }
   } finally {
     await client.end()
   }
