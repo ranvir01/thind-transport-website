@@ -15,7 +15,7 @@
 import puppeteer from "puppeteer"
 import { mkdirSync, writeFileSync } from "node:fs"
 import path from "node:path"
-import { BASE, sleep, failures, check, waitForText, login, makeShot, clickByText, clickSelector, reseed } from "./e2e-lib.mjs"
+import { BASE, sleep, failures, check, waitForText, login, makeShot, clickByText, reseed } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-safety"
 mkdirSync(OUT, { recursive: true })
@@ -79,30 +79,32 @@ async function advanceDriverLoadToDelivered(page) {
   await clickByText(page, "Delivered")
   await waitForText(page, "Status updated")
   await sleep(1200)
-  check((await page.evaluate(() => document.body.innerText.toLowerCase())).includes("delivered — send the pod"), "load is delivered and awaiting POD")
+  check(
+    (await page.evaluate(() => document.body.innerText)).toLowerCase().includes("delivered — send the pod"),
+    "load is delivered and awaiting POD"
+  )
 }
 
+/**
+ * Scoped to the OS&D checkbox's own card — the driver home also pins an
+ * unrelated document-request widget (e.g. "Receipt for THD-1005") with its
+ * own hidden file input earlier in the DOM; grabbing the page's first
+ * input[type=file] uploads to the wrong load and misreports as "isn't yours".
+ */
 async function uploadOsdPod(page, fixturePath) {
-  // The driver home also renders a DocRequestCard (a "the office needs
-  // something" quick-upload for a *different* load) higher up the page, with
-  // its own <input type="file">. A bare `input[type="file"]` selector grabs
-  // that one first and uploads against the wrong load_id (server rejects
-  // with "That load isn't yours"). Scope to the file input sitting inside
-  // the same "Send paperwork" container as the OS&D checkbox.
   const fileInputHandle = await page.evaluateHandle(() => {
     const box = [...document.querySelectorAll("label")].find((l) =>
       (l.textContent ?? "").includes("Exceptions noted on the POD")
     )
-    const checkbox = box?.querySelector('input[type="checkbox"]')
+    if (!box) return null
+    const checkbox = box.querySelector('input[type="checkbox"]')
     if (checkbox && !checkbox.checked) checkbox.click()
-    return box?.parentElement?.querySelector('input[type="file"]') ?? null
+    const card = box.closest("div.rounded-xl") ?? box.parentElement
+    return card ? card.querySelector('input[type="file"]') : null
   })
   const fileInput = fileInputHandle.asElement()
-  if (!fileInput) throw new Error("uploadOsdPod: could not find the load's own file input next to the OS&D checkbox")
+  if (!fileInput) throw new Error("Could not find the POD file input near the OS&D checkbox")
   await fileInput.uploadFile(fixturePath)
-  // Driver-side confirmation ("opened a claim file"); the office-facing
-  // notification uses different wording ("draft claim opened") checked
-  // separately in step 6 against the dispatcher's notification tray.
   await waitForText(page, "opened a claim file", 20000)
 }
 
@@ -144,8 +146,8 @@ async function main() {
   await waitForText(page, "Incident updated")
   await sleep(1200)
   await page.goto(`${BASE}/hub/safety`, { waitUntil: "networkidle2" })
-  const afterCloseWall = await page.evaluate(() => document.body.innerText.toLowerCase())
-  check(afterCloseWall.includes("closed"), "closed incident shows Closed status on Safety")
+  const afterCloseWall = await page.evaluate(() => document.body.innerText)
+  check(afterCloseWall.toLowerCase().includes("closed"), "closed incident shows Closed status on Safety")
   check((await registerCount(page)) === 1, "DOT register still lists the recordable incident after close (390.15 retention)")
   await shot(page, "02-incident-closed")
 
@@ -183,7 +185,8 @@ async function main() {
 
   console.log("6. Dispatcher sees the draft-claim alert in notifications")
   await page.goto(`${BASE}/hub`, { waitUntil: "networkidle2" })
-  await clickSelector(page, 'button[aria-label^="Notifications"]')
+  await sleep(1500)
+  await page.click('button[aria-label^="Notifications"]')
   await sleep(800)
   const notify = await page.evaluate(() => document.body.innerText)
   check(notify.toLowerCase().includes("draft claim"), "notification mentions the draft claim opened from OS&D POD")
