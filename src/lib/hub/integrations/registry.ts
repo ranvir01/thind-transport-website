@@ -55,7 +55,7 @@ export const PROVIDERS: readonly ProviderSpec[] = [
     id: "truckercloud", label: "TruckerCloud ELD", domain: "telematics",
     blurb: "Alternate ELD aggregator — drop-in TelematicsSource adapter.",
     fields: [{ key: "apiKey", label: "API key", secret: true }],
-    fallback: "Positions CSV import", sync: "poll", status: "stub",
+    fallback: "Positions CSV import", sync: "poll", status: "live", cronJob: "telematics-sync",
   },
   {
     id: "mailbox", label: "Docs mailbox (IMAP)", domain: "docs",

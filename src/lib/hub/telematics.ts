@@ -1,9 +1,11 @@
 /**
  * TelematicsSource (Phase 6): the live ELD feed behind an internal interface.
- * TruckX has no public API — it connects through aggregators (Terminal is the
- * first adapter; TruckerCloud is a drop-in second). Without credentials the
- * interface reports "not connected" and the CSV import path keeps working —
- * the rest of the system never knows which path the data arrived through.
+ * TruckX has no public API — it connects through aggregators (Terminal shipped
+ * first; TruckerCloud is the drop-in second — same interface, its own
+ * credentials). `activeTelematicsSource` picks whichever one the carrier
+ * connected. Without credentials for either, the interface reports "not
+ * connected" and the CSV import path keeps working — the rest of the system
+ * never knows which path the data arrived through.
  */
 import { query, queryOne } from "./db"
 import { getCredentials, hasCredentials } from "./credentials"
@@ -91,6 +93,86 @@ function minutes(value: unknown): number | null {
 }
 
 /**
+ * TruckerCloud (truckercloud.com, "Apollo API") — the drop-in second
+ * aggregator this file's header comment has promised since Terminal shipped.
+ * Auth model is a best-effort guess (docs/integrations/truckercloud.md):
+ * TruckerCloud's own docs pages 403 this scout's fetch tooling the same way
+ * docs.withterminal.com and the EFS integration pages did, so this assumes a
+ * single bearer API key (matching the registry's one-field credential spec)
+ * against a normalized vehicles/HOS shape parallel to Terminal's. Swapping in
+ * the confirmed shape later only touches the two `normalizeTruckerCloud*`
+ * functions below — the adapter, sync loop, and contract tests don't move.
+ */
+export function truckerCloudSource(carrierId: string): TelematicsSource {
+  const base = process.env.TRUCKERCLOUD_API_BASE ?? "https://api.truckercloud.com/v1"
+  const request = async (path: string) => {
+    const creds = await getCredentials(carrierId, "truckercloud")
+    if (!creds?.apiKey) throw new Error("truckercloud not connected")
+    const response = await fetch(`${base}${path}`, {
+      headers: { Authorization: `Bearer ${creds.apiKey}` },
+      signal: AbortSignal.timeout(15000),
+    })
+    if (!response.ok) throw new Error(`TruckerCloud ${path} → HTTP ${response.status}`)
+    return response.json() as Promise<{ data?: unknown[] }>
+  }
+
+  return {
+    provider: "truckercloud",
+    async connected() {
+      return hasCredentials(carrierId, "truckercloud")
+    },
+    async vehicles() {
+      const json = await request("/vehicles")
+      return ((json.data ?? []) as Record<string, unknown>[]).map(normalizeTruckerCloudVehicle)
+    },
+    async hos() {
+      const json = await request("/hos")
+      return ((json.data ?? []) as Record<string, unknown>[]).map(normalizeTruckerCloudHos)
+    },
+  }
+}
+
+/** Pure — the one place TruckerCloud's assumed vehicle shape is read (see truckerCloudSource). */
+export function normalizeTruckerCloudVehicle(record: Record<string, unknown>): TelematicsVehicle {
+  const location = (record.location ?? {}) as Record<string, unknown>
+  return {
+    externalId: String(record.vehicleId ?? record.id ?? ""),
+    unitHint: (record.unitNumber as string) ?? (record.assetName as string) ?? null,
+    lat: typeof location.lat === "number" ? location.lat : null,
+    lng: typeof location.lng === "number" ? location.lng : null,
+    odometerMiles: typeof location.odometer === "number" ? location.odometer : null,
+    locatedAt: (location.timestamp as string) ?? null,
+  }
+}
+
+/** Pure — the one place TruckerCloud's assumed HOS shape is read (see truckerCloudSource). */
+export function normalizeTruckerCloudHos(record: Record<string, unknown>): TelematicsHos {
+  return {
+    externalDriverId: String(record.driverId ?? ""),
+    driverNameHint: (record.driverName as string) ?? null,
+    dutyStatus: (record.status as string) ?? null,
+    driveRemainingMinutes: minutes(record.driveTimeRemainingSeconds),
+    shiftRemainingMinutes: minutes(record.shiftTimeRemainingSeconds),
+    cycleRemainingMinutes: minutes(record.cycleTimeRemainingSeconds),
+    ts: (record.recordedAt as string) ?? new Date().toISOString(),
+  }
+}
+
+/**
+ * Whichever aggregator the carrier has actually connected — Terminal first
+ * (the longer-lived, confirmed adapter), TruckerCloud as the fallback second
+ * choice. A carrier connects one ELD aggregator at a time; if both were ever
+ * connected simultaneously, Terminal wins rather than merging two feeds.
+ */
+async function activeTelematicsSource(carrierId: string): Promise<TelematicsSource | null> {
+  const terminal = terminalSource(carrierId)
+  if (await terminal.connected()) return terminal
+  const truckerCloud = truckerCloudSource(carrierId)
+  if (await truckerCloud.connected()) return truckerCloud
+  return null
+}
+
+/**
  * Scheduled sync (cron `telematics-sync`): positions → position_pings
  * (append-only), odometer hints, HOS → hos_snapshots. Unit matching is by
  * unit-number hint; unmatched vehicles are reported, never guessed.
@@ -98,8 +180,8 @@ function minutes(value: unknown): number | null {
 export async function runTelematicsSync(
   carrierId: string
 ): Promise<{ connected: boolean; pings?: number; hos?: number; unmatched?: string[] }> {
-  const source = terminalSource(carrierId)
-  if (!(await source.connected())) return { connected: false }
+  const source = await activeTelematicsSource(carrierId)
+  if (!source) return { connected: false }
 
   const trucks = await query<{ id: string; unit_number: string }>(
     `SELECT id, unit_number FROM hub.trucks WHERE carrier_id = $1 AND deleted_at IS NULL`,
@@ -118,8 +200,8 @@ export async function runTelematicsSync(
     if (vehicle.lat != null && vehicle.lng != null) {
       await query(
         `INSERT INTO hub.position_pings (carrier_id, truck_id, ts, lat, lng, odometer, source)
-         VALUES ($1, $2, $3, $4, $5, $6, 'terminal')`,
-        [carrierId, truckId, vehicle.locatedAt ?? new Date().toISOString(), vehicle.lat, vehicle.lng, vehicle.odometerMiles]
+         VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+        [carrierId, truckId, vehicle.locatedAt ?? new Date().toISOString(), vehicle.lat, vehicle.lng, vehicle.odometerMiles, source.provider]
       )
       pings++
     }
@@ -138,10 +220,11 @@ export async function runTelematicsSync(
     await query(
       `INSERT INTO hub.hos_snapshots (carrier_id, driver_id, ts, duty_status,
          drive_remaining_minutes, shift_remaining_minutes, cycle_remaining_minutes, source)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,'terminal')`,
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
       [
         carrierId, driverId, snapshot.ts, snapshot.dutyStatus,
         snapshot.driveRemainingMinutes, snapshot.shiftRemainingMinutes, snapshot.cycleRemainingMinutes,
+        source.provider,
       ]
     )
     hosCount++
