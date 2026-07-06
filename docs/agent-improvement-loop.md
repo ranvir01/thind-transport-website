@@ -191,7 +191,44 @@ can use session branches and must end commits with `Backlog:`.
 
 **Prod smoke (Cursor automation, :30 UTC):** run `npm run prod:smoke` — `/hub/login` must return 200
 with `LoadOff` in the body; `/hub` must not 5xx. Any failure → diagnose, fix forward on `main`, push.
-Optional later: Vercel MCP for deployment status. This is the fleet's no-human rollback trigger.
+This session's egress policy returns a 403 policy denial on the CONNECT to `thindtransport.com`
+itself (confirmed again 2026-07-06) — no page is ever reached, so treat a curl/browser probe
+failure from a Claude Code on the web session as inconclusive, not a site defect. Use the Vercel
+MCP connector instead (`get_runtime_errors`, `list_deployments`, `get_deployment`) — it reaches
+Vercel's API directly, not `thindtransport.com`. This is the fleet's no-human rollback trigger.
+
+**QA/E2E routine (owner+dispatcher+driver drive, ad hoc):** stand up the local rig (`npm run
+db:migrate && npm run seed:demo && npm run build && npm run start`), run every `scripts/e2e-*.mjs`
+smoke + `scripts/e2e-sweep.mjs`, then drive ad hoc flows as owner/dispatcher/driver with Playwright
+(browser preinstalled in the web sandbox at `/opt/pw-browsers`; install a scratch-dir
+`playwright@1.61.1` pinned to the sandbox's Chromium build 1194 rather than adding it to
+`package.json` — launch with `executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome'`
+and `args: ['--no-sandbox']`). Ignore `net::ERR_TUNNEL_CONNECTION_FAILED` on `/hub/map` (sandbox
+proxy blocks `tile.openstreetmap.org`, not an app defect) and `net::ERR_ABORTED` on `*_rsc=*`
+requests (cancelled Next.js prefetches, not an app defect).
+
+Confirmed clean on 2026-07-06 13:25 UTC against the last 3h of commits (WEX daily cron wiring +
+registry flip to live, `agent:backlog` stale-bullet filter): full `scripts/e2e-*.mjs` suite (26
+scripts) + `e2e-sweep.mjs` green, `npx vitest run` 405/405, `npm run build` clean, manual
+Playwright drive as owner/dispatcher/driver/broker (1440px office, 390px driver) across every
+nav-reachable screen found zero console errors and zero regressions; the WEX integration card
+renders correctly on `/hub/settings/integrations` now that its status flipped to `"live"`.
+
+**Critical finding — Vercel has stopped deploying (not a code regression, an infra stall):**
+`main` currently sits at `d03d289` (2026-07-06 13:02 UTC), but `mcp__Vercel__get_deployment` for
+`thindtransport.com` shows production still serving `e163d31` (built 05:28 UTC) — **102 commits
+and ~8 hours behind**. `mcp__Vercel__list_deployments` shows **zero deployments of any kind**
+(production or preview) created after `2026-07-06 08:17 UTC` — over 5 hours of silence despite
+continuous pushes to `main` and a dozen+ `claude/*` branches in that window. `get_runtime_errors`
+shows no runtime errors on the (stale) live deployment, so the site itself isn't crashing — it's
+just not receiving new builds. Checked whether this masks an undeployed security fix: it doesn't —
+`a7c692d` (cross-tenant write fixes) and `d7766d2` (per-carrier IFTA rates) both predate `e163d31`
+and are already live. Likely cause: this fleet's push cadence (every lane + session branch push
+triggers its own Vercel preview build) plausibly exhausts the Hobby plan's daily deployment quota
+— `vercel.json` already notes Hobby-tier cron constraints elsewhere in this repo's history. Owner
+action needed: check the Vercel dashboard for a deployment-limit banner or a broken GitHub
+webhook/App connection; the deploy-agent automation cannot fix this from inside a session (it can
+only push commits, not diagnose why Vercel never picks them up).
 
 **Meta-governor (routine, weekly):** audit the LOOP itself over the past week: commits per agent,
 reverts, test-count trend, build breakages on main, churn (files edited by 3+ agents), busywork
