@@ -1,3 +1,4 @@
+import Link from "next/link"
 import { Download } from "lucide-react"
 import { truckPnl } from "@/lib/hub/expenses"
 import { computeFleetKpis } from "@/lib/hub/kpi"
@@ -47,12 +48,20 @@ export default async function ReportsPage() {
         title="Reports"
         subtitle="Per-truck P&L, last 92 days. Driver pay and fixed costs come from the accountant's books — this is the operational view."
         action={
-          <a
-            href={PNL_EXPORT_URL}
-            className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-border-strong bg-surface px-4 text-sm font-semibold text-fg-2 hover:bg-hover"
-          >
-            <Download className="h-4 w-4" /> P&L CSV
-          </a>
+          <div className="flex flex-wrap gap-2">
+            <Link
+              href="/hub/reports/owner"
+              className="inline-flex min-h-[44px] items-center rounded-xl border border-border-strong bg-surface px-4 text-sm font-semibold text-fg-2 hover:bg-hover"
+            >
+              Owner dashboard →
+            </Link>
+            <a
+              href={PNL_EXPORT_URL}
+              className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-border-strong bg-surface px-4 text-sm font-semibold text-fg-2 hover:bg-hover"
+            >
+              <Download className="h-4 w-4" /> P&L CSV
+            </a>
+          </div>
         }
       />
 
