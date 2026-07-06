@@ -108,7 +108,7 @@ export async function complianceEntries(carrierId: string): Promise<ComplianceEn
   for (const item of manual) {
     entries.push({
       entity: "company", entityId: null, name: "Company", kind: item.kind,
-      due: item.due_on, color: item.due_on ? colorFor(item.due_on, now) : "green",
+      due: item.due_on, color: colorFor(item.due_on, now),
       href: "/hub/compliance", manualItemId: item.id,
     })
   }

@@ -58,13 +58,13 @@ describe("complianceEntries color thresholds (colorFor)", () => {
     expect(entries.every((e) => e.color === "amber")).toBe(true)
   })
 
-  it("treats a manual company item with no due date as green, not amber", async () => {
+  it("treats a manual company item with no due date as amber (needs a date)", async () => {
     mockRowsBySql({
       manual: [{ id: "item-1", kind: "IFTA decals", due_on: null, note: null }],
     })
     const entries = await complianceEntries(CARRIER)
     expect(entries).toHaveLength(1)
-    expect(entries[0].color).toBe("green")
+    expect(entries[0].color).toBe("amber")
     expect(entries[0].manualItemId).toBe("item-1")
   })
 
