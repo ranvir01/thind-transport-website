@@ -71,15 +71,24 @@ export function IftaControls({ quarter, status }: { quarter: string; status: str
   const router = useRouter()
   const [pending, startTransition] = useTransition()
 
-  const compute = () =>
+  const compute = () => {
+    const finalized = status === "reviewed" || status === "filed"
+    if (
+      finalized &&
+      !window.confirm(
+        `${quarter} is already marked ${status}. Recomputing resets it to draft and replaces the saved report — continue?`
+      )
+    )
+      return
     startTransition(async () => {
-      const result = await computeIftaAction(quarter)
+      const result = await computeIftaAction(quarter, { confirmRecompute: finalized })
       if (result.ok) {
         toast.success("Quarter computed")
         if (result.error) toast.warning(result.error)
         router.refresh()
       } else toast.error(result.error ?? "Compute failed")
     })
+  }
 
   const setStatus = (next: "reviewed" | "filed") =>
     startTransition(async () => {

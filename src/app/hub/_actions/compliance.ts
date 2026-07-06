@@ -53,7 +53,10 @@ export async function resolveComplianceItemAction(id: string): Promise<ActionRes
   }
 }
 
-export async function computeIftaAction(quarter: string): Promise<ActionResult> {
+export async function computeIftaAction(
+  quarter: string,
+  opts?: { confirmRecompute?: boolean }
+): Promise<ActionResult> {
   let user
   try {
     user = await requirePermission("compliance:write")
@@ -62,7 +65,9 @@ export async function computeIftaAction(quarter: string): Promise<ActionResult> 
   }
   if (!/^\d{4}Q[1-4]$/.test(quarter)) return { ok: false, error: "Bad quarter (use 2026Q2)" }
   try {
-    const { result } = await computeIftaQuarter(user.carrierId, quarter, user)
+    const { result } = await computeIftaQuarter(user.carrierId, quarter, user, {
+      allowRecomputeOfFinalized: opts?.confirmRecompute,
+    })
     revalidatePath("/hub/compliance/ifta")
     return {
       ok: true,

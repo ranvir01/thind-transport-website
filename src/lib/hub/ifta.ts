@@ -42,8 +42,25 @@ export async function getIftaReport(carrierId: string, quarter: string): Promise
 export async function computeIftaQuarter(
   carrierId: string,
   quarter: string,
-  actor: { id: string; name: string }
+  actor: { id: string; name: string },
+  opts?: { allowRecomputeOfFinalized?: boolean }
 ): Promise<{ result: IftaResult; mileageSource: string }> {
+  // Recomputing upserts status back to 'draft' — a reviewed/filed quarter must
+  // not be reset without explicit confirmation from the caller.
+  const existing = await query<{ status: string }>(
+    `SELECT status FROM hub.ifta_reports WHERE carrier_id = $1 AND quarter = $2`,
+    [carrierId, quarter]
+  )
+  const currentStatus = existing[0]?.status
+  if (
+    (currentStatus === "reviewed" || currentStatus === "filed") &&
+    !opts?.allowRecomputeOfFinalized
+  ) {
+    throw new Error(
+      `Quarter ${quarter} is already ${currentStatus} — recomputing resets it to draft. Confirm the recompute to proceed.`
+    )
+  }
+
   const { start, end } = quarterRange(quarter)
   const runId = randomUUID()
 
