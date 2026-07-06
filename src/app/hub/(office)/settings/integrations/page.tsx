@@ -58,6 +58,7 @@ export default async function IntegrationsPage() {
         { key: "feedPassword", label: "Feed password", type: "password" },
       ],
       connected: efs,
+      canSync: true,
     },
     {
       provider: "comdata",

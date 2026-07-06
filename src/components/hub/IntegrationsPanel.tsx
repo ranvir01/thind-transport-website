@@ -11,7 +11,8 @@ import { toast } from "sonner"
 import { Cable, Check, Loader2, RefreshCw, Unplug } from "lucide-react"
 import { cn } from "@/lib/utils"
 import {
-  disconnectIntegrationAction, saveIntegrationCredentialsAction, syncTelematicsNowAction,
+  disconnectIntegrationAction, saveIntegrationCredentialsAction,
+  syncEfsNowAction, syncTelematicsNowAction,
 } from "@/app/hub/_actions/integrations"
 import { fieldCls, Panel } from "@/components/hub/ui"
 
@@ -23,6 +24,12 @@ export interface ProviderCard {
   fields: { key: string; label: string; type?: string }[]
   connected: boolean
   canSync?: boolean
+}
+
+/** One "sync now" action per provider that has a real adapter behind it. */
+const SYNC_ACTIONS: Partial<Record<ProviderCard["provider"], () => Promise<{ ok: boolean; error?: string; summary?: string }>>> = {
+  terminal: syncTelematicsNowAction,
+  efs: syncEfsNowAction,
 }
 
 export function IntegrationCard({ card, encryptionReady }: { card: ProviderCard; encryptionReady: boolean }) {
@@ -55,7 +62,9 @@ export function IntegrationCard({ card, encryptionReady }: { card: ProviderCard;
 
   const syncNow = () =>
     startTransition(async () => {
-      const result = await syncTelematicsNowAction()
+      const action = SYNC_ACTIONS[card.provider]
+      if (!action) return
+      const result = await action()
       if (result.ok) toast.success(`Synced: ${result.summary}`)
       else toast.error(result.error ?? "Sync failed")
       router.refresh()
