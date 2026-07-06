@@ -79,20 +79,31 @@ async function advanceDriverLoadToDelivered(page) {
   await clickByText(page, "Delivered")
   await waitForText(page, "Status updated")
   await sleep(1200)
-  check((await page.evaluate(() => document.body.innerText)).includes("Delivered — send the POD"), "load is delivered and awaiting POD")
+  check((await page.evaluate(() => document.body.innerText.toLowerCase())).includes("delivered — send the pod"), "load is delivered and awaiting POD")
 }
 
 async function uploadOsdPod(page, fixturePath) {
-  await page.evaluate(() => {
+  // The driver home also renders a DocRequestCard (a "the office needs
+  // something" quick-upload for a *different* load) higher up the page, with
+  // its own <input type="file">. A bare `input[type="file"]` selector grabs
+  // that one first and uploads against the wrong load_id (server rejects
+  // with "That load isn't yours"). Scope to the file input sitting inside
+  // the same "Send paperwork" container as the OS&D checkbox.
+  const fileInputHandle = await page.evaluateHandle(() => {
     const box = [...document.querySelectorAll("label")].find((l) =>
       (l.textContent ?? "").includes("Exceptions noted on the POD")
     )
-    const input = box?.querySelector('input[type="checkbox"]')
-    if (input && !input.checked) input.click()
+    const checkbox = box?.querySelector('input[type="checkbox"]')
+    if (checkbox && !checkbox.checked) checkbox.click()
+    return box?.parentElement?.querySelector('input[type="file"]') ?? null
   })
-  const fileInput = await page.waitForSelector('input[type="file"]')
+  const fileInput = fileInputHandle.asElement()
+  if (!fileInput) throw new Error("uploadOsdPod: could not find the load's own file input next to the OS&D checkbox")
   await fileInput.uploadFile(fixturePath)
-  await waitForText(page, "draft claim file", 20000)
+  // Driver-side confirmation ("opened a claim file"); the office-facing
+  // notification uses different wording ("draft claim opened") checked
+  // separately in step 6 against the dispatcher's notification tray.
+  await waitForText(page, "opened a claim file", 20000)
 }
 
 async function main() {
@@ -133,8 +144,8 @@ async function main() {
   await waitForText(page, "Incident updated")
   await sleep(1200)
   await page.goto(`${BASE}/hub/safety`, { waitUntil: "networkidle2" })
-  const afterCloseWall = await page.evaluate(() => document.body.innerText)
-  check(afterCloseWall.includes("Closed"), "closed incident shows Closed status on Safety")
+  const afterCloseWall = await page.evaluate(() => document.body.innerText.toLowerCase())
+  check(afterCloseWall.includes("closed"), "closed incident shows Closed status on Safety")
   check((await registerCount(page)) === 1, "DOT register still lists the recordable incident after close (390.15 retention)")
   await shot(page, "02-incident-closed")
 
