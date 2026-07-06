@@ -129,7 +129,9 @@ export async function submitInvoiceToFactorAction(invoiceId: string): Promise<Ac
   }
 }
 
-export async function pushInvoiceToQboAction(invoiceId: string): Promise<ActionResult & { alreadyPushed?: boolean }> {
+export async function pushInvoiceToQboAction(
+  invoiceId: string
+): Promise<ActionResult & { alreadyPushed?: boolean; updated?: boolean }> {
   let user
   try {
     user = await requirePermission("money:write")
@@ -141,14 +143,15 @@ export async function pushInvoiceToQboAction(invoiceId: string): Promise<ActionR
     if (!result.connected) {
       return {
         ok: false,
-        error: "QuickBooks isn't connected yet — save credentials under Settings → Integrations.",
+        error: "QuickBooks Online isn't connected yet — save credentials under Settings → Integrations.",
       }
     }
     if (result.alreadyPushed) {
       return { ok: true, alreadyPushed: true }
     }
+    revalidateMoney()
     revalidatePath(`/hub/money/invoices/${invoiceId}`)
-    return { ok: true }
+    return { ok: true, updated: result.updated }
   } catch (err) {
     return asError(err, "Failed to push invoice to QuickBooks")
   }
