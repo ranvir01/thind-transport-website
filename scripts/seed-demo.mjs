@@ -428,7 +428,7 @@ async function main() {
     return rows[0].id
   }
   await makeInvoice(invoiced1, { issuedDaysAgo: 9, terms: 30, status: "sent" })
-  await makeInvoice(overdue1, { issuedDaysAgo: 52, terms: 60 - 8, status: "overdue" }) // due ~time ago
+  await makeInvoice(overdue1, { issuedDaysAgo: 52, terms: 30, status: "overdue" }) // due 22 days ago
   await makeInvoice(factoredInv, { issuedDaysAgo: 6, terms: 45, factored: true, status: "sent" })
   await makeInvoice(paid1, { issuedDaysAgo: 17, terms: 30, status: "paid", payments: [{ amountCents: paid1.totalCents, daysAgo: 2, ref: "ACH 99812" }] })
 
