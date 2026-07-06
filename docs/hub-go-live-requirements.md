@@ -13,6 +13,7 @@ This is the checklist to take HaulDesk from **demo-ready** to **Thind Transport 
 | **NextAuth URL** | `NEXTAUTH_URL` | `https://thindtransport.com` (or your hub domain) |
 | **Credentials encryption** | `CREDENTIALS_KEY` | 32+ random chars — encrypts fuel/telematics/mailbox passwords in DB |
 | **Cron secret** | `CRON_SECRET` | Protects `/api/hub/cron/*` (compliance scan, AR reminders, mailbox, FMCSA recheck, etc.) |
+| **Blob storage** | `BLOB_READ_WRITE_TOKEN` (Vercel Blob) | Vercel's filesystem is ephemeral — without this, POD uploads and generated invoice/settlement PDFs are lost between invocations |
 
 After env is set:
 
@@ -108,7 +109,6 @@ Printable owner guide: `docs/production-intake/thind-transport.md`
 |------|---------|---------|
 | Web Push (driver notifications) | `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_CONTACT` | `npx web-push generate-vapid-keys` |
 | Self-hosted geocoder | `GEOCODER_BASE_URL` | Scale geocoding beyond Nominatim rate limits |
-| Blob storage | Vercel Blob (if enabled) | Large document storage at scale |
 
 ---
 
