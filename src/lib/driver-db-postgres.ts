@@ -89,6 +89,8 @@ export async function initializeDatabase() {
       )
     `)
     await exec(`ALTER TABLE applications ADD COLUMN IF NOT EXISTS status VARCHAR(30) DEFAULT 'submitted'`)
+    await exec(`ALTER TABLE drivers ADD COLUMN IF NOT EXISTS reset_token TEXT`)
+    await exec(`ALTER TABLE drivers ADD COLUMN IF NOT EXISTS reset_token_expiry TIMESTAMP`)
 
     await exec(`
       CREATE TABLE IF NOT EXISTS public_applications (
@@ -115,31 +117,26 @@ export async function initializeDatabase() {
   }
 }
 
-// Self-healing schema: newer tables/columns are created on demand so production
-// keeps working without a manual setup step after deploys.
+// Self-healing schema: tables/columns are created on demand so production
+// keeps working without a manual setup step after deploys — and a fresh
+// database (local rig, new deploy) works without hitting /api/setup-db first.
+// Must create the BASE tables too: on an empty database the old ALTER-only
+// version threw 42P01 and every driver-portal call after it failed.
 let schemaEnsured = false
+let schemaEnsuring: Promise<void> | null = null
 async function ensureSchema() {
   if (schemaEnsured) return
-  try {
-    await exec(`ALTER TABLE applications ADD COLUMN IF NOT EXISTS status VARCHAR(30) DEFAULT 'submitted'`)
-    await exec(`
-      CREATE TABLE IF NOT EXISTS public_applications (
-        id VARCHAR(255) PRIMARY KEY,
-        first_name VARCHAR(255) NOT NULL,
-        last_name VARCHAR(255) NOT NULL,
-        email VARCHAR(255) NOT NULL,
-        phone VARCHAR(50) NOT NULL,
-        driver_type VARCHAR(100),
-        data JSONB NOT NULL,
-        email_delivered BOOLEAN DEFAULT FALSE,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      )
-    `)
-    await exec(`CREATE INDEX IF NOT EXISTS idx_public_applications_email ON public_applications(email)`)
-    schemaEnsured = true
-  } catch (error) {
-    console.error("Schema ensure error:", error)
-  }
+  schemaEnsuring ??= (async () => {
+    try {
+      await initializeDatabase()
+      schemaEnsured = true
+    } catch (error) {
+      console.error("Schema ensure error:", error)
+    } finally {
+      schemaEnsuring = null
+    }
+  })()
+  await schemaEnsuring
 }
 
 // Verify invitation code
@@ -157,6 +154,7 @@ export async function createDriver(driverData: {
   invitationCode: string
 }): Promise<Driver> {
   try {
+    await ensureSchema()
     const existing = await query<{ id: string }>(
       `SELECT id FROM drivers WHERE email = $1`,
       [driverData.email]
@@ -204,6 +202,7 @@ export async function createDriver(driverData: {
 // Find driver by email
 export async function findDriverByEmail(email: string): Promise<Driver | null> {
   try {
+    await ensureSchema()
     return await queryOne<Driver>(
       `SELECT
         id, email, password_hash as "passwordHash",
@@ -223,6 +222,7 @@ export async function findDriverByEmail(email: string): Promise<Driver | null> {
 // Find driver by ID
 export async function findDriverById(id: string): Promise<Driver | null> {
   try {
+    await ensureSchema()
     return await queryOne<Driver>(
       `SELECT
         id, email, password_hash as "passwordHash",
