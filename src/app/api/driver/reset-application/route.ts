@@ -44,13 +44,10 @@ export async function POST(request: NextRequest) {
     
     // Try to use Postgres if available
     if (process.env.POSTGRES_URL) {
-      const { sql } = await import("@vercel/postgres")
-      
-      // Delete any applications for this driver
-      await sql`DELETE FROM applications WHERE driver_id = ${driver.id}`
-      
-      // Reset the application_completed flag
-      await sql`UPDATE drivers SET application_completed = false WHERE id = ${driver.id}`
+      const { hubDb } = await import("@/lib/hub/db")
+
+      await hubDb().query(`DELETE FROM applications WHERE driver_id = $1`, [driver.id])
+      await hubDb().query(`UPDATE drivers SET application_completed = false WHERE id = $1`, [driver.id])
       
       console.log(`Application data reset for driver: ${targetEmail}`)
     } else {
