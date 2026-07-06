@@ -42,12 +42,15 @@ async function main() {
   await page.goto(`${BASE}/hub/reports`, { waitUntil: "networkidle2" })
   await waitForText(page, "Per-truck P&L")
   const reports = await page.evaluate(() => {
-    const text = document.body.innerText
+    // Panel/section labels render through a global uppercase text-transform
+    // (brand h2/label style) — innerText reflects the CSS-rendered case, so
+    // compare lowercased (same convention as e2e-sweep.mjs anchors).
+    const text = document.body.innerText.toLowerCase()
     return {
-      hasKpis: text.includes("Operating cost / mi") && text.includes("Revenue / loaded mi"),
-      hasTotals: text.includes("Net margin") && /Revenue[\s\S]*\$/.test(text),
+      hasKpis: text.includes("operating cost / mi") && text.includes("revenue / loaded mi"),
+      hasTotals: text.includes("net margin") && /revenue[\s\S]*\$/.test(text),
       truckUnits: [...document.querySelectorAll("td.font-bold")].map((td) => td.textContent.trim()),
-      hasLaneSection: text.includes("Lane leaderboard"),
+      hasLaneSection: text.includes("lane leaderboard"),
     }
   })
   check(reports.hasKpis, "fleet KPI cards render")
@@ -72,10 +75,10 @@ async function main() {
   await page.goto(`${BASE}/hub/reports/owner`, { waitUntil: "networkidle2" })
   await waitForText(page, "Owner Dashboard")
   const ownerDash = await page.evaluate(() => {
-    const text = document.body.innerText
+    const text = document.body.innerText.toLowerCase()
     return {
-      hasWeekly: text.includes("Revenue — last 8 weeks"),
-      hasMonthly: text.includes("Revenue — last 6 months"),
+      hasWeekly: text.includes("revenue — last 8 weeks"),
+      hasMonthly: text.includes("revenue — last 6 months"),
       barCount: document.querySelectorAll(".bg-accent.rounded-t-md").length,
       backLink: [...document.querySelectorAll("a")].some((a) => a.getAttribute("href") === "/hub/reports"),
     }
