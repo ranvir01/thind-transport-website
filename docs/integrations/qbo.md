@@ -68,6 +68,34 @@ Intuit's sandbox host while testing), returns
    `hub.invoices.number`, which only holds if a not-yet-built push adapter
    sets it that way when creating the QBO invoice in the first place.
 
+## Push side: `pushInvoiceToQbo`
+
+Creates a QBO Invoice with `DocNumber` set to our invoice number, so a later
+payment sync can resolve it (see the pull-side note above). Two QBO-specific
+lookups happen first, since QuickBooks references everything by its own
+internal Ids, not ours:
+
+- **CustomerRef**: resolved by matching our customer's name against QBO's
+  `Customer.DisplayName` (creating one if none matches). No new column on
+  `hub.customers` — same migration-free, match-by-name approach the pull
+  side uses for invoices (`DocNumber` ↔ `hub.invoices.number`).
+- **Line item**: a single flat line against a generic "Freight Service" QBO
+  `Item` (same resolve-or-create-by-name approach), not a per-accessorial
+  breakdown — that's a design question for whoever wires the office "Push to
+  QBO" button (this lane's territory doesn't include the invoice detail
+  page, `src/app/hub/(office)/money/invoices/[id]/page.tsx`).
+
+Guards a double push the same way `submitInvoiceToFactor` guards a double
+submission: an entry already present in `hub.invoices.sent_log` (kind
+`"qbo-push"`) short-circuits with `{ connected: true, alreadyPushed: true }`
+before any fetch — reusing that column instead of a new one.
+
+**Assumed/unconfirmed until a sandbox exists:** the `Customer`/`Item` create
+bodies (`DisplayName`, `Type: "Service"`, `IncomeAccountRef: { value: "1" }`
+as a placeholder income account) and the `Invoice` create body shape
+(`CustomerRef`, `Line[].SalesItemLineDetail.ItemRef`). Update isn't built —
+this only creates; re-pushing after an invoice edit is the next QBO pass.
+
 ## What activates when the owner pastes keys
 
 `qboSource(carrierId).connected()` flips to `true` and "Sync now" becomes
@@ -75,13 +103,19 @@ available on the QuickBooks card. `runQboSync` resolves each payment to a
 matching invoice by number and calls the SAME `recordPayment` the office
 "record a payment" form uses — so invoice status transitions, audit logging,
 and the load-status cascade (invoiced → paid → settled) all go through the
-one code path. QuickBooks CSV export stays the fallback.
+one code path. `pushInvoiceToQbo(carrierId, invoiceId, actor)` is ready for
+the office lane to call from a "Push to QBO" button. QuickBooks CSV export
+stays the fallback for both directions until then.
 
 ## Open questions for the next pass
 
-- Build the push side (LoadOff → QBO): create/update a QBO Invoice with
-  `DocNumber` set to our invoice number when we invoice a load. Until this
-  exists, payments against invoices QBO doesn't know under a matching
-  `DocNumber` come back `invoiceNumber: null` and are reported unmatched.
-- Confirm the real sandbox response shape and flip `registry.ts` status to
-  `live`.
+- Wire an actual "Push to QBO" button — this lane's territory doesn't
+  include the invoice detail page or its actions
+  (`src/app/hub/_actions/money.ts`), both office-lane territory.
+  `pushInvoiceToQbo(carrierId, invoiceId, actor)` is ready to call.
+- Decide whether accessorials need their own QBO line items instead of one
+  flat "Freight Service" line (see `pushInvoiceToQbo` above).
+- Support updating an already-pushed invoice (rate/accessorial edits after
+  the first push currently never reach QBO).
+- Confirm the real sandbox response shape (`Customer`/`Item`/`Invoice`
+  create bodies) and flip `registry.ts` status to `live`.

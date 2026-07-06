@@ -23,9 +23,10 @@
  * matching DocNumber come back with `invoiceNumber: null` and are reported as
  * unmatched rather than guessed.
  */
+import { logAudit } from "../audit"
 import { getCredentials, hasCredentials, saveCredentials } from "../credentials"
-import { queryOne } from "../db"
-import { recordPayment } from "../invoices"
+import { query, queryOne } from "../db"
+import { getInvoice, recordPayment } from "../invoices"
 import { dollarsToCents } from "../types"
 import type { SyncRowBase, SyncSource } from "./registry"
 
@@ -104,7 +105,7 @@ async function qboEntityQuery(
   base: string,
   realmId: string,
   token: string,
-  entity: "Payment" | "Invoice",
+  entity: "Payment" | "Invoice" | "Customer" | "Item",
   sql: string
 ): Promise<Record<string, unknown>[]> {
   const response = await fetch(`${base}/v3/company/${realmId}/query?query=${encodeURIComponent(sql)}&minorversion=65`, {
@@ -218,4 +219,110 @@ export async function runQboSync(
   }
 
   return { connected: true, imported, skipped, unmatched: [...new Set(unmatched)] }
+}
+
+/**
+ * Resolves a QBO entity (Customer or Item) by exact `DisplayName` match,
+ * creating one if none exists. QuickBooks references everything by its own
+ * internal Id, not our carrier-scoped ones, and `hub.customers` has no QBO-id
+ * column to store a mapping in (adding one is a migration — a shared-file
+ * change outside this lane, same story as `docs/integrations/qbo.md`'s
+ * payments note) — so this resolves by name every push instead, exactly like
+ * `pull()` resolves invoices by `DocNumber` rather than a stored id.
+ */
+async function resolveQboRef(
+  base: string,
+  realmId: string,
+  token: string,
+  entity: "Customer" | "Item",
+  displayName: string,
+  createBody: Record<string, unknown>
+): Promise<string> {
+  const escaped = displayName.replace(/'/g, "")
+  const matches = await qboEntityQuery(base, realmId, token, entity, `SELECT Id FROM ${entity} WHERE DisplayName = '${escaped}'`)
+  if (matches[0]?.Id != null) return String(matches[0].Id)
+
+  const response = await fetch(`${base}/v3/company/${realmId}/${entity.toLowerCase()}?minorversion=65`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json", Accept: "application/json" },
+    body: JSON.stringify(createBody),
+    signal: AbortSignal.timeout(15000),
+  })
+  if (!response.ok) throw new Error(`QuickBooks ${entity} create → HTTP ${response.status}`)
+  const json = (await response.json()) as Record<string, Record<string, unknown> | undefined>
+  const created = json[entity]
+  if (!created?.Id) throw new Error(`QuickBooks ${entity} create response missing Id`)
+  return String(created.Id)
+}
+
+/**
+ * Push side: create a QBO Invoice with `DocNumber` set to our invoice
+ * number — closing the loop `qboSource`'s docstring describes (a payment
+ * only resolves to one of our invoices once a QBO Invoice exists under that
+ * DocNumber). Guards a double push the same way `submitInvoiceToFactor`
+ * guards a double submission: an entry already present in
+ * `hub.invoices.sent_log` (kind `"qbo-push"`), reusing that column instead of
+ * a new one.
+ *
+ * The Customer and line-item Item are resolved by name (see `resolveQboRef`)
+ * rather than a per-accessorial breakdown — a single flat line against a
+ * generic "Freight Service" Item is the assumed shape until whoever wires the
+ * office "Push to QBO" button (this lane's territory doesn't include the
+ * invoice detail page) decides whether accessorials need their own lines.
+ */
+export async function pushInvoiceToQbo(
+  carrierId: string,
+  invoiceId: string,
+  actor: { id: string; name: string }
+): Promise<{ connected: boolean; pushed?: boolean; alreadyPushed?: boolean }> {
+  if (!(await hasCredentials(carrierId, "qbo"))) return { connected: false }
+  const creds = await getCredentials(carrierId, "qbo")
+  if (!creds?.clientId || !creds?.clientSecret || !creds?.refreshToken || !creds?.realmId) return { connected: false }
+
+  const invoice = await getInvoice(carrierId, invoiceId)
+  if (!invoice) throw new Error("Invoice not found")
+  if (invoice.sent_log?.some((entry) => entry.kind === "qbo-push")) {
+    return { connected: true, alreadyPushed: true }
+  }
+
+  const { accessToken, rotatedRefreshToken } = await refreshAccessToken(creds)
+  await persistRotatedRefreshToken(carrierId, creds, rotatedRefreshToken)
+
+  const base = process.env.QBO_API_BASE ?? "https://quickbooks.api.intuit.com"
+  const customerName = invoice.customer_name ?? "Unknown customer"
+  const customerId = await resolveQboRef(base, creds.realmId, accessToken, "Customer", customerName, {
+    DisplayName: customerName,
+  })
+  const itemId = await resolveQboRef(base, creds.realmId, accessToken, "Item", "Freight Service", {
+    Name: "Freight Service", Type: "Service", IncomeAccountRef: { value: "1" },
+  })
+
+  const response = await fetch(`${base}/v3/company/${creds.realmId}/invoice?minorversion=65`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json", Accept: "application/json" },
+    body: JSON.stringify({
+      DocNumber: invoice.number,
+      CustomerRef: { value: customerId },
+      Line: [
+        {
+          Amount: invoice.amount_cents / 100,
+          DetailType: "SalesItemLineDetail",
+          SalesItemLineDetail: { ItemRef: { value: itemId } },
+        },
+      ],
+    }),
+    signal: AbortSignal.timeout(15000),
+  })
+  if (!response.ok) throw new Error(`QuickBooks invoice push → HTTP ${response.status}`)
+
+  await query(
+    `UPDATE hub.invoices SET sent_log = sent_log || $2::jsonb WHERE id = $1`,
+    [invoice.id, JSON.stringify([{ to: "qbo", at: new Date().toISOString(), kind: "qbo-push" }])]
+  )
+  await logAudit({
+    carrierId, actorId: actor.id, actorName: actor.name,
+    entityType: "invoice", entityId: invoiceId, action: "qbo-push",
+    newValue: { number: invoice.number },
+  })
+  return { connected: true, pushed: true }
 }
