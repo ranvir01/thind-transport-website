@@ -5,7 +5,7 @@ import { requireOwner } from "@/lib/hub/session"
 import {
   credentialsConfigured, deleteCredentials, saveCredentials, type IntegrationProvider,
 } from "@/lib/hub/credentials"
-import { runTelematicsSync } from "@/lib/hub/telematics"
+import { activeTelematicsProvider, runTelematicsSync } from "@/lib/hub/telematics"
 import { runEfsSync } from "@/lib/hub/integrations/efs"
 import { runComdataSync } from "@/lib/hub/integrations/comdata"
 import { logAudit } from "@/lib/hub/audit"
@@ -18,7 +18,7 @@ interface Result {
 
 const ALLOWED_FIELDS: Record<string, string[]> = {
   terminal: ["apiKey", "connectionToken"],
-  truckercloud: ["apiKey"],
+  truckercloud: ["clientId", "clientSecret"],
   dat: ["serviceAccountEmail", "password"],
   efs: ["feedUser", "feedPassword"],
   wex: ["feedUser", "feedPassword"],
@@ -69,20 +69,21 @@ export async function disconnectIntegrationAction(provider: IntegrationProvider)
   }
 }
 
-/** Manual "sync now" for the telematics feed. */
+/** Manual "sync now" for the telematics feed — whichever ELD aggregator (Terminal or TruckerCloud) is connected. */
 export async function syncTelematicsNowAction(): Promise<Result & { summary?: string }> {
   try {
     const user = await requireOwner()
     const started = new Date()
+    const provider = await activeTelematicsProvider(user.carrierId)
+    if (!provider) {
+      return { ok: false, error: "Terminal or TruckerCloud isn't connected yet — save credentials first. CSV import keeps working meanwhile." }
+    }
     try {
       const result = await runTelematicsSync(user.carrierId)
-      if (!result.connected) {
-        return { ok: false, error: "Terminal isn't connected yet — save credentials first. CSV import keeps working meanwhile." }
-      }
       await query(
         `INSERT INTO hub.integration_syncs (carrier_id, source, started_at, finished_at, ok, counts)
-         VALUES ($1, 'terminal', $2, NOW(), TRUE, $3)`,
-        [user.carrierId, started.toISOString(), JSON.stringify(result)]
+         VALUES ($1, $2, $3, NOW(), TRUE, $4)`,
+        [user.carrierId, provider, started.toISOString(), JSON.stringify(result)]
       )
       revalidatePath("/hub/settings/integrations")
       return {
@@ -92,8 +93,8 @@ export async function syncTelematicsNowAction(): Promise<Result & { summary?: st
     } catch (err) {
       await query(
         `INSERT INTO hub.integration_syncs (carrier_id, source, started_at, finished_at, ok, error)
-         VALUES ($1, 'terminal', $2, NOW(), FALSE, $3)`,
-        [user.carrierId, started.toISOString(), err instanceof Error ? err.message : "unknown"]
+         VALUES ($1, $2, $3, NOW(), FALSE, $4)`,
+        [user.carrierId, provider, started.toISOString(), err instanceof Error ? err.message : "unknown"]
       )
       throw err
     }

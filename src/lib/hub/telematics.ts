@@ -91,15 +91,103 @@ function minutes(value: unknown): number | null {
 }
 
 /**
+ * Pure normalizers — kept separate from the fetch calls so they're
+ * unit-testable (__tests__/telematics.test.ts) without a live feed. Field
+ * names are docs/integrations/truckercloud.md's best guess; adjust here the
+ * day a real feed response comes back.
+ */
+export function normalizeTruckerCloudVehicle(row: Record<string, unknown>): TelematicsVehicle {
+  const location = (row.lastLocation ?? {}) as Record<string, unknown>
+  return {
+    externalId: String(row.assetId ?? ""),
+    unitHint: (row.unitNumber as string) ?? null,
+    lat: typeof location.lat === "number" ? location.lat : null,
+    lng: typeof location.lng === "number" ? location.lng : null,
+    odometerMiles: typeof location.odometer === "number" ? location.odometer : null,
+    locatedAt: (location.timestamp as string) ?? null,
+  }
+}
+
+export function normalizeTruckerCloudHos(row: Record<string, unknown>): TelematicsHos {
+  return {
+    externalDriverId: String(row.driverId ?? ""),
+    driverNameHint: (row.driverName as string) ?? null,
+    dutyStatus: (row.status as string) ?? null,
+    driveRemainingMinutes: minutes(row.driveTimeRemainingSec),
+    shiftRemainingMinutes: minutes(row.shiftTimeRemainingSec),
+    cycleRemainingMinutes: minutes(row.cycleTimeRemainingSec),
+    ts: (row.recordedAt as string) ?? new Date().toISOString(),
+  }
+}
+
+/** TruckerCloud — drop-in second aggregator, same TelematicsSource contract as Terminal. */
+export function truckerCloudSource(carrierId: string): TelematicsSource {
+  const base = process.env.TRUCKERCLOUD_API_BASE ?? "https://api.truckercloud.com/v1"
+  const token = async () => {
+    const creds = await getCredentials(carrierId, "truckercloud")
+    if (!creds?.clientId || !creds?.clientSecret) throw new Error("TruckerCloud not connected")
+    const response = await fetch(`${base}/oauth/token`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        client_id: creds.clientId, client_secret: creds.clientSecret, grant_type: "client_credentials",
+      }),
+      signal: AbortSignal.timeout(15000),
+    })
+    if (!response.ok) throw new Error(`TruckerCloud token → HTTP ${response.status}`)
+    const json = (await response.json()) as { access_token?: string }
+    if (!json.access_token) throw new Error("TruckerCloud token response missing access_token")
+    return json.access_token
+  }
+  const request = async (path: string) => {
+    const response = await fetch(`${base}${path}`, {
+      headers: { Authorization: `Bearer ${await token()}` },
+      signal: AbortSignal.timeout(15000),
+    })
+    if (!response.ok) throw new Error(`TruckerCloud ${path} → HTTP ${response.status}`)
+    return response.json() as Promise<Record<string, unknown>>
+  }
+
+  return {
+    provider: "truckercloud",
+    async connected() {
+      return hasCredentials(carrierId, "truckercloud")
+    },
+    async vehicles() {
+      const json = await request("/vehicles")
+      return ((json.vehicles ?? []) as Record<string, unknown>[]).map(normalizeTruckerCloudVehicle)
+    },
+    async hos() {
+      const json = await request("/hos")
+      return ((json.logs ?? []) as Record<string, unknown>[]).map(normalizeTruckerCloudHos)
+    },
+  }
+}
+
+/** First aggregator that reports connected — a carrier runs one ELD aggregator at a time. */
+async function activeTelematicsSource(carrierId: string): Promise<TelematicsSource | null> {
+  for (const source of [terminalSource(carrierId), truckerCloudSource(carrierId)]) {
+    if (await source.connected()) return source
+  }
+  return null
+}
+
+/** Which aggregator (if any) is connected — used by the sync action to tag its history row even on a failed pull. */
+export async function activeTelematicsProvider(carrierId: string): Promise<string | null> {
+  const source = await activeTelematicsSource(carrierId)
+  return source?.provider ?? null
+}
+
+/**
  * Scheduled sync (cron `telematics-sync`): positions → position_pings
  * (append-only), odometer hints, HOS → hos_snapshots. Unit matching is by
  * unit-number hint; unmatched vehicles are reported, never guessed.
  */
 export async function runTelematicsSync(
   carrierId: string
-): Promise<{ connected: boolean; pings?: number; hos?: number; unmatched?: string[] }> {
-  const source = terminalSource(carrierId)
-  if (!(await source.connected())) return { connected: false }
+): Promise<{ connected: boolean; provider?: string; pings?: number; hos?: number; unmatched?: string[] }> {
+  const source = await activeTelematicsSource(carrierId)
+  if (!source) return { connected: false }
 
   const trucks = await query<{ id: string; unit_number: string }>(
     `SELECT id, unit_number FROM hub.trucks WHERE carrier_id = $1 AND deleted_at IS NULL`,
@@ -118,8 +206,8 @@ export async function runTelematicsSync(
     if (vehicle.lat != null && vehicle.lng != null) {
       await query(
         `INSERT INTO hub.position_pings (carrier_id, truck_id, ts, lat, lng, odometer, source)
-         VALUES ($1, $2, $3, $4, $5, $6, 'terminal')`,
-        [carrierId, truckId, vehicle.locatedAt ?? new Date().toISOString(), vehicle.lat, vehicle.lng, vehicle.odometerMiles]
+         VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+        [carrierId, truckId, vehicle.locatedAt ?? new Date().toISOString(), vehicle.lat, vehicle.lng, vehicle.odometerMiles, source.provider]
       )
       pings++
     }
@@ -138,16 +226,17 @@ export async function runTelematicsSync(
     await query(
       `INSERT INTO hub.hos_snapshots (carrier_id, driver_id, ts, duty_status,
          drive_remaining_minutes, shift_remaining_minutes, cycle_remaining_minutes, source)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,'terminal')`,
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
       [
         carrierId, driverId, snapshot.ts, snapshot.dutyStatus,
         snapshot.driveRemainingMinutes, snapshot.shiftRemainingMinutes, snapshot.cycleRemainingMinutes,
+        source.provider,
       ]
     )
     hosCount++
   }
 
-  return { connected: true, pings, hos: hosCount, unmatched }
+  return { connected: true, provider: source.provider, pings, hos: hosCount, unmatched }
 }
 
 /**

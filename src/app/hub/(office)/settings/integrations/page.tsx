@@ -11,8 +11,9 @@ export const dynamic = "force-dynamic"
 
 export default async function IntegrationsPage() {
   const user = await requireOwner()
-  const [terminal, dat, efs, comdata, mailbox, syncs] = await Promise.all([
+  const [terminal, truckercloud, dat, efs, comdata, mailbox, syncs] = await Promise.all([
     hasCredentials(user.carrierId, "terminal"),
+    hasCredentials(user.carrierId, "truckercloud"),
     hasCredentials(user.carrierId, "dat"),
     hasCredentials(user.carrierId, "efs"),
     hasCredentials(user.carrierId, "comdata"),
@@ -35,6 +36,18 @@ export default async function IntegrationsPage() {
         { key: "connectionToken", label: "Connection token", type: "password" },
       ],
       connected: terminal,
+      canSync: true,
+    },
+    {
+      provider: "truckercloud",
+      title: "TruckerCloud ELD",
+      blurb: "Drop-in alternate to Terminal for live GPS, odometer, and HOS clocks — ask TruckerCloud for a Client ID + secret (docs.truckercloud.com).",
+      fallback: "Import → Positions CSV feeds the same tables.",
+      fields: [
+        { key: "clientId", label: "Client ID" },
+        { key: "clientSecret", label: "Client secret", type: "password" },
+      ],
+      connected: truckercloud,
       canSync: true,
     },
     {

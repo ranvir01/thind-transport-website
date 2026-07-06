@@ -29,6 +29,7 @@ export interface ProviderCard {
 /** One "sync now" action per provider that has a real adapter behind it. */
 const SYNC_ACTIONS: Partial<Record<ProviderCard["provider"], () => Promise<{ ok: boolean; error?: string; summary?: string }>>> = {
   terminal: syncTelematicsNowAction,
+  truckercloud: syncTelematicsNowAction,
   efs: syncEfsNowAction,
   comdata: syncComdataNowAction,
 }
