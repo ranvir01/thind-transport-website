@@ -6,7 +6,7 @@ import { toast } from "sonner"
 import { Loader2, LogIn } from "lucide-react"
 import { btnPrimaryCls, fieldCls, labelCls, linkAccentCls, Panel } from "@/components/hub/ui"
 import { PRODUCT } from "@/lib/hub/product"
-import { hubLandingPath } from "@/lib/hub/landing"
+import { postLoginPath } from "@/lib/hub/landing"
 
 /** Session fetch can race signIn; retry before we pick the landing route. */
 async function sessionAfterLogin() {
@@ -66,8 +66,7 @@ export function LoginCard({ showDemo }: { showDemo: boolean }) {
       }
 
       const session = await sessionAfterLogin()
-      const role = (session?.user as { role?: string } | undefined)?.role
-      window.location.assign(hubLandingPath(role))
+      window.location.assign(postLoginPath(session?.user as { role?: string } | undefined))
     } catch {
       toast.error("Something went wrong. Please try again.")
       setLoading(false)

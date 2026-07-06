@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 import { getToken } from "next-auth/jwt"
-import { hubLandingPath } from "@/lib/hub/landing"
+import { hubLandingPath, LEGACY_DRIVER_HOME } from "@/lib/hub/landing"
 
 export default async function proxy(request: NextRequest) {
   // NextAuth prefixes the cookie with __Secure- only when running over HTTPS,
@@ -43,8 +43,14 @@ export default async function proxy(request: NextRequest) {
   }
   if (pathname.startsWith("/hub") && pathname !== "/hub/login") {
     const role = (token as { role?: string } | null)?.role
-    if (!token || !role) {
+    if (!token) {
       return NextResponse.redirect(new URL("/hub/login", request.url))
+    }
+    if (!role) {
+      // Legacy driver-portal account: signed in but no hub.role on the token.
+      // Sending it to /hub/login just bounced forever — its home is the
+      // original driver portal.
+      return NextResponse.redirect(new URL(LEGACY_DRIVER_HOME, request.url))
     }
     const officeRoles = ["owner", "dispatcher", "accountant"]
     // NOTE: /hub/driver (the driver app) vs /hub/drivers (office roster).
@@ -73,9 +79,11 @@ export default async function proxy(request: NextRequest) {
     }
   }
 
-  if (pathname === "/hub/login" && (token as { role?: string } | null)?.role) {
+  if (pathname === "/hub/login" && token) {
     const role = (token as { role?: string }).role
-    return NextResponse.redirect(new URL(hubLandingPath(role), request.url))
+    return NextResponse.redirect(
+      new URL(role ? hubLandingPath(role) : LEGACY_DRIVER_HOME, request.url)
+    )
   }
 
   return NextResponse.next()
