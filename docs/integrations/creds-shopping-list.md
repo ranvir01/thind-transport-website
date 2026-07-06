@@ -1,16 +1,21 @@
 # Credentials shopping list — what to buy, what it activates
 
-Ranked by value-per-dollar for a 15-truck carrier. Paste keys into Settings → Integrations;
-each activates a finished, contract-tested integration (or will, once its adapter status
-in `registry.ts` reads `live`).
+Ranked by value-per-dollar for a 15-truck carrier. Paste keys into
+Settings → Integrations; each row activates a finished, contract-tested
+adapter — or documents exactly what's still stub while the owner waits on
+vendor feed setup. Kept current by the integrations lane every time an
+adapter ships (see `docs/integrations/README.md` step 8).
 
 | # | Provider | Plan / est. cost | Get it | Activates | Adapter status |
 |---|---|---|---|---|---|
 | 1 | Terminal (TruckX ELD) | Terminal aggregator — free/dev tier to start | withterminal.com | Live map positions, HOS clocks on dispatch, auto-IFTA miles | **live — ready today** |
-| 2 | EFS fuel card feed | Included with the fuel card acct (ask rep for API/feed access) | efsllc.com rep | Daily fuel txns → MPG, fraud flags, fuel→load auto-linking | stub (lane building) |
-| 3 | DAT load board | DAT One/Power + API access | dat.com | In-app freight search → one-click book | stub |
-| 4 | QuickBooks Online | QBO plan + free Intuit developer app | developer.intuit.com | Invoice/payment two-way sync, no CSV re-keying | planned |
-| 5 | Factoring company API | Ask your factor (varies) | your factor | Electronic invoice submission + advance/reserve tracking | planned |
+| 2 | Docs mailbox (IMAP) | Free (use an existing mailbox + app password) | Gmail/Office365 app-password settings | Rate cons/PODs auto-file to the matching load by subject reference | **live — ready today** |
+| 3 | EFS / WEX fuel feed | Included with the fuel card account — ask your rep for **data-feed** credentials (separate from the portal login); allow ~5 business days to provision | efsllc.com / wexinc.com account rep | Daily fuel transactions land in `fuel_transactions` (same table + idempotency the CSV import uses) → MPG, fraud flags, fuel↔load linking, no more manual export/import | **adapter shipped** — plumbing + contract tests done in `src/lib/hub/integrations/efs.ts`; wire real feed URL/shape once the carrier's data-feed request comes back (see `docs/integrations/efs.md`) |
+| 4 | Comdata fuel feed | Ask your account team for API credentials | comdata.com | Same idempotent fuel-transaction ingest as EFS | **adapter shipped** — plumbing + contract tests done in `src/lib/hub/integrations/comdata.ts`; wire real endpoint/auth-header names once the account team's onboarding response comes back (see `docs/integrations/comdata.md`) |
+| 5 | DAT load board | DAT One/Power + API access, certification required | dat.com | In-app freight search → one-click book | stub — bigger than a background sync adapter (needs a search UI + book action, not just a `SyncSource<Row>` pull); scope as its own slice with a design pass first |
+| 6 | QuickBooks Online | QBO plan + free Intuit developer app | developer.intuit.com | Invoice/payment two-way sync, no CSV re-keying | planned |
+| 7 | Factoring company API | Ask your factor (varies) | your factor | Electronic invoice submission + advance/reserve tracking | planned |
 
-Free already active or key-only: FMCSA QCMobile (broker vetting), EIA diesel index, OSRM
-routing, Nominatim geocoding, NWS weather, NHTSA VIN — see Settings → Integrations panel.
+Free already active or key-only (no adapter needed — see the "Free government
+APIs" panel on the Integrations page): FMCSA QCMobile (broker vetting), EIA
+diesel index, OSRM routing, Nominatim geocoding, NWS weather, NHTSA VIN.

@@ -11,7 +11,8 @@ import { toast } from "sonner"
 import { Cable, Check, Copy, Loader2, RefreshCw, Unplug } from "lucide-react"
 import { cn } from "@/lib/utils"
 import {
-  disconnectIntegrationAction, saveIntegrationCredentialsAction, syncTelematicsNowAction,
+  disconnectIntegrationAction, saveIntegrationCredentialsAction,
+  syncComdataNowAction, syncEfsNowAction, syncTelematicsNowAction,
 } from "@/app/hub/_actions/integrations"
 import { fieldCls, Panel } from "@/components/hub/ui"
 import type { IntegrationProvider } from "@/lib/hub/credentials"
@@ -34,6 +35,13 @@ const STATUS_BADGE: Record<ProviderStatus, { label: string; cls: string }> = {
   live: { label: "not connected", cls: "border-border-strong bg-surface-2 text-fg-3" },
   stub: { label: "coming soon", cls: "border-warn-soft bg-warn-soft text-warn" },
   planned: { label: "planned", cls: "border-border-strong bg-surface-2 text-fg-3" },
+}
+
+/** One "sync now" action per provider that has a real adapter behind it. */
+const SYNC_ACTIONS: Partial<Record<ProviderCard["provider"], () => Promise<{ ok: boolean; error?: string; summary?: string }>>> = {
+  terminal: syncTelematicsNowAction,
+  efs: syncEfsNowAction,
+  comdata: syncComdataNowAction,
 }
 
 export function IntegrationCard({ card, encryptionReady }: { card: ProviderCard; encryptionReady: boolean }) {
@@ -66,7 +74,9 @@ export function IntegrationCard({ card, encryptionReady }: { card: ProviderCard;
 
   const syncNow = () =>
     startTransition(async () => {
-      const result = await syncTelematicsNowAction()
+      const action = SYNC_ACTIONS[card.provider]
+      if (!action) return
+      const result = await action()
       if (result.ok) toast.success(`Synced: ${result.summary}`)
       else toast.error(result.error ?? "Sync failed")
       router.refresh()

@@ -10,6 +10,11 @@ import { cn } from "@/lib/utils"
 
 export const dynamic = "force-dynamic"
 
+// Providers with a manual "sync now" server action wired in IntegrationsPanel's
+// SYNC_ACTIONS map — kept in sync with that map by hand since one lives on each
+// side of the server/client boundary.
+const MANUAL_SYNC_PROVIDERS = new Set(["terminal", "efs", "comdata"])
+
 export default async function IntegrationsPage() {
   const user = await requireOwner()
   const [connectedFlags, syncs] = await Promise.all([
@@ -31,7 +36,7 @@ export default async function IntegrationsPage() {
     fallback: spec.fallback,
     fields: [...spec.fields],
     connected: connectedFlags[i],
-    canSync: spec.cronJob === "telematics-sync",
+    canSync: MANUAL_SYNC_PROVIDERS.has(spec.id),
     status: spec.status,
     webhookUrl:
       spec.sync === "webhook"
