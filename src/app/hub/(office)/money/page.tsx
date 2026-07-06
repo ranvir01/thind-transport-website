@@ -86,6 +86,12 @@ export default async function MoneyPage() {
               <Download className="h-3.5 w-3.5" /> {kind === "1099" ? "1099-NEC" : `${kind} CSV`}
             </a>
           ))}
+          <a
+            href="/api/hub/exports/qbo-iif"
+            className="inline-flex min-h-[36px] items-center gap-1.5 rounded-lg border border-border-strong px-3 text-xs font-semibold text-fg-2 hover:bg-hover"
+          >
+            <Download className="h-3.5 w-3.5" /> Expenses (QuickBooks .IIF)
+          </a>
         </div>
       </Panel>
 

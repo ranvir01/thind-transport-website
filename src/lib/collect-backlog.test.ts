@@ -1,0 +1,93 @@
+import { describe, expect, it } from "vitest"
+import {
+  isDeployMetaItem,
+  normalizeBullet,
+  parseBacklogBullets,
+  splitCurrentAndOlder,
+  topPickItem,
+} from "../../scripts/collect-backlog.mjs"
+
+type Item = { text: string; hash: string; subject: string; commitIndex: number }
+
+const item = (text: string, commitIndex: number): Item => ({
+  text,
+  hash: "abc1234",
+  subject: "test",
+  commitIndex,
+})
+
+describe("parseBacklogBullets", () => {
+  it("joins wrapped continuation lines into one bullet", () => {
+    const bullets = parseBacklogBullets(
+      "- first item that wraps\n  onto a second line\n- second item\n"
+    )
+    expect(bullets).toEqual(["first item that wraps onto a second line", "second item"])
+  })
+})
+
+describe("normalizeBullet", () => {
+  it("collapses case, whitespace, and trailing periods", () => {
+    expect(normalizeBullet("npm audit 3 vulnerabilities — next pass.")).toBe(
+      normalizeBullet("NPM audit 3  vulnerabilities — next pass")
+    )
+  })
+
+  it("keeps genuinely different bullets distinct", () => {
+    expect(normalizeBullet("fix dispatch board")).not.toBe(normalizeBullet("fix expenses page"))
+  })
+})
+
+describe("splitCurrentAndOlder", () => {
+  it("treats only the newest Backlog block as current", () => {
+    const items = [
+      item("still open item", 0),
+      item("resolved long ago — 500s locally", 2),
+    ]
+    const { current, older } = splitCurrentAndOlder(items)
+    expect(current.map((i) => i.text)).toEqual(["still open item"])
+    expect(older.map((i) => i.text)).toEqual(["resolved long ago — 500s locally"])
+  })
+})
+
+describe("topPickItem", () => {
+  it("never picks an older-mention bullet when the newest Backlog has pickable work", () => {
+    const current = [item("prune resolved bullets from ranking", 0)]
+    const older = [item("driver-db-postgres 500s locally (already fixed)", 3)]
+    const { pick, stale } = topPickItem(current, older)
+    expect(pick?.text).toBe("prune resolved bullets from ranking")
+    expect(stale).toBe(false)
+  })
+
+  it("skips owner-only and integrator-meta items in the current list", () => {
+    const current = [
+      item("Owner: approve nodemailer 9.x bump", 0),
+      item("new tenants zero IFTA rates — owner call on seed-from-matrix UX.", 0),
+      item("11 pending claude/* session branches — integrator absorbs one per :00 run.", 0),
+      item("real product work", 0),
+    ]
+    const { pick } = topPickItem(current, [])
+    expect(pick?.text).toBe("real product work")
+  })
+
+  it("falls back to older mentions, flagged stale, when nothing current is pickable", () => {
+    const current = [item("Owner: fleet config call", 0)]
+    const older = [item("verify legacy portal login path", 1)]
+    const { pick, stale } = topPickItem(current, older)
+    expect(pick?.text).toBe("verify legacy portal login path")
+    expect(stale).toBe(true)
+  })
+
+  it("returns null when nothing anywhere is pickable", () => {
+    const current = [item("CATCH-UP MODE: integrator 4 commits ahead", 0)]
+    const { pick } = topPickItem(current, [])
+    expect(pick).toBeNull()
+  })
+})
+
+describe("isDeployMetaItem", () => {
+  it("flags session-branch and catch-up snapshots", () => {
+    expect(isDeployMetaItem("11 pending claude/* session branches — integrator absorbs one per :00 run.")).toBe(true)
+    expect(isDeployMetaItem("CATCH-UP MODE: draining integrator")).toBe(true)
+    expect(isDeployMetaItem("wire comdata cron sync")).toBe(false)
+  })
+})

@@ -240,3 +240,72 @@ export async function exportCsv(carrierId: string, kind: string): Promise<{ file
       throw new Error(`Unknown export: ${kind}`)
   }
 }
+
+// ---- QuickBooks Desktop IIF export (general journal) ----
+//
+// QBO's "Push invoice" flow (integrations/qbo.ts) resolves customers/items by
+// name string, never a stored id — no hub.customers column maps to a QBO
+// entity, so this follows the same no-migration pattern: a hardcoded
+// category -> QBO expense-account name table, same spirit as the hardcoded
+// "Freight Service" item name over there.
+const QBO_ACCOUNT_BY_CATEGORY: Record<ExpenseCategory, string> = {
+  fuel: "Fuel Expense",
+  tolls: "Tolls & Permits",
+  maintenance: "Repairs & Maintenance",
+  insurance: "Insurance Expense",
+  permits: "Tolls & Permits",
+  parking: "Tolls & Permits",
+  lumper: "Lumper Fees",
+  other: "Other Business Expenses",
+}
+
+const QBO_OFFSET_ACCOUNT = "Business Checking"
+
+function iifField(value: unknown): string {
+  // IIF is tab/newline delimited — strip both from free-text fields.
+  return String(value ?? "").replace(/[\t\r\n]+/g, " ").trim()
+}
+
+function iifDate(isoDate: string | null): string {
+  const iso = toIsoDateOnly(isoDate)
+  if (!iso) return ""
+  const [y, m, d] = iso.split("-")
+  return `${m}/${d}/${y}`
+}
+
+export async function exportQboIif(carrierId: string): Promise<{ filename: string; iif: string }> {
+  const rows = await query<{
+    incurred_on: string
+    category: ExpenseCategory
+    amount_cents: number
+    truck: string | null
+    driver: string | null
+    memo: string | null
+  }>(
+    `SELECT e.incurred_on, e.category, e.amount_cents,
+       t.unit_number AS truck, d.first_name || ' ' || d.last_name AS driver, e.memo
+     FROM hub.expenses e
+     LEFT JOIN hub.trucks t ON t.id = e.truck_id AND t.carrier_id = e.carrier_id
+     LEFT JOIN hub.drivers d ON d.id = e.driver_id AND d.carrier_id = e.carrier_id
+     WHERE e.carrier_id = $1 ORDER BY e.incurred_on`,
+    [carrierId]
+  )
+
+  const lines: string[] = [
+    "!TRNS\tTRNSID\tTRNSTYPE\tDATE\tACCNT\tNAME\tCLASS\tAMOUNT\tMEMO",
+    "!SPL\tSPLID\tTRNSTYPE\tDATE\tACCNT\tNAME\tCLASS\tAMOUNT\tMEMO",
+    "!ENDTRNS",
+  ]
+  for (const r of rows) {
+    const date = iifDate(r.incurred_on)
+    const amount = (r.amount_cents / 100).toFixed(2)
+    const memoParts = [r.truck ? `Unit ${r.truck}` : null, r.driver, r.memo].filter(Boolean)
+    const memo = iifField(memoParts.join(" - "))
+    const account = QBO_ACCOUNT_BY_CATEGORY[r.category]
+    const name = iifField(r.driver ?? "")
+    lines.push(`TRNS\t\tGENERAL JOURNAL\t${date}\t${QBO_OFFSET_ACCOUNT}\t${name}\t\t-${amount}\t${memo}`)
+    lines.push(`SPL\t\tGENERAL JOURNAL\t${date}\t${account}\t${name}\t\t${amount}\t${memo}`)
+    lines.push("ENDTRNS")
+  }
+  return { filename: "expenses-qbo.iif", iif: lines.join("\r\n") + "\r\n" }
+}
