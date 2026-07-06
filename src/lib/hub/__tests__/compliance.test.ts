@@ -12,6 +12,7 @@ const CARRIER = "11111111-1111-1111-1111-111111111111"
 function mockRowsBySql(rows: {
   drivers?: unknown[]
   trucks?: unknown[]
+  trailers?: unknown[]
   maintenance?: unknown[]
   manual?: unknown[]
 }) {
@@ -20,6 +21,7 @@ function mockRowsBySql(rows: {
     if (s.includes("FROM hub.drivers")) return rows.drivers ?? []
     if (s.includes("FROM hub.maintenance_schedules")) return rows.maintenance ?? []
     if (s.includes("FROM hub.trucks")) return rows.trucks ?? []
+    if (s.includes("FROM hub.trailers")) return rows.trailers ?? []
     if (s.includes("FROM hub.compliance_items")) return rows.manual ?? []
     return []
   })
@@ -79,11 +81,48 @@ describe("complianceEntries color thresholds (colorFor)", () => {
       manual: [{ id: "item-1", kind: "2290", due_on: past2, note: null }],
     })
     const entries = await complianceEntries(CARRIER)
-    // Both past1 (d2 CDL) and past2 (item-1) are red; item-1's due is earlier so it sorts first.
     const redEntries = entries.filter((e) => e.color === "red")
     expect(redEntries[0].kind).toBe("2290")
     expect(redEntries[1].kind).toBe("CDL")
     expect(entries[entries.length - 1].color).not.toBe("red")
+  })
+})
+
+describe("complianceEntries trailers", () => {
+  beforeEach(() => queryMock.mockReset())
+
+  it("surfaces trailer registration and inspection expiries, same as trucks", async () => {
+    mockRowsBySql({
+      trailers: [
+        { id: "trailer-1", unit_number: "501", registration_expiry: "2020-01-01", inspection_due: "2020-06-01" },
+      ],
+    })
+    const entries = await complianceEntries(CARRIER)
+    const trailerEntries = entries.filter((e) => e.entity === "trailer")
+
+    expect(trailerEntries).toHaveLength(2)
+    expect(trailerEntries.map((e) => e.kind).sort()).toEqual(["Annual inspection (396.17)", "Registration"])
+    expect(trailerEntries.every((e) => e.name === "Trailer #501")).toBe(true)
+    expect(trailerEntries.every((e) => e.href === "/hub/fleet/trailers/trailer-1")).toBe(true)
+    expect(trailerEntries.every((e) => e.color === "red")).toBe(true)
+  })
+
+  it("scopes the trailer query by carrier, excludes retired and soft-deleted rows", async () => {
+    mockRowsBySql({})
+    await complianceEntries(CARRIER)
+    const trailerCall = queryMock.mock.calls.find(([sql]) => String(sql).includes("hub.trailers"))
+    expect(trailerCall).toBeDefined()
+    const [sql, params] = trailerCall!
+    expect(sql).toContain("carrier_id = $1")
+    expect(sql).toContain("deleted_at IS NULL")
+    expect(sql).toContain("status <> 'retired'")
+    expect(params).toEqual([CARRIER])
+  })
+
+  it("returns no trailer entries when the fleet has none", async () => {
+    mockRowsBySql({})
+    const entries = await complianceEntries(CARRIER)
+    expect(entries.filter((e) => e.entity === "trailer")).toHaveLength(0)
   })
 })
 
@@ -97,7 +136,7 @@ describe("complianceEntries carrier scoping", () => {
       expect(String(sql)).toContain("carrier_id = $1")
       expect(params).toEqual([CARRIER])
     }
-    expect(queryMock).toHaveBeenCalledTimes(4)
+    expect(queryMock).toHaveBeenCalledTimes(5)
   })
 
   it("excludes soft-deleted drivers/trucks and inactive/retired records", async () => {

@@ -28,9 +28,10 @@ export default async function CompliancePage() {
         titleExtra={
           <HelpTip title="What this wall tracks">
             Driver files (CDL, medical card — 49 CFR 391), truck files (registration,
-            annual inspection — 396.17, insurance), and company items (2290, UCR, IFTA
-            decals). Red is expired, amber is inside 30 days. The daily scan emails the
-            office at 60/30/7 days.
+            annual inspection — 396.17, insurance), trailer files (registration, annual
+            inspection — 396.17), and company items (2290, UCR, IFTA decals). Red is
+            expired, amber is inside 30 days. The daily scan emails the office at
+            60/30/7 days.
           </HelpTip>
         }
         subtitle="CDLs, med cards, registrations, inspections, 2290, UCR, IFTA — one wall, color-coded."
