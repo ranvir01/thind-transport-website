@@ -3,7 +3,7 @@
 Researched: 2026-07-06. Status: **built adapter**, live in `src/lib/hub/telematics.ts`
 (`terminalSource`) and wired into the 30-min cron sync (`runTelematicsSync`) and the manual
 "sync now" action (`src/app/hub/_actions/integrations.ts`). This is the only provider in
-`docs/integrations/creds-shopping-list.md` with real outbound API calls at write time, so an
+`docs/integrations/scout-rotation.md` with real outbound API calls at write time, so an
 API change here is the one that can silently break production.
 
 ## Why we use it
