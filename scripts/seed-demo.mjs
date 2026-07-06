@@ -635,9 +635,9 @@ async function main() {
   for (const quarter of [...new Set(rateQuarters)]) {
     for (const [jur, rate, surcharge] of rateMatrix) {
       await q(
-        `INSERT INTO hub.ifta_tax_rates (jurisdiction, quarter, rate, surcharge_rate) VALUES ($1,$2,$3,$4)
-         ON CONFLICT (jurisdiction, quarter) DO UPDATE SET rate = $3, surcharge_rate = $4`,
-        [jur, quarter, rate, surcharge]
+        `INSERT INTO hub.ifta_tax_rates (carrier_id, jurisdiction, quarter, rate, surcharge_rate) VALUES ($1,$2,$3,$4,$5)
+         ON CONFLICT (carrier_id, jurisdiction, quarter) DO UPDATE SET rate = $4, surcharge_rate = $5`,
+        [CARRIER, jur, quarter, rate, surcharge]
       )
     }
   }
