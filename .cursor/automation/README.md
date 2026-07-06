@@ -19,6 +19,7 @@ lane agents ──▶ claude/lane-* ──▶ integrator (:00) ──▶ deploy 
 | Command | Purpose |
 |---------|---------|
 | `npm run agent:status` | Branch drift + recent `Backlog:` blocks; exit 1 = catch-up mode |
+| `npm run agent:branches` | Pending `claude/*` branches not on main (session + lane); top = integrator's next merge |
 | `npm run agent:backlog` | Ranked backlog from last 30 commits on `main` |
 | `npm run prod:smoke` | HTTP smoke: `/hub/login` shows LoadOff, `/hub` not 5xx |
 

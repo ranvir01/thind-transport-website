@@ -151,11 +151,29 @@ Many routines run concurrently, so each **lane owns a file territory and its own
 `AGENTS.md`, migrations) except through the **integrator**. The flow:
 
 ```
-lane routines ──push──▶ claude/lane-*  ──integrator (:00 UTC)──▶ claude/hauldesk-project-setup-l1luoo
-   (hourly-ish, staggered)                    │
+lane routines ──push──▶ claude/lane-* OR claude/<session>  ──integrator (:00)──▶ integration branch
+   (hourly-ish, staggered)         npm run agent:branches finds orphans      │
                               deploy (:59 UTC) ──▶ main ──▶ Vercel
                               prod smoke (:30 UTC) checks thindtransport.com/hub
 ```
+
+### Session branches (ad-hoc agent names)
+
+Claude Code sessions often push to **random** branch names (`claude/blissful-pascal-q5zlvo`,
+`claude/pensive-allen-*`, …) instead of `claude/lane-*`. That is **fine** — the integrator does
+not require lane branches.
+
+| Command | Purpose |
+|---------|---------|
+| `npm run agent:branches` | List every `claude/*` branch with commits **not on main**; suggests lane from changed files |
+| `npm run agent:status` | Integrator vs main drift + pending branch count |
+
+**Integrator rule:** each :00 run, merge the **top** branch from `agent:branches` (one branch per
+run), then verify. **Deploy rule:** drain integrator → `main` when ahead.
+
+Paste **docs/claude-routine-preamble.md** at the top of every Claude routine so agents know they
+can use session branches and must end commits with `Backlog:`.
+
 
 | Lane branch | Territory (only these paths) | Mission |
 |---|---|---|

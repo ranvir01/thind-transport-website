@@ -88,6 +88,21 @@ function main() {
     for (const line of logLines(MAIN, INTEGRATOR)) console.log(`  ${line}`)
   }
 
+  const pendingOut = execSync("node scripts/agent-branch-inventory.mjs --json", {
+    encoding: "utf-8",
+    cwd: process.cwd(),
+  })
+  let pendingCount = 0
+  try {
+    pendingCount = JSON.parse(pendingOut).pending?.length ?? 0
+  } catch {
+    /* ignore */
+  }
+  console.log(`\nPending claude/* branches (not on main): ${pendingCount}`)
+  if (pendingCount > 0) {
+    console.log("  Run: npm run agent:branches")
+  }
+
   console.log("\nLane branches ahead of integrator:")
   let anyLane = false
   for (const lane of LANES) {

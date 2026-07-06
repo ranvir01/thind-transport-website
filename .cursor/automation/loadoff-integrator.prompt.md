@@ -8,7 +8,12 @@ Repo: ranvir01/thind-transport-website · branch: **claude/hauldesk-project-setu
 ```bash
 git fetch origin
 npm run agent:status || true
+npm run agent:branches
 ```
+
+Claude routines push to **many branch names** (`claude/lane-*`, `claude/blissful-pascal-*`,
+`claude/pensive-allen-*`, etc.). Your job is to absorb **any** branch with commits not on
+integrator — not only `lane-*`.
 
 ## Run order
 
@@ -16,35 +21,38 @@ npm run agent:status || true
 
 2. If `main` is ahead of integrator, merge `origin/main` into integrator first; verify build + tests.
 
-3. For each `origin/claude/lane-*` branch **ahead of integrator**, in this order when multiple exist:
+3. **Orphan / session branches (priority):** Run `npm run agent:branches`. If any branch is
+   **ahead of main**, merge the **top listed branch** into integrator this run:
+   - Review changed files; `npm run agent:branches` shows a **suggested lane** — reject edits
+     clearly outside that territory (see §5 table in docs/agent-improvement-loop.md).
+   - `git merge origin/<branch-name>` (one branch per run).
+   - Verify: `npm run build` && `npx vitest run` (+ `npm run test:sidecars` if services touched).
+   - If red: revert merge, skip branch, record skip reason in commit `Backlog:`.
+   - Commit: `Integrator: absorb claude/<name> (<short why>)`.
+
+4. **Lane branches:** If no orphan branches are ahead of main, merge any `claude/lane-*` ahead
+   of integrator (same verify rules), in order:
    - `lane-office`, `lane-driver`, `lane-portal`, `lane-sidecars`, `lane-tests`, `lane-compliance`,
      `lane-docs`, `lane-roadmap`, `lane-integrations`, `lane-analytics`, `lane-saas`
 
-4. **Per lane merge:**
-   - Review diff against AGENTS.md territory rules (§5 table). Reject out-of-territory edits.
-   - Merge lane → integrator (one lane per commit unless octopus is clean).
-   - Run `npm run build` && `npx vitest run` (+ `npm run test:sidecars` if services touched).
-   - If red: revert that merge, skip lane, note reason in commit `Backlog:` for the lane agent.
-
 5. **Shared files** (`types.ts`, `permissions.ts`, `navigation.ts`, `AGENTS.md`, `migrations/hub/*`)
-   may ONLY be edited here when lane backlogs request it — one coherent change, not scattered.
+   may ONLY be edited here when backlogs request it — one coherent change.
 
-6. Commit subject: `Integrator: merge claude/lane-<name> (<short why>)` or
-   `Integrator: sync main into integration branch`. Body ends with `Backlog:`.
+6. Body ends with `Backlog:` listing branches still pending (`npm run agent:branches`).
 
 7. Push to `claude/hauldesk-project-setup-l1luoo`.
 
 ## Stop without committing when
 
-- No lane branches are ahead of integrator AND integrator already contains `main`.
+- No branches are ahead of integrator (check `agent:branches` AND lane-*), AND integrator contains `main`.
 
 ## Guardrails
 
-- One lane merge per run when possible (avoid giant octopus merges).
-- Never push to `main` — that is the deploy agent's job.
+- **One branch merge per run** — never octopus-merge ten session branches.
+- Never push to `main` — deploy agent drains integrator → main.
 - Never touch secrets, `.env*`, prod `HUB_DEMO_LOGIN`.
-- IFTA fixture changes require Rust golden tests in the same commit.
+- Duplicate work: if merge is empty (already on integrator), skip silently.
 
 ## Report
 
-Summarize: lanes merged or skipped, verify results, integrator vs main drift (`npm run agent:status`).
+Summarize: branch absorbed (or skip), verify results, pending count from `agent:branches`, integrator vs main (`agent:status`).

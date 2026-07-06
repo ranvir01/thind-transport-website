@@ -61,7 +61,8 @@ Sidecars are optional: when env vars are unset, `src/lib/hub/sidecars.ts` falls 
 Every change, agent or human, walks the same loop — see `docs/agent-improvement-loop.md` for the
 full playbook and ready-made prompts:
 
-1. **Sync** — `git pull`; read the newest commits before assuming anything.
+1. **Sync** — `git pull`; read the newest commits before assuming anything. Run `npm run agent:branches`
+   if you pushed to a session branch (`claude/<random>`) — integrator picks it up hourly.
 2. **Pick** — take the top item from the backlog section of the latest brief/commit, or run a debug
    sweep to find one.
 3. **Build** — smallest change that ships value; follow the standing rules above.
