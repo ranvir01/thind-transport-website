@@ -1,104 +1,94 @@
-# Docs mailbox (IMAP) — inbound rate-con/POD auto-filing
+# Docs mailbox (IMAP) — scouting notes
 
-Researched: 2026-07-07. Status: **built, live** — `pollDocsMailbox` in `src/lib/hub/mailbox.ts`,
-wired to the daily `docs-mailbox` cron (`vercel.json`, `30 12 * * *`) and registered as
-`status: "live"` in `src/lib/hub/integrations/registry.ts`. No manual "sync now" — poll-only
-(`page.tsx` comment, `MANUAL_SYNC_PROVIDERS`). This doc did not exist before this cycle
-(`scout-rotation.md` listed it "missing — never researched") despite the adapter being shipped
-code, which per the rotation rule (a built adapter is production-impacting) made it higher
-priority than any of the still-stub fuel/load-board providers.
+Researched: 2026-07-06. Status: **built adapter, live** in `src/lib/hub/mailbox.ts`
+(`pollDocsMailbox`), wired to the `docs-mailbox` cron job. Not a vendor SDK — it's a generic
+IMAP client (`imapflow` + `mailparser`) pointed at whatever inbox the carrier's office already
+uses. This doc covers the two mailbox providers row 2 of `creds-shopping-list.md` names
+(Gmail, Office365) since "auth model" here means "what the mailbox provider allows for
+IMAP login," not a single company's API.
 
-## What it does today (confirmed from source)
+## Auth model (as implemented, confirmed against our code)
 
-`pollDocsMailbox(carrierId)`:
-1. Loads `host`/`user`/`password`/`port`/`folder` via `getCredentials(carrierId, "mailbox")`;
-   returns `{connected: false}` if unset (CSV/manual-upload fallback stays the product).
-2. Opens an `ImapFlow` connection (`imapflow@^1.4.0`) with `secure: true` (implicit TLS) on the
-   given port (default 993), `auth: { user, pass }` — **plain IMAP `LOGIN`, not OAuth**.
-3. Searches the target folder (default `INBOX`) for up to 25 unseen messages, parses each with
-   `mailparser@^3.9.9`, extracts a load reference (`THD-1042`-style token) from the subject via
-   `extractReference()`, and attaches matching PDFs/images (capped at 15 MB each) to that load
-   as a `rate_confirmation` document.
-4. Unmatched mail (no reference, or reference doesn't resolve to a load) triggers an
-   owner/dispatcher notification rather than being silently dropped — mail is always marked
-   `\Seen` either way so it isn't reprocessed.
-5. Every run writes a `hub.integration_syncs` row (`source = 'mailbox'`, `counts: {filed, unmatched}`).
+- Credential fields (`src/lib/hub/integrations/registry.ts`, `mailbox` entry): `host`, `port`
+  (default 993), `user`, `password` (`secret: true`), `folder` (default `INBOX`).
+- `pollDocsMailbox` builds an `ImapFlow` client with `auth: { user, pass: password }` —
+  **plain username/password (basic) auth only**. No OAuth2/XOAUTH2 code path exists.
+- `secure: true` is hardcoded (implicit TLS on port 993) — there's no STARTTLS fallback for
+  a provider only offering port 143.
 
-## Auth model — **this is the finding that matters**
+## ⚠️ Finding: Office 365 / Exchange Online cannot work with this adapter today
 
-The credentials form (`registry.ts` fields: `host`, `port`, `user`, `password`, `folder`) and the
-shopping-list copy ("use an existing mailbox + app password") both assume a plain
-username+app-password IMAP login works against any mailbox host. **That assumption is no longer
-true for the two providers a 15-truck carrier is actually likely to use for a company mailbox:**
+- Microsoft **disabled Basic Authentication for IMAP in Exchange Online on October 1, 2022**
+  (21Vianet-operated tenants followed in March 2023). A username+password IMAP login — which
+  is the only thing our `password` field and `ImapFlow` config support — is rejected outright
+  by Microsoft 365 mailboxes now. There is no tenant-side opt-back-in; Microsoft's own guidance
+  is "migrate to OAuth2," full stop.
+- Microsoft 365 "app passwords" (the MFA-bypass secrets some legacy docs mention) are a
+  **different, mostly-retired mechanism** and don't restore IMAP basic auth even where still
+  available — they were for legacy Office desktop clients, not a basic-auth IMAP exception.
+- Net effect: the credential field label in `page.tsx` (`"IMAP host (e.g. imap.gmail.com)"`)
+  already only examples Gmail, but `creds-shopping-list.md` row 2 still says "Gmail/Office365
+  app-password settings" as if the two are symmetric. **They are not** — a carrier who points
+  this integration at an `outlook.office365.com`/`imap-mail.outlook.com` host with a password
+  will get an authentication failure, not a working sync, no matter what password they use.
+- **Backlog (urgent):** either (a) correct `creds-shopping-list.md` + the settings-page copy to
+  say Gmail-only until OAuth2 is added, or (b) add an XOAUTH2 path to `pollDocsMailbox` (ImapFlow
+  supports `auth: { user, accessToken }`) plus an Entra ID app registration + refresh-token
+  storage — a real scope increase, not a config tweak. Filing as urgent because the current copy
+  actively tells an office to spend setup time on a combination that cannot work.
 
-- **Microsoft 365 / Exchange Online**: Basic authentication for IMAP (and POP, EAS, EWS) was
-  disabled tenant-wide years ago — Microsoft's own migration timeline states EAS/POP/IMAP/EWS/
-  Remote PowerShell were all moved to Modern Auth-only by the end of 2022, and only SMTP AUTH
-  Client Submission still has a basic-auth allowance (now scheduled to go disabled-by-default at
-  the end of December 2026). **An Exchange Online mailbox cannot authenticate via plain
-  `user`/`password` IMAP LOGIN today** — full stop, no app-password escape hatch exists for IMAP
-  specifically (app passwords are an MFA convenience for other legacy protocols, not a bypass of
-  the IMAP Basic Auth retirement). OAuth 2.0 (XOAUTH2) is required.
-- **Google Workspace** (paid business Gmail — the likely host for `docs@<carrier>.com`, as
-  opposed to a personal `@gmail.com`): Google's admin documentation on the "less secure apps to
-  OAuth" transition states Workspace accounts can no longer sign in to third-party apps with
-  username/password (including app passwords) as of the account's LSA-retirement date in 2025 —
-  OAuth is required org-wide. **Personal, non-Workspace `@gmail.com` accounts with 2-Step
-  Verification can still generate an IMAP app password and log in with it** (that mechanism is
-  unaffected — it's a distinct code path from the deprecated "less secure apps" toggle), so the
-  adapter still works for a carrier using a personal Gmail inbox as their docs mailbox, just not
-  a Workspace one.
+## Gmail-side auth (confirmed working)
 
-Net effect: **the adapter works today only against a personal (non-Workspace) Gmail inbox, or any
-smaller IMAP host that still allows plain LOGIN** (many non-Microsoft/non-Google business
-webmail/cPanel-style IMAP hosts still do). It does **not** work against Microsoft 365 or Google
-Workspace mailboxes — which is what "Gmail/Office365 app-password settings" in
-`creds-shopping-list.md` currently implies will work, and won't for most real carrier setups.
-
-**Backlog (urgent):** `mailbox.ts`/`registry.ts` need an OAuth2/XOAUTH2 path before this adapter
-is usable by a carrier on Microsoft 365 or Google Workspace (the two most common business-mailbox
-hosts). `ImapFlow` already supports `auth: { user, accessToken }` for XOAUTH2 as a drop-in
-alternative to `auth: { user, pass }`, so the client library is not the blocker — token
-acquisition (Microsoft Entra ID app registration + `IMAP.AccessAsUser.All` scope, or a Google
-Cloud OAuth client + `https://mail.google.com/` scope) and refresh-token storage/rotation (same
-pattern as `qbo.ts`'s persisted refresh token) are the actual work. Until that ships, the
-integrations lane should update `creds-shopping-list.md`'s mailbox row and the settings-page copy
-to say "personal Gmail (non-Workspace) or any IMAP host allowing password login" instead of
-implying Gmail/Office365 business mail both work as-is — flagging that copy fix here rather than
-making it myself since `page.tsx`/`creds-shopping-list.md` product-facing copy is outside this
-docs-only research pass.
+- Gmail requires 2-Step Verification to be enabled on the account, then an **App Password**
+  (a 16-character generated secret, Google Account → Security → App passwords) goes in our
+  `password` field — this is real basic auth over IMAP that Google still honors for app
+  passwords specifically, even though Google finished retiring the old blanket "less secure
+  apps" toggle. Google enforced OAuth2 for non-app-password IMAP clients starting **May 1,
+  2025**; app passwords are the documented workaround and remain supported as of this
+  research date.
+- IMAP is on by default for every Google account since January 2025 (the old admin on/off
+  toggle is gone), so there's no "enable IMAP first" step to document anymore.
+- Google Workspace admins can still block IMAP org-wide via Admin Console → Apps → Google
+  Workspace → Gmail → some organizational units — worth a one-line callout in onboarding docs
+  if a carrier's Workspace admin has it off.
 
 ## Rate limits
 
-- **Gmail** (personal): ~15 simultaneous IMAP connections per account; Workspace-tier bandwidth
-  caps (2,500 MB/day download, 500 MB/day upload) apply to Workspace tenants but are moot until
-  the OAuth gap above is closed. Our adapter opens one connection per cron run, fetches at most
-  25 messages, then disconnects — nowhere near either limit.
-- **Exchange Online**: N/A today — Basic Auth IMAP is rejected outright regardless of rate.
-- No throttling/backoff logic exists in `pollDocsMailbox` today; not a practical concern at
-  current volume (one connection, once a day, 25-message cap) but note for later if the cron
-  cadence increases.
+- **Connections:** Gmail allows up to **15 simultaneous IMAP connections** per account. Our
+  cron does one connect-poll-disconnect cycle per carrier per run, well under that.
+- **Bandwidth:** Gmail throttles at roughly **2,500 MB/day IMAP download, 500 MB/day upload**
+  per account; exceeding it triggers temporary throttling, not a hard ban. Attachment size is
+  already capped at 15 MB per file in `pollDocsMailbox` and only the first 25 unseen messages
+  are processed per run, so a single sync run can't realistically hit the daily cap.
+- Office365/Exchange Online numeric IMAP throttling budgets exist (per-tenant EWS/IMAP
+  throttling policies) but are moot until the auth blocker above is resolved.
 
 ## Sandbox
 
-No dedicated sandbox needed or used — the adapter talks to a real IMAP mailbox. Testing today is
-via `mailbox.test.ts` (unit tests around `extractReference`) and any local IMAP test account the
-developer configures by hand; no test double/mailserver has been wired into CI.
+No formal sandbox needed — any real Gmail account with 2FA + an app password (or a free
+Workspace trial) is a fully working test target, which is presumably how this adapter's
+Phase 6 author validated it originally.
 
 ## Pricing
 
-Free — "use an existing mailbox + app password" per the shopping list. No vendor cost, only the
-carrier's existing email hosting. The only cost implication of the OAuth backlog item above is
-engineering time, not a new vendor fee.
+Free either way: Gmail personal/Workspace accounts and Microsoft 365 mailboxes the carrier
+already pays for — this integration needs no new vendor spend, just the app-password setup
+step (Gmail) or, longer term, an Entra ID app registration (Office 365, once OAuth2 ships).
 
 ## What this scout could and couldn't verify
 
-- **Confirmed from source**: exact fields, poll logic, 25-message/15 MB caps, notification
-  fallback, cron schedule, `imapflow`/`mailparser` versions in `package.json`.
-- **Confirmed from public documentation**: Exchange Online Basic Auth (incl. IMAP) retirement
-  timeline (Microsoft Learn), Google Workspace less-secure-apps/OAuth transition scope, personal
-  Gmail app-password IMAP continuing to function, Gmail connection/bandwidth limits.
-- **Not verifiable this cycle**: the exact date a given carrier's specific Workspace tenant lost
-  LSA access (Google rolled this out per-account through 2025, not a single hard cutover), and
-  whether any smaller webmail providers a carrier might use still allow plain IMAP LOGIN (assumed
-  yes for most non-Microsoft/non-Google hosts, not exhaustively checked).
+- **Confirmed from source**: exact credential fields, basic-auth-only `ImapFlow` config,
+  15 MB attachment cap, 25-message-per-run cap, `docs-mailbox` cron wiring.
+- **Confirmed from public search**: Exchange Online IMAP basic-auth retirement date (Oct 1,
+  2022, Microsoft Learn/community-blog consensus — the Microsoft Learn deprecation page itself
+  returned HTTP 403 to this scout's fetch, same Cloudflare-style block noted in `terminal.md`,
+  so this is cross-referenced from secondary sources, not Microsoft's page directly), Gmail's
+  2,500/500 MB daily IMAP bandwidth caps, 15-connection cap, May 2025 OAuth2 enforcement date
+  and app-password carve-out, January 2025 IMAP-always-on change.
+- **Not independently verified**: current Microsoft 365 IMAP-specific throttling numbers (moot
+  per the auth blocker above), and whether any newer Exchange Online tenant setting has quietly
+  reopened a basic-auth path since the 2022 retirement — treat the "Office 365 broken" finding
+  above as high-confidence but re-check before building the OAuth2 fix, since exact tenant
+  policy exceptions can vary.
+
+Sources: [Deprecation of Basic authentication in Exchange Online — Microsoft Learn](https://learn.microsoft.com/en-us/exchange/clients-and-mobile-in-exchange-online/deprecation-of-basic-authentication-exchange-online) (fetch blocked, cited via secondary coverage), [Gmail Help — Sign in with app passwords](https://support.google.com/mail/answer/185833), [Google Workspace Admin Help — Gmail bandwidth limits](https://support.google.com/a/answer/1071518), [Transition from less secure apps to OAuth — Google Workspace Help](https://knowledge.workspace.google.com/admin/sync/transition-from-less-secure-apps-to-oauth), [Gmail API Limits in 2026 — Unipile](https://www.unipile.com/gmail-api-limits/).
