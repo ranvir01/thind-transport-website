@@ -21,6 +21,7 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
   const openCents = invoice.amount_cents - (invoice.paid_cents ?? 0)
   const canWrite = can(user.role, "money:write")
   const factorSubmitted = (invoice.sent_log ?? []).some((entry) => entry.kind === "factor-submission")
+  const qboPushed = (invoice.sent_log ?? []).some((entry) => entry.kind === "qbo-push")
 
   return (
     <div>
@@ -76,6 +77,7 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
               factored={invoice.factored}
               disputed={invoice.status === "disputed"}
               factorSubmitted={factorSubmitted}
+              qboPushed={qboPushed}
             />
           ) : null}
 
