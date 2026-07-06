@@ -5,7 +5,7 @@ vi.mock("../audit", () => ({ logAudit: vi.fn(async () => undefined) }))
 
 import { query } from "../db"
 import { logAudit } from "../audit"
-import { createExpense, exportCsv, listExpenses } from "../expenses"
+import { createExpense, exportCsv, exportQboIif, listExpenses } from "../expenses"
 import { createAdvance } from "../settlements"
 
 const queryMock = vi.mocked(query)
@@ -140,5 +140,62 @@ describe("createAdvance cross-table tenancy", () => {
     const inserts = queryMock.mock.calls.filter(([sql]) => String(sql).includes("INSERT INTO hub.advances"))
     expect(inserts).toHaveLength(1)
     expect(auditMock).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe("exportQboIif (QuickBooks Desktop general journal)", () => {
+  beforeEach(() => {
+    queryMock.mockReset()
+  })
+
+  it("joins trucks and drivers on the expense's carrier", async () => {
+    queryMock.mockResolvedValue([])
+    await exportQboIif(CARRIER)
+    const sql = String(queryMock.mock.calls[0][0])
+    expect(sql).toContain("ON t.id = e.truck_id AND t.carrier_id = e.carrier_id")
+    expect(sql).toContain("ON d.id = e.driver_id AND d.carrier_id = e.carrier_id")
+  })
+
+  it("emits a balanced TRNS/SPL/ENDTRNS block per expense with the category's mapped account", async () => {
+    queryMock.mockResolvedValue([
+      {
+        incurred_on: new Date("2026-07-04T00:00:00.000Z"),
+        category: "maintenance",
+        amount_cents: 42599,
+        truck: "101",
+        driver: "Test Driver",
+        memo: "Brake job",
+      },
+    ])
+    const { filename, iif } = await exportQboIif(CARRIER)
+    expect(filename).toBe("expenses-qbo.iif")
+    const lines = iif.trim().split("\r\n")
+    expect(lines[0]).toBe("!TRNS\tTRNSID\tTRNSTYPE\tDATE\tACCNT\tNAME\tCLASS\tAMOUNT\tMEMO")
+    const trns = lines.find((l) => l.startsWith("TRNS\t"))
+    const spl = lines.find((l) => l.startsWith("SPL\t"))
+    expect(lines).toContain("ENDTRNS")
+    expect(trns).toContain("07/04/2026")
+    expect(trns).toContain("Business Checking")
+    expect(trns).toContain("-425.99")
+    expect(spl).toContain("Repairs & Maintenance")
+    expect(spl).toContain("425.99")
+    expect(spl).toContain("Unit 101 - Test Driver - Brake job")
+  })
+
+  it("strips tabs and newlines from free-text memo fields (IIF is tab-delimited)", async () => {
+    queryMock.mockResolvedValue([
+      {
+        incurred_on: new Date("2026-07-04T00:00:00.000Z"),
+        category: "other",
+        amount_cents: 1000,
+        truck: null,
+        driver: null,
+        memo: "line1\tline2\nline3",
+      },
+    ])
+    const { iif } = await exportQboIif(CARRIER)
+    const spl = iif.split("\r\n").find((l) => l.startsWith("SPL\t"))
+    expect(spl?.split("\t")).toHaveLength(9)
+    expect(spl).toContain("line1 line2 line3")
   })
 })
