@@ -172,7 +172,7 @@ lane routines ──push──▶ claude/lane-*  ──integrator (:00 UTC)─�
 | `claude/lane-roadmap` | new feature files within any ONE existing territory per run | NEW capability from `docs/hauldesk-gap-report`-style gaps: pick the top unbuilt feature a 15-truck carrier needs, build it complete with tests + E2E |
 
 **Prod smoke (Cursor automation, :30 UTC):** run `npm run prod:smoke` — `/hub/login` must return 200
-with `LOADOFF` in the body; `/hub` must not 5xx. Any failure → diagnose, fix forward on `main`, push.
+with `LoadOff` in the body; `/hub` must not 5xx. Any failure → diagnose, fix forward on `main`, push.
 Optional later: Vercel MCP for deployment status. This is the fleet's no-human rollback trigger.
 
 **Meta-governor (routine, weekly):** audit the LOOP itself over the past week: commits per agent,

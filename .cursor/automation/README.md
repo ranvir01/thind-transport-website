@@ -20,7 +20,7 @@ lane agents ──▶ claude/lane-* ──▶ integrator (:00) ──▶ deploy 
 |---------|---------|
 | `npm run agent:status` | Branch drift + recent `Backlog:` blocks; exit 1 = catch-up mode |
 | `npm run agent:backlog` | Ranked backlog from last 30 commits on `main` |
-| `npm run prod:smoke` | HTTP smoke: `/hub/login` shows `LOADOFF`, `/hub` not 5xx |
+| `npm run prod:smoke` | HTTP smoke: `/hub/login` shows LoadOff, `/hub` not 5xx |
 
 ## Activate (one time, ~5 min)
 
@@ -31,7 +31,7 @@ lane agents ──▶ claude/lane-* ──▶ integrator (:00) ──▶ deploy 
 5. Confirm the automation bot has **write access** to the repo.
 6. **Manual first run:** trigger **Deploy + backlog** once to drain integrator → `main` if
    `npm run agent:status` shows catch-up mode.
-7. After Vercel deploys, run `npm run prod:smoke` — expect `LOADOFF` on `/hub/login`.
+7. After Vercel deploys, run `npm run prod:smoke` — expect **LoadOff** on `/hub/login`.
 
 ## Catch-up vs steady state
 

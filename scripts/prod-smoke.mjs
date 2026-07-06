@@ -9,20 +9,22 @@ const BASE = (process.env.PROD_BASE_URL ?? "https://thindtransport.com").replace
 
 const checks = []
 
-async function fetchCheck(name, path, { expectStatus = 200, bodyIncludes = [] } = {}) {
+async function fetchCheck(name, path, { expectStatus = 200, bodyIncludes = [], bodyIncludesIgnoreCase = [] } = {}) {
   const url = `${BASE}${path}`
   try {
     const res = await fetch(url, { redirect: "follow" })
     const body = await res.text()
+    const bodyLower = body.toLowerCase()
     const okStatus = res.status === expectStatus || (expectStatus === "not5xx" && res.status < 500)
     const missing = bodyIncludes.filter((s) => !body.includes(s))
-    const pass = okStatus && missing.length === 0
+    const missingCi = bodyIncludesIgnoreCase.filter((s) => !bodyLower.includes(s.toLowerCase()))
+    const pass = okStatus && missing.length === 0 && missingCi.length === 0
     checks.push({
       name,
       pass,
       detail: pass
         ? `${res.status} OK`
-        : `status=${res.status}${missing.length ? ` missing: ${missing.join(", ")}` : ""}`,
+        : `status=${res.status}${missing.length ? ` missing: ${missing.join(", ")}` : ""}${missingCi.length ? ` missing (ci): ${missingCi.join(", ")}` : ""}`,
       url,
     })
   } catch (err) {
@@ -36,7 +38,7 @@ async function main() {
 
   await fetchCheck("hub login page", "/hub/login", {
     expectStatus: 200,
-    bodyIncludes: ["LOADOFF"],
+    bodyIncludesIgnoreCase: ["loadoff"],
   })
   await fetchCheck("hub root", "/hub", { expectStatus: "not5xx" })
 

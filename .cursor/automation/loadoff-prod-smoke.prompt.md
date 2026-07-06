@@ -26,7 +26,7 @@ npm run prod:smoke
 
 ## Checks (also in scripts/prod-smoke.mjs)
 
-- `GET /hub/login` → 200, HTML contains `LOADOFF`
+- `GET /hub/login` → 200, HTML contains `LoadOff` (case-insensitive)
 - `GET /hub` → not 5xx
 
 ## Guardrails
