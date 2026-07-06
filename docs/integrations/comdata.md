@@ -44,8 +44,8 @@ CSV import path is untouched.
 ## Open questions for the next pass
 
 - Confirm the real endpoint path, auth header names, and payload shape
-  against an actual Comdata API onboarding response — the shape may need to
-  change once a real feed responds.
+  against an actual Comdata API onboarding response — adjust `normalizeComdataRow`
+  and `comdataSource()` when the real packet arrives.
 - Confirm whether Comdata transactions need a separate `card_program` value
   (`"Comdata"`) distinct from EFS for reporting, or if `source` alone is
   sufficient (currently assumed sufficient — no `card_program` column write
