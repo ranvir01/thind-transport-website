@@ -22,19 +22,24 @@ function git(cmd) {
   return execSync(`git ${cmd}`, { encoding: "utf-8" }).trim()
 }
 
+const RECORD_SEP = "\x1eCOMMIT\x1e"
+
 function collectItems() {
   git("fetch origin --quiet")
-  const out = git(`log ${ref} -n ${limit} --format=%H---%s---%B---END---`)
+  const out = git(`log ${ref} -n ${limit} --format=%H---%s---%B${RECORD_SEP}`)
   const seen = new Set()
   const items = []
 
-  for (const chunk of out.split("---END---")) {
-    const header = chunk.match(/^([a-f0-9]+)---(.+)---\n([\s\S]*)$/i)
+  for (const chunk of out.split(RECORD_SEP)) {
+    if (!chunk.trim()) continue
+    // %B follows the third --- with no newline (unlike %b); subject must be non-greedy.
+    const header = chunk.match(/^([a-f0-9]+)---(.+?)---([\s\S]*)$/i)
     if (!header) continue
     const [, hash, subject, body] = header
-    const match = body.match(/\nBacklog:\s*\n([\s\S]*?)(?:\n\n|$)/i)
+    const match = body.match(/(?:^|\n)Backlog:\s*\n([\s\S]*)/i)
     if (!match) continue
-    for (const line of match[1].split("\n")) {
+    const backlogBlock = match[1].split(/\n\n/)[0]
+    for (const line of backlogBlock.split("\n")) {
       const text = line.replace(/^[-*]\s*/, "").trim()
       if (!text || seen.has(text.toLowerCase())) continue
       seen.add(text.toLowerCase())
