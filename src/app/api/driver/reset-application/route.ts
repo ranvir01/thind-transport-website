@@ -44,10 +44,11 @@ export async function POST(request: NextRequest) {
     
     // Try to use Postgres if available
     if (process.env.POSTGRES_URL) {
-      const { hubDb } = await import("@/lib/hub/db")
+      const { driverDbPool } = await import("@/lib/driver-db-local")
+      const pool = driverDbPool()
 
-      await hubDb().query(`DELETE FROM applications WHERE driver_id = $1`, [driver.id])
-      await hubDb().query(`UPDATE drivers SET application_completed = false WHERE id = $1`, [driver.id])
+      await pool.query(`DELETE FROM applications WHERE driver_id = $1`, [driver.id])
+      await pool.query(`UPDATE drivers SET application_completed = false WHERE id = $1`, [driver.id])
       
       console.log(`Application data reset for driver: ${targetEmail}`)
     } else {

@@ -3,12 +3,20 @@
  * Run this once to initialize tables and migrate existing data
  */
 
-import { hubDb, query } from "./hub/db"
+import { driverDbPool } from "./driver-db-local"
 import { readFileSync } from "fs"
 import { join } from "path"
 
 async function exec(text: string, params: unknown[] = []): Promise<void> {
-  await hubDb().query(text, params)
+  await driverDbPool().query(text, params)
+}
+
+async function query<T = Record<string, unknown>>(
+  text: string,
+  params: unknown[] = []
+): Promise<T[]> {
+  const result = await driverDbPool().query(text, params)
+  return result.rows as T[]
 }
 
 export async function setupDatabase() {
