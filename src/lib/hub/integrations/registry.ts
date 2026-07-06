@@ -17,15 +17,22 @@ export type SyncKind = "poll" | "webhook" | "manual"
 export type ProviderStatus =
   | "live"      // client implemented and activatable with credentials
   | "stub"      // credentials UI only — client not yet built (lane target)
-  | "planned"   // not even a card yet — roadmap entry for the fleet
+  | "planned"   // roadmap entry for the fleet — card shows honestly as planned
+
+export interface CredentialField {
+  key: string
+  label: string
+  /** Masked in the connect form (rendered as a password input). */
+  secret?: boolean
+}
 
 export interface ProviderSpec {
   id: string
   label: string
   domain: "telematics" | "loadboard" | "fuel" | "accounting" | "factoring" | "docs"
   blurb: string
-  /** Credential field names the connect form may store (allowlist). */
-  fields: string[]
+  /** Credential fields the connect form may store (keys are the allowlist). */
+  fields: CredentialField[]
   /** The always-working path when the integration is off. */
   fallback: string
   sync: SyncKind
@@ -37,62 +44,91 @@ export interface ProviderSpec {
 export const PROVIDERS: readonly ProviderSpec[] = [
   {
     id: "terminal", label: "Terminal (TruckX ELD)", domain: "telematics",
-    blurb: "Live truck positions + HOS clocks through the Terminal aggregator.",
-    fields: ["apiKey", "connectionToken"],
+    blurb: "Live truck positions + HOS clocks through the Terminal aggregator — open an account at withterminal.com and authorize TruckX.",
+    fields: [
+      { key: "apiKey", label: "Terminal API key", secret: true },
+      { key: "connectionToken", label: "Connection token", secret: true },
+    ],
     fallback: "Positions CSV import", sync: "poll", status: "live", cronJob: "telematics-sync",
   },
   {
     id: "truckercloud", label: "TruckerCloud ELD", domain: "telematics",
     blurb: "Alternate ELD aggregator — drop-in TelematicsSource adapter.",
-    fields: ["apiKey"],
+    fields: [{ key: "apiKey", label: "API key", secret: true }],
     fallback: "Positions CSV import", sync: "poll", status: "stub",
   },
   {
     id: "mailbox", label: "Docs mailbox (IMAP)", domain: "docs",
-    blurb: "Polls an inbox and files rate cons/PODs onto matching loads.",
-    fields: ["host", "port", "user", "password", "folder"],
+    blurb: "Polls an inbox and files rate cons/PODs onto matching loads by reference number in the subject.",
+    fields: [
+      { key: "host", label: "IMAP host (e.g. imap.gmail.com)" },
+      { key: "port", label: "Port (993)" },
+      { key: "user", label: "Mailbox user" },
+      { key: "password", label: "App password", secret: true },
+      { key: "folder", label: "Folder (default INBOX)" },
+    ],
     fallback: "Manual document upload", sync: "poll", status: "live", cronJob: "docs-mailbox",
   },
   {
     id: "dat", label: "DAT load board", domain: "loadboard",
-    blurb: "Search and book freight without leaving LoadOff.",
-    fields: ["serviceAccountEmail", "password"],
+    blurb: "Search and book freight without leaving LoadOff. Needs a DAT service account with API entitlement (developer.dat.com).",
+    fields: [
+      { key: "serviceAccountEmail", label: "Service account email" },
+      { key: "password", label: "Service account password", secret: true },
+    ],
     fallback: "Paste rate con", sync: "poll", status: "stub",
   },
   {
     id: "truckstop", label: "Truckstop.com", domain: "loadboard",
     blurb: "Second load board — same LoadSource adapter contract as DAT.",
-    fields: ["apiKey"],
+    fields: [{ key: "apiKey", label: "API key", secret: true }],
     fallback: "Paste rate con", sync: "poll", status: "planned",
   },
   {
     id: "efs", label: "EFS fuel card", domain: "fuel",
-    blurb: "Daily fuel transactions straight into MPG, fraud flags, and fuel→load.",
-    fields: ["feedUser", "feedPassword"],
+    blurb: "Daily fuel transactions straight into MPG, fraud flags, and fuel→load. Ask your EFS rep for data-feed credentials.",
+    fields: [
+      { key: "feedUser", label: "Feed username" },
+      { key: "feedPassword", label: "Feed password", secret: true },
+    ],
     fallback: "Fuel statement CSV import", sync: "poll", status: "stub",
   },
   {
     id: "wex", label: "WEX fuel card", domain: "fuel",
     blurb: "Same FuelSource contract as EFS.",
-    fields: ["feedUser", "feedPassword"],
+    fields: [
+      { key: "feedUser", label: "Feed username" },
+      { key: "feedPassword", label: "Feed password", secret: true },
+    ],
     fallback: "Fuel statement CSV import", sync: "poll", status: "stub",
   },
   {
     id: "comdata", label: "Comdata fuel card", domain: "fuel",
-    blurb: "Same FuelSource contract as EFS.",
-    fields: ["apiKey", "apiSecret"],
+    blurb: "Same FuelSource contract as EFS — request API credentials from your Comdata account team.",
+    fields: [
+      { key: "apiKey", label: "API key", secret: true },
+      { key: "apiSecret", label: "API secret", secret: true },
+    ],
     fallback: "Fuel statement CSV import", sync: "poll", status: "stub",
   },
   {
     id: "qbo", label: "QuickBooks Online", domain: "accounting",
     blurb: "Invoices and payments sync both ways — no more CSV re-keying.",
-    fields: ["clientId", "clientSecret", "refreshToken", "realmId"],
+    fields: [
+      { key: "clientId", label: "Client ID" },
+      { key: "clientSecret", label: "Client secret", secret: true },
+      { key: "refreshToken", label: "Refresh token", secret: true },
+      { key: "realmId", label: "Realm (company) ID" },
+    ],
     fallback: "QuickBooks CSV export", sync: "poll", status: "planned",
   },
   {
     id: "factor", label: "Factoring company", domain: "factoring",
-    blurb: "Submit factored invoices electronically; track advances and reserves.",
-    fields: ["apiKey", "webhookSecret"],
+    blurb: "Submit factored invoices electronically; track advances and reserves. Pushes events to your webhook URL below.",
+    fields: [
+      { key: "apiKey", label: "API key", secret: true },
+      { key: "webhookSecret", label: "Webhook signing secret", secret: true },
+    ],
     fallback: "Email the factor the invoice PDF", sync: "webhook", status: "planned",
   },
 ] as const
@@ -103,9 +139,9 @@ export function providerSpec(id: string): ProviderSpec | undefined {
   return PROVIDERS.find((p) => p.id === id)
 }
 
-/** Field allowlist for the credentials action — derived, never duplicated. */
+/** Field-key allowlist for the credentials action — derived, never duplicated. */
 export function allowedFields(id: string): string[] {
-  return providerSpec(id)?.fields ?? []
+  return providerSpec(id)?.fields.map((f) => f.key) ?? []
 }
 
 /**

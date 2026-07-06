@@ -11,6 +11,7 @@
     "generate:brand-assets": "node scripts/generate-brand-assets.mjs",
     "db:migrate": "node scripts/hub-migrate.mjs",
     "go-live:check": "node scripts/go-live-check.mjs",
+    "connections:check": "node scripts/connections-check.mjs",
     "seed:demo": "node scripts/seed-demo.mjs",
     "test": "vitest run",
     "go-build": "make go-build",
