@@ -1,10 +1,10 @@
 # Comdata fuel card — scouting notes
 
-Status: **adapter shipped stub-first**, no live feed confirmed yet (needs a
-real carrier's API credentials request to come back from the account team).
-Same posture as `efs.md`: update this doc and `normalizeComdataRow` in
-`src/lib/hub/integrations/comdata.ts` in one commit the day a real response
-lands.
+Status: **adapter shipped, feed shape unconfirmed** (same posture as `wex.md`) — cron
+(`comdata-sync`, daily) and the settings "Sync now" action are wired, `registry.ts` carries
+`status: "live"`. No live feed confirmed yet (needs a real carrier's API credentials request
+to come back from the account team). Update this doc and `normalizeComdataRow` in
+`src/lib/hub/integrations/comdata.ts` in one commit the day a real response lands.
 
 ## Auth model
 
@@ -16,7 +16,7 @@ client-credentials-style pair rather than a feed username/password. This
 adapter sends both as HTTP headers (`Api-Key`, `Api-Secret`) rather than
 Basic auth, since Comdata's developer materials describe key/secret pairs,
 not a portal login — confirm the exact header names against the real
-onboarding packet before flipping status to live.
+onboarding packet before the first real sync.
 
 ## Assumed feed shape (unconfirmed — adjust on first real response)
 
@@ -42,8 +42,8 @@ CSV import path is untouched.
 ## Open questions for the next pass
 
 - Confirm the real endpoint path, auth header names, and payload shape
-  against an actual Comdata API onboarding response — the #1 blocker to
-  flipping status from stub to live.
+  against an actual Comdata API onboarding response — adjust `normalizeComdataRow`
+  and `comdataSource()` when the real packet arrives.
 - Confirm whether Comdata transactions need a separate `card_program` value
   (`"Comdata"`) distinct from EFS for reporting, or if `source` alone is
   sufficient (currently assumed sufficient — no `card_program` column write
