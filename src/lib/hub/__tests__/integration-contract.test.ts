@@ -5,7 +5,7 @@
  */
 import { describe, expect, it } from "vitest"
 import { PROVIDERS, allowedFields, providerSpec } from "../integrations/registry"
-import { memorySink, mockSource } from "../integrations/mock"
+import { memorySink, mockLoadSource, mockSource } from "../integrations/mock"
 import { signWebhookBody, verifyWebhookSignature, webhookEventId } from "../integrations/webhooks"
 
 describe("provider registry invariants", () => {
@@ -58,6 +58,22 @@ describe("adapter contract (mock reference implementation)", () => {
     const source = mockSource({ connected: false })
     await expect(source.connected()).resolves.toBe(false)
     await expect(source.pull()).rejects.toThrow(/not connected/)
+  })
+})
+
+describe("LoadSource contract (mock reference implementation)", () => {
+  it("search is deterministic per criteria and carries a stable external id", async () => {
+    const source = mockLoadSource({ provider: "mock-loadboard", rows: 2 })
+    const first = await source.search({ originState: "WA" })
+    const replay = await source.search({ originState: "WA" })
+    expect(first.map((r) => r.external_id)).toEqual(replay.map((r) => r.external_id))
+    expect(first).toHaveLength(2)
+  })
+
+  it("a disconnected source refuses to search instead of returning junk", async () => {
+    const source = mockLoadSource({ connected: false })
+    await expect(source.connected()).resolves.toBe(false)
+    await expect(source.search({ originState: "WA" })).rejects.toThrow(/not connected/)
   })
 })
 

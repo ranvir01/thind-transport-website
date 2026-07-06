@@ -79,13 +79,13 @@ export const PROVIDERS: readonly ProviderSpec[] = [
       { key: "serviceAccountEmail", label: "Service account email" },
       { key: "password", label: "Service account password", secret: true },
     ],
-    fallback: "Paste rate con", sync: "poll", status: "stub",
+    fallback: "Paste rate con", sync: "manual", status: "stub",
   },
   {
     id: "truckstop", label: "Truckstop.com", domain: "loadboard",
     blurb: "Second load board — same LoadSource adapter contract as DAT.",
     fields: [{ key: "apiKey", label: "API key", secret: true }],
-    fallback: "Paste rate con", sync: "poll", status: "planned",
+    fallback: "Paste rate con", sync: "manual", status: "planned",
   },
   {
     id: "efs", label: "EFS fuel card", domain: "fuel",
@@ -160,4 +160,25 @@ export interface SyncSource<Row> {
 
 export interface SyncRowBase {
   external_id: string
+}
+
+/**
+ * Load-board adapter contract (DAT, Truckstop). Deliberately NOT a
+ * `SyncSource<Row>` — a load board isn't a background feed to poll on a
+ * cron, it's an on-demand search a dispatcher triggers from the loadboard
+ * screen (hence `sync: "manual"` on both registry entries above). `search`
+ * still returns rows carrying a stable `external_id` so a future "save this
+ * posting" action can reuse the same idempotent-upsert pattern as every
+ * other adapter, even though nothing is ingested automatically today.
+ */
+export interface LoadSearchCriteria {
+  originState: string
+  destState?: string
+  equipmentType?: string
+}
+
+export interface LoadSource<Row> {
+  provider: string
+  connected(): Promise<boolean>
+  search(criteria: LoadSearchCriteria): Promise<Row[]>
 }
