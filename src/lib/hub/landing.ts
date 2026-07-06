@@ -1,5 +1,11 @@
 import type { HubRole } from "./types"
 
+/** Credentials sign-in destination — hub roles land in LoadOff; legacy driver-portal JWTs have no role. */
+export function postLoginPath(role: HubRole | string | null | undefined): string {
+  if (role) return hubLandingPath(role)
+  return "/driver/application"
+}
+
 /** Post-login home for each LoadOff role (Phase 3). */
 export function hubLandingPath(role: HubRole | string | null | undefined): string {
   switch (role) {

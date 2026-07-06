@@ -1,5 +1,17 @@
 import { describe, expect, it } from "vitest"
-import { hubLandingPath, hubRoleLabel } from "../landing"
+import { hubLandingPath, hubRoleLabel, postLoginPath } from "../landing"
+
+describe("postLoginPath", () => {
+  it("sends legacy driver-portal JWTs to the old application portal", () => {
+    expect(postLoginPath(null)).toBe("/driver/application")
+    expect(postLoginPath(undefined)).toBe("/driver/application")
+  })
+
+  it("delegates hub roles to hubLandingPath", () => {
+    expect(postLoginPath("driver")).toBe("/hub/driver")
+    expect(postLoginPath("owner")).toBe("/hub")
+  })
+})
 
 describe("hubLandingPath (Phase 3 role redirects)", () => {
   it("sends office roles to their primary screens", () => {
