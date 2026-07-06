@@ -118,7 +118,24 @@ export async function driverUploadDocument(formData: FormData): Promise<Result> 
     const osd = formData.get("osd") === "1"
     const amountRaw = String(formData.get("amount") ?? "").replace(/[^0-9.]/g, "")
     if (!DRIVER_UPLOAD_KINDS.has(kind)) return { ok: false, error: "Pick what the photo is" }
-    const load = await driverOwnsLoad(user.carrierId, user.driverId, loadId)
+    let load = await driverOwnsLoad(user.carrierId, user.driverId, loadId)
+    if (!load && requestId) {
+      // The office can request paperwork from a driver for a load assigned to
+      // someone else (team drop, post-delivery reassignment). Their open
+      // request addressed to THIS driver for THIS load is the authorization —
+      // without this, the pinned request card can never be satisfied.
+      const requested = await queryOne<{ id: string }>(
+        `SELECT r.id FROM hub.document_requests r
+         JOIN hub.loads l ON l.id = r.load_id AND l.carrier_id = r.carrier_id
+         WHERE r.carrier_id = $1 AND r.id = $2 AND r.driver_id = $3
+           AND r.load_id = $4 AND r.status = 'open' AND l.deleted_at IS NULL`,
+        [user.carrierId, requestId, user.driverId, loadId]
+      )
+      if (requested) load = await queryOne(
+        `SELECT id, status FROM hub.loads WHERE carrier_id = $1 AND id = $2`,
+        [user.carrierId, loadId]
+      )
+    }
     if (!load) return { ok: false, error: "That load isn't yours" }
     const file = formData.get("file")
     if (!(file instanceof File) || file.size === 0) return { ok: false, error: "Take or pick a photo first" }
