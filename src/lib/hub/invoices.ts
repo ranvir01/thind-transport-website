@@ -174,8 +174,8 @@ export async function createInvoiceFromLoad(
       })
       emailed = true
       await query(
-        `UPDATE hub.invoices SET status = 'sent', sent_log = sent_log || $2::jsonb, updated_at = NOW() WHERE id = $1`,
-        [invoice.id, JSON.stringify([{ to: customer.billing_email, at: new Date().toISOString(), kind: "invoice" }])]
+        `UPDATE hub.invoices SET status = 'sent', sent_log = sent_log || $2::jsonb, updated_at = NOW() WHERE id = $1 AND carrier_id = $3`,
+        [invoice.id, JSON.stringify([{ to: customer.billing_email, at: new Date().toISOString(), kind: "invoice" }]), carrierId]
       )
       invoice.status = "sent"
     } catch (err) {
@@ -281,7 +281,7 @@ export async function runOverdueReminders(carrierId: string): Promise<{ sent: nu
     const daysPast = Math.floor((today.getTime() - new Date(invoice.due_on).getTime()) / 86400000)
     if (daysPast <= 0) continue
     if (invoice.status !== "overdue") {
-      await query(`UPDATE hub.invoices SET status = 'overdue', updated_at = NOW() WHERE id = $1`, [invoice.id])
+      await query(`UPDATE hub.invoices SET status = 'overdue', updated_at = NOW() WHERE id = $1 AND carrier_id = $2`, [invoice.id, carrierId])
       flaggedOverdue++
     }
     if (![3, 10, 20].includes(daysPast)) continue
@@ -297,8 +297,8 @@ export async function runOverdueReminders(carrierId: string): Promise<{ sent: nu
         text: `Invoice ${invoice.number} for load ${invoice.load_reference} was due on ${String(invoice.due_on).slice(0, 10)}.\nOpen balance: $${(invoice.open_cents / 100).toFixed(2)}.\n\nPlease remit to:\n${invoice.remit_to}\n\n${carrier?.name ?? ""}`,
       })
       await query(
-        `UPDATE hub.invoices SET sent_log = sent_log || $2::jsonb WHERE id = $1`,
-        [invoice.id, JSON.stringify([{ to: customer.billing_email, at: new Date().toISOString(), kind: `reminder-${daysPast}d` }])]
+        `UPDATE hub.invoices SET sent_log = sent_log || $2::jsonb WHERE id = $1 AND carrier_id = $3`,
+        [invoice.id, JSON.stringify([{ to: customer.billing_email, at: new Date().toISOString(), kind: `reminder-${daysPast}d` }]), carrierId]
       )
       sent++
     } catch { /* reminder failures surface via integration_syncs in cron route */ }
@@ -428,8 +428,8 @@ export async function sendCustomerStatement(
 
   const sentAt = new Date().toISOString()
   await query(
-    `UPDATE hub.invoices SET sent_log = sent_log || $2::jsonb WHERE id = ANY($1::uuid[])`,
-    [statement.invoices.map((inv) => inv.id), JSON.stringify([{ to: statement.billingEmail, at: sentAt, kind: "statement" }])]
+    `UPDATE hub.invoices SET sent_log = sent_log || $2::jsonb WHERE id = ANY($1::uuid[]) AND carrier_id = $3`,
+    [statement.invoices.map((inv) => inv.id), JSON.stringify([{ to: statement.billingEmail, at: sentAt, kind: "statement" }]), carrierId]
   )
   await logAudit({
     carrierId, actorId: actor.id, actorName: actor.name,
@@ -477,8 +477,8 @@ export async function sendFactoringPacket(
     attachments,
   })
   await query(
-    `UPDATE hub.invoices SET sent_log = sent_log || $2::jsonb WHERE id = $1`,
-    [invoice.id, JSON.stringify([{ to: settings.factoring.email, at: new Date().toISOString(), kind: "factoring-packet" }])]
+    `UPDATE hub.invoices SET sent_log = sent_log || $2::jsonb WHERE id = $1 AND carrier_id = $3`,
+    [invoice.id, JSON.stringify([{ to: settings.factoring.email, at: new Date().toISOString(), kind: "factoring-packet" }]), carrierId]
   )
   await logAudit({
     carrierId, actorId: actor.id, actorName: actor.name,

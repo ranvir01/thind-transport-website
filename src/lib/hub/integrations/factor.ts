@@ -143,8 +143,8 @@ export async function submitInvoiceToFactor(
   if (!response.ok) throw new Error(`Factor submission → HTTP ${response.status}`)
 
   await query(
-    `UPDATE hub.invoices SET sent_log = sent_log || $2::jsonb WHERE id = $1`,
-    [invoice.id, JSON.stringify([{ to: "factor-api", at: new Date().toISOString(), kind: "factor-submission" }])]
+    `UPDATE hub.invoices SET sent_log = sent_log || $2::jsonb WHERE id = $1 AND carrier_id = $3`,
+    [invoice.id, JSON.stringify([{ to: "factor-api", at: new Date().toISOString(), kind: "factor-submission" }]), carrierId]
   )
   await logAudit({
     carrierId, actorId: actor.id, actorName: actor.name,
