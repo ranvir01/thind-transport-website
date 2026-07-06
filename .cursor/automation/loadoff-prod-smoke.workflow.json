@@ -1,0 +1,26 @@
+{
+  "name": "LoadOff prod smoke",
+  "description": "Hourly at :30 UTC — HTTP smoke on thindtransport.com/hub; fix-forward on main if production is broken.",
+  "workflow": {
+    "triggers": [
+      {
+        "cron": {
+          "cron": "30 * * * *"
+        }
+      }
+    ],
+    "actions": [],
+    "prompts": [
+      "You are the LoadOff production smoke background agent (docs/agent-improvement-loop.md section 5).\n\nRead AGENTS.md and .cursor/automation/loadoff-prod-smoke.prompt.md for full steps.\n\nRun npm run prod:smoke. If green, stop without changes. If red, diagnose and fix forward on main with verify (npm run build + npx vitest run), push.\n\nRepo: ranvir01/thind-transport-website, branch main."
+    ],
+    "gitConfig": {
+      "repo": "ranvir01/thind-transport-website",
+      "branch": "main"
+    },
+    "model": "auto",
+    "agentOptions": {
+      "skipInstall": false
+    },
+    "memoryEnabled": true
+  }
+}

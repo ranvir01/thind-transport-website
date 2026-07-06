@@ -95,10 +95,24 @@ Launch together, merge in any order.
 
 **Background automation (subscription — no API key):**
 
-Use **Cursor Automations** on an **hourly schedule** (`59 * * * *`, model **Auto**, repo
-`ranvir01/thind-transport-website` / `main`). Setup: `.cursor/automation/README.md` — prompt in
-`hauldesk-improvement-cycle.prompt.md`, editor draft in `hauldesk-improvement-cycle.workflow.json`.
-Each run merges `claude/hauldesk-project-setup-l1luoo` when ahead of `main`, then ships one backlog item or stops if green and empty.
+Three **Cursor Automations** on staggered hourly schedules (model **Auto**, repo
+`ranvir01/thind-transport-website`). Setup: [`.cursor/automation/README.md`](../.cursor/automation/README.md).
+
+| Agent | Cron (UTC) | Branch | Job |
+|-------|------------|--------|-----|
+| Integrator | `0 * * * *` | `claude/hauldesk-project-setup-l1luoo` | Merge `claude/lane-*` → integrator; verify after each merge |
+| Prod smoke | `30 * * * *` | `main` | `npm run prod:smoke`; fix-forward if production broken |
+| Deploy + backlog | `59 * * * *` | `main` | **Catch-up:** merge integrator → `main` while drift > threshold. **Steady:** one `Backlog:` item |
+
+Preflight helpers: `npm run agent:status`, `npm run agent:backlog`, `npm run prod:smoke`.
+
+Prompts: `loadoff-integrator.prompt.md`, `loadoff-prod-smoke.prompt.md`, `loadoff-deploy.prompt.md`
+(editor drafts: matching `*.workflow.json`).
+
+**Catch-up mode:** while `npm run agent:status` exits 1, deploy agent drains integrator → `main` only
+(no new feature work). When caught up, one backlog item per hour.
+
+Legacy single-automation files (`hauldesk-improvement-cycle.*`) alias to `loadoff-deploy.*`.
 
 ### 3b. Release gate (before any deploy is called done)
 > Verify the release: `npm run build`, `npx vitest run`, `npm run test:sidecars`; then against production
@@ -137,9 +151,10 @@ Many routines run concurrently, so each **lane owns a file territory and its own
 `AGENTS.md`, migrations) except through the **integrator**. The flow:
 
 ```
-lane routines ──push──▶ claude/lane-*  ──reviewed+merged──▶ claude/hauldesk-project-setup-l1luoo
-   (hourly-ish, staggered)      (integrator routine, every ~2h)            │
-                                                     Cursor automation ──▶ main ──▶ Vercel
+lane routines ──push──▶ claude/lane-*  ──integrator (:00 UTC)──▶ claude/hauldesk-project-setup-l1luoo
+   (hourly-ish, staggered)                    │
+                              deploy (:59 UTC) ──▶ main ──▶ Vercel
+                              prod smoke (:30 UTC) checks thindtransport.com/hub
 ```
 
 | Lane branch | Territory (only these paths) | Mission |
@@ -153,10 +168,9 @@ lane routines ──push──▶ claude/lane-*  ──reviewed+merged──▶ 
 | `claude/lane-docs` | `docs/**`, `.env.example`, README, `scripts/go-live-check.mjs` | docs drift, runbooks, staff how-to guides |
 | `claude/lane-roadmap` | new feature files within any ONE existing territory per run | NEW capability from `docs/hauldesk-gap-report`-style gaps: pick the top unbuilt feature a 15-truck carrier needs, build it complete with tests + E2E |
 
-**Prod smoke (routine, hourly):** with the Vercel connector, check the newest production deployment
-state and error clusters since the last hour; fetch the live login page (expect 200). Any failure →
-diagnose, fix forward per AGENTS.md, push. Healthy → exit in one line. This is the fleet's
-no-human rollback trigger: a broken deploy is found within the hour, not the next morning.
+**Prod smoke (Cursor automation, :30 UTC):** run `npm run prod:smoke` — `/hub/login` must return 200
+with `LOADOFF` in the body; `/hub` must not 5xx. Any failure → diagnose, fix forward on `main`, push.
+Optional later: Vercel MCP for deployment status. This is the fleet's no-human rollback trigger.
 
 **Meta-governor (routine, weekly):** audit the LOOP itself over the past week: commits per agent,
 reverts, test-count trend, build breakages on main, churn (files edited by 3+ agents), busywork

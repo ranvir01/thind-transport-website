@@ -13,6 +13,9 @@
     "go-live:check": "node scripts/go-live-check.mjs",
     "seed:demo": "node scripts/seed-demo.mjs",
     "test": "vitest run",
+    "agent:status": "node scripts/agent-loop-status.mjs",
+    "agent:backlog": "node scripts/collect-backlog.mjs",
+    "prod:smoke": "node scripts/prod-smoke.mjs",
     "go-build": "make go-build",
     "rust-build": "make rust-build",
     "test:sidecars": "make test-sidecars"

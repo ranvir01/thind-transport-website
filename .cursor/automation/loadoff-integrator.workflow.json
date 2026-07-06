@@ -1,0 +1,26 @@
+{
+  "name": "LoadOff integrator (lane merge)",
+  "description": "Hourly at :00 UTC — merges claude/lane-* branches into claude/hauldesk-project-setup-l1luoo with build+test after each merge.",
+  "workflow": {
+    "triggers": [
+      {
+        "cron": {
+          "cron": "0 * * * *"
+        }
+      }
+    ],
+    "actions": [],
+    "prompts": [
+      "You are the LoadOff integrator background agent (docs/agent-improvement-loop.md section 5).\n\nRead AGENTS.md and .cursor/automation/loadoff-integrator.prompt.md for full steps.\n\nBranch: claude/hauldesk-project-setup-l1luoo (NOT main). Run npm run agent:status first. Merge each claude/lane-* branch that is ahead of integrator, verify with npm run build + npx vitest run after each merge, push to integrator branch only.\n\nEnd commit bodies with Backlog:. Never push to main.\n\nRepo: ranvir01/thind-transport-website."
+    ],
+    "gitConfig": {
+      "repo": "ranvir01/thind-transport-website",
+      "branch": "claude/hauldesk-project-setup-l1luoo"
+    },
+    "model": "auto",
+    "agentOptions": {
+      "skipInstall": false
+    },
+    "memoryEnabled": true
+  }
+}

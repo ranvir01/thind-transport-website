@@ -68,6 +68,7 @@ full playbook and ready-made prompts:
 4. **Verify** — `npm run build` + `npx vitest run` (+ `npm run test:sidecars` if Go/Rust touched)
    + visual check of changed screens (local Postgres: `npm run db:migrate && npm run seed:demo`,
    then drive the real UI — demo logins in `scripts/seed-demo.mjs`).
-5. **Ship** — commit with a one-line why, push, merge to `main` (Vercel deploys `main`).
+5. **Ship** — commit with a one-line why, push, merge to `main` (Vercel deploys `main`). Background
+   fleet automations (`.cursor/automation/README.md`) handle integrator → main drain and prod smoke.
 6. **Record** — end the commit body or PR with a `Backlog:` list of follow-ups you saw but didn't
    take; the next agent starts there. Never leave discovered defects unrecorded.

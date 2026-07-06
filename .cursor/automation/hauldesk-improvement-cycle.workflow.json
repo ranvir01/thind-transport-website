@@ -1,6 +1,6 @@
 {
-  "name": "HaulDesk improvement cycle (3a)",
-  "description": "Hourly background agent on subscription Auto — one backlog item per run, merges claude/hauldesk-project-setup-l1luoo when ahead of main.",
+  "name": "LoadOff deploy + backlog (replaces HaulDesk improvement cycle 3a)",
+  "description": "DEPRECATED prefill — use loadoff-deploy.workflow.json. Hourly at :59 UTC on main.",
   "workflow": {
     "triggers": [
       {
