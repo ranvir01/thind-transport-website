@@ -79,20 +79,33 @@ async function advanceDriverLoadToDelivered(page) {
   await clickByText(page, "Delivered")
   await waitForText(page, "Status updated")
   await sleep(1200)
-  check((await page.evaluate(() => document.body.innerText)).includes("Delivered — send the POD"), "load is delivered and awaiting POD")
+  check(
+    (await page.evaluate(() => document.body.innerText)).toLowerCase().includes("delivered — send the pod"),
+    "load is delivered and awaiting POD"
+  )
 }
 
+/**
+ * Scoped to the OS&D checkbox's own card — the driver home also pins an
+ * unrelated document-request widget (e.g. "Receipt for THD-1005") with its
+ * own hidden file input earlier in the DOM; grabbing the page's first
+ * input[type=file] uploads to the wrong load and misreports as "isn't yours".
+ */
 async function uploadOsdPod(page, fixturePath) {
-  await page.evaluate(() => {
+  const fileInputHandle = await page.evaluateHandle(() => {
     const box = [...document.querySelectorAll("label")].find((l) =>
       (l.textContent ?? "").includes("Exceptions noted on the POD")
     )
-    const input = box?.querySelector('input[type="checkbox"]')
-    if (input && !input.checked) input.click()
+    if (!box) return null
+    const checkbox = box.querySelector('input[type="checkbox"]')
+    if (checkbox && !checkbox.checked) checkbox.click()
+    const card = box.closest("div.rounded-xl") ?? box.parentElement
+    return card ? card.querySelector('input[type="file"]') : null
   })
-  const fileInput = await page.waitForSelector('input[type="file"]')
+  const fileInput = fileInputHandle.asElement()
+  if (!fileInput) throw new Error("Could not find the POD file input near the OS&D checkbox")
   await fileInput.uploadFile(fixturePath)
-  await waitForText(page, "draft claim file", 20000)
+  await waitForText(page, "opened a claim file", 20000)
 }
 
 async function main() {
@@ -134,7 +147,7 @@ async function main() {
   await sleep(1200)
   await page.goto(`${BASE}/hub/safety`, { waitUntil: "networkidle2" })
   const afterCloseWall = await page.evaluate(() => document.body.innerText)
-  check(afterCloseWall.includes("Closed"), "closed incident shows Closed status on Safety")
+  check(afterCloseWall.toLowerCase().includes("closed"), "closed incident shows Closed status on Safety")
   check((await registerCount(page)) === 1, "DOT register still lists the recordable incident after close (390.15 retention)")
   await shot(page, "02-incident-closed")
 
