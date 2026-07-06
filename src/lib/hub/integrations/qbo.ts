@@ -342,8 +342,8 @@ export async function pushInvoiceToQbo(
     if (!response.ok) throw new Error(`QuickBooks invoice update → HTTP ${response.status}`)
 
     await query(
-      `UPDATE hub.invoices SET sent_log = sent_log || $2::jsonb WHERE id = $1`,
-      [invoice.id, JSON.stringify([{ to: "qbo", at: new Date().toISOString(), kind: "qbo-push-update" }])]
+      `UPDATE hub.invoices SET sent_log = sent_log || $2::jsonb WHERE id = $1 AND carrier_id = $3`,
+      [invoice.id, JSON.stringify([{ to: "qbo", at: new Date().toISOString(), kind: "qbo-push-update" }]), carrierId]
     )
     await logAudit({
       carrierId, actorId: actor.id, actorName: actor.name,
@@ -380,8 +380,8 @@ export async function pushInvoiceToQbo(
   if (!response.ok) throw new Error(`QuickBooks invoice push → HTTP ${response.status}`)
 
   await query(
-    `UPDATE hub.invoices SET sent_log = sent_log || $2::jsonb WHERE id = $1`,
-    [invoice.id, JSON.stringify([{ to: "qbo", at: new Date().toISOString(), kind: "qbo-push" }])]
+    `UPDATE hub.invoices SET sent_log = sent_log || $2::jsonb WHERE id = $1 AND carrier_id = $3`,
+    [invoice.id, JSON.stringify([{ to: "qbo", at: new Date().toISOString(), kind: "qbo-push" }]), carrierId]
   )
   await logAudit({
     carrierId, actorId: actor.id, actorName: actor.name,

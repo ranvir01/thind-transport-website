@@ -194,7 +194,12 @@ describe("submitInvoiceToFactor", () => {
       referenceNumber: "INV-1", amount: 1250.5, debtorName: "Acme",
       documents: [{ kind: "rate_confirmation", url: "/docs/rc.pdf" }, { kind: "pod", url: "/docs/pod.pdf" }],
     })
-    expect(queryMock).toHaveBeenCalledWith(expect.stringContaining("UPDATE hub.invoices SET sent_log"), expect.any(Array))
+    expect(queryMock).toHaveBeenCalledWith(
+      expect.stringContaining("UPDATE hub.invoices SET sent_log"),
+      expect.arrayContaining([CARRIER]) // tenancy guard on the write side too
+    )
+    const [updateSql] = queryMock.mock.calls.find(([sql]) => String(sql).includes("UPDATE hub.invoices"))!
+    expect(String(updateSql)).toContain("carrier_id")
     expect(logAuditMock).toHaveBeenCalledWith(expect.objectContaining({ action: "factor-submission" }))
   })
 
