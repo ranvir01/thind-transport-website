@@ -133,8 +133,8 @@ export function DriverIncidentForm({ loads }: { loads: { id: string; reference: 
         </p>
         {QUESTIONS.map(({ key, q }) => (
           <div key={key} className="flex items-center justify-between gap-3 min-h-[48px]">
-            <p className="text-sm font-semibold text-white">{q}</p>
-            <div className="flex rounded-xl border border-white/15 overflow-hidden">
+            <p className="min-w-0 flex-1 text-sm font-semibold text-white">{q}</p>
+            <div className="flex shrink-0 rounded-xl border border-white/15 overflow-hidden">
               {[false, true].map((value) => (
                 <button
                   key={String(value)}
