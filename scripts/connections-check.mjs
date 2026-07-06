@@ -30,7 +30,7 @@ const ENV_SWITCHES = [
   ["POSTGRES_URL", "the database (everything)"],
   ["NEXTAUTH_SECRET", "login sessions"],
   ["CREDENTIALS_KEY", "encrypted vault — required to store ANY provider credentials"],
-  ["CRON_SECRET", "the 9 scheduled production jobs (vercel.json)"],
+  ["CRON_SECRET", "the 10 scheduled production jobs (vercel.json)"],
   ["BLOB_READ_WRITE_TOKEN", "durable POD uploads + invoice/settlement PDFs on Vercel"],
   ["SMTP_USER", "outbound email (invoices, statements) — with SMTP_PASS"],
   ["VAPID_PUBLIC_KEY", "driver web-push notifications — with VAPID_PRIVATE_KEY"],

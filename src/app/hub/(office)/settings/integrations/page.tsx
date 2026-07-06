@@ -31,7 +31,9 @@ export default async function IntegrationsPage() {
     fallback: spec.fallback,
     fields: [...spec.fields],
     connected: connectedFlags[i],
-    canSync: spec.cronJob === "telematics-sync",
+    // "Sync now" needs a case in runProviderSync (src/app/hub/_actions/integrations.ts) —
+    // not every cronJob has a manual trigger wired yet (e.g. mailbox is poll-only today).
+    canSync: spec.cronJob === "telematics-sync" || spec.cronJob === "efs-sync",
     status: spec.status,
     webhookUrl:
       spec.sync === "webhook"

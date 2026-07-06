@@ -11,7 +11,7 @@ import { toast } from "sonner"
 import { Cable, Check, Copy, Loader2, RefreshCw, Unplug } from "lucide-react"
 import { cn } from "@/lib/utils"
 import {
-  disconnectIntegrationAction, saveIntegrationCredentialsAction, syncTelematicsNowAction,
+  disconnectIntegrationAction, saveIntegrationCredentialsAction, syncIntegrationNowAction,
 } from "@/app/hub/_actions/integrations"
 import { fieldCls, Panel } from "@/components/hub/ui"
 import type { IntegrationProvider } from "@/lib/hub/credentials"
@@ -66,7 +66,7 @@ export function IntegrationCard({ card, encryptionReady }: { card: ProviderCard;
 
   const syncNow = () =>
     startTransition(async () => {
-      const result = await syncTelematicsNowAction()
+      const result = await syncIntegrationNowAction(card.provider)
       if (result.ok) toast.success(`Synced: ${result.summary}`)
       else toast.error(result.error ?? "Sync failed")
       router.refresh()
