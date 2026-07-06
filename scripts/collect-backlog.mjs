@@ -74,9 +74,22 @@ function collectItems() {
   return items
 }
 
+/** Deploy-agent meta bullets — state snapshots, not shippable backlog work. */
+export function isDeployMetaItem(text) {
+  if (/^CATCH-UP MODE:/i.test(text)) return true
+  if (/integrator.*commits ahead/i.test(text)) return true
+  if (/on integrator.*pending deploy/i.test(text)) return true
+  if (/integrator absorbs one per/i.test(text)) return true
+  if (/duplicate.*skip on next run/i.test(text)) return true
+  if (/pending claude\/\* session branches/i.test(text)) return true
+  return false
+}
+
 function rankItem(text) {
   // Fleet-configuration items need owner approval — never auto-pick for deploy agent.
   if (/^owner:/i.test(text)) return PRIORITY.length - 1
+  // Stale catch-up / integrator state — never outrank real product backlog.
+  if (isDeployMetaItem(text)) return PRIORITY.length - 1
 
   for (let i = 0; i < PRIORITY.length; i++) {
     if (PRIORITY[i].test.test(text)) return i
@@ -85,7 +98,11 @@ function rankItem(text) {
 }
 
 function topPickItem(items) {
-  return items.find((item) => !/^owner:/i.test(item.text)) ?? items[0]
+  return (
+    items.find(
+      (item) => !/^owner:/i.test(item.text) && !isDeployMetaItem(item.text)
+    ) ?? null
+  )
 }
 
 function main() {
@@ -112,7 +129,12 @@ function main() {
   }
 
   console.log("\n--- TOP PICK (steady-state deploy agent) ---")
-  console.log(topPickItem(items).text)
+  const pick = topPickItem(items)
+  if (pick) {
+    console.log(pick.text)
+  } else {
+    console.log("(none — remaining items are owner-only or deploy/integrator meta; stop without committing)")
+  }
 }
 
 main()
