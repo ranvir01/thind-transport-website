@@ -24,6 +24,30 @@ function git(cmd) {
 
 const RECORD_SEP = "\x1eCOMMIT\x1e"
 
+/** Join wrapped bullets: continuation lines lack a leading "- " / "* ". */
+export function parseBacklogBullets(backlogBlock) {
+  const bullets = []
+  let current = null
+
+  for (const line of backlogBlock.split("\n")) {
+    const trimmed = line.trim()
+    if (!trimmed) continue
+
+    if (/^[-*]\s/.test(line)) {
+      if (current) bullets.push(current)
+      current = line.replace(/^[-*]\s*/, "").trim()
+      continue
+    }
+
+    if (current) {
+      current = `${current} ${trimmed}`
+    }
+  }
+
+  if (current) bullets.push(current)
+  return bullets
+}
+
 function collectItems() {
   git("fetch origin --quiet")
   const out = git(`log ${ref} -n ${limit} --format=%H---%s---%B${RECORD_SEP}`)
@@ -73,10 +97,17 @@ function parseBacklogBullets(block) {
 }
 
 function rankItem(text) {
+  // Fleet-configuration items need owner approval — never auto-pick for deploy agent.
+  if (/^owner:/i.test(text)) return PRIORITY.length - 1
+
   for (let i = 0; i < PRIORITY.length; i++) {
     if (PRIORITY[i].test.test(text)) return i
   }
   return PRIORITY.length - 1
+}
+
+function topPickItem(items) {
+  return items.find((item) => !/^owner:/i.test(item.text)) ?? items[0]
 }
 
 function main() {
@@ -103,7 +134,7 @@ function main() {
   }
 
   console.log("\n--- TOP PICK (steady-state deploy agent) ---")
-  console.log(items[0].text)
+  console.log(topPickItem(items).text)
 }
 
 main()
