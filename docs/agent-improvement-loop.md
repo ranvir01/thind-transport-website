@@ -157,6 +157,20 @@ lane routines ──push──▶ claude/lane-*  ──reviewed+merged──▶ 
 state and error clusters since the last hour; fetch the live login page (expect 200). Any failure →
 diagnose, fix forward per AGENTS.md, push. Healthy → exit in one line. This is the fleet's
 no-human rollback trigger: a broken deploy is found within the hour, not the next morning.
+Note: Claude Code on the web sessions' egress policy can block direct HTTPS to
+`thindtransport.com` outright (proxy CONNECT 403 — a policy denial, not a bug); when direct fetch
+isn't allowed, this routine must go through the Vercel connector/API instead of `curl`/a browser.
+
+**QA/E2E routine (owner+dispatcher+driver drive, ad hoc):** stand up the local rig (`npm run
+db:migrate && npm run seed:demo && npm run build && npm run start`), run every `scripts/e2e-*.mjs`
+smoke + `scripts/e2e-sweep.mjs`, then drive ad hoc flows as owner/dispatcher/driver with Playwright
+(browser preinstalled in the web sandbox at `/opt/pw-browsers`; `npm install --no-save
+playwright@1.56.1` to match it — a newer `playwright` pulls a browser build that isn't there).
+Confirmed clean on 2026-07-06 against 1abd6bb/a7c692d/d7766d2 (tenancy fixes + per-carrier IFTA):
+full smoke suite, `vitest`, and `build` green; manual drive across both seeded tenants (Thind,
+Cascade Demo Lines) showed correct carrier isolation on IFTA rates and the load board, working
+capacity-posting and facility-notes flows, and correct permission-boundary redirects for
+non-owner roles.
 
 **Meta-governor (routine, weekly):** audit the LOOP itself over the past week: commits per agent,
 reverts, test-count trend, build breakages on main, churn (files edited by 3+ agents), busywork
