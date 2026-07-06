@@ -9,7 +9,7 @@ This is the checklist to take HaulDesk from **demo-ready** to **Thind Transport 
 | Item | Where to set | Why |
 |------|----------------|-----|
 | **Postgres URL** | Vercel → `POSTGRES_URL` | System of record (loads, money, users). Use Vercel Postgres or Neon. |
-| **NextAuth secret** | `NEXTAUTH_SECRET` | `openssl rand -base64 32` |
+| **NextAuth secret** | `NEXTAUTH_SECRET` (or `AUTH_SECRET`, Auth.js v5's native name — either works) | `openssl rand -base64 32` |
 | **NextAuth URL** | `NEXTAUTH_URL` | `https://thindtransport.com` (or your hub domain) |
 | **Credentials encryption** | `CREDENTIALS_KEY` | 32+ random chars — encrypts fuel/telematics/mailbox passwords in DB |
 | **Cron secret** | `CRON_SECRET` | Protects `/api/hub/cron/*` (compliance scan, AR reminders, mailbox, FMCSA recheck, etc.) |
