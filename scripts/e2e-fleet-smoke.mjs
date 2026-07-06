@@ -2,7 +2,8 @@
  * Fleet workflow smoke test — add-truck is the most daily of the office
  * screens that had no dedicated smoke: dispatcher opens Fleet, adds a truck
  * and a trailer, both land on their tab with the count bumped, the truck
- * detail prefills the edit form, a duplicate unit number is rejected with the
+ * detail prefills the edit form, trailer detail prefills its edit form with the
+ * Documents panel, a duplicate unit number is rejected with the
  * friendly error, an accountant (fleet:read but not fleet:write) is refused
  * by the server action, and a driver never reaches Fleet at all.
  *
@@ -141,6 +142,26 @@ async function main() {
   check(afterTrailer.hasUnit, `new trailer #${TRAILER_UNIT} shows on the trailers tab (count ${SEED_TRAILERS + 1})`)
   check(afterTrailer.hasSpecs, "trailer card shows the reefer specs (2024 Utility)")
   await shot(page, "05-fleet-trailers")
+
+  console.log("4b. Trailer detail prefills the edit form")
+  await clickByText(page, `#${TRAILER_UNIT}`, { tag: "a" })
+  await page.waitForFunction(
+    () => /\/hub\/fleet\/trailers\/[0-9a-f-]{36}$/.test(location.pathname),
+    { timeout: 15000 }
+  )
+  await waitForText(page, `Trailer #${TRAILER_UNIT}`)
+  const trailerDetail = await page.evaluate(() => ({
+    unit: document.querySelector("#t_unit")?.value,
+    type: document.querySelector("#t_type")?.value,
+    make: document.querySelector("#t_make")?.value,
+    year: document.querySelector("#t_year")?.value,
+    hasDocsPanel: /Documents/i.test(document.body.innerText),
+  }))
+  check(trailerDetail.unit === TRAILER_UNIT, `trailer edit form prefills unit number (${trailerDetail.unit})`)
+  check(trailerDetail.type === "reefer", `trailer edit form prefills type (${trailerDetail.type})`)
+  check(trailerDetail.make === "Utility" && trailerDetail.year === "2024", "trailer edit form prefills make/year")
+  check(trailerDetail.hasDocsPanel, "Documents panel renders on the trailer detail")
+  await shot(page, "05b-trailer-detail")
 
   console.log("5. Duplicate unit number is rejected")
   await page.goto(`${BASE}/hub/fleet/trucks/new`, { waitUntil: "networkidle2" })
