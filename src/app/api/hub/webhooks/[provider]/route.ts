@@ -9,6 +9,15 @@
  * mis-signed requests get 401 and store NOTHING. Verified events insert
  * idempotently into hub.integration_events for async processing, and every
  * delivery writes a hub.integration_syncs row for the settings-page history.
+ *
+ * A provider with business logic to apply (currently just `factor` — see
+ * `integrations/factor.ts`) gets an entry in EVENT_PROCESSORS and runs right
+ * after its event is stored, marking `processed_at` only when the processor
+ * reports the event was actually applied (or deliberately ignored) — an
+ * event it couldn't yet match (e.g. no matching invoice) stays unprocessed
+ * for a later manual re-drain instead of being silently dropped. A provider
+ * with no entry here just accumulates rows for future processing, same as
+ * before this existed.
  */
 import { NextResponse } from "next/server"
 import { getCredentials, type IntegrationProvider } from "@/lib/hub/credentials"
@@ -16,9 +25,17 @@ import { providerSpec } from "@/lib/hub/integrations/registry"
 import {
   EVENT_ID_HEADER, SIGNATURE_HEADER, verifyWebhookSignature, webhookEventId,
 } from "@/lib/hub/integrations/webhooks"
+import { processFactorEvent } from "@/lib/hub/integrations/factor"
 import { query, queryOne } from "@/lib/hub/db"
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+const EVENT_PROCESSORS: Record<
+  string,
+  (carrierId: string, event: { external_id: string; kind: string | null; payload: Record<string, unknown> }) => Promise<{ applied: boolean; reason?: string }>
+> = {
+  factor: processFactorEvent,
+}
 
 export async function POST(
   req: Request,
@@ -72,10 +89,28 @@ export async function POST(
   )
   const duplicate = inserted.length === 0
 
+  let processed: { applied: boolean; reason?: string } | undefined
+  const processor = EVENT_PROCESSORS[provider]
+  if (!duplicate && processor) {
+    try {
+      processed = await processor(carrierId, { external_id: externalId, kind, payload: payload as Record<string, unknown> })
+      if (processed.applied || processed.reason === "already recorded" || processed.reason?.startsWith("unhandled event kind")) {
+        await query(
+          `UPDATE hub.integration_events SET processed_at = NOW() WHERE carrier_id = $1 AND provider = $2 AND external_id = $3`,
+          [carrierId, provider, externalId]
+        )
+      }
+    } catch (err) {
+      // Event is already stored — leave processed_at null and surface the
+      // failure in sync history rather than losing the webhook.
+      processed = { applied: false, reason: err instanceof Error ? err.message : "processing failed" }
+    }
+  }
+
   await query(
     `INSERT INTO hub.integration_syncs (carrier_id, source, started_at, finished_at, ok, counts)
      VALUES ($1, $2, NOW(), NOW(), TRUE, $3)`,
-    [carrierId, `webhook:${provider}`, JSON.stringify({ events: duplicate ? 0 : 1, duplicate })]
+    [carrierId, `webhook:${provider}`, JSON.stringify({ events: duplicate ? 0 : 1, duplicate, processed })]
   )
 
   return NextResponse.json({ ok: true, duplicate })
