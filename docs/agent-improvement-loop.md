@@ -105,6 +105,13 @@ Each run merges `claude/hauldesk-project-setup-l1luoo` when ahead of `main`, the
 > Postgres `POSTGRES_URL=<prod> HUB_DEMO_LOGIN=false npm run go-live:check` and fix anything red.
 > Smoke on production: dispatcher login lands on /hub/loadboard; edit a load-board cell; Suggest miles on
 > a load; link a fuel receipt; open the driver PWA at phone size. Report pass/fail per item.
+>
+> If the session's network egress policy blocks direct HTTPS to `thindtransport.com` (403 on CONNECT —
+> common in sandboxed agent environments), that's a read-only check, not a hard stop: use the Vercel MCP
+> tools instead — `get_deployment` (confirm the `production` target aliases `thindtransport.com` and is
+> `READY` on the expected commit SHA) and `get_runtime_errors` / `get_runtime_logs` (confirm no new error
+> clusters since the last deploy). This covers the same "is prod healthy" question without touching the
+> blocked host.
 
 ### 3c. Dependency + security pass (weekly)
 > Run `npm audit` and `cargo audit` (if installed); update only patch/minor versions of non-framework
