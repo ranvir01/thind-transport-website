@@ -120,7 +120,7 @@ export const PROVIDERS: readonly ProviderSpec[] = [
       { key: "refreshToken", label: "Refresh token", secret: true },
       { key: "realmId", label: "Realm (company) ID" },
     ],
-    fallback: "QuickBooks CSV export", sync: "poll", status: "planned",
+    fallback: "QuickBooks CSV export", sync: "poll", status: "stub",
   },
   {
     id: "factor", label: "Factoring company", domain: "factoring",
