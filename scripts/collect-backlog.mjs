@@ -9,9 +9,6 @@
 import { execSync } from "node:child_process"
 import { pathToFileURL } from "node:url"
 
-const ref = process.argv[2] ?? "origin/main"
-const limit = Number(process.argv[3] ?? "30")
-
 const PRIORITY = [
   { key: "production", label: "Production-breaking", test: /prod(uction)?|breaking|deploy|outage|500|crash|login fail/i },
   { key: "money", label: "Money-correctness", test: /money|cent|invoice|settlement|ifta|pay rule|audit/i },
@@ -19,11 +16,31 @@ const PRIORITY = [
   { key: "polish", label: "Polish", test: /.*/ },
 ]
 
+// ASCII unit/record separators — cannot appear in commit subjects or bodies,
+// unlike "---", which collided with subjects and the ---END--- sentinel and
+// made the old parser drop every commit.
+export const FIELD_SEP = "\x1f"
+export const RECORD_SEP = "\x1e"
+// %x1f/%x1e keep the shell command plain ASCII; git expands them to the bytes above.
+export const LOG_FORMAT = "%H%x1f%s%x1f%b%x1e"
+
 function git(cmd) {
   return execSync(`git ${cmd}`, { encoding: "utf-8" }).trim()
 }
 
-const RECORD_SEP = "\x1eCOMMIT\x1e"
+/** Pull bullet lines out of the "Backlog:" trailer of one commit body. */
+export function extractBacklog(body) {
+  const lines = body.split("\n")
+  const start = lines.findIndex((line) => /^backlog:\s*$/i.test(line.trim()))
+  if (start === -1) return []
+  const items = []
+  for (const line of lines.slice(start + 1)) {
+    const bullet = line.match(/^\s*[-*]\s+(.*\S)\s*$/)
+    if (!bullet) break
+    items.push(bullet[1])
+  }
+  return items
+}
 
 /** Join wrapped bullets: continuation lines lack a leading "- " / "* ". */
 export function parseBacklogBullets(backlogBlock) {
@@ -55,21 +72,16 @@ export function normalizeBullet(text) {
   return text.toLowerCase().replace(/\s+/g, " ").replace(/[.\s]+$/, "").trim()
 }
 
-function collectItems() {
-  git("fetch origin --quiet")
-  const out = git(`log ${ref} -n ${limit} --format=%H---%s---%B${RECORD_SEP}`)
+/** Parse `git log --format=LOG_FORMAT` output into deduped backlog items. */
+export function parseCommits(raw) {
   const seen = new Set()
   const items = []
   let backlogCommitIndex = -1
 
-  for (const chunk of out.split(RECORD_SEP)) {
-    const trimmed = chunk.trim()
-    if (!trimmed) continue
-    // %B follows the third --- with no newline (unlike %b); subject must be non-greedy.
-    // git log inserts a newline between formatted records when %B ends with \n — trim each chunk.
-    const header = trimmed.match(/^([a-f0-9]+)---(.+?)---([\s\S]*)$/i)
-    if (!header) continue
-    const [, hash, subject, body] = header
+  for (const record of raw.split(RECORD_SEP)) {
+    const [hash, subject, body] = record.replace(/^\n/, "").split(FIELD_SEP)
+    if (!hash || subject === undefined || body === undefined) continue
+
     const match = body.match(/(?:^|\n)Backlog:\s*\n([\s\S]*)/i)
     if (!match) continue
     backlogCommitIndex++
@@ -109,7 +121,7 @@ export function splitCurrentAndOlder(items) {
   return { current, older }
 }
 
-function rankItem(text) {
+export function rankItem(text) {
   // Fleet-configuration items need owner approval — never auto-pick for deploy agent.
   if (/^owner:/i.test(text)) return PRIORITY.length - 1
   // Stale catch-up / integrator state — never outrank real product backlog.
@@ -138,7 +150,11 @@ export function topPickItem(current, older) {
 }
 
 function main() {
-  const items = collectItems()
+  const ref = process.argv[2] ?? "origin/main"
+  const limit = Number(process.argv[3] ?? "30")
+
+  git("fetch origin --quiet")
+  const items = parseCommits(git(`log ${ref} -n ${limit} --format=${LOG_FORMAT}`))
   items.sort((a, b) => rankItem(a.text) - rankItem(b.text) || a.text.localeCompare(b.text))
   const { current, older } = splitCurrentAndOlder(items)
 
