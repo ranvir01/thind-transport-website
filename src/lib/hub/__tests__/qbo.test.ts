@@ -1,24 +1,30 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
-vi.mock("../db", () => ({ queryOne: vi.fn(async () => null) }))
+vi.mock("../db", () => ({ query: vi.fn(async () => []), queryOne: vi.fn(async () => null) }))
 vi.mock("../credentials", () => ({
   getCredentials: vi.fn(async () => null),
   hasCredentials: vi.fn(async () => false),
   saveCredentials: vi.fn(async () => undefined),
 }))
-vi.mock("../invoices", () => ({ recordPayment: vi.fn(async () => ({})) }))
+vi.mock("../invoices", () => ({ getInvoice: vi.fn(async () => null), recordPayment: vi.fn(async () => ({})) }))
+vi.mock("../audit", () => ({ logAudit: vi.fn(async () => {}) }))
 
-import { queryOne } from "../db"
+import { query, queryOne } from "../db"
 import { getCredentials, hasCredentials, saveCredentials } from "../credentials"
-import { recordPayment } from "../invoices"
-import { normalizeQboPayment, qboSource, runQboSync } from "../integrations/qbo"
+import { getInvoice, recordPayment } from "../invoices"
+import { logAudit } from "../audit"
+import { normalizeQboPayment, pushInvoiceToQbo, qboSource, runQboSync } from "../integrations/qbo"
 
+const queryMock = vi.mocked(query)
 const queryOneMock = vi.mocked(queryOne)
 const getCredentialsMock = vi.mocked(getCredentials)
 const hasCredentialsMock = vi.mocked(hasCredentials)
 const saveCredentialsMock = vi.mocked(saveCredentials)
+const getInvoiceMock = vi.mocked(getInvoice)
 const recordPaymentMock = vi.mocked(recordPayment)
+const logAuditMock = vi.mocked(logAudit)
 const CARRIER = "33333333-3333-3333-3333-333333333333"
+const ACTOR = { id: "user-1", name: "Owner" }
 
 const CREDS = { clientId: "cid", clientSecret: "csec", refreshToken: "rtok", realmId: "9130000000000000" }
 
@@ -247,5 +253,77 @@ describe("runQboSync", () => {
     const result = await runQboSync(CARRIER)
     expect(result).toEqual({ connected: true, imported: 0, skipped: 0, unmatched: ["INV-404"] })
     expect(recordPaymentMock).not.toHaveBeenCalled()
+  })
+})
+
+describe("pushInvoiceToQbo", () => {
+  const INVOICE = {
+    id: "invoice-1", number: "INV-1042", amount_cents: 125050, customer_name: "Acme Foods", sent_log: [],
+  }
+
+  beforeEach(() => {
+    hasCredentialsMock.mockReset()
+    getCredentialsMock.mockReset()
+    getInvoiceMock.mockReset()
+    queryMock.mockReset().mockResolvedValue([])
+    logAuditMock.mockReset()
+  })
+
+  it("reports not connected without credentials, no fetch attempted", async () => {
+    hasCredentialsMock.mockResolvedValue(false)
+    const result = await pushInvoiceToQbo(CARRIER, "invoice-1", ACTOR)
+    expect(result).toEqual({ connected: false })
+    expect(getInvoiceMock).not.toHaveBeenCalled()
+  })
+
+  it("short-circuits on a second push instead of double-creating the QBO invoice", async () => {
+    hasCredentialsMock.mockResolvedValue(true)
+    getCredentialsMock.mockResolvedValue(CREDS)
+    getInvoiceMock.mockResolvedValue({ ...INVOICE, sent_log: [{ to: "qbo", at: "2026-06-01", kind: "qbo-push" }] } as never)
+    const fetchMock = vi.fn()
+    vi.stubGlobal("fetch", fetchMock)
+    const result = await pushInvoiceToQbo(CARRIER, "invoice-1", ACTOR)
+    expect(result).toEqual({ connected: true, alreadyPushed: true })
+    expect(fetchMock).not.toHaveBeenCalled()
+  })
+
+  it("resolves customer/item by name (creating a customer that doesn't exist yet) and creates the QBO invoice", async () => {
+    hasCredentialsMock.mockResolvedValue(true)
+    getCredentialsMock.mockResolvedValue(CREDS)
+    getInvoiceMock.mockResolvedValue(INVOICE as never)
+    const fetchMock = mockFetchSequence(
+      { ok: true, json: async () => ({ access_token: "tok" }) },
+      { ok: true, json: async () => ({ QueryResponse: {} }) }, // Customer lookup: no match
+      { ok: true, json: async () => ({ Customer: { Id: "501" } }) }, // Customer create
+      { ok: true, json: async () => ({ QueryResponse: { Item: [{ Id: "77" }] } }) }, // Item lookup: match
+      { ok: true, json: async () => ({ Invoice: { Id: "900" } }) } // Invoice create
+    )
+    const result = await pushInvoiceToQbo(CARRIER, "invoice-1", ACTOR)
+    expect(result).toEqual({ connected: true, pushed: true })
+
+    const [invoiceUrl, invoiceInit] = fetchMock.mock.calls[4] as [string, RequestInit]
+    expect(invoiceUrl).toMatch(/\/invoice\?minorversion=65$/)
+    const body = JSON.parse(invoiceInit.body as string)
+    expect(body).toEqual({
+      DocNumber: "INV-1042",
+      CustomerRef: { value: "501" },
+      Line: [{ Amount: 1250.5, DetailType: "SalesItemLineDetail", SalesItemLineDetail: { ItemRef: { value: "77" } } }],
+    })
+    expect(queryMock).toHaveBeenCalledWith(expect.stringContaining("UPDATE hub.invoices SET sent_log"), expect.any(Array))
+    expect(logAuditMock).toHaveBeenCalledWith(expect.objectContaining({ action: "qbo-push" }))
+  })
+
+  it("surfaces a non-OK invoice-create response as an error rather than marking it pushed", async () => {
+    hasCredentialsMock.mockResolvedValue(true)
+    getCredentialsMock.mockResolvedValue(CREDS)
+    getInvoiceMock.mockResolvedValue(INVOICE as never)
+    mockFetchSequence(
+      { ok: true, json: async () => ({ access_token: "tok" }) },
+      { ok: true, json: async () => ({ QueryResponse: { Customer: [{ Id: "501" }] } }) },
+      { ok: true, json: async () => ({ QueryResponse: { Item: [{ Id: "77" }] } }) },
+      { ok: false, status: 500, json: async () => ({}) }
+    )
+    await expect(pushInvoiceToQbo(CARRIER, "invoice-1", ACTOR)).rejects.toThrow(/500/)
+    expect(queryMock).not.toHaveBeenCalled()
   })
 })
