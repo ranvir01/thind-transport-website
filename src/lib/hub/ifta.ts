@@ -1,8 +1,9 @@
 import { randomUUID } from "crypto"
 import { query, queryOne } from "./db"
-import { computeIfta, quarterRange, type IftaResult } from "./ifta-core"
+import { computeIfta, quarterRange, lastCompletedQuarterKey, iftaDueDate, type IftaResult } from "./ifta-core"
 import { jurisdictionMilesFromPings } from "./geo"
 import { logAudit } from "./audit"
+import type { ComplianceEntry } from "./compliance"
 
 export interface IftaReportRecord {
   id: string
@@ -135,6 +136,61 @@ export async function computeIftaQuarter(
   })
 
   return { result, mileageSource }
+}
+
+/**
+ * Compliance-wall entries for the IFTA quarterly filing itself. CDL/truck/
+ * trailer expiries surface on the wall automatically, but a carrier who never
+ * opened /hub/compliance/ifta got no signal that a quarter was unfiled.
+ *
+ * One entry always exists for the most recently completed quarter (the filing
+ * currently due): amber until filed, red once the due date passes, green once
+ * its report is marked filed. Older quarters appear only when a report was
+ * started (draft/reviewed) and never marked filed — quarters before the
+ * carrier onboarded stay off the wall.
+ */
+export function iftaFilingWallEntries(
+  reports: { quarter: string; status: "draft" | "reviewed" | "filed" }[],
+  now: Date
+): ComplianceEntry[] {
+  const currentQuarter = lastCompletedQuarterKey(now)
+  const statusByQuarter = new Map(reports.map((r) => [r.quarter, r.status]))
+  const quarters = new Set<string>([currentQuarter])
+  for (const report of reports) {
+    // "2025Q4" < "2026Q1" holds lexicographically for YYYYQN keys.
+    if (report.status !== "filed" && report.quarter <= currentQuarter) quarters.add(report.quarter)
+  }
+
+  const entries: ComplianceEntry[] = []
+  for (const quarter of [...quarters].sort()) {
+    const due = iftaDueDate(quarter)
+    const filed = statusByQuarter.get(quarter) === "filed"
+    const color: ComplianceEntry["color"] = filed
+      ? "green"
+      : due < now
+        ? "red"
+        : due.getTime() - now.getTime() < 30 * 86400000
+          ? "amber"
+          : "green"
+    entries.push({
+      entity: "company",
+      entityId: null,
+      name: "Company",
+      kind: `IFTA filing ${quarter}`,
+      due: due.toISOString().slice(0, 10),
+      color,
+      href: `/hub/compliance/ifta?q=${quarter}`,
+    })
+  }
+  return entries
+}
+
+export async function iftaFilingComplianceEntries(carrierId: string): Promise<ComplianceEntry[]> {
+  const reports = await query<{ quarter: string; status: "draft" | "reviewed" | "filed" }>(
+    `SELECT quarter, status FROM hub.ifta_reports WHERE carrier_id = $1`,
+    [carrierId]
+  )
+  return iftaFilingWallEntries(reports, new Date())
 }
 
 export async function setIftaStatus(
