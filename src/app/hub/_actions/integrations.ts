@@ -10,6 +10,7 @@ import { runTelematicsSync } from "@/lib/hub/telematics"
 import { runEfsSync } from "@/lib/hub/integrations/efs"
 import { runComdataSync } from "@/lib/hub/integrations/comdata"
 import { runWexSync } from "@/lib/hub/integrations/wex"
+import { runQboSync } from "@/lib/hub/integrations/qbo"
 import { logAudit } from "@/lib/hub/audit"
 import { query } from "@/lib/hub/db"
 
@@ -133,6 +134,13 @@ async function runProviderSync(
     return {
       connected: result.connected,
       summary: `${result.imported ?? 0} fuel transactions${result.skipped ? `, ${result.skipped} already synced` : ""}${result.unmatched?.length ? `, unmatched units: ${result.unmatched.join(", ")}` : ""}`,
+    }
+  }
+  if (provider === "qbo") {
+    const result = await runQboSync(carrierId)
+    return {
+      connected: result.connected,
+      summary: `${result.imported ?? 0} payments recorded${result.skipped ? `, ${result.skipped} already synced` : ""}${result.unmatched?.length ? `, unmatched invoices: ${result.unmatched.join(", ")}` : ""}`,
     }
   }
   throw new Error(`No sync loop wired for ${provider} yet`)

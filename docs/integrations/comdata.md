@@ -1,10 +1,12 @@
 # Comdata fuel card — scouting notes
 
-Status: **adapter shipped, feed shape unconfirmed** (same posture as `wex.md`) — cron
-(`comdata-sync`, daily) and the settings "Sync now" action are wired, `registry.ts` carries
-`status: "live"`. No live feed confirmed yet (needs a real carrier's API credentials request
-to come back from the account team). Update this doc and `normalizeComdataRow` in
-`src/lib/hub/integrations/comdata.ts` in one commit the day a real response lands.
+Status: **adapter shipped, feed shape unconfirmed** (same posture as `efs.md`
+and `wex.md`) — cron (`comdata-sync`, daily, staggered 10 minutes after
+`wex-sync`) and the settings "Sync now" action are wired, `registry.ts`
+carries `status: "live"`. No live feed confirmed yet (needs a real carrier's
+API credentials request to come back from the account team). Update this doc
+and `normalizeComdataRow` in `src/lib/hub/integrations/comdata.ts` in one
+commit the day a real response lands.
 
 ## Auth model
 
@@ -16,7 +18,7 @@ client-credentials-style pair rather than a feed username/password. This
 adapter sends both as HTTP headers (`Api-Key`, `Api-Secret`) rather than
 Basic auth, since Comdata's developer materials describe key/secret pairs,
 not a portal login — confirm the exact header names against the real
-onboarding packet before the first real sync.
+onboarding packet when the account team's response lands.
 
 ## Assumed feed shape (unconfirmed — adjust on first real response)
 
