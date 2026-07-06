@@ -1,13 +1,19 @@
 # DAT One load board — scouting notes
 
-Status: **search adapter shipped (stub-first), product surface not yet built.** DAT
-(dat.com) is the highest-value load board for a 15-truck van/reefer carrier, but unlike
-every other provider in `docs/integrations/creds-shopping-list.md` it isn't a background
-sync into an existing table — it's an interactive freight search a dispatcher drives, and
-booking is a two-way action, not a pull. This slice ships the `SyncSource`-shaped contract
-(`connected`/`pull`/`search`) and its normalizer, mock+contract tested, so the eventual
-search UI + "create load from posting" action has a finished, tested client to call instead
-of guessing the API and the UX in the same pass.
+Status: **search adapter + booking mapper shipped (stub-first), product surface not yet
+built.** DAT (dat.com) is the highest-value load board for a 15-truck van/reefer carrier,
+but unlike every other provider in `docs/integrations/creds-shopping-list.md` it isn't a
+background sync into an existing table — it's an interactive freight search a dispatcher
+drives, and booking is a two-way action, not a pull. This slice ships the `SyncSource`-shaped
+contract (`connected`/`pull`/`search`), its normalizer, and `datPostingToLoadDraft` — a pure
+mapper from a matched posting onto `createLoad()`'s `LoadInput` shape (stops, rate, miles,
+equipment) — all mock+contract tested, so the eventual search UI + "book this posting" button
+has a finished, tested client and mapper to call instead of guessing the API, the UX, and the
+field mapping all in the same pass.
+
+`datPostingToLoadDraft` deliberately omits `customer_id` — DAT has no concept of our customer
+records, so it's the one field a dispatcher must still supply (pick or create a customer) before
+the draft can be passed to `createLoad()`. Everything else in the draft is ready to submit as-is.
 
 ## Why this is scoped differently than EFS/WEX/Comdata/TruckerCloud
 
@@ -73,8 +79,8 @@ facing surface for it at all (it's a tested library function, not a feature yet)
 ## Open questions for the next pass (the actual remaining slice)
 
 - Design + build the dispatcher-facing search panel (criteria form → results list) and a
-  "create load from posting" action that seeds a new `hub.loads` row from a `DatLoadPosting`
-  — likely office-lane UI territory once designed, coordinate via `Backlog:`.
+  "book this posting" button that calls `datPostingToLoadDraft` + a customer picker, then
+  `createLoad()` — likely office-lane UI territory once designed, coordinate via `Backlog:`.
 - Confirm the real DAT One auth flow (OAuth2 vs Basic) and search endpoint shape against an
   actual developer packet — the #1 blocker to flipping `registry.ts`'s `dat` entry from
   `stub` to `live`.
