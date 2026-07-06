@@ -276,15 +276,59 @@ describe("pushInvoiceToQbo", () => {
     expect(getInvoiceMock).not.toHaveBeenCalled()
   })
 
-  it("short-circuits on a second push instead of double-creating the QBO invoice", async () => {
+  it("treats an unchanged amount as already pushed — no update sent", async () => {
     hasCredentialsMock.mockResolvedValue(true)
     getCredentialsMock.mockResolvedValue(CREDS)
     getInvoiceMock.mockResolvedValue({ ...INVOICE, sent_log: [{ to: "qbo", at: "2026-06-01", kind: "qbo-push" }] } as never)
-    const fetchMock = vi.fn()
-    vi.stubGlobal("fetch", fetchMock)
+    const fetchMock = mockFetchSequence(
+      { ok: true, json: async () => ({ access_token: "tok" }) },
+      { ok: true, json: async () => ({ QueryResponse: { Invoice: [{ Id: "900", SyncToken: "1", TotalAmt: 1250.5 }] } }) }
+    )
     const result = await pushInvoiceToQbo(CARRIER, "invoice-1", ACTOR)
     expect(result).toEqual({ connected: true, alreadyPushed: true })
-    expect(fetchMock).not.toHaveBeenCalled()
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+    expect(queryMock).not.toHaveBeenCalled()
+  })
+
+  it("sends a sparse update when the amount changed since the original push (rate/accessorial edit)", async () => {
+    hasCredentialsMock.mockResolvedValue(true)
+    getCredentialsMock.mockResolvedValue(CREDS)
+    getInvoiceMock.mockResolvedValue({
+      ...INVOICE, amount_cents: 150000, sent_log: [{ to: "qbo", at: "2026-06-01", kind: "qbo-push" }],
+    } as never)
+    const fetchMock = mockFetchSequence(
+      { ok: true, json: async () => ({ access_token: "tok" }) },
+      { ok: true, json: async () => ({ QueryResponse: { Invoice: [{ Id: "900", SyncToken: "1", TotalAmt: 1250.5 }] } }) },
+      { ok: true, json: async () => ({ QueryResponse: { Item: [{ Id: "77" }] } }) },
+      { ok: true, json: async () => ({ Invoice: { Id: "900" } }) }
+    )
+    const result = await pushInvoiceToQbo(CARRIER, "invoice-1", ACTOR)
+    expect(result).toEqual({ connected: true, pushed: true, updated: true })
+
+    const [updateUrl, updateInit] = fetchMock.mock.calls[3] as [string, RequestInit]
+    expect(updateUrl).toMatch(/\/invoice\?operation=update&minorversion=65$/)
+    const body = JSON.parse(updateInit.body as string)
+    expect(body).toEqual({
+      Id: "900",
+      SyncToken: "1",
+      sparse: true,
+      Line: [{ Amount: 1500, DetailType: "SalesItemLineDetail", SalesItemLineDetail: { ItemRef: { value: "77" } } }],
+    })
+    expect(queryMock).toHaveBeenCalledWith(expect.stringContaining("UPDATE hub.invoices SET sent_log"), expect.any(Array))
+    expect(logAuditMock).toHaveBeenCalledWith(expect.objectContaining({ action: "qbo-push-update" }))
+  })
+
+  it("treats a missing QBO invoice (deleted upstream) as already pushed rather than guessing", async () => {
+    hasCredentialsMock.mockResolvedValue(true)
+    getCredentialsMock.mockResolvedValue(CREDS)
+    getInvoiceMock.mockResolvedValue({ ...INVOICE, sent_log: [{ to: "qbo", at: "2026-06-01", kind: "qbo-push" }] } as never)
+    mockFetchSequence(
+      { ok: true, json: async () => ({ access_token: "tok" }) },
+      { ok: true, json: async () => ({ QueryResponse: {} }) }
+    )
+    const result = await pushInvoiceToQbo(CARRIER, "invoice-1", ACTOR)
+    expect(result).toEqual({ connected: true, alreadyPushed: true })
+    expect(queryMock).not.toHaveBeenCalled()
   })
 
   it("resolves customer/item by name (creating a customer that doesn't exist yet) and creates the QBO invoice", async () => {

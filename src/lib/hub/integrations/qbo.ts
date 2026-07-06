@@ -230,6 +230,30 @@ export async function runQboSync(
  * payments note) — so this resolves by name every push instead, exactly like
  * `pull()` resolves invoices by `DocNumber` rather than a stored id.
  */
+/**
+ * Looks up a previously-pushed QBO invoice by the DocNumber we set on
+ * create (same DocNumber-matching approach `pull()` uses for payments).
+ * Returns the current `TotalAmt` alongside `Id`/`SyncToken` so
+ * `pushInvoiceToQbo` can tell whether a rate/accessorial edit since the
+ * original push needs a sparse update sent, or whether it's a no-op.
+ */
+async function findQboInvoiceRef(
+  base: string,
+  realmId: string,
+  token: string,
+  docNumber: string
+): Promise<{ id: string; syncToken: string; totalAmtCents: number } | null> {
+  const escaped = docNumber.replace(/'/g, "")
+  const matches = await qboEntityQuery(base, realmId, token, "Invoice", `SELECT Id, SyncToken, TotalAmt FROM Invoice WHERE DocNumber = '${escaped}'`)
+  const match = matches[0]
+  if (match?.Id == null) return null
+  return {
+    id: String(match.Id),
+    syncToken: String(match.SyncToken ?? "0"),
+    totalAmtCents: dollarsToCents(match.TotalAmt as number | string | undefined),
+  }
+}
+
 async function resolveQboRef(
   base: string,
   realmId: string,
@@ -259,10 +283,12 @@ async function resolveQboRef(
  * Push side: create a QBO Invoice with `DocNumber` set to our invoice
  * number — closing the loop `qboSource`'s docstring describes (a payment
  * only resolves to one of our invoices once a QBO Invoice exists under that
- * DocNumber). Guards a double push the same way `submitInvoiceToFactor`
- * guards a double submission: an entry already present in
- * `hub.invoices.sent_log` (kind `"qbo-push"`), reusing that column instead of
- * a new one.
+ * DocNumber). A second push for the same invoice doesn't just short-circuit:
+ * it looks the QBO invoice back up by DocNumber (`findQboInvoiceRef`) and
+ * compares `TotalAmt` against our current `amount_cents` — unchanged means a
+ * true no-op (`alreadyPushed`), but a rate/accessorial edit since the
+ * original push sends a sparse update (`operation=update` with the looked-up
+ * `Id`/`SyncToken`) instead of silently drifting out of sync with QBO.
  *
  * The Customer and line-item Item are resolved by name (see `resolveQboRef`)
  * rather than a per-accessorial breakdown — a single flat line against a
@@ -274,21 +300,59 @@ export async function pushInvoiceToQbo(
   carrierId: string,
   invoiceId: string,
   actor: { id: string; name: string }
-): Promise<{ connected: boolean; pushed?: boolean; alreadyPushed?: boolean }> {
+): Promise<{ connected: boolean; pushed?: boolean; alreadyPushed?: boolean; updated?: boolean }> {
   if (!(await hasCredentials(carrierId, "qbo"))) return { connected: false }
   const creds = await getCredentials(carrierId, "qbo")
   if (!creds?.clientId || !creds?.clientSecret || !creds?.refreshToken || !creds?.realmId) return { connected: false }
 
   const invoice = await getInvoice(carrierId, invoiceId)
   if (!invoice) throw new Error("Invoice not found")
-  if (invoice.sent_log?.some((entry) => entry.kind === "qbo-push")) {
-    return { connected: true, alreadyPushed: true }
-  }
 
   const { accessToken, rotatedRefreshToken } = await refreshAccessToken(creds)
   await persistRotatedRefreshToken(carrierId, creds, rotatedRefreshToken)
-
   const base = process.env.QBO_API_BASE ?? "https://quickbooks.api.intuit.com"
+
+  const previouslyPushed = invoice.sent_log?.some((entry) => entry.kind === "qbo-push" || entry.kind === "qbo-push-update")
+  if (previouslyPushed) {
+    const existing = await findQboInvoiceRef(base, creds.realmId, accessToken, invoice.number)
+    if (!existing || existing.totalAmtCents === invoice.amount_cents) {
+      return { connected: true, alreadyPushed: true }
+    }
+
+    const itemId = await resolveQboRef(base, creds.realmId, accessToken, "Item", "Freight Service", {
+      Name: "Freight Service", Type: "Service", IncomeAccountRef: { value: "1" },
+    })
+    const response = await fetch(`${base}/v3/company/${creds.realmId}/invoice?operation=update&minorversion=65`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json", Accept: "application/json" },
+      body: JSON.stringify({
+        Id: existing.id,
+        SyncToken: existing.syncToken,
+        sparse: true,
+        Line: [
+          {
+            Amount: invoice.amount_cents / 100,
+            DetailType: "SalesItemLineDetail",
+            SalesItemLineDetail: { ItemRef: { value: itemId } },
+          },
+        ],
+      }),
+      signal: AbortSignal.timeout(15000),
+    })
+    if (!response.ok) throw new Error(`QuickBooks invoice update → HTTP ${response.status}`)
+
+    await query(
+      `UPDATE hub.invoices SET sent_log = sent_log || $2::jsonb WHERE id = $1`,
+      [invoice.id, JSON.stringify([{ to: "qbo", at: new Date().toISOString(), kind: "qbo-push-update" }])]
+    )
+    await logAudit({
+      carrierId, actorId: actor.id, actorName: actor.name,
+      entityType: "invoice", entityId: invoiceId, action: "qbo-push-update",
+      newValue: { number: invoice.number, amountCents: invoice.amount_cents },
+    })
+    return { connected: true, pushed: true, updated: true }
+  }
+
   const customerName = invoice.customer_name ?? "Unknown customer"
   const customerId = await resolveQboRef(base, creds.realmId, accessToken, "Customer", customerName, {
     DisplayName: customerName,
