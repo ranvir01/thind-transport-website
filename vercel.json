@@ -16,6 +16,7 @@
     { "path": "/api/hub/cron/docs-mailbox", "schedule": "30 12 * * *" },
     { "path": "/api/hub/cron/efs-sync", "schedule": "0 6 * * *" },
     { "path": "/api/hub/cron/wex-sync", "schedule": "10 6 * * *" },
+    { "path": "/api/hub/cron/comdata-sync", "schedule": "20 6 * * *" },
     { "path": "/api/hub/cron/owner-digest", "schedule": "0 13 * * 1" }
   ],
   "headers": [
