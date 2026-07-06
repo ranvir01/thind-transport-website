@@ -3,7 +3,7 @@
  * Uses the same POSTGRES_URL pool as the Hub (plain TCP; works locally and on Vercel/Neon).
  */
 
-import { hubDb, query, queryOne } from "./hub/db"
+import { driverDbPool } from "./driver-db-local"
 
 interface Driver {
   id: string
@@ -41,7 +41,23 @@ export interface PublicApplication {
 }
 
 async function exec(text: string, params: unknown[] = []): Promise<void> {
-  await hubDb().query(text, params)
+  await driverDbPool().query(text, params)
+}
+
+async function query<T = Record<string, unknown>>(
+  text: string,
+  params: unknown[] = []
+): Promise<T[]> {
+  const result = await driverDbPool().query(text, params)
+  return result.rows as T[]
+}
+
+async function queryOne<T = Record<string, unknown>>(
+  text: string,
+  params: unknown[] = []
+): Promise<T | null> {
+  const rows = await query<T>(text, params)
+  return rows[0] ?? null
 }
 
 // Initialize database tables

@@ -58,8 +58,7 @@ function unpickedCommitCount(ref, base) {
   const out = git(`cherry ${base} ${ref}`)
   if (!out) return revCount(base, ref)
   const lines = out.split("\n").filter(Boolean)
-  // git cherry marks commits NOT patch-equivalent upstream with "+" (unpicked)
-  // and already-absorbed ones with "-" (picked).
+  // git cherry: "+" = no equivalent on <base> yet (unpicked), "-" = already picked.
   const unpicked = lines.filter((l) => l.startsWith("+")).length
   return unpicked
 }
