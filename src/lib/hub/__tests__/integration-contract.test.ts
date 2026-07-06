@@ -6,7 +6,7 @@
 import { describe, expect, it } from "vitest"
 import { PROVIDERS, allowedFields, providerSpec } from "../integrations/registry"
 import { memorySink, mockSource } from "../integrations/mock"
-import { signWebhookBody, verifyWebhookSignature, webhookEventId } from "../integrations/webhooks"
+import { isEventOutcomeFinal, signWebhookBody, verifyWebhookSignature, webhookEventId } from "../integrations/webhooks"
 
 describe("provider registry invariants", () => {
   it("ids are unique, lowercase slugs matching the DB shape constraint", () => {
@@ -83,5 +83,14 @@ describe("webhook signature + event identity", () => {
     expect(a).toBe(b)
     expect(a).toHaveLength(40)
     expect(webhookEventId(body + "x", null)).not.toBe(a)
+  })
+
+  it("isEventOutcomeFinal marks applied + deliberate no-ops done, leaves transient misses pending", () => {
+    expect(isEventOutcomeFinal({ applied: true })).toBe(true)
+    expect(isEventOutcomeFinal({ applied: false, reason: "already recorded" })).toBe(true)
+    expect(isEventOutcomeFinal({ applied: false, reason: "unhandled event kind: invoice.rejected" })).toBe(true)
+    expect(isEventOutcomeFinal({ applied: false, reason: "no matching invoice" })).toBe(false)
+    expect(isEventOutcomeFinal({ applied: false, reason: "missing invoice reference or amount" })).toBe(false)
+    expect(isEventOutcomeFinal({ applied: false })).toBe(false)
   })
 })

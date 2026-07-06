@@ -11,7 +11,7 @@ import { toast } from "sonner"
 import { Cable, Check, Copy, Loader2, RefreshCw, Unplug } from "lucide-react"
 import { cn } from "@/lib/utils"
 import {
-  disconnectIntegrationAction, saveIntegrationCredentialsAction, syncIntegrationNowAction,
+  disconnectIntegrationAction, retryIntegrationEventsAction, saveIntegrationCredentialsAction, syncIntegrationNowAction,
 } from "@/app/hub/_actions/integrations"
 import { fieldCls, Panel } from "@/components/hub/ui"
 import type { IntegrationProvider } from "@/lib/hub/credentials"
@@ -28,6 +28,8 @@ export interface ProviderCard {
   status: ProviderStatus
   /** Copy-paste inbound URL, present when the provider pushes via webhook. */
   webhookUrl?: string
+  /** Count of hub.integration_events stuck unprocessed — undefined for providers with no event processor. */
+  pendingEvents?: number
 }
 
 const STATUS_BADGE: Record<ProviderStatus, { label: string; cls: string }> = {
@@ -72,6 +74,14 @@ export function IntegrationCard({ card, encryptionReady }: { card: ProviderCard;
       router.refresh()
     })
 
+  const retryEvents = () =>
+    startTransition(async () => {
+      const result = await retryIntegrationEventsAction(card.provider)
+      if (result.ok) toast.success(result.summary ?? "Retried")
+      else toast.error(result.error ?? "Retry failed")
+      router.refresh()
+    })
+
   return (
     <Panel className="p-4">
       <div className="flex items-start justify-between gap-2">
@@ -104,6 +114,13 @@ export function IntegrationCard({ card, encryptionReady }: { card: ProviderCard;
 
       {card.webhookUrl ? <WebhookUrl url={card.webhookUrl} /> : null}
 
+      {card.connected && card.pendingEvents ? (
+        <p className="mt-2 rounded-lg border border-warn-soft bg-warn-soft px-2.5 py-1.5 text-[11px] text-warn">
+          {card.pendingEvents} event{card.pendingEvents === 1 ? "" : "s"} couldn&rsquo;t be matched yet (e.g. webhook
+          arrived before the invoice existed) — retry below.
+        </p>
+      ) : null}
+
       <div className="mt-3 flex flex-wrap gap-2">
         {card.connected ? (
           <>
@@ -113,6 +130,14 @@ export function IntegrationCard({ card, encryptionReady }: { card: ProviderCard;
                 className="flex min-h-[40px] items-center gap-1.5 rounded-control bg-accent px-4 text-sm font-bold text-accent-fg hover:bg-accent-hover disabled:opacity-60"
               >
                 {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />} Sync now
+              </button>
+            ) : null}
+            {card.pendingEvents ? (
+              <button
+                onClick={retryEvents} disabled={pending}
+                className="flex min-h-[40px] items-center gap-1.5 rounded-xl border border-warn-soft px-4 text-sm font-semibold text-warn hover:bg-warn-soft disabled:opacity-60"
+              >
+                {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />} Retry {card.pendingEvents} event{card.pendingEvents === 1 ? "" : "s"}
               </button>
             ) : null}
             <button

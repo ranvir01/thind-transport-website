@@ -45,3 +45,15 @@ export function webhookEventId(rawBody: string, headerEventId: string | null | u
   if (fromHeader) return fromHeader.slice(0, 120)
   return createHash("sha256").update(rawBody, "utf8").digest("hex").slice(0, 40)
 }
+
+/**
+ * Whether a processor's outcome should mark `hub.integration_events.processed_at`
+ * — applied, a deliberate no-op (already recorded / an event kind we don't
+ * act on), rather than a transient miss (no matching invoice yet, missing
+ * fields) that should stay pending for a later retry. Shared by the webhook
+ * route's inline processing and the manual re-drain (`retryUnprocessedFactorEvents`)
+ * so the two never drift on what counts as "done".
+ */
+export function isEventOutcomeFinal(outcome: { applied: boolean; reason?: string }): boolean {
+  return outcome.applied || outcome.reason === "already recorded" || Boolean(outcome.reason?.startsWith("unhandled event kind"))
+}
