@@ -49,6 +49,7 @@ export function ChatThread({
   }, [router])
 
   const send = (file?: File) => {
+    if (pending) return
     if (!body.trim() && !file) return
     const formData = new FormData()
     formData.set("thread_id", threadId)
