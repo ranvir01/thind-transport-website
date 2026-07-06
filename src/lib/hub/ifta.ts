@@ -104,10 +104,10 @@ export async function computeIftaQuarter(
     if (row.jurisdiction !== "??") gallonsByJurisdiction[row.jurisdiction] = Number(row.gallons)
   }
 
-  // Rates for the quarter
+  // Rates for the quarter (per-carrier since migration 016)
   const rateRows = await query<{ jurisdiction: string; rate: string; surcharge_rate: string }>(
-    `SELECT jurisdiction, rate, surcharge_rate FROM hub.ifta_tax_rates WHERE quarter = $1`,
-    [quarter]
+    `SELECT jurisdiction, rate, surcharge_rate FROM hub.ifta_tax_rates WHERE carrier_id = $1 AND quarter = $2`,
+    [carrierId, quarter]
   )
   const rates: Record<string, { rate: number; surchargeRate?: number }> = {}
   for (const row of rateRows) {
@@ -155,26 +155,34 @@ export async function setIftaStatus(
 
 /** Replace rates for a quarter from pasted iftach.org-style CSV (JUR,rate,surcharge). */
 export async function importIftaRates(
+  carrierId: string,
   rows: { jurisdiction: string; rate: number; surchargeRate: number }[],
-  quarter: string
+  quarter: string,
+  actor: { id: string; name: string }
 ): Promise<number> {
   let count = 0
   for (const row of rows) {
     await query(
-      `INSERT INTO hub.ifta_tax_rates (jurisdiction, quarter, rate, surcharge_rate)
-       VALUES ($1,$2,$3,$4)
-       ON CONFLICT (jurisdiction, quarter) DO UPDATE SET rate = $3, surcharge_rate = $4`,
-      [row.jurisdiction.toUpperCase(), quarter, row.rate, row.surchargeRate]
+      `INSERT INTO hub.ifta_tax_rates (carrier_id, jurisdiction, quarter, rate, surcharge_rate)
+       VALUES ($1,$2,$3,$4,$5)
+       ON CONFLICT (carrier_id, jurisdiction, quarter) DO UPDATE SET rate = $4, surcharge_rate = $5`,
+      [carrierId, row.jurisdiction.toUpperCase(), quarter, row.rate, row.surchargeRate]
     )
     count++
   }
+  await logAudit({
+    carrierId, actorId: actor.id, actorName: actor.name,
+    entityType: "ifta_rates", entityId: quarter, action: "import",
+    newValue: { count, jurisdictions: rows.map((r) => r.jurisdiction.toUpperCase()) },
+  })
   return count
 }
 
-export async function listIftaRates(quarter: string) {
+export async function listIftaRates(carrierId: string, quarter: string) {
   return query<{ jurisdiction: string; rate: string; surcharge_rate: string }>(
-    `SELECT jurisdiction, rate, surcharge_rate FROM hub.ifta_tax_rates WHERE quarter = $1 ORDER BY jurisdiction`,
-    [quarter]
+    `SELECT jurisdiction, rate, surcharge_rate FROM hub.ifta_tax_rates
+     WHERE carrier_id = $1 AND quarter = $2 ORDER BY jurisdiction`,
+    [carrierId, quarter]
   )
 }
 
