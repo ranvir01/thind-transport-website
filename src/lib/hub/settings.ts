@@ -10,6 +10,8 @@ export interface CarrierSettings {
   randomTesting: { drugPct: number; alcoholPct: number }
   factoring: { company: string | null; remitName: string | null; remitAddress: string | null; email: string | null }
   notifications: { officeEmail: string | null }
+  /** Per-tenant branding (Phase 7). Written by setBrandAccentAction; not yet rendered anywhere. */
+  branding: { accent: string | null }
 }
 
 export const DEFAULT_SETTINGS: CarrierSettings = {
@@ -21,6 +23,7 @@ export const DEFAULT_SETTINGS: CarrierSettings = {
   randomTesting: { drugPct: 50, alcoholPct: 10 },
   factoring: { company: null, remitName: null, remitAddress: null, email: null },
   notifications: { officeEmail: null },
+  branding: { accent: null },
 }
 
 export interface Carrier {
@@ -54,6 +57,7 @@ export async function getCarrierSettings(carrierId: string): Promise<CarrierSett
     randomTesting: { ...DEFAULT_SETTINGS.randomTesting, ...stored.randomTesting },
     factoring: { ...DEFAULT_SETTINGS.factoring, ...stored.factoring },
     notifications: { ...DEFAULT_SETTINGS.notifications, ...stored.notifications },
+    branding: { ...DEFAULT_SETTINGS.branding, ...stored.branding },
   }
 }
 

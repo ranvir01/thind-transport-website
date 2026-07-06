@@ -49,7 +49,7 @@ export function IntegrationCard({ card, encryptionReady }: { card: ProviderCard;
     startTransition(async () => {
       const result = await saveIntegrationCredentialsAction(card.provider, values)
       if (result.ok) {
-        toast.success(`${card.title} connected — credentials encrypted at rest`)
+        toast.success(card.connected ? `${card.title} credentials updated` : `${card.title} connected — credentials encrypted at rest`)
         setOpen(false)
         setValues({})
         router.refresh()
@@ -122,7 +122,7 @@ export function IntegrationCard({ card, encryptionReady }: { card: ProviderCard;
       ) : null}
 
       <div className="mt-3 flex flex-wrap gap-2">
-        {card.connected ? (
+        {card.connected && !open ? (
           <>
             {card.canSync ? (
               <button
@@ -141,6 +141,12 @@ export function IntegrationCard({ card, encryptionReady }: { card: ProviderCard;
               </button>
             ) : null}
             <button
+              onClick={() => setOpen(true)} disabled={pending}
+              className="flex min-h-[40px] items-center gap-1.5 rounded-xl border border-border-strong px-4 text-sm font-semibold text-fg-2 hover:bg-hover disabled:opacity-60"
+            >
+              Edit
+            </button>
+            <button
               onClick={disconnect} disabled={pending}
               className="flex min-h-[40px] items-center gap-1.5 rounded-xl border border-border-strong px-4 text-sm font-semibold text-fg-2 hover:bg-hover disabled:opacity-60"
             >
@@ -153,12 +159,16 @@ export function IntegrationCard({ card, encryptionReady }: { card: ProviderCard;
               <p className="rounded-lg border border-warn-soft bg-warn-soft px-2.5 py-1.5 text-[11px] text-warn">
                 Set <code>CREDENTIALS_KEY</code> in the environment first — credentials are encrypted at rest.
               </p>
+            ) : card.connected ? (
+              <p className="rounded-lg bg-surface-2 px-2.5 py-1.5 text-[11px] text-fg-3">
+                Leave a field blank to keep its saved value — only fields you fill in here get updated.
+              </p>
             ) : null}
             {card.fields.map((field) => (
               <input
                 key={field.key}
                 aria-label={field.label}
-                placeholder={field.label}
+                placeholder={card.connected ? `${field.label} (unchanged if left blank)` : field.label}
                 type={field.secret ? "password" : "text"}
                 className={fieldCls}
                 value={values[field.key] ?? ""}
@@ -166,13 +176,13 @@ export function IntegrationCard({ card, encryptionReady }: { card: ProviderCard;
               />
             ))}
             <div className="flex gap-2">
-              <button type="button" onClick={() => setOpen(false)}
+              <button type="button" onClick={() => { setOpen(false); setValues({}) }}
                 className="flex-1 min-h-[40px] rounded-xl border border-border-strong text-sm font-semibold text-fg-2 hover:bg-hover">
                 Cancel
               </button>
               <button type="submit" disabled={pending || !encryptionReady}
                 className="flex flex-1 min-h-[40px] items-center justify-center gap-1.5 rounded-control bg-accent text-sm font-bold text-fg hover:bg-accent-hover disabled:opacity-50">
-                {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />} Connect
+                {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />} {card.connected ? "Save changes" : "Connect"}
               </button>
             </div>
           </form>
