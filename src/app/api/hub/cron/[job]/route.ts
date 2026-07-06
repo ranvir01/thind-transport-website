@@ -11,6 +11,7 @@ import { runTelematicsSync } from "@/lib/hub/telematics"
 import { runEfsSync } from "@/lib/hub/integrations/efs"
 import { runComdataSync } from "@/lib/hub/integrations/comdata"
 import { runWexSync } from "@/lib/hub/integrations/wex"
+import { runQboSync } from "@/lib/hub/integrations/qbo"
 import { pollDocsMailbox } from "@/lib/hub/mailbox"
 import { sendOwnerDigest } from "@/lib/hub/digest"
 import { getCarrierSettings } from "@/lib/hub/settings"
@@ -95,6 +96,9 @@ export async function GET(
       } else if (job === "comdata-sync") {
         // Integrations lane: daily Comdata fuel-card feed → hub.fuel_transactions.
         results[carrier.id] = await runComdataSync(carrier.id)
+      } else if (job === "qbo-sync") {
+        // Integrations lane: daily QBO payment pull → hub.payments via recordPayment.
+        results[carrier.id] = await runQboSync(carrier.id)
       } else if (job === "owner-digest") {
         // Phase 6: the Monday-morning numbers email.
         results[carrier.id] = await sendOwnerDigest(carrier.id)

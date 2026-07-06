@@ -20,6 +20,7 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
   const payments = await listInvoicePayments(user.carrierId, id)
   const openCents = invoice.amount_cents - (invoice.paid_cents ?? 0)
   const canWrite = can(user.role, "money:write")
+  const factorSubmitted = (invoice.sent_log ?? []).some((entry) => entry.kind === "factor-submission")
 
   return (
     <div>
@@ -69,7 +70,14 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
             </p>
           </Panel>
 
-          {canWrite ? <InvoiceActions invoiceId={id} factored={invoice.factored} disputed={invoice.status === "disputed"} /> : null}
+          {canWrite ? (
+            <InvoiceActions
+              invoiceId={id}
+              factored={invoice.factored}
+              disputed={invoice.status === "disputed"}
+              factorSubmitted={factorSubmitted}
+            />
+          ) : null}
 
           {/* Send log */}
           <Panel className="p-4 md:p-5">
