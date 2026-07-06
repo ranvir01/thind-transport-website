@@ -1,5 +1,5 @@
 /**
- * HaulDesk service worker: Web Push, notification clicks, and an offline
+ * LoadOff service worker: Web Push, notification clicks, and an offline
  * shell for the driver app — no signal must never mean a blank page.
  * (Action queueing lives in IndexedDB on the page side; see offline-queue.ts.)
  */
@@ -61,7 +61,7 @@ self.addEventListener("fetch", (event) => {
             cached ||
             caches.match("/hub/driver") ||
             new Response(
-              "<html><body style='background:#0E1621;color:#F4F6F8;font-family:sans-serif;text-align:center;padding:40vh 20px 0'>No signal — HaulDesk reconnects automatically.</body></html>",
+              "<html><body style='background:#0E1621;color:#F4F6F8;font-family:sans-serif;text-align:center;padding:40vh 20px 0'>No signal — LoadOff reconnects automatically.</body></html>",
               { headers: { "Content-Type": "text/html" } }
             )
           )
@@ -71,7 +71,7 @@ self.addEventListener("fetch", (event) => {
 })
 
 self.addEventListener("push", (event) => {
-  let data = { title: "HaulDesk", body: "", link: "/hub" }
+  let data = { title: "LoadOff", body: "", link: "/hub" }
   try {
     data = { ...data, ...event.data.json() }
   } catch {
