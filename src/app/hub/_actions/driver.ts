@@ -15,6 +15,7 @@ import { addFacilityNote } from "@/lib/hub/facilities"
 import { createTimeOffRequest, cancelTimeOff } from "@/lib/hub/timeoff"
 import { acknowledgeAnnouncement } from "@/lib/hub/announcements"
 import { notifyRoles } from "@/lib/hub/notify"
+import { logAudit } from "@/lib/hub/audit"
 import { query, queryOne } from "@/lib/hub/db"
 import { dollarsToCents, type LoadStatus } from "@/lib/hub/types"
 
@@ -66,7 +67,7 @@ export async function driverStopTimestamp(
     const user = await requireDriverUser()
     const load = await driverOwnsLoad(user.carrierId, user.driverId, loadId)
     if (!load) return { ok: false, error: "That load isn't yours" }
-    const stop = await setStopTimestamp(user.carrierId, stopId, field, new Date().toISOString())
+    const stop = await setStopTimestamp(user.carrierId, stopId, loadId, field, new Date().toISOString())
     if (stop) {
       await addLoadEvent(user.carrierId, loadId, "geo", {
         stop_id: stopId, field, city: stop.city, state: stop.state, by: "driver",
@@ -157,15 +158,21 @@ export async function driverUploadDocument(formData: FormData): Promise<Result> 
 
     // Receipts with an amount become reimbursable expenses for office review.
     if (kind === "receipt" && amountRaw && Number(amountRaw) > 0) {
-      await query(
+      const amountCents = dollarsToCents(amountRaw)
+      const expenseRows = await query<{ id: string }>(
         `INSERT INTO hub.expenses (carrier_id, category, amount_cents, incurred_on, driver_id, load_id,
            reimbursable, receipt_document_id, memo)
-         VALUES ($1, 'other', $2, CURRENT_DATE, $3, $4, TRUE, $5, $6)`,
+         VALUES ($1, 'other', $2, CURRENT_DATE, $3, $4, TRUE, $5, $6) RETURNING id`,
         [
-          user.carrierId, dollarsToCents(amountRaw), user.driverId, loadId, doc.id,
+          user.carrierId, amountCents, user.driverId, loadId, doc.id,
           `Driver receipt — ${file.name}`,
         ]
       )
+      await logAudit({
+        carrierId: user.carrierId, actorId: user.id, actorName: user.name,
+        entityType: "expense", entityId: expenseRows[0].id, action: "driver_receipt",
+        newValue: { amountCents, loadId },
+      })
     }
 
     // Close the loop on any matching open request (pinned on the driver home).
@@ -213,11 +220,12 @@ export async function driverAddFacilityNote(input: {
     if (!input.body.trim() && input.tags.length === 0) {
       return { ok: false, error: "Say something first — even one tag helps" }
     }
-    await addFacilityNote(user.carrierId, input.facilityId, {
+    const added = await addFacilityNote(user.carrierId, input.facilityId, {
       body: input.body.trim() || input.tags.join(", "),
       tags: input.tags,
       author: { id: user.id, name: user.name, role: "driver" },
     })
+    if (!added) return { ok: false, error: "Facility not found" }
     revalidatePath("/hub/driver")
     return { ok: true }
   } catch (err) {
@@ -283,6 +291,11 @@ export async function driverRequestAdvance(input: {
        VALUES ($1, $2, $3, CURRENT_DATE, 'Driver request', 'pending', $4, $5) RETURNING id`,
       [user.carrierId, user.driverId, amountCents, user.id, input.note?.trim() || null]
     )
+    await logAudit({
+      carrierId: user.carrierId, actorId: user.id, actorName: user.name,
+      entityType: "advance", entityId: rows[0].id, action: "requested",
+      newValue: { amountCents },
+    })
     await notifyRoles(user.carrierId, ["owner", "accountant"], {
       kind: "advance",
       title: `${user.name} asked for a $${(amountCents / 100).toFixed(2)} advance`,

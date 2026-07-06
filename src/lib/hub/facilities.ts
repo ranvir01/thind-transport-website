@@ -75,12 +75,12 @@ export async function upsertFacility(
 
 const FACILITY_LIST_SELECT = `
   SELECT f.*,
-    (SELECT COUNT(*)::int FROM hub.stops s WHERE s.facility_id = f.id) AS stop_count,
+    (SELECT COUNT(*)::int FROM hub.stops s WHERE s.facility_id = f.id AND s.carrier_id = f.carrier_id) AS stop_count,
     (SELECT ROUND(AVG(EXTRACT(EPOCH FROM (s.departed_at - s.arrived_at)) / 60))::int
        FROM hub.stops s
-       WHERE s.facility_id = f.id AND s.arrived_at IS NOT NULL AND s.departed_at IS NOT NULL
+       WHERE s.facility_id = f.id AND s.carrier_id = f.carrier_id AND s.arrived_at IS NOT NULL AND s.departed_at IS NOT NULL
          AND s.departed_at > s.arrived_at) AS avg_dwell_minutes,
-    (SELECT COUNT(*)::int FROM hub.facility_notes n WHERE n.facility_id = f.id) AS note_count
+    (SELECT COUNT(*)::int FROM hub.facility_notes n WHERE n.facility_id = f.id AND n.carrier_id = f.carrier_id) AS note_count
   FROM hub.facilities f`
 
 export async function listFacilities(
@@ -148,6 +148,8 @@ export async function listFacilityNotes(
   )
 }
 
+/** Insert guarded on the facility side (assignFuelToLoad pattern): a facilityId
+ *  from another carrier matches no row, so the insert is a no-op. */
 export async function addFacilityNote(
   carrierId: string,
   facilityId: string,
@@ -157,10 +159,13 @@ export async function addFacilityNote(
     documentId?: string | null
     author: { id: string; name: string; role: string }
   }
-): Promise<void> {
-  await query(
+): Promise<boolean> {
+  const rows = await query<{ id: string }>(
     `INSERT INTO hub.facility_notes (carrier_id, facility_id, author_id, author_name, author_role, body, tags, document_id)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+     SELECT f.carrier_id, f.id, $3, $4, $5, $6, $7, $8
+     FROM hub.facilities f
+     WHERE f.carrier_id = $1 AND f.id = $2
+     RETURNING id`,
     [
       carrierId,
       facilityId,
@@ -172,6 +177,7 @@ export async function addFacilityNote(
       input.documentId ?? null,
     ]
   )
+  return rows.length > 0
 }
 
 // ---- Dwell / detention risk ----

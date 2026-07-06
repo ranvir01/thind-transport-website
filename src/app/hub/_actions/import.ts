@@ -223,6 +223,11 @@ export async function importFuelAction(rows: GenericRow[], program: string): Pro
       failed.push({ row: i + 1, error: err instanceof Error ? err.message : "Unknown error" })
     }
   }
+  await logAudit({
+    carrierId: user.carrierId, actorId: user.id, actorName: user.name,
+    entityType: "import", entityId: new Date().toISOString(),
+    action: "import_fuel", newValue: { imported, failed: failed.length, skippedDuplicates },
+  })
   revalidatePath("/hub/fuel")
   return { ok: failed.length === 0, imported, failed, skippedDuplicates }
 }
@@ -268,6 +273,11 @@ export async function importTollsAction(rows: GenericRow[], program: string): Pr
       failed.push({ row: i + 1, error: err instanceof Error ? err.message : "Unknown error" })
     }
   }
+  await logAudit({
+    carrierId: user.carrierId, actorId: user.id, actorName: user.name,
+    entityType: "import", entityId: new Date().toISOString(),
+    action: "import_tolls", newValue: { imported, failed: failed.length, skippedDuplicates },
+  })
   revalidatePath("/hub/fuel")
   return { ok: failed.length === 0, imported, failed, skippedDuplicates }
 }

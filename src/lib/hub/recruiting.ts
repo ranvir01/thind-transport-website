@@ -6,6 +6,12 @@
  */
 import { hubDb, query, queryOne } from "./db"
 import { ORIENTATION_TEMPLATE, type Applicant, type ApplicantStage } from "./recruiting-shared"
+import { assertCarrierRefs } from "./tenancy"
+
+/** Thind's own carrier row (migration 002) — the only tenant whose real
+ *  applicants land in the legacy, carrier-less public.public_applications
+ *  table backing the marketing site's job form. */
+const THIND_CARRIER_ID = "11111111-1111-1111-1111-111111111111"
 
 export {
   APPLICANT_STAGES, ORIENTATION_TEMPLATE, STAGE_LABELS,
@@ -167,8 +173,8 @@ export async function convertApplicantToDriver(
     }
   }
   const offer = await queryOne<{ status: string }>(
-    `SELECT status FROM hub.offers WHERE applicant_id = $1 ORDER BY created_at DESC LIMIT 1`,
-    [applicantId]
+    `SELECT status FROM hub.offers WHERE applicant_id = $1 AND carrier_id = $2 ORDER BY created_at DESC LIMIT 1`,
+    [applicantId, carrierId]
   )
   if (!offer || offer.status !== "signed") {
     return { ok: false, error: "The offer letter has to be signed first" }
@@ -259,6 +265,7 @@ export async function createOffer(
   input: { paySummary: string; startDate: string | null; body: string },
   actorName: string
 ): Promise<string> {
+  await assertCarrierRefs(carrierId, { applicant_id: applicantId })
   const rows = await query<{ id: string }>(
     `INSERT INTO hub.offers (carrier_id, applicant_id, pay_summary, start_date, body, created_by_name)
      VALUES ($1,$2,$3,$4,$5,$6) RETURNING id`,
@@ -301,6 +308,7 @@ export async function attachReferral(
   referrerDriverId: string,
   bonusCents: number
 ): Promise<void> {
+  await assertCarrierRefs(carrierId, { applicant_id: applicantId, driver_id: referrerDriverId })
   await query(
     `INSERT INTO hub.referrals (carrier_id, applicant_id, referrer_driver_id, bonus_cents, milestone)
      VALUES ($1,$2,$3,$4,'hired')`,
@@ -322,6 +330,10 @@ export async function importPublicApplicants(
   carrierId: string,
   actorName: string
 ): Promise<{ imported: number }> {
+  // public.public_applications carries no carrier_id — it's the single legacy
+  // table behind Thind's own marketing-site job form. Every other tenant must
+  // no-op here, or they'd import Thind's real applicant PII into their pipeline.
+  if (carrierId !== THIND_CARRIER_ID) return { imported: 0 }
   const exists = await queryOne<{ reg: string | null }>(
     `SELECT to_regclass('public.public_applications')::text AS reg`
   )

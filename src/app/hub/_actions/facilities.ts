@@ -104,11 +104,12 @@ export async function addOfficeFacilityNoteAction(
   try {
     const user = await requireOfficeUser()
     if (!body.trim() && tags.length === 0) return { ok: false, error: "Write something first" }
-    await addFacilityNote(user.carrierId, facilityId, {
+    const added = await addFacilityNote(user.carrierId, facilityId, {
       body: body.trim() || tags.join(", "),
       tags,
       author: { id: user.id, name: user.name, role: user.role },
     })
+    if (!added) return { ok: false, error: "Facility not found" }
     revalidatePath(`/hub/facilities/${facilityId}`)
     return { ok: true }
   } catch (err) {

@@ -5,6 +5,7 @@
  * exportable — instead of being a binder somebody forgot to keep.
  */
 import { query, queryOne } from "./db"
+import { assertCarrierRefs } from "./tenancy"
 import type { Incident } from "./types"
 
 const INCIDENT_SELECT = `
@@ -61,6 +62,7 @@ export async function createIncident(
   input: IncidentInput,
   reporter: { id: string; name: string }
 ): Promise<Incident> {
+  await assertCarrierRefs(carrierId, { truck_id: input.truckId, driver_id: input.driverId, load_id: input.loadId })
   const rows = await query<Incident>(
     `INSERT INTO hub.incidents (
        carrier_id, truck_id, driver_id, load_id, occurred_at, location, description,
@@ -86,6 +88,10 @@ export async function updateIncident(
 ): Promise<Incident | null> {
   const current = await getIncident(carrierId, id)
   if (!current) return null
+  const truckId = patch.truckId !== undefined ? patch.truckId : current.truck_id
+  const driverId = patch.driverId !== undefined ? patch.driverId : current.driver_id
+  const loadId = patch.loadId !== undefined ? patch.loadId : current.load_id
+  await assertCarrierRefs(carrierId, { truck_id: truckId, driver_id: driverId, load_id: loadId })
   const rows = await query<Incident>(
     `UPDATE hub.incidents SET
        truck_id = $3, driver_id = $4, load_id = $5, occurred_at = $6, location = $7,
@@ -94,9 +100,9 @@ export async function updateIncident(
      WHERE carrier_id = $1 AND id = $2 RETURNING *`,
     [
       carrierId, id,
-      patch.truckId !== undefined ? patch.truckId : current.truck_id,
-      patch.driverId !== undefined ? patch.driverId : current.driver_id,
-      patch.loadId !== undefined ? patch.loadId : current.load_id,
+      truckId,
+      driverId,
+      loadId,
       patch.occurredAt ?? current.occurred_at,
       patch.location !== undefined ? patch.location : current.location,
       patch.description !== undefined ? patch.description : current.description,

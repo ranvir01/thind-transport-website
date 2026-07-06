@@ -5,6 +5,7 @@ import { requirePermission } from "@/lib/hub/session"
 import { addComplianceItem, resolveComplianceItem } from "@/lib/hub/compliance"
 import { computeIftaQuarter, importIftaRates, setIftaStatus } from "@/lib/hub/ifta"
 import { query } from "@/lib/hub/db"
+import { logAudit } from "@/lib/hub/audit"
 import { assertCarrierRefs } from "@/lib/hub/tenancy"
 import { dollarsToCents } from "@/lib/hub/types"
 import type { ActionResult } from "./fleet"
@@ -176,16 +177,22 @@ export async function addMaintenanceRecordAction(values: {
       truck_id: values.truckId,
       schedule_id: values.scheduleId || null,
     })
-    await query(
+    const costCents = dollarsToCents(values.cost)
+    const rows = await query<{ id: string }>(
       `INSERT INTO hub.maintenance_records (carrier_id, truck_id, schedule_id, done_on, odometer, vendor, cost_cents, notes)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING id`,
       [
         user.carrierId, values.truckId, values.scheduleId || null,
         values.doneOn || new Date().toISOString().slice(0, 10),
         values.odometer ? Number(values.odometer) : null,
-        values.vendor || null, dollarsToCents(values.cost), values.notes || null,
+        values.vendor || null, costCents, values.notes || null,
       ]
     )
+    await logAudit({
+      carrierId: user.carrierId, actorId: user.id, actorName: user.name,
+      entityType: "maintenance_record", entityId: rows[0].id, action: "create",
+      newValue: { truckId: values.truckId, costCents, vendor: values.vendor || null },
+    })
     if (values.scheduleId) {
       await query(
         `UPDATE hub.maintenance_schedules SET last_done_on = $2, last_done_odometer = $3, updated_at = NOW()

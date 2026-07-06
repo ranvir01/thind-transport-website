@@ -14,7 +14,7 @@ export default async function CapacityPage() {
       `SELECT p.id, t.unit_number AS truck_unit, p.equipment, p.available_on,
          p.origin_city, p.origin_state, p.dest_preference, p.note
        FROM hub.capacity_postings p
-       LEFT JOIN hub.trucks t ON t.id = p.truck_id
+       LEFT JOIN hub.trucks t ON t.id = p.truck_id AND t.carrier_id = p.carrier_id
        WHERE p.carrier_id = $1 AND p.active AND p.available_on >= CURRENT_DATE - 1
        ORDER BY p.available_on`,
       [user.carrierId]

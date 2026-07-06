@@ -331,14 +331,15 @@ export async function changeLoadStatus(
 export async function setStopTimestamp(
   carrierId: string,
   stopId: string,
+  loadId: string,
   field: "arrived_at" | "departed_at",
   value: string | null
 ): Promise<Stop | null> {
   const column = field === "arrived_at" ? "arrived_at" : "departed_at"
   const rows = await query<Stop>(
-    `UPDATE hub.stops SET ${column} = $3, updated_at = NOW()
-     WHERE id = $2 AND carrier_id = $1 RETURNING *`,
-    [carrierId, stopId, value]
+    `UPDATE hub.stops SET ${column} = $4, updated_at = NOW()
+     WHERE id = $2 AND load_id = $3 AND carrier_id = $1 RETURNING *`,
+    [carrierId, stopId, loadId, value]
   )
   return rows[0] ?? null
 }

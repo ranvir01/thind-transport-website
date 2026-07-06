@@ -1,7 +1,7 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
-import { requireOfficeUser } from "@/lib/hub/session"
+import { requirePermission } from "@/lib/hub/session"
 import {
   attachReferral, convertApplicantToDriver, createApplicant, createOffer,
   importPublicApplicants, moveApplicantStage, signOffer, toggleOrientationItem,
@@ -31,7 +31,7 @@ export async function addApplicantAction(input: {
   notes?: string
 }): Promise<Result> {
   try {
-    const user = await requireOfficeUser()
+    const user = await requirePermission("drivers:write")
     if (!input.firstName.trim() || !input.lastName.trim()) {
       return { ok: false, error: "First and last name, at minimum" }
     }
@@ -62,7 +62,7 @@ export async function moveStageAction(
   note?: string
 ): Promise<Result> {
   try {
-    const user = await requireOfficeUser()
+    const user = await requirePermission("drivers:write")
     const result = await moveApplicantStage(user.carrierId, applicantId, toStage, user.name, note)
     revalidatePath("/hub/recruiting")
     revalidatePath(`/hub/recruiting/${applicantId}`)
@@ -78,7 +78,7 @@ export async function toggleOrientationAction(
   done: boolean
 ): Promise<Result> {
   try {
-    const user = await requireOfficeUser()
+    const user = await requirePermission("drivers:write")
     await toggleOrientationItem(user.carrierId, applicantId, key, done)
     revalidatePath(`/hub/recruiting/${applicantId}`)
     return { ok: true }
@@ -92,7 +92,7 @@ export async function createOfferAction(
   input: { paySummary: string; startDate?: string; body: string }
 ): Promise<Result> {
   try {
-    const user = await requireOfficeUser()
+    const user = await requirePermission("drivers:write")
     if (!input.paySummary.trim() || !input.body.trim()) {
       return { ok: false, error: "Pay summary and the letter text are both needed" }
     }
@@ -118,7 +118,7 @@ export async function signOfferAction(
   signedName: string
 ): Promise<Result> {
   try {
-    const user = await requireOfficeUser()
+    const user = await requirePermission("drivers:write")
     if (!signature) return { ok: false, error: "Sign first" }
     const ok = await signOffer(user.carrierId, offerId, signature, signedName)
     if (!ok) return { ok: false, error: "Offer already decided" }
@@ -141,7 +141,7 @@ export async function convertApplicantAction(
   input: { payType: "per_mile" | "percentage"; payRate: string; hireDate: string }
 ): Promise<Result & { driverId?: string }> {
   try {
-    const user = await requireOfficeUser()
+    const user = await requirePermission("drivers:write")
     const payRate = Number(input.payRate)
     if (!Number.isFinite(payRate) || payRate <= 0) return { ok: false, error: "Set the pay rate" }
     if (!input.hireDate) return { ok: false, error: "Pick the hire date" }
@@ -172,11 +172,16 @@ export async function attachReferralAction(
   bonus: string
 ): Promise<Result> {
   try {
-    const user = await requireOfficeUser()
+    const user = await requirePermission("drivers:write")
     const bonusCents = dollarsToCents(bonus)
     if (!referrerDriverId) return { ok: false, error: "Pick the referring driver" }
     if (bonusCents <= 0) return { ok: false, error: "Set the bonus amount" }
     await attachReferral(user.carrierId, applicantId, referrerDriverId, bonusCents)
+    await logAudit({
+      carrierId: user.carrierId, actorId: user.id, actorName: user.name,
+      entityType: "referral", entityId: applicantId, action: "attached",
+      newValue: { referrerDriverId, bonusCents },
+    })
     revalidatePath(`/hub/recruiting/${applicantId}`)
     return { ok: true }
   } catch (err) {
@@ -186,7 +191,7 @@ export async function attachReferralAction(
 
 export async function importPublicApplicantsAction(): Promise<Result & { imported?: number }> {
   try {
-    const user = await requireOfficeUser()
+    const user = await requirePermission("drivers:write")
     const { imported } = await importPublicApplicants(user.carrierId, user.name)
     revalidatePath("/hub/recruiting")
     return { ok: true, imported }

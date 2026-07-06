@@ -206,8 +206,8 @@ export async function draftSettlements(
         }
       }
       await client.query(
-        `UPDATE hub.loads SET settlement_id = $1, updated_at = NOW() WHERE id = ANY($2::uuid[])`,
-        [settlementId, loads.map((l) => l.id)]
+        `UPDATE hub.loads SET settlement_id = $1, updated_at = NOW() WHERE id = ANY($2::uuid[]) AND carrier_id = $3`,
+        [settlementId, loads.map((l) => l.id), carrierId]
       )
       await client.query("COMMIT")
       created++
@@ -245,8 +245,8 @@ export async function approveSettlement(
   // Apply advances
   for (const line of lines.filter((l) => l.source_type === "advance" && l.source_id)) {
     await query(
-      `UPDATE hub.advances SET status = 'applied', applied_settlement_id = $1, updated_at = NOW() WHERE id = $2 AND status = 'outstanding'`,
-      [settlementId, line.source_id]
+      `UPDATE hub.advances SET status = 'applied', applied_settlement_id = $1, updated_at = NOW() WHERE id = $2 AND carrier_id = $3 AND status = 'outstanding'`,
+      [settlementId, line.source_id, carrierId]
     )
   }
   // Referral bonuses paid through this settlement flip to 'paid' (E5)
@@ -262,8 +262,8 @@ export async function approveSettlement(
   const escrowLine = lines.find((l) => l.source_type === "escrow")
   if (escrowLine) {
     const last = await queryOne<{ balance_cents: number }>(
-      `SELECT balance_cents FROM hub.escrow_ledger WHERE driver_id = $1 ORDER BY id DESC LIMIT 1`,
-      [settlement.driver_id]
+      `SELECT balance_cents FROM hub.escrow_ledger WHERE driver_id = $1 AND carrier_id = $2 ORDER BY id DESC LIMIT 1`,
+      [settlement.driver_id, carrierId]
     )
     const newBalance = Number(last?.balance_cents ?? 0) + escrowLine.amount_cents
     await query(
@@ -320,25 +320,27 @@ export async function markSettlementPaid(
   carrierId: string,
   settlementId: string,
   actor: { id: string; name: string }
-): Promise<void> {
-  await query(
-    `UPDATE hub.settlements SET status = 'paid', updated_at = NOW() WHERE carrier_id = $1 AND id = $2 AND status = 'approved'`,
+): Promise<boolean> {
+  const updated = await query(
+    `UPDATE hub.settlements SET status = 'paid', updated_at = NOW() WHERE carrier_id = $1 AND id = $2 AND status = 'approved' RETURNING id`,
     [carrierId, settlementId]
   )
+  if (updated.length === 0) return false
   // Close out fully-paid loads attached to this settlement
   const loads = await query<{ id: string; status: string }>(
-    `SELECT id, status FROM hub.loads WHERE settlement_id = $1`,
-    [settlementId]
+    `SELECT id, status FROM hub.loads WHERE settlement_id = $1 AND carrier_id = $2`,
+    [settlementId, carrierId]
   )
   for (const load of loads) {
     if (load.status === "paid") {
-      await query(`UPDATE hub.loads SET status = 'settled', updated_at = NOW() WHERE id = $1`, [load.id])
+      await query(`UPDATE hub.loads SET status = 'settled', updated_at = NOW() WHERE id = $1 AND carrier_id = $2`, [load.id, carrierId])
     }
   }
   await logAudit({
     carrierId, actorId: actor.id, actorName: actor.name,
     entityType: "settlement", entityId: settlementId, action: "paid",
   })
+  return true
 }
 
 // ---- Advances + escrow ----

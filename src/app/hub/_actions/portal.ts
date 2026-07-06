@@ -1,7 +1,7 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
-import { requireOfficeUser, requirePortalUser } from "@/lib/hub/session"
+import { requirePermission, requirePortalUser } from "@/lib/hub/session"
 import { acceptInvitation, createPortalInvitation, createQuoteRequest } from "@/lib/hub/portal"
 import { getCarrier } from "@/lib/hub/settings"
 import { logAudit } from "@/lib/hub/audit"
@@ -19,7 +19,7 @@ export async function invitePortalUserAction(input: {
   role: "broker" | "shipper"
 }): Promise<Result & { acceptUrl?: string }> {
   try {
-    const user = await requireOfficeUser()
+    const user = await requirePermission("customers:write")
     if (!input.email.includes("@")) return { ok: false, error: "Enter their email" }
     const customer = await queryOne<{ id: string; name: string }>(
       `SELECT id, name FROM hub.customers WHERE carrier_id = $1 AND id = $2 AND deleted_at IS NULL`,

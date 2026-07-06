@@ -8,6 +8,7 @@ import { decideTimeOff } from "@/lib/hub/timeoff"
 import { notifyDriver } from "@/lib/hub/notify"
 import { logAudit } from "@/lib/hub/audit"
 import { query, queryOne } from "@/lib/hub/db"
+import { assertCarrierRefs } from "@/lib/hub/tenancy"
 
 interface Result {
   ok: boolean
@@ -67,6 +68,7 @@ export async function requestDocumentAction(input: {
       [user.carrierId, input.driverId]
     )
     if (!driver) return { ok: false, error: "Driver not found" }
+    await assertCarrierRefs(user.carrierId, { load_id: input.loadId || null })
     const rows = await query<{ id: string }>(
       `INSERT INTO hub.document_requests (carrier_id, driver_id, load_id, kind, note, requested_by, requested_by_name)
        VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING id`,
@@ -92,11 +94,12 @@ export async function requestDocumentAction(input: {
 export async function cancelDocumentRequestAction(id: string): Promise<Result> {
   try {
     const user = await requireOfficeUser()
-    await query(
+    const rows = await query(
       `UPDATE hub.document_requests SET status = 'cancelled'
-       WHERE carrier_id = $1 AND id = $2 AND status = 'open'`,
+       WHERE carrier_id = $1 AND id = $2 AND status = 'open' RETURNING id`,
       [user.carrierId, id]
     )
+    if (rows.length === 0) return { ok: false, error: "Already decided or not found" }
     revalidatePath("/hub/driver")
     return { ok: true }
   } catch (err) {
