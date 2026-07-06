@@ -3,7 +3,7 @@
 Status: **adapter shipped, feed shape unconfirmed.** TruckerCloud (truckercloud.com) is the
 drop-in second aggregator `src/lib/hub/telematics.ts`'s header comment has promised since
 Terminal shipped — same `TelematicsSource` interface (`connected`/`vehicles`/`hos`), its own
-credentials. `activeTelematicsSource()` in that file now picks whichever of the two a carrier
+credentials. `activeTelematicsSource()` in that file picks whichever of the two a carrier
 actually connected (Terminal wins if somehow both are).
 
 ## Why TruckerCloud specifically
@@ -21,10 +21,13 @@ value proposition as Terminal.
   `docs.withterminal.com` (`docs/integrations/terminal.md`) and the EFS integration help pages
   (`docs/integrations/efs.md`). Everything below is a best-effort guess from search-result
   snippets, not a page read in full.
-- The registry (`src/lib/hub/integrations/registry.ts`) already scoped `truckercloud` to a
-  single `apiKey` credential field (no separate connection-token, unlike Terminal's two-field
-  model) — `truckerCloudSource()` in `telematics.ts` assumes a plain `Authorization: Bearer
-  {apiKey}` header against that single key.
+- `docs/hub-go-live-requirements.md` lists TruckerCloud as needing "Client ID + secret"
+  credentials, not a static API key — so the registry (`src/lib/hub/integrations/registry.ts`)
+  scopes `truckercloud` to `clientId` + `clientSecret`, and `truckerCloudSource()` in
+  `telematics.ts` exchanges them for a bearer token via an OAuth2 client-credentials grant
+  (`POST {base}/oauth/token`) before every request. No token caching yet — each sync fetches a
+  fresh token, which is correct but not optimal; revisit if a real account confirms tokens are
+  short-lived enough for that to matter.
 - Base URL is an env override (`TRUCKERCLOUD_API_BASE`), defaulting to a placeholder host
   (`https://api.truckercloud.com/v1`) — never treated as confirmed.
 
@@ -32,31 +35,32 @@ value proposition as Terminal.
 
 `normalizeTruckerCloudVehicle` and `normalizeTruckerCloudHos` in `telematics.ts` are the two
 places the guessed shape is read — swapping in the real one only touches those two functions,
-same doctrine as `normalizeEfsRecord`. Assumed shape, parallel to Terminal's confirmed one:
+same doctrine as `normalizeEfsRecord`. Assumed shape:
 
 ```json
-// GET /vehicles → { "data": [ ... ] }
+// GET /vehicles → { "vehicles": [ ... ] }
 {
-  "vehicleId": "string — becomes externalId",
+  "assetId": "string — becomes externalId",
   "unitNumber": "string — matched against hub.trucks.unit_number",
-  "location": { "lat": 0, "lng": 0, "odometer": 0, "timestamp": "ISO 8601" }
+  "lastLocation": { "lat": 0, "lng": 0, "odometer": 0, "timestamp": "ISO 8601" }
 }
 
-// GET /hos → { "data": [ ... ] }
+// GET /hos → { "logs": [ ... ] }
 {
   "driverId": "string",
   "driverName": "string — matched against hub.drivers full name",
   "status": "duty status string",
-  "driveTimeRemainingSeconds": 0,
-  "shiftTimeRemainingSeconds": 0,
-  "cycleTimeRemainingSeconds": 0,
+  "driveTimeRemainingSec": 0,
+  "shiftTimeRemainingSec": 0,
+  "cycleTimeRemainingSec": 0,
   "recordedAt": "ISO 8601"
 }
 ```
 
-If the real endpoints or field names differ (very likely — these are guesses, not observed
-responses), only the two normalizer functions and the two `request(...)` path strings in
-`truckerCloudSource()` change; the sync loop, ingestion, and cron wiring don't move.
+If the real endpoints, auth flow, or field names differ (very likely — these are guesses, not
+observed responses), only the two normalizer functions, the `/oauth/token` exchange, and the
+two `request(...)` path strings in `truckerCloudSource()` change; the sync loop, ingestion, and
+cron wiring don't move.
 
 ## Rate limits / sandbox
 
@@ -67,18 +71,23 @@ program surfaced. Ask when a TruckerCloud contact is available for real credenti
 
 Shares Terminal's cron job (`telematics-sync`, `vercel.json`) and "Sync now" action —
 `activeTelematicsSource()` means there is exactly one sync path regardless of which aggregator
-is connected, so no new cron entry was needed.
+is connected, so no new cron entry was needed. `runTelematicsSync` tags every
+`position_pings`/`hos_snapshots` row it writes with `source = 'truckercloud'` (vs `'terminal'`)
+via the connected `TelematicsSource`'s own `provider` field.
 
 ## What ships today without any of this
 
 Manual truck location entry on the dispatch board keeps working with neither aggregator
 connected — this adapter, like Terminal's, is additive.
 
-## Backlog surfaced by this scout
+## Open questions for the next pass
 
-- Same open item as Terminal and EFS: no 429/5xx retry-with-backoff on the single `fetch` in
-  `truckerCloudSource`'s `request()` — a transient error fails that day's sync silently.
-- `docs/integrations/creds-shopping-list.md` still only lists Terminal/EFS/DAT/QBO/factor —
-  it should grow rows for TruckerCloud, WEX, and Comdata to match the registry's full set
-  (flagged by the previous EFS cycle's backlog too; deferred again here to keep this cycle to
-  one provider).
+- Confirm the real token endpoint path and grant type against an actual TruckerCloud developer
+  packet — the #1 blocker to flipping status from stub to live.
+- Confirm `/vehicles` and `/hos` response field names (best guess above).
+- Same open item as Terminal and EFS: no 429/5xx retry-with-backoff on the single `fetch` calls
+  in `truckerCloudSource`'s `request()`/token exchange — a transient error fails that day's sync
+  silently.
+- Confirm whether a carrier can have both Terminal AND TruckerCloud credentials saved at once
+  (e.g. mid-migration between aggregators); if so, `activeTelematicsSource`'s "first connected
+  wins" selection needs to become an explicit preference instead of source order.

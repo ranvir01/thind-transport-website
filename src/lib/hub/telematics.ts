@@ -93,27 +93,69 @@ function minutes(value: unknown): number | null {
 }
 
 /**
+ * Pure normalizers — kept separate from the fetch calls so they're
+ * unit-testable (__tests__/telematics.test.ts) without a live feed. Field
+ * names are docs/integrations/truckercloud.md's best guess; adjust here the
+ * day a real feed response comes back.
+ */
+export function normalizeTruckerCloudVehicle(row: Record<string, unknown>): TelematicsVehicle {
+  const location = (row.lastLocation ?? {}) as Record<string, unknown>
+  return {
+    externalId: String(row.assetId ?? ""),
+    unitHint: (row.unitNumber as string) ?? null,
+    lat: typeof location.lat === "number" ? location.lat : null,
+    lng: typeof location.lng === "number" ? location.lng : null,
+    odometerMiles: typeof location.odometer === "number" ? location.odometer : null,
+    locatedAt: (location.timestamp as string) ?? null,
+  }
+}
+
+export function normalizeTruckerCloudHos(row: Record<string, unknown>): TelematicsHos {
+  return {
+    externalDriverId: String(row.driverId ?? ""),
+    driverNameHint: (row.driverName as string) ?? null,
+    dutyStatus: (row.status as string) ?? null,
+    driveRemainingMinutes: minutes(row.driveTimeRemainingSec),
+    shiftRemainingMinutes: minutes(row.shiftTimeRemainingSec),
+    cycleRemainingMinutes: minutes(row.cycleTimeRemainingSec),
+    ts: (row.recordedAt as string) ?? new Date().toISOString(),
+  }
+}
+
+/**
  * TruckerCloud (truckercloud.com, "Apollo API") — the drop-in second
  * aggregator this file's header comment has promised since Terminal shipped.
- * Auth model is a best-effort guess (docs/integrations/truckercloud.md):
- * TruckerCloud's own docs pages 403 this scout's fetch tooling the same way
- * docs.withterminal.com and the EFS integration pages did, so this assumes a
- * single bearer API key (matching the registry's one-field credential spec)
- * against a normalized vehicles/HOS shape parallel to Terminal's. Swapping in
- * the confirmed shape later only touches the two `normalizeTruckerCloud*`
- * functions below — the adapter, sync loop, and contract tests don't move.
+ * Auth is OAuth2 client-credentials (docs/hub-go-live-requirements.md lists
+ * TruckerCloud as needing a "Client ID + secret"): the token endpoint
+ * exchanges clientId/clientSecret for a bearer token, re-fetched fresh on
+ * every sync (no caching yet — revisit if a real account shows tokens are
+ * short-lived enough to matter).
  */
 export function truckerCloudSource(carrierId: string): TelematicsSource {
   const base = process.env.TRUCKERCLOUD_API_BASE ?? "https://api.truckercloud.com/v1"
-  const request = async (path: string) => {
+  const token = async () => {
     const creds = await getCredentials(carrierId, "truckercloud")
-    if (!creds?.apiKey) throw new Error("truckercloud not connected")
+    if (!creds?.clientId || !creds?.clientSecret) throw new Error("TruckerCloud not connected")
+    const response = await fetch(`${base}/oauth/token`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        client_id: creds.clientId, client_secret: creds.clientSecret, grant_type: "client_credentials",
+      }),
+      signal: AbortSignal.timeout(15000),
+    })
+    if (!response.ok) throw new Error(`TruckerCloud token → HTTP ${response.status}`)
+    const json = (await response.json()) as { access_token?: string }
+    if (!json.access_token) throw new Error("TruckerCloud token response missing access_token")
+    return json.access_token
+  }
+  const request = async (path: string) => {
     const response = await fetch(`${base}${path}`, {
-      headers: { Authorization: `Bearer ${creds.apiKey}` },
+      headers: { Authorization: `Bearer ${await token()}` },
       signal: AbortSignal.timeout(15000),
     })
     if (!response.ok) throw new Error(`TruckerCloud ${path} → HTTP ${response.status}`)
-    return response.json() as Promise<{ data?: unknown[] }>
+    return response.json() as Promise<Record<string, unknown>>
   }
 
   return {
@@ -123,38 +165,12 @@ export function truckerCloudSource(carrierId: string): TelematicsSource {
     },
     async vehicles() {
       const json = await request("/vehicles")
-      return ((json.data ?? []) as Record<string, unknown>[]).map(normalizeTruckerCloudVehicle)
+      return ((json.vehicles ?? []) as Record<string, unknown>[]).map(normalizeTruckerCloudVehicle)
     },
     async hos() {
       const json = await request("/hos")
-      return ((json.data ?? []) as Record<string, unknown>[]).map(normalizeTruckerCloudHos)
+      return ((json.logs ?? []) as Record<string, unknown>[]).map(normalizeTruckerCloudHos)
     },
-  }
-}
-
-/** Pure — the one place TruckerCloud's assumed vehicle shape is read (see truckerCloudSource). */
-export function normalizeTruckerCloudVehicle(record: Record<string, unknown>): TelematicsVehicle {
-  const location = (record.location ?? {}) as Record<string, unknown>
-  return {
-    externalId: String(record.vehicleId ?? record.id ?? ""),
-    unitHint: (record.unitNumber as string) ?? (record.assetName as string) ?? null,
-    lat: typeof location.lat === "number" ? location.lat : null,
-    lng: typeof location.lng === "number" ? location.lng : null,
-    odometerMiles: typeof location.odometer === "number" ? location.odometer : null,
-    locatedAt: (location.timestamp as string) ?? null,
-  }
-}
-
-/** Pure — the one place TruckerCloud's assumed HOS shape is read (see truckerCloudSource). */
-export function normalizeTruckerCloudHos(record: Record<string, unknown>): TelematicsHos {
-  return {
-    externalDriverId: String(record.driverId ?? ""),
-    driverNameHint: (record.driverName as string) ?? null,
-    dutyStatus: (record.status as string) ?? null,
-    driveRemainingMinutes: minutes(record.driveTimeRemainingSeconds),
-    shiftRemainingMinutes: minutes(record.shiftTimeRemainingSeconds),
-    cycleRemainingMinutes: minutes(record.cycleTimeRemainingSeconds),
-    ts: (record.recordedAt as string) ?? new Date().toISOString(),
   }
 }
 
