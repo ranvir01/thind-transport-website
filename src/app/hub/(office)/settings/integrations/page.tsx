@@ -36,6 +36,8 @@ export default async function IntegrationsPage() {
     fallback: spec.fallback,
     fields: [...spec.fields],
     connected: connectedFlags[i],
+    // "Sync now" needs a case in runProviderSync (src/app/hub/_actions/integrations.ts) —
+    // not every provider has a manual trigger wired yet (e.g. mailbox is poll-only today).
     canSync: MANUAL_SYNC_PROVIDERS.has(spec.id),
     status: spec.status,
     webhookUrl:

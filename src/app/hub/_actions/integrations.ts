@@ -63,31 +63,35 @@ export async function disconnectIntegrationAction(provider: IntegrationProvider)
   }
 }
 
-/** Manual "sync now" for the telematics feed. */
-export async function syncTelematicsNowAction(): Promise<Result & { summary?: string }> {
+/**
+ * Manual "sync now", one case per provider with a poll sync loop. Every
+ * card's canSync button routes through here — adding a provider's sync
+ * loop is a new case, never a new action (registry.ts stays the one place
+ * that decides which cards get a Sync now button, via `cronJob`).
+ */
+export async function syncIntegrationNowAction(
+  provider: IntegrationProvider
+): Promise<Result & { summary?: string }> {
   try {
     const user = await requireOwner()
     const started = new Date()
     try {
-      const result = await runTelematicsSync(user.carrierId)
+      const result = await runProviderSync(provider, user.carrierId)
       if (!result.connected) {
-        return { ok: false, error: "Terminal isn't connected yet — save credentials first. CSV import keeps working meanwhile." }
+        return { ok: false, error: `${provider} isn't connected yet — save credentials first. The fallback keeps working meanwhile.` }
       }
       await query(
         `INSERT INTO hub.integration_syncs (carrier_id, source, started_at, finished_at, ok, counts)
-         VALUES ($1, 'terminal', $2, NOW(), TRUE, $3)`,
-        [user.carrierId, started.toISOString(), JSON.stringify(result)]
+         VALUES ($1, $2, $3, NOW(), TRUE, $4)`,
+        [user.carrierId, provider, started.toISOString(), JSON.stringify(result)]
       )
       revalidatePath("/hub/settings/integrations")
-      return {
-        ok: true,
-        summary: `${result.pings ?? 0} positions, ${result.hos ?? 0} HOS clocks${result.unmatched?.length ? `, unmatched units: ${result.unmatched.join(", ")}` : ""}`,
-      }
+      return { ok: true, summary: result.summary }
     } catch (err) {
       await query(
         `INSERT INTO hub.integration_syncs (carrier_id, source, started_at, finished_at, ok, error)
-         VALUES ($1, 'terminal', $2, NOW(), FALSE, $3)`,
-        [user.carrierId, started.toISOString(), err instanceof Error ? err.message : "unknown"]
+         VALUES ($1, $2, $3, NOW(), FALSE, $4)`,
+        [user.carrierId, provider, started.toISOString(), err instanceof Error ? err.message : "unknown"]
       )
       throw err
     }
@@ -96,70 +100,30 @@ export async function syncTelematicsNowAction(): Promise<Result & { summary?: st
   }
 }
 
-/** Manual "sync now" for the EFS/WEX fuel feed. */
-export async function syncEfsNowAction(): Promise<Result & { summary?: string }> {
-  try {
-    const user = await requireOwner()
-    const started = new Date()
-    try {
-      const result = await runEfsSync(user.carrierId)
-      if (!result.connected) {
-        return { ok: false, error: "EFS isn't connected yet — save feed credentials first. Fuel CSV import keeps working meanwhile." }
-      }
-      await query(
-        `INSERT INTO hub.integration_syncs (carrier_id, source, started_at, finished_at, ok, counts)
-         VALUES ($1, 'efs', $2, NOW(), TRUE, $3)`,
-        [user.carrierId, started.toISOString(), JSON.stringify(result)]
-      )
-      revalidatePath("/hub/settings/integrations")
-      revalidatePath("/hub/fuel")
-      return {
-        ok: true,
-        summary: `${result.imported ?? 0} transactions, ${result.skipped ?? 0} already on file${result.unmatched?.length ? `, unmatched units: ${result.unmatched.join(", ")}` : ""}`,
-      }
-    } catch (err) {
-      await query(
-        `INSERT INTO hub.integration_syncs (carrier_id, source, started_at, finished_at, ok, error)
-         VALUES ($1, 'efs', $2, NOW(), FALSE, $3)`,
-        [user.carrierId, started.toISOString(), err instanceof Error ? err.message : "unknown"]
-      )
-      throw err
+async function runProviderSync(
+  provider: IntegrationProvider,
+  carrierId: string
+): Promise<{ connected: boolean; summary?: string }> {
+  if (provider === "terminal") {
+    const result = await runTelematicsSync(carrierId)
+    return {
+      connected: result.connected,
+      summary: `${result.pings ?? 0} positions, ${result.hos ?? 0} HOS clocks${result.unmatched?.length ? `, unmatched units: ${result.unmatched.join(", ")}` : ""}`,
     }
-  } catch (err) {
-    return { ok: false, error: err instanceof Error ? err.message : "Sync failed" }
   }
-}
-
-/** Manual "sync now" for the Comdata fuel feed. */
-export async function syncComdataNowAction(): Promise<Result & { summary?: string }> {
-  try {
-    const user = await requireOwner()
-    const started = new Date()
-    try {
-      const result = await runComdataSync(user.carrierId)
-      if (!result.connected) {
-        return { ok: false, error: "Comdata isn't connected yet — save API credentials first. Fuel CSV import keeps working meanwhile." }
-      }
-      await query(
-        `INSERT INTO hub.integration_syncs (carrier_id, source, started_at, finished_at, ok, counts)
-         VALUES ($1, 'comdata', $2, NOW(), TRUE, $3)`,
-        [user.carrierId, started.toISOString(), JSON.stringify(result)]
-      )
-      revalidatePath("/hub/settings/integrations")
-      revalidatePath("/hub/fuel")
-      return {
-        ok: true,
-        summary: `${result.imported ?? 0} transactions, ${result.skipped ?? 0} already on file${result.unmatched?.length ? `, unmatched units: ${result.unmatched.join(", ")}` : ""}`,
-      }
-    } catch (err) {
-      await query(
-        `INSERT INTO hub.integration_syncs (carrier_id, source, started_at, finished_at, ok, error)
-         VALUES ($1, 'comdata', $2, NOW(), FALSE, $3)`,
-        [user.carrierId, started.toISOString(), err instanceof Error ? err.message : "unknown"]
-      )
-      throw err
+  if (provider === "efs") {
+    const result = await runEfsSync(carrierId)
+    return {
+      connected: result.connected,
+      summary: `${result.imported ?? 0} fuel transactions${result.skipped ? `, ${result.skipped} already synced` : ""}${result.unmatched?.length ? `, unmatched units: ${result.unmatched.join(", ")}` : ""}`,
     }
-  } catch (err) {
-    return { ok: false, error: err instanceof Error ? err.message : "Sync failed" }
   }
+  if (provider === "comdata") {
+    const result = await runComdataSync(carrierId)
+    return {
+      connected: result.connected,
+      summary: `${result.imported ?? 0} fuel transactions${result.skipped ? `, ${result.skipped} already synced` : ""}${result.unmatched?.length ? `, unmatched units: ${result.unmatched.join(", ")}` : ""}`,
+    }
+  }
+  throw new Error(`No sync loop wired for ${provider} yet`)
 }

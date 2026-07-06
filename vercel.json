@@ -14,6 +14,7 @@
     { "path": "/api/hub/cron/fmcsa-recheck", "schedule": "0 11 * * *" },
     { "path": "/api/hub/cron/telematics-sync", "schedule": "0 12 * * *" },
     { "path": "/api/hub/cron/docs-mailbox", "schedule": "30 12 * * *" },
+    { "path": "/api/hub/cron/efs-sync", "schedule": "0 6 * * *" },
     { "path": "/api/hub/cron/owner-digest", "schedule": "0 13 * * 1" }
   ],
   "headers": [

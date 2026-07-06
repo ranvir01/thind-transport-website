@@ -1,55 +1,64 @@
-# EFS / WEX fuel card — scouting notes
+# EFS fuel card feed — scouting notes
 
-Status: **adapter shipped stub-first**, no live feed confirmed yet (needs a
-real carrier's data-feed request to come back from the rep). This doc is
-what's publicly known plus what the existing CSV import already assumes;
-update it the day a real feed response lands so the next agent can fix any
-field-name mismatch in one place (`normalizeEfsRow` in
-`src/lib/hub/integrations/efs.ts`).
+Status: **adapter shipped, feed shape unconfirmed.** EFS (efsllc.com, a WEX brand) has no
+self-serve developer portal — the daily transaction feed is provisioned per-carrier by an
+account rep, and the exact response shape is only confirmed once that request is in. This
+doc records what's assumed so the day the feed shows up, only `normalizeEfsRecord` in
+`src/lib/hub/integrations/efs.ts` needs to change.
 
-## Auth model
+## Auth model (assumed)
 
-EFS/WEX does not expose a self-serve public REST API for transaction pulls.
-Feed access ("CarrierControl" portal export, or a partner data feed) is
-provisioned per-carrier by an EFS/WEX account rep — request it separately
-from the normal portal login. Typical lead time: up to 5 business days.
-Credentials are a feed username/password (Basic auth), not an OAuth token —
-matches the `feedUser` / `feedPassword` fields already in
-`ALLOWED_FIELDS.efs` (`src/app/hub/_actions/integrations.ts`).
+- HTTP Basic auth over the feed connection, credentials called "feed username" / "feed
+  password" by EFS reps — deliberately distinct from the EFS Direct Data portal login.
+  Matches the `feedUser` / `feedPassword` fields already on the `efs` entry in
+  `src/lib/hub/integrations/registry.ts`.
+- Base URL is an env override (`EFS_FEED_BASE`), defaulting to a placeholder host — never
+  hardcode a real EFS endpoint until the rep confirms one.
 
-## Assumed feed shape (unconfirmed — adjust on first real response)
+## Feed shape (assumed, unconfirmed)
 
-`GET {EFS_FEED_BASE}/transactions` (env override; placeholder base URL —
-replace once the rep's confirmation email states the real endpoint), Basic
-auth, returns `{ transactions: [...] }` where each entry carries (naming per
-common fuel-card feed exports, e.g. Fleetio/Samsara's public EFS docs):
+EFS/WEX fuel-card feeds are historically flat-file (CSV/fixed-width) or a polled REST
+export, keyed on a per-transaction id. The adapter assumes a JSON array of records shaped
+roughly like:
 
-- `transactionId` (or `id`) — stable per-transaction id → `external_id`
-- `transactionDate` — ISO or `MM/DD/YYYY HH:mm`
-- `unitNumber` (or `vehicleId`) — matched against `hub.trucks.unit_number`,
-  same unmatched-is-reported-not-guessed rule as `telematics.ts`
-- `merchantName`, `city`, `state`
-- `gallons`, `pricePerGallon`, `totalAmount` (dollars — converted to cents)
-- `odometer`
+```json
+{
+  "TransactionId": "string, stable per transaction — becomes external_id",
+  "TransactionDateTime": "ISO 8601 or similar",
+  "CardNumber": "string, last-4 hint",
+  "UnitNumber": "string — matched against hub.trucks.unit_number",
+  "MerchantName": "string",
+  "MerchantCity": "string",
+  "MerchantState": "string, used as the IFTA jurisdiction hint",
+  "Quantity": "number, gallons",
+  "PricePerGallon": "number, dollars",
+  "TotalAmount": "number, dollars",
+  "Odometer": "number, miles, optional"
+}
+```
 
-Sync cadence when live: third-party fleet platforms typically see EFS
-transactions within minutes of posting; a 5–15 minute poll cron is
-reasonable once `status` flips to `live` in the registry-equivalent card.
+If the real feed is a CSV/flat-file instead of JSON, only the fetch + row-splitting step in
+`efsSource()` changes — `normalizeEfsRecord` stays a pure `Record<string, unknown> → EfsFuelRow`
+function either way, so the contract tests keep passing untouched.
 
-## What activates when the owner pastes keys
+## Rate limits / polling
 
-Nothing changes silently — `efsSource(carrierId).connected()` flips to
-`true` (credentials exist), "Sync now" becomes available on the
-Integrations card, and `runEfsSync` starts landing rows into
-`hub.fuel_transactions` with `source = 'efs'`, `ON CONFLICT (carrier_id,
-source, external_id) DO NOTHING`. The Fuel CSV import path is untouched and
-keeps working for anything the feed doesn't cover.
+Unknown until the feed is live. `runEfsSync` is written as a daily pull (cron `efs-sync`,
+`vercel.json`), which is conservative for any vendor batch-export cadence seen on other fuel
+cards (EFS/WEX and Comdata typically batch overnight).
 
-## Open questions for the next pass
+## Sandbox
 
-- Confirm the real endpoint path and payload shape against an actual
-  CarrierControl data-feed response (this is the #1 blocker to flipping
-  status from stub to live).
-- Confirm whether unmatched vehicle/unit ids should also raise a
-  `hub.integration_syncs` warning row (today they're just returned in the
-  `unmatched` array like `telematics.ts`'s `runTelematicsSync`).
+None advertised publicly. Ask the account rep for a test/sandbox feed alongside the
+production one when requesting data-feed access — note the answer here once known.
+
+## Lead time
+
+~5 business days per the existing entry in `docs/integrations/creds-shopping-list.md`.
+
+## What ships today without any of this
+
+The CSV statement import (`Settings → Fuel → Import`) already accepts any card program's
+export, including EFS's, and lands rows in the exact same `hub.fuel_transactions` table via
+the same `(carrier_id, source, external_id)` idempotency key. This adapter is additive —
+it never replaces that path.
