@@ -31,7 +31,7 @@ export default async function IftaPage({
   const quarter = /^\d{4}Q[1-4]$/.test(params.q ?? "") ? params.q! : lastCompletedQuarterKey(new Date())
   const [report, rates] = await Promise.all([
     getIftaReport(user.carrierId, quarter),
-    listIftaRates(quarter),
+    listIftaRates(user.carrierId, quarter),
   ])
   const rows: IftaReportRow[] = (report?.report?.rows as IftaReportRow[] | undefined) ?? []
   const due = iftaDueDate(quarter)

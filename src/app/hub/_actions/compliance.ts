@@ -96,8 +96,9 @@ export async function setIftaStatusAction(
 
 /** Rates pasted as lines of "JUR,rate[,surcharge]" (iftach.org matrix transcription). */
 export async function importIftaRatesAction(quarter: string, ratesText: string): Promise<ActionResult> {
+  let user
   try {
-    await requirePermission("compliance:write")
+    user = await requirePermission("compliance:write")
   } catch (err) {
     return asError(err, "Forbidden")
   }
@@ -113,7 +114,7 @@ export async function importIftaRatesAction(quarter: string, ratesText: string):
   }
   if (rows.length === 0) return { ok: false, error: "No rates parsed — use lines like WA,0.4940 or IN,0.5500,0.1100" }
   try {
-    const count = await importIftaRates(rows, quarter)
+    const count = await importIftaRates(user.carrierId, rows, quarter, user)
     revalidatePath("/hub/compliance/ifta")
     return { ok: true, id: String(count) }
   } catch (err) {
