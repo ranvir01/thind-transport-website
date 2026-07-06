@@ -357,6 +357,9 @@ export async function uploadDocumentAction(formData: FormData): Promise<ActionRe
       revalidatePath(`/hub/facilities/${parsed.data.entity_id}`)
     } else if (parsed.data.entity_type === "applicant") {
       revalidatePath(`/hub/recruiting/${parsed.data.entity_id}`)
+    } else if (parsed.data.entity_type === "truck" || parsed.data.entity_type === "trailer") {
+      // Fleet detail pages live under /hub/fleet/{type}s/{id}, not /hub/{type}s/{id}.
+      revalidatePath(`/hub/fleet/${parsed.data.entity_type}s/${parsed.data.entity_id}`)
     } else {
       revalidatePath(`/hub/${parsed.data.entity_type}s/${parsed.data.entity_id}`)
     }
