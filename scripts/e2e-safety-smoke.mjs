@@ -15,7 +15,7 @@
 import puppeteer from "puppeteer"
 import { mkdirSync, writeFileSync } from "node:fs"
 import path from "node:path"
-import { BASE, sleep, failures, check, waitForText, login, makeShot, clickByText, reseed } from "./e2e-lib.mjs"
+import { BASE, sleep, failures, check, waitForText, login, makeShot, clickByText, clickSelector, reseed } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-safety"
 mkdirSync(OUT, { recursive: true })
@@ -183,8 +183,7 @@ async function main() {
 
   console.log("6. Dispatcher sees the draft-claim alert in notifications")
   await page.goto(`${BASE}/hub`, { waitUntil: "networkidle2" })
-  await sleep(1500)
-  await page.click('button[aria-label^="Notifications"]')
+  await clickSelector(page, 'button[aria-label^="Notifications"]')
   await sleep(800)
   const notify = await page.evaluate(() => document.body.innerText)
   check(notify.toLowerCase().includes("draft claim"), "notification mentions the draft claim opened from OS&D POD")

@@ -87,6 +87,30 @@ export function makeShot(outDir, { fullPage = false } = {}) {
   }
 }
 
+/**
+ * Wait for a CSS selector to be present and visible, then click it — retries
+ * through the race where a click lands right after `page.goto`/navigation and
+ * hits "Attempted to use detached Frame" because the DOM node from the old
+ * render was still resolving when waitForSelector/click ran. A flat `sleep`
+ * before a bare `page.click` doesn't guard against this; polling with a fresh
+ * waitForSelector each attempt does.
+ */
+export async function clickSelector(page, selector, { timeout = 8000 } = {}) {
+  const deadline = Date.now() + timeout
+  let lastErr
+  while (Date.now() < deadline) {
+    try {
+      await page.waitForSelector(selector, { visible: true, timeout: Math.max(deadline - Date.now(), 100) })
+      await page.click(selector)
+      return
+    } catch (err) {
+      lastErr = err
+      await sleep(250)
+    }
+  }
+  throw new Error(`clickSelector: could not click "${selector}": ${lastErr?.message ?? "timed out"}`)
+}
+
 /** Click the first `tag` element whose text contains `text`, polling until timeout. */
 export async function clickByText(page, text, { tag = "button", timeout = 8000 } = {}) {
   const deadline = Date.now() + timeout
