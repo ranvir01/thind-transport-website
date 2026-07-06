@@ -1,9 +1,10 @@
 # WEX fuel card feed — scouting notes
 
-Status: **adapter shipped stub-first**, no live feed confirmed yet (needs a real carrier's
-data-feed request to come back from the WEX account rep). Same posture as `efs.md` and
-`comdata.md`: update this doc and `normalizeWexRecord` in `src/lib/hub/integrations/wex.ts`
-in one commit the day a real response lands.
+Status: **adapter shipped, feed shape unconfirmed** (same posture as `efs.md`) — cron
+(`wex-sync`, daily) and the settings "Sync now" action are wired, `registry.ts` carries
+`status: "live"`. No live feed confirmed yet (needs a real carrier's data-feed request to
+come back from the WEX account rep). Update this doc and `normalizeWexRecord` in
+`src/lib/hub/integrations/wex.ts` in one commit the day a real response lands.
 
 ## Auth model (assumed)
 
@@ -32,9 +33,9 @@ to use:
 
 ## Rate limits / polling
 
-Unknown until the feed is live. No cron job is wired yet (`registry.ts` keeps `wex` at
-`status: "stub"`, so it isn't in `vercel.json`'s cron list) — flip both once the real feed
-shape is confirmed, following `efs-sync`'s daily cadence as the starting assumption.
+Unknown until the feed is live. `runWexSync` runs daily (cron `wex-sync`, `vercel.json`,
+staggered 10 minutes after `efs-sync`) — conservative for any vendor batch-export cadence,
+matching EFS/Comdata. Adjust the cadence once the real feed's rate limits are known.
 
 ## Sandbox
 
@@ -56,6 +57,6 @@ never replaces that path.
 ## Open questions for the next pass
 
 - Confirm the real endpoint path, auth model, and payload shape against an actual WEX API
-  onboarding response — the #1 blocker to flipping status from stub to live.
+  onboarding response — the shape may need to change once a real feed responds.
 - Confirm whether WEX's data-feed request is truly bundled with EFS's (same rep, same lead
   time) or requires a separate credentials conversation.
