@@ -35,6 +35,7 @@ export default async function IftaPage({
   ])
   const rows: IftaReportRow[] = (report?.report?.rows as IftaReportRow[] | undefined) ?? []
   const due = iftaDueDate(quarter)
+  const isOverdue = due < new Date() && report?.status !== "filed"
 
   return (
     <div>
@@ -43,6 +44,15 @@ export default async function IftaPage({
         title={`IFTA — ${quarter}`}
         subtitle={`Filing due ${due.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}. File even at zero or credit; source data retained 4 years.`}
       />
+
+      {isOverdue ? (
+        <Panel className="p-4 mb-4 border-bad-soft">
+          <p className="text-body-sm text-bad font-semibold">
+            Filing overdue — was due {due.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}.
+            {report ? " File with your state's IFTA portal, then mark this quarter filed below." : " Compute the quarter below, file with your state, then mark it filed."}
+          </p>
+        </Panel>
+      ) : null}
 
       {/* Quarter picker + actions */}
       <div className="flex flex-wrap items-center gap-3 mb-4">
