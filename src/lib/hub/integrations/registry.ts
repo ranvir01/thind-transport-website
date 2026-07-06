@@ -132,7 +132,7 @@ export const PROVIDERS: readonly ProviderSpec[] = [
       { key: "apiKey", label: "API key", secret: true },
       { key: "webhookSecret", label: "Webhook signing secret", secret: true },
     ],
-    fallback: "Email the factor the invoice PDF", sync: "webhook", status: "planned",
+    fallback: "Email the factor the invoice PDF", sync: "webhook", status: "stub",
   },
 ] as const
 
