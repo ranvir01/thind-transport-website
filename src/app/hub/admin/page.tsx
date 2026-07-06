@@ -30,27 +30,27 @@ export default async function PlatformAdminPage() {
   )
 
   return (
-    <div className="min-h-screen bg-navy px-4 py-8">
+    <div className="min-h-screen bg-bg px-4 py-8">
       <div className="mx-auto max-w-4xl">
         <div className="mb-6 flex items-center justify-between">
           <div>
-            <span className="brand-wordmark text-xl font-semibold text-white tracking-[0.14em]">
+            <span className="brand-wordmark text-xl font-semibold text-fg tracking-[0.14em]">
               {PRODUCT.wordmark}
             </span>
-            <span className="ml-3 text-[10px] font-bold uppercase tracking-[0.25em] text-gold">
+            <span className="ml-3 text-[10px] font-bold uppercase tracking-[0.25em] text-fg-3">
               Platform admin
             </span>
           </div>
           <div className="w-40">
-            <SignOutButton variant="dark" />
+            <SignOutButton />
           </div>
         </div>
 
-        <p className="mb-4 text-body-sm text-steel-300">
+        <p className="mb-4 text-body-sm text-fg-2">
           Tenants and operational counts only — customer business data stays inside each workspace.
         </p>
 
-        <Panel className="divide-y divide-white/5">
+        <Panel className="divide-y divide-border">
           {tenants.map((tenant) => (
             <div key={tenant.id} className="flex flex-wrap items-center justify-between gap-2 p-4">
               <div className="min-w-0">
