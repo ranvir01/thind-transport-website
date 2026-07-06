@@ -3,7 +3,7 @@ import { getCarrier, getCarrierSettings, nextInvoiceNumber } from "./settings"
 import { getLoad, getLoadStops, changeLoadStatus } from "./loads"
 import { getCustomer } from "./customers"
 import { listDocuments, storeGeneratedPdf } from "./documents"
-import { buildInvoicePdf } from "./pdf"
+import { buildInvoicePdf, buildStatementPdf } from "./pdf"
 import { invoiceTotalCents, agingBucket, type AgingBucket } from "./money"
 import { logAudit } from "./audit"
 import { createMailTransport, isEmailConfigured, mailFrom } from "@/lib/mailer"
@@ -304,6 +304,143 @@ export async function runOverdueReminders(carrierId: string): Promise<{ sent: nu
     } catch { /* reminder failures surface via integration_syncs in cron route */ }
   }
   return { sent, flaggedOverdue }
+}
+
+// ---- Customer statements ----
+
+export interface CustomerStatement {
+  customerId: string
+  customerName: string
+  billingEmail: string | null
+  totalOpenCents: number
+  buckets: Record<AgingBucket, number>
+  invoices: (Invoice & { bucket: AgingBucket; open_cents: number })[]
+}
+
+async function loadOpenInvoicesByCustomer(
+  carrierId: string,
+  customerId?: string
+): Promise<(Invoice & { billing_email: string | null })[]> {
+  const params: unknown[] = [carrierId]
+  let where = `i.carrier_id = $1 AND i.status NOT IN ('paid')`
+  if (customerId) {
+    params.push(customerId)
+    where += ` AND i.customer_id = $${params.length}`
+  }
+  return query<Invoice & { billing_email: string | null }>(
+    `SELECT i.*, c.name AS customer_name, c.billing_email, l.reference AS load_reference,
+       COALESCE((SELECT SUM(amount_cents) FROM hub.payments WHERE invoice_id = i.id AND carrier_id = i.carrier_id), 0)::int AS paid_cents
+     FROM hub.invoices i
+     JOIN hub.customers c ON c.id = i.customer_id
+     JOIN hub.loads l ON l.id = i.load_id
+     WHERE ${where}
+     ORDER BY c.name, i.due_on`,
+    params
+  )
+}
+
+function groupStatementsByCustomer(
+  rows: (Invoice & { billing_email: string | null })[]
+): CustomerStatement[] {
+  const now = new Date()
+  const byCustomer = new Map<string, CustomerStatement>()
+  for (const row of rows) {
+    const openCents = row.amount_cents - (row.paid_cents ?? 0)
+    if (openCents <= 0) continue
+    const bucket = agingBucket(new Date(row.due_on), now)
+    let stmt = byCustomer.get(row.customer_id)
+    if (!stmt) {
+      stmt = {
+        customerId: row.customer_id,
+        customerName: row.customer_name ?? "—",
+        billingEmail: row.billing_email,
+        totalOpenCents: 0,
+        buckets: { current: 0, "1-30": 0, "31-60": 0, "61-90": 0, "90+": 0 },
+        invoices: [],
+      }
+      byCustomer.set(row.customer_id, stmt)
+    }
+    stmt.totalOpenCents += openCents
+    stmt.buckets[bucket] += openCents
+    stmt.invoices.push({ ...row, bucket, open_cents: openCents })
+  }
+  return Array.from(byCustomer.values()).sort((a, b) => b.totalOpenCents - a.totalOpenCents)
+}
+
+/** Per-customer AR rollup for the "Customer statements" panel on the money page. */
+export async function getCustomerStatements(carrierId: string): Promise<CustomerStatement[]> {
+  return groupStatementsByCustomer(await loadOpenInvoicesByCustomer(carrierId))
+}
+
+export async function getCustomerStatementDetail(
+  carrierId: string,
+  customerId: string
+): Promise<CustomerStatement | null> {
+  const rows = await loadOpenInvoicesByCustomer(carrierId, customerId)
+  return groupStatementsByCustomer(rows)[0] ?? null
+}
+
+/** Emails every open invoice for one customer as a single statement PDF (AR aging, one click). */
+export async function sendCustomerStatement(
+  carrierId: string,
+  customerId: string,
+  actor: { id: string; name: string }
+): Promise<{ emailed: boolean; to?: string; totalOpenCents: number; invoiceCount: number; error?: string }> {
+  const statement = await getCustomerStatementDetail(carrierId, customerId)
+  if (!statement) throw new Error("No open invoices for this customer")
+  if (!statement.billingEmail) throw new Error("No billing email on file for this customer")
+
+  const carrier = await getCarrier(carrierId)
+  if (!isEmailConfigured()) {
+    return {
+      emailed: false,
+      totalOpenCents: statement.totalOpenCents,
+      invoiceCount: statement.invoices.length,
+      error: "Email not configured (set SMTP_USER/SMTP_PASS) — download the PDF from the money page and send it manually.",
+    }
+  }
+
+  const pdfBytes = await buildStatementPdf({
+    brand: {
+      name: carrier?.name ?? "Thind Transport", address: carrier?.address, phone: carrier?.phone,
+      email: carrier?.email, dot: carrier?.dot_number, mc: carrier?.mc_number,
+    },
+    customerName: statement.customerName,
+    statementDate: new Date().toISOString().slice(0, 10),
+    invoices: statement.invoices.map((inv) => ({
+      number: inv.number, loadReference: inv.load_reference ?? "—", dueOn: String(inv.due_on).slice(0, 10),
+      bucket: inv.bucket, openCents: inv.open_cents,
+    })),
+    totalOpenCents: statement.totalOpenCents,
+  })
+
+  const transport = createMailTransport()
+  await transport.sendMail({
+    from: mailFrom(carrier?.name ?? "Accounts Receivable"),
+    to: statement.billingEmail,
+    subject: `Statement of account — ${carrier?.name ?? "Thind Transport"} (${statement.invoices.length} open invoice${statement.invoices.length === 1 ? "" : "s"})`,
+    text: `Attached is your current statement of account.\n\nOpen balance: $${(statement.totalOpenCents / 100).toFixed(2)}\nOpen invoices: ${statement.invoices.map((i) => i.number).join(", ")}\n\n${carrier?.name ?? ""}`,
+    attachments: [{
+      filename: `statement-${statement.customerName.replace(/[^a-zA-Z0-9]/g, "-")}.pdf`,
+      content: Buffer.from(pdfBytes), contentType: "application/pdf",
+    }],
+  })
+
+  const sentAt = new Date().toISOString()
+  await query(
+    `UPDATE hub.invoices SET sent_log = sent_log || $2::jsonb WHERE id = ANY($1::uuid[])`,
+    [statement.invoices.map((inv) => inv.id), JSON.stringify([{ to: statement.billingEmail, at: sentAt, kind: "statement" }])]
+  )
+  await logAudit({
+    carrierId, actorId: actor.id, actorName: actor.name,
+    entityType: "customer", entityId: customerId, action: "statement-sent",
+    newValue: { to: statement.billingEmail, totalOpenCents: statement.totalOpenCents, invoiceCount: statement.invoices.length },
+  })
+
+  return {
+    emailed: true, to: statement.billingEmail,
+    totalOpenCents: statement.totalOpenCents, invoiceCount: statement.invoices.length,
+  }
 }
 
 /** Factoring packet: invoice + rate con + POD emailed to the factor. */

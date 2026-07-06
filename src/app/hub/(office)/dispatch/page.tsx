@@ -1,10 +1,11 @@
 import Link from "next/link"
-import { Plus, CloudLightning, ClipboardPaste, AlertTriangle } from "lucide-react"
+import { Plus, CloudLightning, ClipboardPaste, AlertTriangle, Clock } from "lucide-react"
 import { listLoads, getLoadStops } from "@/lib/hub/loads"
 import { listDrivers, dispatchLegality } from "@/lib/hub/drivers"
 import { listTrucks } from "@/lib/hub/fleet"
 import { getCarrierSettings } from "@/lib/hub/settings"
 import { getActiveAlerts, type WeatherAlert } from "@/lib/hub/weather"
+import { getDwellingStops } from "@/lib/hub/detention"
 import { requireOfficeUser } from "@/lib/hub/session"
 import {
   BOARD_STATUSES, STATUS_LABELS, fmtCents, loadTotalCents, type Load,
@@ -40,15 +41,17 @@ async function weatherForLoads(carrierId: string, loads: Load[]): Promise<Map<st
 
 export default async function DispatchBoardPage() {
   const user = await requireOfficeUser()
-  const [loads, drivers, trucks, settings] = await Promise.all([
+  const [loads, drivers, trucks, settings, dwelling] = await Promise.all([
     listLoads(user.carrierId, { status: "active" }),
     listDrivers(user.carrierId),
     listTrucks(user.carrierId),
     getCarrierSettings(user.carrierId),
+    getDwellingStops(user.carrierId),
   ])
   const weather = await weatherForLoads(user.carrierId, loads)
   const driverById = new Map(drivers.map((d) => [d.id, d]))
   const truckById = new Map(trucks.map((t) => [t.id, t]))
+  const dwellingByLoad = new Map(dwelling.map((d) => [d.loadId, d]))
 
   const byStatus = new Map<string, Load[]>()
   for (const status of BOARD_STATUSES) byStatus.set(status, [])
@@ -95,6 +98,7 @@ export default async function DispatchBoardPage() {
                 ) : (
                   column.map((load) => {
                     const alert = weather.get(load.id)
+                    const dwell = dwellingByLoad.get(load.id)
                     const docKinds = load.doc_kinds ?? []
                     const totalCents = loadTotalCents(load)
                     const totalMiles = (load.loaded_miles ?? 0) + (load.deadhead_miles ?? 0)
@@ -147,6 +151,15 @@ export default async function DispatchBoardPage() {
                           <p className="mt-2 flex items-center gap-1.5 rounded-lg bg-warn-soft border border-warn-soft px-2 py-1 text-[11px] font-semibold text-warn">
                             <CloudLightning className="h-3.5 w-3.5 shrink-0" /> {alert.event} on route
                           </p>
+                        ) : null}
+                        {dwell ? (
+                          <Link
+                            href={`/hub/loads/${load.id}`}
+                            className="mt-2 flex items-center gap-1.5 rounded-lg bg-warn-soft border border-warn-soft px-2 py-1 text-[11px] font-semibold text-warn hover:bg-hover"
+                          >
+                            <Clock className="h-3.5 w-3.5 shrink-0" />
+                            Dwelling {dwell.hoursOver.toFixed(1)}h over free time (~{fmtCents(dwell.estimatedCents)}) — mark departed to bill it
+                          </Link>
                         ) : null}
                         <div className="mt-2.5 flex items-center justify-between gap-2">
                           <div className="flex gap-1">

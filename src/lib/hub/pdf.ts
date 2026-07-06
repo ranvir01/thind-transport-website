@@ -234,6 +234,44 @@ export async function buildInvoicePdf(input: InvoicePdfInput): Promise<Uint8Arra
   return b.doc.save()
 }
 
+// ---- Customer statement (AR rollup, one PDF per customer) ----
+
+export interface StatementPdfInput {
+  brand: PdfBrand
+  customerName: string
+  statementDate: string
+  invoices: { number: string; loadReference: string; dueOn: string; bucket: string; openCents: number }[]
+  totalOpenCents: number
+}
+
+export async function buildStatementPdf(input: StatementPdfInput): Promise<Uint8Array> {
+  const b = await newBuilder()
+  b.header(input.brand, "Statement of Account")
+  b.keyValue([
+    ["Customer", input.customerName],
+    ["Statement date", input.statementDate],
+    ["Open invoices", String(input.invoices.length)],
+  ])
+  b.table(
+    [
+      { header: "INVOICE", width: 100 },
+      { header: "LOAD", width: 120 },
+      { header: "DUE", width: 90 },
+      { header: "AGING", width: 90 },
+      { header: "OPEN", width: 140, align: "right" },
+    ],
+    input.invoices.map((inv) => [
+      inv.number,
+      inv.loadReference,
+      inv.dueOn,
+      inv.bucket === "current" ? "Current" : `${inv.bucket} days`,
+      fmtCentsExact(inv.openCents),
+    ])
+  )
+  b.totalLine("TOTAL DUE", fmtCentsExact(input.totalOpenCents))
+  return b.doc.save()
+}
+
 // ---- Settlement statement ----
 
 export interface SettlementPdfInput {
