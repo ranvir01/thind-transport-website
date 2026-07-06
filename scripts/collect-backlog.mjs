@@ -74,28 +74,6 @@ function collectItems() {
   return items
 }
 
-/** Join wrapped continuation lines onto the preceding `-` bullet. */
-function parseBacklogBullets(block) {
-  const bullets = []
-  let current = null
-
-  for (const line of block.split("\n")) {
-    const bullet = line.match(/^[-*]\s*(.*)/)
-    if (bullet) {
-      const text = bullet[1].trim()
-      if (text) {
-        if (current) bullets.push(current)
-        current = text
-      }
-      continue
-    }
-    const cont = line.trim()
-    if (cont && current) current = `${current} ${cont}`
-  }
-  if (current) bullets.push(current)
-  return bullets
-}
-
 function rankItem(text) {
   // Fleet-configuration items need owner approval — never auto-pick for deploy agent.
   if (/^owner:/i.test(text)) return PRIORITY.length - 1
