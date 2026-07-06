@@ -3,7 +3,7 @@ import { query } from "./db"
 export type ComplianceColor = "red" | "amber" | "green"
 
 export interface ComplianceEntry {
-  entity: "driver" | "truck" | "company"
+  entity: "driver" | "truck" | "trailer" | "company"
   entityId: string | null
   name: string
   kind: string
@@ -63,6 +63,21 @@ export async function complianceEntries(carrierId: string): Promise<ComplianceEn
     entries.push({ entity: "truck", entityId: truck.id, name, kind: "Registration", due: truck.registration_expiry, color: colorFor(truck.registration_expiry, now), href })
     entries.push({ entity: "truck", entityId: truck.id, name, kind: "Annual inspection (396.17)", due: truck.inspection_due, color: colorFor(truck.inspection_due, now), href })
     entries.push({ entity: "truck", entityId: truck.id, name, kind: "Insurance", due: truck.insurance_expiry, color: colorFor(truck.insurance_expiry, now), href })
+  }
+
+  const trailers = await query<{
+    id: string; unit_number: string
+    registration_expiry: string | null; inspection_due: string | null
+  }>(
+    `SELECT id, unit_number, registration_expiry, inspection_due
+     FROM hub.trailers WHERE carrier_id = $1 AND deleted_at IS NULL AND status <> 'retired'`,
+    [carrierId]
+  )
+  for (const trailer of trailers) {
+    const name = `Trailer #${trailer.unit_number}`
+    const href = `/hub/fleet/trailers/${trailer.id}`
+    entries.push({ entity: "trailer", entityId: trailer.id, name, kind: "Registration", due: trailer.registration_expiry, color: colorFor(trailer.registration_expiry, now), href })
+    entries.push({ entity: "trailer", entityId: trailer.id, name, kind: "Annual inspection (396.17)", due: trailer.inspection_due, color: colorFor(trailer.inspection_due, now), href })
   }
 
   // Maintenance schedules due by date
