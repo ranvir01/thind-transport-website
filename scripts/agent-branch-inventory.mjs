@@ -58,7 +58,10 @@ function unpickedCommitCount(ref, base) {
   const out = git(`cherry ${base} ${ref}`)
   if (!out) return revCount(base, ref)
   const lines = out.split("\n").filter(Boolean)
-  const unpicked = lines.filter((l) => l.startsWith("-")).length
+  // git cherry: "+" = commit NOT in base (unpicked); "-" = change already in
+  // base (cherry-equivalent, picked). Counting "-" inverted the queue: new
+  // branches read as absorbed, absorbed ones as pending.
+  const unpicked = lines.filter((l) => l.startsWith("+")).length
   return unpicked
 }
 
