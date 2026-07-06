@@ -60,6 +60,7 @@ Run `npx maildev --smtp 1025 --web 1080`, then set `SMTP_HOST=localhost` and `SM
 3. **Postgres returns snake_case**, TypeScript uses camelCase. Handle both: `driver.firstName || driver.first_name`.
 4. Zod schemas must stay in sync with React Hook Form fields or steps silently refuse to advance.
 5. **Blank `NEXTAUTH_SECRET` / `AUTH_SECRET`** breaks hub login only (`MissingSecret` on `/api/auth/error`); marketing pages and `/apply` still render. `src/proxy.ts` reads `NEXTAUTH_SECRET ?? AUTH_SECRET` — set at least one in `.env.local` before E2E or Playwright hub drives.
+6. **Don't copy `.env.example`'s placeholder `SMTP_USER`/`SMTP_PASS` verbatim into `.env.local`.** `isEmailConfigured()` (`src/lib/mailer.ts`) only checks that both are non-empty, so the literal placeholders (`your-gmail@gmail.com` / `your-16-character-app-password`) read as "configured" and every send (customer statements, settlement/invoice emails) tries a real SMTP auth against `smtp.gmail.com` and hangs for the full 8s `connectionTimeout` before failing, instead of hitting the graceful "email not configured" toast path. Leave both blank (or point at local maildev) for local rig / E2E runs.
 
 ## Pre-Commit Checklist
 
