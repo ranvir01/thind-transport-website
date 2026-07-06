@@ -54,6 +54,14 @@ function tip(ref) {
   return { hash, subject, date }
 }
 
+function unpickedCommitCount(ref, base) {
+  const out = git(`cherry ${base} ${ref}`)
+  if (!out) return revCount(base, ref)
+  const lines = out.split("\n").filter(Boolean)
+  const unpicked = lines.filter((l) => l.startsWith("-")).length
+  return unpicked
+}
+
 function buildInventory({ pendingOnly }) {
   git("fetch origin --quiet")
   const branches = listClaudeBranches()
@@ -65,11 +73,12 @@ function buildInventory({ pendingOnly }) {
 
     const aheadMain = revCount(MAIN, ref)
     const aheadIntegrator = revCount(INTEGRATOR, ref)
-    const onMain = aheadMain === 0
-    const onIntegrator = aheadIntegrator === 0
+    const unpickedOnMain = unpickedCommitCount(ref, MAIN)
+    const onMain = unpickedOnMain === 0
+    const onIntegrator = revCount(INTEGRATOR, ref) === 0 && unpickedCommitCount(ref, INTEGRATOR) === 0
 
     if (pendingOnly && onMain) continue
-    if (aheadMain === 0 && aheadIntegrator === 0) continue
+    if (aheadMain === 0 && aheadIntegrator === 0 && onMain) continue
 
     const files = changedFiles(ref, MAIN)
     const lane = inferLane(files.length ? files : changedFiles(ref, INTEGRATOR))
@@ -79,6 +88,7 @@ function buildInventory({ pendingOnly }) {
       branch: `claude/${name}`,
       aheadMain,
       aheadIntegrator,
+      unpickedOnMain,
       onMain,
       onIntegrator,
       suggestedLane: lane.lane,
@@ -86,7 +96,7 @@ function buildInventory({ pendingOnly }) {
       laneConfidence: lane.confidence,
       files: files.slice(0, 8),
       tip: t,
-      priority: aheadMain * 100 + aheadIntegrator,
+      priority: unpickedOnMain * 100 + aheadIntegrator,
     })
   }
 
@@ -120,7 +130,7 @@ function main() {
   for (const r of rows) {
     console.log(`  ${r.branch}`)
     console.log(`    tip: ${r.tip?.hash} ${r.tip?.subject}`)
-    console.log(`    ahead of main: ${r.aheadMain} · ahead of integrator: ${r.aheadIntegrator}`)
+    console.log(`    ahead of main: ${r.unpickedOnMain} unpicked (${r.aheadMain} raw) · ahead of integrator: ${r.aheadIntegrator}`)
     console.log(`    suggested lane: ${r.suggestedLane} (${r.laneLabel}, ${r.laneConfidence})`)
     if (r.files.length) console.log(`    files: ${r.files.join(", ")}${r.files.length >= 8 ? "…" : ""}`)
     console.log("")
