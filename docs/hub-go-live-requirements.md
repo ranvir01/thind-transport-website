@@ -11,10 +11,11 @@ This is the checklist to take LoadOff from **demo-ready** to **Thind Transport p
 | Item | Where to set | Why |
 |------|----------------|-----|
 | **Postgres URL** | Vercel → `POSTGRES_URL` | System of record (loads, money, users). Use Vercel Postgres or Neon. |
-| **NextAuth secret** | `NEXTAUTH_SECRET` | `openssl rand -base64 32` |
+| **NextAuth secret** | `NEXTAUTH_SECRET` (or `AUTH_SECRET`, Auth.js v5's native name — either works) | `openssl rand -base64 32` |
 | **NextAuth URL** | `NEXTAUTH_URL` | `https://thindtransport.com` (or your hub domain) |
 | **Credentials encryption** | `CREDENTIALS_KEY` | 32+ random chars — encrypts fuel/telematics/mailbox passwords in DB |
 | **Cron secret** | `CRON_SECRET` | Protects `/api/hub/cron/*` (compliance scan, AR reminders, mailbox, FMCSA recheck, etc.) |
+| **Blob storage** | `BLOB_READ_WRITE_TOKEN` (Vercel Blob) | Vercel's filesystem is ephemeral — without this, POD uploads and generated invoice/settlement PDFs are lost between invocations |
 
 After env is set:
 
@@ -110,7 +111,6 @@ Printable owner guide: `docs/production-intake/thind-transport.md`
 |------|---------|---------|
 | Web Push (driver notifications) | `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_CONTACT` | `npx web-push generate-vapid-keys` |
 | Self-hosted geocoder | `GEOCODER_BASE_URL` | Scale geocoding beyond Nominatim rate limits |
-| Blob storage | `BLOB_READ_WRITE_TOKEN` (Vercel → Storage → Blob) | Durable POD uploads + invoice/settlement PDFs |
 
 ---
 
