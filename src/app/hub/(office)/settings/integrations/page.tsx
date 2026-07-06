@@ -15,16 +15,27 @@ export const dynamic = "force-dynamic"
 // side of the server/client boundary.
 const MANUAL_SYNC_PROVIDERS = new Set(["terminal", "efs", "comdata", "wex", "qbo"])
 
+// Providers with a webhook event processor (src/app/api/hub/webhooks/[provider]/route.ts's
+// EVENT_PROCESSORS) get a "retry unprocessed" surface — an event that couldn't
+// be matched on first delivery otherwise sits stuck with no way to re-run it.
+const EVENT_RETRY_PROVIDERS = new Set(["factor"])
+
 export default async function IntegrationsPage() {
   const user = await requireOwner()
-  const [connectedFlags, syncs] = await Promise.all([
+  const [connectedFlags, syncs, pendingEventRows] = await Promise.all([
     Promise.all(PROVIDERS.map((p) => hasCredentials(user.carrierId, p.id as IntegrationProvider))),
     query<{ source: string; started_at: string; ok: boolean | null; counts: unknown; error: string | null }>(
       `SELECT source, started_at, ok, counts, error FROM hub.integration_syncs
        WHERE carrier_id = $1 OR carrier_id IS NULL ORDER BY started_at DESC LIMIT 15`,
       [user.carrierId]
     ),
+    query<{ provider: string; count: string }>(
+      `SELECT provider, COUNT(*)::text AS count FROM hub.integration_events
+       WHERE carrier_id = $1 AND processed_at IS NULL GROUP BY provider`,
+      [user.carrierId]
+    ),
   ])
+  const pendingEventsByProvider = new Map(pendingEventRows.map((r) => [r.provider, Number(r.count)]))
 
   // Every card comes from the provider registry — adding a provider there is
   // the whole job; this page never hardcodes a list again.
@@ -44,6 +55,7 @@ export default async function IntegrationsPage() {
       spec.sync === "webhook"
         ? `${baseUrl}/api/hub/webhooks/${spec.id}?carrier=${user.carrierId}`
         : undefined,
+    pendingEvents: EVENT_RETRY_PROVIDERS.has(spec.id) ? (pendingEventsByProvider.get(spec.id) ?? 0) : undefined,
   }))
 
   const pushConfigured = Boolean(process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY)

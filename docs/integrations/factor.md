@@ -67,14 +67,24 @@ office "record a payment" form uses, so status transitions, audit logging,
 and the load-status cascade all go through one code path. Email-the-PDF stays
 the fallback for both directions until then.
 
+## Manual re-drain for unmatched events
+
+An event `processFactorEvent` can't yet match (webhook arrived before the
+invoice existed, a malformed payload) sits in `hub.integration_events` with
+`processed_at IS NULL` — nothing re-runs it on its own. The Integrations
+settings page now surfaces a per-carrier pending count for `factor` and a
+"Retry N events" button (`retryIntegrationEventsAction` →
+`retryUnprocessedFactorEvents` in `factor.ts`), which re-applies
+`processFactorEvent` to the oldest 50 pending rows and marks each one done
+using the same applied/no-op rule (`isEventOutcomeFinal`, `webhooks.ts`) the
+live webhook route uses — a manual retry never marks something "done"
+differently than a real delivery would have.
+
 ## Open questions for the next pass
 
 - Wire an actual "Submit to factor" button — this lane's territory doesn't
   include the invoice detail page (`src/app/hub/(office)/money/invoices/[id]/page.tsx`)
   or its actions (`src/app/hub/_actions/money.ts`), both office-lane territory.
   `submitInvoiceToFactor(carrierId, invoiceId, actor)` is ready to call.
-- An event `processFactorEvent` can't yet match (no matching invoice, missing
-  amount) stays unprocessed in `hub.integration_events` for a manual re-drain —
-  no admin UI exists yet to list/retry those.
 - Confirm a real factor's request/webhook shape and flip `registry.ts` status
   to `live`.

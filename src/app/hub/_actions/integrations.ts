@@ -11,6 +11,7 @@ import { runEfsSync } from "@/lib/hub/integrations/efs"
 import { runComdataSync } from "@/lib/hub/integrations/comdata"
 import { runWexSync } from "@/lib/hub/integrations/wex"
 import { runQboSync } from "@/lib/hub/integrations/qbo"
+import { retryUnprocessedFactorEvents } from "@/lib/hub/integrations/factor"
 import { logAudit } from "@/lib/hub/audit"
 import { query } from "@/lib/hub/db"
 
@@ -99,6 +100,34 @@ export async function syncIntegrationNowAction(
     }
   } catch (err) {
     return { ok: false, error: err instanceof Error ? err.message : "Sync failed" }
+  }
+}
+
+/**
+ * Manual re-drain for webhook events a live delivery couldn't yet match (no
+ * invoice, missing fields) — they sit in hub.integration_events with
+ * processed_at IS NULL until someone retries. One provider today (factor);
+ * add a case here when a second push-style provider gets a processor.
+ */
+export async function retryIntegrationEventsAction(
+  provider: IntegrationProvider
+): Promise<Result & { summary?: string }> {
+  try {
+    const user = await requireOwner()
+    if (provider !== "factor") throw new Error(`No event retry wired for ${provider} yet`)
+    const result = await retryUnprocessedFactorEvents(user.carrierId)
+    await logAudit({
+      carrierId: user.carrierId, actorId: user.id, actorName: user.name,
+      entityType: "integration", entityId: provider, action: "retry_events",
+      newValue: result,
+    })
+    revalidatePath("/hub/settings/integrations")
+    return {
+      ok: true,
+      summary: `${result.applied} applied, ${result.stillUnprocessed} still unmatched (of ${result.retried} retried)`,
+    }
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : "Retry failed" }
   }
 }
 

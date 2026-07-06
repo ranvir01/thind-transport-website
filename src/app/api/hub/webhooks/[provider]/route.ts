@@ -23,7 +23,7 @@ import { NextResponse } from "next/server"
 import { getCredentials, type IntegrationProvider } from "@/lib/hub/credentials"
 import { providerSpec } from "@/lib/hub/integrations/registry"
 import {
-  EVENT_ID_HEADER, SIGNATURE_HEADER, verifyWebhookSignature, webhookEventId,
+  EVENT_ID_HEADER, SIGNATURE_HEADER, isEventOutcomeFinal, verifyWebhookSignature, webhookEventId,
 } from "@/lib/hub/integrations/webhooks"
 import { processFactorEvent } from "@/lib/hub/integrations/factor"
 import { query, queryOne } from "@/lib/hub/db"
@@ -94,7 +94,7 @@ export async function POST(
   if (!duplicate && processor) {
     try {
       processed = await processor(carrierId, { external_id: externalId, kind, payload: payload as Record<string, unknown> })
-      if (processed.applied || processed.reason === "already recorded" || processed.reason?.startsWith("unhandled event kind")) {
+      if (isEventOutcomeFinal(processed)) {
         await query(
           `UPDATE hub.integration_events SET processed_at = NOW() WHERE carrier_id = $1 AND provider = $2 AND external_id = $3`,
           [carrierId, provider, externalId]
