@@ -1,7 +1,6 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
 import { signIn, getSession } from "next-auth/react"
 import { toast } from "sonner"
 import { Loader2, LogIn } from "lucide-react"
@@ -9,23 +8,27 @@ import { btnPrimaryCls, fieldCls, labelCls, linkAccentCls, Panel } from "@/compo
 import { PRODUCT } from "@/lib/hub/product"
 import { hubLandingPath } from "@/lib/hub/landing"
 
-/** Session fetch can race the post-login hard navigation; one retry covers it. */
+/** Session fetch can race signIn; retry before we pick the landing route. */
 async function sessionAfterLogin() {
-  for (let attempt = 0; attempt < 2; attempt++) {
+  for (let attempt = 0; attempt < 5; attempt++) {
     try {
       const session = await getSession({ broadcast: false })
       if (session) return session
+      const res = await fetch("/api/auth/session")
+      if (res.ok) {
+        const data = (await res.json()) as { user?: { role?: string } }
+        if (data?.user) return data
+      }
     } catch {
-      // transient authjs fetch abort — retry once before redirect
+      // transient authjs fetch abort — retry
     }
-    if (attempt === 0) await new Promise((r) => setTimeout(r, 150))
+    await new Promise((r) => setTimeout(r, 100 * (attempt + 1)))
   }
   return null
 }
 
 /** Client login card. `showDemo` comes from the server page (HUB_DEMO_LOGIN). */
 export function LoginCard({ showDemo }: { showDemo: boolean }) {
-  const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [form, setForm] = useState({ email: "", password: "" })
   const [roleHint, setRoleHint] = useState<string | null>(null)
@@ -56,17 +59,15 @@ export function LoginCard({ showDemo }: { showDemo: boolean }) {
         password: form.password,
         redirect: false,
       })
-      if (result?.ok) {
-        const session = await sessionAfterLogin()
-        const role = (session?.user as { role?: string } | undefined)?.role
-        // Client navigation keeps hub SessionProvider mounted so its session fetch
-        // is not aborted (window.location.href caused authjs "Failed to fetch" noise).
-        router.push(hubLandingPath(role))
-        router.refresh()
-      } else {
+      if (result?.error || !result?.ok) {
         toast.error("Invalid email or password")
         setLoading(false)
+        return
       }
+
+      const session = await sessionAfterLogin()
+      const role = (session?.user as { role?: string } | undefined)?.role
+      window.location.assign(hubLandingPath(role))
     } catch {
       toast.error("Something went wrong. Please try again.")
       setLoading(false)
