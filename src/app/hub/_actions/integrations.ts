@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache"
 import { requireOwner } from "@/lib/hub/session"
 import {
-  credentialsConfigured, deleteCredentials, saveCredentials, type IntegrationProvider,
+  credentialsConfigured, deleteCredentials, getCredentials, saveCredentials, type IntegrationProvider,
 } from "@/lib/hub/credentials"
 import { allowedFields } from "@/lib/hub/integrations/registry"
 import { runTelematicsSync } from "@/lib/hub/telematics"
@@ -38,7 +38,12 @@ export async function saveIntegrationCredentialsAction(
       if (payload[field]?.trim()) clean[field] = payload[field].trim()
     }
     if (Object.keys(clean).length === 0) return { ok: false, error: "Fill in the credentials" }
-    await saveCredentials(user.carrierId, provider, clean, user.id)
+    // Merge over whatever is already stored so rotating one field (e.g. a
+    // leaked webhook secret) never blanks out the others — saveCredentials
+    // itself is a full overwrite (see qbo.ts's refresh-token rotation, which
+    // follows the same merge-then-save convention).
+    const existing = await getCredentials(user.carrierId, provider)
+    await saveCredentials(user.carrierId, provider, { ...existing, ...clean }, user.id)
     await logAudit({
       carrierId: user.carrierId, actorId: user.id, actorName: user.name,
       entityType: "integration", entityId: provider, action: "credentials_saved",
