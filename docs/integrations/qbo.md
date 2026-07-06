@@ -85,16 +85,26 @@ internal Ids, not ours:
   QBO" button (this lane's territory doesn't include the invoice detail
   page, `src/app/hub/(office)/money/invoices/[id]/page.tsx`).
 
-Guards a double push the same way `submitInvoiceToFactor` guards a double
-submission: an entry already present in `hub.invoices.sent_log` (kind
-`"qbo-push"`) short-circuits with `{ connected: true, alreadyPushed: true }`
-before any fetch — reusing that column instead of a new one.
+A second push for the same invoice (an entry already present in
+`hub.invoices.sent_log` with kind `"qbo-push"` or `"qbo-push-update"`) isn't
+a blind short-circuit: `findQboInvoiceRef` looks the QBO invoice back up by
+`DocNumber` and compares its `TotalAmt` to our current `amount_cents`.
+Unchanged means a true no-op — `{ connected: true, alreadyPushed: true }`
+with no further fetch. Changed (a rate/accessorial edit since the original
+push) sends a sparse update instead: `POST .../invoice?operation=update`
+with the looked-up `Id`/`SyncToken` and `sparse: true`, so only the `Line`
+amount moves and everything else on the QBO side is left alone. A successful
+update appends its own `sent_log` entry (kind `"qbo-push-update"`) rather
+than reusing `"qbo-push"`, so the audit trail shows create vs. update
+separately.
 
 **Assumed/unconfirmed until a sandbox exists:** the `Customer`/`Item` create
 bodies (`DisplayName`, `Type: "Service"`, `IncomeAccountRef: { value: "1" }`
-as a placeholder income account) and the `Invoice` create body shape
-(`CustomerRef`, `Line[].SalesItemLineDetail.ItemRef`). Update isn't built —
-this only creates; re-pushing after an invoice edit is the next QBO pass.
+as a placeholder income account), the `Invoice` create body shape
+(`CustomerRef`, `Line[].SalesItemLineDetail.ItemRef`), and QBO's actual
+sparse-update semantics for `Line` (assumed to replace the array wholesale
+since no per-line `Id` is tracked — confirm this doesn't duplicate lines on
+a real account before flipping `registry.ts`'s `qbo` entry to live).
 
 ## What activates when the owner pastes keys
 
@@ -115,7 +125,8 @@ stays the fallback for both directions until then.
   `pushInvoiceToQbo(carrierId, invoiceId, actor)` is ready to call.
 - Decide whether accessorials need their own QBO line items instead of one
   flat "Freight Service" line (see `pushInvoiceToQbo` above).
-- Support updating an already-pushed invoice (rate/accessorial edits after
-  the first push currently never reach QBO).
+- Confirm QBO's sparse-update semantics for `Line` on a real sandbox account
+  before flipping to live — `pushInvoiceToQbo`'s update path assumes
+  resending the full `Line` array is safe without a per-line `Id`.
 - Confirm the real sandbox response shape (`Customer`/`Item`/`Invoice`
   create bodies) and flip `registry.ts` status to `live`.
