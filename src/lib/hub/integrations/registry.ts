@@ -103,7 +103,7 @@ export const PROVIDERS: readonly ProviderSpec[] = [
       { key: "feedUser", label: "Feed username" },
       { key: "feedPassword", label: "Feed password", secret: true },
     ],
-    fallback: "Fuel statement CSV import", sync: "poll", status: "stub",
+    fallback: "Fuel statement CSV import", sync: "poll", status: "live", cronJob: "wex-sync",
   },
   {
     id: "comdata", label: "Comdata fuel card", domain: "fuel",

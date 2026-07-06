@@ -9,6 +9,7 @@ import { computeDriverScores } from "@/lib/hub/recruiting"
 import { recheckActiveCustomers } from "@/lib/hub/vetting"
 import { runTelematicsSync } from "@/lib/hub/telematics"
 import { runEfsSync } from "@/lib/hub/integrations/efs"
+import { runWexSync } from "@/lib/hub/integrations/wex"
 import { pollDocsMailbox } from "@/lib/hub/mailbox"
 import { sendOwnerDigest } from "@/lib/hub/digest"
 import { getCarrierSettings } from "@/lib/hub/settings"
@@ -87,6 +88,9 @@ export async function GET(
       } else if (job === "efs-sync") {
         // Integrations lane: daily EFS fuel-card feed → hub.fuel_transactions.
         results[carrier.id] = await runEfsSync(carrier.id)
+      } else if (job === "wex-sync") {
+        // Integrations lane: daily WEX fuel-card feed → hub.fuel_transactions.
+        results[carrier.id] = await runWexSync(carrier.id)
       } else if (job === "owner-digest") {
         // Phase 6: the Monday-morning numbers email.
         results[carrier.id] = await sendOwnerDigest(carrier.id)
