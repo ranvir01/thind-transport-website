@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import { getTrackedLoad } from "@/lib/hub/sharelinks"
 import { STATUS_LABELS, LOAD_STATUSES, type LoadStatus } from "@/lib/hub/types"
+import { TrackRefresher } from "@/components/hub/TrackRefresher"
 
 export const dynamic = "force-dynamic"
 
@@ -49,9 +50,11 @@ export default async function TrackPage({ params }: { params: Promise<{ token: s
   const { load, stops, carrierName, latestPosition } = tracked
   const status = publicStatus(load.status)
   const cancelled = load.status === "cancelled"
+  const live = !cancelled && status.index < PUBLIC_FLOW.length - 1
 
   return (
     <div className="min-h-screen px-4 py-10">
+      <TrackRefresher active={live} />
       <div className="mx-auto w-full max-w-lg">
         <div className="rounded-2xl border border-white/10 bg-[linear-gradient(180deg,rgba(20,31,47,0.94),rgba(11,20,34,0.96))] p-6 md:p-8">
           <p className="text-[11px] font-bold uppercase tracking-[0.3em] text-gold">{carrierName}</p>
