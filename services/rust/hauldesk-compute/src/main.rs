@@ -150,19 +150,50 @@ fn json_response(status: u16, body: &str) -> Response<std::io::Cursor<Vec<u8>>> 
 
 /// Constant-time-ish comparison is overkill for a LAN sidecar, but never leak
 /// which prefix matched: compare full bytes only when lengths agree.
-fn secret_matches(request: &tiny_http::Request, secret: &str) -> bool {
-    let sent = request
-        .headers()
-        .iter()
-        .find(|h| h.field.as_str().as_str().eq_ignore_ascii_case("x-hauldesk-secret"))
-        .map(|h| h.value.as_str().to_string())
-        .unwrap_or_default();
+fn secret_matches_header(sent: Option<&str>, secret: &str) -> bool {
+    let sent = sent.unwrap_or_default();
     sent.len() == secret.len()
         && sent
             .bytes()
             .zip(secret.bytes())
             .fold(0u8, |acc, (a, b)| acc | (a ^ b))
             == 0
+}
+
+fn header_value<'a>(request: &'a tiny_http::Request, name: &str) -> Option<&'a str> {
+    request
+        .headers()
+        .iter()
+        .find(|h| h.field.as_str().as_str().eq_ignore_ascii_case(name))
+        .map(|h| h.value.as_str())
+}
+
+/// Auth-gate + route dispatch, decoupled from the live `tiny_http::Request` so
+/// the handler wiring below is unit-tested as built (mirrors newMux() in the
+/// Go worker's main_test.go: main and the tests share this exact logic).
+fn handle(method: &Method, path: &str, secret_header: Option<&str>, body: &str, secret: &str) -> (u16, String) {
+    // /health stays open for load-balancer checks; work endpoints are gated.
+    if path != "/health" && !secret.is_empty() && !secret_matches_header(secret_header, secret) {
+        return (401, r#"{"error":"unauthorized"}"#.to_string());
+    }
+
+    match (method, path) {
+        (Method::Get, "/health") => (
+            200,
+            r#"{"service":"hauldesk-compute","status":"ok"}"#.to_string(),
+        ),
+        (Method::Post, "/ifta/summary") => match serde_json::from_str::<IftaInputs>(body) {
+            Ok(inputs) => {
+                let result = compute_ifta(&inputs);
+                match serde_json::to_string(&result) {
+                    Ok(json) => (200, json),
+                    Err(_) => (500, r#"{"error":"encode failed"}"#.to_string()),
+                }
+            }
+            Err(_) => (400, r#"{"error":"invalid ifta inputs"}"#.to_string()),
+        },
+        _ => (404, r#"{"error":"not found"}"#.to_string()),
+    }
 }
 
 fn main() {
@@ -176,39 +207,16 @@ fn main() {
     for mut request in server.incoming_requests() {
         let path = request.url().to_string();
         let method = request.method().clone();
+        let secret_header = header_value(&request, "x-hauldesk-secret").map(|s| s.to_string());
 
-        // /health stays open for load-balancer checks; work endpoints are gated.
-        if path != "/health" && !secret.is_empty() && !secret_matches(&request, &secret) {
-            let _ = request.respond(json_response(401, r#"{"error":"unauthorized"}"#));
+        let mut body = String::new();
+        if method == Method::Post && request.as_reader().read_to_string(&mut body).is_err() {
+            let _ = request.respond(json_response(400, r#"{"error":"bad request"}"#));
             continue;
         }
 
-        let response = match (method, path.as_str()) {
-            (Method::Get, "/health") => json_response(
-                200,
-                r#"{"service":"hauldesk-compute","status":"ok"}"#,
-            ),
-            (Method::Post, "/ifta/summary") => {
-                let mut body = String::new();
-                if request.as_reader().read_to_string(&mut body).is_err() {
-                    json_response(400, r#"{"error":"bad request"}"#)
-                } else {
-                    match serde_json::from_str::<IftaInputs>(&body) {
-                        Ok(inputs) => {
-                            let result = compute_ifta(&inputs);
-                            match serde_json::to_string(&result) {
-                                Ok(json) => json_response(200, &json),
-                                Err(_) => json_response(500, r#"{"error":"encode failed"}"#),
-                            }
-                        }
-                        Err(_) => json_response(400, r#"{"error":"invalid ifta inputs"}"#),
-                    }
-                }
-            }
-            _ => json_response(404, r#"{"error":"not found"}"#),
-        };
-
-        let _ = request.respond(response);
+        let (status, resp_body) = handle(&method, &path, secret_header.as_deref(), &body, &secret);
+        let _ = request.respond(json_response(status, &resp_body));
     }
 }
 #[cfg(test)]
@@ -367,5 +375,62 @@ mod tests {
         ] {
             assert!(json.contains(key), "missing camelCase key {key} in {json}");
         }
+    }
+
+    // Auth-middleware suite (parity with the Go worker's TestHealthOpenWithSecretSet
+    // / TestSecretGate): health stays open, work endpoints 401 without/with-wrong
+    // header and 200 with the matching one.
+    #[test]
+    fn health_open_with_secret_set() {
+        let (status, body) = handle(&Method::Get, "/health", None, "", "s3cret");
+        assert_eq!(status, 200);
+        assert!(body.contains("\"status\":\"ok\""));
+    }
+
+    #[test]
+    fn secret_gate_401_without_header() {
+        let (status, _) = handle(&Method::Post, "/ifta/summary", None, "{}", "s3cret");
+        assert_eq!(status, 401);
+    }
+
+    #[test]
+    fn secret_gate_401_with_wrong_header() {
+        let (status, _) = handle(&Method::Post, "/ifta/summary", Some("wrong"), "{}", "s3cret");
+        assert_eq!(status, 401);
+    }
+
+    #[test]
+    fn secret_gate_200_with_matching_header() {
+        let body = r#"{"milesByJurisdiction":{},"gallonsByJurisdiction":{},"rates":{}}"#;
+        let (status, _) = handle(&Method::Post, "/ifta/summary", Some("s3cret"), body, "s3cret");
+        assert_eq!(status, 200);
+    }
+
+    #[test]
+    fn secret_gate_open_when_secret_unset() {
+        let body = r#"{"milesByJurisdiction":{},"gallonsByJurisdiction":{},"rates":{}}"#;
+        let (status, _) = handle(&Method::Post, "/ifta/summary", None, body, "");
+        assert_eq!(status, 200);
+    }
+
+    #[test]
+    fn unknown_path_is_404() {
+        let (status, _) = handle(&Method::Get, "/nope", Some("s3cret"), "", "s3cret");
+        assert_eq!(status, 404);
+    }
+
+    #[test]
+    fn malformed_ifta_body_is_400() {
+        let (status, _) = handle(&Method::Post, "/ifta/summary", Some("s3cret"), "{not json", "s3cret");
+        assert_eq!(status, 400);
+    }
+
+    #[test]
+    fn secret_matches_header_rejects_length_mismatch_and_wrong_bytes() {
+        assert!(secret_matches_header(Some("s3cret"), "s3cret"));
+        assert!(!secret_matches_header(Some("s3cre"), "s3cret"));
+        assert!(!secret_matches_header(Some("wrong!"), "s3cret"));
+        assert!(!secret_matches_header(None, "s3cret"));
+        assert!(secret_matches_header(None, ""));
     }
 }
