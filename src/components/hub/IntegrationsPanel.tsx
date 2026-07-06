@@ -8,21 +8,32 @@
 import { useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
-import { Cable, Check, Loader2, RefreshCw, Unplug } from "lucide-react"
+import { Cable, Check, Copy, Loader2, RefreshCw, Unplug } from "lucide-react"
 import { cn } from "@/lib/utils"
 import {
-  disconnectIntegrationAction, saveIntegrationCredentialsAction, syncTelematicsNowAction,
+  disconnectIntegrationAction, saveIntegrationCredentialsAction, syncIntegrationNowAction,
 } from "@/app/hub/_actions/integrations"
 import { fieldCls, Panel } from "@/components/hub/ui"
+import type { IntegrationProvider } from "@/lib/hub/credentials"
+import type { CredentialField, ProviderStatus } from "@/lib/hub/integrations/registry"
 
 export interface ProviderCard {
-  provider: "terminal" | "truckercloud" | "dat" | "efs" | "wex" | "comdata" | "mailbox"
+  provider: IntegrationProvider
   title: string
   blurb: string
   fallback: string
-  fields: { key: string; label: string; type?: string }[]
+  fields: CredentialField[]
   connected: boolean
   canSync?: boolean
+  status: ProviderStatus
+  /** Copy-paste inbound URL, present when the provider pushes via webhook. */
+  webhookUrl?: string
+}
+
+const STATUS_BADGE: Record<ProviderStatus, { label: string; cls: string }> = {
+  live: { label: "not connected", cls: "border-border-strong bg-surface-2 text-fg-3" },
+  stub: { label: "coming soon", cls: "border-warn-soft bg-warn-soft text-warn" },
+  planned: { label: "planned", cls: "border-border-strong bg-surface-2 text-fg-3" },
 }
 
 export function IntegrationCard({ card, encryptionReady }: { card: ProviderCard; encryptionReady: boolean }) {
@@ -55,7 +66,7 @@ export function IntegrationCard({ card, encryptionReady }: { card: ProviderCard;
 
   const syncNow = () =>
     startTransition(async () => {
-      const result = await syncTelematicsNowAction()
+      const result = await syncIntegrationNowAction(card.provider)
       if (result.ok) toast.success(`Synced: ${result.summary}`)
       else toast.error(result.error ?? "Sync failed")
       router.refresh()
@@ -73,18 +84,25 @@ export function IntegrationCard({ card, encryptionReady }: { card: ProviderCard;
         <span
           className={cn(
             "shrink-0 rounded-full border px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider",
-            card.connected
-              ? "border-ok-soft bg-ok-soft text-ok"
-              : "border-border-strong bg-surface-2 text-fg-3"
+            card.connected ? "border-ok-soft bg-ok-soft text-ok" : STATUS_BADGE[card.status].cls
           )}
         >
-          {card.connected ? "connected" : "not connected"}
+          {card.connected ? "connected" : STATUS_BADGE[card.status].label}
         </span>
       </div>
 
       <p className="mt-2 rounded-lg bg-surface-2 px-2.5 py-1.5 text-[11px] text-fg-3">
         Always works without it: {card.fallback}
       </p>
+
+      {card.status !== "live" ? (
+        <p className="mt-2 text-[11px] text-fg-3">
+          The sync client is still being built — credentials you save now are stored encrypted and
+          activate automatically when it ships. The fallback above works today.
+        </p>
+      ) : null}
+
+      {card.webhookUrl ? <WebhookUrl url={card.webhookUrl} /> : null}
 
       <div className="mt-3 flex flex-wrap gap-2">
         {card.connected ? (
@@ -116,7 +134,7 @@ export function IntegrationCard({ card, encryptionReady }: { card: ProviderCard;
                 key={field.key}
                 aria-label={field.label}
                 placeholder={field.label}
-                type={field.type ?? "text"}
+                type={field.secret ? "password" : "text"}
                 className={fieldCls}
                 value={values[field.key] ?? ""}
                 onChange={(e) => setValues({ ...values, [field.key]: e.target.value })}
@@ -143,5 +161,39 @@ export function IntegrationCard({ card, encryptionReady }: { card: ProviderCard;
         )}
       </div>
     </Panel>
+  )
+}
+
+/** Copy-paste inbound endpoint for push-style providers. */
+function WebhookUrl({ url }: { url: string }) {
+  const [copied, setCopied] = useState(false)
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(url)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch {
+      toast.error("Copy failed — select the URL manually")
+    }
+  }
+  return (
+    <div className="mt-2 rounded-lg border border-border bg-surface-2 px-2.5 py-2">
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-[11px] font-bold uppercase tracking-wide text-fg-3">Your webhook URL</span>
+        <button
+          type="button" onClick={copy}
+          className="flex items-center gap-1 rounded-lg border border-border-strong px-2 py-0.5 text-[11px] font-semibold text-fg-2 hover:bg-hover"
+        >
+          {copied ? <Check className="h-3 w-3 text-ok" /> : <Copy className="h-3 w-3" />}
+          {copied ? "Copied" : "Copy"}
+        </button>
+      </div>
+      <code className="mt-1 block break-all text-[11px] text-fg-2">{url}</code>
+      <p className="mt-1 text-[11px] text-fg-3">
+        Give this to the provider. Requests must be HMAC-SHA256 signed with your{" "}
+        <span className="font-semibold">webhook signing secret</span> (saved above) in the{" "}
+        <code>X-Loadoff-Signature</code> header.
+      </p>
+    </div>
   )
 }

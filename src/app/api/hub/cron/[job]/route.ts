@@ -2,11 +2,13 @@ import { NextResponse } from "next/server"
 import { query } from "@/lib/hub/db"
 import { complianceEntries } from "@/lib/hub/compliance"
 import { runOverdueReminders } from "@/lib/hub/invoices"
+import { runDetentionAlerts } from "@/lib/hub/detention"
 import { runTaskAutomations } from "@/lib/hub/tasks"
 import { recomputeLanes } from "@/lib/hub/lanes"
 import { computeDriverScores } from "@/lib/hub/recruiting"
 import { recheckActiveCustomers } from "@/lib/hub/vetting"
 import { runTelematicsSync } from "@/lib/hub/telematics"
+import { runEfsSync } from "@/lib/hub/integrations/efs"
 import { pollDocsMailbox } from "@/lib/hub/mailbox"
 import { sendOwnerDigest } from "@/lib/hub/digest"
 import { getCarrierSettings } from "@/lib/hub/settings"
@@ -14,8 +16,9 @@ import { createMailTransport, mailFrom } from "@/lib/mailer"
 
 /**
  * Vercel Cron entrypoints (secret-protected):
- *   /api/hub/cron/compliance-scan — daily 60/30/7-day expiry alerts per carrier
- *   /api/hub/cron/ar-reminders    — daily overdue invoice dunning (skips factored)
+ *   /api/hub/cron/compliance-scan  — daily 60/30/7-day expiry alerts per carrier
+ *   /api/hub/cron/ar-reminders     — daily overdue invoice dunning (skips factored)
+ *   /api/hub/cron/detention-alerts — hourly dwelling-past-free-time alerts
  * Health lands in hub.integration_syncs either way.
  */
 export async function GET(
@@ -59,6 +62,10 @@ export async function GET(
         results[carrier.id] = { alerts: alerts.length }
       } else if (job === "ar-reminders") {
         results[carrier.id] = await runOverdueReminders(carrier.id)
+      } else if (job === "detention-alerts") {
+        // Roadmap: alert dispatcher/owner the moment a stop crosses free time
+        // dwelling, instead of waiting for someone to notice on the board.
+        results[carrier.id] = await runDetentionAlerts(carrier.id)
       } else if (job === "task-automations") {
         // E4: every condition needing office action becomes a deep-linked task.
         results[carrier.id] = await runTaskAutomations(carrier.id)
@@ -77,6 +84,9 @@ export async function GET(
       } else if (job === "docs-mailbox") {
         // Phase 6: forwarded rate cons auto-file to their loads.
         results[carrier.id] = await pollDocsMailbox(carrier.id)
+      } else if (job === "efs-sync") {
+        // Integrations lane: daily EFS fuel-card feed → hub.fuel_transactions.
+        results[carrier.id] = await runEfsSync(carrier.id)
       } else if (job === "owner-digest") {
         // Phase 6: the Monday-morning numbers email.
         results[carrier.id] = await sendOwnerDigest(carrier.id)

@@ -1,7 +1,8 @@
 import { requireOwner } from "@/lib/hub/session"
-import { credentialsConfigured, hasCredentials } from "@/lib/hub/credentials"
+import { credentialsConfigured, hasCredentials, type IntegrationProvider } from "@/lib/hub/credentials"
 import { fmcsaConfigured } from "@/lib/hub/vetting"
 import { aiParserConfigured } from "@/lib/hub/doc-intake/analyze-enhanced"
+import { PROVIDERS } from "@/lib/hub/integrations/registry"
 import { query } from "@/lib/hub/db"
 import { PageHeader, Panel } from "@/components/hub/ui"
 import { IntegrationCard, type ProviderCard } from "@/components/hub/IntegrationsPanel"
@@ -9,14 +10,15 @@ import { cn } from "@/lib/utils"
 
 export const dynamic = "force-dynamic"
 
+// Providers with a manual "sync now" server action wired in IntegrationsPanel's
+// SYNC_ACTIONS map — kept in sync with that map by hand since one lives on each
+// side of the server/client boundary.
+const MANUAL_SYNC_PROVIDERS = new Set(["terminal", "efs", "comdata", "wex"])
+
 export default async function IntegrationsPage() {
   const user = await requireOwner()
-  const [terminal, dat, efs, comdata, mailbox, syncs] = await Promise.all([
-    hasCredentials(user.carrierId, "terminal"),
-    hasCredentials(user.carrierId, "dat"),
-    hasCredentials(user.carrierId, "efs"),
-    hasCredentials(user.carrierId, "comdata"),
-    hasCredentials(user.carrierId, "mailbox"),
+  const [connectedFlags, syncs] = await Promise.all([
+    Promise.all(PROVIDERS.map((p) => hasCredentials(user.carrierId, p.id as IntegrationProvider))),
     query<{ source: string; started_at: string; ok: boolean | null; counts: unknown; error: string | null }>(
       `SELECT source, started_at, ok, counts, error FROM hub.integration_syncs
        WHERE carrier_id = $1 OR carrier_id IS NULL ORDER BY started_at DESC LIMIT 15`,
@@ -24,65 +26,33 @@ export default async function IntegrationsPage() {
     ),
   ])
 
-  const cards: ProviderCard[] = [
-    {
-      provider: "terminal",
-      title: "TruckX ELD (via Terminal)",
-      blurb: "Live GPS, odometer, and HOS clocks. TruckX connects through the Terminal aggregator — open an account at withterminal.com and authorize TruckX.",
-      fallback: "Import → Positions CSV (TruckX portal export) feeds the same tables.",
-      fields: [
-        { key: "apiKey", label: "Terminal API key", type: "password" },
-        { key: "connectionToken", label: "Connection token", type: "password" },
-      ],
-      connected: terminal,
-      canSync: true,
-    },
-    {
-      provider: "dat",
-      title: "DAT load board",
-      blurb: "One-click book → load. Needs a DAT service account with API entitlement (developer.dat.com; certification required before production).",
-      fallback: "Loads → Paste a rate con books a load in under 60 seconds.",
-      fields: [
-        { key: "serviceAccountEmail", label: "Service account email" },
-        { key: "password", label: "Service account password", type: "password" },
-      ],
-      connected: dat,
-    },
-    {
-      provider: "efs",
-      title: "EFS / WEX fuel feed",
-      blurb: "Daily transaction feed. Ask your EFS/WEX rep for data-feed credentials (separate from the portal login).",
-      fallback: "Import → Fuel CSV handles any program's statement export, idempotently.",
-      fields: [
-        { key: "feedUser", label: "Feed username" },
-        { key: "feedPassword", label: "Feed password", type: "password" },
-      ],
-      connected: efs,
-    },
-    {
-      provider: "comdata",
-      title: "Comdata fuel feed",
-      blurb: "Comdata has a developer portal — request API credentials from your account team.",
-      fallback: "Import → Fuel CSV handles Comdata statement exports.",
-      fields: [
-        { key: "apiKey", label: "API key", type: "password" },
-        { key: "apiSecret", label: "API secret", type: "password" },
-      ],
-      connected: comdata,
-    },
-    {
-      provider: "mailbox",
-      title: "Docs mailbox (IMAP)",
-      blurb: "Forward rate cons to a dedicated address — attachments auto-file to the matching load by reference number in the subject.",
-      fallback: "Upload documents on the load page, or paste the rate con text.",
-      fields: [
-        { key: "host", label: "IMAP host (e.g. imap.gmail.com)" },
-        { key: "port", label: "Port (993)" },
-        { key: "user", label: "Mailbox user" },
-        { key: "password", label: "App password", type: "password" },
-      ],
-      connected: mailbox,
-    },
+  // Every card comes from the provider registry — adding a provider there is
+  // the whole job; this page never hardcodes a list again.
+  const baseUrl = process.env.NEXTAUTH_URL || "https://thindtransport.com"
+  const cards: ProviderCard[] = PROVIDERS.map((spec, i) => ({
+    provider: spec.id as IntegrationProvider,
+    title: spec.label,
+    blurb: spec.blurb,
+    fallback: spec.fallback,
+    fields: [...spec.fields],
+    connected: connectedFlags[i],
+    // "Sync now" needs a case in runProviderSync (src/app/hub/_actions/integrations.ts) —
+    // not every provider has a manual trigger wired yet (e.g. mailbox is poll-only today).
+    canSync: MANUAL_SYNC_PROVIDERS.has(spec.id),
+    status: spec.status,
+    webhookUrl:
+      spec.sync === "webhook"
+        ? `${baseUrl}/api/hub/webhooks/${spec.id}?carrier=${user.carrierId}`
+        : undefined,
+  }))
+
+  const pushConfigured = Boolean(process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY)
+  const envServices = [
+    { name: "FMCSA QCMobile (broker vetting)", ok: fmcsaConfigured(), fix: "set FMCSA_WEBKEY" },
+    { name: "EIA weekly diesel index", ok: Boolean(process.env.EIA_API_KEY), fix: "set EIA_API_KEY" },
+    { name: "Smart Setup AI extraction (Anthropic)", ok: aiParserConfigured(), fix: "set ANTHROPIC_API_KEY" },
+    { name: "Driver push notifications (web push)", ok: pushConfigured, fix: "set VAPID keys" },
+    { name: "Scheduled jobs (vercel.json cron)", ok: Boolean(process.env.CRON_SECRET), fix: "set CRON_SECRET" },
   ]
 
   return (
@@ -104,33 +74,26 @@ export default async function IntegrationsPage() {
           <IntegrationCard key={card.provider} card={card} encryptionReady={credentialsConfigured()} />
         ))}
 
-        {/* Free keyed APIs configured at the environment level */}
+        {/* Keyed services configured at the environment level, not per carrier */}
         <Panel className="p-4">
-          <h3 className="font-display text-sm font-bold uppercase tracking-wide text-fg">Free government APIs</h3>
+          <h3 className="font-display text-sm font-bold uppercase tracking-wide text-fg">Environment services</h3>
           <ul className="mt-2 space-y-1.5 text-body-sm">
-            <li className="flex items-center justify-between">
-              <span className="text-fg-2">FMCSA QCMobile (broker vetting)</span>
-              <span className={cn("text-[11px] font-bold uppercase", fmcsaConfigured() ? "text-ok" : "text-fg-3")}>
-                {fmcsaConfigured() ? "configured" : "set FMCSA_WEBKEY"}
-              </span>
-            </li>
-            <li className="flex items-center justify-between">
-              <span className="text-fg-2">EIA weekly diesel index</span>
-              <span className={cn("text-[11px] font-bold uppercase", process.env.EIA_API_KEY ? "text-ok" : "text-fg-3")}>
-                {process.env.EIA_API_KEY ? "configured" : "set EIA_API_KEY"}
-              </span>
-            </li>
-            <li className="flex items-center justify-between">
-              <span className="text-fg-2">Smart Setup AI extraction (Anthropic)</span>
-              <span className={cn("text-[11px] font-bold uppercase", aiParserConfigured() ? "text-ok" : "text-fg-3")}>
-                {aiParserConfigured() ? "configured" : "set ANTHROPIC_API_KEY"}
-              </span>
-            </li>
+            {envServices.map((svc) => (
+              <li key={svc.name} className="flex items-center justify-between">
+                <span className="text-fg-2">{svc.name}</span>
+                <span className={cn("text-[11px] font-bold uppercase", svc.ok ? "text-ok" : "text-fg-3")}>
+                  {svc.ok ? "configured" : svc.fix}
+                </span>
+              </li>
+            ))}
             <li className="flex items-center justify-between">
               <span className="text-fg-2">NWS weather · NHTSA VIN/recalls · OSM</span>
               <span className="text-[11px] font-bold uppercase text-ok">no key needed</span>
             </li>
           </ul>
+          <p className="mt-2 text-[11px] text-fg-3">
+            Full readiness report: <code>npm run connections:check</code>
+          </p>
         </Panel>
       </div>
 

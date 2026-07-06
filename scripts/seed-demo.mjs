@@ -349,7 +349,14 @@ async function main() {
   await makeLoad({ customer: 0, status: "booked", equipment: "reefer", commodity: "Frozen berries", weight: 41000, linehaulCents: 285000, fscCents: 32000, miles: 740, driver: 1, truck: 1, trailer: 2, origin: CITY.kent, dest: CITY.sacramento, pickupDaysAgo: -1, deliverDaysAgo: -3 })
   await makeLoad({ customer: 5, status: "booked", equipment: "dry_van", commodity: "Paper products", weight: 38500, linehaulCents: 198000, fscCents: 21000, miles: 465, driver: 5, truck: 4, origin: CITY.portland, dest: CITY.boise, pickupDaysAgo: -2, deliverDaysAgo: -3 }) // driver 5 has expired med card → legality stop on board
   await makeLoad({ customer: 1, status: "dispatched", equipment: "flatbed", commodity: "Lumber", weight: 44000, linehaulCents: 240000, fscCents: 26000, miles: 610, driver: 0, truck: 0, trailer: 4, origin: CITY.kent, dest: CITY.boise, pickupDaysAgo: 0, deliverDaysAgo: -2 })
-  await makeLoad({ customer: 3, status: "at_pickup", equipment: "dry_van", commodity: "Retail goods", weight: 36000, linehaulCents: 210000, fscCents: 23000, miles: 520, driver: 3, truck: 3, trailer: 0, origin: CITY.spokane, dest: CITY.portland, pickupDaysAgo: 0, deliverDaysAgo: -1, arrived: true, factored: true })
+  const atPickup = await makeLoad({ customer: 3, status: "at_pickup", equipment: "dry_van", commodity: "Retail goods", weight: 36000, linehaulCents: 210000, fscCents: 23000, miles: 520, driver: 3, truck: 3, trailer: 0, origin: CITY.spokane, dest: CITY.portland, pickupDaysAgo: 0, deliverDaysAgo: -1, arrived: true, factored: true })
+  // "at_pickup" means still sitting there — reopen the pickup stop (arrived, not
+  // yet departed) 5h ago so the detention auto-alert has something to catch.
+  await q(
+    `UPDATE hub.stops SET arrived_at = NOW() - INTERVAL '5 hours', departed_at = NULL
+     WHERE carrier_id = $1 AND load_id = $2 AND type = 'pickup'`,
+    [CARRIER, atPickup.id]
+  )
   const inTransit = await makeLoad({ customer: 0, status: "in_transit", equipment: "reefer", commodity: "Fresh produce", weight: 42500, linehaulCents: 345000, fscCents: 38000, miles: 920, driver: 1, truck: 1, trailer: 3, origin: CITY.kent, dest: CITY.losangeles, pickupDaysAgo: 1, deliverDaysAgo: -1 })
   await makeLoad({ customer: 6, status: "in_transit", equipment: "dry_van", commodity: "Beverages", weight: 43000, linehaulCents: 275000, fscCents: 30000, miles: 820, driver: 6, truck: 6, trailer: 6, origin: CITY.portland, dest: CITY.saltlake, pickupDaysAgo: 1, deliverDaysAgo: 0 })
   await makeLoad({ customer: 2, status: "delivered", equipment: "reefer", commodity: "Apples", weight: 41800, linehaulCents: 220000, fscCents: 24000, miles: 540, driver: 4, truck: 8, trailer: 2, origin: CITY.yakima, dest: CITY.medford, pickupDaysAgo: 3, deliverDaysAgo: 1 })

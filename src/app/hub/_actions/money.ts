@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache"
 import { requirePermission } from "@/lib/hub/session"
 import {
-  createInvoiceFromLoad, recordPayment, sendFactoringPacket, setInvoiceStatus,
+  createInvoiceFromLoad, recordPayment, sendCustomerStatement, sendFactoringPacket, setInvoiceStatus,
 } from "@/lib/hub/invoices"
 import {
   approveSettlement, createAdvance, draftSettlements, markSettlementPaid,
@@ -98,6 +98,26 @@ export async function factoringPacketAction(invoiceId: string): Promise<ActionRe
     return { ok: true, error: undefined, id: to }
   } catch (err) {
     return asError(err, "Failed to send factoring packet")
+  }
+}
+
+export async function sendCustomerStatementAction(
+  customerId: string
+): Promise<ActionResult & { emailed?: boolean; to?: string; totalCents?: number; invoiceCount?: number }> {
+  let user
+  try {
+    user = await requirePermission("money:write")
+  } catch (err) {
+    return asError(err, "Forbidden")
+  }
+  try {
+    const { emailed, to, totalOpenCents, invoiceCount, error } = await sendCustomerStatement(
+      user.carrierId, customerId, user
+    )
+    revalidateMoney()
+    return { ok: true, emailed, to, totalCents: totalOpenCents, invoiceCount, error }
+  } catch (err) {
+    return asError(err, "Failed to send statement")
   }
 }
 

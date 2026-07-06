@@ -1,6 +1,8 @@
-# HaulDesk Go-Live — What We Need From You
+# LoadOff Go-Live — What We Need From You
 
-This is the checklist to take HaulDesk from **demo-ready** to **Thind Transport production**. The software runs on Vercel + Postgres today; integrations are wired but need your real credentials and carrier data.
+This is the checklist to take LoadOff from **demo-ready** to **Thind Transport production**. The software runs on Vercel + Postgres today; integrations are wired but need your real credentials and carrier data.
+
+**One-command status:** `npm run connections:check` (with `POSTGRES_URL` pointed at the target DB) prints every env switch, every integration provider's credential/sync state, and the cron schedule — the permanent answer to "is everything connected?". Which paid credentials to chase first is ranked in `docs/integrations/creds-shopping-list.md`.
 
 ---
 
@@ -9,10 +11,11 @@ This is the checklist to take HaulDesk from **demo-ready** to **Thind Transport 
 | Item | Where to set | Why |
 |------|----------------|-----|
 | **Postgres URL** | Vercel → `POSTGRES_URL` | System of record (loads, money, users). Use Vercel Postgres or Neon. |
-| **NextAuth secret** | `NEXTAUTH_SECRET` | `openssl rand -base64 32` |
+| **NextAuth secret** | `NEXTAUTH_SECRET` (or `AUTH_SECRET`, Auth.js v5's native name — either works) | `openssl rand -base64 32` |
 | **NextAuth URL** | `NEXTAUTH_URL` | `https://thindtransport.com` (or your hub domain) |
 | **Credentials encryption** | `CREDENTIALS_KEY` | 32+ random chars — encrypts fuel/telematics/mailbox passwords in DB |
 | **Cron secret** | `CRON_SECRET` | Protects `/api/hub/cron/*` (compliance scan, AR reminders, mailbox, FMCSA recheck, etc.) |
+| **Blob storage** | `BLOB_READ_WRITE_TOKEN` (Vercel Blob) | Vercel's filesystem is ephemeral — without this, POD uploads and generated invoice/settlement PDFs are lost between invocations |
 
 After env is set:
 
@@ -51,7 +54,7 @@ Without these: broker MC lookup and EIA diesel chart show manual/CSV fallback on
 
 ## 4. Integrations (Settings → Integrations)
 
-Each has a **CSV/manual fallback** — connect when you have vendor access.
+Each has a **CSV/manual fallback** — connect when you have vendor access. The full provider list (live/stub/planned) is the registry at `src/lib/hub/integrations/registry.ts`; the settings page renders from it directly, and webhook-style providers show a copy-paste inbound URL on their card.
 
 ### Telematics (GPS + HOS sync)
 
@@ -108,7 +111,6 @@ Printable owner guide: `docs/production-intake/thind-transport.md`
 |------|---------|---------|
 | Web Push (driver notifications) | `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_CONTACT` | `npx web-push generate-vapid-keys` |
 | Self-hosted geocoder | `GEOCODER_BASE_URL` | Scale geocoding beyond Nominatim rate limits |
-| Blob storage | Vercel Blob (if enabled) | Large document storage at scale |
 
 ---
 

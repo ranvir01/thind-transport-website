@@ -72,3 +72,18 @@ full playbook and ready-made prompts:
    fleet automations (`.cursor/automation/README.md`) handle integrator → main drain and prod smoke.
 6. **Record** — end the commit body or PR with a `Backlog:` list of follow-ups you saw but didn't
    take; the next agent starts there. Never leave discovered defects unrecorded.
+
+## Integrations doctrine (everything-app track)
+
+- `src/lib/hub/integrations/registry.ts` is the ONLY provider list — cards, credential
+  allowlists, cron jobs, and webhook routing all derive from it.
+- **Stub-first**: every adapter ships complete against `integrations/mock.ts` + the contract
+  suite (`integration-contract.test.ts`) BEFORE vendor credentials exist. Pasting keys is
+  activation, not development.
+- Adapters implement `SyncSource`, land data in the same tables as CSV imports via
+  `ON CONFLICT (carrier_id, source, external_id)`, and write a `hub.integration_syncs`
+  row on EVERY run. The CSV/manual fallback is never removed.
+- Inbound pushes go through `/api/hub/webhooks/[provider]` only — HMAC-verified against the
+  carrier's encrypted `webhookSecret`; unsigned requests store nothing.
+- Never log credential values (field names only). New provider = registry entry + adapter +
+  docs page + shopping-list row, one commit each.

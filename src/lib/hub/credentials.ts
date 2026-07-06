@@ -8,6 +8,7 @@ import { query, queryOne } from "./db"
 
 export type IntegrationProvider =
   | "terminal" | "truckercloud" | "dat" | "efs" | "wex" | "comdata" | "mailbox"
+  | "truckstop" | "qbo" | "factor"
 
 export function credentialsConfigured(): boolean {
   return Boolean(process.env.CREDENTIALS_KEY && process.env.CREDENTIALS_KEY.length >= 16)

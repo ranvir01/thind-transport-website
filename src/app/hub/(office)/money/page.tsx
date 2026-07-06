@@ -1,11 +1,13 @@
 import Link from "next/link"
-import { Download } from "lucide-react"
-import { getAgingSummary } from "@/lib/hub/invoices"
+import { Download, FileText } from "lucide-react"
+import { getAgingSummary, getCustomerStatements } from "@/lib/hub/invoices"
 import { requirePermissionPage } from "@/lib/hub/session"
+import { can } from "@/lib/hub/permissions"
 import { fmtCents } from "@/lib/hub/types"
 import { formatHubDateShort } from "@/lib/hub/format-dates"
 import { Panel, PageHeader, EmptyState } from "@/components/hub/ui"
 import { cn } from "@/lib/utils"
+import { SendStatementButton } from "@/components/hub/SendStatementButton"
 
 import { HelpTip } from "@/components/hub/HelpTip"
 
@@ -24,7 +26,11 @@ const BUCKETS = ["current", "1-30", "31-60", "61-90", "90+"] as const
 
 export default async function MoneyPage() {
   const user = await requirePermissionPage("money:read")
-  const aging = await getAgingSummary(user.carrierId)
+  const canWrite = can(user.role, "money:write")
+  const [aging, statements] = await Promise.all([
+    getAgingSummary(user.carrierId),
+    getCustomerStatements(user.carrierId),
+  ])
 
   return (
     <div>
@@ -82,6 +88,44 @@ export default async function MoneyPage() {
           ))}
         </div>
       </Panel>
+
+      {/* Customer statements */}
+      <h2 className="font-display text-lg font-bold uppercase tracking-wide text-fg mb-3">Customer statements</h2>
+      {statements.length === 0 ? (
+        <EmptyState
+          title="No open balances"
+          hint="Statements roll up every open invoice per customer once there's a balance to collect."
+        />
+      ) : (
+        <Panel className="divide-y divide-border mb-8">
+          {statements.map((s) => (
+            <div key={s.customerId} className="flex flex-wrap items-center justify-between gap-3 p-4">
+              <div className="min-w-0">
+                <p className="font-semibold text-fg truncate">{s.customerName}</p>
+                <p className="text-body-xs text-fg-3">
+                  {s.invoices.length} open invoice{s.invoices.length === 1 ? "" : "s"}
+                  {" · "}
+                  {s.billingEmail ?? "no billing email on file"}
+                </p>
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="font-mono font-medium text-accent-text tabular-nums">{fmtCents(s.totalOpenCents)}</span>
+                <a
+                  href={`/api/hub/customer-statements/${s.customerId}/pdf`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex min-h-[36px] items-center gap-1.5 rounded-lg border border-border-strong px-3 text-xs font-semibold text-fg-2 hover:bg-hover"
+                >
+                  <FileText className="h-3.5 w-3.5" /> PDF
+                </a>
+                {canWrite ? (
+                  <SendStatementButton customerId={s.customerId} disabled={!s.billingEmail} />
+                ) : null}
+              </div>
+            </div>
+          ))}
+        </Panel>
+      )}
 
       {/* Invoice list */}
       <h2 className="font-display text-lg font-bold uppercase tracking-wide text-fg mb-3">Invoices</h2>
