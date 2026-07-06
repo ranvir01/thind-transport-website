@@ -3,11 +3,14 @@
  * walks the core phone flow — confirm dispatch, arrive/depart taps, facility
  * tip, message dispatch, pay + more screens — saving screenshots along the way.
  *
- * Reseeds demo data first so a prior e2e-driver-pod-smoke run (alphabetically
- * earlier) cannot leave the driver's load past the "confirm dispatch" step.
+ * Reseeds demo data first (see reseed in e2e-lib.mjs) — step 2 needs the
+ * seeded driver's load still sitting in "dispatched, unacknowledged". Other
+ * state-consuming smokes (e.g. e2e-safety-smoke's OS&D flow) advance that
+ * same load past "dispatched" if they run first in the same session, so
+ * without its own reseed this smoke fails on run order alone.
  *
  * Usage: node scripts/e2e-driver-smoke.mjs [outputDir]
- * Requires: npm run dev (or start) on localhost:3000, seeded demo data.
+ * Requires: npm run dev (or start) on localhost:3000.
  */
 import puppeteer from "puppeteer"
 import { mkdirSync } from "node:fs"
