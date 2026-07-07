@@ -10,21 +10,24 @@ as an urgent `Backlog:` item.
 | Provider | Code status | Credential fields | Adapter file | Research doc | Last researched |
 |---|---|---|---|---|---|
 | `terminal` | **Built** — live TSP aggregator (vehicles + HOS), 30-min cron sync | `apiKey`, `connectionToken` (+ `TERMINAL_API_BASE` env, optional) | `src/lib/hub/telematics.ts` | [`terminal.md`](./terminal.md) | 2026-07-06 |
-| `mailbox` | **Built** — generic IMAP client, not a vendor SDK | `host`, `port`, `user`, `password`, `folder` | `src/lib/hub/mailbox.ts` | `mailbox.md` — missing | never |
+| `mailbox` | **Built** — generic IMAP client, not a vendor SDK. Plain LOGIN auth — broken against M365/Google Workspace, see doc | `host`, `port`, `user`, `password`, `folder` | `src/lib/hub/mailbox.ts` | [`mailbox.md`](./mailbox.md) | 2026-07-07 |
 | `fmcsa` (adjacent, free, not in `IntegrationProvider` union — no stored creds) | **Built** — QCMobile broker vetting | `FMCSA_WEBKEY` env | `src/lib/hub/vetting.ts` | `fmcsa.md` — missing | never |
 | `eia` (adjacent, free, not in `IntegrationProvider` union) | **Built** — diesel price benchmark | `EIA_API_KEY` env | `src/lib/hub/fuel.ts` | `eia.md` — missing | never |
-| `truckercloud` | Stub — valid provider id, zero adapter code | `apiKey` | none yet | `truckercloud.md` — missing | never |
-| `dat` | Stub — "honest pending" card, CSV fallback only | `serviceAccountEmail`, `password` | none yet | `dat.md` — missing | never |
-| `efs` | Stub — "honest pending" card, CSV fallback only | `feedUser`, `feedPassword` | none yet | `efs.md` — missing | never |
-| `wex` | Stub — "honest pending" card, CSV fallback only | `feedUser`, `feedPassword` | none yet | `wex.md` — missing | never |
-| `comdata` | Stub — "honest pending" card, CSV fallback only | `apiKey`, `apiSecret` | none yet | `comdata.md` — missing | never |
+| `truckercloud` | **Built** — adapter shipped, drop-in second aggregator to Terminal | `apiKey`, `clientId`/`clientSecret` | `src/lib/hub/telematics.ts` (`truckerCloudSource`) | [`truckercloud.md`](./truckercloud.md) | 2026-07-06 |
+| `dat` | **Built** — search + posting-to-load-draft mapper, stub-first (registry still `stub`/CSV fallback pending real auth confirm) | `serviceAccountEmail`, `password` | `src/lib/hub/integrations/dat.ts` | [`dat.md`](./dat.md) | 2026-07-06 |
+| `efs` | **Built** — adapter shipped, feed shape unconfirmed | `feedUser`, `feedPassword` | `src/lib/hub/integrations/efs.ts` | [`efs.md`](./efs.md) | 2026-07-06 |
+| `wex` | **Built** — adapter shipped, daily cron live | `feedUser`, `feedPassword` | `src/lib/hub/integrations/wex.ts` | [`wex.md`](./wex.md) | 2026-07-06 |
+| `comdata` | **Built** — adapter shipped, daily cron live | `apiKey`, `apiSecret` | `src/lib/hub/integrations/comdata.ts` | [`comdata.md`](./comdata.md) | 2026-07-06 |
+| `qbo` | **Built** — pull + push both directions, refresh-token rotation | OAuth2 (Intuit) | `src/lib/hub/integrations/qbo.ts` | [`qbo.md`](./qbo.md) | 2026-07-06 |
+| `factor` | **Built** — push + webhook receiver | varies by factor | `src/lib/hub/integrations/factor.ts` | [`factor.md`](./factor.md) | 2026-07-06 |
+| `truckstop` | **Built** — search adapter, booking mapper pending (blocked on migration) | API key | `src/lib/hub/integrations/truckstop.ts` | [`truckstop.md`](./truckstop.md) | 2026-07-06 |
 
-Stub providers (`dat`/`efs`/`wex`/`comdata`/`truckercloud`) only have credential-field
-definitions in `src/app/hub/_actions/integrations.ts` (`ALLOWED_FIELDS`) and UI copy in
-`src/app/hub/(office)/settings/integrations/page.tsx` — nothing reads the stored credentials
-back to make a request yet, per the Phase 6 commit (`484fb92`). Researching them is lower
-urgency than `terminal` or `mailbox` until an adapter actually gets built against them; a scout
-picking one up should note in its doc whether the wire-up is worth doing given current API terms.
+All ten vendor providers now have both a shipped adapter and a research doc (this row was
+stale — it previously described `dat`/`efs`/`wex`/`comdata`/`truckercloud` as credential-only
+stubs; the integrations lane has since shipped real adapter code for every one, see each doc's
+"Adapter file" column). The only remaining gaps are the two free/adjacent government-API
+integrations that were never in scope of the vendor shopping list: `fmcsa.md` and `eia.md`,
+both "missing — never researched."
 
 ## Rotation rule
 
@@ -33,3 +36,7 @@ picking one up should note in its doc whether the wire-up is worth doing given c
 2. Otherwise take the stub provider whose doc is oldest or missing, to pre-stage integration
    notes before a lane builds the adapter.
 3. One provider per cycle. Update the "Last researched" date and doc link when done.
+
+Next up by this rule: `fmcsa` or `eia` (both built, both missing docs) — whichever a future
+cycle picks, then back to the oldest-dated vendor doc (`terminal.md`/`truckercloud.md`, both
+2026-07-06) once those two are done.
