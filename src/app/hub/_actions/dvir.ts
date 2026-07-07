@@ -7,6 +7,7 @@ import { notifyRoles } from "@/lib/hub/notify"
 import { logAudit } from "@/lib/hub/audit"
 import { queryOne } from "@/lib/hub/db"
 import { dollarsToCents } from "@/lib/hub/types"
+import { actionError } from "@/lib/hub/action-error"
 
 interface Result {
   ok: boolean
@@ -68,7 +69,7 @@ export async function submitDvirAction(input: {
     revalidatePath(`/hub/fleet/trucks/${input.truckId}`)
     return { ok: true, grounded }
   } catch (err) {
-    return { ok: false, error: err instanceof Error ? err.message : "Could not file the DVIR" }
+    return actionError(err, "Could not file the DVIR")
   }
 }
 
@@ -100,6 +101,6 @@ export async function certifyRepairAction(
     revalidatePath(`/hub/fleet/trucks/${truckId}`)
     return { ok: true }
   } catch (err) {
-    return { ok: false, error: err instanceof Error ? err.message : "Could not certify" }
+    return actionError(err, "Could not certify")
   }
 }
