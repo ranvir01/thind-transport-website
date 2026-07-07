@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 import { getHubUser } from "@/lib/hub/session"
 import { can } from "@/lib/hub/permissions"
 import { getIftaReport, exportIftaSources } from "@/lib/hub/ifta"
-import { getCarrier } from "@/lib/hub/settings"
+import { getCarrier, getCarrierSettings } from "@/lib/hub/settings"
 import { buildIftaPdf } from "@/lib/hub/pdf"
 import type { IftaReportRow } from "@/lib/hub/types"
 
@@ -52,10 +52,12 @@ export async function GET(
 
   if (file === "worksheet.pdf") {
     const carrier = await getCarrier(user.carrierId)
+    const settings = await getCarrierSettings(user.carrierId)
     const pdf = await buildIftaPdf({
       brand: {
         name: carrier?.name ?? "Carrier", address: carrier?.address, phone: carrier?.phone,
         email: carrier?.email, dot: carrier?.dot_number, mc: carrier?.mc_number,
+        accent: settings.branding.accent,
       },
       quarter,
       mileageSource: report.mileage_source ?? "—",

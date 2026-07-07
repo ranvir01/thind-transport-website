@@ -2,7 +2,7 @@ import { hubDb, query, queryOne } from "./db"
 import {
   evaluatePayRules, legacyConfigToRuleSet, parseRuleSet, type PayLoadContext,
 } from "./pay-rules"
-import { getCarrier } from "./settings"
+import { getCarrier, getCarrierSettings } from "./settings"
 import { storeGeneratedPdf } from "./documents"
 import { buildSettlementPdf } from "./pdf"
 import { logAudit } from "./audit"
@@ -241,6 +241,7 @@ export async function approveSettlement(
     [settlement.driver_id, carrierId]
   )
   const carrier = await getCarrier(carrierId)
+  const settings = await getCarrierSettings(carrierId)
 
   // Apply advances
   for (const line of lines.filter((l) => l.source_type === "advance" && l.source_id)) {
@@ -277,6 +278,7 @@ export async function approveSettlement(
     brand: {
       name: carrier?.name ?? "Carrier", address: carrier?.address, phone: carrier?.phone,
       email: carrier?.email, dot: carrier?.dot_number, mc: carrier?.mc_number,
+      accent: settings.branding.accent,
     },
     driverName: settlement.driver_name ?? "Driver",
     periodStart: toIsoDateOnly(settlement.period_start) ?? "",
