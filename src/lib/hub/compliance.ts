@@ -1,5 +1,4 @@
-import { query, queryOne } from "./db"
-import { iftaDueDate, lastCompletedQuarterKey } from "./ifta-core"
+import { query } from "./db"
 
 export type ComplianceColor = "red" | "amber" | "green"
 
@@ -12,30 +11,6 @@ export interface ComplianceEntry {
   color: ComplianceColor
   href: string
   manualItemId?: string
-}
-
-/** Auto-entry for the quarter whose filing is actually due (mirrors IFTA screen default). */
-export async function iftaFilingComplianceEntry(
-  carrierId: string,
-  now: Date
-): Promise<ComplianceEntry | null> {
-  const quarter = lastCompletedQuarterKey(now)
-  const report = await queryOne<{ status: string }>(
-    `SELECT status FROM hub.ifta_reports WHERE carrier_id = $1 AND quarter = $2`,
-    [carrierId, quarter]
-  )
-  if (report?.status === "filed") return null
-
-  const due = iftaDueDate(quarter).toISOString().slice(0, 10)
-  return {
-    entity: "company",
-    entityId: null,
-    name: "Company",
-    kind: `IFTA filing (${quarter})`,
-    due,
-    color: colorFor(due, now),
-    href: `/hub/compliance/ifta?q=${quarter}`,
-  }
 }
 
 function colorFor(due: string | null, now: Date): ComplianceColor {
@@ -137,9 +112,6 @@ export async function complianceEntries(carrierId: string): Promise<ComplianceEn
       href: "/hub/compliance", manualItemId: item.id,
     })
   }
-
-  const iftaEntry = await iftaFilingComplianceEntry(carrierId, now)
-  if (iftaEntry) entries.push(iftaEntry)
 
   const order = { red: 0, amber: 1, green: 2 }
   return entries.sort((a, b) => order[a.color] - order[b.color] || String(a.due ?? "9999").localeCompare(String(b.due ?? "9999")))

@@ -1,6 +1,7 @@
 import Link from "next/link"
 import { FileSpreadsheet } from "lucide-react"
 import { complianceEntries, summarize } from "@/lib/hub/compliance"
+import { iftaFilingComplianceEntries } from "@/lib/hub/ifta"
 import { requirePermissionPage } from "@/lib/hub/session"
 import { Panel, PageHeader, ExpiryPill } from "@/components/hub/ui"
 import { AddComplianceItemForm, ResolveItemButton } from "@/components/hub/ComplianceForms"
@@ -18,7 +19,16 @@ const COLOR_DOT: Record<string, string> = {
 
 export default async function CompliancePage() {
   const user = await requirePermissionPage("compliance:read")
-  const entries = await complianceEntries(user.carrierId)
+  const [baseEntries, iftaEntries] = await Promise.all([
+    complianceEntries(user.carrierId),
+    iftaFilingComplianceEntries(user.carrierId),
+  ])
+  // Merge the auto-generated IFTA filing entries in wall order (red first,
+  // then soonest due) — same comparator complianceEntries() uses internally.
+  const colorOrder = { red: 0, amber: 1, green: 2 } as const
+  const entries = [...baseEntries, ...iftaEntries].sort(
+    (a, b) => colorOrder[a.color] - colorOrder[b.color] || String(a.due ?? "9999").localeCompare(String(b.due ?? "9999"))
+  )
   const summary = summarize(entries)
 
   return (
@@ -29,7 +39,8 @@ export default async function CompliancePage() {
           <HelpTip title="What this wall tracks">
             Driver files (CDL, medical card — 49 CFR 391), truck files (registration,
             annual inspection — 396.17, insurance), trailer files (registration, annual
-            inspection — 396.17), and company items (2290, UCR, IFTA decals). Red is
+            inspection — 396.17), company items (2290, UCR, IFTA decals), and the IFTA
+            quarterly filing itself (auto-tracked — clears when marked filed). Red is
             expired, amber is inside 30 days. The daily scan emails the office at
             60/30/7 days.
           </HelpTip>
