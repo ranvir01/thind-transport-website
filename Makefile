@@ -12,6 +12,6 @@ go-test:
 	cd services/go/hauldesk-worker && go vet ./... && go test ./...
 
 rust-test:
-	cd services/rust/hauldesk-compute && cargo test
+	cd services/rust/hauldesk-compute && cargo clippy --all-targets -- -D warnings && cargo test
 
 test-sidecars: go-test rust-test
