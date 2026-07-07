@@ -283,7 +283,7 @@ export interface Load {
   trailer_id: string | null
   driver_id: string | null
   dispatcher_id: string | null
-  source: "dat" | "direct" | "import" | "quote"
+  source: "dat" | "direct" | "import" | "quote" | "truckstop"
   factored: boolean
   settlement_id: string | null
   notes: string | null

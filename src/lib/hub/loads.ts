@@ -155,7 +155,7 @@ export interface LoadInput {
   truck_id?: string | null
   trailer_id?: string | null
   driver_id?: string | null
-  source?: "dat" | "direct" | "import" | "quote"
+  source?: "dat" | "direct" | "import" | "quote" | "truckstop"
   factored?: boolean
   notes?: string | null
   stops: StopInput[]

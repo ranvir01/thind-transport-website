@@ -2,15 +2,15 @@
  * Truckstop.com load board — search adapter (stub-first per docs/integrations/README.md
  * + docs/integrations/truckstop.md). Same shape as `dat.ts`: this is an interactive
  * freight search, not a background sync into an existing table, so this slice ships
- * the `search`/`pull` contract and its normalizer only. It deliberately stops short of
- * a `truckstopPostingToLoadDraft` mapper — `hub.loads.source` is a DB CHECK constraint
- * (`migrations/hub/002_tenancy_money_events.sql`) currently limited to
- * `'dat','direct','import','quote'`, a shared migration file outside this lane's
- * territory (see Backlog). Once that constraint grows a `'truckstop'` value, the
- * mapper is a copy of `datPostingToLoadDraft` with the source string swapped.
- * `normalizeTruckstopPosting` is the one place the assumed response shape is read.
+ * the `search`/`pull` contract, its normalizer, and `truckstopPostingToLoadDraft`,
+ * which maps a matched posting onto `createLoad()`'s input shape. A dispatcher-facing
+ * search panel and "book this posting" button are their own slice (see
+ * creds-shopping-list.md). `normalizeTruckstopPosting` is the one place the assumed
+ * response shape is read.
  */
 import { getCredentials, hasCredentials } from "../credentials"
+import type { LoadInput, StopInput } from "../loads"
+import type { EquipmentType } from "../types"
 import type { SyncRowBase, SyncSource } from "./registry"
 
 export interface TruckstopSearchCriteria {
@@ -54,6 +54,49 @@ export function normalizeTruckstopPosting(record: Record<string, unknown>): Truc
     pickupDate: (record.pickupDate as string) ?? null,
     contactPhone: (record.contactPhone as string) ?? null,
     raw: record,
+  }
+}
+
+/** The one field `createLoad()` needs that no Truckstop posting can supply — a dispatcher picks it. */
+export type TruckstopLoadDraft = Omit<LoadInput, "customer_id" | "status">
+
+const EQUIPMENT_PATTERNS: [EquipmentType, RegExp][] = [
+  ["reefer", /reefer|refr|^r$/i],
+  ["flatbed", /flat|^f(bed)?$/i],
+  ["dry_van", /van|^v$/i],
+]
+
+function mapEquipment(raw: string | null): EquipmentType {
+  if (raw) {
+    for (const [type, pattern] of EQUIPMENT_PATTERNS) {
+      if (pattern.test(raw)) return type
+    }
+  }
+  return "dry_van"
+}
+
+/**
+ * Prefill a load-creation draft from a Truckstop posting — the one place a posting is turned
+ * into `LoadInput`-shaped fields. `customer_id` is deliberately omitted: Truckstop has no concept
+ * of our customer records, so a dispatcher must still pick or create one before `createLoad()`
+ * accepts the draft. Everything else (stops, rate, miles, equipment) is ready to submit as-is.
+ */
+export function truckstopPostingToLoadDraft(posting: TruckstopLoadPosting): TruckstopLoadDraft {
+  const stops: StopInput[] = [
+    { type: "pickup", city: posting.originCity ?? "", state: posting.originState ?? "", appt_start: posting.pickupDate },
+    { type: "delivery", city: posting.destCity ?? "", state: posting.destState ?? "" },
+  ]
+  return {
+    customer_reference: posting.external_id,
+    equipment: mapEquipment(posting.equipment),
+    commodity: null,
+    linehaul_cents: posting.rateTotalCents ?? 0,
+    fuel_surcharge_cents: 0,
+    accessorials: [],
+    loaded_miles: posting.miles,
+    source: "truckstop",
+    notes: posting.contactPhone ? `Truckstop posting contact: ${posting.contactPhone}` : null,
+    stops,
   }
 }
 

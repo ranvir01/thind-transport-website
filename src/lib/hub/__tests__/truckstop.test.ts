@@ -7,7 +7,7 @@ vi.mock("../credentials", () => ({
 
 import { getCredentials, hasCredentials } from "../credentials"
 import { memorySink } from "../integrations/mock"
-import { normalizeTruckstopPosting, truckstopSource } from "../integrations/truckstop"
+import { normalizeTruckstopPosting, truckstopPostingToLoadDraft, truckstopSource } from "../integrations/truckstop"
 
 const getCredentialsMock = vi.mocked(getCredentials)
 const hasCredentialsMock = vi.mocked(hasCredentials)
@@ -50,6 +50,64 @@ describe("normalizeTruckstopPosting (pure — the one place the assumed posting 
     expect(row.equipment).toBeNull()
     expect(row.miles).toBeNull()
     expect(row.rateTotalCents).toBeNull()
+  })
+})
+
+describe("truckstopPostingToLoadDraft (pure — prefills createLoad()'s input from a posting)", () => {
+  it("maps a fully-populated posting onto LoadInput-shaped fields, minus customer_id", () => {
+    const posting = normalizeTruckstopPosting({
+      postingId: "POST-1",
+      equipment: "Reefer",
+      originCity: "Kent",
+      originState: "WA",
+      destCity: "Boise",
+      destState: "ID",
+      miles: 420,
+      totalRate: 1250.5,
+      pickupDate: "2026-06-02",
+      contactPhone: "555-0100",
+    })
+    const draft = truckstopPostingToLoadDraft(posting)
+    expect(draft).toEqual({
+      customer_reference: "POST-1",
+      equipment: "reefer",
+      commodity: null,
+      linehaul_cents: 125050,
+      fuel_surcharge_cents: 0,
+      accessorials: [],
+      loaded_miles: 420,
+      source: "truckstop",
+      notes: "Truckstop posting contact: 555-0100",
+      stops: [
+        { type: "pickup", city: "Kent", state: "WA", appt_start: "2026-06-02" },
+        { type: "delivery", city: "Boise", state: "ID" },
+      ],
+    })
+    expect(draft).not.toHaveProperty("customer_id")
+  })
+
+  it.each([
+    ["Van", "dry_van"],
+    ["V", "dry_van"],
+    ["Reefer", "reefer"],
+    ["R", "reefer"],
+    ["Flatbed", "flatbed"],
+    ["F", "flatbed"],
+    ["Power Only", "dry_van"],
+  ])("maps Truckstop equipment string %s to %s, defaulting unknowns to dry_van", (raw, expected) => {
+    const posting = normalizeTruckstopPosting({ postingId: "P", equipment: raw })
+    expect(truckstopPostingToLoadDraft(posting).equipment).toBe(expected)
+  })
+
+  it("degrades to empty stop cities/no rate/no notes when the posting is missing fields", () => {
+    const posting = normalizeTruckstopPosting({ postingId: "P" })
+    const draft = truckstopPostingToLoadDraft(posting)
+    expect(draft.stops).toEqual([
+      { type: "pickup", city: "", state: "", appt_start: null },
+      { type: "delivery", city: "", state: "" },
+    ])
+    expect(draft.linehaul_cents).toBe(0)
+    expect(draft.notes).toBeNull()
   })
 })
 
