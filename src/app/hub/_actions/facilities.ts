@@ -9,6 +9,7 @@ import {
 import { getCarrierSettings } from "@/lib/hub/settings"
 import { queryOne } from "@/lib/hub/db"
 import { dollarsToCents } from "@/lib/hub/types"
+import { actionError } from "@/lib/hub/action-error"
 
 interface Result {
   ok: boolean
@@ -92,7 +93,7 @@ export async function updateFacilityAction(
     revalidatePath("/hub/facilities")
     return { ok: true }
   } catch (err) {
-    return { ok: false, error: err instanceof Error ? err.message : "Could not save" }
+    return actionError(err, "Could not save")
   }
 }
 
@@ -113,6 +114,6 @@ export async function addOfficeFacilityNoteAction(
     revalidatePath(`/hub/facilities/${facilityId}`)
     return { ok: true }
   } catch (err) {
-    return { ok: false, error: err instanceof Error ? err.message : "Could not add the note" }
+    return actionError(err, "Could not add the note")
   }
 }

@@ -14,6 +14,7 @@ import {
   type TruckstopSearchCriteria,
 } from "@/lib/hub/integrations/truckstop"
 import type { StopInput } from "@/lib/hub/loads"
+import { actionError } from "@/lib/hub/action-error"
 
 interface ActionResult {
   ok: boolean
@@ -53,10 +54,7 @@ export async function searchTruckstopFreightAction(
     const postings = await truckstopSource(user.carrierId).search(criteria)
     return { ok: true, connected: true, postings }
   } catch (err) {
-    return {
-      ok: false,
-      error: err instanceof Error ? err.message : "Truckstop search failed",
-    }
+    return actionError(err, "Truckstop search failed")
   }
 }
 
@@ -68,7 +66,7 @@ export async function bookTruckstopPostingAction(
   try {
     user = await requirePermission("loads:write")
   } catch (err) {
-    return { ok: false, error: err instanceof Error ? err.message : "Forbidden" }
+    return actionError(err, "Forbidden")
   }
 
   if (!customerId?.trim()) {
@@ -106,6 +104,6 @@ export async function bookTruckstopPostingAction(
     revalidatePath(`/hub/loads/${load.id}`)
     return { ok: true, id: load.id }
   } catch (err) {
-    return { ok: false, error: err instanceof Error ? err.message : "Could not book posting" }
+    return actionError(err, "Could not book posting")
   }
 }
