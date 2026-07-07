@@ -66,7 +66,7 @@ export function DatFreightSearch({ customers, canBook, datConnected }: DatFreigh
         originCity: criteria.originCity.trim() || undefined,
         originState: criteria.originState || undefined,
         destState: criteria.destState || undefined,
-        equipment: criteria.equipment || undefined,
+        equipment: EQUIPMENT_TO_DAT[criteria.equipment] ?? criteria.equipment,
         radiusMiles: Number(criteria.radiusMiles) || 100,
       })
       if (!result.ok) {
