@@ -79,13 +79,13 @@ export const PROVIDERS: readonly ProviderSpec[] = [
       { key: "serviceAccountEmail", label: "Service account email" },
       { key: "password", label: "Service account password", secret: true },
     ],
-    fallback: "Paste rate con", sync: "poll", status: "stub",
+    fallback: "Paste rate con", sync: "manual", status: "live",
   },
   {
     id: "truckstop", label: "Truckstop.com", domain: "loadboard",
     blurb: "Second load board — same search adapter contract as DAT. Needs a Truckstop.com developer API key.",
     fields: [{ key: "apiKey", label: "API key", secret: true }],
-    fallback: "Paste rate con", sync: "poll", status: "stub",
+    fallback: "Paste rate con", sync: "manual", status: "live",
   },
   {
     id: "efs", label: "EFS fuel card", domain: "fuel",
