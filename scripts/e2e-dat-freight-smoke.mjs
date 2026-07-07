@@ -42,7 +42,7 @@ async function main() {
   console.log("1. Dispatcher sees the DAT panel on the load board, disconnected by default")
   await login(page, "dispatch@demo.thind")
   await page.goto(`${BASE}/hub/loadboard`, { waitUntil: "networkidle2" })
-  await waitForText(page, "DAT freight search")
+  await waitForText(page, "External freight search")
   const disconnectedState = await page.evaluate(() => document.body.innerText)
   check(disconnectedState.includes("Connect DAT"), "loadboard shows the Connect DAT prompt before any credentials exist")
   check(disconnectedState.includes("Paste rate cons manually"), "disconnected copy points dispatchers at the manual fallback")
