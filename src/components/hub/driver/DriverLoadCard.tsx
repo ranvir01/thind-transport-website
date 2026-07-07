@@ -263,7 +263,7 @@ export function DriverLoadCard({ load, detentionFreeMinutes }: { load: LoadForDr
                 {done && stop.facility_id ? (
                   <button
                     onClick={() => setNotingStop(stop)}
-                    className="mt-2 flex items-center gap-1.5 text-body-xs font-semibold text-gold hover:text-gold/80 min-h-[36px]"
+                    className="mt-2 flex items-center gap-1.5 text-body-xs font-semibold text-gold hover:text-gold/80 min-h-[44px]"
                   >
                     <MessageSquarePlus className="h-3.5 w-3.5" />
                     Leave a tip about this place for other drivers
@@ -406,7 +406,7 @@ function FacilityNoteSheet({
               key={tag}
               onClick={() => toggle(tag)}
               className={cn(
-                "rounded-full border px-3 py-2 text-sm font-semibold capitalize min-h-[40px]",
+                "rounded-full border px-3 py-2 text-sm font-semibold capitalize min-h-[44px]",
                 tags.includes(tag)
                   ? "border-gold/60 bg-gold/20 text-gold"
                   : "border-white/15 bg-white/5 text-steel-200"

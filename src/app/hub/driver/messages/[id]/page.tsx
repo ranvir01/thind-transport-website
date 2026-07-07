@@ -39,7 +39,7 @@ export default async function DriverThreadPage({ params }: { params: Promise<{ i
         <Link
           href="/hub/driver/messages"
           aria-label="Back to messages"
-          className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/15 text-steel-100 hover:bg-white/5"
+          className="flex h-11 w-11 min-h-[44px] min-w-[44px] items-center justify-center rounded-xl border border-white/15 text-steel-100 hover:bg-white/5"
         >
           <ChevronLeft className="h-5 w-5" />
         </Link>

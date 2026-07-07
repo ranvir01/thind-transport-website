@@ -90,7 +90,7 @@ export function CancelTimeOffButton({ id }: { id: string }) {
         })
       }
       disabled={pending}
-      className="mt-2 text-body-xs font-semibold text-steel-400 hover:text-white min-h-[36px]"
+      className="mt-2 text-body-xs font-semibold text-steel-400 hover:text-white min-h-[44px]"
     >
       Cancel this request
     </button>
