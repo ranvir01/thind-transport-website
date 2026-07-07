@@ -12,6 +12,7 @@ import { formatHubDateShort } from "@/lib/hub/format-dates"
 import { driverTimeOffConflict } from "@/lib/hub/timeoff"
 import { query, queryOne } from "@/lib/hub/db"
 import { logAudit } from "@/lib/hub/audit"
+import { actionError } from "@/lib/hub/action-error"
 import type { Driver } from "@/lib/hub/types"
 
 interface Result {
@@ -31,7 +32,7 @@ export async function plannerMoveLoadAction(
   try {
     user = await requirePermission("loads:write")
   } catch (err) {
-    return { ok: false, error: err instanceof Error ? err.message : "Forbidden" }
+    return actionError(err, "Forbidden")
   }
 
   const load = await queryOne<{

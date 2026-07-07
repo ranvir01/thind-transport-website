@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache"
 import { getHubUser } from "@/lib/hub/session"
 import { query } from "@/lib/hub/db"
 import { logAudit } from "@/lib/hub/audit"
+import { actionError } from "@/lib/hub/action-error"
 
 interface Result {
   ok: boolean
@@ -28,6 +29,6 @@ export async function setTenantStatusAction(
     revalidatePath("/hub/admin")
     return { ok: true }
   } catch (err) {
-    return { ok: false, error: err instanceof Error ? err.message : "Failed" }
+    return actionError(err, "Failed")
   }
 }

@@ -5,6 +5,7 @@ import { requireOfficeUser } from "@/lib/hub/session"
 import { emailPacket, signBrokerAgreement } from "@/lib/hub/packet"
 import { getCarrier, getCarrierSettings } from "@/lib/hub/settings"
 import { logAudit } from "@/lib/hub/audit"
+import { actionError } from "@/lib/hub/action-error"
 import { query } from "@/lib/hub/db"
 
 interface Result {
@@ -27,7 +28,7 @@ export async function emailPacketAction(to: string, note?: string): Promise<Resu
     })
     return { ok: true, attached: result.attached }
   } catch (err) {
-    return { ok: false, error: err instanceof Error ? err.message : "Could not send the packet" }
+    return actionError(err, "Could not send the packet")
   }
 }
 
@@ -60,7 +61,7 @@ export async function requestCoiAction(input: {
     )
     return { ok: true }
   } catch (err) {
-    return { ok: false, error: err instanceof Error ? err.message : "Could not send the request" }
+    return actionError(err, "Could not send the request")
   }
 }
 
@@ -90,7 +91,7 @@ export async function signAgreementAction(
     revalidatePath(`/hub/customers/${customerId}`)
     return { ok: true }
   } catch (err) {
-    return { ok: false, error: err instanceof Error ? err.message : "Could not record the agreement" }
+    return actionError(err, "Could not record the agreement")
   }
 }
 

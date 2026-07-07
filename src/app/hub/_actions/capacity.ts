@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache"
 import { requireOfficeUser } from "@/lib/hub/session"
 import { query } from "@/lib/hub/db"
 import { assertCarrierRefs } from "@/lib/hub/tenancy"
+import { actionError } from "@/lib/hub/action-error"
 
 interface Result {
   ok: boolean
@@ -38,7 +39,7 @@ export async function postCapacityAction(input: {
     revalidatePath("/load-board")
     return { ok: true }
   } catch (err) {
-    return { ok: false, error: err instanceof Error ? err.message : "Could not post" }
+    return actionError(err, "Could not post")
   }
 }
 
@@ -53,6 +54,6 @@ export async function removeCapacityAction(id: string): Promise<Result> {
     revalidatePath("/load-board")
     return { ok: true }
   } catch (err) {
-    return { ok: false, error: err instanceof Error ? err.message : "Could not remove" }
+    return actionError(err, "Could not remove")
   }
 }

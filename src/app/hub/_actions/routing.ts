@@ -7,6 +7,7 @@ import { suggestMiles } from "@/lib/hub/routing"
 import { milesSourceLabel, type MilesSource } from "@/lib/hub/routing-core"
 import { query } from "@/lib/hub/db"
 import { logAudit } from "@/lib/hub/audit"
+import { actionError } from "@/lib/hub/action-error"
 
 /**
  * Compute suggested drive miles for a load's lane (read-only — does not save).
@@ -19,7 +20,7 @@ export async function suggestLoadMilesAction(
   try {
     user = await requirePermission("loads:read")
   } catch (err) {
-    return { ok: false, error: err instanceof Error ? err.message : "Forbidden" }
+    return actionError(err, "Forbidden")
   }
   const load = await getLoad(user.carrierId, loadId)
   if (!load) return { ok: false, error: "Load not found" }
@@ -43,7 +44,7 @@ export async function applyLoadMilesAction(
   try {
     user = await requirePermission("loads:write")
   } catch (err) {
-    return { ok: false, error: err instanceof Error ? err.message : "Forbidden" }
+    return actionError(err, "Forbidden")
   }
   if (!Number.isFinite(miles) || miles <= 0 || miles > 100000) {
     return { ok: false, error: "Enter a mileage between 1 and 100,000" }

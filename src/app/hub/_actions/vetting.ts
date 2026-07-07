@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache"
 import { requireOfficeUser, requirePermission } from "@/lib/hub/session"
 import { avgDaysToPay, creditExposure, latestVetting, vetCustomer, fmcsaConfigured } from "@/lib/hub/vetting"
 import { logAudit } from "@/lib/hub/audit"
+import { actionError } from "@/lib/hub/action-error"
 
 interface Result {
   ok: boolean
@@ -29,7 +30,7 @@ export async function vetCustomerAction(customerId: string): Promise<Result> {
     revalidatePath(`/hub/customers/${customerId}`)
     return { ok: true }
   } catch (err) {
-    return { ok: false, error: err instanceof Error ? err.message : "Vetting failed" }
+    return actionError(err, "Vetting failed")
   }
 }
 

@@ -13,6 +13,7 @@ import { saveDocument } from "@/lib/hub/documents"
 import { decodeVin } from "@/lib/hub/vin"
 import { vetCustomer, fmcsaConfigured } from "@/lib/hub/vetting"
 import { logAudit } from "@/lib/hub/audit"
+import { actionError } from "@/lib/hub/action-error"
 import { queryOne, query } from "@/lib/hub/db"
 import type { DocKind } from "@/lib/hub/doc-intake/types"
 import type { DocumentKind } from "@/lib/hub/types"
@@ -62,7 +63,7 @@ export async function applySmartScanAction(formData: FormData): Promise<ApplySca
   try {
     user = await requirePermission("fleet:write")
   } catch (err) {
-    return { ok: false, error: err instanceof Error ? err.message : "Forbidden" }
+    return actionError(err, "Forbidden")
   }
 
   const kind = formData.get("kind") as DocKind
@@ -264,7 +265,7 @@ export async function applySmartScanAction(formData: FormData): Promise<ApplySca
     if (msg.includes("unique") || msg.includes("duplicate")) {
       return { ok: false, error: "That record already exists (duplicate unit # or name)" }
     }
-    return { ok: false, error: msg }
+    return actionError(err, "Could not apply")
   }
 }
 

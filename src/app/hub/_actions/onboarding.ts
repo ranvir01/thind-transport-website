@@ -9,6 +9,7 @@ import bcrypt from "bcrypt"
 import { hubDb, queryOne } from "@/lib/hub/db"
 import { getHubUser, requireOwner } from "@/lib/hub/session"
 import { logAudit } from "@/lib/hub/audit"
+import { actionError } from "@/lib/hub/action-error"
 
 interface Result {
   ok: boolean
@@ -79,7 +80,7 @@ export async function createWorkspaceAction(input: {
     return { ok: true }
   } catch (err) {
     await client.query("ROLLBACK")
-    return { ok: false, error: err instanceof Error ? err.message : "Could not create the workspace" }
+    return actionError(err, "Could not create the workspace")
   } finally {
     client.release()
   }
@@ -129,6 +130,6 @@ export async function setBrandAccentAction(accent: string): Promise<Result> {
     )
     return { ok: true }
   } catch (err) {
-    return { ok: false, error: err instanceof Error ? err.message : "Could not save" }
+    return actionError(err, "Could not save")
   }
 }
