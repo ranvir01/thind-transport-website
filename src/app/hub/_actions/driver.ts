@@ -18,15 +18,12 @@ import { notifyRoles } from "@/lib/hub/notify"
 import { logAudit } from "@/lib/hub/audit"
 import { query, queryOne } from "@/lib/hub/db"
 import { dollarsToCents, type LoadStatus } from "@/lib/hub/types"
+import { actionError } from "@/lib/hub/action-error"
 
 interface Result {
   ok: boolean
   error?: string
   id?: string
-}
-
-function fail(err: unknown, fallback: string): Result {
-  return { ok: false, error: err instanceof Error ? err.message : fallback }
 }
 
 const STATUS_WORDS: Record<string, string> = {
@@ -53,7 +50,7 @@ export async function driverAdvanceStatus(loadId: string): Promise<Result> {
     revalidatePath("/hub/driver")
     return { ok: true }
   } catch (err) {
-    return fail(err, "Could not update status")
+    return actionError(err, "Could not update status")
   }
 }
 
@@ -76,7 +73,7 @@ export async function driverStopTimestamp(
     revalidatePath("/hub/driver")
     return { ok: true }
   } catch (err) {
-    return fail(err, "Could not record the time")
+    return actionError(err, "Could not record the time")
   }
 }
 
@@ -95,7 +92,7 @@ export async function driverAcknowledgeDispatch(loadId: string): Promise<Result>
     revalidatePath("/hub/driver")
     return { ok: true }
   } catch (err) {
-    return fail(err, "Could not confirm")
+    return actionError(err, "Could not confirm")
   }
 }
 
@@ -222,7 +219,7 @@ export async function driverUploadDocument(formData: FormData): Promise<Result> 
     revalidatePath(`/hub/loads/${loadId}`)
     return { ok: true, id: doc.id }
   } catch (err) {
-    return fail(err, "Upload failed — try again when you have signal")
+    return actionError(err, "Upload failed — try again when you have signal")
   }
 }
 
@@ -246,7 +243,7 @@ export async function driverAddFacilityNote(input: {
     revalidatePath("/hub/driver")
     return { ok: true }
   } catch (err) {
-    return fail(err, "Could not save the note")
+    return actionError(err, "Could not save the note")
   }
 }
 
@@ -276,7 +273,7 @@ export async function driverRequestTimeOff(input: {
     revalidatePath("/hub/driver/timeoff")
     return { ok: true, id: request.id }
   } catch (err) {
-    return fail(err, "Could not send the request")
+    return actionError(err, "Could not send the request")
   }
 }
 
@@ -287,7 +284,7 @@ export async function driverCancelTimeOff(id: string): Promise<Result> {
     revalidatePath("/hub/driver/timeoff")
     return ok ? { ok: true } : { ok: false, error: "Already decided — call the office" }
   } catch (err) {
-    return fail(err, "Could not cancel")
+    return actionError(err, "Could not cancel")
   }
 }
 
@@ -323,7 +320,7 @@ export async function driverRequestAdvance(input: {
     revalidatePath("/hub/money/advances")
     return { ok: true, id: rows[0].id }
   } catch (err) {
-    return fail(err, "Could not send the request")
+    return actionError(err, "Could not send the request")
   }
 }
 
@@ -343,6 +340,6 @@ export async function driverAcknowledgeAnnouncement(
     revalidatePath("/hub/driver")
     return { ok: true }
   } catch (err) {
-    return fail(err, "Could not acknowledge")
+    return actionError(err, "Could not acknowledge")
   }
 }
