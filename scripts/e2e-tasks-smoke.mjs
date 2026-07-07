@@ -192,6 +192,8 @@ async function main() {
 
   console.log("7. Delete the urgent task")
   await clickTaskButton(page, FULL_TASK, "Delete task")
+  await waitForText(page, "Keep")
+  await clickTaskButton(page, FULL_TASK, "Confirm delete task")
   await page.waitForFunction(
     (t) => !document.body.innerText.includes(t),
     { timeout: 15000 },
