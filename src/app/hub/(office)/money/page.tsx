@@ -24,6 +24,9 @@ const STATUS_PILL: Record<string, string> = {
 
 const BUCKETS = ["current", "1-30", "31-60", "61-90", "90+"] as const
 
+// API download endpoint (not a page) — held in a const so the page-link lint rule doesn't misfire.
+const QBO_IIF_EXPORT_URL = "/api/hub/exports/qbo-iif"
+
 export default async function MoneyPage() {
   const user = await requirePermissionPage("money:read")
   const canWrite = can(user.role, "money:write")
@@ -87,7 +90,7 @@ export default async function MoneyPage() {
             </a>
           ))}
           <a
-            href="/api/hub/exports/qbo-iif"
+            href={QBO_IIF_EXPORT_URL}
             className="inline-flex min-h-[36px] items-center gap-1.5 rounded-lg border border-border-strong px-3 text-xs font-semibold text-fg-2 hover:bg-hover"
           >
             <Download className="h-3.5 w-3.5" /> Expenses (QuickBooks .IIF)
