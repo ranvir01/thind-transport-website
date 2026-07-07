@@ -83,9 +83,11 @@ export async function createLoadAction(values: Record<string, unknown>): Promise
 
   try {
     const stops = await geocodeStops(parsed.data.stops)
+    const source =
+      values.source === "quote" ? "quote" : values.source === "dat" ? "dat" : "direct"
     const load = await createLoad(
       user.carrierId,
-      { ...toLoadInput(parsed.data), source: values.source === "quote" ? "quote" : "direct", stops },
+      { ...toLoadInput(parsed.data), source, stops },
       { id: user.id, name: user.name }
     )
     await logAudit({

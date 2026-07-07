@@ -1,10 +1,13 @@
 import Link from "next/link"
 import { Search } from "lucide-react"
+import { DatFreightSearch } from "@/components/hub/DatFreightSearch"
 import { LoadBoardGrid } from "@/components/hub/LoadBoardGrid"
 import { EmptyState, PageHeader, fieldCls, btnSecondaryCls } from "@/components/hub/ui"
+import { listCustomers } from "@/lib/hub/customers"
 import { listDrivers } from "@/lib/hub/drivers"
 import { listTrucks } from "@/lib/hub/fleet"
 import { listLoads } from "@/lib/hub/loads"
+import { hasCredentials } from "@/lib/hub/credentials"
 import { can } from "@/lib/hub/permissions"
 import { requireOfficeUser } from "@/lib/hub/session"
 import { LOAD_STATUSES, STATUS_LABELS, type LoadStatus } from "@/lib/hub/types"
@@ -21,10 +24,12 @@ export default async function LoadBoardPage({
   const status = (params.status as LoadStatus | "active" | "all") || "active"
   const search = params.q?.trim() || undefined
 
-  const [loads, drivers, trucks] = await Promise.all([
+  const [loads, drivers, trucks, customers, datConnected] = await Promise.all([
     listLoads(user.carrierId, { status, search }),
     listDrivers(user.carrierId),
     listTrucks(user.carrierId),
+    listCustomers(user.carrierId),
+    hasCredentials(user.carrierId, "dat"),
   ])
 
   const canEdit = can(user.role, "loads:write")
@@ -36,6 +41,12 @@ export default async function LoadBoardPage({
       <PageHeader
         title="Load board"
         subtitle="Your booked loads — click any cell to edit, like Excel."
+      />
+
+      <DatFreightSearch
+        customers={customers.map((c) => ({ id: c.id, label: c.name }))}
+        canBook={canEdit}
+        datConnected={datConnected}
       />
 
       <form method="GET" className="mb-4 flex flex-col gap-2 sm:flex-row">
