@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { weeklyRevenueTrend, monthlyRevenueTrend, type RevenuePeriod } from "@/lib/hub/reports"
+import { weeklyRevenueTrend, monthlyRevenueTrend, arAgingTrend, type RevenuePeriod, type AgingTrendPeriod } from "@/lib/hub/reports"
 import { requirePermissionPage } from "@/lib/hub/session"
 import { fmtCents } from "@/lib/hub/types"
 import { Panel, PageHeader } from "@/components/hub/ui"
@@ -27,11 +27,64 @@ function RevenueBars({ periods, labelFmt }: { periods: RevenuePeriod[]; labelFmt
   )
 }
 
+const AGING_SEGMENTS: { key: keyof AgingTrendPeriod; className: string; label: string }[] = [
+  { key: "currentCents", className: "bg-surface-2", label: "Current" },
+  { key: "bucket1_30Cents", className: "bg-warn-soft", label: "1-30" },
+  { key: "bucket31_60Cents", className: "bg-warn", label: "31-60" },
+  { key: "bucket61_90Cents", className: "bg-bad-soft", label: "61-90" },
+  { key: "bucket90PlusCents", className: "bg-bad", label: "90+" },
+]
+
+function AgingTrendBars({ periods }: { periods: AgingTrendPeriod[] }) {
+  const max = Math.max(1, ...periods.map((p) => p.totalOpenCents))
+  const weekLabel = (iso: string) =>
+    new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric" })
+
+  return (
+    <div>
+      <div className="flex items-end gap-2 px-4 pb-2 pt-2" style={{ height: 160 }}>
+        {periods.map((p) => (
+          <div key={p.periodStart} className="flex flex-1 flex-col items-center gap-1.5">
+            <span className="text-[10.5px] font-medium text-fg-3 tabular-nums">
+              {p.totalOpenCents > 0 ? `$${Math.round(p.totalOpenCents / 100 / 1000)}k` : ""}
+            </span>
+            <div
+              className="flex w-full flex-col-reverse overflow-hidden rounded-t-md"
+              title={fmtCents(p.totalOpenCents)}
+            >
+              {AGING_SEGMENTS.map((seg) => {
+                const value = p[seg.key] as number
+                if (value <= 0) return null
+                return (
+                  <div
+                    key={seg.key}
+                    className={seg.className}
+                    style={{ height: Math.max(1, Math.round((value / max) * 110)) }}
+                  />
+                )
+              })}
+            </div>
+            <span className="text-[10.5px] text-fg-3">{weekLabel(p.periodStart)}</span>
+          </div>
+        ))}
+      </div>
+      <div className="flex flex-wrap gap-x-3 gap-y-1 px-4 pb-4 text-[10.5px] text-fg-3">
+        {AGING_SEGMENTS.map((seg) => (
+          <span key={seg.key} className="inline-flex items-center gap-1">
+            <span className={`h-2 w-2 rounded-sm ${seg.className}`} /> {seg.label}
+          </span>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 export default async function OwnerDashboardPage() {
   const user = await requirePermissionPage("money:read")
-  const [weekly, monthly] = await Promise.all([
+  const [weekly, monthly, aging] = await Promise.all([
     weeklyRevenueTrend(user.carrierId, 8),
     monthlyRevenueTrend(user.carrierId, 6),
+    arAgingTrend(user.carrierId, 8),
   ])
 
   const weekLabel = (iso: string) =>
@@ -60,6 +113,12 @@ export default async function OwnerDashboardPage() {
         </Panel>
         <Panel title="Revenue — last 6 months">
           <RevenueBars periods={monthly} labelFmt={monthLabel} />
+        </Panel>
+      </div>
+
+      <div className="mt-4">
+        <Panel title="AR aging trend — last 8 weeks">
+          <AgingTrendBars periods={aging} />
         </Panel>
       </div>
     </div>
