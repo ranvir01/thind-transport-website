@@ -27,6 +27,7 @@ export function CapacityPanel({
 }) {
   const router = useRouter()
   const [pending, startTransition] = useTransition()
+  const [confirmingRemoveId, setConfirmingRemoveId] = useState<string | null>(null)
   const [form, setForm] = useState({
     truckId: "", equipment: "dry_van" as "flatbed" | "reefer" | "dry_van",
     availableOn: new Date().toISOString().slice(0, 10),
@@ -44,6 +45,14 @@ export function CapacityPanel({
       } else toast.error(result.error ?? "Could not post")
     })
   }
+
+  const remove = (postingId: string) =>
+    startTransition(async () => {
+      const result = await removeCapacityAction(postingId)
+      if (result.ok) router.refresh()
+      else toast.error(result.error ?? "Failed")
+      setConfirmingRemoveId(null)
+    })
 
   return (
     <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
@@ -99,19 +108,36 @@ export function CapacityPanel({
                   {posting.dest_preference ? ` → ${posting.dest_preference}` : ""}
                 </p>
               </div>
-              <button
-                aria-label="Remove posting"
-                onClick={() =>
-                  startTransition(async () => {
-                    const result = await removeCapacityAction(posting.id)
-                    if (result.ok) router.refresh()
-                    else toast.error(result.error ?? "Failed")
-                  })
-                }
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-fg-3 hover:bg-hover hover:text-bad"
-              >
-                <Trash2 className="h-4 w-4" />
-              </button>
+              {confirmingRemoveId === posting.id ? (
+                <span className="flex shrink-0 items-center gap-1">
+                  <button
+                    onClick={() => remove(posting.id)}
+                    disabled={pending}
+                    aria-label="Confirm remove posting"
+                    className="flex h-8 items-center gap-1 rounded-lg bg-bad px-2 text-[11px] font-bold uppercase tracking-wide text-white hover:opacity-90 disabled:opacity-60"
+                  >
+                    {pending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
+                    Remove
+                  </button>
+                  <button
+                    onClick={() => setConfirmingRemoveId(null)}
+                    disabled={pending}
+                    aria-label="Keep posting"
+                    className="flex h-8 items-center rounded-lg px-2 text-[11px] font-semibold text-fg-3 hover:bg-hover"
+                  >
+                    Keep
+                  </button>
+                </span>
+              ) : (
+                <button
+                  onClick={() => setConfirmingRemoveId(posting.id)}
+                  disabled={pending}
+                  aria-label="Remove posting"
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-fg-3 hover:bg-hover hover:text-bad"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              )}
             </div>
           ))
         )}
