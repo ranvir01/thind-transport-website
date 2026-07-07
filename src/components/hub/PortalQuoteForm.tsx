@@ -41,7 +41,7 @@ export function PortalQuoteForm() {
   }
 
   return (
-    <form onSubmit={submit} className="rounded-2xl border border-gold/30 bg-gold/[0.05] p-4 space-y-3">
+    <form onSubmit={submit} className="rounded-2xl border border-white/10 bg-navy-800/80 p-4 space-y-3">
       <div className="grid grid-cols-[1fr_72px] gap-2">
         <div>
           <label htmlFor="q-ocity" className={labelDarkCls}>Pickup city *</label>
