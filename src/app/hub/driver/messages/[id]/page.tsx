@@ -43,7 +43,7 @@ export default async function DriverThreadPage({ params }: { params: Promise<{ i
         >
           <ChevronLeft className="h-5 w-5" />
         </Link>
-        <h1 className="font-display text-lg font-extrabold uppercase tracking-wide text-white">
+        <h1 className="min-w-0 flex-1 truncate font-display text-lg font-extrabold uppercase tracking-wide text-white">
           {thread.kind === "direct" ? "Dispatch / office" : `Load ${thread.load_reference ?? ""}`}
         </h1>
       </div>
