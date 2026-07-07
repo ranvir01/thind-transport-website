@@ -94,11 +94,11 @@ export function PortalQuoteForm() {
       </div>
       <div className="flex gap-2">
         <button type="button" onClick={() => setOpen(false)}
-          className="flex-1 min-h-[48px] rounded-xl border border-border-strong text-sm font-semibold text-fg-2 hover:bg-hover">
+          className="flex-1 min-h-[48px] rounded-xl border border-white/15 text-sm font-semibold text-steel-100 hover:bg-white/5">
           Cancel
         </button>
         <button type="submit" disabled={pending}
-          className="flex flex-1 min-h-[48px] items-center justify-center gap-2 rounded-control bg-accent font-display text-sm font-bold uppercase tracking-[0.06em] text-fg hover:bg-accent-hover disabled:opacity-60">
+          className="flex flex-1 min-h-[48px] items-center justify-center gap-2 rounded-control bg-accent font-display text-sm font-bold uppercase tracking-[0.06em] text-accent-fg hover:bg-accent-hover disabled:opacity-60">
           {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : null} Send the request
         </button>
       </div>
