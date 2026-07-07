@@ -13,6 +13,7 @@ import {
   parseIntSafe, normalizeEquipment, normalizeState, parseDateSafe,
   type ImportRow,
 } from "@/lib/hub/csv"
+import { actionError, actionErrorMessage } from "@/lib/hub/action-error"
 
 export interface ImportResult {
   ok: boolean
@@ -54,7 +55,7 @@ export async function saveImportTemplateAction(
   try {
     user = await requirePermission("imports:run")
   } catch (err) {
-    return { ok: false, error: err instanceof Error ? err.message : "Forbidden" }
+    return actionError(err, "Forbidden")
   }
   if (!name.trim()) return { ok: false, error: "Template needs a name" }
   await query(
@@ -84,7 +85,8 @@ export async function importLoadsAction(
   try {
     user = await requirePermission("imports:run")
   } catch (err) {
-    return { ok: false, imported: 0, failed: [{ row: 0, error: err instanceof Error ? err.message : "Forbidden" }] }
+    const denied = actionError(err, "Forbidden")
+    return { ok: false, imported: 0, failed: [{ row: 0, error: denied.error }] }
   }
   const failed: { row: number; error: string }[] = []
   let imported = 0
@@ -152,7 +154,7 @@ export async function importLoadsAction(
       )
       imported++
     } catch (err) {
-      failed.push({ row: i + 1, error: err instanceof Error ? err.message : "Unknown error" })
+      failed.push({ row: i + 1, error: actionErrorMessage(err, "Unknown error") })
     }
   }
 
@@ -175,7 +177,8 @@ export async function importFuelAction(rows: GenericRow[], program: string): Pro
   try {
     user = await requirePermission("imports:run")
   } catch (err) {
-    return { ok: false, imported: 0, failed: [{ row: 0, error: err instanceof Error ? err.message : "Forbidden" }] }
+    const denied = actionError(err, "Forbidden")
+    return { ok: false, imported: 0, failed: [{ row: 0, error: denied.error }] }
   }
   const failed: { row: number; error: string }[] = []
   let imported = 0
@@ -220,7 +223,7 @@ export async function importFuelAction(rows: GenericRow[], program: string): Pro
       if (result.length === 0) skippedDuplicates++
       else imported++
     } catch (err) {
-      failed.push({ row: i + 1, error: err instanceof Error ? err.message : "Unknown error" })
+      failed.push({ row: i + 1, error: actionErrorMessage(err, "Unknown error") })
     }
   }
   await logAudit({
@@ -239,7 +242,8 @@ export async function importTollsAction(rows: GenericRow[], program: string): Pr
   try {
     user = await requirePermission("imports:run")
   } catch (err) {
-    return { ok: false, imported: 0, failed: [{ row: 0, error: err instanceof Error ? err.message : "Forbidden" }] }
+    const denied = actionError(err, "Forbidden")
+    return { ok: false, imported: 0, failed: [{ row: 0, error: denied.error }] }
   }
   const failed: { row: number; error: string }[] = []
   let imported = 0
@@ -270,7 +274,7 @@ export async function importTollsAction(rows: GenericRow[], program: string): Pr
       if (result.length === 0) skippedDuplicates++
       else imported++
     } catch (err) {
-      failed.push({ row: i + 1, error: err instanceof Error ? err.message : "Unknown error" })
+      failed.push({ row: i + 1, error: actionErrorMessage(err, "Unknown error") })
     }
   }
   await logAudit({
@@ -289,7 +293,8 @@ export async function importPositionsAction(rows: GenericRow[]): Promise<ImportR
   try {
     user = await requirePermission("imports:run")
   } catch (err) {
-    return { ok: false, imported: 0, failed: [{ row: 0, error: err instanceof Error ? err.message : "Forbidden" }] }
+    const denied = actionError(err, "Forbidden")
+    return { ok: false, imported: 0, failed: [{ row: 0, error: denied.error }] }
   }
   const failed: { row: number; error: string }[] = []
   let imported = 0
@@ -312,7 +317,7 @@ export async function importPositionsAction(rows: GenericRow[]): Promise<ImportR
       )
       imported++
     } catch (err) {
-      failed.push({ row: i + 1, error: err instanceof Error ? err.message : "Unknown error" })
+      failed.push({ row: i + 1, error: actionErrorMessage(err, "Unknown error") })
     }
   }
   revalidatePath("/hub/map")
@@ -326,7 +331,8 @@ export async function importMileageAction(rows: GenericRow[]): Promise<ImportRes
   try {
     user = await requirePermission("imports:run")
   } catch (err) {
-    return { ok: false, imported: 0, failed: [{ row: 0, error: err instanceof Error ? err.message : "Forbidden" }] }
+    const denied = actionError(err, "Forbidden")
+    return { ok: false, imported: 0, failed: [{ row: 0, error: denied.error }] }
   }
   const failed: { row: number; error: string }[] = []
   let imported = 0
@@ -350,7 +356,7 @@ export async function importMileageAction(rows: GenericRow[]): Promise<ImportRes
       )
       imported++
     } catch (err) {
-      failed.push({ row: i + 1, error: err instanceof Error ? err.message : "Unknown error" })
+      failed.push({ row: i + 1, error: actionErrorMessage(err, "Unknown error") })
     }
   }
   revalidatePath("/hub/compliance/ifta")
