@@ -5,6 +5,7 @@ import { requirePermission, getHubUser } from "@/lib/hub/session"
 import { createIncident, updateIncident, type IncidentInput } from "@/lib/hub/incidents"
 import { notifyRoles } from "@/lib/hub/notify"
 import { logAudit } from "@/lib/hub/audit"
+import { actionError } from "@/lib/hub/action-error"
 
 export interface IncidentFormResult {
   ok: boolean
@@ -21,7 +22,7 @@ export async function saveIncident(
   try {
     user = await requirePermission("compliance:write")
   } catch (err) {
-    return { ok: false, error: err instanceof Error ? err.message : "Forbidden" }
+    return actionError(err, "Forbidden")
   }
   try {
     const incident = id
@@ -40,7 +41,7 @@ export async function saveIncident(
     revalidatePath("/hub/safety")
     return { ok: true, id: incident.id }
   } catch (err) {
-    return { ok: false, error: err instanceof Error ? err.message : "Could not save incident" }
+    return actionError(err, "Could not save incident")
   }
 }
 
@@ -108,6 +109,6 @@ export async function fileDriverIncidentReport(input: {
     revalidatePath("/hub/safety")
     return { ok: true, id: incident.id }
   } catch (err) {
-    return { ok: false, error: err instanceof Error ? err.message : "Could not file report" }
+    return actionError(err, "Could not file report")
   }
 }
