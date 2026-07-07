@@ -1,7 +1,6 @@
 import Link from "next/link"
 import { Search } from "lucide-react"
-import { DatFreightSearch } from "@/components/hub/DatFreightSearch"
-import { TruckstopFreightSearch } from "@/components/hub/TruckstopFreightSearch"
+import { LoadBoardFreightSearch } from "@/components/hub/LoadBoardFreightSearch"
 import { LoadBoardGrid } from "@/components/hub/LoadBoardGrid"
 import { EmptyState, PageHeader, fieldCls, btnSecondaryCls } from "@/components/hub/ui"
 import { listCustomers } from "@/lib/hub/customers"
@@ -45,15 +44,10 @@ export default async function LoadBoardPage({
         subtitle="Your booked loads — click any cell to edit, like Excel."
       />
 
-      <DatFreightSearch
+      <LoadBoardFreightSearch
         customers={customers.map((c) => ({ id: c.id, label: c.name }))}
         canBook={canEdit}
         datConnected={datConnected}
-      />
-
-      <TruckstopFreightSearch
-        customers={customers.map((c) => ({ id: c.id, label: c.name }))}
-        canBook={canEdit}
         truckstopConnected={truckstopConnected}
       />
 
