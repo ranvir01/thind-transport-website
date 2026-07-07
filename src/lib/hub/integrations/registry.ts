@@ -83,9 +83,9 @@ export const PROVIDERS: readonly ProviderSpec[] = [
   },
   {
     id: "truckstop", label: "Truckstop.com", domain: "loadboard",
-    blurb: "Second load board — same LoadSource adapter contract as DAT.",
+    blurb: "Second load board — same search adapter contract as DAT. Needs a Truckstop.com developer API key.",
     fields: [{ key: "apiKey", label: "API key", secret: true }],
-    fallback: "Paste rate con", sync: "poll", status: "planned",
+    fallback: "Paste rate con", sync: "poll", status: "stub",
   },
   {
     id: "efs", label: "EFS fuel card", domain: "fuel",
