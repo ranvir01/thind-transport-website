@@ -1,5 +1,7 @@
 import Link from "next/link"
 import { weeklyRevenueTrend, monthlyRevenueTrend, arAgingTrend, type RevenuePeriod, type AgingTrendPeriod } from "@/lib/hub/reports"
+import { truckPnl } from "@/lib/hub/expenses"
+import { computeFleetKpis } from "@/lib/hub/kpi"
 import { requirePermissionPage } from "@/lib/hub/session"
 import { fmtCents } from "@/lib/hub/types"
 import { Panel, PageHeader } from "@/components/hub/ui"
@@ -79,12 +81,63 @@ function AgingTrendBars({ periods }: { periods: AgingTrendPeriod[] }) {
   )
 }
 
+function LoadedVsDeadheadPanel({ pnl }: { pnl: Awaited<ReturnType<typeof truckPnl>> }) {
+  const loadedMiles = pnl.reduce((s, r) => s + Number(r.loaded_miles ?? 0), 0)
+  const deadheadMiles = pnl.reduce((s, r) => s + Number(r.deadhead_miles ?? 0), 0)
+  const revenueCents = pnl.reduce((s, r) => s + Number(r.revenue_cents), 0)
+  const operatingCostCents = pnl.reduce(
+    (s, r) => s + Number(r.fuel_cents) + Number(r.maintenance_cents) + Number(r.other_expense_cents),
+    0
+  )
+  const kpis = computeFleetKpis({ revenueCents, operatingCostCents, loadedMiles, deadheadMiles })
+  const perMile = (c: number | null) => (c == null ? "—" : `$${(c / 100).toFixed(2)}`)
+  const loadedPct = kpis.totalMiles > 0 ? Math.round((kpis.loadedMiles / kpis.totalMiles) * 100) : null
+
+  return (
+    <div>
+      <div className="grid grid-cols-2 gap-3 px-4 pt-4">
+        <div>
+          <span className="text-label text-fg-3 uppercase">Operating cost / mi</span>
+          <p className="mt-1 font-mono text-lg font-medium text-fg tabular-nums">{perMile(kpis.cpmCents)}</p>
+        </div>
+        <div>
+          <span className="text-label text-fg-3 uppercase">Revenue / loaded mi</span>
+          <p className="mt-1 font-mono text-lg font-medium text-fg tabular-nums">{perMile(kpis.rpmCents)}</p>
+        </div>
+      </div>
+
+      <div className="px-4 pt-4">
+        {kpis.totalMiles > 0 ? (
+          <div className="h-3 w-full overflow-hidden rounded-full bg-bad-soft">
+            <div className="h-full rounded-full bg-accent" style={{ width: `${loadedPct}%` }} />
+          </div>
+        ) : (
+          <div className="h-3 w-full rounded-full bg-surface-2" />
+        )}
+        <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-fg-3">
+          <span className="inline-flex items-center gap-1.5">
+            <span className="h-2 w-2 rounded-sm bg-accent" /> Loaded {loadedPct != null ? `${loadedPct}%` : "—"} ({kpis.loadedMiles.toLocaleString()} mi)
+          </span>
+          <span className="inline-flex items-center gap-1.5">
+            <span className="h-2 w-2 rounded-sm bg-bad-soft" /> Deadhead {kpis.deadheadPct != null ? `${kpis.deadheadPct}%` : "—"} ({kpis.deadheadMiles.toLocaleString()} mi)
+          </span>
+        </div>
+      </div>
+
+      <p className="px-4 py-4 text-[11px] text-fg-3">
+        Last 92 days, all trucks. {kpis.totalMiles === 0 ? "Add miles to loads to see this trend." : ""}
+      </p>
+    </div>
+  )
+}
+
 export default async function OwnerDashboardPage() {
   const user = await requirePermissionPage("money:read")
-  const [weekly, monthly, aging] = await Promise.all([
+  const [weekly, monthly, aging, pnl] = await Promise.all([
     weeklyRevenueTrend(user.carrierId, 8),
     monthlyRevenueTrend(user.carrierId, 6),
     arAgingTrend(user.carrierId, 8),
+    truckPnl(user.carrierId, 92),
   ])
 
   const weekLabel = (iso: string) =>
@@ -116,9 +169,12 @@ export default async function OwnerDashboardPage() {
         </Panel>
       </div>
 
-      <div className="mt-4">
+      <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
         <Panel title="AR aging trend — last 8 weeks">
           <AgingTrendBars periods={aging} />
+        </Panel>
+        <Panel title="Loaded vs. deadhead">
+          <LoadedVsDeadheadPanel pnl={pnl} />
         </Panel>
       </div>
     </div>
