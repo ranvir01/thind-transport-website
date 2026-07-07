@@ -69,6 +69,15 @@ describe("topPickItem", () => {
     expect(pick?.text).toBe("real product work")
   })
 
+  it("skips Vercel owner-dashboard deploy blockers for the next pickable item", () => {
+    const current = [
+      item("[CRITICAL] Vercel auto-deploy from main stalled — owner dashboard check.", 0),
+      item("Quote .env.example SMTP_FROM for bash source compatibility (lane-docs).", 0),
+    ]
+    const { pick } = topPickItem(current, [])
+    expect(pick?.text).toContain("SMTP_FROM")
+  })
+
   it("falls back to older mentions, flagged stale, when nothing current is pickable", () => {
     const current = [item("Owner: fleet config call", 0)]
     const older = [item("verify legacy portal login path", 1)]
