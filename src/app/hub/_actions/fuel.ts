@@ -5,6 +5,7 @@ import { requirePermission } from "@/lib/hub/session"
 import { setFuelUse, assignFuelToLoad } from "@/lib/hub/fuel"
 import { logAudit } from "@/lib/hub/audit"
 import { FUEL_USES, type FuelUse } from "@/lib/hub/types"
+import { actionError } from "@/lib/hub/action-error"
 
 /**
  * Manual fuel-use reclassification (tractor / reefer / other). This changes
@@ -18,7 +19,7 @@ export async function reclassifyFuelUse(
   try {
     user = await requirePermission("fuel:write")
   } catch (err) {
-    return { ok: false, error: err instanceof Error ? err.message : "Forbidden" }
+    return actionError(err, "Forbidden")
   }
   if (!FUEL_USES.includes(fuelUse)) return { ok: false, error: "Bad fuel use" }
   const changed = await setFuelUse(user.carrierId, transactionId, fuelUse)
@@ -45,7 +46,7 @@ export async function assignFuelLoadAction(
   try {
     user = await requirePermission("fuel:write")
   } catch (err) {
-    return { ok: false, error: err instanceof Error ? err.message : "Forbidden" }
+    return actionError(err, "Forbidden")
   }
   const touched = await assignFuelToLoad(user.carrierId, transactionId, loadId)
   if (touched === 0) {
