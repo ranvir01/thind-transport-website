@@ -17,15 +17,12 @@ import { createShareLink, revokeShareLink } from "@/lib/hub/sharelinks"
 import { logAudit } from "@/lib/hub/audit"
 import { geocodeCityState } from "@/lib/hub/geocode"
 import { NEXT_STATUS, STATUS_LABELS, canCancelLoad, dollarsToCents } from "@/lib/hub/types"
+import { actionError } from "@/lib/hub/action-error"
 import type { ActionResult } from "./fleet"
 
 function firstError(error: { issues: { path: PropertyKey[]; message: string }[] }): string {
   const issue = error.issues[0]
   return issue ? `${issue.path.join(".")}: ${issue.message}` : "Invalid input"
-}
-
-function asError(err: unknown, fallback: string): ActionResult {
-  return { ok: false, error: err instanceof Error ? err.message : fallback }
 }
 
 function revalidateLoadViews(id?: string) {
@@ -76,7 +73,7 @@ export async function createLoadAction(values: Record<string, unknown>): Promise
   try {
     user = await requirePermission("loads:write")
   } catch (err) {
-    return asError(err, "Forbidden")
+    return actionError(err, "Forbidden")
   }
   const parsed = loadSchema.safeParse(values)
   if (!parsed.success) return { ok: false, error: firstError(parsed.error) }
@@ -98,7 +95,7 @@ export async function createLoadAction(values: Record<string, unknown>): Promise
     revalidateLoadViews(load.id)
     return { ok: true, id: load.id }
   } catch (err) {
-    return asError(err, "Failed to create load")
+    return actionError(err, "Failed to create load")
   }
 }
 
@@ -110,7 +107,7 @@ export async function updateLoadAction(
   try {
     user = await requirePermission("loads:write")
   } catch (err) {
-    return asError(err, "Forbidden")
+    return actionError(err, "Forbidden")
   }
   const parsed = loadSchema.safeParse(values)
   if (!parsed.success) return { ok: false, error: firstError(parsed.error) }
@@ -133,7 +130,7 @@ export async function updateLoadAction(
     revalidateLoadViews(id)
     return { ok: true, id }
   } catch (err) {
-    return asError(err, "Failed to update load")
+    return actionError(err, "Failed to update load")
   }
 }
 
@@ -142,7 +139,7 @@ export async function advanceLoadStatusAction(id: string): Promise<ActionResult>
   try {
     user = await requirePermission("loads:status")
   } catch (err) {
-    return asError(err, "Forbidden")
+    return actionError(err, "Forbidden")
   }
   try {
     const load = await getLoad(user.carrierId, id)
@@ -170,7 +167,7 @@ export async function advanceLoadStatusAction(id: string): Promise<ActionResult>
     revalidateLoadViews(id)
     return { ok: true, id }
   } catch (err) {
-    return asError(err, "Failed to advance status")
+    return actionError(err, "Failed to advance status")
   }
 }
 
@@ -184,7 +181,7 @@ export async function setLoadStatusAction(id: string, status: string): Promise<A
   try {
     user = await requirePermission("loads:status")
   } catch (err) {
-    return asError(err, "Forbidden")
+    return actionError(err, "Forbidden")
   }
   if (status !== "cancelled") {
     return { ok: false, error: "Only cancellation is allowed here — use Advance for forward moves" }
@@ -200,7 +197,7 @@ export async function setLoadStatusAction(id: string, status: string): Promise<A
     revalidateLoadViews(id)
     return { ok: true, id }
   } catch (err) {
-    return asError(err, "Failed to set status")
+    return actionError(err, "Failed to set status")
   }
 }
 
@@ -213,7 +210,7 @@ export async function stopTimestampAction(
   try {
     user = await requirePermission("loads:status")
   } catch (err) {
-    return asError(err, "Forbidden")
+    return actionError(err, "Forbidden")
   }
   try {
     const stop = await setStopTimestamp(user.carrierId, stopId, loadId, field, new Date().toISOString())
@@ -225,7 +222,7 @@ export async function stopTimestampAction(
     revalidateLoadViews(loadId)
     return { ok: true }
   } catch (err) {
-    return asError(err, "Failed to record time")
+    return actionError(err, "Failed to record time")
   }
 }
 
@@ -239,7 +236,7 @@ export async function addDetentionAction(loadId: string): Promise<ActionResult &
   try {
     user = await requirePermission("loads:write")
   } catch (err) {
-    return asError(err, "Forbidden")
+    return actionError(err, "Forbidden")
   }
   try {
     const load = await getLoad(user.carrierId, loadId)
@@ -283,7 +280,7 @@ export async function addDetentionAction(loadId: string): Promise<ActionResult &
     revalidateLoadViews(loadId)
     return { ok: true, amountCents: total }
   } catch (err) {
-    return asError(err, "Could not draft detention")
+    return actionError(err, "Could not draft detention")
   }
 }
 
@@ -292,14 +289,14 @@ export async function logCheckCallAction(loadId: string, note: string): Promise<
   try {
     user = await requirePermission("loads:status")
   } catch (err) {
-    return asError(err, "Forbidden")
+    return actionError(err, "Forbidden")
   }
   try {
     await addLoadEvent(user.carrierId, loadId, "check_call", { note: note.trim() }, { id: user.id, name: user.name })
     revalidateLoadViews(loadId)
     return { ok: true }
   } catch (err) {
-    return asError(err, "Failed to log check call")
+    return actionError(err, "Failed to log check call")
   }
 }
 
@@ -317,7 +314,7 @@ export async function uploadDocumentAction(formData: FormData): Promise<ActionRe
   try {
     user = await requirePermission("documents:write")
   } catch (err) {
-    return asError(err, "Forbidden")
+    return actionError(err, "Forbidden")
   }
   const parsed = documentUploadSchema.safeParse({
     entity_type: formData.get("entity_type"),
@@ -364,7 +361,7 @@ export async function uploadDocumentAction(formData: FormData): Promise<ActionRe
     }
     return { ok: true, id: doc.id }
   } catch (err) {
-    return asError(err, "Upload failed")
+    return actionError(err, "Upload failed")
   }
 }
 
@@ -377,7 +374,7 @@ export async function deleteDocumentAction(
   try {
     user = await requirePermission("documents:write")
   } catch (err) {
-    return asError(err, "Forbidden")
+    return actionError(err, "Forbidden")
   }
   try {
     const deleted = await deleteDocument(user.carrierId, id)
@@ -390,7 +387,7 @@ export async function deleteDocumentAction(
     if (entityType === "load") revalidateLoadViews(entityId)
     return { ok: true }
   } catch (err) {
-    return asError(err, "Delete failed")
+    return actionError(err, "Delete failed")
   }
 }
 
@@ -401,7 +398,7 @@ export async function createShareLinkAction(loadId: string): Promise<ActionResul
   try {
     user = await requirePermission("loads:write")
   } catch (err) {
-    return asError(err, "Forbidden")
+    return actionError(err, "Forbidden")
   }
   try {
     const link = await createShareLink(user.carrierId, loadId, user.id)
@@ -409,7 +406,7 @@ export async function createShareLinkAction(loadId: string): Promise<ActionResul
     revalidateLoadViews(loadId)
     return { ok: true, id: link.id, token: link.token }
   } catch (err) {
-    return asError(err, "Failed to create tracking link")
+    return actionError(err, "Failed to create tracking link")
   }
 }
 
@@ -418,13 +415,13 @@ export async function revokeShareLinkAction(linkId: string, loadId: string): Pro
   try {
     user = await requirePermission("loads:write")
   } catch (err) {
-    return asError(err, "Forbidden")
+    return actionError(err, "Forbidden")
   }
   try {
     await revokeShareLink(user.carrierId, linkId)
     revalidateLoadViews(loadId)
     return { ok: true }
   } catch (err) {
-    return asError(err, "Failed to revoke link")
+    return actionError(err, "Failed to revoke link")
   }
 }

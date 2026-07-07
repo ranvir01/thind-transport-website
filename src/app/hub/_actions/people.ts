@@ -9,15 +9,12 @@ import { createCustomer, updateCustomer, createContact, deleteContact, addCrmAct
 import { createHubUser, setHubUserActive } from "@/lib/hub/users"
 import { logAudit } from "@/lib/hub/audit"
 import { dollarsToCents } from "@/lib/hub/types"
+import { actionError } from "@/lib/hub/action-error"
 import type { ActionResult } from "./fleet"
 
 function firstError(error: { issues: { path: PropertyKey[]; message: string }[] }): string {
   const issue = error.issues[0]
   return issue ? `${issue.path.join(".")}: ${issue.message}` : "Invalid input"
-}
-
-function asError(err: unknown, fallback: string): ActionResult {
-  return { ok: false, error: err instanceof Error ? err.message : fallback }
 }
 
 export async function saveDriverAction(
@@ -28,7 +25,7 @@ export async function saveDriverAction(
   try {
     user = await requirePermission("drivers:write")
   } catch (err) {
-    return asError(err, "Forbidden")
+    return actionError(err, "Forbidden")
   }
   const parsed = driverSchema.safeParse(values)
   if (!parsed.success) return { ok: false, error: firstError(parsed.error) }
@@ -51,7 +48,7 @@ export async function saveDriverAction(
     revalidatePath("/hub/drivers")
     return { ok: true, id: driver.id }
   } catch (err) {
-    return asError(err, "Failed to save driver")
+    return actionError(err, "Failed to save driver")
   }
 }
 
@@ -63,7 +60,7 @@ export async function saveCustomerAction(
   try {
     user = await requirePermission("customers:write")
   } catch (err) {
-    return asError(err, "Forbidden")
+    return actionError(err, "Forbidden")
   }
   const parsed = customerSchema.safeParse(values)
   if (!parsed.success) return { ok: false, error: firstError(parsed.error) }
@@ -85,7 +82,7 @@ export async function saveCustomerAction(
     revalidatePath("/hub/customers")
     return { ok: true, id: customer.id }
   } catch (err) {
-    return asError(err, "Failed to save customer")
+    return actionError(err, "Failed to save customer")
   }
 }
 
@@ -94,7 +91,7 @@ export async function addContactAction(values: Record<string, unknown>): Promise
   try {
     user = await requirePermission("customers:write")
   } catch (err) {
-    return asError(err, "Forbidden")
+    return actionError(err, "Forbidden")
   }
   const parsed = contactSchema.safeParse(values)
   if (!parsed.success) return { ok: false, error: firstError(parsed.error) }
@@ -104,7 +101,7 @@ export async function addContactAction(values: Record<string, unknown>): Promise
     revalidatePath(`/hub/customers/${parsed.data.customer_id}`)
     return { ok: true, id: contact.id }
   } catch (err) {
-    return asError(err, "Failed to add contact")
+    return actionError(err, "Failed to add contact")
   }
 }
 
@@ -113,14 +110,14 @@ export async function removeContactAction(id: string, customerId: string): Promi
   try {
     user = await requirePermission("customers:write")
   } catch (err) {
-    return asError(err, "Forbidden")
+    return actionError(err, "Forbidden")
   }
   try {
     await deleteContact(user.carrierId, id)
     revalidatePath(`/hub/customers/${customerId}`)
     return { ok: true }
   } catch (err) {
-    return asError(err, "Failed to remove contact")
+    return actionError(err, "Failed to remove contact")
   }
 }
 
@@ -133,7 +130,7 @@ export async function addCrmNoteAction(input: {
   try {
     user = await requirePermission("customers:write")
   } catch (err) {
-    return asError(err, "Forbidden")
+    return actionError(err, "Forbidden")
   }
   if (!input.body.trim()) return { ok: false, error: "Note cannot be empty" }
   try {
@@ -148,7 +145,7 @@ export async function addCrmNoteAction(input: {
     revalidatePath(`/hub/customers/${input.customerId}`)
     return { ok: true }
   } catch (err) {
-    return asError(err, "Failed to add note")
+    return actionError(err, "Failed to add note")
   }
 }
 
@@ -159,7 +156,7 @@ export async function createHubUserAction(values: Record<string, unknown>): Prom
   try {
     owner = await requirePermission("users:manage")
   } catch (err) {
-    return asError(err, "Forbidden")
+    return actionError(err, "Forbidden")
   }
   const parsed = hubUserSchema.safeParse(values)
   if (!parsed.success) return { ok: false, error: firstError(parsed.error) }
@@ -192,7 +189,7 @@ export async function setUserActiveAction(id: string, active: boolean): Promise<
   try {
     owner = await requirePermission("users:manage")
   } catch (err) {
-    return asError(err, "Forbidden")
+    return actionError(err, "Forbidden")
   }
   if (id === owner.id) return { ok: false, error: "You cannot deactivate your own account" }
   try {
@@ -205,6 +202,6 @@ export async function setUserActiveAction(id: string, active: boolean): Promise<
     revalidatePath("/hub/settings/users")
     return { ok: true }
   } catch (err) {
-    return asError(err, "Failed to update user")
+    return actionError(err, "Failed to update user")
   }
 }
