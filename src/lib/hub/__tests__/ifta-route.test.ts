@@ -5,6 +5,7 @@
  * and the 404s when a variant has no report to serve.
  */
 import { beforeEach, describe, expect, it, vi } from "vitest"
+import { computeIfta } from "@/lib/hub/ifta-core"
 
 vi.mock("@/lib/hub/session", () => ({ getHubUser: vi.fn() }))
 vi.mock("@/lib/hub/permissions", () => ({ can: vi.fn() }))
@@ -97,29 +98,31 @@ describe("GET /api/hub/ifta/[quarter]/[file]", () => {
     expect(body).toContain("TOTAL,,,,,,123.45")
   })
 
-  it("renders multi-jurisdiction worksheet.csv including surcharge state (IN)", async () => {
-    // Mirrors ifta.test.ts golden fixture — WA/ID/IN with IN surcharge_rate column populated.
-    getIftaReportMock.mockResolvedValue({
-      net_tax_cents: 2360,
-      mileage_source: "pings",
-      fleet_miles: "7000",
-      fleet_gallons: "1000",
-      mpg: "7",
-      report: {
-        rows: [
-          { jurisdiction: "WA", miles: 4000, taxableGallons: 571.428571, taxPaidGallons: 600, rate: 0.494, surchargeRate: 0, netCents: -1411 },
-          { jurisdiction: "ID", miles: 1000, taxableGallons: 142.857143, taxPaidGallons: 100, rate: 0.33, surchargeRate: 0, netCents: 1414 },
-          { jurisdiction: "IN", miles: 2000, taxableGallons: 285.714286, taxPaidGallons: 300, rate: 0.55, surchargeRate: 0.11, netCents: 2357 },
-        ],
+  it("renders multi-jurisdiction worksheet.csv including surcharge state (golden fixture)", async () => {
+    const golden = computeIfta({
+      milesByJurisdiction: { WA: 4000, ID: 1000, IN: 2000 },
+      gallonsByJurisdiction: { WA: 600, ID: 100, IN: 300 },
+      rates: {
+        WA: { rate: 0.494 },
+        ID: { rate: 0.33 },
+        IN: { rate: 0.55, surchargeRate: 0.11 },
       },
+    })
+    getIftaReportMock.mockResolvedValue({
+      net_tax_cents: golden.netTaxCents,
+      mileage_source: "pings",
+      fleet_miles: String(golden.fleetMiles),
+      fleet_gallons: String(golden.fleetGallons),
+      mpg: String(golden.mpg),
+      report: { rows: golden.rows },
     } as never)
     const res = await call("2026Q1", "worksheet.csv")
     expect(res.status).toBe(200)
     const body = await res.text()
     expect(body).toContain("jurisdiction,miles,taxable_gallons,tax_paid_gallons,rate,surcharge_rate,net_tax_usd")
-    expect(body).toContain("WA,4000,571.429,600.000,0.4940,0.0000,-14.11")
     expect(body).toContain("ID,1000,142.857,100.000,0.3300,0.0000,14.14")
     expect(body).toContain("IN,2000,285.714,300.000,0.5500,0.1100,23.57")
+    expect(body).toContain("WA,4000,571.429,600.000,0.4940,0.0000,-14.11")
     expect(body).toContain("TOTAL,,,,,,23.60")
   })
 
