@@ -98,7 +98,7 @@ export function PortalQuoteForm() {
           Cancel
         </button>
         <button type="submit" disabled={pending}
-          className="flex flex-1 min-h-[48px] items-center justify-center gap-2 rounded-control bg-accent font-display text-sm font-bold uppercase tracking-[0.06em] text-white hover:bg-accent-hover disabled:opacity-60">
+          className="flex flex-1 min-h-[48px] items-center justify-center gap-2 rounded-control bg-accent font-display text-sm font-bold uppercase tracking-[0.06em] text-accent-fg hover:bg-accent-hover disabled:opacity-60">
           {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : null} Send the request
         </button>
       </div>

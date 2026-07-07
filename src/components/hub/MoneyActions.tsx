@@ -96,11 +96,13 @@ export function InvoiceActions({
   invoiceId,
   factored,
   disputed,
+  factorConnected,
   factorSubmitted,
 }: {
   invoiceId: string
   factored: boolean
   disputed: boolean
+  factorConnected?: boolean
   factorSubmitted?: boolean
 }) {
   const router = useRouter()
@@ -123,7 +125,7 @@ export function InvoiceActions({
             {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
             Send factoring packet
           </button>
-          {!factorSubmitted ? (
+          {factorConnected && !factorSubmitted ? (
             <button
               onClick={() =>
                 startTransition(async () => {
