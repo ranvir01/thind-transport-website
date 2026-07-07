@@ -14,6 +14,7 @@ import { runQboSync } from "@/lib/hub/integrations/qbo"
 import { retryUnprocessedFactorEvents } from "@/lib/hub/integrations/factor"
 import { logAudit } from "@/lib/hub/audit"
 import { query } from "@/lib/hub/db"
+import { actionError } from "@/lib/hub/action-error"
 
 interface Result {
   ok: boolean
@@ -52,7 +53,7 @@ export async function saveIntegrationCredentialsAction(
     revalidatePath("/hub/settings/integrations")
     return { ok: true }
   } catch (err) {
-    return { ok: false, error: err instanceof Error ? err.message : "Could not save" }
+    return actionError(err, "Could not save")
   }
 }
 
@@ -67,7 +68,7 @@ export async function disconnectIntegrationAction(provider: IntegrationProvider)
     revalidatePath("/hub/settings/integrations")
     return { ok: true }
   } catch (err) {
-    return { ok: false, error: err instanceof Error ? err.message : "Could not disconnect" }
+    return actionError(err, "Could not disconnect")
   }
 }
 
@@ -104,7 +105,7 @@ export async function syncIntegrationNowAction(
       throw err
     }
   } catch (err) {
-    return { ok: false, error: err instanceof Error ? err.message : "Sync failed" }
+    return actionError(err, "Sync failed")
   }
 }
 
@@ -132,7 +133,7 @@ export async function retryIntegrationEventsAction(
       summary: `${result.applied} applied, ${result.stillUnprocessed} still unmatched (of ${result.retried} retried)`,
     }
   } catch (err) {
-    return { ok: false, error: err instanceof Error ? err.message : "Retry failed" }
+    return actionError(err, "Retry failed")
   }
 }
 

@@ -6,6 +6,7 @@ import {
   completeTask, createTask, deleteTask, reopenTask, toggleChecklistItem,
 } from "@/lib/hub/tasks"
 import type { TaskPriority, TaskRecurrence } from "@/lib/hub/types"
+import { actionError } from "@/lib/hub/action-error"
 
 interface Result {
   ok: boolean
@@ -40,7 +41,7 @@ export async function createTaskAction(input: {
     revalidatePath("/hub/tasks")
     return { ok: true }
   } catch (err) {
-    return { ok: false, error: err instanceof Error ? err.message : "Could not create task" }
+    return actionError(err, "Could not create task")
   }
 }
 
@@ -52,7 +53,7 @@ export async function completeTaskAction(id: string): Promise<Result & { recurre
     revalidatePath("/hub")
     return { ok: true, recurred: Boolean(next) }
   } catch (err) {
-    return { ok: false, error: err instanceof Error ? err.message : "Could not complete task" }
+    return actionError(err, "Could not complete task")
   }
 }
 
@@ -63,7 +64,7 @@ export async function reopenTaskAction(id: string): Promise<Result> {
     revalidatePath("/hub/tasks")
     return { ok: true }
   } catch (err) {
-    return { ok: false, error: err instanceof Error ? err.message : "Could not reopen task" }
+    return actionError(err, "Could not reopen task")
   }
 }
 
@@ -74,7 +75,7 @@ export async function toggleChecklistAction(id: string, index: number, done: boo
     revalidatePath("/hub/tasks")
     return { ok: true }
   } catch (err) {
-    return { ok: false, error: err instanceof Error ? err.message : "Could not update checklist" }
+    return actionError(err, "Could not update checklist")
   }
 }
 
@@ -85,6 +86,6 @@ export async function deleteTaskAction(id: string): Promise<Result> {
     revalidatePath("/hub/tasks")
     return { ok: true }
   } catch (err) {
-    return { ok: false, error: err instanceof Error ? err.message : "Could not delete task" }
+    return actionError(err, "Could not delete task")
   }
 }
