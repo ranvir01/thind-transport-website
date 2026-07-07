@@ -9,6 +9,7 @@ import type { Contact } from "@/lib/hub/types"
 
 export function ContactsPanel({ customerId, contacts }: { customerId: string; contacts: Contact[] }) {
   const [adding, setAdding] = useState(false)
+  const [confirmingRemoveId, setConfirmingRemoveId] = useState<string | null>(null)
   const [form, setForm] = useState({ name: "", role: "", phone: "", email: "" })
   const [pending, startTransition] = useTransition()
 
@@ -31,6 +32,7 @@ export function ContactsPanel({ customerId, contacts }: { customerId: string; co
       const result = await removeContactAction(id, customerId)
       if (result.ok) toast.success("Contact removed")
       else toast.error(result.error ?? "Could not remove contact")
+      setConfirmingRemoveId(null)
     })
 
   return (
@@ -88,14 +90,36 @@ export function ContactsPanel({ customerId, contacts }: { customerId: string; co
                   ) : null}
                 </div>
               </div>
-              <button
-                aria-label={`Remove ${contact.name}`}
-                onClick={() => remove(contact.id)}
-                disabled={pending}
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-bad hover:bg-bad-soft disabled:opacity-50"
-              >
-                <Trash2 className="h-4 w-4" />
-              </button>
+              {confirmingRemoveId === contact.id ? (
+                <span className="flex shrink-0 items-center gap-1">
+                  <button
+                    onClick={() => remove(contact.id)}
+                    disabled={pending}
+                    aria-label={`Confirm remove ${contact.name}`}
+                    className="flex h-8 items-center gap-1 rounded-lg bg-bad px-2 text-[11px] font-bold uppercase tracking-wide text-white hover:opacity-90 disabled:opacity-60"
+                  >
+                    {pending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
+                    Remove
+                  </button>
+                  <button
+                    onClick={() => setConfirmingRemoveId(null)}
+                    disabled={pending}
+                    aria-label={`Keep ${contact.name}`}
+                    className="flex h-8 items-center rounded-lg px-2 text-[11px] font-semibold text-fg-3 hover:bg-hover"
+                  >
+                    Keep
+                  </button>
+                </span>
+              ) : (
+                <button
+                  onClick={() => setConfirmingRemoveId(contact.id)}
+                  disabled={pending}
+                  aria-label={`Remove ${contact.name}`}
+                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-fg-3 hover:bg-hover hover:text-bad disabled:opacity-50"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              )}
             </li>
           ))}
         </ul>
