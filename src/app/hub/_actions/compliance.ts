@@ -8,11 +8,8 @@ import { query } from "@/lib/hub/db"
 import { logAudit } from "@/lib/hub/audit"
 import { assertCarrierRefs } from "@/lib/hub/tenancy"
 import { dollarsToCents } from "@/lib/hub/types"
+import { actionError } from "@/lib/hub/action-error"
 import type { ActionResult } from "./fleet"
-
-function asError(err: unknown, fallback: string): ActionResult {
-  return { ok: false, error: err instanceof Error ? err.message : fallback }
-}
 
 export async function addComplianceItemAction(values: {
   kind: string
@@ -23,7 +20,7 @@ export async function addComplianceItemAction(values: {
   try {
     user = await requirePermission("compliance:write")
   } catch (err) {
-    return asError(err, "Forbidden")
+    return actionError(err, "Forbidden")
   }
   if (!values.kind.trim()) return { ok: false, error: "What is the item?" }
   try {
@@ -33,7 +30,7 @@ export async function addComplianceItemAction(values: {
     revalidatePath("/hub/compliance")
     return { ok: true }
   } catch (err) {
-    return asError(err, "Failed to add item")
+    return actionError(err, "Failed to add item")
   }
 }
 
@@ -42,14 +39,14 @@ export async function resolveComplianceItemAction(id: string): Promise<ActionRes
   try {
     user = await requirePermission("compliance:write")
   } catch (err) {
-    return asError(err, "Forbidden")
+    return actionError(err, "Forbidden")
   }
   try {
     await resolveComplianceItem(user.carrierId, id)
     revalidatePath("/hub/compliance")
     return { ok: true }
   } catch (err) {
-    return asError(err, "Failed to resolve item")
+    return actionError(err, "Failed to resolve item")
   }
 }
 
@@ -61,7 +58,7 @@ export async function computeIftaAction(
   try {
     user = await requirePermission("compliance:write")
   } catch (err) {
-    return asError(err, "Forbidden")
+    return actionError(err, "Forbidden")
   }
   if (!/^\d{4}Q[1-4]$/.test(quarter)) return { ok: false, error: "Bad quarter (use 2026Q2)" }
   try {
@@ -76,7 +73,7 @@ export async function computeIftaAction(
         : undefined,
     }
   } catch (err) {
-    return asError(err, "Failed to compute IFTA")
+    return actionError(err, "Failed to compute IFTA")
   }
 }
 
@@ -88,14 +85,14 @@ export async function setIftaStatusAction(
   try {
     user = await requirePermission("compliance:write")
   } catch (err) {
-    return asError(err, "Forbidden")
+    return actionError(err, "Forbidden")
   }
   try {
     await setIftaStatus(user.carrierId, quarter, status, user)
     revalidatePath("/hub/compliance/ifta")
     return { ok: true }
   } catch (err) {
-    return asError(err, "Failed to update report status")
+    return actionError(err, "Failed to update report status")
   }
 }
 
@@ -105,7 +102,7 @@ export async function importIftaRatesAction(quarter: string, ratesText: string):
   try {
     user = await requirePermission("compliance:write")
   } catch (err) {
-    return asError(err, "Forbidden")
+    return actionError(err, "Forbidden")
   }
   if (!/^\d{4}Q[1-4]$/.test(quarter)) return { ok: false, error: "Bad quarter" }
   const rows: { jurisdiction: string; rate: number; surchargeRate: number }[] = []
@@ -123,7 +120,7 @@ export async function importIftaRatesAction(quarter: string, ratesText: string):
     revalidatePath("/hub/compliance/ifta")
     return { ok: true, id: String(count) }
   } catch (err) {
-    return asError(err, "Failed to import rates")
+    return actionError(err, "Failed to import rates")
   }
 }
 
@@ -140,7 +137,7 @@ export async function addMaintenanceScheduleAction(values: {
   try {
     user = await requirePermission("fleet:write")
   } catch (err) {
-    return asError(err, "Forbidden")
+    return actionError(err, "Forbidden")
   }
   if (!values.name.trim()) return { ok: false, error: "Name the PM item" }
   try {
@@ -159,7 +156,7 @@ export async function addMaintenanceScheduleAction(values: {
     revalidatePath("/hub/compliance")
     return { ok: true }
   } catch (err) {
-    return asError(err, "Failed to add schedule")
+    return actionError(err, "Failed to add schedule")
   }
 }
 
@@ -176,7 +173,7 @@ export async function addMaintenanceRecordAction(values: {
   try {
     user = await requirePermission("fleet:write")
   } catch (err) {
-    return asError(err, "Forbidden")
+    return actionError(err, "Forbidden")
   }
   try {
     await assertCarrierRefs(user.carrierId, {
@@ -210,6 +207,6 @@ export async function addMaintenanceRecordAction(values: {
     revalidatePath("/hub/compliance")
     return { ok: true }
   } catch (err) {
-    return asError(err, "Failed to add record")
+    return actionError(err, "Failed to add record")
   }
 }
