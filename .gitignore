@@ -55,6 +55,7 @@ dist-legacy
 
 # HaulDesk local artifacts
 e2e-shots*/
+e2e-sweep/
 /bin/
 services/**/target/
 services/go/hauldesk-worker/hauldesk-worker
