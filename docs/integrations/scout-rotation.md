@@ -12,7 +12,7 @@ as an urgent `Backlog:` item.
 | `terminal` | **Built** — live TSP aggregator (vehicles + HOS), 30-min cron sync | `apiKey`, `connectionToken` (+ `TERMINAL_API_BASE` env, optional) | `src/lib/hub/telematics.ts` | [`terminal.md`](./terminal.md) | 2026-07-06 |
 | `mailbox` | **Built** — generic IMAP client, not a vendor SDK. Plain LOGIN auth — broken against M365/Google Workspace, see doc | `host`, `port`, `user`, `password`, `folder` | `src/lib/hub/mailbox.ts` | [`mailbox.md`](./mailbox.md) | 2026-07-07 |
 | `fmcsa` (adjacent, free, not in `IntegrationProvider` union — no stored creds) | **Built** — QCMobile broker vetting | `FMCSA_WEBKEY` env | `src/lib/hub/vetting.ts` | [`fmcsa.md`](./fmcsa.md) | 2026-07-07 |
-| `eia` (adjacent, free, not in `IntegrationProvider` union) | **Built** — diesel price benchmark | `EIA_API_KEY` env | `src/lib/hub/fuel.ts` | `eia.md` — missing | never |
+| `eia` (adjacent, free, not in `IntegrationProvider` union) | **Built** — diesel price benchmark | `EIA_API_KEY` env | `src/lib/hub/fuel.ts` | [`eia.md`](./eia.md) | 2026-07-07 |
 | `truckercloud` | **Built** — adapter shipped, drop-in second aggregator to Terminal | `apiKey`, `clientId`/`clientSecret` | `src/lib/hub/telematics.ts` (`truckerCloudSource`) | [`truckercloud.md`](./truckercloud.md) | 2026-07-06 |
 | `dat` | **Built** — search + posting-to-load-draft mapper, stub-first (registry still `stub`/CSV fallback pending real auth confirm) | `serviceAccountEmail`, `password` | `src/lib/hub/integrations/dat.ts` | [`dat.md`](./dat.md) | 2026-07-06 |
 | `efs` | **Built** — adapter shipped, feed shape unconfirmed | `feedUser`, `feedPassword` | `src/lib/hub/integrations/efs.ts` | [`efs.md`](./efs.md) | 2026-07-06 |
@@ -26,8 +26,8 @@ All ten vendor providers now have both a shipped adapter and a research doc (thi
 stale — it previously described `dat`/`efs`/`wex`/`comdata`/`truckercloud` as credential-only
 stubs; the integrations lane has since shipped real adapter code for every one, see each doc's
 "Adapter file" column). The only remaining gaps are the two free/adjacent government-API
-integrations that were never in scope of the vendor shopping list: `eia.md` is still
-"missing — never researched." `fmcsa.md` was added 2026-07-07.
+integrations that were never in scope of the vendor shopping list: both `fmcsa.md` and
+`eia.md` were added 2026-07-07.
 
 ## Rotation rule
 
@@ -37,5 +37,5 @@ integrations that were never in scope of the vendor shopping list: `eia.md` is s
    notes before a lane builds the adapter.
 3. One provider per cycle. Update the "Last researched" date and doc link when done.
 
-Next up by this rule: `eia` (built, doc still missing), then back to the oldest-dated vendor
-doc (`terminal.md`/`truckercloud.md`, both 2026-07-06).
+Next up by this rule: oldest-dated vendor doc (`terminal.md`/`truckercloud.md`, both
+2026-07-06), then rotate through stubs as needed.
