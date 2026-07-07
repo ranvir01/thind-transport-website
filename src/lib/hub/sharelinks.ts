@@ -1,5 +1,6 @@
 import { randomBytes } from "crypto"
 import { query, queryOne } from "./db"
+import { assertCarrierRefs } from "./tenancy"
 import type { Load, Stop } from "./types"
 
 export interface ShareLink {
@@ -22,6 +23,7 @@ export async function createShareLink(
   loadId: string,
   createdBy: string
 ): Promise<ShareLink> {
+  await assertCarrierRefs(carrierId, { load_id: loadId })
   // 32 hex chars = 128 bits of entropy
   const token = randomBytes(16).toString("hex")
   const rows = await query<ShareLink>(
@@ -57,8 +59,8 @@ export async function getTrackedLoad(token: string): Promise<TrackedLoad | null>
   const load = await queryOne<Load & { carrier_name: string }>(
     `SELECT l.id, l.reference, l.status, l.equipment, l.truck_id, c.name AS carrier_name
      FROM hub.loads l JOIN hub.carriers c ON c.id = l.carrier_id
-     WHERE l.id = $1 AND l.deleted_at IS NULL`,
-    [link.load_id]
+     WHERE l.id = $1 AND l.carrier_id = $2 AND l.deleted_at IS NULL`,
+    [link.load_id, link.carrier_id]
   )
   if (!load) return null
 
