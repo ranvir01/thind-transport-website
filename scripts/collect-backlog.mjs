@@ -134,8 +134,8 @@ export function rankItem(text) {
 }
 
 function isPickable(item) {
-  // "owner call on X" / "needs owner approval" mid-bullet block auto-pick too.
-  if (/owner (call|approval|decision)/i.test(item.text)) return false
+  // "owner call on X" / "owner dashboard check" / "needs owner approval" block auto-pick.
+  if (/owner (call|approval|decision|dashboard)|needs (the )?owner/i.test(item.text)) return false
   return !/^owner:/i.test(item.text) && !isDeployMetaItem(item.text)
 }
 
