@@ -96,7 +96,30 @@ describe("topPickItem", () => {
 describe("isDeployMetaItem", () => {
   it("flags session-branch and catch-up snapshots", () => {
     expect(isDeployMetaItem("11 pending claude/* session branches — integrator absorbs one per :00 run.")).toBe(true)
+    expect(isDeployMetaItem("33 other pending claude/* branches — run npm run agent:branches.")).toBe(true)
+    expect(isDeployMetaItem("Next merge: claude/lane-docs (mailbox IMAP scout docs).")).toBe(true)
+    expect(isDeployMetaItem("Ops: Cursor Automations + Vercel creds.")).toBe(true)
     expect(isDeployMetaItem("CATCH-UP MODE: draining integrator")).toBe(true)
     expect(isDeployMetaItem("wire comdata cron sync")).toBe(false)
+  })
+
+  it("skips branch-inventory meta so TOP PICK falls through to shippable work", () => {
+    const current = [
+      item("[CRITICAL] Vercel auto-deploy from main stalled — owner dashboard check.", 0),
+      item("new tenants zero IFTA rates — owner call on seed-from-matrix UX.", 0),
+      item("33 other pending claude/* branches — run npm run agent:branches.", 0),
+      item("Next merge: claude/lane-docs (mailbox IMAP scout docs).", 0),
+      item("nodemailer 9.x — owner approval.", 0),
+      item("Ops: Cursor Automations + Vercel creds.", 0),
+    ]
+    const older = [
+      item(
+        "e2e-driver-smoke.mjs needs reseed() so the suite is order-independent (lane-tests).",
+        1
+      ),
+    ]
+    const { pick, stale } = topPickItem(current, older)
+    expect(pick?.text).toContain("e2e-driver-smoke")
+    expect(stale).toBe(true)
   })
 })
