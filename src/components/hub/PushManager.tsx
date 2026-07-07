@@ -81,7 +81,7 @@ export function PushManager({ compact = false }: { compact?: boolean }) {
   if (state === "on") {
     return compact ? null : (
       <p className="flex items-center gap-2 text-body-xs text-steel-400">
-        <Check className="h-3.5 w-3.5 text-gold" /> Alerts are on for this device
+        <Check className="h-3.5 w-3.5 text-accent" /> Alerts are on for this device
       </p>
     )
   }
@@ -95,7 +95,7 @@ export function PushManager({ compact = false }: { compact?: boolean }) {
   return (
     <button
       onClick={subscribe}
-      className="flex w-full min-h-[44px] items-center justify-center gap-2 rounded-xl border border-gold/40 bg-gold/10 px-3 py-2 text-sm font-semibold text-gold hover:bg-gold/20"
+      className="flex w-full min-h-[44px] items-center justify-center gap-2 rounded-xl border border-white/15 px-3 py-2 text-sm font-semibold text-steel-200 hover:bg-white/5"
     >
       <BellRing className="h-4 w-4" />
       Turn on alerts for this device
