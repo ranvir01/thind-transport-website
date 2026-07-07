@@ -3,9 +3,9 @@
  * + docs/integrations/truckstop.md). Same shape as `dat.ts`: this is an interactive
  * freight search, not a background sync into an existing table, so this slice ships
  * the `search`/`pull` contract, its normalizer, and `truckstopPostingToLoadDraft`,
- * which maps a matched posting onto `createLoad()`'s input shape. A dispatcher-facing
- * search panel and "book this posting" button are their own slice (see
- * creds-shopping-list.md). `normalizeTruckstopPosting` is the one place the assumed
+ * which maps a matched posting onto `createLoad()`'s input shape. The dispatcher-facing
+ * search panel lives in `TruckstopFreightSearch` on `/hub/loadboard`. `normalizeTruckstopPosting`
+ * is the one place the assumed
  * response shape is read.
  */
 import { getCredentials, hasCredentials } from "../credentials"
