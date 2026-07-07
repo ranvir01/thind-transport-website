@@ -116,6 +116,7 @@ export async function createInvoiceFromLoad(
     brand: {
       name: carrier.name, address: carrier.address, phone: carrier.phone,
       email: carrier.email, dot: carrier.dot_number, mc: carrier.mc_number,
+      accent: settings.branding.accent,
     },
     number, issuedOn, dueOn,
     billTo: { name: customer.name, address: customer.billing_address, email: customer.billing_email },
@@ -400,10 +401,12 @@ export async function sendCustomerStatement(
     }
   }
 
+  const settings = await getCarrierSettings(carrierId)
   const pdfBytes = await buildStatementPdf({
     brand: {
       name: carrier?.name ?? "Thind Transport", address: carrier?.address, phone: carrier?.phone,
       email: carrier?.email, dot: carrier?.dot_number, mc: carrier?.mc_number,
+      accent: settings.branding.accent,
     },
     customerName: statement.customerName,
     statementDate: new Date().toISOString().slice(0, 10),

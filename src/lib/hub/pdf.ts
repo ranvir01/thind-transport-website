@@ -31,6 +31,20 @@ const GOLD = rgb(0.949, 0.663, 0)
 const GRAY = rgb(0.35, 0.39, 0.45)
 const LIGHT = rgb(0.92, 0.94, 0.96)
 
+/**
+ * Tenant accent override for the PDF title bar. Only `#RRGGBB` (the format
+ * `setBrandAccentAction` validates before storing) is trusted; anything else
+ * — unset, legacy shorthand, garbage — falls back to the Thind gold so a bad
+ * value can never blank out or crash a document.
+ */
+export function resolveAccentColor(hex: string | null | undefined): ReturnType<typeof rgb> {
+  if (!hex || !/^#[0-9a-fA-F]{6}$/.test(hex)) return GOLD
+  const r = parseInt(hex.slice(1, 3), 16) / 255
+  const g = parseInt(hex.slice(3, 5), 16) / 255
+  const b = parseInt(hex.slice(5, 7), 16) / 255
+  return rgb(r, g, b)
+}
+
 export interface PdfBrand {
   name: string
   address?: string | null
@@ -38,6 +52,8 @@ export interface PdfBrand {
   email?: string | null
   dot?: string | null
   mc?: string | null
+  /** Hex accent from carrier_settings.branding.accent; falls back to gold. */
+  accent?: string | null
 }
 
 interface TableColumn {
@@ -73,13 +89,14 @@ class DocBuilder {
       email: rawBrand.email ? winAnsiSafe(rawBrand.email) : rawBrand.email,
     }
     const title = winAnsiSafe(rawTitle)
+    const accent = resolveAccentColor(rawBrand.accent)
     this.page.drawRectangle({ x: 0, y: 752, width: 612, height: 40, color: NAVY })
     this.page.drawText(brand.name.toUpperCase(), {
       x: 40, y: 766, size: 16, font: this.fonts.bold, color: rgb(1, 1, 1),
     })
     this.page.drawText(title.toUpperCase(), {
       x: 612 - 40 - this.fonts.bold.widthOfTextAtSize(title.toUpperCase(), 13),
-      y: 767, size: 13, font: this.fonts.bold, color: GOLD,
+      y: 767, size: 13, font: this.fonts.bold, color: accent,
     })
     this.y = 738
     const meta = [

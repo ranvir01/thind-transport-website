@@ -21,6 +21,7 @@ vi.mock("../settings", () => ({
   getCarrierSettings: vi.fn(async () => ({
     invoice: { defaultTermsDays: 30 },
     factoring: { remitName: null, remitAddress: null },
+    branding: { accent: null },
   })),
   nextInvoiceNumber: vi.fn(async () => "THD-INV-1001"),
 }))

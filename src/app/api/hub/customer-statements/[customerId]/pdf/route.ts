@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 import { getHubUser } from "@/lib/hub/session"
 import { can } from "@/lib/hub/permissions"
 import { getCustomerStatementDetail } from "@/lib/hub/invoices"
-import { getCarrier } from "@/lib/hub/settings"
+import { getCarrier, getCarrierSettings } from "@/lib/hub/settings"
 import { buildStatementPdf } from "@/lib/hub/pdf"
 
 export async function GET(
@@ -17,11 +17,13 @@ export async function GET(
   const statement = await getCustomerStatementDetail(user.carrierId, customerId)
   if (!statement) return NextResponse.json({ error: "No open statement for this customer" }, { status: 404 })
   const carrier = await getCarrier(user.carrierId)
+  const settings = await getCarrierSettings(user.carrierId)
 
   const pdfBytes = await buildStatementPdf({
     brand: {
       name: carrier?.name ?? "Thind Transport", address: carrier?.address, phone: carrier?.phone,
       email: carrier?.email, dot: carrier?.dot_number, mc: carrier?.mc_number,
+      accent: settings.branding.accent,
     },
     customerName: statement.customerName,
     statementDate: new Date().toISOString().slice(0, 10),

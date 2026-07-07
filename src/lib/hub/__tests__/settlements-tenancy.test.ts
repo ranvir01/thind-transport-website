@@ -5,7 +5,10 @@ vi.mock("../db", () => ({
   queryOne: vi.fn(async () => null),
   hubDb: vi.fn(),
 }))
-vi.mock("../settings", () => ({ getCarrier: vi.fn(async () => ({ name: "Demo" })) }))
+vi.mock("../settings", () => ({
+  getCarrier: vi.fn(async () => ({ name: "Demo" })),
+  getCarrierSettings: vi.fn(async () => ({ branding: { accent: null } })),
+}))
 vi.mock("../documents", () => ({ storeGeneratedPdf: vi.fn(async () => "https://example.com/settlement.pdf") }))
 vi.mock("../pdf", () => ({ buildSettlementPdf: vi.fn(async () => new Uint8Array([1])) }))
 vi.mock("../audit", () => ({ logAudit: vi.fn(async () => undefined) }))
