@@ -9,6 +9,7 @@ import { notifyDriver } from "@/lib/hub/notify"
 import { logAudit } from "@/lib/hub/audit"
 import { query, queryOne } from "@/lib/hub/db"
 import { assertCarrierRefs } from "@/lib/hub/tenancy"
+import { actionError } from "@/lib/hub/action-error"
 
 interface Result {
   ok: boolean
@@ -50,7 +51,7 @@ export async function createAnnouncementAction(input: {
     revalidatePath("/hub/messages/announcements")
     return { ok: true, id: announcement.id }
   } catch (err) {
-    return { ok: false, error: err instanceof Error ? err.message : "Could not send announcement" }
+    return actionError(err, "Could not send announcement")
   }
 }
 
@@ -87,7 +88,7 @@ export async function requestDocumentAction(input: {
     revalidatePath(`/hub/drivers/${input.driverId}`)
     return { ok: true, id: rows[0].id }
   } catch (err) {
-    return { ok: false, error: err instanceof Error ? err.message : "Could not send the request" }
+    return actionError(err, "Could not send the request")
   }
 }
 
@@ -103,7 +104,7 @@ export async function cancelDocumentRequestAction(id: string): Promise<Result> {
     revalidatePath("/hub/driver")
     return { ok: true }
   } catch (err) {
-    return { ok: false, error: err instanceof Error ? err.message : "Could not cancel" }
+    return actionError(err, "Could not cancel")
   }
 }
 
@@ -134,6 +135,6 @@ export async function decideTimeOffAction(
     revalidatePath("/hub/driver/timeoff")
     return { ok: true }
   } catch (err) {
-    return { ok: false, error: err instanceof Error ? err.message : "Could not decide" }
+    return actionError(err, "Could not decide")
   }
 }

@@ -14,6 +14,7 @@ import {
 import { saveDocument } from "@/lib/hub/documents"
 import { notifyDriver, notifyRoles } from "@/lib/hub/notify"
 import { queryOne } from "@/lib/hub/db"
+import { actionError } from "@/lib/hub/action-error"
 
 interface Result {
   ok: boolean
@@ -87,7 +88,7 @@ export async function openThread(target: { loadId?: string; driverId?: string })
     }
     return { ok: false, error: "Pick a load or a driver" }
   } catch (err) {
-    return { ok: false, error: err instanceof Error ? err.message : "Could not open thread" }
+    return actionError(err, "Could not open thread")
   }
 }
 
@@ -166,7 +167,7 @@ export async function sendMessageAction(formData: FormData): Promise<Result> {
     revalidatePath("/hub/driver/messages")
     return { ok: true, threadId }
   } catch (err) {
-    return { ok: false, error: err instanceof Error ? err.message : "Could not send" }
+    return actionError(err, "Could not send")
   }
 }
 

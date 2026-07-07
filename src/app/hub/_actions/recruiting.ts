@@ -9,15 +9,12 @@ import {
 } from "@/lib/hub/recruiting"
 import { logAudit } from "@/lib/hub/audit"
 import { dollarsToCents } from "@/lib/hub/types"
+import { actionError } from "@/lib/hub/action-error"
 
 interface Result {
   ok: boolean
   error?: string
   id?: string
-}
-
-function fail(err: unknown, fallback: string): Result {
-  return { ok: false, error: err instanceof Error ? err.message : fallback }
 }
 
 export async function addApplicantAction(input: {
@@ -52,7 +49,7 @@ export async function addApplicantAction(input: {
     revalidatePath("/hub/recruiting")
     return { ok: true, id: applicant?.id }
   } catch (err) {
-    return fail(err, "Could not add the applicant")
+    return actionError(err, "Could not add the applicant")
   }
 }
 
@@ -68,7 +65,7 @@ export async function moveStageAction(
     revalidatePath(`/hub/recruiting/${applicantId}`)
     return result
   } catch (err) {
-    return fail(err, "Could not move the applicant")
+    return actionError(err, "Could not move the applicant")
   }
 }
 
@@ -83,7 +80,7 @@ export async function toggleOrientationAction(
     revalidatePath(`/hub/recruiting/${applicantId}`)
     return { ok: true }
   } catch (err) {
-    return fail(err, "Could not update the checklist")
+    return actionError(err, "Could not update the checklist")
   }
 }
 
@@ -107,7 +104,7 @@ export async function createOfferAction(
     revalidatePath("/hub/recruiting")
     return { ok: true, id }
   } catch (err) {
-    return fail(err, "Could not create the offer")
+    return actionError(err, "Could not create the offer")
   }
 }
 
@@ -132,7 +129,7 @@ export async function signOfferAction(
     revalidatePath("/hub/recruiting")
     return { ok: true }
   } catch (err) {
-    return fail(err, "Could not record the signature")
+    return actionError(err, "Could not record the signature")
   }
 }
 
@@ -162,7 +159,7 @@ export async function convertApplicantAction(
     }
     return result
   } catch (err) {
-    return fail(err, "Conversion failed")
+    return actionError(err, "Conversion failed")
   }
 }
 
@@ -185,7 +182,7 @@ export async function attachReferralAction(
     revalidatePath(`/hub/recruiting/${applicantId}`)
     return { ok: true }
   } catch (err) {
-    return fail(err, "Could not attach the referral")
+    return actionError(err, "Could not attach the referral")
   }
 }
 
@@ -196,6 +193,6 @@ export async function importPublicApplicantsAction(): Promise<Result & { importe
     revalidatePath("/hub/recruiting")
     return { ok: true, imported }
   } catch (err) {
-    return fail(err, "Import failed")
+    return actionError(err, "Import failed")
   }
 }

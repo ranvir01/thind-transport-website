@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache"
 import { requirePermission } from "@/lib/hub/session"
 import { patchLoadBoardField, type LoadBoardField } from "@/lib/hub/loadboard"
 import { logAudit } from "@/lib/hub/audit"
+import { actionError } from "@/lib/hub/action-error"
 import type { ActionResult } from "./fleet"
 
 const LOADBOARD_FIELDS: LoadBoardField[] = [
@@ -43,7 +44,7 @@ export async function patchLoadBoardFieldAction(
   try {
     user = await requirePermission(field === "status" ? "loads:status" : "loads:write")
   } catch (err) {
-    return { ok: false, error: err instanceof Error ? err.message : "Forbidden" }
+    return actionError(err, "Forbidden")
   }
 
   try {
@@ -69,6 +70,6 @@ export async function patchLoadBoardFieldAction(
     revalidateLoadBoard(loadId)
     return { ok: true, id: load.id }
   } catch (err) {
-    return { ok: false, error: err instanceof Error ? err.message : "Update failed" }
+    return actionError(err, "Update failed")
   }
 }

@@ -6,6 +6,7 @@ import { acceptInvitation, createPortalInvitation, createQuoteRequest } from "@/
 import { getCarrier } from "@/lib/hub/settings"
 import { logAudit } from "@/lib/hub/audit"
 import { queryOne } from "@/lib/hub/db"
+import { actionError } from "@/lib/hub/action-error"
 
 interface Result {
   ok: boolean
@@ -54,7 +55,7 @@ export async function invitePortalUserAction(input: {
     revalidatePath(`/hub/customers/${input.customerId}`)
     return { ok: true, acceptUrl }
   } catch (err) {
-    return { ok: false, error: err instanceof Error ? err.message : "Could not invite" }
+    return actionError(err, "Could not invite")
   }
 }
 
@@ -98,6 +99,6 @@ export async function portalQuoteRequestAction(input: {
     revalidatePath("/hub/portal")
     return { ok: true, reference }
   } catch (err) {
-    return { ok: false, error: err instanceof Error ? err.message : "Could not send the request" }
+    return actionError(err, "Could not send the request")
   }
 }
