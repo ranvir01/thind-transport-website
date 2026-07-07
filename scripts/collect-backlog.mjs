@@ -104,6 +104,9 @@ export function isDeployMetaItem(text) {
   if (/integrator absorbs one per/i.test(text)) return true
   if (/duplicate.*skip on next run/i.test(text)) return true
   if (/pending claude\/\* session branches/i.test(text)) return true
+  if (/pending claude\/\* branches/i.test(text)) return true
+  if (/^next merge:\s*claude\//i.test(text)) return true
+  if (/^ops:\s*/i.test(text)) return true
   return false
 }
 
