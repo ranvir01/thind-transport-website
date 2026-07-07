@@ -1,4 +1,5 @@
 import { query } from "./db"
+import { iftaFilingComplianceEntries } from "./ifta"
 
 export type ComplianceColor = "red" | "amber" | "green"
 
@@ -112,6 +113,9 @@ export async function complianceEntries(carrierId: string): Promise<ComplianceEn
       href: "/hub/compliance", manualItemId: item.id,
     })
   }
+
+  const iftaEntries = await iftaFilingComplianceEntries(carrierId)
+  entries.push(...iftaEntries)
 
   const order = { red: 0, amber: 1, green: 2 }
   return entries.sort((a, b) => order[a.color] - order[b.color] || String(a.due ?? "9999").localeCompare(String(b.due ?? "9999")))

@@ -16,7 +16,7 @@ function mockRowsBySql(rows: {
   trailers?: unknown[]
   maintenance?: unknown[]
   manual?: unknown[]
-  iftaReport?: { status: string } | null
+  iftaReports?: { quarter: string; status: string }[]
 }) {
   queryMock.mockImplementation(async (sql: string) => {
     const s = String(sql)
@@ -25,14 +25,8 @@ function mockRowsBySql(rows: {
     if (s.includes("FROM hub.trucks")) return rows.trucks ?? []
     if (s.includes("FROM hub.trailers")) return rows.trailers ?? []
     if (s.includes("FROM hub.compliance_items")) return rows.manual ?? []
+    if (s.includes("FROM hub.ifta_reports")) return rows.iftaReports ?? []
     return []
-  })
-  queryOneMock.mockImplementation(async (sql: string) => {
-    if (String(sql).includes("FROM hub.ifta_reports")) {
-      if (rows.iftaReport === undefined) return { status: "filed" }
-      return rows.iftaReport
-    }
-    return null
   })
 }
 
@@ -75,9 +69,9 @@ describe("complianceEntries color thresholds (colorFor)", () => {
       manual: [{ id: "item-1", kind: "IFTA decals", due_on: null, note: null }],
     })
     const entries = await complianceEntries(CARRIER)
-    expect(entries).toHaveLength(1)
-    expect(entries[0].color).toBe("amber")
-    expect(entries[0].manualItemId).toBe("item-1")
+    const manual = entries.find((e) => e.manualItemId === "item-1")
+    expect(manual).toBeDefined()
+    expect(manual!.color).toBe("amber")
   })
 
   it("sorts red before amber before green, ties broken by earliest due date", async () => {
@@ -154,7 +148,10 @@ describe("complianceEntries carrier scoping", () => {
       expect(String(sql)).toContain("carrier_id = $1")
       expect(params).toEqual([CARRIER])
     }
-    expect(queryMock).toHaveBeenCalledTimes(5)
+    expect(queryMock).toHaveBeenCalledTimes(6)
+    const iftaCall = queryMock.mock.calls.find(([sql]) => String(sql).includes("FROM hub.ifta_reports"))
+    expect(iftaCall).toBeDefined()
+    expect(iftaCall![1]).toEqual([CARRIER])
   })
 
   it("excludes soft-deleted drivers/trucks and inactive/retired records", async () => {
@@ -172,6 +169,32 @@ describe("complianceEntries carrier scoping", () => {
     const manualSql = String(queryMock.mock.calls.find(([sql]) => String(sql).includes("FROM hub.compliance_items"))![0])
     expect(manualSql).toContain("status = 'open'")
     expect(manualSql).toContain("entity_type = 'company'")
+  })
+})
+
+describe("complianceEntries IFTA filing", () => {
+  beforeEach(() => {
+    queryMock.mockReset()
+    queryOneMock.mockReset()
+  })
+
+  it("includes auto-tracked IFTA quarterly filing entries from ifta reports", async () => {
+    mockRowsBySql({
+      iftaReports: [{ quarter: "2026Q2", status: "draft" }],
+    })
+    const entries = await complianceEntries(CARRIER)
+    const ifta = entries.filter((e) => e.kind.startsWith("IFTA filing"))
+    expect(ifta.length).toBeGreaterThan(0)
+    expect(ifta.some((e) => e.entity === "company" && e.href.includes("/hub/compliance/ifta"))).toBe(true)
+  })
+
+  it("scopes the IFTA reports query by carrier_id", async () => {
+    mockRowsBySql({})
+    await complianceEntries(CARRIER)
+    const iftaCall = queryMock.mock.calls.find(([sql]) => String(sql).includes("FROM hub.ifta_reports"))
+    expect(iftaCall).toBeDefined()
+    expect(String(iftaCall![0])).toContain("carrier_id = $1")
+    expect(iftaCall![1]).toEqual([CARRIER])
   })
 })
 
