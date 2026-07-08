@@ -220,7 +220,7 @@ function PriceBookRowEditor({
       <input
         aria-label={`${entry.name} default amount`}
         type="number" step="0.01" min="0"
-        className={`${fieldCls} w-28`}
+        className={`${fieldCls} !w-28`}
         value={amount}
         onChange={(e) => setAmount(e.target.value)}
       />
