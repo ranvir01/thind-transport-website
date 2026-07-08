@@ -37,6 +37,6 @@ export async function DELETE(request: Request) {
   const user = await getHubUser()
   if (!user) return NextResponse.json({ error: "Not signed in" }, { status: 401 })
   const body = (await request.json()) as { endpoint?: string }
-  if (body.endpoint) await removePushSubscription(user.id, body.endpoint)
+  if (body.endpoint) await removePushSubscription(user.carrierId, user.id, body.endpoint)
   return NextResponse.json({ ok: true })
 }

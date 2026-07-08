@@ -129,7 +129,7 @@ async function pushToUser(userId: string, input: NotifyInput): Promise<void> {
 
 // ---- In-app feed ----
 
-export async function listNotifications(userId: string, limit = 30) {
+export async function listNotifications(carrierId: string, userId: string, limit = 30) {
   return query<{
     id: number
     kind: string
@@ -140,24 +140,25 @@ export async function listNotifications(userId: string, limit = 30) {
     created_at: string
   }>(
     `SELECT id, kind, title, body, link, read_at, created_at
-     FROM hub.notifications WHERE user_id = $1
-     ORDER BY created_at DESC LIMIT $2`,
-    [userId, limit]
+     FROM hub.notifications WHERE carrier_id = $1 AND user_id = $2
+     ORDER BY created_at DESC LIMIT $3`,
+    [carrierId, userId, limit]
   )
 }
 
-export async function unreadCount(userId: string): Promise<number> {
+export async function unreadCount(carrierId: string, userId: string): Promise<number> {
   const rows = await query<{ count: string }>(
-    `SELECT COUNT(*) AS count FROM hub.notifications WHERE user_id = $1 AND read_at IS NULL`,
-    [userId]
+    `SELECT COUNT(*) AS count FROM hub.notifications WHERE carrier_id = $1 AND user_id = $2 AND read_at IS NULL`,
+    [carrierId, userId]
   )
   return Number(rows[0]?.count ?? 0)
 }
 
-export async function markAllRead(userId: string): Promise<void> {
-  await query(`UPDATE hub.notifications SET read_at = NOW() WHERE user_id = $1 AND read_at IS NULL`, [
-    userId,
-  ])
+export async function markAllRead(carrierId: string, userId: string): Promise<void> {
+  await query(
+    `UPDATE hub.notifications SET read_at = NOW() WHERE carrier_id = $1 AND user_id = $2 AND read_at IS NULL`,
+    [carrierId, userId]
+  )
 }
 
 // ---- Push subscription management ----
@@ -177,9 +178,13 @@ export async function savePushSubscription(
   )
 }
 
-export async function removePushSubscription(userId: string, endpoint: string): Promise<void> {
-  await query(`DELETE FROM hub.push_subscriptions WHERE user_id = $1 AND endpoint = $2`, [
-    userId,
-    endpoint,
-  ])
+export async function removePushSubscription(
+  carrierId: string,
+  userId: string,
+  endpoint: string
+): Promise<void> {
+  await query(
+    `DELETE FROM hub.push_subscriptions WHERE carrier_id = $1 AND user_id = $2 AND endpoint = $3`,
+    [carrierId, userId, endpoint]
+  )
 }
