@@ -5,7 +5,15 @@ vi.mock("../audit", () => ({ logAudit: vi.fn(async () => undefined) }))
 
 import { query } from "../db"
 import { logAudit } from "../audit"
-import { createExpense, exportCsv, exportQboIif, listExpenses } from "../expenses"
+import {
+  createExpense,
+  exportCsv,
+  exportQboIif,
+  exportQboIifInvoices,
+  exportQboIifPayments,
+  exportQboIifSettlements,
+  listExpenses,
+} from "../expenses"
 import { createAdvance } from "../settlements"
 
 const queryMock = vi.mocked(query)
@@ -197,5 +205,132 @@ describe("exportQboIif (QuickBooks Desktop general journal)", () => {
     const spl = iif.split("\r\n").find((l) => l.startsWith("SPL\t"))
     expect(spl?.split("\t")).toHaveLength(9)
     expect(spl).toContain("line1 line2 line3")
+  })
+})
+
+describe("exportQboIifInvoices (AR revenue recognition)", () => {
+  beforeEach(() => {
+    queryMock.mockReset()
+  })
+
+  it("joins customers and loads on the invoice's carrier", async () => {
+    queryMock.mockResolvedValue([])
+    await exportQboIifInvoices(CARRIER)
+    const sql = String(queryMock.mock.calls[0][0])
+    expect(sql).toContain("ON c.id = i.customer_id AND c.carrier_id = i.carrier_id")
+    expect(sql).toContain("ON l.id = i.load_id AND l.carrier_id = i.carrier_id")
+  })
+
+  it("debits Accounts Receivable and credits Freight Revenue in balance", async () => {
+    queryMock.mockResolvedValue([
+      {
+        number: "INV-1001",
+        customer: "Acme Foods",
+        load_ref: "LD-42",
+        amount_cents: 250000,
+        issued_on: new Date("2026-07-04T00:00:00.000Z"),
+      },
+    ])
+    const { filename, iif } = await exportQboIifInvoices(CARRIER)
+    expect(filename).toBe("invoices-qbo.iif")
+    const lines = iif.trim().split("\r\n")
+    const trns = lines.find((l) => l.startsWith("TRNS\t"))
+    const spl = lines.find((l) => l.startsWith("SPL\t"))
+    expect(lines).toContain("ENDTRNS")
+    expect(trns).toContain("Accounts Receivable")
+    expect(trns).toContain("2500.00")
+    expect(spl).toContain("Freight Revenue")
+    expect(spl).toContain("-2500.00")
+    expect(spl).toContain("Invoice INV-1001 - LD-42")
+  })
+})
+
+describe("exportQboIifPayments (AR receipts)", () => {
+  beforeEach(() => {
+    queryMock.mockReset()
+  })
+
+  it("joins invoices and customers on the payment's carrier", async () => {
+    queryMock.mockResolvedValue([])
+    await exportQboIifPayments(CARRIER)
+    const sql = String(queryMock.mock.calls[0][0])
+    expect(sql).toContain("ON i.id = p.invoice_id AND i.carrier_id = p.carrier_id")
+    expect(sql).toContain("ON c.id = i.customer_id AND c.carrier_id = i.carrier_id")
+  })
+
+  it("debits checking and credits Accounts Receivable in balance", async () => {
+    queryMock.mockResolvedValue([
+      {
+        number: "INV-1001",
+        customer: "Acme Foods",
+        amount_cents: 250000,
+        paid_on: new Date("2026-07-10T00:00:00.000Z"),
+        reference: "ACH-9981",
+      },
+    ])
+    const { filename, iif } = await exportQboIifPayments(CARRIER)
+    expect(filename).toBe("payments-qbo.iif")
+    const lines = iif.trim().split("\r\n")
+    const trns = lines.find((l) => l.startsWith("TRNS\t"))
+    const spl = lines.find((l) => l.startsWith("SPL\t"))
+    expect(trns).toContain("Business Checking")
+    expect(trns).toContain("2500.00")
+    expect(spl).toContain("Accounts Receivable")
+    expect(spl).toContain("-2500.00")
+    expect(trns).toContain("Payment on INV-1001 - ACH-9981")
+  })
+})
+
+describe("exportQboIifSettlements (driver payroll)", () => {
+  beforeEach(() => {
+    queryMock.mockReset()
+  })
+
+  it("only includes paid settlements", async () => {
+    queryMock.mockResolvedValue([])
+    await exportQboIifSettlements(CARRIER)
+    const sql = String(queryMock.mock.calls[0][0])
+    expect(sql).toContain("s.status = 'paid'")
+    expect(sql).toContain("ON d.id = s.driver_id AND d.carrier_id = s.carrier_id")
+  })
+
+  it("debits Driver Pay Expense and splits the credit across checking and deductions payable", async () => {
+    queryMock.mockResolvedValue([
+      {
+        driver: "Test Driver",
+        period_end: new Date("2026-07-05T00:00:00.000Z"),
+        gross_cents: 300000,
+        deductions_cents: 45000,
+        net_cents: 255000,
+      },
+    ])
+    const { filename, iif } = await exportQboIifSettlements(CARRIER)
+    expect(filename).toBe("settlements-qbo.iif")
+    const lines = iif.trim().split("\r\n")
+    const trns = lines.find((l) => l.startsWith("TRNS\t"))
+    const splLines = lines.filter((l) => l.startsWith("SPL\t"))
+    expect(trns).toContain("Driver Pay Expense")
+    expect(trns).toContain("3000.00")
+    expect(splLines).toHaveLength(2)
+    expect(splLines[0]).toContain("Business Checking")
+    expect(splLines[0]).toContain("-2550.00")
+    expect(splLines[1]).toContain("Driver Deductions Payable")
+    expect(splLines[1]).toContain("-450.00")
+  })
+
+  it("omits the deductions split when there are no deductions", async () => {
+    queryMock.mockResolvedValue([
+      {
+        driver: "Test Driver",
+        period_end: new Date("2026-07-05T00:00:00.000Z"),
+        gross_cents: 300000,
+        deductions_cents: 0,
+        net_cents: 300000,
+      },
+    ])
+    const { iif } = await exportQboIifSettlements(CARRIER)
+    const splLines = iif.trim().split("\r\n").filter((l) => l.startsWith("SPL\t"))
+    expect(splLines).toHaveLength(1)
+    expect(splLines[0]).toContain("Business Checking")
   })
 })

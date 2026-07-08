@@ -309,3 +309,113 @@ export async function exportQboIif(carrierId: string): Promise<{ filename: strin
   }
   return { filename: "expenses-qbo.iif", iif: lines.join("\r\n") + "\r\n" }
 }
+
+// ---- QuickBooks Desktop IIF export: revenue, receipts, payroll ----
+//
+// Same general-journal pattern as exportQboIif above (no customer/vendor list
+// sync, just posted balanced entries): positive amount = debit, negative =
+// credit. Kept as separate exports (not one combined file) so a bookkeeper
+// importing AR activity isn't forced to also import payroll in one shot.
+
+const IIF_HEADER = [
+  "!TRNS\tTRNSID\tTRNSTYPE\tDATE\tACCNT\tNAME\tCLASS\tAMOUNT\tMEMO",
+  "!SPL\tSPLID\tTRNSTYPE\tDATE\tACCNT\tNAME\tCLASS\tAMOUNT\tMEMO",
+  "!ENDTRNS",
+]
+
+const QBO_AR_ACCOUNT = "Accounts Receivable"
+const QBO_REVENUE_ACCOUNT = "Freight Revenue"
+const QBO_DRIVER_PAY_ACCOUNT = "Driver Pay Expense"
+const QBO_DEDUCTIONS_ACCOUNT = "Driver Deductions Payable"
+
+export async function exportQboIifInvoices(carrierId: string): Promise<{ filename: string; iif: string }> {
+  const rows = await query<{
+    number: string
+    customer: string
+    load_ref: string
+    amount_cents: number
+    issued_on: string
+  }>(
+    `SELECT i.number, c.name AS customer, l.reference AS load_ref, i.amount_cents, i.issued_on
+     FROM hub.invoices i
+     JOIN hub.customers c ON c.id = i.customer_id AND c.carrier_id = i.carrier_id
+     JOIN hub.loads l ON l.id = i.load_id AND l.carrier_id = i.carrier_id
+     WHERE i.carrier_id = $1 ORDER BY i.issued_on`,
+    [carrierId]
+  )
+
+  const lines = [...IIF_HEADER]
+  for (const r of rows) {
+    const date = iifDate(r.issued_on)
+    const amount = (r.amount_cents / 100).toFixed(2)
+    const name = iifField(r.customer)
+    const memo = iifField(`Invoice ${r.number} - ${r.load_ref}`)
+    lines.push(`TRNS\t\tGENERAL JOURNAL\t${date}\t${QBO_AR_ACCOUNT}\t${name}\t\t${amount}\t${memo}`)
+    lines.push(`SPL\t\tGENERAL JOURNAL\t${date}\t${QBO_REVENUE_ACCOUNT}\t${name}\t\t-${amount}\t${memo}`)
+    lines.push("ENDTRNS")
+  }
+  return { filename: "invoices-qbo.iif", iif: lines.join("\r\n") + "\r\n" }
+}
+
+export async function exportQboIifPayments(carrierId: string): Promise<{ filename: string; iif: string }> {
+  const rows = await query<{
+    number: string
+    customer: string
+    amount_cents: number
+    paid_on: string
+    reference: string | null
+  }>(
+    `SELECT i.number, c.name AS customer, p.amount_cents, p.paid_on, p.reference
+     FROM hub.payments p
+     JOIN hub.invoices i ON i.id = p.invoice_id AND i.carrier_id = p.carrier_id
+     JOIN hub.customers c ON c.id = i.customer_id AND c.carrier_id = i.carrier_id
+     WHERE p.carrier_id = $1 ORDER BY p.paid_on`,
+    [carrierId]
+  )
+
+  const lines = [...IIF_HEADER]
+  for (const r of rows) {
+    const date = iifDate(r.paid_on)
+    const amount = (r.amount_cents / 100).toFixed(2)
+    const name = iifField(r.customer)
+    const memo = iifField([`Payment on ${r.number}`, r.reference].filter(Boolean).join(" - "))
+    lines.push(`TRNS\t\tGENERAL JOURNAL\t${date}\t${QBO_OFFSET_ACCOUNT}\t${name}\t\t${amount}\t${memo}`)
+    lines.push(`SPL\t\tGENERAL JOURNAL\t${date}\t${QBO_AR_ACCOUNT}\t${name}\t\t-${amount}\t${memo}`)
+    lines.push("ENDTRNS")
+  }
+  return { filename: "payments-qbo.iif", iif: lines.join("\r\n") + "\r\n" }
+}
+
+export async function exportQboIifSettlements(carrierId: string): Promise<{ filename: string; iif: string }> {
+  const rows = await query<{
+    driver: string
+    period_end: string
+    gross_cents: number
+    deductions_cents: number
+    net_cents: number
+  }>(
+    `SELECT d.first_name || ' ' || d.last_name AS driver, s.period_end,
+       s.gross_cents, s.deductions_cents, s.net_cents
+     FROM hub.settlements s
+     JOIN hub.drivers d ON d.id = s.driver_id AND d.carrier_id = s.carrier_id
+     WHERE s.carrier_id = $1 AND s.status = 'paid' ORDER BY s.period_end`,
+    [carrierId]
+  )
+
+  const lines = [...IIF_HEADER]
+  for (const r of rows) {
+    const date = iifDate(r.period_end)
+    const name = iifField(r.driver)
+    const memo = iifField(`Settlement - ${r.driver} - period ending ${date}`)
+    const gross = (r.gross_cents / 100).toFixed(2)
+    const net = (r.net_cents / 100).toFixed(2)
+    lines.push(`TRNS\t\tGENERAL JOURNAL\t${date}\t${QBO_DRIVER_PAY_ACCOUNT}\t${name}\t\t${gross}\t${memo}`)
+    lines.push(`SPL\t\tGENERAL JOURNAL\t${date}\t${QBO_OFFSET_ACCOUNT}\t${name}\t\t-${net}\t${memo}`)
+    if (r.deductions_cents > 0) {
+      const deductions = (r.deductions_cents / 100).toFixed(2)
+      lines.push(`SPL\t\tGENERAL JOURNAL\t${date}\t${QBO_DEDUCTIONS_ACCOUNT}\t${name}\t\t-${deductions}\t${memo}`)
+    }
+    lines.push("ENDTRNS")
+  }
+  return { filename: "settlements-qbo.iif", iif: lines.join("\r\n") + "\r\n" }
+}

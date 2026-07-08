@@ -24,8 +24,13 @@ const STATUS_PILL: Record<string, string> = {
 
 const BUCKETS = ["current", "1-30", "31-60", "61-90", "90+"] as const
 
-// API download endpoint (not a page) — held in a const so the page-link lint rule doesn't misfire.
-const QBO_IIF_EXPORT_URL = "/api/hub/exports/qbo-iif"
+// API download endpoints (not pages) — held in consts so the page-link lint rule doesn't misfire.
+const QBO_IIF_EXPORTS = [
+  { kind: "qbo-iif", label: "Expenses (QuickBooks .IIF)" },
+  { kind: "qbo-iif-invoices", label: "Invoices (QuickBooks .IIF)" },
+  { kind: "qbo-iif-payments", label: "Payments (QuickBooks .IIF)" },
+  { kind: "qbo-iif-settlements", label: "Settlements (QuickBooks .IIF)" },
+] as const
 
 export default async function MoneyPage() {
   const user = await requirePermissionPage("money:read")
@@ -89,12 +94,15 @@ export default async function MoneyPage() {
               <Download className="h-3.5 w-3.5" /> {kind === "1099" ? "1099-NEC" : `${kind} CSV`}
             </a>
           ))}
-          <a
-            href={QBO_IIF_EXPORT_URL}
-            className="inline-flex min-h-[36px] items-center gap-1.5 rounded-lg border border-border-strong px-3 text-xs font-semibold text-fg-2 hover:bg-hover"
-          >
-            <Download className="h-3.5 w-3.5" /> Expenses (QuickBooks .IIF)
-          </a>
+          {QBO_IIF_EXPORTS.map(({ kind, label }) => (
+            <a
+              key={kind}
+              href={`/api/hub/exports/${kind}`}
+              className="inline-flex min-h-[36px] items-center gap-1.5 rounded-lg border border-border-strong px-3 text-xs font-semibold text-fg-2 hover:bg-hover"
+            >
+              <Download className="h-3.5 w-3.5" /> {label}
+            </a>
+          ))}
         </div>
       </Panel>
 

@@ -1,7 +1,13 @@
 import { NextResponse } from "next/server"
 import { getHubUser } from "@/lib/hub/session"
 import { can } from "@/lib/hub/permissions"
-import { exportCsv, exportQboIif } from "@/lib/hub/expenses"
+import {
+  exportCsv,
+  exportQboIif,
+  exportQboIifInvoices,
+  exportQboIifPayments,
+  exportQboIifSettlements,
+} from "@/lib/hub/expenses"
 import { accidentRegisterCsv } from "@/lib/hub/incidents"
 
 export async function GET(
@@ -30,8 +36,15 @@ export async function GET(
     return NextResponse.json({ error: "Forbidden" }, { status: 403 })
   }
 
-  if (kind === "qbo-iif") {
-    const { filename, iif } = await exportQboIif(user.carrierId)
+  const QBO_IIF_EXPORTERS = {
+    "qbo-iif": exportQboIif,
+    "qbo-iif-invoices": exportQboIifInvoices,
+    "qbo-iif-payments": exportQboIifPayments,
+    "qbo-iif-settlements": exportQboIifSettlements,
+  } as const
+
+  if (kind in QBO_IIF_EXPORTERS) {
+    const { filename, iif } = await QBO_IIF_EXPORTERS[kind as keyof typeof QBO_IIF_EXPORTERS](user.carrierId)
     return new NextResponse(iif, {
       headers: {
         "Content-Type": "application/octet-stream",
