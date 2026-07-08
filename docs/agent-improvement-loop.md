@@ -124,8 +124,13 @@ Legacy single-automation files (`hauldesk-improvement-cycle.*`) alias to `loadof
 > common in sandboxed agent environments), treat that as inconclusive, not a site defect. Use Vercel
 > deployment/status tools instead (confirm the `production` alias is `READY` on the expected commit SHA;
 > check runtime errors/logs for new clusters). Same "is prod healthy" question without touching the
-> blocked host. If deploys stop appearing after pushes to `main`, that is an owner infra issue (GitHub
-> App / webhook / plan quota) — sessions can push commits but cannot reconnect Vercel.
+> blocked host.
+>
+> If GitHub shows a **Vercel** commit status of `Deployment failed` whose link lands on
+> [cron usage & pricing](https://vercel.com/docs/cron-jobs/usage-and-pricing), the project is on
+> **Hobby** and `vercel.json` has a cron that runs more than once per day (e.g. `0 * * * *`). That
+> fails the deploy before build — fix the schedule to daily (or upgrade to Pro). Git being
+> "connected" is fine; the config is what blocks.
 
 ### 3c. Dependency + security pass (weekly)
 > Run `npm audit` and `cargo audit` (if installed); update only patch/minor versions of non-framework
