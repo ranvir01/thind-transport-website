@@ -12,6 +12,7 @@ import { toast } from "sonner"
 import { Check, Loader2, ShieldAlert, Wrench } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { submitDvirAction } from "@/app/hub/_actions/dvir"
+import { runOrQueue } from "@/components/hub/driver/offline-queue"
 import { SignaturePad } from "@/components/hub/SignaturePad"
 import { fieldDarkCls, labelDarkCls } from "@/components/hub/ui"
 import type { Dvir, DvirDefect } from "@/lib/hub/dvir"
@@ -41,9 +42,10 @@ export function DvirForm({
     .filter((c) => !checks[c.key])
     .map((c) => ({ label: c.label, note: defectNotes[c.key] || "" }))
 
+  // Same offline queue as the load card: no signal at the yard shouldn't lose a signed inspection.
   const submit = () =>
     startTransition(async () => {
-      const result = await submitDvirAction({
+      const input = {
         truckId: truck.id,
         type,
         odometer,
@@ -52,8 +54,13 @@ export function DvirForm({
         safeToOperate: defects.length === 0 ? true : safeToOperate,
         signature: signature ?? "",
         priorDvirId: priorDvir?.id ?? null,
-      })
-      if (result.ok) {
+      }
+      const result = await runOrQueue({ kind: "dvir", payload: input }, () => submitDvirAction(input))
+      if ("queued" in result) {
+        // No navigation while offline — router.push/refresh needs the network it doesn't have,
+        // same as the load card's queued path.
+        toast.success("No signal — inspection saved, sends automatically")
+      } else if (result.ok) {
         toast.success(
           result.grounded
             ? "Filed — truck is grounded until the shop signs off. Good call."
