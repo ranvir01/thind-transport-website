@@ -63,6 +63,14 @@ Run `npx maildev --smtp 1025 --web 1080`, then set `SMTP_HOST=localhost` and `SM
 5. **Blank `NEXTAUTH_SECRET` / `AUTH_SECRET`** breaks hub login only (`MissingSecret` on `/api/auth/error`); marketing pages and `/apply` still render. `src/proxy.ts` reads `NEXTAUTH_SECRET ?? AUTH_SECRET` — set at least one in `.env.local` before E2E or Playwright hub drives.
 6. **Don't copy `.env.example`'s placeholder `SMTP_USER`/`SMTP_PASS` verbatim into `.env.local`.** `isEmailConfigured()` (`src/lib/mailer.ts`) only checks that both are non-empty, so the literal placeholders (`your-gmail@gmail.com` / `your-16-character-app-password`) read as "configured" and every send (customer statements, settlement/invoice emails) tries a real SMTP auth against `smtp.gmail.com` and hangs for the full connection timeout before failing, instead of hitting the graceful "email not configured" toast path. Leave both blank (or point at local maildev) for local rig / E2E runs.
 7. **`/driver/*` (legacy driver portal) uses `@vercel/postgres`** (`src/lib/driver-db-postgres.ts`), Neon's HTTP-fetch driver — pointing `POSTGRES_URL` at a plain local/self-hosted Postgres makes it 500 with `fetch failed / ECONNREFUSED 127.0.0.1:443` on register and login. `/hub/*` is unaffected — it uses `pg` directly. For local `/driver/*` testing either leave `POSTGRES_URL` unset (falls back to local JSON files, per `.env.example`) or point it at a real Neon/Vercel Postgres endpoint. Prefer `GET /api/setup-db` when you do want Postgres-backed legacy tables locally.
+8. **A fresh container's Postgres 16 cluster is installed but stopped, with no app role/database yet.** `npm run db:migrate` just fails to connect until you bring both up:
+   ```bash
+   sudo pg_ctlcluster 16 main start   # or: pg_lsclusters, then start the down cluster
+   sudo -u postgres psql -c "CREATE ROLE hubuser WITH LOGIN PASSWORD 'hubpass' SUPERUSER;"
+   sudo -u postgres psql -c "CREATE DATABASE hubdb OWNER hubuser;"
+   # then in .env.local: POSTGRES_URL=postgres://hubuser:hubpass@localhost:5432/hubdb
+   ```
+   `scripts/e2e-*-smoke.mjs` and `go-live-check.mjs` don't load `.env.local` themselves (see `e2e-lib.mjs`'s header) — export `NEXTAUTH_SECRET`/`POSTGRES_URL`/etc. in the shell when running them directly instead of through `npm run dev`/`start`.
 
 ## Pre-Commit Checklist
 
