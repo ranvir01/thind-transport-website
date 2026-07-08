@@ -22,16 +22,12 @@ export function fmcsaConfigured(): boolean {
 
 export { computeRiskScore, DOUBLE_BROKER_CHECKLIST } from "./vetting-shared"
 import { computeRiskScore } from "./vetting-shared"
-
-interface QcCarrier {
-  legalName?: string
-  dbaName?: string
-  allowedToOperate?: string
-  statusCode?: string
-  commonAuthorityStatus?: string
-  contractAuthorityStatus?: string
-  brokerAuthorityStatus?: string
-}
+import {
+  carrierAllowedToOperate,
+  carrierAuthorityStatus,
+  extractQcCarrier,
+  type QcCarrier,
+} from "./vetting-fmcsa"
 
 /** QCMobile lookup by MC (docket) or DOT number. Returns null when not configured. */
 async function fmcsaLookup(customer: {
@@ -48,9 +44,8 @@ async function fmcsaLookup(customer: {
     try {
       const response = await fetch(url, { signal: AbortSignal.timeout(8000) })
       if (!response.ok) continue
-      const json = (await response.json()) as { content?: unknown }
-      const content = Array.isArray(json.content) ? json.content[0] : json.content
-      const carrier = (content as { carrier?: QcCarrier })?.carrier
+      const json = await response.json()
+      const carrier = extractQcCarrier(json)
       if (carrier) return { carrier, raw: json }
     } catch {
       /* try the next identifier */
@@ -74,10 +69,8 @@ export async function vetCustomer(carrierId: string, customerId: string): Promis
   const lookup = await fmcsaLookup(customer)
   const paySpeed = await avgDaysToPay(carrierId, customerId)
 
-  const allowed =
-    lookup?.carrier.allowedToOperate == null ? null : lookup.carrier.allowedToOperate === "Y"
-  const authorityStatus =
-    lookup?.carrier.brokerAuthorityStatus ?? lookup?.carrier.commonAuthorityStatus ?? null
+  const allowed = lookup ? carrierAllowedToOperate(lookup.carrier) : null
+  const authorityStatus = lookup ? carrierAuthorityStatus(lookup.carrier) : null
   const nameMatches = lookup?.carrier.legalName
     ? normalizeName(lookup.carrier.legalName) === normalizeName(customer.name) ||
       normalizeName(lookup.carrier.dbaName ?? "") === normalizeName(customer.name)
