@@ -359,6 +359,8 @@ async function main() {
   )
   const inTransit = await makeLoad({ customer: 0, status: "in_transit", equipment: "reefer", commodity: "Fresh produce", weight: 42500, linehaulCents: 345000, fscCents: 38000, miles: 920, driver: 1, truck: 1, trailer: 3, origin: CITY.kent, dest: CITY.losangeles, pickupDaysAgo: 1, deliverDaysAgo: -1 })
   await makeLoad({ customer: 6, status: "in_transit", equipment: "dry_van", commodity: "Beverages", weight: 43000, linehaulCents: 275000, fscCents: 30000, miles: 820, driver: 6, truck: 6, trailer: 6, origin: CITY.portland, dest: CITY.saltlake, pickupDaysAgo: 1, deliverDaysAgo: 0 })
+  // Cancelled load — customer bailed after booking; exercises the /track cancelled banner.
+  const cancelledLoad = await makeLoad({ customer: 4, status: "cancelled", equipment: "dry_van", commodity: "Furniture", weight: 34000, linehaulCents: 185000, fscCents: 19000, miles: 430, origin: CITY.seattle, dest: CITY.boise, pickupDaysAgo: -1, deliverDaysAgo: -3 })
   await makeLoad({ customer: 2, status: "delivered", equipment: "reefer", commodity: "Apples", weight: 41800, linehaulCents: 220000, fscCents: 24000, miles: 540, driver: 4, truck: 8, trailer: 2, origin: CITY.yakima, dest: CITY.medford, pickupDaysAgo: 3, deliverDaysAgo: 1 })
   const podLoad = await makeLoad({ customer: 4, status: "pod_received", equipment: "flatbed", commodity: "Steel beams", weight: 45000, linehaulCents: 295000, fscCents: 31000, accessorials: [{ label: "Tarp", amount_cents: 10000 }], miles: 690, driver: 8, truck: 7, trailer: 5, origin: CITY.seattle, dest: CITY.boise, pickupDaysAgo: 4, deliverDaysAgo: 2 })
 
@@ -716,6 +718,13 @@ async function main() {
     [CARRIER, inTransit.id, token, users.dispatcher]
   )
 
+  // ---- Share link for the cancelled load (drives the /track cancelled banner) ----
+  const cancelledToken = randomBytes(16).toString("hex")
+  await q(
+    `INSERT INTO hub.share_links (carrier_id, load_id, token, created_by) VALUES ($1,$2,$3,$4)`,
+    [CARRIER, cancelledLoad.id, cancelledToken, users.dispatcher]
+  )
+
   // ---- Demo documents: driver wallet, load POD, carrier packet (portal + settings) ----
   console.log("Creating demo documents…")
   const demoDocUrl = (name) => `/api/hub/files/${name}`
@@ -992,6 +1001,7 @@ async function main() {
 
   console.log(`Done. Demo data ready.`)
   console.log(`  In-transit load: ${inTransit.reference} → tracking: /track/${token}`)
+  console.log(`  Cancelled load: ${cancelledLoad.reference} → tracking: /track/${cancelledToken}`)
   console.log(`  Settlement-ready loads: ${settle1.reference}, ${settle2.reference} (company drv), ${settle3.reference} (O/O)`)
   console.log(`  POD-received load awaiting invoice: ${podLoad.reference}`)
   console.log(`  Tenant 2 (Cascade Demo Lines): owner@cascademo.example / driver@cascademo.example`)
