@@ -9,7 +9,7 @@ as an urgent `Backlog:` item.
 
 | Provider | Code status | Credential fields | Adapter file | Research doc | Last researched |
 |---|---|---|---|---|---|
-| `terminal` | **Built** — live TSP aggregator (vehicles + HOS), 30-min cron sync | `apiKey`, `connectionToken` (+ `TERMINAL_API_BASE` env, optional) | `src/lib/hub/telematics.ts` | [`terminal.md`](./terminal.md) | 2026-07-06 |
+| `terminal` | **Built** — live TSP aggregator (vehicles + HOS), 30-min cron sync | `apiKey`, `connectionToken` (+ `TERMINAL_API_BASE` env, optional) | `src/lib/hub/telematics.ts` | [`terminal.md`](./terminal.md) | 2026-07-08 |
 | `mailbox` | **Built** — generic IMAP client, not a vendor SDK. Plain LOGIN auth — broken against M365/Google Workspace, see doc | `host`, `port`, `user`, `password`, `folder` | `src/lib/hub/mailbox.ts` | [`mailbox.md`](./mailbox.md) | 2026-07-07 |
 | `fmcsa` (adjacent, free, not in `IntegrationProvider` union — no stored creds) | **Built** — QCMobile broker vetting | `FMCSA_WEBKEY` env | `src/lib/hub/vetting.ts` | [`fmcsa.md`](./fmcsa.md) | 2026-07-07 |
 | `eia` (adjacent, free, not in `IntegrationProvider` union) | **Built** — diesel price benchmark | `EIA_API_KEY` env | `src/lib/hub/fuel.ts` | [`eia.md`](./eia.md) | 2026-07-07 |
@@ -37,5 +37,6 @@ integrations that were never in scope of the vendor shopping list: both `fmcsa.m
    notes before a lane builds the adapter.
 3. One provider per cycle. Update the "Last researched" date and doc link when done.
 
-Next up by this rule: oldest-dated vendor doc (`terminal.md`/`truckercloud.md`, both
-2026-07-06), then rotate through stubs as needed.
+Next up by this rule: `truckercloud.md` is now the oldest vendor doc (2026-07-06, unchanged);
+`efs.md`/`wex.md`/`comdata.md`/`qbo.md`/`factor.md`/`dat.md`/`truckstop.md` follow in date order
+after that.
