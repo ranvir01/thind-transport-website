@@ -1,5 +1,6 @@
 import { hubDb, query, queryOne } from "./db"
 import { facilityDedupeKey } from "./facilities"
+import { notifyDriver } from "./notify"
 import { assertCarrierRefs } from "./tenancy"
 import type {
   Accessorial, EquipmentType, Load, LoadEvent, LoadEventKind, LoadStatus, Stop,
@@ -319,7 +320,22 @@ export async function changeLoadStatus(
       [carrierId, id, actor.id ?? null, actor.name ?? null, JSON.stringify({ from: fromStatus, to: toStatus })]
     )
     await client.query("COMMIT")
-    return rows[0] as Load
+    const load = rows[0] as Load
+    // Best-effort: a driver push failure must never undo the status change
+    // that already committed.
+    if (toStatus === "dispatched" && fromStatus !== "dispatched" && load.driver_id) {
+      try {
+        await notifyDriver(carrierId, load.driver_id, {
+          kind: "load_dispatched",
+          title: `Load ${load.reference} dispatched to you`,
+          body: "Check your driver app for stop details and paperwork.",
+          link: "/hub/driver",
+        })
+      } catch (err) {
+        console.error("dispatch notification failed:", err)
+      }
+    }
+    return load
   } catch (err) {
     await client.query("ROLLBACK")
     throw err
