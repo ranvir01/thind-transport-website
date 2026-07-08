@@ -16,6 +16,7 @@ export interface ShareLinkRow {
 export function ShareLinkPanel({ loadId, links }: { loadId: string; links: ShareLinkRow[] }) {
   const [pending, startTransition] = useTransition()
   const [latestToken, setLatestToken] = useState<string | null>(null)
+  const [confirmingRevokeId, setConfirmingRevokeId] = useState<string | null>(null)
 
   const create = () =>
     startTransition(async () => {
@@ -33,6 +34,7 @@ export function ShareLinkPanel({ loadId, links }: { loadId: string; links: Share
       const result = await revokeShareLinkAction(id, loadId)
       if (result.ok) toast.success("Link revoked")
       else toast.error(result.error ?? "Could not revoke link")
+      setConfirmingRevokeId(null)
     })
 
   const copy = (token: string) => {
@@ -87,14 +89,36 @@ export function ShareLinkPanel({ loadId, links }: { loadId: string; links: Share
               >
                 Open
               </a>
-              <button
-                aria-label="Revoke link"
-                onClick={() => revoke(link.id)}
-                disabled={pending}
-                className="flex h-10 w-10 items-center justify-center rounded-lg text-bad hover:bg-bad-soft disabled:opacity-50"
-              >
-                <XCircle className="h-4 w-4" />
-              </button>
+              {confirmingRevokeId === link.id ? (
+                <span className="flex shrink-0 items-center gap-1">
+                  <button
+                    onClick={() => revoke(link.id)}
+                    disabled={pending}
+                    aria-label="Confirm revoke link"
+                    className="flex h-8 items-center gap-1 rounded-lg bg-bad px-2 text-[11px] font-bold uppercase tracking-wide text-white hover:opacity-90 disabled:opacity-60"
+                  >
+                    {pending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <XCircle className="h-3.5 w-3.5" />}
+                    Revoke
+                  </button>
+                  <button
+                    onClick={() => setConfirmingRevokeId(null)}
+                    disabled={pending}
+                    aria-label="Keep link"
+                    className="flex h-8 items-center rounded-lg px-2 text-[11px] font-semibold text-fg-3 hover:bg-hover"
+                  >
+                    Keep
+                  </button>
+                </span>
+              ) : (
+                <button
+                  aria-label="Revoke link"
+                  onClick={() => setConfirmingRevokeId(link.id)}
+                  disabled={pending}
+                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-bad hover:bg-bad-soft disabled:opacity-50"
+                >
+                  <XCircle className="h-4 w-4" />
+                </button>
+              )}
             </li>
           ))}
         </ul>
