@@ -113,12 +113,48 @@ async function main() {
     check(!/pod_received|invoiced|paid|settled/i.test(text2), "internal money status never leaks to the public page")
     await shot(page, "02-delivered")
 
-    console.log("3. Unknown token at 390px")
+    console.log("3. Cancelled load at 390px")
+    let cancelled = await db.query(
+      `SELECT sl.token, l.reference FROM hub.share_links sl
+         JOIN hub.loads l ON l.id = sl.load_id
+        WHERE l.status = 'cancelled' AND sl.revoked_at IS NULL
+        ORDER BY sl.created_at DESC LIMIT 1`
+    )
+    let cancelledToken, cancelledRef
+    if (cancelled.rows[0]) {
+      cancelledToken = cancelled.rows[0].token
+      cancelledRef = cancelled.rows[0].reference
+    } else {
+      const load = await db.query(`SELECT id, carrier_id, reference FROM hub.loads WHERE status = 'cancelled' LIMIT 1`)
+      check(!!load.rows[0], "a cancelled demo load exists")
+      const token = `e2e-track-cancelled-${Date.now().toString(36)}`
+      await db.query(
+        `INSERT INTO hub.share_links (carrier_id, load_id, token) VALUES ($1,$2,$3)`,
+        [load.rows[0].carrier_id, load.rows[0].id, token]
+      )
+      cancelledToken = token
+      cancelledRef = load.rows[0].reference
+    }
+
+    const respC = await page.goto(`${BASE}/track/${cancelledToken}`, { waitUntil: "networkidle2" })
+    check(respC.status() === 200, `GET /track/[token] (cancelled) -> ${respC.status()}`)
+    const textC = await page.evaluate(() => document.body.innerText)
+    check(textC.includes(cancelledRef), `page shows load reference (${cancelledRef})`)
+    check(/cancelled/i.test(textC), "cancelled load shows the cancelled banner")
+    const bannerColor = await page.evaluate(() => {
+      const el = [...document.querySelectorAll("p")].find((p) => /cancelled/i.test(p.textContent ?? ""))
+      return el ? getComputedStyle(el).color : null
+    })
+    const brightC = brightness(bannerColor ?? "")
+    check(brightC !== null && brightC > 120, `cancelled banner renders light-on-dark (color=${bannerColor}, brightness=${brightC?.toFixed(0)})`)
+    await shot(page, "03-cancelled")
+
+    console.log("4. Unknown token at 390px")
     const resp3 = await page.goto(`${BASE}/track/not-a-real-token-${Date.now()}`, { waitUntil: "networkidle2" })
     check(resp3.status() === 200, `GET /track/[bad-token] -> ${resp3.status()}`)
     const text3 = await page.evaluate(() => document.body.innerText)
     check(/expired or revoked/i.test(text3), "unknown token shows the expired-link card")
-    await shot(page, "03-unknown-token")
+    await shot(page, "04-unknown-token")
 
     check(consoleErrors.length === 0, `no console errors (${consoleErrors.length}: ${consoleErrors.slice(0, 2).join(" | ")})`)
   } catch (err) {
