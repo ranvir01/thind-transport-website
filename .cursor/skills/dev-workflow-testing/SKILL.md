@@ -40,6 +40,7 @@ Run `npx maildev --smtp 1025 --web 1080`, then set `SMTP_HOST=localhost` and `SM
 - Copy `.env.example` → `.env.local` (it documents every variable: SMTP, NEXTAUTH, POSTGRES_URL, DRIVER_INVITATION_CODE, SETUP_DB_TOKEN). Without Postgres credentials, public pages still render; only driver-portal/auth/database features fail — don't mistake that for broken code.
 - **Hub login requires a session secret.** Set `NEXTAUTH_SECRET` (or Auth.js v5's `AUTH_SECRET`) in `.env.local` — generate with `openssl rand -base64 32`. If it is blank, `/hub/login` redirects to `/api/auth/error` with Auth.js `MissingSecret`; public marketing pages still work.
 - Never commit secrets. Production env lives in Vercel. `vercel-env*.txt` is gitignored for a reason — a real password was once committed in one.
+- **The legacy `/driver/register` + `/driver/login` portal** (pre-Hub, `src/lib/driver-db-postgres.ts`) reads/writes `drivers`/`applications`/`public_applications` tables that `npm run db:migrate` does **not** create — those come from `setupDatabase()` (`src/lib/db-setup.ts`), exposed at `GET /api/setup-db` and gated by `SETUP_DB_TOKEN`. Set `SETUP_DB_TOKEN` in `.env.local` and hit that endpoint once before exercising this flow locally, or registration 500s with `relation "drivers" does not exist`.
 
 ## Key Map
 
@@ -60,6 +61,8 @@ Run `npx maildev --smtp 1025 --web 1080`, then set `SMTP_HOST=localhost` and `SM
 3. **Postgres returns snake_case**, TypeScript uses camelCase. Handle both: `driver.firstName || driver.first_name`.
 4. Zod schemas must stay in sync with React Hook Form fields or steps silently refuse to advance.
 5. **Blank `NEXTAUTH_SECRET` / `AUTH_SECRET`** breaks hub login only (`MissingSecret` on `/api/auth/error`); marketing pages and `/apply` still render. `src/proxy.ts` reads `NEXTAUTH_SECRET ?? AUTH_SECRET` — set at least one in `.env.local` before E2E or Playwright hub drives.
+6. **Don't copy `.env.example`'s placeholder `SMTP_USER`/`SMTP_PASS` verbatim into `.env.local`.** `isEmailConfigured()` (`src/lib/mailer.ts`) only checks that both are non-empty, so the literal placeholders (`your-gmail@gmail.com` / `your-16-character-app-password`) read as "configured" and every send (customer statements, settlement/invoice emails) tries a real SMTP auth against `smtp.gmail.com` and hangs for the full connection timeout before failing, instead of hitting the graceful "email not configured" toast path. Leave both blank (or point at local maildev) for local rig / E2E runs.
+7. **`/driver/*` (legacy driver portal) uses `@vercel/postgres`** (`src/lib/driver-db-postgres.ts`), Neon's HTTP-fetch driver — pointing `POSTGRES_URL` at a plain local/self-hosted Postgres makes it 500 with `fetch failed / ECONNREFUSED 127.0.0.1:443` on register and login. `/hub/*` is unaffected — it uses `pg` directly. For local `/driver/*` testing either leave `POSTGRES_URL` unset (falls back to local JSON files, per `.env.example`) or point it at a real Neon/Vercel Postgres endpoint. Prefer `GET /api/setup-db` when you do want Postgres-backed legacy tables locally.
 
 ## Pre-Commit Checklist
 
