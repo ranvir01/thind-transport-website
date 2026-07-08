@@ -79,13 +79,27 @@ async function main() {
     return {
       hasWeekly: text.includes("revenue — last 8 weeks"),
       hasMonthly: text.includes("revenue — last 6 months"),
-      barCount: document.querySelectorAll(".bg-accent.rounded-t-md").length,
+      hasArAging: text.includes("ar aging trend"),
+      hasLoadedDeadhead: text.includes("loaded vs. deadhead"),
+      hasOperatingCost: text.includes("operating cost / mi"),
+      hasRevenuePerLoaded: text.includes("revenue / loaded mi"),
+      hasLoadedShare: /loaded\s+\d+%/.test(text),
+      revenueBarCount: document.querySelectorAll(".bg-accent.rounded-t-md").length,
+      arLegendCount: [...document.querySelectorAll("span.h-2.w-2.rounded-sm")].filter((el) =>
+        /current|1-30|31-60|61-90|90\+/i.test(el.parentElement?.textContent ?? "")
+      ).length,
       backLink: [...document.querySelectorAll("a")].some((a) => a.getAttribute("href") === "/hub/reports"),
     }
   })
   check(ownerDash.hasWeekly, "weekly revenue panel renders")
   check(ownerDash.hasMonthly, "monthly revenue panel renders")
-  check(ownerDash.barCount >= 8, `revenue bars render (${ownerDash.barCount} bars)`)
+  check(ownerDash.revenueBarCount >= 8, `revenue bars render (${ownerDash.revenueBarCount} bars)`)
+  check(ownerDash.hasArAging, "AR aging trend panel renders")
+  check(ownerDash.arLegendCount >= 4, `AR aging legend segments render (${ownerDash.arLegendCount})`)
+  check(ownerDash.hasLoadedDeadhead, "loaded vs. deadhead panel renders")
+  check(ownerDash.hasOperatingCost, "operating cost / mi KPI renders")
+  check(ownerDash.hasRevenuePerLoaded, "revenue / loaded mi KPI renders")
+  check(ownerDash.hasLoadedShare, "loaded-mile share percentage renders")
   check(ownerDash.backLink, "link back to full P&L reports")
   await shot(page, "02-owner-dashboard")
 
