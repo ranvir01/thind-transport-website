@@ -81,7 +81,7 @@ export function PushManager({ compact = false }: { compact?: boolean }) {
   if (state === "on") {
     return compact ? null : (
       <p className="flex items-center gap-2 text-body-xs text-steel-400">
-        <Check className="h-3.5 w-3.5 text-accent" /> Alerts are on for this device
+        <Check className="h-3.5 w-3.5 text-steel-200" /> Alerts are on for this device
       </p>
     )
   }
