@@ -21,7 +21,7 @@ import { createMailTransport, mailFrom } from "@/lib/mailer"
  * Vercel Cron entrypoints (secret-protected):
  *   /api/hub/cron/compliance-scan  — daily 60/30/7-day expiry alerts per carrier
  *   /api/hub/cron/ar-reminders     — daily overdue invoice dunning (skips factored)
- *   /api/hub/cron/detention-alerts — hourly dwelling-past-free-time alerts
+ *   /api/hub/cron/detention-alerts — daily dwelling-past-free-time alerts (Hobby: once/day)
  * Health lands in hub.integration_syncs either way.
  */
 export async function GET(

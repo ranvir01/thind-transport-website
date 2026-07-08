@@ -15,12 +15,15 @@
  *   6. at least one real (non-demo) active office user exists
  *   7. NEXTAUTH_SECRET/AUTH_SECRET, CREDENTIALS_KEY, CRON_SECRET are set
  *      (docs/hub-go-live-requirements.md §1 lists all three as required before login)
+ *   8. vercel.json crons are Hobby-safe (no schedule fires more than once/day —
+ *      Vercel Hobby rejects those at deploy time before build)
  *
  * Exit 0 = ready; exit 1 = at least one blocking failure. Warnings don't block.
  */
 import { readFileSync, readdirSync, existsSync } from "node:fs"
 import path from "node:path"
 import pg from "pg"
+import { hobbyIllegalCrons } from "./hobby-cron-guard.mjs"
 
 function loadEnvLocal() {
   if (process.env.POSTGRES_URL) return
@@ -142,6 +145,24 @@ async function main() {
       pass("CRON_SECRET set — /api/hub/cron/* protected")
     } else {
       fail("CRON_SECRET not set", "cron routes (compliance scan, AR reminders, mailbox, FMCSA recheck) accept unauthenticated requests")
+    }
+
+    // 9. Hobby-safe vercel.json crons (deploy fails before build otherwise)
+    try {
+      const vercel = JSON.parse(readFileSync(path.join(process.cwd(), "vercel.json"), "utf-8"))
+      const illegal = hobbyIllegalCrons(vercel)
+      if (illegal.length === 0) {
+        pass(`vercel.json crons Hobby-safe (${(vercel.crons ?? []).length} daily-or-less)`)
+      } else {
+        fail(
+          `vercel.json has ${illegal.length} Hobby-illegal cron(s)`,
+          illegal
+            .map((c) => `${c.path} schedule "${c.schedule}" fires ${c.firingsPerDay}×/day — Hobby allows once/day`)
+            .join("; ")
+        )
+      }
+    } catch (err) {
+      fail("vercel.json cron check failed", err instanceof Error ? err.message : String(err))
     }
   } finally {
     await client.end()

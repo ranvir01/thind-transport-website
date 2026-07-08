@@ -130,7 +130,9 @@ Legacy single-automation files (`hauldesk-improvement-cycle.*`) alias to `loadof
 > [cron usage & pricing](https://vercel.com/docs/cron-jobs/usage-and-pricing), the project is on
 > **Hobby** and `vercel.json` has a cron that runs more than once per day (e.g. `0 * * * *`). That
 > fails the deploy before build — fix the schedule to daily (or upgrade to Pro). Git being
-> "connected" is fine; the config is what blocks.
+> "connected" is fine; the config is what blocks. Guarded locally by
+> `src/lib/__tests__/hobby-cron-guard.test.ts` and `npm run go-live:check` (via
+> `scripts/hobby-cron-guard.mjs`) so this fails before Vercel.
 
 ### 3c. Dependency + security pass (weekly)
 > Run `npm audit` and `cargo audit` (if installed); update only patch/minor versions of non-framework

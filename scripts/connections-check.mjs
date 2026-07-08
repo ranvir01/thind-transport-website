@@ -30,7 +30,7 @@ const ENV_SWITCHES = [
   ["POSTGRES_URL", "the database (everything)"],
   ["NEXTAUTH_SECRET", "login sessions"],
   ["CREDENTIALS_KEY", "encrypted vault — required to store ANY provider credentials"],
-  ["CRON_SECRET", "the 11 scheduled production jobs (vercel.json)"],
+  ["CRON_SECRET", "the scheduled production jobs (vercel.json)"],
   ["BLOB_READ_WRITE_TOKEN", "durable POD uploads + invoice/settlement PDFs on Vercel"],
   ["SMTP_USER", "outbound email (invoices, statements) — with SMTP_PASS"],
   ["VAPID_PUBLIC_KEY", "driver web-push notifications — with VAPID_PRIVATE_KEY"],
@@ -93,8 +93,16 @@ async function main() {
     console.log("\n3 · Production cron (vercel.json)")
     console.log("─".repeat(72))
     const vercel = JSON.parse(readFileSync(path.join(process.cwd(), "vercel.json"), "utf-8"))
+    const { hobbyIllegalCrons } = await import("./hobby-cron-guard.mjs")
+    const illegal = new Map(hobbyIllegalCrons(vercel).map((c) => [c.path, c]))
     for (const c of vercel.crons ?? []) {
-      console.log(`✓ ${c.path.replace("/api/hub/cron/", "").padEnd(20)} ${c.schedule}`)
+      const bad = illegal.get(c.path)
+      const mark = bad ? "✗" : "✓"
+      const note = bad ? `  ← Hobby-illegal (${bad.firingsPerDay}×/day)` : ""
+      console.log(`${mark} ${c.path.replace("/api/hub/cron/", "").padEnd(20)} ${c.schedule}${note}`)
+    }
+    if (illegal.size > 0) {
+      console.log(`✗ ${illegal.size} cron(s) would fail Vercel Hobby deploy — fix schedules to once/day`)
     }
     if (!process.env.CRON_SECRET) {
       console.log("· NOTE: CRON_SECRET unset — scheduled jobs will 401 until it is set")
