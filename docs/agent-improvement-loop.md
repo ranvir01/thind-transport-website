@@ -198,7 +198,8 @@ can use session branches and must end commits with `Backlog:`.
 
 **Prod smoke (Cursor automation, :30 UTC):** run `npm run prod:smoke` — `/hub/login` must return 200
 with `LoadOff` in the body; `/hub` must not 5xx. Any failure → diagnose, fix forward on `main`, push.
-Optional later: Vercel MCP for deployment status. This is the fleet's no-human rollback trigger.
+When direct prod HTTPS is egress-blocked, fall back to Vercel deployment status (see §3b). This is the
+fleet's no-human rollback trigger.
 
 **Meta-governor (routine, weekly):** audit the LOOP itself over the past week: commits per agent,
 reverts, test-count trend, build breakages on main, churn (files edited by 3+ agents), busywork
