@@ -51,7 +51,7 @@ See `.env.example` for the full annotated list. Summary:
 | Variable | Required for | Notes |
 |---|---|---|
 | `SMTP_HOST/PORT/USER/PASS/FROM` | All lead/application emails | Gmail app password works |
-| `HR_EMAIL`, `FROM_EMAIL` | Driver PDF delivery | Defaults provided |
+| `HR_EMAIL` | Driver PDF delivery | Defaults provided |
 | `NEXTAUTH_URL`, `NEXTAUTH_SECRET` | Driver portal auth | `openssl rand -base64 32` |
 | `DRIVER_INVITATION_CODE` | Portal registration | Falls back to legacy code |
 | `POSTGRES_URL` | Driver portal persistence | Unset = local JSON files in `/data` (dev only) |

@@ -33,7 +33,7 @@ Create your **owner account** via `/hub/signup` or insert owner user manually, t
 | Item | Env vars |
 |------|----------|
 | SMTP (Gmail app password or SendGrid) | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM` |
-| HR / ops copies | `HR_EMAIL`, `FROM_EMAIL` |
+| HR / ops copies | `HR_EMAIL` |
 
 **Test locally:** `npx maildev --smtp 1025 --web 1080` + `SMTP_HOST=localhost` `SMTP_PORT=1025`
 
