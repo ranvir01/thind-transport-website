@@ -2,7 +2,7 @@
  * Owner dashboard (M10) data — revenue trend series. Booked-revenue definition
  * matches `getDashboardStats`/`truckPnl` (linehaul + FSC, non-cancelled loads).
  */
-import { query } from "./db"
+import { query, queryOne } from "./db"
 
 export interface RevenuePeriod {
   periodStart: string
@@ -104,4 +104,28 @@ export async function arAgingTrend(carrierId: string, weeks = 8): Promise<AgingT
       totalOpenCents: currentCents + bucket1_30Cents + bucket31_60Cents + bucket61_90Cents + bucket90PlusCents,
     }
   })
+}
+
+/**
+ * Driver settlement liability (M10) — money owed to drivers not yet paid out:
+ * draft settlements (not yet approved) plus approved-but-unpaid settlements.
+ */
+export interface SettlementLiability {
+  draftCents: number
+  approvedCents: number
+  totalCents: number
+}
+
+export async function settlementLiability(carrierId: string): Promise<SettlementLiability> {
+  const row = await queryOne<{ draft_cents: string; approved_cents: string }>(
+    `SELECT
+       COALESCE(SUM(net_cents) FILTER (WHERE status = 'draft'), 0) AS draft_cents,
+       COALESCE(SUM(net_cents) FILTER (WHERE status = 'approved'), 0) AS approved_cents
+     FROM hub.settlements
+     WHERE carrier_id = $1 AND status IN ('draft', 'approved')`,
+    [carrierId]
+  )
+  const draftCents = Number(row?.draft_cents ?? 0)
+  const approvedCents = Number(row?.approved_cents ?? 0)
+  return { draftCents, approvedCents, totalCents: draftCents + approvedCents }
 }
