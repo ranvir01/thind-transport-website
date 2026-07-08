@@ -2,8 +2,9 @@ import Link from "next/link"
 import { weeklyRevenueTrend, monthlyRevenueTrend, arAgingTrend, type RevenuePeriod, type AgingTrendPeriod } from "@/lib/hub/reports"
 import { truckPnl } from "@/lib/hub/expenses"
 import { computeFleetKpis } from "@/lib/hub/kpi"
+import { query } from "@/lib/hub/db"
 import { requirePermissionPage } from "@/lib/hub/session"
-import { fmtCents } from "@/lib/hub/types"
+import { fmtCents, type Lane } from "@/lib/hub/types"
 import { Panel, PageHeader } from "@/components/hub/ui"
 
 export const dynamic = "force-dynamic"
@@ -81,6 +82,49 @@ function AgingTrendBars({ periods }: { periods: AgingTrendPeriod[] }) {
   )
 }
 
+function LaneLeaderboardPanel({ lanes }: { lanes: Lane[] }) {
+  if (lanes.length === 0) {
+    return (
+      <p className="px-4 py-4 text-body-sm text-fg-3">
+        Lane history builds itself from your loads — it recomputes nightly.
+      </p>
+    )
+  }
+
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="border-b border-border text-left text-label text-fg-3 uppercase">
+            <th className="px-4 py-3">Lane</th>
+            <th className="px-4 py-3 text-right">Loads</th>
+            <th className="px-4 py-3 text-right">Revenue</th>
+            <th className="px-4 py-3 text-right">Avg $/mi</th>
+            <th className="px-4 py-3 text-right">Est. margin</th>
+          </tr>
+        </thead>
+        <tbody>
+          {lanes.map((lane) => (
+            <tr key={lane.id} className="border-b border-border last:border-b-0">
+              <td className="max-w-[12rem] truncate px-4 py-2.5 font-semibold text-fg">
+                {lane.origin_city}, {lane.origin_state} → {lane.dest_city}, {lane.dest_state}
+              </td>
+              <td className="px-4 py-2.5 text-right text-fg-2">{lane.loads_count}</td>
+              <td className="px-4 py-2.5 text-right font-semibold text-accent-text">{fmtCents(Number(lane.revenue_cents))}</td>
+              <td className="px-4 py-2.5 text-right text-fg-2">
+                {lane.avg_rpm_cents ? `$${(lane.avg_rpm_cents / 100).toFixed(2)}` : "—"}
+              </td>
+              <td className={`px-4 py-2.5 text-right font-semibold ${Number(lane.margin_cents) >= 0 ? "text-ok" : "text-bad"}`}>
+                {fmtCents(Number(lane.margin_cents))}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
 function LoadedVsDeadheadPanel({ pnl }: { pnl: Awaited<ReturnType<typeof truckPnl>> }) {
   const loadedMiles = pnl.reduce((s, r) => s + Number(r.loaded_miles ?? 0), 0)
   const deadheadMiles = pnl.reduce((s, r) => s + Number(r.deadhead_miles ?? 0), 0)
@@ -133,11 +177,15 @@ function LoadedVsDeadheadPanel({ pnl }: { pnl: Awaited<ReturnType<typeof truckPn
 
 export default async function OwnerDashboardPage() {
   const user = await requirePermissionPage("money:read")
-  const [weekly, monthly, aging, pnl] = await Promise.all([
+  const [weekly, monthly, aging, pnl, lanes] = await Promise.all([
     weeklyRevenueTrend(user.carrierId, 8),
     monthlyRevenueTrend(user.carrierId, 6),
     arAgingTrend(user.carrierId, 8),
     truckPnl(user.carrierId, 92),
+    query<Lane>(
+      `SELECT * FROM hub.lanes WHERE carrier_id = $1 ORDER BY margin_cents DESC LIMIT 5`,
+      [user.carrierId]
+    ),
   ])
 
   const weekLabel = (iso: string) =>
@@ -177,6 +225,10 @@ export default async function OwnerDashboardPage() {
           <LoadedVsDeadheadPanel pnl={pnl} />
         </Panel>
       </div>
+
+      <Panel title="Top lanes by margin" className="mt-4">
+        <LaneLeaderboardPanel lanes={lanes} />
+      </Panel>
     </div>
   )
 }
