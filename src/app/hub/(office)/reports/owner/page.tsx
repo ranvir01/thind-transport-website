@@ -1,5 +1,8 @@
 import Link from "next/link"
-import { weeklyRevenueTrend, monthlyRevenueTrend, arAgingTrend, type RevenuePeriod, type AgingTrendPeriod } from "@/lib/hub/reports"
+import {
+  weeklyRevenueTrend, monthlyRevenueTrend, arAgingTrend, settlementLiability,
+  type RevenuePeriod, type AgingTrendPeriod, type SettlementLiability,
+} from "@/lib/hub/reports"
 import { truckPnl } from "@/lib/hub/expenses"
 import { computeFleetKpis } from "@/lib/hub/kpi"
 import { query } from "@/lib/hub/db"
@@ -175,9 +178,31 @@ function LoadedVsDeadheadPanel({ pnl }: { pnl: Awaited<ReturnType<typeof truckPn
   )
 }
 
+function SettlementLiabilityPanel({ liability }: { liability: SettlementLiability }) {
+  return (
+    <div className="px-4 py-4">
+      <span className="text-label text-fg-3 uppercase">Owed to drivers</span>
+      <p className="mt-1 font-display text-2xl font-extrabold text-fg">{fmtCents(liability.totalCents)}</p>
+      <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-fg-3">
+        <span className="inline-flex items-center gap-1.5">
+          <span className="h-2 w-2 rounded-sm bg-warn" /> Approved, unpaid {fmtCents(liability.approvedCents)}
+        </span>
+        <span className="inline-flex items-center gap-1.5">
+          <span className="h-2 w-2 rounded-sm bg-surface-2" /> Draft {fmtCents(liability.draftCents)}
+        </span>
+      </div>
+      <p className="mt-3 text-[11px] text-fg-3">
+        {liability.totalCents === 0
+          ? "No open settlements — run payroll to see draft liabilities here."
+          : "Approved settlements are ready to pay; drafts still need review."}
+      </p>
+    </div>
+  )
+}
+
 export default async function OwnerDashboardPage() {
   const user = await requirePermissionPage("money:read")
-  const [weekly, monthly, aging, pnl, lanes] = await Promise.all([
+  const [weekly, monthly, aging, pnl, lanes, liability] = await Promise.all([
     weeklyRevenueTrend(user.carrierId, 8),
     monthlyRevenueTrend(user.carrierId, 6),
     arAgingTrend(user.carrierId, 8),
@@ -186,6 +211,7 @@ export default async function OwnerDashboardPage() {
       `SELECT * FROM hub.lanes WHERE carrier_id = $1 ORDER BY margin_cents DESC LIMIT 5`,
       [user.carrierId]
     ),
+    settlementLiability(user.carrierId),
   ])
 
   const weekLabel = (iso: string) =>
@@ -226,9 +252,14 @@ export default async function OwnerDashboardPage() {
         </Panel>
       </div>
 
-      <Panel title="Top lanes by margin" className="mt-4">
-        <LaneLeaderboardPanel lanes={lanes} />
-      </Panel>
+      <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Panel title="Driver settlement liability">
+          <SettlementLiabilityPanel liability={liability} />
+        </Panel>
+        <Panel title="Top lanes by margin">
+          <LaneLeaderboardPanel lanes={lanes} />
+        </Panel>
+      </div>
     </div>
   )
 }
