@@ -1,3 +1,8 @@
 # Ignore repo-root driver JSON store — production uses Postgres
 /data/
 
+# Never upload bundled Node distributions (legacy accidental commits)
+/node/
+node*.tar.xz
+/node_modules/
+
