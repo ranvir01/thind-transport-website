@@ -216,8 +216,8 @@ export async function convertApplicantToDriver(
     // Move applicant documents (PSP/MVR/CDL/offer) onto the driver file.
     await client.query(
       `UPDATE hub.documents SET entity_type = 'driver', entity_id = $2
-       WHERE entity_type = 'applicant' AND entity_id = $1`,
-      [applicantId, driverId]
+       WHERE entity_type = 'applicant' AND entity_id = $1 AND carrier_id = $3`,
+      [applicantId, driverId, carrierId]
     )
 
     await client.query(
