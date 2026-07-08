@@ -17,6 +17,7 @@
     "agent:status": "node scripts/agent-loop-status.mjs",
     "agent:branches": "node scripts/agent-branch-inventory.mjs",
     "agent:backlog": "node scripts/collect-backlog.mjs",
+    "setup:canvas-deps": "bash scripts/setup-canvas-deps.sh",
     "prod:smoke": "node scripts/prod-smoke.mjs",
     "go-build": "make go-build",
     "rust-build": "make rust-build",
