@@ -119,6 +119,13 @@ Legacy single-automation files (`hauldesk-improvement-cycle.*`) alias to `loadof
 > Postgres `POSTGRES_URL=<prod> HUB_DEMO_LOGIN=false npm run go-live:check` and fix anything red.
 > Smoke on production: dispatcher login lands on /hub/loadboard; edit a load-board cell; Suggest miles on
 > a load; link a fuel receipt; open the driver PWA at phone size. Report pass/fail per item.
+>
+> If the session's network egress policy blocks direct HTTPS to `thindtransport.com` (403 on CONNECT —
+> common in sandboxed agent environments), treat that as inconclusive, not a site defect. Use Vercel
+> deployment/status tools instead (confirm the `production` alias is `READY` on the expected commit SHA;
+> check runtime errors/logs for new clusters). Same "is prod healthy" question without touching the
+> blocked host. If deploys stop appearing after pushes to `main`, that is an owner infra issue (GitHub
+> App / webhook / plan quota) — sessions can push commits but cannot reconnect Vercel.
 
 ### 3c. Dependency + security pass (weekly)
 > Run `npm audit` and `cargo audit` (if installed); update only patch/minor versions of non-framework
