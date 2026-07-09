@@ -34,6 +34,9 @@ export function NotificationsBell({ direction = "down" }: { direction?: "down" |
   const [items, setItems] = useState<FeedItem[]>([])
   const [unread, setUnread] = useState(0)
   const panelRef = useRef<HTMLDivElement>(null)
+  // While the mark-as-read POST is in flight, a concurrent GET would report the
+  // pre-POST unread count — don't let it resurrect the badge we just cleared.
+  const markingRead = useRef(false)
 
   const refresh = useCallback(async () => {
     try {
@@ -41,7 +44,7 @@ export function NotificationsBell({ direction = "down" }: { direction?: "down" |
       if (!res.ok) return
       const data = await res.json()
       setItems(data.items ?? [])
-      setUnread(data.unread ?? 0)
+      if (!markingRead.current) setUnread(data.unread ?? 0)
     } catch {
       /* offline — keep what we have */
     }
@@ -69,12 +72,22 @@ export function NotificationsBell({ direction = "down" }: { direction?: "down" |
   const toggle = async () => {
     const next = !open
     setOpen(next)
-    if (next && unread > 0) {
-      // Opening the feed clears the badge — simple and predictable.
-      fetch("/api/hub/notifications", { method: "POST" }).catch(() => {})
+    if (!next) return
+    if (unread > 0) {
+      // Opening the feed clears the badge — simple and predictable. Await the
+      // mark-as-read POST before refreshing, or the GET wins the race and
+      // restores the stale count.
+      markingRead.current = true
       setUnread(0)
+      try {
+        await fetch("/api/hub/notifications", { method: "POST" })
+      } catch {
+        /* offline — badge stays cleared; the next poll reconciles */
+      } finally {
+        markingRead.current = false
+      }
     }
-    if (next) refresh()
+    refresh()
   }
 
   return (
