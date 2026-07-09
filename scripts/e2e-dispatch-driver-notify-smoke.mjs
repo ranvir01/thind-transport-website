@@ -132,6 +132,11 @@ async function main() {
     const btn = document.querySelector('button[aria-label^="Notifications"]')
     return btn?.getAttribute("aria-label") ?? null
   })
+  // Known open bug (filed 65fad58, still unfixed as of this QA cycle, lane-office
+  // owns NotificationsBell.tsx): toggle() fires the mark-as-read POST without
+  // awaiting it, then calls refresh() (a GET) immediately after — the GET
+  // routinely wins the race and restores the stale unread count. If this check
+  // starts failing, that's this pre-existing bug, not a fresh regression.
   check(badgeAfterOpen === "Notifications", `opening the feed cleared the unread badge (${badgeAfterOpen})`)
 
   const realDispatcherErrors = consoleErrors.filter((e) => !/favicon|manifest/i.test(e))
