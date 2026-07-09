@@ -146,6 +146,60 @@ func TestRouteMilesFallbackLabeled(t *testing.T) {
 	}
 }
 
+func TestRouteMilesFallbackOnEmptyRoutes(t *testing.T) {
+	// OSRM 200s but returns no route (e.g. unreachable dest) — osrmMiles must
+	// treat "no route" the same as "unreachable" rather than panicking on
+	// payload.Routes[0], and the gateway still gets a labeled fallback answer.
+	osrm := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = w.Write([]byte(`{"routes":[]}`))
+	}))
+	defer osrm.Close()
+	t.Setenv("OSRM_URL", osrm.URL)
+
+	rec := doRequest(t, http.MethodPost, "/route/miles",
+		`{"origin":{"lat":0,"lng":0},"dest":{"lat":0,"lng":1}}`, nil)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected 200 fallback answer, got %d", rec.Code)
+	}
+	if payload := decodeBody(t, rec); payload["source"] != "haversine-fallback" {
+		t.Fatalf("expected source haversine-fallback, got %v", payload["source"])
+	}
+}
+
+func TestRouteMilesFallbackOnZeroDistance(t *testing.T) {
+	// A zero/negative distance is as unusable as no route at all.
+	osrm := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = w.Write([]byte(`{"routes":[{"distance":0}]}`))
+	}))
+	defer osrm.Close()
+	t.Setenv("OSRM_URL", osrm.URL)
+
+	rec := doRequest(t, http.MethodPost, "/route/miles",
+		`{"origin":{"lat":0,"lng":0},"dest":{"lat":0,"lng":1}}`, nil)
+	if payload := decodeBody(t, rec); payload["source"] != "haversine-fallback" {
+		t.Fatalf("expected source haversine-fallback, got %v", payload["source"])
+	}
+}
+
+func TestRouteMilesFallbackOnMalformedOSRMBody(t *testing.T) {
+	// OSRM reachable and 200 but replies with garbage — decode error must fall
+	// back rather than surfacing a 500 to the TS gateway.
+	osrm := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = w.Write([]byte("not json"))
+	}))
+	defer osrm.Close()
+	t.Setenv("OSRM_URL", osrm.URL)
+
+	rec := doRequest(t, http.MethodPost, "/route/miles",
+		`{"origin":{"lat":0,"lng":0},"dest":{"lat":0,"lng":1}}`, nil)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected 200 fallback answer, got %d", rec.Code)
+	}
+	if payload := decodeBody(t, rec); payload["source"] != "haversine-fallback" {
+		t.Fatalf("expected source haversine-fallback, got %v", payload["source"])
+	}
+}
+
 func TestHaversineMiles(t *testing.T) {
 	if got := haversineMiles(47.6062, -122.3321, 47.6062, -122.3321); got != 0 {
 		t.Fatalf("zero distance expected for identical points, got %f", got)
