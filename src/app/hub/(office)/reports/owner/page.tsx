@@ -5,10 +5,11 @@ import {
 } from "@/lib/hub/reports"
 import { truckPnl } from "@/lib/hub/expenses"
 import { computeFleetKpis } from "@/lib/hub/kpi"
+import { complianceEntries, summarize, type ComplianceEntry } from "@/lib/hub/compliance"
 import { query } from "@/lib/hub/db"
 import { requirePermissionPage } from "@/lib/hub/session"
 import { fmtCents, type Lane } from "@/lib/hub/types"
-import { Panel, PageHeader } from "@/components/hub/ui"
+import { Panel, PageHeader, ExpiryPill } from "@/components/hub/ui"
 
 export const dynamic = "force-dynamic"
 
@@ -200,9 +201,63 @@ function SettlementLiabilityPanel({ liability }: { liability: SettlementLiabilit
   )
 }
 
+function ComplianceRedFlagsPanel({ entries }: { entries: ComplianceEntry[] }) {
+  const summary = summarize(entries)
+  const worst = entries.filter((e) => e.color !== "green").slice(0, 5)
+
+  return (
+    <div>
+      <div className="grid grid-cols-3 gap-3 px-4 pt-4">
+        <div>
+          <span className="text-label text-bad uppercase">Expired</span>
+          <p className="mt-1 font-display text-2xl font-extrabold text-bad">{summary.red}</p>
+        </div>
+        <div>
+          <span className="text-label text-warn uppercase">Due 30d</span>
+          <p className="mt-1 font-display text-2xl font-extrabold text-warn">{summary.amber}</p>
+        </div>
+        <div>
+          <span className="text-label text-ok uppercase">Clean</span>
+          <p className="mt-1 font-display text-2xl font-extrabold text-ok">{summary.green}</p>
+        </div>
+      </div>
+
+      {worst.length > 0 ? (
+        <div className="mt-3 divide-y divide-border border-t border-border">
+          {worst.map((entry, i) => (
+            <div key={i} className="flex items-center gap-3 px-4 py-2.5">
+              <span
+                className={`h-2 w-2 shrink-0 rounded-full ${entry.color === "red" ? "bg-bad" : "bg-warn"}`}
+              />
+              <div className="min-w-0 flex-1">
+                {entry.manualItemId ? (
+                  <p className="truncate text-sm font-semibold text-fg">{entry.kind}</p>
+                ) : (
+                  <Link href={entry.href} className="block truncate text-sm font-semibold text-fg hover:text-accent-text">
+                    {entry.name} — {entry.kind}
+                  </Link>
+                )}
+              </div>
+              <ExpiryPill date={entry.due} />
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p className="px-4 py-4 text-body-sm text-fg-3">Nothing expired or due soon — clean wall.</p>
+      )}
+
+      <div className="px-4 pb-4 pt-3">
+        <Link href="/hub/compliance" className="text-[11px] font-semibold text-accent-text hover:underline">
+          Full compliance wall →
+        </Link>
+      </div>
+    </div>
+  )
+}
+
 export default async function OwnerDashboardPage() {
   const user = await requirePermissionPage("money:read")
-  const [weekly, monthly, aging, pnl, lanes, liability] = await Promise.all([
+  const [weekly, monthly, aging, pnl, lanes, liability, compliance] = await Promise.all([
     weeklyRevenueTrend(user.carrierId, 8),
     monthlyRevenueTrend(user.carrierId, 6),
     arAgingTrend(user.carrierId, 8),
@@ -212,6 +267,7 @@ export default async function OwnerDashboardPage() {
       [user.carrierId]
     ),
     settlementLiability(user.carrierId),
+    complianceEntries(user.carrierId),
   ])
 
   const weekLabel = (iso: string) =>
@@ -258,6 +314,12 @@ export default async function OwnerDashboardPage() {
         </Panel>
         <Panel title="Top lanes by margin">
           <LaneLeaderboardPanel lanes={lanes} />
+        </Panel>
+      </div>
+
+      <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Panel title="Compliance red flags">
+          <ComplianceRedFlagsPanel entries={compliance} />
         </Panel>
       </div>
     </div>
