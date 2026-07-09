@@ -6,12 +6,12 @@
 -->
 
 # What We Need From You
-## Thind Transport — HaulDesk Setup Guide
+## Thind Transport — LoadOff Setup Guide
 
 **Read this once.** You do **not** need to look up VIN numbers, MC numbers, broker addresses,
-or type truck details by hand. **Upload the paperwork you already have.** HaulDesk reads it.
+or type truck details by hand. **Upload the paperwork you already have.** LoadOff reads it.
 
-**Where to upload:** Log in to HaulDesk → **Admin → Smart Setup**  
+**Where to upload:** Log in to LoadOff → **Admin → Smart Setup**  
 (or give files to whoever is setting up the system — same list below)
 
 **Company we have on file:** Thind Transport · Phone (206) 765-6300 · Kent, WA  
@@ -270,4 +270,4 @@ Invoices and alerts need a **real company email** (not a test account).
 
 ---
 
-*Thind Transport · HaulDesk · Upload at Admin → Smart Setup · Questions on this form only*
+*Thind Transport · LoadOff · Upload at Admin → Smart Setup · Questions on this form only*

@@ -1,10 +1,10 @@
-# HaulDesk trilingual stack
+# LoadOff trilingual stack
 
-HaulDesk is built in **three languages** with clear ownership boundaries. TypeScript remains the system of record UI and API gateway on Vercel for V1. Go and Rust run as **optional sidecars** (one binary each max at this scale) until specific workloads justify extraction.
+LoadOff is built in **three languages** with clear ownership boundaries. TypeScript remains the system of record UI and API gateway on Vercel for V1. Go and Rust run as **optional sidecars** (one binary each max at this scale) until specific workloads justify extraction.
 
 ## Language boundaries
 
-| Language | Owns | Examples in HaulDesk |
+| Language | Owns | Examples in LoadOff |
 |----------|------|----------------------|
 | **TypeScript** | Web app, UI, auth, Postgres ORM/queries, server actions, PWA | Next.js `/hub/*`, components, `_actions`, `src/lib/hub/*` |
 | **Go** | Long-running workers, integration sync, HTTP proxies, cron-scale jobs | Terminal/TruckX sync, DAT webhook, OSRM routing proxy, email queue, `/api/hub/cron` extraction candidate |
