@@ -11,6 +11,14 @@
  * Reseeds demo data first (see reseed in e2e-lib.mjs) — the run books a new
  * load, so the THD- reference counter advances.
  *
+ * Known red as of 2026-07-09: step 3's "opening the feed cleared the unread
+ * badge" check fails on main — NotificationsBell.toggle() fires the
+ * mark-as-read POST without awaiting it before the refresh() GET, so the GET
+ * routinely wins the race and restores the stale count. Already fixed on
+ * unmerged branch claude/stoic-mccarthy-p50zng (commit 78a987d) — awaits the
+ * POST before refresh(). Not a regression from the last 3 hours (bug dates to
+ * 2026-07-06); the fix just hasn't been picked up by the integrator yet.
+ *
  * Usage: node scripts/e2e-dispatch-driver-notify-smoke.mjs [outputDir]
  */
 import puppeteer from "puppeteer"
