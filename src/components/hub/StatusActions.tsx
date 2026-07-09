@@ -175,8 +175,12 @@ export function StopTimestampButton({
   const record = () =>
     startTransition(async () => {
       const result = await stopTimestampAction(stopId, loadId, field)
-      if (result.ok) toast.success(field === "arrived_at" ? "Arrival recorded" : "Departure recorded")
-      else toast.error(result.error ?? "Could not record time")
+      if (result.ok) {
+        const detention = result.detentionAppliedCents
+          ? ` — detention billed: $${(result.detentionAppliedCents / 100).toFixed(2)}`
+          : ""
+        toast.success((field === "arrived_at" ? "Arrival recorded" : "Departure recorded") + detention)
+      } else toast.error(result.error ?? "Could not record time")
     })
 
   return (

@@ -1,12 +1,14 @@
 /**
- * Detention auto-alert workflow smoke test: addDetentionAction only bills a
- * stop once it has departed, so a truck that's still sitting past free time
- * never surfaced anywhere until a human happened to check. This exercises
- * the fix end to end: the dispatch board badges a currently-dwelling stop
- * with an accurate hours-over/estimate, the badge links through to "Mark
- * departed" (not "Add detention" — the clock is still running so the exact
- * amount isn't known yet), marking departed clears the badge and unlocks
- * "Add detention" with the right total, and the detention-alerts cron job
+ * Detention end-to-end smoke test: a truck sitting past free time is
+ * surfaced before anyone knows the final total (dispatch-board badge + cron
+ * alert), and the moment it departs, detention bills itself onto the load —
+ * no one has to notice and click a button. This exercises the fix end to
+ * end: the dispatch board badges a currently-dwelling stop with an accurate
+ * hours-over/estimate, the badge links through to "Mark departed" (no
+ * detention button yet — the clock is still running so the exact amount
+ * isn't known), marking departed clears the badge, auto-applies the
+ * Detention accessorial, and confirms the amount in the toast — no manual
+ * "Add detention" click required — and the detention-alerts cron job
  * notifies once per dwell episode and stays quiet on a repeat run
  * (idempotent against hub.load_events).
  *
@@ -53,7 +55,7 @@ async function main() {
     `badge copy matches the not-yet-departed reality (${badge?.text})`)
   await shot(page, "01-dispatch-dwelling-badge")
 
-  console.log("2. Badge links to the load — Mark departed shown, Add detention not yet")
+  console.log("2. Badge links to the load — Mark departed shown, no detention button yet")
   await Promise.all([
     page.waitForNavigation({ waitUntil: "networkidle2" }),
     page.evaluate((href) => { location.href = href }, badge.href),
@@ -61,10 +63,10 @@ async function main() {
   await waitForText(page, "Mark departed")
   const before = await page.evaluate(() => ({
     hasMarkDeparted: [...document.querySelectorAll("button")].some((b) => b.textContent.includes("Mark departed")),
-    hasAddDetention: [...document.querySelectorAll("button")].some((b) => b.textContent.includes("Add detention")),
+    hasDetentionButton: [...document.querySelectorAll("button")].some((b) => /detention/i.test(b.textContent)),
   }))
   check(before.hasMarkDeparted, "load page offers Mark departed for the open stop")
-  check(!before.hasAddDetention, "Add detention is NOT offered while the stop is still open")
+  check(!before.hasDetentionButton, "no detention button offered while the stop is still open")
   await shot(page, "02-load-before-departure")
 
   console.log("3. Cron alerts once, then stays quiet on a repeat run (idempotent)")
@@ -84,19 +86,27 @@ async function main() {
     console.log("  ⏭  CRON_SECRET not set — skipping cron endpoint checks")
   }
 
-  console.log("4. Mark departed — badge clears, Add detention unlocks with a positive estimate")
+  console.log("4. Mark departed — badge clears, detention auto-bills itself (no click needed)")
   await page.evaluate(() => {
     const btn = [...document.querySelectorAll("button")].find((b) => b.textContent.includes("Mark departed"))
     btn.click()
   })
   await waitForText(page, "Departure recorded")
+  const toastText = await page.evaluate(() => {
+    const text = document.body.innerText
+    const start = text.indexOf("Departure recorded")
+    return start >= 0 ? text.slice(start, start + 80).split("\n")[0] : null
+  })
+  check(/detention billed: \$[\d.]+/.test(toastText ?? ""), `toast confirms auto-applied detention (${toastText})`)
   await sleep(1500) // router.refresh
   const after = await page.evaluate(() => ({
     hasMarkDeparted: [...document.querySelectorAll("button")].some((b) => b.textContent.includes("Mark departed")),
-    addDetentionText: [...document.querySelectorAll("button")].find((b) => b.textContent.includes("Add detention"))?.textContent ?? null,
+    hasDetentionButton: [...document.querySelectorAll("button")].some((b) => /detention/i.test(b.textContent)),
+    hasDetentionLine: [...document.querySelectorAll("dt")].some((dt) => dt.textContent?.trim() === "Detention"),
   }))
   check(!after.hasMarkDeparted, "Mark departed is gone once the stop is closed")
-  check(!!after.addDetentionText, `Add detention now offered (${after.addDetentionText})`)
+  check(after.hasDetentionLine, "Detention line auto-appears on the Rate panel — no button click needed")
+  check(!after.hasDetentionButton, "no manual detention button remains once auto-applied")
   await shot(page, "03-load-after-departure")
 
   console.log("5. Dispatch board no longer badges the now-closed stop")

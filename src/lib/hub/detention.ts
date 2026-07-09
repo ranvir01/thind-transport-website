@@ -1,16 +1,17 @@
 /**
- * Detention auto-alert: addDetentionAction (src/app/hub/_actions/loads.ts)
- * only bills a stop once it has BOTH arrived_at and departed_at — a human
- * has to notice a truck is still sitting and click "Add detention" before
- * it closes out. This surfaces stops that are dwelling right now, past free
- * time, so the dispatch board and a cron alert catch it without anyone
- * watching the clock.
+ * Detention: two halves. `getDwellingStops`/`runDetentionAlerts` surface a
+ * stop that's dwelling right now, past free time, before anyone knows the
+ * final total. `applyDetentionAccrual` runs the moment a stop closes
+ * (departed_at is set, office or driver side) and bills it automatically —
+ * no one has to notice and click a button.
  */
 import { query } from "./db"
 import { getCarrierSettings } from "./settings"
 import { detentionCents } from "./money"
-import { addLoadEvent } from "./loads"
+import { addLoadEvent, getLoad, getLoadStops } from "./loads"
 import { notifyRoles } from "./notify"
+import { logAudit } from "./audit"
+import type { Accessorial } from "./types"
 
 export interface DwellingStop {
   loadId: string
@@ -87,4 +88,75 @@ export async function runDetentionAlerts(carrierId: string): Promise<{ checked: 
     alerted++
   }
   return { checked: dwelling.length, alerted }
+}
+
+export interface DetentionAccrualResult {
+  ok: boolean
+  changed: boolean
+  amountCents: number
+  error?: string
+}
+
+/**
+ * Recompute detention from stop timestamps and upsert it onto the load as a
+ * single "Detention" accessorial — the settled total across every stop that
+ * has both arrived_at and departed_at, not a per-episode append. Called
+ * automatically whenever a stop is marked departed (office or driver side)
+ * so a dispatcher never has to notice and click a button; also callable
+ * directly to recompute a load whose settings changed after the fact.
+ * Never shrinks or removes an already-billed amount — only grows it.
+ */
+export async function applyDetentionAccrual(
+  carrierId: string,
+  loadId: string,
+  actor: { id: string | null; name: string }
+): Promise<DetentionAccrualResult> {
+  const load = await getLoad(carrierId, loadId)
+  if (!load) return { ok: false, changed: false, amountCents: 0, error: "Load not found" }
+
+  const settings = await getCarrierSettings(carrierId)
+  const stops = await getLoadStops(carrierId, loadId)
+  let total = 0
+  const detail: string[] = []
+  for (const stop of stops) {
+    if (!stop.arrived_at || !stop.departed_at) continue
+    const cents = detentionCents(
+      new Date(stop.arrived_at), new Date(stop.departed_at),
+      settings.detention.freeHours, settings.detention.ratePerHourCents
+    )
+    if (cents > 0) {
+      total += cents
+      detail.push(`${stop.city}, ${stop.state}: $${(cents / 100).toFixed(2)}`)
+    }
+  }
+
+  const accessorials: Accessorial[] = Array.isArray(load.accessorials) ? load.accessorials : []
+  const existingIndex = accessorials.findIndex((a) => /detention/i.test(a.label))
+  const existingCents = existingIndex >= 0 ? Number(accessorials[existingIndex].amount_cents || 0) : 0
+  if (total <= existingCents) {
+    return { ok: true, changed: false, amountCents: existingCents }
+  }
+
+  const updated =
+    existingIndex >= 0
+      ? accessorials.map((a, i) => (i === existingIndex ? { ...a, amount_cents: total } : a))
+      : [...accessorials, { label: "Detention", amount_cents: total }]
+
+  await query(
+    `UPDATE hub.loads SET accessorials = $3, updated_at = NOW() WHERE carrier_id = $1 AND id = $2`,
+    [carrierId, loadId, JSON.stringify(updated)]
+  )
+  await addLoadEvent(carrierId, loadId, "detention", {
+    amount_cents: total, detail,
+    freeHours: settings.detention.freeHours, ratePerHourCents: settings.detention.ratePerHourCents,
+  }, actor)
+  await logAudit({
+    carrierId, actorId: actor.id, actorName: actor.name,
+    entityType: "load", entityId: loadId,
+    action: existingIndex >= 0 ? "detention_recomputed" : "detention_drafted",
+    oldValue: existingIndex >= 0 ? { amountCents: existingCents } : undefined,
+    newValue: { amountCents: total, detail },
+  })
+
+  return { ok: true, changed: true, amountCents: total }
 }

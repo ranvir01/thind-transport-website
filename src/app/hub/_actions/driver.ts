@@ -9,6 +9,7 @@ import { requireDriverUser } from "@/lib/hub/session"
 import {
   addLoadEvent, changeLoadStatus, setStopTimestamp, getLoad,
 } from "@/lib/hub/loads"
+import { applyDetentionAccrual } from "@/lib/hub/detention"
 import { driverOwnsLoad, DRIVER_STATUS_FLOW } from "@/lib/hub/driver-app"
 import { saveDocument } from "@/lib/hub/documents"
 import { addFacilityNote } from "@/lib/hub/facilities"
@@ -69,6 +70,14 @@ export async function driverStopTimestamp(
       await addLoadEvent(user.carrierId, loadId, "geo", {
         stop_id: stopId, field, city: stop.city, state: stop.state, by: "driver",
       }, { id: user.id, name: user.name })
+    }
+    if (field === "departed_at") {
+      // Best-effort: a closed stop always records, even if detention math fails.
+      try {
+        await applyDetentionAccrual(user.carrierId, loadId, { id: user.id, name: user.name })
+      } catch (err) {
+        console.error("applyDetentionAccrual failed:", err)
+      }
     }
     revalidatePath("/hub/driver")
     return { ok: true }

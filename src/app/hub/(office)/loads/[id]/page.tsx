@@ -86,7 +86,9 @@ export default async function LoadDetailPage({ params }: { params: Promise<{ id:
   const totalCents = loadTotalCents(load)
   const rpmCents = load.loaded_miles ? totalCents / load.loaded_miles : null
   const canInvoice = can(user.role, "money:write") && load.status === "pod_received" && !invoice
-  // Detention auto-draft (Phase 6): dwell beyond free time, computed from timestamps.
+  // Detention now auto-applies the moment a stop is marked departed (office or
+  // driver side) — this button is only a fallback for loads that closed before
+  // that shipped, or whose free-time/rate settings changed after the fact.
   const detentionEstimateCents = stops.reduce((sum, stop) => {
     if (!stop.arrived_at || !stop.departed_at) return sum
     return sum + detentionCents(
@@ -94,6 +96,9 @@ export default async function LoadDetailPage({ params }: { params: Promise<{ id:
       settings.detention.freeHours, settings.detention.ratePerHourCents
     )
   }, 0)
+  const existingDetentionCents = (Array.isArray(load.accessorials) ? load.accessorials : [])
+    .filter((a) => /detention/i.test(a.label))
+    .reduce((sum, a) => sum + Number(a.amount_cents || 0), 0)
 
   return (
     <div>
@@ -126,9 +131,12 @@ export default async function LoadDetailPage({ params }: { params: Promise<{ id:
           <div className="flex flex-wrap gap-2 ml-auto">
             {canInvoice ? <CreateInvoiceButton loadId={id} /> : <AdvanceStatusButton loadId={id} status={load.status} />}
             <CheckCallButton loadId={id} />
-            {detentionEstimateCents > 0 &&
-            !(Array.isArray(load.accessorials) ? load.accessorials : []).some((a) => /detention/i.test(a.label)) ? (
-              <DetentionButton loadId={id} estimateCents={detentionEstimateCents} />
+            {detentionEstimateCents > existingDetentionCents ? (
+              <DetentionButton
+                loadId={id}
+                estimateCents={detentionEstimateCents}
+                recompute={existingDetentionCents > 0}
+              />
             ) : null}
             <CancelLoadButton loadId={id} status={load.status} />
           </div>

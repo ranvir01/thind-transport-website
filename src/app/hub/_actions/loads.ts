@@ -5,12 +5,11 @@ import { requirePermission } from "@/lib/hub/session"
 import { loadSchema, documentUploadSchema } from "@/lib/hub/schemas"
 import {
   createLoad, updateLoad, changeLoadStatus, replaceStops, setStopTimestamp, getLoad,
-  addLoadEvent, getLoadStops,
+  addLoadEvent,
 } from "@/lib/hub/loads"
-import { getCarrierSettings } from "@/lib/hub/settings"
+import { applyDetentionAccrual } from "@/lib/hub/detention"
 import { getDriver, dispatchLegality } from "@/lib/hub/drivers"
 import { getTruck } from "@/lib/hub/fleet"
-import { query } from "@/lib/hub/db"
 import { saveDocument, deleteDocument } from "@/lib/hub/documents"
 import { assertCarrierRefs, type CarrierRefField } from "@/lib/hub/tenancy"
 import { createShareLink, revokeShareLink } from "@/lib/hub/sharelinks"
@@ -205,7 +204,7 @@ export async function stopTimestampAction(
   stopId: string,
   loadId: string,
   field: "arrived_at" | "departed_at"
-): Promise<ActionResult> {
+): Promise<ActionResult & { detentionAppliedCents?: number }> {
   let user
   try {
     user = await requirePermission("loads:status")
@@ -219,17 +218,28 @@ export async function stopTimestampAction(
         stop_id: stopId, field, city: stop.city, state: stop.state,
       }, { id: user.id, name: user.name })
     }
+    let detentionAppliedCents: number | undefined
+    if (field === "departed_at") {
+      // Best-effort: a closed stop always records, even if detention math fails.
+      try {
+        const accrual = await applyDetentionAccrual(user.carrierId, loadId, { id: user.id, name: user.name })
+        if (accrual.ok && accrual.changed) detentionAppliedCents = accrual.amountCents
+      } catch (err) {
+        console.error("applyDetentionAccrual failed:", err)
+      }
+    }
     revalidateLoadViews(loadId)
-    return { ok: true }
+    return { ok: true, detentionAppliedCents }
   } catch (err) {
     return actionError(err, "Failed to record time")
   }
 }
 
 /**
- * Detention auto-draft (Phase 6 §9): dwell beyond free time becomes a
- * Detention accessorial in one click — computed from stop timestamps and the
- * carrier's detention settings, never typed by hand.
+ * Manual detention recompute: marking a stop departed already auto-applies
+ * detention (see stopTimestampAction), so this is the fallback for loads
+ * that closed before that existed, or whose detention settings changed
+ * after the fact.
  */
 export async function addDetentionAction(loadId: string): Promise<ActionResult & { amountCents?: number }> {
   let user
@@ -239,46 +249,11 @@ export async function addDetentionAction(loadId: string): Promise<ActionResult &
     return actionError(err, "Forbidden")
   }
   try {
-    const load = await getLoad(user.carrierId, loadId)
-    if (!load) return { ok: false, error: "Load not found" }
-    const accessorials = Array.isArray(load.accessorials) ? load.accessorials : []
-    if (accessorials.some((a) => /detention/i.test(a.label))) {
-      return { ok: false, error: "Detention is already on this load" }
-    }
-    const settings = await getCarrierSettings(user.carrierId)
-    const stops = await getLoadStops(user.carrierId, loadId)
-    const { detentionCents } = await import("@/lib/hub/money")
-    let total = 0
-    const detail: string[] = []
-    for (const stop of stops) {
-      if (!stop.arrived_at || !stop.departed_at) continue
-      const cents = detentionCents(
-        new Date(stop.arrived_at), new Date(stop.departed_at),
-        settings.detention.freeHours, settings.detention.ratePerHourCents
-      )
-      if (cents > 0) {
-        total += cents
-        detail.push(`${stop.city}, ${stop.state}: $${(cents / 100).toFixed(2)}`)
-      }
-    }
-    if (total === 0) return { ok: false, error: "No stop sat past the free time — nothing to bill" }
-
-    const updated = [...accessorials, { label: "Detention", amount_cents: total }]
-    await query(
-      `UPDATE hub.loads SET accessorials = $3, updated_at = NOW() WHERE carrier_id = $1 AND id = $2`,
-      [user.carrierId, loadId, JSON.stringify(updated)]
-    )
-    await addLoadEvent(user.carrierId, loadId, "detention", {
-      amount_cents: total, detail,
-      freeHours: settings.detention.freeHours, ratePerHourCents: settings.detention.ratePerHourCents,
-    }, { id: user.id, name: user.name })
-    await logAudit({
-      carrierId: user.carrierId, actorId: user.id, actorName: user.name,
-      entityType: "load", entityId: loadId, action: "detention_drafted",
-      newValue: { amountCents: total, detail },
-    })
+    const result = await applyDetentionAccrual(user.carrierId, loadId, { id: user.id, name: user.name })
+    if (!result.ok) return { ok: false, error: result.error ?? "Could not draft detention" }
+    if (!result.changed) return { ok: false, error: "Detention already reflects the current stop timestamps" }
     revalidateLoadViews(loadId)
-    return { ok: true, amountCents: total }
+    return { ok: true, amountCents: result.amountCents }
   } catch (err) {
     return actionError(err, "Could not draft detention")
   }
