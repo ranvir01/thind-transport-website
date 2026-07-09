@@ -38,12 +38,14 @@ export function NotificationsBell({ direction = "down" }: { direction?: "down" |
   const refresh = useCallback(async () => {
     try {
       const res = await fetch("/api/hub/notifications")
-      if (!res.ok) return
+      if (!res.ok) return null
       const data = await res.json()
       setItems(data.items ?? [])
       setUnread(data.unread ?? 0)
+      return data
     } catch {
       /* offline — keep what we have */
+      return null
     }
   }, [])
 
@@ -69,12 +71,17 @@ export function NotificationsBell({ direction = "down" }: { direction?: "down" |
   const toggle = async () => {
     const next = !open
     setOpen(next)
-    if (next && unread > 0) {
+    if (!next) return
+    // Fetch fresh items/count first, then mark read — doing it in the other
+    // order raced an un-awaited POST against this GET: the GET could land
+    // first and overwrite the optimistic setUnread(0) with the pre-read
+    // count, leaving the badge stuck on "N unread" after opening the feed.
+    const data = await refresh()
+    if ((data?.unread ?? 0) > 0) {
       // Opening the feed clears the badge — simple and predictable.
       fetch("/api/hub/notifications", { method: "POST" }).catch(() => {})
       setUnread(0)
     }
-    if (next) refresh()
   }
 
   return (
