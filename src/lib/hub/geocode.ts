@@ -10,7 +10,12 @@ export interface GeocodeSource {
   geocode(city: string, state: string): Promise<{ lat: number; lng: number } | null>
 }
 
-async function nominatimLookup(city: string, state: string): Promise<{ lat: number; lng: number } | null> {
+// Geocoding is best-effort inside the load-booking round trip — a slow or
+// unresponsive geocoder must fail fast (loads save fine without coordinates),
+// not stall createLoadAction for the 30s+ observed under load.
+export const GEOCODER_TIMEOUT_MS = 5000
+
+export async function nominatimLookup(city: string, state: string): Promise<{ lat: number; lng: number } | null> {
   try {
     const q = encodeURIComponent(`${city}, ${state}, USA`)
     // GeocodeSource swap path (Phase 7): the public Nominatim instance's
@@ -23,6 +28,7 @@ async function nominatimLookup(city: string, state: string): Promise<{ lat: numb
       {
         headers: { "User-Agent": PRODUCT.userAgent },
         next: { revalidate: 86400 * 30 },
+        signal: AbortSignal.timeout(GEOCODER_TIMEOUT_MS),
       }
     )
     if (!res.ok) return null
