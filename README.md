@@ -1,6 +1,20 @@
-# Thind Transport — Driver Recruitment Website
+# Thind Transport + LoadOff
 
-Marketing and driver-recruitment site for [Thind Transport](https://thindtransport.com), a family-run trucking company in Kent, WA. Built with Next.js (App Router), TypeScript, and Tailwind CSS.
+Two products in one monorepo for a Kent, WA trucking carrier:
+
+1. **Driver recruitment website** — [thindtransport.com](https://thindtransport.com) convert CDL drivers into applications
+2. **LoadOff** (legacy docs may say HaulDesk) — multi-tenant TMS for small/mid carriers: dispatch, money, fuel/IFTA, compliance, driver PWA, and customer portals
+
+**Stack:** Next.js App Router, TypeScript, Tailwind, NextAuth v5, Vercel Postgres. Optional Go worker + Rust compute sidecars.
+
+### Portfolio highlights
+
+- **Anthropic Claude integration** — Smart Setup document extraction via Messages API (`src/lib/hub/doc-intake/llm-parser.ts`) with PII redaction, confidence-scored fields, human review, and heuristic fallback when `ANTHROPIC_API_KEY` is unset
+- **Production invariants** — carrier-scoped queries, integer-cent money math, server-action permissions, audit logs, automated Vitest coverage
+- **AI-assisted delivery** — Cursor skills, master prompts, and an agent improvement loop (`docs/agent-improvement-loop.md`)
+- **Demo path** — `docs/demo-script.md` (seed demo accounts + walkthrough)
+
+Some vendor integrations ship **stub-first** (mock + contract tests) until credentials are activated. CSV/manual fallbacks remain.
 
 ## Quick start
 
