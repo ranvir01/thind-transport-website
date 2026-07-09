@@ -10,7 +10,7 @@ import "./hub-theme.css"
 export const metadata: Metadata = {
   title: { default: PRODUCT.name, template: `%s | ${PRODUCT.name}` },
   robots: { index: false, follow: false },
-  manifest: "/hub.webmanifest",
+  manifest: "/api/hub/manifest",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
