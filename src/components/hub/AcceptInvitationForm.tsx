@@ -5,7 +5,7 @@ import { signIn } from "next-auth/react"
 import { toast } from "sonner"
 import { Loader2 } from "lucide-react"
 import { acceptInvitationAction } from "@/app/hub/_actions/portal"
-import { fieldCls, labelCls } from "@/components/hub/ui"
+import { fieldDarkCls, labelDarkCls } from "@/components/hub/ui"
 
 export function AcceptInvitationForm({ token, email }: { token: string; email: string }) {
   const [pending, startTransition] = useTransition()
@@ -28,16 +28,16 @@ export function AcceptInvitationForm({ token, email }: { token: string; email: s
   return (
     <form onSubmit={submit} className="space-y-3">
       <div>
-        <label htmlFor="acc-name" className={labelCls}>Your name</label>
+        <label htmlFor="acc-name" className={labelDarkCls}>Your name</label>
         <input
-          id="acc-name" required className={fieldCls} autoComplete="name"
+          id="acc-name" required className={fieldDarkCls} autoComplete="name"
           value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })}
         />
       </div>
       <div>
-        <label htmlFor="acc-pass" className={labelCls}>Choose a password (8+ characters)</label>
+        <label htmlFor="acc-pass" className={labelDarkCls}>Choose a password (8+ characters)</label>
         <input
-          id="acc-pass" required type="password" minLength={8} className={fieldCls} autoComplete="new-password"
+          id="acc-pass" required type="password" minLength={8} className={fieldDarkCls} autoComplete="new-password"
           value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })}
         />
       </div>
