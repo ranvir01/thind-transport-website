@@ -69,12 +69,19 @@ export function NotificationsBell({ direction = "down" }: { direction?: "down" |
   const toggle = async () => {
     const next = !open
     setOpen(next)
-    if (next && unread > 0) {
+    if (!next) return
+    if (unread > 0) {
       // Opening the feed clears the badge — simple and predictable.
-      fetch("/api/hub/notifications", { method: "POST" }).catch(() => {})
       setUnread(0)
+      // Wait for mark-as-read to commit before refetching, or the GET can
+      // win the race and put the stale unread count back on the badge.
+      try {
+        await fetch("/api/hub/notifications", { method: "POST" })
+      } catch {
+        /* offline — keep the optimistic clear; the next refresh reconciles */
+      }
     }
-    if (next) refresh()
+    refresh()
   }
 
   return (
