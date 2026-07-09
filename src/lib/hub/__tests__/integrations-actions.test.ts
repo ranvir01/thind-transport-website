@@ -13,7 +13,7 @@ vi.mock("@/lib/hub/session", () => ({
   requireOwner: vi.fn(async () => ({ id: "u1", name: "Owner", carrierId: "carrier-1" })),
 }))
 vi.mock("@/lib/hub/audit", () => ({ logAudit: vi.fn(async () => undefined) }))
-vi.mock("@/lib/hub/db", () => ({ query: vi.fn(async () => []) }))
+vi.mock("@/lib/hub/db", () => ({ query: vi.fn(async () => []), queryOne: vi.fn(async () => null) }))
 vi.mock("@/lib/hub/credentials", async () => {
   const actual = await vi.importActual<typeof import("@/lib/hub/credentials")>("@/lib/hub/credentials")
   return { ...actual, credentialsConfigured: vi.fn(() => true), saveCredentials: vi.fn(async () => undefined) }
