@@ -123,6 +123,19 @@ describe("qboSource (SyncSource<QboPaymentRow> contract)", () => {
     await expect(qboSource(CARRIER).pull()).rejects.toThrow(/401/)
   })
 
+  it("refuses to pull on a partial/corrupted credential row even though hasCredentials is true", async () => {
+    hasCredentialsMock.mockResolvedValue(true)
+    getCredentialsMock.mockResolvedValue({ clientId: "cid", clientSecret: "csec", refreshToken: "rtok" })
+    await expect(qboSource(CARRIER).pull()).rejects.toThrow(/not connected/)
+  })
+
+  it("surfaces an OK token response missing access_token as an error rather than proceeding with undefined", async () => {
+    hasCredentialsMock.mockResolvedValue(true)
+    getCredentialsMock.mockResolvedValue(CREDS)
+    mockFetchSequence({ ok: true, json: async () => ({}) })
+    await expect(qboSource(CARRIER).pull()).rejects.toThrow(/missing access_token/)
+  })
+
   it("persists a rotated refresh token so the next sync doesn't redeem a stale one", async () => {
     hasCredentialsMock.mockResolvedValue(true)
     getCredentialsMock.mockResolvedValue(CREDS)
@@ -274,6 +287,22 @@ describe("pushInvoiceToQbo", () => {
     const result = await pushInvoiceToQbo(CARRIER, "invoice-1", ACTOR)
     expect(result).toEqual({ connected: false })
     expect(getInvoiceMock).not.toHaveBeenCalled()
+  })
+
+  it("reports not connected on a partial/corrupted credential row even though hasCredentials is true", async () => {
+    hasCredentialsMock.mockResolvedValue(true)
+    getCredentialsMock.mockResolvedValue({ clientId: "cid", clientSecret: "csec", refreshToken: "rtok" })
+    const result = await pushInvoiceToQbo(CARRIER, "invoice-1", ACTOR)
+    expect(result).toEqual({ connected: false })
+    expect(getInvoiceMock).not.toHaveBeenCalled()
+  })
+
+  it("throws instead of pushing when the invoice doesn't exist (deleted since page load)", async () => {
+    hasCredentialsMock.mockResolvedValue(true)
+    getCredentialsMock.mockResolvedValue(CREDS)
+    getInvoiceMock.mockResolvedValue(null)
+    await expect(pushInvoiceToQbo(CARRIER, "invoice-1", ACTOR)).rejects.toThrow(/Invoice not found/)
+    expect(queryMock).not.toHaveBeenCalled()
   })
 
   it("treats an unchanged amount as already pushed — no update sent", async () => {
