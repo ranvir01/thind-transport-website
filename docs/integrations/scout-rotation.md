@@ -13,7 +13,7 @@ as an urgent `Backlog:` item.
 | `mailbox` | **Built** — generic IMAP client, not a vendor SDK. Plain LOGIN auth — broken against M365/Google Workspace, see doc | `host`, `port`, `user`, `password`, `folder` | `src/lib/hub/mailbox.ts` | [`mailbox.md`](./mailbox.md) | 2026-07-07 |
 | `fmcsa` (adjacent, free, not in `IntegrationProvider` union — no stored creds) | **Built** — QCMobile broker vetting | `FMCSA_WEBKEY` env | `src/lib/hub/vetting.ts` | [`fmcsa.md`](./fmcsa.md) | 2026-07-07 |
 | `eia` (adjacent, free, not in `IntegrationProvider` union) | **Built** — diesel price benchmark | `EIA_API_KEY` env | `src/lib/hub/fuel.ts` | [`eia.md`](./eia.md) | 2026-07-07 |
-| `truckercloud` | **Built** — adapter shipped, drop-in second aggregator to Terminal | `apiKey`, `clientId`/`clientSecret` | `src/lib/hub/telematics.ts` (`truckerCloudSource`) | [`truckercloud.md`](./truckercloud.md) | 2026-07-06 |
+| `truckercloud` | **Built** — adapter shipped, drop-in second aggregator to Terminal | `apiKey`, `clientId`/`clientSecret` | `src/lib/hub/telematics.ts` (`truckerCloudSource`) | [`truckercloud.md`](./truckercloud.md) | 2026-07-09 |
 | `dat` | **Built** — search + posting-to-load-draft mapper, stub-first (registry still `stub`/CSV fallback pending real auth confirm) | `serviceAccountEmail`, `password` | `src/lib/hub/integrations/dat.ts` | [`dat.md`](./dat.md) | 2026-07-06 |
 | `efs` | **Built** — adapter shipped, feed shape unconfirmed | `feedUser`, `feedPassword` | `src/lib/hub/integrations/efs.ts` | [`efs.md`](./efs.md) | 2026-07-06 |
 | `wex` | **Built** — adapter shipped, daily cron live | `feedUser`, `feedPassword` | `src/lib/hub/integrations/wex.ts` | [`wex.md`](./wex.md) | 2026-07-06 |
@@ -37,6 +37,15 @@ integrations that were never in scope of the vendor shopping list: both `fmcsa.m
    notes before a lane builds the adapter.
 3. One provider per cycle. Update the "Last researched" date and doc link when done.
 
-Next up by this rule: `truckercloud.md` is now the oldest vendor doc (2026-07-06, unchanged);
-`efs.md`/`wex.md`/`comdata.md`/`qbo.md`/`factor.md`/`dat.md`/`truckstop.md` follow in date order
-after that.
+Next up by this rule: `dat.md` is now the oldest vendor doc (2026-07-06, unchanged);
+`efs.md`/`wex.md`/`comdata.md`/`qbo.md`/`factor.md`/`truckstop.md` follow in date order
+after that (`truckercloud.md` refreshed 2026-07-09, moved to the back of the queue).
+
+## 2026-07-09 pass notes (truckercloud)
+
+No auth/endpoint confirmation gained — `truckercloud.com` and `docs.truckercloud.com` still
+403 this scout's fetch tooling (2nd pass in a row), and `web.archive.org` isn't reachable from
+this tooling either. No breaking API change found, so no urgent `Backlog:` item. Did surface a
+scale-claim update worth a sentence in the doc (marketing now says "170+ ELDs and Cameras" vs.
+the "50+" figure cited 2026-07-06) and a business-direction note (recent partnerships — RLI,
+Sentry, IntelliShift — are all insurance-telematics deals, not TMS integrations like ours).

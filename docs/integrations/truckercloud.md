@@ -1,5 +1,7 @@
 # TruckerCloud ELD — scouting notes
 
+_Last researched: 2026-07-09 (Partner-API scout, 3rd pass)._
+
 Status: **adapter shipped, feed shape unconfirmed.** TruckerCloud (truckercloud.com) is the
 drop-in second aggregator `src/lib/hub/telematics.ts`'s header comment has promised since
 Terminal shipped — same `TelematicsSource` interface (`connected`/`vehicles`/`hos`), its own
@@ -10,17 +12,30 @@ actually connected (Terminal wins if somehow both are).
 
 TruckX (the ELD our carriers already run) has no public API of its own — it only exposes data
 through TSP aggregators, and TruckerCloud is the second one after Terminal. Public marketing
-describes TruckerCloud as an "API-based telematics data aggregator" fronting 50+ underlying ELD
+describes TruckerCloud as an "API-based telematics data aggregator" fronting underlying ELD
 providers under one normalized API (their product is branded the "Apollo API"), the same
-value proposition as Terminal.
+value proposition as Terminal. Their own integration pages list a dedicated
+`connect-truckx-eld` / `connect-truckx-eld-d` pair (two separate TruckX doc pages — likely one
+per TruckX API generation), confirming TruckX is a first-class, still-supported source for them,
+not an edge case.
+
+**Scale claim grew since the last pass**: this scout's 2026-07-06 research cited "50+ underlying
+ELD providers"; search-result snippets now attached to a June 2026 IntelliShift partnership
+announcement cite **"170+ ELDs and Cameras"**, and a separate result says their "open API...
+unify[s] with 30+ connected ELDs." Three different numbers (30+/50+/170+) across marketing
+copy of different ages/audiences — read as directional growth, not a precise, sourced count.
 
 ## Auth model (assumed, unconfirmed)
 
-- **Could not fetch TruckerCloud's own docs pages** (`truckercloud.com/integrations/*` returned
-  HTTP 403 to this scout's fetch tooling) — same Cloudflare-style block noted for
-  `docs.withterminal.com` (`docs/integrations/terminal.md`) and the EFS integration help pages
-  (`docs/integrations/efs.md`). Everything below is a best-effort guess from search-result
-  snippets, not a page read in full.
+- **Still could not fetch TruckerCloud's own docs pages on this pass either** —
+  `truckercloud.com/integrations/*`, the bare `www.truckercloud.com/`, and `docs.truckercloud.com`
+  all returned HTTP 403 to this scout's fetch tooling (2026-07-06 and again 2026-07-09), and
+  third-party review pages that sometimes carry pricing (G2, Capterra) 403'd too — same
+  Cloudflare-style block noted for `docs.withterminal.com` (`docs/integrations/terminal.md`) and
+  the EFS integration help pages (`docs/integrations/efs.md`). `web.archive.org` is not reachable
+  from this scout's tooling either, so there's no snapshot workaround. Everything below is still
+  a best-effort guess from search-result snippets, not a page read in full — two passes in a row
+  with zero new primary-source confirmation.
 - `docs/hub-go-live-requirements.md` lists TruckerCloud as needing "Client ID + secret"
   credentials, not a static API key — so the registry (`src/lib/hub/integrations/registry.ts`)
   scopes `truckercloud` to `clientId` + `clientSecret`, and `truckerCloudSource()` in
@@ -64,8 +79,23 @@ cron wiring don't move.
 
 ## Rate limits / sandbox
 
-Not found in the accessible search results. No numeric limits, no public sandbox/test-key
-program surfaced. Ask when a TruckerCloud contact is available for real credentials.
+Still not found in accessible search results on this pass. No numeric limits, no public
+sandbox/test-key program surfaced, no self-serve pricing page found (one search snippet
+claims "TruckerCloud does not offer an API" while another calls their "open API... the
+fastest way to connect ELD data" — both are third-party summaries, not TruckerCloud's own
+words, and they contradict each other; treat neither as authoritative). Ask when a
+TruckerCloud contact is available for real credentials.
+
+## Business direction (context, not a code change)
+
+TruckerCloud's public partnership announcements over the last year skew heavily toward
+**usage-based insurance telematics**, not TMS/dispatch integrations like ours: RLI Transportation
+(Apr 2025), Sentry (Oct 2025), and IntelliShift (Jun 2026) are all insurance or fleet-safety
+plays, and their homepage now markets itself first as an "Auto Insurance Telematics Aggregator."
+That's not an API change and breaks nothing today, but it's worth watching — a vendor whose
+growth is concentrated in one vertical sometimes deprioritizes support/docs for adjacent use
+cases (ours). No adapter impact to report this pass; re-check whether their core ELD/HOS API
+surface is still maintained the next time this doc comes up for rotation.
 
 ## Sync loop
 
@@ -91,3 +121,8 @@ connected — this adapter, like Terminal's, is additive.
 - Confirm whether a carrier can have both Terminal AND TruckerCloud credentials saved at once
   (e.g. mid-migration between aggregators); if so, `activeTelematicsSource`'s "first connected
   wins" selection needs to become an explicit preference instead of source order.
+- Two research passes (2026-07-06, 2026-07-09) have both hit a hard Cloudflare-style 403 on
+  every TruckerCloud-owned URL and most third-party review sites. If a third pass also comes up
+  empty, stop re-running the same web search/fetch approach and instead have the owner request a
+  developer packet directly (same recommendation already standing for Terminal/EFS) — this is
+  no longer a "try again later" gap, it's a "web research has hit its ceiling" gap.
