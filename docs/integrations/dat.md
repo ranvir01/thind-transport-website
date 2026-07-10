@@ -25,17 +25,39 @@ Building that UI against an unconfirmed API shape would mean re-doing it twice. 
 stops at the tested client; `docs/integrations/creds-shopping-list.md` tracks the remaining
 UI + booking slice separately.
 
-## Auth model (assumed, unconfirmed)
+## Auth model (researched 2026-07-10 — search-snippet confidence, pages 403-walled)
 
-- DAT's One API requires a service account provisioned through a DAT sales/API agreement
-  (`developer.dat.com`), not a self-serve signup — `dat.ts` assumes HTTP Basic auth with a
-  service-account email + password, matching the `serviceAccountEmail`/`password` fields
-  already on the `dat` entry in `src/lib/hub/integrations/registry.ts`.
-- Base URL is an env override (`DAT_API_BASE`), defaulting to a placeholder host
-  (`https://freight.api.dat.com/v3`) — never treated as confirmed. DAT's real integration
-  program is OAuth2-based per public docs; the Basic-auth assumption here is a placeholder
-  until a real developer packet is in hand, same caveat as every other unconfirmed adapter
-  in this repo.
+DAT's own pages (`dat.com`, `one.support.dat.com`, `developer.dat.com`) and even third-party
+integration guides all 403 against our fetch tooling (same wall as TruckerCloud), so the
+facts below come from search-result snippets of DAT's official support FAQ and TMS-vendor
+activation guides — higher confidence than the previous pure guess, but still not a
+developer packet.
+
+- **Two-level token auth, not per-request Basic.** DAT's official RESTful API FAQ describes
+  the flow as: (1) a **service account** (dedicated email + password, provisioned once per
+  organization) authenticates the *organization*; (2) a **regular user's email** is then
+  authenticated on top of the org auth to identify *who* is making requests. So the
+  `serviceAccountEmail`/`password` fields on the `dat` registry entry are right but
+  **insufficient** — activation will also need a third field for the acting user's email
+  (see Backlog). `dat.ts`'s current per-request Basic-auth construction is a placeholder
+  that will need to become a token exchange (org token → user token → Bearer on API calls).
+- **Tokens are short-lived.** One TMS integration (Salesforce-based) caches DAT org and
+  user tokens for 28 minutes, implying ~30-minute expiry — the adapter must re-auth per
+  sync run rather than storing a long-lived token.
+- **Seats gate API calls.** The authenticated user must hold a **Connexion seat** plus a
+  load board seat to search or post via API; any load board subscription tier allows REST
+  API integration, but the seat requirement is per-user.
+- **Service accounts are managed at `account.dat.com`** (User Management) and must not be
+  edited/deleted once an integration depends on them.
+- Base URL env override (`DAT_API_BASE`) currently defaults to `https://freight.api.dat.com/v3`.
+  The **host** is now corroborated (a real posting endpoint is
+  `https://freight.api.staging.dat.com/posting/v2/loads`), but the path scheme is per-service
+  versioning (`/posting/v2/...`), not a global `/v3` — expect the search path to change when
+  the developer packet arrives.
+- Developer portal: `developer.dat.com` (login at `developer.dat.com/_/login`), access
+  requests via **developersupport@dat.com** with company name, contact, MC number, and a
+  note that REST API access is needed. A public Postman workspace
+  (`postman.com/it-sys/dat-s-api-documentation`) also exists but is fetch-blocked from here.
 
 ## Search shape (assumed, unconfirmed)
 
@@ -64,11 +86,23 @@ If the real endpoint, auth flow, or field names differ (likely), only `normalize
 the `/loads/search` path, and the auth header construction in `datSource()` change — the
 `search`/`pull` contract and its tests don't move.
 
-## Rate limits / sandbox
+## Rate limits / sandbox / pricing (researched 2026-07-10)
 
-Not found in accessible public docs — DAT's API terms are behind the sales agreement. Ask
-for sandbox/test-key access alongside production credentials when a DAT contact is
-available; record the answer here once known.
+- **Rate limits:** still not published anywhere accessible; behind the developer portal.
+  Two soft signals: tokens expire ~30 min (see auth), and lower load-board tiers cap usage
+  at **500 load searches + truck posts per month** — if that product cap applies to API
+  searches too, an interactive dispatcher search panel could exhaust it quickly on a small
+  plan. Confirm with DAT before building periodic polling.
+- **Sandbox:** a dedicated **staging environment exists** — `freight.api.staging.dat.com`
+  appears in a real TMS integration example (`POST /posting/v2/loads`). Ask for staging
+  credentials alongside production ones; wire it through `DAT_API_BASE`.
+- **Pricing (third-party figures, unverified):** DAT subscriptions run roughly
+  $50–$300/user/month depending on tier; one integration guide reports developer-portal
+  registration is free but production API use carries a **$500–$1,000 one-time setup fee**.
+  Budget for the Connexion seat on top of the load board seat for the API user.
+- **Legacy note:** DAT's older SOAP freight-matching API (TFMI, `ftp.dat.com/wsdl/
+  TfmiFreightMatching.xsd`) is still publicly visible; REST is the current program — don't
+  build against the WSDL.
 
 ## What ships today without any of this
 
@@ -81,9 +115,12 @@ facing surface for it at all (it's a tested library function, not a feature yet)
 - Design + build the dispatcher-facing search panel (criteria form → results list) and a
   "book this posting" button that calls `datPostingToLoadDraft` + a customer picker, then
   `createLoad()` — likely office-lane UI territory once designed, coordinate via `Backlog:`.
-- Confirm the real DAT One auth flow (OAuth2 vs Basic) and search endpoint shape against an
-  actual developer packet — the #1 blocker to flipping `registry.ts`'s `dat` entry from
-  `stub` to `live`.
+- Auth flow is now known in outline (two-level service-account → user token, see above);
+  the remaining #1 blocker to flipping `registry.ts`'s `dat` entry from `stub` to `live` is
+  the developer packet: exact token endpoints/headers, the real search path + response
+  field names, and rate limits. Request via developersupport@dat.com (needs MC number).
+- Registry change needed (integrator/integrations lane): add an acting-user email
+  credential field to the `dat` entry — the service account alone cannot make requests.
 - Decide whether matches get a `cronJob` (periodic "loads near you" polling into a new
   table) in addition to on-demand search, or stay purely interactive — affects whether a
   migration is needed (`hub.available_loads`-style table) vs. search staying stateless.
