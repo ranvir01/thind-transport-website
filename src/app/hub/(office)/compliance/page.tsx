@@ -1,7 +1,6 @@
 import Link from "next/link"
 import { FileSpreadsheet } from "lucide-react"
 import { complianceEntries, summarize } from "@/lib/hub/compliance"
-import { iftaFilingComplianceEntries } from "@/lib/hub/ifta"
 import { requirePermissionPage } from "@/lib/hub/session"
 import { Panel, PageHeader, ExpiryPill } from "@/components/hub/ui"
 import { AddComplianceItemForm, ResolveItemButton } from "@/components/hub/ComplianceForms"
@@ -19,16 +18,10 @@ const COLOR_DOT: Record<string, string> = {
 
 export default async function CompliancePage() {
   const user = await requirePermissionPage("compliance:read")
-  const [baseEntries, iftaEntries] = await Promise.all([
-    complianceEntries(user.carrierId),
-    iftaFilingComplianceEntries(user.carrierId),
-  ])
-  // Merge the auto-generated IFTA filing entries in wall order (red first,
-  // then soonest due) — same comparator complianceEntries() uses internally.
-  const colorOrder = { red: 0, amber: 1, green: 2 } as const
-  const entries = [...baseEntries, ...iftaEntries].sort(
-    (a, b) => colorOrder[a.color] - colorOrder[b.color] || String(a.due ?? "9999").localeCompare(String(b.due ?? "9999"))
-  )
+  // complianceEntries() already merges the auto-tracked IFTA filing entries
+  // (and the cron digest + today.ts share that path) — merging them again
+  // here rendered every filing row twice and double-counted the tiles.
+  const entries = await complianceEntries(user.carrierId)
   const summary = summarize(entries)
 
   return (

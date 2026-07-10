@@ -76,6 +76,16 @@ async function main() {
   check(wall.includes("expired"), "wall shows an expired pill")
   check(wall.includes("Truck #107") && wall.includes("Registration"), "wall lists Truck #107 registration")
   check(wall.includes("Drug & alcohol consortium"), "wall lists the overdue consortium item")
+  // Auto-tracked IFTA quarterly filing (d2b089e): exactly one entry for the
+  // last completed quarter — a second copy means the page is re-merging what
+  // complianceEntries() already merged (regression seen after 875c514).
+  const iftaFilingCount = (wall.match(/IFTA filing \d{4}Q[1-4]/g) ?? []).length
+  check(iftaFilingCount >= 1, `wall auto-tracks the IFTA quarterly filing (got ${iftaFilingCount})`)
+  const iftaFilingKinds = new Set(wall.match(/IFTA filing \d{4}Q[1-4]/g) ?? [])
+  check(
+    iftaFilingCount === iftaFilingKinds.size,
+    `each IFTA filing quarter appears exactly once (${iftaFilingCount} rows, ${iftaFilingKinds.size} quarters)`
+  )
   await shot(page, "01-compliance-wall")
 
   console.log("2. Track a new company item")
