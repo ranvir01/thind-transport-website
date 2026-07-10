@@ -9,7 +9,7 @@
  */
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
-vi.mock("../db", () => ({ query: vi.fn(async () => []) }))
+vi.mock("../db", () => ({ query: vi.fn(async () => []), queryOne: vi.fn(async () => null) }))
 vi.mock("../credentials", () => ({
   getCredentials: vi.fn(async (carrierId: string, provider: string) => {
     if (provider === "terminal") return { apiKey: "term-key", connectionToken: "term-token" }
@@ -19,13 +19,15 @@ vi.mock("../credentials", () => ({
   hasCredentials: vi.fn(async () => false),
 }))
 
-import { query } from "../db"
+import { query, queryOne } from "../db"
 import { getCredentials, hasCredentials } from "../credentials"
 import {
-  normalizeTruckerCloudVehicle, normalizeTruckerCloudHos, runTelematicsSync, truckerCloudSource,
+  hosLegalityWarning, normalizeTruckerCloudVehicle, normalizeTruckerCloudHos,
+  runTelematicsSync, terminalSource, truckerCloudSource,
 } from "../telematics"
 
 const queryMock = vi.mocked(query)
+const queryOneMock = vi.mocked(queryOne)
 const getCredentialsMock = vi.mocked(getCredentials)
 const hasCredentialsMock = vi.mocked(hasCredentials)
 const CARRIER = "11111111-1111-1111-1111-111111111111"
@@ -175,5 +177,222 @@ describe("runTelematicsSync provider selection", () => {
     expect(result.connected).toBe(true)
     expect(getCredentialsMock).toHaveBeenCalledWith(CARRIER, "terminal")
     expect(getCredentialsMock).not.toHaveBeenCalledWith(CARRIER, "truckercloud")
+  })
+})
+
+describe("terminalSource (TelematicsSource contract)", () => {
+  beforeEach(() => {
+    hasCredentialsMock.mockReset()
+    getCredentialsMock.mockReset()
+    vi.stubGlobal("fetch", vi.fn())
+  })
+
+  it("reports not connected without credentials, and refuses to fetch on partial credentials", async () => {
+    hasCredentialsMock.mockResolvedValue(false)
+    getCredentialsMock.mockResolvedValue({ apiKey: "term-key" }) // no connectionToken
+    const source = terminalSource(CARRIER)
+    await expect(source.connected()).resolves.toBe(false)
+    await expect(source.vehicles()).rejects.toThrow(/not connected/)
+    await expect(source.hos()).rejects.toThrow(/not connected/)
+    expect(vi.mocked(fetch)).not.toHaveBeenCalled()
+  })
+
+  it("sends both auth headers and normalizes the vehicles feed (latestLocation expanded)", async () => {
+    getCredentialsMock.mockResolvedValue({ apiKey: "term-key", connectionToken: "term-token" })
+    const fetchMock = vi.fn(async () => ({
+      ok: true,
+      json: async () => ({
+        data: [
+          {
+            id: 9001,
+            name: "104",
+            latestLocation: { latitude: 47.38, longitude: -122.23, odometer: 187654, locatedAt: "2026-07-01T14:30:00Z" },
+          },
+          { id: "veh-2", licensePlate: "WA-TRK-2" }, // no name, no location yet
+        ],
+      }),
+    }))
+    vi.stubGlobal("fetch", fetchMock)
+
+    const vehicles = await terminalSource(CARRIER).vehicles()
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining("/vehicles?expand=latestLocation"),
+      expect.objectContaining({
+        headers: { Authorization: "Bearer term-key", "Connection-Token": "term-token" },
+      })
+    )
+    expect(vehicles).toEqual([
+      { externalId: "9001", unitHint: "104", lat: 47.38, lng: -122.23, odometerMiles: 187654, locatedAt: "2026-07-01T14:30:00Z" },
+      { externalId: "veh-2", unitHint: "WA-TRK-2", lat: null, lng: null, odometerMiles: null, locatedAt: null },
+    ])
+  })
+
+  it("normalizes the HOS feed, converting remaining-time seconds to minutes", async () => {
+    getCredentialsMock.mockResolvedValue({ apiKey: "term-key", connectionToken: "term-token" })
+    vi.stubGlobal("fetch", vi.fn(async () => ({
+      ok: true,
+      json: async () => ({
+        data: [
+          {
+            driverId: "drv-7", driverName: "Jasbir Singh", dutyStatus: "driving",
+            driveRemaining: 5430, shiftRemaining: 7200, cycleRemaining: "not-a-number",
+            updatedAt: "2026-07-01T14:30:00Z",
+          },
+        ],
+      }),
+    })))
+
+    const hos = await terminalSource(CARRIER).hos()
+    expect(hos).toEqual([
+      {
+        externalDriverId: "drv-7",
+        driverNameHint: "Jasbir Singh",
+        dutyStatus: "driving",
+        driveRemainingMinutes: 91, // 5430s rounds to 91min, proving seconds→minutes
+        shiftRemainingMinutes: 120,
+        cycleRemainingMinutes: null, // non-numeric timer refused, not coerced
+        ts: "2026-07-01T14:30:00Z",
+      },
+    ])
+  })
+
+  it("surfaces a non-OK response as an error naming the path and status", async () => {
+    getCredentialsMock.mockResolvedValue({ apiKey: "term-key", connectionToken: "term-token" })
+    vi.stubGlobal("fetch", vi.fn(async () => ({ ok: false, status: 401, json: async () => ({}) })))
+    await expect(terminalSource(CARRIER).vehicles()).rejects.toThrow(/\/vehicles.*401/)
+  })
+})
+
+describe("truckerCloudSource token + HOS edge paths", () => {
+  beforeEach(() => {
+    hasCredentialsMock.mockReset()
+    getCredentialsMock.mockReset()
+    getCredentialsMock.mockResolvedValue({ clientId: "tc-id", clientSecret: "tc-secret" })
+  })
+
+  it("pulls and normalizes the HOS feed from the logs envelope", async () => {
+    mockTokenThenFeed({ logs: [{ driverId: "DRV-3", status: "on_duty", driveTimeRemainingSec: 600 }] })
+    const hos = await truckerCloudSource(CARRIER).hos()
+    expect(hos.map((h) => [h.externalDriverId, h.dutyStatus, h.driveRemainingMinutes])).toEqual([
+      ["DRV-3", "on_duty", 10],
+    ])
+  })
+
+  it("surfaces a failed token exchange instead of calling the feed unauthenticated", async () => {
+    const fetchMock = vi.fn(async () => ({ ok: false, status: 401, json: async () => ({}) }))
+    vi.stubGlobal("fetch", fetchMock)
+    await expect(truckerCloudSource(CARRIER).vehicles()).rejects.toThrow(/token.*401/)
+    expect(fetchMock).toHaveBeenCalledTimes(1) // only the token call, never the feed
+  })
+
+  it("rejects a token response that lacks access_token", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => ({ ok: true, json: async () => ({}) })))
+    await expect(truckerCloudSource(CARRIER).vehicles()).rejects.toThrow(/missing access_token/)
+  })
+})
+
+describe("runTelematicsSync matching + persistence", () => {
+  const TRUCKS = [
+    { id: "truck-a", unit_number: "104" },
+    { id: "truck-b", unit_number: "T-9" },
+  ]
+  const DRIVERS = [{ id: "driver-a", full_name: "jasbir singh" }]
+  const inserts = () =>
+    queryMock.mock.calls.filter(([sql]) => (sql as string).includes("INSERT INTO"))
+
+  beforeEach(() => {
+    hasCredentialsMock.mockReset()
+    getCredentialsMock.mockReset()
+    queryMock.mockReset()
+    // Terminal is the connected aggregator for these tests.
+    hasCredentialsMock.mockImplementation(async (_c: string, provider: string) => provider === "terminal")
+    getCredentialsMock.mockResolvedValue({ apiKey: "term-key", connectionToken: "term-token" })
+    queryMock.mockImplementation(async (sql: string) => {
+      if (sql.includes("FROM hub.trucks")) return TRUCKS
+      if (sql.includes("FROM hub.drivers")) return DRIVERS
+      return []
+    })
+  })
+
+  function stubTerminalFeeds(vehicles: unknown[], hos: unknown[]) {
+    vi.stubGlobal("fetch", vi.fn(async (url: string) => ({
+      ok: true,
+      json: async () => ({ data: url.includes("/vehicles") ? vehicles : hos }),
+    })))
+  }
+
+  it("matches units case-insensitively, writes carrier-scoped pings tagged with the provider, and reports unmatched hints", async () => {
+    stubTerminalFeeds(
+      [
+        { id: "v1", name: "t-9", latestLocation: { latitude: 47.1, longitude: -122.2, odometer: 50000, locatedAt: "2026-07-01T10:00:00Z" } },
+        { id: "v2", name: "999", latestLocation: { latitude: 1, longitude: 2 } }, // unit not in fleet
+        { id: "v3", latestLocation: { latitude: 3, longitude: 4 } }, // no unit hint at all
+      ],
+      []
+    )
+    const result = await runTelematicsSync(CARRIER)
+    expect(result).toEqual({ connected: true, pings: 1, hos: 0, unmatched: ["999"] })
+
+    const pingInserts = inserts().filter(([sql]) => (sql as string).includes("position_pings"))
+    expect(pingInserts).toHaveLength(1)
+    expect(pingInserts[0][1]).toEqual([
+      CARRIER, "truck-b", "2026-07-01T10:00:00Z", 47.1, -122.2, 50000, "terminal",
+    ])
+  })
+
+  it("skips a matched vehicle without coordinates rather than inserting a null ping", async () => {
+    stubTerminalFeeds([{ id: "v1", name: "104", latestLocation: { odometer: 12345 } }], [])
+    const result = await runTelematicsSync(CARRIER)
+    expect(result.pings).toBe(0)
+    expect(result.unmatched).toEqual([])
+    expect(inserts()).toHaveLength(0)
+  })
+
+  it("matches HOS snapshots by driver-name hint (case-insensitive) and skips unknown drivers", async () => {
+    stubTerminalFeeds(
+      [],
+      [
+        { driverId: "d1", driverName: "JASBIR SINGH", dutyStatus: "driving", driveRemaining: 3600, updatedAt: "2026-07-01T11:00:00Z" },
+        { driverId: "d2", driverName: "Nobody Here", dutyStatus: "off_duty", updatedAt: "2026-07-01T11:00:00Z" },
+        { driverId: "d3", updatedAt: "2026-07-01T11:00:00Z" }, // no name hint
+      ]
+    )
+    const result = await runTelematicsSync(CARRIER)
+    expect(result.hos).toBe(1)
+
+    const hosInserts = inserts().filter(([sql]) => (sql as string).includes("hos_snapshots"))
+    expect(hosInserts).toHaveLength(1)
+    expect(hosInserts[0][1]).toEqual([
+      CARRIER, "driver-a", "2026-07-01T11:00:00Z", "driving", 60, null, null, "terminal",
+    ])
+  })
+})
+
+describe("hosLegalityWarning (dispatch-legality estimate)", () => {
+  beforeEach(() => {
+    queryOneMock.mockReset()
+  })
+
+  it("stays silent when there is no HOS snapshot for the driver", async () => {
+    queryOneMock.mockResolvedValue(null)
+    await expect(hosLegalityWarning(CARRIER, "driver-a", 6)).resolves.toBeNull()
+  })
+
+  it("stays silent when the latest snapshot has no drive-remaining value", async () => {
+    queryOneMock.mockResolvedValue({ drive_remaining_minutes: null, ts: "2026-07-01T11:00:00Z" })
+    await expect(hosLegalityWarning(CARRIER, "driver-a", 6)).resolves.toBeNull()
+  })
+
+  it("stays silent when the remaining drive clock covers the ETA", async () => {
+    queryOneMock.mockResolvedValue({ drive_remaining_minutes: 480, ts: "2026-07-01T11:00:00Z" })
+    await expect(hosLegalityWarning(CARRIER, "driver-a", 7.5)).resolves.toBeNull()
+  })
+
+  it("warns — clearly labeled an estimate — when the ETA exceeds the remaining clock", async () => {
+    queryOneMock.mockResolvedValue({ drive_remaining_minutes: 90, ts: "2026-07-01T11:00:00Z" })
+    const warning = await hosLegalityWarning(CARRIER, "driver-a", 4)
+    expect(warning).toMatch(/~4\.0h of driving/)
+    expect(warning).toMatch(/~1\.5h left/)
+    expect(warning).toMatch(/estimate only.*ELD is authoritative/)
   })
 })
