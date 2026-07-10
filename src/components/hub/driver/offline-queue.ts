@@ -9,7 +9,7 @@
 
 export interface QueuedIntent {
   id: string
-  kind: "status" | "stop" | "ack" | "upload" | "dvir" | "announcement-ack"
+  kind: "status" | "stop" | "ack" | "upload" | "dvir" | "announcement-ack" | "incident"
   payload: Record<string, unknown>
   /** Serialized file for offline photo uploads. */
   file?: { name: string; type: string; buffer: ArrayBuffer }

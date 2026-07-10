@@ -17,6 +17,7 @@ import {
   driverUploadDocument,
 } from "@/app/hub/_actions/driver"
 import { submitDvirAction } from "@/app/hub/_actions/dvir"
+import { fileDriverIncidentReport } from "@/app/hub/_actions/safety"
 
 async function execute(intent: QueuedIntent): Promise<{ ok: boolean; error?: string }> {
   switch (intent.kind) {
@@ -49,6 +50,12 @@ async function execute(intent: QueuedIntent): Promise<{ ok: boolean; error?: str
     }
     case "dvir":
       return submitDvirAction(intent.payload as Parameters<typeof submitDvirAction>[0])
+    case "incident":
+      // occurredAt was stamped when the driver hit "File the report", so a
+      // replay hours later still records the true time of the incident.
+      return fileDriverIncidentReport(
+        intent.payload as Parameters<typeof fileDriverIncidentReport>[0]
+      )
     default:
       return { ok: true }
   }
