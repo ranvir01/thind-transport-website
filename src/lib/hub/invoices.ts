@@ -13,8 +13,8 @@ const INVOICE_SELECT = `
   SELECT i.*, c.name AS customer_name, l.reference AS load_reference,
     COALESCE((SELECT SUM(amount_cents) FROM hub.payments WHERE invoice_id = i.id AND carrier_id = i.carrier_id), 0)::int AS paid_cents
   FROM hub.invoices i
-  JOIN hub.customers c ON c.id = i.customer_id
-  JOIN hub.loads l ON l.id = i.load_id
+  JOIN hub.customers c ON c.id = i.customer_id AND c.carrier_id = i.carrier_id
+  JOIN hub.loads l ON l.id = i.load_id AND l.carrier_id = i.carrier_id
 `
 
 export async function listInvoices(
@@ -332,8 +332,8 @@ async function loadOpenInvoicesByCustomer(
     `SELECT i.*, c.name AS customer_name, c.billing_email, l.reference AS load_reference,
        COALESCE((SELECT SUM(amount_cents) FROM hub.payments WHERE invoice_id = i.id AND carrier_id = i.carrier_id), 0)::int AS paid_cents
      FROM hub.invoices i
-     JOIN hub.customers c ON c.id = i.customer_id
-     JOIN hub.loads l ON l.id = i.load_id
+     JOIN hub.customers c ON c.id = i.customer_id AND c.carrier_id = i.carrier_id
+     JOIN hub.loads l ON l.id = i.load_id AND l.carrier_id = i.carrier_id
      WHERE ${where}
      ORDER BY c.name, i.due_on`,
     params

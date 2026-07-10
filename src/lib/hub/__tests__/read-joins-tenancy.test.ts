@@ -21,6 +21,7 @@ import { listTrucks, latestTruckPositions } from "../fleet"
 import { listApplicants } from "../recruiting"
 import { listAdvances, listSettlements, escrowBalances } from "../settlements"
 import { listCustomers } from "../customers"
+import { listInvoices } from "../invoices"
 import { listTasks } from "../tasks"
 import { listFacilityNotes } from "../facilities"
 import { driverActiveLoads, driverDocuments, openDocumentRequests } from "../driver-app"
@@ -156,5 +157,12 @@ describe("read queries carrier-guard their joins (both-sides tenancy)", () => {
   it("portal load documents guard the document side of the loads join", async () => {
     await portalLoadDocuments(CARRIER, "c1", "l1")
     expect(lastSql()).toContain("ON l.id = d.entity_id AND d.entity_type = 'load' AND d.carrier_id = l.carrier_id")
+  })
+
+  it("invoice list (shared INVOICE_SELECT) guards customer/load joins", async () => {
+    await listInvoices(CARRIER)
+    const sql = lastSql()
+    expect(sql).toContain("ON c.id = i.customer_id AND c.carrier_id = i.carrier_id")
+    expect(sql).toContain("ON l.id = i.load_id AND l.carrier_id = i.carrier_id")
   })
 })

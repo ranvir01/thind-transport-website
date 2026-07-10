@@ -200,8 +200,8 @@ export async function draftSettlements(
         // Mark reimbursed expenses so they never double-pay
         if (line.sourceType === "expense" && line.sourceId) {
           await client.query(
-            `UPDATE hub.expenses SET settled_line_id = $1, updated_at = NOW() WHERE id = $2`,
-            [lineRows[0].id, line.sourceId]
+            `UPDATE hub.expenses SET settled_line_id = $1, updated_at = NOW() WHERE id = $2 AND carrier_id = $3`,
+            [lineRows[0].id, line.sourceId, carrierId]
           )
         }
       }
@@ -242,6 +242,17 @@ export async function approveSettlement(
   )
   const carrier = await getCarrier(carrierId)
   const settings = await getCarrierSettings(carrierId)
+
+  // Claim draft -> approved atomically BEFORE any side effect. The escrow
+  // append below is not idempotent, so a concurrent double-approve (or a
+  // retry after a mid-flight failure) must lose here, not after the ledger
+  // already grew twice.
+  const claimed = await query<{ id: string }>(
+    `UPDATE hub.settlements SET status = 'approved', approved_by = $3, approved_at = NOW(), updated_at = NOW()
+     WHERE carrier_id = $1 AND id = $2 AND status = 'draft' RETURNING id`,
+    [carrierId, settlementId, actor.id]
+  )
+  if (claimed.length === 0) throw new Error("Only drafts can be approved")
 
   // Apply advances
   for (const line of lines.filter((l) => l.source_type === "advance" && l.source_id)) {
@@ -291,9 +302,9 @@ export async function approveSettlement(
   const statementUrl = await storeGeneratedPdf(`settlement-${settlementId}.pdf`, pdfBytes)
 
   await query(
-    `UPDATE hub.settlements SET status = 'approved', statement_url = $2, approved_by = $3, approved_at = NOW(), updated_at = NOW()
-     WHERE id = $1`,
-    [settlementId, statementUrl, actor.id]
+    `UPDATE hub.settlements SET statement_url = $3, updated_at = NOW()
+     WHERE carrier_id = $1 AND id = $2`,
+    [carrierId, settlementId, statementUrl]
   )
   await logAudit({
     carrierId, actorId: actor.id, actorName: actor.name,
