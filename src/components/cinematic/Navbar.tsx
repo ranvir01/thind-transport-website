@@ -18,7 +18,8 @@ import {
   Users,
   Truck,
   Shield,
-  ChevronRight
+  ChevronRight,
+  LayoutDashboard
 } from "lucide-react"
 import { COMPANY_INFO } from "@/lib/constants"
 
@@ -35,6 +36,7 @@ const driverMenuItems = [
 const companyMenuItems = [
   { href: "/about", label: "About Us", description: `Family-run since ${COMPANY_INFO.founded}`, icon: Users },
   { href: "/fleet", label: "Our Fleet", description: "2024 Cascadias", icon: Truck },
+  { href: "/loadoff", label: "LoadOff TMS", description: "The software we run on", icon: LayoutDashboard },
   { href: "/veterans", label: "Veterans", description: "We honor service", icon: Shield },
 ]
 

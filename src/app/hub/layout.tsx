@@ -4,6 +4,7 @@ import Script from "next/script"
 import { GeistMono } from "geist/font/mono"
 import { GeistSans } from "geist/font/sans"
 import { PRODUCT } from "@/lib/hub/product"
+import { ServiceWorkerBoot } from "@/components/hub/ServiceWorkerBoot"
 import "./hub-theme.css"
 
 export const metadata: Metadata = {
@@ -33,6 +34,7 @@ export default function HubLayout({ children }: { children: React.ReactNode }) {
       <Script id="hauldesk-theme-boot" strategy="beforeInteractive">
         {themeBoot}
       </Script>
+      <ServiceWorkerBoot />
       <SessionProvider>{children}</SessionProvider>
     </div>
   )

@@ -2,6 +2,7 @@ import Link from "next/link"
 import { CalendarOff, ChevronRight, ClipboardCheck, FileText, ShieldAlert } from "lucide-react"
 import { requireDriverUser } from "@/lib/hub/session"
 import { getCarrier } from "@/lib/hub/settings"
+import { InstallAppButton } from "@/components/hub/InstallAppButton"
 import { PushManager } from "@/components/hub/PushManager"
 import { SignOutButton } from "@/components/hub/SignOutButton"
 
@@ -52,6 +53,7 @@ export default async function DriverMorePage() {
         </a>
       ) : null}
 
+      <InstallAppButton />
       <PushManager />
 
       <div className="rounded-2xl border border-white/10 bg-navy-800/80 p-4">

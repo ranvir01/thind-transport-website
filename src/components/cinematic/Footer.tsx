@@ -44,6 +44,7 @@ const FooterLinkSections = () => {
   const companyLinks = [
     { href: "/about", label: "About Us" },
     { href: "/fleet", label: "Our Fleet" },
+    { href: "/loadoff", label: "LoadOff TMS" },
     { href: "/veterans", label: "Veterans Program" },
     { href: "https://safer.fmcsa.dot.gov/CompanySnapshot.aspx", label: "FMCSA SAFER Record", external: true },
     { href: "https://www.fmcsa.dot.gov/registration/whats-coming", label: "FMCSA Motus (Registration)", external: true },
