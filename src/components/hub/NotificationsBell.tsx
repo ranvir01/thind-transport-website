@@ -34,12 +34,17 @@ export function NotificationsBell({ direction = "down" }: { direction?: "down" |
   const [items, setItems] = useState<FeedItem[]>([])
   const [unread, setUnread] = useState(0)
   const panelRef = useRef<HTMLDivElement>(null)
+  // Monotonic fetch sequence: a response only applies if nothing superseded it
+  // (a newer fetch, or clearing the badge) while it was in flight.
+  const fetchSeq = useRef(0)
 
   const refresh = useCallback(async () => {
+    const seq = ++fetchSeq.current
     try {
       const res = await fetch("/api/hub/notifications")
       if (!res.ok) return
       const data = await res.json()
+      if (seq !== fetchSeq.current) return
       setItems(data.items ?? [])
       setUnread(data.unread ?? 0)
     } catch {
@@ -69,12 +74,20 @@ export function NotificationsBell({ direction = "down" }: { direction?: "down" |
   const toggle = async () => {
     const next = !open
     setOpen(next)
-    if (next && unread > 0) {
-      // Opening the feed clears the badge — simple and predictable.
-      fetch("/api/hub/notifications", { method: "POST" }).catch(() => {})
+    if (!next) return
+    if (unread > 0) {
+      // Opening the feed clears the badge — simple and predictable. Invalidate
+      // any in-flight poll (its stale unread count would resurrect the badge),
+      // and only re-fetch after the server has committed the mark-as-read.
+      fetchSeq.current++
       setUnread(0)
+      try {
+        await fetch("/api/hub/notifications", { method: "POST" })
+      } catch {
+        /* offline — the next poll restores server truth */
+      }
     }
-    if (next) refresh()
+    refresh()
   }
 
   return (
