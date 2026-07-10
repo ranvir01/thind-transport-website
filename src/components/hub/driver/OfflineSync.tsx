@@ -13,7 +13,8 @@ import {
   isOfflineError, listIntents, queueCount, removeIntent, type QueuedIntent,
 } from "./offline-queue"
 import {
-  driverAcknowledgeDispatch, driverAdvanceStatus, driverStopTimestamp, driverUploadDocument,
+  driverAcknowledgeAnnouncement, driverAcknowledgeDispatch, driverAdvanceStatus, driverStopTimestamp,
+  driverUploadDocument,
 } from "@/app/hub/_actions/driver"
 import { submitDvirAction } from "@/app/hub/_actions/dvir"
 
@@ -29,6 +30,11 @@ async function execute(intent: QueuedIntent): Promise<{ ok: boolean; error?: str
       )
     case "ack":
       return driverAcknowledgeDispatch(String(intent.payload.loadId))
+    case "announcement-ack":
+      return driverAcknowledgeAnnouncement(
+        String(intent.payload.announcementId),
+        intent.payload.signature ? String(intent.payload.signature) : null
+      )
     case "upload": {
       const formData = new FormData()
       formData.set("load_id", String(intent.payload.loadId))
