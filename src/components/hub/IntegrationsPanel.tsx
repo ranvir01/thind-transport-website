@@ -43,6 +43,7 @@ export function IntegrationCard({ card, encryptionReady }: { card: ProviderCard;
   const [pending, startTransition] = useTransition()
   const [open, setOpen] = useState(false)
   const [values, setValues] = useState<Record<string, string>>({})
+  const [confirmingDisconnect, setConfirmingDisconnect] = useState(false)
 
   const save = (e: React.FormEvent) => {
     e.preventDefault()
@@ -64,6 +65,7 @@ export function IntegrationCard({ card, encryptionReady }: { card: ProviderCard;
         toast.success("Disconnected — the CSV import path keeps working")
         router.refresh()
       } else toast.error(result.error ?? "Failed")
+      setConfirmingDisconnect(false)
     })
 
   const syncNow = () =>
@@ -147,17 +149,34 @@ export function IntegrationCard({ card, encryptionReady }: { card: ProviderCard;
               </button>
             ) : null}
             <button
-              onClick={() => setOpen(true)} disabled={pending}
+              onClick={() => { setOpen(true); setConfirmingDisconnect(false) }} disabled={pending}
               className="flex min-h-[40px] items-center gap-1.5 rounded-xl border border-border-strong px-4 text-sm font-semibold text-fg-2 hover:bg-hover disabled:opacity-60"
             >
               Edit
             </button>
-            <button
-              onClick={disconnect} disabled={pending}
-              className="flex min-h-[40px] items-center gap-1.5 rounded-xl border border-border-strong px-4 text-sm font-semibold text-fg-2 hover:bg-hover disabled:opacity-60"
-            >
-              <Unplug className="h-4 w-4" /> Disconnect
-            </button>
+            {confirmingDisconnect ? (
+              <>
+                <button
+                  onClick={disconnect} disabled={pending}
+                  className="flex min-h-[40px] items-center gap-1.5 rounded-xl bg-bad px-4 text-sm font-bold text-white hover:opacity-90 disabled:opacity-60"
+                >
+                  {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Unplug className="h-4 w-4" />} Disconnect it
+                </button>
+                <button
+                  onClick={() => setConfirmingDisconnect(false)} disabled={pending}
+                  className="flex min-h-[40px] items-center gap-1.5 rounded-xl border border-border-strong px-4 text-sm font-semibold text-fg-2 hover:bg-hover disabled:opacity-60"
+                >
+                  Keep
+                </button>
+              </>
+            ) : (
+              <button
+                onClick={() => setConfirmingDisconnect(true)} disabled={pending}
+                className="flex min-h-[40px] items-center gap-1.5 rounded-xl border border-border-strong px-4 text-sm font-semibold text-fg-2 hover:bg-hover disabled:opacity-60"
+              >
+                <Unplug className="h-4 w-4" /> Disconnect
+              </button>
+            )}
           </>
         ) : card.status === "planned" ? null : open ? (
           <form onSubmit={save} className="w-full space-y-2">
