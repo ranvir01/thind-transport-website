@@ -53,12 +53,12 @@ struct IftaResult {
     source: &'static str,
 }
 
+/// f64::round IS round-half-away-from-zero, and unlike the `(x + 0.5).floor()`
+/// idiom it never misrounds near-tie floats (0.49999999999999994 + 0.5 == 1.0
+/// exactly in f64) — keeping it bit-for-bit with the TS gateway's
+/// `Math.sign(v) * Math.round(Math.abs(v))` (src/lib/hub/rounding.ts).
 fn round_half_away_from_zero(x: f64) -> i64 {
-    if x >= 0.0 {
-        (x + 0.5).floor() as i64
-    } else {
-        (x - 0.5).ceil() as i64
-    }
+    x.round() as i64
 }
 
 /// Port of `computeIfta` in `src/lib/hub/ifta-core.ts` (golden parity: see tests).
@@ -423,6 +423,22 @@ mod tests {
     fn malformed_ifta_body_is_400() {
         let (status, _) = handle(&Method::Post, "/ifta/summary", Some("s3cret"), "{not json", "s3cret");
         assert_eq!(status, 400);
+    }
+
+    /// money.test.ts "rounds half away from zero" golden, plus the near-tie
+    /// floats where `(x + 0.5).floor()` diverges from JS Math.round:
+    /// 0.49999999999999994 + 0.5 == 1.0 exactly in f64, so the old idiom
+    /// returned ±1 for a value strictly below the half-cent boundary.
+    #[test]
+    fn round_half_away_from_zero_matches_ts_money_rounding() {
+        assert_eq!(round_half_away_from_zero(11110.5), 11111);
+        assert_eq!(round_half_away_from_zero(-11110.5), -11111);
+        assert_eq!(round_half_away_from_zero(785.714), 786);
+        assert_eq!(round_half_away_from_zero(-785.714), -786);
+        assert_eq!(round_half_away_from_zero(0.0), 0);
+        // Largest f64 strictly below 0.5 — must round to 0, as in TS.
+        assert_eq!(round_half_away_from_zero(0.499_999_999_999_999_94), 0);
+        assert_eq!(round_half_away_from_zero(-0.499_999_999_999_999_94), 0);
     }
 
     #[test]
