@@ -154,11 +154,19 @@ async function main() {
   check(paidButtons === 0, "no settlement actions once paid")
   await shot(page, "05-paid")
 
-  console.log("7. O/O percentage draft: net to the cent, escrow posts once")
+  console.log("7. O/O percentage draft: net to the cent, detention itemized, escrow posts once")
   await page.goto(`${BASE}${jasdeepDrafts[0]}`, { waitUntil: "networkidle2" })
   await waitForText(page, "Net pay")
   check(parseCents(await totalsValue(page, "Net pay")) === JASDEEP.netCents,
     `O/O net is 90% linehaul + FSC − escrow (${await totalsValue(page, "Net pay")})`)
+  // settle3 carries a $150 auto-billed Detention accessorial: the evaluator
+  // names its 90% share on its own line instead of blending it into the base.
+  const jasdeepDetail = await page.evaluate(() => document.body.innerText)
+  check(jasdeepDetail.includes("90% of detention $150.00"),
+    "detention share itemized as its own earning line")
+  check(jasdeepDetail.includes("$135.00"), "detention line pays 90% × $150.00 = $135.00")
+  check(jasdeepDetail.includes("90% of $2500.00") && jasdeepDetail.includes("$2,250.00"),
+    "remainder line excludes detention from its base ($2,250.00 of $2500.00)")
   await clickByText(page, "Approve", { tag: "button" })
   await waitForText(page, "Status: approved", 20000)
   await page.goto(`${BASE}/hub/money/settlements`, { waitUntil: "networkidle2" })

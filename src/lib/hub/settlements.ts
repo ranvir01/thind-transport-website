@@ -101,7 +101,7 @@ export async function draftSettlements(
     // Loads delivered or beyond, not yet attached to a settlement
     const loads = await query<{
       id: string; reference: string; linehaul_cents: number; fuel_surcharge_cents: number
-      accessorials: { amount_cents: number }[]; loaded_miles: number | null; deadhead_miles: number | null
+      accessorials: { label?: string; amount_cents: number }[]; loaded_miles: number | null; deadhead_miles: number | null
       stops_count: number | null
     }>(
       `SELECT id, reference, linehaul_cents, fuel_surcharge_cents, accessorials, loaded_miles, deadhead_miles,
@@ -136,17 +136,24 @@ export async function draftSettlements(
       [carrierId, driver.id]
     )
 
-    const loadInputs: PayLoadContext[] = loads.map((load) => ({
-      id: load.id,
-      reference: load.reference,
-      linehaulCents: Number(load.linehaul_cents),
-      fuelSurchargeCents: Number(load.fuel_surcharge_cents),
-      accessorialCents: (Array.isArray(load.accessorials) ? load.accessorials : [])
-        .reduce((sum, a) => sum + Number(a.amount_cents || 0), 0),
-      loadedMiles: load.loaded_miles ?? 0,
-      deadheadMiles: load.deadhead_miles ?? 0,
-      stopsCount: Number(load.stops_count ?? 0),
-    }))
+    const loadInputs: PayLoadContext[] = loads.map((load) => {
+      const accessorials = Array.isArray(load.accessorials) ? load.accessorials : []
+      return {
+        id: load.id,
+        reference: load.reference,
+        linehaulCents: Number(load.linehaul_cents),
+        fuelSurchargeCents: Number(load.fuel_surcharge_cents),
+        accessorialCents: accessorials.reduce((sum, a) => sum + Number(a.amount_cents || 0), 0),
+        // Same matcher applyDetentionAccrual upserts with — lets percent rules
+        // itemize the detention share as its own settlement line.
+        detentionCents: accessorials
+          .filter((a) => /detention/i.test(String(a.label ?? "")))
+          .reduce((sum, a) => sum + Number(a.amount_cents || 0), 0),
+        loadedMiles: load.loaded_miles ?? 0,
+        deadheadMiles: load.deadhead_miles ?? 0,
+        stopsCount: Number(load.stops_count ?? 0),
+      }
+    })
 
     // The settlement engine consumes ONLY the generic pay-rules evaluator.
     // A driver's rule set lives in hub.pay_rules (seeded from the legacy
