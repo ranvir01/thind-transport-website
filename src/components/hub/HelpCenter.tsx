@@ -50,6 +50,39 @@ export function HelpCenter() {
       </section>
 
       <section>
+        <h2 className="text-[13.5px] font-semibold text-fg mb-3">Video walkthroughs</h2>
+        <p className="text-sm text-fg-3 mb-3">
+          30-second captioned recordings of the real product — watch with the sound off.
+        </p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {[
+            { src: "/videos/tour-office.mp4", poster: "/videos/poster-office.jpg", title: "Run the morning", blurb: "Today → dispatch → loads → money → integrations" },
+            { src: "/videos/tour-money.mp4", poster: "/videos/poster-money.jpg", title: "From delivered to paid", blurb: "Invoices, receivables, driver settlements" },
+            { src: "/videos/tour-driver.mp4", poster: "/videos/poster-driver.jpg", title: "The driver app", blurb: "Confirm, status taps, pay stubs, install on a phone" },
+          ].map((video) => (
+            <Panel key={video.src} className="overflow-hidden">
+              <video
+                poster={video.poster}
+                controls
+                muted
+                playsInline
+                preload="none"
+                className="w-full h-auto"
+                aria-label={`${video.title} — ${video.blurb}`}
+              >
+                <source src={video.src} type="video/mp4" />
+                <source src={video.src.replace(/\.mp4$/, ".webm")} type="video/webm" />
+              </video>
+              <div className="p-3">
+                <h3 className="font-semibold text-fg text-sm">{video.title}</h3>
+                <p className="mt-0.5 text-xs text-fg-3">{video.blurb}</p>
+              </div>
+            </Panel>
+          ))}
+        </div>
+      </section>
+
+      <section>
         <h2 className="text-[13.5px] font-semibold text-fg mb-3">Common questions</h2>
         <div className="space-y-2">
           {HELP_TOPICS.map((topic) => (

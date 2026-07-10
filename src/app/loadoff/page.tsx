@@ -1,6 +1,5 @@
 import { Metadata } from "next"
 import Link from "next/link"
-import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -90,33 +89,65 @@ export default function LoadOffPage() {
       </div>
 
       <div className="container py-16">
-        {/* Product shots */}
+        {/* Watch it run — real screen recordings with captions, no audio needed */}
+        <h2 className="text-3xl font-black text-gray-900 text-center mb-3">Watch it run</h2>
+        <p className="text-center text-gray-600 mb-8 max-w-2xl mx-auto">
+          Real recordings of the live product with captions — no sound needed.
+        </p>
         <div className="grid lg:grid-cols-3 gap-8 mb-16 items-start">
           <Card className="lg:col-span-2 overflow-hidden shadow-xl border-gray-100">
-            <Image
-              src="/images/loadoff/today.png"
-              alt="LoadOff Today command center — active loads, money owed, and what needs attention this morning"
-              width={1440}
-              height={900}
+            <video
+              poster="/videos/poster-office.jpg"
+              controls
+              muted
+              playsInline
+              preload="none"
               className="w-full h-auto"
-              priority
-            />
+              aria-label="LoadOff office walkthrough: Today, dispatch, loads, money, and integrations in 36 seconds"
+            >
+              <source src="/videos/tour-office.mp4" type="video/mp4" />
+              <source src="/videos/tour-office.webm" type="video/webm" />
+            </video>
             <p className="px-5 py-3 text-sm text-gray-600 border-t border-gray-100">
-              The Today screen: what&rsquo;s due, who hasn&rsquo;t confirmed, and money not yet invoiced.
+              The whole morning in 36 seconds — Today, dispatch, loads, money, integrations.
             </p>
           </Card>
-          <Card className="overflow-hidden shadow-xl border-gray-100 max-w-[300px] mx-auto lg:mx-0">
-            <Image
-              src="/images/loadoff/driver.png"
-              alt="LoadOff driver phone app — dispatch confirmation, driver tips, and camera POD upload"
-              width={390}
-              height={844}
-              className="w-full h-auto"
-            />
-            <p className="px-5 py-3 text-sm text-gray-600 border-t border-gray-100">
-              The driver app — installs from the browser.
-            </p>
-          </Card>
+          <div className="space-y-8">
+            <Card className="overflow-hidden shadow-xl border-gray-100">
+              <video
+                poster="/videos/poster-money.jpg"
+                controls
+                muted
+                playsInline
+                preload="none"
+                className="w-full h-auto"
+                aria-label="LoadOff money walkthrough: invoices, receivables, and driver settlements"
+              >
+                <source src="/videos/tour-money.mp4" type="video/mp4" />
+                <source src="/videos/tour-money.webm" type="video/webm" />
+              </video>
+              <p className="px-5 py-3 text-sm text-gray-600 border-t border-gray-100">
+                From delivered to paid — invoices and settlements.
+              </p>
+            </Card>
+            <Card className="overflow-hidden shadow-xl border-gray-100 max-w-[300px] mx-auto lg:mx-0">
+              <video
+                poster="/videos/poster-driver.jpg"
+                controls
+                muted
+                playsInline
+                preload="none"
+                className="w-full h-auto"
+                aria-label="LoadOff driver app walkthrough: confirm a dispatch, pay stubs, and install from the browser"
+              >
+                <source src="/videos/tour-driver.mp4" type="video/mp4" />
+                <source src="/videos/tour-driver.webm" type="video/webm" />
+              </video>
+              <p className="px-5 py-3 text-sm text-gray-600 border-t border-gray-100">
+                The driver app — installs from the browser.
+              </p>
+            </Card>
+          </div>
         </div>
 
         {/* Modules */}
