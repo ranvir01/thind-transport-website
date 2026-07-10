@@ -10,9 +10,57 @@ actually connected (Terminal wins if somehow both are).
 
 TruckX (the ELD our carriers already run) has no public API of its own — it only exposes data
 through TSP aggregators, and TruckerCloud is the second one after Terminal. Public marketing
-describes TruckerCloud as an "API-based telematics data aggregator" fronting 50+ underlying ELD
-providers under one normalized API (their product is branded the "Apollo API"), the same
-value proposition as Terminal.
+describes TruckerCloud as an "API-based telematics data aggregator" fronting 100+ underlying
+ELD/camera providers under one normalized API, the same value proposition as Terminal.
+
+**Correction (2026-07-10 evening pass):** an earlier pass claimed TruckerCloud's product is
+"branded the Apollo API". That was a misreading of search snippets — **Apollo ELD is one of the
+ELD providers TruckerCloud aggregates** (it has its own connector page at
+`truckercloud.com/integrations/connect-apollo-eld`, alongside `connect-truckx-eld-d`,
+`connect-samsara-eld`, etc.). No public brand name for TruckerCloud's own API surfaced in any
+pass; don't go looking for "Apollo API" docs.
+
+## Market positioning — insurance pivot (2026-07-10 evening pass)
+
+TruckerCloud's homepage now titles itself **"Auto Insurance Telematics Aggregator"** and its
+marketing describes "a complete telematics intelligence platform built specifically for
+commercial auto insurers". Recent public activity is all insurer-side: a September 2025
+partnership with QEO Insurance Group (underwriting/loss-control/claims), named to FinTech
+Global's InsurTech100 (Nov 2024), and dedicated `/program/<insurer>` pages for RLI, ISC, NTA,
+and QEO. Backed by Rule 1 Ventures (2021), CEO Spencer Mitchell, Atlanta; no acquisition or new
+funding round surfaced through mid-2026.
+
+Implication for us: our use case (a carrier-facing TMS pulling its own trucks' positions/HOS) is
+not the customer they market to — carriers appear in their flow as the party that *authorizes*
+data sharing to an insurer, not as API consumers. A developer account for LoadOff may still be
+possible (their integration pages do say "Get The APIs"), but Terminal remains the primary
+aggregator bet and this adapter stays the fallback. Worth asking about carrier/TMS API access
+explicitly if outreach happens: support@truckercloud.com, help center at
+`truckercloud.zendesk.com`.
+
+## Carrier-side onboarding flow (confirmed from TruckX/TruckerCloud snippets)
+
+How a carrier authorizes TruckX→TruckerCloud data sharing (this is consent plumbing, not our
+API auth, but it's the part the owner would actually perform):
+
+1. Log into the **TruckX** portal → "API Key" in the sidebar → "+ Share API Key".
+2. In "Select API Partner" choose **TruckerCloud**; select all drivers, trucks, trailers.
+3. Accept terms → "Send API Key".
+4. On TruckerCloud's onboarding page, check "Utilize my existing ELD provider credentials".
+
+TruckerCloud's Zendesk hosts per-ELD carrier onboarding guides
+(`truckercloud.zendesk.com/hc/en-us/articles/4415549969435`), which instruct carriers to add
+TruckerCloud as an authorized user or obtain API credentials from their ELD provider. Data
+surfaced per their connector pages: vehicle location, VIN, license plate, driver identity/HOS,
+safety events — consistent with the `vehicles`/`hos` split our adapter assumes.
+
+## Competitive context
+
+Terminal advertises 316 supported telematics providers vs TruckerCloud's 100+ (170+ counting
+cameras); a third aggregator, **Axle** (axle.insure / getaxle.com — "universal telematics
+API"), also fronts TruckX and is carrier/fleet-app oriented. If TruckerCloud's insurer focus
+ever forecloses a carrier-facing account, Axle is the natural candidate to research as the
+second `TelematicsSource` instead — same drop-in interface swap.
 
 ## Auth model (assumed, unconfirmed)
 
@@ -92,11 +140,16 @@ connected — this adapter, like Terminal's, is additive.
 ## Open questions for the next pass
 
 - Confirm the real token endpoint path and grant type against an actual TruckerCloud developer
-  packet — the #1 blocker to flipping status from stub to live. Two scout passes in a row
-  (2026-07-06, 2026-07-10) have hit the same 403 wall on `truckercloud.com/integrations/*`; a
-  future pass should try a signed-in developer-portal URL or a direct outreach ask instead of
-  another anonymous fetch, since the public marketing pages won't yield auth details.
+  packet — the #1 blocker to flipping status from stub to live. Three scout fetch attempts
+  (2026-07-06, 2026-07-10 ×2) have hit the same 403 wall on `truckercloud.com/*`,
+  `docs.truckercloud.com`, and even `truckercloud.zendesk.com`; archive.org is blocked by this
+  environment's network policy, so anonymous scouting is exhausted. Next step is human
+  outreach: email support@truckercloud.com asking specifically whether carrier/TMS API access
+  (not insurer access) is offered, and for a developer packet.
 - Confirm `/vehicles` and `/hos` response field names (best guess above).
+- **Ask outreach question first**: given the insurer repositioning (see "Market positioning"),
+  confirm TruckerCloud still sells API access to carrier-facing platforms at all before
+  spending more effort here; if not, redirect this fallback-aggregator slot to Axle.
 - Same open item as Terminal and EFS: no 429/5xx retry-with-backoff on the single `fetch` calls
   in `truckerCloudSource`'s `request()`/token exchange — a transient error fails that day's sync
   silently.
