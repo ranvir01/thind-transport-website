@@ -131,6 +131,19 @@ suite("portal + tenant isolation (query layer)", () => {
     }
   })
 
+  it("a broker cannot fetch another customer's load by id", async () => {
+    expect(await portal.portalLoad(T1, customerA, loadB)).toBeNull()
+    expect(await portal.portalLoad(T1, customerA, tenant2Load)).toBeNull()
+    const legit = await portal.portalLoad(T1, customerA, loadA)
+    expect(legit?.reference).toBe(`ISO-A-${suffix}`)
+    expect(legit?.stops).toHaveLength(2)
+    expect(Object.keys(legit!)).not.toContain("truck_id")
+    // Timeline stops are public-safe: no facility address, refs, or raw GPS.
+    for (const forbidden of ["address", "facility", "lat", "lng", "pickup_number", "po_number", "notes"]) {
+      expect(Object.keys(legit!.stops[0])).not.toContain(forbidden)
+    }
+  })
+
   it("a broker cannot fetch another customer's load documents", async () => {
     const stolen = await portal.portalLoadDocuments(T1, customerA, loadB)
     expect(stolen).toHaveLength(0)

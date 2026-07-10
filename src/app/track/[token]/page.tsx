@@ -1,6 +1,6 @@
 import type { Metadata } from "next"
 import { getTrackedLoad } from "@/lib/hub/sharelinks"
-import { STATUS_LABELS, LOAD_STATUSES, type LoadStatus } from "@/lib/hub/types"
+import { STATUS_LABELS, type LoadStatus } from "@/lib/hub/types"
 import { TrackRefresher } from "@/components/hub/TrackRefresher"
 
 export const dynamic = "force-dynamic"
