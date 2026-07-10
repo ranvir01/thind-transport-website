@@ -112,6 +112,16 @@ Prompts: `loadoff-integrator.prompt.md`, `loadoff-prod-smoke.prompt.md`, `loadof
 **Catch-up mode:** while `npm run agent:status` exits 1, deploy agent drains integrator → `main` only
 (no new feature work). When caught up, one backlog item per hour.
 
+**Drain redundancy (learned 2026-07-10):** the drain must NOT depend on any single agent being alive.
+Cursor's cloud VMs went read-only for a stretch, the :59 deploy agent silently stopped merging, and the
+production alias sat hours behind a green integrator — everything looked like "Vercel is broken" when
+Vercel was fine. Rule: ANY agent (Claude routine or Cursor) that finds catch-up mode with a green
+integrator drains it (`git push origin <integrator>:main` fast-forward, or merge when diverged) before
+its own work. PR #13 is merged/closed (2026-07-03) — never wait on a PR merge to reach `main`; the
+drain is a direct push. Two deploy-blockers seen in the wild so far, both cron validation on the Vercel
+Hobby plan: sub-daily schedules and (guard) job count — preview deploys skip cron validation, so
+"previews green, production stale" is the signature of a vercel.json cron problem.
+
 Legacy single-automation files (`hauldesk-improvement-cycle.*`) alias to `loadoff-deploy.*`.
 
 ### 3b. Release gate (before any deploy is called done)
