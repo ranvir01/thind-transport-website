@@ -8,6 +8,9 @@
 --    (replays collapse on the unique key) for async processing.
 
 ALTER TABLE hub.api_credentials DROP CONSTRAINT IF EXISTS api_credentials_provider_check;
+-- Drop-then-add (the pattern every constraint migration here uses) so a rerun
+-- on a DB where this applied outside the tracker stays idempotent.
+ALTER TABLE hub.api_credentials DROP CONSTRAINT IF EXISTS api_credentials_provider_shape;
 ALTER TABLE hub.api_credentials
   ADD CONSTRAINT api_credentials_provider_shape CHECK (provider ~ '^[a-z][a-z0-9_-]{1,39}$');
 

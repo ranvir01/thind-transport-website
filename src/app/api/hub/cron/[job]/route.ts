@@ -16,6 +16,11 @@ import { pollDocsMailbox } from "@/lib/hub/mailbox"
 import { sendOwnerDigest } from "@/lib/hub/digest"
 import { getCarrierSettings } from "@/lib/hub/settings"
 import { createMailTransport, mailFrom } from "@/lib/mailer"
+import { runMigrations } from "@/lib/hub/migrate"
+
+// Migrations on a cold backlog can outlive the default limit; 60s is the cap
+// on Hobby and a no-op run finishes in well under a second.
+export const maxDuration = 60
 
 /**
  * Vercel Cron entrypoints (secret-protected):
@@ -34,6 +39,29 @@ export async function GET(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
   const { job } = await params
+
+  // Schema first: migrate runs before the carriers query below can assume any
+  // table exists, and applies exactly the migrations bundled with this deploy.
+  if (job === "migrate") {
+    const started = new Date()
+    try {
+      const result = await runMigrations()
+      await query(
+        `INSERT INTO hub.integration_syncs (carrier_id, source, started_at, finished_at, ok, counts)
+         VALUES (NULL, 'cron:migrate', $1, NOW(), TRUE, $2)`,
+        [started.toISOString(), JSON.stringify(result)]
+      ).catch(() => undefined)
+      return NextResponse.json({ ok: true, job, ...result })
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "unknown"
+      await query(
+        `INSERT INTO hub.integration_syncs (carrier_id, source, started_at, finished_at, ok, error)
+         VALUES (NULL, 'cron:migrate', $1, NOW(), FALSE, $2)`,
+        [started.toISOString(), message]
+      ).catch(() => undefined)
+      return NextResponse.json({ ok: false, job, error: message }, { status: 500 })
+    }
+  }
 
   const carriers = await query<{ id: string; name: string }>(
     `SELECT id, name FROM hub.carriers WHERE status = 'active'`
