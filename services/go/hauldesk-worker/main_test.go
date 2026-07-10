@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"math"
 	"net/http"
@@ -197,6 +198,32 @@ func TestRouteMilesFallbackOnMalformedOSRMBody(t *testing.T) {
 	}
 	if payload := decodeBody(t, rec); payload["source"] != "haversine-fallback" {
 		t.Fatalf("expected source haversine-fallback, got %v", payload["source"])
+	}
+}
+
+func TestOsrmMilesDefaultsToPublicDemoWhenURLUnset(t *testing.T) {
+	// Unset OSRM_URL must fall through to the public demo host rather than an
+	// empty base — verified via an already-canceled context so the assertion
+	// stays fast and offline instead of depending on real network reachability.
+	t.Setenv("OSRM_URL", "")
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	_, err := osrmMiles(ctx, latLng{Lat: 0, Lng: 0}, latLng{Lat: 0, Lng: 1})
+	if err == nil {
+		t.Fatal("expected error from canceled context")
+	}
+	if !strings.Contains(err.Error(), "router.project-osrm.org") {
+		t.Fatalf("expected default OSRM_URL in error, got: %v", err)
+	}
+}
+
+func TestOsrmMilesRequestConstructionError(t *testing.T) {
+	// A malformed OSRM_URL (e.g. from a bad env var) must surface as a plain
+	// error from osrmMiles/the fallback path, not a panic on a nil request.
+	t.Setenv("OSRM_URL", "http://example.com/\x7f")
+	_, err := osrmMiles(context.Background(), latLng{Lat: 0, Lng: 0}, latLng{Lat: 0, Lng: 1})
+	if err == nil {
+		t.Fatal("expected error for malformed OSRM_URL")
 	}
 }
 
