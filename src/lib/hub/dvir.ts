@@ -50,13 +50,37 @@ export interface Dvir {
 const DVIR_SELECT = `
   SELECT v.*, t.unit_number AS truck_unit, d.first_name || ' ' || d.last_name AS driver_name
   FROM hub.dvirs v
-  JOIN hub.trucks t ON t.id = v.truck_id
-  JOIN hub.drivers d ON d.id = v.driver_id`
+  JOIN hub.trucks t ON t.id = v.truck_id AND t.carrier_id = v.carrier_id
+  JOIN hub.drivers d ON d.id = v.driver_id AND d.carrier_id = v.carrier_id`
 
 export async function listDvirsForTruck(carrierId: string, truckId: string, limit = 10): Promise<Dvir[]> {
   return query<Dvir>(
     `${DVIR_SELECT} WHERE v.carrier_id = $1 AND v.truck_id = $2 ORDER BY v.created_at DESC LIMIT $3`,
     [carrierId, truckId, limit]
+  )
+}
+
+/**
+ * Is this truck the driver's to inspect — their seated assignment, or their
+ * active load's truck? (Same rule as the driver DVIR page's own lookup.)
+ * A driver's own carrier scope isn't enough here: without this check any
+ * driver could file (and potentially ground) a truck they've never touched.
+ */
+export async function driverOwnsTruck(
+  carrierId: string,
+  driverId: string,
+  truckId: string
+): Promise<{ id: string; unit_number: string } | null> {
+  return queryOne<{ id: string; unit_number: string }>(
+    `SELECT t.id, t.unit_number FROM hub.trucks t
+     WHERE t.carrier_id = $1 AND t.id = $2 AND t.deleted_at IS NULL
+       AND (t.assigned_driver_id = $3 OR t.id = (
+         SELECT l.truck_id FROM hub.loads l
+         WHERE l.carrier_id = $1 AND l.driver_id = $3 AND l.deleted_at IS NULL
+           AND l.status IN ('dispatched','at_pickup','in_transit','delivered')
+         ORDER BY l.created_at DESC LIMIT 1
+       ))`,
+    [carrierId, truckId, driverId]
   )
 }
 
