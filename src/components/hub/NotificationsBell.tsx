@@ -34,12 +34,17 @@ export function NotificationsBell({ direction = "down" }: { direction?: "down" |
   const [items, setItems] = useState<FeedItem[]>([])
   const [unread, setUnread] = useState(0)
   const panelRef = useRef<HTMLDivElement>(null)
+  // Bumped on every mark-all-read so in-flight GETs from before the clear
+  // can't land afterwards and resurrect the stale unread badge.
+  const epoch = useRef(0)
 
   const refresh = useCallback(async () => {
+    const started = epoch.current
     try {
       const res = await fetch("/api/hub/notifications")
       if (!res.ok) return
       const data = await res.json()
+      if (started !== epoch.current) return
       setItems(data.items ?? [])
       setUnread(data.unread ?? 0)
     } catch {
@@ -69,12 +74,20 @@ export function NotificationsBell({ direction = "down" }: { direction?: "down" |
   const toggle = async () => {
     const next = !open
     setOpen(next)
-    if (next && unread > 0) {
-      // Opening the feed clears the badge — simple and predictable.
-      fetch("/api/hub/notifications", { method: "POST" }).catch(() => {})
+    if (!next) return
+    if (unread > 0) {
+      // Opening the feed clears the badge. Await the write before refreshing
+      // so the follow-up GET can't read a pre-clear snapshot; if the write
+      // fails (offline), the refresh below restores the real server count.
+      epoch.current++
       setUnread(0)
+      try {
+        await fetch("/api/hub/notifications", { method: "POST" })
+      } catch {
+        /* offline — refresh() will restore the true unread count */
+      }
     }
-    if (next) refresh()
+    refresh()
   }
 
   return (
