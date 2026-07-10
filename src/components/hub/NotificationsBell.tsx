@@ -66,15 +66,21 @@ export function NotificationsBell({ direction = "down" }: { direction?: "down" |
     return () => document.removeEventListener("mousedown", close)
   }, [open])
 
-  const toggle = async () => {
+  const toggle = () => {
     const next = !open
     setOpen(next)
-    if (next && unread > 0) {
-      // Opening the feed clears the badge — simple and predictable.
-      fetch("/api/hub/notifications", { method: "POST" }).catch(() => {})
+    if (!next) return
+    if (unread > 0) {
+      // Opening the feed clears the badge — mark read on the server BEFORE
+      // refetching, or the parallel GET wins the race and restores the
+      // stale unread count.
       setUnread(0)
+      fetch("/api/hub/notifications", { method: "POST" })
+        .catch(() => {})
+        .then(() => refresh())
+    } else {
+      refresh()
     }
-    if (next) refresh()
   }
 
   return (
