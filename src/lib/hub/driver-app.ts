@@ -4,7 +4,7 @@
  * enforced here at the query layer, not in the UI.
  */
 import { query, queryOne } from "./db"
-import type { Load, Stop, Settlement, HubDocument, DocumentRequest } from "./types"
+import type { Load, Stop, Settlement, SettlementLine, HubDocument, DocumentRequest } from "./types"
 
 /** Statuses where a load is "live" for the driver. */
 export const DRIVER_ACTIVE_STATUSES = ["dispatched", "at_pickup", "in_transit", "delivered"] as const
@@ -89,6 +89,20 @@ export async function driverSettlements(
      WHERE s.carrier_id = $1 AND s.driver_id = $2 AND s.status IN ('approved','paid')
      ORDER BY s.period_end DESC LIMIT $3`,
     [carrierId, driverId, limit]
+  )
+}
+
+/** Line items for one of the driver's own settlements — guarded by driver_id, not just carrier_id. */
+export async function driverSettlementLines(
+  carrierId: string,
+  driverId: string,
+  settlementId: string
+): Promise<SettlementLine[]> {
+  return query<SettlementLine>(
+    `SELECT sl.* FROM hub.settlement_lines sl
+     JOIN hub.settlements s ON s.id = sl.settlement_id AND s.carrier_id = $1 AND s.driver_id = $2
+     WHERE sl.settlement_id = $3 ORDER BY sl.kind, sl.created_at`,
+    [carrierId, driverId, settlementId]
   )
 }
 

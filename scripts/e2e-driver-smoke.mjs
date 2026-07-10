@@ -82,9 +82,12 @@ async function main() {
     await sleep(800)
     await shot(page, "08-chat")
 
-    console.log("7. Pay screen")
+    console.log("7. Pay screen — expand a settlement to see its lines")
     await page.goto(`${BASE}/hub/driver/pay`, { waitUntil: "networkidle2" })
     await shot(page, "09-pay")
+    await page.click("details summary")
+    await waitForText(page, "Insurance")
+    await shot(page, "09b-pay-expanded")
 
     console.log("8. Time off request")
     await page.goto(`${BASE}/hub/driver/timeoff`, { waitUntil: "networkidle2" })
