@@ -1,7 +1,7 @@
 import Link from "next/link"
 import {
-  weeklyRevenueTrend, monthlyRevenueTrend, arAgingTrend, settlementLiability,
-  type RevenuePeriod, type AgingTrendPeriod, type SettlementLiability,
+  weeklyRevenueTrend, monthlyRevenueTrend, arAgingTrend, settlementLiability, fuelSpendSummary,
+  type RevenuePeriod, type AgingTrendPeriod, type SettlementLiability, type FuelSpendSummary,
 } from "@/lib/hub/reports"
 import { truckPnl } from "@/lib/hub/expenses"
 import { computeFleetKpis } from "@/lib/hub/kpi"
@@ -201,6 +201,49 @@ function SettlementLiabilityPanel({ liability }: { liability: SettlementLiabilit
   )
 }
 
+function FuelSpendPanel({ fuel }: { fuel: FuelSpendSummary }) {
+  return (
+    <div>
+      <div className="grid grid-cols-2 gap-3 px-4 pt-4">
+        <div>
+          <span className="text-label text-fg-3 uppercase">Month to date</span>
+          <p className="mt-1 font-display text-2xl font-extrabold text-fg">{fmtCents(fuel.monthCents)}</p>
+        </div>
+        <div>
+          <span className="text-label text-fg-3 uppercase">Week to date</span>
+          <p className="mt-1 font-display text-2xl font-extrabold text-fg">{fmtCents(fuel.weekCents)}</p>
+        </div>
+      </div>
+
+      <div className="flex flex-wrap gap-x-4 gap-y-1 px-4 pt-3 text-[11px] text-fg-3">
+        <span>{fuel.monthGallons.toLocaleString(undefined, { maximumFractionDigits: 0 })} gal this month</span>
+        <span>{fuel.avgPriceCents != null ? `$${(fuel.avgPriceCents / 100).toFixed(2)}/gal avg` : "—"}</span>
+      </div>
+
+      {fuel.topTrucks.length > 0 ? (
+        <div className="mt-3 divide-y divide-border border-t border-border">
+          {fuel.topTrucks.map((t, i) => (
+            <div key={t.truck_id ?? i} className="flex items-center justify-between gap-3 px-4 py-2.5">
+              <span className="truncate text-sm font-semibold text-fg">{t.truck_unit ?? "Unassigned"}</span>
+              <span className="shrink-0 text-sm text-fg-2 tabular-nums">
+                {t.gallons.toLocaleString(undefined, { maximumFractionDigits: 0 })} gal · {fmtCents(t.total_cents)}
+              </span>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p className="px-4 py-4 text-body-sm text-fg-3">No fuel receipts this month.</p>
+      )}
+
+      <div className="px-4 pb-4 pt-3">
+        <Link href="/hub/fuel" className="text-[11px] font-semibold text-accent-text hover:underline">
+          Full fuel log →
+        </Link>
+      </div>
+    </div>
+  )
+}
+
 function ComplianceRedFlagsPanel({ entries }: { entries: ComplianceEntry[] }) {
   const summary = summarize(entries)
   const worst = entries.filter((e) => e.color !== "green").slice(0, 5)
@@ -257,7 +300,7 @@ function ComplianceRedFlagsPanel({ entries }: { entries: ComplianceEntry[] }) {
 
 export default async function OwnerDashboardPage() {
   const user = await requirePermissionPage("money:read")
-  const [weekly, monthly, aging, pnl, lanes, liability, compliance] = await Promise.all([
+  const [weekly, monthly, aging, pnl, lanes, liability, compliance, fuel] = await Promise.all([
     weeklyRevenueTrend(user.carrierId, 8),
     monthlyRevenueTrend(user.carrierId, 6),
     arAgingTrend(user.carrierId, 8),
@@ -268,6 +311,7 @@ export default async function OwnerDashboardPage() {
     ),
     settlementLiability(user.carrierId),
     complianceEntries(user.carrierId),
+    fuelSpendSummary(user.carrierId),
   ])
 
   const weekLabel = (iso: string) =>
@@ -320,6 +364,9 @@ export default async function OwnerDashboardPage() {
       <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
         <Panel title="Compliance red flags">
           <ComplianceRedFlagsPanel entries={compliance} />
+        </Panel>
+        <Panel title="Fuel spend">
+          <FuelSpendPanel fuel={fuel} />
         </Panel>
       </div>
     </div>

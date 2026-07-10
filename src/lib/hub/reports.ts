@@ -129,3 +129,55 @@ export async function settlementLiability(carrierId: string): Promise<Settlement
   const approvedCents = Number(row?.approved_cents ?? 0)
   return { draftCents, approvedCents, totalCents: draftCents + approvedCents }
 }
+
+/**
+ * Fuel spend (M10) — week-to-date / month-to-date pump spend, with the
+ * month's biggest-spending trucks. Every gallon counts toward spend (unlike
+ * MPG, which excludes reefer/DEF — see fuel-core.ts); an owner watching cash
+ * out the door wants the whole pump bill, not just propulsion fuel.
+ */
+export interface FuelSpendTruck {
+  truck_id: string | null
+  truck_unit: string | null
+  total_cents: number
+  gallons: number
+}
+
+export interface FuelSpendSummary {
+  weekCents: number
+  monthCents: number
+  monthGallons: number
+  avgPriceCents: number | null
+  topTrucks: FuelSpendTruck[]
+}
+
+export async function fuelSpendSummary(carrierId: string): Promise<FuelSpendSummary> {
+  const totals = await queryOne<{ week_cents: string; month_cents: string; month_gallons: string }>(
+    `SELECT
+       COALESCE(SUM(total_cents) FILTER (WHERE ts >= date_trunc('week', NOW())), 0) AS week_cents,
+       COALESCE(SUM(total_cents) FILTER (WHERE ts >= date_trunc('month', NOW())), 0) AS month_cents,
+       COALESCE(SUM(gallons) FILTER (WHERE ts >= date_trunc('month', NOW())), 0) AS month_gallons
+     FROM hub.fuel_transactions
+     WHERE carrier_id = $1`,
+    [carrierId]
+  )
+  const topTrucks = await query<FuelSpendTruck>(
+    `SELECT f.truck_id, t.unit_number AS truck_unit,
+       SUM(f.total_cents)::int AS total_cents, SUM(f.gallons) AS gallons
+     FROM hub.fuel_transactions f
+     LEFT JOIN hub.trucks t ON t.id = f.truck_id AND t.carrier_id = f.carrier_id
+     WHERE f.carrier_id = $1 AND f.ts >= date_trunc('month', NOW())
+     GROUP BY f.truck_id, t.unit_number
+     ORDER BY total_cents DESC LIMIT 5`,
+    [carrierId]
+  )
+  const monthCents = Number(totals?.month_cents ?? 0)
+  const monthGallons = Number(totals?.month_gallons ?? 0)
+  return {
+    weekCents: Number(totals?.week_cents ?? 0),
+    monthCents,
+    monthGallons,
+    avgPriceCents: monthGallons > 0 ? Math.round(monthCents / monthGallons) : null,
+    topTrucks: topTrucks.map((t) => ({ ...t, total_cents: Number(t.total_cents), gallons: Number(t.gallons) })),
+  }
+}
