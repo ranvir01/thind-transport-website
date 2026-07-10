@@ -13,7 +13,7 @@ as an urgent `Backlog:` item.
 | `mailbox` | **Built** — generic IMAP client, not a vendor SDK. Plain LOGIN auth — broken against M365/Google Workspace, see doc | `host`, `port`, `user`, `password`, `folder` | `src/lib/hub/mailbox.ts` | [`mailbox.md`](./mailbox.md) | 2026-07-07 |
 | `fmcsa` (adjacent, free, not in `IntegrationProvider` union — no stored creds) | **Built** — QCMobile broker vetting | `FMCSA_WEBKEY` env | `src/lib/hub/vetting.ts` | [`fmcsa.md`](./fmcsa.md) | 2026-07-07 |
 | `eia` (adjacent, free, not in `IntegrationProvider` union) | **Built** — diesel price benchmark | `EIA_API_KEY` env | `src/lib/hub/fuel.ts` | [`eia.md`](./eia.md) | 2026-07-07 |
-| `truckercloud` | **Built** — adapter shipped, drop-in second aggregator to Terminal | `apiKey`, `clientId`/`clientSecret` | `src/lib/hub/telematics.ts` (`truckerCloudSource`) | [`truckercloud.md`](./truckercloud.md) | 2026-07-06 |
+| `truckercloud` | **Built**, registry `status: live` — but see doc's "Urgent": credential model (carrier-pasted clientId/secret) may not match TruckerCloud's real per-carrier connect-widget flow | `apiKey`, `clientId`/`clientSecret` | `src/lib/hub/telematics.ts` (`truckerCloudSource`) | [`truckercloud.md`](./truckercloud.md) | 2026-07-10 |
 | `dat` | **Built** — search + posting-to-load-draft mapper, stub-first (registry still `stub`/CSV fallback pending real auth confirm) | `serviceAccountEmail`, `password` | `src/lib/hub/integrations/dat.ts` | [`dat.md`](./dat.md) | 2026-07-06 |
 | `efs` | **Built** — adapter shipped, feed shape unconfirmed | `feedUser`, `feedPassword` | `src/lib/hub/integrations/efs.ts` | [`efs.md`](./efs.md) | 2026-07-06 |
 | `wex` | **Built** — adapter shipped, daily cron live | `feedUser`, `feedPassword` | `src/lib/hub/integrations/wex.ts` | [`wex.md`](./wex.md) | 2026-07-06 |
@@ -37,6 +37,12 @@ integrations that were never in scope of the vendor shopping list: both `fmcsa.m
    notes before a lane builds the adapter.
 3. One provider per cycle. Update the "Last researched" date and doc link when done.
 
-Next up by this rule: `truckercloud.md` is now the oldest vendor doc (2026-07-06, unchanged);
-`efs.md`/`wex.md`/`comdata.md`/`qbo.md`/`factor.md`/`dat.md`/`truckstop.md` follow in date order
-after that.
+2026-07-10 pass: re-researched `truckercloud` (was oldest vendor doc at 2026-07-06). Docs pages
+are still 403-blocked to fetch tooling, but search snippets surfaced a real concern — TruckerCloud's
+own indexed copy describes a per-carrier "Instant Carrier Onboarding Widget" consent flow, not a
+static clientId/secret pair carriers paste into third-party settings pages. Flagged urgent in
+`truckercloud.md` since the registry already ships this as `status: "live"`. Not fixed this pass
+(shape change needs a confirmed developer packet, not a second guess).
+
+Next up by this rule: `efs.md`, `wex.md`, and `comdata.md` are now tied oldest (2026-07-06);
+`qbo.md`/`factor.md`/`dat.md`/`truckstop.md` follow in date order after that.
