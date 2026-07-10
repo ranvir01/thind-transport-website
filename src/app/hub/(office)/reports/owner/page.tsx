@@ -235,10 +235,13 @@ function FuelSpendPanel({ fuel }: { fuel: FuelSpendSummary }) {
         <p className="px-4 py-4 text-body-sm text-fg-3">No fuel receipts this month.</p>
       )}
 
-      <div className="px-4 pb-4 pt-3">
+      <div className="flex items-center gap-4 px-4 pb-4 pt-3">
         <Link href="/hub/fuel" className="text-[11px] font-semibold text-accent-text hover:underline">
           Full fuel log →
         </Link>
+        <a href="/api/hub/exports/fuel-spend" className="text-[11px] font-semibold text-accent-text hover:underline">
+          Download CSV
+        </a>
       </div>
     </div>
   )
