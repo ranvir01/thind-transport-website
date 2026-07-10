@@ -10,10 +10,66 @@ import { hubDb, queryOne } from "@/lib/hub/db"
 import { getHubUser, requireOwner } from "@/lib/hub/session"
 import { logAudit } from "@/lib/hub/audit"
 import { actionError } from "@/lib/hub/action-error"
+import {
+  carrierAllowedToOperate,
+  carrierAuthorityStatus,
+  extractQcCarrier,
+} from "@/lib/hub/vetting-fmcsa"
 
 interface Result {
   ok: boolean
   error?: string
+}
+
+export interface CarrierAuthorityCheck {
+  legalName: string | null
+  dbaName: string | null
+  allowedToOperate: boolean | null
+  authorityStatus: string | null
+}
+
+/**
+ * Live DOT/MC lookup at signup time (FMCSA QCMobile, phase-7.md M11 step 1).
+ * Pre-auth and non-persisting — a failed or unconfigured lookup just falls
+ * back to manual entry, it never blocks workspace creation.
+ */
+export async function verifyCarrierAuthorityAction(input: {
+  dotNumber?: string
+  mcNumber?: string
+}): Promise<{ ok: boolean; result: CarrierAuthorityCheck | null; error?: string }> {
+  const webKey = process.env.FMCSA_WEBKEY
+  if (!webKey) return { ok: false, result: null, error: "Live verification isn't configured" }
+  const dot = input.dotNumber?.trim()
+  const mc = input.mcNumber?.trim()
+  if (!dot && !mc) return { ok: false, result: null, error: "Enter a DOT or MC number first" }
+
+  const base = "https://mobile.fmcsa.dot.gov/qc/services/carriers"
+  const urls: string[] = []
+  if (mc) urls.push(`${base}/docket-number/${encodeURIComponent(mc)}?webKey=${webKey}`)
+  if (dot) urls.push(`${base}/${encodeURIComponent(dot)}?webKey=${webKey}`)
+
+  for (const url of urls) {
+    try {
+      const response = await fetch(url, { signal: AbortSignal.timeout(8000) })
+      if (!response.ok) continue
+      const json = await response.json()
+      const carrier = extractQcCarrier(json)
+      if (carrier) {
+        return {
+          ok: true,
+          result: {
+            legalName: carrier.legalName ?? null,
+            dbaName: carrier.dbaName ?? null,
+            allowedToOperate: carrierAllowedToOperate(carrier),
+            authorityStatus: carrierAuthorityStatus(carrier),
+          },
+        }
+      }
+    } catch {
+      /* try the next identifier */
+    }
+  }
+  return { ok: false, result: null, error: "No FMCSA record found for that DOT/MC" }
 }
 
 export async function createWorkspaceAction(input: {

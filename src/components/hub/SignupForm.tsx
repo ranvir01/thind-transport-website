@@ -3,16 +3,35 @@
 import { useState, useTransition } from "react"
 import { signIn } from "next-auth/react"
 import { toast } from "sonner"
-import { Loader2, Rocket } from "lucide-react"
-import { createWorkspaceAction } from "@/app/hub/_actions/onboarding"
+import { CheckCircle2, Loader2, Rocket, ShieldCheck } from "lucide-react"
+import { createWorkspaceAction, verifyCarrierAuthorityAction, type CarrierAuthorityCheck } from "@/app/hub/_actions/onboarding"
 import { fieldCls, labelCls } from "@/components/hub/ui"
 
 export function SignupForm() {
   const [pending, startTransition] = useTransition()
+  const [verifying, startVerify] = useTransition()
+  const [authority, setAuthority] = useState<CarrierAuthorityCheck | null>(null)
+  const [authorityError, setAuthorityError] = useState<string | null>(null)
   const [form, setForm] = useState({
     companyName: "", dotNumber: "", mcNumber: "", phone: "",
     ownerName: "", email: "", password: "",
   })
+
+  const verify = () => {
+    setAuthorityError(null)
+    setAuthority(null)
+    startVerify(async () => {
+      const result = await verifyCarrierAuthorityAction({ dotNumber: form.dotNumber, mcNumber: form.mcNumber })
+      if (!result.ok || !result.result) {
+        setAuthorityError(result.error ?? "Could not verify that DOT/MC")
+        return
+      }
+      setAuthority(result.result)
+      if (!form.companyName.trim() && result.result.legalName) {
+        setForm((f) => ({ ...f, companyName: result.result!.legalName ?? f.companyName }))
+      }
+    })
+  }
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -40,14 +59,30 @@ export function SignupForm() {
         <div>
           <label htmlFor="su-dot" className={labelCls}>DOT #</label>
           <input id="su-dot" className={fieldCls} inputMode="numeric"
-            value={form.dotNumber} onChange={(e) => setForm({ ...form, dotNumber: e.target.value })} />
+            value={form.dotNumber}
+            onChange={(e) => { setForm({ ...form, dotNumber: e.target.value }); setAuthority(null); setAuthorityError(null) }} />
         </div>
         <div>
           <label htmlFor="su-mc" className={labelCls}>MC #</label>
           <input id="su-mc" className={fieldCls} inputMode="numeric"
-            value={form.mcNumber} onChange={(e) => setForm({ ...form, mcNumber: e.target.value })} />
+            value={form.mcNumber}
+            onChange={(e) => { setForm({ ...form, mcNumber: e.target.value }); setAuthority(null); setAuthorityError(null) }} />
         </div>
       </div>
+      <button
+        type="button" onClick={verify} disabled={verifying || (!form.dotNumber.trim() && !form.mcNumber.trim())}
+        className="flex min-h-[32px] items-center gap-1.5 py-1 text-xs font-medium text-accent-text hover:underline disabled:opacity-50 disabled:no-underline"
+      >
+        {verifying ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ShieldCheck className="h-3.5 w-3.5" />}
+        Verify with FMCSA
+      </button>
+      {authority && (
+        <p className={`flex items-center gap-1.5 text-xs ${authority.allowedToOperate === false ? "text-bad" : "text-ok"}`}>
+          <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
+          {authority.legalName ?? "Carrier"} — {authority.allowedToOperate === false ? "not currently allowed to operate" : "authority on file"}
+        </p>
+      )}
+      {authorityError && <p className="text-xs text-warn">{authorityError}</p>}
       <div>
         <label htmlFor="su-owner" className={labelCls}>Your name *</label>
         <input id="su-owner" required className={fieldCls} autoComplete="name"
