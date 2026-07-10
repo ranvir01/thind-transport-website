@@ -1,0 +1,78 @@
+# Fallback drain: fast-forward main from the integrator branch when both
+# agent platforms (Claude routines + Cursor deploy agent) fail to drain it.
+# Backlog origin: main@0f9003b — "the drain must NOT depend on any single
+# agent being alive." Fires only when the integrator is >3 commits ahead,
+# main is strictly behind (pure fast-forward), and build + vitest are green
+# on the integrator head. Never force-pushes, never merges diverged history.
+name: drain-fallback
+
+on:
+  schedule:
+    # :20/:50 — offset from the integrator (:00) and deploy agent (:59) so a
+    # healthy loop keeps the integrator <4 ahead and this workflow no-ops.
+    - cron: "20,50 * * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: drain-fallback
+  cancel-in-progress: false
+
+env:
+  INTEGRATOR: claude/hauldesk-project-setup-l1luoo
+  THRESHOLD: 3
+
+jobs:
+  drain:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Decide whether a drain is needed
+        id: gate
+        run: |
+          set -euo pipefail
+          git fetch origin main "$INTEGRATOR"
+          AHEAD=$(git rev-list --count "origin/main..origin/$INTEGRATOR")
+          echo "integrator is $AHEAD commit(s) ahead of main (threshold: >$THRESHOLD)"
+          if [ "$AHEAD" -le "$THRESHOLD" ]; then
+            echo "steady state — nothing to drain"
+            echo "drain=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if ! git merge-base --is-ancestor "origin/main" "origin/$INTEGRATOR"; then
+            echo "::warning::integrator has diverged from main — a merge is required; leaving that to the agents"
+            echo "drain=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "drain=true" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/setup-node@v4
+        if: steps.gate.outputs.drain == 'true'
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Verify integrator head is green (build + tests)
+        if: steps.gate.outputs.drain == 'true'
+        run: |
+          set -euo pipefail
+          git checkout --detach "origin/$INTEGRATOR"
+          sudo bash scripts/setup-canvas-deps.sh
+          npm ci --no-audit --no-fund
+          npm run build
+          npx vitest run
+
+      - name: Fast-forward main
+        if: steps.gate.outputs.drain == 'true'
+        run: |
+          set -euo pipefail
+          # Plain (non-force) push: rejected automatically if main moved
+          # since the gate check, so a concurrent agent drain always wins.
+          git push origin "origin/$INTEGRATOR:refs/heads/main"
+          echo "main fast-forwarded to $(git rev-parse --short "origin/$INTEGRATOR")"
