@@ -16,11 +16,20 @@ value proposition as Terminal.
 
 ## Auth model (assumed, unconfirmed)
 
-- **Could not fetch TruckerCloud's own docs pages** (`truckercloud.com/integrations/*` returned
-  HTTP 403 to this scout's fetch tooling) — same Cloudflare-style block noted for
-  `docs.withterminal.com` (`docs/integrations/terminal.md`) and the EFS integration help pages
-  (`docs/integrations/efs.md`). Everything below is a best-effort guess from search-result
-  snippets, not a page read in full.
+- **Still could not fetch TruckerCloud's own docs pages** as of this pass (2026-07-10):
+  `truckercloud.com/integrations/connect-apollo-eld` and
+  `truckercloud.com/integrations/connect-truckx-eld-d` both returned HTTP 403 to this scout's
+  fetch tooling, same Cloudflare-style block as the 2026-07-06 pass and as noted for
+  `docs.withterminal.com` (`docs/integrations/terminal.md`) and the EFS help pages
+  (`docs/integrations/efs.md`). Everything below is still a best-effort guess from search-result
+  snippets, not a page read in full — auth model, endpoints, and pricing are unchanged from the
+  last pass.
+- Search snippets did confirm marketing claims consistent with the existing assumption:
+  TruckerCloud advertises 170+ ELD/camera integrations and >90% commercial-vehicle coverage, and
+  publishes a **separate per-provider connector page** for each one — including a dedicated
+  `connect-truckx-eld-d` page, i.e. TruckX (the ELD our carriers run) is a named, supported
+  integration, not an inferred one. No numeric rate limits, sandbox program, or pricing surfaced
+  in this pass either (same gap as last time).
 - `docs/hub-go-live-requirements.md` lists TruckerCloud as needing "Client ID + secret"
   credentials, not a static API key — so the registry (`src/lib/hub/integrations/registry.ts`)
   scopes `truckercloud` to `clientId` + `clientSecret`, and `truckerCloudSource()` in
@@ -83,7 +92,10 @@ connected — this adapter, like Terminal's, is additive.
 ## Open questions for the next pass
 
 - Confirm the real token endpoint path and grant type against an actual TruckerCloud developer
-  packet — the #1 blocker to flipping status from stub to live.
+  packet — the #1 blocker to flipping status from stub to live. Two scout passes in a row
+  (2026-07-06, 2026-07-10) have hit the same 403 wall on `truckercloud.com/integrations/*`; a
+  future pass should try a signed-in developer-portal URL or a direct outreach ask instead of
+  another anonymous fetch, since the public marketing pages won't yield auth details.
 - Confirm `/vehicles` and `/hos` response field names (best guess above).
 - Same open item as Terminal and EFS: no 429/5xx retry-with-backoff on the single `fetch` calls
   in `truckerCloudSource`'s `request()`/token exchange — a transient error fails that day's sync
