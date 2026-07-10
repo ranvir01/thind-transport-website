@@ -80,6 +80,8 @@ export async function createWorkspaceAction(input: {
   ownerName: string
   email: string
   password: string
+  /** Optional brand accent picked in the wizard; invalid values are dropped, never block signup. */
+  accent?: string
 }): Promise<Result> {
   if (!input.companyName.trim()) return { ok: false, error: "What's the company called?" }
   if (!input.ownerName.trim()) return { ok: false, error: "Your name is needed" }
@@ -105,6 +107,7 @@ export async function createWorkspaceAction(input: {
     )
     const carrierId = carrierRows[0].id as string
     const prefix = input.companyName.trim().replace(/[^A-Za-z]/g, "").slice(0, 3).toUpperCase() || "LD"
+    const accent = /^#[0-9a-fA-F]{6}$/.test(input.accent ?? "") ? input.accent : null
     await client.query(
       `INSERT INTO hub.carrier_settings (carrier_id, settings) VALUES ($1, $2)`,
       [
@@ -118,6 +121,7 @@ export async function createWorkspaceAction(input: {
           randomTesting: { drugPct: 50, alcoholPct: 10 },
           factoring: { company: null, remitName: null, remitAddress: null, email: null },
           notifications: { officeEmail: input.email.toLowerCase() },
+          ...(accent ? { branding: { accent } } : {}),
         }),
       ]
     )
