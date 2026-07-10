@@ -23,6 +23,9 @@ async function nominatimLookup(city: string, state: string): Promise<{ lat: numb
       {
         headers: { "User-Agent": PRODUCT.userAgent },
         next: { revalidate: 86400 * 30 },
+        // A hung geocoder must not stall load booking (createLoadAction ->
+        // geocodeStops); abort hard and fall through to the null path.
+        signal: AbortSignal.timeout(5_000),
       }
     )
     if (!res.ok) return null
