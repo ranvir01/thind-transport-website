@@ -14,14 +14,29 @@
  * safety, reports) call
  * reseed() themselves, so no manual seed:demo between runs on a local rig.
  *
- * Copy `.env.example` → `.env.local` for local runs (Next reads it; these scripts
- * do not load `.env.local` themselves). Export vars in the shell when driving
- * against a remote base URL: E2E_BASE_URL=https://… POSTGRES_URL=… NEXTAUTH_SECRET=…
+ * Copy `.env.example` → `.env.local` for local runs. Against a localhost BASE,
+ * this module loads `.env.local` itself (fallback only — shell exports win), so
+ * the same file that configures the server configures the smokes; no separate
+ * in-shell exports needed. Remote drives keep explicit-export discipline
+ * (`.env.local` holds the LOCAL server's secret, which cannot sign cookies the
+ * remote server accepts — silently using it would turn a clear "secret required"
+ * error into baffling 401s): E2E_BASE_URL=https://… POSTGRES_URL=… NEXTAUTH_SECRET=…
  */
 import path from "node:path"
+import { existsSync, readFileSync } from "node:fs"
 import { spawnSync } from "node:child_process"
 
 export const BASE = process.env.E2E_BASE_URL ?? "http://localhost:3000"
+
+if (/localhost|127\.0\.0\.1/.test(BASE)) {
+  const envPath = path.join(process.cwd(), ".env.local")
+  if (existsSync(envPath)) {
+    for (const line of readFileSync(envPath, "utf-8").split("\n")) {
+      const match = line.match(/^([A-Z0-9_]+)=(.*)$/)
+      if (match && !process.env[match[1]]) process.env[match[1]] = match[2]
+    }
+  }
+}
 
 /**
  * Re-run `scripts/seed-demo.mjs` so state-consuming smokes (dispatch advances
