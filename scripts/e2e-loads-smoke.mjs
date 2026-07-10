@@ -90,8 +90,12 @@ async function main() {
   await clickByText(page, "Book load")
   await waitForText(page, "Load booked")
   await page.waitForFunction(
+    // createLoadAction awaits geocodeStops() (Nominatim, no hard timeout yet —
+    // see backlog) before redirecting; under concurrent headless-browser load
+    // this saw 15-30s+ round trips locally vs. ~50-300ms in isolation, so give
+    // this wait real headroom instead of flaking on a slow but healthy booking.
     () => /\/hub\/loads\/[0-9a-f-]{36}$/.test(location.pathname),
-    { timeout: 15000 }
+    { timeout: 30000 }
   )
   await waitForText(page, "Rate")
   const detail = await page.evaluate(() => {
