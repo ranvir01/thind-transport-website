@@ -1,0 +1,115 @@
+/**
+ * syncIntegrationNowAction/retryIntegrationEventsAction had zero test
+ * coverage — the "Sync now" and "Retry events" buttons on every connected
+ * integration card route through here (src/app/hub/_actions/integrations.ts).
+ * Covers: the not-yet-connected message, one dispatch case per provider
+ * wired into runProviderSync, the "no sync loop wired" guard for a provider
+ * that isn't, a sync failure landing in hub.integration_syncs, and the
+ * factor-only guard on event retries.
+ */
+import { beforeEach, describe, expect, it, vi } from "vitest"
+
+vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }))
+vi.mock("@/lib/hub/session", () => ({
+  requireOwner: vi.fn(async () => ({ id: "u1", name: "Owner", carrierId: "carrier-1" })),
+}))
+vi.mock("@/lib/hub/audit", () => ({ logAudit: vi.fn(async () => undefined) }))
+vi.mock("@/lib/hub/db", () => ({ query: vi.fn(async () => []) }))
+vi.mock("@/lib/hub/telematics", () => ({ runTelematicsSync: vi.fn() }))
+vi.mock("@/lib/hub/integrations/efs", () => ({ runEfsSync: vi.fn() }))
+vi.mock("@/lib/hub/integrations/comdata", () => ({ runComdataSync: vi.fn() }))
+vi.mock("@/lib/hub/integrations/wex", () => ({ runWexSync: vi.fn() }))
+vi.mock("@/lib/hub/integrations/qbo", () => ({ runQboSync: vi.fn() }))
+vi.mock("@/lib/hub/integrations/factor", () => ({ retryUnprocessedFactorEvents: vi.fn() }))
+
+import { query } from "@/lib/hub/db"
+import { runTelematicsSync } from "@/lib/hub/telematics"
+import { runEfsSync } from "@/lib/hub/integrations/efs"
+import { runComdataSync } from "@/lib/hub/integrations/comdata"
+import { runWexSync } from "@/lib/hub/integrations/wex"
+import { runQboSync } from "@/lib/hub/integrations/qbo"
+import { retryUnprocessedFactorEvents } from "@/lib/hub/integrations/factor"
+import { retryIntegrationEventsAction, syncIntegrationNowAction } from "@/app/hub/_actions/integrations"
+
+const queryMock = vi.mocked(query)
+const runTelematicsSyncMock = vi.mocked(runTelematicsSync)
+const runEfsSyncMock = vi.mocked(runEfsSync)
+const runComdataSyncMock = vi.mocked(runComdataSync)
+const runWexSyncMock = vi.mocked(runWexSync)
+const runQboSyncMock = vi.mocked(runQboSync)
+const retryUnprocessedFactorEventsMock = vi.mocked(retryUnprocessedFactorEvents)
+
+beforeEach(() => {
+  queryMock.mockReset().mockResolvedValue([])
+  runTelematicsSyncMock.mockReset()
+  runEfsSyncMock.mockReset()
+  runComdataSyncMock.mockReset()
+  runWexSyncMock.mockReset()
+  runQboSyncMock.mockReset()
+  retryUnprocessedFactorEventsMock.mockReset()
+})
+
+describe("syncIntegrationNowAction", () => {
+  it("reports not-yet-connected instead of a raw error", async () => {
+    runEfsSyncMock.mockResolvedValue({ connected: false })
+    const result = await syncIntegrationNowAction("efs")
+    expect(result).toEqual({
+      ok: false,
+      error: "efs isn't connected yet — save credentials first. The fallback keeps working meanwhile.",
+    })
+    expect(queryMock).not.toHaveBeenCalled()
+  })
+
+  it.each([
+    ["terminal", runTelematicsSyncMock, { connected: true, pings: 3, hos: 1 }, /3 positions, 1 HOS clocks/],
+    ["truckercloud", runTelematicsSyncMock, { connected: true, pings: 0, hos: 0 }, /0 positions, 0 HOS clocks/],
+    ["efs", runEfsSyncMock, { connected: true, imported: 2, skipped: 1 }, /2 fuel transactions, 1 already synced/],
+    ["comdata", runComdataSyncMock, { connected: true, imported: 5 }, /5 fuel transactions/],
+    ["wex", runWexSyncMock, { connected: true, imported: 4 }, /4 fuel transactions/],
+    ["qbo", runQboSyncMock, { connected: true, imported: 2 }, /2 payments recorded/],
+  ] as const)("dispatches %s to its sync loop and logs a successful sync", async (provider, mockFn, resolved, summaryPattern) => {
+    mockFn.mockResolvedValue(resolved)
+    const result = await syncIntegrationNowAction(provider)
+    expect(result.ok).toBe(true)
+    expect(result.summary).toMatch(summaryPattern)
+    expect(queryMock).toHaveBeenCalledWith(
+      expect.stringContaining("INSERT INTO hub.integration_syncs"),
+      expect.arrayContaining(["carrier-1", provider])
+    )
+  })
+
+  it("throws for a provider with no sync loop wired (e.g. mailbox is poll-only)", async () => {
+    const result = await syncIntegrationNowAction("mailbox")
+    expect(result.ok).toBe(false)
+    expect(result.error).toBe("No sync loop wired for mailbox yet")
+    expect(queryMock).toHaveBeenCalledWith(
+      expect.stringContaining("INSERT INTO hub.integration_syncs"),
+      expect.arrayContaining(["carrier-1", "mailbox", "No sync loop wired for mailbox yet"])
+    )
+  })
+
+  it("logs a failed sync when the provider client throws", async () => {
+    runEfsSyncMock.mockRejectedValue(new Error("feed unreachable"))
+    const result = await syncIntegrationNowAction("efs")
+    expect(result.ok).toBe(false)
+    expect(queryMock).toHaveBeenCalledWith(
+      expect.stringContaining("INSERT INTO hub.integration_syncs"),
+      expect.arrayContaining(["carrier-1", "efs", expect.any(String), "feed unreachable"])
+    )
+  })
+})
+
+describe("retryIntegrationEventsAction", () => {
+  it("retries unprocessed factor events and summarizes the outcome", async () => {
+    retryUnprocessedFactorEventsMock.mockResolvedValue({ retried: 5, applied: 3, stillUnprocessed: 2 })
+    const result = await retryIntegrationEventsAction("factor")
+    expect(result).toEqual({ ok: true, summary: "3 applied, 2 still unmatched (of 5 retried)" })
+  })
+
+  it("refuses providers with no event retry wired", async () => {
+    const result = await retryIntegrationEventsAction("efs")
+    expect(result.ok).toBe(false)
+    expect(result.error).toBe("No event retry wired for efs yet")
+    expect(retryUnprocessedFactorEventsMock).not.toHaveBeenCalled()
+  })
+})
