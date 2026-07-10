@@ -34,12 +34,17 @@ export function NotificationsBell({ direction = "down" }: { direction?: "down" |
   const [items, setItems] = useState<FeedItem[]>([])
   const [unread, setUnread] = useState(0)
   const panelRef = useRef<HTMLDivElement>(null)
+  // Bumped on every refresh AND on mark-as-read, so a slow in-flight GET
+  // can't land after the badge was cleared and restore a stale count.
+  const seqRef = useRef(0)
 
   const refresh = useCallback(async () => {
+    const seq = ++seqRef.current
     try {
       const res = await fetch("/api/hub/notifications")
       if (!res.ok) return
       const data = await res.json()
+      if (seq !== seqRef.current) return
       setItems(data.items ?? [])
       setUnread(data.unread ?? 0)
     } catch {
@@ -69,12 +74,18 @@ export function NotificationsBell({ direction = "down" }: { direction?: "down" |
   const toggle = async () => {
     const next = !open
     setOpen(next)
-    if (next && unread > 0) {
+    if (!next) return
+    if (unread > 0) {
       // Opening the feed clears the badge — simple and predictable.
-      fetch("/api/hub/notifications", { method: "POST" }).catch(() => {})
       setUnread(0)
+      seqRef.current++
+      try {
+        await fetch("/api/hub/notifications", { method: "POST" })
+      } catch {
+        /* offline — the next successful refresh restores the real count */
+      }
     }
-    if (next) refresh()
+    refresh()
   }
 
   return (
