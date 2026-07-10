@@ -1,41 +1,48 @@
 # Docs mailbox (IMAP) — scouting notes
 
-Researched: 2026-07-06. Status: **built adapter, live** in `src/lib/hub/mailbox.ts`
-(`pollDocsMailbox`), wired to the `docs-mailbox` cron job. Not a vendor SDK — it's a generic
-IMAP client (`imapflow` + `mailparser`) pointed at whatever inbox the carrier's office already
-uses. This doc covers the two mailbox providers row 2 of `creds-shopping-list.md` names
-(Gmail, Office365) since "auth model" here means "what the mailbox provider allows for
-IMAP login," not a single company's API.
+Researched: 2026-07-06, OAuth2 path added 2026-07-10. Status: **built adapter, live** in
+`src/lib/hub/mailbox.ts` (`pollDocsMailbox`), wired to the `docs-mailbox` cron job. Not a
+vendor SDK — it's a generic IMAP client (`imapflow` + `mailparser`) pointed at whatever inbox
+the carrier's office already uses. This doc covers the two mailbox providers row 2 of
+`creds-shopping-list.md` names (Gmail, Microsoft 365 / Google Workspace) since "auth model"
+here means "what the mailbox provider allows for IMAP login," not a single company's API.
 
 ## Auth model (as implemented, confirmed against our code)
 
 - Credential fields (`src/lib/hub/integrations/registry.ts`, `mailbox` entry): `host`, `port`
-  (default 993), `user`, `password` (`secret: true`), `folder` (default `INBOX`).
-- `pollDocsMailbox` builds an `ImapFlow` client with `auth: { user, pass: password }` —
-  **plain username/password (basic) auth only**. No OAuth2/XOAUTH2 code path exists.
+  (default 993), `user`, `password` (`secret: true`, Gmail app password), `folder` (default
+  `INBOX`), plus four OAuth2 fields — `tokenEndpoint`, `clientId`, `clientSecret` (`secret:
+  true`), `refreshToken` (`secret: true`).
+- `pollDocsMailbox` calls `resolveMailboxAuth`, which picks the auth mode per carrier:
+  - **OAuth2 (XOAUTH2)** when all four OAuth2 fields are set (`isOAuthConfigured`) — exchanges
+    the stored refresh token for a bearer access token via a standard `grant_type=refresh_token`
+    POST to `tokenEndpoint`, then builds `auth: { user, accessToken }`. A rotated
+    `refresh_token` in the response is persisted back through `saveCredentials` before the next
+    poll needs it (same rotation pattern as `qbo.ts`'s `refreshAccessToken`).
+  - **Plain password** otherwise, when `password` is set — unchanged Gmail app-password path,
+    `auth: { user, pass: password }`.
+  - Neither configured → `connected: false`, CSV/manual-upload fallback stays the product.
 - `secure: true` is hardcoded (implicit TLS on port 993) — there's no STARTTLS fallback for
   a provider only offering port 143.
+- `tokenEndpoint` is a plain credential field, not hardcoded per-vendor, so the same code path
+  covers Microsoft identity platform (`https://login.microsoftonline.com/<tenant>/oauth2/v2.0/token`)
+  and Google OAuth2 (`https://oauth2.googleapis.com/token`) — both are standard
+  `refresh_token`-grant, form-encoded, JSON-response endpoints.
 
-## ⚠️ Finding: Office 365 / Exchange Online cannot work with this adapter today
+## ⚠️ Setup gap: no in-app OAuth2 consent flow yet
 
-- Microsoft **disabled Basic Authentication for IMAP in Exchange Online on October 1, 2022**
-  (21Vianet-operated tenants followed in March 2023). A username+password IMAP login — which
-  is the only thing our `password` field and `ImapFlow` config support — is rejected outright
-  by Microsoft 365 mailboxes now. There is no tenant-side opt-back-in; Microsoft's own guidance
-  is "migrate to OAuth2," full stop.
-- Microsoft 365 "app passwords" (the MFA-bypass secrets some legacy docs mention) are a
-  **different, mostly-retired mechanism** and don't restore IMAP basic auth even where still
-  available — they were for legacy Office desktop clients, not a basic-auth IMAP exception.
-- Net effect: the credential field label in `page.tsx` (`"IMAP host (e.g. imap.gmail.com)"`)
-  already only examples Gmail, but `creds-shopping-list.md` row 2 still says "Gmail/Office365
-  app-password settings" as if the two are symmetric. **They are not** — a carrier who points
-  this integration at an `outlook.office365.com`/`imap-mail.outlook.com` host with a password
-  will get an authentication failure, not a working sync, no matter what password they use.
-- **Backlog (urgent):** either (a) correct `creds-shopping-list.md` + the settings-page copy to
-  say Gmail-only until OAuth2 is added, or (b) add an XOAUTH2 path to `pollDocsMailbox` (ImapFlow
-  supports `auth: { user, accessToken }`) plus an Entra ID app registration + refresh-token
-  storage — a real scope increase, not a config tweak. Filing as urgent because the current copy
-  actively tells an office to spend setup time on a combination that cannot work.
+- This ships the **token-exchange plumbing**, not a one-click "Connect Microsoft 365" button.
+  An office still needs an admin (theirs, or Thind's, depending on who owns the app
+  registration) to complete an Entra ID app registration (or Google Cloud OAuth client) once,
+  run the authorization-code consent flow by hand, and paste the resulting client
+  ID/secret/refresh token/token endpoint into the four new credential fields — a real onboarding
+  step, not zero-touch. Building an in-app "Connect" button that runs the consent redirect
+  itself is future work; not started this cycle (scope: Gmail app-password parity, not a
+  full OAuth consent UI).
+- Previously this doc filed an "urgent" finding that Office 365/Workspace mailboxes couldn't
+  authenticate at all and the settings copy wrongly implied they could — both are now
+  resolved: `registry.ts`'s blurb and field labels spell out which fields are for Gmail vs.
+  OAuth2, and the OAuth2 path actually works end-to-end once those four fields are filled in.
 
 ## Gmail-side auth (confirmed working)
 
@@ -61,7 +68,8 @@ IMAP login," not a single company's API.
   already capped at 15 MB per file in `pollDocsMailbox` and only the first 25 unseen messages
   are processed per run, so a single sync run can't realistically hit the daily cap.
 - Office365/Exchange Online numeric IMAP throttling budgets exist (per-tenant EWS/IMAP
-  throttling policies) but are moot until the auth blocker above is resolved.
+  throttling policies) but weren't independently confirmed — worth checking against a real
+  tenant once a carrier's first Microsoft 365 OAuth2 connection goes live.
 
 ## Sandbox
 
@@ -73,7 +81,7 @@ Phase 6 author validated it originally.
 
 Free either way: Gmail personal/Workspace accounts and Microsoft 365 mailboxes the carrier
 already pays for — this integration needs no new vendor spend, just the app-password setup
-step (Gmail) or, longer term, an Entra ID app registration (Office 365, once OAuth2 ships).
+step (Gmail) or an Entra ID / Google Cloud OAuth app registration (Microsoft 365 / Workspace).
 
 ## What this scout could and couldn't verify
 
