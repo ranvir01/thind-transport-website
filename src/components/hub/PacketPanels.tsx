@@ -91,7 +91,7 @@ export function CoiRequestForm({ savedAgent }: { savedAgent: string }) {
         <div>
           <label htmlFor="coi-holder" className={labelCls}>Certificate holder (name + address)</label>
           <textarea
-            id="coi-holder" required rows={2} className={fieldCls}
+            id="coi-holder" required rows={2} className={`${fieldCls} h-auto py-3`}
             placeholder={"Pacific Crest Logistics\n410 Harbor Way, Portland OR 97201"}
             value={form.certificateHolder}
             onChange={(e) => setForm({ ...form, certificateHolder: e.target.value })}
