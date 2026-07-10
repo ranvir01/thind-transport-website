@@ -216,6 +216,23 @@ export async function setIftaStatus(
   status: "draft" | "reviewed" | "filed",
   actor: { id: string; name: string }
 ): Promise<void> {
+  // Status is meaningless without a computed report — without this check the
+  // UPDATE matches nothing yet an audit row still claims the status changed.
+  const existing = await queryOne<{ report: { missingRates?: string[] } | null }>(
+    `SELECT report FROM hub.ifta_reports WHERE carrier_id = $1 AND quarter = $2`,
+    [carrierId, quarter]
+  )
+  if (!existing) {
+    throw new Error(`No report computed for ${quarter} — compute the quarter first.`)
+  }
+  // Missing rates zero out those jurisdictions' lines (see computeIfta), so a
+  // filing with them is materially understated — resolve before marking filed.
+  const missingRates = existing.report?.missingRates ?? []
+  if (status === "filed" && missingRates.length > 0) {
+    throw new Error(
+      `Cannot mark ${quarter} filed — missing tax rates for ${missingRates.join(", ")}. Import rates and recompute first.`
+    )
+  }
   await query(
     `UPDATE hub.ifta_reports SET status = $3, updated_at = NOW() WHERE carrier_id = $1 AND quarter = $2`,
     [carrierId, quarter, status]
