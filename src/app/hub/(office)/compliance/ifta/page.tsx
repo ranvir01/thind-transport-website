@@ -7,6 +7,9 @@ import { Panel, PageHeader, BackLink, fieldCls, Pill } from "@/components/hub/ui
 import { IftaControls, IftaRatesImporter } from "@/components/hub/ComplianceForms"
 
 const STATUS_TONE = { draft: "neutral", reviewed: "info", filed: "ok" } as const
+// Most-recent-first (query is ORDER BY quarter DESC); caps the strip so a carrier
+// with years of filings doesn't get a wall of pills.
+const HISTORY_STRIP_LIMIT = 8
 
 export const dynamic = "force-dynamic"
 
@@ -70,7 +73,7 @@ export default async function IftaPage({
         <IftaControls quarter={quarter} status={report?.status ?? null} />
         {history.length > 1 ? (
           <div className="flex flex-wrap items-center gap-1.5">
-            {history.map((h) => (
+            {history.slice(0, HISTORY_STRIP_LIMIT).map((h) => (
               <a key={h.quarter} href={`/hub/compliance/ifta?q=${h.quarter}`}>
                 <Pill tone={h.quarter === quarter ? "accent" : STATUS_TONE[h.status]}>
                   {h.quarter} {h.status}
