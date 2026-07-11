@@ -11,7 +11,7 @@
  */
 import puppeteer from "puppeteer"
 import pg from "pg"
-import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs"
+import { writeFileSync, mkdirSync } from "node:fs"
 import path from "node:path"
 import { BASE, sleep, clickByText, waitForText, makeShot, reseed, check, failures } from "./e2e-lib.mjs"
 
@@ -24,14 +24,6 @@ const PNG = Buffer.from(
   "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
   "base64"
 )
-
-// this script checks the database directly; load .env.local like hub-migrate does
-if (!process.env.POSTGRES_URL && existsSync(".env.local")) {
-  for (const line of readFileSync(".env.local", "utf-8").split("\n")) {
-    const m = line.match(/^([A-Z0-9_]+)=(.*)$/)
-    if (m && !process.env[m[1]]) process.env[m[1]] = m[2]
-  }
-}
 
 /** The paperwork inputs are hidden `<input type=file>`s — pick by container text. */
 async function fileInputIn(page, containerSelector, containerText) {

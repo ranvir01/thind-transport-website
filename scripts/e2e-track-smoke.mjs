@@ -16,19 +16,12 @@
  */
 import puppeteer from "puppeteer"
 import pg from "pg"
-import { readFileSync, existsSync, mkdirSync } from "node:fs"
+import { mkdirSync } from "node:fs"
 import { BASE, makeShot, reseed, check, failures } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-track"
 mkdirSync(OUT, { recursive: true })
 const shot = makeShot(OUT, { fullPage: true })
-
-if (!process.env.POSTGRES_URL && existsSync(".env.local")) {
-  for (const line of readFileSync(".env.local", "utf-8").split("\n")) {
-    const m = line.match(/^([A-Z0-9_]+)=(.*)$/)
-    if (m && !process.env[m[1]]) process.env[m[1]] = m[2]
-  }
-}
 
 /** Parses "rgb(r, g, b)" / "rgba(r, g, b, a)" into a 0-255 brightness estimate. */
 function brightness(rgbString) {
