@@ -34,16 +34,24 @@ export function NotificationsBell({ direction = "down" }: { direction?: "down" |
   const [items, setItems] = useState<FeedItem[]>([])
   const [unread, setUnread] = useState(0)
   const panelRef = useRef<HTMLDivElement>(null)
+  // Monotonic guard: a GET response only applies if no newer fetch (or a
+  // mark-read) started after it — otherwise a slow stale response would
+  // resurrect the badge we just cleared.
+  const seqRef = useRef(0)
 
-  const refresh = useCallback(async () => {
+  const refresh = useCallback(async (): Promise<number | null> => {
+    const seq = ++seqRef.current
     try {
       const res = await fetch("/api/hub/notifications")
-      if (!res.ok) return
+      if (!res.ok) return null
       const data = await res.json()
+      if (seq !== seqRef.current) return null
       setItems(data.items ?? [])
       setUnread(data.unread ?? 0)
+      return data.unread ?? 0
     } catch {
       /* offline — keep what we have */
+      return null
     }
   }, [])
 
@@ -69,12 +77,16 @@ export function NotificationsBell({ direction = "down" }: { direction?: "down" |
   const toggle = async () => {
     const next = !open
     setOpen(next)
-    if (next && unread > 0) {
-      // Opening the feed clears the badge — simple and predictable.
-      fetch("/api/hub/notifications", { method: "POST" }).catch(() => {})
+    if (!next) return
+    // Fetch first so the panel shows fresh items with their unread
+    // highlights, then clear the badge — the seq bump discards any
+    // in-flight response that would re-apply the pre-mark count.
+    const freshUnread = await refresh()
+    if ((freshUnread ?? unread) > 0) {
+      seqRef.current++
       setUnread(0)
+      fetch("/api/hub/notifications", { method: "POST" }).catch(() => {})
     }
-    if (next) refresh()
   }
 
   return (
