@@ -1,0 +1,110 @@
+# Drain fallback — last-resort integrator → main fast-forward.
+#
+# The normal drain is the Cursor deploy agent (:59 UTC). This job exists for the
+# failure mode of 2026-07-10: both agent platforms down while the integrator sat
+# green and hours ahead of main, so production went stale. It only acts when ALL
+# of the following hold:
+#   1. integrator is > AHEAD_THRESHOLD commits ahead of main (catch-up condition),
+#   2. main's tip is > MAIN_STALE_MINUTES old (the deploy agent has missed at
+#      least one full cycle — a healthy deploy agent advances main every hour),
+#   3. main is an ancestor of the integrator (pure fast-forward; real merges are
+#      the deploy agent's job),
+#   4. npm run build and npx vitest run are green on the integrator tip.
+# It never creates merge commits, never resolves conflicts, and never launches
+# agents (the README's "no GitHub Actions" rule is about agent launching/billing).
+#
+# Owner kill switch: set repository variable DRAIN_FALLBACK_DISABLED=1.
+name: Drain fallback
+
+on:
+  schedule:
+    - cron: "20 * * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: drain-fallback
+  cancel-in-progress: false
+
+env:
+  INTEGRATOR: claude/hauldesk-project-setup-l1luoo
+  AHEAD_THRESHOLD: 3 # keep in sync with AGENT_CATCHUP_THRESHOLD (scripts/agent-loop-status.mjs)
+  MAIN_STALE_MINUTES: 120
+
+jobs:
+  drain:
+    if: vars.DRAIN_FALLBACK_DISABLED != '1'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Decide whether a fallback drain is needed
+        id: decide
+        run: |
+          set -euo pipefail
+          git fetch origin main "$INTEGRATOR" --quiet
+          echo "run=false" >> "$GITHUB_OUTPUT"
+          AHEAD=$(git rev-list --count "origin/main..origin/$INTEGRATOR")
+          echo "Integrator is $AHEAD commit(s) ahead of main."
+          if [ "$AHEAD" -le "$AHEAD_THRESHOLD" ]; then
+            echo "Within threshold ($AHEAD_THRESHOLD) — steady state, nothing to do."
+            exit 0
+          fi
+          MAIN_TS=$(git log -1 --format=%ct origin/main)
+          AGE_MIN=$(( ( $(date +%s) - MAIN_TS ) / 60 ))
+          echo "main tip is ${AGE_MIN} minute(s) old."
+          if [ "$AGE_MIN" -lt "$MAIN_STALE_MINUTES" ]; then
+            echo "Deploy agent looks alive (main advanced < ${MAIN_STALE_MINUTES} min ago) — leaving the drain to it."
+            exit 0
+          fi
+          if ! git merge-base --is-ancestor origin/main "origin/$INTEGRATOR"; then
+            echo "main is not an ancestor of the integrator — a real merge is needed; that is the deploy agent's job."
+            exit 0
+          fi
+          {
+            echo "run=true"
+            echo "sha=$(git rev-parse "origin/$INTEGRATOR")"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Check out integrator tip
+        if: steps.decide.outputs.run == 'true'
+        run: git checkout --detach "${{ steps.decide.outputs.sha }}"
+
+      - uses: actions/setup-node@v4
+        if: steps.decide.outputs.run == 'true'
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install canvas build deps
+        if: steps.decide.outputs.run == 'true'
+        run: sudo apt-get update -q && sudo apt-get install -y -q libcairo2-dev libpango1.0-dev libjpeg-dev libgif-dev librsvg2-dev pkg-config
+
+      - name: Install
+        if: steps.decide.outputs.run == 'true'
+        run: npm ci --no-audit --no-fund
+
+      - name: Build
+        if: steps.decide.outputs.run == 'true'
+        run: npm run build
+
+      - name: Test
+        if: steps.decide.outputs.run == 'true'
+        run: npx vitest run
+
+      - name: Fast-forward main
+        if: steps.decide.outputs.run == 'true'
+        run: |
+          set -euo pipefail
+          git fetch origin main --quiet
+          if ! git merge-base --is-ancestor origin/main "${{ steps.decide.outputs.sha }}"; then
+            echo "main moved while we were verifying — standing down."
+            exit 0
+          fi
+          git push origin "${{ steps.decide.outputs.sha }}:refs/heads/main"
+          echo "Fast-forwarded main to ${{ steps.decide.outputs.sha }}."
