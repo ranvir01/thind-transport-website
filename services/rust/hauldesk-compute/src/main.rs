@@ -196,6 +196,24 @@ fn handle(method: &Method, path: &str, secret_header: Option<&str>, body: &str, 
     }
 }
 
+/// Per-request glue between the live `tiny_http::Request` and `handle`:
+/// header extraction (case-insensitive — the TS gateway sends
+/// `X-Hauldesk-Secret`, other clients may differ), body read, dispatch.
+/// main()'s loop and the test suite share this exact logic.
+fn process(request: &mut tiny_http::Request, secret: &str) -> Response<std::io::Cursor<Vec<u8>>> {
+    let path = request.url().to_string();
+    let method = request.method().clone();
+    let secret_header = header_value(request, "x-hauldesk-secret").map(|s| s.to_string());
+
+    let mut body = String::new();
+    if method == Method::Post && request.as_reader().read_to_string(&mut body).is_err() {
+        return json_response(400, r#"{"error":"bad request"}"#);
+    }
+
+    let (status, resp_body) = handle(&method, &path, secret_header.as_deref(), &body, secret);
+    json_response(status, &resp_body)
+}
+
 fn main() {
     let secret = std::env::var("HAULDESK_SIDECAR_SECRET").unwrap_or_default();
     let server = Server::http("0.0.0.0:8082").expect("bind :8082");
@@ -205,18 +223,8 @@ fn main() {
     );
 
     for mut request in server.incoming_requests() {
-        let path = request.url().to_string();
-        let method = request.method().clone();
-        let secret_header = header_value(&request, "x-hauldesk-secret").map(|s| s.to_string());
-
-        let mut body = String::new();
-        if method == Method::Post && request.as_reader().read_to_string(&mut body).is_err() {
-            let _ = request.respond(json_response(400, r#"{"error":"bad request"}"#));
-            continue;
-        }
-
-        let (status, resp_body) = handle(&method, &path, secret_header.as_deref(), &body, &secret);
-        let _ = request.respond(json_response(status, &resp_body));
+        let response = process(&mut request, &secret);
+        let _ = request.respond(response);
     }
 }
 #[cfg(test)]
@@ -448,5 +456,80 @@ mod tests {
         assert!(!secret_matches_header(Some("wrong!"), "s3cret"));
         assert!(!secret_matches_header(None, "s3cret"));
         assert!(secret_matches_header(None, ""));
+    }
+
+    // Request-loop glue suite: `process` is the exact code main()'s loop runs,
+    // driven here through tiny_http::TestRequest so header extraction and body
+    // reading are tested as built — not just the `handle` dispatch beneath them.
+    use tiny_http::TestRequest;
+
+    const GATEWAY_BODY: &str = r#"{
+        "milesByJurisdiction": {"WA": 4000, "ID": 1000, "IN": 2000},
+        "gallonsByJurisdiction": {"WA": 600, "ID": 100, "IN": 300},
+        "rates": {
+            "WA": {"rate": 0.494},
+            "ID": {"rate": 0.33},
+            "IN": {"rate": 0.55, "surchargeRate": 0.11}
+        }
+    }"#;
+
+    fn run_request(request: TestRequest, secret: &str) -> (u16, String) {
+        let mut request: tiny_http::Request = request.into();
+        let response = process(&mut request, secret);
+        let status = response.status_code().0;
+        let body = String::from_utf8(response.into_reader().into_inner()).expect("utf8 body");
+        (status, body)
+    }
+
+    fn secret_header(name: &str, value: &str) -> Header {
+        Header::from_bytes(name.as_bytes(), value.as_bytes()).expect("valid header")
+    }
+
+    #[test]
+    fn process_health_stays_open_through_the_live_glue() {
+        let (status, body) = run_request(TestRequest::new().with_path("/health"), "s3cret");
+        assert_eq!(status, 200);
+        assert!(body.contains("\"status\":\"ok\""));
+    }
+
+    /// The TS gateway sends `X-Hauldesk-Secret`; other clients may case it
+    /// differently. A regression to case-sensitive lookup would silently 401
+    /// every gateway call, so pin the insensitivity at the live-glue level.
+    #[test]
+    fn process_finds_secret_header_regardless_of_case() {
+        for name in ["X-Hauldesk-Secret", "X-HAULDESK-SECRET", "x-hauldesk-secret"] {
+            let request = TestRequest::new()
+                .with_method(Method::Post)
+                .with_path("/ifta/summary")
+                .with_header(secret_header(name, "s3cret"))
+                .with_body(GATEWAY_BODY);
+            let (status, _) = run_request(request, "s3cret");
+            assert_eq!(status, 200, "header {name} must open the gate");
+        }
+    }
+
+    #[test]
+    fn process_401s_without_header_when_secret_set() {
+        let request = TestRequest::new()
+            .with_method(Method::Post)
+            .with_path("/ifta/summary")
+            .with_body(GATEWAY_BODY);
+        let (status, body) = run_request(request, "s3cret");
+        assert_eq!(status, 401);
+        assert!(body.contains("unauthorized"));
+    }
+
+    /// The POST body must survive the read-then-dispatch glue intact: the
+    /// golden fixture through the full request path yields the golden pennies.
+    #[test]
+    fn process_reads_post_body_through_to_compute() {
+        let request = TestRequest::new()
+            .with_method(Method::Post)
+            .with_path("/ifta/summary")
+            .with_body(GATEWAY_BODY);
+        let (status, body) = run_request(request, "");
+        assert_eq!(status, 200);
+        assert!(body.contains("\"netTaxCents\":2360"), "golden pennies in {body}");
+        assert!(body.contains("\"source\":\"rust-compute\""));
     }
 }
