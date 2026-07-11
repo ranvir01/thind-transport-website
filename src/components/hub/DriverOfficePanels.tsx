@@ -33,6 +33,15 @@ export function RequestDocumentPanel({
   const router = useRouter()
   const [pending, startTransition] = useTransition()
   const [form, setForm] = useState({ kind: "pod", loadId: "", note: "" })
+  const [confirmingCancelId, setConfirmingCancelId] = useState<string | null>(null)
+
+  const cancelRequest = (id: string) =>
+    startTransition(async () => {
+      const result = await cancelDocumentRequestAction(id)
+      if (result.ok) router.refresh()
+      else toast.error(result.error ?? "Failed")
+      setConfirmingCancelId(null)
+    })
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -99,18 +108,31 @@ export function RequestDocumentPanel({
                 Waiting on <span className="font-semibold text-fg">{r.kind.replace(/_/g, " ")}</span>
                 {r.load_reference ? ` for ${r.load_reference}` : ""}
               </span>
-              <button
-                onClick={() =>
-                  startTransition(async () => {
-                    const result = await cancelDocumentRequestAction(r.id)
-                    if (result.ok) router.refresh()
-                    else toast.error(result.error ?? "Failed")
-                  })
-                }
-                className="text-body-xs font-semibold text-fg-3 hover:text-fg min-h-[32px]"
-              >
-                Cancel
-              </button>
+              {confirmingCancelId === r.id ? (
+                <span className="flex shrink-0 items-center gap-2">
+                  <button
+                    onClick={() => cancelRequest(r.id)}
+                    disabled={pending}
+                    className="text-body-xs font-semibold text-bad hover:opacity-80 min-h-[32px] disabled:opacity-60"
+                  >
+                    Cancel it
+                  </button>
+                  <button
+                    onClick={() => setConfirmingCancelId(null)}
+                    disabled={pending}
+                    className="text-body-xs font-semibold text-fg-3 hover:text-fg min-h-[32px]"
+                  >
+                    Keep
+                  </button>
+                </span>
+              ) : (
+                <button
+                  onClick={() => setConfirmingCancelId(r.id)}
+                  className="text-body-xs font-semibold text-fg-3 hover:text-fg min-h-[32px]"
+                >
+                  Cancel
+                </button>
+              )}
             </li>
           ))}
         </ul>
