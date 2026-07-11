@@ -1,10 +1,15 @@
 import { Download } from "lucide-react"
-import { getIftaReport, listIftaRates } from "@/lib/hub/ifta"
+import { getIftaReport, listIftaRates, listIftaReports } from "@/lib/hub/ifta"
 import { quarterKey, lastCompletedQuarterKey, iftaDueDate } from "@/lib/hub/ifta-core"
 import { requirePermissionPage } from "@/lib/hub/session"
 import { fmtCentsExact, type IftaReportRow } from "@/lib/hub/types"
-import { Panel, PageHeader, BackLink, fieldCls } from "@/components/hub/ui"
+import { Panel, PageHeader, BackLink, fieldCls, Pill } from "@/components/hub/ui"
 import { IftaControls, IftaRatesImporter } from "@/components/hub/ComplianceForms"
+
+const STATUS_TONE = { draft: "neutral", reviewed: "info", filed: "ok" } as const
+// Most-recent-first (query is ORDER BY quarter DESC); caps the strip so a carrier
+// with years of filings doesn't get a wall of pills.
+const HISTORY_STRIP_LIMIT = 8
 
 export const dynamic = "force-dynamic"
 
@@ -29,9 +34,10 @@ export default async function IftaPage({
   // Default to the last completed quarter — the filing that is actually due;
   // a days-old in-progress quarter is a misleading landing view.
   const quarter = /^\d{4}Q[1-4]$/.test(params.q ?? "") ? params.q! : lastCompletedQuarterKey(new Date())
-  const [report, rates] = await Promise.all([
+  const [report, rates, history] = await Promise.all([
     getIftaReport(user.carrierId, quarter),
     listIftaRates(user.carrierId, quarter),
+    listIftaReports(user.carrierId),
   ])
   const rows: IftaReportRow[] = (report?.report?.rows as IftaReportRow[] | undefined) ?? []
   const due = iftaDueDate(quarter)
@@ -65,6 +71,17 @@ export default async function IftaPage({
           </button>
         </form>
         <IftaControls quarter={quarter} status={report?.status ?? null} />
+        {history.length > 1 ? (
+          <div className="flex flex-wrap items-center gap-1.5">
+            {history.slice(0, HISTORY_STRIP_LIMIT).map((h) => (
+              <a key={h.quarter} href={`/hub/compliance/ifta?q=${h.quarter}`}>
+                <Pill tone={h.quarter === quarter ? "accent" : STATUS_TONE[h.status]}>
+                  {h.quarter} {h.status}
+                </Pill>
+              </a>
+            ))}
+          </div>
+        ) : null}
         {report ? (
           <div className="flex gap-2">
             <a href={`/api/hub/ifta/${quarter}/worksheet.pdf`} className="inline-flex min-h-[44px] items-center gap-1.5 rounded-xl border border-border-strong bg-surface px-4 text-sm font-semibold text-fg-2 hover:bg-hover">
@@ -111,6 +128,16 @@ export default async function IftaPage({
             <Panel className="p-4 mb-4 border-warn">
               <p className="text-body-sm text-warn font-semibold">
                 Missing rates for: {report.report.missingRates!.join(", ")} — import below and recompute.
+              </p>
+            </Panel>
+          ) : null}
+
+          {(report.report?.unknownJurisdictionGallons ?? 0) > 0 ? (
+            <Panel className="p-4 mb-4 border-warn">
+              <p className="text-body-sm text-warn font-semibold">
+                {report.report.unknownJurisdictionGallons!.toLocaleString()}
+                {" gal of tractor fuel have no state and are excluded from tax-paid credit and fleet MPG — this overstates MPG and understates taxable gallons. Set each purchase's state in "}
+                <a href="/hub/fuel" className="underline">Fuel</a> and recompute.
               </p>
             </Panel>
           ) : null}

@@ -15,7 +15,7 @@ export interface IftaReportRecord {
   fleet_gallons: string | null
   mpg: string | null
   net_tax_cents: number | null
-  report: { rows?: IftaResult["rows"]; missingRates?: string[] }
+  report: { rows?: IftaResult["rows"]; missingRates?: string[]; unknownJurisdictionGallons?: number }
   updated_at: string
 }
 
@@ -45,7 +45,7 @@ export async function computeIftaQuarter(
   quarter: string,
   actor: { id: string; name: string },
   opts?: { allowRecomputeOfFinalized?: boolean }
-): Promise<{ result: IftaResult; mileageSource: string }> {
+): Promise<{ result: IftaResult; mileageSource: string; unknownJurisdictionGallons: number }> {
   // Recomputing upserts status back to 'draft' — a reviewed/filed quarter must
   // not be reset without explicit confirmation from the caller.
   const existing = await query<{ status: string }>(
@@ -117,10 +117,17 @@ export async function computeIftaQuarter(
      GROUP BY COALESCE(jurisdiction, '??')`,
     [carrierId, start.toISOString(), end.toISOString()]
   )
+  // Gallons with no state can't be credited to any jurisdiction, so they're
+  // excluded from tax-paid gallons AND fleet MPG — which inflates MPG and
+  // understates taxable gallons. Track the total so the worksheet can surface
+  // it instead of silently filing on incomplete fuel data.
   const gallonsByJurisdiction: Record<string, number> = {}
+  let unknownJurisdictionGallons = 0
   for (const row of fuel) {
-    if (row.jurisdiction !== "??") gallonsByJurisdiction[row.jurisdiction] = Number(row.gallons)
+    if (row.jurisdiction === "??") unknownJurisdictionGallons += Number(row.gallons)
+    else gallonsByJurisdiction[row.jurisdiction] = Number(row.gallons)
   }
+  unknownJurisdictionGallons = Math.round(unknownJurisdictionGallons * 1000) / 1000
 
   // Rates for the quarter (per-carrier since migration 016)
   const rateRows = await query<{ jurisdiction: string; rate: string; surcharge_rate: string }>(
@@ -143,16 +150,16 @@ export async function computeIftaQuarter(
     [
       carrierId, quarter, runId, mileageSource,
       result.fleetMiles, result.fleetGallons, result.mpg, result.netTaxCents,
-      JSON.stringify({ rows: result.rows, missingRates: result.missingRates }),
+      JSON.stringify({ rows: result.rows, missingRates: result.missingRates, unknownJurisdictionGallons }),
     ]
   )
   await logAudit({
     carrierId, actorId: actor.id, actorName: actor.name,
     entityType: "ifta_report", entityId: quarter, action: "compute",
-    newValue: { runId, mileageSource, netTaxCents: result.netTaxCents },
+    newValue: { runId, mileageSource, netTaxCents: result.netTaxCents, unknownJurisdictionGallons },
   })
 
-  return { result, mileageSource }
+  return { result, mileageSource, unknownJurisdictionGallons }
 }
 
 /**
@@ -216,6 +223,23 @@ export async function setIftaStatus(
   status: "draft" | "reviewed" | "filed",
   actor: { id: string; name: string }
 ): Promise<void> {
+  // Status is meaningless without a computed report — without this check the
+  // UPDATE matches nothing yet an audit row still claims the status changed.
+  const existing = await queryOne<{ report: { missingRates?: string[] } | null }>(
+    `SELECT report FROM hub.ifta_reports WHERE carrier_id = $1 AND quarter = $2`,
+    [carrierId, quarter]
+  )
+  if (!existing) {
+    throw new Error(`No report computed for ${quarter} — compute the quarter first.`)
+  }
+  // Missing rates zero out those jurisdictions' lines (see computeIfta), so a
+  // filing with them is materially understated — resolve before marking filed.
+  const missingRates = existing.report?.missingRates ?? []
+  if (status === "filed" && missingRates.length > 0) {
+    throw new Error(
+      `Cannot mark ${quarter} filed — missing tax rates for ${missingRates.join(", ")}. Import rates and recompute first.`
+    )
+  }
   await query(
     `UPDATE hub.ifta_reports SET status = $3, updated_at = NOW() WHERE carrier_id = $1 AND quarter = $2`,
     [carrierId, quarter, status]

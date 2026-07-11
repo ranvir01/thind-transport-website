@@ -98,16 +98,51 @@ describe("computeIftaQuarter mileage source selection", () => {
     expect(result.fleetGallons).toBe(150)
   })
 
-  it("drops a fuel row with no resolved jurisdiction ('??') instead of taxing it", async () => {
+  it("drops a fuel row with no resolved jurisdiction ('??') instead of taxing it, but reports the dropped gallons", async () => {
     mockQueries({
       trucks: [],
       imported: [{ jurisdiction: "WA", miles: "1000" }],
       fuel: [{ jurisdiction: "??", gallons: "80" }],
     })
 
-    const { result } = await computeIftaQuarter("carrier-1", "2026Q2", actor)
+    const { result, unknownJurisdictionGallons } = await computeIftaQuarter("carrier-1", "2026Q2", actor)
 
     expect(result.fleetGallons).toBe(0)
+    expect(unknownJurisdictionGallons).toBe(80)
+  })
+
+  it("persists unknownJurisdictionGallons in the report JSON so the worksheet can surface it", async () => {
+    const calls = mockQueries({
+      trucks: [],
+      imported: [{ jurisdiction: "WA", miles: "1000" }],
+      fuel: [
+        { jurisdiction: "WA", gallons: "150" },
+        { jurisdiction: "??", gallons: "42.5" },
+      ],
+      rates: [{ jurisdiction: "WA", rate: "0.4940", surcharge_rate: "0" }],
+    })
+
+    const { result, unknownJurisdictionGallons } = await computeIftaQuarter("carrier-1", "2026Q2", actor)
+
+    // Known-state gallons still tax normally; only the stateless gallons drop.
+    expect(result.fleetGallons).toBe(150)
+    expect(unknownJurisdictionGallons).toBe(42.5)
+    const upsert = calls.find((c) => c.sql.includes("INSERT INTO hub.ifta_reports"))
+    expect(upsert).toBeDefined()
+    const reportJson = JSON.parse(String(upsert!.params[8]))
+    expect(reportJson.unknownJurisdictionGallons).toBe(42.5)
+  })
+
+  it("reports zero unknown gallons when every fuel purchase has a state", async () => {
+    mockQueries({
+      trucks: [],
+      imported: [{ jurisdiction: "WA", miles: "1000" }],
+      fuel: [{ jurisdiction: "WA", gallons: "150" }],
+    })
+
+    const { unknownJurisdictionGallons } = await computeIftaQuarter("carrier-1", "2026Q2", actor)
+
+    expect(unknownJurisdictionGallons).toBe(0)
   })
 
   it("carrier-scopes every mileage/fuel/rate/report query with carrierId as the first parameter", async () => {
