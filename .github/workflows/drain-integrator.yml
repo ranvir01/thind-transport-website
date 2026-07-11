@@ -1,0 +1,86 @@
+# Fallback drain: fast-forward main from the integrator branch when both hourly
+# agents (Claude routine + Cursor deploy) have been down long enough for drift
+# to build up. Lesson from 2026-07-10: Cursor's VMs went read-only, the :59
+# deploy agent silently stopped merging, and production sat hours behind a
+# green integrator. This Action is the platform-independent backstop.
+#
+# It only ever performs a *fast-forward* (integrator strictly ahead, zero
+# behind) and only after verifying the exact SHA it will push with the same
+# chain the agents use (npm run build + npx vitest run). A plain non-force
+# push means any race with a live agent is rejected by GitHub, never clobbered.
+name: Drain integrator fallback
+
+on:
+  schedule:
+    # :17 — offset from the agent crons (:00 integrator, :30 smoke, :59 deploy)
+    # so this only fires between their slots and never races a healthy loop.
+    - cron: "17 * * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: drain-integrator
+  cancel-in-progress: false
+
+env:
+  INTEGRATOR: claude/hauldesk-project-setup-l1luoo
+  # Agents drain at any drift; the fallback waits for >3 commits (~3+ missed
+  # hourly deploy slots) so it only acts when the loop is actually down.
+  DRIFT_THRESHOLD: 3
+
+jobs:
+  drain:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Measure drift
+        id: drift
+        run: |
+          set -euo pipefail
+          git fetch origin main "refs/heads/${INTEGRATOR}"
+          SHA="$(git rev-parse "origin/${INTEGRATOR}")"
+          AHEAD="$(git rev-list --count "origin/main..${SHA}")"
+          BEHIND="$(git rev-list --count "${SHA}..origin/main")"
+          echo "integrator=${SHA} ahead=${AHEAD} behind=${BEHIND}"
+          echo "sha=${SHA}" >> "$GITHUB_OUTPUT"
+          if [ "$BEHIND" -ne 0 ]; then
+            echo "Integrator diverged from main (${BEHIND} behind) — not a fast-forward; leaving it to the agents."
+            echo "drain=false" >> "$GITHUB_OUTPUT"
+          elif [ "$AHEAD" -le "$DRIFT_THRESHOLD" ]; then
+            echo "Integrator only ${AHEAD} ahead (threshold ${DRIFT_THRESHOLD}) — the hourly loop is keeping up."
+            echo "drain=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "drain=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Use Node 22
+        if: steps.drift.outputs.drain == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Verify integrator (build + tests)
+        if: steps.drift.outputs.drain == 'true'
+        run: |
+          set -euo pipefail
+          git checkout --detach "${{ steps.drift.outputs.sha }}"
+          bash scripts/setup-canvas-deps.sh
+          npm ci
+          npm run build
+          npx vitest run
+
+      - name: Fast-forward main
+        if: steps.drift.outputs.drain == 'true'
+        run: |
+          set -euo pipefail
+          # Plain push (no force): if main moved since the drift check, GitHub
+          # rejects the non-fast-forward and the next hourly run re-evaluates.
+          git push origin "${{ steps.drift.outputs.sha }}:refs/heads/main"
+          echo "Drained ${INTEGRATOR} -> main at ${{ steps.drift.outputs.sha }}"

@@ -122,6 +122,13 @@ drain is a direct push. Two deploy-blockers seen in the wild so far, both cron v
 Hobby plan: sub-daily schedules and (guard) job count — preview deploys skip cron validation, so
 "previews green, production stale" is the signature of a vercel.json cron problem.
 
+**Automated backstop:** `.github/workflows/drain-integrator.yml` runs at :17 UTC (offset from the
+agent slots). When the integrator is >3 commits ahead of `main` and still a pure fast-forward, it
+verifies that exact SHA (`npm ci`, `npm run build`, `npx vitest run`) and pushes it to `main` with a
+plain non-force push — a race with a live agent is rejected by GitHub, never clobbered. Diverged
+history or drift ≤3 means the loop is alive (or needs a real merge), so the Action stands down and
+leaves it to the agents. This keeps the drain working even when both agent platforms are down at once.
+
 Legacy single-automation files (`hauldesk-improvement-cycle.*`) alias to `loadoff-deploy.*`.
 
 ### 3b. Release gate (before any deploy is called done)
