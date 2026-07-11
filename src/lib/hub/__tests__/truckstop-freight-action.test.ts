@@ -63,8 +63,11 @@ vi.mock("next/cache", () => ({
 
 import { requirePermission } from "@/lib/hub/session"
 import { hasCredentials } from "@/lib/hub/credentials"
-import { truckstopSource } from "@/lib/hub/integrations/truckstop"
+import { normalizeTruckstopPosting, truckstopSource } from "@/lib/hub/integrations/truckstop"
 import { createLoad } from "@/lib/hub/loads"
+import { geocodeCityState } from "@/lib/hub/geocode"
+import { logAudit } from "@/lib/hub/audit"
+import { revalidatePath } from "next/cache"
 import {
   bookTruckstopPostingAction,
   searchTruckstopFreightAction,
@@ -73,7 +76,11 @@ import {
 const requirePermissionMock = vi.mocked(requirePermission)
 const hasCredentialsMock = vi.mocked(hasCredentials)
 const truckstopSourceMock = vi.mocked(truckstopSource)
+const normalizeTruckstopPostingMock = vi.mocked(normalizeTruckstopPosting)
 const createLoadMock = vi.mocked(createLoad)
+const geocodeCityStateMock = vi.mocked(geocodeCityState)
+const logAuditMock = vi.mocked(logAudit)
+const revalidatePathMock = vi.mocked(revalidatePath)
 
 const USER = {
   id: "user-1",
@@ -129,6 +136,30 @@ describe("searchTruckstopFreightAction", () => {
     expect(result.ok).toBe(true)
     expect(result.postings?.map((p) => p.external_id)).toEqual(["POST-1"])
   })
+
+  it("surfaces a permission denial as an action error, not a throw", async () => {
+    requirePermissionMock.mockRejectedValue(new Error("Forbidden: driver cannot loads:read"))
+    const result = await searchTruckstopFreightAction({ originState: "WA" })
+    expect(result.ok).toBe(false)
+    expect(result.error).toMatch(/forbidden/i)
+  })
+
+  it("hides an internal vendor failure behind the generic search message", async () => {
+    const consoleError = vi.spyOn(console, "error").mockImplementation(() => {})
+    hasCredentialsMock.mockResolvedValue(true)
+    truckstopSourceMock.mockReturnValue({
+      provider: "truckstop",
+      connected: async () => true,
+      pull: async () => [],
+      search: async () => {
+        throw new Error("fetch failed")
+      },
+    })
+    const result = await searchTruckstopFreightAction({ originState: "WA" })
+    expect(result.ok).toBe(false)
+    expect(result.error).toBe("Truckstop search failed")
+    consoleError.mockRestore()
+  })
 })
 
 describe("bookTruckstopPostingAction", () => {
@@ -162,5 +193,74 @@ describe("bookTruckstopPostingAction", () => {
       }),
       { id: "user-1", name: "Dispatcher" }
     )
+  })
+
+  it("still books when geocoding misses, storing null coordinates", async () => {
+    geocodeCityStateMock.mockResolvedValueOnce(null).mockResolvedValueOnce(null)
+    const result = await bookTruckstopPostingAction("cust-1", { postingId: "POST-1" })
+    expect(result.ok).toBe(true)
+    expect(createLoadMock).toHaveBeenCalledWith(
+      "carrier-1",
+      expect.objectContaining({
+        stops: [
+          expect.objectContaining({ city: "Kent", lat: null, lng: null }),
+          expect.objectContaining({ city: "Boise", lat: null, lng: null }),
+        ],
+      }),
+      expect.anything()
+    )
+  })
+
+  it("audits the booking with the posting id and money fields", async () => {
+    await bookTruckstopPostingAction("cust-1", { postingId: "POST-1" })
+    expect(logAuditMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        carrierId: "carrier-1",
+        entityType: "load",
+        action: "create",
+        newValue: expect.objectContaining({
+          source: "truckstop",
+          truckstop_posting_id: "POST-1",
+          linehaul_cents: 125000,
+        }),
+      })
+    )
+    expect(revalidatePathMock).toHaveBeenCalledWith("/hub/loadboard")
+  })
+
+  it("refuses booking when the caller lacks loads:write and never creates a load", async () => {
+    requirePermissionMock.mockRejectedValue(new Error("Forbidden: viewer cannot loads:write"))
+    const result = await bookTruckstopPostingAction("cust-1", { postingId: "POST-1" })
+    expect(result.ok).toBe(false)
+    expect(result.error).toMatch(/forbidden/i)
+    expect(createLoadMock).not.toHaveBeenCalled()
+  })
+
+  it("refuses a posting that normalizes without a posting id", async () => {
+    const result = await bookTruckstopPostingAction("cust-1", {})
+    expect(result.ok).toBe(false)
+    expect(result.error).toMatch(/posting id/i)
+    expect(createLoadMock).not.toHaveBeenCalled()
+  })
+
+  it("refuses a posting that fails to normalize at all", async () => {
+    normalizeTruckstopPostingMock.mockImplementationOnce(() => {
+      throw new Error("Posting is not a Truckstop payload")
+    })
+    const result = await bookTruckstopPostingAction("cust-1", { postingId: "POST-1" })
+    expect(result.ok).toBe(false)
+    expect(result.error).toMatch(/not a Truckstop payload/i)
+    expect(createLoadMock).not.toHaveBeenCalled()
+  })
+
+  it("hides an internal createLoad failure and does not revalidate anything", async () => {
+    const consoleError = vi.spyOn(console, "error").mockImplementation(() => {})
+    createLoadMock.mockRejectedValueOnce(new Error("connection terminated"))
+    const result = await bookTruckstopPostingAction("cust-1", { postingId: "POST-1" })
+    expect(result.ok).toBe(false)
+    expect(result.error).toBe("Could not book posting")
+    expect(logAuditMock).not.toHaveBeenCalled()
+    expect(revalidatePathMock).not.toHaveBeenCalled()
+    consoleError.mockRestore()
   })
 })
