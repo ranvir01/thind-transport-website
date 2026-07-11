@@ -1,23 +1,30 @@
 import Link from "next/link"
 import { Download } from "lucide-react"
-import { truckPnl } from "@/lib/hub/expenses"
+import { resolvePnlRange, truckPnlRange } from "@/lib/hub/reports"
 import { computeFleetKpis } from "@/lib/hub/kpi"
 import { requirePermissionPage } from "@/lib/hub/session"
 import { fmtCents } from "@/lib/hub/types"
-import { Panel, PageHeader } from "@/components/hub/ui"
+import { Panel, PageHeader, fieldCls } from "@/components/hub/ui"
 import { query } from "@/lib/hub/db"
 import type { Lane } from "@/lib/hub/types"
 
 export const dynamic = "force-dynamic"
 
-// API download endpoint (not a page) — held in a const so the page-link lint rule doesn't misfire.
+// API download endpoints (not pages) — held in consts so the page-link lint rule doesn't misfire.
 const PNL_EXPORT_URL = "/api/hub/exports/pnl"
+const PNL_RANGE_EXPORT_URL = "/hub/reports/export"
 const LANES_EXPORT_URL = "/api/hub/exports/lanes"
 
-export default async function ReportsPage() {
+export default async function ReportsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ from?: string; to?: string }>
+}) {
   const user = await requirePermissionPage("money:read")
+  const params = await searchParams
+  const range = resolvePnlRange(params.from, params.to)
   const [pnl, lanes] = await Promise.all([
-    truckPnl(user.carrierId, 92),
+    truckPnlRange(user.carrierId, range),
     query<Lane>(`SELECT * FROM hub.lanes WHERE carrier_id = $1 ORDER BY margin_cents DESC LIMIT 20`, [user.carrierId]),
   ])
   const totals = pnl.reduce(
@@ -42,11 +49,21 @@ export default async function ReportsPage() {
   const perMile = (c: number | null) => (c == null ? "—" : `$${(c / 100).toFixed(2)}`)
   const pct = (p: number | null) => (p == null ? "—" : `${p}%`)
 
+  const hasCustomRange = Boolean(params.from || params.to)
+  const fmtDay = (iso: string) =>
+    new Date(`${iso}T00:00:00`).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
+  const rangeLabel = hasCustomRange ? `${fmtDay(range.from)} – ${fmtDay(range.to)}` : "last 92 days"
+  // Default view keeps the original trailing-365-day export; a chosen range
+  // downloads exactly the dates on screen.
+  const pnlCsvHref = hasCustomRange
+    ? `${PNL_RANGE_EXPORT_URL}?from=${range.from}&to=${range.to}`
+    : PNL_EXPORT_URL
+
   return (
     <div>
       <PageHeader
         title="Reports"
-        subtitle="Per-truck P&L, last 92 days. Driver pay and fixed costs come from the accountant's books — this is the operational view."
+        subtitle={`Per-truck P&L, ${rangeLabel}. Driver pay and fixed costs come from the accountant's books — this is the operational view.`}
         action={
           <div className="flex flex-wrap gap-2">
             <Link
@@ -56,7 +73,7 @@ export default async function ReportsPage() {
               Owner dashboard →
             </Link>
             <a
-              href={PNL_EXPORT_URL}
+              href={pnlCsvHref}
               className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-border-strong bg-surface px-4 text-sm font-semibold text-fg-2 hover:bg-hover"
             >
               <Download className="h-4 w-4" /> P&L CSV
@@ -64,6 +81,28 @@ export default async function ReportsPage() {
           </div>
         }
       />
+
+      <form method="GET" className="mb-4 flex flex-wrap items-end gap-3">
+        <label className="flex w-40 flex-col gap-1 text-label text-fg-3 uppercase">
+          From
+          <input type="date" name="from" defaultValue={range.from} max={range.to} className={fieldCls} />
+        </label>
+        <label className="flex w-40 flex-col gap-1 text-label text-fg-3 uppercase">
+          To
+          <input type="date" name="to" defaultValue={range.to} className={fieldCls} />
+        </label>
+        <button
+          type="submit"
+          className="inline-flex min-h-[44px] items-center rounded-xl border border-border-strong bg-surface px-4 text-sm font-semibold text-fg-2 hover:bg-hover"
+        >
+          Apply
+        </button>
+        {hasCustomRange && (
+          <Link href="/hub/reports" className="inline-flex min-h-[44px] items-center text-sm font-semibold text-accent-text hover:underline">
+            Reset to last 92 days
+          </Link>
+        )}
+      </form>
 
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-3">
         <Panel className="p-4">
