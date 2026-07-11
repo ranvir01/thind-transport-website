@@ -13,8 +13,8 @@ import {
   isOfflineError, listIntents, queueCount, removeIntent, type QueuedIntent,
 } from "./offline-queue"
 import {
-  driverAcknowledgeAnnouncement, driverAcknowledgeDispatch, driverAdvanceStatus, driverStopTimestamp,
-  driverUploadDocument,
+  driverAcknowledgeAnnouncement, driverAcknowledgeDispatch, driverAdvanceStatus, driverRequestAdvance,
+  driverRequestTimeOff, driverStopTimestamp, driverUploadDocument,
 } from "@/app/hub/_actions/driver"
 import { submitDvirAction } from "@/app/hub/_actions/dvir"
 import { fileDriverIncidentReport } from "@/app/hub/_actions/safety"
@@ -56,6 +56,10 @@ async function execute(intent: QueuedIntent): Promise<{ ok: boolean; error?: str
       return fileDriverIncidentReport(
         intent.payload as Parameters<typeof fileDriverIncidentReport>[0]
       )
+    case "time-off":
+      return driverRequestTimeOff(intent.payload as Parameters<typeof driverRequestTimeOff>[0])
+    case "advance":
+      return driverRequestAdvance(intent.payload as Parameters<typeof driverRequestAdvance>[0])
     default:
       return { ok: true }
   }

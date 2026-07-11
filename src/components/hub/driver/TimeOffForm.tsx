@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { CalendarPlus, Loader2 } from "lucide-react"
 import { driverCancelTimeOff, driverRequestTimeOff } from "@/app/hub/_actions/driver"
+import { runOrQueue } from "@/components/hub/driver/offline-queue"
 import { fieldDarkCls, labelDarkCls } from "@/components/hub/ui"
 import { TIME_OFF_KINDS, TIME_OFF_KIND_LABELS } from "@/lib/hub/types"
 
@@ -16,8 +17,16 @@ export function TimeOffForm() {
   const submit = (e: React.FormEvent) => {
     e.preventDefault()
     startTransition(async () => {
-      const result = await driverRequestTimeOff(form)
-      if (result.ok) {
+      // A driver planning home time from a dead-signal truck stop must not
+      // lose the tap — same offline queue as the DVIR and incident forms.
+      const result = await runOrQueue({ kind: "time-off", payload: form }, () =>
+        driverRequestTimeOff(form)
+      )
+      if ("queued" in result) {
+        // No router.refresh on the queued path — it needs the network it doesn't have.
+        toast.success("No signal — request saved on your phone, sends automatically")
+        setForm({ startDate: "", endDate: "", kind: "home_time", reason: "" })
+      } else if (result.ok) {
         toast.success("Request sent — the office will answer here")
         setForm({ startDate: "", endDate: "", kind: "home_time", reason: "" })
         router.refresh()
