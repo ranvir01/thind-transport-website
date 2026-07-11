@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest"
 import { computeSettlement } from "../money"
+import { roundHalfAwayFromZero } from "../rounding"
 import {
   evaluatePayRules, legacyConfigToRuleSet, parseRuleSet, summarizePayRules,
   type PayLoadContext, type PayRuleSet,
@@ -167,6 +168,95 @@ describe("pay-rules evaluator — the generic settlement seam", () => {
     )
     expect(draft.deductionsCents).toBe(20000)
     expect(draft.netCents).toBe(11500)
+  })
+})
+
+describe("detention itemization — percent rules name the detention share", () => {
+  // Auto-billed detention (applyDetentionAccrual) lands in accessorialCents;
+  // detentionCents tells the evaluator how much of it to itemize by name.
+  const detained = load({
+    linehaulCents: 250000, fuelSurchargeCents: 30000,
+    accessorialCents: 15000, detentionCents: 15000,
+  })
+
+  it("percent_linehaul splits detention into its own line, penny-identical total", () => {
+    const ruleSet: PayRuleSet = { name: "t", rules: [{ type: "percent_linehaul", basisPoints: 9000 }], deductions: [] }
+    const split = evaluatePayRules(ruleSet, { loads: [detained], ...noExtras })
+    const blended = evaluatePayRules(ruleSet, { loads: [load({ linehaulCents: 250000, accessorialCents: 15000 })], ...noExtras })
+    expect(split.grossCents).toBe(blended.grossCents) // 238500 — nobody's pay changes
+    const earnings = split.lines.filter((l) => l.kind === "earning")
+    expect(earnings).toHaveLength(2)
+    expect(earnings[0].label).toBe("REF-1 — 90% of $2500.00")
+    expect(earnings[0].amountCents).toBe(225000)
+    expect(earnings[1].label).toBe("REF-1 — 90% of detention $150.00")
+    expect(earnings[1].amountCents).toBe(13500)
+  })
+
+  it("percent_total itemizes detention out of the all-in base", () => {
+    const draft = evaluatePayRules(
+      { name: "t", rules: [{ type: "percent_total", basisPoints: 7500 }], deductions: [] },
+      { loads: [detained], ...noExtras }
+    )
+    // 75% × $2,950.00 all-in = $2,212.50 total, of which 75% × $150 = $112.50 detention
+    expect(draft.grossCents).toBe(221250)
+    const earnings = draft.lines.filter((l) => l.kind === "earning")
+    expect(earnings.map((l) => [l.label, l.amountCents])).toEqual([
+      ["REF-1 — 75% of $2800.00 (all-in)", 210000],
+      ["REF-1 — 75% of detention $150.00", 11250],
+    ])
+  })
+
+  it("percent_accessorials names detention apart from other accessorials", () => {
+    const draft = evaluatePayRules(
+      { name: "t", rules: [{ type: "percent_accessorials", basisPoints: 5000 }], deductions: [] },
+      { loads: [load({ accessorialCents: 25000, detentionCents: 15000 })], ...noExtras }
+    )
+    const earnings = draft.lines.filter((l) => l.kind === "earning")
+    expect(earnings.map((l) => [l.label, l.amountCents])).toEqual([
+      ["REF-1 — 50% of accessorials $100.00", 5000],
+      ["REF-1 — 50% of detention $150.00", 7500],
+    ])
+  })
+
+  it("split lines always sum to the unsplit rounding, even on awkward percentages", () => {
+    // 66.67% of $123.45 base with $33.33 detention — both shares round.
+    const ruleSet: PayRuleSet = { name: "t", rules: [{ type: "percent_linehaul", basisPoints: 6667 }], deductions: [] }
+    const awkward = load({ linehaulCents: 9012, fuelSurchargeCents: 0, accessorialCents: 3333, detentionCents: 3333 })
+    const split = evaluatePayRules(ruleSet, { loads: [awkward], ...noExtras })
+    const unsplit = roundHalfAwayFromZero(((9012 + 3333) * 6667) / 10000)
+    expect(split.grossCents).toBe(unsplit)
+    expect(split.lines.reduce((s, l) => s + l.amountCents, 0)).toBe(unsplit)
+  })
+
+  it("an all-detention load drops the empty remainder line", () => {
+    const draft = evaluatePayRules(
+      { name: "t", rules: [{ type: "percent_linehaul", basisPoints: 9000 }], deductions: [] },
+      { loads: [load({ linehaulCents: 0, accessorialCents: 15000, detentionCents: 15000 })], ...noExtras }
+    )
+    const earnings = draft.lines.filter((l) => l.kind === "earning")
+    expect(earnings).toHaveLength(1)
+    expect(earnings[0].label).toBe("REF-1 — 90% of detention $150.00")
+    expect(earnings[0].amountCents).toBe(13500)
+  })
+
+  it("clamps detentionCents to the billed accessorials (defensive)", () => {
+    const draft = evaluatePayRules(
+      { name: "t", rules: [{ type: "percent_linehaul", basisPoints: 10000 }], deductions: [] },
+      { loads: [load({ linehaulCents: 100000, accessorialCents: 5000, detentionCents: 99999 })], ...noExtras }
+    )
+    expect(draft.grossCents).toBe(105000)
+    const detentionLine = draft.lines.find((l) => l.label.includes("detention"))
+    expect(detentionLine?.amountCents).toBe(5000)
+  })
+
+  it("loads without detention keep their single blended line (no behavior change)", () => {
+    const draft = evaluatePayRules(
+      { name: "t", rules: [{ type: "percent_linehaul", basisPoints: 9000 }], deductions: [] },
+      { loads: [load({ linehaulCents: 250000, accessorialCents: 15000 })], ...noExtras }
+    )
+    const earnings = draft.lines.filter((l) => l.kind === "earning")
+    expect(earnings).toHaveLength(1)
+    expect(earnings[0].label).toBe("REF-1 — 90% of $2650.00")
   })
 })
 
