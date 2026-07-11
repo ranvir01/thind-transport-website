@@ -10,6 +10,8 @@
  * "Pending" = at least one commit on the branch that is not reachable from origin/main.
  */
 import { execSync } from "node:child_process"
+import { realpathSync } from "node:fs"
+import { pathToFileURL } from "node:url"
 import { inferLane } from "./infer-agent-lane.mjs"
 
 const INTEGRATOR = "origin/claude/hauldesk-project-setup-l1luoo"
@@ -71,8 +73,8 @@ function unpickedCommitCount(ref, base) {
   return countUnpickedFromCherry(out)
 }
 
-function buildInventory({ pendingOnly }) {
-  git("fetch origin --quiet")
+export function buildInventory({ pendingOnly, skipFetch = false }) {
+  if (!skipFetch) git("fetch origin --quiet")
   const branches = listClaudeBranches()
   const rows = []
 
@@ -119,8 +121,11 @@ function main() {
   const rows = buildInventory({ pendingOnly: !showAll })
 
   if (json) {
+    // No process.exit() here: exit doesn't drain a piped stdout, so payloads
+    // past ~64KB truncated mid-string and consumers parsed garbage. Return
+    // and let Node flush + exit naturally.
     console.log(JSON.stringify({ integrator: INTEGRATOR, main: MAIN, pending: rows }, null, 2))
-    process.exit(rows.length ? 0 : 0)
+    return
   }
 
   console.log("LoadOff agent branch inventory")
@@ -152,5 +157,29 @@ function main() {
   console.log(`  git merge origin/${top.branch.split("/").slice(1).join("/")}`)
 }
 
-// import-safe: only run when executed directly (tests import countUnpickedFromCherry)
-if (process.argv[1] && import.meta.url === new URL(`file://${process.argv[1]}`).href) main()
+/**
+ * True when this file is the CLI entry point. Node realpaths the main module
+ * (import.meta.url is the symlink-resolved path), so a hand-built
+ * `file://${argv[1]}` mismatches under symlinked checkouts — main() silently
+ * never ran, stdout stayed empty, and agent:status parsed that as 0 pending.
+ * Compare both the raw and realpath forms of argv[1], via pathToFileURL so
+ * spaces/unicode/Windows paths encode the same way import.meta.url does.
+ */
+export function isCliEntry(argvPath, metaUrl) {
+  if (!argvPath) return false
+  const candidates = new Set()
+  try {
+    candidates.add(pathToFileURL(argvPath).href)
+  } catch {
+    /* unparseable path — fall through to realpath attempt */
+  }
+  try {
+    candidates.add(pathToFileURL(realpathSync(argvPath)).href)
+  } catch {
+    /* path may not exist (e.g. deleted cwd) — raw form already covered */
+  }
+  return candidates.has(metaUrl)
+}
+
+// import-safe: only run when executed directly (agent-loop-status and tests import from here)
+if (isCliEntry(process.argv[1], import.meta.url)) main()

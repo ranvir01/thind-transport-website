@@ -10,6 +10,7 @@
  * Exit 1 = integrator is ahead of main by more than AGENT_CATCHUP_THRESHOLD (catch-up mode).
  */
 import { execSync } from "node:child_process"
+import { buildInventory } from "./agent-branch-inventory.mjs"
 
 const INTEGRATOR = "origin/claude/hauldesk-project-setup-l1luoo"
 const MAIN = "origin/main"
@@ -88,19 +89,36 @@ function main() {
     for (const line of logLines(MAIN, INTEGRATOR)) console.log(`  ${line}`)
   }
 
-  const pendingOut = execSync("node scripts/agent-branch-inventory.mjs --json", {
-    encoding: "utf-8",
-    cwd: process.cwd(),
-  })
-  let pendingCount = 0
+  // Direct import instead of a `node … --json` subprocess: the old path
+  // silently coerced any spawn/parse failure to 0, reporting "Pending: 0"
+  // while agent:branches showed 200+. A failure here now prints loudly.
+  let pendingCount = null
   try {
-    pendingCount = JSON.parse(pendingOut).pending?.length ?? 0
-  } catch {
-    /* ignore */
+    pendingCount = buildInventory({ pendingOnly: true, skipFetch: true }).length
+  } catch (err) {
+    console.log(`\nPending claude/* branches (not on main): UNKNOWN — inventory failed: ${err?.message ?? err}`)
+    console.log("  Run: npm run agent:branches (and fix the failure above before trusting this snapshot)")
   }
-  console.log(`\nPending claude/* branches (not on main): ${pendingCount}`)
-  if (pendingCount > 0) {
-    console.log("  Run: npm run agent:branches")
+  if (pendingCount !== null) {
+    console.log(`\nPending claude/* branches (not on main): ${pendingCount}`)
+    if (pendingCount > 0) {
+      console.log("  Run: npm run agent:branches")
+    } else {
+      // Mismatch guard: 0 pending is only plausible when no claude/* branch
+      // has commits main lacks. Cross-check with plain ancestry; cherry
+      // patch-equivalence can legitimately clear a --no-merged branch, so
+      // this warns rather than fails.
+      const unmergedClaude = git(`branch -r --no-merged ${MAIN}`)
+        .split("\n")
+        .map((l) => l.trim())
+        .filter((l) => l.startsWith("origin/claude/") && l !== INTEGRATOR).length
+      if (unmergedClaude > 0) {
+        console.log(
+          `  WARNING: inventory says 0 pending but ${unmergedClaude} origin/claude/* branch(es) are not ancestry-merged into main.`
+        )
+        console.log("  Verify with: npm run agent:branches")
+      }
+    }
   }
 
   console.log("\nLane branches ahead of integrator:")
