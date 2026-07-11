@@ -8,11 +8,11 @@ import { createWorkspaceAction, verifyCarrierAuthorityAction, type CarrierAuthor
 import { fieldCls, labelCls } from "@/components/hub/ui"
 
 /**
- * Onboarding wizard (phase-7 M11): company facts → branding → owner account.
- * One server action at the end — earlier steps hold state client-side so an
- * abandoned signup persists nothing.
+ * Onboarding wizard (phase-7 M11): company facts → branding → driver pay →
+ * owner account. One server action at the end — earlier steps hold state
+ * client-side so an abandoned signup persists nothing.
  */
-const STEPS = ["Company", "Branding", "Your account"] as const
+const STEPS = ["Company", "Branding", "Driver pay", "Your account"] as const
 
 const ACCENT_PRESETS: { name: string; value: string }[] = [
   { name: "Amber", value: "#d97706" },
@@ -35,6 +35,8 @@ export function SignupForm() {
     companyName: "", dotNumber: "", mcNumber: "", phone: "",
     ownerName: "", email: "", password: "",
   })
+  // Pay step is prefilled with the platform defaults so "just keep going" stays valid.
+  const [pay, setPay] = useState({ perMile: "0.60", ownerOperatorPct: "90" })
 
   const verify = () => {
     setAuthorityError(null)
@@ -65,7 +67,14 @@ export function SignupForm() {
       return
     }
     startTransition(async () => {
-      const result = await createWorkspaceAction({ ...form, accent: accent ?? undefined })
+      const perMile = Number.parseFloat(pay.perMile)
+      const ooPct = Number.parseFloat(pay.ownerOperatorPct)
+      const result = await createWorkspaceAction({
+        ...form,
+        accent: accent ?? undefined,
+        payPerMile: Number.isFinite(perMile) ? perMile : undefined,
+        ownerOperatorPct: Number.isFinite(ooPct) ? ooPct : undefined,
+      })
       if (!result.ok) {
         toast.error(result.error ?? "Could not create the workspace")
         return
@@ -166,6 +175,31 @@ export function SignupForm() {
       )}
 
       {step === 2 && (
+        <>
+          <p className="text-body-sm text-fg-2">
+            How do you pay drivers? These seed your settlement math — every rate is
+            editable later in Settings, and per-driver overrides win.
+          </p>
+          <div>
+            <label htmlFor="su-permile" className={labelCls}>Company drivers — $ per mile *</label>
+            <input id="su-permile" required type="number" inputMode="decimal"
+              min={0.01} max={5} step={0.01} className={fieldCls}
+              value={pay.perMile} onChange={(e) => setPay({ ...pay, perMile: e.target.value })} />
+          </div>
+          <div>
+            <label htmlFor="su-oopct" className={labelCls}>Owner-operators — % of linehaul *</label>
+            <input id="su-oopct" required type="number" inputMode="numeric"
+              min={1} max={100} step={1} className={fieldCls}
+              value={pay.ownerOperatorPct} onChange={(e) => setPay({ ...pay, ownerOperatorPct: e.target.value })} />
+          </div>
+          <p className="text-xs text-fg-3">
+            Don&apos;t run one of these driver types? Leave its default — it only applies
+            when a driver is set to that pay type.
+          </p>
+        </>
+      )}
+
+      {step === 3 && (
         <>
           <div>
             <label htmlFor="su-owner" className={labelCls}>Your name *</label>

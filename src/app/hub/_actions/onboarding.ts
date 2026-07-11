@@ -82,11 +82,24 @@ export async function createWorkspaceAction(input: {
   password: string
   /** Optional brand accent picked in the wizard; invalid values are dropped, never block signup. */
   accent?: string
+  /** Company-driver rate in dollars per mile (wizard pay step). Omitted → standard default. */
+  payPerMile?: number
+  /** Owner-operator share as a percent, 1–100 (wizard pay step). Omitted → standard default. */
+  ownerOperatorPct?: number
 }): Promise<Result> {
   if (!input.companyName.trim()) return { ok: false, error: "What's the company called?" }
   if (!input.ownerName.trim()) return { ok: false, error: "Your name is needed" }
   if (!input.email.includes("@")) return { ok: false, error: "Enter a real email" }
   if ((input.password ?? "").length < 8) return { ok: false, error: "Password needs 8+ characters" }
+  // Pay is money, not cosmetics: a provided-but-nonsense value is an error, never a silent default.
+  if (input.payPerMile !== undefined &&
+      (!Number.isFinite(input.payPerMile) || input.payPerMile <= 0 || input.payPerMile > 5)) {
+    return { ok: false, error: "Company driver rate looks off — enter dollars per mile, like 0.60" }
+  }
+  if (input.ownerOperatorPct !== undefined &&
+      (!Number.isFinite(input.ownerOperatorPct) || input.ownerOperatorPct < 1 || input.ownerOperatorPct > 100)) {
+    return { ok: false, error: "Owner-operator share must be between 1 and 100 percent" }
+  }
 
   const existing = await queryOne<{ id: string }>(
     `SELECT id FROM hub.users WHERE email = $1`,
@@ -108,13 +121,15 @@ export async function createWorkspaceAction(input: {
     const carrierId = carrierRows[0].id as string
     const prefix = input.companyName.trim().replace(/[^A-Za-z]/g, "").slice(0, 3).toUpperCase() || "LD"
     const accent = /^#[0-9a-fA-F]{6}$/.test(input.accent ?? "") ? input.accent : null
+    const perMile = input.payPerMile !== undefined ? Math.round(input.payPerMile * 100) / 100 : 0.6
+    const ooShare = input.ownerOperatorPct !== undefined ? Math.round(input.ownerOperatorPct * 100) / 10000 : 0.9
     await client.query(
       `INSERT INTO hub.carrier_settings (carrier_id, settings) VALUES ($1, $2)`,
       [
         carrierId,
         JSON.stringify({
           invoice: { prefix: `${prefix}-INV-`, nextNumber: 1001, defaultTermsDays: 30 },
-          pay: { companyDriverPerMile: 0.6, ownerOperatorPercentage: 0.9, payLoadedMilesOnly: true },
+          pay: { companyDriverPerMile: perMile, ownerOperatorPercentage: ooShare, payLoadedMilesOnly: true },
           detention: { freeHours: 2, ratePerHourCents: 6000 },
           costPerMileCents: 185,
           fsc: { baseCentsPerGallon: 125, mpg: 6.0 },

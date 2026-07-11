@@ -3,8 +3,11 @@
  * final step. Pins: input validation short-circuits before any DB work,
  * duplicate emails are rejected, the wizard's optional brand accent is seeded
  * into carrier_settings only when it's a well-formed hex color (a malformed
- * accent is dropped silently — cosmetic fields never block signup), and a
- * failed insert rolls the transaction back instead of committing half a tenant.
+ * accent is dropped silently — cosmetic fields never block signup), the pay
+ * step's rates are seeded when sane and REJECTED when nonsense (pay is money:
+ * silently substituting a default for a mistyped rate would corrupt every
+ * settlement until someone noticed), and a failed insert rolls the
+ * transaction back instead of committing half a tenant.
  */
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
@@ -117,6 +120,56 @@ describe("createWorkspaceAction", () => {
     await createWorkspaceAction(VALID_INPUT)
 
     expect(seededSettings(client).branding).toBeUndefined()
+  })
+
+  it("seeds the pay step's rates when provided", async () => {
+    const client = mockClient()
+
+    const result = await createWorkspaceAction({ ...VALID_INPUT, payPerMile: 0.72, ownerOperatorPct: 88 })
+
+    expect(result.ok).toBe(true)
+    const pay = seededSettings(client).pay
+    expect(pay.companyDriverPerMile).toBe(0.72)
+    expect(pay.ownerOperatorPercentage).toBe(0.88)
+    expect(pay.payLoadedMilesOnly).toBe(true)
+  })
+
+  it("keeps the platform pay defaults when the wizard omits the pay step", async () => {
+    const client = mockClient()
+
+    await createWorkspaceAction(VALID_INPUT)
+
+    const pay = seededSettings(client).pay
+    expect(pay.companyDriverPerMile).toBe(0.6)
+    expect(pay.ownerOperatorPercentage).toBe(0.9)
+  })
+
+  it("rounds pay input to sane precision (cents per mile, basis points of share)", async () => {
+    const client = mockClient()
+
+    await createWorkspaceAction({ ...VALID_INPUT, payPerMile: 0.6849, ownerOperatorPct: 87.5 })
+
+    const pay = seededSettings(client).pay
+    expect(pay.companyDriverPerMile).toBe(0.68)
+    expect(pay.ownerOperatorPercentage).toBe(0.875)
+  })
+
+  it("rejects nonsense pay values before touching the database — never silently defaults money", async () => {
+    mockClient()
+    for (const bad of [
+      { ...VALID_INPUT, payPerMile: 0 },
+      { ...VALID_INPUT, payPerMile: -0.5 },
+      { ...VALID_INPUT, payPerMile: 5.01 },
+      { ...VALID_INPUT, payPerMile: Number.NaN },
+      { ...VALID_INPUT, ownerOperatorPct: 0 },
+      { ...VALID_INPUT, ownerOperatorPct: 101 },
+      { ...VALID_INPUT, ownerOperatorPct: Number.NaN },
+    ]) {
+      const result = await createWorkspaceAction(bad)
+      expect(result.ok).toBe(false)
+      expect(result.error).toBeTruthy()
+    }
+    expect(queryOneMock).not.toHaveBeenCalled()
   })
 
   it("rolls back and reports failure when an insert throws", async () => {
