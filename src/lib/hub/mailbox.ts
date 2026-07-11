@@ -8,6 +8,7 @@ import { getCredentials } from "./credentials"
 import { query, queryOne } from "./db"
 import { saveDocument } from "./documents"
 import { addLoadEvent } from "./loads"
+import { defaultImapHost, resolveMailboxAuth } from "./mailbox-oauth"
 
 /** Pull a load reference like THD-1042 / LD-23 out of a subject line. */
 export function extractReference(subject: string): string | null {
@@ -19,15 +20,23 @@ export async function pollDocsMailbox(
   carrierId: string
 ): Promise<{ connected: boolean; filed?: number; unmatched?: number }> {
   const creds = await getCredentials(carrierId, "mailbox")
-  if (!creds?.host || !creds?.user || !creds?.password) return { connected: false }
+  if (!creds?.user) return { connected: false }
+  // Password (Gmail app password) or OAuth2 (M365 / Google Workspace XOAUTH2) —
+  // resolveMailboxAuth picks from the saved fields and mints the token.
+  const auth = await resolveMailboxAuth(creds)
+  if (!auth) return { connected: false }
+  const host = creds.host || defaultImapHost(auth.method)
 
   const { ImapFlow } = await import("imapflow")
   const { simpleParser } = await import("mailparser")
   const client = new ImapFlow({
-    host: creds.host,
+    host,
     port: Number(creds.port ?? 993),
     secure: true,
-    auth: { user: creds.user, pass: creds.password },
+    auth:
+      auth.method === "password"
+        ? { user: auth.user, pass: auth.pass }
+        : { user: auth.user, accessToken: auth.accessToken },
     logger: false,
   })
 

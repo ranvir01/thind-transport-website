@@ -9,14 +9,33 @@ IMAP login," not a single company's API.
 
 ## Auth model (as implemented, confirmed against our code)
 
-- Credential fields (`src/lib/hub/integrations/registry.ts`, `mailbox` entry): `host`, `port`
-  (default 993), `user`, `password` (`secret: true`), `folder` (default `INBOX`).
-- `pollDocsMailbox` builds an `ImapFlow` client with `auth: { user, pass: password }` —
-  **plain username/password (basic) auth only**. No OAuth2/XOAUTH2 code path exists.
-- `secure: true` is hardcoded (implicit TLS on port 993) — there's no STARTTLS fallback for
-  a provider only offering port 143.
+Updated 2026-07-11: OAuth2/XOAUTH2 shipped in `src/lib/hub/mailbox-oauth.ts` — the ⚠️ finding
+below is resolved. Three auth paths, selected by which credential fields are filled in
+(`mailboxAuthMethod`; OAuth fields win over a stale password):
 
-## ⚠️ Finding: Office 365 / Exchange Online cannot work with this adapter today
+- **Gmail app password** (unchanged): `user` + `password` → `auth: { user, pass }`.
+- **Microsoft 365** (Entra ID client-credentials grant): `tenantId` + `clientId` +
+  `clientSecret` → token from `login.microsoftonline.com/<tenant>/oauth2/v2.0/token` with
+  scope `https://outlook.office365.com/.default`, then `auth: { user, accessToken }`
+  (SASL XOAUTH2). Setup: app registration with the **`IMAP.AccessAsApp` application
+  permission + admin consent**, then register the service principal in Exchange Online and
+  grant it mailbox access (`New-ServicePrincipal` + `Add-MailboxPermission` in Exchange
+  Online PowerShell) — Microsoft's "Authenticate an IMAP, POP or SMTP connection using
+  OAuth" doc covers the exact steps.
+- **Google Workspace** (service-account JWT-bearer grant with domain-wide delegation):
+  paste the service account's JSON key file into `serviceAccountKey` → RS256-signed JWT
+  (`sub` = the mailbox user, scope `https://mail.google.com/`) exchanged at
+  `oauth2.googleapis.com/token`, then `auth: { user, accessToken }`. Setup: create a
+  service account (no key restrictions needed beyond the JSON key), then authorize its
+  client ID for scope `https://mail.google.com/` under Admin console → Security → API
+  controls → Domain-wide delegation.
+
+Tokens are minted per poll (no cache — the cron is hourly, tokens live ~60 min), mirroring
+`qbo.ts`'s refresh pattern. `host` may now be left blank: it defaults per auth method
+(`outlook.office365.com` / `imap.gmail.com`). `secure: true` is still hardcoded (implicit
+TLS on port 993) — no STARTTLS fallback for a provider only offering port 143.
+
+## ~~⚠️ Finding~~ (resolved 2026-07-11): Office 365 / Exchange Online basic auth is retired
 
 - Microsoft **disabled Basic Authentication for IMAP in Exchange Online on October 1, 2022**
   (21Vianet-operated tenants followed in March 2023). A username+password IMAP login — which
@@ -31,11 +50,11 @@ IMAP login," not a single company's API.
   app-password settings" as if the two are symmetric. **They are not** — a carrier who points
   this integration at an `outlook.office365.com`/`imap-mail.outlook.com` host with a password
   will get an authentication failure, not a working sync, no matter what password they use.
-- **Backlog (urgent):** either (a) correct `creds-shopping-list.md` + the settings-page copy to
+- ~~**Backlog (urgent):** either (a) correct `creds-shopping-list.md` + the settings-page copy to
   say Gmail-only until OAuth2 is added, or (b) add an XOAUTH2 path to `pollDocsMailbox` (ImapFlow
   supports `auth: { user, accessToken }`) plus an Entra ID app registration + refresh-token
-  storage — a real scope increase, not a config tweak. Filing as urgent because the current copy
-  actively tells an office to spend setup time on a combination that cannot work.
+  storage.~~ **Done 2026-07-11** — option (b) shipped (see "Auth model" above); no refresh-token
+  storage needed since both grants mint tokens directly from paste-able credentials.
 
 ## Gmail-side auth (confirmed working)
 
