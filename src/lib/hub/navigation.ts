@@ -103,6 +103,7 @@ const ALL_UTILITY_LINKS: HubNavLink[] = [
   { href: "/hub/setup", label: "Smart Setup" },
   { href: "/hub/import", label: "Import" },
   { href: "/hub/settings/packet", label: "Carrier packet" },
+  { href: "/hub/settings/app", label: "Phone app" },
   { href: "/hub/settings/integrations", label: "Integrations", ownerOnly: true },
   { href: "/hub/settings/users", label: "Settings", ownerOnly: true },
 ]

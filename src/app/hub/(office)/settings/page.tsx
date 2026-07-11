@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { Cable, ChevronRight, FileBadge, Tags, Users } from "lucide-react"
+import { Cable, ChevronRight, FileBadge, Smartphone, Tags, Users } from "lucide-react"
 import { requireOfficeUser } from "@/lib/hub/session"
 import { PageHeader, Panel } from "@/components/hub/ui"
 
@@ -34,6 +34,13 @@ const AREAS = [
     label: "Price book",
     hint: "Lane rates and accessorial defaults that prefill quotes",
     icon: Tags,
+    ownerOnly: false,
+  },
+  {
+    href: "/hub/settings/app",
+    label: "Phone app",
+    hint: "Install LoadOff on your phone — alerts, offline, no app store",
+    icon: Smartphone,
     ownerOnly: false,
   },
 ] as const

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { isNavActive } from "../navigation"
+import { HUB_UTILITY_LINKS, allHubRoutes, isNavActive } from "../navigation"
 
 describe("isNavActive", () => {
   it("highlights Money overview only on the overview route", () => {
@@ -12,5 +12,18 @@ describe("isNavActive", () => {
     expect(isNavActive("/hub/money/invoices", "/hub/money/invoices")).toBe(true)
     expect(isNavActive("/hub/money/invoices/abc", "/hub/money/invoices")).toBe(true)
     expect(isNavActive("/hub/money", "/hub/money/invoices")).toBe(false)
+  })
+})
+
+describe("team phone app entry", () => {
+  it("exposes /hub/settings/app to every office role, even in small-carrier mode", () => {
+    const link = HUB_UTILITY_LINKS.find((l) => l.href === "/hub/settings/app")
+    expect(link).toBeDefined()
+    expect(link?.ownerOnly).toBeFalsy()
+  })
+
+  it("reaches the ⌘K palette for non-owners", () => {
+    const routes = allHubRoutes(false)
+    expect(routes.some((r) => r.href === "/hub/settings/app")).toBe(true)
   })
 })
