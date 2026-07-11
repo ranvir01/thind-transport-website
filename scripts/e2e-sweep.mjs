@@ -39,6 +39,11 @@ const OFFICE_PAGES = [
   ["setup", "/hub/setup", "upload paperwork once"],
 ]
 
+// Portal home renders the same route for both roles; the anchor differs.
+// The broker's load detail is discovered from the home page (dynamic URL).
+const PORTAL_BROKER_PAGES = [["portal-home", "/hub/portal", "no checking calls needed"]]
+const PORTAL_SHIPPER_PAGES = [["portal-home", "/hub/portal", "request a quote"]]
+
 const DRIVER_PAGES = [
   ["driver-home", "/hub/driver", "my cards"],
   ["driver-dvir", "/hub/driver/dvir", "vehicle inspection"],
@@ -114,6 +119,32 @@ async function main() {
   await login(driver, "driver@demo.thind")
   console.log("Driver app @ 390px")
   problems.push(...(await sweep(driver, DRIVER_PAGES, "driver", 390)))
+
+  // Portal (broker + shipper) at phone — §1d requires /hub/portal/* at 390px
+  const brokerContext = await browser.createBrowserContext()
+  const broker = await brokerContext.newPage()
+  await broker.setViewport({ width: 390, height: 844, deviceScaleFactor: 2 })
+  await login(broker, "broker@demo.thind")
+  console.log("Broker portal @ 390px")
+  problems.push(...(await sweep(broker, PORTAL_BROKER_PAGES, "broker", 390)))
+  const loadHref = await broker.evaluate(
+    () =>
+      [...document.querySelectorAll("a")]
+        .find((a) => a.getAttribute("href")?.includes("/hub/portal/loads/"))
+        ?.getAttribute("href")
+  )
+  if (loadHref) {
+    problems.push(...(await sweep(broker, [["portal-load", loadHref, "documents"]], "broker", 390)))
+  } else {
+    problems.push("portal-load: no /hub/portal/loads/ link on the broker home (seed regression?)")
+  }
+
+  const shipperContext = await browser.createBrowserContext()
+  const shipper = await shipperContext.newPage()
+  await shipper.setViewport({ width: 390, height: 844, deviceScaleFactor: 2 })
+  await login(shipper, "shipper@demo.thind")
+  console.log("Shipper portal @ 390px")
+  problems.push(...(await sweep(shipper, PORTAL_SHIPPER_PAGES, "shipper", 390)))
 
   await browser.close()
 
