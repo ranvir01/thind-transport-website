@@ -132,6 +132,16 @@ export default async function IftaPage({
             </Panel>
           ) : null}
 
+          {(report.report?.unknownJurisdictionGallons ?? 0) > 0 ? (
+            <Panel className="p-4 mb-4 border-warn">
+              <p className="text-body-sm text-warn font-semibold">
+                {report.report.unknownJurisdictionGallons!.toLocaleString()}
+                {" gal of tractor fuel have no state and are excluded from tax-paid credit and fleet MPG — this overstates MPG and understates taxable gallons. Set each purchase's state in "}
+                <a href="/hub/fuel" className="underline">Fuel</a> and recompute.
+              </p>
+            </Panel>
+          ) : null}
+
           <Panel className="overflow-x-auto mb-4">
             <table className="w-full text-sm">
               <thead>
