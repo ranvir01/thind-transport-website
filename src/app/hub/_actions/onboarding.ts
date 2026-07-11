@@ -10,10 +10,66 @@ import { hubDb, queryOne } from "@/lib/hub/db"
 import { getHubUser, requireOwner } from "@/lib/hub/session"
 import { logAudit } from "@/lib/hub/audit"
 import { actionError } from "@/lib/hub/action-error"
+import {
+  carrierAllowedToOperate,
+  carrierAuthorityStatus,
+  extractQcCarrier,
+} from "@/lib/hub/vetting-fmcsa"
 
 interface Result {
   ok: boolean
   error?: string
+}
+
+export interface CarrierAuthorityCheck {
+  legalName: string | null
+  dbaName: string | null
+  allowedToOperate: boolean | null
+  authorityStatus: string | null
+}
+
+/**
+ * Live DOT/MC lookup at signup time (FMCSA QCMobile, phase-7.md M11 step 1).
+ * Pre-auth and non-persisting — a failed or unconfigured lookup just falls
+ * back to manual entry, it never blocks workspace creation.
+ */
+export async function verifyCarrierAuthorityAction(input: {
+  dotNumber?: string
+  mcNumber?: string
+}): Promise<{ ok: boolean; result: CarrierAuthorityCheck | null; error?: string }> {
+  const webKey = process.env.FMCSA_WEBKEY
+  if (!webKey) return { ok: false, result: null, error: "Live verification isn't configured" }
+  const dot = input.dotNumber?.trim()
+  const mc = input.mcNumber?.trim()
+  if (!dot && !mc) return { ok: false, result: null, error: "Enter a DOT or MC number first" }
+
+  const base = "https://mobile.fmcsa.dot.gov/qc/services/carriers"
+  const urls: string[] = []
+  if (mc) urls.push(`${base}/docket-number/${encodeURIComponent(mc)}?webKey=${webKey}`)
+  if (dot) urls.push(`${base}/${encodeURIComponent(dot)}?webKey=${webKey}`)
+
+  for (const url of urls) {
+    try {
+      const response = await fetch(url, { signal: AbortSignal.timeout(8000) })
+      if (!response.ok) continue
+      const json = await response.json()
+      const carrier = extractQcCarrier(json)
+      if (carrier) {
+        return {
+          ok: true,
+          result: {
+            legalName: carrier.legalName ?? null,
+            dbaName: carrier.dbaName ?? null,
+            allowedToOperate: carrierAllowedToOperate(carrier),
+            authorityStatus: carrierAuthorityStatus(carrier),
+          },
+        }
+      }
+    } catch {
+      /* try the next identifier */
+    }
+  }
+  return { ok: false, result: null, error: "No FMCSA record found for that DOT/MC" }
 }
 
 export async function createWorkspaceAction(input: {
@@ -24,11 +80,26 @@ export async function createWorkspaceAction(input: {
   ownerName: string
   email: string
   password: string
+  /** Optional brand accent picked in the wizard; invalid values are dropped, never block signup. */
+  accent?: string
+  /** Company-driver rate in dollars per mile (wizard pay step). Omitted → standard default. */
+  payPerMile?: number
+  /** Owner-operator share as a percent, 1–100 (wizard pay step). Omitted → standard default. */
+  ownerOperatorPct?: number
 }): Promise<Result> {
   if (!input.companyName.trim()) return { ok: false, error: "What's the company called?" }
   if (!input.ownerName.trim()) return { ok: false, error: "Your name is needed" }
   if (!input.email.includes("@")) return { ok: false, error: "Enter a real email" }
   if ((input.password ?? "").length < 8) return { ok: false, error: "Password needs 8+ characters" }
+  // Pay is money, not cosmetics: a provided-but-nonsense value is an error, never a silent default.
+  if (input.payPerMile !== undefined &&
+      (!Number.isFinite(input.payPerMile) || input.payPerMile <= 0 || input.payPerMile > 5)) {
+    return { ok: false, error: "Company driver rate looks off — enter dollars per mile, like 0.60" }
+  }
+  if (input.ownerOperatorPct !== undefined &&
+      (!Number.isFinite(input.ownerOperatorPct) || input.ownerOperatorPct < 1 || input.ownerOperatorPct > 100)) {
+    return { ok: false, error: "Owner-operator share must be between 1 and 100 percent" }
+  }
 
   const existing = await queryOne<{ id: string }>(
     `SELECT id FROM hub.users WHERE email = $1`,
@@ -49,19 +120,23 @@ export async function createWorkspaceAction(input: {
     )
     const carrierId = carrierRows[0].id as string
     const prefix = input.companyName.trim().replace(/[^A-Za-z]/g, "").slice(0, 3).toUpperCase() || "LD"
+    const accent = /^#[0-9a-fA-F]{6}$/.test(input.accent ?? "") ? input.accent : null
+    const perMile = input.payPerMile !== undefined ? Math.round(input.payPerMile * 100) / 100 : 0.6
+    const ooShare = input.ownerOperatorPct !== undefined ? Math.round(input.ownerOperatorPct * 100) / 10000 : 0.9
     await client.query(
       `INSERT INTO hub.carrier_settings (carrier_id, settings) VALUES ($1, $2)`,
       [
         carrierId,
         JSON.stringify({
           invoice: { prefix: `${prefix}-INV-`, nextNumber: 1001, defaultTermsDays: 30 },
-          pay: { companyDriverPerMile: 0.6, ownerOperatorPercentage: 0.9, payLoadedMilesOnly: true },
+          pay: { companyDriverPerMile: perMile, ownerOperatorPercentage: ooShare, payLoadedMilesOnly: true },
           detention: { freeHours: 2, ratePerHourCents: 6000 },
           costPerMileCents: 185,
           fsc: { baseCentsPerGallon: 125, mpg: 6.0 },
           randomTesting: { drugPct: 50, alcoholPct: 10 },
           factoring: { company: null, remitName: null, remitAddress: null, email: null },
           notifications: { officeEmail: input.email.toLowerCase() },
+          ...(accent ? { branding: { accent } } : {}),
         }),
       ]
     )
