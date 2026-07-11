@@ -1,4 +1,4 @@
-# HaulDesk Setup Guide
+# LoadOff Setup Guide
 
 **For:** Carrier owners, dispatchers, and office staff — no prior TMS experience needed.
 
@@ -22,7 +22,7 @@
 
 ## Phase 1 — Set up your company
 
-| Step | What to do | Where in HaulDesk |
+| Step | What to do | Where in LoadOff |
 |------|------------|-------------------|
 | 1 | Drop all paperwork at once | **Smart Setup** (`/hub/setup`) |
 | 2 | File W-9, COI, authority docs | **Carrier packet** (`/hub/settings/packet`) |
@@ -111,10 +111,10 @@ Red on the **Today** screen means act now; amber means plan ahead.
 
 ## In the app
 
-The same guide lives inside HaulDesk: **Setup guide** in the left menu (`/hub/guide`) or press **⌘K** and type “setup guide”.
+The same guide lives inside LoadOff: **Setup guide** in the left menu (`/hub/guide`) or press **⌘K** and type “setup guide”.
 
 For production credentials and integrations, see `docs/hub-go-live-requirements.md`.
 
 ---
 
-*HaulDesk — run trucking start to finish.*
+*LoadOff — run trucking start to finish.*

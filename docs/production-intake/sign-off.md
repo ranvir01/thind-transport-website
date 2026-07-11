@@ -1,4 +1,4 @@
-# HaulDesk Production Sign-Off — Thind Transport
+# LoadOff Production Sign-Off — Thind Transport
 
 Check each gate on **production** with **real data** (not demo seed). All must pass before Excel is retired.
 
@@ -40,7 +40,7 @@ Check each gate on **production** with **real data** (not demo seed). All must p
 
 ## Cutover
 
-- [ ] First full week: all new loads booked only in HaulDesk
+- [ ] First full week: all new loads booked only in LoadOff
 - [ ] Excel retired
 - [ ] Owner sign-off date: ___________
 
