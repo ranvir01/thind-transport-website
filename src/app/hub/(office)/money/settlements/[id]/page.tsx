@@ -51,6 +51,11 @@ export default async function SettlementDetailPage({ params }: { params: Promise
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
         <Panel className="xl:col-span-2 p-4 md:p-5">
           <h2 className="text-[13.5px] font-semibold text-fg mb-3">Lines</h2>
+          {lines.length === 0 ? (
+            <p className="text-body-sm text-fg-3">
+              No lines on this settlement — delivered loads in the period, reimbursements, and deductions appear here.
+            </p>
+          ) : null}
           <ul className="divide-y divide-border">
             {lines.map((line) => (
               <li key={line.id} className="flex items-center justify-between gap-3 py-2.5 text-sm">
