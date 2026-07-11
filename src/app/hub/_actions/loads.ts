@@ -158,7 +158,8 @@ export async function advanceLoadStatusAction(id: string): Promise<ActionResult>
         return { ok: false, error: legality.stops.join("; ") }
       }
     }
-    // Document gates: BOL before in_transit→delivered advance, POD before pod_received.
+    // Document gate: POD before pod_received (no BOL gate — drivers mark
+    // delivered from the road before paperwork is scanned).
     const docs = load.doc_kinds ?? []
     if (next === "pod_received" && !docs.includes("pod")) {
       return { ok: false, error: "Upload the POD before marking POD received" }
@@ -292,6 +293,10 @@ export async function logCheckCallAction(loadId: string, note: string): Promise<
     return actionError(err, "Forbidden")
   }
   try {
+    // loadId is a client string: prove the load is ours before writing an
+    // event row against it (cross-table writes guard tenancy on both sides).
+    const load = await getLoad(user.carrierId, loadId)
+    if (!load) return { ok: false, error: "Load not found" }
     await addLoadEvent(user.carrierId, loadId, "check_call", { note: note.trim() }, { id: user.id, name: user.name })
     revalidateLoadViews(loadId)
     return { ok: true }

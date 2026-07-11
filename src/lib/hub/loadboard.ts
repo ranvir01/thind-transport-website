@@ -1,4 +1,6 @@
 import { changeLoadStatus, getLoad, getLoadStops } from "./loads"
+import { getDriver, dispatchLegality } from "./drivers"
+import { getTruck } from "./fleet"
 import { assertCarrierRefs } from "./tenancy"
 import { query } from "./db"
 import { geocodeCityState } from "./geocode"
@@ -94,6 +96,17 @@ export async function patchLoadBoardField(
     case "status": {
       const status = rawValue as LoadStatus
       if (!LOAD_STATUSES.includes(status)) throw new Error("Invalid status")
+      // Dispatch legality is enforced server-side on EVERY path that can set
+      // 'dispatched' (advanceLoadStatusAction, planner) — the board's status
+      // cell is the third path and gets the same hard-stop gate.
+      if (status === "dispatched" && load.status !== "dispatched") {
+        const [driver, truck] = await Promise.all([
+          load.driver_id ? getDriver(carrierId, load.driver_id) : null,
+          load.truck_id ? getTruck(carrierId, load.truck_id) : null,
+        ])
+        const legality = dispatchLegality(driver, truck)
+        if (!legality.legal) throw new Error(legality.stops.join("; "))
+      }
       return changeLoadStatus(carrierId, loadId, status, actor)
     }
     case "origin_city":

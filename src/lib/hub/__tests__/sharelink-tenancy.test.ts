@@ -61,4 +61,22 @@ describe("getTrackedLoad scopes the load read by the share link's own carrier_id
     expect(String(sql)).toContain("WHERE l.id = $1 AND l.carrier_id = $2 AND l.deleted_at IS NULL")
     expect(params).toEqual([OWNED_LOAD, CARRIER])
   })
+
+  it("scopes the public stops and position queries by the link's carrier_id", async () => {
+    queryOneMock.mockResolvedValueOnce({ load_id: OWNED_LOAD, carrier_id: CARRIER })
+    queryOneMock.mockResolvedValueOnce({
+      id: OWNED_LOAD, reference: "THD-1001", status: "in_transit",
+      equipment: "dry_van", truck_id: "truck-1", carrier_name: "Acme",
+    })
+    queryOneMock.mockResolvedValueOnce({ lat: 47.1234, lng: -122.5678, ts: "2026-07-11" })
+    await getTrackedLoad("some-token")
+
+    const [stopsSql, stopsParams] = queryMock.mock.calls[0]
+    expect(String(stopsSql)).toContain("FROM hub.stops WHERE load_id = $1 AND carrier_id = $2")
+    expect(stopsParams).toEqual([OWNED_LOAD, CARRIER])
+
+    const [pingSql, pingParams] = queryOneMock.mock.calls[2]
+    expect(String(pingSql)).toContain("WHERE truck_id = $1 AND carrier_id = $2")
+    expect(pingParams).toEqual(["truck-1", CARRIER])
+  })
 })
