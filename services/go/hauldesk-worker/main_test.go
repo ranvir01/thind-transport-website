@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"math"
 	"net/http"
@@ -143,6 +144,86 @@ func TestRouteMilesFallbackLabeled(t *testing.T) {
 	want := math.Round(haversineMiles(0, 0, 0, 1))
 	if payload["miles"] != want {
 		t.Fatalf("expected %v haversine miles, got %v", want, payload["miles"])
+	}
+}
+
+func TestRouteMilesFallbackOnEmptyRoutes(t *testing.T) {
+	// OSRM 200s but returns no route (e.g. unreachable dest) — osrmMiles must
+	// treat "no route" the same as "unreachable" rather than panicking on
+	// payload.Routes[0], and the gateway still gets a labeled fallback answer.
+	osrm := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = w.Write([]byte(`{"routes":[]}`))
+	}))
+	defer osrm.Close()
+	t.Setenv("OSRM_URL", osrm.URL)
+
+	rec := doRequest(t, http.MethodPost, "/route/miles",
+		`{"origin":{"lat":0,"lng":0},"dest":{"lat":0,"lng":1}}`, nil)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected 200 fallback answer, got %d", rec.Code)
+	}
+	if payload := decodeBody(t, rec); payload["source"] != "haversine-fallback" {
+		t.Fatalf("expected source haversine-fallback, got %v", payload["source"])
+	}
+}
+
+func TestRouteMilesFallbackOnZeroDistance(t *testing.T) {
+	// A zero/negative distance is as unusable as no route at all.
+	osrm := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = w.Write([]byte(`{"routes":[{"distance":0}]}`))
+	}))
+	defer osrm.Close()
+	t.Setenv("OSRM_URL", osrm.URL)
+
+	rec := doRequest(t, http.MethodPost, "/route/miles",
+		`{"origin":{"lat":0,"lng":0},"dest":{"lat":0,"lng":1}}`, nil)
+	if payload := decodeBody(t, rec); payload["source"] != "haversine-fallback" {
+		t.Fatalf("expected source haversine-fallback, got %v", payload["source"])
+	}
+}
+
+func TestRouteMilesFallbackOnMalformedOSRMBody(t *testing.T) {
+	// OSRM reachable and 200 but replies with garbage — decode error must fall
+	// back rather than surfacing a 500 to the TS gateway.
+	osrm := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = w.Write([]byte("not json"))
+	}))
+	defer osrm.Close()
+	t.Setenv("OSRM_URL", osrm.URL)
+
+	rec := doRequest(t, http.MethodPost, "/route/miles",
+		`{"origin":{"lat":0,"lng":0},"dest":{"lat":0,"lng":1}}`, nil)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected 200 fallback answer, got %d", rec.Code)
+	}
+	if payload := decodeBody(t, rec); payload["source"] != "haversine-fallback" {
+		t.Fatalf("expected source haversine-fallback, got %v", payload["source"])
+	}
+}
+
+func TestOsrmMilesDefaultsToPublicDemoWhenURLUnset(t *testing.T) {
+	// Unset OSRM_URL must fall through to the public demo host rather than an
+	// empty base — verified via an already-canceled context so the assertion
+	// stays fast and offline instead of depending on real network reachability.
+	t.Setenv("OSRM_URL", "")
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	_, err := osrmMiles(ctx, latLng{Lat: 0, Lng: 0}, latLng{Lat: 0, Lng: 1})
+	if err == nil {
+		t.Fatal("expected error from canceled context")
+	}
+	if !strings.Contains(err.Error(), "router.project-osrm.org") {
+		t.Fatalf("expected default OSRM_URL in error, got: %v", err)
+	}
+}
+
+func TestOsrmMilesRequestConstructionError(t *testing.T) {
+	// A malformed OSRM_URL (e.g. from a bad env var) must surface as a plain
+	// error from osrmMiles/the fallback path, not a panic on a nil request.
+	t.Setenv("OSRM_URL", "http://example.com/\x7f")
+	_, err := osrmMiles(context.Background(), latLng{Lat: 0, Lng: 0}, latLng{Lat: 0, Lng: 1})
+	if err == nil {
+		t.Fatal("expected error for malformed OSRM_URL")
 	}
 }
 
