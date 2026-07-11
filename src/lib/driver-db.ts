@@ -1,6 +1,6 @@
 /**
  * Driver Account & Application Database Functions
- * Uses Vercel Postgres in production, JSON files in development
+ * Uses Postgres (node-postgres) when POSTGRES_URL is set, JSON files otherwise
  */
 
 import { promises as fs } from "fs"

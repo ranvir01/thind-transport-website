@@ -1,11 +1,13 @@
 /**
  * Local-Postgres adapter for the legacy driver portal.
  *
- * `@vercel/postgres` speaks the Neon serverless protocol and rejects plain
- * TCP connection strings, so the legacy driver flow could never run against
- * the local rig (postgres://…@localhost). When POSTGRES_URL points at a
- * local server, `driver-db-postgres.ts` routes through this pool with
- * `search_path=public` so unqualified tables never collide with hub.*.
+ * The legacy driver flow once used `@vercel/postgres`, which speaks the Neon
+ * serverless protocol and rejects plain TCP connection strings — it could
+ * never run against the local rig (postgres://…@localhost). Everything now
+ * goes through node-postgres pools: when POSTGRES_URL points at a local
+ * server, `driver-db-postgres.ts` routes through this pool with
+ * `search_path=public` so unqualified tables never collide with hub.*;
+ * otherwise it shares the hub pool.
  */
 import { Pool } from "pg"
 import { hubDb } from "./hub/db"
