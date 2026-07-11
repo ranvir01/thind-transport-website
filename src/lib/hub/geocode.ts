@@ -6,6 +6,11 @@
 import { query, queryOne } from "./db"
 import { PRODUCT } from "./product"
 
+// Hard cap on geocoder round trips: nominatimLookup sits inside
+// createLoadAction's booking path, and an unresponsive geocoder was
+// observed stalling bookings 15-30s under concurrent load.
+const GEOCODER_TIMEOUT_MS = 5_000
+
 export interface GeocodeSource {
   geocode(city: string, state: string): Promise<{ lat: number; lng: number } | null>
 }
@@ -23,6 +28,7 @@ async function nominatimLookup(city: string, state: string): Promise<{ lat: numb
       {
         headers: { "User-Agent": PRODUCT.userAgent },
         next: { revalidate: 86400 * 30 },
+        signal: AbortSignal.timeout(GEOCODER_TIMEOUT_MS),
       }
     )
     if (!res.ok) return null
