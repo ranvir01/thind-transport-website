@@ -1,7 +1,8 @@
 import type { Metadata } from "next"
 import { getTrackedLoad } from "@/lib/hub/sharelinks"
-import { STATUS_LABELS, LOAD_STATUSES, type LoadStatus } from "@/lib/hub/types"
+import { STATUS_LABELS, type LoadStatus } from "@/lib/hub/types"
 import { TrackRefresher } from "@/components/hub/TrackRefresher"
+import { StopTimeline } from "@/components/hub/StopTimeline"
 
 export const dynamic = "force-dynamic"
 
@@ -87,35 +88,7 @@ export default async function TrackPage({ params }: { params: Promise<{ token: s
           )}
 
           {/* Stops */}
-          <ol className="mt-6 space-y-4">
-            {stops.map((stop, i) => (
-              <li key={stop.id} className="flex gap-3">
-                <div className="flex flex-col items-center">
-                  <span
-                    className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full border text-xs font-bold ${
-                      stop.departed_at
-                        ? "border-emerald-400/40 bg-emerald-500/15 text-emerald-300"
-                        : stop.arrived_at
-                          ? "border-gold/40 bg-gold/15 text-gold"
-                          : "border-white/15 bg-white/5 text-steel-200"
-                    }`}
-                  >
-                    {i + 1}
-                  </span>
-                  {i < stops.length - 1 ? <span className="w-px flex-1 bg-white/10 my-1" /> : null}
-                </div>
-                <div className="min-w-0 flex-1 pb-1">
-                  <p className="text-[11px] font-bold uppercase tracking-wider text-steel-300">{stop.type}</p>
-                  <p className="font-semibold text-white">{stop.city}, {stop.state}</p>
-                  <p className="text-body-xs text-steel-300">
-                    {stop.fcfs ? "FCFS" : stop.appt_start ? `Appt ${fmt(stop.appt_start)}` : ""}
-                    {stop.arrived_at ? ` · Arrived ${fmt(stop.arrived_at)}` : ""}
-                    {stop.departed_at ? ` · Departed ${fmt(stop.departed_at)}` : ""}
-                  </p>
-                </div>
-              </li>
-            ))}
-          </ol>
+          <StopTimeline stops={stops} className="mt-6" />
 
           <p className="mt-6 border-t border-white/10 pt-4 text-body-xs text-steel-400">
             Live status page provided by {carrierName}. Updates appear as the driver moves.

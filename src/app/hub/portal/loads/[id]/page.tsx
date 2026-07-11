@@ -2,8 +2,9 @@ import Link from "next/link"
 import { notFound } from "next/navigation"
 import { ChevronLeft, FileText } from "lucide-react"
 import { requirePortalUser } from "@/lib/hub/session"
-import { portalLoadDocuments, portalLoads } from "@/lib/hub/portal"
+import { portalLoad, portalLoadDocuments } from "@/lib/hub/portal"
 import { STATUS_LABELS, type LoadStatus } from "@/lib/hub/types"
+import { StopTimeline } from "@/components/hub/StopTimeline"
 
 export const dynamic = "force-dynamic"
 
@@ -11,8 +12,7 @@ export default async function PortalLoadPage({ params }: { params: Promise<{ id:
   const user = await requirePortalUser()
   const { id } = await params
   // Scoped fetch: the load must belong to THIS portal customer.
-  const loads = await portalLoads(user.carrierId, user.customerId, 100)
-  const load = loads.find((l) => l.id === id)
+  const load = await portalLoad(user.carrierId, user.customerId, id).catch(() => null)
   if (!load) notFound()
   const documents = await portalLoadDocuments(user.carrierId, user.customerId, id)
 
@@ -54,6 +54,13 @@ export default async function PortalLoadPage({ params }: { params: Promise<{ id:
           <p className="text-body-xs text-steel-400">Your reference: {load.customer_reference}</p>
         ) : null}
       </section>
+
+      {load.stops.length > 0 ? (
+        <section className="rounded-2xl border border-white/10 bg-navy-800/80 p-4">
+          <h2 className="mb-3 font-display text-sm font-bold uppercase tracking-wider text-steel-300">Stops</h2>
+          <StopTimeline stops={load.stops} />
+        </section>
+      ) : null}
 
       <section>
         <h2 className="mb-2 font-display text-sm font-bold uppercase tracking-wider text-steel-300">Documents</h2>

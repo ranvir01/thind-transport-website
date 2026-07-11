@@ -96,6 +96,47 @@ export interface PortalLoad {
   position_hint: string | null
 }
 
+/** Public-safe stop for the portal timeline: no facility address, refs, or GPS. */
+export interface PortalStop {
+  id: string
+  sequence: number
+  type: "pickup" | "delivery"
+  city: string
+  state: string
+  fcfs: boolean
+  appt_start: string | null
+  appt_end: string | null
+  arrived_at: string | null
+  departed_at: string | null
+}
+
+const PORTAL_LOAD_SELECT = `
+  SELECT l.id, l.reference, l.customer_reference, l.status, l.equipment, l.truck_id,
+    fs.city AS origin_city, fs.state AS origin_state,
+    ls.city AS dest_city, ls.state AS dest_state,
+    fs.appt_start AS pickup_at, COALESCE(ls.appt_end, ls.appt_start) AS delivery_at
+  FROM hub.loads l
+  LEFT JOIN LATERAL (SELECT city, state, appt_start FROM hub.stops WHERE load_id = l.id AND carrier_id = l.carrier_id AND type = 'pickup' ORDER BY sequence LIMIT 1) fs ON TRUE
+  LEFT JOIN LATERAL (SELECT city, state, appt_start, appt_end FROM hub.stops WHERE load_id = l.id AND carrier_id = l.carrier_id AND type = 'delivery' ORDER BY sequence DESC LIMIT 1) ls ON TRUE
+  WHERE l.carrier_id = $1 AND l.customer_id = $2 AND l.deleted_at IS NULL
+    AND l.status <> 'cancelled'`
+
+/** City-level position hint for an in-transit load (latest ping → state only, never raw GPS). */
+async function positionHint(
+  carrierId: string,
+  load: { status: string; truck_id: string | null; dest_city: string | null }
+): Promise<string | null> {
+  if (load.status !== "in_transit" || !load.truck_id) return null
+  const ping = await queryOne<{ lat: number; lng: number; ts: string }>(
+    `SELECT lat, lng, ts FROM hub.position_pings
+     WHERE carrier_id = $1 AND truck_id = $2 ORDER BY ts DESC LIMIT 1`,
+    [carrierId, load.truck_id]
+  )
+  if (!ping) return null
+  const state = stateForPoint(ping.lat, ping.lng)
+  return `${state ? `In ${state}` : "On the road"}, heading to ${load.dest_city ?? "delivery"} — updated ${new Date(ping.ts).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}`
+}
+
 /** Loads visible to a portal account: their customer's only, no money/driver fields. */
 export async function portalLoads(
   carrierId: string,
@@ -103,35 +144,37 @@ export async function portalLoads(
   limit = 50
 ): Promise<PortalLoad[]> {
   const loads = await query<PortalLoad & { truck_id: string | null }>(
-    `SELECT l.id, l.reference, l.customer_reference, l.status, l.equipment, l.truck_id,
-       fs.city AS origin_city, fs.state AS origin_state,
-       ls.city AS dest_city, ls.state AS dest_state,
-       fs.appt_start AS pickup_at, COALESCE(ls.appt_end, ls.appt_start) AS delivery_at
-     FROM hub.loads l
-     LEFT JOIN LATERAL (SELECT city, state, appt_start FROM hub.stops WHERE load_id = l.id AND carrier_id = l.carrier_id AND type = 'pickup' ORDER BY sequence LIMIT 1) fs ON TRUE
-     LEFT JOIN LATERAL (SELECT city, state, appt_start, appt_end FROM hub.stops WHERE load_id = l.id AND carrier_id = l.carrier_id AND type = 'delivery' ORDER BY sequence DESC LIMIT 1) ls ON TRUE
-     WHERE l.carrier_id = $1 AND l.customer_id = $2 AND l.deleted_at IS NULL
-       AND l.status <> 'cancelled'
+    `${PORTAL_LOAD_SELECT}
      ORDER BY l.created_at DESC LIMIT $3`,
     [carrierId, customerId, limit]
   )
-  // City-level position hint for in-transit loads (latest ping → state only).
   for (const load of loads) {
-    load.position_hint = null
-    if (load.status === "in_transit" && load.truck_id) {
-      const ping = await queryOne<{ lat: number; lng: number; ts: string }>(
-        `SELECT lat, lng, ts FROM hub.position_pings
-         WHERE carrier_id = $1 AND truck_id = $2 ORDER BY ts DESC LIMIT 1`,
-        [carrierId, load.truck_id]
-      )
-      if (ping) {
-        const state = stateForPoint(ping.lat, ping.lng)
-        load.position_hint = `${state ? `In ${state}` : "On the road"}, heading to ${load.dest_city ?? "delivery"} — updated ${new Date(ping.ts).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}`
-      }
-    }
+    load.position_hint = await positionHint(carrierId, load)
     delete (load as { truck_id?: string | null }).truck_id
   }
   return loads
+}
+
+/** ONE load for a portal account, with its stop timeline. Same scoping as portalLoads
+ *  (both carrier AND customer in the WHERE) so a guessed id never crosses customers. */
+export async function portalLoad(
+  carrierId: string,
+  customerId: string,
+  loadId: string
+): Promise<(PortalLoad & { stops: PortalStop[] }) | null> {
+  const load = await queryOne<PortalLoad & { truck_id: string | null }>(
+    `${PORTAL_LOAD_SELECT} AND l.id = $3`,
+    [carrierId, customerId, loadId]
+  )
+  if (!load) return null
+  const stops = await query<PortalStop>(
+    `SELECT id, sequence, type, city, state, fcfs, appt_start, appt_end, arrived_at, departed_at
+     FROM hub.stops WHERE carrier_id = $1 AND load_id = $2 ORDER BY sequence`,
+    [carrierId, loadId]
+  )
+  load.position_hint = await positionHint(carrierId, load)
+  delete (load as { truck_id?: string | null }).truck_id
+  return { ...load, stops }
 }
 
 /** Documents a portal user may download for ONE of their loads: POD/BOL only. */
