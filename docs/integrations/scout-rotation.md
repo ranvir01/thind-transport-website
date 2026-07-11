@@ -15,7 +15,7 @@ as an urgent `Backlog:` item.
 | `eia` (adjacent, free, not in `IntegrationProvider` union) | **Built** — diesel price benchmark | `EIA_API_KEY` env | `src/lib/hub/fuel.ts` | [`eia.md`](./eia.md) | 2026-07-07 |
 | `truckercloud` | **Built** — adapter shipped, drop-in second aggregator to Terminal | `apiKey`, `clientId`/`clientSecret` | `src/lib/hub/telematics.ts` (`truckerCloudSource`) | [`truckercloud.md`](./truckercloud.md) | 2026-07-10 |
 | `dat` | **Built** — search + posting-to-load-draft mapper, stub-first (registry still `stub`/CSV fallback pending real auth confirm) | `serviceAccountEmail`, `password` (+ acting-user email needed, see doc) | `src/lib/hub/integrations/dat.ts` | [`dat.md`](./dat.md) | 2026-07-10 |
-| `efs` | **Built** — adapter shipped, feed shape unconfirmed | `feedUser`, `feedPassword` | `src/lib/hub/integrations/efs.ts` | [`efs.md`](./efs.md) | 2026-07-06 |
+| `efs` | **Built** — adapter shipped; real feed confirmed as daily SFTP CSV, not REST JSON — transport swap needed before activation (see doc) | `feedUser`, `feedPassword` | `src/lib/hub/integrations/efs.ts` | [`efs.md`](./efs.md) | 2026-07-11 |
 | `wex` | **Built** — adapter shipped, daily cron live | `feedUser`, `feedPassword` | `src/lib/hub/integrations/wex.ts` | [`wex.md`](./wex.md) | 2026-07-06 |
 | `comdata` | **Built** — adapter shipped, daily cron live | `apiKey`, `apiSecret` | `src/lib/hub/integrations/comdata.ts` | [`comdata.md`](./comdata.md) | 2026-07-06 |
 | `qbo` | **Built** — pull + push both directions, refresh-token rotation | OAuth2 (Intuit) | `src/lib/hub/integrations/qbo.ts` | [`qbo.md`](./qbo.md) | 2026-07-06 |
@@ -37,6 +37,10 @@ integrations that were never in scope of the vendor shopping list: both `fmcsa.m
    notes before a lane builds the adapter.
 3. One provider per cycle. Update the "Last researched" date and doc link when done.
 
-Next up by this rule: `efs.md`, `wex.md`, `comdata.md`, `qbo.md`, `factor.md`, and
-`truckstop.md` are tied as the oldest vendor docs (2026-07-06, unchanged) after `dat.md`
-was refreshed 2026-07-10; take the top of that list next (`efs.md`).
+Next up by this rule: `wex.md`, `comdata.md`, `qbo.md`, `factor.md`, and `truckstop.md`
+are tied as the oldest vendor docs (2026-07-06, unchanged) after `efs.md` was refreshed
+2026-07-11; take the top of that list next (`wex.md` — note the EFS pass already
+established that WEX-side feeds are the same SFTP-CSV model and same account-rep
+provisioning, so the WEX pass should focus on confirming whether `wexSource()` has the
+identical transport mismatch and whether fleetapi.wexinc.com offers a REST alternative
+for WEX-branded cards).
