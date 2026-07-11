@@ -14,6 +14,15 @@ lane agents ──▶ claude/lane-* ──▶ integrator (:00) ──▶ deploy 
                                               prod smoke (:30) checks thindtransport.com/hub
 ```
 
+## Drain fallback (GitHub Action, `:40` UTC)
+
+[`.github/workflows/drain-fallback.yml`](../../.github/workflows/drain-fallback.yml) is the
+platform-independent backstop learned from the 2026-07-10 Cursor outage (main sat hours behind a
+green integrator). Hourly it checks whether the integrator branch is **>3 commits ahead** of `main`
+and `main` can be **fast-forwarded**; if so it runs build + vitest on the integrator tip and pushes
+the fast-forward. Divergence or a red build = no-op (that stays agent work). It launches **no AI
+agents** — the "Do not use" rule below bans billable agent launches from Actions, not plain CI.
+
 ## Helper scripts
 
 | Command | Purpose |
@@ -54,6 +63,7 @@ Full playbook: [`docs/agent-improvement-loop.md`](../../docs/agent-improvement-l
 
 - `CURSOR_API_KEY` / `api.cursor.com/v1/agents` — bills outside your subscription
 - GitHub Actions to launch agents — removed from this repo for that reason
+  (`drain-fallback.yml` is fine: plain git + build/test, no agent, no API key)
 
 ## Manual run
 

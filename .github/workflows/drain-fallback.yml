@@ -1,0 +1,98 @@
+# Drain fallback — fast-forward main from the integrator branch when both agent
+# platforms are down (docs/agent-improvement-loop.md §5, .cursor/automation/README.md).
+#
+# Normal flow: Cursor deploy agent (:59 UTC) drains claude/hauldesk-project-setup-l1luoo
+# into main. On 2026-07-10 Cursor's cloud VMs went read-only and main sat hours behind a
+# green integrator. This job is the platform-independent backstop: when the integrator is
+# MORE THAN 3 commits ahead of main (same AGENT_CATCHUP_THRESHOLD as agent-loop-status.mjs)
+# AND main can be fast-forwarded (no divergence, no merge commit needed) AND build + tests
+# are green on the integrator tip, push the fast-forward. Anything short of all three
+# conditions is a no-op — divergence and red builds stay with the agents.
+#
+# This job runs no AI agents (see "Do not use" in .cursor/automation/README.md — that ban
+# is about launching billable agents from Actions, not about plain CI).
+
+name: drain-fallback
+
+on:
+  schedule:
+    - cron: "40 * * * *" # offset from integrator (:00), prod smoke (:30), deploy (:59)
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: drain-fallback
+  cancel-in-progress: false
+
+env:
+  INTEGRATOR_BRANCH: claude/hauldesk-project-setup-l1luoo
+  CATCHUP_THRESHOLD: 3
+
+jobs:
+  drain:
+    if: github.repository == 'ranvir01/thind-transport-website'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Decide whether a fast-forward is needed
+        id: decide
+        run: |
+          set -euo pipefail
+          git fetch origin main "$INTEGRATOR_BRANCH"
+          ahead=$(git rev-list --count origin/main.."origin/$INTEGRATOR_BRANCH")
+          echo "integrator is $ahead commit(s) ahead of main"
+          if [ "$ahead" -le "$CATCHUP_THRESHOLD" ]; then
+            echo "within threshold ($CATCHUP_THRESHOLD) — agents are keeping up; no-op"
+            echo "run=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if ! git merge-base --is-ancestor origin/main "origin/$INTEGRATOR_BRANCH"; then
+            echo "main and integrator have diverged — a merge is needed, which is agent work; no-op"
+            echo "run=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "run=true" >> "$GITHUB_OUTPUT"
+          echo "sha=$(git rev-parse "origin/$INTEGRATOR_BRANCH")" >> "$GITHUB_OUTPUT"
+
+      - name: Check out integrator tip
+        if: steps.decide.outputs.run == 'true'
+        run: git checkout --detach "${{ steps.decide.outputs.sha }}"
+
+      - uses: actions/setup-node@v4
+        if: steps.decide.outputs.run == 'true'
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install (canvas needs system libs)
+        if: steps.decide.outputs.run == 'true'
+        run: |
+          npm run setup:canvas-deps
+          npm ci
+
+      - name: Verify integrator tip (build + tests)
+        if: steps.decide.outputs.run == 'true'
+        run: |
+          npm run build
+          npx vitest run
+
+      - name: Fast-forward main
+        if: steps.decide.outputs.run == 'true'
+        run: |
+          set -euo pipefail
+          # Re-check fast-forwardability against the CURRENT remote main: an agent may
+          # have drained while we were building. Push without force — if main moved,
+          # the non-fast-forward rejection is the correct outcome for this fallback.
+          git fetch origin main
+          if ! git merge-base --is-ancestor origin/main "${{ steps.decide.outputs.sha }}"; then
+            echo "main advanced during verification — nothing to do"
+            exit 0
+          fi
+          git push origin "${{ steps.decide.outputs.sha }}:refs/heads/main"
+          echo "fast-forwarded main to ${{ steps.decide.outputs.sha }}"
