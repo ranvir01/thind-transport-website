@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { Check, Loader2, Megaphone } from "lucide-react"
 import { driverAcknowledgeAnnouncement } from "@/app/hub/_actions/driver"
+import { runOrQueue } from "@/components/hub/driver/offline-queue"
 import { SignaturePad } from "@/components/hub/SignaturePad"
 
 export function AnnouncementAckCard({
@@ -19,11 +20,16 @@ export function AnnouncementAckCard({
 
   const ack = () =>
     startTransition(async () => {
-      const result = await driverAcknowledgeAnnouncement(announcement.id, signature)
-      if (result.ok) {
+      const result = await runOrQueue(
+        { kind: "announcement-ack", payload: { announcementId: announcement.id, signature } },
+        () => driverAcknowledgeAnnouncement(announcement.id, signature)
+      )
+      if ("queued" in result && result.queued) {
+        toast.success("No signal — saved on your phone, sends automatically")
+      } else if (result.ok) {
         toast.success("Acknowledged — the office can see it")
         router.refresh()
-      } else toast.error(result.error ?? "Could not acknowledge")
+      } else toast.error(("error" in result && result.error) || "Could not acknowledge")
     })
 
   return (

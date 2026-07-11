@@ -13,9 +13,11 @@ import {
   isOfflineError, listIntents, queueCount, removeIntent, type QueuedIntent,
 } from "./offline-queue"
 import {
-  driverAcknowledgeDispatch, driverAdvanceStatus, driverStopTimestamp, driverUploadDocument,
+  driverAcknowledgeAnnouncement, driverAcknowledgeDispatch, driverAdvanceStatus, driverRequestAdvance,
+  driverRequestTimeOff, driverStopTimestamp, driverUploadDocument,
 } from "@/app/hub/_actions/driver"
 import { submitDvirAction } from "@/app/hub/_actions/dvir"
+import { fileDriverIncidentReport } from "@/app/hub/_actions/safety"
 
 async function execute(intent: QueuedIntent): Promise<{ ok: boolean; error?: string }> {
   switch (intent.kind) {
@@ -29,6 +31,11 @@ async function execute(intent: QueuedIntent): Promise<{ ok: boolean; error?: str
       )
     case "ack":
       return driverAcknowledgeDispatch(String(intent.payload.loadId))
+    case "announcement-ack":
+      return driverAcknowledgeAnnouncement(
+        String(intent.payload.announcementId),
+        intent.payload.signature ? String(intent.payload.signature) : null
+      )
     case "upload": {
       const formData = new FormData()
       formData.set("load_id", String(intent.payload.loadId))
@@ -43,6 +50,16 @@ async function execute(intent: QueuedIntent): Promise<{ ok: boolean; error?: str
     }
     case "dvir":
       return submitDvirAction(intent.payload as Parameters<typeof submitDvirAction>[0])
+    case "incident":
+      // occurredAt was stamped when the driver hit "File the report", so a
+      // replay hours later still records the true time of the incident.
+      return fileDriverIncidentReport(
+        intent.payload as Parameters<typeof fileDriverIncidentReport>[0]
+      )
+    case "time-off":
+      return driverRequestTimeOff(intent.payload as Parameters<typeof driverRequestTimeOff>[0])
+    case "advance":
+      return driverRequestAdvance(intent.payload as Parameters<typeof driverRequestAdvance>[0])
     default:
       return { ok: true }
   }

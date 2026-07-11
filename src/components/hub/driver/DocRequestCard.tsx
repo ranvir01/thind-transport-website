@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { Camera, FileQuestion, Loader2 } from "lucide-react"
 import { driverUploadDocument } from "@/app/hub/_actions/driver"
+import { runOrQueue } from "@/components/hub/driver/offline-queue"
 import { DOCUMENT_KIND_LABELS, type DocumentKind } from "@/lib/hub/types"
 
 export function DocRequestCard({
@@ -28,17 +29,31 @@ export function DocRequestCard({
 
   const upload = (file: File | undefined) => {
     if (!file || !request.load_id) return
-    const formData = new FormData()
-    formData.set("load_id", request.load_id)
-    formData.set("kind", ["pod", "bol", "receipt"].includes(request.kind) ? request.kind : "other")
-    formData.set("request_id", request.id)
-    formData.set("file", file)
+    const loadId = request.load_id
+    const kind = ["pod", "bol", "receipt"].includes(request.kind) ? request.kind : "other"
     startTransition(async () => {
-      const result = await driverUploadDocument(formData)
-      if (result.ok) {
+      const buffer = await file.arrayBuffer()
+      const result = await runOrQueue(
+        {
+          kind: "upload",
+          payload: { loadId, kind, requestId: request.id },
+          file: { name: file.name, type: file.type, buffer },
+        },
+        () => {
+          const formData = new FormData()
+          formData.set("load_id", loadId)
+          formData.set("kind", kind)
+          formData.set("request_id", request.id)
+          formData.set("file", file)
+          return driverUploadDocument(formData)
+        }
+      )
+      if ("queued" in result && result.queued) {
+        toast.success("No signal — saved on your phone, sends automatically")
+      } else if (result.ok) {
         toast.success("Sent — request cleared")
         router.refresh()
-      } else toast.error(result.error ?? "Upload failed")
+      } else toast.error(("error" in result && result.error) || "Upload failed")
     })
   }
 

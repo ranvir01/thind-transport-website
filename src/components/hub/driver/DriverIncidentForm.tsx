@@ -10,6 +10,7 @@ import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { Loader2, MapPin, ShieldAlert } from "lucide-react"
 import { fileDriverIncidentReport } from "@/app/hub/_actions/safety"
+import { runOrQueue } from "@/components/hub/driver/offline-queue"
 import { fieldDarkCls, labelDarkCls } from "@/components/hub/ui"
 import { cn } from "@/lib/utils"
 
@@ -47,7 +48,7 @@ export function DriverIncidentForm({ loads }: { loads: { id: string; reference: 
   const submit = (e: React.FormEvent) => {
     e.preventDefault()
     startTransition(async () => {
-      const result = await fileDriverIncidentReport({
+      const input = {
         occurredAt: new Date().toISOString(),
         location: form.location,
         description: form.description,
@@ -58,8 +59,17 @@ export function DriverIncidentForm({ loads }: { loads: { id: string; reference: 
         towAwayDisabling: form.towAwayDisabling,
         lat: coords?.lat ?? null,
         lng: coords?.lng ?? null,
-      })
-      if (result.ok) {
+      }
+      // A crash scene is exactly where signal dies — the report must queue,
+      // never vanish. Same offline path as the DVIR and load-card taps.
+      const result = await runOrQueue({ kind: "incident", payload: input }, () =>
+        fileDriverIncidentReport(input)
+      )
+      if ("queued" in result) {
+        // No navigation while offline — router.push/refresh needs the network
+        // it doesn't have, same as the DVIR queued path.
+        toast.success("No signal — report saved on your phone, sends automatically")
+      } else if (result.ok) {
         toast.success("Report filed — the office has been alerted")
         router.push("/hub/driver")
         router.refresh()

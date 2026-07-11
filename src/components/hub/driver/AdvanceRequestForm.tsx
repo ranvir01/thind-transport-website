@@ -5,7 +5,9 @@ import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { HandCoins, Loader2 } from "lucide-react"
 import { driverRequestAdvance } from "@/app/hub/_actions/driver"
+import { runOrQueue } from "@/components/hub/driver/offline-queue"
 import { fieldDarkCls } from "@/components/hub/ui"
+import { dollarsToCents } from "@/lib/hub/types"
 
 export function AdvanceRequestForm() {
   const router = useRouter()
@@ -15,9 +17,22 @@ export function AdvanceRequestForm() {
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault()
+    // Mirror the server's amount rules before queueing — a bad amount queued
+    // offline would be rejected silently at replay, long after the driver
+    // could fix it.
+    const amountCents = dollarsToCents(form.amount)
+    if (amountCents <= 0) return void toast.error("How much do you need?")
+    if (amountCents > 100000) return void toast.error("Over $1,000 — call the office instead")
     startTransition(async () => {
-      const result = await driverRequestAdvance(form)
-      if (result.ok) {
+      const result = await runOrQueue({ kind: "advance", payload: form }, () =>
+        driverRequestAdvance(form)
+      )
+      if ("queued" in result) {
+        // No router.refresh on the queued path — it needs the network it doesn't have.
+        toast.success("No signal — request saved on your phone, sends automatically")
+        setForm({ amount: "", note: "" })
+        setOpen(false)
+      } else if (result.ok) {
         toast.success("Request sent — the office will answer here")
         setForm({ amount: "", note: "" })
         setOpen(false)
