@@ -1,0 +1,98 @@
+# Fallback drain: fast-forward main to the integrator branch when verified work
+# is piling up and nobody is deploying it.
+#
+# Learned 2026-07-10: the drain must not depend on any single agent platform
+# being alive. Cursor's cloud VMs went read-only, the :59 deploy agent silently
+# stopped merging, and production sat hours behind a green integrator. This
+# workflow is the platform-independent backstop (docs/agent-improvement-loop.md §3a):
+# it only acts in catch-up mode (integrator > threshold commits ahead), only
+# fast-forwards (never merges, never forces), and only after re-verifying the
+# exact SHA with a full build + test run on a clean runner.
+#
+# Branch names and the threshold must stay in lockstep with
+# scripts/agent-loop-status.mjs — enforced by src/lib/__tests__/drain-workflow-guard.test.ts.
+name: drain-integrator
+
+on:
+  schedule:
+    # :15 — after the :59 deploy agent and the :00 integrator have had their shot.
+    - cron: "15 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: drain-integrator
+  cancel-in-progress: false
+
+env:
+  INTEGRATOR: claude/hauldesk-project-setup-l1luoo
+  CATCHUP_THRESHOLD: 3
+
+jobs:
+  drain:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Decide whether a drain is needed
+        id: decide
+        run: |
+          git fetch --quiet origin \
+            "+refs/heads/main:refs/remotes/origin/main" \
+            "+refs/heads/$INTEGRATOR:refs/remotes/origin/$INTEGRATOR"
+          ahead=$(git rev-list --count "origin/main..origin/$INTEGRATOR")
+          echo "Integrator ahead of main: $ahead commit(s) (threshold $CATCHUP_THRESHOLD)"
+          if [ "$ahead" -le "$CATCHUP_THRESHOLD" ]; then
+            echo "Steady state — the regular agents are keeping up. Nothing to do."
+            echo "drain=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if ! git merge-base --is-ancestor origin/main "origin/$INTEGRATOR"; then
+            echo "::warning::Integrator is $ahead commits ahead but has diverged from main. Fast-forward is impossible — an agent must merge main into the integrator first."
+            echo "drain=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "drain=true" >> "$GITHUB_OUTPUT"
+          echo "sha=$(git rev-parse "origin/$INTEGRATOR")" >> "$GITHUB_OUTPUT"
+
+      - name: Check out the integrator tip
+        if: steps.decide.outputs.drain == 'true'
+        run: git checkout --detach "${{ steps.decide.outputs.sha }}"
+
+      - uses: actions/setup-node@v4
+        if: steps.decide.outputs.drain == 'true'
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        if: steps.decide.outputs.drain == 'true'
+        run: |
+          bash scripts/setup-canvas-deps.sh
+          npm ci
+
+      - name: Build
+        if: steps.decide.outputs.drain == 'true'
+        run: npm run build
+
+      - name: Test
+        if: steps.decide.outputs.drain == 'true'
+        run: npx vitest run
+
+      - name: Fast-forward main to the verified SHA
+        if: steps.decide.outputs.drain == 'true'
+        run: |
+          sha="${{ steps.decide.outputs.sha }}"
+          # Re-check right before pushing: another agent may have drained (or
+          # diverged main) while the verify ran. Standing down is success.
+          git fetch --quiet origin "+refs/heads/main:refs/remotes/origin/main"
+          if ! git merge-base --is-ancestor origin/main "$sha"; then
+            echo "main moved past the verified SHA while CI ran (another agent drained). Standing down."
+            exit 0
+          fi
+          git push origin "$sha:refs/heads/main"
