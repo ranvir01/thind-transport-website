@@ -92,6 +92,17 @@ async function main() {
            hub.document_requests, hub.lanes, hub.time_off_requests
            RESTART IDENTITY CASCADE`)
   await q(`DELETE FROM hub.ifta_tax_rates`)
+  // Price book back to the 003_money.sql defaults — accessorial_types isn't in
+  // the TRUNCATE list (its migration seeds via ON CONFLICT DO NOTHING), so
+  // edits made by smokes (e2e-pricebook-smoke) would otherwise leak across reseeds.
+  await q(`DELETE FROM hub.accessorial_types WHERE carrier_id = $1`, [CARRIER])
+  await q(`INSERT INTO hub.accessorial_types (carrier_id, name, default_amount_cents, unit) VALUES
+           ($1, 'Detention', 6000, 'per_hour'),
+           ($1, 'Layover', 25000, 'per_day'),
+           ($1, 'TONU', 20000, 'flat'),
+           ($1, 'Stop-off', 10000, 'flat'),
+           ($1, 'Tarp', 10000, 'flat'),
+           ($1, 'Lumper', 0, 'pass_through')`, [CARRIER])
   // Reset invoice numbering
   await q(`UPDATE hub.carrier_settings SET settings = jsonb_set(settings, '{invoice,nextNumber}', '1001')
            WHERE carrier_id = $1`, [CARRIER])
