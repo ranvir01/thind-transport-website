@@ -9,11 +9,24 @@ const BASE = (process.env.PROD_BASE_URL ?? "https://thindtransport.com").replace
 
 const checks = []
 
+// Sandboxed agent containers route HTTPS through an egress proxy that answers
+// CONNECT for non-allowlisted hosts itself (403, x-deny-reason header, "not in
+// allowlist" plain-text body). That response says nothing about production —
+// without this guard the "not5xx" checks false-pass on it. Playbook §3b: fall
+// back to Vercel deployment status when this fires.
+function isProxyDenial(res, body) {
+  return res.headers.has("x-deny-reason") || /host not in allowlist/i.test(body)
+}
+
 async function fetchCheck(name, path, { expectStatus = 200, bodyIncludes = [], bodyIncludesIgnoreCase = [] } = {}) {
   const url = `${BASE}${path}`
   try {
     const res = await fetch(url, { redirect: "follow" })
     const body = await res.text()
+    if (isProxyDenial(res, body)) {
+      checks.push({ name, pass: false, inconclusive: true, detail: `egress proxy denied CONNECT (${res.status}) — production unreached`, url })
+      return
+    }
     const bodyLower = body.toLowerCase()
     const okStatus = res.status === expectStatus || (expectStatus === "not5xx" && res.status < 500)
     const missing = bodyIncludes.filter((s) => !body.includes(s))
@@ -43,18 +56,24 @@ async function main() {
   await fetchCheck("hub root", "/hub", { expectStatus: "not5xx" })
 
   let failed = 0
+  let inconclusive = 0
   for (const c of checks) {
-    const mark = c.pass ? "PASS" : "FAIL"
+    const mark = c.pass ? "PASS" : c.inconclusive ? "INCONCLUSIVE" : "FAIL"
     console.log(`${mark}  ${c.name}`)
     console.log(`      ${c.url}`)
     console.log(`      ${c.detail}`)
-    if (!c.pass) failed++
+    if (c.inconclusive) inconclusive++
+    else if (!c.pass) failed++
   }
 
   console.log("")
   if (failed) {
     console.log(`${failed} check(s) failed.`)
     process.exit(1)
+  }
+  if (inconclusive) {
+    console.log(`${inconclusive} check(s) inconclusive: egress to production is blocked here, not a prod failure. Use the Vercel deployment-status fallback (docs/agent-improvement-loop.md §3b).`)
+    process.exit(2)
   }
   console.log("All checks passed.")
 }
