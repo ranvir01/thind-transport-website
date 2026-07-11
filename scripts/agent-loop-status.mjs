@@ -67,6 +67,34 @@ function branchExists(name) {
   return git(`rev-parse --verify ${name}`).length > 0
 }
 
+/**
+ * Parse `agent-branch-inventory --json` output into a pending-branch count.
+ * Never silently degrades to 0: unparseable output (the old 64KB stdout
+ * truncation bug), a missing pending array, or a count/pending.length
+ * mismatch all return an error instead of a bogus count.
+ */
+export function parsePendingFromInventoryJson(out) {
+  let parsed
+  try {
+    parsed = JSON.parse(out)
+  } catch {
+    return {
+      count: null,
+      error: `inventory --json output is not valid JSON (${out.length} bytes — truncated stdout?)`,
+    }
+  }
+  if (!Array.isArray(parsed?.pending)) {
+    return { count: null, error: "inventory --json output has no pending[] array" }
+  }
+  if (typeof parsed.count === "number" && parsed.count !== parsed.pending.length) {
+    return {
+      count: null,
+      error: `inventory --json count field (${parsed.count}) does not match pending[] length (${parsed.pending.length})`,
+    }
+  }
+  return { count: parsed.pending.length, error: null }
+}
+
 function main() {
   git("fetch origin --quiet")
 
@@ -88,19 +116,29 @@ function main() {
     for (const line of logLines(MAIN, INTEGRATOR)) console.log(`  ${line}`)
   }
 
-  const pendingOut = execSync("node scripts/agent-branch-inventory.mjs --json", {
-    encoding: "utf-8",
-    cwd: process.cwd(),
-  })
-  let pendingCount = 0
+  let pendingOut = ""
+  let pendingExecError = null
   try {
-    pendingCount = JSON.parse(pendingOut).pending?.length ?? 0
-  } catch {
-    /* ignore */
+    pendingOut = execSync("node scripts/agent-branch-inventory.mjs --json", {
+      encoding: "utf-8",
+      cwd: process.cwd(),
+      maxBuffer: 128 * 1024 * 1024,
+    })
+  } catch (err) {
+    pendingExecError = err instanceof Error ? err.message : String(err)
   }
-  console.log(`\nPending claude/* branches (not on main): ${pendingCount}`)
-  if (pendingCount > 0) {
-    console.log("  Run: npm run agent:branches")
+  const pending = pendingExecError
+    ? { count: null, error: `agent-branch-inventory --json failed: ${pendingExecError}` }
+    : parsePendingFromInventoryJson(pendingOut)
+  if (pending.error) {
+    console.log(`\nPending claude/* branches (not on main): UNKNOWN`)
+    console.log(`  WARN: ${pending.error}`)
+    console.log("  Do not trust a 0 here — run npm run agent:branches directly.")
+  } else {
+    console.log(`\nPending claude/* branches (not on main): ${pending.count}`)
+    if (pending.count > 0) {
+      console.log("  Run: npm run agent:branches")
+    }
   }
 
   console.log("\nLane branches ahead of integrator:")
@@ -138,4 +176,5 @@ function main() {
   console.log(`STEADY STATE: integrator within ${THRESHOLD} commits of main.`)
 }
 
-main()
+// import-safe: only run when executed directly (tests import parsePendingFromInventoryJson)
+if (process.argv[1] && import.meta.url === new URL(`file://${process.argv[1]}`).href) main()

@@ -119,8 +119,12 @@ function main() {
   const rows = buildInventory({ pendingOnly: !showAll })
 
   if (json) {
-    console.log(JSON.stringify({ integrator: INTEGRATOR, main: MAIN, pending: rows }, null, 2))
-    process.exit(rows.length ? 0 : 0)
+    // count lets consumers detect truncated output (see agent-loop-status.mjs).
+    // No process.exit() here: exiting kills the process before stdout's pipe
+    // buffer flushes, which truncated large payloads at 64KB and made
+    // agent:status report 0 pending branches.
+    console.log(JSON.stringify({ integrator: INTEGRATOR, main: MAIN, count: rows.length, pending: rows }, null, 2))
+    return
   }
 
   console.log("LoadOff agent branch inventory")
