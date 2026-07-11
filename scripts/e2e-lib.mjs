@@ -15,11 +15,28 @@
  * reseed() themselves, so no manual seed:demo between runs on a local rig.
  *
  * Copy `.env.example` → `.env.local` for local runs (Next reads it; these scripts
- * do not load `.env.local` themselves). Export vars in the shell when driving
+ * do not load `.env.local` themselves). Shell exports still win when driving
  * against a remote base URL: E2E_BASE_URL=https://… POSTGRES_URL=… NEXTAUTH_SECRET=…
  */
 import path from "node:path"
 import { spawnSync } from "node:child_process"
+import { readFileSync } from "node:fs"
+
+// Fill unset vars from .env.local so smokes run out of the box on a rig that
+// already boots the server from it (shell exports keep precedence — a remote
+// drive exporting E2E_BASE_URL/POSTGRES_URL must not be overridden). Every
+// smoke failed with "NEXTAUTH_SECRET required" on a fully configured rig
+// before this, because Next reads .env.local but these scripts did not.
+try {
+  const envLocal = readFileSync(new URL("../.env.local", import.meta.url), "utf8")
+  for (const line of envLocal.split("\n")) {
+    const m = line.match(/^\s*([A-Z0-9_]+)\s*=\s*(.*?)\s*$/)
+    if (!m || m[1] in process.env) continue
+    process.env[m[1]] = m[2].replace(/^(["'])(.*)\1$/, "$2")
+  }
+} catch {
+  // no .env.local — fine, vars must come from the shell as before
+}
 
 export const BASE = process.env.E2E_BASE_URL ?? "http://localhost:3000"
 
