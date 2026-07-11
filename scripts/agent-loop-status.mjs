@@ -67,6 +67,21 @@ function branchExists(name) {
   return git(`rev-parse --verify ${name}`).length > 0
 }
 
+/**
+ * Parse the inventory --json payload into a pending-branch count.
+ * Returns null (unknown) — never 0 — when the JSON is malformed, so a
+ * truncated pipe read can't masquerade as "nothing pending" and stall
+ * the integrator while lane fixes strand on session branches.
+ */
+export function parsePendingCount(out) {
+  try {
+    const pending = JSON.parse(out).pending
+    return Array.isArray(pending) ? pending.length : 0
+  } catch {
+    return null
+  }
+}
+
 function main() {
   git("fetch origin --quiet")
 
@@ -91,16 +106,18 @@ function main() {
   const pendingOut = execSync("node scripts/agent-branch-inventory.mjs --json", {
     encoding: "utf-8",
     cwd: process.cwd(),
+    maxBuffer: 32 * 1024 * 1024,
   })
-  let pendingCount = 0
-  try {
-    pendingCount = JSON.parse(pendingOut).pending?.length ?? 0
-  } catch {
-    /* ignore */
-  }
-  console.log(`\nPending claude/* branches (not on main): ${pendingCount}`)
-  if (pendingCount > 0) {
+  const pendingCount = parsePendingCount(pendingOut)
+  if (pendingCount === null) {
+    console.log("\nPending claude/* branches (not on main): UNKNOWN")
+    console.log("  WARNING: inventory --json output was unparsable — do NOT treat as zero pending.")
     console.log("  Run: npm run agent:branches")
+  } else {
+    console.log(`\nPending claude/* branches (not on main): ${pendingCount}`)
+    if (pendingCount > 0) {
+      console.log("  Run: npm run agent:branches")
+    }
   }
 
   console.log("\nLane branches ahead of integrator:")
@@ -138,4 +155,5 @@ function main() {
   console.log(`STEADY STATE: integrator within ${THRESHOLD} commits of main.`)
 }
 
-main()
+// import-safe: only run when executed directly (tests import parsePendingCount)
+if (process.argv[1] && import.meta.url === new URL(`file://${process.argv[1]}`).href) main()
