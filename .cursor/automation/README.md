@@ -14,6 +14,12 @@ lane agents ──▶ claude/lane-* ──▶ integrator (:00) ──▶ deploy 
                                               prod smoke (:30) checks thindtransport.com/hub
 ```
 
+**Drain fallback (GitHub Action, `:20` hourly):** `.github/workflows/main-drain-fallback.yml`
+fast-forwards `main` to the integrator sha when it is a clean fast-forward, >3 commits ahead,
+and build + vitest pass on that exact sha. It exists because the 2026-07-10 Cursor outage left
+`main` hours behind a green integrator (post-mortem in commit `0f9003b`). It never merges or
+launches agents — the "no GitHub Actions" rule below is about launching *agents* on paid APIs.
+
 ## Helper scripts
 
 | Command | Purpose |
@@ -54,6 +60,7 @@ Full playbook: [`docs/agent-improvement-loop.md`](../../docs/agent-improvement-l
 
 - `CURSOR_API_KEY` / `api.cursor.com/v1/agents` — bills outside your subscription
 - GitHub Actions to launch agents — removed from this repo for that reason
+  (the drain-fallback Action above is fine: plain CI + a fast-forward push, no agents)
 
 ## Manual run
 
