@@ -122,6 +122,15 @@ drain is a direct push. Two deploy-blockers seen in the wild so far, both cron v
 Hobby plan: sub-daily schedules and (guard) job count — preview deploys skip cron validation, so
 "previews green, production stale" is the signature of a vercel.json cron problem.
 
+**Platform-independent fallback:** the GitHub Action
+[`drain-integrator`](../.github/workflows/drain-integrator.yml) runs hourly at :15 (staggered against
+the Cursor agents at :00/:30/:59). When the integrator is more than `AGENT_CATCHUP_THRESHOLD` (3)
+commits ahead of `main` and fast-forwardable, it builds and tests the integrator tip on a GitHub
+runner and, only if green, pushes the fast-forward. It never merges a diverged integrator (that still
+needs an agent) and does nothing in steady state — the hourly agents keep owning the drain; the Action
+only fires when every agent platform is down at once. It can also be triggered manually from the
+Actions tab (`workflow_dispatch`) when a stale production alias needs healing now.
+
 Legacy single-automation files (`hauldesk-improvement-cycle.*`) alias to `loadoff-deploy.*`.
 
 ### 3b. Release gate (before any deploy is called done)
