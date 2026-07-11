@@ -34,12 +34,17 @@ export function NotificationsBell({ direction = "down" }: { direction?: "down" |
   const [items, setItems] = useState<FeedItem[]>([])
   const [unread, setUnread] = useState(0)
   const panelRef = useRef<HTMLDivElement>(null)
+  const fetchSeq = useRef(0)
 
   const refresh = useCallback(async () => {
+    const seq = ++fetchSeq.current
     try {
       const res = await fetch("/api/hub/notifications")
       if (!res.ok) return
       const data = await res.json()
+      // A newer fetch started while this one was in flight (e.g. the poll
+      // raced the open-and-mark-read flow) — drop this stale response.
+      if (seq !== fetchSeq.current) return
       setItems(data.items ?? [])
       setUnread(data.unread ?? 0)
     } catch {
@@ -66,15 +71,24 @@ export function NotificationsBell({ direction = "down" }: { direction?: "down" |
     return () => document.removeEventListener("mousedown", close)
   }, [open])
 
-  const toggle = async () => {
+  const toggle = () => {
     const next = !open
     setOpen(next)
-    if (next && unread > 0) {
-      // Opening the feed clears the badge — simple and predictable.
-      fetch("/api/hub/notifications", { method: "POST" }).catch(() => {})
-      setUnread(0)
-    }
-    if (next) refresh()
+    if (!next) return
+    void (async () => {
+      if (unread > 0) {
+        // Opening the feed clears the badge — simple and predictable. Await
+        // the mark-read write before refetching, otherwise the GET can be
+        // served from the pre-write state and resurrect the badge.
+        setUnread(0)
+        try {
+          await fetch("/api/hub/notifications", { method: "POST" })
+        } catch {
+          /* offline — server still has them unread; the next poll re-syncs */
+        }
+      }
+      refresh()
+    })()
   }
 
   return (
