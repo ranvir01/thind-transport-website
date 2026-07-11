@@ -152,7 +152,9 @@ async function main() {
 
     console.log("6. Cleanup — disconnect DAT so the credential doesn't linger between runs")
     await owner.goto(`${BASE}/hub/settings/integrations`, { waitUntil: "networkidle2" })
+    // Two clicks: "Disconnect" arms the destructive-action confirm, "Disconnect it" fires it.
     await clickByText(owner, "Disconnect").catch(() => {})
+    await clickByText(owner, "Disconnect it").catch(() => {})
   }
 
   const realErrors = consoleErrors.filter((e) => !/favicon|manifest/i.test(e))

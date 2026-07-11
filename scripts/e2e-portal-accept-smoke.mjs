@@ -102,8 +102,11 @@ async function main() {
     check(nameBright !== null && nameBright > 150, `name input renders light-on-dark (color=${nameColor}, brightness=${nameBright?.toFixed(0)})`)
     await shot(page, "01-valid-invitation")
 
+    // waitForNavigation (not waitForFunction on pathname): the pathname flips
+    // before the new document lays out, and a screenshot in that gap dies with
+    // "Cannot take screenshot with 0 width".
     await Promise.all([
-      page.waitForFunction(() => window.location.pathname === "/hub/portal", { timeout: 15000 }),
+      page.waitForNavigation({ waitUntil: "networkidle2", timeout: 15000 }),
       page.click('button[type="submit"]'),
     ])
     check(page.url().includes("/hub/portal"), `accepting the invitation signs in and lands on /hub/portal (url=${page.url()})`)
@@ -152,8 +155,9 @@ async function main() {
 
     check(consoleErrors.length === 0, `no console errors (${consoleErrors.length}: ${consoleErrors.slice(0, 2).join(" | ")})`)
   } catch (err) {
-    await shot(page, "ZZ-failure")
     failures.push(`crash: ${err.message}`)
+    // Best-effort: a screenshot failure here must not mask the real error.
+    try { await shot(page, "ZZ-failure") } catch (shotErr) { console.error(`  (ZZ-failure screenshot failed: ${shotErr.message})`) }
   } finally {
     await browser.close()
     await db.end()
