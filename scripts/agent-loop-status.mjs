@@ -10,6 +10,7 @@
  * Exit 1 = integrator is ahead of main by more than AGENT_CATCHUP_THRESHOLD (catch-up mode).
  */
 import { execSync } from "node:child_process"
+import { buildInventory } from "./agent-branch-inventory.mjs"
 
 const INTEGRATOR = "origin/claude/hauldesk-project-setup-l1luoo"
 const MAIN = "origin/main"
@@ -67,6 +68,24 @@ function branchExists(name) {
   return git(`rev-parse --verify ${name}`).length > 0
 }
 
+/**
+ * Render the pending-branches section. A failed inventory must never read as
+ * "0 pending" — the old execSync + JSON.parse path swallowed errors to 0
+ * while agent:branches showed 217, sending the integrator idle with real
+ * work queued.
+ */
+export function pendingSummaryLines(result) {
+  if (!result.ok) {
+    return [
+      `Pending claude/* branches (not on main): UNKNOWN — inventory failed: ${result.error}`,
+      "  Do NOT read this as 0 — run: npm run agent:branches",
+    ]
+  }
+  const lines = [`Pending claude/* branches (not on main): ${result.count}`]
+  if (result.count > 0) lines.push("  Run: npm run agent:branches")
+  return lines
+}
+
 function main() {
   git("fetch origin --quiet")
 
@@ -88,20 +107,16 @@ function main() {
     for (const line of logLines(MAIN, INTEGRATOR)) console.log(`  ${line}`)
   }
 
-  const pendingOut = execSync("node scripts/agent-branch-inventory.mjs --json", {
-    encoding: "utf-8",
-    cwd: process.cwd(),
-  })
-  let pendingCount = 0
+  // Same code path as agent:branches — the two commands can't disagree, and
+  // any inventory error surfaces as UNKNOWN instead of a silent 0.
+  let pendingResult
   try {
-    pendingCount = JSON.parse(pendingOut).pending?.length ?? 0
-  } catch {
-    /* ignore */
+    pendingResult = { ok: true, count: buildInventory({ pendingOnly: true }).length }
+  } catch (err) {
+    pendingResult = { ok: false, error: err?.message ?? String(err) }
   }
-  console.log(`\nPending claude/* branches (not on main): ${pendingCount}`)
-  if (pendingCount > 0) {
-    console.log("  Run: npm run agent:branches")
-  }
+  console.log("")
+  for (const line of pendingSummaryLines(pendingResult)) console.log(line)
 
   console.log("\nLane branches ahead of integrator:")
   let anyLane = false
@@ -138,4 +153,5 @@ function main() {
   console.log(`STEADY STATE: integrator within ${THRESHOLD} commits of main.`)
 }
 
-main()
+// import-safe: only run when executed directly (tests import pendingSummaryLines)
+if (process.argv[1] && import.meta.url === new URL(`file://${process.argv[1]}`).href) main()

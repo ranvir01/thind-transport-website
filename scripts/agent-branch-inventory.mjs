@@ -71,7 +71,7 @@ function unpickedCommitCount(ref, base) {
   return countUnpickedFromCherry(out)
 }
 
-function buildInventory({ pendingOnly }) {
+export function buildInventory({ pendingOnly }) {
   git("fetch origin --quiet")
   const branches = listClaudeBranches()
   const rows = []
