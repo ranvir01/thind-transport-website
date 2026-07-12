@@ -60,6 +60,25 @@ async function main() {
   await login(page, "owner@demo.thind")
   await page.goto(`${BASE}/hub/settings/integrations`, { waitUntil: "networkidle2" })
   await waitForText(page, "Docs mailbox")
+
+  // Fail fast when the server can't store credentials at all — without this,
+  // the missing env var only surfaces as an opaque 15s toast timeout in step 3.
+  const pageText = await page.evaluate(() => document.body.innerText)
+  if (/Set CREDENTIALS_KEY/i.test(pageText)) {
+    throw new Error("server is running without CREDENTIALS_KEY — set it in .env.local (32+ random chars) and restart; credential saves can't work without it")
+  }
+
+  // Self-heal: a crashed earlier run can leave the smoke credential connected;
+  // disconnect (two-step confirm) so the script is rerunnable without a reseed.
+  if (!/not connected/i.test(await cardText(page))) {
+    console.log("   (stale connection from a previous run — disconnecting first)")
+    await clickInCard(page, "Disconnect")
+    await sleep(300)
+    await clickInCard(page, "Disconnect it")
+    await waitForText(page, "the CSV import path keeps working")
+    await sleep(1200)
+  }
+
   const before = await cardText(page)
   check(/not connected/i.test(before), "card starts not connected")
   check(/OAuth2 for Microsoft 365/.test(before), "blurb names the OAuth2 paths")
@@ -110,7 +129,13 @@ async function main() {
   await clickInCard(page, "Cancel")
 
   console.log("5. Disconnect leaves the demo carrier clean")
+  // Disconnect is a two-step confirm since 1daecb5: first click arms it,
+  // then the destructive "Disconnect it" / "Keep" pair replaces the button.
   await clickInCard(page, "Disconnect")
+  await sleep(300)
+  const confirmText = await cardText(page)
+  check(/Disconnect it/.test(confirmText) && /Keep/.test(confirmText), "disconnect asks for confirmation first")
+  await clickInCard(page, "Disconnect it")
   await waitForText(page, "the CSV import path keeps working")
   await sleep(1200)
   const finalText = await cardText(page)
