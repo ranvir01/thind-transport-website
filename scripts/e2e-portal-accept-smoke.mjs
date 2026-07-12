@@ -160,7 +160,14 @@ async function main() {
 
     check(consoleErrors.length === 0, `no console errors (${consoleErrors.length}: ${consoleErrors.slice(0, 2).join(" | ")})`)
   } catch (err) {
-    await shot(page, "ZZ-failure")
+    // The diagnostics screenshot must never eat the real failure: a crash
+    // mid-navigation can make the shot itself throw, which would kill the
+    // script before the failure list below ever prints.
+    try {
+      await shot(page, "ZZ-failure")
+    } catch (shotErr) {
+      console.error(`  (failure screenshot also failed: ${shotErr.message})`)
+    }
     failures.push(`crash: ${err.message}`)
   } finally {
     await browser.close()
