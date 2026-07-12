@@ -67,6 +67,25 @@ function branchExists(name) {
   return git(`rev-parse --verify ${name}`).length > 0
 }
 
+/**
+ * Parse `agent-branch-inventory.mjs --json` output into a pending count.
+ * Throws on malformed/truncated JSON instead of defaulting to 0 — a silent
+ * zero once masked 200+ pending branches when the inventory's output was
+ * cut off mid-write.
+ */
+export function parsePendingInventory(out) {
+  const parsed = JSON.parse(out)
+  if (!Array.isArray(parsed.pending)) {
+    throw new Error("inventory JSON has no pending[] array")
+  }
+  return parsed.pending.length
+}
+
+function unmergedClaudeBranchCount() {
+  const out = git(`branch -r --no-merged ${MAIN}`)
+  return out.split("\n").filter((l) => l.trim().startsWith("origin/claude/")).length
+}
+
 function main() {
   git("fetch origin --quiet")
 
@@ -88,19 +107,37 @@ function main() {
     for (const line of logLines(MAIN, INTEGRATOR)) console.log(`  ${line}`)
   }
 
-  const pendingOut = execSync("node scripts/agent-branch-inventory.mjs --json", {
-    encoding: "utf-8",
-    cwd: process.cwd(),
-  })
-  let pendingCount = 0
+  let pendingCount = null
+  let inventoryError = ""
   try {
-    pendingCount = JSON.parse(pendingOut).pending?.length ?? 0
-  } catch {
-    /* ignore */
+    const pendingOut = execSync("node scripts/agent-branch-inventory.mjs --json", {
+      encoding: "utf-8",
+      cwd: process.cwd(),
+      maxBuffer: 64 * 1024 * 1024,
+    })
+    pendingCount = parsePendingInventory(pendingOut)
+  } catch (err) {
+    inventoryError = (err instanceof Error ? err.message : String(err)).split("\n")[0]
   }
-  console.log(`\nPending claude/* branches (not on main): ${pendingCount}`)
-  if (pendingCount > 0) {
+
+  if (pendingCount === null) {
+    console.log(`\nPending claude/* branches (not on main): UNKNOWN — inventory failed (${inventoryError})`)
     console.log("  Run: npm run agent:branches")
+  } else {
+    console.log(`\nPending claude/* branches (not on main): ${pendingCount}`)
+    if (pendingCount > 0) {
+      console.log("  Run: npm run agent:branches")
+    } else {
+      // Mismatch guard: cherry-based "pending" can honestly be 0 while raw
+      // ancestry says branches are unmerged (patch-equivalent picks), but a
+      // zero next to hundreds of unmerged refs deserves a second look.
+      const unmerged = unmergedClaudeBranchCount()
+      if (unmerged > 0) {
+        console.log(
+          `  Note: ${unmerged} claude/* branch(es) not ancestry-merged into main (patch-equivalent or stale). Verify with: npm run agent:branches`
+        )
+      }
+    }
   }
 
   console.log("\nLane branches ahead of integrator:")
@@ -138,4 +175,5 @@ function main() {
   console.log(`STEADY STATE: integrator within ${THRESHOLD} commits of main.`)
 }
 
-main()
+// import-safe: only run when executed directly (tests import parsePendingInventory)
+if (process.argv[1] && import.meta.url === new URL(`file://${process.argv[1]}`).href) main()
