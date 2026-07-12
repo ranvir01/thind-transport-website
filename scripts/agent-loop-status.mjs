@@ -88,19 +88,39 @@ function main() {
     for (const line of logLines(MAIN, INTEGRATOR)) console.log(`  ${line}`)
   }
 
-  const pendingOut = execSync("node scripts/agent-branch-inventory.mjs --json", {
-    encoding: "utf-8",
-    cwd: process.cwd(),
-  })
-  let pendingCount = 0
+  let pendingCount = null
+  let pendingError = null
   try {
+    const pendingOut = execSync("node scripts/agent-branch-inventory.mjs --json", {
+      encoding: "utf-8",
+      cwd: process.cwd(),
+      maxBuffer: 64 * 1024 * 1024,
+    })
     pendingCount = JSON.parse(pendingOut).pending?.length ?? 0
-  } catch {
-    /* ignore */
+  } catch (err) {
+    pendingError = err
   }
-  console.log(`\nPending claude/* branches (not on main): ${pendingCount}`)
-  if (pendingCount > 0) {
+
+  if (pendingCount === null) {
+    console.log("\nPending claude/* branches (not on main): UNKNOWN — inventory --json failed:")
+    console.log(`  ${String(pendingError?.message ?? pendingError).split("\n")[0]}`)
     console.log("  Run: npm run agent:branches")
+  } else {
+    console.log(`\nPending claude/* branches (not on main): ${pendingCount}`)
+    if (pendingCount === 0) {
+      // Mismatch guard: cheap second opinion so a bad inventory can never hide work as 0.
+      const unmerged = git(`branch -r --no-merged ${MAIN}`)
+        .split("\n")
+        .map((l) => l.trim())
+        .filter((l) => l.startsWith("origin/claude/") && l !== INTEGRATOR).length
+      if (unmerged > 0) {
+        console.log(
+          `  WARNING: inventory reports 0 pending but ${unmerged} origin/claude/* branch(es) are not merged to main — counts disagree; inspect with npm run agent:branches`
+        )
+      }
+    } else {
+      console.log("  Run: npm run agent:branches")
+    }
   }
 
   console.log("\nLane branches ahead of integrator:")
