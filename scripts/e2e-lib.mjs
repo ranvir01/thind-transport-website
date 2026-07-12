@@ -94,17 +94,24 @@ export async function login(page, email, password = "ThindDemo1!") {
   ])
 }
 
-/** Screenshot helper bound to the script's output dir. */
+/**
+ * Screenshot helper bound to the script's output dir. Retries the capture:
+ * a screenshot taken right after a full-document navigation (e.g. a form
+ * that redirects via `window.location.href`) can hit Chrome mid-swap, when
+ * layout metrics read 0×0 — Page.captureScreenshot then rejects with
+ * "Cannot take screenshot with 0 width". A short settle and one more try
+ * is always enough once the new document has laid out.
+ */
 export function makeShot(outDir, { fullPage = false } = {}) {
   return async (page, name) => {
-    const file = path.join(outDir, `${name}.png`)
-    try {
-      await page.screenshot({ path: file, fullPage })
-    } catch {
-      // A capture that races a client-side redirect can hit CDP's "Cannot
-      // take screenshot with 0 width" — settle once and retry before failing.
-      await sleep(600)
-      await page.screenshot({ path: file, fullPage })
+    for (let attempt = 0; ; attempt++) {
+      try {
+        await page.screenshot({ path: path.join(outDir, `${name}.png`), fullPage })
+        break
+      } catch (err) {
+        if (attempt >= 3 || !/0 width|0 height/.test(err.message ?? "")) throw err
+        await sleep(500)
+      }
     }
     console.log(`  📸 ${name}`)
   }
