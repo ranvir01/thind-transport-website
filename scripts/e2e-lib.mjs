@@ -8,6 +8,9 @@
  *
  *   POSTGRES_URL=<url> npm run db:migrate && npm run seed:demo
  *   NEXTAUTH_SECRET=<secret>   # or AUTH_SECRET — hub login 401s with MissingSecret if blank
+ *   CREDENTIALS_KEY=<32+ chars> # server-side; without it the integrations screen shows a
+ *                               # "Set CREDENTIALS_KEY first" card and the mailbox-oauth /
+ *                               # DAT smokes stall waiting for the connect form
  *
  * State-consuming smokes (dispatch, invoices, settlements, advances,
  * compliance, messages, expenses, fuel, customers, loads, fleet, tasks,
@@ -94,10 +97,25 @@ export async function login(page, email, password = "ThindDemo1!") {
   ])
 }
 
-/** Screenshot helper bound to the script's output dir. */
+/**
+ * Screenshot helper bound to the script's output dir. Retries the capture:
+ * a screenshot taken right after a full-document navigation (e.g. a form
+ * that redirects via `window.location.href`) can hit Chrome mid-swap, when
+ * layout metrics read 0×0 — Page.captureScreenshot then rejects with
+ * "Cannot take screenshot with 0 width". A short settle and one more try
+ * is always enough once the new document has laid out.
+ */
 export function makeShot(outDir, { fullPage = false } = {}) {
   return async (page, name) => {
-    await page.screenshot({ path: path.join(outDir, `${name}.png`), fullPage })
+    for (let attempt = 0; ; attempt++) {
+      try {
+        await page.screenshot({ path: path.join(outDir, `${name}.png`), fullPage })
+        break
+      } catch (err) {
+        if (attempt >= 3 || !/0 width|0 height/.test(err.message ?? "")) throw err
+        await sleep(500)
+      }
+    }
     console.log(`  📸 ${name}`)
   }
 }
