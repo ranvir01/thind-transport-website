@@ -28,7 +28,23 @@ export interface GuidePhase {
   steps: GuideStep[]
 }
 
-export type GettingStartedKeys = "trucks" | "drivers" | "customers" | "loads" | "packet"
+export type GettingStartedKeys = "trucks" | "drivers" | "customers" | "loads" | "packet" | "fuel"
+
+/**
+ * Core steps a carrier can't operate without; the rest (packet, fuel history)
+ * are worth doing but shouldn't keep the Today checklist on screen forever.
+ */
+export const CORE_CHECKLIST_KEYS = ["trucks", "drivers", "customers", "loads"] as const satisfies readonly GettingStartedKeys[]
+
+/**
+ * Whether the Today-screen checklist should still show: yes while any core
+ * step is missing, no once only optional steps (carrier packet, fuel import)
+ * remain — established tenants shouldn't be nagged over history imports.
+ */
+export function showSetupChecklist(progress: Record<GettingStartedKeys, boolean> | null): boolean {
+  if (!progress) return false
+  return CORE_CHECKLIST_KEYS.some((key) => !progress[key])
+}
 
 /** The full lifecycle — setup through compliance. */
 export const OPERATIONS_PHASES: GuidePhase[] = [
@@ -96,7 +112,7 @@ export const OPERATIONS_PHASES: GuidePhase[] = [
         title: "Import past loads",
         summary: "Bring spreadsheet history so reports and lane stats are not starting from zero.",
         who: "Owner or accountant",
-        href: "/hub/import",
+        href: "/hub/import?kind=loads",
         cta: "Import CSV",
         progressKey: "loads",
       },
@@ -216,6 +232,7 @@ export const OPERATIONS_PHASES: GuidePhase[] = [
         who: "Accountant",
         href: "/hub/fuel",
         cta: "Fuel & cards",
+        progressKey: "fuel",
       },
     ],
   },
@@ -237,7 +254,8 @@ export const SETUP_CHECKLIST: {
   { key: "trucks", label: "Trucks on file", href: "/hub/setup" },
   { key: "drivers", label: "Drivers on file", href: "/hub/setup" },
   { key: "customers", label: "Brokers on file (MC/DOT lookup)", href: "/hub/setup" },
-  { key: "loads", label: "Load history imported", href: "/hub/import" },
+  { key: "loads", label: "Load history imported", href: "/hub/import?kind=loads" },
+  { key: "fuel", label: "Fuel card data imported (feeds IFTA)", href: "/hub/import?kind=fuel" },
   { key: "packet", label: "Carrier packet filed (W-9, COI)", href: "/hub/settings/packet" },
 ]
 

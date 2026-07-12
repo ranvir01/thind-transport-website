@@ -167,19 +167,21 @@ export interface GettingStarted {
   customers: boolean
   loads: boolean
   packet: boolean
+  fuel: boolean
 }
 
 /** Which getting-started steps are done (drives the new-carrier checklist). */
 export async function gettingStartedState(): Promise<GettingStarted | null> {
   const user = await getHubUser()
   if (!user) return null
-  const row = await queryOne<{ trucks: string; drivers: string; customers: string; loads: string; packet: string }>(
+  const row = await queryOne<{ trucks: string; drivers: string; customers: string; loads: string; packet: string; fuel: string }>(
     `SELECT
        (SELECT COUNT(*) FROM hub.trucks WHERE carrier_id = $1 AND deleted_at IS NULL) AS trucks,
        (SELECT COUNT(*) FROM hub.drivers WHERE carrier_id = $1 AND deleted_at IS NULL) AS drivers,
        (SELECT COUNT(*) FROM hub.customers WHERE carrier_id = $1 AND deleted_at IS NULL) AS customers,
        (SELECT COUNT(*) FROM hub.loads WHERE carrier_id = $1 AND deleted_at IS NULL) AS loads,
-       (SELECT COUNT(*) FROM hub.documents WHERE carrier_id = $1 AND entity_type = 'carrier') AS packet`,
+       (SELECT COUNT(*) FROM hub.documents WHERE carrier_id = $1 AND entity_type = 'carrier') AS packet,
+       (SELECT COUNT(*) FROM hub.fuel_transactions WHERE carrier_id = $1) AS fuel`,
     [user.carrierId]
   )
   if (!row) return null
@@ -189,6 +191,7 @@ export async function gettingStartedState(): Promise<GettingStarted | null> {
     customers: Number(row.customers) > 0,
     loads: Number(row.loads) > 0,
     packet: Number(row.packet) > 0,
+    fuel: Number(row.fuel) > 0,
   }
 }
 
