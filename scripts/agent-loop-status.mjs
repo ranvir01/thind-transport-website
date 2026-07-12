@@ -88,19 +88,26 @@ function main() {
     for (const line of logLines(MAIN, INTEGRATOR)) console.log(`  ${line}`)
   }
 
-  const pendingOut = execSync("node scripts/agent-branch-inventory.mjs --json", {
-    encoding: "utf-8",
-    cwd: process.cwd(),
-  })
-  let pendingCount = 0
+  let pendingCount = null // null = unknown; never silently report 0 on a bad read
   try {
-    pendingCount = JSON.parse(pendingOut).pending?.length ?? 0
-  } catch {
-    /* ignore */
+    const pendingOut = execSync("node scripts/agent-branch-inventory.mjs --json", {
+      encoding: "utf-8",
+      cwd: process.cwd(),
+      maxBuffer: 32 * 1024 * 1024,
+    })
+    const parsed = JSON.parse(pendingOut)
+    if (!Array.isArray(parsed.pending)) throw new Error("inventory JSON missing pending[]")
+    pendingCount = parsed.pending.length
+  } catch (err) {
+    console.log(`\nWARNING: could not read branch inventory (${err.message.split("\n")[0]})`)
   }
-  console.log(`\nPending claude/* branches (not on main): ${pendingCount}`)
-  if (pendingCount > 0) {
-    console.log("  Run: npm run agent:branches")
+  if (pendingCount === null) {
+    console.log("Pending claude/* branches (not on main): UNKNOWN — run npm run agent:branches directly")
+  } else {
+    console.log(`\nPending claude/* branches (not on main): ${pendingCount}`)
+    if (pendingCount > 0) {
+      console.log("  Run: npm run agent:branches")
+    }
   }
 
   console.log("\nLane branches ahead of integrator:")
