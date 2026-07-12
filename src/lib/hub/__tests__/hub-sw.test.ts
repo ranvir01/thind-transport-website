@@ -40,4 +40,15 @@ describe("hub service worker offline shell", () => {
     expect(sw).not.toContain('"hauldesk-shell-v1"')
     expect(sw).toMatch(/const SHELL_CACHE = "hauldesk-shell-v\d+"/)
   })
+
+  it("wipes every hauldesk cache when sign-out posts the clear message", () => {
+    const handler = sw.slice(sw.indexOf('"hauldesk-clear-shell"'))
+    expect(handler).toContain('k.startsWith("hauldesk-")')
+    expect(handler).toContain("caches.delete(k)")
+  })
+
+  it("badges the app icon on push so alerts survive a closed app", () => {
+    const pushHandler = sw.slice(sw.indexOf('"push"'))
+    expect(pushHandler).toContain("setAppBadge")
+  })
 })

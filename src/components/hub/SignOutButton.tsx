@@ -3,12 +3,16 @@
 import { signOut } from "next-auth/react"
 import { LogOut } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { clearShellCache } from "@/lib/hub/pwa"
 
 export function SignOutButton({ variant = "office" }: { variant?: "office" | "dark" }) {
   const dark = variant === "dark"
   return (
     <button
-      onClick={() => signOut({ callbackUrl: "/hub/login" })}
+      onClick={() => {
+        clearShellCache()
+        signOut({ callbackUrl: "/hub/login" })
+      }}
       className={cn(
         "flex w-full min-h-[44px] items-center justify-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-semibold",
         dark

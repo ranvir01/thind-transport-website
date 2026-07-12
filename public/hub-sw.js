@@ -79,6 +79,18 @@ self.addEventListener("fetch", (event) => {
   }
 })
 
+// Sign-out posts this so cached screens can't outlive the session on a
+// shared device. Fire-and-forget on the page side; nothing waits on it.
+self.addEventListener("message", (event) => {
+  if (event.data === "hauldesk-clear-shell") {
+    event.waitUntil(
+      caches
+        .keys()
+        .then((keys) => Promise.all(keys.filter((k) => k.startsWith("hauldesk-")).map((k) => caches.delete(k))))
+    )
+  }
+})
+
 self.addEventListener("push", (event) => {
   let data = { title: "LoadOff", body: "", link: "/hub" }
   try {
@@ -86,6 +98,9 @@ self.addEventListener("push", (event) => {
   } catch {
     /* keep defaults */
   }
+  // Dot the installed app's icon even when no tab is open; the bell clears
+  // it (with the real count) next time the app is opened.
+  if (self.navigator && self.navigator.setAppBadge) self.navigator.setAppBadge().catch(() => {})
   event.waitUntil(
     self.registration.showNotification(data.title, {
       body: data.body,

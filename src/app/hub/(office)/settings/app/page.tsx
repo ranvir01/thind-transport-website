@@ -6,6 +6,7 @@ import { PRODUCT } from "@/lib/hub/product"
 import { PageHeader, Panel } from "@/components/hub/ui"
 import { InstallAppButton } from "@/components/hub/InstallAppButton"
 import { PushManager } from "@/components/hub/PushManager"
+import { QrCode } from "@/components/hub/QrCode"
 
 export const dynamic = "force-dynamic"
 
@@ -45,13 +46,24 @@ export default async function TeamAppPage() {
                 <span className="font-semibold text-fg">Add to Home Screen</span>.
               </div>
             </div>
-            <p className="flex items-start gap-2 text-body-xs text-fg-3">
+            <div className="hidden items-center gap-4 rounded-control border border-border bg-surface-2 p-3 sm:flex">
+              <QrCode
+                value={`${host.startsWith("localhost") || host.startsWith("127.") ? "http" : "https"}://${host}/hub/settings/app`}
+                label="Opens this page on your phone"
+                className="h-28 w-28 shrink-0 rounded-md"
+              />
+              <p className="text-body-xs text-fg-2">
+                <span className="block font-semibold text-fg">Reading this on a computer?</span>
+                Point your phone&apos;s camera here — it opens this page on the phone. Sign in with
+                the same account, then tap install.
+              </p>
+            </div>
+            <p className="flex items-start gap-2 text-body-xs text-fg-3 sm:hidden">
               <MonitorSmartphone className="mt-0.5 h-3.5 w-3.5 shrink-0" />
               <span>
-                Reading this on a computer? Open{" "}
+                On a computer? Open{" "}
                 <span className="font-mono font-medium text-fg-2">{host}/hub</span>{" "}
-                in your phone&apos;s browser and sign in with the same account — then come back to
-                this page there.
+                in your phone&apos;s browser and sign in with the same account.
               </span>
             </p>
           </div>
