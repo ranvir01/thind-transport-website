@@ -97,7 +97,15 @@ export async function login(page, email, password = "ThindDemo1!") {
 /** Screenshot helper bound to the script's output dir. */
 export function makeShot(outDir, { fullPage = false } = {}) {
   return async (page, name) => {
-    await page.screenshot({ path: path.join(outDir, `${name}.png`), fullPage })
+    const file = path.join(outDir, `${name}.png`)
+    try {
+      await page.screenshot({ path: file, fullPage })
+    } catch {
+      // A capture that races a client-side redirect can hit CDP's "Cannot
+      // take screenshot with 0 width" — settle once and retry before failing.
+      await sleep(600)
+      await page.screenshot({ path: file, fullPage })
+    }
     console.log(`  📸 ${name}`)
   }
 }

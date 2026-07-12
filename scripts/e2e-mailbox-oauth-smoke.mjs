@@ -60,7 +60,19 @@ async function main() {
   await login(page, "owner@demo.thind")
   await page.goto(`${BASE}/hub/settings/integrations`, { waitUntil: "networkidle2" })
   await waitForText(page, "Docs mailbox")
-  const before = await cardText(page)
+  let before = await cardText(page)
+  if (!/not connected/i.test(before)) {
+    // seed-demo does not wipe hub.api_credentials, so an interrupted previous
+    // run leaves the card connected — disconnect first to restore the baseline.
+    console.log("   (leftover connected state — disconnecting first)")
+    await clickInCard(page, "Disconnect")
+    await sleep(300)
+    await clickInCard(page, "Disconnect it")
+    await waitForText(page, "the CSV import path keeps working")
+    await page.reload({ waitUntil: "networkidle2" })
+    await waitForText(page, "Docs mailbox")
+    before = await cardText(page)
+  }
   check(/not connected/i.test(before), "card starts not connected")
   check(/OAuth2 for Microsoft 365/.test(before), "blurb names the OAuth2 paths")
   await shot(page, "01-card-disconnected")
@@ -110,7 +122,11 @@ async function main() {
   await clickInCard(page, "Cancel")
 
   console.log("5. Disconnect leaves the demo carrier clean")
+  // Disconnect is a two-step destructive action: the first click arms the
+  // confirm state, "Disconnect it" performs it.
   await clickInCard(page, "Disconnect")
+  await sleep(300)
+  await clickInCard(page, "Disconnect it")
   await waitForText(page, "the CSV import path keeps working")
   await sleep(1200)
   const finalText = await cardText(page)

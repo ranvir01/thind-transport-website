@@ -152,7 +152,8 @@ async function main() {
 
     check(consoleErrors.length === 0, `no console errors (${consoleErrors.length}: ${consoleErrors.slice(0, 2).join(" | ")})`)
   } catch (err) {
-    await shot(page, "ZZ-failure")
+    // Never let a failure screenshot mask the real error.
+    await shot(page, "ZZ-failure").catch(() => {})
     failures.push(`crash: ${err.message}`)
   } finally {
     await browser.close()

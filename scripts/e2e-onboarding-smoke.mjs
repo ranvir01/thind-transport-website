@@ -22,14 +22,30 @@ async function main() {
   await fresh.setViewport({ width: 390, height: 844, deviceScaleFactor: 2 })
   await fresh.goto(`${BASE}/hub/signup`, { waitUntil: "networkidle2" })
   await shot(fresh, "01-signup")
+  // Signup is a 4-step wizard (Company → Branding → Driver pay → Your account);
+  // only the current step's inputs are mounted.
+  const advance = async (label) => {
+    const clicked = await fresh.evaluate((wanted) => {
+      const btn = [...document.querySelectorAll("button")].find((b) => b.textContent.trim().startsWith(wanted))
+      if (btn) btn.click()
+      return Boolean(btn)
+    }, label)
+    if (!clicked) throw new Error(`wizard button "${label}" not found`)
+  }
   await fresh.type("#su-company", `Bluebird Freight ${stamp}`)
   await fresh.type("#su-dot", "4112233")
+  await advance("Continue") // → Branding
+  await waitForText(fresh, "accent color")
+  await advance("Skip for now") // no accent picked → keep standard look
+  await fresh.waitForSelector("#su-permile", { timeout: 10000 })
+  await advance("Continue") // keep the prefilled pay defaults
+  await fresh.waitForSelector("#su-owner", { timeout: 10000 })
   await fresh.type("#su-owner", "Rosa Bluebird")
   await fresh.type("#su-email", `rosa+${stamp}@bluebird.example`)
   await fresh.type("#su-pass", "BluebirdPass1!")
   await Promise.all([
     fresh.waitForNavigation({ waitUntil: "networkidle2", timeout: 25000 }),
-    fresh.click('button[type="submit"]'),
+    advance("Create the workspace"),
   ])
   await waitForText(fresh, "Set up your workspace")
   await shot(fresh, "02-getting-started")
