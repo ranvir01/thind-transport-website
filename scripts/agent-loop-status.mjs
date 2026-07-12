@@ -88,19 +88,31 @@ function main() {
     for (const line of logLines(MAIN, INTEGRATOR)) console.log(`  ${line}`)
   }
 
-  const pendingOut = execSync("node scripts/agent-branch-inventory.mjs --json", {
-    encoding: "utf-8",
-    cwd: process.cwd(),
-  })
-  let pendingCount = 0
+  // Never report a silent 0 here: a truncated/broken inventory payload once made
+  // status claim "0 pending" while agent:branches showed 200+. Parse failures are
+  // surfaced as "unknown" and the script exits non-zero at the end.
+  let pendingCount = null
+  let pendingError = null
   try {
-    pendingCount = JSON.parse(pendingOut).pending?.length ?? 0
-  } catch {
-    /* ignore */
+    const pendingOut = execSync("node scripts/agent-branch-inventory.mjs --json", {
+      encoding: "utf-8",
+      cwd: process.cwd(),
+      maxBuffer: 64 * 1024 * 1024,
+    })
+    const parsed = JSON.parse(pendingOut)
+    if (!Array.isArray(parsed.pending)) throw new Error("inventory JSON missing 'pending' array")
+    pendingCount = parsed.pending.length
+  } catch (err) {
+    pendingError = err instanceof Error ? err.message.split("\n")[0] : String(err)
   }
-  console.log(`\nPending claude/* branches (not on main): ${pendingCount}`)
-  if (pendingCount > 0) {
+  if (pendingCount === null) {
+    console.log(`\nPending claude/* branches (not on main): UNKNOWN — inventory failed (${pendingError})`)
     console.log("  Run: npm run agent:branches")
+  } else {
+    console.log(`\nPending claude/* branches (not on main): ${pendingCount}`)
+    if (pendingCount > 0) {
+      console.log("  Run: npm run agent:branches")
+    }
   }
 
   console.log("\nLane branches ahead of integrator:")
@@ -133,6 +145,10 @@ function main() {
     console.log(
       `CATCH-UP MODE: integrator is ${integratorAhead} commits ahead (threshold ${THRESHOLD}). Deploy agent should drain integrator → main before new backlog work.`
     )
+    process.exit(1)
+  }
+  if (pendingCount === null) {
+    console.log("INVENTORY FAILED: pending-branch count is unknown — fix scripts/agent-branch-inventory.mjs output.")
     process.exit(1)
   }
   console.log(`STEADY STATE: integrator within ${THRESHOLD} commits of main.`)
