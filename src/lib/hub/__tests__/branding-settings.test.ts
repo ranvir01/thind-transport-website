@@ -74,7 +74,21 @@ describe("setBrandAccentAction", () => {
     expect(result).toEqual({ ok: true })
     expect(queryMock).toHaveBeenCalledTimes(1)
     const [sql, params] = queryMock.mock.calls[0]
-    expect(String(sql)).toContain("jsonb_set(settings, '{branding,accent}'")
+    expect(String(sql)).toContain("'{branding,accent}'")
     expect(params).toEqual([CARRIER_ID, "#a1B2c3"])
+  })
+
+  // jsonb_set can't create a missing parent key — a plain
+  // jsonb_set(settings, '{branding,accent}') silently no-ops for tenants whose
+  // settings JSON predates the wizard. Pin that the write seeds '{branding}'
+  // and upserts, so a missing row or missing parent both still persist.
+  it("seeds the branding parent key and upserts a missing settings row", async () => {
+    requireOwnerMock.mockResolvedValue({
+      id: "u1", name: "Priya", email: "p@a.com", role: "owner", carrierId: CARRIER_ID,
+    })
+    await setBrandAccentAction("#112233")
+    const [sql] = queryMock.mock.calls[0]
+    expect(String(sql)).toContain("ON CONFLICT (carrier_id) DO UPDATE")
+    expect(String(sql)).toMatch(/'\{branding\}',\s*COALESCE/)
   })
 })

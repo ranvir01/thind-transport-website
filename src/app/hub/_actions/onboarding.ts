@@ -198,9 +198,18 @@ export async function setBrandAccentAction(accent: string): Promise<Result> {
     const user = await requireOwner()
     if (!/^#[0-9a-fA-F]{6}$/.test(accent)) return { ok: false, error: "Pick a color" }
     const { query } = await import("@/lib/hub/db")
+    // jsonb_set can't create the missing '{branding}' parent key (it returns
+    // the target unchanged), so seed the parent first; the upsert also covers
+    // a carrier with no settings row at all.
     await query(
-      `UPDATE hub.carrier_settings SET settings = jsonb_set(settings, '{branding,accent}', to_jsonb($2::text), TRUE), updated_at = NOW()
-       WHERE carrier_id = $1`,
+      `INSERT INTO hub.carrier_settings (carrier_id, settings)
+       VALUES ($1, jsonb_build_object('branding', jsonb_build_object('accent', $2::text)))
+       ON CONFLICT (carrier_id) DO UPDATE SET
+         settings = jsonb_set(
+           jsonb_set(hub.carrier_settings.settings, '{branding}',
+             COALESCE(hub.carrier_settings.settings->'branding', '{}'::jsonb), TRUE),
+           '{branding,accent}', to_jsonb($2::text), TRUE),
+         updated_at = NOW()`,
       [user.carrierId, accent]
     )
     return { ok: true }
