@@ -6,8 +6,10 @@
  * accent is dropped silently — cosmetic fields never block signup), the pay
  * step's rates are seeded when sane and REJECTED when nonsense (pay is money:
  * silently substituting a default for a mistyped rate would corrupt every
- * settlement until someone noticed), and a failed insert rolls the
- * transaction back instead of committing half a tenant.
+ * settlement until someone noticed), the default accessorial price book is
+ * seeded inside the same transaction (tenancy-bound, idempotent, integer
+ * cents), and a failed insert rolls the transaction back instead of
+ * committing half a tenant.
  */
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
@@ -22,6 +24,7 @@ vi.mock("bcrypt", () => ({ default: { hash: vi.fn(async () => "hashed") } }))
 
 import { hubDb, queryOne } from "../db"
 import { createWorkspaceAction } from "@/app/hub/_actions/onboarding"
+import { DEFAULT_PRICE_BOOK } from "../price-book-defaults"
 
 const hubDbMock = vi.mocked(hubDb)
 const queryOneMock = vi.mocked(queryOne)
@@ -170,6 +173,36 @@ describe("createWorkspaceAction", () => {
       expect(result.error).toBeTruthy()
     }
     expect(queryOneMock).not.toHaveBeenCalled()
+  })
+
+  it("seeds the default accessorial price book inside the signup transaction", async () => {
+    const client = mockClient()
+
+    const result = await createWorkspaceAction(VALID_INPUT)
+
+    expect(result.ok).toBe(true)
+    const call = client.query.mock.calls.find(([sql]) => String(sql).includes("hub.accessorial_types"))
+    expect(call).toBeDefined()
+    const [sql, params] = call! as [string, unknown[]]
+    // Inside the transaction (before COMMIT) so a failed seed never commits half a tenant.
+    const statements = client.query.mock.calls.map(([s]) => String(s))
+    expect(statements.indexOf(String(sql))).toBeLessThan(statements.indexOf("COMMIT"))
+    // Idempotent against the UNIQUE (carrier_id, name) constraint.
+    expect(String(sql)).toContain("ON CONFLICT (carrier_id, name) DO NOTHING")
+    // Tenancy: every tuple binds the new carrier's id ($1).
+    expect(params[0]).toBe("carrier-1")
+    expect(DEFAULT_PRICE_BOOK.length).toBeGreaterThan(0)
+    for (const entry of DEFAULT_PRICE_BOOK) {
+      expect(params).toContain(entry.name)
+      expect(params).toContain(entry.unit)
+    }
+    // Integer cents, and the Detention default matches the seeded detention settings rate.
+    for (const entry of DEFAULT_PRICE_BOOK) {
+      expect(Number.isInteger(entry.defaultAmountCents)).toBe(true)
+      expect(entry.defaultAmountCents).toBeGreaterThanOrEqual(0)
+    }
+    const detention = DEFAULT_PRICE_BOOK.find((e) => e.name === "Detention")
+    expect(detention?.defaultAmountCents).toBe(seededSettings(client).detention.ratePerHourCents)
   })
 
   it("rolls back and reports failure when an insert throws", async () => {

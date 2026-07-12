@@ -15,6 +15,7 @@ import {
   carrierAuthorityStatus,
   extractQcCarrier,
 } from "@/lib/hub/vetting-fmcsa"
+import { DEFAULT_PRICE_BOOK } from "@/lib/hub/price-book-defaults"
 
 interface Result {
   ok: boolean
@@ -145,6 +146,17 @@ export async function createWorkspaceAction(input: {
       `INSERT INTO hub.users (carrier_id, email, password_hash, name, role)
        VALUES ($1,$2,$3,$4,'owner')`,
       [carrierId, input.email.toLowerCase(), hash, input.ownerName.trim()]
+    )
+    // Pre-fill the accessorial price book so load forms offer detention,
+    // layover, TONU, etc. from day one — all editable in settings/pricebook.
+    const priceBookTuples = DEFAULT_PRICE_BOOK
+      .map((_, i) => `($1, $${i * 3 + 2}, $${i * 3 + 3}, $${i * 3 + 4})`)
+      .join(", ")
+    await client.query(
+      `INSERT INTO hub.accessorial_types (carrier_id, name, default_amount_cents, unit)
+       VALUES ${priceBookTuples}
+       ON CONFLICT (carrier_id, name) DO NOTHING`,
+      [carrierId, ...DEFAULT_PRICE_BOOK.flatMap((e) => [e.name, e.defaultAmountCents, e.unit])]
     )
     await client.query("COMMIT")
     await logAudit({
