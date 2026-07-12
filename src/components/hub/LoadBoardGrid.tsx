@@ -9,13 +9,13 @@ import { patchLoadBoardFieldAction } from "@/app/hub/_actions/loadboard"
 import { SuggestMilesInline } from "@/components/hub/SuggestMilesButton"
 import { exportLoadsCsv } from "@/lib/hub/loadboard-export"
 import {
-  LOAD_STATUSES,
   STATUS_LABELS,
   centsToDollars,
   fmtCents,
   loadTotalCents,
   type Load,
 } from "@/lib/hub/types"
+import { loadBoardStatusChoices } from "@/lib/hub/loadboard-status"
 import type { Driver } from "@/lib/hub/types"
 import type { Truck } from "@/lib/hub/types"
 import { StatusBadge, btnPrimaryCls, btnSecondaryCls, fieldCls, linkAccentCls, moneyCls, tableHeadCls } from "@/components/hub/ui"
@@ -159,8 +159,11 @@ export function LoadBoardGrid({ loads, drivers, trucks, canEdit }: LoadBoardGrid
     ],
     [trucks]
   )
-  const statusOptions = useMemo(
-    () => LOAD_STATUSES.map((s) => ({ value: s, label: STATUS_LABELS[s] })),
+  // Per-load: billing statuses come from the invoice/settlement flow and
+  // cancellation locks after delivery, so the dropdown never offers them.
+  const statusOptionsFor = useCallback(
+    (load: LoadRow) =>
+      loadBoardStatusChoices(load.status).map((s) => ({ value: s, label: STATUS_LABELS[s] })),
     []
   )
 
@@ -234,14 +237,14 @@ export function LoadBoardGrid({ loads, drivers, trucks, canEdit }: LoadBoardGrid
                   />
                 </td>
                 <td className="px-3 py-1.5">
-                  {canEdit ? (
+                  {canEdit && statusOptionsFor(load).length > 1 ? (
                     <EditableCell
                       loadId={load.id}
                       field="status"
                       display={<StatusBadge status={load.status} />}
                       editValue={load.status}
                       type="select"
-                      options={statusOptions}
+                      options={statusOptionsFor(load)}
                       canEdit={canEdit}
                       onSaved={refresh}
                     />

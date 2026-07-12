@@ -1,4 +1,7 @@
 import { changeLoadStatus, getLoad, getLoadStops } from "./loads"
+import { dispatchLegality, getDriver } from "./drivers"
+import { getTruck } from "./fleet"
+import { loadBoardStatusRefusal } from "./loadboard-status"
 import { assertCarrierRefs } from "./tenancy"
 import { query } from "./db"
 import { geocodeCityState } from "./geocode"
@@ -94,6 +97,28 @@ export async function patchLoadBoardField(
     case "status": {
       const status = rawValue as LoadStatus
       if (!LOAD_STATUSES.includes(status)) throw new Error("Invalid status")
+      if (status === load.status) return load
+      // The board obeys the same server-side gates as the load page
+      // (advanceLoadStatusAction / setLoadStatusAction): inline editing is a
+      // convenience, not a bypass.
+      const refusal = loadBoardStatusRefusal(load.status, status)
+      if (refusal) throw new Error(refusal)
+      if (status !== "cancelled") {
+        const dispatchIdx = LOAD_STATUSES.indexOf("dispatched")
+        const fromBeforeDispatch =
+          load.status === "cancelled" || LOAD_STATUSES.indexOf(load.status) < dispatchIdx
+        if (fromBeforeDispatch && LOAD_STATUSES.indexOf(status) >= dispatchIdx) {
+          const [driver, truck] = await Promise.all([
+            load.driver_id ? getDriver(carrierId, load.driver_id) : null,
+            load.truck_id ? getTruck(carrierId, load.truck_id) : null,
+          ])
+          const legality = dispatchLegality(driver, truck)
+          if (!legality.legal) throw new Error(legality.stops.join("; "))
+        }
+        if (status === "pod_received" && !(load.doc_kinds ?? []).includes("pod")) {
+          throw new Error("Upload the POD before marking POD received")
+        }
+      }
       return changeLoadStatus(carrierId, loadId, status, actor)
     }
     case "origin_city":
