@@ -116,6 +116,14 @@ describe("wexSource (SyncSource<WexFuelRow> contract)", () => {
     const source = wexSource(CARRIER)
     await expect(source.pull()).rejects.toThrow(/503/)
   })
+
+  it("treats a feed response without a transactions array as an empty pull", async () => {
+    hasCredentialsMock.mockResolvedValue(true)
+    getCredentialsMock.mockResolvedValue({ feedUser: "u", feedPassword: "p" })
+    vi.stubGlobal("fetch", vi.fn(async () => ({ ok: true, json: async () => ({}) })))
+    const source = wexSource(CARRIER)
+    await expect(source.pull()).resolves.toEqual([])
+  })
 })
 
 describe("runWexSync", () => {
@@ -173,5 +181,23 @@ describe("runWexSync", () => {
     const result = await runWexSync(CARRIER)
     expect(result).toEqual({ connected: true, imported: 0, skipped: 0, unmatched: [] })
     expect(queryMock).not.toHaveBeenCalledWith(expect.stringContaining("INSERT INTO hub.fuel_transactions"), expect.anything())
+  })
+
+  it("counts a replayed transaction as skipped and lands hintless rows with truck_id NULL", async () => {
+    hasCredentialsMock.mockResolvedValue(true)
+    getCredentialsMock.mockResolvedValue({ feedUser: "u", feedPassword: "p" })
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => ({
+        ok: true,
+        json: async () => ({ transactions: [{ TransactionId: "WX-1", Quantity: 10, TotalAmount: 40 }] }),
+      }))
+    )
+    // ON CONFLICT DO NOTHING returns no row for a duplicate — the [] default
+    queryMock.mockResolvedValue([])
+    const result = await runWexSync(CARRIER)
+    expect(result).toEqual({ connected: true, imported: 0, skipped: 1, unmatched: [] })
+    const insert = queryMock.mock.calls.find(([sql]) => String(sql).includes("INSERT INTO hub.fuel_transactions"))
+    expect(insert?.[1]?.[2]).toBeNull()
   })
 })

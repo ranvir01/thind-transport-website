@@ -73,6 +73,12 @@ describe("processFactorEvent", () => {
     expect(queryOneMock).not.toHaveBeenCalled()
   })
 
+  it("reports a null event kind as 'none' instead of crashing", async () => {
+    const outcome = await processFactorEvent(CARRIER, { external_id: "e1", kind: null, payload: {} })
+    expect(outcome).toEqual({ applied: false, invoiceNumber: null, reason: "unhandled event kind: none" })
+    expect(queryOneMock).not.toHaveBeenCalled()
+  })
+
   it("refuses an incomplete payload rather than recording a bad payment", async () => {
     const outcome = await processFactorEvent(CARRIER, { external_id: "e1", kind: "invoice.funded", payload: { invoiceNumber: "INV-1" } })
     expect(outcome.applied).toBe(false)
@@ -154,6 +160,25 @@ describe("submitInvoiceToFactor", () => {
     const result = await submitInvoiceToFactor(CARRIER, "invoice-1", ACTOR)
     expect(result).toEqual({ connected: false })
     expect(getInvoiceMock).not.toHaveBeenCalled()
+  })
+
+  it("reports not connected when stored credentials lack an apiKey, no fetch attempted", async () => {
+    hasCredentialsMock.mockResolvedValue(true)
+    getCredentialsMock.mockResolvedValue({} as never)
+    const fetchMock = mockFetchOnce({ ok: true })
+    const result = await submitInvoiceToFactor(CARRIER, "invoice-1", ACTOR)
+    expect(result).toEqual({ connected: false })
+    expect(getInvoiceMock).not.toHaveBeenCalled()
+    expect(fetchMock).not.toHaveBeenCalled()
+  })
+
+  it("throws when the invoice doesn't exist instead of submitting nothing", async () => {
+    hasCredentialsMock.mockResolvedValue(true)
+    getCredentialsMock.mockResolvedValue({ apiKey: "key" })
+    getInvoiceMock.mockResolvedValue(null)
+    const fetchMock = mockFetchOnce({ ok: true })
+    await expect(submitInvoiceToFactor(CARRIER, "missing-invoice", ACTOR)).rejects.toThrow(/Invoice not found/)
+    expect(fetchMock).not.toHaveBeenCalled()
   })
 
   it("short-circuits on a second submission instead of double-billing the factor", async () => {
