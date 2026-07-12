@@ -8,6 +8,8 @@
  * factoring submission destroys trust and creates tax exposure — so never do
  * money math on raw floats; route it through here.
  */
+import { roundHalfAwayFromZero } from "./rounding"
+
 export class Money {
   private constructor(
     readonly cents: number,
@@ -24,7 +26,7 @@ export class Money {
   /** Parse a dollar amount (e.g. from a form) into cents, rounding to the nearest cent. */
   static fromDollars(dollars: number, currency = "USD"): Money {
     if (!Number.isFinite(dollars)) throw new Error(`Money.fromDollars requires a finite number, got ${dollars}`)
-    return new Money(Math.round(dollars * 100), currency)
+    return new Money(roundHalfAwayFromZero(dollars * 100), currency)
   }
 
   static zero(currency = "USD"): Money {
@@ -50,7 +52,7 @@ export class Money {
   /** Multiply by a scalar (miles × rate, percentage, etc.). Rounds to the nearest cent. */
   times(factor: number): Money {
     if (!Number.isFinite(factor)) throw new Error(`Money.times requires a finite factor, got ${factor}`)
-    return new Money(Math.round(this.cents * factor), this.currency)
+    return new Money(roundHalfAwayFromZero(this.cents * factor), this.currency)
   }
 
   /**

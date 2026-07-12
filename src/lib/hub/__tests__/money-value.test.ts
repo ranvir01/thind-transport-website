@@ -25,6 +25,13 @@ describe("Money value object", () => {
     expect(Money.fromCents(189).times(3).cents).toBe(567)
   })
 
+  it("rounds negative half-cents away from zero, matching roundHalfAwayFromZero and the Rust sidecar", () => {
+    // Math.round would give -300 / -7; the pay engine, IFTA compute, and Rust f64::round all give -301 / -8.
+    expect(Money.fromDollars(-3.005).cents).toBe(-301)
+    expect(Money.fromCents(-100).times(0.075).cents).toBe(-8) // -7.5 -> -8
+    expect(Money.fromCents(-125).times(0.5).cents).toBe(-63) // -62.5 -> -63
+  })
+
   it("allocates without losing or inventing a penny", () => {
     const parts = Money.fromCents(100).allocate([1, 1, 1])
     expect(parts.map((p) => p.cents)).toEqual([34, 33, 33])
