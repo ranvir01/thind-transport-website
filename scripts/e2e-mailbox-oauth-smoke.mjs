@@ -111,6 +111,9 @@ async function main() {
 
   console.log("5. Disconnect leaves the demo carrier clean")
   await clickInCard(page, "Disconnect")
+  // Destructive actions confirm first (IntegrationsPanel confirm step).
+  await sleep(300)
+  await clickInCard(page, "Disconnect it")
   await waitForText(page, "the CSV import path keeps working")
   await sleep(1200)
   const finalText = await cardText(page)
