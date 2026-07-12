@@ -67,6 +67,25 @@ function branchExists(name) {
   return git(`rev-parse --verify ${name}`).length > 0
 }
 
+/**
+ * Parse the inventory's --json output into a pending-branch count.
+ * Returns { count, error } — count is null when the payload is unusable
+ * (truncated pipe, crash text, wrong shape) so callers can warn loudly
+ * instead of reporting a false "0 pending".
+ */
+export function parsePendingCount(out) {
+  let parsed
+  try {
+    parsed = JSON.parse(out)
+  } catch (err) {
+    return { count: null, error: `inventory JSON did not parse (${err.message})` }
+  }
+  if (!Array.isArray(parsed?.pending)) {
+    return { count: null, error: "inventory JSON has no pending[] array" }
+  }
+  return { count: parsed.pending.length, error: null }
+}
+
 function main() {
   git("fetch origin --quiet")
 
@@ -88,19 +107,28 @@ function main() {
     for (const line of logLines(MAIN, INTEGRATOR)) console.log(`  ${line}`)
   }
 
-  const pendingOut = execSync("node scripts/agent-branch-inventory.mjs --json", {
-    encoding: "utf-8",
-    cwd: process.cwd(),
-  })
-  let pendingCount = 0
+  let pendingOut = ""
+  let pendingRunError = null
   try {
-    pendingCount = JSON.parse(pendingOut).pending?.length ?? 0
-  } catch {
-    /* ignore */
+    pendingOut = execSync("node scripts/agent-branch-inventory.mjs --json", {
+      encoding: "utf-8",
+      cwd: process.cwd(),
+      maxBuffer: 64 * 1024 * 1024, // 200+ session branches → multi-MB JSON
+    })
+  } catch (err) {
+    pendingRunError = `inventory script failed (${err.message})`
   }
-  console.log(`\nPending claude/* branches (not on main): ${pendingCount}`)
-  if (pendingCount > 0) {
-    console.log("  Run: npm run agent:branches")
+  const { count: pendingCount, error: pendingParseError } = pendingRunError
+    ? { count: null, error: pendingRunError }
+    : parsePendingCount(pendingOut)
+  if (pendingCount === null) {
+    console.log(`\nPending claude/* branches (not on main): UNKNOWN — ${pendingParseError}`)
+    console.log("  Do NOT trust this as zero. Run: npm run agent:branches")
+  } else {
+    console.log(`\nPending claude/* branches (not on main): ${pendingCount}`)
+    if (pendingCount > 0) {
+      console.log("  Run: npm run agent:branches")
+    }
   }
 
   console.log("\nLane branches ahead of integrator:")
@@ -138,4 +166,5 @@ function main() {
   console.log(`STEADY STATE: integrator within ${THRESHOLD} commits of main.`)
 }
 
-main()
+// import-safe: only run when executed directly (tests import parsePendingCount)
+if (process.argv[1] && import.meta.url === new URL(`file://${process.argv[1]}`).href) main()
