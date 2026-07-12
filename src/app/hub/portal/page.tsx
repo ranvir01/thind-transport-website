@@ -33,10 +33,10 @@ export default async function PortalHomePage() {
     <div className="space-y-5">
       <div>
         <h1 className="font-display text-xl font-extrabold uppercase tracking-wide text-white">
-          {carrier?.name ?? "Your carrier"}
+          Hi {user.name.split(" ")[0]}
         </h1>
         <p className="text-body-sm text-steel-400">
-          Hi {user.name.split(" ")[0]} — live freight, documents, and payment status. No checking calls needed.
+          Live freight, documents, and payment status from {carrier?.name ?? "your carrier"} — no checking calls needed.
         </p>
       </div>
 
