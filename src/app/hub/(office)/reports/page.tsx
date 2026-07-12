@@ -1,10 +1,11 @@
 import Link from "next/link"
 import { Download } from "lucide-react"
-import { resolvePnlRange, truckPnlRange } from "@/lib/hub/reports"
+import { pnlPresetRanges, resolvePnlRange, truckPnlRange } from "@/lib/hub/reports"
 import { computeFleetKpis } from "@/lib/hub/kpi"
 import { requirePermissionPage } from "@/lib/hub/session"
 import { fmtCents } from "@/lib/hub/types"
 import { Panel, PageHeader, fieldCls } from "@/components/hub/ui"
+import { cn } from "@/lib/utils"
 import { query } from "@/lib/hub/db"
 import type { Lane } from "@/lib/hub/types"
 
@@ -50,6 +51,7 @@ export default async function ReportsPage({
   const pct = (p: number | null) => (p == null ? "—" : `${p}%`)
 
   const hasCustomRange = Boolean(params.from || params.to)
+  const presets = pnlPresetRanges()
   const fmtDay = (iso: string) =>
     new Date(`${iso}T00:00:00`).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
   const rangeLabel = hasCustomRange ? `${fmtDay(range.from)} – ${fmtDay(range.to)}` : "last 92 days"
@@ -97,6 +99,25 @@ export default async function ReportsPage({
         >
           Apply
         </button>
+        <div className="flex min-h-[44px] flex-wrap items-center gap-1.5">
+          {presets.map((p) => {
+            const active = hasCustomRange && p.range.from === range.from && p.range.to === range.to
+            return (
+              <Link
+                key={p.key}
+                href={`/hub/reports?from=${p.range.from}&to=${p.range.to}`}
+                className={cn(
+                  "rounded-pill px-3 py-1.5 text-xs font-semibold border",
+                  active
+                    ? "bg-accent-soft text-accent-text border-transparent"
+                    : "border-border-strong text-fg-2 hover:bg-hover"
+                )}
+              >
+                {p.label}
+              </Link>
+            )
+          })}
+        </div>
         {hasCustomRange && (
           <Link href="/hub/reports" className="inline-flex min-h-[44px] items-center text-sm font-semibold text-accent-text hover:underline">
             Reset to last 92 days
