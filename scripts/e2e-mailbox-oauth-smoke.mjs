@@ -7,8 +7,11 @@
  * fallback state so the demo database stays clean for the next smoke.
  *
  * Token minting itself is unit-tested with signature verification in
- * src/lib/hub/__tests__/mailbox-oauth.test.ts — this smoke stays off the
- * network (never clicks a sync), so it runs green in sandboxes too.
+ * src/lib/hub/__tests__/mailbox-oauth.test.ts — this smoke never leaves the
+ * machine (the one "Sync now" click points IMAP at a closed localhost port),
+ * so it runs green in sandboxes too. That click drives the manual-sync slice:
+ * a bad credential set fails instantly with an honest toast and a failed
+ * `mailbox` row in Sync history, instead of silently waiting for the cron.
  *
  * Requires CREDENTIALS_KEY in the server env (encrypted credential storage).
  *
@@ -99,6 +102,7 @@ async function main() {
   await sleep(1200)
   const after = await cardText(page)
   check(/connected/i.test(after) && !/not connected/i.test(after), "card flips to connected")
+  check(/Sync now/.test(after), "connected card offers Sync now (manual mailbox sync is wired)")
   await shot(page, "03-connected")
 
   console.log("4. Edit promises field-level merge (rotate one field, keep the rest)")
@@ -109,13 +113,55 @@ async function main() {
   await shot(page, "04-edit-merge-hint")
   await clickInCard(page, "Cancel")
 
-  console.log("5. Disconnect leaves the demo carrier clean")
+  console.log("5. Disconnect the OAuth set (saved fields merge, and OAuth outranks a password)")
   await clickInCard(page, "Disconnect")
+  await sleep(300)
+  await clickInCard(page, "Disconnect it")
+  await waitForText(page, "the CSV import path keeps working")
+  await sleep(1200)
+  check(/not connected/i.test(await cardText(page)), "card back to not connected after disconnect")
+  await shot(page, "05-disconnected")
+
+  console.log("6. Sync now against a dead local endpoint fails honestly, on the spot")
+  // A fresh password set pointed at a closed localhost port: the click must
+  // come back with an error toast and a failed ledger row — never a silent
+  // nothing — and without any network egress from the sandbox.
+  await clickInCard(page, "Connect")
+  await sleep(300)
+  await page.type('input[aria-label="Mailbox address"]', "docs@demo-carrier.example")
+  await page.type('input[aria-label="App password (Gmail only — M365/Workspace use OAuth2 below)"]', "wrong-app-password")
+  await page.type('input[aria-label="IMAP host (blank = auto per auth method)"]', "127.0.0.1")
+  await page.type('input[aria-label="Port (993)"]', "2526")
+  await clickInCard(page, "Connect")
+  await waitForText(page, "credentials encrypted at rest")
+  await sleep(1200)
+  await clickInCard(page, "Sync now")
+  await waitForText(page, "Sync failed", 30000)
+  check(true, "bad credentials surface an immediate error toast")
+  await shot(page, "06-sync-failed-toast")
+
+  console.log("7. The failed attempt lands in Sync history as a failed mailbox row")
+  await page.goto(`${BASE}/hub/settings/integrations`, { waitUntil: "networkidle2" })
+  await waitForText(page, "Sync history")
+  const failedRow = await page.evaluate(() => {
+    const sources = [...document.querySelectorAll("span > span.font-semibold")]
+    return sources.some(
+      (s) => s.textContent.trim() === "mailbox" &&
+        s.closest("div")?.textContent.includes("failed")
+    )
+  })
+  check(failedRow, "Sync history shows a failed 'mailbox' run")
+  await shot(page, "07-sync-history-failed-row")
+
+  console.log("8. Disconnect leaves the demo carrier clean")
+  await clickInCard(page, "Disconnect")
+  await sleep(300)
+  await clickInCard(page, "Disconnect it")
   await waitForText(page, "the CSV import path keeps working")
   await sleep(1200)
   const finalText = await cardText(page)
   check(/not connected/i.test(finalText), "card back to not connected after disconnect")
-  await shot(page, "05-disconnected")
+  await shot(page, "08-disconnected")
 
   const realErrors = consoleErrors.filter((e) => !/favicon|manifest/i.test(e))
   check(realErrors.length === 0, `no console errors (${realErrors.length}: ${realErrors.slice(0, 2).join(" | ")})`)

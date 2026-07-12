@@ -5,7 +5,7 @@
  * note — never silently dropped.
  */
 import { getCredentials } from "./credentials"
-import { query, queryOne } from "./db"
+import { queryOne } from "./db"
 import { saveDocument } from "./documents"
 import { addLoadEvent } from "./loads"
 import { defaultImapHost, resolveMailboxAuth } from "./mailbox-oauth"
@@ -111,10 +111,8 @@ export async function pollDocsMailbox(
     await client.logout().catch(() => {})
   }
 
-  await query(
-    `INSERT INTO hub.integration_syncs (carrier_id, source, started_at, finished_at, ok, counts)
-     VALUES ($1, 'mailbox', NOW(), NOW(), TRUE, $2)`,
-    [carrierId, JSON.stringify({ filed, unmatched })]
-  )
+  // The sync ledger row is the caller's job (cron route / syncIntegrationNowAction),
+  // same as every other adapter — they record failures too, which an insert here
+  // never could (a connect or token-mint throw skips straight past this line).
   return { connected: true, filed, unmatched }
 }
