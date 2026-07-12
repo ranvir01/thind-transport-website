@@ -16,11 +16,39 @@
  */
 import puppeteer from "puppeteer"
 import { mkdirSync } from "node:fs"
+import pg from "pg"
 import { BASE, sleep, failures, check, waitForText, login, makeShot } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-mailbox-oauth"
 mkdirSync(OUT, { recursive: true })
 const shot = makeShot(OUT, { fullPage: true })
+
+/**
+ * A run that dies between Connect and Disconnect (step 3 → step 5) leaves the
+ * demo carrier's mailbox credential behind, and seed:demo/reseed() never
+ * touches hub.api_credentials — so every rerun fails at "card starts not
+ * connected". Delete the leftover row up front (localhost rigs only:
+ * e2e-lib loads POSTGRES_URL from .env.local; a remote BASE has no local DB
+ * to clean, same rule as reseed()).
+ */
+async function cleanupLeftoverCredential() {
+  if (!process.env.POSTGRES_URL) {
+    console.log("⏭  credential cleanup skipped: POSTGRES_URL unset (remote BASE)")
+    return
+  }
+  const client = new pg.Client({ connectionString: process.env.POSTGRES_URL })
+  await client.connect()
+  try {
+    const { rowCount } = await client.query(
+      `DELETE FROM hub.api_credentials
+       WHERE provider = 'mailbox'
+         AND carrier_id = (SELECT carrier_id FROM hub.users WHERE email = 'owner@demo.thind')`
+    )
+    if (rowCount > 0) console.log(`🧹 removed ${rowCount} leftover mailbox credential row(s) from a dead prior run`)
+  } finally {
+    await client.end()
+  }
+}
 
 /** Text of the Docs mailbox card (the ancestor that includes the fallback line). */
 async function cardText(page) {
@@ -45,6 +73,7 @@ async function clickInCard(page, label) {
 }
 
 async function main() {
+  await cleanupLeftoverCredential()
   const browser = await puppeteer.launch({
     headless: "new",
     args: ["--no-sandbox", "--disable-dev-shm-usage"],
