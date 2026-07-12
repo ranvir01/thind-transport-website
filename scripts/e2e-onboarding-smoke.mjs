@@ -49,10 +49,10 @@ async function main() {
   await nextStep(fresh)
   // Step 4/4 — owner account
   await fresh.waitForSelector("#su-owner", { timeout: 10000 })
-  await shot(fresh, "01b-account-step")
   await fresh.type("#su-owner", "Rosa Bluebird")
   await fresh.type("#su-email", `rosa+${stamp}@bluebird.example`)
   await fresh.type("#su-pass", "BluebirdPass1!")
+  await shot(fresh, "01b-account-step")
   await Promise.all([
     fresh.waitForNavigation({ waitUntil: "networkidle2", timeout: 25000 }),
     fresh.click('button[type="submit"]'),

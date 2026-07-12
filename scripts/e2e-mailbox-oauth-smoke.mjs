@@ -132,6 +132,7 @@ async function main() {
   // Disconnect is a two-step confirm since 1daecb5: first click arms it,
   // then the destructive "Disconnect it" / "Keep" pair replaces the button.
   await clickInCard(page, "Disconnect")
+  // Destructive actions confirm first (IntegrationsPanel confirm step).
   await sleep(300)
   const confirmText = await cardText(page)
   check(/Disconnect it/.test(confirmText) && /Keep/.test(confirmText), "disconnect asks for confirmation first")

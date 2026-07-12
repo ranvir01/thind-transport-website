@@ -8,6 +8,9 @@
  *
  *   POSTGRES_URL=<url> npm run db:migrate && npm run seed:demo
  *   NEXTAUTH_SECRET=<secret>   # or AUTH_SECRET — hub login 401s with MissingSecret if blank
+ *   CREDENTIALS_KEY=<32+ chars> # server-side; without it the integrations screen shows a
+ *                               # "Set CREDENTIALS_KEY first" card and the mailbox-oauth /
+ *                               # DAT smokes stall waiting for the connect form
  *
  * State-consuming smokes (dispatch, invoices, settlements, advances,
  * compliance, messages, expenses, fuel, customers, loads, fleet, tasks,
