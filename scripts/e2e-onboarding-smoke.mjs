@@ -21,9 +21,29 @@ async function main() {
   const fresh = await signupCtx.newPage()
   await fresh.setViewport({ width: 390, height: 844, deviceScaleFactor: 2 })
   await fresh.goto(`${BASE}/hub/signup`, { waitUntil: "networkidle2" })
-  await shot(fresh, "01-signup")
+
+  // Signup is a 4-step wizard since the M11 onboarding work (SignupForm.tsx):
+  // Company → Branding → Driver pay → Your account. Steps advance client-side;
+  // the branding step's button reads "Skip for now" until an accent is picked.
+  const wizardNext = async (label) => {
+    await fresh.waitForFunction(
+      (wanted) => [...document.querySelectorAll("button")].some((b) => b.textContent.trim().startsWith(wanted)),
+      { timeout: 5000 },
+      label
+    )
+    await fresh.evaluate((wanted) => {
+      [...document.querySelectorAll("button")].find((b) => b.textContent.trim().startsWith(wanted)).click()
+    }, label)
+  }
+
   await fresh.type("#su-company", `Bluebird Freight ${stamp}`)
   await fresh.type("#su-dot", "4112233")
+  await shot(fresh, "01-signup")
+  await wizardNext("Continue") // → Branding
+  await wizardNext("Skip for now") // no accent picked → Driver pay
+  await fresh.waitForSelector("#su-permile", { timeout: 5000 }) // pay step prefilled with platform defaults
+  await wizardNext("Continue") // → Your account
+  await fresh.waitForSelector("#su-owner", { timeout: 5000 })
   await fresh.type("#su-owner", "Rosa Bluebird")
   await fresh.type("#su-email", `rosa+${stamp}@bluebird.example`)
   await fresh.type("#su-pass", "BluebirdPass1!")
