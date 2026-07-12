@@ -22,11 +22,28 @@ async function main() {
   await fresh.setViewport({ width: 390, height: 844, deviceScaleFactor: 2 })
   await fresh.goto(`${BASE}/hub/signup`, { waitUntil: "networkidle2" })
   await shot(fresh, "01-signup")
+  // Signup is a 4-step wizard (Company → Branding → Driver pay → Your account);
+  // only the current step's inputs are mounted, so advance between fills.
+  const advance = async (expectStep) => {
+    await fresh.evaluate(() => {
+      const btn = [...document.querySelectorAll('button[type="button"]')]
+        .find((b) => /Continue|Skip for now/.test(b.textContent ?? ""))
+      if (!btn) throw new Error("wizard advance button not found")
+      btn.click()
+    })
+    await waitForText(fresh, `Step ${expectStep} of 4`)
+  }
   await fresh.type("#su-company", `Bluebird Freight ${stamp}`)
   await fresh.type("#su-dot", "4112233")
+  await advance(2) // Branding — skip the accent picker
+  await advance(3) // Driver pay — keep the prefilled defaults
+  await fresh.waitForSelector("#su-permile")
+  await advance(4)
+  await fresh.waitForSelector("#su-owner")
   await fresh.type("#su-owner", "Rosa Bluebird")
   await fresh.type("#su-email", `rosa+${stamp}@bluebird.example`)
   await fresh.type("#su-pass", "BluebirdPass1!")
+  await shot(fresh, "01b-signup-account-step")
   await Promise.all([
     fresh.waitForNavigation({ waitUntil: "networkidle2", timeout: 25000 }),
     fresh.click('button[type="submit"]'),
