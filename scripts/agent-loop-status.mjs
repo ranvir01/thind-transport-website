@@ -10,6 +10,7 @@
  * Exit 1 = integrator is ahead of main by more than AGENT_CATCHUP_THRESHOLD (catch-up mode).
  */
 import { execSync } from "node:child_process"
+import { buildInventory } from "./agent-branch-inventory.mjs"
 
 const INTEGRATOR = "origin/claude/hauldesk-project-setup-l1luoo"
 const MAIN = "origin/main"
@@ -67,6 +68,31 @@ function branchExists(name) {
   return git(`rev-parse --verify ${name}`).length > 0
 }
 
+/**
+ * Format the pending-branches section. Pure so it's unit-testable: a null
+ * inventory (buildInventory threw) must render UNKNOWN, and a 0-pending
+ * result that contradicts the raw ahead-of-main count must render a
+ * MISMATCH warning instead of a quiet zero.
+ */
+export function describePendingBranches(inventory, error = null) {
+  if (!inventory) {
+    return [
+      `\nPending claude/* branches (not on main): UNKNOWN — inventory failed${error ? `: ${error}` : ""}`,
+      "  Run directly to diagnose: npm run agent:branches",
+    ]
+  }
+  const pending = inventory.rows.length
+  const lines = [`\nPending claude/* branches (not on main): ${pending} (scanned ${inventory.scanned})`]
+  if (pending > 0) {
+    lines.push("  Run: npm run agent:branches")
+  } else if (inventory.rawAheadOfMain > 0) {
+    lines.push(
+      `  MISMATCH: 0 pending but ${inventory.rawAheadOfMain} claude/* branch(es) have raw commits ahead of main — patch-equivalent picks, or a counting bug. Inspect: npm run agent:branches -- --all`
+    )
+  }
+  return lines
+}
+
 function main() {
   git("fetch origin --quiet")
 
@@ -88,20 +114,17 @@ function main() {
     for (const line of logLines(MAIN, INTEGRATOR)) console.log(`  ${line}`)
   }
 
-  const pendingOut = execSync("node scripts/agent-branch-inventory.mjs --json", {
-    encoding: "utf-8",
-    cwd: process.cwd(),
-  })
-  let pendingCount = 0
+  // Shares buildInventory with agent:branches so the two commands can never
+  // disagree. A failure is reported loudly — never silently collapsed to 0
+  // (that hid 200+ pending branches from the integrator once).
+  let inventory = null
+  let inventoryError = null
   try {
-    pendingCount = JSON.parse(pendingOut).pending?.length ?? 0
-  } catch {
-    /* ignore */
+    inventory = buildInventory({ pendingOnly: true, skipFetch: true })
+  } catch (err) {
+    inventoryError = err?.message ?? String(err)
   }
-  console.log(`\nPending claude/* branches (not on main): ${pendingCount}`)
-  if (pendingCount > 0) {
-    console.log("  Run: npm run agent:branches")
-  }
+  for (const line of describePendingBranches(inventory, inventoryError)) console.log(line)
 
   console.log("\nLane branches ahead of integrator:")
   let anyLane = false
@@ -138,4 +161,5 @@ function main() {
   console.log(`STEADY STATE: integrator within ${THRESHOLD} commits of main.`)
 }
 
-main()
+// import-safe: only run when executed directly (tests import describePendingBranches)
+if (process.argv[1] && import.meta.url === new URL(`file://${process.argv[1]}`).href) main()

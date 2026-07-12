@@ -71,16 +71,26 @@ function unpickedCommitCount(ref, base) {
   return countUnpickedFromCherry(out)
 }
 
-function buildInventory({ pendingOnly }) {
-  git("fetch origin --quiet")
+/**
+ * Scan every origin/claude/* branch. Returns { rows, scanned, rawAheadOfMain }:
+ * rows = branches with unpicked work (or all unmerged when pendingOnly=false),
+ * scanned = total claude/* branches examined, rawAheadOfMain = branches with
+ * rev-list commits ahead of main regardless of patch-equivalence — a cheap
+ * cross-check so callers (agent-loop-status) can detect a pending count that
+ * silently collapsed to 0.
+ */
+export function buildInventory({ pendingOnly, skipFetch = false } = {}) {
+  if (!skipFetch) git("fetch origin --quiet")
   const branches = listClaudeBranches()
   const rows = []
+  let rawAheadOfMain = 0
 
   for (const name of branches) {
     const ref = `${PREFIX}${name}`
     if (!git(`rev-parse --verify ${ref}`)) continue
 
     const aheadMain = revCount(MAIN, ref)
+    if (aheadMain > 0) rawAheadOfMain++
     const aheadIntegrator = revCount(INTEGRATOR, ref)
     const unpickedOnMain = unpickedCommitCount(ref, MAIN)
     const onMain = unpickedOnMain === 0
@@ -110,17 +120,17 @@ function buildInventory({ pendingOnly }) {
   }
 
   rows.sort((a, b) => b.priority - a.priority || (b.tip?.date ?? "").localeCompare(a.tip?.date ?? ""))
-  return rows
+  return { rows, scanned: branches.length, rawAheadOfMain }
 }
 
 function main() {
   const json = process.argv.includes("--json")
   const showAll = process.argv.includes("--all")
-  const rows = buildInventory({ pendingOnly: !showAll })
+  const { rows, scanned, rawAheadOfMain } = buildInventory({ pendingOnly: !showAll })
 
   if (json) {
-    console.log(JSON.stringify({ integrator: INTEGRATOR, main: MAIN, pending: rows }, null, 2))
-    process.exit(rows.length ? 0 : 0)
+    console.log(JSON.stringify({ integrator: INTEGRATOR, main: MAIN, scanned, rawAheadOfMain, pending: rows }, null, 2))
+    process.exit(0)
   }
 
   console.log("LoadOff agent branch inventory")
