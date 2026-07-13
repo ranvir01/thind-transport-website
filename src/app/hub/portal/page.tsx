@@ -5,6 +5,7 @@ import { portalInvoices, portalLoads, portalPacketDocuments } from "@/lib/hub/po
 import { getCarrier } from "@/lib/hub/settings"
 import { fmtCents, STATUS_LABELS, type LoadStatus } from "@/lib/hub/types"
 import { PortalQuoteForm } from "@/components/hub/PortalQuoteForm"
+import { LoadProgressBar } from "@/components/hub/LoadProgressBar"
 import { cn } from "@/lib/utils"
 
 export const dynamic = "force-dynamic"
@@ -71,8 +72,9 @@ export default async function PortalHomePage() {
                   <p className="mt-0.5 text-body-sm text-steel-200">
                     {load.origin_city}, {load.origin_state} → {load.dest_city}, {load.dest_state}
                   </p>
+                  <LoadProgressBar status={load.status as LoadStatus} className="mt-2.5" />
                   {load.position_hint ? (
-                    <p className="mt-1 text-body-xs text-gold">{load.position_hint}</p>
+                    <p className="mt-1.5 text-body-xs text-gold">{load.position_hint}</p>
                   ) : null}
                 </Link>
               </li>
