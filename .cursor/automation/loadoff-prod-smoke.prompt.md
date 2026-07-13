@@ -16,7 +16,12 @@ npm run prod:smoke
 
 2. **If all checks pass:** report one line — "Production smoke green" — and **stop without committing**.
 
-3. **If any check fails:**
+3. **If it exits 2 (INCONCLUSIVE):** your machine's egress is blocked or proxied — the responses did
+   not come from Vercel, so production health is UNKNOWN. Do **not** fix-forward. Probe another way
+   (Vercel MCP `web_fetch_vercel_url`, or Vercel runtime-error/deployment status) or report
+   "smoke inconclusive — egress blocked" and stop.
+
+4. **If any check fails (exit 1):**
    - Diagnose: is production behind `main` (Vercel still deploying)? Wait and re-run smoke once.
    - If still failing: identify the regression (recent main commit, missing deploy, wrong branding).
    - Fix forward on `main` with the smallest diff (e.g. revert breaking commit, fix branding string).
