@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest"
 // @ts-expect-error — plain .mjs fleet script, no type declarations
-import { countUnpickedFromCherry } from "../../../../scripts/agent-branch-inventory.mjs"
+import { buildInventory, countUnpickedFromCherry } from "../../../../scripts/agent-branch-inventory.mjs"
 
 /**
  * git cherry polarity: "+" = commit NOT in upstream (unpicked work the
@@ -25,5 +25,17 @@ describe("countUnpickedFromCherry", () => {
 
   it("empty output means nothing unpicked", () => {
     expect(countUnpickedFromCherry("")).toBe(0)
+  })
+})
+
+/**
+ * agent-loop-status.mjs imports buildInventory to count pending branches
+ * in-process. Regression: it used to shell out with --json and parse stdout,
+ * but a process.exit after console.log truncated piped output >64KB, so the
+ * swallowed parse error reported "0 pending" while 200+ branches existed.
+ */
+describe("buildInventory export contract", () => {
+  it("is exported as a function for in-process use by agent-loop-status", () => {
+    expect(typeof buildInventory).toBe("function")
   })
 })

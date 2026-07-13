@@ -71,8 +71,8 @@ function unpickedCommitCount(ref, base) {
   return countUnpickedFromCherry(out)
 }
 
-function buildInventory({ pendingOnly }) {
-  git("fetch origin --quiet")
+export function buildInventory({ pendingOnly, fetch = true }) {
+  if (fetch) git("fetch origin --quiet")
   const branches = listClaudeBranches()
   const rows = []
 
@@ -119,8 +119,11 @@ function main() {
   const rows = buildInventory({ pendingOnly: !showAll })
 
   if (json) {
+    // No process.exit here: exiting right after console.log truncates output
+    // larger than the pipe buffer when stdout is piped (the agent:status
+    // "0 pending" bug) — let the process drain stdout and exit naturally.
     console.log(JSON.stringify({ integrator: INTEGRATOR, main: MAIN, pending: rows }, null, 2))
-    process.exit(rows.length ? 0 : 0)
+    return
   }
 
   console.log("LoadOff agent branch inventory")
