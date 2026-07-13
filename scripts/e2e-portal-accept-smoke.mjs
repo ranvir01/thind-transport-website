@@ -107,6 +107,13 @@ async function main() {
       page.click('button[type="submit"]'),
     ])
     check(page.url().includes("/hub/portal"), `accepting the invitation signs in and lands on /hub/portal (url=${page.url()})`)
+    // The pathname flips before the new document paints (readyState is still
+    // "loading" with an empty body) — wait for real content so the shot shows
+    // the portal, not a blank frame that makeShot's retry would accept.
+    await page.waitForFunction(
+      () => document.readyState === "complete" && (document.body?.innerText.length ?? 0) > 0,
+      { timeout: 15000 }
+    )
     await shot(page, "02-signed-in")
 
     console.log("2. Already-used invitation at 390px")
