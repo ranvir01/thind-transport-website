@@ -6,47 +6,38 @@
  */
 import puppeteer from "puppeteer"
 import { mkdirSync } from "node:fs"
-import { BASE, waitForText, login, makeShot } from "./e2e-lib.mjs"
+import { BASE, waitForText, login, makeShot, clickByText } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-onboarding"
 mkdirSync(OUT, { recursive: true })
 const shot = makeShot(OUT)
 
-/** Click the wizard's Continue/Skip button (SignupForm mounts one step at a time). */
-async function nextStep(page) {
-  await page.evaluate(() => {
-    const btn = [...document.querySelectorAll('button[type="button"]')].find((b) =>
-      /Continue|Skip for now/.test(b.textContent ?? "")
-    )
-    if (!btn) throw new Error("wizard Continue button not found")
-    btn.click()
-  })
-}
-
 async function main() {
   const browser = await puppeteer.launch({ headless: "new", args: ["--no-sandbox", "--disable-dev-shm-usage"] })
   const stamp = Date.now().toString().slice(-6)
 
-  console.log("1. Self-serve signup wizard creates a new workspace")
+  console.log("1. Self-serve signup walks the onboarding wizard")
   const signupCtx = await browser.createBrowserContext()
   const fresh = await signupCtx.newPage()
   await fresh.setViewport({ width: 390, height: 844, deviceScaleFactor: 2 })
   await fresh.goto(`${BASE}/hub/signup`, { waitUntil: "networkidle2" })
-  await shot(fresh, "01-signup")
-  // Step 1 of 4 — Company (FMCSA verify is optional; the wizard advances without it)
+  // Step 1 — company facts. FMCSA verify is optional and needs egress, so the
+  // smoke skips the verify button and continues on required fields alone.
+  await shot(fresh, "01-signup-company")
   await fresh.type("#su-company", `Bluebird Freight ${stamp}`)
   await fresh.type("#su-dot", "4112233")
-  await nextStep(fresh)
-  // Step 2 of 4 — Branding: pick the first accent preset, then continue
-  await fresh.waitForSelector('[role="radiogroup"] button[role="radio"]', { timeout: 10000 })
-  await fresh.click('[role="radiogroup"] button[role="radio"]')
-  await shot(fresh, "01b-branding")
-  await nextStep(fresh)
-  // Step 3 of 4 — Driver pay: platform defaults are prefilled, keep them
-  await fresh.waitForSelector("#su-permile", { timeout: 10000 })
-  await nextStep(fresh)
-  // Step 4 of 4 — Owner account, then submit
-  await fresh.waitForSelector("#su-owner", { timeout: 10000 })
+  await clickByText(fresh, "Continue")
+  // Step 2 — branding: pick an accent so per-tenant branding is exercised.
+  await fresh.waitForSelector('[role="radiogroup"]', { visible: true })
+  await clickByText(fresh, "Blue")
+  await shot(fresh, "01b-signup-branding")
+  await clickByText(fresh, "Continue")
+  // Step 3 — driver pay comes prefilled with platform defaults.
+  await fresh.waitForSelector("#su-permile", { visible: true })
+  await shot(fresh, "01c-signup-pay")
+  await clickByText(fresh, "Continue")
+  // Step 4 — owner account, then the single server action creates it all.
+  await fresh.waitForSelector("#su-owner", { visible: true })
   await fresh.type("#su-owner", "Rosa Bluebird")
   await fresh.type("#su-email", `rosa+${stamp}@bluebird.example`)
   await fresh.type("#su-pass", "BluebirdPass1!")

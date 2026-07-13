@@ -152,7 +152,9 @@ async function main() {
 
     check(consoleErrors.length === 0, `no console errors (${consoleErrors.length}: ${consoleErrors.slice(0, 2).join(" | ")})`)
   } catch (err) {
-    await shot(page, "ZZ-failure")
+    // The failure shot is best-effort — if the page is mid-navigation or gone,
+    // a second throw here would crash the process and mask the real error.
+    try { await shot(page, "ZZ-failure") } catch { /* keep the original error */ }
     failures.push(`crash: ${err.message}`)
   } finally {
     await browser.close()
