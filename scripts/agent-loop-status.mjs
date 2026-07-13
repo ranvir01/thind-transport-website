@@ -88,19 +88,28 @@ function main() {
     for (const line of logLines(MAIN, INTEGRATOR)) console.log(`  ${line}`)
   }
 
-  const pendingOut = execSync("node scripts/agent-branch-inventory.mjs --json", {
-    encoding: "utf-8",
-    cwd: process.cwd(),
-  })
-  let pendingCount = 0
+  let pendingCount = null
+  let pendingError = null
   try {
-    pendingCount = JSON.parse(pendingOut).pending?.length ?? 0
-  } catch {
-    /* ignore */
+    const pendingOut = execSync("node scripts/agent-branch-inventory.mjs --json", {
+      encoding: "utf-8",
+      cwd: process.cwd(),
+      maxBuffer: 64 * 1024 * 1024,
+    })
+    const parsed = JSON.parse(pendingOut)
+    if (!Array.isArray(parsed.pending)) throw new Error("inventory JSON has no pending[] array")
+    pendingCount = parsed.pending.length
+  } catch (err) {
+    pendingError = err instanceof Error ? err.message.split("\n")[0] : String(err)
   }
-  console.log(`\nPending claude/* branches (not on main): ${pendingCount}`)
-  if (pendingCount > 0) {
-    console.log("  Run: npm run agent:branches")
+  if (pendingCount === null) {
+    console.log(`\nPending claude/* branches (not on main): UNKNOWN — inventory failed (${pendingError})`)
+    console.log("  Do not trust 'all merged' until this is fixed. Run: npm run agent:branches")
+  } else {
+    console.log(`\nPending claude/* branches (not on main): ${pendingCount}`)
+    if (pendingCount > 0) {
+      console.log("  Run: npm run agent:branches")
+    }
   }
 
   console.log("\nLane branches ahead of integrator:")
