@@ -119,8 +119,12 @@ function main() {
   const rows = buildInventory({ pendingOnly: !showAll })
 
   if (json) {
+    // No process.exit() here: when stdout is a pipe (execSync in
+    // agent-loop-status.mjs) writes are async, and exiting immediately
+    // truncates large payloads mid-JSON. Falling off main() lets node
+    // flush stdout and exit 0 naturally.
     console.log(JSON.stringify({ integrator: INTEGRATOR, main: MAIN, pending: rows }, null, 2))
-    process.exit(rows.length ? 0 : 0)
+    return
   }
 
   console.log("LoadOff agent branch inventory")
