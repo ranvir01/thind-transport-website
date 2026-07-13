@@ -1,12 +1,14 @@
 /**
- * Phase 7 smoke: self-serve workspace signup → getting-started checklist;
- * second tenant sees ONLY its own data; platform admin sees tenant ops only.
+ * Phase 7 smoke: self-serve workspace signup (4-step onboarding wizard:
+ * company → branding → driver pay → owner account) → getting-started
+ * checklist; second tenant sees ONLY its own data; platform admin sees
+ * tenant ops only.
  *
  * Usage: node scripts/e2e-onboarding-smoke.mjs [outputDir]
  */
 import puppeteer from "puppeteer"
 import { mkdirSync } from "node:fs"
-import { BASE, waitForText, login, makeShot } from "./e2e-lib.mjs"
+import { BASE, waitForText, login, makeShot, clickByText } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-onboarding"
 mkdirSync(OUT, { recursive: true })
@@ -16,14 +18,29 @@ async function main() {
   const browser = await puppeteer.launch({ headless: "new", args: ["--no-sandbox", "--disable-dev-shm-usage"] })
   const stamp = Date.now().toString().slice(-6)
 
-  console.log("1. Self-serve signup creates a new workspace")
+  console.log("1. Self-serve signup walks the 4-step wizard to a new workspace")
   const signupCtx = await browser.createBrowserContext()
   const fresh = await signupCtx.newPage()
   await fresh.setViewport({ width: 390, height: 844, deviceScaleFactor: 2 })
   await fresh.goto(`${BASE}/hub/signup`, { waitUntil: "networkidle2" })
-  await shot(fresh, "01-signup")
+  // Step 1 — company facts
+  await shot(fresh, "01-signup-company")
   await fresh.type("#su-company", `Bluebird Freight ${stamp}`)
   await fresh.type("#su-dot", "4112233")
+  await clickByText(fresh, "Continue")
+  // Step 2 — branding; picking an accent flips the button from "Skip for now"
+  // to "Continue", so the click below doubles as the selection assertion.
+  await waitForText(fresh, "accent color")
+  await shot(fresh, "02-signup-branding")
+  await clickByText(fresh, "Teal")
+  await clickByText(fresh, "Continue")
+  // Step 3 — driver pay, prefilled with platform defaults
+  await waitForText(fresh, "per mile")
+  await shot(fresh, "03-signup-pay")
+  await clickByText(fresh, "Continue")
+  // Step 4 — owner account, then submit creates the workspace
+  await fresh.waitForSelector("#su-owner", { visible: true, timeout: 8000 })
+  await shot(fresh, "04-signup-account")
   await fresh.type("#su-owner", "Rosa Bluebird")
   await fresh.type("#su-email", `rosa+${stamp}@bluebird.example`)
   await fresh.type("#su-pass", "BluebirdPass1!")
@@ -32,7 +49,7 @@ async function main() {
     fresh.click('button[type="submit"]'),
   ])
   await waitForText(fresh, "Set up your workspace")
-  await shot(fresh, "02-getting-started")
+  await shot(fresh, "05-getting-started")
   const checklist = await fresh.evaluate(() => document.body.innerText)
   if (!checklist.includes("Smart Setup")) throw new Error("Getting-started checklist missing")
   if (checklist.includes("THD-")) throw new Error("NEW TENANT SEES THIND DATA — isolation broken!")
@@ -48,7 +65,7 @@ async function main() {
   const loadsText = await cascade.evaluate(() => document.body.innerText)
   if (!loadsText.includes("CAS-5001")) throw new Error("Cascade load missing")
   if (loadsText.includes("THD-")) throw new Error("CASCADE SEES THIND LOADS — isolation broken!")
-  await shot(cascade, "03-cascade-loads")
+  await shot(cascade, "06-cascade-loads")
   console.log("   zero bleed between tenants ✓")
 
   console.log("3. Platform admin sees tenant ops only")
@@ -59,7 +76,7 @@ async function main() {
   if (!admin.url().includes("/hub/admin")) throw new Error(`Admin landed on ${admin.url()}`)
   await waitForText(admin, "Platform admin")
   await waitForText(admin, "Cascade Demo Lines")
-  await shot(admin, "04-platform-admin")
+  await shot(admin, "07-platform-admin")
   // Bouncing into a tenant surface must redirect back.
   await admin.goto(`${BASE}/hub/loads`, { waitUntil: "networkidle2" })
   if (!admin.url().includes("/hub/admin")) throw new Error("Platform admin reached tenant data!")
