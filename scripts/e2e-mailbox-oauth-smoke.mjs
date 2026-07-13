@@ -60,6 +60,17 @@ async function main() {
   await login(page, "owner@demo.thind")
   await page.goto(`${BASE}/hub/settings/integrations`, { waitUntil: "networkidle2" })
   await waitForText(page, "Docs mailbox")
+  // Self-heal: `seed:demo` does not wipe hub.api_credentials, so a run that
+  // died between connect and disconnect leaves the mailbox connected for every
+  // later run. Disconnect the leftover credential before asserting clean start.
+  if (!/not connected/i.test(await cardText(page))) {
+    console.log("   (leftover credential from an interrupted run — disconnecting first)")
+    await clickInCard(page, "Disconnect")
+    await sleep(300)
+    await clickInCard(page, "Disconnect it")
+    await waitForText(page, "the CSV import path keeps working")
+    await sleep(1200)
+  }
   const before = await cardText(page)
   check(/not connected/i.test(before), "card starts not connected")
   check(/OAuth2 for Microsoft 365/.test(before), "blurb names the OAuth2 paths")
@@ -114,6 +125,7 @@ async function main() {
   // click arms it, the "Disconnect it" click actually disconnects.
   await clickInCard(page, "Disconnect")
   await sleep(300)
+  check(/Disconnect it/.test(await cardText(page)), "disconnect arms an inline confirm before acting")
   await clickInCard(page, "Disconnect it")
   await waitForText(page, "the CSV import path keeps working")
   await sleep(1200)
