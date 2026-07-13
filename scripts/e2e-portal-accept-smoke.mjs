@@ -18,7 +18,7 @@
 import puppeteer from "puppeteer"
 import pg from "pg"
 import { readFileSync, existsSync, mkdirSync } from "node:fs"
-import { BASE, reseed, makeShot, check, failures } from "./e2e-lib.mjs"
+import { BASE, reseed, makeShot, check, failures, sleep } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-portal-accept"
 mkdirSync(OUT, { recursive: true })
@@ -107,6 +107,10 @@ async function main() {
       page.click('button[type="submit"]'),
     ])
     check(page.url().includes("/hub/portal"), `accepting the invitation signs in and lands on /hub/portal (url=${page.url()})`)
+    // The pathname flips before the new document lays out; a fullPage shot in
+    // that window throws "Cannot take screenshot with 0 width". Wait for layout.
+    await page.waitForFunction(() => (document.documentElement?.scrollWidth ?? 0) > 0, { timeout: 10000 })
+    await sleep(500)
     await shot(page, "02-signed-in")
 
     console.log("2. Already-used invitation at 390px")
