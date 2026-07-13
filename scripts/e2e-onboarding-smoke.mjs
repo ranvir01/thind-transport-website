@@ -6,7 +6,7 @@
  */
 import puppeteer from "puppeteer"
 import { mkdirSync } from "node:fs"
-import { BASE, waitForText, login, makeShot } from "./e2e-lib.mjs"
+import { BASE, waitForText, login, makeShot, clickByText } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-onboarding"
 mkdirSync(OUT, { recursive: true })
@@ -16,17 +16,29 @@ async function main() {
   const browser = await puppeteer.launch({ headless: "new", args: ["--no-sandbox", "--disable-dev-shm-usage"] })
   const stamp = Date.now().toString().slice(-6)
 
-  console.log("1. Self-serve signup creates a new workspace")
+  console.log("1. Self-serve signup walks the 4-step wizard to a new workspace")
   const signupCtx = await browser.createBrowserContext()
   const fresh = await signupCtx.newPage()
   await fresh.setViewport({ width: 390, height: 844, deviceScaleFactor: 2 })
   await fresh.goto(`${BASE}/hub/signup`, { waitUntil: "networkidle2" })
   await shot(fresh, "01-signup")
+  // Step 1 — Company (FMCSA verify is optional; DOT/MC alone must not block)
   await fresh.type("#su-company", `Bluebird Freight ${stamp}`)
   await fresh.type("#su-dot", "4112233")
+  await clickByText(fresh, "Continue")
+  // Step 2 — Branding: pick an accent preset (button flips Skip → Continue)
+  await waitForText(fresh, "Step 2 of 4")
+  await clickByText(fresh, "Blue")
+  await clickByText(fresh, "Continue")
+  // Step 3 — Driver pay: platform defaults are prefilled, "just keep going" stays valid
+  await waitForText(fresh, "Step 3 of 4")
+  await clickByText(fresh, "Continue")
+  // Step 4 — Owner account, then the single server action
+  await waitForText(fresh, "Step 4 of 4")
   await fresh.type("#su-owner", "Rosa Bluebird")
   await fresh.type("#su-email", `rosa+${stamp}@bluebird.example`)
   await fresh.type("#su-pass", "BluebirdPass1!")
+  await shot(fresh, "01b-signup-account")
   await Promise.all([
     fresh.waitForNavigation({ waitUntil: "networkidle2", timeout: 25000 }),
     fresh.click('button[type="submit"]'),
