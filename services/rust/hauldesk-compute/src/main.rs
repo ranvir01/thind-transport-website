@@ -172,6 +172,11 @@ fn header_value<'a>(request: &'a tiny_http::Request, name: &str) -> Option<&'a s
 /// the handler wiring below is unit-tested as built (mirrors newMux() in the
 /// Go worker's main_test.go: main and the tests share this exact logic).
 fn handle(method: &Method, path: &str, secret_header: Option<&str>, body: &str, secret: &str) -> (u16, String) {
+    // Route on the path alone: tiny_http hands over the raw request-line URL,
+    // so "/health?probe=1" (how some load balancers tag their checks) must
+    // still reach the open /health route instead of being secret-gated into a
+    // 404 — parity with the Go worker, whose ServeMux ignores the query string.
+    let path = path.split('?').next().unwrap_or(path);
     // /health stays open for load-balancer checks; work endpoints are gated.
     if path != "/health" && !secret.is_empty() && !secret_matches_header(secret_header, secret) {
         return (401, r#"{"error":"unauthorized"}"#.to_string());
@@ -433,6 +438,25 @@ mod tests {
         assert_eq!(status, 400);
     }
 
+    /// tiny_http gives handle() the raw request-line URL, query string and all.
+    /// A load balancer probing "/health?probe=1" must get the open 200, not a
+    /// secret-gated 401/404 (the Go worker's ServeMux already behaves this way).
+    #[test]
+    fn health_open_with_query_string() {
+        let (status, body) = handle(&Method::Get, "/health?probe=1", None, "", "s3cret");
+        assert_eq!(status, 200);
+        assert!(body.contains("\"status\":\"ok\""));
+    }
+
+    /// Same for work endpoints: a query-string suffix must not knock the route
+    /// into the 404 arm once the secret gate passes.
+    #[test]
+    fn ifta_summary_routes_with_query_string() {
+        let body = r#"{"milesByJurisdiction":{},"gallonsByJurisdiction":{},"rates":{}}"#;
+        let (status, _) = handle(&Method::Post, "/ifta/summary?trace=1", Some("s3cret"), body, "s3cret");
+        assert_eq!(status, 200);
+    }
+
     /// money.test.ts "rounds half away from zero" golden, plus the near-tie
     /// floats where `(x + 0.5).floor()` diverges from JS Math.round:
     /// 0.49999999999999994 + 0.5 == 1.0 exactly in f64, so the old idiom
@@ -488,6 +512,15 @@ mod tests {
     #[test]
     fn process_health_stays_open_through_the_live_glue() {
         let (status, body) = run_request(TestRequest::new().with_path("/health"), "s3cret");
+        assert_eq!(status, 200);
+        assert!(body.contains("\"status\":\"ok\""));
+    }
+
+    /// End-to-end pin for the query-string fix: the raw URL really does arrive
+    /// with its query attached through tiny_http, and /health must stay open.
+    #[test]
+    fn process_health_open_with_query_string_through_the_live_glue() {
+        let (status, body) = run_request(TestRequest::new().with_path("/health?probe=1"), "s3cret");
         assert_eq!(status, 200);
         assert!(body.contains("\"status\":\"ok\""));
     }
