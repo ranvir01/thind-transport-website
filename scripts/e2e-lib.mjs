@@ -94,11 +94,27 @@ export async function login(page, email, password = "ThindDemo1!") {
   ])
 }
 
-/** Screenshot helper bound to the script's output dir. */
+/**
+ * Screenshot helper bound to the script's output dir. Retries through the
+ * mid-navigation race: a capture that lands between documents (right after a
+ * submit-click that commits a full navigation) fails with
+ * "Cannot take screenshot with 0 width" or a detached-frame ProtocolError.
+ * One settle-and-retry succeeds; a persistently broken page still throws.
+ */
 export function makeShot(outDir, { fullPage = false } = {}) {
   return async (page, name) => {
-    await page.screenshot({ path: path.join(outDir, `${name}.png`), fullPage })
-    console.log(`  📸 ${name}`)
+    let lastErr
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        await page.screenshot({ path: path.join(outDir, `${name}.png`), fullPage })
+        console.log(`  📸 ${name}`)
+        return
+      } catch (err) {
+        lastErr = err
+        await sleep(500)
+      }
+    }
+    throw lastErr
   }
 }
 

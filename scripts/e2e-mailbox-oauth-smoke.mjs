@@ -110,7 +110,11 @@ async function main() {
   await clickInCard(page, "Cancel")
 
   console.log("5. Disconnect leaves the demo carrier clean")
+  // Disconnect is a destructive action behind a two-step confirm: the first
+  // click arms it, the "Disconnect it" click actually disconnects.
   await clickInCard(page, "Disconnect")
+  await sleep(300)
+  await clickInCard(page, "Disconnect it")
   await waitForText(page, "the CSV import path keeps working")
   await sleep(1200)
   const finalText = await cardText(page)
