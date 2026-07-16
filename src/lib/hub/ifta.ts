@@ -1,6 +1,6 @@
 import { randomUUID } from "crypto"
 import { query, queryOne } from "./db"
-import { computeIfta, quarterRange, lastCompletedQuarterKey, iftaDueDate, type IftaResult } from "./ifta-core"
+import { computeIfta, quarterRange, lastCompletedQuarterKey, iftaDueDate, staleRateJurisdictions, type IftaResult } from "./ifta-core"
 import { jurisdictionMilesFromPings } from "./geo"
 import { logAudit } from "./audit"
 import type { ComplianceEntry } from "./compliance"
@@ -225,7 +225,9 @@ export async function setIftaStatus(
 ): Promise<void> {
   // Status is meaningless without a computed report — without this check the
   // UPDATE matches nothing yet an audit row still claims the status changed.
-  const existing = await queryOne<{ report: { missingRates?: string[] } | null }>(
+  const existing = await queryOne<{
+    report: { rows?: IftaResult["rows"]; missingRates?: string[] } | null
+  }>(
     `SELECT report FROM hub.ifta_reports WHERE carrier_id = $1 AND quarter = $2`,
     [carrierId, quarter]
   )
@@ -239,6 +241,25 @@ export async function setIftaStatus(
     throw new Error(
       `Cannot mark ${quarter} filed — missing tax rates for ${missingRates.join(", ")}. Import rates and recompute first.`
     )
+  }
+  // Rates re-imported AFTER the compute leave the report's lines priced on
+  // superseded rates with missingRates empty — the filing would transcribe
+  // numbers no longer backed by the rates on file.
+  if (status === "filed") {
+    const rateRows = await query<{ jurisdiction: string; rate: string; surcharge_rate: string }>(
+      `SELECT jurisdiction, rate, surcharge_rate FROM hub.ifta_tax_rates WHERE carrier_id = $1 AND quarter = $2`,
+      [carrierId, quarter]
+    )
+    const onFile: Record<string, { rate: number; surchargeRate?: number }> = {}
+    for (const row of rateRows) {
+      onFile[row.jurisdiction] = { rate: Number(row.rate), surchargeRate: Number(row.surcharge_rate) || undefined }
+    }
+    const stale = staleRateJurisdictions(existing.report?.rows ?? [], onFile)
+    if (stale.length > 0) {
+      throw new Error(
+        `Cannot mark ${quarter} filed — rates on file for ${stale.join(", ")} changed after this report was computed. Recompute first.`
+      )
+    }
   }
   await query(
     `UPDATE hub.ifta_reports SET status = $3, updated_at = NOW() WHERE carrier_id = $1 AND quarter = $2`,

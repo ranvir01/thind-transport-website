@@ -1,6 +1,6 @@
 import { Download } from "lucide-react"
 import { getIftaReport, listIftaRates, listIftaReports } from "@/lib/hub/ifta"
-import { quarterKey, lastCompletedQuarterKey, iftaDueDate } from "@/lib/hub/ifta-core"
+import { quarterKey, lastCompletedQuarterKey, iftaDueDate, staleRateJurisdictions } from "@/lib/hub/ifta-core"
 import { requirePermissionPage } from "@/lib/hub/session"
 import { fmtCentsExact, type IftaReportRow } from "@/lib/hub/types"
 import { Panel, PageHeader, BackLink, fieldCls, Pill } from "@/components/hub/ui"
@@ -42,6 +42,20 @@ export default async function IftaPage({
   const rows: IftaReportRow[] = (report?.report?.rows as IftaReportRow[] | undefined) ?? []
   const due = iftaDueDate(quarter)
   const isOverdue = due < new Date() && report?.status !== "filed"
+  // Rates re-imported after the compute leave the report priced on superseded
+  // rates; a filed quarter is history, so only unfiled reports get the nag.
+  const staleRates =
+    report && report.status !== "filed"
+      ? staleRateJurisdictions(
+          rows,
+          Object.fromEntries(
+            rates.map((r) => [
+              r.jurisdiction,
+              { rate: Number(r.rate), surchargeRate: Number(r.surcharge_rate) || undefined },
+            ])
+          )
+        )
+      : []
 
   return (
     <div>
@@ -128,6 +142,15 @@ export default async function IftaPage({
             <Panel className="p-4 mb-4 border-warn">
               <p className="text-body-sm text-warn font-semibold">
                 Missing rates for: {report.report.missingRates!.join(", ")} — import below and recompute.
+              </p>
+            </Panel>
+          ) : null}
+
+          {staleRates.length > 0 ? (
+            <Panel className="p-4 mb-4 border-warn">
+              <p className="text-body-sm text-warn font-semibold">
+                Rates on file for {staleRates.join(", ")} changed after this report was computed —
+                the lines below use the old rates. Recompute before filing (Mark filed is blocked until then).
               </p>
             </Panel>
           ) : null}

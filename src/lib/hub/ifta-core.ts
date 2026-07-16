@@ -93,6 +93,28 @@ export function computeIfta(inputs: IftaInputs): IftaResult {
   }
 }
 
+/**
+ * Jurisdictions whose rate on file no longer matches the rate a computed
+ * report actually used — the report is stale and must be recomputed before
+ * filing. Jurisdictions with no rate on file are the missingRates path's
+ * problem, not staleness.
+ */
+export function staleRateJurisdictions(
+  rows: Pick<IftaReportRow, "jurisdiction" | "rate" | "surchargeRate">[],
+  rates: Record<string, { rate: number; surchargeRate?: number }>
+): string[] {
+  const stale: string[] = []
+  for (const row of rows) {
+    const onFile = rates[row.jurisdiction]
+    if (!onFile) continue
+    const rateChanged = Math.abs(onFile.rate - Number(row.rate)) > 1e-9
+    const surchargeChanged =
+      Math.abs((onFile.surchargeRate ?? 0) - Number(row.surchargeRate ?? 0)) > 1e-9
+    if (rateChanged || surchargeChanged) stale.push(row.jurisdiction)
+  }
+  return stale
+}
+
 /** "2026Q2"-style key for a date; IFTA quarters are calendar quarters. */
 export function quarterKey(date: Date): string {
   return `${date.getUTCFullYear()}Q${Math.floor(date.getUTCMonth() / 3) + 1}`
