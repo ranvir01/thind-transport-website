@@ -17,7 +17,7 @@ as an urgent `Backlog:` item.
 | `dat` | **Built** — search + posting-to-load-draft mapper, stub-first (registry still `stub`/CSV fallback pending real auth confirm) | `serviceAccountEmail`, `password` (+ acting-user email needed, see doc) | `src/lib/hub/integrations/dat.ts` | [`dat.md`](./dat.md) | 2026-07-10 |
 | `efs` | **Built** — adapter shipped; real feed confirmed as daily SFTP CSV, not REST JSON — transport swap needed before activation (see doc) | `feedUser`, `feedPassword` | `src/lib/hub/integrations/efs.ts` | [`efs.md`](./efs.md) | 2026-07-11 |
 | `wex` | **Built** — adapter shipped; real feed confirmed as SFTP file drop, not REST JSON — same transport swap as EFS needed before activation (see doc) | `feedUser`, `feedPassword` (+ feed file name, no field yet) | `src/lib/hub/integrations/wex.ts` | [`wex.md`](./wex.md) | 2026-07-12 |
-| `comdata` | **Built** — adapter shipped, daily cron live | `apiKey`, `apiSecret` | `src/lib/hub/integrations/comdata.ts` | [`comdata.md`](./comdata.md) | 2026-07-06 |
+| `comdata` | **Built** — adapter shipped, daily cron live; real APIs confirmed to exist (REST portal + SOAP Transaction History), but partner feeds are batch files (AC00029) — transport TBD at onboarding (see doc) | `apiKey`, `apiSecret` | `src/lib/hub/integrations/comdata.ts` | [`comdata.md`](./comdata.md) | 2026-07-16 |
 | `qbo` | **Built** — pull + push both directions, refresh-token rotation | OAuth2 (Intuit) | `src/lib/hub/integrations/qbo.ts` | [`qbo.md`](./qbo.md) | 2026-07-06 |
 | `factor` | **Built** — push + webhook receiver | varies by factor | `src/lib/hub/integrations/factor.ts` | [`factor.md`](./factor.md) | 2026-07-06 |
 | `truckstop` | **Built** — search adapter, booking mapper pending (blocked on migration) | API key | `src/lib/hub/integrations/truckstop.ts` | [`truckstop.md`](./truckstop.md) | 2026-07-06 |
@@ -37,9 +37,10 @@ integrations that were never in scope of the vendor shopping list: both `fmcsa.m
    notes before a lane builds the adapter.
 3. One provider per cycle. Update the "Last researched" date and doc link when done.
 
-Next up by this rule: `comdata.md`, `qbo.md`, `factor.md`, and `truckstop.md` are tied as
-the oldest vendor docs (2026-07-06, unchanged) after `wex.md` was refreshed 2026-07-12;
-take the top of that list next (`comdata.md` — Comdata is FLEETCOR/Corpay, *not* a WEX
-brand, so don't assume the SFTP-file model carries over; the pass should establish whether
-Comdata's carrier transaction feed is REST like `comdataSource()` assumes — it's the third
-fuel adapter with the same fetch shape, and WEX + EFS have both now proven file-based).
+Next up by this rule: `qbo.md`, `factor.md`, and `truckstop.md` are tied as the oldest
+vendor docs (2026-07-06, unchanged) after `comdata.md` was refreshed 2026-07-16; take the
+top of that list next (`qbo.md` — the adapter is built both directions with refresh-token
+rotation, so the pass should check Intuit's current minor-version/deprecation notices and
+whether the QBO API's Payment/Invoice endpoints or OAuth token lifetimes changed —
+Intuit rotates refresh tokens on every exchange, so a policy change there breaks the
+stored-credential path silently).
