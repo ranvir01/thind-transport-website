@@ -88,19 +88,34 @@ function main() {
     for (const line of logLines(MAIN, INTEGRATOR)) console.log(`  ${line}`)
   }
 
-  const pendingOut = execSync("node scripts/agent-branch-inventory.mjs --json", {
-    encoding: "utf-8",
-    cwd: process.cwd(),
-  })
-  let pendingCount = 0
+  let pendingCount = null
   try {
+    const pendingOut = execSync("node scripts/agent-branch-inventory.mjs --json", {
+      encoding: "utf-8",
+      cwd: process.cwd(),
+      maxBuffer: 16 * 1024 * 1024,
+    })
     pendingCount = JSON.parse(pendingOut).pending?.length ?? 0
-  } catch {
-    /* ignore */
+  } catch (err) {
+    console.log(`\nPending claude/* branches (not on main): UNKNOWN — inventory failed: ${String(err.message ?? err).split("\n")[0]}`)
   }
-  console.log(`\nPending claude/* branches (not on main): ${pendingCount}`)
-  if (pendingCount > 0) {
-    console.log("  Run: npm run agent:branches")
+  if (pendingCount !== null) {
+    console.log(`\nPending claude/* branches (not on main): ${pendingCount}`)
+    // Mismatch guard: a raw git count of unmerged claude/* branches. It can
+    // legitimately exceed pendingCount (cherry-picked branches), but 0 pending
+    // while git sees unmerged branches means the inventory output was lost.
+    const rawUnmerged = git("branch -r --no-merged origin/main")
+      .split("\n")
+      .map((l) => l.trim())
+      .filter((l) => l.startsWith("origin/claude/") && !l.endsWith("/hauldesk-project-setup-l1luoo")).length
+    if (pendingCount === 0 && rawUnmerged > 0) {
+      console.log(
+        `  WARNING: inventory reported 0 pending but git sees ${rawUnmerged} unmerged claude/* branch(es) — inventory output may be truncated or corrupt. Run: npm run agent:branches`
+      )
+    }
+    if (pendingCount > 0) {
+      console.log("  Run: npm run agent:branches")
+    }
   }
 
   console.log("\nLane branches ahead of integrator:")
