@@ -8,6 +8,7 @@
  *
  * Exit 0 = integrator is within threshold of main (steady state OK).
  * Exit 1 = integrator is ahead of main by more than AGENT_CATCHUP_THRESHOLD (catch-up mode).
+ * Exit 2 = the branch inventory could not be read (status output is unreliable).
  */
 import { execSync } from "node:child_process"
 
@@ -67,6 +68,21 @@ function branchExists(name) {
   return git(`rev-parse --verify ${name}`).length > 0
 }
 
+/**
+ * Parse `agent-branch-inventory --json` output into a pending-branch count.
+ * Returns null when the output is not valid JSON or has no pending array —
+ * callers must treat null as "unknown", never as 0. (Regression: truncated
+ * JSON was silently swallowed to 0 while the inventory showed 200+ branches.)
+ */
+export function parsePendingCount(out) {
+  try {
+    const parsed = JSON.parse(out)
+    return Array.isArray(parsed.pending) ? parsed.pending.length : null
+  } catch {
+    return null
+  }
+}
+
 function main() {
   git("fetch origin --quiet")
 
@@ -88,15 +104,21 @@ function main() {
     for (const line of logLines(MAIN, INTEGRATOR)) console.log(`  ${line}`)
   }
 
-  const pendingOut = execSync("node scripts/agent-branch-inventory.mjs --json", {
-    encoding: "utf-8",
-    cwd: process.cwd(),
-  })
-  let pendingCount = 0
+  let pendingOut = ""
   try {
-    pendingCount = JSON.parse(pendingOut).pending?.length ?? 0
-  } catch {
-    /* ignore */
+    pendingOut = execSync("node scripts/agent-branch-inventory.mjs --json", {
+      encoding: "utf-8",
+      cwd: process.cwd(),
+      maxBuffer: 32 * 1024 * 1024, // 200+ branches of JSON already exceed the 1MB default's comfort zone
+    })
+  } catch (err) {
+    console.error(`\nERROR: branch inventory failed: ${err.message.split("\n")[0]}`)
+  }
+  const pendingCount = parsePendingCount(pendingOut)
+  if (pendingCount === null) {
+    console.log("\nPending claude/* branches (not on main): UNKNOWN — inventory --json was unreadable")
+    console.log("  Do not trust this run's status. Run: npm run agent:branches")
+    process.exit(2)
   }
   console.log(`\nPending claude/* branches (not on main): ${pendingCount}`)
   if (pendingCount > 0) {
@@ -138,4 +160,5 @@ function main() {
   console.log(`STEADY STATE: integrator within ${THRESHOLD} commits of main.`)
 }
 
-main()
+// import-safe: only run when executed directly (tests import parsePendingCount)
+if (process.argv[1] && import.meta.url === new URL(`file://${process.argv[1]}`).href) main()

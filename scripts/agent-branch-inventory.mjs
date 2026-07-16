@@ -119,8 +119,11 @@ function main() {
   const rows = buildInventory({ pendingOnly: !showAll })
 
   if (json) {
+    // No process.exit() here: with 200+ branches the JSON exceeds the pipe
+    // buffer, and exit() drops the unflushed remainder when stdout is a pipe
+    // (agent-loop-status reads this via execSync and got truncated JSON).
     console.log(JSON.stringify({ integrator: INTEGRATOR, main: MAIN, pending: rows }, null, 2))
-    process.exit(rows.length ? 0 : 0)
+    return
   }
 
   console.log("LoadOff agent branch inventory")
