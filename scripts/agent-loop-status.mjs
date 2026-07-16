@@ -67,6 +67,21 @@ function branchExists(name) {
   return git(`rev-parse --verify ${name}`).length > 0
 }
 
+/**
+ * Parse the pending-branch count out of agent-branch-inventory --json output.
+ * Returns null (never 0) when the payload is unreadable — truncated pipe
+ * output once parsed here as "0 pending" while 200+ branches were waiting.
+ */
+export function parsePendingCount(out) {
+  try {
+    const parsed = JSON.parse(out)
+    if (!Array.isArray(parsed?.pending)) return null
+    return parsed.pending.length
+  } catch {
+    return null
+  }
+}
+
 function main() {
   git("fetch origin --quiet")
 
@@ -88,19 +103,25 @@ function main() {
     for (const line of logLines(MAIN, INTEGRATOR)) console.log(`  ${line}`)
   }
 
-  const pendingOut = execSync("node scripts/agent-branch-inventory.mjs --json", {
-    encoding: "utf-8",
-    cwd: process.cwd(),
-  })
-  let pendingCount = 0
+  let pendingCount = null
   try {
-    pendingCount = JSON.parse(pendingOut).pending?.length ?? 0
+    const pendingOut = execSync("node scripts/agent-branch-inventory.mjs --json", {
+      encoding: "utf-8",
+      cwd: process.cwd(),
+      maxBuffer: 64 * 1024 * 1024,
+    })
+    pendingCount = parsePendingCount(pendingOut)
   } catch {
-    /* ignore */
+    /* inventory crashed — reported as UNKNOWN below, never as 0 */
   }
-  console.log(`\nPending claude/* branches (not on main): ${pendingCount}`)
-  if (pendingCount > 0) {
-    console.log("  Run: npm run agent:branches")
+  if (pendingCount === null) {
+    console.log("\nPending claude/* branches (not on main): UNKNOWN — inventory failed or emitted unreadable JSON")
+    console.log("  Run: npm run agent:branches (and check node scripts/agent-branch-inventory.mjs --json)")
+  } else {
+    console.log(`\nPending claude/* branches (not on main): ${pendingCount}`)
+    if (pendingCount > 0) {
+      console.log("  Run: npm run agent:branches")
+    }
   }
 
   console.log("\nLane branches ahead of integrator:")
@@ -138,4 +159,5 @@ function main() {
   console.log(`STEADY STATE: integrator within ${THRESHOLD} commits of main.`)
 }
 
-main()
+// import-safe: only run when executed directly (tests import parsePendingCount)
+if (process.argv[1] && import.meta.url === new URL(`file://${process.argv[1]}`).href) main()
