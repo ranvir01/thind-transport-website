@@ -189,19 +189,20 @@ export function resolvePnlRange(fromParam?: string | null, toParam?: string | nu
 
 /**
  * Preset windows for the Reports range form. Day math is UTC to match
- * resolvePnlRange. "Last quarter" is the most recent COMPLETE calendar
- * quarter (in Q3 that's Apr–Jun) — a partial current quarter is already
- * covered by MTD, and owners compare against closed books.
+ * resolvePnlRange. "Last month" / "Last quarter" are the most recent
+ * COMPLETE calendar month/quarter (in Q3 that's Apr–Jun) — the partial
+ * current period is already covered by MTD, and owners compare against
+ * closed books.
  */
 export interface PnlPreset {
-  key: "mtd" | "last-quarter" | "ytd"
+  key: "mtd" | "last-month" | "last-quarter" | "ytd"
   label: string
   range: PnlRange
 }
 
 export function pnlPresetRanges(today = new Date()): PnlPreset[] {
   // Date.UTC rolls out-of-range months (-3 → Oct prior year) and day 0
-  // (→ last day of the prior month), which is exactly the quarter math.
+  // (→ last day of the prior month), which is exactly the month/quarter math.
   const iso = (y: number, monthIndex: number, day: number) =>
     new Date(Date.UTC(y, monthIndex, day)).toISOString().slice(0, 10)
   const y = today.getUTCFullYear()
@@ -210,6 +211,7 @@ export function pnlPresetRanges(today = new Date()): PnlPreset[] {
   const prevQuarterStart = Math.floor(m / 3) * 3 - 3
   return [
     { key: "mtd", label: "MTD", range: { from: iso(y, m, 1), to: todayIso } },
+    { key: "last-month", label: "Last month", range: { from: iso(y, m - 1, 1), to: iso(y, m, 0) } },
     {
       key: "last-quarter",
       label: "Last quarter",
@@ -217,6 +219,21 @@ export function pnlPresetRanges(today = new Date()): PnlPreset[] {
     },
     { key: "ytd", label: "YTD", range: { from: iso(y, 0, 1), to: todayIso } },
   ]
+}
+
+/**
+ * Last-used Reports range, persisted so the page reopens where the owner
+ * left off. A cookie (per browser) rather than a DB column: per-user server
+ * storage needs a migration, which is integrator territory.
+ */
+export const REPORTS_RANGE_COOKIE = "hub_reports_range"
+
+/** Parse the persisted "YYYY-MM-DD_YYYY-MM-DD" cookie; null on anything malformed or tampered. */
+export function parseStoredPnlRange(value: string | null | undefined): PnlRange | null {
+  if (!value) return null
+  const [from, to, ...rest] = value.split("_")
+  if (rest.length > 0 || !isValidIsoDate(from) || !isValidIsoDate(to)) return null
+  return from > to ? { from: to, to: from } : { from, to }
 }
 
 export async function truckPnlRange(carrierId: string, range: PnlRange): Promise<TruckPnl[]> {
