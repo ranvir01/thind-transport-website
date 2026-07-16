@@ -39,6 +39,19 @@ const OFFICE_PAGES = [
   ["setup", "/hub/setup", "upload paperwork once"],
 ]
 
+// Owner-flavored screens the dispatcher pass above doesn't visit. Driven in a
+// separate context as owner@demo.thind — the fleet's three primary roles
+// (owner, dispatcher, driver) each get a real logged-in pass.
+const OWNER_PAGES = [
+  ["loadboard", "/hub/loadboard", "like excel"],
+  ["reports", "/hub/reports", "the operational view"],
+  ["owner-dashboard", "/hub/reports/owner", "an owner checks first"],
+  ["invoices", "/hub/money/invoices", "every invoice, paid or open"],
+  ["settlements", "/hub/money/settlements", "weekly driver pay"],
+  ["fleet", "/hub/fleet", "trailers, and their paperwork"],
+  ["drivers", "/hub/drivers", "qualification files"],
+]
+
 const DRIVER_PAGES = [
   ["driver-home", "/hub/driver", "my cards"],
   ["driver-dvir", "/hub/driver/dvir", "vehicle inspection"],
@@ -106,6 +119,17 @@ async function main() {
   await office.setViewport({ width: 390, height: 844, deviceScaleFactor: 2 })
   console.log("Office @ 390px")
   problems.push(...(await sweep(office, OFFICE_PAGES, "office", 390)))
+
+  // Owner at desktop + phone
+  const ownerContext = await browser.createBrowserContext()
+  const owner = await ownerContext.newPage()
+  await owner.setViewport({ width: 1440, height: 950 })
+  await login(owner, "owner@demo.thind")
+  console.log("Owner @ 1440px")
+  problems.push(...(await sweep(owner, OWNER_PAGES, "owner", 1440)))
+  await owner.setViewport({ width: 390, height: 844, deviceScaleFactor: 2 })
+  console.log("Owner @ 390px")
+  problems.push(...(await sweep(owner, OWNER_PAGES, "owner", 390)))
 
   // Driver app at phone
   const driverContext = await browser.createBrowserContext()
