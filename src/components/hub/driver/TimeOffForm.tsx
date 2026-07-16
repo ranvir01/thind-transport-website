@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { CalendarPlus, Loader2 } from "lucide-react"
 import { driverCancelTimeOff, driverRequestTimeOff } from "@/app/hub/_actions/driver"
-import { runOrQueue } from "@/components/hub/driver/offline-queue"
+import { isOfflineError, runOrQueue } from "@/components/hub/driver/offline-queue"
 import { fieldDarkCls, labelDarkCls } from "@/components/hub/ui"
 import { TIME_OFF_KINDS, TIME_OFF_KIND_LABELS } from "@/lib/hub/types"
 
@@ -91,11 +91,21 @@ export function CancelTimeOffButton({ id }: { id: string }) {
     <button
       onClick={() =>
         startTransition(async () => {
-          const result = await driverCancelTimeOff(id)
-          if (result.ok) {
-            toast.success("Request cancelled")
-            router.refresh()
-          } else toast.error(result.error ?? "Could not cancel")
+          // Deliberately NOT queued offline: a queued cancel replaying later
+          // could race an office approval. Tell the driver the truth instead.
+          try {
+            const result = await driverCancelTimeOff(id)
+            if (result.ok) {
+              toast.success("Request cancelled")
+              router.refresh()
+            } else toast.error(result.error ?? "Could not cancel")
+          } catch (err) {
+            toast.error(
+              isOfflineError(err)
+                ? "No signal — try cancelling again when you're connected"
+                : "Could not cancel"
+            )
+          }
         })
       }
       disabled={pending}
