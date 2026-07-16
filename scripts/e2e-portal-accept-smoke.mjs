@@ -107,6 +107,13 @@ async function main() {
       page.click('button[type="submit"]'),
     ])
     check(page.url().includes("/hub/portal"), `accepting the invitation signs in and lands on /hub/portal (url=${page.url()})`)
+    // The pathname flips before the new document paints (readyState "loading",
+    // body height 0) — a fullPage screenshot mid-swap crashes CDP with
+    // "Cannot take screenshot with 0 width". Wait for real content first.
+    await page.waitForFunction(
+      () => document.readyState === "complete" && (document.body?.innerText.length ?? 0) > 40,
+      { timeout: 15000 }
+    )
     await shot(page, "02-signed-in")
 
     console.log("2. Already-used invitation at 390px")
@@ -152,7 +159,11 @@ async function main() {
 
     check(consoleErrors.length === 0, `no console errors (${consoleErrors.length}: ${consoleErrors.slice(0, 2).join(" | ")})`)
   } catch (err) {
-    await shot(page, "ZZ-failure")
+    // The diagnostic shot must never mask the real failure — a screenshot
+    // crash here used to kill the process before failures were reported.
+    try {
+      await shot(page, "ZZ-failure")
+    } catch {}
     failures.push(`crash: ${err.message}`)
   } finally {
     await browser.close()
