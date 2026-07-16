@@ -67,6 +67,21 @@ function branchExists(name) {
   return git(`rev-parse --verify ${name}`).length > 0
 }
 
+/**
+ * Parse the inventory --json payload into a pending-branch count.
+ * Returns null (never 0) when the payload is unparsable or malformed —
+ * a truncated pipe once made this silently read as "0 pending" while
+ * 200+ branches were waiting on the integrator.
+ */
+export function parsePendingCount(raw) {
+  try {
+    const pending = JSON.parse(raw)?.pending
+    return Array.isArray(pending) ? pending.length : null
+  } catch {
+    return null
+  }
+}
+
 function main() {
   git("fetch origin --quiet")
 
@@ -88,19 +103,40 @@ function main() {
     for (const line of logLines(MAIN, INTEGRATOR)) console.log(`  ${line}`)
   }
 
-  const pendingOut = execSync("node scripts/agent-branch-inventory.mjs --json", {
-    encoding: "utf-8",
-    cwd: process.cwd(),
-  })
-  let pendingCount = 0
+  let pendingCount = null
+  let inventoryError = ""
   try {
-    pendingCount = JSON.parse(pendingOut).pending?.length ?? 0
-  } catch {
-    /* ignore */
+    const pendingOut = execSync("node scripts/agent-branch-inventory.mjs --json", {
+      encoding: "utf-8",
+      cwd: process.cwd(),
+      maxBuffer: 64 * 1024 * 1024,
+    })
+    pendingCount = parsePendingCount(pendingOut)
+    if (pendingCount === null) inventoryError = "inventory printed unparsable JSON (truncated output?)"
+  } catch (err) {
+    inventoryError = `inventory failed: ${err?.message?.split("\n")[0] ?? String(err)}`
   }
-  console.log(`\nPending claude/* branches (not on main): ${pendingCount}`)
-  if (pendingCount > 0) {
-    console.log("  Run: npm run agent:branches")
+  if (pendingCount === null) {
+    console.log(`\nPending claude/* branches (not on main): UNKNOWN — ${inventoryError}`)
+    console.log("  Run directly: npm run agent:branches")
+  } else {
+    console.log(`\nPending claude/* branches (not on main): ${pendingCount}`)
+    if (pendingCount > 0) {
+      console.log("  Run: npm run agent:branches")
+    } else {
+      // Mismatch guard: "0 pending" once masked a truncated-JSON bug while 200+
+      // claude/* refs sat unmerged. Cross-check against raw unmerged refs; a gap
+      // can be legit (patch-equivalent picks) but deserves a visible flag.
+      const rawUnmerged = git("branch -r --no-merged origin/main")
+        .split("\n")
+        .map((l) => l.trim())
+        .filter((l) => l.startsWith("origin/claude/") && l !== INTEGRATOR).length
+      if (rawUnmerged > 0) {
+        console.log(
+          `  WARNING: 0 pending but ${rawUnmerged} origin/claude/* ref(s) not merged to main — verify with: npm run agent:branches`
+        )
+      }
+    }
   }
 
   console.log("\nLane branches ahead of integrator:")
@@ -138,4 +174,5 @@ function main() {
   console.log(`STEADY STATE: integrator within ${THRESHOLD} commits of main.`)
 }
 
-main()
+// import-safe: only run when executed directly (tests import parsePendingCount)
+if (process.argv[1] && import.meta.url === new URL(`file://${process.argv[1]}`).href) main()
