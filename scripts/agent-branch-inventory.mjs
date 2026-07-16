@@ -71,8 +71,8 @@ function unpickedCommitCount(ref, base) {
   return countUnpickedFromCherry(out)
 }
 
-function buildInventory({ pendingOnly }) {
-  git("fetch origin --quiet")
+export function buildInventory({ pendingOnly, fetch = true }) {
+  if (fetch) git("fetch origin --quiet")
   const branches = listClaudeBranches()
   const rows = []
 
@@ -119,8 +119,12 @@ function main() {
   const rows = buildInventory({ pendingOnly: !showAll })
 
   if (json) {
-    console.log(JSON.stringify({ integrator: INTEGRATOR, main: MAIN, pending: rows }, null, 2))
-    process.exit(rows.length ? 0 : 0)
+    // process.stdout.write + return, NOT process.exit: exiting with a pending
+    // async pipe write truncates large JSON mid-stream (consumers then parse
+    // a cut-off document — this is how agent:status once reported 0 pending
+    // while agent:branches showed hundreds).
+    process.stdout.write(JSON.stringify({ integrator: INTEGRATOR, main: MAIN, pending: rows }, null, 2) + "\n")
+    return
   }
 
   console.log("LoadOff agent branch inventory")

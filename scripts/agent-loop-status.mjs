@@ -9,6 +9,7 @@
  * Exit 0 = integrator is within threshold of main (steady state OK).
  * Exit 1 = integrator is ahead of main by more than AGENT_CATCHUP_THRESHOLD (catch-up mode).
  */
+import { buildInventory } from "./agent-branch-inventory.mjs"
 import { execSync } from "node:child_process"
 
 const INTEGRATOR = "origin/claude/hauldesk-project-setup-l1luoo"
@@ -88,19 +89,24 @@ function main() {
     for (const line of logLines(MAIN, INTEGRATOR)) console.log(`  ${line}`)
   }
 
-  const pendingOut = execSync("node scripts/agent-branch-inventory.mjs --json", {
-    encoding: "utf-8",
-    cwd: process.cwd(),
-  })
-  let pendingCount = 0
+  // Call the inventory in-process instead of shelling out and parsing its
+  // stdout — the old --json subprocess path truncated large output, and the
+  // silent catch turned that parse failure into "0 pending" while
+  // agent:branches showed hundreds. A failure here must never look like 0.
+  let pendingCount = null
   try {
-    pendingCount = JSON.parse(pendingOut).pending?.length ?? 0
-  } catch {
-    /* ignore */
-  }
-  console.log(`\nPending claude/* branches (not on main): ${pendingCount}`)
-  if (pendingCount > 0) {
+    const rows = buildInventory({ pendingOnly: true, fetch: false })
+    if (!Array.isArray(rows)) throw new Error("inventory did not return an array")
+    pendingCount = rows.length
+  } catch (err) {
+    console.log(`\nPending claude/* branches (not on main): UNKNOWN — inventory failed: ${err?.message ?? err}`)
     console.log("  Run: npm run agent:branches")
+  }
+  if (pendingCount !== null) {
+    console.log(`\nPending claude/* branches (not on main): ${pendingCount}`)
+    if (pendingCount > 0) {
+      console.log("  Run: npm run agent:branches")
+    }
   }
 
   console.log("\nLane branches ahead of integrator:")
