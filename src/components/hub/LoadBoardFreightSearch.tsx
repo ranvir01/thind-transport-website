@@ -14,7 +14,7 @@ import {
   searchTruckstopFreightAction,
 } from "@/app/hub/_actions/truckstop-freight"
 import { btnPrimaryCls, btnSecondaryCls, fieldCls, labelCls, moneyCls, Panel } from "@/components/hub/ui"
-import { EQUIPMENT_LABELS, EQUIPMENT_TYPES, centsToDollars } from "@/lib/hub/types"
+import { EQUIPMENT_LABELS, EQUIPMENT_TYPES, fmtCentsExact } from "@/lib/hub/types"
 import type { DatLoadPosting } from "@/lib/hub/integrations/dat"
 import type { TruckstopLoadPosting } from "@/lib/hub/integrations/truckstop"
 
@@ -330,7 +330,7 @@ export function LoadBoardFreightSearch({
                             <td className="px-3 py-2 text-fg-2">{posting.equipment ?? "—"}</td>
                             <td className={`px-3 py-2 text-right ${moneyCls}`}>{posting.miles ?? "—"}</td>
                             <td className={`px-3 py-2 text-right ${moneyCls}`}>
-                              {posting.rateTotalCents != null ? `$${centsToDollars(posting.rateTotalCents)}` : "—"}
+                              {posting.rateTotalCents != null ? fmtCentsExact(posting.rateTotalCents) : "—"}
                             </td>
                             <td className="px-3 py-2">
                               <select
