@@ -25,6 +25,7 @@
 import path from "node:path"
 import { existsSync, readFileSync } from "node:fs"
 import { spawnSync } from "node:child_process"
+import puppeteer from "puppeteer"
 
 export const BASE = process.env.E2E_BASE_URL ?? "http://localhost:3000"
 
@@ -35,6 +36,20 @@ if (/localhost|127\.0\.0\.1/.test(BASE)) {
       const match = line.match(/^([A-Z0-9_]+)=(.*)$/)
       if (match && !process.env[match[1]]) process.env[match[1]] = match[2]
     }
+  }
+}
+
+// Fresh QA rigs (Claude Code cloud containers with the browser download
+// blocked) have no puppeteer cache, but ship a Playwright Chromium. Point
+// puppeteer at it so every smoke launches without a manual export. The
+// PUPPETEER_EXECUTABLE_PATH env var can't do this from here — puppeteer
+// snapshots its configuration when ITS module initializes, which (import
+// order in the smokes) happens before this one — so mutate the shared
+// instance's configuration, which resolveExecutablePath reads at launch().
+if (!process.env.PUPPETEER_EXECUTABLE_PATH) {
+  const pwChromium = path.join(process.env.PLAYWRIGHT_BROWSERS_PATH ?? "/opt/pw-browsers", "chromium")
+  if (!existsSync(path.join(process.env.HOME ?? "/root", ".cache", "puppeteer")) && existsSync(pwChromium)) {
+    puppeteer.configuration.executablePath = pwChromium
   }
 }
 
@@ -94,11 +109,27 @@ export async function login(page, email, password = "ThindDemo1!") {
   ])
 }
 
-/** Screenshot helper bound to the script's output dir. */
+/**
+ * Screenshot helper bound to the script's output dir. Retries through the
+ * mid-navigation race: a capture that lands between documents (right after a
+ * submit-click that commits a full navigation) fails with
+ * "Cannot take screenshot with 0 width" or a detached-frame ProtocolError.
+ * One settle-and-retry succeeds; a persistently broken page still throws.
+ */
 export function makeShot(outDir, { fullPage = false } = {}) {
   return async (page, name) => {
-    await page.screenshot({ path: path.join(outDir, `${name}.png`), fullPage })
-    console.log(`  📸 ${name}`)
+    let lastErr
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        await page.screenshot({ path: path.join(outDir, `${name}.png`), fullPage })
+        console.log(`  📸 ${name}`)
+        return
+      } catch (err) {
+        lastErr = err
+        await sleep(500)
+      }
+    }
+    throw lastErr
   }
 }
 
