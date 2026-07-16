@@ -16,6 +16,7 @@ import { AdvanceStatusButton, CancelLoadButton, StopTimestampButton, CheckCallBu
 import { DocumentsPanel } from "@/components/hub/DocumentsPanel"
 import { ShareLinkPanel } from "@/components/hub/ShareLinkPanel"
 import { MessageLoadButton } from "@/components/hub/MessageLoadButton"
+import { DuplicateLoadButton } from "@/components/hub/DuplicateLoadButton"
 import { DetentionButton } from "@/components/hub/DetentionButton"
 import { detentionCents } from "@/lib/hub/money"
 import { getCarrierSettings } from "@/lib/hub/settings"
@@ -109,6 +110,7 @@ export default async function LoadDetailPage({ params }: { params: Promise<{ id:
         action={
           <div className="flex gap-2">
             <MessageLoadButton loadId={id} />
+            {can(user.role, "loads:write") ? <DuplicateLoadButton loadId={id} /> : null}
             <Link
               href={`/hub/loads/${id}/edit`}
               className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-border-strong px-4 text-sm font-semibold text-fg-2 hover:bg-hover"
