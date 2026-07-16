@@ -1,6 +1,10 @@
+import { readFileSync } from "node:fs"
+import { join } from "node:path"
 import { describe, it, expect } from "vitest"
 // @ts-expect-error — plain .mjs fleet script, no type declarations
 import { countUnpickedFromCherry } from "../../../../scripts/agent-branch-inventory.mjs"
+// @ts-expect-error — plain .mjs fleet script, no type declarations
+import { parsePendingCount } from "../../../../scripts/agent-loop-status.mjs"
 
 /**
  * git cherry polarity: "+" = commit NOT in upstream (unpicked work the
@@ -25,5 +29,34 @@ describe("countUnpickedFromCherry", () => {
 
   it("empty output means nothing unpicked", () => {
     expect(countUnpickedFromCherry("")).toBe(0)
+  })
+})
+
+/**
+ * Regression: agent:status once reported "Pending claude/* branches: 0" while
+ * agent:branches listed 200+. Two causes, both guarded here:
+ * 1. the inventory's --json path called process.exit() right after console.log,
+ *    truncating piped stdout (~64KB) before the async flush completed;
+ * 2. the status script's JSON.parse catch swallowed the resulting error to 0.
+ */
+describe("parsePendingCount", () => {
+  it("returns the pending array length for valid JSON", () => {
+    expect(parsePendingCount(JSON.stringify({ pending: [] }))).toBe(0)
+    expect(parsePendingCount(JSON.stringify({ pending: [{ branch: "a" }, { branch: "b" }] }))).toBe(2)
+  })
+
+  it("returns null (not 0) for truncated JSON", () => {
+    const full = JSON.stringify({ pending: Array.from({ length: 260 }, (_, i) => ({ branch: `b${i}` })) })
+    expect(parsePendingCount(full.slice(0, Math.floor(full.length / 2)))).toBeNull()
+  })
+
+  it("returns null when the pending key is missing or not an array", () => {
+    expect(parsePendingCount("{}")).toBeNull()
+    expect(parsePendingCount(JSON.stringify({ pending: 5 }))).toBeNull()
+  })
+
+  it("inventory script never calls process.exit (it truncates piped stdout)", () => {
+    const src = readFileSync(join(process.cwd(), "scripts/agent-branch-inventory.mjs"), "utf-8")
+    expect(src).not.toMatch(/process\.exit\(/)
   })
 })
