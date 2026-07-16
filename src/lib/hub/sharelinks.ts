@@ -72,8 +72,9 @@ export async function getTrackedLoad(token: string): Promise<TrackedLoad | null>
   let latestPosition: { lat: number; lng: number; ts: string } | null = null
   if (load.truck_id && ["dispatched", "at_pickup", "in_transit"].includes(load.status)) {
     const ping = await queryOne<{ lat: number; lng: number; ts: string }>(
-      `SELECT lat, lng, ts FROM hub.position_pings WHERE truck_id = $1 ORDER BY ts DESC LIMIT 1`,
-      [load.truck_id]
+      `SELECT lat, lng, ts FROM hub.position_pings
+       WHERE carrier_id = $1 AND truck_id = $2 ORDER BY ts DESC LIMIT 1`,
+      [link.carrier_id, load.truck_id]
     )
     if (ping) {
       // City-level only: round to ~1.1km so raw GPS history is never exposed

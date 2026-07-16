@@ -50,8 +50,8 @@ export interface Dvir {
 const DVIR_SELECT = `
   SELECT v.*, t.unit_number AS truck_unit, d.first_name || ' ' || d.last_name AS driver_name
   FROM hub.dvirs v
-  JOIN hub.trucks t ON t.id = v.truck_id
-  JOIN hub.drivers d ON d.id = v.driver_id`
+  JOIN hub.trucks t ON t.id = v.truck_id AND t.carrier_id = v.carrier_id
+  JOIN hub.drivers d ON d.id = v.driver_id AND d.carrier_id = v.carrier_id`
 
 export async function listDvirsForTruck(carrierId: string, truckId: string, limit = 10): Promise<Dvir[]> {
   return query<Dvir>(
@@ -77,7 +77,7 @@ export async function truckDvirState(
     `${DVIR_SELECT}
      WHERE v.carrier_id = $1 AND v.truck_id = $2 AND v.type = 'post'
        AND jsonb_array_length(v.defects) > 0
-       AND NOT EXISTS (SELECT 1 FROM hub.dvirs r WHERE r.prior_dvir_id = v.id)
+       AND NOT EXISTS (SELECT 1 FROM hub.dvirs r WHERE r.prior_dvir_id = v.id AND r.carrier_id = v.carrier_id)
      ORDER BY v.created_at DESC LIMIT 1`,
     [carrierId, truckId]
   )
@@ -104,6 +104,23 @@ export async function submitDvir(
   const client = await hubDb().connect()
   try {
     await client.query("BEGIN")
+
+    // priorDvirId comes from the client — resolve it scoped to this carrier AND
+    // this truck before it's stored. An unscoped reference would let a dvir row
+    // point at another carrier's report (masking their awaiting-repair state via
+    // truckDvirState's NOT EXISTS) or release a different truck than the one the
+    // certified repair belongs to.
+    let priorCertifiedAt: string | null = null
+    if (input.priorDvirId) {
+      const prior = await client.query(
+        `SELECT repair_certified_at FROM hub.dvirs
+         WHERE id = $1 AND carrier_id = $2 AND truck_id = $3`,
+        [input.priorDvirId, carrierId, input.truckId]
+      )
+      if (prior.rows.length === 0) throw new Error("Prior DVIR not found for this truck")
+      priorCertifiedAt = prior.rows[0].repair_certified_at
+    }
+
     const { rows } = await client.query(
       `INSERT INTO hub.dvirs (carrier_id, truck_id, driver_id, type, odometer, checklist, defects,
          safe_to_operate, signature, signed_name, prior_dvir_id)
@@ -131,25 +148,20 @@ export async function submitDvir(
           `DVIR defects: ${input.defects.map((d) => d.label).join("; ")} (awaiting repair certification)`,
         ]
       )
-      await client.query(`UPDATE hub.dvirs SET repair_work_order_id = $1 WHERE id = $2`, [
-        workOrder[0].id, dvirId,
-      ])
+      await client.query(
+        `UPDATE hub.dvirs SET repair_work_order_id = $1 WHERE id = $2 AND carrier_id = $3`,
+        [workOrder[0].id, dvirId, carrierId]
+      )
       grounded = true
     }
 
-    if (input.type === "pre" && input.priorDvirId) {
+    if (input.type === "pre" && priorCertifiedAt) {
       // 396.13(c): the reviewing driver's signature releases a certified truck.
-      const prior = await client.query(
-        `SELECT repair_certified_at FROM hub.dvirs WHERE id = $1 AND carrier_id = $2`,
-        [input.priorDvirId, carrierId]
+      await client.query(
+        `UPDATE hub.trucks SET status = 'active', updated_at = NOW()
+         WHERE carrier_id = $1 AND id = $2 AND status = 'shop'`,
+        [carrierId, input.truckId]
       )
-      if (prior.rows[0]?.repair_certified_at) {
-        await client.query(
-          `UPDATE hub.trucks SET status = 'active', updated_at = NOW()
-           WHERE carrier_id = $1 AND id = $2 AND status = 'shop'`,
-          [carrierId, input.truckId]
-        )
-      }
     }
 
     await client.query("COMMIT")

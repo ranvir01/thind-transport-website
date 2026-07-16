@@ -25,6 +25,10 @@ import { listTasks } from "../tasks"
 import { listFacilityNotes } from "../facilities"
 import { driverActiveLoads, driverDocuments, openDocumentRequests } from "../driver-app"
 import { portalLoads, portalLoadDocuments } from "../portal"
+import { todayData } from "../today"
+import { listTimeOff } from "../timeoff"
+import { complianceEntries } from "../compliance"
+import { exportIftaSources } from "../ifta"
 
 const queryMock = vi.mocked(query)
 const queryOneMock = vi.mocked(queryOne)
@@ -156,5 +160,39 @@ describe("read queries carrier-guard their joins (both-sides tenancy)", () => {
   it("portal load documents guard the document side of the loads join", async () => {
     await portalLoadDocuments(CARRIER, "c1", "l1")
     expect(lastSql()).toContain("ON l.id = d.entity_id AND d.entity_type = 'load' AND d.carrier_id = l.carrier_id")
+  })
+
+  it("time-off list guards the driver join", async () => {
+    await listTimeOff(CARRIER)
+    expect(lastSql()).toContain("ON d.id = r.driver_id AND d.carrier_id = r.carrier_id")
+  })
+
+  it("compliance maintenance entries guard the truck join", async () => {
+    await complianceEntries(CARRIER)
+    const sqls = queryMock.mock.calls.map((c) => String(c[0])).join("\n")
+    expect(sqls).toContain("ON t.id = ms.truck_id AND t.carrier_id = ms.carrier_id")
+  })
+
+  it("IFTA source export guards both truck joins", async () => {
+    await exportIftaSources(CARRIER, "2026Q1")
+    const sqls = queryMock.mock.calls.map((c) => String(c[0])).join("\n")
+    expect(sqls).toContain("JOIN hub.trucks t ON t.id = p.truck_id AND t.carrier_id = p.carrier_id")
+    expect(sqls).toContain("LEFT JOIN hub.trucks t ON t.id = f.truck_id AND t.carrier_id = f.carrier_id")
+  })
+
+  it("Today widget queries guard every driver/truck/stop/load side-join", async () => {
+    await todayData(CARRIER)
+    const sqls = [...queryMock.mock.calls, ...queryOneMock.mock.calls].map((c) => String(c[0])).join("\n")
+    // stops-today: driver + truck labels
+    expect(sqls).toContain("ON d.id = l.driver_id AND d.carrier_id = l.carrier_id")
+    expect(sqls).toContain("ON t.id = l.truck_id AND t.carrier_id = l.carrier_id")
+    // empty-truck panels: assigned-driver label + load laterals/anti-joins
+    expect(sqls).toContain("ON d.id = t.assigned_driver_id AND d.carrier_id = t.carrier_id")
+    expect(sqls).toContain("WHERE l.truck_id = t.id AND l.carrier_id = t.carrier_id")
+    expect(sqls).toContain("WHERE nl.truck_id = t.id AND nl.carrier_id = t.carrier_id")
+    // tasks assignee, unbilled customer label, invoice anti-join
+    expect(sqls).toContain("ON u.id = t.assignee_user_id AND u.carrier_id = t.carrier_id")
+    expect(sqls).toContain("ON c.id = l.customer_id AND c.carrier_id = l.carrier_id")
+    expect(sqls).toContain("WHERE i.load_id = l.id AND i.carrier_id = l.carrier_id")
   })
 })

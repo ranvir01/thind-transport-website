@@ -73,8 +73,8 @@ export async function todayData(carrierId: string): Promise<TodayData> {
            d.first_name || ' ' || d.last_name AS driver_name, t.unit_number AS truck_unit
          FROM hub.stops s
          JOIN hub.loads l ON l.id = s.load_id
-         LEFT JOIN hub.drivers d ON d.id = l.driver_id
-         LEFT JOIN hub.trucks t ON t.id = l.truck_id
+         LEFT JOIN hub.drivers d ON d.id = l.driver_id AND d.carrier_id = l.carrier_id
+         LEFT JOIN hub.trucks t ON t.id = l.truck_id AND t.carrier_id = l.carrier_id
          WHERE l.carrier_id = $1 AND l.deleted_at IS NULL
            AND l.status IN ('booked','dispatched','at_pickup','in_transit')
            AND s.appt_start >= date_trunc('day', NOW())
@@ -87,15 +87,17 @@ export async function todayData(carrierId: string): Promise<TodayData> {
         `SELECT t.id, t.unit_number, d.first_name || ' ' || d.last_name AS driver_name,
            lp.city AS where_city, lp.state AS where_state
          FROM hub.trucks t
-         LEFT JOIN hub.drivers d ON d.id = t.assigned_driver_id
+         LEFT JOIN hub.drivers d ON d.id = t.assigned_driver_id AND d.carrier_id = t.carrier_id
          LEFT JOIN LATERAL (
            SELECT s.city, s.state FROM hub.stops s JOIN hub.loads l ON l.id = s.load_id
-           WHERE l.truck_id = t.id AND s.type = 'delivery' AND s.departed_at IS NOT NULL
+           WHERE l.truck_id = t.id AND l.carrier_id = t.carrier_id
+             AND s.type = 'delivery' AND s.departed_at IS NOT NULL
            ORDER BY s.departed_at DESC LIMIT 1
          ) lp ON TRUE
          WHERE t.carrier_id = $1 AND t.deleted_at IS NULL AND t.status = 'active'
            AND NOT EXISTS (
-             SELECT 1 FROM hub.loads l WHERE l.truck_id = t.id AND l.deleted_at IS NULL
+             SELECT 1 FROM hub.loads l WHERE l.truck_id = t.id AND l.carrier_id = t.carrier_id
+               AND l.deleted_at IS NULL
                AND l.status IN ('booked','dispatched','at_pickup','in_transit')
            )
          ORDER BY t.unit_number`,
@@ -106,11 +108,11 @@ export async function todayData(carrierId: string): Promise<TodayData> {
         `SELECT t.id, t.unit_number, d.first_name || ' ' || d.last_name AS driver_name,
            fin.city AS where_city, fin.state AS where_state, fin.final_at
          FROM hub.trucks t
-         LEFT JOIN hub.drivers d ON d.id = t.assigned_driver_id
+         LEFT JOIN hub.drivers d ON d.id = t.assigned_driver_id AND d.carrier_id = t.carrier_id
          JOIN LATERAL (
            SELECT s.city, s.state, COALESCE(s.appt_end, s.appt_start) AS final_at
            FROM hub.stops s JOIN hub.loads l ON l.id = s.load_id
-           WHERE l.truck_id = t.id AND l.deleted_at IS NULL
+           WHERE l.truck_id = t.id AND l.carrier_id = t.carrier_id AND l.deleted_at IS NULL
              AND l.status IN ('dispatched','at_pickup','in_transit')
              AND s.type = 'delivery'
            ORDER BY COALESCE(s.appt_end, s.appt_start) DESC LIMIT 1
@@ -119,8 +121,8 @@ export async function todayData(carrierId: string): Promise<TodayData> {
            AND fin.final_at < NOW() + INTERVAL '36 hours'
            AND NOT EXISTS (
              SELECT 1 FROM hub.loads nl
-             JOIN LATERAL (SELECT MIN(appt_start) AS next_pickup FROM hub.stops WHERE load_id = nl.id AND type = 'pickup') np ON TRUE
-             WHERE nl.truck_id = t.id AND nl.deleted_at IS NULL AND nl.status IN ('quoted','booked')
+             JOIN LATERAL (SELECT MIN(appt_start) AS next_pickup FROM hub.stops WHERE load_id = nl.id AND carrier_id = nl.carrier_id AND type = 'pickup') np ON TRUE
+             WHERE nl.truck_id = t.id AND nl.carrier_id = t.carrier_id AND nl.deleted_at IS NULL AND nl.status IN ('quoted','booked')
                AND np.next_pickup > NOW()
            )
          ORDER BY fin.final_at`,
@@ -132,9 +134,9 @@ export async function todayData(carrierId: string): Promise<TodayData> {
            l.updated_at AS dispatched_at,
            fs.city AS origin_city, ls.city AS dest_city
          FROM hub.loads l
-         LEFT JOIN hub.drivers d ON d.id = l.driver_id
-         LEFT JOIN LATERAL (SELECT city FROM hub.stops WHERE load_id = l.id AND type = 'pickup' ORDER BY sequence LIMIT 1) fs ON TRUE
-         LEFT JOIN LATERAL (SELECT city FROM hub.stops WHERE load_id = l.id AND type = 'delivery' ORDER BY sequence DESC LIMIT 1) ls ON TRUE
+         LEFT JOIN hub.drivers d ON d.id = l.driver_id AND d.carrier_id = l.carrier_id
+         LEFT JOIN LATERAL (SELECT city FROM hub.stops WHERE load_id = l.id AND carrier_id = l.carrier_id AND type = 'pickup' ORDER BY sequence LIMIT 1) fs ON TRUE
+         LEFT JOIN LATERAL (SELECT city FROM hub.stops WHERE load_id = l.id AND carrier_id = l.carrier_id AND type = 'delivery' ORDER BY sequence DESC LIMIT 1) ls ON TRUE
          WHERE l.carrier_id = $1 AND l.deleted_at IS NULL AND l.status = 'dispatched'
            AND l.acknowledged_at IS NULL
          ORDER BY l.updated_at`,
@@ -143,7 +145,7 @@ export async function todayData(carrierId: string): Promise<TodayData> {
       complianceEntries(carrierId),
       query<Task>(
         `SELECT t.*, u.name AS assignee_name FROM hub.tasks t
-         LEFT JOIN hub.users u ON u.id = t.assignee_user_id
+         LEFT JOIN hub.users u ON u.id = t.assignee_user_id AND u.carrier_id = t.carrier_id
          WHERE t.carrier_id = $1 AND t.completed_at IS NULL
            AND (t.due_at < date_trunc('day', NOW()) + INTERVAL '1 day' OR t.priority = 'urgent')
          ORDER BY t.due_at ASC NULLS LAST LIMIT 12`,
@@ -155,9 +157,9 @@ export async function todayData(carrierId: string): Promise<TodayData> {
             COALESCE((SELECT SUM((a->>'amount_cents')::bigint) FROM jsonb_array_elements(l.accessorials) a), 0))::bigint AS total_cents,
            GREATEST(0, EXTRACT(DAY FROM NOW() - l.updated_at))::int AS delivered_days_ago
          FROM hub.loads l
-         LEFT JOIN hub.customers c ON c.id = l.customer_id
+         LEFT JOIN hub.customers c ON c.id = l.customer_id AND c.carrier_id = l.carrier_id
          WHERE l.carrier_id = $1 AND l.deleted_at IS NULL AND l.status = 'pod_received'
-           AND NOT EXISTS (SELECT 1 FROM hub.invoices i WHERE i.load_id = l.id)
+           AND NOT EXISTS (SELECT 1 FROM hub.invoices i WHERE i.load_id = l.id AND i.carrier_id = l.carrier_id)
          ORDER BY l.updated_at`,
         [carrierId]
       ),
