@@ -107,6 +107,13 @@ async function main() {
       page.click('button[type="submit"]'),
     ])
     check(page.url().includes("/hub/portal"), `accepting the invitation signs in and lands on /hub/portal (url=${page.url()})`)
+    // The pathname flips before the new document paints (readyState is still
+    // "loading" with an empty body) — wait for real content so the shot shows
+    // the portal, not a blank frame that makeShot's retry would accept.
+    await page.waitForFunction(
+      () => document.readyState === "complete" && (document.body?.innerText.length ?? 0) > 0,
+      { timeout: 15000 }
+    )
     await shot(page, "02-signed-in")
 
     console.log("2. Already-used invitation at 390px")
@@ -152,7 +159,9 @@ async function main() {
 
     check(consoleErrors.length === 0, `no console errors (${consoleErrors.length}: ${consoleErrors.slice(0, 2).join(" | ")})`)
   } catch (err) {
-    await shot(page, "ZZ-failure")
+    // The failure shot is best-effort — if the page is mid-navigation or gone,
+    // a second throw here would crash the process and mask the real error.
+    try { await shot(page, "ZZ-failure") } catch { /* keep the original error */ }
     failures.push(`crash: ${err.message}`)
   } finally {
     await browser.close()
