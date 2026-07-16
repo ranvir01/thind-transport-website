@@ -5,6 +5,7 @@ import { requirePortalUser } from "@/lib/hub/session"
 import { portalLoad, portalLoadDocuments } from "@/lib/hub/portal"
 import { STATUS_LABELS, type LoadStatus } from "@/lib/hub/types"
 import { StopTimeline } from "@/components/hub/StopTimeline"
+import { LoadProgressBar } from "@/components/hub/LoadProgressBar"
 
 export const dynamic = "force-dynamic"
 
@@ -39,6 +40,7 @@ export default async function PortalLoadPage({ params }: { params: Promise<{ id:
           {" → "}
           <span className="font-semibold text-white">{load.dest_city}, {load.dest_state}</span>
         </p>
+        <LoadProgressBar status={load.status as LoadStatus} className="py-1" />
         {load.pickup_at ? (
           <p className="text-body-xs text-steel-300">
             Pickup {new Date(load.pickup_at).toLocaleString("en-US", { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
