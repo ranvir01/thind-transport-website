@@ -24,7 +24,7 @@ type ImportKind = "loads" | "trucks" | "drivers" | "customers" | "fuel" | "tolls
 // accepts loads/fuel/tolls/positions, and one-time setup lists rarely repeat.
 const KINDS: { key: ImportKind; label: string; hint: string; fields: readonly ImportFieldDef[]; templateKind?: "loads" | "fuel" | "tolls" | "positions" }[] = [
   { key: "loads", label: "Load history", hint: "Your Excel load sheet — history lands as settled, brokers auto-created.", fields: IMPORT_FIELDS as unknown as ImportFieldDef[], templateKind: "loads" },
-  { key: "trucks", label: "Trucks", hint: "Your fleet list — unit numbers already on file are skipped, never duplicated.", fields: TRUCK_IMPORT_FIELDS },
+  { key: "trucks", label: "Trucks", hint: "Your fleet list — unit numbers already on file are skipped; rows with a VIN get year, make & model filled in automatically.", fields: TRUCK_IMPORT_FIELDS },
   { key: "drivers", label: "Drivers", hint: "Driver roster — pay starts at your Settings default, everything editable per driver after.", fields: DRIVER_IMPORT_FIELDS },
   { key: "customers", label: "Brokers", hint: "Broker / customer list — names already on file are skipped, MC numbers cleaned up.", fields: CUSTOMER_IMPORT_FIELDS },
   { key: "fuel", label: "Fuel", hint: "Any card program statement (EFS, Comdata, WEX…). Idempotent — re-import safely.", fields: FUEL_IMPORT_FIELDS, templateKind: "fuel" },
@@ -395,6 +395,7 @@ export function ImportWizard({ initialKind = "loads" }: { initialKind?: string }
             {result.imported} imported
             {result.customersCreated != null ? ` · ${result.customersCreated} customers created` : ""}
             {result.skippedDuplicates != null ? ` · ${result.skippedDuplicates} duplicates skipped` : ""}
+            {(result.vinDecoded ?? 0) > 0 ? ` · ${result.vinDecoded} decoded from VIN` : ""}
             {` · ${result.failed.length} failed`}
           </p>
           {result.failed.length > 0 ? (

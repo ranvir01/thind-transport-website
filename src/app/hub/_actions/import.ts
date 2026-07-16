@@ -11,6 +11,7 @@ import { getCarrierSettings } from "@/lib/hub/settings"
 import { query } from "@/lib/hub/db"
 import { logAudit } from "@/lib/hub/audit"
 import { classifyFuelUse } from "@/lib/hub/fuel-core"
+import { decodeVin, type VinDecodeResult } from "@/lib/hub/vin"
 import { dollarsToCents } from "@/lib/hub/types"
 import {
   parseIntSafe, normalizeEquipment, normalizeState, parseDateSafe,
@@ -24,6 +25,7 @@ export interface ImportResult {
   failed: { row: number; error: string }[]
   customersCreated?: number
   skippedDuplicates?: number
+  vinDecoded?: number
 }
 
 type GenericRow = Record<string, string>
@@ -187,8 +189,10 @@ export async function importTrucksAction(rows: GenericRow[]): Promise<ImportResu
   }
   const existing = await truckMap(user.carrierId)
   const failed: { row: number; error: string }[] = []
+  const vinCache = new Map<string, VinDecodeResult | null>()
   let imported = 0
   let skippedDuplicates = 0
+  let vinDecoded = 0
 
   for (let i = 0; i < rows.length; i++) {
     const row = rows[i]
@@ -199,14 +203,38 @@ export async function importTrucksAction(rows: GenericRow[]): Promise<ImportResu
         skippedDuplicates++
         continue
       }
+      const vin = row.vin?.trim().toUpperCase() || null
+      let year = parseIntSafe(row.year)
+      let make = row.make?.trim() || null
+      let model = row.model?.trim() || null
+      // Fleet lists usually carry a VIN but not year/make/model — decode fills
+      // only the gaps (the spreadsheet wins where it has a value), and a null
+      // decode (offline, bad VIN) never blocks the row.
+      if (vin && (year == null || !make || !model)) {
+        let decoded = vinCache.get(vin)
+        if (decoded === undefined) {
+          decoded = await decodeVin(vin)
+          vinCache.set(vin, decoded)
+        }
+        if (decoded) {
+          const filled =
+            (year == null && decoded.year != null) ||
+            (!make && !!decoded.make) ||
+            (!model && !!decoded.model)
+          year ??= decoded.year
+          make ??= decoded.make
+          model ??= decoded.model
+          if (filled) vinDecoded++
+        }
+      }
       const truck = await createTruck(user.carrierId, {
         unit_number: unit,
-        vin: row.vin?.trim() || null,
+        vin,
         plate: row.plate?.trim() || null,
         plate_state: row.plate_state ? normalizeState(row.plate_state) : null,
-        year: parseIntSafe(row.year),
-        make: row.make?.trim() || null,
-        model: row.model?.trim() || null,
+        year,
+        make,
+        model,
         ownership: /owner|o\/?o/i.test(row.ownership ?? "") ? "owner_operator" : "company",
         status: "active",
       })
@@ -220,11 +248,11 @@ export async function importTrucksAction(rows: GenericRow[]): Promise<ImportResu
   await logAudit({
     carrierId: user.carrierId, actorId: user.id, actorName: user.name,
     entityType: "import", entityId: new Date().toISOString(),
-    action: "import_trucks", newValue: { imported, failed: failed.length, skippedDuplicates },
+    action: "import_trucks", newValue: { imported, failed: failed.length, skippedDuplicates, vinDecoded },
   })
   revalidatePath("/hub/fleet")
   revalidatePath("/hub")
-  return { ok: failed.length === 0, imported, failed, skippedDuplicates }
+  return { ok: failed.length === 0, imported, failed, skippedDuplicates, vinDecoded }
 }
 
 export async function importDriversAction(rows: GenericRow[]): Promise<ImportResult> {

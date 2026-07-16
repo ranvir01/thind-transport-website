@@ -24,9 +24,11 @@ vi.mock("@/lib/hub/settings", () => ({
 }))
 vi.mock("@/lib/hub/audit", () => ({ logAudit: vi.fn(async () => undefined) }))
 vi.mock("@/lib/hub/db", () => ({ query: vi.fn(async () => []) }))
+vi.mock("@/lib/hub/vin", () => ({ decodeVin: vi.fn(async () => null) }))
 
 import { query } from "@/lib/hub/db"
 import { logAudit } from "@/lib/hub/audit"
+import { decodeVin } from "@/lib/hub/vin"
 import { createTruck } from "@/lib/hub/fleet"
 import { createDriver } from "@/lib/hub/drivers"
 import { createCustomer, findCustomerByName } from "@/lib/hub/customers"
@@ -37,6 +39,7 @@ import { SETUP_CHECKLIST } from "@/lib/hub/setup-guide"
 
 const queryMock = vi.mocked(query)
 const logAuditMock = vi.mocked(logAudit)
+const decodeVinMock = vi.mocked(decodeVin)
 const createTruckMock = vi.mocked(createTruck)
 const createDriverMock = vi.mocked(createDriver)
 const createCustomerMock = vi.mocked(createCustomer)
@@ -46,6 +49,7 @@ beforeEach(() => {
   vi.clearAllMocks()
   queryMock.mockResolvedValue([])
   findCustomerByNameMock.mockResolvedValue(null)
+  decodeVinMock.mockResolvedValue(null)
 })
 
 describe("importTrucksAction", () => {
@@ -76,6 +80,45 @@ describe("importTrucksAction", () => {
     expect(result.imported).toBe(1)
     expect(result.failed).toEqual([{ row: 1, error: "Missing unit #" }])
     expect(result.ok).toBe(false)
+  })
+
+  it("decodes the VIN to fill missing year/make/model, spreadsheet values winning", async () => {
+    decodeVinMock.mockResolvedValue({ year: 2019, make: "FREIGHTLINER", model: "CASCADIA" })
+    const result = await importTrucksAction([
+      { unit_number: "101", vin: "1fujgldr8clbp1234", make: "Freightliner" },
+    ])
+    expect(decodeVinMock).toHaveBeenCalledWith("1FUJGLDR8CLBP1234")
+    expect(createTruckMock).toHaveBeenCalledWith(
+      "carrier-1",
+      expect.objectContaining({
+        vin: "1FUJGLDR8CLBP1234", year: 2019, make: "Freightliner", model: "CASCADIA",
+      })
+    )
+    expect(result.vinDecoded).toBe(1)
+    expect(logAuditMock).toHaveBeenCalledWith(
+      expect.objectContaining({ newValue: expect.objectContaining({ vinDecoded: 1 }) })
+    )
+  })
+
+  it("skips the vPIC lookup when year, make, and model are all on the row", async () => {
+    await importTrucksAction([
+      { unit_number: "101", vin: "1FUJGLDR8CLBP1234", year: "2019", make: "Peterbilt", model: "579" },
+    ])
+    expect(decodeVinMock).not.toHaveBeenCalled()
+  })
+
+  it("caches decode results per batch and imports the row as-is on a null decode", async () => {
+    const result = await importTrucksAction([
+      { unit_number: "101", vin: "1FUJGLDR8CLBP1234" },
+      { unit_number: "202", vin: "1FUJGLDR8CLBP1234" },
+    ])
+    expect(decodeVinMock).toHaveBeenCalledTimes(1)
+    expect(result.imported).toBe(2)
+    expect(result.vinDecoded).toBe(0)
+    expect(createTruckMock).toHaveBeenCalledWith(
+      "carrier-1",
+      expect.objectContaining({ unit_number: "101", year: null, make: null, model: null })
+    )
   })
 })
 
