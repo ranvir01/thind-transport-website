@@ -12,6 +12,7 @@
  * Usage: node scripts/e2e-sweep.mjs [outputDir]
  */
 import puppeteer from "puppeteer"
+import pg from "pg"
 import { mkdirSync } from "node:fs"
 import path from "node:path"
 import { BASE, sleep, login } from "./e2e-lib.mjs"
@@ -62,6 +63,48 @@ const DRIVER_PAGES = [
   ["driver-docs", "/hub/driver/docs", "my documents"],
   ["driver-more", "/hub/driver/more", "ask for home time"],
 ]
+
+// Broker/shipper portal — the forced-dark customer surface. The load-detail
+// entry is resolved at runtime from the portal home's first load link (its
+// URL carries a seeded UUID). "stops" / "documents" are always-rendered
+// section headings on the detail screen.
+const PORTAL_PAGES = [
+  ["portal-home", "/hub/portal", "no checking calls needed"],
+]
+
+/**
+ * The public /track/<token> page needs a seeded share-link token, which only
+ * the database knows. Local rigs (the only place the seeded token matches the
+ * server's DB — same reasoning as reseed()) resolve it here; remote sweeps
+ * skip the track pass LOUDLY rather than silently shrinking coverage.
+ */
+async function resolveTrackUrl() {
+  if (!/localhost|127\.0\.0\.1/.test(BASE) && process.env.E2E_RESEED !== "1") {
+    console.warn("⚠ track page skipped: E2E_BASE_URL is remote (local POSTGRES_URL is not its DB)")
+    return null
+  }
+  if (!process.env.POSTGRES_URL) {
+    console.warn("⚠ track page skipped: POSTGRES_URL not set")
+    return null
+  }
+  const db = new pg.Client({ connectionString: process.env.POSTGRES_URL })
+  await db.connect()
+  try {
+    const { rows } = await db.query(
+      `SELECT sl.token FROM hub.share_links sl
+         JOIN hub.loads l ON l.id = sl.load_id
+        WHERE l.status = 'in_transit' AND sl.revoked_at IS NULL
+        LIMIT 1`
+    )
+    if (rows.length === 0) {
+      console.warn("⚠ track page skipped: no share link for an in-transit load (run seed:demo)")
+      return null
+    }
+    return `/track/${rows[0].token}`
+  } finally {
+    await db.end()
+  }
+}
 
 // Phrases that only appear on dead screens: Next.js's default client-exception
 // and 404 pages, plus our own error boundaries. Toast variants of "something
@@ -138,6 +181,38 @@ async function main() {
   await login(driver, "driver@demo.thind")
   console.log("Driver app @ 390px")
   problems.push(...(await sweep(driver, DRIVER_PAGES, "driver", 390)))
+
+  // Portal (broker) at desktop + phone — the fourth seeded persona's surface.
+  const portalContext = await browser.createBrowserContext()
+  const portal = await portalContext.newPage()
+  await portal.setViewport({ width: 1440, height: 950 })
+  await login(portal, "broker@demo.thind")
+  await portal.goto(`${BASE}/hub/portal`, { waitUntil: "networkidle2" })
+  const loadHref = await portal.evaluate(
+    () => [...document.querySelectorAll("a")].find((a) => a.getAttribute("href")?.includes("/hub/portal/loads/"))?.getAttribute("href")
+  )
+  const portalPages = [...PORTAL_PAGES]
+  if (loadHref) portalPages.push(["portal-load", loadHref, "stops"])
+  else problems.push("portal-home: no /hub/portal/loads/ link found (broker sees no loads?)")
+  console.log("Portal @ 1440px")
+  problems.push(...(await sweep(portal, portalPages, "portal", 1440)))
+  await portal.setViewport({ width: 390, height: 844, deviceScaleFactor: 2 })
+  console.log("Portal @ 390px")
+  problems.push(...(await sweep(portal, portalPages, "portal", 390)))
+
+  // Public tracking page — no login, just the share-link token.
+  const trackUrl = await resolveTrackUrl()
+  if (trackUrl) {
+    const trackContext = await browser.createBrowserContext()
+    const track = await trackContext.newPage()
+    const trackPages = [["track", trackUrl, "shipment"]]
+    await track.setViewport({ width: 1440, height: 950 })
+    console.log("Track page @ 1440px")
+    problems.push(...(await sweep(track, trackPages, "track", 1440)))
+    await track.setViewport({ width: 390, height: 844, deviceScaleFactor: 2 })
+    console.log("Track page @ 390px")
+    problems.push(...(await sweep(track, trackPages, "track", 390)))
+  }
 
   await browser.close()
 
