@@ -30,6 +30,9 @@ export function DvirForm({
 }) {
   const router = useRouter()
   const [pending, startTransition] = useTransition()
+  // After an offline queue, lock re-submit so a second tap can't enqueue a
+  // duplicate DVIR (TimeOff/Advance clear the form; keep this one readable).
+  const [savedOffline, setSavedOffline] = useState(false)
   const [checks, setChecks] = useState<Record<string, boolean>>(
     Object.fromEntries(checklistTemplate.map((c) => [c.key, true]))
   )
@@ -60,6 +63,7 @@ export function DvirForm({
         // No navigation while offline — router.push/refresh needs the network it doesn't have,
         // same as the load card's queued path.
         toast.success("No signal — inspection saved, sends automatically")
+        setSavedOffline(true)
       } else if (result.ok) {
         toast.success(
           result.grounded
@@ -185,12 +189,19 @@ export function DvirForm({
         <SignaturePad onChange={setSignature} height={110} variant="dark" />
         <button
           onClick={submit}
-          disabled={pending || !signature}
+          disabled={pending || savedOffline || !signature}
           className="mt-3 flex w-full min-h-[56px] items-center justify-center gap-2 rounded-control bg-accent font-display text-base font-bold uppercase tracking-[0.08em] text-accent-fg hover:bg-accent-hover disabled:opacity-50"
         >
           {pending ? <Loader2 className="h-5 w-5 animate-spin" /> : <Check className="h-5 w-5" />}
-          File the {type === "post" ? "post-trip" : "pre-trip"}
+          {savedOffline
+            ? "Saved on your phone"
+            : `File the ${type === "post" ? "post-trip" : "pre-trip"}`}
         </button>
+        {savedOffline ? (
+          <p className="mt-2 text-center text-body-xs text-steel-400">
+            Sends automatically when you have signal — no need to tap again.
+          </p>
+        ) : null}
       </section>
     </div>
   )

@@ -23,6 +23,9 @@ const QUESTIONS = [
 export function DriverIncidentForm({ loads }: { loads: { id: string; reference: string }[] }) {
   const router = useRouter()
   const [pending, startTransition] = useTransition()
+  // After an offline queue, keep the form readable but lock re-submit so a
+  // second tap can't enqueue a duplicate crash report.
+  const [savedOffline, setSavedOffline] = useState(false)
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null)
   const [form, setForm] = useState({
     location: "",
@@ -69,6 +72,7 @@ export function DriverIncidentForm({ loads }: { loads: { id: string; reference: 
         // No navigation while offline — router.push/refresh needs the network
         // it doesn't have, same as the DVIR queued path.
         toast.success("No signal — report saved on your phone, sends automatically")
+        setSavedOffline(true)
       } else if (result.ok) {
         toast.success("Report filed — the office has been alerted")
         router.push("/hub/driver")
@@ -168,14 +172,16 @@ export function DriverIncidentForm({ loads }: { loads: { id: string; reference: 
       </div>
 
       <button
-        type="submit" disabled={pending}
+        type="submit" disabled={pending || savedOffline}
         className="flex w-full min-h-[56px] items-center justify-center gap-2 rounded-control bg-accent font-display text-base font-bold uppercase tracking-[0.08em] text-accent-fg hover:bg-accent-hover disabled:opacity-60"
       >
         {pending ? <Loader2 className="h-5 w-5 animate-spin" /> : null}
-        File the report
+        {savedOffline ? "Saved on your phone" : "File the report"}
       </button>
       <p className="text-center text-body-xs text-steel-400">
-        After filing, message dispatch any photos from the scene.
+        {savedOffline
+          ? "Sends automatically when you have signal — no need to tap again."
+          : "After filing, message dispatch any photos from the scene."}
       </p>
     </form>
   )
