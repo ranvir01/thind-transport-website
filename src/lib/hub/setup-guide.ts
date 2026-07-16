@@ -234,9 +234,9 @@ export const SETUP_CHECKLIST: {
     href: "/hub/setup",
     highlight: true,
   },
-  { key: "trucks", label: "Trucks on file", href: "/hub/setup" },
-  { key: "drivers", label: "Drivers on file", href: "/hub/setup" },
-  { key: "customers", label: "Brokers on file (MC/DOT lookup)", href: "/hub/setup" },
+  { key: "trucks", label: "Trucks on file (or import your fleet list)", href: "/hub/import?kind=trucks" },
+  { key: "drivers", label: "Drivers on file (or import your roster)", href: "/hub/import?kind=drivers" },
+  { key: "customers", label: "Brokers on file (or import your broker list)", href: "/hub/import?kind=customers" },
   { key: "loads", label: "Load history imported", href: "/hub/import" },
   { key: "packet", label: "Carrier packet filed (W-9, COI)", href: "/hub/settings/packet" },
 ]

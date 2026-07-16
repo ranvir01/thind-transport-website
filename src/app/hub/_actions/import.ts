@@ -5,6 +5,9 @@ import { revalidatePath } from "next/cache"
 import { requirePermission } from "@/lib/hub/session"
 import { createLoad } from "@/lib/hub/loads"
 import { findCustomerByName, createCustomer } from "@/lib/hub/customers"
+import { createTruck } from "@/lib/hub/fleet"
+import { createDriver } from "@/lib/hub/drivers"
+import { getCarrierSettings } from "@/lib/hub/settings"
 import { query } from "@/lib/hub/db"
 import { logAudit } from "@/lib/hub/audit"
 import { classifyFuelUse } from "@/lib/hub/fuel-core"
@@ -168,6 +171,170 @@ export async function importLoadsAction(
   revalidatePath("/hub/customers")
   revalidatePath("/hub")
   return { ok: failed.length === 0, imported, failed, customersCreated }
+}
+
+// ---- Setup entities (M11 onboarding): trucks / drivers / customers ----
+// Idempotent by natural key (unit #, driver name, customer name): re-importing
+// the same list skips what's already on file instead of duplicating it.
+
+export async function importTrucksAction(rows: GenericRow[]): Promise<ImportResult> {
+  let user
+  try {
+    user = await requirePermission("imports:run")
+  } catch (err) {
+    const denied = actionError(err, "Forbidden")
+    return { ok: false, imported: 0, failed: [{ row: 0, error: denied.error }] }
+  }
+  const existing = await truckMap(user.carrierId)
+  const failed: { row: number; error: string }[] = []
+  let imported = 0
+  let skippedDuplicates = 0
+
+  for (let i = 0; i < rows.length; i++) {
+    const row = rows[i]
+    try {
+      const unit = row.unit_number?.trim()
+      if (!unit) throw new Error("Missing unit #")
+      if (existing.has(unit.toLowerCase())) {
+        skippedDuplicates++
+        continue
+      }
+      const truck = await createTruck(user.carrierId, {
+        unit_number: unit,
+        vin: row.vin?.trim() || null,
+        plate: row.plate?.trim() || null,
+        plate_state: row.plate_state ? normalizeState(row.plate_state) : null,
+        year: parseIntSafe(row.year),
+        make: row.make?.trim() || null,
+        model: row.model?.trim() || null,
+        ownership: /owner|o\/?o/i.test(row.ownership ?? "") ? "owner_operator" : "company",
+        status: "active",
+      })
+      existing.set(unit.toLowerCase(), truck.id)
+      imported++
+    } catch (err) {
+      failed.push({ row: i + 1, error: actionErrorMessage(err, "Unknown error") })
+    }
+  }
+
+  await logAudit({
+    carrierId: user.carrierId, actorId: user.id, actorName: user.name,
+    entityType: "import", entityId: new Date().toISOString(),
+    action: "import_trucks", newValue: { imported, failed: failed.length, skippedDuplicates },
+  })
+  revalidatePath("/hub/fleet")
+  revalidatePath("/hub")
+  return { ok: failed.length === 0, imported, failed, skippedDuplicates }
+}
+
+export async function importDriversAction(rows: GenericRow[]): Promise<ImportResult> {
+  let user
+  try {
+    user = await requirePermission("imports:run")
+  } catch (err) {
+    const denied = actionError(err, "Forbidden")
+    return { ok: false, imported: 0, failed: [{ row: 0, error: denied.error }] }
+  }
+  const existing = await driverMap(user.carrierId)
+  // Pay defaults come from the workspace settings the owner set in the signup
+  // wizard — every imported driver starts on the standard company rate.
+  const settings = await getCarrierSettings(user.carrierId)
+  const failed: { row: number; error: string }[] = []
+  let imported = 0
+  let skippedDuplicates = 0
+
+  for (let i = 0; i < rows.length; i++) {
+    const row = rows[i]
+    try {
+      const first = row.first_name?.trim()
+      const last = row.last_name?.trim()
+      if (!first || !last) throw new Error("Missing first or last name")
+      const nameKey = `${first} ${last}`.toLowerCase()
+      if (existing.has(nameKey)) {
+        skippedDuplicates++
+        continue
+      }
+      const driver = await createDriver(user.carrierId, {
+        first_name: first,
+        last_name: last,
+        phone: row.phone?.trim() || null,
+        email: row.email?.trim() || null,
+        cdl_number: row.cdl_number?.trim() || null,
+        cdl_state: row.cdl_state ? normalizeState(row.cdl_state) : null,
+        cdl_expiry: parseDateSafe(row.cdl_expiry),
+        medical_card_expiry: parseDateSafe(row.medical_card_expiry),
+        hire_date: parseDateSafe(row.hire_date),
+        pay_type: "per_mile",
+        pay_rate: settings.pay.companyDriverPerMile,
+        pay_loaded_miles_only: settings.pay.payLoadedMilesOnly,
+        status: "active",
+      })
+      existing.set(nameKey, driver.id)
+      imported++
+    } catch (err) {
+      failed.push({ row: i + 1, error: actionErrorMessage(err, "Unknown error") })
+    }
+  }
+
+  await logAudit({
+    carrierId: user.carrierId, actorId: user.id, actorName: user.name,
+    entityType: "import", entityId: new Date().toISOString(),
+    action: "import_drivers", newValue: { imported, failed: failed.length, skippedDuplicates },
+  })
+  revalidatePath("/hub/drivers")
+  revalidatePath("/hub")
+  return { ok: failed.length === 0, imported, failed, skippedDuplicates }
+}
+
+export async function importCustomersAction(rows: GenericRow[]): Promise<ImportResult> {
+  let user
+  try {
+    user = await requirePermission("imports:run")
+  } catch (err) {
+    const denied = actionError(err, "Forbidden")
+    return { ok: false, imported: 0, failed: [{ row: 0, error: denied.error }] }
+  }
+  const failed: { row: number; error: string }[] = []
+  const seen = new Set<string>()
+  let imported = 0
+  let skippedDuplicates = 0
+
+  for (let i = 0; i < rows.length; i++) {
+    const row = rows[i]
+    try {
+      const name = row.name?.trim()
+      if (!name) throw new Error("Missing customer name")
+      const nameKey = name.toLowerCase()
+      if (seen.has(nameKey) || (await findCustomerByName(user.carrierId, name))) {
+        skippedDuplicates++
+        continue
+      }
+      await createCustomer(user.carrierId, {
+        name,
+        type: /ship/i.test(row.customer_type ?? "") ? "shipper" : "broker",
+        mc_number: row.mc_number?.trim() || null,
+        dot_number: row.dot_number?.trim() || null,
+        billing_email: row.billing_email?.trim() || null,
+        phone: row.phone?.trim() || null,
+        payment_terms_days: parseIntSafe(row.payment_terms_days) ?? 30,
+        factored: false,
+        status: "active",
+      })
+      seen.add(nameKey)
+      imported++
+    } catch (err) {
+      failed.push({ row: i + 1, error: actionErrorMessage(err, "Unknown error") })
+    }
+  }
+
+  await logAudit({
+    carrierId: user.carrierId, actorId: user.id, actorName: user.name,
+    entityType: "import", entityId: new Date().toISOString(),
+    action: "import_customers", newValue: { imported, failed: failed.length, skippedDuplicates },
+  })
+  revalidatePath("/hub/customers")
+  revalidatePath("/hub")
+  return { ok: failed.length === 0, imported, failed, skippedDuplicates }
 }
 
 // ---- Fuel ----

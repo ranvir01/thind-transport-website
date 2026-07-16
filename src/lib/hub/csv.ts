@@ -90,6 +90,40 @@ export const MILEAGE_IMPORT_FIELDS: readonly ImportFieldDef[] = [
   { key: "miles", label: "Miles", required: true },
 ] as const
 
+/** Setup-entity imports (M11 onboarding): fleet list, driver roster, broker list. */
+export const TRUCK_IMPORT_FIELDS: readonly ImportFieldDef[] = [
+  { key: "unit_number", label: "Unit #", required: true },
+  { key: "vin", label: "VIN", required: false },
+  { key: "plate", label: "Plate", required: false },
+  { key: "plate_state", label: "Plate state", required: false },
+  { key: "year", label: "Year", required: false },
+  { key: "make", label: "Make", required: false },
+  { key: "model", label: "Model", required: false },
+  { key: "ownership", label: "Ownership (company / owner-op)", required: false },
+] as const
+
+export const DRIVER_IMPORT_FIELDS: readonly ImportFieldDef[] = [
+  { key: "first_name", label: "First name", required: true },
+  { key: "last_name", label: "Last name", required: true },
+  { key: "phone", label: "Phone", required: false },
+  { key: "email", label: "Email", required: false },
+  { key: "cdl_number", label: "CDL number", required: false },
+  { key: "cdl_state", label: "CDL state", required: false },
+  { key: "cdl_expiry", label: "CDL expiry", required: false },
+  { key: "medical_card_expiry", label: "Med card expiry", required: false },
+  { key: "hire_date", label: "Hire date", required: false },
+] as const
+
+export const CUSTOMER_IMPORT_FIELDS: readonly ImportFieldDef[] = [
+  { key: "name", label: "Broker / customer name", required: true },
+  { key: "customer_type", label: "Type (broker/shipper)", required: false },
+  { key: "mc_number", label: "MC number", required: false },
+  { key: "dot_number", label: "DOT number", required: false },
+  { key: "billing_email", label: "Billing email", required: false },
+  { key: "phone", label: "Phone", required: false },
+  { key: "payment_terms_days", label: "Terms (days)", required: false },
+] as const
+
 /** The load fields a CSV column can map to. */
 export const IMPORT_FIELDS = [
   { key: "customer_name", label: "Customer / Broker name", required: true },
