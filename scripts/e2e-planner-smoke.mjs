@@ -5,10 +5,9 @@
  *
  * Usage: node scripts/e2e-planner-smoke.mjs [outputDir]
  */
-import puppeteer from "puppeteer"
 import { mkdirSync } from "node:fs"
 import path from "node:path"
-import { BASE, sleep, waitForText, login } from "./e2e-lib.mjs"
+import { launchBrowser, BASE, sleep, waitForText, login } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-planner"
 mkdirSync(OUT, { recursive: true })
@@ -42,7 +41,7 @@ async function syntheticDrag(page, sourceSelectorText, targetTruckUnit, targetDa
 }
 
 async function main() {
-  const browser = await puppeteer.launch({ headless: "new", args: ["--no-sandbox", "--disable-dev-shm-usage"] })
+  const browser = await launchBrowser()
   const page = await browser.newPage()
   await page.setViewport({ width: 1440, height: 950 })
 

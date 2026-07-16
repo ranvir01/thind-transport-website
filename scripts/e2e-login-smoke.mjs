@@ -14,9 +14,8 @@
  *
  * Run: node scripts/e2e-login-smoke.mjs
  */
-import puppeteer from "puppeteer"
 import { encode } from "next-auth/jwt"
-import { BASE, login, check, failures } from "./e2e-lib.mjs"
+import { launchBrowser, BASE, login, check, failures } from "./e2e-lib.mjs"
 
 const SECRET = process.env.NEXTAUTH_SECRET ?? process.env.AUTH_SECRET
 if (!SECRET) {
@@ -40,10 +39,7 @@ async function rolelessSessionCookie() {
 }
 
 async function main() {
-  const browser = await puppeteer.launch({
-    headless: "new",
-    args: ["--no-sandbox", "--disable-dev-shm-usage"],
-  })
+  const browser = await launchBrowser()
 
   console.log("1. Roleless (legacy driver-portal) session — must not bounce back to /hub/login")
   {

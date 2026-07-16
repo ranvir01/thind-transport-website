@@ -23,8 +23,9 @@
  * error into baffling 401s): E2E_BASE_URL=https://… POSTGRES_URL=… NEXTAUTH_SECRET=…
  */
 import path from "node:path"
-import { existsSync, readFileSync } from "node:fs"
+import { existsSync, readFileSync, readdirSync } from "node:fs"
 import { spawnSync } from "node:child_process"
+import puppeteer from "puppeteer"
 
 export const BASE = process.env.E2E_BASE_URL ?? "http://localhost:3000"
 
@@ -64,6 +65,48 @@ export function reseed() {
     throw new Error("seed-demo.mjs failed — fix the seed before trusting any smoke result")
   }
   return true
+}
+
+/**
+ * Puppeteer resolves PUPPETEER_EXECUTABLE_PATH when its module is imported —
+ * smokes import puppeteer before this lib, so setting the env var here would
+ * be silently ignored. Resolve the browser binary ourselves instead and pass
+ * it as an explicit launch option: env var first, then Puppeteer's own cache,
+ * then the Playwright-provisioned Chromium that agent sandboxes (Claude Code
+ * web/cloud, Cursor) preinstall under /opt/pw-browsers. Keeps every smoke
+ * runnable with zero per-shell exports on those rigs.
+ */
+function resolveChromium() {
+  const fromEnv = process.env.PUPPETEER_EXECUTABLE_PATH
+  if (fromEnv) {
+    if (existsSync(fromEnv)) return fromEnv
+    throw new Error(`PUPPETEER_EXECUTABLE_PATH points at a missing file: ${fromEnv}`)
+  }
+  try {
+    const bundled = puppeteer.executablePath()
+    if (bundled && existsSync(bundled)) return undefined // Puppeteer's own cache works; don't override
+  } catch {
+    // no bundled browser (postinstall download skipped/failed) — fall through
+  }
+  const root = "/opt/pw-browsers"
+  const candidates = [path.join(root, "chromium")] // stable symlink to the current binary
+  if (existsSync(root)) {
+    for (const entry of readdirSync(root)) {
+      if (/^chromium-\d+$/.test(entry)) candidates.push(path.join(root, entry, "chrome-linux", "chrome"))
+    }
+  }
+  return candidates.find((p) => existsSync(p)) // undefined → let puppeteer.launch raise its usual error
+}
+
+/** Launch Chromium with the standard smoke flags; options merge over the defaults. */
+export async function launchBrowser(options = {}) {
+  const executablePath = resolveChromium()
+  return puppeteer.launch({
+    headless: "new",
+    args: ["--no-sandbox", "--disable-dev-shm-usage"],
+    ...(executablePath ? { executablePath } : {}),
+    ...options,
+  })
 }
 
 export const sleep = (ms) => new Promise((r) => setTimeout(r, ms))

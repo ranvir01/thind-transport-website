@@ -14,10 +14,9 @@
  * Usage: node scripts/e2e-track-smoke.mjs [outputDir]
  * Requires: npm run start on localhost:3000, POSTGRES_URL (reads .env.local).
  */
-import puppeteer from "puppeteer"
 import pg from "pg"
 import { readFileSync, existsSync, mkdirSync } from "node:fs"
-import { BASE, makeShot, reseed, check, failures } from "./e2e-lib.mjs"
+import { launchBrowser, BASE, makeShot, reseed, check, failures } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-track"
 mkdirSync(OUT, { recursive: true })
@@ -47,7 +46,7 @@ async function main() {
   })
   await db.connect()
 
-  const browser = await puppeteer.launch({ headless: "new", args: ["--no-sandbox", "--disable-dev-shm-usage"] })
+  const browser = await launchBrowser()
   const page = await browser.newPage()
   await page.setViewport({ width: 390, height: 844, deviceScaleFactor: 2 })
   const consoleErrors = []

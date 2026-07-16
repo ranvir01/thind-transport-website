@@ -14,9 +14,8 @@
  *
  * Usage: node scripts/e2e-advances-smoke.mjs [outputDir]
  */
-import puppeteer from "puppeteer"
 import { mkdirSync } from "node:fs"
-import { BASE, sleep, failures, check, waitForText, login, makeShot, clickByText, reseed } from "./e2e-lib.mjs"
+import { launchBrowser, BASE, sleep, failures, check, waitForText, login, makeShot, clickByText, reseed } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-advances"
 mkdirSync(OUT, { recursive: true })
@@ -61,10 +60,7 @@ const decideRow = (page, needle, label) =>
 
 async function main() {
   reseed()
-  const browser = await puppeteer.launch({
-    headless: "new",
-    args: ["--no-sandbox", "--disable-dev-shm-usage"],
-  })
+  const browser = await launchBrowser()
 
   // ---- Driver at 390px: ask for an advance ----
   const driver = await browser.newPage()
