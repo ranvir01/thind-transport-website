@@ -26,14 +26,14 @@ export function BrandingPanel({ currentAccent }: { currentAccent: string | null 
   const [pending, startTransition] = useTransition()
 
   const saved = (accent ?? "").toLowerCase() === (currentAccent ?? "").toLowerCase()
-  const valid = accent !== null && HEX_RE.test(accent)
+  const valid = accent === null || HEX_RE.test(accent)
 
   const save = () => {
-    if (!valid || accent === null) return
+    if (!valid) return
     startTransition(async () => {
       const result = await setBrandAccentAction(accent)
       if (result.ok) {
-        toast.success("Accent color saved")
+        toast.success(accent === null ? "Back to the standard look" : "Accent color saved")
         router.refresh()
       } else {
         toast.error(result.error ?? "Could not save")
@@ -82,19 +82,33 @@ export function BrandingPanel({ currentAccent }: { currentAccent: string | null 
             Documents will use <span className="font-semibold" style={{ color: accent }}>this color</span>
             <span className="ml-1 font-mono">{accent.toLowerCase()}</span>
           </p>
+        ) : currentAccent !== null ? (
+          <p className="text-body-xs text-fg-3">Documents will go back to the standard look after you save.</p>
         ) : (
           <p className="text-body-xs text-fg-3">Using the standard look — nothing saved yet.</p>
         )}
       </div>
 
-      <button
-        onClick={save}
-        disabled={pending || !valid || saved}
-        className="flex min-h-[48px] w-full sm:w-auto items-center justify-center gap-2 rounded-control bg-accent px-8 font-semibold text-sm text-accent-fg hover:bg-accent-hover disabled:opacity-60"
-      >
-        {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-        {saved ? "Saved" : "Save accent color"}
-      </button>
+      <div className="flex flex-wrap items-center gap-3">
+        <button
+          onClick={save}
+          disabled={pending || !valid || saved}
+          className="flex min-h-[48px] w-full sm:w-auto items-center justify-center gap-2 rounded-control bg-accent px-8 font-semibold text-sm text-accent-fg hover:bg-accent-hover disabled:opacity-60"
+        >
+          {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+          {saved ? "Saved" : accent === null ? "Remove accent color" : "Save accent color"}
+        </button>
+        {accent !== null && (
+          <button
+            type="button"
+            onClick={() => setAccent(null)}
+            disabled={pending}
+            className="min-h-[44px] rounded-control px-3 text-xs font-medium text-fg-3 underline underline-offset-2 hover:text-fg-2 disabled:opacity-60"
+          >
+            Reset to standard look
+          </button>
+        )}
+      </div>
     </Panel>
   )
 }

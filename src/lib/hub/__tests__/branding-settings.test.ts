@@ -78,6 +78,28 @@ describe("setBrandAccentAction", () => {
     expect(params).toEqual([CARRIER_ID, "#a1B2c3"])
   })
 
+  it("clears the accent by deleting the key, scoped to the owner's carrier", async () => {
+    requireOwnerMock.mockResolvedValue({
+      id: "u1", name: "Priya", email: "p@a.com", role: "owner", carrierId: CARRIER_ID,
+    })
+    const result = await setBrandAccentAction(null)
+    expect(result).toEqual({ ok: true })
+    expect(queryMock).toHaveBeenCalledTimes(1)
+    const [sql, params] = queryMock.mock.calls[0]
+    // Delete the key rather than storing JSON null so the read path's
+    // defaulting stays the single meaning of "unset".
+    expect(String(sql)).toContain(`#- '{branding,accent}'`)
+    expect(String(sql)).toContain("WHERE carrier_id = $1")
+    expect(params).toEqual([CARRIER_ID])
+  })
+
+  it("rejects a non-owner clearing the accent without writing anything", async () => {
+    requireOwnerMock.mockRejectedValue(new Error("NEXT_REDIRECT"))
+    const result = await setBrandAccentAction(null)
+    expect(result.ok).toBe(false)
+    expect(queryMock).not.toHaveBeenCalled()
+  })
+
   // jsonb_set can't create a missing parent key — a plain
   // jsonb_set(settings, '{branding,accent}') silently no-ops for tenants whose
   // settings JSON predates the wizard. Pin that the write seeds '{branding}'
