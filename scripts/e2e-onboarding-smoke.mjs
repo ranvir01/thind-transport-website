@@ -6,7 +6,7 @@
  */
 import puppeteer from "puppeteer"
 import { mkdirSync } from "node:fs"
-import { BASE, waitForText, login, makeShot } from "./e2e-lib.mjs"
+import { BASE, waitForText, login, makeShot, clickByText } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-onboarding"
 mkdirSync(OUT, { recursive: true })
@@ -16,14 +16,28 @@ async function main() {
   const browser = await puppeteer.launch({ headless: "new", args: ["--no-sandbox", "--disable-dev-shm-usage"] })
   const stamp = Date.now().toString().slice(-6)
 
-  console.log("1. Self-serve signup creates a new workspace")
+  console.log("1. Self-serve signup walks the onboarding wizard")
   const signupCtx = await browser.createBrowserContext()
   const fresh = await signupCtx.newPage()
   await fresh.setViewport({ width: 390, height: 844, deviceScaleFactor: 2 })
   await fresh.goto(`${BASE}/hub/signup`, { waitUntil: "networkidle2" })
-  await shot(fresh, "01-signup")
+  // Step 1 — company facts. FMCSA verify is optional and needs egress, so the
+  // smoke skips the verify button and continues on required fields alone.
+  await shot(fresh, "01-signup-company")
   await fresh.type("#su-company", `Bluebird Freight ${stamp}`)
   await fresh.type("#su-dot", "4112233")
+  await clickByText(fresh, "Continue")
+  // Step 2 — branding: pick an accent so per-tenant branding is exercised.
+  await fresh.waitForSelector('[role="radiogroup"]', { visible: true })
+  await clickByText(fresh, "Blue")
+  await shot(fresh, "01b-signup-branding")
+  await clickByText(fresh, "Continue")
+  // Step 3 — driver pay comes prefilled with platform defaults.
+  await fresh.waitForSelector("#su-permile", { visible: true })
+  await shot(fresh, "01c-signup-pay")
+  await clickByText(fresh, "Continue")
+  // Step 4 — owner account, then the single server action creates it all.
+  await fresh.waitForSelector("#su-owner", { visible: true })
   await fresh.type("#su-owner", "Rosa Bluebird")
   await fresh.type("#su-email", `rosa+${stamp}@bluebird.example`)
   await fresh.type("#su-pass", "BluebirdPass1!")
