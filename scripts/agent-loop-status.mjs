@@ -4,16 +4,19 @@
  *
  * Usage:
  *   node scripts/agent-loop-status.mjs
- *   AGENT_CATCHUP_THRESHOLD=3 node scripts/agent-loop-status.mjs
+ *   AGENT_CATCHUP_THRESHOLD=3 AGENT_STALL_THRESHOLD_HOURS=24 node scripts/agent-loop-status.mjs
  *
- * Exit 0 = integrator is within threshold of main (steady state OK).
- * Exit 1 = integrator is ahead of main by more than AGENT_CATCHUP_THRESHOLD (catch-up mode).
+ * Exit 0 = steady state (integrator within threshold of main AND moving).
+ * Exit 1 = catch-up mode (integrator ahead of main by more than AGENT_CATCHUP_THRESHOLD).
+ * Exit 2 = integrator stalled (no integrator commit for AGENT_STALL_THRESHOLD_HOURS while
+ *          claude/* branches wait for pickup — drift-vs-main alone cannot see this).
  */
 import { execSync } from "node:child_process"
 
 const INTEGRATOR = "origin/claude/hauldesk-project-setup-l1luoo"
 const MAIN = "origin/main"
 const THRESHOLD = Number(process.env.AGENT_CATCHUP_THRESHOLD ?? "3")
+const STALL_HOURS = Number(process.env.AGENT_STALL_THRESHOLD_HOURS ?? "24")
 
 const LANES = [
   "lane-office",
@@ -81,11 +84,57 @@ export function parsePendingCount(raw) {
   return data.pending.length
 }
 
+/**
+ * Final loop verdict. Pure so tests can cover every mode.
+ *
+ * The July 2026 fleet stall taught us drift-vs-main is the wrong staleness
+ * signal: the integrator sat 6 days dead at 0 drift (nothing merged, so
+ * nothing to drain) while 300+ branches waited, and this script printed
+ * STEADY STATE the whole time. A healthy loop needs the integrator to be
+ * both close to main AND recently moving whenever work is pending.
+ *
+ * pendingCount === null means the inventory failed (UNKNOWN) — treated as
+ * "work may be waiting", never as 0.
+ */
+export function assessLoop({ integratorAhead, integratorAgeHours, pendingCount, threshold, stallHours }) {
+  if (integratorAhead > threshold) {
+    return {
+      mode: "CATCH_UP",
+      exitCode: 1,
+      message: `CATCH-UP MODE: integrator is ${integratorAhead} commits ahead (threshold ${threshold}). Deploy agent should drain integrator → main before new backlog work.`,
+    }
+  }
+  const workMayBeWaiting = pendingCount === null || pendingCount > 0
+  if (integratorAgeHours !== null && integratorAgeHours > stallHours && workMayBeWaiting) {
+    const waiting = pendingCount === null ? "an UNKNOWN number of" : String(pendingCount)
+    return {
+      mode: "STALLED",
+      exitCode: 2,
+      message:
+        `INTEGRATOR STALLED: last integrator commit was ${Math.floor(integratorAgeHours)}h ago ` +
+        `(threshold ${stallHours}h) with ${waiting} claude/* branch(es) waiting for pickup. ` +
+        `Drift vs main is fine, but nothing is being merged — check the :00 integrator automation.`,
+    }
+  }
+  return {
+    mode: "STEADY",
+    exitCode: 0,
+    message: `STEADY STATE: integrator within ${threshold} commits of main and moving.`,
+  }
+}
+
+function lastCommitAgeHours(ref, nowMs = Date.now()) {
+  const out = git(`log -1 --format=%ct ${ref}`)
+  if (!out) return null
+  return (nowMs - Number(out) * 1000) / 3_600_000
+}
+
 function main() {
   git("fetch origin --quiet")
 
   const integratorAhead = revCount(MAIN, INTEGRATOR)
   const mainAhead = revCount(INTEGRATOR, MAIN)
+  const integratorAgeHours = lastCommitAgeHours(INTEGRATOR)
 
   console.log("LoadOff agent loop status")
   console.log("========================")
@@ -93,6 +142,10 @@ function main() {
   console.log(`Main:       ${MAIN}`)
   console.log("")
   console.log(`Integrator ahead of main: ${integratorAhead} commit(s)`)
+  if (integratorAgeHours !== null) {
+    const lastDate = git(`log -1 --format=%ci ${INTEGRATOR}`)
+    console.log(`Integrator last commit:   ${lastDate} (${Math.floor(integratorAgeHours)}h ago)`)
+  }
   if (mainAhead > 0) {
     console.log(`Main ahead of integrator: ${mainAhead} commit(s) — integrator should rebase/merge main`)
   }
@@ -150,13 +203,15 @@ function main() {
   }
 
   console.log("")
-  if (integratorAhead > THRESHOLD) {
-    console.log(
-      `CATCH-UP MODE: integrator is ${integratorAhead} commits ahead (threshold ${THRESHOLD}). Deploy agent should drain integrator → main before new backlog work.`
-    )
-    process.exit(1)
-  }
-  console.log(`STEADY STATE: integrator within ${THRESHOLD} commits of main.`)
+  const verdict = assessLoop({
+    integratorAhead,
+    integratorAgeHours,
+    pendingCount,
+    threshold: THRESHOLD,
+    stallHours: STALL_HOURS,
+  })
+  console.log(verdict.message)
+  if (verdict.exitCode !== 0) process.exit(verdict.exitCode)
 }
 
 // import-safe: only run when executed directly (tests import parsePendingCount)
