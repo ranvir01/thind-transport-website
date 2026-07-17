@@ -15,12 +15,40 @@
  * Usage: node scripts/e2e-mailbox-oauth-smoke.mjs [outputDir]
  */
 import puppeteer from "puppeteer"
-import { mkdirSync } from "node:fs"
+import pg from "pg"
+import { readFileSync, existsSync, mkdirSync } from "node:fs"
 import { BASE, sleep, failures, check, waitForText, login, makeShot } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-mailbox-oauth"
 mkdirSync(OUT, { recursive: true })
 const shot = makeShot(OUT, { fullPage: true })
+
+if (!process.env.POSTGRES_URL && existsSync(".env.local")) {
+  for (const line of readFileSync(".env.local", "utf-8").split("\n")) {
+    const m = line.match(/^([A-Z0-9_]+)=(.*)$/)
+    if (m && !process.env[m[1]]) process.env[m[1]] = m[2]
+  }
+}
+
+/**
+ * `npm run seed:demo` does not touch hub.api_credentials, so a crashed earlier
+ * run leaves the mailbox "connected" and step 1 fails forever. Reset the demo
+ * carrier's mailbox credential directly, mirroring how the portal-accept smoke
+ * seeds its invitation rows.
+ */
+async function resetMailboxCredential() {
+  if (!process.env.POSTGRES_URL) return
+  const db = new pg.Pool({ connectionString: process.env.POSTGRES_URL })
+  try {
+    await db.query(
+      `DELETE FROM hub.api_credentials
+        WHERE provider = 'mailbox'
+          AND carrier_id = (SELECT carrier_id FROM hub.users WHERE email = 'owner@demo.thind' LIMIT 1)`
+    )
+  } finally {
+    await db.end()
+  }
+}
 
 /** Text of the Docs mailbox card (the ancestor that includes the fallback line). */
 async function cardText(page) {
@@ -45,6 +73,7 @@ async function clickInCard(page, label) {
 }
 
 async function main() {
+  await resetMailboxCredential()
   const browser = await puppeteer.launch({
     headless: "new",
     args: ["--no-sandbox", "--disable-dev-shm-usage"],
@@ -111,6 +140,10 @@ async function main() {
 
   console.log("5. Disconnect leaves the demo carrier clean")
   await clickInCard(page, "Disconnect")
+  await sleep(300)
+  // Destructive actions confirm in place: the first click swaps the button
+  // row for a confirm step whose real button reads "Disconnect it".
+  await clickInCard(page, "Disconnect it")
   await waitForText(page, "the CSV import path keeps working")
   await sleep(1200)
   const finalText = await cardText(page)
