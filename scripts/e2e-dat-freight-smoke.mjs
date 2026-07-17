@@ -19,7 +19,27 @@
  */
 import puppeteer from "puppeteer"
 import { mkdirSync } from "node:fs"
-import { BASE, failures, check, waitForText, login, makeShot, clickByText, reseed } from "./e2e-lib.mjs"
+import { BASE, failures, check, waitForText, login, makeShot, clickByText, reseed, sleep } from "./e2e-lib.mjs"
+
+/**
+ * Click a button by exact label inside the DAT card only. Every provider card
+ * renders identically-labeled buttons (Connect / Disconnect / Disconnect it),
+ * so a page-scoped clickByText can hit another provider's card — walk up from
+ * the DAT h3 to its own card (the ancestor carrying the card's fallback
+ * blurb) and search for the button there, never page-wide.
+ */
+async function clickInDatCard(page, label) {
+  return page.evaluate((wanted) => {
+    const header = [...document.querySelectorAll("h3")].find(
+      (el) => el.textContent?.trim().toLowerCase() === "dat load board"
+    )
+    let node = header
+    while (node && !/paste rate con/i.test(node.textContent ?? "")) node = node.parentElement
+    const btn = [...(node?.querySelectorAll("button") ?? [])].find((b) => b.textContent?.trim() === wanted)
+    if (btn) btn.click()
+    return Boolean(btn)
+  }, label)
+}
 
 const OUT = process.argv[2] ?? "e2e-shots-dat-freight"
 mkdirSync(OUT, { recursive: true })
@@ -38,6 +58,28 @@ async function main() {
     if (msg.type() === "error") consoleErrors.push(msg.text())
   })
   page.on("pageerror", (err) => consoleErrors.push(`pageerror: ${err.message}`))
+
+  // Self-heal: a crashed earlier run — or a run of an older smoke variant
+  // with no cleanup step — can leave the DAT credential connected, and
+  // seed:demo does not clear hub.api_credentials, so step 1's
+  // disconnected-state checks would fail on every rerun. Disconnect through
+  // the owner UI first (mirrors e2e-mailbox-oauth-smoke.mjs).
+  {
+    const healCtx = await browser.createBrowserContext()
+    const heal = await healCtx.newPage()
+    await heal.setViewport({ width: 1440, height: 900 })
+    await login(heal, "owner@demo.thind")
+    await heal.goto(`${BASE}/hub/settings/integrations`, { waitUntil: "networkidle2" })
+    await waitForText(heal, "DAT load board")
+    if (await clickInDatCard(heal, "Disconnect")) {
+      console.log("   (stale DAT connection from a previous run — disconnecting first)")
+      await sleep(300)
+      await clickInDatCard(heal, "Disconnect it")
+      await waitForText(heal, "the CSV import path keeps working")
+      await sleep(1200)
+    }
+    await healCtx.close()
+  }
 
   console.log("1. Dispatcher sees the DAT panel on the load board, disconnected by default")
   await login(page, "dispatch@demo.thind")
@@ -152,7 +194,14 @@ async function main() {
 
     console.log("6. Cleanup — disconnect DAT so the credential doesn't linger between runs")
     await owner.goto(`${BASE}/hub/settings/integrations`, { waitUntil: "networkidle2" })
-    await clickByText(owner, "Disconnect").catch(() => {})
+    // Disconnect confirms in place now: arm it, then click "Disconnect it" —
+    // scoped to the DAT card so another connected card is never the victim.
+    const armed = await clickInDatCard(owner, "Disconnect")
+    check(armed, "cleanup found the DAT card's Disconnect button")
+    await sleep(300)
+    const confirmed = await clickInDatCard(owner, "Disconnect it")
+    check(confirmed, "cleanup confirmed with the DAT card's Disconnect it button")
+    await waitForText(owner, "the CSV import path keeps working")
   }
 
   const realErrors = consoleErrors.filter((e) => !/favicon|manifest/i.test(e))
