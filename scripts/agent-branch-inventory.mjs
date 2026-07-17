@@ -119,8 +119,11 @@ function main() {
   const rows = buildInventory({ pendingOnly: !showAll })
 
   if (json) {
+    // No process.exit here: stdout writes to a pipe are async beyond the 64KB
+    // kernel buffer, and exit() drops the unflushed tail — consumers (agent:status)
+    // would intermittently receive truncated, unparseable JSON.
     console.log(JSON.stringify({ integrator: INTEGRATOR, main: MAIN, pending: rows }, null, 2))
-    process.exit(rows.length ? 0 : 0)
+    return
   }
 
   console.log("LoadOff agent branch inventory")
