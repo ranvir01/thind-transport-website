@@ -4,6 +4,13 @@
  * and a body-text sanity check at every width (a screen that renders an
  * error boundary, a 404, or a blank page must fail the sweep, not pass it).
  *
+ * Covers all four surfaces: office (dispatcher), driver app, broker/shipper
+ * portal, and the public /track/[token] page. The portal load-detail URL and
+ * tracking token are discovered at runtime (link on the broker home; newest
+ * unrevoked share link in hub.share_links), so the portal/track section needs
+ * POSTGRES_URL for the token lookup — when it's unset the track page is
+ * skipped WITH a log line, never silently.
+ *
  * Each page also declares an ANCHOR — a fragment of its own content (page
  * subtitle or an always-rendered label, never a nav-chrome word) that must
  * appear in the body text. This is what catches a page stuck on a loading
@@ -12,6 +19,7 @@
  * Usage: node scripts/e2e-sweep.mjs [outputDir]
  */
 import puppeteer from "puppeteer"
+import pg from "pg"
 import { mkdirSync } from "node:fs"
 import path from "node:path"
 import { BASE, sleep, login } from "./e2e-lib.mjs"
@@ -37,6 +45,20 @@ const OFFICE_PAGES = [
   ["capacity", "/hub/capacity", "empty trucks, advertised"],
   ["packet", "/hub/settings/packet", "stored once, sent in one click"],
   ["setup", "/hub/setup", "upload paperwork once"],
+]
+
+// Portal + tracking are forced-dark surfaces (same regression class as the
+// driver app — see AGENTS.md token doctrine). Anchors are page subtitles /
+// always-rendered section labels, per the rule above. The broker load-detail
+// row and the /track URL are appended at runtime in main().
+const PORTAL_PAGES = [
+  ["portal-home", "/hub/portal", "no checking calls needed"],
+]
+
+const SHIPPER_PAGES = [
+  // Quote form renders for shippers only — this is what distinguishes the
+  // shipper home from the broker home the row above already covers.
+  ["shipper-home", "/hub/portal", "request a quote"],
 ]
 
 const DRIVER_PAGES = [
@@ -114,6 +136,58 @@ async function main() {
   await login(driver, "driver@demo.thind")
   console.log("Driver app @ 390px")
   problems.push(...(await sweep(driver, DRIVER_PAGES, "driver", 390)))
+
+  // Broker portal at phone (portals are the third forced-dark surface)
+  const brokerContext = await browser.createBrowserContext()
+  const broker = await brokerContext.newPage()
+  await broker.setViewport({ width: 390, height: 844, deviceScaleFactor: 2 })
+  await login(broker, "broker@demo.thind")
+  console.log("Broker portal @ 390px")
+  const portalPages = [...PORTAL_PAGES]
+  await broker.goto(`${BASE}/hub/portal`, { waitUntil: "networkidle2" })
+  const loadHref = await broker.evaluate(
+    () =>
+      [...document.querySelectorAll("a")]
+        .find((a) => a.getAttribute("href")?.includes("/hub/portal/loads/"))
+        ?.getAttribute("href") ?? null
+  )
+  if (loadHref) portalPages.push(["portal-load", loadHref, "stops"])
+  else problems.push("portal-load: broker home has no /hub/portal/loads/ link (seed should provide one)")
+  problems.push(...(await sweep(broker, portalPages, "portal", 390)))
+
+  // Shipper portal at phone (same route, quote-form variant)
+  const shipperContext = await browser.createBrowserContext()
+  const shipper = await shipperContext.newPage()
+  await shipper.setViewport({ width: 390, height: 844, deviceScaleFactor: 2 })
+  await login(shipper, "shipper@demo.thind")
+  console.log("Shipper portal @ 390px")
+  problems.push(...(await sweep(shipper, SHIPPER_PAGES, "portal", 390)))
+
+  // Public tracking page at phone (no login — token straight from the DB)
+  if (process.env.POSTGRES_URL) {
+    const db = new pg.Client({ connectionString: process.env.POSTGRES_URL })
+    await db.connect()
+    const link = await db.query(
+      `SELECT sl.token FROM hub.share_links sl
+         JOIN hub.loads l ON l.id = sl.load_id
+        WHERE sl.revoked_at IS NULL AND l.status <> 'cancelled'
+        ORDER BY sl.created_at DESC LIMIT 1`
+    )
+    await db.end()
+    if (link.rows[0]) {
+      const trackContext = await browser.createBrowserContext()
+      const track = await trackContext.newPage()
+      await track.setViewport({ width: 390, height: 844, deviceScaleFactor: 2 })
+      console.log("Public tracking @ 390px")
+      problems.push(
+        ...(await sweep(track, [["track", `/track/${link.rows[0].token}`, "shipment"]], "public", 390))
+      )
+    } else {
+      problems.push("track: no unrevoked share link in hub.share_links (seed should provide one)")
+    }
+  } else {
+    console.log("⏭  /track sweep skipped: POSTGRES_URL unset (needed for the share-link token)")
+  }
 
   await browser.close()
 
