@@ -16,7 +16,7 @@
  */
 import puppeteer from "puppeteer"
 import { mkdirSync } from "node:fs"
-import { BASE, sleep, failures, check, waitForText, login, makeShot } from "./e2e-lib.mjs"
+import { BASE, sleep, failures, check, waitForText, login, makeShot, reseed } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-mailbox-oauth"
 mkdirSync(OUT, { recursive: true })
@@ -45,6 +45,9 @@ async function clickInCard(page, label) {
 }
 
 async function main() {
+  // A prior aborted run can leave the mailbox connected (this smoke's own
+  // disconnect is its cleanup) — reseed so the card reliably starts clean.
+  reseed()
   const browser = await puppeteer.launch({
     headless: "new",
     args: ["--no-sandbox", "--disable-dev-shm-usage"],
@@ -60,6 +63,16 @@ async function main() {
   await login(page, "owner@demo.thind")
   await page.goto(`${BASE}/hub/settings/integrations`, { waitUntil: "networkidle2" })
   await waitForText(page, "Docs mailbox")
+  // seed-demo does not wipe hub.api_credentials, so a prior aborted run can
+  // leave the mailbox connected — clean up through the UI before asserting.
+  if (!/not connected/i.test(await cardText(page))) {
+    console.log("   (card left connected by a prior run — disconnecting first)")
+    await clickInCard(page, "Disconnect")
+    await sleep(300)
+    await clickInCard(page, "Disconnect it")
+    await waitForText(page, "the CSV import path keeps working")
+    await sleep(1200)
+  }
   const before = await cardText(page)
   check(/not connected/i.test(before), "card starts not connected")
   check(/OAuth2 for Microsoft 365/.test(before), "blurb names the OAuth2 paths")
@@ -110,7 +123,11 @@ async function main() {
   await clickInCard(page, "Cancel")
 
   console.log("5. Disconnect leaves the demo carrier clean")
+  // Destructive-action confirm (ffae7b7): first click arms the confirm,
+  // "Disconnect it" actually fires the action.
   await clickInCard(page, "Disconnect")
+  await sleep(300)
+  await clickInCard(page, "Disconnect it")
   await waitForText(page, "the CSV import path keeps working")
   await sleep(1200)
   const finalText = await cardText(page)

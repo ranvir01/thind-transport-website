@@ -107,6 +107,13 @@ async function main() {
       page.click('button[type="submit"]'),
     ])
     check(page.url().includes("/hub/portal"), `accepting the invitation signs in and lands on /hub/portal (url=${page.url()})`)
+    // The pathname predicate fires while the window.location redirect is still
+    // swapping documents; screenshotting mid-swap dies with "0 width". Wait for
+    // the portal document to actually render before shooting.
+    await page.waitForFunction(
+      () => document.readyState === "complete" && (document.body?.innerText ?? "").trim().length > 40,
+      { timeout: 15000 }
+    )
     await shot(page, "02-signed-in")
 
     console.log("2. Already-used invitation at 390px")
@@ -152,7 +159,9 @@ async function main() {
 
     check(consoleErrors.length === 0, `no console errors (${consoleErrors.length}: ${consoleErrors.slice(0, 2).join(" | ")})`)
   } catch (err) {
-    await shot(page, "ZZ-failure")
+    // The failure shot is best-effort: if IT throws (e.g. mid-navigation
+    // "0 width"), it must not mask the original error.
+    await shot(page, "ZZ-failure").catch(() => {})
     failures.push(`crash: ${err.message}`)
   } finally {
     await browser.close()
