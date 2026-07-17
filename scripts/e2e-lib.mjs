@@ -8,6 +8,10 @@
  *
  *   POSTGRES_URL=<url> npm run db:migrate && npm run seed:demo
  *   NEXTAUTH_SECRET=<secret>   # or AUTH_SECRET — hub login 401s with MissingSecret if blank
+ *   CREDENTIALS_KEY=<32+ chars> # server-side encrypt-at-rest for integration
+ *                               # credentials — e2e-mailbox-oauth-smoke's connect
+ *                               # step fails without it (only an in-page banner
+ *                               # hints why); the smoke now fails fast instead
  *
  * State-consuming smokes (dispatch, invoices, settlements, advances,
  * compliance, messages, expenses, fuel, customers, loads, fleet, tasks,
