@@ -67,6 +67,39 @@ function branchExists(name) {
   return git(`rev-parse --verify ${name}`).length > 0
 }
 
+/**
+ * Parse `agent-branch-inventory --json` stdout into a pending count.
+ * Returns { count } on success, { error } otherwise — callers must never
+ * collapse a failure to 0 (that once hid 217 pending branches as "0").
+ */
+export function parsePendingCount(stdout) {
+  let parsed
+  try {
+    parsed = JSON.parse(stdout)
+  } catch (err) {
+    return { error: `inventory output is not valid JSON (${err.message})` }
+  }
+  if (!parsed || !Array.isArray(parsed.pending)) {
+    return { error: "inventory JSON has no pending[] array" }
+  }
+  return { count: parsed.pending.length }
+}
+
+/**
+ * Cheap independent signal for the mismatch guard: claude/* branches whose
+ * tip is not an ancestor of main, in a single git call. Counts raw-unmerged
+ * (no patch-equivalence), so it can exceed the inventory's pending count —
+ * but it can never be positive while the true pending count is 0 unless
+ * every unmerged branch is fully patch-equivalent to main.
+ */
+function rawUnmergedClaudeBranchCount() {
+  const out = git(`for-each-ref --no-merged=${MAIN} --format=%(refname:short) 'refs/remotes/origin/claude/*'`)
+  return out
+    .split("\n")
+    .filter(Boolean)
+    .filter((name) => name !== INTEGRATOR).length
+}
+
 function main() {
   git("fetch origin --quiet")
 
@@ -88,19 +121,34 @@ function main() {
     for (const line of logLines(MAIN, INTEGRATOR)) console.log(`  ${line}`)
   }
 
-  const pendingOut = execSync("node scripts/agent-branch-inventory.mjs --json", {
-    encoding: "utf-8",
-    cwd: process.cwd(),
-  })
-  let pendingCount = 0
+  let pending
   try {
-    pendingCount = JSON.parse(pendingOut).pending?.length ?? 0
-  } catch {
-    /* ignore */
+    const pendingOut = execSync("node scripts/agent-branch-inventory.mjs --json", {
+      encoding: "utf-8",
+      cwd: process.cwd(),
+      maxBuffer: 64 * 1024 * 1024, // pending JSON is ~1KB/branch; default 1MB throws past ~1000 branches
+    })
+    pending = parsePendingCount(pendingOut)
+  } catch (err) {
+    pending = { error: `inventory run failed (${String(err.message ?? err).split("\n")[0]})` }
   }
-  console.log(`\nPending claude/* branches (not on main): ${pendingCount}`)
-  if (pendingCount > 0) {
-    console.log("  Run: npm run agent:branches")
+
+  if (pending.error) {
+    console.log(`\nPending claude/* branches (not on main): UNKNOWN — ${pending.error}`)
+    console.log("  Do not trust this status until scripts/agent-branch-inventory.mjs --json runs clean.")
+  } else {
+    console.log(`\nPending claude/* branches (not on main): ${pending.count}`)
+    if (pending.count > 0) {
+      console.log("  Run: npm run agent:branches")
+    } else {
+      const rawUnmerged = rawUnmergedClaudeBranchCount()
+      if (rawUnmerged > 0) {
+        console.log(
+          `  MISMATCH: inventory says 0 pending, but ${rawUnmerged} claude/* branch(es) are not merged into main. ` +
+            "Unless all are patch-equivalent to main, the inventory is wrong — run npm run agent:branches to verify."
+        )
+      }
+    }
   }
 
   console.log("\nLane branches ahead of integrator:")
@@ -138,4 +186,5 @@ function main() {
   console.log(`STEADY STATE: integrator within ${THRESHOLD} commits of main.`)
 }
 
-main()
+// import-safe: only run when executed directly (tests import parsePendingCount)
+if (process.argv[1] && import.meta.url === new URL(`file://${process.argv[1]}`).href) main()
