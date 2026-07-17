@@ -119,8 +119,11 @@ function main() {
   const rows = buildInventory({ pendingOnly: !showAll })
 
   if (json) {
+    // No process.exit() after this write: when stdout is a pipe (execSync in
+    // agent-loop-status.mjs) console.log is async, and exiting mid-write
+    // truncates the JSON — agent:status then parsed garbage and reported 0.
     console.log(JSON.stringify({ integrator: INTEGRATOR, main: MAIN, pending: rows }, null, 2))
-    process.exit(rows.length ? 0 : 0)
+    return
   }
 
   console.log("LoadOff agent branch inventory")
