@@ -48,35 +48,43 @@ async function registerCount(page) {
   })
 }
 
+/**
+ * Each status button only renders after the previous server action's
+ * router.refresh() lands, which under full-battery load can exceed
+ * clickByText's default 8s deadline ("Leaving now" was the observed flake).
+ * The ladder gets a wider window; solo runs are unaffected.
+ */
+const LADDER = { timeout: 25000 }
+
 async function advanceDriverLoadToDelivered(page) {
   await waitForText(page, "THD-")
-  await clickByText(page, "confirm this dispatch")
+  await clickByText(page, "confirm this dispatch", LADDER)
   await waitForText(page, "Dispatch confirmed")
   await sleep(800)
 
-  await clickByText(page, "I'm heading to the pickup")
+  await clickByText(page, "I'm heading to the pickup", LADDER)
   await waitForText(page, "Status updated")
   await sleep(800)
 
-  await clickByText(page, "I'm here")
+  await clickByText(page, "I'm here", LADDER)
   await waitForText(page, "Arrival recorded")
   await sleep(800)
-  await clickByText(page, "Leaving now")
+  await clickByText(page, "Leaving now", LADDER)
   await waitForText(page, "Departure recorded")
   await sleep(800)
 
-  await clickByText(page, "Loaded — rolling now")
+  await clickByText(page, "Loaded — rolling now", LADDER)
   await waitForText(page, "Status updated")
   await sleep(800)
 
-  await clickByText(page, "I'm here")
+  await clickByText(page, "I'm here", LADDER)
   await waitForText(page, "Arrival recorded")
   await sleep(800)
-  await clickByText(page, "Leaving now")
+  await clickByText(page, "Leaving now", LADDER)
   await waitForText(page, "Departure recorded")
   await sleep(800)
 
-  await clickByText(page, "Delivered")
+  await clickByText(page, "Delivered", LADDER)
   await waitForText(page, "Status updated")
   await sleep(1200)
   check(
