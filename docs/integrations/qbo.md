@@ -1,9 +1,12 @@
 # QuickBooks Online — scouting notes
 
 Status: **adapter shipped stub-first** (`src/lib/hub/integrations/qbo.ts`), no
-sandbox account wired yet. Confirm the real response shape and flip
-`registry.ts`'s `qbo` status to `live` once a developer.intuit.com app + sandbox
-company are set up (see `docs/integrations/creds-shopping-list.md` row 6).
+sandbox account wired yet; **platform notices re-checked 2026-07-17** (see the
+dated section below — minorversion pin is stale, refresh tokens gained a
+5-year hard cap, adapter's rotation handling confirmed correct). Confirm the
+real response shape and flip `registry.ts`'s `qbo` status to `live` once a
+developer.intuit.com app + sandbox company are set up (see
+`docs/integrations/creds-shopping-list.md` row 6).
 
 ## Why no migration was needed
 
@@ -45,12 +48,74 @@ exchanges it for a short-lived (1hr) bearer token via
 mirroring `telematics.ts`'s TruckerCloud client-credentials pattern (no
 caching yet).
 
-QBO rotates the refresh token on (most) redemptions in production. Every
-`refreshAccessToken` call compares the response's `refresh_token` against the
-one just used; when Intuit returned a different value, `pull()` writes it
-back to `hub.api_credentials` via `saveCredentials` before returning, so the
-next sync redeems the current token instead of a stale, already-invalidated
-one.
+QBO rotates the refresh token on (most) redemptions in production —
+confirmed 2026-07-17: Intuit's own guidance is that the refresh-token value
+can change on any exchange after a ~24–26 hour window, and the client must
+always persist the latest value returned. Every `refreshAccessToken` call
+compares the response's `refresh_token` against the one just used; when
+Intuit returned a different value, `pull()` writes it back to
+`hub.api_credentials` via `saveCredentials` before returning, so the next
+sync redeems the current token instead of a stale, already-invalidated one.
+The adapter's rotation handling matches the documented policy — no change
+needed there.
+
+**Policy change (announced 2025-11-12, sandbox 2025-12-10, production
+2026-01-27): refresh tokens now have a hard maximum validity of five
+years.** Previously a token stayed valid forever as long as it was redeemed
+at least every 100 days. Now, for apps on the `com.quickbooks.accounting`
+scope (us), tokens generated since October 2023 carry a 5-year cap — the
+first of those start dying **October 2028**; apps on restricted/granular
+scopes hit it earlier (February 2027). Two consequences for this adapter:
+
+- The token-refresh response now includes a field stating when the refresh
+  token itself expires (exact field name unverified — Intuit's docs are
+  behind a bot-wall from this rig; the pre-existing
+  `x_refresh_token_expires_in` field may simply become authoritative).
+  `refreshAccessToken` currently only reads `access_token`/`refresh_token`,
+  which stays correct — but surfacing the expiry would let the settings card
+  warn before the hard death.
+- When the 5-year cap hits, the stored credential dies **unrecoverably** —
+  the owner must repeat the one-time manual auth-code exchange in the
+  Intuit developer console and paste a fresh refresh token. Intuit added a
+  "Reconnect URL" field to app settings (available since 2026-02-24) for
+  exactly this; not relevant to our console-only connect flow, but the
+  re-auth runbook above is.
+
+## Platform changes checked 2026-07-17 (Intuit notices, Aug 2025 → Feb 2026)
+
+Scout pass per the rotation registry — Intuit shipped several Accounting API
+platform changes since this doc was written; each checked against
+`src/lib/hub/integrations/qbo.ts`:
+
+- **Minor versions 1–74 are deprecated since 2025-08-01.** All requests are
+  served with minor-version-75 behavior; a `minorversion` value below 75 is
+  simply *ignored*. The adapter hardcodes `minorversion=65` on all four call
+  sites (query, entity create, invoice create, invoice sparse update) — so it
+  has been silently receiving **v75-shaped responses** for almost a year.
+  Nothing observed is broken (the fields we read — `Id`, `TotalAmt`,
+  `TxnDate`, `PaymentRefNum`, `DocNumber`, `SyncToken`, `Line`,
+  `LinkedTxn` — are stable core fields), but the pin is dead weight and
+  misleading: bump to `minorversion=75` (or drop the param) and re-check the
+  assumed shapes against the v75 schema when the sandbox account exists.
+- **`Id` is no longer a sortable field** (sandbox 2025-12-10, production
+  2026-01-27; Intuit recommends `TxnDate` for ordering). Checked: none of
+  the adapter's five QBO queries uses `ORDERBY`, so no impact today — but
+  don't add `ORDERBY Id` to the Payment pagination when `MAXRESULTS 100`
+  eventually needs real paging; use `TxnDate` (+ `STARTPOSITION`).
+- **Webhooks moved to a CloudEvents payload format** (migration deadline
+  2026-05-15 for existing consumers). LoadOff consumes no QBO webhooks —
+  payments arrive by polling `runQboSync` — so nothing to migrate. If a
+  future pass adds QBO webhooks via `/api/hub/webhooks/[provider]`, build
+  against CloudEvents from day one; the pre-2026 sample payloads floating
+  around are dead.
+- **Rate limits (unchanged for our usage):** 500 requests/min per realm,
+  10 concurrent per realm per app, HTTP 429 on breach; the batch endpoint
+  (which we don't use) was re-throttled to 120 req/min in late 2025, and
+  sandbox limits were aligned with production (~2025-09-15). A sync run
+  makes ≤4 calls — no throttling concern at any realistic cadence.
+- Entity-level changes in the same notice (Employee address/phone
+  validation, `NeoEnabled` NameValue deprecation on CompanyInfo) touch
+  entities this adapter never reads or writes.
 
 ## Assumed feed shape (unconfirmed — adjust on first real sandbox response)
 
@@ -119,6 +184,15 @@ stays the fallback for both directions until then.
 
 ## Open questions for the next pass
 
+- Bump the hardcoded `minorversion=65` to `75` (or drop the param — sub-75
+  values are ignored anyway) in `qbo.ts` — integrations-lane change, four
+  call sites, behavior already is v75 so this is a truth-in-code fix; pair
+  it with a schema re-check once a sandbox account exists.
+- Read the refresh-token-expiry field from the token response and surface
+  it on the QuickBooks settings card, so the 5-year hard death (first
+  possible October 2028 for accounting-scope tokens) warns instead of
+  silently killing the sync. Confirm the exact field name against a real
+  token exchange first.
 - Wire an actual "Push to QBO" button — this lane's territory doesn't
   include the invoice detail page or its actions
   (`src/app/hub/_actions/money.ts`), both office-lane territory.
@@ -130,3 +204,31 @@ stays the fallback for both directions until then.
   resending the full `Line` array is safe without a per-line `Id`.
 - Confirm the real sandbox response shape (`Customer`/`Item`/`Invoice`
   create bodies) and flip `registry.ts` status to `live`.
+
+## Sources (researched 2026-07-17)
+
+Intuit's own developer pages 403 automated fetches from this rig, so
+findings above come from Intuit's announcement summaries as surfaced in
+search plus third-party integrator changelogs that quote them:
+
+- Intuit Developer blog, "Changes to our Accounting API that may impact
+  your application" (medium.com/intuitdev) — minor versions 1–74
+  deprecated 2025-08-01, sub-75 `minorversion` values ignored, all
+  responses v75.
+- Intuit Developer blog, "Important changes to refresh token policy"
+  (blogs.intuit.com, 2025-11-12) — 5-year maximum refresh-token validity;
+  accounting/payments-scope tokens from Oct 2023 expire starting Oct 2028;
+  granular-scope tokens from Feb 2022 starting Feb 2027; new expiry field
+  in the token-refresh response; Reconnect URL portal field live
+  2026-02-24.
+- Intuit Developer blog, "Upcoming changes to APIs and tools that may
+  impact your application" (blogs.intuit.com, 2025-12-01) — sandbox
+  2025-12-10 / production 2026-01-27 rollout; `Id` no longer sortable;
+  CloudEvents webhook migration deadline 2026-05-15.
+- Intuit help center, "Refresh Token Expiration and Validity Policy" /
+  "Handling OAuth token expiration" — 100-day inactivity expiry and
+  ~24–26h rotation of the refresh-token value; always persist the latest.
+- Intuit help center, "API call limits and throttling" + Codat/Apideck
+  integrator changelogs — 500 req/min/realm, 10 concurrent, batch endpoint
+  120 req/min (production 2025-10-31), sandbox aligned to production
+  limits ~2025-09-15.
