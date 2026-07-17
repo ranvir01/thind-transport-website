@@ -67,6 +67,20 @@ function branchExists(name) {
   return git(`rev-parse --verify ${name}`).length > 0
 }
 
+/**
+ * Parse the inventory's --json output into a pending-branch count.
+ * Throws (instead of defaulting to 0) on truncated/invalid JSON or a
+ * missing `pending` array — a silent 0 here once masked 200+ pending
+ * branches when the inventory's piped stdout was cut off mid-write.
+ */
+export function parsePendingInventory(raw) {
+  const parsed = JSON.parse(raw)
+  if (!Array.isArray(parsed?.pending)) {
+    throw new Error("inventory JSON has no 'pending' array — output shape changed?")
+  }
+  return parsed.pending.length
+}
+
 function main() {
   git("fetch origin --quiet")
 
@@ -88,19 +102,24 @@ function main() {
     for (const line of logLines(MAIN, INTEGRATOR)) console.log(`  ${line}`)
   }
 
-  const pendingOut = execSync("node scripts/agent-branch-inventory.mjs --json", {
-    encoding: "utf-8",
-    cwd: process.cwd(),
-  })
-  let pendingCount = 0
+  let pendingCount = null
   try {
-    pendingCount = JSON.parse(pendingOut).pending?.length ?? 0
-  } catch {
-    /* ignore */
+    const pendingOut = execSync("node scripts/agent-branch-inventory.mjs --json", {
+      encoding: "utf-8",
+      cwd: process.cwd(),
+      maxBuffer: 64 * 1024 * 1024,
+    })
+    pendingCount = parsePendingInventory(pendingOut)
+  } catch (err) {
+    const reason = String(err?.message ?? err).split("\n")[0]
+    console.log(`\nPending claude/* branches (not on main): UNKNOWN — inventory failed (${reason})`)
+    console.log("  Do not treat this as 0 — run: npm run agent:branches")
   }
-  console.log(`\nPending claude/* branches (not on main): ${pendingCount}`)
-  if (pendingCount > 0) {
-    console.log("  Run: npm run agent:branches")
+  if (pendingCount !== null) {
+    console.log(`\nPending claude/* branches (not on main): ${pendingCount}`)
+    if (pendingCount > 0) {
+      console.log("  Run: npm run agent:branches")
+    }
   }
 
   console.log("\nLane branches ahead of integrator:")
@@ -138,4 +157,5 @@ function main() {
   console.log(`STEADY STATE: integrator within ${THRESHOLD} commits of main.`)
 }
 
-main()
+// import-safe: only run when executed directly (tests import parsePendingInventory)
+if (process.argv[1] && import.meta.url === new URL(`file://${process.argv[1]}`).href) main()
