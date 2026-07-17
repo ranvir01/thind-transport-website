@@ -1,27 +1,14 @@
 import type { Metadata } from "next"
 import { getTrackedLoad } from "@/lib/hub/sharelinks"
-import { STATUS_LABELS, type LoadStatus } from "@/lib/hub/types"
 import { TrackRefresher } from "@/components/hub/TrackRefresher"
 import { StopTimeline } from "@/components/hub/StopTimeline"
+import { LoadProgressBar, PUBLIC_LOAD_FLOW, publicLoadProgress } from "@/components/hub/LoadProgressBar"
 
 export const dynamic = "force-dynamic"
 
 export const metadata: Metadata = {
   title: "Shipment Tracking",
   robots: { index: false, follow: false },
-}
-
-const PUBLIC_FLOW: LoadStatus[] = [
-  "booked", "dispatched", "at_pickup", "in_transit", "delivered",
-]
-
-function publicStatus(status: LoadStatus): { label: string; index: number } {
-  // Money statuses are internal — the public page shows "Delivered" at most.
-  if (["pod_received", "invoiced", "paid", "settled"].includes(status)) {
-    return { label: "Delivered", index: PUBLIC_FLOW.length - 1 }
-  }
-  const index = PUBLIC_FLOW.indexOf(status)
-  return { label: STATUS_LABELS[status] ?? status, index: index === -1 ? 0 : index }
 }
 
 function fmt(value: string | null): string {
@@ -49,9 +36,9 @@ export default async function TrackPage({ params }: { params: Promise<{ token: s
   }
 
   const { load, stops, carrierName, latestPosition } = tracked
-  const status = publicStatus(load.status)
+  const status = publicLoadProgress(load.status)
   const cancelled = load.status === "cancelled"
-  const live = !cancelled && status.index < PUBLIC_FLOW.length - 1
+  const live = !cancelled && status.index < PUBLIC_LOAD_FLOW.length - 1
 
   return (
     <div className="min-h-screen px-4 py-10">
@@ -71,11 +58,7 @@ export default async function TrackPage({ params }: { params: Promise<{ token: s
             </p>
           ) : (
             <div className="mt-6">
-              <div className="flex items-center gap-1.5">
-                {PUBLIC_FLOW.map((step, i) => (
-                  <div key={step} className={`h-2 flex-1 rounded-full ${i <= status.index ? "bg-gold" : "bg-white/10"}`} />
-                ))}
-              </div>
+              <LoadProgressBar status={load.status} />
               <p className="mt-2 text-sm font-bold text-white">
                 {status.label}
                 {latestPosition ? (
