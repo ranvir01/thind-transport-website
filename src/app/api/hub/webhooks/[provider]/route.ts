@@ -12,7 +12,8 @@
  *
  * A provider with business logic to apply (`factor` funding events, `efs`
  * daily-file drops — see `integrations/factor.ts` / `integrations/efs.ts`)
- * gets an entry in EVENT_PROCESSORS and runs right
+ * gets an entry in EVENT_PROCESSORS (`integrations/event-processors.ts`,
+ * shared with the manual retry action) and runs right
  * after its event is stored, marking `processed_at` only when the processor
  * reports the event was actually applied (or deliberately ignored) — an
  * event it couldn't yet match (e.g. no matching invoice) stays unprocessed
@@ -26,19 +27,10 @@ import { providerSpec } from "@/lib/hub/integrations/registry"
 import {
   EVENT_ID_HEADER, SIGNATURE_HEADER, isEventOutcomeFinal, verifyWebhookSignature, webhookEventId,
 } from "@/lib/hub/integrations/webhooks"
-import { processFactorEvent } from "@/lib/hub/integrations/factor"
-import { processEfsEvent } from "@/lib/hub/integrations/efs"
+import { EVENT_PROCESSORS } from "@/lib/hub/integrations/event-processors"
 import { query, queryOne } from "@/lib/hub/db"
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
-
-const EVENT_PROCESSORS: Record<
-  string,
-  (carrierId: string, event: { external_id: string; kind: string | null; payload: Record<string, unknown> }) => Promise<{ applied: boolean; reason?: string }>
-> = {
-  factor: processFactorEvent,
-  efs: processEfsEvent,
-}
 
 export async function POST(
   req: Request,

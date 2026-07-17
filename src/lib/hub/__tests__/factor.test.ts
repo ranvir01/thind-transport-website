@@ -14,7 +14,7 @@ import { getCredentials, hasCredentials } from "../credentials"
 import { getInvoice, recordPayment } from "../invoices"
 import { listDocuments } from "../documents"
 import { logAudit } from "../audit"
-import { normalizeFactorEvent, processFactorEvent, retryUnprocessedFactorEvents, submitInvoiceToFactor } from "../integrations/factor"
+import { normalizeFactorEvent, processFactorEvent, submitInvoiceToFactor } from "../integrations/factor"
 
 const queryMock = vi.mocked(query)
 const queryOneMock = vi.mocked(queryOne)
@@ -127,43 +127,6 @@ describe("processFactorEvent", () => {
     })
     const actor = recordPaymentMock.mock.calls[0][3] as unknown as { id: string | null }
     expect(actor.id).toBeNull()
-  })
-})
-
-describe("retryUnprocessedFactorEvents", () => {
-  it("no-ops when nothing is pending", async () => {
-    queryMock.mockResolvedValueOnce([])
-    const result = await retryUnprocessedFactorEvents(CARRIER)
-    expect(result).toEqual({ retried: 0, applied: 0, stillUnprocessed: 0 })
-    expect(queryOneMock).not.toHaveBeenCalled()
-  })
-
-  it("applies what it can, marks deliberate no-ops done, leaves transient misses pending for next time", async () => {
-    queryMock.mockResolvedValueOnce([
-      { id: "1", external_id: "evt-1", kind: "invoice.funded", payload: { invoiceNumber: "INV-1", amount: 100 } },
-      { id: "2", external_id: "evt-2", kind: "invoice.rejected", payload: {} },
-      { id: "3", external_id: "evt-3", kind: "invoice.funded", payload: { invoiceNumber: "INV-404", amount: 50 } },
-    ])
-    queryOneMock
-      .mockResolvedValueOnce({ id: "invoice-1" }) // evt-1 invoice lookup
-      .mockResolvedValueOnce(null) // evt-1 payment dedup — not already recorded
-      .mockResolvedValueOnce(null) // evt-3 invoice lookup — no match
-
-    const result = await retryUnprocessedFactorEvents(CARRIER)
-
-    expect(result).toEqual({ retried: 3, applied: 1, stillUnprocessed: 1 })
-    expect(recordPaymentMock).toHaveBeenCalledTimes(1)
-    // evt-1 (applied) and evt-2 (unhandled kind — deliberate no-op) both get marked processed;
-    // evt-3 (no matching invoice yet) is left for a later retry.
-    expect(queryMock).toHaveBeenCalledWith(expect.stringContaining("UPDATE hub.integration_events"), ["1"])
-    expect(queryMock).toHaveBeenCalledWith(expect.stringContaining("UPDATE hub.integration_events"), ["2"])
-    expect(queryMock).not.toHaveBeenCalledWith(expect.stringContaining("UPDATE hub.integration_events"), ["3"])
-  })
-
-  it("caps at 50 pending events per call", async () => {
-    queryMock.mockResolvedValueOnce([])
-    await retryUnprocessedFactorEvents(CARRIER)
-    expect(queryMock).toHaveBeenCalledWith(expect.stringContaining("LIMIT 50"), [CARRIER])
   })
 })
 

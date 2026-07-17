@@ -11,7 +11,7 @@ import { runEfsSync } from "@/lib/hub/integrations/efs"
 import { runComdataSync } from "@/lib/hub/integrations/comdata"
 import { runWexSync } from "@/lib/hub/integrations/wex"
 import { runQboSync } from "@/lib/hub/integrations/qbo"
-import { retryUnprocessedFactorEvents } from "@/lib/hub/integrations/factor"
+import { retryUnprocessedEvents } from "@/lib/hub/integrations/event-processors"
 import { logAudit } from "@/lib/hub/audit"
 import { query } from "@/lib/hub/db"
 import { actionError } from "@/lib/hub/action-error"
@@ -116,18 +116,18 @@ export async function syncIntegrationNowAction(
 }
 
 /**
- * Manual re-drain for webhook events a live delivery couldn't yet match (no
- * invoice, missing fields) — they sit in hub.integration_events with
- * processed_at IS NULL until someone retries. One provider today (factor);
- * add a case here when a second push-style provider gets a processor.
+ * Manual re-drain for webhook events a live delivery couldn't yet apply (no
+ * matching invoice, transient DB error mid-drop) — they sit in
+ * hub.integration_events with processed_at IS NULL until someone retries.
+ * Works for every provider in EVENT_PROCESSORS (event-processors.ts) — a new
+ * processor gets its retry surface for free, no case to add here.
  */
 export async function retryIntegrationEventsAction(
   provider: IntegrationProvider
 ): Promise<Result & { summary?: string }> {
   try {
     const user = await requireOwner()
-    if (provider !== "factor") throw new Error(`No event retry wired for ${provider} yet`)
-    const result = await retryUnprocessedFactorEvents(user.carrierId)
+    const result = await retryUnprocessedEvents(user.carrierId, provider)
     await logAudit({
       carrierId: user.carrierId, actorId: user.id, actorName: user.name,
       entityType: "integration", entityId: provider, action: "retry_events",

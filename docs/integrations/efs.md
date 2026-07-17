@@ -72,6 +72,10 @@ product). Of the three possible remedies, the **inbound file-drop route is now s
   columns ride along into `raw`), refuses rows without a transaction id instead of
   colliding them on an empty idempotency key, and lands rows through the SAME
   `ingestEfsRows` ON-CONFLICT path the cron sync uses. Replaying a file is a no-op.
+  A drop that fails mid-ingest (transient DB error) stays in `hub.integration_events`
+  with `processed_at IS NULL`; the EFS card shows the pending count with a
+  "Retry N events" button (`retryUnprocessedEvents`, `event-processors.ts` —
+  the same re-drain surface the factor card has, generalized 2026-07-17).
 - an SFTP poller in the **Go worker** (`services/go/hauldesk-worker`) exposing the parsed
   rows over its HTTP proxy — still the long-term home for a zero-infrastructure carrier
   (Vercel functions can't hold SFTP sessions; an SSH lib is a banned heavy TS dependency);

@@ -74,8 +74,9 @@ invoice existed, a malformed payload) sits in `hub.integration_events` with
 `processed_at IS NULL` — nothing re-runs it on its own. The Integrations
 settings page now surfaces a per-carrier pending count for `factor` and a
 "Retry N events" button (`retryIntegrationEventsAction` →
-`retryUnprocessedFactorEvents` in `factor.ts`), which re-applies
-`processFactorEvent` to the oldest 50 pending rows and marks each one done
+`retryUnprocessedEvents` in `event-processors.ts` — generic since 2026-07-17,
+every provider in `EVENT_PROCESSORS` gets the same surface), which re-applies
+the provider's processor to the oldest 50 pending rows and marks each one done
 using the same applied/no-op rule (`isEventOutcomeFinal`, `webhooks.ts`) the
 live webhook route uses — a manual retry never marks something "done"
 differently than a real delivery would have.
