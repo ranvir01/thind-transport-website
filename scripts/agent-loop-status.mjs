@@ -10,6 +10,7 @@
  * Exit 1 = integrator is ahead of main by more than AGENT_CATCHUP_THRESHOLD (catch-up mode).
  */
 import { execSync } from "node:child_process"
+import { buildInventory } from "./agent-branch-inventory.mjs"
 
 const INTEGRATOR = "origin/claude/hauldesk-project-setup-l1luoo"
 const MAIN = "origin/main"
@@ -67,6 +68,28 @@ function branchExists(name) {
   return git(`rev-parse --verify ${name}`).length > 0
 }
 
+/**
+ * Mismatch guard: a 0-pending answer must be verifiable, not suspicious.
+ * Rows come from buildInventory({ pendingOnly: false }) — when nothing is
+ * unpicked but branches are still ahead of main in raw commits, say so
+ * explicitly (patch-equivalent history) instead of printing a bare 0.
+ */
+export function formatPendingSummary(rows) {
+  const pending = rows.filter((r) => !r.onMain)
+  const lines = [`Pending claude/* branches (not on main): ${pending.length}`]
+  if (pending.length > 0) {
+    lines.push("  Run: npm run agent:branches")
+  } else {
+    const patchEquivalent = rows.filter((r) => r.onMain && r.aheadMain > 0)
+    if (patchEquivalent.length > 0) {
+      lines.push(
+        `  Verified 0 unpicked: ${patchEquivalent.length} branch(es) are ahead of main in raw commits but fully patch-equivalent.`
+      )
+    }
+  }
+  return lines
+}
+
 function main() {
   git("fetch origin --quiet")
 
@@ -88,19 +111,21 @@ function main() {
     for (const line of logLines(MAIN, INTEGRATOR)) console.log(`  ${line}`)
   }
 
-  const pendingOut = execSync("node scripts/agent-branch-inventory.mjs --json", {
-    encoding: "utf-8",
-    cwd: process.cwd(),
-  })
-  let pendingCount = 0
+  // In-process call — the old subprocess + JSON.parse handoff collapsed any
+  // failure (maxBuffer overflow, crash output) into a silent pending=0.
+  let inventoryRows = null
+  let inventoryError = null
   try {
-    pendingCount = JSON.parse(pendingOut).pending?.length ?? 0
-  } catch {
-    /* ignore */
+    inventoryRows = buildInventory({ pendingOnly: false, fetch: false })
+  } catch (err) {
+    inventoryError = err
   }
-  console.log(`\nPending claude/* branches (not on main): ${pendingCount}`)
-  if (pendingCount > 0) {
-    console.log("  Run: npm run agent:branches")
+  console.log("")
+  if (!inventoryRows) {
+    console.log(`Pending claude/* branches: UNKNOWN — inventory failed: ${inventoryError?.message ?? inventoryError}`)
+    console.log("  Do not trust this run's steady-state verdict. Run: npm run agent:branches")
+  } else {
+    for (const line of formatPendingSummary(inventoryRows)) console.log(line)
   }
 
   console.log("\nLane branches ahead of integrator:")
@@ -135,7 +160,12 @@ function main() {
     )
     process.exit(1)
   }
+  if (inventoryError) {
+    console.log("INVENTORY FAILED: pending-branch count is unverified — treat this run as inconclusive.")
+    process.exit(1)
+  }
   console.log(`STEADY STATE: integrator within ${THRESHOLD} commits of main.`)
 }
 
-main()
+// import-safe: only run when executed directly (tests import formatPendingSummary)
+if (process.argv[1] && import.meta.url === new URL(`file://${process.argv[1]}`).href) main()

@@ -71,8 +71,8 @@ function unpickedCommitCount(ref, base) {
   return countUnpickedFromCherry(out)
 }
 
-function buildInventory({ pendingOnly }) {
-  git("fetch origin --quiet")
+export function buildInventory({ pendingOnly, fetch = true }) {
+  if (fetch) git("fetch origin --quiet")
   const branches = listClaudeBranches()
   const rows = []
 
@@ -119,8 +119,10 @@ function main() {
   const rows = buildInventory({ pendingOnly: !showAll })
 
   if (json) {
+    // No process.exit() here: exiting right after console.log truncates piped
+    // stdout at the ~64KB pipe buffer — consumers then see invalid JSON.
     console.log(JSON.stringify({ integrator: INTEGRATOR, main: MAIN, pending: rows }, null, 2))
-    process.exit(rows.length ? 0 : 0)
+    return
   }
 
   console.log("LoadOff agent branch inventory")
@@ -152,5 +154,5 @@ function main() {
   console.log(`  git merge origin/${top.branch.split("/").slice(1).join("/")}`)
 }
 
-// import-safe: only run when executed directly (tests import countUnpickedFromCherry)
+// import-safe: only run when executed directly (agent-loop-status.mjs and tests import from here)
 if (process.argv[1] && import.meta.url === new URL(`file://${process.argv[1]}`).href) main()
