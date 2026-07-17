@@ -119,8 +119,11 @@ function main() {
   const rows = buildInventory({ pendingOnly: !showAll })
 
   if (json) {
+    // No process.exit() here: exiting kills the process before a piped stdout
+    // finishes flushing, truncating the JSON mid-string for large inventories
+    // (agent-loop-status.mjs read 146KB of a 232KB report and parsed 0 pending).
     console.log(JSON.stringify({ integrator: INTEGRATOR, main: MAIN, pending: rows }, null, 2))
-    process.exit(rows.length ? 0 : 0)
+    return
   }
 
   console.log("LoadOff agent branch inventory")
