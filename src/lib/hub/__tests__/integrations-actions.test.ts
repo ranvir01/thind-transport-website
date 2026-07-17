@@ -13,7 +13,15 @@ vi.mock("@/lib/hub/session", () => ({
   requireOwner: vi.fn(async () => ({ id: "u1", name: "Owner", carrierId: "carrier-1" })),
 }))
 vi.mock("@/lib/hub/audit", () => ({ logAudit: vi.fn(async () => undefined) }))
-vi.mock("@/lib/hub/db", () => ({ query: vi.fn(async () => []) }))
+// queryOne backs getCredentials' merge-then-save read. It must be mocked even
+// though credentialsConfigured is mocked true: getCredentials calls its
+// module-LOCAL credentialsConfigured (partial mocks only rewire importers),
+// so with a real CREDENTIALS_KEY in the env (any shell that sourced
+// .env.local) it reaches the DB and an incomplete mock fails the save test.
+vi.mock("@/lib/hub/db", () => ({
+  query: vi.fn(async () => []),
+  queryOne: vi.fn(async () => null),
+}))
 vi.mock("@/lib/hub/credentials", async () => {
   const actual = await vi.importActual<typeof import("@/lib/hub/credentials")>("@/lib/hub/credentials")
   return { ...actual, credentialsConfigured: vi.fn(() => true), saveCredentials: vi.fn(async () => undefined) }
