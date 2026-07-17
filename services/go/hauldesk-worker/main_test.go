@@ -98,6 +98,47 @@ func TestRouteMilesRejectsBadInput(t *testing.T) {
 	}
 }
 
+func TestRouteMilesRejectsOutOfRangeCoordinates(t *testing.T) {
+	// Out-of-range coordinates are always a client bug (swapped lat/lng, meters
+	// instead of degrees). Without the guard they were proxied to OSRM as
+	// garbage, and on nonsense latitudes haversineMiles can leave asin's domain
+	// and return NaN — json.Encode refuses NaN after the 200 header is written,
+	// so the worker answered 200 with an EMPTY body (verified empirically:
+	// lat ±13090.69 yields NaN). All of these must be a clean 400 instead.
+	t.Setenv("OSRM_URL", "http://127.0.0.1:1")
+	cases := map[string]string{
+		"latitude beyond +90":  `{"origin":{"lat":91,"lng":0},"dest":{"lat":0,"lng":1}}`,
+		"latitude below -90":   `{"origin":{"lat":0,"lng":0},"dest":{"lat":-90.0001,"lng":1}}`,
+		"longitude beyond 180": `{"origin":{"lat":0,"lng":180.5},"dest":{"lat":0,"lng":1}}`,
+		"longitude below -180": `{"origin":{"lat":0,"lng":0},"dest":{"lat":0,"lng":-181}}`,
+		"swapped lat/lng":      `{"origin":{"lat":-122.3321,"lng":47.6062},"dest":{"lat":45.5152,"lng":-122.6784}}`,
+		"NaN-producing pair":   `{"origin":{"lat":-13090.69,"lng":0},"dest":{"lat":13090.69,"lng":180}}`,
+	}
+	for name, body := range cases {
+		t.Run(name, func(t *testing.T) {
+			rec := doRequest(t, http.MethodPost, "/route/miles", body, nil)
+			if rec.Code != http.StatusBadRequest {
+				t.Fatalf("expected 400 for %s, got %d (body %q)", name, rec.Code, rec.Body.String())
+			}
+		})
+	}
+}
+
+func TestRouteMilesAcceptsBoundaryCoordinates(t *testing.T) {
+	// The poles and the antimeridian are legal coordinates — the range guard
+	// must be inclusive, and the worker still answers (labeled fallback here,
+	// since OSRM is unreachable in this test).
+	t.Setenv("OSRM_URL", "http://127.0.0.1:1")
+	rec := doRequest(t, http.MethodPost, "/route/miles",
+		`{"origin":{"lat":90,"lng":-180},"dest":{"lat":-90,"lng":180}}`, nil)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("boundary coordinates must be accepted, got %d (body %q)", rec.Code, rec.Body.String())
+	}
+	if payload := decodeBody(t, rec); payload["source"] != "haversine-fallback" {
+		t.Fatalf("expected labeled fallback answer, got %v", payload)
+	}
+}
+
 func TestRouteMilesOSRMSource(t *testing.T) {
 	osrm := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if !strings.HasPrefix(r.URL.Path, "/route/v1/driving/") {

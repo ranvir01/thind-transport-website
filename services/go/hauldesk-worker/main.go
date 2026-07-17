@@ -29,6 +29,17 @@ type latLng struct {
 	Lng float64 `json:"lng"`
 }
 
+// valid reports whether the point is a real WGS84 coordinate. JSON cannot
+// carry NaN/Inf, so a plain range check is sufficient. Out-of-range values
+// are always a client bug (swapped lat/lng, meters instead of degrees) and
+// must be rejected up front: they would otherwise be proxied to OSRM as
+// garbage, and haversineMiles on nonsense latitudes can leave asin's domain
+// and return NaN — which json.Encode refuses after the 200 header is already
+// written, producing an empty-body 200.
+func (p latLng) valid() bool {
+	return p.Lat >= -90 && p.Lat <= 90 && p.Lng >= -180 && p.Lng <= 180
+}
+
 type routeMilesRequest struct {
 	Origin latLng `json:"origin"`
 	Dest   latLng `json:"dest"`
@@ -81,6 +92,10 @@ func routeMilesHandler(w http.ResponseWriter, r *http.Request) {
 	var req routeMilesRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "bad request", http.StatusBadRequest)
+		return
+	}
+	if !req.Origin.valid() || !req.Dest.valid() {
+		http.Error(w, "coordinates out of range", http.StatusBadRequest)
 		return
 	}
 
