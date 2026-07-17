@@ -187,6 +187,33 @@ export function resolvePnlRange(fromParam?: string | null, toParam?: string | nu
   return { from, to }
 }
 
+export type PnlRangePreset = "mtd" | "last-quarter" | "ytd"
+
+/**
+ * Calendar presets for the Reports range form. UTC day math to match
+ * `resolvePnlRange` (both slice `toISOString`); "last-quarter" is the most
+ * recent COMPLETED calendar quarter, so its numbers stop moving once the
+ * quarter closes.
+ */
+export function presetPnlRange(preset: PnlRangePreset, today = new Date()): PnlRange {
+  const iso = (d: Date) => d.toISOString().slice(0, 10)
+  const y = today.getUTCFullYear()
+  const m = today.getUTCMonth()
+  switch (preset) {
+    case "mtd":
+      return { from: iso(new Date(Date.UTC(y, m, 1))), to: iso(today) }
+    case "last-quarter": {
+      const startMonth = Math.floor(m / 3) * 3 - 3
+      return {
+        from: iso(new Date(Date.UTC(y, startMonth, 1))),
+        to: iso(new Date(Date.UTC(y, startMonth + 3, 0))),
+      }
+    }
+    case "ytd":
+      return { from: iso(new Date(Date.UTC(y, 0, 1))), to: iso(today) }
+  }
+}
+
 export async function truckPnlRange(carrierId: string, range: PnlRange): Promise<TruckPnl[]> {
   const rows = await query<TruckPnl>(
     `SELECT t.id AS truck_id, t.unit_number,

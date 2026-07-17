@@ -1,6 +1,6 @@
 import Link from "next/link"
 import { Download } from "lucide-react"
-import { resolvePnlRange, truckPnlRange } from "@/lib/hub/reports"
+import { presetPnlRange, resolvePnlRange, truckPnlRange, type PnlRangePreset } from "@/lib/hub/reports"
 import { computeFleetKpis } from "@/lib/hub/kpi"
 import { requirePermissionPage } from "@/lib/hub/session"
 import { fmtCents } from "@/lib/hub/types"
@@ -14,6 +14,12 @@ export const dynamic = "force-dynamic"
 const PNL_EXPORT_URL = "/api/hub/exports/pnl"
 const PNL_RANGE_EXPORT_URL = "/hub/reports/export"
 const LANES_EXPORT_URL = "/api/hub/exports/lanes"
+
+const RANGE_PRESETS: { preset: PnlRangePreset; label: string }[] = [
+  { preset: "mtd", label: "Month to date" },
+  { preset: "last-quarter", label: "Last quarter" },
+  { preset: "ytd", label: "Year to date" },
+]
 
 export default async function ReportsPage({
   searchParams,
@@ -50,6 +56,14 @@ export default async function ReportsPage({
   const pct = (p: number | null) => (p == null ? "—" : `${p}%`)
 
   const hasCustomRange = Boolean(params.from || params.to)
+  const presetLinks = RANGE_PRESETS.map(({ preset, label }) => {
+    const r = presetPnlRange(preset)
+    return {
+      label,
+      href: `/hub/reports?from=${r.from}&to=${r.to}`,
+      active: hasCustomRange && range.from === r.from && range.to === r.to,
+    }
+  })
   const fmtDay = (iso: string) =>
     new Date(`${iso}T00:00:00`).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
   const rangeLabel = hasCustomRange ? `${fmtDay(range.from)} – ${fmtDay(range.to)}` : "last 92 days"
@@ -97,6 +111,22 @@ export default async function ReportsPage({
         >
           Apply
         </button>
+        <div className="flex flex-wrap items-center gap-2">
+          {presetLinks.map((p) => (
+            <Link
+              key={p.label}
+              href={p.href}
+              aria-current={p.active ? "true" : undefined}
+              className={`inline-flex min-h-[44px] items-center rounded-xl border px-3 text-sm font-semibold ${
+                p.active
+                  ? "border-border-strong bg-accent-soft text-accent-text"
+                  : "border-border-strong bg-surface text-fg-2 hover:bg-hover"
+              }`}
+            >
+              {p.label}
+            </Link>
+          ))}
+        </div>
         {hasCustomRange && (
           <Link href="/hub/reports" className="inline-flex min-h-[44px] items-center text-sm font-semibold text-accent-text hover:underline">
             Reset to last 92 days
