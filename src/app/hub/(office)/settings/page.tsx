@@ -11,7 +11,7 @@ const AREAS = [
   {
     href: "/hub/settings/users",
     label: "Company & users",
-    hint: "Carrier profile, pay rules, notifications, who can log in",
+    hint: "Company profile — name, phone, address on your invoices — and who can log in",
     icon: Users,
     ownerOnly: true,
   },
