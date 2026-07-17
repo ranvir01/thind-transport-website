@@ -25,7 +25,7 @@ type ImportKind = "loads" | "trucks" | "drivers" | "customers" | "fuel" | "tolls
 const KINDS: { key: ImportKind; label: string; hint: string; fields: readonly ImportFieldDef[]; templateKind?: "loads" | "fuel" | "tolls" | "positions" }[] = [
   { key: "loads", label: "Load history", hint: "Your Excel load sheet — history lands as settled, brokers auto-created.", fields: IMPORT_FIELDS as unknown as ImportFieldDef[], templateKind: "loads" },
   { key: "trucks", label: "Trucks", hint: "Your fleet list — unit numbers already on file are skipped; rows with a VIN get year, make & model filled in automatically.", fields: TRUCK_IMPORT_FIELDS },
-  { key: "drivers", label: "Drivers", hint: "Driver roster — pay starts at your Settings default, everything editable per driver after.", fields: DRIVER_IMPORT_FIELDS },
+  { key: "drivers", label: "Drivers", hint: "Driver roster — pay starts at your Settings default, everything editable per driver after. Rows with an email can get a driver-app invite.", fields: DRIVER_IMPORT_FIELDS },
   { key: "customers", label: "Brokers", hint: "Broker / customer list — names already on file are skipped, MC numbers cleaned up.", fields: CUSTOMER_IMPORT_FIELDS },
   { key: "fuel", label: "Fuel", hint: "Any card program statement (EFS, Comdata, WEX…). Idempotent — re-import safely.", fields: FUEL_IMPORT_FIELDS, templateKind: "fuel" },
   { key: "tolls", label: "Tolls", hint: "Transponder statements (BestPass, state systems).", fields: TOLL_IMPORT_FIELDS, templateKind: "tolls" },
@@ -121,6 +121,7 @@ export function ImportWizard({ initialKind = "loads" }: { initialKind?: string }
   const [rows, setRows] = useState<string[][]>([])
   const [mapping, setMapping] = useState<Mapping>({})
   const [asHistory, setAsHistory] = useState(true)
+  const [sendInvites, setSendInvites] = useState(true)
   const [program, setProgram] = useState("")
   const [templates, setTemplates] = useState<Template[]>([])
   const [templateName, setTemplateName] = useState("")
@@ -183,7 +184,7 @@ export function ImportWizard({ initialKind = "loads" }: { initialKind?: string }
           res = await importTrucksAction(mappedRows)
           break
         case "drivers":
-          res = await importDriversAction(mappedRows)
+          res = await importDriversAction(mappedRows, { sendInvites })
           break
         case "customers":
           res = await importCustomersAction(mappedRows)
@@ -367,6 +368,19 @@ export function ImportWizard({ initialKind = "loads" }: { initialKind?: string }
               </span>
             </label>
           ) : null}
+          {kind === "drivers" ? (
+            <label className="mb-4 flex items-center gap-3 min-h-[44px] cursor-pointer">
+              <input
+                type="checkbox"
+                checked={sendInvites}
+                onChange={(e) => setSendInvites(e.target.checked)}
+                className="h-5 w-5 rounded border-border-strong accent-accent"
+              />
+              <span className="text-sm text-fg-2">
+                Email each driver an app invite (only rows with an email address)
+              </span>
+            </label>
+          ) : null}
           <button
             onClick={runImport}
             disabled={pending}
@@ -396,6 +410,7 @@ export function ImportWizard({ initialKind = "loads" }: { initialKind?: string }
             {result.customersCreated != null ? ` · ${result.customersCreated} customers created` : ""}
             {result.skippedDuplicates != null ? ` · ${result.skippedDuplicates} duplicates skipped` : ""}
             {(result.vinDecoded ?? 0) > 0 ? ` · ${result.vinDecoded} decoded from VIN` : ""}
+            {(result.invitesSent ?? 0) > 0 ? ` · ${result.invitesSent} app invites emailed` : ""}
             {` · ${result.failed.length} failed`}
           </p>
           {result.failed.length > 0 ? (

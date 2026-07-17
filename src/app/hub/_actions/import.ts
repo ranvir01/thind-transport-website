@@ -7,7 +7,8 @@ import { createLoad } from "@/lib/hub/loads"
 import { findCustomerByName, createCustomer } from "@/lib/hub/customers"
 import { createTruck } from "@/lib/hub/fleet"
 import { createDriver } from "@/lib/hub/drivers"
-import { getCarrierSettings } from "@/lib/hub/settings"
+import { getCarrier, getCarrierSettings } from "@/lib/hub/settings"
+import { createDriverInviteToken } from "@/lib/hub/driver-invite"
 import { query } from "@/lib/hub/db"
 import { logAudit } from "@/lib/hub/audit"
 import { classifyFuelUse } from "@/lib/hub/fuel-core"
@@ -26,6 +27,7 @@ export interface ImportResult {
   customersCreated?: number
   skippedDuplicates?: number
   vinDecoded?: number
+  invitesSent?: number
 }
 
 type GenericRow = Record<string, string>
@@ -255,7 +257,43 @@ export async function importTrucksAction(rows: GenericRow[]): Promise<ImportResu
   return { ok: failed.length === 0, imported, failed, skippedDuplicates, vinDecoded }
 }
 
-export async function importDriversAction(rows: GenericRow[]): Promise<ImportResult> {
+// Sent after the roster loop so one dead SMTP host can't stall row processing;
+// bail on the first failure instead of burning the connection timeout per driver.
+async function sendDriverInvites(
+  carrierId: string,
+  invites: { driverId: string; email: string; firstName: string }[]
+): Promise<number> {
+  const carrier = await getCarrier(carrierId).catch(() => null)
+  const carrierName = carrier?.name ?? "Your carrier"
+  const baseUrl = process.env.NEXTAUTH_URL ?? "http://localhost:3000"
+  const { createMailTransport, mailFrom } = await import("@/lib/mailer")
+  const transport = createMailTransport()
+  let sent = 0
+  for (const invite of invites) {
+    const token = createDriverInviteToken({ carrierId, driverId: invite.driverId, email: invite.email })
+    if (!token) break // no auth secret configured — no invite could ever verify
+    try {
+      await transport.sendMail({
+        from: mailFrom(carrierName),
+        to: invite.email,
+        subject: `${carrierName} set you up with the driver app`,
+        text:
+          `Hi ${invite.firstName},\n\n${carrierName} added you to their dispatch system. ` +
+          `The driver app shows your loads, lets you upload PODs from your phone, and tracks your pay.\n\n` +
+          `Set your password here (link valid 7 days):\n${baseUrl}/hub/driver-invite/${token}\n`,
+      })
+      sent++
+    } catch {
+      break
+    }
+  }
+  return sent
+}
+
+export async function importDriversAction(
+  rows: GenericRow[],
+  options?: { sendInvites?: boolean }
+): Promise<ImportResult> {
   let user
   try {
     user = await requirePermission("imports:run")
@@ -268,6 +306,7 @@ export async function importDriversAction(rows: GenericRow[]): Promise<ImportRes
   // wizard — every imported driver starts on the standard company rate.
   const settings = await getCarrierSettings(user.carrierId)
   const failed: { row: number; error: string }[] = []
+  const inviteQueue: { driverId: string; email: string; firstName: string }[] = []
   let imported = 0
   let skippedDuplicates = 0
 
@@ -299,19 +338,25 @@ export async function importDriversAction(rows: GenericRow[]): Promise<ImportRes
       })
       existing.set(nameKey, driver.id)
       imported++
+      const email = row.email?.trim().toLowerCase()
+      if (options?.sendInvites && email && email.includes("@")) {
+        inviteQueue.push({ driverId: driver.id, email, firstName: first })
+      }
     } catch (err) {
       failed.push({ row: i + 1, error: actionErrorMessage(err, "Unknown error") })
     }
   }
 
+  const invitesSent = inviteQueue.length > 0 ? await sendDriverInvites(user.carrierId, inviteQueue) : 0
+
   await logAudit({
     carrierId: user.carrierId, actorId: user.id, actorName: user.name,
     entityType: "import", entityId: new Date().toISOString(),
-    action: "import_drivers", newValue: { imported, failed: failed.length, skippedDuplicates },
+    action: "import_drivers", newValue: { imported, failed: failed.length, skippedDuplicates, invitesSent },
   })
   revalidatePath("/hub/drivers")
   revalidatePath("/hub")
-  return { ok: failed.length === 0, imported, failed, skippedDuplicates }
+  return { ok: failed.length === 0, imported, failed, skippedDuplicates, invitesSent }
 }
 
 export async function importCustomersAction(rows: GenericRow[]): Promise<ImportResult> {

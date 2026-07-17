@@ -38,7 +38,11 @@ export default async function proxy(request: NextRequest) {
 
   // ---- Hub (operations system) ----
   // Public by design: invitation-accept (token-gated) and self-serve signup.
-  if (pathname.startsWith("/hub/portal/accept") || pathname === "/hub/signup") {
+  if (
+    pathname.startsWith("/hub/portal/accept") ||
+    pathname.startsWith("/hub/driver-invite/") ||
+    pathname === "/hub/signup"
+  ) {
     return NextResponse.next()
   }
   if (pathname.startsWith("/hub") && pathname !== "/hub/login") {

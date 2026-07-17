@@ -21,14 +21,24 @@ vi.mock("@/lib/hub/settings", () => ({
   getCarrierSettings: vi.fn(async () => ({
     pay: { companyDriverPerMile: 0.62, ownerOperatorPercentage: 0.9, payLoadedMilesOnly: false },
   })),
+  getCarrier: vi.fn(async () => ({ name: "Demo Carrier" })),
 }))
 vi.mock("@/lib/hub/audit", () => ({ logAudit: vi.fn(async () => undefined) }))
 vi.mock("@/lib/hub/db", () => ({ query: vi.fn(async () => []) }))
 vi.mock("@/lib/hub/vin", () => ({ decodeVin: vi.fn(async () => null) }))
+vi.mock("@/lib/hub/driver-invite", () => ({
+  createDriverInviteToken: vi.fn(() => "signed-token"),
+}))
+const { sendMailMock } = vi.hoisted(() => ({ sendMailMock: vi.fn(async () => undefined) }))
+vi.mock("@/lib/mailer", () => ({
+  createMailTransport: vi.fn(() => ({ sendMail: sendMailMock })),
+  mailFrom: vi.fn((name: string) => `"${name}" <noreply@test>`),
+}))
 
 import { query } from "@/lib/hub/db"
 import { logAudit } from "@/lib/hub/audit"
 import { decodeVin } from "@/lib/hub/vin"
+import { createDriverInviteToken } from "@/lib/hub/driver-invite"
 import { createTruck } from "@/lib/hub/fleet"
 import { createDriver } from "@/lib/hub/drivers"
 import { createCustomer, findCustomerByName } from "@/lib/hub/customers"
@@ -149,6 +159,53 @@ describe("importDriversAction", () => {
     const result = await importDriversAction([{ first_name: "OnlyFirst" }])
     expect(result.imported).toBe(0)
     expect(result.failed).toHaveLength(1)
+  })
+
+  it("emails an app invite to created rows with an email when asked to", async () => {
+    const result = await importDriversAction(
+      [
+        { first_name: "Amar", last_name: "Gill", email: "Amar@Example.com" },
+        { first_name: "Sukh", last_name: "Dhillon" }, // no email — no invite
+      ],
+      { sendInvites: true }
+    )
+    expect(result.imported).toBe(2)
+    expect(result.invitesSent).toBe(1)
+    expect(createDriverInviteToken).toHaveBeenCalledWith({
+      carrierId: "carrier-1", driverId: "d-new", email: "amar@example.com",
+    })
+    expect(sendMailMock).toHaveBeenCalledTimes(1)
+    expect(sendMailMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        to: "amar@example.com",
+        text: expect.stringContaining("/hub/driver-invite/signed-token"),
+      })
+    )
+    expect(logAuditMock).toHaveBeenCalledWith(
+      expect.objectContaining({ newValue: expect.objectContaining({ invitesSent: 1 }) })
+    )
+  })
+
+  it("sends nothing when invites are not requested", async () => {
+    const result = await importDriversAction([
+      { first_name: "Amar", last_name: "Gill", email: "amar@example.com" },
+    ])
+    expect(result.invitesSent).toBe(0)
+    expect(sendMailMock).not.toHaveBeenCalled()
+  })
+
+  it("stops after the first SMTP failure instead of stalling the batch", async () => {
+    sendMailMock.mockRejectedValueOnce(new Error("connect ETIMEDOUT"))
+    const result = await importDriversAction(
+      [
+        { first_name: "A", last_name: "One", email: "one@example.com" },
+        { first_name: "B", last_name: "Two", email: "two@example.com" },
+      ],
+      { sendInvites: true }
+    )
+    expect(result.imported).toBe(2) // rows still land — email is best-effort
+    expect(result.invitesSent).toBe(0)
+    expect(sendMailMock).toHaveBeenCalledTimes(1)
   })
 })
 

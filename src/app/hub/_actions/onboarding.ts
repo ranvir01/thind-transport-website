@@ -7,6 +7,7 @@
  */
 import bcrypt from "bcrypt"
 import { hubDb, queryOne } from "@/lib/hub/db"
+import { acceptDriverInvite } from "@/lib/hub/driver-invite"
 import { getHubUser, requireOwner } from "@/lib/hub/session"
 import { logAudit } from "@/lib/hub/audit"
 import { actionError } from "@/lib/hub/action-error"
@@ -214,6 +215,19 @@ export async function gettingStartedState(): Promise<GettingStarted | null> {
     customers: Number(row.customers) > 0,
     loads: Number(row.loads) > 0,
     packet: Number(row.packet) > 0,
+  }
+}
+
+/** Public: a driver accepts their app invite (token-gated; no session required). */
+export async function acceptDriverInviteAction(
+  token: string,
+  input: { password: string }
+): Promise<Result & { email?: string }> {
+  if ((input.password ?? "").length < 8) return { ok: false, error: "Password needs 8+ characters" }
+  try {
+    return await acceptDriverInvite(token, { password: input.password })
+  } catch (err) {
+    return actionError(err, "Could not create the account")
   }
 }
 
