@@ -76,7 +76,11 @@ export function normalizeFactorEvent(payload: Record<string, unknown>): {
 export async function processFactorEvent(
   carrierId: string,
   event: FactorEvent,
-  actor: { id: string; name: string } = { id: "system:factor", name: "Factoring webhook" }
+  // System actors carry a null id (the detention.ts convention): actor_id
+  // columns are UUIDs, so a "system:factor"-style sentinel makes recordPayment's
+  // load-paid cascade throw AFTER the payment lands and silently drops the
+  // payment audit row — the event then sits unprocessed forever.
+  actor: { id: string | null; name: string } = { id: null, name: "Factoring webhook" }
 ): Promise<FactorEventOutcome> {
   if (!event.kind || !FUNDING_EVENT_KINDS.has(event.kind)) {
     return { applied: false, invoiceNumber: null, reason: `unhandled event kind: ${event.kind ?? "none"}` }
@@ -100,7 +104,10 @@ export async function processFactorEvent(
   )
   if (existing) return { applied: false, invoiceNumber, reason: "already recorded" }
 
-  await recordPayment(carrierId, invoice.id, { amountCents, paidOn, method: "factor-advance", reference }, actor)
+  // recordPayment's actor sinks (logAudit, changeLoadStatus) accept a null id;
+  // its parameter type is just narrower than they are (widening it lives in
+  // invoices.ts — outside this lane, requested via Backlog).
+  await recordPayment(carrierId, invoice.id, { amountCents, paidOn, method: "factor-advance", reference }, actor as { id: string; name: string })
   return { applied: true, invoiceNumber }
 }
 

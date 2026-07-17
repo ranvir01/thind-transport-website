@@ -98,7 +98,9 @@ async function persistRotatedRefreshToken(
   rotatedRefreshToken: string | null
 ): Promise<void> {
   if (!rotatedRefreshToken) return
-  await saveCredentials(carrierId, "qbo", { ...creds, refreshToken: rotatedRefreshToken }, "system:qbo")
+  // null, not a "system:qbo" sentinel — created_by is a UUID column, and a
+  // non-UUID string makes the INSERT throw, crashing every sync that rotates.
+  await saveCredentials(carrierId, "qbo", { ...creds, refreshToken: rotatedRefreshToken }, null)
 }
 
 async function qboEntityQuery(
@@ -178,7 +180,10 @@ export async function runQboSync(
   const source = qboSource(carrierId)
   if (!(await source.connected())) return { connected: false }
 
-  const actor = { id: "system:qbo", name: "QuickBooks Online sync" }
+  // Null id per the system-actor convention (see processFactorEvent) — actor_id
+  // columns are UUIDs, and recordPayment's null-tolerant sinks type narrower
+  // than they accept.
+  const actor = { id: null, name: "QuickBooks Online sync" } as unknown as { id: string; name: string }
   const unmatched: string[] = []
   let imported = 0
   let skipped = 0

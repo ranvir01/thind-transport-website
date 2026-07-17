@@ -159,11 +159,13 @@ describe("qboSource (SyncSource<QboPaymentRow> contract)", () => {
       { ok: true, json: async () => ({ QueryResponse: { Payment: [] } }) }
     )
     await qboSource(CARRIER).pull()
+    // createdBy must be null for system rotation — created_by is a UUID column,
+    // and the old "system:qbo" sentinel crashed the INSERT on every rotation.
     expect(saveCredentialsMock).toHaveBeenCalledWith(
       CARRIER,
       "qbo",
       { ...CREDS, refreshToken: "rtok-new" },
-      "system:qbo"
+      null
     )
   })
 
@@ -258,11 +260,13 @@ describe("runQboSync", () => {
     })
     const result = await runQboSync(CARRIER)
     expect(result).toEqual({ connected: true, imported: 1, skipped: 0, unmatched: [] })
+    // Actor id must be null (UUID column) — a "system:qbo" sentinel made the
+    // load-paid cascade throw after money moved. See factor.test.ts regression.
     expect(recordPaymentMock).toHaveBeenCalledWith(
       CARRIER,
       "invoice-1",
       { amountCents: 4000, paidOn: "2026-06-01", method: null, reference: "qbo:A" },
-      { id: "system:qbo", name: "QuickBooks Online sync" }
+      { id: null, name: "QuickBooks Online sync" }
     )
   })
 

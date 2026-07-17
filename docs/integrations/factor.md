@@ -80,6 +80,18 @@ using the same applied/no-op rule (`isEventOutcomeFinal`, `webhooks.ts`) the
 live webhook route uses — a manual retry never marks something "done"
 differently than a real delivery would have.
 
+The whole path is live-driven on the local rig (2026-07-17, 38 checks):
+connect through the real form, unsigned/mis-signed deliveries 401 and store
+nothing (probes visible in sync history), a signed `invoice.funded` pays a
+real invoice inline and replays as a no-op duplicate, an event arriving
+before its invoice exists parks pending → card warns → an early retry
+honestly reports "still unmatched" → one-click-invoicing the load makes the
+next retry apply it and the warning clears. One rule the drive enforced:
+**system actors carry `id: null`** — `actor_id`/`created_by` columns are
+UUIDs, and the old `"system:factor"`/`"system:qbo"` sentinel strings made
+`recordPayment`'s load-paid cascade throw after money moved (and crashed
+QBO's refresh-token rotation).
+
 ## Open questions for the next pass
 
 - Wire an actual "Submit to factor" button — this lane's territory doesn't

@@ -41,7 +41,9 @@ export async function saveCredentials(
   carrierId: string,
   provider: IntegrationProvider,
   payload: Record<string, string>,
-  createdBy: string
+  // Null for system writers (e.g. QBO refresh-token rotation) — created_by is
+  // a UUID column, so any non-UUID sentinel string would make the INSERT throw.
+  createdBy: string | null
 ): Promise<void> {
   const envelope = encryptPayload(payload)
   await query(

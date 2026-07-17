@@ -112,8 +112,21 @@ describe("processFactorEvent", () => {
     expect(recordPaymentMock).toHaveBeenCalledWith(
       CARRIER, "invoice-1",
       { amountCents: 87550, paidOn: "2026-06-01", method: "factor-advance", reference: "factor:evt-9" },
-      { id: "system:factor", name: "Factoring webhook" }
+      { id: null, name: "Factoring webhook" }
     )
+  })
+
+  // Regression (found on the live rig): actor_id columns are UUIDs, so a
+  // "system:factor"-style sentinel id made recordPayment's load-paid cascade
+  // throw AFTER the payment landed — money moved, the audit row was silently
+  // dropped, and the event sat pending forever. System actors carry id: null.
+  it("default actor id is null, never a non-UUID sentinel string", async () => {
+    queryOneMock.mockResolvedValueOnce({ id: "invoice-1" }).mockResolvedValueOnce(null)
+    await processFactorEvent(CARRIER, {
+      external_id: "evt-10", kind: "invoice.funded", payload: { invoiceNumber: "INV-1", amount: 100 },
+    })
+    const actor = recordPaymentMock.mock.calls[0][3] as unknown as { id: string | null }
+    expect(actor.id).toBeNull()
   })
 })
 
