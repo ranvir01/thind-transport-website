@@ -51,8 +51,11 @@ export default async function IntegrationsPage() {
     // not every provider has a manual trigger wired yet (e.g. mailbox is poll-only today).
     canSync: MANUAL_SYNC_PROVIDERS.has(spec.id),
     status: spec.status,
+    // Push-style providers get their inbound URL, and so does any poll
+    // provider that accepts signed file drops (a `webhookSecret` field in the
+    // registry is the marker — e.g. EFS's daily CSV forward).
     webhookUrl:
-      spec.sync === "webhook"
+      spec.sync === "webhook" || spec.fields.some((f) => f.key === "webhookSecret")
         ? `${baseUrl}/api/hub/webhooks/${spec.id}?carrier=${user.carrierId}`
         : undefined,
     pendingEvents: EVENT_RETRY_PROVIDERS.has(spec.id) ? (pendingEventsByProvider.get(spec.id) ?? 0) : undefined,

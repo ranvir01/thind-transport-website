@@ -7,7 +7,18 @@
  * credentials the source reports `connected(): false` and the CSV fuel
  * import stays the product — the rest of the app never knows which path a
  * transaction arrived through.
+ *
+ * Transport reality (researched 2026-07-11, docs/integrations/efs.md): the
+ * feed EFS actually provisions is a daily CSV file over SFTP — there is no
+ * REST endpoint for `efsSource().pull()` to hit. Vercel functions can't hold
+ * SFTP sessions and an SSH lib is a banned heavy dependency, so the shipped
+ * inbound path is a FILE DROP: any forwarder (a one-line curl in a cron on
+ * the office machine, or the Go worker later) POSTs the daily file to
+ * `/api/hub/webhooks/efs?carrier=<uuid>` as `{"event":"fuel.batch","csv":…}`,
+ * HMAC-signed with the carrier's `webhookSecret`. `processEfsEvent` parses it
+ * and lands rows through the SAME idempotent ingest the cron sync uses.
  */
+import { parseCsv } from "../csv"
 import { getCredentials, hasCredentials } from "../credentials"
 import { query } from "../db"
 import { dollarsToCents } from "../types"
@@ -73,19 +84,17 @@ export function efsSource(carrierId: string): SyncSource<EfsFuelRow> {
 }
 
 /**
- * Scheduled sync (cron `efs-sync`): lands rows in hub.fuel_transactions —
- * the SAME table the fuel CSV import writes to — via the identical
- * `ON CONFLICT (carrier_id, source, external_id) DO NOTHING` idempotency
- * key, so replays never duplicate a charge. Unit matching is by unit
- * number hint; unmatched transactions still land (truck_id NULL) and are
- * reported, never dropped.
+ * Idempotent ingest shared by the cron sync and the file-drop webhook: lands
+ * rows in hub.fuel_transactions — the SAME table the fuel CSV import writes
+ * to — via the identical `ON CONFLICT (carrier_id, source, external_id)
+ * DO NOTHING` key, so replays never duplicate a charge. Unit matching is by
+ * unit number hint; unmatched transactions still land (truck_id NULL) and
+ * are reported, never dropped.
  */
-export async function runEfsSync(
-  carrierId: string
-): Promise<{ connected: boolean; imported?: number; skipped?: number; unmatched?: string[] }> {
-  const source = efsSource(carrierId)
-  if (!(await source.connected())) return { connected: false }
-
+export async function ingestEfsRows(
+  carrierId: string,
+  rows: EfsFuelRow[]
+): Promise<{ imported: number; skipped: number; unmatched: string[] }> {
   const trucks = await query<{ id: string; unit_number: string }>(
     `SELECT id, unit_number FROM hub.trucks WHERE carrier_id = $1 AND deleted_at IS NULL`,
     [carrierId]
@@ -95,7 +104,7 @@ export async function runEfsSync(
   let imported = 0
   let skipped = 0
 
-  for (const row of await source.pull()) {
+  for (const row of rows) {
     const truckId = row.unitHint ? byUnit.get(row.unitHint.toLowerCase()) ?? null : null
     if (row.unitHint && !truckId) unmatched.push(row.unitHint)
 
@@ -115,5 +124,117 @@ export async function runEfsSync(
     else skipped++
   }
 
+  return { imported, skipped, unmatched }
+}
+
+/** Scheduled sync (cron `efs-sync`) — the poll half, pending a partner REST feed. */
+export async function runEfsSync(
+  carrierId: string
+): Promise<{ connected: boolean; imported?: number; skipped?: number; unmatched?: string[] }> {
+  const source = efsSource(carrierId)
+  if (!(await source.connected())) return { connected: false }
+  const { imported, skipped, unmatched } = await ingestEfsRows(carrierId, await source.pull())
   return { connected: true, imported, skipped, unmatched }
+}
+
+/**
+ * Header aliases for the daily feed file — the real column names are
+ * unverified until a provisioned file lands (docs/integrations/efs.md), so
+ * matching is tolerant: headers are lowercased and stripped of separators,
+ * then mapped onto the SAME assumed record keys `normalizeEfsRecord` reads —
+ * that function stays the single shape-reading point for every transport.
+ */
+const CSV_HEADER_ALIASES: Record<string, string> = {
+  transactionid: "TransactionId", transactionnumber: "TransactionId", tranid: "TransactionId", txnid: "TransactionId",
+  transactiondatetime: "TransactionDateTime", transactiondate: "TransactionDateTime", trandate: "TransactionDateTime",
+  date: "TransactionDateTime", datetime: "TransactionDateTime",
+  unitnumber: "UnitNumber", unit: "UnitNumber", truck: "UnitNumber", trucknumber: "UnitNumber", vehicleunit: "UnitNumber",
+  merchantname: "MerchantName", merchant: "MerchantName", locationname: "MerchantName", truckstopname: "MerchantName",
+  merchantcity: "MerchantCity", city: "MerchantCity", locationcity: "MerchantCity",
+  merchantstate: "MerchantState", state: "MerchantState", locationstate: "MerchantState", stprov: "MerchantState",
+  quantity: "Quantity", gallons: "Quantity", qty: "Quantity", fuelquantity: "Quantity", numberofgallons: "Quantity",
+  pricepergallon: "PricePerGallon", ppg: "PricePerGallon", unitprice: "PricePerGallon", pumpprice: "PricePerGallon",
+  totalamount: "TotalAmount", total: "TotalAmount", amount: "TotalAmount", fueltotal: "TotalAmount",
+  odometer: "Odometer", odo: "Odometer", odometerreading: "Odometer", hubodometer: "Odometer",
+}
+
+/**
+ * Pure — parse the daily feed CSV into the assumed record shape. Unknown
+ * columns ride along under their original header (they end up in `raw`, so
+ * nothing a real file carries is thrown away before the layout is confirmed).
+ * Odometer is coerced to a number because `normalizeEfsRecord` drops
+ * non-numeric odometers by design.
+ */
+export function parseEfsFeedCsv(text: string): Record<string, unknown>[] {
+  const grid = parseCsv(text)
+  if (grid.length < 2) return []
+  const headers = grid[0].map((h) => {
+    const canonical = CSV_HEADER_ALIASES[h.trim().toLowerCase().replace(/[^a-z0-9]/gi, "")]
+    return canonical ?? h.trim()
+  })
+  return grid
+    .slice(1)
+    .filter((cells) => cells.some((c) => c.trim() !== ""))
+    .map((cells) => {
+      const record: Record<string, unknown> = {}
+      headers.forEach((header, i) => {
+        const value = (cells[i] ?? "").trim()
+        if (!header || value === "") return
+        if (header === "Odometer") {
+          // Strip thousands separators only — "n/a"-style non-numerics must
+          // become NaN and be dropped, not collapse to Number("") === 0.
+          const num = Number(value.replace(/,/g, ""))
+          if (Number.isFinite(num)) record[header] = num
+          return
+        }
+        record[header] = value
+      })
+      return record
+    })
+}
+
+export interface EfsEventOutcome {
+  applied: boolean
+  reason?: string
+  imported?: number
+  skipped?: number
+  invalid?: number
+  unmatched?: string[]
+}
+
+/** Event kinds the file-drop processor knows how to ingest. */
+const FILE_DROP_EVENT_KINDS = new Set(["fuel.batch"])
+
+/**
+ * Webhook processor (EVENT_PROCESSORS["efs"] in the receiver route): applies
+ * one verified file drop. Payload carries either the raw file (`csv`) or
+ * already-parsed records (`transactions`). Replays are safe twice over — the
+ * receiver dedups identical bodies by content hash, and every row goes
+ * through the same ON CONFLICT ingest as the cron path. Rows without a
+ * recognizable transaction id are counted and refused (an empty external id
+ * would make unrelated rows collide on the idempotency key), never guessed.
+ */
+export async function processEfsEvent(
+  carrierId: string,
+  event: { external_id: string; kind: string | null; payload: Record<string, unknown> }
+): Promise<EfsEventOutcome> {
+  if (!event.kind || !FILE_DROP_EVENT_KINDS.has(event.kind)) {
+    return { applied: false, reason: `unhandled event kind: ${event.kind ?? "none"}` }
+  }
+
+  const records =
+    typeof event.payload.csv === "string"
+      ? parseEfsFeedCsv(event.payload.csv)
+      : Array.isArray(event.payload.transactions)
+        ? (event.payload.transactions as Record<string, unknown>[])
+        : []
+  if (records.length === 0) return { applied: false, reason: "no fuel rows in payload" }
+
+  const rows = records.map(normalizeEfsRecord)
+  const valid = rows.filter((r) => r.external_id !== "")
+  const invalid = rows.length - valid.length
+  if (valid.length === 0) return { applied: false, invalid, reason: "rows missing transaction ids" }
+
+  const { imported, skipped, unmatched } = await ingestEfsRows(carrierId, valid)
+  return { applied: true, imported, skipped, unmatched, ...(invalid > 0 ? { invalid } : {}) }
 }

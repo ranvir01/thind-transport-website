@@ -6,17 +6,20 @@
  * missing carrier param, malformed JSON, the signed-empty-body → {} payload
  * fallback, idempotent duplicate detection via the DB's ON CONFLICT DO
  * NOTHING, and the processor branch that only providers in EVENT_PROCESSORS
- * (currently just "factor") get — Error and non-Error throws both.
+ * ("factor" funding events, "efs" file drops) get — Error and non-Error
+ * throws both.
  */
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
 vi.mock("@/lib/hub/db", () => ({ query: vi.fn(), queryOne: vi.fn() }))
 vi.mock("@/lib/hub/credentials", () => ({ getCredentials: vi.fn() }))
 vi.mock("@/lib/hub/integrations/factor", () => ({ processFactorEvent: vi.fn() }))
+vi.mock("@/lib/hub/integrations/efs", () => ({ processEfsEvent: vi.fn() }))
 
 import { query, queryOne } from "@/lib/hub/db"
 import { getCredentials } from "@/lib/hub/credentials"
 import { processFactorEvent } from "@/lib/hub/integrations/factor"
+import { processEfsEvent } from "@/lib/hub/integrations/efs"
 import { signWebhookBody } from "@/lib/hub/integrations/webhooks"
 import { POST } from "@/app/api/hub/webhooks/[provider]/route"
 
@@ -24,6 +27,7 @@ const queryMock = vi.mocked(query)
 const queryOneMock = vi.mocked(queryOne)
 const getCredentialsMock = vi.mocked(getCredentials)
 const processFactorEventMock = vi.mocked(processFactorEvent)
+const processEfsEventMock = vi.mocked(processEfsEvent)
 
 const CARRIER = "11111111-1111-1111-1111-111111111111"
 const SECRET = "whsec_test"
@@ -49,6 +53,7 @@ beforeEach(() => {
   queryOneMock.mockReset().mockResolvedValue({ id: CARRIER })
   getCredentialsMock.mockReset().mockResolvedValue({ webhookSecret: SECRET })
   processFactorEventMock.mockReset()
+  processEfsEventMock.mockReset()
 })
 
 describe("POST /api/hub/webhooks/[provider]", () => {
@@ -123,10 +128,30 @@ describe("POST /api/hub/webhooks/[provider]", () => {
       return []
     })
     const body = JSON.stringify({ event: "position.updated" })
-    const res = await call("efs", body)
+    const res = await call("wex", body)
     expect(res.status).toBe(200)
     expect(await res.json()).toEqual({ ok: true, duplicate: false })
     expect(processFactorEventMock).not.toHaveBeenCalled()
+    expect(processEfsEventMock).not.toHaveBeenCalled()
+  })
+
+  it("runs the efs processor on a signed file drop and marks an applied batch processed", async () => {
+    queryMock.mockImplementation(async (sql: string) => {
+      if (sql.includes("INSERT INTO hub.integration_events")) return [{ id: "evt-1" }]
+      return []
+    })
+    processEfsEventMock.mockResolvedValue({ applied: true, imported: 2, skipped: 0, unmatched: [] })
+    const body = JSON.stringify({ event: "fuel.batch", csv: "TransactionId,Gallons\nA,10\nB,20" })
+    const res = await call("efs", body, { eventId: "drop_2026-07-17" })
+    expect(res.status).toBe(200)
+    expect(processEfsEventMock).toHaveBeenCalledWith(
+      CARRIER,
+      expect.objectContaining({ external_id: "drop_2026-07-17", kind: "fuel.batch" })
+    )
+    expect(queryMock).toHaveBeenCalledWith(
+      expect.stringContaining("UPDATE hub.integration_events SET processed_at = NOW()"),
+      [CARRIER, "efs", "drop_2026-07-17"]
+    )
   })
 
   it("runs the factor processor, marks processed_at final, and reports duplicate:false", async () => {
