@@ -26,10 +26,29 @@
  * error into baffling 401s): E2E_BASE_URL=https://… POSTGRES_URL=… NEXTAUTH_SECRET=…
  */
 import path from "node:path"
+import os from "node:os"
 import { existsSync, readFileSync } from "node:fs"
 import { spawnSync } from "node:child_process"
 
 export const BASE = process.env.E2E_BASE_URL ?? "http://localhost:3000"
+
+// Cloud QA rigs install with PUPPETEER_SKIP_DOWNLOAD=1 (the sandbox egress
+// proxy rejects puppeteer's postinstall Chrome download), so puppeteer has no
+// browser of its own and every smoke dies at launch with "Could not find
+// Chrome". Those rigs ship a Playwright-managed chromium instead; point
+// puppeteer at it — only when nothing is configured and puppeteer's own cache
+// is empty, so a developer's real Chrome install always wins.
+if (!process.env.PUPPETEER_EXECUTABLE_PATH) {
+  const puppeteerCache =
+    process.env.PUPPETEER_CACHE_DIR ?? path.join(os.homedir(), ".cache", "puppeteer")
+  const fallback = [
+    process.env.PLAYWRIGHT_BROWSERS_PATH && path.join(process.env.PLAYWRIGHT_BROWSERS_PATH, "chromium"),
+    "/opt/pw-browsers/chromium",
+  ].find((p) => p && existsSync(p))
+  if (fallback && !existsSync(path.join(puppeteerCache, "chrome"))) {
+    process.env.PUPPETEER_EXECUTABLE_PATH = fallback
+  }
+}
 
 if (/localhost|127\.0\.0\.1/.test(BASE)) {
   const envPath = path.join(process.cwd(), ".env.local")
