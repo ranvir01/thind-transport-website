@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server"
 import { getHubUser } from "@/lib/hub/session"
 import { can } from "@/lib/hub/permissions"
-import { getIftaReport, exportIftaSources } from "@/lib/hub/ifta"
+import { getIftaReport, exportIftaSources, listIftaRates } from "@/lib/hub/ifta"
+import { iftaWorksheetWarnings } from "@/lib/hub/ifta-core"
+import { withIftaWarningsCoverPage } from "@/lib/hub/ifta-pdf"
 import { getCarrier, getCarrierSettings } from "@/lib/hub/settings"
 import { buildIftaPdf } from "@/lib/hub/pdf"
 import type { IftaReportRow } from "@/lib/hub/types"
@@ -33,9 +35,26 @@ export async function GET(
   const report = await getIftaReport(user.carrierId, quarter)
   if (!report) return NextResponse.json({ error: "No report for that quarter" }, { status: 404 })
   const rows = (report.report?.rows as IftaReportRow[] | undefined) ?? []
+  // The exports must carry the worksheet screen's warnings — a transcriber
+  // working from the download otherwise never sees them.
+  const rates = await listIftaRates(user.carrierId, quarter)
+  const warnings = iftaWorksheetWarnings({
+    status: report.status,
+    rows,
+    missingRates: report.report?.missingRates,
+    unknownJurisdictionGallons: report.report?.unknownJurisdictionGallons,
+    ratesOnFile: Object.fromEntries(
+      rates.map((r) => [
+        r.jurisdiction,
+        { rate: Number(r.rate), surchargeRate: Number(r.surcharge_rate) || undefined },
+      ])
+    ),
+  })
 
   if (file === "worksheet.csv") {
     const csv = [
+      // Comment-prefixed like sources.csv, above the header so they open at the top.
+      ...warnings.map((w) => `# WARNING: ${w}`),
       "jurisdiction,miles,taxable_gallons,tax_paid_gallons,rate,surcharge_rate,net_tax_usd",
       ...rows.map((r) =>
         `${r.jurisdiction},${r.miles},${r.taxableGallons.toFixed(3)},${r.taxPaidGallons.toFixed(3)},${Number(r.rate).toFixed(4)},${Number(r.surchargeRate).toFixed(4)},${(r.netCents / 100).toFixed(2)}`
@@ -71,7 +90,8 @@ export async function GET(
       })),
       netTaxCents: Number(report.net_tax_cents ?? 0),
     })
-    return new NextResponse(new Uint8Array(pdf), {
+    const withWarnings = await withIftaWarningsCoverPage(new Uint8Array(pdf), { quarter, warnings })
+    return new NextResponse(new Uint8Array(withWarnings), {
       headers: {
         "Content-Type": "application/pdf",
         "Content-Disposition": `inline; filename="ifta-${quarter}-worksheet.pdf"`,
