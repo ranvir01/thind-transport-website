@@ -10,6 +10,7 @@
     { "path": "/api/hub/cron/ar-reminders", "schedule": "30 14 * * *" },
     { "path": "/api/hub/cron/detention-alerts", "schedule": "0 15 * * *" },
     { "path": "/api/hub/cron/task-automations", "schedule": "15 14 * * *" },
+    { "path": "/api/hub/cron/recurring-rebook", "schedule": "20 9 * * *" },
     { "path": "/api/hub/cron/recompute-lanes", "schedule": "45 9 * * *" },
     { "path": "/api/hub/cron/driver-scorecards", "schedule": "0 10 1 * *" },
     { "path": "/api/hub/cron/fmcsa-recheck", "schedule": "0 11 * * *" },

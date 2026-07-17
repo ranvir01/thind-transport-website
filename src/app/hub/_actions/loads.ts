@@ -5,9 +5,10 @@ import { requirePermission } from "@/lib/hub/session"
 import { loadSchema, documentUploadSchema } from "@/lib/hub/schemas"
 import {
   createLoad, updateLoad, changeLoadStatus, replaceStops, setStopTimestamp, getLoad,
-  getLoadStops, addLoadEvent,
+  addLoadEvent,
 } from "@/lib/hub/loads"
 import { applyDetentionAccrual } from "@/lib/hub/detention"
+import { rebookLoad } from "@/lib/hub/recurring"
 import { getDriver, dispatchLegality } from "@/lib/hub/drivers"
 import { getTruck } from "@/lib/hub/fleet"
 import { saveDocument, deleteDocument } from "@/lib/hub/documents"
@@ -112,64 +113,12 @@ export async function duplicateLoadAction(id: string): Promise<ActionResult> {
     return actionError(err, "Forbidden")
   }
   try {
-    const source = await getLoad(user.carrierId, id)
-    if (!source) return { ok: false, error: "Load not found" }
-    if (!source.customer_id) return { ok: false, error: "Add a customer to this load before duplicating it" }
-    const stops = await getLoadStops(user.carrierId, id)
-    if (stops.length === 0) return { ok: false, error: "Load has no stops to copy" }
-
-    const accessorials = (Array.isArray(source.accessorials) ? source.accessorials : [])
-      .filter((a) => !/detention/i.test(a.label))
-      .map((a) => ({ label: a.label, amount_cents: Number(a.amount_cents || 0) }))
-
-    const load = await createLoad(
-      user.carrierId,
-      {
-        customer_id: source.customer_id,
-        customer_reference: null,
-        equipment: source.equipment,
-        commodity: source.commodity ?? null,
-        weight_lbs: source.weight_lbs ?? null,
-        linehaul_cents: Number(source.linehaul_cents),
-        fuel_surcharge_cents: Number(source.fuel_surcharge_cents),
-        accessorials,
-        loaded_miles: source.loaded_miles ?? null,
-        deadhead_miles: source.deadhead_miles ?? null,
-        truck_id: source.truck_id ?? null,
-        trailer_id: source.trailer_id ?? null,
-        driver_id: source.driver_id ?? null,
-        source: "direct",
-        factored: source.factored ?? false,
-        notes: source.notes ?? null,
-        stops: stops.map((s) => ({
-          type: s.type,
-          facility: s.facility ?? null,
-          address: s.address ?? null,
-          city: s.city,
-          state: s.state,
-          zip: s.zip ?? null,
-          fcfs: s.fcfs ?? false,
-          pickup_number: null,
-          po_number: null,
-          appt_start: null,
-          appt_end: null,
-          lat: s.lat ?? null,
-          lng: s.lng ?? null,
-          notes: s.notes ?? null,
-        })),
-      },
-      { id: user.id, name: user.name }
-    )
-    await addLoadEvent(user.carrierId, load.id, "note", {
-      note: `Duplicated from ${source.reference}`,
-    }, { id: user.id, name: user.name })
-    await logAudit({
-      carrierId: user.carrierId, actorId: user.id, actorName: user.name,
-      entityType: "load", entityId: load.id, action: "create",
-      newValue: { reference: load.reference, linehaul_cents: load.linehaul_cents, duplicated_from: source.reference },
-    })
-    revalidateLoadViews(load.id)
-    return { ok: true, id: load.id }
+    // Copy/strip matrix lives in rebookLoad, shared with the recurring-rebook
+    // cron so the manual and scheduled paths can never drift.
+    const result = await rebookLoad(user.carrierId, id, { id: user.id, name: user.name })
+    if (!result.ok) return result
+    revalidateLoadViews(result.load.id)
+    return { ok: true, id: result.load.id }
   } catch (err) {
     return actionError(err, "Failed to duplicate load")
   }

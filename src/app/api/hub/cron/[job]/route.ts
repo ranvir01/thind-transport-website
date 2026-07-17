@@ -5,6 +5,7 @@ import { runOverdueReminders } from "@/lib/hub/invoices"
 import { runDetentionAlerts } from "@/lib/hub/detention"
 import { runTaskAutomations } from "@/lib/hub/tasks"
 import { recomputeLanes } from "@/lib/hub/lanes"
+import { runRecurringRebooks } from "@/lib/hub/recurring"
 import { computeDriverScores } from "@/lib/hub/recruiting"
 import { recheckActiveCustomers } from "@/lib/hub/vetting"
 import { runTelematicsSync } from "@/lib/hub/telematics"
@@ -27,6 +28,7 @@ export const maxDuration = 60
  *   /api/hub/cron/compliance-scan  — daily 60/30/7-day expiry alerts per carrier
  *   /api/hub/cron/ar-reminders     — daily overdue invoice dunning (skips factored)
  *   /api/hub/cron/detention-alerts — daily dwelling-past-free-time alerts (Hobby: once/day)
+ *   /api/hub/cron/recurring-rebook — daily "rebook every <weekday>" lane rules → fresh Booked loads
  * Health lands in hub.integration_syncs either way.
  */
 export async function GET(
@@ -100,6 +102,10 @@ export async function GET(
       } else if (job === "task-automations") {
         // E4: every condition needing office action becomes a deep-linked task.
         results[carrier.id] = await runTaskAutomations(carrier.id)
+      } else if (job === "recurring-rebook") {
+        // Roadmap: dedicated weekly lanes book themselves — every enabled
+        // "rebook every <weekday>" rule due today lands as a fresh Booked load.
+        results[carrier.id] = await runRecurringRebooks(carrier.id)
       } else if (job === "recompute-lanes") {
         // E1: lane history powers backhaul hints on the planner.
         results[carrier.id] = await recomputeLanes(carrier.id)
