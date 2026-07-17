@@ -7,7 +7,7 @@
  * Share → Add to Home Screen instruction instead. Hidden entirely once the
  * app is already running standalone (i.e. installed).
  */
-import { useEffect, useState } from "react"
+import { useEffect, useState, useSyncExternalStore } from "react"
 import { Share, Smartphone } from "lucide-react"
 
 interface BeforeInstallPromptEvent extends Event {
@@ -15,21 +15,26 @@ interface BeforeInstallPromptEvent extends Event {
   userChoice: Promise<{ outcome: "accepted" | "dismissed" }>
 }
 
+// Both values are fixed for the life of the page, so the subscription never fires;
+// useSyncExternalStore still gives us an SSR-safe read without a hydration mismatch.
+const subscribeNever = () => () => {}
+const isIosSnapshot = () => /iphone|ipad|ipod/i.test(navigator.userAgent)
+const isStandaloneSnapshot = () => window.matchMedia("(display-mode: standalone)").matches
+
 export function InstallAppButton() {
   const [installEvent, setInstallEvent] = useState<BeforeInstallPromptEvent | null>(null)
-  const [mode, setMode] = useState<"hidden" | "prompt" | "ios">("hidden")
+  const [installed, setInstalled] = useState(false)
+  const isIos = useSyncExternalStore(subscribeNever, isIosSnapshot, () => false)
+  const isStandalone = useSyncExternalStore(subscribeNever, isStandaloneSnapshot, () => true)
 
   useEffect(() => {
     if (window.matchMedia("(display-mode: standalone)").matches) return
-    const isIos = /iphone|ipad|ipod/i.test(navigator.userAgent)
-    if (isIos) setMode("ios")
 
     const onPrompt = (event: Event) => {
       event.preventDefault()
       setInstallEvent(event as BeforeInstallPromptEvent)
-      setMode("prompt")
     }
-    const onInstalled = () => setMode("hidden")
+    const onInstalled = () => setInstalled(true)
     window.addEventListener("beforeinstallprompt", onPrompt)
     window.addEventListener("appinstalled", onInstalled)
     return () => {
@@ -38,9 +43,9 @@ export function InstallAppButton() {
     }
   }, [])
 
-  if (mode === "hidden") return null
+  if (isStandalone || installed) return null
 
-  if (mode === "prompt" && installEvent) {
+  if (installEvent) {
     return (
       <button
         onClick={() => installEvent.prompt().catch(() => undefined)}
@@ -52,7 +57,7 @@ export function InstallAppButton() {
     )
   }
 
-  if (mode === "ios") {
+  if (isIos) {
     return (
       <p className="flex items-start gap-2 rounded-2xl border border-white/10 bg-navy-800/80 p-4 text-body-xs text-steel-300">
         <Share className="mt-0.5 h-4 w-4 shrink-0 text-gold" />
