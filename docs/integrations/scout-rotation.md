@@ -19,7 +19,7 @@ as an urgent `Backlog:` item.
 | `wex` | **Built** — adapter shipped; real feed confirmed as SFTP file drop, not REST JSON — same transport swap as EFS needed before activation (see doc) | `feedUser`, `feedPassword` (+ feed file name, no field yet) | `src/lib/hub/integrations/wex.ts` | [`wex.md`](./wex.md) | 2026-07-12 |
 | `comdata` | **Built** — adapter shipped, daily cron live; real APIs confirmed to exist (REST portal + SOAP Transaction History), but partner feeds are batch files (AC00029) — transport TBD at onboarding (see doc) | `apiKey`, `apiSecret` | `src/lib/hub/integrations/comdata.ts` | [`comdata.md`](./comdata.md) | 2026-07-16 |
 | `qbo` | **Built** — pull + push both directions, refresh-token rotation confirmed correct; hardcoded `minorversion=65` is stale (Intuit serves v75 regardless since 2025-08-01); refresh tokens now carry a 5-year hard cap (see doc) | OAuth2 (Intuit) | `src/lib/hub/integrations/qbo.ts` | [`qbo.md`](./qbo.md) | 2026-07-17 |
-| `factor` | **Built** — push + webhook receiver | varies by factor | `src/lib/hub/integrations/factor.ts` | [`factor.md`](./factor.md) | 2026-07-06 |
+| `factor` | **Built** — push + webhook receiver; vendor landscape pinned: OTR Solutions is the only factor with public dev docs + test env (recommended first target); Apex/Denim are API-key class; RTS/Triumph are FTP file drops (EFS-style transport gap); NO factor documents webhooks to carriers — funding status is poll-based everywhere (see doc) | varies by factor | `src/lib/hub/integrations/factor.ts` | [`factor.md`](./factor.md) | 2026-07-17 |
 | `truckstop` | **Built** — search adapter, booking mapper pending (blocked on migration) | API key | `src/lib/hub/integrations/truckstop.ts` | [`truckstop.md`](./truckstop.md) | 2026-07-06 |
 
 All ten vendor providers now have both a shipped adapter and a research doc (this row was
@@ -37,11 +37,11 @@ integrations that were never in scope of the vendor shopping list: both `fmcsa.m
    notes before a lane builds the adapter.
 3. One provider per cycle. Update the "Last researched" date and doc link when done.
 
-Next up by this rule: `factor.md` and `truckstop.md` are tied as the oldest vendor docs
-(2026-07-06, unchanged) after `qbo.md` was refreshed 2026-07-17; take `factor.md` next —
-the adapter pushes invoices AND receives webhooks, and "varies by factor" credentials mean
-the doc should pin down which factoring companies (OTR, Triumph/TriumphPay, RTS, apex)
-actually expose an API a 15-truck carrier can get keys for, what their webhook signature
-schemes look like versus our HMAC assumption in `/api/hub/webhooks/[provider]`, and
-whether any publishes a sandbox. Then `truckstop.md` (booking mapper still blocked on a
-migration — re-check whether their API tiers changed).
+Next up by this rule: `truckstop.md` is now the oldest vendor doc (2026-07-06, unchanged)
+after `factor.md` was refreshed 2026-07-17. The truckstop pass should re-check their
+developer-API tiers and whether the booking flow still needs the migration the doc calls
+blocked (migration `017_truckstop_load_source.sql` has since been applied — the doc may be
+stale on that), plus rate limits and sandbox on their current partner program. After that,
+`mailbox.md`/`fmcsa.md`/`eia.md` (2026-07-07) are the oldest remaining, then
+`terminal.md` (2026-07-08) — terminal is the highest-value recheck of those since its
+adapter runs a live 30-minute cron in production.
