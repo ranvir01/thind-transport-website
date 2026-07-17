@@ -34,6 +34,7 @@ One monorepo for a Kent, WA family carrier:
 ## Quick start
 
 ```bash
+npm run setup:canvas-deps     # system libs for the `canvas` dep (or: npm install --ignore-scripts)
 npm install
 cp .env.example .env.local    # POSTGRES_URL + NEXTAUTH_SECRET minimum
 npm run db:migrate
