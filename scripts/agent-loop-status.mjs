@@ -67,6 +67,20 @@ function branchExists(name) {
   return git(`rev-parse --verify ${name}`).length > 0
 }
 
+/**
+ * Parse the pending-branch count out of `agent-branch-inventory.mjs --json`
+ * output. Returns null (never 0) when the JSON is invalid or truncated —
+ * a silent 0 here once hid 217 pending branches from the integrator.
+ */
+export function parsePendingCount(raw) {
+  try {
+    const parsed = JSON.parse(raw)
+    return Array.isArray(parsed.pending) ? parsed.pending.length : null
+  } catch {
+    return null
+  }
+}
+
 function main() {
   git("fetch origin --quiet")
 
@@ -88,19 +102,25 @@ function main() {
     for (const line of logLines(MAIN, INTEGRATOR)) console.log(`  ${line}`)
   }
 
-  const pendingOut = execSync("node scripts/agent-branch-inventory.mjs --json", {
-    encoding: "utf-8",
-    cwd: process.cwd(),
-  })
-  let pendingCount = 0
+  let pendingOut = ""
   try {
-    pendingCount = JSON.parse(pendingOut).pending?.length ?? 0
+    pendingOut = execSync("node scripts/agent-branch-inventory.mjs --json", {
+      encoding: "utf-8",
+      cwd: process.cwd(),
+      maxBuffer: 32 * 1024 * 1024,
+    })
   } catch {
-    /* ignore */
+    /* subprocess failure → pendingCount stays null and is reported below */
   }
-  console.log(`\nPending claude/* branches (not on main): ${pendingCount}`)
-  if (pendingCount > 0) {
-    console.log("  Run: npm run agent:branches")
+  const pendingCount = parsePendingCount(pendingOut)
+  if (pendingCount === null) {
+    console.log("\nPending claude/* branches (not on main): UNKNOWN — inventory --json failed or returned invalid/truncated JSON.")
+    console.log("  Do not trust this as 0. Run: npm run agent:branches")
+  } else {
+    console.log(`\nPending claude/* branches (not on main): ${pendingCount}`)
+    if (pendingCount > 0) {
+      console.log("  Run: npm run agent:branches")
+    }
   }
 
   console.log("\nLane branches ahead of integrator:")
@@ -138,4 +158,5 @@ function main() {
   console.log(`STEADY STATE: integrator within ${THRESHOLD} commits of main.`)
 }
 
-main()
+// import-safe: only run when executed directly (tests import parsePendingCount)
+if (process.argv[1] && import.meta.url === new URL(`file://${process.argv[1]}`).href) main()
