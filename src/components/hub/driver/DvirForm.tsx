@@ -37,6 +37,9 @@ export function DvirForm({
   const [safeToOperate, setSafeToOperate] = useState(true)
   const [odometer, setOdometer] = useState("")
   const [signature, setSignature] = useState<string | null>(null)
+  // Bumped to remount the (uncontrolled canvas) SignaturePad blank after a
+  // queued submit — clearing the signature state alone leaves stale ink.
+  const [padKey, setPadKey] = useState(0)
 
   const defects: DvirDefect[] = checklistTemplate
     .filter((c) => !checks[c.key])
@@ -60,6 +63,14 @@ export function DvirForm({
         // No navigation while offline — router.push/refresh needs the network it doesn't have,
         // same as the load card's queued path.
         toast.success("No signal — inspection saved, sends automatically")
+        // Reset like TimeOffForm's queued path: a signed form with a live button
+        // lets a driver who doubts the toast queue the same inspection twice.
+        setChecks(Object.fromEntries(checklistTemplate.map((c) => [c.key, true])))
+        setDefectNotes({})
+        setSafeToOperate(true)
+        setOdometer("")
+        setSignature(null)
+        setPadKey((k) => k + 1)
       } else if (result.ok) {
         toast.success(
           result.grounded
@@ -182,7 +193,7 @@ export function DvirForm({
 
       <section className="rounded-2xl border border-white/10 bg-navy-800/80 p-4">
         <p className={labelDarkCls}>Sign the report</p>
-        <SignaturePad onChange={setSignature} height={110} variant="dark" />
+        <SignaturePad key={padKey} onChange={setSignature} height={110} variant="dark" />
         <button
           onClick={submit}
           disabled={pending || !signature}
