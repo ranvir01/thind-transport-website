@@ -24,7 +24,7 @@ export function DriverIncidentForm({ loads }: { loads: { id: string; reference: 
   const router = useRouter()
   const [pending, startTransition] = useTransition()
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null)
-  const [form, setForm] = useState({
+  const emptyForm = {
     location: "",
     description: "",
     policeReport: "",
@@ -32,7 +32,8 @@ export function DriverIncidentForm({ loads }: { loads: { id: string; reference: 
     fatality: false,
     injuryTreatedAway: false,
     towAwayDisabling: false,
-  })
+  }
+  const [form, setForm] = useState(emptyForm)
 
   const grabLocation = () => {
     if (!navigator.geolocation) return
@@ -67,8 +68,11 @@ export function DriverIncidentForm({ loads }: { loads: { id: string; reference: 
       )
       if ("queued" in result) {
         // No navigation while offline — router.push/refresh needs the network
-        // it doesn't have, same as the DVIR queued path.
+        // it doesn't have, same as the DVIR queued path. Clear the form so a
+        // driver who doubts the toast can't queue the same report twice.
         toast.success("No signal — report saved on your phone, sends automatically")
+        setForm(emptyForm)
+        setCoords(null)
       } else if (result.ok) {
         toast.success("Report filed — the office has been alerted")
         router.push("/hub/driver")
