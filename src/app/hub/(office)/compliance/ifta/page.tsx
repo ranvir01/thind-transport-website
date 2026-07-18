@@ -62,11 +62,11 @@ export default async function IftaPage({
 
       {/* Quarter picker + actions */}
       <div className="flex flex-wrap items-center gap-3 mb-4">
-        <form method="GET">
+        <form method="GET" className="flex items-center gap-2">
           <select name="q" defaultValue={quarter} className={`${fieldCls} w-40`}>
             {quarterOptions().map((q) => <option key={q} value={q}>{q}</option>)}
           </select>
-          <button type="submit" className="ml-2 min-h-[44px] rounded-xl border border-border-strong px-4 text-sm font-semibold text-fg-2 hover:bg-hover">
+          <button type="submit" className="min-h-[44px] rounded-xl border border-border-strong px-4 text-sm font-semibold text-fg-2 hover:bg-hover">
             Go
           </button>
         </form>

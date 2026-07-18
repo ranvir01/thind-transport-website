@@ -140,3 +140,15 @@
   background: var(--bg);
   color: var(--text);
 }
+
+/* Disabled accent buttons: the disabled:opacity-* utilities fade the whole
+   control, leaving the label at ~1.4:1 over a light page (white text on
+   half-transparent accent). Paint a solid muted accent instead so the label
+   stays legible in every theme/mode. Selector specificity (attr + element +
+   class + pseudo) intentionally beats the opacity utility. */
+@supports (background-color: color-mix(in srgb, red 50%, white)) {
+  [data-app="hauldesk"] button.bg-accent:disabled {
+    opacity: 1;
+    background-color: color-mix(in srgb, var(--accent) 60%, var(--bg));
+  }
+}

@@ -281,7 +281,8 @@ export function PlannerGrid({
                     {block.status === "dispatched" && !block.acknowledged_at ? (
                       <span className="h-2 w-2 shrink-0 animate-pulse rounded-full bg-accent" title="Driver hasn't confirmed" />
                     ) : null}
-                    <Link href={`/hub/loads/${block.id}`} className="truncate hover:underline" onClick={(e) => e.stopPropagation()}>
+                    {/* text-inherit: the marketing site's global `a` color would otherwise ghost the ref against the bar tint */}
+                    <Link href={`/hub/loads/${block.id}`} className="truncate text-inherit hover:underline" onClick={(e) => e.stopPropagation()}>
                       {block.reference}
                     </Link>
                     <span className="truncate font-semibold opacity-80">
