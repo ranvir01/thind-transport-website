@@ -114,7 +114,9 @@ export async function exportCsv(carrierId: string, kind: string): Promise<{ file
       const rows = await query<Record<string, unknown>>(
         `SELECT i.number, c.name AS customer, l.reference AS load, i.issued_on, i.due_on,
            ROUND(i.amount_cents / 100.0, 2) AS amount, i.status, i.factored
-         FROM hub.invoices i JOIN hub.customers c ON c.id = i.customer_id JOIN hub.loads l ON l.id = i.load_id
+         FROM hub.invoices i
+         JOIN hub.customers c ON c.id = i.customer_id AND c.carrier_id = i.carrier_id
+         JOIN hub.loads l ON l.id = i.load_id AND l.carrier_id = i.carrier_id
          WHERE i.carrier_id = $1 ORDER BY i.issued_on`,
         [carrierId]
       )

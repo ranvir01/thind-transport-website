@@ -44,17 +44,31 @@ const draftSettlement = {
   statement_url: null,
 }
 
+/** Dispatching mocks: settlement read, driver read, lines read, claim UPDATE. */
+function mockApproveQueries(opts: { claimWins: boolean; escrowLine?: boolean }) {
+  queryOneMock.mockImplementation(async (sql: string) => {
+    const s = String(sql)
+    if (s.includes("hub.settlements s JOIN hub.drivers")) return draftSettlement
+    if (s.includes("FROM hub.drivers WHERE id = $1 AND carrier_id = $2")) return { id: DRIVER, email: null }
+    return null
+  })
+  queryMock.mockImplementation(async (sql: string) => {
+    const s = String(sql)
+    if (s.includes("FROM hub.settlement_lines")) {
+      return opts.escrowLine
+        ? [{ id: "l1", kind: "deduction", label: "Escrow", amount_cents: -5000, source_type: "escrow", source_id: null }]
+        : []
+    }
+    if (s.includes("SET status = 'approved'")) return opts.claimWins ? [{ id: SETTLEMENT }] : []
+    return []
+  })
+}
+
 describe("approveSettlement carrier-guards driver read", () => {
   beforeEach(() => {
     queryMock.mockReset()
     queryOneMock.mockReset()
-    queryOneMock.mockImplementation(async (sql: string) => {
-      const s = String(sql)
-      if (s.includes("hub.settlements s JOIN hub.drivers")) return draftSettlement
-      if (s.includes("FROM hub.drivers WHERE id = $1 AND carrier_id = $2")) return { id: DRIVER, email: null }
-      return null
-    })
-    queryMock.mockResolvedValue([])
+    mockApproveQueries({ claimWins: true })
   })
 
   it("loads the driver with carrier_id = $2 (not id-only)", async () => {
@@ -64,6 +78,46 @@ describe("approveSettlement carrier-guards driver read", () => {
     )
     expect(driverLookup).toBeDefined()
     expect(driverLookup![1]).toEqual([DRIVER, CARRIER])
+  })
+})
+
+describe("approveSettlement claims the draft atomically before side effects", () => {
+  beforeEach(() => {
+    queryMock.mockReset()
+    queryOneMock.mockReset()
+  })
+
+  it("flips draft -> approved with carrier + status gate in one statement", async () => {
+    mockApproveQueries({ claimWins: true, escrowLine: true })
+    await approveSettlement(CARRIER, SETTLEMENT, ACTOR)
+    const claim = queryMock.mock.calls.find(([sql]) => String(sql).includes("SET status = 'approved'"))
+    expect(claim).toBeDefined()
+    const claimSql = String(claim![0])
+    expect(claimSql).toContain("WHERE carrier_id = $1 AND id = $2 AND status = 'draft'")
+    expect(claimSql).toContain("RETURNING id")
+    expect(claim![1]).toEqual([CARRIER, SETTLEMENT, ACTOR.id])
+    // The escrow append is NOT idempotent — the claim must come first so a
+    // double-approve can never grow the ledger twice.
+    const claimIndex = queryMock.mock.calls.findIndex(([sql]) => String(sql).includes("SET status = 'approved'"))
+    const escrowIndex = queryMock.mock.calls.findIndex(([sql]) => String(sql).includes("INSERT INTO hub.escrow_ledger"))
+    expect(escrowIndex).toBeGreaterThan(claimIndex)
+  })
+
+  it("statement_url write is carrier-scoped", async () => {
+    mockApproveQueries({ claimWins: true })
+    await approveSettlement(CARRIER, SETTLEMENT, ACTOR)
+    const urlWrite = queryMock.mock.calls.find(([sql]) => String(sql).includes("SET statement_url"))
+    expect(urlWrite).toBeDefined()
+    expect(String(urlWrite![0])).toContain("WHERE carrier_id = $1 AND id = $2")
+  })
+
+  it("a race loser (claim matched no row) throws and performs no side effects", async () => {
+    mockApproveQueries({ claimWins: false, escrowLine: true })
+    await expect(approveSettlement(CARRIER, SETTLEMENT, ACTOR)).rejects.toThrow("Only drafts can be approved")
+    const sqls = queryMock.mock.calls.map(([sql]) => String(sql))
+    expect(sqls.some((s) => s.includes("INSERT INTO hub.escrow_ledger"))).toBe(false)
+    expect(sqls.some((s) => s.includes("UPDATE hub.advances"))).toBe(false)
+    expect(sqls.some((s) => s.includes("SET statement_url"))).toBe(false)
   })
 })
 

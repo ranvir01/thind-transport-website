@@ -1,18 +1,18 @@
 /**
  * Static SQL-shape sweep (AGENTS.md: every query carrier-scoped): every
- * UPDATE/DELETE against the money tables (hub.invoices, hub.payments) in
- * product code must carry a carrier_id guard in the statement itself, even
- * when the row id came from an already-scoped read — WHERE id = $1 alone
- * has repeatedly crept in via sent_log appends (factor.ts, reminders,
- * statements, factoring packets). Scans source so new call sites are
- * covered without writing a mock harness per function.
+ * UPDATE/DELETE against the money tables in product code must carry a
+ * carrier_id guard in the statement itself, even when the row id came from
+ * an already-scoped read — WHERE id = $1 alone has repeatedly crept in via
+ * sent_log appends (factor.ts, reminders, statements, factoring packets)
+ * and settlement approval/expense-marking (settlements.ts). Scans source so
+ * new call sites are covered without writing a mock harness per function.
  */
 import { describe, expect, it } from "vitest"
 import { readFileSync, readdirSync, statSync } from "node:fs"
 import path from "node:path"
 
 const ROOTS = ["src/lib", "src/app"].map((p) => path.join(process.cwd(), p))
-const WRITE_RE = /(UPDATE|DELETE FROM)\s+hub\.(invoices|payments)\b[^`]*/g
+const WRITE_RE = /(UPDATE|DELETE FROM)\s+hub\.(invoices|payments|settlements|settlement_lines|advances|expenses|escrow_ledger)\b[^`]*/g
 
 function sourceFiles(dir: string): string[] {
   return readdirSync(dir).flatMap((name) => {
@@ -23,7 +23,7 @@ function sourceFiles(dir: string): string[] {
   })
 }
 
-describe("hub.invoices / hub.payments writes are carrier-guarded", () => {
+describe("money-table writes are carrier-guarded", () => {
   it("every UPDATE/DELETE statement contains carrier_id", () => {
     const offenders: string[] = []
     for (const root of ROOTS) {
