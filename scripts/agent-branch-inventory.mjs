@@ -119,8 +119,12 @@ function main() {
   const rows = buildInventory({ pendingOnly: !showAll })
 
   if (json) {
+    // No process.exit() here: when stdout is a pipe (agent-loop-status runs us
+    // via execSync) console.log writes asynchronously, and exiting immediately
+    // truncates the JSON mid-payload. The consumer then parsed garbage and
+    // reported "Pending claude/* branches: 0" against hundreds of real ones.
     console.log(JSON.stringify({ integrator: INTEGRATOR, main: MAIN, pending: rows }, null, 2))
-    process.exit(rows.length ? 0 : 0)
+    return
   }
 
   console.log("LoadOff agent branch inventory")
