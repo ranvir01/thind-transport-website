@@ -9,6 +9,7 @@ import {
   exportQboIifSettlements,
 } from "@/lib/hub/expenses"
 import { accidentRegisterCsv } from "@/lib/hub/incidents"
+import { exportFuelSpendCsv } from "@/lib/hub/reports"
 
 export async function GET(
   _req: Request,
@@ -34,6 +35,16 @@ export async function GET(
 
   if (!can(user.role, "money:read")) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+  }
+
+  if (kind === "fuel-spend") {
+    const { filename, csv } = await exportFuelSpendCsv(user.carrierId)
+    return new NextResponse(csv, {
+      headers: {
+        "Content-Type": "text/csv; charset=utf-8",
+        "Content-Disposition": `attachment; filename="${filename}"`,
+      },
+    })
   }
 
   const QBO_IIF_EXPORTERS = {

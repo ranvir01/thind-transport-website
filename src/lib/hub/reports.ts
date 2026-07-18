@@ -277,3 +277,41 @@ export async function fuelSpendSummary(carrierId: string): Promise<FuelSpendSumm
     topTrucks: topTrucks.map((t) => ({ ...t, total_cents: Number(t.total_cents), gallons: Number(t.gallons) })),
   }
 }
+
+// Same private CSV serializer as expenses.ts (integrator: hoist both into csv.ts).
+function csvEscape(value: unknown): string {
+  const str = String(value ?? "")
+  return /[",\n]/.test(str) ? `"${str.replace(/"/g, '""')}"` : str
+}
+
+function toCsv(headers: string[], rows: unknown[][]): string {
+  return [headers.join(","), ...rows.map((row) => row.map(csvEscape).join(","))].join("\n")
+}
+
+/**
+ * Fuel-spend CSV export — per-truck monthly totals for the last 6 months
+ * (current month included). Detail view behind the owner-dashboard fuel
+ * panel, same whole-pump-bill definition as fuelSpendSummary above.
+ */
+export async function exportFuelSpendCsv(carrierId: string): Promise<{ filename: string; csv: string }> {
+  const rows = await query<Record<string, unknown>>(
+    `SELECT to_char(date_trunc('month', f.ts), 'YYYY-MM') AS month,
+       COALESCE(t.unit_number, 'Unassigned') AS truck,
+       ROUND(SUM(f.gallons)::numeric, 1) AS gallons,
+       ROUND(SUM(f.total_cents) / 100.0, 2) AS total_spend,
+       ROUND(SUM(f.total_cents) / 100.0 / NULLIF(SUM(f.gallons), 0), 2) AS avg_per_gal
+     FROM hub.fuel_transactions f
+     LEFT JOIN hub.trucks t ON t.id = f.truck_id AND t.carrier_id = f.carrier_id
+     WHERE f.carrier_id = $1 AND f.ts >= date_trunc('month', NOW()) - interval '5 months'
+     GROUP BY 1, 2
+     ORDER BY 1 DESC, SUM(f.total_cents) DESC`,
+    [carrierId]
+  )
+  return {
+    filename: "fuel-spend.csv",
+    csv: toCsv(
+      ["Month", "Truck", "Gallons", "TotalSpend", "AvgPerGal"],
+      rows.map((r) => [r.month, r.truck, r.gallons, r.total_spend, r.avg_per_gal])
+    ),
+  }
+}
