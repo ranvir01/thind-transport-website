@@ -8,6 +8,7 @@
  *
  * Exit 0 = integrator is within threshold of main (steady state OK).
  * Exit 1 = integrator is ahead of main by more than AGENT_CATCHUP_THRESHOLD (catch-up mode).
+ * Exit 2 = branch inventory failed — pending count is unknown, do not trust "0".
  */
 import { execSync } from "node:child_process"
 
@@ -88,19 +89,30 @@ function main() {
     for (const line of logLines(MAIN, INTEGRATOR)) console.log(`  ${line}`)
   }
 
-  const pendingOut = execSync("node scripts/agent-branch-inventory.mjs --json", {
-    encoding: "utf-8",
-    cwd: process.cwd(),
-  })
-  let pendingCount = 0
+  // Mismatch guard: never let an inventory failure masquerade as "0 pending".
+  // A truncated/unparsable payload reports unknown and exits non-zero so the
+  // loop notices, instead of silently telling the integrator there is no work.
+  let pendingCount = null
+  let inventoryError = null
   try {
-    pendingCount = JSON.parse(pendingOut).pending?.length ?? 0
-  } catch {
-    /* ignore */
+    const pendingOut = execSync("node scripts/agent-branch-inventory.mjs --json", {
+      encoding: "utf-8",
+      cwd: process.cwd(),
+      maxBuffer: 64 * 1024 * 1024,
+    })
+    const pending = JSON.parse(pendingOut).pending
+    if (!Array.isArray(pending)) throw new Error("inventory JSON has no pending array")
+    pendingCount = pending.length
+  } catch (err) {
+    inventoryError = err instanceof Error ? err.message : String(err)
   }
-  console.log(`\nPending claude/* branches (not on main): ${pendingCount}`)
-  if (pendingCount > 0) {
-    console.log("  Run: npm run agent:branches")
+  if (pendingCount === null) {
+    console.log(`\nPending claude/* branches (not on main): UNKNOWN — inventory failed: ${inventoryError}`)
+  } else {
+    console.log(`\nPending claude/* branches (not on main): ${pendingCount}`)
+    if (pendingCount > 0) {
+      console.log("  Run: npm run agent:branches")
+    }
   }
 
   console.log("\nLane branches ahead of integrator:")
@@ -134,6 +146,10 @@ function main() {
       `CATCH-UP MODE: integrator is ${integratorAhead} commits ahead (threshold ${THRESHOLD}). Deploy agent should drain integrator → main before new backlog work.`
     )
     process.exit(1)
+  }
+  if (inventoryError) {
+    console.log(`INVENTORY FAILED: pending branch count unknown (${inventoryError}). Run npm run agent:branches directly.`)
+    process.exit(2)
   }
   console.log(`STEADY STATE: integrator within ${THRESHOLD} commits of main.`)
 }
