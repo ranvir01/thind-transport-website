@@ -67,8 +67,20 @@ export function DriverIncidentForm({ loads }: { loads: { id: string; reference: 
       )
       if ("queued" in result) {
         // No navigation while offline — router.push/refresh needs the network
-        // it doesn't have, same as the DVIR queued path.
+        // it doesn't have, same as the DVIR queued path. Clear the form (like
+        // TimeOffForm): a filled form with a live button invites a driver who
+        // doubts the toast to queue the same report twice.
         toast.success("No signal — report saved on your phone, sends automatically")
+        setForm({
+          location: "",
+          description: "",
+          policeReport: "",
+          loadId: loads[0]?.id ?? "",
+          fatality: false,
+          injuryTreatedAway: false,
+          towAwayDisabling: false,
+        })
+        setCoords(null)
       } else if (result.ok) {
         toast.success("Report filed — the office has been alerted")
         router.push("/hub/driver")
