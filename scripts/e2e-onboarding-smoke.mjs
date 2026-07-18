@@ -6,7 +6,7 @@
  */
 import puppeteer from "puppeteer"
 import { mkdirSync } from "node:fs"
-import { BASE, waitForText, login, makeShot } from "./e2e-lib.mjs"
+import { BASE, waitForText, login, makeShot, clickByText, sleep } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-onboarding"
 mkdirSync(OUT, { recursive: true })
@@ -22,16 +22,27 @@ async function main() {
   await fresh.setViewport({ width: 390, height: 844, deviceScaleFactor: 2 })
   await fresh.goto(`${BASE}/hub/signup`, { waitUntil: "networkidle2" })
   await shot(fresh, "01-signup")
+  // Signup is a 4-step wizard (Company → Branding → Driver pay → Your account);
+  // only the current step's inputs are mounted. FMCSA verify is optional, pay
+  // step ships prefilled — "just keep going" must stay a valid path.
+  await fresh.waitForSelector("#su-company", { visible: true, timeout: 10000 })
   await fresh.type("#su-company", `Bluebird Freight ${stamp}`)
   await fresh.type("#su-dot", "4112233")
+  await clickByText(fresh, "Continue")
+  await waitForText(fresh, "accent color")
+  await clickByText(fresh, "Skip for now")
+  await waitForText(fresh, "per mile")
+  await clickByText(fresh, "Continue")
+  await fresh.waitForSelector("#su-owner", { visible: true, timeout: 10000 })
   await fresh.type("#su-owner", "Rosa Bluebird")
   await fresh.type("#su-email", `rosa+${stamp}@bluebird.example`)
   await fresh.type("#su-pass", "BluebirdPass1!")
-  await Promise.all([
-    fresh.waitForNavigation({ waitUntil: "networkidle2", timeout: 25000 }),
-    fresh.click('button[type="submit"]'),
-  ])
-  await waitForText(fresh, "Set up your workspace")
+  await shot(fresh, "01b-signup-account-step")
+  await clickByText(fresh, "Create the workspace")
+  // Submit runs a server action then client-side signIn + location.href — no
+  // full navigation event to await; wait for the landing content instead.
+  await waitForText(fresh, "Set up your workspace", 30000)
+  await sleep(500)
   await shot(fresh, "02-getting-started")
   const checklist = await fresh.evaluate(() => document.body.innerText)
   if (!checklist.includes("Smart Setup")) throw new Error("Getting-started checklist missing")
