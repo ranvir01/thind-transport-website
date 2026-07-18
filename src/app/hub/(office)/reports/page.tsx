@@ -1,10 +1,16 @@
 import Link from "next/link"
+import { cookies } from "next/headers"
+import { redirect } from "next/navigation"
 import { Download } from "lucide-react"
-import { resolvePnlRange, truckPnlRange } from "@/lib/hub/reports"
+import {
+  parseStoredPnlRange, pnlPresetRanges, resolvePnlRange, truckPnlRange, REPORTS_RANGE_COOKIE,
+} from "@/lib/hub/reports"
+import { applyReportRangeAction, resetReportRangeAction } from "./actions"
 import { computeFleetKpis } from "@/lib/hub/kpi"
 import { requirePermissionPage } from "@/lib/hub/session"
 import { fmtCents } from "@/lib/hub/types"
 import { Panel, PageHeader, fieldCls } from "@/components/hub/ui"
+import { cn } from "@/lib/utils"
 import { query } from "@/lib/hub/db"
 import type { Lane } from "@/lib/hub/types"
 
@@ -22,6 +28,12 @@ export default async function ReportsPage({
 }) {
   const user = await requirePermissionPage("money:read")
   const params = await searchParams
+  if (!params.from && !params.to) {
+    // Reopen where the owner left off: a remembered range redirects to its
+    // canonical ?from/?to URL so every range-aware piece keys off params.
+    const stored = parseStoredPnlRange((await cookies()).get(REPORTS_RANGE_COOKIE)?.value)
+    if (stored) redirect(`/hub/reports?from=${stored.from}&to=${stored.to}`)
+  }
   const range = resolvePnlRange(params.from, params.to)
   const [pnl, lanes] = await Promise.all([
     truckPnlRange(user.carrierId, range),
@@ -50,6 +62,7 @@ export default async function ReportsPage({
   const pct = (p: number | null) => (p == null ? "—" : `${p}%`)
 
   const hasCustomRange = Boolean(params.from || params.to)
+  const presets = pnlPresetRanges()
   const fmtDay = (iso: string) =>
     new Date(`${iso}T00:00:00`).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
   const rangeLabel = hasCustomRange ? `${fmtDay(range.from)} – ${fmtDay(range.to)}` : "last 92 days"
@@ -82,10 +95,13 @@ export default async function ReportsPage({
         }
       />
 
-      <form method="GET" className="mb-4 flex flex-wrap items-end gap-3">
+      <form action={applyReportRangeAction} className="mb-4 flex flex-wrap items-end gap-3">
         <label className="flex w-40 flex-col gap-1 text-label text-fg-3 uppercase">
           From
-          <input type="date" name="from" defaultValue={range.from} max={range.to} className={fieldCls} />
+          {/* No max={range.to}: it froze the OLD range's end as a hard limit, so moving the
+              window forward failed native validation and the submit was silently blocked.
+              resolvePnlRange swaps a backwards range server-side anyway. */}
+          <input type="date" name="from" defaultValue={range.from} className={fieldCls} />
         </label>
         <label className="flex w-40 flex-col gap-1 text-label text-fg-3 uppercase">
           To
@@ -97,10 +113,35 @@ export default async function ReportsPage({
         >
           Apply
         </button>
+        <div className="flex min-h-[44px] flex-wrap items-center gap-1.5">
+          {presets.map((p) => {
+            const active = hasCustomRange && p.range.from === range.from && p.range.to === range.to
+            return (
+              <button
+                key={p.key}
+                type="submit"
+                name="preset"
+                value={p.key}
+                className={cn(
+                  "rounded-pill px-3 py-1.5 text-xs font-semibold border",
+                  active
+                    ? "bg-accent-soft text-accent-text border-transparent"
+                    : "border-border-strong text-fg-2 hover:bg-hover"
+                )}
+              >
+                {p.label}
+              </button>
+            )
+          })}
+        </div>
         {hasCustomRange && (
-          <Link href="/hub/reports" className="inline-flex min-h-[44px] items-center text-sm font-semibold text-accent-text hover:underline">
+          <button
+            type="submit"
+            formAction={resetReportRangeAction}
+            className="inline-flex min-h-[44px] items-center text-sm font-semibold text-accent-text hover:underline"
+          >
             Reset to last 92 days
-          </Link>
+          </button>
         )}
       </form>
 
