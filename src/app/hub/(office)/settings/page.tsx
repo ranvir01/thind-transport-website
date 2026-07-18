@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { Cable, ChevronRight, FileBadge, Tags, Users } from "lucide-react"
+import { Cable, ChevronRight, FileBadge, Palette, Tags, Users } from "lucide-react"
 import { requireOfficeUser } from "@/lib/hub/session"
 import { PageHeader, Panel } from "@/components/hub/ui"
 
@@ -11,7 +11,7 @@ const AREAS = [
   {
     href: "/hub/settings/users",
     label: "Company & users",
-    hint: "Carrier profile, pay rules, notifications, who can log in",
+    hint: "Company profile, the office alert email, and who can log in",
     icon: Users,
     ownerOnly: true,
   },
@@ -20,6 +20,13 @@ const AREAS = [
     label: "Integrations",
     hint: "ELD, fuel cards, load boards, mailbox — every feed with a CSV fallback",
     icon: Cable,
+    ownerOnly: true,
+  },
+  {
+    href: "/hub/settings/branding",
+    label: "Branding",
+    hint: "Accent color on invoices, PDFs, and the driver app",
+    icon: Palette,
     ownerOnly: true,
   },
   {
