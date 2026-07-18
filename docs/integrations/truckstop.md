@@ -1,79 +1,110 @@
 # Truckstop.com load board — scouting notes
 
-Status: **search adapter shipped (stub-first), booking mapper + product surface not yet
-built.** Truckstop.com is the second load board on `docs/integrations/creds-shopping-list.md`,
-same shape as DAT: an interactive freight search a dispatcher drives, not a background sync
-into an existing table. This slice ships the `SyncSource`-shaped contract
-(`connected`/`pull`/`search`) and its normalizer in `src/lib/hub/integrations/truckstop.ts`,
-mock+contract tested, mirroring `dat.ts`.
+Status: **feature complete in-app (search UI + booking shipped), but the adapter's assumed
+wire protocol is wrong** — scouted 2026-07-18 against developer.truckstop.com. Truckstop's
+board load search is a **SOAP/XML web service with credentials in the request body**, not
+the Bearer-key REST endpoint `truckstop.ts` guesses at. Auth + transport both need a rewrite
+before real credentials can activate anything (same class of mismatch the EFS/WEX scouts
+found: adapter assumed REST JSON, vendor ships something older). Nothing is broken today —
+without pasted credentials the adapter throws `truckstop is not connected` before any HTTP
+happens — but the shopping list's "paste key → works" promise does not hold for this row.
 
-## Why there's no `truckstopPostingToLoadDraft` yet
+## What's actually built (doc was stale on this — corrected 2026-07-18)
 
-DAT's `datPostingToLoadDraft` sets `source: "dat"` on the draft it hands to `createLoad()`.
-That value is accepted because `hub.loads.source` carries a DB CHECK constraint
-(`migrations/hub/002_tenancy_money_events.sql`): `CHECK (source IN ('dat','direct','import','quote'))`.
-Truckstop has no slot in that list yet, and migrations are a shared file outside the
-integrations lane's territory (`AGENTS.md` §5) — adding `'truckstop'` needs a new
-append-only migration, coordinated through the integrator rather than added unilaterally
-here. Once that constraint grows the value, the mapper itself is a straight copy of
-`datPostingToLoadDraft` with the source string swapped — same stops/rate/equipment mapping,
-same `customer_id` omission (a dispatcher still has to pick a customer).
+The previous revision of this doc said the booking mapper was blocked on a migration. That's
+long done: `migrations/hub/017_truckstop_load_source.sql` (applied) added `'truckstop'` to
+the `hub.loads.source` CHECK constraint, and the full slice shipped:
 
-## Auth model (assumed, unconfirmed)
+- `src/lib/hub/integrations/truckstop.ts` — `search`/`pull` contract, `normalizeTruckstopPosting`,
+  `truckstopPostingToLoadDraft` (customer_id deliberately omitted; dispatcher picks it)
+- `LoadBoardFreightSearch.tsx` on `/hub/loadboard` — shared DAT/Truckstop search + book UI
+- `bookTruckstopPostingAction` (`src/app/hub/_actions/truckstop-freight.ts`)
+- Mock + contract + action tests; registry `status: "live"` (manual sync)
 
-- `registry.ts`'s `truckstop` entry has a single `apiKey` field — Truckstop.com's developer
-  portal issues API keys per account, not an OAuth2 client-credentials flow like TruckerCloud.
-  `truckstop.ts` assumes a Bearer token (`Authorization: Bearer <apiKey>`) until a real
-  developer packet says otherwise.
-- Base URL is an env override (`TRUCKSTOP_API_BASE`), defaulting to a placeholder host
-  (`https://api.truckstop.com/v1`) — never treated as confirmed, same caveat as `DAT_API_BASE`.
+## Auth model (CONFIRMED — differs from the adapter)
 
-## Search shape (assumed, unconfirmed)
+- **No API key, no OAuth, no Bearer header.** Every request carries three credentials inside
+  the SOAP envelope body: `IntegrationId` (a unique 6-digit number Truckstop generates per
+  integration), `UserName`, `Password`. The account must have the relevant web service
+  (e.g. Load Search) enabled on that integration ID.
+- **A signed Systems Integration Agreement (SIA) is required before credentials are issued** —
+  fully executed, no exceptions per the developer portal. Request via the carrier's Truckstop
+  account manager or `tsi@truckstop.com`.
+- API access is tied to the paid load-board subscription; marketplace guidance says accounts
+  need the **Load Board Pro** tier for API access (see pricing below).
+- `registry.ts`'s single `apiKey` credential field is therefore wrong for this provider — it
+  needs `integrationId` / `username` / `password` (registry + `credentials.ts` allowlist are
+  integrations-lane territory; flagged in Backlog, not changed here).
 
-`normalizeTruckstopPosting` in `src/lib/hub/integrations/truckstop.ts` is the one place the
-guessed response shape is read. Assumed shape:
+## Endpoints for our use case (CONFIRMED)
 
-```json
-// GET /loads/search?originCity=&originState=&destState=&equipment=&radiusMiles= →
-// { "postings": [ ... ] }
-{
-  "postingId": "string — becomes external_id",
-  "postedDate": "ISO 8601",
-  "equipment": "Van | Reefer | Flatbed | ...",
-  "originCity": "string",
-  "originState": "string",
-  "destCity": "string",
-  "destState": "string",
-  "miles": 0,
-  "totalRate": 0.0,
-  "pickupDate": "ISO date",
-  "contactPhone": "string"
-}
-```
+Our use case is carrier-side: search the public board, prefill a load draft. That is the
+**Load Search web service**, SOAP 1.1 / XML:
 
-If the real endpoint, auth flow, or field names differ (likely), only
-`normalizeTruckstopPosting`, the `/loads/search` path, and the auth header construction in
-`truckstopSource()` change — the `search`/`pull` contract and its tests don't move.
+| Purpose | Endpoint | SOAPAction |
+|---|---|---|
+| Search all board loads | `POST /v13/Searching/LoadSearch.svc` | `http://webservices.truckstop.com/v12/ILoadSearch/GetLoadSearchResults` |
+| Truck search (not our use case) | `POST /V13/Searching/TruckSearch.svc` | analogous `ITruckSearch` action |
+| Truck posting (not our use case) | `POST /v13/Posting/TruckPosting.svc` | — |
+
+- **Test host: `https://testws.truckstop.com`** (all portal examples run against it) —
+  a real sandbox exists; ask for test credentials alongside the SIA.
+- Production host follows the `webservices.truckstop.com` namespace the SOAPAction uses;
+  confirm the exact production base with the developer packet at onboarding.
+- Confirmed request capabilities: origin/destination accept single or multiple states
+  (max **15 states** per side); `HoursOld` filters posting age (0 = all); sorting via a
+  `SortColumns` enum + `SortDescending` flag.
+- There IS a modern REST surface (`/loadmanagement/v2/load/search`, JSON) but it searches
+  **your own posted loads** — the broker/shipper posting side, not the public board. Don't
+  mistake it for the carrier search; the board search remains SOAP as of 2026-07-18, with
+  no deprecation or REST-migration notice found.
+- Portal tip for future scouts: `https://developer.truckstop.com/llms.txt` is a
+  Markdown/OpenAPI index of the whole reference (the portal 403s generic fetchers and this
+  sandbox's egress proxy blocks the host — research went through search snippets; a pass
+  from an unrestricted network should pull llms.txt directly).
+
+## What the adapter must change before activation
+
+`truckstopSource()` currently issues `GET {base}/loads/search?…` with
+`Authorization: Bearer <apiKey>` and parses `{ postings: [...] }` JSON. Reality:
+
+1. **Transport:** build a SOAP 1.1 XML envelope, `POST` it to `/v13/Searching/LoadSearch.svc`
+   with the `SOAPAction` header, and parse an XML response (no JSON anywhere).
+2. **Auth:** embed `IntegrationId`/`UserName`/`Password` in the envelope body per request.
+3. **Normalizer:** `normalizeTruckstopPosting`'s field guesses (`postingId`, `totalRate`, …)
+   must be re-mapped from the real `GetLoadSearchResults` XML element names — the full
+   response schema sits behind the portal's bot wall; take it from the developer packet or
+   an llms.txt pass rather than guessing again.
+
+The contract (`search`/`pull`/`connected`) and everything downstream — mapper, UI, action,
+migration — survive unchanged; this is a transport-layer swap isolated to `truckstopSource()`
+plus the normalizer, exactly the seam the stub-first doctrine reserved.
 
 ## Rate limits / sandbox
 
-Not found in accessible public docs. Ask for sandbox/test-key access alongside production
-credentials when a Truckstop.com contact is available; record the answer here once known.
+- Sandbox: **yes** — `testws.truckstop.com` (see above); credentials come with the SIA.
+- Rate limits: **not published** anywhere accessible; ask when the SIA is signed and
+  record the answer here. Until known, keep searches dispatcher-initiated (manual sync)
+  rather than cron-polled — which is how the registry entry is configured anyway.
+
+## Pricing (checked 2026-07-18)
+
+Carrier-side load-board plans: **Basic $42/mo, Advanced $135/mo, Pro $159/mo** (plans range
+up to $369/mo on the broker side). API access requires the Pro tier plus the signed SIA —
+budget ~$159/mo for this row, not the bare $42 entry plan.
 
 ## What ships today without any of this
 
-Pasting a rate confirmation onto a load manually is the product today and stays the
-product — this adapter is additive, and until a search UI + booking mapper exist there is
-no dispatcher-facing surface for it at all (it's a tested library function, not a feature yet).
+Manual load entry and rate-con paste-in remain the product. The search UI renders only when
+`truckstopConnected` is true, so the wrong-transport adapter is dormant until credentials
+exist — no production risk right now, but pasting real credentials would fail on the first
+search, which is why the rewrite is flagged urgent in the Backlog rather than waiting for a
+customer to find it.
 
 ## Open questions for the next pass
 
-- Migration: add `'truckstop'` to the `hub.loads.source` CHECK constraint, then ship
-  `truckstopPostingToLoadDraft` (copy of `datPostingToLoadDraft`) — coordinate via `Backlog:`
-  since migrations are shared-file territory.
-- Design + build the dispatcher-facing search panel and "book this posting" button — likely
-  shared with (or adjacent to) DAT's equivalent office-lane UI once that's designed, so the
-  two load boards get one search/book surface instead of two.
-- Confirm the real Truckstop.com auth flow and search endpoint shape against an actual
-  developer packet — the #1 blocker to flipping `registry.ts`'s `truckstop` entry from
-  `stub` to `live`.
+- Get the real `GetLoadSearchResults` request/response XML schema (developer packet or
+  llms.txt from an unblocked network) and pin the normalizer mapping to it.
+- Confirm the production SOAP host and whether load *booking* (not just search) has any API
+  surface, or whether booking stays phone/email + our draft prefill.
+- Confirm rate limits and any per-integration-ID concurrency rules at SIA time.

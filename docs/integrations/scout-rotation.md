@@ -20,7 +20,7 @@ as an urgent `Backlog:` item.
 | `comdata` | **Built** — adapter shipped, daily cron live; real APIs confirmed to exist (REST portal + SOAP Transaction History), but partner feeds are batch files (AC00029) — transport TBD at onboarding (see doc) | `apiKey`, `apiSecret` | `src/lib/hub/integrations/comdata.ts` | [`comdata.md`](./comdata.md) | 2026-07-16 |
 | `qbo` | **Built** — pull + push both directions, refresh-token rotation confirmed correct; hardcoded `minorversion=65` is stale (Intuit serves v75 regardless since 2025-08-01); refresh tokens now carry a 5-year hard cap (see doc) | OAuth2 (Intuit) | `src/lib/hub/integrations/qbo.ts` | [`qbo.md`](./qbo.md) | 2026-07-17 |
 | `factor` | **Built** — push + webhook receiver; vendor landscape pinned: OTR Solutions is the only factor with public dev docs + test env (recommended first target); Apex/Denim are API-key class; RTS/Triumph are FTP file drops (EFS-style transport gap); NO factor documents webhooks to carriers — funding status is poll-based everywhere (see doc) | varies by factor | `src/lib/hub/integrations/factor.ts` | [`factor.md`](./factor.md) | 2026-07-17 |
-| `truckstop` | **Built** — search adapter, booking mapper pending (blocked on migration) | API key | `src/lib/hub/integrations/truckstop.ts` | [`truckstop.md`](./truckstop.md) | 2026-07-06 |
+| `truckstop` | **Built** — full slice shipped (search UI + booking, migration 017 applied); real API confirmed as SOAP/XML with `IntegrationId`+`UserName`+`Password` in the envelope body — adapter's Bearer-key REST guess is wrong on auth AND transport, rewrite needed before activation; sandbox exists at `testws.truckstop.com` (see doc) | `integrationId`, `username`, `password` (registry still says `apiKey` — wrong) | `src/lib/hub/integrations/truckstop.ts` | [`truckstop.md`](./truckstop.md) | 2026-07-18 |
 
 All ten vendor providers now have both a shipped adapter and a research doc (this row was
 stale — it previously described `dat`/`efs`/`wex`/`comdata`/`truckercloud` as credential-only
@@ -37,11 +37,13 @@ integrations that were never in scope of the vendor shopping list: both `fmcsa.m
    notes before a lane builds the adapter.
 3. One provider per cycle. Update the "Last researched" date and doc link when done.
 
-Next up by this rule: `truckstop.md` is now the oldest vendor doc (2026-07-06, unchanged)
-after `factor.md` was refreshed 2026-07-17. The truckstop pass should re-check their
-developer-API tiers and whether the booking flow still needs the migration the doc calls
-blocked (migration `017_truckstop_load_source.sql` has since been applied — the doc may be
-stale on that), plus rate limits and sandbox on their current partner program. After that,
-`mailbox.md`/`fmcsa.md`/`eia.md` (2026-07-07) are the oldest remaining, then
-`terminal.md` (2026-07-08) — terminal is the highest-value recheck of those since its
-adapter runs a live 30-minute cron in production.
+Next up by this rule: `mailbox.md` and the two government-API docs `fmcsa.md`/`eia.md`
+(all 2026-07-07) are the oldest after `truckstop.md` was refreshed 2026-07-18; of those,
+`mailbox.md` first — it's a built adapter with three live auth paths (Gmail app password,
+M365 + Google Workspace OAuth2 shipped 2026-07-11) and the doc predates the OAuth2 work, so
+it likely describes the plain-LOGIN-only era. Then `terminal.md` (2026-07-08) — the
+highest-value recheck overall since its adapter runs a live 30-minute cron in production.
+The 2026-07-18 truckstop pass answered the previous open questions: migration 017 is indeed
+applied (doc corrected), sandbox exists (`testws.truckstop.com`), API tier is Load Board
+Pro ($159/mo) + signed SIA, and the real protocol is SOAP/XML body-credential auth — an
+adapter rewrite is flagged urgent for the integrations lane.
