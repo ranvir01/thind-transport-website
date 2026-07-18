@@ -119,8 +119,12 @@ function main() {
   const rows = buildInventory({ pendingOnly: !showAll })
 
   if (json) {
+    // No process.exit() here: stdout writes to a pipe are async, and exiting
+    // right after console.log truncates the JSON mid-stream for any caller
+    // capturing output (execSync). Fall through and let the process exit
+    // naturally so the full payload flushes.
     console.log(JSON.stringify({ integrator: INTEGRATOR, main: MAIN, pending: rows }, null, 2))
-    process.exit(rows.length ? 0 : 0)
+    return
   }
 
   console.log("LoadOff agent branch inventory")

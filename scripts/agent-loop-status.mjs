@@ -67,6 +67,33 @@ function branchExists(name) {
   return git(`rev-parse --verify ${name}`).length > 0
 }
 
+/**
+ * Parse `agent-branch-inventory.mjs --json` output into a pending-branch
+ * count. Throws on invalid/truncated JSON or a missing pending array —
+ * callers must surface the failure, not report 0 (the old catch-to-0 path
+ * masked a truncated-pipe bug as "Pending claude/* branches: 0" while
+ * agent:branches showed hundreds).
+ */
+export function parsePendingCount(jsonText) {
+  const parsed = JSON.parse(jsonText)
+  if (!Array.isArray(parsed.pending)) throw new Error("inventory --json output has no pending array")
+  return parsed.pending.length
+}
+
+/**
+ * Cheap independent cross-check: claude/* branches with commits not reachable
+ * from main, straight from git. An upper bound on the inventory's pending
+ * count (patch-equivalent branches show here but not there) — used only to
+ * catch the inventory implausibly reporting 0.
+ */
+function unmergedClaudeBranchCount() {
+  const out = git(`branch -r --no-merged ${MAIN}`)
+  return out
+    .split("\n")
+    .map((l) => l.trim())
+    .filter((l) => l.startsWith("origin/claude/") && l !== INTEGRATOR).length
+}
+
 function main() {
   git("fetch origin --quiet")
 
@@ -88,19 +115,32 @@ function main() {
     for (const line of logLines(MAIN, INTEGRATOR)) console.log(`  ${line}`)
   }
 
-  const pendingOut = execSync("node scripts/agent-branch-inventory.mjs --json", {
-    encoding: "utf-8",
-    cwd: process.cwd(),
-  })
-  let pendingCount = 0
+  let pendingCount = null
   try {
-    pendingCount = JSON.parse(pendingOut).pending?.length ?? 0
-  } catch {
-    /* ignore */
-  }
-  console.log(`\nPending claude/* branches (not on main): ${pendingCount}`)
-  if (pendingCount > 0) {
+    const pendingOut = execSync("node scripts/agent-branch-inventory.mjs --json", {
+      encoding: "utf-8",
+      cwd: process.cwd(),
+      maxBuffer: 32 * 1024 * 1024,
+    })
+    pendingCount = parsePendingCount(pendingOut)
+  } catch (err) {
+    const reason = String(err?.message ?? err).split("\n")[0]
+    console.log(`\nPending claude/* branches (not on main): UNKNOWN — inventory --json failed (${reason})`)
     console.log("  Run: npm run agent:branches")
+  }
+  if (pendingCount !== null) {
+    console.log(`\nPending claude/* branches (not on main): ${pendingCount}`)
+    if (pendingCount === 0) {
+      const unmerged = unmergedClaudeBranchCount()
+      if (unmerged > 0) {
+        console.log(
+          `  MISMATCH: git sees ${unmerged} claude/* branch(es) not merged to main but the inventory reports 0 pending — trust: npm run agent:branches`
+        )
+      }
+    }
+    if (pendingCount > 0) {
+      console.log("  Run: npm run agent:branches")
+    }
   }
 
   console.log("\nLane branches ahead of integrator:")
@@ -138,4 +178,5 @@ function main() {
   console.log(`STEADY STATE: integrator within ${THRESHOLD} commits of main.`)
 }
 
-main()
+// import-safe: only run when executed directly (tests import parsePendingCount)
+if (process.argv[1] && import.meta.url === new URL(`file://${process.argv[1]}`).href) main()
