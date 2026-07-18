@@ -71,7 +71,8 @@ function unpickedCommitCount(ref, base) {
   return countUnpickedFromCherry(out)
 }
 
-function buildInventory({ pendingOnly }) {
+// exported: agent-loop-status.mjs imports this instead of shelling out to --json
+export function buildInventory({ pendingOnly }) {
   git("fetch origin --quiet")
   const branches = listClaudeBranches()
   const rows = []

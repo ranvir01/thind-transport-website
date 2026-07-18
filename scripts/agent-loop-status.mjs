@@ -10,6 +10,7 @@
  * Exit 1 = integrator is ahead of main by more than AGENT_CATCHUP_THRESHOLD (catch-up mode).
  */
 import { execSync } from "node:child_process"
+import { buildInventory } from "./agent-branch-inventory.mjs"
 
 const INTEGRATOR = "origin/claude/hauldesk-project-setup-l1luoo"
 const MAIN = "origin/main"
@@ -67,6 +68,26 @@ function branchExists(name) {
   return git(`rev-parse --verify ${name}`).length > 0
 }
 
+function countUnmergedClaudeBranches() {
+  const out = git(`branch -r --no-merged ${MAIN}`)
+  return out
+    .split("\n")
+    .map((l) => l.trim())
+    .filter((l) => l.startsWith("origin/claude/") && l !== INTEGRATOR).length
+}
+
+/**
+ * Mismatch guard: a pending count of 0 must agree with git's own ancestry
+ * view. Branches can legitimately be ancestry-unmerged while patch-equivalent
+ * to main (cherry-picked), but "0 pending, N unmerged" also matches what an
+ * inventory bug looks like — so say so instead of letting 0 read as "all
+ * agent work landed".
+ */
+export function pendingMismatchWarning(pendingCount, unmergedCount) {
+  if (pendingCount !== 0 || unmergedCount === 0) return null
+  return `WARNING: inventory reports 0 pending but ${unmergedCount} claude/* branch(es) are unmerged by ancestry — either all patch-equivalent to main or an inventory bug. Cross-check: npm run agent:branches`
+}
+
 function main() {
   git("fetch origin --quiet")
 
@@ -88,19 +109,19 @@ function main() {
     for (const line of logLines(MAIN, INTEGRATOR)) console.log(`  ${line}`)
   }
 
-  const pendingOut = execSync("node scripts/agent-branch-inventory.mjs --json", {
-    encoding: "utf-8",
-    cwd: process.cwd(),
-  })
-  let pendingCount = 0
+  let pendingCount = null
   try {
-    pendingCount = JSON.parse(pendingOut).pending?.length ?? 0
-  } catch {
-    /* ignore */
+    pendingCount = buildInventory({ pendingOnly: true }).length
+  } catch (err) {
+    console.log(`\nPending claude/* branches: UNKNOWN — inventory failed: ${err?.message ?? err}`)
   }
-  console.log(`\nPending claude/* branches (not on main): ${pendingCount}`)
-  if (pendingCount > 0) {
-    console.log("  Run: npm run agent:branches")
+  if (pendingCount !== null) {
+    console.log(`\nPending claude/* branches (not on main): ${pendingCount}`)
+    if (pendingCount > 0) {
+      console.log("  Run: npm run agent:branches")
+    }
+    const warning = pendingMismatchWarning(pendingCount, countUnmergedClaudeBranches())
+    if (warning) console.log(`  ${warning}`)
   }
 
   console.log("\nLane branches ahead of integrator:")
@@ -138,4 +159,5 @@ function main() {
   console.log(`STEADY STATE: integrator within ${THRESHOLD} commits of main.`)
 }
 
-main()
+// import-safe: only run when executed directly (tests import pendingMismatchWarning)
+if (process.argv[1] && import.meta.url === new URL(`file://${process.argv[1]}`).href) main()
