@@ -12,27 +12,52 @@ const OUT = process.argv[2] ?? "e2e-shots-onboarding"
 mkdirSync(OUT, { recursive: true })
 const shot = makeShot(OUT)
 
+/** Advance the signup wizard one step ("Continue" / "Skip for now"). */
+async function wizardNext(page) {
+  const clicked = await page.evaluate(() => {
+    const btn = [...document.querySelectorAll('button[type="button"]')].find((b) =>
+      /continue|skip for now/i.test(b.innerText)
+    )
+    if (!btn) return false
+    btn.click()
+    return true
+  })
+  if (!clicked) throw new Error("wizard next button not found")
+}
+
 async function main() {
   const browser = await puppeteer.launch({ headless: "new", args: ["--no-sandbox", "--disable-dev-shm-usage"] })
   const stamp = Date.now().toString().slice(-6)
 
-  console.log("1. Self-serve signup creates a new workspace")
+  console.log("1. Self-serve signup walks the onboarding wizard")
   const signupCtx = await browser.createBrowserContext()
   const fresh = await signupCtx.newPage()
   await fresh.setViewport({ width: 390, height: 844, deviceScaleFactor: 2 })
   await fresh.goto(`${BASE}/hub/signup`, { waitUntil: "networkidle2" })
-  await shot(fresh, "01-signup")
+  await shot(fresh, "01-signup-company")
+  // Step 1 — company facts (FMCSA verify is optional; skip it here)
   await fresh.type("#su-company", `Bluebird Freight ${stamp}`)
   await fresh.type("#su-dot", "4112233")
+  await wizardNext(fresh)
+  // Step 2 — branding accent; no pick → button reads "Skip for now"
+  await fresh.waitForSelector('[role="radiogroup"]', { timeout: 10000 })
+  await shot(fresh, "02-signup-branding")
+  await wizardNext(fresh)
+  // Step 3 — driver pay, prefilled with platform defaults
+  await fresh.waitForSelector("#su-permile", { timeout: 10000 })
+  await wizardNext(fresh)
+  // Step 4 — owner account, then submit creates the workspace
+  await fresh.waitForSelector("#su-owner", { timeout: 10000 })
   await fresh.type("#su-owner", "Rosa Bluebird")
   await fresh.type("#su-email", `rosa+${stamp}@bluebird.example`)
   await fresh.type("#su-pass", "BluebirdPass1!")
+  await shot(fresh, "03-signup-account")
   await Promise.all([
     fresh.waitForNavigation({ waitUntil: "networkidle2", timeout: 25000 }),
     fresh.click('button[type="submit"]'),
   ])
   await waitForText(fresh, "Set up your workspace")
-  await shot(fresh, "02-getting-started")
+  await shot(fresh, "04-getting-started")
   const checklist = await fresh.evaluate(() => document.body.innerText)
   if (!checklist.includes("Smart Setup")) throw new Error("Getting-started checklist missing")
   if (checklist.includes("THD-")) throw new Error("NEW TENANT SEES THIND DATA — isolation broken!")
@@ -48,7 +73,7 @@ async function main() {
   const loadsText = await cascade.evaluate(() => document.body.innerText)
   if (!loadsText.includes("CAS-5001")) throw new Error("Cascade load missing")
   if (loadsText.includes("THD-")) throw new Error("CASCADE SEES THIND LOADS — isolation broken!")
-  await shot(cascade, "03-cascade-loads")
+  await shot(cascade, "05-cascade-loads")
   console.log("   zero bleed between tenants ✓")
 
   console.log("3. Platform admin sees tenant ops only")
@@ -59,7 +84,7 @@ async function main() {
   if (!admin.url().includes("/hub/admin")) throw new Error(`Admin landed on ${admin.url()}`)
   await waitForText(admin, "Platform admin")
   await waitForText(admin, "Cascade Demo Lines")
-  await shot(admin, "04-platform-admin")
+  await shot(admin, "06-platform-admin")
   // Bouncing into a tenant surface must redirect back.
   await admin.goto(`${BASE}/hub/loads`, { waitUntil: "networkidle2" })
   if (!admin.url().includes("/hub/admin")) throw new Error("Platform admin reached tenant data!")

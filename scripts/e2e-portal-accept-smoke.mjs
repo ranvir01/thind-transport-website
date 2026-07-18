@@ -103,7 +103,10 @@ async function main() {
     await shot(page, "01-valid-invitation")
 
     await Promise.all([
-      page.waitForFunction(() => window.location.pathname === "/hub/portal", { timeout: 15000 }),
+      // networkidle2 (not a bare pathname poll): the pathname flips at the
+      // START of the client-side redirect, and a screenshot taken mid-swap
+      // dies with "Cannot take screenshot with 0 width".
+      page.waitForNavigation({ waitUntil: "networkidle2", timeout: 15000 }),
       page.click('button[type="submit"]'),
     ])
     check(page.url().includes("/hub/portal"), `accepting the invitation signs in and lands on /hub/portal (url=${page.url()})`)
@@ -152,7 +155,9 @@ async function main() {
 
     check(consoleErrors.length === 0, `no console errors (${consoleErrors.length}: ${consoleErrors.slice(0, 2).join(" | ")})`)
   } catch (err) {
-    await shot(page, "ZZ-failure")
+    // The failure shot is best-effort — if the page is mid-navigation the
+    // screenshot itself throws, which must not eat the real failure report.
+    await shot(page, "ZZ-failure").catch(() => {})
     failures.push(`crash: ${err.message}`)
   } finally {
     await browser.close()
@@ -166,4 +171,7 @@ async function main() {
   console.log("\nPortal accept smoke passed.")
 }
 
-main()
+main().catch((err) => {
+  console.error("\nPortal accept smoke CRASHED:", err.message)
+  process.exit(1)
+})
