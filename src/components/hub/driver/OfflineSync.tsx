@@ -154,7 +154,10 @@ export function OfflineSync() {
           ? `Sending ${pending} saved update${pending > 1 ? "s" : ""}…`
           : pending > 0
             ? `No signal — ${pending} update${pending > 1 ? "s" : ""} saved, sends automatically`
-            : "No signal — your taps still save and send when you're back"}
+            : // Cancels are the one deliberate exception to the queue (a cancel
+              // replayed hours later could race an office approval) — the
+              // banner must not promise they save.
+              "No signal — your taps still save and send when you're back; cancels wait for signal"}
       </p>
     </div>
   )
