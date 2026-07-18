@@ -89,7 +89,7 @@ async function main() {
            hub.facility_notes, hub.facilities, hub.pay_rules, hub.notifications,
            hub.push_subscriptions, hub.tasks, hub.message_reads, hub.messages,
            hub.message_threads, hub.message_templates, hub.announcement_acks, hub.announcements,
-           hub.document_requests, hub.lanes, hub.time_off_requests
+           hub.document_requests, hub.lanes, hub.time_off_requests, hub.api_credentials
            RESTART IDENTITY CASCADE`)
   await q(`DELETE FROM hub.ifta_tax_rates`)
   // Reset invoice numbering

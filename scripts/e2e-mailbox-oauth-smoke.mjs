@@ -16,7 +16,7 @@
  */
 import puppeteer from "puppeteer"
 import { mkdirSync } from "node:fs"
-import { BASE, sleep, failures, check, waitForText, login, makeShot } from "./e2e-lib.mjs"
+import { BASE, sleep, failures, check, waitForText, login, makeShot, reseed } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-mailbox-oauth"
 mkdirSync(OUT, { recursive: true })
@@ -45,6 +45,9 @@ async function clickInCard(page, label) {
 }
 
 async function main() {
+  // State-consuming: connects/disconnects the docs_mailbox credential, and a
+  // failed prior run leaves it connected — start from a known-clean seed.
+  reseed()
   const browser = await puppeteer.launch({
     headless: "new",
     args: ["--no-sandbox", "--disable-dev-shm-usage"],
@@ -110,7 +113,11 @@ async function main() {
   await clickInCard(page, "Cancel")
 
   console.log("5. Disconnect leaves the demo carrier clean")
+  // Disconnect is a destructive action — the card swaps to an inline
+  // "Disconnect it / Keep" confirmation; the first click only arms it.
   await clickInCard(page, "Disconnect")
+  await sleep(300)
+  await clickInCard(page, "Disconnect it")
   await waitForText(page, "the CSV import path keeps working")
   await sleep(1200)
   const finalText = await cardText(page)

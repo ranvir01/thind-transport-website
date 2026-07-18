@@ -6,7 +6,7 @@
  */
 import puppeteer from "puppeteer"
 import { mkdirSync } from "node:fs"
-import { BASE, waitForText, login, makeShot } from "./e2e-lib.mjs"
+import { BASE, waitForText, login, makeShot, clickByText } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-onboarding"
 mkdirSync(OUT, { recursive: true })
@@ -22,8 +22,17 @@ async function main() {
   await fresh.setViewport({ width: 390, height: 844, deviceScaleFactor: 2 })
   await fresh.goto(`${BASE}/hub/signup`, { waitUntil: "networkidle2" })
   await shot(fresh, "01-signup")
+  // Signup is a 4-step wizard (Company → Branding → Driver pay → Your account);
+  // only the current step's inputs are mounted, so walk it like a user would.
   await fresh.type("#su-company", `Bluebird Freight ${stamp}`)
   await fresh.type("#su-dot", "4112233")
+  await clickByText(fresh, "Continue") // → Branding
+  await fresh.waitForSelector('[role="radiogroup"]')
+  await clickByText(fresh, "Skip for now") // → Driver pay (prefilled defaults)
+  await fresh.waitForSelector("#su-permile")
+  await clickByText(fresh, "Continue") // → Your account
+  await fresh.waitForSelector("#su-owner")
+  await shot(fresh, "01b-signup-account-step")
   await fresh.type("#su-owner", "Rosa Bluebird")
   await fresh.type("#su-email", `rosa+${stamp}@bluebird.example`)
   await fresh.type("#su-pass", "BluebirdPass1!")
