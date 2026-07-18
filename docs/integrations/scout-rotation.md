@@ -9,8 +9,8 @@ as an urgent `Backlog:` item.
 
 | Provider | Code status | Credential fields | Adapter file | Research doc | Last researched |
 |---|---|---|---|---|---|
-| `terminal` | **Built** — live TSP aggregator (vehicles + HOS), 30-min cron sync | `apiKey`, `connectionToken` (+ `TERMINAL_API_BASE` env, optional) | `src/lib/hub/telematics.ts` | [`terminal.md`](./terminal.md) | 2026-07-08 |
-| `mailbox` | **Built** — generic IMAP client, not a vendor SDK. Plain LOGIN auth — broken against M365/Google Workspace, see doc | `host`, `port`, `user`, `password`, `folder` | `src/lib/hub/mailbox.ts` | [`mailbox.md`](./mailbox.md) | 2026-07-07 |
+| `terminal` | **Built** — live TSP aggregator (vehicles + HOS); cron now daily 12:00 UTC per `vercel.json` (the "30-min cron" in `terminal.md` predates the Hobby-plan daily-only fix — reconcile on next scout pass) | `apiKey`, `connectionToken` (+ `TERMINAL_API_BASE` env, optional) | `src/lib/hub/telematics.ts` | [`terminal.md`](./terminal.md) | 2026-07-08 |
+| `mailbox` | **Built** — generic IMAP client, not a vendor SDK. Three auth paths live since 2026-07-11: Gmail app password, M365 client-credentials OAuth2, Google Workspace service-account OAuth2 (XOAUTH2). Cron is daily 12:30 UTC, not hourly as older notes said. Workspace app-password reliability contested — steer Workspace to OAuth2 (see doc) | `user`, `password` (Gmail only), `tenantId`/`clientId`/`clientSecret` (M365), `serviceAccountKey` (Workspace), `host`, `port`, `folder` | `src/lib/hub/mailbox.ts` + `mailbox-oauth.ts` | [`mailbox.md`](./mailbox.md) | 2026-07-18 |
 | `fmcsa` (adjacent, free, not in `IntegrationProvider` union — no stored creds) | **Built** — QCMobile broker vetting | `FMCSA_WEBKEY` env | `src/lib/hub/vetting.ts` | [`fmcsa.md`](./fmcsa.md) | 2026-07-07 |
 | `eia` (adjacent, free, not in `IntegrationProvider` union) | **Built** — diesel price benchmark | `EIA_API_KEY` env | `src/lib/hub/fuel.ts` | [`eia.md`](./eia.md) | 2026-07-07 |
 | `truckercloud` | **Built** — adapter shipped, drop-in second aggregator to Terminal | `apiKey`, `clientId`/`clientSecret` | `src/lib/hub/telematics.ts` (`truckerCloudSource`) | [`truckercloud.md`](./truckercloud.md) | 2026-07-10 |
@@ -37,13 +37,15 @@ integrations that were never in scope of the vendor shopping list: both `fmcsa.m
    notes before a lane builds the adapter.
 3. One provider per cycle. Update the "Last researched" date and doc link when done.
 
-Next up by this rule: `mailbox.md` and the two government-API docs `fmcsa.md`/`eia.md`
-(all 2026-07-07) are the oldest after `truckstop.md` was refreshed 2026-07-18; of those,
-`mailbox.md` first — it's a built adapter with three live auth paths (Gmail app password,
-M365 + Google Workspace OAuth2 shipped 2026-07-11) and the doc predates the OAuth2 work, so
-it likely describes the plain-LOGIN-only era. Then `terminal.md` (2026-07-08) — the
-highest-value recheck overall since its adapter runs a live 30-minute cron in production.
-The 2026-07-18 truckstop pass answered the previous open questions: migration 017 is indeed
-applied (doc corrected), sandbox exists (`testws.truckstop.com`), API tier is Load Board
-Pro ($159/mo) + signed SIA, and the real protocol is SOAP/XML body-credential auth — an
-adapter rewrite is flagged urgent for the integrations lane.
+Next up by this rule: `terminal.md` (2026-07-08) — the highest-value recheck since its
+adapter is a live production vendor sync; that pass must also reconcile the doc's "30-min
+cron" claims with `vercel.json`'s daily schedule. Then the two government-API docs
+`fmcsa.md`/`eia.md` (2026-07-07, now the oldest — low risk, free stable gov APIs).
+The 2026-07-18 mailbox pass found: the doc's auth-model section was already accurate
+(the OAuth2 shipper updated it 2026-07-11 — better than the previous next-up note assumed);
+real drift was the cron cadence (daily 12:30 UTC, not hourly — doc + registry corrected)
+and a new provider-policy nuance: Google Workspace app-password IMAP is contested
+post-May-2025 (conflicting sources, Google help pages 403-blocked) — operationally moot
+since the Workspace OAuth2 path shipped and the UI steers there. Microsoft side clean:
+`IMAP.AccessAsApp` client-credentials unchanged; April 2026 basic-auth retirement is
+SMTP-AUTH-only (we don't send).
