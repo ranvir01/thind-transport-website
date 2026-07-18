@@ -12,6 +12,15 @@ const OUT = process.argv[2] ?? "e2e-shots-onboarding"
 mkdirSync(OUT, { recursive: true })
 const shot = makeShot(OUT)
 
+/** Click the wizard's footer button by its visible label (Continue / Skip for now). */
+async function clickWizardButton(page, label) {
+  await page.evaluate((wanted) => {
+    const btn = [...document.querySelectorAll("button")].find((b) => b.innerText.trim().startsWith(wanted))
+    if (!btn) throw new Error(`No wizard button labeled "${wanted}"`)
+    btn.click()
+  }, label)
+}
+
 async function main() {
   const browser = await puppeteer.launch({ headless: "new", args: ["--no-sandbox", "--disable-dev-shm-usage"] })
   const stamp = Date.now().toString().slice(-6)
@@ -22,8 +31,17 @@ async function main() {
   await fresh.setViewport({ width: 390, height: 844, deviceScaleFactor: 2 })
   await fresh.goto(`${BASE}/hub/signup`, { waitUntil: "networkidle2" })
   await shot(fresh, "01-signup")
+  // Signup is a 4-step wizard (Company → Branding → Driver pay → Your account)
+  // since the M11 onboarding work — walk it like an owner would; only the
+  // current step's inputs are mounted.
   await fresh.type("#su-company", `Bluebird Freight ${stamp}`)
   await fresh.type("#su-dot", "4112233")
+  await clickWizardButton(fresh, "Continue")
+  await waitForText(fresh, "Step 2 of 4")
+  await clickWizardButton(fresh, "Skip for now") // no accent picked on the branding step
+  await waitForText(fresh, "Step 3 of 4")
+  await clickWizardButton(fresh, "Continue") // pay step is prefilled with platform defaults
+  await waitForText(fresh, "Step 4 of 4")
   await fresh.type("#su-owner", "Rosa Bluebird")
   await fresh.type("#su-email", `rosa+${stamp}@bluebird.example`)
   await fresh.type("#su-pass", "BluebirdPass1!")

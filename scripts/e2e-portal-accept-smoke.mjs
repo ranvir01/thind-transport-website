@@ -107,6 +107,10 @@ async function main() {
       page.click('button[type="submit"]'),
     ])
     check(page.url().includes("/hub/portal"), `accepting the invitation signs in and lands on /hub/portal (url=${page.url()})`)
+    // waitForFunction resolves on the pathname flip while the document is
+    // still swapping in — screenshotting right then can hit "Cannot take
+    // screenshot with 0 width". Let the page settle first.
+    await page.waitForNetworkIdle({ idleTime: 500, timeout: 10000 }).catch(() => {})
     await shot(page, "02-signed-in")
 
     console.log("2. Already-used invitation at 390px")
