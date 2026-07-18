@@ -119,8 +119,11 @@ function main() {
   const rows = buildInventory({ pendingOnly: !showAll })
 
   if (json) {
+    // No process.exit here: stdout writes to a pipe are async, and exiting
+    // immediately truncates large JSON mid-stream for piped consumers
+    // (agent-loop-status.mjs read 146KB of a 255KB payload and parsed nothing).
     console.log(JSON.stringify({ integrator: INTEGRATOR, main: MAIN, pending: rows }, null, 2))
-    process.exit(rows.length ? 0 : 0)
+    return
   }
 
   console.log("LoadOff agent branch inventory")
@@ -149,7 +152,7 @@ function main() {
   console.log("--- INTEGRATOR: merge this branch next ---")
   console.log(`  ${top.branch} — ${top.tip?.subject}`)
   console.log(`  git fetch origin && git checkout claude/hauldesk-project-setup-l1luoo`)
-  console.log(`  git merge origin/${top.branch.split("/").slice(1).join("/")}`)
+  console.log(`  git merge origin/${top.branch}`)
 }
 
 // import-safe: only run when executed directly (tests import countUnpickedFromCherry)
