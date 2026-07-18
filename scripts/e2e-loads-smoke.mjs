@@ -88,7 +88,9 @@ async function main() {
 
   console.log("3. Book the load")
   await clickByText(page, "Book load")
-  await waitForText(page, "Load booked")
+  // 20s to match sibling post-mutation waits (settlements/safety/driver-pod smokes) —
+  // the 15s default flaked once mid-batch behind a full sequential smoke-suite run.
+  await waitForText(page, "Load booked", 20000)
   await page.waitForFunction(
     () => /\/hub\/loads\/[0-9a-f-]{36}$/.test(location.pathname),
     { timeout: 15000 }
