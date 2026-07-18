@@ -156,8 +156,15 @@ async function main() {
 
     check(consoleErrors.length === 0, `no console errors (${consoleErrors.length}: ${consoleErrors.slice(0, 2).join(" | ")})`)
   } catch (err) {
-    await shot(page, "ZZ-failure")
     failures.push(`crash: ${err.message}`)
+    // Best-effort: a page mid-navigation (or crashed) has a 0-width frame and
+    // the screenshot itself throws — record the real error first so the shot
+    // failing can never mask it (it hid the actual crash before this guard).
+    try {
+      await shot(page, "ZZ-failure")
+    } catch (shotErr) {
+      console.error(`  (failure screenshot unavailable: ${shotErr.message})`)
+    }
   } finally {
     await browser.close()
     await db.end()
