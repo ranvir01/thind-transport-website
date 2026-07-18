@@ -18,9 +18,9 @@
  * HMAC-signed with the carrier's `webhookSecret`. `processEfsEvent` parses it
  * and lands rows through the SAME idempotent ingest the cron sync uses.
  */
-import { parseCsv } from "../csv"
 import { getCredentials, hasCredentials } from "../credentials"
 import { query } from "../db"
+import { parseFuelFeedCsv } from "./fuel-feed-csv"
 import { dollarsToCents } from "../types"
 import type { SyncRowBase, SyncSource } from "./registry"
 
@@ -137,62 +137,6 @@ export async function runEfsSync(
   return { connected: true, imported, skipped, unmatched }
 }
 
-/**
- * Header aliases for the daily feed file — the real column names are
- * unverified until a provisioned file lands (docs/integrations/efs.md), so
- * matching is tolerant: headers are lowercased and stripped of separators,
- * then mapped onto the SAME assumed record keys `normalizeEfsRecord` reads —
- * that function stays the single shape-reading point for every transport.
- */
-const CSV_HEADER_ALIASES: Record<string, string> = {
-  transactionid: "TransactionId", transactionnumber: "TransactionId", tranid: "TransactionId", txnid: "TransactionId",
-  transactiondatetime: "TransactionDateTime", transactiondate: "TransactionDateTime", trandate: "TransactionDateTime",
-  date: "TransactionDateTime", datetime: "TransactionDateTime",
-  unitnumber: "UnitNumber", unit: "UnitNumber", truck: "UnitNumber", trucknumber: "UnitNumber", vehicleunit: "UnitNumber",
-  merchantname: "MerchantName", merchant: "MerchantName", locationname: "MerchantName", truckstopname: "MerchantName",
-  merchantcity: "MerchantCity", city: "MerchantCity", locationcity: "MerchantCity",
-  merchantstate: "MerchantState", state: "MerchantState", locationstate: "MerchantState", stprov: "MerchantState",
-  quantity: "Quantity", gallons: "Quantity", qty: "Quantity", fuelquantity: "Quantity", numberofgallons: "Quantity",
-  pricepergallon: "PricePerGallon", ppg: "PricePerGallon", unitprice: "PricePerGallon", pumpprice: "PricePerGallon",
-  totalamount: "TotalAmount", total: "TotalAmount", amount: "TotalAmount", fueltotal: "TotalAmount",
-  odometer: "Odometer", odo: "Odometer", odometerreading: "Odometer", hubodometer: "Odometer",
-}
-
-/**
- * Pure — parse the daily feed CSV into the assumed record shape. Unknown
- * columns ride along under their original header (they end up in `raw`, so
- * nothing a real file carries is thrown away before the layout is confirmed).
- * Odometer is coerced to a number because `normalizeEfsRecord` drops
- * non-numeric odometers by design.
- */
-export function parseEfsFeedCsv(text: string): Record<string, unknown>[] {
-  const grid = parseCsv(text)
-  if (grid.length < 2) return []
-  const headers = grid[0].map((h) => {
-    const canonical = CSV_HEADER_ALIASES[h.trim().toLowerCase().replace(/[^a-z0-9]/gi, "")]
-    return canonical ?? h.trim()
-  })
-  return grid
-    .slice(1)
-    .filter((cells) => cells.some((c) => c.trim() !== ""))
-    .map((cells) => {
-      const record: Record<string, unknown> = {}
-      headers.forEach((header, i) => {
-        const value = (cells[i] ?? "").trim()
-        if (!header || value === "") return
-        if (header === "Odometer") {
-          // Strip thousands separators only — "n/a"-style non-numerics must
-          // become NaN and be dropped, not collapse to Number("") === 0.
-          const num = Number(value.replace(/,/g, ""))
-          if (Number.isFinite(num)) record[header] = num
-          return
-        }
-        record[header] = value
-      })
-      return record
-    })
-}
-
 export interface EfsEventOutcome {
   applied: boolean
   reason?: string
@@ -224,7 +168,7 @@ export async function processEfsEvent(
 
   const records =
     typeof event.payload.csv === "string"
-      ? parseEfsFeedCsv(event.payload.csv)
+      ? parseFuelFeedCsv(event.payload.csv)
       : Array.isArray(event.payload.transactions)
         ? (event.payload.transactions as Record<string, unknown>[])
         : []

@@ -11,15 +11,18 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 vi.mock("../db", () => ({ query: vi.fn(async () => []) }))
 vi.mock("../integrations/factor", () => ({ processFactorEvent: vi.fn() }))
 vi.mock("../integrations/efs", () => ({ processEfsEvent: vi.fn() }))
+vi.mock("../integrations/wex", () => ({ processWexEvent: vi.fn() }))
 
 import { query } from "../db"
 import { processFactorEvent } from "../integrations/factor"
 import { processEfsEvent } from "../integrations/efs"
+import { processWexEvent } from "../integrations/wex"
 import { EVENT_PROCESSORS, EVENT_RETRY_PROVIDERS, retryUnprocessedEvents } from "../integrations/event-processors"
 
 const queryMock = vi.mocked(query)
 const processFactorEventMock = vi.mocked(processFactorEvent)
 const processEfsEventMock = vi.mocked(processEfsEvent)
+const processWexEventMock = vi.mocked(processWexEvent)
 
 const CARRIER = "44444444-4444-4444-4444-444444444444"
 
@@ -27,6 +30,7 @@ beforeEach(() => {
   queryMock.mockReset().mockResolvedValue([])
   processFactorEventMock.mockReset()
   processEfsEventMock.mockReset()
+  processWexEventMock.mockReset()
 })
 
 describe("EVENT_RETRY_PROVIDERS", () => {
@@ -34,12 +38,13 @@ describe("EVENT_RETRY_PROVIDERS", () => {
     expect(EVENT_RETRY_PROVIDERS).toEqual(new Set(Object.keys(EVENT_PROCESSORS)))
     expect(EVENT_RETRY_PROVIDERS.has("factor")).toBe(true)
     expect(EVENT_RETRY_PROVIDERS.has("efs")).toBe(true)
+    expect(EVENT_RETRY_PROVIDERS.has("wex")).toBe(true)
   })
 })
 
 describe("retryUnprocessedEvents", () => {
   it("refuses a provider with no processor before touching the DB", async () => {
-    await expect(retryUnprocessedEvents(CARRIER, "wex")).rejects.toThrow("No event retry wired for wex yet")
+    await expect(retryUnprocessedEvents(CARRIER, "comdata")).rejects.toThrow("No event retry wired for comdata yet")
     expect(queryMock).not.toHaveBeenCalled()
   })
 
@@ -88,5 +93,20 @@ describe("retryUnprocessedEvents", () => {
     expect(processEfsEventMock).toHaveBeenCalledWith(CARRIER, { external_id: "drop-1", kind: "fuel.batch", payload: { csv: "…" } })
     expect(queryMock).toHaveBeenCalledWith(expect.stringContaining("UPDATE hub.integration_events"), ["10"])
     expect(processFactorEventMock).not.toHaveBeenCalled()
+  })
+
+  it("re-drives a stuck wex file drop through processWexEvent (registered 2026-07-18)", async () => {
+    queryMock.mockResolvedValueOnce([
+      { id: "20", external_id: "drop-2", kind: "fuel.batch", payload: { csv: "…" } },
+    ])
+    processWexEventMock.mockResolvedValueOnce({ applied: true, imported: 1, skipped: 0 })
+
+    const result = await retryUnprocessedEvents(CARRIER, "wex")
+
+    expect(result).toEqual({ retried: 1, applied: 1, stillUnprocessed: 0 })
+    expect(processWexEventMock).toHaveBeenCalledWith(CARRIER, { external_id: "drop-2", kind: "fuel.batch", payload: { csv: "…" } })
+    expect(queryMock).toHaveBeenCalledWith(expect.stringContaining("UPDATE hub.integration_events"), ["20"])
+    expect(processFactorEventMock).not.toHaveBeenCalled()
+    expect(processEfsEventMock).not.toHaveBeenCalled()
   })
 })

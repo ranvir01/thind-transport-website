@@ -68,7 +68,8 @@ product). Of the three possible remedies, the **inbound file-drop route is now s
   `{"event": "fuel.batch", "transactions": [...]}`), HMAC-SHA256-signed over the raw
   body in `X-Loadoff-Signature`. A one-line cron anywhere the SFTP drop is reachable
   works: fetch file → wrap in JSON → sign → curl. `processEfsEvent` parses the CSV with
-  header-alias tolerance (`parseEfsFeedCsv` — real column names still unverified, unknown
+  header-alias tolerance (`parseFuelFeedCsv` in `integrations/fuel-feed-csv.ts`, shared
+  with WEX since 2026-07-18 — real column names still unverified, unknown
   columns ride along into `raw`), refuses rows without a transaction id instead of
   colliding them on an empty idempotency key, and lands rows through the SAME
   `ingestEfsRows` ON-CONFLICT path the cron sync uses. Replaying a file is a no-op.

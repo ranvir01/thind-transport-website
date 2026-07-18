@@ -109,9 +109,9 @@ describe("retryIntegrationEventsAction", () => {
   })
 
   it("surfaces the no-retry-wired refusal from retryUnprocessedEvents", async () => {
-    retryUnprocessedEventsMock.mockRejectedValue(new Error("No event retry wired for wex yet"))
-    const result = await retryIntegrationEventsAction("wex")
+    retryUnprocessedEventsMock.mockRejectedValue(new Error("No event retry wired for comdata yet"))
+    const result = await retryIntegrationEventsAction("comdata")
     expect(result.ok).toBe(false)
-    expect(result.error).toBe("No event retry wired for wex yet")
+    expect(result.error).toBe("No event retry wired for comdata yet")
   })
 })

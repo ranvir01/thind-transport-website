@@ -8,6 +8,7 @@
  */
 import { processFactorEvent } from "./factor"
 import { processEfsEvent } from "./efs"
+import { processWexEvent } from "./wex"
 import { isEventOutcomeFinal } from "./webhooks"
 import { query } from "../db"
 
@@ -28,6 +29,7 @@ export const EVENT_PROCESSORS: Record<
 > = {
   factor: processFactorEvent,
   efs: processEfsEvent,
+  wex: processWexEvent,
 }
 
 /** Providers whose stuck events can be re-driven — derived, never hand-listed. */

@@ -9,7 +9,8 @@ vi.mock("../credentials", () => ({
 import { query } from "../db"
 import { getCredentials, hasCredentials } from "../credentials"
 import { memorySink } from "../integrations/mock"
-import { normalizeWexRecord, runWexSync, wexSource } from "../integrations/wex"
+import { isEventOutcomeFinal } from "../integrations/webhooks"
+import { normalizeWexRecord, processWexEvent, runWexSync, wexSource } from "../integrations/wex"
 
 const queryMock = vi.mocked(query)
 const getCredentialsMock = vi.mocked(getCredentials)
@@ -199,5 +200,71 @@ describe("runWexSync", () => {
     expect(result).toEqual({ connected: true, imported: 0, skipped: 1, unmatched: [] })
     const insert = queryMock.mock.calls.find(([sql]) => String(sql).includes("INSERT INTO hub.fuel_transactions"))
     expect(insert?.[1]?.[2]).toBeNull()
+  })
+})
+
+describe("processWexEvent (file-drop webhook processor — mirror of processEfsEvent)", () => {
+  beforeEach(() => {
+    queryMock.mockReset()
+  })
+  const event = (payload: Record<string, unknown>, kind: string | null = "fuel.batch") => ({
+    external_id: "drop-1", kind, payload,
+  })
+
+  it("refuses unknown event kinds with a FINAL outcome (never stuck pending)", async () => {
+    const outcome = await processWexEvent(CARRIER, event({ csv: "x" }, "position.updated"))
+    expect(outcome).toEqual({ applied: false, reason: "unhandled event kind: position.updated" })
+    expect(isEventOutcomeFinal(outcome)).toBe(true)
+    expect(queryMock).not.toHaveBeenCalled()
+  })
+
+  it("reports an empty payload as a non-final miss, storing nothing", async () => {
+    const outcome = await processWexEvent(CARRIER, event({}))
+    expect(outcome).toEqual({ applied: false, reason: "no fuel rows in payload" })
+    expect(isEventOutcomeFinal(outcome)).toBe(false)
+    expect(queryMock).not.toHaveBeenCalled()
+  })
+
+  it("refuses rows with no transaction id rather than colliding them on an empty key", async () => {
+    const outcome = await processWexEvent(CARRIER, event({ csv: "Gallons,Total\n10,40\n20,80\n" }))
+    expect(outcome).toEqual({ applied: false, invalid: 2, reason: "rows missing transaction ids" })
+    expect(queryMock).not.toHaveBeenCalled()
+  })
+
+  it("ingests a CSV drop through the same idempotent path as the cron sync, WEX-normalized", async () => {
+    queryMock.mockImplementation(async (sql: string) => {
+      if (sql.includes("FROM hub.trucks")) return [{ id: "truck-1", unit_number: "212" }]
+      if (sql.includes("INSERT INTO hub.fuel_transactions")) return [{ id: "row-1" }]
+      return []
+    })
+    const csv =
+      "TransactionId,UnitNumber,MerchantState,Quantity,TotalAmount\nWX-1,212,ne,10,40\nWX-2,999,WY,5,20\n"
+    const outcome = await processWexEvent(CARRIER, event({ csv }))
+    expect(outcome).toEqual({ applied: true, imported: 2, skipped: 0, unmatched: ["999"] })
+    expect(isEventOutcomeFinal(outcome)).toBe(true)
+    const insert = queryMock.mock.calls.find(([sql]) => String(sql).includes("INSERT INTO hub.fuel_transactions"))
+    // truck matched by unit hint, and the lowercase state normalized to "NE"
+    expect(insert?.[1]?.[2]).toBe("truck-1")
+    expect(insert?.[1]?.[6]).toBe("NE")
+  })
+
+  it("accepts pre-parsed transactions arrays and counts replays as skipped", async () => {
+    // ON CONFLICT DO NOTHING returns no row for a duplicate
+    queryMock.mockResolvedValue([])
+    const outcome = await processWexEvent(
+      CARRIER,
+      event({ transactions: [{ TransactionId: "WX-1", Quantity: 10, TotalAmount: 40 }] })
+    )
+    expect(outcome).toEqual({ applied: true, imported: 0, skipped: 1, unmatched: [] })
+  })
+
+  it("still applies partial batches, reporting the id-less rows it refused", async () => {
+    queryMock.mockImplementation(async (sql: string) => {
+      if (sql.includes("INSERT INTO hub.fuel_transactions")) return [{ id: "row-1" }]
+      return []
+    })
+    const csv = "TransactionId,Quantity,TotalAmount\nWX-1,10,40\n,5,20\n"
+    const outcome = await processWexEvent(CARRIER, event({ csv }))
+    expect(outcome).toEqual({ applied: true, imported: 1, skipped: 0, unmatched: [], invalid: 1 })
   })
 })

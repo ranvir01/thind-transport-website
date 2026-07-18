@@ -10,7 +10,8 @@ import { query } from "../db"
 import { getCredentials, hasCredentials } from "../credentials"
 import { memorySink } from "../integrations/mock"
 import { isEventOutcomeFinal } from "../integrations/webhooks"
-import { efsSource, normalizeEfsRecord, parseEfsFeedCsv, processEfsEvent, runEfsSync } from "../integrations/efs"
+import { efsSource, normalizeEfsRecord, processEfsEvent, runEfsSync } from "../integrations/efs"
+import { parseFuelFeedCsv } from "../integrations/fuel-feed-csv"
 
 const queryMock = vi.mocked(query)
 const getCredentialsMock = vi.mocked(getCredentials)
@@ -188,9 +189,9 @@ describe("runEfsSync", () => {
   })
 })
 
-describe("parseEfsFeedCsv (pure — daily feed file → assumed record shape)", () => {
+describe("parseFuelFeedCsv (pure — daily feed file → assumed record shape, shared by EFS + WEX)", () => {
   it("passes through the assumed header names unchanged", () => {
-    const records = parseEfsFeedCsv(
+    const records = parseFuelFeedCsv(
       "TransactionId,TransactionDateTime,UnitNumber,MerchantName,MerchantCity,MerchantState,Quantity,PricePerGallon,TotalAmount,Odometer\n" +
         'TXN-1,2026-06-01T12:00:00Z,104,"Flying J #221, I-80",Laramie,WY,112.4,3.899,438.22,245102\n'
     )
@@ -207,7 +208,7 @@ describe("parseEfsFeedCsv (pure — daily feed file → assumed record shape)", 
   })
 
   it("maps variant headers (spacing, casing, synonyms) onto the same keys", () => {
-    const records = parseEfsFeedCsv(
+    const records = parseFuelFeedCsv(
       "Transaction Number,Tran Date,Truck #,Merchant,City,State,Gallons,Unit Price,Total,Odometer Reading\n" +
         "9001,2026-06-02,88,Pilot 442,Ogden,UT,95.1,$3.75,$356.63,188002\n"
     )
@@ -225,18 +226,18 @@ describe("parseEfsFeedCsv (pure — daily feed file → assumed record shape)", 
   })
 
   it("keeps unrecognized columns under their original header so raw loses nothing", () => {
-    const records = parseEfsFeedCsv("TransactionId,DriverPin\nTXN-2,4471\n")
+    const records = parseFuelFeedCsv("TransactionId,DriverPin\nTXN-2,4471\n")
     expect(records[0].DriverPin).toBe("4471")
   })
 
   it("skips blank lines and returns [] for an empty or header-only file", () => {
-    expect(parseEfsFeedCsv("")).toEqual([])
-    expect(parseEfsFeedCsv("TransactionId,Gallons\n")).toEqual([])
-    expect(parseEfsFeedCsv("TransactionId,Gallons\nTXN-1,10\n,\nTXN-2,20\n")).toHaveLength(2)
+    expect(parseFuelFeedCsv("")).toEqual([])
+    expect(parseFuelFeedCsv("TransactionId,Gallons\n")).toEqual([])
+    expect(parseFuelFeedCsv("TransactionId,Gallons\nTXN-1,10\n,\nTXN-2,20\n")).toHaveLength(2)
   })
 
-  it("drops a non-numeric odometer instead of passing a string normalizeEfsRecord would discard", () => {
-    const records = parseEfsFeedCsv("TransactionId,Odometer\nTXN-1,n/a\n")
+  it("drops a non-numeric odometer instead of passing a string the normalizers would discard", () => {
+    const records = parseFuelFeedCsv("TransactionId,Odometer\nTXN-1,n/a\n")
     expect(records[0].Odometer).toBeUndefined()
   })
 })
