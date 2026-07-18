@@ -93,6 +93,65 @@ export function computeIfta(inputs: IftaInputs): IftaResult {
   }
 }
 
+/**
+ * Jurisdictions whose rate on file no longer matches the rate a computed
+ * report actually used — the report is stale and must be recomputed before
+ * filing. Jurisdictions with no rate on file are the missingRates path's
+ * problem, not staleness.
+ */
+export function staleRateJurisdictions(
+  rows: Pick<IftaReportRow, "jurisdiction" | "rate" | "surchargeRate">[],
+  rates: Record<string, { rate: number; surchargeRate?: number }>
+): string[] {
+  const stale: string[] = []
+  for (const row of rows) {
+    const onFile = rates[row.jurisdiction]
+    if (!onFile) continue
+    const rateChanged = Math.abs(onFile.rate - Number(row.rate)) > 1e-9
+    const surchargeChanged =
+      Math.abs((onFile.surchargeRate ?? 0) - Number(row.surchargeRate ?? 0)) > 1e-9
+    if (rateChanged || surchargeChanged) stale.push(row.jurisdiction)
+  }
+  return stale
+}
+
+export interface IftaWorksheetWarningInputs {
+  status: "draft" | "reviewed" | "filed"
+  rows: Pick<IftaReportRow, "jurisdiction" | "rate" | "surchargeRate">[]
+  missingRates?: string[]
+  unknownJurisdictionGallons?: number
+  /** Rates currently on file for the quarter (numeric, like staleRateJurisdictions takes). */
+  ratesOnFile: Record<string, { rate: number; surchargeRate?: number }>
+}
+
+/**
+ * The worksheet screen's warning panels as plain sentences, for the PDF/CSV
+ * exports — an office user transcribing from a download must see the same
+ * caveats the screen shows. Same policy as the page: missing rates and
+ * stateless gallons always warn; stale rates only nag unfiled reports
+ * (a filed quarter is history).
+ */
+export function iftaWorksheetWarnings(input: IftaWorksheetWarningInputs): string[] {
+  const warnings: string[] = []
+  if ((input.missingRates?.length ?? 0) > 0) {
+    warnings.push(
+      `Missing rates for ${input.missingRates!.join(", ")} — these lines are priced at $0. Import rates and recompute before filing.`
+    )
+  }
+  const stale = input.status !== "filed" ? staleRateJurisdictions(input.rows, input.ratesOnFile) : []
+  if (stale.length > 0) {
+    warnings.push(
+      `Rates on file for ${stale.join(", ")} changed after this report was computed — the lines use the old rates. Recompute before filing.`
+    )
+  }
+  if ((input.unknownJurisdictionGallons ?? 0) > 0) {
+    warnings.push(
+      `${input.unknownJurisdictionGallons!.toLocaleString("en-US")} gal of tractor fuel have no state and are excluded from tax-paid credit and fleet MPG — this overstates MPG and understates taxable gallons. Set each purchase's state in Fuel and recompute.`
+    )
+  }
+  return warnings
+}
+
 /** "2026Q2"-style key for a date; IFTA quarters are calendar quarters. */
 export function quarterKey(date: Date): string {
   return `${date.getUTCFullYear()}Q${Math.floor(date.getUTCMonth() / 3) + 1}`

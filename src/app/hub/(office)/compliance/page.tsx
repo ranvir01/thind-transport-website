@@ -1,9 +1,16 @@
 import Link from "next/link"
 import { FileSpreadsheet } from "lucide-react"
 import { complianceEntries, summarize } from "@/lib/hub/compliance"
-import { iftaFilingComplianceEntries } from "@/lib/hub/ifta"
+import {
+  WALL_ENTITIES,
+  WALL_ENTITY_LABELS,
+  entityCounts,
+  filterWall,
+  parseWallFilter,
+  wallHref,
+} from "./wall-filter"
 import { requirePermissionPage } from "@/lib/hub/session"
-import { Panel, PageHeader, ExpiryPill } from "@/components/hub/ui"
+import { Panel, PageHeader, ExpiryPill, Pill } from "@/components/hub/ui"
 import { AddComplianceItemForm, ResolveItemButton } from "@/components/hub/ComplianceForms"
 import { cn } from "@/lib/utils"
 
@@ -17,19 +24,29 @@ const COLOR_DOT: Record<string, string> = {
   green: "bg-ok",
 }
 
-export default async function CompliancePage() {
+// Full class strings (never interpolated) so Tailwind sees them.
+const SUMMARY_TILES = [
+  { color: "red", label: "Expired / overdue", restCls: "border-bad-soft", activeCls: "border-bad", textCls: "text-bad" },
+  { color: "amber", label: "Due in 30 days", restCls: "border-warn-soft", activeCls: "border-warn", textCls: "text-warn" },
+  { color: "green", label: "Clean", restCls: "border-ok-soft", activeCls: "border-ok", textCls: "text-ok" },
+] as const
+
+export default async function CompliancePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ entity?: string; color?: string }>
+}) {
   const user = await requirePermissionPage("compliance:read")
-  const [baseEntries, iftaEntries] = await Promise.all([
-    complianceEntries(user.carrierId),
-    iftaFilingComplianceEntries(user.carrierId),
-  ])
-  // Merge the auto-generated IFTA filing entries in wall order (red first,
-  // then soonest due) — same comparator complianceEntries() uses internally.
-  const colorOrder = { red: 0, amber: 1, green: 2 } as const
-  const entries = [...baseEntries, ...iftaEntries].sort(
-    (a, b) => colorOrder[a.color] - colorOrder[b.color] || String(a.due ?? "9999").localeCompare(String(b.due ?? "9999"))
-  )
+  const filter = parseWallFilter(await searchParams)
+  // complianceEntries() already merges the auto-generated IFTA filing entries
+  // (and sorts the wall) — merging them here again rendered every IFTA filing
+  // twice and double-counted it in the summary tiles.
+  const entries = await complianceEntries(user.carrierId)
+  // Tiles and chips always count the whole wall; only the list below filters.
   const summary = summarize(entries)
+  const counts = entityCounts(entries)
+  const visible = filterWall(entries, filter)
+  const filtered = filter.entity !== null || filter.color !== null
 
   return (
     <div>
@@ -56,20 +73,37 @@ export default async function CompliancePage() {
         }
       />
 
-      {/* Red / amber / green summary */}
+      {/* Red / amber / green summary — each tile toggles the wall to its bucket */}
       <div className="grid grid-cols-3 gap-3 mb-4">
-        <Panel className="p-4 border-bad-soft">
-          <span className="text-label text-bad uppercase">Expired / overdue</span>
-          <p className="mt-2 font-display text-3xl font-extrabold text-bad">{summary.red}</p>
-        </Panel>
-        <Panel className="p-4 border-warn-soft">
-          <span className="text-label text-warn uppercase">Due in 30 days</span>
-          <p className="mt-2 font-display text-3xl font-extrabold text-warn">{summary.amber}</p>
-        </Panel>
-        <Panel className="p-4 border-ok-soft">
-          <span className="text-label text-ok uppercase">Clean</span>
-          <p className="mt-2 font-display text-3xl font-extrabold text-ok">{summary.green}</p>
-        </Panel>
+        {SUMMARY_TILES.map((tile) => {
+          const active = filter.color === tile.color
+          return (
+            <Link
+              key={tile.color}
+              href={wallHref({ ...filter, color: active ? null : tile.color })}
+              title={active ? "Show all statuses" : `Show only: ${tile.label.toLowerCase()}`}
+            >
+              <Panel className={cn("h-full p-4 transition-colors hover:bg-hover", active ? tile.activeCls : tile.restCls)}>
+                <span className={cn("text-label uppercase", tile.textCls)}>{tile.label}</span>
+                <p className={cn("mt-2 font-display text-3xl font-extrabold", tile.textCls)}>{summary[tile.color]}</p>
+              </Panel>
+            </Link>
+          )
+        })}
+      </div>
+
+      {/* Entity filter */}
+      <div className="mb-4 flex flex-wrap items-center gap-1.5">
+        <Link href={wallHref({ ...filter, entity: null })}>
+          <Pill tone={filter.entity === null ? "accent" : "neutral"}>All ({entries.length})</Pill>
+        </Link>
+        {WALL_ENTITIES.map((entity) => (
+          <Link key={entity} href={wallHref({ ...filter, entity: filter.entity === entity ? null : entity })}>
+            <Pill tone={filter.entity === entity ? "accent" : "neutral"}>
+              {WALL_ENTITY_LABELS[entity]} ({counts[entity]})
+            </Pill>
+          </Link>
+        ))}
       </div>
 
       {/* Add company item */}
@@ -81,8 +115,17 @@ export default async function CompliancePage() {
       </Panel>
 
       {/* The wall */}
+      {filtered ? (
+        <p className="mb-2 text-body-xs text-fg-3">
+          Showing {visible.length} of {entries.length} items ·{" "}
+          <Link href="/hub/compliance" className="underline hover:text-accent-text">clear filter</Link>
+        </p>
+      ) : null}
       <Panel className="divide-y divide-border">
-        {entries.map((entry, i) => (
+        {filtered && visible.length === 0 ? (
+          <p className="p-6 text-center text-body-sm text-fg-2">Nothing matches this filter.</p>
+        ) : null}
+        {visible.map((entry, i) => (
           <div key={i} className="flex items-center gap-3 p-3">
             <span className={cn("h-2.5 w-2.5 shrink-0 rounded-full", COLOR_DOT[entry.color])} />
             <div className="min-w-0 flex-1">

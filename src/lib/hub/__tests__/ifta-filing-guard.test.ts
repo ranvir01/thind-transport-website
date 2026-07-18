@@ -79,3 +79,68 @@ describe("setIftaStatus filing guard", () => {
     ).resolves.toBeUndefined()
   })
 })
+
+describe("setIftaStatus stale-rates guard", () => {
+  // Rates re-imported after the compute: report rows carry the old rate.
+  const staleReport = {
+    report: {
+      missingRates: [],
+      rows: [
+        { jurisdiction: "WA", rate: 0.449, surchargeRate: 0 },
+        { jurisdiction: "IN", rate: 0.55, surchargeRate: 0.11 },
+      ],
+    },
+  }
+  const ratesOnFile = (rows: { jurisdiction: string; rate: string; surcharge_rate: string }[]) => {
+    queryMock.mockImplementation(async (sql: unknown) =>
+      String(sql).includes("hub.ifta_tax_rates") ? (rows as never) : ([] as never)
+    )
+  }
+
+  it("throws when marking filed after a rate on file changed", async () => {
+    mockReport(staleReport)
+    ratesOnFile([
+      { jurisdiction: "WA", rate: "0.4940", surcharge_rate: "0" },
+      { jurisdiction: "IN", rate: "0.5500", surcharge_rate: "0.1100" },
+    ])
+    await expect(setIftaStatus("carrier-1", "2026Q1", "filed", actor)).rejects.toThrow(
+      /rates on file for WA changed after this report was computed/
+    )
+    const update = queryMock.mock.calls.find(([sql]) =>
+      String(sql).includes("UPDATE hub.ifta_reports")
+    )
+    expect(update).toBeUndefined()
+    expect(auditMock).not.toHaveBeenCalled()
+  })
+
+  it("allows filed when rates on file still match the report", async () => {
+    mockReport(staleReport)
+    ratesOnFile([
+      { jurisdiction: "WA", rate: "0.4490", surcharge_rate: "0" },
+      { jurisdiction: "IN", rate: "0.5500", surcharge_rate: "0.1100" },
+    ])
+    await expect(
+      setIftaStatus("carrier-1", "2026Q1", "filed", actor)
+    ).resolves.toBeUndefined()
+    expect(auditMock).toHaveBeenCalledOnce()
+  })
+
+  it("still allows reviewed and draft while rates are stale", async () => {
+    mockReport(staleReport)
+    ratesOnFile([{ jurisdiction: "WA", rate: "0.4940", surcharge_rate: "0" }])
+    await expect(
+      setIftaStatus("carrier-1", "2026Q1", "reviewed", actor)
+    ).resolves.toBeUndefined()
+    await expect(
+      setIftaStatus("carrier-1", "2026Q1", "draft", actor)
+    ).resolves.toBeUndefined()
+  })
+
+  it("allows filed on a legacy report JSON with no rows key", async () => {
+    mockReport({ report: { missingRates: [] } })
+    ratesOnFile([{ jurisdiction: "WA", rate: "0.4940", surcharge_rate: "0" }])
+    await expect(
+      setIftaStatus("carrier-1", "2026Q1", "filed", actor)
+    ).resolves.toBeUndefined()
+  })
+})

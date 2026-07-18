@@ -9,22 +9,26 @@ import { computeIfta } from "@/lib/hub/ifta-core"
 
 vi.mock("@/lib/hub/session", () => ({ getHubUser: vi.fn() }))
 vi.mock("@/lib/hub/permissions", () => ({ can: vi.fn() }))
-vi.mock("@/lib/hub/ifta", () => ({ getIftaReport: vi.fn(), exportIftaSources: vi.fn() }))
+vi.mock("@/lib/hub/ifta", () => ({ getIftaReport: vi.fn(), exportIftaSources: vi.fn(), listIftaRates: vi.fn() }))
 vi.mock("@/lib/hub/settings", () => ({ getCarrier: vi.fn(), getCarrierSettings: vi.fn() }))
 vi.mock("@/lib/hub/pdf", () => ({ buildIftaPdf: vi.fn(async () => Buffer.from("pdf-bytes")) }))
+vi.mock("@/lib/hub/ifta-pdf", () => ({ withIftaWarningsCoverPage: vi.fn(async (bytes: Uint8Array) => bytes) }))
 
 import { getHubUser } from "@/lib/hub/session"
 import { can } from "@/lib/hub/permissions"
-import { getIftaReport, exportIftaSources } from "@/lib/hub/ifta"
+import { getIftaReport, exportIftaSources, listIftaRates } from "@/lib/hub/ifta"
 import { getCarrier, getCarrierSettings } from "@/lib/hub/settings"
+import { withIftaWarningsCoverPage } from "@/lib/hub/ifta-pdf"
 import { GET } from "@/app/api/hub/ifta/[quarter]/[file]/route"
 
 const getHubUserMock = vi.mocked(getHubUser)
 const canMock = vi.mocked(can)
 const getIftaReportMock = vi.mocked(getIftaReport)
 const exportIftaSourcesMock = vi.mocked(exportIftaSources)
+const listIftaRatesMock = vi.mocked(listIftaRates)
 const getCarrierMock = vi.mocked(getCarrier)
 const getCarrierSettingsMock = vi.mocked(getCarrierSettings)
+const withIftaWarningsCoverPageMock = vi.mocked(withIftaWarningsCoverPage)
 
 const user = { id: "u1", carrierId: "carrier-1", role: "owner" as const }
 
@@ -39,6 +43,8 @@ beforeEach(() => {
   canMock.mockReset().mockReturnValue(true)
   getIftaReportMock.mockReset()
   exportIftaSourcesMock.mockReset().mockResolvedValue({ pingsCsv: "unit,timestamp\n", fuelCsv: "unit,timestamp\n" })
+  listIftaRatesMock.mockReset().mockResolvedValue([])
+  withIftaWarningsCoverPageMock.mockClear()
   getCarrierMock.mockReset().mockResolvedValue({ name: "Thind Transport" } as never)
   getCarrierSettingsMock.mockReset().mockResolvedValue({ branding: { accent: null } } as never)
 })
@@ -126,6 +132,53 @@ describe("GET /api/hub/ifta/[quarter]/[file]", () => {
     expect(body).toContain("TOTAL,,,,,,23.60")
   })
 
+  it("prepends worksheet warnings as # WARNING lines in worksheet.csv", async () => {
+    getIftaReportMock.mockResolvedValue({
+      status: "draft",
+      net_tax_cents: 0,
+      mileage_source: "pings",
+      fleet_miles: "1000",
+      fleet_gallons: "100",
+      mpg: "10",
+      report: {
+        rows: [
+          { jurisdiction: "WA", miles: 1000, taxableGallons: 100, taxPaidGallons: 80, rate: 0.494, surchargeRate: 0, netCents: 0 },
+        ],
+        missingRates: ["AZ", "NV"],
+        unknownJurisdictionGallons: 250,
+      },
+    } as never)
+    // WA rate on file changed after compute → stale warning too.
+    listIftaRatesMock.mockResolvedValue([{ jurisdiction: "WA", rate: "0.4990", surcharge_rate: "0" }])
+    const res = await call("2026Q1", "worksheet.csv")
+    const body = await res.text()
+    const lines = body.split("\n")
+    expect(lines[0]).toContain("# WARNING: Missing rates for AZ, NV")
+    expect(lines[1]).toContain("# WARNING: Rates on file for WA changed")
+    expect(lines[2]).toContain("# WARNING: 250 gal of tractor fuel have no state")
+    expect(lines[3]).toBe("jurisdiction,miles,taxable_gallons,tax_paid_gallons,rate,surcharge_rate,net_tax_usd")
+  })
+
+  it("keeps worksheet.csv warning-free when the report is clean", async () => {
+    getIftaReportMock.mockResolvedValue({
+      status: "filed",
+      net_tax_cents: 12345,
+      mileage_source: "pings",
+      fleet_miles: "1000",
+      fleet_gallons: "100",
+      mpg: "10",
+      report: {
+        rows: [
+          { jurisdiction: "WA", miles: 1000, taxableGallons: 100, taxPaidGallons: 80, rate: 0.494, surchargeRate: 0, netCents: 12345 },
+        ],
+      },
+    } as never)
+    const res = await call("2026Q1", "worksheet.csv")
+    const body = await res.text()
+    expect(body).not.toContain("# WARNING")
+    expect(body.split("\n")[0]).toBe("jurisdiction,miles,taxable_gallons,tax_paid_gallons,rate,surcharge_rate,net_tax_usd")
+  })
+
   it("404s worksheet.pdf when no report has been computed", async () => {
     getIftaReportMock.mockResolvedValue(null)
     const res = await call("2026Q1", "worksheet.pdf")
@@ -146,6 +199,25 @@ describe("GET /api/hub/ifta/[quarter]/[file]", () => {
     expect(res.headers.get("Content-Type")).toBe("application/pdf")
     expect(getCarrierMock).toHaveBeenCalledWith("carrier-1")
     expect(getCarrierSettingsMock).toHaveBeenCalledWith("carrier-1")
+  })
+
+  it("routes worksheet warnings into the PDF cover-page step", async () => {
+    getIftaReportMock.mockResolvedValue({
+      status: "reviewed",
+      net_tax_cents: 500,
+      mileage_source: "import",
+      fleet_miles: "500",
+      fleet_gallons: "50",
+      mpg: "10",
+      report: { rows: [], missingRates: ["MT"] },
+    } as never)
+    const res = await call("2026Q1", "worksheet.pdf")
+    expect(res.status).toBe(200)
+    expect(withIftaWarningsCoverPageMock).toHaveBeenCalledTimes(1)
+    const [, arg] = withIftaWarningsCoverPageMock.mock.calls[0]
+    expect(arg.quarter).toBe("2026Q1")
+    expect(arg.warnings).toHaveLength(1)
+    expect(arg.warnings[0]).toContain("Missing rates for MT")
   })
 
   it("404s an unrecognized file variant", async () => {
