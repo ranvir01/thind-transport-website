@@ -45,7 +45,7 @@ export default async function PortalHomePage() {
 
       {/* Moving now */}
       <section>
-        <h2 className="mb-2 font-display text-sm font-bold uppercase tracking-wider text-gold">
+        <h2 className="mb-2 font-display text-sm font-bold uppercase tracking-wider text-[color:var(--portal-accent)]">
           Moving now ({inTransit.length})
         </h2>
         {inTransit.length === 0 ? (
@@ -86,7 +86,7 @@ export default async function PortalHomePage() {
       {/* Invoices (brokers) */}
       {user.portalRole === "broker" && invoices.length > 0 ? (
         <section>
-          <h2 className="mb-2 font-display text-sm font-bold uppercase tracking-wider text-gold">Invoices</h2>
+          <h2 className="mb-2 font-display text-sm font-bold uppercase tracking-wider text-[color:var(--portal-accent)]">Invoices</h2>
           <ul className="divide-y divide-white/5 rounded-2xl border border-white/10 bg-navy-800/80">
             {invoices.map((invoice) => {
               const status = INVOICE_STATUS_COPY[invoice.status] ?? INVOICE_STATUS_COPY.sent

@@ -1,8 +1,9 @@
 import { headers } from "next/headers"
 import { PRODUCT } from "@/lib/hub/product"
 import { getHubUser } from "@/lib/hub/session"
-import { getCarrier } from "@/lib/hub/settings"
+import { getCarrier, getCarrierSettings } from "@/lib/hub/settings"
 import { SignOutButton } from "@/components/hub/SignOutButton"
+import { PORTAL_ACCENT_DEFAULT, resolvePortalAccent } from "./accent"
 
 /**
  * Portal chrome is intentionally minimal: external users get their freight,
@@ -16,13 +17,23 @@ export default async function PortalLayout({ children }: { children: React.React
   // and shippers see the carrier they hired (same as /track). The public
   // accept/[token] page has no session, so it keeps the product wordmark.
   const user = await getHubUser()
-  const carrier =
+  const [carrier, accent] =
     (user?.role === "broker" || user?.role === "shipper") && user.carrierId
-      ? await getCarrier(user.carrierId).catch(() => null)
-      : null
+      ? await Promise.all([
+          getCarrier(user.carrierId).catch(() => null),
+          getCarrierSettings(user.carrierId)
+            .then((s) => resolvePortalAccent(s.branding.accent))
+            .catch(() => PORTAL_ACCENT_DEFAULT),
+        ])
+      : [null, PORTAL_ACCENT_DEFAULT]
   return (
-    <div className="min-h-screen bg-navy">
-      <header className="fixed top-0 inset-x-0 z-40 flex h-14 items-center justify-between gap-3 border-b border-white/10 bg-navy-900/95 px-4 backdrop-blur-sm">
+    // --portal-accent lets page-level headers (text-[color:var(--portal-accent)])
+    // follow the carrier's brand without each page re-reading settings.
+    <div className="min-h-screen bg-navy" style={{ "--portal-accent": accent.text } as React.CSSProperties}>
+      <header
+        className="fixed top-0 inset-x-0 z-40 flex h-14 items-center justify-between gap-3 border-b bg-navy-900/95 px-4 backdrop-blur-sm"
+        style={{ borderBottomColor: accent.rule }}
+      >
         {carrier?.name ? (
           <span className="min-w-0 truncate font-display text-sm font-extrabold uppercase tracking-wider text-white">
             {carrier.name}
@@ -32,7 +43,9 @@ export default async function PortalLayout({ children }: { children: React.React
             {PRODUCT.wordmark}
           </span>
         )}
-        <span className="shrink-0 text-[10px] font-bold uppercase tracking-[0.25em] text-gold">Customer portal</span>
+        <span className="shrink-0 text-[10px] font-bold uppercase tracking-[0.25em] text-[color:var(--portal-accent)]">
+          Customer portal
+        </span>
       </header>
       <main className="pt-20 pb-12 px-4 mx-auto w-full max-w-3xl">{children}</main>
       <footer className="pb-8 px-4 mx-auto w-full max-w-3xl">
