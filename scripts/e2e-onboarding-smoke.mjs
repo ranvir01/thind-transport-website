@@ -6,7 +6,7 @@
  */
 import puppeteer from "puppeteer"
 import { mkdirSync } from "node:fs"
-import { BASE, waitForText, login, makeShot } from "./e2e-lib.mjs"
+import { BASE, waitForText, login, makeShot, clickByText } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-onboarding"
 mkdirSync(OUT, { recursive: true })
@@ -22,8 +22,21 @@ async function main() {
   await fresh.setViewport({ width: 390, height: 844, deviceScaleFactor: 2 })
   await fresh.goto(`${BASE}/hub/signup`, { waitUntil: "networkidle2" })
   await shot(fresh, "01-signup")
+  // Signup is a 4-step wizard (M11): Company → Branding → Driver pay → Your account.
+  // Step 1 — company facts. FMCSA verify is optional and hits an external API, so skip it.
   await fresh.type("#su-company", `Bluebird Freight ${stamp}`)
   await fresh.type("#su-dot", "4112233")
+  await clickByText(fresh, "Continue")
+  // Step 2 — branding: pick an accent so the branded path is exercised, not skipped.
+  await waitForText(fresh, "Step 2 of 4")
+  await clickByText(fresh, "Blue")
+  await shot(fresh, "01b-branding")
+  await clickByText(fresh, "Continue")
+  // Step 3 — driver pay defaults are prefilled and valid as-is.
+  await waitForText(fresh, "Step 3 of 4")
+  await clickByText(fresh, "Continue")
+  // Step 4 — owner account, then the single server action creates the workspace.
+  await waitForText(fresh, "Step 4 of 4")
   await fresh.type("#su-owner", "Rosa Bluebird")
   await fresh.type("#su-email", `rosa+${stamp}@bluebird.example`)
   await fresh.type("#su-pass", "BluebirdPass1!")
