@@ -46,9 +46,27 @@ type routeMilesRequest struct {
 }
 
 func main() {
-	addr := ":8081"
-	log.Printf("hauldesk-worker listening on %s (auth: %v)", addr, os.Getenv("HAULDESK_SIDECAR_SECRET") != "")
-	log.Fatal(http.ListenAndServe(addr, newMux()))
+	srv := newServer(":8081")
+	log.Printf("hauldesk-worker listening on %s (auth: %v)", srv.Addr, os.Getenv("HAULDESK_SIDECAR_SECRET") != "")
+	log.Fatal(srv.ListenAndServe())
+}
+
+// newServer builds the worker's HTTP server; main and the test suite share it
+// so the timeout config is asserted as deployed. http.ListenAndServe's
+// zero-value timeouts never close slow or idle connections (slowloris: a
+// client trickling one header byte at a time holds a goroutine forever), so
+// even a LAN-only sidecar gets explicit limits. WriteTimeout starts when the
+// request header is read and therefore covers handler time — /route/miles
+// waits up to 10s on OSRM, so it must stay well above that.
+func newServer(addr string) *http.Server {
+	return &http.Server{
+		Addr:              addr,
+		Handler:           newMux(),
+		ReadHeaderTimeout: 5 * time.Second,
+		ReadTimeout:       15 * time.Second,
+		WriteTimeout:      30 * time.Second,
+		IdleTimeout:       60 * time.Second,
+	}
 }
 
 // newMux wires all routes; main and the test suite share this exact wiring

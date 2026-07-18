@@ -8,6 +8,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 )
 
 func doRequest(t *testing.T, method, path, body string, header http.Header) *httptest.ResponseRecorder {
@@ -36,6 +37,37 @@ func decodeBody(t *testing.T, rec *httptest.ResponseRecorder) map[string]any {
 		t.Fatalf("response is not JSON: %v (body %q)", err, rec.Body.String())
 	}
 	return payload
+}
+
+func TestNewServerTimeouts(t *testing.T) {
+	// http.ListenAndServe's zero-value timeouts never close slow or idle
+	// connections (slowloris exposure if the worker is ever reachable beyond
+	// the LAN), so the deployed server must carry explicit limits. The write
+	// timeout covers handler time on HTTP/1.1 and /route/miles waits up to
+	// 10s on OSRM — it must stay above that or slow OSRM answers get cut off.
+	srv := newServer(":8081")
+	if srv.Addr != ":8081" {
+		t.Fatalf("expected addr :8081, got %q", srv.Addr)
+	}
+	if srv.ReadHeaderTimeout <= 0 {
+		t.Fatal("ReadHeaderTimeout must be set (slowloris guard)")
+	}
+	if srv.ReadTimeout <= 0 {
+		t.Fatal("ReadTimeout must be set (slow-body guard)")
+	}
+	if srv.WriteTimeout <= 10*time.Second {
+		t.Fatalf("WriteTimeout must exceed the 10s OSRM budget, got %v", srv.WriteTimeout)
+	}
+	if srv.IdleTimeout <= 0 {
+		t.Fatal("IdleTimeout must be set (idle keep-alive guard)")
+	}
+
+	// The server must serve the real mux: /health answers through srv.Handler.
+	rec := httptest.NewRecorder()
+	srv.Handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/health", nil))
+	if rec.Code != http.StatusOK {
+		t.Fatalf("server handler must wire newMux; /health got %d", rec.Code)
+	}
 }
 
 func TestHealthOpenWithSecretSet(t *testing.T) {
