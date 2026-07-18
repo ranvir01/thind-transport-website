@@ -15,6 +15,7 @@
  * Usage: node scripts/e2e-mailbox-oauth-smoke.mjs [outputDir]
  */
 import puppeteer from "puppeteer"
+import pg from "pg"
 import { mkdirSync } from "node:fs"
 import { BASE, sleep, failures, check, waitForText, login, makeShot } from "./e2e-lib.mjs"
 
@@ -44,7 +45,24 @@ async function clickInCard(page, label) {
   check(clicked, `clicked "${label}" on the Docs mailbox card`)
 }
 
+/**
+ * A crashed earlier run leaves its saved mailbox credential behind —
+ * `seed:demo` does not wipe `hub.api_credentials` — and step 1 then fails
+ * forever on "card starts not connected". Clean up our own leftovers first.
+ */
+async function removeLeftoverCredential() {
+  if (!process.env.POSTGRES_URL || !/localhost|127\.0\.0\.1/.test(BASE)) return
+  const db = new pg.Client({ connectionString: process.env.POSTGRES_URL })
+  await db.connect()
+  try {
+    await db.query(`DELETE FROM hub.api_credentials WHERE provider = 'mailbox'`)
+  } finally {
+    await db.end()
+  }
+}
+
 async function main() {
+  await removeLeftoverCredential()
   const browser = await puppeteer.launch({
     headless: "new",
     args: ["--no-sandbox", "--disable-dev-shm-usage"],
@@ -111,6 +129,9 @@ async function main() {
 
   console.log("5. Disconnect leaves the demo carrier clean")
   await clickInCard(page, "Disconnect")
+  // Destructive actions confirm inline — the real action reads "Disconnect it".
+  await sleep(300)
+  await clickInCard(page, "Disconnect it")
   await waitForText(page, "the CSV import path keeps working")
   await sleep(1200)
   const finalText = await cardText(page)
