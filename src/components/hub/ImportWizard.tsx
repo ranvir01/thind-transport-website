@@ -411,6 +411,11 @@ export function ImportWizard({ initialKind = "loads" }: { initialKind?: string }
             {result.skippedDuplicates != null ? ` · ${result.skippedDuplicates} duplicates skipped` : ""}
             {(result.vinDecoded ?? 0) > 0 ? ` · ${result.vinDecoded} decoded from VIN` : ""}
             {(result.invitesSent ?? 0) > 0 ? ` · ${result.invitesSent} app invites emailed` : ""}
+            {(result.invitesFailed ?? 0) > 0 ? (
+              <span className="text-warn">{` · ${result.invitesFailed} invites couldn't be emailed`}</span>
+            ) : (
+              ""
+            )}
             {` · ${result.failed.length} failed`}
           </p>
           {result.failed.length > 0 ? (

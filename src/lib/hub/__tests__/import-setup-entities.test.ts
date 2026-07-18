@@ -171,6 +171,7 @@ describe("importDriversAction", () => {
     )
     expect(result.imported).toBe(2)
     expect(result.invitesSent).toBe(1)
+    expect(result.invitesFailed).toBe(0)
     expect(createDriverInviteToken).toHaveBeenCalledWith({
       carrierId: "carrier-1", driverId: "d-new", email: "amar@example.com",
     })
@@ -182,7 +183,7 @@ describe("importDriversAction", () => {
       })
     )
     expect(logAuditMock).toHaveBeenCalledWith(
-      expect.objectContaining({ newValue: expect.objectContaining({ invitesSent: 1 }) })
+      expect.objectContaining({ newValue: expect.objectContaining({ invitesSent: 1, invitesFailed: 0 }) })
     )
   })
 
@@ -205,7 +206,25 @@ describe("importDriversAction", () => {
     )
     expect(result.imported).toBe(2) // rows still land — email is best-effort
     expect(result.invitesSent).toBe(0)
+    expect(result.invitesFailed).toBe(2)
     expect(sendMailMock).toHaveBeenCalledTimes(1)
+    expect(logAuditMock).toHaveBeenCalledWith(
+      expect.objectContaining({ newValue: expect.objectContaining({ invitesSent: 0, invitesFailed: 2 }) })
+    )
+  })
+
+  it("counts every queued invite as failed when no auth secret can sign tokens", async () => {
+    vi.mocked(createDriverInviteToken).mockReturnValueOnce(null)
+    const result = await importDriversAction(
+      [
+        { first_name: "A", last_name: "One", email: "one@example.com" },
+        { first_name: "B", last_name: "Two", email: "two@example.com" },
+      ],
+      { sendInvites: true }
+    )
+    expect(result.invitesSent).toBe(0)
+    expect(result.invitesFailed).toBe(2)
+    expect(sendMailMock).not.toHaveBeenCalled()
   })
 })
 

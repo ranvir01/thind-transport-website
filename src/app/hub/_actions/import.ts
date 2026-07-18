@@ -28,6 +28,7 @@ export interface ImportResult {
   skippedDuplicates?: number
   vinDecoded?: number
   invitesSent?: number
+  invitesFailed?: number
 }
 
 type GenericRow = Record<string, string>
@@ -348,15 +349,16 @@ export async function importDriversAction(
   }
 
   const invitesSent = inviteQueue.length > 0 ? await sendDriverInvites(user.carrierId, inviteQueue) : 0
+  const invitesFailed = inviteQueue.length - invitesSent
 
   await logAudit({
     carrierId: user.carrierId, actorId: user.id, actorName: user.name,
     entityType: "import", entityId: new Date().toISOString(),
-    action: "import_drivers", newValue: { imported, failed: failed.length, skippedDuplicates, invitesSent },
+    action: "import_drivers", newValue: { imported, failed: failed.length, skippedDuplicates, invitesSent, invitesFailed },
   })
   revalidatePath("/hub/drivers")
   revalidatePath("/hub")
-  return { ok: failed.length === 0, imported, failed, skippedDuplicates, invitesSent }
+  return { ok: failed.length === 0, imported, failed, skippedDuplicates, invitesSent, invitesFailed }
 }
 
 export async function importCustomersAction(rows: GenericRow[]): Promise<ImportResult> {
