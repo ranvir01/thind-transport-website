@@ -5,6 +5,7 @@ import { portalInvoices, portalLoads, portalPacketDocuments } from "@/lib/hub/po
 import { getCarrier } from "@/lib/hub/settings"
 import { fmtCents, STATUS_LABELS, type LoadStatus } from "@/lib/hub/types"
 import { PortalQuoteForm } from "@/components/hub/PortalQuoteForm"
+import { LoadProgressBar } from "@/components/hub/LoadProgressBar"
 import { cn } from "@/lib/utils"
 
 export const dynamic = "force-dynamic"
@@ -33,10 +34,10 @@ export default async function PortalHomePage() {
     <div className="space-y-5">
       <div>
         <h1 className="font-display text-xl font-extrabold uppercase tracking-wide text-white">
-          {carrier?.name ?? "Your carrier"}
+          Hi {user.name.split(" ")[0]}
         </h1>
         <p className="text-body-sm text-steel-400">
-          Hi {user.name.split(" ")[0]} — live freight, documents, and payment status. No checking calls needed.
+          Live freight, documents, and payment status from {carrier?.name ?? "your carrier"} — no checking calls needed.
         </p>
       </div>
 
@@ -44,7 +45,7 @@ export default async function PortalHomePage() {
 
       {/* Moving now */}
       <section>
-        <h2 className="mb-2 font-display text-sm font-bold uppercase tracking-wider text-gold">
+        <h2 className="mb-2 font-display text-sm font-bold uppercase tracking-wider text-[color:var(--portal-accent)]">
           Moving now ({inTransit.length})
         </h2>
         {inTransit.length === 0 ? (
@@ -71,8 +72,9 @@ export default async function PortalHomePage() {
                   <p className="mt-0.5 text-body-sm text-steel-200">
                     {load.origin_city}, {load.origin_state} → {load.dest_city}, {load.dest_state}
                   </p>
+                  <LoadProgressBar status={load.status as LoadStatus} className="mt-2.5" />
                   {load.position_hint ? (
-                    <p className="mt-1 text-body-xs text-gold">{load.position_hint}</p>
+                    <p className="mt-1.5 text-body-xs text-gold">{load.position_hint}</p>
                   ) : null}
                 </Link>
               </li>
@@ -84,7 +86,7 @@ export default async function PortalHomePage() {
       {/* Invoices (brokers) */}
       {user.portalRole === "broker" && invoices.length > 0 ? (
         <section>
-          <h2 className="mb-2 font-display text-sm font-bold uppercase tracking-wider text-gold">Invoices</h2>
+          <h2 className="mb-2 font-display text-sm font-bold uppercase tracking-wider text-[color:var(--portal-accent)]">Invoices</h2>
           <ul className="divide-y divide-white/5 rounded-2xl border border-white/10 bg-navy-800/80">
             {invoices.map((invoice) => {
               const status = INVOICE_STATUS_COPY[invoice.status] ?? INVOICE_STATUS_COPY.sent
