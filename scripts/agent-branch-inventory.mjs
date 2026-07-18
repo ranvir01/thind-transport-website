@@ -18,10 +18,13 @@ const PREFIX = "origin/claude/"
 
 const SKIP_BRANCHES = new Set(["hauldesk-project-setup-l1luoo"])
 
+let gitFailures = 0
+
 function git(cmd) {
   try {
     return execSync(`git ${cmd}`, { encoding: "utf-8", stdio: ["pipe", "pipe", "pipe"] }).trim()
   } catch {
+    gitFailures++
     return ""
   }
 }
@@ -73,7 +76,15 @@ function unpickedCommitCount(ref, base) {
 
 function buildInventory({ pendingOnly }) {
   git("fetch origin --quiet")
+  gitFailures = 0 // an offline fetch is fine — local refs still answer the inventory
   const branches = listClaudeBranches()
+  if (!branches.length) {
+    // `git branch -r` returning nothing means git itself is failing (spawn
+    // pressure, corrupt clone) — this repo always has claude/* branches.
+    // Emitting an empty inventory here is what made agent:status report
+    // "0 pending" while hundreds of branches were waiting.
+    throw new Error("git branch -r returned no claude/* branches — git is failing, inventory aborted")
+  }
   const rows = []
 
   for (const name of branches) {
@@ -109,6 +120,12 @@ function buildInventory({ pendingOnly }) {
     })
   }
 
+  if (!rows.length && gitFailures > 0) {
+    // Every branch looked "on main" but only because git calls were erroring —
+    // an empty inventory built on failed commands must not parse as all-clear.
+    throw new Error(`${gitFailures} git command(s) failed while building the inventory — result discarded`)
+  }
+
   rows.sort((a, b) => b.priority - a.priority || (b.tip?.date ?? "").localeCompare(a.tip?.date ?? ""))
   return rows
 }
@@ -116,11 +133,23 @@ function buildInventory({ pendingOnly }) {
 function main() {
   const json = process.argv.includes("--json")
   const showAll = process.argv.includes("--all")
-  const rows = buildInventory({ pendingOnly: !showAll })
+  let rows
+  try {
+    rows = buildInventory({ pendingOnly: !showAll })
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err)
+    if (json) console.log(JSON.stringify({ integrator: INTEGRATOR, main: MAIN, error: message }, null, 2))
+    console.error(`agent-branch-inventory: ${message}`)
+    process.exitCode = 2
+    return
+  }
 
   if (json) {
+    // No process.exit() here: exiting right after console.log truncates the
+    // ~270KB JSON mid-write when stdout is a pipe (>64KB pipe buffer), which
+    // is what randomly fed agent:status half a document. Let node flush.
     console.log(JSON.stringify({ integrator: INTEGRATOR, main: MAIN, pending: rows }, null, 2))
-    process.exit(rows.length ? 0 : 0)
+    return
   }
 
   console.log("LoadOff agent branch inventory")
