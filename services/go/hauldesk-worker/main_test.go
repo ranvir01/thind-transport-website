@@ -8,6 +8,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 )
 
 func doRequest(t *testing.T, method, path, body string, header http.Header) *httptest.ResponseRecorder {
@@ -36,6 +37,37 @@ func decodeBody(t *testing.T, rec *httptest.ResponseRecorder) map[string]any {
 		t.Fatalf("response is not JSON: %v (body %q)", err, rec.Body.String())
 	}
 	return payload
+}
+
+func TestNewServerTimeouts(t *testing.T) {
+	// http.ListenAndServe's zero-value timeouts never close slow or idle
+	// connections (slowloris exposure if the worker is ever reachable beyond
+	// the LAN), so the deployed server must carry explicit limits. The write
+	// timeout covers handler time on HTTP/1.1 and /route/miles waits up to
+	// 10s on OSRM — it must stay above that or slow OSRM answers get cut off.
+	srv := newServer(":8081")
+	if srv.Addr != ":8081" {
+		t.Fatalf("expected addr :8081, got %q", srv.Addr)
+	}
+	if srv.ReadHeaderTimeout <= 0 {
+		t.Fatal("ReadHeaderTimeout must be set (slowloris guard)")
+	}
+	if srv.ReadTimeout <= 0 {
+		t.Fatal("ReadTimeout must be set (slow-body guard)")
+	}
+	if srv.WriteTimeout <= 10*time.Second {
+		t.Fatalf("WriteTimeout must exceed the 10s OSRM budget, got %v", srv.WriteTimeout)
+	}
+	if srv.IdleTimeout <= 0 {
+		t.Fatal("IdleTimeout must be set (idle keep-alive guard)")
+	}
+
+	// The server must serve the real mux: /health answers through srv.Handler.
+	rec := httptest.NewRecorder()
+	srv.Handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/health", nil))
+	if rec.Code != http.StatusOK {
+		t.Fatalf("server handler must wire newMux; /health got %d", rec.Code)
+	}
 }
 
 func TestHealthOpenWithSecretSet(t *testing.T) {
@@ -95,6 +127,47 @@ func TestRouteMilesRejectsBadInput(t *testing.T) {
 	}
 	if rec := doRequest(t, http.MethodPost, "/route/miles", "{not json", nil); rec.Code != http.StatusBadRequest {
 		t.Fatalf("expected 400 for malformed JSON, got %d", rec.Code)
+	}
+}
+
+func TestRouteMilesRejectsOutOfRangeCoordinates(t *testing.T) {
+	// Out-of-range coordinates are always a client bug (swapped lat/lng, meters
+	// instead of degrees). Without the guard they were proxied to OSRM as
+	// garbage, and on nonsense latitudes haversineMiles can leave asin's domain
+	// and return NaN — json.Encode refuses NaN after the 200 header is written,
+	// so the worker answered 200 with an EMPTY body (verified empirically:
+	// lat ±13090.69 yields NaN). All of these must be a clean 400 instead.
+	t.Setenv("OSRM_URL", "http://127.0.0.1:1")
+	cases := map[string]string{
+		"latitude beyond +90":  `{"origin":{"lat":91,"lng":0},"dest":{"lat":0,"lng":1}}`,
+		"latitude below -90":   `{"origin":{"lat":0,"lng":0},"dest":{"lat":-90.0001,"lng":1}}`,
+		"longitude beyond 180": `{"origin":{"lat":0,"lng":180.5},"dest":{"lat":0,"lng":1}}`,
+		"longitude below -180": `{"origin":{"lat":0,"lng":0},"dest":{"lat":0,"lng":-181}}`,
+		"swapped lat/lng":      `{"origin":{"lat":-122.3321,"lng":47.6062},"dest":{"lat":45.5152,"lng":-122.6784}}`,
+		"NaN-producing pair":   `{"origin":{"lat":-13090.69,"lng":0},"dest":{"lat":13090.69,"lng":180}}`,
+	}
+	for name, body := range cases {
+		t.Run(name, func(t *testing.T) {
+			rec := doRequest(t, http.MethodPost, "/route/miles", body, nil)
+			if rec.Code != http.StatusBadRequest {
+				t.Fatalf("expected 400 for %s, got %d (body %q)", name, rec.Code, rec.Body.String())
+			}
+		})
+	}
+}
+
+func TestRouteMilesAcceptsBoundaryCoordinates(t *testing.T) {
+	// The poles and the antimeridian are legal coordinates — the range guard
+	// must be inclusive, and the worker still answers (labeled fallback here,
+	// since OSRM is unreachable in this test).
+	t.Setenv("OSRM_URL", "http://127.0.0.1:1")
+	rec := doRequest(t, http.MethodPost, "/route/miles",
+		`{"origin":{"lat":90,"lng":-180},"dest":{"lat":-90,"lng":180}}`, nil)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("boundary coordinates must be accepted, got %d (body %q)", rec.Code, rec.Body.String())
+	}
+	if payload := decodeBody(t, rec); payload["source"] != "haversine-fallback" {
+		t.Fatalf("expected labeled fallback answer, got %v", payload)
 	}
 }
 

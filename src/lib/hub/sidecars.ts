@@ -91,6 +91,30 @@ export type IftaSummarySource = "rust-compute" | "typescript"
 
 export type IftaSummaryResult = IftaResult & { source: IftaSummarySource }
 
+/**
+ * A 200 from the Rust URL is not proof the reply is IFTA math — version skew,
+ * a proxy error page, or the wrong service answering on that port all return
+ * parseable JSON. Filing money must never carry `undefined`/NaN cents, so
+ * anything not shaped like an IftaResult is treated as no answer and the TS
+ * engine runs instead (same doctrine as goWorkerRouteMiles's nonsense guard).
+ */
+function isIftaResult(data: unknown): data is IftaResult {
+  if (typeof data !== "object" || data === null) return false
+  const r = data as Record<string, unknown>
+  const finite = (v: unknown) => typeof v === "number" && Number.isFinite(v)
+  return (
+    [r.fleetMiles, r.fleetGallons, r.mpg, r.netTaxCents].every(finite) &&
+    Array.isArray(r.missingRates) &&
+    Array.isArray(r.rows) &&
+    r.rows.every(
+      (row) =>
+        typeof row === "object" &&
+        row !== null &&
+        finite((row as Record<string, unknown>).netCents)
+    )
+  )
+}
+
 /** Quarterly IFTA tax summary. Rust compute → `computeIfta` fallback. */
 export async function iftaSummary(inputs: IftaInputs): Promise<IftaSummaryResult> {
   if (RUST_COMPUTE_URL) {
@@ -102,8 +126,10 @@ export async function iftaSummary(inputs: IftaInputs): Promise<IftaSummaryResult
         signal: AbortSignal.timeout(30_000),
       })
       if (res.ok) {
-        const data = (await res.json()) as IftaResult
-        return { ...data, source: "rust-compute" }
+        const data: unknown = await res.json()
+        if (isIftaResult(data)) {
+          return { ...data, source: "rust-compute" }
+        }
       }
     } catch {
       // fall through to TS

@@ -29,15 +29,44 @@ type latLng struct {
 	Lng float64 `json:"lng"`
 }
 
+// valid reports whether the point is a real WGS84 coordinate. JSON cannot
+// carry NaN/Inf, so a plain range check is sufficient. Out-of-range values
+// are always a client bug (swapped lat/lng, meters instead of degrees) and
+// must be rejected up front: they would otherwise be proxied to OSRM as
+// garbage, and haversineMiles on nonsense latitudes can leave asin's domain
+// and return NaN — which json.Encode refuses after the 200 header is already
+// written, producing an empty-body 200.
+func (p latLng) valid() bool {
+	return p.Lat >= -90 && p.Lat <= 90 && p.Lng >= -180 && p.Lng <= 180
+}
+
 type routeMilesRequest struct {
 	Origin latLng `json:"origin"`
 	Dest   latLng `json:"dest"`
 }
 
 func main() {
-	addr := ":8081"
-	log.Printf("hauldesk-worker listening on %s (auth: %v)", addr, os.Getenv("HAULDESK_SIDECAR_SECRET") != "")
-	log.Fatal(http.ListenAndServe(addr, newMux()))
+	srv := newServer(":8081")
+	log.Printf("hauldesk-worker listening on %s (auth: %v)", srv.Addr, os.Getenv("HAULDESK_SIDECAR_SECRET") != "")
+	log.Fatal(srv.ListenAndServe())
+}
+
+// newServer builds the worker's HTTP server; main and the test suite share it
+// so the timeout config is asserted as deployed. http.ListenAndServe's
+// zero-value timeouts never close slow or idle connections (slowloris: a
+// client trickling one header byte at a time holds a goroutine forever), so
+// even a LAN-only sidecar gets explicit limits. WriteTimeout starts when the
+// request header is read and therefore covers handler time — /route/miles
+// waits up to 10s on OSRM, so it must stay well above that.
+func newServer(addr string) *http.Server {
+	return &http.Server{
+		Addr:              addr,
+		Handler:           newMux(),
+		ReadHeaderTimeout: 5 * time.Second,
+		ReadTimeout:       15 * time.Second,
+		WriteTimeout:      30 * time.Second,
+		IdleTimeout:       60 * time.Second,
+	}
 }
 
 // newMux wires all routes; main and the test suite share this exact wiring
@@ -81,6 +110,10 @@ func routeMilesHandler(w http.ResponseWriter, r *http.Request) {
 	var req routeMilesRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "bad request", http.StatusBadRequest)
+		return
+	}
+	if !req.Origin.valid() || !req.Dest.valid() {
+		http.Error(w, "coordinates out of range", http.StatusBadRequest)
 		return
 	}
 

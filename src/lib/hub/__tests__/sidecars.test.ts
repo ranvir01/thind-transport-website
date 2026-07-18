@@ -184,6 +184,62 @@ describe("iftaSummary", () => {
     expect(result).toEqual({ ...rustResult, source: "rust-compute" })
   })
 
+  it("accepts a rust reply with populated rows when every row carries finite cents", async () => {
+    vi.stubEnv("HAULDESK_RUST_COMPUTE_URL", "http://localhost:8091")
+    const row = {
+      jurisdiction: "WA",
+      miles: 500,
+      taxableGallons: 71.429,
+      taxPaidGallons: 80,
+      rate: 0.494,
+      surchargeRate: 0,
+      taxCents: -423,
+      surchargeCents: 0,
+      netCents: -423,
+    }
+    const rustResult = { fleetMiles: 700, fleetGallons: 100, mpg: 7, rows: [row], netTaxCents: -423, missingRates: [] }
+    vi.stubGlobal("fetch", vi.fn(async () => ({ ok: true, json: async () => rustResult })))
+    const { iftaSummary } = await loadSidecars()
+    await expect(iftaSummary(INPUTS)).resolves.toEqual({ ...rustResult, source: "rust-compute" })
+  })
+
+  // A 200 with parseable JSON is not proof the reply is IFTA math — version
+  // skew, a proxy error page, or the wrong service on that port must fall back
+  // to TS rather than flow undefined/NaN cents into a filing.
+  it.each([
+    ["an error object", { error: "internal" }],
+    ["a null body", null],
+    ["a bare string", "ok"],
+    ["netTaxCents as a string", { fleetMiles: 1, fleetGallons: 1, mpg: 1, rows: [], netTaxCents: "1234", missingRates: [] }],
+    ["a missing netTaxCents", { fleetMiles: 1, fleetGallons: 1, mpg: 1, rows: [], missingRates: [] }],
+    ["missingRates as a non-array", { fleetMiles: 1, fleetGallons: 1, mpg: 1, rows: [], netTaxCents: 0, missingRates: "WA" }],
+    ["a row without netCents", { fleetMiles: 1, fleetGallons: 1, mpg: 1, rows: [{ jurisdiction: "WA" }], netTaxCents: 0, missingRates: [] }],
+  ])("falls back to typescript when the rust sidecar answers 200 with %s", async (_label, body) => {
+    vi.stubEnv("HAULDESK_RUST_COMPUTE_URL", "http://localhost:8091")
+    vi.stubGlobal("fetch", vi.fn(async () => ({ ok: true, json: async () => body })))
+    const { iftaSummary } = await loadSidecars()
+    const result = await iftaSummary(INPUTS)
+    expect(result.source).toBe("typescript")
+    expect(result.fleetMiles).toBe(700)
+  })
+
+  it("falls back to typescript when the rust reply is not valid JSON (json() throws)", async () => {
+    vi.stubEnv("HAULDESK_RUST_COMPUTE_URL", "http://localhost:8091")
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => ({
+        ok: true,
+        json: async () => {
+          throw new SyntaxError("Unexpected token < in JSON")
+        },
+      }))
+    )
+    const { iftaSummary } = await loadSidecars()
+    const result = await iftaSummary(INPUTS)
+    expect(result.source).toBe("typescript")
+    expect(result.fleetMiles).toBe(700)
+  })
+
   it("falls back to typescript when the rust sidecar is set but errors", async () => {
     vi.stubEnv("HAULDESK_RUST_COMPUTE_URL", "http://localhost:8091")
     vi.stubGlobal("fetch", vi.fn(async () => ({ ok: false })))

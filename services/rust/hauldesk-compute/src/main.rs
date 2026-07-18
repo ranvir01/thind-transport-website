@@ -172,13 +172,20 @@ fn header_value<'a>(request: &'a tiny_http::Request, name: &str) -> Option<&'a s
 /// the handler wiring below is unit-tested as built (mirrors newMux() in the
 /// Go worker's main_test.go: main and the tests share this exact logic).
 fn handle(method: &Method, path: &str, secret_header: Option<&str>, body: &str, secret: &str) -> (u16, String) {
+    // Route on the path alone: tiny_http hands over the raw request-line URL,
+    // so "/health?probe=1" (how some load balancers tag their checks) must
+    // still reach the open /health route instead of being secret-gated into a
+    // 404 — parity with the Go worker, whose ServeMux ignores the query string.
+    let path = path.split('?').next().unwrap_or(path);
     // /health stays open for load-balancer checks; work endpoints are gated.
     if path != "/health" && !secret.is_empty() && !secret_matches_header(secret_header, secret) {
         return (401, r#"{"error":"unauthorized"}"#.to_string());
     }
 
     match (method, path) {
-        (Method::Get, "/health") => (
+        // Any method: parity with the Go worker, whose /health handler ignores
+        // the method — load balancers commonly probe with HEAD.
+        (_, "/health") => (
             200,
             r#"{"service":"hauldesk-compute","status":"ok"}"#.to_string(),
         ),
@@ -192,6 +199,9 @@ fn handle(method: &Method, path: &str, secret_header: Option<&str>, body: &str, 
             }
             Err(_) => (400, r#"{"error":"invalid ifta inputs"}"#.to_string()),
         },
+        // Known path, wrong method: 405 like the Go worker's routeMilesHandler,
+        // not 404 — a misconfigured client learns the path is right.
+        (_, "/ifta/summary") => (405, r#"{"error":"method not allowed"}"#.to_string()),
         _ => (404, r#"{"error":"not found"}"#.to_string()),
     }
 }
@@ -433,6 +443,55 @@ mod tests {
         assert_eq!(status, 400);
     }
 
+    /// Method-mismatch parity with the Go worker: a wrong method on a known
+    /// path is 405 (routeMilesHandler's contract), not 404 — a client with the
+    /// right URL but wrong verb must learn the path exists.
+    #[test]
+    fn wrong_method_on_ifta_summary_is_405() {
+        for method in [Method::Get, Method::Put, Method::Delete] {
+            let (status, body) = handle(&method, "/ifta/summary", Some("s3cret"), "", "s3cret");
+            assert_eq!(status, 405, "{method} /ifta/summary must be 405");
+            assert!(body.contains("method not allowed"));
+        }
+    }
+
+    /// The secret gate still runs first: without the header, a wrong-method
+    /// request is 401, never a 405 that confirms the route to the unauthorized.
+    #[test]
+    fn wrong_method_still_401_without_secret() {
+        let (status, _) = handle(&Method::Get, "/ifta/summary", None, "", "s3cret");
+        assert_eq!(status, 401);
+    }
+
+    /// Parity with the Go worker's /health handler, which ignores the method —
+    /// load balancers commonly probe with HEAD, and that must never 404/405.
+    #[test]
+    fn health_answers_any_method() {
+        for method in [Method::Get, Method::Head, Method::Post] {
+            let (status, _) = handle(&method, "/health", None, "", "s3cret");
+            assert_eq!(status, 200, "{method} /health must stay open");
+        }
+    }
+
+    /// tiny_http gives handle() the raw request-line URL, query string and all.
+    /// A load balancer probing "/health?probe=1" must get the open 200, not a
+    /// secret-gated 401/404 (the Go worker's ServeMux already behaves this way).
+    #[test]
+    fn health_open_with_query_string() {
+        let (status, body) = handle(&Method::Get, "/health?probe=1", None, "", "s3cret");
+        assert_eq!(status, 200);
+        assert!(body.contains("\"status\":\"ok\""));
+    }
+
+    /// Same for work endpoints: a query-string suffix must not knock the route
+    /// into the 404 arm once the secret gate passes.
+    #[test]
+    fn ifta_summary_routes_with_query_string() {
+        let body = r#"{"milesByJurisdiction":{},"gallonsByJurisdiction":{},"rates":{}}"#;
+        let (status, _) = handle(&Method::Post, "/ifta/summary?trace=1", Some("s3cret"), body, "s3cret");
+        assert_eq!(status, 200);
+    }
+
     /// money.test.ts "rounds half away from zero" golden, plus the near-tie
     /// floats where `(x + 0.5).floor()` diverges from JS Math.round:
     /// 0.49999999999999994 + 0.5 == 1.0 exactly in f64, so the old idiom
@@ -492,6 +551,15 @@ mod tests {
         assert!(body.contains("\"status\":\"ok\""));
     }
 
+    /// End-to-end pin for the query-string fix: the raw URL really does arrive
+    /// with its query attached through tiny_http, and /health must stay open.
+    #[test]
+    fn process_health_open_with_query_string_through_the_live_glue() {
+        let (status, body) = run_request(TestRequest::new().with_path("/health?probe=1"), "s3cret");
+        assert_eq!(status, 200);
+        assert!(body.contains("\"status\":\"ok\""));
+    }
+
     /// The TS gateway sends `X-Hauldesk-Secret`; other clients may case it
     /// differently. A regression to case-sensitive lookup would silently 401
     /// every gateway call, so pin the insensitivity at the live-glue level.
@@ -517,6 +585,19 @@ mod tests {
         let (status, body) = run_request(request, "s3cret");
         assert_eq!(status, 401);
         assert!(body.contains("unauthorized"));
+    }
+
+    /// Wrong-method 405 through the live glue: process() only reads a body for
+    /// POST, so the GET arm must dispatch to the 405 without touching it.
+    #[test]
+    fn process_answers_405_for_get_ifta_summary() {
+        let request = TestRequest::new()
+            .with_method(Method::Get)
+            .with_path("/ifta/summary")
+            .with_header(secret_header("X-Hauldesk-Secret", "s3cret"));
+        let (status, body) = run_request(request, "s3cret");
+        assert_eq!(status, 405);
+        assert!(body.contains("method not allowed"));
     }
 
     /// The POST body must survive the read-then-dispatch glue intact: the
