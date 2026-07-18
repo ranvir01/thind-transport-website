@@ -102,8 +102,11 @@ async function main() {
     check(nameBright !== null && nameBright > 150, `name input renders light-on-dark (color=${nameColor}, brightness=${nameBright?.toFixed(0)})`)
     await shot(page, "01-valid-invitation")
 
+    // Accept does signIn() then a hard window.location.href hop — wait for the
+    // new document to finish loading, not just the pathname flip, or the next
+    // screenshot races the load and dies on a 0-width frame.
     await Promise.all([
-      page.waitForFunction(() => window.location.pathname === "/hub/portal", { timeout: 15000 }),
+      page.waitForNavigation({ waitUntil: "networkidle2", timeout: 15000 }),
       page.click('button[type="submit"]'),
     ])
     check(page.url().includes("/hub/portal"), `accepting the invitation signs in and lands on /hub/portal (url=${page.url()})`)
@@ -152,7 +155,8 @@ async function main() {
 
     check(consoleErrors.length === 0, `no console errors (${consoleErrors.length}: ${consoleErrors.slice(0, 2).join(" | ")})`)
   } catch (err) {
-    await shot(page, "ZZ-failure")
+    // A failed screenshot here must never crash the process and eat `err`.
+    await shot(page, "ZZ-failure").catch(() => {})
     failures.push(`crash: ${err.message}`)
   } finally {
     await browser.close()
