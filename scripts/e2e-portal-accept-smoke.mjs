@@ -18,7 +18,7 @@
 import puppeteer from "puppeteer"
 import pg from "pg"
 import { readFileSync, existsSync, mkdirSync } from "node:fs"
-import { BASE, reseed, makeShot, check, failures } from "./e2e-lib.mjs"
+import { BASE, reseed, makeShot, check, failures, sleep } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-portal-accept"
 mkdirSync(OUT, { recursive: true })
@@ -107,6 +107,11 @@ async function main() {
       page.click('button[type="submit"]'),
     ])
     check(page.url().includes("/hub/portal"), `accepting the invitation signs in and lands on /hub/portal (url=${page.url()})`)
+    // The pathname flips before the portal document finishes replacing the
+    // accept page; screenshotting mid-swap throws "Cannot take screenshot
+    // with 0 width". Wait for portal content to actually render first.
+    await page.waitForFunction(() => (document.body?.innerText ?? "").trim().length > 40, { timeout: 15000 })
+    await sleep(500)
     await shot(page, "02-signed-in")
 
     console.log("2. Already-used invitation at 390px")
@@ -152,7 +157,10 @@ async function main() {
 
     check(consoleErrors.length === 0, `no console errors (${consoleErrors.length}: ${consoleErrors.slice(0, 2).join(" | ")})`)
   } catch (err) {
-    await shot(page, "ZZ-failure")
+    // The failure shot is best-effort: if it throws too (page mid-navigation,
+    // 0-width surface), it must not mask the real error or kill the process
+    // before the failure report prints.
+    await shot(page, "ZZ-failure").catch(() => {})
     failures.push(`crash: ${err.message}`)
   } finally {
     await browser.close()
