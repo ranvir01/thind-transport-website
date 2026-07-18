@@ -25,6 +25,18 @@ const OUT = process.argv[2] ?? "e2e-shots-dat-freight"
 mkdirSync(OUT, { recursive: true })
 const shot = makeShot(OUT, { fullPage: true })
 
+/**
+ * Disconnect on an integrations card is a two-click confirm flow
+ * (Disconnect → "Disconnect it"); one click only opens the confirm step
+ * and leaves the credential saved.
+ */
+async function disconnectDat(ownerPage) {
+  await clickByText(ownerPage, "Disconnect").catch(() => {})
+  await new Promise((r) => setTimeout(r, 250))
+  await clickByText(ownerPage, "Disconnect it").catch(() => {})
+  await waitForText(ownerPage, "the CSV import path keeps working").catch(() => {})
+}
+
 async function main() {
   reseed()
   const browser = await puppeteer.launch({
@@ -38,6 +50,27 @@ async function main() {
     if (msg.type() === "error") consoleErrors.push(msg.text())
   })
   page.on("pageerror", (err) => consoleErrors.push(`pageerror: ${err.message}`))
+
+  // Self-heal: a failed prior run can leave the DAT credential behind
+  // (seed:demo does not wipe hub.api_credentials), which fails step 1.
+  const healCtx = await browser.createBrowserContext()
+  const heal = await healCtx.newPage()
+  await heal.setViewport({ width: 1440, height: 900 })
+  await login(heal, "owner@demo.thind")
+  await heal.goto(`${BASE}/hub/settings/integrations`, { waitUntil: "networkidle2" })
+  await waitForText(heal, "DAT load board")
+  const datConnected = await heal.evaluate(() => {
+    const heading = [...document.querySelectorAll("h3")].find((h) => h.textContent.includes("DAT load board"))
+    let node = heading
+    while (node && !node.textContent.includes("Always works without it")) node = node.parentElement
+    return /\bconnected\b/.test(node?.querySelector("span")?.textContent ?? "") &&
+      !/not connected/i.test(node?.querySelector("span")?.textContent ?? "")
+  })
+  if (datConnected) {
+    console.log("   (stale DAT credential from a previous failed run — disconnecting first)")
+    await disconnectDat(heal)
+  }
+  await healCtx.close()
 
   console.log("1. Dispatcher sees the DAT panel on the load board, disconnected by default")
   await login(page, "dispatch@demo.thind")
@@ -152,7 +185,7 @@ async function main() {
 
     console.log("6. Cleanup — disconnect DAT so the credential doesn't linger between runs")
     await owner.goto(`${BASE}/hub/settings/integrations`, { waitUntil: "networkidle2" })
-    await clickByText(owner, "Disconnect").catch(() => {})
+    await disconnectDat(owner)
   }
 
   const realErrors = consoleErrors.filter((e) => !/favicon|manifest/i.test(e))
