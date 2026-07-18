@@ -10,6 +10,7 @@
  * Exit 1 = integrator is ahead of main by more than AGENT_CATCHUP_THRESHOLD (catch-up mode).
  */
 import { execSync } from "node:child_process"
+import { pathToFileURL } from "node:url"
 
 const INTEGRATOR = "origin/claude/hauldesk-project-setup-l1luoo"
 const MAIN = "origin/main"
@@ -82,6 +83,21 @@ export function parsePendingCount(out) {
   }
 }
 
+/**
+ * Cheap independent estimate: origin/claude/* branches with commits not
+ * reachable from main. Coarser than the inventory's cherry-based count
+ * (it can't see patch-equivalent picks), so it's only a sanity guard:
+ * inventory reports 0/UNKNOWN while git sees unmerged claude branches →
+ * the inventory result is wrong, say so loudly.
+ */
+function rawUnmergedClaudeBranchCount() {
+  const out = git(`branch -r --no-merged ${MAIN}`)
+  return out
+    .split("\n")
+    .map((l) => l.trim())
+    .filter((l) => l.startsWith("origin/claude/") && l !== INTEGRATOR).length
+}
+
 function main() {
   git("fetch origin --quiet")
 
@@ -110,8 +126,9 @@ function main() {
       cwd: process.cwd(),
       maxBuffer: 32 * 1024 * 1024,
     })
-  } catch {
-    /* leave pendingOut empty → parsePendingCount returns null below */
+  } catch (err) {
+    // leave pendingOut empty → parsePendingCount returns null below
+    console.log(`\nWARNING: agent-branch-inventory --json failed: ${err.message}`)
   }
   const pendingCount = parsePendingCount(pendingOut)
   if (pendingCount === null) {
@@ -121,6 +138,14 @@ function main() {
     console.log(`\nPending claude/* branches (not on main): ${pendingCount}`)
     if (pendingCount > 0) {
       console.log("  Run: npm run agent:branches")
+    }
+  }
+  if (!pendingCount) {
+    const rawUnmerged = rawUnmergedClaudeBranchCount()
+    if (rawUnmerged > 0) {
+      console.log(
+        `  MISMATCH: git sees ${rawUnmerged} origin/claude/* branch(es) not merged to main — do not trust the count above; run npm run agent:branches`
+      )
     }
   }
 
@@ -160,4 +185,4 @@ function main() {
 }
 
 // import-safe: only run when executed directly (tests import parsePendingCount)
-if (process.argv[1] && import.meta.url === new URL(`file://${process.argv[1]}`).href) main()
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) main()
