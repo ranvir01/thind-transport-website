@@ -64,6 +64,21 @@ describe("normalizeQboPayment (pure — the one place the assumed QBO shape is r
     expect(row.external_id).toBe("1")
     expect(row.method).toBeNull()
   })
+
+  it("tolerates a payment with no Line array and no Id instead of crashing", () => {
+    const row = normalizeQboPayment({ TotalAmt: 5 }, new Map([["87", "INV-9"]]))
+    expect(row.external_id).toBe("")
+    expect(row.invoiceNumber).toBeNull()
+    expect(row.amountCents).toBe(500)
+  })
+
+  it("ignores lines without a LinkedTxn array and TxnIds absent from the map", () => {
+    const row = normalizeQboPayment(
+      { Id: "2", TotalAmt: 10, Line: [{ Amount: 10 }, { LinkedTxn: [{ TxnId: "99", TxnType: "Invoice" }] }] },
+      new Map([["87", "INV-9"]])
+    )
+    expect(row.invoiceNumber).toBeNull()
+  })
 })
 
 describe("qboSource (SyncSource<QboPaymentRow> contract)", () => {
@@ -144,11 +159,13 @@ describe("qboSource (SyncSource<QboPaymentRow> contract)", () => {
       { ok: true, json: async () => ({ QueryResponse: { Payment: [] } }) }
     )
     await qboSource(CARRIER).pull()
+    // createdBy must be null for system rotation — created_by is a UUID column,
+    // and the old "system:qbo" sentinel crashed the INSERT on every rotation.
     expect(saveCredentialsMock).toHaveBeenCalledWith(
       CARRIER,
       "qbo",
       { ...CREDS, refreshToken: "rtok-new" },
-      "system:qbo"
+      null
     )
   })
 
@@ -172,6 +189,38 @@ describe("qboSource (SyncSource<QboPaymentRow> contract)", () => {
     )
     await qboSource(CARRIER).pull()
     expect(saveCredentialsMock).not.toHaveBeenCalled()
+  })
+
+  it("surfaces a non-OK Payment query as an error rather than returning an empty pull", async () => {
+    hasCredentialsMock.mockResolvedValue(true)
+    getCredentialsMock.mockResolvedValue(CREDS)
+    mockFetchSequence(
+      { ok: true, json: async () => ({ access_token: "tok" }) },
+      { ok: false, status: 500, json: async () => ({}) }
+    )
+    await expect(qboSource(CARRIER).pull()).rejects.toThrow(/Payment query → HTTP 500/)
+  })
+
+  it("skips malformed payments/lines when collecting linked ids and tolerates an invoice row missing DocNumber", async () => {
+    hasCredentialsMock.mockResolvedValue(true)
+    getCredentialsMock.mockResolvedValue(CREDS)
+    mockFetchSequence(
+      { ok: true, json: async () => ({ access_token: "tok" }) },
+      {
+        ok: true,
+        json: async () => ({
+          QueryResponse: {
+            Payment: [
+              { Id: "A", TotalAmt: 10 }, // no Line at all
+              { Id: "B", TotalAmt: 20, Line: [{ Amount: 20 }, { LinkedTxn: [{ TxnId: "87", TxnType: "Invoice" }] }] },
+            ],
+          },
+        }),
+      },
+      { ok: true, json: async () => ({ QueryResponse: { Invoice: [{ Id: "87" }] } }) } // DocNumber missing upstream
+    )
+    const rows = await qboSource(CARRIER).pull()
+    expect(rows.map((r) => r.invoiceNumber)).toEqual([null, null])
   })
 })
 
@@ -211,11 +260,13 @@ describe("runQboSync", () => {
     })
     const result = await runQboSync(CARRIER)
     expect(result).toEqual({ connected: true, imported: 1, skipped: 0, unmatched: [] })
+    // Actor id must be null (UUID column) — a "system:qbo" sentinel made the
+    // load-paid cascade throw after money moved. See factor.test.ts regression.
     expect(recordPaymentMock).toHaveBeenCalledWith(
       CARRIER,
       "invoice-1",
       { amountCents: 4000, paidOn: "2026-06-01", method: null, reference: "qbo:A" },
-      { id: "system:qbo", name: "QuickBooks Online sync" }
+      { id: null, name: "QuickBooks Online sync" }
     )
   })
 
@@ -265,6 +316,29 @@ describe("runQboSync", () => {
     })
     const result = await runQboSync(CARRIER)
     expect(result).toEqual({ connected: true, imported: 0, skipped: 0, unmatched: ["INV-404"] })
+    expect(recordPaymentMock).not.toHaveBeenCalled()
+  })
+
+  it("drops payments without an Id and reports unlinked ones as unmatched by their QBO id", async () => {
+    hasCredentialsMock.mockResolvedValue(true)
+    getCredentialsMock.mockResolvedValue(CREDS)
+    mockFetchSequence(
+      { ok: true, json: async () => ({ access_token: "tok" }) },
+      {
+        ok: true,
+        json: async () => ({
+          QueryResponse: {
+            Payment: [
+              { TotalAmt: 5 }, // no Id — nothing to dedup on, skip entirely
+              { Id: "B", TotalAmt: 7, Line: [] }, // no linked invoice — report, don't guess
+            ],
+          },
+        }),
+      }
+    )
+    const result = await runQboSync(CARRIER)
+    expect(result).toEqual({ connected: true, imported: 0, skipped: 0, unmatched: ["B"] })
+    expect(queryOneMock).not.toHaveBeenCalled()
     expect(recordPaymentMock).not.toHaveBeenCalled()
   })
 })
@@ -384,6 +458,86 @@ describe("pushInvoiceToQbo", () => {
     })
     expect(queryMock).toHaveBeenCalledWith(expect.stringContaining("UPDATE hub.invoices SET sent_log"), expect.any(Array))
     expect(logAuditMock).toHaveBeenCalledWith(expect.objectContaining({ action: "qbo-push" }))
+  })
+
+  it("recognizes a prior sparse update in sent_log and defaults a missing SyncToken to \"0\"", async () => {
+    hasCredentialsMock.mockResolvedValue(true)
+    getCredentialsMock.mockResolvedValue(CREDS)
+    getInvoiceMock.mockResolvedValue({
+      ...INVOICE, amount_cents: 150000, sent_log: [{ to: "qbo", at: "2026-06-01", kind: "qbo-push-update" }],
+    } as never)
+    const fetchMock = mockFetchSequence(
+      { ok: true, json: async () => ({ access_token: "tok" }) },
+      { ok: true, json: async () => ({ QueryResponse: { Invoice: [{ Id: "900", TotalAmt: 1250.5 }] } }) }, // no SyncToken
+      { ok: true, json: async () => ({ QueryResponse: { Item: [{ Id: "77" }] } }) },
+      { ok: true, json: async () => ({ Invoice: { Id: "900" } }) }
+    )
+    const result = await pushInvoiceToQbo(CARRIER, "invoice-1", ACTOR)
+    expect(result).toEqual({ connected: true, pushed: true, updated: true })
+    const body = JSON.parse((fetchMock.mock.calls[3] as [string, RequestInit])[1].body as string)
+    expect(body.SyncToken).toBe("0")
+  })
+
+  it("surfaces a non-OK sparse-update response as an error rather than logging a push", async () => {
+    hasCredentialsMock.mockResolvedValue(true)
+    getCredentialsMock.mockResolvedValue(CREDS)
+    getInvoiceMock.mockResolvedValue({
+      ...INVOICE, amount_cents: 150000, sent_log: [{ to: "qbo", at: "2026-06-01", kind: "qbo-push" }],
+    } as never)
+    mockFetchSequence(
+      { ok: true, json: async () => ({ access_token: "tok" }) },
+      { ok: true, json: async () => ({ QueryResponse: { Invoice: [{ Id: "900", SyncToken: "1", TotalAmt: 1250.5 }] } }) },
+      { ok: true, json: async () => ({ QueryResponse: { Item: [{ Id: "77" }] } }) },
+      { ok: false, status: 502, json: async () => ({}) }
+    )
+    await expect(pushInvoiceToQbo(CARRIER, "invoice-1", ACTOR)).rejects.toThrow(/invoice update → HTTP 502/)
+    expect(queryMock).not.toHaveBeenCalled()
+    expect(logAuditMock).not.toHaveBeenCalled()
+  })
+
+  it("surfaces a non-OK entity create as an error rather than pushing with a bogus ref", async () => {
+    hasCredentialsMock.mockResolvedValue(true)
+    getCredentialsMock.mockResolvedValue(CREDS)
+    getInvoiceMock.mockResolvedValue(INVOICE as never)
+    mockFetchSequence(
+      { ok: true, json: async () => ({ access_token: "tok" }) },
+      { ok: true, json: async () => ({ QueryResponse: {} }) }, // Customer lookup: no match
+      { ok: false, status: 500, json: async () => ({}) } // Customer create fails
+    )
+    await expect(pushInvoiceToQbo(CARRIER, "invoice-1", ACTOR)).rejects.toThrow(/Customer create → HTTP 500/)
+    expect(queryMock).not.toHaveBeenCalled()
+  })
+
+  it("surfaces an OK create response missing an Id instead of proceeding with undefined", async () => {
+    hasCredentialsMock.mockResolvedValue(true)
+    getCredentialsMock.mockResolvedValue(CREDS)
+    getInvoiceMock.mockResolvedValue(INVOICE as never)
+    mockFetchSequence(
+      { ok: true, json: async () => ({ access_token: "tok" }) },
+      { ok: true, json: async () => ({ QueryResponse: {} }) }, // Customer lookup: no match
+      { ok: true, json: async () => ({}) } // Customer create: OK but empty body
+    )
+    await expect(pushInvoiceToQbo(CARRIER, "invoice-1", ACTOR)).rejects.toThrow(/Customer create response missing Id/)
+    expect(queryMock).not.toHaveBeenCalled()
+  })
+
+  it("falls back to 'Unknown customer' when the invoice has no customer name", async () => {
+    hasCredentialsMock.mockResolvedValue(true)
+    getCredentialsMock.mockResolvedValue(CREDS)
+    getInvoiceMock.mockResolvedValue({ ...INVOICE, customer_name: null } as never)
+    const fetchMock = mockFetchSequence(
+      { ok: true, json: async () => ({ access_token: "tok" }) },
+      { ok: true, json: async () => ({ QueryResponse: {} }) }, // Customer lookup: no match
+      { ok: true, json: async () => ({ Customer: { Id: "501" } }) },
+      { ok: true, json: async () => ({ QueryResponse: { Item: [{ Id: "77" }] } }) },
+      { ok: true, json: async () => ({ Invoice: { Id: "900" } }) }
+    )
+    const result = await pushInvoiceToQbo(CARRIER, "invoice-1", ACTOR)
+    expect(result).toEqual({ connected: true, pushed: true })
+    const lookupUrl = (fetchMock.mock.calls[1] as [string])[0]
+    expect(decodeURIComponent(lookupUrl)).toContain("DisplayName = 'Unknown customer'")
+    const createBody = JSON.parse((fetchMock.mock.calls[2] as [string, RequestInit])[1].body as string)
+    expect(createBody).toEqual({ DisplayName: "Unknown customer" })
   })
 
   it("surfaces a non-OK invoice-create response as an error rather than marking it pushed", async () => {

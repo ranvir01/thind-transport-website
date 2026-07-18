@@ -22,7 +22,7 @@ vi.mock("@/lib/hub/integrations/efs", () => ({ runEfsSync: vi.fn() }))
 vi.mock("@/lib/hub/integrations/comdata", () => ({ runComdataSync: vi.fn() }))
 vi.mock("@/lib/hub/integrations/wex", () => ({ runWexSync: vi.fn() }))
 vi.mock("@/lib/hub/integrations/qbo", () => ({ runQboSync: vi.fn() }))
-vi.mock("@/lib/hub/integrations/factor", () => ({ retryUnprocessedFactorEvents: vi.fn() }))
+vi.mock("@/lib/hub/integrations/event-processors", () => ({ retryUnprocessedEvents: vi.fn() }))
 
 import { getCredentials, saveCredentials } from "@/lib/hub/credentials"
 import { saveIntegrationCredentialsAction } from "@/app/hub/_actions/integrations"

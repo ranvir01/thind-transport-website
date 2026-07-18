@@ -51,8 +51,8 @@ export function webhookEventId(rawBody: string, headerEventId: string | null | u
  * — applied, a deliberate no-op (already recorded / an event kind we don't
  * act on), rather than a transient miss (no matching invoice yet, missing
  * fields) that should stay pending for a later retry. Shared by the webhook
- * route's inline processing and the manual re-drain (`retryUnprocessedFactorEvents`)
- * so the two never drift on what counts as "done".
+ * route's inline processing and the manual re-drain (`retryUnprocessedEvents`
+ * in event-processors.ts) so the two never drift on what counts as "done".
  */
 export function isEventOutcomeFinal(outcome: { applied: boolean; reason?: string }): boolean {
   return outcome.applied || outcome.reason === "already recorded" || Boolean(outcome.reason?.startsWith("unhandled event kind"))

@@ -4,8 +4,9 @@
  * integration card route through here (src/app/hub/_actions/integrations.ts).
  * Covers: the not-yet-connected message, one dispatch case per provider
  * wired into runProviderSync, the "no sync loop wired" guard for a provider
- * that isn't, a sync failure landing in hub.integration_syncs, and the
- * factor-only guard on event retries.
+ * that isn't, a sync failure landing in hub.integration_syncs, and event
+ * retries dispatching through the shared retryUnprocessedEvents (whose
+ * per-provider guard is covered in event-processors.test.ts).
  */
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
@@ -20,7 +21,7 @@ vi.mock("@/lib/hub/integrations/efs", () => ({ runEfsSync: vi.fn() }))
 vi.mock("@/lib/hub/integrations/comdata", () => ({ runComdataSync: vi.fn() }))
 vi.mock("@/lib/hub/integrations/wex", () => ({ runWexSync: vi.fn() }))
 vi.mock("@/lib/hub/integrations/qbo", () => ({ runQboSync: vi.fn() }))
-vi.mock("@/lib/hub/integrations/factor", () => ({ retryUnprocessedFactorEvents: vi.fn() }))
+vi.mock("@/lib/hub/integrations/event-processors", () => ({ retryUnprocessedEvents: vi.fn() }))
 
 import { query } from "@/lib/hub/db"
 import { runTelematicsSync } from "@/lib/hub/telematics"
@@ -28,7 +29,7 @@ import { runEfsSync } from "@/lib/hub/integrations/efs"
 import { runComdataSync } from "@/lib/hub/integrations/comdata"
 import { runWexSync } from "@/lib/hub/integrations/wex"
 import { runQboSync } from "@/lib/hub/integrations/qbo"
-import { retryUnprocessedFactorEvents } from "@/lib/hub/integrations/factor"
+import { retryUnprocessedEvents } from "@/lib/hub/integrations/event-processors"
 import { retryIntegrationEventsAction, syncIntegrationNowAction } from "@/app/hub/_actions/integrations"
 
 const queryMock = vi.mocked(query)
@@ -37,7 +38,7 @@ const runEfsSyncMock = vi.mocked(runEfsSync)
 const runComdataSyncMock = vi.mocked(runComdataSync)
 const runWexSyncMock = vi.mocked(runWexSync)
 const runQboSyncMock = vi.mocked(runQboSync)
-const retryUnprocessedFactorEventsMock = vi.mocked(retryUnprocessedFactorEvents)
+const retryUnprocessedEventsMock = vi.mocked(retryUnprocessedEvents)
 
 beforeEach(() => {
   queryMock.mockReset().mockResolvedValue([])
@@ -46,7 +47,7 @@ beforeEach(() => {
   runComdataSyncMock.mockReset()
   runWexSyncMock.mockReset()
   runQboSyncMock.mockReset()
-  retryUnprocessedFactorEventsMock.mockReset()
+  retryUnprocessedEventsMock.mockReset()
 })
 
 describe("syncIntegrationNowAction", () => {
@@ -100,16 +101,17 @@ describe("syncIntegrationNowAction", () => {
 })
 
 describe("retryIntegrationEventsAction", () => {
-  it("retries unprocessed factor events and summarizes the outcome", async () => {
-    retryUnprocessedFactorEventsMock.mockResolvedValue({ retried: 5, applied: 3, stillUnprocessed: 2 })
+  it("retries unprocessed events for the given provider and summarizes the outcome", async () => {
+    retryUnprocessedEventsMock.mockResolvedValue({ retried: 5, applied: 3, stillUnprocessed: 2 })
     const result = await retryIntegrationEventsAction("factor")
     expect(result).toEqual({ ok: true, summary: "3 applied, 2 still unmatched (of 5 retried)" })
+    expect(retryUnprocessedEventsMock).toHaveBeenCalledWith("carrier-1", "factor")
   })
 
-  it("refuses providers with no event retry wired", async () => {
-    const result = await retryIntegrationEventsAction("efs")
+  it("surfaces the no-retry-wired refusal from retryUnprocessedEvents", async () => {
+    retryUnprocessedEventsMock.mockRejectedValue(new Error("No event retry wired for comdata yet"))
+    const result = await retryIntegrationEventsAction("comdata")
     expect(result.ok).toBe(false)
-    expect(result.error).toBe("No event retry wired for efs yet")
-    expect(retryUnprocessedFactorEventsMock).not.toHaveBeenCalled()
+    expect(result.error).toBe("No event retry wired for comdata yet")
   })
 })

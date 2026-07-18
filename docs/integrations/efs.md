@@ -1,10 +1,12 @@
 # EFS fuel card feed — scouting notes
 
-Status: **adapter shipped; real feed mechanics now researched (2026-07-11) — transport
-mismatch found.** EFS (efsllc.com, a WEX brand) has no self-serve developer portal for
-transaction feeds. The feed is provisioned per-carrier, and this pass confirmed how the
-real provisioning and delivery work — see "Adapter impact" below: the delivery is a daily
-SFTP CSV file, not the Basic-auth REST JSON endpoint `efsSource()` currently assumes.
+Status: **adapter shipped; transport gap closed with a signed file-drop webhook
+(2026-07-17).** EFS (efsllc.com, a WEX brand) has no self-serve developer portal for
+transaction feeds. The feed is provisioned per-carrier, and the 2026-07-11 pass confirmed
+the real delivery is a daily SFTP CSV file, not the Basic-auth REST JSON endpoint
+`efsSource()` assumes — see "Adapter impact" below for the shipped remedy: forward the
+daily file to `/api/hub/webhooks/efs?carrier=<uuid>` and `processEfsEvent` lands it
+through the same idempotent ingest as everything else.
 
 ## Provisioning — two real paths (confirmed)
 
@@ -51,23 +53,39 @@ these two fields), so **no registry/credential-schema change is needed**.
   data integrators list (driver id, fuel grade, cost/gallon, location), but header names
   are unverified until a real file lands.
 
-## Adapter impact (found 2026-07-11 — latent, bites at activation)
+## Adapter impact (found 2026-07-11; file-drop remedy shipped 2026-07-17)
 
 `efsSource().pull()` in `src/lib/hub/integrations/efs.ts` does an HTTPS GET to
 `${EFS_FEED_BASE}/transactions` with Basic auth and expects `{ transactions: [...] }`
 JSON. **The real feed is an SFTP-delivered CSV file — that fetch cannot work as written.**
-Nothing breaks today (adapter reports `connected(): false` without creds; CSV import is
-the product), but before activation the fetch step must become one of:
+Nothing breaks (adapter reports `connected(): false` without creds; CSV import is the
+product). Of the three possible remedies, the **inbound file-drop route is now shipped**:
 
+- **File drop (shipped)** — save a `webhookSecret` on the EFS card
+  (Settings → Integrations; the card shows the carrier's copy-paste URL), then any
+  forwarder POSTs the daily file to `/api/hub/webhooks/efs?carrier=<uuid>` as
+  `{"event": "fuel.batch", "csv": "<raw file text>"}` (or pre-parsed
+  `{"event": "fuel.batch", "transactions": [...]}`), HMAC-SHA256-signed over the raw
+  body in `X-Loadoff-Signature`. A one-line cron anywhere the SFTP drop is reachable
+  works: fetch file → wrap in JSON → sign → curl. `processEfsEvent` parses the CSV with
+  header-alias tolerance (`parseFuelFeedCsv` in `integrations/fuel-feed-csv.ts`, shared
+  with WEX since 2026-07-18 — real column names still unverified, unknown
+  columns ride along into `raw`), refuses rows without a transaction id instead of
+  colliding them on an empty idempotency key, and lands rows through the SAME
+  `ingestEfsRows` ON-CONFLICT path the cron sync uses. Replaying a file is a no-op.
+  A drop that fails mid-ingest (transient DB error) stays in `hub.integration_events`
+  with `processed_at IS NULL`; the EFS card shows the pending count with a
+  "Retry N events" button (`retryUnprocessedEvents`, `event-processors.ts` —
+  the same re-drain surface the factor card has, generalized 2026-07-17).
 - an SFTP poller in the **Go worker** (`services/go/hauldesk-worker`) exposing the parsed
-  rows over its HTTP proxy — the natural home, since Vercel functions can't hold SFTP
-  sessions and an SSH lib would be a heavy TS dependency (banned by AGENTS.md);
-- an inbound file-drop route (carrier or a forwarder pushes the daily CSV to us);
+  rows over its HTTP proxy — still the long-term home for a zero-infrastructure carrier
+  (Vercel functions can't hold SFTP sessions; an SSH lib is a banned heavy TS dependency);
 - registering LoadOff as an EFS Data Sharing Partner and consuming whatever delivery
   EFS specifies in the partner agreement (possibly still SFTP on their side).
 
-`normalizeEfsRecord` stays the single shape-reading point either way — only the transport
-half of `efsSource()` changes, so contract tests survive.
+`normalizeEfsRecord` stays the single shape-reading point for every transport — when a
+real provisioned file lands, confirming the layout means updating `CSV_HEADER_ALIASES`/
+`normalizeEfsRecord` once, and cron + file-drop + tests all follow.
 
 ## Matching gotchas (from Geotab's production experience)
 

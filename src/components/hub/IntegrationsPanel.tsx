@@ -124,8 +124,10 @@ export function IntegrationCard({ card, encryptionReady }: { card: ProviderCard;
 
       {card.connected && card.pendingEvents ? (
         <p className="mt-2 rounded-lg border border-warn-soft bg-warn-soft px-2.5 py-1.5 text-[11px] text-warn">
-          {card.pendingEvents} event{card.pendingEvents === 1 ? "" : "s"} couldn&rsquo;t be matched yet (e.g. webhook
-          arrived before the invoice existed) — retry below.
+          {/* Explicit {" "} — the compiler drops a bare space between an
+              expression container and entity text (rendered "1 eventcouldn't"). */}
+          {card.pendingEvents} event{card.pendingEvents === 1 ? "" : "s"}{" "}
+          couldn&rsquo;t be matched yet (e.g. webhook arrived before the invoice existed) — retry below.
         </p>
       ) : null}
 

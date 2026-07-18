@@ -51,6 +51,10 @@ describe("normalizeDatPosting (pure — the one place the assumed match shape is
     expect(row.miles).toBeNull()
     expect(row.rateTotalCents).toBeNull()
   })
+
+  it("falls back to an empty external_id when matchId is absent", () => {
+    expect(normalizeDatPosting({}).external_id).toBe("")
+  })
 })
 
 describe("datPostingToLoadDraft (pure — prefills createLoad()'s input from a posting)", () => {
@@ -183,5 +187,13 @@ describe("datSource (SyncSource<DatLoadPosting> + search contract)", () => {
     vi.stubGlobal("fetch", vi.fn(async () => ({ ok: false, status: 503 })))
     const source = datSource(CARRIER)
     await expect(source.pull()).rejects.toThrow(/503/)
+  })
+
+  it("returns an empty result when the response body has no matches array", async () => {
+    hasCredentialsMock.mockResolvedValue(true)
+    getCredentialsMock.mockResolvedValue({ serviceAccountEmail: "u@carrier.com", password: "p" })
+    vi.stubGlobal("fetch", vi.fn(async () => ({ ok: true, json: async () => ({}) })))
+    const source = datSource(CARRIER)
+    await expect(source.pull()).resolves.toEqual([])
   })
 })

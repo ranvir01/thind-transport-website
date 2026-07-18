@@ -45,7 +45,7 @@ describe("Comdata feed row normalization", () => {
   })
 
   it("falls back safely when optional fields are missing or malformed", () => {
-    const row = normalizeComdataRow({ id: "CD-1", amount: "not-a-number" })
+    const row = normalizeComdataRow({ id: "CD-1", amount: "not-a-number", quantity: "not-a-number" })
     expect(row.external_id).toBe("CD-1")
     expect(row.unitHint).toBeNull()
     expect(row.jurisdiction).toBeNull()
@@ -133,6 +133,14 @@ describe("comdataSource (SyncSource<ComdataTransaction> contract)", () => {
     const source = comdataSource(CARRIER)
     await expect(source.pull()).rejects.toThrow(/503/)
   })
+
+  it("treats a feed response without a transactions array as an empty pull", async () => {
+    hasCredentialsMock.mockResolvedValue(true)
+    getCredentialsMock.mockResolvedValue({ apiKey: "k", apiSecret: "s" })
+    vi.stubGlobal("fetch", vi.fn(async () => ({ ok: true, json: async () => ({}) })))
+    const source = comdataSource(CARRIER)
+    await expect(source.pull()).resolves.toEqual([])
+  })
 })
 
 describe("runComdataSync", () => {
@@ -192,5 +200,23 @@ describe("runComdataSync", () => {
     const result = await runComdataSync(CARRIER)
     expect(result).toEqual({ connected: true, imported: 0, skipped: 0, unmatched: [] })
     expect(queryMock).not.toHaveBeenCalledWith(expect.stringContaining("INSERT INTO hub.fuel_transactions"), expect.anything())
+  })
+
+  it("counts a replayed transaction as skipped and lands hintless rows with truck_id NULL", async () => {
+    hasCredentialsMock.mockResolvedValue(true)
+    getCredentialsMock.mockResolvedValue({ apiKey: "k", apiSecret: "s" })
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => ({
+        ok: true,
+        json: async () => ({ transactions: [{ transactionId: "CD-9", quantity: 10, amount: 40 }] }),
+      }))
+    )
+    // ON CONFLICT DO NOTHING returns no row for a duplicate — the [] default
+    queryMock.mockResolvedValue([])
+    const result = await runComdataSync(CARRIER)
+    expect(result).toEqual({ connected: true, imported: 0, skipped: 1, unmatched: [] })
+    const insert = queryMock.mock.calls.find(([sql]) => String(sql).includes("INSERT INTO hub.fuel_transactions"))
+    expect(insert?.[1]?.[2]).toBeNull()
   })
 })

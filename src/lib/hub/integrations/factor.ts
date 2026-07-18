@@ -24,7 +24,6 @@ import { query, queryOne } from "../db"
 import { listDocuments } from "../documents"
 import { getInvoice, recordPayment } from "../invoices"
 import { dollarsToCents } from "../types"
-import { isEventOutcomeFinal } from "./webhooks"
 
 export interface FactorEvent {
   external_id: string
@@ -76,7 +75,11 @@ export function normalizeFactorEvent(payload: Record<string, unknown>): {
 export async function processFactorEvent(
   carrierId: string,
   event: FactorEvent,
-  actor: { id: string; name: string } = { id: "system:factor", name: "Factoring webhook" }
+  // System actors carry a null id (the detention.ts convention): actor_id
+  // columns are UUIDs, so a "system:factor"-style sentinel makes recordPayment's
+  // load-paid cascade throw AFTER the payment lands and silently drops the
+  // payment audit row — the event then sits unprocessed forever.
+  actor: { id: string | null; name: string } = { id: null, name: "Factoring webhook" }
 ): Promise<FactorEventOutcome> {
   if (!event.kind || !FUNDING_EVENT_KINDS.has(event.kind)) {
     return { applied: false, invoiceNumber: null, reason: `unhandled event kind: ${event.kind ?? "none"}` }
@@ -100,47 +103,11 @@ export async function processFactorEvent(
   )
   if (existing) return { applied: false, invoiceNumber, reason: "already recorded" }
 
-  await recordPayment(carrierId, invoice.id, { amountCents, paidOn, method: "factor-advance", reference }, actor)
+  // recordPayment's actor sinks (logAudit, changeLoadStatus) accept a null id;
+  // its parameter type is just narrower than they are (widening it lives in
+  // invoices.ts — outside this lane, requested via Backlog).
+  await recordPayment(carrierId, invoice.id, { amountCents, paidOn, method: "factor-advance", reference }, actor as { id: string; name: string })
   return { applied: true, invoiceNumber }
-}
-
-export interface RetryEventsResult {
-  retried: number
-  applied: number
-  stillUnprocessed: number
-}
-
-/**
- * Manual re-drain for the gap `docs/integrations/factor.md` calls out: an
- * event `processFactorEvent` couldn't match the first time (invoice not
- * created yet, webhook arrived before the load closed out) sits in
- * `hub.integration_events` with `processed_at IS NULL` forever otherwise —
- * nothing re-runs it. Capped at 50 per call (oldest first) so a large backlog
- * drains over a few button presses instead of one slow request. Reuses the
- * same `isEventOutcomeFinal` rule the webhook route applies inline, so a
- * retry marks exactly the events a live delivery would have marked.
- */
-export async function retryUnprocessedFactorEvents(carrierId: string): Promise<RetryEventsResult> {
-  const pending = await query<{ id: string; external_id: string; kind: string | null; payload: Record<string, unknown> }>(
-    `SELECT id, external_id, kind, payload FROM hub.integration_events
-     WHERE carrier_id = $1 AND provider = 'factor' AND processed_at IS NULL
-     ORDER BY received_at ASC LIMIT 50`,
-    [carrierId]
-  )
-
-  let applied = 0
-  let stillUnprocessed = 0
-  for (const row of pending) {
-    const outcome = await processFactorEvent(carrierId, { external_id: row.external_id, kind: row.kind, payload: row.payload })
-    if (isEventOutcomeFinal(outcome)) {
-      await query(`UPDATE hub.integration_events SET processed_at = NOW() WHERE id = $1`, [row.id])
-      if (outcome.applied) applied += 1
-    } else {
-      stillUnprocessed += 1
-    }
-  }
-
-  return { retried: pending.length, applied, stillUnprocessed }
 }
 
 /**

@@ -93,19 +93,21 @@ export const PROVIDERS: readonly ProviderSpec[] = [
   },
   {
     id: "efs", label: "EFS fuel card", domain: "fuel",
-    blurb: "Daily fuel transactions straight into MPG, fraud flags, and fuel→load. Ask your EFS rep for data-feed credentials.",
+    blurb: "Daily fuel transactions straight into MPG, fraud flags, and fuel→load. Ask your EFS rep for data-feed credentials — the feed arrives as a daily CSV file, which any forwarder can push to your signed file-drop URL below.",
     fields: [
       { key: "feedUser", label: "Feed username" },
       { key: "feedPassword", label: "Feed password", secret: true },
+      { key: "webhookSecret", label: "File-drop signing secret (daily CSV forward)", secret: true },
     ],
     fallback: "Fuel statement CSV import", sync: "poll", status: "live", cronJob: "efs-sync",
   },
   {
     id: "wex", label: "WEX fuel card", domain: "fuel",
-    blurb: "Same FuelSource contract as EFS.",
+    blurb: "Same FuelSource contract as EFS — and the same daily-CSV delivery: ask your WEX rep (Data Release Forms) for the feed, then any forwarder can push each day's file to your signed file-drop URL below.",
     fields: [
       { key: "feedUser", label: "Feed username" },
       { key: "feedPassword", label: "Feed password", secret: true },
+      { key: "webhookSecret", label: "File-drop signing secret (daily CSV forward)", secret: true },
     ],
     fallback: "Fuel statement CSV import", sync: "poll", status: "live", cronJob: "wex-sync",
   },

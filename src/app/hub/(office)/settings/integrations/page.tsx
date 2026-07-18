@@ -3,6 +3,7 @@ import { credentialsConfigured, hasCredentials, type IntegrationProvider } from 
 import { fmcsaConfigured } from "@/lib/hub/vetting"
 import { aiParserConfigured } from "@/lib/hub/doc-intake/analyze-enhanced"
 import { PROVIDERS } from "@/lib/hub/integrations/registry"
+import { EVENT_RETRY_PROVIDERS } from "@/lib/hub/integrations/event-processors"
 import { query } from "@/lib/hub/db"
 import { PageHeader, Panel } from "@/components/hub/ui"
 import { IntegrationCard, type ProviderCard } from "@/components/hub/IntegrationsPanel"
@@ -14,11 +15,6 @@ export const dynamic = "force-dynamic"
 // SYNC_ACTIONS map — kept in sync with that map by hand since one lives on each
 // side of the server/client boundary.
 const MANUAL_SYNC_PROVIDERS = new Set(["terminal", "truckercloud", "efs", "comdata", "wex", "qbo"])
-
-// Providers with a webhook event processor (src/app/api/hub/webhooks/[provider]/route.ts's
-// EVENT_PROCESSORS) get a "retry unprocessed" surface — an event that couldn't
-// be matched on first delivery otherwise sits stuck with no way to re-run it.
-const EVENT_RETRY_PROVIDERS = new Set(["factor"])
 
 export default async function IntegrationsPage() {
   const user = await requireOwner()
@@ -51,10 +47,15 @@ export default async function IntegrationsPage() {
     // not every provider has a manual trigger wired yet (e.g. mailbox is poll-only today).
     canSync: MANUAL_SYNC_PROVIDERS.has(spec.id),
     status: spec.status,
+    // Push-style providers get their inbound URL, and so does any poll
+    // provider that accepts signed file drops (a `webhookSecret` field in the
+    // registry is the marker — e.g. EFS's daily CSV forward).
     webhookUrl:
-      spec.sync === "webhook"
+      spec.sync === "webhook" || spec.fields.some((f) => f.key === "webhookSecret")
         ? `${baseUrl}/api/hub/webhooks/${spec.id}?carrier=${user.carrierId}`
         : undefined,
+    // Providers with a webhook event processor get a "retry unprocessed"
+    // surface — the set derives from EVENT_PROCESSORS (event-processors.ts).
     pendingEvents: EVENT_RETRY_PROVIDERS.has(spec.id) ? (pendingEventsByProvider.get(spec.id) ?? 0) : undefined,
   }))
 
