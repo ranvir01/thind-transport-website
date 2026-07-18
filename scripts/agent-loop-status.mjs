@@ -67,6 +67,31 @@ function branchExists(name) {
   return git(`rev-parse --verify ${name}`).length > 0
 }
 
+/**
+ * Parse the inventory's --json output into a pending count.
+ * Returns a number, or null when the payload is unreadable (truncated pipe,
+ * crash mid-write, wrong shape). Callers must treat null as "unknown", never
+ * as 0 — the old swallow-to-zero catch hid a truncated 267KB payload and
+ * reported "0 pending" while 200+ branches waited.
+ */
+export function parsePendingCount(jsonText) {
+  try {
+    const pending = JSON.parse(jsonText).pending
+    return Array.isArray(pending) ? pending.length : null
+  } catch {
+    return null
+  }
+}
+
+/** Cheap cross-check: origin/claude/* branches whose tip isn't on main. */
+function unmergedClaudeBranchCount() {
+  const out = git(`branch -r --no-merged ${MAIN}`)
+  return out
+    .split("\n")
+    .map((l) => l.trim())
+    .filter((l) => l.startsWith("origin/claude/") && l !== INTEGRATOR).length
+}
+
 function main() {
   git("fetch origin --quiet")
 
@@ -88,19 +113,28 @@ function main() {
     for (const line of logLines(MAIN, INTEGRATOR)) console.log(`  ${line}`)
   }
 
-  const pendingOut = execSync("node scripts/agent-branch-inventory.mjs --json", {
-    encoding: "utf-8",
-    cwd: process.cwd(),
-  })
-  let pendingCount = 0
+  let pendingCount = null
   try {
-    pendingCount = JSON.parse(pendingOut).pending?.length ?? 0
+    const pendingOut = execSync("node scripts/agent-branch-inventory.mjs --json", {
+      encoding: "utf-8",
+      cwd: process.cwd(),
+      maxBuffer: 64 * 1024 * 1024,
+    })
+    pendingCount = parsePendingCount(pendingOut)
   } catch {
-    /* ignore */
+    pendingCount = null
   }
-  console.log(`\nPending claude/* branches (not on main): ${pendingCount}`)
-  if (pendingCount > 0) {
-    console.log("  Run: npm run agent:branches")
+
+  const unmergedTips = unmergedClaudeBranchCount()
+  if (pendingCount === null) {
+    console.log(`\nPending claude/* branches (not on main): UNKNOWN — inventory --json output was unreadable.`)
+    console.log("  Run directly: npm run agent:branches")
+  } else if (pendingCount === 0 && unmergedTips > 0) {
+    console.log(`\nPending claude/* branches (not on main): 0 — MISMATCH: ${unmergedTips} claude/* tip(s) not merged to main.`)
+    console.log("  The inventory disagrees with git branch --no-merged; trust: npm run agent:branches")
+  } else {
+    console.log(`\nPending claude/* branches (not on main): ${pendingCount}`)
+    if (pendingCount > 0) console.log("  Run: npm run agent:branches")
   }
 
   console.log("\nLane branches ahead of integrator:")
@@ -138,4 +172,5 @@ function main() {
   console.log(`STEADY STATE: integrator within ${THRESHOLD} commits of main.`)
 }
 
-main()
+// import-safe: only run when executed directly (tests import parsePendingCount)
+if (process.argv[1] && import.meta.url === new URL(`file://${process.argv[1]}`).href) main()
