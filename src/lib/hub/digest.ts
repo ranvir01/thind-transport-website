@@ -36,7 +36,7 @@ export async function sendOwnerDigest(carrierId: string): Promise<{ sent: boolea
        (SELECT COUNT(*) FROM hub.drivers WHERE carrier_id = $1 AND deleted_at IS NULL AND status = 'active'
           AND (cdl_expiry < CURRENT_DATE OR medical_card_expiry < CURRENT_DATE)) AS red_compliance_drivers,
        (SELECT COUNT(*) FROM hub.trucks t WHERE t.carrier_id = $1 AND t.deleted_at IS NULL AND t.status = 'active'
-          AND NOT EXISTS (SELECT 1 FROM hub.loads l WHERE l.truck_id = t.id AND l.deleted_at IS NULL
+          AND NOT EXISTS (SELECT 1 FROM hub.loads l WHERE l.truck_id = t.id AND l.carrier_id = t.carrier_id AND l.deleted_at IS NULL
             AND l.status IN ('booked','dispatched','at_pickup','in_transit'))) AS empty_trucks`,
     [carrierId]
   )

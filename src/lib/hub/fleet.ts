@@ -168,11 +168,3 @@ export async function latestTruckPositions(carrierId: string): Promise<TruckPosi
     [carrierId]
   )
 }
-
-/** Latest position for one truck (used for city-level tracking on share links). */
-export async function latestPositionForTruck(truckId: string): Promise<{ lat: number; lng: number; ts: string } | null> {
-  return queryOne<{ lat: number; lng: number; ts: string }>(
-    `SELECT lat, lng, ts FROM hub.position_pings WHERE truck_id = $1 ORDER BY ts DESC LIMIT 1`,
-    [truckId]
-  )
-}

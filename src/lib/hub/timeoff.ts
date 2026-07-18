@@ -9,7 +9,7 @@ import type { TimeOffRequest } from "./types"
 const SELECT = `
   SELECT r.*, d.first_name || ' ' || d.last_name AS driver_name
   FROM hub.time_off_requests r
-  JOIN hub.drivers d ON d.id = r.driver_id`
+  JOIN hub.drivers d ON d.id = r.driver_id AND d.carrier_id = r.carrier_id`
 
 export async function listTimeOff(
   carrierId: string,

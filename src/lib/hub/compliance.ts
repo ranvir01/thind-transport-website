@@ -87,7 +87,7 @@ export async function complianceEntries(carrierId: string): Promise<ComplianceEn
        CASE WHEN ms.interval_days IS NOT NULL AND ms.last_done_on IS NOT NULL
          THEN (ms.last_done_on + (ms.interval_days || ' days')::interval)::date::text
          ELSE NULL END AS due_on
-     FROM hub.maintenance_schedules ms JOIN hub.trucks t ON t.id = ms.truck_id
+     FROM hub.maintenance_schedules ms JOIN hub.trucks t ON t.id = ms.truck_id AND t.carrier_id = ms.carrier_id
      WHERE ms.carrier_id = $1 AND t.deleted_at IS NULL AND t.status <> 'retired'`,
     [carrierId]
   )

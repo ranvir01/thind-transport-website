@@ -12,6 +12,12 @@ vi.mock("../db", () => ({
   hubDb: vi.fn(),
 }))
 
+// Digest early-returns without an office email; stub settings so its stats SQL runs.
+vi.mock("../settings", () => ({
+  getCarrier: vi.fn(async () => ({ name: "Test Carrier" })),
+  getCarrierSettings: vi.fn(async () => ({ notifications: { officeEmail: "office@example.com" } })),
+}))
+
 import { query, queryOne } from "../db"
 import { listFuelTransactions } from "../fuel"
 import { listIncidents } from "../incidents"
@@ -25,6 +31,15 @@ import { listTasks } from "../tasks"
 import { listFacilityNotes } from "../facilities"
 import { driverActiveLoads, driverDocuments, openDocumentRequests } from "../driver-app"
 import { portalLoads, portalLoadDocuments } from "../portal"
+import { todayData } from "../today"
+import { listTimeOff } from "../timeoff"
+import { listDvirsForTruck, truckDvirState } from "../dvir"
+import { getTrackedLoad } from "../sharelinks"
+import { exportIftaSources } from "../ifta"
+import { complianceEntries } from "../compliance"
+import { truckPnlRange } from "../reports"
+import { truckPnl, exportCsv } from "../expenses"
+import { sendOwnerDigest } from "../digest"
 
 const queryMock = vi.mocked(query)
 const queryOneMock = vi.mocked(queryOne)
@@ -37,6 +52,14 @@ function lastSql(): string {
   queryMock.mockClear()
   queryOneMock.mockClear()
   return String(calls[calls.length - 1][0])
+}
+
+/** Every SQL statement issued since the last reset, joined — for multi-query functions. */
+function allSql(): string {
+  const calls = [...queryMock.mock.calls, ...queryOneMock.mock.calls]
+  queryMock.mockClear()
+  queryOneMock.mockClear()
+  return calls.map((c) => String(c[0])).join("\n")
 }
 
 beforeEach(() => {
@@ -156,5 +179,88 @@ describe("read queries carrier-guard their joins (both-sides tenancy)", () => {
   it("portal load documents guard the document side of the loads join", async () => {
     await portalLoadDocuments(CARRIER, "c1", "l1")
     expect(lastSql()).toContain("ON l.id = d.entity_id AND d.entity_type = 'load' AND d.carrier_id = l.carrier_id")
+  })
+
+  it("Today widget guards every load/driver/truck/user/customer join and lateral", async () => {
+    await todayData(CARRIER)
+    const sql = allSql()
+    // stops-today: stops→loads→drivers/trucks chain
+    expect(sql).toContain("JOIN hub.loads l ON l.id = s.load_id AND l.carrier_id = s.carrier_id")
+    expect(sql).toContain("LEFT JOIN hub.drivers d ON d.id = l.driver_id AND d.carrier_id = l.carrier_id")
+    expect(sql).toContain("LEFT JOIN hub.trucks t ON t.id = l.truck_id AND t.carrier_id = l.carrier_id")
+    // empty-truck panels: seated-driver join + truck-scoped load laterals
+    expect(sql).toContain("ON d.id = t.assigned_driver_id AND d.carrier_id = t.carrier_id")
+    expect(sql).toContain("WHERE l.truck_id = t.id AND l.carrier_id = t.carrier_id AND s.type = 'delivery'")
+    expect(sql).toContain("WHERE l.truck_id = t.id AND l.carrier_id = t.carrier_id AND l.deleted_at IS NULL")
+    // tasks-due assignee join
+    expect(sql).toContain("ON u.id = t.assignee_user_id AND u.carrier_id = t.carrier_id")
+    // unbilled: customer join + invoice existence check
+    expect(sql).toContain("ON c.id = l.customer_id AND c.carrier_id = l.carrier_id")
+    expect(sql).toContain("FROM hub.invoices i WHERE i.load_id = l.id AND i.carrier_id = l.carrier_id")
+  })
+
+  it("time-off reads guard the driver join", async () => {
+    await listTimeOff(CARRIER)
+    expect(lastSql()).toContain("JOIN hub.drivers d ON d.id = r.driver_id AND d.carrier_id = r.carrier_id")
+  })
+
+  it("DVIR reads guard truck/driver joins and the prior-dvir subquery", async () => {
+    await listDvirsForTruck(CARRIER, "t1")
+    const listSql = lastSql()
+    expect(listSql).toContain("JOIN hub.trucks t ON t.id = v.truck_id AND t.carrier_id = v.carrier_id")
+    expect(listSql).toContain("JOIN hub.drivers d ON d.id = v.driver_id AND d.carrier_id = v.carrier_id")
+    await truckDvirState(CARRIER, "t1")
+    expect(lastSql()).toContain("WHERE r.prior_dvir_id = v.id AND r.carrier_id = v.carrier_id")
+  })
+
+  it("public tracked-load lookup scopes stops and pings to the link's carrier", async () => {
+    queryOneMock
+      .mockResolvedValueOnce({ load_id: "l1", carrier_id: CARRIER })
+      .mockResolvedValueOnce({
+        id: "l1", reference: "R1", status: "in_transit", equipment: "dry_van",
+        truck_id: "t1", carrier_name: "Carrier",
+      })
+      .mockResolvedValueOnce(null)
+    await getTrackedLoad("token")
+    const sql = allSql()
+    expect(sql).toContain("FROM hub.stops WHERE load_id = $1 AND carrier_id = $2")
+    expect(sql).toContain("FROM hub.position_pings WHERE truck_id = $1 AND carrier_id = $2")
+  })
+
+  it("IFTA source export guards both truck joins", async () => {
+    await exportIftaSources(CARRIER, "2026Q1")
+    const sql = allSql()
+    expect(sql).toContain("JOIN hub.trucks t ON t.id = p.truck_id AND t.carrier_id = p.carrier_id")
+    expect(sql).toContain("LEFT JOIN hub.trucks t ON t.id = f.truck_id AND t.carrier_id = f.carrier_id")
+  })
+
+  it("compliance wall guards the maintenance-schedule truck join", async () => {
+    await complianceEntries(CARRIER)
+    expect(allSql()).toContain("JOIN hub.trucks t ON t.id = ms.truck_id AND t.carrier_id = ms.carrier_id")
+  })
+
+  it("truck P&L subqueries carry the carrier guard (both variants)", async () => {
+    await truckPnl(CARRIER)
+    const pnlSql = lastSql()
+    await truckPnlRange(CARRIER, { from: "2026-01-01", to: "2026-03-31" })
+    const rangeSql = lastSql()
+    for (const sql of [pnlSql, rangeSql]) {
+      expect(sql).toContain("l.truck_id = t.id AND l.carrier_id = t.carrier_id")
+      expect(sql).toContain("f.truck_id = t.id AND f.carrier_id = t.carrier_id")
+      expect(sql).toContain("m.truck_id = t.id AND m.carrier_id = t.carrier_id")
+      expect(sql).toContain("e.truck_id = t.id AND e.carrier_id = t.carrier_id")
+    }
+  })
+
+  it("invoices CSV export guards its customer and load joins", async () => {
+    await exportCsv(CARRIER, "invoices")
+    const sql = lastSql()
+    expect(sql).toContain("JOIN hub.customers c ON c.id = i.customer_id AND c.carrier_id = i.carrier_id")
+    expect(sql).toContain("JOIN hub.loads l ON l.id = i.load_id AND l.carrier_id = i.carrier_id")
+  })
+
+  it("owner digest guards the empty-trucks load subquery", async () => {
+    await sendOwnerDigest(CARRIER)
+    expect(allSql()).toContain("l.truck_id = t.id AND l.carrier_id = t.carrier_id AND l.deleted_at IS NULL")
   })
 })

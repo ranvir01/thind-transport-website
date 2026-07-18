@@ -50,8 +50,8 @@ export interface Dvir {
 const DVIR_SELECT = `
   SELECT v.*, t.unit_number AS truck_unit, d.first_name || ' ' || d.last_name AS driver_name
   FROM hub.dvirs v
-  JOIN hub.trucks t ON t.id = v.truck_id
-  JOIN hub.drivers d ON d.id = v.driver_id`
+  JOIN hub.trucks t ON t.id = v.truck_id AND t.carrier_id = v.carrier_id
+  JOIN hub.drivers d ON d.id = v.driver_id AND d.carrier_id = v.carrier_id`
 
 export async function listDvirsForTruck(carrierId: string, truckId: string, limit = 10): Promise<Dvir[]> {
   return query<Dvir>(
@@ -77,7 +77,7 @@ export async function truckDvirState(
     `${DVIR_SELECT}
      WHERE v.carrier_id = $1 AND v.truck_id = $2 AND v.type = 'post'
        AND jsonb_array_length(v.defects) > 0
-       AND NOT EXISTS (SELECT 1 FROM hub.dvirs r WHERE r.prior_dvir_id = v.id)
+       AND NOT EXISTS (SELECT 1 FROM hub.dvirs r WHERE r.prior_dvir_id = v.id AND r.carrier_id = v.carrier_id)
      ORDER BY v.created_at DESC LIMIT 1`,
     [carrierId, truckId]
   )
