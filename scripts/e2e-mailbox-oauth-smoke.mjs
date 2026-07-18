@@ -22,6 +22,21 @@ const OUT = process.argv[2] ?? "e2e-shots-mailbox-oauth"
 mkdirSync(OUT, { recursive: true })
 const shot = makeShot(OUT, { fullPage: true })
 
+// Fail fast on a rig missing CREDENTIALS_KEY: without it saveCredential()
+// throws server-side and the smoke dies as an opaque 15s timeout waiting for
+// the connected state. e2e-lib loads .env.local for a localhost BASE, so the
+// same file that booted the server answers here; a remote BASE's server env
+// is unknowable, so only the local rig gets the guard (mirrors the >=16-char
+// minimum in src/lib/hub/credentials.ts).
+if (/localhost|127\.0\.0\.1/.test(BASE) && (process.env.CREDENTIALS_KEY ?? "").length < 16) {
+  console.error(
+    "MAILBOX OAUTH SMOKE ABORTED: CREDENTIALS_KEY is missing or shorter than 16 chars in .env.local/env.\n" +
+      "Credential saves are refused without it. Add one (e.g. `echo \"CREDENTIALS_KEY=$(openssl rand -hex 24)\" >> .env.local`),\n" +
+      "restart the Next.js server so it picks the key up, then re-run."
+  )
+  process.exit(1)
+}
+
 /** Text of the Docs mailbox card (the ancestor that includes the fallback line). */
 async function cardText(page) {
   return page.evaluate(() => {
