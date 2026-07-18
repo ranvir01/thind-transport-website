@@ -16,6 +16,7 @@
 import { query } from "./db"
 import { createLoad, getLoad, getLoadStops, addLoadEvent } from "./loads"
 import { logAudit } from "./audit"
+import { notifyRoles } from "./notify"
 import type { Load } from "./types"
 
 export interface RecurringLaneRule {
@@ -168,6 +169,71 @@ export async function rebookLoad(
   return { ok: true, load }
 }
 
+export interface RecurringLaneOverviewRow extends RecurringLaneRule {
+  originCity: string | null
+  originState: string | null
+  destCity: string | null
+  destState: string | null
+  customerName: string | null
+}
+
+/**
+ * Every recurring rule joined with its source load's lane and customer, for
+ * the roll-up on the loads page. A rule whose source load is gone (deleted
+ * after scheduling) still appears — its stored reference plus the auto-disable
+ * reason are exactly what the dispatcher needs to see. Stopped rules sort
+ * first; the rest by weekday.
+ */
+export async function getRecurringLanesOverview(
+  carrierId: string
+): Promise<RecurringLaneOverviewRow[]> {
+  const rules = await getRecurringRules(carrierId)
+  if (rules.length === 0) return []
+  const rows = await query<{
+    id: string
+    customer_name: string | null
+    origin_city: string | null
+    origin_state: string | null
+    dest_city: string | null
+    dest_state: string | null
+  }>(
+    `SELECT l.id, c.name AS customer_name,
+       fs.city AS origin_city, fs.state AS origin_state,
+       ls.city AS dest_city, ls.state AS dest_state
+     FROM hub.loads l
+     LEFT JOIN hub.customers c ON c.id = l.customer_id AND c.carrier_id = l.carrier_id
+     LEFT JOIN LATERAL (
+       SELECT city, state FROM hub.stops WHERE load_id = l.id AND carrier_id = l.carrier_id AND type = 'pickup'
+       ORDER BY sequence ASC LIMIT 1
+     ) fs ON TRUE
+     LEFT JOIN LATERAL (
+       SELECT city, state FROM hub.stops WHERE load_id = l.id AND carrier_id = l.carrier_id AND type = 'delivery'
+       ORDER BY sequence DESC LIMIT 1
+     ) ls ON TRUE
+     WHERE l.carrier_id = $1 AND l.id = ANY($2::uuid[]) AND l.deleted_at IS NULL`,
+    [carrierId, rules.map((r) => r.loadId)]
+  )
+  const byId = new Map(rows.map((r) => [r.id, r]))
+  return rules
+    .map((rule): RecurringLaneOverviewRow => {
+      const load = byId.get(rule.loadId)
+      return {
+        ...rule,
+        originCity: load?.origin_city ?? null,
+        originState: load?.origin_state ?? null,
+        destCity: load?.dest_city ?? null,
+        destState: load?.dest_state ?? null,
+        customerName: load?.customer_name ?? null,
+      }
+    })
+    .sort((a, b) => {
+      const stopped = Number(Boolean(b.lastError)) - Number(Boolean(a.lastError))
+      if (stopped !== 0) return stopped
+      if (a.weekday !== b.weekday) return a.weekday - b.weekday
+      return a.reference.localeCompare(b.reference)
+    })
+}
+
 export interface RecurringRunResult {
   rules: number
   due: number
@@ -214,6 +280,19 @@ export async function runRecurringRebooks(
       rule.enabled = false
       rule.lastError = rebooked.error
       result.disabled++
+      // A silently stopped lane is a load that never gets booked again —
+      // tell the dispatch desk. Best-effort: a notify failure must not
+      // break the cron or lose the disable itself.
+      try {
+        await notifyRoles(carrierId, ["owner", "dispatcher"], {
+          kind: "recurring_lane",
+          title: `Weekly rebook stopped: ${rule.reference}`,
+          body: `${rebooked.error}. The every-${WEEKDAY_LABELS[rule.weekday]} rule was turned off — fix the load and reschedule it, or remove the rule.`,
+          link: `/hub/loads/${rule.loadId}`,
+        })
+      } catch (err) {
+        console.error("recurring-lane stop notification failed:", err)
+      }
     }
   }
   if (changed) await saveRecurringRules(carrierId, rules)

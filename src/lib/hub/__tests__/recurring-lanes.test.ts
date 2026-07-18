@@ -17,13 +17,15 @@ vi.mock("@/lib/hub/loads", () => ({
   getLoad: vi.fn(), getLoadStops: vi.fn(), addLoadEvent: vi.fn(async () => undefined),
 }))
 vi.mock("@/lib/hub/audit", () => ({ logAudit: vi.fn(async () => undefined) }))
+vi.mock("@/lib/hub/notify", () => ({ notifyRoles: vi.fn(async () => undefined) }))
 
 import { query } from "@/lib/hub/db"
 import { createLoad, getLoad, getLoadStops, addLoadEvent } from "@/lib/hub/loads"
 import { logAudit } from "@/lib/hub/audit"
+import { notifyRoles } from "@/lib/hub/notify"
 import { requirePermission } from "@/lib/hub/session"
 import {
-  carrierLocalParts, runRecurringRebooks, type RecurringLaneRule,
+  carrierLocalParts, getRecurringLanesOverview, runRecurringRebooks, type RecurringLaneRule,
 } from "@/lib/hub/recurring"
 import { setRecurringLaneAction } from "@/app/hub/_actions/recurring"
 
@@ -33,6 +35,7 @@ const getLoadMock = vi.mocked(getLoad)
 const getLoadStopsMock = vi.mocked(getLoadStops)
 const addLoadEventMock = vi.mocked(addLoadEvent)
 const logAuditMock = vi.mocked(logAudit)
+const notifyRolesMock = vi.mocked(notifyRoles)
 const requirePermissionMock = vi.mocked(requirePermission)
 
 const sourceLoad = {
@@ -164,6 +167,38 @@ describe("runRecurringRebooks", () => {
     ])
   })
 
+  it("tells the dispatch desk when a rule auto-disables — a stopped lane is never silent", async () => {
+    getLoadMock.mockResolvedValue(null)
+    primeRules([rule()])
+    await runRecurringRebooks("carrier-1", TUESDAY_CRON)
+    expect(notifyRolesMock).toHaveBeenCalledTimes(1)
+    expect(notifyRolesMock).toHaveBeenCalledWith("carrier-1", ["owner", "dispatcher"], {
+      kind: "recurring_lane",
+      title: "Weekly rebook stopped: THD-1001",
+      body: expect.stringContaining("Load not found"),
+      link: "/hub/loads/load-src",
+    })
+    // The reason names the rule's day so the message stands alone.
+    expect(notifyRolesMock.mock.calls[0][2].body).toContain("Tuesday")
+  })
+
+  it("does not notify on a successful booking", async () => {
+    primeRules([rule()])
+    await runRecurringRebooks("carrier-1", TUESDAY_CRON)
+    expect(notifyRolesMock).not.toHaveBeenCalled()
+  })
+
+  it("still saves the disable when the notification itself fails", async () => {
+    getLoadMock.mockResolvedValue(null)
+    notifyRolesMock.mockRejectedValue(new Error("push exploded"))
+    primeRules([rule()])
+    const result = await runRecurringRebooks("carrier-1", TUESDAY_CRON)
+    expect(result.disabled).toBe(1)
+    expect(savedRules()).toEqual([
+      expect.objectContaining({ enabled: false, lastError: "Load not found" }),
+    ])
+  })
+
   it("keeps other carriers' isolation: every query is carrier-scoped", async () => {
     primeRules([rule()])
     await runRecurringRebooks("carrier-1", TUESDAY_CRON)
@@ -171,6 +206,79 @@ describe("runRecurringRebooks", () => {
       if (/carrier_settings/.test(sql)) expect((params as unknown[])[0]).toBe("carrier-1")
     }
     expect(getLoadMock).toHaveBeenCalledWith("carrier-1", "load-src")
+  })
+})
+
+describe("getRecurringLanesOverview", () => {
+  type LaneRow = {
+    id: string
+    customer_name: string | null
+    origin_city: string | null
+    origin_state: string | null
+    dest_city: string | null
+    dest_state: string | null
+  }
+
+  /** Rules from settings + what the loads join returns. */
+  function primeOverview(rules: RecurringLaneRule[], laneRows: LaneRow[]) {
+    queryMock.mockImplementation(async (sql: string) => {
+      if (/SELECT settings->'recurringLanes'/.test(sql)) return [{ rules }] as never
+      if (/FROM hub\.loads l/.test(sql)) return laneRows as never
+      return [] as never
+    })
+  }
+
+  const laneRow = (id: string): LaneRow => ({
+    id, customer_name: "Cascade Pipe",
+    origin_city: "Kent", origin_state: "WA", dest_city: "Sacramento", dest_state: "CA",
+  })
+
+  it("returns nothing (and skips the join) when no rules exist", async () => {
+    primeOverview([], [])
+    expect(await getRecurringLanesOverview("carrier-1")).toEqual([])
+    expect(queryMock.mock.calls.some(([sql]) => /FROM hub\.loads l/.test(sql))).toBe(false)
+  })
+
+  it("joins each rule with its load's lane and customer, carrier-scoped", async () => {
+    primeOverview([rule()], [laneRow("load-src")])
+    const rows = await getRecurringLanesOverview("carrier-1")
+    expect(rows).toEqual([
+      expect.objectContaining({
+        loadId: "load-src", reference: "THD-1001", weekday: 2,
+        originCity: "Kent", originState: "WA", destCity: "Sacramento", destState: "CA",
+        customerName: "Cascade Pipe",
+      }),
+    ])
+    const join = queryMock.mock.calls.find(([sql]) => /FROM hub\.loads l/.test(sql))
+    expect((join?.[1] as unknown[])[0]).toBe("carrier-1")
+    expect((join?.[1] as unknown[])[1]).toEqual(["load-src"])
+  })
+
+  it("keeps a rule whose source load is gone — reference and error still show", async () => {
+    primeOverview(
+      [rule({ enabled: false, lastError: "Load not found" })],
+      [] // deleted_at filter dropped the load
+    )
+    const rows = await getRecurringLanesOverview("carrier-1")
+    expect(rows).toEqual([
+      expect.objectContaining({
+        reference: "THD-1001", lastError: "Load not found",
+        originCity: null, destCity: null, customerName: null,
+      }),
+    ])
+  })
+
+  it("sorts stopped rules first, then by weekday", async () => {
+    primeOverview(
+      [
+        rule({ loadId: "load-fri", reference: "THD-0300", weekday: 5 }),
+        rule({ loadId: "load-mon", reference: "THD-0100", weekday: 1 }),
+        rule({ loadId: "load-bad", reference: "THD-0200", weekday: 3, enabled: false, lastError: "Load not found" }),
+      ],
+      [laneRow("load-fri"), laneRow("load-mon")]
+    )
+    const rows = await getRecurringLanesOverview("carrier-1")
+    expect(rows.map((r) => r.reference)).toEqual(["THD-0200", "THD-0100", "THD-0300"])
   })
 })
 
