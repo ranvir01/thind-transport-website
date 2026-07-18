@@ -187,6 +187,40 @@ export function resolvePnlRange(fromParam?: string | null, toParam?: string | nu
   return { from, to }
 }
 
+export interface PnlRangePreset {
+  key: "mtd" | "last-quarter" | "ytd"
+  label: string
+  range: PnlRange
+}
+
+/**
+ * Preset ranges for the Reports date form. Computed in UTC to match
+ * resolvePnlRange's notion of "today". "Last quarter" is the most recent
+ * COMPLETED calendar quarter — a finished period an owner can compare
+ * against, not the partial one in progress.
+ */
+export function pnlRangePresets(now: Date = new Date()): PnlRangePreset[] {
+  const iso = (ms: number) => new Date(ms).toISOString().slice(0, 10)
+  const year = now.getUTCFullYear()
+  const month = now.getUTCMonth()
+  const today = iso(now.getTime())
+  const quarterStartMonth = Math.floor(month / 3) * 3
+  return [
+    { key: "mtd", label: "MTD", range: { from: iso(Date.UTC(year, month, 1)), to: today } },
+    {
+      key: "last-quarter",
+      label: "Last quarter",
+      range: {
+        // Date.UTC handles the rollovers: month -3 lands in the prior year,
+        // day 0 is the last day of the previous month.
+        from: iso(Date.UTC(year, quarterStartMonth - 3, 1)),
+        to: iso(Date.UTC(year, quarterStartMonth, 0)),
+      },
+    },
+    { key: "ytd", label: "YTD", range: { from: iso(Date.UTC(year, 0, 1)), to: today } },
+  ]
+}
+
 export async function truckPnlRange(carrierId: string, range: PnlRange): Promise<TruckPnl[]> {
   const rows = await query<TruckPnl>(
     `SELECT t.id AS truck_id, t.unit_number,

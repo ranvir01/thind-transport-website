@@ -1,6 +1,6 @@
 import Link from "next/link"
 import { Download } from "lucide-react"
-import { resolvePnlRange, truckPnlRange } from "@/lib/hub/reports"
+import { pnlRangePresets, resolvePnlRange, truckPnlRange } from "@/lib/hub/reports"
 import { computeFleetKpis } from "@/lib/hub/kpi"
 import { requirePermissionPage } from "@/lib/hub/session"
 import { fmtCents } from "@/lib/hub/types"
@@ -23,6 +23,7 @@ export default async function ReportsPage({
   const user = await requirePermissionPage("money:read")
   const params = await searchParams
   const range = resolvePnlRange(params.from, params.to)
+  const presets = pnlRangePresets()
   const [pnl, lanes] = await Promise.all([
     truckPnlRange(user.carrierId, range),
     query<Lane>(`SELECT * FROM hub.lanes WHERE carrier_id = $1 ORDER BY margin_cents DESC LIMIT 20`, [user.carrierId]),
@@ -97,6 +98,25 @@ export default async function ReportsPage({
         >
           Apply
         </button>
+        <div className="flex flex-wrap items-center gap-2">
+          {presets.map((preset) => {
+            const active = hasCustomRange && preset.range.from === range.from && preset.range.to === range.to
+            return (
+              <Link
+                key={preset.key}
+                href={`/hub/reports?from=${preset.range.from}&to=${preset.range.to}`}
+                aria-current={active ? "true" : undefined}
+                className={`inline-flex min-h-[44px] items-center rounded-xl border px-3 text-body-xs font-semibold ${
+                  active
+                    ? "border-accent-soft bg-accent-soft text-accent-text"
+                    : "border-border text-fg-2 hover:bg-hover"
+                }`}
+              >
+                {preset.label}
+              </Link>
+            )
+          })}
+        </div>
         {hasCustomRange && (
           <Link href="/hub/reports" className="inline-flex min-h-[44px] items-center text-sm font-semibold text-accent-text hover:underline">
             Reset to last 92 days
