@@ -8,6 +8,7 @@
  *
  * Exit 0 = integrator is within threshold of main (steady state OK).
  * Exit 1 = integrator is ahead of main by more than AGENT_CATCHUP_THRESHOLD (catch-up mode).
+ * Exit 2 = pending-branch count could not be computed (inventory failed or emitted bad JSON).
  */
 import { execSync } from "node:child_process"
 
@@ -67,6 +68,22 @@ function branchExists(name) {
   return git(`rev-parse --verify ${name}`).length > 0
 }
 
+/**
+ * Parse the inventory's --json output into a pending-branch count.
+ * Never masquerades a failure as 0: bad/truncated JSON or a missing
+ * pending[] array returns { count: null, error } so callers can surface
+ * the failure instead of reporting a clean loop.
+ */
+export function parsePendingCount(out) {
+  try {
+    const pending = JSON.parse(out).pending
+    if (!Array.isArray(pending)) return { count: null, error: "inventory JSON has no pending[] array" }
+    return { count: pending.length, error: null }
+  } catch (err) {
+    return { count: null, error: err instanceof Error ? err.message : String(err) }
+  }
+}
+
 function main() {
   git("fetch origin --quiet")
 
@@ -88,19 +105,27 @@ function main() {
     for (const line of logLines(MAIN, INTEGRATOR)) console.log(`  ${line}`)
   }
 
-  const pendingOut = execSync("node scripts/agent-branch-inventory.mjs --json", {
-    encoding: "utf-8",
-    cwd: process.cwd(),
-  })
-  let pendingCount = 0
+  let pendingOut = ""
+  let inventoryError = null
   try {
-    pendingCount = JSON.parse(pendingOut).pending?.length ?? 0
-  } catch {
-    /* ignore */
+    pendingOut = execSync("node scripts/agent-branch-inventory.mjs --json", {
+      encoding: "utf-8",
+      cwd: process.cwd(),
+      maxBuffer: 64 * 1024 * 1024,
+    })
+  } catch (err) {
+    inventoryError = err instanceof Error ? err.message : String(err)
   }
-  console.log(`\nPending claude/* branches (not on main): ${pendingCount}`)
-  if (pendingCount > 0) {
+  const parsed = parsePendingCount(pendingOut)
+  const pendingError = inventoryError ?? parsed.error
+  if (pendingError) {
+    console.log(`\nPending claude/* branches (not on main): UNKNOWN — inventory failed: ${pendingError}`)
     console.log("  Run: npm run agent:branches")
+  } else {
+    console.log(`\nPending claude/* branches (not on main): ${parsed.count}`)
+    if (parsed.count > 0) {
+      console.log("  Run: npm run agent:branches")
+    }
   }
 
   console.log("\nLane branches ahead of integrator:")
@@ -136,6 +161,8 @@ function main() {
     process.exit(1)
   }
   console.log(`STEADY STATE: integrator within ${THRESHOLD} commits of main.`)
+  if (pendingError) process.exit(2)
 }
 
-main()
+// import-safe: only run when executed directly (tests import parsePendingCount)
+if (process.argv[1] && import.meta.url === new URL(`file://${process.argv[1]}`).href) main()
