@@ -76,8 +76,9 @@ export default async function DispatchBoardPage() {
         }
       />
 
-      {/* Mobile: stacked sections. Desktop: horizontal columns. */}
-      <div className="flex flex-col lg:flex-row gap-4 lg:overflow-x-auto lg:pb-4">
+      {/* Mobile: stacked sections. Desktop: horizontal columns — a visible scrollbar
+          is the only hint that Delivered/POD Received sit past the fold. */}
+      <div className="flex flex-col lg:flex-row gap-4 lg:overflow-x-auto lg:pb-4 lg:[&::-webkit-scrollbar]:h-2 lg:[&::-webkit-scrollbar-track]:bg-surface-2 lg:[&::-webkit-scrollbar-track]:rounded-full lg:[&::-webkit-scrollbar-thumb]:bg-border lg:[&::-webkit-scrollbar-thumb]:rounded-full">
         {BOARD_STATUSES.map((status) => {
           const column = byStatus.get(status) ?? []
           return (
