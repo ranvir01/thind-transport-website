@@ -9,6 +9,11 @@
  *   POSTGRES_URL=<url> npm run db:migrate && npm run seed:demo
  *   NEXTAUTH_SECRET=<secret>   # or AUTH_SECRET — hub login 401s with MissingSecret if blank
  *
+ * Fresh rig (cloud agent, new container): run `npm run setup:canvas-deps`
+ * BEFORE `npm install` — the `canvas` devDependency's node-gyp build needs
+ * system pangocairo headers, and without them the whole install aborts,
+ * which surfaces later as "Cannot find package 'pg'" from every script.
+ *
  * State-consuming smokes (dispatch, invoices, settlements, advances,
  * compliance, messages, expenses, fuel, customers, loads, fleet, tasks,
  * safety, reports) call
