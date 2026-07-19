@@ -68,12 +68,16 @@ first of those start dying **October 2028**; apps on restricted/granular
 scopes hit it earlier (February 2027). Two consequences for this adapter:
 
 - The token-refresh response now includes a field stating when the refresh
-  token itself expires (exact field name unverified — Intuit's docs are
-  behind a bot-wall from this rig; the pre-existing
-  `x_refresh_token_expires_in` field may simply become authoritative).
-  `refreshAccessToken` currently only reads `access_token`/`refresh_token`,
-  which stays correct — but surfacing the expiry would let the settings card
-  warn before the hard death.
+  token itself expires (the pre-existing `x_refresh_token_expires_in`
+  seconds field is what this adapter reads — if a real token exchange shows
+  Intuit added a differently-named authoritative field, extend
+  `refreshAccessToken` to prefer it). **Shipped 2026-07-19:**
+  `refreshAccessToken` converts it to an absolute `refreshTokenExpiresAt`
+  ISO timestamp, `persistTokenRotation` stores it in the same encrypted
+  credential payload (with a >1-day drift guard so syncs don't rewrite
+  credentials every run), and `qboTokenExpiryNotice` renders it on the
+  QuickBooks settings card — calm validity line normally, warn styling
+  inside 90 days or past expiry.
 - When the 5-year cap hits, the stored credential dies **unrecoverably** —
   the owner must repeat the one-time manual auth-code exchange in the
   Intuit developer console and paste a fresh refresh token. Intuit added a
@@ -94,9 +98,11 @@ platform changes since this doc was written; each checked against
   has been silently receiving **v75-shaped responses** for almost a year.
   Nothing observed is broken (the fields we read — `Id`, `TotalAmt`,
   `TxnDate`, `PaymentRefNum`, `DocNumber`, `SyncToken`, `Line`,
-  `LinkedTxn` — are stable core fields), but the pin is dead weight and
-  misleading: bump to `minorversion=75` (or drop the param) and re-check the
-  assumed shapes against the v75 schema when the sandbox account exists.
+  `LinkedTxn` — are stable core fields), but the pin was dead weight and
+  misleading. **Bumped to `minorversion=75` on all four call sites
+  2026-07-19** (truth-in-code — behavior is unchanged since responses were
+  already v75-shaped); still re-check the assumed shapes against the v75
+  schema when the sandbox account exists.
 - **`Id` is no longer a sortable field** (sandbox 2025-12-10, production
   2026-01-27; Intuit recommends `TxnDate` for ordering). Checked: none of
   the adapter's five QBO queries uses `ORDERBY`, so no impact today — but
@@ -184,19 +190,17 @@ stays the fallback for both directions until then.
 
 ## Open questions for the next pass
 
-- Bump the hardcoded `minorversion=65` to `75` (or drop the param — sub-75
-  values are ignored anyway) in `qbo.ts` — integrations-lane change, four
-  call sites, behavior already is v75 so this is a truth-in-code fix; pair
-  it with a schema re-check once a sandbox account exists.
-- Read the refresh-token-expiry field from the token response and surface
-  it on the QuickBooks settings card, so the 5-year hard death (first
-  possible October 2028 for accounting-scope tokens) warns instead of
-  silently killing the sync. Confirm the exact field name against a real
-  token exchange first.
-- Wire an actual "Push to QBO" button — this lane's territory doesn't
-  include the invoice detail page or its actions
-  (`src/app/hub/_actions/money.ts`), both office-lane territory.
-  `pushInvoiceToQbo(carrierId, invoiceId, actor)` is ready to call.
+- ~~Bump the hardcoded `minorversion=65` to `75`~~ — done 2026-07-19 (four
+  call sites); pair with a schema re-check once a sandbox account exists.
+- ~~Read the refresh-token-expiry field and surface it on the settings
+  card~~ — done 2026-07-19 (`x_refresh_token_expires_in` →
+  `refreshTokenExpiresAt` in the credential payload → `qboTokenExpiryNotice`
+  on the card). Confirm the field name against a real token exchange; the
+  notice simply stays absent until an expiry is observed.
+- ~~Wire an actual "Push to QBO" button~~ — already shipped: the invoice
+  detail page's `MoneyActions.tsx` calls `pushInvoiceToQboAction`
+  (`src/app/hub/_actions/money.ts`), which calls
+  `pushInvoiceToQbo(carrierId, invoiceId, actor)`.
 - Decide whether accessorials need their own QBO line items instead of one
   flat "Freight Service" line (see `pushInvoiceToQbo` above).
 - Confirm QBO's sparse-update semantics for `Line` on a real sandbox account

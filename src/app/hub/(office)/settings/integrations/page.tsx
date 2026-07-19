@@ -1,8 +1,9 @@
 import { requireOwner } from "@/lib/hub/session"
-import { credentialsConfigured, hasCredentials, type IntegrationProvider } from "@/lib/hub/credentials"
+import { credentialsConfigured, getCredentials, hasCredentials, type IntegrationProvider } from "@/lib/hub/credentials"
 import { fmcsaConfigured } from "@/lib/hub/vetting"
 import { aiParserConfigured } from "@/lib/hub/doc-intake/analyze-enhanced"
 import { PROVIDERS } from "@/lib/hub/integrations/registry"
+import { qboTokenExpiryNotice } from "@/lib/hub/integrations/qbo"
 import { EVENT_RETRY_PROVIDERS } from "@/lib/hub/integrations/event-processors"
 import { query } from "@/lib/hub/db"
 import { PageHeader, Panel } from "@/components/hub/ui"
@@ -18,7 +19,7 @@ const MANUAL_SYNC_PROVIDERS = new Set(["terminal", "truckercloud", "efs", "comda
 
 export default async function IntegrationsPage() {
   const user = await requireOwner()
-  const [connectedFlags, syncs, pendingEventRows] = await Promise.all([
+  const [connectedFlags, syncs, pendingEventRows, qboCreds] = await Promise.all([
     Promise.all(PROVIDERS.map((p) => hasCredentials(user.carrierId, p.id as IntegrationProvider))),
     query<{ source: string; started_at: string; ok: boolean | null; counts: unknown; error: string | null }>(
       `SELECT source, started_at, ok, counts, error FROM hub.integration_syncs
@@ -30,6 +31,10 @@ export default async function IntegrationsPage() {
        WHERE carrier_id = $1 AND processed_at IS NULL GROUP BY provider`,
       [user.carrierId]
     ),
+    // Read (not just existence-check) the QBO payload for the refresh-token
+    // expiry the sync persists — only the expiry date reaches the card, never
+    // a credential value. Null when unconfigured/disconnected.
+    getCredentials(user.carrierId, "qbo"),
   ])
   const pendingEventsByProvider = new Map(pendingEventRows.map((r) => [r.provider, Number(r.count)]))
 
@@ -57,6 +62,9 @@ export default async function IntegrationsPage() {
     // Providers with a webhook event processor get a "retry unprocessed"
     // surface — the set derives from EVENT_PROCESSORS (event-processors.ts).
     pendingEvents: EVENT_RETRY_PROVIDERS.has(spec.id) ? (pendingEventsByProvider.get(spec.id) ?? 0) : undefined,
+    // Intuit hard-caps refresh tokens at 5 years — warn on the card before
+    // the sync dies unrecoverably instead of after.
+    credentialNotice: spec.id === "qbo" ? qboTokenExpiryNotice(qboCreds) ?? undefined : undefined,
   }))
 
   const pushConfigured = Boolean(process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY)
