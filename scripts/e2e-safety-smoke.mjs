@@ -76,7 +76,10 @@ async function advanceDriverLoadToDelivered(page) {
   await waitForText(page, "Departure recorded")
   await sleep(800)
 
-  await clickByText(page, "Delivered")
+  // The arrival/departure waits above can match a still-visible toast from the
+  // previous stop, letting the script outrun the server's status commits; under
+  // full-suite CPU contention the Delivered button then takes >8s to render.
+  await clickByText(page, "Delivered", { timeout: 20000 })
   await waitForText(page, "Status updated")
   await sleep(1200)
   check(
