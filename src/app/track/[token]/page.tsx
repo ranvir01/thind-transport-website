@@ -3,6 +3,7 @@ import { getTrackedLoad } from "@/lib/hub/sharelinks"
 import { TrackRefresher } from "@/components/hub/TrackRefresher"
 import { StopTimeline } from "@/components/hub/StopTimeline"
 import { LoadProgressBar, PUBLIC_FLOW, publicStatus } from "@/components/hub/LoadProgressBar"
+import { getTrackAccent } from "./accent"
 
 export const dynamic = "force-dynamic"
 
@@ -18,7 +19,10 @@ function fmt(value: string | null): string {
 
 export default async function TrackPage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params
-  const tracked = await getTrackedLoad(token).catch(() => null)
+  const [tracked, accent] = await Promise.all([
+    getTrackedLoad(token).catch(() => null),
+    getTrackAccent(token),
+  ])
 
   if (!tracked) {
     return (
@@ -44,8 +48,15 @@ export default async function TrackPage({ params }: { params: Promise<{ token: s
     <div className="min-h-screen px-4 py-10">
       <TrackRefresher active={live} />
       <div className="mx-auto w-full max-w-lg">
-        <div className="rounded-2xl border border-white/10 bg-[linear-gradient(180deg,rgba(20,31,47,0.94),rgba(11,20,34,0.96))] p-6 md:p-8">
-          <p className="text-[11px] font-bold uppercase tracking-[0.3em] text-gold">{carrierName}</p>
+        {/* accent.rule defaults to the same rgba as the stock border-white/10 hairline,
+            so an unset accent renders this card pixel-identical to before. */}
+        <div
+          className="rounded-2xl border bg-[linear-gradient(180deg,rgba(20,31,47,0.94),rgba(11,20,34,0.96))] p-6 md:p-8"
+          style={{ borderColor: accent.rule }}
+        >
+          <p className="text-[11px] font-bold uppercase tracking-[0.3em]" style={{ color: accent.text }}>
+            {carrierName}
+          </p>
           <h1 className="mt-1 font-display text-2xl font-extrabold uppercase tracking-wide text-white">
             {load.reference}
           </h1>
