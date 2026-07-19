@@ -184,26 +184,6 @@ export async function deleteTask(carrierId: string, id: string): Promise<void> {
 
 // ---- Automations (cron) ----
 
-/** Where a task's entity link should take the user. */
-export function taskLink(task: Pick<Task, "entity_type" | "entity_id">): string | null {
-  if (!task.entity_type || !task.entity_id) return null
-  switch (task.entity_type) {
-    case "load": return `/hub/loads/${task.entity_id}`
-    case "customer": return `/hub/customers/${task.entity_id}`
-    case "driver": return `/hub/drivers/${task.entity_id}`
-    case "truck": return `/hub/fleet/trucks/${task.entity_id}`
-    case "trailer": return `/hub/fleet/trailers/${task.entity_id}`
-    case "incident": return `/hub/safety/${task.entity_id}`
-    case "claim": return `/hub/safety`
-    case "applicant": return `/hub/recruiting`
-    case "fuel": return `/hub/fuel`
-    case "compliance": return `/hub/compliance`
-    case "invoice": return `/hub/money`
-    case "time_off": return `/hub/drivers`
-    default: return null
-  }
-}
-
 /**
  * The automation sweep (daily cron): every condition that needs office action
  * becomes a deep-linked task, deduped by automation_key. Returns created count.

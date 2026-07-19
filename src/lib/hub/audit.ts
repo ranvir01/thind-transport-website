@@ -30,19 +30,3 @@ export async function logAudit(entry: {
     console.error("Audit log write failed:", err)
   }
 }
-
-export async function getAuditTrail(entityType: string, entityId: string) {
-  return query<{
-    id: number
-    actor_name: string | null
-    action: string
-    old_value: unknown
-    new_value: unknown
-    created_at: string
-  }>(
-    `SELECT id, actor_name, action, old_value, new_value, created_at
-     FROM hub.audit_log WHERE entity_type = $1 AND entity_id = $2
-     ORDER BY created_at DESC LIMIT 100`,
-    [entityType, entityId]
-  )
-}

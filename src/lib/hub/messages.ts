@@ -193,20 +193,6 @@ export async function threadReads(
   )
 }
 
-export async function totalUnreadMessages(carrierId: string, userId: string): Promise<number> {
-  const row = await queryOne<{ count: string }>(
-    `SELECT COUNT(*) AS count
-     FROM hub.messages m
-     JOIN hub.message_threads t ON t.id = m.thread_id AND t.carrier_id = m.carrier_id
-     WHERE t.carrier_id = $1
-       AND m.sender_id IS DISTINCT FROM $2
-       AND m.id > COALESCE((SELECT r.last_read_message_id FROM hub.message_reads r
-                            WHERE r.thread_id = m.thread_id AND r.user_id = $2), 0)`,
-    [carrierId, userId]
-  )
-  return Number(row?.count ?? 0)
-}
-
 // ---- Saved templates ("send me the lumper receipt") ----
 
 export async function listTemplates(carrierId: string): Promise<{ id: string; label: string; body: string }[]> {

@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest"
 import {
-  allGuideSteps,
   OPERATIONS_PHASES,
   SETUP_CHECKLIST,
   type GettingStartedKeys,
@@ -8,16 +7,11 @@ import {
 
 const VALID_PROGRESS_KEYS: GettingStartedKeys[] = ["trucks", "drivers", "customers", "loads", "packet"]
 
-describe("allGuideSteps", () => {
-  it("flattens every phase's steps, in phase order", () => {
-    const steps = allGuideSteps()
-    const expectedCount = OPERATIONS_PHASES.reduce((sum, p) => sum + p.steps.length, 0)
-    expect(steps).toHaveLength(expectedCount)
-    expect(steps).toEqual(OPERATIONS_PHASES.flatMap((p) => p.steps))
-  })
+const allSteps = OPERATIONS_PHASES.flatMap((p) => p.steps)
 
+describe("guide steps", () => {
   it("gives every step a unique id", () => {
-    const ids = allGuideSteps().map((s) => s.id)
+    const ids = allSteps.map((s) => s.id)
     expect(new Set(ids).size).toBe(ids.length)
   })
 
@@ -30,7 +24,7 @@ describe("allGuideSteps", () => {
   })
 
   it("routes every step into the /hub app with non-empty guidance copy", () => {
-    for (const step of allGuideSteps()) {
+    for (const step of allSteps) {
       expect(step.href.startsWith("/hub")).toBe(true)
       expect(step.title.length).toBeGreaterThan(0)
       expect(step.summary.length).toBeGreaterThan(0)
@@ -40,7 +34,7 @@ describe("allGuideSteps", () => {
   })
 
   it("only uses progressKey values that a real getting-started key covers", () => {
-    for (const step of allGuideSteps()) {
+    for (const step of allSteps) {
       if (step.progressKey !== undefined) {
         expect(VALID_PROGRESS_KEYS).toContain(step.progressKey)
       }
@@ -78,7 +72,7 @@ describe("SETUP_CHECKLIST", () => {
 
   it("covers every progressKey used by a guide step, plus the smart_setup highlight", () => {
     const checklistKeys = new Set(SETUP_CHECKLIST.map((c) => c.key))
-    const usedProgressKeys = new Set(allGuideSteps().flatMap((s) => (s.progressKey ? [s.progressKey] : [])))
+    const usedProgressKeys = new Set(allSteps.flatMap((s) => (s.progressKey ? [s.progressKey] : [])))
     for (const key of usedProgressKeys) {
       expect(checklistKeys).toContain(key)
     }
