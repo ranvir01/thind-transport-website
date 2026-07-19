@@ -68,4 +68,11 @@ describe("geocodeCityState", () => {
     expect(insert).toBeDefined()
     expect(insert?.[1]).toEqual(["nowhere,ZZ", null, null])
   })
+
+  it("returns null for a cached negative entry without calling the geocoder", async () => {
+    queryOneMock.mockResolvedValue({ lat: null, lng: null })
+
+    await expect(geocodeCityState("Nowhere", "ZZ")).resolves.toBeNull()
+    expect(fetchMock).not.toHaveBeenCalled()
+  })
 })
