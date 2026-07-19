@@ -152,7 +152,10 @@ async function main() {
 
     console.log("6. Cleanup — disconnect DAT so the credential doesn't linger between runs")
     await owner.goto(`${BASE}/hub/settings/integrations`, { waitUntil: "networkidle2" })
+    // Disconnect is two-step since 1daecb5: arm the inline confirm, then fire it.
     await clickByText(owner, "Disconnect").catch(() => {})
+    await clickByText(owner, "Disconnect it").catch(() => {})
+    await waitForText(owner, "the CSV import path keeps working").catch(() => {})
   }
 
   const realErrors = consoleErrors.filter((e) => !/favicon|manifest/i.test(e))

@@ -111,6 +111,10 @@ async function main() {
 
   console.log("5. Disconnect leaves the demo carrier clean")
   await clickInCard(page, "Disconnect")
+  await sleep(300)
+  // Disconnect is two-step since 1daecb5: the first click arms an inline
+  // confirm, the "Disconnect it" button actually fires the action.
+  await clickInCard(page, "Disconnect it")
   await waitForText(page, "the CSV import path keeps working")
   await sleep(1200)
   const finalText = await cardText(page)
