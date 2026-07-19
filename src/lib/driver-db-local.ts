@@ -53,10 +53,3 @@ export function driverDbPool(): Pool {
   return isLocalPostgresUrl(process.env.POSTGRES_URL) ? localPool() : hubDb()
 }
 
-export async function localSql(
-  strings: TemplateStringsArray,
-  ...values: unknown[]
-): Promise<{ rows: any[] }> {
-  const q = buildQuery(strings, values)
-  return driverDbPool().query(q.text, q.values)
-}

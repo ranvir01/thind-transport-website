@@ -240,7 +240,3 @@ export const SETUP_CHECKLIST: {
   { key: "loads", label: "Load history imported", href: "/hub/import" },
   { key: "packet", label: "Carrier packet filed (W-9, COI)", href: "/hub/settings/packet" },
 ]
-
-export function allGuideSteps(): GuideStep[] {
-  return OPERATIONS_PHASES.flatMap((p) => p.steps)
-}

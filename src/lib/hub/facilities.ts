@@ -32,47 +32,6 @@ export function facilityDedupeKey(input: {
   return `${name}|${city},${state}`
 }
 
-/** Find or create the facility for a stop being saved. */
-export async function upsertFacility(
-  carrierId: string,
-  input: {
-    name: string
-    address?: string | null
-    city?: string | null
-    state?: string | null
-    zip?: string | null
-    lat?: number | null
-    lng?: number | null
-    type?: "shipper" | "receiver" | "both"
-  }
-): Promise<string> {
-  const key = facilityDedupeKey(input)
-  const row = await queryOne<{ id: string }>(
-    `INSERT INTO hub.facilities (carrier_id, name, dedupe_key, address, city, state, zip, lat, lng, type)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-     ON CONFLICT (carrier_id, dedupe_key) DO UPDATE SET
-       address = COALESCE(hub.facilities.address, EXCLUDED.address),
-       zip = COALESCE(hub.facilities.zip, EXCLUDED.zip),
-       lat = COALESCE(hub.facilities.lat, EXCLUDED.lat),
-       lng = COALESCE(hub.facilities.lng, EXCLUDED.lng),
-       updated_at = NOW()
-     RETURNING id`,
-    [
-      carrierId,
-      input.name.trim(),
-      key,
-      input.address ?? null,
-      input.city ?? null,
-      input.state ?? null,
-      input.zip ?? null,
-      input.lat ?? null,
-      input.lng ?? null,
-      input.type ?? "both",
-    ]
-  )
-  return row!.id
-}
-
 const FACILITY_LIST_SELECT = `
   SELECT f.*,
     (SELECT COUNT(*)::int FROM hub.stops s WHERE s.facility_id = f.id AND s.carrier_id = f.carrier_id) AS stop_count,
@@ -181,31 +140,6 @@ export async function addFacilityNote(
 }
 
 // ---- Dwell / detention risk ----
-
-export interface FacilityDwell {
-  facility_id: string
-  avg_dwell_minutes: number
-  samples: number
-}
-
-/** Average dwell for a set of facilities in one query (booking + stop cards). */
-export async function dwellByFacility(
-  carrierId: string,
-  facilityIds: string[]
-): Promise<Map<string, FacilityDwell>> {
-  if (facilityIds.length === 0) return new Map()
-  const rows = await query<FacilityDwell>(
-    `SELECT s.facility_id,
-       ROUND(AVG(EXTRACT(EPOCH FROM (s.departed_at - s.arrived_at)) / 60))::int AS avg_dwell_minutes,
-       COUNT(*)::int AS samples
-     FROM hub.stops s
-     WHERE s.carrier_id = $1 AND s.facility_id = ANY($2)
-       AND s.arrived_at IS NOT NULL AND s.departed_at IS NOT NULL AND s.departed_at > s.arrived_at
-     GROUP BY s.facility_id`,
-    [carrierId, facilityIds]
-  )
-  return new Map(rows.map((r) => [r.facility_id, r]))
-}
 
 /** Detention risk when the historical average dwell exceeds the free window. */
 export function detentionRisk(
