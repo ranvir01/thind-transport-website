@@ -59,7 +59,7 @@ export interface TodayData {
   unbilled: UnbilledLoad[]
   pendingTimeOff: TimeOffRequest[]
   openIncidents: number
-  /** Invoices sent but unpaid for 30+ days — the cash-flow nudge. */
+  /** Open invoices 30+ days past due (due_on semantics, matching agingBucket) — the cash-flow nudge. */
   arOverdue: { count: number; cents: number }
 }
 
@@ -166,11 +166,19 @@ export async function todayData(carrierId: string): Promise<TodayData> {
         `SELECT COUNT(*) AS count FROM hub.incidents WHERE carrier_id = $1 AND status <> 'closed'`,
         [carrierId]
       ),
+      // Days past DUE date, not issue date, so this agrees with the Money screen's
+      // aging buckets (agingBucket in money.ts); sums the open balance so partial
+      // payments aren't counted as still owed.
       query<{ count: string; cents: string }>(
-        `SELECT COUNT(*) AS count, COALESCE(SUM(amount_cents), 0) AS cents
-         FROM hub.invoices
-         WHERE carrier_id = $1 AND status IN ('sent','partial','overdue','disputed')
-           AND issued_on < (NOW() - INTERVAL '30 days')::date`,
+        `SELECT COUNT(*) AS count, COALESCE(SUM(open_cents), 0) AS cents
+         FROM (
+           SELECT i.amount_cents - COALESCE(
+             (SELECT SUM(p.amount_cents) FROM hub.payments p
+               WHERE p.invoice_id = i.id AND p.carrier_id = i.carrier_id), 0) AS open_cents
+           FROM hub.invoices i
+           WHERE i.carrier_id = $1 AND i.status IN ('sent','partial','overdue','disputed')
+             AND i.due_on < (NOW() - INTERVAL '30 days')::date
+         ) open WHERE open_cents > 0`,
         [carrierId]
       ),
     ])

@@ -105,7 +105,7 @@ export default async function TodayPage() {
             >
               <div className="min-w-0">
                 <p className="font-semibold text-fg">
-                  {today.arOverdue.count} invoice{today.arOverdue.count === 1 ? "" : "s"} unpaid 30+ days · {fmtCents(today.arOverdue.cents)}
+                  {today.arOverdue.count} invoice{today.arOverdue.count === 1 ? "" : "s"} past due 30+ days · {fmtCents(today.arOverdue.cents)}
                 </p>
                 <p className="text-body-xs text-fg-3">Follow up before the receivable ages further.</p>
               </div>
