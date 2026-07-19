@@ -12,14 +12,14 @@
  *
  * Usage:
  *   node scripts/e2e-run-all.mjs [filter ...]  # only smokes whose name
- *                                               # contains any filter, e.g.
- *                                               # `driver dvir`
+ *                                               # contains any filter term
+ *   node scripts/e2e-run-all.mjs driver dvir   # just the driver-side pair
  *   SKIP_SWEEP=1 node scripts/e2e-run-all.mjs  # smokes only
  *
- * Per-script output goes to e2e-run-all-logs/<script>.log; on failure the
- * last lines are echoed so the summary alone is enough to start diagnosing.
- * E2E_TIMEOUT_MS caps each script (default 420000) so one hung smoke can't
- * stall the whole drive.
+ * Per-script output lands in e2e-shots-logs/<name>.log (covered by the
+ * "e2e-shots*" gitignore entry); on failure the last lines are echoed so
+ * the summary alone is enough to start diagnosing. E2E_TIMEOUT_MS caps each
+ * script (default 420000) so one hung smoke can't stall the whole run.
  *
  * A preflight checks the rig before the ~10-minute run: server answering,
  * NEXTAUTH_SECRET + CREDENTIALS_KEY set, demo seed present. Any miss used
@@ -31,7 +31,6 @@ import { spawn } from "node:child_process"
 import path from "node:path"
 import { BASE } from "./e2e-lib.mjs" // side effect: loads .env.local for localhost BASE
 
-const LOG_DIR = "e2e-run-all-logs"
 const TIMEOUT_MS = Number(process.env.E2E_TIMEOUT_MS ?? 420000)
 const filters = process.argv.slice(2).map((f) => f.toLowerCase())
 
@@ -72,23 +71,23 @@ if (problems.length) {
 console.log(`✅ preflight: server up at ${BASE}, secrets set, demo seed present`)
 
 const scriptsDir = path.dirname(new URL(import.meta.url).pathname)
-const smokes = readdirSync(scriptsDir)
+const scripts = readdirSync(scriptsDir)
   .filter((f) => /^e2e-.*-smoke\.mjs$/.test(f))
   .sort()
-
-const names = process.env.SKIP_SWEEP === "1" ? smokes : [...smokes, "e2e-sweep.mjs"]
-const scripts = names.filter((f) => filters.length === 0 || filters.some((needle) => f.includes(needle)))
+  .concat(process.env.SKIP_SWEEP === "1" ? [] : ["e2e-sweep.mjs"])
+  .filter((f) => filters.length === 0 || filters.some((needle) => f.includes(needle)))
 
 if (scripts.length === 0) {
   console.error(`no smoke matches ${JSON.stringify(process.argv.slice(2))}`)
   process.exit(2)
 }
 
+const LOG_DIR = "e2e-shots-logs"
 mkdirSync(LOG_DIR, { recursive: true })
 
 function runOne(script) {
   return new Promise((resolve) => {
-    const name = script.replace(/\.mjs$/, "")
+    const name = path.basename(script, ".mjs")
     const logPath = path.join(LOG_DIR, `${name}.log`)
     const log = createWriteStream(logPath)
     const child = spawn(process.execPath, [path.join("scripts", script)], {
@@ -112,8 +111,8 @@ const results = []
 for (const script of scripts) {
   const t0 = Date.now()
   const r = await runOne(script)
-  const seconds = Math.round((Date.now() - t0) / 1000)
-  console.log(`${r.ok ? "✅ PASS" : "❌ FAIL"} ${r.name} (${seconds}s${r.why ? `, ${r.why}` : ""})`)
+  const secs = Math.round((Date.now() - t0) / 1000)
+  console.log(`${r.ok ? "✅ PASS" : "❌ FAIL"} ${r.name} (${secs}s${r.why ? `, ${r.why}` : ""})`)
   if (!r.ok) {
     const tail = readFileSync(r.logPath, "utf-8").trim().split("\n").slice(-12)
     for (const line of tail) console.log(`     ${line}`)
