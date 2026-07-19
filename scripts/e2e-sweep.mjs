@@ -42,6 +42,7 @@ const OFFICE_PAGES = [
   ["money", "/hub/money", "receivables, invoices, and driver pay"],
   ["compliance", "/hub/compliance", "expired / overdue"],
   ["capacity", "/hub/capacity", "empty trucks, advertised"],
+  ["settings", "/hub/settings", "connections, and shared documents"],
   ["packet", "/hub/settings/packet", "stored once, sent in one click"],
   ["phone-app", "/hub/settings/app", "installed like an app"],
   ["setup", "/hub/setup", "upload paperwork once"],
