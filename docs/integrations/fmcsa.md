@@ -1,6 +1,8 @@
 # FMCSA QCMobile API — broker/carrier authority vetting
 
-Researched: 2026-07-07. Status: **built, live** — `fmcsaLookup`/`vetCustomer`/`recheckActiveCustomers`
+Researched: 2026-07-07; re-scouted 2026-07-19 (**no breaking change** — webKey query-param auth
+and the login.gov → My WebKeys registration flow are confirmed unchanged in current official-page
+excerpts; rate limits remain unpublished). Status: **built, live** — `fmcsaLookup`/`vetCustomer`/`recheckActiveCustomers`
 in `src/lib/hub/vetting.ts`, wired to the daily `fmcsa-recheck` cron (`vercel.json`, `0 11 * * *`).
 Not a stored-credential integration: no row in `src/lib/hub/integrations/registry.ts`,
 no `IntegrationProvider` entry, no `hub.integration_credentials` row — configuration is a single
@@ -98,3 +100,27 @@ minutes of login.gov signup the product's own error copy already promises
   above are cross-checked against the Go client's method list and search-result excerpts rather than
   read directly off the primary docs pages. No documented rate limit could be confirmed to exist or
   not exist; treat "undocumented" as the honest answer rather than assuming unlimited.
+
+## 2026-07-19 re-scout
+
+- **No adverse change found.** Current search-indexed excerpts of the official
+  `QCDevsite/docs/apiAccess` and `getStarted` pages still describe exactly what the adapter
+  implements: webKey as a query parameter on every call, obtained via a login.gov developer
+  account → My WebKeys → "Get a new WebKey". No deprecation, migration, or sunset notice
+  surfaced for QCMobile or `mobile.fmcsa.dot.gov`.
+- **Rate limits: still unpublished** — a second pass found no numeric ceiling anywhere,
+  official or third-party. The 50-customer cron cap remains our own safety margin.
+- **Access is now harder from this environment than 2026-07-07**: back then only the docs
+  *pages* 403'd (bot-blocking); now `mobile.fmcsa.dot.gov` is blocked entirely at the
+  network-policy level (proxy CONNECT 403), so even a live no-key probe of the API endpoint
+  is impossible from a sandboxed agent. A human with a browser (or the prod deployment, which
+  calls it daily via the `fmcsa-recheck` cron) is the only way to observe the live service.
+  Prod cron behavior is therefore the real canary: a sustained drop of `checked > 0` results
+  would be the first sign of an API change.
+- **Historical precedent for outages**: FMCSA has published notices of the Mobile Developer
+  site + QCMobile/SaferBus web services being down together; the adapter's
+  null-on-failure design (lookup failure → "no live data this cycle", never a crash) is the
+  right posture for this API and must not be "improved" into a hard failure.
+- Alternate machine-readable reference found: `data.transportation.gov` hosts a
+  "Licensing and Insurance — QCMobile API" dataset page (id `7xzn-4j4j`) that stays reachable
+  when the FMCSA dev site is not.
