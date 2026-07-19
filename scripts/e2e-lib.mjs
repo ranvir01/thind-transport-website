@@ -12,6 +12,11 @@
  *                               # "Set CREDENTIALS_KEY first" card and the mailbox-oauth /
  *                               # DAT smokes stall waiting for the connect form
  *
+ * Fresh rig (cloud agent, new container): run `npm run setup:canvas-deps`
+ * BEFORE `npm install` — the `canvas` devDependency's node-gyp build needs
+ * system pangocairo headers, and without them the whole install aborts,
+ * which surfaces later as "Cannot find package 'pg'" from every script.
+ *
  * State-consuming smokes (dispatch, invoices, settlements, advances,
  * compliance, messages, expenses, fuel, customers, loads, fleet, tasks,
  * safety, reports) call
