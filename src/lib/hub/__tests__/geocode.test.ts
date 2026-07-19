@@ -2,13 +2,16 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
 vi.mock("../db", () => ({ query: vi.fn(async () => []), queryOne: vi.fn(async () => null) }))
 
+import { queryOne } from "../db"
 import { geocodeCityState } from "../geocode"
 
+const queryOneMock = vi.mocked(queryOne)
 const fetchMock = vi.fn()
 
 beforeEach(() => {
   vi.stubGlobal("fetch", fetchMock)
   fetchMock.mockReset()
+  queryOneMock.mockResolvedValue(null)
 })
 
 afterEach(() => {
@@ -41,5 +44,14 @@ describe("geocodeCityState", () => {
     fetchMock.mockResolvedValue({ ok: false, json: async () => [] })
 
     await expect(geocodeCityState("Kent", "WA")).resolves.toBeNull()
+  })
+
+  it("serves cached coordinates without hitting the network", async () => {
+    queryOneMock.mockResolvedValue({ lat: 47.38, lng: -122.23 })
+
+    const result = await geocodeCityState("Kent", "WA")
+
+    expect(result).toEqual({ lat: 47.38, lng: -122.23 })
+    expect(fetchMock).not.toHaveBeenCalled()
   })
 })
