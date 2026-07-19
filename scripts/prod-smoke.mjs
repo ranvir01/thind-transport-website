@@ -5,6 +5,8 @@
  * Usage: node scripts/prod-smoke.mjs
  * Env:   PROD_BASE_URL (default https://thindtransport.com)
  */
+import path from "node:path"
+
 const BASE = (process.env.PROD_BASE_URL ?? "https://thindtransport.com").replace(/\/$/, "")
 
 const checks = []
@@ -20,9 +22,25 @@ const checks = []
  * deployment-status check (docs/agent-improvement-loop.md §3b), not report a
  * prod failure — and never a prod success.
  */
-function egressBlocked(res, body) {
+export function egressBlocked(res, body) {
   if (res.status !== 403) return false
   return res.headers.has("x-deny-reason") || /host not in allowlist/i.test(body)
+}
+
+/**
+ * Other rigs deny egress one step earlier, at the proxy CONNECT handshake:
+ * fetch() rejects ("fetch failed") with an undici cause chain ending in
+ * "Proxy response (403) !== 200 when HTTP Tunneling". The probe never left
+ * the sandbox, so this is the same BLOCKED outcome as a gateway 403 response
+ * — any tunnel refusal means prod was never reached, whatever the code.
+ * Returns the tunnel-refusal message, or null if the error is something else.
+ */
+export function egressBlockedThrown(err) {
+  for (let e = err, depth = 0; e && depth < 8; e = e.cause, depth++) {
+    const msg = String(e.message ?? "")
+    if (/proxy response.*when http tunneling/i.test(msg)) return msg
+  }
+  return null
 }
 
 async function fetchCheck(name, path, { expectStatus = 200, bodyIncludes = [], bodyIncludesIgnoreCase = [] } = {}) {
@@ -54,6 +72,17 @@ async function fetchCheck(name, path, { expectStatus = 200, bodyIncludes = [], b
       url,
     })
   } catch (err) {
+    const tunnelRefusal = egressBlockedThrown(err)
+    if (tunnelRefusal) {
+      checks.push({
+        name,
+        pass: false,
+        blocked: true,
+        detail: `egress-blocked at proxy CONNECT (${tunnelRefusal}) — not a prod response`,
+        url,
+      })
+      return
+    }
     checks.push({ name, pass: false, detail: String(err.message ?? err), url })
   }
 }
@@ -95,4 +124,6 @@ async function main() {
   console.log("All checks passed.")
 }
 
-main()
+const runDirectly =
+  process.argv[1] && path.resolve(process.argv[1]) === path.resolve(new URL(import.meta.url).pathname)
+if (runDirectly) main()
