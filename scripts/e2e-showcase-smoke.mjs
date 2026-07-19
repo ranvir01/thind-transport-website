@@ -11,10 +11,13 @@
  *   2. Video byte-range serving: Range request on tour-office.mp4 answers 206
  *      (Safari refuses to play mp4 from a server that answers 200-only).
  *   3. Owner: /hub/help shows "Video walkthroughs"; /hub/settings index shows
- *      all six area cards (users, integrations, branding, packet, pricebook,
- *      app).
- *   4. Accounting: /hub/settings shows only the three non-owner cards
- *      (packet + pricebook + app) — the index must gate like the nav does.
+ *      every area card in the page's AREAS list.
+ *   4. Accounting: /hub/settings shows only the non-ownerOnly cards — the
+ *      index must gate like the nav does.
+ *
+ * The expected card lists are parsed from the settings page's AREAS array
+ * rather than hardcoded — this smoke went stale twice when an area was
+ * added, and the counts here silently disagreed with the page.
  *
  * Each role gets its own incognito browser context: pages share cookies
  * inside one context, so a second login() would land on an already
@@ -30,8 +33,24 @@
  */
 import puppeteer from "puppeteer"
 import { execSync } from "node:child_process"
-import { mkdirSync } from "node:fs"
+import { mkdirSync, readFileSync } from "node:fs"
 import { BASE, failures, check, login, makeShot } from "./e2e-lib.mjs"
+
+/**
+ * Single source of truth for the settings index: parse href + ownerOnly out
+ * of the AREAS array in the page source. Each AREAS entry lists href first
+ * and ownerOnly last, so a lazy match pairs them without a real TS parser.
+ */
+function settingsAreas() {
+  const src = readFileSync(new URL("../src/app/hub/(office)/settings/page.tsx", import.meta.url), "utf-8")
+  const areas = [...src.matchAll(/href:\s*"(\/hub\/settings\/[^"]+)"[\s\S]*?ownerOnly:\s*(true|false)/g)].map(
+    (m) => ({ href: m[1], ownerOnly: m[2] === "true" })
+  )
+  if (areas.length < 3 || !areas.some((a) => a.ownerOnly)) {
+    throw new Error(`could not parse AREAS from settings/page.tsx (got ${JSON.stringify(areas)})`)
+  }
+  return areas
+}
 
 const OUT = process.argv[2] ?? "e2e-shots-showcase"
 mkdirSync(OUT, { recursive: true })
@@ -101,10 +120,10 @@ async function main() {
     const ownerCards = await page.evaluate(() =>
       [...document.querySelectorAll(".grid a[href^='/hub/settings/']")].map((a) => a.getAttribute("href"))
     )
-    const ownerOnly = ["/hub/settings/users", "/hub/settings/integrations", "/hub/settings/branding"]
+    const allAreas = settingsAreas().map((a) => a.href)
     check(
-      ownerCards.length === 6 && ownerOnly.every((href) => ownerCards.includes(href)),
-      `owner sees all 6 settings area cards incl. owner-only ones (got ${ownerCards.join(", ") || "none"})`
+      ownerCards.length === allAreas.length && allAreas.every((href) => ownerCards.includes(href)),
+      `owner sees all ${allAreas.length} settings area cards (got ${ownerCards.join(", ") || "none"})`
     )
     // authjs "Failed to fetch" right after login is a known cosmetic race — don't fail on it.
     const real = errors.filter((e) => !/favicon|Failed to fetch/.test(e))
@@ -122,12 +141,11 @@ async function main() {
     const cards = await page.evaluate(() =>
       [...document.querySelectorAll(".grid a[href^='/hub/settings/']")].map((a) => a.getAttribute("href"))
     )
+    const shared = settingsAreas().filter((a) => !a.ownerOnly).map((a) => a.href)
     check(
-      cards.length === 3 &&
-        ["/hub/settings/packet", "/hub/settings/pricebook", "/hub/settings/app"].every((href) =>
-          cards.includes(href)
-        ),
-      `accounting sees exactly packet + pricebook + app (got ${cards.join(", ") || "none"})`
+      cards.length === shared.length && shared.every((href) => cards.includes(href)),
+      `accounting sees exactly the non-owner cards (${shared.map((h) => h.split("/").pop()).join(" + ")}) ` +
+        `(got ${cards.join(", ") || "none"})`
     )
     await shot(page, "settings-index-accounting")
     await ctx.close()
