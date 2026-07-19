@@ -141,6 +141,22 @@ export async function waitForText(page, text, timeout = 15000) {
  * under full-suite CPU contention. Returns true/false instead of throwing
  * so callers can feed it straight into check().
  */
+/**
+ * waitForText that reports instead of throwing: resolves true once `text`
+ * appears in the body, false on timeout. For sleep-then-assert sites where a
+ * missing condition should be a labeled check() failure, not a crashed smoke.
+ */
+export async function textAppears(page, text, timeout = 20000) {
+  return page
+    .waitForFunction(
+      (t) => document.body.innerText.toLowerCase().includes(t.toLowerCase()),
+      { timeout },
+      text
+    )
+    .then(() => true)
+    .catch(() => false)
+}
+
 export async function waitForPathAndText(page, pathname, text, timeout = 20000) {
   return page
     .waitForFunction(

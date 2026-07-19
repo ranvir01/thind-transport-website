@@ -16,7 +16,7 @@
  */
 import puppeteer from "puppeteer"
 import { mkdirSync } from "node:fs"
-import { BASE, sleep, failures, check, waitForText, login, makeShot, clickByText, reseed } from "./e2e-lib.mjs"
+import { BASE, failures, check, waitForText, textAppears, login, makeShot, clickByText, reseed } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-advances"
 mkdirSync(OUT, { recursive: true })
@@ -93,14 +93,13 @@ async function main() {
     await fill('input[aria-label="Amount"]', amount)
     if (note) await fill('input[aria-label="What for"]', note)
     await clickByText(driver, "Send request")
-    await sleep(1500)
   }
 
   await request("1200", "too much")
-  const overLimit = await driver.evaluate(() =>
-    document.body.innerText.includes("Over $1,000 — call the office instead")
+  check(
+    await textAppears(driver, "Over $1,000 — call the office instead"),
+    "over-$1,000 request refused server-side"
   )
-  check(overLimit, "over-$1,000 request refused server-side")
   // The form stays open on error — abandon it before the real requests.
   await clickByText(driver, "Never mind")
 
@@ -136,17 +135,16 @@ async function main() {
   console.log("3. Approve $150.75, deny $60.50")
   check(await decideRow(office, "$150.75", "Approve advance"), "approve button on the $150.75 row")
   await waitForText(office, "Approved — deducts on the next settlement")
-  await sleep(1200)
-  body = await office.evaluate(() => document.body.innerText)
-  check(body.includes(AWAITING_AFTER_APPROVE), `pending subtotal drops to ${AWAITING_AFTER_APPROVE}`)
+  // The decision triggers a server-data refresh; wait for the new subtotal
+  // itself instead of sleeping through the re-render.
+  check(await textAppears(office, AWAITING_AFTER_APPROVE), `pending subtotal drops to ${AWAITING_AFTER_APPROVE}`)
   const approvedRow = await rowText(office, "$150.75")
   check(/outstanding/i.test(approvedRow ?? ""), "$150.75 row now outstanding")
 
   check(await decideRow(office, "$60.50", "Deny advance"), "deny button on the $60.50 row")
   await waitForText(office, "Denied")
-  await sleep(1200)
+  check(await textAppears(office, EXPOSURE_FINAL), `exposure settles at ${EXPOSURE_FINAL} (denied request excluded)`)
   body = await office.evaluate(() => document.body.innerText)
-  check(body.includes(EXPOSURE_FINAL), `exposure settles at ${EXPOSURE_FINAL} (denied request excluded)`)
   check(!body.includes("awaiting approval"), "no pending money left awaiting approval")
   const deniedRow = await rowText(office, "$60.50")
   check(/cancelled/i.test(deniedRow ?? ""), "$60.50 row now cancelled")
@@ -161,9 +159,8 @@ async function main() {
   await office.type("#adv_ref", OFFICE_ISSUED.reference)
   await clickByText(office, "Record advance")
   await waitForText(office, "Advance recorded")
-  await sleep(1200)
+  check(await textAppears(office, OFFICE_ISSUED.exact), `issued advance posts exactly (${OFFICE_ISSUED.exact})`)
   body = await office.evaluate(() => document.body.innerText)
-  check(body.includes(OFFICE_ISSUED.exact), `issued advance posts exactly (${OFFICE_ISSUED.exact})`)
   check(body.includes(OFFICE_ISSUED.reference), "issued advance keeps its EFS reference")
   const issuedRow = await rowText(office, OFFICE_ISSUED.exact)
   check(/outstanding/i.test(issuedRow ?? ""), "issued advance lands outstanding (no approval loop)")
