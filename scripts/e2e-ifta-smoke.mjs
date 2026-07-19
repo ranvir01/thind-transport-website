@@ -7,7 +7,7 @@
  * Usage: node scripts/e2e-ifta-smoke.mjs [outputDir]
  */
 import { mkdirSync } from "node:fs"
-import { launchBrowser, BASE, sleep, failures, check, clickByText, waitForText, login, makeShot } from "./e2e-lib.mjs"
+import { launchBrowser, BASE, failures, check, clickByText, waitForText, textGone, login, makeShot } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-ifta"
 mkdirSync(OUT, { recursive: true })
@@ -46,7 +46,10 @@ async function main() {
   console.log("3. Compute the quarter")
   await clickByText(page, "ompute quarter").catch(() => clickByText(page, "Recompute"))
   await waitForText(page, "Quarter computed")
-  await sleep(1200)
+  check(
+    await textGone(page, `No report computed for ${quarter} yet.`),
+    "worksheet replaces the 'no report' placeholder after compute"
+  )
   await shot(page, "02-ifta-computed")
 
   console.log("4. Validate the worksheet")
@@ -117,10 +120,15 @@ async function main() {
   console.log("6. Advance draft -> reviewed -> filed")
   await clickByText(page, "Mark reviewed")
   await waitForText(page, "Marked reviewed")
-  await sleep(1000)
   await clickByText(page, "Mark filed")
   await waitForText(page, "Marked filed")
-  await sleep(1000)
+  await page
+    .waitForFunction(() => {
+      const nodes = [...document.querySelectorAll("span")]
+      const el = nodes.find((n) => n.textContent?.trim().toUpperCase() === "STATUS")
+      return el?.parentElement?.querySelector("p")?.textContent?.trim().toLowerCase() === "filed"
+    }, { timeout: 20000 })
+    .catch(() => {})
   const finalStatus = await page.evaluate(() => {
     const nodes = [...document.querySelectorAll("span")]
     const el = nodes.find((n) => n.textContent?.trim().toUpperCase() === "STATUS")
@@ -129,11 +137,15 @@ async function main() {
   check(finalStatus?.toLowerCase() === "filed", `status advanced to filed (got ${finalStatus})`)
   await shot(page, "03-ifta-filed")
 
-  console.log(`7. Current partial quarter (${quarterKey()}) computes cleanly`)
-  await page.goto(`${BASE}/hub/compliance/ifta?q=${quarterKey()}`, { waitUntil: "networkidle2" })
+  const currentQuarter = quarterKey()
+  console.log(`7. Current partial quarter (${currentQuarter}) computes cleanly`)
+  await page.goto(`${BASE}/hub/compliance/ifta?q=${currentQuarter}`, { waitUntil: "networkidle2" })
   await clickByText(page, "ompute quarter").catch(() => clickByText(page, "Recompute"))
   await waitForText(page, "Quarter computed")
-  await sleep(1200)
+  check(
+    await textGone(page, `No report computed for ${currentQuarter} yet.`),
+    "partial-quarter worksheet replaces the 'no report' placeholder after compute"
+  )
   const partial = await page.evaluate(() => {
     const nodes = [...document.querySelectorAll("span")]
     const stat = (label) => {
