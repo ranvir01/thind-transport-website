@@ -4,10 +4,10 @@
  * to bounce login → /hub → /hub/login forever (fixed by routing roleless
  * tokens to /driver/application in src/proxy.ts).
  *
- * The legacy credentials lookup itself (drivers table via @vercel/postgres)
- * cannot run against plain local Postgres — the Neon driver speaks HTTPS —
- * so this smoke mints a roleless session cookie with the server's own
- * NEXTAUTH_SECRET and verifies the proxy routing, which is the fixed layer.
+ * The legacy credentials lookup (drivers table) now runs on node-postgres
+ * and works locally, but this smoke still mints a roleless session cookie
+ * with the server's own NEXTAUTH_SECRET: it exercises the proxy routing —
+ * the fixed layer — without needing a seeded legacy driver account.
  *
  * Prereqs: server running (see e2e-lib.mjs header), NEXTAUTH_SECRET (or
  * AUTH_SECRET) matching the server. Hub demo logins come from seed-demo.mjs.
