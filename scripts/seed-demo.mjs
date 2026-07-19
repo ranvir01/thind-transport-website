@@ -78,7 +78,8 @@ async function main() {
   const q = (text, params = []) => client.query(text, params)
 
   console.log("Wiping hub data…")
-  await q(`TRUNCATE hub.audit_log, hub.api_credentials, hub.integration_syncs, hub.claims, hub.incidents,
+  await q(`TRUNCATE hub.audit_log, hub.integration_syncs, hub.api_credentials, hub.integration_events,
+           hub.claims, hub.incidents,
            hub.maintenance_records, hub.maintenance_schedules, hub.compliance_items,
            hub.ifta_reports, hub.jurisdiction_miles, hub.toll_transactions, hub.fuel_transactions,
            hub.escrow_ledger, hub.advances, hub.settlement_lines, hub.expenses, hub.settlements,
@@ -89,7 +90,7 @@ async function main() {
            hub.facility_notes, hub.facilities, hub.pay_rules, hub.notifications,
            hub.push_subscriptions, hub.tasks, hub.message_reads, hub.messages,
            hub.message_threads, hub.message_templates, hub.announcement_acks, hub.announcements,
-           hub.document_requests, hub.lanes, hub.time_off_requests, hub.api_credentials
+           hub.document_requests, hub.lanes, hub.time_off_requests
            RESTART IDENTITY CASCADE`)
   await q(`DELETE FROM hub.ifta_tax_rates`)
   // Price book back to the 003_money.sql defaults — accessorial_types isn't in
