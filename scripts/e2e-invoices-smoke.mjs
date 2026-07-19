@@ -124,10 +124,15 @@ async function main() {
     const a = [...document.querySelectorAll("a")].find((n) => n.textContent.includes("Invoice PDF"))
     if (!a) return { found: false }
     const res = await fetch(a.href)
-    return { found: true, status: res.status, type: res.headers.get("content-type") }
+    // Check the body's magic bytes, not just headers — a route serving an
+    // error page or empty body with a pdf content-type must still fail here.
+    const buf = new Uint8Array(await res.arrayBuffer())
+    const magic = String.fromCharCode(...buf.slice(0, 5))
+    return { found: true, status: res.status, type: res.headers.get("content-type"), magic, bytes: buf.length }
   })
-  check(pdfOk.found && pdfOk.status === 200 && /pdf/.test(pdfOk.type ?? ""),
-    `invoice PDF stored and served (${pdfOk.status} ${pdfOk.type})`)
+  check(pdfOk.found && pdfOk.status === 200 && /pdf/.test(pdfOk.type ?? "") &&
+    pdfOk.magic === "%PDF-" && pdfOk.bytes > 1000,
+    `invoice PDF stored and served (${pdfOk.status} ${pdfOk.type} magic=${pdfOk.magic} ${pdfOk.bytes}B)`)
   await shot(page, "03-invoice-draft")
 
   console.log("5. Load advanced to invoiced")
