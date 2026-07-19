@@ -4,6 +4,13 @@
  *
  * Usage: node scripts/prod-smoke.mjs
  * Env:   PROD_BASE_URL (default https://thindtransport.com)
+ *
+ * Exit codes: 0 all checks passed · 1 at least one check got a bad HTTP
+ * response (real prod signal) · 2 inconclusive — every request died at the
+ * network layer (sandbox egress proxies 403 the CONNECT tunnel to prod, so
+ * no byte ever reached thindtransport.com). On 2, fall back to Vercel
+ * deployment status per docs/agent-improvement-loop.md §3b instead of
+ * treating prod as down.
  */
 import path from "node:path"
 
@@ -47,6 +54,14 @@ async function fetchCheck(name, path, { expectStatus = 200, bodyIncludes = [], b
   const url = `${BASE}${path}`
   try {
     const res = await fetch(url, { redirect: "follow" })
+    // Sandbox egress proxies answer for blocked hosts with their own 403 and
+    // an x-deny-reason header — that response never came from prod, so it
+    // must not count as a prod pass OR fail ("not5xx" would pass a 403).
+    const denyReason = res.headers.get("x-deny-reason")
+    if (denyReason) {
+      checks.push({ name, pass: false, networkError: true, detail: `egress denied by proxy: ${denyReason} (status ${res.status})`, url })
+      return
+    }
     const body = await res.text()
     if (egressBlocked(res, body)) {
       checks.push({
@@ -83,7 +98,12 @@ async function fetchCheck(name, path, { expectStatus = 200, bodyIncludes = [], b
       })
       return
     }
-    checks.push({ name, pass: false, detail: String(err.message ?? err), url })
+    // fetch() rejects only when no HTTP response ever arrived (DNS, TLS,
+    // proxy CONNECT denial) — the root cause lives on err.cause. Whatever the
+    // exact cause, no byte reached the server, so this is inconclusive, not a
+    // real prod failure signal.
+    const cause = err.cause ? ` (${String(err.cause.message ?? err.cause)})` : ""
+    checks.push({ name, pass: false, networkError: true, detail: `${String(err.message ?? err)}${cause}`, url })
   }
 }
 
@@ -97,29 +117,37 @@ async function main() {
   })
   await fetchCheck("hub root", "/hub", { expectStatus: "not5xx" })
 
-  let failed = 0
-  let blocked = 0
+  // A check is "inconclusive" (blocked at the network/proxy layer, never a
+  // real prod response) if it hit the sandbox gateway's 403 marker or the
+  // fetch() call itself never got a response. Those must never masquerade as
+  // a real prod failure, but a real failure elsewhere must not be masked by
+  // an unrelated inconclusive check either — real failures take priority.
+  let realFail = 0
+  let inconclusive = 0
   for (const c of checks) {
-    const mark = c.blocked ? "BLOCKED" : c.pass ? "PASS" : "FAIL"
+    const isInconclusive = c.blocked || c.networkError
+    const mark = isInconclusive ? "BLOCKED" : c.pass ? "PASS" : "FAIL"
     console.log(`${mark}  ${c.name}`)
     console.log(`      ${c.url}`)
     console.log(`      ${c.detail}`)
-    if (c.blocked) blocked++
-    else if (!c.pass) failed++
+    if (!c.pass) {
+      if (isInconclusive) inconclusive++
+      else realFail++
+    }
   }
 
   console.log("")
-  if (blocked) {
+  if (realFail) {
+    console.log(`${realFail} check(s) failed.`)
+    process.exit(1)
+  }
+  if (inconclusive) {
     console.log(
-      `${blocked} check(s) egress-blocked — this rig cannot reach ${BASE}. ` +
+      `${inconclusive} check(s) egress-blocked — this rig cannot reach ${BASE}. ` +
         "Prod status is UNKNOWN from here: use the Vercel deployment-status fallback " +
         "(docs/agent-improvement-loop.md §3b). Not a prod failure."
     )
     process.exit(2)
-  }
-  if (failed) {
-    console.log(`${failed} check(s) failed.`)
-    process.exit(1)
   }
   console.log("All checks passed.")
 }
