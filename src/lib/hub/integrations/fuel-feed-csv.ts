@@ -1,7 +1,8 @@
 /**
- * Shared daily-feed CSV parsing for the WEX-family fuel cards (EFS, WEX —
- * both provisioned as a daily batch file over SFTP, see
- * docs/integrations/efs.md + docs/integrations/wex.md). The real column
+ * Shared daily-feed CSV parsing for the fuel-card file drops (EFS and WEX —
+ * both provisioned as a daily batch file over SFTP — plus Comdata, whose
+ * native AC00029 file is fixed-width and reaches us CSV-converted; see
+ * docs/integrations/efs.md, wex.md, comdata.md). The real column
  * layouts are unverified until a provisioned file lands, so matching is
  * tolerant: headers are lowercased and stripped of separators, then mapped
  * onto the SAME assumed record keys each provider's `normalize*Record`

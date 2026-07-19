@@ -12,17 +12,20 @@ vi.mock("../db", () => ({ query: vi.fn(async () => []) }))
 vi.mock("../integrations/factor", () => ({ processFactorEvent: vi.fn() }))
 vi.mock("../integrations/efs", () => ({ processEfsEvent: vi.fn() }))
 vi.mock("../integrations/wex", () => ({ processWexEvent: vi.fn() }))
+vi.mock("../integrations/comdata", () => ({ processComdataEvent: vi.fn() }))
 
 import { query } from "../db"
 import { processFactorEvent } from "../integrations/factor"
 import { processEfsEvent } from "../integrations/efs"
 import { processWexEvent } from "../integrations/wex"
+import { processComdataEvent } from "../integrations/comdata"
 import { EVENT_PROCESSORS, EVENT_RETRY_PROVIDERS, retryUnprocessedEvents } from "../integrations/event-processors"
 
 const queryMock = vi.mocked(query)
 const processFactorEventMock = vi.mocked(processFactorEvent)
 const processEfsEventMock = vi.mocked(processEfsEvent)
 const processWexEventMock = vi.mocked(processWexEvent)
+const processComdataEventMock = vi.mocked(processComdataEvent)
 
 const CARRIER = "44444444-4444-4444-4444-444444444444"
 
@@ -31,6 +34,7 @@ beforeEach(() => {
   processFactorEventMock.mockReset()
   processEfsEventMock.mockReset()
   processWexEventMock.mockReset()
+  processComdataEventMock.mockReset()
 })
 
 describe("EVENT_RETRY_PROVIDERS", () => {
@@ -39,12 +43,13 @@ describe("EVENT_RETRY_PROVIDERS", () => {
     expect(EVENT_RETRY_PROVIDERS.has("factor")).toBe(true)
     expect(EVENT_RETRY_PROVIDERS.has("efs")).toBe(true)
     expect(EVENT_RETRY_PROVIDERS.has("wex")).toBe(true)
+    expect(EVENT_RETRY_PROVIDERS.has("comdata")).toBe(true)
   })
 })
 
 describe("retryUnprocessedEvents", () => {
   it("refuses a provider with no processor before touching the DB", async () => {
-    await expect(retryUnprocessedEvents(CARRIER, "comdata")).rejects.toThrow("No event retry wired for comdata yet")
+    await expect(retryUnprocessedEvents(CARRIER, "qbo")).rejects.toThrow("No event retry wired for qbo yet")
     expect(queryMock).not.toHaveBeenCalled()
   })
 
