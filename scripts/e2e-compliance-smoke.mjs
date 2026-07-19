@@ -13,7 +13,7 @@
  */
 import { mkdirSync, writeFileSync } from "node:fs"
 import path from "node:path"
-import { launchBrowser, BASE, sleep, failures, check, waitForText, login, makeShot, reseed } from "./e2e-lib.mjs"
+import { launchBrowser, BASE, failures, check, waitForText, textAppears, textGone, login, makeShot, reseed } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-compliance"
 mkdirSync(OUT, { recursive: true })
@@ -80,18 +80,15 @@ async function main() {
   await page.type('input[aria-label="Due date"]', dueOn)
   await page.click('form button[type="submit"]')
   await waitForText(page, "Item tracked")
-  await sleep(1200)
-  check((await page.evaluate(() => document.body.innerText)).includes(marker), "new manual item appears on the wall")
+  check(await textAppears(page, marker), "new manual item appears on the wall")
   await shot(page, "02-item-added")
 
   console.log("3. Resolve the overdue consortium enrollment")
   check(await resolveManualItem(page, "Drug & alcohol consortium"), "clicked Mark done on consortium item")
   await waitForText(page, "Done")
-  await sleep(1200)
+  check(await textGone(page, "Drug & alcohol consortium"), "consortium item left the open wall")
   const afterResolve = await readSummary(page)
   check(afterResolve.red === before.red - 1, `red count dropped by 1 (${before.red} -> ${afterResolve.red})`)
-  const wallAfter = await page.evaluate(() => document.body.innerText)
-  check(!wallAfter.includes("Drug & alcohol consortium"), "consortium item left the open wall")
   await shot(page, "03-consortium-resolved")
 
   console.log("4. Upload a driver document on Harpreet's file")
@@ -109,11 +106,7 @@ async function main() {
     form?.querySelector('button[type="submit"]')?.click()
   })
   await waitForText(page, "uploaded")
-  await sleep(1200)
-  const docListed = await page.evaluate((name) => {
-    return [...document.querySelectorAll("a")].some((a) => a.textContent.includes("e2e-compliance.pdf"))
-  }, "e2e-compliance.pdf")
-  check(docListed, "uploaded PDF appears in the documents list")
+  check(await textAppears(page, "e2e-compliance.pdf"), "uploaded PDF appears in the documents list")
   await shot(page, "04-driver-doc-uploaded")
 
   console.log("5. Driver login cannot reach the office compliance wall")
@@ -125,9 +118,11 @@ async function main() {
   })
   await login(page2, "driver@demo.thind")
   await page2.goto(`${BASE}/hub/compliance`, { waitUntil: "networkidle2" })
-  await sleep(800)
-  const driverUrl = page2.url()
-  check(!driverUrl.includes("/hub/compliance"), `driver redirected away from compliance (at ${driverUrl})`)
+  const redirected = await page2
+    .waitForFunction(() => !location.pathname.startsWith("/hub/compliance"), { timeout: 20000 })
+    .then(() => true)
+    .catch(() => false)
+  check(redirected, `driver redirected away from compliance (at ${page2.url()})`)
   await shot(page2, "05-driver-blocked")
 
   const realErrors = consoleErrors.filter((e) => !/favicon|manifest/i.test(e))
