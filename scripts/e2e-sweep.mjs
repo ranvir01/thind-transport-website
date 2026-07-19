@@ -44,6 +44,7 @@ const OFFICE_PAGES = [
   ["compliance", "/hub/compliance", "expired / overdue"],
   ["capacity", "/hub/capacity", "empty trucks, advertised"],
   ["packet", "/hub/settings/packet", "stored once, sent in one click"],
+  ["phone-app", "/hub/settings/app", "installed like an app"],
   ["setup", "/hub/setup", "upload paperwork once"],
 ]
 
