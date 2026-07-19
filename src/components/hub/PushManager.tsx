@@ -5,6 +5,9 @@
  * subscribe flow. Designed for non-technical users: a single button with
  * plain words, no settings to understand. Renders nothing when push is
  * unsupported or not configured on the server.
+ *
+ * appearance="driver" (default) uses the forced-dark driver tokens;
+ * appearance="office" uses semantic tokens for the office/team screens.
  */
 import { useCallback, useEffect, useState } from "react"
 import { BellRing, Check } from "lucide-react"
@@ -17,8 +20,15 @@ function urlBase64ToUint8Array(base64: string): Uint8Array {
 
 type PushState = "unsupported" | "loading" | "off" | "on" | "denied"
 
-export function PushManager({ compact = false }: { compact?: boolean }) {
+export function PushManager({
+  compact = false,
+  appearance = "driver",
+}: {
+  compact?: boolean
+  appearance?: "driver" | "office"
+}) {
   const [state, setState] = useState<PushState>("loading")
+  const office = appearance === "office"
 
   useEffect(() => {
     let cancelled = false
@@ -80,14 +90,14 @@ export function PushManager({ compact = false }: { compact?: boolean }) {
   if (state === "unsupported" || state === "loading") return null
   if (state === "on") {
     return compact ? null : (
-      <p className="flex items-center gap-2 text-body-xs text-steel-400">
-        <Check className="h-3.5 w-3.5 text-steel-200" /> Alerts are on for this device
+      <p className={office ? "flex items-center gap-2 text-body-xs text-fg-3" : "flex items-center gap-2 text-body-xs text-steel-400"}>
+        <Check className={office ? "h-3.5 w-3.5 text-fg-2" : "h-3.5 w-3.5 text-steel-200"} /> Alerts are on for this device
       </p>
     )
   }
   if (state === "denied") {
     return compact ? null : (
-      <p className="text-body-xs text-steel-400">
+      <p className={office ? "text-body-xs text-fg-3" : "text-body-xs text-steel-400"}>
         Alerts are blocked — allow notifications for this site in your phone settings.
       </p>
     )
@@ -95,7 +105,11 @@ export function PushManager({ compact = false }: { compact?: boolean }) {
   return (
     <button
       onClick={subscribe}
-      className="flex w-full min-h-[44px] items-center justify-center gap-2 rounded-xl border border-white/15 px-3 py-2 text-sm font-semibold text-steel-200 hover:bg-white/5"
+      className={
+        office
+          ? "flex w-full min-h-[44px] items-center justify-center gap-2 rounded-control border border-border-strong px-3 py-2 text-sm font-semibold text-fg-2 hover:bg-hover"
+          : "flex w-full min-h-[44px] items-center justify-center gap-2 rounded-xl border border-white/15 px-3 py-2 text-sm font-semibold text-steel-200 hover:bg-white/5"
+      }
     >
       <BellRing className="h-4 w-4" />
       Turn on alerts for this device

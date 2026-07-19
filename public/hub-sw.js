@@ -1,9 +1,10 @@
 /**
  * LoadOff service worker: Web Push, notification clicks, and an offline
- * shell for the driver app — no signal must never mean a blank page.
- * (Action queueing lives in IndexedDB on the page side; see offline-queue.ts.)
+ * shell for the whole hub — driver and office alike, no signal must never
+ * mean a blank page. (Action queueing lives in IndexedDB on the page side;
+ * see offline-queue.ts.)
  */
-const SHELL_CACHE = "hauldesk-shell-v1"
+const SHELL_CACHE = "hauldesk-shell-v2"
 
 self.addEventListener("install", (event) => {
   self.skipWaiting()
@@ -45,27 +46,47 @@ self.addEventListener("fetch", (event) => {
     return
   }
 
-  // Driver-app navigations: network-first, cached page as the offline fallback
-  // (a stale screen with a "reconnecting" banner beats a blank one).
-  if (event.request.mode === "navigate" && url.pathname.startsWith("/hub/driver")) {
+  // Hub navigations (office and driver): network-first, cached page as the
+  // offline fallback (a stale screen with a "reconnecting" banner beats a
+  // blank one). Login stays network-only so a signed-out shell is never cached.
+  if (
+    event.request.mode === "navigate" &&
+    url.pathname.startsWith("/hub") &&
+    !url.pathname.startsWith("/hub/login")
+  ) {
+    const sectionHome = url.pathname.startsWith("/hub/driver") ? "/hub/driver" : "/hub"
     event.respondWith(
       fetch(event.request)
         .then((response) => {
-          const copy = response.clone()
-          caches.open(SHELL_CACHE).then((cache) => cache.put(event.request, copy)).catch(() => {})
+          if (response.ok) {
+            const copy = response.clone()
+            caches.open(SHELL_CACHE).then((cache) => cache.put(event.request, copy)).catch(() => {})
+          }
           return response
         })
         .catch(async () => {
           const cached = await caches.match(event.request)
           return (
             cached ||
-            caches.match("/hub/driver") ||
+            caches.match(sectionHome) ||
             new Response(
               "<html><body style='background:#0E1621;color:#F4F6F8;font-family:sans-serif;text-align:center;padding:40vh 20px 0'>No signal — LoadOff reconnects automatically.</body></html>",
               { headers: { "Content-Type": "text/html" } }
             )
           )
         })
+    )
+  }
+})
+
+// Sign-out posts this so cached screens can't outlive the session on a
+// shared device. Fire-and-forget on the page side; nothing waits on it.
+self.addEventListener("message", (event) => {
+  if (event.data === "hauldesk-clear-shell") {
+    event.waitUntil(
+      caches
+        .keys()
+        .then((keys) => Promise.all(keys.filter((k) => k.startsWith("hauldesk-")).map((k) => caches.delete(k))))
     )
   }
 })
@@ -77,6 +98,9 @@ self.addEventListener("push", (event) => {
   } catch {
     /* keep defaults */
   }
+  // Dot the installed app's icon even when no tab is open; the bell clears
+  // it (with the real count) next time the app is opened.
+  if (self.navigator && self.navigator.setAppBadge) self.navigator.setAppBadge().catch(() => {})
   event.waitUntil(
     self.registration.showNotification(data.title, {
       body: data.body,

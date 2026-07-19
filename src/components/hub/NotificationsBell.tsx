@@ -8,6 +8,7 @@ import { useCallback, useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import { Bell } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { applyAppBadge } from "@/lib/hub/pwa"
 
 interface FeedItem {
   id: number
@@ -47,6 +48,8 @@ export function NotificationsBell({ direction = "down" }: { direction?: "down" |
       if (started !== epoch.current) return
       setItems(data.items ?? [])
       setUnread(data.unread ?? 0)
+      // Mirror the count onto the installed app's icon (no-op in plain tabs).
+      applyAppBadge(data.unread ?? 0)
     } catch {
       /* offline — keep what we have */
     }
@@ -81,6 +84,7 @@ export function NotificationsBell({ direction = "down" }: { direction?: "down" |
       // fails (offline), the refresh below restores the real server count.
       epoch.current++
       setUnread(0)
+      applyAppBadge(0)
       try {
         await fetch("/api/hub/notifications", { method: "POST" })
       } catch {

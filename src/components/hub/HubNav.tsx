@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation"
 import { signOut } from "next-auth/react"
 import { LogOut } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { clearShellCache } from "@/lib/hub/pwa"
 import { PRODUCT } from "@/lib/hub/product"
 import {
   HUB_PRIMARY_SECTIONS,
@@ -13,6 +14,7 @@ import {
   isNavActive,
 } from "@/lib/hub/navigation"
 import { NotificationsBell } from "@/components/hub/NotificationsBell"
+import { OfficeOfflineBanner } from "@/components/hub/OfficeOfflineBanner"
 import { HubAppearanceMenu } from "@/components/hub/HubAppearanceMenu"
 import { CommandPalette } from "@/components/hub/CommandPalette"
 import { HubTourHost } from "@/components/hub/HubTour"
@@ -69,7 +71,10 @@ export function HubShell({
           </div>
           <button
             type="button"
-            onClick={() => signOut({ callbackUrl: "/hub/login" })}
+            onClick={() => {
+              clearShellCache()
+              signOut({ callbackUrl: "/hub/login" })
+            }}
             className="flex h-9 w-9 items-center justify-center rounded-control border border-border-strong text-fg-2 hover:bg-hover"
             aria-label="Sign out"
           >
@@ -77,6 +82,8 @@ export function HubShell({
           </button>
         </div>
       </header>
+
+      <OfficeOfflineBanner />
 
       {/* Mobile sub-nav */}
       <div className="md:hidden sticky top-14 z-30 border-b border-border bg-surface overflow-x-auto">
