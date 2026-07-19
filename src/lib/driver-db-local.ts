@@ -18,18 +18,6 @@ export function isLocalPostgresUrl(url: string | undefined): boolean {
   return /localhost|127\.0\.0\.1/.test(url || "")
 }
 
-// Convert a tagged template into a parameterized query ($1, $2, …).
-export function buildQuery(
-  strings: readonly string[],
-  values: unknown[]
-): { text: string; values: unknown[] } {
-  let text = strings[0]
-  for (let i = 1; i < strings.length; i++) {
-    text += `$${i}${strings[i]}`
-  }
-  return { text, values }
-}
-
 function localPool(): Pool {
   // Reuse the pool across hot reloads in dev and across invocations in prod.
   if (!global.__driverDbPool) {
