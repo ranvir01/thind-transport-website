@@ -11,8 +11,8 @@ as an urgent `Backlog:` item.
 |---|---|---|---|---|---|
 | `terminal` | **Built** — live TSP aggregator (vehicles + HOS); cron daily 12:00 UTC (doc reconciled 2026-07-19 — the stale "30-min cron" claim is fixed). 2026-07-19 pass: no breaking change (auth + models match adapter); sandbox is dashboard-self-serve (secret + publishable key, `link.sandbox.withterminal.com`); `GET /connections/current` found as a cheap credential health-check; official Link npm SDKs exist; docs host now network-policy-blocked (proxy CONNECT 403) so numeric rate limits remain unread | `apiKey`, `connectionToken` (+ `TERMINAL_API_BASE` env, optional) | `src/lib/hub/telematics.ts` | [`terminal.md`](./terminal.md) | 2026-07-19 |
 | `mailbox` | **Built** — generic IMAP client, not a vendor SDK. Three auth paths live since 2026-07-11: Gmail app password, M365 client-credentials OAuth2, Google Workspace service-account OAuth2 (XOAUTH2). Cron is daily 12:30 UTC, not hourly as older notes said. Workspace app-password reliability contested — steer Workspace to OAuth2 (see doc) | `user`, `password` (Gmail only), `tenantId`/`clientId`/`clientSecret` (M365), `serviceAccountKey` (Workspace), `host`, `port`, `folder` | `src/lib/hub/mailbox.ts` + `mailbox-oauth.ts` | [`mailbox.md`](./mailbox.md) | 2026-07-18 |
-| `fmcsa` (adjacent, free, not in `IntegrationProvider` union — no stored creds) | **Built** — QCMobile broker vetting | `FMCSA_WEBKEY` env | `src/lib/hub/vetting.ts` | [`fmcsa.md`](./fmcsa.md) | 2026-07-07 |
-| `eia` (adjacent, free, not in `IntegrationProvider` union) | **Built** — diesel price benchmark | `EIA_API_KEY` env | `src/lib/hub/fuel.ts` | [`eia.md`](./eia.md) | 2026-07-07 |
+| `fmcsa` (adjacent, free, not in `IntegrationProvider` union — no stored creds) | **Built** — QCMobile broker vetting. 2026-07-19 pass: no breaking change (webKey query-param auth + login.gov registration unchanged); rate limits still unpublished; `mobile.fmcsa.dot.gov` now network-policy-blocked from agent environments (CONNECT 403) — prod's daily `fmcsa-recheck` cron is the live-service canary | `FMCSA_WEBKEY` env | `src/lib/hub/vetting.ts` | [`fmcsa.md`](./fmcsa.md) | 2026-07-19 |
+| `eia` (adjacent, free, not in `IntegrationProvider` union) | **Built** — diesel price benchmark. 2026-07-19 pass: no breaking change (v2 current, series `EMD_EPD2D_PTE_NUS_DPG` alive into 2026); two doc corrections — EIA DOES publish throttles (~9,000 req/hr sustained, 5 req/s burst, temporary auto-suspension) and `DEMO_KEY` is NOT supported (api.data.gov convention, was never EIA's) | `EIA_API_KEY` env | `src/lib/hub/fuel.ts` | [`eia.md`](./eia.md) | 2026-07-19 |
 | `truckercloud` | **Built** — adapter shipped, drop-in second aggregator to Terminal | `apiKey`, `clientId`/`clientSecret` | `src/lib/hub/telematics.ts` (`truckerCloudSource`) | [`truckercloud.md`](./truckercloud.md) | 2026-07-10 |
 | `dat` | **Built** — search + posting-to-load-draft mapper, stub-first (registry still `stub`/CSV fallback pending real auth confirm) | `serviceAccountEmail`, `password` (+ acting-user email needed, see doc) | `src/lib/hub/integrations/dat.ts` | [`dat.md`](./dat.md) | 2026-07-10 |
 | `efs` | **Built** — adapter shipped; real feed is a daily SFTP CSV — signed file-drop webhook shipped 2026-07-17 (`processEfsEvent`), Go-worker SFTP poller still the long-term option (see doc) | `feedUser`, `feedPassword`, `webhookSecret` | `src/lib/hub/integrations/efs.ts` | [`efs.md`](./efs.md) | 2026-07-11 |
@@ -37,10 +37,14 @@ integrations that were never in scope of the vendor shopping list: both `fmcsa.m
    notes before a lane builds the adapter.
 3. One provider per cycle. Update the "Last researched" date and doc link when done.
 
-Next up by this rule: the two government-API docs `fmcsa.md`/`eia.md` (2026-07-07, now the
-oldest — low risk, free stable gov APIs; one pass can plausibly cover both since each is a
-single-endpoint key-only integration). After that, `truckercloud.md` (2026-07-10) and `dat.md`
-(2026-07-10) are the oldest built-adapter docs. The 2026-07-19 terminal pass found no breaking
+Next up by this rule: `truckercloud.md` and `dat.md` (both 2026-07-10, now the oldest
+built-adapter docs — both vendor APIs where a silent change breaks production). The 2026-07-19
+government-API pass covered `fmcsa.md` + `eia.md` in one cycle as planned: neither has an
+adapter-breaking change; EIA's doc got two substantive corrections (published throttle numbers
+of ~9,000 req/hr + 5 req/s replace the "no published limits" claim; the `DEMO_KEY` sandbox
+claim was wrong and is retracted); FMCSA's registration/auth model is confirmed unchanged but
+`mobile.fmcsa.dot.gov` joined `docs.withterminal.com` on the network-policy blocklist (CONNECT
+403), so future passes can only verify it via search excerpts or a human browser. The 2026-07-19 terminal pass found no breaking
 change (auth pattern and both data models still match the adapter verbatim); it corrected the
 doc's stale "30-min cron" claim to the actual daily 12:00 UTC schedule (which upgrades the
 webhook-receiver backlog item from latency nicety to the only same-hour data path), pinned

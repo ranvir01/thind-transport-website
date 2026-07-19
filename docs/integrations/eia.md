@@ -1,6 +1,7 @@
 # EIA Open Data — weekly on-highway diesel benchmark (free API key)
 
-Researched: 2026-07-07. Status: **built, live** — `eiaDieselPriceCents()` in `src/lib/hub/fuel.ts`,
+Researched: 2026-07-07; re-scouted 2026-07-19 (no adapter-breaking change; rate-limit and
+DEMO_KEY corrections below). Status: **built, live** — `eiaDieselPriceCents()` in `src/lib/hub/fuel.ts`,
 surfaced on `/hub/fuel` as "EIA weekly diesel" and on Settings → Integrations under "Environment
 services". Not in `IntegrationProvider` — credentials are a single platform env var
 (`EIA_API_KEY`), not per-carrier stored creds. This doc did not exist before this cycle
@@ -33,7 +34,7 @@ in phase specs but **not wired to this function yet** — today's scope is displ
 | How to obtain | Free — register at [eia.gov/opendata/register.php](https://www.eia.gov/opendata/register.php); key emailed automatically |
 | Auth mechanism | `api_key` query parameter on every request (no OAuth, no signing) |
 | Cost | Free (U.S. government open data; comply with [EIA API Terms of Service](https://www.eia.gov/opendata/terms-of-service.php)) |
-| Sandbox | `DEMO_KEY` works for testing but is rate-limited (~30 requests/hour per EIA docs) |
+| Sandbox | **None** — a registered key is required for every call. (Correction 2026-07-19: this doc previously claimed `DEMO_KEY` works; no EIA documentation supports that — `DEMO_KEY` is an api.data.gov convention, and api.eia.gov is not behind api.data.gov. For keyless testing use the bulk download facility instead) |
 | Production | Same API — no separate prod/sandbox hosts |
 
 Without the key the fuel module degrades gracefully; no errors are thrown and no user-facing
@@ -66,8 +67,13 @@ PADD/state facet (future enhancement).
 
 ## Rate limits and operational notes
 
-EIA does not publish hard per-key limits for registered keys; abuse triggers temporary key
-suspension. Our usage is minimal:
+**Correction 2026-07-19:** EIA *does* publish throttle numbers (this doc previously said it
+didn't). Per EIA's API technical documentation: keep the sustained rate under **~9,000
+requests/hour** and bursts under **5 requests/second** and the key won't be throttled;
+exceeding either automatically and temporarily suspends the key (a few seconds to a number of
+minutes, not beyond an hour except in extreme cases), with automatic reactivation after the
+cool-down. Some complex routes have slower route-specific restrictions. Our usage is five
+orders of magnitude below this:
 - One cached fetch per day per deployment region (Next revalidate 86400 s)
 - No cron fan-out, no per-carrier multiplication
 
@@ -94,7 +100,14 @@ a contract test with `DEMO_KEY` in CI (rate-limited but sufficient for shape che
 | v2 route `petroleum/pri/gnd` restructured | URL or facet names may need update |
 | Rate limiting tightened on shared Vercel egress | Daily cache usually absorbs; burst deploys could miss benchmark briefly |
 
-None observed as of 2026-07-07. EIA API v2 has been stable since the v1 retirement (2022).
+None observed as of 2026-07-19 (re-scout): API v2 (v2.1.x docs) is still current with no
+deprecation notices found; series `EMD_EPD2D_PTE_NUS_DPG` is confirmed alive with weekly data
+points into 2026 (verified via third-party mirrors of the series — fueldatalab.com shows data
+through at least April 2026 — and EIA's own still-live series pages). Caveat: `api.eia.gov` and
+`www.eia.gov` are both unreachable from this scout environment (proxy CONNECT 403 /
+bot-blocking), so the live response envelope could not be re-probed directly this pass; the
+throttle numbers above come from search-indexed excerpts of the official documentation
+corroborated across two independent queries.
 
 ## Shopping list
 
