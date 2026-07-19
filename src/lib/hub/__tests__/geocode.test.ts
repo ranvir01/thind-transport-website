@@ -2,15 +2,19 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
 vi.mock("../db", () => ({ query: vi.fn(async () => []), queryOne: vi.fn(async () => null) }))
 
-import { queryOne } from "../db"
+import { query, queryOne } from "../db"
 import { geocodeCityState } from "../geocode"
 
+const queryMock = vi.mocked(query)
 const queryOneMock = vi.mocked(queryOne)
 const fetchMock = vi.fn()
 
 beforeEach(() => {
   vi.stubGlobal("fetch", fetchMock)
   fetchMock.mockReset()
+  queryMock.mockReset()
+  queryMock.mockResolvedValue([])
+  queryOneMock.mockReset()
   queryOneMock.mockResolvedValue(null)
 })
 
@@ -53,5 +57,15 @@ describe("geocodeCityState", () => {
 
     expect(result).toEqual({ lat: 47.38, lng: -122.23 })
     expect(fetchMock).not.toHaveBeenCalled()
+  })
+
+  it("caches a null result so a failed lookup is not retried on every call", async () => {
+    fetchMock.mockResolvedValue({ ok: true, json: async () => [] })
+
+    await expect(geocodeCityState("Nowhere", "ZZ")).resolves.toBeNull()
+
+    const insert = queryMock.mock.calls.find(([sql]) => String(sql).includes("INSERT INTO hub.geocode_cache"))
+    expect(insert).toBeDefined()
+    expect(insert?.[1]).toEqual(["nowhere,ZZ", null, null])
   })
 })
