@@ -17,7 +17,7 @@ import {
   BASE, sleep, login, check, failures, waitForText, makeShot, clickByText, reseed,
 } from "./e2e-lib.mjs"
 
-const OUT = process.argv[2] ?? "e2e-pricebook"
+const OUT = process.argv[2] ?? "e2e-shots-pricebook"
 mkdirSync(OUT, { recursive: true })
 const shot = makeShot(OUT)
 
