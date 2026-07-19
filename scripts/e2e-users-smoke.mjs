@@ -73,7 +73,9 @@ async function main() {
   console.log("1. Owner opens the user roster")
   await login(page, "owner@demo.thind")
   await page.goto(`${BASE}/hub/settings/users`, { waitUntil: "networkidle2" })
-  await waitForText(page, "Who can sign in, and what they see")
+  // Page subtitle since the "Company & users" rename — unique to this screen,
+  // unlike the title, which the settings index card also renders.
+  await waitForText(page, "alert emails, and who can sign in")
   const roster = await page.evaluate(() => {
     const text = document.body.innerText
     return {
@@ -103,7 +105,9 @@ async function main() {
   await page.select("#u_role", "dispatcher")
   await page.type("#u_password", NEW_PASSWORD)
   await shot(page, "02-new-account-form")
-  await page.click("form button[type=submit]")
+  // Scoped: the page also renders the company-profile and notifications
+  // forms, so a bare "form button[type=submit]" hits the wrong Save.
+  await page.click("form:has(#u_name) button[type=submit]")
   await waitForText(page, `Account created for ${NEW_NAME}`)
   await waitForText(page, NEW_EMAIL)
   const created = await userRow(page, NEW_EMAIL)
@@ -118,7 +122,7 @@ async function main() {
   await page.type("#u_name", "SMK Duplicate")
   await page.type("#u_email", "dispatch@demo.thind")
   await page.type("#u_password", NEW_PASSWORD)
-  await page.click("form button[type=submit]")
+  await page.click("form:has(#u_name) button[type=submit]")
   await waitForText(page, "Email already has an account")
   check(true, "duplicate email surfaces 'Email already has an account'")
   await shot(page, "04-duplicate-refused")
@@ -183,7 +187,7 @@ async function main() {
   await sleep(500)
   const disp = await dispPage.evaluate(() => ({
     path: location.pathname,
-    seesRoster: document.body.innerText.includes("Who can sign in, and what they see"),
+    seesRoster: document.body.innerText.includes("alert emails, and who can sign in"),
   }))
   check(disp.path !== "/hub/settings/users", `dispatcher redirected away (landed on ${disp.path})`)
   check(!disp.seesRoster, "dispatcher never sees the roster")
