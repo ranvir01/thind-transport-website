@@ -21,9 +21,11 @@ npm run generate:brand-assets  # regenerate favicons + og-image from the brand s
 
 The devDependency `canvas` (used by `scripts/extract-pdf-pages.mjs`) compiles native bindings.
 On Debian/Ubuntu — including Cursor Cloud Agent containers — install system libraries **before**
-`npm ci` / `npm install` or the build fails with missing `pango` / `gif` headers:
+`npm ci` / `npm install` or the install fails with missing `pango` / `gif` headers (npm ci rolls
+node_modules back on failure, so it can look like nothing installed at all):
 
 ```bash
+npm run setup:canvas-deps   # idempotent wrapper (scripts/setup-canvas-deps.sh) for:
 sudo apt-get update
 sudo apt-get install -y build-essential libcairo2-dev libpango1.0-dev libjpeg-dev libgif-dev librsvg2-dev
 ```
