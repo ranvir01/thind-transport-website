@@ -8,7 +8,7 @@
 import { useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
-import { Loader2, MapPin, ShieldAlert } from "lucide-react"
+import { CloudUpload, Loader2, MapPin, ShieldAlert } from "lucide-react"
 import { fileDriverIncidentReport } from "@/app/hub/_actions/safety"
 import { runOrQueue } from "@/components/hub/driver/offline-queue"
 import { fieldDarkCls, labelDarkCls } from "@/components/hub/ui"
@@ -23,6 +23,7 @@ const QUESTIONS = [
 export function DriverIncidentForm({ loads }: { loads: { id: string; reference: string }[] }) {
   const router = useRouter()
   const [pending, startTransition] = useTransition()
+  const [queued, setQueued] = useState(false)
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null)
   const [form, setForm] = useState({
     location: "",
@@ -67,14 +68,31 @@ export function DriverIncidentForm({ loads }: { loads: { id: string; reference: 
       )
       if ("queued" in result) {
         // No navigation while offline — router.push/refresh needs the network
-        // it doesn't have, same as the DVIR queued path.
+        // it doesn't have, same as the DVIR queued path. Swap the form for a
+        // confirmation instead: a filled form with a live button invites a
+        // driver who doubts the toast to queue the same report twice.
         toast.success("No signal — report saved on your phone, sends automatically")
+        setQueued(true)
       } else if (result.ok) {
         toast.success("Report filed — the office has been alerted")
         router.push("/hub/driver")
         router.refresh()
       } else toast.error(result.error ?? "Could not file the report")
     })
+  }
+
+  if (queued) {
+    return (
+      <div className="rounded-2xl border border-white/10 bg-navy-800/80 p-6 text-center">
+        <CloudUpload className="mx-auto h-8 w-8 text-green-400" />
+        <p className="mt-2 font-display text-base font-bold uppercase tracking-[0.08em] text-white">
+          Report saved on your phone
+        </p>
+        <p className="mt-1 text-body-sm text-steel-200">
+          It sends itself the moment you&apos;re back in signal — no need to file it again.
+        </p>
+      </div>
+    )
   }
 
   return (
