@@ -35,7 +35,7 @@ function taskHref(task: Task): string | null {
     truck: `/hub/fleet/trucks/${task.entity_id}`,
     trailer: `/hub/fleet/trailers/${task.entity_id}`,
     incident: `/hub/safety/${task.entity_id}`,
-    claim: "/hub/safety",
+    claim: `/hub/safety/claims/${task.entity_id}`,
     applicant: "/hub/recruiting",
     fuel: "/hub/fuel",
     compliance: "/hub/compliance",

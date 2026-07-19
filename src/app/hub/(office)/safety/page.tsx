@@ -1,6 +1,7 @@
 import Link from "next/link"
-import { Download, Plus, ShieldAlert } from "lucide-react"
+import { ChevronRight, Download, FileWarning, Plus, ShieldAlert } from "lucide-react"
 import { listIncidents } from "@/lib/hub/incidents"
+import { listClaims, daysToDeadline } from "@/lib/hub/claims"
 import { requirePermissionPage } from "@/lib/hub/session"
 import { PageHeader, Panel, EmptyState } from "@/components/hub/ui"
 import { cn } from "@/lib/utils"
@@ -17,8 +18,15 @@ const STATUS_LABEL: Record<string, string> = {
 
 export default async function SafetyPage() {
   const user = await requirePermissionPage("compliance:read")
-  const incidents = await listIncidents(user.carrierId)
+  const [incidents, openClaims] = await Promise.all([
+    listIncidents(user.carrierId),
+    listClaims(user.carrierId, { openOnly: true }),
+  ])
   const register = incidents.filter((i) => i.dot_recordable)
+  const urgentClaims = openClaims.filter((c) => {
+    const days = daysToDeadline(c.filing_deadline)
+    return days !== null && days <= 30
+  })
 
   return (
     <div>
@@ -95,6 +103,25 @@ export default async function SafetyPage() {
             ))}
           </ul>
         )}
+      </Panel>
+
+      {/* Claims */}
+      <Panel className="mb-4 p-0">
+        <Link href="/hub/safety/claims" className="flex items-center justify-between gap-2 p-4 md:p-5 hover:bg-hover rounded-card">
+          <div className="flex items-center gap-2 min-w-0">
+            <FileWarning className="h-4 w-4 text-accent-text shrink-0" />
+            <h2 className="text-[13.5px] font-semibold text-fg">Claims</h2>
+            <span className="rounded-full border border-border-strong bg-surface-2 px-2 py-0.5 text-[11px] font-bold text-fg-2">
+              {openClaims.length} open
+            </span>
+            {urgentClaims.length > 0 ? (
+              <span className="rounded-full border border-warn-soft bg-warn-soft px-2 py-0.5 text-[11px] font-bold text-warn truncate">
+                {urgentClaims.length} inside 30 days of the filing deadline
+              </span>
+            ) : null}
+          </div>
+          <ChevronRight className="h-4 w-4 text-fg-3 shrink-0" />
+        </Link>
       </Panel>
 
       {/* All incidents */}
