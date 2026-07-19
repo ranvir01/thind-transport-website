@@ -14,9 +14,15 @@
 # Learned 2026-07-19 (QA rig drive on main@5218a91): this used to be a plain
 # fast-forward push. That lands the exact SHA Vercel already built as an
 # integrator-branch preview, and Vercel dedupes deployments by SHA — the
-# production alias can sit stale with no new build ever queued. Draining via
-# a --no-ff merge commit always produces a SHA Vercel has never seen, so
-# production always gets a real build.
+# production alias can sit stale with no new build ever queued.
+#
+# Learned again 2026-07-19 (QA rig drive on main@11c9be2): a --no-ff merge is
+# NOT enough. The merge commit's TREE is byte-identical to the integrator tip
+# Vercel already built, and Vercel's dedupe keys on content, not just the
+# commit SHA — the first --no-ff drain (11c9be2) produced no deployment at
+# all. The drain commit must therefore also change the tree: it writes the
+# drained SHA + timestamp into `.drain-stamp` inside the merge commit, so
+# every drain has a tree Vercel has never built.
 name: drain-fallback
 
 on:
@@ -90,15 +96,22 @@ jobs:
           npm run build
           npx vitest run
 
-      - name: Merge integrator into main (new commit — avoids Vercel SHA dedupe)
+      - name: Merge integrator into main (new commit + stamped tree — defeats Vercel dedupe)
         if: steps.gate.outputs.run == 'true'
         # `git push` (not a raw ref push) refuses to move main unless the
         # local branch is a fast-forward of the remote, so a concurrent drain
-        # or new main commit makes this fail safely.
+        # or new main commit makes this fail safely. The .drain-stamp write
+        # gives the merge commit a tree Vercel has never built (content-level
+        # dedupe otherwise skips the build entirely).
         run: |
           set -euo pipefail
           SHA="${{ steps.gate.outputs.sha }}"
           git checkout -B main origin/main
           git -c user.name="loadoff-drain-bot" -c user.email="noreply@anthropic.com" \
-            merge --no-ff "$SHA" -m "Drain integrator to main ($SHA)"
+            merge --no-ff --no-commit "$SHA"
+          printf 'sha=%s\ndrained_at=%s\nrun=%s\n' \
+            "$SHA" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "${GITHUB_RUN_ID:-manual}" > .drain-stamp
+          git add .drain-stamp
+          git -c user.name="loadoff-drain-bot" -c user.email="noreply@anthropic.com" \
+            commit -m "Drain integrator to main ($SHA)"
           git push origin main
