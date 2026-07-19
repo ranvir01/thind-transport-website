@@ -47,17 +47,22 @@ const OFFICE_PAGES = [
   ["setup", "/hub/setup", "upload paperwork once"],
 ]
 
-// Portal + tracking are forced-dark surfaces (same regression class as the
-// driver app — see AGENTS.md token doctrine). Anchors are page subtitles /
-// always-rendered section labels, per the rule above. The broker load-detail
-// row and the /track URL are appended at runtime in main().
-const PORTAL_PAGES = [
-  ["portal-home", "/hub/portal", "no checking calls needed"],
+// Owner-flavored screens the dispatcher pass above doesn't visit. Driven in a
+// separate context as owner@demo.thind — the fleet's three primary roles
+// (owner, dispatcher, driver) each get a real logged-in pass.
+const OWNER_PAGES = [
+  ["loadboard", "/hub/loadboard", "like excel"],
+  ["reports", "/hub/reports", "the operational view"],
+  ["owner-dashboard", "/hub/reports/owner", "an owner checks first"],
+  ["invoices", "/hub/money/invoices", "every invoice, paid or open"],
+  ["settlements", "/hub/money/settlements", "weekly driver pay"],
+  ["fleet", "/hub/fleet", "trailers, and their paperwork"],
+  ["drivers", "/hub/drivers", "qualification files"],
 ]
 
 const SHIPPER_PAGES = [
   // Quote form renders for shippers only — this is what distinguishes the
-  // shipper home from the broker home the row above already covers.
+  // shipper home from the broker home PORTAL_PAGES already covers.
   ["shipper-home", "/hub/portal", "request a quote"],
 ]
 
@@ -71,6 +76,48 @@ const DRIVER_PAGES = [
   ["driver-docs", "/hub/driver/docs", "my documents"],
   ["driver-more", "/hub/driver/more", "ask for home time"],
 ]
+
+// Broker/shipper portal — the forced-dark customer surface. The load-detail
+// entry is resolved at runtime from the portal home's first load link (its
+// URL carries a seeded UUID). "stops" / "documents" are always-rendered
+// section headings on the detail screen.
+const PORTAL_PAGES = [
+  ["portal-home", "/hub/portal", "no checking calls needed"],
+]
+
+/**
+ * The public /track/<token> page needs a seeded share-link token, which only
+ * the database knows. Local rigs (the only place the seeded token matches the
+ * server's DB — same reasoning as reseed()) resolve it here; remote sweeps
+ * skip the track pass LOUDLY rather than silently shrinking coverage.
+ */
+async function resolveTrackUrl() {
+  if (!/localhost|127\.0\.0\.1/.test(BASE) && process.env.E2E_RESEED !== "1") {
+    console.warn("⚠ track page skipped: E2E_BASE_URL is remote (local POSTGRES_URL is not its DB)")
+    return null
+  }
+  if (!process.env.POSTGRES_URL) {
+    console.warn("⚠ track page skipped: POSTGRES_URL not set")
+    return null
+  }
+  const db = new pg.Client({ connectionString: process.env.POSTGRES_URL })
+  await db.connect()
+  try {
+    const { rows } = await db.query(
+      `SELECT sl.token FROM hub.share_links sl
+         JOIN hub.loads l ON l.id = sl.load_id
+        WHERE l.status = 'in_transit' AND sl.revoked_at IS NULL
+        LIMIT 1`
+    )
+    if (rows.length === 0) {
+      console.warn("⚠ track page skipped: no share link for an in-transit load (run seed:demo)")
+      return null
+    }
+    return `/track/${rows[0].token}`
+  } finally {
+    await db.end()
+  }
+}
 
 // Phrases that only appear on dead screens: Next.js's default client-exception
 // and 404 pages, plus our own error boundaries. Toast variants of "something
@@ -129,6 +176,17 @@ async function main() {
   console.log("Office @ 390px")
   problems.push(...(await sweep(office, OFFICE_PAGES, "office", 390)))
 
+  // Owner at desktop + phone
+  const ownerContext = await browser.createBrowserContext()
+  const owner = await ownerContext.newPage()
+  await owner.setViewport({ width: 1440, height: 950 })
+  await login(owner, "owner@demo.thind")
+  console.log("Owner @ 1440px")
+  problems.push(...(await sweep(owner, OWNER_PAGES, "owner", 1440)))
+  await owner.setViewport({ width: 390, height: 844, deviceScaleFactor: 2 })
+  console.log("Owner @ 390px")
+  problems.push(...(await sweep(owner, OWNER_PAGES, "owner", 390)))
+
   // Driver app at phone
   const driverContext = await browser.createBrowserContext()
   const driver = await driverContext.newPage()
@@ -137,23 +195,23 @@ async function main() {
   console.log("Driver app @ 390px")
   problems.push(...(await sweep(driver, DRIVER_PAGES, "driver", 390)))
 
-  // Broker portal at phone (portals are the third forced-dark surface)
-  const brokerContext = await browser.createBrowserContext()
-  const broker = await brokerContext.newPage()
-  await broker.setViewport({ width: 390, height: 844, deviceScaleFactor: 2 })
-  await login(broker, "broker@demo.thind")
-  console.log("Broker portal @ 390px")
-  const portalPages = [...PORTAL_PAGES]
-  await broker.goto(`${BASE}/hub/portal`, { waitUntil: "networkidle2" })
-  const loadHref = await broker.evaluate(
-    () =>
-      [...document.querySelectorAll("a")]
-        .find((a) => a.getAttribute("href")?.includes("/hub/portal/loads/"))
-        ?.getAttribute("href") ?? null
+  // Portal (broker) at desktop + phone — the fourth seeded persona's surface.
+  const portalContext = await browser.createBrowserContext()
+  const portal = await portalContext.newPage()
+  await portal.setViewport({ width: 1440, height: 950 })
+  await login(portal, "broker@demo.thind")
+  await portal.goto(`${BASE}/hub/portal`, { waitUntil: "networkidle2" })
+  const loadHref = await portal.evaluate(
+    () => [...document.querySelectorAll("a")].find((a) => a.getAttribute("href")?.includes("/hub/portal/loads/"))?.getAttribute("href")
   )
+  const portalPages = [...PORTAL_PAGES]
   if (loadHref) portalPages.push(["portal-load", loadHref, "stops"])
-  else problems.push("portal-load: broker home has no /hub/portal/loads/ link (seed should provide one)")
-  problems.push(...(await sweep(broker, portalPages, "portal", 390)))
+  else problems.push("portal-home: no /hub/portal/loads/ link found (broker sees no loads?)")
+  console.log("Portal @ 1440px")
+  problems.push(...(await sweep(portal, portalPages, "portal", 1440)))
+  await portal.setViewport({ width: 390, height: 844, deviceScaleFactor: 2 })
+  console.log("Portal @ 390px")
+  problems.push(...(await sweep(portal, portalPages, "portal", 390)))
 
   // Shipper portal at phone (same route, quote-form variant)
   const shipperContext = await browser.createBrowserContext()
@@ -163,30 +221,18 @@ async function main() {
   console.log("Shipper portal @ 390px")
   problems.push(...(await sweep(shipper, SHIPPER_PAGES, "portal", 390)))
 
-  // Public tracking page at phone (no login — token straight from the DB)
-  if (process.env.POSTGRES_URL) {
-    const db = new pg.Client({ connectionString: process.env.POSTGRES_URL })
-    await db.connect()
-    const link = await db.query(
-      `SELECT sl.token FROM hub.share_links sl
-         JOIN hub.loads l ON l.id = sl.load_id
-        WHERE sl.revoked_at IS NULL AND l.status <> 'cancelled'
-        ORDER BY sl.created_at DESC LIMIT 1`
-    )
-    await db.end()
-    if (link.rows[0]) {
-      const trackContext = await browser.createBrowserContext()
-      const track = await trackContext.newPage()
-      await track.setViewport({ width: 390, height: 844, deviceScaleFactor: 2 })
-      console.log("Public tracking @ 390px")
-      problems.push(
-        ...(await sweep(track, [["track", `/track/${link.rows[0].token}`, "shipment"]], "public", 390))
-      )
-    } else {
-      problems.push("track: no unrevoked share link in hub.share_links (seed should provide one)")
-    }
-  } else {
-    console.log("⏭  /track sweep skipped: POSTGRES_URL unset (needed for the share-link token)")
+  // Public tracking page — no login, just the share-link token.
+  const trackUrl = await resolveTrackUrl()
+  if (trackUrl) {
+    const trackContext = await browser.createBrowserContext()
+    const track = await trackContext.newPage()
+    const trackPages = [["track", trackUrl, "shipment"]]
+    await track.setViewport({ width: 1440, height: 950 })
+    console.log("Track page @ 1440px")
+    problems.push(...(await sweep(track, trackPages, "track", 1440)))
+    await track.setViewport({ width: 390, height: 844, deviceScaleFactor: 2 })
+    console.log("Track page @ 390px")
+    problems.push(...(await sweep(track, trackPages, "track", 390)))
   }
 
   await browser.close()
