@@ -1,0 +1,60 @@
+# Branch hygiene: hundreds of one-shot claude/* session branches accumulate
+# (511 at time of writing; 227 fully merged) and drown the fleet's inventory
+# tooling. Agent sandboxes push through a proxy that blocks ref deletions, so
+# pruning lives here, where the credential can delete.
+#
+# Deletes ONLY claude/* branches whose tips are ancestors of main (zero unique
+# commits — `git branch -r --merged`). Never touches the integrator,
+# claude/lane-*, cursor/*, or anything with unpicked work.
+
+name: Prune merged agent branches
+
+on:
+  schedule:
+    - cron: "23 6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: prune-merged-branches
+  cancel-in-progress: false
+
+jobs:
+  prune:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Delete claude/* branches fully merged into main
+        run: |
+          git fetch origin main --prune
+          git branch -r --merged origin/main \
+            | sed 's/^ *//' \
+            | grep '^origin/claude/' \
+            | grep -v '^origin/claude/hauldesk-project-setup-l1luoo$' \
+            | grep -v '^origin/claude/lane-' \
+            | sed 's|^origin/|:refs/heads/|' > /tmp/refspecs || true
+          TOTAL=$(wc -l < /tmp/refspecs)
+          echo "Merged claude/* branches to delete: $TOTAL"
+          if [ "$TOTAL" -eq 0 ]; then
+            echo "Nothing to prune."
+            exit 0
+          fi
+          split -l 40 /tmp/refspecs /tmp/batch-
+          DELETED=0
+          for f in /tmp/batch-*; do
+            # shellcheck disable=SC2046
+            git push origin $(tr '\n' ' ' < "$f") && DELETED=$((DELETED + $(wc -l < "$f")))
+          done
+          echo "Deleted $DELETED of $TOTAL."
+
+      - name: Report survivors
+        run: |
+          git fetch origin --prune
+          KEPT=$(git branch -r | sed 's/^ *//' | grep -c '^origin/claude/' || true)
+          echo "claude/* branches remaining (unique commits or protected): $KEPT"
