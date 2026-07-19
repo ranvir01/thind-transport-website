@@ -100,6 +100,22 @@ export function reseed() {
   if (result.status !== 0) {
     throw new Error("seed-demo.mjs failed — fix the seed before trusting any smoke result")
   }
+  // hub.carrier_settings is not in the seed's TRUNCATE list, so recurringLanes
+  // rules written by an earlier drive survive the reseed pointing at load ids
+  // that no longer exist; the loads-page rollup then renders dead
+  // /hub/loads/<uuid> anchors that poison any smoke matching load links
+  // generically (the recurring smokes 404 on them). Reset the key with the seed.
+  const cleanup = spawnSync(process.execPath, ["-e", `
+    const { Client } = require("pg");
+    const c = new Client({ connectionString: process.env.POSTGRES_URL });
+    c.connect()
+      .then(() => c.query("UPDATE hub.carrier_settings SET settings = settings - 'recurringLanes' WHERE settings ? 'recurringLanes'"))
+      .then(() => c.end())
+      .catch((err) => { console.error("recurringLanes reset: " + err.message); process.exit(1); });
+  `], { stdio: "inherit" })
+  if (cleanup.status !== 0) {
+    throw new Error("recurringLanes reset failed — stale rules would poison the loads-page rollup")
+  }
   return true
 }
 

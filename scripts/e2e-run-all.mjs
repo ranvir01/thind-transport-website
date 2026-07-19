@@ -42,6 +42,8 @@ if (!process.env.NEXTAUTH_SECRET && !process.env.AUTH_SECRET)
   problems.push("NEXTAUTH_SECRET (or AUTH_SECRET) unset — every hub login will 401 with MissingSecret")
 if (!process.env.CREDENTIALS_KEY)
   problems.push("CREDENTIALS_KEY unset — the mailbox smoke fast-fails on credential saves; set 32+ random chars in .env.local and restart the server")
+if (!process.env.CRON_SECRET)
+  problems.push("CRON_SECRET unset — the recurring-lane/rollup smokes' cron calls all 401; set it in .env.local and restart the server")
 if (!process.env.POSTGRES_URL) {
   problems.push("POSTGRES_URL unset — reseeds and cent-exact checks cannot run")
 } else {
