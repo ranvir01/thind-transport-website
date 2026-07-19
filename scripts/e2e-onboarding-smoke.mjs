@@ -6,7 +6,7 @@
  */
 import puppeteer from "puppeteer"
 import { mkdirSync } from "node:fs"
-import { BASE, waitForText, login, makeShot, clickByText } from "./e2e-lib.mjs"
+import { BASE, waitForText, login, makeShot, clickByText, clickSelector } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-onboarding"
 mkdirSync(OUT, { recursive: true })
@@ -55,7 +55,7 @@ async function main() {
   await shot(fresh, "01b-account-step")
   await Promise.all([
     fresh.waitForNavigation({ waitUntil: "networkidle2", timeout: 25000 }),
-    fresh.click('button[type="submit"]'),
+    clickSelector(fresh, 'button[type="submit"]'),
   ])
   await waitForText(fresh, "Set up your workspace")
   await shot(fresh, "04-getting-started")
