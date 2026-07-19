@@ -29,6 +29,14 @@
  * (`.env.local` holds the LOCAL server's secret, which cannot sign cookies the
  * remote server accepts — silently using it would turn a clear "secret required"
  * error into baffling 401s): E2E_BASE_URL=https://… POSTGRES_URL=… NEXTAUTH_SECRET=…
+ *
+ * BEFORE repairing a stale smoke: run `npm run agent:branches` and scan the
+ * `files:` lists for the script you're about to touch — while the integrator
+ * automation is stalled, earlier QA sessions' repairs sit unmerged on session
+ * branches and successive runs keep re-making them (four branches once carried
+ * the identical onboarding-wizard fix). If a pending branch already has the
+ * repair, reference it in your Backlog: trailer instead of committing a
+ * duplicate; only re-fix when yours is materially better.
  */
 import path from "node:path"
 import os from "node:os"
