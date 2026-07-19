@@ -113,10 +113,11 @@ export const PROVIDERS: readonly ProviderSpec[] = [
   },
   {
     id: "comdata", label: "Comdata fuel card", domain: "fuel",
-    blurb: "Same FuelSource contract as EFS — request API credentials from your Comdata account team.",
+    blurb: "Same FuelSource contract as EFS. Comdata (Corpay) has real machine channels — ask your account team for API/web-services access, or have any forwarder push the daily transaction file to your signed file-drop URL below.",
     fields: [
       { key: "apiKey", label: "API key", secret: true },
       { key: "apiSecret", label: "API secret", secret: true },
+      { key: "webhookSecret", label: "File-drop signing secret (daily file forward)", secret: true },
     ],
     fallback: "Fuel statement CSV import", sync: "poll", status: "live", cronJob: "comdata-sync",
   },
