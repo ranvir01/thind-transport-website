@@ -45,6 +45,8 @@ export interface ImportFieldDef {
   key: string
   label: string
   required: boolean
+  /** Mapping this column waives these required fields (e.g. a combined name column). */
+  coversRequired?: readonly string[]
 }
 
 /** Field configs per import kind — the universal importer is source-agnostic. */
@@ -105,6 +107,7 @@ export const TRUCK_IMPORT_FIELDS: readonly ImportFieldDef[] = [
 export const DRIVER_IMPORT_FIELDS: readonly ImportFieldDef[] = [
   { key: "first_name", label: "First name", required: true },
   { key: "last_name", label: "Last name", required: true },
+  { key: "full_name", label: "Driver name (single column)", required: false, coversRequired: ["first_name", "last_name"] },
   { key: "phone", label: "Phone", required: false },
   { key: "email", label: "Email", required: false },
   { key: "cdl_number", label: "CDL number", required: false },
@@ -165,6 +168,25 @@ export interface ImportRow {
   driver_name?: string
   truck_unit?: string
   notes?: string
+}
+
+/**
+ * Split a combined "Driver Name" column into first/last. Handles
+ * "Last, First [Middle]" and "First [Middle] Last"; returns null when the
+ * value can't yield both parts (empty, single word, dangling comma).
+ */
+export function splitFullName(value: string | undefined): { first: string; last: string } | null {
+  const raw = value?.trim().replace(/\s+/g, " ")
+  if (!raw) return null
+  const comma = raw.indexOf(",")
+  if (comma >= 0) {
+    const last = raw.slice(0, comma).trim()
+    const first = raw.slice(comma + 1).trim().replace(/,/g, " ").replace(/\s+/g, " ")
+    return first && last ? { first, last } : null
+  }
+  const parts = raw.split(" ")
+  if (parts.length < 2) return null
+  return { first: parts[0], last: parts.slice(1).join(" ") }
 }
 
 const MONEY_RE = /[^0-9.\-]/g

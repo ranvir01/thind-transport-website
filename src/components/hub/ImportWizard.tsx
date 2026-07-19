@@ -25,7 +25,7 @@ type ImportKind = "loads" | "trucks" | "drivers" | "customers" | "fuel" | "tolls
 const KINDS: { key: ImportKind; label: string; hint: string; fields: readonly ImportFieldDef[]; templateKind?: "loads" | "fuel" | "tolls" | "positions" }[] = [
   { key: "loads", label: "Load history", hint: "Your Excel load sheet — history lands as settled, brokers auto-created.", fields: IMPORT_FIELDS as unknown as ImportFieldDef[], templateKind: "loads" },
   { key: "trucks", label: "Trucks", hint: "Your fleet list — unit numbers already on file are skipped; rows with a VIN get year, make & model filled in automatically.", fields: TRUCK_IMPORT_FIELDS },
-  { key: "drivers", label: "Drivers", hint: "Driver roster — pay starts at your Settings default, everything editable per driver after. Rows with an email can get a driver-app invite.", fields: DRIVER_IMPORT_FIELDS },
+  { key: "drivers", label: "Drivers", hint: "Driver roster — pay starts at your Settings default, everything editable per driver after. Rows with an email can get a driver-app invite; a single combined name column is split for you.", fields: DRIVER_IMPORT_FIELDS },
   { key: "customers", label: "Brokers", hint: "Broker / customer list — names already on file are skipped, MC numbers cleaned up.", fields: CUSTOMER_IMPORT_FIELDS },
   { key: "fuel", label: "Fuel", hint: "Any card program statement (EFS, Comdata, WEX…). Idempotent — re-import safely.", fields: FUEL_IMPORT_FIELDS, templateKind: "fuel" },
   { key: "tolls", label: "Tolls", hint: "Transponder statements (BestPass, state systems).", fields: TOLL_IMPORT_FIELDS, templateKind: "tolls" },
@@ -81,6 +81,7 @@ function guessMapping(headers: string[], fields: readonly ImportFieldDef[]): Map
     ownership: /owner/i,
     first_name: /first/i,
     last_name: /last/i,
+    full_name: /^(driver|full)?\s*name$|^driver$/i,
     phone: /phone|cell|mobile/i,
     email: /e-?mail/i,
     cdl_number: /cdl\s*(#|num(ber)?)?$/i,
@@ -171,7 +172,14 @@ export function ImportWizard({ initialKind = "loads" }: { initialKind?: string }
     })
   }, [rows, mapping, def.fields])
 
-  const requiredMissing = def.fields.filter((f) => f.required && mapping[f.key] === undefined)
+  // A mapped covering column (e.g. one combined "Driver name") waives the
+  // required fields it splits into.
+  const coveredRequired = new Set(
+    def.fields.flatMap((f) => (mapping[f.key] !== undefined ? (f.coversRequired ?? []) : []))
+  )
+  const requiredMissing = def.fields.filter(
+    (f) => f.required && mapping[f.key] === undefined && !coveredRequired.has(f.key)
+  )
 
   const runImport = () =>
     startTransition(async () => {
