@@ -2,10 +2,9 @@
 
 import { revalidatePath } from "next/cache"
 import { requireDriverUser, requirePermission } from "@/lib/hub/session"
-import { certifyRepair, submitDvir, type DvirDefect } from "@/lib/hub/dvir"
+import { certifyRepair, driverOwnsTruck, submitDvir, type DvirDefect } from "@/lib/hub/dvir"
 import { notifyRoles } from "@/lib/hub/notify"
 import { logAudit } from "@/lib/hub/audit"
-import { queryOne } from "@/lib/hub/db"
 import { dollarsToCents } from "@/lib/hub/types"
 import { actionError } from "@/lib/hub/action-error"
 
@@ -29,10 +28,7 @@ export async function submitDvirAction(input: {
   try {
     const user = await requireDriverUser()
     if (!input.signature) return { ok: false, error: "Sign the report first" }
-    const truck = await queryOne<{ id: string; unit_number: string }>(
-      `SELECT id, unit_number FROM hub.trucks WHERE carrier_id = $1 AND id = $2 AND deleted_at IS NULL`,
-      [user.carrierId, input.truckId]
-    )
+    const truck = await driverOwnsTruck(user.carrierId, user.driverId, input.truckId)
     if (!truck) return { ok: false, error: "Truck not found" }
     const { id, grounded } = await submitDvir(user.carrierId, {
       truckId: input.truckId,
