@@ -9,7 +9,7 @@
 import { useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
-import { Check, Loader2, ShieldAlert, Wrench } from "lucide-react"
+import { Check, CloudOff, Loader2, ShieldAlert, Wrench } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { submitDvirAction } from "@/app/hub/_actions/dvir"
 import { runOrQueue } from "@/components/hub/driver/offline-queue"
@@ -30,6 +30,7 @@ export function DvirForm({
 }) {
   const router = useRouter()
   const [pending, startTransition] = useTransition()
+  const [queuedOffline, setQueuedOffline] = useState(false)
   const [checks, setChecks] = useState<Record<string, boolean>>(
     Object.fromEntries(checklistTemplate.map((c) => [c.key, true]))
   )
@@ -58,8 +59,10 @@ export function DvirForm({
       const result = await runOrQueue({ kind: "dvir", payload: input }, () => submitDvirAction(input))
       if ("queued" in result) {
         // No navigation while offline — router.push/refresh needs the network it doesn't have,
-        // same as the load card's queued path.
+        // same as the load card's queued path. Swap the form for a confirmation instead: a
+        // still-signed form with a live button invites a doubtful driver to queue a duplicate.
         toast.success("No signal — inspection saved, sends automatically")
+        setQueuedOffline(true)
       } else if (result.ok) {
         toast.success(
           result.grounded
@@ -70,6 +73,20 @@ export function DvirForm({
         router.refresh()
       } else toast.error(result.error ?? "Could not file")
     })
+
+  if (queuedOffline) {
+    return (
+      <div className="rounded-2xl border border-white/10 bg-navy-800/80 p-5 text-center space-y-2">
+        <CloudOff className="mx-auto h-8 w-8 text-gold" />
+        <p className="text-base font-bold text-white">
+          {type === "post" ? "Post-trip" : "Pre-trip"} saved on your phone
+        </p>
+        <p className="text-body-sm text-steel-200">
+          {`Your signed inspection for #${truck.unit_number} sends to the office automatically when you're back in signal — no need to file it again.`}
+        </p>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-4">
