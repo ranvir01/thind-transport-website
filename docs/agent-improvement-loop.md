@@ -95,8 +95,13 @@ Launch together, merge in any order.
 
 **Background automation (subscription — no API key):**
 
-Three **Cursor Automations** on staggered hourly schedules (model **Auto**, repo
-`ranvir01/thind-transport-website`). Setup: [`.cursor/automation/README.md`](../.cursor/automation/README.md).
+> **RETIRED 2026-07-18:** the Cursor subscription ended; these three roles are now owned by
+> **Claude Code routines** (prompts: [`docs/claude-routines.md`](claude-routines.md)) with the
+> GitHub Action `drain-integrator.yml` as the platform-independent drain backstop. The table
+> below is kept for the role definitions the routines inherit.
+
+Three roles on staggered hourly schedules (originally Cursor Automations, repo
+`ranvir01/thind-transport-website`; legacy setup: [`.cursor/automation/README.md`](../.cursor/automation/README.md)).
 
 | Agent | Cron (UTC) | Branch | Job |
 |-------|------------|--------|-----|
