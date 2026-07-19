@@ -102,8 +102,11 @@ async function main() {
     check(nameBright !== null && nameBright > 150, `name input renders light-on-dark (color=${nameColor}, brightness=${nameBright?.toFixed(0)})`)
     await shot(page, "01-valid-invitation")
 
+    // Accepting sets window.location.href — a full navigation. Wait for it to
+    // finish loading before touching the page again: screenshotting mid-swap
+    // dies with "Cannot take screenshot with 0 width".
     await Promise.all([
-      page.waitForFunction(() => window.location.pathname === "/hub/portal", { timeout: 15000 }),
+      page.waitForNavigation({ waitUntil: "networkidle2", timeout: 20000 }),
       page.click('button[type="submit"]'),
     ])
     check(page.url().includes("/hub/portal"), `accepting the invitation signs in and lands on /hub/portal (url=${page.url()})`)
