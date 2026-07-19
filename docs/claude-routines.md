@@ -16,6 +16,11 @@ never `seed:demo` against production, fetch+rebase before every push.
 
 ## Routine 1 · "LoadOff integrator + drain" — Hourly
 
+**Status: LIVE** — created 2026-07-19 as `trig_01B99W8MteaPtzwk124DFF4w`, fires
+hourly at :43 UTC (fresh session per fire). Do not paste a second copy — two
+integrator routines race each other on the branch; if a duplicate ever appears
+in the Routines list, delete it by trigger id.
+
 > Work the repo ranvir01/thind-transport-website on branch
 > claude/hauldesk-project-setup-l1luoo. Read AGENTS.md and
 > docs/agent-improvement-loop.md first. Run `git fetch origin`, then

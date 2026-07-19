@@ -355,16 +355,19 @@ export function DriverLoadCard({ load, detentionFreeMinutes }: { load: LoadForDr
           onClose={() => setNotingStop(null)}
           onSave={(body, tags) =>
             startTransition(async () => {
-              const result = await driverAddFacilityNote({
-                facilityId: notingStop.facility_id!,
-                body,
-                tags,
-              })
-              if (result.ok) {
+              const facilityId = notingStop.facility_id!
+              const result = await runOrQueue(
+                { kind: "facility-note", payload: { facilityId, body, tags } },
+                () => driverAddFacilityNote({ facilityId, body, tags })
+              )
+              if ("queued" in result && result.queued) {
+                toast.success("No signal — tip saved on your phone, sends automatically")
+                setNotingStop(null)
+              } else if (result.ok) {
                 toast.success("Thanks — every driver after you sees this")
                 setNotingStop(null)
                 router.refresh()
-              } else toast.error(result.error ?? "Could not save")
+              } else toast.error(("error" in result && result.error) || "Could not save")
             })
           }
         />
