@@ -16,6 +16,14 @@ export function NotificationsPanel({ officeEmail }: { officeEmail: string | null
   const router = useRouter()
   const [pending, startTransition] = useTransition()
   const [email, setEmail] = useState(officeEmail ?? "")
+  const [lastSynced, setLastSynced] = useState(officeEmail)
+
+  // router.refresh() after a save delivers the canonical server value
+  // (trimmed + lowercased) — re-sync the field so it shows what was stored.
+  if (officeEmail !== lastSynced) {
+    setLastSynced(officeEmail)
+    setEmail(officeEmail ?? "")
+  }
 
   const saved = email.trim().toLowerCase() === (officeEmail ?? "")
 
