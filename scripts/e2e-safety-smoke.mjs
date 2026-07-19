@@ -162,8 +162,18 @@ async function main() {
   await page.type("#description", "Backed into a gate post at 5 mph. No injuries, truck drivable.")
   await clickByText(page, "Log incident")
   await waitForText(page, "Incident logged")
-  await sleep(1200)
-  check((await page.evaluate(() => document.body.innerText)).includes(OFFICE_INCIDENT), "new office incident appears on Safety")
+  // The form router.push()es back to /hub/safety after the toast; under
+  // full-suite load that client nav takes longer than a fixed sleep, so wait
+  // for the register itself to show the new incident.
+  const officeIncidentListed = await page
+    .waitForFunction(
+      (t) => location.pathname === "/hub/safety" && document.body.innerText.includes(t),
+      { timeout: 20000 },
+      OFFICE_INCIDENT
+    )
+    .then(() => true)
+    .catch(() => false)
+  check(officeIncidentListed, "new office incident appears on Safety")
   await shot(page, "03-office-incident-logged")
 
   console.log("4. Driver files a first report at 390px")
