@@ -15,7 +15,7 @@ import { classifyFuelUse } from "@/lib/hub/fuel-core"
 import { decodeVin, type VinDecodeResult } from "@/lib/hub/vin"
 import { dollarsToCents } from "@/lib/hub/types"
 import {
-  parseIntSafe, normalizeEquipment, normalizeState, parseDateSafe,
+  parseIntSafe, normalizeEquipment, normalizeState, parseDateSafe, splitFullName,
   type ImportRow,
 } from "@/lib/hub/csv"
 import { actionError, actionErrorMessage } from "@/lib/hub/action-error"
@@ -314,8 +314,18 @@ export async function importDriversAction(
   for (let i = 0; i < rows.length; i++) {
     const row = rows[i]
     try {
-      const first = row.first_name?.trim()
-      const last = row.last_name?.trim()
+      let first = row.first_name?.trim()
+      let last = row.last_name?.trim()
+      // Rosters with one combined "Driver Name" column: split it wherever the
+      // dedicated first/last columns didn't supply a value ("Last, First" and
+      // "First [Middle] Last" both work). Explicit columns always win.
+      if (!first || !last) {
+        const split = splitFullName(row.full_name)
+        if (split) {
+          first ||= split.first
+          last ||= split.last
+        }
+      }
       if (!first || !last) throw new Error("Missing first or last name")
       const nameKey = `${first} ${last}`.toLowerCase()
       if (existing.has(nameKey)) {

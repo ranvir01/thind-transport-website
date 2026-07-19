@@ -161,6 +161,39 @@ describe("importDriversAction", () => {
     expect(result.failed).toHaveLength(1)
   })
 
+  it("splits a combined Driver Name column when first/last aren't mapped", async () => {
+    queryMock.mockResolvedValueOnce([{ id: "d1", name: "raj thind" }])
+    const result = await importDriversAction([
+      { full_name: "Reyes, Juan Carlos" },
+      { full_name: "Raj Thind" }, // duplicate of the roster via the split key
+      { full_name: "Cher" }, // one word — can't split
+    ])
+    expect(result.imported).toBe(1)
+    expect(result.skippedDuplicates).toBe(1)
+    expect(result.failed).toEqual([{ row: 3, error: "Missing first or last name" }])
+    expect(createDriverMock).toHaveBeenCalledTimes(1)
+    expect(createDriverMock).toHaveBeenCalledWith(
+      "carrier-1",
+      expect.objectContaining({ first_name: "Juan Carlos", last_name: "Reyes" })
+    )
+  })
+
+  it("lets explicit first/last columns win over the combined column", async () => {
+    const result = await importDriversAction([
+      { first_name: "Amar", last_name: "Gill", full_name: "Someone Else" },
+      { first_name: "Sukh", full_name: "Ignored Dhillon" }, // split fills only the gap
+    ])
+    expect(result.imported).toBe(2)
+    expect(createDriverMock).toHaveBeenCalledWith(
+      "carrier-1",
+      expect.objectContaining({ first_name: "Amar", last_name: "Gill" })
+    )
+    expect(createDriverMock).toHaveBeenCalledWith(
+      "carrier-1",
+      expect.objectContaining({ first_name: "Sukh", last_name: "Dhillon" })
+    )
+  })
+
   it("emails an app invite to created rows with an email when asked to", async () => {
     const result = await importDriversAction(
       [

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { normalizeEquipment, parseCsv, parseDateSafe, parseIntSafe, parseMoney } from "../csv"
+import { normalizeEquipment, parseCsv, parseDateSafe, parseIntSafe, parseMoney, splitFullName } from "../csv"
 
 describe("CSV parser", () => {
   it("handles quoted fields with commas and escaped quotes", () => {
@@ -32,5 +32,24 @@ describe("field normalizers", () => {
     expect(normalizeEquipment("53' Reefer")).toBe("reefer")
     expect(normalizeEquipment("Flat bed")).toBe("flatbed")
     expect(normalizeEquipment("Dry Van")).toBe("dry_van")
+  })
+})
+
+describe("splitFullName", () => {
+  it("splits First Last, middle names joining the last name", () => {
+    expect(splitFullName("Raj Thind")).toEqual({ first: "Raj", last: "Thind" })
+    expect(splitFullName("Juan Carlos Reyes")).toEqual({ first: "Juan", last: "Carlos Reyes" })
+    expect(splitFullName("  Amar   Gill ")).toEqual({ first: "Amar", last: "Gill" })
+  })
+  it("splits the comma form as Last, First", () => {
+    expect(splitFullName("Thind, Raj")).toEqual({ first: "Raj", last: "Thind" })
+    expect(splitFullName("Reyes, Juan Carlos")).toEqual({ first: "Juan Carlos", last: "Reyes" })
+  })
+  it("returns null when both parts can't be produced", () => {
+    expect(splitFullName(undefined)).toBeNull()
+    expect(splitFullName("")).toBeNull()
+    expect(splitFullName("Cher")).toBeNull()
+    expect(splitFullName("Thind,")).toBeNull()
+    expect(splitFullName(", Raj")).toBeNull()
   })
 })
