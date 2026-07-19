@@ -13,7 +13,7 @@ import { query, queryOne } from "../db"
 import { getCredentials, hasCredentials, saveCredentials } from "../credentials"
 import { getInvoice, recordPayment } from "../invoices"
 import { logAudit } from "../audit"
-import { normalizeQboPayment, pushInvoiceToQbo, qboSource, runQboSync } from "../integrations/qbo"
+import { normalizeQboPayment, pushInvoiceToQbo, qboSource, qboTokenExpiryNotice, runQboSync } from "../integrations/qbo"
 
 const queryMock = vi.mocked(query)
 const queryOneMock = vi.mocked(queryOne)
@@ -99,7 +99,7 @@ describe("qboSource (SyncSource<QboPaymentRow> contract)", () => {
   it("refreshes a token, pulls payments, and resolves invoice numbers via a second query", async () => {
     hasCredentialsMock.mockResolvedValue(true)
     getCredentialsMock.mockResolvedValue(CREDS)
-    mockFetchSequence(
+    const fetchMock = mockFetchSequence(
       { ok: true, json: async () => ({ access_token: "tok" }) },
       {
         ok: true,
@@ -117,6 +117,9 @@ describe("qboSource (SyncSource<QboPaymentRow> contract)", () => {
     expect(rows).toEqual([
       { external_id: "A", invoiceNumber: "INV-9", amountCents: 4000, paidOn: "2026-06-01", method: null, raw: expect.any(Object) },
     ])
+    // Minor versions below 75 have been ignored (served as v75) since 2025-08-01 —
+    // the pin must say what actually happens.
+    expect((fetchMock.mock.calls[1] as [string])[0]).toMatch(/&minorversion=75$/)
   })
 
   it("skips the invoice lookup query entirely when no payment links an invoice", async () => {
@@ -191,6 +194,83 @@ describe("qboSource (SyncSource<QboPaymentRow> contract)", () => {
     expect(saveCredentialsMock).not.toHaveBeenCalled()
   })
 
+  it("persists the refresh token's own expiry (x_refresh_token_expires_in) alongside a rotation", async () => {
+    vi.useFakeTimers({ now: new Date("2026-07-19T00:00:00Z"), toFake: ["Date"] })
+    try {
+      hasCredentialsMock.mockResolvedValue(true)
+      getCredentialsMock.mockResolvedValue(CREDS)
+      mockFetchSequence(
+        // 5 years in seconds — Intuit's hard cap
+        { ok: true, json: async () => ({ access_token: "tok", refresh_token: "rtok-new", x_refresh_token_expires_in: 157680000 }) },
+        { ok: true, json: async () => ({ QueryResponse: { Payment: [] } }) }
+      )
+      await qboSource(CARRIER).pull()
+      expect(saveCredentialsMock).toHaveBeenCalledWith(
+        CARRIER,
+        "qbo",
+        { ...CREDS, refreshToken: "rtok-new", refreshTokenExpiresAt: "2031-07-18T00:00:00.000Z" },
+        null
+      )
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it("writes a first-seen expiry even when the refresh token itself didn't rotate", async () => {
+    vi.useFakeTimers({ now: new Date("2026-07-19T00:00:00Z"), toFake: ["Date"] })
+    try {
+      hasCredentialsMock.mockResolvedValue(true)
+      getCredentialsMock.mockResolvedValue(CREDS)
+      mockFetchSequence(
+        { ok: true, json: async () => ({ access_token: "tok", refresh_token: CREDS.refreshToken, x_refresh_token_expires_in: 157680000 }) },
+        { ok: true, json: async () => ({ QueryResponse: { Payment: [] } }) }
+      )
+      await qboSource(CARRIER).pull()
+      expect(saveCredentialsMock).toHaveBeenCalledWith(
+        CARRIER,
+        "qbo",
+        { ...CREDS, refreshTokenExpiresAt: "2031-07-18T00:00:00.000Z" },
+        null
+      )
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it("does not rewrite credentials every sync when the expiry only drifted within a day", async () => {
+    vi.useFakeTimers({ now: new Date("2026-07-19T06:00:00Z"), toFake: ["Date"] })
+    try {
+      hasCredentialsMock.mockResolvedValue(true)
+      // Stored six hours ago by the previous sync — recomputed expiry lands 6h later.
+      getCredentialsMock.mockResolvedValue({ ...CREDS, refreshTokenExpiresAt: "2031-07-18T00:00:00.000Z" })
+      mockFetchSequence(
+        { ok: true, json: async () => ({ access_token: "tok", refresh_token: CREDS.refreshToken, x_refresh_token_expires_in: 157680000 }) },
+        { ok: true, json: async () => ({ QueryResponse: { Payment: [] } }) }
+      )
+      await qboSource(CARRIER).pull()
+      expect(saveCredentialsMock).not.toHaveBeenCalled()
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it("keeps the stored expiry on rotation when the token response omits the field", async () => {
+    hasCredentialsMock.mockResolvedValue(true)
+    const stored = { ...CREDS, refreshTokenExpiresAt: "2031-07-18T00:00:00.000Z" }
+    getCredentialsMock.mockResolvedValue(stored)
+    mockFetchSequence(
+      { ok: true, json: async () => ({ access_token: "tok", refresh_token: "rtok-new" }) },
+      { ok: true, json: async () => ({ QueryResponse: { Payment: [] } }) }
+    )
+    await qboSource(CARRIER).pull()
+    expect(saveCredentialsMock).toHaveBeenCalledWith(
+      CARRIER,
+      "qbo",
+      { ...stored, refreshToken: "rtok-new" },
+      null
+    )
+  })
+
   it("surfaces a non-OK Payment query as an error rather than returning an empty pull", async () => {
     hasCredentialsMock.mockResolvedValue(true)
     getCredentialsMock.mockResolvedValue(CREDS)
@@ -221,6 +301,34 @@ describe("qboSource (SyncSource<QboPaymentRow> contract)", () => {
     )
     const rows = await qboSource(CARRIER).pull()
     expect(rows.map((r) => r.invoiceNumber)).toEqual([null, null])
+  })
+})
+
+describe("qboTokenExpiryNotice (pure — settings-card copy for Intuit's 5-year refresh-token cap)", () => {
+  const NOW = new Date("2026-07-19T00:00:00Z")
+
+  it("returns null when disconnected or no expiry has been observed yet", () => {
+    expect(qboTokenExpiryNotice(null, NOW)).toBeNull()
+    expect(qboTokenExpiryNotice({ refreshToken: "rtok" }, NOW)).toBeNull()
+    expect(qboTokenExpiryNotice({ refreshTokenExpiresAt: "not-a-date" }, NOW)).toBeNull()
+  })
+
+  it("shows a calm validity line when the expiry is far out", () => {
+    const notice = qboTokenExpiryNotice({ refreshTokenExpiresAt: "2031-07-18T00:00:00.000Z" }, NOW)
+    expect(notice).toEqual({ text: expect.stringContaining("valid until Jul"), warn: false })
+    expect(notice?.text).toContain("2031")
+  })
+
+  it("warns inside 90 days so the owner can re-auth before the sync dies", () => {
+    const notice = qboTokenExpiryNotice({ refreshTokenExpiresAt: "2026-09-01T00:00:00.000Z" }, NOW)
+    expect(notice?.warn).toBe(true)
+    expect(notice?.text).toMatch(/expires .*2026.*before then or the sync stops/)
+  })
+
+  it("says expired — reconnect once the hard death already happened", () => {
+    const notice = qboTokenExpiryNotice({ refreshTokenExpiresAt: "2026-07-01T00:00:00.000Z" }, NOW)
+    expect(notice?.warn).toBe(true)
+    expect(notice?.text).toMatch(/expired .*restart the sync/)
   })
 })
 
@@ -409,7 +517,7 @@ describe("pushInvoiceToQbo", () => {
     expect(result).toEqual({ connected: true, pushed: true, updated: true })
 
     const [updateUrl, updateInit] = fetchMock.mock.calls[3] as [string, RequestInit]
-    expect(updateUrl).toMatch(/\/invoice\?operation=update&minorversion=65$/)
+    expect(updateUrl).toMatch(/\/invoice\?operation=update&minorversion=75$/)
     const body = JSON.parse(updateInit.body as string)
     expect(body).toEqual({
       Id: "900",
@@ -449,7 +557,7 @@ describe("pushInvoiceToQbo", () => {
     expect(result).toEqual({ connected: true, pushed: true })
 
     const [invoiceUrl, invoiceInit] = fetchMock.mock.calls[4] as [string, RequestInit]
-    expect(invoiceUrl).toMatch(/\/invoice\?minorversion=65$/)
+    expect(invoiceUrl).toMatch(/\/invoice\?minorversion=75$/)
     const body = JSON.parse(invoiceInit.body as string)
     expect(body).toEqual({
       DocNumber: "INV-1042",

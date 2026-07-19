@@ -63,9 +63,14 @@ export function normalizeQboPayment(
   }
 }
 
-async function refreshAccessToken(
-  creds: Record<string, string>
-): Promise<{ accessToken: string; rotatedRefreshToken: string | null }> {
+interface TokenRotation {
+  accessToken: string
+  rotatedRefreshToken: string | null
+  /** Absolute ISO expiry of the refresh token itself (Intuit's 5-year hard cap), null when the response omits it. */
+  refreshTokenExpiresAt: string | null
+}
+
+async function refreshAccessToken(creds: Record<string, string>): Promise<TokenRotation> {
   const authBase = process.env.QBO_OAUTH_BASE ?? "https://oauth.platform.intuit.com/oauth2/v1/tokens/bearer"
   const basic = Buffer.from(`${creds.clientId}:${creds.clientSecret}`).toString("base64")
   const response = await fetch(authBase, {
@@ -79,28 +84,83 @@ async function refreshAccessToken(
     signal: AbortSignal.timeout(15000),
   })
   if (!response.ok) throw new Error(`QuickBooks token → HTTP ${response.status}`)
-  const json = (await response.json()) as { access_token?: string; refresh_token?: string }
+  const json = (await response.json()) as {
+    access_token?: string
+    refresh_token?: string
+    x_refresh_token_expires_in?: number
+  }
   if (!json.access_token) throw new Error("QuickBooks token response missing access_token")
   const rotatedRefreshToken =
     json.refresh_token && json.refresh_token !== creds.refreshToken ? json.refresh_token : null
-  return { accessToken: json.access_token, rotatedRefreshToken }
+  const expiresInSeconds =
+    typeof json.x_refresh_token_expires_in === "number" && Number.isFinite(json.x_refresh_token_expires_in) && json.x_refresh_token_expires_in > 0
+      ? json.x_refresh_token_expires_in
+      : null
+  const refreshTokenExpiresAt =
+    expiresInSeconds != null ? new Date(Date.now() + expiresInSeconds * 1000).toISOString() : null
+  return { accessToken: json.access_token, rotatedRefreshToken, refreshTokenExpiresAt }
 }
+
+const DAY_MS = 24 * 60 * 60 * 1000
 
 /**
  * QBO issues a new refresh_token on (most) redemptions and invalidates the
  * old one — a sync that doesn't persist the rotation will work once, then
- * fail the next time with a stale token. Only writes when the token actually
- * changed, so this never fires against providers/creds shapes without OAuth.
+ * fail the next time with a stale token. The refresh-token's own absolute
+ * expiry (Intuit's 5-year hard cap) rides along in the same payload so the
+ * settings card can warn before the token dies unrecoverably. Only writes
+ * when the token actually changed or the expiry drifted by more than a day —
+ * the expiry recomputes from now + x_refresh_token_expires_in on every
+ * redemption, so a tighter guard would rewrite credentials every sync.
  */
-async function persistRotatedRefreshToken(
+async function persistTokenRotation(
   carrierId: string,
   creds: Record<string, string>,
-  rotatedRefreshToken: string | null
+  rotation: TokenRotation
 ): Promise<void> {
-  if (!rotatedRefreshToken) return
+  const storedExpiry = creds.refreshTokenExpiresAt ? Date.parse(creds.refreshTokenExpiresAt) : NaN
+  const expiryDrifted =
+    rotation.refreshTokenExpiresAt != null &&
+    (Number.isNaN(storedExpiry) || Math.abs(Date.parse(rotation.refreshTokenExpiresAt) - storedExpiry) > DAY_MS)
+  if (!rotation.rotatedRefreshToken && !expiryDrifted) return
   // null, not a "system:qbo" sentinel — created_by is a UUID column, and a
   // non-UUID string makes the INSERT throw, crashing every sync that rotates.
-  await saveCredentials(carrierId, "qbo", { ...creds, refreshToken: rotatedRefreshToken }, null)
+  await saveCredentials(
+    carrierId,
+    "qbo",
+    {
+      ...creds,
+      refreshToken: rotation.rotatedRefreshToken ?? creds.refreshToken,
+      // Keep the stored expiry when the response omits the field — the 5-year
+      // cap counts from the original authorization, so it survives rotations.
+      ...(rotation.refreshTokenExpiresAt ? { refreshTokenExpiresAt: rotation.refreshTokenExpiresAt } : {}),
+    },
+    null
+  )
+}
+
+/**
+ * Settings-card notice for the refresh token's hard expiry (null when the
+ * carrier isn't connected or no expiry has been observed yet — it lands on
+ * the first sync after this shipped). Warns inside 90 days: past that point
+ * the only fix is the owner repeating the manual auth-code exchange, so the
+ * card must say so before the sync dies, not after.
+ */
+export function qboTokenExpiryNotice(
+  creds: Record<string, string> | null,
+  now: Date = new Date()
+): { text: string; warn: boolean } | null {
+  const expiryMs = creds?.refreshTokenExpiresAt ? Date.parse(creds.refreshTokenExpiresAt) : NaN
+  if (Number.isNaN(expiryMs)) return null
+  const date = new Date(expiryMs).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
+  const daysLeft = (expiryMs - now.getTime()) / DAY_MS
+  if (daysLeft < 0) {
+    return { text: `QuickBooks refresh token expired ${date} — paste a fresh refresh token (Edit) to restart the sync.`, warn: true }
+  }
+  if (daysLeft <= 90) {
+    return { text: `QuickBooks refresh token expires ${date} (Intuit's 5-year cap) — paste a fresh refresh token before then or the sync stops.`, warn: true }
+  }
+  return { text: `Refresh token valid until ${date} — Intuit's 5-year cap; reconnecting resets it.`, warn: false }
 }
 
 async function qboEntityQuery(
@@ -110,7 +170,7 @@ async function qboEntityQuery(
   entity: "Payment" | "Invoice" | "Customer" | "Item",
   sql: string
 ): Promise<Record<string, unknown>[]> {
-  const response = await fetch(`${base}/v3/company/${realmId}/query?query=${encodeURIComponent(sql)}&minorversion=65`, {
+  const response = await fetch(`${base}/v3/company/${realmId}/query?query=${encodeURIComponent(sql)}&minorversion=75`, {
     headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
     signal: AbortSignal.timeout(15000),
   })
@@ -134,8 +194,9 @@ export function qboSource(carrierId: string): SyncSource<QboPaymentRow> {
       if (!creds?.clientId || !creds?.clientSecret || !creds?.refreshToken || !creds?.realmId) {
         throw new Error("qbo is not connected")
       }
-      const { accessToken, rotatedRefreshToken } = await refreshAccessToken(creds)
-      await persistRotatedRefreshToken(carrierId, creds, rotatedRefreshToken)
+      const rotation = await refreshAccessToken(creds)
+      await persistTokenRotation(carrierId, creds, rotation)
+      const accessToken = rotation.accessToken
       const payments = await qboEntityQuery(base, creds.realmId, accessToken, "Payment", "SELECT * FROM Payment MAXRESULTS 100")
 
       const txnIds = [
@@ -271,7 +332,7 @@ async function resolveQboRef(
   const matches = await qboEntityQuery(base, realmId, token, entity, `SELECT Id FROM ${entity} WHERE DisplayName = '${escaped}'`)
   if (matches[0]?.Id != null) return String(matches[0].Id)
 
-  const response = await fetch(`${base}/v3/company/${realmId}/${entity.toLowerCase()}?minorversion=65`, {
+  const response = await fetch(`${base}/v3/company/${realmId}/${entity.toLowerCase()}?minorversion=75`, {
     method: "POST",
     headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json", Accept: "application/json" },
     body: JSON.stringify(createBody),
@@ -313,8 +374,9 @@ export async function pushInvoiceToQbo(
   const invoice = await getInvoice(carrierId, invoiceId)
   if (!invoice) throw new Error("Invoice not found")
 
-  const { accessToken, rotatedRefreshToken } = await refreshAccessToken(creds)
-  await persistRotatedRefreshToken(carrierId, creds, rotatedRefreshToken)
+  const rotation = await refreshAccessToken(creds)
+  await persistTokenRotation(carrierId, creds, rotation)
+  const accessToken = rotation.accessToken
   const base = process.env.QBO_API_BASE ?? "https://quickbooks.api.intuit.com"
 
   const previouslyPushed = invoice.sent_log?.some((entry) => entry.kind === "qbo-push" || entry.kind === "qbo-push-update")
@@ -327,7 +389,7 @@ export async function pushInvoiceToQbo(
     const itemId = await resolveQboRef(base, creds.realmId, accessToken, "Item", "Freight Service", {
       Name: "Freight Service", Type: "Service", IncomeAccountRef: { value: "1" },
     })
-    const response = await fetch(`${base}/v3/company/${creds.realmId}/invoice?operation=update&minorversion=65`, {
+    const response = await fetch(`${base}/v3/company/${creds.realmId}/invoice?operation=update&minorversion=75`, {
       method: "POST",
       headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json", Accept: "application/json" },
       body: JSON.stringify({
@@ -366,7 +428,7 @@ export async function pushInvoiceToQbo(
     Name: "Freight Service", Type: "Service", IncomeAccountRef: { value: "1" },
   })
 
-  const response = await fetch(`${base}/v3/company/${creds.realmId}/invoice?minorversion=65`, {
+  const response = await fetch(`${base}/v3/company/${creds.realmId}/invoice?minorversion=75`, {
     method: "POST",
     headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json", Accept: "application/json" },
     body: JSON.stringify({

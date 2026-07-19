@@ -30,6 +30,8 @@ export interface ProviderCard {
   webhookUrl?: string
   /** Count of hub.integration_events stuck unprocessed — undefined for providers with no event processor. */
   pendingEvents?: number
+  /** Credential-lifetime note (e.g. QBO's 5-year refresh-token cap) — warn styling when action is needed soon. */
+  credentialNotice?: { text: string; warn: boolean }
 }
 
 const STATUS_BADGE: Record<ProviderStatus, { label: string; cls: string }> = {
@@ -121,6 +123,17 @@ export function IntegrationCard({ card, encryptionReady }: { card: ProviderCard;
       ) : null}
 
       {card.webhookUrl ? <WebhookUrl url={card.webhookUrl} /> : null}
+
+      {card.connected && card.credentialNotice ? (
+        <p
+          className={cn(
+            "mt-2 rounded-lg px-2.5 py-1.5 text-[11px]",
+            card.credentialNotice.warn ? "border border-warn-soft bg-warn-soft text-warn" : "bg-surface-2 text-fg-3"
+          )}
+        >
+          {card.credentialNotice.text}
+        </p>
+      ) : null}
 
       {card.connected && card.pendingEvents ? (
         <p className="mt-2 rounded-lg border border-warn-soft bg-warn-soft px-2.5 py-1.5 text-[11px] text-warn">
