@@ -16,18 +16,33 @@ import type { Carrier } from "@/lib/hub/settings"
 export function CompanyProfilePanel({ carrier }: { carrier: Carrier }) {
   const router = useRouter()
   const [pending, startTransition] = useTransition()
-  const [form, setForm] = useState({
+  const stored = {
     name: carrier.name ?? "",
     phone: carrier.phone ?? "",
     email: carrier.email ?? "",
     address: carrier.address ?? "",
-  })
+  }
+  const [form, setForm] = useState(stored)
+  const [lastSynced, setLastSynced] = useState(stored)
+
+  // router.refresh() after a save delivers the canonical server values
+  // (trimmed, "" → null) — re-sync the fields so they show what was stored.
+  // Compare by value: the carrier object is rebuilt on every server render.
+  if (
+    stored.name !== lastSynced.name ||
+    stored.phone !== lastSynced.phone ||
+    stored.email !== lastSynced.email ||
+    stored.address !== lastSynced.address
+  ) {
+    setLastSynced(stored)
+    setForm(stored)
+  }
 
   const saved =
-    form.name.trim() === (carrier.name ?? "") &&
-    form.phone.trim() === (carrier.phone ?? "") &&
-    form.email.trim() === (carrier.email ?? "") &&
-    form.address.trim() === (carrier.address ?? "")
+    form.name.trim() === stored.name &&
+    form.phone.trim() === stored.phone &&
+    form.email.trim() === stored.email &&
+    form.address.trim() === stored.address
 
   const set = (key: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
     setForm((f) => ({ ...f, [key]: e.target.value }))
