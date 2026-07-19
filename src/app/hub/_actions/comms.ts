@@ -55,6 +55,10 @@ export async function createAnnouncementAction(input: {
   }
 }
 
+// Mirrors the office request panel's options; the driver upload flow can only
+// satisfy pod/bol/receipt/other, cdl and medical_card land as renewal uploads.
+const REQUESTABLE_DOC_KINDS = new Set(["pod", "bol", "receipt", "cdl", "medical_card", "other"])
+
 export async function requestDocumentAction(input: {
   driverId: string
   kind: string
@@ -63,6 +67,7 @@ export async function requestDocumentAction(input: {
 }): Promise<Result> {
   try {
     const user = await requireOfficeUser()
+    if (!REQUESTABLE_DOC_KINDS.has(input.kind)) return { ok: false, error: "Pick what you need" }
     const driver = await queryOne<{ id: string; name: string }>(
       `SELECT id, first_name || ' ' || last_name AS name FROM hub.drivers
        WHERE carrier_id = $1 AND id = $2 AND deleted_at IS NULL`,

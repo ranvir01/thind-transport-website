@@ -76,11 +76,49 @@ export async function listDocuments(
 }
 
 export async function deleteDocument(carrierId: string, id: string): Promise<boolean> {
-  const rows = await query<{ id: string }>(
-    `DELETE FROM hub.documents WHERE carrier_id = $1 AND id = $2 RETURNING id`,
+  const rows = await query<{ id: string; storage: string; url: string }>(
+    `DELETE FROM hub.documents WHERE carrier_id = $1 AND id = $2 RETURNING id, storage, url`,
     [carrierId, id]
   )
-  return rows.length > 0
+  const doc = rows[0]
+  if (!doc) return false
+  // Remove the bytes too — a deleted document must stop being fetchable at its
+  // old URL. Best-effort: the row delete is the authoritative act.
+  try {
+    if (doc.storage === "blob") {
+      if (process.env.BLOB_READ_WRITE_TOKEN) {
+        const { del } = await import("@vercel/blob")
+        await del(doc.url)
+      }
+    } else {
+      const name = doc.url.split("/").pop()
+      if (name) await fs.unlink(path.join(UPLOAD_DIR, path.basename(name)))
+    }
+  } catch {
+    // Bytes already gone or storage unreachable; the row is deleted either way.
+  }
+  return true
+}
+
+/**
+ * Which carrier owns a locally stored file. Exactly three producers write
+ * `/api/hub/files/*` URLs: document uploads (hub.documents.url), generated
+ * invoice PDFs (hub.invoices.pdf_url), and settlement statements
+ * (hub.settlements.statement_url). A file no table claims is not served —
+ * being signed in is not tenancy.
+ */
+export async function fileOwnerCarrierId(name: string): Promise<string | null> {
+  const url = `/api/hub/files/${path.basename(name)}`
+  const rows = await query<{ carrier_id: string | null }>(
+    `SELECT carrier_id FROM hub.documents WHERE url = $1
+     UNION ALL
+     SELECT carrier_id FROM hub.invoices WHERE pdf_url = $1
+     UNION ALL
+     SELECT carrier_id FROM hub.settlements WHERE statement_url = $1
+     LIMIT 1`,
+    [url]
+  )
+  return rows[0]?.carrier_id ?? null
 }
 
 export function localUploadPath(fileName: string): string {
