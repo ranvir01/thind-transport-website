@@ -45,6 +45,18 @@ async function clickInCard(page, label) {
 }
 
 async function main() {
+  // e2e-lib already merged .env.local into process.env for localhost drives,
+  // so this mirrors the server's env. Without a usable CREDENTIALS_KEY the
+  // connect save fails server-side and the smoke dies as a baffling 15s
+  // timeout at "card flips to connected" — fail fast with the fix instead.
+  // (credentials.ts requires 16+ chars; .env.example documents 32+.)
+  if (/localhost|127\.0\.0\.1/.test(BASE) && (process.env.CREDENTIALS_KEY ?? "").length < 16) {
+    console.error(
+      "CREDENTIALS_KEY is missing or shorter than 16 chars in the server env (.env.local).\n" +
+        "Encrypted credential storage needs it — add a 32+ char CREDENTIALS_KEY, restart the server, rerun."
+    )
+    process.exit(1)
+  }
   const browser = await puppeteer.launch({
     headless: "new",
     args: ["--no-sandbox", "--disable-dev-shm-usage"],
@@ -68,17 +80,17 @@ async function main() {
     throw new Error("server is running without CREDENTIALS_KEY — set it in .env.local (32+ random chars) and restart; credential saves can't work without it")
   }
 
-  // Self-heal: a crashed earlier run can leave the smoke credential connected;
-  // disconnect (two-step confirm) so the script is rerunnable without a reseed.
+  // Self-heal: `seed:demo` does not wipe hub.api_credentials, so a run that
+  // died between connect and disconnect leaves the mailbox connected for every
+  // later run. Disconnect the leftover credential before asserting clean start.
   if (!/not connected/i.test(await cardText(page))) {
-    console.log("   (stale connection from a previous run — disconnecting first)")
+    console.log("   (leftover credential from an interrupted run — disconnecting first)")
     await clickInCard(page, "Disconnect")
     await sleep(300)
     await clickInCard(page, "Disconnect it")
     await waitForText(page, "the CSV import path keeps working")
     await sleep(1200)
   }
-
   const before = await cardText(page)
   check(/not connected/i.test(before), "card starts not connected")
   check(/OAuth2 for Microsoft 365/.test(before), "blurb names the OAuth2 paths")
