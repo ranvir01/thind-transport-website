@@ -54,14 +54,6 @@ async function fetchCheck(name, path, { expectStatus = 200, bodyIncludes = [], b
   const url = `${BASE}${path}`
   try {
     const res = await fetch(url, { redirect: "follow" })
-    // Sandbox egress proxies answer for blocked hosts with their own 403 and
-    // an x-deny-reason header — that response never came from prod, so it
-    // must not count as a prod pass OR fail ("not5xx" would pass a 403).
-    const denyReason = res.headers.get("x-deny-reason")
-    if (denyReason) {
-      checks.push({ name, pass: false, networkError: true, detail: `egress denied by proxy: ${denyReason} (status ${res.status})`, url })
-      return
-    }
     const body = await res.text()
     if (egressBlocked(res, body)) {
       checks.push({
