@@ -19,7 +19,7 @@ import puppeteer from "puppeteer"
 import { mkdirSync } from "node:fs"
 import { BASE, sleep, check, failures, makeShot } from "./e2e-lib.mjs"
 
-const OUT = process.argv[2] ?? "e2e-public"
+const OUT = process.argv[2] ?? "e2e-shots-public"
 mkdirSync(OUT, { recursive: true })
 
 // [name, url] — every linked public route in src/app (marketing + info).
