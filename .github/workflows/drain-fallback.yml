@@ -1,16 +1,22 @@
-# Drain fallback — fast-forwards main from the integrator branch when both
-# agent platforms are down (docs/agent-improvement-loop.md §5, postmortem in
+# Drain fallback — lands the integrator branch on main when both agent
+# platforms are down (docs/agent-improvement-loop.md §5, postmortem in
 # commit 0f9003b: main sat hours behind a green integrator because the :59
 # Cursor deploy agent was the only drain path).
 #
 # Safety properties:
 #   - only fires when the integrator is MORE than 3 commits ahead of main,
 #     so the normal :59 drain always gets first shot;
-#   - only pushes when main is a strict ancestor of the integrator head
-#     (a plain, non-force push — git itself rejects anything but a
-#     fast-forward);
+#   - only merges when main is a strict ancestor of the integrator head
+#     (linear history only — a diverged main is left for the agents);
 #   - only pushes after `npm run build` and `npx vitest run` pass on the
 #     exact integrator commit being promoted.
+#
+# Learned 2026-07-19 (QA rig drive on main@5218a91): this used to be a plain
+# fast-forward push. That lands the exact SHA Vercel already built as an
+# integrator-branch preview, and Vercel dedupes deployments by SHA — the
+# production alias can sit stale with no new build ever queued. Draining via
+# a --no-ff merge commit always produces a SHA Vercel has never seen, so
+# production always gets a real build.
 name: drain-fallback
 
 on:
@@ -84,8 +90,15 @@ jobs:
           npm run build
           npx vitest run
 
-      - name: Fast-forward main
+      - name: Merge integrator into main (new commit — avoids Vercel SHA dedupe)
         if: steps.gate.outputs.run == 'true'
-        # Plain push — git rejects it unless it is a true fast-forward, so a
-        # concurrent drain or new main commit makes this fail safely.
-        run: git push origin "${{ steps.gate.outputs.sha }}:refs/heads/main"
+        # `git push` (not a raw ref push) refuses to move main unless the
+        # local branch is a fast-forward of the remote, so a concurrent drain
+        # or new main commit makes this fail safely.
+        run: |
+          set -euo pipefail
+          SHA="${{ steps.gate.outputs.sha }}"
+          git checkout -B main origin/main
+          git -c user.name="loadoff-drain-bot" -c user.email="noreply@anthropic.com" \
+            merge --no-ff "$SHA" -m "Drain integrator to main ($SHA)"
+          git push origin main
