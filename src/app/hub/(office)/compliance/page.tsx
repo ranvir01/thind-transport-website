@@ -25,10 +25,12 @@ const COLOR_DOT: Record<string, string> = {
 }
 
 // Full class strings (never interpolated) so Tailwind sees them.
+// shortLabel renders below sm: in the 3-col grid a 390px tile is ~110px wide
+// and the full labels wrap to three lines.
 const SUMMARY_TILES = [
-  { color: "red", label: "Expired / overdue", restCls: "border-bad-soft", activeCls: "border-bad", textCls: "text-bad" },
-  { color: "amber", label: "Due in 30 days", restCls: "border-warn-soft", activeCls: "border-warn", textCls: "text-warn" },
-  { color: "green", label: "Clean", restCls: "border-ok-soft", activeCls: "border-ok", textCls: "text-ok" },
+  { color: "red", label: "Expired / overdue", shortLabel: "Expired", restCls: "border-bad-soft", activeCls: "border-bad", textCls: "text-bad" },
+  { color: "amber", label: "Due in 30 days", shortLabel: "Due soon", restCls: "border-warn-soft", activeCls: "border-warn", textCls: "text-warn" },
+  { color: "green", label: "Clean", shortLabel: "Clean", restCls: "border-ok-soft", activeCls: "border-ok", textCls: "text-ok" },
 ] as const
 
 export default async function CompliancePage({
@@ -83,8 +85,11 @@ export default async function CompliancePage({
               href={wallHref({ ...filter, color: active ? null : tile.color })}
               title={active ? "Show all statuses" : `Show only: ${tile.label.toLowerCase()}`}
             >
-              <Panel className={cn("h-full p-4 transition-colors hover:bg-hover", active ? tile.activeCls : tile.restCls)}>
-                <span className={cn("text-label uppercase", tile.textCls)}>{tile.label}</span>
+              <Panel className={cn("h-full p-3 sm:p-4 transition-colors hover:bg-hover", active ? tile.activeCls : tile.restCls)}>
+                <span className={cn("text-label uppercase", tile.textCls)}>
+                  <span className="whitespace-nowrap sm:hidden">{tile.shortLabel}</span>
+                  <span className="hidden sm:inline">{tile.label}</span>
+                </span>
                 <p className={cn("mt-2 font-display text-3xl font-extrabold", tile.textCls)}>{summary[tile.color]}</p>
               </Panel>
             </Link>
