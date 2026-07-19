@@ -63,6 +63,26 @@ and race each other on the branch.
 
 ---
 
+## First-firing verification — 2026-07-19 ~08:45 UTC (closes the 3a2bdce backlog)
+
+- **Exactly one** "LoadOff integrator + drain" routine is live (cron `43 * * * *`, enabled);
+  the full 23-trigger fleet list has **no duplicate copies** ("Integration Lane Copy" etc.
+  do not exist). Prod smoke exists as a daily routine (16:49 UTC) per Routine 2's
+  save-usage option.
+- **Routine 1's first firing worked**: the 07:43 run absorbed the pending session branches
+  into the integrator (merge commits 08:08–08:29 UTC).
+- **Drain Action**: all five scheduled runs to date concluded **green**. Caveat learned:
+  GitHub throttles the `:17/:47` schedule heavily — observed firings ~1–3.5 h apart
+  (22:09, 23:12, 00:12, 03:57, 06:43), so worst-case drain latency via the Action alone is
+  a few hours, not 30 min. Routine 1's own direct drain remains the primary path; when
+  drift needs clearing *now*, kick the Action manually — it carries `workflow_dispatch`
+  and does its own green-check + fast-forward-only push, so a manual kick is always safe:
+  `gh workflow run drain-integrator.yml` (or the Actions tab → Run workflow).
+- **Proof the dispatch path works**: a manual dispatch fired 08:40 UTC cleared the
+  64-commit integrator→main drift that accumulated after the 06:43 scheduled run —
+  CI-verified the integrator and fast-forwarded `main` to `8650ab0` (drift now 0),
+  even while Routine 1 was still merging (the fast-forward-only push makes the race safe).
+
 ## Division of labor after Cursor
 
 | Concern | Owner |
