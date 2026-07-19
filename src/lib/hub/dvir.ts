@@ -61,6 +61,30 @@ export async function listDvirsForTruck(carrierId: string, truckId: string, limi
 }
 
 /**
+ * Is this truck the driver's to inspect — their seated assignment, or their
+ * active load's truck? (Same rule as the driver DVIR page's own lookup.)
+ * A driver's own carrier scope isn't enough here: without this check any
+ * driver could file (and potentially ground) a truck they've never touched.
+ */
+export async function driverOwnsTruck(
+  carrierId: string,
+  driverId: string,
+  truckId: string
+): Promise<{ id: string; unit_number: string } | null> {
+  return queryOne<{ id: string; unit_number: string }>(
+    `SELECT t.id, t.unit_number FROM hub.trucks t
+     WHERE t.carrier_id = $1 AND t.id = $2 AND t.deleted_at IS NULL
+       AND (t.assigned_driver_id = $3 OR t.id = (
+         SELECT l.truck_id FROM hub.loads l
+         WHERE l.carrier_id = $1 AND l.driver_id = $3 AND l.deleted_at IS NULL
+           AND l.status IN ('dispatched','at_pickup','in_transit','delivered')
+         ORDER BY l.created_at DESC LIMIT 1
+       ))`,
+    [carrierId, truckId, driverId]
+  )
+}
+
+/**
  * What the driver owes on this truck right now:
  * - a defective post-trip awaiting repair certification → truck is grounded
  * - a certified post-trip awaiting the pre-trip review sign-off (396.13)

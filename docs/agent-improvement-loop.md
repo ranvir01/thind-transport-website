@@ -159,6 +159,12 @@ plain non-force push — a race with a live agent is rejected by GitHub, never c
 history or drift ≤3 means the loop is alive (or needs a real merge), so the Action stands down and
 leaves it to the agents. This keeps the drain working even when both agent platforms are down at once.
 
+**Drain fallback (GitHub Action, shipped 2026-07-10):** `.github/workflows/drain-fallback.yml` runs at
+:20/:50 UTC and fast-forwards `main` from the integrator when it is >3 commits ahead, `main` is strictly
+behind (pure fast-forward, never force, never merge), and build + `vitest` pass on the integrator head.
+It no-ops in a healthy loop and survives both agent platforms being down. Diverged history still needs
+an agent to merge — the workflow only warns.
+
 Legacy single-automation files (`hauldesk-improvement-cycle.*`) alias to `loadoff-deploy.*`.
 
 ### 3b. Release gate (before any deploy is called done)
@@ -274,3 +280,10 @@ branch; review each against AGENTS.md; merge clean lanes into
 `claude/hauldesk-project-setup-l1luoo` (octopus or sequential; rebuild + full tests after EACH
 merge); a lane that breaks the build gets its merge skipped and the reason pushed to its
 `Backlog:`. Shared-file changes requested in lane backlogs are made here, once, coherently.
+
+**Before fixing a bug found during a QA drive:** `git log --all --oneline --grep="<short
+description>"` across `claude/*` branches first. With many parallel routines, the same defect
+gets independently found and fixed more than once (three separate branches all fixed the
+`NotificationsBell` unread-badge race on 2026-07-09/10 — none had merged). If a fix already
+exists on an unmerged branch, name that branch in your `Backlog:` instead of writing a fourth
+copy; the integrator should prioritize draining it over any fresh duplicate.

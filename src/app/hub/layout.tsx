@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next"
 import { SessionProvider } from "next-auth/react"
 import Script from "next/script"
+import { auth } from "@/lib/auth"
 import { GeistMono } from "geist/font/mono"
 import { GeistSans } from "geist/font/sans"
 import { PRODUCT } from "@/lib/hub/product"
@@ -26,7 +27,11 @@ export const viewport: Viewport = {
 
 const themeBoot = `(function(){try{var p=location.pathname;if(!p.startsWith('/hub'))return;var m=localStorage.getItem('hauldesk-mode')||'light';var t=localStorage.getItem('hauldesk-theme')||'indigo';var r=document.documentElement;r.setAttribute('data-app','hauldesk');r.setAttribute('data-mode',m);r.setAttribute('data-theme',t);}catch(e){}})();`
 
-export default function HubLayout({ children }: { children: React.ReactNode }) {
+export default async function HubLayout({ children }: { children: React.ReactNode }) {
+  // Seed the client SessionProvider from the server so it skips its initial
+  // /api/auth/session fetch — that fetch racing the post-login redirect was
+  // the sporadic authjs "Failed to fetch" console error on first load.
+  const session = await auth()
   return (
     <div
       className={`${GeistSans.variable} ${GeistMono.variable} font-sans antialiased min-h-screen bg-bg text-fg`}
@@ -35,7 +40,7 @@ export default function HubLayout({ children }: { children: React.ReactNode }) {
         {themeBoot}
       </Script>
       <ServiceWorkerBoot />
-      <SessionProvider>{children}</SessionProvider>
+      <SessionProvider session={session}>{children}</SessionProvider>
     </div>
   )
 }

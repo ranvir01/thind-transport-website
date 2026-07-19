@@ -43,7 +43,7 @@ When caught up, **Phase B** ships one ranked `Backlog:` item per hour.
 
 ## Drain fallback (GitHub Action, last resort)
 
-`.github/workflows/drain-fallback.yml` (`:20` UTC hourly) covers the 2026-07-10 failure mode:
+`.github/workflows/drain-fallback.yml` (`:15` UTC hourly) covers the 2026-07-10 failure mode:
 both agent platforms down while the integrator sits green ahead of `main`, so production goes
 stale. It fast-forwards `main` to the integrator tip ONLY when integrator is >3 ahead **and**
 `main` hasn't moved in 2h (deploy agent missed a full cycle) **and** the move is a pure
