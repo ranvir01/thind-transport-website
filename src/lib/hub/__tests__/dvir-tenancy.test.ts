@@ -9,6 +9,9 @@
  *  - DVIR_SELECT joined hub.trucks / hub.drivers by id alone (no join-side
  *    carrier guard), and truckDvirState's reviewing-dvir subquery was
  *    unscoped.
+ *  - driverOwnsTruck — the new gate closing the "any driver can file/ground
+ *    any truck in the carrier" hole (see dvir-driver-scope.test.ts for the
+ *    action-level enforcement).
  */
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
@@ -19,7 +22,7 @@ vi.mock("../db", () => ({
 }))
 
 import { hubDb, query, queryOne } from "../db"
-import { listDvirsForTruck, submitDvir, truckDvirState } from "../dvir"
+import { driverOwnsTruck, listDvirsForTruck, submitDvir, truckDvirState } from "../dvir"
 
 const queryMock = vi.mocked(query)
 const queryOneMock = vi.mocked(queryOne)
@@ -103,6 +106,17 @@ describe("submitDvir prior-DVIR ownership", () => {
     await submitDvir(CARRIER, preTripInput(PRIOR))
     const release = client.query.mock.calls.find(([sql]) => String(sql).includes("SET status = 'active'"))
     expect(release).toBeUndefined()
+  })
+})
+
+describe("driverOwnsTruck", () => {
+  it("scopes by carrier AND (assigned driver OR the driver's active-load truck)", async () => {
+    await driverOwnsTruck(CARRIER, "driver-1", TRUCK)
+    const [sql, params] = queryOneMock.mock.calls[0]
+    expect(String(sql)).toContain("t.carrier_id = $1 AND t.id = $2")
+    expect(String(sql)).toContain("t.assigned_driver_id = $3")
+    expect(String(sql)).toContain("l.carrier_id = $1 AND l.driver_id = $3")
+    expect(params).toEqual([CARRIER, TRUCK, "driver-1"])
   })
 })
 
