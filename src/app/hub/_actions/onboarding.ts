@@ -7,6 +7,7 @@
  */
 import bcrypt from "bcrypt"
 import { hubDb, queryOne } from "@/lib/hub/db"
+import { acceptDriverInvite } from "@/lib/hub/driver-invite"
 import { getHubUser, requireOwner } from "@/lib/hub/session"
 import { logAudit } from "@/lib/hub/audit"
 import { actionError } from "@/lib/hub/action-error"
@@ -20,6 +21,24 @@ interface Result {
   ok: boolean
   error?: string
 }
+
+// Detention is billed from the price book AND accrued from settings — seed both
+// from one number so a new tenant never invoices a different rate than it accrues.
+const DEFAULT_DETENTION_CENTS_PER_HOUR = 6000
+
+/**
+ * Accessorial price book seeded for every new workspace (industry-typical,
+ * all editable in Settings → Price Book). Without this, "Add accessorial"
+ * on the first booked load offers an empty list.
+ */
+const DEFAULT_PRICE_BOOK: ReadonlyArray<{ name: string; amountCents: number; unit: string }> = [
+  { name: "Detention", amountCents: DEFAULT_DETENTION_CENTS_PER_HOUR, unit: "per_hour" },
+  { name: "Layover", amountCents: 25000, unit: "per_day" },
+  { name: "TONU", amountCents: 20000, unit: "flat" },
+  { name: "Stop-off", amountCents: 10000, unit: "flat" },
+  { name: "Tarp", amountCents: 10000, unit: "flat" },
+  { name: "Lumper", amountCents: 0, unit: "pass_through" },
+]
 
 export interface CarrierAuthorityCheck {
   legalName: string | null
@@ -130,7 +149,7 @@ export async function createWorkspaceAction(input: {
         JSON.stringify({
           invoice: { prefix: `${prefix}-INV-`, nextNumber: 1001, defaultTermsDays: 30 },
           pay: { companyDriverPerMile: perMile, ownerOperatorPercentage: ooShare, payLoadedMilesOnly: true },
-          detention: { freeHours: 2, ratePerHourCents: 6000 },
+          detention: { freeHours: 2, ratePerHourCents: DEFAULT_DETENTION_CENTS_PER_HOUR },
           costPerMileCents: 185,
           fsc: { baseCentsPerGallon: 125, mpg: 6.0 },
           randomTesting: { drugPct: 50, alcoholPct: 10 },
@@ -140,6 +159,13 @@ export async function createWorkspaceAction(input: {
         }),
       ]
     )
+    for (const item of DEFAULT_PRICE_BOOK) {
+      await client.query(
+        `INSERT INTO hub.accessorial_types (carrier_id, name, default_amount_cents, unit)
+         VALUES ($1,$2,$3,$4) ON CONFLICT (carrier_id, name) DO NOTHING`,
+        [carrierId, item.name, item.amountCents, item.unit]
+      )
+    }
     const hash = await bcrypt.hash(input.password, 10)
     await client.query(
       `INSERT INTO hub.users (carrier_id, email, password_hash, name, role)
@@ -189,6 +215,19 @@ export async function gettingStartedState(): Promise<GettingStarted | null> {
     customers: Number(row.customers) > 0,
     loads: Number(row.loads) > 0,
     packet: Number(row.packet) > 0,
+  }
+}
+
+/** Public: a driver accepts their app invite (token-gated; no session required). */
+export async function acceptDriverInviteAction(
+  token: string,
+  input: { password: string }
+): Promise<Result & { email?: string }> {
+  if ((input.password ?? "").length < 8) return { ok: false, error: "Password needs 8+ characters" }
+  try {
+    return await acceptDriverInvite(token, { password: input.password })
+  } catch (err) {
+    return actionError(err, "Could not create the account")
   }
 }
 

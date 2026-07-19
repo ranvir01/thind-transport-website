@@ -4,22 +4,29 @@ import { useEffect, useMemo, useState, useTransition } from "react"
 import { toast } from "sonner"
 import { CheckCircle2, FileSpreadsheet, Loader2, Save, XCircle } from "lucide-react"
 import {
-  importFuelAction, importLoadsAction, importMileageAction, importPositionsAction,
-  importTollsAction, listImportTemplatesAction, saveImportTemplateAction,
+  importCustomersAction, importDriversAction, importFuelAction, importLoadsAction,
+  importMileageAction, importPositionsAction, importTollsAction, importTrucksAction,
+  listImportTemplatesAction, saveImportTemplateAction,
   type ImportResult,
 } from "@/app/hub/_actions/import"
 import {
   parseCsv, IMPORT_FIELDS, FUEL_IMPORT_FIELDS, TOLL_IMPORT_FIELDS,
   POSITION_IMPORT_FIELDS, MILEAGE_IMPORT_FIELDS,
+  TRUCK_IMPORT_FIELDS, DRIVER_IMPORT_FIELDS, CUSTOMER_IMPORT_FIELDS,
   type ImportFieldDef, type ImportRow,
 } from "@/lib/hub/csv"
 import { fieldCls, labelCls, Panel } from "@/components/hub/ui"
 import { cn } from "@/lib/utils"
 
-type ImportKind = "loads" | "fuel" | "tolls" | "positions" | "mileage"
+type ImportKind = "loads" | "trucks" | "drivers" | "customers" | "fuel" | "tolls" | "positions" | "mileage"
 
-const KINDS: { key: ImportKind; label: string; hint: string; fields: readonly ImportFieldDef[]; templateKind: "loads" | "fuel" | "tolls" | "positions" }[] = [
+// templateKind is absent for setup-entity kinds: hub.import_templates only
+// accepts loads/fuel/tolls/positions, and one-time setup lists rarely repeat.
+const KINDS: { key: ImportKind; label: string; hint: string; fields: readonly ImportFieldDef[]; templateKind?: "loads" | "fuel" | "tolls" | "positions" }[] = [
   { key: "loads", label: "Load history", hint: "Your Excel load sheet — history lands as settled, brokers auto-created.", fields: IMPORT_FIELDS as unknown as ImportFieldDef[], templateKind: "loads" },
+  { key: "trucks", label: "Trucks", hint: "Your fleet list — unit numbers already on file are skipped; rows with a VIN get year, make & model filled in automatically.", fields: TRUCK_IMPORT_FIELDS },
+  { key: "drivers", label: "Drivers", hint: "Driver roster — pay starts at your Settings default, everything editable per driver after. Rows with an email can get a driver-app invite.", fields: DRIVER_IMPORT_FIELDS },
+  { key: "customers", label: "Brokers", hint: "Broker / customer list — names already on file are skipped, MC numbers cleaned up.", fields: CUSTOMER_IMPORT_FIELDS },
   { key: "fuel", label: "Fuel", hint: "Any card program statement (EFS, Comdata, WEX…). Idempotent — re-import safely.", fields: FUEL_IMPORT_FIELDS, templateKind: "fuel" },
   { key: "tolls", label: "Tolls", hint: "Transponder statements (BestPass, state systems).", fields: TOLL_IMPORT_FIELDS, templateKind: "tolls" },
   { key: "positions", label: "Positions", hint: "ELD GPS export — feeds the map and the IFTA engine.", fields: POSITION_IMPORT_FIELDS, templateKind: "positions" },
@@ -64,6 +71,29 @@ function guessMapping(headers: string[], fields: readonly ImportFieldDef[]): Map
     lng: /lon|lng/i,
     quarter: /quarter|qtr/i,
     miles: /miles/i,
+    unit_number: /unit|truck/i,
+    vin: /vin/i,
+    plate: /plate|license/i,
+    plate_state: /plate\s*st/i,
+    year: /year/i,
+    make: /make/i,
+    model: /model/i,
+    ownership: /owner/i,
+    first_name: /first/i,
+    last_name: /last/i,
+    phone: /phone|cell|mobile/i,
+    email: /e-?mail/i,
+    cdl_number: /cdl\s*(#|num(ber)?)?$/i,
+    cdl_state: /cdl.*st/i,
+    cdl_expiry: /cdl.*exp/i,
+    medical_card_expiry: /med/i,
+    hire_date: /hire/i,
+    name: /^name$|broker|customer|company/i,
+    customer_type: /type/i,
+    mc_number: /mc/i,
+    dot_number: /dot/i,
+    billing_email: /e-?mail/i,
+    payment_terms_days: /terms|net\s*\d*/i,
   }
   const mapping: Mapping = {}
   for (const field of fields) {
@@ -91,6 +121,7 @@ export function ImportWizard({ initialKind = "loads" }: { initialKind?: string }
   const [rows, setRows] = useState<string[][]>([])
   const [mapping, setMapping] = useState<Mapping>({})
   const [asHistory, setAsHistory] = useState(true)
+  const [sendInvites, setSendInvites] = useState(true)
   const [program, setProgram] = useState("")
   const [templates, setTemplates] = useState<Template[]>([])
   const [templateName, setTemplateName] = useState("")
@@ -98,6 +129,10 @@ export function ImportWizard({ initialKind = "loads" }: { initialKind?: string }
   const [pending, startTransition] = useTransition()
 
   useEffect(() => {
+    if (!def.templateKind) {
+      setTemplates([])
+      return
+    }
     listImportTemplatesAction(def.templateKind)
       .then(setTemplates)
       .catch(() => setTemplates([]))
@@ -145,6 +180,15 @@ export function ImportWizard({ initialKind = "loads" }: { initialKind?: string }
         case "loads":
           res = await importLoadsAction(mappedRows as unknown as ImportRow[], { asHistory })
           break
+        case "trucks":
+          res = await importTrucksAction(mappedRows)
+          break
+        case "drivers":
+          res = await importDriversAction(mappedRows, { sendInvites })
+          break
+        case "customers":
+          res = await importCustomersAction(mappedRows)
+          break
         case "fuel":
           res = await importFuelAction(mappedRows, program)
           break
@@ -166,6 +210,7 @@ export function ImportWizard({ initialKind = "loads" }: { initialKind?: string }
 
   const saveTemplate = () =>
     startTransition(async () => {
+      if (!def.templateKind) return
       const name = templateName.trim() || program.trim() || fileName || "default"
       const res = await saveImportTemplateAction(def.templateKind, name, mapping)
       if (res.ok) {
@@ -283,22 +328,24 @@ export function ImportWizard({ initialKind = "loads" }: { initialKind?: string }
               Still needed: {requiredMissing.map((f) => f.label).join(", ")}
             </p>
           ) : null}
-          <div className="mt-3 flex flex-wrap items-center gap-2">
-            <input
-              aria-label="Template name"
-              placeholder={`Save mapping as… (e.g. ${program || "My export"})`}
-              className={`${fieldCls} max-w-xs`}
-              value={templateName}
-              onChange={(e) => setTemplateName(e.target.value)}
-            />
-            <button
-              onClick={saveTemplate}
-              disabled={pending}
-              className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-border-strong px-4 text-sm font-semibold text-fg-2 hover:bg-hover disabled:opacity-50"
-            >
-              <Save className="h-4 w-4" /> Save mapping
-            </button>
-          </div>
+          {def.templateKind ? (
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              <input
+                aria-label="Template name"
+                placeholder={`Save mapping as… (e.g. ${program || "My export"})`}
+                className={`${fieldCls} max-w-xs`}
+                value={templateName}
+                onChange={(e) => setTemplateName(e.target.value)}
+              />
+              <button
+                onClick={saveTemplate}
+                disabled={pending}
+                className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-border-strong px-4 text-sm font-semibold text-fg-2 hover:bg-hover disabled:opacity-50"
+              >
+                <Save className="h-4 w-4" /> Save mapping
+              </button>
+            </div>
+          ) : null}
         </Panel>
       ) : null}
 
@@ -318,6 +365,19 @@ export function ImportWizard({ initialKind = "loads" }: { initialKind?: string }
               />
               <span className="text-sm text-fg-2">
                 Import as history (settled) — recommended for past loads
+              </span>
+            </label>
+          ) : null}
+          {kind === "drivers" ? (
+            <label className="mb-4 flex items-center gap-3 min-h-[44px] cursor-pointer">
+              <input
+                type="checkbox"
+                checked={sendInvites}
+                onChange={(e) => setSendInvites(e.target.checked)}
+                className="h-5 w-5 rounded border-border-strong accent-accent"
+              />
+              <span className="text-sm text-fg-2">
+                Email each driver an app invite (only rows with an email address)
               </span>
             </label>
           ) : null}
@@ -349,6 +409,13 @@ export function ImportWizard({ initialKind = "loads" }: { initialKind?: string }
             {result.imported} imported
             {result.customersCreated != null ? ` · ${result.customersCreated} customers created` : ""}
             {result.skippedDuplicates != null ? ` · ${result.skippedDuplicates} duplicates skipped` : ""}
+            {(result.vinDecoded ?? 0) > 0 ? ` · ${result.vinDecoded} decoded from VIN` : ""}
+            {(result.invitesSent ?? 0) > 0 ? ` · ${result.invitesSent} app invites emailed` : ""}
+            {(result.invitesFailed ?? 0) > 0 ? (
+              <span className="text-warn">{` · ${result.invitesFailed} invites couldn't be emailed`}</span>
+            ) : (
+              ""
+            )}
             {` · ${result.failed.length} failed`}
           </p>
           {result.failed.length > 0 ? (

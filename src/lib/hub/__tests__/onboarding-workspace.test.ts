@@ -6,8 +6,11 @@
  * accent is dropped silently — cosmetic fields never block signup), the pay
  * step's rates are seeded when sane and REJECTED when nonsense (pay is money:
  * silently substituting a default for a mistyped rate would corrupt every
- * settlement until someone noticed), and a failed insert rolls the
- * transaction back instead of committing half a tenant.
+ * settlement until someone noticed), the accessorial price book is seeded
+ * with the industry-typical defaults inside the same transaction (migration
+ * 003 only seeds the original Thind carrier, so without this every self-serve
+ * tenant would start with an empty "Add accessorial" list), and a failed
+ * insert rolls the transaction back instead of committing half a tenant.
  */
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
@@ -170,6 +173,50 @@ describe("createWorkspaceAction", () => {
       expect(result.error).toBeTruthy()
     }
     expect(queryOneMock).not.toHaveBeenCalled()
+  })
+
+  it("seeds the default accessorial price book inside the signup transaction", async () => {
+    const client = mockClient()
+
+    const result = await createWorkspaceAction(VALID_INPUT)
+
+    expect(result.ok).toBe(true)
+    const priceBookCalls = client.query.mock.calls.filter(([sql]) =>
+      String(sql).includes("hub.accessorial_types")
+    )
+    const seeded = priceBookCalls.map(([, params]) => {
+      const [carrierId, name, amountCents, unit] = params as [string, string, number, string]
+      expect(carrierId).toBe("carrier-1")
+      return { name, amountCents, unit }
+    })
+    expect(seeded).toEqual([
+      { name: "Detention", amountCents: 6000, unit: "per_hour" },
+      { name: "Layover", amountCents: 25000, unit: "per_day" },
+      { name: "TONU", amountCents: 20000, unit: "flat" },
+      { name: "Stop-off", amountCents: 10000, unit: "flat" },
+      { name: "Tarp", amountCents: 10000, unit: "flat" },
+      { name: "Lumper", amountCents: 0, unit: "pass_through" },
+    ])
+    // Inside the transaction: seeding must come after BEGIN and before COMMIT,
+    // so a failed seed never commits half a tenant.
+    const statements = client.query.mock.calls.map(([sql]) => String(sql))
+    const firstSeed = statements.findIndex((s) => s.includes("hub.accessorial_types"))
+    expect(firstSeed).toBeGreaterThan(statements.indexOf("BEGIN"))
+    expect(firstSeed).toBeLessThan(statements.indexOf("COMMIT"))
+  })
+
+  it("seeds the price-book Detention rate equal to the settings detention accrual rate", async () => {
+    const client = mockClient()
+
+    await createWorkspaceAction(VALID_INPUT)
+
+    const detentionRow = client.query.mock.calls.find(
+      ([sql, params]) =>
+        String(sql).includes("hub.accessorial_types") && (params as string[])[1] === "Detention"
+    )
+    expect(detentionRow).toBeDefined()
+    const seededCents = (detentionRow![1] as [string, string, number, string])[2]
+    expect(seededSettings(client).detention.ratePerHourCents).toBe(seededCents)
   })
 
   it("rolls back and reports failure when an insert throws", async () => {
