@@ -137,6 +137,15 @@ deployment is guaranteed. Applied in both `.github/workflows/drain-integrator.ym
 `drain-fallback.yml`; any agent draining by hand (Routine 1, §5) must use the same merge form, not a
 raw `git push origin <integrator>:main`.
 
+**Platform-independent fallback:** the GitHub Action
+[`drain-integrator`](../.github/workflows/drain-integrator.yml) runs hourly at :15 (staggered against
+the Cursor agents at :00/:30/:59). When the integrator is more than `AGENT_CATCHUP_THRESHOLD` (3)
+commits ahead of `main` and fast-forwardable, it builds and tests the integrator tip on a GitHub
+runner and, only if green, pushes the fast-forward. It never merges a diverged integrator (that still
+needs an agent) and does nothing in steady state — the hourly agents keep owning the drain; the Action
+only fires when every agent platform is down at once. It can also be triggered manually from the
+Actions tab (`workflow_dispatch`) when a stale production alias needs healing now.
+
 Legacy single-automation files (`hauldesk-improvement-cycle.*`) alias to `loadoff-deploy.*`.
 
 ### 3b. Release gate (before any deploy is called done)
