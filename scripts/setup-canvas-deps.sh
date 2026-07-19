@@ -15,7 +15,14 @@ readonly DEBIAN_PACKAGES=(
 )
 
 canvas_headers_present() {
-  command -v pkg-config >/dev/null 2>&1 && pkg-config --exists cairo pango 2>/dev/null
+  # node-canvas compiles against all of these, not just cairo/pango — a rig
+  # with cairo+pango but no giflib/jpeg/rsvg headers still fails `npm install`
+  # (fatal error: gif_lib.h). giflib ships no .pc file, so probe the header
+  # through the preprocessor instead of pkg-config.
+  command -v pkg-config >/dev/null 2>&1 || return 1
+  pkg-config --exists cairo pango pangocairo libjpeg librsvg-2.0 2>/dev/null || return 1
+  command -v cpp >/dev/null 2>&1 || return 1
+  echo 'int main(void){return 0;}' | cpp -include gif_lib.h - >/dev/null 2>&1
 }
 
 install_linux() {
@@ -40,6 +47,11 @@ install_linux() {
     echo "setup-canvas-deps: apt-get update failed — proceeding with existing package lists" >&2
   fi
   DEBIAN_FRONTEND=noninteractive "${sudo_cmd[@]}" apt-get install -y --no-install-recommends "${DEBIAN_PACKAGES[@]}"
+
+  if ! canvas_headers_present; then
+    echo "setup-canvas-deps: headers still missing after apt install — node-canvas will not compile" >&2
+    return 1
+  fi
   echo "setup-canvas-deps: installed ${DEBIAN_PACKAGES[*]}"
 }
 
