@@ -9,15 +9,15 @@ as an urgent `Backlog:` item.
 
 | Provider | Code status | Credential fields | Adapter file | Research doc | Last researched |
 |---|---|---|---|---|---|
-| `terminal` | **Built** — live TSP aggregator (vehicles + HOS); cron now daily 12:00 UTC per `vercel.json` (the "30-min cron" in `terminal.md` predates the Hobby-plan daily-only fix — reconcile on next scout pass) | `apiKey`, `connectionToken` (+ `TERMINAL_API_BASE` env, optional) | `src/lib/hub/telematics.ts` | [`terminal.md`](./terminal.md) | 2026-07-08 |
+| `terminal` | **Built** — live TSP aggregator (vehicles + HOS); cron daily 12:00 UTC (doc reconciled 2026-07-19 — the stale "30-min cron" claim is fixed). 2026-07-19 pass: no breaking change (auth + models match adapter); sandbox is dashboard-self-serve (secret + publishable key, `link.sandbox.withterminal.com`); `GET /connections/current` found as a cheap credential health-check; official Link npm SDKs exist; docs host now network-policy-blocked (proxy CONNECT 403) so numeric rate limits remain unread | `apiKey`, `connectionToken` (+ `TERMINAL_API_BASE` env, optional) | `src/lib/hub/telematics.ts` | [`terminal.md`](./terminal.md) | 2026-07-19 |
 | `mailbox` | **Built** — generic IMAP client, not a vendor SDK. Three auth paths live since 2026-07-11: Gmail app password, M365 client-credentials OAuth2, Google Workspace service-account OAuth2 (XOAUTH2). Cron is daily 12:30 UTC, not hourly as older notes said. Workspace app-password reliability contested — steer Workspace to OAuth2 (see doc) | `user`, `password` (Gmail only), `tenantId`/`clientId`/`clientSecret` (M365), `serviceAccountKey` (Workspace), `host`, `port`, `folder` | `src/lib/hub/mailbox.ts` + `mailbox-oauth.ts` | [`mailbox.md`](./mailbox.md) | 2026-07-18 |
 | `fmcsa` (adjacent, free, not in `IntegrationProvider` union — no stored creds) | **Built** — QCMobile broker vetting | `FMCSA_WEBKEY` env | `src/lib/hub/vetting.ts` | [`fmcsa.md`](./fmcsa.md) | 2026-07-07 |
 | `eia` (adjacent, free, not in `IntegrationProvider` union) | **Built** — diesel price benchmark | `EIA_API_KEY` env | `src/lib/hub/fuel.ts` | [`eia.md`](./eia.md) | 2026-07-07 |
 | `truckercloud` | **Built** — adapter shipped, drop-in second aggregator to Terminal | `apiKey`, `clientId`/`clientSecret` | `src/lib/hub/telematics.ts` (`truckerCloudSource`) | [`truckercloud.md`](./truckercloud.md) | 2026-07-10 |
 | `dat` | **Built** — search + posting-to-load-draft mapper, stub-first (registry still `stub`/CSV fallback pending real auth confirm) | `serviceAccountEmail`, `password` (+ acting-user email needed, see doc) | `src/lib/hub/integrations/dat.ts` | [`dat.md`](./dat.md) | 2026-07-10 |
-| `efs` | **Built** — adapter shipped; real feed confirmed as daily SFTP CSV, not REST JSON — transport swap needed before activation (see doc) | `feedUser`, `feedPassword` | `src/lib/hub/integrations/efs.ts` | [`efs.md`](./efs.md) | 2026-07-11 |
-| `wex` | **Built** — adapter shipped; real feed confirmed as SFTP file drop, not REST JSON — same transport swap as EFS needed before activation (see doc) | `feedUser`, `feedPassword` (+ feed file name, no field yet) | `src/lib/hub/integrations/wex.ts` | [`wex.md`](./wex.md) | 2026-07-12 |
-| `comdata` | **Built** — adapter shipped, daily cron live; real APIs confirmed to exist (REST portal + SOAP Transaction History), but partner feeds are batch files (AC00029) — transport TBD at onboarding (see doc) | `apiKey`, `apiSecret` | `src/lib/hub/integrations/comdata.ts` | [`comdata.md`](./comdata.md) | 2026-07-16 |
+| `efs` | **Built** — adapter shipped; real feed is a daily SFTP CSV — signed file-drop webhook shipped 2026-07-17 (`processEfsEvent`), Go-worker SFTP poller still the long-term option (see doc) | `feedUser`, `feedPassword`, `webhookSecret` | `src/lib/hub/integrations/efs.ts` | [`efs.md`](./efs.md) | 2026-07-11 |
+| `wex` | **Built** — adapter shipped; real feed confirmed daily SFTP CSV (same as EFS) — signed file-drop webhook shipped 2026-07-18 (`processWexEvent`) | `feedUser`, `feedPassword`, `webhookSecret` | `src/lib/hub/integrations/wex.ts` | [`wex.md`](./wex.md) | 2026-07-18 |
+| `comdata` | **Built** — adapter shipped, daily cron live; Corpay has REAL machine channels (SOAP FleetCreditWS UsernameToken, REST developer portal, partner daily AC00029 fixed-width file) — file-drop webhook shipped 2026-07-18 (`processComdataEvent`) | `apiKey`, `apiSecret`, `webhookSecret` | `src/lib/hub/integrations/comdata.ts` | [`comdata.md`](./comdata.md) | 2026-07-18 |
 | `qbo` | **Built** — pull + push both directions, refresh-token rotation confirmed correct; hardcoded `minorversion=65` is stale (Intuit serves v75 regardless since 2025-08-01); refresh tokens now carry a 5-year hard cap (see doc) | OAuth2 (Intuit) | `src/lib/hub/integrations/qbo.ts` | [`qbo.md`](./qbo.md) | 2026-07-17 |
 | `factor` | **Built** — push + webhook receiver; vendor landscape pinned: OTR Solutions is the only factor with public dev docs + test env (recommended first target); Apex/Denim are API-key class; RTS/Triumph are FTP file drops (EFS-style transport gap); NO factor documents webhooks to carriers — funding status is poll-based everywhere (see doc) | varies by factor | `src/lib/hub/integrations/factor.ts` | [`factor.md`](./factor.md) | 2026-07-17 |
 | `truckstop` | **Built** — full slice shipped (search UI + booking, migration 017 applied); real API confirmed as SOAP/XML with `IntegrationId`+`UserName`+`Password` in the envelope body — adapter's Bearer-key REST guess is wrong on auth AND transport, rewrite needed before activation; sandbox exists at `testws.truckstop.com` (see doc) | `integrationId`, `username`, `password` (registry still says `apiKey` — wrong) | `src/lib/hub/integrations/truckstop.ts` | [`truckstop.md`](./truckstop.md) | 2026-07-18 |
@@ -37,10 +37,17 @@ integrations that were never in scope of the vendor shopping list: both `fmcsa.m
    notes before a lane builds the adapter.
 3. One provider per cycle. Update the "Last researched" date and doc link when done.
 
-Next up by this rule: `terminal.md` (2026-07-08) — the highest-value recheck since its
-adapter is a live production vendor sync; that pass must also reconcile the doc's "30-min
-cron" claims with `vercel.json`'s daily schedule. Then the two government-API docs
-`fmcsa.md`/`eia.md` (2026-07-07, now the oldest — low risk, free stable gov APIs).
+Next up by this rule: the two government-API docs `fmcsa.md`/`eia.md` (2026-07-07, now the
+oldest — low risk, free stable gov APIs; one pass can plausibly cover both since each is a
+single-endpoint key-only integration). After that, `truckercloud.md` (2026-07-10) and `dat.md`
+(2026-07-10) are the oldest built-adapter docs. The 2026-07-19 terminal pass found no breaking
+change (auth pattern and both data models still match the adapter verbatim); it corrected the
+doc's stale "30-min cron" claim to the actual daily 12:00 UTC schedule (which upgrades the
+webhook-receiver backlog item from latency nicety to the only same-hour data path), pinned
+down sandbox provisioning (self-serve Sandbox Dashboard keys + `link.sandbox.withterminal.com`),
+and found `GET /connections/current` as a natural "Test connection" target. Numeric rate
+limits remain unreadable — `docs.withterminal.com` is now blocked at the network-policy level
+(proxy CONNECT 403), so that verification still needs a human with a browser.
 The 2026-07-18 mailbox pass found: the doc's auth-model section was already accurate
 (the OAuth2 shipper updated it 2026-07-11 — better than the previous next-up note assumed);
 real drift was the cron cadence (daily 12:30 UTC, not hourly — doc + registry corrected)
@@ -48,4 +55,6 @@ and a new provider-policy nuance: Google Workspace app-password IMAP is conteste
 post-May-2025 (conflicting sources, Google help pages 403-blocked) — operationally moot
 since the Workspace OAuth2 path shipped and the UI steers there. Microsoft side clean:
 `IMAP.AccessAsApp` client-credentials unchanged; April 2026 basic-auth retirement is
-SMTP-AUTH-only (we don't send).
+SMTP-AUTH-only (we don't send). `comdata.md`/`qbo.md`/`factor.md`/`truckstop.md` were all
+refreshed 2026-07-16 through 2026-07-18 (see rows above) and `wex.md` again 2026-07-18 —
+none of those are next-up candidates anymore.
