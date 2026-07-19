@@ -157,6 +157,18 @@ export async function textAppears(page, text, timeout = 20000) {
     .catch(() => false)
 }
 
+/** Boolean-returning inverse of textAppears: resolves true once `text` has left the page. */
+export async function textGone(page, text, timeout = 20000) {
+  return page
+    .waitForFunction(
+      (t) => !document.body.innerText.toLowerCase().includes(t.toLowerCase()),
+      { timeout },
+      text
+    )
+    .then(() => true)
+    .catch(() => false)
+}
+
 export async function waitForPathAndText(page, pathname, text, timeout = 20000) {
   return page
     .waitForFunction(
