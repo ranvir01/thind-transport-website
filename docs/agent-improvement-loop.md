@@ -274,3 +274,10 @@ branch; review each against AGENTS.md; merge clean lanes into
 `claude/hauldesk-project-setup-l1luoo` (octopus or sequential; rebuild + full tests after EACH
 merge); a lane that breaks the build gets its merge skipped and the reason pushed to its
 `Backlog:`. Shared-file changes requested in lane backlogs are made here, once, coherently.
+
+**Before fixing a bug found during a QA drive:** `git log --all --oneline --grep="<short
+description>"` across `claude/*` branches first. With many parallel routines, the same defect
+gets independently found and fixed more than once (three separate branches all fixed the
+`NotificationsBell` unread-badge race on 2026-07-09/10 — none had merged). If a fix already
+exists on an unmerged branch, name that branch in your `Backlog:` instead of writing a fourth
+copy; the integrator should prioritize draining it over any fresh duplicate.
