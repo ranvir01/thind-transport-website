@@ -239,7 +239,7 @@ function FuelSpendPanel({ fuel }: { fuel: FuelSpendSummary }) {
         <Link href="/hub/fuel" className="text-[11px] font-semibold text-accent-text hover:underline">
           Full fuel log →
         </Link>
-        <a href="/api/hub/exports/fuel-spend" className="text-[11px] font-semibold text-accent-text hover:underline">
+        <a href="/api/hub/exports/fuel-spend" download className="text-[11px] font-semibold text-accent-text hover:underline">
           Download CSV
         </a>
       </div>
