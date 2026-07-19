@@ -38,12 +38,18 @@ in the Routines list, delete it by trigger id.
 > lands a SHA Vercel already built as an integrator-branch preview, and Vercel
 > dedupes deployments by SHA, so production can sit stale with no new build
 > queued (found 2026-07-19, prod 194 commits stale despite a "successful"
-> drain). Instead: `git checkout -B main origin/main && git merge --no-ff
-> claude/hauldesk-project-setup-l1luoo -m "Drain integrator to main (<sha>)"
-> && git push origin main` — always a new commit, always a real build. If
-> histories diverged, merge main into the integrator first, re-verify, then
-> drain the same way. Never wait on a PR or another agent — PR #13 is long
-> closed.
+> drain). A bare `--no-ff` merge is ALSO not enough — its tree is identical to
+> the integrator preview and Vercel's dedupe keys on content too (found later
+> the same day: the first --no-ff drain produced no deployment at all). The
+> drain commit must change the tree via `.drain-stamp`:
+> `git checkout -B main origin/main && git merge --no-ff --no-commit
+> claude/hauldesk-project-setup-l1luoo && printf 'sha=%s\ndrained_at=%s\n'
+> "$(git rev-parse claude/hauldesk-project-setup-l1luoo)"
+> "$(date -u +%FT%TZ)" > .drain-stamp && git add .drain-stamp && git commit -m
+> "Drain integrator to main (<sha>)" && git push origin main` — always a new
+> tree, always a real build. If histories diverged, merge main into the
+> integrator first, re-verify, then drain the same way. Never wait on a PR or
+> another agent — PR #13 is long closed.
 >
 > If nothing is pending: pick ONE item from `npm run agent:backlog`, fix it
 > with its test, verify, push the integrator, and stop. End the last commit
