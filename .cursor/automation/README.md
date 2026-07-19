@@ -14,15 +14,6 @@ lane agents ──▶ claude/lane-* ──▶ integrator (:00) ──▶ deploy 
                                               prod smoke (:30) checks thindtransport.com/hub
 ```
 
-## Drain fallback (GitHub Action, `:40` UTC)
-
-[`.github/workflows/drain-fallback.yml`](../../.github/workflows/drain-fallback.yml) is the
-platform-independent backstop learned from the 2026-07-10 Cursor outage (main sat hours behind a
-green integrator). Hourly it checks whether the integrator branch is **>3 commits ahead** of `main`
-and `main` can be **fast-forwarded**; if so it runs build + vitest on the integrator tip and pushes
-the fast-forward. Divergence or a red build = no-op (that stays agent work). It launches **no AI
-agents** — the "Do not use" rule below bans billable agent launches from Actions, not plain CI.
-
 ## Helper scripts
 
 | Command | Purpose |
@@ -52,7 +43,7 @@ When caught up, **Phase B** ships one ranked `Backlog:` item per hour.
 
 ## Drain fallback (GitHub Action, last resort)
 
-`.github/workflows/drain-fallback.yml` (`:20` UTC hourly) covers the 2026-07-10 failure mode:
+`.github/workflows/drain-fallback.yml` (`:15` UTC hourly) covers the 2026-07-10 failure mode:
 both agent platforms down while the integrator sits green ahead of `main`, so production goes
 stale. It fast-forwards `main` to the integrator tip ONLY when integrator is >3 ahead **and**
 `main` hasn't moved in 2h (deploy agent missed a full cycle) **and** the move is a pure
