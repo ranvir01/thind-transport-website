@@ -19,7 +19,7 @@ import {
   driverStopTimestamp, driverUploadDocument,
 } from "@/app/hub/_actions/driver"
 import { openThread } from "@/app/hub/_actions/messages"
-import { runOrQueue } from "@/components/hub/driver/offline-queue"
+import { runOrQueue, type PendingIntent } from "@/components/hub/driver/offline-queue"
 import { FACILITY_NOTE_TAGS, type Stop } from "@/lib/hub/types"
 
 interface LoadForDriver {
@@ -69,7 +69,7 @@ export function DriverLoadCard({ load, detentionFreeMinutes }: { load: LoadForDr
 
   // Every tap runs through the offline queue: no signal, no lost updates.
   const run = (
-    intent: { kind: "status" | "stop" | "ack"; payload: Record<string, unknown> },
+    intent: Extract<PendingIntent, { kind: "status" | "stop" | "ack" }>,
     action: () => Promise<{ ok: boolean; error?: string }>,
     success: string
   ) =>

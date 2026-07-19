@@ -7,16 +7,55 @@
  * forward-only load lifecycle make replays conflict-safe.
  */
 
-export interface QueuedIntent {
-  id: string
-  kind:
-    | "status" | "stop" | "ack" | "upload" | "dvir" | "announcement-ack" | "incident"
-    | "time-off" | "advance" | "facility-note"
-  payload: Record<string, unknown>
-  /** Serialized file for offline photo uploads. */
-  file?: { name: string; type: string; buffer: ArrayBuffer }
-  queuedAt: number
+// Type-only imports: erased at compile time, so the server-action modules
+// never enter this client bundle — we only borrow their input types.
+import type {
+  driverAddFacilityNote, driverRequestAdvance, driverRequestTimeOff,
+} from "@/app/hub/_actions/driver"
+import type { submitDvirAction } from "@/app/hub/_actions/dvir"
+import type { fileDriverIncidentReport } from "@/app/hub/_actions/safety"
+
+/**
+ * One payload type per intent kind, derived from the replayed action's own
+ * input where the action takes an object. Enqueue sites and OfflineSync's
+ * replay both compile against this map, so a renamed form field breaks the
+ * build instead of surfacing hours later as a failed replay in a dead zone.
+ */
+export interface IntentPayloads {
+  status: { loadId: string }
+  stop: { stopId: string; loadId: string; field: "arrived_at" | "departed_at" }
+  ack: { loadId: string }
+  "announcement-ack": { announcementId: string; signature: string | null }
+  /** Replayed as FormData for driverUploadDocument — keep keys in sync with it. */
+  upload: { loadId: string; kind: string; requestId?: string; osd?: 1; amount?: string }
+  dvir: Parameters<typeof submitDvirAction>[0]
+  incident: Parameters<typeof fileDriverIncidentReport>[0]
+  "facility-note": Parameters<typeof driverAddFacilityNote>[0]
+  "time-off": Parameters<typeof driverRequestTimeOff>[0]
+  advance: Parameters<typeof driverRequestAdvance>[0]
 }
+
+export type IntentKind = keyof IntentPayloads
+
+/** Serialized file for offline photo uploads. */
+export interface QueuedFile { name: string; type: string; buffer: ArrayBuffer }
+
+/** What callers hand to runOrQueue — kind discriminates the payload type. */
+export type PendingIntent = {
+  [K in IntentKind]: { kind: K; payload: IntentPayloads[K]; file?: QueuedFile }
+}[IntentKind]
+
+// Persisted rows carry whatever shape was current when queued — the typed map
+// guards call sites at compile time, not old IndexedDB data at replay.
+export type QueuedIntent = {
+  [K in IntentKind]: {
+    id: string
+    kind: K
+    payload: IntentPayloads[K]
+    file?: QueuedFile
+    queuedAt: number
+  }
+}[IntentKind]
 
 const DB_NAME = "hauldesk-driver"
 const STORE = "queue"
@@ -48,9 +87,7 @@ async function withStore<T>(
   })
 }
 
-export async function enqueueIntent(
-  intent: Omit<QueuedIntent, "id" | "queuedAt">
-): Promise<void> {
+export async function enqueueIntent(intent: PendingIntent): Promise<void> {
   const full: QueuedIntent = {
     ...intent,
     id: `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
@@ -96,7 +133,7 @@ export function isOfflineError(err: unknown): boolean {
  * the truth ("saved — sends when you have signal").
  */
 export async function runOrQueue<T extends { ok: boolean; error?: string }>(
-  intent: Omit<QueuedIntent, "id" | "queuedAt">,
+  intent: PendingIntent,
   exec: () => Promise<T>
 ): Promise<T | { ok: true; queued: true }> {
   if (typeof navigator !== "undefined" && navigator.onLine === false) {
