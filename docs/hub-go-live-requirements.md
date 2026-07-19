@@ -4,6 +4,8 @@ This is the checklist to take LoadOff from **demo-ready** to **Thind Transport p
 
 **One-command status:** `npm run connections:check` (with `POSTGRES_URL` pointed at the target DB) prints every env switch, every integration provider's credential/sync state, and the cron schedule — the permanent answer to "is everything connected?". Which paid credentials to chase first is ranked in `docs/integrations/creds-shopping-list.md`.
 
+**One-command readiness gate:** `POSTGRES_URL=<prod url> HUB_DEMO_LOGIN=false npm run go-live:check` verifies this checklist automatically — §1 secrets, migrations, demo lockout, blob/SMTP, §3 free keys, §6 web-push keys, sidecar auth, and Hobby-safe crons. Exit 0 = ready; warnings don't block.
+
 ---
 
 ## 1. Required before anyone logs in (production)
@@ -22,6 +24,7 @@ After env is set:
 ```bash
 npm run db:migrate    # on production DB once
 # Do NOT run seed:demo on production
+npm run go-live:check # every §1 item above is verified here — fix anything ✗
 ```
 
 Create your **owner account** via `/hub/signup` or insert owner user manually, then disable demo logins.
