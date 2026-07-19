@@ -19,7 +19,7 @@
  */
 import pg from "pg"
 import { mkdirSync } from "node:fs"
-import { launchBrowser, BASE, sleep, failures, check, waitForText, login, makeShot, reseed } from "./e2e-lib.mjs"
+import { launchBrowser, BASE, failures, check, waitForText, login, makeShot, reseed } from "./e2e-lib.mjs"
 
 // Fail fast on a fresh rig: the connect step needs CREDENTIALS_KEY in the
 // SERVER env (encrypt-at-rest for hub.api_credentials). Against a localhost
@@ -51,6 +51,28 @@ async function cardText(page) {
     while (node && !node.textContent.includes("Always works without it")) node = node.parentElement
     return node?.textContent ?? ""
   })
+}
+
+/**
+ * Condition-wait scoped to the Docs mailbox card: resolves true once the
+ * card's text matches `pattern` (case-insensitive), false on timeout. The
+ * body-wide textAppears helper would false-positive here — "connected",
+ * "Disconnect it", etc. appear on the other provider cards too.
+ */
+async function cardShows(page, pattern, timeout = 20000) {
+  return page
+    .waitForFunction(
+      (src) => {
+        const heading = [...document.querySelectorAll("h3")].find((h) => h.textContent.includes("Docs mailbox"))
+        let node = heading
+        while (node && !node.textContent.includes("Always works without it")) node = node.parentElement
+        return new RegExp(src, "i").test(node?.textContent ?? "")
+      },
+      { timeout },
+      pattern
+    )
+    .then(() => true)
+    .catch(() => false)
 }
 
 async function clickInCard(page, label) {
@@ -111,10 +133,10 @@ async function main() {
   if (!/not connected/i.test(await cardText(page))) {
     console.log("   (leftover credential from an interrupted run — disconnecting first)")
     await clickInCard(page, "Disconnect")
-    await sleep(300)
+    await cardShows(page, "Disconnect it")
     await clickInCard(page, "Disconnect it")
     await waitForText(page, "the CSV import path keeps working")
-    await sleep(1200)
+    await cardShows(page, "not connected")
     await page.reload({ waitUntil: "networkidle2" })
     await waitForText(page, "Docs mailbox")
   }
@@ -125,7 +147,11 @@ async function main() {
 
   console.log("2. Connect form renders every OAuth2 field from the registry")
   await clickInCard(page, "Connect")
-  await sleep(300)
+  const formOpen = await page
+    .waitForSelector('input[aria-label="Mailbox address"]', { timeout: 20000 })
+    .then(() => true)
+    .catch(() => false)
+  check(formOpen, "connect form opened")
   for (const label of [
     "Mailbox address",
     "App password (Gmail only — M365/Workspace use OAuth2 below)",
@@ -154,17 +180,14 @@ async function main() {
   // another provider's outer Connect button.
   await clickInCard(page, "Connect")
   await waitForText(page, "credentials encrypted at rest")
-  await sleep(1200)
+  check(await cardShows(page, "Sync now"), "connected card offers Sync now (manual mailbox sync is wired)")
   const after = await cardText(page)
   check(/connected/i.test(after) && !/not connected/i.test(after), "card flips to connected")
-  check(/Sync now/.test(after), "connected card offers Sync now (manual mailbox sync is wired)")
   await shot(page, "03-connected")
 
   console.log("4. Edit promises field-level merge (rotate one field, keep the rest)")
   await clickInCard(page, "Edit")
-  await sleep(300)
-  const editText = await cardText(page)
-  check(/Leave a field blank to keep its saved value/.test(editText), "edit form shows the merge hint")
+  check(await cardShows(page, "Leave a field blank to keep its saved value"), "edit form shows the merge hint")
   await shot(page, "04-edit-merge-hint")
   await clickInCard(page, "Cancel")
 
@@ -173,13 +196,12 @@ async function main() {
   // then the destructive "Disconnect it" / "Keep" pair replaces the button.
   await clickInCard(page, "Disconnect")
   // Destructive actions confirm first (IntegrationsPanel confirm step).
-  await sleep(300)
+  const confirmShown = await cardShows(page, "Disconnect it")
   const confirmText = await cardText(page)
-  check(/Disconnect it/.test(confirmText) && /Keep/.test(confirmText), "disconnect asks for confirmation first")
+  check(confirmShown && /Keep/.test(confirmText), "disconnect asks for confirmation first")
   await clickInCard(page, "Disconnect it")
   await waitForText(page, "the CSV import path keeps working")
-  await sleep(1200)
-  check(/not connected/i.test(await cardText(page)), "card back to not connected after disconnect")
+  check(await cardShows(page, "not connected"), "card back to not connected after disconnect")
   await shot(page, "05-disconnected")
 
   console.log("6. Sync now against a dead local endpoint fails honestly, on the spot")
@@ -187,14 +209,18 @@ async function main() {
   // come back with an error toast and a failed ledger row — never a silent
   // nothing — and without any network egress from the sandbox.
   await clickInCard(page, "Connect")
-  await sleep(300)
+  const retryFormOpen = await page
+    .waitForSelector('input[aria-label="Mailbox address"]', { timeout: 20000 })
+    .then(() => true)
+    .catch(() => false)
+  check(retryFormOpen, "connect form reopened for the password set")
   await page.type('input[aria-label="Mailbox address"]', "docs@demo-carrier.example")
   await page.type('input[aria-label="App password (Gmail only — M365/Workspace use OAuth2 below)"]', "wrong-app-password")
   await page.type('input[aria-label="IMAP host (blank = auto per auth method)"]', "127.0.0.1")
   await page.type('input[aria-label="Port (993)"]', "2526")
   await clickInCard(page, "Connect")
   await waitForText(page, "credentials encrypted at rest")
-  await sleep(1200)
+  await cardShows(page, "Sync now")
   await clickInCard(page, "Sync now")
   await waitForText(page, "Sync failed", 30000)
   check(true, "bad credentials surface an immediate error toast")
@@ -215,12 +241,10 @@ async function main() {
 
   console.log("8. Disconnect leaves the demo carrier clean")
   await clickInCard(page, "Disconnect")
-  await sleep(300)
+  await cardShows(page, "Disconnect it")
   await clickInCard(page, "Disconnect it")
   await waitForText(page, "the CSV import path keeps working")
-  await sleep(1200)
-  const finalText = await cardText(page)
-  check(/not connected/i.test(finalText), "card back to not connected after disconnect")
+  check(await cardShows(page, "not connected"), "card back to not connected after disconnect")
   await shot(page, "08-disconnected")
 
   const realErrors = consoleErrors.filter((e) => !/favicon|manifest/i.test(e))
