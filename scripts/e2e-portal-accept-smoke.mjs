@@ -107,6 +107,9 @@ async function main() {
       page.click('button[type="submit"]'),
     ])
     check(page.url().includes("/hub/portal"), `accepting the invitation signs in and lands on /hub/portal (url=${page.url()})`)
+    // The pathname flips before the new document paints; screenshotting in that
+    // gap dies with "Cannot take screenshot with 0 width". Wait for real content.
+    await page.waitForFunction(() => document.body && document.body.innerText.trim().length > 40, { timeout: 15000 })
     await shot(page, "02-signed-in")
 
     console.log("2. Already-used invitation at 390px")
@@ -152,7 +155,9 @@ async function main() {
 
     check(consoleErrors.length === 0, `no console errors (${consoleErrors.length}: ${consoleErrors.slice(0, 2).join(" | ")})`)
   } catch (err) {
-    await shot(page, "ZZ-failure")
+    // Best-effort — if the page is mid-navigation the screenshot itself throws,
+    // and an uncaught rethrow here would mask the real failure message.
+    await shot(page, "ZZ-failure").catch(() => {})
     failures.push(`crash: ${err.message}`)
   } finally {
     await browser.close()

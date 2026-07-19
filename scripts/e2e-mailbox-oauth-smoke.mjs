@@ -60,6 +60,26 @@ async function main() {
   await login(page, "owner@demo.thind")
   await page.goto(`${BASE}/hub/settings/integrations`, { waitUntil: "networkidle2" })
   await waitForText(page, "Docs mailbox")
+
+  // seed:demo does not clear hub.api_credentials, so a crashed earlier run can
+  // leave the card connected. Disconnect through the UI before asserting the
+  // clean starting state (no check() here — absence of the button is the norm).
+  if (/connected/i.test(await cardText(page)) && !/not connected/i.test(await cardText(page))) {
+    console.log("   (leftover connected state from a previous run — disconnecting first)")
+    for (const label of ["Disconnect", "Disconnect it"]) {
+      await page.evaluate((wanted) => {
+        const heading = [...document.querySelectorAll("h3")].find((h) => h.textContent.includes("Docs mailbox"))
+        let node = heading
+        while (node && !node.textContent.includes("Always works without it")) node = node.parentElement
+        const btn = [...(node?.querySelectorAll("button") ?? [])].find((b) => b.textContent.trim() === wanted)
+        btn?.click()
+      }, label)
+      await sleep(600)
+    }
+    await waitForText(page, "the CSV import path keeps working")
+    await sleep(1200)
+  }
+
   const before = await cardText(page)
   check(/not connected/i.test(before), "card starts not connected")
   check(/OAuth2 for Microsoft 365/.test(before), "blurb names the OAuth2 paths")
@@ -111,6 +131,10 @@ async function main() {
 
   console.log("5. Disconnect leaves the demo carrier clean")
   await clickInCard(page, "Disconnect")
+  await sleep(300)
+  // Disconnect confirms in place since 1daecb5 — the destructive button reads
+  // "Disconnect it" next to "Keep".
+  await clickInCard(page, "Disconnect it")
   await waitForText(page, "the CSV import path keeps working")
   await sleep(1200)
   const finalText = await cardText(page)
