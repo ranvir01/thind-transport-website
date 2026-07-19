@@ -11,9 +11,15 @@
 # Learned 2026-07-19 (QA rig drive on main@5218a91): a plain fast-forward push
 # lands the exact commit SHA Vercel already built as an integrator-branch
 # preview. Vercel dedupes deployments by SHA, so the production alias can sit
-# on stale content with no new build ever queued. The fix is to always create
-# a brand-new merge commit — a SHA Vercel has never seen — so production
-# always gets a real build.
+# on stale content with no new build ever queued.
+#
+# Learned again 2026-07-19 (QA rig drive on main@11c9be2): a --no-ff merge
+# commit is NOT enough — its TREE is byte-identical to the integrator tip
+# Vercel already built as a preview, and the dedupe keys on content, not just
+# commit SHA (the first --no-ff drain produced no deployment at all). The
+# drain commit must also change the tree: it writes the drained SHA +
+# timestamp to `.drain-stamp` inside the merge commit, so every drain carries
+# a tree Vercel has never built and production always gets a real build.
 #
 # Scheduled at :17/:47 to stay clear of the fleet crons (:00 integrator,
 # :30 prod smoke, :59 deploy). See docs/agent-improvement-loop.md §3a/§5.
@@ -80,15 +86,22 @@ jobs:
           npm run build
           npx vitest run
 
-      - name: Merge integrator into main (new commit — avoids Vercel SHA dedupe)
+      - name: Merge integrator into main (new commit + stamped tree — defeats Vercel dedupe)
         if: steps.drift.outputs.drain == 'true'
         run: |
           set -euo pipefail
           SHA=$(git rev-parse origin/"$INTEGRATOR")
-          echo "Draining $SHA into main via --no-ff merge"
+          echo "Draining $SHA into main via --no-ff merge with .drain-stamp"
           git checkout -B main origin/main
           git -c user.name="loadoff-drain-bot" -c user.email="noreply@anthropic.com" \
-            merge --no-ff "$SHA" -m "Drain integrator to main ($SHA)"
+            merge --no-ff --no-commit "$SHA"
+          # The stamp gives the merge commit a tree Vercel has never built —
+          # content-level dedupe otherwise skips the production build.
+          printf 'sha=%s\ndrained_at=%s\nrun=%s\n' \
+            "$SHA" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "${GITHUB_RUN_ID:-manual}" > .drain-stamp
+          git add .drain-stamp
+          git -c user.name="loadoff-drain-bot" -c user.email="noreply@anthropic.com" \
+            commit -m "Drain integrator to main ($SHA)"
           # git push (not a raw ref push) refuses non-fast-forward on the local
           # side, so a race with another drain fails safely instead of
           # rewriting main.

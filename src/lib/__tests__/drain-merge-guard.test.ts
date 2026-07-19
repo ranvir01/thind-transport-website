@@ -11,12 +11,24 @@ const OLD_FAST_FORWARD_STEP = `
           git push origin "$SHA":refs/heads/main
 `
 
-const FIXED_MERGE_STEP = `
+const UNSTAMPED_MERGE_STEP = `
       - name: Merge integrator into main (new commit — avoids Vercel SHA dedupe)
         run: |
           SHA=$(git rev-parse origin/"$INTEGRATOR")
           git checkout -B main origin/main
           git merge --no-ff "$SHA" -m "Drain integrator to main ($SHA)"
+          git push origin main
+`
+
+const FIXED_MERGE_STEP = `
+      - name: Merge integrator into main (new commit + stamped tree — defeats Vercel dedupe)
+        run: |
+          SHA=$(git rev-parse origin/"$INTEGRATOR")
+          git checkout -B main origin/main
+          git merge --no-ff --no-commit "$SHA"
+          printf 'sha=%s\\n' "$SHA" > .drain-stamp
+          git add .drain-stamp
+          git commit -m "Drain integrator to main ($SHA)"
           git push origin main
 `
 
@@ -27,7 +39,13 @@ describe("checkDrainWorkflow", () => {
     expect(result.reasons.join(" ")).toMatch(/bare ref-to-branch push/)
   })
 
-  it("passes a --no-ff merge step", () => {
+  it("flags a --no-ff merge without the tree stamp (content dedupe still skips the build)", () => {
+    const result = checkDrainWorkflow(UNSTAMPED_MERGE_STEP)
+    expect(result.ok).toBe(false)
+    expect(result.reasons.join(" ")).toMatch(/\.drain-stamp/)
+  })
+
+  it("passes a --no-ff merge step with the tree stamp", () => {
     const result = checkDrainWorkflow(FIXED_MERGE_STEP)
     expect(result.ok).toBe(true)
     expect(result.reasons).toEqual([])

@@ -126,16 +126,22 @@ merge to reach `main`; the drain is direct. Two deploy-blockers seen in the wild
 validation on the Vercel Hobby plan: sub-daily schedules and (guard) job count — preview deploys skip
 cron validation, so "previews green, production stale" is the signature of a vercel.json cron problem.
 
-**Drain method (fixed 2026-07-19 — was fast-forward, now `--no-ff` merge):** a QA rig drive on
-main@5218a91 found production 194 commits stale even though the drain kept reporting success. Root
-cause: `git push origin <integrator>:main` fast-forward lands the exact commit SHA Vercel already built
-as an integrator-branch preview, and Vercel dedupes deployments by SHA — the production alias can move
-with no new build ever queued. Fix: always drain via a **new merge commit**, never a bare ref push —
-`git checkout -B main origin/main && git merge --no-ff <integrator-sha> -m "Drain integrator to main
-(<sha>)" && git push origin main`. This SHA is one Vercel has never built, so a real production
-deployment is guaranteed. Applied in both `.github/workflows/drain-integrator.yml` and
-`drain-fallback.yml`; any agent draining by hand (Routine 1, §5) must use the same merge form, not a
-raw `git push origin <integrator>:main`.
+**Drain method (fixed twice 2026-07-19 — fast-forward → `--no-ff` merge → `--no-ff` merge +
+`.drain-stamp`):** a QA rig drive on main@5218a91 found production 194 commits stale even though the
+drain kept reporting success. Root cause #1: `git push origin <integrator>:main` fast-forward lands the
+exact commit SHA Vercel already built as an integrator-branch preview, and Vercel dedupes deployments
+by SHA. Root cause #2 (found by the next QA drive, main@11c9be2): a bare `--no-ff` merge commit is a
+NEW SHA but its **tree is byte-identical** to the integrator tip Vercel already built — the dedupe
+keys on content too, and the first `--no-ff` drain produced no deployment at all. Fix: the drain
+commit must also change the tree — merge with `--no-commit`, write the drained SHA + timestamp to
+`.drain-stamp`, `git add`, then commit and push:
+`git checkout -B main origin/main && git merge --no-ff --no-commit <integrator-sha> &&
+printf 'sha=%s\ndrained_at=%s\n' <sha> $(date -u +%FT%TZ) > .drain-stamp && git add .drain-stamp &&
+git commit -m "Drain integrator to main (<sha>)" && git push origin main`. Every drain then carries a
+tree Vercel has never built, so a real production deployment is guaranteed. Applied in both
+`.github/workflows/drain-integrator.yml` and `drain-fallback.yml`, enforced by
+`scripts/drain-merge-guard.mjs`; any agent draining by hand (Routine 1, §5) must use the same stamped
+merge form.
 
 **Platform-independent fallback:** the GitHub Action
 [`drain-integrator`](../.github/workflows/drain-integrator.yml) runs hourly at :15 (staggered against
