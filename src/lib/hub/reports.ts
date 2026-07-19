@@ -3,6 +3,7 @@
  * matches `getDashboardStats`/`truckPnl` (linehaul + FSC, non-cancelled loads).
  */
 import { query, queryOne } from "./db"
+import { getCarrierSettings } from "./settings"
 import type { TruckPnl } from "./expenses"
 
 export interface RevenuePeriod {
@@ -294,6 +295,74 @@ export function truckPnlRangeCsv(rows: TruckPnl[], range: PnlRange): { filename:
     filename: `per-truck-pnl_${range.from}_${range.to}.csv`,
     csv: [headers.join(","), ...body.map((row) => row.map(csvField).join(","))].join("\n"),
   }
+}
+
+/**
+ * Lane leaderboard (M10) — top lanes by margin over a trailing-days window,
+ * computed live from load history with the same aggregation and revenue
+ * definition (linehaul + FSC + accessorials) as `recomputeLanes` (lanes.ts).
+ * Live rather than reading `hub.lanes` because that table is an all-time
+ * cache rebuilt nightly: it can't be date-scoped and is empty until the
+ * first recompute runs.
+ */
+export interface LaneLeaderboardRow {
+  origin_city: string
+  origin_state: string
+  dest_city: string
+  dest_state: string
+  loads_count: number
+  revenue_cents: number
+  miles: number
+  margin_cents: number
+  avg_rpm_cents: number | null
+}
+
+export async function laneLeaderboard(carrierId: string, days = 92, limit = 5): Promise<LaneLeaderboardRow[]> {
+  const settings = await getCarrierSettings(carrierId)
+  const costPerMileCents = settings.costPerMileCents ?? 185
+
+  const rows = await query<{
+    origin_city: string; origin_state: string; dest_city: string; dest_state: string
+    loads_count: number; revenue_cents: string; miles: string; margin_cents: string
+  }>(
+    `SELECT * FROM (
+       SELECT
+         fs.city AS origin_city, fs.state AS origin_state,
+         ls.city AS dest_city, ls.state AS dest_state,
+         COUNT(*)::int AS loads_count,
+         SUM(l.linehaul_cents + l.fuel_surcharge_cents +
+             COALESCE((SELECT SUM((a->>'amount_cents')::bigint) FROM jsonb_array_elements(l.accessorials) a), 0)
+         ) AS revenue_cents,
+         SUM(COALESCE(l.loaded_miles, 0)) AS miles,
+         SUM(l.linehaul_cents + l.fuel_surcharge_cents +
+             COALESCE((SELECT SUM((a->>'amount_cents')::bigint) FROM jsonb_array_elements(l.accessorials) a), 0)
+         ) - SUM(COALESCE(l.loaded_miles, 0)) * $3::int AS margin_cents
+       FROM hub.loads l
+       JOIN LATERAL (SELECT city, state FROM hub.stops WHERE load_id = l.id AND type = 'pickup' ORDER BY sequence LIMIT 1) fs ON TRUE
+       JOIN LATERAL (SELECT city, state FROM hub.stops WHERE load_id = l.id AND type = 'delivery' ORDER BY sequence DESC LIMIT 1) ls ON TRUE
+       WHERE l.carrier_id = $1 AND l.deleted_at IS NULL AND l.status <> 'cancelled'
+         AND l.created_at >= NOW() - ($2 || ' days')::interval
+       GROUP BY fs.city, fs.state, ls.city, ls.state
+     ) lane
+     ORDER BY margin_cents DESC, loads_count DESC
+     LIMIT $4`,
+    [carrierId, days, costPerMileCents, limit]
+  )
+  return rows.map((r) => {
+    const revenue = Number(r.revenue_cents)
+    const miles = Number(r.miles)
+    return {
+      origin_city: r.origin_city,
+      origin_state: r.origin_state,
+      dest_city: r.dest_city,
+      dest_state: r.dest_state,
+      loads_count: Number(r.loads_count),
+      revenue_cents: revenue,
+      miles,
+      margin_cents: Number(r.margin_cents),
+      avg_rpm_cents: miles > 0 ? Math.round(revenue / miles) : null,
+    }
+  })
 }
 
 export async function fuelSpendSummary(carrierId: string): Promise<FuelSpendSummary> {
