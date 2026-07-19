@@ -126,16 +126,22 @@ merge to reach `main`; the drain is direct. Two deploy-blockers seen in the wild
 validation on the Vercel Hobby plan: sub-daily schedules and (guard) job count — preview deploys skip
 cron validation, so "previews green, production stale" is the signature of a vercel.json cron problem.
 
-**Drain method (fixed 2026-07-19 — was fast-forward, now `--no-ff` merge):** a QA rig drive on
-main@5218a91 found production 194 commits stale even though the drain kept reporting success. Root
-cause: `git push origin <integrator>:main` fast-forward lands the exact commit SHA Vercel already built
-as an integrator-branch preview, and Vercel dedupes deployments by SHA — the production alias can move
-with no new build ever queued. Fix: always drain via a **new merge commit**, never a bare ref push —
-`git checkout -B main origin/main && git merge --no-ff <integrator-sha> -m "Drain integrator to main
-(<sha>)" && git push origin main`. This SHA is one Vercel has never built, so a real production
-deployment is guaranteed. Applied in both `.github/workflows/drain-integrator.yml` and
-`drain-fallback.yml`; any agent draining by hand (Routine 1, §5) must use the same merge form, not a
-raw `git push origin <integrator>:main`.
+**Drain method (fixed twice 2026-07-19 — fast-forward → `--no-ff` merge → `--no-ff` merge +
+`.drain-stamp`):** a QA rig drive on main@5218a91 found production 194 commits stale even though the
+drain kept reporting success. Root cause #1: `git push origin <integrator>:main` fast-forward lands the
+exact commit SHA Vercel already built as an integrator-branch preview, and Vercel dedupes deployments
+by SHA. Root cause #2 (found by the next QA drive, main@11c9be2): a bare `--no-ff` merge commit is a
+NEW SHA but its **tree is byte-identical** to the integrator tip Vercel already built — the dedupe
+keys on content too, and the first `--no-ff` drain produced no deployment at all. Fix: the drain
+commit must also change the tree — merge with `--no-commit`, write the drained SHA + timestamp to
+`.drain-stamp`, `git add`, then commit and push:
+`git checkout -B main origin/main && git merge --no-ff --no-commit <integrator-sha> &&
+printf 'sha=%s\ndrained_at=%s\n' <sha> $(date -u +%FT%TZ) > .drain-stamp && git add .drain-stamp &&
+git commit -m "Drain integrator to main (<sha>)" && git push origin main`. Every drain then carries a
+tree Vercel has never built, so a real production deployment is guaranteed. Applied in both
+`.github/workflows/drain-integrator.yml` and `drain-fallback.yml`, enforced by
+`scripts/drain-merge-guard.mjs`; any agent draining by hand (Routine 1, §5) must use the same stamped
+merge form.
 
 **Platform-independent fallback:** the GitHub Action
 [`drain-integrator`](../.github/workflows/drain-integrator.yml) runs hourly at :15 (staggered against
@@ -145,6 +151,13 @@ runner and, only if green, pushes the fast-forward. It never merges a diverged i
 needs an agent) and does nothing in steady state — the hourly agents keep owning the drain; the Action
 only fires when every agent platform is down at once. It can also be triggered manually from the
 Actions tab (`workflow_dispatch`) when a stale production alias needs healing now.
+
+**Automated backstop:** `.github/workflows/drain-integrator.yml` runs at :17 UTC (offset from the
+agent slots). When the integrator is >3 commits ahead of `main` and still a pure fast-forward, it
+verifies that exact SHA (`npm ci`, `npm run build`, `npx vitest run`) and pushes it to `main` with a
+plain non-force push — a race with a live agent is rejected by GitHub, never clobbered. Diverged
+history or drift ≤3 means the loop is alive (or needs a real merge), so the Action stands down and
+leaves it to the agents. This keeps the drain working even when both agent platforms are down at once.
 
 Legacy single-automation files (`hauldesk-improvement-cycle.*`) alias to `loadoff-deploy.*`.
 
@@ -238,7 +251,10 @@ can use session branches and must end commits with `Backlog:`.
 | `claude/lane-roadmap` | new feature files within any ONE existing territory per run | NEW capability from `docs/hauldesk-gap-report`-style gaps: pick the top unbuilt feature a 15-truck carrier needs, build it complete with tests + E2E |
 
 **Prod smoke (Cursor automation, :30 UTC):** run `npm run prod:smoke` — `/hub/login` must return 200
-with `LoadOff` in the body; `/hub` must not 5xx. Any failure → diagnose, fix forward on `main`, push.
+with `LoadOff` in the body; `/hub` must not 5xx; `/api/version` must report `origin/main`'s SHA
+(15-minute grace for in-flight deploys), so a dedupe-swallowed drain alarms within the hour instead
+of after days. A staleness failure means re-drain with a `--no-ff` merge (see "Drain method"), not a
+code fix. Any other failure → diagnose, fix forward on `main`, push.
 When direct prod HTTPS is egress-blocked, fall back to Vercel deployment status (see §3b). This is the
 fleet's no-human rollback trigger.
 

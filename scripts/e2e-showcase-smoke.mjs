@@ -11,9 +11,10 @@
  *   2. Video byte-range serving: Range request on tour-office.mp4 answers 206
  *      (Safari refuses to play mp4 from a server that answers 200-only).
  *   3. Owner: /hub/help shows "Video walkthroughs"; /hub/settings index shows
- *      all four area cards.
- *   4. Accounting: /hub/settings shows only the two non-owner cards
- *      (packet + pricebook) — the index must gate like the nav does.
+ *      all six area cards (users, integrations, branding, packet, pricebook,
+ *      app).
+ *   4. Accounting: /hub/settings shows only the three non-owner cards
+ *      (packet + pricebook + app) — the index must gate like the nav does.
  *
  * Each role gets its own incognito browser context: pages share cookies
  * inside one context, so a second login() would land on an already
@@ -97,10 +98,14 @@ async function main() {
 
     const settings = await page.goto(`${BASE}/hub/settings`, { waitUntil: "networkidle2", timeout: 30000 })
     check(settings.status() === 200, `/hub/settings answers 200 as owner (got ${settings.status()})`)
-    const ownerCards = await page.evaluate(
-      () => document.querySelectorAll(".grid a[href^='/hub/settings/']").length
+    const ownerCards = await page.evaluate(() =>
+      [...document.querySelectorAll(".grid a[href^='/hub/settings/']")].map((a) => a.getAttribute("href"))
     )
-    check(ownerCards === 4, `owner sees all 4 settings area cards (got ${ownerCards})`)
+    const ownerOnly = ["/hub/settings/users", "/hub/settings/integrations", "/hub/settings/branding"]
+    check(
+      ownerCards.length === 6 && ownerOnly.every((href) => ownerCards.includes(href)),
+      `owner sees all 6 settings area cards incl. owner-only ones (got ${ownerCards.join(", ") || "none"})`
+    )
     // authjs "Failed to fetch" right after login is a known cosmetic race — don't fail on it.
     const real = errors.filter((e) => !/favicon|Failed to fetch/.test(e))
     check(real.length === 0, `owner pages console clean (${real.slice(0, 2).join(" | ") || "clean"})`)
@@ -118,8 +123,11 @@ async function main() {
       [...document.querySelectorAll(".grid a[href^='/hub/settings/']")].map((a) => a.getAttribute("href"))
     )
     check(
-      cards.length === 2 && cards.includes("/hub/settings/packet") && cards.includes("/hub/settings/pricebook"),
-      `accounting sees exactly packet + pricebook (got ${cards.join(", ") || "none"})`
+      cards.length === 3 &&
+        ["/hub/settings/packet", "/hub/settings/pricebook", "/hub/settings/app"].every((href) =>
+          cards.includes(href)
+        ),
+      `accounting sees exactly packet + pricebook + app (got ${cards.join(", ") || "none"})`
     )
     await shot(page, "settings-index-accounting")
     await ctx.close()

@@ -33,6 +33,10 @@ npm run prod:smoke
 
 - `GET /hub/login` → 200, HTML contains `LoadOff` (case-insensitive)
 - `GET /hub` → not 5xx
+- `GET /api/version` → its `sha` matches `origin/main` (15-min grace for in-flight
+  deploys). A staleness FAIL means a drain was swallowed (Vercel dedupes builds by
+  SHA): the fix-forward is a re-drain — `git checkout -B main origin/main && git merge
+  --no-ff <integrator-sha> && git push origin main` — not a code change.
 
 ## Guardrails
 

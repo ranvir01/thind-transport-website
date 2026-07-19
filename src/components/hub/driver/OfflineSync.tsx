@@ -19,54 +19,48 @@ import {
 import { submitDvirAction } from "@/app/hub/_actions/dvir"
 import { fileDriverIncidentReport } from "@/app/hub/_actions/safety"
 
+// intent.kind narrows intent.payload via IntentPayloads (offline-queue.ts) —
+// no casts, so a drifted enqueue site fails this file's build, not a replay.
 async function execute(intent: QueuedIntent): Promise<{ ok: boolean; error?: string }> {
   switch (intent.kind) {
     case "status":
-      return driverAdvanceStatus(String(intent.payload.loadId))
+      return driverAdvanceStatus(intent.payload.loadId)
     case "stop":
-      return driverStopTimestamp(
-        String(intent.payload.stopId),
-        String(intent.payload.loadId),
-        intent.payload.field as "arrived_at" | "departed_at"
-      )
+      return driverStopTimestamp(intent.payload.stopId, intent.payload.loadId, intent.payload.field)
     case "ack":
-      return driverAcknowledgeDispatch(String(intent.payload.loadId))
+      return driverAcknowledgeDispatch(intent.payload.loadId)
     case "announcement-ack":
-      return driverAcknowledgeAnnouncement(
-        String(intent.payload.announcementId),
-        intent.payload.signature ? String(intent.payload.signature) : null
-      )
+      return driverAcknowledgeAnnouncement(intent.payload.announcementId, intent.payload.signature)
     case "upload": {
       const formData = new FormData()
-      formData.set("load_id", String(intent.payload.loadId))
-      formData.set("kind", String(intent.payload.kind))
-      if (intent.payload.requestId) formData.set("request_id", String(intent.payload.requestId))
+      formData.set("load_id", intent.payload.loadId)
+      formData.set("kind", intent.payload.kind)
+      if (intent.payload.requestId) formData.set("request_id", intent.payload.requestId)
       if (intent.payload.osd) formData.set("osd", "1")
-      if (intent.payload.amount) formData.set("amount", String(intent.payload.amount))
+      if (intent.payload.amount) formData.set("amount", intent.payload.amount)
       if (intent.file) {
         formData.set("file", new File([intent.file.buffer], intent.file.name, { type: intent.file.type }))
       }
       return driverUploadDocument(formData)
     }
     case "dvir":
-      return submitDvirAction(intent.payload as Parameters<typeof submitDvirAction>[0])
+      return submitDvirAction(intent.payload)
     case "incident":
       // occurredAt was stamped when the driver hit "File the report", so a
       // replay hours later still records the true time of the incident.
-      return fileDriverIncidentReport(
-        intent.payload as Parameters<typeof fileDriverIncidentReport>[0]
-      )
+      return fileDriverIncidentReport(intent.payload)
     case "facility-note":
       // Notes are additive and conflict-safe — replayed hours later they still
       // help the next driver at that dock.
-      return driverAddFacilityNote(
-        intent.payload as Parameters<typeof driverAddFacilityNote>[0]
-      )
+      return driverAddFacilityNote(intent.payload)
     case "time-off":
-      return driverRequestTimeOff(intent.payload as Parameters<typeof driverRequestTimeOff>[0])
+      return driverRequestTimeOff(intent.payload)
     case "advance":
-      return driverRequestAdvance(intent.payload as Parameters<typeof driverRequestAdvance>[0])
+      return driverRequestAdvance(intent.payload)
     default:
+      // Unreachable by type, reachable by data: an intent queued by an older
+      // app version whose kind no longer exists. Drop it rather than jam the
+      // queue behind it.
       return { ok: true }
   }
 }
