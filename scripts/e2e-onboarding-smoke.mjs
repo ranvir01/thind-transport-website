@@ -58,7 +58,7 @@ async function main() {
     fresh.click('button[type="submit"]'),
   ])
   await waitForText(fresh, "Set up your workspace")
-  await shot(fresh, "02-getting-started")
+  await shot(fresh, "04-getting-started")
   const checklist = await fresh.evaluate(() => document.body.innerText)
   if (!checklist.includes("Smart Setup")) throw new Error("Getting-started checklist missing")
   if (checklist.includes("THD-")) throw new Error("NEW TENANT SEES THIND DATA — isolation broken!")
@@ -74,7 +74,7 @@ async function main() {
   const loadsText = await cascade.evaluate(() => document.body.innerText)
   if (!loadsText.includes("CAS-5001")) throw new Error("Cascade load missing")
   if (loadsText.includes("THD-")) throw new Error("CASCADE SEES THIND LOADS — isolation broken!")
-  await shot(cascade, "03-cascade-loads")
+  await shot(cascade, "05-cascade-loads")
   console.log("   zero bleed between tenants ✓")
 
   console.log("3. Platform admin sees tenant ops only")
@@ -85,7 +85,7 @@ async function main() {
   if (!admin.url().includes("/hub/admin")) throw new Error(`Admin landed on ${admin.url()}`)
   await waitForText(admin, "Platform admin")
   await waitForText(admin, "Cascade Demo Lines")
-  await shot(admin, "04-platform-admin")
+  await shot(admin, "06-platform-admin")
   // Bouncing into a tenant surface must redirect back.
   await admin.goto(`${BASE}/hub/loads`, { waitUntil: "networkidle2" })
   if (!admin.url().includes("/hub/admin")) throw new Error("Platform admin reached tenant data!")

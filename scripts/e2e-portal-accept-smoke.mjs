@@ -183,4 +183,7 @@ async function main() {
   console.log("\nPortal accept smoke passed.")
 }
 
-main()
+main().catch((err) => {
+  console.error("\nPortal accept smoke CRASHED:", err.message)
+  process.exit(1)
+})
