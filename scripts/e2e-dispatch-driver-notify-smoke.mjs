@@ -73,7 +73,11 @@ async function main() {
 
   await clickByText(page, "Book load")
   await waitForText(page, "Load booked")
-  await page.waitForFunction(() => /\/hub\/loads\/[0-9a-f-]{36}$/.test(location.pathname), { timeout: 15000 })
+  // createLoadAction awaits geocodeStops() (Nominatim, no hard timeout yet —
+  // see backlog) before redirecting; under concurrent headless-browser load
+  // this saw 15-30s+ round trips locally vs. ~50-300ms in isolation, so give
+  // this wait real headroom instead of flaking on a slow but healthy booking.
+  await page.waitForFunction(() => /\/hub\/loads\/[0-9a-f-]{36}$/.test(location.pathname), { timeout: 30000 })
   await waitForText(page, "Rate")
   const reference = await page.evaluate(() => (document.body.innerText.match(/THD-\d+/) ?? [null])[0])
   check(Boolean(reference), `load booked with a carrier reference (${reference})`)
@@ -128,6 +132,9 @@ async function main() {
     const btn = document.querySelector('button[aria-label^="Notifications"]')
     return btn?.getAttribute("aria-label") ?? null
   })
+  // NotificationsBell.tsx's toggle() now awaits the mark-as-read POST before
+  // calling refresh() (fix for 65fad58's badge-resurrection race), so opening
+  // the feed should reliably clear the unread badge.
   check(badgeAfterOpen === "Notifications", `opening the feed cleared the unread badge (${badgeAfterOpen})`)
 
   const realDispatcherErrors = consoleErrors.filter((e) => !/favicon|manifest/i.test(e))

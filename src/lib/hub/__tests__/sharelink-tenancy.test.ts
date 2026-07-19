@@ -80,3 +80,48 @@ describe("getTrackedLoad scopes the load read by the share link's own carrier_id
     expect(pingParams).toEqual(["truck-1", CARRIER])
   })
 })
+
+/**
+ * Regression (loads/dispatch subsystem audit): the load lookup above got its
+ * carrier_id guard in a prior round, but the stops and position-ping reads
+ * later in the SAME function still keyed off load_id/truck_id alone — the
+ * one truly unauthenticated read path in the whole loads subsystem (no
+ * session, just a 128-bit token) with two of its three queries missing the
+ * carrier_id AGENTS.md requires on every query. Not exploitable today (both
+ * ids are already carrier-scoped upstream by the load lookup / assertCarrierRefs
+ * at write time), but a public route is exactly where defense-in-depth belongs.
+ */
+describe("getTrackedLoad carrier-scopes the stops and position-ping reads", () => {
+  beforeEach(() => {
+    queryMock.mockReset()
+    queryOneMock.mockReset()
+  })
+
+  it("passes carrier_id into the stops query", async () => {
+    queryOneMock.mockResolvedValueOnce({ load_id: OWNED_LOAD, carrier_id: CARRIER })
+    queryOneMock.mockResolvedValueOnce({
+      id: OWNED_LOAD, reference: "THD-1", status: "booked", equipment: "dry_van",
+      truck_id: null, carrier_name: "Thind Transport",
+    })
+    queryMock.mockResolvedValueOnce([])
+    await getTrackedLoad("some-token")
+    const [sql, params] = queryMock.mock.calls[0]
+    expect(String(sql)).toContain("WHERE load_id = $1 AND carrier_id = $2")
+    expect(params).toEqual([OWNED_LOAD, CARRIER])
+  })
+
+  it("passes carrier_id into the position-ping query for an in-transit load", async () => {
+    const TRUCK = "55555555-5555-5555-5555-555555555555"
+    queryOneMock.mockResolvedValueOnce({ load_id: OWNED_LOAD, carrier_id: CARRIER })
+    queryOneMock.mockResolvedValueOnce({
+      id: OWNED_LOAD, reference: "THD-1", status: "in_transit", equipment: "dry_van",
+      truck_id: TRUCK, carrier_name: "Thind Transport",
+    })
+    queryMock.mockResolvedValueOnce([]) // stops
+    queryOneMock.mockResolvedValueOnce(null) // ping
+    await getTrackedLoad("some-token")
+    const [sql, params] = queryOneMock.mock.calls[2]
+    expect(String(sql)).toContain("WHERE truck_id = $1 AND carrier_id = $2")
+    expect(params).toEqual([TRUCK, CARRIER])
+  })
+})
