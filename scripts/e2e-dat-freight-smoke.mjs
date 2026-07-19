@@ -59,6 +59,28 @@ async function main() {
   })
   page.on("pageerror", (err) => consoleErrors.push(`pageerror: ${err.message}`))
 
+  // Self-heal: a crashed earlier run — or a run of an older smoke variant
+  // with no cleanup step — can leave the DAT credential connected, and
+  // seed:demo does not clear hub.api_credentials, so step 1's
+  // disconnected-state checks would fail on every rerun. Disconnect through
+  // the owner UI first (mirrors e2e-mailbox-oauth-smoke.mjs).
+  {
+    const healCtx = await browser.createBrowserContext()
+    const heal = await healCtx.newPage()
+    await heal.setViewport({ width: 1440, height: 900 })
+    await login(heal, "owner@demo.thind")
+    await heal.goto(`${BASE}/hub/settings/integrations`, { waitUntil: "networkidle2" })
+    await waitForText(heal, "DAT load board")
+    if (await clickInDatCard(heal, "Disconnect")) {
+      console.log("   (stale DAT connection from a previous run — disconnecting first)")
+      await sleep(300)
+      await clickInDatCard(heal, "Disconnect it")
+      await waitForText(heal, "the CSV import path keeps working")
+      await sleep(1200)
+    }
+    await healCtx.close()
+  }
+
   console.log("1. Dispatcher sees the DAT panel on the load board, disconnected by default")
   await login(page, "dispatch@demo.thind")
   await page.goto(`${BASE}/hub/loadboard`, { waitUntil: "networkidle2" })
