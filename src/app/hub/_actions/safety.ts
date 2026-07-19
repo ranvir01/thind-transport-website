@@ -3,6 +3,8 @@
 import { revalidatePath } from "next/cache"
 import { requirePermission, getHubUser } from "@/lib/hub/session"
 import { createIncident, updateIncident, type IncidentInput } from "@/lib/hub/incidents"
+import { createClaim, updateClaim, type ClaimKind, type ClaimStatus } from "@/lib/hub/claims"
+import { dollarsToCents } from "@/lib/hub/types"
 import { notifyRoles } from "@/lib/hub/notify"
 import { logAudit } from "@/lib/hub/audit"
 import { actionError } from "@/lib/hub/action-error"
@@ -110,5 +112,62 @@ export async function fileDriverIncidentReport(input: {
     return { ok: true, id: incident.id }
   } catch (err) {
     return actionError(err, "Could not file report")
+  }
+}
+
+export interface ClaimFormInput {
+  kind: ClaimKind
+  status: ClaimStatus
+  loadId?: string | null
+  incidentId?: string | null
+  /** Dollars as typed ("1250.00"); blank clears the amount. */
+  amount?: string
+  filingDeadline?: string | null
+  notes?: string | null
+}
+
+/**
+ * Office-side claim entry/edit (compliance:write). Money-adjacent
+ * (amount_cents), so every save is audited.
+ */
+export async function saveClaim(
+  id: string | null,
+  input: ClaimFormInput
+): Promise<IncidentFormResult> {
+  let user
+  try {
+    user = await requirePermission("compliance:write")
+  } catch (err) {
+    return actionError(err, "Forbidden")
+  }
+  try {
+    const amountCents =
+      input.amount === undefined || input.amount.trim() === ""
+        ? null
+        : dollarsToCents(input.amount)
+    const fields = {
+      kind: input.kind,
+      status: input.status,
+      loadId: input.loadId || null,
+      incidentId: input.incidentId || null,
+      amountCents,
+      filingDeadline: input.filingDeadline || null,
+      notes: input.notes || null,
+    }
+    const claim = id
+      ? await updateClaim(user.carrierId, id, fields)
+      : await createClaim(user.carrierId, fields)
+    if (!claim) return { ok: false, error: "Claim not found" }
+    await logAudit({
+      carrierId: user.carrierId, actorId: user.id, actorName: user.name,
+      entityType: "claim", entityId: claim.id,
+      action: id ? "update" : "create",
+      newValue: { kind: fields.kind, status: fields.status, amountCents, loadId: fields.loadId },
+    })
+    revalidatePath("/hub/safety/claims")
+    revalidatePath("/hub/safety")
+    return { ok: true, id: claim.id }
+  } catch (err) {
+    return actionError(err, "Could not save claim")
   }
 }
