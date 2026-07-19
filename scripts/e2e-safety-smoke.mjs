@@ -14,7 +14,7 @@
  */
 import { mkdirSync, writeFileSync } from "node:fs"
 import path from "node:path"
-import { launchBrowser, BASE, sleep, failures, check, waitForText, waitForPathAndText, login, makeShot, clickByText, reseed } from "./e2e-lib.mjs"
+import { launchBrowser, BASE, failures, check, waitForText, textAppears, textGone, waitForPathAndText, login, makeShot, clickByText, reseed } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-safety"
 mkdirSync(OUT, { recursive: true })
@@ -47,37 +47,42 @@ async function registerCount(page) {
   })
 }
 
+/**
+ * Every tap below runs server-action → toast → router.refresh(), and the card
+ * keeps its buttons disabled until the refresh lands. Toast waits alone race
+ * (a still-visible toast from the previous stop matches), so each tap is gated
+ * on the card's own state flip: the tapped button leaving the page, or the
+ * next tap rendering. "I'm here" is NOT usable as a gate — every un-arrived
+ * stop shows one, so the delivery stop's copy is visible from the start.
+ */
 async function advanceDriverLoadToDelivered(page) {
   await waitForText(page, "THD-")
   await clickByText(page, "confirm this dispatch")
   await waitForText(page, "Dispatch confirmed")
-  await sleep(800)
+  check(await textGone(page, "confirm this dispatch"), "dispatch ack committed (confirm button retired)")
 
   await clickByText(page, "I'm heading to the pickup")
   await waitForText(page, "Status updated")
-  await sleep(800)
+  check(await textGone(page, "I'm heading to the pickup"), "status advanced to at-pickup")
 
   await clickByText(page, "I'm here")
   await waitForText(page, "Arrival recorded")
-  await sleep(800)
+  check(await textAppears(page, "Leaving now"), "pickup arrival committed (depart tap rendered)")
   await clickByText(page, "Leaving now")
   await waitForText(page, "Departure recorded")
-  await sleep(800)
+  check(await textGone(page, "Leaving now"), "pickup departure committed (depart tap retired)")
 
   await clickByText(page, "Loaded — rolling now")
   await waitForText(page, "Status updated")
-  await sleep(800)
+  check(await textGone(page, "Loaded — rolling now"), "status advanced to in-transit")
 
   await clickByText(page, "I'm here")
   await waitForText(page, "Arrival recorded")
-  await sleep(800)
+  check(await textAppears(page, "Leaving now"), "delivery arrival committed (depart tap rendered)")
   await clickByText(page, "Leaving now")
   await waitForText(page, "Departure recorded")
-  await sleep(800)
+  check(await textGone(page, "Leaving now"), "delivery departure committed (depart tap retired)")
 
-  // The arrival/departure waits above can match a still-visible toast from the
-  // previous stop, letting the script outrun the server's status commits; under
-  // full-suite CPU contention the Delivered button then takes >8s to render.
   await clickByText(page, "Delivered", { timeout: 20000 })
   await waitForText(page, "Status updated")
   const delivered = await page
@@ -145,11 +150,11 @@ async function main() {
   await waitForText(page, "Three questions that decide")
   await page.select("#status", "closed")
   await clickByText(page, "Save changes")
+  // "Incident updated" toasts only after the server action resolves, so the
+  // status write is durable — the reload below re-reads committed state.
   await waitForText(page, "Incident updated")
-  await sleep(1200)
   await page.goto(`${BASE}/hub/safety`, { waitUntil: "networkidle2" })
-  const afterCloseWall = await page.evaluate(() => document.body.innerText)
-  check(afterCloseWall.toLowerCase().includes("closed"), "closed incident shows Closed status on Safety")
+  check(await textAppears(page, "closed"), "closed incident shows Closed status on Safety")
   check((await registerCount(page)) === 1, "DOT register still lists the recordable incident after close (390.15 retention)")
   await shot(page, "02-incident-closed")
 
@@ -177,7 +182,9 @@ async function main() {
   await driverPage.type("#inc-desc", "Deer strike — bumper damage only. Everyone safe, truck drivable.")
   await clickByText(driverPage, "File the report")
   await waitForText(driverPage, "Report filed")
-  await sleep(1000)
+  // The form router.push()es home after the toast — wait for the landing
+  // instead of sleeping through the navigation.
+  check(await waitForPathAndText(driverPage, "/hub/driver", "THD-"), "driver returned home after filing the report")
   await shot(driverPage, "04-driver-incident-filed")
 
   console.log("5. Driver delivers lumber load and sends POD with OS&D (opens claim file)")
