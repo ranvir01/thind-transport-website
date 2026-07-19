@@ -17,10 +17,9 @@
  *
  * Usage: node scripts/e2e-mailbox-oauth-smoke.mjs [outputDir]
  */
-import puppeteer from "puppeteer"
 import pg from "pg"
 import { mkdirSync } from "node:fs"
-import { BASE, sleep, failures, check, waitForText, login, makeShot, reseed } from "./e2e-lib.mjs"
+import { launchBrowser, BASE, sleep, failures, check, waitForText, login, makeShot, reseed } from "./e2e-lib.mjs"
 
 // Fail fast on a fresh rig: the connect step needs CREDENTIALS_KEY in the
 // SERVER env (encrypt-at-rest for hub.api_credentials). Against a localhost
@@ -86,10 +85,7 @@ async function main() {
   // State-consuming: connects/disconnects the docs_mailbox credential, and a
   // failed prior run leaves it connected — start from a known-clean seed.
   reseed()
-  const browser = await puppeteer.launch({
-    headless: "new",
-    args: ["--no-sandbox", "--disable-dev-shm-usage"],
-  })
+  const browser = await launchBrowser()
   const page = await browser.newPage()
   await page.setViewport({ width: 1440, height: 900 })
   const consoleErrors = []

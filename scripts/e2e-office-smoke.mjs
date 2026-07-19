@@ -5,16 +5,15 @@
  *
  * Usage: node scripts/e2e-office-smoke.mjs [outputDir]
  */
-import puppeteer from "puppeteer"
 import { mkdirSync } from "node:fs"
-import { BASE, sleep, clickByText, waitForText, login, makeShot } from "./e2e-lib.mjs"
+import { launchBrowser, BASE, sleep, clickByText, waitForText, login, makeShot } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-office"
 mkdirSync(OUT, { recursive: true })
 const shot = makeShot(OUT)
 
 async function main() {
-  const browser = await puppeteer.launch({ headless: "new", args: ["--no-sandbox", "--disable-dev-shm-usage"] })
+  const browser = await launchBrowser()
 
   // ---- Office side (desktop) ----
   const office = await browser.newPage()

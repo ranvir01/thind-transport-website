@@ -18,11 +18,10 @@
  *
  * Usage: node scripts/e2e-sweep.mjs [outputDir]
  */
-import puppeteer from "puppeteer"
 import pg from "pg"
 import { mkdirSync } from "node:fs"
 import path from "node:path"
-import { BASE, sleep, login } from "./e2e-lib.mjs"
+import { launchBrowser, BASE, sleep, login } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-sweep"
 mkdirSync(OUT, { recursive: true })
@@ -164,7 +163,7 @@ async function sweep(page, pages, prefix, width) {
 }
 
 async function main() {
-  const browser = await puppeteer.launch({ headless: "new", args: ["--no-sandbox", "--disable-dev-shm-usage"] })
+  const browser = await launchBrowser()
   const problems = []
 
   // Office at desktop + phone

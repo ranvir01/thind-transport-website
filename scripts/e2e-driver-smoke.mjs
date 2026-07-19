@@ -12,9 +12,8 @@
  * Usage: node scripts/e2e-driver-smoke.mjs [outputDir]
  * Requires: npm run dev (or start) on localhost:3000.
  */
-import puppeteer from "puppeteer"
 import { mkdirSync } from "node:fs"
-import { BASE, sleep, clickByText, waitForText, makeShot, reseed } from "./e2e-lib.mjs"
+import { launchBrowser, BASE, sleep, clickByText, waitForText, makeShot, reseed } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots"
 mkdirSync(OUT, { recursive: true })
@@ -22,10 +21,7 @@ const shot = makeShot(OUT)
 
 async function main() {
   reseed()
-  const browser = await puppeteer.launch({
-    headless: "new",
-    args: ["--no-sandbox", "--disable-dev-shm-usage"],
-  })
+  const browser = await launchBrowser()
   const page = await browser.newPage()
   await page.setViewport({ width: 390, height: 844, deviceScaleFactor: 2 })
 

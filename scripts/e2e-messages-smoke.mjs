@@ -14,9 +14,8 @@
  *
  * Usage: node scripts/e2e-messages-smoke.mjs [outputDir]
  */
-import puppeteer from "puppeteer"
 import { mkdirSync } from "node:fs"
-import { BASE, sleep, failures, check, waitForText, login, makeShot, reseed } from "./e2e-lib.mjs"
+import { launchBrowser, BASE, sleep, failures, check, waitForText, login, makeShot, reseed } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-messages"
 mkdirSync(OUT, { recursive: true })
@@ -37,10 +36,7 @@ async function sendChat(page, text) {
 
 async function main() {
   reseed()
-  const browser = await puppeteer.launch({
-    headless: "new",
-    args: ["--no-sandbox", "--disable-dev-shm-usage"],
-  })
+  const browser = await launchBrowser()
   const consoleErrors = []
   const track = (page) =>
     page.on("console", (msg) => {

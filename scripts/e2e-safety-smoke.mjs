@@ -12,10 +12,9 @@
  *
  * Usage: node scripts/e2e-safety-smoke.mjs [outputDir]
  */
-import puppeteer from "puppeteer"
 import { mkdirSync, writeFileSync } from "node:fs"
 import path from "node:path"
-import { BASE, sleep, failures, check, waitForText, waitForPathAndText, login, makeShot, clickByText, reseed } from "./e2e-lib.mjs"
+import { launchBrowser, BASE, sleep, failures, check, waitForText, waitForPathAndText, login, makeShot, clickByText, reseed } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-safety"
 mkdirSync(OUT, { recursive: true })
@@ -121,10 +120,7 @@ async function main() {
   const fixturePath = path.join(tmpDir, "e2e-safety-pod.pdf")
   writeFileSync(fixturePath, "%PDF-1.4\n% minimal fixture for safety OS&D POD smoke\n")
 
-  const browser = await puppeteer.launch({
-    headless: "new",
-    args: ["--no-sandbox", "--disable-dev-shm-usage"],
-  })
+  const browser = await launchBrowser()
   const page = await browser.newPage()
   await page.setViewport({ width: 1440, height: 900 })
   const consoleErrors = []
