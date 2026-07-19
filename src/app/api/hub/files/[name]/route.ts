@@ -1,9 +1,14 @@
 import { promises as fs } from "fs"
 import { NextResponse } from "next/server"
 import { getHubUser } from "@/lib/hub/session"
-import { localUploadPath } from "@/lib/hub/documents"
+import { localUploadPath, fileOwnerCarrierId } from "@/lib/hub/documents"
 
-/** Serves locally stored Hub documents (dev / non-Blob environments). Auth required. */
+/**
+ * Serves locally stored Hub documents (dev / non-Blob environments).
+ * Auth required, and the file must belong to the requester's carrier —
+ * a signed-in driver or portal user of carrier B must never read carrier A's
+ * PODs, CDL scans, or settlement statements by URL.
+ */
 export async function GET(
   _req: Request,
   { params }: { params: Promise<{ name: string }> }
@@ -14,6 +19,10 @@ export async function GET(
   }
 
   const { name } = await params
+  const owner = await fileOwnerCarrierId(name)
+  if (!owner || (user.role !== "platform_admin" && owner !== user.carrierId)) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 })
+  }
   try {
     const filePath = localUploadPath(name)
     const data = await fs.readFile(filePath)

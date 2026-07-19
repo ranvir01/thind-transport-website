@@ -111,7 +111,7 @@ export async function applySmartScanAction(formData: FormData): Promise<ApplySca
           }
         }
         if (upload) {
-          await attachFile(user.carrierId, "customer", customer.id, "other", upload, null, user.name)
+          await attachFile(user.carrierId, "customer", customer.id, "other", upload, null, user.id)
         }
         await logAudit({
           carrierId: user.carrierId, actorId: user.id, actorName: user.name,
@@ -167,7 +167,7 @@ export async function applySmartScanAction(formData: FormData): Promise<ApplySca
           await attachFile(
             user.carrierId, "truck", truck.id, "registration", upload,
             payload.registration_expiry ? String(payload.registration_expiry) : null,
-            user.name
+            user.id
           )
         }
         revalidatePath("/hub/fleet")
@@ -207,7 +207,7 @@ export async function applySmartScanAction(formData: FormData): Promise<ApplySca
             kind === "cdl"
               ? (payload.cdl_expiry ? String(payload.cdl_expiry) : null)
               : (payload.medical_card_expiry ? String(payload.medical_card_expiry) : null),
-            user.name
+            user.id
           )
         }
         revalidatePath("/hub/drivers")
@@ -229,7 +229,7 @@ export async function applySmartScanAction(formData: FormData): Promise<ApplySca
         }
         await attachFile(
           user.carrierId, "carrier", user.carrierId,
-          docKindForVault(kind), upload, expiry, user.name
+          docKindForVault(kind), upload, expiry, user.id
         )
         revalidatePath("/hub/settings/packet")
         revalidatePath("/hub/setup")

@@ -44,6 +44,19 @@ describe("requestDocumentAction", () => {
     const result = await requestDocumentAction({ driverId: "driver-1", kind: "cdl", loadId: "foreign-load" })
     expect(result).toEqual({ ok: false, error: "Load not found" })
   })
+
+  it("refuses a kind outside the request panel's options — nothing is written or notified", async () => {
+    const result = await requestDocumentAction({ driverId: "driver-1", kind: "ssn_card" })
+    expect(result).toEqual({ ok: false, error: "Pick what you need" })
+    expect(queryMock).not.toHaveBeenCalled()
+  })
+
+  it("accepts each kind the driver request panel actually offers", async () => {
+    for (const kind of ["pod", "bol", "receipt", "cdl", "medical_card", "other"]) {
+      const result = await requestDocumentAction({ driverId: "driver-1", kind })
+      expect(result.ok).toBe(true)
+    }
+  })
 })
 
 describe("cancelDocumentRequestAction", () => {
