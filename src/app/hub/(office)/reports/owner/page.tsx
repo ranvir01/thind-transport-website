@@ -1,14 +1,13 @@
 import Link from "next/link"
 import {
-  weeklyRevenueTrend, monthlyRevenueTrend, arAgingTrend, settlementLiability, fuelSpendSummary,
-  type RevenuePeriod, type AgingTrendPeriod, type SettlementLiability, type FuelSpendSummary,
+  weeklyRevenueTrend, monthlyRevenueTrend, arAgingTrend, settlementLiability, fuelSpendSummary, laneLeaderboard,
+  type RevenuePeriod, type AgingTrendPeriod, type SettlementLiability, type FuelSpendSummary, type LaneLeaderboardRow,
 } from "@/lib/hub/reports"
 import { truckPnl } from "@/lib/hub/expenses"
 import { computeFleetKpis } from "@/lib/hub/kpi"
 import { complianceEntries, summarize, type ComplianceEntry } from "@/lib/hub/compliance"
-import { query } from "@/lib/hub/db"
 import { requirePermissionPage } from "@/lib/hub/session"
-import { fmtCents, type Lane } from "@/lib/hub/types"
+import { fmtCents } from "@/lib/hub/types"
 import { Panel, PageHeader, ExpiryPill } from "@/components/hub/ui"
 
 export const dynamic = "force-dynamic"
@@ -86,11 +85,11 @@ function AgingTrendBars({ periods }: { periods: AgingTrendPeriod[] }) {
   )
 }
 
-function LaneLeaderboardPanel({ lanes }: { lanes: Lane[] }) {
+function LaneLeaderboardPanel({ lanes }: { lanes: LaneLeaderboardRow[] }) {
   if (lanes.length === 0) {
     return (
       <p className="px-4 py-4 text-body-sm text-fg-3">
-        Lane history builds itself from your loads — it recomputes nightly.
+        No loads in the last 92 days — lane stats build themselves from your load history.
       </p>
     )
   }
@@ -109,17 +108,20 @@ function LaneLeaderboardPanel({ lanes }: { lanes: Lane[] }) {
         </thead>
         <tbody>
           {lanes.map((lane) => (
-            <tr key={lane.id} className="border-b border-border last:border-b-0">
+            <tr
+              key={`${lane.origin_city}|${lane.origin_state}|${lane.dest_city}|${lane.dest_state}`}
+              className="border-b border-border last:border-b-0"
+            >
               <td className="max-w-[12rem] truncate px-4 py-2.5 font-semibold text-fg">
                 {lane.origin_city}, {lane.origin_state} → {lane.dest_city}, {lane.dest_state}
               </td>
               <td className="px-4 py-2.5 text-right text-fg-2">{lane.loads_count}</td>
-              <td className="px-4 py-2.5 text-right font-semibold text-accent-text">{fmtCents(Number(lane.revenue_cents))}</td>
+              <td className="px-4 py-2.5 text-right font-semibold text-accent-text">{fmtCents(lane.revenue_cents)}</td>
               <td className="px-4 py-2.5 text-right text-fg-2">
                 {lane.avg_rpm_cents ? `$${(lane.avg_rpm_cents / 100).toFixed(2)}` : "—"}
               </td>
-              <td className={`px-4 py-2.5 text-right font-semibold ${Number(lane.margin_cents) >= 0 ? "text-ok" : "text-bad"}`}>
-                {fmtCents(Number(lane.margin_cents))}
+              <td className={`px-4 py-2.5 text-right font-semibold ${lane.margin_cents >= 0 ? "text-ok" : "text-bad"}`}>
+                {fmtCents(lane.margin_cents)}
               </td>
             </tr>
           ))}
@@ -305,10 +307,7 @@ export default async function OwnerDashboardPage() {
     monthlyRevenueTrend(user.carrierId, 6),
     arAgingTrend(user.carrierId, 8),
     truckPnl(user.carrierId, 92),
-    query<Lane>(
-      `SELECT * FROM hub.lanes WHERE carrier_id = $1 ORDER BY margin_cents DESC LIMIT 5`,
-      [user.carrierId]
-    ),
+    laneLeaderboard(user.carrierId, 92),
     settlementLiability(user.carrierId),
     complianceEntries(user.carrierId),
     fuelSpendSummary(user.carrierId),
@@ -356,7 +355,7 @@ export default async function OwnerDashboardPage() {
         <Panel title="Driver settlement liability">
           <SettlementLiabilityPanel liability={liability} />
         </Panel>
-        <Panel title="Top lanes by margin">
+        <Panel title="Top lanes by margin — last 92 days">
           <LaneLeaderboardPanel lanes={lanes} />
         </Panel>
       </div>
