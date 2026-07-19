@@ -5,7 +5,7 @@ import {
   type GettingStartedKeys,
 } from "../setup-guide"
 
-const VALID_PROGRESS_KEYS: GettingStartedKeys[] = ["trucks", "drivers", "customers", "loads", "packet"]
+const VALID_PROGRESS_KEYS: GettingStartedKeys[] = ["trucks", "drivers", "customers", "loads", "packet", "fuel"]
 
 const allSteps = OPERATIONS_PHASES.flatMap((p) => p.steps)
 
