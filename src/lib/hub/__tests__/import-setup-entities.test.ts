@@ -261,6 +261,6 @@ describe("welcome checklist deep links", () => {
     expect(byKey.trucks).toBe("/hub/import?kind=trucks")
     expect(byKey.drivers).toBe("/hub/import?kind=drivers")
     expect(byKey.customers).toBe("/hub/import?kind=customers")
-    expect(byKey.loads).toBe("/hub/import")
+    expect(byKey.loads).toBe("/hub/import?kind=loads")
   })
 })
