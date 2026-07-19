@@ -34,7 +34,11 @@ install_linux() {
     sudo_cmd=(sudo)
   fi
 
-  "${sudo_cmd[@]}" apt-get update -qq
+  # A failed update (stale third-party PPAs 403/unsigned on cloud rigs) must not
+  # abort the script — install still works from the package lists already on disk.
+  if ! "${sudo_cmd[@]}" apt-get update -qq; then
+    echo "setup-canvas-deps: apt-get update failed — proceeding with existing package lists" >&2
+  fi
   DEBIAN_FRONTEND=noninteractive "${sudo_cmd[@]}" apt-get install -y --no-install-recommends "${DEBIAN_PACKAGES[@]}"
   echo "setup-canvas-deps: installed ${DEBIAN_PACKAGES[*]}"
 }
