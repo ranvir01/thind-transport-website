@@ -4,10 +4,12 @@
  *
  * Usage:
  *   node scripts/agent-loop-status.mjs
- *   AGENT_CATCHUP_THRESHOLD=3 node scripts/agent-loop-status.mjs
+ *   AGENT_CATCHUP_THRESHOLD=3 AGENT_STALL_THRESHOLD_HOURS=24 node scripts/agent-loop-status.mjs
  *
- * Exit 0 = integrator is within threshold of main (steady state OK).
- * Exit 1 = integrator is ahead of main by more than AGENT_CATCHUP_THRESHOLD (catch-up mode).
+ * Exit 0 = steady state (integrator within threshold of main AND moving).
+ * Exit 1 = catch-up mode (integrator ahead of main by more than AGENT_CATCHUP_THRESHOLD).
+ * Exit 2 = integrator stalled (no integrator commit for AGENT_STALL_THRESHOLD_HOURS while
+ *          claude/* branches wait for pickup — drift-vs-main alone cannot see this).
  */
 import { execSync } from "node:child_process"
 import { pathToFileURL } from "node:url"
@@ -15,6 +17,7 @@ import { pathToFileURL } from "node:url"
 const INTEGRATOR = "origin/claude/hauldesk-project-setup-l1luoo"
 const MAIN = "origin/main"
 const THRESHOLD = Number(process.env.AGENT_CATCHUP_THRESHOLD ?? "3")
+const STALL_HOURS = Number(process.env.AGENT_STALL_THRESHOLD_HOURS ?? "24")
 
 const LANES = [
   "lane-office",
@@ -69,18 +72,17 @@ function branchExists(name) {
 }
 
 /**
- * Parse `agent-branch-inventory.mjs --json` output into a pending-branch
- * count, or null when the JSON is unparseable (e.g. a truncated pipe).
- * Never coerce a parse failure to 0 — that once reported "Pending: 0"
- * while 200+ branches were waiting for the integrator.
+ * Parse `agent-branch-inventory.mjs --json` output into a pending count.
+ * Throws on truncated/invalid JSON or a missing `pending` array — the
+ * caller must surface that as UNKNOWN, never as 0 (a silent 0 once hid
+ * 200+ unpicked branches from the integrator).
  */
-export function parsePendingCount(out) {
-  try {
-    const pending = JSON.parse(out).pending
-    return Array.isArray(pending) ? pending.length : null
-  } catch {
-    return null
+export function parsePendingCount(raw) {
+  const data = JSON.parse(raw)
+  if (!Array.isArray(data.pending)) {
+    throw new Error("inventory JSON has no 'pending' array — schema mismatch")
   }
+  return data.pending.length
 }
 
 /**
@@ -98,11 +100,57 @@ function rawUnmergedClaudeBranchCount() {
     .filter((l) => l.startsWith("origin/claude/") && l !== INTEGRATOR).length
 }
 
+/**
+ * Final loop verdict. Pure so tests can cover every mode.
+ *
+ * The July 2026 fleet stall taught us drift-vs-main is the wrong staleness
+ * signal: the integrator sat 6 days dead at 0 drift (nothing merged, so
+ * nothing to drain) while 300+ branches waited, and this script printed
+ * STEADY STATE the whole time. A healthy loop needs the integrator to be
+ * both close to main AND recently moving whenever work is pending.
+ *
+ * pendingCount === null means the inventory failed (UNKNOWN) — treated as
+ * "work may be waiting", never as 0.
+ */
+export function assessLoop({ integratorAhead, integratorAgeHours, pendingCount, threshold, stallHours }) {
+  if (integratorAhead > threshold) {
+    return {
+      mode: "CATCH_UP",
+      exitCode: 1,
+      message: `CATCH-UP MODE: integrator is ${integratorAhead} commits ahead (threshold ${threshold}). Deploy agent should drain integrator → main before new backlog work.`,
+    }
+  }
+  const workMayBeWaiting = pendingCount === null || pendingCount > 0
+  if (integratorAgeHours !== null && integratorAgeHours > stallHours && workMayBeWaiting) {
+    const waiting = pendingCount === null ? "an UNKNOWN number of" : String(pendingCount)
+    return {
+      mode: "STALLED",
+      exitCode: 2,
+      message:
+        `INTEGRATOR STALLED: last integrator commit was ${Math.floor(integratorAgeHours)}h ago ` +
+        `(threshold ${stallHours}h) with ${waiting} claude/* branch(es) waiting for pickup. ` +
+        `Drift vs main is fine, but nothing is being merged — check the :00 integrator automation.`,
+    }
+  }
+  return {
+    mode: "STEADY",
+    exitCode: 0,
+    message: `STEADY STATE: integrator within ${threshold} commits of main and moving.`,
+  }
+}
+
+function lastCommitAgeHours(ref, nowMs = Date.now()) {
+  const out = git(`log -1 --format=%ct ${ref}`)
+  if (!out) return null
+  return (nowMs - Number(out) * 1000) / 3_600_000
+}
+
 function main() {
   git("fetch origin --quiet")
 
   const integratorAhead = revCount(MAIN, INTEGRATOR)
   const mainAhead = revCount(INTEGRATOR, MAIN)
+  const integratorAgeHours = lastCommitAgeHours(INTEGRATOR)
 
   console.log("LoadOff agent loop status")
   console.log("========================")
@@ -110,6 +158,10 @@ function main() {
   console.log(`Main:       ${MAIN}`)
   console.log("")
   console.log(`Integrator ahead of main: ${integratorAhead} commit(s)`)
+  if (integratorAgeHours !== null) {
+    const lastDate = git(`log -1 --format=%ci ${INTEGRATOR}`)
+    console.log(`Integrator last commit:   ${lastDate} (${Math.floor(integratorAgeHours)}h ago)`)
+  }
   if (mainAhead > 0) {
     console.log(`Main ahead of integrator: ${mainAhead} commit(s) — integrator should rebase/merge main`)
   }
@@ -119,22 +171,22 @@ function main() {
     for (const line of logLines(MAIN, INTEGRATOR)) console.log(`  ${line}`)
   }
 
-  let pendingOut = ""
+  let pendingCount = null
   try {
-    pendingOut = execSync("node scripts/agent-branch-inventory.mjs --json", {
+    const pendingOut = execSync("node scripts/agent-branch-inventory.mjs --json", {
       encoding: "utf-8",
       cwd: process.cwd(),
-      maxBuffer: 32 * 1024 * 1024,
+      // 300+ branch rows already exceed 200 KB; leave room to grow well past
+      // execSync's 1 MB default so the child is never SIGTERM-truncated.
+      maxBuffer: 64 * 1024 * 1024,
     })
+    pendingCount = parsePendingCount(pendingOut)
   } catch (err) {
-    // leave pendingOut empty → parsePendingCount returns null below
-    console.log(`\nWARNING: agent-branch-inventory --json failed: ${err.message}`)
+    const reason = String(err?.message ?? err).split("\n")[0]
+    console.log(`\nPending claude/* branches (not on main): UNKNOWN — inventory --json failed: ${reason}`)
+    console.log("  Do not trust this run's steady-state verdict; run: npm run agent:branches")
   }
-  const pendingCount = parsePendingCount(pendingOut)
-  if (pendingCount === null) {
-    console.log("\nPending claude/* branches: UNKNOWN — inventory --json output missing or unparseable.")
-    console.log("  Do NOT treat this as 0. Run: npm run agent:branches")
-  } else {
+  if (pendingCount !== null) {
     console.log(`\nPending claude/* branches (not on main): ${pendingCount}`)
     if (pendingCount > 0) {
       console.log("  Run: npm run agent:branches")
@@ -175,13 +227,15 @@ function main() {
   }
 
   console.log("")
-  if (integratorAhead > THRESHOLD) {
-    console.log(
-      `CATCH-UP MODE: integrator is ${integratorAhead} commits ahead (threshold ${THRESHOLD}). Deploy agent should drain integrator → main before new backlog work.`
-    )
-    process.exit(1)
-  }
-  console.log(`STEADY STATE: integrator within ${THRESHOLD} commits of main.`)
+  const verdict = assessLoop({
+    integratorAhead,
+    integratorAgeHours,
+    pendingCount,
+    threshold: THRESHOLD,
+    stallHours: STALL_HOURS,
+  })
+  console.log(verdict.message)
+  if (verdict.exitCode !== 0) process.exit(verdict.exitCode)
 }
 
 // import-safe: only run when executed directly (tests import parsePendingCount)
