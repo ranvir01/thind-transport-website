@@ -238,7 +238,10 @@ can use session branches and must end commits with `Backlog:`.
 | `claude/lane-roadmap` | new feature files within any ONE existing territory per run | NEW capability from `docs/hauldesk-gap-report`-style gaps: pick the top unbuilt feature a 15-truck carrier needs, build it complete with tests + E2E |
 
 **Prod smoke (Cursor automation, :30 UTC):** run `npm run prod:smoke` — `/hub/login` must return 200
-with `LoadOff` in the body; `/hub` must not 5xx. Any failure → diagnose, fix forward on `main`, push.
+with `LoadOff` in the body; `/hub` must not 5xx; `/api/version` must report `origin/main`'s SHA
+(15-minute grace for in-flight deploys), so a dedupe-swallowed drain alarms within the hour instead
+of after days. A staleness failure means re-drain with a `--no-ff` merge (see "Drain method"), not a
+code fix. Any other failure → diagnose, fix forward on `main`, push.
 When direct prod HTTPS is egress-blocked, fall back to Vercel deployment status (see §3b). This is the
 fleet's no-human rollback trigger.
 
