@@ -134,6 +134,25 @@ export async function waitForText(page, text, timeout = 15000) {
   )
 }
 
+/**
+ * Wait until a client-side navigation has landed on `pathname` AND the page
+ * shows `text`. Retires the fixed-sleep-then-assert pattern after
+ * router.push() flows (form submit → toast → nav), which loses the race
+ * under full-suite CPU contention. Returns true/false instead of throwing
+ * so callers can feed it straight into check().
+ */
+export async function waitForPathAndText(page, pathname, text, timeout = 20000) {
+  return page
+    .waitForFunction(
+      (p, t) => location.pathname === p && document.body.innerText.toLowerCase().includes(t.toLowerCase()),
+      { timeout },
+      pathname,
+      text
+    )
+    .then(() => true)
+    .catch(() => false)
+}
+
 export async function login(page, email, password = "ThindDemo1!") {
   await page.goto(`${BASE}/hub/login`, { waitUntil: "networkidle2" })
   await page.type("#email", email)
