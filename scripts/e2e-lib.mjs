@@ -16,6 +16,163 @@
  * BEFORE `npm install` — the `canvas` devDependency's node-gyp build needs
  * system pangocairo headers, and without them the whole install aborts,
  * which surfaces later as "Cannot find package 'pg'" from every script.
+ *
+ * State-consuming smokes (dispatch, invoices, settlements, advances,
+ * compliance, messages, expenses, fuel, customers, loads, fleet, tasks,
+ * safety, reports) call
+ * reseed() themselves, so no manual seed:demo between runs on a local rig.
+ *
+ * Copy `.env.example` → `.env.local` for local runs. Against a localhost BASE,
+ * this module loads `.env.local` itself (fallback only — shell exports win), so
+ * the same file that configures the server configures the smokes; no separate
+ * in-shell exports needed. Remote drives keep explicit-export discipline
+ * (`.env.local` holds the LOCAL server's secret, which cannot sign cookies the
+ * remote server accepts — silently using it would turn a clear "secret required"
+ * error into baffling 401s): E2E_BASE_URL=https://… POSTGRES_URL=… NEXTAUTH_SECRET=…
+ */
+import path from "node:path"
+import os from "node:os"
+import { existsSync, readFileSync } from "node:fs"
+import { spawnSync } from "node:child_process"
+import puppeteer from "puppeteer"
+
+export const BASE = process.env.E2E_BASE_URL ?? "http://localhost:3000"
+
+// Cloud QA rigs install with PUPPETEER_SKIP_DOWNLOAD=1 (the sandbox egress
+// proxy rejects puppeteer's postinstall Chrome download), so puppeteer has no
+// browser of its own and every smoke dies at launch with "Could not find
+// Chrome". Those rigs ship a Playwright-managed chromium instead; point
+// puppeteer at it — only when nothing is configured and puppeteer's own cache
+// is empty, so a developer's real Chrome install always wins.
+if (!process.env.PUPPETEER_EXECUTABLE_PATH) {
+  const puppeteerCache =
+    process.env.PUPPETEER_CACHE_DIR ?? path.join(os.homedir(), ".cache", "puppeteer")
+  const fallback = [
+    process.env.PLAYWRIGHT_BROWSERS_PATH && path.join(process.env.PLAYWRIGHT_BROWSERS_PATH, "chromium"),
+    "/opt/pw-browsers/chromium",
+  ].find((p) => p && existsSync(p))
+  if (fallback && !existsSync(path.join(puppeteerCache, "chrome"))) {
+    process.env.PUPPETEER_EXECUTABLE_PATH = fallback
+  }
+}
+
+if (/localhost|127\.0\.0\.1/.test(BASE)) {
+  const envPath = path.join(process.cwd(), ".env.local")
+  if (existsSync(envPath)) {
+    for (const line of readFileSync(envPath, "utf-8").split("\n")) {
+      const match = line.match(/^([A-Z0-9_]+)=(.*)$/)
+      if (match && !process.env[match[1]]) process.env[match[1]] = match[2]
+    }
+  }
+}
+
+// Fresh QA rigs (Claude Code cloud containers with the browser download
+// blocked) have no puppeteer cache, but ship a Playwright Chromium. Point
+// puppeteer at it so every smoke launches without a manual export. The
+// PUPPETEER_EXECUTABLE_PATH env var can't do this from here — puppeteer
+// snapshots its configuration when ITS module initializes, which (import
+// order in the smokes) happens before this one — so mutate the shared
+// instance's configuration, which resolveExecutablePath reads at launch().
+if (!process.env.PUPPETEER_EXECUTABLE_PATH) {
+  const pwChromium = path.join(process.env.PLAYWRIGHT_BROWSERS_PATH ?? "/opt/pw-browsers", "chromium")
+  if (!existsSync(path.join(process.env.HOME ?? "/root", ".cache", "puppeteer")) && existsSync(pwChromium)) {
+    puppeteer.configuration.executablePath = pwChromium
+  }
+}
+
+/**
+ * Re-run `scripts/seed-demo.mjs` so state-consuming smokes (dispatch advances
+ * loads, invoices consumes the pod_received steel-beams load, settlements
+ * applies advances, advances decides requests, compliance resolves the seeded
+ * consortium item, messages buries the seeded thread preview, expenses piles
+ * up duplicate rows, fuel drains the unassigned inbox and flips road badges
+ * to reefer, customers accumulates contacts and CRM notes, loads books a new
+ * load and advances the THD- reference counter) start from the
+ * exposure totals and load lifecycle the seed
+ * pins. Runs only against a localhost BASE — a
+ * remote E2E_BASE_URL means the local POSTGRES_URL is not that server's
+ * database, so reseeding would either miss or hit the wrong one; set
+ * E2E_RESEED=1 to force it when the local DB really does back the remote URL.
+ * Throws when the seed fails: a stale seed makes every cent-exact check lie.
+ */
+export function reseed() {
+  if (!/localhost|127\.0\.0\.1/.test(BASE) && process.env.E2E_RESEED !== "1") {
+    console.log("⏭  reseed skipped: E2E_BASE_URL is remote (set E2E_RESEED=1 to force)")
+    return false
+  }
+  console.log("🌱 reseeding demo data (scripts/seed-demo.mjs)")
+  const result = spawnSync(process.execPath, ["scripts/seed-demo.mjs"], { stdio: "inherit" })
+  if (result.status !== 0) {
+    throw new Error("seed-demo.mjs failed — fix the seed before trusting any smoke result")
+  }
+  // hub.carrier_settings is not in the seed's TRUNCATE list, so recurringLanes
+  // rules written by an earlier drive survive the reseed pointing at load ids
+  // that no longer exist; the loads-page rollup then renders dead
+  // /hub/loads/<uuid> anchors that poison any smoke matching load links
+  // generically (the recurring smokes 404 on them). Reset the key with the seed.
+  const cleanup = spawnSync(process.execPath, ["-e", `
+    const { Client } = require("pg");
+    const c = new Client({ connectionString: process.env.POSTGRES_URL });
+    c.connect()
+      .then(() => c.query("UPDATE hub.carrier_settings SET settings = settings - 'recurringLanes' WHERE settings ? 'recurringLanes'"))
+      .then(() => c.end())
+      .catch((err) => { console.error("recurringLanes reset: " + err.message); process.exit(1); });
+  `], { stdio: "inherit" })
+  if (cleanup.status !== 0) {
+    throw new Error("recurringLanes reset failed — stale rules would poison the loads-page rollup")
+  }
+  return true
+}
+
+export const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
+
+/** Failed check labels; scripts report these and exit non-zero at the end. */
+export const failures = []
+
+export const check = (ok, label) => {
+  console.log(`  ${ok ? "✅" : "❌"} ${label}`)
+  if (!ok) failures.push(label)
+}
+
+export async function waitForText(page, text, timeout = 15000) {
+  await page.waitForFunction(
+    (t) => document.body.innerText.toLowerCase().includes(t.toLowerCase()),
+    { timeout },
+    text
+  )
+}
+
+export async function login(page, email, password = "ThindDemo1!") {
+  await page.goto(`${BASE}/hub/login`, { waitUntil: "networkidle2" })
+  await page.type("#email", email)
+  await page.type("#password", password)
+  await Promise.all([
+    page.waitForNavigation({ waitUntil: "networkidle2", timeout: 20000 }),
+    page.click('button[type="submit"]'),
+  ])
+}
+
+/**
+ * Screenshot helper bound to the script's output dir. Retries through the
+ * mid-navigation race: a capture that lands between documents (right after a
+ * submit-click that commits a full navigation) fails with
+ * "Cannot take screenshot with 0 width" or a detached-frame ProtocolError.
+ * One settle-and-retry succeeds; a persistently broken page still throws.
+ */
+export function makeShot(outDir, { fullPage = false } = {}) {
+  return async (page, name) => {
+    let lastErr
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        await page.screenshot({ path: path.join(outDir, `${name}.png`), fullPage })
+        console.log(`  📸 ${name}`)
+        return
+      } catch (err) {
+        lastErr = err
+        await sleep(500)
+      }
+    }
+    throw lastErr
   }
 }
 
