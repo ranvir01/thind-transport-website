@@ -41,6 +41,16 @@ merge integrator → `main`, verify, push — **one merge per run**, no new feat
 
 When caught up, **Phase B** ships one ranked `Backlog:` item per hour.
 
+## Drain fallback (GitHub Action, last resort)
+
+`.github/workflows/drain-fallback.yml` (`:20` UTC hourly) covers the 2026-07-10 failure mode:
+both agent platforms down while the integrator sits green ahead of `main`, so production goes
+stale. It fast-forwards `main` to the integrator tip ONLY when integrator is >3 ahead **and**
+`main` hasn't moved in 2h (deploy agent missed a full cycle) **and** the move is a pure
+fast-forward **and** `npm run build` + `npx vitest run` are green on that tip. It never merges,
+never resolves conflicts, and never launches agents. Kill switch: repo variable
+`DRAIN_FALLBACK_DISABLED=1`.
+
 ## Deprecated (aliases)
 
 The old single-automation files still work for `@` references but are superseded:
@@ -54,6 +64,7 @@ Full playbook: [`docs/agent-improvement-loop.md`](../../docs/agent-improvement-l
 
 - `CURSOR_API_KEY` / `api.cursor.com/v1/agents` — bills outside your subscription
 - GitHub Actions to launch agents — removed from this repo for that reason
+  (the drain-fallback Action above is a plain git job, not an agent)
 
 ## Manual run
 
