@@ -132,13 +132,9 @@ async function main() {
     const btn = document.querySelector('button[aria-label^="Notifications"]')
     return btn?.getAttribute("aria-label") ?? null
   })
-  // KNOWN BUG, not a fresh regression if this fails: NotificationsBell.tsx's
-  // toggle() fires the mark-as-read POST without awaiting it before calling
-  // refresh() (a GET) — the GET routinely wins the race and restores the
-  // stale unread count. Filed by 65fad58 (2026-07-06); already fixed and
-  // ready to merge on multiple small unmerged branches (e.g.
-  // claude/stoic-mccarthy-p50zng, claude/gallant-dijkstra-jzu0rv) — do not
-  // re-implement the fix again, just get one of those merged.
+  // NotificationsBell.tsx's toggle() now awaits the mark-as-read POST before
+  // calling refresh() (fix for 65fad58's badge-resurrection race), so opening
+  // the feed should reliably clear the unread badge.
   check(badgeAfterOpen === "Notifications", `opening the feed cleared the unread badge (${badgeAfterOpen})`)
 
   const realDispatcherErrors = consoleErrors.filter((e) => !/favicon|manifest/i.test(e))
