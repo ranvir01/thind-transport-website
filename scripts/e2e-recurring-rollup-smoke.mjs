@@ -25,6 +25,20 @@ import pg from "pg"
 import { mkdirSync } from "node:fs"
 import { BASE, failures, check, waitForText, login, makeShot, reseed, clickByText } from "./e2e-lib.mjs"
 
+// Fail fast on a fresh rig: the cron step authenticates with Bearer CRON_SECRET.
+// Against a localhost BASE, e2e-lib has already loaded .env.local into this
+// process — the same file the server reads — so an empty value here means every
+// cron call 401s and the smoke burns ~25s before dying on a wait timeout.
+// Remote BASEs skip the check (the remote server's env is not visible here).
+if (/localhost|127\.0\.0\.1/.test(BASE) && !process.env.CRON_SECRET) {
+  console.error(
+    "e2e-recurring-rollup-smoke: CRON_SECRET missing in .env.local — the cron " +
+      "endpoint will 401 and no rule can ever book. Set CRON_SECRET in " +
+      ".env.local, restart the server, rerun."
+  )
+  process.exit(1)
+}
+
 const OUT = process.argv[2] ?? "e2e-shots-recurring-rollup"
 mkdirSync(OUT, { recursive: true })
 const shot = makeShot(OUT, { fullPage: true })
