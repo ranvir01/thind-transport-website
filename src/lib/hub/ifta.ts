@@ -309,13 +309,13 @@ export async function exportIftaSources(carrierId: string, quarter: string): Pro
   const { start, end } = quarterRange(quarter)
   const pings = await query<{ unit_number: string; ts: string; lat: number; lng: number; odometer: string | null }>(
     `SELECT t.unit_number, p.ts, p.lat, p.lng, p.odometer
-     FROM hub.position_pings p JOIN hub.trucks t ON t.id = p.truck_id
+     FROM hub.position_pings p JOIN hub.trucks t ON t.id = p.truck_id AND t.carrier_id = p.carrier_id
      WHERE p.carrier_id = $1 AND p.ts >= $2 AND p.ts < $3 ORDER BY t.unit_number, p.ts`,
     [carrierId, start.toISOString(), end.toISOString()]
   )
   const fuel = await query<{ unit_number: string | null; ts: string; jurisdiction: string | null; gallons: string; fuel_use: string; total_cents: number; merchant: string | null }>(
     `SELECT t.unit_number, f.ts, f.jurisdiction, f.gallons, f.fuel_use, f.total_cents, f.merchant
-     FROM hub.fuel_transactions f LEFT JOIN hub.trucks t ON t.id = f.truck_id
+     FROM hub.fuel_transactions f LEFT JOIN hub.trucks t ON t.id = f.truck_id AND t.carrier_id = f.carrier_id
      WHERE f.carrier_id = $1 AND f.ts >= $2 AND f.ts < $3 ORDER BY f.ts`,
     [carrierId, start.toISOString(), end.toISOString()]
   )

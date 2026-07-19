@@ -240,20 +240,20 @@ export async function truckPnlRange(carrierId: string, range: PnlRange): Promise
   const rows = await query<TruckPnl>(
     `SELECT t.id AS truck_id, t.unit_number,
        COALESCE((SELECT SUM(l.linehaul_cents + l.fuel_surcharge_cents) FROM hub.loads l
-         WHERE l.truck_id = t.id AND l.deleted_at IS NULL AND l.status <> 'cancelled'
+         WHERE l.truck_id = t.id AND l.carrier_id = t.carrier_id AND l.deleted_at IS NULL AND l.status <> 'cancelled'
            AND l.created_at >= $2::date AND l.created_at < $3::date + 1), 0) AS revenue_cents,
        COALESCE((SELECT SUM(f.total_cents) FROM hub.fuel_transactions f
-         WHERE f.truck_id = t.id AND f.ts >= $2::date AND f.ts < $3::date + 1), 0) AS fuel_cents,
+         WHERE f.truck_id = t.id AND f.carrier_id = t.carrier_id AND f.ts >= $2::date AND f.ts < $3::date + 1), 0) AS fuel_cents,
        COALESCE((SELECT SUM(m.cost_cents) FROM hub.maintenance_records m
-         WHERE m.truck_id = t.id AND m.done_on BETWEEN $2::date AND $3::date), 0) AS maintenance_cents,
+         WHERE m.truck_id = t.id AND m.carrier_id = t.carrier_id AND m.done_on BETWEEN $2::date AND $3::date), 0) AS maintenance_cents,
        COALESCE((SELECT SUM(e.amount_cents) FROM hub.expenses e
-         WHERE e.truck_id = t.id AND e.category NOT IN ('fuel','maintenance')
+         WHERE e.truck_id = t.id AND e.carrier_id = t.carrier_id AND e.category NOT IN ('fuel','maintenance')
            AND e.incurred_on BETWEEN $2::date AND $3::date), 0) AS other_expense_cents,
        (SELECT SUM(l.loaded_miles) FROM hub.loads l
-         WHERE l.truck_id = t.id AND l.deleted_at IS NULL AND l.status <> 'cancelled'
+         WHERE l.truck_id = t.id AND l.carrier_id = t.carrier_id AND l.deleted_at IS NULL AND l.status <> 'cancelled'
            AND l.created_at >= $2::date AND l.created_at < $3::date + 1) AS loaded_miles,
        (SELECT SUM(l.deadhead_miles) FROM hub.loads l
-         WHERE l.truck_id = t.id AND l.deleted_at IS NULL AND l.status <> 'cancelled'
+         WHERE l.truck_id = t.id AND l.carrier_id = t.carrier_id AND l.deleted_at IS NULL AND l.status <> 'cancelled'
            AND l.created_at >= $2::date AND l.created_at < $3::date + 1) AS deadhead_miles,
        0 AS net_cents
      FROM hub.trucks t
