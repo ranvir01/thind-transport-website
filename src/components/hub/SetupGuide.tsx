@@ -5,6 +5,7 @@ import {
   HAULDESK_MISSION,
   OPERATIONS_PHASES,
   SETUP_CHECKLIST,
+  showSetupChecklist,
   type GettingStartedKeys,
 } from "@/lib/hub/setup-guide"
 import { Panel } from "@/components/hub/ui"
@@ -146,17 +147,7 @@ export function SetupChecklist({
 }: {
   progress: Record<GettingStartedKeys, boolean> | null
 }) {
-  if (!progress) return null
-  const allDone = Object.values(progress).every(Boolean)
-  if (allDone) return null
-
-  const coreDone =
-    progress.trucks &&
-    progress.drivers &&
-    progress.customers &&
-    progress.loads
-  const onlyPacketLeft = coreDone && !progress.packet
-  if (onlyPacketLeft) return null
+  if (!progress || !showSetupChecklist(progress)) return null
 
   return (
     <Panel className="p-4 md:p-5 mb-4 border-accent">
