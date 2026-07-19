@@ -15,7 +15,7 @@
 import puppeteer from "puppeteer"
 import { mkdirSync, writeFileSync } from "node:fs"
 import path from "node:path"
-import { BASE, sleep, failures, check, waitForText, login, makeShot, clickByText, reseed } from "./e2e-lib.mjs"
+import { BASE, sleep, failures, check, waitForText, waitForPathAndText, login, makeShot, clickByText, reseed } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-safety"
 mkdirSync(OUT, { recursive: true })
@@ -81,11 +81,14 @@ async function advanceDriverLoadToDelivered(page) {
   // full-suite CPU contention the Delivered button then takes >8s to render.
   await clickByText(page, "Delivered", { timeout: 20000 })
   await waitForText(page, "Status updated")
-  await sleep(1200)
-  check(
-    (await page.evaluate(() => document.body.innerText)).toLowerCase().includes("delivered — send the pod"),
-    "load is delivered and awaiting POD"
-  )
+  const delivered = await page
+    .waitForFunction(
+      () => document.body.innerText.toLowerCase().includes("delivered — send the pod"),
+      { timeout: 20000 }
+    )
+    .then(() => true)
+    .catch(() => false)
+  check(delivered, "load is delivered and awaiting POD")
 }
 
 /**
@@ -162,18 +165,9 @@ async function main() {
   await page.type("#description", "Backed into a gate post at 5 mph. No injuries, truck drivable.")
   await clickByText(page, "Log incident")
   await waitForText(page, "Incident logged")
-  // The form router.push()es back to /hub/safety after the toast; under
-  // full-suite load that client nav takes longer than a fixed sleep, so wait
-  // for the register itself to show the new incident.
-  const officeIncidentListed = await page
-    .waitForFunction(
-      (t) => location.pathname === "/hub/safety" && document.body.innerText.includes(t),
-      { timeout: 20000 },
-      OFFICE_INCIDENT
-    )
-    .then(() => true)
-    .catch(() => false)
-  check(officeIncidentListed, "new office incident appears on Safety")
+  // The form router.push()es back to /hub/safety after the toast; wait for
+  // the register itself to show the new incident.
+  check(await waitForPathAndText(page, "/hub/safety", OFFICE_INCIDENT), "new office incident appears on Safety")
   await shot(page, "03-office-incident-logged")
 
   console.log("4. Driver files a first report at 390px")
@@ -198,9 +192,11 @@ async function main() {
 
   console.log("6. Dispatcher sees the draft-claim alert in notifications")
   await page.goto(`${BASE}/hub`, { waitUntil: "networkidle2" })
-  await sleep(1500)
+  await page.waitForSelector('button[aria-label^="Notifications"]', { timeout: 20000 })
   await page.click('button[aria-label^="Notifications"]')
-  await sleep(800)
+  await page
+    .waitForFunction(() => document.body.innerText.toLowerCase().includes("draft claim"), { timeout: 20000 })
+    .catch(() => {})
   const notify = await page.evaluate(() => document.body.innerText)
   check(notify.toLowerCase().includes("draft claim"), "notification mentions the draft claim opened from OS&D POD")
   check(notify.includes("THD-"), "notification references the load")
@@ -208,7 +204,9 @@ async function main() {
 
   console.log("7. Driver cannot reach the office Safety screen")
   await driverPage.goto(`${BASE}/hub/safety`, { waitUntil: "networkidle2" })
-  await sleep(800)
+  await driverPage
+    .waitForFunction(() => location.pathname !== "/hub/safety", { timeout: 20000 })
+    .catch(() => {})
   const blocked = await driverPage.evaluate(() => ({
     url: location.pathname,
     seesRegister: document.body.innerText.includes("DOT accident register"),
