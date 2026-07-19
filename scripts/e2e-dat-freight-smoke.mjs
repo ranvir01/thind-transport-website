@@ -45,6 +45,18 @@ const OUT = process.argv[2] ?? "e2e-shots-dat-freight"
 mkdirSync(OUT, { recursive: true })
 const shot = makeShot(OUT, { fullPage: true })
 
+/**
+ * Disconnect on an integrations card is a two-click confirm flow
+ * (Disconnect → "Disconnect it"); one click only opens the confirm step
+ * and leaves the credential saved.
+ */
+async function disconnectDat(ownerPage) {
+  await clickByText(ownerPage, "Disconnect").catch(() => {})
+  await new Promise((r) => setTimeout(r, 250))
+  await clickByText(ownerPage, "Disconnect it").catch(() => {})
+  await waitForText(ownerPage, "the CSV import path keeps working").catch(() => {})
+}
+
 async function main() {
   reseed()
   const browser = await puppeteer.launch({
