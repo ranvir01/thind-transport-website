@@ -77,7 +77,10 @@ export async function truckDvirState(
     `${DVIR_SELECT}
      WHERE v.carrier_id = $1 AND v.truck_id = $2 AND v.type = 'post'
        AND jsonb_array_length(v.defects) > 0
-       AND NOT EXISTS (SELECT 1 FROM hub.dvirs r WHERE r.prior_dvir_id = v.id AND r.carrier_id = v.carrier_id)
+       AND NOT EXISTS (
+         SELECT 1 FROM hub.dvirs r
+         WHERE r.prior_dvir_id = v.id AND r.carrier_id = v.carrier_id AND r.truck_id = v.truck_id
+       )
      ORDER BY v.created_at DESC LIMIT 1`,
     [carrierId, truckId]
   )
@@ -104,6 +107,19 @@ export async function submitDvir(
   const client = await hubDb().connect()
   try {
     await client.query("BEGIN")
+    // prior_dvir_id is a client-supplied cross-table ref: it must be this
+    // carrier's DVIR on this same truck, or the 396.13 review chain can be
+    // forged — a foreign reference suppresses truckDvirState's open defect,
+    // and a certified DVIR from another truck would release this one unrepaired.
+    let prior: { repair_certified_at: string | null } | null = null
+    if (input.priorDvirId) {
+      const priorLookup = await client.query(
+        `SELECT repair_certified_at FROM hub.dvirs WHERE id = $1 AND carrier_id = $2 AND truck_id = $3`,
+        [input.priorDvirId, carrierId, input.truckId]
+      )
+      prior = priorLookup.rows[0] ?? null
+      if (!prior) throw new Error("Prior inspection not found on this truck")
+    }
     const { rows } = await client.query(
       `INSERT INTO hub.dvirs (carrier_id, truck_id, driver_id, type, odometer, checklist, defects,
          safe_to_operate, signature, signed_name, prior_dvir_id)
@@ -137,19 +153,13 @@ export async function submitDvir(
       grounded = true
     }
 
-    if (input.type === "pre" && input.priorDvirId) {
+    if (input.type === "pre" && prior?.repair_certified_at) {
       // 396.13(c): the reviewing driver's signature releases a certified truck.
-      const prior = await client.query(
-        `SELECT repair_certified_at FROM hub.dvirs WHERE id = $1 AND carrier_id = $2`,
-        [input.priorDvirId, carrierId]
+      await client.query(
+        `UPDATE hub.trucks SET status = 'active', updated_at = NOW()
+         WHERE carrier_id = $1 AND id = $2 AND status = 'shop'`,
+        [carrierId, input.truckId]
       )
-      if (prior.rows[0]?.repair_certified_at) {
-        await client.query(
-          `UPDATE hub.trucks SET status = 'active', updated_at = NOW()
-           WHERE carrier_id = $1 AND id = $2 AND status = 'shop'`,
-          [carrierId, input.truckId]
-        )
-      }
     }
 
     await client.query("COMMIT")
