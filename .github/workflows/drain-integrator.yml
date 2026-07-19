@@ -3,9 +3,17 @@
 # the :59 deploy agent silently stopped merging, and the production alias sat
 # hours behind a green integrator. This Action is the platform-independent
 # backstop: when the integrator is more than AGENT_CATCHUP_THRESHOLD commits
-# ahead of main AND build+tests are green on the integrator SHA, fast-forward
-# main. It never merges — a diverged history is left for the agents, so this
-# workflow can only publish history that already exists on the integrator.
+# ahead of main AND build+tests are green on the integrator SHA, land it on
+# main. It never merges conflicting history — a diverged main is left for the
+# agents, so this workflow only ever publishes history that already exists on
+# the integrator (via a --no-ff merge commit, never a rebase or squash).
+#
+# Learned 2026-07-19 (QA rig drive on main@5218a91): a plain fast-forward push
+# lands the exact commit SHA Vercel already built as an integrator-branch
+# preview. Vercel dedupes deployments by SHA, so the production alias can sit
+# on stale content with no new build ever queued. The fix is to always create
+# a brand-new merge commit — a SHA Vercel has never seen — so production
+# always gets a real build.
 #
 # Scheduled at :17/:47 to stay clear of the fleet crons (:00 integrator,
 # :30 prod smoke, :59 deploy). See docs/agent-improvement-loop.md §3a/§5.
@@ -49,8 +57,8 @@ jobs:
             exit 0
           fi
           if ! git merge-base --is-ancestor origin/main origin/"$INTEGRATOR"; then
-            echo "::warning::Integrator and main have diverged — fast-forward impossible."
-            echo "Leaving the merge to the deploy agent / a human; this job only fast-forwards."
+            echo "::warning::Integrator and main have diverged — cannot drain safely."
+            echo "Leaving the merge to the deploy agent / a human; this job only drains linear history."
             echo "drain=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
@@ -72,11 +80,16 @@ jobs:
           npm run build
           npx vitest run
 
-      - name: Fast-forward main
+      - name: Merge integrator into main (new commit — avoids Vercel SHA dedupe)
         if: steps.drift.outputs.drain == 'true'
         run: |
+          set -euo pipefail
           SHA=$(git rev-parse origin/"$INTEGRATOR")
-          echo "Fast-forwarding main to $SHA"
-          # A plain push refuses non-fast-forward, so a race with the :59 agent
-          # fails safely instead of rewriting main.
-          git push origin "$SHA":refs/heads/main
+          echo "Draining $SHA into main via --no-ff merge"
+          git checkout -B main origin/main
+          git -c user.name="loadoff-drain-bot" -c user.email="noreply@anthropic.com" \
+            merge --no-ff "$SHA" -m "Drain integrator to main ($SHA)"
+          # git push (not a raw ref push) refuses non-fast-forward on the local
+          # side, so a race with another drain fails safely instead of
+          # rewriting main.
+          git push origin main

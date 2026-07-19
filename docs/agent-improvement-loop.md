@@ -121,11 +121,21 @@ Prompts: `loadoff-integrator.prompt.md`, `loadoff-prod-smoke.prompt.md`, `loadof
 Cursor's cloud VMs went read-only for a stretch, the :59 deploy agent silently stopped merging, and the
 production alias sat hours behind a green integrator — everything looked like "Vercel is broken" when
 Vercel was fine. Rule: ANY agent (Claude routine or Cursor) that finds catch-up mode with a green
-integrator drains it (`git push origin <integrator>:main` fast-forward, or merge when diverged) before
-its own work. PR #13 is merged/closed (2026-07-03) — never wait on a PR merge to reach `main`; the
-drain is a direct push. Two deploy-blockers seen in the wild so far, both cron validation on the Vercel
-Hobby plan: sub-daily schedules and (guard) job count — preview deploys skip cron validation, so
-"previews green, production stale" is the signature of a vercel.json cron problem.
+integrator drains it before its own work. PR #13 is merged/closed (2026-07-03) — never wait on a PR
+merge to reach `main`; the drain is direct. Two deploy-blockers seen in the wild so far, both cron
+validation on the Vercel Hobby plan: sub-daily schedules and (guard) job count — preview deploys skip
+cron validation, so "previews green, production stale" is the signature of a vercel.json cron problem.
+
+**Drain method (fixed 2026-07-19 — was fast-forward, now `--no-ff` merge):** a QA rig drive on
+main@5218a91 found production 194 commits stale even though the drain kept reporting success. Root
+cause: `git push origin <integrator>:main` fast-forward lands the exact commit SHA Vercel already built
+as an integrator-branch preview, and Vercel dedupes deployments by SHA — the production alias can move
+with no new build ever queued. Fix: always drain via a **new merge commit**, never a bare ref push —
+`git checkout -B main origin/main && git merge --no-ff <integrator-sha> -m "Drain integrator to main
+(<sha>)" && git push origin main`. This SHA is one Vercel has never built, so a real production
+deployment is guaranteed. Applied in both `.github/workflows/drain-integrator.yml` and
+`drain-fallback.yml`; any agent draining by hand (Routine 1, §5) must use the same merge form, not a
+raw `git push origin <integrator>:main`.
 
 Legacy single-automation files (`hauldesk-improvement-cycle.*`) alias to `loadoff-deploy.*`.
 

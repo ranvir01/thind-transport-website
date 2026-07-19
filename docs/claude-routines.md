@@ -3,9 +3,10 @@
 Cursor's subscription ended 2026-07-18; its three automations (integrator :00,
 prod smoke :30, deploy :59) are replaced by **Claude Code routines** (claude.ai
 → Code → Routines, simple Hourly/Daily triggers) plus the platform-independent
-**GitHub Action** `.github/workflows/drain-integrator.yml`, which fast-forwards
+**GitHub Action** `.github/workflows/drain-integrator.yml`, which drains
 `main` at :17/:47 whenever the integrator is >3 ahead and green — so the drain
-survives even every routine being down.
+survives even every routine being down. (Fixed 2026-07-19: this drains via a
+`--no-ff` merge commit, not a fast-forward push — see below.)
 
 Each routine fires a fresh session: prompts are standalone. House rules live in
 AGENTS.md and docs/agent-improvement-loop.md; commits as
@@ -32,10 +33,17 @@ in the Routines list, delete it by trigger id.
 > when the integrator already carries a newer superset of the same work, keep
 > HEAD. Skip (and note) any branch that stays red after one honest fix attempt.
 >
-> When the integrator is green and ahead of main: drain with a direct
-> `git push origin claude/hauldesk-project-setup-l1luoo:main` (fast-forward;
-> if histories diverged, merge main into the integrator first, re-verify, then
-> push both). Never wait on a PR or another agent — PR #13 is long closed.
+> When the integrator is green and ahead of main: drain it directly — do NOT
+> use a bare fast-forward ref push (`git push origin <integrator>:main`); that
+> lands a SHA Vercel already built as an integrator-branch preview, and Vercel
+> dedupes deployments by SHA, so production can sit stale with no new build
+> queued (found 2026-07-19, prod 194 commits stale despite a "successful"
+> drain). Instead: `git checkout -B main origin/main && git merge --no-ff
+> claude/hauldesk-project-setup-l1luoo -m "Drain integrator to main (<sha>)"
+> && git push origin main` — always a new commit, always a real build. If
+> histories diverged, merge main into the integrator first, re-verify, then
+> drain the same way. Never wait on a PR or another agent — PR #13 is long
+> closed.
 >
 > If nothing is pending: pick ONE item from `npm run agent:backlog`, fix it
 > with its test, verify, push the integrator, and stop. End the last commit

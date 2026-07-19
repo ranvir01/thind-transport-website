@@ -165,6 +165,13 @@ export default async function LoadDetailPage({ params }: { params: Promise<{ id:
             <h2 className="text-[13.5px] font-semibold text-fg mb-4">
               Stops
             </h2>
+            {stops.length === 0 ? (
+              <p className="text-body-sm text-fg-3">
+                No stops on this load yet —{" "}
+                <Link href={`/hub/loads/${id}/edit`} className="text-accent-text">edit the load</Link>{" "}
+                to add pickup and delivery stops.
+              </p>
+            ) : null}
             <ol className="space-y-4">
               {stops.map((stop, i) => (
                 <li key={stop.id} className="flex gap-3">
@@ -275,6 +282,9 @@ export default async function LoadDetailPage({ params }: { params: Promise<{ id:
           {/* Unified event timeline */}
           <Panel className="p-4 md:p-5">
             <h2 className="text-[13.5px] font-semibold text-fg mb-3">Timeline</h2>
+            {events.length === 0 ? (
+              <p className="text-body-sm text-fg-3">No activity yet — status changes, check calls, and documents land here.</p>
+            ) : null}
             <ol className="space-y-2.5 max-h-[420px] overflow-y-auto pr-1">
               {[...events].reverse().map((event) => {
                 const Icon = eventIcon(event.kind)
