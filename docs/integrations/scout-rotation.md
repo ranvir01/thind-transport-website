@@ -9,7 +9,7 @@ as an urgent `Backlog:` item.
 
 | Provider | Code status | Credential fields | Adapter file | Research doc | Last researched |
 |---|---|---|---|---|---|
-| `terminal` | **Built** — live TSP aggregator (vehicles + HOS); cron now daily 12:00 UTC per `vercel.json` (the "30-min cron" in `terminal.md` predates the Hobby-plan daily-only fix — reconcile on next scout pass) | `apiKey`, `connectionToken` (+ `TERMINAL_API_BASE` env, optional) | `src/lib/hub/telematics.ts` | [`terminal.md`](./terminal.md) | 2026-07-08 |
+| `terminal` | **Built** — live TSP aggregator (vehicles + HOS); cron daily 12:00 UTC (doc reconciled 2026-07-19 — the stale "30-min cron" claim is fixed). 2026-07-19 pass: no breaking change (auth + models match adapter); sandbox is dashboard-self-serve (secret + publishable key, `link.sandbox.withterminal.com`); `GET /connections/current` found as a cheap credential health-check; official Link npm SDKs exist; docs host now network-policy-blocked (proxy CONNECT 403) so numeric rate limits remain unread | `apiKey`, `connectionToken` (+ `TERMINAL_API_BASE` env, optional) | `src/lib/hub/telematics.ts` | [`terminal.md`](./terminal.md) | 2026-07-19 |
 | `mailbox` | **Built** — generic IMAP client, not a vendor SDK. Three auth paths live since 2026-07-11: Gmail app password, M365 client-credentials OAuth2, Google Workspace service-account OAuth2 (XOAUTH2). Cron is daily 12:30 UTC, not hourly as older notes said. Workspace app-password reliability contested — steer Workspace to OAuth2 (see doc) | `user`, `password` (Gmail only), `tenantId`/`clientId`/`clientSecret` (M365), `serviceAccountKey` (Workspace), `host`, `port`, `folder` | `src/lib/hub/mailbox.ts` + `mailbox-oauth.ts` | [`mailbox.md`](./mailbox.md) | 2026-07-18 |
 | `fmcsa` (adjacent, free, not in `IntegrationProvider` union — no stored creds) | **Built** — QCMobile broker vetting | `FMCSA_WEBKEY` env | `src/lib/hub/vetting.ts` | [`fmcsa.md`](./fmcsa.md) | 2026-07-07 |
 | `eia` (adjacent, free, not in `IntegrationProvider` union) | **Built** — diesel price benchmark | `EIA_API_KEY` env | `src/lib/hub/fuel.ts` | [`eia.md`](./eia.md) | 2026-07-07 |
@@ -37,10 +37,17 @@ integrations that were never in scope of the vendor shopping list: both `fmcsa.m
    notes before a lane builds the adapter.
 3. One provider per cycle. Update the "Last researched" date and doc link when done.
 
-Next up by this rule: `terminal.md` (2026-07-08) — the highest-value recheck since its
-adapter is a live production vendor sync; that pass must also reconcile the doc's "30-min
-cron" claims with `vercel.json`'s daily schedule. Then the two government-API docs
-`fmcsa.md`/`eia.md` (2026-07-07, now the oldest — low risk, free stable gov APIs).
+Next up by this rule: the two government-API docs `fmcsa.md`/`eia.md` (2026-07-07, now the
+oldest — low risk, free stable gov APIs; one pass can plausibly cover both since each is a
+single-endpoint key-only integration). After that, `truckercloud.md` (2026-07-10) and `dat.md`
+(2026-07-10) are the oldest built-adapter docs. The 2026-07-19 terminal pass found no breaking
+change (auth pattern and both data models still match the adapter verbatim); it corrected the
+doc's stale "30-min cron" claim to the actual daily 12:00 UTC schedule (which upgrades the
+webhook-receiver backlog item from latency nicety to the only same-hour data path), pinned
+down sandbox provisioning (self-serve Sandbox Dashboard keys + `link.sandbox.withterminal.com`),
+and found `GET /connections/current` as a natural "Test connection" target. Numeric rate
+limits remain unreadable — `docs.withterminal.com` is now blocked at the network-policy level
+(proxy CONNECT 403), so that verification still needs a human with a browser.
 The 2026-07-18 mailbox pass found: the doc's auth-model section was already accurate
 (the OAuth2 shipper updated it 2026-07-11 — better than the previous next-up note assumed);
 real drift was the cron cadence (daily 12:30 UTC, not hourly — doc + registry corrected)
