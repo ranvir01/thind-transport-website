@@ -16,6 +16,9 @@ import { AdvanceStatusButton, CancelLoadButton, StopTimestampButton, CheckCallBu
 import { DocumentsPanel } from "@/components/hub/DocumentsPanel"
 import { ShareLinkPanel } from "@/components/hub/ShareLinkPanel"
 import { MessageLoadButton } from "@/components/hub/MessageLoadButton"
+import { DuplicateLoadButton } from "@/components/hub/DuplicateLoadButton"
+import { RecurringLaneButton } from "@/components/hub/RecurringLaneButton"
+import { getRecurringRule } from "@/lib/hub/recurring"
 import { DetentionButton } from "@/components/hub/DetentionButton"
 import { detentionCents } from "@/lib/hub/money"
 import { getCarrierSettings } from "@/lib/hub/settings"
@@ -74,13 +77,14 @@ export default async function LoadDetailPage({ params }: { params: Promise<{ id:
   if (!load) notFound()
 
   const settings = await getCarrierSettings(user.carrierId)
-  const [stops, events, documents, shareLinks, invoice, loadFuel] = await Promise.all([
+  const [stops, events, documents, shareLinks, invoice, loadFuel, recurringRule] = await Promise.all([
     getLoadStops(user.carrierId, id),
     getLoadEvents(user.carrierId, id),
     listDocuments(user.carrierId, "load", id),
     listShareLinks(user.carrierId, id),
     getInvoiceForLoad(user.carrierId, id),
     fuelForLoad(user.carrierId, id),
+    getRecurringRule(user.carrierId, id),
   ])
 
   const totalCents = loadTotalCents(load)
@@ -107,8 +111,19 @@ export default async function LoadDetailPage({ params }: { params: Promise<{ id:
         title={load.reference}
         subtitle={load.customer_name ? `${load.customer_name}${load.customer_reference ? ` · Ref ${load.customer_reference}` : ""}${load.factored ? " · Factored" : ""}` : undefined}
         action={
-          <div className="flex gap-2">
+          <div className="flex max-w-full flex-wrap gap-2">
             <MessageLoadButton loadId={id} />
+            {can(user.role, "loads:write") ? (
+              <RecurringLaneButton
+                loadId={id}
+                rule={recurringRule ? {
+                  weekday: recurringRule.weekday,
+                  enabled: recurringRule.enabled,
+                  lastLoadRef: recurringRule.lastLoadRef,
+                } : null}
+              />
+            ) : null}
+            {can(user.role, "loads:write") ? <DuplicateLoadButton loadId={id} /> : null}
             <Link
               href={`/hub/loads/${id}/edit`}
               className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-border-strong px-4 text-sm font-semibold text-fg-2 hover:bg-hover"

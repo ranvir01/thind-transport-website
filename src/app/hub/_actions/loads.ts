@@ -8,6 +8,7 @@ import {
   addLoadEvent,
 } from "@/lib/hub/loads"
 import { applyDetentionAccrual } from "@/lib/hub/detention"
+import { rebookLoad } from "@/lib/hub/recurring"
 import { getDriver, dispatchLegality } from "@/lib/hub/drivers"
 import { getTruck } from "@/lib/hub/fleet"
 import { saveDocument, deleteDocument } from "@/lib/hub/documents"
@@ -95,6 +96,31 @@ export async function createLoadAction(values: Record<string, unknown>): Promise
     return { ok: true, id: load.id }
   } catch (err) {
     return actionError(err, "Failed to create load")
+  }
+}
+
+/**
+ * Rebook a recurring lane in one click: copies the lane, rate, equipment and
+ * assignment onto a fresh booked load. Per-shipment facts stay behind —
+ * customer ref, PU#/PO#, appointment windows, stop timestamps, documents, and
+ * earned detention accessorials all belong to the trip they happened on.
+ */
+export async function duplicateLoadAction(id: string): Promise<ActionResult> {
+  let user
+  try {
+    user = await requirePermission("loads:write")
+  } catch (err) {
+    return actionError(err, "Forbidden")
+  }
+  try {
+    // Copy/strip matrix lives in rebookLoad, shared with the recurring-rebook
+    // cron so the manual and scheduled paths can never drift.
+    const result = await rebookLoad(user.carrierId, id, { id: user.id, name: user.name })
+    if (!result.ok) return result
+    revalidateLoadViews(result.load.id)
+    return { ok: true, id: result.load.id }
+  } catch (err) {
+    return actionError(err, "Failed to duplicate load")
   }
 }
 

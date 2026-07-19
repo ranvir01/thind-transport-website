@@ -1,7 +1,9 @@
 import Link from "next/link"
 import { Plus, Search } from "lucide-react"
 import { listLoads } from "@/lib/hub/loads"
+import { getRecurringLanesOverview } from "@/lib/hub/recurring"
 import { requireOfficeUser } from "@/lib/hub/session"
+import { RecurringLanesPanel } from "@/components/hub/RecurringLanesPanel"
 import { LOAD_STATUSES, STATUS_LABELS, fmtCents, loadTotalCents, type LoadStatus } from "@/lib/hub/types"
 import {
   btnPrimaryCls,
@@ -27,7 +29,10 @@ export default async function LoadsPage({
   const params = await searchParams
   const status = (params.status as LoadStatus | "active" | "all") || "active"
   const search = params.q?.trim() || undefined
-  const loads = await listLoads(user.carrierId, { status, search })
+  const [loads, recurring] = await Promise.all([
+    listLoads(user.carrierId, { status, search }),
+    getRecurringLanesOverview(user.carrierId),
+  ])
 
   return (
     <div>
@@ -40,6 +45,8 @@ export default async function LoadsPage({
           </Link>
         }
       />
+
+      <RecurringLanesPanel rows={recurring} />
 
       <form method="GET" className="mb-4 flex flex-col gap-2 sm:flex-row">
         <div className="relative flex-1">

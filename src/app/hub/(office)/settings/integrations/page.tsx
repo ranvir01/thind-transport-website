@@ -11,10 +11,10 @@ import { cn } from "@/lib/utils"
 
 export const dynamic = "force-dynamic"
 
-// Providers with a manual "sync now" server action wired in IntegrationsPanel's
-// SYNC_ACTIONS map — kept in sync with that map by hand since one lives on each
-// side of the server/client boundary.
-const MANUAL_SYNC_PROVIDERS = new Set(["terminal", "truckercloud", "efs", "comdata", "wex", "qbo"])
+// Providers with a case in runProviderSync (src/app/hub/_actions/integrations.ts) —
+// kept in sync with that dispatch by hand since one lives on each side of the
+// server/client boundary.
+const MANUAL_SYNC_PROVIDERS = new Set(["terminal", "truckercloud", "efs", "comdata", "wex", "qbo", "mailbox"])
 
 export default async function IntegrationsPage() {
   const user = await requireOwner()
@@ -44,7 +44,7 @@ export default async function IntegrationsPage() {
     fields: [...spec.fields],
     connected: connectedFlags[i],
     // "Sync now" needs a case in runProviderSync (src/app/hub/_actions/integrations.ts) —
-    // not every provider has a manual trigger wired yet (e.g. mailbox is poll-only today).
+    // not every provider has a manual trigger wired yet (e.g. DAT search is on-demand).
     canSync: MANUAL_SYNC_PROVIDERS.has(spec.id),
     status: spec.status,
     // Push-style providers get their inbound URL, and so does any poll

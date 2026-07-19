@@ -12,6 +12,7 @@ import { runComdataSync } from "@/lib/hub/integrations/comdata"
 import { runWexSync } from "@/lib/hub/integrations/wex"
 import { runQboSync } from "@/lib/hub/integrations/qbo"
 import { retryUnprocessedEvents } from "@/lib/hub/integrations/event-processors"
+import { pollDocsMailbox } from "@/lib/hub/mailbox"
 import { logAudit } from "@/lib/hub/audit"
 import { query } from "@/lib/hub/db"
 import { actionError } from "@/lib/hub/action-error"
@@ -182,6 +183,16 @@ async function runProviderSync(
     return {
       connected: result.connected,
       summary: `${result.imported ?? 0} payments recorded${result.skipped ? `, ${result.skipped} already synced` : ""}${result.unmatched?.length ? `, unmatched invoices: ${result.unmatched.join(", ")}` : ""}`,
+    }
+  }
+  if (provider === "mailbox") {
+    // Instant verification for a freshly pasted app password or OAuth2 set —
+    // a bad credential fails here with an honest error (and a failed ledger
+    // row) instead of silently doing nothing until the next docs-mailbox cron.
+    const result = await pollDocsMailbox(carrierId)
+    return {
+      connected: result.connected,
+      summary: `${result.filed ?? 0} documents filed${result.unmatched ? `, ${result.unmatched} unmatched (notified for hand-filing)` : ""}`,
     }
   }
   throw new Error(`No sync loop wired for ${provider} yet`)

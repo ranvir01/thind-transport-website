@@ -22,6 +22,7 @@ vi.mock("@/lib/hub/integrations/comdata", () => ({ runComdataSync: vi.fn() }))
 vi.mock("@/lib/hub/integrations/wex", () => ({ runWexSync: vi.fn() }))
 vi.mock("@/lib/hub/integrations/qbo", () => ({ runQboSync: vi.fn() }))
 vi.mock("@/lib/hub/integrations/event-processors", () => ({ retryUnprocessedEvents: vi.fn() }))
+vi.mock("@/lib/hub/mailbox", () => ({ pollDocsMailbox: vi.fn() }))
 
 import { query } from "@/lib/hub/db"
 import { runTelematicsSync } from "@/lib/hub/telematics"
@@ -30,6 +31,7 @@ import { runComdataSync } from "@/lib/hub/integrations/comdata"
 import { runWexSync } from "@/lib/hub/integrations/wex"
 import { runQboSync } from "@/lib/hub/integrations/qbo"
 import { retryUnprocessedEvents } from "@/lib/hub/integrations/event-processors"
+import { pollDocsMailbox } from "@/lib/hub/mailbox"
 import { retryIntegrationEventsAction, syncIntegrationNowAction } from "@/app/hub/_actions/integrations"
 
 const queryMock = vi.mocked(query)
@@ -39,6 +41,7 @@ const runComdataSyncMock = vi.mocked(runComdataSync)
 const runWexSyncMock = vi.mocked(runWexSync)
 const runQboSyncMock = vi.mocked(runQboSync)
 const retryUnprocessedEventsMock = vi.mocked(retryUnprocessedEvents)
+const pollDocsMailboxMock = vi.mocked(pollDocsMailbox)
 
 beforeEach(() => {
   queryMock.mockReset().mockResolvedValue([])
@@ -48,6 +51,7 @@ beforeEach(() => {
   runWexSyncMock.mockReset()
   runQboSyncMock.mockReset()
   retryUnprocessedEventsMock.mockReset()
+  pollDocsMailboxMock.mockReset()
 })
 
 describe("syncIntegrationNowAction", () => {
@@ -68,6 +72,8 @@ describe("syncIntegrationNowAction", () => {
     ["comdata", runComdataSyncMock, { connected: true, imported: 5 }, /5 fuel transactions/],
     ["wex", runWexSyncMock, { connected: true, imported: 4 }, /4 fuel transactions/],
     ["qbo", runQboSyncMock, { connected: true, imported: 2 }, /2 payments recorded/],
+    ["mailbox", pollDocsMailboxMock, { connected: true, filed: 3, unmatched: 1 }, /3 documents filed, 1 unmatched/],
+    ["mailbox", pollDocsMailboxMock, { connected: true, filed: 0, unmatched: 0 }, /^0 documents filed$/],
   ] as const)("dispatches %s to its sync loop and logs a successful sync", async (provider, mockFn, resolved, summaryPattern) => {
     mockFn.mockResolvedValue(resolved)
     const result = await syncIntegrationNowAction(provider)
@@ -79,13 +85,24 @@ describe("syncIntegrationNowAction", () => {
     )
   })
 
-  it("throws for a provider with no sync loop wired (e.g. mailbox is poll-only)", async () => {
-    const result = await syncIntegrationNowAction("mailbox")
+  it("throws for a provider with no sync loop wired (e.g. DAT search is on-demand)", async () => {
+    const result = await syncIntegrationNowAction("dat")
     expect(result.ok).toBe(false)
-    expect(result.error).toBe("No sync loop wired for mailbox yet")
+    expect(result.error).toBe("No sync loop wired for dat yet")
     expect(queryMock).toHaveBeenCalledWith(
       expect.stringContaining("INSERT INTO hub.integration_syncs"),
-      expect.arrayContaining(["carrier-1", "mailbox", "No sync loop wired for mailbox yet"])
+      expect.arrayContaining(["carrier-1", "dat", "No sync loop wired for dat yet"])
+    )
+  })
+
+  it("logs a failed mailbox sync when connect or token minting throws", async () => {
+    pollDocsMailboxMock.mockRejectedValue(new Error("invalid_client"))
+    const result = await syncIntegrationNowAction("mailbox")
+    expect(result.ok).toBe(false)
+    expect(result.error).toBe("invalid_client")
+    expect(queryMock).toHaveBeenCalledWith(
+      expect.stringContaining("INSERT INTO hub.integration_syncs"),
+      expect.arrayContaining(["carrier-1", "mailbox", "invalid_client"])
     )
   })
 

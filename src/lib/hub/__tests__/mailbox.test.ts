@@ -122,7 +122,7 @@ describe("pollDocsMailbox", () => {
     expect(imapClient.getMailboxLock).toHaveBeenCalledWith("Docs")
   })
 
-  it("files an attachment onto the carrier-scoped matching load and records the sync", async () => {
+  it("files an attachment onto the carrier-scoped matching load", async () => {
     imapClient.search.mockResolvedValue([7])
     imapClient.fetchOne.mockResolvedValue({ source: Buffer.from("raw rfc822") })
     simpleParserMock.mockResolvedValue(parsedMessage())
@@ -154,10 +154,9 @@ describe("pollDocsMailbox", () => {
     )
     expect(notifyRolesMock).not.toHaveBeenCalled()
     expect(imapClient.messageFlagsAdd).toHaveBeenCalledWith("7", ["\\Seen"])
-    expect(queryMock).toHaveBeenCalledWith(
-      expect.stringContaining("hub.integration_syncs"),
-      [CARRIER, JSON.stringify({ filed: 1, unmatched: 0 })]
-    )
+    // The sync ledger row belongs to the caller (cron route / sync-now action),
+    // which records failures too — the adapter itself never writes one.
+    expect(queryMock).not.toHaveBeenCalled()
     expect(releaseMock).toHaveBeenCalled()
     expect(imapClient.logout).toHaveBeenCalled()
   })
@@ -231,16 +230,12 @@ describe("pollDocsMailbox", () => {
     expect(result).toEqual({ connected: true, filed: 0, unmatched: 0 })
   })
 
-  it("still records an empty sync when the server reports no unseen mail", async () => {
+  it("still reports an empty sync when the server reports no unseen mail", async () => {
     imapClient.search.mockResolvedValue(null)
 
     const result = await pollDocsMailbox(CARRIER)
 
     expect(imapClient.fetchOne).not.toHaveBeenCalled()
-    expect(queryMock).toHaveBeenCalledWith(
-      expect.stringContaining("hub.integration_syncs"),
-      [CARRIER, JSON.stringify({ filed: 0, unmatched: 0 })]
-    )
     expect(result).toEqual({ connected: true, filed: 0, unmatched: 0 })
   })
 
