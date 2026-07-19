@@ -103,6 +103,35 @@ describe("goWorkerRouteMiles", () => {
     await expect(goWorkerRouteMiles(ORIGIN, DEST)).resolves.toBeNull()
   })
 
+  // Gateway-side mirror of the Go worker's WGS84 range check: the worker
+  // answers 400 for these anyway, so the fetch is a guaranteed-null round
+  // trip. Cases match the worker's own rejection table (main_test.go), plus
+  // NaN/Infinity, which JSON can't carry but a TS caller can.
+  it.each([
+    ["latitude beyond +90", { lat: 91, lng: 0 }, { lat: 0, lng: 1 }],
+    ["latitude below -90", { lat: 0, lng: 0 }, { lat: -90.0001, lng: 1 }],
+    ["longitude beyond 180", { lat: 0, lng: 180.5 }, { lat: 0, lng: 1 }],
+    ["longitude below -180", { lat: 0, lng: 0 }, { lat: 0, lng: -181 }],
+    ["NaN latitude", { lat: Number.NaN, lng: 0 }, { lat: 0, lng: 1 }],
+    ["Infinity longitude", { lat: 0, lng: Number.POSITIVE_INFINITY }, { lat: 0, lng: 1 }],
+  ])("returns null without calling fetch for out-of-range coordinates (%s)", async (_label, origin, dest) => {
+    vi.stubEnv("HAULDESK_GO_WORKER_URL", "http://localhost:8090")
+    const { goWorkerRouteMiles } = await loadSidecars()
+    await expect(goWorkerRouteMiles(origin, dest)).resolves.toBeNull()
+    expect(fetch).not.toHaveBeenCalled()
+  })
+
+  it("still calls the worker for boundary coordinates (poles / date line)", async () => {
+    vi.stubEnv("HAULDESK_GO_WORKER_URL", "http://localhost:8090")
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => ({ ok: true, json: async () => ({ miles: 100, source: "osrm" }) }))
+    )
+    const { goWorkerRouteMiles } = await loadSidecars()
+    await expect(goWorkerRouteMiles({ lat: 90, lng: -180 }, { lat: -90, lng: 180 })).resolves.toBe(100)
+    expect(fetch).toHaveBeenCalledTimes(1)
+  })
+
   it("sends the shared-secret header when HAULDESK_SIDECAR_SECRET is set", async () => {
     vi.stubEnv("HAULDESK_GO_WORKER_URL", "http://localhost:8090")
     vi.stubEnv("HAULDESK_SIDECAR_SECRET", "shh")

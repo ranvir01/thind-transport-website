@@ -42,12 +42,32 @@ export interface RouteMilesResult {
 }
 
 /**
+ * Mirror of the Go worker's WGS84 range check (main.go `latLng.valid`): the
+ * worker answers 400 for out-of-range coordinates, so sending them is a
+ * guaranteed-null round trip against the 15s fetch budget. Out-of-range
+ * values are always a caller bug (swapped lat/lng, meters instead of
+ * degrees); unlike JSON the TS side can also carry NaN/Infinity, so the
+ * finiteness check is not redundant here.
+ */
+function isValidLatLng(p: LatLng): boolean {
+  return (
+    Number.isFinite(p.lat) &&
+    Number.isFinite(p.lng) &&
+    p.lat >= -90 &&
+    p.lat <= 90 &&
+    p.lng >= -180 &&
+    p.lng <= 180
+  )
+}
+
+/**
  * Drive miles from the Go worker alone. Null when the worker is unset, down,
  * or answers nonsense — callers pick their own fallback (routing.ts puts this
  * at the top of the Suggest-miles ladder so the two ladders never drift).
  */
 export async function goWorkerRouteMiles(origin: LatLng, dest: LatLng): Promise<number | null> {
   if (!GO_WORKER_URL) return null
+  if (!isValidLatLng(origin) || !isValidLatLng(dest)) return null
   try {
     const res = await fetch(`${GO_WORKER_URL}/route/miles`, {
       method: "POST",
