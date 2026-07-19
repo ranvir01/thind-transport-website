@@ -11,24 +11,29 @@
  * their reseeds never race.
  *
  * Usage:
- *   node scripts/e2e-run-all.mjs [logDir]     # default: e2e-run-all-logs
- *   SKIP_SWEEP=1 node scripts/e2e-run-all.mjs # smokes only
+ *   node scripts/e2e-run-all.mjs [filter ...]  # only smokes whose name
+ *                                               # contains any filter, e.g.
+ *                                               # `driver dvir`
+ *   SKIP_SWEEP=1 node scripts/e2e-run-all.mjs  # smokes only
  *
- * Per-script output goes to <logDir>/<script>.log; on failure the last
- * lines are echoed so the summary alone is enough to start diagnosing.
+ * Per-script output goes to e2e-run-all-logs/<script>.log; on failure the
+ * last lines are echoed so the summary alone is enough to start diagnosing.
+ * E2E_TIMEOUT_MS caps each script (default 420000) so one hung smoke can't
+ * stall the whole drive.
  *
  * A preflight checks the rig before the ~10-minute run: server answering,
  * NEXTAUTH_SECRET + CREDENTIALS_KEY set, demo seed present. Any miss used
  * to surface only mid-suite (the mailbox smoke's fast-fail, baffling login
  * 401s); now it fails in the first seconds with the fix spelled out.
  */
-import { readdirSync, mkdirSync, writeFileSync, readFileSync } from "node:fs"
-import { spawnSync } from "node:child_process"
+import { readdirSync, mkdirSync, createWriteStream, readFileSync } from "node:fs"
+import { spawn } from "node:child_process"
 import path from "node:path"
 import { BASE } from "./e2e-lib.mjs" // side effect: loads .env.local for localhost BASE
 
-const LOG_DIR = process.argv[2] ?? "e2e-run-all-logs"
-mkdirSync(LOG_DIR, { recursive: true })
+const LOG_DIR = "e2e-run-all-logs"
+const TIMEOUT_MS = Number(process.env.E2E_TIMEOUT_MS ?? 420000)
+const filters = process.argv.slice(2).map((f) => f.toLowerCase())
 
 const problems = []
 try {
@@ -71,30 +76,54 @@ const smokes = readdirSync(scriptsDir)
   .filter((f) => /^e2e-.*-smoke\.mjs$/.test(f))
   .sort()
 
-const jobs = smokes.map((f) => ["node", [path.join("scripts", f)], f.replace(/\.mjs$/, "")])
-if (process.env.SKIP_SWEEP !== "1") {
-  jobs.push(["node", [path.join("scripts", "e2e-sweep.mjs"), path.join(LOG_DIR, "sweep")], "e2e-sweep"])
+const names = process.env.SKIP_SWEEP === "1" ? smokes : [...smokes, "e2e-sweep.mjs"]
+const scripts = names.filter((f) => filters.length === 0 || filters.some((needle) => f.includes(needle)))
+
+if (scripts.length === 0) {
+  console.error(`no smoke matches ${JSON.stringify(process.argv.slice(2))}`)
+  process.exit(2)
 }
 
+mkdirSync(LOG_DIR, { recursive: true })
+
+function runOne(script) {
+  return new Promise((resolve) => {
+    const name = script.replace(/\.mjs$/, "")
+    const logPath = path.join(LOG_DIR, `${name}.log`)
+    const log = createWriteStream(logPath)
+    const child = spawn(process.execPath, [path.join("scripts", script)], {
+      stdio: ["ignore", "pipe", "pipe"],
+    })
+    child.stdout.pipe(log)
+    child.stderr.pipe(log)
+    const killer = setTimeout(() => {
+      child.kill("SIGKILL")
+      resolve({ name, ok: false, why: `timeout after ${TIMEOUT_MS}ms`, logPath })
+    }, TIMEOUT_MS)
+    child.on("exit", (code) => {
+      clearTimeout(killer)
+      resolve({ name, ok: code === 0, why: code === 0 ? "" : `exit ${code}`, logPath })
+    })
+  })
+}
+
+const started = Date.now()
 const results = []
-for (const [cmd, args, name] of jobs) {
-  const started = Date.now()
-  const run = spawnSync(cmd, args, { encoding: "utf-8" })
-  const seconds = ((Date.now() - started) / 1000).toFixed(0)
-  const logPath = path.join(LOG_DIR, `${name}.log`)
-  writeFileSync(logPath, (run.stdout ?? "") + (run.stderr ?? ""))
-  const pass = run.status === 0
-  results.push({ name, pass, seconds, logPath })
-  console.log(`${pass ? "✅" : "❌"} ${name} (${seconds}s)`)
-  if (!pass) {
-    const tail = readFileSync(logPath, "utf-8").trim().split("\n").slice(-12)
+for (const script of scripts) {
+  const t0 = Date.now()
+  const r = await runOne(script)
+  const seconds = Math.round((Date.now() - t0) / 1000)
+  console.log(`${r.ok ? "✅ PASS" : "❌ FAIL"} ${r.name} (${seconds}s${r.why ? `, ${r.why}` : ""})`)
+  if (!r.ok) {
+    const tail = readFileSync(r.logPath, "utf-8").trim().split("\n").slice(-12)
     for (const line of tail) console.log(`     ${line}`)
   }
+  results.push(r)
 }
 
-const failed = results.filter((r) => !r.pass)
-console.log("")
-console.log(`${results.length - failed.length}/${results.length} passed — logs in ${LOG_DIR}/`)
+const failed = results.filter((r) => !r.ok)
+const mins = Math.round((Date.now() - started) / 6000) / 10
+console.log(`\n${results.length - failed.length}/${results.length} passed in ${mins}m — logs in ${LOG_DIR}/`)
 if (failed.length) {
   console.log(`Failed: ${failed.map((r) => r.name).join(", ")}`)
   process.exit(1)
