@@ -12,6 +12,21 @@ const OUT = process.argv[2] ?? "e2e-shots-onboarding"
 mkdirSync(OUT, { recursive: true })
 const shot = makeShot(OUT)
 
+/**
+ * Advance the signup wizard one step. The forward button is type=button and
+ * reads "Continue" (or "Skip for now" on the branding step with no accent
+ * picked), so a plain submit-click can't drive it.
+ */
+async function nextStep(page) {
+  const clicked = await page.evaluate(() => {
+    const btn = [...document.querySelectorAll("form button")]
+      .find((b) => /Continue|Skip for now/.test(b.textContent ?? ""))
+    if (btn) btn.click()
+    return Boolean(btn)
+  })
+  if (!clicked) throw new Error("Wizard forward button not found")
+}
+
 async function main() {
   const browser = await puppeteer.launch({ headless: "new", args: ["--no-sandbox", "--disable-dev-shm-usage"] })
   const stamp = Date.now().toString().slice(-6)
@@ -22,11 +37,22 @@ async function main() {
   await fresh.setViewport({ width: 390, height: 844, deviceScaleFactor: 2 })
   await fresh.goto(`${BASE}/hub/signup`, { waitUntil: "networkidle2" })
   await shot(fresh, "01-signup")
+  // Step 1/4 — company facts (FMCSA verify is optional; skip the network call)
   await fresh.type("#su-company", `Bluebird Freight ${stamp}`)
   await fresh.type("#su-dot", "4112233")
+  await nextStep(fresh)
+  // Step 2/4 — branding: keep the standard look ("Skip for now")
+  await waitForText(fresh, "Pick an accent color")
+  await nextStep(fresh)
+  // Step 3/4 — driver pay: platform defaults are prefilled and valid
+  await fresh.waitForSelector("#su-permile", { timeout: 10000 })
+  await nextStep(fresh)
+  // Step 4/4 — owner account
+  await fresh.waitForSelector("#su-owner", { timeout: 10000 })
   await fresh.type("#su-owner", "Rosa Bluebird")
   await fresh.type("#su-email", `rosa+${stamp}@bluebird.example`)
   await fresh.type("#su-pass", "BluebirdPass1!")
+  await shot(fresh, "01b-account-step")
   await Promise.all([
     fresh.waitForNavigation({ waitUntil: "networkidle2", timeout: 25000 }),
     fresh.click('button[type="submit"]'),

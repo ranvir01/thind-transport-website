@@ -8,7 +8,7 @@
 import puppeteer from "puppeteer"
 import { mkdirSync } from "node:fs"
 import path from "node:path"
-import { BASE, sleep, waitForText, login } from "./e2e-lib.mjs"
+import { BASE, reseed, sleep, waitForText, login } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-planner"
 mkdirSync(OUT, { recursive: true })
@@ -42,6 +42,9 @@ async function syntheticDrag(page, sourceSelectorText, targetTruckUnit, targetDa
 }
 
 async function main() {
+  // The drag step needs the seeded booked THD- loads on this week's grid;
+  // earlier smokes (dispatch, loads, dvir) advance or cancel them.
+  reseed()
   const browser = await puppeteer.launch({ headless: "new", args: ["--no-sandbox", "--disable-dev-shm-usage"] })
   const page = await browser.newPage()
   await page.setViewport({ width: 1440, height: 950 })
