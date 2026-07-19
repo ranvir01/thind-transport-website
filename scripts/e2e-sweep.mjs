@@ -40,7 +40,9 @@ const OFFICE_PAGES = [
   ["safety", "/hub/safety", "flow to the register automatically"],
   ["fuel", "/hub/fuel", "last 92 days across every card program"],
   ["money", "/hub/money", "receivables, invoices, and driver pay"],
-  ["compliance", "/hub/compliance", "expired / overdue"],
+  // Subtitle, not the red tile label: below sm: the tiles render shortLabel
+  // ("Expired"), so "expired / overdue" disappears at 390px.
+  ["compliance", "/hub/compliance", "one wall, color-coded"],
   ["capacity", "/hub/capacity", "empty trucks, advertised"],
   ["packet", "/hub/settings/packet", "stored once, sent in one click"],
   ["phone-app", "/hub/settings/app", "installed like an app"],
