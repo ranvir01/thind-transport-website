@@ -153,6 +153,12 @@ plain non-force push — a race with a live agent is rejected by GitHub, never c
 history or drift ≤3 means the loop is alive (or needs a real merge), so the Action stands down and
 leaves it to the agents. This keeps the drain working even when both agent platforms are down at once.
 
+**Drain fallback (GitHub Action, shipped 2026-07-10):** `.github/workflows/drain-fallback.yml` runs at
+:20/:50 UTC and fast-forwards `main` from the integrator when it is >3 commits ahead, `main` is strictly
+behind (pure fast-forward, never force, never merge), and build + `vitest` pass on the integrator head.
+It no-ops in a healthy loop and survives both agent platforms being down. Diverged history still needs
+an agent to merge — the workflow only warns.
+
 Legacy single-automation files (`hauldesk-improvement-cycle.*`) alias to `loadoff-deploy.*`.
 
 ### 3b. Release gate (before any deploy is called done)
