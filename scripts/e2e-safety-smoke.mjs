@@ -14,7 +14,7 @@
  */
 import { mkdirSync, writeFileSync } from "node:fs"
 import path from "node:path"
-import { launchBrowser, BASE, sleep, failures, check, waitForText, waitForPathAndText, login, makeShot, clickByText, reseed } from "./e2e-lib.mjs"
+import { launchBrowser, BASE, failures, check, waitForText, textAppears, textGone, waitForPathAndText, login, makeShot, clickByText, reseed } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-safety"
 mkdirSync(OUT, { recursive: true })
@@ -47,47 +47,46 @@ async function registerCount(page) {
   })
 }
 
+/**
+ * The toast waits alone can match a still-visible toast from a previous tap
+ * (both stops toast "Arrival recorded"/"Departure recorded", and every status
+ * advance toasts "Status updated"), letting the script outrun the server's
+ * commits — while a tap is pending every button on the card is disabled, so
+ * an early click is silently lost. Each tap is therefore gated on the DOM
+ * change its commit causes: the ack button unmounting, the advance button
+ * relabeling, or the stop's Leaving-now button appearing/unmounting.
+ */
 async function advanceDriverLoadToDelivered(page) {
   await waitForText(page, "THD-")
   await clickByText(page, "confirm this dispatch")
   await waitForText(page, "Dispatch confirmed")
-  await sleep(800)
+  check(await textGone(page, "confirm this dispatch"), "dispatch ack committed (confirm button gone)")
 
   await clickByText(page, "I'm heading to the pickup")
   await waitForText(page, "Status updated")
-  await sleep(800)
+  check(await textAppears(page, "Loaded — rolling now"), "status advanced to at_pickup (next advance offered)")
 
   await clickByText(page, "I'm here")
   await waitForText(page, "Arrival recorded")
-  await sleep(800)
+  check(await textAppears(page, "Leaving now"), "pickup arrival committed (Leaving now offered)")
   await clickByText(page, "Leaving now")
   await waitForText(page, "Departure recorded")
-  await sleep(800)
+  check(await textGone(page, "Leaving now"), "pickup departure committed (stop closed out)")
 
   await clickByText(page, "Loaded — rolling now")
   await waitForText(page, "Status updated")
-  await sleep(800)
+  check(await textGone(page, "Loaded — rolling now"), "status advanced to in_transit")
 
   await clickByText(page, "I'm here")
   await waitForText(page, "Arrival recorded")
-  await sleep(800)
+  check(await textAppears(page, "Leaving now"), "delivery arrival committed (Leaving now offered)")
   await clickByText(page, "Leaving now")
   await waitForText(page, "Departure recorded")
-  await sleep(800)
+  check(await textGone(page, "Leaving now"), "delivery departure committed (stop closed out)")
 
-  // The arrival/departure waits above can match a still-visible toast from the
-  // previous stop, letting the script outrun the server's status commits; under
-  // full-suite CPU contention the Delivered button then takes >8s to render.
   await clickByText(page, "Delivered", { timeout: 20000 })
   await waitForText(page, "Status updated")
-  const delivered = await page
-    .waitForFunction(
-      () => document.body.innerText.toLowerCase().includes("delivered — send the pod"),
-      { timeout: 20000 }
-    )
-    .then(() => true)
-    .catch(() => false)
-  check(delivered, "load is delivered and awaiting POD")
+  check(await textAppears(page, "delivered — send the pod"), "load is delivered and awaiting POD")
 }
 
 /**
@@ -146,8 +145,12 @@ async function main() {
   await page.select("#status", "closed")
   await clickByText(page, "Save changes")
   await waitForText(page, "Incident updated")
-  await sleep(1200)
-  await page.goto(`${BASE}/hub/safety`, { waitUntil: "networkidle2" })
+  // The edit form router.push()es back to /hub/safety once the write has
+  // committed; wait for that landing instead of sleeping through it.
+  check(
+    await waitForPathAndText(page, "/hub/safety", "flow to the register automatically"),
+    "returned to Safety after closing the incident"
+  )
   const afterCloseWall = await page.evaluate(() => document.body.innerText)
   check(afterCloseWall.toLowerCase().includes("closed"), "closed incident shows Closed status on Safety")
   check((await registerCount(page)) === 1, "DOT register still lists the recordable incident after close (390.15 retention)")
@@ -177,7 +180,8 @@ async function main() {
   await driverPage.type("#inc-desc", "Deer strike — bumper damage only. Everyone safe, truck drivable.")
   await clickByText(driverPage, "File the report")
   await waitForText(driverPage, "Report filed")
-  await sleep(1000)
+  // Filing router.push()es back to the driver home after the commit.
+  check(await waitForPathAndText(driverPage, "/hub/driver", "THD-"), "driver lands back home after filing")
   await shot(driverPage, "04-driver-incident-filed")
 
   console.log("5. Driver delivers lumber load and sends POD with OS&D (opens claim file)")
