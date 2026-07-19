@@ -1,0 +1,78 @@
+# Fallback drain: integrator -> main (docs/agent-improvement-loop.md §5)
+#
+# Normal operation: the Cursor deploy agent (:59 UTC) fast-forwards main from the
+# integration branch. On 2026-07-10 Cursor's cloud VMs went read-only and main sat
+# hours behind a green integrator while production served stale code. This workflow
+# is the platform-independent backstop: if the integrator is more than THRESHOLD
+# commits ahead of main (i.e. several drain cycles were missed), verify it with the
+# same gate every agent uses (npm run build + npx vitest run) and fast-forward main.
+#
+# It never merges: if main has commits the integrator lacks, it stands down and
+# leaves the divergence for the integrator agent. It never force-pushes.
+name: fallback-drain
+
+on:
+  schedule:
+    - cron: "40 * * * *" # after integrator (:00) and prod smoke (:30), before deploy (:59)
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: fallback-drain
+  cancel-in-progress: false
+
+env:
+  INTEGRATOR: claude/hauldesk-project-setup-l1luoo
+  THRESHOLD: 3
+
+jobs:
+  drain:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check drift
+        id: drift
+        run: |
+          git fetch origin main "$INTEGRATOR"
+          AHEAD=$(git rev-list --count "origin/main..origin/$INTEGRATOR")
+          BEHIND=$(git rev-list --count "origin/$INTEGRATOR..origin/main")
+          echo "integrator is $AHEAD ahead / $BEHIND behind main"
+          if [ "$BEHIND" -ne 0 ]; then
+            echo "main has commits not on the integrator — not fast-forwardable, leaving for the integrator agent"
+            echo "go=false" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          if [ "$AHEAD" -le "$THRESHOLD" ]; then
+            echo "drift within normal range — the :59 deploy agent handles this"
+            echo "go=false" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          echo "go=true" >> "$GITHUB_OUTPUT"
+          echo "sha=$(git rev-parse "origin/$INTEGRATOR")" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/setup-node@v4
+        if: steps.drift.outputs.go == 'true'
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Verify integrator (build + tests)
+        if: steps.drift.outputs.go == 'true'
+        run: |
+          git checkout --detach "${{ steps.drift.outputs.sha }}"
+          npm ci
+          npm run build
+          npx vitest run
+
+      - name: Fast-forward main
+        if: steps.drift.outputs.go == 'true'
+        run: |
+          git fetch origin main
+          if ! git merge-base --is-ancestor origin/main "${{ steps.drift.outputs.sha }}"; then
+            echo "main moved during verification — standing down"; exit 0
+          fi
+          git push origin "${{ steps.drift.outputs.sha }}:refs/heads/main"
