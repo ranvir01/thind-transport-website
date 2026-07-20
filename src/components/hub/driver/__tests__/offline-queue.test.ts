@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
 
-import { isOfflineError, listIntents, runOrQueue } from "../offline-queue"
+import { isOfflineError, listIntents, replayQueue, runOrQueue } from "../offline-queue"
 
 /**
  * isOfflineError decides whether a failed driver tap gets queued for replay
@@ -132,5 +132,83 @@ describe("runOrQueue", () => {
     const exec = vi.fn().mockRejectedValue(new Error("Forbidden"))
     await expect(runOrQueue(noteIntent, exec)).rejects.toThrow("Forbidden")
     expect(await listIntents()).toHaveLength(0)
+  })
+})
+
+/**
+ * replayQueue is OfflineSync's replay loop, extracted so it's testable
+ * without mounting a React component. It's the no-lost-taps guarantee once
+ * the driver is back in signal: process oldest-first, stop clean on a
+ * connectivity error (retry next signal), drop-and-count on a hard failure
+ * (it won't fix itself, and it can't be allowed to jam everything behind it).
+ */
+describe("replayQueue", () => {
+  function makeIntent(id: string, queuedAt: number) {
+    return {
+      id,
+      kind: "facility-note" as const,
+      payload: { facilityId: "f1", body: "gate 4 is the fast one", tags: ["fast"] },
+      queuedAt,
+    }
+  }
+
+  function stubQueueWorld(intents: ReturnType<typeof makeIntent>[]) {
+    const fake = makeFakeIndexedDB()
+    vi.stubGlobal("indexedDB", fake.indexedDB)
+    vi.stubGlobal("navigator", { onLine: true })
+    vi.stubGlobal("window", { dispatchEvent: () => {} })
+    for (const intent of intents) fake.rows.set(intent.id, intent)
+    return fake
+  }
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  it("replays oldest-first and reports every success as sent", async () => {
+    const intents = [makeIntent("a", 100), makeIntent("b", 200), makeIntent("c", 300)]
+    stubQueueWorld(intents)
+    const order: string[] = []
+    const execute = vi.fn(async (intent) => {
+      order.push(intent.id)
+      return { ok: true }
+    })
+    const result = await replayQueue(intents, execute)
+    expect(order).toEqual(["a", "b", "c"])
+    expect(result).toEqual({ sent: 3, failed: 0 })
+    expect(await listIntents()).toHaveLength(0)
+  })
+
+  it("drops a hard failure but keeps replaying the rest of the queue", async () => {
+    const intents = [makeIntent("a", 100), makeIntent("b", 200), makeIntent("c", 300)]
+    stubQueueWorld(intents)
+    const execute = vi
+      .fn()
+      .mockResolvedValueOnce({ ok: true })
+      .mockRejectedValueOnce(new Error("Invalid payload"))
+      .mockResolvedValueOnce({ ok: true })
+    const result = await replayQueue(intents, execute)
+    expect(execute).toHaveBeenCalledTimes(3)
+    expect(result).toEqual({ sent: 2, failed: 1 })
+    // The hard failure is dropped too — retrying it would jam every intent
+    // queued behind it, and it isn't going to succeed on its own.
+    expect(await listIntents()).toHaveLength(0)
+  })
+
+  it("stops clean at the first connectivity error, leaving the remainder queued in order", async () => {
+    const intents = [makeIntent("a", 100), makeIntent("b", 200), makeIntent("c", 300)]
+    stubQueueWorld(intents)
+    const execute = vi
+      .fn()
+      .mockResolvedValueOnce({ ok: true })
+      .mockRejectedValueOnce(new TypeError("Failed to fetch"))
+      .mockResolvedValueOnce({ ok: true })
+    const result = await replayQueue(intents, execute)
+    // Never attempts "c" — signal dropped mid-queue, so it stops rather than
+    // replaying out of order.
+    expect(execute).toHaveBeenCalledTimes(2)
+    expect(result).toEqual({ sent: 1, failed: 0 })
+    const remaining = await listIntents()
+    expect(remaining.map((i) => i.id)).toEqual(["b", "c"])
   })
 })
