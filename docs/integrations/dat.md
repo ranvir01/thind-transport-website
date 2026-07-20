@@ -25,28 +25,45 @@ Building that UI against an unconfirmed API shape would mean re-doing it twice. 
 stops at the tested client; `docs/integrations/creds-shopping-list.md` tracks the remaining
 UI + booking slice separately.
 
-## Auth model (researched 2026-07-10 — search-snippet confidence, pages 403-walled)
+## Auth model (researched 2026-07-10; re-scouted 2026-07-20 — search-snippet confidence, pages still 403-walled)
 
-DAT's own pages (`dat.com`, `one.support.dat.com`, `developer.dat.com`) and even third-party
-integration guides all 403 against our fetch tooling (same wall as TruckerCloud), so the
-facts below come from search-result snippets of DAT's official support FAQ and TMS-vendor
-activation guides — higher confidence than the previous pure guess, but still not a
-developer packet.
+DAT's own pages (`dat.com`, `one.support.dat.com`, `developer.dat.com`) and third-party
+integration guides all still 403 against our fetch tooling (same wall as TruckerCloud — five
+straight direct-fetch attempts across both passes, all blocked), so the facts below come from
+search-result snippets of DAT's official support FAQ and TMS-vendor activation guides — higher
+confidence than a pure guess, but still not a developer packet.
 
 - **Two-level token auth, not per-request Basic.** DAT's official RESTful API FAQ describes
   the flow as: (1) a **service account** (dedicated email + password, provisioned once per
   organization) authenticates the *organization*; (2) a **regular user's email** is then
   authenticated on top of the org auth to identify *who* is making requests. So the
-  `serviceAccountEmail`/`password` fields on the `dat` registry entry are right but
-  **insufficient** — activation will also need a third field for the acting user's email
-  (see Backlog). `dat.ts`'s current per-request Basic-auth construction is a placeholder
-  that will need to become a token exchange (org token → user token → Bearer on API calls).
+  `serviceAccountEmail`/`password` fields on the `dat` registry entry were right but
+  **insufficient** — a third `actingUserEmail` field now ships on the registry entry
+  (2026-07-20, this pass) and `datSource().search()` refuses (`"dat is not connected"`) until
+  all three are present, so a real setup can't silently half-configure. `dat.ts`'s per-request
+  Basic-auth construction on the service account is still a placeholder — swapping it for the
+  real token exchange (org token → user token → Bearer) needs the actual token endpoint paths,
+  still unconfirmed (see Open questions).
+- **2026-07-20 correction: service accounts hold NO seats/services.** The FAQ is explicit —
+  "service accounts do not and should not have any services assigned to them." All seat
+  requirements (Connexion + load board, +RateView for rate requests) attach to the **acting
+  user**, not the service account. This confirms the `actingUserEmail` field is the credential
+  that actually needs the paid seat, not `serviceAccountEmail`.
+- **2026-07-20 finding, unconfirmed: RateView Combo Pro/Premium may gate RESTful API access.**
+  A search snippet states "RateView Combo Pro or RateView Combo Premium are required for a
+  RESTful API integration" — this reads as narrower than this doc's prior "any load board
+  subscription tier allows REST API integration" claim. Couldn't corroborate on a second
+  source or confirm whether that's RateView-specific access vs. the base search/post API: flag
+  as a pricing risk to check with developersupport@dat.com, not yet strong enough to overwrite
+  the existing claim outright.
 - **Tokens are short-lived.** One TMS integration (Salesforce-based) caches DAT org and
   user tokens for 28 minutes, implying ~30-minute expiry — the adapter must re-auth per
-  sync run rather than storing a long-lived token.
-- **Seats gate API calls.** The authenticated user must hold a **Connexion seat** plus a
-  load board seat to search or post via API; any load board subscription tier allows REST
-  API integration, but the seat requirement is per-user.
+  sync run rather than storing a long-lived token. No official token-lifetime number found
+  this pass either.
+- **Seats gate API calls.** The authenticated (acting) user must hold a **Connexion seat**
+  plus a **load board seat** to search or post via API; posting/searching/requesting rates
+  needs a Connexion + load board + RateView seat. Any load board subscription tier is claimed
+  to allow REST API integration generally, but see the RateView-gating finding above.
 - **Service accounts are managed at `account.dat.com`** (User Management) and must not be
   edited/deleted once an integration depends on them.
 - Base URL env override (`DAT_API_BASE`) currently defaults to `https://freight.api.dat.com/v3`.
@@ -119,8 +136,13 @@ facing surface for it at all (it's a tested library function, not a feature yet)
   the remaining #1 blocker to flipping `registry.ts`'s `dat` entry from `stub` to `live` is
   the developer packet: exact token endpoints/headers, the real search path + response
   field names, and rate limits. Request via developersupport@dat.com (needs MC number).
-- Registry change needed (integrator/integrations lane): add an acting-user email
-  credential field to the `dat` entry — the service account alone cannot make requests.
+- ~~Registry change needed: add an acting-user email credential field~~ — done 2026-07-20:
+  `actingUserEmail` field ships on the `dat` registry entry, `datSource().search()` requires
+  it. The request itself still authenticates with organization Basic auth only (placeholder)
+  until the token-exchange endpoints are confirmed.
+- Confirm whether the RateView Combo Pro/Premium requirement (found this pass, single source)
+  applies to the base search/post API or only rate-request calls — changes the pricing story
+  in `creds-shopping-list.md` if it applies broadly.
 - Decide whether matches get a `cronJob` (periodic "loads near you" polling into a new
   table) in addition to on-demand search, or stay purely interactive — affects whether a
   migration is needed (`hub.available_loads`-style table) vs. search staying stateless.
