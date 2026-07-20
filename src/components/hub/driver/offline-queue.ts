@@ -128,6 +128,41 @@ export function isOfflineError(err: unknown): boolean {
   )
 }
 
+export interface ReplayResult { sent: number; failed: number }
+
+/**
+ * Replays queued intents oldest-first (caller passes listIntents()'s output,
+ * already sorted). A connectivity error stops the loop immediately so the
+ * untouched remainder stays queued in order for the next signal; any other
+ * throw drops just that intent so one bad payload can't jam everything
+ * queued behind it. Mirrors OfflineSync's toast copy: `sent` update the
+ * "N sent" success toast, `failed` the "N couldn't be sent" error toast.
+ */
+export async function replayQueue(
+  intents: QueuedIntent[],
+  execute: (intent: QueuedIntent) => Promise<{ ok: boolean; error?: string }>
+): Promise<ReplayResult> {
+  let sent = 0
+  let failed = 0
+  for (const intent of intents) {
+    try {
+      const result = await execute(intent)
+      // Real rejections (e.g. "not your load") drop the intent too —
+      // retrying forever would be worse than telling the office.
+      await removeIntent(intent.id)
+      if (result.ok) sent++
+    } catch (err) {
+      if (isOfflineError(err)) break // still offline — try again on the next signal
+      // A non-network throw (bad payload, server exception) isn't going to
+      // fix itself on retry — drop it so it can't jam every intent queued
+      // after it, since replay always starts from the oldest.
+      await removeIntent(intent.id)
+      failed++
+    }
+  }
+  return { sent, failed }
+}
+
 /**
  * Try the action now; if the network is gone, queue it and tell the driver
  * the truth ("saved — sends when you have signal").

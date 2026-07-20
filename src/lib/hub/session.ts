@@ -46,6 +46,21 @@ async function isActiveUser(user: HubSessionUser): Promise<boolean> {
 }
 
 /**
+ * Suspending a tenant (platform admin, see setTenantStatusAction) must cut
+ * off that tenant's office/driver/portal access immediately, not just skip
+ * it in crons — same JWT-vs-DB-state gap as isActiveUser, so every guard
+ * below re-checks the carrier's status on every request too.
+ */
+async function isActiveCarrier(carrierId: string): Promise<boolean> {
+  const { queryOne } = await import("./db")
+  const row = await queryOne<{ id: string }>(
+    `SELECT id FROM hub.carriers WHERE id = $1 AND status = 'active'`,
+    [carrierId]
+  )
+  return !!row
+}
+
+/**
  * Platform admin is the one role without a carrier_id scope (see
  * getHubUser), so it can't reuse isActiveUser's carrier-scoped query —
  * it needs its own re-check by id + role instead.
@@ -77,6 +92,7 @@ export async function requireOfficeUser(): Promise<HubSessionUser> {
   // straight back into the app, which re-hits this same check — an infinite
   // redirect loop. /hub/deactivated is a dead end the proxy lets through.
   if (!(await isActiveUser(user))) redirect("/hub/deactivated")
+  if (!(await isActiveCarrier(user.carrierId))) redirect("/hub/suspended")
   return user
 }
 
@@ -102,6 +118,7 @@ export async function requireDriverUser(): Promise<DriverSessionUser> {
     [user.id, user.carrierId]
   )
   if (!row?.driver_id) redirect("/hub/welcome")
+  if (!(await isActiveCarrier(user.carrierId))) redirect("/hub/suspended")
   return { ...user, driverId: row.driver_id }
 }
 
@@ -130,6 +147,7 @@ export async function requirePortalUser(): Promise<PortalSessionUser> {
     [user.id, user.carrierId]
   )
   if (!row?.customer_id) redirect("/hub/welcome")
+  if (!(await isActiveCarrier(user.carrierId))) redirect("/hub/suspended")
   return { ...user, customerId: row.customer_id, portalRole: user.role }
 }
 
@@ -150,6 +168,7 @@ export async function requirePermission(action: HubAction): Promise<HubSessionUs
   if (!user) throw new Error("Not signed in")
   if (!can(user.role, action)) throw new Error(`Forbidden: ${user.role} cannot ${action}`)
   if (!(await isActiveUser(user))) throw new Error("Account deactivated")
+  if (!(await isActiveCarrier(user.carrierId))) throw new Error("Workspace suspended")
   return user
 }
 
@@ -163,5 +182,6 @@ export async function requirePermissionPage(action: HubAction): Promise<HubSessi
   }
   // Same /hub/login-vs-proxy loop as requireOfficeUser — see comment there.
   if (!(await isActiveUser(user))) redirect("/hub/deactivated")
+  if (!(await isActiveCarrier(user.carrierId))) redirect("/hub/suspended")
   return user
 }
