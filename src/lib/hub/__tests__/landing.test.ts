@@ -1,17 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { hubLandingPath, hubRoleLabel, postLoginPath } from "../landing"
-
-describe("postLoginPath", () => {
-  it("sends legacy driver-portal JWTs to the old application portal", () => {
-    expect(postLoginPath(null)).toBe("/driver/application")
-    expect(postLoginPath(undefined)).toBe("/driver/application")
-  })
-
-  it("delegates hub roles to hubLandingPath", () => {
-    expect(postLoginPath("driver")).toBe("/hub/driver")
-    expect(postLoginPath("owner")).toBe("/hub")
-  })
-})
+import { hubLandingPath, hubRoleLabel, postLoginPath, LEGACY_DRIVER_HOME } from "../landing"
 
 describe("hubLandingPath (Phase 3 role redirects)", () => {
   it("sends office roles to their primary screens", () => {
@@ -29,6 +17,23 @@ describe("hubLandingPath (Phase 3 role redirects)", () => {
   it("falls back to Today for unknown roles", () => {
     expect(hubLandingPath(null)).toBe("/hub")
     expect(hubLandingPath(undefined)).toBe("/hub")
+  })
+})
+
+describe("postLoginPath (legacy driver-portal accounts)", () => {
+  it("routes hub roles through hubLandingPath", () => {
+    expect(postLoginPath({ role: "dispatcher" })).toBe("/hub/loadboard")
+    expect(postLoginPath({ role: "driver" })).toBe("/hub/driver")
+  })
+
+  it("sends a signed-in user WITHOUT a hub role to the legacy driver portal", () => {
+    expect(postLoginPath({ role: null })).toBe(LEGACY_DRIVER_HOME)
+    expect(postLoginPath({})).toBe(LEGACY_DRIVER_HOME)
+  })
+
+  it("falls back to /hub when the session fetch failed (proxy routes by token)", () => {
+    expect(postLoginPath(null)).toBe("/hub")
+    expect(postLoginPath(undefined)).toBe("/hub")
   })
 })
 
