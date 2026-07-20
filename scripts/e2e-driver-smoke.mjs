@@ -13,7 +13,10 @@
  * Requires: npm run dev (or start) on localhost:3000.
  */
 import { mkdirSync } from "node:fs"
-import { launchBrowser, BASE, sleep, clickByText, waitForText, makeShot, reseed } from "./e2e-lib.mjs"
+import {
+  launchBrowser, BASE, clickByText, waitForText, waitForPathAndText,
+  textAppears, textGone, makeShot, reseed,
+} from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots"
 mkdirSync(OUT, { recursive: true })
@@ -42,19 +45,19 @@ async function main() {
     console.log("2. Confirm dispatch (acknowledge)")
     await clickByText(page, "confirm this dispatch")
     await waitForText(page, "Dispatch confirmed")
-    await sleep(1200)
+    if (!(await textGone(page, "confirm this dispatch"))) throw new Error("confirm banner did not clear after acknowledge")
     await shot(page, "03-acknowledged")
 
     console.log("3. Arrive at the pickup")
     await clickByText(page, "I'm here")
     await waitForText(page, "Arrival recorded")
-    await sleep(1500)
+    if (!(await textAppears(page, "Leaving now"))) throw new Error("pickup stop did not offer Leaving now after arrival")
     await shot(page, "04-arrived")
 
     console.log("4. Depart the pickup")
     await clickByText(page, "Leaving now")
     await waitForText(page, "Departure recorded")
-    await sleep(1500)
+    if (!(await textGone(page, "Leaving now"))) throw new Error("pickup stop did not settle to its done row after departure")
     await shot(page, "05-departed")
 
     console.log("5. Leave a facility tip (two taps)")
@@ -65,7 +68,7 @@ async function main() {
     await shot(page, "06-facility-tip")
     await clickByText(page, "Save tip")
     await waitForText(page, "every driver after you")
-    await sleep(800)
+    if (!(await textGone(page, "Tap what applies"))) throw new Error("facility-tip sheet did not close after save")
 
     console.log("6. Message dispatch")
     await page.goto(`${BASE}/hub/driver/messages`, { waitUntil: "networkidle2" })
@@ -75,7 +78,9 @@ async function main() {
     await page.type("textarea", "Made the pickup, rolling to Boise. ETA tomorrow 14:00.")
     await clickByText(page, "", { tag: 'button[aria-label="Send"]' })
     await waitForText(page, "Made the pickup")
-    await sleep(800)
+    await page
+      .waitForFunction(() => document.querySelector("textarea")?.value === "", { timeout: 20000 })
+      .catch(() => { throw new Error("composer did not clear after send") })
     await shot(page, "08-chat")
 
     console.log("7. Pay screen — expand a settlement to see its lines")
@@ -103,7 +108,7 @@ async function main() {
     await shot(page, "10-timeoff-form")
     await clickByText(page, "Ask for these days")
     await waitForText(page, "Request sent")
-    await sleep(1000)
+    if (!(await textAppears(page, "Waiting on the office"))) throw new Error("new time-off request did not land in the list")
     await shot(page, "11-timeoff-requested")
 
     console.log("9. More + docs")
@@ -119,7 +124,7 @@ async function main() {
     await shot(page, "14-incident-form")
     await clickByText(page, "File the report")
     await waitForText(page, "Report filed")
-    await sleep(1000)
+    if (!(await waitForPathAndText(page, "/hub/driver", "THD-"))) throw new Error("incident form did not return to the driver home")
     await shot(page, "15-after-incident")
 
     console.log("\nAll driver-app smoke steps passed ✔")
