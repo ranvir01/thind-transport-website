@@ -14,7 +14,8 @@ vi.mock("bcrypt", () => ({ default: { hash: vi.fn(async () => "hashed-pw") } }))
 
 import { query, queryOne } from "@/lib/hub/db"
 import {
-  acceptDriverInvite, createDriverInviteToken, getDriverInviteState, verifyDriverInviteToken,
+  acceptDriverInvite, createDriverInviteToken, getDriverInviteState, hasDriverAppAccount,
+  sendDriverInviteEmail, verifyDriverInviteToken,
 } from "@/lib/hub/driver-invite"
 
 const queryMock = vi.mocked(query)
@@ -131,5 +132,48 @@ describe("getDriverInviteState", () => {
       carrierName: "Demo Carrier", email: "amar@example.com",
     })
     expect(await getDriverInviteState("garbage")).toEqual({ valid: false, claimed: false })
+  })
+})
+
+describe("hasDriverAppAccount", () => {
+  it("is carrier-scoped and reflects whether a linked hub.users row exists", async () => {
+    queryOneMock.mockResolvedValueOnce({ id: "u1" } as never)
+    expect(await hasDriverAppAccount("carrier-1", "driver-1")).toBe(true)
+    expect(queryOneMock).toHaveBeenCalledWith(expect.stringContaining("hub.users"), ["carrier-1", "driver-1"])
+
+    queryOneMock.mockResolvedValueOnce(null)
+    expect(await hasDriverAppAccount("carrier-1", "driver-1")).toBe(false)
+  })
+})
+
+describe("sendDriverInviteEmail", () => {
+  const recipient = { driverId: "driver-1", email: "amar@example.com", firstName: "Amar" }
+  const mailFrom = (name?: string) => `"${name}" <noreply@test>`
+
+  it("signs a token and sends the invite over the caller's transport", async () => {
+    const sendMail = vi.fn(async () => undefined)
+    const ok = await sendDriverInviteEmail({ sendMail }, mailFrom, "carrier-1", "Demo Carrier", recipient)
+    expect(ok).toBe(true)
+    expect(sendMail).toHaveBeenCalledWith(
+      expect.objectContaining({
+        from: '"Demo Carrier" <noreply@test>',
+        to: "amar@example.com",
+        text: expect.stringMatching(/\/hub\/driver-invite\/[\w-]+\.[\w-]+/),
+      })
+    )
+  })
+
+  it("never calls the transport when no auth secret can sign a token", async () => {
+    delete process.env.NEXTAUTH_SECRET
+    const sendMail = vi.fn(async () => undefined)
+    const ok = await sendDriverInviteEmail({ sendMail }, mailFrom, "carrier-1", "Demo Carrier", recipient)
+    expect(ok).toBe(false)
+    expect(sendMail).not.toHaveBeenCalled()
+  })
+
+  it("reports failure without throwing when the SMTP send rejects", async () => {
+    const sendMail = vi.fn(async () => { throw new Error("connect ETIMEDOUT") })
+    const ok = await sendDriverInviteEmail({ sendMail }, mailFrom, "carrier-1", "Demo Carrier", recipient)
+    expect(ok).toBe(false)
   })
 })

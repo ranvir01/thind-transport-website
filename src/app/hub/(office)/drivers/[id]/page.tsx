@@ -11,7 +11,8 @@ import { describePayRules } from "@/lib/hub/pay-rules"
 import { openDocumentRequests } from "@/lib/hub/driver-app"
 import { listTimeOff } from "@/lib/hub/timeoff"
 import { driverScoreHistory } from "@/lib/hub/recruiting"
-import { RequestDocumentPanel, TimeOffDecisionPanel } from "@/components/hub/DriverOfficePanels"
+import { DriverAppAccessPanel, RequestDocumentPanel, TimeOffDecisionPanel } from "@/components/hub/DriverOfficePanels"
+import { hasDriverAppAccount } from "@/lib/hub/driver-invite"
 import { fmtCents, loadTotalCents } from "@/lib/hub/types"
 import Link from "next/link"
 
@@ -22,13 +23,14 @@ export default async function DriverDetailPage({ params }: { params: Promise<{ i
   const { id } = await params
   const driver = await getDriver(user.carrierId, id).catch(() => null)
   if (!driver) notFound()
-  const [documents, loads, payRules, openRequests, timeOff, scores] = await Promise.all([
+  const [documents, loads, payRules, openRequests, timeOff, scores, hasAppAccess] = await Promise.all([
     listDocuments(user.carrierId, "driver", id),
     listLoads(user.carrierId, { driverId: id, status: "all" }),
     getActivePayRules(user.carrierId, id),
     openDocumentRequests(user.carrierId, id),
     listTimeOff(user.carrierId, { driverId: id, status: "requested" }),
     driverScoreHistory(user.carrierId, id),
+    hasDriverAppAccount(user.carrierId, id),
   ])
   const payDescription = payRules ? describePayRules(payRules) : null
 
@@ -61,6 +63,7 @@ export default async function DriverDetailPage({ params }: { params: Promise<{ i
         <DriverForm driverId={id} initial={initial} />
         <div className="space-y-4 max-w-2xl">
           <TimeOffDecisionPanel requests={timeOff} />
+          <DriverAppAccessPanel driverId={id} email={driver.email} hasAccess={hasAppAccess} />
           <RequestDocumentPanel
             driverId={id}
             loads={loads

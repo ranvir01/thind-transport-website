@@ -4,10 +4,11 @@
 import { useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
-import { Check, FileQuestion, Loader2, X } from "lucide-react"
+import { Check, FileQuestion, Loader2, Mail, X } from "lucide-react"
 import {
   cancelDocumentRequestAction, decideTimeOffAction, requestDocumentAction,
 } from "@/app/hub/_actions/comms"
+import { resendDriverInviteAction } from "@/app/hub/_actions/people"
 import { fieldCls, Panel } from "@/components/hub/ui"
 import { formatHubDateShort } from "@/lib/hub/format-dates"
 import { TIME_OFF_KIND_LABELS, type DocumentRequest, type TimeOffRequest } from "@/lib/hub/types"
@@ -192,6 +193,60 @@ export function TimeOffDecisionPanel({ requests }: { requests: TimeOffRequest[] 
           </li>
         ))}
       </ul>
+    </Panel>
+  )
+}
+
+/**
+ * First-send or resend the driver-app invite. Covers both gaps that had no
+ * retry path: a manually-added driver who never got the bulk-import invite,
+ * and a driver whose 7-day link expired before they used it.
+ */
+export function DriverAppAccessPanel({
+  driverId,
+  email,
+  hasAccess,
+}: {
+  driverId: string
+  email: string | null
+  hasAccess: boolean
+}) {
+  const router = useRouter()
+  const [pending, startTransition] = useTransition()
+
+  if (hasAccess) return null
+
+  const send = () =>
+    startTransition(async () => {
+      const result = await resendDriverInviteAction(driverId)
+      if (result.ok) {
+        toast.success(`Invite sent to ${email}`)
+        router.refresh()
+      } else toast.error(result.error ?? "Could not send invite")
+    })
+
+  return (
+    <Panel className="p-4 md:p-5">
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <h2 className="flex items-center gap-2 text-[13.5px] font-semibold text-fg">
+            <Mail className="h-4 w-4 text-accent-text" /> Driver app access
+          </h2>
+          <p className="mt-0.5 text-body-xs text-fg-3">
+            {email
+              ? "No app account yet — send a set-password link (valid 7 days)."
+              : "Add an email address above to send an app invite."}
+          </p>
+        </div>
+        <button
+          onClick={send}
+          disabled={pending || !email}
+          className="flex min-h-[36px] shrink-0 items-center gap-1.5 rounded-xl border border-border-strong px-3 text-sm font-bold text-fg-2 hover:bg-hover disabled:opacity-60"
+        >
+          {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Mail className="h-4 w-4" />}
+          Send invite
+        </button>
+      </div>
     </Panel>
   )
 }
