@@ -30,11 +30,27 @@ export async function getHubUser(): Promise<HubSessionUser | null> {
   }
 }
 
+/**
+ * `active` is part of the guard: login checks it, but sessions are JWTs —
+ * without this, a deactivated account keeps access until the token expires
+ * (~30 days). Fixed for driver/portal already; office/permission guards
+ * below now get the same per-request re-check.
+ */
+async function isActiveUser(user: HubSessionUser): Promise<boolean> {
+  const { queryOne } = await import("./db")
+  const row = await queryOne<{ id: string }>(
+    `SELECT id FROM hub.users WHERE id = $1 AND carrier_id = $2 AND active`,
+    [user.id, user.carrierId]
+  )
+  return !!row
+}
+
 /** Server-side guard for office pages and actions (defense in depth over the proxy). */
 export async function requireOfficeUser(): Promise<HubSessionUser> {
   const user = await getHubUser()
   if (!user) redirect("/hub/login")
   if (!OFFICE_ROLES.includes(user.role)) redirect("/hub/welcome")
+  if (!(await isActiveUser(user))) redirect("/hub/login")
   return user
 }
 
@@ -107,6 +123,7 @@ export async function requirePermission(action: HubAction): Promise<HubSessionUs
   const user = await getHubUser()
   if (!user) throw new Error("Not signed in")
   if (!can(user.role, action)) throw new Error(`Forbidden: ${user.role} cannot ${action}`)
+  if (!(await isActiveUser(user))) throw new Error("Account deactivated")
   return user
 }
 
@@ -118,5 +135,6 @@ export async function requirePermissionPage(action: HubAction): Promise<HubSessi
     if (!OFFICE_ROLES.includes(user.role)) redirect("/hub/welcome")
     redirect("/hub")
   }
+  if (!(await isActiveUser(user))) redirect("/hub/login")
   return user
 }

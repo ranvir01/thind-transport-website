@@ -86,7 +86,12 @@ export default async function CompliancePage({
               title={active ? "Show all statuses" : `Show only: ${tile.label.toLowerCase()}`}
             >
               <Panel className={cn("h-full p-3 sm:p-4 transition-colors hover:bg-hover", active ? tile.activeCls : tile.restCls)}>
-                <span className={cn("text-label uppercase", tile.textCls)}>
+                {/* Plain template, not cn(): tailwind-merge treats the custom
+                    `text-label` font-size as a text-color and drops it when merged
+                    with text-bad/text-warn/text-ok, collapsing the label to 16px.
+                    text-label and the color set different CSS props and never
+                    conflict, so concatenate them directly. */}
+                <span className={`text-label uppercase ${tile.textCls}`}>
                   <span className="whitespace-nowrap sm:hidden">{tile.shortLabel}</span>
                   <span className="hidden sm:inline">{tile.label}</span>
                 </span>
