@@ -67,6 +67,24 @@ async function main() {
   check(lanesCsv.status === 200 && /csv/i.test(lanesCsv.type ?? ""), `lanes CSV served (${lanesCsv.status} ${lanesCsv.type})`)
   check(/^Lane|Origin|Loads/i.test(lanesCsv.body.trim()), "lanes CSV has a header row")
 
+  console.log("3b. Range-following lanes export (/hub/reports/export/lanes) follows ?from/?to")
+  const rangeLanesCsv = await page.evaluate(async () => {
+    const res = await fetch("/hub/reports/export/lanes?from=2020-01-01&to=2020-01-31")
+    return { status: res.status, type: res.headers.get("content-type"), disposition: res.headers.get("content-disposition"), body: await res.text() }
+  })
+  check(
+    rangeLanesCsv.status === 200 && /csv/i.test(rangeLanesCsv.type ?? ""),
+    `range lanes CSV served (${rangeLanesCsv.status} ${rangeLanesCsv.type})`
+  )
+  check(
+    (rangeLanesCsv.disposition ?? "").includes('filename="lanes_2020-01-01_2020-01-31.csv"'),
+    `range lanes CSV filename encodes the requested range (${rangeLanesCsv.disposition})`
+  )
+  check(
+    /^Origin,OriginState,Destination,DestState,Loads,Revenue,Miles,EstMargin,AvgRPM/.test(rangeLanesCsv.body.trim()),
+    "range lanes CSV has expected column headers"
+  )
+
   console.log("4. Owner dashboard revenue charts render")
   await page.goto(`${BASE}/hub/reports/owner`, { waitUntil: "networkidle2" })
   await waitForText(page, "Owner Dashboard")
