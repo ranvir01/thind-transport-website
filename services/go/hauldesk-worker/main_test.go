@@ -317,3 +317,16 @@ func TestHaversineMiles(t *testing.T) {
 		t.Fatalf("Seattle-Portland great-circle should be ~145 mi, got %f", a)
 	}
 }
+
+// TestHaversineMilesGoldenParityWithTS pins the same Kent-WA-to-Denver-CO
+// fixture as geo.test.ts's "computes great-circle distance between two known
+// cities" (toBeCloseTo(1008.69, 1)) — the Go worker's fallback path and the
+// TS gateway's own haversineMiles (src/lib/hub/geo.ts) must never drift,
+// since routing.ts falls back to the TS formula whenever the worker itself
+// is unset, so both must agree with the shared golden distance.
+func TestHaversineMilesGoldenParityWithTS(t *testing.T) {
+	got := haversineMiles(47.3809, -122.2348, 39.7392, -104.9903)
+	if math.Abs(got-1008.69) > 0.05 {
+		t.Fatalf("expected TS golden 1008.69 mi (±0.05), got %f", got)
+	}
+}
