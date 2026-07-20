@@ -12,7 +12,7 @@
  * Usage: node scripts/e2e-customers-smoke.mjs [outputDir]
  */
 import { mkdirSync } from "node:fs"
-import { launchBrowser, BASE, sleep, failures, check, waitForText, login, makeShot, clickByText, reseed } from "./e2e-lib.mjs"
+import { launchBrowser, BASE, failures, check, waitForText, login, makeShot, clickByText, reseed } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-customers"
 mkdirSync(OUT, { recursive: true })
@@ -117,12 +117,15 @@ async function main() {
   await page2.setViewport({ width: 390, height: 844 })
   await login(page2, "driver@demo.thind")
   await page2.goto(`${BASE}/hub/customers`, { waitUntil: "networkidle2" })
-  await sleep(1000)
+  const redirected = await page2
+    .waitForFunction(() => location.pathname !== "/hub/customers", { timeout: 20000 })
+    .then(() => true)
+    .catch(() => false)
   const driverBlocked = await page2.evaluate(() => ({
     url: location.pathname,
     seesBook: document.body.innerText.includes("book of business"),
   }))
-  check(driverBlocked.url !== "/hub/customers", `driver redirected away (landed on ${driverBlocked.url})`)
+  check(redirected && driverBlocked.url !== "/hub/customers", `driver redirected away (landed on ${driverBlocked.url})`)
   check(!driverBlocked.seesBook, "driver never sees the customers list")
   await shot(page2, "06-customers-driver-blocked")
 
