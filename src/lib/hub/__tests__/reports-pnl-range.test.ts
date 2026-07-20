@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
-import { resolvePnlRange, truckPnlRangeCsv } from "@/lib/hub/reports"
+import { parseStoredPnlRange, pnlPresetRanges, resolvePnlRange, truckPnlRangeCsv } from "@/lib/hub/reports"
 import type { TruckPnl } from "@/lib/hub/expenses"
 
 describe("resolvePnlRange", () => {
@@ -40,6 +40,54 @@ describe("resolvePnlRange", () => {
 
   it("accepts a leap-day date", () => {
     expect(resolvePnlRange("2024-02-29", "2026-07-14")).toEqual({ from: "2024-02-29", to: "2026-07-14" })
+  })
+})
+
+describe("pnlPresetRanges", () => {
+  it("computes MTD, last month, last quarter, and YTD for a mid-year date", () => {
+    const presets = pnlPresetRanges(new Date("2026-07-14T12:00:00Z"))
+    expect(presets).toEqual([
+      { key: "mtd", label: "MTD", range: { from: "2026-07-01", to: "2026-07-14" } },
+      { key: "last-month", label: "Last month", range: { from: "2026-06-01", to: "2026-06-30" } },
+      { key: "last-quarter", label: "Last quarter", range: { from: "2026-04-01", to: "2026-06-30" } },
+      { key: "ytd", label: "YTD", range: { from: "2026-01-01", to: "2026-07-14" } },
+    ])
+  })
+
+  it("rolls last month and last quarter back into the prior year in January", () => {
+    const presets = pnlPresetRanges(new Date("2026-01-15T12:00:00Z"))
+    const byKey = Object.fromEntries(presets.map((p) => [p.key, p.range]))
+    expect(byKey["last-month"]).toEqual({ from: "2025-12-01", to: "2025-12-31" })
+    expect(byKey["last-quarter"]).toEqual({ from: "2025-10-01", to: "2025-12-31" })
+  })
+})
+
+describe("parseStoredPnlRange", () => {
+  it("returns null for null, undefined, or empty input", () => {
+    expect(parseStoredPnlRange(null)).toBeNull()
+    expect(parseStoredPnlRange(undefined)).toBeNull()
+    expect(parseStoredPnlRange("")).toBeNull()
+  })
+
+  it("parses a valid stored range", () => {
+    expect(parseStoredPnlRange("2026-01-01_2026-03-31")).toEqual({ from: "2026-01-01", to: "2026-03-31" })
+  })
+
+  it("swaps a backwards stored range instead of rejecting it", () => {
+    expect(parseStoredPnlRange("2026-06-01_2026-01-01")).toEqual({ from: "2026-01-01", to: "2026-06-01" })
+  })
+
+  it("rejects a value with extra underscore-separated parts", () => {
+    expect(parseStoredPnlRange("2026-01-01_2026-03-31_extra")).toBeNull()
+  })
+
+  it("rejects a value missing the second date", () => {
+    expect(parseStoredPnlRange("2026-01-01")).toBeNull()
+  })
+
+  it("rejects malformed or calendar-impossible dates", () => {
+    expect(parseStoredPnlRange("not-a-date_2026-03-31")).toBeNull()
+    expect(parseStoredPnlRange("2026-02-31_2026-03-31")).toBeNull()
   })
 })
 
