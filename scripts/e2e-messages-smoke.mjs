@@ -15,13 +15,19 @@
  * Usage: node scripts/e2e-messages-smoke.mjs [outputDir]
  */
 import { mkdirSync } from "node:fs"
-import { launchBrowser, BASE, sleep, failures, check, waitForText, login, makeShot, reseed } from "./e2e-lib.mjs"
+import { launchBrowser, BASE, failures, check, waitForText, login, makeShot, reseed } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-messages"
 mkdirSync(OUT, { recursive: true })
 const shot = makeShot(OUT, { fullPage: true })
 
-/** Type into the ChatThread composer and press Send. */
+/**
+ * Type into the ChatThread composer and press Send. ChatThread's send()
+ * awaits sendMessageAction then calls router.refresh() — the sent text only
+ * renders once the refresh re-fetches messages from the DB, so waitForText
+ * finding it already means the message is persisted server-side; no
+ * additional settle time needed.
+ */
 async function sendChat(page, text) {
   await page.click('textarea[placeholder="Type a message…"]')
   await page.keyboard.down("Control")
@@ -31,7 +37,6 @@ async function sendChat(page, text) {
   await page.type('textarea[placeholder="Type a message…"]', text)
   await page.click('button[aria-label="Send"]')
   await waitForText(page, text)
-  await sleep(800)
 }
 
 async function main() {
@@ -93,11 +98,17 @@ async function main() {
     chip.click()
     return true
   })
-  await sleep(300)
+  check(chipFilled === true, "template chips render on the office composer")
+  // setBody(t.body) is a React state update — poll instead of racing its render.
+  await office
+    .waitForFunction(
+      () => document.querySelector('textarea[placeholder="Type a message…"]')?.value.includes("ETA"),
+      { timeout: 8000 }
+    )
+    .catch(() => {})
   const composerValue = await office.evaluate(
     () => document.querySelector('textarea[placeholder="Type a message…"]')?.value ?? ""
   )
-  check(chipFilled === true, "template chips render on the office composer")
   check(composerValue.includes("ETA"), `ETA template fills the composer (got "${composerValue}")`)
   await sendChat(office, officeMarker)
   const officeThread = await office.evaluate(() => document.body.innerText)
@@ -161,11 +172,12 @@ async function main() {
   await shot(office, "06-office-reply-seen")
 
   console.log("6. Driver login is refused the office messages routes")
+  // proxy.ts's middleware redirect() runs server-side before any HTML ships,
+  // and Puppeteer's goto() follows redirects transparently — driver.url() is
+  // already final once goto() resolves, no settle time needed.
   await driver.goto(`${BASE}/hub/messages`, { waitUntil: "networkidle2" })
-  await sleep(800)
   check(!driver.url().includes("/hub/messages"), `driver redirected off the office list (at ${driver.url()})`)
   await driver.goto(`${BASE}/hub/messages/${threadId}`, { waitUntil: "networkidle2" })
-  await sleep(800)
   check(
     !driver.url().includes(`/hub/messages/${threadId}`),
     `driver redirected off the office thread deep link (at ${driver.url()})`
