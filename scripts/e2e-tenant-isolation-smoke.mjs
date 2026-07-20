@@ -20,7 +20,7 @@
  */
 import puppeteer from "puppeteer"
 import { mkdirSync } from "node:fs"
-import { BASE, sleep, failures, check, waitForText, login, makeShot, reseed } from "./e2e-lib.mjs"
+import { BASE, failures, check, waitForText, login, makeShot, reseed } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-tenant-isolation"
 mkdirSync(OUT, { recursive: true })
@@ -73,7 +73,9 @@ async function main() {
   check(!(await bodyText(thind)).includes("CAS-INV"), "Thind money screen has no CAS-INV reference")
 
   await thind.goto(`${BASE}/hub/fleet`, { waitUntil: "networkidle2" })
-  await sleep(600)
+  // Fleet is an RSC list page — wait for a real unit number to render
+  // (101–107) instead of a blind sleep after networkidle2.
+  await thind.waitForFunction(() => /\b10[1-7]\b/.test(document.body.innerText), { timeout: 8000 }).catch(() => {})
   const thindFleetWall = await bodyText(thind)
   check(!/\bC-0[12]\b/.test(thindFleetWall), "Thind fleet has no Cascade unit (C-01/C-02)")
   const truckUrl = await firstHref(thind, "/hub/fleet/trucks/")
@@ -104,7 +106,11 @@ async function main() {
   await shot(cascade, "02-cascade-dispatch")
 
   await cascade.goto(`${BASE}/hub/fleet`, { waitUntil: "networkidle2" })
-  await sleep(600)
+  await cascade
+    .waitForFunction(() => document.body.innerText.includes("C-01") && document.body.innerText.includes("C-02"), {
+      timeout: 8000,
+    })
+    .catch(() => {})
   const cascadeFleetWall = await bodyText(cascade)
   check(cascadeFleetWall.includes("C-01") && cascadeFleetWall.includes("C-02"), "Cascade fleet shows C-01 and C-02")
   check(!/\b10[1-7]\b|\b20[1-3]\b/.test(cascadeFleetWall), "Cascade fleet has no Thind unit numbers (101–107/201–203)")
@@ -124,7 +130,16 @@ async function main() {
   ]) {
     if (!url) continue
     await cascade.goto(`${BASE}${url}`, { waitUntil: "networkidle2" })
-    await sleep(600)
+    // Expected outcome is the not-found boundary ("Road Not Found!"); also
+    // resolve early if the leak text shows up instead, so a real leak is
+    // caught fast rather than masked by a blind sleep either way.
+    await cascade
+      .waitForFunction(
+        (t) => document.body.innerText.toLowerCase().includes("road not found") || (t && document.body.innerText.includes(t)),
+        { timeout: 8000 },
+        leak
+      )
+      .catch(() => {})
     const wall = await bodyText(cascade)
     const leaked = leak ? wall.includes(leak) : false
     const notFound = wall.toLowerCase().includes("road not found") || wall.toLowerCase().includes("could not be found")
