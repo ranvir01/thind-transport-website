@@ -66,8 +66,7 @@ export function LoginCard({ showDemo }: { showDemo: boolean }) {
       }
 
       const session = await sessionAfterLogin()
-      const role = (session?.user as { role?: string } | undefined)?.role
-      window.location.assign(postLoginPath(role))
+      window.location.assign(postLoginPath(session?.user as { role?: string } | undefined))
     } catch {
       toast.error("Something went wrong. Please try again.")
       setLoading(false)
