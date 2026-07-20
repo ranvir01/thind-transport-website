@@ -82,6 +82,7 @@ export const PROVIDERS: readonly ProviderSpec[] = [
     fields: [
       { key: "serviceAccountEmail", label: "Service account email" },
       { key: "password", label: "Service account password", secret: true },
+      { key: "actingUserEmail", label: "Acting user email (needs a Connexion + load board seat)" },
     ],
     fallback: "Paste rate con", sync: "manual", status: "live",
   },

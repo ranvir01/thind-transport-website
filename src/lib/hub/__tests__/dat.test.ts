@@ -131,9 +131,20 @@ describe("datSource (SyncSource<DatLoadPosting> + search contract)", () => {
     await expect(source.search({ originState: "WA" })).rejects.toThrow(/not connected/)
   })
 
-  it("searches and normalizes matches once credentials resolve", async () => {
+  it("refuses to search when the acting-user email is missing (service account alone cannot authenticate)", async () => {
     hasCredentialsMock.mockResolvedValue(true)
     getCredentialsMock.mockResolvedValue({ serviceAccountEmail: "u@carrier.com", password: "p" })
+    const source = datSource(CARRIER)
+    await expect(source.search({ originState: "WA" })).rejects.toThrow(/not connected/)
+  })
+
+  it("searches and normalizes matches once credentials resolve", async () => {
+    hasCredentialsMock.mockResolvedValue(true)
+    getCredentialsMock.mockResolvedValue({
+      serviceAccountEmail: "u@carrier.com",
+      password: "p",
+      actingUserEmail: "dispatch@carrier.com",
+    })
     vi.stubGlobal(
       "fetch",
       vi.fn(async () => ({
@@ -153,7 +164,11 @@ describe("datSource (SyncSource<DatLoadPosting> + search contract)", () => {
 
   it("carries the search criteria into the query string", async () => {
     hasCredentialsMock.mockResolvedValue(true)
-    getCredentialsMock.mockResolvedValue({ serviceAccountEmail: "u@carrier.com", password: "p" })
+    getCredentialsMock.mockResolvedValue({
+      serviceAccountEmail: "u@carrier.com",
+      password: "p",
+      actingUserEmail: "dispatch@carrier.com",
+    })
     const fetchMock = vi.fn(async () => ({ ok: true, json: async () => ({ matches: [] }) }))
     vi.stubGlobal("fetch", fetchMock)
     const source = datSource(CARRIER)
@@ -168,7 +183,11 @@ describe("datSource (SyncSource<DatLoadPosting> + search contract)", () => {
 
   it("deterministic external ids replay idempotently through the shared memory sink", async () => {
     hasCredentialsMock.mockResolvedValue(true)
-    getCredentialsMock.mockResolvedValue({ serviceAccountEmail: "u@carrier.com", password: "p" })
+    getCredentialsMock.mockResolvedValue({
+      serviceAccountEmail: "u@carrier.com",
+      password: "p",
+      actingUserEmail: "dispatch@carrier.com",
+    })
     vi.stubGlobal(
       "fetch",
       vi.fn(async () => ({ ok: true, json: async () => ({ matches: [{ matchId: "A", tripMiles: 100 }] }) }))
@@ -183,7 +202,11 @@ describe("datSource (SyncSource<DatLoadPosting> + search contract)", () => {
 
   it("surfaces a non-OK search response as an error rather than swallowing it", async () => {
     hasCredentialsMock.mockResolvedValue(true)
-    getCredentialsMock.mockResolvedValue({ serviceAccountEmail: "u@carrier.com", password: "p" })
+    getCredentialsMock.mockResolvedValue({
+      serviceAccountEmail: "u@carrier.com",
+      password: "p",
+      actingUserEmail: "dispatch@carrier.com",
+    })
     vi.stubGlobal("fetch", vi.fn(async () => ({ ok: false, status: 503 })))
     const source = datSource(CARRIER)
     await expect(source.pull()).rejects.toThrow(/503/)
@@ -191,7 +214,11 @@ describe("datSource (SyncSource<DatLoadPosting> + search contract)", () => {
 
   it("returns an empty result when the response body has no matches array", async () => {
     hasCredentialsMock.mockResolvedValue(true)
-    getCredentialsMock.mockResolvedValue({ serviceAccountEmail: "u@carrier.com", password: "p" })
+    getCredentialsMock.mockResolvedValue({
+      serviceAccountEmail: "u@carrier.com",
+      password: "p",
+      actingUserEmail: "dispatch@carrier.com",
+    })
     vi.stubGlobal("fetch", vi.fn(async () => ({ ok: true, json: async () => ({}) })))
     const source = datSource(CARRIER)
     await expect(source.pull()).resolves.toEqual([])
