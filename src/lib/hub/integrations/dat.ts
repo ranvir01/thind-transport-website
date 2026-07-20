@@ -124,7 +124,15 @@ export function datSource(carrierId: string): DatSource {
 
   async function search(criteria: DatSearchCriteria): Promise<DatLoadPosting[]> {
     const creds = await getCredentials(carrierId, "dat")
-    if (!creds?.serviceAccountEmail || !creds?.password) throw new Error("dat is not connected")
+    // DAT's RESTful API FAQ (one.support.dat.com) confirms a two-level model: the service
+    // account authenticates the organization, but every request is made AS a regular user who
+    // must hold a Connexion + load board seat — the service account alone cannot search or post.
+    // actingUserEmail is required here so the credential is on file before the real token
+    // exchange is built; the request below still sends organization Basic auth only (placeholder,
+    // see docs/integrations/dat.md) until DAT's developer packet confirms the token endpoints.
+    if (!creds?.serviceAccountEmail || !creds?.password || !creds?.actingUserEmail) {
+      throw new Error("dat is not connected")
+    }
     const auth = Buffer.from(`${creds.serviceAccountEmail}:${creds.password}`).toString("base64")
     const response = await fetch(`${base}/loads/search?${searchQuery(criteria)}`, {
       headers: { Authorization: `Basic ${auth}` },
