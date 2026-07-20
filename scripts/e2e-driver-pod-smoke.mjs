@@ -12,7 +12,7 @@
 import pg from "pg"
 import { writeFileSync, mkdirSync } from "node:fs"
 import path from "node:path"
-import { launchBrowser, BASE, sleep, clickByText, waitForText, makeShot, reseed, check, failures } from "./e2e-lib.mjs"
+import { launchBrowser, BASE, clickByText, waitForText, textGone, makeShot, reseed, check, failures } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots"
 mkdirSync(OUT, { recursive: true })
@@ -72,7 +72,11 @@ async function main() {
     await clickByText(page, "confirm this dispatch")
     await waitForText(page, "Dispatch confirmed")
     check(true, "dispatch confirmed toast shown")
-    await sleep(1200)
+    // The toast fires before router.refresh() re-renders the card without the
+    // (now acknowledged_at-gated) confirm button — wait for that button to
+    // actually leave the page instead of a fixed sleep, so the screenshot and
+    // the rest of the flow don't race a stale "unconfirmed" card.
+    check(await textGone(page, "confirm this dispatch"), "confirm-dispatch button cleared after refresh")
     await shot(page, "02-confirmed")
 
     console.log("3. Send a POD through SEND PAPERWORK")
@@ -84,7 +88,12 @@ async function main() {
     await podInput.uploadFile(podPath)
     await waitForText(page, "POD sent to the office", 20000)
     check(true, "POD sent toast shown")
-    await sleep(1500)
+    // This load stays "dispatched" through the smoke, so nothing in
+    // DriverLoadCard's markup flips on hasPod (that only gates copy on
+    // delivered loads) — there's no DOM condition to key a wait on. Wait for
+    // the in-flight router.refresh() fetch to actually settle instead of
+    // guessing a fixed delay, so the screenshot isn't caught mid-refresh.
+    await page.waitForNetworkIdle({ idleTime: 500, timeout: 8000 }).catch(() => {})
     await shot(page, "03-pod-sent")
 
     const podRows = await db.query(
@@ -110,7 +119,11 @@ async function main() {
     await reqInput.uploadFile(receiptPath)
     await waitForText(page, "Sent — request cleared", 20000)
     check(true, "request-cleared toast shown")
-    await sleep(1500)
+    // The satisfied request drops out of the driver home's pending-requests
+    // query, so DocRequestCard unmounts once router.refresh() lands — wait
+    // for its "office needs something" header to leave the page instead of a
+    // fixed sleep.
+    check(await textGone(page, "The office needs something"), "document-request card cleared after refresh")
     await shot(page, "04-request-cleared")
 
     const req = await db.query(
