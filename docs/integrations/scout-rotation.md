@@ -15,7 +15,7 @@ as an urgent `Backlog:` item.
 | `eia` (adjacent, free, not in `IntegrationProvider` union) | **Built** — diesel price benchmark. 2026-07-19 pass: no breaking change (v2 current, series `EMD_EPD2D_PTE_NUS_DPG` alive into 2026); two doc corrections — EIA DOES publish throttles (~9,000 req/hr sustained, 5 req/s burst, temporary auto-suspension) and `DEMO_KEY` is NOT supported (api.data.gov convention, was never EIA's) | `EIA_API_KEY` env | `src/lib/hub/fuel.ts` | [`eia.md`](./eia.md) | 2026-07-19 |
 | `truckercloud` | **Built** — adapter shipped, drop-in second aggregator to Terminal. 2026-07-20 pass (5th): no adapter-breaking change; every `truckercloud.com`/zendesk/trade-press page still 403 to this env, so the OAuth2 client-credentials assumption stays unverified (anonymous scouting now exhausted — human outreach only). One correction: Carrier TMS is still an explicitly marketed solution, so the "insurer pivot forecloses carrier access → redirect to Axle" worry is downgraded from likely to unlikely. Provider count now marketed as "175+ ELDs and Cameras". Stale `"Apollo API"` code comment in `telematics.ts` flagged as an integrations-lane Backlog item | `apiKey`, `clientId`/`clientSecret` | `src/lib/hub/telematics.ts` (`truckerCloudSource`) | [`truckercloud.md`](./truckercloud.md) | 2026-07-20 |
 | `dat` | **Built** — search + posting-to-load-draft mapper; registry `status: "live"` (manual sync). 2026-07-20 pass: no wire-format breaking change (per-request Basic auth on the service account still matches the assumed shape); confirmed via FAQ that service accounts hold zero seats and the acting user carries the Connexion/load board seats — the missing `actingUserEmail` credential field shipped this pass, `datSource().search()` now refuses without it | `serviceAccountEmail`, `password`, `actingUserEmail` (added 2026-07-20) | `src/lib/hub/integrations/dat.ts` | [`dat.md`](./dat.md) | 2026-07-20 |
-| `efs` | **Built** — adapter shipped; real feed is a daily SFTP CSV — signed file-drop webhook shipped 2026-07-17 (`processEfsEvent`), Go-worker SFTP poller still the long-term option (see doc) | `feedUser`, `feedPassword`, `webhookSecret` | `src/lib/hub/integrations/efs.ts` | [`efs.md`](./efs.md) | 2026-07-11 |
+| `efs` | **Built** — adapter shipped; real feed is a daily SFTP CSV — signed file-drop webhook shipped 2026-07-17 (`processEfsEvent`), Go-worker SFTP poller still the long-term option. 2026-07-20 pass: no breaking change (provisioning path/timeline/transport all still match); every direct vendor fetch 403-walled again, so confirmation is search-snippet only. Two corroborating sources found the same transaction-field set independently (Level-III fields, Motive's synthesized view), and the Motive source surfaced a "discounts applied" field `normalizeEfsRecord` doesn't currently capture — flagged for whenever a real file lands, not urgent | `feedUser`, `feedPassword`, `webhookSecret` | `src/lib/hub/integrations/efs.ts` | [`efs.md`](./efs.md) | 2026-07-20 |
 | `wex` | **Built** — adapter shipped; real feed confirmed daily SFTP CSV (same as EFS) — signed file-drop webhook shipped 2026-07-18 (`processWexEvent`) | `feedUser`, `feedPassword`, `webhookSecret` | `src/lib/hub/integrations/wex.ts` | [`wex.md`](./wex.md) | 2026-07-18 |
 | `comdata` | **Built** — adapter shipped, daily cron live; Corpay has REAL machine channels (SOAP FleetCreditWS UsernameToken, REST developer portal, partner daily AC00029 fixed-width file) — file-drop webhook shipped 2026-07-18 (`processComdataEvent`) | `apiKey`, `apiSecret`, `webhookSecret` | `src/lib/hub/integrations/comdata.ts` | [`comdata.md`](./comdata.md) | 2026-07-18 |
 | `qbo` | **Built** — pull + push both directions, refresh-token rotation confirmed correct; hardcoded `minorversion=65` is stale (Intuit serves v75 regardless since 2025-08-01); refresh tokens now carry a 5-year hard cap (see doc) | OAuth2 (Intuit) | `src/lib/hub/integrations/qbo.ts` | [`qbo.md`](./qbo.md) | 2026-07-17 |
@@ -37,8 +37,17 @@ integrations that were never in scope of the vendor shopping list: both `fmcsa.m
    notes before a lane builds the adapter.
 3. One provider per cycle. Update the "Last researched" date and doc link when done.
 
-Next up by this rule: `efs.md` (2026-07-11, now the oldest built-adapter doc). The 2026-07-20
-DAT pass found no wire-format breaking change to the existing per-request Basic-auth guess, but
+Next up by this rule: `qbo.md` or `factor.md` (both 2026-07-17, now tied oldest built-adapter
+docs). The 2026-07-20 EFS pass found no breaking change: provisioning path, timeline, and
+transport (daily SFTP CSV) all still match the 2026-07-11 doc. Every direct vendor fetch
+403-walled again this pass (efsllc.com, emgr.efsllc.com, geotab.com, fleetio.com,
+firstfleetinc.com, gomotive.com, and — newly ruled out as a false lead — wextelematics.com, a
+different WEX product), so confirmation is search-snippet only, same wall as terminal/
+truckercloud/fmcsa/dat. One substantive addition: a second independent source (Motive's
+synthesized transaction view) landed on the same field set as the existing Level-III list and
+surfaced a "discounts applied" field `normalizeEfsRecord` doesn't currently capture — flagged
+in `efs.md` as a minor gap to close whenever a real provisioned file lands, not urgent. The
+2026-07-20 DAT pass before that found no wire-format breaking change to the existing per-request Basic-auth guess, but
 did close a real gap: the RESTful API FAQ confirms service accounts carry zero seats/services —
 all seat requirements (Connexion + load board, +RateView for rates) attach to the acting user,
 not the service account — so the previously-flagged missing `actingUserEmail` credential field
