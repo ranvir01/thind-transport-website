@@ -17,7 +17,7 @@
  */
 import puppeteer from "puppeteer"
 import { mkdirSync } from "node:fs"
-import { BASE, sleep, failures, check, waitForText, login, makeShot, reseed } from "./e2e-lib.mjs"
+import { BASE, failures, check, waitForText, waitForPath, login, makeShot, reseed } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-users"
 mkdirSync(OUT, { recursive: true })
@@ -184,7 +184,10 @@ async function main() {
   await dispPage.setViewport({ width: 1440, height: 900 })
   await login(dispPage, "dispatch@demo.thind")
   await dispPage.goto(`${BASE}/hub/settings/users`, { waitUntil: "networkidle2" })
-  await sleep(500)
+  // requireOwner's redirect is server-side and already resolved by the time
+  // goto() settles, but poll for the landing path instead of a fixed sleep
+  // in case a slow rig leaves the redirect still in flight under contention.
+  await waitForPath(dispPage, "/hub")
   const disp = await dispPage.evaluate(() => ({
     path: location.pathname,
     seesRoster: document.body.innerText.includes("alert emails, and who can sign in"),
