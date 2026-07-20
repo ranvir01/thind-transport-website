@@ -17,13 +17,18 @@ vi.mock("@/lib/hub/documents", () => ({
   localUploadPath: vi.fn((name: string) => `/uploads/${name}`),
   fileOwnerCarrierId: vi.fn(async () => null),
 }))
+vi.mock("@/lib/hub/portal", () => ({
+  portalFileVisible: vi.fn(async () => false),
+}))
 
 import { getHubUser } from "@/lib/hub/session"
 import { fileOwnerCarrierId } from "@/lib/hub/documents"
+import { portalFileVisible } from "@/lib/hub/portal"
 import { GET } from "@/app/api/hub/files/[name]/route"
 
 const getHubUserMock = vi.mocked(getHubUser)
 const ownerMock = vi.mocked(fileOwnerCarrierId)
+const portalVisibleMock = vi.mocked(portalFileVisible)
 
 const CARRIER_A = "11111111-1111-1111-1111-111111111111"
 const CARRIER_B = "22222222-2222-2222-2222-222222222222"
@@ -38,6 +43,8 @@ beforeEach(() => {
   getHubUserMock.mockReset()
   ownerMock.mockReset()
   ownerMock.mockResolvedValue(null)
+  portalVisibleMock.mockReset()
+  portalVisibleMock.mockResolvedValue(false)
   readFileMock.mockClear()
 })
 
@@ -68,6 +75,36 @@ describe("/api/hub/files/[name] tenancy", () => {
   it("serves the file to a user of the owning carrier", async () => {
     getHubUserMock.mockResolvedValue({ id: "u1", name: "Dana", role: "owner", carrierId: CARRIER_A })
     ownerMock.mockResolvedValue(CARRIER_A)
+    const res = await request()
+    expect(res.status).toBe(200)
+    expect(res.headers.get("Content-Type")).toBe("application/pdf")
+    // Office users are governed by tenancy alone — the portal ACL never runs.
+    expect(portalVisibleMock).not.toHaveBeenCalled()
+  })
+
+  it("404s a SAME-carrier broker for a file the portal does not surface (settlements, CDL scans, other customers' invoices)", async () => {
+    getHubUserMock.mockResolvedValue({ id: "u-broker", name: "Bree", role: "broker", carrierId: CARRIER_A })
+    ownerMock.mockResolvedValue(CARRIER_A)
+    portalVisibleMock.mockResolvedValue(false)
+    const res = await request("uuid-settlement.pdf")
+    expect(res.status).toBe(404)
+    expect(readFileMock).not.toHaveBeenCalled()
+    expect(portalVisibleMock).toHaveBeenCalledWith(CARRIER_A, "u-broker", "uuid-settlement.pdf")
+  })
+
+  it("404s a same-carrier shipper too when the portal ACL refuses", async () => {
+    getHubUserMock.mockResolvedValue({ id: "u-ship", name: "Sam", role: "shipper", carrierId: CARRIER_A })
+    ownerMock.mockResolvedValue(CARRIER_A)
+    portalVisibleMock.mockResolvedValue(false)
+    const res = await request()
+    expect(res.status).toBe(404)
+    expect(readFileMock).not.toHaveBeenCalled()
+  })
+
+  it("serves a portal-visible file (their customer's POD/invoice, packet docs) to a broker", async () => {
+    getHubUserMock.mockResolvedValue({ id: "u-broker", name: "Bree", role: "broker", carrierId: CARRIER_A })
+    ownerMock.mockResolvedValue(CARRIER_A)
+    portalVisibleMock.mockResolvedValue(true)
     const res = await request()
     expect(res.status).toBe(200)
     expect(res.headers.get("Content-Type")).toBe("application/pdf")

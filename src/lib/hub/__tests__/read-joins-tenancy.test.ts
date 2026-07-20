@@ -31,7 +31,7 @@ import { listInvoices } from "../invoices"
 import { listTasks } from "../tasks"
 import { listFacilityNotes } from "../facilities"
 import { driverActiveLoads, driverDocuments, openDocumentRequests } from "../driver-app"
-import { portalLoads, portalLoadDocuments } from "../portal"
+import { portalLoads, portalLoadDocuments, portalInvoices } from "../portal"
 import { todayData } from "../today"
 import { listTimeOff } from "../timeoff"
 import { listDvirsForTruck, truckDvirState } from "../dvir"
@@ -177,6 +177,11 @@ describe("read queries carrier-guard their joins (both-sides tenancy)", () => {
     expect(sql).toContain("WHERE load_id = l.id AND carrier_id = l.carrier_id AND type = 'delivery'")
   })
 
+  it("portal invoices guard the load-reference join (money-audit flag)", async () => {
+    await portalInvoices(CARRIER, "c1")
+    expect(lastSql()).toContain("JOIN hub.loads l ON l.id = i.load_id AND l.carrier_id = i.carrier_id")
+  })
+
   it("portal load documents guard the document side of the loads join", async () => {
     await portalLoadDocuments(CARRIER, "c1", "l1")
     expect(lastSql()).toContain("ON l.id = d.entity_id AND d.entity_type = 'load' AND d.carrier_id = l.carrier_id")
@@ -233,6 +238,10 @@ describe("read queries carrier-guard their joins (both-sides tenancy)", () => {
     const sql = allSql()
     expect(sql).toContain("FROM hub.stops WHERE load_id = $1 AND carrier_id = $2")
     expect(sql).toContain("FROM hub.position_pings WHERE truck_id = $1 AND carrier_id = $2")
+    // Unauthenticated surface: stops are the explicit public-safe column list,
+    // never SELECT * (facility/address, pickup/PO refs, notes, raw lat/lng).
+    expect(sql).not.toContain("SELECT * FROM hub.stops")
+    expect(sql).toContain("SELECT id, sequence, type, city, state, fcfs, appt_start, appt_end, arrived_at, departed_at")
   })
 
   it("IFTA source export guards both truck joins", async () => {

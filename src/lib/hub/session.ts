@@ -77,8 +77,11 @@ export async function requirePortalUser(): Promise<PortalSessionUser> {
   if (user.role === "driver") redirect("/hub/driver")
   if (user.role !== "broker" && user.role !== "shipper") redirect("/hub/welcome")
   const { queryOne } = await import("./db")
+  // `active` is part of the guard: login checks it, but sessions are JWTs —
+  // without this, a deactivated external account keeps portal access until
+  // the token expires.
   const row = await queryOne<{ customer_id: string | null }>(
-    `SELECT customer_id FROM hub.users WHERE id = $1 AND carrier_id = $2`,
+    `SELECT customer_id FROM hub.users WHERE id = $1 AND carrier_id = $2 AND active`,
     [user.id, user.carrierId]
   )
   if (!row?.customer_id) redirect("/hub/welcome")
