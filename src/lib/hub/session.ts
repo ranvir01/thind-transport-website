@@ -52,8 +52,11 @@ export async function requireDriverUser(): Promise<DriverSessionUser> {
   if (OFFICE_ROLES.includes(user.role)) redirect("/hub")
   if (user.role !== "driver") redirect("/hub/welcome")
   const { queryOne } = await import("./db")
+  // `active` is part of the guard: login checks it, but sessions are JWTs —
+  // without this, a deactivated driver keeps app access until the token
+  // expires (same gap fixed for requirePortalUser).
   const row = await queryOne<{ driver_id: string | null }>(
-    `SELECT driver_id FROM hub.users WHERE id = $1 AND carrier_id = $2`,
+    `SELECT driver_id FROM hub.users WHERE id = $1 AND carrier_id = $2 AND active`,
     [user.id, user.carrierId]
   )
   if (!row?.driver_id) redirect("/hub/welcome")
