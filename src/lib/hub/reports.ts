@@ -317,14 +317,34 @@ export interface LaneLeaderboardRow {
   avg_rpm_cents: number | null
 }
 
+type LaneLeaderboardQueryRow = {
+  origin_city: string; origin_state: string; dest_city: string; dest_state: string
+  loads_count: number; revenue_cents: string; miles: string; margin_cents: string
+}
+
+function mapLaneLeaderboardRows(rows: LaneLeaderboardQueryRow[]): LaneLeaderboardRow[] {
+  return rows.map((r) => {
+    const revenue = Number(r.revenue_cents)
+    const miles = Number(r.miles)
+    return {
+      origin_city: r.origin_city,
+      origin_state: r.origin_state,
+      dest_city: r.dest_city,
+      dest_state: r.dest_state,
+      loads_count: Number(r.loads_count),
+      revenue_cents: revenue,
+      miles,
+      margin_cents: Number(r.margin_cents),
+      avg_rpm_cents: miles > 0 ? Math.round(revenue / miles) : null,
+    }
+  })
+}
+
 export async function laneLeaderboard(carrierId: string, days = 92, limit = 5): Promise<LaneLeaderboardRow[]> {
   const settings = await getCarrierSettings(carrierId)
   const costPerMileCents = settings.costPerMileCents ?? 185
 
-  const rows = await query<{
-    origin_city: string; origin_state: string; dest_city: string; dest_state: string
-    loads_count: number; revenue_cents: string; miles: string; margin_cents: string
-  }>(
+  const rows = await query<LaneLeaderboardQueryRow>(
     `SELECT * FROM (
        SELECT
          fs.city AS origin_city, fs.state AS origin_state,
@@ -348,21 +368,66 @@ export async function laneLeaderboard(carrierId: string, days = 92, limit = 5): 
      LIMIT $4`,
     [carrierId, days, costPerMileCents, limit]
   )
-  return rows.map((r) => {
-    const revenue = Number(r.revenue_cents)
-    const miles = Number(r.miles)
-    return {
-      origin_city: r.origin_city,
-      origin_state: r.origin_state,
-      dest_city: r.dest_city,
-      dest_state: r.dest_state,
-      loads_count: Number(r.loads_count),
-      revenue_cents: revenue,
-      miles,
-      margin_cents: Number(r.margin_cents),
-      avg_rpm_cents: miles > 0 ? Math.round(revenue / miles) : null,
-    }
-  })
+  return mapLaneLeaderboardRows(rows)
+}
+
+/**
+ * Date-range variant of `laneLeaderboard`, for the Reports page and its CSV
+ * export — same aggregation and margin math, but scoped to an explicit
+ * [from, to] window instead of a trailing-days one (mirrors truckPnl vs
+ * truckPnlRange above). Live rather than `hub.lanes`, which is an all-time
+ * cache that can't be date-scoped.
+ */
+export async function laneLeaderboardRange(carrierId: string, range: PnlRange, limit = 20): Promise<LaneLeaderboardRow[]> {
+  const settings = await getCarrierSettings(carrierId)
+  const costPerMileCents = settings.costPerMileCents ?? 185
+
+  const rows = await query<LaneLeaderboardQueryRow>(
+    `SELECT * FROM (
+       SELECT
+         fs.city AS origin_city, fs.state AS origin_state,
+         ls.city AS dest_city, ls.state AS dest_state,
+         COUNT(*)::int AS loads_count,
+         SUM(l.linehaul_cents + l.fuel_surcharge_cents +
+             COALESCE((SELECT SUM((a->>'amount_cents')::bigint) FROM jsonb_array_elements(l.accessorials) a), 0)
+         ) AS revenue_cents,
+         SUM(COALESCE(l.loaded_miles, 0)) AS miles,
+         SUM(l.linehaul_cents + l.fuel_surcharge_cents +
+             COALESCE((SELECT SUM((a->>'amount_cents')::bigint) FROM jsonb_array_elements(l.accessorials) a), 0)
+         ) - SUM(COALESCE(l.loaded_miles, 0)) * $4::int AS margin_cents
+       FROM hub.loads l
+       JOIN LATERAL (SELECT city, state FROM hub.stops WHERE load_id = l.id AND type = 'pickup' ORDER BY sequence LIMIT 1) fs ON TRUE
+       JOIN LATERAL (SELECT city, state FROM hub.stops WHERE load_id = l.id AND type = 'delivery' ORDER BY sequence DESC LIMIT 1) ls ON TRUE
+       WHERE l.carrier_id = $1 AND l.deleted_at IS NULL AND l.status <> 'cancelled'
+         AND l.created_at >= $2::date AND l.created_at < $3::date + 1
+       GROUP BY fs.city, fs.state, ls.city, ls.state
+     ) lane
+     ORDER BY margin_cents DESC, loads_count DESC
+     LIMIT $5`,
+    [carrierId, range.from, range.to, costPerMileCents, limit]
+  )
+  return mapLaneLeaderboardRows(rows)
+}
+
+// Same columns as the all-time "lanes" export in expenses.ts, so a
+// spreadsheet built against one keeps working against the other.
+export function laneLeaderboardRangeCsv(rows: LaneLeaderboardRow[], range: PnlRange): { filename: string; csv: string } {
+  const headers = ["Origin", "OriginState", "Destination", "DestState", "Loads", "Revenue", "Miles", "EstMargin", "AvgRPM"]
+  const body = rows.map((r) => [
+    r.origin_city,
+    r.origin_state,
+    r.dest_city,
+    r.dest_state,
+    r.loads_count,
+    (r.revenue_cents / 100).toFixed(2),
+    r.miles,
+    (r.margin_cents / 100).toFixed(2),
+    r.avg_rpm_cents != null ? (r.avg_rpm_cents / 100).toFixed(2) : "",
+  ])
+  return {
+    filename: `lanes_${range.from}_${range.to}.csv`,
+    csv: [headers.join(","), ...body.map((row) => row.map(csvField).join(","))].join("\n"),
+  }
 }
 
 export async function fuelSpendSummary(carrierId: string): Promise<FuelSpendSummary> {

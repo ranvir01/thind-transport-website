@@ -3,7 +3,8 @@ import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
 import { Download } from "lucide-react"
 import {
-  parseStoredPnlRange, pnlPresetRanges, resolvePnlRange, truckPnlRange, REPORTS_RANGE_COOKIE,
+  parseStoredPnlRange, pnlPresetRanges, resolvePnlRange, truckPnlRange, laneLeaderboardRange,
+  REPORTS_RANGE_COOKIE,
 } from "@/lib/hub/reports"
 import { applyReportRangeAction, resetReportRangeAction } from "./actions"
 import { computeFleetKpis } from "@/lib/hub/kpi"
@@ -11,15 +12,13 @@ import { requirePermissionPage } from "@/lib/hub/session"
 import { fmtCents } from "@/lib/hub/types"
 import { Panel, PageHeader, fieldCls } from "@/components/hub/ui"
 import { cn } from "@/lib/utils"
-import { query } from "@/lib/hub/db"
-import type { Lane } from "@/lib/hub/types"
 
 export const dynamic = "force-dynamic"
 
 // API download endpoints (not pages) — held in consts so the page-link lint rule doesn't misfire.
 const PNL_EXPORT_URL = "/api/hub/exports/pnl"
 const PNL_RANGE_EXPORT_URL = "/hub/reports/export"
-const LANES_EXPORT_URL = "/api/hub/exports/lanes"
+const LANES_RANGE_EXPORT_URL = "/hub/reports/export/lanes"
 
 export default async function ReportsPage({
   searchParams,
@@ -37,7 +36,7 @@ export default async function ReportsPage({
   const range = resolvePnlRange(params.from, params.to)
   const [pnl, lanes] = await Promise.all([
     truckPnlRange(user.carrierId, range),
-    query<Lane>(`SELECT * FROM hub.lanes WHERE carrier_id = $1 ORDER BY margin_cents DESC LIMIT 20`, [user.carrierId]),
+    laneLeaderboardRange(user.carrierId, range, 20),
   ])
   const totals = pnl.reduce(
     (acc, row) => ({
@@ -71,6 +70,9 @@ export default async function ReportsPage({
   const pnlCsvHref = hasCustomRange
     ? `${PNL_RANGE_EXPORT_URL}?from=${range.from}&to=${range.to}`
     : PNL_EXPORT_URL
+  // The lane leaderboard table is always range-scoped (unlike the P&L default
+  // above), so its CSV always follows the same range — no separate all-time href.
+  const lanesCsvHref = `${LANES_RANGE_EXPORT_URL}?from=${range.from}&to=${range.to}`
 
   return (
     <div>
@@ -215,11 +217,13 @@ export default async function ReportsPage({
         </table>
       </Panel>
 
-      {/* Lane leaderboard (Phase 6/M10) */}
+      {/* Lane leaderboard (Phase 6/M10) — live from load history, scoped to the range above */}
       <div className="mt-6 flex items-center justify-between gap-2 mb-2">
-        <h2 className="font-display text-lg font-bold uppercase tracking-wide text-fg">Lane leaderboard</h2>
+        <h2 className="font-display text-lg font-bold uppercase tracking-wide text-fg">
+          Lane leaderboard, {rangeLabel}
+        </h2>
         <a
-          href={LANES_EXPORT_URL}
+          href={lanesCsvHref}
           className="inline-flex min-h-[40px] items-center gap-2 rounded-xl border border-border-strong px-3 text-body-xs font-semibold text-fg-2 hover:bg-hover"
         >
           <Download className="h-3.5 w-3.5" /> Lanes CSV
@@ -227,9 +231,7 @@ export default async function ReportsPage({
       </div>
       {lanes.length === 0 ? (
         <Panel className="p-5">
-          <p className="text-body-sm text-fg-3">
-            Lane history builds itself from your loads — it recomputes nightly.
-          </p>
+          <p className="text-body-sm text-fg-3">No loads with pickup/delivery cities in this range yet.</p>
         </Panel>
       ) : (
         <Panel className="overflow-x-auto">
@@ -245,7 +247,10 @@ export default async function ReportsPage({
             </thead>
             <tbody>
               {lanes.slice(0, 12).map((lane) => (
-                <tr key={lane.id} className="border-b border-border">
+                <tr
+                  key={`${lane.origin_city}-${lane.origin_state}-${lane.dest_city}-${lane.dest_state}`}
+                  className="border-b border-border"
+                >
                   <td className="px-4 py-2.5 font-semibold text-fg">
                     {lane.origin_city}, {lane.origin_state} → {lane.dest_city}, {lane.dest_state}
                   </td>

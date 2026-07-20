@@ -1,5 +1,4 @@
-import { redirect } from "next/navigation"
-import { getHubUser } from "@/lib/hub/session"
+import { requirePlatformAdmin } from "@/lib/hub/session"
 import { query } from "@/lib/hub/db"
 import { PRODUCT } from "@/lib/hub/product"
 import { Panel } from "@/components/hub/ui"
@@ -14,9 +13,7 @@ export const dynamic = "force-dynamic"
  * No customer business data — suspend/reactivate and metrics, nothing else.
  */
 export default async function PlatformAdminPage() {
-  const user = await getHubUser()
-  if (!user) redirect("/hub/login")
-  if (user.role !== "platform_admin") redirect("/hub")
+  await requirePlatformAdmin()
 
   const tenants = await query<{
     id: string; name: string; dot_number: string | null; status: string; created_at: string
