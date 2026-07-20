@@ -6,9 +6,19 @@
  * https://vercel.com/docs/cron-jobs/usage-and-pricing. This module is the
  * local/pre-merge catch so we never re-learn that at the Vercel status check.
  *
+ * Per-project job COUNT is also checked (see `MAX_CRON_JOBS_PER_PROJECT`
+ * below): Vercel raised this to 100 jobs on every plan in January 2026
+ * (previously lower on Hobby), so it is not expected to trip in practice,
+ * but the guard keeps a safety margin instead of assuming the limit never
+ * changes again.
+ *
  * Shared by vitest (`src/lib/__tests__/hobby-cron-guard.test.ts`) and
  * `scripts/go-live-check.mjs`.
  */
+
+/** Per-project cron job cap, current as of the Jan 2026 Vercel changelog
+ * ("Cron jobs now support 100 per project on every plan"). */
+export const MAX_CRON_JOBS_PER_PROJECT = 100
 
 /** Expand one cron field into the concrete values it matches in [min, max]. */
 export function expandCronField(field, min, max) {
@@ -90,4 +100,13 @@ export function hobbyIllegalCrons(vercel) {
     }
   }
   return illegal
+}
+
+/**
+ * True when vercel.json declares more cron jobs than Vercel allows per
+ * project (`MAX_CRON_JOBS_PER_PROJECT`).
+ * @param {{ crons?: { path?: string, schedule?: string }[] } | null | undefined} vercel
+ */
+export function exceedsHobbyJobCount(vercel) {
+  return (vercel?.crons ?? []).length > MAX_CRON_JOBS_PER_PROJECT
 }

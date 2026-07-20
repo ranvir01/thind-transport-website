@@ -7,6 +7,8 @@ import {
   firingsPerMatchingDay,
   exceedsHobbyDailyLimit,
   hobbyIllegalCrons,
+  exceedsHobbyJobCount,
+  MAX_CRON_JOBS_PER_PROJECT,
 } from "../../../scripts/hobby-cron-guard.mjs"
 
 describe("expandCronField", () => {
@@ -59,5 +61,23 @@ describe("hobbyIllegalCrons (vercel.json)", () => {
       readFileSync(path.join(process.cwd(), "vercel.json"), "utf-8")
     )
     expect(hobbyIllegalCrons(vercel)).toEqual([])
+  })
+})
+
+describe("exceedsHobbyJobCount (vercel.json)", () => {
+  it("is false under the per-project cap and true over it", () => {
+    const under = { crons: Array.from({ length: MAX_CRON_JOBS_PER_PROJECT }, (_, i) => ({ path: `/api/${i}`, schedule: "0 0 * * *" })) }
+    const over = { crons: Array.from({ length: MAX_CRON_JOBS_PER_PROJECT + 1 }, (_, i) => ({ path: `/api/${i}`, schedule: "0 0 * * *" })) }
+    expect(exceedsHobbyJobCount(under)).toBe(false)
+    expect(exceedsHobbyJobCount(over)).toBe(true)
+    expect(exceedsHobbyJobCount({})).toBe(false)
+    expect(exceedsHobbyJobCount(undefined)).toBe(false)
+  })
+
+  it("keeps the repo's vercel.json under the per-project job cap", () => {
+    const vercel = JSON.parse(
+      readFileSync(path.join(process.cwd(), "vercel.json"), "utf-8")
+    )
+    expect(exceedsHobbyJobCount(vercel)).toBe(false)
   })
 })

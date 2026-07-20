@@ -16,7 +16,8 @@
  *   7. NEXTAUTH_SECRET/AUTH_SECRET, CREDENTIALS_KEY, CRON_SECRET are set
  *      (docs/hub-go-live-requirements.md §1 lists all three as required before login)
  *   8. vercel.json crons are Hobby-safe (no schedule fires more than once/day —
- *      Vercel Hobby rejects those at deploy time before build)
+ *      Vercel Hobby rejects those at deploy time before build — and the total
+ *      job count stays under Vercel's per-project cap)
  *   9. NEXTAUTH_URL is set and https (warn-only — Auth.js v5 can infer the URL
  *      on Vercel via trustHost, but §1 lists it and a wrong value breaks callbacks)
  *  10. free API keys FMCSA_WEBKEY / EIA_API_KEY (§3; warn-only — without them
@@ -29,7 +30,7 @@
 import { readFileSync, readdirSync, existsSync } from "node:fs"
 import path from "node:path"
 import pg from "pg"
-import { hobbyIllegalCrons } from "./hobby-cron-guard.mjs"
+import { hobbyIllegalCrons, exceedsHobbyJobCount, MAX_CRON_JOBS_PER_PROJECT } from "./hobby-cron-guard.mjs"
 
 function loadEnvLocal() {
   if (process.env.POSTGRES_URL) return
@@ -158,15 +159,17 @@ async function main() {
     try {
       const vercel = JSON.parse(readFileSync(path.join(process.cwd(), "vercel.json"), "utf-8"))
       const illegal = hobbyIllegalCrons(vercel)
-      if (illegal.length === 0) {
-        pass(`vercel.json crons Hobby-safe (${(vercel.crons ?? []).length} daily-or-less)`)
+      const jobCount = (vercel.crons ?? []).length
+      if (illegal.length === 0 && !exceedsHobbyJobCount(vercel)) {
+        pass(`vercel.json crons Hobby-safe (${jobCount} daily-or-less, under the ${MAX_CRON_JOBS_PER_PROJECT}-job cap)`)
       } else {
-        fail(
-          `vercel.json has ${illegal.length} Hobby-illegal cron(s)`,
-          illegal
-            .map((c) => `${c.path} schedule "${c.schedule}" fires ${c.firingsPerDay}×/day — Hobby allows once/day`)
-            .join("; ")
+        const reasons = illegal.map(
+          (c) => `${c.path} schedule "${c.schedule}" fires ${c.firingsPerDay}×/day — Hobby allows once/day`
         )
+        if (exceedsHobbyJobCount(vercel)) {
+          reasons.push(`${jobCount} cron jobs declared — Vercel allows at most ${MAX_CRON_JOBS_PER_PROJECT} per project`)
+        }
+        fail(`vercel.json has ${reasons.length} Hobby cron problem(s)`, reasons.join("; "))
       }
     } catch (err) {
       fail("vercel.json cron check failed", err instanceof Error ? err.message : String(err))
