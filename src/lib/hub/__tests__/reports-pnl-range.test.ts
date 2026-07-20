@@ -135,3 +135,55 @@ describe("truckPnlRangeCsv", () => {
     expect(csv).toBe("Truck,Revenue,Fuel,Maintenance,OtherExpenses,Net,LoadedMiles,NetPerMile")
   })
 })
+
+describe("pnlPresetRanges", () => {
+  it("builds MTD, last month, last quarter, and YTD for a mid-year date", () => {
+    // 2026-07-14 is Q3 — "last quarter" should be the complete prior quarter (Apr-Jun).
+    const presets = pnlPresetRanges(new Date("2026-07-14T12:00:00Z"))
+    expect(presets).toEqual([
+      { key: "mtd", label: "MTD", range: { from: "2026-07-01", to: "2026-07-14" } },
+      { key: "last-month", label: "Last month", range: { from: "2026-06-01", to: "2026-06-30" } },
+      { key: "last-quarter", label: "Last quarter", range: { from: "2026-04-01", to: "2026-06-30" } },
+      { key: "ytd", label: "YTD", range: { from: "2026-01-01", to: "2026-07-14" } },
+    ])
+  })
+
+  it("rolls last month back into the prior year in January", () => {
+    const presets = pnlPresetRanges(new Date("2026-01-15T12:00:00Z"))
+    const lastMonth = presets.find((p) => p.key === "last-month")
+    expect(lastMonth?.range).toEqual({ from: "2025-12-01", to: "2025-12-31" })
+  })
+
+  it("rolls last quarter back into the prior year for a Q1 date", () => {
+    // Q1 2026 (Jan-Mar) -> last complete quarter is Q4 2025 (Oct-Dec).
+    const presets = pnlPresetRanges(new Date("2026-02-10T12:00:00Z"))
+    const lastQuarter = presets.find((p) => p.key === "last-quarter")
+    expect(lastQuarter?.range).toEqual({ from: "2025-10-01", to: "2025-12-31" })
+  })
+})
+
+describe("parseStoredPnlRange", () => {
+  it("returns null for a missing value", () => {
+    expect(parseStoredPnlRange(null)).toBeNull()
+    expect(parseStoredPnlRange(undefined)).toBeNull()
+    expect(parseStoredPnlRange("")).toBeNull()
+  })
+
+  it("parses a well-formed stored range", () => {
+    expect(parseStoredPnlRange("2026-01-01_2026-03-31")).toEqual({ from: "2026-01-01", to: "2026-03-31" })
+  })
+
+  it("swaps a backwards stored range instead of erroring", () => {
+    expect(parseStoredPnlRange("2026-06-01_2026-01-01")).toEqual({ from: "2026-01-01", to: "2026-06-01" })
+  })
+
+  it("returns null for a tampered value with extra segments", () => {
+    expect(parseStoredPnlRange("2026-01-01_2026-03-31_extra")).toBeNull()
+  })
+
+  it("returns null for malformed or calendar-impossible dates", () => {
+    expect(parseStoredPnlRange("not-a-date_2026-03-31")).toBeNull()
+    expect(parseStoredPnlRange("2026-02-31_2026-03-31")).toBeNull()
+    expect(parseStoredPnlRange("garbage")).toBeNull()
+  })
+})
