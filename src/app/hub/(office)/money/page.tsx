@@ -8,6 +8,7 @@ import { formatHubDateShort } from "@/lib/hub/format-dates"
 import { Panel, PageHeader, EmptyState } from "@/components/hub/ui"
 import { cn } from "@/lib/utils"
 import { SendStatementButton } from "@/components/hub/SendStatementButton"
+import { RowLink } from "@/components/hub/RowLink"
 
 import { HelpTip } from "@/components/hub/HelpTip"
 
@@ -168,7 +169,11 @@ export default async function MoneyPage() {
               </thead>
               <tbody>
                 {aging.invoices.map((invoice) => (
-                  <tr key={invoice.id} className="border-b border-border hover:bg-hover">
+                  <RowLink
+                    key={invoice.id}
+                    href={`/hub/money/invoices/${invoice.id}`}
+                    className="cursor-pointer border-b border-border hover:bg-hover"
+                  >
                     <td className="px-4 py-3">
                       <Link href={`/hub/money/invoices/${invoice.id}`} className="font-semibold text-accent-text hover:underline">
                         {invoice.number}
@@ -185,7 +190,7 @@ export default async function MoneyPage() {
                     </td>
                     <td className="px-4 py-3 text-fg-2">{invoice.bucket}</td>
                     <td className="px-4 py-3 text-right font-mono font-medium text-accent-text tabular-nums">{fmtCents(invoice.open_cents)}</td>
-                  </tr>
+                  </RowLink>
                 ))}
               </tbody>
             </table>
