@@ -5,6 +5,7 @@
  * loads, internal margins, raw GPS history, or driver personal information.
  */
 import { randomBytes } from "crypto"
+import path from "path"
 import bcrypt from "bcrypt"
 import { query, queryOne } from "./db"
 import { stateForPoint } from "./geo"
@@ -202,7 +203,7 @@ export async function portalInvoices(carrierId: string, customerId: string) {
   }>(
     `SELECT i.id, i.number, i.amount_cents, i.issued_on, i.due_on, i.status, i.pdf_url,
        l.reference AS load_reference
-     FROM hub.invoices i JOIN hub.loads l ON l.id = i.load_id
+     FROM hub.invoices i JOIN hub.loads l ON l.id = i.load_id AND l.carrier_id = i.carrier_id
      WHERE i.carrier_id = $1 AND i.customer_id = $2
      ORDER BY i.issued_on DESC LIMIT 50`,
     [carrierId, customerId]
@@ -219,6 +220,43 @@ export async function portalPacketDocuments(carrierId: string) {
      ORDER BY kind, created_at DESC`,
     [carrierId]
   )
+}
+
+/**
+ * Files an external portal user may fetch from the file-serving route: POD/BOL
+ * on THEIR customer's loads, the carrier's packet docs, and their customer's
+ * invoice PDFs — never settlements, CDL scans, or other customers' paperwork.
+ * Same-carrier is not enough for an external account; the deactivated-account
+ * check rides along so a disabled login can't keep pulling files by URL.
+ */
+export async function portalFileVisible(
+  carrierId: string,
+  userId: string,
+  fileName: string
+): Promise<boolean> {
+  const account = await queryOne<{ customer_id: string | null }>(
+    `SELECT customer_id FROM hub.users
+     WHERE id = $1 AND carrier_id = $2 AND role IN ('broker','shipper') AND active`,
+    [userId, carrierId]
+  )
+  if (!account?.customer_id) return false
+  const url = `/api/hub/files/${path.basename(fileName)}`
+  const claim = await queryOne<{ ok: number }>(
+    `SELECT 1 AS ok FROM hub.documents d
+       JOIN hub.loads l ON l.id = d.entity_id AND d.entity_type = 'load' AND l.carrier_id = d.carrier_id
+     WHERE d.url = $1 AND d.carrier_id = $2 AND l.customer_id = $3
+       AND l.deleted_at IS NULL AND d.kind IN ('pod','bol')
+     UNION ALL
+     SELECT 1 AS ok FROM hub.documents
+     WHERE url = $1 AND carrier_id = $2 AND entity_type = 'carrier' AND entity_id = $2
+       AND kind IN ('insurance','w9','authority_letter')
+     UNION ALL
+     SELECT 1 AS ok FROM hub.invoices
+     WHERE pdf_url = $1 AND carrier_id = $2 AND customer_id = $3
+     LIMIT 1`,
+    [url, carrierId, account.customer_id]
+  )
+  return Boolean(claim)
 }
 
 /** Shipper quote request → a 'quoted' load + CRM activity + office alert. */

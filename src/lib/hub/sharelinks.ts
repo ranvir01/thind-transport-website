@@ -41,10 +41,17 @@ export async function revokeShareLink(carrierId: string, id: string): Promise<vo
   )
 }
 
+/** Public-safe stop for the unauthenticated /track page: same discipline as the
+ *  portal's PortalStop — no facility name/address, pickup/PO refs, notes, or raw GPS. */
+export type TrackedStop = Pick<
+  Stop,
+  "id" | "sequence" | "type" | "city" | "state" | "fcfs" | "appt_start" | "appt_end" | "arrived_at" | "departed_at"
+>
+
 export interface TrackedLoad {
   load: Pick<Load, "id" | "reference" | "status" | "equipment" | "truck_id">
   carrierName: string
-  stops: Stop[]
+  stops: TrackedStop[]
   latestPosition: { lat: number; lng: number; ts: string } | null
 }
 
@@ -64,8 +71,9 @@ export async function getTrackedLoad(token: string): Promise<TrackedLoad | null>
   )
   if (!load) return null
 
-  const stops = await query<Stop>(
-    `SELECT * FROM hub.stops WHERE load_id = $1 AND carrier_id = $2 ORDER BY sequence`,
+  const stops = await query<TrackedStop>(
+    `SELECT id, sequence, type, city, state, fcfs, appt_start, appt_end, arrived_at, departed_at
+     FROM hub.stops WHERE load_id = $1 AND carrier_id = $2 ORDER BY sequence`,
     [link.load_id, link.carrier_id]
   )
 

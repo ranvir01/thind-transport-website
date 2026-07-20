@@ -4,6 +4,7 @@ import { requirePermissionPage } from "@/lib/hub/session"
 import { fmtCents, type InvoiceStatus } from "@/lib/hub/types"
 import { formatHubDateShort } from "@/lib/hub/format-dates"
 import { Panel, PageHeader, BackLink, EmptyState } from "@/components/hub/ui"
+import { RowLink } from "@/components/hub/RowLink"
 import { cn } from "@/lib/utils"
 
 export const dynamic = "force-dynamic"
@@ -87,7 +88,11 @@ export default async function InvoicesPage({
                 {invoices.map((invoice) => {
                   const openCents = invoice.amount_cents - (invoice.paid_cents ?? 0)
                   return (
-                    <tr key={invoice.id} className="border-b border-border hover:bg-hover">
+                    <RowLink
+                      key={invoice.id}
+                      href={`/hub/money/invoices/${invoice.id}`}
+                      className="cursor-pointer border-b border-border hover:bg-hover"
+                    >
                       <td className="px-4 py-3">
                         <Link href={`/hub/money/invoices/${invoice.id}`} className="font-semibold text-accent-text hover:underline">
                           {invoice.number}
@@ -107,7 +112,7 @@ export default async function InvoicesPage({
                       <td className="px-4 py-3 text-right font-mono font-medium text-accent-text tabular-nums">
                         {invoice.status === "paid" ? "—" : fmtCents(openCents)}
                       </td>
-                    </tr>
+                    </RowLink>
                   )
                 })}
               </tbody>

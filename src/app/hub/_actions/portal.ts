@@ -22,6 +22,11 @@ export async function invitePortalUserAction(input: {
   try {
     const user = await requirePermission("customers:write")
     if (!input.email.includes("@")) return { ok: false, error: "Enter their email" }
+    // Runtime allowlist, not just the TS type: invitation role becomes the
+    // created account's hub role, so nothing else may ever pass through here.
+    if (input.role !== "broker" && input.role !== "shipper") {
+      return { ok: false, error: "Portal invitations are broker or shipper only" }
+    }
     const customer = await queryOne<{ id: string; name: string }>(
       `SELECT id, name FROM hub.customers WHERE carrier_id = $1 AND id = $2 AND deleted_at IS NULL`,
       [user.carrierId, input.customerId]
@@ -84,6 +89,9 @@ export async function portalQuoteRequestAction(input: {
     const user = await requirePortalUser()
     if (!input.originCity.trim() || !input.destCity.trim()) {
       return { ok: false, error: "Origin and destination cities are needed" }
+    }
+    if (!["flatbed", "reefer", "dry_van"].includes(input.equipment)) {
+      return { ok: false, error: "Pick an equipment type" }
     }
     const { reference } = await createQuoteRequest(user.carrierId, user.customerId, {
       originCity: input.originCity.trim(),

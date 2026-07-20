@@ -4,6 +4,7 @@ import { listLoads } from "@/lib/hub/loads"
 import { getRecurringLanesOverview } from "@/lib/hub/recurring"
 import { requireOfficeUser } from "@/lib/hub/session"
 import { RecurringLanesPanel } from "@/components/hub/RecurringLanesPanel"
+import { RowLink } from "@/components/hub/RowLink"
 import { LOAD_STATUSES, STATUS_LABELS, fmtCents, loadTotalCents, type LoadStatus } from "@/lib/hub/types"
 import {
   btnPrimaryCls,
@@ -95,7 +96,11 @@ export default async function LoadsPage({
               </thead>
               <tbody>
                 {loads.map((load) => (
-                  <tr key={load.id} className="border-b border-border last:border-0 hover:bg-hover">
+                  <RowLink
+                    key={load.id}
+                    href={`/hub/loads/${load.id}`}
+                    className="cursor-pointer border-b border-border last:border-0 hover:bg-hover"
+                  >
                     <td className="px-4 py-3">
                       <Link href={`/hub/loads/${load.id}`} className={`font-mono text-sm ${linkAccentCls}`}>
                         {load.reference}
@@ -121,7 +126,7 @@ export default async function LoadsPage({
                       {load.invoice_status ?? (load.settlement_id ? "settled" : "—")}
                     </td>
                     <td className={`px-4 py-3 text-right text-base ${moneyCls}`}>{fmtCents(loadTotalCents(load))}</td>
-                  </tr>
+                  </RowLink>
                 ))}
               </tbody>
             </table>
