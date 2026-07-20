@@ -6,7 +6,9 @@ transaction feeds. The feed is provisioned per-carrier, and the 2026-07-11 pass 
 the real delivery is a daily SFTP CSV file, not the Basic-auth REST JSON endpoint
 `efsSource()` assumes — see "Adapter impact" below for the shipped remedy: forward the
 daily file to `/api/hub/webhooks/efs?carrier=<uuid>` and `processEfsEvent` lands it
-through the same idempotent ingest as everything else.
+through the same idempotent ingest as everything else. **2026-07-20 re-scout: no
+adapter-breaking change** — provisioning path, timeline, and transport all still match;
+one new corroborating field detail found (see "Feed shape").
 
 ## Provisioning — two real paths (confirmed)
 
@@ -52,6 +54,15 @@ these two fields), so **no registry/credential-schema change is needed**.
   number, merchant name/city/state, gallons, price, total, odometer) matches the Level-III
   data integrators list (driver id, fuel grade, cost/gallon, location), but header names
   are unverified until a real file lands.
+- **2026-07-20 finding: Motive's synthesized per-transaction view lists date, time, truck
+  stop location, driver ID, fuel type, gallons, price/gallon, total cost, discounts
+  applied, and odometer.** This is Motive's downstream display, not the raw SFTP CSV's
+  actual header names, so it doesn't resolve the open header-name question — but it's a
+  second independent source (after the Level-III field list) landing on the same field
+  set, plus one field neither this doc nor `normalizeEfsRecord` currently accounts for:
+  **a discount-applied amount**. Worth adding to `CSV_HEADER_ALIASES` as an optional
+  column once a real file confirms the header name, so a discount doesn't silently fold
+  into `total` unexplained.
 
 ## Adapter impact (found 2026-07-11; file-drop remedy shipped 2026-07-17)
 
@@ -125,7 +136,17 @@ the same `(carrier_id, source, external_id)` idempotency key. This adapter is ad
 it never replaces that path. Given the real feed is itself a CSV, the import path and the
 future SFTP path can even share row-level normalization.
 
-## Sources (researched 2026-07-11)
+## False lead: "WEX Telematics" is a different product
+
+`help.wextelematics.com` surfaces prominently in EFS/WEX searches (e.g. its own "Fuel
+Card Transactions Report" doc) but it's the WEX-owned GPS/ELD telematics product
+(formerly Silent Passenger), not the EFS OTR fuel-card program this doc and the `efs`
+adapter cover. Its pages 403 to this tooling like everything else vendor-side, so this
+couldn't be fully confirmed, but the product naming and separate domain make it
+unrelated — don't chase it as a third developer portal alongside `developer.wexinc.com`
+and `fleetapi.wexinc.com` (both already ruled out, see Auth model).
+
+## Sources (researched 2026-07-11; re-scouted 2026-07-20)
 
 - Fleetio EFS integration help (Data Sharing Preferences flow, Data Feed User/Password,
   5-business-day provisioning, ~5-min partner sync): help.fleetio.com / fleetio.helpjuice.com
@@ -135,3 +156,10 @@ future SFTP path can even share row-level normalization.
 - WEX SFTP feed contacts (800-492-0669, CSWEXLINK@wexinc.com): Geotab/WEX setup docs
 - WEX developer portals: developer.wexinc.com (B2B payments, OAuth), fleetapi.wexinc.com
   (WEX Mobility) — neither covers EFS OTR transaction feeds
+- 2026-07-20 pass (search-snippet only, every direct fetch 403-walled — efsllc.com,
+  emgr.efsllc.com, geotab.com, fleetio.com, firstfleetinc.com, gomotive.com,
+  wextelematics.com all blocked this pass, same wall as terminal/truckercloud/fmcsa):
+  FleetRabbit's EFS integration page corroborates "1–5 business days" provisioning
+  (fleetrabbit.com); Motive's transaction-field list (gomotive.com, via search snippet)
+  corroborates the assumed field set and adds a "discounts applied" field not yet in
+  `normalizeEfsRecord`.
