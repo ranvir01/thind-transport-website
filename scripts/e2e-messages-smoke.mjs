@@ -15,7 +15,7 @@
  * Usage: node scripts/e2e-messages-smoke.mjs [outputDir]
  */
 import { mkdirSync } from "node:fs"
-import { launchBrowser, BASE, sleep, failures, check, waitForText, login, makeShot, reseed } from "./e2e-lib.mjs"
+import { launchBrowser, BASE, failures, check, waitForText, login, makeShot, reseed } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-messages"
 mkdirSync(OUT, { recursive: true })
@@ -31,7 +31,15 @@ async function sendChat(page, text) {
   await page.type('textarea[placeholder="Type a message…"]', text)
   await page.click('button[aria-label="Send"]')
   await waitForText(page, text)
-  await sleep(800)
+  // ChatThread's send() clears the composer (setBody("")) only after the
+  // server action resolves and router.refresh() re-renders — waiting for the
+  // textarea to actually empty catches the same race the driver PWA's own
+  // chat step already guards against, instead of a fixed sleep.
+  await page
+    .waitForFunction(() => document.querySelector('textarea[placeholder="Type a message…"]')?.value === "", {
+      timeout: 20000,
+    })
+    .catch(() => { throw new Error("composer did not clear after send") })
 }
 
 async function main() {
@@ -93,7 +101,12 @@ async function main() {
     chip.click()
     return true
   })
-  await sleep(300)
+  await office
+    .waitForFunction(
+      () => (document.querySelector('textarea[placeholder="Type a message…"]')?.value ?? "").length > 0,
+      { timeout: 5000 }
+    )
+    .catch(() => {})
   const composerValue = await office.evaluate(
     () => document.querySelector('textarea[placeholder="Type a message…"]')?.value ?? ""
   )
@@ -162,10 +175,14 @@ async function main() {
 
   console.log("6. Driver login is refused the office messages routes")
   await driver.goto(`${BASE}/hub/messages`, { waitUntil: "networkidle2" })
-  await sleep(800)
+  await driver
+    .waitForFunction(() => !location.pathname.startsWith("/hub/messages"), { timeout: 10000 })
+    .catch(() => {})
   check(!driver.url().includes("/hub/messages"), `driver redirected off the office list (at ${driver.url()})`)
   await driver.goto(`${BASE}/hub/messages/${threadId}`, { waitUntil: "networkidle2" })
-  await sleep(800)
+  await driver
+    .waitForFunction(() => !location.pathname.startsWith("/hub/messages"), { timeout: 10000 })
+    .catch(() => {})
   check(
     !driver.url().includes(`/hub/messages/${threadId}`),
     `driver redirected off the office thread deep link (at ${driver.url()})`
