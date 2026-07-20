@@ -28,8 +28,12 @@ export default async function HubWelcomePage() {
   if (OFFICE_ROLES.includes(user.role)) redirect("/hub")
   if (user.role === "driver") {
     const { queryOne } = await import("@/lib/hub/db")
+    // AND active: without it, a deactivated driver whose driver_id is still
+    // linked bounces straight back to /hub/driver, which requireDriverUser's
+    // own active check bounces right back here — an infinite redirect loop
+    // (confirmed live during a QA drive on 2026-07-20; ERR_TOO_MANY_REDIRECTS).
     const row = await queryOne<{ driver_id: string | null }>(
-      `SELECT driver_id FROM hub.users WHERE id = $1 AND carrier_id = $2`,
+      `SELECT driver_id FROM hub.users WHERE id = $1 AND carrier_id = $2 AND active`,
       [user.id, user.carrierId]
     )
     if (row?.driver_id) redirect("/hub/driver")

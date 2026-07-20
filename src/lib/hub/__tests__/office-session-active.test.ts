@@ -52,10 +52,14 @@ describe("requireOfficeUser active-account guard", () => {
     expect(params).toEqual(["u1", CARRIER])
   })
 
-  it("bounces a deactivated office account out of the hub", async () => {
+  it("bounces a deactivated office account to the deactivated dead end, not /hub/login", async () => {
+    // Not /hub/login: the proxy still sees a valid token there and bounces
+    // the request straight back into the app, re-hitting this same check —
+    // an infinite redirect loop (confirmed live with a real deactivated
+    // session during a QA drive on 2026-07-20; ERR_TOO_MANY_REDIRECTS).
     authMock.mockResolvedValue(dispatcherSession() as never)
     queryOneMock.mockResolvedValue(null)
-    await expect(requireOfficeUser()).rejects.toThrow("REDIRECT:/hub/login")
+    await expect(requireOfficeUser()).rejects.toThrow("REDIRECT:/hub/deactivated")
   })
 })
 
@@ -75,9 +79,9 @@ describe("requirePermission active-account guard", () => {
 })
 
 describe("requirePermissionPage active-account guard", () => {
-  it("redirects a deactivated account to login instead of rendering the page", async () => {
+  it("redirects a deactivated account to the deactivated dead end instead of rendering the page", async () => {
     authMock.mockResolvedValue(dispatcherSession() as never)
     queryOneMock.mockResolvedValue(null)
-    await expect(requirePermissionPage("loads:write")).rejects.toThrow("REDIRECT:/hub/login")
+    await expect(requirePermissionPage("loads:write")).rejects.toThrow("REDIRECT:/hub/deactivated")
   })
 })

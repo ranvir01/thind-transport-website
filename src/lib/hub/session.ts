@@ -50,7 +50,10 @@ export async function requireOfficeUser(): Promise<HubSessionUser> {
   const user = await getHubUser()
   if (!user) redirect("/hub/login")
   if (!OFFICE_ROLES.includes(user.role)) redirect("/hub/welcome")
-  if (!(await isActiveUser(user))) redirect("/hub/login")
+  // Not /hub/login: the proxy still sees a valid token and bounces /hub/login
+  // straight back into the app, which re-hits this same check — an infinite
+  // redirect loop. /hub/deactivated is a dead end the proxy lets through.
+  if (!(await isActiveUser(user))) redirect("/hub/deactivated")
   return user
 }
 
@@ -135,6 +138,7 @@ export async function requirePermissionPage(action: HubAction): Promise<HubSessi
     if (!OFFICE_ROLES.includes(user.role)) redirect("/hub/welcome")
     redirect("/hub")
   }
-  if (!(await isActiveUser(user))) redirect("/hub/login")
+  // Same /hub/login-vs-proxy loop as requireOfficeUser — see comment there.
+  if (!(await isActiveUser(user))) redirect("/hub/deactivated")
   return user
 }
