@@ -8,7 +8,7 @@ import { findCustomerByName, createCustomer } from "@/lib/hub/customers"
 import { createTruck } from "@/lib/hub/fleet"
 import { createDriver } from "@/lib/hub/drivers"
 import { getCarrier, getCarrierSettings } from "@/lib/hub/settings"
-import { createDriverInviteToken } from "@/lib/hub/driver-invite"
+import { sendDriverInviteEmail } from "@/lib/hub/driver-invite"
 import { query } from "@/lib/hub/db"
 import { logAudit } from "@/lib/hub/audit"
 import { classifyFuelUse } from "@/lib/hub/fuel-core"
@@ -266,27 +266,13 @@ async function sendDriverInvites(
 ): Promise<number> {
   const carrier = await getCarrier(carrierId).catch(() => null)
   const carrierName = carrier?.name ?? "Your carrier"
-  const baseUrl = process.env.NEXTAUTH_URL ?? "http://localhost:3000"
   const { createMailTransport, mailFrom } = await import("@/lib/mailer")
   const transport = createMailTransport()
   let sent = 0
   for (const invite of invites) {
-    const token = createDriverInviteToken({ carrierId, driverId: invite.driverId, email: invite.email })
-    if (!token) break // no auth secret configured — no invite could ever verify
-    try {
-      await transport.sendMail({
-        from: mailFrom(carrierName),
-        to: invite.email,
-        subject: `${carrierName} set you up with the driver app`,
-        text:
-          `Hi ${invite.firstName},\n\n${carrierName} added you to their dispatch system. ` +
-          `The driver app shows your loads, lets you upload PODs from your phone, and tracks your pay.\n\n` +
-          `Set your password here (link valid 7 days):\n${baseUrl}/hub/driver-invite/${token}\n`,
-      })
-      sent++
-    } catch {
-      break
-    }
+    const ok = await sendDriverInviteEmail(transport, mailFrom, carrierId, carrierName, invite)
+    if (!ok) break // no auth secret configured, or one dead SMTP host — don't burn the timeout on the rest
+    sent++
   }
   return sent
 }
