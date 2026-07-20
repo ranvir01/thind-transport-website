@@ -6,23 +6,39 @@
  * Usage: node scripts/e2e-dvir-smoke.mjs [outputDir]
  */
 import { mkdirSync } from "node:fs"
-import { launchBrowser, BASE, sleep, clickByText, waitForText, login, makeShot } from "./e2e-lib.mjs"
+import { launchBrowser, BASE, clickByText, waitForText, textAppears, waitForPath, login, makeShot } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-dvir"
 mkdirSync(OUT, { recursive: true })
 const shot = makeShot(OUT)
 
-async function sign(page) {
+/**
+ * Draw a signature stroke, then wait for `fileButtonText`'s button to enable —
+ * SignaturePad emits onChange on pointerup, and a click before that lands on a
+ * disabled button and is silently lost (same race the office/recruiting
+ * smokes guard against). `behavior: "instant"` on scrollIntoView sidesteps the
+ * global `scroll-behavior: smooth` CSS so the canvas's boundingBox is correct
+ * the instant scrollIntoView returns, instead of racing its scroll animation.
+ */
+async function sign(page, fileButtonText) {
   const canvas = await page.$("canvas")
-  await canvas.evaluate((el) => el.scrollIntoView({ block: "center" }))
-  await sleep(400)
+  await canvas.evaluate((el) => el.scrollIntoView({ block: "center", behavior: "instant" }))
   const box = await canvas.boundingBox()
   await page.mouse.move(box.x + 30, box.y + 60)
   await page.mouse.down()
   await page.mouse.move(box.x + 150, box.y + 40, { steps: 10 })
   await page.mouse.move(box.x + 240, box.y + 80, { steps: 10 })
   await page.mouse.up()
-  await sleep(300)
+  await page
+    .waitForFunction(
+      (text) => {
+        const btn = [...document.querySelectorAll("button")].find((b) => b.textContent?.includes(text))
+        return !!btn && !btn.disabled
+      },
+      { timeout: 20000 },
+      fileButtonText
+    )
+    .catch(() => { throw new Error(`"${fileButtonText}" stayed disabled after drawing a signature`) })
 }
 
 async function main() {
@@ -42,15 +58,15 @@ async function main() {
     const problem = [...row.querySelectorAll("button")].find((b) => b.textContent === "Problem")
     problem.click()
   })
-  await sleep(300)
+  await driver.waitForSelector("li input", { visible: true, timeout: 8000 })
   await driver.type("li input", "Air leak, pressure drops fast")
   await waitForText(driver, "Is the truck still safe to drive?")
   await clickByText(driver, "No — park it")
   await shot(driver, "01-post-trip-defect")
-  await sign(driver)
+  await sign(driver, "File the post-trip")
   await clickByText(driver, "File the post-trip")
   await waitForText(driver, "truck is grounded")
-  await sleep(1000)
+  if (!(await waitForPath(driver, "/hub/driver"))) throw new Error("post-trip form did not return to the driver home after grounding the truck")
   console.log("   defect filed, truck grounded ✓")
 
   // Office: sees grounded truck, certifies the repair
@@ -71,7 +87,11 @@ async function main() {
   await office.type('input[aria-label="Repair notes"]', "Replaced air line + fitting, leak test passed")
   await clickByText(office, "Certify the repair")
   await waitForText(office, "pre-trip sign-off releases the truck")
-  await sleep(1000)
+  // The toast fires on the certify action's own resolution, before
+  // router.refresh() re-renders the truck panel from the DB — wait for the
+  // panel's persistent (not toast) copy so the next screenshot and the
+  // driver's reload both see the certified state, not a stale "Grounded" one.
+  if (!(await textAppears(office, "waiting on the next driver's pre-trip sign-off"))) throw new Error("repair certification did not refresh the truck panel to awaiting_review")
   await shot(office, "03-certified")
 
   // Driver: pre-trip review releases the truck
@@ -80,10 +100,10 @@ async function main() {
   await waitForText(driver, "Review before you roll")
   await waitForText(driver, "Repairs certified by")
   await shot(driver, "04-pre-trip-review")
-  await sign(driver)
+  await sign(driver, "File the pre-trip")
   await clickByText(driver, "File the pre-trip")
   await waitForText(driver, "Inspection filed")
-  await sleep(1200)
+  if (!(await waitForPath(driver, "/hub/driver"))) throw new Error("pre-trip form did not return to the driver home after filing")
 
   // Verify the truck is active again
   await office.reload({ waitUntil: "networkidle2" })
