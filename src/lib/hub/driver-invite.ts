@@ -73,6 +73,50 @@ export interface DriverInviteState {
   email?: string
 }
 
+/** True once the driver has claimed an invite (or was given app access directly). */
+export async function hasDriverAppAccount(carrierId: string, driverId: string): Promise<boolean> {
+  const existing = await queryOne<{ id: string }>(
+    `SELECT id FROM hub.users WHERE carrier_id = $1 AND driver_id = $2`,
+    [carrierId, driverId]
+  )
+  return Boolean(existing)
+}
+
+interface MailTransport {
+  sendMail(options: { from: string; to: string; subject: string; text: string }): Promise<unknown>
+}
+
+/**
+ * Sends one driver-app invite email over a caller-supplied transport, so a
+ * bulk roster send shares one SMTP connection instead of opening one per
+ * driver. Also the entry point for a one-off resend from the driver page.
+ */
+export async function sendDriverInviteEmail(
+  transport: MailTransport,
+  mailFrom: (displayName?: string) => string,
+  carrierId: string,
+  carrierName: string,
+  recipient: { driverId: string; email: string; firstName: string }
+): Promise<boolean> {
+  const token = createDriverInviteToken({ carrierId, driverId: recipient.driverId, email: recipient.email })
+  if (!token) return false // no auth secret configured — no invite could ever verify
+  const baseUrl = process.env.NEXTAUTH_URL ?? "http://localhost:3000"
+  try {
+    await transport.sendMail({
+      from: mailFrom(carrierName),
+      to: recipient.email,
+      subject: `${carrierName} set you up with the driver app`,
+      text:
+        `Hi ${recipient.firstName},\n\n${carrierName} added you to their dispatch system. ` +
+        `The driver app shows your loads, lets you upload PODs from your phone, and tracks your pay.\n\n` +
+        `Set your password here (link valid 7 days):\n${baseUrl}/hub/driver-invite/${token}\n`,
+    })
+    return true
+  } catch {
+    return false
+  }
+}
+
 /** Everything the public accept page needs to render, in one call. */
 export async function getDriverInviteState(token: string): Promise<DriverInviteState> {
   const payload = verifyDriverInviteToken(token)

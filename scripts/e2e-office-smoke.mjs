@@ -6,7 +6,7 @@
  * Usage: node scripts/e2e-office-smoke.mjs [outputDir]
  */
 import { mkdirSync } from "node:fs"
-import { launchBrowser, BASE, sleep, clickByText, waitForText, login, makeShot } from "./e2e-lib.mjs"
+import { launchBrowser, BASE, clickByText, waitForText, textGone, login, makeShot } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-office"
 mkdirSync(OUT, { recursive: true })
@@ -27,7 +27,9 @@ async function main() {
   await office.type("#ann-body", "Chains required over Snoqualmie starting Nov 1. Check your kit before every run.")
   await clickByText(office, "Send announcement")
   await waitForText(office, "Announcement sent")
-  await sleep(800)
+  await office
+    .waitForFunction(() => document.querySelector("#ann-title")?.value === "", { timeout: 20000 })
+    .catch(() => { throw new Error("announcement composer did not clear after send") })
   await shot(office, "01-announcement-sent")
 
   console.log("3. Office: request a POD from Harpreet")
@@ -40,7 +42,9 @@ async function main() {
   await waitForText(office, "Ask for paperwork")
   await clickByText(office, "Send")
   await waitForText(office, "pinned to the driver")
-  await sleep(600)
+  await office
+    .waitForFunction(() => document.querySelector('input[aria-label="Note"]')?.value === "", { timeout: 20000 })
+    .catch(() => { throw new Error("doc-request composer did not clear after send") })
   await shot(office, "02-doc-request-sent")
 
   console.log("4. Office: add + complete a recurring task")
@@ -51,7 +55,9 @@ async function main() {
   await office.type('textarea[aria-label="Checklist (one item per line)"]', "Check overnight statuses\nReview unacknowledged dispatches")
   await clickByText(office, "", { tag: 'button[type="submit"]' })
   await waitForText(office, "Recurring task created")
-  await sleep(800)
+  await office
+    .waitForFunction(() => document.querySelector('input[aria-label="New task"]')?.value === "", { timeout: 20000 })
+    .catch(() => { throw new Error("task composer did not clear after create") })
   await shot(office, "03-task-created")
   // Complete OUR task specifically (automation tasks may sit above it).
   await office.evaluate(() => {
@@ -61,7 +67,15 @@ async function main() {
     button?.click()
   })
   await waitForText(office, "next one is already on the list")
-  await sleep(800)
+  // Recurrence rolls a fresh task forward under the same title while the
+  // completed one drops into "Recently done" — wait for both to render
+  // instead of sleeping through the refresh (same check as e2e-tasks-smoke.mjs).
+  await office
+    .waitForFunction(
+      () => document.body.innerText.split("Morning ops huddle checklist").length - 1 >= 2,
+      { timeout: 15000 }
+    )
+    .catch(() => { throw new Error("recurred task did not roll forward alongside the completed one") })
   await shot(office, "04-task-recurred")
 
   // ---- Driver side (phone, isolated session) ----
@@ -80,10 +94,18 @@ async function main() {
   await driver.mouse.move(box.x + 120, box.y + 40, { steps: 12 })
   await driver.mouse.move(box.x + 200, box.y + 80, { steps: 12 })
   await driver.mouse.up()
-  await sleep(300)
+  await driver
+    .waitForFunction(
+      () => {
+        const btn = [...document.querySelectorAll("button")].find((b) => (b.textContent ?? "").includes("Sign & acknowledge"))
+        return !!btn && !btn.disabled
+      },
+      { timeout: 20000 }
+    )
+    .catch(() => { throw new Error("Sign & acknowledge stayed disabled after drawing a signature") })
   await clickByText(driver, "Sign & acknowledge")
   await waitForText(driver, "Acknowledged")
-  await sleep(800)
+  if (!(await textGone(driver, "Winter chain policy"))) throw new Error("acknowledged announcement did not clear from the driver home")
   await shot(driver, "06-driver-signed")
 
   console.log("6. Driver: sees the POD request pinned")

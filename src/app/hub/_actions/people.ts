@@ -4,9 +4,11 @@ import { revalidatePath } from "next/cache"
 import bcrypt from "bcrypt"
 import { requirePermission } from "@/lib/hub/session"
 import { driverSchema, customerSchema, contactSchema, hubUserSchema } from "@/lib/hub/schemas"
-import { createDriver, updateDriver } from "@/lib/hub/drivers"
+import { createDriver, updateDriver, getDriver } from "@/lib/hub/drivers"
 import { createCustomer, updateCustomer, createContact, deleteContact, addCrmActivity } from "@/lib/hub/customers"
 import { createHubUser, setHubUserActive } from "@/lib/hub/users"
+import { getCarrier } from "@/lib/hub/settings"
+import { hasDriverAppAccount, sendDriverInviteEmail } from "@/lib/hub/driver-invite"
 import { logAudit } from "@/lib/hub/audit"
 import { dollarsToCents } from "@/lib/hub/types"
 import { actionError } from "@/lib/hub/action-error"
@@ -49,6 +51,40 @@ export async function saveDriverAction(
     return { ok: true, id: driver.id }
   } catch (err) {
     return actionError(err, "Failed to save driver")
+  }
+}
+
+/** First-send or resend the driver-app invite — covers manually-added drivers (no invite yet) and expired links (a fresh token overrides the old one). */
+export async function resendDriverInviteAction(driverId: string): Promise<ActionResult> {
+  let user
+  try {
+    user = await requirePermission("drivers:write")
+  } catch (err) {
+    return actionError(err, "Forbidden")
+  }
+  try {
+    const driver = await getDriver(user.carrierId, driverId)
+    if (!driver) return { ok: false, error: "Driver not found" }
+    if (!driver.email) return { ok: false, error: "Add an email address before sending an app invite" }
+    if (await hasDriverAppAccount(user.carrierId, driverId)) {
+      return { ok: false, error: "This driver already has app access" }
+    }
+    const carrier = await getCarrier(user.carrierId)
+    const { createMailTransport, mailFrom } = await import("@/lib/mailer")
+    const sent = await sendDriverInviteEmail(
+      createMailTransport(), mailFrom, user.carrierId, carrier?.name ?? "Your carrier",
+      { driverId, email: driver.email, firstName: driver.first_name }
+    )
+    if (!sent) return { ok: false, error: "Could not send the invite — check email settings" }
+    await logAudit({
+      carrierId: user.carrierId, actorId: user.id, actorName: user.name,
+      entityType: "driver", entityId: driverId,
+      action: "send_app_invite", newValue: { email: driver.email },
+    })
+    revalidatePath(`/hub/drivers/${driverId}`)
+    return { ok: true }
+  } catch (err) {
+    return actionError(err, "Failed to send invite")
   }
 }
 
