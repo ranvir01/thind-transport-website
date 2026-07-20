@@ -186,6 +186,11 @@ Legacy single-automation files (`hauldesk-improvement-cycle.*`) alias to `loadof
 > "connected" is fine; the config is what blocks. Guarded locally by
 > `src/lib/__tests__/hobby-cron-guard.test.ts` and `npm run go-live:check` (via
 > `scripts/hobby-cron-guard.mjs`) so this fails before Vercel.
+>
+> **`live` alone is not a reliable signal** (seen 2026-07-19, main@161cde7): the Vercel project's
+> `live` flag can read `false` even when `latestDeployment`/`target`/`alias`/commit SHA all confirm
+> production is healthy on the expected commit. Cross-check `live` against the alias + deployment SHA
+> before declaring an outage — don't page on `live=false` in isolation.
 
 ### 3c. Dependency + security pass (weekly)
 > Run `npm audit` and `cargo audit` (if installed); update only patch/minor versions of non-framework
