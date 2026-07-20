@@ -45,6 +45,29 @@ async function isActiveUser(user: HubSessionUser): Promise<boolean> {
   return !!row
 }
 
+/**
+ * Platform admin is the one role without a carrier_id scope (see
+ * getHubUser), so it can't reuse isActiveUser's carrier-scoped query —
+ * it needs its own re-check by id + role instead.
+ */
+export async function isActivePlatformAdmin(userId: string): Promise<boolean> {
+  const { queryOne } = await import("./db")
+  const row = await queryOne<{ id: string }>(
+    `SELECT id FROM hub.users WHERE id = $1 AND role = 'platform_admin' AND active`,
+    [userId]
+  )
+  return !!row
+}
+
+/** Server-side guard for the platform admin page (same active re-check as requireOfficeUser). */
+export async function requirePlatformAdmin(): Promise<HubSessionUser> {
+  const user = await getHubUser()
+  if (!user) redirect("/hub/login")
+  if (user.role !== "platform_admin") redirect("/hub")
+  if (!(await isActivePlatformAdmin(user.id))) redirect("/hub/login")
+  return user
+}
+
 /** Server-side guard for office pages and actions (defense in depth over the proxy). */
 export async function requireOfficeUser(): Promise<HubSessionUser> {
   const user = await getHubUser()

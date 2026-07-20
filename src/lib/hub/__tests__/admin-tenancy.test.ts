@@ -10,7 +10,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }))
 
-vi.mock("../session", () => ({ getHubUser: vi.fn() }))
+vi.mock("../session", () => ({ getHubUser: vi.fn(), isActivePlatformAdmin: vi.fn(async () => true) }))
 
 vi.mock("../db", () => ({
   query: vi.fn(async () => []),
@@ -20,12 +20,13 @@ vi.mock("../db", () => ({
 
 vi.mock("../audit", () => ({ logAudit: vi.fn(async () => undefined) }))
 
-import { getHubUser } from "../session"
+import { getHubUser, isActivePlatformAdmin } from "../session"
 import { query } from "../db"
 import { logAudit } from "../audit"
 import { setTenantStatusAction } from "@/app/hub/_actions/admin"
 
 const getHubUserMock = vi.mocked(getHubUser)
+const isActivePlatformAdminMock = vi.mocked(isActivePlatformAdmin)
 const queryMock = vi.mocked(query)
 const logAuditMock = vi.mocked(logAudit)
 
@@ -34,6 +35,8 @@ const TENANT_B = "22222222-2222-2222-2222-222222222222"
 
 beforeEach(() => {
   getHubUserMock.mockReset()
+  isActivePlatformAdminMock.mockReset()
+  isActivePlatformAdminMock.mockResolvedValue(true)
   queryMock.mockClear()
   queryMock.mockResolvedValue([])
   logAuditMock.mockClear()
@@ -77,5 +80,16 @@ describe("setTenantStatusAction is platform_admin only", () => {
     expect(logAuditMock).toHaveBeenCalledWith(
       expect.objectContaining({ carrierId: TENANT_B, actorId: "admin1", entityId: TENANT_B })
     )
+  })
+
+  it("refuses a deactivated platform_admin even with a valid role check (JWT-vs-active gap)", async () => {
+    getHubUserMock.mockResolvedValue({
+      id: "admin1", name: "Ops", email: "ops@platform.com", role: "platform_admin", carrierId: "",
+    })
+    isActivePlatformAdminMock.mockResolvedValue(false)
+    const result = await setTenantStatusAction(TENANT_B, "suspended")
+    expect(result).toEqual({ ok: false, error: "Account deactivated" })
+    expect(queryMock).not.toHaveBeenCalled()
+    expect(logAuditMock).not.toHaveBeenCalled()
   })
 })
