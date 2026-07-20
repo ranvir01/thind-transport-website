@@ -5,7 +5,7 @@ vi.mock("../tenancy", () => ({ assertCarrierRefs: vi.fn(async () => undefined) }
 
 import { query, queryOne } from "../db"
 import { assertCarrierRefs } from "../tenancy"
-import { createClaim, daysToDeadline, getClaim, listClaims, updateClaim } from "../claims"
+import { createClaim, daysToDeadline, getClaim, getOsdClaimForLoad, listClaims, updateClaim } from "../claims"
 
 const queryMock = vi.mocked(query)
 const queryOneMock = vi.mocked(queryOne)
@@ -102,6 +102,39 @@ describe("updateClaim", () => {
     await updateClaim(CARRIER, CLAIM_ID, { amountCents: null })
     const params = queryMock.mock.calls[0][1] as unknown[]
     expect(params[6]).toBeNull()
+  })
+})
+
+describe("getOsdClaimForLoad", () => {
+  const LOAD_ID = "33333333-3333-3333-3333-333333333333"
+
+  it("skips the claim lookup entirely when the load isn't OS&D-flagged", async () => {
+    queryOneMock.mockResolvedValueOnce(null)
+    const result = await getOsdClaimForLoad(CARRIER, LOAD_ID)
+    expect(result).toEqual({ osdFlagged: false, claim: null })
+    expect(queryOneMock).toHaveBeenCalledTimes(1)
+  })
+
+  it("returns osdFlagged with no claim if the flag was set without one (defensive)", async () => {
+    queryOneMock.mockResolvedValueOnce({ osd_flagged: true })
+    queryOneMock.mockResolvedValueOnce(null)
+    const result = await getOsdClaimForLoad(CARRIER, LOAD_ID)
+    expect(result).toEqual({ osdFlagged: true, claim: null })
+  })
+
+  it("prefers an open/filed claim over a resolved one, scoped to this carrier + load", async () => {
+    const claim = { id: CLAIM_ID, carrier_id: CARRIER, load_id: LOAD_ID, status: "open" }
+    queryOneMock.mockResolvedValueOnce({ osd_flagged: true })
+    queryOneMock.mockResolvedValueOnce(claim)
+    const result = await getOsdClaimForLoad(CARRIER, LOAD_ID)
+    expect(result).toEqual({ osdFlagged: true, claim })
+    const [loadSql, loadParams] = queryOneMock.mock.calls[0]
+    expect(String(loadSql)).toContain("FROM hub.loads WHERE carrier_id = $1 AND id = $2")
+    expect(loadParams).toEqual([CARRIER, LOAD_ID])
+    const [claimSql, claimParams] = queryOneMock.mock.calls[1]
+    expect(String(claimSql)).toContain("c.carrier_id = $1 AND c.load_id = $2")
+    expect(String(claimSql)).toContain("(c.status IN ('open','filed')) DESC")
+    expect(claimParams).toEqual([CARRIER, LOAD_ID])
   })
 })
 

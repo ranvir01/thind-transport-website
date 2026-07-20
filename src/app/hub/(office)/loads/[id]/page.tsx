@@ -1,7 +1,8 @@
 import Link from "next/link"
 import { notFound } from "next/navigation"
-import { Pencil, FileText, MapPin, MessageSquare, CloudLightning, Camera, StickyNote } from "lucide-react"
+import { Pencil, FileText, MapPin, MessageSquare, CloudLightning, Camera, StickyNote, AlertTriangle } from "lucide-react"
 import { getLoad, getLoadStops, getLoadEvents } from "@/lib/hub/loads"
+import { getOsdClaimForLoad } from "@/lib/hub/claims"
 import { fuelForLoad } from "@/lib/hub/fuel"
 import { listDocuments } from "@/lib/hub/documents"
 import { listShareLinks } from "@/lib/hub/sharelinks"
@@ -77,7 +78,7 @@ export default async function LoadDetailPage({ params }: { params: Promise<{ id:
   if (!load) notFound()
 
   const settings = await getCarrierSettings(user.carrierId)
-  const [stops, events, documents, shareLinks, invoice, loadFuel, recurringRule] = await Promise.all([
+  const [stops, events, documents, shareLinks, invoice, loadFuel, recurringRule, osdClaim] = await Promise.all([
     getLoadStops(user.carrierId, id),
     getLoadEvents(user.carrierId, id),
     listDocuments(user.carrierId, "load", id),
@@ -85,6 +86,7 @@ export default async function LoadDetailPage({ params }: { params: Promise<{ id:
     getInvoiceForLoad(user.carrierId, id),
     fuelForLoad(user.carrierId, id),
     getRecurringRule(user.carrierId, id),
+    getOsdClaimForLoad(user.carrierId, id),
   ])
 
   const totalCents = loadTotalCents(load)
@@ -141,6 +143,15 @@ export default async function LoadDetailPage({ params }: { params: Promise<{ id:
           {invoice ? (
             <Link href={`/hub/money/invoices/${invoice.id}`} className="inline-flex items-center gap-1.5 rounded-full border border-cyan-400/30 bg-cyan-500/10 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-cyan-300 hover:bg-cyan-500/20">
               <FileText className="h-3.5 w-3.5" /> {invoice.number} · {invoice.status}
+            </Link>
+          ) : null}
+          {osdClaim.osdFlagged ? (
+            <Link
+              href={osdClaim.claim ? `/hub/safety/claims/${osdClaim.claim.id}` : "/hub/safety/claims"}
+              className="inline-flex items-center gap-1.5 rounded-full border border-warn-soft bg-warn-soft px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-warn hover:bg-warn-soft/80"
+            >
+              <AlertTriangle className="h-3.5 w-3.5" />
+              {osdClaim.claim ? `OS&D · Claim ${osdClaim.claim.status}` : "OS&D · No claim on file"}
             </Link>
           ) : null}
           <div className="flex flex-wrap gap-2 ml-auto">

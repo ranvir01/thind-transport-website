@@ -117,6 +117,30 @@ export async function updateClaim(
   return rows[0] ?? null
 }
 
+/**
+ * The load detail page flags osd_flagged loads with a link straight to the
+ * claim the driver OS&D flow auto-opened — before this, a flagged load gave
+ * no hint that real money (a cargo claim) was sitting in a table nobody
+ * could reach from there. Falls back to the newest claim on the load if
+ * none is still open (settled/denied/closed claims still deserve a link).
+ */
+export async function getOsdClaimForLoad(
+  carrierId: string,
+  loadId: string
+): Promise<{ osdFlagged: boolean; claim: Claim | null }> {
+  const loadRow = await queryOne<{ osd_flagged: boolean }>(
+    `SELECT osd_flagged FROM hub.loads WHERE carrier_id = $1 AND id = $2`,
+    [carrierId, loadId]
+  )
+  if (!loadRow?.osd_flagged) return { osdFlagged: false, claim: null }
+  const claim = await queryOne<Claim>(
+    `${CLAIM_SELECT} WHERE c.carrier_id = $1 AND c.load_id = $2
+     ORDER BY (c.status IN ('open','filed')) DESC, c.created_at DESC LIMIT 1`,
+    [carrierId, loadId]
+  )
+  return { osdFlagged: true, claim }
+}
+
 /** Days until the filing deadline (negative = past due); null when no deadline. */
 export function daysToDeadline(
   filingDeadline: string | Date | null,
