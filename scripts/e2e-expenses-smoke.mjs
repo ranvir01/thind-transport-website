@@ -12,7 +12,7 @@
  * Usage: node scripts/e2e-expenses-smoke.mjs [outputDir]
  */
 import { mkdirSync } from "node:fs"
-import { launchBrowser, BASE, sleep, failures, check, waitForText, login, makeShot, reseed } from "./e2e-lib.mjs"
+import { launchBrowser, BASE, failures, check, waitForText, textAppears, login, makeShot, reseed } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-expenses"
 mkdirSync(OUT, { recursive: true })
@@ -88,7 +88,9 @@ async function main() {
   await page.type("#exp_memo", marker)
   await page.click('button[type="submit"]')
   await waitForText(page, "Expense recorded")
-  await sleep(1500)
+  // The list only reflects the new row after router.refresh() re-renders —
+  // poll for the memo marker instead of sleeping a fixed 1500ms.
+  await textAppears(page, marker)
   const listed = await page.evaluate((memo) => {
     const row = [...document.querySelectorAll("p")].find((p) => p.textContent.includes(memo))
     const container = row?.closest("div.flex")
@@ -129,7 +131,7 @@ async function main() {
   await page.click('label:has(input[type="checkbox"])')
   await page.click('button[type="submit"]')
   await waitForText(page, "Expense recorded")
-  await sleep(1500)
+  await textAppears(page, `${marker} reimb`)
   const reimb = await page.evaluate((memo) => {
     const row = [...document.querySelectorAll("p")].find((p) => p.textContent.includes(memo))
     return row?.closest("div.flex")?.querySelectorAll("p")[1]?.textContent ?? ""
