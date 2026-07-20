@@ -1,10 +1,7 @@
 import type { HubRole } from "./types"
 
-/** Credentials sign-in destination — hub roles land in LoadOff; legacy driver-portal JWTs have no role. */
-export function postLoginPath(role: HubRole | string | null | undefined): string {
-  if (role) return hubLandingPath(role)
-  return "/driver/application"
-}
+/** Home for legacy driver-portal accounts (signed in, but no hub.role on the token). */
+export const LEGACY_DRIVER_HOME = "/driver/application"
 
 /** Post-login home for each LoadOff role (Phase 3). */
 export function hubLandingPath(role: HubRole | string | null | undefined): string {
@@ -23,6 +20,18 @@ export function hubLandingPath(role: HubRole | string | null | undefined): strin
     default:
       return "/hub"
   }
+}
+
+/**
+ * Where to send an account right after /hub/login. A signed-in user without a
+ * hub role is a legacy driver-portal account — its home is the original
+ * driver portal, never /hub (the proxy would bounce it straight back to
+ * /hub/login). When the session fetch failed entirely (`user` is null) we
+ * fall back to /hub and let the proxy route by token.
+ */
+export function postLoginPath(user: { role?: string | null } | null | undefined): string {
+  if (user && !user.role) return LEGACY_DRIVER_HOME
+  return hubLandingPath(user?.role)
 }
 
 /** Human-readable role label for the login hint badge. */
