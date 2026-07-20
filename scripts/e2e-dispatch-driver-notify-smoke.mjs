@@ -14,7 +14,7 @@
  * Usage: node scripts/e2e-dispatch-driver-notify-smoke.mjs [outputDir]
  */
 import { mkdirSync } from "node:fs"
-import { launchBrowser, BASE, sleep, failures, check, waitForText, login, makeShot, clickByText, reseed } from "./e2e-lib.mjs"
+import { launchBrowser, BASE, failures, check, waitForText, login, makeShot, clickByText, reseed } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-dispatch-notify"
 mkdirSync(OUT, { recursive: true })
@@ -90,7 +90,9 @@ async function main() {
   console.log("2. Dispatcher advances the load to Dispatched")
   check(await clickByText(page, "Mark Dispatched"), "clicked Mark Dispatched on the load detail page")
   await waitForText(page, "Moved to Dispatched")
-  await sleep(500)
+  // advanceLoadStatusAction awaits changeLoadStatus() (notifyDriver() included)
+  // before returning, so the toast firing already means the status write
+  // committed — the reload below sees it fresh without a settling sleep.
   await page.reload({ waitUntil: "networkidle2" })
   check(
     await page.evaluate(() => document.body.innerText.toLowerCase().includes("dispatched")),
@@ -108,7 +110,15 @@ async function main() {
   })
   await login(driverPage, "driver@demo.thind")
   await driverPage.goto(`${BASE}/hub/driver`, { waitUntil: "networkidle2" })
-  await sleep(1500) // NotificationsBell's first fetch is deferred off the mount effect
+  // NotificationsBell's first fetch is deferred off the mount effect (setTimeout(refresh, 0))
+  // — wait for the aria-label to actually reflect the unread count instead of guessing how
+  // long that GET takes.
+  await driverPage
+    .waitForFunction(
+      () => document.querySelector('button[aria-label^="Notifications"]')?.getAttribute("aria-label")?.includes("unread"),
+      { timeout: 10000 }
+    )
+    .catch(() => {})
 
   const badge = await driverPage.evaluate(() => {
     const btn = document.querySelector('button[aria-label^="Notifications"]')
@@ -127,14 +137,19 @@ async function main() {
   )
 
   await driverPage.click('a[href="/hub/driver"]')
-  await sleep(500)
+  // NotificationsBell.tsx's toggle() awaits the mark-as-read POST before calling
+  // refresh() (fix for 65fad58's badge-resurrection race) — wait for the aria-label
+  // to actually clear instead of guessing how long that round trip takes.
+  await driverPage
+    .waitForFunction(
+      () => document.querySelector('button[aria-label^="Notifications"]')?.getAttribute("aria-label") === "Notifications",
+      { timeout: 10000 }
+    )
+    .catch(() => {})
   const badgeAfterOpen = await driverPage.evaluate(() => {
     const btn = document.querySelector('button[aria-label^="Notifications"]')
     return btn?.getAttribute("aria-label") ?? null
   })
-  // NotificationsBell.tsx's toggle() now awaits the mark-as-read POST before
-  // calling refresh() (fix for 65fad58's badge-resurrection race), so opening
-  // the feed should reliably clear the unread badge.
   check(badgeAfterOpen === "Notifications", `opening the feed cleared the unread badge (${badgeAfterOpen})`)
 
   const realDispatcherErrors = consoleErrors.filter((e) => !/favicon|manifest/i.test(e))
