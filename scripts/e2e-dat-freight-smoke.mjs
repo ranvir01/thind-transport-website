@@ -26,35 +26,36 @@ import { launchBrowser, BASE, failures, check, waitForText, login, makeShot, cli
  * so a page-scoped clickByText can hit another provider's card — walk up from
  * the DAT h3 to its own card (the ancestor carrying the card's fallback
  * blurb) and search for the button there, never page-wide.
+ *
+ * `retry: true` polls until the button appears (or times out) — the confirm
+ * step's "Disconnect it" only renders after the first click's React update
+ * commits, so a single evaluate right after clicking "Disconnect" raced that
+ * render under CPU contention. The initial "Disconnect" probe stays a single
+ * fast check: it doubles as a not-connected test, where the button
+ * legitimately never exists and a poll would just add its full timeout to
+ * every normal (non-stale) run.
  */
-async function clickInDatCard(page, label) {
-  return page.evaluate((wanted) => {
-    const header = [...document.querySelectorAll("h3")].find(
-      (el) => el.textContent?.trim().toLowerCase() === "dat load board"
-    )
-    let node = header
-    while (node && !/paste rate con/i.test(node.textContent ?? "")) node = node.parentElement
-    const btn = [...(node?.querySelectorAll("button") ?? [])].find((b) => b.textContent?.trim() === wanted)
-    if (btn) btn.click()
-    return Boolean(btn)
-  }, label)
+async function clickInDatCard(page, label, { retry = false, timeout = 8000 } = {}) {
+  const deadline = Date.now() + timeout
+  while (true) {
+    const clicked = await page.evaluate((wanted) => {
+      const header = [...document.querySelectorAll("h3")].find(
+        (el) => el.textContent?.trim().toLowerCase() === "dat load board"
+      )
+      let node = header
+      while (node && !/paste rate con/i.test(node.textContent ?? "")) node = node.parentElement
+      const btn = [...(node?.querySelectorAll("button") ?? [])].find((b) => b.textContent?.trim() === wanted)
+      if (btn) btn.click()
+      return Boolean(btn)
+    }, label)
+    if (clicked || !retry || Date.now() >= deadline) return clicked
+    await sleep(250)
+  }
 }
 
 const OUT = process.argv[2] ?? "e2e-shots-dat-freight"
 mkdirSync(OUT, { recursive: true })
 const shot = makeShot(OUT, { fullPage: true })
-
-/**
- * Disconnect on an integrations card is a two-click confirm flow
- * (Disconnect → "Disconnect it"); one click only opens the confirm step
- * and leaves the credential saved.
- */
-async function disconnectDat(ownerPage) {
-  await clickByText(ownerPage, "Disconnect").catch(() => {})
-  await new Promise((r) => setTimeout(r, 250))
-  await clickByText(ownerPage, "Disconnect it").catch(() => {})
-  await waitForText(ownerPage, "the CSV import path keeps working").catch(() => {})
-}
 
 async function main() {
   reseed()
@@ -81,8 +82,7 @@ async function main() {
     await waitForText(heal, "DAT load board")
     if (await clickInDatCard(heal, "Disconnect")) {
       console.log("   (stale DAT connection from a previous run — disconnecting first)")
-      await sleep(300)
-      await clickInDatCard(heal, "Disconnect it")
+      await clickInDatCard(heal, "Disconnect it", { retry: true })
       await waitForText(heal, "the CSV import path keeps working")
       await sleep(1200)
     }
@@ -206,8 +206,7 @@ async function main() {
     // scoped to the DAT card so another connected card is never the victim.
     const armed = await clickInDatCard(owner, "Disconnect")
     check(armed, "cleanup found the DAT card's Disconnect button")
-    await sleep(300)
-    const confirmed = await clickInDatCard(owner, "Disconnect it")
+    const confirmed = await clickInDatCard(owner, "Disconnect it", { retry: true })
     check(confirmed, "cleanup confirmed with the DAT card's Disconnect it button")
     await waitForText(owner, "the CSV import path keeps working")
   }
