@@ -21,7 +21,7 @@
  * Usage: node scripts/e2e-detention-alerts-smoke.mjs [outputDir]
  */
 import { mkdirSync } from "node:fs"
-import { launchBrowser, BASE, sleep, failures, check, waitForText, login, makeShot, reseed } from "./e2e-lib.mjs"
+import { launchBrowser, BASE, failures, check, waitForText, textGone, login, makeShot, reseed } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-detention-alerts"
 mkdirSync(OUT, { recursive: true })
@@ -94,7 +94,10 @@ async function main() {
     return start >= 0 ? text.slice(start, start + 80).split("\n")[0] : null
   })
   check(/detention billed: \$[\d.]+/.test(toastText ?? ""), `toast confirms auto-applied detention (${toastText})`)
-  await sleep(1500) // router.refresh
+  // The toast text itself contains "detention", so textAppears("Detention")
+  // would resolve before the refresh — poll for the button that actually
+  // disappears once the server action's revalidation lands instead.
+  await textGone(page, "Mark departed")
   const after = await page.evaluate(() => ({
     hasMarkDeparted: [...document.querySelectorAll("button")].some((b) => b.textContent.includes("Mark departed")),
     hasDetentionButton: [...document.querySelectorAll("button")].some((b) => /detention/i.test(b.textContent)),
