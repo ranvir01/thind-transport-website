@@ -219,6 +219,14 @@ export async function textGone(page, text, timeout = 20000) {
     .catch(() => false)
 }
 
+/** Boolean-returning wait for a client-side navigation to land on `pathname` (no text requirement). */
+export async function waitForPath(page, pathname, timeout = 20000) {
+  return page
+    .waitForFunction((p) => location.pathname === p, { timeout }, pathname)
+    .then(() => true)
+    .catch(() => false)
+}
+
 export async function waitForPathAndText(page, pathname, text, timeout = 20000) {
   return page
     .waitForFunction(
