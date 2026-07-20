@@ -10,7 +10,7 @@ import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { CloudOff, RefreshCw } from "lucide-react"
 import {
-  isOfflineError, listIntents, queueCount, removeIntent, type QueuedIntent,
+  listIntents, queueCount, replayQueue, type QueuedIntent,
 } from "./offline-queue"
 import {
   driverAcknowledgeAnnouncement, driverAcknowledgeDispatch, driverAddFacilityNote, driverAdvanceStatus,
@@ -80,24 +80,7 @@ export function OfflineSync() {
     replaying.current = true
     try {
       const intents = await listIntents()
-      let sent = 0
-      let failed = 0
-      for (const intent of intents) {
-        try {
-          const result = await execute(intent)
-          // Real rejections (e.g. "not your load") drop the intent too —
-          // retrying forever would be worse than telling the office.
-          await removeIntent(intent.id)
-          if (result.ok) sent++
-        } catch (err) {
-          if (isOfflineError(err)) break // still offline — try again on the next signal
-          // A non-network throw (bad payload, server exception) isn't going to
-          // fix itself on retry — drop it so it can't jam every intent queued
-          // after it, since replay always starts from the oldest.
-          await removeIntent(intent.id)
-          failed++
-        }
-      }
+      const { sent, failed } = await replayQueue(intents, execute)
       if (sent > 0) {
         toast.success(`Back online — ${sent} update${sent > 1 ? "s" : ""} sent to the office`)
         router.refresh()
