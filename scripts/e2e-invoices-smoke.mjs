@@ -13,7 +13,7 @@
  * Usage: node scripts/e2e-invoices-smoke.mjs [outputDir]
  */
 import { mkdirSync } from "node:fs"
-import { launchBrowser, BASE, sleep, failures, check, waitForText, login, makeShot, clickByText, reseed } from "./e2e-lib.mjs"
+import { launchBrowser, BASE, failures, check, waitForText, login, makeShot, clickByText, reseed } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-invoices"
 mkdirSync(OUT, { recursive: true })
@@ -37,12 +37,28 @@ const summaryValue = (page, label) =>
     return dt?.parentElement?.querySelector("dd")?.textContent?.trim() ?? null
   }, label)
 
-async function recordPayment(page, dollars) {
+async function recordPayment(page, dollars, expectedOpenCents) {
   await page.evaluate(() => (document.querySelector("#pay_amount").value = ""))
   await page.type("#pay_amount", dollars)
   await clickByText(page, "Record payment", { tag: "button" })
   await waitForText(page, "Payment recorded")
-  await sleep(1500) // router.refresh
+  // The Summary block only reflects the new balance after the server action
+  // resolves and router.refresh() re-renders — poll the "Open balance" dd
+  // for the expected cents instead of sleeping a fixed 1500ms.
+  await page
+    .waitForFunction(
+      (expectedCents) => {
+        const dt = [...document.querySelectorAll("dt")].find((n) => n.textContent.trim() === "Open balance")
+        const text = dt?.parentElement?.querySelector("dd")?.textContent?.trim() ?? ""
+        const m = text.match(/(-?)\$?([\d,]+)\.(\d{2})/)
+        if (!m) return false
+        const cents = (m[1] ? -1 : 1) * (Number(m[2].replace(/,/g, "")) * 100 + Number(m[3]))
+        return cents === expectedCents
+      },
+      { timeout: 20000 },
+      expectedOpenCents
+    )
+    .catch(() => { throw new Error(`open balance did not update to ${expectedOpenCents} cents after payment`) })
 }
 
 async function main() {
@@ -140,7 +156,7 @@ async function main() {
   console.log("6. Partial payment with odd cents")
   await page.goto(`${BASE}${invoiceUrl}`, { waitUntil: "networkidle2" })
   await page.waitForSelector("#pay_amount", { timeout: 10000 })
-  await recordPayment(page, (PARTIAL_CENTS / 100).toFixed(2))
+  await recordPayment(page, (PARTIAL_CENTS / 100).toFixed(2), REMAINDER_CENTS)
   check((await summaryValue(page, "Status"))?.toLowerCase() === "partial", "status flips to partial")
   check(parseCents(await summaryValue(page, "Paid")) === PARTIAL_CENTS,
     `paid shows exact cents (${await summaryValue(page, "Paid")})`)
@@ -149,7 +165,7 @@ async function main() {
   await shot(page, "04-invoice-partial")
 
   console.log("7. Pay the remainder — invoice paid, load paid")
-  await recordPayment(page, (REMAINDER_CENTS / 100).toFixed(2))
+  await recordPayment(page, (REMAINDER_CENTS / 100).toFixed(2), 0)
   check((await summaryValue(page, "Status"))?.toLowerCase() === "paid", "status flips to paid")
   check(parseCents(await summaryValue(page, "Open balance")) === 0, "open balance is $0.00")
   const formGone = await page.evaluate(() => !document.querySelector("#pay_amount"))
