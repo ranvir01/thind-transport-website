@@ -29,7 +29,13 @@ export default async function PortalLoadPage({ params }: { params: Promise<{ id:
         <h1 className="font-display text-lg font-extrabold uppercase tracking-wide text-white">
           {load.reference}
         </h1>
-        <span className="ml-auto rounded-full border border-gold/40 bg-gold/10 px-2.5 py-0.5 text-[11px] font-bold text-gold">
+        <span
+          className="ml-auto rounded-full border px-2.5 py-0.5 text-[11px] font-bold text-[color:var(--portal-accent)]"
+          style={{
+            borderColor: "color-mix(in srgb, var(--portal-accent) 40%, transparent)",
+            backgroundColor: "color-mix(in srgb, var(--portal-accent) 10%, transparent)",
+          }}
+        >
           {STATUS_LABELS[load.status as LoadStatus] ?? load.status}
         </span>
       </div>
@@ -51,7 +57,9 @@ export default async function PortalLoadPage({ params }: { params: Promise<{ id:
             Delivery {new Date(load.delivery_at).toLocaleString("en-US", { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
           </p>
         ) : null}
-        {load.position_hint ? <p className="text-body-sm text-gold">{load.position_hint}</p> : null}
+        {load.position_hint ? (
+          <p className="text-body-sm text-[color:var(--portal-accent)]">{load.position_hint}</p>
+        ) : null}
         {load.customer_reference ? (
           <p className="text-body-xs text-steel-400">Your reference: {load.customer_reference}</p>
         ) : null}
