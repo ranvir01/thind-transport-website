@@ -1,13 +1,22 @@
 # Truckstop.com load board — scouting notes
 
-Status: **feature complete in-app (search UI + booking shipped), but the adapter's assumed
-wire protocol is wrong** — scouted 2026-07-18 against developer.truckstop.com. Truckstop's
-board load search is a **SOAP/XML web service with credentials in the request body**, not
-the Bearer-key REST endpoint `truckstop.ts` guesses at. Auth + transport both need a rewrite
-before real credentials can activate anything (same class of mismatch the EFS/WEX scouts
-found: adapter assumed REST JSON, vendor ships something older). Nothing is broken today —
+Status: **feature complete in-app (search UI + booking shipped), and the adapter's transport
+now matches the confirmed protocol** — rewritten 2026-07-21 (integrations lane) per the
+2026-07-18 scout findings against developer.truckstop.com. Truckstop's board load search is
+a **SOAP 1.1/XML web service with credentials in the request body**, not the Bearer-key REST
+endpoint `truckstop.ts` used to guess at. `truckstopSource()` now builds a SOAP envelope,
+`POST`s it to `/v13/Searching/LoadSearch.svc` with the `SOAPAction` header, and parses the
+XML response through `parseLoadSearchResponse` (no XML library — a small tag-extraction
+helper, since the response shape is a single fixed pattern). `registry.ts`'s credential
+fields changed from a single `apiKey` to `integrationId`/`username`/`password` to match.
+What's still unconfirmed: the real `GetLoadSearchResults` response element names (the
+portal's schema sits behind its bot wall — `parseLoadSearchResponse`/`normalizeTruckstopPosting`
+assume PascalCase names like `LoadId`/`TripMiles`/`TotalRate`, adjust both together once a
+developer packet or unblocked `llms.txt` pull confirms them) and the production SOAP host
+(base defaults to the confirmed sandbox, `testws.truckstop.com`). Nothing is broken today —
 without pasted credentials the adapter throws `truckstop is not connected` before any HTTP
-happens — but the shopping list's "paste key → works" promise does not hold for this row.
+happens — and a real SIA-issued credential set can now at least speak the right protocol,
+though the response parse will need a field-name correction pass on first real contact.
 
 ## What's actually built (doc was stale on this — corrected 2026-07-18)
 
@@ -63,22 +72,35 @@ Our use case is carrier-side: search the public board, prefill a load draft. Tha
   sandbox's egress proxy blocks the host — research went through search snippets; a pass
   from an unrestricted network should pull llms.txt directly).
 
-## What the adapter must change before activation
+## What the adapter changed (2026-07-21 rewrite)
 
-`truckstopSource()` currently issues `GET {base}/loads/search?…` with
-`Authorization: Bearer <apiKey>` and parses `{ postings: [...] }` JSON. Reality:
+`truckstopSource()` now issues `POST {base}/v13/Searching/LoadSearch.svc` with the
+`SOAPAction` header and a SOAP 1.1 XML envelope body, parsing an XML response — no JSON
+anywhere:
 
-1. **Transport:** build a SOAP 1.1 XML envelope, `POST` it to `/v13/Searching/LoadSearch.svc`
-   with the `SOAPAction` header, and parse an XML response (no JSON anywhere).
-2. **Auth:** embed `IntegrationId`/`UserName`/`Password` in the envelope body per request.
-3. **Normalizer:** `normalizeTruckstopPosting`'s field guesses (`postingId`, `totalRate`, …)
-   must be re-mapped from the real `GetLoadSearchResults` XML element names — the full
-   response schema sits behind the portal's bot wall; take it from the developer packet or
-   an llms.txt pass rather than guessing again.
+1. **Transport:** `buildSearchEnvelope` builds the envelope; the response is read with a
+   small hand-rolled tag-extraction helper (`extractTagBlocks`/`extractTagValue` in
+   `truckstop.ts`) rather than a new XML-parsing dependency, since the shape needed is one
+   repeated element (`LoadSearchResult`) with flat child tags.
+2. **Auth:** `IntegrationId`/`UserName`/`Password` are embedded in the envelope body per
+   request (`registry.ts`'s truckstop entry now collects these three fields instead of a
+   single `apiKey`).
+3. **Normalizer:** `normalizeTruckstopPosting` reads PascalCase element names
+   (`LoadId`/`TripMiles`/`TotalRate`/…) instead of the old JSON-flavored camelCase guesses —
+   still assumed, not confirmed: the full `GetLoadSearchResults` response schema sits behind
+   the portal's bot wall. Re-map both `parseLoadSearchResponse`'s field list and
+   `normalizeTruckstopPosting` together once a developer packet or an unblocked `llms.txt`
+   pull confirms the real element names.
+4. **Not sent yet:** `originCity`/`radiusMiles` (part of `TruckstopSearchCriteria`, used by
+   the shared DAT/Truckstop search UI) aren't part of the confirmed request shape — only
+   `OriginStates`/`DestinationStates`/`Equipment`/`HoursOld` are sent. Confirm whether/how
+   city or radius filtering exists on the real service before wiring those through.
 
 The contract (`search`/`pull`/`connected`) and everything downstream — mapper, UI, action,
-migration — survive unchanged; this is a transport-layer swap isolated to `truckstopSource()`
-plus the normalizer, exactly the seam the stub-first doctrine reserved.
+migration — survived unchanged; this was a transport-layer swap isolated to
+`truckstopSource()` plus the normalizer, exactly the seam the stub-first doctrine reserved.
+Mock + contract tests updated in `src/lib/hub/__tests__/truckstop.test.ts` (SOAP envelope
+shape, XML parsing incl. entity-decoding and SOAP-fault handling, idempotent replay).
 
 ## Rate limits / sandbox
 
@@ -96,15 +118,17 @@ budget ~$159/mo for this row, not the bare $42 entry plan.
 ## What ships today without any of this
 
 Manual load entry and rate-con paste-in remain the product. The search UI renders only when
-`truckstopConnected` is true, so the wrong-transport adapter is dormant until credentials
-exist — no production risk right now, but pasting real credentials would fail on the first
-search, which is why the rewrite is flagged urgent in the Backlog rather than waiting for a
-customer to find it.
+`truckstopConnected` is true, so the adapter is dormant until credentials exist — no
+production risk right now, but the first real search will still need a field-name
+correction pass on the response parse (see Open questions) before results are trustworthy.
 
 ## Open questions for the next pass
 
 - Get the real `GetLoadSearchResults` request/response XML schema (developer packet or
-  llms.txt from an unblocked network) and pin the normalizer mapping to it.
+  llms.txt from an unblocked network) and pin `parseLoadSearchResponse`'s field list +
+  `normalizeTruckstopPosting`'s mapping to it.
 - Confirm the production SOAP host and whether load *booking* (not just search) has any API
   surface, or whether booking stays phone/email + our draft prefill.
 - Confirm rate limits and any per-integration-ID concurrency rules at SIA time.
+- Confirm whether/how city-level or radius filtering exists on the real service — not sent
+  in the current request envelope (only origin/destination states + equipment + HoursOld).

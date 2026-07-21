@@ -4,14 +4,24 @@
  * freight search, not a background sync into an existing table, so this slice ships
  * the `search`/`pull` contract, its normalizer, and `truckstopPostingToLoadDraft`,
  * which maps a matched posting onto `createLoad()`'s input shape. The dispatcher-facing
- * search panel lives in `TruckstopFreightSearch` on `/hub/loadboard`. `normalizeTruckstopPosting`
- * is the one place the assumed
- * response shape is read.
+ * search panel lives in `TruckstopFreightSearch` on `/hub/loadboard`.
+ *
+ * Transport: the confirmed Load Search web service is SOAP 1.1 / XML with
+ * IntegrationId/UserName/Password inside the envelope body (see
+ * docs/integrations/truckstop.md) — not the Bearer-key REST/JSON this file
+ * assumed before the 2026-07-18 scout pass. `parseLoadSearchResponse` and
+ * `normalizeTruckstopPosting` are the two places the assumed XML element
+ * names are read; the real `GetLoadSearchResults` schema sits behind the
+ * developer portal's bot wall, so both stay adjustable in one place until a
+ * developer packet confirms the wire names.
  */
 import { getCredentials, hasCredentials } from "../credentials"
 import type { LoadInput, StopInput } from "../loads"
 import type { EquipmentType } from "../types"
 import type { SyncRowBase, SyncSource } from "./registry"
+
+const SOAP_ACTION = "http://webservices.truckstop.com/v12/ILoadSearch/GetLoadSearchResults"
+const SOAP_NS = "http://webservices.truckstop.com/v12"
 
 export interface TruckstopSearchCriteria {
   originCity?: string
@@ -35,24 +45,34 @@ export interface TruckstopLoadPosting extends SyncRowBase {
   raw: Record<string, unknown>
 }
 
+function toNumber(value: unknown): number | null {
+  const n = typeof value === "number" ? value : typeof value === "string" ? Number(value) : NaN
+  return Number.isFinite(n) ? n : null
+}
+
 /**
- * Pure normalizer — the ONE place the assumed Truckstop.com posting shape is read.
- * Contract tests exercise this without ever calling the real API.
+ * Pure normalizer — the ONE place the assumed `GetLoadSearchResults` XML element
+ * names are read (PascalCase, matching the vendor's other confirmed field names —
+ * see docs/integrations/truckstop.md). Contract tests exercise this without ever
+ * calling the real API. `record` comes from `parseLoadSearchResponse`, so its keys
+ * are strings even for numeric-looking fields (raw XML text content).
  */
 export function normalizeTruckstopPosting(record: Record<string, unknown>): TruckstopLoadPosting {
-  const rate = record.totalRate
   return {
-    external_id: String(record.postingId ?? ""),
-    postedAt: String(record.postedDate ?? new Date().toISOString()),
-    equipment: (record.equipment as string) ?? null,
-    originCity: (record.originCity as string) ?? null,
-    originState: (record.originState as string) ?? null,
-    destCity: (record.destCity as string) ?? null,
-    destState: (record.destState as string) ?? null,
-    miles: typeof record.miles === "number" ? record.miles : null,
-    rateTotalCents: typeof rate === "number" ? Math.round(rate * 100) : null,
-    pickupDate: (record.pickupDate as string) ?? null,
-    contactPhone: (record.contactPhone as string) ?? null,
+    external_id: String(record.LoadId ?? ""),
+    postedAt: String(record.PostedDate ?? new Date().toISOString()),
+    equipment: (record.Equipment as string) ?? null,
+    originCity: (record.OriginCity as string) ?? null,
+    originState: (record.OriginState as string) ?? null,
+    destCity: (record.DestinationCity as string) ?? null,
+    destState: (record.DestinationState as string) ?? null,
+    miles: toNumber(record.TripMiles),
+    rateTotalCents: (() => {
+      const rate = toNumber(record.TotalRate)
+      return rate === null ? null : Math.round(rate * 100)
+    })(),
+    pickupDate: (record.PickupDate as string) ?? null,
+    contactPhone: (record.ContactPhone as string) ?? null,
     raw: record,
   }
 }
@@ -100,35 +120,137 @@ export function truckstopPostingToLoadDraft(posting: TruckstopLoadPosting): Truc
   }
 }
 
-function searchQuery(criteria: TruckstopSearchCriteria): string {
-  const params = new URLSearchParams()
-  if (criteria.originCity) params.set("originCity", criteria.originCity)
-  if (criteria.originState) params.set("originState", criteria.originState)
-  if (criteria.destState) params.set("destState", criteria.destState)
-  if (criteria.equipment) params.set("equipment", criteria.equipment)
-  params.set("radiusMiles", String(criteria.radiusMiles ?? 100))
-  return params.toString()
+function escapeXml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&apos;")
+}
+
+function decodeXmlEntities(value: string): string {
+  return value
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&apos;/g, "'")
+    .replace(/&amp;/g, "&")
+}
+
+/** Every match of `<tag>...</tag>` (namespace-prefix tolerant), in document order. */
+function extractTagBlocks(xml: string, tag: string): string[] {
+  const re = new RegExp(`<(?:[\\w-]+:)?${tag}(?:\\s[^>]*)?>([\\s\\S]*?)</(?:[\\w-]+:)?${tag}>`, "gi")
+  const blocks: string[] = []
+  let match: RegExpExecArray | null
+  while ((match = re.exec(xml))) blocks.push(match[1])
+  return blocks
+}
+
+function extractTagValue(xml: string, tag: string): string | null {
+  const [first] = extractTagBlocks(xml, tag)
+  return first === undefined ? null : decodeXmlEntities(first.trim())
+}
+
+/**
+ * Build the `GetLoadSearchResults` SOAP request body. Only `OriginStates`/
+ * `DestinationStates`/`HoursOld` are confirmed request fields (see
+ * docs/integrations/truckstop.md) — city-level and radius filtering aren't
+ * part of the confirmed shape, so `originCity`/`radiusMiles` aren't sent
+ * until a developer packet confirms whether/how the service accepts them.
+ */
+function buildSearchEnvelope(
+  criteria: TruckstopSearchCriteria,
+  creds: { integrationId: string; username: string; password: string }
+): string {
+  const body: string[] = [
+    `<IntegrationId>${escapeXml(creds.integrationId)}</IntegrationId>`,
+    `<UserName>${escapeXml(creds.username)}</UserName>`,
+    `<Password>${escapeXml(creds.password)}</Password>`,
+  ]
+  if (criteria.originState) {
+    body.push(`<OriginStates><string>${escapeXml(criteria.originState)}</string></OriginStates>`)
+  }
+  if (criteria.destState) {
+    body.push(`<DestinationStates><string>${escapeXml(criteria.destState)}</string></DestinationStates>`)
+  }
+  if (criteria.equipment) body.push(`<Equipment>${escapeXml(criteria.equipment)}</Equipment>`)
+  body.push(`<HoursOld>0</HoursOld>`)
+  return (
+    `<?xml version="1.0" encoding="utf-8"?>` +
+    `<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">` +
+    `<soap:Body><GetLoadSearchResults xmlns="${SOAP_NS}">${body.join("")}</GetLoadSearchResults></soap:Body>` +
+    `</soap:Envelope>`
+  )
+}
+
+/**
+ * Parse a `GetLoadSearchResultsResponse` SOAP body into plain records keyed by
+ * the assumed `LoadSearchResult` element names (see `normalizeTruckstopPosting`).
+ * A `<faultstring>` anywhere in the response — SOAP 1.1's fault shape — throws
+ * instead of silently returning zero postings.
+ */
+export function parseLoadSearchResponse(xml: string): Record<string, unknown>[] {
+  const fault = extractTagValue(xml, "faultstring")
+  if (fault) throw new Error(`Truckstop SOAP fault: ${fault}`)
+  const fields = [
+    "LoadId",
+    "PostedDate",
+    "Equipment",
+    "OriginCity",
+    "OriginState",
+    "DestinationCity",
+    "DestinationState",
+    "TripMiles",
+    "TotalRate",
+    "PickupDate",
+    "ContactPhone",
+  ] as const
+  return extractTagBlocks(xml, "LoadSearchResult").map((block) => {
+    const record: Record<string, unknown> = {}
+    for (const field of fields) record[field] = extractTagValue(block, field)
+    return record
+  })
 }
 
 export interface TruckstopSource extends SyncSource<TruckstopLoadPosting> {
-  /** Freight search — `pull()` is `search({})`, Truckstop's default radius-only query. */
+  /** Freight search — `pull()` is `search({})`, Truckstop's default unfiltered query. */
   search(criteria: TruckstopSearchCriteria): Promise<TruckstopLoadPosting[]>
 }
 
-/** Truckstop.com load board API (developer portal — single API key). */
+/**
+ * Truckstop.com Load Search web service — SOAP 1.1/XML, not REST (confirmed
+ * 2026-07-18, see docs/integrations/truckstop.md). Base defaults to the
+ * confirmed sandbox host; the production host follows the same
+ * `webservices.truckstop.com` namespace the SOAPAction uses but isn't
+ * confirmed yet, so override with `TRUCKSTOP_API_BASE` once a developer
+ * packet names it.
+ */
 export function truckstopSource(carrierId: string): TruckstopSource {
-  const base = process.env.TRUCKSTOP_API_BASE ?? "https://api.truckstop.com/v1"
+  const base = process.env.TRUCKSTOP_API_BASE ?? "https://testws.truckstop.com"
 
   async function search(criteria: TruckstopSearchCriteria): Promise<TruckstopLoadPosting[]> {
     const creds = await getCredentials(carrierId, "truckstop")
-    if (!creds?.apiKey) throw new Error("truckstop is not connected")
-    const response = await fetch(`${base}/loads/search?${searchQuery(criteria)}`, {
-      headers: { Authorization: `Bearer ${creds.apiKey}` },
+    if (!creds?.integrationId || !creds?.username || !creds?.password) {
+      throw new Error("truckstop is not connected")
+    }
+    const envelope = buildSearchEnvelope(criteria, {
+      integrationId: creds.integrationId,
+      username: creds.username,
+      password: creds.password,
+    })
+    const response = await fetch(`${base}/v13/Searching/LoadSearch.svc`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "text/xml; charset=utf-8",
+        SOAPAction: SOAP_ACTION,
+      },
+      body: envelope,
       signal: AbortSignal.timeout(15000),
     })
     if (!response.ok) throw new Error(`Truckstop search → HTTP ${response.status}`)
-    const json = (await response.json()) as { postings?: unknown[] }
-    return ((json.postings ?? []) as Record<string, unknown>[]).map(normalizeTruckstopPosting)
+    const xml = await response.text()
+    return parseLoadSearchResponse(xml).map(normalizeTruckstopPosting)
   }
 
   return {

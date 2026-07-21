@@ -427,6 +427,49 @@ describe("runQboSync", () => {
     expect(recordPaymentMock).not.toHaveBeenCalled()
   })
 
+  it("refuses a zero-amount payment (missing/garbled TotalAmt) instead of recording $0.00", async () => {
+    hasCredentialsMock.mockResolvedValue(true)
+    getCredentialsMock.mockResolvedValue(CREDS)
+    mockFetchSequence(
+      { ok: true, json: async () => ({ access_token: "tok" }) },
+      {
+        ok: true,
+        json: async () => ({
+          QueryResponse: {
+            // No TotalAmt at all — dollarsToCents normalizes this to 0 cents.
+            Payment: [{ Id: "A", TxnDate: "2026-06-01", Line: [{ LinkedTxn: [{ TxnId: "87", TxnType: "Invoice" }] }] }],
+          },
+        }),
+      },
+      { ok: true, json: async () => ({ QueryResponse: { Invoice: [{ Id: "87", DocNumber: "INV-9" }] } }) }
+    )
+    const result = await runQboSync(CARRIER)
+    expect(result).toEqual({ connected: true, imported: 0, skipped: 0, unmatched: ["INV-9"] })
+    // Refused before any DB lookup — no invoice match, no dedup probe, no insert.
+    expect(queryOneMock).not.toHaveBeenCalled()
+    expect(recordPaymentMock).not.toHaveBeenCalled()
+  })
+
+  it("refuses a negative-amount payment (refund shape) instead of downgrading a paid invoice", async () => {
+    hasCredentialsMock.mockResolvedValue(true)
+    getCredentialsMock.mockResolvedValue(CREDS)
+    mockFetchSequence(
+      { ok: true, json: async () => ({ access_token: "tok" }) },
+      {
+        ok: true,
+        json: async () => ({
+          QueryResponse: {
+            Payment: [{ Id: "A", TotalAmt: -25, TxnDate: "2026-06-01", Line: [{ LinkedTxn: [{ TxnId: "87", TxnType: "Invoice" }] }] }],
+          },
+        }),
+      },
+      { ok: true, json: async () => ({ QueryResponse: { Invoice: [{ Id: "87", DocNumber: "INV-9" }] } }) }
+    )
+    const result = await runQboSync(CARRIER)
+    expect(result).toEqual({ connected: true, imported: 0, skipped: 0, unmatched: ["INV-9"] })
+    expect(recordPaymentMock).not.toHaveBeenCalled()
+  })
+
   it("drops payments without an Id and reports unlinked ones as unmatched by their QBO id", async () => {
     hasCredentialsMock.mockResolvedValue(true)
     getCredentialsMock.mockResolvedValue(CREDS)

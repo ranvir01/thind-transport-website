@@ -88,8 +88,12 @@ export const PROVIDERS: readonly ProviderSpec[] = [
   },
   {
     id: "truckstop", label: "Truckstop.com", domain: "loadboard",
-    blurb: "Second load board — same search adapter contract as DAT. Needs a Truckstop.com developer API key.",
-    fields: [{ key: "apiKey", label: "API key", secret: true }],
+    blurb: "Second load board — SOAP/XML Load Search web service (not a REST API key). Requires a signed Systems Integration Agreement — ask your Truckstop account manager or tsi@truckstop.com — and the Load Board Pro tier.",
+    fields: [
+      { key: "integrationId", label: "Integration ID (6-digit, issued with the SIA)" },
+      { key: "username", label: "Web service username" },
+      { key: "password", label: "Web service password", secret: true },
+    ],
     fallback: "Paste rate con", sync: "manual", status: "live",
   },
   {
