@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
-vi.mock("../db", () => ({ query: vi.fn(async () => []) }))
+vi.mock("../db", () => ({ query: vi.fn(async () => []), queryOne: vi.fn(async () => null) }))
 vi.mock("../audit", () => ({ logAudit: vi.fn(async () => undefined) }))
 
-import { query } from "../db"
+import { query, queryOne } from "../db"
 import { logAudit } from "../audit"
 import {
   createExpense,

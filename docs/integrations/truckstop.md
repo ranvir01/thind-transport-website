@@ -122,6 +122,24 @@ Manual load entry and rate-con paste-in remain the product. The search UI render
 production risk right now, but the first real search will still need a field-name
 correction pass on the response parse (see Open questions) before results are trustworthy.
 
+## 2026-07-21 scout re-pass
+
+No adapter-breaking change. `developer.truckstop.com` and `llms.txt` are still 403-walled to
+this environment's egress exactly as the 2026-07-18/21 passes found — no direct fetch of the
+`GetLoadSearchResults` response schema was possible this pass either, so
+`parseLoadSearchResponse`'s field-name guesses remain unconfirmed. One partial lead on the
+city-filtering open question: search snippets referencing the same
+`developer.truckstop.com/reference/get-load-search-results-1` page (the confirmed reference
+page for our SOAP endpoint) mention `DestinationCity`/`DestinationCountry` as request-criteria
+fields — but a separate snippet's `OriginCity` mention traces to
+`developer.truckstop.com/reference/pload2` ("search within posted loads"), which this doc
+already rules out as broker-side/REST, not the carrier-side SOAP `LoadSearch.svc` our adapter
+calls. Don't wire `DestinationCity` in from this alone: single search-snippet confidence,
+unconfirmed field casing/placement inside the `Criteria` element, and no independent second
+source. No mention of `RadiusMiles`/`OriginRadius` surfaced in either request-shape search.
+Confirming needs the same thing every pass since 2026-07-18 has needed: a developer packet or
+a pull from an unblocked network.
+
 ## Open questions for the next pass
 
 - Get the real `GetLoadSearchResults` request/response XML schema (developer packet or
@@ -132,3 +150,6 @@ correction pass on the response parse (see Open questions) before results are tr
 - Confirm rate limits and any per-integration-ID concurrency rules at SIA time.
 - Confirm whether/how city-level or radius filtering exists on the real service — not sent
   in the current request envelope (only origin/destination states + equipment + HoursOld).
+  2026-07-21 lead (unconfirmed, single source): `DestinationCity`/`DestinationCountry` may be
+  valid `Criteria` fields on the same reference page as our SOAP endpoint — verify against the
+  actual page before wiring `originCity`/`radiusMiles` through.

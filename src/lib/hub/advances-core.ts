@@ -26,6 +26,16 @@ export interface DriverAdvanceBalance {
   exposure_cents: number
 }
 
+/** Cumulative outstanding+pending cap per driver, carrier-wide — the office/driver-app
+ * issuance paths must refuse a new advance that would push a driver past this before the
+ * next settlement can recover any of it. */
+export const MAX_DRIVER_ADVANCE_EXPOSURE_CENTS = 150000
+
+/** True if adding `newAmountCents` to a driver's current exposure would clear the cap. */
+export function advanceExposureExceedsCap(existingExposureCents: number, newAmountCents: number): boolean {
+  return existingExposureCents + newAmountCents > MAX_DRIVER_ADVANCE_EXPOSURE_CENTS
+}
+
 /**
  * Per-driver exposure from a flat advance list (reuse whatever `listAdvances`
  * already returned — no extra query). Only drivers with live exposure are
