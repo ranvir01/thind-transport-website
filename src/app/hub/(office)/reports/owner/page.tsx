@@ -1,6 +1,8 @@
 import Link from "next/link"
+import { cookies } from "next/headers"
 import {
-  weeklyRevenueTrend, monthlyRevenueTrend, arAgingTrend, settlementLiability, fuelSpendSummary, laneLeaderboard,
+  weeklyRevenueTrend, monthlyRevenueTrend, arAgingTrend, settlementLiability, fuelSpendSummary, laneLeaderboardRange,
+  parseStoredPnlRange, resolvePnlRange, REPORTS_RANGE_COOKIE,
   type RevenuePeriod, type AgingTrendPeriod, type SettlementLiability, type FuelSpendSummary, type LaneLeaderboardRow,
 } from "@/lib/hub/reports"
 import { truckPnl } from "@/lib/hub/expenses"
@@ -85,11 +87,11 @@ function AgingTrendBars({ periods }: { periods: AgingTrendPeriod[] }) {
   )
 }
 
-function LaneLeaderboardPanel({ lanes }: { lanes: LaneLeaderboardRow[] }) {
+function LaneLeaderboardPanel({ lanes, rangeLabel }: { lanes: LaneLeaderboardRow[]; rangeLabel: string }) {
   if (lanes.length === 0) {
     return (
       <p className="px-4 py-4 text-body-sm text-fg-3">
-        No loads in the last 92 days — lane stats build themselves from your load history.
+        No loads {rangeLabel} — lane stats build themselves from your load history.
       </p>
     )
   }
@@ -302,12 +304,18 @@ function ComplianceRedFlagsPanel({ entries }: { entries: ComplianceEntry[] }) {
 
 export default async function OwnerDashboardPage() {
   const user = await requirePermissionPage("money:read")
+  // Lane leaderboard follows the range the owner last set on the Reports
+  // page (same cookie), instead of a fixed trailing-92-day window — so a
+  // custom range chosen there stays consistent across both screens.
+  const storedRange = parseStoredPnlRange((await cookies()).get(REPORTS_RANGE_COOKIE)?.value)
+  const laneRange = storedRange ?? resolvePnlRange()
+
   const [weekly, monthly, aging, pnl, lanes, liability, compliance, fuel] = await Promise.all([
     weeklyRevenueTrend(user.carrierId, 8),
     monthlyRevenueTrend(user.carrierId, 6),
     arAgingTrend(user.carrierId, 8),
     truckPnl(user.carrierId, 92),
-    laneLeaderboard(user.carrierId, 92),
+    laneLeaderboardRange(user.carrierId, laneRange, 5),
     settlementLiability(user.carrierId),
     complianceEntries(user.carrierId),
     fuelSpendSummary(user.carrierId),
@@ -317,6 +325,10 @@ export default async function OwnerDashboardPage() {
     new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric" })
   const monthLabel = (iso: string) =>
     new Date(iso).toLocaleDateString("en-US", { month: "short" })
+  const fmtDay = (iso: string) =>
+    new Date(`${iso}T00:00:00`).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
+  const lanesRangeLabel = storedRange ? `${fmtDay(laneRange.from)} – ${fmtDay(laneRange.to)}` : "last 92 days"
+  const lanesEmptyLabel = storedRange ? `in ${lanesRangeLabel}` : "in the last 92 days"
 
   return (
     <div>
@@ -355,8 +367,8 @@ export default async function OwnerDashboardPage() {
         <Panel title="Driver settlement liability">
           <SettlementLiabilityPanel liability={liability} />
         </Panel>
-        <Panel title="Top lanes by margin — last 92 days">
-          <LaneLeaderboardPanel lanes={lanes} />
+        <Panel title={`Top lanes by margin — ${lanesRangeLabel}`}>
+          <LaneLeaderboardPanel lanes={lanes} rangeLabel={lanesEmptyLabel} />
         </Panel>
       </div>
 
