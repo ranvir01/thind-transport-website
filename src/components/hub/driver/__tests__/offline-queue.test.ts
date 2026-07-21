@@ -1,6 +1,8 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
 
-import { isOfflineError, listIntents, replayQueue, runOrQueue } from "../offline-queue"
+import {
+  isOfflineError, listIntents, QUEUE_SCHEMA_VERSION, replayQueue, runOrQueue,
+} from "../offline-queue"
 
 /**
  * isOfflineError decides whether a failed driver tap gets queued for replay
@@ -117,6 +119,9 @@ describe("runOrQueue", () => {
     expect(queued).toHaveLength(1)
     expect(queued[0].kind).toBe("facility-note")
     expect(queued[0].payload).toEqual(noteIntent.payload)
+    // Stamped so a future payload-shape change can tell this row apart from
+    // one queued under the new shape.
+    expect(queued[0].schemaVersion).toBe(QUEUE_SCHEMA_VERSION)
   })
 
   it("queues when the action throws a connectivity error mid-flight", async () => {
@@ -143,12 +148,13 @@ describe("runOrQueue", () => {
  * (it won't fix itself, and it can't be allowed to jam everything behind it).
  */
 describe("replayQueue", () => {
-  function makeIntent(id: string, queuedAt: number) {
+  function makeIntent(id: string, queuedAt: number, schemaVersion?: number) {
     return {
       id,
       kind: "facility-note" as const,
       payload: { facilityId: "f1", body: "gate 4 is the fast one", tags: ["fast"] },
       queuedAt,
+      schemaVersion,
     }
   }
 
@@ -210,5 +216,30 @@ describe("replayQueue", () => {
     expect(result).toEqual({ sent: 1, failed: 0 })
     const remaining = await listIntents()
     expect(remaining.map((i) => i.id)).toEqual(["b", "c"])
+  })
+
+  it("drops a row stamped with a stale schemaVersion without calling execute", async () => {
+    const intents = [
+      makeIntent("a", 100, QUEUE_SCHEMA_VERSION - 1),
+      makeIntent("b", 200, QUEUE_SCHEMA_VERSION),
+    ]
+    stubQueueWorld(intents)
+    const execute = vi.fn(async () => ({ ok: true }))
+    const result = await replayQueue(intents, execute)
+    // Only "b" (current version) reaches execute — "a" is dropped outright,
+    // it was queued under a payload shape this build no longer sends.
+    expect(execute).toHaveBeenCalledTimes(1)
+    expect(execute).toHaveBeenCalledWith(expect.objectContaining({ id: "b" }))
+    expect(result).toEqual({ sent: 1, failed: 1 })
+    expect(await listIntents()).toHaveLength(0)
+  })
+
+  it("treats a row with no schemaVersion (queued before the field existed) as current", async () => {
+    const intents = [makeIntent("a", 100, undefined)]
+    stubQueueWorld(intents)
+    const execute = vi.fn(async () => ({ ok: true }))
+    const result = await replayQueue(intents, execute)
+    expect(execute).toHaveBeenCalledTimes(1)
+    expect(result).toEqual({ sent: 1, failed: 0 })
   })
 })
