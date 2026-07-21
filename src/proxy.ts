@@ -61,13 +61,17 @@ export default async function proxy(request: NextRequest) {
     const inDriverApp = pathname === "/hub/driver" || pathname.startsWith("/hub/driver/")
     const inPortal = pathname === "/hub/portal" || pathname.startsWith("/hub/portal/")
     if (role === "driver") {
-      // Drivers live in the driver app; the API routes stay shared.
-      if (!inDriverApp && !pathname.startsWith("/hub/welcome")) {
+      // Drivers live in the driver app; the API routes stay shared. /hub/suspended
+      // must stay reachable too — otherwise a suspended tenant's driver bounces
+      // straight back to /hub/driver, which redirects to /hub/suspended, forever
+      // (the same class of loop /hub/welcome is already exempted from).
+      if (!inDriverApp && !pathname.startsWith("/hub/welcome") && !pathname.startsWith("/hub/suspended")) {
         return NextResponse.redirect(new URL("/hub/driver", request.url))
       }
     } else if (role === "broker" || role === "shipper") {
-      // External accounts live in the portal — nothing else.
-      if (!inPortal && !pathname.startsWith("/hub/welcome")) {
+      // External accounts live in the portal — nothing else, but /hub/suspended
+      // needs the same exemption as the driver branch above.
+      if (!inPortal && !pathname.startsWith("/hub/welcome") && !pathname.startsWith("/hub/suspended")) {
         return NextResponse.redirect(new URL("/hub/portal", request.url))
       }
     } else if (role === "platform_admin") {

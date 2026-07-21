@@ -1,7 +1,7 @@
 /**
  * Two-tenant isolation smoke — proves zero data bleed between the seeded
  * carriers (Thind Transport and Cascade Demo Lines, scripts/seed-demo.mjs
- * Phase 7). Three angles:
+ * Phase 7). Four angles:
  *
  *   1. List screens: each owner sees only their tenant's references
  *      (THD- vs CAS-) on dispatch, loads, fleet, and money.
@@ -11,6 +11,11 @@
  *      src/lib/hub/loads.ts).
  *   3. Driver PWA: the Cascade driver's phone view never references a
  *      Thind load or invoice.
+ *   4. Suspend/reactivate: platform admin flips Cascade's carrier status;
+ *      the already-signed-in owner and driver sessions (valid JWTs, no
+ *      re-login) must be cut off on their very next request and restored on
+ *      reactivation — the per-request isActiveCarrier re-check in
+ *      src/lib/hub/session.ts, not just a login-time check.
  *
  * Token discipline: Thind seeds a customer literally named "Cascade Produce
  * Co.", so asserting on the bare word "Cascade" would false-positive —
@@ -20,7 +25,7 @@
  */
 import puppeteer from "puppeteer"
 import { mkdirSync } from "node:fs"
-import { BASE, failures, check, waitForText, login, makeShot, reseed } from "./e2e-lib.mjs"
+import { BASE, failures, check, waitForText, textAppears, waitForPath, login, makeShot, reseed } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-tenant-isolation"
 mkdirSync(OUT, { recursive: true })
@@ -43,6 +48,40 @@ async function firstHref(page, prefix) {
         .find((h) => h?.startsWith(p) && uuid.test(h.slice(p.length))) ?? null
     )
   }, prefix)
+}
+
+/**
+ * Click the Suspend/Reactivate button inside a /hub/admin tenant row (each
+ * row is a `.flex-wrap` div containing a `<p>` with the tenant name and the
+ * TenantActions button) — dispatched as a real DOM click so React's
+ * delegated onClick handler fires the same as a user click would.
+ */
+async function clickTenantAction(page, tenantName) {
+  return page.evaluate((name) => {
+    const p = [...document.querySelectorAll("p")].find((el) => el.textContent?.includes(name))
+    const row = p?.closest(".flex-wrap")
+    const btn = row?.querySelector("button")
+    if (!btn) return false
+    btn.click()
+    return true
+  }, tenantName)
+}
+
+/** Wait until a tenant row's status badge/button reflects the given status ("active"/"suspended"). */
+async function waitForTenantStatus(page, tenantName, status, timeout = 10000) {
+  return page
+    .waitForFunction(
+      (name, s) => {
+        const p = [...document.querySelectorAll("p")].find((el) => el.textContent?.includes(name))
+        const row = p?.closest(".flex-wrap")
+        return row?.textContent?.toLowerCase().includes(s) ?? false
+      },
+      { timeout },
+      tenantName,
+      status
+    )
+    .then(() => true)
+    .catch(() => false)
 }
 
 async function main() {
@@ -171,6 +210,44 @@ async function main() {
 
   const realErrors = consoleErrors.filter((e) => !/favicon|manifest|404/i.test(e))
   check(realErrors.length === 0, `no console errors (${realErrors.length}: ${realErrors.slice(0, 2).join(" | ")})`)
+
+  // ---- 5. Platform admin suspends Cascade — its whole workspace is cut off ----
+  console.log("5. Platform admin suspends Cascade Demo Lines — owner session is cut off mid-JWT")
+  const adminCtx = await browser.createBrowserContext()
+  const admin = await adminCtx.newPage()
+  await admin.setViewport({ width: 1440, height: 950 })
+  await login(admin, "admin@hauldesk.app")
+  await admin.goto(`${BASE}/hub/admin`, { waitUntil: "networkidle2" })
+  await waitForText(admin, "Cascade Demo Lines")
+
+  check(await clickTenantAction(admin, "Cascade Demo Lines"), "clicked Suspend on Cascade Demo Lines")
+  check(await waitForTenantStatus(admin, "Cascade Demo Lines", "suspended"), "admin page shows Cascade as suspended")
+
+  // The Cascade owner's session cookie is still a valid JWT — only the
+  // per-request isActiveCarrier re-check (src/lib/hub/session.ts) should stop it.
+  await cascade.goto(`${BASE}/hub/dispatch`, { waitUntil: "networkidle2" })
+  check(await waitForPath(cascade, "/hub/suspended"), "suspended Cascade owner is redirected to /hub/suspended")
+  // h1 is `uppercase` via Tailwind, and innerText reflects the rendered
+  // (CSS-transformed) case, not the source string — compare lowercased.
+  check(
+    (await bodyText(cascade)).toLowerCase().includes("workspace suspended"),
+    "/hub/suspended renders the suspended dead-end copy"
+  )
+
+  // The Cascade driver PWA session must be cut off the same way, not just the office side.
+  await driver.goto(`${BASE}/hub/driver`, { waitUntil: "networkidle2" })
+  check(await waitForPath(driver, "/hub/suspended"), "suspended Cascade driver is redirected to /hub/suspended")
+
+  // ---- 6. Reactivate — access is restored without a fresh login ----
+  console.log("6. Platform admin reactivates Cascade — owner access is restored")
+  check(await clickTenantAction(admin, "Cascade Demo Lines"), "clicked Reactivate on Cascade Demo Lines")
+  check(await waitForTenantStatus(admin, "Cascade Demo Lines", "active"), "admin page shows Cascade as active")
+
+  await cascade.goto(`${BASE}/hub/dispatch`, { waitUntil: "networkidle2" })
+  check(
+    await textAppears(cascade, "every active load, booking to pod"),
+    "reactivated Cascade owner reaches /hub/dispatch again"
+  )
 
   await browser.close()
   if (failures.length > 0) {
