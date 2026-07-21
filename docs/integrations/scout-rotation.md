@@ -20,7 +20,7 @@ as an urgent `Backlog:` item.
 | `comdata` | **Built** — adapter shipped, daily cron live; Corpay has REAL machine channels (SOAP FleetCreditWS UsernameToken, REST developer portal, partner daily AC00029 fixed-width file) — file-drop webhook shipped 2026-07-18 (`processComdataEvent`) | `apiKey`, `apiSecret`, `webhookSecret` | `src/lib/hub/integrations/comdata.ts` | [`comdata.md`](./comdata.md) | 2026-07-18 |
 | `qbo` | **Built** — pull + push both directions, refresh-token rotation confirmed correct; `minorversion` bumped 65→75 (2026-07-19), 5-year refresh-token cap surfaced on the settings card. 2026-07-21 pass: no adapter-breaking change; the previously-open expiry-field question is closed — the authoritative field is `x_refresh_token_expires_in` (the field the adapter already reads; value `157680000` s = 5 y under the cap), so no `refreshAccessToken` change is needed; also documented Intuit's customer-facing expiry notices (in-app 30 d / email 7 d), which fire *after* our 90-day card warning. Intuit pages still 403 this env — search-excerpt confirmation only | OAuth2 (Intuit) | `src/lib/hub/integrations/qbo.ts` | [`qbo.md`](./qbo.md) | 2026-07-21 |
 | `factor` | **Built** — push + webhook receiver; vendor landscape pinned: OTR Solutions is the only factor with public dev docs + test env (recommended first target); Apex/Denim are API-key class; RTS/Triumph are FTP file drops (EFS-style transport gap); NO factor documents webhooks to carriers — funding status is poll-based everywhere (see doc). 2026-07-21 pass: no breaking change; OTR names three distinct products (Rate Verification, Document Exchange, Carrier Setup APIs) instead of one undifferentiated API — Document Exchange is the one `submitInvoiceToFactor` targets | varies by factor | `src/lib/hub/integrations/factor.ts` | [`factor.md`](./factor.md) | 2026-07-21 |
-| `truckstop` | **Built** — full slice shipped (search UI + booking, migration 017 applied); real API confirmed as SOAP/XML with `IntegrationId`+`UserName`+`Password` in the envelope body; 2026-07-21 integrations-lane rewrite matched the adapter's transport to this (SOAP envelope + XML parse replacing the old Bearer-key REST guess, registry fields updated to match); sandbox exists at `testws.truckstop.com` (see doc); still unconfirmed: the real `GetLoadSearchResults` response element names | `integrationId`, `username`, `password` | `src/lib/hub/integrations/truckstop.ts` | [`truckstop.md`](./truckstop.md) | 2026-07-18 |
+| `truckstop` | **Built** — full slice shipped (search UI + booking, migration 017 applied); real API confirmed as SOAP/XML with `IntegrationId`+`UserName`+`Password` in the envelope body; 2026-07-21 integrations-lane rewrite matched the adapter's transport to this (SOAP envelope + XML parse replacing the old Bearer-key REST guess, registry fields updated to match); sandbox exists at `testws.truckstop.com` (see doc). 2026-07-21 docs re-pass: no breaking change; portal still 403-walled so the `GetLoadSearchResults` response element names remain unconfirmed; one unconfirmed single-source lead that `DestinationCity`/`DestinationCountry` may be valid request-criteria fields (not yet wired) | `integrationId`, `username`, `password` | `src/lib/hub/integrations/truckstop.ts` | [`truckstop.md`](./truckstop.md) | 2026-07-21 |
 
 All ten vendor providers now have both a shipped adapter and a research doc (this row was
 stale — it previously described `dat`/`efs`/`wex`/`comdata`/`truckercloud` as credential-only
@@ -37,8 +37,19 @@ integrations that were never in scope of the vendor shopping list: both `fmcsa.m
    notes before a lane builds the adapter.
 3. One provider per cycle. Update the "Last researched" date and doc link when done.
 
-Next up by this rule: `mailbox`/`wex`/`comdata`/`truckstop`, all last researched 2026-07-18
-(the sole oldest built-adapter docs now that `factor.md` was refreshed 2026-07-21). The
+Next up by this rule: `mailbox`/`wex`/`comdata`, all last researched 2026-07-18 (now the sole
+oldest built-adapter docs — `truckstop.md` was refreshed 2026-07-21, see below). The
+2026-07-21 `truckstop` pass (prompted by the same-day integrations-lane SOAP/XML rewrite's
+Backlog flag) found no adapter-breaking change beyond what that rewrite already surfaced:
+`developer.truckstop.com` and its `llms.txt` are still 403-walled to this environment exactly
+as the 2026-07-18 pass found, so the `GetLoadSearchResults` response element names
+(`parseLoadSearchResponse`/`normalizeTruckstopPosting`'s open question) stay unconfirmed. One
+partial, unconfirmed lead surfaced on the separate open question of city-level search
+filtering: a search snippet ties `DestinationCity`/`DestinationCountry` to the same reference
+page as our confirmed SOAP endpoint, but a same-search `OriginCity` mention turned out to
+trace to a different, already-ruled-out REST endpoint (`pload2`, broker-side posted-loads
+search) — so it's flagged in `truckstop.md` as needing a second source before wiring, not
+acted on. The
 2026-07-21 `factor` pass found no adapter-breaking change: the subscription-key auth model
 and poll-based (no webhook) funding status from the 2026-07-17 pass both stand; the new find
 was that OTR names three distinct API products (Rate Verification, Document Exchange, Carrier
