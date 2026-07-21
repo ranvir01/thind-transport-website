@@ -97,10 +97,12 @@ async function main() {
   page.on("pageerror", (err) => consoleErrors.push(`pageerror: ${err.message}`))
 
   // Self-heal: a crashed earlier run — or a run of an older smoke variant
-  // with no cleanup step — can leave the DAT credential connected, and
-  // seed:demo does not clear hub.api_credentials, so step 1's
-  // disconnected-state checks would fail on every rerun. Disconnect through
-  // the owner UI first (mirrors e2e-mailbox-oauth-smoke.mjs).
+  // with no cleanup step — can leave the DAT credential connected. seed-demo.mjs
+  // does TRUNCATE hub.api_credentials, but reseed() (line 89) only runs it
+  // against a localhost BASE; a remote E2E_BASE_URL skips reseeding entirely
+  // (e2e-lib.mjs), so step 1's disconnected-state checks would fail on every
+  // rerun there. Disconnect through the owner UI first (mirrors
+  // e2e-mailbox-oauth-smoke.mjs).
   {
     const healCtx = await browser.createBrowserContext()
     const heal = await healCtx.newPage()
