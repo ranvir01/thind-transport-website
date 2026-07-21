@@ -1,11 +1,12 @@
 # QuickBooks Online — scouting notes
 
 Status: **adapter shipped stub-first** (`src/lib/hub/integrations/qbo.ts`), no
-sandbox account wired yet; **platform notices re-checked 2026-07-17** (see the
-dated section below — minorversion pin is stale, refresh tokens gained a
-5-year hard cap, adapter's rotation handling confirmed correct). Confirm the
-real response shape and flip `registry.ts`'s `qbo` status to `live` once a
-developer.intuit.com app + sandbox company are set up (see
+sandbox account wired yet; **platform notices re-checked 2026-07-21** (see the
+dated sections below — no adapter-breaking change; the previously-unconfirmed
+refresh-token-expiry field name is now confirmed as `x_refresh_token_expires_in`,
+i.e. the field the adapter already reads, and it now carries the 5-year value).
+Confirm the real response shape and flip `registry.ts`'s `qbo` status to `live`
+once a developer.intuit.com app + sandbox company are set up (see
 `docs/integrations/creds-shopping-list.md` row 6).
 
 ## Why no migration was needed
@@ -68,10 +69,14 @@ first of those start dying **October 2028**; apps on restricted/granular
 scopes hit it earlier (February 2027). Two consequences for this adapter:
 
 - The token-refresh response now includes a field stating when the refresh
-  token itself expires (the pre-existing `x_refresh_token_expires_in`
-  seconds field is what this adapter reads — if a real token exchange shows
-  Intuit added a differently-named authoritative field, extend
-  `refreshAccessToken` to prefer it). **Shipped 2026-07-19:**
+  token itself expires. **Confirmed 2026-07-21:** it is the pre-existing
+  `x_refresh_token_expires_in` seconds field — the exact field this adapter
+  already reads — and no differently-named authoritative field was added, so
+  the `refreshAccessToken` "prefer a new field" contingency is moot. Under the
+  5-year cap that field now returns `157680000` (= 1825 days = 5 years) instead
+  of the legacy 100-day inactivity value, so `refreshAccessToken`'s
+  `now + x_refresh_token_expires_in` computation yields the real hard-expiry
+  date directly. **Shipped 2026-07-19:**
   `refreshAccessToken` converts it to an absolute `refreshTokenExpiresAt`
   ISO timestamp, `persistTokenRotation` stores it in the same encrypted
   credential payload (with a >1-day drift guard so syncs don't rewrite
@@ -83,7 +88,41 @@ scopes hit it earlier (February 2027). Two consequences for this adapter:
   Intuit developer console and paste a fresh refresh token. Intuit added a
   "Reconnect URL" field to app settings (available since 2026-02-24) for
   exactly this; not relevant to our console-only connect flow, but the
-  re-auth runbook above is.
+  re-auth runbook above is. Intuit *also* fires customer-facing expiry
+  notices — in-app top-menu + Integrations-page banners 30 days out, an email
+  reminder 7 days out (confirmed 2026-07-21). LoadOff's own
+  `qboTokenExpiryNotice` warns on the settings card at **90 days**, i.e. the
+  owner sees our warning well before Intuit's customer channels fire — the
+  right ordering, since our fix (paste a fresh refresh token) is what resolves
+  it, not Intuit's generic reconnect prompt.
+
+## Re-verified 2026-07-21 (scout pass — no adapter-breaking change)
+
+Full re-check of auth model, endpoints, rate limits, sandbox, and pricing
+against `src/lib/hub/integrations/qbo.ts`. Nothing broke; two items closed:
+
+- **Refresh-token expiry field name confirmed** (was the top open question):
+  the authoritative field is `x_refresh_token_expires_in` — exactly what
+  `refreshAccessToken` already reads. Intuit did **not** add a differently-named
+  field; under the 5-year cap it simply returns the larger value
+  (`157680000` s = 5 y) in the same slot. Confirmed against multiple sources
+  quoting the live token response shape. The adapter needs no change.
+- **Customer-facing expiry notice cadence documented** (in-app 30 d, email
+  7 d) — see the refresh-token section above; validates the 90-day
+  `qboTokenExpiryNotice` window as firing *ahead* of Intuit's own notices.
+
+Re-confirmed unchanged: minorversion-75 default (sub-75 ignored), `Id` no
+longer sortable, CloudEvents webhook format, OAuth2 refresh-token grant on
+`oauth.platform.intuit.com/oauth2/v1/tokens/bearer`, and the 500 req/min/realm
++ 10-concurrent core limits (a sync makes ≤4 calls). One minor discrepancy
+noted: some third-party 2026 guides cite the **batch** endpoint at 40 req/min
+where Intuit's own Oct-2025 notice says 120 — LoadOff uses neither the batch
+endpoint nor the "resource-intensive" 200 req/min class, so it's academic for
+us; the doc keeps Intuit's official 120 figure. No pricing change to API
+access surfaced. Intuit's own pages (developer.intuit.com, help center,
+medium.com/intuitdev) still 403 automated fetches from this rig — findings
+are from search excerpts and third-party integrator guides that quote the
+notices verbatim.
 
 ## Platform changes checked 2026-07-17 (Intuit notices, Aug 2025 → Feb 2026)
 
@@ -195,8 +234,10 @@ stays the fallback for both directions until then.
 - ~~Read the refresh-token-expiry field and surface it on the settings
   card~~ — done 2026-07-19 (`x_refresh_token_expires_in` →
   `refreshTokenExpiresAt` in the credential payload → `qboTokenExpiryNotice`
-  on the card). Confirm the field name against a real token exchange; the
-  notice simply stays absent until an expiry is observed.
+  on the card). ~~Confirm the field name against a real token exchange~~ —
+  confirmed 2026-07-21: it is `x_refresh_token_expires_in`, the field the
+  adapter already reads (no differently-named field was added). The notice
+  simply stays absent until an expiry is observed.
 - ~~Wire an actual "Push to QBO" button~~ — already shipped: the invoice
   detail page's `MoneyActions.tsx` calls `pushInvoiceToQboAction`
   (`src/app/hub/_actions/money.ts`), which calls
@@ -209,7 +250,7 @@ stays the fallback for both directions until then.
 - Confirm the real sandbox response shape (`Customer`/`Item`/`Invoice`
   create bodies) and flip `registry.ts` status to `live`.
 
-## Sources (researched 2026-07-17)
+## Sources (researched 2026-07-17, re-verified 2026-07-21)
 
 Intuit's own developer pages 403 automated fetches from this rig, so
 findings above come from Intuit's announcement summaries as surfaced in
@@ -236,3 +277,13 @@ search plus third-party integrator changelogs that quote them:
   integrator changelogs — 500 req/min/realm, 10 concurrent, batch endpoint
   120 req/min (production 2025-10-31), sandbox aligned to production
   limits ~2025-09-15.
+- 2026-07-21 re-verification: Intuit help center "Refresh Token Expiration
+  and Validity Policy" + "Handling OAuth token expiration" and multiple 2026
+  integrator guides (Truto, Apideck, Satva, Coefficient, Zuplo) quoting the
+  live token response — the expiry field is `x_refresh_token_expires_in`
+  (value `157680000` s = 5 y under the cap); customer expiry notices fire
+  in-app 30 days out and by email 7 days out; core rate limits (500/min/realm,
+  10 concurrent) and minorversion-75 default unchanged. Some third-party
+  guides cite the batch endpoint at 40 req/min vs Intuit's official 120 —
+  irrelevant to this adapter (uses neither batch nor resource-intensive
+  endpoints). No API-access pricing change surfaced.
