@@ -14,7 +14,7 @@
 import puppeteer from "puppeteer"
 import { mkdirSync } from "node:fs"
 import {
-  BASE, sleep, login, check, failures, waitForText, waitForPath, makeShot, clickByText, reseed,
+  BASE, login, check, failures, waitForText, waitForPath, makeShot, clickByText, reseed,
 } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-pricebook"
@@ -82,7 +82,10 @@ try {
   check(chips.some((t) => t.includes("Detention") && t.includes("$75")), "Detention chip shows edited $75")
 
   await clickByText(page, "+ Chains")
-  await sleep(300)
+  await page.waitForFunction(
+    () => document.querySelector('input[aria-label="Accessorial label"]')?.value === "Chains",
+    { timeout: 8000 }
+  )
   const accLabel = await page.$eval('input[aria-label="Accessorial label"]', (el) => el.value)
   const accAmount = await page.$eval('input[aria-label="Accessorial amount"]', (el) => el.value)
   check(accLabel === "Chains", `quick-add filled label (got "${accLabel}")`)
