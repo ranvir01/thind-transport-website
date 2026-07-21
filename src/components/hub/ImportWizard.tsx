@@ -130,14 +130,12 @@ export function ImportWizard({ initialKind = "loads" }: { initialKind?: string }
   const [pending, startTransition] = useTransition()
 
   useEffect(() => {
-    if (!def.templateKind) {
-      setTemplates([])
-      return
-    }
+    if (!def.templateKind) return
     listImportTemplatesAction(def.templateKind)
       .then(setTemplates)
       .catch(() => setTemplates([]))
   }, [def.templateKind])
+  const visibleTemplates = def.templateKind ? templates : []
 
   const reset = () => {
     setFileName(null)
@@ -288,13 +286,13 @@ export function ImportWizard({ initialKind = "loads" }: { initialKind?: string }
             <h2 className="text-[13.5px] font-semibold text-fg">
               2 · Map your columns
             </h2>
-            {templates.length > 0 ? (
+            {visibleTemplates.length > 0 ? (
               <select
                 aria-label="Apply saved template"
                 className={`${fieldCls} w-56`}
                 defaultValue=""
                 onChange={(e) => {
-                  const template = templates.find((t) => t.id === e.target.value)
+                  const template = visibleTemplates.find((t) => t.id === e.target.value)
                   if (template) {
                     setMapping(template.mapping)
                     toast.success(`Applied "${template.name}"`)
@@ -302,7 +300,7 @@ export function ImportWizard({ initialKind = "loads" }: { initialKind?: string }
                 }}
               >
                 <option value="">Apply saved mapping…</option>
-                {templates.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+                {visibleTemplates.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
               </select>
             ) : null}
           </div>
