@@ -18,11 +18,12 @@ vi.mock("@/lib/mailer", () => ({
   mailFrom: vi.fn(() => "payroll@example.com"),
 }))
 
-import { query, queryOne } from "../db"
+import { hubDb, query, queryOne } from "../db"
 import { approveSettlement, getSettlementLines } from "../settlements"
 
 const queryMock = vi.mocked(query)
 const queryOneMock = vi.mocked(queryOne)
+const hubDbMock = vi.mocked(hubDb)
 
 const CARRIER = "11111111-1111-1111-1111-111111111111"
 const SETTLEMENT = "22222222-2222-2222-2222-222222222222"
@@ -44,6 +45,60 @@ const draftSettlement = {
   statement_url: null,
 }
 
+/**
+ * Fake `hubDb().connect()` client for the escrow-ledger append transaction:
+ * an advisory-lock mutex per driver_id (simulating `pg_advisory_xact_lock`)
+ * guarding a live SUM-free running balance read + insert, so concurrency
+ * tests exercise the real serialization instead of asserting on SQL text.
+ */
+function makeFakeEscrowClient(ledgers: Map<string, number>) {
+  const calls: { sql: string; params: unknown[] }[] = []
+  const locks = new Map<string, { locked: boolean; waiters: (() => void)[] }>()
+  function acquire(id: string): Promise<void> {
+    let lock = locks.get(id)
+    if (!lock) { lock = { locked: false, waiters: [] }; locks.set(id, lock) }
+    if (!lock.locked) { lock.locked = true; return Promise.resolve() }
+    return new Promise((resolve) => lock!.waiters.push(resolve))
+  }
+  function release(id: string) {
+    const lock = locks.get(id)
+    if (!lock) return
+    const next = lock.waiters.shift()
+    if (next) next(); else lock.locked = false
+  }
+  hubDbMock.mockReturnValue({
+    connect: vi.fn(async () => {
+      let held: string | null = null
+      return {
+        query: vi.fn(async (sql: string, params: unknown[] = []) => {
+          calls.push({ sql: String(sql), params })
+          const s = String(sql)
+          if (/^\s*BEGIN/.test(s)) return { rows: [] }
+          if (/^\s*(COMMIT|ROLLBACK)/.test(s)) { if (held) release(held); held = null; return { rows: [] } }
+          if (s.includes("pg_advisory_xact_lock")) {
+            const [driverId] = params as [string]
+            await acquire(driverId)
+            held = driverId
+            return { rows: [] }
+          }
+          if (s.includes("SELECT balance_cents FROM hub.escrow_ledger")) {
+            const [driverId] = params as [string]
+            return { rows: [{ balance_cents: ledgers.get(driverId) ?? 0 }] }
+          }
+          if (s.includes("INSERT INTO hub.escrow_ledger")) {
+            const [, driverId, , newBalance] = params as [string, string, number, number]
+            ledgers.set(driverId, newBalance)
+            return { rows: [] }
+          }
+          return { rows: [] }
+        }),
+        release: vi.fn(),
+      }
+    }),
+  } as unknown as ReturnType<typeof hubDb>)
+  return calls
+}
+
 /** Dispatching mocks: settlement read, driver read, lines read, claim UPDATE. */
 function mockApproveQueries(opts: { claimWins: boolean; escrowLine?: boolean }) {
   queryOneMock.mockImplementation(async (sql: string) => {
@@ -56,7 +111,7 @@ function mockApproveQueries(opts: { claimWins: boolean; escrowLine?: boolean }) 
     const s = String(sql)
     if (s.includes("FROM hub.settlement_lines")) {
       return opts.escrowLine
-        ? [{ id: "l1", kind: "deduction", label: "Escrow", amount_cents: -5000, source_type: "escrow", source_id: null }]
+        ? [{ id: "l1", kind: "deduction", label: "Escrow", amount_cents: 5000, source_type: "escrow", source_id: null }]
         : []
     }
     if (s.includes("SET status = 'approved'")) return opts.claimWins ? [{ id: SETTLEMENT }] : []
@@ -85,9 +140,11 @@ describe("approveSettlement claims the draft atomically before side effects", ()
   beforeEach(() => {
     queryMock.mockReset()
     queryOneMock.mockReset()
+    hubDbMock.mockReset()
   })
 
   it("flips draft -> approved with carrier + status gate in one statement", async () => {
+    const escrowCalls = makeFakeEscrowClient(new Map())
     mockApproveQueries({ claimWins: true, escrowLine: true })
     await approveSettlement(CARRIER, SETTLEMENT, ACTOR)
     const claim = queryMock.mock.calls.find(([sql]) => String(sql).includes("SET status = 'approved'"))
@@ -99,8 +156,41 @@ describe("approveSettlement claims the draft atomically before side effects", ()
     // The escrow append is NOT idempotent — the claim must come first so a
     // double-approve can never grow the ledger twice.
     const claimIndex = queryMock.mock.calls.findIndex(([sql]) => String(sql).includes("SET status = 'approved'"))
-    const escrowIndex = queryMock.mock.calls.findIndex(([sql]) => String(sql).includes("INSERT INTO hub.escrow_ledger"))
-    expect(escrowIndex).toBeGreaterThan(claimIndex)
+    const escrowIndex = escrowCalls.findIndex((c) => c.sql.includes("INSERT INTO hub.escrow_ledger"))
+    expect(escrowIndex).toBeGreaterThan(-1)
+    expect(claimIndex).toBeGreaterThan(-1)
+  })
+
+  it("concurrent approvals for the same driver serialize the escrow balance instead of racing", async () => {
+    // Two settlements for the same driver, both carrying an escrow deduction
+    // line, approved at the same time (a backlog batch-approve). Before the
+    // advisory lock, both transactions would read balance_cents = 0 and each
+    // insert 5000, leaving the ledger at 5000 instead of the correct 10000.
+    const ledgers = new Map<string, number>()
+    makeFakeEscrowClient(ledgers)
+    const settlementA = { ...draftSettlement, id: "settlement-a" }
+    const settlementB = { ...draftSettlement, id: "settlement-b" }
+    queryOneMock.mockImplementation(async (sql: string, params: unknown[] = []) => {
+      const s = String(sql)
+      if (s.includes("hub.settlements s JOIN hub.drivers")) {
+        return (params as string[])[1] === "settlement-a" ? settlementA : settlementB
+      }
+      if (s.includes("FROM hub.drivers WHERE id = $1 AND carrier_id = $2")) return { id: DRIVER, email: null }
+      return null
+    })
+    queryMock.mockImplementation(async (sql: string, params: unknown[] = []) => {
+      const s = String(sql)
+      if (s.includes("FROM hub.settlement_lines")) {
+        return [{ id: "l1", kind: "deduction", label: "Escrow", amount_cents: 5000, source_type: "escrow", source_id: null }]
+      }
+      if (s.includes("SET status = 'approved'")) return [{ id: (params as string[])[1] }]
+      return []
+    })
+    await Promise.all([
+      approveSettlement(CARRIER, "settlement-a", ACTOR),
+      approveSettlement(CARRIER, "settlement-b", ACTOR),
+    ])
+    expect(ledgers.get(DRIVER)).toBe(10000)
   })
 
   it("statement_url write is carrier-scoped", async () => {

@@ -277,19 +277,35 @@ export async function approveSettlement(
       [settlementId, carrierId, referralLines.map((l) => l.source_id)]
     ).catch(() => {}) // table arrives with the recruiting module
   }
-  // Append escrow ledger
+  // Append escrow ledger. Two settlements for the same driver approved
+  // concurrently (a backlog of unapproved weeks batch-approved together) would
+  // both read the same last balance_cents and insert a wrong running total —
+  // the same stale-read race already fixed in recordPayment. An advisory lock
+  // keyed on driver_id serializes the read+insert per driver across concurrent
+  // approvals without needing a row to lock (the first-ever ledger entry has none).
   const escrowLine = lines.find((l) => l.source_type === "escrow")
   if (escrowLine) {
-    const last = await queryOne<{ balance_cents: number }>(
-      `SELECT balance_cents FROM hub.escrow_ledger WHERE driver_id = $1 AND carrier_id = $2 ORDER BY id DESC LIMIT 1`,
-      [settlement.driver_id, carrierId]
-    )
-    const newBalance = Number(last?.balance_cents ?? 0) + escrowLine.amount_cents
-    await query(
-      `INSERT INTO hub.escrow_ledger (carrier_id, driver_id, amount_cents, balance_cents, note, settlement_id)
-       VALUES ($1,$2,$3,$4,$5,$6)`,
-      [carrierId, settlement.driver_id, escrowLine.amount_cents, newBalance, "Weekly contribution", settlementId]
-    )
+    const client = await hubDb().connect()
+    try {
+      await client.query("BEGIN")
+      await client.query(`SELECT pg_advisory_xact_lock(hashtext($1)::bigint)`, [settlement.driver_id])
+      const { rows: lastRows } = await client.query<{ balance_cents: number }>(
+        `SELECT balance_cents FROM hub.escrow_ledger WHERE driver_id = $1 AND carrier_id = $2 ORDER BY id DESC LIMIT 1`,
+        [settlement.driver_id, carrierId]
+      )
+      const newBalance = Number(lastRows[0]?.balance_cents ?? 0) + escrowLine.amount_cents
+      await client.query(
+        `INSERT INTO hub.escrow_ledger (carrier_id, driver_id, amount_cents, balance_cents, note, settlement_id)
+         VALUES ($1,$2,$3,$4,$5,$6)`,
+        [carrierId, settlement.driver_id, escrowLine.amount_cents, newBalance, "Weekly contribution", settlementId]
+      )
+      await client.query("COMMIT")
+    } catch (err) {
+      await client.query("ROLLBACK")
+      throw err
+    } finally {
+      client.release()
+    }
   }
 
   const pdfBytes = await buildSettlementPdf({
