@@ -18,7 +18,7 @@ as an urgent `Backlog:` item.
 | `efs` | **Built** — adapter shipped; real feed is a daily SFTP CSV — signed file-drop webhook shipped 2026-07-17 (`processEfsEvent`), Go-worker SFTP poller still the long-term option. 2026-07-20 pass: no breaking change (provisioning path/timeline/transport all still match); every direct vendor fetch 403-walled again, so confirmation is search-snippet only. Two corroborating sources found the same transaction-field set independently (Level-III fields, Motive's synthesized view), and the Motive source surfaced a "discounts applied" field `normalizeEfsRecord` doesn't currently capture — flagged for whenever a real file lands, not urgent | `feedUser`, `feedPassword`, `webhookSecret` | `src/lib/hub/integrations/efs.ts` | [`efs.md`](./efs.md) | 2026-07-20 |
 | `wex` | **Built** — adapter shipped; real feed confirmed daily SFTP CSV (same as EFS) — signed file-drop webhook shipped 2026-07-18 (`processWexEvent`) | `feedUser`, `feedPassword`, `webhookSecret` | `src/lib/hub/integrations/wex.ts` | [`wex.md`](./wex.md) | 2026-07-18 |
 | `comdata` | **Built** — adapter shipped, daily cron live; Corpay has REAL machine channels (SOAP FleetCreditWS UsernameToken, REST developer portal, partner daily AC00029 fixed-width file) — file-drop webhook shipped 2026-07-18 (`processComdataEvent`) | `apiKey`, `apiSecret`, `webhookSecret` | `src/lib/hub/integrations/comdata.ts` | [`comdata.md`](./comdata.md) | 2026-07-18 |
-| `qbo` | **Built** — pull + push both directions, refresh-token rotation confirmed correct; hardcoded `minorversion=65` is stale (Intuit serves v75 regardless since 2025-08-01); refresh tokens now carry a 5-year hard cap (see doc) | OAuth2 (Intuit) | `src/lib/hub/integrations/qbo.ts` | [`qbo.md`](./qbo.md) | 2026-07-17 |
+| `qbo` | **Built** — pull + push both directions, refresh-token rotation confirmed correct; `minorversion` bumped 65→75 (2026-07-19), 5-year refresh-token cap surfaced on the settings card. 2026-07-21 pass: no adapter-breaking change; the previously-open expiry-field question is closed — the authoritative field is `x_refresh_token_expires_in` (the field the adapter already reads; value `157680000` s = 5 y under the cap), so no `refreshAccessToken` change is needed; also documented Intuit's customer-facing expiry notices (in-app 30 d / email 7 d), which fire *after* our 90-day card warning. Intuit pages still 403 this env — search-excerpt confirmation only | OAuth2 (Intuit) | `src/lib/hub/integrations/qbo.ts` | [`qbo.md`](./qbo.md) | 2026-07-21 |
 | `factor` | **Built** — push + webhook receiver; vendor landscape pinned: OTR Solutions is the only factor with public dev docs + test env (recommended first target); Apex/Denim are API-key class; RTS/Triumph are FTP file drops (EFS-style transport gap); NO factor documents webhooks to carriers — funding status is poll-based everywhere (see doc) | varies by factor | `src/lib/hub/integrations/factor.ts` | [`factor.md`](./factor.md) | 2026-07-17 |
 | `truckstop` | **Built** — full slice shipped (search UI + booking, migration 017 applied); real API confirmed as SOAP/XML with `IntegrationId`+`UserName`+`Password` in the envelope body — adapter's Bearer-key REST guess is wrong on auth AND transport, rewrite needed before activation; sandbox exists at `testws.truckstop.com` (see doc) | `integrationId`, `username`, `password` (registry still says `apiKey` — wrong) | `src/lib/hub/integrations/truckstop.ts` | [`truckstop.md`](./truckstop.md) | 2026-07-18 |
 
@@ -37,8 +37,17 @@ integrations that were never in scope of the vendor shopping list: both `fmcsa.m
    notes before a lane builds the adapter.
 3. One provider per cycle. Update the "Last researched" date and doc link when done.
 
-Next up by this rule: `qbo.md` or `factor.md` (both 2026-07-17, now tied oldest built-adapter
-docs). The 2026-07-20 EFS pass found no breaking change: provisioning path, timeline, and
+Next up by this rule: `factor.md` (2026-07-17, now the sole oldest built-adapter doc after the
+2026-07-21 `qbo` pass; then `mailbox`/`wex`/`comdata`/`truckstop` at 2026-07-18). The
+2026-07-21 `qbo` pass found no adapter-breaking change: minorversion-75 default, `Id`-not-sortable,
+CloudEvents webhooks, the OAuth2 refresh-token grant, and the 500 req/min/realm + 10-concurrent
+limits are all unchanged. It closed the doc's top open question — the refresh-token-expiry field is
+`x_refresh_token_expires_in` (the field the adapter already reads; no differently-named field was
+added, and it now carries `157680000` s = 5 y under the cap), so the `refreshAccessToken` "prefer a
+new field" contingency is moot — and documented Intuit's customer-facing expiry notices (in-app
+30 d, email 7 d), which fire after LoadOff's own 90-day settings-card warning. Intuit's pages
+(developer.intuit.com, help center, medium.com/intuitdev) still 403 automated fetches, so
+confirmation is search-excerpt only. The 2026-07-20 EFS pass found no breaking change: provisioning path, timeline, and
 transport (daily SFTP CSV) all still match the 2026-07-11 doc. Every direct vendor fetch
 403-walled again this pass (efsllc.com, emgr.efsllc.com, geotab.com, fleetio.com,
 firstfleetinc.com, gomotive.com, and — newly ruled out as a false lead — wextelematics.com, a
