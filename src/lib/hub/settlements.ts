@@ -1,3 +1,4 @@
+import type { PoolClient } from "pg"
 import { hubDb, query, queryOne } from "./db"
 import {
   evaluatePayRules, legacyConfigToRuleSet, parseRuleSet, type PayLoadContext,
@@ -391,14 +392,44 @@ export async function listAdvances(carrierId: string): Promise<Advance[]> {
   )
 }
 
-/** Sum of a driver's live (outstanding + pending) advance exposure, carrier-scoped. */
-export async function driverAdvanceExposureCents(carrierId: string, driverId: string): Promise<number> {
-  const row = await queryOne<{ cents: string | number }>(
-    `SELECT COALESCE(SUM(amount_cents), 0) AS cents FROM hub.advances
-     WHERE carrier_id = $1 AND driver_id = $2 AND status IN ('outstanding', 'pending')`,
-    [carrierId, driverId]
-  )
-  return Number(row?.cents ?? 0)
+/**
+ * Locks per-driver (advisory xact lock keyed on driver_id, same pattern as the
+ * escrow-ledger race fix in approveSettlement), re-checks exposure inside the
+ * lock, then inserts. Closes the TOCTOU window where two concurrent advance
+ * requests/approvals for the same driver (office create + driver request, or
+ * two drivers-app taps) could both read the same pre-insert exposure and both
+ * pass the cap — each caller supplies its own INSERT and cap-exceeded message
+ * so the two entry points keep their own copy/columns.
+ */
+export async function insertAdvanceWithinExposureCap(
+  carrierId: string,
+  driverId: string,
+  amountCents: number,
+  capExceededMessage: string,
+  insertRow: (client: PoolClient) => Promise<{ id: string }>
+): Promise<{ id: string }> {
+  const client = await hubDb().connect()
+  try {
+    await client.query("BEGIN")
+    await client.query(`SELECT pg_advisory_xact_lock(hashtext($1)::bigint)`, [driverId])
+    const { rows: exposureRows } = await client.query<{ cents: string | number }>(
+      `SELECT COALESCE(SUM(amount_cents), 0) AS cents FROM hub.advances
+       WHERE carrier_id = $1 AND driver_id = $2 AND status IN ('outstanding', 'pending')`,
+      [carrierId, driverId]
+    )
+    const exposure = Number(exposureRows[0]?.cents ?? 0)
+    if (advanceExposureExceedsCap(exposure, amountCents)) {
+      throw new Error(capExceededMessage)
+    }
+    const row = await insertRow(client)
+    await client.query("COMMIT")
+    return row
+  } catch (err) {
+    await client.query("ROLLBACK")
+    throw err
+  } finally {
+    client.release()
+  }
 }
 
 export async function createAdvance(
@@ -407,20 +438,23 @@ export async function createAdvance(
   actor: { id: string; name: string }
 ): Promise<void> {
   await assertCarrierRefs(carrierId, { driver_id: input.driverId })
-  const exposure = await driverAdvanceExposureCents(carrierId, input.driverId)
-  if (advanceExposureExceedsCap(exposure, input.amountCents)) {
-    throw new Error(
-      `Would push this driver's advance exposure past $${(MAX_DRIVER_ADVANCE_EXPOSURE_CENTS / 100).toFixed(0)}`
-    )
-  }
-  const rows = await query<{ id: string }>(
-    `INSERT INTO hub.advances (carrier_id, driver_id, amount_cents, issued_on, reference, status)
-     VALUES ($1,$2,$3,$4,$5,'outstanding') RETURNING id`,
-    [carrierId, input.driverId, input.amountCents, input.issuedOn, input.reference ?? null]
+  const row = await insertAdvanceWithinExposureCap(
+    carrierId,
+    input.driverId,
+    input.amountCents,
+    `Would push this driver's advance exposure past $${(MAX_DRIVER_ADVANCE_EXPOSURE_CENTS / 100).toFixed(0)}`,
+    async (client) => {
+      const { rows } = await client.query<{ id: string }>(
+        `INSERT INTO hub.advances (carrier_id, driver_id, amount_cents, issued_on, reference, status)
+         VALUES ($1,$2,$3,$4,$5,'outstanding') RETURNING id`,
+        [carrierId, input.driverId, input.amountCents, input.issuedOn, input.reference ?? null]
+      )
+      return rows[0]
+    }
   )
   await logAudit({
     carrierId, actorId: actor.id, actorName: actor.name,
-    entityType: "advance", entityId: rows[0].id, action: "create",
+    entityType: "advance", entityId: row.id, action: "create",
     newValue: input,
   })
 }

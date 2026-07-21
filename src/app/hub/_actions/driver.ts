@@ -20,7 +20,8 @@ import { logAudit } from "@/lib/hub/audit"
 import { query, queryOne } from "@/lib/hub/db"
 import { dollarsToCents, type LoadStatus } from "@/lib/hub/types"
 import { actionError } from "@/lib/hub/action-error"
-import { advanceExposureExceedsCap, MAX_DRIVER_ADVANCE_EXPOSURE_CENTS } from "@/lib/hub/advances-core"
+import { MAX_DRIVER_ADVANCE_EXPOSURE_CENTS } from "@/lib/hub/advances-core"
+import { insertAdvanceWithinExposureCap } from "@/lib/hub/settlements"
 
 interface Result {
   ok: boolean
@@ -310,25 +311,23 @@ export async function driverRequestAdvance(input: {
       return { ok: false, error: "How much do you need?" }
     }
     if (amountCents > 100000) return { ok: false, error: "Over $1,000 — call the office instead" }
-    const exposureRow = await queryOne<{ cents: string | number }>(
-      `SELECT COALESCE(SUM(amount_cents), 0) AS cents FROM hub.advances
-       WHERE carrier_id = $1 AND driver_id = $2 AND status IN ('outstanding', 'pending')`,
-      [user.carrierId, user.driverId]
-    )
-    if (advanceExposureExceedsCap(Number(exposureRow?.cents ?? 0), amountCents)) {
-      return {
-        ok: false,
-        error: `That would put you over the $${(MAX_DRIVER_ADVANCE_EXPOSURE_CENTS / 100).toFixed(0)} advance limit — call the office`,
+    const row = await insertAdvanceWithinExposureCap(
+      user.carrierId,
+      user.driverId,
+      amountCents,
+      `That would put you over the $${(MAX_DRIVER_ADVANCE_EXPOSURE_CENTS / 100).toFixed(0)} advance limit — call the office`,
+      async (client) => {
+        const { rows } = await client.query<{ id: string }>(
+          `INSERT INTO hub.advances (carrier_id, driver_id, amount_cents, issued_on, reference, status, requested_by, note)
+           VALUES ($1, $2, $3, CURRENT_DATE, 'Driver request', 'pending', $4, $5) RETURNING id`,
+          [user.carrierId, user.driverId, amountCents, user.id, input.note?.trim() || null]
+        )
+        return rows[0]
       }
-    }
-    const rows = await query<{ id: string }>(
-      `INSERT INTO hub.advances (carrier_id, driver_id, amount_cents, issued_on, reference, status, requested_by, note)
-       VALUES ($1, $2, $3, CURRENT_DATE, 'Driver request', 'pending', $4, $5) RETURNING id`,
-      [user.carrierId, user.driverId, amountCents, user.id, input.note?.trim() || null]
     )
     await logAudit({
       carrierId: user.carrierId, actorId: user.id, actorName: user.name,
-      entityType: "advance", entityId: rows[0].id, action: "requested",
+      entityType: "advance", entityId: row.id, action: "requested",
       newValue: { amountCents },
     })
     await notifyRoles(user.carrierId, ["owner", "accountant"], {
@@ -339,7 +338,7 @@ export async function driverRequestAdvance(input: {
     })
     revalidatePath("/hub/driver/pay")
     revalidatePath("/hub/money/advances")
-    return { ok: true, id: rows[0].id }
+    return { ok: true, id: row.id }
   } catch (err) {
     return actionError(err, "Could not send the request")
   }

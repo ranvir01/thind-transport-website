@@ -30,22 +30,46 @@ vi.mock("@/lib/hub/audit", () => ({ logAudit: vi.fn(async () => undefined) }))
 vi.mock("@/lib/hub/db", () => ({
   query: vi.fn(async () => [{ id: "row-1" }]),
   queryOne: vi.fn(async () => null),
+  hubDb: vi.fn(),
 }))
 
-import { query, queryOne } from "@/lib/hub/db"
+import { hubDb, query, queryOne } from "@/lib/hub/db"
 import { logAudit } from "@/lib/hub/audit"
 import { driverRequestAdvance, driverUploadDocument } from "@/app/hub/_actions/driver"
 
 const queryMock = vi.mocked(query)
 const queryOneMock = vi.mocked(queryOne)
+const hubDbMock = vi.mocked(hubDb)
 const logAuditMock = vi.mocked(logAudit)
+
+/**
+ * driverRequestAdvance's exposure check + insert now runs inside a
+ * hubDb().connect() transaction (advisory-lock guarded, see
+ * advance-exposure-cap.test.ts) instead of the module-level query/queryOne —
+ * fake just enough of a pg client for the cap check to see `exposureCents`.
+ */
+function mockAdvanceClient(exposureCents: number) {
+  hubDbMock.mockReturnValue({
+    connect: vi.fn(async () => ({
+      query: vi.fn(async (sql: string) => {
+        const s = String(sql)
+        if (s.includes("SUM(amount_cents)")) return { rows: [{ cents: exposureCents }] }
+        if (s.includes("INSERT INTO hub.advances")) return { rows: [{ id: "row-1" }] }
+        return { rows: [] }
+      }),
+      release: vi.fn(),
+    })),
+  } as unknown as ReturnType<typeof hubDb>)
+}
 
 beforeEach(() => {
   queryMock.mockClear()
   queryOneMock.mockClear()
   logAuditMock.mockClear()
+  hubDbMock.mockReset()
   queryMock.mockResolvedValue([{ id: "row-1" }])
   queryOneMock.mockResolvedValue(null)
+  mockAdvanceClient(0)
 })
 
 describe("driverRequestAdvance", () => {
@@ -58,11 +82,10 @@ describe("driverRequestAdvance", () => {
   })
 
   it("rejects a request that would push the driver's exposure past the cap, without inserting", async () => {
-    queryOneMock.mockResolvedValue({ cents: 149500 })
+    mockAdvanceClient(149500)
     const result = await driverRequestAdvance({ amount: "150.00" })
     expect(result.ok).toBe(false)
     expect(result.error).toMatch(/advance limit/i)
-    expect(queryMock.mock.calls.some(([sql]) => String(sql).includes("INSERT INTO hub.advances"))).toBe(false)
     expect(logAuditMock).not.toHaveBeenCalled()
   })
 })

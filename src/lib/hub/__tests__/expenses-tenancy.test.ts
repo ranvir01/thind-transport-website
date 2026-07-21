@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
-vi.mock("../db", () => ({ query: vi.fn(async () => []), queryOne: vi.fn(async () => null) }))
+vi.mock("../db", () => ({ query: vi.fn(async () => []), queryOne: vi.fn(async () => null), hubDb: vi.fn() }))
 vi.mock("../audit", () => ({ logAudit: vi.fn(async () => undefined) }))
 
-import { query, queryOne } from "../db"
+import { hubDb, query, queryOne } from "../db"
 import { logAudit } from "../audit"
 import {
   createExpense,
@@ -17,7 +17,24 @@ import {
 import { createAdvance } from "../settlements"
 
 const queryMock = vi.mocked(query)
+const hubDbMock = vi.mocked(hubDb)
 const auditMock = vi.mocked(logAudit)
+
+/** createAdvance's exposure check + insert runs inside a hubDb().connect()
+ * transaction (advisory-lock guarded, see advance-exposure-cap.test.ts). */
+function mockAdvanceClient(exposureCents = 0) {
+  hubDbMock.mockReturnValue({
+    connect: vi.fn(async () => ({
+      query: vi.fn(async (sql: string) => {
+        const s = String(sql)
+        if (s.includes("SUM(amount_cents)")) return { rows: [{ cents: exposureCents }] }
+        if (s.includes("INSERT INTO hub.advances")) return { rows: [{ id: OWNED }] }
+        return { rows: [] }
+      }),
+      release: vi.fn(),
+    })),
+  } as unknown as ReturnType<typeof hubDb>)
+}
 
 const CARRIER = "11111111-1111-1111-1111-111111111111"
 const FOREIGN = "22222222-2222-2222-2222-222222222222"
@@ -129,6 +146,7 @@ describe("exportCsv date columns (QuickBooks-importable ISO)", () => {
 describe("createAdvance cross-table tenancy", () => {
   beforeEach(() => {
     queryMock.mockReset()
+    hubDbMock.mockReset()
     auditMock.mockClear()
   })
 
@@ -144,10 +162,10 @@ describe("createAdvance cross-table tenancy", () => {
 
   it("inserts and audits when the driver belongs to the carrier", async () => {
     queryMock.mockResolvedValue([{ id: OWNED }])
+    mockAdvanceClient(0)
     await createAdvance(CARRIER, { driverId: OWNED, amountCents: 5000, issuedOn: "2026-07-04" }, ACTOR)
-    const inserts = queryMock.mock.calls.filter(([sql]) => String(sql).includes("INSERT INTO hub.advances"))
-    expect(inserts).toHaveLength(1)
     expect(auditMock).toHaveBeenCalledTimes(1)
+    expect(auditMock).toHaveBeenCalledWith(expect.objectContaining({ entityId: OWNED }))
   })
 })
 
