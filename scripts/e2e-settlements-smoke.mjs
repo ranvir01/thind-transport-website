@@ -13,7 +13,7 @@
  * Usage: node scripts/e2e-settlements-smoke.mjs [outputDir]
  */
 import { mkdirSync } from "node:fs"
-import { launchBrowser, BASE, sleep, failures, check, waitForText, login, makeShot, clickByText, reseed } from "./e2e-lib.mjs"
+import { launchBrowser, BASE, failures, check, waitForText, login, makeShot, clickByText, reseed } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-settlements"
 mkdirSync(OUT, { recursive: true })
@@ -58,6 +58,27 @@ const settlementLinks = (page, needles) =>
       .map((a) => a.getAttribute("href"))
   }, needles)
 
+/**
+ * Waits for the "Draft this week's settlements" button to re-enable.
+ * DraftSettlementsButton keeps `disabled={pending}` set for the whole
+ * useTransition, including the router.refresh() call after the toast —
+ * re-enabling is the actual completion signal, not a guess at how long the
+ * refresh takes.
+ */
+const draftButtonSettled = (page, timeout = 20000) =>
+  page
+    .waitForFunction(
+      () => {
+        const btn = [...document.querySelectorAll("button")].find((b) =>
+          (b.textContent ?? "").toLowerCase().includes("draft this week")
+        )
+        return !!btn && !btn.disabled
+      },
+      { timeout }
+    )
+    .then(() => true)
+    .catch(() => false)
+
 async function main() {
   reseed()
   const browser = await launchBrowser()
@@ -83,7 +104,7 @@ async function main() {
   console.log("2. Draft this week's settlements")
   await clickByText(page, "Draft this week", { tag: "button" })
   await waitForText(page, "settlement draft(s) created")
-  await sleep(1500) // router.refresh
+  check(await draftButtonSettled(page), "draft button re-enabled after router.refresh")
   const harpreetDrafts = await settlementLinks(page, ["Harpreet Singh", "draft"])
   check(harpreetDrafts.length === 1, `Harpreet draft created (${harpreetDrafts.length})`)
   const jasdeepDrafts = await settlementLinks(page, ["Jasdeep Brar", "draft"])
@@ -93,7 +114,7 @@ async function main() {
   console.log("3. Second draft run creates nothing (no double-pay)")
   await clickByText(page, "Draft this week", { tag: "button" })
   await waitForText(page, "0 settlement draft(s) created")
-  await sleep(1500)
+  check(await draftButtonSettled(page), "draft button re-enabled after rerun's router.refresh")
   const harpreetAfterRerun = await settlementLinks(page, ["Harpreet Singh", "draft"])
   check(harpreetAfterRerun.length === 1,
     `rerun did not duplicate Harpreet's draft (${harpreetAfterRerun.length})`)
