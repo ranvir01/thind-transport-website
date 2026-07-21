@@ -299,11 +299,11 @@ export function truckPnlRangeCsv(rows: TruckPnl[], range: PnlRange): { filename:
 }
 
 /**
- * Lane leaderboard (M10) — top lanes by margin over a trailing-days window,
- * computed live from load history via the same aggregation `recomputeLanes`
- * uses (lanes.ts's `aggregateLanes`). Live rather than reading `hub.lanes`
- * because that table is an all-time cache rebuilt nightly: it can't be
- * date-scoped and is empty until the first recompute runs.
+ * Lane leaderboard (M10) — top lanes by margin over a date range, computed
+ * live from load history via the same aggregation `recomputeLanes` uses
+ * (lanes.ts's `aggregateLanes`). Live rather than reading `hub.lanes` because
+ * that table is an all-time cache rebuilt nightly: it can't be date-scoped
+ * and is empty until the first recompute runs.
  */
 export interface LaneLeaderboardRow {
   origin_city: string
@@ -335,20 +335,9 @@ function toLeaderboardRows(rows: LaneAggregateRow[], limit: number): LaneLeaderb
     }))
 }
 
-export async function laneLeaderboard(carrierId: string, days = 92, limit = 5): Promise<LaneLeaderboardRow[]> {
-  const settings = await getCarrierSettings(carrierId)
-  const costPerMileCents = settings.costPerMileCents ?? 185
-  const rows = await aggregateLanes(
-    carrierId, costPerMileCents,
-    "AND l.created_at >= NOW() - ($2 || ' days')::interval", [days]
-  )
-  return toLeaderboardRows(rows, limit)
-}
-
 /**
- * Date-range variant of `laneLeaderboard`, for the Reports page and its CSV
- * export — same aggregation and margin math, but scoped to an explicit
- * [from, to] window instead of a trailing-days one (mirrors truckPnl vs
+ * Lane leaderboard scoped to an explicit [from, to] window, for the Reports
+ * page and its CSV export and the owner dashboard (mirrors truckPnl vs
  * truckPnlRange above). Live rather than `hub.lanes`, which is an all-time
  * cache that can't be date-scoped.
  */
