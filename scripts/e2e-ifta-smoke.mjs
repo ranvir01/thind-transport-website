@@ -25,6 +25,10 @@ async function main() {
   const browser = await launchBrowser()
   const page = await browser.newPage()
   await page.setViewport({ width: 1440, height: 900 })
+  // Recomputing an already-reviewed/filed quarter (IftaControls.compute) pops a
+  // window.confirm(); without a handler Puppeteer blocks on it forever, so a
+  // rerun against a rig left mid-quarter by a prior run hangs at step 3/7.
+  page.on("dialog", (dialog) => dialog.accept())
   const consoleErrors = []
   page.on("console", (msg) => {
     if (msg.type() === "error") consoleErrors.push(msg.text())

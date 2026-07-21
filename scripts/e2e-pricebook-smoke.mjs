@@ -14,7 +14,7 @@
 import puppeteer from "puppeteer"
 import { mkdirSync } from "node:fs"
 import {
-  BASE, sleep, login, check, failures, waitForText, makeShot, clickByText, reseed,
+  BASE, sleep, login, check, failures, waitForText, waitForPath, makeShot, clickByText, reseed,
 } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-pricebook"
@@ -95,7 +95,7 @@ try {
   await page2.setViewport({ width: 1440, height: 900 })
   await login(page2, "dispatch@demo.thind")
   await page2.goto(`${BASE}/hub/settings/pricebook`, { waitUntil: "networkidle2" })
-  await sleep(500)
+  await waitForPath(page2, "/hub")
   const url2 = page2.url()
   const body2 = await page2.evaluate(() => document.body.innerText)
   check(!url2.includes("/settings/pricebook") && !body2.includes("Accessorial Price Book"),

@@ -20,7 +20,7 @@
  * Usage: node scripts/e2e-tasks-smoke.mjs [outputDir]
  */
 import { mkdirSync } from "node:fs"
-import { launchBrowser, BASE, sleep, failures, check, waitForText, login, makeShot, clickByText, reseed } from "./e2e-lib.mjs"
+import { launchBrowser, BASE, failures, check, waitForText, waitForPath, login, makeShot, clickByText, reseed } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-tasks"
 mkdirSync(OUT, { recursive: true })
@@ -218,7 +218,7 @@ async function main() {
   await driverPage.setViewport({ width: 390, height: 844 })
   await login(driverPage, "driver@demo.thind")
   await driverPage.goto(`${BASE}/hub/tasks`, { waitUntil: "networkidle2" })
-  await sleep(1000)
+  await waitForPath(driverPage, "/hub/driver")
   const driverBlocked = await driverPage.evaluate(() => ({
     url: location.pathname,
     seesBoard: document.body.innerText.includes("minus the sticky notes"),

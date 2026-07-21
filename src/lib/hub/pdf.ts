@@ -132,6 +132,9 @@ class DocBuilder {
     this.y -= 4
   }
 
+  // Columns start at x=40 but the row/header shading spans x=36..576 (540 wide) —
+  // widths must sum to 536, not 540, or right-aligned text in the last column
+  // clips past the shaded band (IFTA's NET TAX column did).
   table(rawColumns: TableColumn[], rawRows: string[][]) {
     const columns = rawColumns.map((c) => ({ ...c, header: winAnsiSafe(c.header) }))
     const rows = rawRows.map((r) => r.map((v) => winAnsiSafe(v ?? "")))
@@ -366,7 +369,7 @@ export async function buildIftaPdf(input: IftaPdfInput): Promise<Uint8Array> {
       { header: "TAX-PAID GAL", width: 95, align: "right" },
       { header: "RATE", width: 70, align: "right" },
       { header: "SURCH", width: 60, align: "right" },
-      { header: "NET TAX", width: 80, align: "right" },
+      { header: "NET TAX", width: 76, align: "right" },
     ],
     input.rows.map((row) => [
       row.jurisdiction,
