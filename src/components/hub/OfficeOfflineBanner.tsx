@@ -16,6 +16,7 @@ export function OfficeOfflineBanner() {
   const [state, setState] = useState<"online" | "offline" | "reconnecting">("online")
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- navigator.onLine is unavailable during SSR; this syncs the hydration-safe "online" default to the real value once on the client.
     if (!navigator.onLine) setState("offline")
     const onOffline = () => setState("offline")
     const onOnline = () => {
