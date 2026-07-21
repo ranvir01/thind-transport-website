@@ -194,6 +194,13 @@ export async function recordPayment(
   input: { amountCents: number; paidOn: string; method?: string | null; reference?: string | null },
   actor: { id: string; name: string }
 ): Promise<Invoice> {
+  // Every caller (office form, QBO sync, factor webhook) validates upstream,
+  // but the status derivation below trusts amountCents blindly — a zero or
+  // negative amount would insert a junk payment row and rewrite the invoice's
+  // status off it, so the invariant is enforced here too.
+  if (!Number.isInteger(input.amountCents) || input.amountCents <= 0) {
+    throw new Error("Payment amount must be a positive number of cents")
+  }
   const invoice = await getInvoice(carrierId, invoiceId)
   if (!invoice) throw new Error("Invoice not found")
 
