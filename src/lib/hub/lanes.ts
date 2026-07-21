@@ -7,15 +7,33 @@ import { query } from "./db"
 import { getCarrierSettings } from "./settings"
 import type { Lane } from "./types"
 
-/** Rebuild a carrier's lane aggregates from settled/active load history. */
-export async function recomputeLanes(carrierId: string): Promise<{ lanes: number }> {
-  const settings = await getCarrierSettings(carrierId)
-  const costPerMileCents = settings.costPerMileCents ?? 185
+export type LaneAggregateRow = {
+  origin_city: string; origin_state: string; dest_city: string; dest_state: string
+  loads_count: number; revenue_cents: number; miles: number; margin_cents: number
+  last_used_at: string
+}
 
-  const rows = await query<{
-    origin_city: string; origin_state: string; dest_city: string; dest_state: string
-    loads_count: string; revenue_cents: string; miles: string; last_used_at: string
-  }>(
+type RawLaneAggregateRow = {
+  origin_city: string; origin_state: string; dest_city: string; dest_state: string
+  loads_count: string; revenue_cents: string; miles: string; margin_cents: string; last_used_at: string
+}
+
+/**
+ * Shared lane aggregation: revenue (linehaul + FSC + accessorials), miles,
+ * and margin (revenue - loaded miles * cost/mile) grouped by
+ * origin→destination market. `recomputeLanes` (all-time cache, below) and
+ * the Reports lane leaderboard (`laneLeaderboard`/`laneLeaderboardRange` in
+ * reports.ts) both read this — same formula, different date scope — so the
+ * SQL lives in one place instead of three.
+ */
+export async function aggregateLanes(
+  carrierId: string,
+  costPerMileCents: number,
+  dateFilterSql = "",
+  dateFilterParams: unknown[] = []
+): Promise<LaneAggregateRow[]> {
+  const costParamIndex = dateFilterParams.length + 2
+  const rows = await query<RawLaneAggregateRow>(
     `SELECT
        fs.city AS origin_city, fs.state AS origin_state,
        ls.city AS dest_city, ls.state AS dest_state,
@@ -24,21 +42,40 @@ export async function recomputeLanes(carrierId: string): Promise<{ lanes: number
            COALESCE((SELECT SUM((a->>'amount_cents')::bigint) FROM jsonb_array_elements(l.accessorials) a), 0)
        ) AS revenue_cents,
        SUM(COALESCE(l.loaded_miles, 0)) AS miles,
+       SUM(l.linehaul_cents + l.fuel_surcharge_cents +
+           COALESCE((SELECT SUM((a->>'amount_cents')::bigint) FROM jsonb_array_elements(l.accessorials) a), 0)
+       ) - SUM(COALESCE(l.loaded_miles, 0)) * $${costParamIndex}::int AS margin_cents,
        MAX(l.created_at) AS last_used_at
      FROM hub.loads l
      JOIN LATERAL (SELECT city, state FROM hub.stops WHERE load_id = l.id AND type = 'pickup' ORDER BY sequence LIMIT 1) fs ON TRUE
      JOIN LATERAL (SELECT city, state FROM hub.stops WHERE load_id = l.id AND type = 'delivery' ORDER BY sequence DESC LIMIT 1) ls ON TRUE
-     WHERE l.carrier_id = $1 AND l.deleted_at IS NULL AND l.status <> 'cancelled'
+     WHERE l.carrier_id = $1 AND l.deleted_at IS NULL AND l.status <> 'cancelled' ${dateFilterSql}
      GROUP BY fs.city, fs.state, ls.city, ls.state`,
-    [carrierId]
+    [carrierId, ...dateFilterParams, costPerMileCents]
   )
+  return rows.map((r) => ({
+    origin_city: r.origin_city, origin_state: r.origin_state,
+    dest_city: r.dest_city, dest_state: r.dest_state,
+    loads_count: Number(r.loads_count), revenue_cents: Number(r.revenue_cents),
+    miles: Number(r.miles), margin_cents: Number(r.margin_cents),
+    last_used_at: r.last_used_at,
+  }))
+}
+
+/** Revenue per loaded mile, in cents — null when there are no loaded miles. */
+export function avgRpmCents(revenueCents: number, miles: number): number | null {
+  return miles > 0 ? Math.round(revenueCents / miles) : null
+}
+
+/** Rebuild a carrier's lane aggregates from settled/active load history. */
+export async function recomputeLanes(carrierId: string): Promise<{ lanes: number }> {
+  const settings = await getCarrierSettings(carrierId)
+  const costPerMileCents = settings.costPerMileCents ?? 185
+  const rows = await aggregateLanes(carrierId, costPerMileCents)
 
   await query(`DELETE FROM hub.lanes WHERE carrier_id = $1`, [carrierId])
   for (const lane of rows) {
-    const revenue = Number(lane.revenue_cents)
-    const miles = Number(lane.miles)
-    const margin = revenue - miles * costPerMileCents
-    const avgRpm = miles > 0 ? Math.round(revenue / miles) : null
+    const avgRpm = avgRpmCents(lane.revenue_cents, lane.miles)
     await query(
       `INSERT INTO hub.lanes (carrier_id, origin_city, origin_state, dest_city, dest_state,
          loads_count, revenue_cents, miles, margin_cents, avg_rpm_cents, last_used_at, computed_at)
@@ -50,7 +87,7 @@ export async function recomputeLanes(carrierId: string): Promise<{ lanes: number
          computed_at = NOW()`,
       [
         carrierId, lane.origin_city, lane.origin_state, lane.dest_city, lane.dest_state,
-        Number(lane.loads_count), revenue, miles, margin, avgRpm, lane.last_used_at,
+        lane.loads_count, lane.revenue_cents, lane.miles, lane.margin_cents, avgRpm, lane.last_used_at,
       ]
     )
   }
