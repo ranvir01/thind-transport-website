@@ -128,9 +128,17 @@ export async function createInvoiceFromLoad(
 
   const rows = await query<Invoice>(
     `INSERT INTO hub.invoices (carrier_id, number, customer_id, load_id, amount_cents, issued_on, due_on, status, factored, remit_to, pdf_url)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,'draft',$8,$9,$10) RETURNING *`,
+     VALUES ($1,$2,$3,$4,$5,$6,$7,'draft',$8,$9,$10)
+     ON CONFLICT (carrier_id, load_id) DO NOTHING RETURNING *`,
     [carrierId, number, customer.id, loadId, amountCents, issuedOn, dueOn, factored, remitTo, pdfUrl]
   )
+  if (rows.length === 0) {
+    // Lost the race to a concurrent createInvoiceFromLoad call for the same load
+    // (invoices_carrier_load_unique, migration 018) — the pre-check above is not
+    // atomic with the INSERT, so re-fetch and report what actually landed.
+    const raced = await getInvoiceForLoad(carrierId, loadId)
+    throw new Error(raced ? `Already invoiced as ${raced.number}` : "Load was already invoiced")
+  }
   const invoice = rows[0]
 
   await logAudit({
