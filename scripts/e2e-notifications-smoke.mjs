@@ -56,7 +56,12 @@ try {
 
   console.log("— opening the feed clears the badge")
   await page.click(BELL)
-  await sleep(400)
+  // toggle() sets open + clears unread synchronously, before it ever awaits
+  // the (deliberately delayed) mark-as-read POST — poll the aria-label
+  // instead of guessing how long that render takes to commit.
+  await page
+    .waitForFunction((sel) => document.querySelector(sel)?.getAttribute("aria-label") === "Notifications", { timeout: 5000 }, BELL)
+    .catch(() => {})
   // The header renders uppercase via CSS, so match case-insensitively.
   check(
     await page.evaluate(() => document.body.innerText.toLowerCase().includes("notifications")),
@@ -65,6 +70,12 @@ try {
   check((await bellLabel(page)) === "Notifications", "badge clears on open")
   await shot(page, "02-feed-open")
 
+  // This 3500ms is not a sleep-then-assert guess: it's the regression window
+  // itself. The point of the test is that the badge stays cleared for the
+  // whole span covering the artificially delayed POST (line above, 1500ms)
+  // plus its follow-up refresh() — there's no earlier "done" signal to poll
+  // for, since resurrecting the badge partway through is exactly the bug
+  // this smoke exists to catch.
   console.log("— badge must not resurrect once the delayed POST + refresh settle")
   await sleep(3500)
   const settled = await bellLabel(page)
@@ -73,8 +84,22 @@ try {
 
   console.log("— server committed the mark-as-read (fresh page load, no badge)")
   await page.setRequestInterception(false)
-  await page.reload({ waitUntil: "networkidle2" })
-  await sleep(1500)
+  const [reloadResponse] = await Promise.all([
+    page
+      .waitForResponse((res) => res.url().includes("/api/hub/notifications") && res.request().method() === "GET", {
+        timeout: 15000,
+      })
+      .catch(() => null),
+    page.reload({ waitUntil: "networkidle2" }),
+  ])
+  if (!reloadResponse) {
+    // NotificationsBell's first fetch is deferred off the mount effect
+    // (setTimeout(refresh, 0)) — fall back to polling the aria-label if the
+    // response listener started after the request already fired.
+    await page
+      .waitForFunction((sel) => document.querySelector(sel)?.getAttribute("aria-label") === "Notifications", { timeout: 5000 }, BELL)
+      .catch(() => {})
+  }
   const afterReload = await bellLabel(page)
   check(afterReload === "Notifications", `no unread badge after reload (${afterReload})`)
   await shot(page, "04-after-reload")
