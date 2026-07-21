@@ -12,7 +12,7 @@
  * Usage: node scripts/e2e-dispatch-smoke.mjs [outputDir]
  */
 import { mkdirSync } from "node:fs"
-import { launchBrowser, BASE, sleep, failures, check, waitForText, login, makeShot, reseed } from "./e2e-lib.mjs"
+import { launchBrowser, BASE, failures, check, waitForText, login, makeShot, reseed } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-dispatch"
 mkdirSync(OUT, { recursive: true })
@@ -58,6 +58,27 @@ const cardHref = (page, marker) =>
     const found = new Function(`return (${fn})`)()(m)
     return found?.card.querySelector("a[href^='/hub/loads/']")?.getAttribute("href") ?? null
   }, marker, boardCard.toString())
+
+/**
+ * Waits for the card's Advance button to re-enable after a click.
+ * AdvanceStatusButton keeps disabled={pending} set for the whole
+ * useTransition (success or failure) — re-enabling is the real completion
+ * signal instead of a guess at how long the server action + toast take.
+ */
+const advanceButtonSettled = (page, marker, timeout = 20000) =>
+  page
+    .waitForFunction(
+      (m, fn) => {
+        const found = new Function(`return (${fn})`)()(m)
+        const btn = found?.card.querySelector("button")
+        return !!btn && !btn.disabled
+      },
+      { timeout },
+      marker,
+      boardCard.toString()
+    )
+    .then(() => true)
+    .catch(() => false)
 
 async function clickByText(page, text, tag = "button") {
   return page.evaluate(
@@ -114,7 +135,7 @@ async function main() {
   console.log("3. Server refuses to dispatch the expired-medical-card load")
   check(await clickAdvance(page, ILLEGAL), `clicked Advance on the ${ILLEGAL} card`)
   await waitForText(page, "medical card expired")
-  await sleep(1000)
+  check(await advanceButtonSettled(page, ILLEGAL), "Advance button re-enabled after the refused transition")
   await page.goto(`${BASE}/hub/dispatch`, { waitUntil: "networkidle2" })
   check((await findColumn(page, ILLEGAL)) === "Booked", `${ILLEGAL} load stayed in Booked`)
   await shot(page, "03-board-refused")
@@ -147,7 +168,7 @@ async function main() {
   const beforeCol = await findColumn(page2, LEGAL)
   check(await clickAdvance(page2, LEGAL), "accountant clicked Advance")
   await waitForText(page2, "Forbidden")
-  await sleep(1000)
+  check(await advanceButtonSettled(page2, LEGAL), "Advance button re-enabled after the forbidden transition")
   await page2.goto(`${BASE}/hub/dispatch`, { waitUntil: "networkidle2" })
   check((await findColumn(page2, LEGAL)) === beforeCol, "load did not move for the accountant")
   await shot(page2, "06-board-accountant")
