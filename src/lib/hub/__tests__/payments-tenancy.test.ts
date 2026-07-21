@@ -21,7 +21,7 @@ vi.mock("@/lib/mailer", () => ({
   mailFrom: vi.fn(() => "test@example.com"),
 }))
 
-import { query, queryOne } from "../db"
+import { hubDb, query, queryOne } from "../db"
 import { getInvoice, listInvoicePayments, recordPayment } from "../invoices"
 import { avgDaysToPay, creditExposure } from "../vetting"
 import { exportCsv } from "../expenses"
@@ -30,6 +30,7 @@ import { sendOwnerDigest } from "../digest"
 
 const queryMock = vi.mocked(query)
 const queryOneMock = vi.mocked(queryOne)
+const hubDbMock = vi.mocked(hubDb)
 
 const CARRIER = "11111111-1111-1111-1111-111111111111"
 
@@ -44,6 +45,7 @@ function lastSql(): string {
 beforeEach(() => {
   queryMock.mockClear()
   queryOneMock.mockClear()
+  hubDbMock.mockReset()
 })
 
 describe("hub.payments reads are carrier-guarded on both sides", () => {
@@ -89,19 +91,37 @@ describe("hub.payments reads are carrier-guarded on both sides", () => {
 })
 
 describe("recordPayment write scoping", () => {
-  it("scopes the invoice status update by carrier_id, not id alone", async () => {
+  it("scopes the transactional insert + status update by carrier_id, not id alone", async () => {
     queryOneMock.mockResolvedValueOnce({
       id: "inv-1", carrier_id: CARRIER, load_id: "load-1",
       amount_cents: 100000, paid_cents: 0, status: "sent",
     })
+    const clientQuery = vi.fn(async (text: string, params: unknown[] = []) => {
+      const sql = String(text)
+      if (sql.includes("UPDATE hub.invoices SET status")) return { rows: [{ status: "partial" }] }
+      return { rows: [] }
+    })
+    hubDbMock.mockReturnValue({
+      connect: vi.fn(async () => ({ query: clientQuery, release: vi.fn() })),
+    } as never)
+
     await recordPayment(
       CARRIER, "inv-1",
       { amountCents: 40000, paidOn: "2026-07-05" },
       { id: "user-1", name: "Test User" }
     )
-    const update = queryMock.mock.calls.find(([sql]) => String(sql).includes("UPDATE hub.invoices SET status"))
+
+    const insert = clientQuery.mock.calls.find(([sql]) => String(sql).includes("INSERT INTO hub.payments"))
+    expect(insert).toBeDefined()
+    expect(insert![1]).toEqual([CARRIER, "inv-1", 40000, "2026-07-05", null, null])
+
+    const lock = clientQuery.mock.calls.find(([sql]) => String(sql).includes("FOR UPDATE"))
+    expect(lock).toBeDefined()
+    expect(lock![1]).toEqual(["inv-1", CARRIER])
+
+    const update = clientQuery.mock.calls.find(([sql]) => String(sql).includes("UPDATE hub.invoices SET status"))
     expect(update).toBeDefined()
-    expect(String(update![0])).toContain("WHERE id = $1 AND carrier_id = $3")
-    expect(update![1]).toEqual(["inv-1", "partial", CARRIER])
+    expect(String(update![0])).toContain("WHERE id = $1 AND carrier_id = $2")
+    expect(update![1]).toEqual(["inv-1", CARRIER])
   })
 })

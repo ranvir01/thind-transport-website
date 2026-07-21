@@ -1,4 +1,4 @@
-import { query, queryOne } from "./db"
+import { query, queryOne, hubDb } from "./db"
 import { getCarrier, getCarrierSettings, nextInvoiceNumber } from "./settings"
 import { getLoad, getLoadStops, changeLoadStatus } from "./loads"
 import { getCustomer } from "./customers"
@@ -204,14 +204,37 @@ export async function recordPayment(
   const invoice = await getInvoice(carrierId, invoiceId)
   if (!invoice) throw new Error("Invoice not found")
 
-  await query(
-    `INSERT INTO hub.payments (carrier_id, invoice_id, amount_cents, paid_on, method, reference)
-     VALUES ($1,$2,$3,$4,$5,$6)`,
-    [carrierId, invoiceId, input.amountCents, input.paidOn, input.method ?? null, input.reference ?? null]
-  )
-  const paidTotal = (invoice.paid_cents ?? 0) + input.amountCents
-  const newStatus = paidTotal >= invoice.amount_cents ? "paid" : "partial"
-  await query(`UPDATE hub.invoices SET status = $2, updated_at = NOW() WHERE id = $1 AND carrier_id = $3`, [invoiceId, newStatus, carrierId])
+  // Insert + status derivation must be atomic: two concurrent payments both
+  // reading the pre-insert paid_cents can leave a fully-paid invoice stuck at
+  // 'partial'. Lock the invoice row and derive the new status from a live SUM
+  // over hub.payments (including the just-inserted row) in the same statement.
+  let newStatus: string
+  const client = await hubDb().connect()
+  try {
+    await client.query("BEGIN")
+    await client.query(`SELECT id FROM hub.invoices WHERE id = $1 AND carrier_id = $2 FOR UPDATE`, [invoiceId, carrierId])
+    await client.query(
+      `INSERT INTO hub.payments (carrier_id, invoice_id, amount_cents, paid_on, method, reference)
+       VALUES ($1,$2,$3,$4,$5,$6)`,
+      [carrierId, invoiceId, input.amountCents, input.paidOn, input.method ?? null, input.reference ?? null]
+    )
+    const { rows } = await client.query<{ status: string }>(
+      `UPDATE hub.invoices SET status = CASE
+         WHEN (SELECT COALESCE(SUM(amount_cents), 0) FROM hub.payments WHERE invoice_id = $1 AND carrier_id = $2) >= amount_cents
+         THEN 'paid' ELSE 'partial' END,
+       updated_at = NOW()
+       WHERE id = $1 AND carrier_id = $2
+       RETURNING status`,
+      [invoiceId, carrierId]
+    )
+    newStatus = rows[0].status
+    await client.query("COMMIT")
+  } catch (err) {
+    await client.query("ROLLBACK")
+    throw err
+  } finally {
+    client.release()
+  }
   await logAudit({
     carrierId, actorId: actor.id, actorName: actor.name,
     entityType: "payment", entityId: invoiceId, action: "record",
