@@ -86,7 +86,7 @@ export default async function PortalLoadPage({ params }: { params: Promise<{ id:
                   href={doc.url} target="_blank" rel="noreferrer"
                   className="flex items-center gap-3 rounded-2xl border border-white/10 bg-navy-800/80 p-3.5 hover:bg-white/5"
                 >
-                  <FileText className="h-5 w-5 shrink-0 text-gold" />
+                  <FileText className="h-5 w-5 shrink-0 text-[color:var(--portal-accent)]" />
                   <span className="min-w-0">
                     <span className="block text-sm font-semibold text-white uppercase">{doc.kind}</span>
                     <span className="block text-body-xs text-steel-300 truncate">{doc.file_name}</span>
