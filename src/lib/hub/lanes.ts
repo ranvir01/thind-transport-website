@@ -22,9 +22,9 @@ type RawLaneAggregateRow = {
  * Shared lane aggregation: revenue (linehaul + FSC + accessorials), miles,
  * and margin (revenue - loaded miles * cost/mile) grouped by
  * origin→destination market. `recomputeLanes` (all-time cache, below) and
- * the Reports lane leaderboard (`laneLeaderboard`/`laneLeaderboardRange` in
- * reports.ts) both read this — same formula, different date scope — so the
- * SQL lives in one place instead of three.
+ * the Reports lane leaderboard (`laneLeaderboardRange` in reports.ts) both
+ * read this — same formula, different date scope — so the SQL lives in one
+ * place instead of two.
  */
 export async function aggregateLanes(
   carrierId: string,

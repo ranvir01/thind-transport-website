@@ -1,11 +1,11 @@
 /**
  * `aggregateLanes` (lanes.ts) is the single SQL aggregation shared by
  * `recomputeLanes` (all-time cache) and the Reports lane leaderboard
- * (`laneLeaderboard`/`laneLeaderboardRange`, reports.ts) — same revenue/
- * margin formula, different date scope. This guards that the three callers
- * still wire the right date filter and params through the shared query, and
- * that sorting/limiting the live leaderboard views in JS matches what the
- * old per-function SQL `ORDER BY ... LIMIT` used to do.
+ * (`laneLeaderboardRange`, reports.ts) — same revenue/margin formula,
+ * different date scope. This guards that both callers still wire the right
+ * date filter and params through the shared query, and that sorting/
+ * limiting the live leaderboard view in JS matches what the old per-function
+ * SQL `ORDER BY ... LIMIT` used to do.
  */
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
@@ -13,7 +13,7 @@ vi.mock("../db", () => ({ query: vi.fn(async () => []), queryOne: vi.fn(async ()
 
 import { query, queryOne } from "../db"
 import { aggregateLanes, avgRpmCents, recomputeLanes } from "../lanes"
-import { laneLeaderboard, laneLeaderboardRange } from "../reports"
+import { laneLeaderboardRange } from "../reports"
 
 const queryMock = vi.mocked(query)
 const queryOneMock = vi.mocked(queryOne)
@@ -93,21 +93,12 @@ describe("recomputeLanes", () => {
   })
 })
 
-describe("laneLeaderboard / laneLeaderboardRange", () => {
+describe("laneLeaderboardRange", () => {
   const bestMargin = laneRow({ dest_city: "Boise", margin_cents: "250000", loads_count: "2" })
   const worstMargin = laneRow({ dest_city: "Spokane", margin_cents: "50000", loads_count: "9" })
   const midMargin = laneRow({ dest_city: "Portland", margin_cents: "150000", loads_count: "9" })
 
-  it("laneLeaderboard scopes by trailing days and sorts by margin desc, loads_count desc as tiebreaker", async () => {
-    queryMock.mockResolvedValue([worstMargin, bestMargin, midMargin])
-    const rows = await laneLeaderboard(CARRIER, 30, 5)
-    expect(rows.map((r) => r.dest_city)).toEqual(["Boise", "Portland", "Spokane"])
-    const [sql, params] = queryMock.mock.calls[0]
-    expect(sql).toContain("AND l.created_at >= NOW() - ($2 || ' days')::interval")
-    expect(params).toEqual([CARRIER, 30, 185])
-  })
-
-  it("laneLeaderboardRange scopes by [from, to) and respects the limit", async () => {
+  it("sorts by margin desc, loads_count desc as tiebreaker, and scopes by [from, to) respecting the limit", async () => {
     queryMock.mockResolvedValue([worstMargin, bestMargin, midMargin])
     const rows = await laneLeaderboardRange(CARRIER, { from: "2026-01-01", to: "2026-03-31" }, 2)
     expect(rows).toHaveLength(2)

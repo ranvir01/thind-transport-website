@@ -17,7 +17,7 @@ export function TenantActions({ tenantId, status }: { tenantId: string; status: 
         startTransition(async () => {
           const result = await setTenantStatusAction(tenantId, next as "active" | "suspended")
           if (result.ok) {
-            toast.success(next === "suspended" ? "Tenant suspended — logins keep working, crons stop" : "Tenant reactivated")
+            toast.success(next === "suspended" ? "Tenant suspended — logins are blocked, crons stop" : "Tenant reactivated")
             router.refresh()
           } else toast.error(result.error ?? "Failed")
         })
