@@ -32,17 +32,20 @@ vi.mock("@/lib/hub/db", () => ({
   queryOne: vi.fn(async () => null),
 }))
 
-import { query } from "@/lib/hub/db"
+import { query, queryOne } from "@/lib/hub/db"
 import { logAudit } from "@/lib/hub/audit"
 import { driverRequestAdvance, driverUploadDocument } from "@/app/hub/_actions/driver"
 
 const queryMock = vi.mocked(query)
+const queryOneMock = vi.mocked(queryOne)
 const logAuditMock = vi.mocked(logAudit)
 
 beforeEach(() => {
   queryMock.mockClear()
+  queryOneMock.mockClear()
   logAuditMock.mockClear()
   queryMock.mockResolvedValue([{ id: "row-1" }])
+  queryOneMock.mockResolvedValue(null)
 })
 
 describe("driverRequestAdvance", () => {
@@ -52,6 +55,15 @@ describe("driverRequestAdvance", () => {
     expect(logAuditMock).toHaveBeenCalledWith(
       expect.objectContaining({ entityType: "advance", action: "requested", newValue: { amountCents: 15000 } })
     )
+  })
+
+  it("rejects a request that would push the driver's exposure past the cap, without inserting", async () => {
+    queryOneMock.mockResolvedValue({ cents: 149500 })
+    const result = await driverRequestAdvance({ amount: "150.00" })
+    expect(result.ok).toBe(false)
+    expect(result.error).toMatch(/advance limit/i)
+    expect(queryMock.mock.calls.some(([sql]) => String(sql).includes("INSERT INTO hub.advances"))).toBe(false)
+    expect(logAuditMock).not.toHaveBeenCalled()
   })
 })
 

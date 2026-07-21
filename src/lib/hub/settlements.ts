@@ -9,6 +9,7 @@ import { logAudit } from "./audit"
 import { assertCarrierRefs } from "./tenancy"
 import { toIsoDateOnly } from "./format-dates"
 import { createMailTransport, isEmailConfigured, mailFrom } from "@/lib/mailer"
+import { advanceExposureExceedsCap, MAX_DRIVER_ADVANCE_EXPOSURE_CENTS } from "./advances-core"
 import type { Advance, Driver, Settlement, SettlementLine } from "./types"
 
 export async function listSettlements(carrierId: string): Promise<Settlement[]> {
@@ -390,12 +391,28 @@ export async function listAdvances(carrierId: string): Promise<Advance[]> {
   )
 }
 
+/** Sum of a driver's live (outstanding + pending) advance exposure, carrier-scoped. */
+export async function driverAdvanceExposureCents(carrierId: string, driverId: string): Promise<number> {
+  const row = await queryOne<{ cents: string | number }>(
+    `SELECT COALESCE(SUM(amount_cents), 0) AS cents FROM hub.advances
+     WHERE carrier_id = $1 AND driver_id = $2 AND status IN ('outstanding', 'pending')`,
+    [carrierId, driverId]
+  )
+  return Number(row?.cents ?? 0)
+}
+
 export async function createAdvance(
   carrierId: string,
   input: { driverId: string; amountCents: number; issuedOn: string; reference?: string | null },
   actor: { id: string; name: string }
 ): Promise<void> {
   await assertCarrierRefs(carrierId, { driver_id: input.driverId })
+  const exposure = await driverAdvanceExposureCents(carrierId, input.driverId)
+  if (advanceExposureExceedsCap(exposure, input.amountCents)) {
+    throw new Error(
+      `Would push this driver's advance exposure past $${(MAX_DRIVER_ADVANCE_EXPOSURE_CENTS / 100).toFixed(0)}`
+    )
+  }
   const rows = await query<{ id: string }>(
     `INSERT INTO hub.advances (carrier_id, driver_id, amount_cents, issued_on, reference, status)
      VALUES ($1,$2,$3,$4,$5,'outstanding') RETURNING id`,
