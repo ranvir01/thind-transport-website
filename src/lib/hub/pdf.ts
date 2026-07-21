@@ -56,13 +56,13 @@ export interface PdfBrand {
   accent?: string | null
 }
 
-interface TableColumn {
+export interface TableColumn {
   header: string
   width: number
   align?: "left" | "right"
 }
 
-class DocBuilder {
+export class DocBuilder {
   page: PDFPage
   y: number
   constructor(
@@ -136,6 +136,10 @@ class DocBuilder {
   // widths must sum to 536, not 540, or right-aligned text in the last column
   // clips past the shaded band (IFTA's NET TAX column did).
   table(rawColumns: TableColumn[], rawRows: string[][]) {
+    const totalWidth = rawColumns.reduce((sum, c) => sum + c.width, 0)
+    if (totalWidth !== 536) {
+      throw new Error(`table() columns must sum to 536 (got ${totalWidth}) or the last column clips past the shaded row band`)
+    }
     const columns = rawColumns.map((c) => ({ ...c, header: winAnsiSafe(c.header) }))
     const rows = rawRows.map((r) => r.map((v) => winAnsiSafe(v ?? "")))
     this.ensureRoom(24)
@@ -202,7 +206,7 @@ class DocBuilder {
   }
 }
 
-async function newBuilder(): Promise<DocBuilder> {
+export async function newBuilder(): Promise<DocBuilder> {
   const doc = await PDFDocument.create()
   const regular = await doc.embedFont(StandardFonts.Helvetica)
   const bold = await doc.embedFont(StandardFonts.HelveticaBold)
@@ -242,7 +246,7 @@ export async function buildInvoicePdf(input: InvoicePdfInput): Promise<Uint8Arra
   b.table(
     [
       { header: "DESCRIPTION", width: 420 },
-      { header: "AMOUNT", width: 120, align: "right" },
+      { header: "AMOUNT", width: 116, align: "right" },
     ],
     input.lines.map((line) => [line.label, fmtCentsExact(line.amountCents)])
   )
@@ -278,7 +282,7 @@ export async function buildStatementPdf(input: StatementPdfInput): Promise<Uint8
       { header: "LOAD", width: 120 },
       { header: "DUE", width: 90 },
       { header: "AGING", width: 90 },
-      { header: "OPEN", width: 140, align: "right" },
+      { header: "OPEN", width: 136, align: "right" },
     ],
     input.invoices.map((inv) => [
       inv.number,
@@ -316,7 +320,7 @@ export async function buildSettlementPdf(input: SettlementPdfInput): Promise<Uin
     [
       { header: "TYPE", width: 90 },
       { header: "DESCRIPTION", width: 330 },
-      { header: "AMOUNT", width: 120, align: "right" },
+      { header: "AMOUNT", width: 116, align: "right" },
     ],
     input.lines.map((line) => [
       line.kind.toUpperCase(),
