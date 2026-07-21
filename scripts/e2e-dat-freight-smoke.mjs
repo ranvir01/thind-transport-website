@@ -21,6 +21,34 @@ import { mkdirSync } from "node:fs"
 import { launchBrowser, BASE, failures, check, waitForText, login, makeShot, clickByText, reseed, sleep } from "./e2e-lib.mjs"
 
 /**
+ * Waits for the DAT card to show a button with the given label. Used after a
+ * disconnect confirms (toast text alone doesn't prove the card re-rendered
+ * to its disconnected state — the "Connect" toggle reappearing does).
+ */
+async function waitForDatCardButton(page, label, timeout = 8000) {
+  try {
+    await page.waitForFunction(
+      (wanted) => {
+        const header = [...document.querySelectorAll("h3")].find(
+          (el) => el.textContent?.trim().toLowerCase() === "dat load board"
+        )
+        let node = header?.parentElement ?? null
+        while (node && node.tagName !== "BODY") {
+          if ([...node.querySelectorAll("button")].some((b) => b.textContent?.trim() === wanted)) return true
+          node = node.parentElement
+        }
+        return false
+      },
+      { timeout },
+      label
+    )
+    return true
+  } catch {
+    return false
+  }
+}
+
+/**
  * Click a button by exact label inside the DAT card only. Every provider card
  * renders identically-labeled buttons (Connect / Disconnect / Disconnect it),
  * so a page-scoped clickByText can hit another provider's card — walk up from
@@ -84,7 +112,7 @@ async function main() {
       console.log("   (stale DAT connection from a previous run — disconnecting first)")
       await clickInDatCard(heal, "Disconnect it", { retry: true })
       await waitForText(heal, "the CSV import path keeps working")
-      await sleep(1200)
+      check(await waitForDatCardButton(heal, "Connect"), "DAT card shows Connect again after the self-heal disconnect")
     }
     await healCtx.close()
   }
