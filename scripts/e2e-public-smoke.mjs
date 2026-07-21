@@ -17,7 +17,7 @@
  */
 import puppeteer from "puppeteer"
 import { mkdirSync } from "node:fs"
-import { BASE, sleep, check, failures, makeShot } from "./e2e-lib.mjs"
+import { BASE, check, failures, makeShot, waitForStableText } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-public"
 mkdirSync(OUT, { recursive: true })
@@ -65,7 +65,7 @@ async function main() {
     for (const [name, url] of PAGES) {
       pageErrors.length = 0
       const res = await page.goto(`${BASE}${url}`, { waitUntil: "networkidle2", timeout: 30000 })
-      await sleep(400)
+      await waitForStableText(page)
       const status = res?.status() ?? 0
       const text = await page.evaluate(() => (document.body?.innerText ?? "").trim())
       const lower = text.toLowerCase()
