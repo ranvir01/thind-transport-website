@@ -121,6 +121,27 @@ func TestSecretGate(t *testing.T) {
 	})
 }
 
+// TestUnknownPathIs404 pins newMux's default-NotFound behavior, which no
+// prior test exercised. Unlike the Rust sidecar (handle() in main.rs, whose
+// secret gate covers every path except /health, so an unmatched path without
+// the header answers 401 before routing ever runs), requireSecret here only
+// wraps /route/miles: http.ServeMux's built-in NotFoundHandler answers
+// unmatched paths directly, so a 404 never checks HAULDESK_SIDECAR_SECRET.
+// That is an intentional deployment choice (this worker exposes exactly two
+// routes, both already documented in docs/architecture/trilingual-stack.md,
+// so there is nothing to enumerate) — pinned here so a future route-wiring
+// change surfaces the tradeoff instead of silently altering it.
+func TestUnknownPathIs404(t *testing.T) {
+	t.Setenv("HAULDESK_SIDECAR_SECRET", "s3cret")
+	if rec := doRequest(t, http.MethodGet, "/nope", "", nil); rec.Code != http.StatusNotFound {
+		t.Fatalf("expected 404 for unknown path without a secret header, got %d", rec.Code)
+	}
+	if rec := doRequest(t, http.MethodGet, "/nope", "",
+		http.Header{"X-Hauldesk-Secret": []string{"s3cret"}}); rec.Code != http.StatusNotFound {
+		t.Fatalf("expected 404 for unknown path with a secret header, got %d", rec.Code)
+	}
+}
+
 func TestRouteMilesRejectsBadInput(t *testing.T) {
 	if rec := doRequest(t, http.MethodGet, "/route/miles", "", nil); rec.Code != http.StatusMethodNotAllowed {
 		t.Fatalf("expected 405 for GET, got %d", rec.Code)
