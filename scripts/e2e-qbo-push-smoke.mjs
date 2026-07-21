@@ -10,7 +10,7 @@
  * Usage: node scripts/e2e-qbo-push-smoke.mjs [outputDir]
  */
 import { mkdirSync } from "node:fs"
-import { launchBrowser, BASE, sleep, failures, check, waitForText, login, makeShot, reseed } from "./e2e-lib.mjs"
+import { launchBrowser, BASE, failures, check, waitForText, textAppears, login, makeShot, reseed } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-qbo-push"
 mkdirSync(OUT, { recursive: true })
@@ -46,7 +46,7 @@ async function main() {
     const btn = [...document.querySelectorAll("button")].find((b) => b.textContent.includes("Push to QBO"))
     btn.click()
   })
-  await sleep(1200)
+  await textAppears(page, "connected yet")
   const toastText = await page.evaluate(() => document.body.innerText)
   check(/QuickBooks Online isn.t connected/i.test(toastText), "toast names the QBO setup path instead of crashing")
   await shot(page, "02-not-connected-toast")
