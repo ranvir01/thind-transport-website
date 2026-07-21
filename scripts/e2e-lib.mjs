@@ -219,6 +219,31 @@ export async function textGone(page, text, timeout = 20000) {
     .catch(() => false)
 }
 
+/**
+ * Wait until document.body.innerText stops changing for `settle` ms (hydration
+ * has finished mutating the DOM), or `timeout` elapses — whichever first.
+ * Replaces a fixed post-navigation sleep guessed to outlast hydration: fast
+ * pages return as soon as text stabilizes instead of always paying the full
+ * guessed delay, and slow/CPU-contended pages get up to `timeout` instead of
+ * racing a duration picked for the common case.
+ */
+export async function waitForStableText(page, { settle = 150, timeout = 3000 } = {}) {
+  const deadline = Date.now() + timeout
+  let last = null
+  let stableSince = null
+  while (Date.now() < deadline) {
+    const text = await page.evaluate(() => document.body?.innerText ?? "")
+    if (text === last) {
+      if (stableSince === null) stableSince = Date.now()
+      if (Date.now() - stableSince >= settle) return
+    } else {
+      last = text
+      stableSince = null
+    }
+    await sleep(50)
+  }
+}
+
 /** Boolean-returning wait for a client-side navigation to land on `pathname` (no text requirement). */
 export async function waitForPath(page, pathname, timeout = 20000) {
   return page
