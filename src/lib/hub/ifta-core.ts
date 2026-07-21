@@ -174,8 +174,23 @@ export function quarterRange(quarter: string): { start: Date; end: Date } {
   }
 }
 
-/** IFTA filing due date: last day of the month after the quarter ends. */
+/**
+ * IFTA filing due date: last day of the month after the quarter ends, rolled
+ * forward to the next business day when that date is a Saturday or Sunday.
+ *
+ * Per the IFTA Procedures Manual (P1040): "When the due date falls on a
+ * Saturday, Sunday, or legal holiday, the next business day is the due date."
+ * We roll weekends only — legal holidays vary by jurisdiction and are not
+ * modeled here, so a due date landing on a weekday holiday still shows on that
+ * date. Rolling weekends stops the wall from flagging a filing overdue over a
+ * weekend when the real deadline is the following Monday (e.g. 2025Q4 lands on
+ * Saturday 2026-01-31 and is actually due Monday 2026-02-02).
+ */
 export function iftaDueDate(quarter: string): Date {
   const { end } = quarterRange(quarter)
-  return new Date(Date.UTC(end.getUTCFullYear(), end.getUTCMonth() + 1, 0))
+  const due = new Date(Date.UTC(end.getUTCFullYear(), end.getUTCMonth() + 1, 0))
+  const dow = due.getUTCDay() // 0 = Sunday, 6 = Saturday
+  if (dow === 6) due.setUTCDate(due.getUTCDate() + 2)
+  else if (dow === 0) due.setUTCDate(due.getUTCDate() + 1)
+  return due
 }

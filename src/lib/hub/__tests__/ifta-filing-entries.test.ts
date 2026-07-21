@@ -42,7 +42,8 @@ describe("iftaFilingWallEntries", () => {
     )
     expect(entries.map((e) => e.kind)).toEqual(["IFTA filing 2025Q4", "IFTA filing 2026Q2"])
     expect(entries[0].color).toBe("red")
-    expect(entries[0].due).toBe("2026-01-31")
+    // 2026-01-31 is a Saturday → the real deadline rolls to Monday 2026-02-02.
+    expect(entries[0].due).toBe("2026-02-02")
   })
 
   it("leaves filed past quarters and never-touched pre-onboarding quarters off the wall", () => {
