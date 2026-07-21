@@ -45,8 +45,19 @@ export type PendingIntent = {
   [K in IntentKind]: { kind: K; payload: IntentPayloads[K]; file?: QueuedFile }
 }[IntentKind]
 
+/**
+ * Bump this when an IntentPayloads shape changes in a way a stale queued row
+ * wouldn't survive (renamed/removed/retyped field) — a driver could be parked
+ * offline for days, so the app version that replays an intent is often not
+ * the one that queued it. Rows stamped with an older version are dropped at
+ * replay instead of handed to execute() with a shape it was never built for.
+ */
+export const QUEUE_SCHEMA_VERSION = 1
+
 // Persisted rows carry whatever shape was current when queued — the typed map
 // guards call sites at compile time, not old IndexedDB data at replay.
+// schemaVersion is optional: rows queued before this field existed have none,
+// and are treated as matching (nothing about the shape changed until v1).
 export type QueuedIntent = {
   [K in IntentKind]: {
     id: string
@@ -54,6 +65,7 @@ export type QueuedIntent = {
     payload: IntentPayloads[K]
     file?: QueuedFile
     queuedAt: number
+    schemaVersion?: number
   }
 }[IntentKind]
 
@@ -92,6 +104,7 @@ export async function enqueueIntent(intent: PendingIntent): Promise<void> {
     ...intent,
     id: `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
     queuedAt: Date.now(),
+    schemaVersion: QUEUE_SCHEMA_VERSION,
   }
   await withStore("readwrite", (store) => store.add(full))
   window.dispatchEvent(new CustomEvent("hauldesk-queue-changed"))
@@ -137,6 +150,12 @@ export interface ReplayResult { sent: number; failed: number }
  * throw drops just that intent so one bad payload can't jam everything
  * queued behind it. Mirrors OfflineSync's toast copy: `sent` update the
  * "N sent" success toast, `failed` the "N couldn't be sent" error toast.
+ *
+ * A row stamped with a schemaVersion that doesn't match the running app's
+ * QUEUE_SCHEMA_VERSION is dropped before execute() ever sees it — it was
+ * queued under a payload shape this build no longer knows how to send.
+ * Rows with no schemaVersion (queued before the field existed) are treated
+ * as current and replayed normally.
  */
 export async function replayQueue(
   intents: QueuedIntent[],
@@ -145,6 +164,11 @@ export async function replayQueue(
   let sent = 0
   let failed = 0
   for (const intent of intents) {
+    if (intent.schemaVersion !== undefined && intent.schemaVersion !== QUEUE_SCHEMA_VERSION) {
+      await removeIntent(intent.id)
+      failed++
+      continue
+    }
     try {
       const result = await execute(intent)
       // Real rejections (e.g. "not your load") drop the intent too —
