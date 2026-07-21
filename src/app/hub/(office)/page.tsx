@@ -13,20 +13,9 @@ import { PRODUCT } from "@/lib/hub/product"
 import { requireOfficeUser } from "@/lib/hub/session"
 import { gettingStartedState } from "@/app/hub/_actions/onboarding"
 import { cn } from "@/lib/utils"
+import { countdown } from "./countdown"
 
 export const dynamic = "force-dynamic"
-
-function countdown(iso: string | null): { label: string; urgent: boolean } {
-  if (!iso) return { label: "no appt", urgent: false }
-  const minutes = Math.round((new Date(iso).getTime() - Date.now()) / 60000)
-  if (minutes < 0) return { label: `${Math.abs(Math.round(minutes / 60))}h late`, urgent: true }
-  if (minutes < 60) return { label: `in ${minutes}m`, urgent: minutes < 30 }
-  if (minutes < 60 * 12) return { label: `in ${Math.round(minutes / 60)}h`, urgent: false }
-  return {
-    label: new Date(iso).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }),
-    urgent: false,
-  }
-}
 
 export default async function TodayPage() {
   const user = await requireOfficeUser()
