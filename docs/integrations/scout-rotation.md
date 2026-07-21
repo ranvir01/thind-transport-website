@@ -19,7 +19,7 @@ as an urgent `Backlog:` item.
 | `wex` | **Built** — adapter shipped; real feed confirmed daily SFTP CSV (same as EFS) — signed file-drop webhook shipped 2026-07-18 (`processWexEvent`) | `feedUser`, `feedPassword`, `webhookSecret` | `src/lib/hub/integrations/wex.ts` | [`wex.md`](./wex.md) | 2026-07-18 |
 | `comdata` | **Built** — adapter shipped, daily cron live; Corpay has REAL machine channels (SOAP FleetCreditWS UsernameToken, REST developer portal, partner daily AC00029 fixed-width file) — file-drop webhook shipped 2026-07-18 (`processComdataEvent`) | `apiKey`, `apiSecret`, `webhookSecret` | `src/lib/hub/integrations/comdata.ts` | [`comdata.md`](./comdata.md) | 2026-07-18 |
 | `qbo` | **Built** — pull + push both directions, refresh-token rotation confirmed correct; `minorversion` bumped 65→75 (2026-07-19), 5-year refresh-token cap surfaced on the settings card. 2026-07-21 pass: no adapter-breaking change; the previously-open expiry-field question is closed — the authoritative field is `x_refresh_token_expires_in` (the field the adapter already reads; value `157680000` s = 5 y under the cap), so no `refreshAccessToken` change is needed; also documented Intuit's customer-facing expiry notices (in-app 30 d / email 7 d), which fire *after* our 90-day card warning. Intuit pages still 403 this env — search-excerpt confirmation only | OAuth2 (Intuit) | `src/lib/hub/integrations/qbo.ts` | [`qbo.md`](./qbo.md) | 2026-07-21 |
-| `factor` | **Built** — push + webhook receiver; vendor landscape pinned: OTR Solutions is the only factor with public dev docs + test env (recommended first target); Apex/Denim are API-key class; RTS/Triumph are FTP file drops (EFS-style transport gap); NO factor documents webhooks to carriers — funding status is poll-based everywhere (see doc) | varies by factor | `src/lib/hub/integrations/factor.ts` | [`factor.md`](./factor.md) | 2026-07-17 |
+| `factor` | **Built** — push + webhook receiver; vendor landscape pinned: OTR Solutions is the only factor with public dev docs + test env (recommended first target); Apex/Denim are API-key class; RTS/Triumph are FTP file drops (EFS-style transport gap); NO factor documents webhooks to carriers — funding status is poll-based everywhere (see doc). 2026-07-21 pass: no breaking change; OTR names three distinct products (Rate Verification, Document Exchange, Carrier Setup APIs) instead of one undifferentiated API — Document Exchange is the one `submitInvoiceToFactor` targets | varies by factor | `src/lib/hub/integrations/factor.ts` | [`factor.md`](./factor.md) | 2026-07-21 |
 | `truckstop` | **Built** — full slice shipped (search UI + booking, migration 017 applied); real API confirmed as SOAP/XML with `IntegrationId`+`UserName`+`Password` in the envelope body — adapter's Bearer-key REST guess is wrong on auth AND transport, rewrite needed before activation; sandbox exists at `testws.truckstop.com` (see doc) | `integrationId`, `username`, `password` (registry still says `apiKey` — wrong) | `src/lib/hub/integrations/truckstop.ts` | [`truckstop.md`](./truckstop.md) | 2026-07-18 |
 
 All ten vendor providers now have both a shipped adapter and a research doc (this row was
@@ -37,9 +37,17 @@ integrations that were never in scope of the vendor shopping list: both `fmcsa.m
    notes before a lane builds the adapter.
 3. One provider per cycle. Update the "Last researched" date and doc link when done.
 
-Next up by this rule: `factor.md` (2026-07-17, now the sole oldest built-adapter doc after the
-2026-07-21 `qbo` pass; then `mailbox`/`wex`/`comdata`/`truckstop` at 2026-07-18). The
-2026-07-21 `qbo` pass found no adapter-breaking change: minorversion-75 default, `Id`-not-sortable,
+Next up by this rule: `mailbox`/`wex`/`comdata`/`truckstop`, all last researched 2026-07-18
+(the sole oldest built-adapter docs now that `factor.md` was refreshed 2026-07-21). The
+2026-07-21 `factor` pass found no adapter-breaking change: the subscription-key auth model
+and poll-based (no webhook) funding status from the 2026-07-17 pass both stand; the new find
+was that OTR names three distinct API products (Rate Verification, Document Exchange, Carrier
+Setup) instead of one undifferentiated API — Document Exchange is the one `submitInvoiceToFactor`
+targets, and Rate Verification covers the broker-eligibility-check synergy already noted. Every
+OTR-adjacent page checked (`otrsolutions.com`, `docs.otrsolutions.com`, `vektortms.com`,
+`helpcenter.gomotive.com`, `help.loadops.com`) 403'd this env's egress, so confirmation is
+search-excerpt only — same wall as every other vendor doc in this rotation.
+The 2026-07-21 `qbo` pass found no adapter-breaking change: minorversion-75 default, `Id`-not-sortable,
 CloudEvents webhooks, the OAuth2 refresh-token grant, and the 500 req/min/realm + 10-concurrent
 limits are all unchanged. It closed the doc's top open question — the refresh-token-expiry field is
 `x_refresh_token_expires_in` (the field the adapter already reads; no differently-named field was

@@ -175,6 +175,41 @@ to end.
 - [HaulPay for carriers](https://haulpay.io/digital-freight-factoring-for-carriers/),
   [Denim API documents page](https://www.denim.com/denim-api-documents)
 
+## 2026-07-21 scout pass — OTR's three named APIs surfaced
+
+No adapter-breaking change: the subscription-key/account-credentials auth
+model and poll-based (no webhook) funding status from the 2026-07-17 pass
+both stand. This pass found OTR names three distinct products instead of
+one undifferentiated "API" — worth pinning down since they map onto
+different pieces of this adapter:
+
+- **Rate Verification API** — confirms invoice/rate info instantly (broker
+  books a load → invoice completed → advance taken → claim/TONU); this is
+  the "broker credit/eligibility check" synergy already called out above,
+  plus general invoice/rate confirmation.
+- **Document Exchange API** — automates invoice + rate-confirmation + POD
+  submission; this is the one `submitInvoiceToFactor` targets.
+- **Carrier Setup API** — onboards a carrier as an OTR factoring client;
+  out of scope for LoadOff (that's the carrier's relationship with OTR, not
+  a per-invoice call our adapter would make).
+
+Also newly surfaced: OTR markets "fast retrieval of outstanding A/R
+statuses" as a capability — corroborates the existing assumption that
+funding status is poll-based (an A/R-status pull), not webhook-pushed;
+still no mention anywhere of an outbound webhook/callback option at any
+tier. `docs.otrsolutions.com` and every other vendor/integration-partner
+page checked this pass (`otrsolutions.com`, `vektortms.com`,
+`helpcenter.gomotive.com`, `help.loadops.com`) 403'd this env's egress —
+same wall as the 2026-07-17 pass and every other vendor doc in this
+rotation — so confirmation is search-excerpt only; exact endpoint paths
+for Document Exchange (the one this adapter would call first) still need
+a provisioned subscription key to confirm.
+
+Sources: [OTR API Integrations](https://otrsolutions.com/resources/api-integrations/),
+[Developer Resources](https://otrsolutions.com/developer-resources),
+[Carrier Integrations docs](https://docs.otrsolutions.com/docs/carrier-integrations)
+(search-excerpt only, page itself 403s to this env)
+
 ## Open questions for the next pass
 
 - Get the actual OTR developer-portal API specs (needs an account-manager
