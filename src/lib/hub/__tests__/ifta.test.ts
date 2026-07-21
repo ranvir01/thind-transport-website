@@ -80,9 +80,16 @@ describe("quarter helpers", () => {
     expect(end.toISOString().slice(0, 10)).toBe("2026-07-01")
   })
   it("IFTA due date is the last day of the following month", () => {
+    // Weekday last-days pass through unchanged: 2026-04-30 is a Thursday,
+    // 2026-07-31 a Friday.
     expect(iftaDueDate("2026Q1").toISOString().slice(0, 10)).toBe("2026-04-30")
     expect(iftaDueDate("2026Q2").toISOString().slice(0, 10)).toBe("2026-07-31")
-    expect(iftaDueDate("2026Q4").toISOString().slice(0, 10)).toBe("2027-01-31")
+  })
+  it("rolls a weekend due date forward to the next business day (IFTA P1040)", () => {
+    // 2027-01-31 is a Sunday → Monday 2027-02-01.
+    expect(iftaDueDate("2026Q4").toISOString().slice(0, 10)).toBe("2027-02-01")
+    // 2026-01-31 is a Saturday → Monday 2026-02-02.
+    expect(iftaDueDate("2025Q4").toISOString().slice(0, 10)).toBe("2026-02-02")
   })
 })
 
