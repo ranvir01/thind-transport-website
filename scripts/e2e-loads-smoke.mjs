@@ -13,7 +13,7 @@
  * Usage: node scripts/e2e-loads-smoke.mjs [outputDir]
  */
 import { mkdirSync } from "node:fs"
-import { launchBrowser, BASE, sleep, failures, check, waitForText, login, makeShot, clickByText, reseed } from "./e2e-lib.mjs"
+import { launchBrowser, BASE, failures, check, waitForText, textGone, login, makeShot, clickByText, reseed } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-loads"
 mkdirSync(OUT, { recursive: true })
@@ -143,13 +143,10 @@ async function main() {
   await page2.setViewport({ width: 390, height: 844 })
   await login(page2, "driver@demo.thind")
   await page2.goto(`${BASE}/hub/loads/new`, { waitUntil: "networkidle2" })
-  await sleep(1000)
-  const driverBlocked = await page2.evaluate(() => ({
-    url: location.pathname,
-    seesForm: document.body.innerText.includes("Book a Load"),
-  }))
+  const formGone = await textGone(page2, "Book a Load")
+  check(formGone, "driver never sees the booking form")
+  const driverBlocked = await page2.evaluate(() => ({ url: location.pathname }))
   check(driverBlocked.url !== "/hub/loads/new", `driver redirected away (landed on ${driverBlocked.url})`)
-  check(!driverBlocked.seesForm, "driver never sees the booking form")
   await shot(page2, "05-loads-new-driver-blocked")
 
   const realErrors = consoleErrors.filter((e) => !/favicon|manifest/i.test(e))

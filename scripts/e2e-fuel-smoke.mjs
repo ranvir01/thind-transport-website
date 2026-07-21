@@ -12,7 +12,7 @@
  * Usage: node scripts/e2e-fuel-smoke.mjs [outputDir]
  */
 import { mkdirSync } from "node:fs"
-import { launchBrowser, BASE, sleep, failures, check, waitForText, login, makeShot, clickByText, reseed } from "./e2e-lib.mjs"
+import { launchBrowser, BASE, failures, check, waitForText, textGone, login, makeShot, clickByText, reseed } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-fuel"
 mkdirSync(OUT, { recursive: true })
@@ -142,13 +142,10 @@ async function main() {
   await page2.setViewport({ width: 390, height: 844 })
   await login(page2, "driver@demo.thind")
   await page2.goto(`${BASE}/hub/fuel`, { waitUntil: "networkidle2" })
-  await sleep(1000)
-  const driverBlocked = await page2.evaluate(() => ({
-    url: location.pathname,
-    seesInbox: document.body.innerText.includes("Unassigned fuel"),
-  }))
+  const inboxGone = await textGone(page2, "Unassigned fuel")
+  check(inboxGone, "driver never sees the unassigned-fuel inbox")
+  const driverBlocked = await page2.evaluate(() => ({ url: location.pathname }))
   check(driverBlocked.url !== "/hub/fuel", `driver redirected away (landed on ${driverBlocked.url})`)
-  check(!driverBlocked.seesInbox, "driver never sees the unassigned-fuel inbox")
   await shot(page2, "05-fuel-driver-blocked")
 
   const realErrors = consoleErrors.filter((e) => !/favicon|manifest/i.test(e))
