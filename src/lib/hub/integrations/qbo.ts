@@ -255,6 +255,15 @@ export async function runQboSync(
       unmatched.push(row.external_id)
       continue
     }
+    // A missing/garbled TotalAmt normalizes to 0 cents (dollarsToCents), and a
+    // refund-shaped payload can go negative — recording either would land a
+    // junk hub.payments row and rewrite the invoice's status off it (an unpaid
+    // invoice flips to 'partial', a paid one can downgrade). Refuse and report,
+    // the same way processFactorEvent refuses an incomplete funding payload.
+    if (!Number.isInteger(row.amountCents) || row.amountCents <= 0) {
+      unmatched.push(row.invoiceNumber)
+      continue
+    }
 
     const invoice = await queryOne<{ id: string }>(
       `SELECT id FROM hub.invoices WHERE carrier_id = $1 AND number = $2`,
