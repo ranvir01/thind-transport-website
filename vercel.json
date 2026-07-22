@@ -4,6 +4,7 @@
   "installCommand": "npm install",
   "framework": "nextjs",
   "regions": ["iad1"],
+  "ignoreCommand": "[ \"$VERCEL_GIT_COMMIT_REF\" != \"main\" ]",
   "crons": [
     { "path": "/api/hub/cron/migrate", "schedule": "30 5 * * *" },
     { "path": "/api/hub/cron/compliance-scan", "schedule": "0 14 * * *" },

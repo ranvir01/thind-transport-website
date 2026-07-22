@@ -102,6 +102,21 @@ and race each other on the branch.
   CI-verified the integrator and fast-forwarded `main` to `8650ab0` (drift now 0),
   even while Routine 1 was still merging (the fast-forward-only push makes the race safe).
 
+## Deploy discipline (learned 2026-07-22)
+
+- **Vercel dedupes deployments by SHA.** Pushing the same commit to the integrator
+  branch and `main` simultaneously can attach the only build to the BRANCH ref —
+  main silently gets no production deployment. Drains push **main first, alone**;
+  sync the integrator afterwards.
+- **Hobby has a daily deployment quota.** The fleet's per-branch preview builds
+  exhausted it (2026-07-22: production frozen mid-theme-rollout with pushes
+  creating zero deployments). `vercel.json` now carries
+  `"ignoreCommand": "[ \"$VERCEL_GIT_COMMIT_REF\" != \"main\" ]"` — only main
+  ever builds. Preview URLs are gone by design; agents verify on local rigs.
+- If a main push creates no deployment (quota window still saturated), the next
+  hourly drain re-triggers it automatically once slots free; for urgency, push a
+  `.drain-stamp` refresh to main alone.
+
 ## Division of labor after Cursor
 
 | Concern | Owner |
