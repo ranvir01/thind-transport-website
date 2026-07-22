@@ -48,9 +48,9 @@ export default function ForgotPasswordPage() {
             <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
               <CheckCircle2 className="w-8 h-8 text-green-600" />
             </div>
-            <CardTitle className="text-2xl text-gray-900">Check Your Email</CardTitle>
+            <CardTitle className="text-2xl">Check Your Email</CardTitle>
             <CardDescription className="text-base mt-2">
-              We've sent a password reset link to <strong className="text-gray-900">{email}</strong>
+              We've sent a password reset link to <strong className="text-white">{email}</strong>
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -69,7 +69,7 @@ export default function ForgotPasswordPage() {
               </Link>
             </div>
 
-            <p className="text-center text-sm text-gray-500">
+            <p className="text-center text-sm text-steel-400">
               Didn't receive the email?{" "}
               <button 
                 onClick={() => setSubmitted(false)} 
@@ -91,7 +91,7 @@ export default function ForgotPasswordPage() {
           <div className="mx-auto w-12 h-12 bg-orange-600 rounded-full flex items-center justify-center mb-4">
             <Mail className="w-6 h-6 text-white" />
           </div>
-          <CardTitle className="text-2xl text-gray-900">Forgot Password?</CardTitle>
+          <CardTitle className="text-2xl">Forgot Password?</CardTitle>
           <CardDescription>
             Enter your email address and we'll send you a link to reset your password.
           </CardDescription>
@@ -99,7 +99,7 @@ export default function ForgotPasswordPage() {
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-gray-800">Email Address</Label>
+              <Label htmlFor="email" className="text-white">Email Address</Label>
               <Input
                 id="email"
                 type="email"
@@ -128,7 +128,7 @@ export default function ForgotPasswordPage() {
           </form>
 
           <div className="mt-6 text-center">
-            <Link href="/driver/login" className="text-sm text-gray-600 hover:text-gray-900 flex items-center justify-center gap-2">
+            <Link href="/driver/login" className="text-sm text-steel-300 hover:text-white flex items-center justify-center gap-2">
               <ArrowLeft className="h-4 w-4" />
               Back to Login
             </Link>

@@ -68,7 +68,7 @@ export default function LoginPage() {
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email" className="text-white">Email</Label>
               <Input
                 id="email"
                 type="email"
@@ -80,7 +80,7 @@ export default function LoginPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password" className="text-white">Password</Label>
               <Input
                 id="password"
                 type="password"
@@ -107,7 +107,7 @@ export default function LoginPage() {
           </form>
 
           <div className="mt-4 text-center text-sm">
-            <Link href="/driver/forgot-password" className="text-gray-600 hover:text-gray-900 hover:underline">
+            <Link href="/driver/forgot-password" className="text-steel-300 hover:text-white hover:underline">
               Forgot your password?
             </Link>
           </div>
@@ -120,7 +120,7 @@ export default function LoginPage() {
           </div>
 
           <div className="mt-6 text-center">
-            <Link href="/apply" className="text-sm text-gray-600 hover:text-gray-900">
+            <Link href="/apply" className="text-sm text-steel-300 hover:text-white">
               ← Back to Application
             </Link>
           </div>

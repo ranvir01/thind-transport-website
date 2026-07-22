@@ -100,13 +100,13 @@ function ResetPasswordForm() {
             <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
               <CheckCircle2 className="w-8 h-8 text-green-600" />
             </div>
-            <CardTitle className="text-2xl text-gray-900">Password Reset Complete!</CardTitle>
+            <CardTitle className="text-2xl">Password Reset Complete!</CardTitle>
             <CardDescription className="text-base mt-2">
               Your password has been successfully updated.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <p className="text-center text-gray-600">
+            <p className="text-center text-steel-300">
               You can now log in with your new password.
             </p>
 
@@ -116,7 +116,7 @@ function ResetPasswordForm() {
               </Button>
             </Link>
 
-            <p className="text-center text-sm text-gray-500">
+            <p className="text-center text-sm text-steel-400">
               Redirecting to login page...
             </p>
           </CardContent>
@@ -132,7 +132,7 @@ function ResetPasswordForm() {
           <div className="mx-auto w-12 h-12 bg-orange-600 rounded-full flex items-center justify-center mb-4">
             <Key className="w-6 h-6 text-white" />
           </div>
-          <CardTitle className="text-2xl text-gray-900">Reset Your Password</CardTitle>
+          <CardTitle className="text-2xl">Reset Your Password</CardTitle>
           <CardDescription>
             Enter a new password for your account
           </CardDescription>
@@ -140,7 +140,7 @@ function ResetPasswordForm() {
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="password" className="text-gray-800">New Password</Label>
+              <Label htmlFor="password" className="text-white">New Password</Label>
               <div className="relative">
                 <Input
                   id="password"
@@ -162,7 +162,7 @@ function ResetPasswordForm() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="confirmPassword" className="text-gray-800">Confirm New Password</Label>
+              <Label htmlFor="confirmPassword" className="text-white">Confirm New Password</Label>
               <div className="relative">
                 <Input
                   id="confirmPassword"
@@ -218,7 +218,7 @@ function ResetPasswordForm() {
           </form>
 
           <div className="mt-6 text-center">
-            <Link href="/driver/login" className="text-sm text-gray-600 hover:text-gray-900 flex items-center justify-center gap-2">
+            <Link href="/driver/login" className="text-sm text-steel-300 hover:text-white flex items-center justify-center gap-2">
               <ArrowLeft className="h-4 w-4" />
               Back to Login
             </Link>
