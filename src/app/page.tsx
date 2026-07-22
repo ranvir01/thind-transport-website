@@ -9,6 +9,7 @@ import { ThindPromise } from "@/components/home/ThindPromise"
 import { OperationSection } from "@/components/home/OperationSection"
 import { DispatchBand } from "@/components/home/DispatchBand"
 import { FreightYouKnow } from "@/components/home/FreightYouKnow"
+import { PhotoBand } from "@/components/home/PhotoBand"
 import { ApplicationForm } from "@/components/application/ApplicationForm"
 import { ProfitCalculator } from "@/components/features/ProfitCalculator"
 import { QuickQualify } from "@/components/features/QuickQualify"
@@ -28,6 +29,13 @@ export default function Home() {
 
       <WhySwitch />
 
+      <PhotoBand
+        src="/images/generated/fleet-lineup-kent.webp"
+        alt="Thind Transport Freightliner Cascadias lined up at the Kent, WA yard"
+        eyebrow="Kent, WA · Home yard"
+        headline="15 trucks. One family. Zero call centers."
+      />
+
       <OperationSection />
 
       <DispatchBand />
@@ -35,6 +43,13 @@ export default function Home() {
       <ThindPromise />
 
       <SuccessStoriesSection />
+
+      <PhotoBand
+        src="/images/generated/truck-mountain-pass.webp"
+        alt="Thind Transport truck crossing a mountain pass at golden hour"
+        eyebrow="All 48 states"
+        headline="The lanes you know. The miles you want."
+      />
 
       <FreightYouKnow />
 

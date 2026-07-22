@@ -160,25 +160,23 @@ export function FAQAccordion({ items = defaultFaqs, darkBackground = true }: FAQ
             key={`${id}-${index}`} 
             value={`item-${id}-${index}`}
             className={`border rounded-fleet mb-2 px-4 transition-colors ${
-              darkBackground 
+              darkBackground
                 ? "border-steel-700 bg-navy-700/50 hover:bg-steel-800/40 data-[state=open]:bg-steel-800/60 data-[state=open]:border-orange/50"
-                : "border-steel-700 bg-navy-700/50 hover:bg-steel-800/40 data-[state=open]:bg-steel-800/60 data-[state=open]:border-orange/50"
+                : "border-gray-200 bg-white hover:bg-orange-50/50 data-[state=open]:bg-orange-50/70 data-[state=open]:border-orange-300 shadow-sm"
             }`}
           >
-            <AccordionTrigger className={`text-left py-5 font-semibold text-base hover:no-underline [&>svg]:text-zinc-400 [&[data-state=open]>svg]:text-orange-400 ${
+            <AccordionTrigger className={`text-left py-5 font-semibold text-base hover:no-underline [&[data-state=open]>svg]:text-orange-500 ${
               darkBackground
-                ? "text-white hover:text-orange-400 [&[data-state=open]]:text-orange-400"
-                : "text-white hover:text-orange-400 [&[data-state=open]]:text-orange-400"
+                ? "text-white hover:text-orange-400 [&[data-state=open]]:text-orange-400 [&>svg]:text-zinc-400"
+                : "text-gray-900 hover:text-orange-600 [&[data-state=open]]:text-orange-700 [&>svg]:text-gray-400"
             }`}>
               <div className="flex items-start gap-3 flex-1 pr-4">
-                <HelpCircle className={`h-5 w-5 mt-0.5 flex-shrink-0 ${
-                  darkBackground ? "text-orange-500" : "text-orange-500"
-                }`} />
+                <HelpCircle className="h-5 w-5 mt-0.5 flex-shrink-0 text-orange-500" />
                 <span className="flex-1">{faq.question}</span>
               </div>
             </AccordionTrigger>
             <AccordionContent className={`text-base leading-relaxed pb-5 pl-8 ${
-              darkBackground ? "text-zinc-300" : "text-steel-200"
+              darkBackground ? "text-zinc-300" : "text-gray-600"
             }`}>
               <p>{faq.answer}</p>
             </AccordionContent>

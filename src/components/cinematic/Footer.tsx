@@ -39,12 +39,14 @@ const FooterLinkSections = () => {
     { href: "/routes", label: "Routes & Lanes" },
     { href: "/testimonials", label: "Driver Reviews" },
     { href: "/resources", label: "Driver Resources" },
+    { href: "/cdl-jobs", label: "Jobs by State" },
     { href: "/driver/login", label: "Driver Login" },
   ]
   
   const companyLinks = [
     { href: "/about", label: "About Us" },
     { href: "/fleet", label: "Our Fleet" },
+    { href: "/shippers", label: "Ship With Us" },
     { href: "/loadoff", label: "LoadOff TMS" },
     { href: "/veterans", label: "Veterans Program" },
     { href: "https://safer.fmcsa.dot.gov/CompanySnapshot.aspx", label: "FMCSA SAFER Record", external: true },

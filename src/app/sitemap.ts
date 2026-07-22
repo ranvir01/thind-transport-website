@@ -1,4 +1,5 @@
 import { MetadataRoute } from 'next'
+import { STATES } from '@/lib/state-data'
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const baseUrl = 'https://thindtransport.com'
@@ -10,6 +11,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { path: "/apply", changeFrequency: "weekly" as const, priority: 0.95 },
     { path: "/pay-rates", changeFrequency: "weekly" as const, priority: 0.9 },
     { path: "/routes", changeFrequency: "weekly" as const, priority: 0.9 },
+    { path: "/shippers", changeFrequency: "monthly" as const, priority: 0.85 },
+    { path: "/cdl-jobs", changeFrequency: "weekly" as const, priority: 0.85 },
+    ...STATES.map((state) => ({
+      path: `/cdl-jobs/${state.slug}`,
+      changeFrequency: "monthly" as const,
+      priority: 0.6,
+    })),
     { path: "/about", changeFrequency: "monthly" as const, priority: 0.8 },
     { path: "/fleet", changeFrequency: "monthly" as const, priority: 0.8 },
     { path: "/benefits", changeFrequency: "monthly" as const, priority: 0.75 },
