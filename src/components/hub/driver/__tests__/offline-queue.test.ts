@@ -1,7 +1,8 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
 
 import {
-  isOfflineError, listIntents, QUEUE_SCHEMA_VERSION, replayQueue, runOrQueue,
+  enqueueIntent, isOfflineError, listIntents, queueCount, QUEUE_SCHEMA_VERSION, removeIntent,
+  replayQueue, runOrQueue,
 } from "../offline-queue"
 
 /**
@@ -241,5 +242,82 @@ describe("replayQueue", () => {
     const result = await replayQueue(intents, execute)
     expect(execute).toHaveBeenCalledTimes(1)
     expect(result).toEqual({ sent: 1, failed: 0 })
+  })
+})
+
+/**
+ * listIntents is what OfflineSync and replayQueue's callers hand a replay
+ * order to — a driver's taps must replay in the order they happened
+ * (arrived-then-departed can't ever execute out of order), independent of
+ * whatever order IndexedDB's getAll() happens to return rows in.
+ */
+describe("listIntents", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  it("sorts by queuedAt ascending regardless of storage order", async () => {
+    const fake = makeFakeIndexedDB()
+    vi.stubGlobal("indexedDB", fake.indexedDB)
+    // Inserted newest-first so a passthrough (unsorted) implementation would
+    // fail this test.
+    fake.rows.set("z", { id: "z", kind: "ack", payload: { loadId: "L3" }, queuedAt: 300 })
+    fake.rows.set("a", { id: "a", kind: "ack", payload: { loadId: "L1" }, queuedAt: 100 })
+    fake.rows.set("m", { id: "m", kind: "ack", payload: { loadId: "L2" }, queuedAt: 200 })
+
+    const result = await listIntents()
+    expect(result.map((i) => i.id)).toEqual(["a", "m", "z"])
+  })
+})
+
+/**
+ * enqueueIntent/removeIntent are the only writers of the queue, and both
+ * fire "hauldesk-queue-changed" so OfflineSync's pending-count badge stays
+ * honest without polling. A regression here wouldn't fail loudly — the
+ * badge would just quietly stop updating.
+ */
+describe("enqueueIntent / removeIntent / queueCount", () => {
+  function stubWorld() {
+    const fake = makeFakeIndexedDB()
+    vi.stubGlobal("indexedDB", fake.indexedDB)
+    const dispatchEvent = vi.fn()
+    vi.stubGlobal("window", { dispatchEvent })
+    return { fake, dispatchEvent }
+  }
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  it("stamps a unique id, the current queuedAt, and notifies listeners", async () => {
+    const { dispatchEvent } = stubWorld()
+    const before = Date.now()
+    await enqueueIntent({ kind: "ack", payload: { loadId: "L1" } })
+    const after = Date.now()
+
+    expect(dispatchEvent).toHaveBeenCalledTimes(1)
+    expect(dispatchEvent.mock.calls[0][0]).toMatchObject({ type: "hauldesk-queue-changed" })
+
+    const [row] = await listIntents()
+    expect(row.id).toBeTruthy()
+    expect(row.queuedAt).toBeGreaterThanOrEqual(before)
+    expect(row.queuedAt).toBeLessThanOrEqual(after)
+    expect(row.schemaVersion).toBe(QUEUE_SCHEMA_VERSION)
+  })
+
+  it("queueCount tracks adds and removes, both notifying listeners", async () => {
+    const { dispatchEvent } = stubWorld()
+    expect(await queueCount()).toBe(0)
+
+    await enqueueIntent({ kind: "ack", payload: { loadId: "L1" } })
+    await enqueueIntent({ kind: "ack", payload: { loadId: "L2" } })
+    expect(await queueCount()).toBe(2)
+
+    const [first] = await listIntents()
+    await removeIntent(first.id)
+    expect(await queueCount()).toBe(1)
+
+    // 2 enqueues + 1 remove — every write notifies, not just enqueue.
+    expect(dispatchEvent).toHaveBeenCalledTimes(3)
   })
 })
