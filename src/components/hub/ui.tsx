@@ -134,7 +134,7 @@ export function EmptyState({ title, hint, action }: { title: string; hint?: stri
   )
 }
 
-type PillTone = "neutral" | "accent" | "ok" | "warn" | "bad" | "info"
+export type PillTone = "neutral" | "accent" | "ok" | "warn" | "bad" | "info"
 
 const PILL_TONE: Record<PillTone, string> = {
   neutral: "bg-surface-2 text-fg-2",

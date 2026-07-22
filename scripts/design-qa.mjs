@@ -77,6 +77,7 @@ const HUB_ROUTES = [
   "/hub/fleet",
   "/hub/compliance",
   "/hub/leads",
+  "/hub/outreach",
   "/hub/settings/integrations",
 ]
 
