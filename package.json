@@ -21,7 +21,8 @@
     "prod:smoke": "node scripts/prod-smoke.mjs",
     "go-build": "make go-build",
     "rust-build": "make rust-build",
-    "test:sidecars": "make test-sidecars"
+    "test:sidecars": "make test-sidecars",
+    "rust-audit": "make rust-audit"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
