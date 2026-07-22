@@ -54,7 +54,7 @@ export default async function StateJobsPage({ params }: { params: Promise<{ stat
       <PageBreadcrumb pageName={`${state.name} CDL Jobs`} category="Drivers" />
 
       {/* Header */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-[#001F3F] via-[#0A2A4F] to-[#001326] py-16 md:py-24 text-white">
+      <div className="relative overflow-hidden bg-gradient-to-br from-[#17181B] via-[#1F2024] to-[#0B0C0E] py-16 md:py-24 text-white">
         <div className="container px-4">
           <div className="max-w-3xl">
             <span className="fleet-badge fleet-badge-gold mb-4">Now hiring · {state.name}</span>

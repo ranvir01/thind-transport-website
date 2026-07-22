@@ -272,7 +272,7 @@ export function ApplicationForm() {
     <div className={cn("space-y-8 relative", showStickyFooter && "pb-24 md:pb-0")}>
       {/* Mobile Sticky Footer */}
       {showStickyFooter && (
-        <div className="fixed bottom-0 left-0 right-0 z-[100] md:hidden bg-gradient-to-r from-[#001F3F] to-[#003366] p-3 border-t border-white/10 shadow-2xl safe-area-bottom">
+        <div className="fixed bottom-0 left-0 right-0 z-[100] md:hidden bg-gradient-to-r from-[#17181B] to-[#003366] p-3 border-t border-white/10 shadow-2xl safe-area-bottom">
           <div className="flex gap-3">
             <a
               href={`tel:${COMPANY_INFO.phoneFormatted}`}
@@ -721,7 +721,7 @@ export function ApplicationForm() {
             </div>
 
             {/* What happens next — real process, no inflated promises */}
-            <div className="bg-gradient-to-br from-[#001F3F] to-[#001326] rounded-xl p-5 text-white border border-slate-700 shadow-xl">
+            <div className="bg-gradient-to-br from-[#17181B] to-[#0B0C0E] rounded-xl p-5 text-white border border-slate-700 shadow-xl">
               <h4 className="font-bold text-base text-orange-400 mb-3">What happens after you submit</h4>
               <ul className="space-y-2 text-sm text-slate-300 leading-relaxed">
                 <li className="flex items-start gap-2">

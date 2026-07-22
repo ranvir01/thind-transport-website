@@ -36,10 +36,9 @@ export const CinematicHero = () => {
           </h1>
 
           <p className="text-lg md:text-xl text-steel-200 max-w-2xl mb-8 leading-relaxed">
-            Owner-operators keep 90% of the gross. Company drivers run new Freightliners at $0.63/mile with weekly
-            {/* Explicit {" "} — the compiler drops bare spaces between expression
-                containers and adjacent text/entities (see IntegrationsPanel note). */}
-            pay. {`${new Date().getFullYear() - COMPANY_INFO.founded} years out of Kent, WA`}{" "}&mdash; you drive, we handle the rest.
+            {/* One expression, no adjacent bare text — the compiler drops bare
+                spaces next to expression containers (see IntegrationsPanel note). */}
+            {`Owner-operators keep 90% of the gross. Company drivers run new Freightliners at $0.63/mile with weekly pay. ${new Date().getFullYear() - COMPANY_INFO.founded} years out of Kent, WA — you drive, we handle the rest.`}
           </p>
 
           <div className="flex flex-col sm:flex-row flex-wrap gap-3 mb-7">

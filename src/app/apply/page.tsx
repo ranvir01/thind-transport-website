@@ -105,10 +105,10 @@ export default function ApplyPage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jobPostingSchema) }}
       />
 
-      <div className="brand-page-shell min-h-screen overflow-x-hidden bg-[#00060D]">
+      <div className="brand-page-shell min-h-screen overflow-x-hidden bg-[#060607]">
         <PageBreadcrumb pageName="Apply Now" category="Drivers" />
 
-        <section className="border-b border-white/5 bg-[#00060D] py-10 md:py-20">
+        <section className="border-b border-white/5 bg-[#060607] py-10 md:py-20">
           <div className="container">
             <div className="grid items-start gap-8 lg:grid-cols-12 lg:gap-12">
               <div className="lg:col-span-5 lg:sticky lg:top-24 space-y-6">
@@ -127,14 +127,14 @@ export default function ApplyPage() {
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="rounded-xl border border-orange-500/30 bg-[#001F3F]/80 p-4">
+                  <div className="rounded-xl border border-orange-500/30 bg-[#17181B]/80 p-4">
                     <p className="text-xs font-bold uppercase tracking-wider text-orange-400">
                       Owner Operators
                     </p>
                     <p className="text-3xl font-black text-orange-400">{PAY_RATES.ownerOperator.commission}</p>
                     <p className="text-sm text-slate-300">gross split</p>
                   </div>
-                  <div className="rounded-xl border border-blue-500/30 bg-[#001F3F]/80 p-4">
+                  <div className="rounded-xl border border-blue-500/30 bg-[#17181B]/80 p-4">
                     <p className="text-xs font-bold uppercase tracking-wider text-blue-400">
                       Company Drivers
                     </p>
@@ -160,7 +160,7 @@ export default function ApplyPage() {
                   ))}
                 </div>
 
-                <div className="rounded-2xl border border-white/10 bg-[#001326] p-6">
+                <div className="rounded-2xl border border-white/10 bg-[#0B0C0E] p-6">
                   <h2 className="mb-4 text-lg font-bold text-white">Before You Apply</h2>
                   <div className="space-y-3 text-sm text-slate-300">
                     <div className="flex items-start gap-3">
@@ -181,7 +181,7 @@ export default function ApplyPage() {
 
               <div className="lg:col-span-7 w-full" id="application-form">
                 <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl" data-light>
-                  <div className="border-b border-navy-800 bg-gradient-to-r from-[#001F3F] to-[#003366] px-6 py-4">
+                  <div className="border-b border-navy-800 bg-gradient-to-r from-[#17181B] to-[#003366] px-6 py-4">
                     <h2 className="text-lg font-bold text-white">Start Your Application</h2>
                     <p className="text-xs text-blue-200">
                       Share your contact information and driving background. We&apos;ll follow up from there.
@@ -196,11 +196,11 @@ export default function ApplyPage() {
           </div>
         </section>
 
-        <section className="border-t border-white/5 bg-[#001326] py-12 lg:py-16">
+        <section className="border-t border-white/5 bg-[#0B0C0E] py-12 lg:py-16">
           <div className="container">
             <div className="grid gap-8 lg:grid-cols-3 lg:gap-12">
               <div className="space-y-8 lg:col-span-2">
-                <div className="rounded-2xl border border-white/5 bg-[#00060D] p-6 md:p-8">
+                <div className="rounded-2xl border border-white/5 bg-[#060607] p-6 md:p-8">
                   <h2 className="mb-6 text-2xl font-bold text-white">What To Expect</h2>
                   <div className="grid gap-6 md:grid-cols-2">
                     <div className="space-y-3">
@@ -241,14 +241,14 @@ export default function ApplyPage() {
                   </div>
                 </div>
 
-                <div className="rounded-2xl border border-white/5 bg-[#001326] p-6 md:p-8">
+                <div className="rounded-2xl border border-white/5 bg-[#0B0C0E] p-6 md:p-8">
                   <h2 className="mb-6 text-2xl font-bold text-white">Frequently Asked Questions</h2>
-                  <FAQAccordion items={faqItems} darkBackground={true} gradientColor="#001326" />
+                  <FAQAccordion items={faqItems} darkBackground={true} gradientColor="#0B0C0E" />
                 </div>
               </div>
 
               <div className="space-y-6 lg:sticky lg:top-24">
-                <div className="rounded-2xl border border-white/5 bg-[#00060D] p-6">
+                <div className="rounded-2xl border border-white/5 bg-[#060607] p-6">
                   <h3 className="mb-4 text-lg font-bold text-white">Application Notes</h3>
                   <div className="space-y-4">
                     {[

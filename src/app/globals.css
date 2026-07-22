@@ -16,23 +16,23 @@
     --mobile-bar-height: 4.5rem;
 
     /* Brand Colors (HSL values for compatibility) */
-    --primary: 217 51% 9%; /* #0B1422 */
+    --primary: 217 51% 9%; /* #131418 */
     --primary-foreground: 210 33% 97%;
     --secondary: 2 66% 56%; /* #D94B45 */
     --secondary-foreground: 210 33% 97%;
     --brand-bg: #080d12;
-    --brand-bg-soft: #0e1621;
-    --brand-surface: #141c26;
-    --brand-surface-alt: #1a2430;
-    --brand-surface-elevated: #212d3a;
+    --brand-bg-soft: #121316;
+    --brand-surface: #17181b;
+    --brand-surface-alt: #1c1d21;
+    --brand-surface-elevated: #242629;
     --brand-line: rgba(180, 190, 200, 0.12);
     --brand-line-strong: rgba(180, 190, 200, 0.22);
     --brand-copy: #9ca8b6;
     --brand-copy-strong: #e8edf2;
     --brand-copy-soft: #6b7785;
-    --brand-accent: #f26419;
-    --brand-accent-strong: #fb7d2e;
-    --brand-accent-soft: rgba(242, 100, 25, 0.13);
+    --brand-accent: #e0392f;
+    --brand-accent-strong: #ec5a50;
+    --brand-accent-soft: rgba(224, 57, 47, 0.13);
     --brand-gold: #f2a900;
     --brand-gold-soft: rgba(242, 169, 0, 0.13);
     --brand-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
@@ -64,7 +64,7 @@
   body {
     background-color: var(--brand-bg);
     background-image:
-      radial-gradient(900px circle at 78% -5%, rgba(242, 100, 25, 0.12), transparent 45%),
+      radial-gradient(900px circle at 78% -5%, rgba(224, 57, 47, 0.12), transparent 45%),
       radial-gradient(700px circle at 5% 8%, rgba(242, 169, 0, 0.06), transparent 40%);
     background-attachment: fixed;
     color: var(--brand-copy-strong);
@@ -202,7 +202,7 @@
   }
   
   .gradient-brand {
-    @apply bg-gradient-to-br from-[#0B1422] via-[#141f2f] to-[#05080e];
+    @apply bg-gradient-to-br from-[#131418] via-[#141f2f] to-[#05080e];
   }
   
   .gradient-accent {
@@ -242,7 +242,7 @@
   .brand-page-shell {
     background-color: var(--brand-bg-soft);
     background-image:
-      radial-gradient(800px circle at 80% 0%, rgba(242, 100, 25, 0.1), transparent 42%);
+      radial-gradient(800px circle at 80% 0%, rgba(224, 57, 47, 0.1), transparent 42%);
   }
 
   .brand-section-panel {
@@ -281,7 +281,7 @@
     @apply inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider;
     background: var(--brand-accent-soft);
     color: var(--brand-accent-strong);
-    border: 1px solid rgba(242, 100, 25, 0.4);
+    border: 1px solid rgba(224, 57, 47, 0.4);
     font-family: var(--font-display), sans-serif;
   }
 
@@ -300,8 +300,8 @@
   }
 
   .fleet-stat-card--highlight {
-    border-color: rgba(242, 100, 25, 0.5);
-    background: linear-gradient(135deg, rgba(242, 100, 25, 0.16) 0%, rgba(14, 22, 33, 0.95) 100%);
+    border-color: rgba(224, 57, 47, 0.5);
+    background: linear-gradient(135deg, rgba(224, 57, 47, 0.16) 0%, rgba(14, 22, 33, 0.95) 100%);
   }
 
   .fleet-section-heading {

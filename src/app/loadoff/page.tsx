@@ -55,7 +55,7 @@ export default function LoadOffPage() {
       <PageBreadcrumb pageName="LoadOff TMS" category="Company" />
 
       {/* Hero */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 text-white py-20">
+      <div className="relative overflow-hidden bg-gradient-to-br from-[#17181B] via-[#101114] to-[#17181B] text-white py-20">
         <div className="absolute -top-24 -right-24 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl" />
         <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-violet-500/10 rounded-full blur-3xl" />
         <div className="container relative">
@@ -197,7 +197,7 @@ export default function LoadOffPage() {
         </Card>
 
         {/* CTA */}
-        <Card className="p-10 bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 text-white text-center shadow-2xl">
+        <Card className="p-10 bg-gradient-to-br from-[#17181B] via-[#101114] to-[#17181B] text-white text-center shadow-2xl">
           <h2 className="text-3xl font-bold mb-4">See it running</h2>
           <p className="text-lg mb-6 text-white/85 max-w-2xl mx-auto">
             LoadOff dispatches our trucks, bills our brokers, and pays our drivers today.

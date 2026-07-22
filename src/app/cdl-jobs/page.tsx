@@ -19,7 +19,7 @@ export default function CdlJobsIndexPage() {
     <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-50">
       <PageBreadcrumb pageName="CDL Jobs by State" category="Drivers" />
 
-      <div className="relative overflow-hidden bg-gradient-to-br from-[#001F3F] via-[#0A2A4F] to-[#001326] py-16 md:py-20 text-white">
+      <div className="relative overflow-hidden bg-gradient-to-br from-[#17181B] via-[#1F2024] to-[#0B0C0E] py-16 md:py-20 text-white">
         <div className="container px-4 text-center">
           <span className="fleet-badge fleet-badge-gold mb-4">Coast to coast</span>
           <h1 className="mx-auto max-w-3xl text-4xl md:text-5xl font-black leading-tight mb-4">
@@ -54,7 +54,7 @@ export default function CdlJobsIndexPage() {
           </div>
         ))}
 
-        <div className="mt-12 rounded-3xl bg-gradient-to-br from-[#001F3F] to-[#001326] p-8 text-center text-white">
+        <div className="mt-12 rounded-3xl bg-gradient-to-br from-[#17181B] to-[#0B0C0E] p-8 text-center text-white">
           <h2 className="text-2xl font-black mb-2">Not sure which lane fits?</h2>
           <p className="mx-auto mb-6 max-w-xl text-white/80">
             Call the people who actually build the schedules. Five minutes on the phone beats an hour

@@ -164,7 +164,7 @@ export default function RoutesPage() {
         <section className="bg-white py-16">
           <div className="container">
             <div className="mb-10 text-center">
-              <Badge className="mb-4 border-0 bg-[#001F3F] px-4 py-2 text-xs font-bold text-white">
+              <Badge className="mb-4 border-0 bg-[#17181B] px-4 py-2 text-xs font-bold text-white">
                 Market Snapshot
               </Badge>
               <h2 className="mb-3 text-3xl font-black text-navy md:text-4xl">
@@ -214,7 +214,7 @@ export default function RoutesPage() {
           <div className="container">
             <div className="mx-auto max-w-4xl">
               <div className="mb-10 text-center">
-                <Badge className="mb-4 border-0 bg-[#001F3F] px-4 py-2 text-xs font-bold text-white">
+                <Badge className="mb-4 border-0 bg-[#17181B] px-4 py-2 text-xs font-bold text-white">
                   Frequently Asked Questions
                 </Badge>
                 <h2 className="mb-3 text-3xl font-black text-white md:text-4xl">

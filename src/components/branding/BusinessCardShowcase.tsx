@@ -249,9 +249,9 @@ function TruckScene() {
         ))}
         <rect x="0" y="6" width="156" height="9" rx="3" fill="white" opacity="0.06" />
 
-        <text x="78" y="31" fontFamily="Inter, system-ui, sans-serif" fontSize="12" fontWeight="900" fill="#001F3F" textAnchor="middle" letterSpacing="0.5">THIND</text>
-        <rect x="44" y="34" width="68" height="1.5" rx="0.75" fill="#001F3F" opacity="0.2" />
-        <text x="78" y="48" fontFamily="Inter, system-ui, sans-serif" fontSize="7" fontWeight="700" fill="#001F3F" textAnchor="middle" letterSpacing="3">TRANSPORT</text>
+        <text x="78" y="31" fontFamily="Inter, system-ui, sans-serif" fontSize="12" fontWeight="900" fill="#17181B" textAnchor="middle" letterSpacing="0.5">THIND</text>
+        <rect x="44" y="34" width="68" height="1.5" rx="0.75" fill="#17181B" opacity="0.2" />
+        <text x="78" y="48" fontFamily="Inter, system-ui, sans-serif" fontSize="7" fontWeight="700" fill="#17181B" textAnchor="middle" letterSpacing="3">TRANSPORT</text>
 
         {/* Fifth wheel */}
         <rect x="154" y="22" width="8" height="30" rx="1.5" fill="#777" />
@@ -442,7 +442,7 @@ export function BusinessCardShowcase() {
               { label: "Bleed Size", value: '3.46" x 2.32"' },
               { label: "Trim Size", value: '3.30" x 2.16"' },
               { label: "Safe Area", value: '3.14" x 2.02"' },
-              { label: "Primary Color", value: "#001F3F (Navy)" },
+              { label: "Primary Color", value: "#17181B (Navy)" },
               { label: "Accent Color", value: "#FF9500 (Safety Orange)" },
               { label: "Font", value: "Inter (800/700/500)" },
               { label: "Min Font Size", value: "8pt (print)" },

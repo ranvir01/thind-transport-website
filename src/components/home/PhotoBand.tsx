@@ -29,7 +29,7 @@ export function PhotoBand({
         priority={priorityHint}
         className="object-cover img-authentic"
       />
-      <div className="absolute inset-0 bg-gradient-to-t from-[#00060D] via-[#00060D]/45 to-[#00060D]/20" />
+      <div className="absolute inset-0 bg-gradient-to-t from-[#060607] via-[#060607]/45 to-[#060607]/20" />
       <div className="grain-overlay" />
       <div className="absolute inset-x-0 bottom-0 pb-8 md:pb-12">
         <div className="container px-4">

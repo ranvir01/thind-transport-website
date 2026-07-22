@@ -191,7 +191,7 @@ export const CommandBar = () => {
         initial={{ y: 100 }}
         animate={{ y: 0 }}
         transition={{ delay: 1, type: "spring", stiffness: 200, damping: 20 }}
-        className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[90] hidden lg:flex items-center gap-2 p-2 bg-[#001F3F]/90 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl ring-1 ring-white/5"
+        className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[90] hidden lg:flex items-center gap-2 p-2 bg-[#17181B]/90 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl ring-1 ring-white/5"
     >
         <div className="flex items-center gap-4 px-4 border-r border-white/10">
             <div className="flex items-center gap-2">
@@ -239,7 +239,7 @@ export const CommandBar = () => {
         <div className="pl-2 border-l border-white/10">
             <a 
               href={`tel:${COMPANY_INFO.phoneFormatted}`} 
-              className="group flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-800 rounded-xl text-[10px] font-black text-white uppercase tracking-widest shadow-[0_0_20px_rgba(242, 100, 25, 0.3)] hover:shadow-[0_0_30px_rgba(242, 100, 25, 0.5)] transition-all hover:-translate-y-0.5 active:translate-y-0" 
+              className="group flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-800 rounded-xl text-[10px] font-black text-white uppercase tracking-widest shadow-[0_0_20px_rgba(224, 57, 47, 0.3)] hover:shadow-[0_0_30px_rgba(224, 57, 47, 0.5)] transition-all hover:-translate-y-0.5 active:translate-y-0" 
               data-cursor="CALL"
             >
                 <Phone className="w-3 h-3" />
@@ -258,7 +258,7 @@ export const MobileCommandBar = () => {
   if (pathname === '/apply' || (pathname.startsWith('/hub') || pathname.startsWith('/track'))) return null
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-[90] md:hidden bg-gradient-to-t from-[#00060D] via-[#00060D]/98 to-[#00060D]/95 backdrop-blur-xl border-t border-white/10 safe-area-bottom">
+    <div className="fixed bottom-0 left-0 right-0 z-[90] md:hidden bg-gradient-to-t from-[#060607] via-[#060607]/98 to-[#060607]/95 backdrop-blur-xl border-t border-white/10 safe-area-bottom">
        <div className="flex gap-2 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
           <a
             href={`tel:${COMPANY_INFO.phoneFormatted}`}
@@ -304,9 +304,9 @@ export const CinematicFooter = () => {
   const currentYear = new Date().getFullYear()
 
   return (
-    <footer className="relative w-full bg-[#00060D] text-white border-t border-white/5 pb-24 md:pb-0">
+    <footer className="relative w-full bg-[#060607] text-white border-t border-white/5 pb-24 md:pb-0">
       {/* Mesh Gradient Background */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-navy-800 via-[#00060D] to-[#00060D] opacity-50" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-navy-800 via-[#060607] to-[#060607] opacity-50" />
       
       {/* Noise Overlay — inline SVG turbulence, no external request */}
       <div className="absolute inset-0 opacity-[0.02] pointer-events-none bg-[url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22160%22 height=%22160%22><filter id=%22n%22><feTurbulence type=%22fractalNoise%22 baseFrequency=%220.8%22 numOctaves=%222%22/></filter><rect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23n)%22/></svg>')]" />
@@ -416,7 +416,7 @@ export const CinematicFooter = () => {
       </div>
 
       {/* Bottom Bar */}
-      <div className="relative z-10 border-t border-white/5 bg-[#00060D]">
+      <div className="relative z-10 border-t border-white/5 bg-[#060607]">
         <div className="container py-8">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <p className="text-xs text-zinc-400">

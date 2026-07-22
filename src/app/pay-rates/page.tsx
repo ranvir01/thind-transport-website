@@ -66,7 +66,7 @@ export default function PayRatesPage() {
       <section className="py-16 -mt-8">
         <div className="container">
           <div className="text-center mb-12">
-            <Badge className="mb-4 bg-[#001F3F] text-white px-4 py-2 text-xs font-bold">
+            <Badge className="mb-4 bg-[#17181B] text-white px-4 py-2 text-xs font-bold">
               Open Positions
             </Badge>
             <h2 className="text-4xl font-black text-gray-900 mb-4">
@@ -82,12 +82,12 @@ export default function PayRatesPage() {
               <CardHeader className="bg-gradient-to-br from-blue-50 via-indigo-50 to-blue-50 py-8 border-b-2 border-blue-100">
                 <CardTitle className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#001F3F]/10 to-blue-600/10 flex items-center justify-center border border-blue-100">
-                      <Shield className="h-6 w-6 text-[#001F3F]" />
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#17181B]/10 to-blue-600/10 flex items-center justify-center border border-blue-100">
+                      <Shield className="h-6 w-6 text-[#17181B]" />
                     </div>
                     <span className="text-xl font-black text-gray-900">Company Driver</span>
                   </div>
-                  <Badge className="bg-[#001F3F] text-white px-3 py-1 font-bold">Full-Time</Badge>
+                  <Badge className="bg-[#17181B] text-white px-3 py-1 font-bold">Full-Time</Badge>
                 </CardTitle>
                 <CardDescription className="text-base text-gray-700 font-medium">
                   Competitive pay, excellent benefits, and flexible routes
@@ -97,28 +97,28 @@ export default function PayRatesPage() {
                 <div className="space-y-4 mb-6">
                   <div className="flex items-center justify-between p-4 bg-gradient-to-r from-gray-50 to-blue-50 rounded-xl hover:from-blue-50 hover:to-indigo-50 transition-colors group/item">
                     <div className="flex items-center gap-3">
-                      <DollarSign className="h-5 w-5 text-[#001F3F]" />
+                      <DollarSign className="h-5 w-5 text-[#17181B]" />
                       <span className="text-sm font-medium text-gray-700">Annual Salary</span>
                     </div>
                     <span className="font-black text-xl text-gray-900">{PAY_RATES.companyDriver.regional.annual}</span>
                   </div>
                   <div className="flex items-center justify-between p-4 bg-gradient-to-r from-gray-50 to-blue-50 rounded-xl hover:from-blue-50 hover:to-indigo-50 transition-colors group/item">
                     <div className="flex items-center gap-3">
-                      <DollarSign className="h-5 w-5 text-[#001F3F]" />
+                      <DollarSign className="h-5 w-5 text-[#17181B]" />
                       <span className="text-sm font-medium text-gray-700">Per Mile</span>
                     </div>
                     <span className="font-black text-xl text-gray-900">{PAY_RATES.companyDriver.regional.perMile}</span>
                   </div>
                   <div className="flex items-center justify-between p-4 bg-gradient-to-r from-gray-50 to-blue-50 rounded-xl hover:from-blue-50 hover:to-indigo-50 transition-colors group/item">
                     <div className="flex items-center gap-3">
-                      <Home className="h-5 w-5 text-[#001F3F]" />
+                      <Home className="h-5 w-5 text-[#17181B]" />
                       <span className="text-sm font-medium text-gray-700">Home Time</span>
                     </div>
                     <span className="font-black text-xl text-gray-900">Flexible</span>
                   </div>
                   <div className="flex items-center justify-between p-4 bg-gradient-to-r from-gray-50 to-blue-50 rounded-xl hover:from-blue-50 hover:to-indigo-50 transition-colors group/item">
                     <div className="flex items-center gap-3">
-                      <Calendar className="h-5 w-5 text-[#001F3F]" />
+                      <Calendar className="h-5 w-5 text-[#17181B]" />
                       <span className="text-sm font-medium text-gray-700">Start Date</span>
                     </div>
                     <span className="font-black text-xl text-orange-400">Immediate</span>
@@ -153,7 +153,7 @@ export default function PayRatesPage() {
                     </div>
                     <span className="text-xl font-black text-gray-900">Owner Operator</span>
                   </div>
-                  <Badge className="bg-[#001F3F] text-white px-3 py-1 font-bold">Independent</Badge>
+                  <Badge className="bg-[#17181B] text-white px-3 py-1 font-bold">Independent</Badge>
                 </CardTitle>
                 <CardDescription className="text-base text-gray-700 font-medium">
                   Highest earning potential with 90% commission
@@ -219,7 +219,7 @@ export default function PayRatesPage() {
           {/* Pay Rate Visualizations */}
           <section className="mb-16">
             <div className="text-center mb-8">
-              <Badge className="mb-4 bg-[#001F3F] text-white px-4 py-2 text-xs font-bold">
+              <Badge className="mb-4 bg-[#17181B] text-white px-4 py-2 text-xs font-bold">
                 Visual Analytics
               </Badge>
               <h2 className="text-4xl font-black text-gray-900 mb-4">

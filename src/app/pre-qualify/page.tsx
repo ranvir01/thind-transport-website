@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 
 export default function PreQualifyPage() {
   return (
-    <div className="min-h-screen bg-[#00060D] pb-20">
+    <div className="min-h-screen bg-[#060607] pb-20">
       <PageBreadcrumb pageName="Pre-Qualification" category="Drivers" />
       
       <div className="container max-w-4xl mx-auto px-4 -mt-20 relative z-10">

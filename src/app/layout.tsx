@@ -97,7 +97,7 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 5,
-  themeColor: "#0E1621",
+  themeColor: "#121316",
 }
 
 export default function RootLayout({
@@ -114,7 +114,7 @@ export default function RootLayout({
         <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
         <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
         <link rel="manifest" href="/site.webmanifest" />
-        <meta name="msapplication-TileColor" content="#0E1621" />
+        <meta name="msapplication-TileColor" content="#121316" />
 
         {/* Structured Data - Injected via SchemaMarkup component */}
         <SchemaMarkup />

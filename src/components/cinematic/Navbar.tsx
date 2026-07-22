@@ -202,7 +202,7 @@ function MobileMenuDrawer({
             animate={{ x: 0 }}
             exit={{ x: "100%" }}
             transition={{ type: "spring", damping: 30, stiffness: 300 }}
-            className="fixed top-0 right-0 bottom-0 w-[85vw] max-w-sm bg-[linear-gradient(180deg,#0B1422_0%,#070D16_100%)] z-[102] flex flex-col shadow-2xl"
+            className="fixed top-0 right-0 bottom-0 w-[85vw] max-w-sm bg-[linear-gradient(180deg,#131418_0%,#0A0B0C_100%)] z-[102] flex flex-col shadow-2xl"
           >
             {/* Header */}
             <div className="flex items-center justify-between p-4 border-b border-white/10">
@@ -420,7 +420,7 @@ export const CinematicNavbar = () => {
       <header
         className={`fixed top-0 left-0 right-0 z-[100] border-b transition-[transform,box-shadow] duration-300 ${
           scrolled ? "border-steel-700 shadow-brand" : "border-steel-800/80"
-        } ${navHidden ? "-translate-y-full" : "translate-y-0"} bg-[#0B1422] md:bg-[#0B1422]/95 md:backdrop-blur-md`}
+        } ${navHidden ? "-translate-y-full" : "translate-y-0"} bg-[#131418] md:bg-[#131418]/95 md:backdrop-blur-md`}
       >
         <div className="fleet-accent-line" />
         <nav className="container flex items-center justify-between gap-4 h-14 md:h-16 px-4">

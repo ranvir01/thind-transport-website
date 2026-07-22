@@ -57,7 +57,7 @@ export default function ShippersPage() {
       <PageBreadcrumb pageName="Ship With Us" category="Company" />
 
       {/* Hero */}
-      <div className="relative overflow-hidden bg-[#00060D] text-white">
+      <div className="relative overflow-hidden bg-[#060607] text-white">
         <Image
           src="/images/generated/truck-night-highway.webp"
           alt="Thind Transport truck running a night highway lane"
@@ -66,7 +66,7 @@ export default function ShippersPage() {
           className="object-cover opacity-40"
           priority
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#00060D] via-[#00060D]/60 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#060607] via-[#060607]/60 to-transparent" />
         <div className="container relative px-4 py-20 md:py-28">
           <div className="max-w-3xl">
             <span className="fleet-badge fleet-badge-gold mb-5">Asset-based carrier · Kent, WA</span>
@@ -132,7 +132,7 @@ export default function ShippersPage() {
         </div>
 
         {/* Why us */}
-        <div className="mb-16 rounded-3xl bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 p-8 md:p-12 text-white shadow-2xl">
+        <div className="mb-16 rounded-3xl bg-gradient-to-br from-[#17181B] via-[#101114] to-[#17181B] p-8 md:p-12 text-white shadow-2xl">
           <h2 className="mb-8 text-3xl font-black text-center">Why brokers keep our number</h2>
           <div className="grid md:grid-cols-3 gap-8">
             {WHY.map((item) => (
