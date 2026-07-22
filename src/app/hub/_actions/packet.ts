@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache"
 import { requireOfficeUser } from "@/lib/hub/session"
 import { emailPacket, signBrokerAgreement } from "@/lib/hub/packet"
 import { getCarrier, getCarrierSettings } from "@/lib/hub/settings"
+import { isEmailConfigured } from "@/lib/mailer"
 import { logAudit } from "@/lib/hub/audit"
 import { actionError } from "@/lib/hub/action-error"
 import { query } from "@/lib/hub/db"
@@ -19,7 +20,13 @@ export async function emailPacketAction(to: string, note?: string): Promise<Resu
     if (!to.includes("@")) return { ok: false, error: "Enter the broker's email" }
     const result = await emailPacket(user.carrierId, to.trim(), note ?? null)
     if (!result.sent) {
-      return { ok: false, error: "Nothing to send yet — upload the W-9 and COI first" }
+      return {
+        ok: false,
+        error:
+          result.reason === "not_configured"
+            ? "Email not configured (set SMTP_USER/SMTP_PASS) — download the documents and send them manually."
+            : "Nothing to send yet — upload the W-9 and COI first",
+      }
     }
     await logAudit({
       carrierId: user.carrierId, actorId: user.id, actorName: user.name,
@@ -40,6 +47,12 @@ export async function requestCoiAction(input: {
     const user = await requireOfficeUser()
     if (!input.agentEmail.includes("@")) return { ok: false, error: "Enter the agent's email" }
     if (!input.certificateHolder.trim()) return { ok: false, error: "Who is the certificate holder?" }
+    if (!isEmailConfigured()) {
+      return {
+        ok: false,
+        error: "Email not configured (set SMTP_USER/SMTP_PASS) — email your agent directly for now.",
+      }
+    }
     const carrier = await getCarrier(user.carrierId)
     const { createMailTransport, mailFrom } = await import("@/lib/mailer")
     const transport = createMailTransport()
