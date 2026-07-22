@@ -115,6 +115,18 @@ export function staleRateJurisdictions(
   return stale
 }
 
+/**
+ * Base fuel-tax cents for a row, split out from the surcharge — legacy
+ * stored reports predate the taxCents/surchargeCents split, so fall back to
+ * the combined net minus surcharge (surcharge itself defaults to 0 too).
+ */
+export function iftaRowFuelTaxCents(
+  row: Partial<Pick<IftaReportRow, "taxCents" | "surchargeCents" | "netCents">>
+): number {
+  const surchargeCents = Number(row.surchargeCents ?? 0)
+  return row.taxCents != null ? Number(row.taxCents) : Number(row.netCents ?? 0) - surchargeCents
+}
+
 export interface IftaWorksheetWarningInputs {
   status: "draft" | "reviewed" | "filed"
   rows: Pick<IftaReportRow, "jurisdiction" | "rate" | "surchargeRate">[]
