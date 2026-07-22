@@ -29,7 +29,10 @@ export function SetupGuide({
               <BookOpen className="h-4 w-4 text-accent-text shrink-0" />
               How LoadOff works
             </p>
-            <p className="mt-1 text-sm text-fg-2 max-w-xl">{HAULDESK_MISSION}</p>
+            <p className="mt-1 text-sm text-fg-2 max-w-xl">
+              The plain-language playbook — set up your carrier and run every load from booking to paid
+              invoice, step by step.
+            </p>
           </div>
           <Link
             href="/hub/guide"
