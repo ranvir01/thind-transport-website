@@ -16,6 +16,7 @@ describe("computeFleetKpis", () => {
     expect(k.operatingRatioPct).toBe(60) // 600/1000
     expect(k.marginPct).toBe(40)
     expect(k.deadheadPct).toBeCloseTo(16.7, 1) // 100/600
+    expect(k.loadedPct).toBeCloseTo(83.3, 1) // 500/600
   })
 
   it("returns null ratios instead of dividing by zero", () => {
@@ -25,6 +26,12 @@ describe("computeFleetKpis", () => {
     expect(k.operatingRatioPct).toBeNull()
     expect(k.marginPct).toBeNull()
     expect(k.deadheadPct).toBeNull()
+    expect(k.loadedPct).toBeNull()
+  })
+
+  it("keeps loadedPct + deadheadPct summing to exactly 100 (regression: independently rounded shares used to read e.g. 100.4%)", () => {
+    const k = computeFleetKpis({ revenueCents: 1, operatingCostCents: 1, loadedMiles: 560, deadheadMiles: 40 })
+    expect(k.loadedPct! + k.deadheadPct!).toBe(100)
   })
 
   it("flags an operating ratio over 100 when costs exceed revenue (the break-even reality)", () => {
