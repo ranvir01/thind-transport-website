@@ -180,8 +180,10 @@ const FooterLinkSections = () => {
 export const MobileCommandBar = () => {
   const pathname = usePathname()
   
-  // Hide on Apply page and in the Hub (the Hub has its own bottom navigation)
-  if (pathname === '/apply' || (pathname.startsWith('/hub') || pathname.startsWith('/track'))) return null
+  // Hide on Apply page, in the Hub (own bottom navigation), and the legacy driver
+  // portal (its own submit buttons sit where this bar would land, per pitfall
+  // found 2026-07-22: it covered the register form's Create Account button)
+  if (pathname === '/apply' || pathname.startsWith('/hub') || pathname.startsWith('/track') || pathname.startsWith('/driver')) return null
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-[90] md:hidden bg-gradient-to-t from-[#060607] via-[#060607]/98 to-[#060607]/95 backdrop-blur-xl border-t border-white/10 safe-area-bottom">
