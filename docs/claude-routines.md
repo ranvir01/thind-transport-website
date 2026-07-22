@@ -153,3 +153,52 @@ un-mergeable by construction and should be deleted rather than re-triaged every 
 most of the rest sampled so far is stale/superseded, not unabsorbed value. The
 meta-governor pass should treat "no merge-base with main" as an auto-delete candidate
 list rather than re-running `agent:branches` priority order against it each hour.
+
+## Integrator + backlog sweep — 2026-07-22 ~05:50 UTC (Routine 1 run)
+
+Absorbed the two pending branches in `agent:branches` order (`eager-babbage-zy9rbx`,
+then `practical-franklin-4zwwy0`) — both were empty verify-and-build/QA-drive cycles
+whose only diff was a stale `.drain-stamp` echo, no product code. Build + `vitest`
+green after each merge (168 files/1431 tests). Integrator's tree ended up
+byte-identical to `main`'s despite 3 new commits (the two branches' `.drain-stamp`
+edits round-tripped back to the same content `main` already had) — drained with the
+stamped `--no-ff` method (not a plain fast-forward) specifically because a
+tree-identical commit is exactly the Root-cause-#2 dedupe trap this doc already
+documents; a fresh `.drain-stamp` timestamp guarantees Vercel sees a new tree.
+
+Then swept `agent:backlog` for a pickable item: every item still carried on the
+newest commit is owner-gated (IFTA holiday roll needs a shared-date-util design call;
+portal gold-vs-accent color choice needs an owner call; the no-merge-base branch prune
+needs a human) — none are agent-guessable per AGENTS.md's money/permissions ambiguity
+rule. Checked the "older mentions" tail for anything already resolved that's safe to
+drop:
+
+- `scripts/e2e-reports-smoke.mjs`'s "range-following lanes export not covered" item is
+  **resolved** — step 3b already covers `/hub/reports/export/lanes?from&to` (landed in
+  `4af102ab`).
+- `reseed()`'s "doesn't reset `hub.carriers.status`" item is **resolved** — `e2e-lib.mjs`
+  already resets both demo tenants to `active` on every reseed (landed in `07b4baf`).
+- The "~7-9 sleep-then-assert sites in fleet/fuel/loads/qbo-push/reports/settlements/
+  statements/tasks" item is **resolved** — grepped all eight named files, zero
+  `sleep()`/`waitForTimeout()` calls remain. Remaining `sleep()` calls repo-wide
+  (`e2e-apply-smoke.mjs`, `e2e-dat-freight-smoke.mjs`, `e2e-notifications-smoke.mjs`) are
+  bounded retry-loop backoffs or documented regression-window waits, not guessed
+  pre-screenshot settles — not the same class of issue, don't convert them.
+- The canvas-deps setup-script/README note is **resolved** — `npm run setup:canvas-deps`
+  + the README line already exist.
+- Sidecars lane's cargo-audit item is **still blocked**, but the reason changed: `cargo`
+  and `go` toolchains ARE present in this session (unlike prior cycles), `test-sidecars`
+  passed clean (26/26 Rust + Go tests), but `cargo-audit` itself isn't installed and
+  `cargo install cargo-audit --locked` didn't complete inside a reasonable timeout
+  (compiling from source against the sandboxed proxy) — still needs a session with either
+  a pre-warmed `cargo-audit` binary or a longer budget, not a code fix.
+- hauldesk-compute's OSRM-fallback-parity gap is unchanged: still blocked on a routing
+  endpoint that doesn't exist yet in the Rust sidecar (a feature-design item, not a
+  same-cycle fix).
+
+No local Postgres running in this session, so no visual/E2E sweep this cycle — build +
+`vitest` (168 files/1431 tests) + lint all green is what's verified here.
+
+Drained the resulting integrator tip to `main` immediately after (stamped `--no-ff`,
+see above) since it was already ahead and green — never left a green integrator
+waiting on a PR.
