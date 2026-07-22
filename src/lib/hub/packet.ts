@@ -68,7 +68,7 @@ export async function emailPacket(
   // SMTP connection and time out after 8s (createMailTransport's guard) —
   // every other mail-sending path in the codebase (invoices.ts, settlements.ts,
   // the public form actions) checks this first.
-  if (!isEmailConfigured()) return { sent: false, attached: 0, missing, reason: "not_configured" }
+  if (!isEmailConfigured()) return { sent: false, attached: attachments.length, missing, reason: "not_configured" }
 
   const { createMailTransport, mailFrom } = await import("@/lib/mailer")
   const transport = createMailTransport()
