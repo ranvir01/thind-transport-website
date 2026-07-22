@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils"
 import { plannerMoveLoadAction } from "@/app/hub/_actions/planner"
 import type { PlannerBlock, PlannerTruck } from "@/lib/hub/planner"
 import { toIsoDateOnly } from "@/lib/hub/format-dates"
+import { assignLanes } from "@/components/hub/planner-lanes"
 import type { TimeOffRequest } from "@/lib/hub/types"
 
 const LANE_HEIGHT = 46
@@ -37,21 +38,6 @@ function dayIndex(days: string[], iso: string): number {
   const date = new Date(iso)
   const dayStart = new Date(`${days[0]}T00:00:00`)
   return Math.floor((date.getTime() - dayStart.getTime()) / 86400000)
-}
-
-/** Greedy lane assignment so overlapping blocks stack instead of colliding. */
-function assignLanes(blocks: { start: number; end: number }[]): number[] {
-  const laneEnds: number[] = []
-  return blocks.map((b) => {
-    for (let lane = 0; lane < laneEnds.length; lane++) {
-      if (laneEnds[lane] <= b.start) {
-        laneEnds[lane] = b.end + 1
-        return lane
-      }
-    }
-    laneEnds.push(b.end + 1)
-    return laneEnds.length - 1
-  })
 }
 
 export function PlannerGrid({
