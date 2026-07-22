@@ -12,10 +12,12 @@
  * Usage: npm run seed:demo
  */
 import { readFileSync, existsSync } from "node:fs"
+import { mkdir, writeFile } from "node:fs/promises"
 import path from "node:path"
 import { randomBytes } from "node:crypto"
 import pg from "pg"
 import bcrypt from "bcrypt"
+import { PDFDocument, StandardFonts } from "pdf-lib"
 
 function loadEnvLocal() {
   if (process.env.POSTGRES_URL) return
@@ -28,6 +30,29 @@ function loadEnvLocal() {
 }
 
 const CARRIER = "11111111-1111-1111-1111-111111111111" // Thind (created by migration 002)
+
+// Carrier-packet documents inserted below with storage='local' and a bare
+// /api/hub/files/<name> url — readDocumentBytes() reads UPLOAD_DIR/<name> for
+// those, so the row is a lie unless a real file sits there too (found via
+// "Email the packet" always reporting "Nothing to send yet" on a fresh rig).
+export const PACKET_PLACEHOLDER_FILES = ["thind-w9.pdf", "thind-coi.pdf", "thind-authority.pdf"]
+
+/** A minimal valid one-page PDF so local-storage demo docs are real, readable files. */
+export async function placeholderPdfBytes(label) {
+  const pdf = await PDFDocument.create()
+  const page = pdf.addPage([300, 150])
+  const font = await pdf.embedFont(StandardFonts.Helvetica)
+  page.drawText(`${label} — demo placeholder`, { x: 20, y: 70, size: 12, font })
+  return pdf.save()
+}
+
+/** Write PACKET_PLACEHOLDER_FILES into uploadDir so local "storage" rows resolve to real bytes. */
+export async function writePacketPlaceholders(uploadDir) {
+  await mkdir(uploadDir, { recursive: true })
+  for (const name of PACKET_PLACEHOLDER_FILES) {
+    await writeFile(path.join(uploadDir, name), await placeholderPdfBytes(name))
+  }
+}
 
 const CITY = {
   kent: { city: "Kent", state: "WA", lat: 47.3809, lng: -122.2348 },
@@ -758,6 +783,9 @@ async function main() {
       demoDocUrl("thind-w9.pdf"), demoDocUrl("thind-coi.pdf"), demoDocUrl("thind-authority.pdf"),
     ]
   )
+  // These three rows claim storage='local' — back that claim with real files,
+  // or readDocumentBytes() (and "Email the packet") finds nothing to send.
+  await writePacketPlaceholders(path.join(process.cwd(), "data", "uploads"))
 
   // ---- Expansion modules (E1–E5) demo data ----
   console.log("Creating comms, tasks, facilities intel, recruiting…")
@@ -1024,7 +1052,12 @@ async function main() {
   await client.end()
 }
 
-main().catch((err) => {
-  console.error("Seed failed:", err)
-  process.exit(1)
-})
+// Only run when executed directly (`node scripts/seed-demo.mjs`) — importing
+// this module (e.g. from a vitest test to exercise the pure helpers above)
+// must not trigger a live DB connection + process.exit.
+if (import.meta.url === `file://${process.argv[1]}`) {
+  main().catch((err) => {
+    console.error("Seed failed:", err)
+    process.exit(1)
+  })
+}
