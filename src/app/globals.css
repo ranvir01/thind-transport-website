@@ -30,9 +30,9 @@
     --brand-copy: #9ca8b6;
     --brand-copy-strong: #e8edf2;
     --brand-copy-soft: #6b7785;
-    --brand-accent: #e0392f;
-    --brand-accent-strong: #ec5a50;
-    --brand-accent-soft: rgba(224, 57, 47, 0.13);
+    --brand-accent: #f26419;
+    --brand-accent-strong: #fb7d2e;
+    --brand-accent-soft: rgba(242, 100, 25, 0.13);
     --brand-gold: #f2a900;
     --brand-gold-soft: rgba(242, 169, 0, 0.13);
     --brand-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
@@ -64,7 +64,7 @@
   body {
     background-color: var(--brand-bg);
     background-image:
-      radial-gradient(900px circle at 78% -5%, rgba(224, 57, 47, 0.12), transparent 45%),
+      radial-gradient(900px circle at 78% -5%, rgba(242, 100, 25, 0.12), transparent 45%),
       radial-gradient(700px circle at 5% 8%, rgba(242, 169, 0, 0.06), transparent 40%);
     background-attachment: fixed;
     color: var(--brand-copy-strong);
@@ -242,7 +242,7 @@
   .brand-page-shell {
     background-color: var(--brand-bg-soft);
     background-image:
-      radial-gradient(800px circle at 80% 0%, rgba(224, 57, 47, 0.1), transparent 42%);
+      radial-gradient(800px circle at 80% 0%, rgba(242, 100, 25, 0.1), transparent 42%);
   }
 
   .brand-section-panel {
@@ -281,7 +281,7 @@
     @apply inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider;
     background: var(--brand-accent-soft);
     color: var(--brand-accent-strong);
-    border: 1px solid rgba(224, 57, 47, 0.4);
+    border: 1px solid rgba(242, 100, 25, 0.4);
     font-family: var(--font-display), sans-serif;
   }
 
@@ -300,8 +300,8 @@
   }
 
   .fleet-stat-card--highlight {
-    border-color: rgba(224, 57, 47, 0.5);
-    background: linear-gradient(135deg, rgba(224, 57, 47, 0.16) 0%, rgba(14, 22, 33, 0.95) 100%);
+    border-color: rgba(242, 100, 25, 0.5);
+    background: linear-gradient(135deg, rgba(242, 100, 25, 0.16) 0%, rgba(14, 22, 33, 0.95) 100%);
   }
 
   .fleet-section-heading {
@@ -1168,4 +1168,19 @@ button[aria-label="Contact us"]:hover {
     rgba(217, 164, 65, 0.07) 7px,
     rgba(217, 164, 65, 0.07) 9px
   );
+}
+
+/* Authentic-photo treatment: one grade across all imagery so mixed sources
+   (and AI-generated placeholders until real yard photos land) read as a
+   single shoot — slight desaturation kills the synthetic over-saturation,
+   film contrast + warm cast reads documentary, not stock. */
+.img-authentic {
+  filter: saturate(0.88) contrast(1.06) sepia(0.06);
+}
+.grain-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.05;
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="180" height="180"><filter id="g"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2"/></filter><rect width="100%25" height="100%25" filter="url(%23g)"/></svg>');
 }

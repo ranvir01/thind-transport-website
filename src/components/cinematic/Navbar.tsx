@@ -419,8 +419,8 @@ export const CinematicNavbar = () => {
     <>
       <header
         className={`fixed top-0 left-0 right-0 z-[100] border-b transition-[transform,box-shadow] duration-300 ${
-          scrolled ? "border-steel-700 bg-navy-900/98 shadow-brand" : "border-steel-800/80 bg-navy-900/95"
-        } ${navHidden ? "-translate-y-full" : "translate-y-0"} backdrop-blur-sm`}
+          scrolled ? "border-steel-700 shadow-brand" : "border-steel-800/80"
+        } ${navHidden ? "-translate-y-full" : "translate-y-0"} bg-[#0B1422] md:bg-[#0B1422]/95 md:backdrop-blur-md`}
       >
         <div className="fleet-accent-line" />
         <nav className="container flex items-center justify-between gap-4 h-14 md:h-16 px-4">
@@ -430,8 +430,8 @@ export const CinematicNavbar = () => {
               className="relative z-20 hover:opacity-80 transition-opacity whitespace-nowrap leading-none flex items-center" 
               data-cursor="HOME"
             >
-              <span className="brand-wordmark text-base md:text-lg font-semibold leading-none text-white tracking-[0.14em]">
-                THIND<span className="text-steel-400 font-medium"> TRANSPORT</span>
+              <span className="brand-wordmark text-base md:text-lg font-bold leading-none text-white tracking-[0.14em]">
+                THIND<span className="text-orange-400 font-semibold"> TRANSPORT</span>
               </span>
             </Link>
 

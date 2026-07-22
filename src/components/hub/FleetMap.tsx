@@ -50,7 +50,7 @@ export function FleetMap({ positions }: { positions: TruckPosition[] }) {
             className: "",
             // iconSize [0,0] gives the Leaflet wrapper zero width — without
             // width:max-content the pill collapses and the label spills onto the map.
-            html: `<div style="width:max-content;background:#E0392F;color:#fff;font-weight:800;font-size:11px;padding:3px 7px;border-radius:9999px;border:2px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.45);white-space:nowrap;">#${pos.unit_number}</div>`,
+            html: `<div style="width:max-content;background:#F26419;color:#fff;font-weight:800;font-size:11px;padding:3px 7px;border-radius:9999px;border:2px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.45);white-space:nowrap;">#${pos.unit_number}</div>`,
             iconSize: [0, 0],
             iconAnchor: [20, 12],
           }),

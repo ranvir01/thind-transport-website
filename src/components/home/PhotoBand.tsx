@@ -27,9 +27,10 @@ export function PhotoBand({
         fill
         sizes="100vw"
         priority={priorityHint}
-        className="object-cover"
+        className="object-cover img-authentic"
       />
       <div className="absolute inset-0 bg-gradient-to-t from-[#00060D] via-[#00060D]/45 to-[#00060D]/20" />
+      <div className="grain-overlay" />
       <div className="absolute inset-x-0 bottom-0 pb-8 md:pb-12">
         <div className="container px-4">
           <p className="fleet-badge fleet-badge-gold mb-3">{eyebrow}</p>

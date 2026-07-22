@@ -239,7 +239,7 @@ export const CommandBar = () => {
         <div className="pl-2 border-l border-white/10">
             <a 
               href={`tel:${COMPANY_INFO.phoneFormatted}`} 
-              className="group flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-800 rounded-xl text-[10px] font-black text-white uppercase tracking-widest shadow-[0_0_20px_rgba(224,57,47,0.3)] hover:shadow-[0_0_30px_rgba(224,57,47,0.5)] transition-all hover:-translate-y-0.5 active:translate-y-0" 
+              className="group flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-800 rounded-xl text-[10px] font-black text-white uppercase tracking-widest shadow-[0_0_20px_rgba(242, 100, 25, 0.3)] hover:shadow-[0_0_30px_rgba(242, 100, 25, 0.5)] transition-all hover:-translate-y-0.5 active:translate-y-0" 
               data-cursor="CALL"
             >
                 <Phone className="w-3 h-3" />
