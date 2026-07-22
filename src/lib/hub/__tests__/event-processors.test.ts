@@ -114,4 +114,20 @@ describe("retryUnprocessedEvents", () => {
     expect(processFactorEventMock).not.toHaveBeenCalled()
     expect(processEfsEventMock).not.toHaveBeenCalled()
   })
+
+  it("re-drives a stuck comdata file drop through processComdataEvent (registered 2026-07-18)", async () => {
+    queryMock.mockResolvedValueOnce([
+      { id: "30", external_id: "drop-3", kind: "fuel.batch", payload: { csv: "…" } },
+    ])
+    processComdataEventMock.mockResolvedValueOnce({ applied: true, imported: 3, skipped: 0 })
+
+    const result = await retryUnprocessedEvents(CARRIER, "comdata")
+
+    expect(result).toEqual({ retried: 1, applied: 1, stillUnprocessed: 0 })
+    expect(processComdataEventMock).toHaveBeenCalledWith(CARRIER, { external_id: "drop-3", kind: "fuel.batch", payload: { csv: "…" } })
+    expect(queryMock).toHaveBeenCalledWith(expect.stringContaining("UPDATE hub.integration_events"), ["30"])
+    expect(processFactorEventMock).not.toHaveBeenCalled()
+    expect(processEfsEventMock).not.toHaveBeenCalled()
+    expect(processWexEventMock).not.toHaveBeenCalled()
+  })
 })
