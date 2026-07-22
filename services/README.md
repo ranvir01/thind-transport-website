@@ -28,7 +28,14 @@ source "$HOME/.cargo/env"
 ```bash
 make go-build rust-build       # or: npm run go-build / npm run rust-build
 make rust-test                 # or: npm run test:sidecars (Rust IFTA golden parity)
+make rust-audit                # or: npm run rust-audit (RustSec advisory scan, installs cargo-audit if missing)
 ```
+
+`rust-audit` is not part of the every-commit verify chain (it hits the network) — run it for the
+weekly dependency pass (`docs/agent-improvement-loop.md` 3c). Despite `https://crates.io/` itself
+403ing behind some agent-proxy egress policies, `cargo install`/`cargo audit` still work: cargo
+talks to `index.crates.io` (sparse index) and `static.crates.io` (crate downloads) directly, neither
+of which is the blocked host.
 
 ## Run locally (optional)
 

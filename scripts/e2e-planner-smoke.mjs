@@ -7,7 +7,7 @@
  */
 import { mkdirSync } from "node:fs"
 import path from "node:path"
-import { launchBrowser, BASE, reseed, sleep, waitForText, login } from "./e2e-lib.mjs"
+import { launchBrowser, BASE, reseed, waitForText, login, waitForStableText } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-planner"
 mkdirSync(OUT, { recursive: true })
@@ -62,7 +62,7 @@ async function main() {
   console.log("3. Planner grid")
   await page.goto(`${BASE}/hub/planner`, { waitUntil: "networkidle2" })
   await waitForText(page, "Planner")
-  await sleep(800)
+  await waitForStableText(page)
   await page.screenshot({ path: path.join(OUT, "02-planner.png"), fullPage: true })
   console.log("  📸 02-planner")
 
@@ -76,7 +76,7 @@ async function main() {
   const drag = await syntheticDrag(page, reference, "106", 4)
   if (!drag.ok) throw new Error(drag.error)
   await waitForText(page, reference, 5000) // toast mentions the reference
-  await sleep(1500)
+  await waitForStableText(page)
   await page.screenshot({ path: path.join(OUT, "03-after-drag.png"), fullPage: true })
   console.log("  📸 03-after-drag")
 
