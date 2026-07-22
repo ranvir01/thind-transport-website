@@ -9,6 +9,7 @@ import { PDFDocument, StandardFonts, rgb } from "pdf-lib"
 import { query } from "./db"
 import { getCarrier } from "./settings"
 import { saveDocument } from "./documents"
+import { isEmailConfigured } from "@/lib/mailer"
 import type { HubDocument } from "./types"
 
 const UPLOAD_DIR = path.join(process.cwd(), "data", "uploads")
@@ -42,7 +43,7 @@ export async function emailPacket(
   carrierId: string,
   to: string,
   note: string | null
-): Promise<{ sent: boolean; attached: number; missing: string[] }> {
+): Promise<{ sent: boolean; attached: number; missing: string[]; reason?: "not_configured" | "missing_docs" }> {
   const carrier = await getCarrier(carrierId)
   const documents = await listPacketDocuments(carrierId)
   // Latest per kind only — brokers don't want three stale COIs.
@@ -62,7 +63,12 @@ export async function emailPacket(
     const bytes = await readDocumentBytes(doc)
     if (bytes) attachments.push({ filename: doc.file_name, content: bytes })
   }
-  if (attachments.length === 0) return { sent: false, attached: 0, missing }
+  if (attachments.length === 0) return { sent: false, attached: 0, missing, reason: "missing_docs" }
+  // Fail fast with a clear reason instead of letting sendMail attempt a real
+  // SMTP connection and time out after 8s (createMailTransport's guard) —
+  // every other mail-sending path in the codebase (invoices.ts, settlements.ts,
+  // the public form actions) checks this first.
+  if (!isEmailConfigured()) return { sent: false, attached: 0, missing, reason: "not_configured" }
 
   const { createMailTransport, mailFrom } = await import("@/lib/mailer")
   const transport = createMailTransport()
