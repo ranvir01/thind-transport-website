@@ -59,17 +59,24 @@ function DesktopDropdown({
   const dropdownRef = useRef<HTMLDivElement>(null)
   const pathname = usePathname()
   
-  // Close on click outside
+  // Close on click outside or Escape
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         onClose()
       }
     }
+    function handleKey(event: KeyboardEvent) {
+      if (event.key === "Escape") onClose()
+    }
     if (isOpen) {
       document.addEventListener("mousedown", handleClickOutside)
+      document.addEventListener("keydown", handleKey)
     }
-    return () => document.removeEventListener("mousedown", handleClickOutside)
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside)
+      document.removeEventListener("keydown", handleKey)
+    }
   }, [isOpen, onClose])
 
   // Check if any item in this menu is active
@@ -158,17 +165,22 @@ function MobileMenuDrawer({
   const pathname = usePathname()
   const [expandedSection, setExpandedSection] = useState<string | null>(null)
 
-  // Prevent body scroll when menu is open
+  // Prevent body scroll when menu is open; Escape closes it
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden'
     } else {
       document.body.style.overflow = ''
     }
+    function handleKey(event: KeyboardEvent) {
+      if (event.key === "Escape") onClose()
+    }
+    if (isOpen) document.addEventListener("keydown", handleKey)
     return () => {
       document.body.style.overflow = ''
+      document.removeEventListener("keydown", handleKey)
     }
-  }, [isOpen])
+  }, [isOpen, onClose])
 
   return (
     <AnimatePresence>
@@ -366,17 +378,31 @@ export const CinematicNavbar = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null)
   const [scrolled, setScrolled] = useState(false)
+  const [hidden, setHidden] = useState(false)
+  const lastYRef = useRef(0)
   const pathname = usePathname()
   const isHub = (pathname.startsWith("/hub") || pathname.startsWith("/track"))
 
-  // Handle scroll styling
+  // Scroll behavior: shadow once moving, and auto-hide on scroll-down /
+  // reveal on scroll-up past the hero — reading reclaims the top bar, and
+  // the moment intent reverses (scroll up = "I want to navigate") it's back.
   useEffect(() => {
     const handleScroll = () => {
-      setScrolled(window.scrollY > 50)
+      const y = window.scrollY
+      setScrolled(y > 50)
+      const delta = y - lastYRef.current
+      // Ignore sub-8px jitter (rubber-banding, precision trackpads).
+      if (Math.abs(delta) > 8) {
+        setHidden(delta > 0 && y > 160)
+        lastYRef.current = y
+      }
     }
     window.addEventListener("scroll", handleScroll, { passive: true })
     return () => window.removeEventListener("scroll", handleScroll)
   }, [])
+
+  // Never hide while a menu is open.
+  const navHidden = hidden && !mobileMenuOpen && !activeDropdown
 
   // Close dropdowns on route change (state reset during render, no effect needed)
   const [prevPathname, setPrevPathname] = useState(pathname)
@@ -392,9 +418,9 @@ export const CinematicNavbar = () => {
   return (
     <>
       <header
-        className={`fixed top-0 left-0 right-0 z-[100] border-b transition-shadow duration-300 ${
+        className={`fixed top-0 left-0 right-0 z-[100] border-b transition-[transform,box-shadow] duration-300 ${
           scrolled ? "border-steel-700 bg-navy-900/98 shadow-brand" : "border-steel-800/80 bg-navy-900/95"
-        } backdrop-blur-sm`}
+        } ${navHidden ? "-translate-y-full" : "translate-y-0"} backdrop-blur-sm`}
       >
         <div className="fleet-accent-line" />
         <nav className="container flex items-center justify-between gap-4 h-14 md:h-16 px-4">
