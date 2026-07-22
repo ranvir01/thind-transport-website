@@ -4,7 +4,7 @@ import "./globals.css"
 import { CinematicNavbar } from "@/components/cinematic/Navbar"
 import { ActiveBackground } from "@/components/ui/ActiveBackground"
 import { SmoothScroll } from "@/components/cinematic/SmoothScroll"
-import { CinematicFooter, CommandBar, MobileCommandBar } from "@/components/cinematic/Footer"
+import { CinematicFooter, MobileCommandBar } from "@/components/cinematic/Footer"
 import { BackToTop } from "@/components/shared/BackToTop"
 import { SkipLink } from "@/components/shared/SkipLink"
 import { COMPANY_INFO } from "@/lib/constants"
@@ -137,7 +137,6 @@ export default function RootLayout({
 
           {/* Footer */}
           <CinematicFooter />
-          <CommandBar />
           <MobileCommandBar />
 
           <BackToTop />

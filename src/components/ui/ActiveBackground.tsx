@@ -21,7 +21,7 @@ export const ActiveBackground = () => {
         }}
       />
       {/* Warm accent glows */}
-      <div className="accent-orb -top-32 -right-24 h-[28rem] w-[28rem] bg-orange-600/25 animate-pulse-glow" />
+      <div className="accent-orb -top-32 -right-24 h-[28rem] w-[28rem] bg-orange-600/20" />
       <div className="accent-orb top-1/3 -left-32 h-[24rem] w-[24rem] bg-gold-600/12" />
       <div className="accent-orb bottom-0 right-1/4 h-[22rem] w-[22rem] bg-orange-700/12" />
     </div>

@@ -1,5 +1,6 @@
 import { Metadata } from "next"
 import Link from "next/link"
+import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -54,15 +55,13 @@ export default function LoadOffPage() {
     <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-50">
       <PageBreadcrumb pageName="LoadOff TMS" category="Company" />
 
-      {/* Hero */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-[#17181B] via-[#101114] to-[#17181B] text-white py-20">
-        <div className="absolute -top-24 -right-24 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl" />
-        <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-violet-500/10 rounded-full blur-3xl" />
+      {/* Hero — product-first: the real Today screen is the pitch */}
+      <div className="relative overflow-hidden bg-gradient-to-b from-[#101114] to-[#17181B] text-white pt-20 pb-0">
         <div className="container relative">
           <div className="text-center max-w-4xl mx-auto">
-            <Badge className="mb-6 bg-white/10 backdrop-blur-md text-white border-white/20 px-4 py-2 text-sm font-bold">
+            <Badge className="mb-6 bg-white/10 text-white border-white/20 px-4 py-2 text-sm font-bold">
               <PlugZap className="h-4 w-4 mr-1.5" />
-              Built in-house. Runs our fleet every day.
+              Built in-house · Runs our fleet every day
             </Badge>
             <h1 className="text-5xl md:text-6xl font-black mb-6 leading-tight">
               LoadOff<span className="text-indigo-300">.</span> Take a load off.
@@ -84,6 +83,38 @@ export default function LoadOffPage() {
                 </Link>
               </Button>
             </div>
+          </div>
+          {/* The product itself, front and center */}
+          <div className="relative mx-auto mt-12 max-w-5xl">
+            <div className="overflow-hidden rounded-t-2xl border border-b-0 border-white/15 shadow-[0_-8px_60px_rgba(0,0,0,0.5)]">
+              <Image
+                src="/images/loadoff/today.png"
+                alt="The LoadOff Today command center — live loads, money owed, and what needs attention this morning"
+                width={1440}
+                height={900}
+                priority
+                className="w-full h-auto"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Honest engineering metrics — verifiable, not marketing numbers */}
+      <div className="border-b border-gray-200 bg-white">
+        <div className="container px-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 divide-x divide-gray-100">
+            {[
+              { value: "1,400+", label: "Automated tests" },
+              { value: "10", label: "Integration providers" },
+              { value: "6", label: "User roles served" },
+              { value: "Daily", label: "Real freight dispatched" },
+            ].map((stat) => (
+              <div key={stat.label} className="px-4 py-6 text-center">
+                <p className="text-3xl font-black text-gray-900">{stat.value}</p>
+                <p className="mt-1 text-xs font-bold uppercase tracking-wider text-gray-500">{stat.label}</p>
+              </div>
+            ))}
           </div>
         </div>
       </div>
@@ -195,6 +226,18 @@ export default function LoadOffPage() {
             </div>
           </div>
         </Card>
+
+        {/* Under the hood — for the technically curious */}
+        <div className="mb-16 rounded-2xl border border-gray-200 bg-white p-6 md:p-8 shadow-md">
+          <p className="text-center text-xs font-bold uppercase tracking-[0.2em] text-gray-400 mb-4">Under the hood</p>
+          <p className="mx-auto max-w-3xl text-center text-gray-600 leading-relaxed">
+            Next.js and Postgres, multi-tenant from the first table: every query carrier-scoped, money
+            kept in integer cents, credentials encrypted at rest, every change audit-logged. Verified
+            continuously by 1,400+ automated tests and browser-driven smoke suites before anything
+            reaches the trucks — engineering discipline borrowed from software companies much larger
+            than a 15-truck carrier, because drivers&apos; paychecks run through it.
+          </p>
+        </div>
 
         {/* CTA */}
         <Card className="p-10 bg-gradient-to-br from-[#17181B] via-[#101114] to-[#17181B] text-white text-center shadow-2xl">

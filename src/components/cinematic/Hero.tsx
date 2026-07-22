@@ -16,14 +16,13 @@ export const CinematicHero = () => {
       {/* Cinematic overlays for legibility + warmth */}
       <div className="absolute inset-0 z-[1] bg-gradient-to-r from-navy-900/95 via-navy-900/80 to-navy-900/45" />
       <div className="absolute inset-0 z-[1] bg-gradient-to-t from-navy-900 via-transparent to-navy-900/40" />
-      <div className="accent-orb top-10 right-10 h-80 w-80 bg-orange-600/30 z-[1] animate-pulse-glow" />
+      <div className="accent-orb top-10 right-10 h-80 w-80 bg-orange-600/25 z-[1]" />
 
       <div className="relative z-10 container mx-auto px-4 pt-24 pb-14 md:pt-28 md:pb-16">
         <div className="max-w-4xl hero-stagger">
           <div className="fleet-badge mb-5">
             <span className="relative flex h-2 w-2">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-orange-400 opacity-75" />
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-orange-500" />
+                            <span className="relative inline-flex h-2 w-2 rounded-full bg-orange-500" />
             </span>
             Family-run since {COMPANY_INFO.founded} · Kent, WA
           </div>

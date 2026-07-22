@@ -174,82 +174,8 @@ const FooterLinkSections = () => {
   )
 }
 
-// The floating command bar
-export const CommandBar = () => {
-  const pathname = usePathname()
-
-  if ((pathname.startsWith("/hub") || pathname.startsWith("/track"))) return null
-
-  const navItems = [
-    { name: 'Routes', href: '/routes' },
-    { name: 'Pay', href: '/pay-rates' },
-    { name: 'Login', href: '/driver/login' }
-  ]
-  
-  return (
-    <motion.div 
-        initial={{ y: 100 }}
-        animate={{ y: 0 }}
-        transition={{ delay: 1, type: "spring", stiffness: 200, damping: 20 }}
-        className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[90] hidden lg:flex items-center gap-2 p-2 bg-[#17181B]/90 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl ring-1 ring-white/5"
-    >
-        <div className="flex items-center gap-4 px-4 border-r border-white/10">
-            <div className="flex items-center gap-2">
-                <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
-                </span>
-                <span className="text-[10px] font-mono text-white/80 uppercase tracking-widest">USDOT #{COMPANY_INFO.dot}</span>
-            </div>
-        </div>
-
-        <nav className="flex items-center gap-1 px-2">
-            <Link 
-                href="/apply" 
-                className={`px-4 py-2 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all hover:scale-105 active:scale-95 shadow-[0_0_10px_rgba(249,115,22,0.4)]
-                  ${pathname === '/apply' 
-                    ? 'bg-orange-700 text-white ring-2 ring-orange-400/50' 
-                    : 'bg-orange-600 hover:bg-orange-700 text-white'
-                  }
-                `}
-                data-cursor="APPLY"
-            >
-                Apply Now
-            </Link>
-            {navItems.map((item) => {
-              const isActive = pathname === item.href || pathname.startsWith(item.href + '/')
-              return (
-                <Link 
-                    key={item.name}
-                    href={item.href} 
-                    className={`px-4 py-2 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all hover:scale-105 active:scale-95
-                      ${isActive 
-                        ? 'bg-white/20 text-white ring-1 ring-white/30' 
-                        : 'hover:bg-white/10 text-white/80 hover:text-white'
-                      }
-                    `}
-                    data-cursor="VIEW"
-                >
-                    {item.name}
-                </Link>
-              )
-            })}
-        </nav>
-
-        <div className="pl-2 border-l border-white/10">
-            <a 
-              href={`tel:${COMPANY_INFO.phoneFormatted}`} 
-              className="group flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-800 rounded-xl text-[10px] font-black text-white uppercase tracking-widest shadow-[0_0_20px_rgba(224, 57, 47, 0.3)] hover:shadow-[0_0_30px_rgba(224, 57, 47, 0.5)] transition-all hover:-translate-y-0.5 active:translate-y-0" 
-              data-cursor="CALL"
-            >
-                <Phone className="w-3 h-3" />
-                <span>Recruiting</span>
-                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="group-hover:translate-x-1 transition-transform"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
-            </a>
-        </div>
-    </motion.div>
-  )
-}
+// (Desktop floating command bar removed: it duplicated the navbar's Apply/
+// Routes/Pay/Login + phone and floated over content on every page.)
 
 export const MobileCommandBar = () => {
   const pathname = usePathname()
@@ -278,10 +204,6 @@ export const MobileCommandBar = () => {
             href="/apply"
             className="flex-[1.4] flex items-center justify-center gap-2 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 active:from-orange-700 active:to-orange-800 text-white font-bold py-3.5 px-3 rounded-xl transition-all shadow-lg shadow-orange-500/30 active:scale-[0.98]"
           >
-             <span className="relative flex h-2 w-2">
-               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
-               <span className="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
-             </span>
              <span className="text-sm">Apply Now</span>
           </Link>
        </div>
