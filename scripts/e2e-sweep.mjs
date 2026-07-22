@@ -21,7 +21,7 @@
 import pg from "pg"
 import { mkdirSync } from "node:fs"
 import path from "node:path"
-import { launchBrowser, BASE, sleep, login } from "./e2e-lib.mjs"
+import { launchBrowser, BASE, login, waitForStableText } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-sweep"
 mkdirSync(OUT, { recursive: true })
@@ -148,7 +148,7 @@ async function sweep(page, pages, prefix, width) {
   const problems = []
   for (const [name, url, anchor] of pages) {
     await page.goto(`${BASE}${url}`, { waitUntil: "networkidle2" })
-    await sleep(600)
+    await waitForStableText(page)
     if (page.url().includes("/hub/login")) {
       problems.push(`${name}: bounced to login at ${width}px (session lost)`)
     } else {
