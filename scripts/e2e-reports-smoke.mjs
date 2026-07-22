@@ -97,7 +97,7 @@ async function main() {
       hasLoadedDeadhead: text.includes("loaded vs. deadhead"),
       hasOperatingCost: text.includes("operating cost / mi"),
       hasRevenuePerLoaded: text.includes("revenue / loaded mi"),
-      hasLoadedShare: /loaded\s+\d+%/.test(text),
+      hasLoadedShare: /loaded\s+\d+(\.\d+)?%/.test(text),
       revenueBarCount: document.querySelectorAll(".bg-accent.rounded-t-md").length,
       arLegendCount: [...document.querySelectorAll("span.h-2.w-2.rounded-sm")].filter((el) =>
         /current|1-30|31-60|61-90|90\+/i.test(el.parentElement?.textContent ?? "")
