@@ -143,7 +143,7 @@ function LoadedVsDeadheadPanel({ pnl }: { pnl: Awaited<ReturnType<typeof truckPn
   )
   const kpis = computeFleetKpis({ revenueCents, operatingCostCents, loadedMiles, deadheadMiles })
   const perMile = (c: number | null) => (c == null ? "—" : `$${(c / 100).toFixed(2)}`)
-  const loadedPct = kpis.totalMiles > 0 ? Math.round((kpis.loadedMiles / kpis.totalMiles) * 100) : null
+  const loadedPct = kpis.loadedPct
 
   return (
     <div>

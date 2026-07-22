@@ -35,6 +35,8 @@ export interface FleetKpis {
   marginPct: number | null
   /** Deadhead share = deadhead / total miles, as a percent. */
   deadheadPct: number | null
+  /** Loaded share = loaded / total miles, as a percent. Complementary to deadheadPct (sums to 100). */
+  loadedPct: number | null
 }
 
 const round1 = (n: number) => Math.round(n * 10) / 10
@@ -59,5 +61,8 @@ export function computeFleetKpis(input: FleetKpiInput): FleetKpis {
     operatingRatioPct: revenueCents > 0 ? round1((operatingCostCents / revenueCents) * 100) : null,
     marginPct: revenueCents > 0 ? round1((netCents / revenueCents) * 100) : null,
     deadheadPct: totalMiles > 0 ? round1((deadheadMiles / totalMiles) * 100) : null,
+    // Derived from the unrounded deadhead share so the two always sum to 100 —
+    // rounding loadedMiles/totalMiles independently could land on 93 + 7.4 = 100.4.
+    loadedPct: totalMiles > 0 ? round1(100 - (deadheadMiles / totalMiles) * 100) : null,
   }
 }
