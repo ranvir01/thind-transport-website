@@ -1,7 +1,8 @@
 # Docs mailbox (IMAP) — scouting notes
 
-Researched: 2026-07-06; refreshed 2026-07-18 (code-drift + provider-policy recheck — see
-"2026-07-18 recheck" notes inline). Status: **built adapter, live** in `src/lib/hub/mailbox.ts`
+Researched: 2026-07-06; refreshed 2026-07-18 (code-drift + provider-policy recheck), 2026-07-22
+(Workspace app-password carve-out resolved — see "2026-07-22 pass" notes inline). Status:
+**built adapter, live** in `src/lib/hub/mailbox.ts`
 (`pollDocsMailbox`), wired to the `docs-mailbox` cron job. Not a vendor SDK — it's a generic
 IMAP client (`imapflow` + `mailparser`) pointed at whatever inbox the carrier's office already
 uses. This doc covers the two mailbox providers row 2 of `creds-shopping-list.md` names
@@ -79,16 +80,25 @@ writeups; the Microsoft Learn page itself still 403s this scout's fetches).
   Security → App passwords) goes in our `password` field — real basic auth over IMAP that
   Google still honors for app passwords specifically. Multiple 2026 setup guides confirm
   app passwords remain the supported IMAP path for personal Gmail.
-- **Google Workspace accounts — password path now contested (new 2026-07-18 finding):**
+- **Google Workspace accounts — password path (2026-07-22 update, carve-out now confirmed):**
   Google's less-secure-apps retirement finished rolling out to Workspace **May 1, 2025**
-  (OAuth enforcement for CalDAV/CardDAV/IMAP/POP/SMTP began March 14, 2025). Google's own
-  wind-down announcement carved out app passwords as the exception, but several 2025–26
-  migration guides report that Workspace accounts now reject IMAP logins with app passwords
-  too, and Google's canonical help pages (`support.google.com/a/answer/14114704`,
-  `knowledge.workspace.google.com`) return HTTP 403 to this scout, so the carve-out can't be
-  confirmed from source. **Treat Workspace app passwords as unreliable** — the shipped
-  `serviceAccountKey` OAuth2 path is the dependable Workspace route, and the settings-page
-  label already steers there ("App password (Gmail only — M365/Workspace use OAuth2 below)").
+  (OAuth enforcement for CalDAV/CardDAV/IMAP/POP/SMTP began March 14, 2025) — that shutoff
+  was scoped to **raw username+password**, not app passwords. This pass found five
+  independent 2026-dated how-to sources (InfoSwitch, LeadsMonky, XpectoIT, Systron, plus the
+  Domain India KB) converging on the same claim: **app passwords for Workspace IMAP still
+  work in 2026**, same mechanism as consumer Gmail — 2-Step Verification, then a generated
+  16-character secret. That resolves the 2026-07-18 "contested/unconfirmed" finding. One new
+  wrinkle: whether it works for a given mailbox now depends on a **Workspace-admin-controlled
+  toggle** — Admin console → Security → Authentication → 2-Step Verification →
+  *"Allow users to generate app passwords"* — that can be turned off org-wide independent of
+  the IMAP-access toggle already documented below. A carrier whose Workspace admin has that
+  setting off gets an app-password failure that looks identical to the pre-2025-carve-out
+  failure; the shipped `serviceAccountKey` OAuth2 path is unaffected by this toggle either
+  way, so it remains the more robust default recommendation, but "unreliable" was the wrong
+  word — downgrading this from a real gap to a documented admin-config caveat. Every primary
+  Google page on this topic (`support.google.com/a/answer/14114704`,
+  `knowledge.workspace.google.com/...`) still 403s this scout — search-excerpt confirmation
+  only, same wall as every pass since 2026-07-18.
 - IMAP is on by default for every Google account since January 2025 (the old admin on/off
   toggle is gone), so there's no "enable IMAP first" step to document anymore.
 - Google Workspace admins can still block IMAP org-wide via Admin Console → Apps → Google
@@ -137,11 +147,23 @@ step (Gmail) or, longer term, an Entra ID app registration (Office 365, once OAu
   2,500/500 MB daily IMAP bandwidth caps, 15-connection cap, May 2025 OAuth2 enforcement date
   and app-password carve-out, January 2025 IMAP-always-on change.
 - **Not independently verified**: current Microsoft 365 IMAP-specific throttling numbers
-  (unpublished; low risk at daily cadence), and — new 2026-07-18 — whether Google Workspace's
-  app-password carve-out survived the May 2025 less-secure-apps shutoff (conflicting
-  secondary sources, primary pages 403-blocked; doesn't matter operationally since the
-  Workspace OAuth2 path shipped and the UI steers Workspace users to it).
+  (unpublished; low risk at daily cadence), and the exact admin-console path/label for the
+  Workspace app-password toggle (secondary sources agree on "Security → Authentication →
+  2-Step Verification → Allow users to generate app passwords" but Google's own admin-help
+  pages are 403-walled to this scout, so the label isn't source-confirmed).
+- **Resolved this pass (2026-07-22)**: whether Google Workspace's app-password carve-out
+  survived the May 2025 less-secure-apps shutoff — five independent 2026-dated secondary
+  sources now agree it did (app passwords still work for Workspace IMAP, gated by a
+  separate admin toggle, not by the 2025 shutoff itself). SMTP AUTH basic-auth retirement
+  timelines for Exchange Online are still in flux across sources (phased March–April 2026 per
+  one source, "disabled by default late 2026 / removed H2 2027" per another) but remain
+  scoped to **SMTP AUTH only** — this adapter only reads via IMAP and never sends, so the
+  exact date is not adapter-relevant, same conclusion as every prior pass. Gmail's 2,500 MB
+  download / 500 MB upload daily IMAP bandwidth caps reconfirmed unchanged.
 
 Sources: [Deprecation of Basic authentication in Exchange Online — Microsoft Learn](https://learn.microsoft.com/en-us/exchange/clients-and-mobile-in-exchange-online/deprecation-of-basic-authentication-exchange-online) (fetch blocked, cited via secondary coverage), [Gmail Help — Sign in with app passwords](https://support.google.com/mail/answer/185833), [Google Workspace Admin Help — Gmail bandwidth limits](https://support.google.com/a/answer/1071518), [Transition from less secure apps to OAuth — Google Workspace Help](https://knowledge.workspace.google.com/admin/sync/transition-from-less-secure-apps-to-oauth), [Gmail API Limits in 2026 — Unipile](https://www.unipile.com/gmail-api-limits/).
 
 2026-07-18 recheck sources: [Winding down Google Sync and Less Secure Apps support — Google Workspace Updates](https://workspaceupdates.googleblog.com/2023/09/winding-down-google-sync-and-less-secure-apps-support.html) (403 to this scout; app-password exception quoted via secondary coverage), [Transition from less secure apps to OAuth — Google Workspace Admin Help](https://support.google.com/a/answer/14114704) (403), [How to Create a Gmail App Password in 2026 — MailJerry](https://www.mailjerry.com/create-gmail-app-password), [Gmail OAuth changes 2026 — Mailbird](https://www.getmailbird.com/gmail-oauth-authentication-changes-user-guide/), [Microsoft modern-auth enforcement 2026 — Mailbird](https://www.getmailbird.com/microsoft-modern-authentication-enforcement-email-guide/), [OAuth2 client-credential flow with Office365 IMAP — Limilabs](https://www.limilabs.com/blog/oauth2-client-credential-flow-office365-exchange-imap-pop3-smtp), [Authenticate an IMAP, POP or SMTP connection using OAuth — Microsoft Learn](https://learn.microsoft.com/en-us/exchange/client-developer/legacy-protocols/how-to-authenticate-an-imap-pop-smtp-application-by-using-oauth) (403).
+
+2026-07-22 pass sources (all Google/Microsoft primary pages 403 to this scout — search-excerpt
+confirmation only): [App Passwords and OAuth 2.0 in Google Workspace — Domain India KB](https://www.domainindia.com/client/knowledgebase/743/How-to-Use-App-Passwords-and-OAuth-2.0-in-Google-Workspace-A-Complete-Setup-Guide.html), [Google Workspace: create an app password to access Gmail over IMAP — InfoSwitch](https://infoswitch.fr/en/blog/google-workspace-app-password-imap), [Google Workspace IMAP Settings 2026 — LeadsMonky](https://leadsmonky.com/google-workspace-imap-settings/), [Setting Up Google Workspace for Third-Party Email Clients Using App Passwords — XpectoIT](https://www.xpectoitsolutions.com/setting-up-google-workspace-for-thirdparty-email-clients-using-app-passwords), [How to Generate App Passwords for Google Workspace — Systron Micronix](https://orders.systron.net/knowledgebase/148/How-to-Generate-App-Passwords-for-Google-Workspace.html), [Exchange Online SMTP AUTH Basic Authentication: 2026 Default Disable and 2027 Removal Timeline — Windows Forum](https://windowsforum.com/threads/exchange-online-smtp-auth-basic-authentication-2026-default-disable-and-2027-removal-timeline.399158/), [End of Basic Authentication for SMTP in Exchange Online — itpro-tips](https://itpro-tips.com/end-of-life-basic-authentication-smtp-exchange-online/) (fetch 403'd, cited via search excerpt).

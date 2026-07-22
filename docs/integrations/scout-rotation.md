@@ -10,7 +10,7 @@ as an urgent `Backlog:` item.
 | Provider | Code status | Credential fields | Adapter file | Research doc | Last researched |
 |---|---|---|---|---|---|
 | `terminal` | **Built** — live TSP aggregator (vehicles + HOS); cron daily 12:00 UTC (doc reconciled 2026-07-19 — the stale "30-min cron" claim is fixed). 2026-07-19 pass: no breaking change (auth + models match adapter); sandbox is dashboard-self-serve (secret + publishable key, `link.sandbox.withterminal.com`); `GET /connections/current` found as a cheap credential health-check; official Link npm SDKs exist; docs host now network-policy-blocked (proxy CONNECT 403) so numeric rate limits remain unread | `apiKey`, `connectionToken` (+ `TERMINAL_API_BASE` env, optional) | `src/lib/hub/telematics.ts` | [`terminal.md`](./terminal.md) | 2026-07-19 |
-| `mailbox` | **Built** — generic IMAP client, not a vendor SDK. Three auth paths live since 2026-07-11: Gmail app password, M365 client-credentials OAuth2, Google Workspace service-account OAuth2 (XOAUTH2). Cron is daily 12:30 UTC, not hourly as older notes said. Workspace app-password reliability contested — steer Workspace to OAuth2 (see doc) | `user`, `password` (Gmail only), `tenantId`/`clientId`/`clientSecret` (M365), `serviceAccountKey` (Workspace), `host`, `port`, `folder` | `src/lib/hub/mailbox.ts` + `mailbox-oauth.ts` | [`mailbox.md`](./mailbox.md) | 2026-07-18 |
+| `mailbox` | **Built** — generic IMAP client, not a vendor SDK. Three auth paths live since 2026-07-11: Gmail app password, M365 client-credentials OAuth2, Google Workspace service-account OAuth2 (XOAUTH2). Cron is daily 12:30 UTC, not hourly as older notes said. 2026-07-22 pass: no adapter-breaking change; resolved the 2026-07-18 "Workspace app-password reliability contested" finding — five independent 2026 sources confirm Workspace app passwords still work for IMAP post-May-2025 shutoff, gated by a separate admin toggle (Security → Authentication → 2-Step Verification → "Allow users to generate app passwords"), not by the less-secure-apps retirement itself. The shipped `serviceAccountKey` OAuth2 path remains the recommended default regardless | `user`, `password` (Gmail only), `tenantId`/`clientId`/`clientSecret` (M365), `serviceAccountKey` (Workspace), `host`, `port`, `folder` | `src/lib/hub/mailbox.ts` + `mailbox-oauth.ts` | [`mailbox.md`](./mailbox.md) | 2026-07-22 |
 | `fmcsa` (adjacent, free, not in `IntegrationProvider` union — no stored creds) | **Built** — QCMobile broker vetting. 2026-07-19 pass: no breaking change (webKey query-param auth + login.gov registration unchanged); rate limits still unpublished; `mobile.fmcsa.dot.gov` now network-policy-blocked from agent environments (CONNECT 403) — prod's daily `fmcsa-recheck` cron is the live-service canary | `FMCSA_WEBKEY` env | `src/lib/hub/vetting.ts` | [`fmcsa.md`](./fmcsa.md) | 2026-07-19 |
 | `eia` (adjacent, free, not in `IntegrationProvider` union) | **Built** — diesel price benchmark. 2026-07-19 pass: no breaking change (v2 current, series `EMD_EPD2D_PTE_NUS_DPG` alive into 2026); two doc corrections — EIA DOES publish throttles (~9,000 req/hr sustained, 5 req/s burst, temporary auto-suspension) and `DEMO_KEY` is NOT supported (api.data.gov convention, was never EIA's) | `EIA_API_KEY` env | `src/lib/hub/fuel.ts` | [`eia.md`](./eia.md) | 2026-07-19 |
 | `truckercloud` | **Built** — adapter shipped, drop-in second aggregator to Terminal. 2026-07-20 pass (5th): no adapter-breaking change; every `truckercloud.com`/zendesk/trade-press page still 403 to this env, so the OAuth2 client-credentials assumption stays unverified (anonymous scouting now exhausted — human outreach only). One correction: Carrier TMS is still an explicitly marketed solution, so the "insurer pivot forecloses carrier access → redirect to Axle" worry is downgraded from likely to unlikely. Provider count now marketed as "175+ ELDs and Cameras". Stale `"Apollo API"` code comment in `telematics.ts` flagged as an integrations-lane Backlog item | `apiKey`, `clientId`/`clientSecret` | `src/lib/hub/telematics.ts` (`truckerCloudSource`) | [`truckercloud.md`](./truckercloud.md) | 2026-07-20 |
@@ -37,8 +37,24 @@ integrations that were never in scope of the vendor shopping list: both `fmcsa.m
    notes before a lane builds the adapter.
 3. One provider per cycle. Update the "Last researched" date and doc link when done.
 
-Next up by this rule: `mailbox`, last researched 2026-07-18 (now the sole oldest built-adapter
-doc after `wex.md` was refreshed 2026-07-22, see below). The 2026-07-22 `wex` pass found no
+Next up by this rule: `terminal`, `fmcsa`, and `eia` are now tied oldest at 2026-07-19 (`mailbox.md`
+was refreshed 2026-07-22, see below) — take `terminal` first (live built vendor adapter, higher
+production stakes than the two free/adjacent government APIs), or `fmcsa`+`eia` together in one
+cycle as the previous 2026-07-19 pass did. The 2026-07-22 `mailbox` pass found no adapter-breaking
+change: the three auth paths, daily 12:30 UTC cron, and 15 MB attachment / 25-message-per-run caps
+in `mailbox.ts`/`mailbox-oauth.ts` are all untouched. It resolved the one open question from
+2026-07-18 — whether Google Workspace's app-password carve-out survived the May 2025
+less-secure-apps shutoff. Five independent 2026-dated secondary sources (Domain India, InfoSwitch,
+LeadsMonky, XpectoIT, Systron) now agree it did: Workspace app passwords for IMAP still work,
+gated by a distinct admin toggle (Security → Authentication → 2-Step Verification → "Allow users
+to generate app passwords") rather than by the 2025 shutoff. Operationally this doesn't change the
+adapter or the settings-page copy — the shipped `serviceAccountKey` OAuth2 path stays the
+recommended default for Workspace either way — it only downgrades "unreliable" to "admin-toggle-
+dependent" in the doc. Also reconfirmed Gmail's 2,500 MB/500 MB daily IMAP bandwidth caps
+unchanged, and noted Exchange Online's SMTP-AUTH basic-auth retirement (dates still inconsistent
+across sources, phased through 2026) remains SMTP-only and so stays moot for an IMAP-only reader
+adapter. Every Google/Microsoft primary page 403-walled this scout again — search-excerpt
+confirmation only, same wall as every other provider in this rotation. The 2026-07-22 `wex` pass found no
 adapter-breaking change — the file-drop webhook path (`processWexEvent` + `normalizeWexRecord`,
 the only thing `wexSource()` actually runs) is untouched. Four finds, none urgent: (1) two new
 integrator sources (Samsara, Azuga) document WEX returning SFTP credentials in 2–4 business
