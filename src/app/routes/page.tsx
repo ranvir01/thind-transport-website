@@ -246,7 +246,7 @@ export default function RoutesPage() {
             <div className="mb-6 flex flex-col justify-center gap-4 sm:flex-row">
               <Button
                 size="lg"
-                className="bg-orange font-bold text-base text-white hover:bg-orange-600"
+                className="bg-orange-600 font-bold text-base text-white hover:bg-orange-600"
                 asChild
               >
                 <Link href="/apply">

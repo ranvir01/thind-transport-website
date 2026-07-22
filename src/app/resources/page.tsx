@@ -422,8 +422,10 @@ export default function ResourcesPage() {
                 <Phone className="h-5 w-5 text-red-600" />
               </div>
               <div>
-                <p className="text-sm font-bold text-red-800">24/7 Emergency Dispatch</p>
-                <p className="text-xs text-red-600">Roadside assistance, accidents, breakdowns</p>
+                {/* text-red-800/600 read as dark-on-dark: .brand-page-shell force-darkens
+                    the bg-red-50 bar but does not flip colored text — use light reds. */}
+                <p className="text-sm font-bold text-red-200">24/7 Emergency Dispatch</p>
+                <p className="text-xs text-red-300">Roadside assistance, accidents, breakdowns</p>
               </div>
             </div>
             <a 
@@ -520,7 +522,7 @@ export default function ResourcesPage() {
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link
                 href="/apply"
-                className="px-8 py-4 bg-orange hover:bg-orange-600 text-white font-bold rounded-xl transition-colors"
+                className="px-8 py-4 bg-orange-600 hover:bg-orange-500 text-white font-bold rounded-xl transition-colors"
               >
                 Apply to Drive With Us
               </Link>

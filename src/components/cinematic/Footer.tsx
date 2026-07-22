@@ -76,7 +76,7 @@ const FooterLinkSections = () => {
                   href={link.href} 
                   className={`${link.highlight ? 'text-steel-100 font-semibold' : 'text-steel-300'} hover:text-orange-500 transition-colors flex items-center gap-2 group py-1`}
                 >
-                  <span className={`w-1 h-1 rounded-full ${link.highlight ? 'bg-orange-500' : 'bg-zinc-700'} group-hover:bg-orange-500 transition-all`} />
+                  <span className={`w-1 h-1 rounded-full ${link.highlight ? 'bg-orange-600' : 'bg-zinc-700'} group-hover:bg-orange-500 transition-all`} />
                   <span>{link.label}</span>
                 </Link>
               </li>
@@ -92,7 +92,7 @@ const FooterLinkSections = () => {
                 href={link.href} 
                 className={`${link.highlight ? 'text-zinc-300 font-semibold' : 'text-zinc-400'} hover:text-orange-500 transition-colors flex items-center gap-2 group`}
               >
-                <span className={`w-1 h-1 rounded-full ${link.highlight ? 'bg-orange-500' : 'bg-zinc-700'} group-hover:bg-orange-500 group-hover:scale-150 transition-all`} />
+                <span className={`w-1 h-1 rounded-full ${link.highlight ? 'bg-orange-600' : 'bg-zinc-700'} group-hover:bg-orange-500 group-hover:scale-150 transition-all`} />
                 <span className="group-hover:translate-x-1 transition-transform">{link.label}</span>
               </Link>
             </li>

@@ -145,7 +145,7 @@ export default function VeteransPage() {
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link
                 href="/apply"
-                className="px-8 py-4 bg-orange hover:bg-orange-600 text-white font-bold rounded-xl transition-colors"
+                className="px-8 py-4 bg-orange-600 hover:bg-orange-500 text-white font-bold rounded-xl transition-colors"
               >
                 Apply Now — Veteran Priority
               </Link>
@@ -224,7 +224,7 @@ export default function VeteransPage() {
       <section className="py-16 bg-gradient-to-b from-gray-50 to-white">
         <div className="container">
           <div className="text-center mb-12">
-            <Badge className="mb-4 bg-green-600 text-white px-4 py-2 text-sm font-bold">
+            <Badge className="mb-4 bg-green-700 text-white px-4 py-2 text-sm font-bold">
               <Target className="h-4 w-4 mr-1.5 inline" />
               Skills Translation
             </Badge>
@@ -241,7 +241,7 @@ export default function VeteransPage() {
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
-                    <tr className="bg-orange text-white">
+                    <tr className="bg-orange-600 text-white">
                       <th className="px-6 py-4 text-left font-bold">Military Skill</th>
                       <th className="px-6 py-4 text-left font-bold">Trucking Application</th>
                     </tr>
@@ -270,7 +270,7 @@ export default function VeteransPage() {
       <section className="py-16">
         <div className="container">
           <div className="text-center mb-12">
-            <Badge className="mb-4 bg-orange text-white px-4 py-2 text-sm font-bold">
+            <Badge className="mb-4 bg-orange-600 text-white px-4 py-2 text-sm font-bold">
               <GraduationCap className="h-4 w-4 mr-1.5 inline" />
               CDL Training Resources
             </Badge>
@@ -312,7 +312,7 @@ export default function VeteransPage() {
       <section className="py-16">
         <div className="container">
           <div className="text-center mb-12">
-            <Badge className="mb-4 bg-green-600 text-white px-4 py-2 text-sm font-bold">
+            <Badge className="mb-4 bg-green-700 text-white px-4 py-2 text-sm font-bold">
               <Briefcase className="h-4 w-4 mr-1.5 inline" />
               Open Positions
             </Badge>
@@ -413,7 +413,7 @@ export default function VeteransPage() {
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link
                 href="/apply"
-                className="px-8 py-4 bg-orange hover:bg-orange-600 text-white font-bold rounded-xl transition-colors"
+                className="px-8 py-4 bg-orange-600 hover:bg-orange-500 text-white font-bold rounded-xl transition-colors"
               >
                 Apply Now — Veteran Priority Processing
               </Link>

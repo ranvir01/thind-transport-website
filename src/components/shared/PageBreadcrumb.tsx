@@ -19,7 +19,7 @@ export function PageBreadcrumb({ pageName, category, parentPage, className = "" 
       <div className="container">
         <ol className="flex items-center justify-center gap-2 text-xs">
           {/* Category */}
-          <li className="text-orange font-display font-semibold uppercase tracking-[0.18em]">
+          <li className="text-orange-400 font-display font-semibold uppercase tracking-[0.18em]">
             {category}
           </li>
           

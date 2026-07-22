@@ -43,7 +43,7 @@ export default function PayBreakdownPage() {
         />
         <div className="absolute inset-0 bg-gradient-to-b from-navy/70 via-navy/55 to-navy/95" />
         <div className="container relative mx-auto max-w-4xl px-4">
-          <p className="mb-4 text-xs font-bold uppercase tracking-[0.3em] text-orange">Owner Operators</p>
+          <p className="mb-4 text-xs font-bold uppercase tracking-[0.3em] text-orange-400">Owner Operators</p>
           <h1 className="mb-6 text-4xl font-black leading-tight md:text-6xl">
             The 90% Split, <span className="text-orange">Explained</span>
           </h1>
@@ -147,7 +147,7 @@ export default function PayBreakdownPage() {
           <div className="flex flex-col gap-4 sm:flex-row">
             <Link
               href="/apply"
-              className="inline-flex items-center justify-center gap-2 rounded-xl bg-orange px-8 py-4 font-bold text-white transition-colors hover:bg-orange-600"
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-orange-600 px-8 py-4 font-bold text-white transition-colors hover:bg-orange-600"
             >
               Apply Now
               <ArrowRight className="h-5 w-5" />

@@ -42,7 +42,7 @@ export function DispatchBand() {
             <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
               <a
                 href={`tel:${COMPANY_INFO.phoneFormatted}`}
-                className="group inline-flex items-center justify-center gap-2 rounded-fleet bg-orange px-7 py-3.5 font-display text-sm font-bold uppercase tracking-wide text-white shadow-cta transition-all hover:bg-orange-400 hover:shadow-cta-hover md:text-base"
+                className="group inline-flex items-center justify-center gap-2 rounded-fleet bg-orange-600 px-7 py-3.5 font-display text-sm font-bold uppercase tracking-wide text-white shadow-cta transition-all hover:bg-orange-400 hover:shadow-cta-hover md:text-base"
               >
                 <Phone className="h-5 w-5 transition-transform group-hover:rotate-12" />
                 Talk to dispatch: {COMPANY_INFO.phone}

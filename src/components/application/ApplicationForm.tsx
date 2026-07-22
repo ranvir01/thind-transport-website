@@ -290,7 +290,7 @@ export function ApplicationForm() {
                    nextStep()
                  }
               }}
-              className="flex-1 h-12 bg-orange-500 hover:bg-orange-600 text-white font-bold text-base rounded-xl shadow-lg shadow-orange-500/30"
+              className="flex-1 h-12 bg-orange-600 hover:bg-orange-500 text-white font-bold text-base rounded-xl shadow-lg shadow-orange-500/30"
             >
               {step === 4 ? "Submit Application" : "Continue Application"}
               <ChevronRight className="ml-2 h-5 w-5" />
@@ -363,7 +363,7 @@ export function ApplicationForm() {
                     </div>
                     <div className={cn(
                       "ml-4 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all",
-                      watchedFields.driverType === "owner-operator-otr" ? "border-orange-500 bg-orange-500" : "border-gray-300"
+                      watchedFields.driverType === "owner-operator-otr" ? "border-orange-500 bg-orange-600" : "border-gray-300"
                     )}>
                       {watchedFields.driverType === "owner-operator-otr" && <Check className="w-4 h-4 text-white" />}
                     </div>
@@ -383,7 +383,7 @@ export function ApplicationForm() {
                     </div>
                     <div className={cn(
                       "ml-4 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all",
-                      watchedFields.driverType === "regional-company-driver" ? "border-orange-500 bg-orange-500" : "border-gray-300"
+                      watchedFields.driverType === "regional-company-driver" ? "border-orange-500 bg-orange-600" : "border-gray-300"
                     )}>
                       {watchedFields.driverType === "regional-company-driver" && <Check className="w-4 h-4 text-white" />}
                     </div>
@@ -399,7 +399,7 @@ export function ApplicationForm() {
                     {["Class A", "Class B", "Class C"].map((cls) => (
                       <label key={cls} className={cn(
                         "flex items-center justify-center p-3 border-2 rounded-xl cursor-pointer transition-all font-bold text-center",
-                        watchedFields.cdlClass === cls ? "border-orange-500 bg-orange-500 text-white shadow-md transform scale-[1.02]" : "border-gray-200 bg-white text-gray-700 hover:border-orange-300 hover:bg-orange-50",
+                        watchedFields.cdlClass === cls ? "border-orange-500 bg-orange-600 text-white shadow-md transform scale-[1.02]" : "border-gray-200 bg-white text-gray-700 hover:border-orange-300 hover:bg-orange-50",
                         errors.cdlClass ? "border-red-500" : ""
                       )}>
                         <input type="radio" {...register("cdlClass")} value={cls} className="sr-only" />
@@ -438,7 +438,7 @@ export function ApplicationForm() {
                 <Button 
                   type="button" 
                   onClick={nextStep} 
-                  className="w-full h-14 text-lg font-bold bg-orange-500 hover:bg-orange-600 text-white shadow-lg shadow-orange-500/30 transition-all hover:shadow-xl hover:shadow-orange-500/40 hover:-translate-y-0.5"
+                  className="w-full h-14 text-lg font-bold bg-orange-600 hover:bg-orange-500 text-white shadow-lg shadow-orange-500/30 transition-all hover:shadow-xl hover:shadow-orange-500/40 hover:-translate-y-0.5"
                   disabled={isCapturingLead}
                 >
                     CHECK MY ELIGIBILITY <ChevronRight className="ml-2 h-5 w-5" />
@@ -522,7 +522,7 @@ export function ApplicationForm() {
                   <Button 
                     type="button" 
                     onClick={nextStep} 
-                    className="flex-[2] h-14 text-lg font-bold bg-orange-500 hover:bg-orange-600 text-white shadow-lg shadow-orange-500/30 transition-all hover:shadow-xl hover:shadow-orange-500/40 hover:-translate-y-0.5"
+                    className="flex-[2] h-14 text-lg font-bold bg-orange-600 hover:bg-orange-500 text-white shadow-lg shadow-orange-500/30 transition-all hover:shadow-xl hover:shadow-orange-500/40 hover:-translate-y-0.5"
                     disabled={isCapturingLead}
                   >
                     {isCapturingLead ? (
@@ -644,7 +644,7 @@ export function ApplicationForm() {
                 <Button type="button" variant="outline" onClick={prevStep} className="flex-1 h-12 border-gray-300 text-gray-700 hover:bg-gray-50">
                   <ArrowLeft className="mr-2 h-4 w-4" /> Back
                 </Button>
-                <Button type="button" onClick={nextStep} className="flex-[2] h-14 text-lg font-bold bg-orange-500 hover:bg-orange-600 text-white shadow-lg shadow-orange-500/30 transition-all hover:shadow-xl hover:shadow-orange-500/40 hover:-translate-y-0.5">
+                <Button type="button" onClick={nextStep} className="flex-[2] h-14 text-lg font-bold bg-orange-600 hover:bg-orange-500 text-white shadow-lg shadow-orange-500/30 transition-all hover:shadow-xl hover:shadow-orange-500/40 hover:-translate-y-0.5">
                   CONTINUE <ChevronRight className="ml-2 h-5 w-5" />
                 </Button>
               </div>
@@ -797,7 +797,7 @@ export function ApplicationForm() {
                 </p>
                 <Button
                   asChild
-                  className="w-full sm:w-auto bg-orange-500 hover:bg-orange-600 text-white font-bold"
+                  className="w-full sm:w-auto bg-orange-600 hover:bg-orange-500 text-white font-bold"
                 >
                   <Link href={`/driver/register?email=${encodeURIComponent(getValues("email") || "")}`}>
                     Create Portal Account
@@ -814,7 +814,7 @@ export function ApplicationForm() {
                 </h3>
                 <div className="space-y-4">
                   <div className="flex gap-3 items-center">
-                    <div className="flex-shrink-0 w-10 h-10 bg-orange-500 text-white rounded-full flex items-center justify-center">
+                    <div className="flex-shrink-0 w-10 h-10 bg-orange-600 text-white rounded-full flex items-center justify-center">
                       <Phone className="h-5 w-5" />
                     </div>
                     <div>
@@ -839,7 +839,7 @@ export function ApplicationForm() {
                 <Button 
                   asChild
                   size="lg"
-                  className="flex-1 bg-orange-500 hover:bg-orange-600 text-white font-bold text-lg h-14"
+                  className="flex-1 bg-orange-600 hover:bg-orange-500 text-white font-bold text-lg h-14"
                 >
                   <a href={`tel:${COMPANY_INFO.phoneFormatted}`}>
                     <Phone className="mr-2 h-5 w-5" />

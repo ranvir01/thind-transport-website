@@ -56,7 +56,7 @@ export const ThindPromise = () => {
               </div>
             </div>
 
-            <div className="absolute -top-5 -left-5 -z-10 h-24 w-24 rounded-full bg-orange-500/20 blur-2xl" />
+            <div className="absolute -top-5 -left-5 -z-10 h-24 w-24 rounded-full bg-orange-600/20 blur-2xl" />
           </motion.div>
 
           {/* Story */}
@@ -103,7 +103,7 @@ export const ThindPromise = () => {
 
               <a
                 href={`tel:${COMPANY_INFO.phoneFormatted}`}
-                className="group inline-flex items-center justify-center gap-2 rounded-fleet bg-orange px-6 py-3.5 font-display font-bold uppercase tracking-wide text-white shadow-cta transition-all hover:bg-orange-400 hover:shadow-cta-hover"
+                className="group inline-flex items-center justify-center gap-2 rounded-fleet bg-orange-600 px-6 py-3.5 font-display font-bold uppercase tracking-wide text-white shadow-cta transition-all hover:bg-orange-400 hover:shadow-cta-hover"
               >
                 <Phone className="h-5 w-5 transition-transform group-hover:rotate-12" />
                 Talk to a real person

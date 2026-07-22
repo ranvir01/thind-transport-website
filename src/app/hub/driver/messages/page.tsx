@@ -36,7 +36,7 @@ export default async function DriverMessagesPage() {
                 </span>
               </span>
               {(t.unread_count ?? 0) > 0 ? (
-                <span className="flex h-6 min-w-6 items-center justify-center rounded-full bg-orange px-1.5 text-[11px] font-bold text-white">
+                <span className="flex h-6 min-w-6 items-center justify-center rounded-full bg-orange-600 px-1.5 text-[11px] font-bold text-white">
                   {t.unread_count}
                 </span>
               ) : null}

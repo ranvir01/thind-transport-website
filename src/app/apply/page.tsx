@@ -112,7 +112,7 @@ export default function ApplyPage() {
           <div className="container">
             <div className="grid items-start gap-8 lg:grid-cols-12 lg:gap-12">
               <div className="lg:col-span-5 lg:sticky lg:top-24 space-y-6">
-                <div className="inline-flex items-center rounded-full border border-orange-500/30 bg-orange-500/10 px-4 py-2 text-sm font-bold text-orange-300">
+                <div className="inline-flex items-center rounded-full border border-orange-500/30 bg-orange-600/10 px-4 py-2 text-sm font-bold text-orange-300">
                   CDL Class A Opportunities
                 </div>
 

@@ -28,7 +28,7 @@ export function PayRateVisualizations() {
       <Card className="p-6 border-2 border-gray-200 bg-white">
         <div className="mb-4">
           <div className="flex items-center gap-2 mb-1">
-            <div className="w-1 h-6 bg-orange-500 rounded-full"></div>
+            <div className="w-1 h-6 bg-orange-600 rounded-full"></div>
             <h3 className="text-xl font-black text-gray-900">Annual Earnings</h3>
           </div>
           <p className="text-sm text-gray-600">Compare positions at a glance</p>
@@ -39,11 +39,11 @@ export function PayRateVisualizations() {
           <div>
             <div className="flex items-center justify-between mb-1.5">
               <span className="text-sm font-semibold text-gray-900">Company Driver - Local</span>
-              <span className="font-black text-blue-600">$57.5K</span>
+              <span className="font-black text-navy">$57.5K</span>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-5">
               <div 
-                className="bg-blue-500 h-5 rounded-full flex items-center justify-end pr-2"
+                className="bg-slate-500 h-5 rounded-full flex items-center justify-end pr-2"
                 style={{ width: '20%' }}
               >
                 <span className="text-xs text-white font-bold">20%</span>
@@ -54,11 +54,11 @@ export function PayRateVisualizations() {
           <div>
             <div className="flex items-center justify-between mb-1.5">
               <span className="text-sm font-semibold text-gray-900">Company Driver - Regional</span>
-              <span className="font-black text-blue-600">$63.5K</span>
+              <span className="font-black text-navy">$63.5K</span>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-5">
               <div 
-                className="bg-blue-600 h-5 rounded-full flex items-center justify-end pr-2"
+                className="bg-navy h-5 rounded-full flex items-center justify-end pr-2"
                 style={{ width: '23%' }}
               >
                 <span className="text-xs text-white font-bold">23%</span>
@@ -69,11 +69,11 @@ export function PayRateVisualizations() {
           <div>
             <div className="flex items-center justify-between mb-1.5">
               <span className="text-sm font-semibold text-gray-900">Company Driver - OTR</span>
-              <span className="font-black text-blue-600">$71.5K</span>
+              <span className="font-black text-navy">$71.5K</span>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-5">
               <div 
-                className="bg-blue-700 h-5 rounded-full flex items-center justify-end pr-2"
+                className="bg-navy-900 h-5 rounded-full flex items-center justify-end pr-2"
                 style={{ width: '25%' }}
               >
                 <span className="text-xs text-white font-bold">25%</span>
@@ -105,7 +105,7 @@ export function PayRateVisualizations() {
       <Card className="p-6 border-2 border-gray-200 bg-white">
         <div className="mb-4">
           <div className="flex items-center gap-2 mb-1">
-            <div className="w-1 h-6 bg-orange-500 rounded-full"></div>
+            <div className="w-1 h-6 bg-orange-600 rounded-full"></div>
             <h3 className="text-xl font-black text-gray-900">Weekly & Monthly</h3>
           </div>
           <p className="text-sm text-gray-600">Average take-home breakdown</p>
@@ -116,19 +116,19 @@ export function PayRateVisualizations() {
           <div>
             <h4 className="font-black text-gray-900 mb-2 text-sm uppercase tracking-wide">Company Driver</h4>
             <div className="grid grid-cols-3 gap-2">
-              <div className="text-center p-3 bg-blue-50 rounded-lg border border-gray-200">
+              <div className="text-center p-3 bg-slate-50 rounded-lg border border-gray-200">
                 <div className="text-xs text-gray-500 mb-1">Local</div>
                 <div className="font-black text-gray-900">$1,346</div>
                 <div className="text-xs text-gray-500">$5,833/mo</div>
               </div>
-              <div className="text-center p-3 bg-blue-50 rounded-lg border border-gray-200">
+              <div className="text-center p-3 bg-slate-50 rounded-lg border border-gray-200">
                 <div className="text-xs text-gray-500 mb-1">Regional</div>
                 <div className="font-black text-gray-900">$1,442</div>
                 <div className="text-xs text-gray-500">$6,250/mo</div>
               </div>
-              <div className="text-center p-3 bg-blue-50 rounded-lg border-2 border-gray-200">
+              <div className="text-center p-3 bg-slate-50 rounded-lg border-2 border-gray-200">
                 <div className="text-xs text-gray-500 mb-1">OTR</div>
-                <div className="font-black text-blue-600">$1,635</div>
+                <div className="font-black text-navy">$1,635</div>
                 <div className="text-xs text-gray-500">$7,083/mo</div>
               </div>
             </div>
@@ -161,10 +161,10 @@ export function PayRateVisualizations() {
       </Card>
 
       {/* 5-Year Earnings Projection */}
-      <Card className="p-6 border-2 border-gray-200 bg-gradient-to-br from-blue-50 to-green-50">
+      <Card className="p-6 border-2 border-gray-200 bg-gradient-to-br from-slate-50 to-green-50">
         <div className="mb-4">
           <div className="flex items-center gap-2 mb-1">
-            <div className="w-1 h-6 bg-orange-500 rounded-full"></div>
+            <div className="w-1 h-6 bg-orange-600 rounded-full"></div>
             <h3 className="text-xl font-black text-gray-900">5-Year Projection</h3>
           </div>
           <p className="text-sm text-gray-600">Total potential earnings</p>
@@ -174,11 +174,11 @@ export function PayRateVisualizations() {
           <div>
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm font-semibold text-gray-900">Company Driver (OTR)</span>
-              <span className="text-xl font-black text-blue-600">$425K</span>
+              <span className="text-xl font-black text-navy">$425K</span>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-6">
               <div 
-                className="bg-blue-600 h-6 rounded-full flex items-center justify-end pr-2"
+                className="bg-navy h-6 rounded-full flex items-center justify-end pr-2"
                 style={{ width: '85%' }}
               >
                 <span className="text-xs text-white font-black">5 Years</span>
@@ -211,7 +211,7 @@ export function PayRateVisualizations() {
       <Card className="p-6 border-2 border-gray-200 bg-white">
         <div className="mb-4">
           <div className="flex items-center gap-2 mb-1">
-            <div className="w-1 h-6 bg-orange-500 rounded-full"></div>
+            <div className="w-1 h-6 bg-orange-600 rounded-full"></div>
             <h3 className="text-xl font-black text-gray-900">Commission Rate</h3>
           </div>
           <p className="text-sm text-gray-600">90% vs industry average</p>

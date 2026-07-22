@@ -323,7 +323,7 @@ export default function FleetPage() {
   const [selectedTruck, setSelectedTruck] = useState<number | null>(null)
 
   return (
-    <div className="brand-page-shell min-h-screen selection:bg-orange selection:text-white">
+    <div className="brand-page-shell min-h-screen selection:bg-orange-600 selection:text-white">
       <PageBreadcrumb pageName="Our Fleet" category="Company" />
       
       {/* Hero Section with Video Option */}
@@ -429,7 +429,7 @@ export default function FleetPage() {
               <Button 
                 asChild
                 size="lg" 
-                className="bg-orange hover:bg-orange-600 text-white font-bold text-lg px-8 py-6 shadow-cta hover:shadow-cta-hover transition-all duration-300 group"
+                className="bg-orange-600 hover:bg-orange-500 text-white font-bold text-lg px-8 py-6 shadow-cta hover:shadow-cta-hover transition-all duration-300 group"
               >
                 <Link href="/apply">
                   Apply to Drive This Equipment
@@ -564,7 +564,7 @@ export default function FleetPage() {
                 transition={{ duration: 0.6 }}
                 className="max-w-2xl"
               >
-                <Badge className="mb-3 bg-orange text-white px-4 py-1.5 text-xs font-bold">
+                <Badge className="mb-3 bg-orange-600 text-white px-4 py-1.5 text-xs font-bold">
                   The Yard — Kent, WA
                 </Badge>
                 <h2 className="text-3xl md:text-5xl font-black text-white leading-tight">
@@ -671,7 +671,7 @@ export default function FleetPage() {
                       
                       {/* Highlight badge */}
                       <div className="absolute top-4 left-4">
-                        <Badge className="bg-orange text-white font-bold px-3 py-1.5 shadow-lg">
+                        <Badge className="bg-orange-600 text-white font-bold px-3 py-1.5 shadow-lg">
                           {truck.highlight}
                         </Badge>
                       </div>
@@ -778,7 +778,7 @@ export default function FleetPage() {
                         <Button 
                           asChild
                           size="sm"
-                          className="bg-orange hover:bg-orange-600 text-white font-bold shadow-cta"
+                          className="bg-orange-600 hover:bg-orange-500 text-white font-bold shadow-cta"
                           onClick={(e) => e.stopPropagation()}
                         >
                           <Link href="/apply">
@@ -925,7 +925,7 @@ export default function FleetPage() {
             <Button
               asChild
               variant="outline"
-              className="border-2 border-orange text-orange hover:bg-orange hover:text-white font-bold"
+              className="border-2 border-orange text-orange hover:bg-orange-600 hover:text-white font-bold"
             >
               <Link href={`tel:${COMPANY_INFO.phoneFormatted}`}>
                 <Phone className="mr-2 h-4 w-4" />

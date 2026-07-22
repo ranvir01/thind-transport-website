@@ -56,7 +56,7 @@ export default function TestimonialsPage() {
       <section className="py-16 md:py-20">
         <div className="container px-4">
           <TestimonialsCarousel />
-          <p className="mt-6 text-center text-xs text-steel-500 max-w-xl mx-auto">
+          <p className="mt-6 text-center text-xs text-steel-400 max-w-xl mx-auto">
             Quotes are shared with drivers&apos; permission and lightly edited for length. Want to talk to a
             current driver before you commit? Ask recruiting — we&apos;ll connect you.
           </p>

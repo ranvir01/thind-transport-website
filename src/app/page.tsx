@@ -18,7 +18,7 @@ import Link from "next/link"
 
 export default function Home() {
   return (
-    <div className="brand-page-shell relative min-h-screen selection:bg-orange selection:text-white pb-24 md:pb-0">
+    <div className="brand-page-shell relative min-h-screen selection:bg-orange-600 selection:text-white pb-24 md:pb-0">
       <CinematicHero />
 
       <TrustStrip />

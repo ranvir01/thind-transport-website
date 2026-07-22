@@ -268,7 +268,7 @@ export function ReviewStep({
               <Button
                 onClick={handleShowReview}
                 disabled={isSubmitting}
-                className="py-3 bg-orange-500 hover:bg-orange-600 text-white"
+                className="py-3 bg-orange-600 hover:bg-orange-500 text-white"
               >
                 <Eye className="w-5 h-5 mr-2" />
                 Review & Submit Application
@@ -453,7 +453,7 @@ export function ReviewStep({
                 <Button
                   onClick={handleSubmitWithReview}
                   disabled={!allChecklistComplete || isSubmitting}
-                  className="flex-1 bg-orange-500 hover:bg-orange-600 text-white disabled:bg-gray-300"
+                  className="flex-1 bg-orange-600 hover:bg-orange-500 text-white disabled:bg-gray-300"
                 >
                   {isSubmitting ? (
                     <>

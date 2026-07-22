@@ -392,7 +392,7 @@ export function PreQualificationForm() {
         <Button 
           type="submit" 
           disabled={isSubmitting}
-          className="w-full h-14 text-lg font-bold bg-orange-500 hover:bg-orange-600 text-white shadow-xl shadow-orange-500/20"
+          className="w-full h-14 text-lg font-bold bg-orange-600 hover:bg-orange-500 text-white shadow-xl shadow-orange-500/20"
         >
           {isSubmitting ? (
             <>

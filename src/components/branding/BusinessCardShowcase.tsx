@@ -67,7 +67,7 @@ function CardFront() {
         </div>
 
         {/* Orange bar */}
-        <div className="bg-orange px-[6%] py-[2.5%]">
+        <div className="bg-orange-600 px-[6%] py-[2.5%]">
           <p className="text-navy font-extrabold tracking-wide text-center" style={{ fontSize: "clamp(0.55rem, 2cqi, 0.95rem)" }}>
             24/7 Dispatch &bull; Dry Van &bull; Reefer &bull; Flatbed &bull; Serving 48 States
           </p>
@@ -130,7 +130,7 @@ function CardBack() {
         </div>
 
         {/* Bottom: Orange bar */}
-        <div className="bg-orange px-[5%] py-[2%] flex items-center justify-between">
+        <div className="bg-orange-600 px-[5%] py-[2%] flex items-center justify-between">
           <div className="flex items-center gap-[2%] text-navy" style={{ fontSize: "clamp(0.4rem, 1.4cqi, 0.6rem)" }}>
             <span className="font-extrabold tracking-wider">FLATBED</span>
             <span className="text-navy/40">&bull;</span>
@@ -462,7 +462,7 @@ export function BusinessCardShowcase() {
             {[
               { href: "/branding/business-card-front.svg", label: "Front (SVG)", style: "bg-navy" },
               { href: "/branding/business-card-back.svg", label: "Back (SVG)", style: "bg-navy" },
-              { href: "/branding/thind-transport-logo.svg", label: "Logo (SVG)", style: "bg-orange" },
+              { href: "/branding/thind-transport-logo.svg", label: "Logo (SVG)", style: "bg-orange-600" },
             ].map((d) => (
               <a key={d.href} href={d.href} download className={`inline-flex items-center gap-2 px-5 py-2.5 ${d.style} text-white rounded-lg text-sm font-semibold hover:opacity-90 transition-opacity shadow-brand`}>
                 <svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">

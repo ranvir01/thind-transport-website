@@ -67,7 +67,7 @@ export function PayCalculator() {
   return (
     <Card className="p-8 bg-[linear-gradient(180deg,rgba(20,31,47,0.98),rgba(11,20,34,0.98))] border border-white/10">
       <div className="flex items-center gap-3 mb-6">
-        <div className="bg-orange p-3 rounded-lg border border-orange/30 shadow-cta">
+        <div className="bg-orange-600 p-3 rounded-lg border border-orange/30 shadow-cta">
           <Calculator className="h-6 w-6 text-white" />
         </div>
         <div>
@@ -244,7 +244,7 @@ export function PayCalculator() {
             </div>
           </div>
 
-          <Button className="w-full !bg-orange-500 !from-orange-500 !to-orange-600 hover:!bg-orange-600" size="lg" asChild>
+          <Button className="w-full !bg-orange-600 !from-orange-500 !to-orange-600 hover:!bg-orange-600" size="lg" asChild>
             <a href="/apply">
               Apply Now to Start Earning
             </a>

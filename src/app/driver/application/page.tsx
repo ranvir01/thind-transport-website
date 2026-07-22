@@ -386,7 +386,7 @@ export default function DriverApplicationPage() {
           </p>
           <div className="space-y-3">
             <Link href="/driver/dashboard">
-              <Button className="w-full bg-orange-500 hover:bg-orange-600 text-white">
+              <Button className="w-full bg-orange-600 hover:bg-orange-500 text-white">
                 <Home className="w-4 h-4 mr-2" />
                 Go to Dashboard
               </Button>
@@ -570,7 +570,7 @@ export default function DriverApplicationPage() {
 
             <Button
               onClick={handleNext}
-              className="bg-orange-500 hover:bg-orange-600 text-white"
+              className="bg-orange-600 hover:bg-orange-500 text-white"
             >
               {currentStep === 8 ? "Review Application" : "Next"}
               <ArrowRight className="w-4 h-4 ml-2" />

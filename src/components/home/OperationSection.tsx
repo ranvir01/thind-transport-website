@@ -90,7 +90,7 @@ export function OperationSection() {
                 >
                   <div className="relative flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-fleet border border-orange/30 bg-orange/10">
                     <Icon className="h-5 w-5 text-orange" />
-                    <span className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-orange font-display text-[11px] font-bold text-white">
+                    <span className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-orange-600 font-display text-[11px] font-bold text-white">
                       {index + 1}
                     </span>
                   </div>

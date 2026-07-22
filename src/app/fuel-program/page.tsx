@@ -139,7 +139,7 @@ export default function FuelProgramPage() {
 
           <div>
             {/* Savings Calculator */}
-            <Card className="p-8 bg-gradient-to-br from-green-50 via-emerald-50 to-blue-50 border-2 border-green-200 mb-6 shadow-xl hover:shadow-2xl transition-shadow duration-300">
+            <Card variant="light" className="p-8 bg-gradient-to-br from-green-50 via-emerald-50 to-slate-50 border-2 border-green-200 mb-6 shadow-xl hover:shadow-2xl transition-shadow duration-300">
               <h3 className="text-xl font-bold text-gray-900 mb-4">
                 <DollarSign className="inline h-5 w-5 text-green-600 mr-1" />
                 Your Potential Savings
@@ -151,12 +151,12 @@ export default function FuelProgramPage() {
                 </div>
                 <div className="flex justify-between items-center p-3 rounded-lg hover:bg-green-50 transition-colors">
                   <span className="text-gray-600 font-medium">Average discount:</span>
-                  <span className="font-bold text-green-600 text-lg">$0.40/gal</span>
+                  <span className="font-bold text-green-700 text-lg">$0.40/gal</span>
                 </div>
                 <div className="h-px bg-gray-300 my-3"></div>
                 <div className="flex justify-between items-center text-lg p-3 rounded-lg hover:bg-green-50 transition-colors">
                   <span className="font-bold">Weekly savings:</span>
-                  <span className="font-black text-green-600 text-xl">$200</span>
+                  <span className="font-black text-green-700 text-xl">$200</span>
                 </div>
                 <div className="flex justify-between items-center text-xl bg-green-100 p-3 rounded-lg -mx-2">
                   <span className="font-semibold">Annual savings:</span>

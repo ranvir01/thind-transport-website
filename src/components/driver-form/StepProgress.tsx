@@ -41,7 +41,7 @@ export function StepProgress({ currentStep, completedSteps, onStepClick }: StepP
         </div>
         <div className="w-full bg-gray-200 rounded-full h-2">
           <div 
-            className="bg-orange-500 h-2 rounded-full transition-all duration-300"
+            className="bg-orange-600 h-2 rounded-full transition-all duration-300"
             style={{ width: `${(currentStep / steps.length) * 100}%` }}
           />
         </div>
@@ -65,7 +65,7 @@ export function StepProgress({ currentStep, completedSteps, onStepClick }: StepP
                       w-8 h-8 flex items-center justify-center rounded-full text-sm font-medium
                       transition-colors duration-200
                       ${step.id === currentStep
-                        ? 'bg-orange-500 text-white'
+                        ? 'bg-orange-600 text-white'
                         : completedSteps.includes(step.id)
                         ? 'bg-green-500 text-white'
                         : 'bg-gray-200 text-gray-500'

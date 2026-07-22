@@ -111,7 +111,7 @@ function ResetPasswordForm() {
             </p>
 
             <Link href="/driver/login">
-              <Button className="w-full bg-orange hover:bg-orange/90">
+              <Button className="w-full bg-orange-600 hover:bg-orange/90">
                 Go to Login
               </Button>
             </Link>
@@ -129,7 +129,7 @@ function ResetPasswordForm() {
     <div className="min-h-screen bg-gradient-to-br from-navy via-navy-600 to-navy-800 flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <div className="mx-auto w-12 h-12 bg-orange rounded-full flex items-center justify-center mb-4">
+          <div className="mx-auto w-12 h-12 bg-orange-600 rounded-full flex items-center justify-center mb-4">
             <Key className="w-6 h-6 text-white" />
           </div>
           <CardTitle className="text-2xl text-gray-900">Reset Your Password</CardTitle>
@@ -202,7 +202,7 @@ function ResetPasswordForm() {
               </ul>
             </div>
 
-            <Button type="submit" className="w-full bg-orange hover:bg-orange/90" disabled={loading}>
+            <Button type="submit" className="w-full bg-orange-600 hover:bg-orange/90" disabled={loading}>
               {loading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />

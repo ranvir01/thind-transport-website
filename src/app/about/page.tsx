@@ -136,7 +136,7 @@ export default function AboutPage() {
                 <div className="absolute inset-0 bg-gradient-to-t from-navy via-navy/20 to-transparent" />
               </div>
               <div className="absolute bottom-5 left-5 right-5">
-                <p className="mb-1 text-xs font-bold uppercase tracking-[0.25em] text-orange">The yard, Kent WA</p>
+                <p className="mb-1 text-xs font-bold uppercase tracking-[0.25em] text-orange-400">The yard, Kent WA</p>
                 <p className="text-sm font-semibold text-white">
                   Pre-trip done right — equipment checked before every run.
                 </p>
@@ -166,7 +166,7 @@ export default function AboutPage() {
       <section className="bg-gradient-to-b from-gray-50 to-white py-16">
         <div className="container">
           <div className="mb-12 text-center">
-            <Badge className="mb-4 bg-orange px-4 py-2 text-sm font-bold text-white">
+            <Badge className="mb-4 bg-orange-600 px-4 py-2 text-sm font-bold text-white">
               <Calendar className="mr-1.5 inline h-4 w-4" />
               Company Timeline
             </Badge>
@@ -266,7 +266,7 @@ export default function AboutPage() {
               </div>
               <div className="absolute bottom-5 left-5 right-5 flex items-end justify-between gap-4">
                 <div>
-                  <p className="mb-1 text-xs font-bold uppercase tracking-[0.25em] text-orange">Home base</p>
+                  <p className="mb-1 text-xs font-bold uppercase tracking-[0.25em] text-orange-400">Home base</p>
                   <p className="text-sm font-semibold text-white">The lineup in Kent, Washington</p>
                 </div>
                 <div className="flex gap-4 text-right">
@@ -306,7 +306,7 @@ export default function AboutPage() {
             <div className="flex flex-col justify-center gap-4 sm:flex-row">
               <Link
                 href="/apply"
-                className="rounded-xl bg-orange px-8 py-4 font-bold text-white transition-colors hover:bg-orange-600"
+                className="rounded-xl bg-orange-600 px-8 py-4 font-bold text-white transition-colors hover:bg-orange-600"
               >
                 Apply Now
               </Link>

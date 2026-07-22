@@ -180,7 +180,7 @@ export const WhySwitch = () => {
             </p>
             <Link
               href="/apply"
-              className="inline-flex items-center gap-2 px-8 py-4 bg-orange hover:bg-orange-400 text-white font-bold rounded-fleet transition-all hover:shadow-cta-hover shadow-cta font-display uppercase tracking-wide"
+              className="inline-flex items-center gap-2 px-8 py-4 bg-orange-600 hover:bg-orange-400 text-white font-bold rounded-fleet transition-all hover:shadow-cta-hover shadow-cta font-display uppercase tracking-wide"
             >
               Calculate Your Earnings
               <ArrowRight className="w-5 h-5" />

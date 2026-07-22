@@ -12,6 +12,7 @@
     "db:migrate": "node scripts/hub-migrate.mjs",
     "go-live:check": "node scripts/go-live-check.mjs",
     "connections:check": "node scripts/connections-check.mjs",
+    "design-qa": "node scripts/design-qa.mjs",
     "seed:demo": "node scripts/seed-demo.mjs",
     "test": "vitest run",
     "agent:status": "node scripts/agent-loop-status.mjs",

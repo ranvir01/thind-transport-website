@@ -326,7 +326,7 @@ export default function BenefitsPage() {
       <section className="py-16">
         <div className="container">
           <div className="text-center mb-12">
-            <Badge className="mb-4 bg-blue-600 text-white px-4 py-2 text-sm font-bold">
+            <Badge className="mb-4 bg-navy text-white px-4 py-2 text-sm font-bold">
               <Shield className="h-4 w-4 mr-1.5 inline" />
               Company Drivers
             </Badge>
@@ -383,7 +383,7 @@ export default function BenefitsPage() {
       <section className="py-16 bg-gradient-to-b from-gray-50 to-white">
         <div className="container">
           <div className="text-center mb-12">
-            <Badge className="mb-4 bg-green-600 text-white px-4 py-2 text-sm font-bold">
+            <Badge className="mb-4 bg-green-700 text-white px-4 py-2 text-sm font-bold">
               <TrendingUp className="h-4 w-4 mr-1.5 inline" />
               Owner Operators
             </Badge>
@@ -459,7 +459,7 @@ export default function BenefitsPage() {
                   <thead>
                     <tr className="bg-navy text-white">
                       <th className="px-6 py-4 text-left font-bold">Feature</th>
-                      <th className="px-6 py-4 text-center font-bold bg-orange">
+                      <th className="px-6 py-4 text-center font-bold bg-orange-600">
                         <div className="flex flex-col items-center">
                           <Star className="h-5 w-5 mb-1" />
                           Thind Transport
@@ -509,7 +509,7 @@ export default function BenefitsPage() {
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link
                 href="/apply"
-                className="px-8 py-4 bg-orange hover:bg-orange-600 text-white font-bold rounded-xl transition-colors"
+                className="px-8 py-4 bg-orange-600 hover:bg-orange-500 text-white font-bold rounded-xl transition-colors"
               >
                 Apply Now — Takes 2 Minutes
               </Link>

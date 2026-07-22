@@ -76,12 +76,12 @@ export default function PrivacyPage() {
             <section key={section.heading} className="mb-10">
               <h2 className="text-2xl font-bold text-navy mb-4">{section.heading}</h2>
               {section.body.map((paragraph) => (
-                <p key={paragraph.slice(0, 40)} className="mb-4">
+                <p key={paragraph.slice(0, 40)} className="mb-4 text-gray-700">
                   {paragraph}
                 </p>
               ))}
               {section.items && (
-                <ul className="list-disc pl-6 space-y-2 marker:text-orange">
+                <ul className="list-disc pl-6 space-y-2 text-gray-700 marker:text-orange-600">
                   {section.items.map((item) => (
                     <li key={item}>{item}</li>
                   ))}
@@ -92,15 +92,15 @@ export default function PrivacyPage() {
 
           <section className="mb-12 bg-gray-50 p-8 rounded-2xl border border-gray-100">
             <h2 className="text-2xl font-bold text-navy mb-4 mt-0">Questions or requests</h2>
-            <p className="mb-2">
+            <p className="mb-2 text-gray-700">
               Phone:{" "}
-              <a href={`tel:${COMPANY_INFO.phoneFormatted}`} className="text-orange font-semibold">
+              <a href={`tel:${COMPANY_INFO.phoneFormatted}`} className="font-semibold text-orange-700 hover:underline">
                 {COMPANY_INFO.phone}
               </a>
             </p>
-            <p className="mb-0">
+            <p className="mb-0 text-gray-700">
               Email:{" "}
-              <a href={`mailto:${COMPANY_INFO.email}`} className="text-orange font-semibold">
+              <a href={`mailto:${COMPANY_INFO.email}`} className="font-semibold text-orange-700 hover:underline">
                 {COMPANY_INFO.email}
               </a>
             </p>

@@ -133,7 +133,7 @@ export function TrustStrip() {
           </div>
         </div>
 
-        <p className="mt-8 text-center text-xs text-steel-500">
+        <p className="mt-8 text-center text-xs text-steel-400">
           USDOT #{COMPANY_INFO.dot} · MC-{COMPANY_INFO.mc} — verify our authority anytime on the{" "}
           <a
             href={FMCSA_LINKS.safer}

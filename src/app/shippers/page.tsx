@@ -122,7 +122,7 @@ export default function ShippersPage() {
         <div className="grid md:grid-cols-3 gap-6 mb-16">
           {EQUIPMENT.map((eq) => (
             <div key={eq.name} className="rounded-2xl border border-gray-100 bg-white p-6 shadow-lg transition-shadow hover:shadow-xl">
-              <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-orange-500/10">
+              <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-orange-600/10">
                 <eq.icon className="h-6 w-6 text-orange-600" />
               </div>
               <h3 className="mb-2 text-lg font-bold text-gray-900">{eq.name}</h3>

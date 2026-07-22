@@ -22,7 +22,7 @@ export const CinematicHero = () => {
         <div className="max-w-4xl hero-stagger">
           <div className="fleet-badge mb-5">
             <span className="relative flex h-2 w-2">
-                            <span className="relative inline-flex h-2 w-2 rounded-full bg-orange-500" />
+                            <span className="relative inline-flex h-2 w-2 rounded-full bg-orange-600" />
             </span>
             Family-run since {COMPANY_INFO.founded} · Kent, WA
           </div>

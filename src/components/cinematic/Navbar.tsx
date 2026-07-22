@@ -87,8 +87,8 @@ function DesktopDropdown({
       <button 
         onClick={onToggle}
         className={`flex items-center gap-1 px-3 py-2 text-sm font-semibold transition-colors rounded-fleet font-display uppercase tracking-wide
-          ${hasActiveItem 
-            ? 'text-orange bg-steel-800/80' 
+          ${hasActiveItem
+            ? 'text-orange-400 bg-steel-800/80'
             : 'text-steel-200 hover:text-white hover:bg-steel-800/50'
           }
         `}
@@ -118,7 +118,7 @@ function DesktopDropdown({
                   onClick={onClose}
                   className={`flex items-center gap-3 px-4 py-3 transition-all group
                     ${item.highlight 
-                      ? 'bg-orange-500/10 hover:bg-orange-500/20 border-l-2 border-orange-500' 
+                      ? 'bg-orange-600/10 hover:bg-orange-500/20 border-l-2 border-orange-500' 
                       : isActive
                         ? 'bg-white/10 border-l-2 border-white'
                         : 'hover:bg-white/5 border-l-2 border-transparent hover:border-white/30'
@@ -127,7 +127,7 @@ function DesktopDropdown({
                 >
                   <div className={`p-2 rounded-lg transition-colors
                     ${item.highlight 
-                      ? 'bg-orange-500/20 text-orange-400' 
+                      ? 'bg-orange-600/20 text-orange-400' 
                       : isActive
                         ? 'bg-white/20 text-white'
                         : 'bg-white/10 text-white/80 group-hover:bg-white/15 group-hover:text-white'
@@ -257,7 +257,7 @@ function MobileMenuDrawer({
                           >
                             <div className={`p-2.5 rounded-xl
                               ${item.highlight 
-                                ? 'bg-orange-500 text-white' 
+                                ? 'bg-orange-600 text-white' 
                                 : isActive
                                   ? 'bg-white/20 text-white'
                                   : 'bg-white/5 text-white/60'
@@ -272,7 +272,7 @@ function MobileMenuDrawer({
                               <div className="text-xs text-white/70">{item.description}</div>
                             </div>
                             {item.highlight && (
-                              <span className="text-[10px] px-2 py-0.5 rounded-full bg-orange-500 text-white font-bold uppercase">
+                              <span className="text-[10px] px-2 py-0.5 rounded-full bg-orange-600 text-white font-bold uppercase">
                                 Start
                               </span>
                             )}
@@ -457,7 +457,7 @@ export const CinematicNavbar = () => {
                 href="/driver/login" 
                 className={`px-3 py-2 text-sm font-semibold rounded-fleet transition-colors font-display uppercase tracking-wide
                   ${pathname === '/driver/login' || pathname.startsWith('/driver/')
-                    ? 'text-orange bg-steel-800/80'
+                    ? 'text-orange-400 bg-steel-800/80'
                     : 'text-steel-200 hover:text-white hover:bg-steel-800/50'
                   }
                 `}

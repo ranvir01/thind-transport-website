@@ -106,7 +106,7 @@ export function SuccessStoriesSection() {
           <div className="inline-flex flex-col sm:flex-row gap-4 items-center">
             <Link
               href="/apply"
-              className="px-8 py-4 bg-orange hover:bg-orange-600 text-white font-bold rounded-lg transition-all shadow-cta hover:shadow-cta-hover"
+              className="px-8 py-4 bg-orange-600 hover:bg-orange-500 text-white font-bold rounded-lg transition-all shadow-cta hover:shadow-cta-hover"
             >
               Start Your Application
             </Link>

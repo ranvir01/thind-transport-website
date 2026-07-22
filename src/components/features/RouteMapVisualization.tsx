@@ -42,7 +42,7 @@ export function RouteMapVisualization() {
             <div className="flex items-start justify-between gap-4">
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-2">
-                  <Badge className={`text-white ${lane.type === "Primary" ? "!bg-blue-600" : lane.type === "Long-Haul" ? "!bg-purple-600" : "!bg-green-600"}`}>
+                  <Badge className={`text-white ${lane.type === "Primary" ? "!bg-orange-600" : lane.type === "Long-Haul" ? "!bg-navy" : "!bg-green-700"}`}>
                     {lane.type}
                   </Badge>
                   <span className="font-semibold text-gray-900">{lane.route}</span>

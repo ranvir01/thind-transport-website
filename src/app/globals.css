@@ -179,10 +179,12 @@
     margin-bottom: 0.75rem;
   }
 
-  /* Enhanced Strong and Emphasis */
+  /* Strong stays bold and INHERITS its context's color. A fixed light color
+     here (was var(--brand-copy-strong), near-white) turned every <strong> on a
+     light card or light band invisible site-wide — bold weight is the emphasis,
+     the color must follow the surrounding text so contrast holds on any surface. */
   strong {
     font-weight: 700;
-    color: var(--brand-copy-strong);
   }
 
   em {
@@ -210,7 +212,7 @@
   }
   
   .hero-cta-button {
-    @apply w-full bg-orange text-white px-8 py-4 rounded-fleet font-bold text-lg shadow-cta hover:bg-orange-400 transition-colors;
+    @apply w-full bg-orange-600 text-white px-8 py-4 rounded-fleet font-bold text-lg shadow-cta hover:bg-orange-400 transition-colors;
     font-family: var(--font-display), sans-serif;
     letter-spacing: 0.06em;
     text-transform: uppercase;

@@ -126,7 +126,7 @@ export default function LoadOffPage() {
           Real recordings of the live product with captions — no sound needed.
         </p>
         <div className="grid lg:grid-cols-3 gap-8 mb-16 items-start">
-          <Card className="lg:col-span-2 overflow-hidden shadow-xl border-gray-100">
+          <Card variant="light" className="lg:col-span-2 overflow-hidden shadow-xl border-gray-100">
             <video
               poster="/videos/poster-office.jpg"
               controls
@@ -144,7 +144,7 @@ export default function LoadOffPage() {
             </p>
           </Card>
           <div className="space-y-8">
-            <Card className="overflow-hidden shadow-xl border-gray-100">
+            <Card variant="light" className="overflow-hidden shadow-xl border-gray-100">
               <video
                 poster="/videos/poster-money.jpg"
                 controls
@@ -161,7 +161,7 @@ export default function LoadOffPage() {
                 From delivered to paid — invoices and settlements.
               </p>
             </Card>
-            <Card className="overflow-hidden shadow-xl border-gray-100 max-w-[300px] mx-auto lg:mx-0">
+            <Card variant="light" className="overflow-hidden shadow-xl border-gray-100 max-w-[300px] mx-auto lg:mx-0">
               <video
                 poster="/videos/poster-driver.jpg"
                 controls
@@ -187,7 +187,7 @@ export default function LoadOffPage() {
         </h2>
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-16">
           {MODULES.map((mod) => (
-            <Card key={mod.title} className="p-6 border-gray-100 hover:shadow-xl transition-shadow duration-300">
+            <Card key={mod.title} variant="light" className="p-6 border-gray-200 hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300">
               <div className="w-11 h-11 rounded-xl bg-indigo-500/10 flex items-center justify-center mb-4">
                 <mod.icon className="h-6 w-6 text-indigo-600" />
               </div>
@@ -198,7 +198,7 @@ export default function LoadOffPage() {
         </div>
 
         {/* Principles strip */}
-        <Card className="p-8 mb-16 bg-gradient-to-br from-slate-50 via-indigo-50/40 to-slate-50 border-indigo-100 shadow-xl">
+        <Card variant="light" className="p-8 mb-16 bg-gradient-to-br from-slate-50 via-indigo-50/40 to-slate-50 border-indigo-100 shadow-xl">
           <div className="grid md:grid-cols-3 gap-6 text-center">
             <div>
               <MapPin className="h-6 w-6 text-indigo-600 mx-auto mb-2" />
@@ -212,7 +212,7 @@ export default function LoadOffPage() {
               <CheckCircle2 className="h-6 w-6 text-indigo-600 mx-auto mb-2" />
               <h4 className="font-bold text-gray-900">Tested like money depends on it</h4>
               <p className="text-sm text-gray-600 mt-1">
-                700+ automated tests cover the math that pays drivers and bills brokers, because
+                1,400+ automated tests cover the math that pays drivers and bills brokers, because
                 it does.
               </p>
             </div>
