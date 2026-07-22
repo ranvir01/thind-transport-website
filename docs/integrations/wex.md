@@ -9,6 +9,47 @@ delivery model as EFS — there is no carrier-self-serve REST endpoint for
 same idempotent ingest as everything else. Update `normalizeWexRecord` in
 `src/lib/hub/integrations/wex.ts` in one commit the day a real file lands.
 
+## 2026-07-22 scout pass — no adapter-breaking change
+
+First re-pass since the 2026-07-18 file-drop ship. Two new integrator sources
+(Samsara, Azuga) turned up alongside the existing Geotab/Fleetio/Motive set;
+every WEX/Corpay-controlled page (`fleetapi.wexinc.com`, `developer.wexinc.com`)
+still 403s this env, so confirmation stays search-excerpt only — same wall as
+every other provider in this rotation. Nothing here touches the adapter's
+proven path (file-drop webhook + `normalizeWexRecord`), so no urgent flag.
+Four finds:
+
+1. **Provisioning timeline is faster than our doc implies, for some
+   integrators.** Samsara and Azuga both document WEX returning SFTP
+   credentials in **2–4 business days** (Azuga: +1–2 more days for
+   platform-side config; Samsara: 3–8 business days end-to-end) — well under
+   Fleetio's 7–10 (+7 more for certain prefixes) already in this doc. Since
+   LoadOff's path is the release-form/file-drop model (not a carrier holding
+   SFTP creds directly), treat Fleetio's number as the conservative upper
+   bound for the shopping list, not the typical case.
+2. **Conflicting, unconfirmed account-number claim.** Samsara's doc states
+   WEX account numbers "always begin with 690046" and are **19 digits** —
+   directly at odds with Fleetio's existing 13-digit/04-69-369-2960-1960-7560-prefix
+   claim already recorded here. Our adapter never parses or validates account
+   number format (`grep` confirmed zero references in `wex.ts`), so this is a
+   docs-only discrepancy, not adapter-breaking. Needs a third source before
+   either claim is trusted — flagged, not resolved.
+3. **File frequency is selectable, not always daily.** Azuga's WEX setup form
+   lets the carrier choose daily, weekly, or monthly file delivery. The
+   `wex-sync` cron's daily assumption is still the right default to recommend
+   a carrier request, but it's worth saying explicitly since a carrier could
+   pick weekly/monthly at signup and land fewer rows than expected.
+4. **2026 card pricing (shopping-list context, same treatment as comdata.md).**
+   Third-party sources report a **~$40 one-time setup fee** and a
+   **~$2–4/card/month** fee that varies by card tier (SmartFleet-class ~$4,
+   Large-Fleet-class ~$2). No public comprehensive fee grid — quote-driven,
+   consistent with the "varies by account" framing this doc already carries
+   for provisioning.
+
+Fleet Fabric (`developer.wexinc.com/fleet-fabric-service`) and the WEX
+Mobility Developer Portal (`fleetapi.wexinc.com`) remain partner-tier and
+403-walled — no change to the existing "not a same-week activation" call.
+
 ## Provisioning (confirmed 2026-07-18 — differs from EFS in paperwork, not transport)
 
 How every shipping integrator (Geotab, Motive, Fleetio) gets WEX-branded card data:
@@ -101,7 +142,9 @@ idempotency key. This adapter is additive — it never replaces that path.
 - Scope WEX partner registration (fleetapi.wexinc.com) — one registration would
   cover WEX-branded cards the way EFS Data Sharing Partner status covers EFS.
 
-## Sources (researched 2026-07-18)
+## Sources
+
+Researched 2026-07-18 unless noted:
 
 - Geotab "Fuel Transaction Provider (WEX) Setup Process V2.1" (SFTP file, daily
   24h cadence, 800-492-0669, VIN↔card matching): support.geotab.com
@@ -113,3 +156,13 @@ idempotency key. This adapter is additive — it never replaces that path.
 - WEX developer portals: fleetapi.wexinc.com (WEX Mobility, partner-tier),
   developer.wexinc.com (Fleet Fabric / B2B payments) — partner APIs with Level-III
   transaction data, no carrier self-serve feed
+- **(2026-07-22)** Samsara "Integrate with WEX" (2–4 day SFTP turnaround,
+  690046-prefix/19-digit account number claim, 3-lockout SFTP credential
+  warning): kb.samsara.com
+- **(2026-07-22)** Azuga "WEX Fuel Card Integration" (2–4 day SFTP + 1–2 day
+  config, daily/weekly/monthly file-frequency choice, VIN-required matching,
+  1-business-day support SLA): fleet-azuga.helpscoutdocs.com
+- **(2026-07-22)** 2026 WEX fuel-card fee reporting (~$40 setup, ~$2–4/card/mo
+  by tier): freightwaves.com, truckingway.com, pfleet.com — all vendor-
+  controlled WEX/Corpay pages still 403 this env; search-excerpt confirmation
+  only, same wall as every other provider in this rotation.
