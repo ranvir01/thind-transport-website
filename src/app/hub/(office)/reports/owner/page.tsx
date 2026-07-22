@@ -1,11 +1,11 @@
 import Link from "next/link"
 import { cookies } from "next/headers"
 import {
-  weeklyRevenueTrend, monthlyRevenueTrend, arAgingTrend, settlementLiability, fuelSpendSummary, laneLeaderboardRange,
+  weeklyRevenueTrend, monthlyRevenueTrend, arAgingTrend, settlementLiability, fuelSpendSummary,
+  laneLeaderboardRange, truckPnlRange,
   parseStoredPnlRange, resolvePnlRange, REPORTS_RANGE_COOKIE,
   type RevenuePeriod, type AgingTrendPeriod, type SettlementLiability, type FuelSpendSummary, type LaneLeaderboardRow,
 } from "@/lib/hub/reports"
-import { truckPnl } from "@/lib/hub/expenses"
 import { computeFleetKpis } from "@/lib/hub/kpi"
 import { complianceEntries, summarize, type ComplianceEntry } from "@/lib/hub/compliance"
 import { requirePermissionPage } from "@/lib/hub/session"
@@ -133,7 +133,7 @@ function LaneLeaderboardPanel({ lanes, rangeLabel }: { lanes: LaneLeaderboardRow
   )
 }
 
-function LoadedVsDeadheadPanel({ pnl }: { pnl: Awaited<ReturnType<typeof truckPnl>> }) {
+function LoadedVsDeadheadPanel({ pnl, rangeLabel }: { pnl: Awaited<ReturnType<typeof truckPnlRange>>; rangeLabel: string }) {
   const loadedMiles = pnl.reduce((s, r) => s + Number(r.loaded_miles ?? 0), 0)
   const deadheadMiles = pnl.reduce((s, r) => s + Number(r.deadhead_miles ?? 0), 0)
   const revenueCents = pnl.reduce((s, r) => s + Number(r.revenue_cents), 0)
@@ -177,7 +177,7 @@ function LoadedVsDeadheadPanel({ pnl }: { pnl: Awaited<ReturnType<typeof truckPn
       </div>
 
       <p className="px-4 py-4 text-[11px] text-fg-3">
-        Last 92 days, all trucks. {kpis.totalMiles === 0 ? "Add miles to loads to see this trend." : ""}
+        {rangeLabel}, all trucks. {kpis.totalMiles === 0 ? "Add miles to loads to see this trend." : ""}
       </p>
     </div>
   )
@@ -304,18 +304,19 @@ function ComplianceRedFlagsPanel({ entries }: { entries: ComplianceEntry[] }) {
 
 export default async function OwnerDashboardPage() {
   const user = await requirePermissionPage("money:read")
-  // Lane leaderboard follows the range the owner last set on the Reports
-  // page (same cookie), instead of a fixed trailing-92-day window — so a
-  // custom range chosen there stays consistent across both screens.
+  // Lane leaderboard and loaded-vs-deadhead both follow the range the owner
+  // last set on the Reports page (same cookie), instead of a fixed
+  // trailing-92-day window — so a custom range chosen there stays consistent
+  // across all three screens.
   const storedRange = parseStoredPnlRange((await cookies()).get(REPORTS_RANGE_COOKIE)?.value)
-  const laneRange = storedRange ?? resolvePnlRange()
+  const range = storedRange ?? resolvePnlRange()
 
   const [weekly, monthly, aging, pnl, lanes, liability, compliance, fuel] = await Promise.all([
     weeklyRevenueTrend(user.carrierId, 8),
     monthlyRevenueTrend(user.carrierId, 6),
     arAgingTrend(user.carrierId, 8),
-    truckPnl(user.carrierId, 92),
-    laneLeaderboardRange(user.carrierId, laneRange, 5),
+    truckPnlRange(user.carrierId, range),
+    laneLeaderboardRange(user.carrierId, range, 5),
     settlementLiability(user.carrierId),
     complianceEntries(user.carrierId),
     fuelSpendSummary(user.carrierId),
@@ -327,8 +328,8 @@ export default async function OwnerDashboardPage() {
     new Date(iso).toLocaleDateString("en-US", { month: "short" })
   const fmtDay = (iso: string) =>
     new Date(`${iso}T00:00:00`).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
-  const lanesRangeLabel = storedRange ? `${fmtDay(laneRange.from)} – ${fmtDay(laneRange.to)}` : "last 92 days"
-  const lanesEmptyLabel = storedRange ? `in ${lanesRangeLabel}` : "in the last 92 days"
+  const rangeLabel = storedRange ? `${fmtDay(range.from)} – ${fmtDay(range.to)}` : "last 92 days"
+  const lanesEmptyLabel = storedRange ? `in ${rangeLabel}` : "in the last 92 days"
 
   return (
     <div>
@@ -358,8 +359,8 @@ export default async function OwnerDashboardPage() {
         <Panel title="AR aging trend — last 8 weeks">
           <AgingTrendBars periods={aging} />
         </Panel>
-        <Panel title="Loaded vs. deadhead">
-          <LoadedVsDeadheadPanel pnl={pnl} />
+        <Panel title={`Loaded vs. deadhead — ${rangeLabel}`}>
+          <LoadedVsDeadheadPanel pnl={pnl} rangeLabel={rangeLabel} />
         </Panel>
       </div>
 
@@ -367,7 +368,7 @@ export default async function OwnerDashboardPage() {
         <Panel title="Driver settlement liability">
           <SettlementLiabilityPanel liability={liability} />
         </Panel>
-        <Panel title={`Top lanes by margin — ${lanesRangeLabel}`}>
+        <Panel title={`Top lanes by margin — ${rangeLabel}`}>
           <LaneLeaderboardPanel lanes={lanes} rangeLabel={lanesEmptyLabel} />
         </Panel>
       </div>
