@@ -63,7 +63,9 @@ describe("emailPacket + isEmailConfigured", () => {
   it("fails fast with reason 'not_configured' instead of attempting a real send", async () => {
     isEmailConfigured.mockReturnValue(false)
     const result = await emailPacket(CARRIER, "broker@example.com", null)
-    expect(result).toEqual({ sent: false, attached: 0, missing: [], reason: "not_configured" })
+    // attached reflects the 3 documents actually read before the SMTP check, not 0 —
+    // a caller trusting `attached` on a non-sent response must see the true count.
+    expect(result).toEqual({ sent: false, attached: 3, missing: [], reason: "not_configured" })
     expect(sendMail).not.toHaveBeenCalled()
   })
 
