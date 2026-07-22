@@ -20,7 +20,7 @@
     --primary-foreground: 210 33% 97%;
     --secondary: 2 66% 56%; /* #D94B45 */
     --secondary-foreground: 210 33% 97%;
-    --brand-bg: #080d12;
+    --brand-bg: #0B0C0E;
     --brand-bg-soft: #121316;
     --brand-surface: #17181b;
     --brand-surface-alt: #1c1d21;
@@ -540,7 +540,7 @@
   .brand-page-shell [data-light] .text-green-900,
   .brand-page-shell [data-light] .text-orange-900,
   .brand-page-shell [data-light] .text-neutral-900 {
-    color: #0f172a !important;
+    color: #121316 !important;
   }
 
   .brand-page-shell [data-light] .text-gray-600,
@@ -1117,7 +1117,7 @@ button[aria-label="Contact us"]:hover {
 .portal-light h2,
 .portal-light h3,
 .portal-light h4 {
-  color: #0f172a;
+  color: #121316;
 }
 
 /* Hero entrance — CSS-only stagger so the headline paints before hydration.

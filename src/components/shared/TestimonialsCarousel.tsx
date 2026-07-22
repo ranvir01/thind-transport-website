@@ -75,7 +75,7 @@ export function TestimonialsCarousel() {
       <CarouselContent className="-ml-2 md:-ml-4">
         {testimonials.map((testimonial, index) => (
           <CarouselItem key={index} className="pl-2 md:pl-4 md:basis-1/2 lg:basis-1/3">
-            <Card className="h-full border-0 bg-gradient-to-br from-[#17181B] via-[#0B0C0E] to-[#000D1A] hover:from-[#002b55] transition-all duration-300 shadow-xl hover:shadow-2xl hover:-translate-y-1 rounded-2xl overflow-hidden group">
+            <Card className="h-full border-0 bg-gradient-to-br from-[#17181B] via-[#0B0C0E] to-[#050506] hover:from-[#242629] transition-all duration-300 shadow-xl hover:shadow-2xl hover:-translate-y-1 rounded-2xl overflow-hidden group">
               <CardContent className="p-8 flex flex-col h-full relative">
                 {/* Quote icon */}
                 <div className="absolute top-6 right-6 opacity-10 group-hover:opacity-20 transition-opacity">

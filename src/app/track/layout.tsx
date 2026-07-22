@@ -3,7 +3,7 @@
 // carries its own dark canvas instead of leaning on the marketing backdrop.
 export default function TrackLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="relative min-h-screen bg-[#080d12]">
+    <div className="relative min-h-screen bg-[#0B0C0E]">
       {/* Blueprint grid, matching the marketing backdrop's texture — no orbs */}
       <div
         aria-hidden

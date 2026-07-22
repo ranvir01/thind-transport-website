@@ -10,7 +10,7 @@ export const ActiveBackground = () => {
   // not glow through behind either.
   if (pathname.startsWith("/hub") || pathname.startsWith("/track")) return null
   return (
-    <div className="fixed inset-0 z-[-1] overflow-hidden bg-[#080d12]" aria-hidden>
+    <div className="fixed inset-0 z-[-1] overflow-hidden bg-[#0B0C0E]" aria-hidden>
       {/* Blueprint grid */}
       <div
         className="absolute inset-0 opacity-[0.3]"
