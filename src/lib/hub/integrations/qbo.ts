@@ -17,10 +17,10 @@
  *
  * A QBO Payment links to an Invoice by QBO's internal Id, not our invoice
  * number, so `pull()` does a second query resolving those internal ids to
- * `DocNumber` (which the push side of this integration — not yet built — would
- * set equal to our invoice number when creating the QBO invoice). Until that
- * push side exists, payments for invoices QuickBooks doesn't know under a
- * matching DocNumber come back with `invoiceNumber: null` and are reported as
+ * `DocNumber` (which the push side of this integration, `pushInvoiceToQbo`,
+ * sets equal to our invoice number when creating the QBO invoice). Payments
+ * for invoices QuickBooks doesn't know under a matching DocNumber — e.g. one
+ * never pushed — come back with `invoiceNumber: null` and are reported as
  * unmatched rather than guessed.
  */
 import { logAudit } from "../audit"

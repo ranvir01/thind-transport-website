@@ -93,15 +93,15 @@ describe("GET /api/hub/ifta/[quarter]/[file]", () => {
       mpg: "10",
       report: {
         rows: [
-          { jurisdiction: "WA", miles: 1000, taxableGallons: 100, taxPaidGallons: 80, rate: 0.375, surchargeRate: 0, netCents: 12345 },
+          { jurisdiction: "WA", miles: 1000, taxableGallons: 100, taxPaidGallons: 80, rate: 0.375, surchargeRate: 0, taxCents: 12345, surchargeCents: 0, netCents: 12345 },
         ],
       },
     } as never)
     const res = await call("2026Q1", "worksheet.csv")
     expect(res.status).toBe(200)
     const body = await res.text()
-    expect(body).toContain("WA,1000,100.000,80.000,0.3750,0.0000,123.45")
-    expect(body).toContain("TOTAL,,,,,,123.45")
+    expect(body).toContain("WA,1000,100.000,80.000,0.3750,123.45,0.0000,0.00,123.45")
+    expect(body).toContain("TOTAL,,,,,,,,123.45")
   })
 
   it("renders multi-jurisdiction worksheet.csv including surcharge state (golden fixture)", async () => {
@@ -125,11 +125,33 @@ describe("GET /api/hub/ifta/[quarter]/[file]", () => {
     const res = await call("2026Q1", "worksheet.csv")
     expect(res.status).toBe(200)
     const body = await res.text()
-    expect(body).toContain("jurisdiction,miles,taxable_gallons,tax_paid_gallons,rate,surcharge_rate,net_tax_usd")
-    expect(body).toContain("ID,1000,142.857,100.000,0.3300,0.0000,14.14")
-    expect(body).toContain("IN,2000,285.714,300.000,0.5500,0.1100,23.57")
-    expect(body).toContain("WA,4000,571.429,600.000,0.4940,0.0000,-14.11")
-    expect(body).toContain("TOTAL,,,,,,23.60")
+    expect(body).toContain("jurisdiction,miles,taxable_gallons,tax_paid_gallons,rate,fuel_tax_usd,surcharge_rate,surcharge_usd,net_tax_usd")
+    expect(body).toContain("ID,1000,142.857,100.000,0.3300,14.14,0.0000,0.00,14.14")
+    // Surcharge state: base fuel tax (-7.86, credited) and surcharge (31.43, no
+    // credit) are their own columns so each fills the matching IFTA-return line.
+    expect(body).toContain("IN,2000,285.714,300.000,0.5500,-7.86,0.1100,31.43,23.57")
+    expect(body).toContain("WA,4000,571.429,600.000,0.4940,-14.11,0.0000,0.00,-14.11")
+    expect(body).toContain("TOTAL,,,,,,,,23.60")
+  })
+
+  it("falls back to the combined net for legacy rows missing the tax/surcharge split", async () => {
+    // Reports computed before taxCents/surchargeCents were persisted only carry
+    // netCents — the export must still render, attributing net to fuel tax.
+    getIftaReportMock.mockResolvedValue({
+      net_tax_cents: 5000,
+      mileage_source: "pings",
+      fleet_miles: "1000",
+      fleet_gallons: "100",
+      mpg: "10",
+      report: {
+        rows: [
+          { jurisdiction: "WA", miles: 1000, taxableGallons: 100, taxPaidGallons: 50, rate: 1.0, surchargeRate: 0, netCents: 5000 },
+        ],
+      },
+    } as never)
+    const res = await call("2026Q1", "worksheet.csv")
+    const body = await res.text()
+    expect(body).toContain("WA,1000,100.000,50.000,1.0000,50.00,0.0000,0.00,50.00")
   })
 
   it("prepends worksheet warnings as # WARNING lines in worksheet.csv", async () => {
@@ -156,7 +178,7 @@ describe("GET /api/hub/ifta/[quarter]/[file]", () => {
     expect(lines[0]).toContain("# WARNING: Missing rates for AZ, NV")
     expect(lines[1]).toContain("# WARNING: Rates on file for WA changed")
     expect(lines[2]).toContain("# WARNING: 250 gal of tractor fuel have no state")
-    expect(lines[3]).toBe("jurisdiction,miles,taxable_gallons,tax_paid_gallons,rate,surcharge_rate,net_tax_usd")
+    expect(lines[3]).toBe("jurisdiction,miles,taxable_gallons,tax_paid_gallons,rate,fuel_tax_usd,surcharge_rate,surcharge_usd,net_tax_usd")
   })
 
   it("keeps worksheet.csv warning-free when the report is clean", async () => {
@@ -176,7 +198,7 @@ describe("GET /api/hub/ifta/[quarter]/[file]", () => {
     const res = await call("2026Q1", "worksheet.csv")
     const body = await res.text()
     expect(body).not.toContain("# WARNING")
-    expect(body.split("\n")[0]).toBe("jurisdiction,miles,taxable_gallons,tax_paid_gallons,rate,surcharge_rate,net_tax_usd")
+    expect(body.split("\n")[0]).toBe("jurisdiction,miles,taxable_gallons,tax_paid_gallons,rate,fuel_tax_usd,surcharge_rate,surcharge_usd,net_tax_usd")
   })
 
   it("404s worksheet.pdf when no report has been computed", async () => {

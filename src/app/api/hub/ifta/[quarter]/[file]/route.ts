@@ -55,11 +55,18 @@ export async function GET(
     const csv = [
       // Comment-prefixed like sources.csv, above the header so they open at the top.
       ...warnings.map((w) => `# WARNING: ${w}`),
-      "jurisdiction,miles,taxable_gallons,tax_paid_gallons,rate,surcharge_rate,net_tax_usd",
-      ...rows.map((r) =>
-        `${r.jurisdiction},${r.miles},${r.taxableGallons.toFixed(3)},${r.taxPaidGallons.toFixed(3)},${Number(r.rate).toFixed(4)},${Number(r.surchargeRate).toFixed(4)},${(r.netCents / 100).toFixed(2)}`
-      ),
-      `TOTAL,,,,,,${(Number(report.net_tax_cents) / 100).toFixed(2)}`,
+      // Base fuel tax and surcharge are split out (not just the combined net):
+      // IN/KY/VA returns require the surcharge as its own line, and the surcharge
+      // gets no tax-paid credit, so a transcriber can't derive it from the net.
+      "jurisdiction,miles,taxable_gallons,tax_paid_gallons,rate,fuel_tax_usd,surcharge_rate,surcharge_usd,net_tax_usd",
+      ...rows.map((r) => {
+        // Legacy stored rows predate the taxCents/surchargeCents split; fall back
+        // to the combined net (surcharge 0) so old reports still export cleanly.
+        const surchargeCents = Number(r.surchargeCents ?? 0)
+        const fuelTaxCents = r.taxCents != null ? Number(r.taxCents) : Number(r.netCents) - surchargeCents
+        return `${r.jurisdiction},${r.miles},${r.taxableGallons.toFixed(3)},${r.taxPaidGallons.toFixed(3)},${Number(r.rate).toFixed(4)},${(fuelTaxCents / 100).toFixed(2)},${Number(r.surchargeRate).toFixed(4)},${(surchargeCents / 100).toFixed(2)},${(r.netCents / 100).toFixed(2)}`
+      }),
+      `TOTAL,,,,,,,,${(Number(report.net_tax_cents) / 100).toFixed(2)}`,
     ].join("\n")
     return new NextResponse(csv, {
       headers: {
