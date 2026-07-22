@@ -52,6 +52,21 @@ async function main() {
   await login(driver, "driver@demo.thind")
   await driver.goto(`${BASE}/hub/driver/dvir`, { waitUntil: "networkidle2" })
   await waitForText(driver, "End-of-day inspection")
+  // Regression: "Emergency equipment (triangles, extinguisher)" is long enough
+  // to wrap onto two lines at 390px. Without min-w-0 on the label and shrink-0
+  // + whitespace-nowrap on the OK/Problem button group, the button group
+  // shrinks to fit the remaining row width and overflow-hidden clips
+  // "Problem" down to "Probl…".
+  const dvirRowClip = await driver.evaluate(() => {
+    const row = [...document.querySelectorAll("li")].find((li) => li.textContent?.includes("Emergency equipment"))
+    const buttonGroup = row?.querySelector(".overflow-hidden")
+    if (!buttonGroup) return null
+    return { scrollWidth: buttonGroup.scrollWidth, clientWidth: buttonGroup.clientWidth }
+  })
+  if (!dvirRowClip) throw new Error('"Emergency equipment" checklist row not found')
+  if (dvirRowClip.scrollWidth > dvirRowClip.clientWidth + 1) {
+    throw new Error(`"Emergency equipment" row's OK/Problem buttons are clipped at 390px (scrollWidth ${dvirRowClip.scrollWidth} > clientWidth ${dvirRowClip.clientWidth})`)
+  }
   // Mark "Service brakes" as a problem
   await driver.evaluate(() => {
     const row = [...document.querySelectorAll("li")].find((li) => li.textContent?.includes("Service brakes"))

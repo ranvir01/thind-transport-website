@@ -127,8 +127,8 @@ export function DvirForm({
             return (
               <li key={item.key}>
                 <div className="flex items-center justify-between gap-2 min-h-[48px]">
-                  <span className="text-sm font-semibold text-white">{item.label}</span>
-                  <div className="flex rounded-xl border border-white/15 overflow-hidden">
+                  <span className="min-w-0 text-sm font-semibold text-white">{item.label}</span>
+                  <div className="flex shrink-0 whitespace-nowrap rounded-xl border border-white/15 overflow-hidden">
                     <button
                       type="button"
                       onClick={() => setChecks({ ...checks, [item.key]: true })}
