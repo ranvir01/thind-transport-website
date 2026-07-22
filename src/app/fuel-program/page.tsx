@@ -24,12 +24,12 @@ export default function FuelProgramPage() {
       <PageBreadcrumb pageName="Fuel Program" category="Drivers" />
       
       {/* Enhanced Header */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-orange-600 via-red-600 to-orange-700 text-white py-20">
+      <div className="relative overflow-hidden bg-gradient-to-br from-orange-600 via-orange-500 to-orange-700 text-white py-20">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-yellow-400/10 via-transparent to-transparent" />
-        
+
         {/* Decorative elements */}
         <div className="absolute -top-24 -right-24 w-96 h-96 bg-yellow-400/10 rounded-full blur-3xl" />
-        <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-red-400/10 rounded-full blur-3xl" />
+        <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-orange-800/10 rounded-full blur-3xl" />
         
         <div className="container relative">
           <div className="text-center max-w-4xl mx-auto">
@@ -79,7 +79,7 @@ export default function FuelProgramPage() {
         <div className="grid lg:grid-cols-2 gap-8 mb-16">
           <Card className="p-8 shadow-xl border-gray-100 hover:shadow-2xl transition-shadow duration-300">
             <div className="flex items-center gap-3 mb-6">
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-500/10 to-red-600/10 flex items-center justify-center">
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-500/10 to-orange-600/10 flex items-center justify-center">
                 <Fuel className="h-6 w-6 text-orange-600" />
               </div>
               <h2 className="text-2xl font-bold text-gray-900">Program Features</h2>
@@ -249,7 +249,7 @@ export default function FuelProgramPage() {
         </Card>
 
         {/* CTA Section */}
-        <Card className="p-10 bg-gradient-to-br from-orange-600 via-red-600 to-orange-700 text-white text-center shadow-2xl relative overflow-hidden">
+        <Card className="p-10 bg-gradient-to-br from-orange-600 via-orange-500 to-orange-700 text-white text-center shadow-2xl relative overflow-hidden">
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-yellow-400/10 via-transparent to-transparent" />
           <div className="relative">
           <h2 className="text-3xl font-bold mb-4">
