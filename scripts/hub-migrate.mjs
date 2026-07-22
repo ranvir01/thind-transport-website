@@ -23,6 +23,13 @@ async function main() {
   loadEnvLocal()
   const url = process.env.POSTGRES_URL
   if (!url) {
+    // --if-db: the Vercel buildCommand runs migrations before every build so
+    // production schema can never lag production code; environments without a
+    // database (CI, forks) must still build.
+    if (process.argv.includes("--if-db")) {
+      console.log("No POSTGRES_URL — skipping migrations (--if-db).")
+      return
+    }
     console.error("POSTGRES_URL is required (set it in the environment or .env.local)")
     process.exit(1)
   }
