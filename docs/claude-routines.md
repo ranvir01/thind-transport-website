@@ -111,3 +111,45 @@ and race each other on the branch.
 | Drain integrator → main | Routine 1 when green; GitHub Action `drain-integrator.yml` as backstop (:17/:47) |
 | Production smoke + fix-forward | Routine 2 |
 | Production schema | `/api/hub/cron/migrate` (daily Vercel cron, CRON_SECRET) |
+
+## Pending-branch triage — 2026-07-22 ~02:00 UTC (Routine 1 run)
+
+Integrator sat at 0 drift vs main (last drained 01:02 UTC) with 76 pending `claude/*`
+branches. Worked the `agent:branches` priority order looking for a safe absorb; every
+candidate tried turned out to be either unmergeable or already superseded:
+
+- **29 of the 76 branches have no merge-base with `main`** (`git merge-base main <ref>`
+  returns nothing) — `amazing-meitner-0r0bvi`, `awesome-hypatia-hj5b2c`,
+  `charming-dirac-m8b4ig`, both `compassionate-bell-{8r88rj,zef4dj}`, 21 of the
+  `gallant-dijkstra-*` family, `practical-franklin-5ol54s`, `stoic-mccarthy-6modfo`.
+  Spot-checked two (`compassionate-bell-8r88rj`, `compassionate-bell-zef4dj`): their root
+  commits carry **5093–5110 tracked files** vs. `main`'s 833 — these were pushed from a
+  shallow/detached clone, not a fork of this repo's real history, and are not safely
+  mergeable (`--allow-unrelated-histories` would be required and is not safe to run
+  unattended). These can't be absorbed by any future integrator run either; they need a
+  human call — either hand-cherry-pick anything valuable out of them or delete the refs.
+- Tried five more with a real merge-base and a small diff
+  (`stoic-mccarthy-yx14n1`, `inspiring-sagan-qrnct7`, `pensive-allen-bgqbgg`,
+  `inspiring-sagan-posqqo`, `pensive-allen-lz41rp`): all five conflict against `HEAD`,
+  and in every conflict HEAD already carries a newer/more complete version of the same
+  fix (e.g. `agent-loop-status.mjs`'s STALLED-mode assessor, `seed-demo.mjs` truncating
+  `hub.integration_events` too, `TasksBoard.tsx`'s confirm-delete flow). Per AGENTS.md
+  ("keep HEAD when it's already a superset"), none were merged.
+- The single largest branch (`gallant-dijkstra-tfl0e7`, 190 unpicked/298 raw commits)
+  produces 20+ file-level conflicts including `vercel.json` and `src/proxy.ts` — too
+  stale and too risky to reconcile in one unattended pass.
+- `inspiring-sagan-2npdmr` (96 files / 4426 lines, merge-base flush with current main)
+  looked promising but the dry-run merge hit **add/add conflicts** on files like
+  `LoadProgressBar.tsx`, `NotificationsPanel.tsx`, and `integrations/event-processors.ts`
+  — both sides independently built the same components, another duplicate-work case.
+
+Net: main/integrator verified green this run (`npm run build`, `npx vitest run` — 168
+files/1431 tests green; `npm run lint` clean) and a full local-rig `node
+scripts/e2e-run-all.mjs` battery (Postgres migrated + seeded, `NEXTAUTH_SECRET`/
+`CREDENTIALS_KEY`/`CRON_SECRET` set) passed **46/46 with 0 defects** — no code fix was
+available to ship. This sharpens the existing "75+ pending branches await a meta-governor
+prune pass" backlog line: roughly 40% of the pile (the 29 no-merge-base branches) is
+un-mergeable by construction and should be deleted rather than re-triaged every cycle;
+most of the rest sampled so far is stale/superseded, not unabsorbed value. The
+meta-governor pass should treat "no merge-base with main" as an auto-delete candidate
+list rather than re-running `agent:branches` priority order against it each hour.
