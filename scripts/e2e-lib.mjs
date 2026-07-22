@@ -110,16 +110,24 @@ export function reseed() {
   // that no longer exist; the loads-page rollup then renders dead
   // /hub/loads/<uuid> anchors that poison any smoke matching load links
   // generically (the recurring smokes 404 on them). Reset the key with the seed.
+  //
+  // hub.carriers is likewise absent from the TRUNCATE list (ON CONFLICT DO
+  // NOTHING in seed-demo.mjs) — a suspend-flow smoke that dies mid-run (or a
+  // manual admin-suspend drive) leaves status = 'suspended' on Thind or
+  // Cascade Demo Lines, and every later local run then bounces every login
+  // to /hub/suspended before it even reaches the screen under test. Force
+  // both demo tenants back to 'active' on every reseed.
   const cleanup = spawnSync(process.execPath, ["-e", `
     const { Client } = require("pg");
     const c = new Client({ connectionString: process.env.POSTGRES_URL });
     c.connect()
       .then(() => c.query("UPDATE hub.carrier_settings SET settings = settings - 'recurringLanes' WHERE settings ? 'recurringLanes'"))
+      .then(() => c.query("UPDATE hub.carriers SET status = 'active' WHERE status <> 'active'"))
       .then(() => c.end())
-      .catch((err) => { console.error("recurringLanes reset: " + err.message); process.exit(1); });
+      .catch((err) => { console.error("reseed cleanup: " + err.message); process.exit(1); });
   `], { stdio: "inherit" })
   if (cleanup.status !== 0) {
-    throw new Error("recurringLanes reset failed — stale rules would poison the loads-page rollup")
+    throw new Error("reseed cleanup failed — stale recurringLanes rules or a suspended tenant would poison the next smoke")
   }
   return true
 }
