@@ -7,7 +7,7 @@
  * Usage: node scripts/e2e-portal-smoke.mjs [outputDir]
  */
 import { mkdirSync } from "node:fs"
-import { launchBrowser, BASE, sleep, clickByText, waitForText, login, makeShot } from "./e2e-lib.mjs"
+import { launchBrowser, BASE, clickByText, waitForText, login, makeShot, waitForStableText } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-portal"
 mkdirSync(OUT, { recursive: true })
@@ -61,7 +61,7 @@ async function main() {
   await shot(shipper, "03-quote-form")
   await clickByText(shipper, "Send the request")
   await waitForText(shipper, "is with dispatch")
-  await sleep(800)
+  await waitForStableText(shipper)
   await shot(shipper, "04-quote-sent")
   console.log("   quote request landed ✓")
 
