@@ -74,7 +74,7 @@ export default async function PortalHomePage() {
                   </p>
                   <LoadProgressBar status={load.status as LoadStatus} className="mt-2.5" />
                   {load.position_hint ? (
-                    <p className="mt-1.5 text-body-xs text-gold">{load.position_hint}</p>
+                    <p className="mt-1.5 text-body-xs text-[color:var(--portal-accent)]">{load.position_hint}</p>
                   ) : null}
                 </Link>
               </li>
