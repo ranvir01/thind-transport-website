@@ -93,6 +93,7 @@ const ALL_PRIMARY_SECTIONS: HubPrimarySection[] = [
 ]
 
 const ALL_UTILITY_LINKS: HubNavLink[] = [
+  { href: "/hub/leads", label: "Driver leads" },
   { href: "/hub/compliance", label: "Compliance" },
   { href: "/hub/safety", label: "Safety" },
   { href: "/hub/reports", label: "Reports" },

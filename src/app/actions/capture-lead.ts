@@ -3,6 +3,7 @@
 import { z } from "zod"
 import { COMPANY_INFO } from "@/lib/constants"
 import { createMailTransport, isEmailConfigured, mailFrom } from "@/lib/mailer"
+import { saveWebsiteLead } from "@/lib/hub/website-leads"
 
 const leadSchema = z.object({
   name: z.string().min(2).optional(),
@@ -20,12 +21,19 @@ export type LeadState = {
 
 export async function captureLead(prevState: LeadState, formData: FormData): Promise<LeadState> {
   try {
+    // FormData.get returns null for absent fields; zod .optional() accepts
+    // undefined but rejects null — that mismatch silently failed EVERY lead
+    // that omitted any optional field (the apply form omits `message`).
+    const field = (key: string): string | undefined => {
+      const value = formData.get(key)
+      return typeof value === "string" && value.trim().length > 0 ? value.trim() : undefined
+    }
     const rawData = {
-      name: formData.get("name"),
-      email: formData.get("email"),
-      phone: formData.get("phone"),
-      source: formData.get("source"),
-      message: formData.get("message"),
+      name: field("name"),
+      email: field("email"),
+      phone: field("phone"),
+      source: field("source"),
+      message: field("message"),
     }
 
     const validatedData = leadSchema.safeParse(rawData)
@@ -40,25 +48,50 @@ export async function captureLead(prevState: LeadState, formData: FormData): Pro
 
     const data = validatedData.data
 
-    console.log("Lead captured:", { ...data, timestamp: new Date().toISOString() })
+    // Database first — with SMTP unset (production today), email-only capture
+    // silently discarded every interested driver. The hub's Today screen and
+    // /hub/leads read this table, so a saved lead is a SEEN lead.
+    const savedToDb = await saveWebsiteLead({
+      name: data.name,
+      email: data.email,
+      phone: data.phone,
+      source: data.source,
+      driverType: (formData.get("driverType") as string) || null,
+      experienceYears: (formData.get("experienceYears") as string) || null,
+      message: data.message,
+    })
 
+    let emailed = false
     if (isEmailConfigured()) {
-      const transporter = createMailTransport()
-      await transporter.sendMail({
-        from: mailFrom(),
-        to: COMPANY_INFO.email,
-        replyTo: data.email,
-        subject: `Website lead${data.source ? ` — ${data.source}` : ""}`,
-        text: [
-          `Name: ${data.name || "—"}`,
-          `Email: ${data.email}`,
-          `Phone: ${data.phone || "—"}`,
-          `Source: ${data.source || "website"}`,
-          data.message ? `Message: ${data.message}` : "",
-        ]
-          .filter(Boolean)
-          .join("\n"),
-      })
+      try {
+        const transporter = createMailTransport()
+        await transporter.sendMail({
+          from: mailFrom(),
+          to: COMPANY_INFO.email,
+          replyTo: data.email,
+          subject: `Website lead${data.source ? ` — ${data.source}` : ""}`,
+          text: [
+            `Name: ${data.name || "—"}`,
+            `Email: ${data.email}`,
+            `Phone: ${data.phone || "—"}`,
+            `Source: ${data.source || "website"}`,
+            data.message ? `Message: ${data.message}` : "",
+          ]
+            .filter(Boolean)
+            .join("\n"),
+        })
+        emailed = true
+      } catch (err) {
+        console.error("Lead email failed (lead is in the DB):", err)
+      }
+    }
+
+    if (!savedToDb && !emailed) {
+      console.error("Lead reached NO destination:", { ...data, timestamp: new Date().toISOString() })
+      return {
+        success: false,
+        message: `We couldn't save that just now. Call or text ${COMPANY_INFO.phone} and we'll help you directly.`,
+      }
     }
 
     return {

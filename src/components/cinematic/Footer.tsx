@@ -14,6 +14,7 @@ import {
 import {
   Award,
   BadgeCheck,
+  MessageSquare,
   Shield,
   ShieldCheck,
   Phone,
@@ -256,17 +257,24 @@ export const MobileCommandBar = () => {
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-[90] md:hidden bg-gradient-to-t from-[#00060D] via-[#00060D]/98 to-[#00060D]/95 backdrop-blur-xl border-t border-white/10 safe-area-bottom">
-       <div className="flex gap-3 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-          <a 
-            href={`tel:${COMPANY_INFO.phoneFormatted}`} 
-            className="flex-1 flex items-center justify-center gap-2 bg-white/10 hover:bg-white/15 active:bg-white/20 text-white font-semibold py-3.5 px-4 rounded-xl transition-all active:scale-[0.98]"
+       <div className="flex gap-2 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+          <a
+            href={`tel:${COMPANY_INFO.phoneFormatted}`}
+            className="flex-1 flex items-center justify-center gap-1.5 bg-white/10 hover:bg-white/15 active:bg-white/20 text-white font-semibold py-3.5 px-2 rounded-xl transition-all active:scale-[0.98]"
           >
              <Phone className="w-4 h-4" />
-             <span className="text-sm">Call Now</span>
+             <span className="text-sm">Call</span>
           </a>
-          <Link 
-            href="/apply" 
-            className="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 active:from-orange-700 active:to-orange-800 text-white font-bold py-3.5 px-4 rounded-xl transition-all shadow-lg shadow-orange-500/30 active:scale-[0.98]"
+          <a
+            href={`sms:${COMPANY_INFO.phoneFormatted}?body=${encodeURIComponent("Hi, I'm interested in driving for Thind Transport.")}`}
+            className="flex-1 flex items-center justify-center gap-1.5 bg-white/10 hover:bg-white/15 active:bg-white/20 text-white font-semibold py-3.5 px-2 rounded-xl transition-all active:scale-[0.98]"
+          >
+             <MessageSquare className="w-4 h-4" />
+             <span className="text-sm">Text</span>
+          </a>
+          <Link
+            href="/apply"
+            className="flex-[1.4] flex items-center justify-center gap-2 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 active:from-orange-700 active:to-orange-800 text-white font-bold py-3.5 px-3 rounded-xl transition-all shadow-lg shadow-orange-500/30 active:scale-[0.98]"
           >
              <span className="relative flex h-2 w-2">
                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>

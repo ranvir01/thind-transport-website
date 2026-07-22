@@ -5,6 +5,7 @@ import {
 } from "lucide-react"
 import { getDashboardStats } from "@/lib/hub/loads"
 import { todayData } from "@/lib/hub/today"
+import { countNewWebsiteLeads } from "@/lib/hub/website-leads"
 import { fmtCents } from "@/lib/hub/types"
 import { Panel, PageHeader } from "@/components/hub/ui"
 import { SetupChecklist, SetupGuide } from "@/components/hub/SetupGuide"
@@ -19,10 +20,11 @@ export const dynamic = "force-dynamic"
 
 export default async function TodayPage() {
   const user = await requireOfficeUser()
-  const [stats, today, started] = await Promise.all([
+  const [stats, today, started, newLeads] = await Promise.all([
     getDashboardStats(user.carrierId),
     todayData(user.carrierId),
     gettingStartedState(),
+    countNewWebsiteLeads(),
   ])
 
   const allQuiet =
@@ -72,6 +74,23 @@ export default async function TodayPage() {
           </Panel>
         </Link>
       </div>
+
+      {newLeads > 0 ? (
+        <Link
+          href="/hub/leads"
+          className="mb-4 flex items-center justify-between gap-3 rounded-card border border-accent-soft bg-accent-soft px-4 py-3 hover:border-accent"
+        >
+          <div className="min-w-0">
+            <p className="font-semibold text-fg">
+              {newLeads} driver{newLeads === 1 ? "" : "s"} reached out on the website
+            </p>
+            <p className="text-body-xs text-fg-3">
+              Speed to lead wins drivers — the first carrier to call usually gets them.
+            </p>
+          </div>
+          <span className="shrink-0 rounded-pill bg-surface px-2.5 py-1 text-[11.5px] font-semibold text-fg-2">Call them →</span>
+        </Link>
+      ) : null}
 
       {stats.awaiting_pod > 0 || today.arOverdue.count > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
