@@ -247,6 +247,16 @@ async function collectFindings(page, isMobile) {
 }
 
 async function auditRoute(page, route, viewport) {
+  // page.setViewport() implicitly reloads whatever page is CURRENTLY loaded
+  // when isMobile toggles (Chromium's mobile-emulation switch requires a
+  // reload to take effect) — and that implicit reload has no timeout
+  // fallback like our own page.goto() below. If the previous route left an
+  // in-flight request that never fires a CDP finish/fail event (observed
+  // with certain image requests under headless Chromium), setViewport()
+  // hangs for the full 30s navigation timeout, uncaught, and design-qa dies
+  // mid-sweep. Go to about:blank first so the implicit reload has nothing
+  // in-flight to hang on.
+  await page.goto("about:blank")
   await page.setViewport({ width: viewport.width, height: viewport.height, isMobile: viewport.isMobile })
   const url = BASE + route
   try {
