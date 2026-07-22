@@ -10,7 +10,49 @@ Update this doc and `normalizeComdataRow` in
 `src/lib/hub/integrations/comdata.ts` in one commit the day a real response
 or provisioned file lands.
 
-## Transport reality (researched 2026-07-18)
+## 2026-07-22 scout pass — no adapter-breaking change
+
+Fifth straight anonymous pass; every Comdata/Corpay/FleetCor-controlled page
+still 403s this env's egress (resourcecenter.comdata.com, the Web Services
+2.1 spec PDF, developers.fleetcor.com/naf), so confirmation stays
+search-excerpt only. Nothing this pass touches the adapter's proven path
+(daily file-drop webhook + placeholder REST pull), so **no urgent Backlog
+flag**. Four substantive findings:
+
+1. **The SOAP spec was refreshed to 2025 and now deprecates operations.**
+   The "Corpay/Comdata Web Services 2.1 (Fleet Credit) Technical
+   Specifications" PDF (same `…/2022/05/…` upload path, so the URL is
+   unchanged) is now dated **April 11, 2025**, and search excerpts state
+   several operations are marked deprecated with planned future removal.
+   This does **not** break us today — `comdataSource().pull()` is a
+   placeholder REST call, not a SOAP client, so we call none of those
+   operations. But it's a live warning for anyone who later builds the
+   real SOAP channel: pull the current PDF and check the deprecation list
+   (especially real-time transaction / `inquireCardV02`-class inquiry
+   functions) before implementing. Recorded, not acted on.
+2. **Corpay divested Comdata *Merchant POS Solutions* to PDI Technologies.**
+   This is the merchant-acquiring / point-of-sale side of Comdata — **not**
+   the fleet-card issuing / fuel-transaction side we integrate. Our channel
+   (Fleet Credit web services + fuel-transaction file feed) is unaffected;
+   noted here to pre-empt a future scout mistaking the headline for a
+   feed-killing event.
+3. **The new `developer.crossborder.corpay.com` portal is a red herring
+   for us.** Corpay stood up a polished Cross-Border developer portal
+   (REST, HATEOAS, access-token auth, "generate API keys" guides) — but it
+   is **FX / cross-border payments only**, not fuel or fleet cards. The
+   fuel channel is still the North-American-Fuel portal at
+   `developers.fleetcor.com/naf` and the `resourcecenter.comdata.com`
+   Fleet Credit specs. Do not chase the cross-border portal for fuel-feed
+   activation.
+4. **2026 card pricing (context for the shopping-list "est. cost").** Third-
+   party 2026 reviews report: ~$50 setup, ~$8/card/month (SmartFleet tier;
+   Simple Saver $0 but fewest features; Total Advantage ~$129/mo full
+   account), **$3 out-of-network transaction fee / $0 in-network**, and
+   retail-minus fuel discounts of ~8–25¢/gal. Card-program cost only —
+   API/web-services access itself is arranged (and priced) through the
+   account team, still unquoted for a 15-truck carrier.
+
+## Transport reality (researched 2026-07-18, spec re-dated 2025-04-11)
 
 Comdata is a **Corpay** (formerly FLEETCOR) brand — NOT part of the WEX
 family — and, unlike EFS/WEX, it does publish real machine channels beyond
@@ -23,7 +65,9 @@ a rep-provisioned SFTP file:
    Comdata associates create during setup. The published specs (Web
    Services 1.0 / 2.1 Fleet Credit on resourcecenter.comdata.com) cover
    card management, driver-ID inquiry, and real-time transaction functions
-   (e.g. `inquireCardV02`).
+   (e.g. `inquireCardV02`). **The 2.1 spec PDF is now dated 2025-04-11 and
+   marks several operations deprecated for future removal** — consult its
+   deprecation list before building the real SOAP channel (2026-07-22 pass).
 2. **REST APIs + developer portal** — Corpay's "APIs and Web Services" page
    (resourcecenter.comdata.com/apis-and-web-services) describes
    resource-oriented REST APIs with JSON responses, an API developer portal
@@ -110,8 +154,17 @@ CSV import path is untouched.
 - Confirm whether Comdata transactions need a separate `card_program` value
   distinct from EFS for reporting — `runComdataSync` writes
   `card_program = 'Comdata'` today, matching the EFS/WEX pattern.
+- Watch the deprecation list in the 2025-04-11 Web Services 2.1 spec: if a
+  real-time transaction-inquiry operation we'd depend on is scheduled for
+  removal, the future SOAP channel must target its replacement, not the
+  deprecated op. Not actionable until we build that channel (REST-pull
+  placeholder calls none of them today).
 
 Sources: resourcecenter.comdata.com ("APIs and Web Services", Web Services
-1.0/2.1 Fleet Credit specs), api.iconnectdata.com WSDL,
-support.geotab.com ("Corpay NA (Comdata & Fuelman) Fuel Transactions"),
-developers.fleetcor.com/naf.
+1.0/2.1 Fleet Credit specs — 2.1 PDF re-dated 2025-04-11 with deprecated
+operations), api.iconnectdata.com WSDL, support.geotab.com ("Corpay NA
+(Comdata & Fuelman) Fuel Transactions"), developers.fleetcor.com/naf,
+developer.crossborder.corpay.com (cross-border/FX portal — NOT fuel),
+freightwaves.com / truckingway.com / fleetlogging.com (2026 card pricing),
+businesswire/Corpay IR (Merchant POS Solutions divestiture to PDI). All
+vendor-controlled pages 403 this env; search-excerpt confirmation only.
