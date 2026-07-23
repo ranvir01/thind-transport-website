@@ -457,3 +457,59 @@ Backlog:
   last confirmed recovered (per `b7eb6c2`), not re-checked this cycle (no Vercel MCP tool
   available) — no new information to page on.
 
+## Static audit + tenant-isolation E2E — 2026-07-23 ~17:50 UTC (verify-and-build cycle)
+
+`main` (`80150e8c`) build (`npm run build`), `npx vitest run` (182 files / 1521 passed, 7
+skipped), `npm run lint`, and `npm run test:sidecars` (28 Rust tests + Go vet/test, clippy
+clean) all green before touching anything else.
+
+`npm run agent:status`: 96 pending `claude/*` branches (up from 95), integrator within 3
+commits of `main`, steady state — nothing for this role to drain. `agent:backlog`'s top item
+is still owner-gated only (npm audit semver-major bump), so per step 6 did a static
+tenancy/permission audit pass (AGENTS.md rules 1-3) on the `src/app/hub/_actions/*` files not
+yet covered by the safety/claims/tasks/recruiting/settlements/fuel/expenses/messages rotation
+(`admin.ts`, `capacity.ts`, `comms.ts`, `company.ts`, `facilities.ts`, `integrations.ts`,
+`leads.ts`, `messages.ts`, `onboarding.ts`, `outreach.ts`, `packet.ts`, `driver.ts`,
+`portal.ts`), plus every `UPDATE`/`DELETE` in `src/lib/hub/*.ts` grepped for a missing
+`carrier_id` guard. One apparent gap (`setWebsiteLeadStatus` in `src/lib/hub/website-leads.ts`
+has no `carrier_id` filter at all — any office user of any carrier can flip any lead's status)
+turned out to be intentional and already documented in `migrations/hub/019_website_leads.sql`:
+`hub.website_leads` is deliberately pre-tenant, single-pool marketing-site data for the site's
+operator (Thind, tenant #1), not per-carrier SaaS data. Everything else checked out —
+`requireOfficeUser`/`requireOwner`/`requirePlatformAdmin`/manual role checks gate every
+mutation, every carrier-scoped table's writes carry `carrier_id` in the `WHERE`. No fix to
+ship from this pass.
+
+Stood up local Postgres 16 (server down, no role/db yet — created both), `npm run db:migrate`
+(20 migrations clean) + `npm run seed:demo` (two tenants), `npm run build && npm run start`,
+and ran `scripts/e2e-tenant-isolation-smoke.mjs` — the one named workflow the prior cycle's
+sweep didn't cover. All four angles passed: office list screens leak nothing cross-tenant,
+direct-URL probes for another tenant's load/invoice/truck all land on not-found with zero
+reference leakage, the Cascade driver's 390px PWA never mentions a Thind load, and platform-
+admin suspend/reactivate cuts off and restores an already-signed-in owner+driver session on
+their next request (not just at login) via the per-request `isActiveCarrier` re-check.
+**0 defects.**
+
+No code change resulted — draining the unchanged integrator tip would just replay `80150e8c`
+with a fresh `.drain-stamp` for no new deployment, so left `main` as-is.
+
+Backlog:
+- 96 pending `claude/*` branches (up from 95) — same too-large-to-absorb picture as prior
+  cycles for the big lanes, but three genuinely small candidates now sit on top of
+  `agent:branches`' list and look integrator-ready: `claude/lane-docs` (1 commit, docs-only,
+  "2026-07-23 scout pass"), `claude/lane-roadmap` (1 commit, "random drug & alcohol testing
+  pool (49 CFR 382.305)"), `claude/lane-integrations` (1 commit, fuel-feed CSV parser test
+  coverage) — worth the integrator's next `:00` pass before the usual too-large branches.
+  `lane-compliance` (~1370 unpicked) and `lane-tests` (~1276) are now the largest; meta-
+  governor prune pass still overdue, unchanged.
+- Subsystem-audit rotation: `_actions/{admin,capacity,comms,company,facilities,integrations,
+  leads,messages,onboarding,outreach,packet,driver,portal}.ts` plus a full `lib/hub` UPDATE/
+  DELETE carrier_id sweep confirmed clean this cycle. Remaining unaudited action files:
+  `dat-freight.ts`, `dvir.ts`, `fleet.ts`, `import.ts`, `loadboard.ts`, `loads.ts`, `planner.ts`,
+  `recurring.ts`, `routing.ts`, `setup.ts`, `truckstop-freight.ts`, `vetting.ts` — good next
+  pick if `agent:backlog` is owner-gated again.
+- Carried, unchanged: npm audit's 3 high-severity findings (owner-approval-gated semver-major
+  bump); IFTA due-date roll not accounting for legal holidays (documented scope decision);
+  Owner's Vercel production-pipeline status last confirmed recovered (per `b7eb6c2`), not
+  re-checked this cycle (no Vercel MCP tool available).
+
