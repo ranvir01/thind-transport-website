@@ -86,9 +86,15 @@ export async function driverOwnsTruck(
 
 /**
  * What the driver owes on this truck right now:
- * - a defective post-trip awaiting repair certification → truck is grounded
- * - a certified post-trip awaiting the pre-trip review sign-off (396.13)
+ * - a defective DVIR (pre or post — submitDvir grounds on either) awaiting
+ *   repair certification → truck is grounded
+ * - a certified defective DVIR awaiting the reviewing pre-trip's sign-off (396.13)
  * - otherwise: a fresh post-trip at end of day
+ *
+ * Must cover 'pre' as well as 'post': a reviewing pre-trip that finds its own
+ * new unsafe defect (see submitDvir) grounds the truck and becomes the new
+ * open DVIR in the review chain — restricting this to type='post' left it
+ * invisible to the driver/office UI once that happened.
  */
 export async function truckDvirState(
   carrierId: string,
@@ -99,7 +105,7 @@ export async function truckDvirState(
 }> {
   const lastDefective = await queryOne<Dvir>(
     `${DVIR_SELECT}
-     WHERE v.carrier_id = $1 AND v.truck_id = $2 AND v.type = 'post'
+     WHERE v.carrier_id = $1 AND v.truck_id = $2
        AND jsonb_array_length(v.defects) > 0
        AND NOT EXISTS (
          SELECT 1 FROM hub.dvirs r
