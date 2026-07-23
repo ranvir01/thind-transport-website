@@ -107,6 +107,12 @@ func routeMilesHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// A route request is two coordinate pairs — nothing legitimate needs more
+	// than a few hundred bytes. Cap it well above that so a client streaming
+	// an unbounded body can't hold the handler reading forever (this worker
+	// has no user auth of its own; only the TS gateway is meant to reach it,
+	// but trusting the gateway doesn't mean trusting whatever reaches it).
+	r.Body = http.MaxBytesReader(w, r.Body, 16<<10) // 16 KiB
 	var req routeMilesRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "bad request", http.StatusBadRequest)
