@@ -333,3 +333,60 @@ Backlog:
   portal invoice-pill accent-vs-gold call; IFTA due-date roll not accounting for legal
   holidays.
 
+## QA rig drive on main@f2245d6 — 2026-07-23 ~09:15 UTC (owner/dispatcher/driver, read-only prod probe)
+
+Fresh rig from scratch: Postgres 16 started (was down), `hauldesk` role + `hauldesk`
+database created per AGENTS.md pitfall #9, `npm install` (748 packages incl. canvas
+native deps via `setup:canvas-deps`), `npm run db:migrate` through `020_outreach.sql`
+clean, `seed:demo`, `npm run build` (Next.js 16 + Turbopack, zero TS errors, 140+
+routes) clean, `npx vitest run` (182 files/1522 tests) green, `npm run lint` clean,
+`npm run test:sidecars` (28 Rust tests + `cargo clippy` clean + Go `vet`/`test`) green.
+
+Reviewed every non-merge/non-drain commit landed since the last verify cycle
+(`b7eb6c2`): the only real product diff is `af69299` (today.ts's "empty soon" panel
+and digest.ts's weekly "unbilled" count each had a `NOT EXISTS` subquery scoped only
+by `truck_id`/`load_id`, not `carrier_id`, on the far side of the join — tightened to
+the same both-sides-of-the-join tenancy doctrine as every other read query in these
+files, per AGENTS.md). Bounded by UUID uniqueness so never a live leak, ships its own
+regression tests (26/26 green in `read-joins-tenancy.test.ts`), and only *tightens* an
+existing guard — not a regression. No other product diff in the window; the rest is
+merge/drain plumbing.
+
+Drove the full local rig as owner, dispatcher, and driver via `node
+scripts/e2e-run-all.mjs`: all 47 `e2e-*-smoke.mjs` scripts green plus `e2e-sweep.mjs`'s
+full visual pass (owner/office at 1440px+390px, driver PWA at 390px, portal + shipper
+portal, `/track/[token]` at both widths) — every screen has real content, no
+horizontal overflow at 390px, no blank/dead screens. **47/47, 0 defects.** Full
+battery: 13.2m.
+
+Production: direct HTTPS to `thindtransport.com` is still egress-blocked from this
+sandbox (curl exit 56, CONNECT tunnel 403), so fell back to Vercel MCP per §3b.
+`get_project`: `live: false`, `latestDeployment` CANCELED with `target: null` (a
+preview build for a session branch, not production). `list_deployments`: the last
+`target: "production"` / `state: "READY"` deployment remains `a2355f18` (06:39:54
+UTC) — main has since advanced through `83198c6`, `b7eb6c2`, `af69299`, and the drain
+merges to `f2245d6` (07:50:54 UTC), **1h39m+ stale as of this cycle with zero
+production deployment attempts** recorded for any of those commits. This is the same
+stuck-pipeline condition a concurrent cycle already found and paged the owner about at
+~08:36 UTC (session branch `claude/practical-franklin-iavf3w`, commit `3811a90`, "QA
+rig drive on main@f2245d6") — not re-alerting here since nothing beyond the staleness
+number has changed. `get_runtime_errors` (6h window): only the pre-existing SSL-mode
+deprecation warning (first seen 2026-06-26, unrelated), no new error clusters.
+
+`npm audit`: unchanged — 3 high severity (nodemailer SMTP-injection family,
+sharp/libvips via next's image optimizer), still owner-approval-gated semver-major
+bumps, not touched.
+
+Backlog:
+- Owner: production Vercel deploy pipeline stuck again on `a2355f18` — `main@f2245d6`
+  has zero production deployment attempts as of 09:29 UTC (1h39m+ stale). Same root
+  cause a concurrent cycle already flagged and paged on ~53 minutes ago (~08:36 UTC);
+  needs the Vercel dashboard Git-integration/production-branch/Ignored-Build-Step
+  check, no in-repo fix possible. Not re-paging — no new information since that alert.
+- `lane-compliance` (1368 unpicked), `lane-roadmap` (1239), and `lane-tests` (1274)
+  keep growing fast per `agent:branches`/`agent:status` — meta-governor prune pass is
+  now significantly overdue on all three.
+- Carried, unchanged: npm audit's 3 high-severity findings (owner-approval-gated
+  semver-major bump); portal invoice-pill accent-vs-gold call; IFTA due-date roll not
+  accounting for legal holidays.
+
