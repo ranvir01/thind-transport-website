@@ -205,6 +205,12 @@ describe("read queries carrier-guard their joins (both-sides tenancy)", () => {
     expect(sql).toContain("ON d.id = t.assigned_driver_id AND d.carrier_id = t.carrier_id")
     expect(sql).toContain("WHERE l.truck_id = t.id AND l.carrier_id = t.carrier_id AND s.type = 'delivery'")
     expect(sql).toContain("WHERE l.truck_id = t.id AND l.carrier_id = t.carrier_id AND l.deleted_at IS NULL")
+    // empty-soon: the "no upcoming pickup" NOT EXISTS must guard both the
+    // outer loads row and its nested next-pickup stops lateral by carrier_id,
+    // not just truck_id (truck_id/load_id are UUIDs so this was never a live
+    // leak, but it's the same both-sides-of-the-join doctrine as everywhere else).
+    expect(sql).toContain("WHERE nl.truck_id = t.id AND nl.carrier_id = t.carrier_id AND nl.deleted_at IS NULL")
+    expect(sql).toContain("WHERE load_id = nl.id AND carrier_id = nl.carrier_id AND type = 'pickup'")
     // tasks-due assignee join
     expect(sql).toContain("ON u.id = t.assignee_user_id AND u.carrier_id = t.carrier_id")
     // unbilled: customer join + invoice existence check
@@ -276,8 +282,10 @@ describe("read queries carrier-guard their joins (both-sides tenancy)", () => {
     expect(sql).toContain("JOIN hub.loads l ON l.id = i.load_id AND l.carrier_id = i.carrier_id")
   })
 
-  it("owner digest guards the empty-trucks load subquery", async () => {
+  it("owner digest guards the empty-trucks load subquery and the unbilled invoice check", async () => {
     await sendOwnerDigest(CARRIER)
-    expect(allSql()).toContain("l.truck_id = t.id AND l.carrier_id = t.carrier_id AND l.deleted_at IS NULL")
+    const sql = allSql()
+    expect(sql).toContain("l.truck_id = t.id AND l.carrier_id = t.carrier_id AND l.deleted_at IS NULL")
+    expect(sql).toContain("FROM hub.invoices i WHERE i.load_id = l.id AND i.carrier_id = l.carrier_id")
   })
 })

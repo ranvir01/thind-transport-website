@@ -27,7 +27,7 @@ export async function sendOwnerDigest(carrierId: string): Promise<{ sent: boolea
           AND updated_at >= NOW() - INTERVAL '7 days') AS delivered_week,
        (SELECT COUNT(*) FROM hub.loads l WHERE l.carrier_id = $1 AND l.deleted_at IS NULL
           AND l.status = 'pod_received'
-          AND NOT EXISTS (SELECT 1 FROM hub.invoices i WHERE i.load_id = l.id)) AS unbilled,
+          AND NOT EXISTS (SELECT 1 FROM hub.invoices i WHERE i.load_id = l.id AND i.carrier_id = l.carrier_id)) AS unbilled,
        COALESCE((SELECT SUM(i.amount_cents - COALESCE(p.paid, 0)) FROM hub.invoices i
          LEFT JOIN LATERAL (SELECT SUM(amount_cents) AS paid FROM hub.payments WHERE invoice_id = i.id AND carrier_id = i.carrier_id) p ON TRUE
          WHERE i.carrier_id = $1 AND i.status NOT IN ('paid','disputed')), 0) AS ar_open,
