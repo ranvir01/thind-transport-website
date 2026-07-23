@@ -10,7 +10,8 @@ export interface CarrierSettings {
   randomTesting: { drugPct: number; alcoholPct: number }
   factoring: { company: string | null; remitName: string | null; remitAddress: string | null; email: string | null }
   notifications: { officeEmail: string | null }
-  /** Per-tenant branding (Phase 7). Written by setBrandAccentAction; not yet rendered anywhere. */
+  /** Per-tenant branding (Phase 7). Written by setBrandAccentAction; rendered on PDFs, the customer
+   * portal chrome, and the driver PWA nav (each via its own accent-resolution helper). */
   branding: { accent: string | null }
 }
 

@@ -50,7 +50,9 @@ export function DriverNav({ firstName }: { firstName: string }) {
               href={tab.href}
               className={cn(
                 "flex min-h-[60px] flex-col items-center justify-center gap-1 text-[10px] font-bold uppercase tracking-wide",
-                isActive(pathname, tab.href) ? "text-gold" : "text-steel-400 hover:text-white"
+                isActive(pathname, tab.href)
+                  ? "text-[color:var(--driver-accent)]"
+                  : "text-steel-400 hover:text-white"
               )}
             >
               <tab.icon className="h-5 w-5" />
