@@ -9,6 +9,7 @@
 
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet};
+use std::io::Read;
 use tiny_http::{Header, Method, Response, Server, StatusCode};
 
 #[derive(Debug, Deserialize)]
@@ -206,6 +207,14 @@ fn handle(method: &Method, path: &str, secret_header: Option<&str>, body: &str, 
     }
 }
 
+/// `/ifta/summary` payloads scale with jurisdiction count (US states + Canadian
+/// provinces, at most a few dozen) — a few KiB covers any real fleet. Capped
+/// well above that so a client streaming an unbounded body can't hold this
+/// LAN-only sidecar reading into memory forever (it has no user auth of its
+/// own; only the TS gateway is meant to reach it, but trusting the gateway
+/// doesn't mean trusting whatever reaches it).
+const MAX_BODY_BYTES: u64 = 256 * 1024;
+
 /// Per-request glue between the live `tiny_http::Request` and `handle`:
 /// header extraction (case-insensitive — the TS gateway sends
 /// `X-Hauldesk-Secret`, other clients may differ), body read, dispatch.
@@ -216,8 +225,17 @@ fn process(request: &mut tiny_http::Request, secret: &str) -> Response<std::io::
     let secret_header = header_value(request, "x-hauldesk-secret").map(|s| s.to_string());
 
     let mut body = String::new();
-    if method == Method::Post && request.as_reader().read_to_string(&mut body).is_err() {
-        return json_response(400, r#"{"error":"bad request"}"#);
+    if method == Method::Post {
+        // Read one byte past the cap: a body that fills exactly that many
+        // bytes is over the limit, while a body exactly at the cap reads in
+        // full and passes through untruncated.
+        let mut limited = request.as_reader().take(MAX_BODY_BYTES + 1);
+        if limited.read_to_string(&mut body).is_err() {
+            return json_response(400, r#"{"error":"bad request"}"#);
+        }
+        if body.len() as u64 > MAX_BODY_BYTES {
+            return json_response(413, r#"{"error":"payload too large"}"#);
+        }
     }
 
     let (status, resp_body) = handle(&method, &path, secret_header.as_deref(), &body, secret);
@@ -612,5 +630,48 @@ mod tests {
         assert_eq!(status, 200);
         assert!(body.contains("\"netTaxCents\":2360"), "golden pennies in {body}");
         assert!(body.contains("\"source\":\"rust-compute\""));
+    }
+
+    /// Builds a valid (ignored-field-tolerant) IftaInputs body padded with a
+    /// throwaway string field to land at an exact byte length, so the
+    /// MAX_BODY_BYTES boundary can be tested to the byte.
+    fn padded_gateway_body(target_len: usize) -> String {
+        let prefix = r#"{"milesByJurisdiction":{},"gallonsByJurisdiction":{},"rates":{},"pad":""#;
+        let suffix = r#""}"#;
+        let overhead = prefix.len() + suffix.len();
+        assert!(target_len >= overhead, "target_len too small for the body's own overhead");
+        format!("{prefix}{}{suffix}", "a".repeat(target_len - overhead))
+    }
+
+    /// A body of exactly MAX_BODY_BYTES must not be flagged oversized —
+    /// the cap is inclusive, not exclusive.
+    #[test]
+    fn process_accepts_body_exactly_at_the_cap() {
+        // TestRequest::with_body needs a &'static str; leaking is fine in a
+        // test that runs once and exits.
+        let body: &'static str = Box::leak(padded_gateway_body(MAX_BODY_BYTES as usize).into_boxed_str());
+        assert_eq!(body.len() as u64, MAX_BODY_BYTES);
+        let request = TestRequest::new()
+            .with_method(Method::Post)
+            .with_path("/ifta/summary")
+            .with_body(body);
+        let (status, _) = run_request(request, "");
+        assert_eq!(status, 200, "a body exactly at the cap must not be rejected");
+    }
+
+    /// One byte past MAX_BODY_BYTES must be rejected before it ever reaches
+    /// serde/compute_ifta — a client streaming an unbounded body must not be
+    /// able to hold this sidecar reading it into memory.
+    #[test]
+    fn process_413s_body_one_byte_over_the_cap() {
+        let body: &'static str =
+            Box::leak(padded_gateway_body(MAX_BODY_BYTES as usize + 1).into_boxed_str());
+        let request = TestRequest::new()
+            .with_method(Method::Post)
+            .with_path("/ifta/summary")
+            .with_body(body);
+        let (status, resp_body) = run_request(request, "");
+        assert_eq!(status, 413);
+        assert!(resp_body.contains("payload too large"));
     }
 }

@@ -177,6 +177,18 @@ func TestRouteMilesRejectsOutOfRangeCoordinates(t *testing.T) {
 	}
 }
 
+func TestRouteMilesRejectsOversizedBody(t *testing.T) {
+	// MaxBytesReader caps the body well above any legitimate two-coordinate
+	// payload; a client streaming megabytes must get a clean 400, not tie up
+	// the handler reading an unbounded body into memory.
+	pad := strings.Repeat("a", 32<<10) // 32 KiB, double the 16 KiB cap
+	body := `{"origin":{"lat":0,"lng":0},"dest":{"lat":0,"lng":1},"pad":"` + pad + `"}`
+	rec := doRequest(t, http.MethodPost, "/route/miles", body, nil)
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("expected 400 for oversized body, got %d", rec.Code)
+	}
+}
+
 func TestRouteMilesAcceptsBoundaryCoordinates(t *testing.T) {
 	// The poles and the antimeridian are legal coordinates — the range guard
 	// must be inclusive, and the worker still answers (labeled fallback here,
