@@ -157,8 +157,12 @@ export async function submitDvir(
     const dvirId = rows[0].id as string
     let grounded = false
 
-    if (input.type === "post" && input.defects.length > 0 && !input.safeToOperate) {
-      // Unsafe defect: ground the truck and open a work order (396.11(a)(3)).
+    // Unsafe defect grounds the truck regardless of pre/post (396.11(a)(3)) — a
+    // pre-trip reviewing a certified repair can itself find a new unsafe defect,
+    // and must not release the truck just because the PRIOR defect was certified.
+    const isUnsafe = input.defects.length > 0 && !input.safeToOperate
+
+    if (isUnsafe) {
       await client.query(
         `UPDATE hub.trucks SET status = 'shop', updated_at = NOW() WHERE carrier_id = $1 AND id = $2`,
         [carrierId, input.truckId]
@@ -175,10 +179,8 @@ export async function submitDvir(
         workOrder[0].id, dvirId,
       ])
       grounded = true
-    }
-
-    if (input.type === "pre" && prior?.repair_certified_at) {
-      // 396.13(c): the reviewing driver's signature releases a certified truck.
+    } else if (input.type === "pre" && prior?.repair_certified_at) {
+      // 396.13(c): the reviewing driver's clean signature releases a certified truck.
       await client.query(
         `UPDATE hub.trucks SET status = 'active', updated_at = NOW()
          WHERE carrier_id = $1 AND id = $2 AND status = 'shop'`,
