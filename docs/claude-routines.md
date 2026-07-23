@@ -400,3 +400,63 @@ Backlog:
   production-pipeline dashboard check (re-verify with Vercel MCP before paging again — no
   access this cycle to re-confirm either way).
 
+## Safety/claims/recruiting/settlements/tasks audit found already in flight — 2026-07-23 ~15:35 UTC (verify-and-build cycle)
+
+`git fetch origin`: session branch was already at `main`'s tip (`318a5b12`, the drain of
+`5f65dd51`). `npm ci` (720 packages, same 3 carried `npm audit` high-severity findings,
+not re-attempted), `npm run build` (zero TS errors) and `npx vitest run` (182 files/1519
+tests, 1 file/7 tests skipped) both green — no rule violations to fix, so main-repair
+wasn't the run.
+
+Went to take the top backlog item (`5f65dd51`'s rotation: "safety/claims, recruiting,
+settlements, tasks" per-entry-point audit) but `git log --all --oneline --grep=...` first,
+per §5's duplicate-work rule, turned up that **all four subsystems already have audit
+fixes sitting on unmerged session branches**, each on its own branch:
+- `origin/claude/eager-babbage-cwnjh8` → `5f8e3164` "safety/claims + recruiting +
+  settlements + tasks subsystem audit clean" (a combined pass)
+- `origin/claude/eager-babbage-siqumh` → `103764b5` "Tasks subsystem audit: close
+  both-sides tenancy gaps found by rotation"
+- `origin/claude/eager-babbage-39qe2o` → `5b4f746f` "Recruiting subsystem audit: referral
+  bonus stuck 'pending' if attached after hire"
+- `origin/claude/eager-babbage-x9omlp` → `f5fe61ef` "Tasks: guard the unbilled-invoice
+  NOT EXISTS check by carrier_id"
+
+Not writing a fifth copy of this audit. Instead used the rig to independently verify
+current `main`'s behavior (pre-fix baseline) so the integrator knows what these branches
+are actually fixing: local Postgres up, migrated through `020_outreach.sql`, seeded,
+`npm run build && npm run start`. Ran `e2e-ifta-smoke` and `e2e-compliance-smoke` (this
+cycle's E2E-sweep fallback, since the real backlog item was a duplicate) plus, since the
+rig was already up, `e2e-safety-smoke`, `e2e-claims-smoke`, `e2e-recruiting-smoke`,
+`e2e-settlements-smoke`, and `e2e-tasks-smoke` to baseline exactly the subsystems those
+four branches touch. **All seven green, 0 defects, 0 console errors** — the smokes don't
+happen to exercise the specific tenancy/lifecycle edges those branches fix (both-sides
+carrier scoping on an internal query, a referral-bonus state transition, an
+unbilled-invoice check's missing `carrier_id` guard), so a clean E2E run and a real
+uncommitted fix aren't in tension; the integrator should still land those four branches.
+
+`npm run agent:status`: still steady state (integrator within 3 of main). `npm run
+agent:branches` shows the growth trend continuing and worsening: `lane-tests` 1274 (was
+1273), `lane-compliance` 1368 (was 1367), `lane-roadmap` 1239 (was 1238) commits ahead of
+the integrator, plus the four small audit branches above untouched by any drain.
+`lane-docs` is the only small one (2 commits, a 2026-07-23 docs scout pass).
+
+Backlog:
+- Integrator: land the four unmerged audit-fix branches above before picking anything
+  else off `lane-compliance`/`lane-roadmap`/`lane-tests` — they're small, isolated,
+  already-verified fixes for exactly the rotation item this cycle would otherwise have
+  redone.
+- Subsystem-audit rotation, once those four land: no subsystem left unaudited per
+  AGENTS.md's per-entry-point pass (fuel, expenses, messages, safety/claims, recruiting,
+  settlements, tasks all now covered) — next cycle should re-scope the rotation (e.g.
+  onboarding/admin, integrations adapters, reports/owner dashboard) rather than repeat.
+- `lane-compliance` (1368 unpicked, up from 662 two cycles ago) and `lane-roadmap` (1239,
+  up from 627) and `lane-tests` (1274, newly the largest) are growing every cycle —
+  meta-governor prune pass is now significantly overdue on all three, not just the first
+  two.
+- Carried, unchanged: npm audit's 3 high-severity findings (owner-approval-gated
+  semver-major bump); IFTA due-date roll not accounting for legal holidays (note:
+  `lane-compliance`'s `d71d657d` "roll IFTA due dates off weekends to the next business
+  day" is a step toward this but doesn't cover legal holidays — still open); Owner's
+  Vercel production-pipeline dashboard check (no Vercel MCP access this cycle to
+  re-confirm either way).
+
