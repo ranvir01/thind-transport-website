@@ -52,7 +52,7 @@ export default async function TrackPage({ params }: { params: Promise<{ token: s
             so an unset accent renders this card pixel-identical to before. */}
         <div
           className="rounded-2xl border bg-[linear-gradient(180deg,rgba(20,31,47,0.94),rgba(11,20,34,0.96))] p-6 md:p-8"
-          style={{ borderColor: accent.rule }}
+          style={{ borderColor: accent.rule, "--portal-accent": accent.text } as React.CSSProperties}
         >
           <p className="text-[11px] font-bold uppercase tracking-[0.3em]" style={{ color: accent.text }}>
             {carrierName}
