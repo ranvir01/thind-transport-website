@@ -265,3 +265,58 @@ Backlog:
   pending lane branch and carries old integrator-merge history in its own log —
   needs the meta-governor prune pass to decide salvage-vs-delete, same as the
   other 600+/190+ branches noted above; not safe for an unattended one-shot merge.
+
+## QA rig drive on main@7e9372e: owner/dispatcher/driver sweep clean; production stuck ~5h with zero deploy attempts on the last 3 main pushes — 2026-07-23 ~04:30 UTC
+
+Fresh rig from scratch: Postgres 16 started (was down), `loadoff`/`loadoff_dev`
+role+database created per pitfall #9, `npm ci` (720 packages), `npm run db:migrate`
+through `020_outreach.sql` clean, `seed:demo`, `npm run build` (Next.js 16, zero TS
+errors) clean, `npx vitest run` (181 files/1515 tests) green, `npm run test:sidecars`
+(28 Rust + Go `go vet`/`go test ./...`, including the new
+`TestRouteMilesRejectsOversizedBody`/`process_413s_body_one_byte_over_the_cap`
+boundary tests) green.
+
+Reviewed every non-merge commit landed in the last 3 hours (01:17–04:30 UTC):
+`981507e` (sidecars POST body-size cap on both Go/Rust work endpoints, own
+boundary tests in-commit) and `0a1bdfa` (docs log, no product diff). Neither
+touches money/permission/tenancy paths; both carry their own verification. No
+regression found — nothing to fix-forward.
+
+Drove the full local rig as owner, dispatcher, and driver: `node
+scripts/e2e-run-all.mjs` (all 47 `e2e-*-smoke.mjs` scripts, run in two batches
+since one 580s timeout wasn't enough for the full suite) — 47/47 passed, 0
+failures. Followed with `node scripts/e2e-sweep.mjs`: every office/owner screen
+at 1440px + 390px, the driver PWA at 390px, the broker/shipper portal, and
+`/track/[token]` — sweep clean, real content on every screen, no horizontal
+overflow at 390px.
+
+**Production defect (not a code regression — a deploy-pipeline stall):** the
+`thindtransport.com` alias is still serving `dpl_3ABZnHjnyvFk7LiLGghjzigTrS8j`
+(commit `97a9f6a`, deployed 2026-07-22 23:31:58 UTC) — confirmed via the Vercel
+connector (`get_deployment` on the domain alias; direct HTTPS to
+`thindtransport.com` is egress-blocked in this sandbox per `prod:smoke`'s
+`host_not_allowed`, so used the documented §3b fallback). `main` has since
+advanced 3 real pushes (`8f285fc`, `727d38a`, `7e9372e`, all "Drain integrator to
+main" commits carrying real diffs — IFTA split, digest fix, portal accent, sidecars
+body-size cap, docs) — **none of the three appear in Vercel's deployment list at
+all**, not even as an `ignoreCommand`-skipped/CANCELED entry the way every
+non-main branch push correctly does. That's different from the known
+Hobby-cron-validation and SHA-dedupe failure modes already documented here: this
+looks like `main` pushes simply not reaching Vercel as build triggers since
+~02:08 UTC. The GitHub Action `drain-integrator.yml` backstop also hasn't fired
+since 01:18:05 UTC (next scheduled ~01:47) — within its documented throttling
+range, so not conclusive on its own, but consistent with the same window.
+Production is now ~5h stale on content that's fully green on the local rig.
+
+Backlog:
+- **Production redeploy needed now**: `main`@`7e9372e` is verified green
+  (build+vitest+sidecars+full E2E+sweep, this cycle) but not live. Next agent
+  with Vercel deploy access: trigger a fresh production deployment for `main`
+  directly (`deploy_to_vercel` or an empty `.drain-stamp`-refresh commit per the
+  existing force-deploy pattern) and confirm the alias moves off `97a9f6a`. If
+  the same "main push creates no deployment record at all" pattern repeats, this
+  is a GitHub↔Vercel integration/webhook issue (not a code or ignoreCommand
+  problem) and needs a human look at the Vercel project's Git integration
+  settings.
+- 84+ pending `claude/*` branches still await the meta-governor prune pass
+  (unchanged from the last cycle's note).
