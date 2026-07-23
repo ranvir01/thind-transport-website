@@ -86,9 +86,16 @@ export async function driverOwnsTruck(
 
 /**
  * What the driver owes on this truck right now:
- * - a defective post-trip awaiting repair certification → truck is grounded
- * - a certified post-trip awaiting the pre-trip review sign-off (396.13)
+ * - a defective DVIR awaiting repair certification → truck is grounded
+ * - a certified defective DVIR awaiting the pre-trip review sign-off (396.13)
  * - otherwise: a fresh post-trip at end of day
+ *
+ * A defective DVIR can be a 'post' (end-of-day find) or a 'pre' (396.13
+ * review itself turns up a NEW unsafe defect) — both open the same repair/
+ * re-review chain, so the type filter must not exclude either one. The
+ * chain always advances via prior_dvir_id (DvirForm always submits the
+ * current openDvir.id as its prior), so at most one defective DVIR is ever
+ * un-reviewed at a time regardless of which type opened it.
  */
 export async function truckDvirState(
   carrierId: string,
@@ -99,7 +106,7 @@ export async function truckDvirState(
 }> {
   const lastDefective = await queryOne<Dvir>(
     `${DVIR_SELECT}
-     WHERE v.carrier_id = $1 AND v.truck_id = $2 AND v.type = 'post'
+     WHERE v.carrier_id = $1 AND v.truck_id = $2
        AND jsonb_array_length(v.defects) > 0
        AND NOT EXISTS (
          SELECT 1 FROM hub.dvirs r
