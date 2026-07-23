@@ -28,7 +28,7 @@ import { listApplicants } from "../recruiting"
 import { listAdvances, listSettlements, escrowBalances } from "../settlements"
 import { listCustomers } from "../customers"
 import { listInvoices } from "../invoices"
-import { listTasks } from "../tasks"
+import { listTasks, runTaskAutomations } from "../tasks"
 import { listFacilityNotes } from "../facilities"
 import { driverActiveLoads, driverDocuments, openDocumentRequests } from "../driver-app"
 import { portalLoads, portalLoadDocuments, portalInvoices } from "../portal"
@@ -143,6 +143,13 @@ describe("read queries carrier-guard their joins (both-sides tenancy)", () => {
   it("task list guards the assignee users join", async () => {
     await listTasks(CARRIER)
     expect(lastSql()).toContain("ON u.id = t.assignee_user_id AND u.carrier_id = t.carrier_id")
+  })
+
+  it("task automations guard the unbilled-invoice existence check", async () => {
+    await runTaskAutomations(CARRIER)
+    expect(allSql()).toContain(
+      "FROM hub.invoices i WHERE i.load_id = l.id AND i.carrier_id = l.carrier_id"
+    )
   })
 
   it("facility notes guard the document join", async () => {
