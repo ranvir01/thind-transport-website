@@ -333,3 +333,70 @@ Backlog:
   portal invoice-pill accent-vs-gold call; IFTA due-date roll not accounting for legal
   holidays.
 
+## Divergence repair + fuel/expenses/messages subsystem audit — 2026-07-23 ~09:40 UTC (verify-and-build cycle)
+
+Found the integrator 1 ahead of `main` (`9eac3a5b`, the DVIR pre-trip-grounding widen) and
+`main` 1 ahead of the integrator (a `.drain-stamp` drain commit not yet merged back) — same
+divergence shape as the 07-23 01:55 UTC cycle. Merged `main` into the integrator first
+(clean, no conflicts). `npm ci` + `npm run build` + `npx vitest run` (182 files/1519 tests)
++ `npm run lint` all green before touching anything else.
+
+Picked up the fuel-subsystem audit next in the rotation (per `168446e4`'s backlog: "fuel —
+`fuel.ts` receipts + `assignFuelToLoad`'s cross-table tenancy, IFTA gallon/odometer
+rollup"). Walked every fuel entry point against AGENTS.md: `fuel.ts` (all 9 exports —
+tenancy joins guard both sides, `assignFuelToLoad` already matches the canonical
+carrier-scoped-both-sides pattern AGENTS.md cites it for), `_actions/fuel.ts`
+(`reclassifyFuelUse`/`assignFuelLoadAction` both `requirePermission("fuel:write")` +
+`logAudit`), the CSV bulk importer and the WEX/EFS/Comdata poll-sync ingests (all
+carrier-scoped truck matching, `ON CONFLICT (carrier_id, source, external_id)`,
+`dollarsToCents` on money fields), and the IFTA gallon rollup in `ifta.ts` (tractor-only
+gallons, carrier+date scoped, unknown-jurisdiction gallons tracked not silently dropped).
+**No defect found** — this subsystem is clean. `odometer` on `fuel_transactions` is
+captured but never fed into mileage math (IFTA miles come from GPS pings or imported
+CSV mileage only, never card-reported odometer) — that's correct IFTA practice, not a gap.
+
+While there, spot-checked the next two items already flagged as "unaudited" and found both
+already resolved by intervening commits, so clearing them from future rotation notes:
+- `expenses.ts` + `_actions/money.ts#createExpenseAction` + the driver-receipt path in
+  `_actions/driver.ts`: permission-gated (`money:write`), `assertCarrierRefs` on
+  truck/driver/load, audited, integer cents throughout. Clean.
+- `messages.ts`: `sendMessage`/`markThreadRead` don't take/re-check `carrierId` internally,
+  but every caller in `_actions/messages.ts` goes through `canAccessThread` (which calls
+  `getThread(carrierId, threadId)`) before any write — verify-then-write, not a live gap.
+
+Also confirmed three carried backlog lines from `168446e4`/earlier cycles are stale
+(already fixed, just not pruned from the trailer chain): `today.ts`/`digest.ts` NOT EXISTS
+carrier_id gaps (closed by `af69299d`), the DVIR pre-trip-release safety bug (closed by
+`45e08c0b`/`9eac3a5b`/`c3647dfa`), and the portal invoice-pill accent-vs-gold call (closed
+by `83198c68` — it turned out to be a mechanical token fix, not an owner design call after
+all).
+
+Stood up local Postgres, migrated + seeded, `npm run build && npm run start`, and ran the
+four smokes touching what was just audited: `e2e-fuel-smoke` (36 unassigned receipts,
+link/reclassify/driver-blocked all pass), `e2e-expenses-smoke` (odd-cents record + P&L
+delta + QBO CSV reconcile), `e2e-messages-smoke` (office↔driver thread, unread badges, read
+receipts, driver blocked from office routes), `e2e-ifta-smoke` (compute → draft → filed,
+worksheet/CSV/header net-tax reconciliation). **All four green, 0 defects, 0 console
+errors** — matches the static-audit conclusion.
+
+`agent:branches` (81 pending, down from 84): every branch under ~150 unpicked commits from
+the last two cycles is already absorbed; every remaining candidate is 150+ unpicked
+(`lane-compliance` 662, `eager-babbage-ibsmrz` 652, `lane-tests` 639, `lane-roadmap` 627,
+`practical-franklin-5ol54s` 618, the `gallant-dijkstra-*`/`stoic-mccarthy-*`/
+`compassionate-bell-*` family 150-186 each) — same "too large for one unattended pass" call
+as prior cycles, nothing new to absorb.
+
+Drained the resulting integrator tip to `main` with the stamped `--no-ff` method
+immediately after.
+
+Backlog:
+- Subsystem-audit rotation: fuel + expenses + messages are now confirmed clean. Next
+  unaudited per AGENTS.md's per-entry-point pass: safety/claims, recruiting, settlements,
+  tasks.
+- `lane-compliance` (662 unpicked) and `lane-roadmap` (627) remain the largest pending
+  branches — meta-governor prune pass still overdue, unchanged from prior cycles.
+- Carried, unchanged: npm audit's 3 high-severity findings (owner-approval-gated
+  semver-major bump); IFTA due-date roll not accounting for legal holidays; Owner's Vercel
+  production-pipeline dashboard check (re-verify with Vercel MCP before paging again — no
+  access this cycle to re-confirm either way).
+
