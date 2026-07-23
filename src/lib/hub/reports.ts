@@ -340,41 +340,9 @@ function mapLaneLeaderboardRows(rows: LaneLeaderboardQueryRow[]): LaneLeaderboar
   })
 }
 
-export async function laneLeaderboard(carrierId: string, days = 92, limit = 5): Promise<LaneLeaderboardRow[]> {
-  const settings = await getCarrierSettings(carrierId)
-  const costPerMileCents = settings.costPerMileCents ?? 185
-
-  const rows = await query<LaneLeaderboardQueryRow>(
-    `SELECT * FROM (
-       SELECT
-         fs.city AS origin_city, fs.state AS origin_state,
-         ls.city AS dest_city, ls.state AS dest_state,
-         COUNT(*)::int AS loads_count,
-         SUM(l.linehaul_cents + l.fuel_surcharge_cents +
-             COALESCE((SELECT SUM((a->>'amount_cents')::bigint) FROM jsonb_array_elements(l.accessorials) a), 0)
-         ) AS revenue_cents,
-         SUM(COALESCE(l.loaded_miles, 0)) AS miles,
-         SUM(l.linehaul_cents + l.fuel_surcharge_cents +
-             COALESCE((SELECT SUM((a->>'amount_cents')::bigint) FROM jsonb_array_elements(l.accessorials) a), 0)
-         ) - SUM(COALESCE(l.loaded_miles, 0)) * $3::int AS margin_cents
-       FROM hub.loads l
-       JOIN LATERAL (SELECT city, state FROM hub.stops WHERE load_id = l.id AND type = 'pickup' ORDER BY sequence LIMIT 1) fs ON TRUE
-       JOIN LATERAL (SELECT city, state FROM hub.stops WHERE load_id = l.id AND type = 'delivery' ORDER BY sequence DESC LIMIT 1) ls ON TRUE
-       WHERE l.carrier_id = $1 AND l.deleted_at IS NULL AND l.status <> 'cancelled'
-         AND l.created_at >= NOW() - ($2 || ' days')::interval
-       GROUP BY fs.city, fs.state, ls.city, ls.state
-     ) lane
-     ORDER BY margin_cents DESC, loads_count DESC
-     LIMIT $4`,
-    [carrierId, days, costPerMileCents, limit]
-  )
-  return mapLaneLeaderboardRows(rows)
-}
-
 /**
- * Date-range variant of `laneLeaderboard`, for the Reports page and its CSV
- * export — same aggregation and margin math, but scoped to an explicit
- * [from, to] window instead of a trailing-days one (mirrors truckPnl vs
+ * Lane leaderboard scoped to an explicit [from, to] window, for the owner
+ * dashboard, Reports page, and its CSV export (mirrors truckPnl vs
  * truckPnlRange above). Live rather than `hub.lanes`, which is an all-time
  * cache that can't be date-scoped.
  */
