@@ -246,6 +246,56 @@ describe("replayQueue", () => {
 })
 
 /**
+ * withStore closes its IndexedDB connection on every terminal path. A failed
+ * request aborts the transaction rather than completing it, so oncomplete
+ * alone would leak the connection — OfflineSync calls into this queue every
+ * 30s for the life of a shift, and repeated failures (e.g. quota errors on
+ * queued photos) would otherwise pile up open connections.
+ */
+describe("withStore connection cleanup", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  it("closes the connection when a request fails and the transaction aborts", async () => {
+    let closeCalls = 0
+    const reqError = new Error("QuotaExceededError")
+    const req: any = {
+      onsuccess: null,
+      error: reqError,
+      set onerror(fn: (() => void) | null) {
+        if (fn) queueMicrotask(fn)
+      },
+    }
+    const store = { count: () => req }
+    const tx: any = {
+      objectStore: () => store,
+      oncomplete: null,
+      onerror: null,
+      set onabort(fn: (() => void) | null) {
+        if (fn) queueMicrotask(fn)
+      },
+    }
+    const db = {
+      objectStoreNames: { contains: () => true },
+      createObjectStore: () => {},
+      transaction: () => tx,
+      close: () => { closeCalls++ },
+    }
+    const openReq: any = { onsuccess: null, result: db }
+    vi.stubGlobal("indexedDB", {
+      open: () => {
+        queueMicrotask(() => openReq.onsuccess?.())
+        return openReq
+      },
+    })
+
+    await expect(queueCount()).rejects.toThrow("QuotaExceededError")
+    expect(closeCalls).toBe(1)
+  })
+})
+
+/**
  * listIntents is what OfflineSync and replayQueue's callers hand a replay
  * order to — a driver's taps must replay in the order they happened
  * (arrived-then-departed can't ever execute out of order), independent of
