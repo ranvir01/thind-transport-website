@@ -400,3 +400,65 @@ Backlog:
   production-pipeline dashboard check (re-verify with Vercel MCP before paging again — no
   access this cycle to re-confirm either way).
 
+## QA-only drive (owner/dispatcher/driver, Playwright + prod probe) — 2026-07-23 ~11:10 UTC
+
+Dedicated QA cycle per this routine's brief: no feature work, stand up the rig, drive real
+user flows with **Playwright** (deliberately not the existing `scripts/e2e-*.mjs` Puppeteer
+suite — an independent tool catches what a shared harness's own bugs wouldn't), and probe
+`https://thindtransport.com` read-only.
+
+**Last-3-hours regression check first** (the brief's other instruction): every commit on
+`main` in the 08:10-11:10 UTC window is docs-only or merge/drain plumbing (`5f65dd51` touched
+only `docs/claude-routines.md`; `3626da3`/`318a5b1` are merges) — no product code landed, so
+nothing to regress.
+
+**Fresh rig from scratch**: Postgres 16 started (was down), `hauldesk` role + database created
+per AGENTS.md pitfall #9, `.env.local` from `.env.example` with a generated `NEXTAUTH_SECRET`/
+`CRON_SECRET`/`CREDENTIALS_KEY`, `npm install` (748 packages incl. canvas native deps via
+`setup:canvas-deps`), `npm run db:migrate` through `020_outreach.sql` clean, `seed:demo`,
+`npm run build` (Next.js 16 + Turbopack, zero TS errors, 140+ routes) clean, `npm run start`.
+
+**Playwright drive** (own script, `playwright` installed `--no-save` against the sandbox's
+preinstalled `/opt/pw-browsers` chromium — not added to `package.json`): logged in as
+owner/dispatcher (1440px) and driver (390px, forced-dark) and walked each role's real nav —
+owner (loadboard, owner reports, invoices, fleet, safety, users), dispatcher (loadboard,
+planner, messages, loads, tasks, map, opened a real load-detail page from the board),
+driver (home, messages, pay, more, docs, DVIR, timeoff, incident). Watched console errors,
+`pageerror`, HTTP 5xx, and same-origin failed requests throughout. **Zero defects**: no console
+errors, no 5xx, no broken same-origin requests (Next.js `?_rsc=` prefetch aborts are normal
+router behavior, filtered out; OpenStreetMap tile fetches on `/hub/map` failed only because
+this sandbox's egress policy blocks external hosts, not an app bug). Driver body colors
+sampled at `rgb(232,237,242)` text on `rgb(11,12,14)` background — forced-dark contrast intact,
+no invisible text. Screenshots of all three roles' key screens confirm clean rendering: office
+surfaces are semantic/light with no gold/navy bleed, driver surfaces are correctly dark. Cross-
+checked with `e2e-login-smoke.mjs` (still green) rather than re-running the full 47-script suite,
+since `5f65dd51` (90 minutes prior) already ran a fresh-rig full sweep at 0 defects.
+
+**Production probe**: direct HTTPS to `thindtransport.com` failed with the documented sandbox
+egress 403 (inconclusive, not a site defect — per `docs/agent-improvement-loop.md` §3b). Via
+Vercel MCP instead: `get_project`'s `latestDeployment` reads `CANCELED`/`target: null`, but that
+is the most recent deployment of *any* kind (a preview build), not production — cross-checking
+`list_deployments` finds the actual `target: "production"` deployment (`dpl_EYx8D285j...`) is
+`READY` at commit `318a5b12`, exactly `main`'s current HEAD. **Production is healthy and
+current.** `agent:status` independently confirms STEADY STATE. `get_runtime_errors` (24h window)
+shows exactly one error group: a `pg`/`pg-connection-string` SSL-mode deprecation warning
+(`sslmode=require` will stop aliasing to `verify-full` in a future major) on
+`/api/hub/cron/[job]`, first seen 2026-06-26 — long-standing library noise, not a functional
+error and not a recent regression, so not fixed outright here.
+
+Backlog:
+- New, low-priority: `POSTGRES_URL`'s `sslmode=require` triggers a `pg-connection-string`
+  deprecation warning on every cron invocation (`/api/hub/cron/[job]`, seen since 2026-06-26,
+  11 occurrences/24h) — harmless today, but `pg` v9/`pg-connection-string` v3 will change its
+  semantics. Fix is a one-line env var change (`sslmode=verify-full` or
+  `uselibpqcompat=true&sslmode=require`) on the Vercel project, not a code change — owner or
+  lane-docs to action.
+- `claude/lane-compliance` already carries a fix for the long-carried "IFTA due-date roll
+  doesn't account for legal holidays" item (`d71d657d` "roll IFTA due dates off weekends to the
+  next business day", 1368 commits unpicked) — integrator should prioritize draining that lane
+  over any fresh fix.
+- Carried, unchanged: `lane-compliance` (1368 unpicked) and `lane-roadmap` (1239) remain by far
+  the largest pending branches; meta-governor prune pass is significantly overdue (this cycle
+  intentionally did not touch it — out of scope for a QA-only run). npm audit's 3 high-severity
+  findings (owner-approval-gated semver-major bump).
+
