@@ -217,3 +217,51 @@ No local Postgres running in this session, so no visual/E2E sweep this cycle —
 Drained the resulting integrator tip to `main` immediately after (stamped `--no-ff`,
 see above) since it was already ahead and green — never left a green integrator
 waiting on a PR.
+
+## Divergence repair + 7-branch absorb + drain — 2026-07-23 ~01:55 UTC (Routine 1 run)
+
+Found the integrator and `main` diverged 1 commit each (a `.drain-stamp` force-deploy
+commit had landed on `main` directly without being merged back) — merged `main` into
+the integrator first (clean, build+tests green: 177 files/1473 tests) before touching
+any lane branch, per the "if histories diverged, merge main into the integrator first"
+rule.
+
+Absorbed 7 small clean branches from `agent:branches`, one at a time, build+`vitest`
+green after each: `eager-babbage-udxdjn` (IFTA worksheet fuel-tax/surcharge split —
+closes a Backlog item carried since `d54be16`), `intelligent-sagan-o3i2oa` (weekly
+owner digest was blind to expired equipment compliance), `lane-portal` (progress
+bar/stop timeline follow the carrier's accent), `lane-office` (planner lane-packing
+unit coverage), `charming-allen-lqe146` (mapbox.ts test coverage), `lane-saas`
+(PDF-branding test coverage), `stoic-mccarthy-yx14n1` (fleet-tooling
+`agent-loop-status.mjs` fix — conflicted with HEAD's already-shipped superset
+implementation; resolved keep-HEAD per AGENTS.md, verified the incoming diff was
+fully subsumed before resolving that way).
+
+Skipped every branch above 200 unpicked commits (`lane-compliance` 667, `lane-tests`
+644, `lane-roadmap` 632, `practical-franklin-5ol54s` 623, four `gallant-dijkstra-*`
+190-188 each) — same call as the 2026-07-22 triage note: too large to reconcile in
+one unattended pass, several already carry old integrator-merge history (drain-stamp
+and cross-lane merge commits) suggesting long-stale forks rather than fresh unpicked
+work. These still need the meta-governor prune pass, now joined by `lane-compliance`
+specifically (667 unpicked is the largest single lane branch seen yet flagged this
+way).
+
+Local Postgres stood up this cycle (`db:migrate` + `seed:demo`): ran
+`scripts/e2e-ifta-smoke.mjs` against the merged fuel-tax/surcharge split — all
+checks green including jurisdiction-row-sum-equals-header-net-tax reconciliation —
+and screenshotted `/track/:token` at 390px + 1440px for the merged accent-following
+progress bar/timeline (readable, no clipping, no regressions).
+
+Drained the resulting integrator tip (`cc703c66`) to `main` with the stamped
+`--no-ff` method immediately after — `main` and the integrator now match at
+`8f285fca`.
+
+Backlog:
+- 84 pending `claude/*` branches remain per `agent:branches`; most of the small
+  ones left are QA-rig-drive/verify-and-build log commits with no product diff
+  (safe but low-value to absorb) — next cycle should skim for any more with an
+  actual code/test diff before falling back to those.
+- `lane-compliance` (667 unpicked/1372 raw commits) is now the single largest
+  pending lane branch and carries old integrator-merge history in its own log —
+  needs the meta-governor prune pass to decide salvage-vs-delete, same as the
+  other 600+/190+ branches noted above; not safe for an unattended one-shot merge.
