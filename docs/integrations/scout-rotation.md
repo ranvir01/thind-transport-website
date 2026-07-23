@@ -9,7 +9,7 @@ as an urgent `Backlog:` item.
 
 | Provider | Code status | Credential fields | Adapter file | Research doc | Last researched |
 |---|---|---|---|---|---|
-| `terminal` | **Built** — live TSP aggregator (vehicles + HOS); cron daily 12:00 UTC (doc reconciled 2026-07-19 — the stale "30-min cron" claim is fixed). 2026-07-19 pass: no breaking change (auth + models match adapter); sandbox is dashboard-self-serve (secret + publishable key, `link.sandbox.withterminal.com`); `GET /connections/current` found as a cheap credential health-check; official Link npm SDKs exist; docs host now network-policy-blocked (proxy CONNECT 403) so numeric rate limits remain unread | `apiKey`, `connectionToken` (+ `TERMINAL_API_BASE` env, optional) | `src/lib/hub/telematics.ts` | [`terminal.md`](./terminal.md) | 2026-07-19 |
+| `terminal` | **Built** — live TSP aggregator (vehicles + HOS); cron daily 12:00 UTC (doc reconciled 2026-07-19 — the stale "30-min cron" claim is fixed). 2026-07-23 pass (4th): no breaking change — auth (Bearer + `Connection-Token`), `List Vehicles`/`Get Current Connection`/HOS-available-time endpoints, provider count (316/290), npm SDKs (still v0.5.0), and seed-only funding all unchanged; new refinement: a **dedicated vehicle-location-change webhook** is a confirmed shipped feature (the exact event our daily position poll substitutes for → strengthens the webhook-receiver backlog); `docs.withterminal.com` still 403s this env (network-policy CONNECT block, 4th straight wall) so numeric rate limits + full response-shape diff stay human-browser work. Prior 2026-07-19 finds (sandbox dashboard-self-serve, `GET /connections/current` health-check, Link npm SDKs) all still stand | `apiKey`, `connectionToken` (+ `TERMINAL_API_BASE` env, optional) | `src/lib/hub/telematics.ts` | [`terminal.md`](./terminal.md) | 2026-07-23 |
 | `mailbox` | **Built** — generic IMAP client, not a vendor SDK. Three auth paths live since 2026-07-11: Gmail app password, M365 client-credentials OAuth2, Google Workspace service-account OAuth2 (XOAUTH2). Cron is daily 12:30 UTC, not hourly as older notes said. 2026-07-22 pass: no adapter-breaking change; resolved the 2026-07-18 "Workspace app-password reliability contested" finding — five independent 2026 sources confirm Workspace app passwords still work for IMAP post-May-2025 shutoff, gated by a separate admin toggle (Security → Authentication → 2-Step Verification → "Allow users to generate app passwords"), not by the less-secure-apps retirement itself. The shipped `serviceAccountKey` OAuth2 path remains the recommended default regardless | `user`, `password` (Gmail only), `tenantId`/`clientId`/`clientSecret` (M365), `serviceAccountKey` (Workspace), `host`, `port`, `folder` | `src/lib/hub/mailbox.ts` + `mailbox-oauth.ts` | [`mailbox.md`](./mailbox.md) | 2026-07-22 |
 | `fmcsa` (adjacent, free, not in `IntegrationProvider` union — no stored creds) | **Built** — QCMobile broker vetting. 2026-07-19 pass: no breaking change (webKey query-param auth + login.gov registration unchanged); rate limits still unpublished; `mobile.fmcsa.dot.gov` now network-policy-blocked from agent environments (CONNECT 403) — prod's daily `fmcsa-recheck` cron is the live-service canary | `FMCSA_WEBKEY` env | `src/lib/hub/vetting.ts` | [`fmcsa.md`](./fmcsa.md) | 2026-07-19 |
 | `eia` (adjacent, free, not in `IntegrationProvider` union) | **Built** — diesel price benchmark. 2026-07-19 pass: no breaking change (v2 current, series `EMD_EPD2D_PTE_NUS_DPG` alive into 2026); two doc corrections — EIA DOES publish throttles (~9,000 req/hr sustained, 5 req/s burst, temporary auto-suspension) and `DEMO_KEY` is NOT supported (api.data.gov convention, was never EIA's) | `EIA_API_KEY` env | `src/lib/hub/fuel.ts` | [`eia.md`](./eia.md) | 2026-07-19 |
@@ -37,10 +37,21 @@ integrations that were never in scope of the vendor shopping list: both `fmcsa.m
    notes before a lane builds the adapter.
 3. One provider per cycle. Update the "Last researched" date and doc link when done.
 
-Next up by this rule: `terminal`, `fmcsa`, and `eia` are now tied oldest at 2026-07-19 (`mailbox.md`
-was refreshed 2026-07-22, see below) — take `terminal` first (live built vendor adapter, higher
-production stakes than the two free/adjacent government APIs), or `fmcsa`+`eia` together in one
-cycle as the previous 2026-07-19 pass did. The 2026-07-22 `mailbox` pass found no adapter-breaking
+Next up by this rule: after the 2026-07-23 `terminal` pass (below), the two oldest docs are now
+`fmcsa` and `eia`, both at 2026-07-19 — take them together in one cycle as the 2026-07-19 pass
+did (both free/adjacent government APIs, adapters `src/lib/hub/vetting.ts` and `src/lib/hub/fuel.ts`).
+After those, `truckercloud` / `dat` / `efs` (all 2026-07-20) are next. The 2026-07-23 `terminal`
+pass (4th) found no adapter-breaking change: the Bearer + `Connection-Token` auth, the
+`List Vehicles` / `Get Current Connection` / HOS-available-time endpoints, the 316/290 provider
+count, the `@terminal-api/link-*` npm SDKs (still v0.5.0, no new release), and the seed-only
+funding status are all unchanged from 2026-07-19. The one substantive refinement: Terminal's
+**dedicated vehicle-location-change webhook** is a confirmed, shipped, generally-available feature
+(publicly announced by Terminal) — it is the precise event class our daily
+`/vehicles?expand=latestLocation` poll stands in for, so it is the highest-leverage piece of the
+webhook catalog for LoadOff specifically and tightens the existing webhook-receiver backlog item
+(not urgent, not adapter-breaking). `docs.withterminal.com` returned HTTP 403 to this environment
+again (network-policy CONNECT block, fourth straight pass), so the numeric rate limits and a
+field-by-field `/vehicles` ↔ `/hos/available-time` response-shape diff remain human-browser work. The 2026-07-22 `mailbox` pass found no adapter-breaking
 change: the three auth paths, daily 12:30 UTC cron, and 15 MB attachment / 25-message-per-run caps
 in `mailbox.ts`/`mailbox-oauth.ts` are all untouched. It resolved the one open question from
 2026-07-18 — whether Google Workspace's app-password carve-out survived the May 2025

@@ -1,17 +1,28 @@
 # Terminal (withterminal.com) — TSP aggregator for ELD/telematics
 
-Researched: 2026-07-19 (third pass; prior 2026-07-08, first 2026-07-06). Status: **built
-adapter**, live in `src/lib/hub/telematics.ts` (`terminalSource`), wired into the **daily**
-telematics cron (`/api/hub/cron/telematics-sync`, `0 12 * * *` UTC per `vercel.json`) and the
-manual "sync now" action (`src/app/hub/_actions/integrations.ts`). This is the only provider in
-`docs/integrations/scout-rotation.md` with real outbound API calls at write time, so an
-API change here is the one that can silently break production.
+Researched: 2026-07-23 (fourth pass; prior 2026-07-19, 2026-07-08, first 2026-07-06). Status:
+**built adapter**, live in `src/lib/hub/telematics.ts` (`terminalSource`), wired into the
+**daily** telematics cron (`/api/hub/cron/telematics-sync`, `0 12 * * *` UTC per `vercel.json`)
+and the manual "sync now" action (`src/app/hub/_actions/integrations.ts`). This is the only
+provider in `docs/integrations/scout-rotation.md` with real outbound API calls at write time, so
+an API change here is the one that can silently break production.
 
-**Headline from this pass: no adapter-breaking change found.** The auth model (Bearer +
-`Connection-Token`) and the `latestLocation` / HOS available-time data models are still exactly
-what our code expects, per current search-indexed doc snippets. New findings below: how sandbox
-credentials are actually provisioned, a cheap credential health-check endpoint, official Link
-embed SDKs on npm, and a cron-cadence correction to this doc itself.
+**Headline from this pass (2026-07-23): no adapter-breaking change found.** The auth model
+(Bearer + `Connection-Token`) and the `latestLocation` / HOS available-time data models are still
+exactly what our code expects, reconfirmed this pass against current search-indexed doc snippets
+(`List Vehicles`, `Get Current Connection`, and the models overview all still resolve under the
+same paths and field names). The provider count (316 supported / 290 maintained), the
+`@terminal-api/link-sdk` / `@terminal-api/link-react` npm packages (both still v0.5.0, no new
+release), and the seed-only funding status are all unchanged from the 2026-07-19 pass. The one
+substantive refinement this pass: a **dedicated vehicle-location-change webhook** is a confirmed,
+shipped Terminal feature — the precise event that would close the daily-poll latency gap (see the
+Webhooks section). `docs.withterminal.com` remains 403-walled from this environment (network-policy
+CONNECT block, reconfirmed this pass), so numeric rate limits and a full response-shape diff still
+need a human browser.
+
+Earlier passes' new findings (kept below for context): how sandbox credentials are actually
+provisioned, a cheap credential health-check endpoint (`GET /connections/current`), official Link
+embed SDKs on npm, and the cron-cadence correction (daily, not 30-min).
 
 ## Cron cadence — doc correction (2026-07-19)
 
@@ -123,12 +134,22 @@ response-shape drift detection without touching a real carrier's sync).
 Terminal's webhook system (`docs.withterminal.com/terminal-platform/webhooks`) is built on Svix:
 HTTP POST callbacks, signature verification, retry with idempotency expectations ("your endpoint
 should be idempotent and able to handle duplicate events gracefully"), a dashboard for delivery
-status/replay. This pass surfaced a per-event reference catalog
+status/replay. The 2026-07-19 pass surfaced a per-event reference catalog
 (`docs.withterminal.com/api-reference/webhook-events/…` — e.g. `connection.completed`,
 `vehicle.removed`), with payloads carrying the full related entity. Our integration is 100%
 poll-based — and with the poll now confirmed daily rather than every 30 minutes, a
 webhook-driven update path has been upgraded from "latency nicety" to the only realistic way to
 get same-hour position/HOS data without burning manual "sync now" clicks.
+
+**New finding (2026-07-23):** Terminal ships a **dedicated vehicle-location-change webhook** —
+publicly announced by Terminal ("We just launched webhooks for vehicle location changes … receive
+real-time GPS location updates for all of their connected vehicles faster and more efficiently").
+This is the exact event class our daily `/vehicles?expand=latestLocation` poll currently
+substitutes for, so it is the highest-leverage part of the webhook catalog for us specifically:
+subscribing to it would turn ~24h-stale positions into push updates. (The announcement traces to
+an early-2024 Terminal post, so this is a mature, generally-available capability rather than a
+brand-new beta — good news for the backlog item's feasibility, not an adapter-breaking change.)
+This tightens, but does not change the direction of, the webhook-receiver backlog item below.
 
 **Backlog** (roadmap-lane sized; priority raised by the daily-cron correction): evaluate a
 Terminal webhook receiver (`src/app/api/hub/webhooks/terminal`) for near-real-time vehicle/HOS
@@ -170,6 +191,14 @@ Vendor context, rechecked this pass:
   2025-06-03, still maintained); dedicated Rate Limits docs page exists; sandbox Link host
   `link.sandbox.withterminal.com`; corrected this doc's stale "30-min cron" claim to the actual
   daily 12:00 UTC schedule.
+- **Reconfirmed / added (2026-07-23, fourth pass)**: no adapter-breaking change — auth pattern,
+  `List Vehicles` / `Get Current Connection` / HOS-available-time endpoints, provider count
+  (316/290), npm SDK versions (still v0.5.0, no new release), and seed-only funding all unchanged.
+  New: a dedicated **vehicle-location-change webhook** is a confirmed shipped Terminal feature
+  (the specific event our daily position poll stands in for). `docs.withterminal.com` still
+  returns HTTP 403 to this environment (network-policy CONNECT block), so numeric rate limits and
+  the full `/vehicles` ↔ `/hos/available-time` response-shape diff remain human-browser work —
+  four passes have now hit this same wall.
 - **Still not verifiable from here**: numeric rate limits (page exists, host is
   network-policy-blocked — proxy CONNECT 403, upgraded from the earlier Cloudflare-only block),
   current usage-based pricing, the exact sandbox API host, and a field-by-field diff of the
