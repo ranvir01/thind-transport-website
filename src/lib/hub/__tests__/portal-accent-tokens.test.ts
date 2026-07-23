@@ -41,6 +41,11 @@ describe("portal home page accent tokens", () => {
   it("the Moving now list's position hint follows the carrier's accent color, not stock gold", () => {
     expect(HOME_SOURCE).toMatch(/text-body-xs text-\[color:var\(--portal-accent\)\]">\{load\.position_hint\}/)
   })
+
+  it("the invoice status pill and amount follow the carrier's accent color, not stock gold", () => {
+    expect(HOME_SOURCE).not.toMatch(/text-gold|bg-gold|border-gold/)
+    expect(HOME_SOURCE).toMatch(/var\(--portal-accent\)/)
+  })
 })
 
 describe("shared progress/timeline components (portal + public track)", () => {
