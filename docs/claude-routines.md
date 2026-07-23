@@ -457,3 +457,48 @@ Backlog:
   last confirmed recovered (per `b7eb6c2`), not re-checked this cycle (no Vercel MCP tool
   available) — no new information to page on.
 
+## QA rig drive on main@80150e8c — 2026-07-23 ~20:25 UTC (owner/dispatcher/driver, read-only prod probe)
+
+No commits landed on `main` in the 3 hours before this cycle started (last commit `80150e8c`
+at 16:49 UTC, ~3h20m stale at kickoff) — nothing in the "fix outright regressions from the last
+3 hours" mandate applied this run; `npm run agent:status` confirmed integrator/main in steady
+state (within 3 commits, moving) so no drain was needed either.
+
+Fresh rig from scratch: Postgres 16 started (was down), `hubapp` role + `hubdb` database created
+per AGENTS.md pitfall #9, `npm ci` (720 packages, same carried 3 high-severity `npm audit`
+findings), `npm run db:migrate` through `020_outreach.sql` clean (20/20), `seed:demo`, `npm run
+build` (Next.js 16, zero TS errors) clean, `npx vitest run` (183 files/1528 tests) green, `npm
+run test:sidecars` (28 Rust tests + Go vet/test, clippy clean) green.
+
+Drove the full `e2e-run-all.mjs` battery (47 `e2e-*-smoke.mjs` scripts) as owner, dispatcher,
+driver, broker, and shipper against the seeded rig, plus the nav-reachable visual sweep (office
+screens at 390px, owner dashboard panels at 1440px+390px, driver PWA at 390px, portal/shipper at
+1440px+390px, `/track/:token` at both widths). **47/47 green in 13m, 0 defects, 0 console
+errors**, sweep confirmed every screen has real content with no horizontal overflow at 390px.
+
+Production probe: direct HTTPS to `thindtransport.com` stayed egress-blocked (curl exit 56,
+CONNECT 403) — consistent with every prior cycle. Used Vercel MCP instead, and specifically did
+**not** trust the top-level `live: false` / `latestDeployment: CANCELED` fields alone (per the
+"`live` alone is not a reliable signal" note above) — cross-checked `list_deployments` for the
+most recent `target: "production"` + `state: "READY"` record and found `dpl_J6Ym45v7g26Dc...`,
+created 16:49:33 UTC, `githubCommitSha: 80150e8c...` — an **exact match** to current `main` HEAD,
+with `thindtransport.com` in its alias list. Production is healthy and fully current; the
+`live`/`latestDeployment` fields were just pointing at an unrelated newer preview build for a
+session branch, not an outage. `get_runtime_errors` (6h window) returned exactly one group: a
+`pg`/`pg-connection-string` SSL-mode deprecation warning on `/api/hub/cron/[job]` (4 occurrences,
+first seen 2026-06-26, last 2026-07-23T15:28) — a long-standing benign library warning, not a
+new regression, not actionable this cycle.
+
+No defect found anywhere this cycle (build, tests, sidecars, all 47 smokes, full visual sweep,
+and production all clean) — no code fix to ship, so `main` is left as-is.
+
+Backlog:
+- 103 pending `claude/*` branches remain per `agent:branches` (up from 95 four cycles ago) —
+  `lane-compliance` and `lane-roadmap` are still the largest; the meta-governor prune pass is
+  now well overdue across several consecutive cycles.
+- Carried, unchanged: npm audit's 3 high-severity findings (owner-approval-gated semver-major
+  bump); IFTA due-date roll not accounting for legal holidays (documented scope decision, not a
+  bug, per `83198c6` — drop unless an owner asks); the `pg` SSL-mode deprecation warning noted
+  above (cosmetic, low priority, fix by adding an explicit `sslmode` to `POSTGRES_URL` whenever
+  someone touches that config).
+
