@@ -350,6 +350,8 @@ export interface IftaPdfInput {
     taxPaidGallons: number
     rate: number
     surchargeRate: number
+    taxCents: number
+    surchargeCents: number
     netCents: number
   }[]
   netTaxCents: number
@@ -367,12 +369,14 @@ export async function buildIftaPdf(input: IftaPdfInput): Promise<Uint8Array> {
   ])
   b.table(
     [
-      { header: "JUR", width: 50 },
-      { header: "MILES", width: 90, align: "right" },
-      { header: "TAXABLE GAL", width: 95, align: "right" },
-      { header: "TAX-PAID GAL", width: 95, align: "right" },
-      { header: "RATE", width: 70, align: "right" },
-      { header: "SURCH", width: 60, align: "right" },
+      { header: "JUR", width: 36 },
+      { header: "MILES", width: 50, align: "right" },
+      { header: "TAXABLE GAL", width: 78, align: "right" },
+      { header: "TAX-PAID GAL", width: 78, align: "right" },
+      { header: "RATE", width: 40, align: "right" },
+      { header: "TAX $", width: 66, align: "right" },
+      { header: "SURCH %", width: 46, align: "right" },
+      { header: "SURCH $", width: 66, align: "right" },
       { header: "NET TAX", width: 76, align: "right" },
     ],
     input.rows.map((row) => [
@@ -381,7 +385,9 @@ export async function buildIftaPdf(input: IftaPdfInput): Promise<Uint8Array> {
       row.taxableGallons.toFixed(3),
       row.taxPaidGallons.toFixed(3),
       row.rate.toFixed(4),
+      fmtCentsExact(row.taxCents),
       row.surchargeRate ? row.surchargeRate.toFixed(4) : "—",
+      row.surchargeCents ? fmtCentsExact(row.surchargeCents) : "—",
       fmtCentsExact(row.netCents),
     ])
   )

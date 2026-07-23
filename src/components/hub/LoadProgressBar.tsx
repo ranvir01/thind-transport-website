@@ -16,8 +16,10 @@ export function publicStatus(status: LoadStatus): { label: string; index: number
 }
 
 /**
- * Five-segment gold progress bar for forced-dark sharelink/portal surfaces
- * (/track and /hub/portal). Decorative — pair it with visible status text.
+ * Five-segment progress bar for forced-dark sharelink/portal surfaces
+ * (/track and /hub/portal). Filled segments follow the carrier's
+ * --portal-accent (both surfaces set it; unbranded carriers keep the
+ * default gold). Decorative — pair it with visible status text.
  * Renders nothing for cancelled loads — callers show their own cancelled treatment.
  */
 export function LoadProgressBar({ status, className }: { status: LoadStatus; className?: string }) {
@@ -26,7 +28,10 @@ export function LoadProgressBar({ status, className }: { status: LoadStatus; cla
   return (
     <div className={cn("flex items-center gap-1.5", className)} aria-hidden>
       {PUBLIC_FLOW.map((step, i) => (
-        <div key={step} className={`h-2 flex-1 rounded-full ${i <= index ? "bg-gold" : "bg-white/10"}`} />
+        <div
+          key={step}
+          className={`h-2 flex-1 rounded-full ${i <= index ? "bg-[color:var(--portal-accent)]" : "bg-white/10"}`}
+        />
       ))}
     </div>
   )

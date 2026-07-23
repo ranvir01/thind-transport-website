@@ -1,6 +1,6 @@
 import { Download } from "lucide-react"
 import { getIftaReport, listIftaRates, listIftaReports } from "@/lib/hub/ifta"
-import { quarterKey, lastCompletedQuarterKey, iftaDueDate, staleRateJurisdictions } from "@/lib/hub/ifta-core"
+import { quarterKey, lastCompletedQuarterKey, iftaDueDate, staleRateJurisdictions, iftaRowFuelTaxCents } from "@/lib/hub/ifta-core"
 import { requirePermissionPage } from "@/lib/hub/session"
 import { fmtCentsExact, type IftaReportRow } from "@/lib/hub/types"
 import { Panel, PageHeader, BackLink, fieldCls, Pill } from "@/components/hub/ui"
@@ -174,24 +174,32 @@ export default async function IftaPage({
                   <th className="px-4 py-3 text-right">Taxable gal</th>
                   <th className="px-4 py-3 text-right">Tax-paid gal</th>
                   <th className="px-4 py-3 text-right">Rate</th>
-                  <th className="px-4 py-3 text-right">Surcharge</th>
+                  <th className="px-4 py-3 text-right">Tax</th>
+                  <th className="px-4 py-3 text-right">Surch rate</th>
+                  <th className="px-4 py-3 text-right">Surch $</th>
                   <th className="px-4 py-3 text-right">Net tax</th>
                 </tr>
               </thead>
               <tbody>
-                {rows.map((row) => (
-                  <tr key={row.jurisdiction} className="border-b border-border">
-                    <td className="px-4 py-2.5 font-bold text-fg">{row.jurisdiction}</td>
-                    <td className="px-4 py-2.5 text-right text-fg-2">{row.miles.toLocaleString()}</td>
-                    <td className="px-4 py-2.5 text-right text-fg-2">{row.taxableGallons.toFixed(3)}</td>
-                    <td className="px-4 py-2.5 text-right text-fg-2">{row.taxPaidGallons.toFixed(3)}</td>
-                    <td className="px-4 py-2.5 text-right text-fg-2">{Number(row.rate).toFixed(4)}</td>
-                    <td className="px-4 py-2.5 text-right text-fg-2">{row.surchargeRate ? Number(row.surchargeRate).toFixed(4) : "—"}</td>
-                    <td className={`px-4 py-2.5 text-right font-semibold ${row.netCents > 0 ? "text-warn" : row.netCents < 0 ? "text-ok" : "text-fg-2"}`}>
-                      {fmtCentsExact(row.netCents)}
-                    </td>
-                  </tr>
-                ))}
+                {rows.map((row) => {
+                  const surchargeCents = Number(row.surchargeCents ?? 0)
+                  const fuelTaxCents = iftaRowFuelTaxCents(row)
+                  return (
+                    <tr key={row.jurisdiction} className="border-b border-border">
+                      <td className="px-4 py-2.5 font-bold text-fg">{row.jurisdiction}</td>
+                      <td className="px-4 py-2.5 text-right text-fg-2">{row.miles.toLocaleString()}</td>
+                      <td className="px-4 py-2.5 text-right text-fg-2">{row.taxableGallons.toFixed(3)}</td>
+                      <td className="px-4 py-2.5 text-right text-fg-2">{row.taxPaidGallons.toFixed(3)}</td>
+                      <td className="px-4 py-2.5 text-right text-fg-2">{Number(row.rate).toFixed(4)}</td>
+                      <td className="px-4 py-2.5 text-right text-fg-2">{fmtCentsExact(fuelTaxCents)}</td>
+                      <td className="px-4 py-2.5 text-right text-fg-2">{row.surchargeRate ? Number(row.surchargeRate).toFixed(4) : "—"}</td>
+                      <td className="px-4 py-2.5 text-right text-fg-2">{surchargeCents ? fmtCentsExact(surchargeCents) : "—"}</td>
+                      <td className={`px-4 py-2.5 text-right font-semibold ${row.netCents > 0 ? "text-warn" : row.netCents < 0 ? "text-ok" : "text-fg-2"}`}>
+                        {fmtCentsExact(row.netCents)}
+                      </td>
+                    </tr>
+                  )
+                })}
               </tbody>
             </table>
           </Panel>
