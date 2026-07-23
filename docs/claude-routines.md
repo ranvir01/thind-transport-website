@@ -457,3 +457,56 @@ Backlog:
   last confirmed recovered (per `b7eb6c2`), not re-checked this cycle (no Vercel MCP tool
   available) — no new information to page on.
 
+## Money-subsystem audit (invoices/advances/settlements/statements) — 2026-07-23 ~18:40 UTC (verify-and-build cycle)
+
+Integrator and `main` matched exactly at `80150e8c` (0 drift) — `npm ci`, `npm run build`,
+`npx vitest run` (182 files/1521 tests), `npm run lint`, and `npm run test:sidecars` (28 Rust
+tests + Go vet/test, clippy clean) all green before touching anything else.
+
+`agent:backlog`'s top item is owner-gated only (npm audit major bump, meta-governor prune),
+so per step 6 picked the next unaudited subsystem in the AGENTS.md tenancy/permission/money
+rotation: invoices, advances, and settlements (fuel/expenses/messages/safety/claims/tasks/
+recruiting/settlements-adjacent items were already confirmed clean in the last two cycles;
+invoices/advances specifically hadn't been named yet). Walked every entry point: `invoices.ts`
+(tenancy joins on both sides for customers/loads in `INVOICE_SELECT`, `invoiceTotalCents` vs.
+`loadTotalCents` cross-check before insert, `ON CONFLICT (carrier_id, load_id)` race handled
+with a re-fetch-and-report path, `recordPayment`'s status derivation done inside a `SELECT ...
+FOR UPDATE` transaction so two concurrent payments can't both land on `partial`), `advances-
+core.ts` + `settlements.ts#insertAdvanceWithinExposureCap` (per-driver `pg_advisory_xact_lock`
+closes the TOCTOU window between office-issued and driver-requested advances, both entry points
+in `_actions/money.ts` and `_actions/driver.ts` share the same capped-insert helper and each
+carry their own `requirePermission`/`logAudit`), and `_actions/money.ts`'s invoice/advance/
+settlement actions (all `money:write` or `money:approve`, all audited). **No defect found** —
+this subsystem is already well-hardened (the advisory-lock exposure-cap pattern explicitly
+mirrors the escrow-ledger race fix cited in its own comments).
+
+Stood up a fresh local rig this cycle (Postgres was down, no `hubapp` role/`hubdb` database
+existed yet — created both per the dev-workflow-testing skill's pitfall #9), `npm run
+db:migrate` (all 20 migrations clean) + `npm run seed:demo`, `npm run build && npm run start`.
+Ran the four smokes covering what was just audited: `e2e-invoices-smoke` (one-click invoice
+from POD, odd-cents partial payment, exact-remainder final payment, dispatcher read-only),
+`e2e-advances-smoke` (driver request over $1,000 refused server-side, exposure math exact
+through approve/deny, office-issued advance, dispatcher read-only), `e2e-settlements-smoke`
+(draft is idempotent on rerun, company-driver and O/O percentage settlements itemize to the
+cent including detention share, escrow bumps exactly once, EFS advance flips to applied on
+approval), `e2e-statements-smoke` (AR rollup excludes fully-paid customers, statement PDF
+serves, send-without-SMTP stays graceful, dispatcher read-only). **All four green, 0 defects,
+0 console errors** — matches the static-audit conclusion.
+
+No code fix was available to ship — draining the unchanged integrator tip would just replay
+`80150e8c` with a fresh `.drain-stamp`, so left `main` as-is this cycle rather than manufacture
+a no-op deploy.
+
+Backlog:
+- Subsystem-audit rotation: invoices, advances, settlements, and statements are now confirmed
+  clean, joining fuel/expenses/messages/safety/claims/tasks/recruiting from the last two
+  cycles. Remaining unaudited per AGENTS.md's per-entry-point pass: dispatch/loads core,
+  planner, reports, portal/tracking, integrations webhooks, driver PWA offline queue.
+- 99 pending `claude/*` branches remain per `agent:branches` (up from 95) — `lane-compliance`
+  (664 unpicked/1370 raw) and `lane-roadmap` are still the largest; meta-governor prune pass
+  remains overdue, unchanged from prior cycles.
+- Carried, unchanged: npm audit's 3 high-severity findings (owner-approval-gated semver-major
+  bump); IFTA due-date roll not accounting for legal holidays (documented scope decision, not
+  a bug); Owner's Vercel production-pipeline status last confirmed recovered, not re-checked
+  this cycle (no Vercel MCP tool available).
+
