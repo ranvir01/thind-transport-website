@@ -14,6 +14,7 @@ import { runComdataSync } from "@/lib/hub/integrations/comdata"
 import { runWexSync } from "@/lib/hub/integrations/wex"
 import { runQboSync } from "@/lib/hub/integrations/qbo"
 import { pollDocsMailbox } from "@/lib/hub/mailbox"
+import { notifyRandomTestPool, selectRandomTestPool } from "@/lib/hub/random-testing"
 import { sendOwnerDigest } from "@/lib/hub/digest"
 import { getCarrierSettings } from "@/lib/hub/settings"
 import { createMailTransport, mailFrom } from "@/lib/mailer"
@@ -136,6 +137,18 @@ export async function GET(
       } else if (job === "owner-digest") {
         // Phase 6: the Monday-morning numbers email.
         results[carrier.id] = await sendOwnerDigest(carrier.id)
+      } else if (job === "random-testing") {
+        // Roadmap: 49 CFR 382.305 quarterly random drug/alcohol pool — daily
+        // no-op once each quarter's pool is full (selectRandomTestPool is
+        // idempotent), so this is safe on a daily schedule.
+        const drugSelected = await selectRandomTestPool(carrier.id, "drug")
+        const alcoholSelected = await selectRandomTestPool(carrier.id, "alcohol")
+        const drugNotified = await notifyRandomTestPool(carrier.id, "drug")
+        const alcoholNotified = await notifyRandomTestPool(carrier.id, "alcohol")
+        results[carrier.id] = {
+          drugSelected: drugSelected.length, alcoholSelected: alcoholSelected.length,
+          drugNotified: drugNotified.notified, alcoholNotified: alcoholNotified.notified,
+        }
       } else {
         return NextResponse.json({ error: "Unknown job" }, { status: 404 })
       }
