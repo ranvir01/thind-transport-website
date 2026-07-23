@@ -92,7 +92,9 @@ async function main() {
     return (m[1] ? -1 : 1) * (Number(m[2].replace(/,/g, "")) * 100 + Number(m[3]))
   }
   const netTaxCents = parseCents(screen.netTax)
-  const rowSum = screen.rows.reduce((acc, row) => acc + (parseCents(row[6]) ?? 0), 0)
+  // Net tax is the last column — a Tax and Surch $ column now sit between
+  // Surch rate and Net tax (base fuel tax split out from the surcharge).
+  const rowSum = screen.rows.reduce((acc, row) => acc + (parseCents(row[row.length - 1]) ?? 0), 0)
   check(
     netTaxCents !== null && rowSum === netTaxCents,
     `jurisdiction rows sum to header net tax (${rowSum} vs ${netTaxCents})`

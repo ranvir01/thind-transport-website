@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 import { getHubUser } from "@/lib/hub/session"
 import { can } from "@/lib/hub/permissions"
 import { getIftaReport, exportIftaSources, listIftaRates } from "@/lib/hub/ifta"
-import { iftaWorksheetWarnings } from "@/lib/hub/ifta-core"
+import { iftaWorksheetWarnings, iftaRowFuelTaxCents } from "@/lib/hub/ifta-core"
 import { withIftaWarningsCoverPage } from "@/lib/hub/ifta-pdf"
 import { getCarrier, getCarrierSettings } from "@/lib/hub/settings"
 import { buildIftaPdf } from "@/lib/hub/pdf"
@@ -60,10 +60,8 @@ export async function GET(
       // gets no tax-paid credit, so a transcriber can't derive it from the net.
       "jurisdiction,miles,taxable_gallons,tax_paid_gallons,rate,fuel_tax_usd,surcharge_rate,surcharge_usd,net_tax_usd",
       ...rows.map((r) => {
-        // Legacy stored rows predate the taxCents/surchargeCents split; fall back
-        // to the combined net (surcharge 0) so old reports still export cleanly.
         const surchargeCents = Number(r.surchargeCents ?? 0)
-        const fuelTaxCents = r.taxCents != null ? Number(r.taxCents) : Number(r.netCents) - surchargeCents
+        const fuelTaxCents = iftaRowFuelTaxCents(r)
         return `${r.jurisdiction},${r.miles},${r.taxableGallons.toFixed(3)},${r.taxPaidGallons.toFixed(3)},${Number(r.rate).toFixed(4)},${(fuelTaxCents / 100).toFixed(2)},${Number(r.surchargeRate).toFixed(4)},${(surchargeCents / 100).toFixed(2)},${(r.netCents / 100).toFixed(2)}`
       }),
       `TOTAL,,,,,,,,${(Number(report.net_tax_cents) / 100).toFixed(2)}`,
@@ -93,6 +91,7 @@ export async function GET(
       rows: rows.map((r) => ({
         jurisdiction: r.jurisdiction, miles: r.miles, taxableGallons: r.taxableGallons,
         taxPaidGallons: r.taxPaidGallons, rate: Number(r.rate), surchargeRate: Number(r.surchargeRate),
+        taxCents: iftaRowFuelTaxCents(r), surchargeCents: Number(r.surchargeCents ?? 0),
         netCents: r.netCents,
       })),
       netTaxCents: Number(report.net_tax_cents ?? 0),
