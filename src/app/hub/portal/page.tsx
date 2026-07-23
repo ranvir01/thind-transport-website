@@ -10,14 +10,20 @@ import { cn } from "@/lib/utils"
 
 export const dynamic = "force-dynamic"
 
-const INVOICE_STATUS_COPY: Record<string, { label: string; cls: string }> = {
+const INVOICE_STATUS_COPY: Record<string, { label: string; cls: string; accent?: boolean }> = {
   draft: { label: "Preparing", cls: "border-white/15 bg-white/5 text-steel-400" },
-  sent: { label: "Awaiting payment", cls: "border-gold/40 bg-gold/10 text-gold" },
-  partial: { label: "Partially paid", cls: "border-gold/40 bg-gold/10 text-gold" },
+  sent: { label: "Awaiting payment", cls: "text-[color:var(--portal-accent)]", accent: true },
+  partial: { label: "Partially paid", cls: "text-[color:var(--portal-accent)]", accent: true },
   paid: { label: "Paid — thank you", cls: "border-green-500/40 bg-green-500/10 text-green-400" },
   overdue: { label: "Past due", cls: "border-red-500/40 bg-red-500/10 text-red-400" },
   disputed: { label: "In review", cls: "border-white/15 bg-white/5 text-steel-400" },
 }
+
+/** Same border/background mix the load detail page and StopTimeline use for --portal-accent chrome. */
+const ACCENT_PILL_STYLE = {
+  borderColor: "color-mix(in srgb, var(--portal-accent) 40%, transparent)",
+  backgroundColor: "color-mix(in srgb, var(--portal-accent) 10%, transparent)",
+} as const
 
 export default async function PortalHomePage() {
   const user = await requirePortalUser()
@@ -99,10 +105,15 @@ export default async function PortalHomePage() {
                     </p>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
-                    <span className={cn("rounded-full border px-2.5 py-0.5 text-[11px] font-bold", status.cls)}>
+                    <span
+                      className={cn("rounded-full border px-2.5 py-0.5 text-[11px] font-bold", status.cls)}
+                      style={status.accent ? ACCENT_PILL_STYLE : undefined}
+                    >
                       {status.label}
                     </span>
-                    <span className="font-display font-extrabold text-gold">{fmtCents(invoice.amount_cents)}</span>
+                    <span className="font-display font-extrabold text-[color:var(--portal-accent)]">
+                      {fmtCents(invoice.amount_cents)}
+                    </span>
                     {invoice.pdf_url ? (
                       <a href={invoice.pdf_url} target="_blank" rel="noreferrer" aria-label="Download invoice"
                         className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/15 text-steel-200 hover:bg-white/5">
