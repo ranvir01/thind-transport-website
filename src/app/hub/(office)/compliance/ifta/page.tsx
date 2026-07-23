@@ -1,6 +1,6 @@
 import { Download } from "lucide-react"
 import { getIftaReport, listIftaRates, listIftaReports } from "@/lib/hub/ifta"
-import { quarterKey, lastCompletedQuarterKey, iftaDueDate, iftaFilingIsLate, staleRateJurisdictions, iftaRowFuelTaxCents } from "@/lib/hub/ifta-core"
+import { quarterKey, lastCompletedQuarterKey, iftaDueDate, iftaFilingIsLate, staleRateJurisdictions, iftaRowFuelTaxCents, iftaWorksheetTotals } from "@/lib/hub/ifta-core"
 import { requirePermissionPage } from "@/lib/hub/session"
 import { fmtCentsExact, type IftaReportRow } from "@/lib/hub/types"
 import { Panel, PageHeader, BackLink, fieldCls, Pill } from "@/components/hub/ui"
@@ -40,6 +40,7 @@ export default async function IftaPage({
     listIftaReports(user.carrierId),
   ])
   const rows: IftaReportRow[] = (report?.report?.rows as IftaReportRow[] | undefined) ?? []
+  const totals = iftaWorksheetTotals(rows)
   const due = iftaDueDate(quarter)
   // iftaDueDate is UTC midnight of the due DATE; `due < new Date()` shouted
   // "overdue" from the start of the day the filing was due. Same rule as the
@@ -204,6 +205,25 @@ export default async function IftaPage({
                   )
                 })}
               </tbody>
+              {rows.length > 0 ? (
+                <tfoot>
+                  {/* Column totals — a state IFTA return asks for total taxable
+                      gallons, tax-paid gallons, and tax as its own summary lines. */}
+                  <tr className="border-t-2 border-border-strong font-semibold text-fg">
+                    <td className="px-4 py-2.5">Total</td>
+                    <td className="px-4 py-2.5 text-right">{Math.round(totals.miles).toLocaleString()}</td>
+                    <td className="px-4 py-2.5 text-right">{totals.taxableGallons.toFixed(3)}</td>
+                    <td className="px-4 py-2.5 text-right">{totals.taxPaidGallons.toFixed(3)}</td>
+                    <td className="px-4 py-2.5" />
+                    <td className="px-4 py-2.5 text-right">{fmtCentsExact(totals.taxCents)}</td>
+                    <td className="px-4 py-2.5" />
+                    <td className="px-4 py-2.5 text-right">{totals.surchargeCents ? fmtCentsExact(totals.surchargeCents) : "—"}</td>
+                    <td className={`px-4 py-2.5 text-right ${totals.netCents > 0 ? "text-warn" : totals.netCents < 0 ? "text-ok" : "text-fg-2"}`}>
+                      {fmtCentsExact(totals.netCents)}
+                    </td>
+                  </tr>
+                </tfoot>
+              ) : null}
             </table>
           </Panel>
           <p className="text-body-xs text-fg-3 mb-4">

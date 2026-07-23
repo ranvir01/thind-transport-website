@@ -127,6 +127,40 @@ export function iftaRowFuelTaxCents(
   return row.taxCents != null ? Number(row.taxCents) : Number(row.netCents ?? 0) - surchargeCents
 }
 
+export interface IftaWorksheetTotals {
+  miles: number
+  taxableGallons: number
+  taxPaidGallons: number
+  /** Base fuel tax (surcharge excluded), summed across jurisdictions. */
+  taxCents: number
+  surchargeCents: number
+  netCents: number
+}
+
+/**
+ * Column totals for the worksheet table. A state IFTA return asks for total
+ * taxable gallons, total tax-paid gallons, and total tax as its own summary
+ * lines, so a filer transcribing from the worksheet needs the columns summed —
+ * not just the fleet-miles / net-tax tiles. Uses iftaRowFuelTaxCents so legacy
+ * reports (pre taxCents/surchargeCents split) total the base tax correctly.
+ */
+export function iftaWorksheetTotals(
+  rows: Partial<Pick<IftaReportRow, "miles" | "taxableGallons" | "taxPaidGallons" | "taxCents" | "surchargeCents" | "netCents">>[]
+): IftaWorksheetTotals {
+  const totals: IftaWorksheetTotals = {
+    miles: 0, taxableGallons: 0, taxPaidGallons: 0, taxCents: 0, surchargeCents: 0, netCents: 0,
+  }
+  for (const row of rows) {
+    totals.miles += Number(row.miles ?? 0)
+    totals.taxableGallons += Number(row.taxableGallons ?? 0)
+    totals.taxPaidGallons += Number(row.taxPaidGallons ?? 0)
+    totals.taxCents += iftaRowFuelTaxCents(row)
+    totals.surchargeCents += Number(row.surchargeCents ?? 0)
+    totals.netCents += Number(row.netCents ?? 0)
+  }
+  return totals
+}
+
 export interface IftaWorksheetWarningInputs {
   status: "draft" | "reviewed" | "filed"
   rows: Pick<IftaReportRow, "jurisdiction" | "rate" | "surchargeRate">[]
