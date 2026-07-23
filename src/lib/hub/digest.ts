@@ -16,7 +16,7 @@ export async function sendOwnerDigest(carrierId: string): Promise<{ sent: boolea
   const stats = await queryOne<{
     revenue_week: string; delivered_week: string; unbilled: string
     ar_open: string; ar_overdue: string; settlements_draft: string
-    red_compliance_drivers: string; empty_trucks: string
+    red_compliance_drivers: string; red_compliance_equipment: string; empty_trucks: string
   }>(
     `SELECT
        COALESCE((SELECT SUM(linehaul_cents + fuel_surcharge_cents) FROM hub.loads
@@ -35,6 +35,15 @@ export async function sendOwnerDigest(carrierId: string): Promise<{ sent: boolea
        (SELECT COUNT(*) FROM hub.settlements WHERE carrier_id = $1 AND status = 'draft') AS settlements_draft,
        (SELECT COUNT(*) FROM hub.drivers WHERE carrier_id = $1 AND deleted_at IS NULL AND status = 'active'
           AND (cdl_expiry < CURRENT_DATE OR medical_card_expiry < CURRENT_DATE)) AS red_compliance_drivers,
+       -- Equipment out of compliance is as grounding as a lapsed med card (an
+       -- expired truck insurance/registration is an out-of-service violation),
+       -- so the Monday email must not report "all clear" while a unit is red.
+       -- Mirrors complianceEntries' predicate: non-retired, non-deleted, and a
+       -- NULL expiry is "not on file" (amber), not expired, so it is not counted.
+       ((SELECT COUNT(*) FROM hub.trucks WHERE carrier_id = $1 AND deleted_at IS NULL AND status <> 'retired'
+           AND (registration_expiry < CURRENT_DATE OR inspection_due < CURRENT_DATE OR insurance_expiry < CURRENT_DATE))
+        + (SELECT COUNT(*) FROM hub.trailers WHERE carrier_id = $1 AND deleted_at IS NULL AND status <> 'retired'
+           AND (registration_expiry < CURRENT_DATE OR inspection_due < CURRENT_DATE))) AS red_compliance_equipment,
        (SELECT COUNT(*) FROM hub.trucks t WHERE t.carrier_id = $1 AND t.deleted_at IS NULL AND t.status = 'active'
           AND NOT EXISTS (SELECT 1 FROM hub.loads l WHERE l.truck_id = t.id AND l.carrier_id = t.carrier_id AND l.deleted_at IS NULL
             AND l.status IN ('booked','dispatched','at_pickup','in_transit'))) AS empty_trucks`,
@@ -43,15 +52,23 @@ export async function sendOwnerDigest(carrierId: string): Promise<{ sent: boolea
   if (!stats) return { sent: false }
 
   const dollars = (cents: string) => `$${(Number(cents) / 100).toLocaleString("en-US", { maximumFractionDigits: 0 })}`
+  const redDrivers = Number(stats.red_compliance_drivers)
+  const redEquipment = Number(stats.red_compliance_equipment)
+  const complianceParts = [
+    redDrivers > 0 ? `${redDrivers} driver(s) with an EXPIRED CDL or med card` : null,
+    redEquipment > 0
+      ? `${redEquipment} truck/trailer(s) with EXPIRED registration, inspection, or insurance`
+      : null,
+  ].filter(Boolean)
   const lines = [
     `Booked this week: ${dollars(stats.revenue_week)}  ·  ${stats.delivered_week} load(s) delivered`,
     `Owed to you: ${dollars(stats.ar_open)} open AR${Number(stats.ar_overdue) > 0 ? ` (${stats.ar_overdue} overdue!)` : ""}`,
     `Unbilled PODs: ${stats.unbilled} — every one is money sitting on the floor`,
     `Settlements waiting on approval: ${stats.settlements_draft}`,
     `Trucks empty right now: ${stats.empty_trucks}`,
-    Number(stats.red_compliance_drivers) > 0
-      ? `⚠ ${stats.red_compliance_drivers} driver(s) with an EXPIRED CDL or med card`
-      : `Compliance: no expired driver documents`,
+    complianceParts.length > 0
+      ? `⚠ ${complianceParts.join("  ·  ")}`
+      : `Compliance: no expired driver or equipment documents`,
   ]
 
   const { createMailTransport, mailFrom } = await import("@/lib/mailer")
