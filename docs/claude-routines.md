@@ -400,3 +400,69 @@ Backlog:
   production-pipeline dashboard check (re-verify with Vercel MCP before paging again — no
   access this cycle to re-confirm either way).
 
+## Safety/claims + recruiting + settlements + tasks subsystem audit — 2026-07-23 ~14:35 UTC (verify-and-build cycle)
+
+`main` and the integrator were even (`318a5b12`, both 1 commit ahead of the prior cycle's
+tip via the `2f400ace` task-automations widen not yet drained — steady state per
+`agent:status`, no divergence to repair this time). `npm ci` + `npm run build` +
+`npx vitest run` (182 files/1519 tests, 7 skipped) both green before touching anything.
+
+Picked up the next four items in the subsystem-audit rotation named in the prior cycle's
+backlog: safety/claims, recruiting, settlements, tasks. Walked every entry point against
+AGENTS.md's tenancy/permission/audit rules:
+
+- `incidents.ts` / `claims.ts` (`_actions/safety.ts`): every mutation gated on
+  `compliance:write`, `assertCarrierRefs` on truck/driver/load/incident before every
+  insert/update, `logAudit` on every office save. The driver-role `fileDriverIncidentReport`
+  path resolves `driverId`/`truckId` server-side from the caller's own session, never
+  trusts a client-supplied one, and still routes through `createIncident`'s
+  `assertCarrierRefs`.
+- `recruiting.ts` (`_actions/recruiting.ts`): all seven actions gated on `drivers:write`,
+  `attachReferral` guards both `applicant_id` and the referring `driver_id` with
+  `assertCarrierRefs`, offer signing/conversion re-checks status server-side (can't sign an
+  already-decided offer, can't convert without a signed offer + finished orientation).
+- `settlements.ts` (`_actions/money.ts`): draft/approve/mark-paid gated on
+  `money:write`/`money:approve`, `approveSettlement` claims draft→approved with a
+  single-row `UPDATE ... WHERE status='draft'` before any side effect (closes the
+  concurrent-double-approve race), escrow ledger append and advance-exposure check both use
+  a per-driver `pg_advisory_xact_lock` (same pattern as the fuel/expense races fixed in
+  earlier cycles), every settlement/advance/escrow query carrier-scoped.
+- `tasks.ts` (`_actions/tasks.ts`): gated on `requireOfficeUser()` rather than a specific
+  `HubAction` permission — correct, since tasks are an office-wide shared workflow with no
+  role distinction in the product (any office role can create/complete/delete any task),
+  not a missed `requirePermission` call. Every query/mutation carrier-scoped.
+
+**No defect found in any of the four** — this rotation batch is clean.
+
+Stood up local Postgres (`service postgresql start`, migrate + seed — first run on this
+container, so also created the `hauldesk` role/db per the dev-workflow-testing skill's
+pitfall #9), `npm run build && npm run start`, and ran the five smokes covering what was
+just audited: `e2e-safety-smoke` (DOT register, incident close/reopen, driver first-report,
+OS&D POD auto-opening a claim, driver blocked from the office register), `e2e-claims-smoke`
+(open → filed → settled lifecycle, safety-page rollup counts and deadline badges),
+`e2e-recruiting-smoke` (applicant → stage moves → referral → offer sign → orientation gate
+→ convert to driver), `e2e-settlements-smoke` (draft idempotency, cent-exact gross/deduction/
+net on both a company-driver per-mile settlement and an O/O percentage settlement with
+itemized detention, PDF statement stored, advance flips to applied, escrow bumps exactly
+once, dispatcher sees read-only), `e2e-tasks-smoke` (recurring task rolls itself forward on
+completion, checklist persistence, shared office board, driver blocked). **All five green, 0
+defects, 0 console errors** — matches the static-audit conclusion.
+
+`agent:status` still reports steady state (integrator 1 ahead of main on `2f400ace`, not yet
+drained — within the 3-commit threshold, no action needed this cycle).
+`agent:branches` unchanged from the prior cycle: `lane-compliance` (662 unpicked/1368 raw),
+`lane-roadmap` (627/1239), `lane-tests` (639/1274) remain the largest pending branches.
+
+Backlog:
+- Subsystem-audit rotation: fuel, expenses, messages, safety, claims, recruiting,
+  settlements, and tasks are all now confirmed clean. Next unaudited per AGENTS.md's
+  per-entry-point pass: compliance (`compliance.ts`), DVIR (`dvir.ts`), and
+  loadboard/loads (`loadboard.ts`/`loads.ts`) — the remaining money- and safety-adjacent
+  entry points that haven't had a documented rotation pass yet.
+- `lane-compliance` (662 unpicked) and `lane-roadmap` (627) remain the largest pending
+  branches — meta-governor prune pass still overdue across four consecutive cycles now.
+- Carried, unchanged: npm audit's 3 high-severity findings (owner-approval-gated
+  semver-major bump); IFTA due-date roll not accounting for legal holidays; Owner's Vercel
+  production-pipeline dashboard check (re-verify with Vercel MCP before paging again — no
+  access this cycle to re-confirm either way).
+
