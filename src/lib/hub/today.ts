@@ -119,8 +119,8 @@ export async function todayData(carrierId: string): Promise<TodayData> {
            AND fin.final_at < NOW() + INTERVAL '36 hours'
            AND NOT EXISTS (
              SELECT 1 FROM hub.loads nl
-             JOIN LATERAL (SELECT MIN(appt_start) AS next_pickup FROM hub.stops WHERE load_id = nl.id AND type = 'pickup') np ON TRUE
-             WHERE nl.truck_id = t.id AND nl.deleted_at IS NULL AND nl.status IN ('quoted','booked')
+             JOIN LATERAL (SELECT MIN(appt_start) AS next_pickup FROM hub.stops WHERE load_id = nl.id AND carrier_id = nl.carrier_id AND type = 'pickup') np ON TRUE
+             WHERE nl.truck_id = t.id AND nl.carrier_id = t.carrier_id AND nl.deleted_at IS NULL AND nl.status IN ('quoted','booked')
                AND np.next_pickup > NOW()
            )
          ORDER BY fin.final_at`,
