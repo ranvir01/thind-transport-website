@@ -13,6 +13,11 @@
  *    matched on entity_id alone with no carrier_id predicate at all — the
  *    one write in the whole hire flow that skipped the tenancy guard every
  *    sibling write in the same transaction already has.
+ *  - attachReferral always inserted status 'pending', but the only code path
+ *    that flips 'pending' -> 'payable' lives inside convertApplicantToDriver,
+ *    at the moment of conversion. Attaching a referral after that applicant
+ *    was already hired left the bonus stuck at 'pending' forever (money
+ *    silently never paid to the referring driver).
  */
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
@@ -124,6 +129,22 @@ describe("attachReferral", () => {
   it("validates both the applicant and referring driver belong to the carrier", async () => {
     await attachReferral(CARRIER, APPLICANT, "driver-1", 50000)
     expect(assertRefsMock).toHaveBeenCalledWith(CARRIER, { applicant_id: APPLICANT, driver_id: "driver-1" })
+  })
+
+  it("inserts as 'pending' when the applicant hasn't been hired yet", async () => {
+    queryOneMock.mockResolvedValueOnce({ id: APPLICANT, converted_driver_id: null } as never)
+    await attachReferral(CARRIER, APPLICANT, "driver-1", 50000)
+    const insert = queryMock.mock.calls.find(([sql]) => String(sql).includes("INSERT INTO hub.referrals"))
+    expect(insert![1]).toEqual([CARRIER, APPLICANT, "driver-1", 50000, "pending"])
+  })
+
+  it("inserts as 'payable' when attached after the applicant is already hired — the 'hired' " +
+    "milestone flip only runs once, inside convertApplicantToDriver, so a referral attached " +
+    "later would never pay out if it started 'pending'", async () => {
+    queryOneMock.mockResolvedValueOnce({ id: APPLICANT, converted_driver_id: "driver-9" } as never)
+    await attachReferral(CARRIER, APPLICANT, "driver-1", 50000)
+    const insert = queryMock.mock.calls.find(([sql]) => String(sql).includes("INSERT INTO hub.referrals"))
+    expect(insert![1]).toEqual([CARRIER, APPLICANT, "driver-1", 50000, "payable"])
   })
 })
 
