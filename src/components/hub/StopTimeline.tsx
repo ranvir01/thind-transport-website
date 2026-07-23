@@ -29,8 +29,9 @@ export function stopTimingLine(stop: TimelineStop): string {
 }
 
 /**
- * Numbered stop timeline for forced-dark sharelink/portal surfaces:
- * gold badge = arrived, emerald = departed, steel = pending.
+ * Numbered stop timeline for forced-dark sharelink/portal surfaces: accent
+ * badge (--portal-accent, gold by default) = arrived, emerald = departed,
+ * steel = pending.
  */
 export function StopTimeline({ stops, className }: { stops: TimelineStop[]; className?: string }) {
   return (
@@ -43,9 +44,17 @@ export function StopTimeline({ stops, className }: { stops: TimelineStop[]; clas
                 stop.departed_at
                   ? "border-emerald-400/40 bg-emerald-500/15 text-emerald-300"
                   : stop.arrived_at
-                    ? "border-gold/40 bg-gold/15 text-gold"
+                    ? "text-[color:var(--portal-accent)]"
                     : "border-white/15 bg-white/5 text-steel-200"
               }`}
+              style={
+                stop.arrived_at && !stop.departed_at
+                  ? {
+                      borderColor: "color-mix(in srgb, var(--portal-accent) 40%, transparent)",
+                      backgroundColor: "color-mix(in srgb, var(--portal-accent) 15%, transparent)",
+                    }
+                  : undefined
+              }
             >
               {i + 1}
             </span>
