@@ -400,3 +400,60 @@ Backlog:
   production-pipeline dashboard check (re-verify with Vercel MCP before paging again — no
   access this cycle to re-confirm either way).
 
+## Named-workflow E2E sweep + branch triage — 2026-07-23 ~16:48 UTC (verify-and-build cycle)
+
+Integrator (`2f400ace`) was 1 commit ahead of `main` (`318a5b12`), no divergence — build
+(`npm run build`), `npx vitest run` (182 files/1521 tests), and `npm run lint` all green on
+the integrator tip before touching anything else.
+
+Worked `agent:branches`' suggested order looking for a safe absorb (95 pending branches).
+`lane-compliance`/`eager-babbage-ibsmrz`/`lane-tests`/`lane-roadmap`/`practical-franklin-5ol54s`
+and the `gallant-dijkstra-*`/`stoic-mccarthy-*` 150-660+ unpicked-commit family are the same
+too-large-for-one-unattended-pass branches prior cycles have already ruled out (confirmed
+again via diffstat: 150-345 files / 7.8k-19k line diffs each). Dry-ran merges on every branch
+with 20 or fewer unpicked commits (`stoic-mccarthy-{08z45u,p7dtl2,smz6m4}`, `gallant-dijkstra-
+5pt308`, `compassionate-bell-8r88rj`, `pensive-allen-{bgqbgg,lz41rp,kpjskl,1wsr8h,pd71ho,
+ao14bb,6gmrh4}`, `gallant-dijkstra-hi3km2`): 7 have no merge-base with `main` (unrelated-
+history forks, not safely mergeable unattended), the rest conflict against HEAD. Spot-checked
+the two single-file conflicts (`stoic-mccarthy-p7dtl2`/`smz6m4`, both "NotificationsBell badge
+race" fixes) and the pending-count fix (`stoic-mccarthy-08z45u`) directly against HEAD: all
+three are superseded — HEAD already carries a newer/more complete version of each (the
+`NotificationsBell` awaited-POST fix plus epoch tracking and app-badge sync; `agent-loop-
+status.mjs`'s `parsePendingCount` + 64 MB `maxBuffer` fix for the same execSync-truncation
+bug `08z45u` was chasing). Per AGENTS.md's keep-HEAD-when-superset rule, none merged. No
+absorbable branch this cycle.
+
+`agent:backlog`'s top pick (`2f400ace`) carries only owner-gated items (npm audit semver-major
+bump, meta-governor prune pass) — nothing an agent can act on without an owner call, so per
+step 6 ran a full E2E sweep instead of forcing a guess. Local Postgres 16 stood up from scratch
+(server was down; no `hubapp` role/`hubdb` database existed yet — created both per the dev-
+workflow-testing skill's pitfall #9), `npm run db:migrate` (all 20 migrations clean) + `npm run
+seed:demo`, `npm run build && npm run start`. Drove all five workflows the routine template
+names by their `e2e-*-smoke.mjs` scripts: **compliance** (wall summary counts, item tracking,
+consortium resolution, driver-doc upload, driver blocked from office routes), **messages**
+(office↔driver thread at 390px, template chips, unread badges, read receipts, driver blocked
+from office routes), **dispatch board** (legal advance, server-side refusal on an expired-
+medical-card load, cancel-confirm flow, accountant's `loads:read`-only refusal), **expenses**
+(odd-cents recording, P&L delta, QuickBooks CSV reconcile, reimbursable tagging, dispatcher's
+read-only view), and **IFTA generate** (compute → draft → reviewed → filed, worksheet/CSV
+jurisdiction-row-sum-equals-header-net-tax reconciliation, partial-current-quarter compute).
+**All five green, 0 defects, 0 console errors.** `npm run test:sidecars` also green this cycle
+(28 Rust tests + Go vet/test, clippy clean) though nothing Go/Rust was touched.
+
+No code fix was available to ship — draining the unchanged integrator tip would just replay
+`2f400ace` with a fresh `.drain-stamp`, so left `main` as-is this cycle rather than manufacture
+a no-op deploy.
+
+Backlog:
+- 95 pending `claude/*` branches remain per `agent:branches`, up from 84 two cycles ago —
+  `lane-compliance` (662 unpicked) and `lane-roadmap` (627) are still the largest and the
+  meta-governor prune pass remains overdue; this cycle adds confirmation that at least 7 of
+  the small (<=20 unpicked) branches are unrelated-history forks and should be deleted rather
+  than re-triaged every hour (`stoic-mccarthy-6modfo`, `gallant-dijkstra-{5pt308,vu6skb,
+  kj6yrh,mta231,hi3km2,7ra44b}`, `compassionate-bell-8r88rj`).
+- Carried, unchanged: npm audit's 3 high-severity findings (owner-approval-gated semver-major
+  bump); IFTA due-date roll not accounting for legal holidays (documented scope decision, not
+  a bug, per 83198c6 — drop unless an owner asks); Owner's Vercel production-pipeline status
+  last confirmed recovered (per `b7eb6c2`), not re-checked this cycle (no Vercel MCP tool
+  available) — no new information to page on.
+

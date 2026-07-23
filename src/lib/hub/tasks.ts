@@ -223,20 +223,28 @@ export async function runTaskAutomations(carrierId: string): Promise<{ created: 
        AND (cdl_expiry <= CURRENT_DATE + 7 OR medical_card_expiry <= CURRENT_DATE + 7)`,
     [carrierId]
   )
+  const soon = new Date(Date.now() + 7 * 86400000)
   for (const driver of drivers) {
-    const what =
-      driver.medical_card_expiry && new Date(driver.medical_card_expiry) <= new Date(Date.now() + 7 * 86400000)
-        ? { label: "medical card", date: driver.medical_card_expiry }
-        : { label: "CDL", date: driver.cdl_expiry! }
-    await add({
-      title: `${driver.name}'s ${what.label} ${new Date(what.date) < new Date() ? "is EXPIRED" : "expires this week"}`,
-      notes: "Driver is not dispatch-legal once it lapses. Get the renewal scheduled today.",
-      dueAt: new Date(what.date).toISOString(),
-      priority: "urgent",
-      entityType: "driver",
-      entityId: driver.id,
-      automationKey: `driver-expiry:${driver.id}:${isoDate(what.date)}`,
-    })
+    // Both documents can be expiring in the same window — flag each one
+    // that's actually due, not just whichever the ternary picked first.
+    const windows: { label: string; date: string }[] = []
+    if (driver.cdl_expiry && new Date(driver.cdl_expiry) <= soon) {
+      windows.push({ label: "CDL", date: driver.cdl_expiry })
+    }
+    if (driver.medical_card_expiry && new Date(driver.medical_card_expiry) <= soon) {
+      windows.push({ label: "medical card", date: driver.medical_card_expiry })
+    }
+    for (const what of windows) {
+      await add({
+        title: `${driver.name}'s ${what.label} ${new Date(what.date) < new Date() ? "is EXPIRED" : "expires this week"}`,
+        notes: "Driver is not dispatch-legal once it lapses. Get the renewal scheduled today.",
+        dueAt: new Date(what.date).toISOString(),
+        priority: "urgent",
+        entityType: "driver",
+        entityId: driver.id,
+        automationKey: `driver-expiry:${driver.id}:${what.label}:${isoDate(what.date)}`,
+      })
+    }
   }
 
   // 3. Unmatched fuel rows (no truck) from the last 30 days.
