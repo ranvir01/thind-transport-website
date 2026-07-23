@@ -94,6 +94,37 @@ describe("submitDvir prior_dvir_id tenancy", () => {
     await submitDvir(CARRIER, { ...BASE_INPUT, priorDvirId: PRIOR })
     expect(calls.some((c) => /SET status = 'active'/.test(c.sql))).toBe(false)
   })
+
+  it("does NOT release a truck whose reviewing pre-trip itself finds a new unsafe defect", async () => {
+    // Regression (truck subsystem audit): a pre-trip reviewing a certified repair
+    // released the truck unconditionally, ignoring defects/safeToOperate on THIS
+    // same submission — an unsafe truck could roll under 396.13(c) cover.
+    const { calls } = mockClient({ repair_certified_at: "2026-07-01T00:00:00Z" })
+    const result = await submitDvir(CARRIER, {
+      ...BASE_INPUT,
+      priorDvirId: PRIOR,
+      defects: [{ label: "Service brakes", note: "grinding" }],
+      safeToOperate: false,
+    })
+    expect(result.grounded).toBe(true)
+    expect(calls.some((c) => /SET status = 'active'/.test(c.sql))).toBe(false)
+    const ground = calls.find((c) => /SET status = 'shop'/.test(c.sql))
+    expect(ground).toBeDefined()
+    expect(calls.some((c) => /INSERT INTO hub\.maintenance_records/.test(c.sql))).toBe(true)
+  })
+
+  it("grounds a first-time pre-trip that finds a new unsafe defect (no prior DVIR)", async () => {
+    // Same root cause: pre-trips with no priorDvirId never grounded the truck at
+    // all before this fix, regardless of safeToOperate.
+    const { calls } = mockClient(null)
+    const result = await submitDvir(CARRIER, {
+      ...BASE_INPUT,
+      defects: [{ label: "Steering", note: "loose" }],
+      safeToOperate: false,
+    })
+    expect(result.grounded).toBe(true)
+    expect(calls.some((c) => /SET status = 'shop'/.test(c.sql))).toBe(true)
+  })
 })
 
 describe("DVIR read queries are carrier-guarded on both sides", () => {

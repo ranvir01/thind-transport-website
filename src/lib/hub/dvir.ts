@@ -157,8 +157,11 @@ export async function submitDvir(
     const dvirId = rows[0].id as string
     let grounded = false
 
-    if (input.type === "post" && input.defects.length > 0 && !input.safeToOperate) {
-      // Unsafe defect: ground the truck and open a work order (396.11(a)(3)).
+    if (input.defects.length > 0 && !input.safeToOperate) {
+      // Unsafe defect on EITHER trip type: ground the truck and open a work
+      // order (396.11(a)(3)). A pre-trip can find a new defect too — e.g. one
+      // reviewing a repair-certified prior DVIR — and must not release the
+      // truck just because it happens to be the reviewing inspection.
       await client.query(
         `UPDATE hub.trucks SET status = 'shop', updated_at = NOW() WHERE carrier_id = $1 AND id = $2`,
         [carrierId, input.truckId]
@@ -175,10 +178,10 @@ export async function submitDvir(
         workOrder[0].id, dvirId,
       ])
       grounded = true
-    }
-
-    if (input.type === "pre" && prior?.repair_certified_at) {
-      // 396.13(c): the reviewing driver's signature releases a certified truck.
+    } else if (input.type === "pre" && prior?.repair_certified_at) {
+      // 396.13(c): a clean reviewing pre-trip's signature releases a
+      // certified truck. Gated on this pre-trip itself having no unsafe
+      // defect (the branch above), not just on its type.
       await client.query(
         `UPDATE hub.trucks SET status = 'active', updated_at = NOW()
          WHERE carrier_id = $1 AND id = $2 AND status = 'shop'`,

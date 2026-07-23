@@ -265,3 +265,71 @@ Backlog:
   pending lane branch and carries old integrator-merge history in its own log —
   needs the meta-governor prune pass to decide salvage-vs-delete, same as the
   other 600+/190+ branches noted above; not safe for an unattended one-shot merge.
+
+## QA rig drive on main@7e9372eb — 2026-07-23 ~05:30 UTC (owner/dispatcher/driver, read-only prod probe)
+
+First cycle in this window with **Vercel MCP tools connected** (`mcp__Vercel__*`) — every
+prior cycle back to `e105f8b2` (~3h13m stale) had only egress-blocked HTTPS to
+`thindtransport.com` and could only guess at production health from commit-trailer math.
+This confirms what those cycles suspected: **the Vercel Git integration has stopped
+deploying `main` to production entirely**, not just fallen behind.
+
+`get_project` on `prj_QKMg8o77DoEYiVQgQbI0FB5F4tAg`: `live: false`, `latestDeployment`
+CANCELED with `target: null` (a preview build for a session branch, not production).
+`list_deployments` (20 most recent + a windowed follow-up): the last deployment with
+`target: "production"` and `state: "READY"` is `97a9f6a9` (the `961950ce1` dedupe-trap
+force-deploy from `FxpgVvgTBD4RZ6sdJPL6Cwx91Das`/`3ABZnHjnyvFk7LiLGghjzigTrS8j`), created
+2026-07-22 23:31:58 UTC — **5h38m stale** as of this cycle. Every one of the 15+ commits
+landed on `main` since then (`ac62cb48` through `7e9372eb`, including the DVIR
+release-when-unsafe safety fix `727ba61b`/`45e08c0b` and the sidecars POST body-size cap)
+produced **zero** deployment records with `target: "production"` — not READY, not
+CANCELED, not even a SKIPPED/ignored one. Every deployment in the window is a preview
+build (`target: null`) for a feature/session/integrator branch. Ruled out as the cause:
+the integrator→main drain itself (`npm run agent:status` reports STEADY STATE, integrator
+within 3 commits of main and moving) and the `drain-integrator.yml` GitHub Action (last 15
+scheduled runs all `completed`/`success` on `main`, correctly no-op'ing in steady state —
+that workflow only fast-forwards the *integrator* to `main`, it has no role in Vercel's
+own main→production trigger). This is specifically Vercel's GitHub App integration/webhook
+no longer firing production builds on push to `main` — fixable only from the Vercel
+dashboard (Git integration connection, production-branch setting, Ignored Build Step).
+Notified the owner directly (push notification) since three prior cycles flagged rising
+staleness in their trailers with no way to act on it.
+
+Direct HTTPS probe to `thindtransport.com` stayed egress-blocked this session too (curl
+exit 56 on both `/` and `/hub/login`) — consistent with every prior cycle, not new
+information.
+
+Fresh rig from scratch: Postgres 16 started (was down), `hubapp` role + `hubdb` database
+created, `npm ci` (720 packages, 3 high-severity `npm audit` findings — same carried
+semver-major-bump item, not re-attempted), `npm run db:migrate` through `020_outreach.sql`
+clean, `seed:demo`, `npm run build` (Next.js 16, zero TS errors) clean, `npx vitest run`
+(181 files/1515 tests green), `npm run test:sidecars` (28 Rust tests + Go vet/test green,
+clippy clean).
+
+No new commits landed on `main` since the last three QA cycles (`efcd2fbf`, `d335e724`,
+`1e6bfd9f`) all audited this exact window at this exact SHA with 0 regressions found — not
+re-auditing the same diff a fourth time; nothing to add there.
+
+Drove the full `e2e-run-all.mjs` battery (47 `e2e-*-smoke.mjs` scripts) as owner,
+dispatcher, and driver: first pass showed 4 failures (`e2e-detention-alerts-smoke`,
+`e2e-mailbox-oauth-smoke`, `e2e-recurring-lane-smoke`, `e2e-recurring-rollup-smoke`, all
+401/"CREDENTIALS_KEY missing" symptoms) — traced to **this session's own rig setup**, not
+a product bug: appending `CREDENTIALS_KEY`/`CRON_SECRET` to `.env.local` and restarting
+`next start` in one shell call left the *old* process still bound to :3000 (the new one
+lost the port race), so the server under test never actually picked up the new secrets.
+Force-killed both processes, started clean, re-ran all 4 individually — all pass. **47/47
+green**, 0 real defects, 0 console errors. Leaving this note so the next agent doesn't
+chase the same phantom failure if it recurs from the same shortcut.
+
+Backlog:
+- Owner: production Vercel deploy pipeline confirmed broken (not just stale) — see above,
+  needs a dashboard check of the Git integration/production-branch/Ignored-Build-Step
+  settings; no in-repo fix is possible for this one.
+- `lane-compliance` (1362 unpicked commits, up from 667 two cycles ago) and
+  `lane-roadmap` (1233, up from 632) are growing fast — meta-governor prune pass is now
+  well overdue on both.
+- Carried, unchanged: npm audit's 3 high-severity findings (nodemailer/@auth/core,
+  sharp/next's image optimizer) still blocked on an owner-approved semver-major bump;
+  portal invoice-pill accent-vs-gold call; IFTA due-date roll not accounting for legal
+  holidays.
+
