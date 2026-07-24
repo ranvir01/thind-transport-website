@@ -703,6 +703,61 @@ Backlog:
   accounting for legal holidays (documented scope decision).
 
 
+## Playwright QA drive (owner/dispatcher/driver) + prod probe — 2026-07-24 ~15:20 UTC
+
+Fresh QA-drive routine per `docs/agent-improvement-loop.md` §5 (probe-only, no feature work). Reviewed
+the diff across every commit landed in the prior 3 hours (`159627d1`..`f0facd4c`: the driver-accent
+mechanical swap on `pay/page.tsx` + `OfflineSync.tsx`, plus `.drain-stamp`/docs) for outright
+regressions — none found; the `color-mix()` border/bg pattern correctly avoids the opacity-on-CSS-var
+pitfall (AGENTS.md).
+
+Stood up a clean local rig from scratch (Postgres running but no role/db existed — created both per
+the dev-workflow-testing skill's pitfall #9), `npm run db:migrate` (21 migrations) + `npm run
+seed:demo` + `npm run build` + `npm run start`. `npx vitest run`: 187 files/1555 tests, all green.
+
+Drove real flows with actual Playwright (not the repo's Puppeteer `e2e-*.mjs` scripts) against the
+live rig, screenshotting every page: **owner** (today dashboard, owner reports, fleet, money,
+settlements, settings/users/branding), **dispatcher** (loadboard, load list, a real load detail page,
+planner, messages, tasks, fuel), **driver** at 390px forced-dark (home, pay, docs, dvir, incident,
+messages, timeoff, more). Zero console errors, zero failed navigations, zero HTTP errors across all
+three roles. Visual review of every screenshot found no invisible/ghosted text and no marketing
+gold/navy/steel leaking into `(office)` routes; driver screens correctly show the carrier-accent gold
+via `var(--driver-accent)` per the swap above.
+
+Two harness-only false positives worth recording so the next agent doesn't rediscover them: (1)
+`page.waitForLoadState('networkidle')` immediately after a login-form submit can resolve before the
+async `signIn()` fetch even starts, reading as a failed login when it isn't — wait for the URL to
+leave `/hub/login` first; (2) `a[href^="/hub/loads/"]` also matches the static `/hub/loads/paste` and
+`/hub/loads/new` routes, so a "find a load detail link" regex needs to exclude those before grabbing
+the first match.
+
+Probed `https://thindtransport.com` read-only: direct HTTPS is blocked by this session's egress proxy
+(403 on CONNECT, expected per §3b) — fell back to the Vercel connector. Latest production deployment
+(`dpl_AsUcQZ8FDXfnsiUGFhUj4Ab6LNV7`) is READY, target production, on commit `f0facd4c` — matches
+`main` HEAD, so prod is current. `get_runtime_errors` (24h window) shows exactly one error group, a
+`pg`/`pg-connection-string` deprecation warning ("SSL modes 'prefer'/'require'/'verify-ca' are treated
+as aliases for 'verify-full'") on `/api/hub/cron/[job]`, first seen 2026-06-26 — pre-existing, not a
+regression, not a functional failure, just log noise. No other errors in the window.
+
+No code fix to ship this cycle — the fleet is broadly green and no regression was introduced in the
+audited window.
+
+Backlog:
+- `src/lib/hub/db.ts`'s `Pool({ connectionString: url })` triggers a `pg`/`pg-connection-string`
+  deprecation warning in production logs on every cron invocation (`sslmode=require` etc. will change
+  meaning in pg v9). Low priority (cosmetic log noise, not a functional bug) but a one-line fix —
+  append `&sslmode=verify-full` (or `uselibpqcompat=true&sslmode=require` for current behavior) to the
+  connection string, or set `ssl: { rejectUnauthorized: true }` explicitly instead of relying on the
+  querystring alias. `db.ts` isn't inside any lane's file territory (per §5's table) — the integrator
+  should pick this one up directly rather than assigning it to a lane.
+- `lane-tests` (1443 unpicked) and `lane-compliance` (1536 unpicked, fully superseded by HEAD per the
+  prior cycle's investigation) remain the two largest pending branches; meta-governor prune pass
+  remains overdue across many cycles now.
+- Carried, unchanged: npm audit's 3 high-severity findings (owner-approval-gated semver-major bump);
+  Rust sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision); IFTA due-date roll not
+  accounting for legal holidays (documented scope decision).
+
+
 ## Full 48-script E2E battery on a live rig — 2026-07-24 ~14:00 UTC (verify-and-build cycle)
 
 `git fetch` + `npm run agent:status`: integrator (`claude/hauldesk-project-setup-l1luoo`) had 3 new
