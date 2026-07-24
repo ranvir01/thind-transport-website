@@ -567,3 +567,71 @@ Backlog:
   for provider/webhook consistency (lane-integrations territory); reseed() not resetting
   hub.carriers.status (lane-tests territory).
 
+## Dispatch/loads-core subsystem audit + small-branch triage — 2026-07-24 ~06:40 UTC (verify-and-build cycle)
+
+`main` was 1 commit ahead of the integrator (a `.drain-stamp` drain commit not yet merged back) — same
+divergence shape as prior cycles. Fast-forwarded the integrator to `main` (pure fast-forward, no
+conflicts), pushed. `npm ci` + `npm run build` + `npx vitest run` (186 files/1546 tests) all green
+before touching anything else.
+
+Before absorbing branches, dry-ran merges on the 12 smallest pending candidates from `agent:branches`
+not yet individually confirmed in prior triage notes: `stoic-mccarthy-{08z45u,p7dtl2,smz6m4,97wgd7}`
+and `pensive-allen-{bgqbgg,lz41rp,kpjskl,1wsr8h,pd71ho,6gmrh4,ao14bb,6tmehe,smw0re}`. All 12 conflict
+against HEAD (none are unrelated-history forks — every one has a real merge-base, just 300+ commits
+stale). Verified rather than assumed: read the actual conflicting hunks for a representative sample —
+`pensive-allen-kpjskl`'s compliance-page bad/ok token mapping is already on HEAD (`bg-bad`/`bg-ok`/
+`text-bad` etc., `src/app/hub/(office)/compliance/page.tsx`); `pensive-allen-{1wsr8h,pd71ho,6gmrh4,
+ao14bb}`'s `text-emerald-300` → `text-ok` IFTA fix is superseded by a newer three-way `text-warn`/
+`text-ok`/`text-fg` ternary already on HEAD (`ifta/page.tsx`); `stoic-mccarthy-97wgd7`'s
+`.cursor/automation/README.md` rewrite is byte-identical to HEAD's current content; `pensive-allen-
+{6tmehe,smw0re}`'s `dev-workflow-testing/SKILL.md` pitfall additions are a strict subset of HEAD's
+(HEAD already carries pitfalls 5-12, these branches only had a couple of the earlier ones). Per
+AGENTS.md's keep-HEAD-superset rule, none merged — no absorbable branch this cycle.
+
+`agent:backlog`'s top items are all owner-gated (npm audit major bump, meta-governor prune, tiny_http
+decision), so per step 6 picked the next unaudited subsystem in the AGENTS.md tenancy/permission/money
+rotation: dispatch/loads core (fuel/expenses/messages/invoices/advances/settlements/statements/safety/
+claims/tasks/recruiting already confirmed clean in prior cycles). Walked every entry point: `loads.ts`
+(all queries carrier-scoped, `LOAD_SELECT`'s lateral joins guard `carrier_id` on every joined table,
+`assertCarrierRefs` gates customer/driver/truck/trailer on create+update), `_actions/loads.ts` (every
+action calls `requirePermission` with the right action — `loads:write`/`loads:status`/`documents:write`
+— money-adjacent update logs old/new linehaul+FSC via `logAudit`, `logCheckCallAction` proves the
+client-supplied `loadId` belongs to the carrier via `getLoad` before writing an event row), `loadboard.ts`
+(`patchLoadBoardField` re-derives the load server-side, re-applies the same dispatch-legality + POD
+gates as the load-detail path so inline editing can't bypass them, `assertCarrierRefs` on driver_id/
+truck_id reassignment), `_actions/loadboard.ts` (permission check keyed off field name, `loads:status`
+for status changes), `sharelinks.ts` (`createShareLink` calls `assertCarrierRefs({load_id})` before
+issuing a token; `revokeShareLink` is carrier-scoped in its own WHERE clause), `recurring.ts#rebookLoad`
+(source load fetched via carrier-scoped `getLoad` before any field is copied), and `documents.ts`
+(`saveDocument`/`deleteDocument` both carrier-scoped, entity ref proven via `assertCarrierRefs` in the
+action layer before the DB write). **No defect found** — this subsystem is clean.
+
+Stood up a fresh local rig this cycle (Postgres was down, no `hubapp` role/`hubdb` database existed
+yet — created both per the dev-workflow-testing skill's pitfall #9), `npm run db:migrate` (all 21
+migrations clean) + `npm run seed:demo`, `npm run build && npm run start`. Ran the four smokes covering
+what was just audited: `e2e-loads-smoke` (booking flow, cent-exact rate math, driver blocked from
+Book-a-Load), `e2e-dispatch-smoke` (legal advance, server-side refusal on the expired-medical-card
+load, cancel-confirm flow, accountant's `loads:read`-only refusal), `e2e-duplicate-load-smoke`
+(per-shipment facts stripped on rebook, assignment/factored flag carried over, accountant not offered
+Duplicate), `e2e-load-osd-chip-smoke` (driver POD-with-exception opens a draft claim, load detail chips
+it, chip links back to the exact claim). **All four green, 0 defects, 0 console errors** — matches the
+static-audit conclusion.
+
+No code fix was available to ship — draining the unchanged integrator tip would just replay `main`'s
+tip with a fresh `.drain-stamp`, so left `main` as-is this cycle rather than manufacture a no-op deploy.
+
+Backlog:
+- Subsystem-audit rotation: dispatch/loads core is now confirmed clean, joining fuel/expenses/
+  messages/invoices/advances/settlements/statements/safety/claims/tasks/recruiting from prior cycles.
+  Remaining unaudited per AGENTS.md's per-entry-point pass: planner, reports, portal/tracking,
+  integrations webhooks, driver PWA offline queue.
+- All 12 of this cycle's dry-run candidates (`stoic-mccarthy-{08z45u,p7dtl2,smz6m4,97wgd7}`,
+  `pensive-allen-{bgqbgg,lz41rp,kpjskl,1wsr8h,pd71ho,6gmrh4,ao14bb,6tmehe,smw0re}`) are confirmed
+  superseded-by-HEAD, not just conflicting — safe deletion candidates for the meta-governor prune pass
+  rather than re-triage targets.
+- `lane-tests` (1443 unpicked) and `lane-compliance` (1536 unpicked) remain the two largest pending
+  branches; meta-governor prune pass remains overdue, unchanged from prior cycles.
+- Carried, unchanged: npm audit's 3 high-severity findings (owner-approval-gated semver-major bump);
+  Rust sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision); IFTA due-date roll not
+  accounting for legal holidays (documented scope decision).
+
