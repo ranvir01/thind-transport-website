@@ -567,3 +567,65 @@ Backlog:
   for provider/webhook consistency (lane-integrations territory); reseed() not resetting
   hub.carriers.status (lane-tests territory).
 
+## QA rig drive on main@4ff19e73 — 2026-07-24 ~06:36 UTC (owner/dispatcher/driver, read-only prod probe)
+
+Routine charter is QA drive + prod probe only (`docs/agent-improvement-loop.md` §5's
+owner/dispatcher/driver mandate) — no feature work this cycle.
+
+Fresh rig from scratch: Postgres 16 started (was down), `hubuser` role + `hubdb` database created
+(pitfall #9), canvas native deps installed, `PUPPETEER_SKIP_DOWNLOAD=true npm install` (748
+packages) pointed at the sandbox's preinstalled `/opt/pw-browsers` Chromium, `npm run db:migrate`
+through `021_random_testing.sql` clean (21/21), `seed:demo`, `npm run build` clean, `next start`.
+Full verify chain green: `npx vitest run` (187 files/1553 tests), `npm run lint` (clean),
+`npm run test:sidecars` (28 Rust tests + Go vet/test, clippy clean).
+
+Drove the full `e2e-run-all.mjs` battery as owner, dispatcher, and driver: **48/48 green**
+(15.5m), 0 defects, covering dispatch/loads, planner, fuel, invoices/advances/settlements/
+statements, compliance incl. the new random-testing feature, DVIR, safety/claims, tasks,
+recruiting, messages, notifications, portal + portal-accept, track, driver PWA incl. POD, tenant
+isolation, IFTA, QBO push/IIF, DAT freight, recurring lane/rollup, reports, users, settings, plus
+the screen sweep. Additionally spot-checked the three screens actually touched by the last 3h of
+commits with a standalone Puppeteer drive (separate browser contexts per role to avoid cookie
+collisions): owner's new `/hub/compliance/random-testing` page, the driver PWA bottom nav at
+390px (`driver@demo.thind`), and the broker portal home (`broker@demo.thind`) — all rendered
+clean, 0 console errors, correct forced-dark palette on driver/portal, no gold/navy/steel leakage
+on the office screen.
+
+Reviewed every commit landed in the 3 hours before kickoff (`686ad6b`..`4ff19e7`, 03:39-05:39
+UTC): the `lane-portal`/`lane-sidecars`/`lane-roadmap`/`lane-docs`/`lane-integrations`/
+`lane-analytics`/`lane-saas` merges (new random-testing compliance feature + migration 021 +
+daily-only cron entry, Go worker graceful shutdown, driver PWA accent wiring, portal quote CTA
+accent fix, integration docs scout passes) plus two tenancy-hardening fixes absorbed straight
+into the integrator (`eager-babbage-39qe2o`'s referral-bonus stuck-pending fix,
+`eager-babbage-siqumh`'s tasks assignee-guard + invoice carrier-check). Every one shipped with
+its own regression test and a green build/vitest run in its own commit body; `vercel.json`'s one
+change (new `random-testing` cron) is daily-only, consistent with the Hobby-plan sub-daily-cron
+guardrail. **Zero regressions found.**
+
+Production probe: direct HTTPS to `thindtransport.com` stayed egress-blocked this session (curl
+exit 56, CONNECT 403) — Vercel MCP tools were connected, so used those instead per §3b's
+documented fallback. `list_deployments` confirms the latest `target: "production"` /
+`state: "READY"` deployment (`dpl_3mbVx4wHbcCjR85WxdnX3NtVQs2U`) is on commit `4ff19e73`, exactly
+matching local `main` HEAD — production is current, not stale. `get_project`'s `live: false` is
+the known false-negative (documented 2026-07-19); cross-checked against the alias + deployment SHA
+per that note. `get_runtime_errors` (6h window) returned exactly one group: a long-standing
+(first seen 2026-06-26) benign pg-connection-string SSL-mode deprecation warning on the cron
+route, not a real error. Production confirmed healthy and current.
+
+`npm run agent:status`: main 1 commit ahead of integrator (drain-stamp only) — STEADY STATE, no
+catch-up mode, nothing for this routine to drain. `agent:backlog`'s top items are unchanged from
+last cycle and all owner-gated (branch-prune triage, Rust sidecar timeout/thread-cap decision,
+npm audit semver-major bump) — none guessable per AGENTS.md's ambiguity rule, so no code fix was
+forced this cycle.
+
+Backlog:
+- 90 pending `claude/*` branches remain — `lane-tests` (1443 unpicked) and `lane-compliance`
+  (1536 unpicked) are still the two largest by a wide margin; meta-governor prune pass remains
+  significantly overdue on both.
+- Rust sidecar `tiny_http` connection-timeout/thread-cap gap still needs an owner decision before
+  any code change.
+- Carried, unchanged: npm audit's 3 high-severity findings (owner-approval-gated semver-major
+  bump); IFTA due-date roll not accounting for legal holidays (documented scope decision);
+  registry.test.ts for provider/webhook consistency (lane-integrations territory); reseed() not
+  resetting hub.carriers.status (lane-tests territory).
+
