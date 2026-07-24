@@ -309,10 +309,19 @@ export async function attachReferral(
   bonusCents: number
 ): Promise<void> {
   await assertCarrierRefs(carrierId, { applicant_id: applicantId, driver_id: referrerDriverId })
+  // The 'hired' milestone only flips pending -> payable inside
+  // convertApplicantToDriver's own transaction, at the moment of conversion.
+  // If the office attaches a referral AFTER that applicant is already hired
+  // (converted_driver_id set), that flip has already happened and will never
+  // run again — a referral inserted as 'pending' here would sit forever and
+  // the driver's bonus would silently never pay. Insert straight to
+  // 'payable' in that case instead of relying on a milestone that already passed.
+  const applicant = await getApplicant(carrierId, applicantId)
+  const status = applicant?.converted_driver_id ? "payable" : "pending"
   await query(
-    `INSERT INTO hub.referrals (carrier_id, applicant_id, referrer_driver_id, bonus_cents, milestone)
-     VALUES ($1,$2,$3,$4,'hired')`,
-    [carrierId, applicantId, referrerDriverId, bonusCents]
+    `INSERT INTO hub.referrals (carrier_id, applicant_id, referrer_driver_id, bonus_cents, milestone, status)
+     VALUES ($1,$2,$3,$4,'hired',$5)`,
+    [carrierId, applicantId, referrerDriverId, bonusCents, status]
   )
   await query(
     `UPDATE hub.applicants SET source = 'referral', updated_at = NOW() WHERE carrier_id = $1 AND id = $2`,
