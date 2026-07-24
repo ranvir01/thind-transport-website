@@ -744,3 +744,50 @@ Backlog:
 - Carried, unchanged: npm audit's 3 high-severity findings (owner-approval-gated semver-major bump);
   Rust sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision); IFTA due-date roll not
   accounting for legal holidays (documented scope decision).
+
+## QA rig drive on main@f0facd4c — 2026-07-24 ~17:10-17:35 UTC (owner/dispatcher/driver, read-only prod probe)
+
+No commits landed on `main` in the last 3 hours other than the routine `.drain-stamp` commit
+(`f0facd4c`, 14:09:41 UTC — a tree-only stamp, no product diff) on top of `ca084724` (the 14:00 UTC
+48-script battery cycle, already 0-defect). Nothing to regression-check beyond re-verifying that exact
+tip, so this cycle is a fresh full-rig drive rather than a diff-driven fix.
+
+Fresh rig from scratch: Postgres 16 started (was down, no `hubapp` role/`hubdb` database existed yet —
+created both per the dev-workflow-testing skill's pitfall #9), `npm ci` (748 packages, same carried 3
+high-severity `npm audit` findings), `npm run db:migrate` (all 21 migrations clean), `seed:demo`, `npm
+run build` (all routes compile, zero TS errors), `npx vitest run` (187 files/1555 tests green),
+`npm run lint` (clean), `npm run test:sidecars` (28 Rust tests + Go vet/test, clippy clean).
+
+Drove the full `scripts/e2e-battery.mjs` (48 `e2e-*-smoke.mjs` scripts, owner/dispatcher/driver/broker/
+shipper/portal/public/tenant-isolation) against the freshly seeded rig. **48/48 PASS, 0 defects, 0
+console errors.**
+
+Production probe: direct HTTPS to `thindtransport.com` stayed egress-blocked this session (curl exit
+56, CONNECT tunnel 403) — same as every prior cycle, not new information. Vercel MCP tools were
+connected this cycle, so cross-checked via `get_project`/`list_deployments` instead: `live` still reads
+`false` and `latestDeployment` is a CANCELED branch preview (`target: null`) — but per this doc's own
+"`live` alone is not a reliable signal" note, that's not the real signal. The actual `target:
+"production"`/`state: "READY"` deployment is `f0facd4c` created 2026-07-24 14:09:46 UTC — **the exact
+current `main` tip**, not stale. This resolves the production-pipeline concern several prior cycles
+carried (last flagged broken 2026-07-23 ~05:30 UTC, "confirmed recovered" per `b7eb6c2` but unverified
+since) — production is healthy and current as of this cycle. `get_runtime_errors` (24h window) shows
+exactly one error group: a benign `pg` driver deprecation warning ("SSL modes 'prefer'/'require'/
+'verify-ca' are treated as aliases for 'verify-full'") on `/api/hub/cron/[job]`, first seen 2026-06-26
+— long-standing log noise from the Postgres client library, not an application defect, not a regression.
+
+No code fix was available or needed to ship this cycle — the tip is clean.
+
+Backlog:
+- Minor/cosmetic: the `pg` SSL-mode deprecation warning on `/api/hub/cron/[job]` could be silenced by
+  setting `sslmode=verify-full` explicitly (or `uselibpqcompat=true&sslmode=require`) on the prod
+  `POSTGRES_URL`/cron DB client instead of the implicit `require`/`prefer` alias — cosmetic log noise
+  only, not urgent, lane-sidecars/lane-docs adjacent (wherever the cron DB client config lives).
+  Do not mistake it for a new outage if it recurs in a future runtime-error scan.
+- `lane-tests` (1443 unpicked) and `lane-compliance` (1536 unpicked, and per the last cycle's note,
+  fully superseded-by-HEAD) remain the two largest pending branches; meta-governor prune pass remains
+  overdue across many cycles now — unchanged.
+- Carried, unchanged: npm audit's 3 high-severity findings (owner-approval-gated semver-major bump);
+  Rust sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision); IFTA due-date roll not
+  accounting for legal holidays (documented scope decision); driver-accent mechanical swap
+  (`text-gold`/`bg-gold`/`border-gold` → carrier accent) still open across ~16-18 driver PWA
+  occurrences (lane-driver territory).
