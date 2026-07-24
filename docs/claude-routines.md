@@ -744,3 +744,55 @@ Backlog:
 - Carried, unchanged: npm audit's 3 high-severity findings (owner-approval-gated semver-major bump);
   Rust sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision); IFTA due-date roll not
   accounting for legal holidays (documented scope decision).
+
+## QA rig drive on main@f0facd4 — 2026-07-24 ~14:10 UTC (owner/dispatcher/driver, read-only prod probe)
+
+Routine charter is QA drive + prod probe only (this doc §5's owner/dispatcher/driver mandate;
+`docs/agent-improvement-loop.md` §5) — no feature work this cycle. Reviewed every commit landed in the
+3 hours before kickoff (`159627d1`, `9a0d244e`, `ca084724`, `f0facd4c`, ~11:10-14:10 UTC): all four are
+docs-only (`docs/claude-routines.md` audit-record entries plus the stamped drain merge) — zero product
+code changed in the window, so there was no regression to fix forward.
+
+Fresh rig from scratch: Postgres 16 started (was down), `hubapp` role + `hubdb` database created per
+pitfall #9 (neither existed), `npm ci` (748 packages; npm audit's carried 3 high-severity findings,
+unchanged, not re-attempted — owner-approval-gated semver-major bump), `npm run db:migrate` (all 21
+migrations clean through `021_random_testing.sql`), `npm run seed:demo`, `npm run build` (Next.js 16,
+zero TS errors) clean, `npm run start`. `npx vitest run` (187 files/1555 tests green), `npm run lint`
+clean, `npm run test:sidecars` (28 Rust tests green, Go vet/test + clippy clean).
+
+Drove the full `scripts/e2e-battery.mjs` — all 48 `e2e-*-smoke.mjs` scripts plus the visual sweep,
+sequentially against one seeded database, covering owner/dispatcher/driver/broker/shipper/portal/
+tenant-isolation flows end to end. **48/48 PASS, 0 defects.** Cross-checked the running server's log
+for anything the smoke scripts' own assertions might have missed: the only non-2xx noise was an
+`ECONNREFUSED 127.0.0.1:2526` (mailbox-oauth-smoke's own deliberate bad-port negative test) and
+`CredentialsSignin` auth errors (login-smoke's deliberate bad-password negative tests) — both expected
+test fixtures, not real errors.
+
+Production probe: direct HTTPS to `thindtransport.com` stayed egress-blocked this session (curl exit
+56), so used the Vercel MCP connector instead. `get_project`: `latestDeployment` is `READY`,
+`target: "production"`, commit SHA `f0facd4c9979a614f10f6a27408e9802a7ec4550` — exactly this session's
+HEAD, so production is current, not stale (the `live: false` flag is the known-unreliable signal this
+doc already documents; cross-checked against the deployment SHA instead per §3b). `get_runtime_errors`
+(24h window) surfaced only the one already-carried cosmetic finding: the pg-connection-string SSL-mode
+deprecation warning on `/api/hub/cron/[job]` (first seen 2026-06-26, still just a warning, not a
+functional failure) — no new error clusters.
+
+`agent:status`: integrator and main diverged by 1 (a `.drain-stamp` commit on `main` not yet merged
+back into the integrator) — same shape prior cycles have noted; left for the integrator routine per
+division of labor, this cycle's charter is QA-drive/prod-probe only, not integrator merges.
+
+No code fix was needed or shipped this cycle — the fleet is green top to bottom and production matches
+HEAD exactly.
+
+Backlog:
+- Integrator is 1 commit behind `main` (a `.drain-stamp` commit) — next integrator-routine run should
+  merge `main` into the integrator before touching any lane branch, per the documented divergence-repair
+  pattern.
+- 96 pending `claude/*` branches remain per `agent:branches`; `lane-tests` (1443 unpicked) is the single
+  largest and still growing — meta-governor prune pass remains overdue across many cycles now.
+- Carried, unchanged: npm audit's 3 high-severity findings (owner-approval-gated semver-major bump);
+  Rust sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision); IFTA due-date roll not
+  accounting for legal holidays (documented scope decision); driver-accent mechanical swap
+  (`text-gold`/`bg-gold`/`border-gold` → `var(--driver-accent)`) still has ~16 occurrences left across
+  `driver/page.tsx`, `more/page.tsx`, `timeoff/page.tsx`, `messages/page.tsx`, `docs/page.tsx`, and
+  several driver components (lane-driver territory).
