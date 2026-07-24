@@ -95,7 +95,12 @@ async function withStore<T>(
     const request = fn(tx.objectStore(STORE))
     request.onsuccess = () => resolve(request.result)
     request.onerror = () => reject(request.error)
+    // A failed request aborts the transaction rather than completing it, so
+    // close() must run on every terminal path or the connection leaks —
+    // OfflineSync calls into this queue every 30s for the life of a shift.
     tx.oncomplete = () => db.close()
+    tx.onerror = () => db.close()
+    tx.onabort = () => db.close()
   })
 }
 

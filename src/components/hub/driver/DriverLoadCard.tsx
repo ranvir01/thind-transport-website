@@ -294,7 +294,7 @@ export function DriverLoadCard({ load, detentionFreeMinutes }: { load: LoadForDr
           <div className="flex gap-2">
             <select
               aria-label="What is the photo"
-              className="min-h-[48px] rounded-xl border border-white/15 bg-navy-600 px-3 text-sm font-semibold text-white"
+              className="min-h-[48px] w-[132px] shrink-0 truncate rounded-xl border border-white/15 bg-navy-600 px-3 text-sm font-semibold text-white"
               value={uploadKind}
               onChange={(e) => setUploadKind(e.target.value as "pod" | "receipt" | "bol")}
             >
@@ -305,9 +305,9 @@ export function DriverLoadCard({ load, detentionFreeMinutes }: { load: LoadForDr
             <button
               onClick={() => fileRef.current?.click()}
               disabled={pending}
-              className="flex flex-1 min-h-[48px] items-center justify-center gap-2 rounded-xl border border-gold/50 bg-gold/10 font-display text-sm font-bold uppercase tracking-[0.06em] text-gold hover:bg-gold/20 disabled:opacity-60"
+              className="flex flex-1 min-w-0 min-h-[48px] items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-gold/50 bg-gold/10 font-display text-sm font-bold uppercase tracking-[0.06em] text-gold hover:bg-gold/20 disabled:opacity-60"
             >
-              <Camera className="h-5 w-5" /> Snap & send
+              <Camera className="h-5 w-5 shrink-0" /> Snap & send
             </button>
             <input
               ref={fileRef}

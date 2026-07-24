@@ -128,9 +128,10 @@ export function DvirForm({
               <li key={item.key}>
                 <div className="flex items-center justify-between gap-2 min-h-[48px]">
                   <span className="min-w-0 text-sm font-semibold text-white">{item.label}</span>
-                  <div className="flex shrink-0 whitespace-nowrap rounded-xl border border-white/15 overflow-hidden">
+                  <div role="group" aria-label={`${item.label} condition`} className="flex shrink-0 whitespace-nowrap rounded-xl border border-white/15 overflow-hidden">
                     <button
                       type="button"
+                      aria-pressed={ok}
                       onClick={() => setChecks({ ...checks, [item.key]: true })}
                       className={cn("min-h-[44px] px-4 text-sm font-bold", ok ? "bg-green-500/25 text-green-300" : "text-steel-400 hover:bg-white/5")}
                     >
@@ -138,6 +139,7 @@ export function DvirForm({
                     </button>
                     <button
                       type="button"
+                      aria-pressed={!ok}
                       onClick={() => setChecks({ ...checks, [item.key]: false })}
                       className={cn("min-h-[44px] px-4 text-sm font-bold", !ok ? "bg-accent text-accent-fg" : "text-steel-400 hover:bg-white/5")}
                     >
@@ -175,11 +177,12 @@ export function DvirForm({
           <p className="mt-1 text-body-xs text-steel-200">
             Answer honestly — &quot;No&quot; parks the truck until the shop signs off. That&apos;s the law working, not you in trouble.
           </p>
-          <div className="mt-2 flex gap-2">
+          <div role="group" aria-label="Safe to operate" className="mt-2 flex gap-2">
             {[true, false].map((value) => (
               <button
                 key={String(value)}
                 type="button"
+                aria-pressed={safeToOperate === value}
                 onClick={() => setSafeToOperate(value)}
                 className={cn(
                   "flex-1 min-h-[48px] rounded-xl border text-sm font-bold",
