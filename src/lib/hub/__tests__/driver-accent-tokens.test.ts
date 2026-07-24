@@ -4,9 +4,10 @@
  * for the customer portal (see portal-accent-tokens.test.ts). Fixed so far:
  * the persistent bottom-tab nav's active-tab color, the offline-sync "sending"
  * banner, the pay page's advance/settlement net amounts, and the home/more/
- * timeoff/messages/docs pages. The signup wizard's own copy promises
- * "Invoices, PDFs, and the driver app will use this color" — this suite
- * keeps that promise honest. See AGENTS.md's semantic-token doctrine.
+ * timeoff/messages/docs pages, and the AnnouncementAckCard/DvirForm
+ * components. The signup wizard's own copy promises "Invoices, PDFs, and
+ * the driver app will use this color" — this suite keeps that promise
+ * honest. See AGENTS.md's semantic-token doctrine.
  */
 import { readFileSync } from "node:fs"
 import { join } from "node:path"
@@ -24,6 +25,11 @@ const MORE_PAGE_SOURCE = readFileSync(join(__dirname, "../../../app/hub/driver/m
 const TIMEOFF_PAGE_SOURCE = readFileSync(join(__dirname, "../../../app/hub/driver/timeoff/page.tsx"), "utf-8")
 const MESSAGES_PAGE_SOURCE = readFileSync(join(__dirname, "../../../app/hub/driver/messages/page.tsx"), "utf-8")
 const DOCS_PAGE_SOURCE = readFileSync(join(__dirname, "../../../app/hub/driver/docs/page.tsx"), "utf-8")
+const ANNOUNCEMENT_ACK_CARD_SOURCE = readFileSync(
+  join(__dirname, "../../../components/hub/driver/AnnouncementAckCard.tsx"),
+  "utf-8"
+)
+const DVIR_FORM_SOURCE = readFileSync(join(__dirname, "../../../components/hub/driver/DvirForm.tsx"), "utf-8")
 
 describe("driver layout accent wiring", () => {
   it("sets --driver-accent from the carrier's resolved portal accent", () => {
@@ -85,5 +91,19 @@ describe("docs page accent tokens", () => {
   it("the document icon follows the carrier's accent color, not stock gold", () => {
     expect(DOCS_PAGE_SOURCE).not.toMatch(/text-gold|bg-gold|border-gold/)
     expect(DOCS_PAGE_SOURCE).toMatch(/var\(--driver-accent\)/)
+  })
+})
+
+describe("announcement ack card accent tokens", () => {
+  it("the pinned-announcement banner and 'Got it' button follow the carrier's accent color, not stock gold", () => {
+    expect(ANNOUNCEMENT_ACK_CARD_SOURCE).not.toMatch(/text-gold|bg-gold|border-gold/)
+    expect(ANNOUNCEMENT_ACK_CARD_SOURCE).toMatch(/var\(--driver-accent\)/)
+  })
+})
+
+describe("DVIR form accent tokens", () => {
+  it("the prior post-trip review banner follows the carrier's accent color, not stock gold", () => {
+    expect(DVIR_FORM_SOURCE).not.toMatch(/text-gold|bg-gold|border-gold/)
+    expect(DVIR_FORM_SOURCE).toMatch(/var\(--driver-accent\)/)
   })
 })
