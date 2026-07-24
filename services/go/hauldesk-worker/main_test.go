@@ -3,7 +3,9 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"math"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -361,5 +363,48 @@ func TestHaversineMilesGoldenParityWithTS(t *testing.T) {
 	got := haversineMiles(47.3809, -122.2348, 39.7392, -104.9903)
 	if math.Abs(got-1008.69) > 0.05 {
 		t.Fatalf("expected TS golden 1008.69 mi (±0.05), got %f", got)
+	}
+}
+
+// TestRunGracefulShutdownOnContextCancel pins run()'s SIGTERM contract: a
+// bare os.Exit (the old main() before this test) cuts off whatever the
+// server was mid-handling — a redeploy landing mid-OSRM-call would silently
+// drop that request. A pre-canceled context stands in for the signal having
+// already arrived; run() must reach Shutdown and return promptly (well under
+// its own 10s drain budget) rather than hang or require a real OS signal to
+// exercise in a test.
+func TestRunGracefulShutdownOnContextCancel(t *testing.T) {
+	srv := newServer("127.0.0.1:0")
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	done := make(chan error, 1)
+	go func() { done <- run(ctx, srv) }()
+
+	select {
+	case err := <-done:
+		if err != nil {
+			t.Fatalf("expected a clean shutdown, got %v", err)
+		}
+	case <-time.After(2 * time.Second):
+		t.Fatal("run did not return after context cancellation — shutdown hung")
+	}
+}
+
+// TestRunPropagatesListenError pins the other branch of run()'s select: a
+// real bind failure (address already in use) must surface as an error from
+// run(), not be swallowed as if it were a clean ErrServerClosed shutdown.
+func TestRunPropagatesListenError(t *testing.T) {
+	l, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatalf("failed to reserve a port: %v", err)
+	}
+	defer l.Close()
+
+	srv := newServer(l.Addr().String())
+	if err := run(context.Background(), srv); err == nil {
+		t.Fatal("expected a bind error when the address is already in use")
+	} else if errors.Is(err, http.ErrServerClosed) {
+		t.Fatalf("bind failure must not read as a clean shutdown, got %v", err)
 	}
 }
