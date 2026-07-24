@@ -510,3 +510,51 @@ Backlog:
   a bug); Owner's Vercel production-pipeline status last confirmed recovered, not re-checked
   this cycle (no Vercel MCP tool available).
 
+## QA rig drive on main@de0dcf88 — 2026-07-24 ~00:15 UTC (owner/dispatcher/driver, read-only prod probe)
+
+Direct HTTPS to `thindtransport.com` stayed egress-blocked this session (curl exit 56), so used
+the Vercel MCP tools per §3b. `get_project` again shows `live: false` — confirmed once more as
+the documented false-negative, not a real signal: `list_deployments` shows the newest deployment
+with `target: "production"` and `state: "READY"` is for commit `de0dcf88` on `main`, created
+2026-07-23T20:42:46Z, which is exactly `main`'s current HEAD — production is not stale, it matches
+the repo exactly. `get_runtime_errors` (24h window) returned only the longstanding `pg-connection-
+string` SSL-mode deprecation warning on `/api/hub/cron/[job]` (first seen 2026-06-26, last
+2026-07-23T15:28), no new error clusters — nothing to page on.
+
+No commits landed on `main` in the three hours before this cycle (`de0dcf88` has been HEAD since
+2026-07-23 20:41:58 UTC, this cycle started ~00:15 UTC 07-24) — no "last 3 hours" regression window
+to check.
+
+Fresh rig from scratch: Postgres was down, no `hubapp` role/`hubdb` database existed yet (created
+both), `npm ci`, `npm run db:migrate` (all 20 migrations clean), `npm run seed:demo`, `npm run
+build` (zero TS errors) and `npm run start` all clean. `npx vitest run` 183 files/1528 tests green,
+`npm run lint` clean, `npm run test:sidecars` green (28 Rust tests + Go `vet`/`test`, clippy
+clean). Mid-run, this session's container worker restarted and killed the local Postgres process
+(not `next start`, which survived) — one `vitest` file (`portal-isolation.test.ts`) failed
+transiently with `ECONNREFUSED` on that pass; restarted Postgres and reran clean. Noting this so a
+future agent doesn't mistake a stale log line for a real regression — it was this session's
+infrastructure blip, not a product bug.
+
+Drove the full `node scripts/e2e-run-all.mjs` battery (all 46 `e2e-*-smoke.mjs` scripts plus the
+390px/1440px screen sweep) as owner, dispatcher, and driver against the fresh rig: **47/47 green
+in 13.8m, 0 defects, 0 console errors**, sweep confirms no horizontal overflow at 390px and no
+invisible/ghosted text on any nav-reachable screen.
+
+`agent:status` reports the integrator 4 commits ahead of `main` (CATCH-UP MODE) — that's Routine
+1/deploy's job, not this QA-drive cycle's; left untouched rather than draining outside lane. No
+code fix was available to ship this cycle (0 defects, 0 regressions) — recording the audit here
+for the next agent instead of manufacturing a change.
+
+Backlog:
+- Integrator is 4 commits ahead of `main` (CATCH-UP MODE per `agent:status`) — needs Routine 1 or
+  the deploy agent to drain; not touched here since draining is outside this QA-drive routine's
+  role.
+- 98 pending `claude/* ` branches remain (up from 99 two cycles ago, roughly flat) —
+  `lane-compliance`/`lane-roadmap` still the largest, meta-governor prune pass remains overdue,
+  unchanged from prior cycles.
+- Carried, unchanged: npm audit's 3 high-severity findings (owner-approval-gated semver-major
+  bump); subsystem-audit rotation still has reports, portal/tracking, integrations webhooks, and
+  driver PWA offline queue unaudited per the last three verify-and-build cycles' notes; IFTA
+  due-date-roll-off-weekends fix already appears in flight on `claude/lane-compliance` per
+  `agent:branches` (integrator's suggested next merge) rather than needing a fresh implementation.
+
