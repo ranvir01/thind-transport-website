@@ -1,6 +1,6 @@
 # FMCSA QCMobile API — broker/carrier authority vetting
 
-Researched: 2026-07-07; re-scouted 2026-07-19 (**no breaking change** — webKey query-param auth
+Researched: 2026-07-07; re-scouted 2026-07-19, 2026-07-23 (**no breaking change** — webKey query-param auth
 and the login.gov → My WebKeys registration flow are confirmed unchanged in current official-page
 excerpts; rate limits remain unpublished). Status: **built, live** — `fmcsaLookup`/`vetCustomer`/`recheckActiveCustomers`
 in `src/lib/hub/vetting.ts`, wired to the daily `fmcsa-recheck` cron (`vercel.json`, `0 11 * * *`).
@@ -124,3 +124,26 @@ minutes of login.gov signup the product's own error copy already promises
 - Alternate machine-readable reference found: `data.transportation.gov` hosts a
   "Licensing and Insurance — QCMobile API" dataset page (id `7xzn-4j4j`) that stays reachable
   when the FMCSA dev site is not.
+
+## 2026-07-23 re-scout
+
+- **No adverse change found.** Same wall as every prior pass: `mobile.fmcsa.dot.gov` (both the
+  `apiAccess`/`getStarted` docs pages and the bare API host) 403'd this scout's fetch tooling
+  directly, so confirmation is search-excerpt-only again — webKey query-param auth, the
+  login.gov → My WebKeys flow, and the docket-then-DOT lookup order all still match what
+  `fmcsaLookup` implements, with no deprecation or migration notice surfaced anywhere.
+- **Rate limits: still unpublished**, third search pass in a row with no numeric ceiling found,
+  official or third-party (the unofficial `brandenc40/qcmobile` Go client's own docs are unchanged
+  since its 2021 release, no newer client surfaced either). The 50-customer cron cap remains our
+  own safety margin, not a documented FMCSA limit.
+- **New corroborating data point for the existing "historical precedent for outages" note**: FMCSA
+  confirmed a real scheduled-maintenance window this year — all FMCSA web applications
+  (`mobile.fmcsa.dot.gov` included, per FMCSA's own systems-wide maintenance notices) were down
+  ET Saturday 11pm–Sunday 4am, June 1–2, 2026, a ~5-hour planned outage. This is the first
+  concretely-dated instance backing the doc's prior "FMCSA has published notices of coordinated
+  outages" claim — reinforces that `fmcsaLookup`'s null-on-failure design (never throw, just "no
+  live data this cycle") is load-bearing, not defensive-only. No sign this repeats on a fixed
+  cadence; treat future FMCSA-wide maintenance notices the same way.
+- Nothing else changed: `data.transportation.gov`'s QCMobile dataset mirror (id `7xzn-4j4j`) is
+  still the fallback reference when the dev site is unreachable; the used-vs-unused endpoint table
+  above stands as-is.

@@ -1,6 +1,6 @@
 # EIA Open Data — weekly on-highway diesel benchmark (free API key)
 
-Researched: 2026-07-07; re-scouted 2026-07-19 (no adapter-breaking change; rate-limit and
+Researched: 2026-07-07; re-scouted 2026-07-19, 2026-07-23 (no adapter-breaking change; rate-limit and
 DEMO_KEY corrections below). Status: **built, live** — `eiaDieselPriceCents()` in `src/lib/hub/fuel.ts`,
 surfaced on `/hub/fuel` as "EIA weekly diesel" and on Settings → Integrations under "Environment
 services". Not in `IntegrationProvider` — credentials are a single platform env var
@@ -108,6 +108,17 @@ through at least April 2026 — and EIA's own still-live series pages). Caveat: 
 bot-blocking), so the live response envelope could not be re-probed directly this pass; the
 throttle numbers above come from search-indexed excerpts of the official documentation
 corroborated across two independent queries.
+
+**2026-07-23 re-scout:** no adverse change. `api.eia.gov`, `www.eia.gov`, and the
+`APIv2.1.0.pdf`/`APIv2.0.1.pdf` documentation PDFs all still 403 this scout's direct fetch —
+fourth straight environment-level wall on this provider, so this pass is search-excerpt-only
+like the last one. Nothing found contradicts the 2026-07-19 throttle numbers (~9,000 req/hr
+sustained, 5 req/s burst) or the `DEMO_KEY`-not-supported correction. One corroborating,
+non-adapter-affecting find: EIA's legacy v1 API was fully discontinued in November 2022 with
+users redirected to v2 permanently — no v3 announcement or v2 sunset notice exists anywhere in
+this pass's search results, which is the strongest evidence yet that v2 (the version
+`eiaDieselPriceCents()` calls) is not near end-of-life. Series `EMD_EPD2D_PTE_NUS_DPG` and the
+`petroleum/pri/gnd` route are unchanged.
 
 ## Shopping list
 
