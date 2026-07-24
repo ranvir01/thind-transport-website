@@ -635,3 +635,65 @@ Backlog:
   Rust sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision); IFTA due-date roll not
   accounting for legal holidays (documented scope decision).
 
+## Owner/dispatcher/driver QA drive (Playwright + Puppeteer smokes) — 2026-07-24 ~11:00-11:25 UTC
+
+Dedicated QA-drive cycle (no feature work): stood up the local rig, drove real user flows as owner,
+dispatcher, and driver, probed production read-only, checked for regressions in the last 3 hours of
+commits. `git log --since="3 hours ago"` on `main` returned nothing (latest commit, `7e4dfc6`, was
+4.5h old and was itself a prior verify-and-build audit already confirmed clean) — no regression window
+to fix forward this cycle.
+
+Local rig from scratch: Postgres was down with no role/db (pitfall #9) — started the service, created
+`hubapp`/`hubdb`, wrote `.env.local` (fresh `NEXTAUTH_SECRET`/`CREDENTIALS_KEY`/`CRON_SECRET`,
+`HUB_DEMO_LOGIN` default-on). `npm run db:migrate` (21 migrations clean) + `npm run seed:demo` +
+`npm run build` (turbopack, clean) + `npm run start`.
+
+Installed `playwright-core` standalone (scratch dir, not a repo dependency) pointed at the sandbox's
+preinstalled `/opt/pw-browsers/chromium` and drove a role-based page sweep: owner + dispatcher at
+1440px across every office screen (loadboard, dispatch, loads, money/*, reports, fleet, safety,
+compliance, tasks, messages, settings, recruiting, fuel, map), driver at 390px across the PWA
+(home, dvir, docs, messages, pay, more, incident, timeoff). Checked HTTP status, console errors, and
+horizontal overflow on each. Zero findings except `/hub/map`: OSM tile requests hit
+`ERR_TUNNEL_CONNECTION_FAILED` — confirmed environment-specific (the sandbox's agent proxy rejects
+CONNECT to arbitrary external hosts by policy, same restriction that blocked the production probe
+below), not a product defect.
+
+For deeper business-logic coverage than a page sweep can catch, also ran the existing Puppeteer smoke
+suite for all three roles: `e2e-office-smoke` (dispatcher: announcement + POD request + recurring task,
+driver sees/acks both), `e2e-dispatch-smoke` (dispatcher: legal advance, server-side refusal on
+expired-medical-card load, cancel-confirm flow, accountant's `loads:read`-only refusal), `e2e-driver-
+smoke` (15-step phone flow: ack, arrive, depart, facility tip, messages, pay/settlement expand, time
+off, docs, incident report), `e2e-reports-smoke` (owner: KPI cards, P&L table + CSV export, lane CSV,
+revenue/AR/deadhead dashboard panels, dispatcher shares the view via `money:read`, driver correctly
+blocked). **All four green, 0 defects, 0 console errors.** `npm run build` + `npx vitest run` (187
+files/1553 tests) + `npm run lint` all clean.
+
+Production probe: direct HTTPS to `thindtransport.com` is blocked by this sandbox's egress policy
+(confirmed via `curl -x $HTTPS_PROXY https://thindtransport.com/` → `CONNECT tunnel failed, response
+403`), so per AGENTS.md §3b fell back to the Vercel connector instead of treating it as a site defect.
+Confirmed healthy: the `thindtransport.com` alias points at `dpl_2U8Z8cwuahGBBKnuD4nQ3f4fCwWA`,
+`readyState: READY`, commit `7e4dfc6` — exactly `main`'s current tip, not stale. `get_runtime_errors`
+(24h window) returned exactly one error group, and it isn't a functional error: a `pg`/`pg-connection-
+string` deprecation **warning** ("SSL modes 'prefer'/'require'/'verify-ca' are treated as aliases for
+'verify-full'") logged on every `/api/hub/cron/[job]` invocation since 2026-06-26 — cosmetic log noise
+from the production `POSTGRES_URL`'s `sslmode` value, not a request failure (12 occurrences over 4
+weeks, cron jobs still ran).
+
+No code change this cycle — nothing broken locally, nothing broken in production, no regression in the
+lookback window. Per AGENTS.md's guardrails a clean audit is a valid cycle outcome; manufacturing a
+change would violate "smallest change that ships value."
+
+Backlog:
+- Cosmetic: production's `POSTGRES_URL` triggers a `pg-connection-string` SSL-mode deprecation warning
+  on every cron invocation (`/api/hub/cron/[job]`, first seen 2026-06-26, still recurring). Fix is an
+  env-var change (append `sslmode=verify-full`, or `uselibpqcompat=true&sslmode=require` if libpq
+  semantics are wanted) in the Vercel project's `POSTGRES_URL`, not a code change — owner action, docs/
+  lane could add a note to the go-live checklist so the next Postgres credential rotation sets it
+  correctly the first time.
+- Subsystem-audit rotation (from prior cycles) still has planner, portal/tracking, integrations
+  webhooks, and driver PWA offline queue unaudited for tenancy/permission/money correctness.
+- Carried, unchanged: npm audit's 3 high-severity findings (owner-approval-gated semver-major bump);
+  Rust sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision); IFTA due-date roll not
+  accounting for legal holidays (documented scope decision); `lane-tests`/`lane-compliance` meta-
+  governor prune pass still overdue.
+
