@@ -30,6 +30,10 @@ const ANNOUNCEMENT_ACK_CARD_SOURCE = readFileSync(
   "utf-8"
 )
 const DVIR_FORM_SOURCE = readFileSync(join(__dirname, "../../../components/hub/driver/DvirForm.tsx"), "utf-8")
+const LOAD_CARD_SOURCE = readFileSync(
+  join(__dirname, "../../../components/hub/driver/DriverLoadCard.tsx"),
+  "utf-8"
+)
 
 describe("driver layout accent wiring", () => {
   it("sets --driver-accent from the carrier's resolved portal accent", () => {
@@ -105,5 +109,12 @@ describe("DVIR form accent tokens", () => {
   it("the prior post-trip review banner follows the carrier's accent color, not stock gold", () => {
     expect(DVIR_FORM_SOURCE).not.toMatch(/text-gold|bg-gold|border-gold/)
     expect(DVIR_FORM_SOURCE).toMatch(/var\(--driver-accent\)/)
+  })
+})
+
+describe("driver load card accent tokens", () => {
+  it("the status banner, ack button, stop timeline, camera upload, and facility-note tags follow the carrier's accent color, not stock gold", () => {
+    expect(LOAD_CARD_SOURCE).not.toMatch(/text-gold|bg-gold|border-gold/)
+    expect(LOAD_CARD_SOURCE).toMatch(/var\(--driver-accent\)/)
   })
 })
