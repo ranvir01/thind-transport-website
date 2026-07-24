@@ -744,3 +744,55 @@ Backlog:
 - Carried, unchanged: npm audit's 3 high-severity findings (owner-approval-gated semver-major bump);
   Rust sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision); IFTA due-date roll not
   accounting for legal holidays (documented scope decision).
+
+## Full 48-script E2E battery + production probe — 2026-07-24 ~19:00 UTC (QA/probe routine)
+
+Reviewed the last 3 hours of commits before touching anything: nothing landed on `main` in that
+window (HEAD is still `f0facd4c`, the same drain this loop has been testing against all day). On the
+integrator (`claude/hauldesk-project-setup-l1luoo`), the only commits in the window were three more
+steps of the driver-accent mechanical swap (`e1e39092`, `f4b6be61`, `615ce7ef` — `DriverLoadCard`,
+`AnnouncementAckCard`/`DvirForm`, then the last two components `DriverIncidentForm`/
+`AdvanceRequestForm`) plus a routine merge of `main` into the integrator. Diffed each against its
+parent: all follow the same `color-mix()` border/background pattern established by `OfflineSync`
+(Tailwind drops opacity modifiers on CSS-var colors silently — AGENTS.md), `--driver-accent` is set
+once at `src/app/hub/driver/layout.tsx`'s root with a resolved fallback, and each commit extended
+`driver-accent-tokens.test.ts` with a regression guard for its files. No regression found — confirmed
+this is the mechanical swap's **last** step: `git grep` for `text-gold|bg-gold|border-gold` under
+`src/app/hub/driver` and `src/components/hub/driver` on the integrator tip now returns zero hits. The
+long-carried "driver-accent swap still open" backlog item (several prior cycles) is resolved as of
+`615ce7ef`, pending drain to `main`.
+
+Stood up a clean local rig from scratch (Postgres 16 wasn't running, no role/database existed —
+created both per the dev-workflow-testing skill's pitfall #9): `npm run db:migrate` (21 migrations)
++ `npm run seed:demo`, `npm run build` (all routes compile) + `npx vitest run` (187 files/1555 tests,
+all green) + `npm run start`, then the full `node scripts/e2e-run-all.mjs` battery — every
+`scripts/e2e-*-smoke.mjs` (48 scripts covering owner/dispatcher/driver/broker/shipper/portal/public/
+tenant-isolation) plus the visual sweep, driven sequentially against one seeded database.
+
+**48/48 PASS in 13.9 minutes, 0 console errors, 0 defects, 0 regressions.**
+
+Probed `thindtransport.com` read-only: direct HTTPS is egress-blocked in this sandbox (403 on CONNECT,
+the expected pattern per agent-improvement-loop.md §3b), so cross-checked via the Vercel MCP connector
+instead. `live: false` on the project (the known unreliable flag) but the actual latest **production**
+deployment (`dpl_AsUcQZ8FDXfnsiUGFhUj4Ab6LNV7`) is `READY`, `target: production`, on `main`'s exact
+HEAD commit (`f0facd4c`) — production is healthy and current, not stale. `get_runtime_errors` (24h
+window) shows exactly one error group: the pre-existing pg-connection-string SSL-mode deprecation
+warning on `/api/hub/cron/[job]` (first seen 2026-06-26, still not a regression, still unfixed — see
+backlog below).
+
+No code fix was needed or made this cycle — nothing in-scope for a QA/probe routine was broken.
+
+Backlog:
+- Driver-accent mechanical swap is now **complete** on the integrator (`615ce7ef`) — zero
+  `text-gold`/`bg-gold`/`border-gold` left under `driver/`. Next drain will bring `main` in sync; no
+  further lane-driver action needed on this specific item.
+- `src/lib/hub/db.ts`'s `Pool({ connectionString })` still triggers the pg-connection-string
+  deprecation warning in prod logs on every cron run (since 2026-06-26, carried across many cycles
+  now) — one-line fix is appending `sslmode=verify-full` (or `uselibpqcompat=true&sslmode=require`) to
+  the connection string. Not in any lane's file territory — integrator/owner should take it directly.
+- `lane-tests` (1443+ unpicked) and `lane-compliance` (1536+ unpicked, per a prior cycle's content-diff
+  check, fully superseded by HEAD and a safe deletion candidate) remain the two largest pending
+  branches; the meta-governor prune pass is overdue across many cycles now.
+- Carried, unchanged: npm audit's 3 high-severity findings (owner-approval-gated semver-major bump);
+  Rust sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision); IFTA due-date roll not
+  accounting for legal holidays (documented scope decision).
