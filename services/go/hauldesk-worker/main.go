@@ -15,12 +15,15 @@ import (
 	"context"
 	"crypto/subtle"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"math"
 	"net/http"
 	"os"
+	"os/signal"
 	"strings"
+	"syscall"
 	"time"
 )
 
@@ -46,9 +49,45 @@ type routeMilesRequest struct {
 }
 
 func main() {
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
 	srv := newServer(":8081")
 	log.Printf("hauldesk-worker listening on %s (auth: %v)", srv.Addr, os.Getenv("HAULDESK_SIDECAR_SECRET") != "")
-	log.Fatal(srv.ListenAndServe())
+	if err := run(ctx, srv); err != nil {
+		log.Fatal(err)
+	}
+}
+
+// run serves srv until ctx is canceled, then drains in-flight requests via
+// Shutdown before returning, so a container restart/redeploy never cuts off
+// a request mid-OSRM-call (a bare os.Exit on SIGTERM would). Kept separate
+// from main so the shutdown path is testable via plain context cancellation
+// instead of sending this process real OS signals.
+func run(ctx context.Context, srv *http.Server) error {
+	serveErr := make(chan error, 1)
+	go func() { serveErr <- srv.ListenAndServe() }()
+
+	select {
+	case err := <-serveErr:
+		if errors.Is(err, http.ErrServerClosed) {
+			return nil
+		}
+		return err
+	case <-ctx.Done():
+		// 10s: comfortably above /route/miles's 10s OSRM budget, so a request
+		// mid-flight when shutdown starts gets to finish rather than being cut
+		// off by the deadline.
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+		if err := srv.Shutdown(shutdownCtx); err != nil {
+			return err
+		}
+		if err := <-serveErr; err != nil && !errors.Is(err, http.ErrServerClosed) {
+			return err
+		}
+		return nil
+	}
 }
 
 // newServer builds the worker's HTTP server; main and the test suite share it
