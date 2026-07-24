@@ -23,7 +23,7 @@ import type { fileDriverIncidentReport } from "@/app/hub/_actions/safety"
  */
 export interface IntentPayloads {
   status: { loadId: string }
-  stop: { stopId: string; loadId: string; field: "arrived_at" | "departed_at" }
+  stop: { stopId: string; loadId: string; field: "arrived_at" | "departed_at"; at: string }
   ack: { loadId: string }
   "announcement-ack": { announcementId: string; signature: string | null }
   /** Replayed as FormData for driverUploadDocument — keep keys in sync with it. */
@@ -51,8 +51,14 @@ export type PendingIntent = {
  * offline for days, so the app version that replays an intent is often not
  * the one that queued it. Rows stamped with an older version are dropped at
  * replay instead of handed to execute() with a shape it was never built for.
+ *
+ * v2: "stop" gained a required `at` field (the tap-time timestamp) so a
+ * replay hours later still records when the driver actually arrived/departed,
+ * not when the queue happened to sync — detention billing runs off this
+ * timestamp. A v1 "stop" row has no `at` and must be dropped, not replayed
+ * with a stale server-time fallback.
  */
-export const QUEUE_SCHEMA_VERSION = 1
+export const QUEUE_SCHEMA_VERSION = 2
 
 // Persisted rows carry whatever shape was current when queued — the typed map
 // guards call sites at compile time, not old IndexedDB data at replay.

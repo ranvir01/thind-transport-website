@@ -27,6 +27,7 @@ vi.mock("@/lib/hub/timeoff", () => ({ createTimeOffRequest: vi.fn(), cancelTimeO
 vi.mock("@/lib/hub/announcements", () => ({ acknowledgeAnnouncement: vi.fn() }))
 vi.mock("@/lib/hub/notify", () => ({ notifyRoles: vi.fn(async () => undefined) }))
 vi.mock("@/lib/hub/audit", () => ({ logAudit: vi.fn(async () => undefined) }))
+vi.mock("@/lib/hub/detention", () => ({ applyDetentionAccrual: vi.fn(async () => undefined) }))
 vi.mock("@/lib/hub/db", () => ({
   query: vi.fn(async () => [{ id: "row-1" }]),
   queryOne: vi.fn(async () => null),
@@ -35,12 +36,14 @@ vi.mock("@/lib/hub/db", () => ({
 
 import { hubDb, query, queryOne } from "@/lib/hub/db"
 import { logAudit } from "@/lib/hub/audit"
-import { driverRequestAdvance, driverUploadDocument } from "@/app/hub/_actions/driver"
+import { setStopTimestamp } from "@/lib/hub/loads"
+import { driverRequestAdvance, driverStopTimestamp, driverUploadDocument } from "@/app/hub/_actions/driver"
 
 const queryMock = vi.mocked(query)
 const queryOneMock = vi.mocked(queryOne)
 const hubDbMock = vi.mocked(hubDb)
 const logAuditMock = vi.mocked(logAudit)
+const setStopTimestampMock = vi.mocked(setStopTimestamp)
 
 /**
  * driverRequestAdvance's exposure check + insert now runs inside a
@@ -67,8 +70,10 @@ beforeEach(() => {
   queryOneMock.mockClear()
   logAuditMock.mockClear()
   hubDbMock.mockReset()
+  setStopTimestampMock.mockClear()
   queryMock.mockResolvedValue([{ id: "row-1" }])
   queryOneMock.mockResolvedValue(null)
+  setStopTimestampMock.mockResolvedValue(null)
   mockAdvanceClient(0)
 })
 
@@ -103,5 +108,14 @@ describe("driverUploadDocument — receipt with an amount", () => {
     expect(logAuditMock).toHaveBeenCalledWith(
       expect.objectContaining({ entityType: "expense", action: "driver_receipt" })
     )
+  })
+})
+
+describe("driverStopTimestamp", () => {
+  it("records the tap-time timestamp the client sent, not the server clock at replay", async () => {
+    const tapTime = "2026-07-20T03:15:00.000Z"
+    const result = await driverStopTimestamp("stop-1", "load-1", "departed_at", tapTime)
+    expect(result.ok).toBe(true)
+    expect(setStopTimestampMock).toHaveBeenCalledWith("carrier-1", "stop-1", "load-1", "departed_at", tapTime)
   })
 })
