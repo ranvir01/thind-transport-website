@@ -181,7 +181,7 @@ export function DriverIncidentForm({ loads }: { loads: { id: string; reference: 
                     "min-h-[44px] px-4 text-sm font-bold",
                     form[key] === value
                       ? value
-                        ? "bg-accent text-accent-fg"
+                        ? "bg-orange/25 text-orange"
                         : "bg-white/15 text-white"
                       : "text-steel-400 hover:bg-white/5"
                   )}

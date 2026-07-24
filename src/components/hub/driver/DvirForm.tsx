@@ -147,7 +147,7 @@ export function DvirForm({
                       type="button"
                       aria-pressed={!ok}
                       onClick={() => setChecks({ ...checks, [item.key]: false })}
-                      className={cn("min-h-[44px] px-4 text-sm font-bold", !ok ? "bg-accent text-accent-fg" : "text-steel-400 hover:bg-white/5")}
+                      className={cn("min-h-[44px] px-4 text-sm font-bold", !ok ? "bg-orange/25 text-orange" : "text-steel-400 hover:bg-white/5")}
                     >
                       Problem
                     </button>
@@ -195,7 +195,7 @@ export function DvirForm({
                   safeToOperate === value
                     ? value
                       ? "border-green-500/50 bg-green-500/20 text-green-300"
-                      : "border-orange bg-accent text-accent-fg"
+                      : "border-orange bg-orange/20 text-orange"
                     : "border-white/15 text-steel-200 hover:bg-white/5"
                 )}
               >
