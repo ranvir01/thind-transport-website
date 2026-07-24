@@ -201,6 +201,11 @@ function SettlementLiabilityPanel({ liability }: { liability: SettlementLiabilit
           ? "No open settlements — run payroll to see draft liabilities here."
           : "Approved settlements are ready to pay; drafts still need review."}
       </p>
+      <div className="mt-3">
+        <Link href="/hub/money/settlements" className="text-[11px] font-semibold text-accent-text hover:underline">
+          View settlements →
+        </Link>
+      </div>
     </div>
   )
 }
