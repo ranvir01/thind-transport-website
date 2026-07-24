@@ -2,11 +2,13 @@
  * Portal pages must follow the carrier's accent color (--portal-accent) instead
  * of Thind's marketing gold bleeding into a white-label portal surface.
  * Regressions fixed so far: the load detail page's Documents list FileText icon,
- * the portal home page's "Moving now" list position hint, and the shared
- * LoadProgressBar/StopTimeline components used by both /hub/portal and the
- * public /track/[token] page (all were hardcoded text-gold/bg-gold despite a
- * sibling element already using the accent var). See AGENTS.md's
- * semantic-token doctrine.
+ * the portal home page's "Moving now" list position hint, the invoice status
+ * pill/amount, the shared LoadProgressBar/StopTimeline components used by both
+ * /hub/portal and the public /track/[token] page (all were hardcoded
+ * text-gold/bg-gold despite a sibling element already using the accent var),
+ * and the quote form's CTA buttons (which used the internal ops `bg-accent`/
+ * `text-accent-fg` tokens — mode-dependent on the office theme toggle, not the
+ * carrier's --portal-accent). See AGENTS.md's semantic-token doctrine.
  */
 import { readFileSync } from "node:fs"
 import { join } from "node:path"
@@ -24,6 +26,10 @@ const PROGRESS_BAR_SOURCE = readFileSync(
 )
 const STOP_TIMELINE_SOURCE = readFileSync(
   join(__dirname, "../../../components/hub/StopTimeline.tsx"),
+  "utf-8"
+)
+const QUOTE_FORM_SOURCE = readFileSync(
+  join(__dirname, "../../../components/hub/PortalQuoteForm.tsx"),
   "utf-8"
 )
 
@@ -61,5 +67,12 @@ describe("shared progress/timeline components (portal + public track)", () => {
 
   it("the public track page sets --portal-accent so the shared components resolve the carrier's color", () => {
     expect(TRACK_SOURCE).toMatch(/"--portal-accent":\s*accent\.text/)
+  })
+})
+
+describe("portal quote form accent tokens", () => {
+  it("the CTA buttons follow --portal-accent, not the internal ops bg-accent/text-accent-fg tokens", () => {
+    expect(QUOTE_FORM_SOURCE).not.toMatch(/bg-accent\b|text-accent-fg\b|bg-accent-hover\b/)
+    expect(QUOTE_FORM_SOURCE).toMatch(/var\(--portal-accent\)/)
   })
 })
