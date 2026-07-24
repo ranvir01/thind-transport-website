@@ -18,6 +18,7 @@ const REF_TABLES = {
   applicant_id: { table: "hub.applicants", label: "Applicant", softDelete: false },
   facility_id: { table: "hub.facilities", label: "Facility", softDelete: false },
   message_thread_id: { table: "hub.message_threads", label: "Thread", softDelete: false },
+  assignee_user_id: { table: "hub.users", label: "User", softDelete: false },
 } as const
 
 export type CarrierRefField = keyof typeof REF_TABLES

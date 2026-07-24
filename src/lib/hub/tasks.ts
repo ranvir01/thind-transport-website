@@ -5,6 +5,7 @@
  * problem never piles up duplicates; each task deep-links to its record.
  */
 import { query, queryOne } from "./db"
+import { assertCarrierRefs } from "./tenancy"
 import type { Task, TaskChecklistItem, TaskPriority, TaskRecurrence } from "./types"
 
 // ---- Pure recurrence math (unit-tested) ----
@@ -90,6 +91,7 @@ export async function createTask(
   input: TaskInput,
   creator: { id: string; name: string } | null
 ): Promise<Task | null> {
+  await assertCarrierRefs(carrierId, { assignee_user_id: input.assigneeUserId })
   const rows = await query<Task>(
     `INSERT INTO hub.tasks (carrier_id, title, notes, assignee_user_id, created_by, created_by_name,
        due_at, priority, entity_type, entity_id, checklist, recurrence, automation_key)
@@ -288,7 +290,7 @@ export async function runTaskAutomations(carrierId: string): Promise<{ created: 
     `SELECT l.id, l.reference FROM hub.loads l
      WHERE l.carrier_id = $1 AND l.deleted_at IS NULL AND l.status = 'pod_received'
        AND l.updated_at < NOW() - INTERVAL '3 days'
-       AND NOT EXISTS (SELECT 1 FROM hub.invoices i WHERE i.load_id = l.id)`,
+       AND NOT EXISTS (SELECT 1 FROM hub.invoices i WHERE i.load_id = l.id AND i.carrier_id = l.carrier_id)`,
     [carrierId]
   )
   for (const load of unbilled) {
