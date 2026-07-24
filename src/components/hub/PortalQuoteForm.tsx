@@ -7,6 +7,12 @@ import { Loader2, Quote } from "lucide-react"
 import { portalQuoteRequestAction } from "@/app/hub/_actions/portal"
 import { fieldDarkCls, labelDarkCls } from "@/components/hub/ui"
 
+/** Same border/background mix the portal home page and load detail page use for --portal-accent chrome. */
+const ACCENT_BUTTON_STYLE = {
+  borderColor: "color-mix(in srgb, var(--portal-accent) 50%, transparent)",
+  backgroundColor: "color-mix(in srgb, var(--portal-accent) 14%, transparent)",
+} as const
+
 export function PortalQuoteForm() {
   const router = useRouter()
   const [pending, startTransition] = useTransition()
@@ -33,7 +39,8 @@ export function PortalQuoteForm() {
     return (
       <button
         onClick={() => setOpen(true)}
-        className="flex w-full min-h-[52px] items-center justify-center gap-2 rounded-control bg-accent font-semibold text-sm text-accent-fg hover:bg-accent-hover"
+        className="flex w-full min-h-[52px] items-center justify-center gap-2 rounded-control border font-semibold text-sm text-[color:var(--portal-accent)] hover:bg-white/5"
+        style={ACCENT_BUTTON_STYLE}
       >
         <Quote className="h-4 w-4" /> Request a quote
       </button>
@@ -98,7 +105,8 @@ export function PortalQuoteForm() {
           Cancel
         </button>
         <button type="submit" disabled={pending}
-          className="flex flex-1 min-h-[48px] items-center justify-center gap-2 rounded-control bg-accent font-display text-sm font-bold uppercase tracking-[0.06em] text-accent-fg hover:bg-accent-hover disabled:opacity-60">
+          className="flex flex-1 min-h-[48px] items-center justify-center gap-2 rounded-control border font-display text-sm font-bold uppercase tracking-[0.06em] text-[color:var(--portal-accent)] hover:bg-white/5 disabled:opacity-60"
+          style={ACCENT_BUTTON_STYLE}>
           {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : null} Send the request
         </button>
       </div>
