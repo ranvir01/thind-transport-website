@@ -702,3 +702,45 @@ Backlog:
   Rust sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision); IFTA due-date roll not
   accounting for legal holidays (documented scope decision).
 
+
+## Full 48-script E2E battery on a live rig — 2026-07-24 ~14:00 UTC (verify-and-build cycle)
+
+`git fetch` + `npm run agent:status`: integrator (`claude/hauldesk-project-setup-l1luoo`) had 3 new
+commits since the last cycle — `dd640b79`/`2af2a40d` (driver-accent mechanical swap on the offline-sync
+banner and pay screen) and `6736ee00` (integrations webhooks subsystem audit, 0 defects) — plus
+`claude/lane-driver`'s `159627d1` (driver PWA offline queue subsystem audit, 0 defects, docs-only) not
+yet absorbed. Merged `claude/lane-driver` cleanly (docs-only diff, no conflict). `npm ci` + `npm run
+build` (all routes compile) + `npx vitest run` (187 files/1555 tests, 1 skipped file/7 skipped tests) +
+`npm run lint` all green post-merge.
+
+With the subsystem-audit rotation now complete (dispatch/loads-core, planner, reports, portal/tracking,
+integrations webhooks, and driver PWA offline queue all confirmed clean across recent cycles), this
+cycle did the deeper live pass `159627d1`'s own backlog suggested instead of a fresh audit: stood up a
+clean local rig from scratch (Postgres wasn't running, no role/database existed — created both per the
+dev-workflow-testing skill's pitfall #9), ran `npm run db:migrate` (21 migrations) + `npm run
+seed:demo`, `npm run build && npm run start`, then `node scripts/e2e-battery.mjs` — every
+`scripts/e2e-*-smoke.mjs` (48 scripts covering owner/dispatcher/driver/broker/shipper/portal/public/
+tenant-isolation across dispatch, compliance, IFTA, invoices, settlements, recruiting, integrations,
+onboarding, etc.) plus the full visual sweep, run sequentially against one seeded database.
+
+**48/48 PASS, 0 console errors, 0 defects.** This is the broadest single verification pass on record
+for this loop (previous cycles ran 4-10 targeted smokes per audit); every workflow the fleet has a
+smoke for is now confirmed green on the same commit in one sitting.
+
+Backlog:
+- No further audit or verification action needed this cycle — the fleet is broadly green. Next agent:
+  either the still-open driver-accent mechanical swap (~16 `text-gold`/`bg-gold`/`border-gold`
+  occurrences remain across `driver/page.tsx`, `more/page.tsx`, `timeoff/page.tsx`, `messages/page.tsx`,
+  `docs/page.tsx`, and components `AnnouncementAckCard`/`DriverIncidentForm`/`DriverLoadCard`/
+  `DvirForm`/`AdvanceRequestForm` — lane-driver territory), or the overdue meta-governor prune pass.
+- `lane-tests` (1443 unpicked) and `lane-compliance` (1536 unpicked) remain the two largest pending
+  branches by a wide margin; meta-governor prune pass remains overdue across many cycles now. Note for
+  that pass: `claude/lane-compliance`'s only real (non-superseded) commit, `d71d657d` ("roll IFTA due
+  dates off weekends"), is itself a duplicate — `src/lib/hub/ifta-core.ts`'s `iftaDueDate` on HEAD
+  already has the identical weekend-roll logic via a different, independently-authored commit
+  (`24d03ca0`'s territory) — so `lane-compliance` is fully superseded-by-HEAD, a safe deletion
+  candidate, not a merge target. Confirmed via content diff before writing this, per the "duplicate
+  fix" protocol in `docs/agent-improvement-loop.md` §5.
+- Carried, unchanged: npm audit's 3 high-severity findings (owner-approval-gated semver-major bump);
+  Rust sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision); IFTA due-date roll not
+  accounting for legal holidays (documented scope decision).
