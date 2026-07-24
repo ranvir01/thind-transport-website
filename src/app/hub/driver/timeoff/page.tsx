@@ -7,12 +7,18 @@ import { cn } from "@/lib/utils"
 
 export const dynamic = "force-dynamic"
 
-const STATUS_COPY: Record<string, { label: string; cls: string }> = {
-  requested: { label: "Waiting on the office", cls: "border-gold/40 bg-gold/10 text-gold" },
+const STATUS_COPY: Record<string, { label: string; cls: string; accent?: boolean }> = {
+  requested: { label: "Waiting on the office", cls: "text-[color:var(--driver-accent)]", accent: true },
   approved: { label: "Approved — on the planner", cls: "border-green-500/40 bg-green-500/10 text-green-400" },
   denied: { label: "Denied — talk to dispatch", cls: "border-red-500/40 bg-red-500/10 text-red-400" },
   cancelled: { label: "Cancelled", cls: "border-white/15 bg-white/5 text-steel-300" },
 }
+
+/** Same border/background mix OfflineSync uses for --driver-accent chrome (opacity modifiers drop silently on CSS-var colors — AGENTS.md). */
+const ACCENT_PILL_STYLE = {
+  borderColor: "color-mix(in srgb, var(--driver-accent) 40%, transparent)",
+  backgroundColor: "color-mix(in srgb, var(--driver-accent) 10%, transparent)",
+} as const
 
 export default async function DriverTimeOffPage() {
   const user = await requireDriverUser()
@@ -40,7 +46,10 @@ export default async function DriverTimeOffPage() {
                   <p className="font-semibold text-white">
                     {formatHubDateShort(r.start_date)} – {formatHubDateShort(r.end_date)}
                   </p>
-                  <span className={cn("rounded-full border px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider", status.cls)}>
+                  <span
+                    className={cn("rounded-full border px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider", status.cls)}
+                    style={status.accent ? ACCENT_PILL_STYLE : undefined}
+                  >
                     {status.label}
                   </span>
                 </div>

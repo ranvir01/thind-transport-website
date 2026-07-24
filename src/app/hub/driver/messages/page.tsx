@@ -24,7 +24,7 @@ export default async function DriverMessagesPage() {
               href={`/hub/driver/messages/${t.id}`}
               className="flex items-center gap-3 rounded-2xl border border-white/10 bg-navy-800/80 p-4 hover:bg-white/5"
             >
-              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white/5 text-gold">
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white/5 text-[color:var(--driver-accent)]">
                 <MessageSquare className="h-5 w-5" />
               </span>
               <span className="min-w-0 flex-1">

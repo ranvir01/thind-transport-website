@@ -44,7 +44,7 @@ export default async function DriverDocsPage() {
                 rel="noreferrer"
                 className="flex items-center gap-3 rounded-2xl border border-white/10 bg-navy-800/80 p-4 hover:bg-white/5"
               >
-                <FileText className="h-5 w-5 shrink-0 text-gold" />
+                <FileText className="h-5 w-5 shrink-0 text-[color:var(--driver-accent)]" />
                 <span className="min-w-0 flex-1">
                   <span className="block font-semibold text-white truncate">
                     {DOCUMENT_KIND_LABELS[doc.kind] ?? doc.kind}
