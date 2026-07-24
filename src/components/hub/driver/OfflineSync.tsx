@@ -128,9 +128,20 @@ export function OfflineSync() {
       <p
         className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-body-xs font-semibold backdrop-blur-sm ${
           online
-            ? "border-gold/40 bg-gold/15 text-gold"
+            ? "text-[color:var(--driver-accent)]"
             : "border-orange/40 bg-orange/15 text-orange"
         }`}
+        // Opacity modifiers silently drop on CSS-var colors (AGENTS.md), so the
+        // carrier-accent border/bg mix goes through color-mix() like DriverNav's
+        // other --driver-accent surfaces instead of border-[…]/40 bg-[…]/15.
+        style={
+          online
+            ? {
+                borderColor: "color-mix(in srgb, var(--driver-accent) 40%, transparent)",
+                backgroundColor: "color-mix(in srgb, var(--driver-accent) 15%, transparent)",
+              }
+            : undefined
+        }
       >
         {online ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <CloudOff className="h-3.5 w-3.5" />}
         {online
