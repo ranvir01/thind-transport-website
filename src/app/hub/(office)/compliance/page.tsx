@@ -66,12 +66,20 @@ export default async function CompliancePage({
         }
         subtitle="CDLs, med cards, registrations, inspections, 2290, UCR, IFTA — one wall, color-coded."
         action={
-          <Link
-            href="/hub/compliance/ifta"
-            className="inline-flex min-h-[44px] items-center gap-2 rounded-control bg-accent px-5 font-semibold text-sm text-accent-fg hover:bg-accent-hover"
-          >
-            <FileSpreadsheet className="h-4 w-4" /> IFTA
-          </Link>
+          <div className="flex flex-wrap gap-2">
+            <Link
+              href="/hub/compliance/random-testing"
+              className="inline-flex min-h-[44px] items-center gap-2 rounded-control border border-border-strong px-5 font-semibold text-sm text-fg-2 hover:bg-hover"
+            >
+              Random testing
+            </Link>
+            <Link
+              href="/hub/compliance/ifta"
+              className="inline-flex min-h-[44px] items-center gap-2 rounded-control bg-accent px-5 font-semibold text-sm text-accent-fg hover:bg-accent-hover"
+            >
+              <FileSpreadsheet className="h-4 w-4" /> IFTA
+            </Link>
+          </div>
         }
       />
 
