@@ -567,3 +567,63 @@ Backlog:
   for provider/webhook consistency (lane-integrations territory); reseed() not resetting
   hub.carriers.status (lane-tests territory).
 
+## QA rig drive + prod probe — 2026-07-24 ~05:10-05:35 UTC (main@6449f78)
+
+Routine charter is QA drive + prod probe only (`docs/agent-improvement-loop.md` §5's
+owner/dispatcher/driver mandate) — no feature work this cycle.
+
+Fresh rig from scratch: Postgres 16 started (was down), `loadoff` role + database created per
+AGENTS.md pitfall #9, `npm install` (748 packages, canvas native deps via
+`setup:canvas-deps`), `npm run db:migrate` through `021_random_testing.sql` clean (21/21),
+`seed:demo`, `npm run build` (Next.js 16, zero TS errors, Turbopack) clean, `npx vitest run`
+green (186 files/1547 tests), `npm run start`.
+
+Drove the app with Playwright (installed ad hoc, not added to `package.json`; pointed at the
+sandbox's preinstalled Chromium at `/opt/pw-browsers/chromium` since the pinned Playwright
+build's own browser revision wasn't present) as owner, dispatcher, driver, and broker/shipper
+portal: logged in as each of `owner@demo.thind` / `dispatch@demo.thind` / `driver@demo.thind` /
+`broker@demo.thind`, visited every nav-reachable screen for each role (desktop 1440px for
+office/portal, 390px for the driver PWA), drilled into an invoice, a settlement, and a driver
+message thread, and ran a heuristic invisible-text check (text color == own background) plus a
+forbidden-marketing-token check (`gold`/`navy`/`steel` classes) on every office screen per the
+visual-QA playbook (§1d). Zero HIGH/MED/LOW findings: no invisible text, no marketing tokens on
+office screens, no console errors, no failed navigations. The only anomaly (`/hub/map` OSM tile
+requests failing with `ERR_TUNNEL_CONNECTION_FAILED`) traced to this sandbox's egress proxy
+blocking `tile.openstreetmap.org`, confirmed via `$HTTPS_PROXY/__agentproxy/status`'s
+`recentRelayFailures` — not a product defect.
+
+Regression check on the last 3h of commits before kickoff (`d7dbf2e..6449f78`, the seven-lane
+absorb + drain): the one commit with a manual merge-conflict resolution
+(`e033ebd`/`4788ca06`, `reports.ts#laneLeaderboardRange`) was re-verified by hand — diffed both
+merge parents, confirmed the kept side both correctly carrier-scopes (`aggregateLanes` in
+`lanes.ts` filters `WHERE l.carrier_id = $1`) and is covered by dedicated tests
+(`lane-aggregation.test.ts`'s `laneLeaderboardRange`/`aggregateLanes` describe blocks). The other
+six merges (`lane-saas`/`lane-integrations`/`lane-roadmap`/`lane-docs`/`lane-sidecars`/
+`lane-portal`) were clean fast-forward-style merges with no conflict markers. No regression
+found; nothing to fix forward.
+
+Production probe: direct HTTPS to `thindtransport.com` is egress-blocked in this sandbox (403 on
+CONNECT, per §3b's documented fallback) — used Vercel MCP instead. The current `READY` deployment
+targeting `production` (`dpl_HxLys8mYzeickyRG6q7k8uGVMZGj`) is commit `6449f78d`, exactly `main`
+HEAD; `get_runtime_errors` over the last 6h returned zero clusters. `get_project`'s `live: false`
+is the known false-negative (cross-checked against the alias/deployment SHA per §3b) — production
+confirmed healthy and current.
+
+Noted in passing: a parallel session (`claude/practical-franklin-05h6m2`) ran what looks like the
+same QA-drive charter on the same `main@6449f78` within the same ~40-minute window (preview
+deployment `dpl_B1nYR6XiwxTYg5M41nnu9ALYZAqL`, not yet merged) and reached the same 0-defect
+conclusion independently — flagging for the meta-governor as a possible scheduling-overlap case
+rather than re-running anything to reconcile it.
+
+Backlog:
+- Meta-governor: two QA-drive routines appear to have fired within ~40 minutes of each other
+  against the same main commit (this cycle and `claude/practical-franklin-05h6m2`) — worth
+  checking whether the QA-drive routine's schedule/cadence is double-booked.
+- 92 pending `claude/*` branches remain per `agent:branches` — `lane-tests` and
+  `lane-compliance` are still the two largest by a wide margin; meta-governor prune pass
+  remains overdue, unchanged from prior cycles.
+- Carried, unchanged: npm audit's 3 high-severity findings (owner-approval-gated semver-major
+  bump); IFTA due-date roll not accounting for legal holidays (documented scope decision);
+  registry.test.ts for provider/webhook consistency (lane-integrations territory); reseed() not
+  resetting hub.carriers.status (lane-tests territory).
+
