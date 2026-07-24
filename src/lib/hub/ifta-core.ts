@@ -206,3 +206,20 @@ export function iftaDueDate(quarter: string): Date {
   else if (dow === 0) due.setUTCDate(due.getUTCDate() + 1)
   return due
 }
+
+/**
+ * Whether an IFTA filing for `quarter` is past due as of `now`.
+ *
+ * A filing is on time *through the whole of* its (weekend-rolled) due date, so
+ * it only counts as overdue once that entire day has elapsed. iftaDueDate
+ * returns UTC midnight of the due date, so a naive `due < now` flags the filing
+ * overdue from the first instant of the due date itself — which is late
+ * afternoon the day before in Pacific time, undoing the weekend roll and
+ * showing "overdue" up to a day and a half early. Overdue therefore starts at
+ * UTC midnight of the day *after* the due date.
+ */
+export function iftaFilingOverdue(quarter: string, now: Date): boolean {
+  const due = iftaDueDate(quarter)
+  const overdueAt = new Date(Date.UTC(due.getUTCFullYear(), due.getUTCMonth(), due.getUTCDate() + 1))
+  return now >= overdueAt
+}

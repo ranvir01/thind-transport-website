@@ -1,6 +1,6 @@
 import { Download } from "lucide-react"
 import { getIftaReport, listIftaRates, listIftaReports } from "@/lib/hub/ifta"
-import { quarterKey, lastCompletedQuarterKey, iftaDueDate, staleRateJurisdictions, iftaRowFuelTaxCents } from "@/lib/hub/ifta-core"
+import { quarterKey, lastCompletedQuarterKey, iftaDueDate, iftaFilingOverdue, staleRateJurisdictions, iftaRowFuelTaxCents } from "@/lib/hub/ifta-core"
 import { requirePermissionPage } from "@/lib/hub/session"
 import { fmtCentsExact, type IftaReportRow } from "@/lib/hub/types"
 import { Panel, PageHeader, BackLink, fieldCls, Pill } from "@/components/hub/ui"
@@ -41,7 +41,10 @@ export default async function IftaPage({
   ])
   const rows: IftaReportRow[] = (report?.report?.rows as IftaReportRow[] | undefined) ?? []
   const due = iftaDueDate(quarter)
-  const isOverdue = due < new Date() && report?.status !== "filed"
+  // On time through the whole due date — overdue only after it has passed, so
+  // the banner doesn't fire the day before (iftaDueDate is UTC midnight, which
+  // is late afternoon Pacific the prior day).
+  const isOverdue = iftaFilingOverdue(quarter, new Date()) && report?.status !== "filed"
   // Rates re-imported after the compute leave the report priced on superseded
   // rates; a filed quarter is history, so only unfiled reports get the nag.
   const staleRates =
