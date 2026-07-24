@@ -744,3 +744,58 @@ Backlog:
 - Carried, unchanged: npm audit's 3 high-severity findings (owner-approval-gated semver-major bump);
   Rust sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision); IFTA due-date roll not
   accounting for legal holidays (documented scope decision).
+
+## Five-lane absorb + HOS-alerting tenancy fix + drain — 2026-07-24 ~21:45 UTC (verify-and-build cycle)
+
+`main` was 1 commit ahead of the integrator (a `.drain-stamp` drain commit not yet merged back), same
+divergence shape as prior cycles. Merged `main` into the integrator first (clean, no conflicts). `npm
+ci` + `npm run build` + `npx vitest run` (186 files/1558 tests) + `npm run lint` all green before
+touching any lane branch.
+
+`agent:branches`/`agent:status` showed six lane branches ahead of the integrator: `lane-tests` (1443
+unpicked) and `lane-compliance` (1536 unpicked) are the same too-large-for-one-unattended-pass branches
+prior cycles have already ruled out (skipped again, unchanged call). The other five were small (1-2
+commits each, real merge-bases) and absorbed one at a time, build+`vitest` green after each:
+`lane-driver` (safety-critical toggles get their own danger color instead of the theme accent),
+`lane-docs` (EFS/DAT integration doc scout passes, no code), `lane-integrations` (registry↔credentials↔
+event-processors drift test, test-only), `lane-analytics` (owner dashboard's settlement-liability panel
+links to `/hub/money/settlements`, one `Link` using the existing `accent-text` token), and
+`lane-roadmap` (real diff, see below).
+
+`lane-roadmap` added a fleet-wide HOS violation dashboard on the Safety page (bucketed
+violation/critical/warning/ok/stale, badge + per-driver row linking to the driver profile) plus a
+same-cron-slot alert to dispatcher/owner when a driver hits violation or critical — rides the existing
+`telematics-sync` cron job instead of adding a new one (Hobby plan cron-count cap), dedupes per driver
+via `hub.notifications` for ~20h. Reviewing the new `fleetHosStatus` query against AGENTS.md's
+carrier-scoping rule found a real gap: the query filtered `hub.hos_snapshots` by `carrier_id` but its
+`JOIN hub.drivers d ON d.id = h.driver_id` didn't also constrain `d.carrier_id` — the same
+both-sides-of-a-cross-table-join pattern the `LOAD_SELECT`/facilities-notes/contacts-crm tenancy tests
+already established in this codebase. No live exploit path found (snapshot rows are written
+carrier-scoped already), but it's exactly the defense-in-depth AGENTS.md asks for, so fixed in the same
+commit (`d.carrier_id = h.carrier_id` added to the join) with a regression test asserting the join SQL
+text, matching the `facilities-notes-tenancy.test.ts`/`contacts-crm-tenancy.test.ts` pattern. Also
+double-checked the safety page's `text-orange`/`bg-orange/10`/`border-orange/40` usage introduced by
+this merge against the office "no gold/navy/steel" token rule — confirmed it's a pre-existing
+convention already on `HEAD` (the DOT-accident-register `Flag` component predates this commit), not a
+new violation, so left as-is.
+
+Verify chain after all five merges: `npm run build`, `npx vitest run` (188 files/1573 tests), `npm run
+lint` (clean), `npm run test:sidecars` (28 Rust tests + Go vet/test, clippy clean) though nothing
+Go/Rust was touched this cycle. Local Postgres stood up fresh (role/db didn't exist yet, pitfall #9),
+`db:migrate` (all 21 migrations) + `seed:demo`, `build && start`. Ran the two E2E smokes covering what
+was merged: `e2e-safety-smoke.mjs` (empty-state HOS panel → populates once `hos_snapshots` has rows →
+badges 2 drivers to watch → per-driver level flags correct → row links to driver profile → driver
+blocked from Safety, plus the pre-existing incident/OS&D-claim flow) and `e2e-reports-smoke.mjs` (owner
+dashboard renders, "View settlements →" link present and styled with `accent-text`, dispatcher
+read-only, driver blocked). **Both green, 0 defects, 0 console errors.**
+
+Pushed the integrator, then drained to `main` with the stamped `--no-ff` method (push `main` alone
+first per the 2026-07-22 dedupe-avoidance rule, then fast-forward the integrator back to match) — `main`
+and the integrator now match exactly, 0 drift either direction.
+
+Backlog:
+- `lane-tests` (1443 unpicked) and `lane-compliance` (1536 unpicked) remain the two largest pending
+  branches by a wide margin; meta-governor prune pass remains overdue across many cycles now.
+- Carried, unchanged: npm audit's 3 high-severity findings (owner-approval-gated semver-major bump);
+  Rust sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision); IFTA due-date roll not
+  accounting for legal holidays (documented scope decision).
