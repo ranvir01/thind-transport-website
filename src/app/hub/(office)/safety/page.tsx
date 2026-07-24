@@ -1,7 +1,8 @@
 import Link from "next/link"
-import { ChevronRight, Download, FileWarning, Plus, ShieldAlert } from "lucide-react"
+import { ChevronRight, Clock, Download, FileWarning, Plus, ShieldAlert } from "lucide-react"
 import { listIncidents } from "@/lib/hub/incidents"
 import { listClaims, daysToDeadline } from "@/lib/hub/claims"
+import { fleetHosStatus, type HosLevel } from "@/lib/hub/telematics"
 import { requirePermissionPage } from "@/lib/hub/session"
 import { PageHeader, Panel, EmptyState } from "@/components/hub/ui"
 import { cn } from "@/lib/utils"
@@ -16,17 +17,35 @@ const STATUS_LABEL: Record<string, string> = {
   closed: "Closed",
 }
 
+const HOS_LEVEL_LABEL: Record<HosLevel, string> = {
+  violation: "Out of hours",
+  critical: "<1h left",
+  warning: "<2h left",
+  ok: "OK",
+  stale: "No recent data",
+}
+
+function formatMinutes(minutes: number | null): string {
+  if (minutes == null) return "—"
+  const clamped = Math.max(minutes, 0)
+  const h = Math.floor(clamped / 60)
+  const m = clamped % 60
+  return h > 0 ? `${h}h ${m}m` : `${m}m`
+}
+
 export default async function SafetyPage() {
   const user = await requirePermissionPage("compliance:read")
-  const [incidents, openClaims] = await Promise.all([
+  const [incidents, openClaims, hosStatus] = await Promise.all([
     listIncidents(user.carrierId),
     listClaims(user.carrierId, { openOnly: true }),
+    fleetHosStatus(user.carrierId),
   ])
   const register = incidents.filter((i) => i.dot_recordable)
   const urgentClaims = openClaims.filter((c) => {
     const days = daysToDeadline(c.filing_deadline)
     return days !== null && days <= 30
   })
+  const hosAtRisk = hosStatus.filter((s) => s.level === "violation" || s.level === "critical" || s.level === "warning")
 
   return (
     <div>
@@ -50,6 +69,57 @@ export default async function SafetyPage() {
           </Link>
         }
       />
+
+      {/* Hours of service */}
+      <Panel className="mb-4 p-4 md:p-5">
+        <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+          <div className="flex items-center gap-2">
+            <Clock className="h-4 w-4 text-accent-text" />
+            <h2 className="text-[13.5px] font-semibold text-fg">Hours of service</h2>
+            {hosAtRisk.length > 0 ? (
+              <span className="rounded-full border border-bad-soft bg-bad-soft px-2 py-0.5 text-[11px] font-bold text-bad">
+                {hosAtRisk.length} to watch
+              </span>
+            ) : null}
+          </div>
+        </div>
+        {hosStatus.length === 0 ? (
+          <p className="text-body-sm text-fg-3">
+            No ELD data yet.{" "}
+            <Link href="/hub/settings/integrations" className="text-accent-text hover:underline">
+              Connect Terminal or TruckerCloud
+            </Link>{" "}
+            to see the fleet&apos;s drive clocks here.
+          </p>
+        ) : hosAtRisk.length === 0 ? (
+          <p className="text-body-sm text-fg-3">
+            All {hosStatus.length} active driver{hosStatus.length === 1 ? "" : "s"} within hours-of-service
+            limits as of the last sync.
+          </p>
+        ) : (
+          <ul className="divide-y divide-border">
+            {hosAtRisk.slice(0, 10).map((s) => (
+              <li key={s.driverId}>
+                <Link
+                  href={`/hub/drivers/${s.driverId}`}
+                  className="flex items-center justify-between gap-2 py-2.5 px-2 -mx-2 rounded-lg hover:bg-hover"
+                >
+                  <div className="min-w-0">
+                    <p className="font-semibold text-fg truncate">{s.driverName}</p>
+                    <p className="text-body-xs text-fg-3 truncate">
+                      {s.dutyStatus ?? "unknown duty status"} · drive clock {formatMinutes(s.driveRemainingMinutes)}
+                    </p>
+                  </div>
+                  <Flag
+                    label={HOS_LEVEL_LABEL[s.level]}
+                    tone={s.level === "violation" ? "red" : s.level === "critical" ? "orange" : "warn"}
+                  />
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Panel>
 
       {/* DOT accident register */}
       <Panel className="mb-4 p-4 md:p-5 border-orange/20">

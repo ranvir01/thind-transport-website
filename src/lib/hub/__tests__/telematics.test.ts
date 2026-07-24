@@ -18,18 +18,21 @@ vi.mock("../credentials", () => ({
   }),
   hasCredentials: vi.fn(async () => false),
 }))
+vi.mock("../notify", () => ({ notifyRoles: vi.fn(async () => undefined) }))
 
 import { query, queryOne } from "../db"
 import { getCredentials, hasCredentials } from "../credentials"
+import { notifyRoles } from "../notify"
 import {
-  hosLegalityWarning, normalizeTruckerCloudVehicle, normalizeTruckerCloudHos,
-  runTelematicsSync, terminalSource, truckerCloudSource,
+  fleetHosStatus, hosLegalityWarning, hosLevel, normalizeTruckerCloudVehicle, normalizeTruckerCloudHos,
+  runHosViolationAlerts, runTelematicsSync, terminalSource, truckerCloudSource,
 } from "../telematics"
 
 const queryMock = vi.mocked(query)
 const queryOneMock = vi.mocked(queryOne)
 const getCredentialsMock = vi.mocked(getCredentials)
 const hasCredentialsMock = vi.mocked(hasCredentials)
+const notifyRolesMock = vi.mocked(notifyRoles)
 const CARRIER = "11111111-1111-1111-1111-111111111111"
 
 /** Mocks the two-call OAuth2 flow: POST /oauth/token, then the feed request. */
@@ -394,5 +397,101 @@ describe("hosLegalityWarning (dispatch-legality estimate)", () => {
     expect(warning).toMatch(/~4\.0h of driving/)
     expect(warning).toMatch(/~1\.5h left/)
     expect(warning).toMatch(/estimate only.*ELD is authoritative/)
+  })
+})
+
+describe("hosLevel (bucketing)", () => {
+  const FRESH = "2026-07-01T12:00:00Z"
+  const now = new Date(FRESH).getTime()
+
+  it("is stale when there is no drive-remaining value", () => {
+    expect(hosLevel(null, FRESH, now)).toBe("stale")
+  })
+
+  it("is stale when the snapshot is older than 24h, even with minutes left", () => {
+    const old = new Date(now - 25 * 3600000).toISOString()
+    expect(hosLevel(480, old, now)).toBe("stale")
+  })
+
+  it("is violation at zero or negative remaining minutes", () => {
+    expect(hosLevel(0, FRESH, now)).toBe("violation")
+    expect(hosLevel(-10, FRESH, now)).toBe("violation")
+  })
+
+  it("is critical under the 60-minute threshold", () => {
+    expect(hosLevel(60, FRESH, now)).toBe("critical")
+    expect(hosLevel(1, FRESH, now)).toBe("critical")
+  })
+
+  it("is warning between 60 and 120 minutes", () => {
+    expect(hosLevel(120, FRESH, now)).toBe("warning")
+    expect(hosLevel(61, FRESH, now)).toBe("warning")
+  })
+
+  it("is ok above 120 minutes and fresh", () => {
+    expect(hosLevel(480, FRESH, now)).toBe("ok")
+  })
+})
+
+describe("fleetHosStatus", () => {
+  beforeEach(() => queryMock.mockReset())
+
+  it("maps rows and sorts by severity then name", async () => {
+    queryMock.mockResolvedValue([
+      { driver_id: "d-ok", full_name: "Zed Driver", duty_status: "driving", drive_remaining_minutes: 480, shift_remaining_minutes: 600, cycle_remaining_minutes: 3000, ts: new Date().toISOString() },
+      { driver_id: "d-violation", full_name: "Amy Driver", duty_status: "driving", drive_remaining_minutes: 0, shift_remaining_minutes: 0, cycle_remaining_minutes: 100, ts: new Date().toISOString() },
+      { driver_id: "d-critical", full_name: "Bo Driver", duty_status: "driving", drive_remaining_minutes: 30, shift_remaining_minutes: 200, cycle_remaining_minutes: 500, ts: new Date().toISOString() },
+    ])
+    const statuses = await fleetHosStatus(CARRIER)
+    expect(statuses.map((s) => s.level)).toEqual(["violation", "critical", "ok"])
+    expect(statuses.map((s) => s.driverId)).toEqual(["d-violation", "d-critical", "d-ok"])
+  })
+
+  it("returns an empty board when no telematics data exists", async () => {
+    queryMock.mockResolvedValue([])
+    await expect(fleetHosStatus(CARRIER)).resolves.toEqual([])
+  })
+
+  it("guards tenancy on both sides of the drivers join, not just hos_snapshots", async () => {
+    queryMock.mockResolvedValue([])
+    await fleetHosStatus(CARRIER)
+    const sql = String(queryMock.mock.calls[0][0])
+    expect(sql).toContain("JOIN hub.drivers d ON d.id = h.driver_id AND d.carrier_id = h.carrier_id")
+  })
+})
+
+describe("runHosViolationAlerts", () => {
+  beforeEach(() => {
+    queryMock.mockReset()
+    notifyRolesMock.mockClear()
+  })
+
+  it("notifies dispatcher/owner once per driver in violation or critical, not warning/ok", async () => {
+    queryMock.mockImplementation(async (sql: string) =>
+      sql.includes("FROM hub.hos_snapshots")
+        ? [
+            { driver_id: "d-violation", full_name: "Amy Driver", duty_status: "driving", drive_remaining_minutes: 0, shift_remaining_minutes: 0, cycle_remaining_minutes: 100, ts: new Date().toISOString() },
+            { driver_id: "d-warning", full_name: "Cy Driver", duty_status: "driving", drive_remaining_minutes: 90, shift_remaining_minutes: 300, cycle_remaining_minutes: 900, ts: new Date().toISOString() },
+          ]
+        : [] // no prior alert found
+    )
+    const result = await runHosViolationAlerts(CARRIER)
+    expect(result).toEqual({ checked: 1, alerted: 1 })
+    expect(notifyRolesMock).toHaveBeenCalledTimes(1)
+    expect(notifyRolesMock).toHaveBeenCalledWith(
+      CARRIER, ["dispatcher", "owner"],
+      expect.objectContaining({ kind: "hos_violation", link: "/hub/drivers/d-violation" })
+    )
+  })
+
+  it("skips a driver already alerted within the cooldown window", async () => {
+    queryMock.mockImplementation(async (sql: string) =>
+      sql.includes("FROM hub.hos_snapshots")
+        ? [{ driver_id: "d-violation", full_name: "Amy Driver", duty_status: "driving", drive_remaining_minutes: 0, shift_remaining_minutes: 0, cycle_remaining_minutes: 100, ts: new Date().toISOString() }]
+        : [{ "?column?": 1 }] // already alerted recently
+    )
+    const result = await runHosViolationAlerts(CARRIER)
+    expect(result).toEqual({ checked: 1, alerted: 0 })
+    expect(notifyRolesMock).not.toHaveBeenCalled()
   })
 })
