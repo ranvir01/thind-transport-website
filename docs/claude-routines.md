@@ -635,3 +635,68 @@ Backlog:
   Rust sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision); IFTA due-date roll not
   accounting for legal holidays (documented scope decision).
 
+## QA rig drive on main@7e4dfc62 — 2026-07-24 ~12:15 UTC (owner/dispatcher/driver, read-only prod probe)
+
+Routine charter is QA drive + prod probe only (docs/agent-improvement-loop.md §5's owner/dispatcher/
+driver mandate) — no feature work this cycle. `git log --since="3 hours ago"` was empty at kickoff
+(last commit `7e4dfc62` at 06:46 UTC, ~5.5h stale), so there was no regression window to fix forward.
+
+Fresh rig from scratch: Postgres 16 started (was down), `loadoff` role + database created per the
+dev-workflow-testing skill's pitfall #9, `npm ci` (748 packages), 21/21 migrations clean, `seed:demo`,
+`npm run build` (Next.js 16, Turbopack, zero TS errors) clean, `npx vitest run` green (187 files/1553
+tests). `npm run start` backgrounded via the harness's own job tracking — first attempt using a
+manually-backgrounded shell (`nohup … & disown`) got silently `Killed` right after "Ready" each time;
+that's this session's process-group teardown reaping detached children, not a product issue — switching
+to the harness's background-command primitive fixed it immediately.
+
+Drove owner (1440px), dispatcher (1440px), and driver (390px) with a fresh Playwright script (repo has
+no `playwright` devDependency — installed with `--no-save`, pointed at the sandbox's prebuilt Chromium
+at `/opt/pw-browsers/chromium-1194`, nothing landed in `package.json`/`package-lock.json`). First pass
+showed logins "failing" for all three roles and two 404s on driver sub-pages — both traced to the test
+script, not the app: (1) `waitForLoadState("networkidle")` fired before NextAuth's client-side
+post-submit redirect started, racing the URL check — a manual network-trace confirmed the credentials
+callback actually succeeds and sets `authjs.session-token` every time; fixed with an explicit
+`waitForURL` alongside the click. (2) the driver PWA nav is Home/Messages/Pay/More
+(`DriverNav.tsx`) — I'd guessed `/hub/driver/{loads,documents,settlements}`, which don't exist; the
+real routes (`/pay`, `/docs`, `/dvir`, `/incident`, `/timeoff`) all 200. Re-ran clean: every
+nav-reachable owner/dispatcher screen plus all four driver tabs load with no 5xx, no error-boundary
+text, no unexpected console errors. Opened a real load detail (`/hub/loads/360d2031-…`, THD-1027) as
+dispatcher — full data, correct rate/stops/documents panels, no console errors. As driver, tapped
+"Got it — confirm this dispatch" on the home screen; the card correctly dropped out of the confirm
+state after the click, no stuck UI. Screenshotted every screen at both breakpoints — no invisible/
+ghosted text, no gold/navy/steel leakage on office screens, forced-dark palette intact on the driver
+PWA. Only anomaly: `/hub/map` throws `ERR_TUNNEL_CONNECTION_FAILED` on the Mapbox/OpenStreetMap tile
+requests (`FleetMap.tsx`) — this sandbox's egress proxy blocks those external hosts, not a code defect
+(same conclusion as every prior cycle that hit this page).
+
+Direct HTTPS to `thindtransport.com` stayed egress-blocked (curl exit 56 on `/`, `/hub/login`, `/`) —
+fell back to Vercel MCP per §3b. `get_project`: latest deployment is `CANCELED`/`target: null` (an
+in-flight preview build for another session's branch, expected churn from the many parallel QA/audit
+cycles hitting this repo right now), but `list_deployments` confirms the most recent `target:
+"production"` + `state: "READY"` deployment is `dpl_2U8Z8cwuahGBBKnuD4nQ3f4fCwWA`, built from `main` at
+exactly `7e4dfc62` — production is current, not stale; the prior cycle's "Vercel stopped deploying
+main" incident (2026-07-23 ~05:30 UTC entry above) is resolved and hasn't recurred. `get_runtime_errors`
+(24h): one error group, the long-standing benign `pg`/`pg-connection-string` SSL-mode deprecation
+warning on `/api/hub/cron/[job]` (13 occurrences since 2026-06-26, still just a warning, not a failure)
+— already recorded as an owner-action item in a prior cycle's backlog, unchanged.
+
+`agent:status`: STEADY STATE (integrator within 3 commits of main, moving). `agent:backlog`'s open
+items are all owner-gated (npm audit major bump, meta-governor prune, `tiny_http` decision), so per
+this routine's read-only charter no code change was made or needed this cycle — 0 defects found in the
+app itself.
+
+Backlog:
+- Owner: `/api/hub/cron/[job]` still logs the pg SSL-mode deprecation warning on every run since
+  2026-06-26 — fix is an env-var change (`sslmode=verify-full` on `POSTGRES_URL`), not code; carried
+  from prior cycles, still unaddressed.
+- `lane-tests` and `lane-compliance` remain the two largest pending branches by a wide margin;
+  meta-governor prune pass remains overdue, unchanged from prior cycles.
+- This session's Playwright rig script (fixed login-race + correct driver routes) isn't committed
+  anywhere — if a future QA cycle wants a Playwright-based drive instead of the existing
+  `scripts/e2e-*.mjs` Puppeteer battery, it'll need to be rewritten from scratch; not saved on purpose
+  since the routine charter doesn't call for new test infra and the existing Puppeteer battery already
+  covers this ground.
+- Carried, unchanged: npm audit's 3 high-severity findings (owner-approval-gated semver-major bump);
+  Rust sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision); IFTA due-date roll not
+  accounting for legal holidays (documented scope decision).
+
