@@ -162,11 +162,12 @@ export function DriverIncidentForm({ loads }: { loads: { id: string; reference: 
         {QUESTIONS.map(({ key, q }) => (
           <div key={key} className="flex items-center justify-between gap-3 min-h-[48px]">
             <p className="min-w-0 flex-1 text-sm font-semibold text-white">{q}</p>
-            <div className="flex shrink-0 rounded-xl border border-white/15 overflow-hidden">
+            <div role="group" aria-label={q} className="flex shrink-0 rounded-xl border border-white/15 overflow-hidden">
               {[false, true].map((value) => (
                 <button
                   key={String(value)}
                   type="button"
+                  aria-pressed={form[key] === value}
                   onClick={() => setForm({ ...form, [key]: value })}
                   className={cn(
                     "min-h-[44px] px-4 text-sm font-bold",
