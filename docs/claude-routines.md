@@ -744,3 +744,55 @@ Backlog:
 - Carried, unchanged: npm audit's 3 high-severity findings (owner-approval-gated semver-major bump);
   Rust sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision); IFTA due-date roll not
   accounting for legal holidays (documented scope decision).
+
+
+## QA/probe drive: driver-accent regression check + prod health — 2026-07-24 ~18:20 UTC (verify-and-build cycle)
+
+`git fetch`: since the last recorded cycle (`ca08472`, ~14:00 UTC), the integrator
+(`claude/hauldesk-project-setup-l1luoo`) picked up two more commits continuing the driver-accent
+mechanical swap — `f4b6be6` (AnnouncementAckCard + DvirForm) and `e1e3909` (DriverLoadCard, the
+largest remaining file). Checked out the integrator tip to QA against the current state.
+
+Stood up a fresh local rig (Postgres 16 was down; started the cluster, created the `loadoff` role +
+`loadoff_dev` database): `npm run db:migrate` (21 migrations clean) + `npm run seed:demo`, `npm run
+build` (clean, all routes compile) + `npx vitest run` (187 files/1563 tests green).
+
+Targeted regression check on the two recent commits: ran e2e-dispatch-driver-notify-smoke,
+e2e-dispatch-smoke, e2e-driver-smoke, e2e-driver-pod-smoke, e2e-dvir-smoke, e2e-messages-smoke,
+e2e-office-smoke, e2e-loads-smoke, e2e-invoices-smoke, e2e-settlements-smoke, e2e-fleet-smoke
+(11/11 green — owner, dispatch, accounting, and driver logins all exercised), plus the full
+`e2e-sweep.mjs` visual sweep (60 screens across office/owner/driver/portal/track at 1440px and
+390px — no horizontal overflow, no blank/error pages). Screenshotted the exact elements the two
+commits touched — AnnouncementAckCard's pinned-announcement banner + "Sign & acknowledge" button,
+DvirForm's "Review before you roll" pre-trip banner, DriverLoadCard's "Got it — confirm this
+dispatch" button and facility-tip tag toggles — all render with the carrier's gold accent, fully
+readable, no ghosted text. **No regression found.**
+
+Production probe (read-only, as owner/dispatcher/driver would experience it): direct HTTPS to
+thindtransport.com is egress-blocked in this sandbox (expected per agent-improvement-loop.md §3b).
+Cross-checked via Vercel instead: the project's `live` flag reads `false` and `latestDeployment`
+shows `CANCELED` — this is the documented false-alarm pattern (§3b), not an outage; that entry is a
+superseded preview build for the integrator branch, not production. The actual production
+deployment (`dpl_AsUcQZ8FDXfnsiUGFhUj4Ab6LNV7`, `target=production`, `READY`, aliased to
+`thindtransport.com`) is on commit `f0facd4c9979a614f10f6a27408e9802a7ec4550` — exactly
+`origin/main`'s HEAD. **Production is healthy and current**, no drain needed.
+
+One pre-existing (not new) item surfaced by `get_runtime_errors`: a Node `pg-connection-string`
+deprecation warning ("SSL modes 'prefer'/'require'/'verify-ca' are aliases for 'verify-full'") has
+been logging on every `/api/hub/cron/[job]` invocation since 2026-06-26 (last seen
+2026-07-24T15:37 UTC) — cosmetic today, but the next major `pg`/`pg-connection-string` bump changes
+this to weaker libpq semantics.
+
+Backlog:
+- `pg-connection-string` SSL-mode deprecation warning firing on every cron job invocation (see
+  above) — add an explicit `sslmode=verify-full` (or `uselibpqcompat=true&sslmode=require`) to the
+  production `POSTGRES_URL` before the next major `pg` bump. Shared env-var change: needs an
+  owner/integrator decision, not touched here.
+- Remaining driver-accent swap occurrences confirmed still present (per `e1e3909`'s own backlog):
+  `DriverIncidentForm`, `AdvanceRequestForm` (2 gold-token occurrences each) — lane-driver
+  territory, not touched by this QA/probe routine.
+- `lane-tests` and `lane-compliance` remain the largest unpicked branch queues; meta-governor prune
+  pass still overdue across many cycles (carried, unowned).
+- Carried, unchanged: npm audit's 3 high-severity findings (owner-approval-gated semver-major bump);
+  Rust sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision); IFTA due-date roll not
+  accounting for legal holidays (documented scope decision).
