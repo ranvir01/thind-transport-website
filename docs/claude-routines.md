@@ -510,3 +510,61 @@ Backlog:
   a bug); Owner's Vercel production-pipeline status last confirmed recovered, not re-checked
   this cycle (no Vercel MCP tool available).
 
+## QA rig drive on main@de0dcf8 — 2026-07-24 ~01:00-01:35 UTC (owner/dispatcher/driver, no lane work)
+
+Ops-only routine per this file's Routine 3 posture: no feature/lane work, just stand up the
+rig and drive it. Reviewed every commit landed in the 3 hours before this run
+(22:10-01:10 UTC) — **there were none** (`git log --since` on that window is empty; the last
+commit, `de0dcf8` draining `f6801eb`, landed at 20:41:58 UTC, ~4.5h before this run started),
+so there is no regression window to audit this cycle.
+
+Fresh rig from scratch: Postgres 16 started (was down), `hauldesk` role + `hauldesk` database
+created per AGENTS.md pitfall #9, `PUPPETEER_SKIP_DOWNLOAD=true npm install` (748 packages,
+canvas native deps via `setup:canvas-deps`), `.env.local` built from `.env.example` with a
+fresh `NEXTAUTH_SECRET`/`CREDENTIALS_KEY`/`CRON_SECRET`/`DRIVER_INVITATION_CODE` (local-only,
+not committed). `npm run db:migrate` through `020_outreach.sql` clean, `seed:demo`, `npm run
+build` (Next.js 16 + Turbopack, zero TS errors, 140+ routes), `npx vitest run` (183 files/1528
+tests), `npm run lint` (clean), `npm run test:sidecars` (28 Rust tests + Go package, both
+green) — all green, matching the last verify-and-build cycle exactly.
+
+Drove the full local rig as owner, dispatcher, and driver via `node scripts/e2e-run-all.mjs`
+against `npm run start` (Puppeteer, pointed at the sandbox's preinstalled Chromium per pitfall
+#8): **47/47 `e2e-*-smoke.mjs` scripts green** in 15.5m — advances, apply, claims, compliance,
+customers, DAT freight, detention alerts, dispatch + driver-notify, driver + POD, DVIR,
+duplicate-load, expenses, fleet, fuel, IFTA, invoices, load-OSD chip, loads, login, mailbox
+OAuth, messages, notifications, office, onboarding, planner, portal + accept, pricebook,
+public, QBO IIF + push, recruiting, recurring lane + rollup, reports, safety, settings-misc,
+settlements, showcase, statements, tasks, tenant-isolation, track, users, plus the full
+`e2e-sweep`. **0 defects, 0 regressions.**
+
+Probed `https://thindtransport.com` read-only: direct HTTPS is sandbox-egress-blocked (403 on
+CONNECT, per AGENTS.md §3b), so cross-checked via the Vercel MCP connector instead. Production
+is healthy: `thindtransport.com` (and the other aliases) resolve to deployment
+`dpl_ECnGduCS1A3hPhii8MSem19ExLKA`, `readyState: READY`, `target: production`, commit
+`de0dcf887a40b7da65a074b947d5956c48e1c04b` — an exact match for local `main` HEAD, so there is
+no drain gap. (The project's `latestDeployment`/`live` fields looked alarming in isolation —
+`live: false` and the newest deployment overall `CANCELED` — but that newest one was a
+non-`main` branch preview correctly skipped by `vercel.json`'s `ignoreCommand`, per the
+"Deploy discipline" note above; the production alias is what matters and it's current.) The
+one runtime-error cluster (`get_runtime_errors`, 24h window) is the long-standing pg
+`sslmode=prefer` deprecation warning on `/api/hub/cron/[job]` (first seen 2026-06-26) — a
+library notice, not a functional error, unrelated to any recent change.
+
+No code fix was needed or shipped this cycle — nothing regressed, and this routine's mandate
+is verification, not feature work. Did not touch the integrator (5 commits ahead of main,
+catch-up mode per `agent:status`) or attempt a drain — that is Routine 1's job, not this
+one's, and no defect here requires a fix-forward push.
+
+Backlog:
+- Integrator is 5 commits ahead of main (catch-up mode per `agent:status`) — next Routine 1
+  fire should drain it; not actioned here since this run's mandate is QA-only, not deploy.
+- Two unmerged branches (`claude/stoic-mccarthy-smz6m4`, `claude/stoic-mccarthy-p7dtl2`)
+  independently fix the same `NotificationsBell` mark-as-read race — per §5's
+  before-fixing-a-bug rule, the integrator should pick one and drop the other rather than a
+  third agent writing a third copy.
+- 100 pending `claude/*` branches per `agent:branches` — meta-governor prune pass remains
+  overdue, unchanged from prior cycles.
+- Carried, unchanged: npm audit's 3 high-severity findings (owner-approval-gated semver-major
+  bump); IFTA due-date roll not accounting for legal holidays (documented scope decision, not
+  a bug).
+
