@@ -510,3 +510,60 @@ Backlog:
   a bug); Owner's Vercel production-pipeline status last confirmed recovered, not re-checked
   this cycle (no Vercel MCP tool available).
 
+## Seven-lane absorb + reports merge-conflict resolution — 2026-07-24 ~03:40 UTC (verify-and-build cycle)
+
+Integrator was pure fast-forwardable from `main` (0 ahead/1 behind) — fast-forwarded first, then
+`npm ci` + `npm run build` + `npx vitest run` (182 files/1522 tests) all green before touching any
+lane branch.
+
+`agent:branches`/`agent:status` showed nine lane branches ahead of the integrator: two huge ones
+(`lane-tests` 1443, `lane-compliance` 1536 unpicked) matched the same too-large-for-one-unattended-
+pass shape prior cycles have already ruled out (skipped again, unchanged call); the other seven were
+small (1-2 commits each, real merge-bases) and absorbed one at a time with build+`vitest` green after
+each: `lane-portal` (quote-form CTA accent), `lane-sidecars` (Go worker graceful SIGINT/SIGTERM
+shutdown — verified with `go test -count=1` since `go test` caches by default and the change was
+Go-only), `lane-docs` (fmcsa/eia/terminal/scout-rotation doc scout passes, no code), `lane-roadmap`
+(new random drug & alcohol testing pool feature — migration `021_random_testing.sql`, new cron entry
+in `vercel.json` at a fixed once-daily time, well under the Hobby per-project job cap), `lane-
+integrations` (fuel-feed CSV parser test coverage, test-only), `lane-analytics` (real conflict, see
+below), `lane-saas` (driver PWA bottom-nav now follows the carrier's accent, forced-dark rules
+respected — fixed navy/steel/white classes only, no fg/surface/border tokens).
+
+`lane-analytics`'s merge conflicted in `reports.ts#toLeaderboardRows`: the incoming branch was the
+original implementation (manual `Number()` coercion + inline `avg_rpm_cents` math), but HEAD already
+carried a newer refactor (`4788ca06`, already on `main`) that reuses the shared `avgRpmCents` helper
+from `lanes.ts` and trusts `LaneAggregateRow`'s already-numeric fields (coercion happens once inside
+`aggregateLanes`, not again downstream) — a genuine keep-HEAD-superset case per AGENTS.md, not a
+blind conflict-marker resolution. Verified by reading `aggregateLanes` in `lanes.ts` directly to
+confirm the numeric coercion already happens there before this call ever sees the row.
+
+Verify chain after all seven merges: `npm run build`, `npx vitest run` (185 files/1540 tests), `npm
+run lint` (clean), `npm run test:sidecars` (28 Rust + Go vet/test, clippy clean, Go re-run with
+`-count=1` to bypass the test cache and confirm the new shutdown test actually executed). Local
+Postgres stood up fresh (role/db didn't exist yet, pitfall #9), `db:migrate` (all 21 migrations
+including the new `021_random_testing.sql` applied clean) + `seed:demo`, `build && start`. Drove four
+E2E smokes covering everything touched this cycle: `e2e-random-testing-smoke` (new feature end to
+end — pool selection, idempotent re-run, result recording, driver blocked, 390px no-overflow, 0
+console errors), `e2e-driver-smoke` (15-step phone flow, accent change didn't regress anything),
+`e2e-portal-smoke` (broker/shipper flows), `e2e-reports-smoke` (P&L, CSV exports, owner dashboard
+lane leaderboard — the exact code path the merge conflict touched). **All four green, 0 defects.**
+
+Pushed the integrator; the `drain-integrator.yml` GitHub Action backstop fast-forwarded `main` to the
+integrator tip (`b2c391e0`) automatically before this cycle got to its own drain step — confirmed via
+`npm run agent:status` (0 drift either direction) rather than re-draining a no-op.
+
+`agent:backlog`'s top pick is an owner-gated architecture call (Rust sidecar's `tiny_http` has no
+per-connection timeout/thread cap — needs accept-risk/vendor-patch/switch-crates decision, not a
+guessable fix), so no further code change was forced this cycle per AGENTS.md's ambiguity rule.
+
+Backlog:
+- 92 pending `claude/*` branches remain (down from 99) — `lane-tests` (1443 unpicked) and
+  `lane-compliance` (1536 unpicked) are now the two largest by a wide margin and growing every
+  cycle; meta-governor prune pass is significantly overdue on both.
+- Rust sidecar `tiny_http` connection-timeout/thread-cap gap (from `agent:backlog`'s top pick) still
+  needs an owner decision before any code change.
+- Carried, unchanged: npm audit's 3 high-severity findings (owner-approval-gated semver-major bump);
+  IFTA due-date roll not accounting for legal holidays (documented scope decision); registry.test.ts
+  for provider/webhook consistency (lane-integrations territory); reseed() not resetting
+  hub.carriers.status (lane-tests territory).
+
