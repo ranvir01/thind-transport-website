@@ -45,7 +45,7 @@ export default async function DriverPayPage() {
               Advance {advance.status === "pending" ? "requested" : "approved"}
               {advance.note ? ` — ${advance.note}` : ""}
             </span>
-            <span className="font-display font-extrabold text-gold">{fmtCentsExact(advance.amount_cents)}</span>
+            <span className="font-display font-extrabold text-[color:var(--driver-accent)]">{fmtCentsExact(advance.amount_cents)}</span>
           </p>
         ))}
       </div>
@@ -76,7 +76,7 @@ export default async function DriverPayPage() {
                       </p>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
-                      <p className="font-display text-xl font-extrabold text-gold">{fmtCentsExact(s.net_cents)}</p>
+                      <p className="font-display text-xl font-extrabold text-[color:var(--driver-accent)]">{fmtCentsExact(s.net_cents)}</p>
                       <ChevronDown className="h-4 w-4 text-steel-400 transition-transform group-open:rotate-180" />
                     </div>
                   </summary>
