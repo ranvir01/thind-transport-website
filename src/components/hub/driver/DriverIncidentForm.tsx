@@ -113,8 +113,16 @@ export function DriverIncidentForm({ loads }: { loads: { id: string; reference: 
               aria-label="Use my GPS location"
               className={cn(
                 "flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border",
-                coords ? "border-gold/50 bg-gold/15 text-gold" : "border-white/15 text-steel-200 hover:bg-white/5"
+                coords ? "text-[color:var(--driver-accent)]" : "border-white/15 text-steel-200 hover:bg-white/5"
               )}
+              style={
+                coords
+                  ? {
+                      borderColor: "color-mix(in srgb, var(--driver-accent) 50%, transparent)",
+                      backgroundColor: "color-mix(in srgb, var(--driver-accent) 15%, transparent)",
+                    }
+                  : undefined
+              }
             >
               <MapPin className="h-5 w-5" />
             </button>
@@ -156,7 +164,7 @@ export function DriverIncidentForm({ loads }: { loads: { id: string; reference: 
       </div>
 
       <div className="rounded-2xl border border-white/10 bg-navy-800/80 p-4 space-y-2">
-        <p className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-gold">
+        <p className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-[color:var(--driver-accent)]">
           <ShieldAlert className="h-4 w-4" /> Three quick questions — answer honestly
         </p>
         {QUESTIONS.map(({ key, q }) => (

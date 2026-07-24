@@ -138,7 +138,7 @@ export function DriverLoadCard({ load, detentionFreeMinutes }: { load: LoadForDr
       {/* Banner */}
       <div className="flex items-center justify-between gap-2 border-b border-white/10 bg-white/[0.03] px-4 py-3">
         <div>
-          <p className="text-[11px] font-bold uppercase tracking-wider text-gold">{STATUS_BANNER[load.status] ?? load.status}</p>
+          <p className="text-[11px] font-bold uppercase tracking-wider text-[color:var(--driver-accent)]">{STATUS_BANNER[load.status] ?? load.status}</p>
           <p className="font-semibold text-lg text-white">{load.reference}</p>
         </div>
         <button
@@ -168,7 +168,11 @@ export function DriverLoadCard({ load, detentionFreeMinutes }: { load: LoadForDr
           <button
             onClick={() => run({ kind: "ack", payload: { loadId: load.id } }, () => driverAcknowledgeDispatch(load.id), "Dispatch confirmed — drive safe")}
             disabled={pending}
-            className="flex w-full min-h-[52px] items-center justify-center gap-2 rounded-xl border border-gold/50 bg-gold/15 font-display text-sm font-bold uppercase tracking-[0.08em] text-gold hover:bg-gold/25 disabled:opacity-60"
+            className="flex w-full min-h-[52px] items-center justify-center gap-2 rounded-xl border font-display text-sm font-bold uppercase tracking-[0.08em] text-[color:var(--driver-accent)] hover:bg-white/5 disabled:opacity-60"
+            style={{
+              borderColor: "color-mix(in srgb, var(--driver-accent) 50%, transparent)",
+              backgroundColor: "color-mix(in srgb, var(--driver-accent) 15%, transparent)",
+            }}
           >
             <Check className="h-5 w-5" /> Got it — confirm this dispatch
           </button>
@@ -200,7 +204,7 @@ export function DriverLoadCard({ load, detentionFreeMinutes }: { load: LoadForDr
                       {stop.po_number ? ` · PO# ${stop.po_number}` : ""}
                     </p>
                     <p className="mt-1 flex items-center gap-1 text-body-xs text-steel-200">
-                      <Clock className="h-3.5 w-3.5 text-gold" /> {fmtAppt(stop.appt_start, stop.appt_end, stop.fcfs)}
+                      <Clock className="h-3.5 w-3.5 text-[color:var(--driver-accent)]" /> {fmtAppt(stop.appt_start, stop.appt_end, stop.fcfs)}
                     </p>
                     {slow ? (
                       <p className="mt-1 inline-flex items-center gap-1 rounded-full border border-orange/40 bg-orange/10 px-2 py-0.5 text-[11px] font-bold text-orange">
@@ -210,7 +214,7 @@ export function DriverLoadCard({ load, detentionFreeMinutes }: { load: LoadForDr
                     {stop.notes ? <p className="mt-1 text-body-xs text-steel-400">{stop.notes}</p> : null}
                     {(stop.facility_notes ?? []).length > 0 ? (
                       <div className="mt-1.5 space-y-1 rounded-lg border border-white/10 bg-white/[0.03] p-2">
-                        <p className="text-[10px] font-bold uppercase tracking-wider text-gold">Driver tips</p>
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-[color:var(--driver-accent)]">Driver tips</p>
                         {(stop.facility_notes ?? []).map((note, i) => (
                           <p key={i} className="text-body-xs text-steel-200">
                             “{note.body}”{note.author ? <span className="text-steel-400"> — {note.author}</span> : null}
@@ -252,7 +256,7 @@ export function DriverLoadCard({ load, detentionFreeMinutes }: { load: LoadForDr
                   ) : null}
                   {done ? (
                     <p className="flex items-center gap-1.5 text-body-xs text-steel-400">
-                      <Check className="h-3.5 w-3.5 text-gold" />
+                      <Check className="h-3.5 w-3.5 text-[color:var(--driver-accent)]" />
                       In {new Date(stop.arrived_at!).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })},
                       out {new Date(stop.departed_at!).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}
                     </p>
@@ -263,7 +267,7 @@ export function DriverLoadCard({ load, detentionFreeMinutes }: { load: LoadForDr
                 {done && stop.facility_id ? (
                   <button
                     onClick={() => setNotingStop(stop)}
-                    className="mt-2 flex items-center gap-1.5 text-body-xs font-semibold text-gold hover:text-gold/80 min-h-[44px]"
+                    className="mt-2 flex items-center gap-1.5 text-body-xs font-semibold text-[color:var(--driver-accent)] hover:opacity-80 min-h-[44px]"
                   >
                     <MessageSquarePlus className="h-3.5 w-3.5" />
                     Leave a tip about this place for other drivers
@@ -305,7 +309,11 @@ export function DriverLoadCard({ load, detentionFreeMinutes }: { load: LoadForDr
             <button
               onClick={() => fileRef.current?.click()}
               disabled={pending}
-              className="flex flex-1 min-w-0 min-h-[48px] items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-gold/50 bg-gold/10 font-display text-sm font-bold uppercase tracking-[0.06em] text-gold hover:bg-gold/20 disabled:opacity-60"
+              className="flex flex-1 min-w-0 min-h-[48px] items-center justify-center gap-2 whitespace-nowrap rounded-xl border font-display text-sm font-bold uppercase tracking-[0.06em] text-[color:var(--driver-accent)] hover:bg-white/5 disabled:opacity-60"
+              style={{
+                borderColor: "color-mix(in srgb, var(--driver-accent) 50%, transparent)",
+                backgroundColor: "color-mix(in srgb, var(--driver-accent) 10%, transparent)",
+              }}
             >
               <Camera className="h-5 w-5 shrink-0" /> Snap & send
             </button>
@@ -410,10 +418,16 @@ function FacilityNoteSheet({
               onClick={() => toggle(tag)}
               className={cn(
                 "rounded-full border px-3 py-2 text-sm font-semibold capitalize min-h-[44px]",
-                tags.includes(tag)
-                  ? "border-gold/60 bg-gold/20 text-gold"
-                  : "border-white/15 bg-white/5 text-steel-200"
+                tags.includes(tag) ? "text-[color:var(--driver-accent)]" : "border-white/15 bg-white/5 text-steel-200"
               )}
+              style={
+                tags.includes(tag)
+                  ? {
+                      borderColor: "color-mix(in srgb, var(--driver-accent) 60%, transparent)",
+                      backgroundColor: "color-mix(in srgb, var(--driver-accent) 20%, transparent)",
+                    }
+                  : undefined
+              }
             >
               {tag}
             </button>

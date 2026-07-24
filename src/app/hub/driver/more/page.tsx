@@ -8,6 +8,12 @@ import { SignOutButton } from "@/components/hub/SignOutButton"
 
 export const dynamic = "force-dynamic"
 
+/** Same border/background mix OfflineSync uses for --driver-accent chrome (opacity modifiers drop silently on CSS-var colors — AGENTS.md). */
+const ACCENT_BUTTON_STYLE = {
+  borderColor: "color-mix(in srgb, var(--driver-accent) 50%, transparent)",
+  backgroundColor: "color-mix(in srgb, var(--driver-accent) 10%, transparent)",
+} as const
+
 const LINKS = [
   { href: "/hub/driver/dvir", label: "Vehicle inspection (DVIR)", hint: "Pre/post-trip — two minutes, phone in hand", icon: ClipboardCheck },
   { href: "/hub/driver/docs", label: "My documents", hint: "CDL, med card, expiry warnings", icon: FileText },
@@ -31,7 +37,7 @@ export default async function DriverMorePage() {
               href={link.href}
               className="flex items-center gap-3 rounded-2xl border border-white/10 bg-navy-800/80 p-4 hover:bg-white/5 min-h-[64px]"
             >
-              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white/5 text-gold">
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white/5 text-[color:var(--driver-accent)]">
                 <link.icon className="h-5 w-5" />
               </span>
               <span className="min-w-0 flex-1">
@@ -47,7 +53,8 @@ export default async function DriverMorePage() {
       {phone ? (
         <a
           href={`tel:${phone}`}
-          className="flex min-h-[52px] items-center justify-center gap-2 rounded-xl border border-gold/50 bg-gold/10 font-display text-sm font-bold uppercase tracking-[0.08em] text-gold hover:bg-gold/20"
+          className="flex min-h-[52px] items-center justify-center gap-2 rounded-xl border font-display text-sm font-bold uppercase tracking-[0.08em] text-[color:var(--driver-accent)] hover:bg-white/5"
+          style={ACCENT_BUTTON_STYLE}
         >
           Call the office: {carrier?.phone}
         </a>
