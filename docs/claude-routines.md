@@ -799,3 +799,40 @@ Backlog:
 - Carried, unchanged: npm audit's 3 high-severity findings (owner-approval-gated semver-major bump);
   Rust sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision); IFTA due-date roll not
   accounting for legal holidays (documented scope decision).
+
+## QA rig drive on main@6ba902c — 2026-07-24 ~22:25 UTC (owner/dispatcher/driver, read-only prod probe)
+
+Read-only QA cycle, no lane work: stood up the local rig from scratch (fresh container — role/db
+didn't exist yet, pitfall #9), `npm ci`, `db:migrate` (all 21 migrations), `seed:demo`, `npm run build`
+(clean), `npx vitest run` (188 files/1580 tests, green), `npm run start` against the built app.
+
+Drove the full existing E2E battery rather than hand-picking a subset: `node scripts/e2e-run-all.mjs`
+(all 47 `e2e-*-smoke.mjs` scripts covering owner, dispatcher/office, driver PWA, and broker/shipper
+portal flows) plus `scripts/e2e-sweep.mjs` (every nav-reachable screen at 1440px, office/owner at both
+1440px and 390px, driver/portal/track at 390px). **47/47 smokes passed, sweep clean — 0 defects, 0
+console errors, no horizontal overflow at 390px, no invisible/ghosted text on the forced-dark driver
+surfaces.** Two log entries matched a naive "fail" grep on first pass (`e2e-mailbox-oauth-smoke`'s "Sync
+now against a dead local endpoint fails honestly" step, `e2e-qbo-push-smoke`'s "push fails gracefully"
+without credentials) — both are intentional graceful-failure assertions, not real failures; spot-checked
+screenshots for the three files touched in the last 3h (`office-safety-1440` HOS empty-state, driver PWA
+home at `driver-driver-home-390`, `owner-owner-dashboard-1440`'s settlement-liability panel) and all
+render correctly. No regressions found in the last 3 hours of commits (five-lane absorb + HOS tenancy
+fix cycle, `062f92f`/`6ba902c`) — nothing to fix forward.
+
+Read-only probe of `https://thindtransport.com`: direct HTTPS stayed egress-blocked (`curl` exit 56,
+CONNECT tunnel 403), same as every prior cycle. Vercel MCP tools were available this cycle:
+`get_project` on `prj_QKMg8o77DoEYiVQgQbI0FB5F4tAg` shows `latestDeployment` READY/`target: production`
+at `dpl_3PG6i44EKWk6vWQAZzDzyXZmsH9D`, built from `githubCommitSha: 6ba902c...` (exactly current `main`
+HEAD, `githubCommitVerification: verified`), aliased to `thindtransport.com`. `get_runtime_errors`
+(6h window): no runtime errors. This directly resolves the staleness/non-deploying-Vercel-integration
+issue flagged in the 2026-07-23 ~05:30 UTC cycle below — production is now deploying promptly on every
+push to `main` again (whatever broke the Git integration/webhook has recovered or been fixed since);
+no owner notification needed this cycle since nothing is broken.
+
+No code changes this cycle (0 defects to fix, 0 regressions). No branch push — nothing to merge.
+
+Backlog:
+- Unchanged from the prior cycle: `lane-tests` (1443 unpicked) and `lane-compliance` (1536 unpicked)
+  await the meta-governor prune pass; npm audit's 3 high-severity findings (owner-approval-gated
+  semver-major bump); Rust sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision); IFTA
+  due-date roll not accounting for legal holidays (documented scope decision).
