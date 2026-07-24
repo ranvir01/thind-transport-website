@@ -635,3 +635,70 @@ Backlog:
   Rust sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision); IFTA due-date roll not
   accounting for legal holidays (documented scope decision).
 
+## Driver PWA offline queue subsystem audit — 2026-07-24 ~12:40 UTC (verify-and-build cycle)
+
+`git fetch` showed integrator (`claude/hauldesk-project-setup-l1luoo`, tip `6736ee00`) 3 commits ahead
+of `main` (`7e4dfc62`) — within the steady-state threshold, `agent:status` confirms "STEADY STATE:
+integrator within 3 commits of main and moving." `npm ci` + `npm run build` (all routes compile,
+clean) + `npx vitest run` (186 files/1546 tests passed, 1 skipped file/7 skipped tests, unchanged from
+last cycle) + `npm run lint` (clean) all green before touching anything else — no fix-forward needed.
+
+Per the rotation's last remaining item, audited the driver PWA offline queue end to end:
+`src/components/hub/driver/offline-queue.ts` (the IndexedDB-backed intent store + replay engine) and
+its one caller, `OfflineSync.tsx` (the replay orchestrator mounted in the driver layout), plus every
+site that enqueues an intent (`DriverLoadCard.tsx`, `DocRequestCard.tsx`, `DvirForm.tsx`,
+`DriverIncidentForm.tsx`, `AnnouncementAckCard.tsx`, `TimeOffForm.tsx`, `AdvanceRequestForm.tsx`).
+Checked against AGENTS.md's standing rules: (1) money — `AdvanceRequestForm`'s queued `advance` intent
+replays through the same `driverRequestAdvance` server action either way, so `dollarsToCents` +
+`logAudit` still run server-side on replay, no bypass; the queued `upload` intent's `amount` field is
+raw user text that only becomes cents in `driverUploadDocument` (`dollarsToCents`) after replay, same
+as the live path. (2) permissions/tenancy — replay calls the *exact* server actions the live path
+calls (`execute()` in `OfflineSync.tsx` switches on `intent.kind` into `driverAdvanceStatus`/
+`driverStopTimestamp`/`driverUploadDocument`/etc.), so a stale queued intent gets the same
+`requireDriverUser` + carrier/driver-scoped checks as an online tap — there's no separate "offline"
+code path that could drift out of permission parity. (3) forced-dark tokens — grepped
+`src/app/hub/driver/**` + `src/components/hub/driver/**` for `text-fg*`/`bg-surface*`/`border-border*`
+and for opacity modifiers on CSS-var colors (`(surface|accent-text|warn|bad)/[0-9]+`): zero hits.
+`OfflineSync.tsx`'s banner uses `bg-gold/15`/`border-gold/40`/`text-gold` and `bg-orange/15`/
+`border-orange/40`/`text-orange` — those are static hex brand colors in `tailwind.config.ts`, not
+CSS-var tokens, so the opacity-modifier pitfall doesn't apply here. (4) the one deliberate exception —
+`driverCancelTimeOff` (`TimeOffForm.tsx`) intentionally bypasses `runOrQueue` and calls the server
+action directly, matching the banner copy's claim ("cancels wait for signal"); confirmed no `cancel`
+intent kind exists in `IntentPayloads`, so a cancel genuinely fails hard offline instead of being
+silently queued and racing an office approval hours later. **No defect found.**
+
+Cross-checked test coverage before concluding: `offline-queue.test.ts` already covers
+`isOfflineError`'s classification boundary (network/abort/timeout messages vs. real rejections),
+`runOrQueue`'s queue-on-offline / queue-on-connectivity-throw / rethrow-on-real-rejection paths,
+`replayQueue`'s oldest-first ordering, stop-clean-on-connectivity-error (leaving the remainder queued
+in order), drop-and-count-on-hard-failure, and the `schemaVersion` staleness guard (added after a
+past incident where a stale queued row's shape drifted from a live rewrite) — plus the IndexedDB
+connection-leak regression test from the last fix to this file (`2d7b7142`). No gap found worth a new
+test.
+
+Verified live on a fresh local rig (Postgres was down, no `hubapp` role/`hubdb` database existed yet —
+created both per the dev-workflow-testing skill's pitfall #9): `npm run db:migrate` (21 migrations
+clean) + `npm run seed:demo`, `npm run build && npm run start`, then `node scripts/e2e-driver-smoke.mjs`
+(login → confirm dispatch → arrive/depart → facility tip → message dispatch → pay screen → time-off
+request → incident report, all at 390px) and `node scripts/e2e-driver-pod-smoke.mjs` (POD upload
+through "SEND PAPERWORK", satisfying a pinned document request) — both green, 0 console errors. These
+exercise every enqueue site's *live* (online) path; the offline/replay path itself is unit-tested
+above rather than driven with a real network-drop in Playwright this cycle.
+
+No code fix was available to ship — the subsystem is clean, so there's nothing to commit against
+`claude/lane-driver` beyond this audit record.
+
+Backlog:
+- Subsystem-audit rotation complete for this pass: dispatch/loads-core, planner, reports,
+  portal/tracking, and now driver PWA offline queue are all confirmed clean, joining
+  fuel/expenses/messages/invoices/advances/settlements/statements/safety/claims/tasks/recruiting from
+  earlier cycles. Integrations webhooks was audited (0 defects, `6736ee00` on the integrator, not yet
+  drained to `main`). Next agent: either start a second pass (deeper, e.g. concurrent-tab queue
+  behavior, or a real Playwright offline-mode drive of `replayQueue`) or defer to the overdue
+  meta-governor prune pass below.
+- `lane-tests` (1443 unpicked) and `lane-compliance` (1536 unpicked) remain the two largest pending
+  branches; meta-governor prune pass remains overdue across multiple cycles now.
+- Carried, unchanged: npm audit's 3 high-severity findings (owner-approval-gated semver-major bump);
+  Rust sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision); IFTA due-date roll not
+  accounting for legal holidays (documented scope decision).
+
