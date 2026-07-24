@@ -635,3 +635,56 @@ Backlog:
   Rust sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision); IFTA due-date roll not
   accounting for legal holidays (documented scope decision).
 
+## QA rig drive on main@7e4dfc62 — 2026-07-24 ~07:20 UTC (owner/dispatcher/driver, read-only prod probe)
+
+Routine charter is QA drive + prod probe only (docs/agent-improvement-loop.md §5's owner/dispatcher/
+driver mandate) — no feature work this cycle.
+
+Reviewed every commit landed in the 3 hours before kickoff (`6449f78d..7e4dfc62`, 03:50–06:46 UTC):
+the only product-code change is `54ae008b` (absorbed `claude/eager-babbage-39qe2o` +
+`claude/eager-babbage-siqumh` — `recruiting.ts`'s referral-bonus stuck-`pending` fix and `tasks.ts`'s
+two both-sides tenancy gaps), which shipped with its own regression tests
+(`recruiting-tenancy.test.ts`, `tasks-tenancy.test.ts`) and was already independently audited clean by
+two subsequent cycles (`4ff19e73`'s drain, `4ea7be31`'s dispatch/loads-core audit). `4ea7be31` itself
+only touched `docs/claude-routines.md` (an audit writeup, 0 defects, 0 absorbable branches — no code).
+No regression found in this window.
+
+Fresh rig from scratch: Postgres 16 started (was down), `hubapp` role + `hubdb` database created (no
+role/db existed yet, pitfall #9), `npm ci` (748 packages, same carried 3 high-severity `npm audit`
+findings), `npm run db:migrate` through `021_random_testing.sql` clean (21/21), `seed:demo`, `npm run
+build` (Next.js 16, zero TS errors), `npx vitest run` (187 files/1553 tests green), `npm run lint`
+clean, `npm run test:sidecars` (28 Rust tests + Go vet/test, clippy clean).
+
+Drove the full `e2e-run-all.mjs` battery (48 `e2e-*-smoke.mjs` scripts + the screen sweep) as owner,
+dispatcher, driver, broker, and shipper: **48/48 green in 13.1m, 0 defects, 0 console errors** — covers
+every subsystem touched in the last 3h (recruiting, tasks) plus the full nav-reachable surface.
+
+Production probe: direct HTTPS to `thindtransport.com` stayed egress-blocked this session (curl exit
+56 on `/` and `/hub/login`), consistent with every prior cycle. Vercel MCP tools were connected:
+`get_project` shows `latestDeployment` `dpl_2U8Z8cwuahGBBKnuD4nQ3f4fCwWA` READY, `target: production`,
+commit `7e4dfc62` — an exact match for `main` HEAD, so production is healthy and fully current (no
+staleness this cycle, unlike the 2026-07-23 05:30 UTC incident). `live: false` is present but per the
+documented caveat cross-checked against the alias + deployment SHA, both healthy — not paging on
+`live=false` alone. `get_runtime_errors` (3h window) shows only the longstanding non-fatal pg
+`sslmode` deprecation warning on `/api/hub/cron/[job]` (first seen 2026-06-26, still just a warning,
+not a regression).
+
+No code fix was available to ship — 0 defects found, so no commit beyond this writeup.
+
+Backlog:
+- Noticed via `git log --all --grep`: at least 5 unmerged sibling-session branches already carry
+  near-identical "QA rig drive ... 0 regressions" commits at older SHAs (`4ff19e73`, `6449f78d`,
+  `de0dcf88`, `251899f4`) that never got absorbed — harmless (no code diff) but they pad the
+  91-pending-branch count; safe prune candidates for the meta-governor pass rather than re-triage
+  targets.
+- Subsystem-audit rotation: dispatch/loads core, fuel, expenses, messages, invoices, advances,
+  settlements, statements, safety, claims, tasks, recruiting all confirmed clean across recent cycles.
+  Remaining unaudited: planner, reports, portal/tracking, integrations webhooks (an audit already
+  exists on unmerged branches `claude/eager-babbage-5bwept`/`claude/eager-babbage-e96q4a` — integrator
+  should drain one of those rather than re-audit), driver PWA offline queue.
+- `lane-tests` (1443 unpicked) and `lane-compliance` (1536 unpicked) remain the two largest pending
+  branches; meta-governor prune pass remains overdue, unchanged from prior cycles.
+- Carried, unchanged: npm audit's 3 high-severity findings (owner-approval-gated semver-major bump);
+  Rust sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision); IFTA due-date roll not
+  accounting for legal holidays (documented scope decision).
+
