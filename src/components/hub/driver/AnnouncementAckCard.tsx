@@ -33,8 +33,14 @@ export function AnnouncementAckCard({
     })
 
   return (
-    <section className="rounded-2xl border border-gold/30 bg-gold/[0.06] p-4">
-      <p className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-gold">
+    <section
+      className="rounded-2xl border p-4"
+      style={{
+        borderColor: "color-mix(in srgb, var(--driver-accent) 30%, transparent)",
+        backgroundColor: "color-mix(in srgb, var(--driver-accent) 6%, transparent)",
+      }}
+    >
+      <p className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-[color:var(--driver-accent)]">
         <Megaphone className="h-4 w-4" /> From the office
         {announcement.created_by_name ? ` · ${announcement.created_by_name}` : ""}
       </p>
@@ -57,7 +63,11 @@ export function AnnouncementAckCard({
         <button
           onClick={ack}
           disabled={pending}
-          className="mt-3 flex w-full min-h-[48px] items-center justify-center gap-2 rounded-xl border border-gold/50 bg-gold/10 font-display text-sm font-bold uppercase tracking-[0.06em] text-gold hover:bg-gold/20 disabled:opacity-60"
+          className="mt-3 flex w-full min-h-[48px] items-center justify-center gap-2 rounded-xl border font-display text-sm font-bold uppercase tracking-[0.06em] text-[color:var(--driver-accent)] hover:bg-white/5 disabled:opacity-60"
+          style={{
+            borderColor: "color-mix(in srgb, var(--driver-accent) 50%, transparent)",
+            backgroundColor: "color-mix(in srgb, var(--driver-accent) 10%, transparent)",
+          }}
         >
           {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
           Got it

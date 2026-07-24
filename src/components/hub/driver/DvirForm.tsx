@@ -92,8 +92,14 @@ export function DvirForm({
     <div className="space-y-4">
       {/* 396.13: review the prior post-trip + its repair certification */}
       {type === "pre" && priorDvir ? (
-        <section className="rounded-2xl border border-gold/30 bg-gold/[0.06] p-4">
-          <p className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-gold">
+        <section
+          className="rounded-2xl border p-4"
+          style={{
+            borderColor: "color-mix(in srgb, var(--driver-accent) 30%, transparent)",
+            backgroundColor: "color-mix(in srgb, var(--driver-accent) 6%, transparent)",
+          }}
+        >
+          <p className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-[color:var(--driver-accent)]">
             <Wrench className="h-4 w-4" /> Review before you roll
           </p>
           <p className="mt-1 text-body-sm text-steel-200">
