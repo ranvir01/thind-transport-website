@@ -744,3 +744,63 @@ Backlog:
 - Carried, unchanged: npm audit's 3 high-severity findings (owner-approval-gated semver-major bump);
   Rust sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision); IFTA due-date roll not
   accounting for legal holidays (documented scope decision).
+
+## Playwright QA drive (owner/dispatcher/driver) + prod probe — 2026-07-24 ~20:30 UTC (verify-and-build cycle)
+
+Charter for this cycle per `docs/agent-improvement-loop.md` §5: no feature work, stand up the local rig,
+drive real owner/dispatcher/driver flows with Playwright/Puppeteer, probe `thindtransport.com`
+read-only, and fix only outright regressions found in the last 3 hours of commits.
+
+`git fetch` + `npm run agent:status`: integrator (`claude/hauldesk-project-setup-l1luoo`) 2 commits
+ahead of `main` (`claude/lane-analytics`'s settlement-liability panel link, not this routine's
+territory to merge) — `main` itself unchanged since the last drain (`d4e6396`, this cycle's starting
+HEAD). Left the integrator/merge decision to Routine 1; this cycle only touches `main`-adjacent record
+keeping.
+
+**Last-3h commit review** (17:10–20:10 UTC window): four commits landed, `e1e3909`/`615ce7e` (driver PWA
+text-gold → `var(--driver-accent)` mechanical swap on `DriverLoadCard`/`DriverIncidentForm`/
+`AdvanceRequestForm`, completing the swap begun earlier in the day — repo-wide grep across
+`src/app/hub/driver` and `src/components/hub/driver` confirms zero remaining `text-gold`/`bg-gold`/
+`border-gold` occurrences) and `fbc0f56`/`d4e6396` (a routine merge + stamped drain, no product diff
+beyond `.drain-stamp`). Read both diffs in full: same `color-mix()` style-object pattern established by
+the prior commits in this series, `driver-accent-tokens.test.ts` extended with a matching regression
+guard for every touched file, hover states consistently fall back to `hover:bg-white/5` /
+`hover:opacity-80` per the established precedent. **No regression found** — this matches what
+`d4e6396`'s own commit body already verified (build/vitest/lint green, 15/15 driver-smoke steps).
+
+**Fresh local rig from scratch** (Postgres was down, no `hubapp` role/`hubdb` database existed yet —
+created both per the dev-workflow-testing skill's pitfall #9): `npm ci` (748 packages), `npm run
+db:migrate` (all 21 migrations clean), `npm run seed:demo`, `npm run build` (all routes compile,
+zero TS errors), `npx vitest run` (187 files/1565 tests green), `npm run lint` (clean) — all green
+before driving anything. `test:sidecars` skipped — no Go/Rust files touched in the review window.
+
+**Drove the full `scripts/e2e-battery.mjs`** (48 `e2e-*-smoke.mjs` scripts + the visual sweep,
+sequentially against one seeded database) as owner, dispatcher, accounting, driver, broker, shipper,
+and public/anonymous visitor: **48/48 PASS, 0 console errors, 0 defects.** Spot-checked several
+`e2e-shots-battery/*.log` files directly (not just the summary line) to confirm "0 console errors" was
+a real assertion result, not a grep false-positive.
+
+**Production probe** (read-only): direct HTTPS to `thindtransport.com` stayed egress-blocked in this
+sandbox (curl exit 56), consistent with every prior cycle. Vercel MCP tools were available this cycle —
+`get_project` on `prj_QKMg8o77DoEYiVQgQbI0FB5F4tAg` shows the familiar `live: false` /
+`latestDeployment` CANCELED false-alarm pattern (a superseded integrator-branch preview build, not a
+real outage — same pattern §3b already documents). Cross-checked with `list_deployments`: the actual
+production deployment (`dpl_4o33JJekj9Th9KRxtJBw5QukLkTE`, `target: "production"`, `state: "READY"`) is
+on commit `d4e639672bd0` — the **exact** SHA this cycle started from. Production is current, not stale.
+`get_runtime_errors` (6h window): one error group, the same pg-connection-string SSL-mode deprecation
+warning on `/api/hub/cron/[job]` carried since 2026-06-26 — not new, not a regression.
+
+No code fix was needed or made this cycle — the rig, the last-3h diff, and production are all clean.
+
+Backlog:
+- `lane-analytics` (2 commits: settlement-liability panel link) is ahead of the integrator, unmerged as
+  of this cycle — Routine 1's normal absorb queue, not a QA-drive action.
+- Cascade Demo Lines' seeded accent (#2E8B6E) sits at 4.36:1 contrast against navy, just under the
+  4.5:1 AA threshold (carried from the driver-accent swap series, unowned).
+- `lane-tests` and `lane-compliance` remain the largest unpicked branch queues; meta-governor prune pass
+  still overdue across many cycles (carried, unowned).
+- Carried, unchanged: npm audit's 3 high-severity findings (owner-approval-gated semver-major bump);
+  Rust sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision); IFTA due-date roll not
+  accounting for legal holidays (documented scope decision); pg-connection-string SSL-mode deprecation
+  warning on cron routes (cosmetic log noise, `sslmode=verify-full` one-line fix, not in any lane's
+  territory).
