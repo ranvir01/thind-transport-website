@@ -635,3 +635,61 @@ Backlog:
   Rust sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision); IFTA due-date roll not
   accounting for legal holidays (documented scope decision).
 
+## QA rig drive on main@7e4dfc62 — 2026-07-24 ~13:35 UTC (owner/dispatcher/driver, read-only prod probe)
+
+Routine charter is QA drive + prod probe only (§5's owner/dispatcher/driver mandate) — no feature work
+this cycle. This is at least the eighth QA-drive cycle to audit this exact window this hour (several
+sibling `claude/practical-franklin-*` sessions ran the identical charter within the same ~3h span,
+per `git log --all`); consistent with all of them, found 0 regressions and nothing new to add on the
+product side.
+
+Reviewed every commit landed across `claude/*` branches in the 3 hours before kickoff (~10:13-13:13
+UTC): only one landed on the integrator lineage (`6736ee0`, an integrations-webhooks verify-only audit
+commit, docs/commit-message only, zero file diff) — no product code changed on anything upstream of
+`main`. The other product-code commits in the window (`aa13e945` driver stop-timestamp fix, `159627d1`
+driver-accent audit) sit on unmerged sibling session/lane branches, not yet on the integrator or main,
+so they're new work in flight, not a regression window to audit. `main` itself hasn't moved in >3h
+(tip still `7e4dfc62`, unchanged since 06:46 UTC). `npm run agent:status`: STEADY STATE, integrator
+within 3 commits of main.
+
+Fresh rig from scratch: started Postgres 16 (was down), created the `hubapp` role + `hubdb` database
+(dev-workflow-testing skill pitfall #9), `.env.local` from `.env.example` (NEXTAUTH_SECRET generated,
+CREDENTIALS_KEY 33 chars, CRON_SECRET set, SMTP left blank per pitfall #6), `npm ci` (748 packages,
+same 3 carried high-severity `npm audit` findings, not re-attempted), `npm run db:migrate` (21/21
+clean) + `seed:demo`, `npm run build` (Next.js 16, zero TS errors) clean, `npx vitest run` (187
+files/1553 tests) green, `npm run lint` clean, `make test-sidecars` (Go vet+test ok, Rust `cargo
+clippy --all-targets -- -D warnings` clean + 28/28 tests) green, `npm run start` against the prod
+build.
+
+Drove the full `e2e-run-all.mjs` battery (47 `e2e-*-smoke.mjs` scripts + the screen sweep) as owner,
+dispatcher, driver, broker, and shipper: **48/48 green in 16.5m, 0 defects, 0 console errors** on the
+first pass — no test-script flakes to chase this cycle. Covers booking/dispatch/loadboard, fuel/
+expenses/invoices/advances/settlements/statements, safety/claims/DVIR/detention, messages/notifications/
+tasks, IFTA, recruiting/onboarding, driver PWA (POD, DVIR, offline queue paths), portal accept/broker/
+shipper flows, tenant isolation, QBO push/IIF export, mailbox OAuth, recurring lane/rollup cron paths,
+tracking, and the public marketing site.
+
+Production probe: direct HTTPS to `thindtransport.com` stayed egress-blocked (curl exit 56 on `/` and
+`/hub/login`), so used Vercel MCP per §3b. `get_project` shows `live: false` (the known-unreliable flag,
+per the "`live` alone is not a reliable signal" note above) but `list_deployments` confirms the latest
+`target: "production"` / `state: "READY"` deployment is `dpl_2U8Z8cwuahGBBKnuD4nQ3f4fCwWA` on commit
+`7e4dfc62` — an exact match for `main` HEAD, so production is current, not stale. `get_runtime_errors`
+(3h window): only the long-standing benign pg SSL-mode deprecation warning on `/api/hub/cron/[job]`
+(first seen 2026-06-26, still the same carried owner-action item, no new error clusters).
+
+No product-code fix was available or needed this cycle — nothing red to fix forward.
+
+Backlog:
+- Owner: production `POSTGRES_URL` still triggers the pg SSL-mode deprecation warning on every
+  `/api/hub/cron/[job]` run — env-var fix (`sslmode=verify-full`), not code; carried unchanged since
+  2026-06-26.
+- `lane-tests` (1443 unpicked) and `lane-compliance` (1536 unpicked) remain the two largest pending
+  branches; meta-governor prune pass remains overdue, unchanged from prior cycles.
+- Several concurrent `claude/practical-franklin-*` QA-drive sessions are auditing this identical
+  window redundantly (at least 4 in the last ~3h, this one included) — worth a meta-governor look at
+  whether the QA-drive routine's fire cadence/concurrency needs tightening, since each cycle costs a
+  full rig-rebuild + 48-smoke run for the same 0-regression answer.
+- Carried, unchanged: npm audit's 3 high-severity findings (owner-approval-gated semver-major bump);
+  Rust sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision); IFTA due-date roll not
+  accounting for legal holidays (documented scope decision).
+
