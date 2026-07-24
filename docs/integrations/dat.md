@@ -25,11 +25,12 @@ Building that UI against an unconfirmed API shape would mean re-doing it twice. 
 stops at the tested client; `docs/integrations/creds-shopping-list.md` tracks the remaining
 UI + booking slice separately.
 
-## Auth model (researched 2026-07-10; re-scouted 2026-07-20 — search-snippet confidence, pages still 403-walled)
+## Auth model (researched 2026-07-10; re-scouted 2026-07-20, 2026-07-24 — search-snippet confidence, pages still 403-walled)
 
 DAT's own pages (`dat.com`, `one.support.dat.com`, `developer.dat.com`) and third-party
-integration guides all still 403 against our fetch tooling (same wall as TruckerCloud — five
-straight direct-fetch attempts across both passes, all blocked), so the facts below come from
+integration guides all still 403 against our fetch tooling (same wall as TruckerCloud — every
+direct-fetch attempt across all three passes blocked; `one.support.dat.com` and
+`learn.tai-software.com` both re-tried and 403'd again 2026-07-24), so the facts below come from
 search-result snippets of DAT's official support FAQ and TMS-vendor activation guides — higher
 confidence than a pure guess, but still not a developer packet.
 
@@ -49,21 +50,41 @@ confidence than a pure guess, but still not a developer packet.
   requirements (Connexion + load board, +RateView for rate requests) attach to the **acting
   user**, not the service account. This confirms the `actingUserEmail` field is the credential
   that actually needs the paid seat, not `serviceAccountEmail`.
-- **2026-07-20 finding, unconfirmed: RateView Combo Pro/Premium may gate RESTful API access.**
-  A search snippet states "RateView Combo Pro or RateView Combo Premium are required for a
-  RESTful API integration" — this reads as narrower than this doc's prior "any load board
-  subscription tier allows REST API integration" claim. Couldn't corroborate on a second
-  source or confirm whether that's RateView-specific access vs. the base search/post API: flag
-  as a pricing risk to check with developersupport@dat.com, not yet strong enough to overwrite
-  the existing claim outright.
+- **2026-07-24 RESOLVED — RateView Combo gates only *rate-request* API access, NOT load
+  search/post.** The 2026-07-20 single-source "RateView Combo Pro/Premium may gate RESTful API
+  access" worry is now answered by a second, more explicit snippet of DAT's official FAQ that
+  states the split directly: *"Any level of load board subscription allows a RESTful API
+  integration, and users wanting to post loads/trucks or search for loads/trucks will need a
+  Connexion seat and a load board seat. RateView Combo Pro or RateView Combo Premium are required
+  for a RESTful API integration [for rates]; users wanting to post, search, **and request
+  rates** will need a Connexion seat, load board seat, **and RateView seat.**"* So the
+  RateView-Combo requirement is scoped to the **RateView (rate-lookup) API only** — the base
+  load-board **search + post** API this adapter targets needs only *any* load board tier + a
+  Connexion seat + a load board seat. **This adapter (`datSource().search()` +
+  `datPostingToLoadDraft`) does search and post-to-draft, never a rate request** (confirmed in
+  `dat.ts` — no RateView call, `rateTotal` is read straight from the posting), so the RateView
+  Combo tier is **not** on LoadOff's critical path and the pricing story in
+  `creds-shopping-list.md` is unchanged. This upholds the doc's original "any load board
+  subscription tier allows REST API integration" claim for our use case; the narrower snippet was
+  RateView-specific. Only revisit if LoadOff later adds a rate-lookup feature.
 - **Tokens are short-lived.** One TMS integration (Salesforce-based) caches DAT org and
   user tokens for 28 minutes, implying ~30-minute expiry — the adapter must re-auth per
-  sync run rather than storing a long-lived token. No official token-lifetime number found
-  this pass either.
+  sync run rather than storing a long-lived token. Reconfirmed 2026-07-24 from a second
+  RateView-integration source ("Org and user tokens are cached in Platform Cache for 28
+  minutes"); still no official token-lifetime number in a primary doc.
+- **2026-07-24 catalog note: DAT exposes several distinct REST products, not one API.** DAT's
+  public resource pages enumerate the family as **DAT Load Board, BookNow, DAT Tracking, and
+  Freight Posting** APIs (plus RateView/DAT iQ rate APIs). LoadOff's adapter targets **Load
+  Board (search) + Freight Posting**. **BookNow** is DAT's own booking API — relevant to the
+  future "book this posting" slice, which today maps a posting onto a *local* `createLoad()`
+  draft (`datPostingToLoadDraft`) rather than transacting a booking back to DAT; if that slice
+  ever needs to reserve the load on DAT's side, BookNow is the surface to request in the
+  developer packet. Not adapter-breaking — noted so the booking slice scopes the right API.
 - **Seats gate API calls.** The authenticated (acting) user must hold a **Connexion seat**
-  plus a **load board seat** to search or post via API; posting/searching/requesting rates
-  needs a Connexion + load board + RateView seat. Any load board subscription tier is claimed
-  to allow REST API integration generally, but see the RateView-gating finding above.
+  plus a **load board seat** to search or post via API; adding rate requests needs a Connexion +
+  load board + **RateView** seat (and a RateView Combo Pro/Premium *subscription* — see the
+  resolved finding above). Any load board subscription tier allows REST API integration for the
+  search/post surface LoadOff uses.
 - **Service accounts are managed at `account.dat.com`** (User Management) and must not be
   edited/deleted once an integration depends on them.
 - Base URL env override (`DAT_API_BASE`) currently defaults to `https://freight.api.dat.com/v3`.
@@ -140,9 +161,11 @@ facing surface for it at all (it's a tested library function, not a feature yet)
   `actingUserEmail` field ships on the `dat` registry entry, `datSource().search()` requires
   it. The request itself still authenticates with organization Basic auth only (placeholder)
   until the token-exchange endpoints are confirmed.
-- Confirm whether the RateView Combo Pro/Premium requirement (found this pass, single source)
-  applies to the base search/post API or only rate-request calls — changes the pricing story
-  in `creds-shopping-list.md` if it applies broadly.
+- ~~Confirm whether the RateView Combo Pro/Premium requirement applies to the base search/post
+  API or only rate-request calls~~ — **resolved 2026-07-24: rate-request calls only.** The base
+  load-board search/post API (what this adapter uses) needs only any load board tier + Connexion
+  + load board seat; no pricing change to `creds-shopping-list.md`. See the resolved auth-model
+  bullet above.
 - Decide whether matches get a `cronJob` (periodic "loads near you" polling into a new
   table) in addition to on-demand search, or stay purely interactive — affects whether a
   migration is needed (`hub.available_loads`-style table) vs. search staying stateless.
