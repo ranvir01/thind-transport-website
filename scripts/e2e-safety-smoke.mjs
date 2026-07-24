@@ -1,10 +1,17 @@
 /**
- * Safety workflow smoke test — incident register + cargo-claim clock from OS&D POD.
- * The office Safety screen was the last daily office flow without a dedicated
- * smoke: dispatcher sees the seeded DOT accident register (tow-away on I-84),
- * closes a recordable incident, logs a new one, a driver files a first report
- * at 390px, then notes OS&D on a delivered POD (opens the draft claim file and
- * alerts the office), and a driver login is bounced off /hub/safety.
+ * Safety workflow smoke test — incident register, fleet HOS status board, and
+ * cargo-claim clock from OS&D POD. The office Safety screen was the last daily
+ * office flow without a dedicated smoke: dispatcher sees the seeded DOT
+ * accident register (tow-away on I-84) and — once the ELD feed writes
+ * hos_snapshots — the fleet's drive-clock status, closes a recordable
+ * incident, logs a new one, a driver files a first report at 390px, then
+ * notes OS&D on a delivered POD (opens the draft claim file and alerts the
+ * office), and a driver login is bounced off /hub/safety.
+ *
+ * The demo seed never connects a telematics feed, so hos_snapshots is empty
+ * after reseed — this smoke inserts a few rows directly (same pattern as
+ * e2e-recurring-rollup-smoke's softDeleteLoad) to drive both the empty and
+ * populated states of the HOS panel.
  *
  * Reseeds demo data first (see reseed in e2e-lib.mjs) — the run closes an
  * incident, adds two more, and advances Harpreet's lumber load through delivery
@@ -14,7 +21,38 @@
  */
 import { mkdirSync, writeFileSync } from "node:fs"
 import path from "node:path"
+import pg from "pg"
 import { launchBrowser, BASE, failures, check, waitForText, textAppears, textGone, waitForPathAndText, login, makeShot, clickByText, reseed } from "./e2e-lib.mjs"
+
+const CARRIER = "11111111-1111-1111-1111-111111111111" // Thind (created by migration 002)
+
+/** Inserts hos_snapshots for Harpreet (violation) and Gurjit (critical) — Jasdeep stays unseeded (ok/absent). */
+async function seedHosSnapshots() {
+  const url = process.env.POSTGRES_URL
+  if (!url) throw new Error("POSTGRES_URL required (loaded from .env.local on a local rig)")
+  const client = new pg.Client({
+    connectionString: url,
+    ssl: /localhost|127\.0\.0\.1/.test(url) ? undefined : { rejectUnauthorized: false },
+  })
+  await client.connect()
+  try {
+    const { rows } = await client.query(
+      `SELECT id, first_name FROM hub.drivers WHERE carrier_id = $1 AND first_name IN ('Harpreet', 'Gurjit')`,
+      [CARRIER]
+    )
+    const byName = Object.fromEntries(rows.map((r) => [r.first_name, r.id]))
+    if (!byName.Harpreet || !byName.Gurjit) throw new Error("seedHosSnapshots: expected demo drivers not found")
+    await client.query(
+      `INSERT INTO hub.hos_snapshots (carrier_id, driver_id, ts, duty_status, drive_remaining_minutes, shift_remaining_minutes, cycle_remaining_minutes, source)
+       VALUES ($1, $2, NOW(), 'driving', 0, 0, 120, 'terminal'),
+              ($1, $3, NOW(), 'driving', 35, 180, 900, 'terminal')`,
+      [CARRIER, byName.Harpreet, byName.Gurjit]
+    )
+    return byName
+  } finally {
+    await client.end()
+  }
+}
 
 const OUT = process.argv[2] ?? "e2e-shots-safety"
 mkdirSync(OUT, { recursive: true })
@@ -137,7 +175,28 @@ async function main() {
   check(wall.includes(SEEDED_REGISTER) && wall.includes("Robert Castillo"), "register lists the seeded Baker City tow-away")
   check(wall.includes(SEEDED_MINOR), "all-incidents list includes the minor Kent bollard scrape")
   check(wall.includes("Tow-away") || wall.toLowerCase().includes("tow"), "register shows tow-away flag")
+  check(wall.includes("No ELD data yet"), "HOS panel shows the empty state before any telematics feed writes a snapshot")
   await shot(page, "01-safety-register")
+
+  console.log("1b. Fleet HOS panel populates once hos_snapshots has rows")
+  const hosDrivers = await seedHosSnapshots()
+  await page.reload({ waitUntil: "networkidle2" })
+  await waitForText(page, "Hours of service")
+  const hosWall = (await page.evaluate(() => document.body.innerText)).toLowerCase()
+  check(hosWall.includes("2 to watch"), "HOS panel badges 2 drivers to watch (violation + critical)")
+  check(hosWall.includes("harpreet singh") && hosWall.includes("out of hours"), "Harpreet (0 min left) flagged Out of hours")
+  check(hosWall.includes("gurjit sandhu") && hosWall.includes("<1h left"), "Gurjit (35 min left) flagged <1h left")
+  check(!hosWall.includes("no eld data yet"), "empty state is gone once snapshots exist")
+  await shot(page, "01b-safety-hos-panel")
+
+  console.log("1c. HOS row links to the driver's profile")
+  await clickByText(page, "Harpreet Singh", { tag: "a" })
+  check(
+    await waitForPathAndText(page, `/hub/drivers/${hosDrivers.Harpreet}`, "Harpreet"),
+    "clicking the HOS row opens Harpreet's driver profile"
+  )
+  await page.goto(`${BASE}/hub/safety`, { waitUntil: "networkidle2" })
+  await waitForText(page, "Hours of service")
 
   console.log("2. Close the seeded DOT-recordable incident (stays on the register)")
   await clickByText(page, SEEDED_REGISTER, { tag: "a" })

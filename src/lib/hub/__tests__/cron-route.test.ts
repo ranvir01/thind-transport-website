@@ -22,7 +22,7 @@ vi.mock("@/lib/hub/tasks", () => ({ runTaskAutomations: vi.fn() }))
 vi.mock("@/lib/hub/lanes", () => ({ recomputeLanes: vi.fn() }))
 vi.mock("@/lib/hub/recruiting", () => ({ computeDriverScores: vi.fn() }))
 vi.mock("@/lib/hub/vetting", () => ({ recheckActiveCustomers: vi.fn() }))
-vi.mock("@/lib/hub/telematics", () => ({ runTelematicsSync: vi.fn() }))
+vi.mock("@/lib/hub/telematics", () => ({ runTelematicsSync: vi.fn(), runHosViolationAlerts: vi.fn() }))
 vi.mock("@/lib/hub/integrations/efs", () => ({ runEfsSync: vi.fn() }))
 vi.mock("@/lib/hub/integrations/comdata", () => ({ runComdataSync: vi.fn() }))
 vi.mock("@/lib/hub/integrations/wex", () => ({ runWexSync: vi.fn() }))
@@ -41,7 +41,7 @@ import { runTaskAutomations } from "@/lib/hub/tasks"
 import { recomputeLanes } from "@/lib/hub/lanes"
 import { computeDriverScores } from "@/lib/hub/recruiting"
 import { recheckActiveCustomers } from "@/lib/hub/vetting"
-import { runTelematicsSync } from "@/lib/hub/telematics"
+import { runTelematicsSync, runHosViolationAlerts } from "@/lib/hub/telematics"
 import { runEfsSync } from "@/lib/hub/integrations/efs"
 import { runComdataSync } from "@/lib/hub/integrations/comdata"
 import { runWexSync } from "@/lib/hub/integrations/wex"
@@ -92,6 +92,7 @@ beforeEach(() => {
   for (const runner of Object.values(INTEGRATION_JOBS)) {
     runner.mockReset().mockResolvedValue({ inserted: 1, skipped: 0 })
   }
+  vi.mocked(runHosViolationAlerts).mockReset().mockResolvedValue({ checked: 0, alerted: 0 })
   vi.mocked(complianceEntries).mockReset().mockResolvedValue([])
   vi.mocked(getCarrierSettings).mockReset().mockResolvedValue({
     notifications: { officeEmail: null },

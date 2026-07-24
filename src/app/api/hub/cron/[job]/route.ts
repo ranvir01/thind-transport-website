@@ -8,7 +8,7 @@ import { recomputeLanes } from "@/lib/hub/lanes"
 import { runRecurringRebooks } from "@/lib/hub/recurring"
 import { computeDriverScores } from "@/lib/hub/recruiting"
 import { recheckActiveCustomers } from "@/lib/hub/vetting"
-import { runTelematicsSync } from "@/lib/hub/telematics"
+import { runTelematicsSync, runHosViolationAlerts } from "@/lib/hub/telematics"
 import { runEfsSync } from "@/lib/hub/integrations/efs"
 import { runComdataSync } from "@/lib/hub/integrations/comdata"
 import { runWexSync } from "@/lib/hub/integrations/wex"
@@ -118,7 +118,11 @@ export async function GET(
         results[carrier.id] = await recheckActiveCustomers(carrier.id)
       } else if (job === "telematics-sync") {
         // Phase 6: positions/odometer/HOS from the ELD aggregator (when connected).
-        results[carrier.id] = await runTelematicsSync(carrier.id)
+        const sync = await runTelematicsSync(carrier.id)
+        // Roadmap: same run, no new cron slot — a driver who just synced into
+        // violation/critical pages dispatch/owner instead of waiting to be noticed.
+        const hos = sync.connected ? await runHosViolationAlerts(carrier.id) : { checked: 0, alerted: 0 }
+        results[carrier.id] = { ...sync, hosAlerted: hos.alerted }
       } else if (job === "docs-mailbox") {
         // Phase 6: forwarded rate cons auto-file to their loads.
         results[carrier.id] = await pollDocsMailbox(carrier.id)

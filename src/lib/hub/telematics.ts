@@ -9,6 +9,7 @@
  */
 import { query, queryOne } from "./db"
 import { getCredentials, hasCredentials } from "./credentials"
+import { notifyRoles } from "./notify"
 
 export interface TelematicsVehicle {
   externalId: string
@@ -269,4 +270,100 @@ export async function hosLegalityWarning(
     return `ETA needs ~${estimatedDriveHours.toFixed(1)}h of driving but the driver has ~${remainingHours.toFixed(1)}h left (estimate only — the ELD is authoritative)`
   }
   return null
+}
+
+/**
+ * Fleet-wide HOS status board: latest snapshot per active driver, bucketed
+ * so a dispatcher can see who's about to run out of clock without opening
+ * each load. A snapshot older than HOS_STALE_HOURS is treated as unknown
+ * rather than "ok" — a quiet ELD feed must never read as a clean driver.
+ */
+export type HosLevel = "violation" | "critical" | "warning" | "ok" | "stale"
+
+export interface DriverHosStatus {
+  driverId: string
+  driverName: string
+  dutyStatus: string | null
+  driveRemainingMinutes: number | null
+  shiftRemainingMinutes: number | null
+  cycleRemainingMinutes: number | null
+  ts: string
+  level: HosLevel
+}
+
+const HOS_CRITICAL_MINUTES = 60
+const HOS_WARNING_MINUTES = 120
+const HOS_STALE_HOURS = 24
+const HOS_LEVEL_RANK: Record<HosLevel, number> = { violation: 0, critical: 1, warning: 2, stale: 3, ok: 4 }
+
+export function hosLevel(driveRemainingMinutes: number | null, ts: string, now = Date.now()): HosLevel {
+  const ageHours = (now - new Date(ts).getTime()) / 3_600_000
+  if (driveRemainingMinutes == null || ageHours > HOS_STALE_HOURS) return "stale"
+  if (driveRemainingMinutes <= 0) return "violation"
+  if (driveRemainingMinutes <= HOS_CRITICAL_MINUTES) return "critical"
+  if (driveRemainingMinutes <= HOS_WARNING_MINUTES) return "warning"
+  return "ok"
+}
+
+export async function fleetHosStatus(carrierId: string): Promise<DriverHosStatus[]> {
+  const rows = await query<{
+    driver_id: string; full_name: string; duty_status: string | null
+    drive_remaining_minutes: number | null; shift_remaining_minutes: number | null
+    cycle_remaining_minutes: number | null; ts: string
+  }>(
+    `SELECT DISTINCT ON (h.driver_id)
+       h.driver_id, (d.first_name || ' ' || d.last_name) AS full_name, h.duty_status,
+       h.drive_remaining_minutes, h.shift_remaining_minutes, h.cycle_remaining_minutes, h.ts
+     FROM hub.hos_snapshots h
+     JOIN hub.drivers d ON d.id = h.driver_id
+     WHERE h.carrier_id = $1 AND d.deleted_at IS NULL AND d.status = 'active'
+     ORDER BY h.driver_id, h.ts DESC`,
+    [carrierId]
+  )
+  return rows
+    .map((r) => ({
+      driverId: r.driver_id,
+      driverName: r.full_name,
+      dutyStatus: r.duty_status,
+      driveRemainingMinutes: r.drive_remaining_minutes,
+      shiftRemainingMinutes: r.shift_remaining_minutes,
+      cycleRemainingMinutes: r.cycle_remaining_minutes,
+      ts: r.ts,
+      level: hosLevel(r.drive_remaining_minutes, r.ts),
+    }))
+    .sort((a, b) => HOS_LEVEL_RANK[a.level] - HOS_LEVEL_RANK[b.level] || a.driverName.localeCompare(b.driverName))
+}
+
+/**
+ * Called right after runTelematicsSync (same cron run — Hobby plan caps
+ * cron jobs, so this rides the existing telematics-sync schedule instead of
+ * adding a new one). Dedupes on hub.notifications so a driver stuck in
+ * violation only pages dispatch/owner once per ~20h, not every sync.
+ */
+export async function runHosViolationAlerts(carrierId: string): Promise<{ checked: number; alerted: number }> {
+  const statuses = await fleetHosStatus(carrierId)
+  const atRisk = statuses.filter((s) => s.level === "violation" || s.level === "critical")
+  let alerted = 0
+  for (const status of atRisk) {
+    const link = `/hub/drivers/${status.driverId}`
+    const already = await query(
+      `SELECT 1 FROM hub.notifications
+       WHERE carrier_id = $1 AND kind = 'hos_violation' AND link = $2
+         AND created_at > NOW() - INTERVAL '20 hours'
+       LIMIT 1`,
+      [carrierId, link]
+    )
+    if (already.length > 0) continue
+
+    const remaining = status.driveRemainingMinutes ?? 0
+    const label = status.level === "violation" ? "out of driving clock" : "almost out of driving clock"
+    await notifyRoles(carrierId, ["dispatcher", "owner"], {
+      kind: "hos_violation",
+      title: `${status.driverName} is ${label}`,
+      body: `~${Math.max(remaining, 0)} min drive time left (estimate — the ELD is authoritative). Duty status: ${status.dutyStatus ?? "unknown"}.`,
+      link,
+    })
+    alerted++
+  }
+  return { checked: atRisk.length, alerted }
 }
