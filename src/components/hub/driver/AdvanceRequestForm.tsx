@@ -45,7 +45,11 @@ export function AdvanceRequestForm() {
     return (
       <button
         onClick={() => setOpen(true)}
-        className="flex w-full min-h-[52px] items-center justify-center gap-2 rounded-xl border border-gold/40 bg-gold/10 font-display text-sm font-bold uppercase tracking-[0.06em] text-gold hover:bg-gold/20"
+        className="flex w-full min-h-[52px] items-center justify-center gap-2 rounded-xl border font-display text-sm font-bold uppercase tracking-[0.06em] text-[color:var(--driver-accent)] hover:bg-white/5"
+        style={{
+          borderColor: "color-mix(in srgb, var(--driver-accent) 40%, transparent)",
+          backgroundColor: "color-mix(in srgb, var(--driver-accent) 10%, transparent)",
+        }}
       >
         <HandCoins className="h-4 w-4" /> Ask for an advance
       </button>
@@ -53,7 +57,14 @@ export function AdvanceRequestForm() {
   }
 
   return (
-    <form onSubmit={submit} className="rounded-2xl border border-gold/30 bg-gold/[0.05] p-4 space-y-2">
+    <form
+      onSubmit={submit}
+      className="rounded-2xl border p-4 space-y-2"
+      style={{
+        borderColor: "color-mix(in srgb, var(--driver-accent) 30%, transparent)",
+        backgroundColor: "color-mix(in srgb, var(--driver-accent) 5%, transparent)",
+      }}
+    >
       <p className="text-body-xs text-steel-200">
         Approved advances come off your next settlement — no surprises.
       </p>

@@ -34,6 +34,14 @@ const LOAD_CARD_SOURCE = readFileSync(
   join(__dirname, "../../../components/hub/driver/DriverLoadCard.tsx"),
   "utf-8"
 )
+const INCIDENT_FORM_SOURCE = readFileSync(
+  join(__dirname, "../../../components/hub/driver/DriverIncidentForm.tsx"),
+  "utf-8"
+)
+const ADVANCE_REQUEST_FORM_SOURCE = readFileSync(
+  join(__dirname, "../../../components/hub/driver/AdvanceRequestForm.tsx"),
+  "utf-8"
+)
 
 describe("driver layout accent wiring", () => {
   it("sets --driver-accent from the carrier's resolved portal accent", () => {
@@ -116,5 +124,19 @@ describe("driver load card accent tokens", () => {
   it("the status banner, ack button, stop timeline, camera upload, and facility-note tags follow the carrier's accent color, not stock gold", () => {
     expect(LOAD_CARD_SOURCE).not.toMatch(/text-gold|bg-gold|border-gold/)
     expect(LOAD_CARD_SOURCE).toMatch(/var\(--driver-accent\)/)
+  })
+})
+
+describe("driver incident form accent tokens", () => {
+  it("the GPS-location toggle and 'three quick questions' banner follow the carrier's accent color, not stock gold", () => {
+    expect(INCIDENT_FORM_SOURCE).not.toMatch(/text-gold|bg-gold|border-gold/)
+    expect(INCIDENT_FORM_SOURCE).toMatch(/var\(--driver-accent\)/)
+  })
+})
+
+describe("advance request form accent tokens", () => {
+  it("the 'Ask for an advance' button and request form follow the carrier's accent color, not stock gold", () => {
+    expect(ADVANCE_REQUEST_FORM_SOURCE).not.toMatch(/text-gold|bg-gold|border-gold/)
+    expect(ADVANCE_REQUEST_FORM_SOURCE).toMatch(/var\(--driver-accent\)/)
   })
 })
