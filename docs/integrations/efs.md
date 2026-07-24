@@ -8,7 +8,10 @@ the real delivery is a daily SFTP CSV file, not the Basic-auth REST JSON endpoin
 daily file to `/api/hub/webhooks/efs?carrier=<uuid>` and `processEfsEvent` lands it
 through the same idempotent ingest as everything else. **2026-07-20 re-scout: no
 adapter-breaking change** — provisioning path, timeline, and transport all still match;
-one new corroborating field detail found (see "Feed shape").
+one new corroborating field detail found (see "Feed shape"). **2026-07-24 re-scout: no
+adapter-breaking change** — the real column layout is still unobtainable without a
+provisioned file; the "discounts applied" field flagged 2026-07-20 was not
+re-corroborated this pass (see "Feed shape").
 
 ## Provisioning — two real paths (confirmed)
 
@@ -63,6 +66,19 @@ these two fields), so **no registry/credential-schema change is needed**.
   **a discount-applied amount**. Worth adding to `CSV_HEADER_ALIASES` as an optional
   column once a real file confirms the header name, so a discount doesn't silently fold
   into `total` unexplained.
+- **2026-07-24 re-scout: discount field not re-corroborated, not refuted either.** A
+  fresh independent search pass over Motive's WEX/EFS field list this time surfaced a
+  differently-worded composition — driver info, total fuel consumption, date/time,
+  jurisdiction, location, odometer, total cost, vehicle, fuel type, reference number,
+  notes, volume, vendor, source — with no "discounts applied" line, but every vendor
+  page (helpcenter.gomotive.com, support.geotab.com, ascendtms.kayako.com,
+  help.wextelematics.com, developers.samsara.com) still 403s direct fetch in this
+  environment, so this is search-snippet-only like every prior pass: search snippets are
+  partial by construction, so a field missing from one snippet is not evidence it was
+  dropped from the real page. Net: still one corroborating mention (2026-07-20) and zero
+  refutations — keep the 2026-07-20 recommendation (add `discountsapplied` as an
+  optional `CSV_HEADER_ALIASES` entry once a real file confirms the header name) as the
+  open item; do not add it speculatively without a provisioned file.
 
 ## Adapter impact (found 2026-07-11; file-drop remedy shipped 2026-07-17)
 
@@ -146,7 +162,7 @@ couldn't be fully confirmed, but the product naming and separate domain make it
 unrelated — don't chase it as a third developer portal alongside `developer.wexinc.com`
 and `fleetapi.wexinc.com` (both already ruled out, see Auth model).
 
-## Sources (researched 2026-07-11; re-scouted 2026-07-20)
+## Sources (researched 2026-07-11; re-scouted 2026-07-20, 2026-07-24)
 
 - Fleetio EFS integration help (Data Sharing Preferences flow, Data Feed User/Password,
   5-business-day provisioning, ~5-min partner sync): help.fleetio.com / fleetio.helpjuice.com
@@ -163,3 +179,12 @@ and `fleetapi.wexinc.com` (both already ruled out, see Auth model).
   (fleetrabbit.com); Motive's transaction-field list (gomotive.com, via search snippet)
   corroborates the assumed field set and adds a "discounts applied" field not yet in
   `normalizeEfsRecord`.
+- 2026-07-24 pass (search-snippet only, direct fetch 403 again on
+  helpcenter.gomotive.com, support.geotab.com, ascendtms.kayako.com,
+  help.wextelematics.com, and developers.samsara.com — same wall as every prior pass):
+  no new source landed the actual SFTP CSV header row; a fresh Motive-field-list search
+  snippet didn't repeat "discounts applied" but also didn't cover the full field table,
+  so this neither confirms nor refutes the 2026-07-20 finding — Fleetio's ~5-minute
+  partner sync cadence and the "up to 5 business days" / Data Sharing Preferences
+  provisioning flow both reconfirmed via help.fleetio.com / fleetio.helpjuice.com search
+  snippets.
