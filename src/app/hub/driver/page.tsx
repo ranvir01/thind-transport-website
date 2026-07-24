@@ -16,6 +16,12 @@ import { ExpiryPill } from "@/components/hub/ui"
 
 export const dynamic = "force-dynamic"
 
+/** Same border/background mix OfflineSync uses for --driver-accent chrome (opacity modifiers drop silently on CSS-var colors — AGENTS.md). */
+const ACCENT_CARD_STYLE = {
+  borderColor: "color-mix(in srgb, var(--driver-accent) 40%, transparent)",
+  backgroundColor: "color-mix(in srgb, var(--driver-accent) 8%, transparent)",
+} as const
+
 export default async function DriverHomePage() {
   const user = await requireDriverUser()
   const [loads, announcements, requests, pay, expiries, settings, hos] = await Promise.all([
@@ -44,8 +50,8 @@ export default async function DriverHomePage() {
       ))}
 
       {weatherAlerts.length > 0 ? (
-        <section className="rounded-2xl border border-gold/40 bg-gold/[0.08] p-4">
-          <p className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-gold">
+        <section className="rounded-2xl border p-4" style={ACCENT_CARD_STYLE}>
+          <p className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-[color:var(--driver-accent)]">
             <CloudLightning className="h-4 w-4" /> Weather on your route
           </p>
           {weatherAlerts.slice(0, 2).map((alert, i) => (
@@ -82,7 +88,7 @@ export default async function DriverHomePage() {
           <p className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-steel-400">
             <Wallet className="h-3.5 w-3.5" /> Last pay
           </p>
-          <p className="mt-1 font-display text-xl font-extrabold text-gold">
+          <p className="mt-1 font-display text-xl font-extrabold text-[color:var(--driver-accent)]">
             {pay ? fmtCentsExact(pay.net_cents) : "—"}
           </p>
           {pay ? (
@@ -119,7 +125,7 @@ export default async function DriverHomePage() {
               { label: "Cycle", minutes: hos.cycle_remaining_minutes },
             ].map((clock) => (
               <div key={clock.label} className="rounded-xl bg-white/[0.04] py-2">
-                <p className="font-display text-lg font-extrabold text-gold">
+                <p className="font-display text-lg font-extrabold text-[color:var(--driver-accent)]">
                   {clock.minutes != null ? `${Math.floor(clock.minutes / 60)}h ${clock.minutes % 60}m` : "—"}
                 </p>
                 <p className="text-[10px] font-bold uppercase tracking-wider text-steel-400">{clock.label}</p>
