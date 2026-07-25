@@ -8,6 +8,8 @@ import {
 } from "@/lib/hub/reports"
 import { applyReportRangeAction, resetReportRangeAction } from "./actions"
 import { computeFleetKpis } from "@/lib/hub/kpi"
+import { getDeadheadReport } from "@/lib/hub/deadhead"
+import { HelpTip } from "@/components/hub/HelpTip"
 import { requirePermissionPage } from "@/lib/hub/session"
 import { fmtCents } from "@/lib/hub/types"
 import { Panel, PageHeader, fieldCls } from "@/components/hub/ui"
@@ -34,10 +36,11 @@ export default async function ReportsPage({
     if (stored) redirect(`/hub/reports?from=${stored.from}&to=${stored.to}`)
   }
   const range = resolvePnlRange(params.from, params.to)
-  const [pnl, lanes, driverPayCents] = await Promise.all([
+  const [pnl, lanes, driverPayCents, deadhead] = await Promise.all([
     truckPnlRange(user.carrierId, range),
     laneLeaderboardRange(user.carrierId, range, 20),
     driverPayCentsForRange(user.carrierId, range),
+    getDeadheadReport(user.carrierId, range),
   ])
   const totals = pnl.reduce(
     (acc, row) => ({
@@ -228,6 +231,89 @@ export default async function ReportsPage({
         <Panel className="p-4"><span className="text-label text-fg-3 uppercase">Other</span><p className="mt-2 font-semibold text-xl text-fg">{fmtCents(totals.other)}</p></Panel>
         <Panel className="p-4"><span className="text-label text-fg-3 uppercase">Net</span><p className={`mt-2 font-display text-xl font-extrabold ${totals.net >= 0 ? "text-ok" : "text-bad"}`}>{fmtCents(totals.net)}</p></Panel>
       </div>
+
+      {/* Deadhead: what dispatch typed vs what the fuel card measured. The two
+          numbers disagreeing is the feature, not a bug to reconcile away. */}
+      <div className="mb-2 mt-6 flex items-center gap-2">
+        <h2 className="font-display text-lg font-bold uppercase tracking-wide text-fg">
+          Deadhead — typed vs measured
+        </h2>
+        <HelpTip title="Two numbers on purpose">
+          The typed number is whatever dispatch entered on each load — nothing checks it. The
+          measured number is fuel-card gallons × your fleet MPG ({deadhead.mpg}) minus the loads&apos;
+          loaded miles: miles the trucks actually ran that nobody billed. If the measured number is
+          well above the typed one, empty miles are hiding in the book. &quot;Thin&quot; means too
+          few fuel rows in this range (or fuel rows are missing) to lean on the estimate.
+        </HelpTip>
+      </div>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+        <Panel className="p-4">
+          <span className="text-label text-fg-3 uppercase">Typed (dispatch)</span>
+          <p className="mt-2 font-mono text-xl font-medium text-fg tabular-nums">
+            {deadhead.fleet.typedDeadheadPct == null ? "—" : `${deadhead.fleet.typedDeadheadPct}%`}
+          </p>
+          <p className="mt-1 text-body-xs text-fg-3">{deadhead.fleet.typedDeadheadMiles.toLocaleString()} mi typed on loads</p>
+        </Panel>
+        <Panel className="p-4">
+          <span className={cn("text-label uppercase", (deadhead.fleet.measuredDeadheadPct ?? 0) > (deadhead.fleet.typedDeadheadPct ?? 0) + 3 ? "text-warn" : "text-fg-3")}>
+            Measured (fuel × MPG)
+          </span>
+          <p className={cn("mt-2 font-mono text-xl font-medium tabular-nums", (deadhead.fleet.measuredDeadheadPct ?? 0) > (deadhead.fleet.typedDeadheadPct ?? 0) + 3 ? "text-warn" : "text-fg")}>
+            {deadhead.fleet.measuredDeadheadPct == null ? "—" : `${deadhead.fleet.measuredDeadheadPct}%`}
+          </p>
+          <p className="mt-1 text-body-xs text-fg-3">
+            {deadhead.fleet.basis === "none"
+              ? "no tractor-fuel rows in range"
+              : `${deadhead.fleet.measuredEmptyMiles?.toLocaleString()} empty of ${deadhead.fleet.measuredTotalMiles?.toLocaleString()} mi driven`}
+          </p>
+        </Panel>
+        <Panel className="p-4">
+          <span className="text-label text-fg-3 uppercase">Basis</span>
+          <p className="mt-2 font-semibold text-xl text-fg">{deadhead.fleet.basis === "fuel" ? "Fuel card" : "—"}</p>
+          <p className="mt-1 text-body-xs text-fg-3">gallons × {deadhead.mpg} MPG (reefer/DEF excluded)</p>
+        </Panel>
+        <Panel className="p-4">
+          <span className={cn("text-label uppercase", deadhead.fleet.confidence === "good" ? "text-fg-3" : "text-warn")}>Confidence</span>
+          <p className={cn("mt-2 font-semibold text-xl", deadhead.fleet.confidence === "good" ? "text-ok" : deadhead.fleet.confidence === "thin" ? "text-warn" : "text-fg-3")}>
+            {deadhead.fleet.confidence === "none" ? "No data" : deadhead.fleet.confidence === "thin" ? "Thin" : "Good"}
+          </p>
+          <p className="mt-1 text-body-xs text-fg-3">from fuel-row coverage in this range</p>
+        </Panel>
+      </div>
+      {deadhead.trucks.length > 0 ? (
+        <Panel className="mb-6 overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-border text-left text-label uppercase text-fg-3">
+                <th className="p-3">Truck</th>
+                <th className="p-3 text-right">Loaded mi</th>
+                <th className="p-3 text-right">Typed deadhead</th>
+                <th className="p-3 text-right">Measured deadhead</th>
+                <th className="p-3 text-right">Gallons</th>
+                <th className="p-3 text-right">Confidence</th>
+              </tr>
+            </thead>
+            <tbody>
+              {deadhead.trucks.map((t) => (
+                <tr key={t.truckId} className="border-b border-border last:border-0">
+                  <td className="p-3 font-semibold text-fg">{t.truckUnit}</td>
+                  <td className="p-3 text-right font-mono tabular-nums text-fg-2">{t.loadedMiles.toLocaleString()}</td>
+                  <td className="p-3 text-right font-mono tabular-nums text-fg-2">
+                    {t.estimate.typedDeadheadPct == null ? "—" : `${t.estimate.typedDeadheadPct}%`}
+                  </td>
+                  <td className={cn("p-3 text-right font-mono tabular-nums", (t.estimate.measuredDeadheadPct ?? 0) > (t.estimate.typedDeadheadPct ?? 0) + 3 ? "text-warn" : "text-fg-2")}>
+                    {t.estimate.measuredDeadheadPct == null ? "—" : `${t.estimate.measuredDeadheadPct}%`}
+                  </td>
+                  <td className="p-3 text-right font-mono tabular-nums text-fg-2">{t.gallons.toLocaleString()}</td>
+                  <td className={cn("p-3 text-right text-body-xs", t.estimate.confidence === "good" ? "text-ok" : t.estimate.confidence === "thin" ? "text-warn" : "text-fg-3")}>
+                    {t.estimate.confidence}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </Panel>
+      ) : null}
 
       <Panel className="overflow-x-auto">
         <table className="w-full text-sm">

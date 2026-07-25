@@ -1,6 +1,7 @@
 import Link from "next/link"
 import { Download, FileText } from "lucide-react"
 import { getAgingSummary, getCustomerStatements } from "@/lib/hub/invoices"
+import { getCashCycle } from "@/lib/hub/cash-cycle"
 import { requirePermissionPage } from "@/lib/hub/session"
 import { can } from "@/lib/hub/permissions"
 import { fmtCents } from "@/lib/hub/types"
@@ -36,10 +37,41 @@ const QBO_IIF_EXPORTS = [
 export default async function MoneyPage() {
   const user = await requirePermissionPage("money:read")
   const canWrite = can(user.role, "money:write")
-  const [aging, statements] = await Promise.all([
+  const [aging, statements, cycle] = await Promise.all([
     getAgingSummary(user.carrierId),
     getCustomerStatements(user.carrierId),
+    getCashCycle(user.carrierId),
   ])
+
+  const fmtDays = (d: number | null) => (d == null ? "—" : `${d}d`)
+  const CYCLE_LEGS = [
+    {
+      label: "Delivered → POD",
+      who: "driver",
+      leg: cycle.stats.deliveredToPod,
+      // A POD should be in hand within a couple of days of delivery.
+      slow: (cycle.stats.deliveredToPod.medianDays ?? 0) > 3,
+    },
+    {
+      label: "POD → invoice",
+      who: "office — yours to fix",
+      leg: cycle.stats.podToInvoice,
+      // The office controls this leg entirely; same-or-next-day is the bar.
+      slow: (cycle.stats.podToInvoice.medianDays ?? 0) > 2,
+    },
+    {
+      label: "Invoice → paid",
+      who: "customer",
+      leg: cycle.stats.invoiceToPaid,
+      slow: false,
+    },
+    {
+      label: "Delivered → paid",
+      who: "total",
+      leg: cycle.stats.deliveredToPaid,
+      slow: false,
+    },
+  ]
 
   return (
     <div>
@@ -106,6 +138,54 @@ export default async function MoneyPage() {
           ))}
         </div>
       </Panel>
+
+      {/* Cash cycle — how long a dollar takes to come home, split by who owns each leg */}
+      <div className="mb-3 flex items-center gap-2">
+        <h2 className="font-display text-lg font-bold uppercase tracking-wide text-fg">Cash cycle</h2>
+        <HelpTip title="Reading the cycle">
+          Median days per leg over the last {cycle.windowDays} days ({cycle.sampleSize} delivered
+          loads). The POD→invoice leg is the one the office fully controls — shrinking it is free
+          money. A big gap between median and mean means a few loads are stuck, not the process.
+          Loads are only counted on legs they&apos;ve finished, so unpaid invoices don&apos;t
+          read as zero days.
+        </HelpTip>
+      </div>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+        {CYCLE_LEGS.map(({ label, who, leg, slow }) => (
+          <Panel key={label} className="p-4">
+            <span className={cn("text-label uppercase", slow ? "text-warn" : "text-fg-3")}>{label}</span>
+            <p className={cn("mt-2 font-semibold text-xl tabular-nums", slow ? "text-warn" : "text-fg")}>
+              {fmtDays(leg.medianDays)}
+              <span className="ml-2 text-body-xs font-normal text-fg-3">
+                {leg.meanDays != null ? `mean ${fmtDays(leg.meanDays)}` : ""}
+              </span>
+            </p>
+            <p className="mt-1 text-body-xs text-fg-3">
+              {leg.count} load{leg.count === 1 ? "" : "s"} · {who}
+            </p>
+          </Panel>
+        ))}
+      </div>
+      {cycle.unbilled.count > 0 ? (
+        <Panel className="mb-6 border-warn-soft bg-warn-soft p-4">
+          <p className="text-body-sm text-warn">
+            <span className="font-semibold">
+              {cycle.unbilled.count} delivered load{cycle.unbilled.count === 1 ? "" : "s"} with no
+              invoice — {fmtCents(cycle.unbilled.totalCents)} not yet billed.
+            </span>
+            {cycle.unbilled.settledCount > 0 ? (
+              <>
+                {" "}
+                {cycle.unbilled.settledCount} of them already settled to the driver
+                ({fmtCents(cycle.unbilled.settledCents)} paid out with nothing billed against it).
+              </>
+            ) : null}{" "}
+            <Link href="/hub/loads?status=pod_received" className="font-semibold underline underline-offset-2">
+              Invoice them now
+            </Link>
+          </p>
+        </Panel>
+      ) : null}
 
       {/* Customer statements */}
       <h2 className="font-display text-lg font-bold uppercase tracking-wide text-fg mb-3">Customer statements</h2>

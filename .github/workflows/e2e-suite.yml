@@ -1,0 +1,123 @@
+# E2E smokes in CI (AGENT_TASKS Wave 1, Task 4).
+#
+# 50+ scripts/e2e-*-smoke.mjs cover dispatch, invoices, settlements, IFTA,
+# the driver PWA, the portal and tenant isolation — and until this workflow
+# they ran only when an agent remembered to run them. The most expensive
+# money paths in the app were guarded by a habit.
+#
+# Two jobs:
+#   unit  — vitest + the cheap static gates (hobby-cron-guard), fast signal.
+#   e2e   — full rig: Postgres service container (same shape as
+#           docker-compose.yml), migrate, seed, production build, server,
+#           then scripts/e2e-run-all.mjs. Failure artifacts (screenshots,
+#           per-script logs, server log) upload so a red run is diagnosable
+#           without re-running locally.
+#
+# Known constraint: next/font fetches Barlow Condensed + Source Sans 3 from
+# fonts.googleapis.com AT BUILD TIME. GitHub-hosted runners have that egress;
+# a self-hosted or egress-restricted runner will fail the build for a reason
+# unrelated to the change under test. If that starts happening, self-host the
+# two font families under src/app/fonts/ and switch to next/font/local.
+#
+# This workflow deliberately does not touch the drain/prune workflows — they
+# publish history; this one only judges it.
+
+name: E2E smoke suite
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: e2e-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  unit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+        env:
+          # The unit job never launches a browser; skip the ~130MB download.
+          PUPPETEER_SKIP_DOWNLOAD: "1"
+      - name: Unit tests
+        run: npm test
+      - name: Hobby cron guard (vercel.json cron budget)
+        run: node scripts/hobby-cron-guard.mjs
+
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: hubapp
+          POSTGRES_PASSWORD: hubpass
+          POSTGRES_DB: hubdb
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U hubapp -d hubdb"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      POSTGRES_URL: postgres://hubapp:hubpass@localhost:5432/hubdb
+      NEXTAUTH_URL: http://localhost:3000
+      # CI-only values; nothing here is a real secret and none of it can
+      # reach production. CREDENTIALS_KEY must be 32+ chars for the vault.
+      NEXTAUTH_SECRET: ci-only-nextauth-secret-not-production
+      CREDENTIALS_KEY: ci-only-credentials-key-32-chars-min
+      CRON_SECRET: ci-only-cron-secret
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Cache Next build cache
+        uses: actions/cache@v4
+        with:
+          path: .next/cache
+          key: next-cache-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-${{ github.sha }}
+          restore-keys: |
+            next-cache-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-
+      - run: npm ci
+      - name: Migrate + seed demo data
+        run: |
+          npm run db:migrate
+          npm run seed:demo
+      - name: Production build
+        run: npm run build
+      - name: Connections check
+        run: npm run connections:check
+      - name: Start server
+        run: |
+          npm run start > server.log 2>&1 &
+          for i in $(seq 1 30); do
+            curl -sf -o /dev/null http://localhost:3000/ && break
+            sleep 2
+          done
+          curl -sf -o /dev/null http://localhost:3000/ || { echo "server never came up"; tail -50 server.log; exit 1; }
+      - name: E2E smoke suite
+        run: node scripts/e2e-run-all.mjs
+      - name: Interaction battery
+        run: node scripts/e2e-interaction-battery.mjs
+      - name: Upload failure artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-failure-${{ github.run_id }}
+          retention-days: 7
+          if-no-files-found: ignore
+          path: |
+            e2e-shots*/
+            server.log

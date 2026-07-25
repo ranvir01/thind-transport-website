@@ -4,6 +4,7 @@ import { z } from "zod"
 import { COMPANY_INFO } from "@/lib/constants"
 import { createMailTransport, isEmailConfigured, mailFrom } from "@/lib/mailer"
 import { savePublicApplication, markPublicApplicationEmailed } from "@/lib/driver-db"
+import { honeypotTripped, publicFormBlocked } from "@/lib/public-form-guard"
 
 const preQualifySchema = z.object({
   firstName: z.string().min(2, "First Name is required"),
@@ -59,6 +60,10 @@ const checkQualification = (data: any): boolean => {
 
 export async function submitPreQualification(prevState: PreQualifyState, formData: FormData): Promise<PreQualifyState> {
   try {
+    // Bot filled the invisible field → fake success, no signal to tune on.
+    if (honeypotTripped(formData)) {
+      return { success: true, message: "Pre-qualification submitted successfully! We will contact you shortly." }
+    }
     const rawData = {
       firstName: formData.get("firstName"),
       lastName: formData.get("lastName"),
@@ -94,6 +99,14 @@ export async function submitPreQualification(prevState: PreQualifyState, formDat
     }
 
     const data = validatedData.data
+
+    if (await publicFormBlocked(data.email)) {
+      return {
+        success: false,
+        message: `Something went wrong. Please try again or call ${COMPANY_INFO.phone}.`,
+      }
+    }
+
     const isQualified = checkQualification(data)
 
     // Persist FIRST — never lose a lead because email is down.

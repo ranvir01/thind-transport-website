@@ -7,6 +7,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Calendar, Clock, CheckCircle2, Phone, Video } from "lucide-react"
 import { toast } from "sonner"
+import { HONEYPOT_FIELD, readHoneypotValue } from "@/lib/honeypot"
+import { HoneypotField } from "@/components/shared/HoneypotField"
 
 export default function ScheduleMeetingPage() {
   const [formData, setFormData] = useState({
@@ -27,7 +29,7 @@ export default function ScheduleMeetingPage() {
       const response = await fetch("/api/schedule-meeting", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({ ...formData, [HONEYPOT_FIELD]: readHoneypotValue() }),
       })
 
       if (!response.ok) {
@@ -88,7 +90,8 @@ export default function ScheduleMeetingPage() {
             </p>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form onSubmit={handleSubmit} className="relative space-y-6">
+              <HoneypotField />
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <Label>Full Name *</Label>

@@ -30,7 +30,7 @@ const KINDS: { key: ImportKind; label: string; hint: string; fields: readonly Im
   { key: "fuel", label: "Fuel", hint: "Any card program statement (EFS, Comdata, WEX…). Idempotent — re-import safely.", fields: FUEL_IMPORT_FIELDS, templateKind: "fuel" },
   { key: "tolls", label: "Tolls", hint: "Transponder statements (BestPass, state systems).", fields: TOLL_IMPORT_FIELDS, templateKind: "tolls" },
   { key: "positions", label: "Positions", hint: "ELD GPS export — feeds the map and the IFTA engine.", fields: POSITION_IMPORT_FIELDS, templateKind: "positions" },
-  { key: "mileage", label: "IFTA mileage", hint: "TruckX-style jurisdiction-mile summaries (per truck per quarter).", fields: MILEAGE_IMPORT_FIELDS, templateKind: "positions" },
+  { key: "mileage", label: "IFTA mileage", hint: "TruckX-style jurisdiction-mile summaries (per truck per quarter). Replaces each quarter in the file — upload the FULL fleet's miles for a quarter, not one truck's.", fields: MILEAGE_IMPORT_FIELDS, templateKind: "positions" },
 ]
 
 type Mapping = Record<string, number | undefined>
@@ -250,6 +250,14 @@ export function ImportWizard({ initialKind = "loads" }: { initialKind?: string }
           1 · Upload {def.label.toLowerCase()} CSV
         </h2>
         <p className="text-body-sm text-fg-2 mb-3">{def.hint}</p>
+        {kind === "mileage" ? (
+          <p className="mb-3 rounded-lg border border-warn-soft bg-warn-soft p-3 text-body-sm text-warn">
+            An IFTA-mileage import <strong>replaces</strong> that quarter&apos;s imported mileage
+            on file — every truck, not just the ones in your file. Re-uploading a corrected file
+            for one truck silently drops the others&apos; rows for that quarter, so always upload
+            the whole quarter together.
+          </p>
+        ) : null}
         {(kind === "fuel" || kind === "tolls") ? (
           <div className="mb-3 max-w-xs">
             <label className={labelCls} htmlFor="program">Program name (EFS, Comdata…)</label>
@@ -416,6 +424,11 @@ export function ImportWizard({ initialKind = "loads" }: { initialKind?: string }
             {result.customersCreated != null ? ` · ${result.customersCreated} customers created` : ""}
             {result.skippedDuplicates != null ? ` · ${result.skippedDuplicates} duplicates skipped` : ""}
             {(result.vinDecoded ?? 0) > 0 ? ` · ${result.vinDecoded} decoded from VIN` : ""}
+            {(result.rowsReplaced ?? 0) > 0 ? (
+              <span className="text-warn">{` · replaced ${result.rowsReplaced} previously imported rows for the quarter(s) in this file`}</span>
+            ) : (
+              ""
+            )}
             {(result.invitesSent ?? 0) > 0 ? ` · ${result.invitesSent} app invites emailed` : ""}
             {(result.invitesFailed ?? 0) > 0 ? (
               <span className="text-warn">{` · ${result.invitesFailed} invites couldn't be emailed`}</span>

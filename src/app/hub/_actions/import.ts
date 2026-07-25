@@ -29,6 +29,8 @@ export interface ImportResult {
   vinDecoded?: number
   invitesSent?: number
   invitesFailed?: number
+  /** Mileage import only: prior imported rows deleted by this quarter-replace. */
+  rowsReplaced?: number
 }
 
 type GenericRow = Record<string, string>
@@ -660,5 +662,5 @@ export async function importMileageAction(rows: GenericRow[]): Promise<ImportRes
     newValue: { runId, imported, failed: failed.length, quarters, rowsReplaced: replaced },
   })
   revalidatePath("/hub/compliance/ifta")
-  return { ok: failed.length === 0, imported, failed }
+  return { ok: failed.length === 0, imported, failed, rowsReplaced: replaced }
 }

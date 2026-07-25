@@ -19,6 +19,8 @@ import { toast } from "sonner"
 import { Loader2, CheckCircle2, AlertCircle, XCircle } from "lucide-react"
 import { submitPreQualification } from "@/app/actions/submit-pre-qualification"
 import { cn } from "@/lib/utils"
+import { HONEYPOT_FIELD, readHoneypotValue } from "@/lib/honeypot"
+import { HoneypotField } from "@/components/shared/HoneypotField"
 import Link from "next/link"
 
 const formSchema = z.object({
@@ -92,6 +94,10 @@ export function PreQualificationForm() {
           formData.append(key, value)
         }
       })
+      // react-hook-form only serializes registered fields, so carry the
+      // honeypot's DOM value across by hand.
+      const honeypot = readHoneypotValue()
+      if (honeypot) formData.append(HONEYPOT_FIELD, honeypot)
 
       const result = await submitPreQualification({ success: false, message: "" }, formData)
 
@@ -177,7 +183,8 @@ export function PreQualificationForm() {
         </div>
       )}
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+      <form onSubmit={handleSubmit(onSubmit)} className="relative space-y-8">
+        <HoneypotField />
         {/* Basic Information */}
         <div className="space-y-6">
           <h3 className="text-xl font-bold text-slate-800 border-b pb-2">Basic Information</h3>

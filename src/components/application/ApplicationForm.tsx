@@ -23,6 +23,8 @@ import { captureLead } from "@/app/actions/capture-lead"
 import { submitApplication } from "@/app/actions/submit-application"
 import { PAY_RATES, COMPANY_INFO } from "@/lib/constants"
 import { applyProgressPercent } from "./apply-progress"
+import { HONEYPOT_FIELD, readHoneypotValue } from "@/lib/honeypot"
+import { HoneypotField } from "@/components/shared/HoneypotField"
 
 // Combined Schema
 const formSchema = z.object({
@@ -160,7 +162,9 @@ export function ApplicationForm() {
           formData.append("driverType", values.driverType)
           formData.append("experienceYears", values.experienceYears)
           formData.append("source", "Application Form Step 2")
-          
+          const hp = readHoneypotValue()
+          if (hp) formData.append(HONEYPOT_FIELD, hp)
+
           await captureLead({ success: false, message: "" }, formData)
         } catch (err) {
           console.error(err)
@@ -195,6 +199,11 @@ export function ApplicationForm() {
         }
       })
       
+      // react-hook-form only serializes registered fields — carry the honeypot
+      // across from the DOM so the server-side check still sees it.
+      const honeypot = readHoneypotValue()
+      if (honeypot) formData.append(HONEYPOT_FIELD, honeypot)
+
       // Append files
       if (uploadedFiles.cdlLicense) formData.append("cdlLicense", uploadedFiles.cdlLicense)
       if (uploadedFiles.medicalCard) formData.append("medicalCard", uploadedFiles.medicalCard)
@@ -338,7 +347,8 @@ export function ApplicationForm() {
         </div>
       )}
 
-      <form onSubmit={handleSubmit(onSubmit)}>
+      <form onSubmit={handleSubmit(onSubmit)} className="relative">
+        <HoneypotField />
         {/* STEP 1: PREQUALIFICATION */}
         {step === 1 && (
           <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-500">

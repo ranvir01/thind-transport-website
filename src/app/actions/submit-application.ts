@@ -4,6 +4,7 @@ import { z } from "zod"
 import { COMPANY_INFO } from "@/lib/constants"
 import { createMailTransport, isEmailConfigured, mailFrom } from "@/lib/mailer"
 import { savePublicApplication, markPublicApplicationEmailed } from "@/lib/driver-db"
+import { honeypotTripped, publicFormBlocked } from "@/lib/public-form-guard"
 
 // Define the schema for server-side validation (should match client-side)
 const applicationSchema = z.object({
@@ -249,6 +250,10 @@ Via: Thind Transport Website
 
 export async function submitApplication(prevState: ApplicationState, formData: FormData): Promise<ApplicationState> {
   try {
+    // Bot filled the invisible field → fake success, no signal to tune on.
+    if (honeypotTripped(formData)) {
+      return { success: true, message: "Application submitted successfully! Our team will contact you within one business day." }
+    }
     // Extract data from FormData
     const rawData = {
       firstName: formData.get("firstName"),
@@ -299,6 +304,16 @@ export async function submitApplication(prevState: ApplicationState, formData: F
     }
 
     const data = validatedData.data
+
+    // This action is the most expensive of the public four (email + PDF), so
+    // it gets the same throttle. Copy matches the ordinary failure path.
+    if (await publicFormBlocked(data.email)) {
+      return {
+        success: false,
+        message: `We hit a technical issue saving your application. Please call ${COMPANY_INFO.phone} or text us — we'll take your info directly.`,
+      }
+    }
+
     const applicantName = `${data.firstName} ${data.lastName}`
 
     // 1) Persist FIRST — the application must never be lost because email is down.
