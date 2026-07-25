@@ -21,7 +21,7 @@ export function RoutesSection() {
             Routes & lanes
           </div>
           <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black text-white mb-3 sm:mb-6 leading-tight tracking-tight">
-            Choose Your Schedule, Choose Your Life
+            Choose the schedule that fits your life
           </h2>
           <p className="text-sm sm:text-base md:text-xl text-steel-300 leading-relaxed max-w-3xl mx-auto">
             Flexible options to fit your lifestyle - from home every night to cross-country adventures
@@ -114,7 +114,7 @@ export function RoutesSection() {
                   <div className="inline-flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 md:w-20 md:h-20 bg-green-500/10 rounded-xl sm:rounded-2xl mb-3 sm:mb-4 shadow-inner border border-green-500/20 group-hover:scale-110 transition-transform duration-300">
                     <MapPin className="h-7 w-7 sm:h-8 sm:w-8 md:h-10 md:w-10 text-green-500" />
                   </div>
-                  <Badge className="mb-2 sm:mb-3 bg-green-500/20 text-green-300 border-green-500/30 font-bold text-xs">Home Weekly ⭐</Badge>
+                  <Badge className="mb-2 sm:mb-3 bg-green-500/20 text-green-300 border-green-500/30 font-bold text-xs">Home weekly</Badge>
                   <h3 className="text-xl sm:text-2xl font-black mb-2 sm:mb-3 text-white">Regional Routes</h3>
                   <div className="flex flex-col items-center gap-0.5 sm:gap-1 mb-2">
                     <span className="text-2xl sm:text-3xl font-black text-green-400">$63K-$73K</span>
@@ -184,7 +184,7 @@ export function RoutesSection() {
                   <div className="inline-flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 md:w-20 md:h-20 bg-purple-500/10 rounded-xl sm:rounded-2xl mb-3 sm:mb-4 shadow-inner border border-purple-500/20 group-hover:scale-110 transition-transform duration-300">
                     <Globe className="h-7 w-7 sm:h-8 sm:w-8 md:h-10 md:w-10 text-purple-500" />
                   </div>
-                  <Badge className="mb-2 sm:mb-3 bg-purple-500/20 text-purple-300 border-purple-500/30 font-bold text-xs">Highest Earnings 💰</Badge>
+                  <Badge className="mb-2 sm:mb-3 bg-purple-500/20 text-purple-300 border-purple-500/30 font-bold text-xs">Highest earnings</Badge>
                   <h3 className="text-xl sm:text-2xl font-black mb-2 sm:mb-3 text-white">OTR Routes</h3>
                   <div className="flex flex-col items-center gap-0.5 sm:gap-1 mb-2">
                     <span className="text-2xl sm:text-3xl font-black text-purple-400">$65K-$280K</span>

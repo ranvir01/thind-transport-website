@@ -7,8 +7,6 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import {
   COMPANY_INFO,
-  MAJOR_CLIENTS,
-  PREMIER_BROKERS,
   TRUST_INDICATORS,
 } from "@/lib/constants"
 import {
@@ -37,7 +35,6 @@ const FooterLinkSections = () => {
     { href: "/pay-rates", label: "Pay Rates" },
     { href: "/benefits", label: "Benefits" },
     { href: "/routes", label: "Routes & Lanes" },
-    { href: "/testimonials", label: "Driver Reviews" },
     { href: "/resources", label: "Driver Resources" },
     { href: "/cdl-jobs", label: "Jobs by State" },
     { href: "/driver/login", label: "Driver Login" },

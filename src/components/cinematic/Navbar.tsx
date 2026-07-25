@@ -30,14 +30,13 @@ const driverMenuItems = [
   { href: "/benefits", label: "Benefits", description: "Full package", icon: Heart },
   { href: "/routes", label: "Routes", description: "Nationwide lanes", icon: MapPin },
   { href: "/cdl-jobs", label: "Jobs by State", description: "Hiring in all 48", icon: MapPin },
-  { href: "/testimonials", label: "Testimonials", description: "Driver reviews", icon: MessageSquare },
   { href: "/resources", label: "Resources", description: "Driver tools", icon: BookOpen },
 ]
 
 const companyMenuItems = [
   { href: "/about", label: "About Us", description: `Family-run since ${COMPANY_INFO.founded}`, icon: Users },
   { href: "/fleet", label: "Our Fleet", description: "2024 Cascadias", icon: Truck },
-  { href: "/shippers", label: "Ship With Us", description: "Freight quotes, direct", icon: Truck },
+  { href: "/shippers", label: "Ship with us", description: "Freight quotes, direct", icon: Truck },
   { href: "/loadoff", label: "LoadOff TMS", description: "The software we run on", icon: LayoutDashboard },
   { href: "/veterans", label: "Veterans", description: "We honor service", icon: Shield },
 ]
