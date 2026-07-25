@@ -799,3 +799,48 @@ Backlog:
 - Carried, unchanged: npm audit's 3 high-severity findings (owner-approval-gated semver-major bump);
   Rust sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision); IFTA due-date roll not
   accounting for legal holidays (documented scope decision).
+
+## QA rig drive on main@6ba902c2 — 2026-07-25 ~02:37 UTC (owner/dispatcher/driver charter)
+
+Ran the standing QA-routine charter (`docs/agent-improvement-loop.md` §5): no feature work, stand up
+the local rig from scratch, drive real owner/dispatcher/driver/broker/shipper/portal flows, probe
+`thindtransport.com` read-only, fix only outright regressions from the last 3h of commits.
+
+**Last-3h review:** `origin/main` HEAD (`6ba902c2`) landed at 21:56:50 UTC, ~4h40m before this cycle
+started — nothing landed inside the 3-hour window, so nothing to fix forward. Spot-checked the five
+lanes absorbed in the preceding cycle (`495673b` analytics, `a6e5541` integrations, `f8cecd3` roadmap
+HOS dashboard incl. its `d.carrier_id = h.carrier_id` tenancy guard, `38c2e45` docs, `1626a34` driver
+danger-color swap) against AGENTS.md's standing rules — no violations, all already build+test verified
+per their own commit messages.
+
+**Local rig from scratch:** Postgres 16 started (was down), `loadoff` role+db created (pitfall #9),
+canvas native deps + `npm install` (748 packages, Puppeteer resolved the sandbox's bundled Chromium
+automatically), `.env.local` written (`NEXTAUTH_SECRET`/`CREDENTIALS_KEY`/`CRON_SECRET` generated,
+`POSTGRES_URL` to the local db, SMTP left blank per pitfall #6), `db:migrate` 21/21, `seed:demo`.
+Verified: `npm run build` clean (all routes), `npx vitest run` 188 files/1580 tests green, `npm run
+lint` clean.
+
+**Full battery** against `next start` (prod build): `scripts/e2e-battery.mjs` — all 49
+`e2e-*-smoke.mjs` scripts plus the visual sweep, **49/49 PASS**, 0 console errors (checked
+`e2e-shots-battery/*.log` directly, not just the summary line). Covers owner/dispatcher (office,
+dispatch board, loads, fleet, reports, safety incl. the new HOS panel, settings, users, tenant
+isolation), driver (login, DVIR, POD, offline replay queue, incident reporting), and
+broker/shipper/portal/track surfaces.
+
+**Production probe:** direct HTTPS to `thindtransport.com` is 403-blocked at the sandbox's CONNECT
+proxy (expected per §3b, not a site defect). Fell back to Vercel MCP: the `production`-target `READY`
+deployment (`dpl_3PG6i44EKWk6vWQAZzDzyXZmsH9D`) is aliased to `thindtransport.com` at commit
+`6ba902c2790a1d9d7a58ce34eb0c393a27369517` — exactly `origin/main` HEAD, 0 drift. `live: false` on the
+project read is the known false-negative (cross-checked against alias + deployment SHA per the
+2026-07-19 note, not treated as an outage). Runtime-error scan (24h): one pre-existing `pg` SSL-mode
+deprecation warning on `/api/hub/cron/[job]` (carried since 2026-06-26, already known, no action).
+
+0 defects, 0 regressions.
+
+Backlog:
+- Same two owner decisions from the 2026-07-25 00:42 UTC meta-governor pass remain open: delete
+  `claude/lane-tests`/`claude/lane-compliance` (confirmed orphaned pre-restructure history, not real
+  unmerged work) and add a stale-production short-circuit to the prod-smoke routine.
+- Carried, unchanged: npm audit's 3 high-severity findings (owner-approval-gated semver-major bump);
+  Rust sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision); IFTA due-date roll not
+  accounting for legal holidays (documented scope decision).
