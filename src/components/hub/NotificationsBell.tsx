@@ -30,7 +30,14 @@ function timeAgo(iso: string): string {
   return `${Math.floor(hours / 24)}d ago`
 }
 
-export function NotificationsBell({ direction = "down" }: { direction?: "down" | "up" }) {
+export function NotificationsBell({
+  direction = "down",
+  variant = "light",
+}: {
+  direction?: "down" | "up"
+  variant?: "light" | "dark"
+}) {
+  const dark = variant === "dark"
   const [open, setOpen] = useState(false)
   const [items, setItems] = useState<FeedItem[]>([])
   const [unread, setUnread] = useState(0)
@@ -99,7 +106,10 @@ export function NotificationsBell({ direction = "down" }: { direction?: "down" |
       <button
         aria-label={unread > 0 ? `Notifications (${unread} unread)` : "Notifications"}
         onClick={toggle}
-        className="relative flex h-9 w-9 items-center justify-center rounded-control border border-border-strong text-fg-2 hover:bg-hover"
+        className={cn(
+          "relative flex h-9 w-9 items-center justify-center rounded-control border",
+          dark ? "border-white/15 text-steel-200 hover:bg-white/5" : "border-border-strong text-fg-2 hover:bg-hover"
+        )}
       >
         <Bell className="h-4 w-4" />
         {unread > 0 ? (
@@ -112,16 +122,22 @@ export function NotificationsBell({ direction = "down" }: { direction?: "down" |
       {open ? (
         <div
           className={cn(
-            "absolute right-0 z-50 w-[min(92vw,360px)] overflow-hidden rounded-card border border-border bg-surface shadow-card",
+            "absolute right-0 z-50 w-[min(92vw,360px)] overflow-hidden rounded-card border shadow-card",
+            dark ? "border-white/10 bg-navy-600" : "border-border bg-surface",
             direction === "down" ? "top-11" : "bottom-11"
           )}
         >
-          <p className="border-b border-border px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-fg-3">
+          <p
+            className={cn(
+              "border-b px-4 py-3 text-[11px] font-semibold uppercase tracking-wide",
+              dark ? "border-white/10 text-steel-400" : "border-border text-fg-3"
+            )}
+          >
             Notifications
           </p>
           <div className="max-h-[60vh] overflow-y-auto">
             {items.length === 0 ? (
-              <p className="px-4 py-8 text-center text-body-sm text-fg-3">
+              <p className={cn("px-4 py-8 text-center text-body-sm", dark ? "text-steel-400" : "text-fg-3")}>
                 Nothing yet — alerts about dispatches, messages, and paperwork will show up here.
               </p>
             ) : (
@@ -131,13 +147,18 @@ export function NotificationsBell({ direction = "down" }: { direction?: "down" |
                   href={item.link ?? "/hub"}
                   onClick={() => setOpen(false)}
                   className={cn(
-                    "block border-b border-border px-4 py-3 hover:bg-hover",
-                    !item.read_at && "bg-accent-soft"
+                    "block border-b px-4 py-3",
+                    dark ? "border-white/10 hover:bg-white/5" : "border-border hover:bg-hover",
+                    !item.read_at && (dark ? "bg-white/[0.04]" : "bg-accent-soft")
                   )}
                 >
-                  <p className="text-sm font-semibold text-fg">{item.title}</p>
-                  {item.body ? <p className="mt-0.5 text-body-xs text-fg-2">{item.body}</p> : null}
-                  <p className="mt-1 text-[11px] text-fg-3">{timeAgo(item.created_at)}</p>
+                  <p className={cn("text-sm font-semibold", dark ? "text-white" : "text-fg")}>{item.title}</p>
+                  {item.body ? (
+                    <p className={cn("mt-0.5 text-body-xs", dark ? "text-steel-200" : "text-fg-2")}>{item.body}</p>
+                  ) : null}
+                  <p className={cn("mt-1 text-[11px]", dark ? "text-steel-400" : "text-fg-3")}>
+                    {timeAgo(item.created_at)}
+                  </p>
                 </Link>
               ))
             )}

@@ -38,7 +38,7 @@ export function DriverNav({ firstName }: { firstName: string }) {
         </Link>
         <div className="flex items-center gap-2">
           <span className="text-body-sm text-steel-100">Hey, {firstName}</span>
-          <NotificationsBell />
+          <NotificationsBell variant="dark" />
         </div>
       </header>
 
