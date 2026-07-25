@@ -76,10 +76,10 @@ export function ShipperQuoteForm() {
   return (
     <form onSubmit={onSubmit} className="relative grid grid-cols-1 sm:grid-cols-2 gap-4">
       <HoneypotField />
-      <input name="company" required placeholder="Company / Brokerage *" className={field} aria-label="Company" />
-      <input name="contact" required placeholder="Contact name *" className={field} aria-label="Contact name" />
-      <input name="email" type="email" required placeholder="Work email *" className={field} aria-label="Email" />
-      <input name="phone" type="tel" required minLength={10} placeholder="Phone *" className={field} aria-label="Phone" />
+      <input name="company" autoComplete="organization" required placeholder="Company / Brokerage *" className={field} aria-label="Company" />
+      <input name="contact" autoComplete="name" required placeholder="Contact name *" className={field} aria-label="Contact name" />
+      <input name="email" type="email" autoComplete="email" required placeholder="Work email *" className={field} aria-label="Email" />
+      <input name="phone" type="tel" inputMode="tel" autoComplete="tel" required minLength={10} placeholder="Phone *" className={field} aria-label="Phone" />
       <input
         name="lane"
         placeholder="Lane (e.g. Seattle, WA → Boise, ID)"

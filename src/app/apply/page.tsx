@@ -134,11 +134,11 @@ export default function ApplyPage() {
                     <p className="text-3xl font-black text-orange-400">{PAY_RATES.ownerOperator.commission}</p>
                     <p className="text-sm text-slate-300">gross split</p>
                   </div>
-                  <div className="rounded-xl border border-blue-500/30 bg-[#17181B]/80 p-4">
-                    <p className="text-xs font-bold uppercase tracking-wider text-blue-400">
+                  <div className="rounded-xl border border-orange-500/30 bg-[#17181B]/80 p-4">
+                    <p className="text-xs font-bold uppercase tracking-wider text-orange-400">
                       Company Drivers
                     </p>
-                    <p className="text-3xl font-black text-blue-400">{PAY_RATES.companyDriver.otr.perMile}</p>
+                    <p className="text-3xl font-black text-orange-400">{PAY_RATES.companyDriver.otr.perMile}</p>
                     <p className="text-sm text-slate-300">OTR pay range</p>
                   </div>
                 </div>
@@ -164,15 +164,15 @@ export default function ApplyPage() {
                   <h2 className="mb-4 text-lg font-bold text-white">Before You Apply</h2>
                   <div className="space-y-3 text-sm text-slate-300">
                     <div className="flex items-start gap-3">
-                      <BadgeCheck className="mt-0.5 h-4 w-4 flex-shrink-0 text-blue-400" />
+                      <BadgeCheck className="mt-0.5 h-4 w-4 flex-shrink-0 text-green-400" />
                       <span>Valid CDL Class A license</span>
                     </div>
                     <div className="flex items-start gap-3">
-                      <BadgeCheck className="mt-0.5 h-4 w-4 flex-shrink-0 text-blue-400" />
+                      <BadgeCheck className="mt-0.5 h-4 w-4 flex-shrink-0 text-green-400" />
                       <span>Recent verifiable driving experience</span>
                     </div>
                     <div className="flex items-start gap-3">
-                      <BadgeCheck className="mt-0.5 h-4 w-4 flex-shrink-0 text-blue-400" />
+                      <BadgeCheck className="mt-0.5 h-4 w-4 flex-shrink-0 text-green-400" />
                       <span>Clean MVR and ability to meet DOT requirements</span>
                     </div>
                   </div>
@@ -181,9 +181,9 @@ export default function ApplyPage() {
 
               <div className="lg:col-span-7 w-full" id="application-form">
                 <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl" data-light>
-                  <div className="border-b border-navy-800 bg-gradient-to-r from-[#17181B] to-[#003366] px-6 py-4">
+                  <div className="border-b border-white/10 bg-[#131418] px-6 py-4">
                     <h2 className="text-lg font-bold text-white">Start Your Application</h2>
-                    <p className="text-xs text-blue-200">
+                    <p className="text-xs text-slate-300">
                       Share your contact information and driving background. We&apos;ll follow up from there.
                     </p>
                   </div>
@@ -295,7 +295,7 @@ export default function ApplyPage() {
 
                 <Link
                   href="/pre-qualify"
-                  className="flex items-center justify-center gap-2 rounded-2xl border border-blue-800 bg-blue-900 px-6 py-4 font-bold text-white transition-all hover:bg-blue-800"
+                  className="flex items-center justify-center gap-2 rounded-2xl border border-white/15 bg-[#17181B] px-6 py-4 font-bold text-white transition-all hover:bg-[#212226]"
                 >
                   Not Ready Yet? Pre-Qualify
                   <ChevronRight className="h-4 w-4" />

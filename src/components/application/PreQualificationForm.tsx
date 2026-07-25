@@ -193,22 +193,22 @@ export function PreQualificationForm() {
           <div className="grid md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <Label htmlFor="firstName">First Name</Label>
-              <Input id="firstName" {...register("firstName")} placeholder="Enter first name" className="h-12" />
+              <Input id="firstName" {...register("firstName")} autoComplete="given-name" placeholder="Enter first name" className="h-12" />
               {errors.firstName && <p className="text-red-500 text-xs">{errors.firstName.message}</p>}
             </div>
             <div className="space-y-2">
               <Label htmlFor="lastName">Last Name</Label>
-              <Input id="lastName" {...register("lastName")} placeholder="Enter last name" className="h-12" />
+              <Input id="lastName" {...register("lastName")} autoComplete="family-name" placeholder="Enter last name" className="h-12" />
               {errors.lastName && <p className="text-red-500 text-xs">{errors.lastName.message}</p>}
             </div>
             <div className="space-y-2">
               <Label htmlFor="phone">Phone Number</Label>
-              <Input id="phone" {...register("phone")} onChange={handlePhoneChange} placeholder="(555) 555-5555" className="h-12" />
+              <Input id="phone" {...register("phone")} onChange={handlePhoneChange} type="tel" inputMode="tel" autoComplete="tel" placeholder="(555) 555-5555" className="h-12" />
               {errors.phone && <p className="text-red-500 text-xs">{errors.phone.message}</p>}
             </div>
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
-              <Input id="email" {...register("email")} type="email" placeholder="john@example.com" className="h-12" />
+              <Input id="email" {...register("email")} type="email" autoComplete="email" placeholder="john@example.com" className="h-12" />
               {errors.email && <p className="text-red-500 text-xs">{errors.email.message}</p>}
             </div>
             <div className="col-span-2 space-y-2">

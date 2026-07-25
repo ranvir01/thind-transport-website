@@ -9,9 +9,9 @@
 import { useTransition } from "react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
-import { Check, Loader2, Mail, MessageSquare, Phone, X } from "lucide-react"
+import { Check, Loader2, Mail, MessageSquare, Phone, UserPlus, X } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { setLeadStatusAction } from "@/app/hub/_actions/leads"
+import { promoteLeadAction, setLeadStatusAction } from "@/app/hub/_actions/leads"
 import type { WebsiteLead } from "@/lib/hub/website-leads"
 
 const STATUS_TONE: Record<WebsiteLead["status"], string> = {
@@ -33,6 +33,17 @@ export function LeadRow({ lead }: { lead: WebsiteLead }) {
       const result = await setLeadStatusAction(lead.id, status)
       if (result.ok) router.refresh()
       else toast.error(result.error ?? "Failed")
+    })
+
+  const promote = () =>
+    startTransition(async () => {
+      const result = await promoteLeadAction(lead.id)
+      if (result.ok) {
+        toast.success("Added to the recruiting pipeline")
+        router.refresh()
+      } else {
+        toast.error(result.error ?? "Could not promote the lead")
+      }
     })
 
   return (
@@ -86,6 +97,14 @@ export function LeadRow({ lead }: { lead: WebsiteLead }) {
         >
           <Mail className="h-4 w-4" />
         </a>
+        <button
+          onClick={promote}
+          disabled={pending}
+          className="flex min-h-[40px] items-center gap-1.5 rounded-xl border border-accent-soft bg-accent-soft px-3 text-sm font-semibold text-accent-text hover:opacity-90 disabled:opacity-60"
+          title="Create an applicant in Recruiting from this lead"
+        >
+          {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <UserPlus className="h-4 w-4" />} Recruit
+        </button>
         {lead.status === "new" ? (
           <button
             onClick={() => setStatus("contacted")}
