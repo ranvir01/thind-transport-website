@@ -12,7 +12,7 @@
  * Usage: node scripts/e2e-customers-smoke.mjs [outputDir]
  */
 import { mkdirSync } from "node:fs"
-import { launchBrowser, BASE, failures, check, waitForText, login, makeShot, clickByText, reseed } from "./e2e-lib.mjs"
+import { launchBrowser, BASE, failures, check, waitForText, login, makeShot, clickByText, reseed, IGNORABLE_CONSOLE_ERROR } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-customers"
 mkdirSync(OUT, { recursive: true })
@@ -129,7 +129,7 @@ async function main() {
   check(!driverBlocked.seesBook, "driver never sees the customers list")
   await shot(page2, "06-customers-driver-blocked")
 
-  const realErrors = consoleErrors.filter((e) => !/favicon|manifest/i.test(e))
+  const realErrors = consoleErrors.filter((e) => !IGNORABLE_CONSOLE_ERROR.test(e))
   check(realErrors.length === 0, `no console errors (${realErrors.length}: ${realErrors.slice(0, 2).join(" | ")})`)
 
   await browser.close()

@@ -16,7 +16,7 @@ import { mkdirSync, writeFileSync } from "node:fs"
 import path from "node:path"
 import {
   launchBrowser, BASE, failures, check, waitForText, textAppears, textGone,
-  login, makeShot, clickByText, reseed,
+  login, makeShot, clickByText, reseed, IGNORABLE_CONSOLE_ERROR,
 } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-load-osd-chip"
@@ -145,7 +145,7 @@ async function main() {
   check(ownerPage.url().endsWith(claimHref), "chip navigates to the exact claim the driver flow opened")
   await shot(ownerPage, "04-chip-lands-on-claim")
 
-  const realErrors = consoleErrors.filter((e) => !/favicon|manifest|service.?worker/i.test(e))
+  const realErrors = consoleErrors.filter((e) => !IGNORABLE_CONSOLE_ERROR.test(e))
   check(realErrors.length === 0, `no console errors (${realErrors.length}: ${realErrors.slice(0, 2).join(" | ")})`)
 
   await browser.close()

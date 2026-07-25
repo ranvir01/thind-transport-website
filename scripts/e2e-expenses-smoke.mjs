@@ -12,7 +12,7 @@
  * Usage: node scripts/e2e-expenses-smoke.mjs [outputDir]
  */
 import { mkdirSync } from "node:fs"
-import { launchBrowser, BASE, failures, check, waitForText, textAppears, login, makeShot, reseed } from "./e2e-lib.mjs"
+import { launchBrowser, BASE, failures, check, waitForText, textAppears, login, makeShot, reseed, IGNORABLE_CONSOLE_ERROR } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-expenses"
 mkdirSync(OUT, { recursive: true })
@@ -160,7 +160,7 @@ async function main() {
   check(dispatcher.seesList, "dispatcher still sees the expense list")
   await shot(page2, "04-expenses-dispatcher")
 
-  const realErrors = consoleErrors.filter((e) => !/favicon|manifest/i.test(e))
+  const realErrors = consoleErrors.filter((e) => !IGNORABLE_CONSOLE_ERROR.test(e))
   check(realErrors.length === 0, `no console errors (${realErrors.length}: ${realErrors.slice(0, 2).join(" | ")})`)
 
   await browser.close()

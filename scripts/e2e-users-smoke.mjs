@@ -17,7 +17,7 @@
  */
 import puppeteer from "puppeteer"
 import { mkdirSync } from "node:fs"
-import { BASE, failures, check, waitForText, waitForPath, login, makeShot, reseed } from "./e2e-lib.mjs"
+import { BASE, failures, check, waitForText, waitForPath, login, makeShot, reseed, IGNORABLE_CONSOLE_ERROR } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-users"
 mkdirSync(OUT, { recursive: true })
@@ -197,7 +197,7 @@ async function main() {
   await shot(dispPage, "09-dispatcher-bounced")
   await dispCtx.close()
 
-  const realErrors = consoleErrors.filter((e) => !/favicon|manifest/i.test(e))
+  const realErrors = consoleErrors.filter((e) => !IGNORABLE_CONSOLE_ERROR.test(e))
   check(realErrors.length === 0, `no console errors (${realErrors.length}: ${realErrors.slice(0, 2).join(" | ")})`)
 
   await browser.close()

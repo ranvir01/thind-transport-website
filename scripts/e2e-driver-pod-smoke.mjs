@@ -12,7 +12,7 @@
 import pg from "pg"
 import { writeFileSync, mkdirSync } from "node:fs"
 import path from "node:path"
-import { launchBrowser, BASE, clickByText, waitForText, textGone, makeShot, reseed, check, failures } from "./e2e-lib.mjs"
+import { launchBrowser, BASE, clickByText, waitForText, textGone, makeShot, reseed, check, failures, IGNORABLE_CONSOLE_ERROR } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots"
 mkdirSync(OUT, { recursive: true })
@@ -134,7 +134,8 @@ async function main() {
     check(req.rows[0]?.status === "satisfied" && req.rows[0]?.file_name?.includes("lumper-receipt"),
       `request satisfied by the upload (${req.rows[0]?.status}, ${req.rows[0]?.file_name})`)
 
-    check(consoleErrors.length === 0, `no console errors (${consoleErrors.length}: ${consoleErrors.slice(0, 2).join(" | ")})`)
+    const realErrors = consoleErrors.filter((e) => !IGNORABLE_CONSOLE_ERROR.test(e))
+    check(realErrors.length === 0, `no console errors (${realErrors.length}: ${realErrors.slice(0, 2).join(" | ")})`)
   } catch (err) {
     await shot(page, "ZZ-failure")
     failures.push(`crash: ${err.message}`)

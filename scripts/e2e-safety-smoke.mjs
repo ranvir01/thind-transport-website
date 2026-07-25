@@ -22,7 +22,7 @@
 import { mkdirSync, writeFileSync } from "node:fs"
 import path from "node:path"
 import pg from "pg"
-import { launchBrowser, BASE, failures, check, waitForText, textAppears, textGone, waitForPathAndText, login, makeShot, clickByText, reseed } from "./e2e-lib.mjs"
+import { launchBrowser, BASE, failures, check, waitForText, textAppears, textGone, waitForPathAndText, login, makeShot, clickByText, reseed, IGNORABLE_CONSOLE_ERROR } from "./e2e-lib.mjs"
 
 const CARRIER = "11111111-1111-1111-1111-111111111111" // Thind (created by migration 002)
 
@@ -274,7 +274,7 @@ async function main() {
   check(!blocked.seesRegister, "driver never sees the accident register")
   await shot(driverPage, "07-driver-blocked")
 
-  const realErrors = consoleErrors.filter((e) => !/favicon|manifest/i.test(e))
+  const realErrors = consoleErrors.filter((e) => !IGNORABLE_CONSOLE_ERROR.test(e))
   check(realErrors.length === 0, `no console errors (${realErrors.length}: ${realErrors.slice(0, 2).join(" | ")})`)
 
   await browser.close()

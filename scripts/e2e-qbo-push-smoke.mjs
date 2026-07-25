@@ -10,7 +10,7 @@
  * Usage: node scripts/e2e-qbo-push-smoke.mjs [outputDir]
  */
 import { mkdirSync } from "node:fs"
-import { launchBrowser, BASE, failures, check, waitForText, textAppears, login, makeShot, reseed } from "./e2e-lib.mjs"
+import { launchBrowser, BASE, failures, check, waitForText, textAppears, login, makeShot, reseed, IGNORABLE_CONSOLE_ERROR } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-qbo-push"
 mkdirSync(OUT, { recursive: true })
@@ -66,7 +66,7 @@ async function main() {
   check(!dispatcherHasButton, "dispatcher (money:read) has no Push to QBO button")
   await shot(page2, "03-invoice-dispatcher")
 
-  const realErrors = consoleErrors.filter((e) => !/favicon|manifest/i.test(e))
+  const realErrors = consoleErrors.filter((e) => !IGNORABLE_CONSOLE_ERROR.test(e))
   check(realErrors.length === 0, `no console errors (${realErrors.length}: ${realErrors.slice(0, 2).join(" | ")})`)
 
   await browser.close()

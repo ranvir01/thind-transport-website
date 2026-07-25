@@ -15,7 +15,7 @@
 import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs"
 import path from "node:path"
 import os from "node:os"
-import { BASE, failures, check, waitForText, waitForPath, login, makeShot, reseed, launchBrowser } from "./e2e-lib.mjs"
+import { BASE, failures, check, waitForText, waitForPath, login, makeShot, reseed, launchBrowser, IGNORABLE_CONSOLE_ERROR } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-import"
 mkdirSync(OUT, { recursive: true })
@@ -98,8 +98,9 @@ async function main() {
   await shot(driverPage, "06-import-driver-blocked")
   await driverCtx.close()
 
-  check(consoleErrors.length === 0, `no console errors (${consoleErrors.length} found)`)
-  if (consoleErrors.length > 0) console.log(consoleErrors.slice(0, 5))
+  const realErrors = consoleErrors.filter((e) => !IGNORABLE_CONSOLE_ERROR.test(e))
+  check(realErrors.length === 0, `no console errors (${realErrors.length} found)`)
+  if (realErrors.length > 0) console.log(realErrors.slice(0, 5))
 
   await browser.close()
 

@@ -176,6 +176,22 @@ export async function launchBrowser(options = {}) {
 
 export const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 
+/**
+ * Console-error text that's expected noise under `next start` on localhost, not an app bug:
+ * favicon/manifest/service-worker requests some pages don't carry, and — since the root
+ * layout grew <Analytics />/<SpeedInsights /> (@vercel/analytics, @vercel/speed-insights) —
+ * every page now fetches /_vercel/insights/script.js + /_vercel/speed-insights/script.js,
+ * endpoints only Vercel's edge serves; they 404 on any non-Vercel host including this rig.
+ * Chrome's console text for a failed resource load is the generic "Failed to load resource:
+ * the server responded with a status of 404 (Not Found)" — Puppeteer's msg.text() never
+ * includes the URL, so matching those two script paths specifically is not possible from the
+ * console API; the whole "Failed to load resource" phrase has to be treated as expected 404
+ * noise (a handful of smokes already did this ad hoc). A real broken-resource regression needs
+ * a targeted response/network assertion, not a console-text scrape. Every smoke's "no console
+ * errors" check should filter this alongside its own real assertions.
+ */
+export const IGNORABLE_CONSOLE_ERROR = /favicon|manifest|service.?worker|failed to load resource/i
+
 /** Failed check labels; scripts report these and exit non-zero at the end. */
 export const failures = []
 

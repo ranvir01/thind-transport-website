@@ -7,7 +7,7 @@
  * Usage: node scripts/e2e-ifta-smoke.mjs [outputDir]
  */
 import { mkdirSync } from "node:fs"
-import { launchBrowser, BASE, failures, check, clickByText, waitForText, textGone, login, makeShot } from "./e2e-lib.mjs"
+import { launchBrowser, BASE, failures, check, clickByText, waitForText, textGone, login, makeShot, IGNORABLE_CONSOLE_ERROR } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-ifta"
 mkdirSync(OUT, { recursive: true })
@@ -164,7 +164,7 @@ async function main() {
   check(Number((partial.miles ?? "").replace(/,/g, "")) >= 0, `partial quarter miles parse (${partial.miles})`)
   await shot(page, "04-ifta-partial-quarter")
 
-  const realErrors = consoleErrors.filter((e) => !/favicon|manifest/i.test(e))
+  const realErrors = consoleErrors.filter((e) => !IGNORABLE_CONSOLE_ERROR.test(e))
   check(realErrors.length === 0, `no console errors (${realErrors.length}: ${realErrors.slice(0, 2).join(" | ")})`)
 
   await browser.close()

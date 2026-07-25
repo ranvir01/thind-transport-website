@@ -6,7 +6,7 @@
  * panels render, app page install/push panels render at 1440px and 390px,
  * zero console errors, non-owner gating on branding.
  */
-import { launchBrowser, login, waitForText, makeShot, check, failures } from "./e2e-lib.mjs"
+import { launchBrowser, login, waitForText, makeShot, check, failures, IGNORABLE_CONSOLE_ERROR } from "./e2e-lib.mjs"
 
 const BASE = process.env.E2E_BASE_URL ?? "http://localhost:3000"
 const outDir = "e2e-shots-logs/settings-misc"
@@ -69,7 +69,8 @@ try {
     check(noneSelected, "accent reset to standard look persisted after reload")
     await shot(page, "04-accent-reset")
 
-    check(errors.length === 0, `no console errors (${errors.length}: ${errors.slice(0, 2).join(" | ")})`)
+    const realErrors = errors.filter((e) => !IGNORABLE_CONSOLE_ERROR.test(e))
+    check(realErrors.length === 0, `no console errors (${realErrors.length}: ${realErrors.slice(0, 2).join(" | ")})`)
     await ctx.close()
   }
 
@@ -102,7 +103,8 @@ try {
     check(await waitForText(page, "Carrier packet").then(() => true).catch(() => false), "packet page renders")
     check(await waitForText(page, "COI").then(() => true).catch(() => false), "COI request panel present")
     await shot(page, "06-packet")
-    check(errors.length === 0, `no console errors (${errors.length}: ${errors.slice(0, 2).join(" | ")})`)
+    const realErrors = errors.filter((e) => !IGNORABLE_CONSOLE_ERROR.test(e))
+    check(realErrors.length === 0, `no console errors (${realErrors.length}: ${realErrors.slice(0, 2).join(" | ")})`)
     await ctx.close()
   }
 
@@ -127,7 +129,8 @@ try {
     check(await waitForText(page, "Install").then(() => true).catch(() => false), "install panel present at 390px")
     await shot(page, "08-app-390")
 
-    check(errors.length === 0, `no console errors (${errors.length}: ${errors.slice(0, 2).join(" | ")})`)
+    const realErrors = errors.filter((e) => !IGNORABLE_CONSOLE_ERROR.test(e))
+    check(realErrors.length === 0, `no console errors (${realErrors.length}: ${realErrors.slice(0, 2).join(" | ")})`)
     await ctx.close()
   }
 

@@ -16,7 +16,7 @@
  */
 import pg from "pg"
 import { mkdirSync } from "node:fs"
-import { launchBrowser, BASE, makeShot, reseed, check, failures } from "./e2e-lib.mjs"
+import { launchBrowser, BASE, makeShot, reseed, check, failures, IGNORABLE_CONSOLE_ERROR } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-track"
 mkdirSync(OUT, { recursive: true })
@@ -148,7 +148,8 @@ async function main() {
     check(/expired or revoked/i.test(text3), "unknown token shows the expired-link card")
     await shot(page, "04-unknown-token")
 
-    check(consoleErrors.length === 0, `no console errors (${consoleErrors.length}: ${consoleErrors.slice(0, 2).join(" | ")})`)
+    const realErrors = consoleErrors.filter((e) => !IGNORABLE_CONSOLE_ERROR.test(e))
+    check(realErrors.length === 0, `no console errors (${realErrors.length}: ${realErrors.slice(0, 2).join(" | ")})`)
   } catch (err) {
     await shot(page, "ZZ-failure")
     failures.push(`crash: ${err.message}`)

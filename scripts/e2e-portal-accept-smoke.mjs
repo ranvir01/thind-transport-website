@@ -17,7 +17,7 @@
  */
 import pg from "pg"
 import { readFileSync, existsSync, mkdirSync } from "node:fs"
-import { launchBrowser, BASE, reseed, makeShot, check, failures } from "./e2e-lib.mjs"
+import { launchBrowser, BASE, reseed, makeShot, check, failures, IGNORABLE_CONSOLE_ERROR } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-portal-accept"
 mkdirSync(OUT, { recursive: true })
@@ -159,7 +159,8 @@ async function main() {
     check(badBright !== null && badBright > 120, `invalid-link copy renders light-on-dark (color=${badColor}, brightness=${badBright?.toFixed(0)})`)
     await shot(page, "05-unknown-token")
 
-    check(consoleErrors.length === 0, `no console errors (${consoleErrors.length}: ${consoleErrors.slice(0, 2).join(" | ")})`)
+    const realErrors = consoleErrors.filter((e) => !IGNORABLE_CONSOLE_ERROR.test(e))
+    check(realErrors.length === 0, `no console errors (${realErrors.length}: ${realErrors.slice(0, 2).join(" | ")})`)
   } catch (err) {
     failures.push(`crash: ${err.message}`)
     // Best-effort: a page mid-navigation (or crashed) has a 0-width frame and

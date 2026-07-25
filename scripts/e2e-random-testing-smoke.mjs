@@ -15,7 +15,7 @@
 import { mkdirSync } from "node:fs"
 import {
   launchBrowser, BASE, failures, check, waitForText, textAppears, textGone,
-  login, makeShot, clickByText, clickSelector, reseed,
+  login, makeShot, clickByText, clickSelector, reseed, IGNORABLE_CONSOLE_ERROR,
 } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-random-testing"
@@ -117,7 +117,7 @@ async function main() {
   check(overflow <= 1, `no horizontal overflow at 390px (excess ${overflow}px)`)
   await shot(page, "06-390px")
 
-  const realErrors = consoleErrors.filter((e) => !/favicon|manifest/i.test(e))
+  const realErrors = consoleErrors.filter((e) => !IGNORABLE_CONSOLE_ERROR.test(e))
   check(realErrors.length === 0, `no console errors (${realErrors.length}: ${realErrors.slice(0, 2).join(" | ")})`)
 
   await browser.close()

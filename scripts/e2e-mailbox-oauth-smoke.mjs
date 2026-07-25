@@ -19,7 +19,7 @@
  */
 import pg from "pg"
 import { mkdirSync } from "node:fs"
-import { launchBrowser, BASE, failures, check, waitForText, login, makeShot, reseed } from "./e2e-lib.mjs"
+import { launchBrowser, BASE, failures, check, waitForText, login, makeShot, reseed, IGNORABLE_CONSOLE_ERROR } from "./e2e-lib.mjs"
 
 // Fail fast on a fresh rig: the connect step needs CREDENTIALS_KEY in the
 // SERVER env (encrypt-at-rest for hub.api_credentials). Against a localhost
@@ -247,7 +247,7 @@ async function main() {
   check(await cardShows(page, "not connected"), "card back to not connected after disconnect")
   await shot(page, "08-disconnected")
 
-  const realErrors = consoleErrors.filter((e) => !/favicon|manifest/i.test(e))
+  const realErrors = consoleErrors.filter((e) => !IGNORABLE_CONSOLE_ERROR.test(e))
   check(realErrors.length === 0, `no console errors (${realErrors.length}: ${realErrors.slice(0, 2).join(" | ")})`)
 
   await browser.close()

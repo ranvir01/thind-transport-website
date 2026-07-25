@@ -18,7 +18,7 @@
  * Usage: node scripts/e2e-dat-freight-smoke.mjs [outputDir]
  */
 import { mkdirSync } from "node:fs"
-import { launchBrowser, BASE, failures, check, waitForText, login, makeShot, clickByText, reseed, sleep } from "./e2e-lib.mjs"
+import { launchBrowser, BASE, failures, check, waitForText, login, makeShot, clickByText, reseed, sleep, IGNORABLE_CONSOLE_ERROR } from "./e2e-lib.mjs"
 
 /**
  * Waits for the DAT card to show a button with the given label. Used after a
@@ -241,7 +241,7 @@ async function main() {
     await waitForText(owner, "the CSV import path keeps working")
   }
 
-  const realErrors = consoleErrors.filter((e) => !/favicon|manifest/i.test(e))
+  const realErrors = consoleErrors.filter((e) => !IGNORABLE_CONSOLE_ERROR.test(e))
   check(realErrors.length === 0, `no console errors (${realErrors.length}: ${realErrors.slice(0, 2).join(" | ")})`)
 
   await browser.close()

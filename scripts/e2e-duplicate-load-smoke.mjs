@@ -18,7 +18,7 @@
  */
 import puppeteer from "puppeteer"
 import { mkdirSync } from "node:fs"
-import { BASE, failures, check, waitForText, login, makeShot, reseed, clickByText } from "./e2e-lib.mjs"
+import { BASE, failures, check, waitForText, login, makeShot, reseed, clickByText, IGNORABLE_CONSOLE_ERROR } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-duplicate-load"
 mkdirSync(OUT, { recursive: true })
@@ -138,7 +138,7 @@ async function main() {
   check(!accountant.hasDuplicate, "accountant sees no Duplicate button")
   await shot(page2, "03-accountant-no-duplicate")
 
-  const realErrors = consoleErrors.filter((e) => !/favicon|manifest|401/i.test(e))
+  const realErrors = consoleErrors.filter((e) => !IGNORABLE_CONSOLE_ERROR.test(e) && !/401/i.test(e))
   check(realErrors.length === 0, `no console errors (${realErrors.length}: ${realErrors.slice(0, 2).join(" | ")})`)
 
   await browser.close()
