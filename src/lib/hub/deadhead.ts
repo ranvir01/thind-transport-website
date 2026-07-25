@@ -126,7 +126,7 @@ export async function getDeadheadReport(
     query<LoadAgg>(
       // Windowed on the delivery stamp with created_at as the pre-022
       // fallback, so legacy rows still land in a range.
-      `SELECT l.truck_id, t.unit AS truck_unit,
+      `SELECT l.truck_id, t.unit_number AS truck_unit,
          COALESCE(SUM(l.loaded_miles), 0) AS loaded_miles,
          COALESCE(SUM(l.deadhead_miles), 0) AS deadhead_miles
        FROM hub.loads l
@@ -135,7 +135,7 @@ export async function getDeadheadReport(
          AND l.status IN ('delivered', 'pod_received', 'invoiced', 'paid', 'settled')
          AND COALESCE(l.delivered_at, l.created_at) >= $2::date
          AND COALESCE(l.delivered_at, l.created_at) < ($3::date + INTERVAL '1 day')
-       GROUP BY l.truck_id, t.unit`,
+       GROUP BY l.truck_id, t.unit_number`,
       [carrierId, range.from, range.to]
     ),
     query<FuelAgg>(
