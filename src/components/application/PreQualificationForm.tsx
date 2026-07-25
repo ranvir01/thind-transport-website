@@ -20,6 +20,7 @@ import { Loader2, CheckCircle2, AlertCircle, XCircle } from "lucide-react"
 import { submitPreQualification } from "@/app/actions/submit-pre-qualification"
 import { cn } from "@/lib/utils"
 import { HONEYPOT_FIELD, readHoneypotValue } from "@/lib/honeypot"
+import { track } from "@vercel/analytics"
 import { HoneypotField } from "@/components/shared/HoneypotField"
 import Link from "next/link"
 
@@ -102,6 +103,7 @@ export function PreQualificationForm() {
       const result = await submitPreQualification({ success: false, message: "" }, formData)
 
       if (result.success) {
+        track("prequalify_submit", { qualified: result.isQualified === true })
         setSubmissionResult({ success: true, isQualified: result.isQualified })
         // Scroll to top to show result
         window.scrollTo({ top: 0, behavior: 'smooth' })

@@ -11,6 +11,7 @@ import { Loader2, Send } from "lucide-react"
 import { captureLead } from "@/app/actions/capture-lead"
 import { COMPANY_INFO } from "@/lib/constants"
 import { HONEYPOT_FIELD } from "@/lib/honeypot"
+import { track } from "@vercel/analytics"
 import { HoneypotField } from "@/components/shared/HoneypotField"
 
 export function ShipperQuoteForm() {
@@ -42,6 +43,7 @@ export function ShipperQuoteForm() {
     try {
       const result = await captureLead({ success: false, message: "" }, fd)
       if (result.success) {
+        track("shipper_quote_submit")
         setState("done")
       } else {
         setErrorMsg(result.message)

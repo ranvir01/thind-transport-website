@@ -5,6 +5,7 @@ import { COMPANY_INFO, STATS, FMCSA_LINKS } from "@/lib/constants"
 import { PageBreadcrumb } from "@/components/shared/PageBreadcrumb"
 import { BrokerPacketForm } from "@/components/features/BrokerPacketForm"
 import { Reveal } from "@/components/ui/Reveal"
+import { PersonaRemember } from "@/components/shared/PersonaRemember"
 
 export const metadata: Metadata = {
   title: "Carrier packet for brokers | Thind Transport — MC 876103",
@@ -49,6 +50,7 @@ const ONBOARDING = [
 export default function BrokersPage() {
   return (
     <div className="bg-paper">
+      <PersonaRemember persona="brokers" />
       <PageBreadcrumb pageName="For brokers" category="Company" />
 
       {/* Archetype B — asymmetric split: the pitch, and the paperwork beside it */}
@@ -113,7 +115,19 @@ export default function BrokersPage() {
               <p className="mt-1.5 text-m-body text-ink-2">
                 Sent within the hour during business hours.
               </p>
-              <div className="mt-5">
+              {/* Instant half: the one-page verifiable snapshot. The signed
+                  half (W-9, per-broker COI, agreement) stays human-sent via
+                  the form — a generic COI on a public URL invites fraud. */}
+              <a
+                href="/api/carrier-packet"
+                className="mt-4 inline-flex min-h-[44px] items-center gap-2 rounded-m-2 border border-ink/20 px-5 py-2.5 font-display text-m-body font-bold uppercase tracking-wide text-ink transition-colors duration-base ease-entrance hover:border-signal hover:text-signal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-signal focus-visible:ring-offset-2 focus-visible:ring-offset-paper"
+              >
+                <FileCheck className="h-4 w-4" aria-hidden /> Carrier snapshot PDF — instant
+              </a>
+              <p className="mt-4 text-m-micro font-bold uppercase tracking-[0.15em] text-ink-3">
+                Full signed packet — W-9, COI, agreement
+              </p>
+              <div className="mt-3">
                 <BrokerPacketForm />
               </div>
             </Reveal>
@@ -157,6 +171,22 @@ export default function BrokersPage() {
               See the fleet <ArrowRight className="h-4 w-4" />
             </Link>
           </Reveal>
+        </div>
+      </section>
+
+      {/* Escape hatch: nobody gets trapped in the broker lane. */}
+      <section className="border-t border-ink/10 py-10">
+        <div className="container px-4">
+          <p className="text-center text-m-body text-ink-3">
+            Not a broker?{" "}
+            <Link href="/drivers" className="font-semibold text-signal underline-offset-4 hover:underline">
+              For drivers
+            </Link>{" "}
+            ·{" "}
+            <Link href="/shippers" className="font-semibold text-signal underline-offset-4 hover:underline">
+              For shippers
+            </Link>
+          </p>
         </div>
       </section>
     </div>

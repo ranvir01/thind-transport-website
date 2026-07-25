@@ -21,6 +21,7 @@ import {
   LayoutDashboard,
 } from "lucide-react"
 import { COMPANY_INFO } from "@/lib/constants"
+import { PersonaSwitcher } from "@/components/shared/PersonaSwitcher"
 
 // Navigation items with dropdowns
 const driverMenuItems = [
@@ -276,6 +277,12 @@ function MobileMenuDrawer({
 
             {/* Navigation */}
             <div className="flex-1 overflow-y-auto py-4">
+              {/* Audience doors — the drawer's equivalent of the desktop
+                  persona switcher; tapping any door also closes the drawer. */}
+              <div className="px-4 mb-4" onClick={onClose}>
+                <PersonaSwitcher className="flex w-fit" />
+              </div>
+
               {/* Drivers Section */}
               <div className="px-4 mb-2">
                 <button
@@ -552,6 +559,12 @@ export const CinematicNavbar = () => {
             >
               Portal
             </Link>
+
+            {/* Persistent audience switcher — always visible so nobody is
+                trapped in a lane; highlight keys off pathname, never a cookie
+                (no hydration mismatch, no flash). lg+ only: at md the bar has
+                no room and the drawer carries the three doors instead. */}
+            <PersonaSwitcher className="ml-2 hidden lg:flex" />
           </div>
 
           {/* Phone Number - Desktop only */}

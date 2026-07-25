@@ -581,7 +581,9 @@ export const ProfitCalculator = () => {
               {emailError && (
                 <p className="text-xs text-red-600 mt-2" role="alert">{emailError}</p>
               )}
-              <p className="text-xs text-gray-500 mt-2">
+              {/* gray-600, not 500: on /drivers this sits on the paper ground
+                  (#f3f3f3) where gray-500 reads 4.36:1 — under AA's 4.5. */}
+              <p className="text-xs text-gray-600 mt-2">
                 We'll email your personalized earnings estimate. No spam, ever.
               </p>
             </div>

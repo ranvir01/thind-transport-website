@@ -12,6 +12,8 @@ import { SkipLink } from "@/components/shared/SkipLink"
 import { COMPANY_INFO } from "@/lib/constants"
 import { SchemaMarkup } from "@/components/features/SchemaMarkup"
 import { Providers } from "./providers"
+import { Analytics } from "@vercel/analytics/next"
+import { SpeedInsights } from "@vercel/speed-insights/next"
 
 const barlowCondensed = Barlow_Condensed({
   subsets: ["latin"],
@@ -173,6 +175,13 @@ export default function RootLayout({
 
           <BackToTop />
         </Providers>
+
+        {/* Cookieless, anonymous analytics (Vercel Web Analytics + Speed
+            Insights): no cross-site tracking, no PII in any custom event —
+            funnel events carry step/source/device class only. Ranvir must
+            enable Web Analytics in the Vercel dashboard for data to land. */}
+        <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   )
