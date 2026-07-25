@@ -1,4 +1,5 @@
 import { CinematicHero } from "@/components/cinematic/Hero"
+import { AudienceSelector } from "@/components/home/AudienceSelector"
 import { InfiniteTicker } from "@/components/cinematic/Ticker"
 import { RoutesSection } from "@/components/home/RoutesSection"
 import { EquipmentSection } from "@/components/home/EquipmentSection"
@@ -18,6 +19,10 @@ export default function Home() {
   return (
     <div className="brand-page-shell relative min-h-screen selection:bg-orange-600 selection:text-white pb-24 md:pb-0">
       <CinematicHero />
+
+      {/* Three doors, immediately after the hero — see AudienceSelector for why
+          this is inline rather than a blocking gate. */}
+      <AudienceSelector />
 
       <TrustStrip />
 
