@@ -8,7 +8,12 @@
  * text-gold/bg-gold despite a sibling element already using the accent var),
  * and the quote form's CTA buttons (which used the internal ops `bg-accent`/
  * `text-accent-fg` tokens — mode-dependent on the office theme toggle, not the
- * carrier's --portal-accent). See AGENTS.md's semantic-token doctrine.
+ * carrier's --portal-accent), and the sessionless accept/[token] invitation
+ * page (its "sign in here" link was hardcoded text-gold and its form button
+ * used the same internal ops bg-accent/text-accent-fg tokens as the quote
+ * form, even though the page has the invitation's carrier_id available to
+ * resolve the real accent, same trick as /track/[token]). See AGENTS.md's
+ * semantic-token doctrine.
  */
 import { readFileSync } from "node:fs"
 import { join } from "node:path"
@@ -30,6 +35,14 @@ const STOP_TIMELINE_SOURCE = readFileSync(
 )
 const QUOTE_FORM_SOURCE = readFileSync(
   join(__dirname, "../../../components/hub/PortalQuoteForm.tsx"),
+  "utf-8"
+)
+const ACCEPT_PAGE_SOURCE = readFileSync(
+  join(__dirname, "../../../app/hub/portal/accept/[token]/page.tsx"),
+  "utf-8"
+)
+const ACCEPT_FORM_SOURCE = readFileSync(
+  join(__dirname, "../../../components/hub/AcceptInvitationForm.tsx"),
   "utf-8"
 )
 
@@ -74,5 +87,22 @@ describe("portal quote form accent tokens", () => {
   it("the CTA buttons follow --portal-accent, not the internal ops bg-accent/text-accent-fg tokens", () => {
     expect(QUOTE_FORM_SOURCE).not.toMatch(/bg-accent\b|text-accent-fg\b|bg-accent-hover\b/)
     expect(QUOTE_FORM_SOURCE).toMatch(/var\(--portal-accent\)/)
+  })
+})
+
+describe("accept invitation page + form accent tokens (sessionless, resolves via invitation.carrier_id)", () => {
+  it("the page resolves the carrier's accent instead of the layout's sessionless default", () => {
+    expect(ACCEPT_PAGE_SOURCE).toMatch(/resolvePortalAccent\(s\.branding\.accent\)/)
+    expect(ACCEPT_PAGE_SOURCE).toMatch(/"--portal-accent":\s*accent\.text/)
+  })
+
+  it("the already-used sign-in link follows --portal-accent, not hardcoded gold", () => {
+    expect(ACCEPT_PAGE_SOURCE).not.toMatch(/text-gold|bg-gold|border-gold/)
+    expect(ACCEPT_PAGE_SOURCE).toMatch(/var\(--portal-accent\)/)
+  })
+
+  it("the form's submit button follows --portal-accent, not the internal ops bg-accent/text-accent-fg tokens", () => {
+    expect(ACCEPT_FORM_SOURCE).not.toMatch(/bg-accent\b|text-accent-fg\b|bg-accent-hover\b/)
+    expect(ACCEPT_FORM_SOURCE).toMatch(/var\(--portal-accent\)/)
   })
 })
