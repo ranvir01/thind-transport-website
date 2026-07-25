@@ -65,6 +65,16 @@ export async function listWebsiteLeads(limit = 100): Promise<WebsiteLead[]> {
   )
 }
 
+export async function getWebsiteLead(id: string): Promise<WebsiteLead | null> {
+  return queryOne<WebsiteLead>(
+    `SELECT id::text, name, email, phone, source, driver_type, experience_years, message,
+            status, created_at::text, contacted_at::text
+     FROM hub.website_leads
+     WHERE id = $1::bigint`,
+    [id]
+  )
+}
+
 export async function countNewWebsiteLeads(): Promise<number> {
   try {
     const row = await queryOne<{ n: string }>(

@@ -7,6 +7,7 @@
 import { hubDb, query, queryOne } from "./db"
 import { ORIENTATION_TEMPLATE, type Applicant, type ApplicantStage } from "./recruiting-shared"
 import { assertCarrierRefs } from "./tenancy"
+import { getWebsiteLead, setWebsiteLeadStatus } from "./website-leads"
 
 /** Thind's own carrier row (migration 002) — the only tenant whose real
  *  applicants land in the legacy, carrier-less public.public_applications
@@ -380,6 +381,61 @@ export async function importPublicApplicants(
     if (created) imported++
   }
   return { imported }
+}
+
+/**
+ * Promote a website driver lead (hub.website_leads) into the recruiting
+ * pipeline as an applicant. Same tenant guard as importPublicApplicants:
+ * website_leads carries no carrier_id — it's the marketing site's pre-tenant
+ * capture table, so only the site's operator (Thind) may pull its PII into a
+ * pipeline. Idempotent: the applicant bridge id `website-lead:<id>` rides the
+ * existing (carrier_id, public_application_id) unique index, so a repeat tap
+ * reports "already promoted" instead of duplicating the applicant. On success
+ * the lead is closed — it's being worked in Recruiting now, the leads list
+ * should stop nagging about it.
+ */
+export async function promoteWebsiteLead(
+  carrierId: string,
+  leadId: string,
+  actorName: string
+): Promise<{ ok: boolean; applicantId?: string; error?: string }> {
+  if (carrierId !== THIND_CARRIER_ID) {
+    return { ok: false, error: "Website leads belong to the site operator" }
+  }
+  const lead = await getWebsiteLead(leadId)
+  if (!lead) return { ok: false, error: "Lead not found" }
+
+  // Leads capture one free-text name field; applicants require first + last.
+  const nameParts = (lead.name ?? "").trim().split(/\s+/).filter(Boolean)
+  const firstName = nameParts[0] ?? lead.email.split("@")[0]
+  const lastName = nameParts.slice(1).join(" ") || "(website lead)"
+  // "5+", "10+ years" → 5, 10; free text with no digits → null.
+  const experience = (lead.experience_years ?? "").match(/\d+(\.\d+)?/)
+  const notes = [
+    lead.driver_type ? `Applied as: ${lead.driver_type}` : null,
+    lead.source ? `Website lead via ${lead.source}` : "Website lead",
+    lead.message ? `Message: ${lead.message}` : null,
+  ]
+    .filter(Boolean)
+    .join("\n")
+
+  const applicant = await createApplicant(
+    carrierId,
+    {
+      firstName,
+      lastName,
+      phone: lead.phone,
+      email: lead.email,
+      yearsExperience: experience ? Number(experience[0]) : null,
+      source: "public_site",
+      notes,
+      publicApplicationId: `website-lead:${lead.id}`,
+    },
+    actorName
+  )
+  if (!applicant) return { ok: false, error: "Already in the recruiting pipeline" }
+  await setWebsiteLeadStatus(lead.id, "closed")
+  return { ok: true, applicantId: applicant.id }
 }
 
 // ---- Scorecards ----
