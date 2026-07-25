@@ -99,6 +99,7 @@ describe("recordPayment write scoping", () => {
     const clientQuery = vi.fn(async (text: string, params: unknown[] = []) => {
       const sql = String(text)
       if (sql.includes("UPDATE hub.invoices SET status")) return { rows: [{ status: "partial" }] }
+      if (sql.includes("AS open_cents")) return { rows: [{ open_cents: 100000 }] }
       return { rows: [] }
     })
     hubDbMock.mockReturnValue({
@@ -123,5 +124,11 @@ describe("recordPayment write scoping", () => {
     expect(update).toBeDefined()
     expect(String(update![0])).toContain("WHERE id = $1 AND carrier_id = $2")
     expect(update![1]).toEqual(["inv-1", CARRIER])
+
+    const balance = clientQuery.mock.calls.find(([sql]) => String(sql).includes("AS open_cents"))
+    expect(balance).toBeDefined()
+    expect(String(balance![0])).toContain("i.carrier_id = $2")
+    expect(String(balance![0])).toContain("p.carrier_id = i.carrier_id")
+    expect(balance![1]).toEqual(["inv-1", CARRIER])
   })
 })
