@@ -11,6 +11,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { path: "/apply", changeFrequency: "weekly" as const, priority: 0.95 },
     { path: "/pay-rates", changeFrequency: "weekly" as const, priority: 0.9 },
     { path: "/routes", changeFrequency: "weekly" as const, priority: 0.9 },
+    { path: "/app", changeFrequency: "monthly" as const, priority: 0.7 },
     { path: "/brokers", changeFrequency: "monthly" as const, priority: 0.8 },
     { path: "/shippers", changeFrequency: "monthly" as const, priority: 0.85 },
     { path: "/cdl-jobs", changeFrequency: "weekly" as const, priority: 0.85 },
