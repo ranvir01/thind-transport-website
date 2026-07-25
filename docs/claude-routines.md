@@ -1075,3 +1075,44 @@ Backlog:
 - Carried, unchanged: npm audit's high-severity findings (owner-approval-gated semver-major bump); Rust
   sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision); IFTA due-date roll not
   accounting for legal holidays (documented scope decision).
+
+## Compliance docs E2E sweep — 2026-07-25 ~17:45 UTC (verify-and-build cycle)
+
+Started from the integrator tip `b0ddf162` (1 commit ahead of main, STEADY STATE): full verify chain
+green — `npm run build`, `npx vitest run` (191 files/1599 tests, 7 skipped), `npm run lint` (eslint
+clean), `npm run test:sidecars` (21 Go tests via `go vet`+`go test`, 29 Rust tests via `cargo clippy -D
+warnings`+`cargo test`). Three more commits landed on the integrator mid-cycle (`82c4aa01` interaction
+QA battery, `de94719d` reject-overpayment fix, `05acbc37` IFTA worksheet totals row, `9ac9ed41` payment
+fake test coverage) — fetched + rebased this doc-only change onto the new tip `9ac9ed41` and re-ran
+`npm run build` + `npx vitest run` (201 files/1782 tests) clean before pushing, per the routine's
+fetch-then-rebase rule. The prior cycle (`b0ddf162`) had already swept the newest Backlog's
+"second subsystem-rotation pass" pointer (money-rounding call sites, gradient-headline visual pass,
+driver PWA manifest fix) with 0 defects, and every named owner-gated item (lane prune, npm audit, IFTA
+holiday roll) needs a human call — nothing agent-pickable this cycle, so per step 6 of the routine
+prompt picked the fallback: E2E-sweep one untested workflow. Compliance docs hadn't been re-swept since
+`7ad8a4b7` (several cycles back), the stalest of the five named candidates alongside messages (both last
+swept together at `7ad8a4b7`) — dispatch board/expenses were re-swept more recently (`912a7ae7`/
+`1b9620ef`).
+
+Stood up a local rig (`service postgresql start`; `npm run db:migrate` — 21 migrations; `npm run
+seed:demo`; `npm run build && npm run start`) and ran `scripts/e2e-compliance-smoke.mjs`: owner's
+compliance wall (red/amber/green tile counts, expired-pill rendering, IFTA quarterly filing
+auto-tracked with no duplicate rows), manual company item add + resolve (red count drops by exactly
+one), a driver-document upload through `DocumentsPanel`, and the forced-dark-role guard (a driver login
+bounces off `/hub/compliance` back to `/hub/driver`, zero console errors). All 5 steps passed, 0
+defects, 0 regressions. No product code change to ship this cycle.
+
+Backlog:
+- `lane-tests` (1443 unpicked) and `lane-compliance` (1552+ unpicked) remain the two largest pending
+  branches; per `9bc1e0c5` do NOT plain-merge either — meta-governor prune pass remains overdue across
+  many cycles now.
+- Five branches confirmed fully superseded-by-HEAD across recent cycles (safe deletion candidates for
+  the meta-governor pass, not re-triage targets): `claude/compassionate-bell-8r88rj`,
+  `claude/pensive-allen-smw0re`, `claude/stoic-mccarthy-b5gw3k`, `claude/pensive-allen-kpjskl`,
+  `claude/eager-babbage-queewe`.
+- Messages is now the stalest named E2E-sweep candidate (last swept alongside compliance at
+  `7ad8a4b7`, several cycles back) — next verify-and-build run should pick it if no fresher backlog
+  item exists.
+- Carried, unchanged: npm audit's high-severity findings (owner-approval-gated semver-major bump); Rust
+  sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision); IFTA due-date roll not
+  accounting for legal holidays (documented scope decision).
