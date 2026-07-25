@@ -900,3 +900,67 @@ Backlog:
 - Carried, unchanged: npm audit's high-severity findings (owner-approval-gated semver-major bump); Rust
   sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision); IFTA due-date roll not
   accounting for legal holidays (documented scope decision).
+
+## QA rig drive on main@86f5df3 — 2026-07-25 ~04:30 UTC (owner/dispatcher/driver, read-only prod probe)
+
+Charter (docs/agent-improvement-loop.md §5): no feature work — stand up the local rig, drive real
+owner/dispatcher/driver/broker/shipper/portal flows, probe `thindtransport.com` read-only, fix only
+outright regressions from the last 3h of commits.
+
+**Last-3h review**: four commits landed inside the window — `0c68cf1` (driver PWA: stamp arrive/depart
+timestamps at tap time instead of replay time, closing a detention-billing correctness gap) plus its
+`eb22fb9` record commit and two `.drain-stamp` drain commits (`466d8d0`, `86f5df3`). Read `0c68cf1`'s
+diff directly rather than trusting its own commit message: `driverStopTimestamp` (`_actions/driver.ts`)
+now takes a required `at` parameter instead of stamping `new Date().toISOString()` server-side, and
+`DriverLoadCard.tsx`'s two tap handlers (`arrived_at`/`departed_at`) capture `at = new
+Date().toISOString()` client-side at tap time and thread it through both the live call and the queued
+offline intent. `requireDriverUser` + `driverOwnsLoad` tenancy checks are unchanged; `setStopTimestamp`
+still binds the value through a parameterized query scoped by `carrier_id`/`load_id`, so there's no new
+tenancy or injection surface — a driver can only skew their own stop's timestamp, same trust boundary
+the incident report's `occurredAt` already accepts. **No regression** — confirmed correct, not just
+"tests pass."
+
+Fresh local rig from scratch (Postgres was down, no `hubapp` role/`hubdb` database existed yet — created
+both per the dev-workflow-testing skill's pitfall #9, `.env.local` didn't exist and was written fresh),
+`npm ci` (748 packages), `npm run db:migrate` (21/21 migrations clean) + `npm run seed:demo`, `npm run
+build` (Turbopack, all routes) + `npx vitest run` (189 files/1592 tests green, matching `eb22fb9`'s own
+count exactly) all clean before driving anything.
+
+Ran the full `scripts/e2e-battery.mjs` (49 `e2e-*-smoke.mjs` scripts covering owner, dispatcher,
+accountant, driver, broker, shipper, portal, tenant-isolation, and public-site flows, plus the visual
+sweep) against a `next start` server on the freshly seeded database. **49/49 PASS**, including
+`driver-smoke` and `driver-offline-smoke` exercising the exact arrive/depart tap path `0c68cf1` touched.
+
+Production probe via the Vercel connector (direct HTTPS to `thindtransport.com` stayed egress-blocked
+this session, consistent with every prior cycle — CONNECT tunnel 403): `get_runtime_errors` for the
+past 3h returned zero errors, and `web_fetch_vercel_url` against `/hub/login` returned 200 with a clean
+render (login form present, no error boundary, no console-visible failure in the HTML). Production is
+healthy and serving correctly.
+
+One finding, not a regression: `get_project`/`list_deployments` show the latest **production** deploy
+(`dpl_EW5JfaoyPcriqbL8BVbbXsBfcALC`) is still built from `cb5e93a` (the "Owner checklist" commit,
+deployed 03:45:25 UTC) — the four commits pushed to `main` after it (`0c68cf1` through `86f5df3`,
+landing 03:50:33–03:55:51 UTC) have **zero** deployment records of any kind (not READY, not CANCELED,
+not even QUEUED) as of 04:28 UTC, ~43 minutes and 4 pushes with no build attempt. This matches the
+known "Vercel Git integration doesn't fire on every main push" / Hobby-quota-saturation pattern this doc
+already documents (`Deploy discipline`, learned 2026-07-22) rather than a new failure mode, and that
+section's own fix — the next hourly drain pushes a fresh commit to `main`, which retriggers the
+webhook — is due within minutes of this cycle ending (Routine 1 fires :43 UTC, the `drain-integrator.yml`
+backstop :47 UTC). Not paging on this alone: production is serving correctly, just 4 commits stale, and
+self-heals via the documented mechanism; flagging here in case it does *not* clear by the next cycle, at
+which point it graduates from "normal lag" to the same dashboard-level issue paged on 2026-07-23.
+
+No code fix was available or needed to ship — 0 defects, 0 regressions, production content-correct.
+Left `main`/the integrator as-is rather than manufacture a no-op deploy.
+
+Backlog:
+- Re-check the production deploy staleness noted above next cycle: if `dpl_EW5JfaoyPcriqbL8BVbbXsBfcALC`
+  (built from `cb5e93a`) is still the latest **production** deployment more than ~1h after this cycle
+  (04:28 UTC), that's no longer normal build-trigger lag — treat it as a recurrence of the 2026-07-23
+  Vercel Git integration incident and page the owner (dashboard Git integration / production-branch /
+  Ignored-Build-Step check, per that incident's resolution).
+- `lane-tests` (1443 unpicked) and `lane-compliance` (1540 unpicked) remain the two largest pending
+  branches by a wide margin; meta-governor prune pass remains overdue across many cycles now.
+- Carried, unchanged: npm audit's high-severity findings (owner-approval-gated semver-major bump); Rust
+  sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision); IFTA due-date roll not
+  accounting for legal holidays (documented scope decision).
