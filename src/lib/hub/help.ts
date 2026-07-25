@@ -148,3 +148,86 @@ export const HUB_TOURS: HubTour[] = [
 export function getTour(id: string): HubTour | undefined {
   return HUB_TOURS.find((t) => t.id === id)
 }
+
+export interface PlaybookStep {
+  text: string
+  /** Optional aside: a shortcut, gotcha, or "we do this for you" note. */
+  note?: string
+}
+
+export interface Playbook {
+  id: string
+  title: string
+  summary: string
+  steps: PlaybookStep[]
+}
+
+/**
+ * Written playbooks for the jobs that span several screens. The interactive
+ * tours spotlight the UI; these are the read-it-once reference for the whole
+ * loop (and what a new dispatcher gets handed on day one).
+ */
+export const PLAYBOOKS: Playbook[] = [
+  {
+    id: "load-end-to-end",
+    title: "Run a load end to end",
+    summary: "The full quote-to-cash loop: book, dispatch, deliver, invoice, settle.",
+    steps: [
+      { text: "Book it in Loads → New load: customer, lane, rate, equipment.", note: "Or paste the rate confirmation and let LoadOff fill the fields." },
+      { text: "Open the load and assign a driver — hours and medical-card status are checked for you." },
+      { text: "Dispatch it. The driver gets the stops, rate con, and directions on their phone." },
+      { text: "Watch it on the Dispatch board and Live map; send the broker a public tracking link." },
+      { text: "On delivery the driver photographs the signed POD and it lands on the load." },
+      { text: "Create the invoice from the load, check the line items, and send it." },
+      { text: "Record the payment when it arrives; the load closes out." },
+      { text: "Pay the driver from Money → Settlements." },
+    ],
+  },
+  {
+    id: "rate-con",
+    title: "Turn a rate confirmation into a load",
+    summary: "A broker PDF or email becomes a booked load in seconds.",
+    steps: [
+      { text: "Open Loads and choose the paste/import option." },
+      { text: "Drop the PDF or paste the email body.", note: "Most broker rate-con formats are handled automatically." },
+      { text: "LoadOff pulls out the customer, stops, rate, reference, and equipment." },
+      { text: "Review anything flagged low-confidence — those are the only fields worth double-checking." },
+      { text: "Save. The load enters as booked, ready to assign." },
+    ],
+  },
+  {
+    id: "invoice-get-paid",
+    title: "Invoice a broker and get paid",
+    summary: "Bill the moment the POD is in hand, then track the money.",
+    steps: [
+      { text: "From a delivered load, create the invoice." },
+      { text: "Confirm the rate, accessorials, and detention.", note: "Factored customers route to the factoring remit-to automatically." },
+      { text: "Send it by email or download the PDF — the POD attaches for you." },
+      { text: "Track it under Money → Invoices and the AR aging view." },
+      { text: "Record the payment when funds land; the load moves to paid." },
+    ],
+  },
+  {
+    id: "settlements",
+    title: "Run weekly settlements",
+    summary: "Pay every driver accurately, on the same day each week.",
+    steps: [
+      { text: "Go to Money → Settlements." },
+      { text: "LoadOff gathers each driver's delivered loads for the pay period." },
+      { text: "Review gross pay, deductions, advances, escrow, and reimbursements.", note: "Each driver's own pay rules — per-mile or percentage — drive the math." },
+      { text: "Run payroll to lock the settlements and generate pay statements." },
+    ],
+  },
+  {
+    id: "ifta",
+    title: "File IFTA for the quarter",
+    summary: "Miles and fuel by jurisdiction, reefer-exempt handled correctly.",
+    steps: [
+      { text: "Open Fuel → IFTA for the quarter you're filing." },
+      { text: "Miles per state come from trips and position pings." },
+      { text: "Fuel-card imports fill in tax-paid gallons; reefer and DEF are excluded automatically." },
+      { text: "Review the per-jurisdiction miles and gallons against your own records." },
+      { text: "Export the worksheet — base tax and surcharge are split out, ready to file." },
+    ],
+  },
+]
