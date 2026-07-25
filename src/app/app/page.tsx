@@ -11,6 +11,14 @@ export const metadata: Metadata = {
   description:
     "The Thind Transport driver app installs straight from your browser — no app store, no download. Confirm dispatches, send PODs from the camera, check pay, and keep working with no signal.",
   alternates: { canonical: "/app" },
+  // Deliberate override of the root layout's marketing manifest: anyone using
+  // Share → Add to Home Screen ON THIS PAGE means the driver app, and iOS
+  // binds the icon to whatever manifest the current page carries. With the
+  // marketing manifest here, that icon opened the website (start_url "/") —
+  // the exact wrong-app report from the owner's iPhone. With the LoadOff
+  // manifest, the same gesture installs the app (start_url "/hub").
+  manifest: "/api/hub/manifest",
+  appleWebApp: { capable: true, title: "LoadOff" },
 }
 
 /**
@@ -54,6 +62,10 @@ const FEATURES = [
 export default function GetAppPage() {
   return (
     <div className="bg-paper">
+      {/* iOS keys standalone launch off the apple-prefixed name; Next's
+          appleWebApp.capable emits only mobile-web-app-capable. React hoists
+          this into <head>. */}
+      <meta name="apple-mobile-web-app-capable" content="yes" />
       <PageBreadcrumb pageName="Driver app" category="Drivers" />
 
       <section className="bg-asphalt py-16 text-paper md:py-24">
