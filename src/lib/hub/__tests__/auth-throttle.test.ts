@@ -147,4 +147,21 @@ describe("throttle scopes", () => {
     await recordAttempt("email:driver@example.com", false, "signup")
     expect(queryMock).not.toHaveBeenCalled()
   })
+
+  it("public-form scope carries its looser 20-per-15-minute budget", async () => {
+    // 19 recent submissions: a busy recruiting office is still fine…
+    queryOneMock.mockResolvedValue({ failures: "19" })
+    expect(await isLockedOut("ip:203.0.113.9", "public-form")).toBe(false)
+    // …the 20th trips it.
+    queryOneMock.mockResolvedValue({ failures: "20" })
+    expect(await isLockedOut("ip:203.0.113.9", "public-form")).toBe(true)
+    expect(queryOneMock.mock.calls[0][1]).toEqual(["public-form:ip:203.0.113.9"])
+  })
+
+  it("honors a tighter per-call override (the email key's 6)", async () => {
+    queryOneMock.mockResolvedValue({ failures: "6" })
+    expect(await isLockedOut("driver@example.com", "public-form", 6)).toBe(true)
+    queryOneMock.mockResolvedValue({ failures: "5" })
+    expect(await isLockedOut("driver@example.com", "public-form", 6)).toBe(false)
+  })
 })

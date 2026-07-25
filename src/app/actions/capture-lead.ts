@@ -4,6 +4,7 @@ import { z } from "zod"
 import { COMPANY_INFO } from "@/lib/constants"
 import { createMailTransport, isEmailConfigured, mailFrom } from "@/lib/mailer"
 import { saveWebsiteLead } from "@/lib/hub/website-leads"
+import { honeypotTripped, publicFormBlocked } from "@/lib/public-form-guard"
 
 const leadSchema = z.object({
   name: z.string().min(2).optional(),
@@ -21,6 +22,10 @@ export type LeadState = {
 
 export async function captureLead(prevState: LeadState, formData: FormData): Promise<LeadState> {
   try {
+    // Bot filled the invisible field → fake success, no signal to tune on.
+    if (honeypotTripped(formData)) {
+      return { success: true, message: "Got it — someone from our team will reach out soon." }
+    }
     // FormData.get returns null for absent fields; zod .optional() accepts
     // undefined but rejects null — that mismatch silently failed EVERY lead
     // that omitted any optional field (the apply form omits `message`).
@@ -47,6 +52,15 @@ export async function captureLead(prevState: LeadState, formData: FormData): Pro
     }
 
     const data = validatedData.data
+
+    // Same copy as the genuine-failure path below: a throttled caller learns
+    // nothing beyond "try the phone", which is also the right advice.
+    if (await publicFormBlocked(data.email)) {
+      return {
+        success: false,
+        message: `We couldn't save that just now. Call or text ${COMPANY_INFO.phone} and we'll help you directly.`,
+      }
+    }
 
     // Database first — with SMTP unset (production today), email-only capture
     // silently discarded every interested driver. The hub's Today screen and

@@ -12,10 +12,21 @@
  */
 import { hubDbAvailable, query, queryOne } from "./db"
 
-export type ThrottleScope = "login" | "signup"
+export type ThrottleScope = "login" | "signup" | "public-form"
 
-const WINDOW_MINUTES = 15
-const MAX_FAILURES = 5
+/**
+ * Per-scope budgets. login/signup keep the historical 5-in-15. public-form is
+ * deliberately looser: those keys count every SUBMISSION (not every failure),
+ * and one office behind a corporate NAT legitimately submits several driver
+ * referrals plus typo-resubmits from a single IP — the budget has to absorb a
+ * whole recruiting afternoon while still stopping a bot from burning the SMTP
+ * quota, which needs hundreds of sends to matter, not twenty.
+ */
+const SCOPE_LIMITS: Record<ThrottleScope, { windowMinutes: number; maxFailures: number }> = {
+  login: { windowMinutes: 15, maxFailures: 5 },
+  signup: { windowMinutes: 15, maxFailures: 5 },
+  "public-form": { windowMinutes: 15, maxFailures: 20 },
+}
 
 function throttleKey(identifier: string, scope: ThrottleScope): string {
   const key = identifier.trim().toLowerCase()
@@ -24,16 +35,18 @@ function throttleKey(identifier: string, scope: ThrottleScope): string {
 
 export async function isLockedOut(
   identifier: string,
-  scope: ThrottleScope = "login"
+  scope: ThrottleScope = "login",
+  maxOverride?: number
 ): Promise<boolean> {
   if (!hubDbAvailable()) return false
+  const { windowMinutes, maxFailures } = SCOPE_LIMITS[scope]
   try {
     const row = await queryOne<{ failures: string }>(
       `SELECT COUNT(*) AS failures FROM hub.auth_attempts
-       WHERE email = $1 AND success = FALSE AND attempted_at > NOW() - INTERVAL '${WINDOW_MINUTES} minutes'`,
+       WHERE email = $1 AND success = FALSE AND attempted_at > NOW() - INTERVAL '${windowMinutes} minutes'`,
       [throttleKey(identifier, scope)]
     )
-    return Number(row?.failures ?? 0) >= MAX_FAILURES
+    return Number(row?.failures ?? 0) >= (maxOverride ?? maxFailures)
   } catch {
     return false
   }

@@ -10,6 +10,8 @@ import { useState } from "react"
 import { Loader2, Send } from "lucide-react"
 import { captureLead } from "@/app/actions/capture-lead"
 import { COMPANY_INFO } from "@/lib/constants"
+import { HONEYPOT_FIELD } from "@/lib/honeypot"
+import { HoneypotField } from "@/components/shared/HoneypotField"
 
 export function ShipperQuoteForm() {
   const [state, setState] = useState<"idle" | "sending" | "done" | "error">("idle")
@@ -20,6 +22,8 @@ export function ShipperQuoteForm() {
     const form = e.currentTarget
     const data = new FormData(form)
     const fd = new FormData()
+    const hp = data.get(HONEYPOT_FIELD)
+    if (typeof hp === "string" && hp) fd.append(HONEYPOT_FIELD, hp)
     fd.append("name", String(data.get("contact") || ""))
     fd.append("email", String(data.get("email") || ""))
     fd.append("phone", String(data.get("phone") || ""))
@@ -68,7 +72,8 @@ export function ShipperQuoteForm() {
     "w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-gray-900 placeholder:text-gray-400 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/20"
 
   return (
-    <form onSubmit={onSubmit} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+    <form onSubmit={onSubmit} className="relative grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <HoneypotField />
       <input name="company" required placeholder="Company / Brokerage *" className={field} aria-label="Company" />
       <input name="contact" required placeholder="Contact name *" className={field} aria-label="Contact name" />
       <input name="email" type="email" required placeholder="Work email *" className={field} aria-label="Email" />
