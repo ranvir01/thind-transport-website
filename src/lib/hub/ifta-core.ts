@@ -13,6 +13,8 @@
 import { roundHalfAwayFromZero } from "./money"
 import type { IftaReportRow } from "./types"
 
+export const SURCHARGE_JURISDICTIONS = ["IN", "KY", "VA"] as const
+
 export interface IftaInputs {
   /** Miles traveled per jurisdiction (all IFTA miles are taxable here). */
   milesByJurisdiction: Record<string, number>
@@ -125,6 +127,40 @@ export function iftaRowFuelTaxCents(
   return row.taxCents != null ? Number(row.taxCents) : Number(row.netCents ?? 0) - surchargeCents
 }
 
+export interface IftaWorksheetTotals {
+  miles: number
+  taxableGallons: number
+  taxPaidGallons: number
+  /** Base fuel tax (surcharge excluded), summed across jurisdictions. */
+  taxCents: number
+  surchargeCents: number
+  netCents: number
+}
+
+/**
+ * Column totals for the worksheet table. A state IFTA return asks for total
+ * taxable gallons, total tax-paid gallons, and total tax as its own summary
+ * lines, so a filer transcribing from the worksheet needs the columns summed —
+ * not just the fleet-miles / net-tax tiles. Uses iftaRowFuelTaxCents so legacy
+ * reports (pre taxCents/surchargeCents split) total the base tax correctly.
+ */
+export function iftaWorksheetTotals(
+  rows: Partial<Pick<IftaReportRow, "miles" | "taxableGallons" | "taxPaidGallons" | "taxCents" | "surchargeCents" | "netCents">>[]
+): IftaWorksheetTotals {
+  const totals: IftaWorksheetTotals = {
+    miles: 0, taxableGallons: 0, taxPaidGallons: 0, taxCents: 0, surchargeCents: 0, netCents: 0,
+  }
+  for (const row of rows) {
+    totals.miles += Number(row.miles ?? 0)
+    totals.taxableGallons += Number(row.taxableGallons ?? 0)
+    totals.taxPaidGallons += Number(row.taxPaidGallons ?? 0)
+    totals.taxCents += iftaRowFuelTaxCents(row)
+    totals.surchargeCents += Number(row.surchargeCents ?? 0)
+    totals.netCents += Number(row.netCents ?? 0)
+  }
+  return totals
+}
+
 export interface IftaWorksheetWarningInputs {
   status: "draft" | "reviewed" | "filed"
   rows: Pick<IftaReportRow, "jurisdiction" | "rate" | "surchargeRate">[]
@@ -203,4 +239,40 @@ export function iftaDueDate(quarter: string): Date {
   if (dow === 6) due.setUTCDate(due.getUTCDate() + 2)
   else if (dow === 0) due.setUTCDate(due.getUTCDate() + 1)
   return due
+}
+
+/**
+ * How far behind UTC the carrier's local midnight is. There is no timezone on
+ * the carrier record, so this is a fixed, deterministic offset rather than a
+ * runtime lookup: Pacific Standard Time (UTC−8), the westernmost of the
+ * lower-48 zones and the offset actually in force on the January 31 due date.
+ *
+ * Using standard time year-round (never daylight time) means the wall can only
+ * ever be an hour LATE calling a filing overdue, never an hour early — a false
+ * "overdue" on a filing that is still on time is the failure that makes an
+ * office stop trusting the compliance wall.
+ */
+const DUE_DATE_LOCAL_UTC_OFFSET_HOURS = 8
+
+/**
+ * The instant a quarter's filing stops being on time.
+ *
+ * iftaDueDate() returns UTC MIDNIGHT of the due date, i.e. the very start of
+ * the day the filing is due — comparing `due < now` called a filing overdue
+ * from 00:00Z of the due date, ~31 hours before the deadline actually passed
+ * in the carrier's own time. A filing due the 31st is on time through 23:59
+ * local on the 31st, so it is late only from local midnight of the 1st.
+ */
+export function iftaLateAfter(quarter: string): Date {
+  const due = iftaDueDate(quarter)
+  return new Date(due.getTime() + (24 + DUE_DATE_LOCAL_UTC_OFFSET_HOURS) * 3600_000)
+}
+
+/**
+ * Whether a quarter's filing is past due at `now`. The ONE place the overdue
+ * comparison lives, so the compliance wall and the IFTA worksheet screen can
+ * never disagree about whether a quarter is late.
+ */
+export function iftaFilingIsLate(quarter: string, now: Date): boolean {
+  return now.getTime() >= iftaLateAfter(quarter).getTime()
 }

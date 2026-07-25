@@ -9,7 +9,7 @@ import { createTruck } from "@/lib/hub/fleet"
 import { createDriver } from "@/lib/hub/drivers"
 import { getCarrier, getCarrierSettings } from "@/lib/hub/settings"
 import { sendDriverInviteEmail } from "@/lib/hub/driver-invite"
-import { query } from "@/lib/hub/db"
+import { query, hubDb } from "@/lib/hub/db"
 import { logAudit } from "@/lib/hub/audit"
 import { classifyFuelUse } from "@/lib/hub/fuel-core"
 import { decodeVin, type VinDecodeResult } from "@/lib/hub/vin"
@@ -144,16 +144,19 @@ export async function importLoadsAction(
           source: "import",
           notes: row.notes?.trim() || null,
           stops: [
+            // A stop's state is display/reporting only (it never drives tax),
+            // so an unrecognized value lands blank rather than blocking the
+            // load — but it is never guessed into a wrong-but-valid code.
             {
               type: "pickup",
               city: row.origin_city.trim(),
-              state: normalizeState(row.origin_state ?? ""),
+              state: normalizeState(row.origin_state ?? "") ?? "",
               appt_start: parseDateSafe(row.pickup_date),
             },
             {
               type: "delivery",
               city: row.dest_city.trim(),
-              state: normalizeState(row.dest_state ?? ""),
+              state: normalizeState(row.dest_state ?? "") ?? "",
               appt_start: parseDateSafe(row.delivery_date),
             },
           ],
@@ -573,11 +576,14 @@ export async function importMileageAction(rows: GenericRow[]): Promise<ImportRes
     return { ok: false, imported: 0, failed: [{ row: 0, error: denied.error }] }
   }
   const failed: { row: number; error: string }[] = []
-  let imported = 0
   const trucks = await truckMap(user.carrierId)
   const { randomUUID } = await import("crypto")
   const runId = randomUUID()
 
+  // Validate the whole file BEFORE touching the table: this import replaces
+  // the quarter's previous import, so a file that turns out to be garbage must
+  // not be able to delete miles that were fine.
+  const valid: { truckId: string; quarter: string; jurisdiction: string; miles: number }[] = []
   for (let i = 0; i < rows.length; i++) {
     const row = rows[i]
     try {
@@ -585,18 +591,74 @@ export async function importMileageAction(rows: GenericRow[]): Promise<ImportRes
       if (!truckId) throw new Error(`Unknown truck unit "${row.truck_unit}"`)
       const quarter = row.quarter?.trim().toUpperCase()
       if (!/^\d{4}Q[1-4]$/.test(quarter ?? "")) throw new Error("Bad quarter (use 2026Q2)")
+      // A jurisdiction that isn't a real state/province is a row error, not a
+      // guess: miles filed under the wrong state hand another state the
+      // fuel-tax credit and are only found in an audit.
+      const jurisdiction = normalizeState(row.jurisdiction ?? "")
+      if (!jurisdiction) {
+        throw new Error(`Unknown jurisdiction "${(row.jurisdiction ?? "").trim()}" — use the 2-letter code (WA, MN, BC)`)
+      }
       const miles = Number(row.miles?.replace(/[^0-9.]/g, ""))
       if (!Number.isFinite(miles) || miles < 0) throw new Error("Bad miles")
-      await query(
-        `INSERT INTO hub.jurisdiction_miles (carrier_id, run_id, truck_id, quarter, jurisdiction, miles, source)
-         VALUES ($1,$2,$3,$4,$5,$6,'import')`,
-        [user.carrierId, runId, truckId, quarter, normalizeState(row.jurisdiction ?? ""), miles]
-      )
-      imported++
+      valid.push({ truckId, quarter: quarter!, jurisdiction, miles })
     } catch (err) {
       failed.push({ row: i + 1, error: actionErrorMessage(err, "Unknown error") })
     }
   }
+
+  // An import REPLACES that quarter's previous import. computeIftaQuarter sums
+  // the quarter's imported rows, so re-uploading the same file used to stack a
+  // second run on top of the first and double the miles — which overpays the
+  // fuel tax. Delete + insert run in ONE transaction so a mid-import failure
+  // can never leave the quarter with no miles at all. Only quarters actually
+  // present in this file are touched.
+  let imported = 0
+  let replaced = 0
+  const quarters = [...new Set(valid.map((v) => v.quarter))].sort()
+  if (valid.length > 0) {
+    const client = await hubDb().connect()
+    try {
+      await client.query("BEGIN")
+      for (const quarter of quarters) {
+        const deleted = await client.query(
+          `DELETE FROM hub.jurisdiction_miles
+           WHERE carrier_id = $1 AND quarter = $2 AND source = 'import'`,
+          [user.carrierId, quarter]
+        )
+        replaced += deleted.rowCount ?? 0
+      }
+      for (const entry of valid) {
+        await client.query(
+          `INSERT INTO hub.jurisdiction_miles (carrier_id, run_id, truck_id, quarter, jurisdiction, miles, source)
+           VALUES ($1,$2,$3,$4,$5,$6,'import')`,
+          [user.carrierId, runId, entry.truckId, entry.quarter, entry.jurisdiction, entry.miles]
+        )
+      }
+      await client.query("COMMIT")
+      imported = valid.length
+    } catch (err) {
+      await client.query("ROLLBACK").catch(() => {})
+      return {
+        ok: false,
+        imported: 0,
+        failed: [
+          ...failed,
+          { row: 0, error: actionErrorMessage(err, "Import failed — the quarter's miles on file were left unchanged") },
+        ],
+      }
+    } finally {
+      client.release()
+    }
+  }
+
+  // This import deletes the quarter's previous mileage rows, and those miles
+  // drive the fuel-tax number — the replacement needs a trail.
+  await logAudit({
+    carrierId: user.carrierId, actorId: user.id, actorName: user.name,
+    entityType: "import", entityId: new Date().toISOString(),
+    action: "import_mileage",
+    newValue: { runId, imported, failed: failed.length, quarters, rowsReplaced: replaced },
+  })
   revalidatePath("/hub/compliance/ifta")
   return { ok: failed.length === 0, imported, failed }
 }

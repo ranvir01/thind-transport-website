@@ -7,6 +7,7 @@
  */
 import bcrypt from "bcrypt"
 import { hubDb, queryOne } from "@/lib/hub/db"
+import { isLockedOut, recordAttempt } from "@/lib/hub/auth-throttle"
 import { acceptDriverInvite } from "@/lib/hub/driver-invite"
 import { getHubUser, requireOwner } from "@/lib/hub/session"
 import { logAudit } from "@/lib/hub/audit"
@@ -39,6 +40,29 @@ const DEFAULT_PRICE_BOOK: ReadonlyArray<{ name: string; amountCents: number; uni
   { name: "Tarp", amountCents: 10000, unit: "flat" },
   { name: "Lumper", amountCents: 0, unit: "pass_through" },
 ]
+
+/**
+ * Signup is unauthenticated and each call inserts a carrier + settings + price
+ * book + owner user, so it gets the same throttle login has (5 per 15 minutes),
+ * keyed on the email AND on the caller's IP — the email key alone would not
+ * slow a bot cycling fresh addresses. Generic message on purpose: a throttle
+ * response must not hint at whether an account exists.
+ */
+const SIGNUP_THROTTLED = "Too many signup attempts — try again in a few minutes"
+
+/** Best-effort caller IP; unavailable (non-request context) just drops that key. */
+async function signupThrottleKeys(email: string): Promise<string[]> {
+  const keys = [`email:${email}`]
+  try {
+    const { headers } = await import("next/headers")
+    const h = await headers()
+    const ip = h.get("x-forwarded-for")?.split(",")[0]?.trim() || h.get("x-real-ip")?.trim()
+    if (ip && ip.length <= 64) keys.push(`ip:${ip}`)
+  } catch {
+    /* no request headers available — the email key still applies */
+  }
+  return keys
+}
 
 export interface CarrierAuthorityCheck {
   legalName: string | null
@@ -119,6 +143,14 @@ export async function createWorkspaceAction(input: {
       (!Number.isFinite(input.ownerOperatorPct) || input.ownerOperatorPct < 1 || input.ownerOperatorPct > 100)) {
     return { ok: false, error: "Owner-operator share must be between 1 and 100 percent" }
   }
+
+  // Throttle before any query: everything below this line costs database work.
+  const throttleKeys = await signupThrottleKeys(input.email.trim().toLowerCase())
+  for (const key of throttleKeys) {
+    if (await isLockedOut(key, "signup")) return { ok: false, error: SIGNUP_THROTTLED }
+  }
+  // Charged up front, so an attempt that times out or throws still counts.
+  for (const key of throttleKeys) await recordAttempt(key, false, "signup")
 
   const existing = await queryOne<{ id: string }>(
     `SELECT id FROM hub.users WHERE email = $1`,

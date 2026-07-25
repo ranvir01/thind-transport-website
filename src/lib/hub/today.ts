@@ -149,16 +149,20 @@ export async function todayData(carrierId: string): Promise<TodayData> {
          ORDER BY t.due_at ASC NULLS LAST LIMIT 12`,
         [carrierId]
       ),
+      // Age off the POD stamp, not updated_at (migration 022): updated_at moves
+      // on any edit to the load, so editing an unbilled load used to reset its
+      // own "delivered N days ago" counter to zero. delivered_at then
+      // updated_at are the fallbacks for rows older than the stamps.
       query<UnbilledLoad>(
         `SELECT l.id, l.reference, c.name AS customer_name,
            (l.linehaul_cents + l.fuel_surcharge_cents +
             COALESCE((SELECT SUM((a->>'amount_cents')::bigint) FROM jsonb_array_elements(l.accessorials) a), 0))::bigint AS total_cents,
-           GREATEST(0, EXTRACT(DAY FROM NOW() - l.updated_at))::int AS delivered_days_ago
+           GREATEST(0, EXTRACT(DAY FROM NOW() - COALESCE(l.pod_received_at, l.delivered_at, l.updated_at)))::int AS delivered_days_ago
          FROM hub.loads l
          LEFT JOIN hub.customers c ON c.id = l.customer_id AND c.carrier_id = l.carrier_id
          WHERE l.carrier_id = $1 AND l.deleted_at IS NULL AND l.status = 'pod_received'
            AND NOT EXISTS (SELECT 1 FROM hub.invoices i WHERE i.load_id = l.id AND i.carrier_id = l.carrier_id)
-         ORDER BY l.updated_at`,
+         ORDER BY COALESCE(l.pod_received_at, l.delivered_at, l.updated_at)`,
         [carrierId]
       ),
       listTimeOff(carrierId, { status: "requested" }),

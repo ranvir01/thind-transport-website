@@ -1,6 +1,6 @@
 import { randomUUID } from "crypto"
 import { query, queryOne } from "./db"
-import { computeIfta, quarterRange, lastCompletedQuarterKey, iftaDueDate, staleRateJurisdictions, type IftaResult } from "./ifta-core"
+import { computeIfta, quarterRange, lastCompletedQuarterKey, iftaDueDate, iftaFilingIsLate, staleRateJurisdictions, type IftaResult } from "./ifta-core"
 import { jurisdictionMilesFromPings } from "./geo"
 import { logAudit } from "./audit"
 import type { ComplianceEntry } from "./compliance"
@@ -33,10 +33,18 @@ export async function getIftaReport(carrierId: string, quarter: string): Promise
   )
 }
 
+/** Where a quarter's miles came from — per fleet, across all its trucks. */
+export type IftaMileageSource = "pings" | "import" | "mixed"
+
 /**
  * Compute (or recompute) a quarter:
- * 1. Prefer GPS pings → jurisdiction miles (per truck) under a fresh run id.
- * 2. Fall back to imported jurisdiction miles (TruckX CSV path) when no pings.
+ * 1. Every truck with GPS pings this quarter → jurisdiction miles from pings,
+ *    written under a fresh run id.
+ * 2. Every OTHER truck → its imported jurisdiction miles (TruckX CSV path).
+ *    The two sources are additive PER TRUCK and never both counted for the
+ *    same truck: one ELD-connected truck used to suppress the whole fleet's
+ *    imported miles, understating the return — the direction that draws an
+ *    audit.
  * 3. Combine with tax-paid gallons from fuel transactions; apply rates.
  * Recomputation creates a new run id — prior runs are never edited.
  */
@@ -45,7 +53,7 @@ export async function computeIftaQuarter(
   quarter: string,
   actor: { id: string; name: string },
   opts?: { allowRecomputeOfFinalized?: boolean }
-): Promise<{ result: IftaResult; mileageSource: string; unknownJurisdictionGallons: number }> {
+): Promise<{ result: IftaResult; mileageSource: IftaMileageSource; unknownJurisdictionGallons: number }> {
   // Recomputing upserts status back to 'draft' — a reviewed/filed quarter must
   // not be reset without explicit confirmation from the caller.
   const existing = await query<{ status: string }>(
@@ -72,40 +80,70 @@ export async function computeIftaQuarter(
     [carrierId, start.toISOString(), end.toISOString()]
   )
 
-  let mileageSource = "pings"
   const milesByJurisdiction: Record<string, number> = {}
+  // Membership decides the source per truck, so a truck can never be counted
+  // twice: pinged trucks are GPS-only even if the trail yields zero miles
+  // (glitch-only quarter), un-pinged trucks are import-only.
+  const pingedTruckIds = new Set(trucks.map((t) => t.truck_id))
+  let pingsContributed = false
+  let importContributed = false
 
-  if (trucks.length > 0) {
-    for (const { truck_id } of trucks) {
-      const pings = await query<{ lat: number; lng: number; ts: string }>(
-        `SELECT lat, lng, ts FROM hub.position_pings
-         WHERE carrier_id = $1 AND truck_id = $2 AND ts >= $3 AND ts < $4
-         ORDER BY ts ASC`,
-        [carrierId, truck_id, start.toISOString(), end.toISOString()]
-      )
-      const perTruck = jurisdictionMilesFromPings(pings)
-      for (const [jurisdiction, miles] of Object.entries(perTruck)) {
-        milesByJurisdiction[jurisdiction] = (milesByJurisdiction[jurisdiction] ?? 0) + miles
-        await query(
-          `INSERT INTO hub.jurisdiction_miles (carrier_id, run_id, truck_id, quarter, jurisdiction, miles, source)
-           VALUES ($1,$2,$3,$4,$5,$6,'pings')`,
-          [carrierId, runId, truck_id, quarter, jurisdiction, miles]
-        )
-      }
-    }
-  } else {
-    // 2. Imported mileage path (universal importer writes source='import')
-    mileageSource = "import"
-    const imported = await query<{ jurisdiction: string; miles: string }>(
-      `SELECT jurisdiction, SUM(miles) AS miles FROM hub.jurisdiction_miles
-       WHERE carrier_id = $1 AND quarter = $2 AND source = 'import'
-       GROUP BY jurisdiction`,
-      [carrierId, quarter]
+  for (const { truck_id } of trucks) {
+    const pings = await query<{ lat: number; lng: number; ts: string }>(
+      `SELECT lat, lng, ts FROM hub.position_pings
+       WHERE carrier_id = $1 AND truck_id = $2 AND ts >= $3 AND ts < $4
+       ORDER BY ts ASC`,
+      [carrierId, truck_id, start.toISOString(), end.toISOString()]
     )
-    for (const row of imported) {
-      milesByJurisdiction[row.jurisdiction] = Number(row.miles)
+    const perTruck = jurisdictionMilesFromPings(pings)
+    for (const [jurisdiction, miles] of Object.entries(perTruck)) {
+      milesByJurisdiction[jurisdiction] = (milesByJurisdiction[jurisdiction] ?? 0) + miles
+      pingsContributed = true
+      await query(
+        `INSERT INTO hub.jurisdiction_miles (carrier_id, run_id, truck_id, quarter, jurisdiction, miles, source)
+         VALUES ($1,$2,$3,$4,$5,$6,'pings')`,
+        [carrierId, runId, truck_id, quarter, jurisdiction, miles]
+      )
     }
   }
+
+  // 2. Imported mileage (universal importer writes source='import') for every
+  // truck the ELD did not cover. The importer replaces a quarter's previous
+  // import inside one transaction, so at most one import run exists per
+  // (carrier, quarter); pinning the read to the newest run_id anyway means a
+  // stray second run can never double-count the miles and overpay the tax —
+  // the write path and this read path cannot disagree about which run counts.
+  // Imported rows are their own audit trail (written under the import's run
+  // id), so compute deliberately does NOT re-write them: copying them under
+  // the compute run id is exactly what would double the miles.
+  const imported = await query<{ truck_id: string; jurisdiction: string; miles: string }>(
+    `SELECT truck_id, jurisdiction, SUM(miles) AS miles FROM hub.jurisdiction_miles
+     WHERE carrier_id = $1 AND quarter = $2 AND source = 'import'
+       AND run_id = (
+         SELECT run_id FROM hub.jurisdiction_miles
+         WHERE carrier_id = $1 AND quarter = $2 AND source = 'import'
+         ORDER BY created_at DESC, id DESC LIMIT 1
+       )
+     GROUP BY truck_id, jurisdiction`,
+    [carrierId, quarter]
+  )
+  for (const row of imported) {
+    if (pingedTruckIds.has(row.truck_id)) continue
+    milesByJurisdiction[row.jurisdiction] = (milesByJurisdiction[row.jurisdiction] ?? 0) + Number(row.miles)
+    importContributed = true
+  }
+
+  // Provenance for the worksheet. A quarter that produced no miles at all has
+  // no honest label in this enum, so it keeps the pre-existing one: 'pings'
+  // when some truck did report position data, 'import' otherwise.
+  const mileageSource: IftaMileageSource =
+    pingsContributed && importContributed
+      ? "mixed"
+      : importContributed
+        ? "import"
+        : pingedTruckIds.size > 0
+          ? "pings"
+          : "import"
 
   // 3. Tax-paid gallons by jurisdiction — TRACTOR FUEL ONLY. Reefer fuel is
   // not propulsion fuel: it is IFTA-exempt and excluded from tax-paid gallons
@@ -189,9 +227,12 @@ export function iftaFilingWallEntries(
   for (const quarter of [...quarters].sort()) {
     const due = iftaDueDate(quarter)
     const filed = statusByQuarter.get(quarter) === "filed"
+    // `due < now` went red at 00:00Z of the due DATE — a day and a half before
+    // the filing was actually late. iftaFilingIsLate waits for the due date to
+    // finish in the carrier's local time; until then the entry stays amber.
     const color: ComplianceEntry["color"] = filed
       ? "green"
-      : due < now
+      : iftaFilingIsLate(quarter, now)
         ? "red"
         : due.getTime() - now.getTime() < 30 * 86400000
           ? "amber"

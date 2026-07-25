@@ -12,11 +12,6 @@ import { cn } from "@/lib/utils"
 
 export const dynamic = "force-dynamic"
 
-// Providers with a case in runProviderSync (src/app/hub/_actions/integrations.ts) —
-// kept in sync with that dispatch by hand since one lives on each side of the
-// server/client boundary.
-const MANUAL_SYNC_PROVIDERS = new Set(["terminal", "truckercloud", "efs", "comdata", "wex", "qbo", "mailbox"])
-
 export default async function IntegrationsPage() {
   const user = await requireOwner()
   const [connectedFlags, syncs, pendingEventRows, qboCreds] = await Promise.all([
@@ -49,8 +44,10 @@ export default async function IntegrationsPage() {
     fields: [...spec.fields],
     connected: connectedFlags[i],
     // "Sync now" needs a case in runProviderSync (src/app/hub/_actions/integrations.ts) —
-    // not every provider has a manual trigger wired yet (e.g. DAT search is on-demand).
-    canSync: MANUAL_SYNC_PROVIDERS.has(spec.id),
+    // every registry `sync: "poll"` provider has one (locked by registry.test.ts's
+    // cronJob↔sync-kind check); manual-only providers like DAT/Truckstop search
+    // on-demand instead, and webhook providers like factor never poll.
+    canSync: spec.sync === "poll",
     status: spec.status,
     // Push-style providers get their inbound URL, and so does any poll
     // provider that accepts signed file drops (a `webhookSecret` field in the

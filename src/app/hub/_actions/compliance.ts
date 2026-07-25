@@ -176,17 +176,23 @@ export async function addMaintenanceRecordAction(values: {
     return actionError(err, "Forbidden")
   }
   try {
-    await assertCarrierRefs(user.carrierId, {
-      truck_id: values.truckId,
-      schedule_id: values.scheduleId || null,
-    })
+    await assertCarrierRefs(user.carrierId, { truck_id: values.truckId })
+    // A schedule must belong to this truck, not just this carrier — otherwise a
+    // record on truck A could roll another truck's PM clock forward.
+    if (values.scheduleId) {
+      const schedule = await query<{ id: string }>(
+        `SELECT id FROM hub.maintenance_schedules WHERE id = $1 AND carrier_id = $2 AND truck_id = $3`,
+        [values.scheduleId, user.carrierId, values.truckId]
+      )
+      if (schedule.length === 0) return { ok: false, error: "Maintenance schedule not found" }
+    }
+    const doneOn = values.doneOn || new Date().toISOString().slice(0, 10)
     const costCents = dollarsToCents(values.cost)
     const rows = await query<{ id: string }>(
       `INSERT INTO hub.maintenance_records (carrier_id, truck_id, schedule_id, done_on, odometer, vendor, cost_cents, notes)
        VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING id`,
       [
-        user.carrierId, values.truckId, values.scheduleId || null,
-        values.doneOn || new Date().toISOString().slice(0, 10),
+        user.carrierId, values.truckId, values.scheduleId || null, doneOn,
         values.odometer ? Number(values.odometer) : null,
         values.vendor || null, costCents, values.notes || null,
       ]
@@ -199,8 +205,8 @@ export async function addMaintenanceRecordAction(values: {
     if (values.scheduleId) {
       await query(
         `UPDATE hub.maintenance_schedules SET last_done_on = $2, last_done_odometer = $3, updated_at = NOW()
-         WHERE id = $1 AND carrier_id = $4`,
-        [values.scheduleId, values.doneOn, values.odometer ? Number(values.odometer) : null, user.carrierId]
+         WHERE id = $1 AND carrier_id = $4 AND truck_id = $5`,
+        [values.scheduleId, doneOn, values.odometer ? Number(values.odometer) : null, user.carrierId, values.truckId]
       )
     }
     revalidatePath(`/hub/fleet/trucks/${values.truckId}`)

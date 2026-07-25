@@ -210,8 +210,120 @@ export function normalizeEquipment(value: string | undefined): "flatbed" | "reef
   return "dry_van"
 }
 
-export function normalizeState(value: string): string {
-  return value.trim().toUpperCase().slice(0, 2)
+/**
+ * Every 2-letter jurisdiction code a US/Canada carrier can legitimately file
+ * or fuel in: 50 states + DC, and all 13 Canadian provinces/territories.
+ * A 2-char input is only trusted when it is on this list — "XX" is a typo,
+ * not a jurisdiction.
+ */
+const JURISDICTION_CODES = new Set([
+  "AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "DC", "FL", "GA", "HI", "ID",
+  "IL", "IN", "IA", "KS", "KY", "LA", "ME", "MD", "MA", "MI", "MN", "MS", "MO",
+  "MT", "NE", "NV", "NH", "NJ", "NM", "NY", "NC", "ND", "OH", "OK", "OR", "PA",
+  "RI", "SC", "SD", "TN", "TX", "UT", "VT", "VA", "WA", "WV", "WI", "WY",
+  "AB", "BC", "MB", "NB", "NL", "NS", "NT", "NU", "ON", "PE", "QC", "SK", "YT",
+])
+
+/**
+ * Full names and the traditional (AP-style) abbreviations that show up in
+ * fleet spreadsheets and fuel-card exports, keyed by the normalized form
+ * (upper case, punctuation stripped, single-spaced).
+ *
+ * This map exists because truncating to the first two characters silently
+ * files miles under the WRONG state — Minnesota and Missouri and Mississippi
+ * all became "MI" (Michigan), Nevada became "NE" (Nebraska), Alaska became
+ * "AL" (Alabama). Wrong-but-valid codes hand the fuel-tax credit to a state
+ * the truck never entered.
+ */
+const JURISDICTION_BY_NAME: Record<string, string> = {
+  ALABAMA: "AL", ALA: "AL",
+  ALASKA: "AK", ALAS: "AK",
+  ARIZONA: "AZ", ARIZ: "AZ",
+  ARKANSAS: "AR", ARK: "AR",
+  CALIFORNIA: "CA", CALIF: "CA", CAL: "CA",
+  COLORADO: "CO", COLO: "CO",
+  CONNECTICUT: "CT", CONN: "CT",
+  DELAWARE: "DE", DEL: "DE",
+  "DISTRICT OF COLUMBIA": "DC", "WASHINGTON DC": "DC",
+  FLORIDA: "FL", FLA: "FL",
+  GEORGIA: "GA",
+  HAWAII: "HI", HAW: "HI",
+  IDAHO: "ID",
+  ILLINOIS: "IL", ILL: "IL",
+  INDIANA: "IN", IND: "IN",
+  IOWA: "IA",
+  KANSAS: "KS", KAN: "KS", KANS: "KS",
+  KENTUCKY: "KY",
+  LOUISIANA: "LA",
+  MAINE: "ME",
+  MARYLAND: "MD",
+  MASSACHUSETTS: "MA", MASS: "MA",
+  MICHIGAN: "MI", MICH: "MI",
+  MINNESOTA: "MN", MINN: "MN",
+  MISSISSIPPI: "MS", MISS: "MS",
+  MISSOURI: "MO",
+  MONTANA: "MT", MONT: "MT",
+  NEBRASKA: "NE", NEB: "NE", NEBR: "NE",
+  NEVADA: "NV", NEV: "NV",
+  "NEW HAMPSHIRE": "NH",
+  "NEW JERSEY": "NJ",
+  "NEW MEXICO": "NM", "N MEX": "NM",
+  "NEW YORK": "NY",
+  "NORTH CAROLINA": "NC",
+  "NORTH DAKOTA": "ND",
+  OHIO: "OH",
+  OKLAHOMA: "OK", OKLA: "OK",
+  OREGON: "OR", ORE: "OR", OREG: "OR",
+  PENNSYLVANIA: "PA", PENN: "PA", PENNA: "PA",
+  "RHODE ISLAND": "RI",
+  "SOUTH CAROLINA": "SC",
+  "SOUTH DAKOTA": "SD",
+  TENNESSEE: "TN", TENN: "TN",
+  TEXAS: "TX", TEX: "TX",
+  UTAH: "UT",
+  VERMONT: "VT",
+  VIRGINIA: "VA",
+  WASHINGTON: "WA", WASH: "WA", "WASHINGTON STATE": "WA",
+  "WEST VIRGINIA": "WV", WVA: "WV", "W VA": "WV",
+  WISCONSIN: "WI", WIS: "WI", WISC: "WI",
+  WYOMING: "WY", WYO: "WY",
+  ALBERTA: "AB",
+  "BRITISH COLUMBIA": "BC",
+  MANITOBA: "MB",
+  "NEW BRUNSWICK": "NB",
+  NEWFOUNDLAND: "NL", "NEWFOUNDLAND AND LABRADOR": "NL",
+  "NOVA SCOTIA": "NS",
+  "NORTHWEST TERRITORIES": "NT",
+  NUNAVUT: "NU",
+  ONTARIO: "ON",
+  "PRINCE EDWARD ISLAND": "PE", PEI: "PE",
+  QUEBEC: "QC", PQ: "QC",
+  SASKATCHEWAN: "SK", SASK: "SK",
+  YUKON: "YT", "YUKON TERRITORY": "YT",
+}
+
+/**
+ * A US state / Canadian province name or code → its IFTA jurisdiction code,
+ * or null when the value is not a jurisdiction we recognize.
+ *
+ * Null (never a guess) is the whole point: callers that can store a blank
+ * jurisdiction do so and surface it later (fuel with no state is already
+ * reported as unknownJurisdictionGallons on the IFTA worksheet); callers that
+ * cannot — the IFTA mileage import — reject the row instead of filing miles
+ * under a state the truck never entered.
+ */
+export function normalizeState(value: string): string | null {
+  // Dots vanish ("D.C." → "DC", "N.H." → "NH"); commas become spaces so
+  // "Washington, D.C." collapses onto the same key as "Washington DC".
+  const raw = value
+    .toUpperCase()
+    .replace(/\./g, "")
+    .replace(/,/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+  if (!raw) return null
+  if (raw.length === 2 && JURISDICTION_CODES.has(raw)) return raw
+  return JURISDICTION_BY_NAME[raw] ?? null
 }
 
 /** Tolerant date parsing for spreadsheet exports (MM/DD/YYYY, YYYY-MM-DD, etc). */

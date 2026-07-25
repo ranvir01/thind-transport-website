@@ -3,16 +3,13 @@
  * W-9, COI, authority letter, NOA if factored, signed agreement. Store it
  * once, send it in one click, win the load before the slow carriers reply.
  */
-import { promises as fs } from "fs"
-import path from "path"
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib"
 import { query } from "./db"
 import { getCarrier } from "./settings"
-import { saveDocument } from "./documents"
+import { saveDocument, readStoredFileBytes } from "./documents"
 import { isEmailConfigured } from "@/lib/mailer"
 import type { HubDocument } from "./types"
 
-const UPLOAD_DIR = path.join(process.cwd(), "data", "uploads")
 
 export async function listPacketDocuments(carrierId: string): Promise<HubDocument[]> {
   return query<HubDocument>(
@@ -22,20 +19,18 @@ export async function listPacketDocuments(carrierId: string): Promise<HubDocumen
   )
 }
 
-/** Raw bytes for a stored document (local disk or blob URL). */
+/**
+ * Raw bytes for a stored document.
+ *
+ * Delegates to `readStoredFileBytes`, which reads disk/blob directly. Do NOT
+ * fetch(doc.url) here: since blobs went private, `url` is the relative
+ * `/api/hub/files/<name>` route, which throws on fetch() and 401s if
+ * absolutised — and every caller swallows attachment errors, so the packet
+ * email would ship silently missing its W-9, COI and authority letter.
+ * The caller has already proven tenancy before reaching this point.
+ */
 export async function readDocumentBytes(doc: HubDocument): Promise<Buffer | null> {
-  try {
-    if (doc.storage === "local") {
-      const safeName = doc.url.split("/").pop()
-      if (!safeName) return null
-      return await fs.readFile(path.join(UPLOAD_DIR, safeName))
-    }
-    const response = await fetch(doc.url)
-    if (!response.ok) return null
-    return Buffer.from(await response.arrayBuffer())
-  } catch {
-    return null
-  }
+  return readStoredFileBytes(doc.url, doc.storage)
 }
 
 /** Email the current packet (latest doc per kind) as attachments. */

@@ -4,7 +4,7 @@ import { redirect } from "next/navigation"
 import { Download } from "lucide-react"
 import {
   parseStoredPnlRange, pnlPresetRanges, resolvePnlRange, truckPnlRange, laneLeaderboardRange,
-  REPORTS_RANGE_COOKIE,
+  driverPayCentsForRange, REPORTS_RANGE_COOKIE,
 } from "@/lib/hub/reports"
 import { applyReportRangeAction, resetReportRangeAction } from "./actions"
 import { computeFleetKpis } from "@/lib/hub/kpi"
@@ -34,9 +34,10 @@ export default async function ReportsPage({
     if (stored) redirect(`/hub/reports?from=${stored.from}&to=${stored.to}`)
   }
   const range = resolvePnlRange(params.from, params.to)
-  const [pnl, lanes] = await Promise.all([
+  const [pnl, lanes, driverPayCents] = await Promise.all([
     truckPnlRange(user.carrierId, range),
     laneLeaderboardRange(user.carrierId, range, 20),
+    driverPayCentsForRange(user.carrierId, range),
   ])
   const totals = pnl.reduce(
     (acc, row) => ({
@@ -51,14 +52,29 @@ export default async function ReportsPage({
 
   const loadedMiles = pnl.reduce((s, r) => s + Number(r.loaded_miles ?? 0), 0)
   const deadheadMiles = pnl.reduce((s, r) => s + Number(r.deadhead_miles ?? 0), 0)
+  // Loads that never had deadhead filled in. SUM() skips NULLs, so without this
+  // count a book of blank fields reads as a flawless 0% deadhead.
+  const deadheadBlankLoads = pnl.reduce((s, r) => s + Number(r.deadhead_missing_loads ?? 0), 0)
   const kpis = computeFleetKpis({
     revenueCents: totals.revenue,
     operatingCostCents: totals.fuel + totals.maintenance + totals.other,
+    driverPayCents,
     loadedMiles,
     deadheadMiles,
   })
   const perMile = (c: number | null) => (c == null ? "—" : `$${(c / 100).toFixed(2)}`)
   const pct = (p: number | null) => (p == null ? "—" : `${p}%`)
+
+  // Driver pay is ~44% of a carrier's cost per mile. With settlements in the
+  // range we can show a real operating ratio and net margin; without them we
+  // show the partial figures under names that admit it, in neutral ink — a
+  // margin that ignores payroll is not good news and must not be inked as if
+  // it were.
+  const hasDriverPay = kpis.driverPayCents != null
+  const operatingRatio = hasDriverPay ? kpis.operatingRatioPct : kpis.operatingRatioBeforeDriverPayPct
+  const margin = hasDriverPay ? kpis.marginPct : kpis.marginBeforeDriverPayPct
+  const deadheadValue =
+    kpis.deadheadPct == null ? "—" : deadheadBlankLoads > 0 ? `≥ ${kpis.deadheadPct}%` : `${kpis.deadheadPct}%`
 
   const hasCustomRange = Boolean(params.from || params.to)
   const presets = pnlPresetRanges()
@@ -78,7 +94,11 @@ export default async function ReportsPage({
     <div>
       <PageHeader
         title="Reports"
-        subtitle={`Per-truck P&L, ${rangeLabel}. Driver pay and fixed costs come from the accountant's books — this is the operational view.`}
+        subtitle={
+          hasDriverPay
+            ? `Per-truck P&L, ${rangeLabel}. Fleet ratios include driver settlement pay; the per-truck table below stays operational (fuel, maintenance, expenses). Fixed costs come from the accountant's books.`
+            : `Per-truck P&L, ${rangeLabel}. Driver pay and fixed costs come from the accountant's books — this is the operational view.`
+        }
         action={
           <div className="flex flex-wrap gap-2">
             <Link
@@ -158,18 +178,46 @@ export default async function ReportsPage({
           <p className="mt-2 font-mono text-xl font-medium text-fg tabular-nums">{perMile(kpis.rpmCents)}</p>
         </Panel>
         <Panel className="p-4">
-          <span className="text-label text-fg-3 uppercase">Operating ratio</span>
-          <p className={`mt-2 font-mono text-xl font-medium tabular-nums ${kpis.operatingRatioPct != null && kpis.operatingRatioPct < 100 ? "text-ok" : "text-bad"}`}>{pct(kpis.operatingRatioPct)}</p>
-          <p className="mt-0.5 text-[11px] text-fg-3">cost ÷ revenue · &lt;100 = profit</p>
+          <span className="text-label text-fg-3 uppercase">
+            {hasDriverPay ? "Operating ratio" : "Op. ratio, pre-pay"}
+          </span>
+          <p
+            className={`mt-2 font-mono text-xl font-medium tabular-nums ${
+              !hasDriverPay ? "text-fg" : operatingRatio != null && operatingRatio < 100 ? "text-ok" : "text-bad"
+            }`}
+          >
+            {pct(operatingRatio)}
+          </p>
+          <p className="mt-0.5 text-[11px] text-fg-3">
+            {hasDriverPay ? "cost incl. driver pay ÷ revenue · <100 = profit" : "excludes driver pay — no settlements in range"}
+          </p>
         </Panel>
         <Panel className="p-4">
           <span className="text-label text-fg-3 uppercase">Deadhead</span>
-          <p className="mt-2 font-mono text-xl font-medium text-fg tabular-nums">{pct(kpis.deadheadPct)}</p>
+          <p className="mt-2 font-mono text-xl font-medium text-fg tabular-nums">{deadheadValue}</p>
           <p className="mt-0.5 text-[11px] text-fg-3">{kpis.totalMiles > 0 ? `${kpis.totalMiles.toLocaleString()} mi total` : "add miles to loads"}</p>
+          {deadheadBlankLoads > 0 && (
+            <p className="mt-0.5 text-[11px] text-warn">
+              {deadheadBlankLoads} load{deadheadBlankLoads === 1 ? "" : "s"} with deadhead blank
+            </p>
+          )}
         </Panel>
         <Panel className="p-4">
-          <span className="text-label text-fg-3 uppercase">Net margin</span>
-          <p className={`mt-2 font-mono text-xl font-medium tabular-nums ${kpis.marginPct != null && kpis.marginPct >= 0 ? "text-ok" : "text-bad"}`}>{pct(kpis.marginPct)}</p>
+          <span className="text-label text-fg-3 uppercase">
+            {hasDriverPay ? "Net margin" : "Margin before driver pay"}
+          </span>
+          <p
+            className={`mt-2 font-mono text-xl font-medium tabular-nums ${
+              !hasDriverPay ? "text-fg" : margin != null && margin >= 0 ? "text-ok" : "text-bad"
+            }`}
+          >
+            {pct(margin)}
+          </p>
+          <p className="mt-0.5 text-[11px] text-fg-3">
+            {hasDriverPay
+              ? `after ${fmtCents(kpis.driverPayCents ?? 0)} driver pay`
+              : "not net margin — payroll not counted"}
+          </p>
         </Panel>
       </div>
 
@@ -242,6 +290,7 @@ export default async function ReportsPage({
                 <th className="px-4 py-3 text-right">Loads</th>
                 <th className="px-4 py-3 text-right">Revenue</th>
                 <th className="px-4 py-3 text-right">Avg $/mi</th>
+                <th className="px-4 py-3 text-right">Deadhead</th>
                 <th className="px-4 py-3 text-right">Est. margin</th>
               </tr>
             </thead>
@@ -258,6 +307,23 @@ export default async function ReportsPage({
                   <td className="px-4 py-2.5 text-right text-accent-text font-semibold">{fmtCents(Number(lane.revenue_cents))}</td>
                   <td className="px-4 py-2.5 text-right text-fg-2">
                     {lane.avg_rpm_cents ? `$${(lane.avg_rpm_cents / 100).toFixed(2)}` : "—"}
+                  </td>
+                  {/* Deadhead is charged inside Est. margin — shown so a lane can be judged on it.
+                      Blank fields are unknown, not zero: mark those miles as a floor (≥) so an
+                      unfilled lane can't read as a perfect empty-mile-free run (and note that its
+                      margin is charged for the miles we know about only). */}
+                  <td
+                    className={`px-4 py-2.5 text-right ${
+                      lane.deadhead_missing_loads > 0 || lane.deadhead_miles > 0 ? "text-warn" : "text-fg-3"
+                    }`}
+                    title={
+                      lane.deadhead_missing_loads > 0
+                        ? `${lane.deadhead_missing_loads} load${lane.deadhead_missing_loads === 1 ? "" : "s"} left deadhead blank — real empty miles are higher, and est. margin does not charge for them`
+                        : undefined
+                    }
+                  >
+                    {lane.deadhead_missing_loads > 0 ? "≥ " : ""}
+                    {lane.deadhead_miles.toLocaleString()} mi
                   </td>
                   <td className={`px-4 py-2.5 text-right font-semibold ${Number(lane.margin_cents) >= 0 ? "text-ok" : "text-bad"}`}>
                     {fmtCents(Number(lane.margin_cents))}

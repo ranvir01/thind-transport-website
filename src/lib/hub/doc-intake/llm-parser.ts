@@ -24,8 +24,16 @@ export function aiParserConfigured(): boolean {
   return Boolean(process.env.ANTHROPIC_API_KEY?.trim())
 }
 
+/** Placeholders written by redactPiiForLlm — never data, see below. */
+const REDACTION_MARKER = /\[[A-Z\s]*REDACTED[A-Z\s]*\]/
+
 function field<T>(value: T | null | undefined, confidence: Confidence) {
   if (value == null || value === "") return undefined
+  // The model only ever sees redacted text, so it can echo a placeholder back
+  // as a "value" (W-9 address, CDL number). Dropping it here keeps the
+  // placeholder out of the merge, so the heuristic pass — which reads the
+  // original, un-redacted text — supplies the field instead.
+  if (typeof value === "string" && REDACTION_MARKER.test(value)) return undefined
   return { value, confidence }
 }
 
@@ -142,24 +150,34 @@ export async function parseDocumentWithLlm(
   const apiKey = process.env.ANTHROPIC_API_KEY?.trim()
   if (!apiKey) return null
 
-  const model = process.env.ANTHROPIC_MODEL?.trim() || "claude-sonnet-4-20250514"
+  // Pinned snapshot id, verified 2026-07-25 against the Anthropic model docs
+  // (platform.claude.com/docs/en/about-claude/models/overview). The previous
+  // default, claude-sonnet-4-20250514, was RETIRED 2026-06-15 — every call
+  // 404'd and silently fell back to heuristics. claude-sonnet-4-6 is the
+  // docs' named replacement; sonnet-5 is the current-generation Sonnet and is
+  // cheaper until 2026-09-01, same price after.
+  const model = process.env.ANTHROPIC_MODEL?.trim() || "claude-sonnet-5"
+  // PII leaves nothing but the redacted copy: this runs BEFORE the fetch below
+  // and `redacted` is the only document text put in the request body.
   const redacted = redactPiiForLlm(text).slice(0, 12000)
 
-  const response = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: {
-      "content-type": "application/json",
-      "x-api-key": apiKey,
-      "anthropic-version": "2023-06-01",
-    },
-    body: JSON.stringify({
-      model,
-      max_tokens: 2048,
-      temperature: 0,
-      messages: [
-        {
-          role: "user",
-          content: `You extract structured fields from trucking carrier paperwork for a TMS.
+  let response: Response
+  try {
+    response = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "x-api-key": apiKey,
+        "anthropic-version": "2023-06-01",
+      },
+      body: JSON.stringify({
+        model,
+        max_tokens: 2048,
+        temperature: 0,
+        messages: [
+          {
+            role: "user",
+            content: `You extract structured fields from trucking carrier paperwork for a TMS.
 Return ONLY valid JSON (no markdown) with this shape:
 {
   "kind": one of ${DOC_KINDS.join("|")},
@@ -178,12 +196,34 @@ Normalize dates to YYYY-MM-DD. File name hint: ${fileName ?? "none"}.
 
 Document text:
 ${redacted}`,
-        },
-      ],
-    }),
-  })
+          },
+        ],
+      }),
+    })
+  } catch (err) {
+    // Same silence, different cause: a DNS/TLS/timeout failure would otherwise
+    // bubble into analyze-enhanced's bare catch and leave no trace at all.
+    // Error name/message only — never the request body, never the API key.
+    console.error(
+      `[doc-intake] Anthropic Messages API unreachable for model "${model}": ` +
+        `${err instanceof Error ? `${err.name}: ${err.message}` : "unknown error"} — ` +
+        `falling back to heuristic parsing`
+    )
+    return null
+  }
 
-  if (!response.ok) return null
+  if (!response.ok) {
+    // Observable, or a retired model / revoked key stays invisible forever:
+    // callers just see the heuristic fallback. Status + reason phrase + model
+    // id only — never the response body (it can quote the document) and never
+    // the API key.
+    console.error(
+      `[doc-intake] Anthropic Messages API ${response.status}` +
+        `${response.statusText ? ` ${response.statusText}` : ""} for model "${model}" — ` +
+        `falling back to heuristic parsing`
+    )
+    return null
+  }
 
   const body = (await response.json()) as {
     content?: { type: string; text?: string }[]

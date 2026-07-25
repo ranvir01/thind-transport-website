@@ -136,14 +136,24 @@ function LaneLeaderboardPanel({ lanes, rangeLabel }: { lanes: LaneLeaderboardRow
 function LoadedVsDeadheadPanel({ pnl, rangeLabel }: { pnl: Awaited<ReturnType<typeof truckPnlRange>>; rangeLabel: string }) {
   const loadedMiles = pnl.reduce((s, r) => s + Number(r.loaded_miles ?? 0), 0)
   const deadheadMiles = pnl.reduce((s, r) => s + Number(r.deadhead_miles ?? 0), 0)
+  // A blank deadhead field is unknown, not zero — SUM() skips NULLs, so a load
+  // nobody filled in used to read as a perfect empty-mile-free run. Count the
+  // blanks and say so rather than quietly rounding the fleet's favour.
+  const deadheadBlankLoads = pnl.reduce((s, r) => s + Number(r.deadhead_missing_loads ?? 0), 0)
   const revenueCents = pnl.reduce((s, r) => s + Number(r.revenue_cents), 0)
   const operatingCostCents = pnl.reduce(
     (s, r) => s + Number(r.fuel_cents) + Number(r.maintenance_cents) + Number(r.other_expense_cents),
     0
   )
+  // No driverPayCents: this panel renders miles and per-mile rates only, so the
+  // margin/operating-ratio fields stay null by design — nothing here can leak a
+  // margin computed without payroll. The Reports page sources driver pay and
+  // shows those.
   const kpis = computeFleetKpis({ revenueCents, operatingCostCents, loadedMiles, deadheadMiles })
   const perMile = (c: number | null) => (c == null ? "—" : `$${(c / 100).toFixed(2)}`)
   const loadedPct = kpis.loadedPct
+  const deadheadLabel =
+    kpis.deadheadPct == null ? "—" : deadheadBlankLoads > 0 ? `≥ ${kpis.deadheadPct}%` : `${kpis.deadheadPct}%`
 
   return (
     <div>
@@ -171,9 +181,14 @@ function LoadedVsDeadheadPanel({ pnl, rangeLabel }: { pnl: Awaited<ReturnType<ty
             <span className="h-2 w-2 rounded-sm bg-accent" /> Loaded {loadedPct != null ? `${loadedPct}%` : "—"} ({kpis.loadedMiles.toLocaleString()} mi)
           </span>
           <span className="inline-flex items-center gap-1.5">
-            <span className="h-2 w-2 rounded-sm bg-bad-soft" /> Deadhead {kpis.deadheadPct != null ? `${kpis.deadheadPct}%` : "—"} ({kpis.deadheadMiles.toLocaleString()} mi)
+            <span className="h-2 w-2 rounded-sm bg-bad-soft" /> Deadhead {deadheadLabel} ({kpis.deadheadMiles.toLocaleString()} mi)
           </span>
         </div>
+        {deadheadBlankLoads > 0 && (
+          <p className="mt-1.5 text-[11px] text-warn">
+            {deadheadBlankLoads} load{deadheadBlankLoads === 1 ? "" : "s"} left deadhead blank — real empty miles are higher.
+          </p>
+        )}
       </div>
 
       <p className="px-4 py-4 text-[11px] text-fg-3">

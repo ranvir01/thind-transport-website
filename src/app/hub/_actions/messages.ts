@@ -6,7 +6,7 @@
  * drivers only reach their own direct thread and their loads' threads.
  */
 import { revalidatePath } from "next/cache"
-import { getHubUser } from "@/lib/hub/session"
+import { getHubUser, type HubSessionUser } from "@/lib/hub/session"
 import { OFFICE_ROLES } from "@/lib/hub/types"
 import {
   ensureDirectThread, ensureLoadThread, getThread, markThreadRead, sendMessage,
@@ -20,6 +20,35 @@ interface Result {
   ok: boolean
   error?: string
   threadId?: string
+}
+
+/**
+ * Session + per-request `active` re-check (the guard every other action gets,
+ * see session.ts:33-38). Sessions are JWTs: without this a fired dispatcher or
+ * a suspended tenant keeps reading and writing carrier threads until the token
+ * expires (~30 days). session.ts keeps isActiveUser/isActiveCarrier private and
+ * neither exported guard fits here — these actions serve office AND driver
+ * roles, and drivers hold no office permissions, so requirePermission would
+ * reject them — so the same two checks run here, carrier-scoped, in one query.
+ */
+async function activeMessagingUser(): Promise<
+  { ok: true; user: HubSessionUser } | { ok: false; error: string }
+> {
+  const user = await getHubUser()
+  if (!user) return { ok: false, error: "Not signed in" }
+  // platform_admin is the one role with no tenant scope (and no carrier row):
+  // tenant operations only, never a tenant's threads.
+  if (!user.carrierId) return { ok: false, error: "Not signed in" }
+  const row = await queryOne<{ user_active: boolean; carrier_active: boolean }>(
+    `SELECT u.active AS user_active, (c.status = 'active') AS carrier_active
+     FROM hub.users u
+     JOIN hub.carriers c ON c.id = u.carrier_id
+     WHERE u.id = $1 AND u.carrier_id = $2`,
+    [user.id, user.carrierId]
+  )
+  if (!row?.user_active) return { ok: false, error: "Account deactivated" }
+  if (!row.carrier_active) return { ok: false, error: "Workspace suspended" }
+  return { ok: true, user }
 }
 
 async function driverIdForUser(userId: string, carrierId: string): Promise<string | null> {
@@ -58,8 +87,9 @@ async function canAccessThread(
 
 /** Open (or create) a thread: office picks a load or a driver; drivers their own. */
 export async function openThread(target: { loadId?: string; driverId?: string }): Promise<Result> {
-  const user = await getHubUser()
-  if (!user) return { ok: false, error: "Not signed in" }
+  const session = await activeMessagingUser()
+  if (!session.ok) return { ok: false, error: session.error }
+  const user = session.user
   try {
     if (target.loadId) {
       // Both office and the assigned driver may open a load thread.
@@ -96,8 +126,9 @@ const MAX_UPLOAD_BYTES = 15 * 1024 * 1024
 
 /** Send a message (text and/or photo) into a thread the sender can access. */
 export async function sendMessageAction(formData: FormData): Promise<Result> {
-  const user = await getHubUser()
-  if (!user) return { ok: false, error: "Not signed in" }
+  const session = await activeMessagingUser()
+  if (!session.ok) return { ok: false, error: session.error }
+  const user = session.user
   const threadId = String(formData.get("thread_id") ?? "")
   const body = String(formData.get("body") ?? "").trim()
   const file = formData.get("file")
@@ -172,8 +203,9 @@ export async function sendMessageAction(formData: FormData): Promise<Result> {
 }
 
 export async function markThreadReadAction(threadId: string): Promise<Result> {
-  const user = await getHubUser()
-  if (!user) return { ok: false, error: "Not signed in" }
+  const session = await activeMessagingUser()
+  if (!session.ok) return { ok: false, error: session.error }
+  const user = session.user
   const access = await canAccessThread(user, threadId)
   if (!access.ok) return { ok: false, error: "No access" }
   await markThreadRead(threadId, user.id)

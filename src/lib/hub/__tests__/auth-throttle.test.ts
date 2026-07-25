@@ -2,6 +2,10 @@
  * Login throttling (AGENTS.md: security-critical, best-effort by design —
  * a database outage or query error must never lock everyone out). Pins the
  * lockout threshold, the case-insensitive email key, and every fail-open path.
+ *
+ * Also pins the scoped keys: signup shares hub.auth_attempts with login but
+ * must never share a KEY, or a bot hammering signup with someone's address
+ * would lock that person out of logging in.
  */
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
@@ -97,5 +101,50 @@ describe("recordAttempt", () => {
   it("swallows insert errors so a bookkeeping failure never blocks login", async () => {
     queryMock.mockRejectedValue(new Error("db unavailable"))
     await expect(recordAttempt("driver@example.com", true)).resolves.toBeUndefined()
+  })
+})
+
+describe("throttle scopes", () => {
+  it("defaults to the login scope, keeping the historical bare-email key", async () => {
+    await isLockedOut("driver@example.com")
+    await recordAttempt("driver@example.com", false)
+    expect(queryOneMock.mock.calls[0][1]).toEqual(["driver@example.com"])
+    expect(queryMock.mock.calls[0][1]).toEqual(["driver@example.com", false])
+  })
+
+  it("namespaces signup keys so they never collide with the login key", async () => {
+    await isLockedOut("email:driver@example.com", "signup")
+    await recordAttempt("ip:203.0.113.7", false, "signup")
+    expect(queryOneMock.mock.calls[0][1]).toEqual(["signup:email:driver@example.com"])
+    expect(queryMock.mock.calls[0][1]).toEqual(["signup:ip:203.0.113.7", false])
+  })
+
+  it("a locked-out signup key leaves that email's login budget untouched", async () => {
+    // Same email, two scopes: the lookups must not read the same row set.
+    await isLockedOut("email:victim@example.com", "signup")
+    await isLockedOut("victim@example.com")
+    const [signupKey] = queryOneMock.mock.calls[0][1] as string[]
+    const [loginKey] = queryOneMock.mock.calls[1][1] as string[]
+    expect(signupKey).not.toBe(loginKey)
+  })
+
+  it("lowercases and trims scoped keys too", async () => {
+    await isLockedOut("  Email:Owner@Cascade.Example  ", "signup")
+    expect(queryOneMock.mock.calls[0][1]).toEqual(["signup:email:owner@cascade.example"])
+  })
+
+  it("counts only failures inside the 15-minute window, whatever the scope", async () => {
+    await isLockedOut("email:driver@example.com", "signup")
+    const sql = String(queryOneMock.mock.calls[0][0])
+    expect(sql).toContain("success = FALSE")
+    expect(sql).toContain("INTERVAL '15 minutes'")
+  })
+
+  it("fails open for signup too when the database is unavailable", async () => {
+    hubDbAvailableMock.mockReturnValue(false)
+    queryOneMock.mockResolvedValue({ failures: "99" })
+    expect(await isLockedOut("email:driver@example.com", "signup")).toBe(false)
+    await recordAttempt("email:driver@example.com", false, "signup")
+    expect(queryMock).not.toHaveBeenCalled()
   })
 })

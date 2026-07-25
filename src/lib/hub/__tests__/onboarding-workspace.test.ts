@@ -22,12 +22,22 @@ vi.mock("../db", () => ({
 vi.mock("../session", () => ({ getHubUser: vi.fn(), requireOwner: vi.fn() }))
 vi.mock("../audit", () => ({ logAudit: vi.fn(async () => undefined) }))
 vi.mock("bcrypt", () => ({ default: { hash: vi.fn(async () => "hashed") } }))
+vi.mock("../auth-throttle", () => ({
+  isLockedOut: vi.fn(async () => false),
+  recordAttempt: vi.fn(async () => undefined),
+}))
+vi.mock("next/headers", () => ({
+  headers: vi.fn(async () => new Headers({ "x-forwarded-for": "203.0.113.7, 70.41.3.18" })),
+}))
 
 import { hubDb, queryOne } from "../db"
+import { isLockedOut, recordAttempt } from "../auth-throttle"
 import { createWorkspaceAction } from "@/app/hub/_actions/onboarding"
 
 const hubDbMock = vi.mocked(hubDb)
 const queryOneMock = vi.mocked(queryOne)
+const isLockedOutMock = vi.mocked(isLockedOut)
+const recordAttemptMock = vi.mocked(recordAttempt)
 
 const VALID_INPUT = {
   companyName: "Cascade Lines LLC",
@@ -56,6 +66,7 @@ function seededSettings(client: ReturnType<typeof mockClient>) {
 beforeEach(() => {
   vi.clearAllMocks()
   queryOneMock.mockResolvedValue(null)
+  isLockedOutMock.mockResolvedValue(false)
 })
 
 describe("createWorkspaceAction", () => {
@@ -217,6 +228,67 @@ describe("createWorkspaceAction", () => {
     expect(detentionRow).toBeDefined()
     const seededCents = (detentionRow![1] as [string, string, number, string])[2]
     expect(seededSettings(client).detention.ratePerHourCents).toBe(seededCents)
+  })
+
+  it("throttles the signup on the email AND the client IP, before any database work", async () => {
+    const client = mockClient()
+
+    const result = await createWorkspaceAction(VALID_INPUT)
+
+    expect(result.ok).toBe(true)
+    // Checked before the duplicate-email lookup and the transaction...
+    expect(isLockedOutMock.mock.calls).toEqual([
+      ["email:owner@cascade.example", "signup"],
+      ["ip:203.0.113.7", "signup"],
+    ])
+    // ...and charged up front, so an attempt that throws still counts.
+    expect(recordAttemptMock.mock.calls).toEqual([
+      ["email:owner@cascade.example", false, "signup"],
+      ["ip:203.0.113.7", false, "signup"],
+    ])
+    expect(isLockedOutMock.mock.invocationCallOrder[0]).toBeLessThan(
+      queryOneMock.mock.invocationCallOrder[0]
+    )
+    expect(recordAttemptMock.mock.invocationCallOrder[0]).toBeLessThan(
+      client.query.mock.invocationCallOrder[0]
+    )
+  })
+
+  it("refuses a throttled signup with a generic message that leaks nothing", async () => {
+    const client = mockClient()
+    isLockedOutMock.mockResolvedValue(true)
+
+    const result = await createWorkspaceAction(VALID_INPUT)
+
+    expect(result.ok).toBe(false)
+    expect(result.error).toMatch(/too many/i)
+    // No account enumeration: the refusal must not mention the email, an
+    // existing account, or signing in.
+    expect(result.error).not.toMatch(/sign in|already|owner@cascade\.example/i)
+    // Nothing was read or written.
+    expect(queryOneMock).not.toHaveBeenCalled()
+    expect(client.query).not.toHaveBeenCalled()
+  })
+
+  it("throttles a hammered IP even when each attempt uses a fresh email", async () => {
+    const client = mockClient()
+    isLockedOutMock.mockImplementation(async (key: string) => key.startsWith("ip:"))
+
+    const result = await createWorkspaceAction({ ...VALID_INPUT, email: "brand-new@example.com" })
+
+    expect(result.ok).toBe(false)
+    expect(client.query).not.toHaveBeenCalled()
+  })
+
+  it("still throttles on the email key when no request headers are available", async () => {
+    const { headers } = await import("next/headers")
+    vi.mocked(headers).mockRejectedValueOnce(new Error("outside a request scope") as never)
+    mockClient()
+
+    const result = await createWorkspaceAction(VALID_INPUT)
+
+    expect(result.ok).toBe(true)
+    expect(isLockedOutMock.mock.calls).toEqual([["email:owner@cascade.example", "signup"]])
   })
 
   it("rolls back and reports failure when an insert throws", async () => {
