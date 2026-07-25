@@ -7,6 +7,12 @@ import { Loader2 } from "lucide-react"
 import { acceptInvitationAction } from "@/app/hub/_actions/portal"
 import { fieldDarkCls, labelDarkCls } from "@/components/hub/ui"
 
+/** Same border/background mix the quote form and portal home/load detail pages use for --portal-accent chrome. */
+const ACCENT_BUTTON_STYLE = {
+  borderColor: "color-mix(in srgb, var(--portal-accent) 50%, transparent)",
+  backgroundColor: "color-mix(in srgb, var(--portal-accent) 14%, transparent)",
+} as const
+
 export function AcceptInvitationForm({ token, email }: { token: string; email: string }) {
   const [pending, startTransition] = useTransition()
   const [form, setForm] = useState({ name: "", password: "" })
@@ -43,7 +49,8 @@ export function AcceptInvitationForm({ token, email }: { token: string; email: s
       </div>
       <button
         type="submit" disabled={pending}
-        className="flex w-full min-h-[48px] items-center justify-center gap-2 rounded-control bg-accent font-semibold text-sm text-accent-fg hover:bg-accent-hover disabled:opacity-60"
+        className="flex w-full min-h-[48px] items-center justify-center gap-2 rounded-control border font-semibold text-sm text-[color:var(--portal-accent)] hover:bg-white/5 disabled:opacity-60"
+        style={ACCENT_BUTTON_STYLE}
       >
         {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
         Create my access

@@ -799,3 +799,42 @@ Backlog:
 - Carried, unchanged: npm audit's 3 high-severity findings (owner-approval-gated semver-major bump);
   Rust sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision); IFTA due-date roll not
   accounting for legal holidays (documented scope decision).
+
+## Two-lane absorb (portal accent, sidecar UTF-8 fix) + catch-up drain — 2026-07-25 ~02:40 UTC (verify-and-build cycle)
+
+`npm run agent:status` found the integrator (`1b9620ef`) already 4 commits ahead of `main` (`6ba902c2`) —
+**CATCH-UP MODE** (threshold 3), so this cycle's first job was draining, not new work. `npm ci` + `npm
+run build` + `npx vitest run` (188 files/1581 tests) + `npm run lint` all green on the integrator tip
+before touching anything.
+
+`agent:branches` showed three lane branches ahead: `lane-portal` and `lane-sidecars` (1 commit each,
+real diffs) and `lane-compliance` (1540 unpicked) — the latter's only non-superseded commit
+(`d71d657d`, IFTA weekend-roll) was already confirmed a duplicate of HEAD's `24d03ca0` logic in the
+2026-07-24 ~14:00 UTC cycle, so skipped again unchanged. Absorbed the other two one at a time, build +
+`vitest` green after each: `lane-portal` (accept-invitation page now follows the carrier's resolved
+portal accent instead of stock gold, extends `portal-accent-tokens.test.ts`) and `lane-sidecars` (Rust
+compute's `process()` now returns a clean 400 instead of panicking when the request body isn't valid
+UTF-8, `process_400s_on_body_that_is_not_valid_utf8` regression test added).
+
+Verify chain after both merges: `npm run build`, `npx vitest run` (188 files/1584 tests), `npm run lint`
+(clean), `npm run test:sidecars` (29 Rust tests including the new UTF-8-body test + Go vet/test, clippy
+clean). Local Postgres stood up fresh (no `hubapp` role/`hubdb` database existed yet — created both per
+the dev-workflow-testing skill's pitfall #9), `db:migrate` (21 migrations) + `seed:demo`, `build &&
+start`. `lane-portal`'s change has no seeded invitation to click through from the UI, so inserted one
+test `hub.portal_invitations` row directly and drove `/hub/portal/accept/[token]` with Puppeteer at
+390px and 1440px: renders gold (the demo carrier has no custom branding accent set, so
+`resolvePortalAccent` correctly falls back to `PORTAL_ACCENT_DEFAULT`'s gold) with 0 console errors at
+either width — confirms the accent-follows-branding wiring is correct, not a regression. Cleaned up the
+test invitation row afterward.
+
+Pushed the integrator, then drained to `main` with the stamped `--no-ff` method (push `main` alone first
+per the 2026-07-22 dedupe-avoidance rule, then fast-forward the integrator back to match).
+
+Backlog:
+- `lane-tests` (1443 unpicked) and `lane-compliance` (1540 unpicked) remain the two largest pending
+  branches by a wide margin; meta-governor prune pass remains overdue across many cycles now.
+- Carried, unchanged: npm audit findings (owner-approval-gated semver-major bump — now showing 21 high
+  severity in a fresh `npm ci` on this rig, up from 3 last checked; worth a re-count next cycle since
+  that's a bigger jump than routine dependency drift); Rust sidecar `tiny_http` connection-timeout/
+  thread-cap gap (owner decision); IFTA due-date roll not accounting for legal holidays (documented
+  scope decision).
