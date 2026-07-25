@@ -12,6 +12,13 @@ export const metadata: Metadata = {
 
 const sections = [
   {
+    heading: "Analytics",
+    body: [
+      "This site uses Vercel Web Analytics and Speed Insights — cookieless, anonymous page and performance measurement. No advertising trackers, no cross-site tracking, and no personal information in any analytics event: form events record only which step was reached, never what was typed. If you pick an audience (drivers, shippers, brokers) we remember the choice in a small cookie so the site can lead with the right door next time; it identifies a preference, not a person.",
+    ],
+    items: [],
+  },
+  {
     heading: "Information we collect",
     body: [
       "When you submit an application, pre-qualification form, or contact request on this site, we collect the information you provide: your name, phone number, email address, CDL class, years of driving experience, and any details you include about your equipment or work history.",
@@ -80,7 +87,7 @@ export default function PrivacyPage() {
                   {paragraph}
                 </p>
               ))}
-              {section.items && (
+              {section.items && section.items.length > 0 && (
                 <ul className="list-disc pl-6 space-y-2 text-gray-700 marker:text-orange-600">
                   {section.items.map((item) => (
                     <li key={item}>{item}</li>

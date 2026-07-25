@@ -51,6 +51,8 @@ jobs:
         run: npm test
       - name: Hobby cron guard (vercel.json cron budget)
         run: node scripts/hobby-cron-guard.mjs
+      - name: Token lint (no raw hex/px in redesigned marketing scope)
+        run: node scripts/token-lint.mjs
 
   e2e:
     runs-on: ubuntu-latest

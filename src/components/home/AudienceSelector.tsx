@@ -29,7 +29,7 @@ interface Audience {
 
 const AUDIENCES: Audience[] = [
   {
-    href: "/apply",
+    href: "/drivers",
     icon: Truck,
     who: "I drive",
     label: "Driver or owner-operator",

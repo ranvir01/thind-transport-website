@@ -7,6 +7,7 @@ import {
 import { COMPANY_INFO, STATS } from "@/lib/constants"
 import { PageBreadcrumb } from "@/components/shared/PageBreadcrumb"
 import { ShipperQuoteForm } from "@/components/features/ShipperQuoteForm"
+import { PersonaRemember } from "@/components/shared/PersonaRemember"
 
 export const metadata: Metadata = {
   title: "Ship With Us | Flatbed, Reefer & Dry Van Carrier — 48 States",
@@ -54,6 +55,7 @@ const WHY = [
 export default function ShippersPage() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-50">
+      <PersonaRemember persona="shippers" />
       <PageBreadcrumb pageName="Ship With Us" category="Company" />
 
       {/* Hero */}
@@ -170,6 +172,17 @@ export default function ShippersPage() {
             Based in Kent, WA — strongest on Pacific Northwest, I-5, I-90, and western lanes; running all 48.{" "}
             <Link href="/routes" className="font-medium text-orange-600 hover:underline">
               See our lanes
+            </Link>
+          </p>
+          {/* Escape hatch: nobody gets trapped in the shipper lane. */}
+          <p className="mt-4 text-center text-sm text-gray-500">
+            Not a shipper?{" "}
+            <Link href="/drivers" className="font-medium text-orange-600 hover:underline">
+              For drivers
+            </Link>{" "}
+            ·{" "}
+            <Link href="/brokers" className="font-medium text-orange-600 hover:underline">
+              For brokers
             </Link>
           </p>
         </div>

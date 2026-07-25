@@ -23,7 +23,8 @@
     "go-build": "make go-build",
     "rust-build": "make rust-build",
     "test:sidecars": "make test-sidecars",
-    "rust-audit": "make rust-audit"
+    "rust-audit": "make rust-audit",
+    "token-lint": "node scripts/token-lint.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
@@ -50,7 +51,9 @@
     "@types/nodemailer": "^7.0.4",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
+    "@vercel/analytics": "^2.0.1",
     "@vercel/blob": "^2.4.0",
+    "@vercel/speed-insights": "^2.0.0",
     "bcrypt": "^6.0.0",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.0",

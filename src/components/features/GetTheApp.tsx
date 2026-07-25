@@ -16,6 +16,7 @@
 
 import { useEffect, useState, useSyncExternalStore } from "react"
 import { Share, Smartphone, Check, MoreVertical } from "lucide-react"
+import { track } from "@vercel/analytics"
 
 interface BeforeInstallPromptEvent extends Event {
   prompt(): Promise<void>
@@ -45,12 +46,23 @@ export function GetTheApp() {
   const [installEvent, setInstallEvent] = useState<BeforeInstallPromptEvent | null>(null)
   const [installed, setInstalled] = useState(false)
 
+  // pwa_launch fires when the page is opened FROM the installed app — the
+  // conversion the install events exist to explain. Guarded so SSR (which
+  // pretends standalone) never fires it.
+  useEffect(() => {
+    if (env === "standalone") track("pwa_launch")
+  }, [env])
+
   useEffect(() => {
     const onPrompt = (e: Event) => {
       e.preventDefault()
       setInstallEvent(e as BeforeInstallPromptEvent)
+      track("pwa_prompt_available")
     }
-    const onInstalled = () => setInstalled(true)
+    const onInstalled = () => {
+      setInstalled(true)
+      track("pwa_install_accepted")
+    }
     window.addEventListener("beforeinstallprompt", onPrompt)
     window.addEventListener("appinstalled", onInstalled)
     return () => {

@@ -24,6 +24,7 @@ import { submitApplication } from "@/app/actions/submit-application"
 import { PAY_RATES, COMPANY_INFO } from "@/lib/constants"
 import { applyProgressPercent } from "./apply-progress"
 import { HONEYPOT_FIELD, readHoneypotValue } from "@/lib/honeypot"
+import { track } from "@vercel/analytics"
 import { HoneypotField } from "@/components/shared/HoneypotField"
 
 // Combined Schema
@@ -166,6 +167,7 @@ export function ApplicationForm() {
           if (hp) formData.append(HONEYPOT_FIELD, hp)
 
           await captureLead({ success: false, message: "" }, formData)
+          track("apply_lead_captured")
         } catch (err) {
           console.error(err)
         } finally {
@@ -173,6 +175,7 @@ export function ApplicationForm() {
         }
       }
       
+      track("apply_step", { step: step + 1 })
       setStep((s) => s + 1)
       // Scroll to top of form container instead of window
       document.getElementById("application-form")?.scrollIntoView({ behavior: 'smooth' })
@@ -212,6 +215,7 @@ export function ApplicationForm() {
       const result = await submitApplication({ success: false, message: "" }, formData)
       
       if (result.success) {
+        track("apply_submit")
         toast.success(result.message)
         // Show success state with next steps
         setStep(5) // Show a success/next steps screen
