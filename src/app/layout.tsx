@@ -179,9 +179,18 @@ export default function RootLayout({
         {/* Cookieless, anonymous analytics (Vercel Web Analytics + Speed
             Insights): no cross-site tracking, no PII in any custom event —
             funnel events carry step/source/device class only. Ranvir must
-            enable Web Analytics in the Vercel dashboard for data to land. */}
-        <Analytics />
-        <SpeedInsights />
+            enable Web Analytics in the Vercel dashboard for data to land.
+            Gated on process.env.VERCEL (only set by Vercel's own build/runtime):
+            both components' "auto" mode keys off NODE_ENV, which is
+            "production" on any self-hosted `next build && next start` too —
+            without this gate every page load 404s fetching a script only
+            Vercel's edge serves. */}
+        {process.env.VERCEL ? (
+          <>
+            <Analytics />
+            <SpeedInsights />
+          </>
+        ) : null}
       </body>
     </html>
   )
