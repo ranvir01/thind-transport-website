@@ -838,3 +838,71 @@ Backlog:
   that's a bigger jump than routine dependency drift); Rust sidecar `tiny_http` connection-timeout/
   thread-cap gap (owner decision); IFTA due-date roll not accounting for legal holidays (documented
   scope decision).
+
+## QA rig drive — 2026-07-25 ~03:24 UTC (charter: docs/agent-improvement-loop.md §5, no feature work)
+
+Fresh local rig from scratch: Postgres started (was down), `hauldesk` role + database created (dev-
+workflow-testing skill pitfall #9), `npm ci` (748 packages), `.env.local` written (fresh
+`NEXTAUTH_SECRET`/`CREDENTIALS_KEY`/`CRON_SECRET`, local `POSTGRES_URL`, SMTP left blank per pitfall
+#6), `npm run db:migrate` (21/21), `npm run seed:demo`, `npm run build` (clean), `npm run start`.
+
+**Last-3h regression check:** `origin/main` HEAD at cycle start was `2b1e145` (landed 02:44 UTC, 40
+min before this cycle). Two product commits fall inside the 3h window: `0aeb0eb` (accept-invitation
+page follows the carrier's resolved portal accent) and `26731a4` (Rust sidecar UTF-8-body test,
+test-only). Verified both by hand rather than trusting the prior cycle's check alone:
+- `26731a4` is test-only (no runtime code path changed) — nothing to drive.
+- `0aeb0eb`: the prior cycle (02:40 UTC) only confirmed the gold-default fallback path. This cycle
+  went one step further — inserted a test `hub.portal_invitations` row, set the demo carrier's
+  `branding.accent` to a real custom color, and confirmed with Playwright that the accept page's
+  submit button and "already used" sign-in link actually re-color to it (first attempt used a blue
+  that legitimately failed `resolvePortalAccent`'s WCAG contrast gate and correctly fell back to
+  gold — not a bug, re-tested with a passing color to isolate it). Completed the full accept flow
+  end-to-end (name + password submit → account created → `accepted_user_id` set → redirected into
+  `/hub/portal`), 0 console errors. **No regression; the fix works as intended, including the
+  custom-accent path the prior verification didn't reach.**
+
+**Playwright drive** (fresh browser contexts, no session reuse): owner login → 11 office routes
+(loadboard, loads, settlements, invoices, expenses, fuel, owner reports, safety, messages, planner,
+integrations settings) all 200 with no login-redirect bounce; driver login → 8 driver-PWA routes at
+390px (home, messages, docs, pay, dvir, incident, timeoff, more) all 200; broker login → portal home
+→ a real load-detail page, 200. 25/25 checks green, 0 console errors across the whole drive.
+
+**Production probe:** direct HTTPS to `thindtransport.com` is 403-blocked at the sandbox proxy
+(expected, not a site defect). Vercel MCP: the `target: "production"` deployment
+(`dpl_7Dyhnsj784He9N8Z7QzduH5Zrd6s`) is `READY` at commit `2b1e145` — exactly `origin/main` HEAD — and
+`get_runtime_errors` shows nothing in the last 3h. Note for whoever reads `get_project` next: `live`
+read `false` and the separately-listed `latestDeployment` was a `CANCELED` preview build (a different,
+newer commit's preview got canceled) — per the documented "`live` alone is not a reliable signal"
+caveat, the actual production alias is healthy and current; this is not an outage.
+
+**Two pre-existing defects found (predate the 3h window, so recorded here rather than fixed — outside
+this routine's charter and outside any single lane's file territory to fix opportunistically):**
+- `NotificationsBell.tsx` (shared office component, `src/components/hub/`) hardcodes office semantic
+  tokens (`border-border-strong`, `text-fg-2`) and is reused as-is in `DriverNav.tsx` for the driver
+  PWA's bell icon. Office mode defaults to light (`hauldesk-mode` localStorage key, unset → `"light"`)
+  for every fresh session, so a driver who has never touched the office dark-mode toggle sees a
+  dark-slate-gray bell icon (`rgb(86,92,102)`) on the driver PWA's near-black forced-dark background —
+  same regression class AGENTS.md's forced-dark rule already documents (`text-fg*`/`border-border*`
+  resolve to light-mode values there), just not yet reached in this one shared component. Confirmed
+  visually (cropped screenshot) and via computed style (`data-mode` defaults to `"light"`, bell
+  renders with light-mode `--text-2`/`--border-strong`). Fix belongs to whichever lane owns both
+  `NotificationsBell.tsx` (lane-office) and `DriverNav.tsx` (lane-driver) — likely a `variant="dark"`
+  prop on the bell, matching `SignOutButton`'s existing pattern.
+- `/hub/portal/accept/[token]` (sessionless invite page, lane-portal territory) renders inside
+  `PortalLayout`, whose footer unconditionally renders `<SignOutButton>` regardless of whether
+  `getHubUser()` returned a session — an unauthenticated visitor accepting a fresh invitation sees a
+  "Sign out" control before they've ever signed in, which is confusing (not a security issue, since
+  there's no session to sign out of). `layout.tsx`'s own comment already documents that this route
+  renders without a session; the footer just wasn't made conditional on `user` being non-null.
+
+Backlog:
+- Fix `NotificationsBell.tsx`'s hardcoded office tokens when rendered inside `DriverNav.tsx` (driver
+  PWA forced-dark surface) — add a dark-surface variant, same pattern as `SignOutButton`'s
+  `variant="dark"`. Lane-office or lane-driver, whichever can touch both files in one commit.
+- `PortalLayout`'s footer `SignOutButton` should be conditional on a real session (`user` non-null) so
+  the sessionless `accept/[token]` page doesn't show a misleading "Sign out" control. Lane-portal.
+- `lane-tests` (1443 unpicked) and `lane-compliance` (1540 unpicked) still await the meta-governor
+  prune pass, unchanged this cycle.
+- Carried, unchanged: npm audit's high-severity findings (owner-approval-gated semver-major bump);
+  Rust sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision); IFTA due-date roll not
+  accounting for legal holidays (documented scope decision).
