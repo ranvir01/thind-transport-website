@@ -64,7 +64,7 @@ export default function GetAppPage() {
                 For our drivers
               </p>
               <h1 className="mt-4 font-display text-m-h1 font-bold">
-                The app installs from this page. No app store.
+                Two taps and it&apos;s on your phone. No app store.
               </h1>
               <p className="mt-5 max-w-measure text-m-lede text-paper/80">
                 No account to create, no download to sit through on truck-stop wifi. Two taps and
