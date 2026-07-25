@@ -36,6 +36,30 @@ describe("PWA manifest wiring", () => {
     expect(hub).toMatch(/capable:\s*true/)
   })
 
+  it("the install-intent marketing pages (/app, /loadoff) carry the LoadOff manifest", () => {
+    // iOS binds Add-to-Home-Screen to the CURRENT page's manifest. On these
+    // two pages the gesture means "install the app" — with the marketing
+    // manifest they minted icons that opened the website (owner's iPhone
+    // repro, 2026-07-25). The override in each page's metadata is the fix.
+    for (const p of ["src/app/app/page.tsx", "src/app/loadoff/page.tsx"]) {
+      const src = read(p)
+      expect(src, p).toMatch(/manifest:\s*["']\/api\/hub\/manifest["']/)
+      expect(src, p).toMatch(/apple-mobile-web-app-capable/)
+    }
+  })
+
+  it("/hub/get-app is proxy-exempt so a logged-out phone can reach the install surface", () => {
+    const proxy = read("src/proxy.ts")
+    expect(proxy).toMatch(/pathname === ["']\/hub\/get-app["']/)
+  })
+
+  it("the standalone scope guard is mounted in the hub layout", () => {
+    // iOS ignores manifest scope: without the guard, one marketing link
+    // inside the installed app swaps the app container for the website.
+    const hub = read("src/app/hub/layout.tsx")
+    expect(hub).toMatch(/<StandaloneScopeGuard \/>/)
+  })
+
   it("the LoadOff manifest scopes and starts inside /hub, with installable icons", () => {
     // Asserted against the route source rather than by importing it: the route
     // pulls next-auth, which needs a Next server runtime vitest doesn't provide.

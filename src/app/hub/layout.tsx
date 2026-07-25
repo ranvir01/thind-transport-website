@@ -6,6 +6,7 @@ import { GeistMono } from "geist/font/mono"
 import { GeistSans } from "geist/font/sans"
 import { PRODUCT } from "@/lib/hub/product"
 import { ServiceWorkerBoot } from "@/components/hub/ServiceWorkerBoot"
+import { StandaloneScopeGuard } from "@/components/hub/StandaloneScopeGuard"
 import "./hub-theme.css"
 
 export const metadata: Metadata = {
@@ -49,6 +50,7 @@ export default async function HubLayout({ children }: { children: React.ReactNod
         {themeBoot}
       </Script>
       <ServiceWorkerBoot />
+      <StandaloneScopeGuard />
       <SessionProvider session={session}>{children}</SessionProvider>
     </div>
   )

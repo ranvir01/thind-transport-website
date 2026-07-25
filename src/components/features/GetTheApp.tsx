@@ -44,7 +44,7 @@ const numCls =
 function OpenAppCta({ label }: { label: string }) {
   return (
     <Link
-      href="/hub/login"
+      href="/hub/get-app"
       onClick={() => track("pwa_install_redirect")}
       className="mt-4 inline-flex min-h-[44px] items-center gap-2 rounded-m-2 bg-signal px-6 py-3 font-display text-m-body font-bold uppercase tracking-wide text-paper transition-colors duration-base ease-entrance hover:bg-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-signal focus-visible:ring-offset-2 focus-visible:ring-offset-paper"
     >
@@ -76,8 +76,8 @@ export function GetTheApp() {
           <li className={stepCls}>
             <span className={numCls}>1</span>
             <span>
-              Open the driver app page in <strong>Safari</strong> — the button below takes you
-              there. (If you&apos;re reading this inside another app, tap its browser menu and
+              Open the app&apos;s install page in <strong>Safari</strong> — the button below takes
+              you there. (If you&apos;re reading this inside another app, tap its browser menu and
               choose &ldquo;Open in Safari&rdquo; first.)
             </span>
           </li>
@@ -107,7 +107,7 @@ export function GetTheApp() {
       <ol className="mt-4 list-none space-y-3">
         <li className={stepCls}>
           <span className={numCls}>1</span>
-          <span>Open the driver app page — the button below takes you there.</span>
+          <span>Open the app&apos;s install page — the button below takes you there.</span>
         </li>
         <li className={stepCls}>
           <span className={numCls}>2</span>

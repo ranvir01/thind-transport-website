@@ -37,11 +37,15 @@ export default async function proxy(request: NextRequest) {
   }
 
   // ---- Hub (operations system) ----
-  // Public by design: invitation-accept (token-gated) and self-serve signup.
+  // Public by design: invitation-accept (token-gated), self-serve signup, and
+  // the install page — installability follows the manifest in scope, so the
+  // page a driver installs FROM must live under /hub and be reachable without
+  // a session (an iOS home-screen app starts with its own empty cookie jar).
   if (
     pathname.startsWith("/hub/portal/accept") ||
     pathname.startsWith("/hub/driver-invite/") ||
-    pathname === "/hub/signup"
+    pathname === "/hub/signup" ||
+    pathname === "/hub/get-app"
   ) {
     return NextResponse.next()
   }

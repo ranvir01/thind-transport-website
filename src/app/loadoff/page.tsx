@@ -15,6 +15,12 @@ export const metadata: Metadata = {
   description:
     "LoadOff is the transportation management system built in-house at Thind Transport: dispatch, invoicing, driver settlements, fuel + IFTA, compliance, and a driver phone app — one calm place to run a trucking company.",
   alternates: { canonical: "/loadoff" },
+  // Share → Add to Home Screen on the LoadOff product page means LoadOFF the
+  // app, not a website shortcut — iOS binds the icon to the page's manifest,
+  // and the marketing one made this icon open the website (the owner's
+  // exact iPhone repro). Same override as /app.
+  manifest: "/api/hub/manifest",
+  appleWebApp: { capable: true, title: "LoadOff" },
 }
 
 const MODULES = [
@@ -53,6 +59,9 @@ const MODULES = [
 export default function LoadOffPage() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-50">
+      {/* iOS keys standalone launch off the apple-prefixed name; React hoists
+          this into <head>. Pairs with the manifest override in metadata. */}
+      <meta name="apple-mobile-web-app-capable" content="yes" />
       <PageBreadcrumb pageName="LoadOff TMS" category="Company" />
 
       {/* Hero — product-first: the real Today screen is the pitch */}
