@@ -33,6 +33,8 @@ import { runQboSync } from "@/lib/hub/integrations/qbo"
 import { retryUnprocessedEvents } from "@/lib/hub/integrations/event-processors"
 import { pollDocsMailbox } from "@/lib/hub/mailbox"
 import { retryIntegrationEventsAction, syncIntegrationNowAction } from "@/app/hub/_actions/integrations"
+import { PROVIDERS } from "@/lib/hub/integrations/registry"
+import type { IntegrationProvider } from "@/lib/hub/credentials"
 
 const queryMock = vi.mocked(query)
 const runTelematicsSyncMock = vi.mocked(runTelematicsSync)
@@ -130,5 +132,37 @@ describe("retryIntegrationEventsAction", () => {
     const result = await retryIntegrationEventsAction("qbo")
     expect(result.ok).toBe(false)
     expect(result.error).toBe("No event retry wired for qbo yet")
+  })
+})
+
+describe("registry ↔ runProviderSync dispatch drift", () => {
+  // The it.each above hand-lists which providers dispatch successfully — a
+  // regression there and a `sync: "poll"` registry entry could drift apart
+  // silently (settings/integrations/page.tsx now derives its "Sync now"
+  // button from `spec.sync === "poll"` alone, per the card's canSync
+  // comment). These two tests iterate the registry itself so a new poll
+  // provider added without a runProviderSync case — or a manual/webhook
+  // provider mistakenly marked "poll" — fails here instead of only
+  // surfacing as a live "No sync loop wired" toast.
+  beforeEach(() => {
+    runTelematicsSyncMock.mockResolvedValue({ connected: true })
+    runEfsSyncMock.mockResolvedValue({ connected: true })
+    runComdataSyncMock.mockResolvedValue({ connected: true })
+    runWexSyncMock.mockResolvedValue({ connected: true })
+    runQboSyncMock.mockResolvedValue({ connected: true })
+    pollDocsMailboxMock.mockResolvedValue({ connected: true })
+  })
+
+  const pollProviders = PROVIDERS.filter((p) => p.sync === "poll").map((p) => p.id as IntegrationProvider)
+  const nonPollProviders = PROVIDERS.filter((p) => p.sync !== "poll").map((p) => p.id as IntegrationProvider)
+
+  it.each(pollProviders)("every registry poll provider (%s) has a working runProviderSync case", async (provider) => {
+    const result = await syncIntegrationNowAction(provider)
+    expect(result.error).not.toBe(`No sync loop wired for ${provider} yet`)
+  })
+
+  it.each(nonPollProviders)("every non-poll provider (%s) has no manual sync dispatch, by design", async (provider) => {
+    const result = await syncIntegrationNowAction(provider)
+    expect(result).toEqual({ ok: false, error: `No sync loop wired for ${provider} yet` })
   })
 })
