@@ -23,6 +23,7 @@
 import { getCredentials, hasCredentials } from "../credentials"
 import { normalizeState } from "../csv"
 import { query } from "../db"
+import { roundHalfAwayFromZero } from "../rounding"
 import { parseFuelFeedCsv } from "./fuel-feed-csv"
 import type { SyncRowBase, SyncSource } from "./registry"
 
@@ -71,8 +72,8 @@ export function normalizeComdataRow(row: Record<string, unknown>): ComdataTransa
     city: (row.city as string) ?? (row.MerchantCity as string) ?? null,
     jurisdiction,
     gallons: Number.isFinite(gallons) ? gallons : 0,
-    unitPriceCents: Number.isFinite(unitPrice) ? Math.round(unitPrice * 100) : null,
-    totalCents: Number.isFinite(amount) ? Math.round(amount * 100) : 0,
+    unitPriceCents: Number.isFinite(unitPrice) ? roundHalfAwayFromZero(unitPrice * 100) : null,
+    totalCents: Number.isFinite(amount) ? roundHalfAwayFromZero(amount * 100) : 0,
     odometer: Number.isFinite(odometer) ? odometer : null,
   }
 }

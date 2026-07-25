@@ -28,9 +28,6 @@ export interface Claim {
   incident_location?: string | null
 }
 
-/** A claim still being worked (deadline nags apply). */
-export const OPEN_CLAIM_STATUSES: ClaimStatus[] = ["open", "filed"]
-
 const CLAIM_SELECT = `
   SELECT c.*,
     l.reference AS load_reference,
