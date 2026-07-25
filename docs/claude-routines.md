@@ -949,3 +949,61 @@ Backlog:
 - Carried, unchanged: npm audit's high-severity findings (owner-approval-gated semver-major bump); Rust
   sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision); IFTA due-date roll not
   accounting for legal holidays (documented scope decision).
+
+## QA rig drive: 50-script E2E battery, production confirmed current — 2026-07-25 ~17:30 UTC
+
+Charter (docs/agent-improvement-loop.md §5): no feature work — stand up the local rig, drive real
+owner/dispatcher/driver flows, probe `thindtransport.com` read-only, fix only outright regressions
+from the last 3h of commits.
+
+`main` HEAD (`8134c50d`) had three commits in the trailing 3-hour window: the dead-code sweep
+(`93b518b9`, 5 zero-importer exports + 3 un-exported type-only constants) and its own drain/ancestry-
+fix pair (`c36136d9`, `8134c50d`, `.drain-stamp` + merge-parent bookkeeping only). Verified the dead-
+code sweep by grepping every deleted symbol name (`ASSIGNABLE_ROLES`, `FUEL_USE_LABELS`,
+`OPEN_CLAIM_STATUSES`, `DRIVER_ACTIVE_STATUSES`, `SURCHARGE_JURISDICTIONS`, and the three un-exported
+`LOAD_EVENT_KINDS`/`TASK_PRIORITIES`/`TASK_RECURRENCES`) repo-wide: zero references anywhere, confirming
+the removal is safe. No regression in this window.
+
+Fresh local rig: Postgres role+db created (neither existed — pitfall #9), `.env.local` generated from
+`.env.example`, `npm run db:migrate` (21 migrations clean) + `seed:demo`, `npm run build` (zero TS
+errors, 140+ routes) + `npx vitest run` (192 files/1606 tests) + `npm run lint` all green, plus
+`npm run test:sidecars` (29 Rust tests + Go vet/test, clippy clean) though nothing Go/Rust changed this
+cycle.
+
+Ran the full `node scripts/e2e-run-all.mjs` battery (50 `e2e-*-smoke.mjs` scripts covering
+owner/dispatcher/driver/accountant/broker/shipper/portal/tenant-isolation flows, plus the visual
+screen sweep) against `npm run start`: **49/50 passed clean, 0 console errors.** The one failure
+(`e2e-statements-smoke`'s "send statement without SMTP configured stays graceful" check) was a
+self-inflicted rig mistake, not a product defect — `.env.local` had been generated with a plain
+`cp .env.example .env.local`, which leaves the placeholder `SMTP_USER=your-gmail@gmail.com` /
+`SMTP_PASS=your-16-character-app-password` in place. `isEmailConfigured()` only checks both are
+non-empty, so the placeholders read as "configured" and the send attempted a real SMTP auth instead
+of hitting the graceful toast path — exactly the failure mode the dev-workflow-testing skill's
+pitfall #6 already documents. Blanked both fields, killed and restarted `next start` (per pitfall #10,
+killing only the `npm run start` parent leaves `next-server` bound to the old port/env — killed both
+PIDs), and re-ran `e2e-statements-smoke` alone: **passed clean**, confirming the product code was never
+at fault. No code change shipped this cycle.
+
+Production probe: direct HTTPS to `thindtransport.com` stayed egress-blocked in this sandbox (curl exit
+56 on `/`, `/hub/login`, `/hub`), consistent with every prior cycle. Vercel MCP tools were available
+this cycle: `get_project` showed `live: false` with `latestDeployment` `CANCELED`/`target: null` — the
+same known false-alarm shape documented in the 2026-07-23 cycle and the 3b playbook's `live`-alone
+caveat. Cross-checked properly: `list_deployments` shows the most recent **production** deployment
+(`dpl_F5HqZjBwwqpH1LPgoM8DW9iRoFn7`, `READY`) is commit `8134c50d` — exactly `main`'s current HEAD — so
+production is current, not stale. The CANCELED/`target: null` entries are preview builds for the
+integrator branch (one for `8134c50d`, one for a newer integrator-only commit `b0ddf162` that landed
+on `claude/hauldesk-project-setup-l1luoo` after this cycle's `git fetch`, presumably a concurrent
+integrator routine — outside this QA charter, not investigated further). `get_runtime_errors` (24h
+window) shows exactly one error group: the `pg`/`pg-connection-string` SSL-mode deprecation warning on
+`/api/hub/cron/[job]`, already a carried cosmetic backlog item, not new.
+
+Backlog:
+- `lane-tests` (1443 unpicked) and `lane-compliance` (1543+ unpicked) remain the two largest pending
+  branches; meta-governor prune pass remains overdue across many cycles now — unchanged from prior
+  cycles, not re-triaged this cycle (outside QA charter).
+- Carried, unchanged: npm audit's 21 high-severity findings (sharp/libvips CVEs, nodemailer SMTP-
+  injection CVEs, PostCSS path-traversal CVE — owner-approval-gated semver-major bumps for
+  next/sharp/nodemailer); Rust sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision);
+  IFTA due-date roll not accounting for legal holidays (documented scope decision); pg SSL-mode
+  deprecation warning on `/api/hub/cron/[job]` (cosmetic, one-line `sslmode` fix before the next `pg`
+  major bump).
