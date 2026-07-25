@@ -949,3 +949,66 @@ Backlog:
 - Carried, unchanged: npm audit's high-severity findings (owner-approval-gated semver-major bump); Rust
   sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision); IFTA due-date roll not
   accounting for legal holidays (documented scope decision).
+
+## QA rig drive on main@5a09b8bd — 2026-07-25 ~15:09 UTC (owner/dispatcher/driver Playwright, read-only prod probe)
+
+Charter (`docs/agent-improvement-loop.md` §5): no feature work — stand up the local rig, drive real
+owner/dispatcher/driver flows, probe `thindtransport.com` read-only, fix only outright regressions from
+the last 3h of commits.
+
+`main` HEAD is `5a09b8bd` (last commit `10:48:36Z`), unchanged since **4h21m before this cycle started**
+(`15:09:21Z`) — zero commits landed in the trailing-3h window, so there was nothing to review for a
+regression.
+
+Fresh local rig from scratch: `postgresql` was stopped, started it; no `loadoff` role/database existed
+(pitfall #9) — created both; `.env.example` → `.env.local` generated fresh (`NEXTAUTH_SECRET`,
+`CREDENTIALS_KEY`, `CRON_SECRET`, `SETUP_DB_TOKEN` freshly random, SMTP left blank per pitfall #6).
+`npm run setup:canvas-deps` + `npm install` (748 packages), `npm run db:migrate` (21/21), `npm run
+seed:demo`, `npm run build` (zero TS errors, 140+ routes), `npm run start`. `npx vitest run`: **191
+files / 1598 tests, all green.**
+
+This project's own `scripts/e2e-*.mjs` battery is Puppeteer-based (pitfall #8); the charter asks for
+Playwright specifically, so installed `playwright` local-only (`npm install --no-save`, not added to
+`package.json`) against the sandbox's preinstalled Chromium
+(`/opt/pw-browsers/chromium-1194/chrome-linux/chrome`). Drove three role sessions:
+- **Owner** (1440px): all 34 nav-reachable `(office)` screens plus click-throughs into a load, an
+  invoice, a settlement, and a driver detail page.
+- **Dispatcher** (1440px): 12 dispatch-relevant screens plus click-throughs into a dispatch-board load
+  and a facility detail page.
+- **Driver** (390px, forced-dark): all 8 `/hub/driver/*` screens plus a document and a message-thread
+  click-through.
+
+54 screen loads, all `200`, zero uncaught page errors, zero 5xx responses, zero meaningful console
+errors. The only console noise was `ERR_TUNNEL_CONNECTION_FAILED` on `/hub/map`'s tile requests on both
+the owner and dispatcher sessions — this sandbox's egress policy blocks the external map-tile host, the
+same class of environment limitation §3b documents for `thindtransport.com` itself, not a product
+defect. One cosmetic-only observation, not fixed: on the driver-detail page's Documents panel
+(`DocumentsPanel.tsx`), the native `<input type="file">`'s "No file chosen" label renders clipped
+("No fi…osen") at 1440px because that page's two-column layout gives the row less width than the
+load-detail page's equivalent row — browser-native rendering, no functional impact, upload still works.
+
+Production probe: direct HTTPS to `thindtransport.com` stayed egress-blocked this session too (`curl`
+CONNECT → `403` from the agent proxy). Used the Vercel MCP connector instead: `get_project` shows
+`live: false` and a `CANCELED`/`target: null` `latestDeployment` — but per the documented
+"`live` alone is not reliable" caveat, that's just the newest preview build from this cycle's own
+in-flight session commits, not production. `list_deployments` confirms the actual production alias:
+`dpl_E13RscPTkR9EYspc4LMxU7m6XJ8j`, `state: READY`, `target: production`, commit `5a09b8bd…` — an exact
+match for `main` HEAD, so production is current and healthy. `get_runtime_errors` (6h window): one error
+group, the same carried `pg`/`pg-connection-string` SSL-mode deprecation warning on
+`/api/hub/cron/[job]` first seen `2026-06-26` (cosmetic, already tracked below).
+
+**0 defects, 0 regressions.**
+
+Backlog:
+- Carried: pg/pg-connection-string SSL-mode deprecation warning on `/api/hub/cron/[job]` (open since
+  2026-06-26, still cosmetic) — worth a one-line `sslmode=verify-full`/`uselibpqcompat` fix before the
+  next `pg` major bump changes the default semantics.
+- Minor, low-priority, not fixed this cycle: `DocumentsPanel.tsx`'s file-input "No file chosen" label
+  clips at 1440px on the driver-detail page's narrower two-column layout (native browser rendering,
+  cosmetic only) — a `lane-office` pickup if anyone wants the polish.
+- `agent:status` shows CATCH-UP MODE (integrator 4 commits ahead of the 3-commit threshold);
+  `lane-compliance` (1552 unpicked) and `lane-tests` (1443 unpicked per last inventory) remain the two
+  largest pending branches — meta-governor prune pass still overdue, unchanged from prior cycles.
+- Carried, unchanged: npm audit's high-severity findings (owner-approval-gated semver-major bump); Rust
+  sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision); IFTA due-date roll not
+  accounting for legal holidays (documented scope decision).
