@@ -374,6 +374,21 @@ const config: Config = {
           from: { opacity: "0" },
           to: { opacity: "1" },
         },
+        // Nav motion, replacing framer-motion's AnimatePresence. Entry only:
+        // exit animation needs the element kept mounted after close, which is
+        // not worth ~40KB of runtime on every page. Closing is instant.
+        "dropdown-in": {
+          from: { opacity: "0", transform: "translateY(8px) scale(0.96)" },
+          to: { opacity: "1", transform: "translateY(0) scale(1)" },
+        },
+        "drawer-in": {
+          from: { transform: "translateX(100%)" },
+          to: { transform: "translateX(0)" },
+        },
+        "backdrop-in": {
+          from: { opacity: "0" },
+          to: { opacity: "1" },
+        },
         "slide-up": {
           from: { transform: "translateY(20px)", opacity: "0" },
           to: { transform: "translateY(0)", opacity: "1" },
@@ -395,6 +410,10 @@ const config: Config = {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
         "fade-in": "fade-in 0.5s ease-out",
+        // Durations/easings from the motion tokens, not one-offs.
+        "dropdown-in": "dropdown-in 120ms cubic-bezier(0.16, 1, 0.3, 1)",
+        "drawer-in": "drawer-in 200ms cubic-bezier(0.16, 1, 0.3, 1)",
+        "backdrop-in": "backdrop-in 200ms cubic-bezier(0.16, 1, 0.3, 1)",
         "slide-up": "slide-up 0.6s ease-out",
         float: "float 6s ease-in-out infinite",
         "pulse-glow": "pulse-glow 3s ease-in-out infinite",

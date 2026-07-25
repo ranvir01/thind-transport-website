@@ -3,8 +3,10 @@ import { Barlow_Condensed, Source_Sans_3 } from "next/font/google"
 import "./globals.css"
 import { CinematicNavbar } from "@/components/cinematic/Navbar"
 import { ActiveBackground } from "@/components/ui/ActiveBackground"
-import { SmoothScroll } from "@/components/cinematic/SmoothScroll"
-import { CinematicFooter, MobileCommandBar } from "@/components/cinematic/Footer"
+import {
+  CinematicFooter,
+  MobileCommandBar,
+} from "@/components/cinematic/Footer"
 import { BackToTop } from "@/components/shared/BackToTop"
 import { SkipLink } from "@/components/shared/SkipLink"
 import { COMPANY_INFO } from "@/lib/constants"
@@ -74,7 +76,8 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: `${COMPANY_INFO.name} | Drive for a Family-Run Carrier`,
-    description: "90% gross for owner operators, $0.63/mile for company drivers, 2024 Cascadias, weekly pay, no forced dispatch.",
+    description:
+      "90% gross for owner operators, $0.63/mile for company drivers, 2024 Cascadias, weekly pay, no forced dispatch.",
     images: ["/og-image.png"],
   },
   robots: {
@@ -109,13 +112,31 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" suppressHydrationWarning className={`scroll-smooth ${barlowCondensed.variable} ${sourceSans.variable}`}>
+    <html
+      lang="en"
+      suppressHydrationWarning
+      className={`scroll-smooth ${barlowCondensed.variable} ${sourceSans.variable}`}
+    >
       <head>
         {/* Favicons */}
         <link rel="icon" href="/favicon.ico" sizes="32x32" />
-        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
-        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
-        <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+        <link
+          rel="icon"
+          type="image/png"
+          sizes="16x16"
+          href="/favicon-16x16.png"
+        />
+        <link
+          rel="icon"
+          type="image/png"
+          sizes="32x32"
+          href="/favicon-32x32.png"
+        />
+        <link
+          rel="apple-touch-icon"
+          sizes="180x180"
+          href="/apple-touch-icon.png"
+        />
         {/* The web app manifest is declared via `metadata.manifest` (above),
             never as a literal tag here. A hardcoded one renders on EVERY route
             including /hub, where the hub layout declares its own LoadOff
@@ -128,11 +149,13 @@ export default function RootLayout({
         {/* Structured Data - Injected via SchemaMarkup component */}
         <SchemaMarkup />
       </head>
-      <body className={`${sourceSans.className} antialiased overflow-x-hidden`} suppressHydrationWarning>
+      <body
+        className={`${sourceSans.className} antialiased overflow-x-hidden`}
+        suppressHydrationWarning
+      >
         <Providers>
-          <SmoothScroll>
-            <ActiveBackground />
-          
+          <ActiveBackground />
+
           {/* Skip to main content - Accessibility */}
           <SkipLink />
 
@@ -149,8 +172,6 @@ export default function RootLayout({
           <MobileCommandBar />
 
           <BackToTop />
-          
-        </SmoothScroll>
         </Providers>
       </body>
     </html>
