@@ -129,6 +129,14 @@ function makeFakeDb(invoices: Map<string, { amount_cents: number; status?: strin
             held = id
             return { rows: [{ id }] }
           }
+          if (sql.includes("AS open_cents")) {
+            const [invoiceId, carrierId] = params as [string, string]
+            const invoice = invoices.get(invoiceId)!
+            const paid = payments
+              .filter((p) => p.invoice_id === invoiceId && p.carrier_id === carrierId)
+              .reduce((sum, p) => sum + p.amount_cents, 0)
+            return { rows: [{ open_cents: invoice.amount_cents - paid }] }
+          }
           if (sql.includes("INSERT INTO hub.payments")) {
             const [carrierId, invoiceId, amountCents] = params as [string, string, number]
             payments.push({ carrier_id: carrierId, invoice_id: invoiceId, amount_cents: amountCents })
@@ -190,6 +198,47 @@ describe("recordPayment status derivation", () => {
 
     expect(invoices.get("inv-1")!.status).toBe("paid")
     expect(changeLoadStatus).toHaveBeenCalledWith(CARRIER, "load-1", "paid", ACTOR)
+  })
+})
+
+describe("recordPayment overpay guard", () => {
+  // Found by the accountant-role e2e drive: the prefilled #pay_amount number
+  // input concatenates typed digits (Chrome drops a second decimal point), and
+  // one slip recorded $10,003,360.00 against a $3,360.00 invoice — paid status,
+  // -$10M open balance, no warning at any layer.
+  it("rejects a payment above the open balance and leaves no payment row behind", async () => {
+    queryOneMock.mockResolvedValue({ ...INVOICE, amount_cents: 336_000 })
+    const { invoices, payments } = makeFakeDb(new Map([["inv-1", { amount_cents: 336_000 }]]))
+
+    await expect(
+      recordPayment(CARRIER, "inv-1", { amountCents: 1_000_336_000, paidOn: "2026-07-25" }, ACTOR)
+    ).rejects.toThrow(/more than the invoice's open balance/)
+
+    expect(payments).toHaveLength(0)
+    expect(invoices.get("inv-1")!.status).toBeUndefined()
+    expect(logAuditMock).not.toHaveBeenCalled()
+  })
+
+  it("still accepts a payment of exactly the open balance (the boundary is inclusive)", async () => {
+    queryOneMock.mockResolvedValue(INVOICE)
+    getLoad.mockResolvedValue({ id: "load-1", status: "invoiced", settlement_id: null })
+    const { invoices, payments } = makeFakeDb(new Map([["inv-1", { amount_cents: 100_000 }]]))
+    payments.push({ carrier_id: CARRIER, invoice_id: "inv-1", amount_cents: 60_000 })
+
+    await recordPayment(CARRIER, "inv-1", { amountCents: 40_000, paidOn: "2026-07-25" }, ACTOR)
+
+    expect(invoices.get("inv-1")!.status).toBe("paid")
+  })
+
+  it("rejects one cent over the live open balance, counting prior payments", async () => {
+    queryOneMock.mockResolvedValue(INVOICE)
+    const { payments } = makeFakeDb(new Map([["inv-1", { amount_cents: 100_000 }]]))
+    payments.push({ carrier_id: CARRIER, invoice_id: "inv-1", amount_cents: 60_000 })
+
+    await expect(
+      recordPayment(CARRIER, "inv-1", { amountCents: 40_001, paidOn: "2026-07-25" }, ACTOR)
+    ).rejects.toThrow(/open balance/)
+    expect(payments).toHaveLength(1)
   })
 })
 

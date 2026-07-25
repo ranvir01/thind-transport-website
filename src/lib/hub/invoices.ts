@@ -7,7 +7,7 @@ import { buildInvoicePdf, buildStatementPdf } from "./pdf"
 import { invoiceTotalCents, agingBucket, type AgingBucket } from "./money"
 import { logAudit } from "./audit"
 import { createMailTransport, isEmailConfigured, mailFrom } from "@/lib/mailer"
-import { loadTotalCents, type Invoice, type HubDocument } from "./types"
+import { loadTotalCents, fmtCentsExact, type Invoice, type HubDocument } from "./types"
 
 const INVOICE_SELECT = `
   SELECT i.*, c.name AS customer_name, l.reference AS load_reference,
@@ -222,6 +222,27 @@ export async function recordPayment(
   try {
     await client.query("BEGIN")
     await client.query(`SELECT id FROM hub.invoices WHERE id = $1 AND carrier_id = $2 FOR UPDATE`, [invoiceId, carrierId])
+    // Overpay guard, inside the row lock so a concurrent payment can't sneak
+    // the balance out from under the check. A payment above the open balance
+    // is a fat-finger, not a credit: one real drive typed into the prefilled
+    // amount field and recorded $10,003,360.00 against a $3,360.00 invoice
+    // (the number input silently drops a second decimal point), flipping it
+    // to paid with a -$10M open balance and no warning at any layer. If a
+    // customer genuinely overpays, record the open balance here and book the
+    // remainder deliberately, not through this form.
+    const { rows: balRows } = await client.query<{ open_cents: string | number }>(
+      `SELECT i.amount_cents - COALESCE(
+         (SELECT SUM(p.amount_cents) FROM hub.payments p
+           WHERE p.invoice_id = i.id AND p.carrier_id = i.carrier_id), 0) AS open_cents
+       FROM hub.invoices i WHERE i.id = $1 AND i.carrier_id = $2`,
+      [invoiceId, carrierId]
+    )
+    const openCents = Number(balRows[0]?.open_cents ?? 0)
+    if (input.amountCents > openCents) {
+      throw new Error(
+        `Payment of ${fmtCentsExact(input.amountCents)} is more than the invoice's open balance of ${fmtCentsExact(openCents)}. Record at most the open balance.`
+      )
+    }
     await client.query(
       `INSERT INTO hub.payments (carrier_id, invoice_id, amount_cents, paid_on, method, reference)
        VALUES ($1,$2,$3,$4,$5,$6)`,

@@ -63,8 +63,13 @@ export function RecordPaymentForm({ invoiceId, openCents }: { invoiceId: string;
     <form onSubmit={submit} className="grid grid-cols-2 gap-3">
       <div>
         <label className={labelCls} htmlFor="pay_amount">Amount ($)</label>
+        {/* Select-on-focus: the amount is prefilled with the full balance, and
+            typing into a focused-but-unselected number input concatenates
+            digits (a second decimal point is silently dropped) — the fat-finger
+            path behind the $10M overpay the accounting drive recorded. */}
         <input id="pay_amount" type="number" step="0.01" min="0.01" required className={fieldCls}
-          value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} />
+          value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })}
+          onFocus={(e) => e.currentTarget.select()} />
       </div>
       <div>
         <label className={labelCls} htmlFor="pay_date">Date</label>
