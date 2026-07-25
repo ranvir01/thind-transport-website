@@ -84,9 +84,6 @@ export default function NotFound() {
             <Link href="/apply" className="block text-sm font-medium text-orange-700 hover:underline">
               → Quick Application (60 seconds)
             </Link>
-            <Link href="/testimonials" className="block text-sm font-medium text-orange-700 hover:underline">
-              → Driver Reviews & Testimonials
-            </Link>
             <Link href="/" className="block text-sm font-medium text-orange-700 hover:underline">
               → Home Page
             </Link>

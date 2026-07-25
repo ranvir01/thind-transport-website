@@ -3,26 +3,79 @@
   "devCommand": "npm run dev",
   "installCommand": "npm install",
   "framework": "nextjs",
-  "regions": ["iad1"],
+  "regions": [
+    "iad1"
+  ],
   "ignoreCommand": "[ \"$VERCEL_GIT_COMMIT_REF\" != \"main\" ]",
   "crons": [
-    { "path": "/api/hub/cron/migrate", "schedule": "30 5 * * *" },
-    { "path": "/api/hub/cron/compliance-scan", "schedule": "0 14 * * *" },
-    { "path": "/api/hub/cron/ar-reminders", "schedule": "30 14 * * *" },
-    { "path": "/api/hub/cron/detention-alerts", "schedule": "0 15 * * *" },
-    { "path": "/api/hub/cron/task-automations", "schedule": "15 14 * * *" },
-    { "path": "/api/hub/cron/recurring-rebook", "schedule": "20 9 * * *" },
-    { "path": "/api/hub/cron/recompute-lanes", "schedule": "45 9 * * *" },
-    { "path": "/api/hub/cron/driver-scorecards", "schedule": "0 10 1 * *" },
-    { "path": "/api/hub/cron/fmcsa-recheck", "schedule": "0 11 * * *" },
-    { "path": "/api/hub/cron/telematics-sync", "schedule": "0 12 * * *" },
-    { "path": "/api/hub/cron/docs-mailbox", "schedule": "30 12 * * *" },
-    { "path": "/api/hub/cron/efs-sync", "schedule": "0 6 * * *" },
-    { "path": "/api/hub/cron/wex-sync", "schedule": "10 6 * * *" },
-    { "path": "/api/hub/cron/comdata-sync", "schedule": "20 6 * * *" },
-    { "path": "/api/hub/cron/qbo-sync", "schedule": "30 6 * * *" },
-    { "path": "/api/hub/cron/owner-digest", "schedule": "0 13 * * 1" },
-    { "path": "/api/hub/cron/random-testing", "schedule": "40 6 * * *" }
+    {
+      "path": "/api/hub/cron/migrate",
+      "schedule": "30 5 * * *"
+    },
+    {
+      "path": "/api/hub/cron/compliance-scan",
+      "schedule": "0 14 * * *"
+    },
+    {
+      "path": "/api/hub/cron/ar-reminders",
+      "schedule": "30 14 * * *"
+    },
+    {
+      "path": "/api/hub/cron/detention-alerts",
+      "schedule": "0 15 * * *"
+    },
+    {
+      "path": "/api/hub/cron/task-automations",
+      "schedule": "15 14 * * *"
+    },
+    {
+      "path": "/api/hub/cron/recurring-rebook",
+      "schedule": "20 9 * * *"
+    },
+    {
+      "path": "/api/hub/cron/recompute-lanes",
+      "schedule": "45 9 * * *"
+    },
+    {
+      "path": "/api/hub/cron/driver-scorecards",
+      "schedule": "0 10 1 * *"
+    },
+    {
+      "path": "/api/hub/cron/fmcsa-recheck",
+      "schedule": "0 11 * * *"
+    },
+    {
+      "path": "/api/hub/cron/telematics-sync",
+      "schedule": "0 12 * * *"
+    },
+    {
+      "path": "/api/hub/cron/docs-mailbox",
+      "schedule": "30 12 * * *"
+    },
+    {
+      "path": "/api/hub/cron/efs-sync",
+      "schedule": "0 6 * * *"
+    },
+    {
+      "path": "/api/hub/cron/wex-sync",
+      "schedule": "10 6 * * *"
+    },
+    {
+      "path": "/api/hub/cron/comdata-sync",
+      "schedule": "20 6 * * *"
+    },
+    {
+      "path": "/api/hub/cron/qbo-sync",
+      "schedule": "30 6 * * *"
+    },
+    {
+      "path": "/api/hub/cron/owner-digest",
+      "schedule": "0 13 * * 1"
+    },
+    {
+      "path": "/api/hub/cron/random-testing",
+      "schedule": "40 6 * * *"
+    }
   ],
   "headers": [
     {
@@ -124,6 +177,11 @@
       "source": "/components-showcase.html",
       "destination": "/",
       "permanent": true
+    },
+    {
+      "source": "/testimonials",
+      "destination": "/",
+      "permanent": false
     }
   ]
 }

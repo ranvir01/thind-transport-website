@@ -42,13 +42,18 @@ const defaultFaqs = [
     question: "What's the average length of haul?",
     answer: "Our average length of haul is 800-1,200 miles depending on your route preferences. We have both long-haul cross-country lanes and shorter regional runs. Dedicated lanes available for drivers who prefer consistent routes. OTR drivers average 2,500-3,000 miles per week."
   },
+  // Both answers below previously named specific shippers and brokers as
+  // partners. We can't substantiate those relationships in writing, and naming
+  // a third party as a partner is a claim about them as much as about us — so
+  // these now describe only what we can stand behind: the freight we actually
+  // haul and the boards we actually pay for.
   {
-    question: "Do you have dedicated accounts?",
-    answer: "Yes! We have dedicated lanes with premium shippers like Amazon, Walmart, Home Depot, and more. Dedicated accounts offer consistent schedules and predictable income. Ask about available dedicated positions during your interview."
+    question: "Do you have dedicated lanes?",
+    answer: "Some, and they change with the season. Dedicated work means a consistent route and predictable weeks, so it goes fast. Call dispatch and ask what's open right now — we'll tell you straight rather than promise something that isn't there."
   },
   {
-    question: "What brokers and load boards do you work with?",
-    answer: "We're partnered with top brokers including Landstar, CH Robinson, JB Hunt, Coyote Logistics, and Schneider. We also utilize DAT, Truckstop.com, and direct shipper relationships. Owner operators have access to our entire network - you pick what works for you."
+    question: "Where do your loads come from?",
+    answer: "A mix: DAT and Truckstop.com load boards, brokers we've hauled for repeatedly, and direct shipper freight we book ourselves. Owner-operators can see what's available and choose — no forced dispatch, so you're never made to take a load that doesn't pay."
   },
   
   // Home Time & Schedule
