@@ -949,3 +949,71 @@ Backlog:
 - Carried, unchanged: npm audit's high-severity findings (owner-approval-gated semver-major bump); Rust
   sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision); IFTA due-date roll not
   accounting for legal holidays (documented scope decision).
+
+## QA rig drive: owner/dispatcher/driver Playwright sweep, 0 defects — 2026-07-25 ~13:20 UTC
+
+Charter (docs/agent-improvement-loop.md §5): no feature work — stand up the local rig, drive real
+owner/dispatcher/driver flows with Playwright, probe thindtransport.com read-only, fix only outright
+regressions from the last 3h of commits.
+
+**Last-3h window (10:20-13:20 UTC) had exactly two commits**, `ae82c650` (close the `arAgingTrend`
+payment-subquery tenancy gap) and its drain `5a09b8bd`. Read the diff directly: adds `AND
+p.carrier_id = $1` to the payments subquery in `arAgingTrend` (`src/lib/hub/reports.ts`) plus a
+regression test asserting the guard is present in the SQL text. Ships its own test, matches the
+standing tenancy checklist, narrows a query rather than loosening one. No regression.
+
+**Local rig from scratch**: Postgres 16 started (was down), `thind`/`thind_local` role+db created
+(pitfall #9), `.env.local` generated fresh from `.env.example` with new `NEXTAUTH_SECRET`/
+`CRON_SECRET`/`CREDENTIALS_KEY`/`DRIVER_INVITATION_CODE`. `npm install` (748 packages), `npm run
+db:migrate` (21/21), `npm run seed:demo`, `npm run build` (Turbopack, zero TS errors, 140+ routes),
+`npx vitest run` (191 files/1598 tests green), `npm run start`.
+
+**Playwright, not the repo's Puppeteer `e2e-*.mjs` scripts**, per this cycle's charter —
+`@playwright/test` installed ad hoc (`npm install --no-save`, not added to `package.json`; nothing
+in this drive touches product code) against the sandbox's preinstalled Chromium
+(`/opt/pw-browsers/chromium-1194`). Drove three personas end to end:
+
+- **Owner** (1440px): logged in, landed on `/hub`; swept every route in `navigation.ts`'s nav list
+  (loadboard, loads, money + its four subpages, fuel, IFTA, reports + owner report, fleet, drivers,
+  recruiting, customers, facilities, leads, outreach, compliance, safety, settings/users +
+  integrations, messages, tasks, planner, capacity, dispatch) — no 4xx/5xx, no error-page text, no
+  console errors beyond expected Next.js RSC-prefetch aborts.
+- **Dispatcher** (1440px): opened a real load detail (had to fix my own script first — its
+  `a[href^="/hub/loads/"]` selector was matching the "Paste rate con" nav link before a real UUID
+  row; re-ran against an actual load), clicked "Suggest miles" — got the graceful "Couldn't route
+  this lane, add pickup/delivery cities or type miles manually" fallback, not a crash. Confirmed via
+  `src/lib/hub/routing.ts` this is the correct behavior when geocoding fails, and this sandbox's
+  egress blocks Nominatim/OSRM/OpenStreetMap tiles (`ERR_TUNNEL_CONNECTION_FAILED` on
+  `tile.openstreetmap.org`, same restriction §3b already documents for `thindtransport.com`) — not a
+  code defect. Tasks board, planner, map, import all rendered clean.
+- **Driver** (390px, forced-dark): logged in, landed on `/hub/driver`; swept messages/pay/more/
+  DVIR/incident/timeoff — no error pages, no console errors; scripted computed-style scan for
+  color===background (invisible-text pattern) found nothing.
+- **Broker portal**: logged in as `broker@demo.thind`, landed on `/hub/portal` correctly.
+- Also verified a settlement detail page and the reports lane-export endpoint
+  (`/hub/reports/export/lanes`) both respond cleanly.
+
+**Production** (Vercel connector, since direct HTTPS to `thindtransport.com` 403s on CONNECT in this
+sandbox per §3b): `latestDeployment` read `CANCELED`/`target: null` at first glance and `live: false`
+— per the documented `live`-alone caveat, cross-checked deployment history instead. The most recent
+`target: "production"` / `state: "READY"` deployment (`dpl_E13RscPT...`) is commit `5a09b8bd`, which
+is exactly current `main` HEAD — production is not stale. `get_runtime_errors` (7-day window) shows
+only the one already-tracked cosmetic finding: the `pg`/`pg-connection-string` SSL-mode-aliasing
+deprecation warning on `/api/hub/cron/[job]` (unchanged since 2026-06-26, still not urgent).
+
+**0 defects, 0 regressions.** No code fix to ship this cycle — the only change is this log entry.
+Noting for the record: this exact charter fired at least four times in the preceding ~5 hours
+(08:22, 09:16, 11:36, 12:44 UTC per the deployment history) from different session branches, all
+landing "0 defects" too — the parallel-QA-drive redundancy the fleet doc already expects, not a
+signal anything is wrong.
+
+Backlog:
+- `lane-tests` (1443 unpicked) and `lane-compliance` remain the two largest pending branches; the
+  meta-governor prune pass is now overdue by a large enough margin that "prune pass overdue" has
+  appeared in this doc's last several entries running — worth the governor actually firing rather
+  than being carried forward again.
+- Carried, unchanged: pg SSL-mode deprecation warning (`/api/hub/cron/[job]`, cosmetic, one-line
+  `sslmode=verify-full` fix next time that file is touched); npm audit's high-severity findings
+  (owner-approval-gated semver-major bump); Rust sidecar `tiny_http` connection-timeout/thread-cap
+  gap (owner decision); IFTA due-date roll not accounting for legal holidays (documented scope
+  decision).
