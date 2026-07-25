@@ -171,5 +171,20 @@ export async function GET(
     }
   }
 
+  // Fail LOUDLY (Task 5): integration_syncs rows are only visible to someone
+  // who goes looking. A structured error line lands in Vercel's runtime log
+  // (where get_runtime_errors and log drains can see it), and a 500 makes the
+  // Vercel Cron dashboard mark the invocation red instead of silently green.
+  const failed = Object.entries(results).filter(
+    ([, r]) => typeof r === "object" && r !== null && "error" in (r as Record<string, unknown>)
+  )
+  if (failed.length > 0) {
+    console.error(
+      `[cron:${job}] ${failed.length}/${carriers.length} carrier run(s) failed`,
+      JSON.stringify(Object.fromEntries(failed))
+    )
+    return NextResponse.json({ ok: false, job, results }, { status: 500 })
+  }
+
   return NextResponse.json({ ok: true, job, results })
 }

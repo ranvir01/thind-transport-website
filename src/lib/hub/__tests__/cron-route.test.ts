@@ -159,7 +159,10 @@ describe("GET /api/hub/cron/[job] — integration sync dispatch", () => {
       .mockRejectedValueOnce(new Error("QBO token expired"))
       .mockResolvedValueOnce({ inserted: 2, skipped: 0 } as never)
     const res = await call("qbo-sync")
-    expect(res.status).toBe(200)
+    // Fail-loudly contract (Task 5): any carrier failure turns the WHOLE
+    // invocation red (500) so the Vercel Cron dashboard shows it — but the
+    // remaining carriers still ran first, which is what this test pins.
+    expect(res.status).toBe(500)
     expect(runQboSync).toHaveBeenCalledTimes(2)
     const failureLog = syncLogCalls().find(([sql]) => String(sql).includes("FALSE"))
     expect(failureLog?.[1]).toEqual(
@@ -194,7 +197,10 @@ describe("registry ↔ vercel.json ↔ route drift", () => {
     for (const cronPath of vercelCronPaths) {
       const job = cronPath.replace("/api/hub/cron/", "")
       const res = await call(job)
-      expect(res.status, cronPath).toBe(200)
+      // 404 is the drift this test exists to catch. A 500 is allowed here:
+      // under these mocks a job whose adapter isn't stubbed fails its carrier
+      // run, and the route now (correctly) reports that loudly.
+      expect(res.status, cronPath).not.toBe(404)
     }
   })
 })
