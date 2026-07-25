@@ -36,6 +36,36 @@
     --brand-gold: #f2a900;
     --brand-gold-soft: rgba(242, 169, 0, 0.13);
     --brand-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+
+    /* ======================================================================
+     * MARKETING PALETTE — docs/design/DIRECTION.md §1
+     *
+     * Authored in OKLCH so the lightness steps are perceptually even rather
+     * than eyeballed, with hex fallbacks first for any engine without oklch().
+     * Contrast for every text/background pair is computed in DIRECTION.md;
+     * ink-3 was darkened from #6E7378 (4.46:1, a fail) to #6B7075 (4.66:1).
+     *
+     * The ground is paper, not near-black: drivers read this outdoors on a
+     * phone, the calculator is a financial instrument, and a real golden-hour
+     * yard photo has to pop rather than disappear. Dark survives as
+     * full-bleed inverted bands (`asphalt`) — punctuation, not the page.
+     * ==================================================================== */
+    --m-paper: #f6f7f7;
+    --m-paper: oklch(97.3% 0.002 197);
+    --m-ink: #141618;
+    --m-ink: oklch(19.1% 0.004 235);
+    --m-ink-2: #4e5257;
+    --m-ink-2: oklch(43.9% 0.008 245);
+    --m-ink-3: #6b7075;
+    --m-ink-3: oklch(55.6% 0.008 245);
+    --m-signal: #c42820;
+    --m-signal: oklch(48.9% 0.176 28);
+    --m-signal-up: #ec5a50;
+    --m-signal-up: oklch(65.6% 0.163 26);
+    --m-asphalt: #1c1f22;
+    --m-asphalt: oklch(24.1% 0.005 235);
+    --m-cedar: #1e6b4f;
+    --m-cedar: oklch(45.4% 0.087 162);
   }
 
   .dark {
