@@ -17,7 +17,11 @@ export function DispatchBand() {
           sizes="100vw"
           className="photo-kenburns object-cover"
         />
-        <div className="absolute inset-0 bg-gradient-to-r from-navy-900 via-navy-900/85 to-navy-900/40" />
+        {/* Left-to-right scrim only works where the copy sits in a left column.
+            At phone width the copy spans the full bleed, so it was landing on
+            the bright part of the photo — keep it heavy across the whole band on
+            mobile, and let the image open up from md+ where the column exists. */}
+        <div className="absolute inset-0 bg-gradient-to-r from-navy-900 via-navy-900/90 to-navy-900/75 md:via-navy-900/85 md:to-navy-900/40" />
         <div className="absolute inset-0 bg-gradient-to-t from-navy-900 via-transparent to-navy-900/30" />
 
         <div className="container relative z-10 flex min-h-[60vh] items-center px-4 py-16 md:min-h-[70vh] md:py-24">

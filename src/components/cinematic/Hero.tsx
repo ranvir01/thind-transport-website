@@ -13,9 +13,13 @@ export const CinematicHero = () => {
     <section className="relative min-h-[88vh] w-full flex items-center overflow-hidden bg-navy-800">
       <HeroBackground />
 
-      {/* Cinematic overlays for legibility + warmth */}
-      <div className="absolute inset-0 z-[1] bg-gradient-to-r from-navy-900/95 via-navy-900/80 to-navy-900/45" />
-      <div className="absolute inset-0 z-[1] bg-gradient-to-t from-navy-900 via-transparent to-navy-900/40" />
+      {/* Legibility scrim. Two stacked overlays at 95%/80% used to bury the
+          truck almost entirely — on a trucking site the equipment IS the pitch,
+          so the scrim now stays heavy only under the copy (left) and clears to
+          nearly nothing on the right where the truck sits. Text legibility is
+          unchanged: the column behind the headline is still ~92% opaque. */}
+      <div className="absolute inset-0 z-[1] bg-gradient-to-r from-navy-900/94 via-navy-900/88 to-navy-900/70 md:via-navy-900/70 md:to-navy-900/20" />
+      <div className="absolute inset-0 z-[1] bg-gradient-to-t from-navy-900 via-transparent to-navy-900/30" />
       <div className="accent-orb top-10 right-10 h-80 w-80 bg-orange-600/25 z-[1]" />
 
       <div className="relative z-10 container mx-auto px-4 pt-24 pb-14 md:pt-28 md:pb-16">

@@ -310,12 +310,15 @@
     @apply text-center mb-10 md:mb-14;
   }
 
+  /* The accent phrase in a headline. Deliberately a SOLID colour, not a
+     gradient: this class sits on the five largest headlines on the site, and a
+     red-to-gold sweep both dated them and introduced gold as a third brand
+     colour competing with the graphite/white/red system — the accent word also
+     landed lighter than the white around it, which inverted the emphasis it was
+     supposed to create. One confident red reads as a decision; a gradient reads
+     as an effect. */
   .text-gradient-accent {
-    background: linear-gradient(100deg, var(--brand-accent-strong), var(--brand-gold));
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
-    color: transparent;
+    color: var(--brand-accent-strong);
   }
 
   /* True-white chip for partner/shipper logos — exempt from the dark bg-white override */
