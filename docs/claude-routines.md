@@ -949,3 +949,63 @@ Backlog:
 - Carried, unchanged: npm audit's high-severity findings (owner-approval-gated semver-major bump); Rust
   sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision); IFTA due-date roll not
   accounting for legal holidays (documented scope decision).
+
+## QA rig drive: 50-script E2E battery + Playwright role sweep — 2026-07-25 ~16:20 UTC (QA routine)
+
+Charter (docs/agent-improvement-loop.md §5): no feature work — stand up the local rig, drive real
+owner/dispatcher/driver flows with Playwright, probe thindtransport.com read-only, fix only outright
+regressions from the last ~3h of commits.
+
+Fresh container, nothing provisioned: started Postgres, created the `loadoff` role + database, wrote
+`.env.local` from `.env.example` with fresh `NEXTAUTH_SECRET`/`CREDENTIALS_KEY`/`CRON_SECRET`, `npm
+install`, `npm run db:migrate` (21/21), `npm run seed:demo`, `npm run build` (zero TS errors, 140+
+routes) and `npx vitest run` (191 files / 1598 tests) green from clean before touching anything.
+`npm run agent:status` showed catch-up mode (integrator 4 ahead of main) — left alone; draining `main`
+is the deploy agent's job, not this routine's.
+
+Ran the full native smoke suite (`node scripts/e2e-run-all.mjs`, Puppeteer-based — this repo's own
+E2E harness): **50/50 scripts passed** in 13.3m, covering owner, dispatcher, driver, broker/shipper
+portal, tenant isolation, IFTA, imports, onboarding, and the visual sweep. Zero failures, zero console
+errors across the battery.
+
+Also drove the same three roles by hand with actual Playwright (`npx playwright` installed clean
+against the sandbox's pre-provisioned `/opt/pw-browsers` Chromium, no network download needed):
+owner at 1440px (loadboard, owner reports, invoices, drivers, fleet), dispatcher at 1440px (dispatch
+board, loads, planner, fuel, map), driver at 390px (home, docs, messages, DVIR, pay, more) — all
+screens render correctly, correct role landing routes, forced-dark driver PWA tokens intact, no gold/
+navy bleed on office screens, no invisible text. First pass showed dispatcher `planner`/`fuel`/`map`
+and driver `pay`/`more` bouncing to `/hub/deactivated`/`/hub/welcome`; root cause was **not a product
+bug** — the native Puppeteer battery was reseeding the same local DB concurrently in the background,
+regenerating every row's UUID mid-session, so the already-issued JWT's `user.id` stopped matching any
+`hub.users` row and `isActiveUser`/driver-id lookups correctly failed closed. Re-ran cleanly after the
+battery finished and after a fresh `seed:demo`: all 18 screens across all three roles landed correctly,
+zero errors (one `ERR_TUNNEL_CONNECTION_FAILED` cluster on `/hub/map` is this sandbox's egress policy
+blocking the map-tile host, not an app defect).
+
+Regression review of the last ~3h of `main` history (`dfd06bdc` OSRM circuit-breaker through `5a09b8bd`
+drain): read each diff directly rather than re-running the audits blind. `9607589` (PWA manifest fix)
+verified live — `curl` against the local rig confirms `/` serves `/site.webmanifest` and `/hub/login`
+serves `/api/hub/manifest`, exactly the single-manifest-per-route fix the commit describes. `9b0990c`
+and `ae82c650` (facilities/AR-aging tenancy guards) both ship their own regression tests and match the
+standing carrier_id-guard checklist. `3b986118` (gradient-headline/scrim visual pass) and `dfd06bdc`
+(Go worker breaker) both carry their own verification notes and tests. No regression found in any of the
+eight commits.
+
+Probed production read-only: this sandbox's egress policy blocks direct HTTPS to `thindtransport.com`
+(`curl` → exit 56, as documented in agent-improvement-loop.md §3b), so cross-checked via the Vercel MCP
+instead — the `production` alias resolves to `dpl_E13RscPTkR9EYspc4LMxU7m6XJ8j`, `READY`, target
+`production`, commit `5a09b8bd` — exactly `main`'s HEAD. (Project's `live` flag read `false`; per the
+documented false-negative, cross-checked against the alias + deployment SHA instead of trusting it
+alone.) `get_runtime_errors` (24h window) shows only the already-tracked cosmetic pg SSL-mode-aliasing
+warning on `/api/hub/cron/[job]`.
+
+**0 defects, 0 regressions.** No code fix to ship this cycle; the only change is this log entry.
+
+Backlog:
+- `lane-tests` (1443 unpicked) and `lane-compliance` (1552 unpicked) remain the two largest pending
+  branches by a wide margin; meta-governor prune pass remains overdue across many cycles now — this
+  note has repeated many times without action.
+- Carried, unchanged: npm audit's high-severity findings (owner-approval-gated semver-major bump); Rust
+  sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision); IFTA due-date roll not
+  accounting for legal holidays (documented scope decision); pg SSL-mode deprecation warning on
+  `/api/hub/cron/[job]` (cosmetic, one-line `sslmode=verify-full` fix next time that file is touched).
