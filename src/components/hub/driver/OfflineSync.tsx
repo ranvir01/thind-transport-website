@@ -26,7 +26,9 @@ async function execute(intent: QueuedIntent): Promise<{ ok: boolean; error?: str
     case "status":
       return driverAdvanceStatus(intent.payload.loadId)
     case "stop":
-      return driverStopTimestamp(intent.payload.stopId, intent.payload.loadId, intent.payload.field)
+      // at was stamped when the driver tapped, so a replay hours later still
+      // bills detention off the real dwell time (mirrors "incident" below).
+      return driverStopTimestamp(intent.payload.stopId, intent.payload.loadId, intent.payload.field, intent.payload.at)
     case "ack":
       return driverAcknowledgeDispatch(intent.payload.loadId)
     case "announcement-ack":
