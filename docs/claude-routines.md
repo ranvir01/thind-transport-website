@@ -949,3 +949,64 @@ Backlog:
 - Carried, unchanged: npm audit's high-severity findings (owner-approval-gated semver-major bump); Rust
   sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision); IFTA due-date roll not
   accounting for legal holidays (documented scope decision).
+
+## QA rig drive: 50-script E2E battery + sidecars, 0 defects, 0 regressions in last-3h commits — 2026-07-25 ~14:20 UTC
+
+Charter (docs/agent-improvement-loop.md §5): no feature work — stand up the local rig, drive real
+owner/dispatcher/driver flows with Playwright/Puppeteer, probe `thindtransport.com` read-only, fix
+only outright regressions from the last 3h of commits.
+
+`git fetch` + `npm run agent:status`: `main` at `5a09b8bd` (10:48 UTC), integrator
+(`claude/hauldesk-project-setup-l1luoo`) 3 commits ahead at `17e1d8d0` (13:44 UTC) — STEADY STATE
+(within the 3-commit catch-up threshold). Reviewed the three commits in that window by reading each
+diff directly rather than trusting the commit body: `071fecb6` (announcements `ackReport` join gained
+an `AND u.carrier_id = $2` guard, ships `announcements-ack-tenancy.test.ts`), `f3f5e0dd`
+(`dollarsToCents` swapped bare `Math.round` for `roundHalfAwayFromZero`, closing a negative-half-cent
+tie-toward-+Infinity gap, regression test added), `17e1d8d0` (five more inline `Math.round(x * 100)`
+call sites in `fuel.ts`/`comdata.ts`/`dat.ts`/`truckstop.ts`/`parser.ts` consolidated onto the same
+helper, each site's NaN/null-preserving branch structure left intact, guard test extended to cover all
+five). Checked `roundHalfAwayFromZero` itself (`src/lib/hub/rounding.ts`) against `Math.sign`/`Math.abs`
+composition for the NaN case — matches `Math.round(NaN)`'s NaN-propagation behavior, no edge case
+introduced. **No regression in any of the three.**
+
+Fresh local rig from scratch (Postgres was down, no `hubapp` role/`hubdb` database existed yet —
+created both per the dev-workflow-testing skill's pitfall #9; `.env.local` didn't exist either,
+generated from `.env.example` with fresh `NEXTAUTH_SECRET`/`CRON_SECRET`/`CREDENTIALS_KEY`): `npm ci`
+(748 packages), `npm run db:migrate` (21/21 migrations clean), `npm run seed:demo`, `npm run build`
+(zero TS errors, 140+ routes) + `npx vitest run` (191 files/1598 tests) + `npm run lint` all green,
+`npm run start`.
+
+Drove the full `scripts/e2e-battery.mjs` — all 50 `e2e-*-smoke.mjs` scripts covering
+owner/dispatcher/driver/accountant/broker/shipper/portal/tenant-isolation flows (advances, apply,
+claims, compliance, customers, DAT freight, detention alerts, dispatch + driver-notify, driver offline
+queue, driver POD, driver 15-step phone flow, duplicate-load, DVIR, expenses, fleet, fuel, IFTA
+generate, imports, invoices, load OS&D chip, loads/booking, login, mailbox OAuth, messages,
+notifications, office nav, onboarding, planner, portal accept + portal, price book, public marketing
+pages, QBO IIF + QBO push, random testing pool, recruiting, recurring lane + rollup, reports,
+safety, settings, settlements, showcase, statements, tasks, tenant isolation, tracking, users) plus
+the full visual sweep. **50/50 PASS, 0 defects, 0 console errors.** `npm run test:sidecars` also green
+(29 Rust tests including the UTF-8-body and half-cent-rounding-parity cases, Go vet/test, clippy clean).
+
+Production probe: direct HTTPS to `thindtransport.com` stayed egress-blocked (curl exit 56 CONNECT
+403, WebFetch also 403 on the same host) — consistent with every prior cycle. Vercel MCP tools
+(`get_project`/`list_deployments`/`get_runtime_errors`) confirmed health instead: `get_project` shows
+`live: false` and `latestDeployment` CANCELED with `target: null`, the same signature the 2026-07-23
+cycle flagged as a broken Git-deploy pipeline — but cross-checking `list_deployments` (per the "`live`
+alone is not a reliable signal" note above) finds the most recent `target: "production"` + `state:
+"READY"` deployment (`dpl_E13RscPTkR9EYspc4LMxU7m6XJ8j`) landed 10:48:41 UTC on commit `5a09b8bd`,
+which is exactly `main`'s current tip — production is current, not stale, `live: false` is a false
+signal again. `get_runtime_errors` (24h window) shows exactly one error group: the already-known
+cosmetic pg/pg-connection-string SSL-mode deprecation warning on `/api/hub/cron/[job]` (carried in the
+backlog below), no new error clusters.
+
+No code fix was needed or shipped this cycle — nothing to drain.
+
+Backlog:
+- lane-tests (1443 unpicked) and lane-compliance (1552 unpicked) remain the two largest pending
+  branches by a wide margin; meta-governor prune pass remains overdue across many cycles now.
+- pg/pg-connection-string SSL-mode deprecation warning on `/api/hub/cron/[job]` is cosmetic today
+  (confirmed again via `get_runtime_errors`, unchanged count) but worth a one-line `sslmode` fix before
+  the next `pg` major bump changes the semantics silently.
+- Carried, unchanged: npm audit's 21 high-severity findings (sharp/libvips CVEs, owner-approval-gated
+  semver-major bump); Rust sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision); IFTA
+  due-date roll not accounting for legal holidays (documented scope decision).
