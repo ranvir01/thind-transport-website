@@ -13,7 +13,11 @@ What's still unconfirmed: the real `GetLoadSearchResults` response element names
 portal's schema sits behind its bot wall — `parseLoadSearchResponse`/`normalizeTruckstopPosting`
 assume PascalCase names like `LoadId`/`TripMiles`/`TotalRate`, adjust both together once a
 developer packet or unblocked `llms.txt` pull confirms them) and the production SOAP host
-(base defaults to the confirmed sandbox, `testws.truckstop.com`). Nothing is broken today —
+(base defaults to the confirmed sandbox, `testws.truckstop.com`). **2026-07-25 scout lead
+(search-snippet evidence, not primary-source confirmed — see that section below):** the
+response item wrapper may actually be `LoadSearchItem`, not the `LoadSearchResult` tag name
+`parseLoadSearchResponse` currently extracts — if so the parser silently returns zero
+postings against a real response. Nothing is broken today —
 without pasted credentials the adapter throws `truckstop is not connected` before any HTTP
 happens — and a real SIA-issued credential set can now at least speak the right protocol,
 though the response parse will need a field-name correction pass on first real contact.
@@ -140,16 +144,65 @@ source. No mention of `RadiusMiles`/`OriginRadius` surfaced in either request-sh
 Confirming needs the same thing every pass since 2026-07-18 has needed: a developer packet or
 a pull from an unblocked network.
 
+## 2026-07-25 scout pass — likely wrapper-element mismatch found (NOT primary-source confirmed)
+
+`developer.truckstop.com` still 403s direct fetch (same wall every pass since 2026-07-18), but
+four independent search-engine queries this pass returned **consistent, overlapping field
+lists** for the `get-load-search-results-1` reference page — the first time a scout pass has
+gotten more than a single fragmentary snippet. Cross-query agreement (not a single source this
+time):
+
+- The response element `parseLoadSearchResponse` should be extracting appears to be named
+  **`LoadSearchItem`**, sitting inside a `SearchResults` array under
+  `GetLoadSearchResultsResult` — **not `LoadSearchResult`**, the tag name
+  `extractTagBlocks(xml, "LoadSearchResult")` currently hard-codes in `truckstop.ts`. If this
+  holds up, `parseLoadSearchResponse` would find **zero matching blocks on a real response and
+  silently return an empty array** — no error, no thrown fault, just "no postings" — the
+  worst kind of adapter bug because nothing in the current mock/contract tests (which construct
+  their own XML fixtures using the assumed tag name) would catch it against the real service.
+- One mention gives the id field as **`ID`**, not `LoadId` — lower confidence (single mention
+  vs. the `LoadSearchItem` wrapper's four-query agreement).
+- Fields repeatedly confirmed present on the item: `Age`, `Bond`, `BondEnabled`, `BondTypeID`,
+  `CompanyName`, `Days2Pay`, `DestinationCity`, `DestinationCountry`, `DestinationDistance`,
+  `DestinationState`, `Equipment`, `EquipmentOptions`, `ExperienceFactor`, `FuelCost`,
+  `OriginCity`, `OriginState`, `PickupDate` (matches the adapter's existing assumption).
+  **This resolves the 2026-07-21 open question**: `DestinationCity`/`DestinationCountry` are
+  response fields on the load item, not request-criteria — they were never candidates for
+  `TruckstopSearchCriteria`, so no city-filter wiring was ever blocked on them; that lead is
+  retired as moot rather than pursued further.
+- Could not corroborate exact names for total rate or trip miles (our `TotalRate`/`TripMiles`
+  guesses) or a contact-phone field in this pass's search snippets — those stay unconfirmed
+  alongside the wrapper-name question.
+
+**This is still search-snippet evidence, not a primary-source read** (the portal itself never
+returned a 200 to this environment) — same standing caveat as every prior pass, just with more
+queries agreeing this time than the usual single fragment. Flagged as an **integrations-lane
+Backlog item** rather than changed here: docs-lane territory doesn't include
+`src/lib/hub/integrations/truckstop.ts`, and a wrapper-tag change is exactly the kind of
+adapter edit that needs a real response sample (or at minimum a from-a-browser portal read) to
+land safely, not a second-hand rename. Until then the adapter is unaffected in production —
+`truckstopSource().search()` still throws `truckstop is not connected` before any HTTP happens
+without pasted credentials, so this is a landmine for first-contact day, not a live bug.
+
 ## Open questions for the next pass
 
+- **Highest priority (new 2026-07-25 lead):** verify the `GetLoadSearchResultsResult` →
+  `SearchResults` → item wrapper element name — `LoadSearchItem` per this pass's
+  multi-query-corroborated search snippets vs. `LoadSearchResult` the adapter currently
+  extracts. If confirmed, `parseLoadSearchResponse`'s `extractTagBlocks(xml, "LoadSearchResult")`
+  call and its field list (`LoadId` vs. `ID`) need a coordinated fix with
+  `normalizeTruckstopPosting`, plus a fixture update in `truckstop.test.ts` so the tests would
+  have caught this. A developer packet or one non-403 browser pull of
+  `developer.truckstop.com/reference/get-load-search-results-1` settles it outright.
 - Get the real `GetLoadSearchResults` request/response XML schema (developer packet or
   llms.txt from an unblocked network) and pin `parseLoadSearchResponse`'s field list +
-  `normalizeTruckstopPosting`'s mapping to it.
+  `normalizeTruckstopPosting`'s mapping to it — specifically the rate and miles field names,
+  still unconfirmed after this pass.
 - Confirm the production SOAP host and whether load *booking* (not just search) has any API
   surface, or whether booking stays phone/email + our draft prefill.
 - Confirm rate limits and any per-integration-ID concurrency rules at SIA time.
-- Confirm whether/how city-level or radius filtering exists on the real service — not sent
-  in the current request envelope (only origin/destination states + equipment + HoursOld).
-  2026-07-21 lead (unconfirmed, single source): `DestinationCity`/`DestinationCountry` may be
-  valid `Criteria` fields on the same reference page as our SOAP endpoint — verify against the
-  actual page before wiring `originCity`/`radiusMiles` through.
+- Confirm whether/how radius filtering exists on the real service — not sent in the current
+  request envelope (only origin/destination states + equipment + HoursOld). City-level
+  filtering via `DestinationCity` is now believed moot per the 2026-07-25 finding above
+  (response field, not request criteria) unless a future pass finds a *separate*
+  request-criteria field with the same name.
