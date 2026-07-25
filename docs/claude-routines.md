@@ -838,3 +838,65 @@ Backlog:
   that's a bigger jump than routine dependency drift); Rust sidecar `tiny_http` connection-timeout/
   thread-cap gap (owner decision); IFTA due-date roll not accounting for legal holidays (documented
   scope decision).
+
+## Driver PWA tap-time timestamp fix + duplicate-branch triage — 2026-07-25 ~03:40 UTC (verify-and-build cycle)
+
+Integrator and `main` matched exactly at `2b1e145c` (0 drift) — `npm ci` + `npm run build` + `npx vitest
+run` (188 files/1584 tests) + `npm run lint` + `npm run test:sidecars` (29 Rust tests + Go vet/test,
+clippy clean) all green before touching anything else.
+
+`agent:branches`' top suggestion (`lane-compliance`) is the same confirmed-superseded IFTA weekend-roll
+duplicate prior cycles have already ruled out (skipped, unchanged). Surveyed the 1-2-unpicked-commit
+branches for anything new instead of the huge stale piles: `claude/eager-babbage-2wt0cm` ("wire carrier
+accent into docs/messages icons") looked like the natural next slice of the driver-accent gold-swap
+flagged in the last full-battery cycle's backlog, but a dry-run merge conflicted and reading both sides
+showed HEAD had already shipped the *entire* remaining swap (home/more/timeoff/messages/docs pages plus
+all five components) sometime after this branch's base — confirmed with `grep -rn text-gold
+src/app/hub/driver src/components/hub/driver` returning zero hits. Two more single-commit candidates
+turned out the same way: `claude/eager-babbage-0jlgig` ("fix truckDvirState pre-trip blindness") diffs
+to a comment-only change against `dvir.ts` — the actual fix is already on HEAD via `9eac3a5b`/`45e08c0b`;
+`claude/eager-babbage-x9omlp` ("guard the unbilled-invoice NOT EXISTS by carrier_id") is fully subsumed
+by `103764b5`, which added the identical `i.carrier_id = l.carrier_id` guard and also carries a strictly
+better version of the branch's driver-expiry-task logic (flags CDL and medical-card expiry as separate
+tasks instead of picking one via ternary). None merged, per AGENTS.md's keep-HEAD-superset rule.
+
+While triaging `claude/eager-babbage-6szuwp` ("stamp stop arrive/depart timestamps at tap time") the same
+way, found it was genuinely NOT superseded: `driverStopTimestamp` (`src/app/hub/_actions/driver.ts`)
+still stamps `new Date().toISOString()` server-side on every call, including offline-queue replay — so a
+driver who taps "I'm here" or "Leaving now" with no signal gets that stop's timestamp set to whenever the
+queue happens to sync, not when they actually tapped. Detention-fee accrual (`applyDetentionAccrual`)
+runs off that same timestamp, so this silently misbills detention time on any offline arrive/depart —
+money-correctness, not just polish. The codebase already has the fix pattern in production: the incident
+report's `occurredAt` is stamped client-side at submit time for exactly this reason. Rather than merging
+the stale branch (its `DriverLoadCard.tsx` still carries pre-accent-swap `text-gold` classes and an
+already-fixed IndexedDB-leak diff), reimplemented the fix fresh against current HEAD: `driverStopTimestamp`
+now takes a required `at` parameter instead of stamping its own clock; `DriverLoadCard.tsx`'s two tap
+handlers capture `at = new Date().toISOString()` at tap time and pass it through both the live call and
+the queued intent; `IntentPayloads.stop` gained the `at: string` field and `QUEUE_SCHEMA_VERSION` bumped
+1 → 2 so a pre-existing queued row without `at` is dropped at replay instead of reaching `execute()` with
+a shape it doesn't have; `OfflineSync.tsx`'s replay switch forwards `intent.payload.at`. Added a unit test
+in `driver-actions-audit.test.ts` asserting `driverStopTimestamp` forwards the caller's timestamp to
+`setStopTimestamp` rather than generating its own.
+
+Verify chain: `npm run build`, `npx vitest run` (189 files/1592 tests, 1 new), `npm run lint` (clean).
+Local Postgres stood up fresh (no `hubapp` role/`hubdb` database existed yet — created both per the
+dev-workflow-testing skill's pitfall #9, `.env.local` didn't exist either and was created from
+`.env.example` with fresh `NEXTAUTH_SECRET`/`CRON_SECRET`/`CREDENTIALS_KEY`), `db:migrate` (21 migrations)
++ `seed:demo`, `build && start`, then `node scripts/e2e-driver-smoke.mjs` at 390px — full 15-step phone
+flow including the arrive/depart taps this cycle touched, all green, 0 console errors; screenshots show
+"In 3:48 AM, out 3:48 AM" recorded correctly off the tap-time value.
+
+Pushed the integrator, then drained to `main` with the stamped `--no-ff` method (push `main` alone first
+per the 2026-07-22 dedupe-avoidance rule, then fast-forward the integrator back to match) — `main` and the
+integrator now match exactly.
+
+Backlog:
+- `lane-tests` (1443 unpicked) and `lane-compliance` (1540 unpicked, its one real commit reconfirmed
+  superseded-by-HEAD this cycle) remain the two largest pending branches by a wide margin; meta-governor
+  prune pass remains overdue across many cycles now.
+- Three more branches confirmed fully superseded-by-HEAD this cycle (safe deletion candidates for the
+  meta-governor pass, not re-triage targets): `claude/eager-babbage-2wt0cm`, `claude/eager-babbage-0jlgig`,
+  `claude/eager-babbage-x9omlp`.
+- Carried, unchanged: npm audit's high-severity findings (owner-approval-gated semver-major bump); Rust
+  sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision); IFTA due-date roll not
+  accounting for legal holidays (documented scope decision).
