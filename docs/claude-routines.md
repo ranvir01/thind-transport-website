@@ -799,3 +799,54 @@ Backlog:
 - Carried, unchanged: npm audit's 3 high-severity findings (owner-approval-gated semver-major bump);
   Rust sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision); IFTA due-date roll not
   accounting for legal holidays (documented scope decision).
+
+## QA rig drive (owner/dispatcher/driver) + prod probe — 2026-07-25 ~01:25 UTC (verify-and-build cycle)
+
+Charter per `docs/agent-improvement-loop.md` §5: no feature work — stand up the local rig, drive real
+owner/dispatcher/driver/broker/shipper/portal flows with the Playwright/Puppeteer E2E suite, probe
+`thindtransport.com` read-only, fix only outright regressions from the last 3h of commits.
+
+**Last-3h commit review:** `main` HEAD (`6ba902c2`, drain of `062f92f`'s five-lane absorb + HOS tenancy
+fix cycle) was pushed at 21:56:50 UTC, ~3h20m before this cycle started — nothing landed inside the
+3-hour window at all, so there was no diff to review and nothing to fix forward.
+
+**Fresh local rig from scratch** (new container — Postgres down, no role/db): started `postgresql`,
+created the `hauldesk` role + database per the dev-workflow-testing skill's pitfall #9,
+`npm run setup:canvas-deps` + `npm install` (748 packages), `.env.local` written (fresh
+`NEXTAUTH_SECRET`/`CREDENTIALS_KEY`/`CRON_SECRET`, `POSTGRES_URL` to the local db, SMTP left blank per
+pitfall #6), `npm run db:migrate` (21/21 clean), `npm run seed:demo`. Verified: `npm run build` clean
+(Turbopack, every route compiles), `npx vitest run` 188 files/1580 tests green, `npm run lint` clean.
+
+**Full drive against `next start`:** `scripts/e2e-run-all.mjs` — all 48 `e2e-*-smoke.mjs` scripts plus
+`e2e-sweep.mjs` (the visual sweep across owner/dispatcher/driver/portal screens at 1440px and 390px) —
+**49/49 PASS in 13.5 minutes, 0 console errors.** Spot-checked several logs directly (not just the
+summary line) to confirm "0 console errors" was a real assertion, not a grep false-positive — same
+diligence as the 2026-07-24 20:30 UTC cycle.
+
+**Production probe (read-only):** direct HTTPS to `thindtransport.com` stayed egress-blocked (curl exit
+56, CONNECT 403), consistent with every prior cycle. Vercel MCP: `get_project` showed the familiar
+`live: false` / `latestDeployment` CANCELED false-alarm pattern (a superseded preview build from
+`claude/lane-portal`, not a real outage — §3b already documents this). Cross-checked with
+`list_deployments`: the actual production deployment (`dpl_3PG6i44EKWk6vWQAZzDzyXZmsH9D`,
+`target: "production"`, `state: "READY"`) is on commit `6ba902c2` — the exact SHA this cycle started
+from. Production is current, not stale. `get_runtime_errors` (24h window): one error group, the same
+pg-connection-string SSL-mode deprecation warning on `/api/hub/cron/[job]` carried since 2026-06-26 —
+not new, not a regression.
+
+No code fix was needed or made this cycle — the rig, the last-3h window (empty), and production are all
+clean.
+
+`npm run agent:status`: steady state, integrator within 3 commits of main. `claude/lane-portal` carries
+1 unmerged commit (accept-invitation page accent fix) — Routine 1's normal absorb queue, not this
+cycle's territory to merge.
+
+Backlog:
+- `claude/lane-portal` (1 commit: accept-invitation page follows the carrier's accent) is ahead of the
+  integrator, unmerged — next integrator pass should pick it up.
+- `lane-tests` (1443 unpicked) and `lane-compliance` (1540 unpicked, confirmed superseded-by-HEAD per
+  the prior cycle's content-diff check) remain the two largest pending branch queues; meta-governor
+  prune pass remains overdue across many cycles now.
+- Carried, unchanged: npm audit's 3 high-severity findings (owner-approval-gated semver-major bump);
+  Rust sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision); IFTA due-date roll not
+  accounting for legal holidays (documented scope decision); pg-connection-string SSL-mode deprecation
+  warning on cron routes (cosmetic, `sslmode=verify-full` one-line fix, not in any lane's territory).
