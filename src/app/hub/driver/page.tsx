@@ -12,7 +12,7 @@ import { DriverLoadCard } from "@/components/hub/driver/DriverLoadCard"
 import { AnnouncementAckCard } from "@/components/hub/driver/AnnouncementAckCard"
 import { DocRequestCard } from "@/components/hub/driver/DocRequestCard"
 import { PushManager } from "@/components/hub/PushManager"
-import { ExpiryPill } from "@/components/hub/ui"
+import { DriverExpiryPill } from "@/components/hub/driver/ExpiryPill"
 
 export const dynamic = "force-dynamic"
 
@@ -103,10 +103,10 @@ export default async function DriverHomePage() {
           <p className="text-[11px] font-bold uppercase tracking-wider text-steel-400">My cards</p>
           <div className="mt-1.5 space-y-1.5">
             <p className="flex items-center justify-between gap-1 text-body-xs text-steel-200">
-              CDL <ExpiryPill date={expiries.cdl_expiry} />
+              CDL <DriverExpiryPill date={expiries.cdl_expiry} />
             </p>
             <p className="flex items-center justify-between gap-1 text-body-xs text-steel-200">
-              Med card <ExpiryPill date={expiries.medical_card_expiry} />
+              Med card <DriverExpiryPill date={expiries.medical_card_expiry} />
             </p>
           </div>
         </div>
