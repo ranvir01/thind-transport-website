@@ -949,3 +949,45 @@ Backlog:
 - Carried, unchanged: npm audit's high-severity findings (owner-approval-gated semver-major bump); Rust
   sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision); IFTA due-date roll not
   accounting for legal holidays (documented scope decision).
+
+## Expenses + compliance + messages E2E re-sweep, no code fix this cycle — 2026-07-25 ~05:35 UTC (verify-and-build cycle)
+
+Integrator and `main` matched exactly at `e5b027a7` (0 drift) — `npm run build` + `npx vitest run` (188
+files/1585 tests, 1 skipped file) + `npm run lint` + `npm run test:sidecars` (29 Rust tests, clippy
+clean) all green before touching anything else.
+
+`agent:status`/`agent:branches` unchanged from the last two cycles: 112 pending `claude/*` branches,
+`lane-compliance` still the only lane ahead of the integrator (1543 commits, one real commit —
+`d71d657d`'s weekend due-date roll — reconfirmed already present in `main`'s `iftaDueDate`, byte-identical
+logic). No new absorbable branch and no owner-actionable backlog item, so per step 6 ran the
+named-workflow E2E sweep on the three workflows this rotation hadn't covered yet (the last two cycles
+already did IFTA generate + dispatch board): fresh container needed Postgres started
+(`service postgresql start`), a `hauldesk`/`hauldesk` role+db created, and `.env.local` generated with a
+fresh `AUTH_SECRET` (`MissingSecret` from Auth.js otherwise — same missing-`.env.local` pitfall as prior
+cycles, just a different variable name landed on this time). `npm run db:migrate` (21 migrations) +
+`npm run seed:demo`, `npm run build && npm run start`.
+
+**Expenses** (`scripts/e2e-expenses-smoke.mjs`): owner records a toll expense with odd cents ($84.37),
+list shows exact cents, QuickBooks CSV export reconciles to the cent, per-truck P&L other-expenses moves
+by exactly 8437 cents, reimbursable-lumper tagging, dispatcher (`money:read`) sees the list but not the
+form — all green. **Compliance** (`scripts/e2e-compliance-smoke.mjs`): wall's red/amber/green tri-state
+counts, IFTA filing auto-tracked with no duplicate rows, manual item tracked, consortium item resolved
+(red count -1), driver-document upload, driver login refused the office wall — all green. **Messages**
+(`scripts/e2e-messages-smoke.mjs`): office template-chip composer, driver PWA at 390px shows unread badge
++ office marker, driver reply flows back to office with read receipt ("Seen by Harpreet Singh"), driver
+login refused the office message routes — all green. **All three green, 0 defects, 0 console errors.**
+This completes the workflow rotation named in the routine (dispatch board, expenses, compliance docs,
+messages, IFTA generate all swept across the last three cycles with 0 defects).
+
+No code fix was available to ship — this cycle's only change is this log entry.
+
+Backlog:
+- `lane-tests` (1443 unpicked) and `lane-compliance` (1543 unpicked) remain the two largest pending
+  branches by a wide margin; meta-governor prune pass remains overdue across many cycles now — flat at
+  ~112 pending branches for three cycles running. Worth flagging explicitly: this is now a recurring
+  backlog item that no verify-and-build cycle can action (pruning stale branches is the meta-governor
+  routine's job per `docs/agent-improvement-loop.md` §5, not this role's), so it will keep reappearing
+  here until that routine actually runs.
+- Carried, unchanged: npm audit's high-severity findings (owner-approval-gated semver-major bump); Rust
+  sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision); IFTA due-date roll not
+  accounting for legal holidays (documented scope decision).
