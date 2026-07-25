@@ -3,9 +3,19 @@
 # tooling. Agent sandboxes push through a proxy that blocks ref deletions, so
 # pruning lives here, where the credential can delete.
 #
-# Deletes ONLY claude/* branches whose tips are ancestors of main (zero unique
-# commits — `git branch -r --merged`). Never touches the integrator,
-# claude/lane-*, cursor/*, or anything with unpicked work.
+# Two tiers (AGENT_TASKS Task 9):
+#  1. Ancestor-merged claude/* branches (`git branch -r --merged`) — always
+#     deleted, as before. Safe by construction: zero unique commits.
+#  2. ZERO-CONTENT-DELTA branches: an empty commit branched off an OLD main is
+#     never an ancestor of current main, so tier 1 can never prune it — that
+#     structural gap is how the repo reached 200+ dead branches. A branch whose
+#     `git diff $(merge-base main b)..b` is EMPTY has nothing to lose, so it is
+#     deletable — but this tier is DRY-RUN by default: it only reports, and
+#     deletes only when a human dispatches the workflow with arm_tree_prune,
+#     so the first real deletion happens after someone has read one report.
+#     An age floor keeps in-flight sessions safe either way.
+#
+# Never touches the integrator, claude/lane-*, or cursor/*.
 
 name: Prune merged agent branches
 
@@ -13,6 +23,11 @@ on:
   schedule:
     - cron: "23 6 * * *"
   workflow_dispatch:
+    inputs:
+      arm_tree_prune:
+        description: "Actually DELETE zero-content-delta branches (default: report only)"
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -52,6 +67,52 @@ jobs:
             git push origin $(tr '\n' ' ' < "$f") && DELETED=$((DELETED + $(wc -l < "$f")))
           done
           echo "Deleted $DELETED of $TOTAL."
+
+      - name: Zero-content-delta branches (dry-run unless armed)
+        env:
+          ARMED: ${{ inputs.arm_tree_prune == true && 'yes' || 'no' }}
+          # Anything whose tip commit is younger than this stays, armed or not —
+          # an in-flight session may still be about to push real work onto it.
+          AGE_FLOOR_HOURS: "24"
+        run: |
+          git fetch origin --prune
+          NOW=$(date +%s)
+          FLOOR=$((AGE_FLOOR_HOURS * 3600))
+          : > /tmp/tree-candidates
+          for ref in $(git branch -r | sed 's/^ *//' | grep '^origin/claude/' \
+              | grep -v '^origin/claude/hauldesk-project-setup-l1luoo$' \
+              | grep -v '^origin/claude/lane-'); do
+            base=$(git merge-base origin/main "$ref" 2>/dev/null) || continue
+            # Tree comparison, not ancestry: empty diff against the merge base
+            # means the branch carries no content main doesn't already have.
+            if git diff --quiet "$base" "$ref"; then
+              tip=$(git log -1 --format=%ct "$ref")
+              age=$((NOW - tip))
+              if [ "$age" -ge "$FLOOR" ]; then
+                echo "$ref" >> /tmp/tree-candidates
+              else
+                echo "skip (younger than ${AGE_FLOOR_HOURS}h): $ref"
+              fi
+            fi
+          done
+          COUNT=$(wc -l < /tmp/tree-candidates)
+          echo "Zero-content-delta candidates: $COUNT"
+          cat /tmp/tree-candidates
+          if [ "$COUNT" -eq 0 ]; then
+            exit 0
+          fi
+          if [ "$ARMED" != "yes" ]; then
+            echo "DRY RUN — nothing deleted. Re-dispatch with arm_tree_prune to delete the $COUNT branches above."
+            exit 0
+          fi
+          sed 's|^origin/|:refs/heads/|' /tmp/tree-candidates > /tmp/tree-refspecs
+          split -l 40 /tmp/tree-refspecs /tmp/treebatch-
+          DELETED=0
+          for f in /tmp/treebatch-*; do
+            # shellcheck disable=SC2046
+            git push origin $(tr '\n' ' ' < "$f") && DELETED=$((DELETED + $(wc -l < "$f")))
+          done
+          echo "Deleted $DELETED zero-content-delta branches."
 
       - name: Report survivors
         run: |

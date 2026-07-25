@@ -27,8 +27,10 @@ async function sessionAfterLogin() {
   return null
 }
 
-/** Client login card. `showDemo` comes from the server page (HUB_DEMO_LOGIN). */
-export function LoginCard({ showDemo }: { showDemo: boolean }) {
+/** Client login card. `showDemo` comes from the server page (HUB_DEMO_LOGIN);
+ *  `installSlot` is the install-the-app affordance the page composes in — it
+ *  belongs on this route because /hub/* carries the driver app manifest. */
+export function LoginCard({ showDemo, installSlot }: { showDemo: boolean; installSlot?: React.ReactNode }) {
   const [loading, setLoading] = useState(false)
   const [form, setForm] = useState({ email: "", password: "" })
   const [roleHint, setRoleHint] = useState<string | null>(null)
@@ -75,7 +77,8 @@ export function LoginCard({ showDemo }: { showDemo: boolean }) {
 
   return (
     <div className="hauldesk-auth flex min-h-screen items-center justify-center p-4">
-      <Panel className="w-full max-w-md p-6 md:p-8">
+      <div className="w-full max-w-md">
+      <Panel className="w-full p-6 md:p-8">
         <div className="mb-6 text-center">
           <span className="text-2xl font-semibold tracking-tight text-fg">{PRODUCT.name}</span>
           <span className="mt-1 block text-sm text-fg-3">{PRODUCT.tagline}</span>
@@ -147,6 +150,8 @@ export function LoginCard({ showDemo }: { showDemo: boolean }) {
           </a>
         </p>
       </Panel>
+      {installSlot ? <div className="mt-4">{installSlot}</div> : null}
+      </div>
     </div>
   )
 }

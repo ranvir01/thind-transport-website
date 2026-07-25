@@ -12,6 +12,7 @@
  */
 import { useEffect, useState, useSyncExternalStore } from "react"
 import { Share, Smartphone } from "lucide-react"
+import { track } from "@vercel/analytics"
 
 interface BeforeInstallPromptEvent extends Event {
   prompt(): Promise<void>
@@ -43,8 +44,12 @@ export function InstallAppButton({ appearance = "driver" }: { appearance?: "driv
     const onPrompt = (event: Event) => {
       event.preventDefault()
       setInstallEvent(event as BeforeInstallPromptEvent)
+      track("pwa_prompt_available")
     }
-    const onInstalled = () => setInstalled(true)
+    const onInstalled = () => {
+      setInstalled(true)
+      track("pwa_install_accepted")
+    }
     window.addEventListener("beforeinstallprompt", onPrompt)
     window.addEventListener("appinstalled", onInstalled)
     return () => {

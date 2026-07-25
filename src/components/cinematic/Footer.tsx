@@ -33,6 +33,7 @@ const FooterLinkSections = () => {
     { href: "/routes", label: "Routes & Lanes" },
     { href: "/resources", label: "Driver Resources" },
     { href: "/cdl-jobs", label: "Jobs by State" },
+    { href: "/app", label: "Get the Driver App" },
     { href: "/driver/login", label: "Driver Login" },
   ]
 
