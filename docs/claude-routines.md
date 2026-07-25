@@ -950,6 +950,75 @@ Backlog:
   sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision); IFTA due-date roll not
   accounting for legal holidays (documented scope decision).
 
+## QA rig drive: owner/dispatcher/driver 50-script E2E battery, 0 defects, 0 regressions in last-3h commits — 2026-07-25 ~12:40 UTC
+
+Charter (docs/agent-improvement-loop.md §5): no feature work — stand up the local rig, drive real
+owner/dispatcher/driver/broker/shipper/portal flows with Playwright/Puppeteer, probe
+`thindtransport.com` read-only, fix only outright regressions from the last 3h of commits.
+
+Integrator (`071fecb6`) was 1 commit ahead of `main` (`5a09b8bd`), steady state (`npm run
+agent:status`). Merged the integrator into the session branch cleanly (no conflicts) before doing
+anything else.
+
+Reviewed the three commits landed in the prior 3-hour window (`96510adb` 09:53, `ae82c650` 10:44,
+`071fecb6` 11:46 UTC) by reading each diff directly rather than trusting the commit body: imports
+subsystem audit (0 defects, added `e2e-import-smoke.mjs` — the only diff was a brand-new test
+script), the `arAgingTrend` payment-subquery tenancy fix (`AND p.carrier_id = $1` added to the AR
+aging join, its own regression test), and the announcements `ackReport` tenancy fix (`AND
+u.carrier_id = $2` added to the acks join plus a scoped pending-users lookup, its own regression
+test). All three are defensive tenancy hardening, each ships its own passing regression test, none
+touch a shared/breaking surface. **No regression in any of them.**
+
+Full verify chain from a clean install before touching anything: `npm ci`, `npm run build` (Next.js
+16, zero TS errors, all routes compile), `npx vitest run` (191 files/1593 tests, 7 skipped), `npm
+run lint` (clean), `npm run test:sidecars` (29 Rust tests + Go vet/test, clippy clean) — all green.
+
+Fresh local rig from scratch: Postgres 16 was down, no `hubapp` role/`hubdb` database existed yet
+(pitfall #9) — created both; `.env.local` didn't exist either, generated fresh from `.env.example`
+with new `NEXTAUTH_SECRET`/`CRON_SECRET`/`CREDENTIALS_KEY`. `npm run db:migrate` (21 migrations
+clean) + `npm run seed:demo`, `npm run build && npm run start` against the production build.
+
+Drove the full `scripts/e2e-battery.mjs` (49 `e2e-*-smoke.mjs` scripts + the visual sweep, every
+workflow the fleet has a smoke for — owner, dispatcher, accountant, driver, broker, shipper, portal,
+tenant-isolation across dispatch, IFTA, invoices, settlements, compliance, recruiting, integrations,
+onboarding, etc.) sequentially against the freshly seeded database
+(`PUPPETEER_EXECUTABLE_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome` per pitfall #8).
+**50/50 PASS.** Grepped every per-script log for `console error`/`FAIL`: all hits are the scripts'
+own zero-count assertion lines (`✅ no ... console errors (0)`), confirmed zero actual console
+errors. The visual sweep (`e2e-sweep.mjs`, screenshots every nav-reachable screen for
+owner/dispatcher/office at 1440px+390px and driver/portal/track at 390px) reported "every screen has
+real content, no horizontal overflow at 390px" — no visual regression.
+
+Production probe: direct HTTPS to `thindtransport.com` stayed egress-blocked (curl exit 56, same as
+every prior cycle), so used the Vercel MCP tools instead (available this cycle). `get_project`:
+`live: false` but that flag alone is not reliable (documented pitfall) — cross-checked against
+`list_deployments`, which shows the latest `target: "production"` / `state: "READY"` deployment
+(`dpl_E13RscPTkR9EYspc4LMxU7m6XJ8j`) built exactly `main`'s current tip (`5a09b8bd`, the drain of
+`ae82c650`) — **production is current, not stale**, unlike the 2026-07-23 incident. `071fecb6`
+hasn't reached `main` yet (still sitting on the integrator, 1 commit ahead, steady state), so no
+production deployment is expected for it yet — that's normal, not a gap. `get_runtime_errors`
+(24h window): one error group, a Node `pg`/`pg-connection-string` SSL-mode deprecation warning
+(`sslmode=prefer/require/verify-ca` being aliased to `verify-full` in a future major version) on
+`/api/hub/cron/[job]`, 12 occurrences since 2026-06-26 — informational library warning, not a
+functional defect, first seen a month ago so not new. No other runtime errors.
+
+No code fix was needed or shipped this cycle — 0 defects found in the full battery and no regression
+in the reviewed 3-hour window, so there's nothing to drain; `main` and the integrator stay as they
+are (1 commit apart, steady state).
+
+Backlog:
+- `lane-tests` (1443 unpicked) and `lane-compliance` (1552 unpicked, one real commit reconfirmed
+  superseded-by-HEAD) remain the two largest pending branches; 119 pending branches total this cycle
+  (up from 111), meta-governor prune pass remains overdue across many cycles now.
+- The pg/pg-connection-string SSL-mode deprecation warning on `/api/hub/cron/[job]` (see above) is
+  cosmetic today but worth a one-line fix (`sslmode=verify-full` or
+  `uselibpqcompat=true&sslmode=require` in the pg connection options) before the next pg major bump
+  makes the semantics change silently — not urgent, first flagged this cycle.
+- Carried, unchanged: npm audit's 21 high-severity findings (sharp/libvips CVEs, fix requires
+  `sharp@0.35.3` — a breaking change, owner-approval-gated semver-major bump); Rust sidecar
+  `tiny_http` connection-timeout/thread-cap gap (owner decision); IFTA due-date roll not accounting
+  for legal holidays (documented scope decision).
+
 ## Catch-up drain + ancestry-bug fix-forward + branch/backlog re-triage — 2026-07-25 ~16:40 UTC (verify-and-build cycle)
 
 `npm run agent:status` found the integrator (`93b518b9`) 4 commits ahead of `main` (`5a09b8bd`) —

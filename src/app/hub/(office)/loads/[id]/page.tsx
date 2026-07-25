@@ -148,7 +148,7 @@ export default async function LoadDetailPage({ params }: { params: Promise<{ id:
           {osdClaim.osdFlagged ? (
             <Link
               href={osdClaim.claim ? `/hub/safety/claims/${osdClaim.claim.id}` : "/hub/safety/claims"}
-              className="inline-flex items-center gap-1.5 rounded-full border border-warn-soft bg-warn-soft px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-warn hover:bg-warn-soft/80"
+              className="inline-flex items-center gap-1.5 rounded-full border border-warn-soft bg-warn-soft px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-warn hover:border-warn"
             >
               <AlertTriangle className="h-3.5 w-3.5" />
               {osdClaim.claim ? `OS&D · Claim ${osdClaim.claim.status}` : "OS&D · No claim on file"}

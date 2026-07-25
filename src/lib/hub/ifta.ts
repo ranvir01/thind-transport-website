@@ -1,6 +1,6 @@
 import { randomUUID } from "crypto"
 import { query, queryOne } from "./db"
-import { computeIfta, quarterRange, lastCompletedQuarterKey, iftaDueDate, staleRateJurisdictions, type IftaResult } from "./ifta-core"
+import { computeIfta, quarterRange, lastCompletedQuarterKey, iftaDueDate, iftaFilingOverdue, staleRateJurisdictions, type IftaResult } from "./ifta-core"
 import { jurisdictionMilesFromPings } from "./geo"
 import { logAudit } from "./audit"
 import type { ComplianceEntry } from "./compliance"
@@ -189,9 +189,12 @@ export function iftaFilingWallEntries(
   for (const quarter of [...quarters].sort()) {
     const due = iftaDueDate(quarter)
     const filed = statusByQuarter.get(quarter) === "filed"
+    // Overdue only after the due date has fully passed; on the due date itself
+    // the filing is still on time, so it reads amber (due-now is negative,
+    // inside the 30-day band), not red.
     const color: ComplianceEntry["color"] = filed
       ? "green"
-      : due < now
+      : iftaFilingOverdue(quarter, now)
         ? "red"
         : due.getTime() - now.getTime() < 30 * 86400000
           ? "amber"

@@ -88,7 +88,7 @@ export function ClaimForm({
                 className={cn(
                   "flex cursor-pointer flex-col rounded-xl border p-3 min-h-[44px]",
                   form.kind === opt.value
-                    ? "border-accent bg-accent/5"
+                    ? "border-accent bg-accent-soft"
                     : "border-border hover:bg-hover"
                 )}
               >
