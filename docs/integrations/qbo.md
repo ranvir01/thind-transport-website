@@ -1,10 +1,10 @@
 # QuickBooks Online — scouting notes
 
 Status: **adapter shipped stub-first** (`src/lib/hub/integrations/qbo.ts`), no
-sandbox account wired yet; **platform notices re-checked 2026-07-21** (see the
-dated sections below — no adapter-breaking change; the previously-unconfirmed
-refresh-token-expiry field name is now confirmed as `x_refresh_token_expires_in`,
-i.e. the field the adapter already reads, and it now carries the 5-year value).
+sandbox account wired yet; **platform notices re-checked 2026-07-25** (see the
+dated sections below — no adapter-breaking change; minorversion-75 is still the
+baseline with no v76 announced, and the 5-year refresh-token cap + the
+`x_refresh_token_expires_in` field the adapter already reads are unchanged).
 Confirm the real response shape and flip `registry.ts`'s `qbo` status to `live`
 once a developer.intuit.com app + sandbox company are set up (see
 `docs/integrations/creds-shopping-list.md` row 6).
@@ -95,6 +95,46 @@ scopes hit it earlier (February 2027). Two consequences for this adapter:
   owner sees our warning well before Intuit's customer channels fire — the
   right ordering, since our fix (paste a fresh refresh token) is what resolves
   it, not Intuit's generic reconnect prompt.
+
+## Re-verified 2026-07-25 (scout pass — no adapter-breaking change)
+
+Sixth scout pass on this doc. Full re-check of auth model, endpoints, rate
+limits, sandbox, and pricing against `src/lib/hub/integrations/qbo.ts`. No
+Intuit notice since the 2026-07-21 pass changes anything this adapter depends
+on; the whole file below still holds. Points confirmed this pass:
+
+- **minorversion-75 is still the baseline — no v76.** Intuit's "Minor versions
+  of our API" page and the Aug-2025 deprecation notice remain the latest word:
+  versions 1–74 stay deprecated (since 2025-08-01), all responses are v75, and
+  a sub-75 `minorversion` value is ignored. No new minor version was announced,
+  so the adapter's `minorversion=75` on all four call sites (query, entity
+  create, invoice create, invoice sparse update) is still current — nothing to
+  bump. Re-check the assumed shapes against the v75 schema when a sandbox
+  account finally exists (unchanged standing task, not a new risk).
+- **Refresh-token 5-year cap unchanged.** Production rollout was 2026-01-27;
+  the first `com.quickbooks.accounting`/`com.quickbooks.payments`-scope tokens
+  begin expiring **October 2028**, granular/restricted-scope tokens **February
+  2027**. LoadOff is on the accounting scope → Oct 2028 horizon. The token
+  response still carries `x_refresh_token_expires_in` (the field
+  `refreshAccessToken` already reads; `157680000` s = 5 y under the cap), and
+  the "Reconnect URL" app-settings field remains live (since 2026-02-24) but is
+  irrelevant to our console-only connect flow. No `refreshAccessToken` change
+  needed.
+- **New find — Reports API "non-documented reports" deprecation (NOT
+  adapter-breaking).** A developer-community thread surfaced this pass flags
+  Intuit deprecating undocumented/legacy Reports API report names. **This
+  adapter calls no Reports API at all** — `runQboSync` and `pushInvoiceToQbo`
+  only hit `/v3/company/{realmId}/query` (Payment/Invoice) and the
+  entity-create/`invoice` endpoints (Customer/Item/Invoice). So this is purely
+  academic for LoadOff: no report is fetched, nothing to migrate. Noted only so
+  a future pass doesn't re-investigate it as if it were open.
+- **Rate limits / pricing unchanged.** 500 req/min/realm, 10 concurrent, HTTP
+  429 on breach; a sync makes ≤4 calls. No API-access pricing change surfaced.
+- **Same 403 wall.** `developer.intuit.com` (the minor-versions doc page) still
+  returned HTTP 403 to this environment's fetch tooling, sixth straight pass —
+  every finding above is search-excerpt / third-party-integrator-guide
+  confirmation, not a primary-source read. The numeric schema diff stays
+  human-browser work until a sandbox company is provisioned.
 
 ## Re-verified 2026-07-21 (scout pass — no adapter-breaking change)
 
@@ -250,7 +290,7 @@ stays the fallback for both directions until then.
 - Confirm the real sandbox response shape (`Customer`/`Item`/`Invoice`
   create bodies) and flip `registry.ts` status to `live`.
 
-## Sources (researched 2026-07-17, re-verified 2026-07-21)
+## Sources (researched 2026-07-17, re-verified 2026-07-21 and 2026-07-25)
 
 Intuit's own developer pages 403 automated fetches from this rig, so
 findings above come from Intuit's announcement summaries as surfaced in
@@ -287,3 +327,14 @@ search plus third-party integrator changelogs that quote them:
   guides cite the batch endpoint at 40 req/min vs Intuit's official 120 —
   irrelevant to this adapter (uses neither batch nor resource-intensive
   endpoints). No API-access pricing change surfaced.
+- 2026-07-25 re-verification: Intuit "Minor versions of our API" doc page +
+  the Aug-2025 "Changes to our Accounting API" and Dec-2025 "Upcoming changes
+  to APIs and tools" notices (via search excerpts + 2026 integrator guides —
+  Zuplo, Truto) — minorversion-75 still the baseline (no v76), 5-year
+  refresh-token cap production-live since 2026-01-27 (accounting/payments scope
+  first expiries Oct 2028, granular Feb 2027), Reconnect-URL field live since
+  2026-02-24, 500 req/min/realm + 10-concurrent limits and API-access pricing
+  all unchanged. New (non-breaking) note: a developer-community thread on
+  Reports API deprecation of non-documented reports — this adapter calls no
+  Reports API, so no impact. developer.intuit.com 403'd this rig again (6th
+  straight pass).
