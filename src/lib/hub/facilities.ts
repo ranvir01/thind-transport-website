@@ -139,6 +139,30 @@ export async function addFacilityNote(
   return rows.length > 0
 }
 
+/** Last 10 loads through this facility, for the detail page's stop history. */
+export async function recentFacilityStops(
+  carrierId: string,
+  facilityId: string,
+  limit = 10
+): Promise<
+  {
+    load_id: string
+    reference: string
+    type: string
+    arrived_at: string | null
+    departed_at: string | null
+    appt_start: string | null
+  }[]
+> {
+  return query(
+    `SELECT l.id AS load_id, l.reference, s.type, s.arrived_at, s.departed_at, s.appt_start
+     FROM hub.stops s JOIN hub.loads l ON l.id = s.load_id AND l.carrier_id = s.carrier_id
+     WHERE s.facility_id = $1 AND s.carrier_id = $2 AND l.deleted_at IS NULL
+     ORDER BY COALESCE(s.appt_start, s.arrived_at) DESC NULLS LAST LIMIT $3`,
+    [facilityId, carrierId, limit]
+  )
+}
+
 // ---- Dwell / detention risk ----
 
 /** Detention risk when the historical average dwell exceeds the free window. */

@@ -73,7 +73,7 @@ export async function arAgingTrend(carrierId: string, weeks = 8): Promise<AgingT
          (c.checkpoint::date - i.due_on) AS days_past,
          i.amount_cents - COALESCE((
            SELECT SUM(p.amount_cents) FROM hub.payments p
-           WHERE p.invoice_id = i.id AND p.paid_on <= c.checkpoint::date
+           WHERE p.invoice_id = i.id AND p.carrier_id = $1 AND p.paid_on <= c.checkpoint::date
          ), 0) AS open_cents
        FROM checkpoints c
        LEFT JOIN hub.invoices i
