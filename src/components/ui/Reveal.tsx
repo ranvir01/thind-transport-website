@@ -36,10 +36,15 @@ export function Reveal({ children, index = 0, as = "div", className }: RevealPro
     if (!el) return
 
     // Respect the user's setting before doing any work: reduced motion means
-    // the element is simply visible, with no observer and no transition.
+    // the element is simply visible, with no observer and no transition. The
+    // setShown call is deferred a frame (rather than called directly in the
+    // effect body) for the same reason the IntersectionObserver callback
+    // below is exempt from react-hooks/set-state-in-effect: it's a reaction
+    // to an external condition, not state derivable from props/state during
+    // render.
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      setShown(true)
-      return
+      const frame = requestAnimationFrame(() => setShown(true))
+      return () => cancelAnimationFrame(frame)
     }
 
     // Already in view on load (above the fold) — show immediately rather than

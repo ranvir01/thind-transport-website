@@ -33,6 +33,7 @@ const FooterLinkSections = () => {
     { href: "/routes", label: "Routes & Lanes" },
     { href: "/resources", label: "Driver Resources" },
     { href: "/cdl-jobs", label: "Jobs by State" },
+    { href: "/app", label: "Get the Driver App" },
     { href: "/driver/login", label: "Driver Login" },
   ]
 
@@ -40,6 +41,7 @@ const FooterLinkSections = () => {
     { href: "/about", label: "About Us" },
     { href: "/fleet", label: "Our Fleet" },
     { href: "/shippers", label: "Ship With Us" },
+    { href: "/brokers", label: "For Brokers" },
     { href: "/loadoff", label: "LoadOff TMS" },
     { href: "/veterans", label: "Veterans Program" },
     {

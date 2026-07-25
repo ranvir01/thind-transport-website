@@ -15,6 +15,8 @@ import { useState } from "react"
 import { Loader2, FileDown } from "lucide-react"
 import { captureLead } from "@/app/actions/capture-lead"
 import { COMPANY_INFO } from "@/lib/constants"
+import { HoneypotField } from "@/components/shared/HoneypotField"
+import { HONEYPOT_FIELD } from "@/lib/honeypot"
 
 export function BrokerPacketForm() {
   const [state, setState] = useState<"idle" | "sending" | "done" | "error">("idle")
@@ -26,6 +28,8 @@ export function BrokerPacketForm() {
     const data = new FormData(form)
 
     const fd = new FormData()
+    const hp = data.get(HONEYPOT_FIELD)
+    if (typeof hp === "string" && hp) fd.append(HONEYPOT_FIELD, hp)
     fd.append("name", String(data.get("contact") || ""))
     fd.append("email", String(data.get("email") || ""))
     fd.append("phone", String(data.get("phone") || ""))
@@ -54,7 +58,7 @@ export function BrokerPacketForm() {
 
   if (state === "done") {
     return (
-      <div className="rounded-m-3 border border-cedar/30 bg-cedar/5 p-6 text-center">
+      <div className="rounded-m-3 border border-[rgba(30,107,79,0.3)] bg-[rgba(30,107,79,0.05)] p-6 text-center">
         <p className="font-display text-m-h4 font-bold text-ink">Packet on its way.</p>
         <p className="mx-auto mt-2 max-w-measure text-m-body text-ink-2">
           W-9, certificate of insurance and our authority are headed to your inbox. Need a truck
@@ -69,13 +73,14 @@ export function BrokerPacketForm() {
   }
 
   const field =
-    "mt-1.5 h-11 w-full rounded-m-2 border border-ink/20 bg-white px-3 text-m-body text-ink " +
+    "mt-1.5 h-11 w-full rounded-m-2 border border-[rgba(20,22,24,0.2)] bg-white px-3 text-m-body text-ink " +
     "transition-colors duration-fast ease-entrance placeholder:text-ink-3 " +
-    "focus:border-signal focus:outline-none focus-visible:ring-2 focus-visible:ring-signal/30"
+    "focus:border-signal focus:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(196,40,32,0.3)]"
   const label = "font-display text-m-micro font-bold uppercase tracking-[0.12em] text-ink-3"
 
   return (
     <form onSubmit={onSubmit} className="grid gap-4 sm:grid-cols-2">
+      <HoneypotField />
       <div className="sm:col-span-2">
         <label className={label} htmlFor="brokerage">
           Brokerage

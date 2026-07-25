@@ -38,7 +38,7 @@ const readServerInstallEnv = (): InstallEnv => "standalone"
 
 const stepCls = "flex gap-3 text-m-body text-ink-2"
 const numCls =
-  "mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-signal/10 font-mono text-m-micro font-bold text-signal"
+  "mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[rgba(196,40,32,0.1)] font-mono text-m-micro font-bold text-signal"
 
 export function GetTheApp() {
   const env = useSyncExternalStore(subscribeNever, readInstallEnv, readServerInstallEnv)
@@ -61,7 +61,7 @@ export function GetTheApp() {
 
   if (env === "standalone" || installed) {
     return (
-      <div className="flex items-center gap-3 rounded-m-3 border border-cedar/30 bg-cedar/5 p-4">
+      <div className="flex items-center gap-3 rounded-m-3 border border-[rgba(30,107,79,0.3)] bg-[rgba(30,107,79,0.05)] p-4">
         <Check className="h-5 w-5 shrink-0 text-cedar" aria-hidden />
         <p className="text-m-body text-ink-2">
           You&apos;re already running the app. Open it from your home screen any time — it works
@@ -73,7 +73,7 @@ export function GetTheApp() {
 
   if (env === "ios") {
     return (
-      <div className="rounded-m-3 border border-ink/15 bg-paper p-5">
+      <div className="rounded-m-3 border border-[rgba(20,22,24,0.15)] bg-paper p-5">
         <p className="font-display text-m-h4 font-bold text-ink">On iPhone</p>
         <ol className="mt-4 list-none space-y-3">
           <li className={stepCls}>
@@ -99,7 +99,7 @@ export function GetTheApp() {
 
   // Android/desktop Chrome: a real install sheet if the browser has offered one.
   return (
-    <div className="rounded-m-3 border border-ink/15 bg-paper p-5">
+    <div className="rounded-m-3 border border-[rgba(20,22,24,0.15)] bg-paper p-5">
       <p className="font-display text-m-h4 font-bold text-ink">On Android</p>
       {installEvent ? (
         <>

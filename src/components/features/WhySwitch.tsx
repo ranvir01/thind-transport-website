@@ -43,7 +43,7 @@ export const WhySwitch = () => {
         <div className="mx-auto mt-10 max-w-3xl">
           {/* Column headers are desktop-only: a header row scrolled off-screen
               is useless, so each row carries its own labels on mobile. */}
-          <div className="hidden grid-cols-3 gap-4 border-b border-ink/15 pb-2 md:grid">
+          <div className="hidden grid-cols-3 gap-4 border-b border-[rgba(20,22,24,0.15)] pb-2 md:grid">
             <span className="font-display text-m-micro font-bold uppercase tracking-[0.15em] text-ink-3">
               What you&apos;re comparing
             </span>
@@ -61,7 +61,7 @@ export const WhySwitch = () => {
                 as="li"
                 key={row.feature}
                 index={Math.min(i, 4)}
-                className="grid grid-cols-2 items-baseline gap-x-4 gap-y-1 border-b border-ink/10 py-4 md:grid-cols-3"
+                className="grid grid-cols-2 items-baseline gap-x-4 gap-y-1 border-b border-[rgba(20,22,24,0.1)] py-4 md:grid-cols-3"
               >
                 <span className="col-span-2 text-m-body font-semibold text-ink md:col-span-1">
                   {row.feature}

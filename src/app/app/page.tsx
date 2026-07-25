@@ -5,12 +5,18 @@ import { COMPANY_INFO } from "@/lib/constants"
 import { PageBreadcrumb } from "@/components/shared/PageBreadcrumb"
 import { GetTheApp } from "@/components/features/GetTheApp"
 import { Reveal } from "@/components/ui/Reveal"
+import { ServiceWorkerBoot } from "@/components/hub/ServiceWorkerBoot"
 
 export const metadata: Metadata = {
   title: "Get the driver app | Thind Transport",
   description:
     "The Thind Transport driver app installs straight from your browser — no app store, no download. Confirm dispatches, send PODs from the camera, check pay, and keep working with no signal.",
   alternates: { canonical: "/app" },
+  // Overrides the root layout's marketing-site manifest (start_url "/"): the
+  // page this ships is the driver hub PWA (start_url "/hub"), not the
+  // marketing site itself — installing from here must open the hub, not the
+  // homepage.
+  manifest: "/api/hub/manifest",
 }
 
 /**
@@ -54,6 +60,10 @@ const FEATURES = [
 export default function GetAppPage() {
   return (
     <div className="bg-paper">
+      {/* Registers /hub-sw.js (scope "/hub") up front so the browser's install
+          criteria are met and the app works offline from the first launch,
+          instead of waiting for a driver's first visit to /hub. */}
+      <ServiceWorkerBoot />
       <PageBreadcrumb pageName="Driver app" category="Drivers" />
 
       <section className="bg-asphalt py-16 text-paper md:py-24">
@@ -66,11 +76,11 @@ export default function GetAppPage() {
               <h1 className="mt-4 font-display text-m-h1 font-bold">
                 The app installs from this page. No app store.
               </h1>
-              <p className="mt-5 max-w-measure text-m-lede text-paper/80">
+              <p className="mt-5 max-w-measure text-m-lede text-[rgba(246,247,247,0.8)]">
                 No account to create, no download to sit through on truck-stop wifi. Two taps and
                 it&apos;s on your home screen — and it keeps working when the bars run out.
               </p>
-              <p className="mt-4 max-w-measure text-m-body text-paper/60">
+              <p className="mt-4 max-w-measure text-m-body text-[rgba(246,247,247,0.6)]">
                 Already drive for us? Add it now. Not with us yet?{" "}
                 <Link
                   href="/apply"
@@ -117,7 +127,7 @@ export default function GetAppPage() {
         </div>
       </section>
 
-      <section className="border-t border-ink/10 py-12">
+      <section className="border-t border-[rgba(20,22,24,0.1)] py-12">
         <div className="container px-4">
           <Reveal className="mx-auto flex max-w-3xl flex-wrap items-center justify-between gap-4">
             <p className="max-w-measure text-m-body text-ink-2">

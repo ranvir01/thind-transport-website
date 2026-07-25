@@ -62,13 +62,13 @@ export default function BrokersPage() {
               <h1 className="mt-4 font-display text-m-h1 font-bold">
                 Onboard us today. Cover your load tomorrow.
               </h1>
-              <p className="mt-5 max-w-measure text-m-lede text-paper/80">
+              <p className="mt-5 max-w-measure text-m-lede text-[rgba(246,247,247,0.8)]">
                 {STATS.trucksInFleet} late-model trucks running flatbed, reefer and dry van across
                 all {STATS.statesCovered} states, out of Kent, Washington. We own the equipment and
                 employ the drivers — when we say it&apos;s covered, it&apos;s covered.
               </p>
 
-              <dl className="mt-8 grid max-w-lg grid-cols-2 gap-x-8 gap-y-5 border-t border-paper/15 pt-6 sm:grid-cols-4">
+              <dl className="mt-8 grid max-w-lg grid-cols-2 gap-x-8 gap-y-5 border-t border-[rgba(246,247,247,0.15)] pt-6 sm:grid-cols-4">
                 {[
                   { k: "USDOT", v: COMPANY_INFO.dot },
                   { k: "MC", v: COMPANY_INFO.mc },
@@ -76,7 +76,7 @@ export default function BrokersPage() {
                   { k: "States", v: String(STATS.statesCovered) },
                 ].map((s) => (
                   <div key={s.k}>
-                    <dt className="font-display text-m-micro font-bold uppercase tracking-[0.15em] text-paper/50">
+                    <dt className="font-display text-m-micro font-bold uppercase tracking-[0.15em] text-[rgba(246,247,247,0.5)]">
                       {s.k}
                     </dt>
                     <dd className="mt-1 font-mono text-m-h4 font-bold tabular-nums text-paper">
@@ -89,7 +89,7 @@ export default function BrokersPage() {
               <div className="mt-8 flex flex-wrap gap-3">
                 <a
                   href={`tel:${COMPANY_INFO.phoneFormatted}`}
-                  className="inline-flex min-h-[44px] items-center gap-2 rounded-m-2 border border-paper/30 px-6 py-3 font-display text-m-body font-bold uppercase tracking-wide text-paper transition-colors duration-base ease-entrance hover:bg-paper/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-signal-up focus-visible:ring-offset-2 focus-visible:ring-offset-asphalt"
+                  className="inline-flex min-h-[44px] items-center gap-2 rounded-m-2 border border-[rgba(246,247,247,0.3)] px-6 py-3 font-display text-m-body font-bold uppercase tracking-wide text-paper transition-colors duration-base ease-entrance hover:bg-[rgba(246,247,247,0.1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-signal-up focus-visible:ring-offset-2 focus-visible:ring-offset-asphalt"
                 >
                   <Phone className="h-4 w-4" /> {COMPANY_INFO.phone}
                 </a>
@@ -97,7 +97,7 @@ export default function BrokersPage() {
                   href={FMCSA_LINKS.safer}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex min-h-[44px] items-center gap-2 rounded-m-2 px-6 py-3 font-display text-m-body font-semibold text-paper/70 underline-offset-4 transition-colors duration-base ease-entrance hover:text-paper hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-signal-up focus-visible:ring-offset-2 focus-visible:ring-offset-asphalt"
+                  className="inline-flex min-h-[44px] items-center gap-2 rounded-m-2 px-6 py-3 font-display text-m-body font-semibold text-[rgba(246,247,247,0.7)] underline-offset-4 transition-colors duration-base ease-entrance hover:text-paper hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-signal-up focus-visible:ring-offset-2 focus-visible:ring-offset-asphalt"
                 >
                   <BadgeCheck className="h-4 w-4" /> Verify on FMCSA SAFER
                 </a>
@@ -107,7 +107,7 @@ export default function BrokersPage() {
             {/* The instrument: the form is the point of this page */}
             <Reveal
               index={1}
-              className="rounded-m-4 border border-ink/10 bg-paper p-6 shadow-m-e4 md:p-8"
+              className="rounded-m-4 border border-[rgba(20,22,24,0.1)] bg-paper p-6 shadow-m-e4 md:p-8"
             >
               <h2 className="font-display text-m-h4 font-bold text-ink">Get the carrier packet</h2>
               <p className="mt-1.5 text-m-body text-ink-2">
@@ -143,7 +143,7 @@ export default function BrokersPage() {
       </section>
 
       {/* One contextual cross-link, not a footer dump */}
-      <section className="border-t border-ink/10 py-12">
+      <section className="border-t border-[rgba(20,22,24,0.1)] py-12">
         <div className="container px-4">
           <Reveal className="mx-auto flex max-w-3xl flex-wrap items-center justify-between gap-4">
             <p className="max-w-measure text-m-body text-ink-2">
