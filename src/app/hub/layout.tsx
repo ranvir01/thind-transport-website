@@ -23,6 +23,9 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   themeColor: "#FBFBFC",
+  // Drivers use the app one-handed in a cab; let it fill past the notch/home
+  // indicator so the bottom action bar isn't squeezed by the safe-area inset.
+  viewportFit: "cover",
 }
 
 const themeBoot = `(function(){try{var p=location.pathname;if(!p.startsWith('/hub'))return;var m=localStorage.getItem('hauldesk-mode')||'light';var t=localStorage.getItem('hauldesk-theme')||'indigo';var r=document.documentElement;r.setAttribute('data-app','hauldesk');r.setAttribute('data-mode',m);r.setAttribute('data-theme',t);}catch(e){}})();`
@@ -36,6 +39,12 @@ export default async function HubLayout({ children }: { children: React.ReactNod
     <div
       className={`${GeistSans.variable} ${GeistMono.variable} font-sans antialiased min-h-screen bg-bg text-fg`}
     >
+      {/* Next emits only the standardised `mobile-web-app-capable` from
+          appleWebApp.capable. iOS Safari still keys standalone launch off the
+          apple-prefixed name, and most of our drivers are on iPhones — without
+          it the home-screen icon opens in a Safari tab with browser chrome
+          instead of as an app. Harmless duplicate on Android. */}
+      <meta name="apple-mobile-web-app-capable" content="yes" />
       <Script id="hauldesk-theme-boot" strategy="beforeInteractive">
         {themeBoot}
       </Script>

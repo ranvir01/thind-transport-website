@@ -91,6 +91,9 @@ export const metadata: Metadata = {
   alternates: {
     canonical: "/",
   },
+  // Metadata-declared so the hub layout's own manifest cleanly overrides it on
+  // /hub routes (Next dedupes these; a hardcoded <link> in JSX is not deduped).
+  manifest: "/site.webmanifest",
 }
 
 export const viewport: Viewport = {
@@ -113,7 +116,13 @@ export default function RootLayout({
         <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
         <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
         <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
-        <link rel="manifest" href="/site.webmanifest" />
+        {/* The web app manifest is declared via `metadata.manifest` (above),
+            never as a literal tag here. A hardcoded one renders on EVERY route
+            including /hub, where the hub layout declares its own LoadOff
+            manifest — Next only dedupes tags it generates from metadata, so the
+            head ended up with two of them and browsers honour the first.
+            Drivers adding the app to their home screen got the marketing site
+            (start_url "/") instead of the driver app (start_url "/hub"). */}
         <meta name="msapplication-TileColor" content="#121316" />
 
         {/* Structured Data - Injected via SchemaMarkup component */}
