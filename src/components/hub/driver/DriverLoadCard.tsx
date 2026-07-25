@@ -238,7 +238,14 @@ export function DriverLoadCard({ load, detentionFreeMinutes }: { load: LoadForDr
                 <div className="mt-2 flex gap-2">
                   {canArrive ? (
                     <button
-                      onClick={() => run({ kind: "stop", payload: { stopId: stop.id, loadId: load.id, field: "arrived_at" } }, () => driverStopTimestamp(stop.id, load.id, "arrived_at"), "Arrival recorded")}
+                      onClick={() => {
+                        const at = new Date().toISOString()
+                        run(
+                          { kind: "stop", payload: { stopId: stop.id, loadId: load.id, field: "arrived_at", at } },
+                          () => driverStopTimestamp(stop.id, load.id, "arrived_at", at),
+                          "Arrival recorded"
+                        )
+                      }}
                       disabled={pending}
                       className="flex flex-1 min-h-[48px] items-center justify-center gap-2 rounded-control bg-accent font-display text-sm font-bold uppercase tracking-[0.06em] text-accent-fg hover:bg-accent-hover disabled:opacity-60"
                     >
@@ -247,7 +254,14 @@ export function DriverLoadCard({ load, detentionFreeMinutes }: { load: LoadForDr
                   ) : null}
                   {canDepart ? (
                     <button
-                      onClick={() => run({ kind: "stop", payload: { stopId: stop.id, loadId: load.id, field: "departed_at" } }, () => driverStopTimestamp(stop.id, load.id, "departed_at"), "Departure recorded")}
+                      onClick={() => {
+                        const at = new Date().toISOString()
+                        run(
+                          { kind: "stop", payload: { stopId: stop.id, loadId: load.id, field: "departed_at", at } },
+                          () => driverStopTimestamp(stop.id, load.id, "departed_at", at),
+                          "Departure recorded"
+                        )
+                      }}
                       disabled={pending}
                       className="flex flex-1 min-h-[48px] items-center justify-center gap-2 rounded-control bg-accent font-display text-sm font-bold uppercase tracking-[0.06em] text-accent-fg hover:bg-accent-hover disabled:opacity-60"
                     >

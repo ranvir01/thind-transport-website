@@ -57,17 +57,24 @@ export async function driverAdvanceStatus(loadId: string): Promise<Result> {
   }
 }
 
-/** Arrived / departed taps write the stop timestamps detention math runs on. */
+/**
+ * Arrived / departed taps write the stop timestamps detention math runs on.
+ * `at` is stamped client-side at tap time (same pattern as the incident
+ * report's occurredAt) — a queued tap can replay hours later once signal
+ * returns, and detention accrual must bill off the real dwell time, not
+ * the moment the replay happened to run.
+ */
 export async function driverStopTimestamp(
   stopId: string,
   loadId: string,
-  field: "arrived_at" | "departed_at"
+  field: "arrived_at" | "departed_at",
+  at: string
 ): Promise<Result> {
   try {
     const user = await requireDriverUser()
     const load = await driverOwnsLoad(user.carrierId, user.driverId, loadId)
     if (!load) return { ok: false, error: "That load isn't yours" }
-    const stop = await setStopTimestamp(user.carrierId, stopId, loadId, field, new Date().toISOString())
+    const stop = await setStopTimestamp(user.carrierId, stopId, loadId, field, at)
     if (stop) {
       await addLoadEvent(user.carrierId, loadId, "geo", {
         stop_id: stopId, field, city: stop.city, state: stop.state, by: "driver",
