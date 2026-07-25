@@ -949,3 +949,60 @@ Backlog:
 - Carried, unchanged: npm audit's high-severity findings (owner-approval-gated semver-major bump); Rust
   sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision); IFTA due-date roll not
   accounting for legal holidays (documented scope decision).
+
+## Catch-up drain + ancestry-bug fix-forward + branch/backlog re-triage — 2026-07-25 ~16:40 UTC (verify-and-build cycle)
+
+`npm run agent:status` found the integrator (`93b518b9`) 4 commits ahead of `main` (`5a09b8bd`) —
+**CATCH-UP MODE** (threshold 3). `npm ci` + `npm run build` + `npx vitest run` (191 files/1599 tests) all
+green on the integrator tip before touching anything, so drained first per the standing rule (any agent
+finding catch-up with a green integrator drains before new work).
+
+Mid-drain found and fixed a new failure mode in the drain procedure itself: the stamped `--no-ff --no-commit`
+merge went through, but composing the `.drain-stamp` file and commit across two separate tool calls meant
+a `git reset --soft HEAD^` (used to correct a placeholder timestamp) silently consumed `.git/MERGE_HEAD`
+before the real commit landed — the resulting drain commit (`c36136d9`) carried the correct merged tree
+but only ONE parent, so the integrator's 4 commits were never recorded as ancestors of `main`. `agent:status`
+kept reporting the same 4-commit drift after the "successful" drain. Fixed forward with a `git merge -s
+ours --no-edit` recording the integrator as a second parent against the (already-correct) current tree —
+verified zero diff between the merge commit and its first parent — then fast-forwarded the integrator
+branch to match `main`. `agent:status` now reports STEADY STATE. Lesson for future drains: do the
+`.drain-stamp` write and the commit in one shell invocation, or re-run `git merge --no-ff --no-commit`
+again (not `reset --soft`) if a fixup is needed before committing — a soft reset after a no-commit merge
+silently drops `MERGE_HEAD`.
+
+`agent:branches` top candidates were the two already-flagged `lane-tests`/`lane-compliance` piles (per
+`9bc1e0c5`, do not plain-merge). Dry-ran two smaller candidates instead: `claude/pensive-allen-kpjskl`
+(10 commits, office semantic-token cleanup) hit 6+ real conflicts across `PortalQuoteForm.tsx`,
+`TasksBoard.tsx`, driver forms, etc. — HEAD's token doctrine is already a superset, confirmed superseded,
+not merged. `claude/eager-babbage-queewe` (2 commits, a meta-governor branch-count addendum) only
+conflicted in `docs/claude-routines.md`'s own history log — stale audit numbers from an earlier branch
+count, no code value, not merged. Both added to the prune-candidate list below.
+
+Swept the newest Backlog trailer's "second subsystem-rotation pass on recently changed areas" pointer
+(money-rounding call sites, the driver PWA manifest fix, the gradient-headline visual pass) plus one more
+check it implied: (1) money-rounding — `comdata.ts`/`dat.ts`/`truckstop.ts`/`parser.ts`/`fuel.ts` already
+route through `roundHalfAwayFromZero` with a dedicated guard test (`money-input-parsing.test.ts`) — the
+backlog note describing them as "still inline Math.round" is stale, already fixed by `17e1d8d0`/`f3f5e0dd`.
+(2) Gradient-headline visual pass (`3b986118`) redefined `.text-gradient-accent` to a solid color in place
+rather than touching the five call sites — confirmed no stray `background-clip`/transparent-color
+combination survives that could reintroduce invisible text. (3) Driver PWA manifest fix (`96075898`) has
+its own regression test; also checked the portal surface it didn't explicitly cover: `/hub/portal/**`
+shares the same hub layout's manifest/service-worker (`start_url`/`scope` both `/hub`), so a broker/shipper
+installing the portal to their home screen would land on `/hub` — traced `src/proxy.ts`'s role redirect
+and confirmed a signed-in `broker`/`shipper` token bounces `/hub` → `/hub/portal` automatically (same
+pattern as the driver-role redirect), so this is not a defect. All four checks: 0 defects, nothing to ship.
+
+`npx vitest run` (191 files/1599 tests) and `npm run test:sidecars` (29 Rust tests, clippy clean; no
+Go/Rust files touched this cycle) both green after the ancestry fix.
+
+Backlog:
+- `lane-tests` (1443 unpicked) and `lane-compliance` (1552 unpicked) remain the two largest pending
+  branches; per `9bc1e0c5` do NOT plain-merge either — meta-governor prune pass remains overdue across
+  many cycles now.
+- Five branches now confirmed fully superseded-by-HEAD across recent cycles (safe deletion candidates for
+  the meta-governor pass, not re-triage targets): `claude/compassionate-bell-8r88rj`,
+  `claude/pensive-allen-smw0re`, `claude/stoic-mccarthy-b5gw3k`, `claude/pensive-allen-kpjskl`,
+  `claude/eager-babbage-queewe`.
+- Carried, unchanged: npm audit's high-severity findings (owner-approval-gated semver-major bump); Rust
+  sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision); IFTA due-date roll not
+  accounting for legal holidays (documented scope decision).
