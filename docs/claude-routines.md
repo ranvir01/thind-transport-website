@@ -949,3 +949,66 @@ Backlog:
 - Carried, unchanged: npm audit's high-severity findings (owner-approval-gated semver-major bump); Rust
   sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision); IFTA due-date roll not
   accounting for legal holidays (documented scope decision).
+
+## QA rig drive on main@3b98611 — 2026-07-25 ~08:20 UTC (owner/dispatcher/driver, read-only prod probe)
+
+Charter (docs/agent-improvement-loop.md §5): no feature work — stand up the local rig, drive real
+owner/dispatcher/driver flows with Playwright/Puppeteer, probe thindtransport.com read-only, fix only
+outright regressions from the last 3h of commits.
+
+**Last-3h window** (cycle started 08:08 UTC, so since ~05:08 UTC) carried five real commits:
+`cb4fce1` (NotificationsBell forced-dark variant), `dfd06bd` (Go worker OSRM circuit breaker),
+`9607589` (driver PWA manifest — fixed the installed home-screen icon opening the marketing site
+instead of `/hub`), and `3b98611` (marketing visual pass — solid-red headline instead of
+red-to-gold gradient, responsive hero/dispatch-band scrims). Reviewed all four diffs directly, then
+verified each live instead of trusting the commit body alone:
+
+- **PWA manifest fix**: `curl` on `/` vs `/hub/login` confirmed exactly one `<link rel="manifest">`
+  each (`/site.webmanifest` vs `/api/hub/manifest`, no duplicate/shadowed tag), and
+  `/api/hub/manifest` serves `start_url`/`scope` `/hub` with all four icon sizes at 200. Fix holds.
+- **Marketing visual pass**: screenshotted the homepage at 1440px and 390px — solid red accent word,
+  trucks visible through the scrim at both widths, no contrast/legibility regression. `text-gradient-
+  accent` still appears in the rendered HTML by design (the class name is unchanged, only its CSS
+  body went from a gradient to `color: var(--brand-accent-strong)`), not a leftover gradient.
+- **Go worker circuit breaker + NotificationsBell variant**: both already covered by this cycle's test
+  run (`go test`/`cargo test`/`vitest`) with no web-facing surface beyond what those suites assert;
+  no separate Playwright drive needed for either.
+
+No regressions found in any of the five commits.
+
+Fresh local rig from scratch (Postgres was down, `hubapp` role/`hubdb` database didn't exist yet —
+created both per pitfall #9; `.env.local` generated fresh from `.env.example`). `npm ci`, `npm run
+db:migrate` (21/21), `npm run seed:demo`, `npm run build` (clean), `npx vitest run` (190 files/1596
+tests), `npm run lint` (clean), `npm run test:sidecars` (29 Rust tests + Go vet/test, clippy clean) —
+all green before driving anything.
+
+Drove 18 `scripts/e2e-*-smoke.mjs` scripts against a freshly seeded `next start` server, chosen to
+cover both the last-3h diff surface and the three standing roles: `public`, `driver`, `driver-offline`,
+`driver-pod`, `notifications`, `login`, `dispatch`, `dispatch-driver-notify`, `office`, `fleet`,
+`loads`, `reports`, `safety`, `onboarding`, `planner`, `portal`, `portal-accept`, `track`.
+**18/18 PASS, 0 console errors, 0 defects.**
+
+Production probe: direct HTTPS to `thindtransport.com` stayed egress-blocked (curl exit 56/CONNECT
+403), same as every prior cycle — fell back to the Vercel connector per §3b. `get_project`'s `live:
+false` + `latestDeployment` CANCELED (a `redesign/landing-soul` preview build, not production) is the
+same known false-negative the 2026-07-23 cycle documented — cross-checked `list_deployments` instead:
+the newest **READY** deployment with `target: "production"` is at commit `3b986118` (this cycle's
+exact `main` HEAD), created 07:14:32 UTC — 1 minute after the commit landed. Production is current,
+not stale, unlike the multi-hour outage seen 2026-07-23. `get_runtime_errors` (3h window): one
+pre-existing warning group, not an error — a `pg`/`pg-connection-string` SSL-mode deprecation notice
+on `/api/hub/cron/[job]`, 4 occurrences since 2026-06-26, unrelated to any recent commit.
+
+No code fix was available or needed this cycle — draining would just replay the current tip, and
+`main`/integrator already match, so nothing to push there either.
+
+Backlog:
+- `lane-tests` (1443 unpicked) and `lane-compliance` (1543 unpicked) remain the two largest pending
+  branches by a wide margin; meta-governor prune pass remains overdue across many cycles now.
+- Minor/low-priority: production logs show a recurring `pg`/`pg-connection-string` SSL-mode-aliasing
+  deprecation warning on `/api/hub/cron/[job]` (4 occurrences since 2026-06-26, not a functional
+  error) — worth a one-line `sslmode=verify-full` (or `uselibpqcompat=true&sslmode=require`) fix in
+  the cron job's connection string next time that file is touched, not urgent enough for its own
+  cycle.
+- Carried, unchanged: npm audit's 21 high-severity findings (owner-approval-gated semver-major bump,
+  `sharp`/libvips chain); Rust sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision);
+  IFTA due-date roll not accounting for legal holidays (documented scope decision).
