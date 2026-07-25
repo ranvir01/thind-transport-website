@@ -857,14 +857,54 @@ No fleet-configuration changes applied this cycle — per §5 "the one thing age
 unilaterally is the fleet configuration itself." This audit is the Backlog handoff for the owner to
 act on.
 
+**Addendum — ran `npm run agent:branches`/`agent:status` after the above (the actual fleet-branch
+picture is bigger than the main-log-only scan found):**
+
+- **108 branches carry unpicked work, not 2.** Of these, 51 are genuinely small (`1 unpicked (1 raw)`
+  each) — real, mergeable single-commit lane contributions, the healthy case. The other 57 range from
+  26 to **1540** unpicked commits each (`claude/lane-compliance` itself: 772 unpicked/1540 raw —
+  slightly different count than the 1536 figure carried in recent `Backlog:` trailers, drift is
+  expected as main moves), and share near-identical file signatures
+  (`.cursor/automation/README.md`, `.github/workflows/drain-integrator.yml`, …) — the same
+  pre-restructure orphaned lineage `9bc1e0c5` diagnosed in `lane-tests`/`lane-compliance`
+  specifically, but it turns out to affect dozens of abandoned session branches
+  (`eager-babbage-ibsmrz`, `practical-franklin-5ol54s`, the `inspiring-sagan-*` and
+  `gallant-dijkstra-*` families, several `stoic-mccarthy-*` branches, etc.), not just those two. The
+  prune-candidate list is ~57 branches, not 2.
+- **Confirmed second duplicate-fix case, independent of the one `docs/agent-improvement-loop.md` §5
+  already logged (`NotificationsBell` unread-badge race, 2026-07-09/10, three branches).** Two of
+  those three still sit unmerged today: `claude/stoic-mccarthy-smz6m4` (`27dc4a04`, 2026-07-10
+  13:43 UTC) and `claude/stoic-mccarthy-p7dtl2` (`239360b2`, same day 12:45 UTC) — same bug, two
+  independent one-line fixes, 15 days stale. Checked `HEAD`'s `NotificationsBell.tsx`: the race is
+  already fixed there (the await-before-refresh comment is present), via neither of these two commits
+  — a third, already-merged fix superseded both. Both branches are safe-to-delete duplicates, not
+  merge candidates.
+- **Older stale branches' own QA-drive commits self-report the same duplicate-work pattern getting
+  worse over time**, e.g. `claude/inspiring-sagan-1but8g`: "duplicate driver-lane fix now 7x,
+  integrator idle ~7h"; `claude/inspiring-sagan-3tkznz`: "...is now 6x"; `claude/inspiring-sagan-7eejw9`:
+  "...re-solving the same fix 5x" — three more unmerged branches independently noticing (at the time)
+  that a driver-lane fix had been independently re-solved 5-7 times across abandoned parallel branches
+  before any of them merged. This is direct historical evidence that the fleet's failure mode isn't
+  hypothetical: unmerged branches silently duplicating work has happened repeatedly, is why
+  `docs/agent-improvement-loop.md` §5 added its "check `git log --all --grep` before fixing a bug"
+  rule, and 57 branches of unpicked/orphaned history is exactly the noise that makes that check
+  expensive to do by hand.
+
 Backlog:
-- Owner decision requested: delete `claude/lane-tests` and `claude/lane-compliance` (confirmed
-  orphaned/superseded history per `9bc1e0c5` + this audit, not real unmerged work) so
-  `agent:branches` stops surfacing 1000+ "unpicked" commits every cycle. This is a fleet-configuration
-  action outside what an agent should do unilaterally.
+- Owner decision requested: prune the ~57 stale/orphaned `claude/*` branches identified by
+  `agent:branches` this cycle (starts with `claude/lane-tests`, `claude/lane-compliance`,
+  `claude/eager-babbage-ibsmrz`, `claude/practical-franklin-5ol54s`, the `inspiring-sagan-*` and
+  `gallant-dijkstra-*` families with 300+ unpicked commits each) — confirmed orphaned pre-restructure
+  history sharing identical stale file signatures, not real unmerged work. This is a fleet-configuration
+  action outside what an agent should do unilaterally; `.github/workflows/prune-merged-branches.yml`
+  already exists for *merged* branches — these are unmerged-but-dead, a different case it doesn't cover.
+- Owner decision requested: delete `claude/stoic-mccarthy-smz6m4` and `claude/stoic-mccarthy-p7dtl2`
+  specifically (confirmed duplicate `NotificationsBell` race fixes, both superseded by an already-merged
+  third fix on `HEAD`).
 - Owner decision requested: add a stale-production short-circuit to Routine 2 (prod-smoke) — after a
   cycle reports staleness, the next cycle checks deploy status first and skips the full 46/47-script
   battery unless `main` changed, restating "still stale" in one line instead. Would have cut 2026-07-22's
   13-repeat incident down to ~2-3 full drives plus 10 one-liners.
 - Next meta-governor pass: this was the first one ever run — re-run on the normal weekly cadence
-  (§5) rather than letting it lapse again; check whether the two items above were acted on.
+  (§5) rather than letting it lapse again; check whether the branch-prune and stale-production items
+  above were acted on, and whether the 51 genuinely-small pending branches got absorbed.
