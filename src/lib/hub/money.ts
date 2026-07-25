@@ -122,6 +122,74 @@ export function computeSettlement(
   })
 }
 
+// ---- Cash cycle ----
+
+export interface CashCycleLoadRow {
+  deliveredAt: Date | null
+  podReceivedAt: Date | null
+  invoiceIssuedOn: Date | null
+  paidOn: Date | null
+}
+
+export interface CashCycleLeg {
+  /** Loads that have completed this leg (both endpoints stamped). */
+  count: number
+  medianDays: number | null
+  meanDays: number | null
+}
+
+export interface CashCycleStats {
+  deliveredToPod: CashCycleLeg
+  podToInvoice: CashCycleLeg
+  invoiceToPaid: CashCycleLeg
+  deliveredToPaid: CashCycleLeg
+}
+
+const DAY_MS = 86400000
+
+/**
+ * Days between two stamps, floored at zero — a POD logged with a clock skew
+ * or a backdated invoice must not produce negative days that drag the median
+ * below reality.
+ */
+function legDays(rows: CashCycleLoadRow[], start: keyof CashCycleLoadRow, end: keyof CashCycleLoadRow): number[] {
+  const days: number[] = []
+  for (const row of rows) {
+    const s = row[start]
+    const e = row[end]
+    // A load is EXCLUDED from any leg it has not completed — an unpaid
+    // invoice is not "0 days to pay", it just isn't a datapoint yet.
+    if (!s || !e) continue
+    days.push(Math.max(0, (e.getTime() - s.getTime()) / DAY_MS))
+  }
+  return days
+}
+
+function legStats(days: number[]): CashCycleLeg {
+  if (days.length === 0) return { count: 0, medianDays: null, meanDays: null }
+  const sorted = [...days].sort((a, b) => a - b)
+  const mid = Math.floor(sorted.length / 2)
+  const median = sorted.length % 2 === 1 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2
+  const mean = days.reduce((sum, d) => sum + d, 0) / days.length
+  const round1 = (n: number) => Math.round(n * 10) / 10
+  return { count: days.length, medianDays: round1(median), meanDays: round1(mean) }
+}
+
+/**
+ * The four-segment cash cycle: delivered → POD → invoice → paid, plus the
+ * total. Medians are the headline number — a single 90-day deadbeat must not
+ * move what the owner reads as "how we're doing"; means are provided so the
+ * outliers still show up as a gap between the two.
+ */
+export function cashCycleStats(rows: CashCycleLoadRow[]): CashCycleStats {
+  return {
+    deliveredToPod: legStats(legDays(rows, "deliveredAt", "podReceivedAt")),
+    podToInvoice: legStats(legDays(rows, "podReceivedAt", "invoiceIssuedOn")),
+    invoiceToPaid: legStats(legDays(rows, "invoiceIssuedOn", "paidOn")),
+    deliveredToPaid: legStats(legDays(rows, "deliveredAt", "paidOn")),
+  }
+}
+
 // ---- Detention ----
 
 /** Detention owed in cents given stop dwell, free time, and hourly rate. */

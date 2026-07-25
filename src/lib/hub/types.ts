@@ -287,6 +287,11 @@ export interface Load {
   settlement_id: string | null
   notes: string | null
   acknowledged_at: string | null
+  /** First transition into delivered / pod_received (migration 022; stamped by
+   *  changeLoadStatus, backfilled from load_events). Null on legacy rows whose
+   *  event trail predates the audit log. */
+  delivered_at: string | null
+  pod_received_at: string | null
   created_at: string
   // joined fields
   customer_name?: string | null
