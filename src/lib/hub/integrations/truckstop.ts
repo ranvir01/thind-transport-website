@@ -17,6 +17,7 @@
  */
 import { getCredentials, hasCredentials } from "../credentials"
 import type { LoadInput, StopInput } from "../loads"
+import { roundHalfAwayFromZero } from "../rounding"
 import type { EquipmentType } from "../types"
 import type { SyncRowBase, SyncSource } from "./registry"
 
@@ -69,7 +70,7 @@ export function normalizeTruckstopPosting(record: Record<string, unknown>): Truc
     miles: toNumber(record.TripMiles),
     rateTotalCents: (() => {
       const rate = toNumber(record.TotalRate)
-      return rate === null ? null : Math.round(rate * 100)
+      return rate === null ? null : roundHalfAwayFromZero(rate * 100)
     })(),
     pickupDate: (record.PickupDate as string) ?? null,
     contactPhone: (record.ContactPhone as string) ?? null,

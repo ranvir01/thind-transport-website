@@ -13,6 +13,7 @@
  */
 import { getCredentials, hasCredentials } from "../credentials"
 import type { LoadInput, StopInput } from "../loads"
+import { roundHalfAwayFromZero } from "../rounding"
 import type { EquipmentType } from "../types"
 import type { SyncRowBase, SyncSource } from "./registry"
 
@@ -53,7 +54,7 @@ export function normalizeDatPosting(record: Record<string, unknown>): DatLoadPos
     destCity: (record.destCity as string) ?? null,
     destState: (record.destState as string) ?? null,
     miles: typeof record.tripMiles === "number" ? record.tripMiles : null,
-    rateTotalCents: typeof rate === "number" ? Math.round(rate * 100) : null,
+    rateTotalCents: typeof rate === "number" ? roundHalfAwayFromZero(rate * 100) : null,
     pickupDate: (record.pickupDate as string) ?? null,
     contactPhone: (record.contactPhone as string) ?? null,
     raw: record,
