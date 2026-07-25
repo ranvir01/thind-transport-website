@@ -1,5 +1,7 @@
 /** Shared Hub types and domain constants. */
 
+import { roundHalfAwayFromZero } from "./rounding"
+
 export const HUB_ROLES = ["owner", "dispatcher", "accountant", "driver", "broker", "shipper", "platform_admin"] as const
 export type HubRole = (typeof HUB_ROLES)[number]
 
@@ -364,7 +366,7 @@ export function dollarsToCents(value: string | number | null | undefined): numbe
   if (value == null || value === "") return 0
   const num = typeof value === "number" ? value : Number(String(value).replace(/[^0-9.\-]/g, ""))
   if (!Number.isFinite(num)) return 0
-  return Math.round(num * 100)
+  return roundHalfAwayFromZero(num * 100)
 }
 
 /** Format integer cents as a plain dollar string for CSV export. */

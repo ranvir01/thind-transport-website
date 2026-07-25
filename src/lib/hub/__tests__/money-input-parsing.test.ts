@@ -41,6 +41,14 @@ describe("dollarsToCents replaces Math.round(parseMoney(x) * 100)", () => {
   it("keeps a legitimately free $0.00 as 0 cents", () => {
     expect(dollarsToCents("0.00")).toBe(0)
   })
+
+  it("rounds a half-cent half away from zero, not toward +Infinity (bare Math.round bug)", () => {
+    // -12.345 * 100 = -1234.5: Math.round ties toward +Infinity and gives -1234
+    // (one cent short of the true magnitude); the house convention
+    // (roundHalfAwayFromZero, same as the positive case below) gives -1235.
+    expect(dollarsToCents("-12.345")).toBe(-1235)
+    expect(dollarsToCents("12.345")).toBe(1235)
+  })
 })
 
 describe("no server action inlines Math.round(parseMoney(...) * 100)", () => {
