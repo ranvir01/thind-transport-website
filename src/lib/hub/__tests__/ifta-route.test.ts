@@ -101,7 +101,9 @@ describe("GET /api/hub/ifta/[quarter]/[file]", () => {
     expect(res.status).toBe(200)
     const body = await res.text()
     expect(body).toContain("WA,1000,100.000,80.000,0.3750,123.45,0.0000,0.00,123.45")
-    expect(body).toContain("TOTAL,,,,,,,,123.45")
+    // TOTAL row sums the summable columns (miles/gallons/tax) like the on-screen
+    // worksheet; per-jurisdiction rate/surcharge_rate stay blank.
+    expect(body).toContain("TOTAL,1000,100.000,80.000,,123.45,,0.00,123.45")
   })
 
   it("renders multi-jurisdiction worksheet.csv including surcharge state (golden fixture)", async () => {
@@ -131,7 +133,9 @@ describe("GET /api/hub/ifta/[quarter]/[file]", () => {
     // credit) are their own columns so each fills the matching IFTA-return line.
     expect(body).toContain("IN,2000,285.714,300.000,0.5500,-7.86,0.1100,31.43,23.57")
     expect(body).toContain("WA,4000,571.429,600.000,0.4940,-14.11,0.0000,0.00,-14.11")
-    expect(body).toContain("TOTAL,,,,,,,,23.60")
+    // TOTAL sums every summable column: 7000 miles, 1000 taxable/tax-paid gal,
+    // base fuel tax (-7.83) and surcharge (31.43) as their own totals, net 23.60.
+    expect(body).toContain("TOTAL,7000,1000.000,1000.000,,-7.83,,31.43,23.60")
   })
 
   it("falls back to the combined net for legacy rows missing the tax/surcharge split", async () => {

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 import { getHubUser } from "@/lib/hub/session"
 import { can } from "@/lib/hub/permissions"
 import { getIftaReport, exportIftaSources, listIftaRates } from "@/lib/hub/ifta"
-import { iftaWorksheetWarnings, iftaRowFuelTaxCents } from "@/lib/hub/ifta-core"
+import { iftaWorksheetWarnings, iftaRowFuelTaxCents, iftaWorksheetTotals } from "@/lib/hub/ifta-core"
 import { withIftaWarningsCoverPage } from "@/lib/hub/ifta-pdf"
 import { getCarrier, getCarrierSettings } from "@/lib/hub/settings"
 import { buildIftaPdf } from "@/lib/hub/pdf"
@@ -64,7 +64,14 @@ export async function GET(
         const fuelTaxCents = iftaRowFuelTaxCents(r)
         return `${r.jurisdiction},${r.miles},${r.taxableGallons.toFixed(3)},${r.taxPaidGallons.toFixed(3)},${Number(r.rate).toFixed(4)},${(fuelTaxCents / 100).toFixed(2)},${Number(r.surchargeRate).toFixed(4)},${(surchargeCents / 100).toFixed(2)},${(r.netCents / 100).toFixed(2)}`
       }),
-      `TOTAL,,,,,,,,${(Number(report.net_tax_cents) / 100).toFixed(2)}`,
+      // Column totals — same iftaWorksheetTotals helper (and cent-summed values)
+      // as the on-screen worksheet's TOTAL row, so a filer transcribing total
+      // taxable/tax-paid gallons and tax off the CSV matches the screen. Rate and
+      // surcharge_rate are per-jurisdiction, not summable, so they stay blank.
+      (() => {
+        const totals = iftaWorksheetTotals(rows)
+        return `TOTAL,${Math.round(totals.miles)},${totals.taxableGallons.toFixed(3)},${totals.taxPaidGallons.toFixed(3)},,${(totals.taxCents / 100).toFixed(2)},,${(totals.surchargeCents / 100).toFixed(2)},${(totals.netCents / 100).toFixed(2)}`
+      })(),
     ].join("\n")
     return new NextResponse(csv, {
       headers: {
