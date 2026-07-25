@@ -949,3 +949,83 @@ Backlog:
 - Carried, unchanged: npm audit's high-severity findings (owner-approval-gated semver-major bump); Rust
   sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision); IFTA due-date roll not
   accounting for legal holidays (documented scope decision).
+
+## QA rig drive on main@3b986118 — 2026-07-25 ~07:35 UTC (owner/dispatcher/driver, read-only prod probe)
+
+Charter (docs/agent-improvement-loop.md §5): no feature work — stand up the local rig, drive
+real owner/dispatcher/driver/broker/shipper/portal flows, probe thindtransport.com read-only,
+fix only outright regressions from the last 3h of commits.
+
+Fresh rig from scratch: Postgres 16 started (was down), `loadoff` role + database created,
+`npm run setup:canvas-deps` + `PUPPETEER_SKIP_DOWNLOAD=true npm install` (748 packages;
+`scripts/e2e-lib.mjs` auto-resolves the sandbox's `/opt/pw-browsers` Chromium), `.env.local`
+written (POSTGRES_URL, NEXTAUTH_SECRET, DRIVER_INVITATION_CODE, SETUP_DB_TOKEN, CRON_SECRET,
+CREDENTIALS_KEY, HUB_DEMO_LOGIN), `npm run db:migrate` (21/21), `npm run seed:demo`, `npm run
+build` clean, `npx vitest run` (189 files/1592 tests) green, `npm run lint` clean.
+
+Last-3h review, re-checked twice as more landed mid-cycle (fleet is active — main moved from
+`c52ec25` to `3b986118` while this session ran): four real product commits inside the window,
+each read diff-by-diff against AGENTS.md —
+- `cb4fce1` (NotificationsBell `variant="dark"` prop for the driver PWA's forced-dark header):
+  correctly scopes every mode-dependent token swap behind the new prop; office/`HubNav` usage
+  untouched (defaults to `"light"`). No regression.
+- `dfd06bd` (Go worker: OSRM circuit breaker, opens after 3 consecutive failures, 60s cooldown,
+  one success closes it): package-level breaker state correctly reset between test cases via a
+  shared `doRequest` helper. Verified independently of the commit's own claims — `go test
+  ./... -shuffle=on` and `npm run test:sidecars` (29 Rust + Go) both green, including the two
+  new breaker tests (`TestOsrmBreakerOpensAfterThresholdAndRecovers`,
+  `TestOsrmBreakerReopensImmediatelyIfProbeFails`). No regression.
+- `9607589` (root layout was leaking a hardcoded `<link rel="manifest">` onto every route
+  including `/hub`, so a browser honoured the marketing manifest first and "Add to Home
+  Screen" installed the marketing site instead of the driver app): fix moves both layouts to
+  `metadata.manifest` so Next dedupes correctly; new
+  `src/lib/hub/__tests__/pwa-manifest-wiring.test.ts` asserts the wiring at source level. No
+  regression.
+- `3b98611` (marketing visual pass: solid-red headline accent instead of a red-to-gold
+  gradient, responsive hero/dispatch-band scrims): `--brand-gold` still has three other live
+  consumers in `globals.css`, not orphaned. Cosmetic-only, no logic surface. No regression.
+
+Drove the full `scripts/e2e-run-all.mjs` battery (49 `e2e-*-smoke.mjs` + `e2e-sweep.mjs`) as
+owner, dispatcher, driver, broker, shipper, and platform admin against a `next start` server.
+**First pass showed 29/49 failing** — traced entirely to this session's own mistake, not a
+product bug: ran `npm run build` in a second shell while the suite was mid-flight against the
+already-running `next start` server. Rebuilding overwrites `.next`'s static assets out from
+under a live server without restarting it, which corrupted in-flight requests — not just the
+expected rash of 500s, but also two false *visual* QA failures that looked exactly like real
+defects: `e2e-track-smoke` reported "heading renders light-on-dark (color=rgb(0,0,0),
+brightness=0)" and `e2e-sweep` reported wild layout overflows (recruiting 1458px, help 898px,
+loadboard 646px at 390px) — both are the signature of a CSS chunk failing to load mid-request,
+not an actual style regression. Killed the stale server, started clean from the now-finished
+build, and re-ran the full battery with zero concurrent writes to `.next`: **49/49 PASS**, 0
+defects, 0 console errors, 12.9 minutes. Noting this so a future cycle doesn't need to
+rediscover it: never rebuild while a live E2E run is hitting `next start` — stop the suite (or
+use a second checkout) first.
+
+Production probe: direct HTTPS to `thindtransport.com` stayed egress-blocked this session
+(curl exit 56 on `/`, `/hub/login`, `/api/version`; confirmed via the agent-proxy status
+endpoint — CONNECT denied by policy, consistent with prior cycles, not new). Vercel MCP
+fallback (§3b): `thindtransport.com`'s alias points at `dpl_6ARpfBF1eG6h9JpPg2tttmLxafdr`,
+`state: READY`, `target: production`, commit `3b986118` — exactly `origin/main` HEAD, 0 drift.
+`get_runtime_errors` (1h window): no new error groups beyond the long-carried, benign
+`pg`/`pg-connection-string` `sslmode` deprecation warning on `/api/hub/cron/[job]` (informational,
+not actionable — same one every recent cycle has carried).
+
+`npm run agent:status`: integrator within 3 commits of main, steady state, no drain needed.
+`npm run agent:branches`: 114 pending, `lane-compliance` still the largest by a wide margin
+(775 unpicked/1543 raw) — unchanged shape from recent cycles.
+
+No regression found in any of the four commits, no product fix needed, 0 defects across the
+full flow battery, production confirmed current and healthy — no product change to ship this
+cycle.
+
+Backlog:
+- Process note (see above): don't run `npm run build`/any rebuild concurrently with a live E2E
+  suite hitting `next start` on the same checkout — it corrupts static assets mid-request and
+  produces both false 500s and false visual/contrast/layout failures indistinguishable from
+  real defects without a clean re-run to rule them out.
+- `lane-compliance` (775 unpicked/1543 raw) remains the single largest pending branch by a wide
+  margin; meta-governor prune pass remains overdue across many cycles now — 114 pending
+  branches this cycle, flat vs. recent cycles.
+- Carried, unchanged: npm audit's high-severity findings (owner-approval-gated semver-major
+  bump); Rust sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision); IFTA
+  due-date roll not accounting for legal holidays (documented scope decision).
