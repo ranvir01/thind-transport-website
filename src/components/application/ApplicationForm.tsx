@@ -22,6 +22,7 @@ import { cn } from "@/lib/utils"
 import { captureLead } from "@/app/actions/capture-lead"
 import { submitApplication } from "@/app/actions/submit-application"
 import { PAY_RATES, COMPANY_INFO } from "@/lib/constants"
+import { applyProgressPercent } from "./apply-progress"
 
 // Combined Schema
 const formSchema = z.object({
@@ -261,8 +262,8 @@ export function ApplicationForm() {
     }
   }
 
-  // Progress Bar
-  const progress = Math.round(((step - 1) / 4) * 100)
+  // Progress Bar — advances every step (25/50/75/100), see apply-progress.ts
+  const progress = applyProgressPercent(step)
 
   // Only pin the continue bar on the dedicated apply page — on other pages the
   // site-wide mobile command bar already covers the CTA.
@@ -299,24 +300,26 @@ export function ApplicationForm() {
         </div>
       )}
 
-      {/* Progress Steps */}
-      <div className="mb-8">
-        <div className="md:hidden text-sm font-bold text-orange-600 mb-2">
-          Step {step} of 4: {["Qualify", "Contact", "Details", "Docs"][step - 1]}
+      {/* Progress Steps — wizard chrome only; the success screen (step 5) is not a step */}
+      {step <= 4 && (
+        <div className="mb-8">
+          <div className="md:hidden text-sm font-bold text-orange-600 mb-2">
+            Step {step} of 4: {["Qualify", "Contact", "Details", "Docs"][step - 1]}
+          </div>
+          <div className="hidden md:flex justify-between text-sm font-medium text-gray-500 mb-2">
+            <span className={cn(step >= 1 && "text-orange-600 font-bold")}>1. Qualify</span>
+            <span className={cn(step >= 2 && "text-orange-600 font-bold")}>2. Contact</span>
+            <span className={cn(step >= 3 && "text-orange-600 font-bold")}>3. Details</span>
+            <span className={cn(step >= 4 && "text-orange-600 font-bold")}>4. Docs</span>
+          </div>
+          <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden">
+            <div
+              className="h-full bg-gradient-to-r from-orange-500 to-orange-600 transition-all duration-500 ease-out"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
         </div>
-        <div className="hidden md:flex justify-between text-sm font-medium text-gray-500 mb-2">
-          <span className={cn(step >= 1 && "text-orange-600 font-bold")}>1. Qualify</span>
-          <span className={cn(step >= 2 && "text-orange-600 font-bold")}>2. Contact</span>
-          <span className={cn(step >= 3 && "text-orange-600 font-bold")}>3. Details</span>
-          <span className={cn(step >= 4 && "text-orange-600 font-bold")}>4. Docs</span>
-        </div>
-        <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden">
-          <div 
-            className="h-full bg-gradient-to-r from-orange-500 to-orange-600 transition-all duration-500 ease-out"
-            style={{ width: `${progress === 0 ? 25 : progress}%` }}
-          />
-        </div>
-      </div>
+      )}
 
       {serverError && (
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-start gap-2 mb-6">
