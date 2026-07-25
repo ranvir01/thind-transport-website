@@ -55,6 +55,33 @@ HAULDESK_RUST_COMPUTE_URL=http://localhost:8082
 HAULDESK_SIDECAR_SECRET=<same value for Next.js and both sidecars>
 ```
 
+## Measured behaviour (25 Jul 2026)
+
+Verified all three languages build, test, run, and agree numerically:
+
+| | Result |
+|---|---|
+| Go worker | `go vet` + tests green (also under `-shuffle=on`), 9.0 MB binary, 9.4 MB RSS, `/health` 0.6 ms |
+| Rust compute | 29 tests green, 1.1 MB binary, 2.8 MB RSS, `/health` 1.4 ms |
+| TypeScript | 1,487 tests green |
+| **Cross-language parity** | TS `computeIfta` and the Rust sidecar return **cent-identical** IFTA numbers on the same inputs (checked live against a running sidecar, not just golden files) |
+
+**OSRM circuit breaker.** `/route/miles` used to pay the full OSRM connect budget on
+*every* call in any environment that can't reach the router (locked-down egress, OSRM
+down, no `OSRM_URL` on a private network) — ~343 ms per request — before returning the
+same great-circle answer. It now trips after 3 consecutive failures and skips OSRM for
+60 s, re-probing after the cooldown: **343 ms → 1.5 ms (229×), identical miles.** One
+success closes it, so a transient blip degrades for at most one cooldown window.
+
+**Known: Rust POST latency on larger payloads.** `/ifta/summary` costs ~1 ms for a
+small body but ~22 ms once the request/response spans more than one TCP segment
+(48 jurisdictions ≈ 2 KB in, ≈ 5 KB out). `/health` is 1.4 ms, so it is not the IFTA
+math — it is Nagle/delayed-ACK on the multi-segment write. The fix is `TCP_NODELAY` on
+the accepted socket, which `tiny_http` 0.12 does not expose per connection; it needs
+either a `Server::from_listener` wrapper that sets the option or a move to a different
+HTTP layer. Not urgent: the sidecars are optional and unset in production, where the
+pure-TypeScript path (identical numbers, no HTTP hop) runs instead.
+
 ## Removed (June contract stubs)
 
 The earlier contract-first placeholders — `services/api` (Go), `services/optimizer` +

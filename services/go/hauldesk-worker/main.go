@@ -23,9 +23,76 @@ import (
 	"os"
 	"os/signal"
 	"strings"
+	"sync"
 	"syscall"
 	"time"
 )
+
+// osrmBreaker trips after consecutive OSRM failures so a persistently
+// unreachable router stops costing every caller the full dial timeout.
+//
+// Without it, an environment that can't reach OSRM at all (locked-down egress,
+// OSRM down, no OSRM_URL configured on a private network) pays the connect
+// budget on EVERY /route/miles call — measured at ~342ms per request against
+// the public demo host from a sandbox that blocks it — before returning the
+// same great-circle answer it could have returned instantly. Miles are
+// unchanged either way; only the wasted wait goes away.
+//
+// Deliberately conservative: one success closes it, and it re-probes after the
+// cooldown, so a transient blip degrades for at most one cooldown window
+// rather than pinning the worker to haversine until restart.
+type osrmBreaker struct {
+	mu        sync.Mutex
+	failures  int
+	openedAt  time.Time
+	threshold int
+	cooldown  time.Duration
+}
+
+var breaker = &osrmBreaker{threshold: 3, cooldown: 60 * time.Second}
+
+// allow reports whether an OSRM call should be attempted now.
+func (b *osrmBreaker) allow() bool {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.failures < b.threshold {
+		return true
+	}
+	// Open: stay shut until the cooldown elapses, then allow one probe.
+	if time.Since(b.openedAt) >= b.cooldown {
+		b.failures = b.threshold - 1 // one more failure re-opens immediately
+		return true
+	}
+	return false
+}
+
+func (b *osrmBreaker) recordSuccess() {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	b.failures = 0
+}
+
+// reset returns the breaker to its closed, never-failed state. The handler uses
+// one package-level breaker (its whole point is state shared across requests),
+// which would otherwise leak between tests and make them order-dependent — a
+// test that exercises the unreachable-OSRM path would trip the breaker and the
+// next test would see its stubbed OSRM skipped. The shared test helper calls
+// this so every case starts closed.
+func (b *osrmBreaker) reset() {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	b.failures = 0
+	b.openedAt = time.Time{}
+}
+
+func (b *osrmBreaker) recordFailure() {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	b.failures++
+	if b.failures == b.threshold {
+		b.openedAt = time.Now()
+	}
+}
 
 type latLng struct {
 	Lat float64 `json:"lat"`
@@ -162,9 +229,16 @@ func routeMilesHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if miles, err := osrmMiles(r.Context(), req.Origin, req.Dest); err == nil {
-		writeJSON(w, http.StatusOK, map[string]any{"miles": miles, "source": "osrm"})
-		return
+	// Skip the call entirely while the breaker is open — the answer below is
+	// what a failed call would have produced anyway, just without the wait.
+	if breaker.allow() {
+		if miles, err := osrmMiles(r.Context(), req.Origin, req.Dest); err == nil {
+			breaker.recordSuccess()
+			writeJSON(w, http.StatusOK, map[string]any{"miles": miles, "source": "osrm"})
+			return
+		} else {
+			breaker.recordFailure()
+		}
 	}
 
 	// OSRM down/unreachable: great-circle is a floor, not an answer of record —

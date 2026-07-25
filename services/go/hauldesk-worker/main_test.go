@@ -15,6 +15,10 @@ import (
 
 func doRequest(t *testing.T, method, path, body string, header http.Header) *httptest.ResponseRecorder {
 	t.Helper()
+	// The handler's breaker is package-level shared state by design; reset it so
+	// a case that exercises the unreachable-OSRM fallback cannot trip it and make
+	// a later case's stubbed OSRM get skipped (order-dependent tests).
+	breaker.reset()
 	var reader *strings.Reader
 	if body == "" {
 		reader = strings.NewReader("")
@@ -406,5 +410,54 @@ func TestRunPropagatesListenError(t *testing.T) {
 		t.Fatal("expected a bind error when the address is already in use")
 	} else if errors.Is(err, http.ErrServerClosed) {
 		t.Fatalf("bind failure must not read as a clean shutdown, got %v", err)
+	}
+}
+
+// The breaker exists to stop a persistently unreachable OSRM from charging
+// every caller the full dial timeout, so the behaviour under test is: closed
+// while healthy, open after `threshold` consecutive failures, re-probing once
+// the cooldown elapses, and fully reset by a single success.
+func TestOsrmBreakerOpensAfterThresholdAndRecovers(t *testing.T) {
+	b := &osrmBreaker{threshold: 3, cooldown: 50 * time.Millisecond}
+
+	for i := 0; i < 3; i++ {
+		if !b.allow() {
+			t.Fatalf("call %d: breaker should still be closed before the threshold", i+1)
+		}
+		b.recordFailure()
+	}
+
+	if b.allow() {
+		t.Fatal("breaker should be open after 3 consecutive failures (callers must skip OSRM)")
+	}
+
+	time.Sleep(60 * time.Millisecond)
+	if !b.allow() {
+		t.Fatal("breaker should allow one probe once the cooldown has elapsed")
+	}
+
+	// A probe that succeeds must fully reset, not leave the breaker half-open.
+	b.recordSuccess()
+	for i := 0; i < 3; i++ {
+		if !b.allow() {
+			t.Fatalf("after success the breaker must be closed (failed on call %d)", i+1)
+		}
+	}
+}
+
+func TestOsrmBreakerReopensImmediatelyIfProbeFails(t *testing.T) {
+	b := &osrmBreaker{threshold: 2, cooldown: 30 * time.Millisecond}
+	b.recordFailure()
+	b.recordFailure()
+	if b.allow() {
+		t.Fatal("breaker should be open")
+	}
+	time.Sleep(40 * time.Millisecond)
+	if !b.allow() {
+		t.Fatal("cooldown elapsed: one probe should be allowed")
+	}
+	b.recordFailure() // probe failed
+	if b.allow() {
+		t.Fatal("a failed probe must re-open the breaker immediately, not grant more calls")
 	}
 }
