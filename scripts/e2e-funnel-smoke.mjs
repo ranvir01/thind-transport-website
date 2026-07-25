@@ -73,7 +73,10 @@ async function main() {
   await shot(page, "01-homepage-390")
 
   await page.goto(`${BASE}/apply`, { waitUntil: "networkidle2" })
-  await waitForText(page, "Step 1 of 4")
+  // Landing anchor must be STATIC page copy (e2e-anchors.test.ts): the wizard
+  // header is a template ("Step {step} of 4:"), so anchor on the form card
+  // heading and let the step-advance waits below cover the wizard itself.
+  await waitForText(page, "Start Your Application")
   // Step 1: qualify
   await clickByText(page, "Company Driver", { tag: "label" })
   await clickByText(page, "Class A", { tag: "label" })
