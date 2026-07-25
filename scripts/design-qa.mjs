@@ -104,14 +104,45 @@ function contrastRatio(fg, bg) {
  */
 async function collectFindings(page, isMobile) {
   return page.evaluate((isMobile) => {
+    // Colour parsing goes through a canvas rather than a regex.
+    //
+    // This used to match /rgba?\(...\)/ only, which quietly broke the moment the
+    // marketing palette moved to OKLCH: Chromium reports those computed values
+    // as `lab(...)`, the regex returned null, and every element using the new
+    // design system was SKIPPED — the contrast gate reported zero failures on
+    // markup that was rendering dark-on-dark. Painting the colour and reading
+    // the pixel back works for any notation the browser can render (rgb, hsl,
+    // lab, oklch, color(), named), so the parser can never silently fall behind
+    // the stylesheet again.
+    const _cv = document.createElement("canvas")
+    _cv.width = _cv.height = 1
+    const _ctx = _cv.getContext("2d", { willReadFrequently: true })
     const parse = (str) => {
-      // rgba/rgb -> [r,g,b,a]; returns null for transparent/none.
-      const m = str && str.match(/rgba?\(([^)]+)\)/)
-      if (!m) return null
-      const parts = m[1].split(",").map((s) => parseFloat(s.trim()))
-      const [r, g, b, a = 1] = parts
+      if (!str) return null
+      const s = String(str).trim()
+      if (!s || s === "transparent" || s === "none") return null
+
+      // Fast path: plain rgb()/rgba() needs no round-trip.
+      const m = s.match(/^rgba?\(([^)]+)\)$/)
+      if (m) {
+        const parts = m[1].split(/[,/\s]+/).filter(Boolean).map(parseFloat)
+        const [r, g, b, a = 1] = parts
+        if (a === 0) return null
+        return [r, g, b, a]
+      }
+
+      // Everything else: let the engine resolve it to actual pixels. A colour
+      // the engine cannot parse leaves fillStyle at the sentinel, which is how
+      // we tell "unsupported" apart from "genuinely black".
+      _ctx.fillStyle = "#123456"
+      _ctx.fillStyle = s
+      if (_ctx.fillStyle === "#123456" && !/#123456/i.test(s)) return null
+      _ctx.clearRect(0, 0, 1, 1)
+      _ctx.fillRect(0, 0, 1, 1)
+      const d = _ctx.getImageData(0, 0, 1, 1).data
+      const a = d[3] / 255
       if (a === 0) return null
-      return [r, g, b, a]
+      return [d[0], d[1], d[2], a]
     }
     const composite = (fg, bg) => {
       // fg over bg, both [r,g,b,a] with a in [0,1]

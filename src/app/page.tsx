@@ -1,14 +1,13 @@
 import { CinematicHero } from "@/components/cinematic/Hero"
+import { AudienceSelector } from "@/components/home/AudienceSelector"
 import { InfiniteTicker } from "@/components/cinematic/Ticker"
 import { RoutesSection } from "@/components/home/RoutesSection"
 import { EquipmentSection } from "@/components/home/EquipmentSection"
 import { FAQSection } from "@/components/home/FAQSection"
-import { SuccessStoriesSection } from "@/components/home/SuccessStoriesSection"
 import { TrustStrip } from "@/components/home/TrustStrip"
 import { ThindPromise } from "@/components/home/ThindPromise"
 import { OperationSection } from "@/components/home/OperationSection"
 import { DispatchBand } from "@/components/home/DispatchBand"
-import { FreightYouKnow } from "@/components/home/FreightYouKnow"
 import { PhotoBand } from "@/components/home/PhotoBand"
 import { ApplicationForm } from "@/components/application/ApplicationForm"
 import { ProfitCalculator } from "@/components/features/ProfitCalculator"
@@ -20,6 +19,10 @@ export default function Home() {
   return (
     <div className="brand-page-shell relative min-h-screen selection:bg-orange-600 selection:text-white pb-24 md:pb-0">
       <CinematicHero />
+
+      {/* Three doors, immediately after the hero — see AudienceSelector for why
+          this is inline rather than a blocking gate. */}
+      <AudienceSelector />
 
       <TrustStrip />
 
@@ -42,16 +45,12 @@ export default function Home() {
 
       <ThindPromise />
 
-      <SuccessStoriesSection />
-
       <PhotoBand
         src="/images/generated/truck-mountain-pass.webp"
         alt="Thind Transport truck crossing a mountain pass at golden hour"
         eyebrow="All 48 states"
         headline="The lanes you know. The miles you want."
       />
-
-      <FreightYouKnow />
 
       <RoutesSection />
 

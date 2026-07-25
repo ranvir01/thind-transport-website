@@ -1,9 +1,14 @@
-"use client"
-
-import { motion } from "framer-motion"
 import Image from "next/image"
-import { ShieldCheck, BadgeCheck, Shield, Truck, MapPin, ExternalLink } from "lucide-react"
+import {
+  ShieldCheck,
+  BadgeCheck,
+  Shield,
+  Truck,
+  MapPin,
+  ExternalLink,
+} from "lucide-react"
 import { COMPANY_INFO, FMCSA_LINKS, STATS } from "@/lib/constants"
+import { Reveal } from "@/components/ui/Reveal"
 
 /**
  * Editorial trust bar: a real FMCSA compliance badge paired with an inline,
@@ -53,52 +58,52 @@ export function TrustStrip() {
       <div className="container px-4">
         <div className="mx-auto grid max-w-6xl items-center gap-8 lg:grid-cols-[auto_1fr] lg:gap-12">
           {/* Real FMCSA compliance badge */}
-          <motion.a
-            href={FMCSA_LINKS.safer}
-            target="_blank"
-            rel="noopener noreferrer"
-            initial={{ opacity: 0, scale: 0.94 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: true }}
-            className="group mx-auto flex items-center gap-4 lg:mx-0"
-          >
-            <div className="relative h-24 w-24 flex-shrink-0 md:h-28 md:w-28">
-              <Image
-                src="/images/generated/fmcsa-compliance-badge.png"
-                alt="FMCSA compliance badge — verified motor carrier authority"
-                fill
-                sizes="112px"
-                className="object-contain drop-shadow-[0_6px_18px_rgba(0,0,0,0.5)]"
-              />
-            </div>
-            <div className="max-w-[12rem]">
-              <p className="font-display text-sm font-bold uppercase tracking-[0.18em] text-steel-300 transition-colors group-hover:text-orange">
-                {COMPANY_INFO.location}-Based
-              </p>
-              <p className="font-display text-lg font-bold leading-tight text-white">
-                FMCSA-Authorized, Driver-Approved
-              </p>
-              <span className="mt-1 inline-flex items-center gap-1 text-xs text-steel-400 underline-offset-2 group-hover:text-orange group-hover:underline">
-                Verify on SAFER
-                <ExternalLink className="h-3 w-3" />
-              </span>
-            </div>
-          </motion.a>
+          {/* Reveal renders the wrapper, so the anchor lives inside it — the
+              href/target/rel belong on a real <a>, not on the animation shell. */}
+          <Reveal className="mx-auto lg:mx-0">
+            <a
+              href={FMCSA_LINKS.safer}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group flex items-center gap-4"
+            >
+              <div className="relative h-24 w-24 flex-shrink-0 md:h-28 md:w-28">
+                <Image
+                  src="/images/generated/fmcsa-compliance-badge.png"
+                  alt="FMCSA compliance badge — verified motor carrier authority"
+                  fill
+                  sizes="112px"
+                  className="object-contain drop-shadow-[0_6px_18px_rgba(0,0,0,0.5)]"
+                />
+              </div>
+              <div className="max-w-[12rem]">
+                <p className="font-display text-sm font-bold uppercase tracking-[0.18em] text-steel-300 transition-colors group-hover:text-orange">
+                  {COMPANY_INFO.location}-Based
+                </p>
+                <p className="font-display text-lg font-bold leading-tight text-white">
+                  FMCSA-Authorized, Driver-Approved
+                </p>
+                <span className="mt-1 inline-flex items-center gap-1 text-xs text-steel-400 underline-offset-2 group-hover:text-orange group-hover:underline">
+                  Verify on SAFER
+                  <ExternalLink className="h-3 w-3" />
+                </span>
+              </div>
+            </a>
+          </Reveal>
 
           {/* Inline credential row — divided, not boxed */}
           <div className="grid grid-cols-2 gap-x-6 gap-y-6 sm:grid-cols-3 lg:flex lg:flex-1 lg:items-stretch lg:justify-between lg:divide-x lg:divide-steel-700/60">
             {credentials.map((item, index) => {
               const Icon = item.icon
               const inner = (
-                <motion.div
-                  initial={{ opacity: 0, y: 12 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: index * 0.05 }}
+                <Reveal
                   className="h-full lg:px-5 lg:first:pl-0 lg:last:pr-0"
+                  index={Math.min(index, 4)}
                 >
                   <div className="mb-1.5 flex items-center gap-2">
-                    <Icon className={`h-4 w-4 ${item.highlight ? "text-orange" : "text-gold"}`} />
+                    <Icon
+                      className={`h-4 w-4 ${item.highlight ? "text-orange" : "text-gold"}`}
+                    />
                     <span className="text-[11px] font-semibold uppercase tracking-wide text-steel-400">
                       {item.label}
                     </span>
@@ -110,8 +115,10 @@ export function TrustStrip() {
                   >
                     {item.value}
                   </div>
-                  <div className="mt-1 text-xs leading-tight text-steel-400">{item.sub}</div>
-                </motion.div>
+                  <div className="mt-1 text-xs leading-tight text-steel-400">
+                    {item.sub}
+                  </div>
+                </Reveal>
               )
 
               if (item.href) {
@@ -134,7 +141,8 @@ export function TrustStrip() {
         </div>
 
         <p className="mt-8 text-center text-xs text-steel-400">
-          USDOT #{COMPANY_INFO.dot} · MC-{COMPANY_INFO.mc} — verify our authority anytime on the{" "}
+          USDOT #{COMPANY_INFO.dot} · MC-{COMPANY_INFO.mc} — verify our
+          authority anytime on the{" "}
           <a
             href={FMCSA_LINKS.safer}
             target="_blank"
@@ -143,7 +151,8 @@ export function TrustStrip() {
           >
             FMCSA SAFER
           </a>{" "}
-          system. Fleet of {STATS.trucksInFleet}+ trucks serving {STATS.statesCovered} states.
+          system. Fleet of {STATS.trucksInFleet}+ trucks serving{" "}
+          {STATS.statesCovered} states.
         </p>
       </div>
     </section>

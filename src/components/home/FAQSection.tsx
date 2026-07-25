@@ -1,20 +1,15 @@
-"use client"
-
 import { FAQAccordion } from "@/components/shared/FAQAccordion"
 import { HelpCircle, MessageCircle } from "lucide-react"
-import { motion } from "framer-motion"
+import { Reveal } from "@/components/ui/Reveal"
 
 export function FAQSection() {
   return (
-    <section data-light className="py-16 sm:py-24 relative overflow-hidden bg-gradient-to-b from-slate-50 via-white to-slate-100 border-y border-gray-200">
+    <section
+      data-light
+      className="py-16 sm:py-24 relative overflow-hidden bg-gradient-to-b from-slate-50 via-white to-slate-100 border-y border-gray-200"
+    >
       <div className="container relative px-4">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          className="max-w-5xl mx-auto"
-          suppressHydrationWarning
-        >
+        <Reveal className="max-w-5xl mx-auto">
           <div className="fleet-section-heading">
             <div className="fleet-badge mb-4 mx-auto w-fit">
               <HelpCircle className="h-3.5 w-3.5" />
@@ -22,8 +17,12 @@ export function FAQSection() {
             </div>
             <h2 className="text-gray-900 mb-4">Questions drivers ask us</h2>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              Straight answers about pay, equipment, and how we run. Don&apos;t see yours?{" "}
-              <a href="/apply" className="text-orange-600 hover:text-orange-700 font-semibold">
+              Straight answers about pay, equipment, and how we run. Don&apos;t
+              see yours?{" "}
+              <a
+                href="/apply"
+                className="text-orange-600 hover:text-orange-700 font-semibold"
+              >
                 Talk with our team
               </a>
               .
@@ -39,13 +38,16 @@ export function FAQSection() {
               <MessageCircle className="h-5 w-5 text-orange-500 shrink-0" />
               <p className="text-gray-700 text-sm md:text-base">
                 Still have questions?{" "}
-                <a href="tel:+12067656300" className="text-orange-600 font-semibold hover:text-orange-700">
+                <a
+                  href="tel:+12067656300"
+                  className="text-orange-600 font-semibold hover:text-orange-700"
+                >
                   Call (206) 765-6300
                 </a>
               </p>
             </div>
           </div>
-        </motion.div>
+        </Reveal>
       </div>
     </section>
   )
