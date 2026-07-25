@@ -234,8 +234,10 @@ export async function createLoad(
       `INSERT INTO hub.loads (
          carrier_id, reference, customer_reference, customer_id, status, equipment, commodity, weight_lbs,
          linehaul_cents, fuel_surcharge_cents, accessorials, loaded_miles, deadhead_miles,
-         truck_id, trailer_id, driver_id, dispatcher_id, source, factored, notes
-       ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20)
+         truck_id, trailer_id, driver_id, dispatcher_id, source, factored, notes,
+         delivered_at, pod_received_at
+       ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,
+         CASE WHEN $5::text = 'delivered' THEN NOW() END, CASE WHEN $5::text = 'pod_received' THEN NOW() END)
        RETURNING *`,
       [
         carrierId, reference, input.customer_reference ?? null, input.customer_id, status,
@@ -310,8 +312,14 @@ export async function changeLoadStatus(
       return null
     }
     const fromStatus = current[0].status as LoadStatus
+    // Stamp the cash clock at the transition (migration 022). COALESCE keeps the
+    // first stamp: re-marking a load delivered/POD'd must not restart the
+    // unbilled-POD alarm, which is exactly why it could not hang off updated_at.
     const { rows } = await client.query(
-      `UPDATE hub.loads SET status = $3, updated_at = NOW() WHERE carrier_id = $1 AND id = $2 RETURNING *`,
+      `UPDATE hub.loads SET status = $3, updated_at = NOW(),
+         delivered_at = CASE WHEN $3::text = 'delivered' THEN COALESCE(delivered_at, NOW()) ELSE delivered_at END,
+         pod_received_at = CASE WHEN $3::text = 'pod_received' THEN COALESCE(pod_received_at, NOW()) ELSE pod_received_at END
+       WHERE carrier_id = $1 AND id = $2 RETURNING *`,
       [carrierId, id, toStatus]
     )
     await client.query(

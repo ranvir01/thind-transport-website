@@ -285,11 +285,14 @@ export async function runTaskAutomations(carrierId: string): Promise<{ created: 
     })
   }
 
-  // 5. Delivered loads sitting unbilled for 3+ days.
+  // 5. Delivered loads sitting unbilled for 3+ days. Measured from the POD
+  // stamp (migration 022), not updated_at — updated_at bumps on every edit to
+  // the load, so touching an unbilled load used to push its own nag back out
+  // three more days, forever. delivered_at then updated_at cover legacy rows.
   const unbilled = await query<{ id: string; reference: string }>(
     `SELECT l.id, l.reference FROM hub.loads l
      WHERE l.carrier_id = $1 AND l.deleted_at IS NULL AND l.status = 'pod_received'
-       AND l.updated_at < NOW() - INTERVAL '3 days'
+       AND COALESCE(l.pod_received_at, l.delivered_at, l.updated_at) < NOW() - INTERVAL '3 days'
        AND NOT EXISTS (SELECT 1 FROM hub.invoices i WHERE i.load_id = l.id AND i.carrier_id = l.carrier_id)`,
     [carrierId]
   )

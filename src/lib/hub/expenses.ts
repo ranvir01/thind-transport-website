@@ -108,7 +108,34 @@ function toCsv(headers: string[], rows: unknown[][]): string {
   return [headers.join(","), ...rows.map((row) => row.map(csvEscape).join(","))].join("\n")
 }
 
-export async function exportCsv(carrierId: string, kind: string): Promise<{ filename: string; csv: string }> {
+/**
+ * Bad caller input, not a server fault: the message is written for the caller
+ * and is safe to return. Everything else out of exportCsv is a real failure
+ * whose message can quote SQL and table names, so it must not be echoed.
+ */
+export class ExportInputError extends Error {}
+
+/**
+ * 1099-NEC filing year. Absent → the PREVIOUS calendar year, because the forms
+ * are filed in Q1 for the year that just closed; defaulting to "now" returned
+ * an empty CSV for every January filing run. An explicit year is validated and
+ * never silently replaced — a tax export for the wrong year is worse than an
+ * error the caller can see.
+ */
+function resolve1099Year(year: number | undefined): number {
+  const maxYear = new Date().getFullYear() + 1
+  if (year === undefined) return new Date().getFullYear() - 1
+  if (!Number.isInteger(year) || year < 2000 || year > maxYear) {
+    throw new ExportInputError(`Pick a filing year between 2000 and ${maxYear}`)
+  }
+  return year
+}
+
+export async function exportCsv(
+  carrierId: string,
+  kind: string,
+  options: { year?: number } = {}
+): Promise<{ filename: string; csv: string }> {
   switch (kind) {
     case "invoices": {
       const rows = await query<Record<string, unknown>>(
@@ -196,7 +223,7 @@ export async function exportCsv(carrierId: string, kind: string): Promise<{ file
       }
     }
     case "1099": {
-      const year = new Date().getFullYear()
+      const year = resolve1099Year(options.year)
       const rows = await query<Record<string, unknown>>(
         `SELECT d.first_name || ' ' || d.last_name AS payee,
            ROUND(SUM(s.gross_cents - COALESCE(reimb.cents, 0)) / 100.0, 2) AS nonemployee_compensation

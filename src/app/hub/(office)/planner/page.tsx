@@ -89,7 +89,8 @@ export default async function PlannerPage({
             <Route className="h-4 w-4 text-accent-text" /> Backhaul ideas
           </h2>
           <p className="text-body-xs text-fg-3 mb-3">
-            Where these trucks go empty, here&apos;s what has paid out of that market before — best margin first.
+            Where these trucks go empty, here&apos;s what has paid out of that market before — best margin per
+            loaded mile first, after deadhead. A short rich lane beats a long cheap one.
           </p>
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
             {data.backhaul.map((hint) => (
@@ -98,17 +99,32 @@ export default async function PlannerPage({
                   #{hint.truckUnit} · empty in {hint.market}
                 </p>
                 <ul className="mt-1.5 space-y-1">
-                  {hint.lanes.map((lane) => (
-                    <li key={lane.id} className="flex items-center justify-between gap-2 text-sm">
-                      <span className="text-fg-2 truncate">
-                        {lane.origin_city} → {lane.dest_city}, {lane.dest_state}
-                        <span className="text-fg-3"> · {lane.loads_count}×</span>
-                      </span>
-                      <span className="shrink-0 font-mono font-medium text-accent-text tabular-nums">
-                        {lane.avg_rpm_cents ? `$${(lane.avg_rpm_cents / 100).toFixed(2)}/mi` : fmtCents(lane.margin_cents)}
-                      </span>
-                    </li>
-                  ))}
+                  {hint.lanes.map((lane) => {
+                    // Show what the list is ranked BY (margin per loaded mile),
+                    // not average revenue per mile — a number that disagreed
+                    // with the ordering read as a broken sort. Number() because
+                    // hub.lanes stores these as BIGINT, which pg hands back as
+                    // strings despite the `Lane` type saying number.
+                    const marginCents = Number(lane.margin_cents)
+                    const laneMiles = Number(lane.miles)
+                    const marginPerMile = laneMiles > 0 ? marginCents / laneMiles : null
+                    return (
+                      <li key={lane.id} className="flex items-center justify-between gap-2 text-sm">
+                        <span className="text-fg-2 truncate">
+                          {lane.origin_city} → {lane.dest_city}, {lane.dest_state}
+                          <span className="text-fg-3"> · {lane.loads_count}×</span>
+                        </span>
+                        <span
+                          className="shrink-0 font-mono font-medium text-accent-text tabular-nums"
+                          title={`Est. margin ${fmtCents(marginCents)} over ${laneMiles.toLocaleString()} loaded mi`}
+                        >
+                          {marginPerMile != null
+                            ? `$${(marginPerMile / 100).toFixed(2)}/mi margin`
+                            : fmtCents(marginCents)}
+                        </span>
+                      </li>
+                    )
+                  })}
                 </ul>
                 <Link
                   href="/hub/loads/new"

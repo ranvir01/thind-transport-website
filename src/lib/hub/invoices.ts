@@ -2,12 +2,12 @@ import { query, queryOne, hubDb } from "./db"
 import { getCarrier, getCarrierSettings, nextInvoiceNumber } from "./settings"
 import { getLoad, getLoadStops, changeLoadStatus } from "./loads"
 import { getCustomer } from "./customers"
-import { listDocuments, storeGeneratedPdf } from "./documents"
+import { listDocuments, storeGeneratedPdf, readStoredFileBytes } from "./documents"
 import { buildInvoicePdf, buildStatementPdf } from "./pdf"
 import { invoiceTotalCents, agingBucket, type AgingBucket } from "./money"
 import { logAudit } from "./audit"
 import { createMailTransport, isEmailConfigured, mailFrom } from "@/lib/mailer"
-import { loadTotalCents, type Invoice } from "./types"
+import { loadTotalCents, type Invoice, type HubDocument } from "./types"
 
 const INVOICE_SELECT = `
   SELECT i.*, c.name AS customer_name, l.reference AS load_reference,
@@ -161,17 +161,18 @@ export async function createInvoiceFromLoad(
         { filename: `${number}.pdf`, content: Buffer.from(pdfBytes), contentType: "application/pdf" },
       ]
       for (const doc of docs.filter((d) => ["pod", "bol"].includes(d.kind))) {
-        try {
-          const res = await fetch(
-            doc.url.startsWith("http") ? doc.url : `${process.env.NEXTAUTH_URL ?? "http://localhost:3000"}${doc.url}`
-          )
-          if (res.ok) {
-            attachments.push({
-              filename: `${doc.kind.toUpperCase()}-${doc.file_name}`,
-              content: Buffer.from(await res.arrayBuffer()),
-            })
-          }
-        } catch { /* attachment fetch is best-effort */ }
+        // Read disk/blob directly. Since blobs went private, doc.url is the
+        // relative /api/hub/files/<name> route: fetch() throws on it, and
+        // absolutising against NEXTAUTH_URL hits a route that demands a session
+        // this outbound server call does not carry — a 401 that this
+        // best-effort block would swallow, shipping the invoice with no POD.
+        const bytes = await readStoredFileBytes(doc.url, doc.storage)
+        if (bytes) {
+          attachments.push({
+            filename: `${doc.kind.toUpperCase()}-${doc.file_name}`,
+            content: bytes,
+          })
+        }
       }
       const transport = createMailTransport()
       await transport.sendMail({
@@ -306,7 +307,35 @@ export async function getAgingSummary(carrierId: string): Promise<AgingSummary> 
   }
 }
 
-/** Overdue reminder runner (cron): due+3/+10/+20 days, factored loads skipped. */
+/** Days past due at which a dunning email goes out. */
+const REMINDER_RUNGS = [3, 10, 20] as const
+
+/**
+ * Which rung this invoice is owed, given how far past due it is and what has
+ * already gone out (sent_log entries look like { kind: 'reminder-10d' }).
+ *
+ * Returns the HIGHEST crossed rung that has not been climbed yet, or null when
+ * the ladder is up to date. The old check was `[3,10,20].includes(daysPast)`,
+ * which only fired on the exact day: a cron that missed a run, or an invoice
+ * that aged past 20 before anyone looked, was never chased again. Crossing a
+ * rung is now enough, and climbing to a rung retires the ones below it so a
+ * caught-up ladder never sends a softer reminder after a harder one.
+ */
+export function nextReminderRung(
+  daysPast: number,
+  sentLog: { kind?: string }[] | null | undefined
+): number | null {
+  const climbed = (Array.isArray(sentLog) ? sentLog : [])
+    .map((entry) => /^reminder-(\d+)d$/.exec(String(entry?.kind ?? ""))?.[1])
+    .map(Number)
+    .filter((rung) => Number.isFinite(rung))
+  const highestClimbed = climbed.length ? Math.max(...climbed) : 0
+  const crossed = REMINDER_RUNGS.filter((rung) => daysPast >= rung)
+  const target = crossed.length ? crossed[crossed.length - 1] : null
+  return target !== null && target > highestClimbed ? target : null
+}
+
+/** Overdue reminder runner (cron): due+3/+10/+20 ladder, factored loads skipped. */
 export async function runOverdueReminders(carrierId: string): Promise<{ sent: number; flaggedOverdue: number }> {
   const aging = await getAgingSummary(carrierId)
   const carrier = await getCarrier(carrierId)
@@ -323,7 +352,9 @@ export async function runOverdueReminders(carrierId: string): Promise<{ sent: nu
       await query(`UPDATE hub.invoices SET status = 'overdue', updated_at = NOW() WHERE id = $1 AND carrier_id = $2`, [invoice.id, carrierId])
       flaggedOverdue++
     }
-    if (![3, 10, 20].includes(daysPast)) continue
+    // One email per invoice per run, and never the same rung twice.
+    const rung = nextReminderRung(daysPast, invoice.sent_log)
+    if (rung === null) continue
     const customer = await getCustomer(carrierId, invoice.customer_id)
     if (!customer?.billing_email) continue
     try {
@@ -337,7 +368,7 @@ export async function runOverdueReminders(carrierId: string): Promise<{ sent: nu
       })
       await query(
         `UPDATE hub.invoices SET sent_log = sent_log || $2::jsonb WHERE id = $1 AND carrier_id = $3`,
-        [invoice.id, JSON.stringify([{ to: customer.billing_email, at: new Date().toISOString(), kind: `reminder-${daysPast}d` }]), carrierId]
+        [invoice.id, JSON.stringify([{ to: customer.billing_email, at: new Date().toISOString(), kind: `reminder-${rung}d` }]), carrierId]
       )
       sent++
     } catch { /* reminder failures surface via integration_syncs in cron route */ }
@@ -497,16 +528,28 @@ export async function sendFactoringPacket(
   const carrier = await getCarrier(carrierId)
 
   const attachments: { filename: string; content: Buffer }[] = []
-  const fetchDoc = async (url: string, filename: string) => {
-    try {
-      const res = await fetch(url.startsWith("http") ? url : `${process.env.NEXTAUTH_URL ?? "http://localhost:3000"}${url}`)
-      if (res.ok) attachments.push({ filename, content: Buffer.from(await res.arrayBuffer()) })
-    } catch { /* best effort */ }
+  // Read disk/blob directly rather than fetching the URL — see the note on the
+  // invoice-email attachments above. A factoring packet that silently drops the
+  // rate con or POD gets the submission rejected, so a miss must not be silent
+  // in the same way a customer-email miss is.
+  const missing: string[] = []
+  const attachDoc = async (url: string, storage: HubDocument["storage"] | null, filename: string) => {
+    const bytes = await readStoredFileBytes(url, storage)
+    if (bytes) attachments.push({ filename, content: bytes })
+    else missing.push(filename)
   }
-  if (invoice.pdf_url) await fetchDoc(invoice.pdf_url, `${invoice.number}.pdf`)
+  // Generated invoice PDFs have no hub.documents row, so no storage column —
+  // readStoredFileBytes falls back to the rule they were written by.
+  if (invoice.pdf_url) await attachDoc(invoice.pdf_url, null, `${invoice.number}.pdf`)
   const docs = await listDocuments(carrierId, "load", invoice.load_id)
   for (const doc of docs.filter((d) => ["rate_confirmation", "pod"].includes(d.kind))) {
-    await fetchDoc(doc.url, `${doc.kind}-${doc.file_name}`)
+    await attachDoc(doc.url, doc.storage, `${doc.kind}-${doc.file_name}`)
+  }
+  if (missing.length > 0) {
+    throw new Error(
+      `Could not read ${missing.join(", ")} — the factor would receive an incomplete packet. ` +
+      `Re-upload the missing document and submit again.`
+    )
   }
 
   const transport = createMailTransport()

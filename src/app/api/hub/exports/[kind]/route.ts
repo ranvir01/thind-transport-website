@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { getHubUser } from "@/lib/hub/session"
 import { can } from "@/lib/hub/permissions"
 import {
+  ExportInputError,
   exportCsv,
   exportQboIif,
   exportQboIifInvoices,
@@ -12,7 +13,7 @@ import { accidentRegisterCsv } from "@/lib/hub/incidents"
 import { exportFuelSpendCsv } from "@/lib/hub/reports"
 
 export async function GET(
-  _req: Request,
+  req: Request,
   { params }: { params: Promise<{ kind: string }> }
 ) {
   const user = await getHubUser()
@@ -64,8 +65,13 @@ export async function GET(
     })
   }
 
+  // ?year= picks the 1099-NEC filing year; omitted falls back to last year
+  // (the year Q1 files). Garbage is rejected by exportCsv, not defaulted.
+  const yearParam = new URL(req.url).searchParams.get("year")
   try {
-    const { filename, csv } = await exportCsv(user.carrierId, kind)
+    const { filename, csv } = await exportCsv(user.carrierId, kind, {
+      year: yearParam ? Number(yearParam) : undefined,
+    })
     return new NextResponse(csv, {
       headers: {
         "Content-Type": "text/csv; charset=utf-8",
@@ -73,9 +79,12 @@ export async function GET(
       },
     })
   } catch (err) {
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Export failed" },
-      { status: 400 }
-    )
+    // Only a bad ?year= is the caller's fault and safe to echo. A query
+    // failure keeps its old behaviour (a 500 with nothing leaked) rather
+    // than becoming a 400 that hands the client a database error message.
+    if (err instanceof ExportInputError) {
+      return NextResponse.json({ error: err.message }, { status: 400 })
+    }
+    throw err
   }
 }

@@ -52,7 +52,7 @@ beforeEach(() => {
 })
 
 describe("computeIftaQuarter mileage source selection", () => {
-  it("prefers GPS pings when a truck has position data this quarter, tagging jurisdiction_miles rows 'pings'", async () => {
+  it("uses GPS pings for a truck that has position data this quarter, tagging jurisdiction_miles rows 'pings'", async () => {
     const calls = mockQueries({
       trucks: [{ truck_id: "t1" }],
       pings: [{ lat: 47.6, lng: -122.3, ts: "2026-04-01T00:00:00Z" }],
@@ -67,14 +67,12 @@ describe("computeIftaQuarter mileage source selection", () => {
     expect(insertMiles).toBeDefined()
     expect(insertMiles!.sql).toContain("'pings'")
     expect(insertMiles!.params).toEqual(["carrier-1", expect.any(String), "t1", "2026Q2", "WA", 250])
-    // Import-mileage path must not be consulted when pings exist.
-    expect(calls.some((c) => c.sql.includes("source = 'import'"))).toBe(false)
   })
 
   it("falls back to imported jurisdiction miles when no truck has pings this quarter", async () => {
     mockQueries({
       trucks: [],
-      imported: [{ jurisdiction: "OR", miles: "400" }],
+      imported: [{ truck_id: "t2", jurisdiction: "OR", miles: "400" }],
     })
 
     const { mileageSource, result } = await computeIftaQuarter("carrier-1", "2026Q2", actor)
@@ -84,10 +82,78 @@ describe("computeIftaQuarter mileage source selection", () => {
     expect(pingsToMilesMock).not.toHaveBeenCalled()
   })
 
+  // Regression: `if (trucks.length > 0) { pings } else { import }` made the two
+  // sources exclusive PER FLEET, so one ELD-connected truck silently dropped
+  // every manual-sheet truck's miles from the return — an understated filing,
+  // which is the direction that draws an audit.
+  it("adds imported miles for trucks without pings to the pinged trucks' miles", async () => {
+    mockQueries({
+      trucks: [{ truck_id: "t1" }],
+      pings: [{ lat: 47.6, lng: -122.3, ts: "2026-04-01T00:00:00Z" }],
+      imported: [
+        { truck_id: "t2", jurisdiction: "OR", miles: "1200" },
+        { truck_id: "t3", jurisdiction: "WA", miles: "800" },
+        { truck_id: "t4", jurisdiction: "ID", miles: "500" },
+        { truck_id: "t5", jurisdiction: "OR", miles: "300" },
+      ],
+    })
+    pingsToMilesMock.mockReturnValue({ WA: 250 })
+
+    const { mileageSource, result } = await computeIftaQuarter("carrier-1", "2026Q2", actor)
+
+    expect(mileageSource).toBe("mixed")
+    // WA 250 pinged + 800 imported, OR 1200 + 300 imported, ID 500 imported.
+    expect(result.fleetMiles).toBe(3050)
+    const byJur = Object.fromEntries(result.rows.map((r) => [r.jurisdiction, r.miles]))
+    expect(byJur.WA).toBe(1050)
+    expect(byJur.OR).toBe(1500)
+    expect(byJur.ID).toBe(500)
+  })
+
+  it("never counts both sources for the same truck — a pinged truck's imported rows are ignored", async () => {
+    mockQueries({
+      trucks: [{ truck_id: "t1" }],
+      pings: [{ lat: 47.6, lng: -122.3, ts: "2026-04-01T00:00:00Z" }],
+      // A stale manual sheet for the same truck the ELD already covers.
+      imported: [{ truck_id: "t1", jurisdiction: "WA", miles: "9999" }],
+    })
+    pingsToMilesMock.mockReturnValue({ WA: 250 })
+
+    const { mileageSource, result } = await computeIftaQuarter("carrier-1", "2026Q2", actor)
+
+    expect(result.fleetMiles).toBe(250)
+    expect(mileageSource).toBe("pings")
+  })
+
+  it("still takes a glitch-only pinged truck off the import path, and keeps the 'pings' label", async () => {
+    mockQueries({
+      trucks: [{ truck_id: "t1" }],
+      pings: [{ lat: 47.6, lng: -122.3, ts: "2026-04-01T00:00:00Z" }],
+      imported: [{ truck_id: "t1", jurisdiction: "WA", miles: "700" }],
+    })
+    pingsToMilesMock.mockReturnValue({}) // every segment dropped as a GPS glitch
+
+    const { mileageSource, result } = await computeIftaQuarter("carrier-1", "2026Q2", actor)
+
+    expect(result.fleetMiles).toBe(0)
+    expect(mileageSource).toBe("pings")
+  })
+
+  it("reads only the newest import run so a second import run can never double-count the quarter", async () => {
+    const calls = mockQueries({ trucks: [], imported: [{ truck_id: "t2", jurisdiction: "WA", miles: "1000" }] })
+    await computeIftaQuarter("carrier-1", "2026Q2", actor)
+    const importRead = calls.find(
+      (c) => c.sql.includes("FROM hub.jurisdiction_miles") && c.sql.includes("source = 'import'")
+    )
+    expect(importRead).toBeDefined()
+    expect(importRead!.sql).toMatch(/run_id = \(\s*SELECT run_id/)
+    expect(importRead!.sql).toContain("LIMIT 1")
+  })
+
   it("counts only tractor fuel toward tax-paid gallons, excluding reefer/DEF at the query level", async () => {
     const calls = mockQueries({
       trucks: [],
-      imported: [{ jurisdiction: "WA", miles: "1000" }],
+      imported: [{ truck_id: "t2", jurisdiction: "WA", miles: "1000" }],
       fuel: [{ jurisdiction: "WA", gallons: "150" }],
     })
 
@@ -101,7 +167,7 @@ describe("computeIftaQuarter mileage source selection", () => {
   it("drops a fuel row with no resolved jurisdiction ('??') instead of taxing it, but reports the dropped gallons", async () => {
     mockQueries({
       trucks: [],
-      imported: [{ jurisdiction: "WA", miles: "1000" }],
+      imported: [{ truck_id: "t2", jurisdiction: "WA", miles: "1000" }],
       fuel: [{ jurisdiction: "??", gallons: "80" }],
     })
 
@@ -114,7 +180,7 @@ describe("computeIftaQuarter mileage source selection", () => {
   it("persists unknownJurisdictionGallons in the report JSON so the worksheet can surface it", async () => {
     const calls = mockQueries({
       trucks: [],
-      imported: [{ jurisdiction: "WA", miles: "1000" }],
+      imported: [{ truck_id: "t2", jurisdiction: "WA", miles: "1000" }],
       fuel: [
         { jurisdiction: "WA", gallons: "150" },
         { jurisdiction: "??", gallons: "42.5" },
@@ -136,7 +202,7 @@ describe("computeIftaQuarter mileage source selection", () => {
   it("reports zero unknown gallons when every fuel purchase has a state", async () => {
     mockQueries({
       trucks: [],
-      imported: [{ jurisdiction: "WA", miles: "1000" }],
+      imported: [{ truck_id: "t2", jurisdiction: "WA", miles: "1000" }],
       fuel: [{ jurisdiction: "WA", gallons: "150" }],
     })
 

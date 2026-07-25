@@ -238,8 +238,47 @@ export function parseStoredPnlRange(value: string | null | undefined): PnlRange 
   return from > to ? { from: to, to: from } : { from, to }
 }
 
-export async function truckPnlRange(carrierId: string, range: PnlRange): Promise<TruckPnl[]> {
-  const rows = await query<TruckPnl>(
+/**
+ * Driver pay over a date range — the cost bucket the per-truck P&L does not
+ * carry, and roughly half of a small carrier's cost per mile. Feeds
+ * `computeFleetKpis({ driverPayCents })` so the Reports margin is a real
+ * margin instead of a margin-before-payroll.
+ *
+ * Earning lines only: reimbursements repay expenses already booked in
+ * hub.expenses (counting them again would double-charge), and deductions
+ * (advances, escrow, insurance) are recoveries of money already paid out, not
+ * reductions in what the driver earned. Scoped by settlement `period_end`
+ * inside the window — the pay periods that closed in it — matching how the
+ * 1099 export scopes settlements by period_end. Drafts count: the work is
+ * done and the money is owed.
+ *
+ * Returns null, NOT 0, when the carrier has no settlements in the range.
+ * "We don't know what payroll cost" must never render as "payroll cost
+ * nothing", which would paint a green full-cost margin on an unpaid book.
+ */
+export async function driverPayCentsForRange(carrierId: string, range: PnlRange): Promise<number | null> {
+  const row = await queryOne<{ settlements: number; earnings_cents: string }>(
+    `SELECT COUNT(DISTINCT s.id)::int AS settlements,
+       COALESCE(SUM(sl.amount_cents) FILTER (WHERE sl.kind = 'earning'), 0) AS earnings_cents
+     FROM hub.settlements s
+     LEFT JOIN hub.settlement_lines sl ON sl.settlement_id = s.id
+     WHERE s.carrier_id = $1 AND s.period_end BETWEEN $2::date AND $3::date`,
+    [carrierId, range.from, range.to]
+  )
+  if (!row || Number(row.settlements) === 0) return null
+  return Number(row.earnings_cents)
+}
+
+/**
+ * `truckPnlRange` rows carry one extra field over `TruckPnl`: how many loads in
+ * the window left `deadhead_miles` blank. SUM() skips NULLs, so without it a
+ * truck whose loads never had the field filled in reports a flawless 0% of
+ * deadhead — the one number the screen exists to make people uncomfortable about.
+ */
+export type TruckPnlRangeRow = TruckPnl & { deadhead_missing_loads: number }
+
+export async function truckPnlRange(carrierId: string, range: PnlRange): Promise<TruckPnlRangeRow[]> {
+  const rows = await query<TruckPnlRangeRow>(
     `SELECT t.id AS truck_id, t.unit_number,
        COALESCE((SELECT SUM(l.linehaul_cents + l.fuel_surcharge_cents) FROM hub.loads l
          WHERE l.truck_id = t.id AND l.carrier_id = t.carrier_id AND l.deleted_at IS NULL AND l.status <> 'cancelled'
@@ -257,6 +296,10 @@ export async function truckPnlRange(carrierId: string, range: PnlRange): Promise
        (SELECT SUM(l.deadhead_miles) FROM hub.loads l
          WHERE l.truck_id = t.id AND l.carrier_id = t.carrier_id AND l.deleted_at IS NULL AND l.status <> 'cancelled'
            AND l.created_at >= $2::date AND l.created_at < $3::date + 1) AS deadhead_miles,
+       (SELECT COUNT(*)::int FROM hub.loads l
+         WHERE l.truck_id = t.id AND l.carrier_id = t.carrier_id AND l.deleted_at IS NULL AND l.status <> 'cancelled'
+           AND l.created_at >= $2::date AND l.created_at < $3::date + 1
+           AND l.deadhead_miles IS NULL) AS deadhead_missing_loads,
        0 AS net_cents
      FROM hub.trucks t
      WHERE t.carrier_id = $1 AND t.deleted_at IS NULL
@@ -265,6 +308,7 @@ export async function truckPnlRange(carrierId: string, range: PnlRange): Promise
   )
   return rows.map((row) => ({
     ...row,
+    deadhead_missing_loads: Number(row.deadhead_missing_loads ?? 0),
     net_cents:
       Number(row.revenue_cents) - Number(row.fuel_cents) -
       Number(row.maintenance_cents) - Number(row.other_expense_cents),
@@ -311,8 +355,14 @@ export interface LaneLeaderboardRow {
   dest_city: string
   dest_state: string
   loads_count: number
-  revenue_cents: number
+  /** Loaded miles. */
   miles: number
+  /** Empty miles — costed inside margin_cents, and shown so the lane can be judged on it. */
+  deadhead_miles: number
+  /** Loads on the lane with a blank deadhead field: the miles above are a floor, not a fact. */
+  deadhead_missing_loads: number
+  revenue_cents: number
+  /** Revenue - (loaded + deadhead) miles * cost/mile. Deadhead IS charged here. */
   margin_cents: number
   avg_rpm_cents: number | null
 }
@@ -330,6 +380,8 @@ function toLeaderboardRows(rows: LaneAggregateRow[], limit: number): LaneLeaderb
       loads_count: r.loads_count,
       revenue_cents: r.revenue_cents,
       miles: r.miles,
+      deadhead_miles: r.deadhead_miles,
+      deadhead_missing_loads: r.deadhead_missing_loads,
       margin_cents: r.margin_cents,
       avg_rpm_cents: avgRpmCents(r.revenue_cents, r.miles),
     }))
@@ -352,7 +404,12 @@ export async function laneLeaderboardRange(carrierId: string, range: PnlRange, l
 }
 
 // Same columns as the all-time "lanes" export in expenses.ts, so a
-// spreadsheet built against one keeps working against the other.
+// spreadsheet built against one keeps working against the other. EstMargin now
+// charges deadhead miles in BOTH exports (that one reads hub.lanes, which
+// recomputeLanes rebuilds with the same formula). A Deadhead column is
+// deliberately absent from both: hub.lanes has no deadhead column to serve the
+// all-time export from, and splitting the two column sets is worse than
+// leaving the figure to the on-screen leaderboard.
 export function laneLeaderboardRangeCsv(rows: LaneLeaderboardRow[], range: PnlRange): { filename: string; csv: string } {
   const headers = ["Origin", "OriginState", "Destination", "DestState", "Loads", "Revenue", "Miles", "EstMargin", "AvgRPM"]
   const body = rows.map((r) => [

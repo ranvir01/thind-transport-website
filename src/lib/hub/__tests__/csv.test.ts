@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { normalizeEquipment, parseCsv, parseDateSafe, parseIntSafe, parseMoney, splitFullName } from "../csv"
+import { normalizeEquipment, normalizeState, parseCsv, parseDateSafe, parseIntSafe, parseMoney, splitFullName } from "../csv"
 
 describe("CSV parser", () => {
   it("handles quoted fields with commas and escaped quotes", () => {
@@ -32,6 +32,50 @@ describe("field normalizers", () => {
     expect(normalizeEquipment("53' Reefer")).toBe("reefer")
     expect(normalizeEquipment("Flat bed")).toBe("flatbed")
     expect(normalizeEquipment("Dry Van")).toBe("dry_van")
+  })
+})
+
+describe("normalizeState", () => {
+  it("passes through jurisdiction codes, upper-casing and trimming", () => {
+    expect(normalizeState("wa")).toBe("WA")
+    expect(normalizeState("  NE ")).toBe("NE") // Nebraska, not Nevada
+    expect(normalizeState("bc")).toBe("BC")
+    expect(normalizeState("D.C.")).toBe("DC")
+  })
+
+  // Regression: normalizeState was `slice(0, 2)`, which files miles and fuel
+  // credit under a real-but-wrong state — the kind of error only an audit finds.
+  it("maps full state names to the right code instead of truncating them", () => {
+    expect(normalizeState("Minnesota")).toBe("MN") // was "MI" (Michigan)
+    expect(normalizeState("Missouri")).toBe("MO") // was "MI"
+    expect(normalizeState("Mississippi")).toBe("MS") // was "MI"
+    expect(normalizeState("Alaska")).toBe("AK") // was "AL" (Alabama)
+    expect(normalizeState("Nevada")).toBe("NV") // was "NE" (Nebraska)
+    expect(normalizeState("Montana")).toBe("MT") // was "MO" (Missouri)
+    expect(normalizeState("Michigan")).toBe("MI")
+    expect(normalizeState("Alabama")).toBe("AL")
+    expect(normalizeState("NEW YORK")).toBe("NY")
+    expect(normalizeState("west virginia")).toBe("WV")
+    expect(normalizeState("British Columbia")).toBe("BC")
+  })
+
+  it("maps the traditional spreadsheet abbreviations", () => {
+    expect(normalizeState("Minn.")).toBe("MN")
+    expect(normalizeState("Nev.")).toBe("NV")
+    expect(normalizeState("Mont.")).toBe("MT")
+    expect(normalizeState("Tex.")).toBe("TX")
+    expect(normalizeState("Calif.")).toBe("CA")
+    expect(normalizeState("W. Va.")).toBe("WV")
+    expect(normalizeState("Wash.")).toBe("WA")
+  })
+
+  it("returns null rather than a wrong-but-valid code for anything unrecognized", () => {
+    expect(normalizeState("")).toBeNull()
+    expect(normalizeState("   ")).toBeNull()
+    expect(normalizeState("XX")).toBeNull()
+    expect(normalizeState("N/A")).toBeNull()
+    expect(normalizeState("Freeport")).toBeNull() // would have been "FR"
+    expect(normalizeState("Mexico")).toBeNull() // would have been "ME" (Maine)
   })
 })
 
