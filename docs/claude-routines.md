@@ -799,3 +799,72 @@ Backlog:
 - Carried, unchanged: npm audit's 3 high-severity findings (owner-approval-gated semver-major bump);
   Rust sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision); IFTA due-date roll not
   accounting for legal holidays (documented scope decision).
+
+## Meta-governor: first fleet-loop audit — 2026-07-25 ~00:45 UTC (verify-and-build cycle)
+
+Closed the "meta-governor prune pass remains overdue across many cycles now" backlog item, carried
+unchanged since at least `1a21bf10`. `git log --all --oneline --grep="^Meta-governor" -i` returns
+nothing — this is the first time the weekly meta-governor audit described in
+`docs/agent-improvement-loop.md` §5 has actually run since the lane was added. Verified green first:
+`npm ci`, `npm run build` clean, `npx vitest run` 187 files/1573 tests passed (7 skipped) — no drift
+from the last recorded state.
+
+**Scope: `main` commits since 2026-07-18 (Cursor-subscription-end / fleet-start), 231 commits.**
+
+- **Reverts: 0.** `git log --since=2026-07-18 --grep=revert -i` on `main` finds nothing. No agent's
+  work was undone by another agent this week — a healthy signal for a fleet this size.
+- **Build breakages on `main`: 0.** No commit message this week reports `build`/`vitest` red on `main`
+  itself (`Verify-and-build`/`QA rig drive` cycles found main green every time they checked). Guardrail
+  #2 ("main stays green") held all week.
+- **Test-count trend: steady growth, no drops.** 1508 → 1521 → 1528 → 1546 → 1573 tests across the
+  week's `Verify-and-build` checkpoints, monotonic. No cycle reported a shrinking suite.
+- **Real churn found — NOT a duplicate-agent conflict (checked before flagging):** `Footer.tsx`/
+  `Navbar.tsx`/`Hero.tsx` show a red→orange→red brand-color reversal within 7 minutes on 2026-07-22
+  (`35badbf9` then `4bcdb787`). Traced both commits to the **same** Claude session
+  (`session_012jmAz7hoqKLJnvpCWCejSU`) responding to explicit owner feedback ("the red was right, the
+  BLUE was the problem") between passes, not two lanes disagreeing. Correctly not fleet churn —
+  recorded here only so the next governor pass doesn't re-flag it without checking session identity
+  first.
+- **Real finding: ~24h production-staleness incident, redundant reporting.** From 2026-07-22 07:27 UTC
+  to 2026-07-23 07:43 UTC, 13 consecutive hourly `QA rig drive` commits each independently re-reported
+  the same condition (production stale/stuck behind `main`, escalating from "STALE 2.5h" to "STUCK ~5h"
+  to "confirmed broken via Vercel MCP — owner notified") before `a2355f18`'s drive found it
+  `RECOVERED`. Each of those 13 commits re-ran the full 46/47-script E2E battery and visual sweep before
+  restating a fact already established by the previous run — real verification work, but the staleness
+  *finding* itself was reported 13 times with no new information after the first 2-3. Proposed
+  loop-configuration change (for the owner, not applied here): once a QA-rig cycle reports production
+  stale/stuck, the *next* cycle should check deploy status first and short-circuit to a one-line
+  "still stale, Nh, no action taken" instead of re-running the full smoke battery — save the full
+  battery for when `main` itself changed or staleness first crosses the alert threshold. This matches
+  the existing `AGENT_CATCHUP_THRESHOLD` drain-side pattern but nothing analogous exists on the
+  QA-smoke side yet.
+- **`lane-tests`/`lane-compliance` (1443/1536 "unpicked" commits): confirmed safe to close, not just
+  triage.** `9bc1e0c5` already proved these carry orphaned pre-restructure history, not real lane work.
+  This pass adds one concrete data point from `495673bc`'s commit body: `lane-compliance`'s only
+  non-superseded commit (`d71d657d`, "roll IFTA due dates off weekends") duplicates logic HEAD already
+  has via an independent commit (`24d03ca0`). No governor action taken on the branches themselves
+  (fleet configuration / branch deletion is an owner call per §5's own rule), but the recommendation
+  carried forward for 3+ cycles now has enough evidence to act on — see Backlog.
+- **Busywork check: none found.** The 21 `QA rig drive`/`Routine: Playwright` commits and 6
+  `docs(<vendor>)` scout-rotation passes this week are each doctrine-mandated (hourly smoke, weekly
+  vendor-API monitoring per the integrations lane) and each carries a distinct finding or a clean
+  "no breaking change, re-dated" note — not filler.
+- **Churn (files touched 3+ times) spot-checked:** `navigation.ts` (3 real edits + 1 drain-stamp,
+  three different lanes, no conflicting logic — additive nav entries), `reports.ts`/`dvir.ts`/
+  `tasks.ts` (iterative same-subsystem work, not cross-lane collision). No shared-file thrashing found.
+
+No fleet-configuration changes applied this cycle — per §5 "the one thing agents never change
+unilaterally is the fleet configuration itself." This audit is the Backlog handoff for the owner to
+act on.
+
+Backlog:
+- Owner decision requested: delete `claude/lane-tests` and `claude/lane-compliance` (confirmed
+  orphaned/superseded history per `9bc1e0c5` + this audit, not real unmerged work) so
+  `agent:branches` stops surfacing 1000+ "unpicked" commits every cycle. This is a fleet-configuration
+  action outside what an agent should do unilaterally.
+- Owner decision requested: add a stale-production short-circuit to Routine 2 (prod-smoke) — after a
+  cycle reports staleness, the next cycle checks deploy status first and skips the full 46/47-script
+  battery unless `main` changed, restating "still stale" in one line instead. Would have cut 2026-07-22's
+  13-repeat incident down to ~2-3 full drives plus 10 one-liners.
+- Next meta-governor pass: this was the first one ever run — re-run on the normal weekly cadence
+  (§5) rather than letting it lapse again; check whether the two items above were acted on.
