@@ -286,7 +286,7 @@ export function ApplicationForm() {
     <div className={cn("space-y-8 relative", showStickyFooter && "pb-24 md:pb-0")}>
       {/* Mobile Sticky Footer */}
       {showStickyFooter && (
-        <div className="fixed bottom-0 left-0 right-0 z-[100] md:hidden bg-gradient-to-r from-[#17181B] to-[#003366] p-3 border-t border-white/10 shadow-2xl safe-area-bottom">
+        <div className="fixed bottom-0 left-0 right-0 z-[100] md:hidden bg-[#131418] p-3 border-t border-white/10 shadow-2xl safe-area-bottom">
           <div className="flex gap-3">
             <a
               href={`tel:${COMPANY_INFO.phoneFormatted}`}
@@ -374,7 +374,7 @@ export function ApplicationForm() {
                     <div className="flex-1">
                       <div className="flex items-center justify-between">
                         <div className="font-bold text-gray-900 text-base">Owner Operator</div>
-                        <div className="text-xl text-green-600 font-black">90% Gross</div>
+                        <div className="text-xl text-orange-600 font-black">90% Gross</div>
                       </div>
                       <div className="text-sm text-gray-500 mt-1 group-hover:text-gray-700 transition-colors">{PAY_RATES.ownerOperator.annualGross} • 2+ years OTR</div>
                     </div>
@@ -394,7 +394,7 @@ export function ApplicationForm() {
                     <div className="flex-1">
                       <div className="flex items-center justify-between">
                         <div className="font-bold text-gray-900 text-base">Company Driver</div>
-                        <div className="text-xl text-blue-600 font-black">{PAY_RATES.companyDriver.regional.perMile}/mi</div>
+                        <div className="text-xl text-orange-600 font-black">{PAY_RATES.companyDriver.regional.perMile}/mi</div>
                       </div>
                       <div className="text-sm text-gray-500 mt-1 group-hover:text-gray-700 transition-colors">{PAY_RATES.companyDriver.regional.annual} • 1+ year experience</div>
                     </div>
@@ -827,9 +827,9 @@ export function ApplicationForm() {
               </div>
 
               {/* Contact Options */}
-              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-6 border-2 border-blue-200 text-left mb-8">
+              <div className="bg-gray-50 rounded-2xl p-6 border-2 border-gray-200 text-left mb-8">
                 <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-                  <Phone className="h-5 w-5 text-blue-600" />
+                  <Phone className="h-5 w-5 text-orange-600" />
                   Get In Touch
                 </h3>
                 <div className="space-y-4">
@@ -843,12 +843,12 @@ export function ApplicationForm() {
                     </div>
                   </div>
                   <div className="flex gap-3 items-center">
-                    <div className="flex-shrink-0 w-10 h-10 bg-blue-500 text-white rounded-full flex items-center justify-center">
+                    <div className="flex-shrink-0 w-10 h-10 bg-gray-900 text-white rounded-full flex items-center justify-center">
                       <Star className="h-5 w-5" />
                     </div>
                     <div>
                       <p className="font-semibold text-gray-900">Email Us</p>
-                      <a href={`mailto:${COMPANY_INFO.email}`} className="text-blue-600 font-bold hover:underline">{COMPANY_INFO.email}</a>
+                      <a href={`mailto:${COMPANY_INFO.email}`} className="text-orange-600 font-bold hover:underline">{COMPANY_INFO.email}</a>
                     </div>
                   </div>
                 </div>
