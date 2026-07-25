@@ -949,3 +949,52 @@ Backlog:
 - Carried, unchanged: npm audit's high-severity findings (owner-approval-gated semver-major bump); Rust
   sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision); IFTA due-date roll not
   accounting for legal holidays (documented scope decision).
+
+## QA rig drive: full 49-script E2E battery, 0 defects, 0 regressions in last-3h commits — 2026-07-25 ~06:35 UTC (QA rig cycle)
+
+Charter (`docs/agent-improvement-loop.md` §5): no feature work — stand up the local rig, drive real
+owner/dispatcher/driver/broker/shipper/portal flows, probe `thindtransport.com` read-only, fix only
+outright regressions from the last 3h of commits.
+
+Last-3h review (cutoff ~03:10 UTC): two product-code commits fell inside the window. `f4312e93` (Help
+Centre search/playbooks + hub-theme WCAG AA contrast pass) — read the full diff: `hub-theme.css` changes
+are `--text-3`/status-color token value tweaks only, confined to the shared office theme scale, not the
+driver/portal forced-dark selectors AGENTS.md protects; `HelpCenter.tsx`/`help.ts` additions are additive
+UI + static playbook content, no server-action or tenancy surface touched. `0c68cf19` (driver PWA
+arrive/depart tap-time timestamp fix) — read the full diff: `driverStopTimestamp` now takes a required
+`at` threaded consistently from both `DriverLoadCard.tsx` tap handlers through `IntentPayloads.stop` and
+`OfflineSync.tsx`'s replay switch; `QUEUE_SCHEMA_VERSION` bump (1→2) correctly drops old queued rows
+missing `at` instead of silently replaying with a stale fallback. No regression in either commit — both
+already carried their own verified build/test/E2E evidence in their commit bodies, confirmed independently
+this cycle.
+
+Fresh local rig from scratch: Postgres role+db created (`loadoff`/`loadoff_dev`), `.env.local` generated
+from `.env.example` with new `NEXTAUTH_SECRET`/`CRON_SECRET`/`CREDENTIALS_KEY`, `npm install`,
+`db:migrate` (21/21), `seed:demo`. Verify chain: `npm run build` clean, `npx vitest run` 189 files/1592
+tests green, `npm run lint` clean, `npm run test:sidecars` 29 Rust tests + Go vet/test green (nothing
+Go/Rust touched this cycle). `npm run build && npm run start`, then the full `scripts/e2e-run-all.mjs`
+battery (`PUPPETEER_EXECUTABLE_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome` per pitfall #8)
+against the fresh server: all 48 `e2e-*-smoke.mjs` scripts plus `e2e-sweep.mjs`, **49/49 PASS in 16.5m**.
+Spot-checked every log for console-error lines beyond the summary (not just trusting the pass count) —
+all "0 console errors" across driver/dispatch/office/portal scripts, sweep confirms every screen renders
+with real content and no horizontal overflow at 390px across owner (1440px), driver PWA (390px), broker
+and shipper portal, and the public track page.
+
+Production probe: direct HTTPS to `thindtransport.com` 403'd on the sandbox's CONNECT proxy (documented
+condition, §3b) — cross-checked via the Vercel connector instead. The latest `READY`, `target: production`
+deployment (`dpl_XM4TnZmrJxfHuPWMGrZtZYk9o9B9`) is at `e5b027a7`, exactly `main` HEAD — production is
+current, not stale. `live: false` on the project read is the known unreliable-in-isolation signal (§3b);
+the alias + deployment SHA confirm health. Runtime-error scan (6h window): one error group, a pg
+`sslmode` deprecation warning first seen 2026-06-26 and last seen just before this probe — long-standing,
+not a new regression, no other clusters. `npm run agent:status`: integrator within 3 commits of main,
+steady state.
+
+No code fix was needed or shipped this cycle — this log entry is the only change, pushed straight to a
+session branch (no lane collision; nothing in `claude/lane-*` territory touched).
+
+Backlog:
+- `lane-tests` (1443 unpicked) and `lane-compliance` (1543 unpicked) remain the two largest pending
+  branches by a wide margin; meta-governor prune pass remains overdue across many cycles now.
+- Carried, unchanged: npm audit's high-severity findings (owner-approval-gated semver-major bump); Rust
+  sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision); IFTA due-date roll not
+  accounting for legal holidays (documented scope decision).
