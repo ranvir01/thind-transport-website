@@ -486,6 +486,7 @@ export function ApplicationForm() {
                   <Input
                     id="firstName"
                     {...register("firstName")}
+                    autoComplete="given-name"
                     placeholder="John"
                     className={cn("h-12 py-3 text-base", errors.firstName ? "border-red-500" : "")}
                   />
@@ -497,6 +498,7 @@ export function ApplicationForm() {
                   <Input
                     id="lastName"
                     {...register("lastName")}
+                    autoComplete="family-name"
                     placeholder="Doe"
                     className={cn("h-12 py-3 text-base", errors.lastName ? "border-red-500" : "")}
                   />
@@ -511,6 +513,7 @@ export function ApplicationForm() {
                   {...register("email")}
                   placeholder="john@example.com"
                   type="email"
+                  autoComplete="email"
                   className={cn("h-12 py-3 text-base", errors.email ? "border-red-500" : "")}
                 />
                 {errors.email && <p className="text-xs text-red-500 mt-1">{errors.email.message}</p>}
