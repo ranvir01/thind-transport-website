@@ -6,9 +6,6 @@
 import { query, queryOne } from "./db"
 import type { Load, Stop, Settlement, SettlementLine, HubDocument, DocumentRequest } from "./types"
 
-/** Statuses where a load is "live" for the driver. */
-export const DRIVER_ACTIVE_STATUSES = ["dispatched", "at_pickup", "in_transit", "delivered"] as const
-
 /** Status taps the driver may perform (forward-only, their own load). */
 export const DRIVER_STATUS_FLOW: Record<string, string> = {
   dispatched: "at_pickup",

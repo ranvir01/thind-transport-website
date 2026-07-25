@@ -13,8 +13,6 @@
 import { roundHalfAwayFromZero } from "./money"
 import type { IftaReportRow } from "./types"
 
-export const SURCHARGE_JURISDICTIONS = ["IN", "KY", "VA"] as const
-
 export interface IftaInputs {
   /** Miles traveled per jurisdiction (all IFTA miles are taxable here). */
   milesByJurisdiction: Record<string, number>

@@ -1,10 +1,9 @@
 /** Shared Hub types and domain constants. */
 
+import { roundHalfAwayFromZero } from "./rounding"
+
 export const HUB_ROLES = ["owner", "dispatcher", "accountant", "driver", "broker", "shipper", "platform_admin"] as const
 export type HubRole = (typeof HUB_ROLES)[number]
-
-/** Roles assignable from the Users admin (platform_admin is reserved until Phase 7). */
-export const ASSIGNABLE_ROLES = ["owner", "dispatcher", "accountant", "driver", "broker", "shipper"] as const
 
 /** Roles the owner can invite from Settings → Users (Phase 3 office staff). */
 export const OFFICE_INVITE_ROLES = ["dispatcher", "accountant"] as const
@@ -320,7 +319,7 @@ export interface HubDocument {
   created_at: string
 }
 
-export const LOAD_EVENT_KINDS = [
+const LOAD_EVENT_KINDS = [
   "status_change", "check_call", "geo", "document", "note",
   "weather_alert", "detention", "exception", "message", "task", "acknowledged",
 ] as const
@@ -364,7 +363,7 @@ export function dollarsToCents(value: string | number | null | undefined): numbe
   if (value == null || value === "") return 0
   const num = typeof value === "number" ? value : Number(String(value).replace(/[^0-9.\-]/g, ""))
   if (!Number.isFinite(num)) return 0
-  return Math.round(num * 100)
+  return roundHalfAwayFromZero(num * 100)
 }
 
 /** Format integer cents as a plain dollar string for CSV export. */
@@ -495,12 +494,6 @@ export interface IftaReportRow {
 export const FUEL_USES = ["tractor", "reefer", "other"] as const
 export type FuelUse = (typeof FUEL_USES)[number]
 
-export const FUEL_USE_LABELS: Record<FuelUse, string> = {
-  tractor: "Tractor (road fuel)",
-  reefer: "Reefer (IFTA-exempt)",
-  other: "Other (DEF / additives)",
-}
-
 export interface Facility {
   id: string
   carrier_id: string
@@ -574,10 +567,10 @@ export interface HubNotification {
   created_at: string
 }
 
-export const TASK_PRIORITIES = ["low", "normal", "high", "urgent"] as const
+const TASK_PRIORITIES = ["low", "normal", "high", "urgent"] as const
 export type TaskPriority = (typeof TASK_PRIORITIES)[number]
 
-export const TASK_RECURRENCES = ["none", "daily", "weekdays", "weekly", "monthly"] as const
+const TASK_RECURRENCES = ["none", "daily", "weekdays", "weekly", "monthly"] as const
 export type TaskRecurrence = (typeof TASK_RECURRENCES)[number]
 
 export interface TaskChecklistItem {

@@ -101,14 +101,14 @@ export async function ackReport(
   const targets = await audienceUserIds(carrierId, announcement.audience ?? { all: true })
   const acks = await query<{ user_id: string; name: string; acked_at: string; signature: string | null }>(
     `SELECT k.user_id, u.name, k.acked_at, k.signature
-     FROM hub.announcement_acks k JOIN hub.users u ON u.id = k.user_id
+     FROM hub.announcement_acks k JOIN hub.users u ON u.id = k.user_id AND u.carrier_id = $2
      WHERE k.announcement_id = $1 ORDER BY k.acked_at`,
-    [announcementId]
+    [announcementId, carrierId]
   )
   const ackedIds = new Set(acks.map((a) => a.user_id))
   const pendingUsers = await query<{ name: string }>(
-    `SELECT name FROM hub.users WHERE id = ANY($1) ORDER BY name`,
-    [targets.filter((id) => !ackedIds.has(id))]
+    `SELECT name FROM hub.users WHERE carrier_id = $2 AND id = ANY($1) ORDER BY name`,
+    [targets.filter((id) => !ackedIds.has(id)), carrierId]
   )
   return {
     acked: acks.map((a) => ({ name: a.name, acked_at: a.acked_at, signed: Boolean(a.signature) })),
