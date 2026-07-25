@@ -13,7 +13,7 @@ vi.mock("../db", () => ({
 }))
 
 import { query } from "../db"
-import { addFacilityNote, listFacilities } from "../facilities"
+import { addFacilityNote, listFacilities, recentFacilityStops } from "../facilities"
 
 const queryMock = vi.mocked(query)
 
@@ -56,5 +56,15 @@ describe("FACILITY_LIST_SELECT subqueries", () => {
     const sql = String(queryMock.mock.calls[0][0])
     expect(sql).toContain("s.facility_id = f.id AND s.carrier_id = f.carrier_id")
     expect(sql).toContain("n.facility_id = f.id AND n.carrier_id = f.carrier_id")
+  })
+})
+
+describe("recentFacilityStops", () => {
+  it("scopes the stop-history join by carrier_id, not facility_id alone", async () => {
+    await recentFacilityStops(CARRIER, FACILITY)
+    const [sql, params] = queryMock.mock.calls[0]
+    expect(String(sql)).toContain("l.id = s.load_id AND l.carrier_id = s.carrier_id")
+    expect(String(sql)).toContain("s.facility_id = $1 AND s.carrier_id = $2")
+    expect(params).toEqual([FACILITY, CARRIER, 10])
   })
 })

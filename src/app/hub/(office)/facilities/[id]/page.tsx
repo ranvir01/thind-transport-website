@@ -3,10 +3,9 @@ import { notFound } from "next/navigation"
 import { Clock, MapPin, Warehouse } from "lucide-react"
 import { requireOfficeUser } from "@/lib/hub/session"
 import {
-  detentionRisk, formatDwell, getFacility, listFacilityNotes,
+  detentionRisk, formatDwell, getFacility, listFacilityNotes, recentFacilityStops,
 } from "@/lib/hub/facilities"
 import { getCarrierSettings } from "@/lib/hub/settings"
-import { query } from "@/lib/hub/db"
 import { PageHeader, BackLink, Panel } from "@/components/hub/ui"
 import { FacilityInfoForm, OfficeNoteComposer } from "@/components/hub/FacilityPanels"
 import { cn } from "@/lib/utils"
@@ -22,16 +21,7 @@ export default async function FacilityDetailPage({ params }: { params: Promise<{
   const [notes, settings, recentStops] = await Promise.all([
     listFacilityNotes(user.carrierId, id),
     getCarrierSettings(user.carrierId),
-    query<{
-      load_id: string; reference: string; type: string; arrived_at: string | null
-      departed_at: string | null; appt_start: string | null
-    }>(
-      `SELECT l.id AS load_id, l.reference, s.type, s.arrived_at, s.departed_at, s.appt_start
-       FROM hub.stops s JOIN hub.loads l ON l.id = s.load_id
-       WHERE s.facility_id = $1 AND l.deleted_at IS NULL
-       ORDER BY COALESCE(s.appt_start, s.arrived_at) DESC NULLS LAST LIMIT 10`,
-      [id]
-    ),
+    recentFacilityStops(user.carrierId, id),
   ])
 
   const freeMinutes = Math.round((settings.detention.freeHours ?? 2) * 60)
