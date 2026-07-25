@@ -1,5 +1,6 @@
 import { query } from "./db"
 import { iftaFilingComplianceEntries } from "./ifta"
+import { mileageStatus } from "./maintenance-due"
 
 export type ComplianceColor = "red" | "amber" | "green"
 
@@ -9,6 +10,9 @@ export interface ComplianceEntry {
   name: string
   kind: string
   due: string | null
+  /** Miles remaining until a mileage-based PM is due (negative = overdue).
+   *  Only set when there's no usable due date and set to null otherwise. */
+  dueMiles?: number | null
   color: ComplianceColor
   href: string
   manualItemId?: string
@@ -20,6 +24,34 @@ function colorFor(due: string | null, now: Date): ComplianceColor {
   if (dueDate < now) return "red"
   if (dueDate.getTime() - now.getTime() < 30 * 86400000) return "amber"
   return "green"
+}
+
+const COLOR_SEVERITY: Record<ComplianceColor, number> = { red: 0, amber: 1, green: 2 }
+
+/** More urgent of the two colors (nulls are "no signal", not "fine"). */
+function worseColor(a: ComplianceColor | null, b: ComplianceColor | null): ComplianceColor | null {
+  if (a && b) return COLOR_SEVERITY[a] <= COLOR_SEVERITY[b] ? a : b
+  return a ?? b
+}
+
+/**
+ * Best-known current odometer per truck: the highest reading recorded across
+ * telematics pings, work orders, and DVIRs (a real odometer never rolls back,
+ * so MAX is a safe fleet-wide "latest" without needing per-source timestamps).
+ */
+export async function truckOdometers(carrierId: string): Promise<Map<string, number>> {
+  const rows = await query<{ truck_id: string; odometer: string }>(
+    `SELECT truck_id, MAX(odometer) AS odometer FROM (
+       SELECT truck_id, odometer FROM hub.position_pings WHERE carrier_id = $1 AND odometer IS NOT NULL
+       UNION ALL
+       SELECT truck_id, odometer FROM hub.maintenance_records WHERE carrier_id = $1 AND odometer IS NOT NULL
+       UNION ALL
+       SELECT truck_id, odometer FROM hub.dvirs WHERE carrier_id = $1 AND odometer IS NOT NULL
+     ) readings
+     GROUP BY truck_id`,
+    [carrierId]
+  )
+  return new Map(rows.map((r) => [r.truck_id, Number(r.odometer)]))
 }
 
 /**
@@ -81,9 +113,15 @@ export async function complianceEntries(carrierId: string): Promise<ComplianceEn
     entries.push({ entity: "trailer", entityId: trailer.id, name, kind: "Annual inspection (396.17)", due: trailer.inspection_due, color: colorFor(trailer.inspection_due, now), href })
   }
 
-  // Maintenance schedules due by date
-  const maintenance = await query<{ id: string; truck_id: string; unit_number: string; name: string; due_on: string | null }>(
-    `SELECT ms.id, ms.truck_id, t.unit_number, ms.name,
+  // Maintenance schedules due by date and/or mileage, whichever is more urgent
+  // — most real PM (oil changes, tire rotations) is "X months or Y miles,
+  // whichever comes first," and a mileage-only schedule used to have no due_on
+  // at all, so it sat amber forever regardless of how overdue it actually was.
+  const maintenance = await query<{
+    id: string; truck_id: string; unit_number: string; name: string
+    due_on: string | null; interval_miles: number | null; last_done_odometer: string | null
+  }>(
+    `SELECT ms.id, ms.truck_id, t.unit_number, ms.name, ms.interval_miles, ms.last_done_odometer,
        CASE WHEN ms.interval_days IS NOT NULL AND ms.last_done_on IS NOT NULL
          THEN (ms.last_done_on + (ms.interval_days || ' days')::interval)::date::text
          ELSE NULL END AS due_on
@@ -91,10 +129,22 @@ export async function complianceEntries(carrierId: string): Promise<ComplianceEn
      WHERE ms.carrier_id = $1 AND t.deleted_at IS NULL AND t.status <> 'retired'`,
     [carrierId]
   )
+  const odometerByTruck = maintenance.length > 0 ? await truckOdometers(carrierId) : new Map<string, number>()
   for (const schedule of maintenance) {
+    const dateColor = schedule.due_on ? colorFor(schedule.due_on, now) : null
+    const { color: mileageColor, milesRemaining } = mileageStatus(
+      schedule.interval_miles,
+      odometerByTruck.get(schedule.truck_id),
+      schedule.last_done_odometer != null ? Number(schedule.last_done_odometer) : null
+    )
+    const color = worseColor(dateColor, mileageColor) ?? "amber"
+    const dateGoverns = dateColor !== null && (mileageColor === null || COLOR_SEVERITY[dateColor] <= COLOR_SEVERITY[mileageColor])
     entries.push({
       entity: "truck", entityId: schedule.truck_id, name: `Truck #${schedule.unit_number}`,
-      kind: `PM: ${schedule.name}`, due: schedule.due_on, color: colorFor(schedule.due_on, now),
+      kind: `PM: ${schedule.name}`,
+      due: dateGoverns ? schedule.due_on : null,
+      dueMiles: !dateGoverns && mileageColor !== null ? milesRemaining : null,
+      color,
       href: `/hub/fleet/trucks/${schedule.truck_id}`,
     })
   }

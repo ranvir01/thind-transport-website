@@ -1,6 +1,6 @@
 import Link from "next/link"
 import { FileSpreadsheet } from "lucide-react"
-import { complianceEntries, summarize } from "@/lib/hub/compliance"
+import { complianceEntries, summarize, type ComplianceColor } from "@/lib/hub/compliance"
 import {
   WALL_ENTITIES,
   WALL_ENTITY_LABELS,
@@ -10,7 +10,7 @@ import {
   wallHref,
 } from "./wall-filter"
 import { requirePermissionPage } from "@/lib/hub/session"
-import { Panel, PageHeader, ExpiryPill, Pill } from "@/components/hub/ui"
+import { Panel, PageHeader, ExpiryPill, Pill, type PillTone } from "@/components/hub/ui"
 import { AddComplianceItemForm, ResolveItemButton } from "@/components/hub/ComplianceForms"
 import { cn } from "@/lib/utils"
 
@@ -22,6 +22,12 @@ const COLOR_DOT: Record<string, string> = {
   red: "bg-bad",
   amber: "bg-warn",
   green: "bg-ok",
+}
+
+const COLOR_TONE: Record<ComplianceColor, PillTone> = {
+  red: "bad",
+  amber: "warn",
+  green: "ok",
 }
 
 // Full class strings (never interpolated) so Tailwind sees them.
@@ -156,7 +162,7 @@ export default async function CompliancePage({
               )}
               <p className="text-body-xs text-fg-3 uppercase">{entry.entity}</p>
             </div>
-            <ExpiryPill date={entry.due} />
+            <ExpiryPill date={entry.due} miles={entry.dueMiles} tone={COLOR_TONE[entry.color]} />
             {entry.manualItemId ? <ResolveItemButton id={entry.manualItemId} /> : null}
           </div>
         ))}

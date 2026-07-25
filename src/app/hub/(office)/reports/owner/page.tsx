@@ -7,12 +7,18 @@ import {
   type RevenuePeriod, type AgingTrendPeriod, type SettlementLiability, type FuelSpendSummary, type LaneLeaderboardRow,
 } from "@/lib/hub/reports"
 import { computeFleetKpis } from "@/lib/hub/kpi"
-import { complianceEntries, summarize, type ComplianceEntry } from "@/lib/hub/compliance"
+import { complianceEntries, summarize, type ComplianceColor, type ComplianceEntry } from "@/lib/hub/compliance"
 import { requirePermissionPage } from "@/lib/hub/session"
 import { fmtCents } from "@/lib/hub/types"
-import { Panel, PageHeader, ExpiryPill } from "@/components/hub/ui"
+import { Panel, PageHeader, ExpiryPill, type PillTone } from "@/components/hub/ui"
 
 export const dynamic = "force-dynamic"
+
+const COLOR_TONE: Record<ComplianceColor, PillTone> = {
+  red: "bad",
+  amber: "warn",
+  green: "ok",
+}
 
 function RevenueBars({ periods, labelFmt }: { periods: RevenuePeriod[]; labelFmt: (iso: string) => string }) {
   const max = Math.max(1, ...periods.map((p) => p.revenueCents))
@@ -293,7 +299,7 @@ function ComplianceRedFlagsPanel({ entries }: { entries: ComplianceEntry[] }) {
                   </Link>
                 )}
               </div>
-              <ExpiryPill date={entry.due} />
+              <ExpiryPill date={entry.due} miles={entry.dueMiles} tone={COLOR_TONE[entry.color]} />
             </div>
           ))}
         </div>

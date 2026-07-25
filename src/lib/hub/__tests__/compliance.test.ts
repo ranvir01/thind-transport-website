@@ -15,6 +15,7 @@ function mockRowsBySql(rows: {
   trucks?: unknown[]
   trailers?: unknown[]
   maintenance?: unknown[]
+  odometers?: { truck_id: string; odometer: string }[]
   manual?: unknown[]
   iftaReports?: { quarter: string; status: string }[]
 }) {
@@ -22,6 +23,10 @@ function mockRowsBySql(rows: {
     const s = String(sql)
     if (s.includes("FROM hub.drivers")) return rows.drivers ?? []
     if (s.includes("FROM hub.maintenance_schedules")) return rows.maintenance ?? []
+    // The odometer union query never mentions hub.trucks/hub.drivers, only
+    // position_pings/maintenance_records/dvirs — check it before the plain
+    // hub.trucks branch below.
+    if (s.includes("hub.position_pings") && s.includes("hub.dvirs")) return rows.odometers ?? []
     if (s.includes("FROM hub.trucks")) return rows.trucks ?? []
     if (s.includes("FROM hub.trailers")) return rows.trailers ?? []
     if (s.includes("FROM hub.compliance_items")) return rows.manual ?? []
@@ -132,6 +137,106 @@ describe("complianceEntries trailers", () => {
     mockRowsBySql({})
     const entries = await complianceEntries(CARRIER)
     expect(entries.filter((e) => e.entity === "trailer")).toHaveLength(0)
+  })
+})
+
+describe("complianceEntries mileage-based maintenance", () => {
+  beforeEach(() => {
+    queryMock.mockReset()
+    queryOneMock.mockReset()
+  })
+
+  it("flags a mileage-only PM schedule red once the truck has passed the interval (previously stuck amber forever)", async () => {
+    mockRowsBySql({
+      maintenance: [
+        { id: "s1", truck_id: "t1", unit_number: "102", name: "Tire rotation", due_on: null, interval_miles: 20000, last_done_odometer: "100000" },
+      ],
+      odometers: [{ truck_id: "t1", odometer: "130160" }],
+    })
+    const entries = await complianceEntries(CARRIER)
+    const pm = entries.find((e) => e.kind === "PM: Tire rotation")
+    expect(pm?.color).toBe("red")
+    expect(pm?.due).toBeNull()
+    expect(pm?.dueMiles).toBe(-10160)
+  })
+
+  it("flags a mileage-only PM schedule amber inside the amber window", async () => {
+    mockRowsBySql({
+      maintenance: [
+        { id: "s1", truck_id: "t1", unit_number: "102", name: "Tire rotation", due_on: null, interval_miles: 20000, last_done_odometer: "100000" },
+      ],
+      odometers: [{ truck_id: "t1", odometer: "119800" }],
+    })
+    const entries = await complianceEntries(CARRIER)
+    const pm = entries.find((e) => e.kind === "PM: Tire rotation")
+    expect(pm?.color).toBe("amber")
+    expect(pm?.dueMiles).toBe(200)
+  })
+
+  it("flags a mileage-only PM schedule green with plenty of margin", async () => {
+    mockRowsBySql({
+      maintenance: [
+        { id: "s1", truck_id: "t1", unit_number: "102", name: "Tire rotation", due_on: null, interval_miles: 20000, last_done_odometer: "100000" },
+      ],
+      odometers: [{ truck_id: "t1", odometer: "105000" }],
+    })
+    const entries = await complianceEntries(CARRIER)
+    const pm = entries.find((e) => e.kind === "PM: Tire rotation")
+    expect(pm?.color).toBe("green")
+    expect(pm?.dueMiles).toBe(15000)
+  })
+
+  it("takes whichever of date or mileage is more urgent (mileage overdue, date far out)", async () => {
+    const far = new Date(Date.now() + 90 * 86400000).toISOString().slice(0, 10)
+    mockRowsBySql({
+      maintenance: [
+        { id: "s1", truck_id: "t1", unit_number: "102", name: "PM service", due_on: far, interval_miles: 20000, last_done_odometer: "100000" },
+      ],
+      odometers: [{ truck_id: "t1", odometer: "130160" }],
+    })
+    const entries = await complianceEntries(CARRIER)
+    const pm = entries.find((e) => e.kind === "PM: PM service")
+    expect(pm?.color).toBe("red")
+    expect(pm?.due).toBeNull()
+    expect(pm?.dueMiles).toBe(-10160)
+  })
+
+  it("takes whichever of date or mileage is more urgent (date due soon, mileage far out)", async () => {
+    const soon = new Date(Date.now() + 10 * 86400000).toISOString().slice(0, 10)
+    mockRowsBySql({
+      maintenance: [
+        { id: "s1", truck_id: "t1", unit_number: "102", name: "PM service", due_on: soon, interval_miles: 20000, last_done_odometer: "100000" },
+      ],
+      odometers: [{ truck_id: "t1", odometer: "105000" }],
+    })
+    const entries = await complianceEntries(CARRIER)
+    const pm = entries.find((e) => e.kind === "PM: PM service")
+    expect(pm?.color).toBe("amber")
+    expect(pm?.due).toBe(soon)
+    expect(pm?.dueMiles).toBeNull()
+  })
+
+  it("falls back to amber (needs data) when neither a date nor an odometer reading is available", async () => {
+    mockRowsBySql({
+      maintenance: [
+        { id: "s1", truck_id: "t1", unit_number: "102", name: "New PM", due_on: null, interval_miles: 20000, last_done_odometer: "100000" },
+      ],
+      odometers: [],
+    })
+    const entries = await complianceEntries(CARRIER)
+    const pm = entries.find((e) => e.kind === "PM: New PM")
+    expect(pm?.color).toBe("amber")
+    expect(pm?.due).toBeNull()
+    expect(pm?.dueMiles).toBeNull()
+  })
+
+  it("does not query for odometers at all when the carrier has no maintenance schedules", async () => {
+    mockRowsBySql({})
+    await complianceEntries(CARRIER)
+    const odometerCall = queryMock.mock.calls.find(
+      ([sql]) => String(sql).includes("hub.position_pings") && String(sql).includes("hub.dvirs")
+    )
+    expect(odometerCall).toBeUndefined()
   })
 })
 
