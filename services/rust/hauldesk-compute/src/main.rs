@@ -674,4 +674,31 @@ mod tests {
         assert_eq!(status, 413);
         assert!(resp_body.contains("payload too large"));
     }
+
+    /// `process`'s `read_to_string(&mut body)` (main.rs) has an `is_err()` arm
+    /// that no prior test reached: this sidecar has no auth of its own beyond
+    /// the shared secret, so a client (or a broken proxy) can send a POST body
+    /// that is not valid UTF-8, and `read_to_string` is exactly what rejects
+    /// that before it ever reaches `serde_json::from_str`. `TestRequest::with_body`
+    /// only accepts `&'static str`, which can't literally hold invalid UTF-8, so
+    /// this reaches for the same escape hatch a real non-UTF-8 client's bytes
+    /// would exercise: a byte sequence that is not valid UTF-8, viewed as `&str`
+    /// only to hand tiny_http the raw bytes, never read as text.
+    #[test]
+    fn process_400s_on_body_that_is_not_valid_utf8() {
+        // Built at runtime (not a `const`/literal) so rustc can't const-eval the
+        // bytes and flag the unsafe call itself as provably-UB at compile time —
+        // a real non-UTF-8 client body is exactly this: bytes rustc never sees
+        // until the process is already running.
+        let invalid_utf8: Vec<u8> = vec![0xFF, 0xFE, 0xFD];
+        let leaked: &'static [u8] = Box::leak(invalid_utf8.into_boxed_slice());
+        let body: &'static str = unsafe { std::str::from_utf8_unchecked(leaked) };
+        let request = TestRequest::new()
+            .with_method(Method::Post)
+            .with_path("/ifta/summary")
+            .with_body(body);
+        let (status, resp_body) = run_request(request, "");
+        assert_eq!(status, 400);
+        assert!(resp_body.contains("bad request"));
+    }
 }
