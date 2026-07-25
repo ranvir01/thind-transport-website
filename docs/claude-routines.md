@@ -900,3 +900,52 @@ Backlog:
 - Carried, unchanged: npm audit's high-severity findings (owner-approval-gated semver-major bump); Rust
   sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision); IFTA due-date roll not
   accounting for legal holidays (documented scope decision).
+
+## IFTA generate + dispatch board E2E re-sweep, no code fix this cycle — 2026-07-25 ~04:47 UTC (verify-and-build cycle)
+
+Integrator and `main` matched exactly at `86f5df38` (0 drift) — `npm ci` + `npm run build` + `npx vitest
+run` (188 files/1585 tests, 7 skipped) + `npm run lint` + `npm run test:sidecars` (29 Rust tests + Go
+vet/test, clippy clean) all green before touching anything else.
+
+`agent:branches` shows 111 pending `claude/*` branches, all from the same stale pile prior cycles have
+already worked through. Spot-checked three candidates that read like real fixes rather than status
+reports — `claude/compassionate-bell-8r88rj` ("guard `createShareLink` against a foreign loadId"),
+`claude/pensive-allen-smw0re` ("tenancy-guard expense/advance cross-table refs"), and
+`claude/stoic-mccarthy-b5gw3k` ("guard IFTA recompute: confirm before resetting a reviewed/filed
+quarter") — against current HEAD: all three are already present (`sharelinks.ts`'s `createShareLink`
+calls `assertCarrierRefs` before insert; `expenses-tenancy.test.ts` covers the cross-table guard;
+`ifta.ts`'s recompute path already carries the reviewed/filed-reset-requires-confirmation comment and
+logic). Confirmed-superseded, none merged, per AGENTS.md's keep-HEAD-superset rule. These branches'
+merge-bases are all far behind HEAD (pre-dates several refactors, e.g. still reference the old `asError`
+helper renamed to `actionError`) — same unrelated-history-fork pattern documented in the 2026-07-23 cycle.
+
+No absorbable branch and no owner-actionable backlog item, so per step 6 ran the named-workflow E2E sweep
+instead of forcing a guess. Local Postgres had no `hubapp` role/`hubdb` database (fresh container, pitfall
+#9) — created both, `.env.local` didn't exist either and was generated fresh from `.env.example` with new
+`NEXTAUTH_SECRET`/`CRON_SECRET`/`CREDENTIALS_KEY`. `npm run db:migrate` (21 migrations) + `npm run
+seed:demo`, `npm run build && npm run start`. Picked the two workflows with the most recent churn —
+**IFTA generate** (multiple lane branches have been fighting over the weekend-roll due-date logic;
+`d71d657d`'s change was already confirmed a duplicate of HEAD's `24d03ca0` in an earlier cycle, worth
+re-verifying the whole compute→draft→reviewed→filed path stayed correct) and **dispatch board**
+(production-breaking-priority daily workflow, not directly swept since 2026-07-23). Both via
+`scripts/e2e-ifta-smoke.mjs` and `scripts/e2e-dispatch-smoke.mjs`
+(`PUPPETEER_EXECUTABLE_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome` per pitfall #8): IFTA —
+compute→draft→reviewed→filed, worksheet/CSV jurisdiction-row-sum-equals-header-net-tax reconciliation
+(11864 vs 11864), partial-current-quarter compute, all green; dispatch — legal-load advance, server-side
+refusal on an expired-medical-card load, cancel-confirm flow, accountant's `loads:read`-only refusal all
+enforced server-side, board state correct after each. **Both green, 0 defects, 0 console errors.**
+
+No code fix was available to ship — draining the unchanged integrator tip would just replay `86f5df38`
+with a fresh `.drain-stamp`, so this cycle's only change is this log entry (committed straight to the
+integrator branch, no drain needed since main already matches).
+
+Backlog:
+- `lane-tests` (1443 unpicked) and `lane-compliance` (1543 unpicked) remain the two largest pending
+  branches by a wide margin; meta-governor prune pass remains overdue across many cycles now — 111
+  pending branches this cycle, essentially flat vs. recent cycles.
+- Three more branches confirmed fully superseded-by-HEAD this cycle (safe deletion candidates for the
+  meta-governor pass, not re-triage targets): `claude/compassionate-bell-8r88rj`,
+  `claude/pensive-allen-smw0re`, `claude/stoic-mccarthy-b5gw3k`.
+- Carried, unchanged: npm audit's high-severity findings (owner-approval-gated semver-major bump); Rust
+  sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision); IFTA due-date roll not
+  accounting for legal holidays (documented scope decision).
