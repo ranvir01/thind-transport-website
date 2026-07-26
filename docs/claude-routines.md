@@ -1261,3 +1261,48 @@ Backlog:
 - The ~150 remaining pending `claude/*` branches (many `inspiring-sagan-*`/`stoic-mccarthy-*`
   duplicates of the same QA-drive/NotificationsBell-race fix) still need the meta-governor prune
   pass flagged on 2026-07-22 — most sampled so far are superseded, not unabsorbed value.
+
+## QA rig drive — 2026-07-26 ~19:30 UTC (owner/dispatcher/driver, independent second pass)
+
+Charter (docs/agent-improvement-loop.md §5): no feature work — stand up the local rig, drive
+owner/dispatcher/driver flows, probe thindtransport.com read-only, fix only outright regressions
+from the last 3h of commits.
+
+Fresh rig from scratch (Postgres 16 role/db created, 22 migrations, `seed:demo`), clean
+`npm run build` and `npx vitest run` (222 files / 1961 tests green) on `main@c5216d1`. Ran the full
+52-script Puppeteer battery (`node scripts/e2e-run-all.mjs`) as owner, dispatcher, and driver:
+50/52 passed. The 2 failures are pre-existing false test-expectations, not product bugs —
+`e2e-public-smoke` still probes the deleted `/testimonials` route, and `e2e-sweep`'s owner-reports
+anchor (`"the operational view"`) only matches one of two subtitle branches on `/hub/reports`,
+and the seeded tenant's driver-pay data hits the other branch. Confirmed a clean one-line fix for
+both already exists, verified, on unmerged branch `claude/practical-franklin-lcfbnd` (`b5f5be3d`)
+— an independent QA-drive session that forked this same `main@c5216d1` a few minutes earlier and
+found the identical two failures. Per AGENTS.md's duplicate-work rule, not re-fixing here;
+integrator should prioritize draining `b5f5be3d` over any fresh copy.
+
+Reviewed the last-3h commit window (`66c79f8`..`c5216d1`: toll-reconciliation dashboard,
+Truckstop SOAP-tag tolerance, planner DST day-column fix, settlementLiability coverage, plus
+lane-office/docs/roadmap/integrations integrator merges) against AGENTS.md's standing rules —
+tenancy guarded on both sides throughout (`assignTollToTruck`, `createLoad`/`updateLoad`), integer
+cents, no forced-dark or gold/navy/steel violations in the touched files. No regressions, nothing
+to fix forward.
+
+Production probe: direct HTTPS to thindtransport.com is egress-blocked from this sandbox (403 on
+CONNECT, per docs/agent-improvement-loop.md §3b) — used Vercel MCP instead. Production `READY`
+alias is on commit `970ab05` (one integrator drain behind `main`'s current tip, `c5216d1` — expected,
+deploy runs at :59 UTC and hadn't reached this window yet at probe time). `get_runtime_errors` (24h)
+shows nothing new: the long-standing pg SSL-mode deprecation warning, and the single
+`cron:compliance-scan` Gmail `BadCredentials` rejection at 14:24 UTC already on record (count=1,
+not recurring since).
+
+Backlog:
+- Drain `claude/practical-franklin-lcfbnd` (`b5f5be3d`) — the verified one-line fix for both
+  `e2e-public-smoke`'s stale `/testimonials` entry and `e2e-sweep`'s reports-subtitle anchor.
+- Owner-gated, carried across many cycles: rotate production `SMTP_USER`/`SMTP_PASS` (Gmail app
+  password) in Vercel — `cron:compliance-scan` hit `BadCredentials` once on 2026-07-26; the same
+  shared SMTP transport also carries driver-application, password-reset, and portal-confirmation
+  email.
+- `claude/lane-compliance` (~1550+ unpicked commits) still needs the meta-governor prune pass
+  flagged repeatedly in this doc; do NOT plain-merge it.
+- npm audit high-severity findings remain owner-approval-gated (semver-major bump); not
+  re-triaged this cycle.
