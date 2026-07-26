@@ -278,3 +278,142 @@ describe("draftSettlements — payableReferralBonuses + latestScorecardScore (TE
     )
   })
 })
+
+describe("draftSettlements — multiple drivers in one call, incl. percentage-pay rounding (TEST_GAPS.md #1 remaining gap)", () => {
+  const DRIVER_A = "88888888-8888-8888-8888-888888888888"
+  const DRIVER_B = "99999999-9999-9999-9999-999999999999"
+  const LOAD_A = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
+  const LOAD_B = "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"
+
+  const driverA: Driver = {
+    ...driver,
+    id: DRIVER_A,
+    first_name: "Amrit",
+    last_name: "PerMile",
+    pay_type: "per_mile",
+    pay_rate: "1.00",
+  }
+  // 65% owner-operator: linehaul_cents chosen so basisPoints math lands on a
+  // .5-cent boundary — a naive Math.floor/toFixed(0) truncation instead of
+  // roundHalfAwayFromZero would silently pay this driver one cent short
+  // every single load.
+  const driverB: Driver = {
+    ...driver,
+    id: DRIVER_B,
+    first_name: "Baljit",
+    last_name: "Percentage",
+    pay_type: "percentage",
+    pay_rate: "0.65",
+  }
+
+  function wireMultiDriverMocks() {
+    const loadsByDriver: Record<string, { settlement_id: string | null }> = {
+      [DRIVER_A]: { settlement_id: null },
+      [DRIVER_B]: { settlement_id: null },
+    }
+    const settlements: { id: string; driver_id: string }[] = []
+    let nextId = 1
+    const calls: { sql: string; params: unknown[] }[] = []
+
+    queryMock.mockImplementation(async (sql: string, params: unknown[] = []) => {
+      const s = String(sql)
+      if (s.includes("FROM hub.drivers WHERE carrier_id")) return [driverA, driverB]
+      if (s.includes("FROM hub.loads")) {
+        const [, driverId] = params as [string, string]
+        if (driverId === DRIVER_A && loadsByDriver[DRIVER_A].settlement_id === null) {
+          return [{
+            id: LOAD_A, reference: "THD-A1", linehaul_cents: 0, fuel_surcharge_cents: 0,
+            accessorials: [], loaded_miles: 500, deadhead_miles: 0, stops_count: 0,
+          }]
+        }
+        if (driverId === DRIVER_B && loadsByDriver[DRIVER_B].settlement_id === null) {
+          return [{
+            id: LOAD_B, reference: "THD-B1", linehaul_cents: 100003, fuel_surcharge_cents: 5000,
+            accessorials: [], loaded_miles: 0, deadhead_miles: 0, stops_count: 0,
+          }]
+        }
+        return []
+      }
+      if (s.includes("FROM hub.expenses")) return []
+      if (s.includes("FROM hub.advances")) return []
+      if (s.includes("FROM hub.referrals")) return []
+      return []
+    })
+
+    queryOneMock.mockImplementation(async (sql: string, params: unknown[] = []) => {
+      const s = String(sql)
+      if (s.includes("to_regclass")) return { reg: null }
+      if (s.includes("FROM hub.pay_rules")) return null
+      if (s.includes("FROM hub.settlements WHERE carrier_id") && s.includes("period_start")) return null
+      void params
+      return null
+    })
+
+    hubDbMock.mockReturnValue({
+      connect: vi.fn(async () => ({
+        query: vi.fn(async (sql: string, params: unknown[] = []) => {
+          calls.push({ sql: String(sql), params })
+          const s = String(sql)
+          if (/^\s*BEGIN/.test(s) || /^\s*COMMIT/.test(s) || /^\s*ROLLBACK/.test(s)) return { rows: [] }
+          if (s.includes("INSERT INTO hub.settlements")) {
+            const id = `settlement-${nextId++}`
+            const [, driverId] = params as [string, string]
+            settlements.push({ id, driver_id: driverId })
+            return { rows: [{ id }] }
+          }
+          if (s.includes("INSERT INTO hub.settlement_lines")) return { rows: [{ id: `line-${nextId++}` }] }
+          if (s.includes("UPDATE hub.loads SET settlement_id")) {
+            const [settlementId, loadIds] = params as [string, string[], string]
+            for (const id of loadIds) {
+              if (id === LOAD_A) loadsByDriver[DRIVER_A].settlement_id = settlementId
+              if (id === LOAD_B) loadsByDriver[DRIVER_B].settlement_id = settlementId
+            }
+            return { rows: [] }
+          }
+          return { rows: [] }
+        }),
+        release: vi.fn(),
+      })),
+    } as unknown as ReturnType<typeof hubDb>)
+
+    return { calls, settlements, loadsByDriver }
+  }
+
+  beforeEach(() => {
+    queryMock.mockReset()
+    queryOneMock.mockReset()
+    hubDbMock.mockReset()
+  })
+
+  it("drafts a correct, isolated settlement per driver — per-mile and percentage pay in the same run", async () => {
+    const { calls, settlements, loadsByDriver } = wireMultiDriverMocks()
+
+    const result = await draftSettlements(CARRIER, "2026-06-01", "2026-06-07", ACTOR)
+    expect(result).toEqual({ created: 2, skipped: 0 })
+    expect(settlements).toHaveLength(2)
+
+    const insertSettlements = calls.filter((c) => c.sql.includes("INSERT INTO hub.settlements"))
+    expect(insertSettlements).toHaveLength(2)
+
+    const settlementA = insertSettlements.find((c) => c.params[1] === DRIVER_A)
+    // 500 loaded mi × $1.00/mi, no deductions/reimbursements.
+    expect(settlementA!.params).toEqual([CARRIER, DRIVER_A, "2026-06-01", "2026-06-07", 50000, 0, 50000])
+
+    const settlementB = insertSettlements.find((c) => c.params[1] === DRIVER_B)
+    // percent_linehaul: 100003 cents × 65% = 65001.95 -> roundHalfAwayFromZero -> 65002,
+    // plus fsc_passthrough 100% of 5000 = 5000. Gross 70002, no deductions.
+    expect(settlementB!.params).toEqual([CARRIER, DRIVER_B, "2026-06-01", "2026-06-07", 70002, 0, 70002])
+
+    // Each driver's load is stamped into THAT driver's own settlement, never the other's.
+    const idA = settlements.find((s) => s.driver_id === DRIVER_A)!.id
+    const idB = settlements.find((s) => s.driver_id === DRIVER_B)!.id
+    expect(idA).not.toBe(idB)
+    expect(loadsByDriver[DRIVER_A].settlement_id).toBe(idA)
+    expect(loadsByDriver[DRIVER_B].settlement_id).toBe(idB)
+
+    const updateLoadsCalls = calls.filter((c) => c.sql.includes("UPDATE hub.loads SET settlement_id"))
+    expect(updateLoadsCalls).toHaveLength(2)
+    expect(updateLoadsCalls.find((c) => c.params[0] === idA)!.params).toEqual([idA, [LOAD_A], CARRIER])
+    expect(updateLoadsCalls.find((c) => c.params[0] === idB)!.params).toEqual([idB, [LOAD_B], CARRIER])
+  })
+})

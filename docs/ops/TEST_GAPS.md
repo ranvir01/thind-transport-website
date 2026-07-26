@@ -20,6 +20,17 @@ Where LoadOff's 1,592 green tests are not looking, ranked by dollars at risk per
 >   only the new tests — failed, then restored). This closes the two 0%-covered helper functions but
 >   NOT the rest of row 1 below (multi-driver runs, percentage-pay rounding, `payableReferralBonuses`'
 >   `deleted_at`/multi-row cases) — row 1 stays open, scope narrowed.
+>   **Update, verify-and-build cycle, 2026-07-26 ~20:45 UTC:** closed two of the three remaining sub-gaps.
+>   Added a case that runs `draftSettlements` for **two drivers in the same call** — one `per_mile`, one
+>   `percentage` — and asserts each gets its own isolated settlement (correct driver-scoped totals, and
+>   each driver's `UPDATE hub.loads SET settlement_id` only ever touches that driver's own load, never
+>   the other's). The percentage driver's `linehaul_cents` (100003 at 65%) was chosen so
+>   `percent_linehaul`'s basis-point math lands on a `.5`-cent boundary (65001.95¢); confirmed the test
+>   fails (`70001` vs expected `70002`) if `roundHalfAwayFromZero` at `pay-rules.ts:132` is swapped for
+>   `Math.floor` — the exact one-cent-per-load underpayment a truncation regression would cause, silent
+>   at any scale. Still open: `payableReferralBonuses`' multi-row and `deleted_at`-applicant cases
+>   (`settlements.ts:56-62`) — a driver with two payable referrals, or one whose referred applicant was
+>   soft-deleted, both currently untested.
 > - **#2** `runOverdueReminders` day-gate ladder — `overdue-reminder-ladder.test.ts` (landed in
 >   `5c158d72`) exercises the exact rung-skip/double-send/22-day-drift cases this row describes.
 > - **#3** `money.ts` `requirePermission` wiring — `money-actions-permissions.test.ts` (landed in
