@@ -6,6 +6,44 @@ Where LoadOff's 1,592 green tests are not looking, ranked by dollars at risk per
 > against the current tree instead of trusting prior "#2/#3 remain open" backlog notes, which had gone
 > stale. **Resolved, with evidence:**
 > - **#1** `draftSettlements` settlement_id stamp — `draft-settlements-loads.test.ts` exists and passes.
+>   **Update, verify-and-build cycle, 2026-07-26 ~19:45 UTC:** the row below still listed
+>   `payableReferralBonuses@48`/`latestScorecardScore@71` at 0% — neither had a single test import
+>   (`grep -rl` across `__tests__/` came back empty for both names). Both are unexported, reachable only
+>   through `draftSettlements`, and the existing suite only drove the "table doesn't exist yet"
+>   early-return branch (`to_regclass(...)` → null) for each — the "table exists, has a payable
+>   row/scored month" branch, which is the one that actually feeds a referral bonus or scorecard bonus
+>   into a settlement, was never exercised. Added three cases to `draft-settlements-loads.test.ts`: a
+>   payable referral row producing its own `earning`/`referral` settlement line with the right label and
+>   totals; an empty (but existing) referrals table producing no line; and a custom `scorecard_bonus`
+>   rule set with a scored month matching the higher of two tiers. All three verified to actually catch
+>   a regression (temporarily broke the amount mapping in both helpers, confirmed the new tests — and
+>   only the new tests — failed, then restored). This closes the two 0%-covered helper functions but
+>   NOT the rest of row 1 below (multi-driver runs, percentage-pay rounding, `payableReferralBonuses`'
+>   `deleted_at`/multi-row cases) — row 1 stays open, scope narrowed.
+>   **Update, verify-and-build cycle, 2026-07-26 ~20:45 UTC:** closed two of the three remaining sub-gaps.
+>   Added a case that runs `draftSettlements` for **two drivers in the same call** — one `per_mile`, one
+>   `percentage` — and asserts each gets its own isolated settlement (correct driver-scoped totals, and
+>   each driver's `UPDATE hub.loads SET settlement_id` only ever touches that driver's own load, never
+>   the other's). The percentage driver's `linehaul_cents` (100003 at 65%) was chosen so
+>   `percent_linehaul`'s basis-point math lands on a `.5`-cent boundary (65001.95¢); confirmed the test
+>   fails (`70001` vs expected `70002`) if `roundHalfAwayFromZero` at `pay-rules.ts:132` is swapped for
+>   `Math.floor` — the exact one-cent-per-load underpayment a truncation regression would cause, silent
+>   at any scale. Still open: `payableReferralBonuses`' multi-row and `deleted_at`-applicant cases
+>   (`settlements.ts:56-62`) — a driver with two payable referrals, or one whose referred applicant was
+>   soft-deleted, both currently untested.
+>   **Update, verify-and-build cycle, 2026-07-26 ~21:40 UTC:** closed the multi-row case; corrected the
+>   `deleted_at` half of the note above, which was never checked against the schema. `hub.applicants`
+>   (`migrations/hub/006_recruiting.sql:5-27`) has no `deleted_at` column — applicants are never soft
+>   deleted — and `hub.referrals.applicant_id` is `NOT NULL REFERENCES hub.applicants(id) ON DELETE
+>   CASCADE` (`:68`), so a referral cannot outlive its applicant: hard-deleting the applicant cascades
+>   the referral away with it. The `COALESCE(a.first_name || ' ' || a.last_name, 'driver')` fallback in
+>   `payableReferralBonuses`'s `LEFT JOIN` is therefore unreachable with the current schema — there is no
+>   "applicant missing" state to test. Added the real remaining case instead: two payable referrals for
+>   the same driver in one `draftSettlements` call, asserting two independent `earning`/`referral`
+>   settlement lines (correct label + amount each) and the summed total landing in `gross_cents`.
+>   Verified it fails (falls back to only the first bonus) when `pay-rules.ts`'s referral-bonus loop is
+>   truncated to `.slice(0, 1)`, then restored. **Row 1 is now fully closed** — `draftSettlements` and
+>   both of its helpers have real, regression-catching coverage.
 > - **#2** `runOverdueReminders` day-gate ladder — `overdue-reminder-ladder.test.ts` (landed in
 >   `5c158d72`) exercises the exact rung-skip/double-send/22-day-drift cases this row describes.
 > - **#3** `money.ts` `requirePermission` wiring — `money-actions-permissions.test.ts` (landed in
@@ -142,7 +180,7 @@ Ranked by dollars-per-hour-of-owner-time. "$/incident" states its assumption on 
 
 | # | Path | What breaks | Who eats it | $ / incident (assumption) | Test to write | Min |
 |---|---|---|---|---|---|---:|
-| 1 | `src/lib/hub/settlements.ts:89` `draftSettlements` — **0% covered, lines 102–235** | The entire weekly payroll: load selection, rule-set choice, expense reimbursement, advance deduction, `settlement_id` stamping, `settled_line_id` stamping — one 134-line uncovered block | Drivers (underpaid) or Ranvir (double-paid) | **$11,801/week** = 10 active Thind drivers × $1,180.13 avg net — *assumption: the 2 seeded settlements are representative; n=2*. Same-period re-runs are already guarded (`settlements.ts:122` period-existence check), so the exposure is the **next** period: a missed `UPDATE hub.loads SET settlement_id` at `:218` leaves the loads eligible and re-pays them, **+$11,801** | Fake `pg` client; 1 driver, 1 load, 1 reimbursable expense, 1 outstanding advance. Assert: the `INSERT hub.settlements` params equal the evaluator's `gross/deductions/net`; `UPDATE hub.loads … settlement_id = $1 AND carrier_id = $3` fired with all load ids; `UPDATE hub.expenses SET settled_line_id` fired once per expense line | 45 |
+| 1 | ~~`src/lib/hub/settlements.ts:89` `draftSettlements` — **0% covered, lines 102–235**~~ **CLOSED 2026-07-26**: `draft-settlements-loads.test.ts` covers the `settlement_id`/`settled_line_id` stamps, both period-boundary re-run guards, `payableReferralBonuses` (single, multi-row, empty-table) and `latestScorecardScore`/tier-bonus branches, and a two-driver run mixing `per_mile` + `percentage` pay with `roundHalfAwayFromZero` pinned on a `.5`-cent boundary. No bug found; the whole path is now regression-guarded. | The entire weekly payroll: load selection, rule-set choice, expense reimbursement, advance deduction, `settlement_id` stamping, `settled_line_id` stamping — one 134-line uncovered block | Drivers (underpaid) or Ranvir (double-paid) | Was **$11,801/week** = 10 active Thind drivers × $1,180.13 avg net — now regression-guarded | — | 45 |
 | 2 | `src/lib/hub/invoices.ts:326` `if (![3, 10, 20].includes(daysPast)) continue` inside `runOverdueReminders@310` — **0% covered** | Dunning fires only on days 3, 10 and 20 *exactly*. Miss the cron once and that invoice is never chased again. **Live proof:** `THD-INV-1002`, $2,930, **22 days past due** as of today — already past every gate, will never be emailed | Ranvir (cash) | **$2,930** worst case (that invoice ages to write-off). Carrying cost of the whole $8,920 open AR at +15 days DSO ≈ **$44** at 12% APR — *assumption: 12% cost of capital; the real number is your factoring rate* | Pure-function extract of the schedule, then: an invoice at 4, 11, 21 and 22 days past due must still produce a reminder (`>= 3` with a `sent_log` dedupe, not `=== 3`). Assert `sent_log` is appended so the reminder is idempotent | 30 |
 | 3 | `src/app/hub/_actions/money.ts` — 12 of 14 actions 0% covered; the `requirePermission` string at `:29,:50,:73,:90,:106,:180,:208,:225,:248,:275` is never asserted | `permissions.test.ts:30-36` locks the role matrix, but **nothing checks the wiring**. Change `:208` from `money:approve` to `money:read` and a dispatcher can approve settlements — every test still passes | Ranvir (fraud/error surface) | **$11,801** = one full weekly settlement run approvable by an unauthorised role. Assumption: one bad approve/week, and the n=2 avg-net extrapolation above | One table-driven test per action: mock `requirePermission` to throw, assert `{ok:false, error:"Forbidden"}` **and** that the underlying `settlements`/`invoices` function was never called. 14 rows, one helper | 40 |
 | 4 | `src/lib/hub/expenses.ts:199` `const year = new Date().getFullYear()` in `exportCsv` case `"1099"` (`:198–220`, **0% covered**) | The 1099-NEC export always uses the **current** year. You file 1099-NEC by Jan 31 **for the prior year** — in Jan 2027 this button (`src/app/hub/(office)/money/page.tsx:89`) returns an empty CSV. There is no year parameter anywhere in the route (`exports/[kind]/route.ts:68`) | Ranvir + accountant | **$240–$1,360** in IRS §6721 late/incorrect-filing penalties for 4 owner-operators (*list price, 2025 §6721 schedule: $60 / $130 / $340 per form — verify the current-year tier*), plus a re-do of the filing by hand | Freeze the clock to 2027-01-15, call `exportCsv(carrier, "1099")`, assert the SQL param is `2026` and the filename is `1099-nec-2026.csv`. Add a `?year=` passthrough | 25 |
