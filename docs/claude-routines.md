@@ -1261,3 +1261,62 @@ Backlog:
 - The ~150 remaining pending `claude/*` branches (many `inspiring-sagan-*`/`stoic-mccarthy-*`
   duplicates of the same QA-drive/NotificationsBell-race fix) still need the meta-governor prune
   pass flagged on 2026-07-22 — most sampled so far are superseded, not unabsorbed value.
+
+## QA rig drive on main@c5216d1 — 2026-07-26 ~22:30 UTC (owner/dispatcher/driver, read-only prod probe)
+
+Fifth independent pass today to reach this exact state. Stood up the local rig from scratch
+(fresh container: `service postgresql start`, created the `loadoff`/`loadoff_dev` role+db,
+`npm run setup:canvas-deps` before `npm install`, 22 migrations, `seed:demo`). `npm run build`
+clean, `npx vitest run` 222 files/1961 tests green, `npm run lint` clean — no drift since the
+17:51 UTC drain.
+
+Full 52-script Puppeteer battery (`node scripts/e2e-run-all.mjs`) as owner/dispatcher/driver:
+**50/52 passed.** The same two failures every pass today has hit:
+- `e2e-public-smoke`: `/testimonials` 404s — no live route/link for it (checked
+  `src/app/(marketing)` route tree; the page was removed, the smoke's page list wasn't).
+- `e2e-sweep`'s owner-reports anchor (`"the operational view"`): confirmed by source read
+  (`src/app/hub/(office)/reports/page.tsx:100-104`) the subtitle branches on `hasDriverPay` —
+  one branch says "...this is the operational view", the other (driver-pay-inclusive KPIs,
+  which is what the current seed produces) doesn't contain that phrase at all. Both are valid
+  product copy; the anchor only covers one branch.
+
+Neither is a regression — `main` has not moved since 17:51 UTC (4h39m static), so there is
+nothing in the "last 3h of commits" window to check, and both failures predate this cycle.
+Per AGENTS.md's duplicate-work rule: the fix (drop `/testimonials` from
+`e2e-public-smoke.mjs`; retarget the sweep anchor to `"per-truck p&l, last 92 days"`, which both
+subtitle branches contain) already exists, verified, on unmerged branch
+`claude/practical-franklin-lcfbnd` (`b5f5be3d`, rebased on this exact `main` tip) — not writing
+a fifth copy. That branch has now sat unmerged for ~4h; it is a trivial two-line test-only diff
+with zero product-code risk and should be the integrator's next pick.
+
+Production probe via Vercel MCP (`get_project`/`list_deployments`; direct HTTPS to
+`thindtransport.com` still egress-blocked, exit 56 on both `/` and `/hub/login`): unchanged from
+the 21:32 UTC pass — `live: false`, last `target: "production"` + `READY` deployment is still
+`970ab05` (17:14:55 UTC), zero deployment attempts registered for `main`'s subsequent push to
+`c5216d1` (17:51 UTC) or anything after. Staleness is now ~5h15m (created-timestamp math) and
+climbing but still well short of the ~12.7h an earlier incident took to self-heal, and this is
+the same issue already escalated to the owner (2026-07-23) and re-confirmed without re-paging by
+the 21:32 UTC pass — carrying forward again rather than re-notifying for an unchanged, already
+non-actionable-without-owner-Vercel-access condition. `get_runtime_errors` (24h) shows only two
+known, already-carried items: the `pg` SSL-mode deprecation warning and the single
+`cron:compliance-scan` Gmail `BadCredentials` hit at 14:24 UTC (owner-gated SMTP rotation,
+unchanged).
+
+Tenant isolation, money paths (invoices/settlements/advances/expenses/fuel), IFTA, DVIR/safety,
+recruiting, messaging, tasks, planner, and the driver PWA offline queue all passed clean in this
+pass — no new defects found anywhere in the 50 green scripts.
+
+Backlog:
+- Drain `claude/practical-franklin-lcfbnd` (`b5f5be3d`) — verified, rebased-on-`c5216d1`,
+  two-line test-only fix for both known E2E false-failures above. Fifth confirmation today;
+  next integrator run should prioritize it over fresh QA-drive busywork.
+- Vercel production deploy pipeline: `main@c5216d1` undeployed ~5h15m and counting, zero
+  deployment attempts registered. Needs owner-level Vercel/GitHub-App access to diagnose
+  (Git integration connection / production-branch setting / Ignored Build Step per
+  `docs/agent-improvement-loop.md` §3b) if it doesn't self-resolve; re-page if this crosses
+  well past the ~12.7h prior-incident mark.
+- Owner-gated, carried: rotate production `SMTP_USER`/`SMTP_PASS` (Gmail app password) —
+  `cron:compliance-scan` BadCredentials on 2026-07-26 14:24 UTC.
+- `claude/lane-compliance` (~1550+ unpicked) still needs the meta-governor prune pass; do not
+  plain-merge it.
+- npm audit high-severity findings remain owner-approval-gated.
