@@ -1175,3 +1175,86 @@ Backlog:
 - Carried, unchanged: npm audit's high-severity findings (owner-approval-gated semver-major bump);
   Rust sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision); IFTA due-date roll not
   accounting for legal holidays (documented scope decision).
+
+## QA rig drive on main@e6be22e — 2026-07-26 ~09:30 UTC (§5 charter: no feature work)
+
+Charter (`docs/agent-improvement-loop.md` §5): no feature work — stand up the local rig, drive real
+owner/dispatcher/driver flows with the local Puppeteer/Playwright harness, probe `thindtransport.com`
+read-only, fix only outright regressions from the last 3h of commits.
+
+**Regression review of the last-3h window:** none — no commit has landed on `main` since `e6be22e`
+at 02:49:05 UTC, checked again now (~6.5h gap). Nothing to review or fix-forward.
+
+**Fresh local rig from scratch:** Postgres 16 was down — started it, created the `hubapp` role +
+`hubdb` database (pitfall #9, fresh container). `npm ci` (749 packages), `.env.local` generated from
+`.env.example` with fresh `NEXTAUTH_SECRET`/`CRON_SECRET`/`CREDENTIALS_KEY`. `npm run build` (zero TS
+errors), `npx vitest run` (210 files / 1856 tests green), `npm run lint` (clean), `make test-sidecars`
+(29 Rust tests + Go vet/test, clippy clean) — full verify chain green before touching anything.
+`npm run db:migrate` (22 migrations clean) + `npm run seed:demo`, `npm run build && npm run start`
+against the production build.
+
+**Full `scripts/e2e-battery.mjs` (51 scripts, owner/dispatcher/driver/accountant/broker/shipper/
+tenant-isolation coverage) against the freshly seeded rig: 15/51 PASS.** Read every failing log
+directly rather than trusting the pass/fail line. All 36 failures trace to three already-diagnosed,
+already-fixed-on-unmerged-branches issues, none of them regressions and none touching functional
+correctness (every button/form/tenancy/math assertion in every failing script passed — only each
+script's own trailing check failed):
+
+1. **Analytics/SpeedInsights 404 false-positive** (root cause: `<Analytics />`/`<SpeedInsights />`
+   unconditionally in `src/app/layout.tsx` since `229885a`, 404ing on any self-hosted `next start`
+   since neither ships without Vercel's edge) — accounts for the large majority of the 36 failures.
+   Per `npm run agent:branches` this exact fix exists independently on at least three unmerged
+   branches already (`claude/practical-franklin-nidydl` tip `3a3c51cc`, `claude/practical-franklin-
+   wcljtj` tip `4feeec41`/`e6c11638`, and the branch referenced by `7c47c20b`'s Backlog) — not
+   re-deriving a fourth copy per the loop's own rule (§5: grep `--all --oneline --grep` before
+   fixing a bug found during a QA drive). Also independently confirmed broken in GitHub Actions:
+   the `E2E smoke suite` workflow has been red on every push to `main` since `565f5d65` (~18:11 UTC
+   yesterday, 8 consecutive runs), same failure signature, same root cause — this is a real,
+   server-side defect (not a sandbox/local artifact), just outside this cycle's 3h fix window and
+   already fixed (repeatedly) on branches nobody has drained yet.
+2. **`e2e-sweep.mjs`'s stale "the operational view" assertion on `/hub/reports`** — same
+   already-fixed-on-`wcljtj`-tip-`4feeec41` situation documented in a prior cycle: the seeded demo
+   tenant has settlements, so the `hasDriverPay` branch that string belongs to is unreachable: the
+   correct role-independent text is asserted right above it.
+3. **`/testimonials` 404s** locally/in-CI — `vercel.json` redirects `/testimonials` → `/`, but
+   `vercel.json` redirects are applied by Vercel's edge routing, never by a self-hosted `next start`.
+   Confirmed no `src/app/testimonials` route exists (intentional — the page was retired). Same
+   environment-only gap a prior cycle already filed; not a product defect.
+
+**Production probe — deploy pipeline still stuck, ~12h and counting, not re-alerting.** Direct HTTPS
+to `thindtransport.com` stayed egress-blocked (403 on CONNECT), used Vercel MCP instead. `get_project`
++ `list_deployments`: the `thindtransport.com` alias is `READY` on `3e96ed4` (deployed 2026-07-25
+21:23:56 UTC), but `main` has advanced 6 commits since (through `508e8aa4`'s own "main-only rebuild
+nudge" stamp, specifically pushed by an earlier cycle to force past Vercel's SHA/tree dedupe) — and
+`list_deployments` across the entire window shows **zero** deployment attempts with
+`githubCommitRef: "main"` for any of those 6 SHAs, only build-skipped (`ignoreCommand`, by design)
+preview attempts on non-main branches. `get_runtime_errors` (24h): only the long-standing pg
+SSL-mode deprecation warning, nothing new — production itself is healthy, just frozen on last
+night's commit. This is the same ongoing incident two earlier cycles already escalated today
+(`7c47c20b` "owner notified" ~05:26 UTC, `dea4bc38` "re-paged" ~07:30 UTC per `git log --all`) — per
+the loop's own alert-fatigue convention (see `bc0fde94`'s "already paged, not re-alerting" from a
+prior incident), **not sending a third page** less than 2h after the last one for the identical
+condition; noting it here for the deploy agent instead. Did not attempt a manual out-of-band deploy
+via the Vercel MCP `deploy_to_vercel` tool — that tool provisions a fresh, non-git-linked deployment
+and would fork the project away from its git-integrated config (`vercel.json` `ignoreCommand`/crons/
+redirects), a hard-to-reverse change to shared production infrastructure outside this routine's
+remit. Pushing directly to `main` is also out of scope (deploy-agent only per §5's branch table).
+
+Backlog:
+- **Deploy agent, do this first (same note as `7c47c20b`, now ~12h not ~8h):** production stuck on
+  `3e96ed4`, 6 commits behind, zero Vercel deploy attempts on `main` since 21:23:56 UTC yesterday
+  despite an explicit rebuild-nudge stamp (`508e8aa4`). The SHA/tree-dedupe nudge trick has now been
+  tried and hasn't produced even a queued deployment — this may no longer be a dedupe issue. Needs a
+  human look at the Vercel dashboard's Git integration for this project (production branch setting,
+  webhook delivery log) since no agent tool here can diagnose past the deployments API.
+- **Integrator, drain one of the Analytics/SpeedInsights-404-fix branches before any fresh lane work
+  touches `src/app/layout.tsx` or `scripts/e2e-lib.mjs`:** `claude/practical-franklin-nidydl`
+  (`3a3c51cc`) or `claude/practical-franklin-wcljtj` (`4feeec41`, which also carries the `e2e-sweep`
+  reports-assertion fix) are the freshest candidates — this single fix would turn ~35 of every QA
+  cycle's e2e failures (and 8+ consecutive GitHub Actions CI runs) from red to green with one commit.
+- `claude/lane-compliance` (1552 unpicked commits) remains the largest pending branch; per prior
+  cycles' notes, do NOT plain-merge — meta-governor prune pass still overdue.
+- Carried, unchanged: npm audit's high-severity findings (owner-approval-gated semver-major bump);
+  Rust sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision); IFTA due-date roll not
+  accounting for legal holidays (documented scope decision); `/testimonials` 404 on self-hosted rigs
+  is an environment gap, not a product bug (see above) — no code fix warranted.
