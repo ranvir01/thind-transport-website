@@ -1261,3 +1261,80 @@ Backlog:
 - The ~150 remaining pending `claude/*` branches (many `inspiring-sagan-*`/`stoic-mccarthy-*`
   duplicates of the same QA-drive/NotificationsBell-race fix) still need the meta-governor prune
   pass flagged on 2026-07-22 — most sampled so far are superseded, not unabsorbed value.
+
+## QA rig drive: owner/dispatcher/driver flows, prod SMTP outage flagged — 2026-07-26 ~23:20 UTC
+
+Charter (docs/agent-improvement-loop.md §5): no feature work — stand up the local rig, drive
+real owner/dispatcher/driver flows with Playwright, probe `thindtransport.com` read-only, fix
+only outright regressions from the last 3 hours of commits.
+
+`npm run agent:status` found **CATCH-UP MODE**: integrator (`edaf50b2`) 4 commits ahead of `main`
+(`c5216d1`). Checked out the integrator tip and ran the full verify chain before touching
+anything else: `npm ci`, `npm run build` (clean, all routes compile), `npx vitest run` (222
+files/1957 tests, 9 skipped), `npm run lint` (clean), `npm run test:sidecars` (29 Rust tests via
+`cargo clippy -D warnings` + `cargo test`, Go `go vet`+`go test` clean) — all green, so drained
+immediately per the standing rule (any agent finding catch-up mode with a green integrator
+drains before its own work). Built the stamped `--no-ff` merge (`.drain-stamp`) locally, but lost
+the race pushing it — another agent's drain of the same integrator tip (`242ccfc9`) landed on
+`origin/main` first; confirmed by refetch and discarded the redundant local commit. This is the
+drain-redundancy design working as intended (a race with a live agent is rejected, never
+clobbered), not a defect.
+
+Reviewed the last-3h commit window on `main` (20:12–23:12 UTC): only two real commits,
+`d81959ce` (20:45) and `edaf50b2` (22:43), both `docs/ops/TEST_GAPS.md` + test-file-only changes
+(`draft-settlements-loads.test.ts` multi-driver/percentage-rounding + referral-bonus multi-row
+cases) — no product code touched, confirmed by `git show --stat` on both. **Zero regression
+risk**, consistent with the full green verify chain above.
+
+Fresh local rig from scratch (container had no Postgres role/db yet): created `hubapp`/`hubdb`,
+generated `.env.local` from `.env.example` with new `NEXTAUTH_SECRET`/`CRON_SECRET`/
+`CREDENTIALS_KEY`, `npm run db:migrate` (22 migrations clean) + `npm run seed:demo`, `npm run
+build && npm run start` against the production build. Drove three role-specific Puppeteer smokes
+end to end (`PUPPETEER_EXECUTABLE_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome`):
+**dispatcher** (`e2e-dispatch-smoke.mjs` — advance a legal load, server-side refusal on an
+expired-medical-card load, cancel-confirm flow, accountant's `loads:read`-only refusal enforced
+server-side, 0 console errors), **driver** (`e2e-driver-smoke.mjs` — login, acknowledge dispatch,
+arrive/depart, facility tip, message dispatch, pay screen settlement expand, time-off request,
+docs, incident report — all 15 steps passed), and **owner** (`e2e-reports-smoke.mjs` — fleet KPI
+cards, P&L table + CSV export, lane leaderboard, owner-dashboard revenue/CPM/deadhead panels,
+dispatcher shares the view via `money:read`, driver correctly blocked from Reports, 0 console
+errors), plus `e2e-login-smoke.mjs` for the role-routing guards underneath all three. **5/5
+scripts passed, 0 defects, 0 console errors.**
+
+Production probe: direct HTTPS to `thindtransport.com` stayed egress-blocked (curl exit 56, same
+as every prior cycle) — used Vercel MCP tools instead. `get_project`/`list_deployments`: the
+latest `target: "production"`/`state: "READY"` deployment (`dpl_EfZB2CRZn382hiNQMXM9p1idkef8`)
+was built from `242ccfc9`, the exact drain commit that now matches `main`'s tip — **production is
+current, not stale** (`live: false` is the known-unreliable flag, cross-checked against the
+deployment SHA per the documented pitfall). `get_runtime_errors` (7-day window): two error
+groups. The `pg`/`pg-connection-string` SSL-mode deprecation warning is the same cosmetic,
+already-carried item (30 occurrences since 2026-06-26, informational only). The second is new
+attention, not new occurrence: `[cron:compliance-scan] 1/4 carrier run(s) failed` with a Gmail
+`BadCredentials` (535-5.7.8) error, a single occurrence at 2026-07-26 14:24:01 UTC (~9h before
+this drive) with no repeat since in the full 7-day window. Traced the blast radius:
+`src/lib/mailer.ts` is the **only** SMTP transport in the codebase (`createTransport` reads
+`SMTP_USER`/`SMTP_PASS` once, shared by every caller) — driver-application PDF delivery to HR,
+password-reset emails, and portal-confirmation emails all go through the same dead credentials as
+the failing compliance-scan cron. For a driver-recruitment site whose primary goal is converting
+applications, a broken outbound-email path is a direct hit to the core funnel, not a background
+job hiccup. This exact item has been sitting in the Backlog trailer since the `13ddf503` cycle
+(several hours ago) without resolution — no agent can rotate the Gmail app password, so flagging
+it directly to the owner this cycle rather than only re-recording it silently again.
+
+No product code change shipped this cycle — 0 defects in the driven flows, 0 regression in the
+reviewed 3-hour window, and the only real production issue found (SMTP credentials) requires
+owner action that no agent can take. Nothing to drain (main and the integrator already matched
+after the other agent's drain).
+
+Backlog:
+- **Action needed from the owner, still unresolved after multiple cycles**: rotate the
+  production `SMTP_USER`/`SMTP_PASS` (Gmail app password) in Vercel's env vars — the current
+  credentials are rejected (`BadCredentials`), breaking driver-application delivery to HR,
+  password resets, and portal confirmations sitewide. First seen 2026-07-26 14:24 UTC.
+- `lane-tests`/`lane-compliance` and the ~166 pending `claude/*` branches remain the largest
+  backlog; meta-governor prune pass remains overdue across many cycles.
+- Carried, unchanged: npm audit's high-severity findings (owner-approval-gated semver-major
+  bump); Rust sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision); IFTA
+  due-date roll not accounting for legal holidays (documented scope decision); pg-connection-
+  string SSL-mode deprecation warning on `/api/hub/cron/[job]` (cosmetic, fix before next pg
+  major bump).
