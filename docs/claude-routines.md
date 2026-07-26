@@ -1261,3 +1261,66 @@ Backlog:
 - The ~150 remaining pending `claude/*` branches (many `inspiring-sagan-*`/`stoic-mccarthy-*`
   duplicates of the same QA-drive/NotificationsBell-race fix) still need the meta-governor prune
   pass flagged on 2026-07-22 — most sampled so far are superseded, not unabsorbed value.
+
+## QA rig drive — 2026-07-26 ~14:30 UTC (charter: docs/agent-improvement-loop.md §5, QA-only —
+no feature work)
+
+Reviewed commits landing on `main` in the prior 3 hours before driving anything: all 15 were
+integrator merges, `.drain-stamp` drains, and `claude-routines.md` doc updates — no product code
+changed, so there was nothing to regression-check or fix-forward.
+
+Fresh local rig from scratch: Postgres 16 started (was down), `thind_hub` database created,
+`npm ci` (749 packages), `npm run db:migrate` (22 migrations clean), `npm run seed:demo`,
+`npm run build` (Next.js 16 + Turbopack, zero TS errors), `npx vitest run` (214 files / 1919
+tests green), `npm run start` against the build.
+
+Drove the full 51-script Puppeteer battery (`node scripts/e2e-run-all.mjs`, this repo's own
+browser-driven E2E harness — puppeteer, not Playwright, per its `scripts/e2e-lib.mjs`) as owner,
+dispatcher, and driver, covering office, dispatch, driver PWA, portal, tenant isolation, and the
+public marketing/apply funnel: **49/51 passed**. The two failures are the same pair this loop has
+hit before, both stale test expectations rather than product bugs:
+
+- `e2e-public-smoke` still lists `/testimonials` in its page table; that route was intentionally
+  deleted (`9291301`, "remove the fabricated content, the trademark logos, and the duplicated
+  table") and now 404s as designed.
+- `e2e-sweep`'s owner-reports anchor expects the subtitle `"the operational view"`, but the
+  seeded tenant's driver-pay data puts the page on its other subtitle branch
+  (`"per-truck p&l, last 92 days"`) — confirmed via the sweep's own screenshot, not a stuck
+  spinner.
+
+Per AGENTS.md's duplicate-work rule, ran `git log --all --oneline --grep="testimonials"` /
+`--grep="operational view"` across `claude/*` before writing a fix: both are **already fixed,
+unmerged**, on `claude/practical-franklin-kcjomr` (commit `3a21cc65`, clean 1-commit diff off
+current `main`, merge-base = `main` HEAD) — the exact same two-line diff this drive would have
+produced. No fourth copy written; the fix just needs draining.
+
+Production probe: direct HTTPS to `thindtransport.com` is egress-blocked in this sandbox (403 on
+CONNECT), so checked via the Vercel MCP connector instead. The `production`-target deployment
+(`dpl_GWb7faARERKUa6oo4SKgPNko9Ug6`) is `READY` on commit `9e47431f`, which matches `origin/main`
+HEAD exactly — production is current, not stale, this cycle. `get_runtime_errors` (24h window)
+shows only a benign `pg`/`pg-connection-string` SSL-mode deprecation console warning on
+`/api/version` and `/api/hub/cron/[job]` (first seen 2026-06-26, unrelated to any recent change).
+The project's `live` flag reads `false` and the *overall* `latestDeployment` is `CANCELED`
+target-`null` — expected, not an outage: `vercel.json`'s `ignoreCommand` (see "Deploy discipline"
+above) only builds pushes to `main`, so every non-`main` session-branch push cancels by design;
+cross-checking the `production`-target deployment specifically is what actually answers "is prod
+healthy" (per §3b's `live`-alone caveat).
+
+`npm run agent:status`: integrator 1 commit ahead of `main`, steady state, no action needed —
+draining is Routine 1's job, not this one's.
+
+Net: 0 app-code defects found this cycle. Nothing fixed (no regression in the 3h window; the two
+E2E failures are pre-existing stale tests with a fix already in flight elsewhere).
+
+Backlog:
+- Drain `claude/practical-franklin-kcjomr` (`3a21cc65`) — drops the stale `/testimonials` entry
+  from `e2e-public-smoke.mjs`'s PAGES list and swaps `e2e-sweep.mjs`'s owner-reports anchor to
+  `"per-truck p&l, last 92 days"`. Clean apply, already build+test verified upstream; prioritize
+  over fresh `agent:branches` candidates so this QA loop stops re-finding the same two false
+  failures every cycle.
+- Carried unchanged from prior cycles: TEST_GAPS.md's uncovered money-critical modules
+  (`pay-rules-db.ts`, `loads.ts` `createLoad`/`updateLoad`, `fuel.ts`, `settlements.ts`
+  `draftSettlements`); `claude/lane-compliance`'s real payload (`d71d657d`, IFTA weekend-roll)
+  still needs a clean cherry-pick off current `main` instead of merging its stale 1557-commit
+  fork; the ~150-branch meta-governor prune pass; owner/design call on the green-as-success
+  convention (`PreQualificationForm.tsx` vs `ApplicationForm.tsx`).
