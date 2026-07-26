@@ -45,7 +45,7 @@ async function main() {
   const consoleErrors = []
   const track = (page) =>
     page.on("console", (msg) => {
-      if (msg.type() === "error") consoleErrors.push(msg.text())
+      if (msg.type() === "error") consoleErrors.push(`${msg.location().url ?? ""} ${msg.text()}`)
     })
 
   const stamp = Date.now().toString(36)
@@ -184,7 +184,11 @@ async function main() {
   )
   await shot(driver, "07-driver-blocked")
 
-  const realErrors = consoleErrors.filter((e) => !/favicon|manifest/i.test(e))
+  // _vercel/insights and _vercel/speed-insights 404 on every page until Ranvir
+  // enables Web Analytics in the Vercel dashboard (docs/ops/AGENT_TASKS.md Task 6)
+  // — expected, not a regression; every other e2e-*.mjs script hits the same
+  // false positive locally (see Backlog).
+  const realErrors = consoleErrors.filter((e) => !/favicon|manifest|_vercel\/(insights|speed-insights)/i.test(e))
   check(realErrors.length === 0, `no console errors (${realErrors.length}: ${realErrors.slice(0, 2).join(" | ")})`)
 
   await browser.close()
