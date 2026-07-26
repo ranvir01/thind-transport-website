@@ -1116,3 +1116,80 @@ Backlog:
 - Carried, unchanged: npm audit's high-severity findings (owner-approval-gated semver-major bump); Rust
   sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision); IFTA due-date roll not
   accounting for legal holidays (documented scope decision).
+
+## QA rig drive on main@508e8aa4 — 2026-07-26 ~01:30 UTC (owner/dispatcher/driver E2E sweep)
+
+Fresh rig from scratch: Postgres 16 started (was down), `hauldesk` role + database created per
+AGENTS.md pitfall #9, canvas native deps + `npm install` (749 packages), `npm run db:migrate` (22
+migrations clean), `npm run seed:demo`, `npm run build` (zero TS errors, Turbopack), `npx vitest run`
+(210 files/1854 tests) all green before touching anything.
+
+Reviewed every commit in the trailing ~4h window (`0e13bd3d` iOS app/website separation + `/hub/get-app`
++ `StandaloneScopeGuard`, `79c50de8` `/api/version` db/migrations + cron-failure-500 monitoring,
+`438c02cf` branch-prune zero-content-delta tier, `508e8aa4` drain-stamp nudge) by reading each diff
+directly: no standing-rule violations, no regression. Manually verified the two novel, untested-by-any-
+e2e-script surfaces: manifest-per-route wiring (`/`, `/drivers` serve `/site.webmanifest`; `/app`,
+`/loadoff`, `/hub/get-app` serve `/api/hub/manifest`), `/hub/get-app` reachable with **no session**
+(proxy-exempt, 200) while every other `/hub/*` route still 307s to login, and `StandaloneScopeGuard`
+under a forced `matchMedia(display-mode: standalone)` override: an injected same-origin marketing link
+(`/pay-rates`) gets retargeted to `target=_blank` on click and the container never leaves
+`/hub/loadboard` — exactly the owner's iPhone repro, fixed. `/api/version` returns `db:true,
+migrations:22` locally, matching the commit's live-verify claim.
+
+Full `node scripts/e2e-run-all.mjs` battery (51 scripts, 14.9m): only 15/51 report PASS, but every
+single failure across the other 36 traces to one of two **pre-existing, already-diagnosed** issues, not
+a new regression:
+1. `<Analytics />`/`<SpeedInsights />` in the root layout (added ~18:35 UTC 2026-07-25, well outside
+   this cycle's 3h window) fetch `/_vercel/insights/script.js` + `/_vercel/speed-insights/script.js`,
+   paths only Vercel's own edge serves — 404 on any self-hosted `next build && next start`, tripping
+   the generic "no console errors" assertion in ~35 of the 36 failing scripts. Confirmed with a direct
+   Puppeteer response listener against `/hub/loadboard`: exactly those two 404s, nothing else. Every
+   *functional* check inside every one of those 36 scripts passed.
+2. `e2e-sweep.mjs`'s owner-role reports check asserts `"the operational view"`, one of two conditional
+   subtitles in `reports/page.tsx` keyed off `hasDriverPay` (a per-tenant data fact, not a role fact) —
+   the seeded demo tenant has settlements, so that branch is unreachable against this dataset. Manually
+   loaded `/hub/reports` as owner: renders fully and correctly ("Per-truck P&L, last 92 days...", the
+   *other* (correct) assertion already used elsewhere in the same script), no spinner, not a defect.
+
+Per AGENTS.md §5 ("before fixing a bug found during a QA drive, grep `claude/*` branches for an
+existing fix"): **both issues already have a verified, complete fix sitting unmerged** on
+`claude/practical-franklin-nidydl` (commit `3a3c51c`, 2026-07-25 23:41 UTC) — gates `<Analytics
+/>`/`<SpeedInsights />` on `process.env.VERCEL`, drops the deleted-page `/testimonials` check from
+`e2e-public-smoke.mjs`, and fixes the exact `e2e-sweep.mjs` assertion above. Its own commit message
+confirms the identical root-cause analysis and a clean re-run (49/51 → both remaining resolved
+individually). Two OLDER independent attempts at the same fix also sit unmerged: `claude/practical-
+franklin-4s2urt` (`b26b38e`) and `claude/practical-franklin-wcljtj` (`e6c11638`+`4feeec4`). Per the
+"don't write a fourth copy" rule, this cycle did **not** re-implement the fix — `nidydl`'s `3a3c51c` is
+the one to drain; the integrator should skip `4s2urt`/`wcljtj` as superseded once it lands.
+
+Production probe: direct HTTPS to `thindtransport.com` stayed egress-blocked (403 on CONNECT) from this
+sandbox, so fell back to Vercel MCP per §3b. `thindtransport.com` is aliased to `dpl_8bs2aVYLjQ9r`
+(READY, target `production`, built ~140s) at commit `3e96ed4d` — one commit behind main's tip
+`508e8aa4`, but `508e8aa4`'s only content is `.drain-stamp` (a rebuild-nudge, zero functional payload),
+so production already serves every real change in this window, iOS separation included. Notable: no
+Vercel deployment of any kind (not even a CANCELED/skipped record) exists for `508e8aa4` itself in
+~3h44m since it was pushed — worth a re-check next cycle if it's still true, but not yet at the
+"confirmed broken" bar from the 2026-07-23 incident (that needed 5h38m stale, 15+ unbuilt commits, and
+3 prior cycles already flagging rising staleness before it justified an owner ping). `get_runtime_errors`
+(6h): none. `npm audit`: unchanged, 23 high (nodemailer/postcss+next+sharp chains, owner-approval-gated
+semver-major bumps).
+
+`npm run agent:branches`: 140 pending `claude/*` branches (up from 120s in recent cycles), `lane-
+compliance` now the largest at 784 unpicked-vs-main (1552 raw)/1552-vs-integrator. `agent:status`:
+integrator only 2 commits ahead of main, last commit 0h ago — the integrator itself is healthy; the
+140-branch pile is almost entirely stale session branches (many are prior QA-drive reports like this
+one) that were never drained or pruned. Meta-governor prune pass remains significantly overdue.
+
+Backlog:
+- Integrator: drain `claude/practical-franklin-nidydl` (`3a3c51c`) next — it's the complete, verified
+  fix for both the Analytics/SpeedInsights console-error false-positive and the stale reports/testimonials
+  e2e assertions. Skip `claude/practical-franklin-4s2urt` and `claude/practical-franklin-wcljtj` as
+  superseded duplicates of the same fix once `nidydl` lands.
+- Re-check next cycle whether `main@508e8aa4` (the drain-stamp commit) ever produced a Vercel deployment;
+  if it's still zero after another few hours, that's the "confirmed broken" bar and warrants an owner
+  ping per the 2026-07-23 precedent. Not yet urgent: production already serves the correct code.
+- `lane-compliance` (784/1552) and the ~140-branch pending pile (mostly stale QA-drive session branches)
+  need the meta-governor prune pass — overdue across many consecutive cycles now.
+- Carried, unchanged: npm audit's high-severity findings (owner-approval-gated semver-major bump); Rust
+  sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision); IFTA due-date roll not
+  accounting for legal holidays (documented scope decision).
