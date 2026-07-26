@@ -1,8 +1,9 @@
 import { Metadata } from "next"
 import Link from "next/link"
 import { notFound } from "next/navigation"
-import { ArrowRight, CheckCircle2, MapPin, Phone, Truck } from "lucide-react"
+import { ArrowRight, CalendarDays, CheckCircle2, Lightbulb, MapPin, Phone, Truck } from "lucide-react"
 import { COMPANY_INFO, PAY_RATES, STATS } from "@/lib/constants"
+import { buildJobPostingSchema } from "@/lib/job-posting"
 import { STATES, neighborStates, stateBySlug } from "@/lib/state-data"
 import { PageBreadcrumb } from "@/components/shared/PageBreadcrumb"
 
@@ -27,26 +28,7 @@ export default async function StateJobsPage({ params }: { params: Promise<{ stat
   if (!state) notFound()
   const neighbors = neighborStates(state)
 
-  const jobPostingSchema = {
-    "@context": "https://schema.org",
-    "@type": "JobPosting",
-    title: `CDL-A Truck Driver / Owner Operator — ${state.name}`,
-    description: `Thind Transport is hiring experienced CDL-A company drivers and owner operators for OTR and regional freight running through ${state.name}. Owner operators keep 90% of gross with 100% fuel surcharge pass-through. Company drivers earn ${PAY_RATES.companyDriver.otr.perMile}/mile with weekly pay. Flatbed, reefer, and dry van.`,
-    hiringOrganization: {
-      "@type": "Organization",
-      name: COMPANY_INFO.name,
-      sameAs: "https://thindtransport.com",
-    },
-    industry: "Truck Transportation",
-    employmentType: ["FULL_TIME", "CONTRACTOR"],
-    jobLocation: {
-      "@type": "Place",
-      address: { "@type": "PostalAddress", addressRegion: state.abbr, addressCountry: "US" },
-    },
-    applicantLocationRequirements: { "@type": "State", name: state.name },
-    datePosted: new Date().toISOString().slice(0, 10),
-    directApply: true,
-  }
+  const jobPostingSchema = buildJobPostingSchema(state)
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-50">
@@ -156,6 +138,62 @@ export default async function StateJobsPage({ params }: { params: Promise<{ stat
             </p>
           </div>
         </div>
+
+        {/* Deep freight-market notes — added one state at a time by the SEO deepening pass */}
+        {state.deepDive ? (
+          <div className="mb-14">
+            <h2 className="mb-2 text-2xl font-black text-gray-900">
+              Know before you haul: the {state.name} freight market
+            </h2>
+            <p className="mb-6 max-w-3xl leading-relaxed text-gray-600">
+              Notes from running these lanes ourselves — the markets, the seasons, and the details
+              that change what a week in {state.name} actually pays.
+            </p>
+
+            <div className="mb-8 grid gap-4 md:grid-cols-2">
+              {state.deepDive.markets.map((market) => (
+                <div key={market.name} className="rounded-2xl border border-gray-100 bg-white p-6 shadow-md">
+                  <h3 className="mb-2 font-black text-gray-900">
+                    <MapPin className="mr-1.5 inline h-4 w-4 text-orange-600" />
+                    {market.name}
+                  </h3>
+                  <p className="text-sm leading-relaxed text-gray-600">{market.note}</p>
+                </div>
+              ))}
+            </div>
+
+            <div className="grid gap-4 lg:grid-cols-2">
+              <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-md">
+                <h3 className="mb-3 font-black text-gray-900">
+                  <CalendarDays className="mr-1.5 inline h-4 w-4 text-orange-600" />
+                  Season by season
+                </h3>
+                <ul className="space-y-3">
+                  {state.deepDive.seasonal.map((note) => (
+                    <li key={note} className="flex items-start gap-2 text-sm leading-relaxed text-gray-600">
+                      <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-green-600" />
+                      {note}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div className="rounded-2xl border border-orange-100 bg-orange-50/60 p-6 shadow-md">
+                <h3 className="mb-3 font-black text-gray-900">
+                  <Lightbulb className="mr-1.5 inline h-4 w-4 text-orange-600" />
+                  Worth knowing
+                </h3>
+                <ul className="space-y-3">
+                  {state.deepDive.driverFacts.map((fact) => (
+                    <li key={fact} className="flex items-start gap-2 text-sm leading-relaxed text-gray-700">
+                      <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-orange-600" />
+                      {fact}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </div>
+        ) : null}
 
         {/* Neighbor states */}
         {neighbors.length > 0 ? (

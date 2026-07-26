@@ -5,6 +5,22 @@
  * stays honest: same pay everywhere (it's the same company), what varies per
  * page is geography.
  */
+/**
+ * Optional per-state deep content for the /cdl-jobs/[state] pages.
+ * Every fact here must be web-verifiable at the time it is written — the
+ * deepening pass (docs/claude-routines.md, Reach & SEO routine) adds one
+ * state per firing. Never spin filler: a page a real driver wouldn't find
+ * useful is worse than the plain template.
+ */
+export interface StateDeepDive {
+  /** Freight-market notes for the state's major markets (ports, distribution corridors, reload points). */
+  markets: { name: string; note: string }[]
+  /** Seasonal lane notes a driver planning their calendar would care about. */
+  seasonal: string[]
+  /** Driver-relevant facts specific to this state (taxes, chain laws, enforcement quirks). */
+  driverFacts: string[]
+}
+
 export interface StateInfo {
   slug: string
   name: string
@@ -12,10 +28,41 @@ export interface StateInfo {
   cities: string[]
   corridors: string[]
   region: "West" | "Southwest" | "Midwest" | "South" | "Northeast"
+  deepDive?: StateDeepDive
 }
 
 export const STATES: readonly StateInfo[] = [
-  { slug: "washington", name: "Washington", abbr: "WA", cities: ["Seattle", "Kent", "Spokane", "Tacoma"], corridors: ["I-5", "I-90", "I-82"], region: "West" },
+  {
+    slug: "washington", name: "Washington", abbr: "WA",
+    cities: ["Seattle", "Kent", "Spokane", "Tacoma"], corridors: ["I-5", "I-90", "I-82"], region: "West",
+    deepDive: {
+      markets: [
+        {
+          name: "Seattle & Tacoma",
+          note: "The two ports operate together as the Northwest Seaport Alliance — the sixth-busiest container gateway in the country, moving over 3 million TEUs a year. That port volume feeds steady drayage-adjacent dry van work in both directions, and import surges show up as reload opportunities across the whole Puget Sound market.",
+        },
+        {
+          name: "Kent Valley",
+          note: "Our home yard sits in the Kent–Auburn–Sumner industrial corridor — the second-largest industrial park on the West Coast and the third-largest distribution and warehouse concentration in the nation, behind only NY/NJ and Los Angeles. Big-box distribution freight starts minutes from where our trucks park.",
+        },
+        {
+          name: "Spokane",
+          note: "The I-90 gateway between Puget Sound and the northern Rockies — the last major market heading east and a regular reload point on our I-90 runs into Idaho and Montana.",
+        },
+        {
+          name: "Yakima & Wenatchee",
+          note: "Central Washington's produce belt, reached off I-82 and US-2/I-90. During harvest this is one of the strongest reefer origin markets in the western US — see the seasonal notes below.",
+        },
+      ],
+      seasonal: [
+        "Apple season is the big one: Washington grows roughly 60% of America's fresh apples, and harvest runs August (Gala) through November (Fuji, Granny Smith), with mid-October the peak crush. Reefer demand and outbound rates out of Yakima, Wenatchee, and the Columbia Basin climb through the fall — a well-timed reefer can stay loaded out of central Washington for months.",
+        "Winter on the passes: from November 1 to April 1, every rig over 10,000 lbs GVWR must carry chains on designated routes, including I-90 over Snoqualmie Pass (the chain-law area runs roughly North Bend to Ellensburg). Snoqualmie is the state's most actively enforced chain zone, and getting caught without chains when they're required is a $500 fine — we plan winter transit windows over the pass rather than gamble on them.",
+      ],
+      driverFacts: [
+        "Washington has no state income tax — a company driver's wages and an owner operator's earnings only see federal tax here, so the same gross pay nets you more than it would in most other states.",
+      ],
+    },
+  },
   { slug: "oregon", name: "Oregon", abbr: "OR", cities: ["Portland", "Salem", "Eugene"], corridors: ["I-5", "I-84"], region: "West" },
   { slug: "california", name: "California", abbr: "CA", cities: ["Sacramento", "Los Angeles", "Fresno", "Oakland"], corridors: ["I-5", "I-80", "I-10"], region: "West" },
   { slug: "idaho", name: "Idaho", abbr: "ID", cities: ["Boise", "Twin Falls", "Pocatello"], corridors: ["I-84", "I-15", "I-90"], region: "West" },
