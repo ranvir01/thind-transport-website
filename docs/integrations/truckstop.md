@@ -184,16 +184,32 @@ land safely, not a second-hand rename. Until then the adapter is unaffected in p
 `truckstopSource().search()` still throws `truckstop is not connected` before any HTTP happens
 without pasted credentials, so this is a landmine for first-contact day, not a live bug.
 
+## 2026-07-26 integrations-lane pass — wrapper tag made tolerant of either name
+
+Tried to settle the `LoadSearchResult` vs. `LoadSearchItem` question with a fresh WebSearch
+pass before touching code: got the same class of evidence the 2026-07-25 scout got (search-
+snippet summaries, not a primary source — `developer.truckstop.com` still 403-walls direct and
+archive.org fetches alike), and a second query surfaced yet another inconsistent field list.
+Not strong enough to safely rename the wrapper tag outright, per the standing rule that a
+wrapper-tag change needs a primary-source check before landing.
+
+Instead of waiting on that (and risking the exact silent-zero-postings failure mode flagged
+2026-07-25), `parseLoadSearchResponse` now tries `LoadSearchResult` first and falls back to
+`LoadSearchItem` when the first finds no blocks — the same tolerant-match approach
+`fuel-feed-csv.ts` already uses for unconfirmed CSV headers. Whichever name the real service
+uses, the adapter no longer silently returns zero postings over a wrapper-name guess; if a real
+response arrives under a third, still-different name, it will (correctly) still return empty
+until that name is added too. Field names inside each item (`LoadId` vs. `ID`, `TripMiles`,
+`TotalRate`, `ContactPhone`) are untouched — still unconfirmed, still the adapter's current
+assumption, not addressed by this pass. `truckstop.test.ts` now covers both wrapper names plus
+the LoadSearchResult-wins-if-both-present case.
+
 ## Open questions for the next pass
 
-- **Highest priority (new 2026-07-25 lead):** verify the `GetLoadSearchResultsResult` →
-  `SearchResults` → item wrapper element name — `LoadSearchItem` per this pass's
-  multi-query-corroborated search snippets vs. `LoadSearchResult` the adapter currently
-  extracts. If confirmed, `parseLoadSearchResponse`'s `extractTagBlocks(xml, "LoadSearchResult")`
-  call and its field list (`LoadId` vs. `ID`) need a coordinated fix with
-  `normalizeTruckstopPosting`, plus a fixture update in `truckstop.test.ts` so the tests would
-  have caught this. A developer packet or one non-403 browser pull of
-  `developer.truckstop.com/reference/get-load-search-results-1` settles it outright.
+- Confirm the per-item wrapper element name (`LoadSearchResult` vs. `LoadSearchItem` vs.
+  possibly something else) via a developer packet or one non-403 browser pull of
+  `developer.truckstop.com/reference/get-load-search-results-1` — the adapter now tolerates
+  either of the two leading candidates, but the field list below still needs a primary source.
 - Get the real `GetLoadSearchResults` request/response XML schema (developer packet or
   llms.txt from an unblocked network) and pin `parseLoadSearchResponse`'s field list +
   `normalizeTruckstopPosting`'s mapping to it — specifically the rate and miles field names,

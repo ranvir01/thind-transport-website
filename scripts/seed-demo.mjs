@@ -607,6 +607,15 @@ async function main() {
       [CARRIER, `TOLL-${5000 + i}`, truckIds[i % 4], daysAgo(40 - i * 4, 12), "SR-520 Bridge", 950 + i * 50]
     )
   }
+  // A couple of unmatched rows (statement unit number didn't match any truck) —
+  // the toll dashboard's reconciliation inbox needs at least one to demo/drive.
+  for (let i = 0; i < 2; i++) {
+    await q(
+      `INSERT INTO hub.toll_transactions (carrier_id, source, external_id, transponder, truck_id, ts, plaza, jurisdiction, amount_cents)
+       VALUES ($1,'csv:PrePass',$2,'PP-90142',NULL,$3,$4,'OR',$5)`,
+      [CARRIER, `TOLL-${5100 + i}`, daysAgo(15 - i * 5, 8), "I-205 Bridge", 1150 + i * 75]
+    )
+  }
 
   // ---- Position pings: I-5 trail for in-transit truck + parked dots ----
   console.log("Creating position pings…")

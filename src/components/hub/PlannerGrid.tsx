@@ -16,6 +16,7 @@ import { plannerMoveLoadAction } from "@/app/hub/_actions/planner"
 import type { PlannerBlock, PlannerTruck } from "@/lib/hub/planner"
 import { toIsoDateOnly } from "@/lib/hub/format-dates"
 import { assignLanes } from "@/components/hub/planner-lanes"
+import { dayIndex } from "@/components/hub/planner-days"
 import type { TimeOffRequest } from "@/lib/hub/types"
 
 const LANE_HEIGHT = 46
@@ -32,12 +33,6 @@ const STATUS_COLORS: Record<string, string> = {
 interface DragPayload {
   loadId: string
   startDayIdx: number
-}
-
-function dayIndex(days: string[], iso: string): number {
-  const date = new Date(iso)
-  const dayStart = new Date(`${days[0]}T00:00:00`)
-  return Math.floor((date.getTime() - dayStart.getTime()) / 86400000)
 }
 
 export function PlannerGrid({

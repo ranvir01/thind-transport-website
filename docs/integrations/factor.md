@@ -210,12 +210,88 @@ Sources: [OTR API Integrations](https://otrsolutions.com/resources/api-integrati
 [Carrier Integrations docs](https://docs.otrsolutions.com/docs/carrier-integrations)
 (search-excerpt only, page itself 403s to this env)
 
+## 2026-07-26 scout pass — OTR auth = Azure APIM confirmed, go-live gate found
+
+No adapter-breaking change (7th straight): the push shape (Bearer key), the
+generic webhook receiver, and `normalizeFactorEvent`'s payload reads are all
+unaffected by anything found. Three substantive additions, none urgent:
+
+1. **OTR's subscription key is literally the Azure API Management
+   `Ocp-Apim-Subscription-Key` header — now corroborated, not inferred.** Prior
+   passes called it "Azure API-Management style"; this pass confirms OTR fronts
+   its carrier API with Azure APIM, so a wired OTR adapter sends
+   `Ocp-Apim-Subscription-Key: <key>` (the APIM default subscription-key header)
+   alongside the account-credential auth, and APIM's rate-limit-by-key returns a
+   plain **`429 Too Many Requests`** (no body forwarded to the backend) when a
+   subscription exceeds its rolling-window quota. The numeric quota is still
+   unpublished (per-subscription, set by OTR's APIM policy), but the *shape* of
+   the throttle is now known: whoever wires OTR should (a) add a subscription-key
+   credential field — a schema tweak, not a row-shape change, already noted in
+   "Assumed shapes" above — and (b) treat a bare `429` as retry-with-backoff, not
+   a hard failure. This is the concrete answer to the standing "auth handshake /
+   rate limits" open question, minus the exact numeric quota.
+
+2. **NEW — a required "Show and Tell" go-live gate.** OTR's onboarding is not
+   self-serve to production: request a subscription key → get a developer-portal
+   account with current specs → build against the test environment with the
+   provided credentials → **a "Show and Tell" walkthrough with OTR's Partner
+   Integrations Team is a required step before going live.** Matters for LoadOff
+   planning (there is a human-in-the-loop review before `registry.ts`'s `factor`
+   status can flip to `live` on OTR), not for the code.
+
+3. **NEW — OTR's developer docs grew two sections since the last pass.**
+   `docs.otrsolutions.com` now publishes **Load Shares** and **Broker
+   Integrations** pages beside **Carrier Integrations**. The **Load Shares API**
+   pre-populates a carrier's OTR invoice creation from broker-supplied load/rate
+   data (an extension of the Rate Verification surface — the broker→carrier
+   hand-off, adjacent to but not the Document Exchange path
+   `submitInvoiceToFactor` targets). **Broker Integrations** is the broker-side
+   surface — out of scope for a carrier hub. Neither changes what this adapter
+   calls; both are noted so a future "prefill invoice from a booked load" idea
+   knows the OTR-side surface exists.
+
+Vendor-landscape refresh (all still poll-based, no carrier-facing webhook
+confirmed anywhere):
+
+- **Apex** — reconfirmed the paste-an-API-key model (Settings → Factoring tab →
+  Connect → enter Apex API key); current TMS partners marketed as Alvys, Ditat,
+  ezLoads, Axele, FlexTMS, Vektor. Unchanged.
+- **HaulPay (ComFreight)** — corporate note: acquired by **Dakota Financial in
+  2024** (asset-backed lender, deeper lending infra behind it); 2026 pricing
+  pitched as flat 3% max, no reserve, no contracts. Still markets a strong
+  public API + "API integration support for any 3rd-party TMS", but the outbound
+  webhook signature scheme remains unpublished — still a first candidate to
+  exercise our receiver once contacted.
+- **Denim** — markets real-time status/payment updates flowing back "into your
+  TMS" through its 20+ two-way integrations (not a documented public
+  carrier-facing webhook); API-key auth unchanged. Owned by Truckstop.
+
+Every OTR/vendor page still 403s this env's direct fetch (`docs.otrsolutions.com`
+re-confirmed 403 this pass — same network-policy CONNECT wall as every other
+provider in this rotation), so all of the above is search-excerpt-confirmed, not
+primary-source-read. Getting the exact Document Exchange endpoint paths + the
+account-credential→token handshake + the status-poll response shape still needs a
+provisioned subscription key (account-manager email), unchanged from prior passes.
+
+Sources (2026-07-26 pass): [OTR Developer Resources](https://otrsolutions.com/developer-resources),
+[OTR Building Your API Integration](https://docs.otrsolutions.com/docs/building-your-api-integration),
+[OTR Carrier Integrations](https://docs.otrsolutions.com/docs/carrier-integrations),
+[OTR Load Shares](https://docs.otrsolutions.com/docs/load-shares),
+[OTR API Integrations overview](https://otrsolutions.com/resources/api-integrations/),
+[Apex TMS integrations](https://www.apexcapitalcorp.com/lp/seamless-tms-integrations-for-streamlined-factoring-with-apex/),
+[HaulPay for carriers](https://haulpay.io/digital-freight-factoring-for-carriers/),
+[Denim integrations](https://www.denim.com/integrations)
+(all search-excerpt only; every vendor/docs host 403s this env's direct fetch)
+
 ## Open questions for the next pass
 
 - Get the actual OTR developer-portal API specs (needs an account-manager
   email → provisioned subscription key): exact endpoint paths, the auth
   handshake (account credentials → token?), status-poll response shape, and
-  whether any webhook/callback option exists at partner tier.
+  whether any webhook/callback option exists at partner tier. (Partly answered
+  2026-07-26: the transport is Azure APIM — `Ocp-Apim-Subscription-Key` header +
+  `429` throttle — but endpoint paths and the credential→token handshake still
+  need a provisioned key.)
 - Confirm whether HaulPay/Denim expose outbound webhooks and what signature
   scheme they use — first candidates to exercise our receiver for real.
 - Wire an actual "Submit to factor" button — DONE since the first draft of

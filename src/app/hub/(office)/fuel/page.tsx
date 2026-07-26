@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { AlertTriangle, Upload } from "lucide-react"
+import { AlertTriangle, Route, Upload } from "lucide-react"
 import { fuelStatsByTruck, fuelByProgram, fuelFraudFlags, listFuelTransactions, eiaDieselPriceCents, listUnassignedFuel, assignableLoadsForFuel } from "@/lib/hub/fuel"
 import { requirePermissionPage } from "@/lib/hub/session"
 import { can } from "@/lib/hub/permissions"
@@ -41,12 +41,20 @@ export default async function FuelPage() {
           </HelpTip>
         }
         action={
-          <Link
-            href="/hub/import?kind=fuel"
-            className="inline-flex min-h-[44px] items-center gap-2 rounded-control bg-accent px-5 font-semibold text-sm text-accent-fg hover:bg-accent-hover"
-          >
-            <Upload className="h-4 w-4" /> Import statement
-          </Link>
+          <div className="flex items-center gap-2">
+            <Link
+              href="/hub/fuel/tolls"
+              className="inline-flex min-h-[44px] items-center gap-2 rounded-control border border-border px-4 font-semibold text-sm text-fg hover:bg-hover"
+            >
+              <Route className="h-4 w-4" /> Tolls
+            </Link>
+            <Link
+              href="/hub/import?kind=fuel"
+              className="inline-flex min-h-[44px] items-center gap-2 rounded-control bg-accent px-5 font-semibold text-sm text-accent-fg hover:bg-accent-hover"
+            >
+              <Upload className="h-4 w-4" /> Import statement
+            </Link>
+          </div>
         }
       />
 
