@@ -1116,3 +1116,70 @@ Backlog:
 - Carried, unchanged: npm audit's high-severity findings (owner-approval-gated semver-major bump); Rust
   sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision); IFTA due-date roll not
   accounting for legal holidays (documented scope decision).
+
+## QA rig drive on main@508e8aa: owner/dispatcher/driver Playwright sweep, 0 regressions — 2026-07-26 ~02:19 UTC
+
+Charter (docs/agent-improvement-loop.md §5): no feature work — stand up the local rig, drive real
+owner/dispatcher/driver flows with Playwright, probe thindtransport.com read-only, fix only outright
+regressions from the last 3h of commits.
+
+**Rig**: `service postgresql start`; created a fresh local role/db (none existed in this container);
+`npm install`; `npm run db:migrate` (22 migrations, clean); `npm run seed:demo`; `npm run build` (clean);
+`npm run start` against Postgres. Installed `playwright` (`--no-save`) pointed at the sandbox's
+preinstalled Chromium (`/opt/pw-browsers`) since the repo's own `scripts/e2e-*.mjs` battery is
+Puppeteer-based, not Playwright.
+
+**Regression check**: `git log origin/main --since="3 hours ago"` — empty; main's HEAD (`508e8aa`, a
+`.drain-stamp`-only nudge) is ~4h55m old at check time, its last functional commit (`3e96ed4`, iOS
+app/website separation) ~4h56m old. Nothing to fix-forward this cycle.
+
+**Playwright drive**: logged in as `owner@demo.thind`, `dispatch@demo.thind`, `driver@demo.thind`
+(seed-demo credentials) and navigated every nav-reachable screen per role at 1440px (390px for the
+driver PWA) — dashboards, reports/owner, loadboard, all-loads, dispatch, map, planner, messages, fuel,
+money/settlements, money/invoices, settings/users, driver pay/docs/messages/dvir/more. All 200s, no
+5xx, no rendering-error bodies. Screenshots reviewed by hand: office screens stayed on semantic tokens
+(no stray gold/navy/steel), driver screens held the forced-dark palette (AGENTS.md) with no
+invisible/ghosted text. Drove three real interactions past page-load: dispatcher opened a load detail
+(THD-1027, stops/rate/documents/tracking panels all rendered), owner opened a settlement detail (clean
+render), driver tapped "Got it — confirm this dispatch" on the home feed — the dispatch card cleared
+and the action completed with zero console errors, confirming the core driver accept-dispatch flow
+works end to end.
+
+The only console noise on every single screen across all three roles was two 404s for
+`/_vercel/insights/script.js` and `/_vercel/speed-insights/script.js` (`@vercel/analytics` /
+`@vercel/speed-insights`, root layout) — these only resolve on Vercel's own edge, so any self-hosted
+`next build && next start` rig 404s them by design. This is the same false-positive already diagnosed
+across several unmerged branches (`claude/practical-franklin-nidydl`/`wcljtj`/`4s2urt`, seen earlier in
+this file) — confirmed real (not a fresh regression) by checking the requests directly with a response
+listener, not just the console text. No other defects found in this drive.
+
+**Production probe**: direct HTTPS to `thindtransport.com` 403'd at the sandbox's CONNECT proxy (known
+sandbox-network-policy limitation, not a site defect — AGENTS.md §3b). Used Vercel MCP instead:
+`thindtransport.com`'s alias resolves to `dpl_8bs2aVYLjQ9rMGPHs5NRNWXfg3Rx`, state `READY`, target
+`production`, built from commit `3e96ed4` — one commit behind main's HEAD. `get_runtime_errors` (24h)
+returned exactly one cluster: a `pg`/`pg-connection-string` SSL-mode deprecation warning
+(`sslmode=prefer|require|verify-ca` aliasing) logged 13 times on `/api/hub/cron/[job]` since
+2026-06-26 — longstanding, benign, not a regression this cycle introduced or found new.
+
+Checked the stamp-commit deploy question the prior cycle (`4d4d5a9`, ~01:33 UTC) flagged as "still
+watching": confirmed via `get_commit` that `508e8aa` touches only `.drain-stamp` (1 line) — zero
+functional diff from what's already live, so production is behaviorally current regardless. Still no
+deployment record for that SHA in the last 20 project deployments (all other recent entries are
+lane/session-branch previews), now ~5h since push vs. ~3h44m when last checked — past the prior
+cycle's "needs longer" bar with no change in outcome. Not escalating to "confirmed broken" since (a)
+content is provably identical and (b) the automation stack (drain-integrator/drain-fallback Actions,
+next hourly integrator) exists precisely to catch a real staleness case; flagging below for the next
+cycle to re-stamp if it's still unbuilt.
+
+Backlog:
+- `508e8aa` (drain-stamp-only commit) still shows no Vercel deployment record ~5h after push, despite
+  zero functional diff from live — if still true next cycle, push a fresh no-op stamp commit to
+  re-trigger the webhook rather than continuing to just watch.
+- `lane-tests` (1443+ unpicked) and `lane-compliance` (1552+ unpicked) remain the two largest pending
+  branches; per `9bc1e0c5` do NOT plain-merge either — meta-governor prune pass remains overdue across
+  many cycles now.
+- Messages remains the stalest named E2E-sweep candidate (last swept at `7ad8a4b7`) — next
+  verify-and-build cycle should pick it if no fresher backlog item exists.
+- Carried, unchanged: npm audit's high-severity findings (owner-approval-gated semver-major bump); Rust
+  sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision); IFTA due-date roll not
+  accounting for legal holidays (documented scope decision).
