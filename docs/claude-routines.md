@@ -1261,3 +1261,46 @@ Backlog:
 - The ~150 remaining pending `claude/*` branches (many `inspiring-sagan-*`/`stoic-mccarthy-*`
   duplicates of the same QA-drive/NotificationsBell-race fix) still need the meta-governor prune
   pass flagged on 2026-07-22 — most sampled so far are superseded, not unabsorbed value.
+
+## Referral/scorecard bonus test coverage (TEST_GAPS.md #1 remaining gap) — 2026-07-26 ~19:45 UTC (verify-and-build cycle)
+
+Integrator and `main` matched exactly at `c5216d1e` (0 drift, steady state) — `npm ci` + `npm run build`
++ `npx vitest run` (221 files/1952 tests, 9 skipped) + `npm run lint` all green before touching anything
+else, so no fix-forward needed.
+
+`agent:backlog`'s newest carried items were all owner-gated (green-as-success convention,
+`lane-compliance` prune, npm audit, `tiny_http` gap) or already-closed subsystem audits, so per step 6
+picked the next real (non-owner-gated) TEST_GAPS.md gap: row 1's remaining scope. The doc's own status
+header already marked `draftSettlements`' settlement_id stamp resolved, but the module-coverage table
+still listed `payableReferralBonuses@48`/`latestScorecardScore@71` at 0% — `grep -rl` across
+`__tests__/` for either name came back empty, confirming neither had ever been exercised. Both are
+unexported helpers reachable only through `draftSettlements`; the existing suite only drove their
+"table doesn't exist yet" branch (`to_regclass(...)` → null) — the "table exists, has a payable
+row/scored month" branch, the one that actually feeds a bonus into a settlement's totals, was never
+hit. Added three cases to `draft-settlements-loads.test.ts`: a payable referral row producing its own
+line (label formatting, amount, source_id) and correct settlement totals; an empty-but-existing
+referrals table producing no line; and a custom `scorecard_bonus` rule set with a scored month
+matching the higher of two tiers. Verified each test actually catches a regression before shipping:
+temporarily broke the amount mapping in each helper, confirmed only the new tests failed, restored,
+reconfirmed green (`npx vitest run` 221 files/1955 tests). Updated `TEST_GAPS.md`'s status header with
+the same evidence and narrowed row 1's remaining scope (multi-driver runs, percentage-pay rounding, and
+`payableReferralBonuses`' multi-row/deleted_at cases are still untested — row 1 stays open).
+
+No local Postgres stood up this cycle — a test-only change to already-unit-tested server functions, no
+UI surface touched, per the routine's own scoping (step 4 only calls for a Playwright drive when the
+change touches UI).
+
+Pushed straight to `claude/hauldesk-project-setup-l1luoo` (integrator now 1 ahead of `main`, steady
+state — no drain forced this cycle).
+
+Backlog:
+- TEST_GAPS.md row 1 (`settlements.ts:89` `draftSettlements`) still has real gaps: multi-driver runs in
+  one `draftSettlements` call, percentage-pay rounding through the same path, and
+  `payableReferralBonuses` with more than one payable referral or a deleted-applicant row.
+- Owner/design call still open: green-as-success convention (`PreQualificationForm.tsx` vs
+  `ApplicationForm.tsx`).
+- `claude/lane-compliance` (~1559 unpicked) remains confirmed redundant with `main` (its one live item,
+  IFTA weekend-roll, already shipped) — meta-governor prune pass to retire the branch outright is still
+  overdue.
+- Carried, unchanged: npm audit high-severity findings (owner-approval-gated semver-major bump); Rust
+  sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision).
