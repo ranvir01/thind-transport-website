@@ -1216,19 +1216,26 @@ verified fixes sitting on **`claude/practical-franklin-wcljtj`** (commits `e6c11
 
 **Production probe:** direct HTTPS to `thindtransport.com` is sandboxed/blocked (403 on CONNECT,
 confirmed via the proxy status endpoint) — fell back to the Vercel API per the runbook's fallback
-guidance. Finding: **production is stale and the drain pipeline looks stalled.** `thindtransport.com`
-is serving `3e96ed4` (the iOS app/website-separation drain); `main` is 8 commits ahead of that,
-including this session's own `e6be22e5` (pushed to `main` at 02:49:05 UTC). As of 03:23 UTC (34+ min
-later) Vercel had not triggered *any* deployment — canceled or otherwise — for that push; the
-project's `latestDeployment` was still the integrator-branch preview from 02:48. Cross-checked with
-GitHub Actions: both `drain-integrator.yml` (hourly, `:17`) and `drain-fallback.yml` (`:20`/`:50`) show
-their last completed run at ~00:10-00:16 UTC — over 3 hours of silence for jobs scheduled every 30-60
-minutes. This matches the exact "drain reports success but Vercel silently never builds" signature
-already documented in `agent-improvement-loop.md` §3a ("Drain redundancy"). `get_runtime_errors`
-shows zero new errors in the last 24h — production itself is healthy, just stale. Paged the owner
-directly (this routine has no authority to push to `main` or force a Vercel deploy — reserved for the
-deploy agent) since a silently-stalled drain is exactly the failure mode the fleet has been burned by
-before.
+guidance. Finding: **production is stale.** `thindtransport.com` is serving `3e96ed4` (the iOS
+app/website-separation drain); `main` is 8 commits ahead of that, including this session's own
+`e6be22e5` (pushed to `main` at 02:49:05 UTC). As of 03:23 UTC (34+ min later) Vercel had not
+triggered any deployment for that push — no READY, no CANCELED, nothing. Correction to my first read
+of this: `vercel.json`'s `ignoreCommand` (`"$VERCEL_GIT_COMMIT_REF" != "main"`, see this doc's "Deploy
+discipline" section) is working exactly as designed — confirmed directly by pushing this cycle's own
+docs commit to a session branch and seeing its resulting deployment CANCELED with
+`errorLink: .../ignored-build-step`, i.e. every non-`main` push (including my own and the prior
+`claude/hauldesk-project-setup-l1luoo` push) is *correctly* skipped on purpose, not evidence of
+breakage. The real anomaly is narrower than "the whole pipeline is down": specifically the push to
+refs/heads/`main` carrying `e6be22e5` — which should NOT be ignored (`ignoreCommand` only skips
+non-main refs) and which earlier main pushes (`a8a1cda`, `3e96ed4`) built successfully within
+seconds of landing — produced zero deployment record of any kind after 30+ minutes. Separately (and
+this may or may not be related): GitHub Actions `drain-integrator.yml` (hourly, `:17`) and
+`drain-fallback.yml` (`:20`/`:50`) both show their last completed run at ~00:10-00:16 UTC — over 3
+hours of silence for jobs scheduled every 30-60 minutes; these only fast-forward the integrator into
+`main`, they have no direct role in Vercel's own build trigger, but their silence means the git-side
+half of the drain loop is also stalled right now. `get_runtime_errors` shows zero new errors in the
+last 24h — production itself is healthy, just increasingly stale. Paged the owner directly (this
+routine has no authority to push to `main` or force a Vercel deploy — reserved for the deploy agent).
 
 Also ran `npm run agent:branches`: 143 branches show "unpicked" work, several (`claude/lane-compliance`,
 `claude/eager-babbage-ibsmrz`, `claude/practical-franklin-5ol54s`, the `claude/inspiring-sagan-*`
@@ -1236,11 +1243,17 @@ cluster) with 300-800+ "unpicked" commits each — confirms prior cycles' read t
 stale-fork sprawl, not real backlog; still needs the meta-governor prune pass.
 
 Backlog:
-- **Time-sensitive:** production deploy pipeline appears stalled — `main` has been un-deployed for
-  30+ minutes (8 commits, including a merge-with-tree-change drain commit that should have forced a
-  fresh build per the "Drain method" doc) and the GitHub Actions drain cron has been silent 3+ hours.
-  Needs the deploy agent (or the owner) to check the Vercel project's GitHub integration/webhook
-  health and manually trigger a production deployment if it's still stuck next cycle.
+- **Time-sensitive:** the specific push to `main` carrying `e6be22e5` (and everything back through
+  `508e8aa`) has produced zero Vercel deployment record 30+ minutes after landing, even though
+  `ignoreCommand` should let `main` pushes through same as the two that worked earlier tonight
+  (`a8a1cda`, `3e96ed4`) — this is NOT the known ignored-build-step behavior (verified that part is
+  fine) and NOT obviously the Hobby-quota issue documented above (quota exhaustion still produces a
+  visible CANCELED/queued record, per that section's own notes). GitHub's drain cron
+  (`drain-integrator.yml`/`drain-fallback.yml`) has also been silent 3+ hours. Next cycle: re-check
+  whether a deployment for `main`@`e6be22e5`-or-later has appeared by then; if not, this needs the
+  deploy agent or owner to push a fresh `.drain-stamp` commit to `main` (cheap way to force a new
+  webhook event) and, if that still produces nothing, check the Vercel project's GitHub App
+  installation/webhook delivery log directly from the dashboard.
 - e2e false-positive trio (analytics 404 console-noise, stale `/testimonials` link, stale reports-sweep
   assertion) has a verified fix already on `claude/practical-franklin-wcljtj` — integrator should drain
   that branch instead of any lane re-deriving the same fix again.
