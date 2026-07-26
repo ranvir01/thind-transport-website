@@ -1175,3 +1175,78 @@ Backlog:
 - Carried, unchanged: npm audit's high-severity findings (owner-approval-gated semver-major bump);
   Rust sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision); IFTA due-date roll not
   accounting for legal holidays (documented scope decision).
+
+## QA rig drive on main@e6be22e — 2026-07-26 ~05:20 UTC (§5 charter: no feature work)
+
+Stood up a fresh local rig from scratch: `service postgresql start`, created the `loadoff`/
+`loadoff_dev` role+DB (fresh container per pitfall #9), `npm ci`, `npm run db:migrate` (22
+migrations), `npm run seed:demo`, `npm run build` (clean), `npm run start`.
+
+Drove all three named roles plus two bonus ones against the live rig:
+`scripts/e2e-dispatch-smoke.mjs` (dispatcher — advance/refuse/cancel/tenancy-refusal, all 6
+functional steps green), `scripts/e2e-driver-smoke.mjs` (driver — dispatch ack through incident
+report, 10/10 steps green), `scripts/e2e-reports-smoke.mjs` + `scripts/e2e-settlements-smoke.mjs`
+(owner — P&L/lane CSVs, revenue dashboard, draft→approve→paid settlement math to the cent, O/O
+escrow, all green), `scripts/e2e-portal-smoke.mjs` (broker/shipper — portal load view + quote
+request, green). Every functional assertion passed; the only failing check across all runs was
+each script's final "no console errors" assertion (see below — pre-existing, not a regression).
+
+**Regression review of the last-3h commit window** (`483a920d` test-only, `4516530c` docs-only,
+`e6be22e` the drain merge itself — the merge additionally surfaced `b7cd4db7` RoutesSection's
+blue/green/purple→gold token cleanup and `ed50ad1` Reveal's dead-setState removal, both authored
+just outside the 3h window but landing on `main` for the first time via this drain): read both
+diffs, confirmed `fleet-badge-gold`/`text-gold`/`bg-navy-800` all resolve in `globals.css`, and
+screenshotted the rendered `RoutesSection` at 1440px after a real (non-smooth, non-fullPage)
+scroll into view — renders exactly as the commit message describes, no ghosted/invisible text, no
+leftover blue/green/purple. `Reveal.tsx`'s reduced-motion branch traced correctly: with
+`shown=false` the `motion-safe:opacity-0` class simply never applies under `prefers-reduced-motion:
+reduce`, so the element is visible via plain CSS with no state change needed — matches the commit's
+claim. `settlements-tenancy.test.ts`'s 8 new tests pass in isolation. **No regression found; no code
+change needed this cycle.**
+
+**Console-error false-positive — already fixed on an unmerged branch, not re-fixed here.** All
+three "no console errors" failures (dispatch/reports/settlements smokes) trace to the same cause:
+`<Analytics />`/`<SpeedInsights />` in the root layout try to load `/_vercel/{insights,speed-insights}
+/script.js`, which 404s on any self-hosted `next start` (no Vercel edge network locally) — two 404s
+per page load, and `page.on("console")`'s generic "Failed to load resource" message never carries a
+URL for the filter regex to exclude. Per the loop's own rule (§5, "before fixing a bug... grep
+`--all --oneline --grep`"): this exact regression was already found and fixed on
+`claude/practical-franklin-4s2urt` (`b26b38e` fix + `9ec64e3` follow-up triage, both unmerged,
+2 commits ahead of main per `npm run agent:branches`) — not re-fixing a third copy here. Integrator
+should prioritize draining that branch over any fresh lane work touching `src/app/layout.tsx` or
+`scripts/e2e-lib.mjs`.
+
+**Production probe — deploy pipeline stuck again, ~8h with zero deploy attempts.** Direct HTTPS to
+`thindtransport.com` is egress-blocked in this sandbox (403 on CONNECT, expected per §3b), so used
+Vercel MCP instead: the `thindtransport.com` alias is `READY` on `3e96ed4` ("iOS app/website
+separation"), deployed 2026-07-25 21:23:55 UTC — but `main` has advanced 6 commits since
+(`508e8aa` → `e6be22e`), including the very `.drain-stamp` nudge (`508e8aa`, "main-only rebuild
+nudge") that's supposed to force a fresh tree past Vercel's SHA/tree dedupe. `list_deployments`
+across the full window from `3e96ed4`'s timestamp to now shows deployment attempts for every one of
+those 6 SHAs *only* under `githubCommitRef: claude/hauldesk-project-setup-l1luoo` (the integrator
+branch, correctly build-skipped by `vercel.json`'s `ignoreCommand` since ref != main) — **zero**
+with `githubCommitRef: "main"` and `target: "production"`. This is the same recurring failure mode
+this repo's history shows repeatedly (`e105f8b`, `91cb250`, `e569688`, `d335e72`, `efcd2fb`,
+`ea6175a`, `b7eb6c2` — stale/stuck/recovered, on and off for days), just currently in the "stuck"
+half of the cycle and past every previously-reported staleness window (the worst prior report was
+~5h; this is ~8h). No functional/correctness impact confirmed (production still serves the
+pre-separation-fix commit fine, `get_runtime_errors` shows only a long-standing pg SSL-mode
+deprecation warning, unrelated), but the deploy automation itself is not doing its job right now.
+Did not push a fresh `.drain-stamp` nudge from this branch — that trick only works pushed to `main`
+directly, and this routine's territory rules forbid pushing to `main` (deploy-agent only); left it
+as the next deploy-agent's first action instead.
+
+Backlog:
+- **Deploy agent, do this first:** production stuck on `3e96ed4`, 6 main commits / ~8h behind with
+  zero Vercel deploy attempts on `main` since. Try the standing remedy first (fresh `.drain-stamp`
+  bump directly on `main`, same shape as `508e8aa`/`be5c50e4`/`d5fed19`); if that *also* gets no
+  deployment attempt, the SHA/tree-dedupe nudge itself may no longer be sufficient and the Vercel
+  project's GitHub integration (production branch setting, webhook delivery) needs a look from the
+  Vercel dashboard, which no agent here has access to.
+- Drain `claude/practical-franklin-4s2urt` (2 commits, `b26b38e` + `9ec64e3`) ahead of any fresh
+  lane-docs/lane-tests work — it already carries the Analytics/SpeedInsights 404 fix plus a
+  36-script false-positive audit; re-deriving it a third time would be pure waste.
+- Same as prior cycles, unchanged: owner/design call on green-as-success convention
+  (`PreQualificationForm.tsx` vs `ApplicationForm.tsx`); `TEST_GAPS.md` #2/#3 remain open;
+  `claude/lane-compliance` (1552 unpicked) still needs the meta-governor prune pass; npm audit /
+  `tiny_http` / IFTA-holiday items carried unchanged.
