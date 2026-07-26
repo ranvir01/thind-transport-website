@@ -1261,3 +1261,57 @@ Backlog:
 - The ~150 remaining pending `claude/*` branches (many `inspiring-sagan-*`/`stoic-mccarthy-*`
   duplicates of the same QA-drive/NotificationsBell-race fix) still need the meta-governor prune
   pass flagged on 2026-07-22 — most sampled so far are superseded, not unabsorbed value.
+
+## QA rig drive — 2026-07-26 ~17:09-17:48 UTC (owner/dispatcher/driver sweep)
+
+Charter (§5): no feature work — stand up the local rig, drive owner/dispatcher/driver flows with
+Playwright/Puppeteer, probe thindtransport.com read-only, fix only outright regressions from the
+last 3h of commits.
+
+Fresh local rig from scratch (Postgres 16 role/db created, `.env.local` from `.env.example`,
+`npm run db:migrate` — 22 migrations, `npm run seed:demo`). Started against main@9e47431, but a
+drain landed mid-cycle (main moved to 970ab05 at 17:14 UTC) — rebased onto it and rediffed: the
+new tip's only changes were four test-coverage commits (`getAgingSummary`, `pay-rules-db.ts`,
+`fuelFraudFlags`, `createLoad`/`updateLoad` tenancy) plus the drain commit itself, no product code,
+so nothing to regression-check. Clean build, 218 files/1936 tests green.
+
+Landed the known e2e-public-smoke/e2e-sweep stale-test fix directly instead of re-filing it a
+fourth time: this exact fix has sat verified-but-unmerged on `claude/practical-franklin-kcjomr`
+(3a21cc65) since the 17:15 UTC cycle three runs ago, and the last three QA-drive Backlogs all
+asked for it to be drained without it happening (158 pending branches, catch-up-mode integrator).
+It's a two-line, lane-tests-territory, already-triple-verified change, so applied it directly
+(`e366b29b`) rather than writing a fifth note.
+
+Full 51-script Puppeteer battery (`node scripts/e2e-run-all.mjs`) against the rebuilt rig: 51/51
+green, including `e2e-sweep` (confirms the stale-test fix). One script (`e2e-statements-smoke`)
+false-failed on the first pass — traced to this session's own rig setup, not a product bug: copying
+`.env.example` verbatim left placeholder `SMTP_USER=your-gmail@gmail.com` in `.env.local`, which
+made `isEmailConfigured()` return true and the app attempt a real SMTP connection instead of
+showing the graceful "Email not configured" toast the test expects. Blanked `SMTP_USER`/`SMTP_PASS`
+and restarted the server (a stale `next-server` process from an earlier rig boot was still serving
+the old env — `pkill -f "next start"` doesn't match the detached `next-server` child, only `kill
+-9 <actual pid>` does) — re-ran the single script clean. Noted here since the next QA-drive session
+will hit the same two traps from a fresh `.env.example` copy.
+
+Production probe via Vercel MCP (direct HTTPS to thindtransport.com still egress-blocked in this
+sandbox, confirmed via the proxy status endpoint — 403 on CONNECT). `list_deployments` shows the
+latest `target: production` / `READY` deployment (`dpl_J9CzoEhx2wGX7ZUU6NanGDG7RaHE`) is exactly
+main@970ab05 — no drift, matching the 17:14 UTC drain. `live: false` on the project object is the
+already-known-unreliable flag (see §3b) and disagreed with the deployment/alias evidence again
+this cycle — not treated as an outage signal. Runtime errors unchanged from the last two cycles:
+the informational pg SSL-mode deprecation warning, and the single 2026-07-26 14:24 UTC
+`cron:compliance-scan` Gmail `BadCredentials` rejection already filed and owner-notified last
+cycle (no new occurrences since).
+
+0 app defects found. 0 last-3h regressions (no product code in the window).
+
+Backlog:
+- Owner-gated, carried unchanged: rotate production `SMTP_USER`/`SMTP_PASS` (Gmail app password)
+  in Vercel — `cron:compliance-scan` got `BadCredentials` for Thind's own carrier at 2026-07-26
+  14:24 UTC; same shared transport (`src/lib/mailer.ts`) likely blocks driver-application/
+  password-reset/portal-confirmation email sitewide until rotated.
+- Meta-governor prune pass for the ~158 pending `claude/* `branches still overdue; `claude/lane-
+  compliance`'s one real payload (`d71d657d`, IFTA weekend-roll) should be cherry-picked onto a
+  fresh branch instead of merging the ~1557-commit stale fork.
+- Low-priority, carried: prod `POSTGRES_URL`'s `sslmode` alias will get weaker guarantees under
+  pg-connection-string v3/pg v9 — switch to explicit `sslmode=verify-full`.
