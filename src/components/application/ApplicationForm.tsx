@@ -265,7 +265,7 @@ export function ApplicationForm() {
       console.error("Submission error:", error)
       const errorMsg = error instanceof Error 
         ? `Error: ${error.message}` 
-        : "An unexpected error occurred. Please call (206) 765-6300 for immediate assistance."
+        : `An unexpected error occurred. Please call ${COMPANY_INFO.phone} for immediate assistance.`
       toast.error(errorMsg)
       setServerError(errorMsg)
     } finally {
