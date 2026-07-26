@@ -38,6 +38,7 @@ suite("portal + tenant isolation (query layer)", () => {
   let loadA: string
   let loadB: string
   let tenant2Load: string
+  let cancelledLoad: string
   const suffix = Math.random().toString(36).slice(2, 8)
 
   beforeAll(async () => {
@@ -63,11 +64,11 @@ suite("portal + tenant isolation (query layer)", () => {
     )
     customerB = b[0].id
 
-    const mkLoad = async (carrierId: string, customerId: string, ref: string) => {
+    const mkLoad = async (carrierId: string, customerId: string, ref: string, status = "in_transit") => {
       const rows = await db.query<{ id: string }>(
         `INSERT INTO hub.loads (carrier_id, reference, customer_id, status, equipment, linehaul_cents, fuel_surcharge_cents)
-         VALUES ($1, $2, $3, 'in_transit', 'dry_van', 100000, 10000) RETURNING id`,
-        [carrierId, ref, customerId]
+         VALUES ($1, $2, $3, $4, 'dry_van', 100000, 10000) RETURNING id`,
+        [carrierId, ref, customerId, status]
       )
       await db.query(
         `INSERT INTO hub.stops (carrier_id, load_id, sequence, type, city, state)
@@ -78,6 +79,7 @@ suite("portal + tenant isolation (query layer)", () => {
     }
     loadA = await mkLoad(T1, customerA, `ISO-A-${suffix}`)
     loadB = await mkLoad(T1, customerB, `ISO-B-${suffix}`)
+    cancelledLoad = await mkLoad(T1, customerA, `ISO-CANCELLED-${suffix}`, "cancelled")
 
     const t2c = await db.query<{ id: string }>(
       `INSERT INTO hub.customers (carrier_id, name, type) VALUES ($1, $2, 'broker') RETURNING id`,
@@ -103,9 +105,9 @@ suite("portal + tenant isolation (query layer)", () => {
     // Clean up everything this suite created (FK-safe order).
     await db.query(`DELETE FROM hub.invoices WHERE number = $1`, [`ISO-INV-${suffix}`])
     await db.query(`DELETE FROM hub.documents WHERE file_name = 'secret-pod-b.pdf' AND entity_id = $1`, [loadB])
-    await db.query(`DELETE FROM hub.load_events WHERE load_id IN ($1, $2, $3)`, [loadA, loadB, tenant2Load])
-    await db.query(`DELETE FROM hub.stops WHERE load_id IN ($1, $2, $3)`, [loadA, loadB, tenant2Load])
-    await db.query(`DELETE FROM hub.loads WHERE id IN ($1, $2, $3)`, [loadA, loadB, tenant2Load])
+    await db.query(`DELETE FROM hub.load_events WHERE load_id IN ($1, $2, $3, $4)`, [loadA, loadB, tenant2Load, cancelledLoad])
+    await db.query(`DELETE FROM hub.stops WHERE load_id IN ($1, $2, $3, $4)`, [loadA, loadB, tenant2Load, cancelledLoad])
+    await db.query(`DELETE FROM hub.loads WHERE id IN ($1, $2, $3, $4)`, [loadA, loadB, tenant2Load, cancelledLoad])
     await db.query(`DELETE FROM hub.customers WHERE name LIKE $1`, [`IsoTest%${suffix}`])
     await db.query(`DELETE FROM hub.carriers WHERE id = $1`, [tenant2])
     await db.hubDb().end()
@@ -142,6 +144,17 @@ suite("portal + tenant isolation (query layer)", () => {
     for (const forbidden of ["address", "facility", "lat", "lng", "pickup_number", "po_number", "notes"]) {
       expect(Object.keys(legit!.stops[0])).not.toContain(forbidden)
     }
+  })
+
+  it("a cancelled load never appears in the customer's load list", async () => {
+    const loads = await portal.portalLoads(T1, customerA, 200)
+    expect(loads.map((l) => l.reference)).not.toContain(`ISO-CANCELLED-${suffix}`)
+  })
+
+  it("a cancelled load 404s instead of rendering stale tracking info", async () => {
+    // PortalLoadPage calls notFound() on a null return, so a cancelled load
+    // must resolve the same way an out-of-tenant load does, not leak status.
+    expect(await portal.portalLoad(T1, customerA, cancelledLoad)).toBeNull()
   })
 
   it("a broker cannot fetch another customer's load documents", async () => {
