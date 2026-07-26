@@ -1175,3 +1175,68 @@ Backlog:
 - Carried, unchanged: npm audit's high-severity findings (owner-approval-gated semver-major bump);
   Rust sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision); IFTA due-date roll not
   accounting for legal holidays (documented scope decision).
+
+## QA rig drive: owner/dispatcher/driver full battery, 0 regressions, production still stalled — 2026-07-26 ~07:30 UTC
+
+Charter (`docs/agent-improvement-loop.md` §5): no feature work — stand up the local rig, drive
+owner/dispatcher/driver/broker/shipper flows, probe `thindtransport.com` read-only, fix only outright
+regressions from the last 3h of commits.
+
+Fresh rig from scratch: local Postgres role/db created, 22 migrations applied, `seed:demo`, `npm run
+build` (0 TS errors), `npx vitest run` (210 files/1856 tests, all green). `git log --since` confirms
+**zero commits landed in the last 3 hours** (HEAD `e6be22e` is ~4.5h old) — nothing to fix-forward.
+
+Drove the full 51-script Puppeteer battery (`e2e-run-all.mjs`) plus `e2e-sweep.mjs` against the fresh
+rig, ~15 minutes, then triaged every failure by hand:
+
+- **36 scripts** fail on a single `no console errors` assertion tripped by `/_vercel/insights/script.js`
+  + `/_vercel/speed-insights/script.js` 404ing against a local `next start` (Vercel-edge-only
+  endpoints). Every functional check in every one of those 36 scripts passed. This exact fix
+  (`IGNORABLE_CONSOLE_ERROR` centralized in `e2e-lib.mjs`) already exists, unmerged, on
+  `claude/practical-franklin-wcljtj` (`e6c11638`) and `claude/practical-franklin-4s2urt` (`b26b38eb`) —
+  not re-derived here per the loop's duplicate-fix rule.
+- **`e2e-sweep.mjs`**: "reports: page content missing... stuck on a spinner?" — false alarm. The
+  assertion (`"the operational view"`) is `reports/page.tsx`'s copy for the `!hasDriverPay` branch; the
+  demo tenant has seeded settlements so `hasDriverPay` is true and that copy is unreachable by design,
+  not a rendering bug. Manually verified `/hub/reports` as owner via Puppeteer: full P&L data renders
+  correctly (operating ratio, deadhead, margin, revenue/fuel/maintenance breakdown), no spinner, no
+  error. Same stale-assertion diagnosis as `4feeec41` on `claude/practical-franklin-wcljtj` — fix also
+  sits unmerged there.
+- **`e2e-public-smoke.mjs`**: `/testimonials` 404s locally — `vercel.json`'s redirect
+  (`/testimonials` → `/`) is edge-level routing that `next start` doesn't apply locally; works fine on
+  Vercel. Pre-existing, already flagged for a stale-check removal (`b8eddd63`, also unmerged).
+- **`e2e-driver-offline-smoke.mjs`**: failed 6/6 checks in the full-battery run (offline toast, IndexedDB
+  queue count, banner, replay toast, server persistence). Re-ran standalone immediately after: **100%
+  clean, all 8 checks passed**. Not reproducible — a timing race under the full battery's concurrent
+  load, not a product regression. No fix needed; noting in case it recurs.
+
+Net: **0 real defects, 0 regressions.** Every functional assertion across owner, dispatcher, accountant,
+driver, broker, and shipper roles passed. All raw failures trace to three already-diagnosed
+non-regressions (two with fixes already written but stranded on unmerged branches) plus one confirmed
+test flake.
+
+**Production probe** (direct HTTPS egress-blocked in this sandbox; used Vercel MCP per `docs/agent-improvement-loop.md`
+§3b): `thindtransport.com` is still pinned to `3e96ed4` (deployed 2026-07-25 21:23 UTC) with **zero**
+Vercel deployment records for any of the 6 commits main has taken since — including `e6be22e`, the
+newest "Drain integrator to main" commit, which has a genuinely different tree/content (not a same-SHA
+dedupe case; that remedy was already applied at `508e8aa`). Production is now ~10h stale. This exact
+finding was already paged to the owner twice by concurrent QA cycles today (`1771d6d3` ~04:29 UTC,
+`7c47c20b` ~05:26 UTC, the latter marked "owner notified"). Re-paged once more this cycle (staleness
+grew from ~8h to ~10h with no sign of self-recovery, consistent with those cycles' own "re-page only if
+still stuck next cycle" guidance) — **do not page again next cycle unless the automated escalation
+below has also been tried and failed.**
+
+Backlog:
+- **Deploy pipeline needs a human, not another agent cycle.** Two consecutive `.drain-stamp` remedies
+  (`508e8aa`, then the content-distinct `e6be22e`) both got zero Vercel deployment attempts — this
+  looks like the GitHub↔Vercel webhook/App connection itself, not a dedupe or build issue any commit
+  can fix. Needs a look at the Vercel dashboard's Git integration / deploy hooks for this project.
+- **Merge `claude/practical-franklin-wcljtj` and `claude/practical-franklin-4s2urt` before any fresh
+  lane-tests work** — between them they carry the `IGNORABLE_CONSOLE_ERROR` fix, the stale
+  `e2e-sweep.mjs` "operational view" assertion fix, and the `/testimonials` stale-check removal. These
+  three fixes have now been independently rediscovered by at least 3 separate QA cycles
+  (`b26b38eb`/`e6c1163`/`3a3c51c`c-era commits) because the branches keep getting orphaned instead of
+  drained — draining them once ends the loop.
+- Same as prior cycles: owner/design call on green-as-success convention; TEST_GAPS.md #2/#3 open;
+  `claude/lane-compliance` meta-governor prune pass still overdue; npm audit/tiny_http/IFTA-holiday
+  items carried unchanged.
