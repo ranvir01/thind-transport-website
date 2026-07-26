@@ -11,7 +11,15 @@ adapter-breaking change** — provisioning path, timeline, and transport all sti
 one new corroborating field detail found (see "Feed shape"). **2026-07-24 re-scout: no
 adapter-breaking change** — the real column layout is still unobtainable without a
 provisioned file; the "discounts applied" field flagged 2026-07-20 was not
-re-corroborated this pass (see "Feed shape").
+re-corroborated this pass (see "Feed shape"). **2026-07-26 re-scout: no adapter-breaking
+change, no new information at all** — a same-day eManager "Data Sharing Preferences"
+instructions PDF surfaced by search (`public-files-download.s3.us-east-2.amazonaws.com`,
+off the vendor domain, so not subject to the usual wall) 404'd instead of loading, and
+every other candidate source (Fleetio, Geotab, Motive, Datatruck, FleetRabbit) 403'd on
+direct fetch same as every prior pass — this is the **third straight fully-walled pass**
+(07-20 corroborated one new field via snippet, 07-24 and 07-26 found nothing new at all).
+Treat the "discounts applied" field as still unconfirmed and stop re-checking it every
+cycle; nothing short of a provisioned file or human-browser access will move it.
 
 ## Provisioning — two real paths (confirmed)
 
@@ -162,7 +170,7 @@ couldn't be fully confirmed, but the product naming and separate domain make it
 unrelated — don't chase it as a third developer portal alongside `developer.wexinc.com`
 and `fleetapi.wexinc.com` (both already ruled out, see Auth model).
 
-## Sources (researched 2026-07-11; re-scouted 2026-07-20, 2026-07-24)
+## Sources (researched 2026-07-11; re-scouted 2026-07-20, 2026-07-24, 2026-07-26)
 
 - Fleetio EFS integration help (Data Sharing Preferences flow, Data Feed User/Password,
   5-business-day provisioning, ~5-min partner sync): help.fleetio.com / fleetio.helpjuice.com
@@ -188,3 +196,14 @@ and `fleetapi.wexinc.com` (both already ruled out, see Auth model).
   partner sync cadence and the "up to 5 business days" / Data Sharing Preferences
   provisioning flow both reconfirmed via help.fleetio.com / fleetio.helpjuice.com search
   snippets.
+- 2026-07-26 pass (third straight fully-walled pass, no new information): two fresh leads
+  both failed — an eManager "Data Sharing Preferences" instructions PDF found via search
+  (`public-files-download.s3.us-east-2.amazonaws.com/Data+Sharing+Instructions.pdf`, an
+  S3 host outside the usual vendor-domain block) 404'd rather than loading, and
+  `fleetrabbit.com`, `support.geotab.com`, and `support.datatruck.io` (a newly-surfaced
+  Datatruck EFS-integration help page, not previously checked) all 403'd on direct fetch.
+  Search-snippet review of the same query set repeated only facts already in this doc
+  (eManager flow, Data Feed Username/Password, up to 5 business days) with nothing new on
+  CSV column names or the "discounts applied" field. No further value in re-running this
+  exact search set next cycle — needs either a provisioned file or human-browser access to
+  move.
