@@ -1261,3 +1261,53 @@ Backlog:
 - The ~150 remaining pending `claude/*` branches (many `inspiring-sagan-*`/`stoic-mccarthy-*`
   duplicates of the same QA-drive/NotificationsBell-race fix) still need the meta-governor prune
   pass flagged on 2026-07-22 — most sampled so far are superseded, not unabsorbed value.
+
+## QA rig drive on main@9e47431 — 2026-07-26 ~13:35 UTC (owner/dispatcher/driver E2E sweep)
+
+Stood up the local rig from scratch (fresh container had no Postgres role/db): created the
+`hauldesk` role + database, `.env.local` from `.env.example` with generated `NEXTAUTH_SECRET` /
+`CRON_SECRET` / `CREDENTIALS_KEY` / `SETUP_DB_TOKEN`, `npm run db:migrate` (22 migrations) +
+`npm run seed:demo`. `npm run build` + `npx vitest run` (214 files/1919 tests) + `npm run lint` +
+`npm run token-lint` + `npm run test:sidecars` (29 Rust + Go) all green on `main@9e47431` — this
+tip matched production exactly (Vercel `latestDeployment` SHA `9e47431f…`, alias `thindtransport.com`
+`READY`; direct HTTPS to the prod host is egress-blocked in this container, 403 on CONNECT, so
+verified via Vercel MCP instead per the release-gate doctrine). `get_runtime_errors` showed only a
+month-old recurring `pg` SSL-mode deprecation warning (not an error, not new) — no fresh production
+error clusters.
+
+Drove the full Puppeteer suite (`node scripts/e2e-run-all.mjs`, 51 scripts + the screen sweep,
+~14 min) against the seeded rig as owner, dispatcher, and driver. 49/51 passed. Two false-positive
+failures, both stale QA tooling (not product bugs, not regressions from the last 3h of lane merges
+that landed 12:36–12:54 UTC — traced each to a same-titled cause older than that window):
+
+- `e2e-public-smoke`: `/testimonials` 404'd. The route was deliberately deleted a day earlier
+  (`9291301`, "remove the fabricated content, the trademark logos, and the duplicated table" —
+  `SuccessStoriesSection`/`TestimonialsCarousel` presented AI-fabricated reviews) but the smoke's
+  page list was never updated. `sitemap.ts` and every nav/footer already dropped the link; only
+  the stale test entry pointed at a route that hasn't existed since 2026-07-25. Removed the
+  `["testimonials", "/testimonials"]` entry from `scripts/e2e-public-smoke.mjs`.
+- `e2e-sweep`: the owner-role `/hub/reports` screenshot showed a fully rendered P&L page (not a
+  spinner) — confirmed visually. The anchor text `"the operational view"` only renders when
+  `hasDriverPay` is false (`src/app/hub/(office)/reports/page.tsx`, added 2026-07-25 by `5c158d72`);
+  the seeded demo tenant has settlement data in the default 92-day window, so `hasDriverPay` is true
+  and the page correctly shows the other subtitle branch instead. The dispatcher-role check on the
+  same route already used a branch-independent anchor (`"per-truck p&l, last 92 days"`, present in
+  both subtitle variants) and passed. Changed the owner-role anchor in `scripts/e2e-sweep.mjs`'s
+  `OWNER_PAGES` to match — same fix shape as the earlier "QA routine: fix false failures in the
+  safety E2E smoke script" precedent.
+
+Re-ran both fixed scripts standalone against the same live rig: clean. Re-ran `npm run build` +
+`npx vitest run` (unchanged, test-script-only diff) — still 214 files/1919 tests green.
+
+No product code touched; no regressions found in the last 3 hours of lane-driver/lane-portal/
+lane-sidecars/lane-tests/lane-docs/lane-roadmap/lane-analytics/lane-saas merges (12:36–12:54 UTC) —
+full build/test/lint/sidecar/E2E gates all green on that tip before and after this fix.
+
+Backlog:
+- Carried from the prior cycle, unchanged: `claude/lane-compliance`'s real payload (`d71d657d`,
+  IFTA due-date weekend roll) still needs cherry-picking onto a fresh branch instead of merging
+  the ~1557-commit stale fork; the meta-governor prune pass for the ~150 pending `claude/*`
+  branches is still overdue; npm audit high-severity findings and the Rust `tiny_http`
+  timeout/thread-cap gap remain owner-gated.
+- `claude/eloquent-mendel-w6e4qz`'s Rust auth-middleware tests still need the manual side-by-side
+  diff noted last cycle before deciding merge vs. discard.

@@ -31,7 +31,6 @@ const PAGES = [
   ["pay-breakdown", "/pay-breakdown"],
   ["benefits", "/benefits"],
   ["routes", "/routes"],
-  ["testimonials", "/testimonials"],
   ["about", "/about"],
   ["fleet", "/fleet"],
   ["fuel-program", "/fuel-program"],
