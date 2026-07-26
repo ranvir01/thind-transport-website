@@ -1175,3 +1175,68 @@ Backlog:
 - Carried, unchanged: npm audit's high-severity findings (owner-approval-gated semver-major bump);
   Rust sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision); IFTA due-date roll not
   accounting for legal holidays (documented scope decision).
+
+## QA rig drive: full 51-script battery, 0 regressions, production deploy still stalled — 2026-07-26 ~04:20 UTC
+
+Charter (docs/agent-improvement-loop.md §5): no feature work — stand up the local rig, drive real
+owner/dispatcher/driver flows with Playwright/Puppeteer, probe `thindtransport.com` read-only, fix
+only outright regressions from the last 3h of commits.
+
+`main` (`e6be22e5`) and the integrator (1 ahead at `9cb28228`, a messages-smoke false-positive fix)
+are in steady state. Reviewed every commit in the trailing 3h window (`b7cd4db7`, `483a920d`,
+`4516530c`, `e6be22e5`) by reading the diffs directly: a marketing token-color swap, a test-only
+settlement-idempotency addition, a docs commit, and an integrator drain — no product code changed
+that could regress a user flow. **Nothing to fix-forward.**
+
+Fresh local rig from scratch (no `hubapp` role/`hubdb` database existed yet, pitfall #9): created
+both, `.env.local` generated from `.env.example` with fresh `NEXTAUTH_SECRET`/`CRON_SECRET`/
+`CREDENTIALS_KEY`. `npm ci`, `npm run db:migrate` (22 migrations), `npm run seed:demo`, `npm run
+build` (zero TS errors), `npx vitest run` (210 files/1856 tests), `npm run lint` — all green.
+
+Drove the full `scripts/e2e-battery.mjs` (51 Puppeteer smokes + the visual sweep — owner, dispatcher,
+accountant, driver, broker, shipper, portal across dispatch/IFTA/invoices/settlements/compliance/
+recruiting/integrations/onboarding/messages/etc.) against the freshly seeded database
+(`PUPPETEER_EXECUTABLE_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome`, pitfall #8).
+**15/51 raw PASS**, but hand-verified every one of the 36 failures traces to two already-diagnosed,
+already-filed issues, never a fresh regression: (1) 35 of them are the `@vercel/analytics`/
+`@vercel/speed-insights` 404-on-self-hosted-rig console-noise false positive (root cause `229885af`;
+fix already exists unmerged on `claude/practical-franklin-wcljtj` for the shared smokes, and
+separately on the integrator itself at `9cb28228` for `messages-smoke` specifically) — every
+functional/business-logic assertion in all 36 of those scripts passed, only the trailing
+"no console errors" check tripped; (2) `public-smoke`/`sweep` both still show `/testimonials`
+genuinely 404ing (no route, no component, and no internal link to `/testimonials` anywhere in
+`src/`) — a pre-existing gap filed by multiple past QA cycles, not something introduced recently and
+not fixed here since it's ambiguous whether the right move is adding the page (feature work, outside
+this routine's charter) or deleting the stale smoke check (lane-tests territory).
+
+Production probe: direct HTTPS to `thindtransport.com` stayed egress-blocked (curl exit 56, same as
+every prior cycle) — used the Vercel MCP tools instead. Confirmed the same stalled-deploy anomaly a
+concurrent session (`claude/practical-franklin-b79ktz`, commits `4a1775b1`/`25ff335f`, ~03:37-03:40
+UTC) already found and paged the owner about: the last `target: "production"` / `state: "READY"`
+deployment is still `dpl_8bs2aVYLjQ9rMGPHs5NRNWXfg3Rx` (commit `3e96ed4d`, created 2026-07-25
+21:23:55 UTC) — now ~7h stale, while every one of the 6 commits pushed to `main` since
+(`508e8aa4` through `e6be22e5`) produced **zero** deployment record of any kind (not READY, not
+CANCELED). Ruled out `vercel.json`'s `ignoreCommand` (that's correctly skipping non-`main` pushes,
+confirmed via a CANCELED preview with `errorLink: ignored-build-step`) and the integrator drain
+itself (`drain-integrator.yml` ran again at 04:02 UTC, `success`, confirming `main`-level git state is
+fine — this is specifically Vercel's GitHub App webhook not firing a production build on push to
+`main`). `get_runtime_errors` (24h): only the pre-existing `pg`/`pg-connection-string` SSL-mode
+deprecation warning, last seen 2026-07-25 15:38 UTC (before the stall started) — no new production
+errors. Since the owner was already paged for this exact incident ~45 minutes before this cycle
+started, not re-notifying to avoid a duplicate page for the same finding.
+
+Backlog:
+- Time-sensitive, unchanged from the prior cycle: production deploy pipeline still stalled (main
+  un-deployed 7h+ as of this cycle) — needs a human check of Vercel's GitHub App webhook delivery log
+  (dashboard → Git integration), not an in-repo fix. Owner already paged once this window; re-page
+  only if it's still stuck after the next deploy-focused cycle.
+- `/testimonials` 404 (no route exists) confirmed again this cycle via `public-smoke`/`sweep` — still
+  needs an owner call (build the page vs. delete the stale e2e assertion) before any agent touches it.
+- Analytics/SpeedInsights console-noise false positive: `claude/practical-franklin-wcljtj` carries the
+  verified fix for the shared smokes; integrator should drain it instead of a fifth independent
+  re-derivation (a sixth Backlog mention of the same fix branch now).
+- `claude/lane-compliance` (1552+ unpicked commits) remains the largest pending branch; meta-governor
+  prune pass still overdue.
+- Carried, unchanged: npm audit's high-severity findings (owner-approval-gated semver-major bump);
+  Rust sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision); IFTA due-date roll not
+  accounting for legal holidays (documented scope decision).
