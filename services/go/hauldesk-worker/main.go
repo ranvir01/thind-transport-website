@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"log"
 	"math"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
@@ -120,20 +121,26 @@ func main() {
 	defer stop()
 
 	srv := newServer(":8081")
+	ln, err := net.Listen("tcp", srv.Addr)
+	if err != nil {
+		log.Fatal(err)
+	}
 	log.Printf("hauldesk-worker listening on %s (auth: %v)", srv.Addr, os.Getenv("HAULDESK_SIDECAR_SECRET") != "")
-	if err := run(ctx, srv); err != nil {
+	if err := run(ctx, srv, ln); err != nil {
 		log.Fatal(err)
 	}
 }
 
-// run serves srv until ctx is canceled, then drains in-flight requests via
-// Shutdown before returning, so a container restart/redeploy never cuts off
-// a request mid-OSRM-call (a bare os.Exit on SIGTERM would). Kept separate
-// from main so the shutdown path is testable via plain context cancellation
-// instead of sending this process real OS signals.
-func run(ctx context.Context, srv *http.Server) error {
+// run serves srv on ln until ctx is canceled, then drains in-flight requests
+// via Shutdown before returning, so a container restart/redeploy never cuts
+// off a request mid-OSRM-call (a bare os.Exit on SIGTERM would). Kept
+// separate from main so both the shutdown path (plain context cancellation,
+// no real OS signal needed) and listener failures (a fake net.Listener) are
+// testable by fault injection — main passes the real bound listener, tests
+// pass one that fails on demand.
+func run(ctx context.Context, srv *http.Server, ln net.Listener) error {
 	serveErr := make(chan error, 1)
-	go func() { serveErr <- srv.ListenAndServe() }()
+	go func() { serveErr <- srv.Serve(ln) }()
 
 	select {
 	case err := <-serveErr:

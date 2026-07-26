@@ -3,7 +3,10 @@
  * summary tiles from seeded credential expiries; a manual company item can be
  * added and resolved; a driver document uploads through DocumentsPanel;
  * expired rows (Amrit Bains med card, Truck #107 registration) show expiry
- * pills; the driver app login cannot reach the office compliance wall.
+ * pills; a mileage-only PM schedule (Truck #102's Tire rotation, no
+ * interval_days) correctly shows red/overdue-by-miles on both the wall and
+ * the truck detail page instead of sitting stuck amber forever; the driver
+ * app login cannot reach the office compliance wall.
  *
  * Reseeds demo data first (see reseed in e2e-lib.mjs) — the run resolves the
  * seeded "Drug & alcohol consortium" item and asserts the red tile drops by
@@ -27,6 +30,19 @@ const readSummary = (page) =>
       .map((p) => Number(p.querySelector("p.font-display")?.textContent?.trim() ?? "NaN"))
     return { red: nums[0], amber: nums[1], green: nums[2] }
   })
+
+const rowDotColor = (page, kindText) =>
+  page.evaluate((kind) => {
+    const rows = [...document.querySelectorAll("div.flex.items-center.gap-3.p-3")]
+    const row = rows.find((r) => r.innerText.includes(kind))
+    if (!row) return null
+    const dot = row.querySelector("span.rounded-full")
+    if (!dot) return null
+    if (dot.className.includes("bg-bad")) return "red"
+    if (dot.className.includes("bg-warn")) return "amber"
+    if (dot.className.includes("bg-ok")) return "green"
+    return "unknown"
+  }, kindText)
 
 const resolveManualItem = (page, kindText) =>
   page.evaluate((kind) => {
@@ -72,6 +88,13 @@ async function main() {
   check(wall.includes("expired"), "wall shows an expired pill")
   check(wall.includes("Truck #107") && wall.includes("Registration"), "wall lists Truck #107 registration")
   check(wall.includes("Drug & alcohol consortium"), "wall lists the overdue consortium item")
+  // Truck 102's mileage-only "Tire rotation" schedule (20k mi interval, last
+  // done at 100k, current ~130k from its seeded position-ping trail) has no
+  // interval_days at all — before the odometer-aware due-status fix this sat
+  // on the wall stuck amber forever with no signal of how overdue it was.
+  check(wall.includes("Truck #102") && wall.includes("PM: Tire rotation"), "wall lists Truck #102's Tire rotation PM")
+  check(wall.includes("mi overdue"), "wall shows a mileage-overdue pill")
+  check((await rowDotColor(page, "Tire rotation")) === "red", "Tire rotation row is red, not stuck amber")
   // Auto-tracked IFTA filing entries come from complianceEntries() alone; the
   // page once merged iftaFilingComplianceEntries() a second time, so every
   // "IFTA filing <quarter>" row rendered twice and the summary double-counted.
@@ -118,7 +141,20 @@ async function main() {
   check(await textAppears(page, "e2e-compliance.pdf"), "uploaded PDF appears in the documents list")
   await shot(page, "04-driver-doc-uploaded")
 
-  console.log("5. Driver login cannot reach the office compliance wall")
+  console.log("5. Truck 102's detail page shows the same mileage-overdue PM")
+  await page.goto(`${BASE}/hub/fleet`, { waitUntil: "networkidle2" })
+  const truckHref = await page.evaluate(
+    () => [...document.querySelectorAll("a")].find((a) => a.textContent.includes("#102"))?.getAttribute("href")
+  )
+  check(!!truckHref, `found Truck #102 link (${truckHref})`)
+  await page.goto(`${BASE}${truckHref}`, { waitUntil: "networkidle2" })
+  await waitForText(page, "Maintenance")
+  const truckPageText = await page.evaluate(() => document.body.innerText)
+  check(truckPageText.includes("Tire rotation"), "truck page lists the Tire rotation schedule")
+  check(truckPageText.includes("mi overdue"), "truck page shows the same mileage-overdue status")
+  await shot(page, "05-truck-mileage-overdue")
+
+  console.log("6. Driver login cannot reach the office compliance wall")
   const ctx = await browser.createBrowserContext()
   const page2 = await ctx.newPage()
   await page2.setViewport({ width: 1440, height: 900 })
@@ -132,7 +168,7 @@ async function main() {
     .then(() => true)
     .catch(() => false)
   check(redirected, `driver redirected away from compliance (at ${page2.url()})`)
-  await shot(page2, "05-driver-blocked")
+  await shot(page2, "06-driver-blocked")
 
   const realErrors = realConsoleErrors(consoleErrors)
   check(realErrors.length === 0, `no console errors (${realErrors.length}: ${realErrors.slice(0, 2).join(" | ")})`)

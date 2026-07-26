@@ -6,13 +6,19 @@ import {
   parseStoredPnlRange, resolvePnlRange, REPORTS_RANGE_COOKIE,
   type RevenuePeriod, type AgingTrendPeriod, type SettlementLiability, type FuelSpendSummary, type LaneLeaderboardRow,
 } from "@/lib/hub/reports"
-import { computeFleetKpis } from "@/lib/hub/kpi"
-import { complianceEntries, summarize, type ComplianceEntry } from "@/lib/hub/compliance"
+import { computeFleetKpis, rankTruckPerformance } from "@/lib/hub/kpi"
+import { complianceEntries, summarize, type ComplianceColor, type ComplianceEntry } from "@/lib/hub/compliance"
 import { requirePermissionPage } from "@/lib/hub/session"
 import { fmtCents } from "@/lib/hub/types"
-import { Panel, PageHeader, ExpiryPill } from "@/components/hub/ui"
+import { Panel, PageHeader, ExpiryPill, type PillTone } from "@/components/hub/ui"
 
 export const dynamic = "force-dynamic"
+
+const COLOR_TONE: Record<ComplianceColor, PillTone> = {
+  red: "bad",
+  amber: "warn",
+  green: "ok",
+}
 
 function RevenueBars({ periods, labelFmt }: { periods: RevenuePeriod[]; labelFmt: (iso: string) => string }) {
   const max = Math.max(1, ...periods.map((p) => p.revenueCents))
@@ -198,6 +204,52 @@ function LoadedVsDeadheadPanel({ pnl, rangeLabel }: { pnl: Awaited<ReturnType<ty
   )
 }
 
+function TruckPerformancePanel({ pnl, emptyRangeLabel }: { pnl: Awaited<ReturnType<typeof truckPnlRange>>; emptyRangeLabel: string }) {
+  const ranked = rankTruckPerformance(
+    pnl.map((r) => ({
+      truckId: r.truck_id,
+      unitNumber: r.unit_number,
+      netCents: r.net_cents,
+      loadedMiles: Number(r.loaded_miles ?? 0),
+    }))
+  ).filter((r) => r.netPerMileCents != null)
+
+  if (ranked.length === 0) {
+    return (
+      <p className="px-4 py-4 text-body-sm text-fg-3">
+        No loaded miles {emptyRangeLabel} — truck ranking needs at least one load with miles logged.
+      </p>
+    )
+  }
+
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="border-b border-border text-left text-label text-fg-3 uppercase">
+            <th className="px-4 py-3">Truck</th>
+            <th className="px-4 py-3 text-right">Net</th>
+            <th className="px-4 py-3 text-right">Net / mi</th>
+          </tr>
+        </thead>
+        <tbody>
+          {ranked.map((r) => (
+            <tr key={r.truckId} className="border-b border-border last:border-b-0">
+              <td className="px-4 py-2.5 font-bold text-fg">#{r.unitNumber}</td>
+              <td className={`px-4 py-2.5 text-right font-semibold ${r.netCents >= 0 ? "text-ok" : "text-bad"}`}>
+                {fmtCents(r.netCents)}
+              </td>
+              <td className={`px-4 py-2.5 text-right font-semibold tabular-nums ${(r.netPerMileCents ?? 0) >= 0 ? "text-ok" : "text-bad"}`}>
+                {r.netPerMileCents != null ? `$${(r.netPerMileCents / 100).toFixed(2)}` : "—"}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
 function SettlementLiabilityPanel({ liability }: { liability: SettlementLiability }) {
   return (
     <div className="px-4 py-4">
@@ -308,7 +360,7 @@ function ComplianceRedFlagsPanel({ entries }: { entries: ComplianceEntry[] }) {
                   </Link>
                 )}
               </div>
-              <ExpiryPill date={entry.due} />
+              <ExpiryPill date={entry.due} miles={entry.dueMiles} tone={COLOR_TONE[entry.color]} />
             </div>
           ))}
         </div>
@@ -402,6 +454,12 @@ export default async function OwnerDashboardPage() {
         </Panel>
         <Panel title="Fuel spend">
           <FuelSpendPanel fuel={fuel} />
+        </Panel>
+      </div>
+
+      <div className="mt-4 grid grid-cols-1 gap-4">
+        <Panel title={`Truck performance, worst-first — ${rangeLabel}`}>
+          <TruckPerformancePanel pnl={pnl} emptyRangeLabel={lanesEmptyLabel} />
         </Panel>
       </div>
     </div>

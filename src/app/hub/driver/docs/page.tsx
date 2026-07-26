@@ -2,7 +2,7 @@ import { FileText } from "lucide-react"
 import { requireDriverUser } from "@/lib/hub/session"
 import { driverDocuments, driverExpiries } from "@/lib/hub/driver-app"
 import { DOCUMENT_KIND_LABELS } from "@/lib/hub/types"
-import { ExpiryPill } from "@/components/hub/ui"
+import { DriverExpiryPill } from "@/components/hub/driver/ExpiryPill"
 
 export const dynamic = "force-dynamic"
 
@@ -22,10 +22,10 @@ export default async function DriverDocsPage() {
 
       <div className="rounded-2xl border border-white/10 bg-navy-800/80 p-4 mb-4 space-y-2">
         <p className="flex items-center justify-between text-sm text-steel-100">
-          <span className="font-semibold text-white">CDL</span> <ExpiryPill date={expiries.cdl_expiry} />
+          <span className="font-semibold text-white">CDL</span> <DriverExpiryPill date={expiries.cdl_expiry} />
         </p>
         <p className="flex items-center justify-between text-sm text-steel-100">
-          <span className="font-semibold text-white">Medical card</span> <ExpiryPill date={expiries.medical_card_expiry} />
+          <span className="font-semibold text-white">Medical card</span> <DriverExpiryPill date={expiries.medical_card_expiry} />
         </p>
         <p className="text-body-xs text-steel-400">
           Renewing soon? Snap the new card in Messages and the office files it.
@@ -51,7 +51,7 @@ export default async function DriverDocsPage() {
                   </span>
                   <span className="block text-body-xs text-steel-300 truncate">{doc.file_name}</span>
                 </span>
-                {doc.expiry ? <ExpiryPill date={doc.expiry} /> : null}
+                {doc.expiry ? <DriverExpiryPill date={doc.expiry} /> : null}
               </a>
             </li>
           ))}

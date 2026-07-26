@@ -4,6 +4,7 @@ import { requireOfficeUser } from "@/lib/hub/session"
 import { listDrivers } from "@/lib/hub/drivers"
 import { listDocuments } from "@/lib/hub/documents"
 import { query } from "@/lib/hub/db"
+import { truckOdometers } from "@/lib/hub/compliance"
 import { PageHeader, BackLink } from "@/components/hub/ui"
 import { TruckForm, type TruckFormState } from "@/components/hub/FleetForms"
 import { DocumentsPanel } from "@/components/hub/DocumentsPanel"
@@ -18,13 +19,13 @@ export default async function TruckDetailPage({ params }: { params: Promise<{ id
   const { id } = await params
   const truck = await getTruck(user.carrierId, id).catch(() => null)
   if (!truck) notFound()
-  const [drivers, documents, dvirs, dvirState, schedules, records] = await Promise.all([
+  const [drivers, documents, dvirs, dvirState, schedules, records, odometerByTruck] = await Promise.all([
     listDrivers(user.carrierId),
     listDocuments(user.carrierId, "truck", id),
     listDvirsForTruck(user.carrierId, id),
     truckDvirState(user.carrierId, id),
     query<MaintenanceSchedule>(
-      `SELECT id, name, interval_miles, interval_days, last_done_on FROM hub.maintenance_schedules
+      `SELECT id, name, interval_miles, interval_days, last_done_on, last_done_odometer FROM hub.maintenance_schedules
        WHERE carrier_id = $1 AND truck_id = $2 ORDER BY name`,
       [user.carrierId, id]
     ),
@@ -33,6 +34,7 @@ export default async function TruckDetailPage({ params }: { params: Promise<{ id
        WHERE carrier_id = $1 AND truck_id = $2 ORDER BY done_on DESC LIMIT 20`,
       [user.carrierId, id]
     ),
+    truckOdometers(user.carrierId),
   ])
 
   const initial: TruckFormState = {
@@ -66,7 +68,7 @@ export default async function TruckDetailPage({ params }: { params: Promise<{ id
         <div className="max-w-2xl space-y-4">
           <DvirPanel truckId={id} dvirs={dvirs} state={dvirState.state} openDvir={dvirState.openDvir} />
           <DocumentsPanel entityType="truck" entityId={id} documents={documents} />
-          <MaintenancePanel truckId={id} schedules={schedules} records={records} />
+          <MaintenancePanel truckId={id} schedules={schedules} records={records} currentOdometer={odometerByTruck.get(id) ?? null} />
         </div>
       </div>
     </div>
