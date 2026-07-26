@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { computeFleetKpis } from "../kpi"
+import { computeFleetKpis, rankTruckPerformance } from "../kpi"
 
 describe("computeFleetKpis", () => {
   it("computes CPM, RPM, and deadhead % from the operating base", () => {
@@ -126,5 +126,33 @@ describe("computeFleetKpis", () => {
       expect(k.netCents).toBe(-10_00)
       expect(k.marginPct).toBe(-10)
     })
+  })
+})
+
+describe("rankTruckPerformance", () => {
+  it("sorts worst net/mile first", () => {
+    const ranked = rankTruckPerformance([
+      { truckId: "a", unitNumber: "101", netCents: 100_00, loadedMiles: 500 }, // $2.00/mi
+      { truckId: "b", unitNumber: "102", netCents: -50_00, loadedMiles: 500 }, // -$0.10/mi
+      { truckId: "c", unitNumber: "103", netCents: 25_00, loadedMiles: 500 }, // $0.50/mi
+    ])
+    expect(ranked.map((r) => r.unitNumber)).toEqual(["102", "103", "101"])
+    expect(ranked[0].netPerMileCents).toBe(-10)
+  })
+
+  it("puts trucks with no loaded miles last, ranked among themselves by unit number", () => {
+    const ranked = rankTruckPerformance([
+      { truckId: "a", unitNumber: "101", netCents: 0, loadedMiles: 0 },
+      { truckId: "b", unitNumber: "102", netCents: -10_00, loadedMiles: 100 },
+      { truckId: "c", unitNumber: "100", netCents: 0, loadedMiles: 0 },
+    ])
+    expect(ranked.map((r) => r.unitNumber)).toEqual(["102", "100", "101"])
+    expect(ranked[1].netPerMileCents).toBeNull()
+    expect(ranked[2].netPerMileCents).toBeNull()
+  })
+
+  it("rounds net/mile to the nearest cent", () => {
+    const ranked = rankTruckPerformance([{ truckId: "a", unitNumber: "101", netCents: 100, loadedMiles: 3 }])
+    expect(ranked[0].netPerMileCents).toBe(33) // 100/3 = 33.33 -> 33
   })
 })

@@ -67,6 +67,37 @@ export interface FleetKpis {
 
 const round1 = (n: number) => Math.round(n * 10) / 10
 
+/**
+ * Per-truck P&L row, ranked worst-first by net/loaded-mile — the operational
+ * cost basis (fuel + maintenance + other expenses), not driver pay, matching
+ * `truckPnlRange`'s own net_cents. Worst-first because the fleet-wide margin
+ * hides which one or two trucks are actually losing money (same reasoning as
+ * the deadhead panel's per-truck sort).
+ */
+export interface TruckPerformanceInput {
+  truckId: string
+  unitNumber: string
+  netCents: number
+  loadedMiles: number
+}
+
+export interface TruckPerformanceRow extends TruckPerformanceInput {
+  /** Net cents per loaded mile. Null when the truck had no loaded miles in range — can't be ranked. */
+  netPerMileCents: number | null
+}
+
+export function rankTruckPerformance(rows: TruckPerformanceInput[]): TruckPerformanceRow[] {
+  return rows
+    .map((r) => ({ ...r, netPerMileCents: r.loadedMiles > 0 ? Math.round(r.netCents / r.loadedMiles) : null }))
+    .sort((a, b) => {
+      // Unranked (no miles) trucks sort last — a blank isn't a good number.
+      if (a.netPerMileCents == null && b.netPerMileCents == null) return a.unitNumber.localeCompare(b.unitNumber)
+      if (a.netPerMileCents == null) return 1
+      if (b.netPerMileCents == null) return -1
+      return a.netPerMileCents - b.netPerMileCents
+    })
+}
+
 export function computeFleetKpis(input: FleetKpiInput): FleetKpis {
   const revenueCents = Math.round(input.revenueCents)
   const operatingCostCents = Math.round(input.operatingCostCents)
