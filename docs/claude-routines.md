@@ -1261,3 +1261,55 @@ Backlog:
 - The ~150 remaining pending `claude/*` branches (many `inspiring-sagan-*`/`stoic-mccarthy-*`
   duplicates of the same QA-drive/NotificationsBell-race fix) still need the meta-governor prune
   pass flagged on 2026-07-22 — most sampled so far are superseded, not unabsorbed value.
+
+## QA rig drive — 2026-07-26 ~21:30 UTC (owner/dispatcher/driver, fourth pass this window)
+
+Charter (docs/agent-improvement-loop.md §5): no feature work — stand up the local rig, drive
+owner/dispatcher/driver flows, probe thindtransport.com read-only, fix only outright regressions
+from the last 3h of commits.
+
+Fresh rig from scratch (Postgres 16 role/db created, migrations 001-022, `seed:demo`), clean
+`npm run build`, `npx vitest run` (222 files / 1961 tests green), and `npm run lint` (clean) on
+`main@c5216d1`. Ran the full 52-script Puppeteer battery as owner/dispatcher/driver
+(`node scripts/e2e-run-all.mjs`, ~15.7m): 50/52 passed. The tolls-reconciliation dashboard from
+the last-3h commit window drove end-to-end again (unassigned toll assigned to a truck, exact
+cents, count dropped 2→1, survives reload). The 2 failures are the same pre-existing
+false-test-expectations already diagnosed and fixed on unmerged branch
+`claude/practical-franklin-lcfbnd` (`b5f5be3d`) — confirmed by source read this pass: `/testimonials`
+has no `src/app/testimonials` route and zero live `href` pointing at it anywhere in `src/`
+(`e2e-public-smoke` is checking a stale URL, not a broken site link), and `/hub/reports`'s subtitle
+genuinely has two valid copy branches (`hasDriverPay` toggles whether the string contains "the
+operational view" — `src/app/hub/(office)/reports/page.tsx:100-104`), so `e2e-sweep`'s anchor is
+too narrow, not the product. Fourth independent pass to hit the identical two failures today
+(18:36, 19:33, 20:40, now 21:30 UTC) — not re-fixing a fourth time per AGENTS.md's duplicate-work
+rule; the branch stays unmerged and undrained.
+
+Reviewed the last-3h commit window against AGENTS.md's standing rules: `main` has not moved since
+`c5216d1` at 17:51 UTC (see below), so there is nothing new in that window beyond what the 19:33
+UTC pass already reviewed (66c79f8..c5216d1) and cleared — no regressions.
+
+Production probe via Vercel MCP (direct HTTPS to thindtransport.com egress-blocked from this
+sandbox, confirmed via 403 on CONNECT): `thindtransport.com` is still `READY` on `970ab05`
+(deployed 17:14 UTC) while `main` has been at `c5216d1` since 17:51 UTC — now ~3h40m stale, still
+zero Vercel deployment attempts of any kind registered for that push (confirmed both via
+`list_deployments` — no entry with `githubCommitRef: main` newer than `970ab05` — and via GitHub
+Actions, where `drain-integrator`/`drain-fallback`/`main-drain-fallback` all report `c5216d1` green
+on the git side, so this is Vercel-side only, not a broken build). Same known, recurring,
+owner-gated issue already escalated across multiple cycles today (03:37 through 20:40 UTC); still
+well short of the ~10:26 UTC incident's ~12.7h before self-healing, so carrying forward rather than
+re-paging. Runtime-error groups (3h lookback): none — the Gmail `BadCredentials` hit from 14:24 UTC
+has not recurred.
+
+Backlog:
+- Drain `claude/practical-franklin-lcfbnd` (`b5f5be3d`) — verified one-line fix for both
+  `e2e-public-smoke`'s stale `/testimonials` entry and `e2e-sweep`'s reports-subtitle anchor; now
+  confirmed unfixed across four independent QA-drive passes today.
+- Vercel production deploy pipeline: `main@c5216d1` (17:51 UTC) still undeployed at ~3h40m and
+  counting, zero deployment attempts registered — needs owner-level access to Vercel project
+  settings / GitHub App installation to diagnose if it doesn't self-resolve; re-page if this
+  crosses into many-hours territory like the ~10:26 UTC incident (~12.7h) did.
+- Owner-gated, carried: rotate production `SMTP_USER`/`SMTP_PASS` (Gmail app password) —
+  `cron:compliance-scan` hit `BadCredentials` once on 2026-07-26 14:24 UTC.
+- `claude/lane-compliance` (~1550+ unpicked) still needs the meta-governor prune pass; do NOT
+  plain-merge it.
+- npm audit high-severity findings remain owner-approval-gated; not re-triaged this cycle.
