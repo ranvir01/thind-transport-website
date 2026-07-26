@@ -209,6 +209,73 @@ describe("approveSettlement claims the draft atomically before side effects", ()
     expect(sqls.some((s) => s.includes("UPDATE hub.advances"))).toBe(false)
     expect(sqls.some((s) => s.includes("SET statement_url"))).toBe(false)
   })
+
+  it("flips an advance line to applied guarded by carrier_id + status='outstanding' (TEST_GAPS.md #6)", async () => {
+    // The `AND status = 'outstanding'` guard here is the only thing stopping an
+    // advance from being deducted twice across settlements: $1,500/driver cap x
+    // 10 drivers = $15,000 exposure if a settled advance is ever re-applied.
+    const ADVANCE = "55555555-5555-5555-5555-555555555555"
+    queryOneMock.mockImplementation(async (sql: string) => {
+      const s = String(sql)
+      if (s.includes("hub.settlements s JOIN hub.drivers")) return draftSettlement
+      if (s.includes("FROM hub.drivers WHERE id = $1 AND carrier_id = $2")) return { id: DRIVER, email: null }
+      return null
+    })
+    queryMock.mockImplementation(async (sql: string) => {
+      const s = String(sql)
+      if (s.includes("FROM hub.settlement_lines")) {
+        return [{ id: "l1", kind: "deduction", label: "Advance", amount_cents: 20000, source_type: "advance", source_id: ADVANCE }]
+      }
+      if (s.includes("SET status = 'approved'")) return [{ id: SETTLEMENT }]
+      return []
+    })
+    await approveSettlement(CARRIER, SETTLEMENT, ACTOR)
+    const advanceUpdate = queryMock.mock.calls.find(([sql]) => String(sql).includes("UPDATE hub.advances"))
+    expect(advanceUpdate).toBeDefined()
+    expect(String(advanceUpdate![0])).toContain("status = 'applied'")
+    expect(String(advanceUpdate![0])).toContain("WHERE id = $2 AND carrier_id = $3 AND status = 'outstanding'")
+    expect(advanceUpdate![1]).toEqual([SETTLEMENT, ADVANCE, CARRIER])
+  })
+
+  it("re-applying the same advance on a second settlement affects zero rows, not a second deduction (idempotency guard, TEST_GAPS.md #6)", async () => {
+    // Two settlements for the same driver both carry a line pointing at the
+    // SAME advance (the exact bug the guard exists for: an advance deducted
+    // on one statement but never flipped to 'applied' would otherwise deduct
+    // again on the next). The fake client enforces the real WHERE semantics
+    // (`AND status = 'outstanding'`) so the second UPDATE is issued but
+    // matches zero rows, proving the guard — not any app-level check — is
+    // what stops the double-deduction.
+    const ADVANCE = "66666666-6666-6666-6666-666666666666"
+    const advances = new Map([[ADVANCE, "outstanding"]])
+    const settlementA = { ...draftSettlement, id: "settlement-a" }
+    const settlementB = { ...draftSettlement, id: "settlement-b" }
+    const advanceLine = [{ id: "l1", kind: "deduction", label: "Advance", amount_cents: 20000, source_type: "advance", source_id: ADVANCE }]
+    const advanceUpdateResults: unknown[] = []
+    queryOneMock.mockImplementation(async (sql: string, params: unknown[] = []) => {
+      const s = String(sql)
+      if (s.includes("hub.settlements s JOIN hub.drivers")) {
+        return (params as string[])[1] === "settlement-a" ? settlementA : settlementB
+      }
+      if (s.includes("FROM hub.drivers WHERE id = $1 AND carrier_id = $2")) return { id: DRIVER, email: null }
+      return null
+    })
+    queryMock.mockImplementation(async (sql: string, params: unknown[] = []) => {
+      const s = String(sql)
+      if (s.includes("FROM hub.settlement_lines")) return advanceLine
+      if (s.includes("SET status = 'approved'")) return [{ id: (params as string[])[1] }]
+      if (s.includes("UPDATE hub.advances")) {
+        const [, advanceId] = params as [string, string, string]
+        const result = advances.get(advanceId) === "outstanding" ? [{ id: advanceId }] : []
+        if (result.length > 0) advances.set(advanceId, "applied")
+        advanceUpdateResults.push(result)
+        return result
+      }
+      return []
+    })
+    await approveSettlement(CARRIER, "settlement-a", ACTOR)
+    await approveSettlement(CARRIER, "settlement-b", ACTOR)
+    expect(advanceUpdateResults).toEqual([[{ id: ADVANCE }], []])
+  })
 })
 
 describe("getSettlementLines carrier-guards via settlements join", () => {
