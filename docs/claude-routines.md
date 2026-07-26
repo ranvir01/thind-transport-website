@@ -1214,3 +1214,50 @@ Backlog:
 - `claude/lane-compliance` (~1552 unpicked) still needs the meta-governor prune pass; npm audit
   high-severity findings and the Rust sidecar `tiny_http` timeout/thread-cap gap remain owner-gated,
   carried unchanged.
+
+## Integrator absorb + drain — 2026-07-26 ~12:50 UTC (Routine 1 run)
+
+Integrator was 1 ahead / 1 behind main (a stray `.drain-stamp` divergence) with 158 pending
+`claude/*` branches. Merged `origin/main` into the integrator first (clean), verified build +
+`vitest` green (168→213 files, 1854 tests), then absorbed the eight small `claude/lane-*`
+branches in one pass, rebuilding/retesting after each:
+
+- `lane-driver` (forced-dark `ExpiryPill` on `/hub/driver`), `lane-portal` (cancelled-load
+  exclusion coverage in `portal.ts`), `lane-sidecars` (Go worker `run()` listener param +
+  test — ran `npm run test:sidecars`, 29 Rust + Go tests green), `lane-tests` (settlement-advance
+  idempotency + fuel-core IFTA coverage), `lane-docs` (QBO/Truckstop/scout-rotation drift fixes),
+  `lane-roadmap` (mileage-based PM due-tracking on compliance wall + truck page), `lane-analytics`
+  (owner-dashboard truck-performance panel — one import-line conflict against `lane-roadmap`'s
+  concurrent edit to the same file, resolved by keeping both `rankTruckPerformance` and
+  `ComplianceColor` imports since the merged JSX uses both), `lane-saas` (`requirePlatformAdmin`
+  role-gate test). All eight: clean or single-line-conflict merges, build + tests green after
+  each, no product-code judgment calls beyond the import merge above.
+
+Skipped three candidates rather than force them:
+- `claude/lane-compliance` (1557 raw commits behind — a stale fork, not really "1 ahead"): dry-run
+  merge hit 20+ file conflicts including deletions of files (`pdf-generator.ts`,
+  `pdf-field-mapping.ts`, `types/driver-application.ts`) that are live on `main` — this is the
+  same "too stale to reconcile unattended" class noted for `gallant-dijkstra-tfl0e7` on
+  2026-07-22. Needs a human triage pass, not another absorb attempt.
+- `claude/eloquent-mendel-w6e4qz` (Rust auth-middleware test coverage for `main.rs`): 7 conflict
+  hunks against the current sidecar test suite from an older fork point — plausible the tests
+  are already superseded by what's on `main`, but not confident enough to hand-resolve blind;
+  needs a side-by-side read of both test suites.
+- `claude/friendly-darwin-7w0afx` (portal tracking auto-refresh): byte-identical
+  `TrackRefresher.tsx` to what's already on `main` (landed via an earlier cycle) — confirmed
+  duplicate, no merge needed. Per AGENTS.md keep-HEAD-when-superset rule, left unmerged.
+
+Drained via the stamped `--no-ff` method (`.drain-stamp` → `sha=38ee2106…`) — main pushed alone,
+build + `vitest` green before and after. No local Postgres this cycle (all changes were
+lib/test/docs-level, verified by the existing unit/build gates).
+
+Backlog:
+- `claude/eloquent-mendel-w6e4qz`'s Rust auth-middleware tests need a manual side-by-side diff
+  against `services/rust/hauldesk-compute/src/main.rs`'s current test module before deciding
+  merge vs. discard.
+- `claude/lane-compliance`'s real payload (IFTA due-date weekend roll, `d71d657d`) is one
+  genuinely new commit buried under 1556 stale ones — worth cherry-picking that single commit
+  onto a fresh branch off current `main` instead of merging the whole stale branch.
+- The ~150 remaining pending `claude/*` branches (many `inspiring-sagan-*`/`stoic-mccarthy-*`
+  duplicates of the same QA-drive/NotificationsBell-race fix) still need the meta-governor prune
+  pass flagged on 2026-07-22 — most sampled so far are superseded, not unabsorbed value.
