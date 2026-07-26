@@ -65,7 +65,7 @@ const OFFICE_PAGES = [
 // (owner, dispatcher, driver) each get a real logged-in pass.
 const OWNER_PAGES = [
   ["loadboard", "/hub/loadboard", "like excel"],
-  ["reports", "/hub/reports", "the operational view"],
+  ["reports", "/hub/reports", "per-truck p&l, last 92 days"],
   ["owner-dashboard", "/hub/reports/owner", "an owner checks first"],
   ["invoices", "/hub/money/invoices", "every invoice, paid or open"],
   ["settlements", "/hub/money/settlements", "weekly driver pay"],
