@@ -1261,3 +1261,57 @@ Backlog:
 - The ~150 remaining pending `claude/*` branches (many `inspiring-sagan-*`/`stoic-mccarthy-*`
   duplicates of the same QA-drive/NotificationsBell-race fix) still need the meta-governor prune
   pass flagged on 2026-07-22 — most sampled so far are superseded, not unabsorbed value.
+
+## QA rig drive — 2026-07-26 ~15:10-15:30 UTC
+
+Charter (docs/agent-improvement-loop.md §5): no feature work — stand up the local rig, drive real
+owner/dispatcher/driver flows against the browser-driven E2E harness, probe thindtransport.com
+read-only, fix only outright regressions from the last 3h of commits.
+
+Last-3h commit window (12:10-15:10 UTC): 12 commits, all integrator merges/drains/docs
+(`683b82d`…`9e47431`) draining `lane-driver`/`lane-portal`/`lane-sidecars`/`lane-tests`/
+`lane-docs`/`lane-roadmap`/`lane-analytics`/`lane-saas` into main. Real product-code diff in that
+window: `compliance.ts`/`kpi.ts`/`maintenance-due.ts`, `MaintenancePanel.tsx`/`ExpiryPill.tsx`,
+office/driver page tweaks, and the Go worker. Reviewed against AGENTS.md's standing rules
+(money-cents, tenancy, forced-dark tokens) — nothing questionable.
+
+Fresh local rig from scratch: Postgres 16 role/db, 22 migrations, `seed:demo`, clean `npm run
+build` (0 TS errors, 0 warnings), `npx vitest run` green (214 files / 1919 tests). Full 51-script
+Puppeteer battery (`e2e-run-all.mjs`) driven as owner, dispatcher, and driver: **49/51 passed**.
+
+Both failures are the same known stale-test pair this loop keeps re-finding, not app defects or
+last-3h regressions:
+- `e2e-public-smoke`: `/testimonials` 404s because the page was intentionally deleted
+  (`9291301`/Phase 2a), but the smoke's page list still probes it.
+- `e2e-sweep`: the owner-reports anchor expects "the operational view" copy, but the seeded
+  tenant has driver pay in range so the page correctly renders the other subtitle branch
+  ("per-truck p&l, last 92 days").
+
+Per AGENTS.md's duplicate-work rule, `git log --all --grep` before touching either script: the
+identical fix already exists, verified and unmerged, on `claude/practical-franklin-kcjomr`
+(`3a21cc65`, pushed ~13:35 UTC — 1.5h before this drive started). Did not write a fourth copy;
+left it for the integrator to prioritize draining instead.
+
+Production probe: direct HTTPS to `thindtransport.com` is egress-blocked in this sandbox (403 on
+CONNECT, confirmed via the proxy status endpoint) — checked via Vercel MCP instead. `main` HEAD
+(`9e47431`) matches the live production alias exactly (`dpl_GWb7faARERKUa6oo4SKgPNko9Ug6`, READY,
+target=production) — no drift, deploy pipeline healthy. `get_runtime_errors` (24h window) showed
+two clusters: a long-standing `pg` SSL-mode deprecation warning (informational, unrelated to any
+recent commit), and a single `compliance-scan` cron failure for the demo carrier
+(`535 5.7.8 BadCredentials` from Gmail SMTP) at 14:24 UTC — a credentials/ops issue (stale or
+placeholder Gmail app-password for that carrier's SMTP config), not a code regression; no commit
+in the last 3h touches `mailer.ts` or the compliance-scan cron.
+
+Backlog:
+- Drain `claude/practical-franklin-kcjomr` (`3a21cc65`) — fixes both `e2e-public-smoke`'s stale
+  `/testimonials` entry and `e2e-sweep`'s owner-reports anchor; also carries a prior cycle's
+  `claude/lane-compliance` cherry-pick note (still open, see below).
+- `claude/lane-compliance` (~1550+ raw commits behind) still needs the meta-governor prune /
+  human triage pass; the one real payload worth keeping (`d71d657d`, IFTA due-date weekend roll)
+  should be cherry-picked onto a fresh branch instead of merging the stale fork.
+- Owner-gated: the `compliance-scan` cron's Gmail SMTP credentials for the demo carrier
+  (`11111111-1111-1111-1111-111111111111`) are being rejected (`BadCredentials`) — needs a real
+  app password or the cron's email step disabled for that tenant, not something an agent should
+  guess at.
+- Carried unchanged: `npm audit` high-severity findings, Rust sidecar `tiny_http` timeout/thread-
+  cap gap, green-as-success form-copy design call, TEST_GAPS.md's remaining coverage gaps.
