@@ -1175,3 +1175,42 @@ Backlog:
 - Carried, unchanged: npm audit's high-severity findings (owner-approval-gated semver-major bump);
   Rust sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision); IFTA due-date roll not
   accounting for legal holidays (documented scope decision).
+
+## CSV formula-injection fix absorbed + drain — 2026-07-26 ~11:50 UTC (verify-and-build cycle)
+
+Integrator (`ccf079e2`) was 2 ahead of `main` — steady state. `npm ci` + `npm run build` +
+`npx vitest run` (209 files/1849 tests) + `npm run lint` all green before touching anything else.
+
+`agent:backlog`'s carried items were all owner-gated (green-as-success convention, `lane-compliance`
+prune, npm audit, tiny_http), so per step 6 started building TEST_GAPS.md #15 (three duplicate
+`csvEscape` implementations in `expenses.ts`/`reports.ts`(×2)/`loadboard-export.ts`, none guarding a
+leading `=+-@` — CSV formula injection via any exported customer/broker/driver name). Before shipping,
+`git log --all --oneline --grep="csvEscape"` per AGENTS.md's duplicate-work rule turned up
+`a0406ae2` on unmerged branch `claude/eager-babbage-3jw8i9` (pushed ~3h earlier the same day) —
+the identical fix, already verified (build + 1854 tests green). Discarded the freshly-written local
+copy and absorbed that branch's commit instead of shipping a second implementation: clean merge (no
+conflicts, shared merge-base with the integrator), re-verified build + `npx vitest run` (1854 tests) +
+lint green on the merged tip, pushed the integrator.
+
+That merge put the integrator 4 ahead of `main` (over the 3-commit catch-up threshold) — drained
+immediately with the stamped `--no-ff` method (`.drain-stamp`, main pushed alone first) per the
+drain-redundancy rule ("ANY agent that finds catch-up mode with a green integrator drains it before
+its own work"). `main` and the integrator matched at the drained tip after; re-verified build + tests
+green on `main` before and after the push.
+
+No local Postgres stood up this cycle — the shipped change is a backend CSV-escaping utility with no
+UI surface, fully exercised by the new unit tests (`csv.test.ts`: formula-lead neutralization,
+untouched ordinary values, existing quote/comma/newline escaping, `toCsv` end-to-end).
+
+Backlog:
+- TEST_GAPS.md's remaining items carried from `a0406ae2`: #5 `pay-rules-db.ts`
+  `syncDefaultPayRules`/`getActivePayRules` 0% covered (custom-pay-program clobber risk, ~$236/wk);
+  #9 `loads.ts` `createLoad`/`updateLoad` 0% covered ($66k blast radius); #10 `fuel.ts`
+  `assignFuelToLoad`/`fuelFraudFlags` 0% covered; #11 `detention.ts` never-shrinks-cents branches
+  uncovered; #12 needs Ranvir's scorecard tier table first; #13 `invoices.ts` `sendFactoringPacket`
+  0% covered; #14 `pay-rules.ts` `parseRuleSet` has no malformed-JSONB guard test.
+- Owner/design call still open: green-as-success convention (`PreQualificationForm.tsx` vs
+  `ApplicationForm.tsx`) — stay or purge to gold/orange like `RoutesSection` was.
+- `claude/lane-compliance` (~1552 unpicked) still needs the meta-governor prune pass; npm audit
+  high-severity findings and the Rust sidecar `tiny_http` timeout/thread-cap gap remain owner-gated,
+  carried unchanged.
