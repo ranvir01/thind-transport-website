@@ -26,27 +26,27 @@ export const QuickQualify = () => {
       id: 1,
       question: "Do you hold a valid CDL Class A License?",
       subtext: "We verify all licenses through FMCSA clearinghouse.",
-      icon: <GraduationCap className="w-12 h-12 text-blue-500 mb-4" />,
+      icon: <GraduationCap className="w-12 h-12 text-orange-600 mb-4" />,
     },
     {
       id: 2,
       question: "Do you have at least 2 years of OTR experience?",
       subtext:
         "Our insurance requires 24 months of verifiable experience for top-tier pay.",
-      icon: <Clock className="w-12 h-12 text-blue-500 mb-4" />,
+      icon: <Clock className="w-12 h-12 text-orange-600 mb-4" />,
     },
     {
       id: 3,
       question: "Is your MVR clean (No major accidents in 3 years)?",
       subtext: "We prioritize safety. Minor tickets may be acceptable.",
-      icon: <ShieldCheck className="w-12 h-12 text-blue-500 mb-4" />,
+      icon: <ShieldCheck className="w-12 h-12 text-orange-600 mb-4" />,
     },
     {
       id: 4,
       question: "Are you willing to drive OTR (Over The Road)?",
       subtext:
         "Most routes are 10-14 days out. Regional options available in WA/OR.",
-      icon: <MapPin className="w-12 h-12 text-blue-500 mb-4" />,
+      icon: <MapPin className="w-12 h-12 text-orange-600 mb-4" />,
     },
   ]
 
@@ -84,7 +84,7 @@ export const QuickQualify = () => {
           </div>
           <h2 className="text-3xl md:text-5xl font-black text-slate-900 mb-4">
             See If You Qualify For{" "}
-            <span className="text-green-700">Top Tier Pay</span>
+            <span className="text-gradient-accent">Top Tier Pay</span>
           </h2>
           <p className="text-xl text-slate-700 max-w-2xl mx-auto">
             Answer 4 simple questions to unlock priority application status. No
@@ -97,14 +97,14 @@ export const QuickQualify = () => {
           data-light
         >
           {/* Background decoration */}
-          <div className="absolute top-0 right-0 w-64 h-64 bg-blue-50 rounded-full blur-3xl -mr-32 -mt-32 pointer-events-none opacity-50"></div>
+          <div className="absolute top-0 right-0 w-64 h-64 bg-orange-50 rounded-full blur-3xl -mr-32 -mt-32 pointer-events-none opacity-50"></div>
           <div className="absolute bottom-0 left-0 w-64 h-64 bg-orange-50 rounded-full blur-3xl -ml-32 -mb-32 pointer-events-none opacity-50"></div>
           {step < questions.length && (
             <div
               key={step}
               className="motion-safe:animate-dropdown-in text-center w-full max-w-xl relative z-10"
             >
-              <div className="w-20 h-20 bg-blue-50 rounded-2xl flex items-center justify-center mx-auto mb-8 shadow-sm border border-blue-100">
+              <div className="w-20 h-20 bg-orange-50 rounded-2xl flex items-center justify-center mx-auto mb-8 shadow-sm border border-orange-100">
                 {questions[step].icon}
               </div>
 
@@ -137,9 +137,9 @@ export const QuickQualify = () => {
                     key={i}
                     className={`h-1.5 rounded-full transition-all duration-300 ${
                       i === step
-                        ? "w-8 bg-blue-600"
+                        ? "w-8 bg-orange-600"
                         : i < step
-                          ? "w-8 bg-green-500"
+                          ? "w-8 bg-orange-300"
                           : "w-2 bg-slate-200"
                     }`}
                   />
@@ -182,7 +182,7 @@ export const QuickQualify = () => {
                 </ul>
               </div>
               <Link href="/pre-qualify">
-                <Button className="bg-orange-600 hover:bg-orange-500 text-white px-12 py-8 text-xl font-bold rounded-full shadow-xl shadow-orange-500/30 animate-pulse hover:scale-105 transition-transform">
+                <Button className="bg-orange-600 hover:bg-orange-500 text-white px-12 py-8 text-xl font-bold rounded-full shadow-xl shadow-orange-500/30">
                   Start Priority Application →
                 </Button>
               </Link>
