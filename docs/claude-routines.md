@@ -1175,3 +1175,65 @@ Backlog:
 - Carried, unchanged: npm audit's high-severity findings (owner-approval-gated semver-major bump);
   Rust sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision); IFTA due-date roll not
   accounting for legal holidays (documented scope decision).
+
+## QA rig drive — 2026-07-26 ~10:00 UTC
+
+Charter (`docs/agent-improvement-loop.md` §5): no feature work — stand up the local rig, drive real
+owner/dispatcher/driver flows with Playwright, probe `thindtransport.com` read-only, fix only outright
+regressions from the last 3h of commits.
+
+**No commits landed on `main` in the trailing 3h window** (`git log --since="3 hours ago"` empty; HEAD
+`e6be22e5` is 7h25m old at drive time) — nothing to fix-forward, so this was a pure QA sweep.
+
+Fresh local rig from scratch: Postgres 16 role/db created, 22 migrations, `seed:demo`, `npm run build`
+(clean), `npm run start`. Playwright (installed to scratchpad, not `package.json` — sandbox ships
+Chromium at `/opt/pw-browsers/`) drove: owner (30+ screens at 1440px), dispatcher (loadboard, new-load
+form), driver (8 screens at 390px, forced-dark palette intact, no horizontal overflow), broker/shipper
+portal (1440px + 390px). Functional actions verified end-to-end: owner approves a time-off request,
+driver confirms a dispatch, dispatcher books a brand-new load through the full form (persisted, correct
+totals, shows on the load detail page) — all succeeded with no console errors beyond known local-only
+noise (Vercel Analytics/Speed Insights 404 on self-hosted `next start`; OSM tile fetches blocked by this
+sandbox's egress policy; Next.js RSC-prefetch aborts). Tenancy isolation re-confirmed: Cascade Demo
+Lines (tenant 2) shows zero tenant-1 (`THD-`) load references or driver names. A `/hub/loadboard` table
+appearing to overlap the bottom tab bar at 390px in a full-page screenshot was verified to be a
+Playwright screenshot-stitching artifact against a `position: fixed` nav (confirmed via viewport-only
+screenshots + computed-style inspection) — not a real defect; the table correctly scrolls in its own
+`overflow-x-auto` container. **Zero app-code defects found.**
+
+**Production probe:** direct HTTPS to `thindtransport.com` is egress-blocked in this sandbox (403 on
+CONNECT) — inconclusive per the routine's own fallback, so checked via Vercel MCP instead. Finding:
+**production has been stale for ~12.7h and is still stale as of this drive.** `get_project` /
+`get_deployment(thindtransport.com)` show the live alias serving `dpl_8bs2aVYLjQ9rMGPHs5NRNWXfg3Rx`
+(commit `3e96ed4`, ready 2026-07-25 21:26 UTC). `origin/main` has since advanced 7 commits (`508e8aa`
+"Stamp: main-only rebuild nudge" → `ed50ad1` → `b7cd4db` → `483a920` → `4516530` → `e6be22e` "Drain
+integrator to main"), landing as recently as 02:49 UTC. `list_deployments` over the full ~14h/40-entry
+window shows **no deployment entry at all — not even a canceled one — with `githubCommitRef: "main"`
+after `3e96ed4`**, while pushes to `claude/lane-*`/session branches over the same window each triggered
+a (correctly canceled-on-superseding-push) preview build. This is a different failure mode than the
+documented "same-SHA/same-tree dedupe" (each of these 7 commits changes the tree, and `508e8aa` was
+already a deliberate stamp-commit workaround for exactly that class of problem) — it looks like Vercel
+is not even attempting to build `main` pushes anymore, only branch pushes. Cross-checked the git-side
+drain pipeline separately so as not to conflate the two: `drain-integrator.yml` and
+`main-drain-fallback.yml` GitHub Actions runs are both green and correctly no-op (`main` already equals
+the integrator tip) — the **integrator→main drain is healthy**; the break is specifically
+**main→Vercel-production**. Not something a code commit can fix from in here; flagged to the owner via
+push notification per the scheduled-routine protocol, same pattern as `ea6175a`'s "confirmed broken via
+Vercel MCP — owner notified" (that incident recovered by `b7eb6c2` on 2026-07-23; this looks like a
+recurrence with a new signature — zero attempts, not stale dedupe — so the earlier fix likely doesn't
+apply as-is).
+
+No product code change to ship this cycle.
+
+Backlog:
+- **Production deploy pipeline: `main` pushes are not triggering any Vercel deployment (not even a
+  canceled one) since `3e96ed4` (2026-07-25 21:23 UTC) — 7 commits / ~12.7h and counting as of this
+  drive.** Branch/preview pushes over the same window build normally, so this is scoped to the
+  main→production trigger specifically (Vercel project settings / GitHub App production-branch hook),
+  not the git-side drain (confirmed healthy). Needs owner-level access to Vercel project settings or the
+  GitHub App installation to diagnose further — outside what an agent can fix by committing code.
+- Carried from prior cycles: `claude/lane-compliance` (1552 unpicked commits) and `claude/lane-tests`
+  (1443 unpicked) remain the largest pending branches, meta-governor prune pass still overdue; npm
+  audit's high-severity findings (owner-approval-gated semver-major bump); Rust sidecar `tiny_http`
+  connection-timeout/thread-cap gap (owner decision); IFTA due-date roll not accounting for legal
+  holidays (documented scope decision); green-as-success token convention owner/design call
+  (`PreQualificationForm.tsx` / `ApplicationForm.tsx`).
