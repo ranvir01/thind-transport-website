@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { normalizeEquipment, normalizeState, parseCsv, parseDateSafe, parseIntSafe, parseMoney, splitFullName } from "../csv"
+import { csvEscape, normalizeEquipment, normalizeState, parseCsv, parseDateSafe, parseIntSafe, parseMoney, splitFullName, toCsv } from "../csv"
 
 describe("CSV parser", () => {
   it("handles quoted fields with commas and escaped quotes", () => {
@@ -13,6 +13,44 @@ describe("CSV parser", () => {
   it("handles newlines inside quotes", () => {
     const rows = parseCsv('"line1\nline2",x')
     expect(rows).toEqual([["line1\nline2", "x"]])
+  })
+})
+
+describe("csvEscape", () => {
+  // Regression (TEST_GAPS.md #15): a customer/driver name typed as
+  // =HYPERLINK(...) or +1-CMD or -2+3 or @SUM(...) would execute as a live
+  // formula when the exported CSV is opened in Excel/Sheets. This was three
+  // independent implementations (expenses.ts, reports.ts x2, loadboard-export.ts),
+  // none of which guarded against it — now a single shared function.
+  it("prefixes a leading apostrophe on formula-injection characters", () => {
+    expect(csvEscape("=HYPERLINK(http://evil)")).toBe("'=HYPERLINK(http://evil)")
+    expect(csvEscape("+1-800-555-0100")).toBe("'+1-800-555-0100")
+    expect(csvEscape("-2+3")).toBe("'-2+3")
+    expect(csvEscape("@SUM(A1:A9)")).toBe("'@SUM(A1:A9)")
+  })
+
+  it("leaves ordinary values untouched", () => {
+    expect(csvEscape("Cascade Produce Co.")).toBe("Cascade Produce Co.")
+    expect(csvEscape(1234)).toBe("1234")
+    expect(csvEscape(null)).toBe("")
+    expect(csvEscape(undefined)).toBe("")
+  })
+
+  it("still quotes commas, quotes, and newlines (RFC 4180)", () => {
+    expect(csvEscape('Smith, "Big Rig" Co.')).toBe('"Smith, ""Big Rig"" Co."')
+    expect(csvEscape("line1\nline2")).toBe('"line1\nline2"')
+  })
+
+  it("quotes AND apostrophe-prefixes a formula value that also needs RFC quoting", () => {
+    expect(csvEscape('=A1,"x"')).toBe(`"'=A1,""x"""`)
+  })
+})
+
+describe("toCsv", () => {
+  it("joins headers and escaped rows", () => {
+    expect(toCsv(["Name", "Note"], [["Acme", "=cmd()"], ["Beta, Inc", "ok"]])).toBe(
+      'Name,Note\nAcme,\'=cmd()\n"Beta, Inc",ok'
+    )
   })
 })
 

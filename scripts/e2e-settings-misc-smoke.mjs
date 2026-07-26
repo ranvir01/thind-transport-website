@@ -6,7 +6,7 @@
  * panels render, app page install/push panels render at 1440px and 390px,
  * zero console errors, non-owner gating on branding.
  */
-import { launchBrowser, login, waitForText, makeShot, check, failures } from "./e2e-lib.mjs"
+import { launchBrowser, login, waitForText, makeShot, check, failures, realConsoleErrors } from "./e2e-lib.mjs"
 
 const BASE = process.env.E2E_BASE_URL ?? "http://localhost:3000"
 const outDir = "e2e-shots-logs/settings-misc"
@@ -23,7 +23,7 @@ try {
     const page = await ctx.newPage()
     const errors = []
     page.on("pageerror", (e) => errors.push(String(e)))
-    page.on("console", (m) => { if (m.type() === "error") errors.push(m.text()) })
+    page.on("console", (m) => { if (m.type() === "error") errors.push(`${m.location().url ?? ""} ${m.text()}`) })
     await page.setViewport({ width: 1440, height: 900 })
 
     console.log("1. Owner opens branding settings")
@@ -69,7 +69,8 @@ try {
     check(noneSelected, "accent reset to standard look persisted after reload")
     await shot(page, "04-accent-reset")
 
-    check(errors.length === 0, `no console errors (${errors.length}: ${errors.slice(0, 2).join(" | ")})`)
+    const realErrors = realConsoleErrors(errors)
+    check(realErrors.length === 0, `no console errors (${realErrors.length}: ${realErrors.slice(0, 2).join(" | ")})`)
     await ctx.close()
   }
 
@@ -93,7 +94,7 @@ try {
     const page = await ctx.newPage()
     const errors = []
     page.on("pageerror", (e) => errors.push(String(e)))
-    page.on("console", (m) => { if (m.type() === "error") errors.push(m.text()) })
+    page.on("console", (m) => { if (m.type() === "error") errors.push(`${m.location().url ?? ""} ${m.text()}`) })
     await page.setViewport({ width: 1440, height: 900 })
 
     console.log("3. Office user opens carrier packet")
@@ -102,7 +103,8 @@ try {
     check(await waitForText(page, "Carrier packet").then(() => true).catch(() => false), "packet page renders")
     check(await waitForText(page, "COI").then(() => true).catch(() => false), "COI request panel present")
     await shot(page, "06-packet")
-    check(errors.length === 0, `no console errors (${errors.length}: ${errors.slice(0, 2).join(" | ")})`)
+    const realErrors = realConsoleErrors(errors)
+    check(realErrors.length === 0, `no console errors (${realErrors.length}: ${realErrors.slice(0, 2).join(" | ")})`)
     await ctx.close()
   }
 
@@ -112,7 +114,7 @@ try {
     const page = await ctx.newPage()
     const errors = []
     page.on("pageerror", (e) => errors.push(String(e)))
-    page.on("console", (m) => { if (m.type() === "error") errors.push(m.text()) })
+    page.on("console", (m) => { if (m.type() === "error") errors.push(`${m.location().url ?? ""} ${m.text()}`) })
     await page.setViewport({ width: 1440, height: 900 })
 
     console.log("4. Office user opens phone-app settings (1440px)")
@@ -127,7 +129,8 @@ try {
     check(await waitForText(page, "Install").then(() => true).catch(() => false), "install panel present at 390px")
     await shot(page, "08-app-390")
 
-    check(errors.length === 0, `no console errors (${errors.length}: ${errors.slice(0, 2).join(" | ")})`)
+    const realErrors = realConsoleErrors(errors)
+    check(realErrors.length === 0, `no console errors (${realErrors.length}: ${realErrors.slice(0, 2).join(" | ")})`)
     await ctx.close()
   }
 

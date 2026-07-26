@@ -5,6 +5,7 @@
 import { query, queryOne } from "./db"
 import { getCarrierSettings } from "./settings"
 import { aggregateLanes, avgRpmCents, type LaneAggregateRow } from "./lanes"
+import { csvEscape, toCsv } from "./csv"
 import type { TruckPnl } from "./expenses"
 
 export interface RevenuePeriod {
@@ -316,14 +317,7 @@ export async function truckPnlRange(carrierId: string, range: PnlRange): Promise
 }
 
 // Same columns as the trailing-365-day "pnl" export in expenses.ts, so a
-// spreadsheet built against one keeps working against the other. csvField
-// duplicates the private csvEscape there — lifting both to a shared csv
-// module is an integrator-level move (see commit backlog).
-const csvField = (value: unknown): string => {
-  const str = String(value ?? "")
-  return /[",\n]/.test(str) ? `"${str.replace(/"/g, '""')}"` : str
-}
-
+// spreadsheet built against one keeps working against the other.
 export function truckPnlRangeCsv(rows: TruckPnl[], range: PnlRange): { filename: string; csv: string } {
   const headers = ["Truck", "Revenue", "Fuel", "Maintenance", "OtherExpenses", "Net", "LoadedMiles", "NetPerMile"]
   const body = rows.map((r) => [
@@ -338,7 +332,7 @@ export function truckPnlRangeCsv(rows: TruckPnl[], range: PnlRange): { filename:
   ])
   return {
     filename: `per-truck-pnl_${range.from}_${range.to}.csv`,
-    csv: [headers.join(","), ...body.map((row) => row.map(csvField).join(","))].join("\n"),
+    csv: [headers.join(","), ...body.map((row) => row.map(csvEscape).join(","))].join("\n"),
   }
 }
 
@@ -425,7 +419,7 @@ export function laneLeaderboardRangeCsv(rows: LaneLeaderboardRow[], range: PnlRa
   ])
   return {
     filename: `lanes_${range.from}_${range.to}.csv`,
-    csv: [headers.join(","), ...body.map((row) => row.map(csvField).join(","))].join("\n"),
+    csv: [headers.join(","), ...body.map((row) => row.map(csvEscape).join(","))].join("\n"),
   }
 }
 
@@ -458,16 +452,6 @@ export async function fuelSpendSummary(carrierId: string): Promise<FuelSpendSumm
     avgPriceCents: monthGallons > 0 ? Math.round(monthCents / monthGallons) : null,
     topTrucks: topTrucks.map((t) => ({ ...t, total_cents: Number(t.total_cents), gallons: Number(t.gallons) })),
   }
-}
-
-// Same private CSV serializer as expenses.ts (integrator: hoist both into csv.ts).
-function csvEscape(value: unknown): string {
-  const str = String(value ?? "")
-  return /[",\n]/.test(str) ? `"${str.replace(/"/g, '""')}"` : str
-}
-
-function toCsv(headers: string[], rows: unknown[][]): string {
-  return [headers.join(","), ...rows.map((row) => row.map(csvEscape).join(","))].join("\n")
 }
 
 /**

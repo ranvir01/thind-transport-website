@@ -16,7 +16,7 @@
 import { mkdirSync } from "node:fs"
 import {
   launchBrowser, BASE, failures, check, login, makeShot, reseed,
-  textAppears, textGone, waitForPathAndText, clickByText,
+  textAppears, textGone, waitForPathAndText, clickByText, realConsoleErrors,
 } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-claims"
@@ -36,7 +36,7 @@ async function main() {
   await page.setViewport({ width: 1440, height: 900 })
   const consoleErrors = []
   page.on("console", (msg) => {
-    if (msg.type() === "error") consoleErrors.push(msg.text())
+    if (msg.type() === "error") consoleErrors.push(`${msg.location().url ?? ""} ${msg.text()}`)
   })
 
   console.log("1. Safety page shows the Claims rollup at 0 open")
@@ -124,7 +124,7 @@ async function main() {
 
   await browser.close()
 
-  const realErrors = consoleErrors.filter((e) => !/favicon|manifest|service.?worker/i.test(e))
+  const realErrors = realConsoleErrors(consoleErrors).filter((e) => !/service.?worker/i.test(e))
   check(realErrors.length === 0, `no console errors (${realErrors.length}: ${realErrors.slice(0, 2).join(" | ")})`)
 
   if (failures.length) {

@@ -12,7 +12,7 @@
  * Usage: node scripts/e2e-dispatch-smoke.mjs [outputDir]
  */
 import { mkdirSync } from "node:fs"
-import { launchBrowser, BASE, failures, check, waitForText, login, makeShot, reseed } from "./e2e-lib.mjs"
+import { launchBrowser, BASE, failures, check, waitForText, login, makeShot, reseed, realConsoleErrors } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-dispatch"
 mkdirSync(OUT, { recursive: true })
@@ -110,7 +110,7 @@ async function main() {
   await page.setViewport({ width: 1440, height: 900 })
   const consoleErrors = []
   page.on("console", (msg) => {
-    if (msg.type() === "error") consoleErrors.push(msg.text())
+    if (msg.type() === "error") consoleErrors.push(`${msg.location().url ?? ""} ${msg.text()}`)
   })
 
   console.log("1. Dispatcher opens the board")
@@ -160,7 +160,7 @@ async function main() {
   const page2 = await context2.newPage()
   await page2.setViewport({ width: 1440, height: 900 })
   page2.on("console", (msg) => {
-    if (msg.type() === "error") consoleErrors.push(msg.text())
+    if (msg.type() === "error") consoleErrors.push(`${msg.location().url ?? ""} ${msg.text()}`)
   })
   await login(page2, "accounting@demo.thind")
   await page2.goto(`${BASE}/hub/dispatch`, { waitUntil: "networkidle2" })
@@ -173,7 +173,7 @@ async function main() {
   check((await findColumn(page2, LEGAL)) === beforeCol, "load did not move for the accountant")
   await shot(page2, "06-board-accountant")
 
-  const realErrors = consoleErrors.filter((e) => !/favicon|manifest/i.test(e))
+  const realErrors = realConsoleErrors(consoleErrors)
   check(realErrors.length === 0, `no console errors (${realErrors.length}: ${realErrors.slice(0, 2).join(" | ")})`)
 
   await browser.close()

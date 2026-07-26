@@ -15,7 +15,7 @@
  * Usage: node scripts/e2e-messages-smoke.mjs [outputDir]
  */
 import { mkdirSync } from "node:fs"
-import { launchBrowser, BASE, failures, check, waitForText, login, makeShot, reseed } from "./e2e-lib.mjs"
+import { launchBrowser, BASE, failures, check, waitForText, login, makeShot, reseed, realConsoleErrors } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-messages"
 mkdirSync(OUT, { recursive: true })
@@ -45,7 +45,7 @@ async function main() {
   const consoleErrors = []
   const track = (page) =>
     page.on("console", (msg) => {
-      if (msg.type() === "error") consoleErrors.push(msg.text())
+      if (msg.type() === "error") consoleErrors.push(`${msg.location().url ?? ""} ${msg.text()}`)
     })
 
   const stamp = Date.now().toString(36)
@@ -184,7 +184,7 @@ async function main() {
   )
   await shot(driver, "07-driver-blocked")
 
-  const realErrors = consoleErrors.filter((e) => !/favicon|manifest/i.test(e))
+  const realErrors = realConsoleErrors(consoleErrors)
   check(realErrors.length === 0, `no console errors (${realErrors.length}: ${realErrors.slice(0, 2).join(" | ")})`)
 
   await browser.close()

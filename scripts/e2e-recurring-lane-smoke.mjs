@@ -21,7 +21,7 @@
  */
 import puppeteer from "puppeteer"
 import { mkdirSync } from "node:fs"
-import { BASE, failures, check, waitForText, login, makeShot, reseed, clickByText } from "./e2e-lib.mjs"
+import { BASE, failures, check, waitForText, login, makeShot, reseed, clickByText, realConsoleErrors } from "./e2e-lib.mjs"
 
 // Fail fast on a fresh rig: the cron step authenticates with Bearer CRON_SECRET.
 // Against a localhost BASE, e2e-lib has already loaded .env.local into this
@@ -69,7 +69,7 @@ async function main() {
   await page.setViewport({ width: 1440, height: 900 })
   const consoleErrors = []
   page.on("console", (msg) => {
-    if (msg.type() === "error") consoleErrors.push(msg.text())
+    if (msg.type() === "error") consoleErrors.push(`${msg.location().url ?? ""} ${msg.text()}`)
   })
 
   console.log("1. Owner opens the settled Pipe load")
@@ -183,7 +183,7 @@ async function main() {
   const page2 = await context2.newPage()
   await page2.setViewport({ width: 1440, height: 900 })
   page2.on("console", (msg) => {
-    if (msg.type() === "error") consoleErrors.push(msg.text())
+    if (msg.type() === "error") consoleErrors.push(`${msg.location().url ?? ""} ${msg.text()}`)
   })
   await login(page2, "accounting@demo.thind")
   await page2.goto(`${BASE}${loadHref}`, { waitUntil: "networkidle2" })
@@ -194,7 +194,7 @@ async function main() {
   check(!accountant.hasRepeat, "accountant sees no Repeat weekly button")
   await shot(page2, "06-accountant-no-repeat")
 
-  const realErrors = consoleErrors.filter((e) => !/favicon|manifest|401/i.test(e))
+  const realErrors = realConsoleErrors(consoleErrors).filter((e) => !/401/i.test(e))
   check(realErrors.length === 0, `no console errors (${realErrors.length}: ${realErrors.slice(0, 2).join(" | ")})`)
 
   await browser.close()

@@ -1,10 +1,6 @@
+import { csvEscape } from "./csv"
 import type { Load } from "./types"
 import { STATUS_LABELS, centsToDollars, loadTotalCents } from "./types"
-
-function csvEscape(value: string): string {
-  if (/[",\n\r]/.test(value)) return `"${value.replace(/"/g, '""')}"`
-  return value
-}
 
 function formatAppt(iso: string | null | undefined): string {
   if (!iso) return ""

@@ -15,7 +15,7 @@
  * Usage: node scripts/e2e-advances-smoke.mjs [outputDir]
  */
 import { mkdirSync } from "node:fs"
-import { launchBrowser, BASE, failures, check, waitForText, textAppears, login, makeShot, clickByText, reseed } from "./e2e-lib.mjs"
+import { launchBrowser, BASE, failures, check, waitForText, textAppears, login, makeShot, clickByText, reseed, realConsoleErrors } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-advances"
 mkdirSync(OUT, { recursive: true })
@@ -67,7 +67,7 @@ async function main() {
   await driver.setViewport({ width: 390, height: 844 })
   const consoleErrors = []
   driver.on("console", (msg) => {
-    if (msg.type() === "error") consoleErrors.push(msg.text())
+    if (msg.type() === "error") consoleErrors.push(`${msg.location().url ?? ""} ${msg.text()}`)
   })
 
   console.log("1. Driver requests an advance from My pay (390px)")
@@ -114,7 +114,7 @@ async function main() {
   const office = await officeCtx.newPage()
   await office.setViewport({ width: 1440, height: 900 })
   office.on("console", (msg) => {
-    if (msg.type() === "error") consoleErrors.push(msg.text())
+    if (msg.type() === "error") consoleErrors.push(`${msg.location().url ?? ""} ${msg.text()}`)
   })
 
   console.log("2. Owner reviews exposure on /hub/money/advances")
@@ -190,7 +190,7 @@ async function main() {
 
   await browser.close()
 
-  const realErrors = consoleErrors.filter((e) => !e.includes("favicon") && !e.includes("Failed to load resource"))
+  const realErrors = realConsoleErrors(consoleErrors).filter((e) => !e.includes("Failed to load resource"))
   check(realErrors.length === 0, `no console errors (${realErrors.length})`)
   if (realErrors.length) realErrors.slice(0, 5).forEach((e) => console.log(`     ${e.slice(0, 160)}`))
 

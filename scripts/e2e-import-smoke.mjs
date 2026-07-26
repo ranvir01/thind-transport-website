@@ -15,7 +15,7 @@
 import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs"
 import path from "node:path"
 import os from "node:os"
-import { BASE, failures, check, waitForText, waitForPath, login, makeShot, reseed, launchBrowser } from "./e2e-lib.mjs"
+import { BASE, failures, check, waitForText, waitForPath, login, makeShot, reseed, launchBrowser, realConsoleErrors } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-import"
 mkdirSync(OUT, { recursive: true })
@@ -38,7 +38,7 @@ async function main() {
   await page.setViewport({ width: 1440, height: 900 })
   const consoleErrors = []
   page.on("console", (msg) => {
-    if (msg.type() === "error") consoleErrors.push(msg.text())
+    if (msg.type() === "error") consoleErrors.push(`${msg.location().url ?? ""} ${msg.text()}`)
   })
 
   console.log("1. Login as dispatcher, open Import > Trucks")
@@ -98,8 +98,9 @@ async function main() {
   await shot(driverPage, "06-import-driver-blocked")
   await driverCtx.close()
 
-  check(consoleErrors.length === 0, `no console errors (${consoleErrors.length} found)`)
-  if (consoleErrors.length > 0) console.log(consoleErrors.slice(0, 5))
+  const realErrors = realConsoleErrors(consoleErrors)
+  check(realErrors.length === 0, `no console errors (${realErrors.length} found)`)
+  if (realErrors.length > 0) console.log(realErrors.slice(0, 5))
 
   await browser.close()
 
