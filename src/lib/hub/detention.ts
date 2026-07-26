@@ -35,7 +35,7 @@ export async function getDwellingStops(carrierId: string): Promise<DwellingStop[
     `SELECT s.id AS stop_id, s.load_id, l.reference AS load_reference,
        s.city, s.state, s.type, s.arrived_at
      FROM hub.stops s
-     JOIN hub.loads l ON l.id = s.load_id
+     JOIN hub.loads l ON l.id = s.load_id AND l.carrier_id = s.carrier_id
      WHERE s.carrier_id = $1 AND s.arrived_at IS NOT NULL AND s.departed_at IS NULL
        AND l.deleted_at IS NULL AND l.status NOT IN ('settled', 'cancelled')`,
     [carrierId]

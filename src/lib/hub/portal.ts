@@ -9,6 +9,7 @@ import path from "path"
 import bcrypt from "bcrypt"
 import { query, queryOne } from "./db"
 import { stateForPoint } from "./geo"
+import { assertCarrierRefs } from "./tenancy"
 
 // ---- Invitations ----
 
@@ -19,6 +20,9 @@ export async function createPortalInvitation(
   role: "broker" | "shipper",
   invitedByName: string
 ): Promise<{ token: string }> {
+  // Two-sided guard at the data layer: the caller verifies today, but an
+  // invitation binding a foreign customer_id must be impossible from here too.
+  await assertCarrierRefs(carrierId, { customer_id: customerId })
   const token = randomBytes(24).toString("hex") // 192-bit
   await query(
     `INSERT INTO hub.portal_invitations (carrier_id, customer_id, email, role, token, invited_by_name, expires_at)

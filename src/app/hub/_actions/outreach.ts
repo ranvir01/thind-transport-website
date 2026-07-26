@@ -1,7 +1,8 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
-import { requireOfficeUser } from "@/lib/hub/session"
+import { requireOfficeUser, requirePermission, type HubSessionUser } from "@/lib/hub/session"
+import { can } from "@/lib/hub/permissions"
 import { logAudit } from "@/lib/hub/audit"
 import { COMPANY_INFO, STATS } from "@/lib/constants"
 import { draftOutreach, type Audience, type Channel, type CompanyFacts } from "@/lib/hub/outreach/draft"
@@ -11,7 +12,23 @@ import {
   type ProspectStatus,
 } from "@/lib/hub/outreach/prospects"
 import { sendOutreachEmail } from "@/lib/hub/outreach/send"
-import { saveWebsiteLead } from "@/lib/hub/website-leads"
+import { saveWebsiteLead, OPERATOR_CARRIER_ID } from "@/lib/hub/website-leads"
+
+/**
+ * Outreach mutations are recruiting (driver audience) or customer-acquisition
+ * (broker/shipper audience) work — gate on the matching matrix permission,
+ * never requireOfficeUser alone (accountant holds neither drivers:write nor
+ * customers:write and must not import, draft, send, or reclassify prospects).
+ */
+function outreachPermission(audience: Audience) {
+  return audience === "driver" ? ("drivers:write" as const) : ("customers:write" as const)
+}
+
+/** Post-fetch gate for actions whose audience lives on the prospect row. */
+function assertOutreachRole(user: HubSessionUser, audience: Audience): void {
+  const perm = outreachPermission(audience)
+  if (!can(user.role, perm)) throw new Error(`Forbidden: ${user.role} cannot ${perm}`)
+}
 
 function companyFacts(): CompanyFacts {
   return {
@@ -35,7 +52,7 @@ export async function importProspectsAction(
   text: string
 ): Promise<Result<{ inserted: number; updated: number; skipped: number }>> {
   try {
-    const user = await requireOfficeUser()
+    const user = await requirePermission(outreachPermission(audience))
     const rows = parseProspects(text, audience)
     if (rows.length === 0) return { ok: false, error: "No rows found. Paste one prospect per line, or a CSV." }
     const res = await importProspects(user.carrierId, rows, "csv")
@@ -58,6 +75,7 @@ export async function generateDraftAction(
     const user = await requireOfficeUser()
     const p = await getProspect(user.carrierId, id)
     if (!p) return { ok: false, error: "Prospect not found." }
+    assertOutreachRole(user, p.audience)
     const draft = draftOutreach(
       {
         audience: p.audience, company: p.company, contactName: p.contact_name,
@@ -82,6 +100,9 @@ export async function generateDraftAction(
 export async function saveDraftAction(id: string, subject: string, body: string): Promise<Result> {
   try {
     const user = await requireOfficeUser()
+    const p = await getProspect(user.carrierId, id)
+    if (!p) return { ok: false, error: "Prospect not found." }
+    assertOutreachRole(user, p.audience)
     await saveDraft(user.carrierId, id, { channel: "email", subject, body })
     revalidatePath("/hub/outreach")
     return { ok: true }
@@ -96,6 +117,7 @@ export async function approveAndSendAction(id: string): Promise<Result<{ reason?
     const user = await requireOfficeUser()
     const p = await getProspect(user.carrierId, id)
     if (!p) return { ok: false, error: "Prospect not found." }
+    assertOutreachRole(user, p.audience)
     const result = await sendOutreachEmail(p, `${COMPANY_INFO.name}`)
     if (!result.sent) return { ok: false, error: result.reason ?? "Not sent." }
     await markSent(user.carrierId, id)
@@ -115,6 +137,7 @@ export async function setProspectStatusAction(id: string, status: ProspectStatus
     const user = await requireOfficeUser()
     const p = await getProspect(user.carrierId, id)
     if (!p) return { ok: false, error: "Prospect not found." }
+    assertOutreachRole(user, p.audience)
 
     if (status === "unsubscribed" && p.email) {
       await suppressByEmail(user.carrierId, p.email)
@@ -123,8 +146,10 @@ export async function setProspectStatusAction(id: string, status: ProspectStatus
     }
 
     // A driver who replies is a recruiting lead — surface them where recruiters
-    // already look (the Driver leads board) so nothing falls through.
-    if (status === "converted" && p.audience === "driver" && p.email) {
+    // already look (the Driver leads board). That board is the site operator's
+    // own (hub.website_leads is carrier-less), so only the operator's tenant
+    // bridges into it; other tenants keep their prospects in outreach.
+    if (status === "converted" && p.audience === "driver" && p.email && user.carrierId === OPERATOR_CARRIER_ID) {
       await saveWebsiteLead({
         name: p.contact_name, email: p.email, phone: p.phone,
         source: "Outreach — driver reply", driverType: null, experienceYears: null,

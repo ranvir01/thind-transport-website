@@ -24,7 +24,7 @@ export default async function TodayPage() {
     getDashboardStats(user.carrierId),
     todayData(user.carrierId),
     gettingStartedState(),
-    countNewWebsiteLeads(),
+    countNewWebsiteLeads(user.carrierId),
   ])
 
   const allQuiet =

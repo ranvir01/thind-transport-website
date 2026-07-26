@@ -1,19 +1,24 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
-import { requireOfficeUser, requirePermission } from "@/lib/hub/session"
+import { requirePermission } from "@/lib/hub/session"
 import { setWebsiteLeadStatus } from "@/lib/hub/website-leads"
 import { promoteWebsiteLead } from "@/lib/hub/recruiting"
 import { logAudit } from "@/lib/hub/audit"
 import { actionError } from "@/lib/hub/action-error"
 
+/**
+ * Lead status flips are recruiting work — gated like promoteLeadAction
+ * (drivers:write), and setWebsiteLeadStatus itself refuses any carrier but
+ * the site operator's (the leads table is operator-owned and carrier-less).
+ */
 export async function setLeadStatusAction(
   id: string,
   status: "new" | "contacted" | "closed"
 ): Promise<{ ok: boolean; error?: string }> {
   try {
-    const user = await requireOfficeUser()
-    await setWebsiteLeadStatus(id, status)
+    const user = await requirePermission("drivers:write")
+    await setWebsiteLeadStatus(user.carrierId, id, status)
     await logAudit({
       carrierId: user.carrierId, actorId: user.id, actorName: user.name,
       entityType: "website_lead", entityId: id, action: `lead_${status}`,

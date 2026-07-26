@@ -1,7 +1,7 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
-import { requireOfficeUser } from "@/lib/hub/session"
+import { requireOfficeUser, requirePermission } from "@/lib/hub/session"
 import { emailPacket, signBrokerAgreement } from "@/lib/hub/packet"
 import { getCarrier, getCarrierSettings } from "@/lib/hub/settings"
 import { isEmailConfigured } from "@/lib/mailer"
@@ -83,7 +83,10 @@ export async function signAgreementAction(
   input: { signerName: string; signerTitle: string; signature: string }
 ): Promise<Result> {
   try {
-    const user = await requireOfficeUser()
+    // Signing a broker–carrier agreement writes a document + CRM activity on
+    // the customer — customers:write, not just any office role (accountant
+    // holds no customers:write in the matrix).
+    const user = await requirePermission("customers:write")
     if (!input.signature) return { ok: false, error: "Sign first" }
     if (!input.signerName.trim()) return { ok: false, error: "Who is signing?" }
     await signBrokerAgreement(
