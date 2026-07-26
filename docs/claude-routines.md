@@ -1175,3 +1175,89 @@ Backlog:
 - Carried, unchanged: npm audit's high-severity findings (owner-approval-gated semver-major bump);
   Rust sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision); IFTA due-date roll not
   accounting for legal holidays (documented scope decision).
+
+## QA rig drive on main@c995c66 — 2026-07-26 ~12:00-13:00 UTC (owner/dispatcher/driver, read-only prod probe)
+
+Charter (docs/agent-improvement-loop.md §5): no feature work — stand up the local rig, drive real
+owner/dispatcher/driver flows against it, probe `thindtransport.com` read-only, fix only outright
+regressions from the last 3h of commits.
+
+**Production probe (Vercel MCP; direct HTTPS to `thindtransport.com` stayed egress-blocked, `curl`
+exit 56 on both `/` and `/hub/login`, consistent with every prior cycle):** `get_project` +
+`list_deployments` on `prj_QKMg8o77DoEYiVQgQbI0FB5F4tAg` show the latest READY `target: "production"`
+deployment is `dpl_6g3NVqsTiedHvGcChYgWULoRyQha`, commit `c995c66` — today's `main` HEAD at the time,
+deployed ~19 minutes before this cycle started. The last several cycles' repeatedly-paged
+"production deploy pipeline stalled/stale" issue is **resolved** — production is current. (`live:
+false` on `get_project` again, per the documented caveat that flag alone isn't reliable — the
+alias + deployment SHA cross-check is what confirms healthy here.) Not re-paging.
+
+**Last-3h commit window:** only two commits landed on `main` in the last 3 hours — `f1b1be6` (merge)
+and `c995c66` (drain-stamp) — both moving forward work authored 3-7h earlier (`a0406ae`'s CSV
+formula-injection fix, `ccf079e`/`9cb2822`'s E2E harness console-error centralization), not new
+same-window authorship. Read those two commits' actual diffs anyway since this is what the drain put
+in front of production this cycle:
+
+- **Found and fixed a real regression** in `a0406ae` (CSV export `csvEscape` dedup, TEST_GAPS.md
+  #15): apostrophe-prefixing every string starting with `=+-@` correctly blocks formula injection in
+  text fields, but it also caught **plain negative decimals** — every Net/margin CSV column
+  (`truckPnlRangeCsv`, `laneLeaderboardRangeCsv`, `expenses.ts`'s per-truck/customer P&L exports) had
+  its loss-making rows silently turned from numbers into apostrophe-prefixed text, breaking SUM
+  formulas in any spreadsheet built on the export. Fixed in `src/lib/hub/csv.ts`: the trigger-char
+  guard now skips values matching a plain signed-decimal shape (`^[+-]?\d+(\.\d+)?$`) — the four
+  injection-shaped test values (`=HYPERLINK(...)`, `+1-800-...`, `-2+3`, `@SUM(...)`) still get
+  prefixed, `-45.23` now round-trips as a real number. New regression test in `csv.test.ts`. Build +
+  `vitest` (1856 tests) + lint all green. Committed/pushed separately (`29b44e4`) before this doc
+  entry so the fix wasn't held hostage to the full drive finishing.
+- `ccf079e`/`9cb2822` (E2E harness plumbing, not product code): read the diff, no defect found — the
+  root-cause analysis in that commit's own body (puppeteer's console-event text has no URL for
+  resource-404s, so only the URL-capturing pattern actually matches the analytics-noise filter) checks
+  out against the current `e2e-lib.mjs`.
+
+**Local rig:** fresh from scratch — Postgres 16 started (was down), `hubapp` role + `hubdb` database
+created (neither existed), `npm ci` (749 packages), `npm run db:migrate` (22 migrations clean),
+`npm run seed:demo`, `npm run build` (Turbopack, 0 TS errors), `npm run start`. `npm run lint` clean.
+
+**Full `e2e-run-all.mjs` battery (51 scripts + sweep) as owner/dispatcher/driver:** first pass 48/51,
+3 failures — all three traced to non-regressions, none from the last-3h window:
+1. `e2e-public-smoke`'s `/testimonials` 404 — a Vercel-edge-only redirect (`vercel.json`'s
+   `redirects` array), not a Next.js route; doesn't apply under local `next start`. Confirmed by
+   reading `vercel.json:181-185`. Same artifact prior cycles have already named.
+2. `e2e-statements-smoke`'s "toast surfaces the email-not-configured message instead of crashing" —
+   **this session's own rig-setup mistake**, not a product bug: copied `.env.example`'s literal
+   placeholder `SMTP_USER=your-gmail@gmail.com`/`SMTP_PASS=...` into `.env.local` instead of leaving
+   both blank (dev-workflow-testing skill pitfall #6 — `isEmailConfigured()` only checks non-empty,
+   so the placeholder reads as "configured" and the send hangs on a real SMTP attempt instead of
+   hitting the graceful toast). Blanked both, killed the stray `next-server` process (pitfall #10 —
+   `pkill -f "next start"` misses the actual server process), restarted clean, re-ran just this
+   script standalone: **passes**.
+3. `e2e-sweep`'s owner-pass "reports: page content missing... stuck on a spinner?" at both widths —
+   a stale anchor string, not a stuck page: `/hub/reports`' subtitle is conditional on
+   `hasDriverPay` (`src/app/hub/(office)/reports/page.tsx:96-104`) and the seeded demo settlements
+   land inside the 92-day default range, so the live subtitle is the driver-pay-included copy, never
+   the "...this is the operational view" phrase `e2e-sweep.mjs`'s `OWNER_PAGES` anchor still expects.
+   Matches the exact "stale `hasDriverPay`-conditional assertion in e2e-sweep.mjs" item prior cycles
+   already carried in their `Backlog:` trailers — not re-fixed here (lane-tests territory, and the
+   fix is a one-line anchor-string change, not urgent enough to justify a territory exception this
+   cycle).
+
+Corrected count: **51/51 real functional checks green, 0 app-code defects** once the rig mistake and
+the two already-known non-regressions are accounted for.
+
+Re-checked `npm audit`'s scope after this cycle's own `npm ci` reported "23 high severity" (up from
+the "3" carried in recent cycles' trailers, flagged as unverified in the fix commit above): running
+`npm audit --omit=dev` narrows it back to the same **3 root packages** (`nodemailer`, `postcss`
+via `next`, `sharp`) — the higher raw count was transitive/dev-dependency duplicates of the same
+three advisories, not a new or growing finding. Still owner-gated (all three fixes are
+semver-major/breaking per `npm audit fix --force`'s own output).
+
+Backlog:
+- `e2e-sweep.mjs`'s `OWNER_PAGES` "reports" anchor (`"the operational view"`) should switch to a
+  substring both subtitle branches share (e.g. `"per-truck p&l"`, matching the office-pass anchor
+  already used for the same route) so it stops false-failing whenever seeded settlements happen to
+  fall inside the default 92-day range — lane-tests territory, one-line fix, purely mechanical.
+- Everything else carried unchanged from the prior cycle: owner/design call on green-as-success
+  convention (`PreQualificationForm.tsx`/`ApplicationForm.tsx`); TEST_GAPS.md's remaining gaps (#2
+  overdue-reminder day-gate, #3 partial `money.ts` permission coverage, #5/#9/#11/#12/#13/#14 per
+  earlier trailers — #10 `fuelFraudFlags` is now closed per `f8761b3`, drop from future lists);
+  `claude/lane-compliance` (1552+ unpicked) still needs the meta-governor prune pass; Rust sidecar
+  `tiny_http` timeout/thread-cap gap (owner decision); IFTA due-date legal-holiday scope decision.
