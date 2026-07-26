@@ -1175,3 +1175,77 @@ Backlog:
 - Carried, unchanged: npm audit's high-severity findings (owner-approval-gated semver-major bump);
   Rust sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision); IFTA due-date roll not
   accounting for legal holidays (documented scope decision).
+
+## QA rig drive — 2026-07-26 ~03:10-03:36 UTC (§5 routine: owner/dispatcher/driver, no feature work)
+
+Charter (`docs/agent-improvement-loop.md` §5): no feature work this cycle — stand up the local rig,
+drive real owner/dispatcher/driver/accountant/broker/shipper flows, probe `thindtransport.com`
+read-only, fix only outright regressions from the trailing 3h of commits.
+
+**3h regression check:** reviewed every commit landed since ~00:09 UTC by reading the diffs directly —
+`b7cd4db7` (RoutesSection blue/green/purple → gold/steel token cleanup), `483a920d` (settlements
+advance-apply test coverage), `4516530c` (docs), `e6be22e5` (integrator→main drain). All cosmetic/
+test/docs; the new `steel-800/60`, `navy-800/60`, `text-gold`, `fleet-badge-gold` classes in
+`RoutesSection.tsx` are pre-existing established patterns (already used in `EquipmentSection.tsx`,
+`PhotoBand.tsx`, `Navbar.tsx`, etc.), not novel/unverified tokens. No regressions found — nothing to
+fix forward.
+
+**Local rig:** fresh container had Postgres installed but stopped with no role/db — started the
+service, created the `loadoff` role + database, `npm ci`, `npm run db:migrate` (22 migrations clean),
+`npm run seed:demo`, `npm run build` (clean), `npx vitest run` (210 files / 1856 tests green).
+
+**Playwright/Puppeteer drive:** this repo's real E2E harness is Puppeteer (`scripts/e2e-*.mjs`), not
+Playwright — used it as the equivalent real-browser driver. Ran the full `e2e-battery.mjs` (51
+scripts) against the fresh rig: 15/51 raw PASS, but all 36 "failures" trace to three already-diagnosed,
+already-fixed-on-an-unmerged-branch issues, not new regressions:
+1. `@vercel/analytics`/`@vercel/speed-insights` 404 on `/_vercel/insights/script.js` +
+   `/_vercel/speed-insights/script.js` on every self-hosted `next start` rig (their "auto" mode keys
+   off `NODE_ENV=production`, true for local prod builds too) — trips the generic "no console errors"
+   assertion in ~30 smokes even though every real functional/business-logic check in each of them
+   passed (dispatch legality gate, tenancy isolation, permission refusals, POD upload, settlement
+   approval, etc.).
+2. `e2e-public-smoke.mjs`'s `/testimonials` entry 404s — confirmed the route doesn't exist under
+   `src/app` and nothing links to it; a stale test fixture, not a site defect.
+3. `e2e-sweep.mjs` asserts "the operational view" on `/hub/reports`; that string is one of two
+   per-tenant conditional subtitles (`hasDriverPay`) and is unreachable against the seeded demo
+   tenant's data, not a role check.
+
+Per AGENTS.md §5 ("check unmerged branches before re-fixing a found defect"): all three already have
+verified fixes sitting on **`claude/practical-franklin-wcljtj`** (commits `e6c11638`, `3a3c51cc`,
+`b8eddd63`, `4feeec41`) — did not re-derive a fourth copy; the integrator should drain that branch.
+
+**Production probe:** direct HTTPS to `thindtransport.com` is sandboxed/blocked (403 on CONNECT,
+confirmed via the proxy status endpoint) — fell back to the Vercel API per the runbook's fallback
+guidance. Finding: **production is stale and the drain pipeline looks stalled.** `thindtransport.com`
+is serving `3e96ed4` (the iOS app/website-separation drain); `main` is 8 commits ahead of that,
+including this session's own `e6be22e5` (pushed to `main` at 02:49:05 UTC). As of 03:23 UTC (34+ min
+later) Vercel had not triggered *any* deployment — canceled or otherwise — for that push; the
+project's `latestDeployment` was still the integrator-branch preview from 02:48. Cross-checked with
+GitHub Actions: both `drain-integrator.yml` (hourly, `:17`) and `drain-fallback.yml` (`:20`/`:50`) show
+their last completed run at ~00:10-00:16 UTC — over 3 hours of silence for jobs scheduled every 30-60
+minutes. This matches the exact "drain reports success but Vercel silently never builds" signature
+already documented in `agent-improvement-loop.md` §3a ("Drain redundancy"). `get_runtime_errors`
+shows zero new errors in the last 24h — production itself is healthy, just stale. Paged the owner
+directly (this routine has no authority to push to `main` or force a Vercel deploy — reserved for the
+deploy agent) since a silently-stalled drain is exactly the failure mode the fleet has been burned by
+before.
+
+Also ran `npm run agent:branches`: 143 branches show "unpicked" work, several (`claude/lane-compliance`,
+`claude/eager-babbage-ibsmrz`, `claude/practical-franklin-5ol54s`, the `claude/inspiring-sagan-*`
+cluster) with 300-800+ "unpicked" commits each — confirms prior cycles' read that this is diverged/
+stale-fork sprawl, not real backlog; still needs the meta-governor prune pass.
+
+Backlog:
+- **Time-sensitive:** production deploy pipeline appears stalled — `main` has been un-deployed for
+  30+ minutes (8 commits, including a merge-with-tree-change drain commit that should have forced a
+  fresh build per the "Drain method" doc) and the GitHub Actions drain cron has been silent 3+ hours.
+  Needs the deploy agent (or the owner) to check the Vercel project's GitHub integration/webhook
+  health and manually trigger a production deployment if it's still stuck next cycle.
+- e2e false-positive trio (analytics 404 console-noise, stale `/testimonials` link, stale reports-sweep
+  assertion) has a verified fix already on `claude/practical-franklin-wcljtj` — integrator should drain
+  that branch instead of any lane re-deriving the same fix again.
+- `claude/lane-compliance` and the other high-unpicked-count branches remain unpruned — meta-governor
+  pass still overdue (carried from prior cycles).
+- Carried, unchanged: owner/design call on green-as-success convention (`PreQualificationForm.tsx` vs
+  `ApplicationForm.tsx`); TEST_GAPS.md #2/#3 remain open; npm audit high-severity findings; Rust
+  `tiny_http` gap; IFTA holiday-roll scope decision.
