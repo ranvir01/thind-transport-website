@@ -1261,3 +1261,63 @@ Backlog:
 - The ~150 remaining pending `claude/*` branches (many `inspiring-sagan-*`/`stoic-mccarthy-*`
   duplicates of the same QA-drive/NotificationsBell-race fix) still need the meta-governor prune
   pass flagged on 2026-07-22 — most sampled so far are superseded, not unabsorbed value.
+
+## QA rig drive: production SMTP credential rejected — 2026-07-26 ~16:20 UTC (routine 5/§5 drive)
+
+Charter (`docs/agent-improvement-loop.md` §5): no feature work — stand up the local rig, drive real
+owner/dispatcher/driver flows with Playwright, probe `thindtransport.com` read-only, fix only outright
+regressions from the last 3h of commits.
+
+Fresh local rig: Postgres 16 role/db created, 22 migrations applied clean, `seed:demo` populated all
+demo logins, `npm run build` clean, `npx vitest run` green (214 files / 1919 tests). Last-3h commit
+window (as of ~16:20 UTC) is empty — `main`'s tip (`9e47431f`) landed at 12:54 UTC, over 3h before this
+cycle started, so there was nothing to regression-check or fix-forward this run.
+
+Playwright (not the Puppeteer `e2e-*.mjs` harness — used the global `playwright@1.56.1` install
+directly per this cycle's brief) drove all three roles: owner (30 nav routes at 1440px), dispatcher
+(11 routes + loadboard→load-detail drill-in + "Suggest miles" click), driver (8 routes at 390px +
+computed-style invisible-text scan on `/hub/driver`). Zero app defects: every route 200, no empty
+bodies, no invisible text, no page errors. The only console noise was the known local-only
+`/_vercel/{insights,speed-insights}/script.js` 404 (real in prod, absent under local `next start`,
+already triaged in prior cycles) and cancelled Next.js RSC prefetch requests on navigation — both
+benign.
+
+Production probe: direct HTTPS to `thindtransport.com` is egress-blocked here (403 on the CONNECT,
+confirmed via the agent-proxy status endpoint — `tile.openstreetmap.org` map tiles are blocked the
+same way, which is what caused `ERR_TUNNEL_CONNECTION_FAILED` console noise on the local owner
+`/hub/map` drive; not an app defect). Used Vercel MCP instead: the latest **READY** `target:
+"production"` deployment (`dpl_GWb7faARERKUa6oo4SKgPNko9Ug6`) is `9e47431f` — `main`'s current tip —
+so production is fresh, even though the project's `live` flag reads `false` (the known-unreliable
+signal this doc has flagged before; cross-checked against alias + deployment + SHA, all healthy).
+
+`get_runtime_errors` (24h and 7d) surfaced one **new, real** finding: `cron:compliance-scan` failed to
+email carrier `11111111-1111-1111-1111-111111111111` (this is Thind's own primary tenant, not a demo
+carrier — created by migration 002, per `seed-demo.mjs`'s comment) at 2026-07-26 14:24:01 UTC —
+Gmail rejected the login (`535-5.7.8 ... BadCredentials`). First and only occurrence in the full 7-day
+window, so this looks like a credential that just broke, not a flaky transient. `src/lib/mailer.ts`'s
+`createMailTransport()` is a single shared transport keyed off one pair of env vars
+(`SMTP_USER`/`SMTP_PASS`) used for *every* outbound email on the site — driver applications to HR,
+password resets, portal confirmations, compliance alerts — so a rejected login here likely means all
+outbound email is currently broken in production, not just this one cron job. Credential rotation is
+owner-gated (`.env*`/secrets are off-limits per AGENTS.md's guardrails, and this agent has no access
+to the Gmail account), so this was filed as a `Backlog:` item and the owner was notified directly
+instead of attempting a fix.
+
+The other error group (`pg-connection-string`'s SSL-mode deprecation warning, 32 occurrences since
+2026-06-26) is a benign forward-compat warning, not new this cycle — carried to `Backlog:` at low
+priority.
+
+No local Postgres findings, no last-3h regressions, no code changes this cycle — recording only.
+
+Backlog:
+- **Urgent, owner-gated:** rotate the production `SMTP_USER`/`SMTP_PASS` (Gmail app password) in
+  Vercel's env vars — `cron:compliance-scan` got a hard `BadCredentials` rejection for Thind's own
+  carrier at 2026-07-26 14:24 UTC, first occurrence in 7 days. Same shared transport
+  (`src/lib/mailer.ts`) sends driver applications, password resets, and portal confirmations, so this
+  is likely blocking real email delivery sitewide until rotated, not just the compliance-alert cron.
+- Low-priority: prod `POSTGRES_URL`'s `sslmode` is using a value (`prefer`/`require`/`verify-ca`) that
+  `pg-connection-string` v3 / `pg` v9 will reinterpret with weaker guarantees — switch to an explicit
+  `sslmode=verify-full` (or `uselibpqcompat=true&sslmode=require`) before that major bump lands.
+- Carried, unchanged: `claude/lane-compliance` (~1557 unpicked) still needs the meta-governor prune
+  pass; npm audit high-severity findings and the Rust sidecar `tiny_http` timeout/thread-cap gap
+  remain owner-gated.
