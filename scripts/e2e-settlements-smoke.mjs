@@ -13,7 +13,7 @@
  * Usage: node scripts/e2e-settlements-smoke.mjs [outputDir]
  */
 import { mkdirSync } from "node:fs"
-import { launchBrowser, BASE, failures, check, waitForText, login, makeShot, clickByText, reseed } from "./e2e-lib.mjs"
+import { launchBrowser, BASE, failures, check, waitForText, login, makeShot, clickByText, reseed, trackPageErrors } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-settlements"
 mkdirSync(OUT, { recursive: true })
@@ -84,10 +84,7 @@ async function main() {
   const browser = await launchBrowser()
   const page = await browser.newPage()
   await page.setViewport({ width: 1440, height: 900 })
-  const consoleErrors = []
-  page.on("console", (msg) => {
-    if (msg.type() === "error") consoleErrors.push(msg.text())
-  })
+  const { errors: consoleErrors } = trackPageErrors(page)
 
   console.log("1. Login as owner, open settlements")
   await login(page, "owner@demo.thind")
@@ -202,9 +199,7 @@ async function main() {
   const ctx = await browser.createBrowserContext()
   const page2 = await ctx.newPage()
   await page2.setViewport({ width: 1440, height: 900 })
-  page2.on("console", (msg) => {
-    if (msg.type() === "error") consoleErrors.push(msg.text())
-  })
+  trackPageErrors(page2, consoleErrors)
   await login(page2, "dispatch@demo.thind")
   await page2.goto(`${BASE}/hub/money/settlements`, { waitUntil: "networkidle2" })
   await waitForText(page2, "Settlements")
@@ -220,8 +215,7 @@ async function main() {
   check(dispatcherActions === 0, "dispatcher has no approve/mark-paid actions")
   await shot(page2, "07-dispatcher")
 
-  const realErrors = consoleErrors.filter((e) => !/favicon|manifest/i.test(e))
-  check(realErrors.length === 0, `no console errors (${realErrors.length}: ${realErrors.slice(0, 2).join(" | ")})`)
+  check(consoleErrors.length === 0, `no console errors (${consoleErrors.length}: ${consoleErrors.slice(0, 2).join(" | ")})`)
 
   await browser.close()
   if (failures.length > 0) {

@@ -12,7 +12,7 @@
 import pg from "pg"
 import { writeFileSync, mkdirSync } from "node:fs"
 import path from "node:path"
-import { launchBrowser, BASE, clickByText, waitForText, textGone, makeShot, reseed, check, failures } from "./e2e-lib.mjs"
+import { launchBrowser, BASE, clickByText, waitForText, textGone, makeShot, reseed, check, failures, trackPageErrors } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots"
 mkdirSync(OUT, { recursive: true })
@@ -52,8 +52,7 @@ async function main() {
   const browser = await launchBrowser()
   const page = await browser.newPage()
   await page.setViewport({ width: 390, height: 844, deviceScaleFactor: 2 })
-  const consoleErrors = []
-  page.on("console", (msg) => { if (msg.type() === "error") consoleErrors.push(msg.text()) })
+  const { errors: consoleErrors } = trackPageErrors(page)
 
   try {
     console.log("1. Login as demo driver at 390px")
