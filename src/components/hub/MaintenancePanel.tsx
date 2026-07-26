@@ -6,6 +6,7 @@ import { Loader2, Plus, Wrench } from "lucide-react"
 import { addMaintenanceRecordAction, addMaintenanceScheduleAction } from "@/app/hub/_actions/compliance"
 import { fieldCls, labelCls, Panel } from "@/components/hub/ui"
 import { fmtCentsExact } from "@/lib/hub/types"
+import { mileageStatus } from "@/lib/hub/maintenance-due"
 
 export interface MaintenanceSchedule {
   id: string
@@ -13,6 +14,7 @@ export interface MaintenanceSchedule {
   interval_miles: number | null
   interval_days: number | null
   last_done_on: string | null
+  last_done_odometer: string | null
 }
 
 export interface MaintenanceRecord {
@@ -28,10 +30,14 @@ export function MaintenancePanel({
   truckId,
   schedules,
   records,
+  currentOdometer,
 }: {
   truckId: string
   schedules: MaintenanceSchedule[]
   records: MaintenanceRecord[]
+  /** Best-known current odometer for this truck (see truckOdometers), used to
+   *  show "X mi left/over" next to mileage-based PM schedules. */
+  currentOdometer?: number | null
 }) {
   const [pending, startTransition] = useTransition()
   const [schedule, setSchedule] = useState({ name: "", intervalMiles: "", intervalDays: "", lastDoneOn: "" })
@@ -71,14 +77,30 @@ export function MaintenancePanel({
       {/* PM schedules */}
       {schedules.length > 0 ? (
         <ul className="mb-3 space-y-1.5">
-          {schedules.map((s) => (
-            <li key={s.id} className="text-body-sm text-fg-2">
-              <span className="font-semibold text-fg">{s.name}</span>
-              {s.interval_miles ? ` · every ${s.interval_miles.toLocaleString()} mi` : ""}
-              {s.interval_days ? ` · every ${s.interval_days} days` : ""}
-              {s.last_done_on ? ` · last ${String(s.last_done_on).slice(0, 10)}` : " · never done"}
-            </li>
-          ))}
+          {schedules.map((s) => {
+            const { color, milesRemaining } = mileageStatus(
+              s.interval_miles,
+              currentOdometer,
+              s.last_done_odometer != null ? Number(s.last_done_odometer) : null
+            )
+            const toneCls = color === "red" ? "text-bad" : color === "amber" ? "text-warn" : "text-ok"
+            return (
+              <li key={s.id} className="text-body-sm text-fg-2">
+                <span className="font-semibold text-fg">{s.name}</span>
+                {s.interval_miles ? ` · every ${s.interval_miles.toLocaleString()} mi` : ""}
+                {s.interval_days ? ` · every ${s.interval_days} days` : ""}
+                {s.last_done_on ? ` · last ${String(s.last_done_on).slice(0, 10)}` : " · never done"}
+                {milesRemaining != null ? (
+                  <span className={`font-semibold ${toneCls}`}>
+                    {" · "}
+                    {milesRemaining <= 0
+                      ? `${Math.abs(Math.round(milesRemaining)).toLocaleString()} mi overdue`
+                      : `${Math.round(milesRemaining).toLocaleString()} mi left`}
+                  </span>
+                ) : null}
+              </li>
+            )
+          })}
         </ul>
       ) : null}
       <form onSubmit={addSchedule} className="mb-4 grid grid-cols-2 sm:grid-cols-4 gap-2">

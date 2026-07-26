@@ -189,18 +189,34 @@ export function StatusBadge({ status, className }: { status: LoadStatus; classNa
   )
 }
 
-export function ExpiryPill({ date }: { date: string | null | undefined }) {
-  if (!date) return <span className="text-sm text-fg-3">—</span>
-  const due = new Date(date)
-  // eslint-disable-next-line react-hooks/purity -- server component; per-request "now" is intended
-  const days = Math.ceil((due.getTime() - Date.now()) / 86400000)
-  const tone: PillTone = days < 0 ? "bad" : days <= 30 ? "warn" : "ok"
-  return (
-    <Pill tone={tone}>
-      {due.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
-      {days < 0 ? " · expired" : days <= 30 ? ` · ${days}d` : ""}
-    </Pill>
-  )
+export function ExpiryPill({
+  date,
+  miles,
+  tone,
+}: {
+  date?: string | null
+  /** Mileage-based fallback when there's no usable due date (see MaintenancePanel). */
+  miles?: number | null
+  tone?: PillTone
+}) {
+  if (date) {
+    const due = new Date(date)
+    // eslint-disable-next-line react-hooks/purity -- server component; per-request "now" is intended
+    const days = Math.ceil((due.getTime() - Date.now()) / 86400000)
+    const t: PillTone = tone ?? (days < 0 ? "bad" : days <= 30 ? "warn" : "ok")
+    return (
+      <Pill tone={t}>
+        {due.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+        {days < 0 ? " · expired" : days <= 30 ? ` · ${days}d` : ""}
+      </Pill>
+    )
+  }
+  if (miles != null) {
+    const t: PillTone = tone ?? (miles <= 0 ? "bad" : "warn")
+    const rounded = Math.abs(Math.round(miles)).toLocaleString()
+    return <Pill tone={t}>{miles <= 0 ? `${rounded} mi overdue` : `${rounded} mi left`}</Pill>
+  }
+  return <span className="text-sm text-fg-3">—</span>
 }
 
 export function KpiCard({

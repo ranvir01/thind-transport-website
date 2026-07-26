@@ -748,6 +748,17 @@ async function main() {
     [CARRIER, truckIds[0], dateOnly(daysAgo(75))]
   )
 
+  // Mileage-only PM schedule, overdue by mileage on truck 102 (~130k mi from
+  // its position-ping trail vs. a 20k tire-rotation interval last done at
+  // 100k) — no interval_days at all, so before the odometer-aware due-status
+  // fix this sat on the compliance wall stuck amber forever with no signal of
+  // how overdue it actually was.
+  await q(
+    `INSERT INTO hub.maintenance_schedules (carrier_id, truck_id, name, interval_miles, last_done_odometer)
+     VALUES ($1,$2,'Tire rotation',20000,100000)`,
+    [CARRIER, truckIds[1]]
+  )
+
   // ---- Live share link for the in-transit load ----
   const token = randomBytes(16).toString("hex")
   await q(
