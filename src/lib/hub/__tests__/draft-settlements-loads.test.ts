@@ -53,7 +53,11 @@ const driver: Driver = {
  * stays eligible and a later period re-drafts it instead of the fake DB
  * hand-computing "already paid".
  */
-function makeFleetState() {
+function makeFleetState(overrides: {
+  referrals?: { id: string; bonus_cents: number; applicant_name: string; milestone: string }[]
+  scorecardComposite?: number | null
+  payRuleRow?: { name: string; rules: unknown[]; deductions: unknown[] } | null
+} = {}) {
   return {
     loads: [{
       id: LOAD, reference: "THD-1001", linehaul_cents: 240000, fuel_surcharge_cents: 10000,
@@ -65,6 +69,12 @@ function makeFleetState() {
     }],
     advances: [{ id: ADVANCE, reference: "ADV-1", amount_cents: 10000, status: "outstanding" as string }],
     settlements: [] as { id: string; driver_id: string; period_start: string; period_end: string }[],
+    // undefined => "hub.referrals"/"hub.driver_scores" don't exist yet (to_regclass returns null),
+    // matching payableReferralBonuses/latestScorecardScore's early-return branch (the only branch the
+    // suite covered before TEST_GAPS.md #1's "table exists and has rows" branch was added below).
+    referrals: overrides.referrals,
+    scorecardComposite: overrides.scorecardComposite,
+    payRuleRow: overrides.payRuleRow ?? null,
   }
 }
 
@@ -83,14 +93,20 @@ function wireMocks(state: ReturnType<typeof makeFleetState>) {
     if (s.includes("FROM hub.advances")) {
       return state.advances.filter((a) => a.status === "outstanding")
     }
+    if (s.includes("FROM hub.referrals")) return state.referrals ?? []
     return []
   })
 
   queryOneMock.mockImplementation(async (sql: string, params: unknown[] = []) => {
     const s = String(sql)
-    if (s.includes("to_regclass('hub.referrals')")) return { reg: null }
-    if (s.includes("to_regclass('hub.driver_scores')")) return { reg: null }
-    if (s.includes("FROM hub.pay_rules")) return null
+    if (s.includes("to_regclass('hub.referrals')")) return { reg: state.referrals === undefined ? null : "hub.referrals" }
+    if (s.includes("to_regclass('hub.driver_scores')")) {
+      return { reg: state.scorecardComposite === undefined ? null : "hub.driver_scores" }
+    }
+    if (s.includes("FROM hub.driver_scores")) {
+      return state.scorecardComposite == null ? null : { composite: String(state.scorecardComposite) }
+    }
+    if (s.includes("FROM hub.pay_rules")) return state.payRuleRow
     if (s.includes("FROM hub.settlements WHERE carrier_id") && s.includes("period_start")) {
       const [, driverId, periodStart, periodEnd] = params as [string, string, string, string]
       const found = state.settlements.find(
@@ -187,5 +203,78 @@ describe("draftSettlements — settlement_id stamp on loads (TEST_GAPS.md #1/#6)
     const second = await draftSettlements(CARRIER, "2026-06-08", "2026-06-14", ACTOR)
     expect(second).toEqual({ created: 0, skipped: 1 })
     expect(state.settlements).toHaveLength(1)
+  })
+})
+
+describe("draftSettlements — payableReferralBonuses + latestScorecardScore (TEST_GAPS.md #1 remaining gap)", () => {
+  beforeEach(() => {
+    queryMock.mockReset()
+    queryOneMock.mockReset()
+    hubDbMock.mockReset()
+  })
+
+  it("adds a payable referral bonus as its own settlement line once hub.referrals exists", async () => {
+    const state = makeFleetState({
+      referrals: [{ id: "referral-1", bonus_cents: 5000, applicant_name: "Sarah Wilson", milestone: "first_load_completed" }],
+    })
+    const calls = wireMocks(state)
+
+    const result = await draftSettlements(CARRIER, "2026-06-01", "2026-06-07", ACTOR)
+    expect(result).toEqual({ created: 1, skipped: 0 })
+
+    // 500 loaded mi × $1.00/mi = $500 + $20 expense reimbursement + $50 referral bonus, minus a $100 advance.
+    const insertSettlement = calls.find((c) => c.sql.includes("INSERT INTO hub.settlements"))
+    expect(insertSettlement!.params).toEqual([CARRIER, DRIVER, "2026-06-01", "2026-06-07", 57000, 10000, 47000])
+
+    const referralLine = calls.find(
+      (c) => c.sql.includes("INSERT INTO hub.settlement_lines") && c.params[4] === "referral"
+    )
+    expect(referralLine).toBeDefined()
+    expect(referralLine!.params).toEqual(
+      expect.arrayContaining(["earning", "Referral bonus — Sarah Wilson (first load completed)", 5000, "referral", "referral-1"])
+    )
+  })
+
+  it("does not add a referral bonus when hub.referrals has no payable row for this driver", async () => {
+    const state = makeFleetState({ referrals: [] })
+    const calls = wireMocks(state)
+
+    const result = await draftSettlements(CARRIER, "2026-06-01", "2026-06-07", ACTOR)
+    expect(result).toEqual({ created: 1, skipped: 0 })
+
+    const insertSettlement = calls.find((c) => c.sql.includes("INSERT INTO hub.settlements"))
+    // Same totals as the baseline test with no referral rows at all: table exists, just nothing payable.
+    expect(insertSettlement!.params).toEqual([CARRIER, DRIVER, "2026-06-01", "2026-06-07", 52000, 10000, 42000])
+  })
+
+  it("adds a scorecard bonus at the matching tier once hub.driver_scores has a composite for this driver", async () => {
+    const state = makeFleetState({
+      scorecardComposite: 92,
+      payRuleRow: {
+        name: "Custom",
+        rules: [
+          { type: "per_mile", rateCentsPerMile: 100, loadedOnly: true },
+          { type: "scorecard_bonus", tiers: [{ minScore: 80, amountCents: 10000 }, { minScore: 90, amountCents: 20000 }] },
+        ],
+        deductions: [],
+      },
+    })
+    const calls = wireMocks(state)
+
+    const result = await draftSettlements(CARRIER, "2026-06-01", "2026-06-07", ACTOR)
+    expect(result).toEqual({ created: 1, skipped: 0 })
+
+    // $500 per-mile + $200 scorecard bonus (92 clears the 90-point tier, not the 80-point one) +
+    // $20 expense reimbursement, minus the $100 advance (no escrow/insurance on this custom rule set).
+    const insertSettlement = calls.find((c) => c.sql.includes("INSERT INTO hub.settlements"))
+    expect(insertSettlement!.params).toEqual([CARRIER, DRIVER, "2026-06-01", "2026-06-07", 72000, 10000, 62000])
+
+    const scorecardLine = calls.find(
+      (c) => c.sql.includes("INSERT INTO hub.settlement_lines") && c.params[4] === "scorecard"
+    )
+    expect(scorecardLine).toBeDefined()
+    expect(scorecardLine!.params).toEqual(
+      expect.arrayContaining(["earning", "Safety & performance bonus (score 92)", 20000, "scorecard"])
+    )
   })
 })

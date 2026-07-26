@@ -6,6 +6,20 @@ Where LoadOff's 1,592 green tests are not looking, ranked by dollars at risk per
 > against the current tree instead of trusting prior "#2/#3 remain open" backlog notes, which had gone
 > stale. **Resolved, with evidence:**
 > - **#1** `draftSettlements` settlement_id stamp — `draft-settlements-loads.test.ts` exists and passes.
+>   **Update, verify-and-build cycle, 2026-07-26 ~19:45 UTC:** the row below still listed
+>   `payableReferralBonuses@48`/`latestScorecardScore@71` at 0% — neither had a single test import
+>   (`grep -rl` across `__tests__/` came back empty for both names). Both are unexported, reachable only
+>   through `draftSettlements`, and the existing suite only drove the "table doesn't exist yet"
+>   early-return branch (`to_regclass(...)` → null) for each — the "table exists, has a payable
+>   row/scored month" branch, which is the one that actually feeds a referral bonus or scorecard bonus
+>   into a settlement, was never exercised. Added three cases to `draft-settlements-loads.test.ts`: a
+>   payable referral row producing its own `earning`/`referral` settlement line with the right label and
+>   totals; an empty (but existing) referrals table producing no line; and a custom `scorecard_bonus`
+>   rule set with a scored month matching the higher of two tiers. All three verified to actually catch
+>   a regression (temporarily broke the amount mapping in both helpers, confirmed the new tests — and
+>   only the new tests — failed, then restored). This closes the two 0%-covered helper functions but
+>   NOT the rest of row 1 below (multi-driver runs, percentage-pay rounding, `payableReferralBonuses`'
+>   `deleted_at`/multi-row cases) — row 1 stays open, scope narrowed.
 > - **#2** `runOverdueReminders` day-gate ladder — `overdue-reminder-ladder.test.ts` (landed in
 >   `5c158d72`) exercises the exact rung-skip/double-send/22-day-drift cases this row describes.
 > - **#3** `money.ts` `requirePermission` wiring — `money-actions-permissions.test.ts` (landed in
