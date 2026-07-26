@@ -92,6 +92,25 @@ describe("requirePermissionPage active-account guard", () => {
   })
 })
 
+describe("requirePlatformAdmin role guard", () => {
+  // The role check (session.ts line "if (user.role !== 'platform_admin')")
+  // had no direct test — only the active-account re-check below was covered.
+  // This is the actual tenancy boundary for /hub/admin: any tenant-scoped
+  // role, however privileged within its own carrier, must never reach the
+  // page that can suspend/reactivate ANY tenant by id (see admin-tenancy.test.ts).
+  it("redirects a tenant owner to /hub, never reaching the active-admin query", async () => {
+    authMock.mockResolvedValue(dispatcherSession() as never)
+    await expect(requirePlatformAdmin()).rejects.toThrow("REDIRECT:/hub")
+    expect(queryOneMock).not.toHaveBeenCalled()
+  })
+
+  it("redirects a signed-out caller to login", async () => {
+    authMock.mockResolvedValue({ user: undefined } as never)
+    await expect(requirePlatformAdmin()).rejects.toThrow("REDIRECT:/hub/login")
+    expect(queryOneMock).not.toHaveBeenCalled()
+  })
+})
+
 describe("requirePlatformAdmin active-account guard", () => {
   // platform_admin has no carrier_id (see getHubUser), so it can't reuse the
   // carrier-scoped isActiveUser query — this re-checks by id + role instead.
