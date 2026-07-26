@@ -235,6 +235,37 @@ describe("draftSettlements — payableReferralBonuses + latestScorecardScore (TE
     )
   })
 
+  it("adds one settlement line per payable referral when a driver has more than one", async () => {
+    const state = makeFleetState({
+      referrals: [
+        { id: "referral-1", bonus_cents: 5000, applicant_name: "Sarah Wilson", milestone: "first_load_completed" },
+        { id: "referral-2", bonus_cents: 7500, applicant_name: "Tom Nguyen", milestone: "days_90" },
+      ],
+    })
+    const calls = wireMocks(state)
+
+    const result = await draftSettlements(CARRIER, "2026-06-01", "2026-06-07", ACTOR)
+    expect(result).toEqual({ created: 1, skipped: 0 })
+
+    // 500 loaded mi × $1.00/mi = $500 + $20 expense + $50 + $75 referral bonuses, minus a $100 advance.
+    const insertSettlement = calls.find((c) => c.sql.includes("INSERT INTO hub.settlements"))
+    expect(insertSettlement!.params).toEqual([CARRIER, DRIVER, "2026-06-01", "2026-06-07", 64500, 10000, 54500])
+
+    const referralLines = calls.filter(
+      (c) => c.sql.includes("INSERT INTO hub.settlement_lines") && c.params[4] === "referral"
+    )
+    expect(referralLines).toHaveLength(2)
+    expect(referralLines.map((l) => l.params[5])).toEqual(
+      expect.arrayContaining(["referral-1", "referral-2"])
+    )
+    expect(referralLines.find((l) => l.params[5] === "referral-1")!.params).toEqual(
+      expect.arrayContaining(["earning", "Referral bonus — Sarah Wilson (first load completed)", 5000, "referral", "referral-1"])
+    )
+    expect(referralLines.find((l) => l.params[5] === "referral-2")!.params).toEqual(
+      expect.arrayContaining(["earning", "Referral bonus — Tom Nguyen (days 90)", 7500, "referral", "referral-2"])
+    )
+  })
+
   it("does not add a referral bonus when hub.referrals has no payable row for this driver", async () => {
     const state = makeFleetState({ referrals: [] })
     const calls = wireMocks(state)
