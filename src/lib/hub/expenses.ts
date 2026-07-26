@@ -1,6 +1,7 @@
 import { query } from "./db"
 import { logAudit } from "./audit"
 import { assertCarrierRefs } from "./tenancy"
+import { toCsv } from "./csv"
 import { toIsoDateOnly } from "./format-dates"
 import type { Expense, ExpenseCategory } from "./types"
 
@@ -98,15 +99,6 @@ export async function truckPnl(carrierId: string, days = 92): Promise<TruckPnl[]
 }
 
 // ---- QuickBooks-importable CSV exports ----
-
-function csvEscape(value: unknown): string {
-  const str = String(value ?? "")
-  return /[",\n]/.test(str) ? `"${str.replace(/"/g, '""')}"` : str
-}
-
-function toCsv(headers: string[], rows: unknown[][]): string {
-  return [headers.join(","), ...rows.map((row) => row.map(csvEscape).join(","))].join("\n")
-}
 
 /**
  * Bad caller input, not a server fault: the message is written for the caller
