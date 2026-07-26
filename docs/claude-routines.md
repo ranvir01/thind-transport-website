@@ -1116,3 +1116,97 @@ Backlog:
 - Carried, unchanged: npm audit's high-severity findings (owner-approval-gated semver-major bump); Rust
   sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision); IFTA due-date roll not
   accounting for legal holidays (documented scope decision).
+
+## QA rig drive: iOS app/website separation window, 0 regressions — 2026-07-26 ~00:20 UTC
+
+Charter (docs/agent-improvement-loop.md §5): no feature work — stand up the local rig, drive real
+owner/dispatcher/driver flows with Playwright, probe `thindtransport.com` read-only, fix only
+outright regressions from the last 3h of commits. `npm run agent:status`: STEADY STATE (integrator
+within 3 commits of main); session branch tip already matched `origin/main` (`508e8aa4`), no merge
+needed.
+
+The trailing 3-hour window held one real content commit, `0e13bd3d` (21:23 UTC) — the iOS
+app/website separation: `/loadoff` and `/app` override their metadata `manifest` to
+`/api/hub/manifest` (the driver-app manifest, `start_url: /hub`) instead of the marketing manifest,
+a new `/hub/get-app` public install page (proxy-exempt in `src/proxy.ts`), and a new
+`StandaloneScopeGuard` (mounted in the hub layout) that retargets same-origin links leaving `/hub`
+to `_blank` — but only when `matchMedia("(display-mode: standalone)")` matches — so an installed iOS
+app can't get stranded on the marketing site with no URL bar. Read the full diff before testing
+anything, not just the commit body.
+
+Fresh local rig: `service postgresql start`, created the `loadoff` role/db (pitfall #9),
+`.env.local` from `.env.example` with a generated `NEXTAUTH_SECRET`/`CRON_SECRET`, `npm run
+db:migrate` (22 migrations clean), `npm run seed:demo`, `npm run build` (zero TS errors) + `npx
+vitest run` (210 files/1854 tests, all green) before touching anything, then `npm run start` against
+the production build.
+
+Wrote a targeted Playwright drive (global Playwright 1.56.1 against the sandbox's preinstalled
+Chromium at `/opt/pw-browsers`, `@playwright/test` isn't a project dependency) rather than reusing
+the Puppeteer `e2e-*.mjs` battery, since the goal was exercising the new standalone-only behavior
+directly: (1) manifest-per-route — confirmed `/` carries `/site.webmanifest`, `/loadoff`/`/app`/
+`/hub/get-app` all carry `/api/hub/manifest`; (2) `/hub/get-app` returns 200 with **no session**
+(proxy-exempt, as an iOS home-screen launch starts with an empty cookie jar); (3)
+`StandaloneScopeGuard` under emulated `display-mode: standalone` (matchMedia override via
+`addInitScript`, since Playwright/CDP doesn't expose a display-mode media override directly) —
+injected a same-origin marketing link into the live `/hub` DOM and clicked it: the guard retargeted
+it to `target=_blank` and the container stayed on `/hub`, matching the intended behavior exactly;
+(4) full owner/dispatcher/driver navigation sweep (`/hub/*`, `/hub/dispatch`, `/hub/driver/*` at
+390px) with console-error/5xx/404 watchers on every page — zero findings; (5) role-based tenancy
+guard re-confirmed: a driver account hitting `/hub/loadboard` bounces to `/hub/driver`. **0
+regressions in the reviewed window** — the iOS separation feature is verified working exactly as
+its own commit message claims.
+
+One early false alarm, self-caused: the drive script's first `loginAs()` helper called
+`waitForLoadState("networkidle")` immediately after `page.click()` without awaiting the sign-in's
+async redirect, so every role check read `/hub/login` as the post-login URL — looked like every
+login was silently failing. Isolated with a standalone login-debug script (logs every
+`/api/auth/*` response) before concluding anything: the actual sign-in flow works correctly
+(`/api/auth/callback/credentials` 200, redirect to `/hub`/`/hub/dispatch`/`/hub/driver` per role).
+Fixed by racing `page.click()` against `page.waitForURL(url => !url.pathname.endsWith("/hub/login"))`
+instead. Not a product bug — a reminder that a QA drive's own harness needs the same skepticism as
+the product under test.
+
+Hit the exact same pre-existing Analytics/SpeedInsights `/_vercel/*.js` 404-on-self-host regression
+documented in this file's prior cycles (introduced by `229885af`, 18:35 UTC — outside this cycle's
+3h window) while building the console-error watcher. Per docs/agent-improvement-loop.md §5's dedup
+rule, checked `git log --all --grep` before touching `src/app/layout.tsx`: **three separate
+unmerged branches already carry the identical fix** (`process.env.VERCEL` gate around
+`<Analytics />`/`<SpeedInsights />`) — `claude/practical-franklin-nidydl` (`3a3c51cc`, 1 commit
+ahead of main, also drops a stale `/testimonials` e2e assertion and fixes a stale `/hub/reports`
+copy assertion), `claude/practical-franklin-wcljtj` (`4feeec41`, 2 commits ahead), and
+`claude/practical-franklin-4s2urt` (`9ec64e3b`, 2 commits ahead). None is an ancestor of another —
+three independent QA-drive sessions hit and fixed the same bug without seeing each other's work.
+Did not write a fourth copy; flagged below for the integrator/meta-governor instead.
+
+Production probe: direct HTTPS to `thindtransport.com` confirmed egress-blocked this session
+(`curl -v` shows the sandbox proxy answering `403` to the `CONNECT` itself, not a site-side error) —
+fell back to the Vercel MCP tools per the documented pitfall. `list_deployments` (`target:
+"production"`, `state: "READY"`): the live deployment (`dpl_8bs2aVYLjQ9rMGPHs5NRNWXfg3Rx`) was built
+from `3e96ed4d`, one commit behind main's tip `508e8aa4` — that last commit is a content-only
+`.drain-stamp` nudge (same-SHA dedupe remedy, no functional payload), so production already serves
+every real change through the reviewed window, including the iOS separation feature verified above.
+`get_runtime_errors` (6h window): none. `get_project`'s `live: false` flag is present again but, per
+the documented pitfall, not reliable in isolation — the alias/deployment/SHA cross-check above is
+what matters and it's clean.
+
+No code fix shipped this cycle — 0 regressions found in the reviewed window, and the one real
+pre-existing defect encountered (Analytics 404s) already has three fixes in flight on other
+branches, so writing a fourth would only add to the duplicate-fix churn the meta-governor already
+tracks.
+
+Backlog:
+- **Dedupe the Analytics/SpeedInsights fix**: `claude/practical-franklin-nidydl` (`3a3c51cc`),
+  `claude/practical-franklin-wcljtj` (`4feeec41`), and `claude/practical-franklin-4s2urt`
+  (`9ec64e3b`) all independently gate `<Analytics />`/`<SpeedInsights />` on `process.env.VERCEL` —
+  identical root fix. Integrator: drain `claude/practical-franklin-nidydl` first (most complete
+  write-up, also carries two unrelated stale-assertion fixes); meta-governor: prune the other two as
+  superseded-by-nidydl once drained, don't merge them separately.
+- `claude/practical-franklin-nidydl` also names an unmerged `/testimonials` routing gap: `92913010`'s
+  own commit message promised a 302 redirect to `/` but the redirect was never added to
+  `next.config.mjs`/`src/proxy.ts` — still 404s. Carries forward from that branch's backlog since it
+  hasn't drained yet.
+- `lane-tests` (2 commits) and `lane-compliance` (1552 commits) remain the two largest pending
+  branches per `npm run agent:status`; meta-governor prune pass remains overdue across many cycles.
+- Carried, unchanged: npm audit's high-severity findings (owner-approval-gated semver-major bump);
+  Rust sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision); IFTA due-date roll not
+  accounting for legal holidays (documented scope decision).
