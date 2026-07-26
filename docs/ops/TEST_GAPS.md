@@ -2,6 +2,33 @@
 
 Where LoadOff's 1,592 green tests are not looking, ranked by dollars at risk per hour of work.
 
+> **Status update, 2026-07-26 (verify-and-build cycle, main@e6be22e5):** re-opened every citation below
+> against the current tree instead of trusting prior "#2/#3 remain open" backlog notes, which had gone
+> stale. **Resolved, with evidence:**
+> - **#1** `draftSettlements` settlement_id stamp — `draft-settlements-loads.test.ts` exists and passes.
+> - **#2** `runOverdueReminders` day-gate ladder — `overdue-reminder-ladder.test.ts` (landed in
+>   `5c158d72`) exercises the exact rung-skip/double-send/22-day-drift cases this row describes.
+> - **#3** `money.ts` `requirePermission` wiring — `money-actions-permissions.test.ts` (landed in
+>   `53f2ca8a`) table-drives all 14 actions incl. the approve-vs-write tier split; `_actions/money.ts`
+>   measured at 100% function coverage this cycle (`npx vitest run --coverage`, v8 provider).
+> - **#4** 1099 export using the current year — `resolve1099Year` (`expenses.ts:125`) replaced the raw
+>   `new Date().getFullYear()`, covered by `export-1099-year.test.ts` (landed alongside #2 in `5c158d72`).
+> - **#5** `pay-rules-db.ts` untested — `pay-rules-db.test.ts` added this cycle; module now at 100%
+>   stmt/branch/func coverage (was 7.7/0/0). Both the custom-beats-auto `if (custom) return` guard and
+>   the `ORDER BY (name = ANY($3)) ASC` tie-break are pinned.
+> - **#6** advance-apply double-deduct guard — pinned in `483a920d` (`TEST_GAPS.md #6`).
+> - **#7** `arAgingTrend` payments sub-select missing `carrier_id` — fixed and tested in `ae82c650`
+>   (`reports-ar-aging-tenancy.test.ts`); the live code at `reports.ts:76` already carries the filter.
+>
+> **Still open, unchanged:** #8 (`getAgingSummary` — no test file found this pass), #11 (detention
+> downward-revision — owner decision), #12 (scorecard tier table — owner decision), #15 (`csvEscape` is
+> still duplicated three ways: `expenses.ts:102`, `reports.ts:464`, `loadboard-export.ts:4` — confirmed
+> by grep this cycle, none escape a leading `=`/`+`/`-`/`@`). **Not re-verified this pass** (claimed
+> status below may be stale either direction): #9 (`loads.ts` createLoad/updateLoad tenancy), #10
+> (`fuel.ts` assignFuelToLoad/fuelFraudFlags), #13 (`sendFactoringPacket`), #14 (`parseRuleSet` branch
+> coverage — a test block exists at `pay-rules.test.ts:295` but wasn't checked against all four cases
+> the row below specifies).
+
 Generated 2026-07-25 against main@c52ec254.
 **Measured live in this session:** `npx vitest run --coverage` (v8 provider, 3 passes: `src/lib/hub/**`,
 `src/app/**`, JSON detail) — 189 files / 1,592 tests, all pass, ~50s per pass; `npx tsc --noEmit`;
