@@ -35,10 +35,10 @@ export function Reveal({ children, index = 0, as = "div", className }: RevealPro
     const el = ref.current
     if (!el) return
 
-    // Respect the user's setting before doing any work: reduced motion means
-    // the element is simply visible, with no observer and no transition.
+    // Respect the user's setting before doing any work: under reduced motion
+    // the `motion-safe:` variants below never apply, so the element is
+    // already fully visible via CSS alone — no state change or observer needed.
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      setShown(true)
       return
     }
 

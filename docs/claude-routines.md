@@ -1116,3 +1116,62 @@ Backlog:
 - Carried, unchanged: npm audit's high-severity findings (owner-approval-gated semver-major bump); Rust
   sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision); IFTA due-date roll not
   accounting for legal holidays (documented scope decision).
+
+## Advance-apply idempotency test (TEST_GAPS.md #6) — 2026-07-26 ~02:45 UTC (verify-and-build cycle)
+
+Integrator (`b7cd4db7`) was 2 commits ahead of `main` (STEADY STATE) — `npm ci` + `npm run build` +
+`npx vitest run` (209 files/1847 tests) + `npm run lint` + `npm run test:sidecars` (29 Rust tests,
+clippy clean) all green before touching anything, so no fix-forward needed.
+
+Considered the newest Backlog item first (`b7cd4db7`: "PreQualificationForm.tsx still carries legacy
+blue/green/purple styling") but found it doesn't hold up as a mechanical pick: the file's only
+non-brand color is green, used for its "qualified" success checkmark/panel, and that exact
+`bg-green-100`/`text-green-600` pattern is still live and unflagged in the sibling `/apply` success
+screen (`ApplicationForm.tsx:796-797`). `agent:backlog`'s older-mentions tail already carries this as
+an open question ("Decide whether the green-400 success-check convention stays — it is not in the
+brand palette but is used consistently sitewide"). Fixing only `/pre-qualify` would make the two
+near-identical qualify-flow success screens diverge from each other instead of converging on the
+brand — an owner/design call, not a token swap, so left it for the next cycle with that framing
+sharpened rather than forcing a guess.
+
+Picked `agent:backlog`'s TOP PICK instead: `settlements.ts:267-272`'s advance-apply `UPDATE` loop
+inside `approveSettlement` was 0% covered — the `AND status = 'outstanding'` guard at `:269` is the
+only thing stopping an advance from being deducted twice across settlements ($1,500/driver cap × 10
+drivers = $15,000 exposure per `docs/ops/TEST_GAPS.md` #6). Added two tests to
+`settlements-tenancy.test.ts`: one pins the exact SQL guard clause + params
+(`[settlementId, source_id, carrierId]`); the other is a two-settlement idempotency proof — a fake
+client enforcing real WHERE-clause row-matching semantics shows the first approval's `UPDATE` matches
+and flips the advance to `applied`, and a second settlement referencing the same advance affects zero
+rows, not a second deduction. Verified the guard-pinning test actually catches the regression it's
+meant to catch: temporarily dropped `AND status = 'outstanding'` from `settlements.ts`, confirmed the
+test failed with a clear diff, restored the file, reconfirmed green. Also checked TEST_GAPS.md #1
+(`draftSettlements` 0% covered) before listing it as still-open in this cycle's Backlog — confirmed
+`draft-settlements-loads.test.ts` already exists and directly targets it (`describe(... TEST_GAPS.md
+#1/#6)`), so that item is at least partially closed already, not fully open as the doc's headline
+number implies.
+
+`npm run build` + `npx vitest run` (209 files/1849 tests, up from 1847) + `npm run lint` all green
+after the change. No Go/Rust touched, so `test:sidecars` not re-run (green earlier this cycle with no
+intervening changes). No local Postgres stood up this cycle — a test-only change to an already-unit-
+tested server function, not a UI change, so no Playwright drive was needed per the routine's own
+scoping (step 4: "if it touches UI ... drive the changed screen").
+
+Pushed straight to `claude/hauldesk-project-setup-l1luoo` (integrator now 3 ahead of `main`, still
+within the steady-state threshold — no drain forced this cycle).
+
+Backlog:
+- Owner/design call needed: is green-as-success (`bg-green-100`/`text-green-600`, used in both
+  `PreQualificationForm.tsx` and `ApplicationForm.tsx`'s success screens) staying as a sitewide
+  semantic-success convention, or getting purged to gold/orange like `RoutesSection`'s category colors
+  were? Whichever way it's decided, both files should move together in the same commit so the two
+  qualify-flow success screens don't diverge from each other.
+- TEST_GAPS.md's other high-value gaps remain open, ranked: #2 `invoices.ts`'s `runOverdueReminders`
+  day-gate (`=== 3/10/20` vs `>= 3` with dedupe) — live proof `THD-INV-1002` is already unchaseable;
+  #3 the 12-of-14 `money.ts` actions with untested `requirePermission` wiring; #1's remaining scope
+  beyond the settlement_id stamp (already covered) — worth a fresh coverage read to see what's left in
+  the 134-line block before assuming more work is needed there.
+- `claude/lane-compliance` (1552 unpicked commits) remains the largest pending branch; per prior
+  cycles' notes, do NOT plain-merge — meta-governor prune pass still overdue.
+- Carried, unchanged: npm audit's high-severity findings (owner-approval-gated semver-major bump);
+  Rust sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision); IFTA due-date roll not
+  accounting for legal holidays (documented scope decision).
