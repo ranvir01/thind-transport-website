@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 )
@@ -378,12 +379,16 @@ func TestHaversineMilesGoldenParityWithTS(t *testing.T) {
 // its own 10s drain budget) rather than hang or require a real OS signal to
 // exercise in a test.
 func TestRunGracefulShutdownOnContextCancel(t *testing.T) {
-	srv := newServer("127.0.0.1:0")
+	ln, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatalf("failed to reserve a port: %v", err)
+	}
+	srv := newServer(ln.Addr().String())
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
 
 	done := make(chan error, 1)
-	go func() { done <- run(ctx, srv) }()
+	go func() { done <- run(ctx, srv, ln) }()
 
 	select {
 	case err := <-done:
@@ -395,21 +400,86 @@ func TestRunGracefulShutdownOnContextCancel(t *testing.T) {
 	}
 }
 
-// TestRunPropagatesListenError pins the other branch of run()'s select: a
-// real bind failure (address already in use) must surface as an error from
-// run(), not be swallowed as if it were a clean ErrServerClosed shutdown.
+// TestRunPropagatesListenError pins the first branch of run()'s select: a
+// real Serve failure (here, Accept on a listener that's already closed)
+// must surface as an error from run(), not be swallowed as if it were a
+// clean ErrServerClosed shutdown.
 func TestRunPropagatesListenError(t *testing.T) {
-	l, err := net.Listen("tcp", "127.0.0.1:0")
+	ln, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
 		t.Fatalf("failed to reserve a port: %v", err)
 	}
-	defer l.Close()
+	ln.Close() // Accept on a closed listener fails immediately, before Shutdown ever runs
 
-	srv := newServer(l.Addr().String())
-	if err := run(context.Background(), srv); err == nil {
-		t.Fatal("expected a bind error when the address is already in use")
+	srv := newServer(ln.Addr().String())
+	if err := run(context.Background(), srv, ln); err == nil {
+		t.Fatal("expected an error when serving on an already-closed listener")
 	} else if errors.Is(err, http.ErrServerClosed) {
-		t.Fatalf("bind failure must not read as a clean shutdown, got %v", err)
+		t.Fatalf("listener failure must not read as a clean shutdown, got %v", err)
+	}
+}
+
+// erroringListener wraps a real listener but returns a caller-supplied error
+// from Close(), standing in for a listener whose underlying fd fails to
+// close cleanly (e.g. a kernel-level close error) — a fault net.Listen can't
+// produce on demand. The wrapped Close still runs so Accept unblocks and the
+// Serve goroutine in run() actually exits instead of leaking.
+//
+// Accept signals `accepted` the first time it's called, which the test waits
+// on before canceling ctx. net/http's Server.Serve registers a listener with
+// the server (so Shutdown knows to close it) before its first Accept call —
+// canceling on a fixed sleep instead would race that registration and could
+// flakily observe Shutdown finding no listener to close yet.
+type erroringListener struct {
+	net.Listener
+	closeErr error
+	accepted chan struct{}
+	once     sync.Once
+}
+
+func (l *erroringListener) Accept() (net.Conn, error) {
+	l.once.Do(func() { close(l.accepted) })
+	return l.Listener.Accept()
+}
+
+func (l *erroringListener) Close() error {
+	_ = l.Listener.Close()
+	return l.closeErr
+}
+
+// TestRunReturnsErrorWhenShutdownFails pins run()'s ctx.Done branch when
+// srv.Shutdown itself fails: Shutdown's return value is the error from
+// closing its tracked listeners (net/http Server.closeListenersLocked), so a
+// listener whose Close() fails must propagate straight out of run() rather
+// than being swallowed as a clean shutdown.
+func TestRunReturnsErrorWhenShutdownFails(t *testing.T) {
+	inner, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatalf("failed to reserve a port: %v", err)
+	}
+	injectedErr := errors.New("injected listener close failure")
+	ln := &erroringListener{Listener: inner, closeErr: injectedErr, accepted: make(chan struct{})}
+
+	srv := newServer(inner.Addr().String())
+	ctx, cancel := context.WithCancel(context.Background())
+
+	done := make(chan error, 1)
+	go func() { done <- run(ctx, srv, ln) }()
+
+	select {
+	case <-ln.accepted:
+	case <-time.After(2 * time.Second):
+		t.Fatal("server never reached its accept loop")
+	}
+	cancel()
+
+	select {
+	case err := <-done:
+		if !errors.Is(err, injectedErr) {
+			t.Fatalf("expected the injected Close error to propagate, got %v", err)
+		}
+	case <-time.After(2 * time.Second):
+		t.Fatal("run did not return after context cancellation — shutdown hung")
 	}
 }
 
