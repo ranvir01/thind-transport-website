@@ -1,5 +1,22 @@
 /** Minimal RFC-4180 CSV parser — quoted fields, escaped quotes, CR/LF. */
 
+/**
+ * RFC-4180 field escaping plus a leading apostrophe on formula-injection
+ * characters (`=+-@`) — a value like `=HYPERLINK(...)` opened in Excel/Sheets
+ * would otherwise execute as a live formula instead of displaying as text.
+ * The single shared implementation for every CSV export (was three
+ * independent copies, none of which guarded against injection).
+ */
+export function csvEscape(value: unknown): string {
+  let str = String(value ?? "")
+  if (/^[=+\-@]/.test(str)) str = `'${str}`
+  return /[",\n\r]/.test(str) ? `"${str.replace(/"/g, '""')}"` : str
+}
+
+export function toCsv(headers: string[], rows: unknown[][]): string {
+  return [headers.join(","), ...rows.map((row) => row.map(csvEscape).join(","))].join("\n")
+}
+
 export function parseCsv(text: string): string[][] {
   const rows: string[][] = []
   let row: string[] = []
