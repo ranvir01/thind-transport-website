@@ -20,7 +20,7 @@
  * Usage: node scripts/e2e-tasks-smoke.mjs [outputDir]
  */
 import { mkdirSync } from "node:fs"
-import { launchBrowser, BASE, failures, check, waitForText, waitForPath, login, makeShot, clickByText, reseed } from "./e2e-lib.mjs"
+import { launchBrowser, BASE, failures, check, waitForText, waitForPath, login, makeShot, clickByText, reseed, realConsoleErrors } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-tasks"
 mkdirSync(OUT, { recursive: true })
@@ -71,7 +71,7 @@ async function main() {
   await page.setViewport({ width: 1440, height: 900 })
   const consoleErrors = []
   page.on("console", (msg) => {
-    if (msg.type() === "error") consoleErrors.push(msg.text())
+    if (msg.type() === "error") consoleErrors.push(`${msg.location().url ?? ""} ${msg.text()}`)
   })
 
   console.log("1. Login as dispatcher, open Tasks")
@@ -227,7 +227,7 @@ async function main() {
   check(!driverBlocked.seesBoard, "driver never sees the task board")
   await shot(driverPage, "09-tasks-driver-blocked")
 
-  const realErrors = consoleErrors.filter((e) => !/favicon|manifest/i.test(e))
+  const realErrors = realConsoleErrors(consoleErrors)
   check(realErrors.length === 0, `no console errors (${realErrors.length}: ${realErrors.slice(0, 2).join(" | ")})`)
 
   await browser.close()

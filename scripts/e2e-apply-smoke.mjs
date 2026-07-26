@@ -30,7 +30,7 @@
  */
 import puppeteer from "puppeteer"
 import { mkdirSync } from "node:fs"
-import { BASE, sleep, check, failures, makeShot, clickByText, waitForText } from "./e2e-lib.mjs"
+import { BASE, sleep, check, failures, makeShot, clickByText, waitForText, realConsoleErrors } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-apply"
 mkdirSync(OUT, { recursive: true })
@@ -133,7 +133,7 @@ async function main() {
   await page.setViewport({ width: 390, height: 844 })
   const consoleErrors = []
   page.on("console", (msg) => {
-    if (msg.type() === "error") consoleErrors.push(msg.text())
+    if (msg.type() === "error") consoleErrors.push(`${msg.location().url ?? ""} ${msg.text()}`)
   })
 
   // ---- 1. Pre-qualify, qualified driver ----
@@ -200,8 +200,8 @@ async function main() {
   check(submitted, "application submits to the success step")
   await shot(page, "apply-submitted-390")
 
-  const realErrors = consoleErrors.filter(
-    (e) => !/favicon|404|Failed to load resource/i.test(e)
+  const realErrors = realConsoleErrors(consoleErrors).filter(
+    (e) => !/404|Failed to load resource/i.test(e)
   )
   check(realErrors.length === 0, `no browser console errors (${realErrors.length})`)
   if (realErrors.length) realErrors.slice(0, 5).forEach((e) => console.log(`    · ${e.slice(0, 200)}`))

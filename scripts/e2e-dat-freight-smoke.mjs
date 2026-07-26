@@ -18,7 +18,7 @@
  * Usage: node scripts/e2e-dat-freight-smoke.mjs [outputDir]
  */
 import { mkdirSync } from "node:fs"
-import { launchBrowser, BASE, failures, check, waitForText, login, makeShot, clickByText, reseed, sleep } from "./e2e-lib.mjs"
+import { launchBrowser, BASE, failures, check, waitForText, login, makeShot, clickByText, reseed, sleep, realConsoleErrors } from "./e2e-lib.mjs"
 
 /**
  * Waits for the DAT card to show a button with the given label. Used after a
@@ -92,7 +92,7 @@ async function main() {
   await page.setViewport({ width: 1440, height: 900 })
   const consoleErrors = []
   page.on("console", (msg) => {
-    if (msg.type() === "error") consoleErrors.push(msg.text())
+    if (msg.type() === "error") consoleErrors.push(`${msg.location().url ?? ""} ${msg.text()}`)
   })
   page.on("pageerror", (err) => consoleErrors.push(`pageerror: ${err.message}`))
 
@@ -133,7 +133,7 @@ async function main() {
   const owner = await ownerCtx.newPage()
   await owner.setViewport({ width: 1440, height: 900 })
   owner.on("console", (msg) => {
-    if (msg.type() === "error") consoleErrors.push(msg.text())
+    if (msg.type() === "error") consoleErrors.push(`${msg.location().url ?? ""} ${msg.text()}`)
   })
   owner.on("pageerror", (err) => consoleErrors.push(`pageerror: ${err.message}`))
   await login(owner, "owner@demo.thind")
@@ -241,7 +241,7 @@ async function main() {
     await waitForText(owner, "the CSV import path keeps working")
   }
 
-  const realErrors = consoleErrors.filter((e) => !/favicon|manifest/i.test(e))
+  const realErrors = realConsoleErrors(consoleErrors)
   check(realErrors.length === 0, `no console errors (${realErrors.length}: ${realErrors.slice(0, 2).join(" | ")})`)
 
   await browser.close()

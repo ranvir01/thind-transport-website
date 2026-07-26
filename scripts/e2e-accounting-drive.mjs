@@ -18,7 +18,7 @@
 import { mkdirSync } from "node:fs"
 import {
   BASE, check, clickByText, failures, launchBrowser, login, makeShot, reseed,
-  sleep, waitForText,
+  sleep, waitForText, realConsoleErrors,
 } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-accounting"
@@ -44,7 +44,7 @@ async function main() {
   const shot = makeShot(OUT)
   const consoleErrors = []
   page.on("console", (msg) => {
-    if (msg.type() === "error") consoleErrors.push(msg.text())
+    if (msg.type() === "error") consoleErrors.push(`${msg.location().url ?? ""} ${msg.text()}`)
   })
 
   console.log("1. Accountant lands on /hub/money")
@@ -188,8 +188,8 @@ async function main() {
   )
   check(navLeaks.length === 0, `nav does not advertise user management (${navLeaks.join(",")})`)
 
-  const realErrors = consoleErrors.filter(
-    (e) => !/favicon|manifest|404|Failed to load resource/i.test(e)
+  const realErrors = realConsoleErrors(consoleErrors).filter(
+    (e) => !/404|Failed to load resource/i.test(e)
   )
   check(realErrors.length === 0, `no console errors (${realErrors[0] ?? "clean"})`)
 

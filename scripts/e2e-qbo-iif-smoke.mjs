@@ -11,7 +11,7 @@
  * Usage: node scripts/e2e-qbo-iif-smoke.mjs [outputDir]
  */
 import { mkdirSync } from "node:fs"
-import { launchBrowser, BASE, check, failures, login, makeShot, reseed, waitForText } from "./e2e-lib.mjs"
+import { launchBrowser, BASE, check, failures, login, makeShot, reseed, waitForText, realConsoleErrors } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-qbo-iif"
 mkdirSync(OUT, { recursive: true })
@@ -57,7 +57,7 @@ async function main() {
   await page.setViewport({ width: 1440, height: 900 })
   const consoleErrors = []
   page.on("console", (msg) => {
-    if (msg.type() === "error") consoleErrors.push(msg.text())
+    if (msg.type() === "error") consoleErrors.push(`${msg.location().url ?? ""} ${msg.text()}`)
   })
 
   console.log("1. Login as owner, open the money page")
@@ -122,7 +122,7 @@ async function main() {
   const driverUrl = page2.url()
   check(!driverUrl.includes("/hub/money"), `driver redirected away from /hub/money (landed on ${driverUrl})`)
 
-  const realErrors = consoleErrors.filter((e) => !/favicon|manifest/i.test(e))
+  const realErrors = realConsoleErrors(consoleErrors)
   check(realErrors.length === 0, `no console errors (${realErrors.length}: ${realErrors.slice(0, 2).join(" | ")})`)
 
   await browser.close()

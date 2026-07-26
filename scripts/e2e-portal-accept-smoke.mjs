@@ -17,7 +17,7 @@
  */
 import pg from "pg"
 import { readFileSync, existsSync, mkdirSync } from "node:fs"
-import { launchBrowser, BASE, reseed, makeShot, check, failures } from "./e2e-lib.mjs"
+import { launchBrowser, BASE, reseed, makeShot, check, failures, realConsoleErrors } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-portal-accept"
 mkdirSync(OUT, { recursive: true })
@@ -72,7 +72,7 @@ async function main() {
   const page = await browser.newPage()
   await page.setViewport({ width: 390, height: 844, deviceScaleFactor: 2 })
   const consoleErrors = []
-  page.on("console", (msg) => { if (msg.type() === "error") consoleErrors.push(msg.text()) })
+  page.on("console", (msg) => { if (msg.type() === "error") consoleErrors.push(`${msg.location().url ?? ""} ${msg.text()}`) })
 
   try {
     const customer = await db.query(`SELECT id, carrier_id, name FROM hub.customers LIMIT 1`)
@@ -159,7 +159,7 @@ async function main() {
     check(badBright !== null && badBright > 120, `invalid-link copy renders light-on-dark (color=${badColor}, brightness=${badBright?.toFixed(0)})`)
     await shot(page, "05-unknown-token")
 
-    check(consoleErrors.length === 0, `no console errors (${consoleErrors.length}: ${consoleErrors.slice(0, 2).join(" | ")})`)
+    check(realConsoleErrors(consoleErrors).length === 0, `no console errors (${realConsoleErrors(consoleErrors).length}: ${realConsoleErrors(consoleErrors).slice(0, 2).join(" | ")})`)
   } catch (err) {
     failures.push(`crash: ${err.message}`)
     // Best-effort: a page mid-navigation (or crashed) has a 0-width frame and

@@ -25,7 +25,7 @@
  */
 import puppeteer from "puppeteer"
 import { mkdirSync } from "node:fs"
-import { BASE, failures, check, waitForText, textAppears, waitForPath, login, makeShot, reseed } from "./e2e-lib.mjs"
+import { BASE, failures, check, waitForText, textAppears, waitForPath, login, makeShot, reseed, realConsoleErrors } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-tenant-isolation"
 mkdirSync(OUT, { recursive: true })
@@ -94,7 +94,7 @@ async function main() {
   await thind.setViewport({ width: 1440, height: 950 })
   const consoleErrors = []
   thind.on("console", (msg) => {
-    if (msg.type() === "error") consoleErrors.push(msg.text())
+    if (msg.type() === "error") consoleErrors.push(`${msg.location().url ?? ""} ${msg.text()}`)
   })
   await login(thind, "owner@demo.thind")
 
@@ -133,7 +133,7 @@ async function main() {
   const cascade = await cascadeCtx.newPage()
   await cascade.setViewport({ width: 1440, height: 950 })
   cascade.on("console", (msg) => {
-    if (msg.type() === "error") consoleErrors.push(msg.text())
+    if (msg.type() === "error") consoleErrors.push(`${msg.location().url ?? ""} ${msg.text()}`)
   })
   await login(cascade, "owner@cascademo.example")
 
@@ -193,7 +193,7 @@ async function main() {
   const driver = await driverCtx.newPage()
   await driver.setViewport({ width: 390, height: 844, deviceScaleFactor: 2 })
   driver.on("console", (msg) => {
-    if (msg.type() === "error") consoleErrors.push(msg.text())
+    if (msg.type() === "error") consoleErrors.push(`${msg.location().url ?? ""} ${msg.text()}`)
   })
   await login(driver, "driver@cascademo.example")
   await driver.goto(`${BASE}/hub/driver`, { waitUntil: "networkidle2" })
@@ -208,7 +208,7 @@ async function main() {
   check(!(await bodyText(driver)).includes("THD-"), "Cascade driver pay has no THD- reference")
   await shot(driver, "06-cascade-driver-pay")
 
-  const realErrors = consoleErrors.filter((e) => !/favicon|manifest|404/i.test(e))
+  const realErrors = realConsoleErrors(consoleErrors).filter((e) => !/404/i.test(e))
   check(realErrors.length === 0, `no console errors (${realErrors.length}: ${realErrors.slice(0, 2).join(" | ")})`)
 
   // ---- 5. Platform admin suspends Cascade — its whole workspace is cut off ----

@@ -184,6 +184,27 @@ export const check = (ok, label) => {
   if (!ok) failures.push(label)
 }
 
+/**
+ * Console "error" noise every smoke sees on every page load, unrelated to
+ * whatever the smoke is actually testing: missing favicon, missing manifest
+ * fetch, and — since 229885af added @vercel/analytics + @vercel/speed-insights
+ * — their /_vercel/insights and /_vercel/speed-insights script 404s, which
+ * stay 404 until Web Analytics is enabled in the Vercel dashboard
+ * (docs/ops/AGENT_TASKS.md Task 6). Each script used to carry its own copy of
+ * this regex; several were missing the _vercel exclusion (false-failing the
+ * "no console errors" check the first time they're driven against a live
+ * `next start` server post-229885af) and a few fell back to a much broader
+ * `404`/`Failed to load resource` exclusion that would also swallow a
+ * genuinely broken image or script. Centralized here so the fix lands once;
+ * scripts needing an additional exclusion (a 401 or service-worker message
+ * their own flow expects) chain `.filter()` on the result.
+ */
+export const BENIGN_CONSOLE_ERROR = /favicon|manifest|_vercel\/(insights|speed-insights)/i
+
+export function realConsoleErrors(errors) {
+  return errors.filter((e) => !BENIGN_CONSOLE_ERROR.test(e))
+}
+
 export async function waitForText(page, text, timeout = 15000) {
   await page.waitForFunction(
     (t) => document.body.innerText.toLowerCase().includes(t.toLowerCase()),

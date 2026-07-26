@@ -14,7 +14,7 @@
  * Usage: node scripts/e2e-dispatch-driver-notify-smoke.mjs [outputDir]
  */
 import { mkdirSync } from "node:fs"
-import { launchBrowser, BASE, failures, check, waitForText, login, makeShot, clickByText, reseed } from "./e2e-lib.mjs"
+import { launchBrowser, BASE, failures, check, waitForText, login, makeShot, clickByText, reseed, realConsoleErrors } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-dispatch-notify"
 mkdirSync(OUT, { recursive: true })
@@ -31,7 +31,7 @@ async function main() {
   await page.setViewport({ width: 1440, height: 900 })
   const consoleErrors = []
   page.on("console", (msg) => {
-    if (msg.type() === "error") consoleErrors.push(msg.text())
+    if (msg.type() === "error") consoleErrors.push(`${msg.location().url ?? ""} ${msg.text()}`)
   })
 
   console.log("1. Dispatcher books a load for Harpreet Singh")
@@ -106,7 +106,7 @@ async function main() {
   await driverPage.setViewport({ width: 390, height: 844 })
   const driverConsoleErrors = []
   driverPage.on("console", (msg) => {
-    if (msg.type() === "error") driverConsoleErrors.push(msg.text())
+    if (msg.type() === "error") driverConsoleErrors.push(`${msg.location().url ?? ""} ${msg.text()}`)
   })
   await login(driverPage, "driver@demo.thind")
   await driverPage.goto(`${BASE}/hub/driver`, { waitUntil: "networkidle2" })
@@ -152,8 +152,8 @@ async function main() {
   })
   check(badgeAfterOpen === "Notifications", `opening the feed cleared the unread badge (${badgeAfterOpen})`)
 
-  const realDispatcherErrors = consoleErrors.filter((e) => !/favicon|manifest/i.test(e))
-  const realDriverErrors = driverConsoleErrors.filter((e) => !/favicon|manifest/i.test(e))
+  const realDispatcherErrors = realConsoleErrors(consoleErrors)
+  const realDriverErrors = realConsoleErrors(driverConsoleErrors)
   check(realDispatcherErrors.length === 0, `no dispatcher console errors (${realDispatcherErrors.length})`)
   check(realDriverErrors.length === 0, `no driver console errors (${realDriverErrors.length})`)
 

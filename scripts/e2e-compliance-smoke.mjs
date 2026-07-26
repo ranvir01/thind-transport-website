@@ -13,7 +13,7 @@
  */
 import { mkdirSync, writeFileSync } from "node:fs"
 import path from "node:path"
-import { launchBrowser, BASE, failures, check, waitForText, textAppears, textGone, login, makeShot, reseed } from "./e2e-lib.mjs"
+import { launchBrowser, BASE, failures, check, waitForText, textAppears, textGone, login, makeShot, reseed, realConsoleErrors } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-compliance"
 mkdirSync(OUT, { recursive: true })
@@ -50,7 +50,7 @@ async function main() {
   await page.setViewport({ width: 1440, height: 900 })
   const consoleErrors = []
   page.on("console", (msg) => {
-    if (msg.type() === "error") consoleErrors.push(msg.text())
+    if (msg.type() === "error") consoleErrors.push(`${msg.location().url ?? ""} ${msg.text()}`)
   })
 
   const marker = `E2E compliance ${Date.now().toString(36)}`
@@ -123,7 +123,7 @@ async function main() {
   const page2 = await ctx.newPage()
   await page2.setViewport({ width: 1440, height: 900 })
   page2.on("console", (msg) => {
-    if (msg.type() === "error") consoleErrors.push(msg.text())
+    if (msg.type() === "error") consoleErrors.push(`${msg.location().url ?? ""} ${msg.text()}`)
   })
   await login(page2, "driver@demo.thind")
   await page2.goto(`${BASE}/hub/compliance`, { waitUntil: "networkidle2" })
@@ -134,7 +134,7 @@ async function main() {
   check(redirected, `driver redirected away from compliance (at ${page2.url()})`)
   await shot(page2, "05-driver-blocked")
 
-  const realErrors = consoleErrors.filter((e) => !/favicon|manifest/i.test(e))
+  const realErrors = realConsoleErrors(consoleErrors)
   check(realErrors.length === 0, `no console errors (${realErrors.length}: ${realErrors.slice(0, 2).join(" | ")})`)
 
   await browser.close()

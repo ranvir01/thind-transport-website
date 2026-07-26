@@ -34,7 +34,7 @@
 import puppeteer from "puppeteer"
 import { execSync } from "node:child_process"
 import { mkdirSync, readFileSync } from "node:fs"
-import { BASE, failures, check, login, makeShot } from "./e2e-lib.mjs"
+import { BASE, failures, check, login, makeShot, realConsoleErrors } from "./e2e-lib.mjs"
 
 /**
  * Single source of truth for the settings index: parse href + ownerOnly out
@@ -64,7 +64,7 @@ async function main() {
     const page = await ctx.newPage()
     await page.setViewport({ width: 1440, height: 900 })
     const errors = []
-    page.on("console", (m) => { if (m.type() === "error") errors.push(m.text()) })
+    page.on("console", (m) => { if (m.type() === "error") errors.push(`${m.location().url ?? ""} ${m.text()}`) })
     page.on("pageerror", (e) => errors.push(String(e)))
     return { ctx, page, errors }
   }
@@ -92,7 +92,7 @@ async function main() {
       check(v.readyState >= 2, `video ${v.src} loads metadata+data (readyState ${v.readyState}, ${v.duration}s)`)
       check(v.poster, `video ${v.src} has a poster frame`)
     }
-    const real = errors.filter((e) => !/favicon/.test(e))
+    const real = realConsoleErrors(errors)
     check(real.length === 0, `/loadoff console clean (${real.slice(0, 2).join(" | ") || "clean"})`)
     await shot(page, "loadoff-watch-it-run")
     await ctx.close()
@@ -126,7 +126,7 @@ async function main() {
       `owner sees all ${allAreas.length} settings area cards (got ${ownerCards.join(", ") || "none"})`
     )
     // authjs "Failed to fetch" right after login is a known cosmetic race — don't fail on it.
-    const real = errors.filter((e) => !/favicon|Failed to fetch/.test(e))
+    const real = realConsoleErrors(errors).filter((e) => !/Failed to fetch/.test(e))
     check(real.length === 0, `owner pages console clean (${real.slice(0, 2).join(" | ") || "clean"})`)
     await shot(page, "settings-index-owner")
     await ctx.close()

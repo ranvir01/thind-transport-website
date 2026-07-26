@@ -23,7 +23,7 @@
 import puppeteer from "puppeteer"
 import pg from "pg"
 import { mkdirSync } from "node:fs"
-import { BASE, failures, check, waitForText, login, makeShot, reseed, clickByText } from "./e2e-lib.mjs"
+import { BASE, failures, check, waitForText, login, makeShot, reseed, clickByText, realConsoleErrors } from "./e2e-lib.mjs"
 
 // Fail fast on a fresh rig: the cron step authenticates with Bearer CRON_SECRET.
 // Against a localhost BASE, e2e-lib has already loaded .env.local into this
@@ -107,7 +107,7 @@ async function main() {
   await page.setViewport({ width: 1440, height: 900 })
   const consoleErrors = []
   page.on("console", (msg) => {
-    if (msg.type() === "error") consoleErrors.push(msg.text())
+    if (msg.type() === "error") consoleErrors.push(`${msg.location().url ?? ""} ${msg.text()}`)
   })
 
   console.log("1. Owner schedules two weekly lanes for today (carrier-local)")
@@ -197,7 +197,7 @@ async function main() {
     `no horizontal body scroll at 390px (scrollWidth ${mobile.scrollWidth} ≤ ${mobile.innerWidth})`)
   await shot(page, "04-mobile-390")
 
-  const realErrors = consoleErrors.filter((e) => !/favicon|manifest|401/i.test(e))
+  const realErrors = realConsoleErrors(consoleErrors).filter((e) => !/401/i.test(e))
   check(realErrors.length === 0, `no console errors (${realErrors.length}: ${realErrors.slice(0, 2).join(" | ")})`)
 
   await browser.close()

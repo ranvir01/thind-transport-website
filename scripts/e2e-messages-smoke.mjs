@@ -15,7 +15,7 @@
  * Usage: node scripts/e2e-messages-smoke.mjs [outputDir]
  */
 import { mkdirSync } from "node:fs"
-import { launchBrowser, BASE, failures, check, waitForText, login, makeShot, reseed } from "./e2e-lib.mjs"
+import { launchBrowser, BASE, failures, check, waitForText, login, makeShot, reseed, realConsoleErrors } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-messages"
 mkdirSync(OUT, { recursive: true })
@@ -184,11 +184,7 @@ async function main() {
   )
   await shot(driver, "07-driver-blocked")
 
-  // _vercel/insights and _vercel/speed-insights 404 on every page until Ranvir
-  // enables Web Analytics in the Vercel dashboard (docs/ops/AGENT_TASKS.md Task 6)
-  // — expected, not a regression; every other e2e-*.mjs script hits the same
-  // false positive locally (see Backlog).
-  const realErrors = consoleErrors.filter((e) => !/favicon|manifest|_vercel\/(insights|speed-insights)/i.test(e))
+  const realErrors = realConsoleErrors(consoleErrors)
   check(realErrors.length === 0, `no console errors (${realErrors.length}: ${realErrors.slice(0, 2).join(" | ")})`)
 
   await browser.close()

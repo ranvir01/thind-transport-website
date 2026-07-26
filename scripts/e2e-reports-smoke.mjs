@@ -11,7 +11,7 @@
  * Usage: node scripts/e2e-reports-smoke.mjs [outputDir]
  */
 import { mkdirSync } from "node:fs"
-import { launchBrowser, BASE, failures, check, waitForText, waitForPath, login, makeShot, reseed } from "./e2e-lib.mjs"
+import { launchBrowser, BASE, failures, check, waitForText, waitForPath, login, makeShot, reseed, realConsoleErrors } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-reports"
 mkdirSync(OUT, { recursive: true })
@@ -30,7 +30,7 @@ async function main() {
   await page.setViewport({ width: 1440, height: 900 })
   const consoleErrors = []
   page.on("console", (msg) => {
-    if (msg.type() === "error") consoleErrors.push(msg.text())
+    if (msg.type() === "error") consoleErrors.push(`${msg.location().url ?? ""} ${msg.text()}`)
   })
 
   console.log("1. Login as owner, open Reports")
@@ -122,7 +122,7 @@ async function main() {
   const dispatchPage = await dispatchCtx.newPage()
   await dispatchPage.setViewport({ width: 1440, height: 900 })
   dispatchPage.on("console", (msg) => {
-    if (msg.type() === "error") consoleErrors.push(msg.text())
+    if (msg.type() === "error") consoleErrors.push(`${msg.location().url ?? ""} ${msg.text()}`)
   })
   await login(dispatchPage, "dispatch@demo.thind")
   await dispatchPage.goto(`${BASE}/hub/reports`, { waitUntil: "networkidle2" })
@@ -150,7 +150,7 @@ async function main() {
   check(!driverBlocked.seesPnl, "driver never sees the P&L table")
   await shot(driverPage, "04-reports-driver-blocked")
 
-  const realErrors = consoleErrors.filter((e) => !/favicon|manifest/i.test(e))
+  const realErrors = realConsoleErrors(consoleErrors)
   check(realErrors.length === 0, `no console errors (${realErrors.length}: ${realErrors.slice(0, 2).join(" | ")})`)
 
   await browser.close()
