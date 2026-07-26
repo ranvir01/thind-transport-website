@@ -102,6 +102,26 @@ describe("parseLoadSearchResponse (pure — the one place the assumed SOAP/XML w
     const xml = `<?xml version="1.0"?><soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"><soap:Body><soap:Fault><faultstring>Invalid credentials</faultstring></soap:Fault></soap:Body></soap:Envelope>`
     expect(() => parseLoadSearchResponse(xml)).toThrow(/Invalid credentials/)
   })
+
+  it("also extracts LoadSearchItem blocks — the 2026-07-25 scout lead's alternate wrapper name, unconfirmed either way", () => {
+    const xml = loadSearchResponseXml(
+      "<LoadSearchItem><LoadId>A</LoadId><OriginState>WA</OriginState><DestinationState>ID</DestinationState><TripMiles>400</TripMiles></LoadSearchItem>" +
+        "<LoadSearchItem><LoadId>B</LoadId><OriginState>WA</OriginState><DestinationState>OR</DestinationState><TripMiles>180</TripMiles></LoadSearchItem>"
+    )
+    const rows = parseLoadSearchResponse(xml)
+    expect(rows).toHaveLength(2)
+    expect(rows[0].LoadId).toBe("A")
+    expect(rows[1].LoadId).toBe("B")
+  })
+
+  it("prefers LoadSearchResult over LoadSearchItem if a response somehow carried both", () => {
+    const xml = loadSearchResponseXml(
+      "<LoadSearchResult><LoadId>real</LoadId></LoadSearchResult><LoadSearchItem><LoadId>ignored</LoadId></LoadSearchItem>"
+    )
+    const rows = parseLoadSearchResponse(xml)
+    expect(rows).toHaveLength(1)
+    expect(rows[0].LoadId).toBe("real")
+  })
 })
 
 describe("truckstopPostingToLoadDraft (pure — prefills createLoad()'s input from a posting)", () => {

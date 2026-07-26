@@ -186,10 +186,21 @@ function buildSearchEnvelope(
 }
 
 /**
+ * Per-posting wrapper tag name is unconfirmed between `LoadSearchResult` (the
+ * original assumption) and `LoadSearchItem` (2026-07-25 Partner-API scout
+ * pass — consistent search-snippet evidence, not primary-source confirmed;
+ * see docs/integrations/truckstop.md). Try the original assumption first,
+ * then the scout's lead, so a real response can't silently parse to zero
+ * postings no matter which name turns out to be right — the same tolerant-
+ * match approach `fuel-feed-csv.ts` uses for unconfirmed CSV headers.
+ */
+const LOAD_ITEM_TAGS = ["LoadSearchResult", "LoadSearchItem"] as const
+
+/**
  * Parse a `GetLoadSearchResultsResponse` SOAP body into plain records keyed by
- * the assumed `LoadSearchResult` element names (see `normalizeTruckstopPosting`).
- * A `<faultstring>` anywhere in the response — SOAP 1.1's fault shape — throws
- * instead of silently returning zero postings.
+ * the assumed `LoadSearchResult`/`LoadSearchItem` element names (see
+ * `normalizeTruckstopPosting`). A `<faultstring>` anywhere in the response —
+ * SOAP 1.1's fault shape — throws instead of silently returning zero postings.
  */
 export function parseLoadSearchResponse(xml: string): Record<string, unknown>[] {
   const fault = extractTagValue(xml, "faultstring")
@@ -207,7 +218,12 @@ export function parseLoadSearchResponse(xml: string): Record<string, unknown>[] 
     "PickupDate",
     "ContactPhone",
   ] as const
-  return extractTagBlocks(xml, "LoadSearchResult").map((block) => {
+  let blocks: string[] = []
+  for (const tag of LOAD_ITEM_TAGS) {
+    blocks = extractTagBlocks(xml, tag)
+    if (blocks.length > 0) break
+  }
+  return blocks.map((block) => {
     const record: Record<string, unknown> = {}
     for (const field of fields) record[field] = extractTagValue(block, field)
     return record
