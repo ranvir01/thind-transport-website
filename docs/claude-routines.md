@@ -1261,3 +1261,55 @@ Backlog:
 - The ~150 remaining pending `claude/*` branches (many `inspiring-sagan-*`/`stoic-mccarthy-*`
   duplicates of the same QA-drive/NotificationsBell-race fix) still need the meta-governor prune
   pass flagged on 2026-07-22 — most sampled so far are superseded, not unabsorbed value.
+
+## QA rig drive — 2026-07-26 ~20:40 UTC (owner/dispatcher/driver, third pass this window)
+
+Charter (docs/agent-improvement-loop.md §5): no feature work — stand up the local rig, drive
+owner/dispatcher/driver flows, probe thindtransport.com read-only, fix only outright regressions
+from the last 3h of commits.
+
+Fresh rig from scratch (Postgres 16 role/db created, 22 migrations, `seed:demo`), clean
+`npm run build` and `npx vitest run` (222 files / 1961 tests green) on `main@c5216d1`. Drove all
+three roles with Playwright directly (login, owner reports/fuel/tolls/pricebook/users,
+dispatcher loadboard/planner/dispatch/loads/import/fleet/messages, driver PWA at 390px across
+home/pay/dvir/messages/docs) — every screen loaded real seeded content, no invisible text, no
+console/page errors beyond the expected local-dev `_vercel/*` 404s. Specifically exercised the
+last-3h feature work: the new `/hub/fuel/tolls` reconciliation dashboard (assigned a truck to an
+unassigned toll transaction end-to-end, unassigned count dropped 2→1 and survived reload) and the
+planner's DST day-column fix (`Mon 20`–`Sun 26` week header renders correctly, no NaN/Invalid
+Date). Then ran the full 52-script Puppeteer battery (`node scripts/e2e-run-all.mjs`): 50/52
+passed, same 2 pre-existing false-failures already diagnosed and fixed on unmerged branch
+`claude/practical-franklin-lcfbnd` (`b5f5be3d`, confirmed still unmerged) — stale `/testimonials`
+route in `e2e-public-smoke` and the `e2e-sweep` reports-subtitle anchor. Not re-fixing a third
+time per AGENTS.md's duplicate-work rule.
+
+Production probe via Vercel MCP (direct HTTPS to thindtransport.com egress-blocked from this
+sandbox, confirmed via 403 on CONNECT, per docs/agent-improvement-loop.md §3b): the `thindtransport.com`
+alias is still `READY` on `970ab05` (deployed 17:14 UTC) while `main` has been at `c5216d1` since
+17:51 UTC — now ~2h49m stale. GitHub shows zero Vercel deployment attempts of any kind (not even
+`CANCELED`) for a `main`-branch push since 970ab05, while preview builds for unrelated
+`claude/lane-*`/session branches over the same window built and completed normally — same
+"main-push-specific, not git-side" signature documented in the 2026-07-26 ~10:26 UTC entry (then
+~12.7h stale) and again by the 19:33 UTC pass (then ~1h42m, called "expected" pre-:59-UTC lag).
+That expected catch-up window has now also passed without a deploy. This is the same known,
+recurring, owner-gated Vercel-side issue already escalated across multiple cycles today, not a
+new instance — carrying it forward rather than re-paging, per the "silence when nothing new"
+rule; a fresh page is warranted if staleness crosses into the many-hours range again like the
+~10:26 UTC incident did. Runtime-error groups (7d lookback) show nothing new: the long-standing pg
+SSL-mode deprecation warning and the single `cron:compliance-scan` Gmail `BadCredentials`
+rejection from 14:24 UTC today (count=1, not recurring since).
+
+Backlog:
+- Drain `claude/practical-franklin-lcfbnd` (`b5f5be3d`) — verified one-line fix for both
+  `e2e-public-smoke`'s stale `/testimonials` entry and `e2e-sweep`'s reports-subtitle anchor;
+  now confirmed unfixed across three independent QA-drive passes today (18:36, 19:33, 20:40 UTC).
+- Vercel production deploy pipeline: `main@c5216d1` (17:51 UTC) still undeployed at ~2h49m and
+  counting, zero deployment attempts registered for the push — needs owner-level access to Vercel
+  project settings / GitHub App installation to diagnose if it doesn't self-resolve; same failure
+  signature as the ~10:26 UTC incident that ran ~12.7h before self-healing.
+- Owner-gated, carried: rotate production `SMTP_USER`/`SMTP_PASS` (Gmail app password) —
+  `cron:compliance-scan` hit `BadCredentials` once on 2026-07-26 14:24 UTC; same shared transport
+  carries driver-application/password-reset/portal-confirmation email.
+- `claude/lane-compliance` (~1550+ unpicked) still needs the meta-governor prune pass; do NOT
+  plain-merge it.
+- npm audit high-severity findings remain owner-approval-gated; not re-triaged this cycle.
