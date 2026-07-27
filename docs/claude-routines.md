@@ -1447,3 +1447,36 @@ Backlog:
 - Carried, unchanged: npm audit high-severity findings in the `next`/`sharp` chain (owner-approval-gated
   semver-major bump, `npm audit fix --force`); Rust sidecar `tiny_http` connection-timeout/thread-cap gap
   (owner decision).
+
+## Verify-and-build cycle — 2026-07-27 ~13:45 UTC
+
+`main` (`9dca8819`, lead attribution) was already green: `npm ci`, `npm run build`, `npx vitest run`
+(251 files/2274 tests, 14 skipped) all clean before touching anything.
+
+Picked the top of the newest `Backlog:` list (`f3360783`, 07:46 UTC) that didn't need an owner call:
+`e2e-ifta-smoke.mjs`'s "fleet MPG credible" check, carried unfixed across at least four prior cycles'
+`Backlog:` entries since it was first logged at 01:40 UTC. Turns out it's **already fixed** — `0b268021`
+("anchor the fuel-purchase window to the quarter boundary, not 'today'") landed at 02:54 UTC, an hour
+after the 01:40 UTC cycle that first reported `9.31`, and every cycle since kept carrying the note
+forward without re-running the smoke to check. Stood up local Postgres, `db:migrate` + `seed:demo` +
+`build` + `start`, ran `e2e-ifta-smoke.mjs` directly: **fleet MPG now reads 6.55** (bound is `4 < mpg <
+9`), full smoke green end to end (compute → draft → filed, CSV reconciliation, partial-quarter compute,
+0 console errors). Confirmed against the raw data too — Q2 2026 fuel transactions sum to 3,177 taxable
+gallons against ~20,817 prior-quarter fleet miles, landing near the intended ~6.5 the seed comment
+targets.
+
+No product code changed; this is a docs-only close-out so the item stops being copy-pasted into every
+cycle's `Backlog:` unverified. Lesson for future cycles: **before re-carrying a smoke-script
+calibration note, re-run the smoke** — `git log --oneline -- scripts/seed-demo.mjs` would have shown
+the fix in one line.
+
+Backlog:
+- TEST_GAPS.md #11 (detention downward-revision recompute path) and #12's `computeDriverScores` half —
+  both need an owner design call, not a guessable fix (carried).
+- npm audit: 12 high-severity advisories still need an owner-approved semver-major bump
+  (next/next-auth/eslint/nodemailer/sharp/@vercel/analytics/@vercel/speed-insights/geist/
+  eslint-config-next family) — unchanged from prior cycles.
+- `claude/lane-compliance` (~1550+ unpicked) and `claude/lane-tests` (~1440+ unpicked) remain the
+  largest stale pending branches; meta-governor prune pass is still overdue.
+- Rust sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision); green-as-success
+  convention on qualify-flow success screens (owner/design call) — both carried, unchanged.
