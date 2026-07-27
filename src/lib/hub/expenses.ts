@@ -60,6 +60,7 @@ export interface TruckPnl {
   fuel_cents: string
   maintenance_cents: string
   other_expense_cents: string
+  toll_cents: string
   loaded_miles: string | null
   deadhead_miles: string | null
   net_cents: number
@@ -78,6 +79,8 @@ export async function truckPnl(carrierId: string, days = 92): Promise<TruckPnl[]
        COALESCE((SELECT SUM(e.amount_cents) FROM hub.expenses e
          WHERE e.truck_id = t.id AND e.carrier_id = t.carrier_id AND e.category NOT IN ('fuel','maintenance')
            AND e.incurred_on >= (NOW() - ($2 || ' days')::interval)::date), 0) AS other_expense_cents,
+       COALESCE((SELECT SUM(x.amount_cents) FROM hub.toll_transactions x
+         WHERE x.truck_id = t.id AND x.carrier_id = t.carrier_id AND x.ts >= NOW() - ($2 || ' days')::interval), 0) AS toll_cents,
        (SELECT SUM(l.loaded_miles) FROM hub.loads l
          WHERE l.truck_id = t.id AND l.carrier_id = t.carrier_id AND l.deleted_at IS NULL AND l.status <> 'cancelled'
            AND l.created_at >= NOW() - ($2 || ' days')::interval) AS loaded_miles,
@@ -94,7 +97,7 @@ export async function truckPnl(carrierId: string, days = 92): Promise<TruckPnl[]
     ...row,
     net_cents:
       Number(row.revenue_cents) - Number(row.fuel_cents) -
-      Number(row.maintenance_cents) - Number(row.other_expense_cents),
+      Number(row.maintenance_cents) - Number(row.other_expense_cents) - Number(row.toll_cents),
   }))
 }
 
@@ -243,12 +246,13 @@ export async function exportCsv(
       return {
         filename: "per-truck-pnl.csv",
         csv: toCsv(
-          ["Truck", "Revenue", "Fuel", "Maintenance", "OtherExpenses", "Net", "LoadedMiles", "NetPerMile"],
+          ["Truck", "Revenue", "Fuel", "Maintenance", "Tolls", "OtherExpenses", "Net", "LoadedMiles", "NetPerMile"],
           rows.map((r) => [
             r.unit_number,
             (Number(r.revenue_cents) / 100).toFixed(2),
             (Number(r.fuel_cents) / 100).toFixed(2),
             (Number(r.maintenance_cents) / 100).toFixed(2),
+            (Number(r.toll_cents) / 100).toFixed(2),
             (Number(r.other_expense_cents) / 100).toFixed(2),
             (r.net_cents / 100).toFixed(2),
             r.loaded_miles ?? 0,
