@@ -458,6 +458,74 @@ describe("fleetHosStatus", () => {
     const sql = String(queryMock.mock.calls[0][0])
     expect(sql).toContain("JOIN hub.drivers d ON d.id = h.driver_id AND d.carrier_id = h.carrier_id")
   })
+
+  it("marks provider numbers as coming from the ELD", async () => {
+    queryMock.mockResolvedValue([
+      { driver_id: "d-1", full_name: "Amy Driver", duty_status: "driving", drive_remaining_minutes: 300, shift_remaining_minutes: 400, cycle_remaining_minutes: 3000, ts: new Date().toISOString() },
+    ])
+    expect((await fleetHosStatus(CARRIER))[0].source).toBe("eld")
+  })
+
+  describe("computed fallback when the provider's numbers are unusable", () => {
+    const hoursAgo = (h: number) => new Date(Date.now() - h * 3_600_000).toISOString()
+
+    /** Latest-snapshot query first, then the duty-log query for stale drivers. */
+    const mockQueries = (latest: unknown[], history: unknown[]) => {
+      queryMock.mockImplementation(async (sql: string) =>
+        String(sql).includes("DISTINCT ON") ? latest : history
+      )
+    }
+
+    it("computes the clocks from the duty log instead of showing a stale shrug", async () => {
+      // The provider stopped sending remaining-minutes, but the duty statuses
+      // kept arriving: 10 hours off, then 4 hours driving.
+      mockQueries(
+        [{ driver_id: "d-1", full_name: "Amy Driver", duty_status: "driving", drive_remaining_minutes: null, shift_remaining_minutes: null, cycle_remaining_minutes: null, ts: hoursAgo(1) }],
+        [
+          { driver_id: "d-1", ts: hoursAgo(15), duty_status: "offDuty" },
+          { driver_id: "d-1", ts: hoursAgo(4), duty_status: "driving" },
+        ]
+      )
+      const [status] = await fleetHosStatus(CARRIER)
+      expect(status.source).toBe("computed")
+      expect(status.level).not.toBe("stale")
+      // 11 hours of driving less the 4 already driven.
+      expect(status.driveRemainingMinutes).toBe(7 * 60)
+      expect(status.shiftRemainingMinutes).toBe(10 * 60)
+    })
+
+    it("scopes the duty-log query to the carrier", async () => {
+      mockQueries(
+        [{ driver_id: "d-1", full_name: "Amy Driver", duty_status: null, drive_remaining_minutes: null, shift_remaining_minutes: null, cycle_remaining_minutes: null, ts: hoursAgo(1) }],
+        []
+      )
+      await fleetHosStatus(CARRIER)
+      const historyCall = queryMock.mock.calls.find(([sql]) => !String(sql).includes("DISTINCT ON"))!
+      expect(String(historyCall[0])).toContain("WHERE carrier_id = $1")
+      expect((historyCall[1] as unknown[])[0]).toBe(CARRIER)
+    })
+
+    it("stays stale rather than inventing hours when the log has no qualifying break", async () => {
+      // Driving with no 10-hour break anywhere in the log: computeHos would
+      // report a full clock it cannot actually vouch for.
+      mockQueries(
+        [{ driver_id: "d-1", full_name: "Amy Driver", duty_status: "driving", drive_remaining_minutes: null, shift_remaining_minutes: null, cycle_remaining_minutes: null, ts: hoursAgo(1) }],
+        [{ driver_id: "d-1", ts: hoursAgo(3), duty_status: "driving" }]
+      )
+      const [status] = await fleetHosStatus(CARRIER)
+      expect(status.level).toBe("stale")
+      expect(status.source).toBe("eld")
+      expect(status.driveRemainingMinutes).toBeNull()
+    })
+
+    it("skips the extra query entirely when every driver's feed is fresh", async () => {
+      queryMock.mockResolvedValue([
+        { driver_id: "d-1", full_name: "Amy Driver", duty_status: "driving", drive_remaining_minutes: 300, shift_remaining_minutes: 400, cycle_remaining_minutes: 3000, ts: new Date().toISOString() },
+      ])
+      await fleetHosStatus(CARRIER)
+      expect(queryMock).toHaveBeenCalledTimes(1)
+    })
+  })
 })
 
 describe("runHosViolationAlerts", () => {

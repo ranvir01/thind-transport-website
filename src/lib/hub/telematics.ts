@@ -10,6 +10,7 @@
 import { query, queryOne } from "./db"
 import { getCredentials, hasCredentials } from "./credentials"
 import { notifyRoles } from "./notify"
+import { computeHos, hosLevelFromClocks, normalizeDutyStatus, type DutyEvent } from "./hos"
 
 export interface TelematicsVehicle {
   externalId: string
@@ -280,6 +281,9 @@ export async function hosLegalityWarning(
  */
 export type HosLevel = "violation" | "critical" | "warning" | "ok" | "stale"
 
+/** Where the clocks came from: the provider's own numbers, or ours (hos.ts). */
+export type HosSource = "eld" | "computed"
+
 export interface DriverHosStatus {
   driverId: string
   driverName: string
@@ -289,6 +293,7 @@ export interface DriverHosStatus {
   cycleRemainingMinutes: number | null
   ts: string
   level: HosLevel
+  source: HosSource
 }
 
 const HOS_CRITICAL_MINUTES = 60
@@ -303,6 +308,40 @@ export function hosLevel(driveRemainingMinutes: number | null, ts: string, now =
   if (driveRemainingMinutes <= HOS_CRITICAL_MINUTES) return "critical"
   if (driveRemainingMinutes <= HOS_WARNING_MINUTES) return "warning"
   return "ok"
+}
+
+/**
+ * Rebuild duty logs from stored snapshots so hours can be computed when the
+ * provider's own numbers are missing or stale.
+ *
+ * hub.hos_snapshots is already a duty-status time series — we just never read
+ * it that way. Nine days covers the 8-day cycle with a day of margin. Only the
+ * *changes* matter, so runs of the same status collapse to their first row.
+ */
+async function dutyLogsFromSnapshots(
+  carrierId: string,
+  driverIds: string[]
+): Promise<Map<string, DutyEvent[]>> {
+  const logs = new Map<string, DutyEvent[]>()
+  if (driverIds.length === 0) return logs
+
+  const rows = await query<{ driver_id: string; ts: string; duty_status: string | null }>(
+    `SELECT driver_id, ts, duty_status FROM hub.hos_snapshots
+     WHERE carrier_id = $1 AND driver_id = ANY($2::uuid[])
+       AND ts >= NOW() - INTERVAL '9 days' AND duty_status IS NOT NULL
+     ORDER BY driver_id, ts ASC`,
+    [carrierId, driverIds]
+  )
+
+  for (const row of rows) {
+    const status = normalizeDutyStatus(row.duty_status)
+    if (!status) continue
+    const log = logs.get(row.driver_id) ?? []
+    if (log[log.length - 1]?.status === status) continue // unchanged since last ping
+    log.push({ status, at: new Date(row.ts).toISOString() })
+    logs.set(row.driver_id, log)
+  }
+  return logs
 }
 
 export async function fleetHosStatus(carrierId: string): Promise<DriverHosStatus[]> {
@@ -320,18 +359,45 @@ export async function fleetHosStatus(carrierId: string): Promise<DriverHosStatus
      ORDER BY h.driver_id, h.ts DESC`,
     [carrierId]
   )
-  return rows
-    .map((r) => ({
-      driverId: r.driver_id,
-      driverName: r.full_name,
-      dutyStatus: r.duty_status,
-      driveRemainingMinutes: r.drive_remaining_minutes,
-      shiftRemainingMinutes: r.shift_remaining_minutes,
-      cycleRemainingMinutes: r.cycle_remaining_minutes,
-      ts: r.ts,
-      level: hosLevel(r.drive_remaining_minutes, r.ts),
-    }))
-    .sort((a, b) => HOS_LEVEL_RANK[a.level] - HOS_LEVEL_RANK[b.level] || a.driverName.localeCompare(b.driverName))
+
+  const base = rows.map((r) => ({
+    driverId: r.driver_id,
+    driverName: r.full_name,
+    dutyStatus: r.duty_status,
+    driveRemainingMinutes: r.drive_remaining_minutes,
+    shiftRemainingMinutes: r.shift_remaining_minutes,
+    cycleRemainingMinutes: r.cycle_remaining_minutes,
+    ts: r.ts,
+    level: hosLevel(r.drive_remaining_minutes, r.ts),
+    source: "eld" as HosSource,
+  }))
+
+  // Where the provider gave us nothing usable, compute from the duty log
+  // rather than showing dispatch a shrug. A stale row still has real duty
+  // statuses behind it; the clocks are derivable even when the vendor stopped
+  // sending its own arithmetic.
+  const needComputed = base.filter((s) => s.level === "stale").map((s) => s.driverId)
+  if (needComputed.length > 0) {
+    const logs = await dutyLogsFromSnapshots(carrierId, needComputed)
+    for (const status of base) {
+      const log = logs.get(status.driverId)
+      if (!log || log.length === 0) continue
+      const clocks = computeHos(log)
+      // A log that never reaches a qualifying break would make up hours the
+      // driver may not have. Leave those showing stale — honestly unknown
+      // beats confidently wrong on a safety board.
+      if (!clocks.windowIsCertain) continue
+      status.driveRemainingMinutes = clocks.driveRemainingMinutes
+      status.shiftRemainingMinutes = clocks.shiftRemainingMinutes
+      status.cycleRemainingMinutes = clocks.cycleRemainingMinutes
+      status.level = hosLevelFromClocks(clocks)
+      status.source = "computed"
+    }
+  }
+
+  return base.sort(
+    (a, b) => HOS_LEVEL_RANK[a.level] - HOS_LEVEL_RANK[b.level] || a.driverName.localeCompare(b.driverName)
+  )
 }
 
 /**

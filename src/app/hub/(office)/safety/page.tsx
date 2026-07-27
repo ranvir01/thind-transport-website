@@ -108,6 +108,7 @@ export default async function SafetyPage() {
                     <p className="font-semibold text-fg truncate">{s.driverName}</p>
                     <p className="text-body-xs text-fg-3 truncate">
                       {s.dutyStatus ?? "unknown duty status"} · drive clock {formatMinutes(s.driveRemainingMinutes)}
+                      {s.source === "computed" ? " · computed from duty log (ELD feed stale)" : ""}
                     </p>
                   </div>
                   <Flag
