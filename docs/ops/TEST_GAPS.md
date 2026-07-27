@@ -82,6 +82,18 @@ Where LoadOff's 1,592 green tests are not looking, ranked by dollars at risk per
 > (`fuel.ts` assignFuelToLoad/fuelFraudFlags), #13 (`sendFactoringPacket`), #14 (`parseRuleSet` branch
 > coverage — a test block exists at `pay-rules.test.ts:295` but wasn't checked against all four cases
 > the row below specifies).
+> owner decision), #13 (`sendFactoringPacket` — **at least three independent unmerged fixes already
+> exist**: `6c88d19c`, `17015b0f`, `be362a0f` — do not write a fourth, drain one of these instead), #14
+> (`parseRuleSet` branch coverage — **an unmerged fix already exists**: `2bc6c55f` on
+> `claude/eager-babbage-8cv6ml` — drain it, don't duplicate).
+>
+> **New, 2026-07-27 (routine cycle):** `pay-rules.ts:338` `describePayRules` was 0% covered (no test file
+> imported it) — the plain-language pay-terms description shown on driver-facing screens, built from the
+> same rule set `evaluatePayRules`/`summarizePayRules` consume. Added full branch coverage in
+> `pay-rules.test.ts` (all 9 earning-rule cases incl. both `per_mile`/`fsc_passthrough` branches and
+> `per_stop`'s default-vs-custom `afterStops`, all 4 deduction kinds, and the empty-set case). Verified
+> the scorecard-tier-sort assertion actually catches a regression (flipped `sort` comparator → 2 test
+> failures with a clear diff), then restored. No bug found in the live code; now regression-guarded.
 
 Generated 2026-07-25 against main@c52ec254.
 **Measured live in this session:** `npx vitest run --coverage` (v8 provider, 3 passes: `src/lib/hub/**`,
