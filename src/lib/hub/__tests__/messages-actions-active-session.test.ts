@@ -135,6 +135,8 @@ describe("markThreadReadAction active re-check", () => {
 
   it("marks read for an active user", async () => {
     expect(await markThreadReadAction("thread-1")).toEqual({ ok: true })
-    expect(markThreadReadMock).toHaveBeenCalledWith("thread-1", "u1")
+    // Carrier first: markThreadRead scopes the write itself now, rather than
+    // trusting canAccessThread to be the only guard (cross-tenant harness).
+    expect(markThreadReadMock).toHaveBeenCalledWith(CARRIER, "thread-1", "u1")
   })
 })

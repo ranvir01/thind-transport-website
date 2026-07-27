@@ -80,9 +80,9 @@ describe("retryUnprocessedEvents", () => {
     expect(result).toEqual({ retried: 3, applied: 1, stillUnprocessed: 1 })
     // evt-1 (applied) and evt-2 (unhandled kind — deliberate no-op) both get marked processed;
     // evt-3 (no matching invoice yet) is left for a later retry.
-    expect(queryMock).toHaveBeenCalledWith(expect.stringContaining("UPDATE hub.integration_events"), ["1"])
-    expect(queryMock).toHaveBeenCalledWith(expect.stringContaining("UPDATE hub.integration_events"), ["2"])
-    expect(queryMock).not.toHaveBeenCalledWith(expect.stringContaining("UPDATE hub.integration_events"), ["3"])
+    expect(queryMock).toHaveBeenCalledWith(expect.stringContaining("UPDATE hub.integration_events"), ["1", CARRIER])
+    expect(queryMock).toHaveBeenCalledWith(expect.stringContaining("UPDATE hub.integration_events"), ["2", CARRIER])
+    expect(queryMock).not.toHaveBeenCalledWith(expect.stringContaining("UPDATE hub.integration_events"), ["3", CARRIER])
     expect(processEfsEventMock).not.toHaveBeenCalled()
   })
 
@@ -96,7 +96,7 @@ describe("retryUnprocessedEvents", () => {
 
     expect(result).toEqual({ retried: 1, applied: 1, stillUnprocessed: 0 })
     expect(processEfsEventMock).toHaveBeenCalledWith(CARRIER, { external_id: "drop-1", kind: "fuel.batch", payload: { csv: "…" } })
-    expect(queryMock).toHaveBeenCalledWith(expect.stringContaining("UPDATE hub.integration_events"), ["10"])
+    expect(queryMock).toHaveBeenCalledWith(expect.stringContaining("UPDATE hub.integration_events"), ["10", CARRIER])
     expect(processFactorEventMock).not.toHaveBeenCalled()
   })
 
@@ -110,7 +110,7 @@ describe("retryUnprocessedEvents", () => {
 
     expect(result).toEqual({ retried: 1, applied: 1, stillUnprocessed: 0 })
     expect(processWexEventMock).toHaveBeenCalledWith(CARRIER, { external_id: "drop-2", kind: "fuel.batch", payload: { csv: "…" } })
-    expect(queryMock).toHaveBeenCalledWith(expect.stringContaining("UPDATE hub.integration_events"), ["20"])
+    expect(queryMock).toHaveBeenCalledWith(expect.stringContaining("UPDATE hub.integration_events"), ["20", CARRIER])
     expect(processFactorEventMock).not.toHaveBeenCalled()
     expect(processEfsEventMock).not.toHaveBeenCalled()
   })
@@ -125,7 +125,7 @@ describe("retryUnprocessedEvents", () => {
 
     expect(result).toEqual({ retried: 1, applied: 1, stillUnprocessed: 0 })
     expect(processComdataEventMock).toHaveBeenCalledWith(CARRIER, { external_id: "drop-3", kind: "fuel.batch", payload: { csv: "…" } })
-    expect(queryMock).toHaveBeenCalledWith(expect.stringContaining("UPDATE hub.integration_events"), ["30"])
+    expect(queryMock).toHaveBeenCalledWith(expect.stringContaining("UPDATE hub.integration_events"), ["30", CARRIER])
     expect(processFactorEventMock).not.toHaveBeenCalled()
     expect(processEfsEventMock).not.toHaveBeenCalled()
     expect(processWexEventMock).not.toHaveBeenCalled()

@@ -68,9 +68,13 @@ export async function acceptInvitation(
      VALUES ($1,$2,$3,$4,$5,$6) RETURNING id`,
     [invitation.carrier_id, invitation.email, hash, input.name.trim(), invitation.role, invitation.customer_id]
   )
-  await query(`UPDATE hub.portal_invitations SET accepted_user_id = $1 WHERE id = $2`, [
-    rows[0].id, invitation.id,
-  ])
+  // Carrier pinned alongside the id even though both came from the same token
+  // row: the write carries its own scope, so no later refactor of the lookup
+  // can turn this into a mutation addressable by invitation id alone.
+  await query(
+    `UPDATE hub.portal_invitations SET accepted_user_id = $1 WHERE id = $2 AND carrier_id = $3`,
+    [rows[0].id, invitation.id, invitation.carrier_id]
+  )
   return { ok: true, email: invitation.email }
 }
 

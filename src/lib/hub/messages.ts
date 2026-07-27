@@ -168,13 +168,27 @@ export async function sendMessage(
   }
 }
 
-export async function markThreadRead(threadId: string, userId: string): Promise<void> {
+export async function markThreadRead(
+  carrierId: string,
+  threadId: string,
+  userId: string
+): Promise<void> {
+  // Driven off hub.message_threads rather than hub.messages directly, so the
+  // carrier predicate lives in the statement itself: a thread belonging to
+  // another carrier selects nothing and no read cursor is written. The action
+  // layer also checks access, but hub.message_reads has no carrier_id of its
+  // own — leaving the only tenant check in one caller is precisely how the
+  // website_leads leak happened.
   await query(
     `INSERT INTO hub.message_reads (thread_id, user_id, last_read_message_id, last_read_at)
-     SELECT $1, $2, COALESCE(MAX(m.id), 0), NOW() FROM hub.messages m WHERE m.thread_id = $1
+     SELECT t.id, $3, COALESCE(MAX(m.id), 0), NOW()
+     FROM hub.message_threads t
+     LEFT JOIN hub.messages m ON m.thread_id = t.id AND m.carrier_id = t.carrier_id
+     WHERE t.id = $1 AND t.carrier_id = $2
+     GROUP BY t.id
      ON CONFLICT (thread_id, user_id) DO UPDATE
        SET last_read_message_id = EXCLUDED.last_read_message_id, last_read_at = NOW()`,
-    [threadId, userId]
+    [threadId, carrierId, userId]
   )
 }
 

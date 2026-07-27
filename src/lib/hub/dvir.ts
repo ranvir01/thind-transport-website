@@ -180,9 +180,13 @@ export async function submitDvir(
           `DVIR defects: ${input.defects.map((d) => d.label).join("; ")} (awaiting repair certification)`,
         ]
       )
-      await client.query(`UPDATE hub.dvirs SET repair_work_order_id = $1 WHERE id = $2`, [
-        workOrder[0].id, dvirId,
-      ])
+      // Carrier pinned alongside the id (same class as the notifyRandomTestPool
+      // fix): a DVIR must never be reachable by id alone, even from inside a
+      // transaction that already looks carrier-scoped.
+      await client.query(
+        `UPDATE hub.dvirs SET repair_work_order_id = $1 WHERE id = $2 AND carrier_id = $3`,
+        [workOrder[0].id, dvirId, carrierId]
+      )
       grounded = true
     } else if (input.type === "pre" && prior?.repair_certified_at) {
       // 396.13(c): a clean reviewing pre-trip's signature releases a

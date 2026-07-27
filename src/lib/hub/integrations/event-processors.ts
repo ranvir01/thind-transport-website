@@ -71,7 +71,13 @@ export async function retryUnprocessedEvents(
   for (const row of pending) {
     const outcome = await processor(carrierId, { external_id: row.external_id, kind: row.kind, payload: row.payload })
     if (isEventOutcomeFinal(outcome)) {
-      await query(`UPDATE hub.integration_events SET processed_at = NOW() WHERE id = $1`, [row.id])
+      // carrier_id pinned alongside the id: the row came from a scoped read,
+      // but the write must carry its own scope so no future refactor of the
+      // read above can turn this into an unscoped mutation by id.
+      await query(
+        `UPDATE hub.integration_events SET processed_at = NOW() WHERE id = $1 AND carrier_id = $2`,
+        [row.id, carrierId]
+      )
       if (outcome.applied) applied += 1
     } else {
       stillUnprocessed += 1

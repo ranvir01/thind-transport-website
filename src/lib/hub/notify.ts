@@ -61,7 +61,7 @@ export async function notifyUser(
     console.error("notification insert failed:", err)
     return
   }
-  await pushToUser(userId, input)
+  await pushToUser(carrierId, userId, input)
 }
 
 /** Notify every active user of the given roles in a carrier. */
@@ -95,11 +95,15 @@ export async function notifyDriver(
   await Promise.all(users.map((u) => notifyUser(carrierId, u.id, input)))
 }
 
-async function pushToUser(userId: string, input: NotifyInput): Promise<void> {
+async function pushToUser(carrierId: string, userId: string, input: NotifyInput): Promise<void> {
   if (!ensureVapid()) return
   const subs = await query<{ id: string; endpoint: string; p256dh: string; auth: string }>(
-    `SELECT id, endpoint, p256dh, auth FROM hub.push_subscriptions WHERE user_id = $1`,
-    [userId]
+    // hub.push_subscriptions carries carrier_id, so read it scoped: a user id
+    // alone must never address a device row, and the pruning DELETE below
+    // inherits the same scope.
+    `SELECT id, endpoint, p256dh, auth FROM hub.push_subscriptions
+     WHERE carrier_id = $1 AND user_id = $2`,
+    [carrierId, userId]
   )
   const payload = JSON.stringify({
     title: input.title,
@@ -118,7 +122,10 @@ async function pushToUser(userId: string, input: NotifyInput): Promise<void> {
         const status = (err as { statusCode?: number }).statusCode
         if (status === 404 || status === 410) {
           // Subscription expired or revoked — clean it up.
-          await query(`DELETE FROM hub.push_subscriptions WHERE id = $1`, [sub.id]).catch(() => {})
+          await query(
+            `DELETE FROM hub.push_subscriptions WHERE id = $1 AND carrier_id = $2`,
+            [sub.id, carrierId]
+          ).catch(() => {})
         } else {
           console.error("web push failed:", err)
         }
