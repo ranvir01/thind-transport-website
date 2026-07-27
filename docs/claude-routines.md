@@ -1447,3 +1447,55 @@ Backlog:
 - Carried, unchanged: npm audit high-severity findings in the `next`/`sharp` chain (owner-approval-gated
   semver-major bump, `npm audit fix --force`); Rust sidecar `tiny_http` connection-timeout/thread-cap gap
   (owner decision).
+
+## QA rig drive on main@9dca881 — 2026-07-27 ~12:35 UTC (owner/dispatcher/driver, read-only prod probe)
+
+Charter (docs/agent-improvement-loop.md §5): no feature work — stood up the local rig from scratch, drove
+owner/dispatcher/driver/portal flows against the full Puppeteer E2E battery, probed thindtransport.com
+read-only, and would fix only outright regressions from the last 3h of commits. There were none to fix:
+`git fetch origin main` confirmed HEAD is still `9dca881` (drained 08:55 UTC), so the actual last-3h
+window (09:23–12:23 UTC) carried **zero** new commits — nothing for this cycle to review. (The `b6ca9dc..
+9dca881` window that several sibling cycles already reviewed this morning is now 3.5h+ old; not
+re-litigated here.)
+
+Fresh rig from scratch: Postgres 16 started (was down), `hubapp` role + `hubdb` database created (neither
+existed, per dev-workflow-testing pitfall #9), `npm ci` (750 packages), `npm run db:migrate` (23
+migrations clean through `023_lead_attribution.sql`), `npm run seed:demo`, `npm run build` (Next.js 16,
+zero TS errors), `npm run lint` (clean), `npx vitest run` (**251 files/2288 tests, all green** — a new
+high for this window), `npm run test:sidecars` (29 Rust tests + Go vet/test + clippy, all green — run for
+extra confidence even though nothing Go/Rust changed this cycle).
+
+Full `e2e-run-all.mjs` battery (52 scripts) as owner/dispatcher/driver/portal/shipper against the local
+rig: **51/52 green**, one already-known non-regression — `e2e-sweep`'s owner-pass "reports: page content
+missing... stuck on a spinner?" at both 1440px and 390px. Re-verified the root cause by reading
+`src/app/hub/(office)/reports/page.tsx:96-104` directly: the subtitle is a synchronous, server-rendered
+conditional on `hasDriverPay` (not a client loading state — there is no spinner), and the seeded demo
+settlements land inside the 92-day default range, so the live subtitle is the driver-pay-included copy.
+`e2e-sweep.mjs`'s `OWNER_PAGES` anchor still only matches the other branch's "...this is the operational
+view" phrase. Identical diagnosis to the 2026-07-26 ~19:45 UTC cycle and at least one earlier one — carried
+again rather than fixed, since `scripts/e2e-*.mjs` is `claude/lane-tests` territory and this routine's
+charter is drive-and-report, not lane work.
+
+**Production probe:** direct HTTPS to `thindtransport.com` stayed egress-blocked (curl exit 56 on `/` and
+`/hub/login`), consistent with every prior cycle. Vercel MCP tools were connected this cycle: `get_project`
+shows `live: false` (the known unreliable flag — see §3b) but `list_deployments` finds a `READY`
+`target: "production"` deployment (`dpl_7SYpCS6iuziYwpE8AXYp4j8S9JdU`) built from commit `9dca8819` —
+**exactly current main HEAD** — created 08:55:38 UTC. Production is current and healthy, not stale.
+`get_runtime_errors` (24h window) returned only two known clusters, neither new: a benign `pg`
+SSL-mode-alias deprecation warning (recurring since 2026-06-26) and a single Gmail SMTP `BadCredentials`
+failure on `cron:compliance-scan` from 2026-07-26 14:24 UTC (a credentials-rotation issue, not a code
+defect, and outside this cycle's 3h regression window regardless).
+
+`npm run agent:status`: STEADY STATE, integrator 2 commits ahead of main (a seed-demo MPG-anchor fix +
+its own verify-and-build commit, not yet drained — not this routine's job to drain).
+
+Backlog:
+- `e2e-sweep.mjs`'s `OWNER_PAGES` "reports" anchor (`"the operational view"`) still needs the one-line
+  swap to a substring both subtitle branches share — carried across at least three cycles now
+  (2026-07-26 ~19:45 UTC, the 2026-07-27 ~01:40 UTC seven-lane cycle, and this one); purely mechanical,
+  `lane-tests` territory.
+- Everything else carried unchanged: npm audit high-severity findings in the `next`/`sharp` chain
+  (owner-approval-gated semver-major bump); Rust sidecar `tiny_http` connection-timeout/thread-cap gap
+  (owner decision); owner/design call on green-as-success convention
+  (`PreQualificationForm.tsx`/`ApplicationForm.tsx`); `claude/lane-compliance` (~1552+ unpicked) and
+  `claude/lane-tests` (1443+ unpicked) still need the meta-governor prune pass.
