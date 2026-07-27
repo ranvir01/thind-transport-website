@@ -17,6 +17,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { path: "/shippers", changeFrequency: "monthly" as const, priority: 0.85 },
     { path: "/owner-operators", changeFrequency: "weekly" as const, priority: 0.9 },
     { path: "/trust", changeFrequency: "monthly" as const, priority: 0.8 },
+    { path: "/quote", changeFrequency: "monthly" as const, priority: 0.85 },
+    { path: "/contact", changeFrequency: "monthly" as const, priority: 0.7 },
     { path: "/cdl-jobs", changeFrequency: "weekly" as const, priority: 0.85 },
     ...STATES.map((state) => ({
       path: `/cdl-jobs/${state.slug}`,

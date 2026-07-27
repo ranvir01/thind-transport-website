@@ -33,7 +33,13 @@ export default async function StateJobsPage({ params }: { params: Promise<{ stat
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-50">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jobPostingSchema) }} />
-      <PageBreadcrumb pageName={`${state.name} CDL Jobs`} category="Drivers" />
+      {/* These 48 pages live under /cdl-jobs but weren't declaring it, so both
+          the visible trail and the BreadcrumbList skipped a level. */}
+      <PageBreadcrumb
+        pageName={`${state.name} CDL Jobs`}
+        category="Drivers"
+        parentPage={{ name: "CDL Jobs", href: "/cdl-jobs" }}
+      />
 
       {/* Header */}
       <div className="relative overflow-hidden bg-gradient-to-br from-[#17181B] via-[#1F2024] to-[#0B0C0E] py-16 md:py-24 text-white">

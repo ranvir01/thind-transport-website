@@ -60,6 +60,8 @@ const PUBLIC_ROUTES = [
   "/shippers",
   "/owner-operators",
   "/trust",
+  "/quote",
+  "/contact",
   "/tools/freight-class-calculator",
   "/about",
   "/routes",
