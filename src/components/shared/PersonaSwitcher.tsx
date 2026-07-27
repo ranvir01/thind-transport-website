@@ -21,6 +21,9 @@ import { PERSONAS, rememberPersona, type Persona } from "@/lib/persona"
 
 const LABELS: Record<Persona, string> = {
   drivers: "Drivers",
+  // Short label deliberately: four chips have to fit a 390px phone without
+  // wrapping the header.
+  "owner-operators": "Owner-Ops",
   shippers: "Shippers",
   brokers: "Brokers",
 }
@@ -28,6 +31,7 @@ const LABELS: Record<Persona, string> = {
 /** Routes that belong to each lane, for highlight purposes. */
 const LANE_PREFIXES: Record<Persona, string[]> = {
   drivers: ["/drivers", "/apply", "/pay-rates", "/benefits", "/cdl-jobs", "/veterans", "/app", "/pre-qualify", "/pay-breakdown"],
+  "owner-operators": ["/owner-operators", "/fuel-program"],
   shippers: ["/shippers"],
   brokers: ["/brokers"],
 }

@@ -221,7 +221,7 @@ export function IntegrationCard({ card, encryptionReady }: { card: ProviderCard;
                 Cancel
               </button>
               <button type="submit" disabled={pending || !encryptionReady}
-                className="flex flex-1 min-h-[40px] items-center justify-center gap-1.5 rounded-control bg-accent text-sm font-bold text-fg hover:bg-accent-hover disabled:opacity-50">
+                className="flex flex-1 min-h-[40px] items-center justify-center gap-1.5 rounded-control bg-accent text-sm font-bold text-accent-fg hover:bg-accent-hover disabled:opacity-50">
                 {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />} {card.connected ? "Save changes" : "Connect"}
               </button>
             </div>

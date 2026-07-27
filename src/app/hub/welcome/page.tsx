@@ -8,13 +8,16 @@ import { Panel } from "@/components/hub/ui"
 import { SignOutButton } from "@/components/hub/SignOutButton"
 
 const ROLE_COPY: Record<string, { title: string; body: string }> = {
+  // The portal shipped — the only way to land on this page is requirePortalUser
+  // bouncing an account whose customer_id is null. Say that, the way the driver
+  // copy below already does, instead of telling people a built feature is coming.
   broker: {
-    title: "Your carrier portal is on the way",
-    body: "Soon you'll track your loads live, download PODs and invoices, and see payment status here.",
+    title: "Almost there",
+    body: "Your account isn't linked to a customer record yet — ask the office to connect it and your portal unlocks: live load tracking, PODs, invoices, and payment status.",
   },
   shipper: {
-    title: "Your shipper portal is on the way",
-    body: "Soon you'll request quotes, track shipments, and download delivery documents here.",
+    title: "Almost there",
+    body: "Your account isn't linked to a customer record yet — ask the office to connect it and your portal unlocks: shipment tracking, delivery documents, and quotes.",
   },
   driver: {
     title: "Almost there",

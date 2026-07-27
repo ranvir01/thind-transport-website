@@ -1,6 +1,11 @@
 /**
- * Audience persona: which of the three doors (drivers / shippers / brokers)
- * this visitor went through last. Client-safe module — no next/headers.
+ * Audience persona: which of the four doors (drivers / owner-operators /
+ * shippers / brokers) this visitor went through last. Client-safe module — no
+ * next/headers.
+ *
+ * Owner-operators are a genuinely separate audience, not a driver sub-segment:
+ * they are buying a business arrangement (percentage, deductions, escrow),
+ * not a job, and the page that converts a company driver actively repels them.
  *
  * Deliberate design limits (researched: NN/g on role-based IA, Google's
  * interstitial penalty):
@@ -14,7 +19,7 @@
  *  - Cookie is SameSite=Lax, 90 days, path=/ with a localStorage mirror.
  */
 
-export const PERSONAS = ["drivers", "shippers", "brokers"] as const
+export const PERSONAS = ["drivers", "owner-operators", "shippers", "brokers"] as const
 export type Persona = (typeof PERSONAS)[number]
 
 export const PERSONA_COOKIE = "persona"

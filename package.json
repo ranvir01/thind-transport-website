@@ -26,7 +26,9 @@
     "rust-audit": "make rust-audit",
     "token-lint": "node scripts/token-lint.mjs",
     "license:audit": "node scripts/license-audit.mjs",
-    "license:notices": "node scripts/license-audit.mjs --notices"
+    "license:notices": "node scripts/license-audit.mjs --notices",
+    "typecheck": "tsc --noEmit",
+    "typecheck:gate": "node scripts/typecheck-gate.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",

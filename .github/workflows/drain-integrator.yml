@@ -85,6 +85,11 @@ jobs:
           npm ci --ignore-scripts
           npm run build
           npx vitest run
+          # Type-soundness + license hygiene, both enforceable today:
+          # app code must have zero tsc errors, test-file debt may only
+          # shrink, and no GPL/AGPL/SSPL may reach production deps.
+          node scripts/typecheck-gate.mjs
+          node scripts/license-audit.mjs
 
       - name: Merge integrator into main (new commit + stamped tree — defeats Vercel dedupe)
         if: steps.drift.outputs.drain == 'true'

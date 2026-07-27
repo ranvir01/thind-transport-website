@@ -41,9 +41,12 @@ function mockTokenThenFeed(feedJson: unknown, feedOk = true) {
     "fetch",
     vi.fn(async (url: string) => {
       if (url.endsWith("/oauth/token")) {
-        return { ok: true, json: async () => ({ access_token: "tok" }) }
+        return { ok: true, status: 200, json: async () => ({ access_token: "tok" }) }
       }
-      return { ok: feedOk, status: 503, json: async () => feedJson }
+      // Status must agree with `ok` — the fixture used to claim 503 on the
+      // success path too, which is not a response any server can send and
+      // which the retry helper (correctly) tried to retry.
+      return { ok: feedOk, status: feedOk ? 200 : 503, json: async () => feedJson }
     })
   )
 }

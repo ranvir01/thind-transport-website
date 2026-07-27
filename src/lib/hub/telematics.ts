@@ -10,6 +10,7 @@
 import { query, queryOne } from "./db"
 import { getCredentials, hasCredentials } from "./credentials"
 import { notifyRoles } from "./notify"
+import { fetchWithRetry } from "./integrations/http-retry"
 import { computeHos, hosLevelFromClocks, normalizeDutyStatus, type DutyEvent } from "./hos"
 
 export interface TelematicsVehicle {
@@ -44,13 +45,20 @@ export function terminalSource(carrierId: string): TelematicsSource {
   const request = async (path: string) => {
     const creds = await getCredentials(carrierId, "terminal")
     if (!creds?.apiKey || !creds?.connectionToken) throw new Error("Terminal not connected")
-    const response = await fetch(`${base}${path}`, {
-      headers: {
-        Authorization: `Bearer ${creds.apiKey}`,
-        "Connection-Token": creds.connectionToken,
+    // Retried on 429/5xx and transport failures: this cron runs daily, so a
+    // single transient 503 is otherwise a ~24-hour hole in position and HOS
+    // data with no alert and no second attempt until tomorrow.
+    const response = await fetchWithRetry(
+      `${base}${path}`,
+      {
+        headers: {
+          Authorization: `Bearer ${creds.apiKey}`,
+          "Connection-Token": creds.connectionToken,
+        },
+        signal: AbortSignal.timeout(15000),
       },
-      signal: AbortSignal.timeout(15000),
-    })
+      { label: `Terminal ${path}` }
+    )
     if (!response.ok) throw new Error(`Terminal ${path} → HTTP ${response.status}`)
     return response.json() as Promise<{ data?: unknown[] }>
   }
@@ -152,10 +160,14 @@ export function truckerCloudSource(carrierId: string): TelematicsSource {
     return json.access_token
   }
   const request = async (path: string) => {
-    const response = await fetch(`${base}${path}`, {
-      headers: { Authorization: `Bearer ${await token()}` },
-      signal: AbortSignal.timeout(15000),
-    })
+    const response = await fetchWithRetry(
+      `${base}${path}`,
+      {
+        headers: { Authorization: `Bearer ${await token()}` },
+        signal: AbortSignal.timeout(15000),
+      },
+      { label: `TruckerCloud ${path}` }
+    )
     if (!response.ok) throw new Error(`TruckerCloud ${path} → HTTP ${response.status}`)
     return response.json() as Promise<Record<string, unknown>>
   }

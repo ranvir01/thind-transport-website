@@ -23,7 +23,7 @@ import { getCredentials, hasCredentials } from "../credentials"
 import { query, queryOne } from "../db"
 import { listDocuments } from "../documents"
 import { getInvoice, recordPayment } from "../invoices"
-import { dollarsToCents } from "../types"
+import { centsToDecimalString, dollarsToCents } from "../types"
 
 export interface FactorEvent {
   external_id: string
@@ -139,7 +139,10 @@ export async function submitInvoiceToFactor(
     headers: { Authorization: `Bearer ${creds.apiKey}`, "Content-Type": "application/json" },
     body: JSON.stringify({
       referenceNumber: invoice.number,
-      amount: invoice.amount_cents / 100,
+      // Formatted, not divided: `amount_cents / 100` puts a float on the wire
+      // at the one boundary where a rounding artifact becomes a funding
+      // discrepancy the factor bills back.
+      amount: centsToDecimalString(invoice.amount_cents),
       debtorName: invoice.customer_name,
       documents: docs
         .filter((d) => d.kind === "rate_confirmation" || d.kind === "pod")

@@ -23,7 +23,40 @@ function loadEnvLocal() {
 loadEnvLocal()
 
 const hasDb = Boolean(process.env.POSTGRES_URL)
+
+// This is the Phase-5 acceptance suite — the only proof that a broker or
+// shipper cannot read another customer's loads and invoices. It is also the
+// only skipped suite in the repo, and a silent skip on the one test that
+// proves tenant isolation is worse than not having it: everyone assumes it
+// ran. e2e-suite.yml does provide a postgres:16 service, but every other job
+// and every local run skipped it without a word.
+if (!hasDb) {
+  console.warn(
+    "\n⚠️  portal-isolation.test.ts SKIPPED — no POSTGRES_URL.\n" +
+      "   This is the cross-tenant proof for the broker/shipper portal.\n" +
+      "   It runs in CI (e2e-suite.yml provides postgres:16). Locally, set\n" +
+      "   POSTGRES_URL in .env.local to actually exercise it.\n"
+  )
+}
+
 const suite = hasDb ? describe : describe.skip
+
+/**
+ * Fails when the isolation proof did not run in an environment that promised
+ * a database. Guards against the suite silently disappearing from CI — a
+ * green build that skipped this proves nothing about tenancy.
+ */
+describe("portal isolation suite ran", () => {
+  it("executes wherever a database is configured", () => {
+    if (process.env.CI && !hasDb) {
+      throw new Error(
+        "CI ran without POSTGRES_URL, so the portal isolation proof was skipped. " +
+          "Either provide the service or remove the job — do not ship a green build that skipped it."
+      )
+    }
+    expect(true).toBe(true)
+  })
+})
 
 suite("portal + tenant isolation (query layer)", () => {
   // Imports deferred so the no-DB skip path never touches pg.
