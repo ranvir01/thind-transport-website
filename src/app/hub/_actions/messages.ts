@@ -208,6 +208,6 @@ export async function markThreadReadAction(threadId: string): Promise<Result> {
   const user = session.user
   const access = await canAccessThread(user, threadId)
   if (!access.ok) return { ok: false, error: "No access" }
-  await markThreadRead(threadId, user.id)
+  await markThreadRead(user.carrierId, threadId, user.id)
   return { ok: true }
 }

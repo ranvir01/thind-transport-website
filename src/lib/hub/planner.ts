@@ -196,9 +196,12 @@ async function emptyEta(
     [carrierId, truckId]
   )
   const [destStop] = await query<{ lat: number | null; lng: number | null }>(
+    // carrier_id alongside load_id: a stop must never be reachable by its
+    // parent's id alone, even when the caller already looks carrier-scoped.
     `SELECT s.lat, s.lng FROM hub.stops s
-     WHERE s.load_id = $1 AND s.type = 'delivery' ORDER BY s.sequence DESC LIMIT 1`,
-    [lastBlock.id]
+     WHERE s.carrier_id = $1 AND s.load_id = $2 AND s.type = 'delivery'
+     ORDER BY s.sequence DESC LIMIT 1`,
+    [carrierId, lastBlock.id]
   )
   if (!ping || destStop?.lat == null || destStop?.lng == null) return apptEnd
 

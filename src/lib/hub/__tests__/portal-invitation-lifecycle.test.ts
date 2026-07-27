@@ -135,7 +135,10 @@ describe("acceptInvitation", () => {
     expect(insertParams).toEqual([CARRIER, "broker@example.com", "hashed-pw", "Sam Broker", "broker", CUSTOMER])
 
     const [linkSql, linkParams] = queryMock.mock.calls[1]
-    expect(String(linkSql)).toContain("UPDATE hub.portal_invitations SET accepted_user_id = $1 WHERE id = $2")
-    expect(linkParams).toEqual(["u-new", "inv-1"])
+    expect(String(linkSql)).toContain("UPDATE hub.portal_invitations SET accepted_user_id = $1")
+    // The link write carries its own carrier scope, so an invitation is never
+    // addressable by id alone (cross-tenant harness).
+    expect(String(linkSql)).toContain("WHERE id = $2 AND carrier_id = $3")
+    expect(linkParams).toEqual(["u-new", "inv-1", CARRIER])
   })
 })
