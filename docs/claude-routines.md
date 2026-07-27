@@ -1447,3 +1447,88 @@ Backlog:
 - Carried, unchanged: npm audit high-severity findings in the `next`/`sharp` chain (owner-approval-gated
   semver-major bump, `npm audit fix --force`); Rust sidecar `tiny_http` connection-timeout/thread-cap gap
   (owner decision).
+
+## QA rig drive on main@9dca881 — 2026-07-27 ~13:20-14:10 UTC (owner/dispatcher/driver, read-only prod probe)
+
+Charter (docs/agent-improvement-loop.md §5): no feature work — stand up the local rig, drive real
+owner/dispatcher/driver flows against it, probe `thindtransport.com` read-only, fix only outright
+regressions from the last 3h of commits.
+
+**Last-3h commit window:** zero. Latest commit on `main` (`9dca881`, 08:55:33 UTC) is ~4.5h old at
+cycle start — nothing landed in the window this charter scopes fix-forward work to, so there was
+nothing to review or fix under that clause.
+
+**Local rig, fresh from scratch:** Postgres 16 started (was down), `thinduser`/`thinddb` role+database
+created (dev-workflow-testing skill pitfall #9), `npm install` (750 packages, canvas native deps via
+`setup:canvas-deps`), `npm run db:migrate` (23 migrations clean), `npm run seed:demo`, `npm run build`
+(Next.js 16, 0 TS errors), `npm run lint` clean, `npx vitest run` (251 files/2288 tests green),
+`npm run test:sidecars` (29 Rust tests + Go vet/test, clippy clean).
+
+**Full `e2e-battery.mjs` (52 scripts) as owner/dispatcher/driver:** first pass 49/52, 3 failures:
+1. `e2e-mailbox-oauth-smoke` — this session's own rig-setup gap: no `CREDENTIALS_KEY` in `.env.local`,
+   so the connect step could only time out. Set a 32+ char key, restarted the server, re-ran standalone:
+   **passes**.
+2. `e2e-statements-smoke`'s "toast surfaces the email-not-configured message instead of crashing" —
+   this session's own rig-setup mistake (the recurring one, dev-workflow-testing pitfall #6): copied
+   `.env.example`'s literal placeholder `SMTP_USER=your-gmail@gmail.com`/`SMTP_PASS=...` into
+   `.env.local` instead of leaving both blank, so `isEmailConfigured()` read it as configured and every
+   send hung on a real SMTP attempt to `smtp.gmail.com` instead of the graceful toast path (visible in
+   the server log as repeated `ETIMEDOUT`/`command: 'CONN'` on pre-qualify/lead/application mail).
+   Blanked both, restarted the server (killed the actual `next-server` PID, not just `next start`'s
+   parent — pitfall #10), re-ran standalone: **passes**.
+3. `e2e-sweep`'s owner-pass "reports: page content missing... stuck on a spinner?" at both widths —
+   the same stale `hasDriverPay`-conditional anchor string (`"the operational view"`,
+   `src/app/hub/(office)/reports/page.tsx:96-104`) at least four prior cycles have already documented
+   and carried (most recently the 2026-07-26 ~12:00 UTC cycle, which named the exact one-line fix).
+   Not re-fixed here: `scripts/e2e-*.mjs` is `claude/lane-tests` territory, not this charter's.
+
+Corrected count: **51/52 real functional checks green** (52nd is the known stale test-assertion, not a
+product defect), 0 app-code regressions found.
+
+**Production probe (Vercel MCP; direct HTTPS to `thindtransport.com` stayed egress-blocked — `prod-smoke`
+got the proxy's `x-deny-reason: host_not_allowed` 403 on all three checks, consistent with every prior
+cycle):** `list_deployments` on `prj_QKMg8o77DoEYiVQgQbI0FB5F4tAg` confirms the latest READY
+`target: "production"` deployment is `dpl_7SYpCS6iuziYwpE8AXYp4j8S9JdU`, commit `9dca8819` — matches
+local `main` HEAD exactly. Production is current.
+
+**Found a real production defect, not a code regression — flagged to the owner directly (can't fix
+credentials from here per AGENTS.md's "never touch `.env*` contents, secrets" + guardrail #5):**
+`get_runtime_errors` (7-day window) shows the production outbound-mail path (`src/lib/mailer.ts`'s
+`SMTP_USER`/`SMTP_PASS`, Gmail) has started failing Google's auth outright —
+`535-5.7.8 BadCredentials` — on two different cron jobs against the **real** primary tenant
+(`11111111-1111-1111-1111-111111111111` is Thind itself, created by migration 002, not a demo carrier;
+`22222222-2222-2222-2222-222222222222`/`bb6b7f71-…`/`1a422ff9-…` are the other real carriers on this
+project):
+- `[cron:compliance-scan]` — 1/4 carrier runs failed, 2026-07-26 14:24:01 UTC (first occurrence).
+- `[cron:owner-digest]` — **4/4 carrier runs failed**, 2026-07-27 13:13:11 UTC (today, ~7 minutes
+  before this probe) — every carrier's owner digest silently failed to send.
+No occurrences before 2026-07-26 in the queried window (the SSL-mode deprecation notice on the same
+routes goes back to June 26 and is unrelated/informational). This reads as the Gmail app password
+itself having been revoked or rotated without Vercel's `SMTP_PASS` being updated to match, not a
+transient network blip (535 is a hard auth rejection, not a timeout) — needs the owner to regenerate
+the Gmail App Password and update `SMTP_PASS` in Vercel's project env vars; no code path can recover
+from this on its own. Pushed a proactive notification about this rather than only recording it here.
+
+**Meta observation, not acted on (outside this charter's scope, flagging for the meta-governor):**
+`npm run agent:status` shows 205 pending `claude/*` branches not yet on main, and the Vercel deployment
+history shows at least 6 separate QA-drive cycles (this one included) independently running the same
+~52-script battery against the identical `main@9dca881` HEAD over the last several hours, all landing
+the same 51/52-green result. Concurrency this high against a commit window this quiet looks like more
+QA-charter routines are scheduled than `main`'s commit cadence can feed distinct work to.
+
+Backlog:
+- Production SMTP credentials are failing Gmail auth (`BadCredentials`) for all 4 real carriers as of
+  today 13:13 UTC — owner-digest and compliance-scan emails are not being delivered. Needs a
+  regenerated Gmail App Password in Vercel's `SMTP_PASS` env var; not fixable from a code change.
+- `e2e-sweep.mjs`'s `OWNER_PAGES` "reports" anchor (`"the operational view"`) should switch to a
+  substring both subtitle branches share (e.g. `"per-truck p&l"`) — lane-tests territory, one-line fix,
+  carried from at least four prior cycles now.
+- Meta-governor: 205 pending `claude/*` branches and repeated same-HEAD QA cycles suggest the QA-drive
+  routine's schedule interval is shorter than main's commit cadence warrants — worth throttling or
+  fanning routines out to different, currently-idle lanes instead.
+- Everything else carried unchanged: owner/design call on green-as-success convention
+  (`PreQualificationForm.tsx`/`ApplicationForm.tsx`); TEST_GAPS.md's remaining gaps (#2 overdue-reminder
+  day-gate, #3 partial `money.ts` permission coverage, #5/#9/#11/#12/#13/#14); `claude/lane-compliance`
+  (1550+ unpicked) still needs the meta-governor prune pass; Rust sidecar `tiny_http` timeout/thread-cap
+  gap (owner decision); IFTA due-date legal-holiday scope decision; npm audit high-severity findings in
+  the `next`/`sharp`/`nodemailer` chain (owner-approval-gated semver-major bump).
