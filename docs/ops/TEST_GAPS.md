@@ -44,7 +44,6 @@ Where LoadOff's 1,592 green tests are not looking, ranked by dollars at risk per
 >   Verified it fails (falls back to only the first bonus) when `pay-rules.ts`'s referral-bonus loop is
 >   truncated to `.slice(0, 1)`, then restored. **Row 1 is now fully closed** — `draftSettlements` and
 >   both of its helpers have real, regression-catching coverage.
->>>>>>> origin/claude/eager-babbage-0v6733
 > - **#2** `runOverdueReminders` day-gate ladder — `overdue-reminder-ladder.test.ts` (landed in
 >   `5c158d72`) exercises the exact rung-skip/double-send/22-day-drift cases this row describes.
 > - **#3** `money.ts` `requirePermission` wiring — `money-actions-permissions.test.ts` (landed in
@@ -59,7 +58,6 @@ Where LoadOff's 1,592 green tests are not looking, ranked by dollars at risk per
 > - **#7** `arAgingTrend` payments sub-select missing `carrier_id` — fixed and tested in `ae82c650`
 >   (`reports-ar-aging-tenancy.test.ts`); the live code at `reports.ts:76` already carries the filter.
 >
-<<<<<<< HEAD
 > **Correction (verify-and-build, same cycle):** the above's #15 claim was stale at the moment it was
 > written — `csv.ts:10-13` already holds one shared `csvEscape` guarding a leading `=`/`+`/`-`/`@` across
 > all three former call sites (`loadboard-export.ts`, `reports.ts`, `expenses.ts`), landed via `a0406ae2`
@@ -76,7 +74,6 @@ Where LoadOff's 1,592 green tests are not looking, ranked by dollars at risk per
 > was correct: the one existing test only covered the non-array `rules` case, not per-rule validation.
 > `parseRuleSet` now filters out-of-range/wrong-typed rules and deductions before they reach
 > `evaluatePayRules`, with a test for each of the four cases this row originally specified.
-=======
 > **Still open, unchanged:** #8 (`getAgingSummary` — no test file found this pass), #11 (detention
 > downward-revision — owner decision), #12 (scorecard tier table — owner decision), #15 (`csvEscape` is
 > still duplicated three ways: `expenses.ts:102`, `reports.ts:464`, `loadboard-export.ts:4` — confirmed
