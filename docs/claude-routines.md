@@ -1493,3 +1493,57 @@ Backlog:
   semver-major bump); TEST_GAPS.md #11/#12 (detention downward-revision recompute, computeDriverScores)
   need an owner design call; wex integration doc is the oldest built-adapter doc awaiting its
   scout-rotation re-pass.
+
+## QA rig drive on main@ea143d8f — 2026-07-27 ~22:12-22:45 UTC (owner/dispatcher/driver, read-only prod probe)
+
+Fresh local rig from scratch (Postgres was down, no `hubapp` role/`hubdb` database existed yet — created
+both per the dev-workflow-testing skill's pitfall #9): `.env.local` from `.env.example` with generated
+`NEXTAUTH_SECRET`/`CREDENTIALS_KEY`/`CRON_SECRET`, `SMTP_USER`/`SMTP_PASS` left blank (pitfall #6),
+`npm run setup:canvas-deps` + `npm ci` (750 packages), `npm run db:migrate` (23 migrations clean through
+`023_lead_attribution.sql`), `npm run seed:demo`, `npm run build` (Next.js 16.2.12, zero TS errors, 110
+routes), `npx vitest run` (253 files/2309 tests, 0 failed), `npm run lint` clean, `npm run test:sidecars`
+(29 Rust tests + Go `ok`). `npm run start` backgrounded, verified the actual serving PID before running
+any smoke (pitfall #10).
+
+Drove the full `e2e-run-all.mjs` battery (53 scripts) as owner, dispatcher, and driver: **52/53 passed**,
+one known stale-anchor false-failure in `e2e-sweep.mjs` (see backlog below, already carried from the
+2026-07-26 cycle). Specifically confirmed the three surfaces touched by this window's last-3h commits:
+IFTA worksheet CSV/PDF export (`e2e-ifta-smoke`, PASS — covers `8fcc537b`'s `surchargeRate` legacy-row
+guard), owner-dashboard revenue trend panels (`e2e-reports-smoke`, PASS — covers `2720bb32`'s
+`weeklyRevenueTrend`/`monthlyRevenueTrend` coverage), and driver PWA offline-queue replay
+(`e2e-driver-offline-smoke`, PASS — covers `0838574b`'s `ok:false` silent-drop fix). **0 app-code
+defects.**
+
+Regression check on every commit landed in the prior 3 hours (`8fcc537b` through `ea143d8f`, including
+the three-lane absorb merges and both drain commits): **all clean.** Each lane merge's diff is exactly
+the single reviewed commit above it; both drains are `.drain-stamp`-only on top of already-clean trees.
+No fix needed, nothing staged or pushed beyond this log entry.
+
+Direct HTTPS to `thindtransport.com` stayed egress-blocked (curl exit 56/403 on CONNECT), so fell back to
+Vercel MCP tools: found the two most recent `main` drains (`c4912c16` 21:45 UTC, `ea143d8f` 21:49 UTC —
+current tip) have **zero Vercel deployment records at all** after 40+ minutes, despite three earlier
+same-day pushes (16:57/17:42/17:53 UTC) deploying cleanly and `drain-integrator.yml` running green on
+schedule throughout the day. Ruled out the known SHA/tree dedupe trap (both drains used the stamped
+`.drain-stamp` method correctly, confirmed via `git show <sha> -- .drain-stamp`). `get_runtime_errors`
+shows no runtime errors on the currently-live deployment (`6bd92be6`, 17:53:56 UTC). This is the same
+failure signature as the 2026-07-23 ~05:30 UTC cycle ("Vercel Git integration stopped deploying `main`")
+but narrower — the pipeline worked for three pushes today before apparently stalling mid-session, not a
+day-long outage. Notified the owner directly (push notification) since this needs a Vercel dashboard
+check (Git integration/webhook health, Ignored Build Step) that no in-repo fix can reach.
+
+Backlog:
+- Owner: production deploy pipeline may have stalled again after 17:53 UTC today — `c4912c16` and
+  `ea143d8f` show no Vercel deployment record after 40+ minutes despite three earlier same-day pushes
+  deploying fine; needs a dashboard check (Git integration connection, Ignored Build Step), same class of
+  issue as the 2026-07-23 outage, no in-repo fix possible.
+- `scripts/e2e-sweep.mjs:68`'s `OWNER_PAGES` `"reports"` anchor (`"the operational view"`) only matches
+  the `!hasDriverPay` subtitle branch; the seeded demo settlements land inside the default 92-day range so
+  the live page renders the driver-pay-included copy instead, false-failing the sweep. Swap to a substring
+  both branches share (e.g. `"per-truck p&l"`, matching the office-pass anchor already used for the same
+  route at line 52). One-line, lane-tests territory. Carried from at least three prior cycles
+  (most recently 2026-07-26 `main@c995c66`) — still unpicked.
+- 200+ pending `claude/*` branches still await the meta-governor prune pass (unchanged from prior cycles).
+- Carried, unchanged: npm audit high-severity findings in the `next`/`sharp` chain (owner-approval-gated
+  semver-major bump); TEST_GAPS.md #11/#12 (detention downward-revision recompute, computeDriverScores)
+  need an owner design call; wex integration doc is the oldest built-adapter doc awaiting its
+  scout-rotation re-pass.
