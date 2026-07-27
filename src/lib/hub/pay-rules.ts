@@ -420,13 +420,63 @@ export function summarizePayRules(ruleSet: PayRuleSet): string {
   return parts.join(" + ")
 }
 
+/**
+ * Validate one rule from a JSONB payload. Unknown `type`s are dropped (silent
+ * no-op in evaluatePayRules, so dropping them at parse time changes nothing);
+ * a *known* type with a malformed field (wrong JS type, negative, or a
+ * basisPoints outside 0-10000) throws instead of reaching the evaluator,
+ * which does no range checking of its own and would otherwise divide by
+ * whatever it was handed.
+ */
+function parseRule(raw: unknown): PayRule | null {
+  if (typeof raw !== "object" || raw === null || typeof (raw as { type?: unknown }).type !== "string") return null
+  const r = raw as Record<string, unknown>
+  const bad = (field: string): never => {
+    throw new Error(`parseRuleSet: rule type "${r.type}" has invalid ${field}: ${JSON.stringify(r[field])}`)
+  }
+  switch (r.type) {
+    case "per_mile":
+      if (typeof r.rateCentsPerMile !== "number" || !Number.isFinite(r.rateCentsPerMile) || r.rateCentsPerMile < 0) {
+        bad("rateCentsPerMile")
+      }
+      return r as PayRule
+    case "percent_linehaul":
+    case "percent_total":
+    case "percent_accessorials":
+    case "fsc_passthrough":
+      if (
+        typeof r.basisPoints !== "number" ||
+        !Number.isFinite(r.basisPoints) ||
+        r.basisPoints < 0 ||
+        r.basisPoints > 10000
+      ) {
+        bad("basisPoints")
+      }
+      return r as PayRule
+    case "flat_per_load":
+    case "per_stop":
+      if (typeof r.amountCents !== "number" || !Number.isFinite(r.amountCents) || r.amountCents < 0) {
+        bad("amountCents")
+      }
+      return r as PayRule
+    case "referral_bonus":
+      return r as PayRule
+    case "scorecard_bonus":
+      if (!Array.isArray(r.tiers)) bad("tiers")
+      return r as PayRule
+    default:
+      return null
+  }
+}
+
 /** Validate/normalize a rules JSONB payload from the DB (defensive parse). */
 export function parseRuleSet(row: {
   name: string
   rules: unknown
   deductions: unknown
 }): PayRuleSet {
-  const rules = Array.isArray(row.rules) ? (row.rules as PayRule[]) : []
+  const rawRules = Array.isArray(row.rules) ? row.rules : []
+  const rules = rawRules.map(parseRule).filter((r): r is PayRule => r !== null)
   const deductions = Array.isArray(row.deductions) ? (row.deductions as PayDeduction[]) : []
   return { name: row.name, rules, deductions }
 }

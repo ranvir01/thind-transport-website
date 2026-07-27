@@ -298,6 +298,54 @@ describe("parseRuleSet — defensive JSONB parse", () => {
     expect(parsed.rules).toEqual([])
     expect(parsed.deductions).toEqual([])
   })
+
+  it("drops a rule with an unknown type instead of passing it through", () => {
+    const parsed = parseRuleSet({
+      name: "x",
+      rules: [{ type: "flux_capacitor", basisPoints: 9000 }, { type: "referral_bonus" }],
+      deductions: [],
+    })
+    expect(parsed.rules).toEqual([{ type: "referral_bonus" }])
+  })
+
+  it("throws on a negative basisPoints", () => {
+    expect(() =>
+      parseRuleSet({ name: "x", rules: [{ type: "percent_linehaul", basisPoints: -1 }], deductions: [] })
+    ).toThrow(/basisPoints/)
+  })
+
+  it("throws on basisPoints above 10000 (over 100%)", () => {
+    expect(() =>
+      parseRuleSet({ name: "x", rules: [{ type: "percent_total", basisPoints: 10001 }], deductions: [] })
+    ).toThrow(/basisPoints/)
+  })
+
+  it("throws on a negative per_mile rate", () => {
+    expect(() =>
+      parseRuleSet({ name: "x", rules: [{ type: "per_mile", rateCentsPerMile: -63 }], deductions: [] })
+    ).toThrow(/rateCentsPerMile/)
+  })
+
+  it("throws when basisPoints is a string instead of a number", () => {
+    expect(() =>
+      parseRuleSet({ name: "x", rules: [{ type: "fsc_passthrough", basisPoints: "10000" }], deductions: [] })
+    ).toThrow(/basisPoints/)
+  })
+
+  it("passes through valid rules of every known type unchanged", () => {
+    const parsed = parseRuleSet({
+      name: "x",
+      rules: [
+        { type: "per_mile", rateCentsPerMile: 63 },
+        { type: "percent_linehaul", basisPoints: 9000 },
+        { type: "flat_per_load", amountCents: 5000 },
+        { type: "per_stop", amountCents: 2500 },
+        { type: "scorecard_bonus", tiers: [{ minScore: 90, amountCents: 10000 }] },
+      ],
+      deductions: [],
+    })
+    expect(parsed.rules).toHaveLength(5)
+  })
 })
 
 describe("summarizePayRules — compact subtitle summary", () => {
