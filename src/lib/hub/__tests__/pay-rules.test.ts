@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest"
 import { computeSettlement } from "../money"
 import { roundHalfAwayFromZero } from "../rounding"
 import {
-  evaluatePayRules, legacyConfigToRuleSet, parseRuleSet, summarizePayRules,
+  describePayRules, evaluatePayRules, legacyConfigToRuleSet, parseRuleSet, summarizePayRules,
   type PayLoadContext, type PayRuleSet,
 } from "../pay-rules"
 
@@ -334,5 +334,77 @@ describe("summarizePayRules — compact subtitle summary", () => {
 
   it("returns an empty string when only bonus rules exist", () => {
     expect(summarizePayRules({ name: "b", rules: [{ type: "referral_bonus" }], deductions: [] })).toBe("")
+  })
+})
+
+describe("describePayRules — plain-language pay-terms screen", () => {
+  it("describes every earning rule type in driver-facing language", () => {
+    const ruleSet: PayRuleSet = {
+      name: "custom",
+      rules: [
+        { type: "per_mile", rateCentsPerMile: 63 },
+        { type: "per_mile", rateCentsPerMile: 55, loadedOnly: false },
+        { type: "percent_linehaul", basisPoints: 9000 },
+        { type: "percent_total", basisPoints: 7250 },
+        { type: "percent_accessorials", basisPoints: 5000 },
+        { type: "fsc_passthrough", basisPoints: 10000 },
+        { type: "fsc_passthrough", basisPoints: 5000 },
+        { type: "flat_per_load", amountCents: 5000 },
+        { type: "per_stop", amountCents: 2500 },
+        { type: "per_stop", amountCents: 1500, afterStops: 4 },
+        { type: "referral_bonus" },
+        {
+          type: "scorecard_bonus",
+          tiers: [
+            { minScore: 80, amountCents: 5000 },
+            { minScore: 95, amountCents: 15000 },
+          ],
+        },
+      ],
+      deductions: [],
+    }
+
+    expect(describePayRules(ruleSet).earnings).toEqual([
+      "$0.63 per loaded mile",
+      "$0.55 per mile (loaded + deadhead)",
+      "90% of the load rate (linehaul + accessorials)",
+      "72.50% of everything the load pays (all-in)",
+      "50% of accessorial charges",
+      "100% of the fuel surcharge",
+      "50% of the fuel surcharge",
+      "$50.00 flat per load",
+      "$25.00 per extra stop (after 2)",
+      "$15.00 per extra stop (after 4)",
+      "Referral bonuses when they come due",
+      // tiers are sorted highest score first regardless of input order
+      "Performance bonus: $150.00 at score 95+, $50.00 at score 80+",
+    ])
+  })
+
+  it("describes every deduction kind", () => {
+    const ruleSet: PayRuleSet = {
+      name: "custom",
+      rules: [],
+      deductions: [
+        { kind: "escrow", amountCents: 10000 },
+        { kind: "insurance", amountCents: 7500 },
+        { kind: "flat_recurring", amountCents: 2000, label: "Phone plan" },
+        { kind: "percent_of_gross", basisPoints: 300, label: "Admin fee" },
+      ],
+    }
+
+    expect(describePayRules(ruleSet).deductions).toEqual([
+      "$100.00 escrow each settlement",
+      "$75.00 insurance each settlement",
+      "$20.00 Phone plan each settlement",
+      "Admin fee: 3% of gross",
+    ])
+  })
+
+  it("returns empty arrays for an empty rule set", () => {
+    expect(describePayRules({ name: "empty", rules: [], deductions: [] })).toEqual({
+      earnings: [],
+      deductions: [],
+    })
   })
 })
