@@ -24,7 +24,9 @@
     "rust-build": "make rust-build",
     "test:sidecars": "make test-sidecars",
     "rust-audit": "make rust-audit",
-    "token-lint": "node scripts/token-lint.mjs"
+    "token-lint": "node scripts/token-lint.mjs",
+    "license:audit": "node scripts/license-audit.mjs",
+    "license:notices": "node scripts/license-audit.mjs --notices"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
