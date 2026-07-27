@@ -1447,3 +1447,51 @@ Backlog:
 - Carried, unchanged: npm audit high-severity findings in the `next`/`sharp` chain (owner-approval-gated
   semver-major bump, `npm audit fix --force`); Rust sidecar `tiny_http` connection-timeout/thread-cap gap
   (owner decision).
+
+## QA rig drive on main@945e110 — 2026-07-27 ~08:15-08:35 UTC (owner/dispatcher/driver, read-only prod probe)
+
+Charter (`docs/agent-improvement-loop.md` §5): no feature work — stood up the local rig, drove
+owner/dispatcher/driver/portal flows against the full Puppeteer E2E battery, probed thindtransport.com
+read-only, fixed only outright regressions introduced in the last 3h of commits.
+
+Fresh rig from scratch: Postgres 16 role (`hubuser`) + database (`hubdb`) created per the
+dev-workflow-testing skill's pitfall #9, `npm run setup:canvas-deps` + `npm install`, 22 migrations clean,
+`npm run seed:demo`, `npm run build` clean, `npx vitest run` (245 files/2198 tests) green, `npm run lint`
+clean. No Go/Rust files in the last-3h window, so `test:sidecars` wasn't required.
+
+Last-3h window (`b6ca9dc..945e110`, ~06:51-07:50 UTC, 32 commits): cross-tenant isolation harness (carrier_id
+pinned alongside the id on writes in `messages.ts`, `notify.ts`, `planner.ts`, `portal.ts`, `dvir.ts`,
+`event-processors.ts`), the HOS rule engine (49 CFR 395), Form 2290/freight-class calculators + their public
+tool page, the license audit guard, and the pay-rules parse reconciliation. Read every non-test diff in the
+window: each tenancy fix is correctly scoped and has a matching test (`cross-tenant-harness.test.ts`,
+`hos.test.ts`, `hvut.test.ts`, `hvut-compliance.test.ts`, `freight-class.test.ts`); the two UI touches
+(`shippers/page.tsx`'s calculator link, `safety/page.tsx`'s "computed from duty log" caption) match existing
+page conventions (`text-orange-600` is already used throughout `shippers/page.tsx`; neither route is
+office/driver-portal, so the token-doctrine rules don't apply). Build + full vitest pass confirms none of
+this regressed. Nothing to fix-forward.
+
+Full 52-script Puppeteer battery (51 smokes + `e2e-sweep`), driven as owner, dispatcher, and driver: 50/52
+pass. Both failures are the same stale-assertion pair at least ten prior QA-drive cycles have independently
+diagnosed (newest confirmed instance: `e81913540f3` on `origin/claude/practical-franklin-b3gmb9`, still
+undrained) — `/testimonials` has no route under `src/app` (confirmed via `git log -S`/blame: removed days
+before this window) and `/hub/reports`' `e2e-sweep` anchor still checks for "the operational view", the
+subtitle branch that only renders when the seeded tenant has zero driver pay in range (this tenant's seed
+carries driver pay, so the page correctly renders the other branch). Not writing an eleventh duplicate
+fix — same one-line diffs already sit on the branch above.
+
+Production probe: direct HTTPS still egress-blocked from this sandbox (proxy 403 on `curl` and `WebFetch`
+alike — policy denial, not a site error). Vercel MCP fallback: latest production deployment
+(`dpl_AHkJhQJdoBkpDtcijhmTR2L5Nep4`) is `READY`, target `production`, matching `main`'s current tip.
+Runtime-error probe (7d): only the pre-existing pg SSL-mode deprecation warning (34 occurrences, expected)
+and the single already-known SMTP `BadCredentials` hit on `compliance-scan` from 2026-07-26 — nothing new.
+
+Backlog:
+- Integrator: drain `origin/claude/practical-franklin-b3gmb9` (`e81913540f3`) — it already fixes the
+  testimonials/reports-subtitle stale-assertion pair; no need for another duplicate diagnosis next cycle.
+- Owner: rotate production `SMTP_USER`/`SMTP_PASS` (Gmail app password) — `compliance-scan` hit
+  `BadCredentials` once on 2026-07-26; carried from prior cycles, still unresolved.
+- Meta-governor: `npm run agent:branches` shows several lane branches (900+/1500+ unpicked raw commits
+  each) that are almost entirely stale history behind one or two real contributed commits — prune pass
+  still overdue, unchanged from prior cycles.
+- Carried, unchanged: npm audit high-severity findings in the `next`/`sharp` chain (owner-approval-gated
+  semver-major bump); Rust sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision).
