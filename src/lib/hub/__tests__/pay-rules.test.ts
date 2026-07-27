@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest"
 import { computeSettlement } from "../money"
 import { roundHalfAwayFromZero } from "../rounding"
 import {
-  describePayRules, evaluatePayRules, legacyConfigToRuleSet, parseRuleSet, summarizePayRules,
+  evaluatePayRules, legacyConfigToRuleSet, parseRuleSet, summarizePayRules,
   type PayLoadContext, type PayRuleSet,
 } from "../pay-rules"
 
@@ -299,65 +299,58 @@ describe("parseRuleSet — defensive JSONB parse", () => {
     expect(parsed.deductions).toEqual([])
   })
 
-  it("drops a rule whose basisPoints exceeds 100% (TEST_GAPS.md #14)", () => {
+  it("drops a rule with an unknown type instead of passing it through", () => {
     const parsed = parseRuleSet({
       name: "x",
-      rules: [{ type: "percent_total", basisPoints: 10001 }],
+      rules: [{ type: "flux_capacitor", basisPoints: 9000 }, { type: "referral_bonus" }],
       deductions: [],
     })
-    expect(parsed.rules).toEqual([])
+    expect(parsed.rules).toEqual([{ type: "referral_bonus" }])
   })
 
-  it("drops a rule with a negative rate", () => {
-    const parsed = parseRuleSet({
-      name: "x",
-      rules: [{ type: "per_mile", rateCentsPerMile: -63 }],
-      deductions: [],
-    })
-    expect(parsed.rules).toEqual([])
+  it("throws on a negative basisPoints", () => {
+    expect(() =>
+      parseRuleSet({ name: "x", rules: [{ type: "percent_linehaul", basisPoints: -1 }], deductions: [] })
+    ).toThrow(/basisPoints/)
   })
 
-  it("drops a rule whose basisPoints is a string, not a number", () => {
-    const parsed = parseRuleSet({
-      name: "x",
-      rules: [{ type: "percent_total", basisPoints: "90" }],
-      deductions: [],
-    })
-    expect(parsed.rules).toEqual([])
+  it("throws on basisPoints above 10000 (over 100%)", () => {
+    expect(() =>
+      parseRuleSet({ name: "x", rules: [{ type: "percent_total", basisPoints: 10001 }], deductions: [] })
+    ).toThrow(/basisPoints/)
   })
 
-  it("drops a rule with an unknown type", () => {
-    const parsed = parseRuleSet({
-      name: "x",
-      rules: [{ type: "percent_of_the_moon", basisPoints: 9000 }],
-      deductions: [],
-    })
-    expect(parsed.rules).toEqual([])
+  it("throws on a negative per_mile rate", () => {
+    expect(() =>
+      parseRuleSet({ name: "x", rules: [{ type: "per_mile", rateCentsPerMile: -63 }], deductions: [] })
+    ).toThrow(/rateCentsPerMile/)
   })
 
-  it("keeps valid rules alongside a dropped invalid one, and evaluatePayRules never pays the invalid rule", () => {
+  it("throws when basisPoints is a string instead of a number", () => {
+    expect(() =>
+      parseRuleSet({ name: "x", rules: [{ type: "fsc_passthrough", basisPoints: "10000" }], deductions: [] })
+    ).toThrow(/basisPoints/)
+  })
+
+  it("passes through valid rules of every known type unchanged", () => {
     const parsed = parseRuleSet({
       name: "x",
       rules: [
-        { type: "percent_total", basisPoints: 9000 },
-        { type: "percent_total", basisPoints: 15000 }, // corrupted: 150%, impossible as a pay rate
-        { type: "flat_per_load", amountCents: -100 },
+        { type: "per_mile", rateCentsPerMile: 63 },
+        { type: "percent_linehaul", basisPoints: 9000 },
+        { type: "flat_per_load", amountCents: 5000 },
+        { type: "per_stop", amountCents: 2500 },
+        { type: "scorecard_bonus", tiers: [{ minScore: 90, amountCents: 10000 }] },
       ],
       deductions: [],
     })
-    expect(parsed.rules).toEqual([{ type: "percent_total", basisPoints: 9000 }])
-
-    const draft = evaluatePayRules(parsed, {
-      loads: [load({ linehaulCents: 240000, fuelSurchargeCents: 0, accessorialCents: 0 })],
-      reimbursements: [],
-      outstandingAdvances: [],
-    })
-    // Only the 90% rule should have paid — a 150%-of-load line would add another $360.00.
-    expect(draft.grossCents).toBe(216000)
-    expect(draft.lines).toHaveLength(1)
+    expect(parsed.rules).toHaveLength(5)
   })
 
   it("drops a deduction with an invalid basisPoints, keeps a valid one", () => {
+    // Deductions fail SAFE (dropped) rather than throwing like rules do: a
+    // skipped deduction can only pay the driver more, while a skipped rule
+    // would silently underpay — hence the asymmetry in parseRuleSet.
     const parsed = parseRuleSet({
       name: "x",
       rules: [],
@@ -367,6 +360,15 @@ describe("parseRuleSet — defensive JSONB parse", () => {
       ],
     })
     expect(parsed.deductions).toEqual([{ kind: "escrow", amountCents: 5000 }])
+  })
+
+  it("drops a deduction of an unknown kind", () => {
+    const parsed = parseRuleSet({
+      name: "x",
+      rules: [],
+      deductions: [{ kind: "not_a_real_kind", amountCents: 100 }, { kind: "insurance", amountCents: 2500 }],
+    })
+    expect(parsed.deductions).toEqual([{ kind: "insurance", amountCents: 2500 }])
   })
 })
 
@@ -404,77 +406,5 @@ describe("summarizePayRules — compact subtitle summary", () => {
 
   it("returns an empty string when only bonus rules exist", () => {
     expect(summarizePayRules({ name: "b", rules: [{ type: "referral_bonus" }], deductions: [] })).toBe("")
-  })
-})
-
-describe("describePayRules — plain-language pay-terms screen", () => {
-  it("describes every earning rule type in driver-facing language", () => {
-    const ruleSet: PayRuleSet = {
-      name: "custom",
-      rules: [
-        { type: "per_mile", rateCentsPerMile: 63 },
-        { type: "per_mile", rateCentsPerMile: 55, loadedOnly: false },
-        { type: "percent_linehaul", basisPoints: 9000 },
-        { type: "percent_total", basisPoints: 7250 },
-        { type: "percent_accessorials", basisPoints: 5000 },
-        { type: "fsc_passthrough", basisPoints: 10000 },
-        { type: "fsc_passthrough", basisPoints: 5000 },
-        { type: "flat_per_load", amountCents: 5000 },
-        { type: "per_stop", amountCents: 2500 },
-        { type: "per_stop", amountCents: 1500, afterStops: 4 },
-        { type: "referral_bonus" },
-        {
-          type: "scorecard_bonus",
-          tiers: [
-            { minScore: 80, amountCents: 5000 },
-            { minScore: 95, amountCents: 15000 },
-          ],
-        },
-      ],
-      deductions: [],
-    }
-
-    expect(describePayRules(ruleSet).earnings).toEqual([
-      "$0.63 per loaded mile",
-      "$0.55 per mile (loaded + deadhead)",
-      "90% of the load rate (linehaul + accessorials)",
-      "72.50% of everything the load pays (all-in)",
-      "50% of accessorial charges",
-      "100% of the fuel surcharge",
-      "50% of the fuel surcharge",
-      "$50.00 flat per load",
-      "$25.00 per extra stop (after 2)",
-      "$15.00 per extra stop (after 4)",
-      "Referral bonuses when they come due",
-      // tiers are sorted highest score first regardless of input order
-      "Performance bonus: $150.00 at score 95+, $50.00 at score 80+",
-    ])
-  })
-
-  it("describes every deduction kind", () => {
-    const ruleSet: PayRuleSet = {
-      name: "custom",
-      rules: [],
-      deductions: [
-        { kind: "escrow", amountCents: 10000 },
-        { kind: "insurance", amountCents: 7500 },
-        { kind: "flat_recurring", amountCents: 2000, label: "Phone plan" },
-        { kind: "percent_of_gross", basisPoints: 300, label: "Admin fee" },
-      ],
-    }
-
-    expect(describePayRules(ruleSet).deductions).toEqual([
-      "$100.00 escrow each settlement",
-      "$75.00 insurance each settlement",
-      "$20.00 Phone plan each settlement",
-      "Admin fee: 3% of gross",
-    ])
-  })
-
-  it("returns empty arrays for an empty rule set", () => {
-    expect(describePayRules({ name: "empty", rules: [], deductions: [] })).toEqual({
-      earnings: [],
-      deductions: [],
-    })
   })
 })

@@ -420,51 +420,72 @@ export function summarizePayRules(ruleSet: PayRuleSet): string {
   return parts.join(" + ")
 }
 
-const KNOWN_RULE_TYPES = new Set<PayRule["type"]>([
-  "per_mile", "percent_linehaul", "percent_total", "percent_accessorials",
-  "fsc_passthrough", "flat_per_load", "per_stop", "referral_bonus", "scorecard_bonus",
-])
-const KNOWN_DEDUCTION_KINDS = new Set<PayDeduction["kind"]>([
-  "escrow", "insurance", "flat_recurring", "percent_of_gross",
-])
-
-const isFiniteNonNegative = (n: unknown): n is number => typeof n === "number" && Number.isFinite(n) && n >= 0
-// Basis points express a percentage 0-100%; anything above 10000 (100%) or below 0 can never be an
-// intentional pay rate, and a non-number means the JSONB shape itself drifted from what this code writes.
-const isValidBasisPoints = (n: unknown): n is number => typeof n === "number" && Number.isFinite(n) && n >= 0 && n <= 10000
-
-/** A rule is only trusted if every field the evaluator reads is present with a sane type/range. */
-function isValidRule(rule: unknown): rule is PayRule {
-  if (!rule || typeof rule !== "object") return false
-  const r = rule as Record<string, unknown>
-  if (typeof r.type !== "string" || !KNOWN_RULE_TYPES.has(r.type as PayRule["type"])) return false
-  switch (r.type as PayRule["type"]) {
+/**
+ * Validate one rule from a JSONB payload. Unknown `type`s are dropped (silent
+ * no-op in evaluatePayRules, so dropping them at parse time changes nothing);
+ * a *known* type with a malformed field (wrong JS type, negative, or a
+ * basisPoints outside 0-10000) throws instead of reaching the evaluator,
+ * which does no range checking of its own and would otherwise divide by
+ * whatever it was handed.
+ */
+function parseRule(raw: unknown): PayRule | null {
+  if (typeof raw !== "object" || raw === null || typeof (raw as { type?: unknown }).type !== "string") return null
+  const r = raw as Record<string, unknown>
+  const bad = (field: string): never => {
+    throw new Error(`parseRuleSet: rule type "${r.type}" has invalid ${field}: ${JSON.stringify(r[field])}`)
+  }
+  switch (r.type) {
     case "per_mile":
-      return isFiniteNonNegative(r.rateCentsPerMile) && (r.loadedOnly === undefined || typeof r.loadedOnly === "boolean")
+      if (typeof r.rateCentsPerMile !== "number" || !Number.isFinite(r.rateCentsPerMile) || r.rateCentsPerMile < 0) {
+        bad("rateCentsPerMile")
+      }
+      return r as PayRule
     case "percent_linehaul":
     case "percent_total":
     case "percent_accessorials":
     case "fsc_passthrough":
-      return isValidBasisPoints(r.basisPoints)
+      if (
+        typeof r.basisPoints !== "number" ||
+        !Number.isFinite(r.basisPoints) ||
+        r.basisPoints < 0 ||
+        r.basisPoints > 10000
+      ) {
+        bad("basisPoints")
+      }
+      return r as PayRule
     case "flat_per_load":
-      return isFiniteNonNegative(r.amountCents)
     case "per_stop":
-      return isFiniteNonNegative(r.amountCents) && (r.afterStops === undefined || isFiniteNonNegative(r.afterStops))
+      if (typeof r.amountCents !== "number" || !Number.isFinite(r.amountCents) || r.amountCents < 0) {
+        bad("amountCents")
+      }
+      return r as PayRule
     case "referral_bonus":
-      return true
+      return r as PayRule
     case "scorecard_bonus":
-      return (
-        Array.isArray(r.tiers) &&
-        r.tiers.every(
-          (t) => t && typeof t === "object" && isFiniteNonNegative((t as Record<string, unknown>).minScore) && isFiniteNonNegative((t as Record<string, unknown>).amountCents)
-        )
-      )
+      if (!Array.isArray(r.tiers)) bad("tiers")
+      return r as PayRule
     default:
-      return false
+      return null
   }
 }
 
-/** A deduction is only trusted if every field the evaluator reads is present with a sane type/range. */
+
+const KNOWN_DEDUCTION_KINDS = new Set<PayDeduction["kind"]>([
+  "escrow", "insurance", "flat_recurring", "percent_of_gross",
+])
+
+const isFiniteNonNegative = (n: unknown): n is number =>
+  typeof n === "number" && Number.isFinite(n) && n >= 0
+// Basis points express 0-100%; outside 0-10000 can never be an intentional rate.
+const isValidBasisPoints = (n: unknown): n is number =>
+  typeof n === "number" && Number.isFinite(n) && n >= 0 && n <= 10000
+
+/**
+ * Deductions come off a driver's gross, so a malformed one is dropped rather
+ * than trusted: unlike a rule (whose absence silently underpays and therefore
+ * throws), an unparseable deduction that we skip can only ever pay the driver
+ * MORE, which is the safe direction to fail while the office fixes the row.
+ */
 function isValidDeduction(deduction: unknown): deduction is PayDeduction {
   if (!deduction || typeof deduction !== "object") return false
   const d = deduction as Record<string, unknown>
@@ -481,18 +502,14 @@ function isValidDeduction(deduction: unknown): deduction is PayDeduction {
   }
 }
 
-/**
- * Validate/normalize a rules JSONB payload from the DB (defensive parse).
- * Drops individual rules/deductions with an out-of-range or wrong-typed field (e.g. a
- * `basisPoints` above 10000 or a string where a number belongs) instead of letting a
- * corrupted row silently mispay — see TEST_GAPS.md #14.
- */
+/** Validate/normalize a rules JSONB payload from the DB (defensive parse). */
 export function parseRuleSet(row: {
   name: string
   rules: unknown
   deductions: unknown
 }): PayRuleSet {
-  const rules = Array.isArray(row.rules) ? row.rules.filter(isValidRule) : []
+  const rawRules = Array.isArray(row.rules) ? row.rules : []
+  const rules = rawRules.map(parseRule).filter((r): r is PayRule => r !== null)
   const deductions = Array.isArray(row.deductions) ? row.deductions.filter(isValidDeduction) : []
   return { name: row.name, rules, deductions }
 }
