@@ -1447,3 +1447,55 @@ Backlog:
 - Carried, unchanged: npm audit high-severity findings in the `next`/`sharp` chain (owner-approval-gated
   semver-major bump, `npm audit fix --force`); Rust sidecar `tiny_http` connection-timeout/thread-cap gap
   (owner decision).
+
+## QA rig drive on main@9dca881 — 2026-07-27 ~14:10-14:47 UTC (8th identical cycle against this HEAD)
+
+Charter (docs/agent-improvement-loop.md §5): no feature work — stand up the local rig, drive
+owner/dispatcher/driver flows, probe `thindtransport.com` read-only, fix only outright regressions
+from the last 3h of commits.
+
+Fresh rig from scratch (Postgres role+db created, `npm install`, 23 migrations, `seed:demo`,
+`npm run build` clean, `npx vitest run` 251 files/2288 tests green, `npm run test:sidecars` 29 Rust
+tests + Go `ok`) and the full 52-script `e2e-run-all.mjs` battery (owner/dispatcher/driver/portal/
+tracking): 51/52 green in 17.9m. The one failure is the already-documented `e2e-sweep.mjs` "reports"
+subtitle anchor (`"the operational view"` only matches the `!hasDriverPay` branch of
+`src/app/hub/(office)/reports/page.tsx:100-103`; the seeded demo tenant has driver settlement pay, so
+it takes the other branch) — independently re-verified against the page source this cycle, not
+re-fixed since `scripts/e2e-*.mjs` is `claude/lane-tests` territory.
+
+`main` HEAD (`9dca8819`, 08:55:33 UTC) had zero new commits the entire ~5h50m of this cycle — nothing
+in the last-3h window to review. Production (Vercel MCP; direct HTTPS stays egress-blocked in this
+environment) is on `dpl_7SYpCS6iuziYwpE8AXYp4j8S9JdU`, commit `9dca8819` — matches, current.
+`get_runtime_errors` (7d) confirms the SMTP `BadCredentials` failure a sibling cycle (`2018214d`,
+13:47 UTC) already found and proactively notified the owner about is still live — most recent
+`compliance-scan` failure 14:13:30 UTC, ~13 minutes before this probe. Not re-notifying: no new
+information, same root cause (Gmail app password needs rotation in Vercel's `SMTP_PASS`), already
+escalated.
+
+**This is the 8th QA-drive/verify-and-build cycle against the identical `9dca8819` HEAD**, spanning
+09:30-14:47 UTC (`933435c8`, `527f214a`, `d3347d2e`, `35bb537e`, `c8eedae3`, `e0f4696e`, `2018214d`,
+this one) — roughly one every 40 minutes for nearly 6 hours with zero new commits to review. Every
+cycle reaches the same 51/52-green, 0-regression result; the only genuinely new finding across all
+eight was the SMTP credential failure (found by the 7th). Escalating past the existing backlog note:
+this isn't a one-off observation anymore, it's a measured pattern — the schedule feeding this charter
+fires far faster than `main`'s commit cadence can give it distinct work, and each cycle burns a full
+rig-build + 18-minute E2E battery to re-confirm what the last one already confirmed. Recommend the
+meta-governor treat this as the top prune candidate: either lengthen the interval, gate a cycle on
+"has `main` advanced since the last one," or redirect the slot to a lane with actual open backlog
+(`lane-tests`' one-line reports-anchor fix, the 200+-branch prune sweep, or the npm audit bump).
+
+Backlog:
+- Production SMTP credentials are still failing Gmail auth (`BadCredentials`) as of 14:13 UTC today —
+  owner-digest and compliance-scan emails not delivering for any of the 4 real carriers. Needs a
+  regenerated Gmail App Password in Vercel's `SMTP_PASS` env var; not fixable from a code change.
+  Already flagged to the owner directly by a prior cycle; carrying here for continuity only.
+- Meta-governor: 8 consecutive QA-drive cycles have now run against the same unchanged `main` HEAD
+  over ~5h50m — concrete evidence the routine's schedule interval is shorter than warranted. See
+  detail above; this is the actionable item this cycle adds.
+- `e2e-sweep.mjs`'s `OWNER_PAGES` "reports" anchor should switch to a substring both subtitle branches
+  share (e.g. `"per-truck p&l"`) — `lane-tests` territory, one-line fix, carried from 5+ prior cycles.
+- Carried, unchanged: TEST_GAPS.md's remaining open items (#11 detention downward-revision recompute,
+  #12's `computeDriverScores` half); owner/design call on green-as-success convention
+  (`PreQualificationForm.tsx`/`ApplicationForm.tsx`); npm audit high-severity findings (owner-approval-
+  gated semver-major bump); Rust sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision);
+  200+ pending `claude/*` branches still awaiting a meta-governor prune pass.
