@@ -17,6 +17,10 @@ over 79 days, which is demo scale, not fleet scale.
 MISSING: real monthly load count, invoiced revenue, and fuel gallons — pull from Thind's 2026 Q2
 QuickBooks P&L and the EFS monthly statement.
 
+**Fixed 2026-07-27:** the qbo-is-mislabeled-stub and dat-is-mislabeled-live findings below
+(`registry.ts:138`, `:87`) are corrected — qbo is now `status: "live"`, dat is now `status: "stub"`.
+Every other finding in this doc is unchanged as of that date.
+
 ---
 
 ## 0. The one finding that outranks the table

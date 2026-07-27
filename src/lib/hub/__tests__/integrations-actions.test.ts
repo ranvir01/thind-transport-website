@@ -3,8 +3,9 @@
  * providers (no client yet) with an honest message instead of a raw DB
  * constraint error. Stub/live providers still save credentials.
  *
- * Registry status has moved since the original fix (qbo/factor are stub,
- * truckstop is live) — the planned guard is exercised via a mocked spec.
+ * Registry status has moved since the original fix (factor is stub, qbo
+ * is live, truckstop is live) — the planned guard is exercised via a
+ * mocked spec.
  */
 import { beforeEach, describe, expect, it, vi } from "vitest"
 

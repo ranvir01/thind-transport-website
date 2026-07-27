@@ -84,7 +84,7 @@ export const PROVIDERS: readonly ProviderSpec[] = [
       { key: "password", label: "Service account password", secret: true },
       { key: "actingUserEmail", label: "Acting user email (needs a Connexion + load board seat)" },
     ],
-    fallback: "Paste rate con", sync: "manual", status: "live",
+    fallback: "Paste rate con", sync: "manual", status: "stub",
   },
   {
     id: "truckstop", label: "Truckstop.com", domain: "loadboard",
@@ -135,7 +135,7 @@ export const PROVIDERS: readonly ProviderSpec[] = [
       { key: "refreshToken", label: "Refresh token", secret: true },
       { key: "realmId", label: "Realm (company) ID" },
     ],
-    fallback: "QuickBooks CSV export", sync: "poll", status: "stub", cronJob: "qbo-sync",
+    fallback: "QuickBooks CSV export", sync: "poll", status: "live", cronJob: "qbo-sync",
   },
   {
     id: "factor", label: "Factoring company", domain: "factoring",
