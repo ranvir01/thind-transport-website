@@ -298,6 +298,76 @@ describe("parseRuleSet — defensive JSONB parse", () => {
     expect(parsed.rules).toEqual([])
     expect(parsed.deductions).toEqual([])
   })
+
+  it("drops a rule whose basisPoints exceeds 100% (TEST_GAPS.md #14)", () => {
+    const parsed = parseRuleSet({
+      name: "x",
+      rules: [{ type: "percent_total", basisPoints: 10001 }],
+      deductions: [],
+    })
+    expect(parsed.rules).toEqual([])
+  })
+
+  it("drops a rule with a negative rate", () => {
+    const parsed = parseRuleSet({
+      name: "x",
+      rules: [{ type: "per_mile", rateCentsPerMile: -63 }],
+      deductions: [],
+    })
+    expect(parsed.rules).toEqual([])
+  })
+
+  it("drops a rule whose basisPoints is a string, not a number", () => {
+    const parsed = parseRuleSet({
+      name: "x",
+      rules: [{ type: "percent_total", basisPoints: "90" }],
+      deductions: [],
+    })
+    expect(parsed.rules).toEqual([])
+  })
+
+  it("drops a rule with an unknown type", () => {
+    const parsed = parseRuleSet({
+      name: "x",
+      rules: [{ type: "percent_of_the_moon", basisPoints: 9000 }],
+      deductions: [],
+    })
+    expect(parsed.rules).toEqual([])
+  })
+
+  it("keeps valid rules alongside a dropped invalid one, and evaluatePayRules never pays the invalid rule", () => {
+    const parsed = parseRuleSet({
+      name: "x",
+      rules: [
+        { type: "percent_total", basisPoints: 9000 },
+        { type: "percent_total", basisPoints: 15000 }, // corrupted: 150%, impossible as a pay rate
+        { type: "flat_per_load", amountCents: -100 },
+      ],
+      deductions: [],
+    })
+    expect(parsed.rules).toEqual([{ type: "percent_total", basisPoints: 9000 }])
+
+    const draft = evaluatePayRules(parsed, {
+      loads: [load({ linehaulCents: 240000, fuelSurchargeCents: 0, accessorialCents: 0 })],
+      reimbursements: [],
+      outstandingAdvances: [],
+    })
+    // Only the 90% rule should have paid — a 150%-of-load line would add another $360.00.
+    expect(draft.grossCents).toBe(216000)
+    expect(draft.lines).toHaveLength(1)
+  })
+
+  it("drops a deduction with an invalid basisPoints, keeps a valid one", () => {
+    const parsed = parseRuleSet({
+      name: "x",
+      rules: [],
+      deductions: [
+        { kind: "percent_of_gross", basisPoints: 20001, label: "bad" },
+        { kind: "escrow", amountCents: 5000 },
+      ],
+    })
+    expect(parsed.deductions).toEqual([{ kind: "escrow", amountCents: 5000 }])
+  })
 })
 
 describe("summarizePayRules — compact subtitle summary", () => {
