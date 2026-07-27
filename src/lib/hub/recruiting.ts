@@ -7,12 +7,12 @@
 import { hubDb, query, queryOne } from "./db"
 import { ORIENTATION_TEMPLATE, type Applicant, type ApplicantStage } from "./recruiting-shared"
 import { assertCarrierRefs } from "./tenancy"
-import { getWebsiteLead, setWebsiteLeadStatus } from "./website-leads"
+import { getWebsiteLead, setWebsiteLeadStatus, OPERATOR_CARRIER_ID } from "./website-leads"
 
 /** Thind's own carrier row (migration 002) — the only tenant whose real
  *  applicants land in the legacy, carrier-less public.public_applications
  *  table backing the marketing site's job form. */
-const THIND_CARRIER_ID = "11111111-1111-1111-1111-111111111111"
+const THIND_CARRIER_ID = OPERATOR_CARRIER_ID
 
 export {
   APPLICANT_STAGES, ORIENTATION_TEMPLATE, STAGE_LABELS,
@@ -402,7 +402,7 @@ export async function promoteWebsiteLead(
   if (carrierId !== THIND_CARRIER_ID) {
     return { ok: false, error: "Website leads belong to the site operator" }
   }
-  const lead = await getWebsiteLead(leadId)
+  const lead = await getWebsiteLead(carrierId, leadId)
   if (!lead) return { ok: false, error: "Lead not found" }
 
   // Leads capture one free-text name field; applicants require first + last.
@@ -434,7 +434,7 @@ export async function promoteWebsiteLead(
     actorName
   )
   if (!applicant) return { ok: false, error: "Already in the recruiting pipeline" }
-  await setWebsiteLeadStatus(lead.id, "closed")
+  await setWebsiteLeadStatus(carrierId, lead.id, "closed")
   return { ok: true, applicantId: applicant.id }
 }
 

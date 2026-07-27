@@ -11,8 +11,8 @@ export const dynamic = "force-dynamic"
  * thing that converts them is a call back within the hour.
  */
 export default async function LeadsPage() {
-  await requireOfficeUser()
-  const leads = await listWebsiteLeads().catch(() => [])
+  const user = await requireOfficeUser()
+  const leads = await listWebsiteLeads(user.carrierId).catch(() => [])
   const fresh = leads.filter((lead) => lead.status === "new").length
 
   return (

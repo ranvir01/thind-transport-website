@@ -7,6 +7,15 @@
  */
 import { query, queryOne, hubDbAvailable } from "./db"
 
+/**
+ * hub.website_leads carries no carrier_id — it is the site operator's own
+ * table, fed by thindtransport.com's public capture forms (migration 002's
+ * well-known carrier row). Every hub-side read/write below takes the caller's
+ * carrierId and refuses any other tenant, so the operator-only invariant
+ * lives here at the data layer instead of in each caller's memory.
+ */
+export const OPERATOR_CARRIER_ID = "11111111-1111-1111-1111-111111111111"
+
 export interface WebsiteLead {
   id: string
   name: string | null
@@ -54,7 +63,8 @@ export async function saveWebsiteLead(lead: {
   }
 }
 
-export async function listWebsiteLeads(limit = 100): Promise<WebsiteLead[]> {
+export async function listWebsiteLeads(carrierId: string, limit = 100): Promise<WebsiteLead[]> {
+  if (carrierId !== OPERATOR_CARRIER_ID) return []
   return query<WebsiteLead>(
     `SELECT id::text, name, email, phone, source, driver_type, experience_years, message,
             status, created_at::text, contacted_at::text
@@ -65,7 +75,8 @@ export async function listWebsiteLeads(limit = 100): Promise<WebsiteLead[]> {
   )
 }
 
-export async function getWebsiteLead(id: string): Promise<WebsiteLead | null> {
+export async function getWebsiteLead(carrierId: string, id: string): Promise<WebsiteLead | null> {
+  if (carrierId !== OPERATOR_CARRIER_ID) return null
   return queryOne<WebsiteLead>(
     `SELECT id::text, name, email, phone, source, driver_type, experience_years, message,
             status, created_at::text, contacted_at::text
@@ -75,7 +86,8 @@ export async function getWebsiteLead(id: string): Promise<WebsiteLead | null> {
   )
 }
 
-export async function countNewWebsiteLeads(): Promise<number> {
+export async function countNewWebsiteLeads(carrierId: string): Promise<number> {
+  if (carrierId !== OPERATOR_CARRIER_ID) return 0
   try {
     const row = await queryOne<{ n: string }>(
       `SELECT COUNT(*)::text AS n FROM hub.website_leads WHERE status = 'new'`
@@ -88,9 +100,13 @@ export async function countNewWebsiteLeads(): Promise<number> {
 }
 
 export async function setWebsiteLeadStatus(
+  carrierId: string,
   id: string,
   status: "new" | "contacted" | "closed"
 ): Promise<void> {
+  if (carrierId !== OPERATOR_CARRIER_ID) {
+    throw new Error("Website leads belong to the site operator")
+  }
   await query(
     `UPDATE hub.website_leads
      SET status = $2, contacted_at = CASE WHEN $2 = 'contacted' THEN NOW() ELSE contacted_at END

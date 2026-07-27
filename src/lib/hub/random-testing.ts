@@ -183,8 +183,8 @@ export async function notifyRandomTestPool(
       link: "/hub/driver",
     })
     await query(
-      `UPDATE hub.random_test_events SET status = 'notified', notified_at = NOW(), updated_at = NOW() WHERE id = $1`,
-      [row.id]
+      `UPDATE hub.random_test_events SET status = 'notified', notified_at = NOW(), updated_at = NOW() WHERE id = $1 AND carrier_id = $2`,
+      [row.id, carrierId]
     )
   }
   return { notified: pending.length }
