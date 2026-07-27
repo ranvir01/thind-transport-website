@@ -1447,3 +1447,67 @@ Backlog:
 - Carried, unchanged: npm audit high-severity findings in the `next`/`sharp` chain (owner-approval-gated
   semver-major bump, `npm audit fix --force`); Rust sidecar `tiny_http` connection-timeout/thread-cap gap
   (owner decision).
+
+## QA rig drive on main@9dca8819 — 2026-07-27 ~16:00-17:00 UTC (owner/dispatcher/driver, read-only prod probe)
+
+Charter (docs/agent-improvement-loop.md §5): no feature work — stand up the local rig, drive real
+owner/dispatcher/driver flows against it, probe `thindtransport.com` read-only, fix only outright
+regressions from the last 3h of commits.
+
+**Last-3h commit window (13:54-16:54 UTC):** zero new commits on `main` — HEAD (`9dca8819`, "Drain
+integrator to main (lead attribution)") was already ~7-8h old at cycle start. Nothing to review under
+this clause, and this cycle's own commit trailer is the record of that check for whoever reads next.
+
+**Production probe (Vercel MCP; direct HTTPS to `thindtransport.com` stayed egress-blocked, `curl`
+exit 56/403 on CONNECT, same as every prior cycle):** `get_project` + `list_deployments` on
+`prj_QKMg8o77DoEYiVQgQbI0FB5F4tAg` confirm the latest READY `target: "production"` deployment
+(`dpl_7SYpCS6iuziYwpE8AXYp4j8S9JdU`) is on commit `9dca8819` — exactly `main` HEAD. Production is
+current, not stale (`live: false` again on `get_project`, the known unreliable-alone flag — the
+alias+SHA cross-check is what matters here, per the documented caveat).
+
+`get_runtime_errors` (6h window) returned 3 groups, none new: a long-standing `pg`
+`sslmode=prefer/require` deprecation warning (first seen 2026-06-26, informational only), and
+`cron:compliance-scan` / `cron:owner-digest` failures against the **seeded demo carrier IDs**
+(`11111111-...`/`22222222-...`, confirmed against `scripts/seed-demo.mjs:32,986` — these are the
+Thind/Cascade demo tenants, not real customer data) — `Invalid login: 535-5.7.8 ... BadCredentials`
+from Gmail. This is the same broken-SMTP-credentials-in-prod finding a sibling cycle already
+surfaced and recorded earlier today (`52iHxNyFr6QHnE622svErP5CrT6Z`'s commit); not re-flagging as new,
+carrying it below since it's still unfixed and owner-gated (real Gmail app-password rotation).
+
+**Local rig, fresh from scratch:** Postgres 16 started (was down, no role/db existed — created
+`hubapp`/`hubdb` per pitfall #9), `npm ci` (750 packages, canvas native deps via
+`setup:canvas-deps`), `npm run db:migrate` (23 migrations clean through `023_lead_attribution.sql`),
+`npm run seed:demo`, `npm run build` (Turbopack, 0 TS errors), `npm run lint` (clean), `npx vitest
+run` (251 files/2288 tests green), `npm run test:sidecars` (29 Rust tests + Go vet/test, clippy
+clean).
+
+**Full `e2e-run-all.mjs` battery (52 scripts + sweep) as owner/dispatcher/driver:** 51/52 green in
+17m. The one failure is the same pre-existing `e2e-sweep.mjs` staleness carried across many prior
+cycles: the "reports" sweep check still expects the `!hasDriverPay` subtitle branch's exact phrase
+("...this is the operational view"), but seeded settlements land inside the default 92-day range so
+the live page renders the other (`hasDriverPay`) branch instead. Re-verified directly rather than
+just trusting the prior write-up: authenticated fetch of `/hub/reports` as `owner@demo.thind` returns
+HTTP 200 with the `hasDriverPay`-branch copy ("Fleet ratios include driver settlement pay...") present
+in the HTML — not a stuck spinner, not a regression. Not fixed here (one-line anchor-string change,
+`scripts/e2e-*.mjs` is `claude/lane-tests` territory per the lane table).
+
+**Redundancy note:** this is at least the 9th "QA rig drive" cycle against this exact `main` HEAD
+(`9dca8819`) in the last ~8 hours per `list_deployments`' commit history — every one found the same
+0-regression result. Compounding the schedule-redundancy flag prior cycles already raised; the
+owner/scheduling layer (not this session) is the place to fix the firing cadence.
+
+Backlog:
+- `e2e-sweep.mjs`'s "reports" anchor (`"the operational view"`) should switch to a substring both
+  subtitle branches share (matching the office-pass anchor already used for the same route) so it
+  stops false-failing whenever seeded settlements fall inside the default 92-day range — lane-tests
+  territory, one-line fix, purely mechanical, carried across many cycles now without being picked up.
+- Production SMTP credentials are still broken (Gmail `BadCredentials` on `cron:compliance-scan` /
+  `cron:owner-digest`, confirmed again this cycle) — owner-gated (real Gmail app-password rotation),
+  carried unchanged.
+- Multiple concurrent "QA rig drive" cycles are firing against the same `main` HEAD within hours of
+  each other with identical 0-regression results (9th repeat today) — worth the owner reviewing the
+  routine schedule/count for this lane, same flag prior cycles have already raised.
+- Carried, unchanged: npm audit high-severity findings in the `next`/`sharp` chain (owner-approval-gated
+  semver-major bump); Rust sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision);
+  `claude/lane-compliance`/`claude/lane-tests` still the largest stale pending branches, meta-governor
+  prune pass overdue.
