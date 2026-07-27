@@ -1361,3 +1361,47 @@ Backlog:
 - Carried, unchanged: npm audit high-severity findings in the `next`/`sharp` chain (owner-approval-gated
   semver-major bump, `npm audit fix --force`); Rust sidecar `tiny_http` connection-timeout/thread-cap gap
   (owner decision).
+
+## Five-workflow QA sweep (dispatch/expenses/compliance/messages/IFTA) — 2026-07-27 ~05:40 UTC (verify-and-build cycle)
+
+`main` and the integrator matched exactly at `dcd0ac4` (0 drift, steady state). `npm ci` + `npm run build`
++ `npx vitest run` (225 files/1981 tests, 9 skipped) both green before touching anything else.
+
+Reviewed `npm run agent:status`'s carried backlog against the current tree instead of trusting the labels:
+the "fleet MPG credible" item is now resolved — `0b26802` (already on `main`) rebased the seed's
+fuel-purchase window off the quarter boundary, and this cycle's own IFTA smoke run below reconfirms it live
+(6.55, was 9.31). TEST_GAPS.md row 1 (`draftSettlements`/`payableReferralBonuses`/`latestScorecardScore`) is
+also now fully closed per `edaf50b2`/`d81959c`/`9182ab8`, all already ancestors of `main` — the doc's own
+"Still open" list undercounts because those landed after its last edit. Everything else still carried
+(green-as-success convention, `lane-compliance`/`lane-tests` prune, npm audit, Rust `tiny_http` gap) is
+owner-gated or meta-governor-scoped, not verify-and-build work. With no fresh non-owner-gated backlog item
+to build, per step 6 ran an E2E sweep instead of shipping nothing.
+
+Stood up local Postgres fresh (no `hubapp` role/`hubdb` database existed — created both per the
+dev-workflow-testing skill's pitfall #9), `npm run db:migrate` (22 migrations clean) + `npm run seed:demo`,
+`npm run build && npm run start`. Drove the five workflows the routine names as sweep candidates, one full
+Puppeteer smoke each (own reseed per script): `e2e-dispatch-smoke` (board advance, server-side refusal on
+an expired-medical-card load, confirm-flow cancel, accountant forbidden-transition check — 6/6 sections),
+`e2e-expenses-smoke` (odd-cents toll expense, QuickBooks CSV reconciliation, per-truck P&L delta,
+reimbursable tagging, dispatcher no-form-but-sees-list — 7/7), `e2e-compliance-smoke` (wall counts, mileage-
+overdue PM row rendering red not amber, consortium resolve, driver-doc upload, truck detail parity, driver
+blocked from office wall — 6/6), `e2e-messages-smoke` (template chip, office→driver send, 390px driver PWA
+unread badge + reply, read receipt, driver blocked from office routes — 6/6), `e2e-ifta-smoke` (compute →
+draft → reviewed → filed, CSV/worksheet reconciliation, partial-quarter compute, and the MPG check itself —
+7/7). All five passed clean, 0 console errors, 0 regressions.
+
+No code changes this cycle — the sweep is the verified work product. Docs-only commit.
+
+Backlog:
+- No new defects found this cycle across dispatch, expenses, compliance, messages, or IFTA generate.
+- TEST_GAPS.md's "Still open" list (top of file) should be re-edited to drop row 1 and the MPG note —
+  both are stale as of this cycle; left as-is here since a doc-content edit on a shared reference file
+  wasn't this cycle's chosen item, but the next docs-lane or verify-and-build cycle should just delete
+  the stale lines rather than re-verify them again.
+- `claude/lane-compliance`/`claude/lane-tests` still show 600+/1400+ unpicked raw commits per
+  `agent:branches` — meta-governor prune candidate, unchanged from prior cycles.
+- Carried, unchanged: owner/design call on green-as-success convention (`PreQualificationForm.tsx` vs
+  `ApplicationForm.tsx`); npm audit high-severity findings in the `next`/`sharp` chain (owner-approval-
+  gated semver-major bump — the integrator already carries a non-breaking partial fix, `961d0d0`, cutting
+  23→12, still pending drain to `main`); Rust sidecar `tiny_http` connection-timeout/thread-cap gap (owner
+  decision).
