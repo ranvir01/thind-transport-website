@@ -186,6 +186,7 @@ export async function replayQueue(
       // retrying forever would be worse than telling the office.
       await removeIntent(intent.id)
       if (result.ok) sent++
+      else failed++
     } catch (err) {
       if (isOfflineError(err)) break // still offline — try again on the next signal
       // A non-network throw (bad payload, server exception) isn't going to

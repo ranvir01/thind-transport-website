@@ -202,6 +202,21 @@ describe("replayQueue", () => {
     expect(await listIntents()).toHaveLength(0)
   })
 
+  it("counts a resolved ok:false rejection as failed, not silently dropped", async () => {
+    // Driver server actions reject business-logic failures (e.g. "not your
+    // load") by resolving with { ok: false, error }, not throwing — replay
+    // must still surface that as a "couldn't be sent" toast, not swallow it.
+    const intents = [makeIntent("a", 100), makeIntent("b", 200)]
+    stubQueueWorld(intents)
+    const execute = vi
+      .fn()
+      .mockResolvedValueOnce({ ok: true })
+      .mockResolvedValueOnce({ ok: false, error: "That load isn't yours" })
+    const result = await replayQueue(intents, execute)
+    expect(result).toEqual({ sent: 1, failed: 1 })
+    expect(await listIntents()).toHaveLength(0)
+  })
+
   it("stops clean at the first connectivity error, leaving the remainder queued in order", async () => {
     const intents = [makeIntent("a", 100), makeIntent("b", 200), makeIntent("c", 300)]
     stubQueueWorld(intents)
