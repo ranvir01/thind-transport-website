@@ -5,7 +5,22 @@
  * had nowhere to render — see branding-settings.test.ts for the settings half.
  */
 import { describe, expect, it } from "vitest"
+import path from "node:path"
+import { pathToFileURL } from "node:url"
+import * as pdfjs from "pdfjs-dist/legacy/build/pdf.mjs"
 import { buildIftaPdf, buildInvoicePdf, buildSettlementPdf, buildStatementPdf, resolveAccentColor } from "../pdf"
+import { fmtCentsExact } from "../types"
+
+/** Renders a PDF's page-1 text so a test can assert on the actual figures, not just byte length. */
+async function extractPdfText(bytes: Uint8Array): Promise<string> {
+  const standardFontDataUrl =
+    pathToFileURL(path.join(process.cwd(), "node_modules/pdfjs-dist/standard_fonts/")).href + "/"
+  const pdf = await pdfjs.getDocument({ data: bytes, useWorkerFetch: false, isEvalSupported: false, standardFontDataUrl })
+    .promise
+  const page = await pdf.getPage(1)
+  const content = await page.getTextContent()
+  return content.items.map((item) => ("str" in item ? item.str : "")).join(" ")
+}
 
 describe("resolveAccentColor", () => {
   it("converts a validated #RRGGBB hex to normalized rgb", () => {
@@ -112,8 +127,20 @@ describe("buildIftaPdf with tenant accent", () => {
     fleetMiles: 10000,
     fleetGallons: 1500,
     mpg: 6.6667,
-    rows: [{ jurisdiction: "WA", miles: 10000, taxableGallons: 1500, taxPaidGallons: 1500, rate: 0.494, surchargeRate: 0, netCents: 0 }],
-    netTaxCents: 0,
+    rows: [
+      {
+        jurisdiction: "WA",
+        miles: 10000,
+        taxableGallons: 1500,
+        taxPaidGallons: 1500,
+        rate: 0.494,
+        surchargeRate: 0.02,
+        taxCents: 74100,
+        surchargeCents: 3000,
+        netCents: 77100,
+      },
+    ],
+    netTaxCents: 77100,
   }
 
   it("builds successfully with a valid tenant accent", async () => {
@@ -125,5 +152,17 @@ describe("buildIftaPdf with tenant accent", () => {
     const blue = await buildIftaPdf({ brand: { name: "Cascade Demo Lines", accent: "#2563EB" }, ...base })
     const red = await buildIftaPdf({ brand: { name: "Cascade Demo Lines", accent: "#DC2626" }, ...base })
     expect(Buffer.compare(blue, red)).not.toBe(0)
+  })
+
+  it("prints the row's actual tax and surcharge cents, not a fallback $0.00", async () => {
+    const bytes = await buildIftaPdf({ brand: { name: "Cascade Demo Lines", accent: "#2563EB" }, ...base })
+    const text = await extractPdfText(bytes)
+    expect(text).toContain(fmtCentsExact(base.rows[0].taxCents))
+    expect(text).toContain(fmtCentsExact(base.rows[0].surchargeCents))
+    expect(text).toContain(fmtCentsExact(base.netTaxCents))
+    // The bug this guards: fmtCentsExact(undefined) also renders "$0.00", so a
+    // regression that drops taxCents/surchargeCents from the row would still
+    // pass a byte-length check — it would not still contain the real figures.
+    expect(text).not.toContain("$0.00")
   })
 })

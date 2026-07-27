@@ -33,7 +33,7 @@ import { execSync } from "node:child_process"
  * Test-file tsc errors as of 2026-07-27. Lower this whenever you fix some;
  * never raise it. Raising it is how a ratchet stops being a ratchet.
  */
-const TEST_ERROR_BASELINE = 104
+const TEST_ERROR_BASELINE = 101
 
 const isTestFile = (file) =>
   file.includes("__tests__/") || file.endsWith(".test.ts") || file.endsWith(".test.tsx")
