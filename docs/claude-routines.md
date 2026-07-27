@@ -1447,3 +1447,49 @@ Backlog:
 - Carried, unchanged: npm audit high-severity findings in the `next`/`sharp` chain (owner-approval-gated
   semver-major bump, `npm audit fix --force`); Rust sidecar `tiny_http` connection-timeout/thread-cap gap
   (owner decision).
+
+## Four-lane absorb + drain — 2026-07-27 ~21:45 UTC (Routine 1 run)
+
+Integrator was 0 ahead / 2 behind main (a stray `.drain-stamp` divergence from the prior drain) with
+four `claude/lane-*` branches ahead per `npm run agent:status`. Fast-forwarded the integrator onto
+`origin/main` first (clean), then `npm ci` + `npm run build` + `npx vitest run` green (252 files/2289
+tests) as the baseline before touching anything.
+
+Absorbed all four small lane branches, rebuilding/retesting after each:
+- `lane-driver` (`replayQueue` no longer silently drops `ok:false` replay rejections in the offline
+  queue) — clean fast-forward.
+- `lane-compliance` (IFTA worksheet CSV/PDF exports now guard `surchargeRate` against legacy rows) —
+  clean merge.
+- `lane-docs` (mailbox integration doc scout re-pass: SMTP AUTH timeline resolved, IMAP throttle knob
+  named) — clean merge, docs-only.
+- `lane-analytics` (owner-dashboard `weeklyRevenueTrend`/`monthlyRevenueTrend` coverage) — the raw
+  branch diff looked like a 96-commits-behind stale fork (9671 line deletions against current `main`
+  in a plain `git diff`), but an actual 3-way merge was clean and reduced to the single genuine test
+  file it added (`reports-revenue-trend.test.ts`) — the raw-diff read was misleading, not the merge
+  itself; worth remembering before skipping a branch on diff-size alone.
+
+Tried the top `agent:branches`-suggested pending branch, `claude/eager-babbage-ibsmrz` (866
+unpicked/1610 raw commits ahead): dry-run merge hit 30+ file conflicts (`src/proxy.ts`, `vercel.json`,
+`src/lib/hub/ifta.ts`, `src/lib/hub/integrations/registry.ts`, a dozen `__tests__` add/add conflicts)
+— the same "too stale to reconcile unattended" class as `gallant-dijkstra-tfl0e7`/`lane-compliance`
+(2026-07-22/26). Aborted rather than hand-resolve blind; needs a human triage pass or a cherry-pick of
+whatever single real commit it contributed, not a full-branch merge.
+
+Full verify chain green after all four merges: `npm run build`, `npx vitest run` (253 files/2295 tests,
+14 skipped). No product code touched directly this cycle (all four lanes were self-contained), so no
+local-Postgres/Playwright drive was run — build + unit-test gates covered everything that changed.
+
+Drained via the stamped `--no-ff` method (`.drain-stamp` → `sha=612aeb4e…`), main pushed alone then
+integrator fast-forwarded to match; both sit at `c4912c16`, 0 drift.
+
+Backlog:
+- `claude/eager-babbage-ibsmrz`'s real payload is buried under 1610 stale commits and conflicts on
+  30+ files against current `main` — needs a human to identify what (if anything) is genuinely new and
+  cherry-pick it onto a fresh branch, same pattern as the `lane-compliance` fork noted 2026-07-26.
+  Don't re-attempt a full-branch merge.
+- 200+ remaining pending `claude/*` branches still await the meta-governor prune pass (unchanged from
+  prior cycles) — most sampled to date are stale/superseded, not unabsorbed value.
+- Carried, unchanged: npm audit high-severity findings in the `next`/`sharp` chain (owner-approval-gated
+  semver-major bump); TEST_GAPS.md #11/#12 (detention downward-revision recompute, computeDriverScores)
+  need an owner design call; wex integration doc is the oldest built-adapter doc awaiting its
+  scout-rotation re-pass.
