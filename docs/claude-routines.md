@@ -1361,3 +1361,80 @@ Backlog:
 - Carried, unchanged: npm audit high-severity findings in the `next`/`sharp` chain (owner-approval-gated
   semver-major bump, `npm audit fix --force`); Rust sidecar `tiny_http` connection-timeout/thread-cap gap
   (owner decision).
+
+## QA rig drive: owner/dispatcher/driver 52-script E2E battery, 0 app defects, 0 last-3h regressions — 2026-07-27 ~02:40 UTC
+
+Charter (docs/agent-improvement-loop.md §5): no feature work — stand up the local rig, drive real
+owner/dispatcher/driver flows with Playwright/Puppeteer, probe `thindtransport.com` read-only, fix
+only outright regressions from the last 3h of commits.
+
+Integrator and `main` matched exactly at `201dfe1` (0 drift, steady state per `npm run agent:status`).
+Reviewed the last-3h window (`2026-07-26 23:09` → now): only two non-merge commits, `0f7ac790` (docs-only,
+recorded the prior cycle) and `2da8f4cc` (Portal: `acceptInvitation` test coverage — confirmed by diff a
+123-line new test file only, no product code touched). **Zero regression risk**, nothing to fix-forward.
+
+Full verify chain from a clean install before touching anything: `npm ci`, `npm run build` (Next.js 16,
+zero TS errors), `npx vitest run` (225 files/1981 tests, 9 skipped), `npm run lint` (clean),
+`npm run test:sidecars` (21 Go tests via `go vet`+`go test`, 29 Rust tests via `cargo clippy -D warnings`+
+`cargo test`) — all green.
+
+Fresh local rig from scratch: Postgres 16 was down, no `hubapp` role/`hubdb` database existed yet
+(pitfall #9) — created both; `.env.local` didn't exist, generated from `.env.example` with fresh
+`NEXTAUTH_SECRET`/`CRON_SECRET`/`CREDENTIALS_KEY`. `npm run db:migrate` (22 migrations clean) +
+`npm run seed:demo`, `npm run build && npm run start` against the production build.
+
+Drove the full `scripts/e2e-battery.mjs` (52 `e2e-*-smoke.mjs` scripts + the visual sweep — owner,
+dispatcher, accountant, driver, broker, shipper, portal, tenant-isolation across dispatch, IFTA,
+invoices, settlements, compliance, recruiting, integrations, onboarding, etc.) against the freshly
+seeded database (`PUPPETEER_EXECUTABLE_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome` per
+pitfall #8). **48/52 PASS.** Diagnosed all four failures individually rather than assuming regressions:
+- `ifta-smoke`: "fleet MPG credible for a tractor" reads 9.31 against the 4–9 bound — the same
+  pre-existing seed/smoke calibration gap flagged in the immediately preceding cycle's Backlog
+  (unchanged demo fleet data, not touched this cycle).
+- `public-smoke`: `/testimonials` 404s at both breakpoints — the same pre-existing stale route entry
+  hit by at least five prior QA drives (no live route/link for it in the current site).
+- `sweep`: reports screen "content missing" at both breakpoints — read `reports/page.tsx:100-103`
+  directly: the subtitle has two valid copy branches depending on whether fixed costs come from the
+  accountant's books, and the sweep's anchor string ("the operational view") only matches one of
+  them. Same pre-existing false-test-expectation already diagnosed by prior cycles, with a verified
+  fix sitting unmerged on `claude/practical-franklin-lcfbnd` (`b5f5be3d`, still unmerged, checked this
+  cycle) — not a fourth independent fix per AGENTS.md's duplicate-work rule.
+- `statements-smoke`: "toast surfaces the email-not-configured message" failed — **this one was my own
+  rig's fault**, not the app's: `.env.local` still had `.env.example`'s literal placeholder
+  `SMTP_USER`/`SMTP_PASS`, which `isEmailConfigured()` reads as "configured" (pitfall #6), so the send
+  hit a real (failing) SMTP attempt instead of the graceful toast path. Blanked both, killed the stale
+  `next-server` process directly (pitfall #10 — `pkill -f "next start"` misses the `next-server`
+  grandchild), restarted, re-ran `e2e-statements-smoke.mjs` alone: passed clean. No product change.
+
+Production probe: direct HTTPS to `thindtransport.com` stayed egress-blocked (curl exit 56), used Vercel
+MCP tools instead. `list_deployments`: the latest `target: "production"` / `state: "READY"` deployment
+(`dpl_BDJiLZzQPgcaosj6fRbRFDuwpajg`, built at 01:54:23 UTC) is `bc87baa4` — main's *previous* tip, one
+commit behind the current `201dfe1` (a docs-only `.drain-stamp` + routines-doc drain, pushed 01:59:52
+UTC). Rechecked twice, ~15 and ~36 minutes after the push — still no deployment queued or built for
+`201dfe1` at either check, past the documented 15-minute grace window. Not treating this as a product
+regression (the pending commit is docs-only, zero functional diff), but flagging since it matches the
+shape of the past "drain silently swallowed" incidents even though this drain did correctly rewrite
+`.drain-stamp` (confirmed via `git show --stat`, ruling out the tree-dedupe root cause already fixed).
+`get_runtime_errors` (24h window): the same two pre-existing groups as recent cycles — the `pg`/
+`pg-connection-string` SSL-mode deprecation warning (informational, first seen 2026-06-26) and one
+`compliance-scan` cron SMTP `BadCredentials` failure at 14:24 UTC yesterday (already flagged in an
+earlier cycle, not recurring since). No new error groups.
+
+No code fix was needed or shipped this cycle — 0 app defects found, 0 regressions in the reviewed 3-hour
+window, so there's nothing to drain; `main` and the integrator stay as they are (0 commits apart, steady
+state).
+
+Backlog:
+- Vercel production deployment for `main`'s current tip (`201dfe1`, docs-only) hadn't built ~36 minutes
+  after push, past the 15-minute grace window — worth a follow-up check next cycle (prod-smoke automation
+  at :30 UTC should also catch this); low severity since the pending commit has zero functional diff, but
+  confirm it isn't a recurring webhook-delivery gap if it's still stale on the next drive.
+- `sweep`'s reports-subtitle anchor mismatch and `public-smoke`'s stale `/testimonials` check both still
+  have a verified one-line fix sitting unmerged on `claude/practical-franklin-lcfbnd` (`b5f5be3d`) —
+  should be drained by the integrator rather than re-diagnosed a sixth time.
+- `e2e-ifta-smoke.mjs`'s "fleet MPG credible for a tractor" check (`4 < mpg < 9`) still reads 9.31
+  against the current demo fleet's seeded fuel/mileage data (carried, unchanged calibration gap).
+- `claude/lane-sidecars` has 1 unpicked commit (race-detector test for `osrmBreaker`) ahead of the
+  integrator this cycle.
+- Carried, unchanged: npm audit high-severity findings in the `next`/`sharp` chain (owner-approval-gated
+  semver-major bump); Rust sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision).
