@@ -31,7 +31,11 @@ const PAGES = [
   ["pay-breakdown", "/pay-breakdown"],
   ["benefits", "/benefits"],
   ["routes", "/routes"],
-  ["testimonials", "/testimonials"],
+  // /testimonials was deliberately removed — the fabricated testimonials on it
+  // were legal exposure, not decoration (docs/design/DIRECTION.md §0). Checking
+  // a route that is meant to 404 is a check that always fails.
+  ["owner-operators", "/owner-operators"],
+  ["trust", "/trust"],
   ["about", "/about"],
   ["fleet", "/fleet"],
   ["fuel-program", "/fuel-program"],

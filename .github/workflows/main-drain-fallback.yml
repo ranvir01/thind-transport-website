@@ -82,6 +82,11 @@ jobs:
           npm ci
           npm run build
           npx vitest run
+          # Type-soundness + license hygiene, both enforceable today:
+          # app code must have zero tsc errors, test-file debt may only
+          # shrink, and no GPL/AGPL/SSPL may reach production deps.
+          node scripts/typecheck-gate.mjs
+          node scripts/license-audit.mjs
 
       - name: Fast-forward main
         if: steps.gate.outputs.drain == 'true'

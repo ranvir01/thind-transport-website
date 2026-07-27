@@ -58,9 +58,11 @@ const PUBLIC_ROUTES = [
   "/pay-breakdown",
   "/benefits",
   "/shippers",
+  "/owner-operators",
+  "/trust",
+  "/tools/freight-class-calculator",
   "/about",
   "/routes",
-  "/testimonials",
   "/veterans",
   "/fuel-program",
   "/resources",
@@ -71,6 +73,10 @@ const PUBLIC_ROUTES = [
 ]
 
 // Hub (software) routes — audited only with DESIGN_QA_HUB=1 (they need a login).
+// "A page not in this list is a page not being checked" — design-qa-routines.md
+// Routine B. This covered 10 of ~25 office routes and none of the driver PWA,
+// which is how the eight text-fg-on-bg-accent contrast failures survived: most
+// of the components carrying them render on routes that were never audited.
 const HUB_ROUTES = [
   "/hub",
   "/hub/loads",
@@ -82,6 +88,28 @@ const HUB_ROUTES = [
   "/hub/leads",
   "/hub/outreach",
   "/hub/settings/integrations",
+  // Added: the rest of the office surface.
+  "/hub/loadboard",
+  "/hub/money",
+  "/hub/fuel",
+  "/hub/drivers",
+  "/hub/customers",
+  "/hub/reports",
+  "/hub/import",
+  "/hub/messages",
+  "/hub/tasks",
+  "/hub/planner",
+  "/hub/capacity",
+  "/hub/recruiting",
+  "/hub/safety",
+]
+
+// The driver PWA is a forced-dark surface with its own token rules, so it is
+// audited as its own group rather than mixed in with the office routes.
+const DRIVER_ROUTES = [
+  "/hub/driver",
+  "/hub/driver/loads",
+  "/hub/driver/dvir",
 ]
 
 const cliRoutes = process.argv.slice(2).filter((a) => a.startsWith("/"))
@@ -325,7 +353,8 @@ async function auditRoute(page, route, viewport) {
 async function main() {
   const routes = cliRoutes.length ? cliRoutes : PUBLIC_ROUTES
   const includeHub = process.env.DESIGN_QA_HUB === "1"
-  const allRoutes = includeHub && !cliRoutes.length ? [...routes, ...HUB_ROUTES] : routes
+  const allRoutes =
+    includeHub && !cliRoutes.length ? [...routes, ...HUB_ROUTES, ...DRIVER_ROUTES] : routes
 
   console.log(`\n🎨 design-qa against ${BASE}`)
   console.log(`   ${allRoutes.length} routes × ${VIEWPORTS.length} viewports\n`)
