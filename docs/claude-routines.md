@@ -1447,3 +1447,64 @@ Backlog:
 - Carried, unchanged: npm audit high-severity findings in the `next`/`sharp` chain (owner-approval-gated
   semver-major bump, `npm audit fix --force`); Rust sidecar `tiny_http` connection-timeout/thread-cap gap
   (owner decision).
+
+## QA rig drive on main@9dca881 — 2026-07-27 ~10:15-10:34 UTC (owner/dispatcher/driver, read-only prod probe)
+
+Charter (docs/agent-improvement-loop.md §5): no feature work — stand up the local rig, drive real
+owner/dispatcher/driver flows against it, probe `thindtransport.com` read-only, fix only outright
+regressions from the last 3h of commits.
+
+**Production probe (Vercel MCP; direct HTTPS to `thindtransport.com` stayed egress-blocked, 403 on the
+proxy CONNECT tunnel, consistent with every prior cycle):** `get_project` + `list_deployments` on
+`prj_QKMg8o77DoEYiVQgQbI0FB5F4tAg` show the READY `target: "production"` deployment is
+`dpl_7SYpCS6iuziYwpE8AXYp4j8S9JdU`, commit `9dca8819` — exactly `main` HEAD, no drift. (`live: false`
+on `get_project` again, same documented caveat — alias + deployment SHA is the reliable check, not
+`live`.) `get_runtime_errors` (6h window): only cluster is the long-standing pg
+`sslmode=require`-alias deprecation warning on `/api/hub/cron/[job]` (first seen 2026-06-26, cosmetic,
+unchanged) — no new error clusters.
+
+**Last-3h window (~07:33-10:33 UTC, `b6ca9dc..9dca881`):** cross-tenant isolation harness + 6
+carrier-scope fixes (`1029dd0`), HOS rule engine 49 CFR 395 (`b5573f9`), freight-class + Form
+2290/HVUT calculators (`5ca2dab`, `ef0a907`), license audit (`4c9664c`), Tier 0 eight verified defects
+(`78281b5`), owner-operators door + FMCSA trust page (`916feae`), retry/backoff on Terminal/TruckerCloud
+calls + two gates (`c02a4fd`), BreadcrumbList schema site-wide + `/contact` + `/quote` (`e7b1eb3`),
+lead attribution (`b9f99c0`), plus drain/merge commits with no product diff. A sibling QA cycle
+(`claude/practical-franklin-9y78vv`, ~45 min earlier, same `main` HEAD) already reviewed this exact
+window in depth and found 0 regressions; re-verified independently rather than re-deriving from
+scratch — `main` has not moved since, so the window is identical.
+
+**Local rig:** fresh from scratch — Postgres 16 started (was down), `loadoff` role + database created
+(neither existed), `npm install` (750 packages, Puppeteer pointed at the sandbox's `/opt/pw-browsers`
+Chromium via `e2e-lib.mjs`'s existing fallback), `npm run db:migrate` (23 migrations clean through
+`023_lead_attribution.sql`), `npm run seed:demo`, `npm run build` (Turbopack, 0 TS errors, 140+
+routes), `npm run start`. `npm run lint` clean. `npx vitest run`: **251 files / 2288 tests green** —
+exact match to the sibling cycle's count, confirming nothing changed underneath either run.
+
+**Full `e2e-run-all.mjs` battery (51 smokes + sweep) as owner/dispatcher/driver, 390px driver pass
+included:** **51/52 green.** The one failure is `e2e-sweep`'s owner-pass "reports: page content
+missing... stuck on a spinner?" at both 1440px and 390px — not a stuck page. `/hub/reports`'
+subtitle is conditional on `hasDriverPay`
+(`src/app/hub/(office)/reports/page.tsx:96-104`, last touched `d7abf96a` on 2026-07-25, outside this
+window) and the seeded demo settlements land inside the 92-day default range, so the live subtitle is
+the driver-pay-included copy, never the `"...this is the operational view"` phrase
+`e2e-sweep.mjs`'s `OWNER_PAGES` anchor still expects. This is the same stale-anchor false-failure named
+in the 2026-07-26 ~12:00 UTC cycle's `Backlog:` below, and it already has a verified one-line fix
+sitting unmerged on `claude/eager-babbage-vbk92d` (commit `8db169a8`, itself noting "not a new
+diagnosis, just landing the confirmed fix that never made it to main"). Not writing a fourth copy of
+the same fix per AGENTS.md's duplicate-work rule — naming the branch again below instead.
+
+**Verdict: 0 regressions in the last-3h window, production current and healthy, 0 new app-code
+defects.** No product or test-script diff pushed this cycle.
+
+Backlog:
+- `claude/eager-babbage-vbk92d` (commit `8db169a8`, "Fix e2e-sweep.mjs OWNER_PAGES reports anchor
+  false-failure") has sat unmerged across at least 3 QA cycles now despite being flagged each time —
+  integrator should prioritize draining this specific branch over fresh top-of-inventory picks; it is
+  a one-line, already-verified `scripts/e2e-sweep.mjs` change with zero product risk.
+- 201 pending `claude/*` branches per `npm run agent:branches` (up from 200 last cycle) — meta-governor
+  prune pass still overdue, growing faster than it's being absorbed.
+- Everything else carried unchanged: owner/design call on green-as-success convention
+  (`PreQualificationForm.tsx`/`ApplicationForm.tsx`); npm audit high-severity findings in the
+  `next`/`sharp`/`nodemailer` chain (owner-approval-gated semver-major bump); Rust sidecar `tiny_http`
+  connection-timeout/thread-cap gap (owner decision); seed-demo.mjs not seeding `hub.hos_snapshots`
+  (noted by the sibling cycle, blocks visually verifying `b5573f9`'s computed-clocks fallback locally).
