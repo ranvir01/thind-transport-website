@@ -36,6 +36,8 @@ const PAGES = [
   // a route that is meant to 404 is a check that always fails.
   ["owner-operators", "/owner-operators"],
   ["trust", "/trust"],
+  ["quote", "/quote"],
+  ["contact", "/contact"],
   ["about", "/about"],
   ["fleet", "/fleet"],
   ["fuel-program", "/fuel-program"],
