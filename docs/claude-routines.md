@@ -1493,3 +1493,70 @@ Backlog:
   semver-major bump); TEST_GAPS.md #11/#12 (detention downward-revision recompute, computeDriverScores)
   need an owner design call; wex integration doc is the oldest built-adapter doc awaiting its
   scout-rotation re-pass.
+
+## QA rig drive on main@ea143d8 — 2026-07-27 ~23:10-23:30 UTC (owner/dispatcher/driver, read-only prod probe)
+
+Charter (docs/agent-improvement-loop.md §5): no feature work — stand up the local rig, drive real
+owner/dispatcher/driver flows against it, probe `thindtransport.com` read-only, fix only outright
+regressions from the last 3h of commits.
+
+**Local rig:** fresh from scratch — Postgres 16 started (was down), `hubdev` role + database created
+per AGENTS.md pitfall #9, `npm ci` (750 packages), `npm run db:migrate` (23 migrations clean through
+`023_lead_attribution.sql`), `npm run seed:demo`, `npm run build` (Next.js 16 / Turbopack, zero TS
+errors) clean, `npm run start`. `npx vitest run`: 253 files / 2309 tests green. Sidecars untouched
+this window, skipped per AGENTS.md.
+
+**Last-3h commit window** (`0838574`..`ea143d8`, 20:41-21:49 UTC): one product-code commit
+(`0838574`, driver offline-queue `replayQueue` missing `else failed++` on a resolved `ok:false`
+rejection — has its own regression test) plus lane-merge commits already reviewed and shipped with
+tests (`8fcc537`'s IFTA `surchargeRate ?? 0` guard, `2720bb3`'s revenue-trend coverage) and two
+docs-only/drain-plumbing commits. Read every diff: no regression found, nothing to fix-forward.
+
+**Owner/dispatcher/driver drive:** built a fresh Playwright script (chromium at
+`/opt/pw-browsers/chromium-1194`, `playwright-core` installed standalone since the repo doesn't
+depend on Playwright) against the local rig — logged in as `owner@demo.thind` / `dispatch@demo.thind`
+/ `driver@demo.thind`, walked every nav-reachable screen from `src/lib/hub/navigation.ts` and
+`DriverNav.tsx`/`more/page.tsx` (34 office screens at 1440px owner, 20 at 1440px dispatcher, 8 driver
+screens at 390px), screenshotted each, watched console/page errors and same-origin HTTP status. 0
+app-code console errors, 0 non-2xx/3xx from app routes (the only 404s were `/_vercel/insights` and
+`/_vercel/speed-insights`, expected — those only resolve when served through Vercel's edge, not
+`next start`). Spot-checked driver PWA screenshots for the forced-dark rule (AGENTS.md) — clean, no
+`fg*`/`surface*`/`border-*` tokens visible. Reports page's near-constant 7.4% "typed deadhead" per
+truck is the seed data being literal `miles × 0.08` on every load, documented as intentional in
+`deadhead.ts`'s own header comment — not a bug.
+
+**Production probe:** direct HTTPS to `thindtransport.com` and `*.vercel.app` stayed egress-blocked in
+this sandbox (`curl` exit 56 on both), consistent with every prior cycle. Fell back to Vercel MCP
+(`prj_QKMg8o77DoEYiVQgQbI0FB5F4tAg`) plus `web_fetch_vercel_url`, which routes through Vercel's own
+infra and isn't subject to the sandbox's network policy — confirmed the production alias itself
+responds (200 on `/hub/login`, real login form, no app error).
+
+**Found: production has been stale for 5.5+ hours, worse than the last two cycles that already paged
+this.** `GET https://thindtransport.com/api/version` returns `{"sha":"6bd92be...","ref":"main"}` —
+that's the drain landed at 17:53:56 UTC (`Drain integrator to main (183b46b1)`). `main` has since
+advanced ~40 commits, including two more correctly-stamped drains (`c4912c1` at 21:45:13 UTC,
+`ea143d8` at 21:49:31 UTC — both verified via `list_commits` to actually be on GitHub's `main`, both
+carry a fresh `.drain-stamp` with a new tree so this isn't the Vercel SHA/tree dedupe case the
+playbook already documents). Neither produced any Vercel deployment record — not READY, not CANCELED,
+not even an ignored-build entry — in `list_deployments`' most recent 20 entries, which comfortably
+span that window. `get_project.latestDeployment` is a `CANCELED` preview from an unrelated session
+branch, not a `main`-target build at all. `get_runtime_errors` shows nothing but a benign pg SSL
+warning, `lastDeployment` still pinned to the stale `6bd92be` build. This is the same "no in-repo fix
+possible" conclusion two prior cycles already reached (`c0f6e34`'s QA drive at 22:41 UTC paged it at
+"40+ minutes stale"; it's now 90+ minutes past that with two more drains added and still nothing) —
+looks like Vercel's GitHub integration/webhook for this repo's `main` branch has stopped firing
+entirely, not a build failure or a dedupe edge case. Nothing left to try from the repo side.
+
+Backlog:
+- **Owner: production deploy pipeline needs a Vercel dashboard check now, not another drain retry.**
+  `main` is 5.5+ hours / ~40 commits ahead of what's actually serving `thindtransport.com`
+  (`6bd92be` vs `ea143d8`), and the last three consecutive QA cycles (this one plus the two immediately
+  before it) all confirm correctly-stamped drains landing on GitHub's `main` with zero corresponding
+  Vercel deployment record. Check the Git integration/webhook health and Ignored Build Step setting in
+  the Vercel project dashboard — same class of issue as the 2026-07-23 outage, but this one isn't
+  self-healing.
+- Carried, unchanged: npm audit high-severity findings in the `next`/`sharp` chain (owner-approval-gated
+  semver-major bump); TEST_GAPS.md #11/#12 (detention downward-revision recompute, computeDriverScores)
+  need an owner design call; wex integration doc is the oldest built-adapter doc awaiting its
+  scout-rotation re-pass; 200+ remaining pending `claude/*` branches still await the meta-governor prune
+  pass.
