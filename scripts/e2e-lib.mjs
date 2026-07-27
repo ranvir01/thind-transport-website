@@ -43,6 +43,7 @@ import os from "node:os"
 import { existsSync, readFileSync, readdirSync } from "node:fs"
 import { spawnSync } from "node:child_process"
 import puppeteer from "puppeteer"
+import { isBenignResourceUrl } from "./e2e-console-filter.mjs"
 
 export const BASE = process.env.E2E_BASE_URL ?? "http://localhost:3000"
 
@@ -175,6 +176,45 @@ export async function launchBrowser(options = {}) {
 }
 
 export const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
+
+/**
+ * URL-aware browser-error tracker. Push genuine defects into `errors`:
+ *   • console `error` lines that are NOT the URL-less "Failed to load resource"
+ *     message — real JS exceptions, failed assertions, etc. (The resource line
+ *     carries no URL, so it is captured with its URL by the response handler
+ *     below instead, where benign-vs-real is actually decidable.)
+ *   • 404 responses whose URL is not benign local-rig / browser noise
+ *     (isBenignResourceUrl) — recorded WITH the URL so a real break is
+ *     debuggable, not a bare count.
+ *   • request failures other than net::ERR_ABORTED (aborted RSC prefetches are
+ *     normal when a navigation interrupts sidebar link prefetching).
+ *
+ * Replaces the per-smoke `consoleErrors.filter(/favicon|manifest|404/)` gates,
+ * which either false-failed on Vercel's off-platform analytics scripts
+ * (/_vercel/insights, /_vercel/speed-insights 404 under `next start`) or blanket-
+ * dropped every "Failed to load resource" line and lost real signal. Pass the
+ * same `errors` array for a second page (dispatcher/second-context flows) to
+ * accumulate both pages' defects in one place.
+ */
+export function trackPageErrors(page, errors = []) {
+  page.on("console", (msg) => {
+    if (msg.type() !== "error") return
+    const text = msg.text()
+    if (/Failed to load resource/i.test(text)) return // captured with URL below
+    errors.push(text)
+  })
+  page.on("response", (res) => {
+    if (res.status() === 404 && !isBenignResourceUrl(res.url())) {
+      errors.push(`HTTP 404 ${res.url()}`)
+    }
+  })
+  page.on("requestfailed", (req) => {
+    const errText = req.failure()?.errorText ?? "failed"
+    if (errText === "net::ERR_ABORTED") return
+    if (!isBenignResourceUrl(req.url())) errors.push(`REQFAIL ${req.url()} ${errText}`)
+  })
+  return { errors }
+}
 
 /** Failed check labels; scripts report these and exit non-zero at the end. */
 export const failures = []
