@@ -36,6 +36,16 @@ describe("csvEscape", () => {
     expect(csvEscape(undefined)).toBe("")
   })
 
+  // Regression: a negative P&L/Net cell (e.g. a loss-making truck or lane)
+  // is a plain signed decimal, not a formula — apostrophe-prefixing it broke
+  // SUM formulas in every downstream spreadsheet by turning the cell to text.
+  it("does not prefix plain negative or positive decimals", () => {
+    expect(csvEscape("-45.23")).toBe("-45.23")
+    expect(csvEscape("-1200")).toBe("-1200")
+    expect(csvEscape(-45.23)).toBe("-45.23")
+    expect(csvEscape("+45.23")).toBe("+45.23")
+  })
+
   it("still quotes commas, quotes, and newlines (RFC 4180)", () => {
     expect(csvEscape('Smith, "Big Rig" Co.')).toBe('"Smith, ""Big Rig"" Co."')
     expect(csvEscape("line1\nline2")).toBe('"line1\nline2"')
