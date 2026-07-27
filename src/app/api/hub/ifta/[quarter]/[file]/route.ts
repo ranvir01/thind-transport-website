@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 import { getHubUser } from "@/lib/hub/session"
 import { can } from "@/lib/hub/permissions"
 import { getIftaReport, exportIftaSources, listIftaRates } from "@/lib/hub/ifta"
-import { iftaWorksheetWarnings, iftaRowFuelTaxCents } from "@/lib/hub/ifta-core"
+import { iftaWorksheetWarnings, iftaRowFuelTaxCents, iftaWorksheetTotals } from "@/lib/hub/ifta-core"
 import { withIftaWarningsCoverPage } from "@/lib/hub/ifta-pdf"
 import { getCarrier, getCarrierSettings } from "@/lib/hub/settings"
 import { buildIftaPdf } from "@/lib/hub/pdf"
@@ -64,7 +64,15 @@ export async function GET(
         const fuelTaxCents = iftaRowFuelTaxCents(r)
         return `${r.jurisdiction},${r.miles},${r.taxableGallons.toFixed(3)},${r.taxPaidGallons.toFixed(3)},${Number(r.rate).toFixed(4)},${(fuelTaxCents / 100).toFixed(2)},${Number(r.surchargeRate).toFixed(4)},${(surchargeCents / 100).toFixed(2)},${(r.netCents / 100).toFixed(2)}`
       }),
-      `TOTAL,,,,,,,,${(Number(report.net_tax_cents) / 100).toFixed(2)}`,
+      // TOTAL row mirrors the on-screen worksheet <tfoot>: sum the columns a
+      // state IFTA return asks for as its own summary lines (taxable/tax-paid
+      // gallons, base fuel tax, surcharge, net). Rate columns stay blank — a
+      // sum of per-jurisdiction rates is meaningless. Miles rounded (no commas
+      // in CSV); net uses the summed rows, which reconciles to net_tax_cents.
+      (() => {
+        const t = iftaWorksheetTotals(rows)
+        return `TOTAL,${Math.round(t.miles)},${t.taxableGallons.toFixed(3)},${t.taxPaidGallons.toFixed(3)},,${(t.taxCents / 100).toFixed(2)},,${(t.surchargeCents / 100).toFixed(2)},${(t.netCents / 100).toFixed(2)}`
+      })(),
     ].join("\n")
     return new NextResponse(csv, {
       headers: {

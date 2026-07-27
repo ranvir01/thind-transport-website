@@ -989,7 +989,7 @@ async function main() {
       randomTesting: { drugPct: 50, alcoholPct: 10 },
       factoring: { company: null, remitName: null, remitAddress: null, email: null },
       notifications: { officeEmail: "ops@cascademo.example" },
-      branding: { accent: "#2E8B6E" },
+      branding: { accent: "#369C82" },
     })]
   )
   const cascadeOwner = await q(
