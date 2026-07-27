@@ -9,6 +9,7 @@ import { queryOne } from "./db"
 import { saveDocument } from "./documents"
 import { addLoadEvent } from "./loads"
 import { defaultImapHost, resolveMailboxAuth } from "./mailbox-oauth"
+import type { DocumentKind } from "./types"
 
 /** Pull a load reference like THD-1042 / LD-23 out of a subject line. */
 export function extractReference(subject: string): string | null {
@@ -16,8 +17,14 @@ export function extractReference(subject: string): string | null {
   return match ? match[0] : null
 }
 
-/** Document kinds the mailbox can file an attachment as. */
-export type MailboxDocKind = "rate_confirmation" | "pod" | "bol" | "invoice"
+/**
+ * Document kinds the mailbox can file an attachment as — a subset of the real
+ * DocumentKind union, so the compiler rejects a kind saveDocument can't store.
+ * (It already caught one: there is no "invoice" kind, and an inbound invoice
+ * is not a load document anyway.)
+ */
+export type MailboxDocKind = Extract<DocumentKind, "rate_confirmation" | "pod" | "bol">
+
 
 /**
  * What kind of document is this attachment?
@@ -52,7 +59,6 @@ export function classifyDocumentKind(
       return "rate_confirmation"
     }
     if (/\bbol\b|bill\s*of\s*lading/.test(t)) return "bol"
-    if (/\binvoice\b|freight\s*bill\b/.test(t)) return "invoice"
     return null
   }
   return check(filename ?? "") ?? check(subject ?? "") ?? "rate_confirmation"

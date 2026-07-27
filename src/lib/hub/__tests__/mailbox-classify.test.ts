@@ -28,8 +28,6 @@ describe("classifyDocumentKind", () => {
     ["carrier-confirmation-99.pdf", "THD-1042", "rate_confirmation"],
     ["BOL_1042.pdf", "THD-1042", "bol"],
     ["bill of lading.pdf", "THD-1042", "bol"],
-    ["invoice-2231.pdf", "THD-1042", "invoice"],
-    ["freight bill 88.pdf", "THD-1042", "invoice"],
   ]
 
   it.each(cases)("%s (subject %s) → %s", (filename, subject, expected) => {
