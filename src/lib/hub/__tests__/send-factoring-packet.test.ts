@@ -78,6 +78,17 @@ beforeEach(() => {
 })
 
 describe("sendFactoringPacket (TEST_GAPS.md #13)", () => {
+  it("throws when the invoice does not belong to this carrier — nothing is emailed", async () => {
+    // getInvoice is carrier-scoped, so a foreign/unknown invoice comes back
+    // null. The packet path must stop there rather than mailing a factor a
+    // packet assembled from whatever it could find.
+    queryOneMock.mockResolvedValue(null)
+
+    await expect(sendFactoringPacket(CARRIER, "inv-other-carrier", ACTOR)).rejects.toThrow()
+    expect(sendMail).not.toHaveBeenCalled()
+    expect(logAudit).not.toHaveBeenCalled()
+  })
+
   it("throws before sending mail when the invoice PDF can't be read — no incomplete packet goes out", async () => {
     readStoredFileBytesMock.mockImplementation(async (url: string) => (url === invoiceRow.pdf_url ? null : Buffer.from("x")))
 
