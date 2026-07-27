@@ -1304,3 +1304,60 @@ Backlog:
   overdue.
 - Carried, unchanged: npm audit high-severity findings (owner-approval-gated semver-major bump); Rust
   sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision).
+
+## QA rig drive — 2026-07-27 ~01:20 UTC (QA rig drive, §5 charter)
+
+Third owner/dispatcher/driver QA drive in this ~3h window (after `cff55b3c` 23:18 UTC and
+`c96b0827` 00:35 UTC) — reconfirms rather than duplicates, since main hasn't moved since
+`242ccfc` and each independent run is the cheapest check against a stuck-drain/flaky-rig
+false negative.
+
+Fresh rig from scratch: Postgres 16 started (was down), `thind` role + `thind_hub` database
+created per the dev-workflow-testing skill's pitfall #9, `npm run setup:canvas-deps` +
+`PUPPETEER_SKIP_DOWNLOAD=1 npm install` (749 packages), `.env.local` generated (`NEXTAUTH_SECRET`/
+`CREDENTIALS_KEY`/`CRON_SECRET` fresh, SMTP left blank per pitfall #6), `npm run db:migrate`
+through `022_load_delivery_timestamps.sql` clean, `seed:demo`, `npm run build` (zero TS errors,
+140+ routes) clean, `npx vitest run` (222 files/1966 tests) + `npm run lint` both clean.
+
+Reviewed the last-3h commit window (`22:10`–`01:10` UTC): one non-merge commit, `edaf50b`
+(`payableReferralBonuses` test coverage, test-only, no product diff) plus the `242ccfc` drain
+merge. Zero regression risk, nothing to fix-forward.
+
+Drove the full `node scripts/e2e-run-all.mjs` battery (55 Puppeteer smokes + sweep) as owner,
+dispatcher, driver, and portal users: 49/52 passed. All three failures are the same pre-existing,
+already-diagnosed issues the last two drives hit, not new regressions:
+- `e2e-public-smoke` (4 checks): stale `/testimonials` 404 — route was intentionally deleted,
+  smoke's `PAGES` list wasn't updated.
+- `e2e-sweep`: `reports` page anchor text mismatch (`OWNER_PAGES` still expects "the operational
+  view").
+- `e2e-ifta-smoke`: fleet MPG credibility check fails deterministically at 9.31 against the
+  `>4 && <9` band — needs a source read of `ifta.ts`'s MPG calc vs. `seed-demo.mjs`'s fuel
+  numbers before touching either side, not a blind fix.
+
+The first two already have a fix sitting unmerged on `claude/practical-franklin-lcfbnd`
+(`b5f5be3d`, pushed 18:36 UTC) — this is the fourth QA-drive cycle to find it still undrained;
+naming it again here rather than writing a fifth copy per AGENTS.md's duplicate-work rule.
+
+Production (Vercel MCP, direct HTTPS still egress-blocked — confirmed `curl` exit 56): `target=production`
+deployment `dpl_EfZB2CRZn382hiNQMXM9p1idkef8` READY on `242ccfc9`, matching `main`'s tip exactly —
+no staleness this cycle. Pulled runtime-error clusters directly (24h window, not just re-quoting
+the prior drive's numbers): two groups, both consistent with what earlier cycles already tracked —
+the long-standing cosmetic pg SSL-mode-alias deprecation warning (`count=14`, first 2026-06-26,
+last 2026-07-26T15:31 UTC) and one `compliance-scan` cron `BadCredentials` SMTP failure at
+2026-07-26T14:24:01 UTC, the cron's last invocation — consistent with the monthlong SMTP outage
+prior drives have been tracking since it was first identified around 2026-06-26. No new clusters.
+
+Backlog:
+- Fourth cycle flagging: `claude/practical-franklin-lcfbnd` (`b5f5be3d`) fixes both the stale
+  `/testimonials` smoke entry and the `reports`-subtitle sweep anchor — integrator/meta-governor
+  should drain this small branch rather than let a fifth QA drive rediscover the same two
+  false-failures.
+- `e2e-ifta-smoke`'s fleet-MPG credibility check (~line 83, `mpg>4 && <9`) still fails
+  deterministically at 9.31 — carried unfixed a second cycle; needs `ifta.ts`'s MPG calc read
+  against `seed-demo.mjs`'s fuel numbers to know which side is stale.
+- Owner-gated, unresolved a full month per prior drives: rotate production `SMTP_USER`/`SMTP_PASS`
+  (Gmail app password) per `docs/OWNER-CHECKLIST.md` §1b — breaks driver-application delivery to
+  HR, password resets, and portal confirmations sitewide. This cycle's 24h runtime-error window
+  reconfirms it recurring as of 2026-07-26T14:24 UTC.
+- 174+ pending `claude/*` branches remain per `npm run agent:branches`; meta-governor prune pass
+  still overdue.
