@@ -649,6 +649,15 @@ async function main() {
   // runs passes (not just truck 102) so ping miles match the diesel the fleet
   // buys: ~1,720 straight-line mi/pass × 13 passes ≈ 22,300 mi against ~3,500
   // tax-paid gallons → fleet MPG lands near a real tractor's ~6.5.
+  // Anchored to fuelQuarterStart rather than "today" for the same reason the
+  // fuel window above is: a "now minus N days" span drifts across the Q2/Q3
+  // boundary as real time advances through the quarter, shrinking the miles
+  // counted for the prior-quarter IFTA report the smoke strictly validates
+  // (fleet MPG = miles ÷ fuel gallons; gallons are stable post-anchor, so a
+  // shrinking numerator alone was enough to push MPG outside the credible
+  // 4-9 band). Offsets 1..82 (t + pass*30 + i*3) mapped through "87 - offset"
+  // land 5 to 86 days before the boundary — a fixed 5-day margin on both
+  // sides of the 91-day Q2 window, independent of what day of Q3 this runs.
   const loop = [
     CITY.kent, CITY.portland, CITY.medford, CITY.portland, CITY.kent, CITY.spokane, CITY.boise, CITY.spokane, CITY.kent,
   ]
@@ -666,7 +675,7 @@ async function main() {
             `INSERT INTO hub.position_pings (carrier_id, truck_id, ts, lat, lng, odometer, source)
              VALUES ($1,$2,$3,$4,$5,$6,'demo')`,
             [CARRIER, truckIds[t],
-              new Date(Date.now() - (88 - t - pass * 30 - i * 3) * 86400000 + s * 7200000).toISOString(),
+              new Date(fuelQuarterStart.getTime() - (87 - t - pass * 30 - i * 3) * 86400000 + s * 7200000).toISOString(),
               lat, lng, odo]
           )
         }
