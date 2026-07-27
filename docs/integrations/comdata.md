@@ -10,6 +10,53 @@ Update this doc and `normalizeComdataRow` in
 `src/lib/hub/integrations/comdata.ts` in one commit the day a real response
 or provisioned file lands.
 
+## 2026-07-27 scout pass — no adapter-breaking change (6th straight wall)
+
+Sixth straight anonymous pass; every Comdata/Corpay/FleetCor page still 403s
+this env (`resourcecenter.comdata.com/apis-and-web-services/` re-confirmed 403
+this pass, plus the Web Services 2.1 spec PDF and `developers.fleetcor.com/naf`).
+Nothing this pass touches the adapter's proven path (placeholder REST pull +
+`processComdataEvent`/`normalizeComdataRow` file-drop), so **no urgent Backlog
+flag**. Three substantive findings, all refining prior notes rather than
+contradicting them:
+
+1. **NEW headline that is a red herring for the fuel feed — NCR Voyix ×
+   Corpay fleet-card *acceptance*.** Announced 2025-10-09 (BusinessWire): NCR
+   Voyix's **Voyix Connect** payment gateway will integrate with Corpay's
+   Comdata system so its 18,000+ US fuel stations can *accept* Corpay/Comdata
+   fleet cards at the pump/POS, deployment beginning 2026 with Voyix's
+   next-gen commercial POS. This is the **merchant-acceptance / acquiring**
+   side (where a card is swiped), **not** the carrier-side fuel-transaction
+   *feed* LoadOff ingests — same category as the 2026-07-22 PDI Merchant POS
+   divestiture note. Recorded here so a future scout doesn't mistake a
+   card-acceptance headline for a feed-affecting event. Our channel
+   (Fleet Credit web services + fuel-transaction file feed) is untouched.
+2. **The 2026-07-22 "several operations deprecated" finding now has a named
+   operation and a version.** The Web Services 2.1 (Fleet Credit) spec is
+   **Document Version 4.8** (dated 2025-04-11), and search excerpts name the
+   **Customer Profile Limit Inquiry** operation as deprecated / slated for
+   future removal. Our adapter calls **none** of the SOAP operations (the
+   pull is a placeholder REST call), so this stays a warning for a future
+   SOAP channel, not a break. The spec's live operation catalog was also
+   re-corroborated this pass: Available Credit Inquiry, Add Driver ID, Add
+   Vehicle ID, Driver ID Inquiry, Add Card — all card-management / inquiry
+   functions, none of them the bulk transaction-retrieval our ingest needs.
+3. **Third-party real-time API sync re-corroborated.** FleetRabbit again
+   describes connecting to Comdata "via secure API to automatically sync fuel
+   card transactions in real time," and Motive documents a "Comdata Enhanced
+   Authorization Controls" integration — both consistent with (not new
+   evidence beyond) the machine channels already documented below. Neither
+   exposes the carrier-facing auth/endpoint shape our REST-pull placeholder
+   still guesses at.
+
+Meta: this is the **6th straight fully-walled Comdata pass** (07-18 built the
+transport map; 07-22, 07-27 added only red-herring pre-empts + a
+deprecation-name refinement). Per the rotation doc's own meta-note, the
+marginal value of another blind pass here is low — Comdata's carrier-facing
+auth/endpoint/rate-limit numbers are human-browser or onboarding-packet work
+now, not anonymous-search work. Recommend a slower re-scout cadence for
+Comdata until a real API-access response or provisioned file lands.
+
 ## 2026-07-22 scout pass — no adapter-breaking change
 
 Fifth straight anonymous pass; every Comdata/Corpay/FleetCor-controlled page
@@ -65,9 +112,10 @@ a rep-provisioned SFTP file:
    Comdata associates create during setup. The published specs (Web
    Services 1.0 / 2.1 Fleet Credit on resourcecenter.comdata.com) cover
    card management, driver-ID inquiry, and real-time transaction functions
-   (e.g. `inquireCardV02`). **The 2.1 spec PDF is now dated 2025-04-11 and
-   marks several operations deprecated for future removal** — consult its
-   deprecation list before building the real SOAP channel (2026-07-22 pass).
+   (e.g. `inquireCardV02`). **The 2.1 spec PDF is Document Version 4.8, dated
+   2025-04-11, and marks several operations deprecated for future removal —
+   the named one so far is Customer Profile Limit Inquiry** (2026-07-27
+   pass) — consult its deprecation list before building the real SOAP channel.
 2. **REST APIs + developer portal** — Corpay's "APIs and Web Services" page
    (resourcecenter.comdata.com/apis-and-web-services) describes
    resource-oriented REST APIs with JSON responses, an API developer portal
@@ -161,10 +209,13 @@ CSV import path is untouched.
   placeholder calls none of them today).
 
 Sources: resourcecenter.comdata.com ("APIs and Web Services", Web Services
-1.0/2.1 Fleet Credit specs — 2.1 PDF re-dated 2025-04-11 with deprecated
-operations), api.iconnectdata.com WSDL, support.geotab.com ("Corpay NA
-(Comdata & Fuelman) Fuel Transactions"), developers.fleetcor.com/naf,
-developer.crossborder.corpay.com (cross-border/FX portal — NOT fuel),
-freightwaves.com / truckingway.com / fleetlogging.com (2026 card pricing),
-businesswire/Corpay IR (Merchant POS Solutions divestiture to PDI). All
-vendor-controlled pages 403 this env; search-excerpt confirmation only.
+1.0/2.1 Fleet Credit specs — 2.1 PDF is Document Version 4.8 dated 2025-04-11,
+Customer Profile Limit Inquiry named as deprecated), api.iconnectdata.com
+WSDL, support.geotab.com ("Corpay NA (Comdata & Fuelman) Fuel Transactions"),
+developers.fleetcor.com/naf, developer.crossborder.corpay.com (cross-border/FX
+portal — NOT fuel), freightwaves.com / truckingway.com / fleetlogging.com
+(2026 card pricing), businesswire/Corpay IR (Merchant POS Solutions
+divestiture to PDI, 2026-07-22; NCR Voyix × Corpay fleet-card *acceptance*
+partnership 2025-10-09, 2026-07-27 — both merchant-side, not the feed),
+fleetrabbit.com / helpcenter.gomotive.com (third-party real-time API sync).
+All vendor-controlled pages 403 this env; search-excerpt confirmation only.
