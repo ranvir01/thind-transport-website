@@ -447,4 +447,35 @@ describe("draftSettlements — multiple drivers in one call, incl. percentage-pa
     expect(updateLoadsCalls.find((c) => c.params[0] === idA)!.params).toEqual([idA, [LOAD_A], CARRIER])
     expect(updateLoadsCalls.find((c) => c.params[0] === idB)!.params).toEqual([idB, [LOAD_B], CARRIER])
   })
+
+  // Regression: parseRuleSet throws on a malformed rule by design (a corrupted
+  // per_mile rate must not silently underpay). Before this fix that throw
+  // escaped draftSettlements' per-driver loop uncaught, so ONE driver's bad
+  // hub.pay_rules row aborted the whole carrier's weekly settlement run —
+  // every other driver, however clean their data, got nothing that week.
+  it("one driver's corrupted pay rule is skipped loudly; it does not block another driver's settlement", async () => {
+    const { calls, settlements } = wireMultiDriverMocks()
+    queryOneMock.mockImplementation(async (sql: string, params: unknown[] = []) => {
+      const s = String(sql)
+      if (s.includes("to_regclass")) return { reg: null }
+      if (s.includes("FROM hub.pay_rules")) {
+        const [, driverId] = params as [string, string]
+        if (driverId === DRIVER_A) {
+          return { name: "Corrupted", rules: [{ type: "per_mile", rateCentsPerMile: "not-a-number" }], deductions: [] }
+        }
+        return null // driver B falls back to its clean legacy pay config
+      }
+      if (s.includes("FROM hub.settlements WHERE carrier_id") && s.includes("period_start")) return null
+      return null
+    })
+
+    const result = await draftSettlements(CARRIER, "2026-06-01", "2026-06-07", ACTOR)
+    expect(result).toEqual({ created: 1, skipped: 1 })
+    expect(settlements).toHaveLength(1)
+    expect(settlements[0].driver_id).toBe(DRIVER_B)
+
+    const insertSettlements = calls.filter((c) => c.sql.includes("INSERT INTO hub.settlements"))
+    expect(insertSettlements).toHaveLength(1)
+    expect(insertSettlements[0].params[1]).toBe(DRIVER_B)
+  })
 })
