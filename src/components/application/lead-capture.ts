@@ -13,6 +13,7 @@
  */
 import { captureLead, type LeadState } from "@/app/actions/capture-lead"
 import { HONEYPOT_FIELD } from "@/lib/honeypot"
+import { ATTRIBUTION_FIELD, readAttribution, serializeAttribution } from "@/lib/attribution"
 
 export type LeadCaptureValues = {
   firstName: string
@@ -33,6 +34,12 @@ export function buildLeadFormData(values: LeadCaptureValues, honeypotValue: stri
   formData.append("driverType", values.driverType)
   formData.append("experienceYears", values.experienceYears)
   formData.append("source", "Application Form Step 2")
+  // This form builds its FormData by hand rather than from a <form>, so the
+  // hidden AttributionField never renders — read it from session storage
+  // directly. Without this the driver funnel, which is the highest-value one,
+  // would be the only unattributed path on the site.
+  const attribution = serializeAttribution(readAttribution())
+  if (attribution) formData.append(ATTRIBUTION_FIELD, attribution)
   if (honeypotValue) formData.append(HONEYPOT_FIELD, honeypotValue)
   return formData
 }

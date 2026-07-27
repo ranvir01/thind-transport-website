@@ -13,6 +13,8 @@ import { COMPANY_INFO } from "@/lib/constants"
 import { HONEYPOT_FIELD } from "@/lib/honeypot"
 import { track } from "@vercel/analytics"
 import { HoneypotField } from "@/components/shared/HoneypotField"
+import { AttributionField } from "@/components/shared/AttributionField"
+import { ATTRIBUTION_FIELD } from "@/lib/attribution"
 
 export function ShipperQuoteForm() {
   const [state, setState] = useState<"idle" | "sending" | "done" | "error">("idle")
@@ -23,6 +25,11 @@ export function ShipperQuoteForm() {
     const form = e.currentTarget
     const data = new FormData(form)
     const fd = new FormData()
+    // These forms rebuild FormData field by field rather than passing the
+    // form's own, so anything not explicitly copied is dropped — which is
+    // exactly how attribution reached the server as null the first time.
+    const attribution = data.get(ATTRIBUTION_FIELD)
+    if (typeof attribution === "string" && attribution) fd.append(ATTRIBUTION_FIELD, attribution)
     const hp = data.get(HONEYPOT_FIELD)
     if (typeof hp === "string" && hp) fd.append(HONEYPOT_FIELD, hp)
     fd.append("name", String(data.get("contact") || ""))
@@ -76,6 +83,7 @@ export function ShipperQuoteForm() {
   return (
     <form onSubmit={onSubmit} className="relative grid grid-cols-1 sm:grid-cols-2 gap-4">
       <HoneypotField />
+      <AttributionField />
       <input name="company" autoComplete="organization" required placeholder="Company / Brokerage *" className={field} aria-label="Company" />
       <input name="contact" autoComplete="name" required placeholder="Contact name *" className={field} aria-label="Contact name" />
       <input name="email" type="email" autoComplete="email" required placeholder="Work email *" className={field} aria-label="Email" />

@@ -15,6 +15,8 @@ import { useState } from "react"
 import { Loader2, FileDown } from "lucide-react"
 import { captureLead } from "@/app/actions/capture-lead"
 import { COMPANY_INFO } from "@/lib/constants"
+import { ATTRIBUTION_FIELD } from "@/lib/attribution"
+import { AttributionField } from "@/components/shared/AttributionField"
 
 export function BrokerPacketForm() {
   const [state, setState] = useState<"idle" | "sending" | "done" | "error">("idle")
@@ -26,6 +28,11 @@ export function BrokerPacketForm() {
     const data = new FormData(form)
 
     const fd = new FormData()
+    // These forms rebuild FormData field by field rather than passing the
+    // form's own, so anything not explicitly copied is dropped — which is
+    // exactly how attribution reached the server as null the first time.
+    const attribution = data.get(ATTRIBUTION_FIELD)
+    if (typeof attribution === "string" && attribution) fd.append(ATTRIBUTION_FIELD, attribution)
     fd.append("name", String(data.get("contact") || ""))
     fd.append("email", String(data.get("email") || ""))
     fd.append("phone", String(data.get("phone") || ""))
@@ -76,6 +83,7 @@ export function BrokerPacketForm() {
 
   return (
     <form onSubmit={onSubmit} className="grid gap-4 sm:grid-cols-2">
+      <AttributionField />
       <div className="sm:col-span-2">
         <label className={label} htmlFor="brokerage">
           Brokerage

@@ -38,7 +38,27 @@ describe("website leads — the lead can never be lost silently", () => {
     expect(params).toEqual([
       "Test Driver", "d@example.com", "2065551234",
       "Application Form Step 2", "owner-operator-otr", "5+", null,
+      null, // attribution — this fixture is direct traffic
     ])
+  })
+
+  it("stores attribution as JSON when the visit carried a campaign", async () => {
+    // The whole point of the column: `source` says which form they filled in,
+    // attribution says what brought them to the site.
+    queryMock.mockClear()
+    await saveWebsiteLead({
+      email: "d@example.com",
+      source: "Application Form Step 2",
+      attribution: { utm_source: "google", utm_medium: "cpc", landing: "/drivers" },
+    })
+    const [sql, params] = queryMock.mock.calls[0]
+    expect(String(sql)).toContain("attribution")
+    expect(params).toBeDefined()
+    expect(JSON.parse(params![7] as string)).toEqual({
+      utm_source: "google",
+      utm_medium: "cpc",
+      landing: "/drivers",
+    })
   })
 
   it("saveWebsiteLead returns false (never throws) on DB failure or no DB", async () => {
