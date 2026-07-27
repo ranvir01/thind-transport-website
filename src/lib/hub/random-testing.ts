@@ -13,7 +13,7 @@
  * and a status check, so a retry (manual or cron) never re-selects or
  * double-notifies.
  */
-import { query } from "./db"
+import { query, queryOne } from "./db"
 import { getCarrierSettings } from "./settings"
 import { notifyDriver } from "./notify"
 import { logAudit } from "./audit"
@@ -198,12 +198,34 @@ export async function recordRandomTestResult(
     result?: TestResult | null
     completedOn?: string | null
     notes?: string | null
-  }
+  },
+  actor: { id: string; name: string }
 ): Promise<void> {
+  // A test result is a career-affecting DOT record (382.305): the write must
+  // land in the audit log with what it replaced, and recording against an id
+  // outside this carrier must be an error, not a silent no-op reported as ok.
+  const existing = await queryOne<{
+    driver_id: string; test_type: TestType; period: string
+    status: TestStatus; result: TestResult | null; completed_on: string | null
+  }>(
+    `SELECT driver_id, test_type, period, status, result, completed_on
+     FROM hub.random_test_events WHERE carrier_id = $1 AND id = $2`,
+    [carrierId, id]
+  )
+  if (!existing) throw new Error("Test event not found")
   await query(
     `UPDATE hub.random_test_events
      SET status = $3, result = $4, completed_on = $5, notes = COALESCE($6, notes), updated_at = NOW()
      WHERE carrier_id = $1 AND id = $2`,
     [carrierId, id, input.status, input.result ?? null, input.completedOn ?? null, input.notes ?? null]
   )
+  await logAudit({
+    carrierId, actorId: actor.id, actorName: actor.name,
+    entityType: "random_test_event", entityId: id, action: "result",
+    oldValue: { status: existing.status, result: existing.result, completedOn: existing.completed_on },
+    newValue: {
+      driverId: existing.driver_id, testType: existing.test_type, period: existing.period,
+      status: input.status, result: input.result ?? null, completedOn: input.completedOn ?? null,
+    },
+  })
 }

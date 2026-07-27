@@ -52,7 +52,7 @@ export async function recordRandomTestResultAction(
       result: values.result || null,
       completedOn: values.completedOn || null,
       notes: values.notes || null,
-    })
+    }, user)
     revalidatePath("/hub/compliance/random-testing")
     return { ok: true }
   } catch (err) {
