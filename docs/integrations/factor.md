@@ -103,9 +103,16 @@ placeholder host), `Authorization: Bearer <apiKey>`:
 ```
 
 This Bearer-key shape maps cleanly onto Apex/Denim-style API-key auth. OTR
-would need two extra credential fields (account credentials for auth + the
-`Ocp-Apim`-style subscription key header) — a credential-schema tweak, not a
-row-shape change.
+additionally sends its subscription key as the `Ocp-Apim-Subscription-Key`
+header — **shipped 2026-07-27**: `registry.ts`'s `factor` entry now has an
+optional `subscriptionKey` credential field, and `submitInvoiceToFactor` sends
+the header only when it's configured, so Apex/Denim-style factors (no
+subscription key) are unaffected. `submitInvoiceToFactor` also now retries
+429/5xx and transport failures through the shared `fetchWithRetry` helper
+(`http-retry.ts`) — the other half of the 2026-07-26 finding that APIM answers
+a bare 429 past quota. Still open: the account-credential→token handshake
+itself (see "Open questions" below) — this only wires the transport-level
+pieces the scout pass could confirm without a provisioned key.
 
 **Webhook** — `event` names this adapter understands as funding:
 `invoice.funded`, `advance.paid`, `invoice.purchased` (`FUNDING_EVENT_KINDS`
@@ -291,7 +298,10 @@ Sources (2026-07-26 pass): [OTR Developer Resources](https://otrsolutions.com/de
   whether any webhook/callback option exists at partner tier. (Partly answered
   2026-07-26: the transport is Azure APIM — `Ocp-Apim-Subscription-Key` header +
   `429` throttle — but endpoint paths and the credential→token handshake still
-  need a provisioned key.)
+  need a provisioned key.) ~~Add the subscription-key credential field +
+  429-with-backoff handling~~ — done 2026-07-27: `registry.ts`'s `factor.fields`
+  gained `subscriptionKey`, and `submitInvoiceToFactor` sends it as
+  `Ocp-Apim-Subscription-Key` and retries through `fetchWithRetry`.
 - Confirm whether HaulPay/Denim expose outbound webhooks and what signature
   scheme they use — first candidates to exercise our receiver for real.
 - Wire an actual "Submit to factor" button — DONE since the first draft of

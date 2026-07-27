@@ -24,6 +24,7 @@ import { query, queryOne } from "../db"
 import { listDocuments } from "../documents"
 import { getInvoice, recordPayment } from "../invoices"
 import { centsToDecimalString, dollarsToCents } from "../types"
+import { fetchWithRetry } from "./http-retry"
 
 export interface FactorEvent {
   external_id: string
@@ -134,22 +135,37 @@ export async function submitInvoiceToFactor(
 
   const docs = await listDocuments(carrierId, "load", invoice.load_id)
   const base = process.env.FACTOR_API_BASE ?? "https://api.factor-partner.example.com/v1"
-  const response = await fetch(`${base}/invoices`, {
-    method: "POST",
-    headers: { Authorization: `Bearer ${creds.apiKey}`, "Content-Type": "application/json" },
-    body: JSON.stringify({
-      referenceNumber: invoice.number,
-      // Formatted, not divided: `amount_cents / 100` puts a float on the wire
-      // at the one boundary where a rounding artifact becomes a funding
-      // discrepancy the factor bills back.
-      amount: centsToDecimalString(invoice.amount_cents),
-      debtorName: invoice.customer_name,
-      documents: docs
-        .filter((d) => d.kind === "rate_confirmation" || d.kind === "pod")
-        .map((d) => ({ kind: d.kind, url: d.url })),
-    }),
-    signal: AbortSignal.timeout(15000),
-  })
+  const response = await fetchWithRetry(
+    `${base}/invoices`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${creds.apiKey}`,
+        "Content-Type": "application/json",
+        // OTR fronts its carrier API with Azure API Management — the
+        // provisioned subscription key rides in this header alongside the
+        // Bearer credential. Other factors (Apex/Denim-style) don't issue
+        // one, so it's only sent when a carrier has actually configured it
+        // (docs/integrations/factor.md, 2026-07-26 scout pass).
+        ...(creds.subscriptionKey ? { "Ocp-Apim-Subscription-Key": creds.subscriptionKey } : {}),
+      },
+      body: JSON.stringify({
+        referenceNumber: invoice.number,
+        // Formatted, not divided: `amount_cents / 100` puts a float on the wire
+        // at the one boundary where a rounding artifact becomes a funding
+        // discrepancy the factor bills back.
+        amount: centsToDecimalString(invoice.amount_cents),
+        debtorName: invoice.customer_name,
+        documents: docs
+          .filter((d) => d.kind === "rate_confirmation" || d.kind === "pod")
+          .map((d) => ({ kind: d.kind, url: d.url })),
+      }),
+      signal: AbortSignal.timeout(15000),
+    },
+    // APIM answers a bare 429 past quota; retrying 429/5xx here is the other
+    // half of the same scout finding the subscription-key header closes.
+    { label: "Factor submission" }
+  )
   if (!response.ok) throw new Error(`Factor submission → HTTP ${response.status}`)
 
   await query(
