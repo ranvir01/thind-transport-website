@@ -188,7 +188,7 @@ Every row measured this session. "Test files" = count of `*.test.ts` importing t
 | `ifta.ts` | 95.3 | 80.9 | 69.2 | 11 | best-covered money module in the repo |
 | `expenses.ts` | 88.8 | 60.4 | 76.2 | 6 | `exportCsv` cases `lanes`/`settlements`/**`1099`**/`pnl` all 0% |
 | **`pay-rules.ts`** | **72.5** | **67.0** | 85.7 | 1 | `describePayRules@338` 0%; `parseRuleSet@424` branches `:429,:430` 0% |
-| **`reports.ts`** | **56.6** | 57.1 | 45.5 | 3 | `fuelSpendSummary@375`, `exportFuelSpendCsv@421` still 0% (`arAgingTrend@53`, `settlementLiability@122` now covered) |
+| **`reports.ts`** | 56.6\* | 57.1\* | 45.5\* | 4 | `fuelSpendSummary@375`, `exportFuelSpendCsv@421` **now covered** (`reports-fuel-spend.test.ts`, `ccf450c7`); `arAgingTrend@53`, `settlementLiability@122` also covered. \*stmt/branch/func % not recomputed since — no coverage tooling in this session (`@vitest/coverage-v8` missing) |
 | **`invoices.ts`** | **54.0** | 44.4 | 59.3 | 11 | `getAgingSummary@287`, `runOverdueReminders@310`, `setInvoiceStatus@263`, `sendFactoringPacket@488` all 0% |
 | **`settlements.ts`** | **51.1** | **29.3** | 51.9 | 7 | **`draftSettlements@89` 0% (lines 102–235)**, `payableReferralBonuses@48` 0%, `latestScorecardScore@71` 0% |
 | **`loads.ts`** | **35.2** | **14.4** | 41.7 | 14 | `createLoad@212`, `updateLoad@266`, `replaceStops@363`, `insertStops@165` all 0% |
