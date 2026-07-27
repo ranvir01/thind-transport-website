@@ -549,16 +549,29 @@ async function main() {
   console.log("Creating fuel transactions…")
   // WA/OR/ID only — pings on truck 102 never enter CA/NV/UT, so fuel here must
   // match the loop or the IFTA worksheet is dominated by purchases-only credits.
-  // Window 83→5 days ago mirrors the truck-102 ping loop (82→~5 days ago):
-  // purchases without pings in the same window read as fuel with no miles and
-  // wreck fleet MPG for whichever quarter the mismatch straddles.
+  // The window used to be a fixed "83→5 days ago" span mirroring the ping loop,
+  // but that drifts relative to calendar-quarter boundaries as real time passes:
+  // these 27 stops are spread EVENLY across the span, while the mileage loop
+  // below is back-loaded into the prior quarter with only a small tail crossing
+  // into the new one. An even split bleeds a growing share of *gallons* (not
+  // miles) into whichever quarter is current as the days-since-quarter-start
+  // grows, inflating fleet MPG for the prior-quarter IFTA report the smoke
+  // strictly validates (seen 2026-07-27: 9.31 vs the intended ~6.5, see
+  // docs/claude-routines.md). Anchor the window's recent edge to the current
+  // quarter's start instead of to "today" so it stays inside the prior quarter
+  // regardless of what day of the quarter the seed runs.
   const fuelStops = [
     ["Pilot #287", CITY.kent, "WA"], ["Loves #441", CITY.portland, "OR"],
     ["TA Boise", CITY.boise, "ID"], ["Pilot Spokane", CITY.spokane, "WA"],
     ["Loves Medford", CITY.medford, "OR"], ["Flying J Yakima", CITY.yakima, "WA"],
   ]
+  const fuelNow = new Date()
+  const fuelQuarterStart = new Date(Date.UTC(fuelNow.getUTCFullYear(), Math.floor(fuelNow.getUTCMonth() / 3) * 3, 1))
+  const daysSinceFuelQuarterStart = Math.floor((fuelNow - fuelQuarterStart) / 86400000)
+  const fuelWindowFloor = Math.max(5, daysSinceFuelQuarterStart + 3)
+  const fuelWindowCeil = fuelWindowFloor + 78
   let fuelN = 0
-  for (let day = 83; day >= 5; day -= 3) {
+  for (let day = fuelWindowCeil; day >= fuelWindowFloor; day -= 3) {
     const truckIdx = fuelN % 8 // active trucks
     const stop = fuelStops[fuelN % fuelStops.length]
     const gallons = 95 + (fuelN % 5) * 12
@@ -570,7 +583,7 @@ async function main() {
       [
         CARRIER, `EFS-${10000 + fuelN}`, truckIds[truckIdx], driverIds[truckIdx] ?? null,
         daysAgo(day, 7 + (fuelN % 9)), stop[0], stop[1].city, stop[2],
-        gallons, ppgCents, Math.round(gallons * ppgCents), 95000 + truckIdx * 8000 + (83 - day) * 450,
+        gallons, ppgCents, Math.round(gallons * ppgCents), 95000 + truckIdx * 8000 + (fuelWindowCeil - day) * 450,
       ]
     )
     fuelN++
