@@ -1361,3 +1361,55 @@ Backlog:
 - Carried, unchanged: npm audit high-severity findings in the `next`/`sharp` chain (owner-approval-gated
   semver-major bump, `npm audit fix --force`); Rust sidecar `tiny_http` connection-timeout/thread-cap gap
   (owner decision).
+
+## QA rig drive — 2026-07-27 ~04:35 UTC (production staleness crossed the grace window)
+
+Charter (docs/agent-improvement-loop.md §5): no feature work — stood up the local rig, drove
+owner/dispatcher/driver/portal flows against the full Puppeteer E2E battery (this repo's `e2e-*-smoke.mjs`
+scripts, not literal Playwright — `dev-workflow-testing` skill pitfall #8 documents the naming mismatch),
+probed thindtransport.com read-only, fixed only outright regressions from the last 3h of commits.
+
+Fresh rig from scratch: Postgres 16 role+db, canvas deps, `npm ci`, 22 migrations clean, `seed:demo`,
+`npm run build` clean, `npx vitest run` (226 files/1990 tests) green. All 51 `e2e-*-smoke.mjs` scripts
+driven as owner, dispatcher, driver, and portal user: 50/51 pass; `e2e-sweep.mjs` (every screen at
+1440px/390px) and the 20-check interaction battery both clean except the same one pre-existing issue.
+`e2e-public-smoke`'s `/testimonials` 404 and `e2e-sweep`'s reports-subtitle anchor miss are the identical
+two false-failures diagnosed in at least three prior cycles (confirmed again by source read: no
+`/testimonials` route exists anywhere under `src/app`; `reports/page.tsx`'s subtitle has two valid copy
+branches on `hasDriverPay`, the sweep's anchor only matches one — confirmed live via a direct authenticated
+fetch of `/hub/reports`, which renders the *other* valid branch, not a stuck spinner). Per AGENTS.md's
+duplicate-work rule, not writing a fourth copy of this fix — three independent unmerged copies already
+exist (`e366b29b`, `3a21cc65`, `b5f5be3d`, most recently `claude/practical-franklin-lcfbnd` @ 2026-07-26
+18:36 UTC) and none have been drained across several integrator cycles since.
+
+Last-3h window (~01:35–04:35 UTC) on `main`: `dcd0ac4b` (drain) and `201dfe13` (drain) wrap only a
+docs-only commit (`0f7ac790`) and a scripts/Go-test-only commit (`0b268021`: `seed-demo.mjs`'s fuel-window
+anchor fix + a Go race-detector test) — zero `src/` diff, zero regression risk, nothing to fix-forward.
+
+**Production is stale past the grace window a prior cycle (`a8b8de36`) flagged**: the last real Vercel
+production deployment is `bc87baa4` (drained 01:54 UTC); `main` has since advanced two more drain cycles
+(`201dfe13` @ 01:59, `dcd0ac4b` @ 02:54) and *neither produced any Vercel deployment record at all* —
+confirmed via the Vercel MCP (`list_deployments` since 01:54 shows 5 more builds, all on session/integrator
+branches, none on `main`; `get_deployment` for the `main` branch alias still resolves to `bc87baa4`).
+`thindtransport.com`'s alias itself is unaffected in practice right now — the gap between deployed and
+current `main` is docs/scripts/Go-test only, no live user-facing regression — but the deployment pipeline
+itself has gone quiet on two consecutive pushes despite both drains correctly using the stamped `--no-ff`
+method (`.drain-stamp` changed content both times, ruling out the known SHA/tree dedupe bug). This matches
+a recurring pattern across many earlier cycles in this same log (`ee90d5ab`: "deploy pipeline stuck ~12h";
+`50cd6d2b`: "production STALE ~6h"; `4a1775b1`: "deploy pipeline looks stalled") — worth the owner checking
+Vercel's GitHub App connection/webhook delivery for this project directly, since repeated re-drains haven't
+self-healed it historically.
+
+Backlog:
+- **Integrator: drain `claude/practical-franklin-lcfbnd` (`b5f5be3d`)** — the most recent of three unmerged
+  copies of the `e2e-public-smoke`/`e2e-sweep` stale-test fix — instead of any agent writing a fifth.
+- **Owner: Vercel deploy pipeline for `thind-transport-website` has gone quiet on the last two `main`
+  pushes** (no deployment record for `201dfe13` or `dcd0ac4b`, `main` branch alias still on `bc87baa4` from
+  01:54 UTC) despite the stamped `--no-ff` drain method that's supposed to guarantee a fresh build every
+  time — recurring across several cycles per this log; worth checking the GitHub↔Vercel webhook/App
+  connection directly rather than assuming the next drain will self-heal it.
+- `claude/lane-compliance` and `claude/lane-tests` still show 600+/1400+ unpicked raw commits per
+  `agent:branches`; meta-governor prune pass still overdue, unchanged from prior cycles.
+- Carried, unchanged: npm audit high-severity findings in the `next`/`sharp`/`eslint`/`next-auth` chain
+  (owner-approval-gated semver-major bump, 12 remaining after the latest `npm audit fix`); Rust sidecar
+  `tiny_http` connection-timeout/thread-cap gap (owner decision).
