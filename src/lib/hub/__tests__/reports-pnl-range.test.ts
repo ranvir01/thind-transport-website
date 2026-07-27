@@ -120,10 +120,11 @@ describe("truckPnlRangeCsv", () => {
     revenue_cents: "500000",
     fuel_cents: "120000",
     maintenance_cents: "10000",
+    toll_cents: "3000",
     other_expense_cents: "5000",
     loaded_miles: "2000",
     deadhead_miles: "150",
-    net_cents: 365000,
+    net_cents: 362000,
     ...overrides,
   })
 
@@ -135,8 +136,8 @@ describe("truckPnlRangeCsv", () => {
   it("emits a header row plus one row per truck with dollars and net/mile", () => {
     const { csv } = truckPnlRangeCsv([row()], range)
     const [header, dataRow] = csv.split("\n")
-    expect(header).toBe("Truck,Revenue,Fuel,Maintenance,OtherExpenses,Net,LoadedMiles,NetPerMile")
-    expect(dataRow).toBe("101,5000.00,1200.00,100.00,50.00,3650.00,2000,1.82")
+    expect(header).toBe("Truck,Revenue,Fuel,Maintenance,Tolls,OtherExpenses,Net,LoadedMiles,NetPerMile")
+    expect(dataRow).toBe("101,5000.00,1200.00,100.00,30.00,50.00,3620.00,2000,1.81")
   })
 
   it("leaves NetPerMile blank instead of dividing by zero when loaded_miles is falsy", () => {
@@ -152,7 +153,7 @@ describe("truckPnlRangeCsv", () => {
 
   it("returns just the header for an empty fleet", () => {
     const { csv } = truckPnlRangeCsv([], range)
-    expect(csv).toBe("Truck,Revenue,Fuel,Maintenance,OtherExpenses,Net,LoadedMiles,NetPerMile")
+    expect(csv).toBe("Truck,Revenue,Fuel,Maintenance,Tolls,OtherExpenses,Net,LoadedMiles,NetPerMile")
   })
 })
 
@@ -216,11 +217,19 @@ describe("truckPnlRange deadhead blanks", () => {
     expect(sql).toContain("l.truck_id = t.id AND l.carrier_id = t.carrier_id")
   })
 
+  it("scopes toll cost (hub.toll_transactions) to the same [from, to] window as every other bucket", async () => {
+    await truckPnlRange(CARRIER, range)
+    const [sql] = queryMock.mock.calls[0]
+    expect(sql).toContain("FROM hub.toll_transactions x")
+    expect(sql).toContain("x.truck_id = t.id AND x.carrier_id = t.carrier_id")
+    expect(sql).toContain("x.ts >= $2::date AND x.ts < $3::date + 1")
+  })
+
   it("surfaces the blank count as a number so a NULL sum can't read as a perfect 0% deadhead", async () => {
     queryMock.mockResolvedValue([
       {
         truck_id: "t1", unit_number: "101", revenue_cents: "500000", fuel_cents: "120000",
-        maintenance_cents: "10000", other_expense_cents: "5000",
+        maintenance_cents: "10000", toll_cents: "0", other_expense_cents: "5000",
         loaded_miles: "2000", deadhead_miles: null, deadhead_missing_loads: 3, net_cents: 0,
       },
     ] as never)
@@ -234,11 +243,23 @@ describe("truckPnlRange deadhead blanks", () => {
     queryMock.mockResolvedValue([
       {
         truck_id: "t1", unit_number: "101", revenue_cents: "0", fuel_cents: "0",
-        maintenance_cents: "0", other_expense_cents: "0",
+        maintenance_cents: "0", toll_cents: "0", other_expense_cents: "0",
         loaded_miles: null, deadhead_miles: null, net_cents: 0,
       },
     ] as never)
     const [row] = await truckPnlRange(CARRIER, range)
     expect(row.deadhead_missing_loads).toBe(0)
+  })
+
+  it("subtracts imported toll spend (hub.toll_transactions) from net_cents like every other cost bucket", async () => {
+    queryMock.mockResolvedValue([
+      {
+        truck_id: "t1", unit_number: "101", revenue_cents: "500000", fuel_cents: "120000",
+        maintenance_cents: "10000", toll_cents: "7500", other_expense_cents: "5000",
+        loaded_miles: "2000", deadhead_miles: "100", net_cents: 0,
+      },
+    ] as never)
+    const [row] = await truckPnlRange(CARRIER, range)
+    expect(row.net_cents).toBe(357500)
   })
 })

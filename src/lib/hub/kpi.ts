@@ -7,7 +7,7 @@
  * cost-per-mile and operating ratio are the numbers a 1-20 truck owner lives by.
  *
  * Cost basis: `operatingCostCents` is what the per-truck P&L tracks — fuel +
- * maintenance + other tracked expenses, and NOT driver pay. Driver pay is about
+ * maintenance + tolls + other tracked expenses, and NOT driver pay. Driver pay is about
  * 44% of a carrier's all-in cost per mile (ATRI 2025: 81.8c/mi wages + 21c/mi
  * benefits against $2.336/mi all-in), so a margin taken from the operating base
  * alone is not a margin at all — it is a margin *before driver pay*, and it
@@ -21,7 +21,7 @@
  */
 export interface FleetKpiInput {
   revenueCents: number
-  /** Operating costs we track per truck: fuel + maintenance + other expenses. Excludes driver pay. */
+  /** Operating costs we track per truck: fuel + maintenance + tolls + other expenses. Excludes driver pay. */
   operatingCostCents: number
   /**
    * Driver settlement pay over the same window. Null/omitted means "not
@@ -69,7 +69,7 @@ const round1 = (n: number) => Math.round(n * 10) / 10
 
 /**
  * Per-truck P&L row, ranked worst-first by net/loaded-mile — the operational
- * cost basis (fuel + maintenance + other expenses), not driver pay, matching
+ * cost basis (fuel + maintenance + tolls + other expenses), not driver pay, matching
  * `truckPnlRange`'s own net_cents. Worst-first because the fleet-wide margin
  * hides which one or two trucks are actually losing money (same reasoning as
  * the deadhead panel's per-truck sort).

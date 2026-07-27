@@ -279,6 +279,9 @@ describe("read queries carrier-guard their joins (both-sides tenancy)", () => {
       expect(sql).toContain("f.truck_id = t.id AND f.carrier_id = t.carrier_id")
       expect(sql).toContain("m.truck_id = t.id AND m.carrier_id = t.carrier_id")
       expect(sql).toContain("e.truck_id = t.id AND e.carrier_id = t.carrier_id")
+      // Toll cost (hub.toll_transactions) both-sides-guarded like every other bucket —
+      // an unassigned toll (truck_id NULL) must never surface on another tenant's truck.
+      expect(sql).toContain("x.truck_id = t.id AND x.carrier_id = t.carrier_id")
     }
   })
 

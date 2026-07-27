@@ -47,10 +47,11 @@ export default async function ReportsPage({
       revenue: acc.revenue + Number(row.revenue_cents),
       fuel: acc.fuel + Number(row.fuel_cents),
       maintenance: acc.maintenance + Number(row.maintenance_cents),
+      tolls: acc.tolls + Number(row.toll_cents),
       other: acc.other + Number(row.other_expense_cents),
       net: acc.net + row.net_cents,
     }),
-    { revenue: 0, fuel: 0, maintenance: 0, other: 0, net: 0 }
+    { revenue: 0, fuel: 0, maintenance: 0, tolls: 0, other: 0, net: 0 }
   )
 
   const loadedMiles = pnl.reduce((s, r) => s + Number(r.loaded_miles ?? 0), 0)
@@ -60,7 +61,7 @@ export default async function ReportsPage({
   const deadheadBlankLoads = pnl.reduce((s, r) => s + Number(r.deadhead_missing_loads ?? 0), 0)
   const kpis = computeFleetKpis({
     revenueCents: totals.revenue,
-    operatingCostCents: totals.fuel + totals.maintenance + totals.other,
+    operatingCostCents: totals.fuel + totals.maintenance + totals.tolls + totals.other,
     driverPayCents,
     loadedMiles,
     deadheadMiles,
@@ -99,7 +100,7 @@ export default async function ReportsPage({
         title="Reports"
         subtitle={
           hasDriverPay
-            ? `Per-truck P&L, ${rangeLabel}. Fleet ratios include driver settlement pay; the per-truck table below stays operational (fuel, maintenance, expenses). Fixed costs come from the accountant's books.`
+            ? `Per-truck P&L, ${rangeLabel}. Fleet ratios include driver settlement pay; the per-truck table below stays operational (fuel, maintenance, tolls, expenses). Fixed costs come from the accountant's books.`
             : `Per-truck P&L, ${rangeLabel}. Driver pay and fixed costs come from the accountant's books — this is the operational view.`
         }
         action={
@@ -224,10 +225,17 @@ export default async function ReportsPage({
         </Panel>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4">
+      <div className="grid grid-cols-2 md:grid-cols-6 gap-3 mb-4">
         <Panel className="p-4"><span className="text-label text-fg-3 uppercase">Revenue</span><p className="mt-2 font-display text-xl font-extrabold text-accent-text">{fmtCents(totals.revenue)}</p></Panel>
         <Panel className="p-4"><span className="text-label text-fg-3 uppercase">Fuel</span><p className="mt-2 font-semibold text-xl text-fg">{fmtCents(totals.fuel)}</p></Panel>
         <Panel className="p-4"><span className="text-label text-fg-3 uppercase">Maintenance</span><p className="mt-2 font-semibold text-xl text-fg">{fmtCents(totals.maintenance)}</p></Panel>
+        <Panel className="p-4">
+          <span className="text-label text-fg-3 uppercase">Tolls</span>
+          <p className="mt-2 font-semibold text-xl text-fg">{fmtCents(totals.tolls)}</p>
+          <Link href="/hub/fuel/tolls" className="mt-0.5 block text-[11px] font-semibold text-accent-text hover:underline">
+            Reconcile →
+          </Link>
+        </Panel>
         <Panel className="p-4"><span className="text-label text-fg-3 uppercase">Other</span><p className="mt-2 font-semibold text-xl text-fg">{fmtCents(totals.other)}</p></Panel>
         <Panel className="p-4"><span className="text-label text-fg-3 uppercase">Net</span><p className={`mt-2 font-display text-xl font-extrabold ${totals.net >= 0 ? "text-ok" : "text-bad"}`}>{fmtCents(totals.net)}</p></Panel>
       </div>
@@ -323,6 +331,7 @@ export default async function ReportsPage({
               <th className="px-4 py-3 text-right">Revenue</th>
               <th className="px-4 py-3 text-right">Fuel</th>
               <th className="px-4 py-3 text-right">Maint.</th>
+              <th className="px-4 py-3 text-right">Tolls</th>
               <th className="px-4 py-3 text-right">Other</th>
               <th className="px-4 py-3 text-right">Net</th>
               <th className="px-4 py-3 text-right">Net/mi</th>
@@ -337,6 +346,7 @@ export default async function ReportsPage({
                   <td className="px-4 py-2.5 text-right text-accent-text font-semibold">{fmtCents(Number(row.revenue_cents))}</td>
                   <td className="px-4 py-2.5 text-right text-fg-2">{fmtCents(Number(row.fuel_cents))}</td>
                   <td className="px-4 py-2.5 text-right text-fg-2">{fmtCents(Number(row.maintenance_cents))}</td>
+                  <td className="px-4 py-2.5 text-right text-fg-2">{fmtCents(Number(row.toll_cents))}</td>
                   <td className="px-4 py-2.5 text-right text-fg-2">{fmtCents(Number(row.other_expense_cents))}</td>
                   <td className={`px-4 py-2.5 text-right font-semibold ${row.net_cents >= 0 ? "text-ok" : "text-bad"}`}>
                     {fmtCents(row.net_cents)}

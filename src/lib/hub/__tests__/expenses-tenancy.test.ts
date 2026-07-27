@@ -13,6 +13,7 @@ import {
   exportQboIifPayments,
   exportQboIifSettlements,
   listExpenses,
+  truckPnl,
 } from "../expenses"
 import { createAdvance } from "../settlements"
 
@@ -115,6 +116,61 @@ describe("expense reads carrier-guard their truck/driver joins", () => {
     await exportCsv(CARRIER, "1099")
     const sql = String(queryMock.mock.calls[0][0])
     expect(sql).toContain("ON d.id = s.driver_id AND d.carrier_id = s.carrier_id")
+  })
+})
+
+/**
+ * hub.toll_transactions (BestPass/PrePass imports, see tolls.ts) fed the new
+ * /hub/fuel/tolls reconciliation dashboard but never touched per-truck P&L —
+ * a truck's real operating cost read low by exactly its toll spend. Same
+ * trailing-window bucket as fuel/maintenance/other, both-sides tenancy guard,
+ * subtracted out of net_cents.
+ */
+describe("truckPnl toll cost (hub.toll_transactions)", () => {
+  beforeEach(() => {
+    queryMock.mockReset()
+  })
+
+  it("sums toll spend carrier- and truck-guarded over the trailing window", async () => {
+    queryMock.mockResolvedValue([])
+    await truckPnl(CARRIER, 92)
+    const [sql, params] = queryMock.mock.calls[0]
+    expect(String(sql)).toContain("FROM hub.toll_transactions x")
+    expect(String(sql)).toContain("x.truck_id = t.id AND x.carrier_id = t.carrier_id")
+    expect(String(sql)).toContain("x.ts >= NOW() - ($2 || ' days')::interval), 0) AS toll_cents")
+    expect(params).toEqual([CARRIER, 92])
+  })
+
+  it("subtracts toll_cents from net_cents alongside fuel, maintenance, and other expenses", async () => {
+    queryMock.mockResolvedValue([
+      {
+        truck_id: "t1", unit_number: "101", revenue_cents: "500000", fuel_cents: "120000",
+        maintenance_cents: "10000", toll_cents: "7500", other_expense_cents: "5000",
+        loaded_miles: "2000", deadhead_miles: "100", net_cents: 0,
+      },
+    ])
+    const [row] = await truckPnl(CARRIER)
+    expect(row.net_cents).toBe(357500)
+  })
+})
+
+describe("exportCsv pnl (per-truck P&L CSV includes a Tolls column)", () => {
+  beforeEach(() => {
+    queryMock.mockReset()
+  })
+
+  it("emits Tolls between Maintenance and OtherExpenses", async () => {
+    queryMock.mockResolvedValue([
+      {
+        truck_id: "t1", unit_number: "101", revenue_cents: "500000", fuel_cents: "120000",
+        maintenance_cents: "10000", toll_cents: "7500", other_expense_cents: "5000",
+        loaded_miles: "2000", deadhead_miles: "100", net_cents: 0,
+      },
+    ])
+    const { csv } = await exportCsv(CARRIER, "pnl")
+    const [header, row] = csv.trim().split("\n")
+    expect(header).toBe("Truck,Revenue,Fuel,Maintenance,Tolls,OtherExpenses,Net,LoadedMiles,NetPerMile")
+    expect(row).toBe("101,5000.00,1200.00,100.00,75.00,50.00,3575.00,2000,1.79")
   })
 })
 

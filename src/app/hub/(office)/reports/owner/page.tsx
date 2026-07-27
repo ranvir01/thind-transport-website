@@ -148,7 +148,8 @@ function LoadedVsDeadheadPanel({ pnl, rangeLabel }: { pnl: Awaited<ReturnType<ty
   const deadheadBlankLoads = pnl.reduce((s, r) => s + Number(r.deadhead_missing_loads ?? 0), 0)
   const revenueCents = pnl.reduce((s, r) => s + Number(r.revenue_cents), 0)
   const operatingCostCents = pnl.reduce(
-    (s, r) => s + Number(r.fuel_cents) + Number(r.maintenance_cents) + Number(r.other_expense_cents),
+    (s, r) =>
+      s + Number(r.fuel_cents) + Number(r.maintenance_cents) + Number(r.toll_cents) + Number(r.other_expense_cents),
     0
   )
   // No driverPayCents: this panel renders miles and per-mile rates only, so the
