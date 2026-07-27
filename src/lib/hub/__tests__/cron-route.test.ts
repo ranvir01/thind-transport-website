@@ -59,6 +59,7 @@ const CARRIERS = [
   { id: "11111111-1111-1111-1111-111111111111", name: "Carrier One" },
   { id: "22222222-2222-2222-2222-222222222222", name: "Carrier Two" },
 ]
+const SUSPENDED_CARRIER = { id: "33333333-3333-3333-3333-333333333333", name: "Suspended Carrier" }
 const SECRET = "cron_test_secret"
 
 /** The integration sync jobs this lane owns → the runner each must dispatch to. */
@@ -171,6 +172,38 @@ describe("GET /api/hub/cron/[job] — integration sync dispatch", () => {
     const body = await res.json()
     expect(body.results[CARRIERS[0].id]).toEqual({ error: "QBO token expired" })
     expect(body.results[CARRIERS[1].id]).toEqual({ inserted: 2, skipped: 0 })
+  })
+})
+
+describe("GET /api/hub/cron/[job] — suspended tenants are excluded", () => {
+  // TenantActions.tsx and _actions/admin.ts both tell the office "crons skip
+  // suspended carriers" — this is the one query enforcing that for all 17
+  // jobs. The dispatch-loop tests above mock query() to return CARRIERS for
+  // any SQL containing "FROM hub.carriers", so they'd stay green even if the
+  // WHERE clause were dropped entirely. Pin the clause directly, then prove
+  // behaviorally that a suspended carrier's id never reaches an adapter.
+  it("scopes the carriers query to active tenants only", async () => {
+    await call("efs-sync")
+    const carriersQuery = queryMock.mock.calls.find(
+      ([sql]) => String(sql).includes("FROM hub.carriers") && !String(sql).includes("INSERT")
+    )
+    expect(carriersQuery).toBeDefined()
+    expect(String(carriersQuery![0])).toMatch(/status\s*=\s*'active'/)
+  })
+
+  it("never dispatches a suspended carrier even if the query's WHERE clause regresses", async () => {
+    // Stands in for a real Postgres WHERE status = 'active': only filters out
+    // the suspended carrier when the route's SQL text still asks it to.
+    queryMock.mockReset().mockImplementation(async (sql: string) => {
+      if (!String(sql).includes("FROM hub.carriers")) return [] as never
+      return (String(sql).includes("status = 'active'")
+        ? CARRIERS
+        : [...CARRIERS, SUSPENDED_CARRIER]) as never
+    })
+    const res = await call("efs-sync")
+    expect(res.status).toBe(200)
+    expect(runEfsSync).toHaveBeenCalledTimes(CARRIERS.length)
+    expect(runEfsSync).not.toHaveBeenCalledWith(SUSPENDED_CARRIER.id)
   })
 })
 
