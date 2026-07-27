@@ -142,6 +142,7 @@ export const PROVIDERS: readonly ProviderSpec[] = [
     blurb: "Submit factored invoices electronically; track advances and reserves. Pushes events to your webhook URL below.",
     fields: [
       { key: "apiKey", label: "API key", secret: true },
+      { key: "subscriptionKey", label: "Subscription key (OTR/Azure APIM — leave blank if your factor doesn't issue one)", secret: true },
       { key: "webhookSecret", label: "Webhook signing secret", secret: true },
     ],
     fallback: "Email the factor the invoice PDF", sync: "webhook", status: "stub",

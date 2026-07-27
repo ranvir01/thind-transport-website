@@ -29,7 +29,7 @@ const CARRIER = "44444444-4444-4444-4444-444444444444"
 const ACTOR = { id: "user-1", name: "Owner" }
 
 function mockFetchOnce(response: { ok: boolean; status?: number }) {
-  const fn = vi.fn(async () => response)
+  const fn = vi.fn(async (_url: string, _init?: RequestInit) => response)
   vi.stubGlobal("fetch", fn)
   return fn
 }
@@ -214,8 +214,40 @@ describe("submitInvoiceToFactor", () => {
     getInvoiceMock.mockResolvedValue({
       id: "invoice-1", number: "INV-1", amount_cents: 100, load_id: "load-1", customer_name: "Acme", sent_log: [],
     } as never)
-    mockFetchOnce({ ok: false, status: 500 })
-    await expect(submitInvoiceToFactor(CARRIER, "invoice-1", ACTOR)).rejects.toThrow(/500/)
+    // 401, not 500/429: those are retryable through fetchWithRetry and would
+    // burn real backoff waits here for no assertion value (retry itself is
+    // covered generically by http-retry.test.ts).
+    const fetchMock = mockFetchOnce({ ok: false, status: 401 })
+    await expect(submitInvoiceToFactor(CARRIER, "invoice-1", ACTOR)).rejects.toThrow(/401/)
+    expect(fetchMock).toHaveBeenCalledTimes(1)
     expect(queryMock).not.toHaveBeenCalled()
+  })
+
+  it("sends the Ocp-Apim-Subscription-Key header when a subscription key is configured (OTR/Azure APIM)", async () => {
+    hasCredentialsMock.mockResolvedValue(true)
+    getCredentialsMock.mockResolvedValue({ apiKey: "key", subscriptionKey: "sub-123" })
+    getInvoiceMock.mockResolvedValue({
+      id: "invoice-1", number: "INV-1", amount_cents: 100, load_id: "load-1", customer_name: "Acme", sent_log: [],
+    } as never)
+    const fetchMock = mockFetchOnce({ ok: true })
+
+    await submitInvoiceToFactor(CARRIER, "invoice-1", ACTOR)
+
+    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit]
+    expect((init.headers as Record<string, string>)["Ocp-Apim-Subscription-Key"]).toBe("sub-123")
+  })
+
+  it("omits the Ocp-Apim-Subscription-Key header for factors that don't issue one", async () => {
+    hasCredentialsMock.mockResolvedValue(true)
+    getCredentialsMock.mockResolvedValue({ apiKey: "key" })
+    getInvoiceMock.mockResolvedValue({
+      id: "invoice-1", number: "INV-1", amount_cents: 100, load_id: "load-1", customer_name: "Acme", sent_log: [],
+    } as never)
+    const fetchMock = mockFetchOnce({ ok: true })
+
+    await submitInvoiceToFactor(CARRIER, "invoice-1", ACTOR)
+
+    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit]
+    expect("Ocp-Apim-Subscription-Key" in (init.headers as Record<string, string>)).toBe(false)
   })
 })
