@@ -1,5 +1,6 @@
 import { query } from "./db"
 import { iftaFilingComplianceEntries } from "./ifta"
+import { form2290ComplianceEntries } from "./hvut-compliance"
 import { mileageStatus } from "./maintenance-due"
 
 export type ComplianceColor = "red" | "amber" | "green"
@@ -166,6 +167,10 @@ export async function complianceEntries(carrierId: string): Promise<ComplianceEn
 
   const iftaEntries = await iftaFilingComplianceEntries(carrierId)
   entries.push(...iftaEntries)
+
+  // Form 2290 is derived rather than stored: it is annual, fleet-wide, and
+  // nobody enters it anywhere, so it only shows up when someone remembers.
+  entries.push(...(await form2290ComplianceEntries(carrierId, now)))
 
   const order = { red: 0, amber: 1, green: 2 }
   return entries.sort((a, b) => order[a.color] - order[b.color] || String(a.due ?? "9999").localeCompare(String(b.due ?? "9999")))

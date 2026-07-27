@@ -250,10 +250,13 @@ describe("complianceEntries carrier scoping", () => {
     mockRowsBySql({})
     await complianceEntries(CARRIER)
     for (const [sql, params] of queryMock.mock.calls) {
+      // The carrier is always the first bind. Some queries take further
+      // params of their own (the Form 2290 wall passes the tax-period start),
+      // so the pin is on the scope, not on the argument count.
       expect(String(sql)).toContain("carrier_id = $1")
-      expect(params).toEqual([CARRIER])
+      expect((params as unknown[])[0]).toBe(CARRIER)
     }
-    expect(queryMock).toHaveBeenCalledTimes(6)
+    expect(queryMock).toHaveBeenCalledTimes(8)
     const iftaCall = queryMock.mock.calls.find(([sql]) => String(sql).includes("FROM hub.ifta_reports"))
     expect(iftaCall).toBeDefined()
     expect(iftaCall![1]).toEqual([CARRIER])
