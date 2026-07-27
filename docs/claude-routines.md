@@ -1447,3 +1447,63 @@ Backlog:
 - Carried, unchanged: npm audit high-severity findings in the `next`/`sharp` chain (owner-approval-gated
   semver-major bump, `npm audit fix --force`); Rust sidecar `tiny_http` connection-timeout/thread-cap gap
   (owner decision).
+
+## HOS computed-clocks fallback verification — 2026-07-27 ~10:45 UTC (verify-and-build cycle)
+
+`main` (`9dca881`) and the integrator (1 commit ahead, `527f214a`) were both already fresh: `npm run
+build` (0 TS errors) and `npx vitest run` (251 files/2274 tests, 14 skipped) green with no changes.
+`npm run agent:status` showed steady state — integrator within 3 of `main`, no unresolved `Backlog:`
+trailer on the last 10 `main` commits. The two most recent QA-rig-drive commits (`d3347d2e`, `527f214a`)
+had, within the last ~2h on this exact `main` HEAD, already run the full `e2e-run-all.mjs` battery
+(51/52 green, the one failure a known pre-existing test-anchor issue with a fix already sitting on an
+unmerged branch). Re-running that same battery again this cycle would have reproduced identical results
+with zero new information — skipped it as duplicate busywork rather than doing it for the checklist.
+
+Instead picked the one carried-forward item nobody had actually investigated: prior cycles' recurring
+note that `seed-demo.mjs` not seeding `hub.hos_snapshots` "blocks locally verifying `b5573f9`'s
+computed-clocks fallback." Traced the actual code path (`fleetHosStatus`/`dutyLogsFromSnapshots` in
+`src/lib/hub/telematics.ts`): the computed fallback only engages for a driver who already has at least
+one `hos_snapshots` row whose latest reading is stale/null — a driver with *zero* rows (the default
+demo-seed state) never enters the fallback at all, they're simply absent from the panel. So the
+open question was never "does the fallback work," it was "has anyone actually run it."
+
+Stood up a fresh local rig (Postgres 16 role+db, `AUTH_SECRET`/`NEXTAUTH_SECRET` — missing entirely from
+a fresh `.env.local`, which is a separate, real gap from the `hos_snapshots` one; `npm run db:migrate`
+22 migrations clean, `npm run seed:demo`, `npm run build && npm run start`). Inserted throwaway
+`hos_snapshots` rows directly via `psql` for two demo drivers *not* touched by `e2e-safety-smoke.mjs`
+(Harpreet/Gurjit/Jasdeep are its fixture; used Amrit Bains and Carlos Reyes instead so this didn't
+collide with that smoke's own empty-state assertion) — never touched `seed-demo.mjs` itself. Logged in
+as dispatcher and drove `/hub/safety` for real:
+- Amrit (an off/driving/off log with a real 10h+ reset break, ending "ok"): counted correctly into the
+  fleet total, no per-row detail shown — matches the office UI's intent of only surfacing at-risk rows.
+- Carlos (24h off — a qualifying reset — then 630 continuous minutes driving, latest reading forced
+  stale): panel showed "1 to watch", `Carlos Reyes — driving · drive clock 30m · computed from duty log
+  (ELD feed stale)`, flagged `OUT OF HOURS`. 660 - 630 = 30 matches `DRIVE_LIMIT_MINUTES` exactly —
+  the math, the `windowIsCertain` gate, the `computed` source label, and the at-risk sort all work
+  correctly end to end.
+
+This closes the ambiguity for good: the feature is correct, not blocked. The `seed-demo.mjs` gap is
+real but shouldn't be fixed by seeding `hos_snapshots` by default — doing so would break
+`e2e-safety-smoke.mjs`'s explicit `"No ELD data yet"` empty-state assertion, which is *also* by design
+(the demo intentionally shows "no telematics connected yet" out of the box). That's a genuine tradeoff,
+not a bug — recording it as an owner call instead of guessing. Deleted the throwaway rows, tore down
+the local server and `.env.local`, working tree stayed clean throughout (verification only, no product
+or test code touched, so no commit was needed on either the safety-page rendering or `seed-demo.mjs`).
+
+Backlog:
+- A fresh rig has no `AUTH_SECRET`/`NEXTAUTH_SECRET` in `.env.example`'s guidance — every QA cycle that
+  stands up local Postgres from scratch hits `MissingSecret` on first login and has to generate one
+  ad hoc. Worth a one-line addition to the dev-workflow-testing skill or `.env.example` itself
+  (`openssl rand -hex 32`) so this stops being rediscovered per cycle.
+- Owner call, not a defect: should `seed-demo.mjs` ship a couple of `hub.hos_snapshots` rows so the
+  Safety page's HOS panel has something to show out of the box, accepting that `e2e-safety-smoke.mjs`'s
+  empty-state assertion would need to move to a driver seeded specifically for that check instead of
+  relying on the whole-table default? Either answer is defensible; flagging instead of guessing.
+- `claude/eager-babbage-vbk92d` (fix for `e2e-sweep.mjs`'s stale OWNER_PAGES reports anchor) is still
+  unmerged after 4+ QA cycles flagging it — integrator should drain this specific branch ahead of any
+  fresh top-of-inventory pick.
+- 201+ pending `claude/*` branches per `agent:branches` — meta-governor prune pass still overdue.
+- Carried, unchanged: npm audit high-severity findings in the `next`/`sharp` chain (owner-approval-gated
+  semver-major bump); Rust sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision);
+  TEST_GAPS.md row 1 (`settlements.ts:89` `draftSettlements` multi-driver/percentage-pay/multi-referral
+  cases); green-as-success convention owner call (`PreQualificationForm.tsx` vs `ApplicationForm.tsx`).
