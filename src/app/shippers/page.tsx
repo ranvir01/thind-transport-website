@@ -174,6 +174,15 @@ export default function ShippersPage() {
               See our lanes
             </Link>
           </p>
+          <p className="mt-4 text-center text-sm text-gray-500">
+            Shipping LTL and not sure of the class?{" "}
+            <Link
+              href="/tools/freight-class-calculator"
+              className="font-medium text-orange-600 hover:underline"
+            >
+              Use our free freight class calculator
+            </Link>
+          </p>
           {/* Escape hatch: nobody gets trapped in the shipper lane. */}
           <p className="mt-4 text-center text-sm text-gray-500">
             Not a shipper?{" "}
