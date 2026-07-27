@@ -6,6 +6,7 @@ import { createMailTransport, isEmailConfigured, mailFrom } from "@/lib/mailer"
 import { savePublicApplication, markPublicApplicationEmailed } from "@/lib/driver-db"
 import { honeypotTripped, publicFormBlocked } from "@/lib/public-form-guard"
 import { saveWebsiteLead } from "@/lib/hub/website-leads"
+import { ATTRIBUTION_FIELD, deserializeAttribution } from "@/lib/attribution"
 
 const preQualifySchema = z.object({
   firstName: z.string().min(2, "First Name is required"),
@@ -126,6 +127,7 @@ export async function submitPreQualification(prevState: PreQualifyState, formDat
       email: data.email,
       phone: data.phone,
       source: `Pre-qualification (${isQualified ? "qualified" : "needs review"})`,
+      attribution: deserializeAttribution(formData.get(ATTRIBUTION_FIELD) as string | null),
       driverType: data.ownSleeperTruck === "Yes" ? "owner-operator" : null,
       experienceYears: data.cdlExperience,
       message: `${data.cityState} · Home time: ${data.homeTimeDuration}`,

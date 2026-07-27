@@ -8,6 +8,7 @@ import {
   MobileCommandBar,
 } from "@/components/cinematic/Footer"
 import { BackToTop } from "@/components/shared/BackToTop"
+import { AttributionCapture } from "@/components/shared/AttributionCapture"
 import { SkipLink } from "@/components/shared/SkipLink"
 import { COMPANY_INFO } from "@/lib/constants"
 import { SchemaMarkup } from "@/components/features/SchemaMarkup"
@@ -150,6 +151,8 @@ export default function RootLayout({
 
         {/* Structured Data - Injected via SchemaMarkup component */}
         <SchemaMarkup />
+        {/* Records where this visit came from, once, wherever they land. */}
+        <AttributionCapture />
       </head>
       <body
         className={`${sourceSans.className} antialiased overflow-x-hidden`}

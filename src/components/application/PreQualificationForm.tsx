@@ -22,6 +22,7 @@ import { cn } from "@/lib/utils"
 import { HONEYPOT_FIELD, readHoneypotValue } from "@/lib/honeypot"
 import { track } from "@vercel/analytics"
 import { HoneypotField } from "@/components/shared/HoneypotField"
+import { AttributionField } from "@/components/shared/AttributionField"
 import Link from "next/link"
 import { COMPANY_INFO, PAY_RATES } from "@/lib/constants"
 
@@ -202,6 +203,7 @@ export function PreQualificationForm() {
 
       <form onSubmit={handleSubmit(onSubmit)} className="relative space-y-8">
         <HoneypotField />
+      <AttributionField />
         {/* Basic Information */}
         <div className="space-y-6">
           <h3 className="text-xl font-bold text-slate-800 border-b pb-2">Basic Information</h3>

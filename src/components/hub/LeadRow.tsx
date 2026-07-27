@@ -7,6 +7,7 @@
  * minutes, not managing a CRM.
  */
 import { useTransition } from "react"
+import { describeAttribution } from "@/lib/attribution"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { Check, Loader2, Mail, MessageSquare, Phone, UserPlus, X } from "lucide-react"
@@ -71,6 +72,12 @@ export function LeadRow({ lead }: { lead: WebsiteLead }) {
             .join(" · ")}
         </p>
         {lead.message ? <p className="mt-1 text-body-xs text-fg-2">{lead.message}</p> : null}
+        {/* Where the visit came from, as opposed to which form they filled in.
+            Only rendered when there is something to say — every lead showing
+            "Direct / unknown" would be noise on a board scanned at a glance. */}
+        {lead.attribution ? (
+          <p className="mt-1 text-body-xs text-fg-3">↳ {describeAttribution(lead.attribution)}</p>
+        ) : null}
       </div>
 
       <div className="flex shrink-0 items-center gap-2">

@@ -6,6 +6,7 @@
  * either DB or email worked).
  */
 import { query, queryOne, hubDbAvailable } from "./db"
+import type { Attribution } from "@/lib/attribution"
 
 /**
  * hub.website_leads carries no carrier_id — it is the site operator's own
@@ -25,6 +26,8 @@ export interface WebsiteLead {
   driver_type: string | null
   experience_years: string | null
   message: string | null
+  /** Campaign / referrer / landing path for the visit this lead came from. */
+  attribution: Attribution | null
   status: "new" | "contacted" | "closed"
   created_at: string
   contacted_at: string | null
@@ -38,12 +41,15 @@ export async function saveWebsiteLead(lead: {
   driverType?: string | null
   experienceYears?: string | null
   message?: string | null
+  /** Campaign / referrer / landing path for this visit. */
+  attribution?: Attribution | null
 }): Promise<boolean> {
   if (!hubDbAvailable()) return false
   try {
     await query(
-      `INSERT INTO hub.website_leads (name, email, phone, source, driver_type, experience_years, message)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+      `INSERT INTO hub.website_leads
+         (name, email, phone, source, driver_type, experience_years, message, attribution)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
       [
         lead.name ?? null,
         lead.email,
@@ -52,6 +58,7 @@ export async function saveWebsiteLead(lead: {
         lead.driverType ?? null,
         lead.experienceYears ?? null,
         lead.message ?? null,
+        lead.attribution ? JSON.stringify(lead.attribution) : null,
       ]
     )
     return true
@@ -67,7 +74,7 @@ export async function listWebsiteLeads(carrierId: string, limit = 100): Promise<
   if (carrierId !== OPERATOR_CARRIER_ID) return []
   return query<WebsiteLead>(
     `SELECT id::text, name, email, phone, source, driver_type, experience_years, message,
-            status, created_at::text, contacted_at::text
+            attribution, status, created_at::text, contacted_at::text
      FROM hub.website_leads
      ORDER BY (status = 'new') DESC, created_at DESC
      LIMIT $1`,
@@ -79,7 +86,7 @@ export async function getWebsiteLead(carrierId: string, id: string): Promise<Web
   if (carrierId !== OPERATOR_CARRIER_ID) return null
   return queryOne<WebsiteLead>(
     `SELECT id::text, name, email, phone, source, driver_type, experience_years, message,
-            status, created_at::text, contacted_at::text
+            attribution, status, created_at::text, contacted_at::text
      FROM hub.website_leads
      WHERE id = $1::bigint`,
     [id]

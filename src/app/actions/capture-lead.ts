@@ -1,6 +1,11 @@
 "use server"
 
 import { z } from "zod"
+import {
+  ATTRIBUTION_FIELD,
+  describeAttribution,
+  deserializeAttribution,
+} from "@/lib/attribution"
 import { COMPANY_INFO } from "@/lib/constants"
 import { createMailTransport, isEmailConfigured, mailFrom } from "@/lib/mailer"
 import { saveWebsiteLead } from "@/lib/hub/website-leads"
@@ -73,6 +78,10 @@ export async function captureLead(prevState: LeadState, formData: FormData): Pro
       driverType: (formData.get("driverType") as string) || null,
       experienceYears: (formData.get("experienceYears") as string) || null,
       message: data.message,
+      // Where the visit came from, captured on their landing page. Parsed
+      // defensively — this is a hidden field and therefore attacker-editable,
+      // so deserializeAttribution whitelists our own keys and drops the rest.
+      attribution: deserializeAttribution(formData.get(ATTRIBUTION_FIELD) as string | null),
     })
 
     let emailed = false
@@ -89,6 +98,9 @@ export async function captureLead(prevState: LeadState, formData: FormData): Pro
             `Email: ${data.email}`,
             `Phone: ${data.phone || "—"}`,
             `Source: ${data.source || "website"}`,
+            `Came from: ${describeAttribution(
+              deserializeAttribution(formData.get(ATTRIBUTION_FIELD) as string | null)
+            )}`,
             data.message ? `Message: ${data.message}` : "",
           ]
             .filter(Boolean)
