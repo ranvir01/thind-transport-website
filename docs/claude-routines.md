@@ -1493,3 +1493,57 @@ Backlog:
   semver-major bump); TEST_GAPS.md #11/#12 (detention downward-revision recompute, computeDriverScores)
   need an owner design call; wex integration doc is the oldest built-adapter doc awaiting its
   scout-rotation re-pass.
+
+## Three-branch absorb + drain — 2026-07-27 ~23:50 UTC (Routine 1 run)
+
+Integrator matched `main` exactly at `ea143d8f` (0 drift) — `npm ci` + `npm run build` + `npx vitest run`
+(253 files/2295 tests) green before touching anything.
+
+`npm run agent:status` showed one lane branch ahead (`claude/lane-tests`, `assignFuelToLoad`'s both-sides
+carrier-scoping test) plus 184 pending `claude/*` branches. The top of `agent:branches`' suggested order
+was the same 350-850+-unpicked-commit family already ruled out in every prior cycle (`eager-babbage-
+ibsmrz`, `practical-franklin-5ol54s`, the `inspiring-sagan-*`/`stoic-mccarthy-*`/`awesome-hypatia-*`
+group) — skipped again, unchanged call. Sampled five of the ~150 branches carrying exactly 1 unpicked
+commit instead of assuming the whole tail is log-only noise (per the standing "skim for an actual code/
+test diff before falling back to those" note): three were confirmed QA-rig-drive/log-only commits with a
+412-413-file stale diff and no real payload (`practical-franklin-{h5n8s8,u6qp8w,02q8zo}`); two carried
+real, small, genuinely new work — `serene-babbage-l3bee1` (a regression test pinning `cron-route.ts`'s
+active-carrier `WHERE` clause) and `eager-babbage-9lfcwu` (a `TEST_GAPS.md` doc fix marking `reports.ts`'s
+`fuelSpendSummary`/`exportFuelSpendCsv` rows covered — closes the exact "reports.ts row is stale" line
+this doc's own backlog has carried for several cycles).
+
+Absorbed all three (`lane-tests`, `serene-babbage-l3bee1`, `eager-babbage-9lfcwu`) one at a time, clean
+3-way merges each (no conflicts) — rebuilding/retesting after each. Verified `serene-babbage-l3bee1`'s new
+test actually runs and passes before committing (`npx vitest run src/lib/hub/__tests__/cron-route.test.ts`
+— 16/16); verified `eager-babbage-9lfcwu`'s doc claim against the code before committing (`reports-fuel-
+spend.test.ts` does exist and does cover both named functions, not just an unverified assertion).
+
+Full verify chain after all three merges: `npm run build`, `npx vitest run` (254 files/2301 tests, 14
+skipped), `npm run lint` (clean), `npm run test:sidecars` (29 Rust tests + Go vet/test, clippy clean) —
+ran sidecars even though nothing Go/Rust was touched this cycle. All three changes were test-only/docs-
+only (no product code, no UI surface), so per the routine's own scoping no local-Postgres/Playwright drive
+was run — build + unit-test gates covered everything that changed, same call as the last several
+docs/test-only absorb cycles.
+
+Drained via the stamped `--no-ff` method (`.drain-stamp` → `sha=0f049eee…`), main pushed alone then
+integrator fast-forwarded to match; both sit at `65e02941`, 0 drift.
+
+Backlog:
+- `claude/eager-babbage-ibsmrz`'s real payload is still buried under 850+ stale commits and conflicts on
+  30+ files against current `main` — needs a human to identify what (if anything) is genuinely new and
+  cherry-pick it onto a fresh branch (carried, unchanged, same as `lane-compliance`'s 2026-07-26 fork).
+- ~150 of the 184 pending branches carry exactly 1 unpicked commit each; this cycle's 5-branch sample was
+  3-to-2 log-only-vs-real, so the tail is NOT safe to write off as entirely log noise — next cycle should
+  keep sampling a fresh slice (not the same five) rather than re-triage the same branches already resolved
+  here.
+- Driver lane has no component-render tests anywhere (no jsdom/testing-library in `vitest.config.ts`) —
+  every UI-facing test in this territory is pure-function or source-grep style. Adding jsdom + testing-
+  library is a shared-tooling change (`vitest.config.ts`, new deps), out of one lane's territory — needs
+  the integrator or an explicit ask (carried, unchanged).
+- `reports.ts`'s `laneLeaderboardRange`/`laneLeaderboardRangeCsv` duplicate `recomputeLanes`' aggregation
+  SQL (`lanes.ts`) — shared lane-aggregation helper touches `lanes.ts`, integrator territory (carried,
+  unchanged, still unclaimed).
+- Carried, unchanged: npm audit high-severity findings in the `next`/`sharp` chain (owner-approval-gated
+  semver-major bump); Rust sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision); TEST_GAPS.md
+  row 1 (`draftSettlements` multi-driver/percentage-pay/multi-referral cases); green-as-success convention
+  design call (`PreQualificationForm.tsx` vs `ApplicationForm.tsx`).
