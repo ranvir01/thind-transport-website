@@ -531,3 +531,44 @@ func TestOsrmBreakerReopensImmediatelyIfProbeFails(t *testing.T) {
 		t.Fatal("a failed probe must re-open the breaker immediately, not grant more calls")
 	}
 }
+
+// TestConcurrentRouteMilesRequestsAreRaceFree drives the package-level
+// `breaker` through the real HTTP handler from many goroutines at once — every
+// other breaker test (above) calls allow/recordSuccess/recordFailure directly
+// and sequentially, which exercises the mutex's correctness but never its
+// safety under genuine concurrent access. In production, every /route/miles
+// request runs on its own goroutine (net/http's per-connection model) and they
+// all share this one breaker, so a locking bug here would only ever show up
+// under real concurrency — `go test -race` is what actually catches it; a
+// green run without -race would just mean the race didn't happen to trigger.
+func TestConcurrentRouteMilesRequestsAreRaceFree(t *testing.T) {
+	breaker.reset()
+	t.Cleanup(breaker.reset)
+	// Unreachable: every request takes the recordFailure() write path, the
+	// side that mutates breaker state, so concurrent access is guaranteed to
+	// touch the same fields rather than only ever reading.
+	t.Setenv("OSRM_URL", "http://127.0.0.1:1")
+	mux := newMux()
+	const body = `{"origin":{"lat":0,"lng":0},"dest":{"lat":0,"lng":1}}`
+
+	const n = 50
+	var wg sync.WaitGroup
+	codes := make([]int, n)
+	for i := 0; i < n; i++ {
+		wg.Add(1)
+		go func(i int) {
+			defer wg.Done()
+			req := httptest.NewRequest(http.MethodPost, "/route/miles", strings.NewReader(body))
+			rec := httptest.NewRecorder()
+			mux.ServeHTTP(rec, req)
+			codes[i] = rec.Code
+		}(i)
+	}
+	wg.Wait()
+
+	for i, code := range codes {
+		if code != http.StatusOK {
+			t.Fatalf("request %d: expected 200 (fallback answer), got %d", i, code)
+		}
+	}
+}
