@@ -6,10 +6,16 @@
  * would otherwise execute as a live formula instead of displaying as text.
  * The single shared implementation for every CSV export (was three
  * independent copies, none of which guarded against injection).
+ *
+ * Plain signed decimals (e.g. a negative Net/P&L cell) are exempt from the
+ * `-` trigger: they're not formula-shaped, and prefixing them turned every
+ * loss-making truck/lane's numeric columns into unusable text in Excel.
  */
+const PLAIN_DECIMAL = /^[+-]?\d+(\.\d+)?$/
+
 export function csvEscape(value: unknown): string {
   let str = String(value ?? "")
-  if (/^[=+\-@]/.test(str)) str = `'${str}`
+  if (!PLAIN_DECIMAL.test(str) && /^[=+\-@]/.test(str)) str = `'${str}`
   return /[",\n\r]/.test(str) ? `"${str.replace(/"/g, '""')}"` : str
 }
 

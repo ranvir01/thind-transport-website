@@ -19,10 +19,10 @@ import {
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
-import { captureLead } from "@/app/actions/capture-lead"
 import { submitApplication } from "@/app/actions/submit-application"
 import { PAY_RATES, COMPANY_INFO } from "@/lib/constants"
 import { applyProgressPercent } from "./apply-progress"
+import { fireLeadCapture } from "./lead-capture"
 import { HONEYPOT_FIELD, readHoneypotValue } from "@/lib/honeypot"
 import { track } from "@vercel/analytics"
 import { HoneypotField } from "@/components/shared/HoneypotField"
@@ -58,7 +58,6 @@ export function ApplicationForm() {
   const pathname = usePathname()
   const [step, setStep] = useState(1)
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [isCapturingLead, setIsCapturingLead] = useState(false)
   const [serverError, setServerError] = useState<string | null>(null)
   const [errorDetails, setErrorDetails] = useState<string[]>([])
   
@@ -152,29 +151,28 @@ export function ApplicationForm() {
 
     if (isStepValid) {
       if (step === 2) {
-        // Capture Lead
-        setIsCapturingLead(true)
-        try {
-          const formData = new FormData()
-          const values = getValues()
-          formData.append("name", `${values.firstName} ${values.lastName}`)
-          formData.append("phone", values.phone)
-          formData.append("email", values.email)
-          formData.append("driverType", values.driverType)
-          formData.append("experienceYears", values.experienceYears)
-          formData.append("source", "Application Form Step 2")
-          const hp = readHoneypotValue()
-          if (hp) formData.append(HONEYPOT_FIELD, hp)
-
-          await captureLead({ success: false, message: "" }, formData)
-          track("apply_lead_captured")
-        } catch (err) {
-          console.error(err)
-        } finally {
-          setIsCapturingLead(false)
-        }
+        // Fire the lead capture in the BACKGROUND — do not await it. The
+        // insert (DB + notification email) is a full server round trip that
+        // can take seconds on truck-stop cell service, and its result never
+        // gates advancement (a failed capture still advances). Blocking the
+        // Continue tap on it stalled drivers at the most abandonment-
+        // sensitive moment of the funnel. Guarded by lead-capture.test.ts.
+        const values = getValues()
+        void fireLeadCapture(
+          {
+            firstName: values.firstName,
+            lastName: values.lastName,
+            email: values.email,
+            phone: values.phone,
+            driverType: values.driverType,
+            experienceYears: values.experienceYears,
+          },
+          readHoneypotValue()
+        ).then((captured) => {
+          if (captured) track("apply_lead_captured")
+        })
       }
-      
+
       track("apply_step", { step: step + 1 })
       setStep((s) => s + 1)
       // Scroll to top of form container instead of window
@@ -267,7 +265,7 @@ export function ApplicationForm() {
       console.error("Submission error:", error)
       const errorMsg = error instanceof Error 
         ? `Error: ${error.message}` 
-        : "An unexpected error occurred. Please call (206) 765-6300 for immediate assistance."
+        : `An unexpected error occurred. Please call ${COMPANY_INFO.phone} for immediate assistance.`
       toast.error(errorMsg)
       setServerError(errorMsg)
     } finally {
@@ -456,7 +454,6 @@ export function ApplicationForm() {
                   type="button" 
                   onClick={nextStep} 
                   className="w-full h-14 text-lg font-bold bg-orange-600 hover:bg-orange-500 text-white shadow-lg shadow-orange-500/30 transition-all hover:shadow-xl hover:shadow-orange-500/40 hover:-translate-y-0.5"
-                  disabled={isCapturingLead}
                 >
                     CHECK MY ELIGIBILITY <ChevronRight className="ml-2 h-5 w-5" />
                 </Button>
@@ -543,18 +540,8 @@ export function ApplicationForm() {
                     type="button" 
                     onClick={nextStep} 
                     className="flex-[2] h-14 text-lg font-bold bg-orange-600 hover:bg-orange-500 text-white shadow-lg shadow-orange-500/30 transition-all hover:shadow-xl hover:shadow-orange-500/40 hover:-translate-y-0.5"
-                    disabled={isCapturingLead}
                   >
-                    {isCapturingLead ? (
-                      <>
-                        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                        Saving...
-                      </>
-                    ) : (
-                      <>
-                        CONTINUE <ChevronRight className="ml-2 h-5 w-5" />
-                      </>
-                    )}
+                    CONTINUE <ChevronRight className="ml-2 h-5 w-5" />
                   </Button>
                 </div>
               </div>

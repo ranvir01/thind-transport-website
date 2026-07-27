@@ -23,6 +23,7 @@ import { HONEYPOT_FIELD, readHoneypotValue } from "@/lib/honeypot"
 import { track } from "@vercel/analytics"
 import { HoneypotField } from "@/components/shared/HoneypotField"
 import Link from "next/link"
+import { COMPANY_INFO, PAY_RATES } from "@/lib/constants"
 
 const formSchema = z.object({
   firstName: z.string().min(2, "First Name is required"),
@@ -53,7 +54,11 @@ type FormData = z.infer<typeof formSchema>
 export function PreQualificationForm() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [serverError, setServerError] = useState<string | null>(null)
-  const [submissionResult, setSubmissionResult] = useState<{ success: boolean; isQualified?: boolean } | null>(null)
+  const [submissionResult, setSubmissionResult] = useState<{
+    success: boolean
+    isQualified?: boolean
+    isOwnerOperator?: boolean
+  } | null>(null)
 
   const {
     register,
@@ -104,7 +109,14 @@ export function PreQualificationForm() {
 
       if (result.success) {
         track("prequalify_submit", { qualified: result.isQualified === true })
-        setSubmissionResult({ success: true, isQualified: result.isQualified })
+        setSubmissionResult({
+          success: true,
+          isQualified: result.isQualified,
+          // "Own Sleeper Truck? Yes" is the O/O track — the sign-on bonus
+          // promise on the success card must match the track (PAY_RATES has
+          // different bonuses for owner-operators vs company drivers).
+          isOwnerOperator: data.ownSleeperTruck === "Yes",
+        })
         // Scroll to top to show result
         window.scrollTo({ top: 0, behavior: 'smooth' })
       } else {
@@ -121,6 +133,9 @@ export function PreQualificationForm() {
 
   if (submissionResult?.success) {
     if (submissionResult.isQualified) {
+      const signOnBonus = submissionResult.isOwnerOperator
+        ? PAY_RATES.ownerOperator.signOnBonus
+        : PAY_RATES.companyDriver.signOnBonus
       return (
         <div className="bg-white rounded-3xl p-8 md:p-12 shadow-2xl shadow-green-900/20 border border-green-100 text-center animate-in fade-in slide-in-from-bottom-4 duration-500">
           <div className="w-24 h-24 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-8 ring-8 ring-green-50">
@@ -134,7 +149,7 @@ export function PreQualificationForm() {
           </p>
           <div className="bg-green-50 rounded-xl p-6 mb-8 max-w-md mx-auto border border-green-100">
             <ul className="text-left space-y-3 font-medium text-green-900">
-              <li className="flex items-center gap-2"><CheckCircle2 className="w-5 h-5 text-green-600" /> Eligible for $2,500 Sign-On Bonus</li>
+              <li className="flex items-center gap-2"><CheckCircle2 className="w-5 h-5 text-green-600" /> Eligible for {signOnBonus} Sign-On Bonus</li>
               <li className="flex items-center gap-2"><CheckCircle2 className="w-5 h-5 text-green-600" /> Priority Application Processing</li>
               <li className="flex items-center gap-2"><CheckCircle2 className="w-5 h-5 text-green-600" /> Immediate Orientation Available</li>
             </ul>
@@ -144,7 +159,7 @@ export function PreQualificationForm() {
               <Link href="/apply">Complete Full Application</Link>
             </Button>
             <Button asChild variant="outline" className="h-14 text-lg font-medium border-slate-300 hover:bg-slate-50">
-              <a href="tel:+12067656300">Call Recruiting</a>
+              <a href={`tel:${COMPANY_INFO.phoneFormatted}`}>Call Recruiting</a>
             </Button>
           </div>
         </div>

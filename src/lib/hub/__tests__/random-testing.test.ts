@@ -6,13 +6,14 @@
  */
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
-const { queryMock, notifyDriver, logAudit } = vi.hoisted(() => ({
+const { queryMock, queryOneMock, notifyDriver, logAudit } = vi.hoisted(() => ({
   queryMock: vi.fn(),
+  queryOneMock: vi.fn(async () => null),
   notifyDriver: vi.fn(async () => undefined),
   logAudit: vi.fn(async () => undefined),
 }))
 
-vi.mock("../db", () => ({ query: queryMock, queryOne: vi.fn(async () => null) }))
+vi.mock("../db", () => ({ query: queryMock, queryOne: queryOneMock }))
 vi.mock("../notify", () => ({ notifyDriver }))
 vi.mock("../audit", () => ({ logAudit }))
 
@@ -143,15 +144,54 @@ describe("notifyRandomTestPool", () => {
 })
 
 describe("recordRandomTestResult", () => {
-  it("writes status/result/completedOn/notes scoped to the carrier", async () => {
+  const ACTOR = { id: "user-1", name: "Test Office" }
+  const EXISTING = {
+    driver_id: "driver-1", test_type: "drug", period: PERIOD,
+    status: "notified", result: null, completed_on: null,
+  }
+
+  beforeEach(() => {
     queryMock.mockReset().mockResolvedValue([])
+    queryOneMock.mockReset().mockResolvedValue(EXISTING as never)
+    logAudit.mockClear()
+  })
+
+  it("writes status/result/completedOn/notes scoped to the carrier", async () => {
     await recordRandomTestResult(CARRIER, "evt-1", {
       status: "completed", result: "negative", completedOn: "2026-07-23", notes: "clean",
-    })
+    }, ACTOR)
+    expect(queryOneMock).toHaveBeenCalledWith(
+      expect.stringContaining("WHERE carrier_id = $1 AND id = $2"),
+      [CARRIER, "evt-1"]
+    )
     expect(queryMock).toHaveBeenCalledWith(
       expect.stringContaining("UPDATE hub.random_test_events"),
       [CARRIER, "evt-1", "completed", "negative", "2026-07-23", "clean"]
     )
+  })
+
+  it("audits the result with what it replaced (DOT record, 382.305)", async () => {
+    await recordRandomTestResult(CARRIER, "evt-1", {
+      status: "refused", result: "refused", completedOn: "2026-07-23",
+    }, ACTOR)
+    expect(logAudit).toHaveBeenCalledWith({
+      carrierId: CARRIER, actorId: ACTOR.id, actorName: ACTOR.name,
+      entityType: "random_test_event", entityId: "evt-1", action: "result",
+      oldValue: { status: "notified", result: null, completedOn: null },
+      newValue: {
+        driverId: "driver-1", testType: "drug", period: PERIOD,
+        status: "refused", result: "refused", completedOn: "2026-07-23",
+      },
+    })
+  })
+
+  it("rejects an id outside the carrier instead of silently no-opping", async () => {
+    queryOneMock.mockResolvedValue(null as never)
+    await expect(
+      recordRandomTestResult(CARRIER, "someone-elses-event", { status: "completed", result: "negative" }, ACTOR)
+    ).rejects.toThrow("Test event not found")
+    expect(queryMock).not.toHaveBeenCalled()
+    expect(logAudit).not.toHaveBeenCalled()
   })
 })
 

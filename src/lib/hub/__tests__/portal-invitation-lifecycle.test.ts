@@ -45,8 +45,14 @@ beforeEach(() => {
 
 describe("createPortalInvitation", () => {
   it("lowercases the email and mints a 7-day token", async () => {
+    // createPortalInvitation now assertCarrierRefs the customer_id at the data
+    // layer (1c audit: an invitation must not be able to bind a foreign
+    // customer even if the caller checked). Answer that ownership lookup so
+    // this test exercises the insert, not the guard — the guard's own refusal
+    // path is covered below.
+    queryMock.mockResolvedValueOnce([{ id: CUSTOMER }])
     await createPortalInvitation(CARRIER, CUSTOMER, "Broker@Example.com", "broker", "Dana")
-    const [sql, params] = queryMock.mock.calls[0]
+    const [sql, params] = queryMock.mock.calls[1]
     expect(String(sql)).toContain("INSERT INTO hub.portal_invitations")
     expect(String(sql)).toContain("NOW() + INTERVAL '7 days'")
     expect(params[0]).toBe(CARRIER)
@@ -55,6 +61,18 @@ describe("createPortalInvitation", () => {
     expect(params[3]).toBe("broker")
     expect(typeof params[4]).toBe("string")
     expect((params[4] as string).length).toBe(48) // 24 bytes hex-encoded
+  })
+
+  it("refuses to bind a customer that belongs to another carrier", async () => {
+    // Ownership lookup comes back empty → the invitation must never be written.
+    queryMock.mockResolvedValueOnce([])
+    await expect(
+      createPortalInvitation(CARRIER, "33333333-3333-3333-3333-333333333333", "b@example.com", "broker", "Dana")
+    ).rejects.toThrow(/not found/i)
+    const inserted = queryMock.mock.calls.some(([sql]) =>
+      String(sql).includes("INSERT INTO hub.portal_invitations")
+    )
+    expect(inserted).toBe(false)
   })
 })
 
