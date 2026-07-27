@@ -1304,3 +1304,60 @@ Backlog:
   overdue.
 - Carried, unchanged: npm audit high-severity findings (owner-approval-gated semver-major bump); Rust
   sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision).
+
+## Seven-lane absorb + drain — 2026-07-27 ~01:40 UTC (verify-and-build cycle)
+
+`main` was 1 commit ahead of the integrator (a `.drain-stamp` drain commit not yet merged back, same
+divergence shape as prior cycles). Fast-forwarded the integrator to `main`, then `npm ci` + `npm run
+build` + `npx vitest run` (221 files/1957 tests) + `npm run lint` all green before touching anything else.
+
+`npm run agent:status` showed seven lane branches ahead of the integrator, each 1-2 small commits with a
+real merge-base — absorbed all seven in one pass, rebuilding/retesting after each, all clean merges (no
+conflicts, no keep-HEAD calls needed this cycle): `lane-driver` (`ExpiryPill`'s day-math extracted into a
+pure, unit-tested function), `lane-portal` (`acceptInvitation` account-creation lifecycle test coverage),
+`lane-tests` (`sendFactoringPacket`'s incomplete-packet guard + factor routing coverage, closes TEST_GAPS.md
+#13), `lane-compliance` (IFTA worksheet CSV export's TOTAL row now fills taxable/tax-paid gallons, base tax,
+and surcharge columns instead of leaving them blank — reuses the existing `iftaWorksheetTotals` helper,
+mirrors the on-screen `<tfoot>`), `lane-docs` (EFS/scout-rotation doc drift fixes, no code), `lane-analytics`
+(`fuelSpendSummary`/`exportFuelSpendCsv` test coverage), `lane-saas` (Cascade Demo Lines seed accent swapped
+to clear WCAG AA contrast against portal chrome).
+
+Full verify chain after all seven merges: `npm run build`, `npx vitest run` (225 files/1981 tests, 9
+skipped), `npm run lint` (clean), `npm run test:sidecars` (29 Rust tests + Go vet/test, clippy clean) — ran
+sidecars even though nothing Go/Rust was touched this cycle, all green.
+
+Local Postgres stood up fresh (no `hubapp` role/`hubdb` database existed yet — created both per the
+dev-workflow-testing skill's pitfall #9), `npm run db:migrate` (all 22 migrations clean) + `npm run
+seed:demo`, `npm run build && npm run start`. Drove three E2E smokes covering what was just merged:
+`e2e-ifta-smoke` (worksheet compute → draft → filed, and specifically the CSV reconciliation this cycle's
+compliance change touches — jurisdiction rows sum to header net tax both on-screen and in the CSV, TOTAL row
+intact) and `e2e-compliance-smoke` + `e2e-driver-smoke` (both render `ExpiryPill` on the compliance wall and
+driver home respectively — 22/22 and 15/15 checks green, 0 console errors). One pre-existing, unrelated
+assertion failed in `e2e-ifta-smoke`: "fleet MPG credible for a tractor (got 9.31)" wants `4 < mpg < 9`;
+traced this to the deterministic demo-data fuel/mileage ratio, not to anything in this cycle's diff — none
+of the seven merges touch fuel-transaction or mileage seed generation (the one `seed-demo.mjs` edit this
+cycle was a single hex color on the second tenant's branding, unrelated to the primary tenant's fuel data
+the check reads). Recorded below rather than treated as a fix-forward blocker since it's a smoke-script
+threshold/seed-data calibration question, not a product defect.
+
+Drained via the stamped `--no-ff` method (`.drain-stamp` → `sha=3df1274…`) immediately after the lane
+absorb, main pushed alone then integrator fast-forwarded to match; this docs commit is a second, separate
+drain on top since it lands after the verification pass completed.
+
+Backlog:
+- `e2e-ifta-smoke.mjs`'s "fleet MPG credible for a tractor" check (`4 < mpg < 9`) reads 9.31 against the
+  current demo fleet's seeded fuel/mileage data — either the seed's fuel-transaction gallons for the
+  primary tenant's tractors need a small adjustment or the script's bound should widen slightly; not a
+  production code defect, just a stale calibration between `seed-demo.mjs` and the smoke's assertion.
+- TEST_GAPS.md row 1 (`settlements.ts:89` `draftSettlements`): multi-driver runs in one call, percentage-pay
+  rounding through the same path, `payableReferralBonuses` with more than one payable referral or a
+  deleted-applicant row — all still untested (carried).
+- Owner/design call still open: green-as-success convention (`PreQualificationForm.tsx` vs
+  `ApplicationForm.tsx`) (carried).
+- `claude/lane-compliance`'s remote branch (the one just absorbed above) and `claude/lane-tests` both still
+  show 600+/1400+ unpicked *raw* commits per `agent:branches` even after this absorb — that's stale history
+  behind the one real commit each contributed this cycle, not unabsorbed value; still a meta-governor prune
+  candidate, unchanged from prior cycles.
+- Carried, unchanged: npm audit high-severity findings in the `next`/`sharp` chain (owner-approval-gated
+  semver-major bump, `npm audit fix --force`); Rust sidecar `tiny_http` connection-timeout/thread-cap gap
+  (owner decision).
