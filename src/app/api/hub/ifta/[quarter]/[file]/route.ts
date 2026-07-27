@@ -62,7 +62,10 @@ export async function GET(
       ...rows.map((r) => {
         const surchargeCents = Number(r.surchargeCents ?? 0)
         const fuelTaxCents = iftaRowFuelTaxCents(r)
-        return `${r.jurisdiction},${r.miles},${r.taxableGallons.toFixed(3)},${r.taxPaidGallons.toFixed(3)},${Number(r.rate).toFixed(4)},${(fuelTaxCents / 100).toFixed(2)},${Number(r.surchargeRate).toFixed(4)},${(surchargeCents / 100).toFixed(2)},${(r.netCents / 100).toFixed(2)}`
+        // `?? 0` mirrors the on-screen table and staleRateJurisdictions: legacy
+        // stored reports predate the surcharge split and omit surchargeRate, so
+        // an unguarded Number(undefined) would print the literal "NaN" here.
+        return `${r.jurisdiction},${r.miles},${r.taxableGallons.toFixed(3)},${r.taxPaidGallons.toFixed(3)},${Number(r.rate).toFixed(4)},${(fuelTaxCents / 100).toFixed(2)},${Number(r.surchargeRate ?? 0).toFixed(4)},${(surchargeCents / 100).toFixed(2)},${(r.netCents / 100).toFixed(2)}`
       }),
       // TOTAL row mirrors the on-screen worksheet <tfoot>: sum the columns a
       // state IFTA return asks for as its own summary lines (taxable/tax-paid
@@ -98,7 +101,7 @@ export async function GET(
       mpg: Number(report.mpg ?? 0),
       rows: rows.map((r) => ({
         jurisdiction: r.jurisdiction, miles: r.miles, taxableGallons: r.taxableGallons,
-        taxPaidGallons: r.taxPaidGallons, rate: Number(r.rate), surchargeRate: Number(r.surchargeRate),
+        taxPaidGallons: r.taxPaidGallons, rate: Number(r.rate), surchargeRate: Number(r.surchargeRate ?? 0),
         taxCents: iftaRowFuelTaxCents(r), surchargeCents: Number(r.surchargeCents ?? 0),
         netCents: r.netCents,
       })),
