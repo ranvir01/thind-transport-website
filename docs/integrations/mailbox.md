@@ -1,7 +1,8 @@
 # Docs mailbox (IMAP) — scouting notes
 
 Researched: 2026-07-06; refreshed 2026-07-18 (code-drift + provider-policy recheck), 2026-07-22
-(Workspace app-password carve-out resolved — see "2026-07-22 pass" notes inline). Status:
+(Workspace app-password carve-out resolved), 2026-07-27 (SMTP AUTH timeline converged, IMAP
+throttling knob named — see "2026-07-27 pass" notes inline). Status:
 **built adapter, live** in `src/lib/hub/mailbox.ts`
 (`pollDocsMailbox`), wired to the `docs-mailbox` cron job. Not a vendor SDK — it's a generic
 IMAP client (`imapflow` + `mailparser`) pointed at whatever inbox the carrier's office already
@@ -48,6 +49,21 @@ Microsoft's basic-auth retirement in Exchange Online (the last holdout, SMTP AUT
 submission — we don't send, so moot); the `IMAP.AccessAsApp` client-credentials flow this
 adapter uses remains the documented, current path (corroborated via Limilabs/community
 writeups; the Microsoft Learn page itself still 403s this scout's fetches).
+
+**2026-07-27 recheck, Microsoft side (resolves the 2026-07-22 "dates still in flux" note):**
+found the primary source behind the Windows Forum coverage this doc already cited — a
+Microsoft Community Hub post titled "Updated Exchange Online SMTP AUTH Basic Authentication
+Deprecation Timeline," which a search-result summary dates to a Jan 27, 2026 revision. That
+explains the 2026-07-22 doc's two-different-dates conflict: **March–April 2026 was the
+original plan**; Microsoft pushed it back and the **Dec 2026 / H2 2027 figures are the
+current, revised timeline** (unchanged through Dec 2026 → **disabled by default for existing
+tenants at end of Dec 2026**, admins can still re-enable → new tenants created after Dec 2026
+get it unavailable by default → final removal date to be announced in H2 2027). Still scoped
+to **SMTP AUTH client submission only** (send path) — this adapter is IMAP-read-only and
+never sends, so the retirement stays moot for `pollDocsMailbox` regardless of the exact date.
+`techcommunity.microsoft.com` and `learn.microsoft.com` both 403 this scout directly, same
+as every pass — the Jan 27, 2026 revision date and full timeline are read from the search
+result's synthesis of the Community Hub post, not fetched from Microsoft's page itself.
 
 ## ~~⚠️ Finding~~ (resolved 2026-07-11): Office 365 / Exchange Online basic auth is retired
 
@@ -120,6 +136,15 @@ writeups; the Microsoft Learn page itself still 403s this scout's fetches).
   throttling policies); they apply now that XOAUTH2 shipped, but exact numbers remain
   unpublished — at one connect-poll-disconnect per carrier per **day**, we're nowhere near
   any plausible budget.
+- **2026-07-27 refinement:** the specific knob is named — Exchange throttling policies
+  expose an `ImapMaxConcurrency` parameter (`Set-ThrottlingPolicy` / `Set-CASMailbox` in
+  Exchange Online PowerShell, valid range 0–2147483647) that caps simultaneous IMAP
+  connections per mailbox. The tenant-default numeric value for Exchange Online specifically
+  is still not published anywhere this scout could reach (on-prem Exchange docs and forum
+  threads cite defaults in the single digits, e.g. ~8, for older Exchange Server versions,
+  which is suggestive but not confirmed as the EXO default) — same "unpublished number, named
+  mechanism" shape as the rest of this doc's open items. Irrelevant at our cadence either way:
+  one connection per carrier per day is nowhere near a single-digit concurrency cap.
 
 ## Sandbox
 
@@ -146,11 +171,31 @@ step (Gmail) or, longer term, an Entra ID app registration (Office 365, once OAu
   so this is cross-referenced from secondary sources, not Microsoft's page directly), Gmail's
   2,500/500 MB daily IMAP bandwidth caps, 15-connection cap, May 2025 OAuth2 enforcement date
   and app-password carve-out, January 2025 IMAP-always-on change.
-- **Not independently verified**: current Microsoft 365 IMAP-specific throttling numbers
-  (unpublished; low risk at daily cadence), and the exact admin-console path/label for the
-  Workspace app-password toggle (secondary sources agree on "Security → Authentication →
-  2-Step Verification → Allow users to generate app passwords" but Google's own admin-help
-  pages are 403-walled to this scout, so the label isn't source-confirmed).
+- **Not independently verified**: the Exchange Online tenant-default numeric value for
+  `ImapMaxConcurrency` (the parameter name is now confirmed via `Set-ThrottlingPolicy` /
+  `Set-CASMailbox` PowerShell docs, but its EXO default isn't published; low risk at daily
+  cadence), and the exact admin-console path/label for the Workspace app-password toggle
+  (secondary sources agree on "Security → Authentication → 2-Step Verification → Allow users
+  to generate app passwords" but Google's own admin-help pages and the community thread that
+  names it are all 403-walled to this scout, so the label isn't source-confirmed).
+- **Flagged, not acted on (2026-07-27)**: two same-domain (getmailbird.com) articles'
+  AI-search-synthesized summaries stated Google Workspace "does not allow IMAP access via
+  app password anymore" since May 2025 — squarely contradicting this doc's 2026-07-22
+  five-source finding that app passwords still work, gated by an admin toggle. Direct fetch
+  of both getmailbird pages 403'd, so the claim couldn't be read in full context (a
+  search-synthesis paraphrase of "less secure apps disabled" easily blurs into "app
+  passwords disabled" without a careful read). Weighed against six independent 2026-dated
+  sources (five from 2026-07-22 plus a 2026-07-27 reco.ai/googally recheck) all agreeing app
+  passwords still work: treating the getmailbird claim as unconfirmed/likely-imprecise
+  rather than acting on it, but leaving it here since it directly contradicts the doc's
+  current recommendation and deserves a second look if it resurfaces from an independently
+  fetchable source.
+- **Resolved this pass (2026-07-27)**: the Exchange Online SMTP AUTH Basic Authentication
+  retirement timeline, previously "dates still inconsistent across sources," now converges
+  on a single Microsoft-published schedule (unchanged through Dec 2026 → disabled by default
+  for existing tenants end of Dec 2026, admin-re-enable still possible → new tenants after
+  Dec 2026 default to unavailable → final removal date announced H2 2027). No adapter impact
+  either way — SMTP AUTH is the send path, this adapter only reads via IMAP.
 - **Resolved this pass (2026-07-22)**: whether Google Workspace's app-password carve-out
   survived the May 2025 less-secure-apps shutoff — five independent 2026-dated secondary
   sources now agree it did (app passwords still work for Workspace IMAP, gated by a
@@ -167,3 +212,19 @@ Sources: [Deprecation of Basic authentication in Exchange Online — Microsoft L
 
 2026-07-22 pass sources (all Google/Microsoft primary pages 403 to this scout — search-excerpt
 confirmation only): [App Passwords and OAuth 2.0 in Google Workspace — Domain India KB](https://www.domainindia.com/client/knowledgebase/743/How-to-Use-App-Passwords-and-OAuth-2.0-in-Google-Workspace-A-Complete-Setup-Guide.html), [Google Workspace: create an app password to access Gmail over IMAP — InfoSwitch](https://infoswitch.fr/en/blog/google-workspace-app-password-imap), [Google Workspace IMAP Settings 2026 — LeadsMonky](https://leadsmonky.com/google-workspace-imap-settings/), [Setting Up Google Workspace for Third-Party Email Clients Using App Passwords — XpectoIT](https://www.xpectoitsolutions.com/setting-up-google-workspace-for-thirdparty-email-clients-using-app-passwords), [How to Generate App Passwords for Google Workspace — Systron Micronix](https://orders.systron.net/knowledgebase/148/How-to-Generate-App-Passwords-for-Google-Workspace.html), [Exchange Online SMTP AUTH Basic Authentication: 2026 Default Disable and 2027 Removal Timeline — Windows Forum](https://windowsforum.com/threads/exchange-online-smtp-auth-basic-authentication-2026-default-disable-and-2027-removal-timeline.399158/), [End of Basic Authentication for SMTP in Exchange Online — itpro-tips](https://itpro-tips.com/end-of-life-basic-authentication-smtp-exchange-online/) (fetch 403'd, cited via search excerpt).
+
+2026-07-27 pass sources (Microsoft/Google primary pages and the Google Workspace admin
+community thread all 403'd this scout again — search-result-synthesis confirmation only):
+[Updated Exchange Online SMTP AUTH Basic Authentication Deprecation Timeline — Microsoft
+Community Hub](https://techcommunity.microsoft.com/blog/exchange/updated-exchange-online-smtp-auth-basic-authentication-deprecation-timeline/4489835)
+(403, cited via search synthesis), [Exchange Online limits — Service Descriptions, Microsoft
+Learn](https://learn.microsoft.com/en-us/office365/servicedescriptions/exchange-online-service-description/exchange-online-limits)
+(403), [Set-ThrottlingPolicy (ExchangePowerShell) — Microsoft
+Learn](https://learn.microsoft.com/en-us/powershell/module/exchangepowershell/set-throttlingpolicy?view=exchange-ps)
+(403, `ImapMaxConcurrency` parameter name/range from search snippet), [Can't add app
+passwords option for users from admin console — Google Workspace Admin
+Community](https://support.google.com/a/thread/341275089/can-t-add-app-passwords-option-for-users-from-admin-console?hl=en)
+(403), [Gmail OAuth 2.0 Authentication Changes 2026 —
+Mailbird](https://www.getmailbird.com/gmail-oauth-authentication-changes-user-guide/) (403;
+flagged as an unconfirmed contradicting claim, see "What this scout could and couldn't
+verify" above), [How to Set Up IMAP in Google Workspace — Reco](https://www.reco.ai/hub/google-workspace-imap-settings-email-access), [Google Workspace GMAIL IMAP Settings — Googally](https://www.googally.com/blog/google-workspace-gmail-imap-settings).
