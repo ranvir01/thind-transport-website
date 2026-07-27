@@ -1361,3 +1361,48 @@ Backlog:
 - Carried, unchanged: npm audit high-severity findings in the `next`/`sharp` chain (owner-approval-gated
   semver-major bump, `npm audit fix --force`); Rust sidecar `tiny_http` connection-timeout/thread-cap gap
   (owner decision).
+
+## QA rig drive — 2026-07-27 ~03:30 UTC (owner/dispatcher/driver E2E battery)
+
+Charter (docs/agent-improvement-loop.md §5): no feature work — stood up the local rig, drove
+owner/dispatcher/driver/portal flows against the full Puppeteer E2E battery, probed
+thindtransport.com read-only, fixed only outright regressions from the last 3h of commits.
+
+Fresh rig from scratch: Postgres 16 role+db, canvas deps, `npm install`, 22 migrations clean,
+`seed:demo`, `npm run build` clean, `npx vitest run` (226 files/1990 tests) green, `npm run
+test:sidecars` (29 Rust + Go vet/test incl. the new `osrmBreaker` race-detector case) green.
+
+Last-3h window (00:09-02:55 UTC) held: one already-verified `seed-demo.mjs` fix (fuel-purchase
+window re-anchored to the quarter boundary, MPG 9.31→~6.5 — re-confirmed here, `e2e-ifta-smoke`
+now reads clean), a Go test-only race-detector addition, a docs-only commit, and a batch of
+lane-merge commits whose product-code diffs (IFTA worksheet CSV TOTAL row, `ExpiryPill` day-math
+extraction) were each authored/tested hours earlier and merely merged into the tree this window —
+none introduced new, untested product-code risk. Zero regressions found, nothing to fix-forward.
+
+Full 52-script Puppeteer battery + `e2e-sweep`: 50/52 passed. Both failures are the same
+pre-existing, already-diagnosed false-test-expectations roughly a dozen prior QA-drive commits have
+hit (`git log --all --grep testimonials -i` returns 10+ "QA rig drive" commits alone):
+`e2e-public-smoke`'s `/testimonials` check (no live route/link exists) and `e2e-sweep`'s
+reports-page subtitle anchor (only matches the `!hasDriverPay` copy branch in
+`src/app/hub/(office)/reports/page.tsx:100-104`, not the `hasDriverPay` branch the demo seed hits).
+Per AGENTS.md's duplicate-work rule, checked `git log --all --grep` before touching anything: fixes
+for this exact pair already exist independently on at least two unmerged branches
+(`claude/practical-franklin-lcfbnd` @ `b5f5be3d`, `claude/practical-franklin-kc0a9d` @ `e366b29b`,
+among others) — not writing a further copy; integrator should drain one of those instead.
+
+Production probe: direct HTTPS to `thindtransport.com` is egress-blocked in this sandbox (403 on
+CONNECT) — used Vercel MCP per the documented fallback. The `production`-target alias currently
+serves `bc87baa` (2 commits behind main's tip `dcd0ac4`); both trailing commits are drain-only
+pushes from the last ~15 minutes, inside the "15-minute grace for in-flight deploys" window, so
+this reads as a deploy still catching up, not staleness — no action taken. No runtime errors in the
+last 24h, no error/fatal logs in the last 24h.
+
+Backlog:
+- Integrator: drain `claude/practical-franklin-lcfbnd` or `claude/practical-franklin-kc0a9d` for the
+  `e2e-public-smoke`/`e2e-sweep` stale-test fixes instead of letting another QA cycle rediscover them
+  a thirteenth time.
+- If production is still on `bc87baa` (not `dcd0ac4` or later) by the next cycle, that's past the
+  grace window and worth a real staleness check.
+- Carried, unchanged: npm audit high-severity findings in the `next`/`sharp` chain (owner-approval-gated
+  semver-major bump); Rust sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision);
+  167 pending `claude/*` branches per `agent:branches`, meta-governor prune pass still overdue.
