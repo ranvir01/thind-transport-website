@@ -18,6 +18,7 @@ import { getHubUser } from "@/lib/hub/session"
 import { can } from "@/lib/hub/permissions"
 import { getIftaReport, exportIftaSources, listIftaRates } from "@/lib/hub/ifta"
 import { getCarrier, getCarrierSettings } from "@/lib/hub/settings"
+import { buildIftaPdf } from "@/lib/hub/pdf"
 import { withIftaWarningsCoverPage } from "@/lib/hub/ifta-pdf"
 import { GET } from "@/app/api/hub/ifta/[quarter]/[file]/route"
 
@@ -159,6 +160,29 @@ describe("GET /api/hub/ifta/[quarter]/[file]", () => {
     expect(body).toContain("WA,1000,100.000,50.000,1.0000,50.00,0.0000,0.00,50.00")
   })
 
+  it("emits 0.0000 (not NaN) in worksheet.csv for legacy rows with no surchargeRate key", async () => {
+    // The oldest stored reports predate the surcharge split and omit
+    // surchargeRate entirely (not 0 — absent). An unguarded Number(undefined)
+    // would print the literal "NaN" into the surcharge_rate column, corrupting
+    // any transcription or re-import of the download.
+    getIftaReportMock.mockResolvedValue({
+      net_tax_cents: 5000,
+      mileage_source: "pings",
+      fleet_miles: "1000",
+      fleet_gallons: "100",
+      mpg: "10",
+      report: {
+        rows: [
+          { jurisdiction: "WA", miles: 1000, taxableGallons: 100, taxPaidGallons: 50, rate: 1.0, netCents: 5000 },
+        ],
+      },
+    } as never)
+    const res = await call("2026Q1", "worksheet.csv")
+    const body = await res.text()
+    expect(body).not.toContain("NaN")
+    expect(body).toContain("WA,1000,100.000,50.000,1.0000,50.00,0.0000,0.00,50.00")
+  })
+
   it("prepends worksheet warnings as # WARNING lines in worksheet.csv", async () => {
     getIftaReportMock.mockResolvedValue({
       status: "draft",
@@ -226,6 +250,27 @@ describe("GET /api/hub/ifta/[quarter]/[file]", () => {
     expect(res.headers.get("Content-Type")).toBe("application/pdf")
     expect(getCarrierMock).toHaveBeenCalledWith("carrier-1")
     expect(getCarrierSettingsMock).toHaveBeenCalledWith("carrier-1")
+  })
+
+  it("maps a legacy row's missing surchargeRate to 0 (not NaN) for the PDF", async () => {
+    vi.mocked(buildIftaPdf).mockClear()
+    getIftaReportMock.mockResolvedValue({
+      net_tax_cents: 5000,
+      mileage_source: "pings",
+      fleet_miles: "1000",
+      fleet_gallons: "100",
+      mpg: "10",
+      report: {
+        rows: [
+          { jurisdiction: "WA", miles: 1000, taxableGallons: 100, taxPaidGallons: 50, rate: 1.0, netCents: 5000 },
+        ],
+      },
+    } as never)
+    const res = await call("2026Q1", "worksheet.pdf")
+    expect(res.status).toBe(200)
+    const [arg] = vi.mocked(buildIftaPdf).mock.calls[0]
+    expect(arg.rows[0].surchargeRate).toBe(0)
+    expect(Number.isNaN(arg.rows[0].surchargeRate)).toBe(false)
   })
 
   it("routes worksheet warnings into the PDF cover-page step", async () => {
