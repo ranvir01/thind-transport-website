@@ -188,7 +188,7 @@ export function AgreementSignPanel({
             })
           }
           disabled={pending || !signature || !form.signerName.trim()}
-          className="flex flex-1 min-h-[44px] items-center justify-center gap-2 rounded-control bg-accent text-sm font-bold text-fg hover:bg-accent-hover disabled:opacity-50"
+          className="flex flex-1 min-h-[44px] items-center justify-center gap-2 rounded-control bg-accent text-sm font-bold text-accent-fg hover:bg-accent-hover disabled:opacity-50"
         >
           {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : null} Sign & file
         </button>

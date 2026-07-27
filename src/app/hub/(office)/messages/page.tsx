@@ -78,7 +78,7 @@ export default async function MessagesPage() {
                   </span>
                 ) : null}
                 {(t.unread_count ?? 0) > 0 ? (
-                  <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-accent px-1.5 text-[11px] font-bold text-fg">
+                  <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-accent px-1.5 text-[11px] font-bold text-accent-fg">
                     {t.unread_count}
                   </span>
                 ) : null}

@@ -76,6 +76,11 @@ export async function hasCredentials(
   carrierId: string,
   provider: IntegrationProvider
 ): Promise<boolean> {
+  // Same guard getCredentials carries. Without it, rotating or dropping
+  // CREDENTIALS_KEY leaves every adapter's connected() reporting true while
+  // pull() throws "not connected" on every cron run, forever, with no alert —
+  // the row still exists, it just can no longer be decrypted.
+  if (!credentialsConfigured()) return false
   const row = await queryOne<{ id: string }>(
     `SELECT id FROM hub.api_credentials WHERE carrier_id = $1 AND provider = $2`,
     [carrierId, provider]

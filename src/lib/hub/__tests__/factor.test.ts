@@ -192,9 +192,13 @@ describe("submitInvoiceToFactor", () => {
     expect((init.headers as Record<string, string>).Authorization).toBe("Bearer key")
     const body = JSON.parse(init.body as string)
     expect(body).toEqual({
-      referenceNumber: "INV-1", amount: 1250.5, debtorName: "Acme",
+      // A string, not a float. `amount_cents / 100` was putting a float on the
+      // wire at the one boundary where a rounding artifact becomes a funding
+      // discrepancy the factor bills back (implementation brief §0.5).
+      referenceNumber: "INV-1", amount: "1250.50", debtorName: "Acme",
       documents: [{ kind: "rate_confirmation", url: "/docs/rc.pdf" }, { kind: "pod", url: "/docs/pod.pdf" }],
     })
+    expect(typeof body.amount).toBe("string")
     expect(queryMock).toHaveBeenCalledWith(
       expect.stringContaining("UPDATE hub.invoices SET sent_log"),
       expect.arrayContaining([CARRIER]) // tenancy guard on the write side too

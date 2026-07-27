@@ -363,6 +363,19 @@ export function fmtCentsExact(cents: number | null | undefined): string {
   })
 }
 
+/**
+ * Integer cents → a plain decimal string for an API boundary ("244690" →
+ * "2446.90"). No currency symbol, no grouping separators, no float: the
+ * division that `cents / 100` performs is exactly what must not happen when
+ * the number is about to be serialized into someone else's system.
+ */
+export function centsToDecimalString(cents: number | null | undefined): string {
+  const value = Math.trunc(cents ?? 0)
+  const sign = value < 0 ? "-" : ""
+  const abs = Math.abs(value)
+  return `${sign}${Math.floor(abs / 100)}.${String(abs % 100).padStart(2, "0")}`
+}
+
 /** Parse a dollars string/number from a form into integer cents (no float drift). */
 export function dollarsToCents(value: string | number | null | undefined): number {
   if (value == null || value === "") return 0

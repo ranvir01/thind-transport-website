@@ -94,7 +94,7 @@ export function RequestDocumentPanel({
           />
           <button
             type="submit" disabled={pending}
-            className="min-h-[48px] shrink-0 rounded-control bg-accent px-5 font-display text-sm font-bold uppercase tracking-[0.06em] text-fg hover:bg-accent-hover disabled:opacity-60"
+            className="min-h-[48px] shrink-0 rounded-control bg-accent px-5 font-display text-sm font-bold uppercase tracking-[0.06em] text-accent-fg hover:bg-accent-hover disabled:opacity-60"
           >
             {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Send"}
           </button>

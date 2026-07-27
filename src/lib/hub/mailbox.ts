@@ -16,6 +16,48 @@ export function extractReference(subject: string): string | null {
   return match ? match[0] : null
 }
 
+/** Document kinds the mailbox can file an attachment as. */
+export type MailboxDocKind = "rate_confirmation" | "pod" | "bol" | "invoice"
+
+/**
+ * What kind of document is this attachment?
+ *
+ * Everything arriving by mail used to be filed as a rate confirmation, which
+ * quietly broke two things downstream: POD-gated invoicing never saw its POD,
+ * and the factoring packet's document filter (which selects kind === "pod")
+ * shipped an incomplete packet to the factor.
+ *
+ * Filename wins over subject — a single email often carries several documents
+ * under one subject line, and the filename is the only per-attachment signal.
+ * Rate confirmation stays the fallback because that is what the mailbox was
+ * built for and what most inbound broker mail actually is.
+ *
+ * Pure and exported so the table of real-world subjects below can be tested
+ * without an IMAP connection.
+ */
+export function classifyDocumentKind(
+  filename: string | null | undefined,
+  subject: string | null | undefined
+): MailboxDocKind {
+  const check = (text: string): MailboxDocKind | null => {
+    // Underscores, hyphens and dots become spaces FIRST. `_` is a word
+    // character to a JS regex, so `\bpod\b` does not match "POD_1042.pdf" —
+    // which is exactly how most brokers name the file.
+    const t = text.toLowerCase().replace(/[_\-.]+/g, " ")
+    // Order matters: "signed BOL" is a POD, and a rate con that also mentions
+    // a BOL is still primarily a rate con, so the POD and rate-con tests
+    // bracket the plain BOL test.
+    if (/\bpod\b|proof\s*of\s*delivery|delivery\s*receipt|signed\s*bol/.test(t)) return "pod"
+    if (/rate\s*con(firmation)?\b|\bratecon\b|load\s*confirmation|carrier\s*confirmation/.test(t)) {
+      return "rate_confirmation"
+    }
+    if (/\bbol\b|bill\s*of\s*lading/.test(t)) return "bol"
+    if (/\binvoice\b|freight\s*bill\b/.test(t)) return "invoice"
+    return null
+  }
+  return check(filename ?? "") ?? check(subject ?? "") ?? "rate_confirmation"
+}
+
 export async function pollDocsMailbox(
   carrierId: string
 ): Promise<{ connected: boolean; filed?: number; unmatched?: number }> {
@@ -61,6 +103,7 @@ export async function pollDocsMailbox(
           : null
 
         let attachedHere = 0
+        const kindsFiled = new Set<MailboxDocKind>()
         if (load) {
           for (const attachment of parsed.attachments ?? []) {
             if (!attachment.content || attachment.content.length === 0) continue
@@ -70,18 +113,22 @@ export async function pollDocsMailbox(
               attachment.filename ?? `attachment-${Date.now()}.pdf`,
               { type: attachment.contentType ?? "application/octet-stream" }
             )
+            // Classified per attachment, not per email: one message routinely
+            // carries a rate con and a POD under one subject line.
+            const kind = classifyDocumentKind(attachment.filename, parsed.subject)
+            kindsFiled.add(kind)
             await saveDocument({
               carrierId,
               entityType: "load",
               entityId: load.id,
-              kind: "rate_confirmation",
+              kind,
               file,
             })
             attachedHere++
           }
           if (attachedHere > 0) {
             await addLoadEvent(carrierId, load.id, "document", {
-              kind: "rate_confirmation",
+              kind: [...kindsFiled].sort().join(", "),
               via: "docs mailbox",
               from: parsed.from?.text ?? "unknown sender",
               files: attachedHere,

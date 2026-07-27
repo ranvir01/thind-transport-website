@@ -37,7 +37,7 @@ export function NewDirectThread({ drivers }: { drivers: { id: string; name: stri
       <button
         onClick={open}
         disabled={pending || !driverId}
-        className="flex min-h-[48px] shrink-0 items-center gap-2 rounded-control bg-accent px-4 font-display text-sm font-bold uppercase tracking-[0.06em] text-fg hover:bg-accent-hover disabled:opacity-50"
+        className="flex min-h-[48px] shrink-0 items-center gap-2 rounded-control bg-accent px-4 font-display text-sm font-bold uppercase tracking-[0.06em] text-accent-fg hover:bg-accent-hover disabled:opacity-50"
       >
         {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <MessageSquarePlus className="h-4 w-4" />}
         Open

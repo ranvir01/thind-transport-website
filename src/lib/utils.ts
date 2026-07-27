@@ -17,6 +17,11 @@ const FONT_SIZE_TOKENS = [
   "h1", "h2", "h3", "h4", "h5", "h6",
   "body-lg", "body", "body-sm", "body-xs",
   "label-lg", "label", "label-sm",
+  // Marketing scale (tailwind.config.ts fontSize `m-*`). These were added
+  // after this list and never registered, which is the exact setup for the
+  // recurrence documented above: `cn("text-m-lede", "text-ink")` would drop
+  // the color and inherit whatever the section happened to set.
+  "m-hero", "m-display", "m-h1", "m-h2", "m-h3", "m-h4", "m-lede", "m-body", "m-micro",
 ]
 
 const twMerge = extendTailwindMerge({

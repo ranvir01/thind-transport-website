@@ -21,6 +21,7 @@
 import { getCredentials, hasCredentials } from "../credentials"
 import { query } from "../db"
 import { parseFuelFeedCsv } from "./fuel-feed-csv"
+import { normalizeState } from "../csv"
 import { dollarsToCents } from "../types"
 import type { SyncRowBase, SyncSource } from "./registry"
 
@@ -50,7 +51,10 @@ export function normalizeEfsRecord(record: Record<string, unknown>): EfsFuelRow 
     unitHint: (record.UnitNumber as string) ?? null,
     merchant: (record.MerchantName as string) ?? null,
     city: (record.MerchantCity as string) ?? null,
-    jurisdiction: (record.MerchantState as string) ?? null,
+    // WEX and Comdata both normalize; EFS did not, and EFS is the card
+    // actually in use — raw values ("Wash.", "Washington") flow straight into
+    // IFTA jurisdiction miles.
+    jurisdiction: record.MerchantState ? normalizeState(String(record.MerchantState)) : null,
     gallons: typeof gallons === "number" ? gallons : Number(gallons ?? 0) || 0,
     unitPriceCents: record.PricePerGallon != null ? dollarsToCents(record.PricePerGallon as number) : null,
     totalCents: dollarsToCents(record.TotalAmount as number | undefined),
@@ -105,6 +109,11 @@ export async function ingestEfsRows(
   let skipped = 0
 
   for (const row of rows) {
+    // Same guard WEX and Comdata carry. Without it an empty external_id
+    // collides on the (carrier_id, source, external_id) unique index and the
+    // row lands in `skipped` with no explanation — a silently dropped fuel
+    // purchase, which is a silently wrong IFTA return.
+    if (!row.external_id) continue
     const truckId = row.unitHint ? byUnit.get(row.unitHint.toLowerCase()) ?? null : null
     if (row.unitHint && !truckId) unmatched.push(row.unitHint)
 
