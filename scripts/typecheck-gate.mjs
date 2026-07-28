@@ -30,17 +30,24 @@
 import { execSync } from "node:child_process"
 
 /**
- * Test-file tsc errors as of 2026-07-27. Lower this whenever you fix some;
+ * Test-file tsc errors as of 2026-07-28. Lower this whenever you fix some;
  * never raise it. Raising it is how a ratchet stops being a ratchet.
  *
- * History: 105 → 86. The drop came from two shared fixtures rather than
- * per-file patches — helpers/db-mock.ts (a `vi.fn(async () => [])` declares a
- * ZERO-argument function, so every `const [sql, params] = mock.calls[0]` was a
- * type error) and helpers/session.ts (hand-built session objects all omitted
- * HubSessionUser's required `email`). Use those in new tests and this number
- * keeps falling on its own.
+ * History: 105 → 86 → 78. The drop to 86 came from two shared fixtures rather
+ * than per-file patches — helpers/db-mock.ts (a `vi.fn(async () => [])`
+ * declares a ZERO-argument function, so every `const [sql, params] =
+ * mock.calls[0]` was a type error) and helpers/session.ts (hand-built session
+ * objects all omitted HubSessionUser's required `email`). Use those in new
+ * tests and this number keeps falling on its own. The drop to 78 fixed the
+ * same shape of bug ad hoc in four files that don't use those shared
+ * fixtures: vin.test.ts/weather.test.ts/eia-diesel-price.test.ts each stub
+ * `fetch` with a zero-argument `vi.fn(async () => ...)` then read
+ * `mock.calls[0][0]`, and dvir-tenancy.test.ts's local `makeClient()` mock
+ * took only `(text: string)` while its assertions read `mock.calls[n][1]` for
+ * query params — same fix as the shared fixtures, just inline: give the mock
+ * a second parameter.
  */
-const TEST_ERROR_BASELINE = 86
+const TEST_ERROR_BASELINE = 78
 
 const isTestFile = (file) =>
   file.includes("__tests__/") || file.endsWith(".test.ts") || file.endsWith(".test.tsx")
