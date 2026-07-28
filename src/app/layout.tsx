@@ -100,6 +100,21 @@ export const metadata: Metadata = {
   // Metadata-declared so the hub layout's own manifest cleanly overrides it on
   // /hub routes (Next dedupes these; a hardcoded <link> in JSX is not deduped).
   manifest: "/site.webmanifest",
+  // Same reason the manifest is metadata-declared: these used to be literal
+  // <link> tags in the <head> below, which render on EVERY route — including
+  // /hub, where the LoadOff app declares its own icons. iOS picks the
+  // home-screen icon from <link rel="apple-touch-icon"> in preference to the
+  // manifest icons, so installing the driver app got the Thind Transport truck
+  // mark on the home screen. As metadata, the hub layout's set replaces this
+  // one on /hub routes instead of stacking with it.
+  icons: {
+    icon: [
+      { url: "/favicon.ico", sizes: "32x32" },
+      { url: "/favicon-16x16.png", type: "image/png", sizes: "16x16" },
+      { url: "/favicon-32x32.png", type: "image/png", sizes: "32x32" },
+    ],
+    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180" }],
+  },
 }
 
 export const viewport: Viewport = {
@@ -121,25 +136,11 @@ export default function RootLayout({
       className={`scroll-smooth ${barlowCondensed.variable} ${sourceSans.variable}`}
     >
       <head>
-        {/* Favicons */}
-        <link rel="icon" href="/favicon.ico" sizes="32x32" />
-        <link
-          rel="icon"
-          type="image/png"
-          sizes="16x16"
-          href="/favicon-16x16.png"
-        />
-        <link
-          rel="icon"
-          type="image/png"
-          sizes="32x32"
-          href="/favicon-32x32.png"
-        />
-        <link
-          rel="apple-touch-icon"
-          sizes="180x180"
-          href="/apple-touch-icon.png"
-        />
+        {/* Favicons and the apple-touch-icon are declared via `metadata.icons`
+            (above), never as literal tags here — a hardcoded icon renders on
+            every route including /hub, and iOS prefers apple-touch-icon over
+            the manifest's icons, so the LoadOff app inherited the Thind
+            Transport mark on the home screen. Same rule as the manifest: */}
         {/* The web app manifest is declared via `metadata.manifest` (above),
             never as a literal tag here. A hardcoded one renders on EVERY route
             including /hub, where the hub layout declares its own LoadOff

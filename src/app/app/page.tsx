@@ -4,21 +4,28 @@ import { CloudOff, Camera, Wallet, Bell, MessageSquare, ArrowRight } from "lucid
 import { COMPANY_INFO } from "@/lib/constants"
 import { PageBreadcrumb } from "@/components/shared/PageBreadcrumb"
 import { GetTheApp } from "@/components/features/GetTheApp"
+import { InstalledAppRedirect } from "@/components/shared/InstalledAppRedirect"
 import { Reveal } from "@/components/ui/Reveal"
 
 export const metadata: Metadata = {
-  title: "Get the driver app | Thind Transport",
+  // absolute: the string already carries the carrier name, and the root
+  // template would otherwise append it a second time.
+  title: { absolute: "Get the driver app | Thind Transport" },
   description:
     "The Thind Transport driver app installs straight from your browser — no app store, no download. Confirm dispatches, send PODs from the camera, check pay, and keep working with no signal.",
   alternates: { canonical: "/app" },
-  // Deliberate override of the root layout's marketing manifest: anyone using
-  // Share → Add to Home Screen ON THIS PAGE means the driver app, and iOS
-  // binds the icon to whatever manifest the current page carries. With the
-  // marketing manifest here, that icon opened the website (start_url "/") —
-  // the exact wrong-app report from the owner's iPhone. With the LoadOff
-  // manifest, the same gesture installs the app (start_url "/hub").
-  manifest: "/api/hub/manifest",
-  appleWebApp: { capable: true, title: "LoadOff" },
+  // No manifest or appleWebApp override here, deliberately. Pointing this page
+  // at the LoadOff manifest looked like it made Add to Home Screen install the
+  // app, but a manifest is only applied to documents inside its `scope`, and
+  // LoadOff's scope is /hub — so iOS threw the manifest away and kept the
+  // `apple-mobile-web-app-capable` flag that came with it, installing a
+  // chrome-less window pinned to THIS marketing page. That is the icon that
+  // "opens the main website" with no way out.
+  //
+  // A page can only mint the app if it lives in the app's scope, so the install
+  // surface is /hub/get-app and this page funnels there (see GetTheApp).
+  // Add to Home Screen performed here now saves an ordinary website bookmark,
+  // which is the honest outcome for a marketing page.
 }
 
 /**
@@ -62,10 +69,9 @@ const FEATURES = [
 export default function GetAppPage() {
   return (
     <div className="bg-paper">
-      {/* iOS keys standalone launch off the apple-prefixed name; Next's
-          appleWebApp.capable emits only mobile-web-app-capable. React hoists
-          this into <head>. */}
-      <meta name="apple-mobile-web-app-capable" content="yes" />
+      {/* Sends already-installed home-screen icons that were saved from this
+          page (back when it declared itself app-capable) into the real app. */}
+      <InstalledAppRedirect />
       <PageBreadcrumb pageName="Driver app" category="Drivers" />
 
       <section className="bg-asphalt py-16 text-paper md:py-24">
