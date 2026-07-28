@@ -1,37 +1,60 @@
 "use client"
 
 /**
- * Repairs home-screen icons that were minted against a marketing page.
+ * Guarantees that a home-screen icon opens the app, whichever page it was
+ * installed from.
  *
- * /app and /loadoff used to ship `apple-mobile-web-app-capable` together with
- * the LoadOff manifest. iOS discards a manifest whose `scope` (here /hub) does
- * not cover the current document, so all that survived was the capable flag —
- * which tells iOS to install a chrome-less standalone window pinned to the
- * MARKETING page. Tapping the icon opened the website with no URL bar and no
- * way through to the app: the owner's report.
+ * The manifest asks for `start_url: "/hub"`, and iOS has honoured that only
+ * since it began applying manifests to Add to Home Screen; older behaviour pins
+ * the icon to the exact URL it was saved at. Both are alive on phones in a
+ * fleet, and the difference is invisible until a driver taps the icon and gets
+ * the website with no URL bar to escape from — the owner's report. This closes
+ * that gap from the page side: an install page reached in standalone
+ * display-mode is a launch, not a visit, so it is handed straight to /hub.
  *
- * The metadata is fixed, but icons already on a phone keep launching at the URL
- * they were saved with. Those launches land here in standalone display-mode —
- * a state a plain Safari visit never reports — so we hand them straight to the
- * app. Ordinary browser visits (the overwhelming majority) do nothing at all.
+ * It also repairs icons already on phones, including the ones minted while
+ * these pages carried `apple-mobile-web-app-capable` without a manifest that
+ * covered them.
  *
- * Deliberately narrow: it is mounted only on the two pages that could mint such
- * an icon, so installing the marketing site proper (start_url "/") is untouched.
+ * Mounted only on pages an install can start from — never sitewide, where it
+ * would hijack an ordinary install of the marketing site (start_url "/").
+ * Standalone display-mode is never reported for a plain browser visit, so for
+ * everyone reading the page in Safari or Chrome this component does nothing.
  */
 
-import { useEffect } from "react"
+import { useEffect, useSyncExternalStore } from "react"
+
+const subscribeNever = () => () => {}
+
+const readStandalone = () =>
+  window.matchMedia("(display-mode: standalone)").matches ||
+  // iOS <= 12 and some iPadOS builds only expose the legacy flag.
+  (window.navigator as Navigator & { standalone?: boolean }).standalone === true
+
+// The server cannot know how the page was launched, and rendering the splash
+// into the HTML would hide the page from crawlers. It assumes a browser visit;
+// the real answer arrives with the first client render.
+const readStandaloneOnServer = () => false
 
 export function InstalledAppRedirect() {
+  const launching = useSyncExternalStore(subscribeNever, readStandalone, readStandaloneOnServer)
+
   useEffect(() => {
-    const standalone =
-      window.matchMedia("(display-mode: standalone)").matches ||
-      // iOS <= 12 and some iPadOS builds only expose the legacy flag.
-      (window.navigator as Navigator & { standalone?: boolean }).standalone === true
-    if (!standalone) return
     // replace(), not assign(): the marketing page must not sit in the app's
     // back stack, where a swipe would return the container to the website.
-    window.location.replace("/hub")
-  }, [])
+    if (launching) window.location.replace("/hub")
+  }, [launching])
 
-  return null
+  if (!launching) return null
+
+  // Covers the page for the moment the navigation takes, so the app opens on
+  // LoadOff's own colours rather than a flash of the website.
+  return (
+    <div
+      aria-live="polite"
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-[#0E1621] text-white"
+    >
+      <p className="text-sm font-medium tracking-wide">Opening LoadOff…</p>
+    </div>
+  )
 }

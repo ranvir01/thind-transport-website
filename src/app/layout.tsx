@@ -12,6 +12,7 @@ import { AttributionCapture } from "@/components/shared/AttributionCapture"
 import { SkipLink } from "@/components/shared/SkipLink"
 import { COMPANY_INFO } from "@/lib/constants"
 import { SchemaMarkup } from "@/components/features/SchemaMarkup"
+import { SITE_ICONS } from "@/lib/site-icons"
 import { Providers } from "./providers"
 import { Analytics } from "@vercel/analytics/next"
 import { SpeedInsights } from "@vercel/speed-insights/next"
@@ -105,16 +106,9 @@ export const metadata: Metadata = {
   // /hub, where the LoadOff app declares its own icons. iOS picks the
   // home-screen icon from <link rel="apple-touch-icon"> in preference to the
   // manifest icons, so installing the driver app got the Thind Transport truck
-  // mark on the home screen. As metadata, the hub layout's set replaces this
-  // one on /hub routes instead of stacking with it.
-  icons: {
-    icon: [
-      { url: "/favicon.ico", sizes: "32x32" },
-      { url: "/favicon-16x16.png", type: "image/png", sizes: "16x16" },
-      { url: "/favicon-32x32.png", type: "image/png", sizes: "32x32" },
-    ],
-    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180" }],
-  },
+  // mark on the home screen. As metadata, an install page's set replaces this
+  // one instead of stacking with it.
+  icons: SITE_ICONS,
 }
 
 export const viewport: Viewport = {

@@ -3,16 +3,21 @@
 /**
  * Install guidance for the driver app, marketing side.
  *
- * Installability follows the manifest IN SCOPE, and /app sits under the
- * MARKETING site's manifest (start_url "/"), not the driver app's
- * (start_url "/hub"). An earlier version of this component captured
- * beforeinstallprompt right here and called prompt() — which would have put
- * the marketing site on the driver's home screen: the exact wrong-app bug
- * the manifest split (96075898) exists to prevent. So this component never
- * prompts. It detects the platform, explains the two taps, and sends the
- * driver to /hub/login — the first driver-app page reachable without a
- * session — where InstallAppButton offers the REAL install inside the right
- * manifest scope (and iOS Add-to-Home-Screen picks up the right app too).
+ * The two platforms need opposite advice, which is why this is a component and
+ * not a paragraph:
+ *
+ * iOS — /app is a real install surface. The page declares the LoadOff manifest,
+ * whose scope is widened to "/" for iOS precisely so it applies here
+ * (lib/hub/install-scope.ts), so Share → Add to Home Screen right here installs
+ * the app under its own name and icon. The steps say so, and name the tell-tale
+ * (the sheet should read "LoadOff") because a wrong install is otherwise silent
+ * until someone taps the icon a day later.
+ *
+ * Android — Chrome only fires beforeinstallprompt for a page inside the
+ * manifest's scope, and off iOS that scope stays narrow at /hub so Chrome never
+ * swallows marketing links into the app window. So this component never
+ * prompts; it sends the driver to /hub/get-app, where InstallAppButton offers
+ * the real install sheet.
  *
  * Renders a quiet confirmation when already running standalone, so a driver
  * who has the app isn't told to install it again.
@@ -71,22 +76,21 @@ export function GetTheApp() {
   if (env === "ios") {
     return (
       <div className="rounded-m-3 border border-ink/15 bg-paper p-5">
-        <p className="font-display text-m-h4 font-bold text-ink">On iPhone</p>
+        <p className="font-display text-m-h4 font-bold text-ink">On iPhone — you&apos;re on the right page</p>
         <ol className="mt-4 list-none space-y-3">
           <li className={stepCls}>
             <span className={numCls}>1</span>
             <span>
-              Open the app&apos;s install page in <strong>Safari</strong> — the button below takes
-              you there. (If you&apos;re reading this inside another app, tap its browser menu and
-              choose &ldquo;Open in Safari&rdquo; first.)
+              Tap the Share button{" "}
+              <Share className="inline h-4 w-4 align-text-bottom text-ink-3" aria-label="Share" />{" "}
+              at the bottom of Safari, then &ldquo;Add to Home Screen&rdquo;.
             </span>
           </li>
           <li className={stepCls}>
             <span className={numCls}>2</span>
             <span>
-              On that page, tap the Share button{" "}
-              <Share className="inline h-4 w-4 align-text-bottom text-ink-3" aria-label="Share" />{" "}
-              at the bottom of Safari, then &ldquo;Add to Home Screen&rdquo;.
+              The name it offers should read <strong>LoadOff</strong>. That&apos;s how you know
+              you&apos;re adding the app and not the website.
             </span>
           </li>
           <li className={stepCls}>
@@ -94,7 +98,13 @@ export function GetTheApp() {
             <span>Tap Add. The app lands on your home screen like any other app.</span>
           </li>
         </ol>
-        <OpenAppCta label="Open the driver app" />
+        {/* The one thing that genuinely cannot work: an in-app webview
+            (Facebook, Gmail, Chrome for iOS) has no Add to Home Screen at all. */}
+        <p className="mt-4 text-m-small text-ink-3">
+          No Share button? You&apos;re reading this inside another app — tap its menu, choose
+          &ldquo;Open in Safari&rdquo;, and start again from step 1.
+        </p>
+        <OpenAppCta label="Or open the app's own page" />
       </div>
     )
   }

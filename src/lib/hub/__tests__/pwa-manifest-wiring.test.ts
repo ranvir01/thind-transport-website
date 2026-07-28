@@ -1,22 +1,22 @@
 /**
  * Guards the driver PWA's install identity at the source level.
  *
- * Two bugs live behind these assertions, both of which handed a driver a
- * home-screen icon that opened the WEBSITE instead of the app:
+ * An install page has to get FOUR independent things right, and every one of
+ * them fails silently — nothing errors, the icon simply turns out to be the
+ * website, and nobody finds out until a driver taps it. Each has been wrong
+ * here at least once:
  *
- * 1. The root layout hardcoded `<link rel="manifest" href="/site.webmanifest">`
- *    in its JSX. Next only dedupes tags it generates from `metadata`, so /hub
- *    routes ended up with two manifest links — marketing first — and browsers
- *    honour the first one.
- * 2. The marketing pages /app and /loadoff then declared the LoadOff manifest
- *    plus `apple-mobile-web-app-capable`. A manifest only applies to documents
- *    inside its `scope`, and LoadOff's scope is /hub, so iOS discarded the
- *    manifest and kept the capable flag — installing a chrome-less window
- *    pinned to the marketing page, with no URL bar to escape from.
+ * - the manifest link, and a manifest whose `scope` actually covers the page
+ *   (the root layout hardcoded `<link rel="manifest">` in JSX, which Next does
+ *   not dedupe, so /hub served two and browsers honour the first; later, /app
+ *   and /loadoff pointed at a manifest scoped to /hub, which iOS discards)
+ * - `apple-mobile-web-app-capable`, which Next never emits itself
+ * - `apple-mobile-web-app-title`, the name iOS pre-fills in the Add sheet
+ * - `apple-touch-icon`, which iOS reads in preference to the manifest icons
  *
- * The same class of mistake applies to icons: iOS reads the home-screen icon
- * from `<link rel="apple-touch-icon">` before it looks at the manifest, so a
- * hardcoded marketing one in the root layout branded the app as the carrier.
+ * Plus the belt to those braces: a standalone launch that lands anywhere but
+ * the app is handed to /hub, so neither iOS start_url behaviour can strand an
+ * icon on the website.
  */
 import { describe, expect, it } from "vitest"
 import { readFileSync } from "node:fs"
@@ -49,9 +49,11 @@ describe("PWA manifest wiring", () => {
   it("root layout declares icons via metadata so /hub can override them", () => {
     expect(code("src/app/layout.tsx")).not.toMatch(/<link[^>]+rel=["']apple-touch-icon["']/)
     expect(code("src/app/layout.tsx")).not.toMatch(/<link[^>]+rel=["']icon["']/)
-    const root = read("src/app/layout.tsx")
-    expect(root).toMatch(/icons:\s*\{/)
-    expect(root).toMatch(/apple:\s*\[\{\s*url:\s*["']\/apple-touch-icon\.png["']/)
+    expect(read("src/app/layout.tsx")).toMatch(/icons:\s*SITE_ICONS/)
+    // SITE_ICONS is the carrier's mark; APP_ICONS is the product's.
+    const sets = read("src/lib/site-icons.ts")
+    expect(sets).toMatch(/SITE_ICONS[\s\S]*?apple:\s*\[\{\s*url:\s*["']\/apple-touch-icon\.png["']/)
+    expect(sets).toMatch(/APP_ICONS[\s\S]*?apple:\s*\[\{\s*url:\s*["']\/hub-icon-180\.png["']/)
   })
 
   it("hub layout points at the LoadOff manifest so the installed app opens /hub", () => {
@@ -62,8 +64,7 @@ describe("PWA manifest wiring", () => {
   it("hub layout carries the LoadOff apple-touch-icon, not the carrier's", () => {
     // iOS prefers apple-touch-icon over the manifest icons, so the app would
     // otherwise wear the Thind Transport mark on the home screen.
-    const hub = read("src/app/hub/layout.tsx")
-    expect(hub).toMatch(/apple:\s*\[\{\s*url:\s*["']\/hub-icon-180\.png["']/)
+    expect(read("src/app/hub/layout.tsx")).toMatch(/icons:\s*\{\s*\.\.\.APP_ICONS/)
   })
 
   it("hub pages title absolutely, so the app never renders the carrier's name", () => {
@@ -82,23 +83,27 @@ describe("PWA manifest wiring", () => {
     expect(hub).toMatch(/capable:\s*true/)
   })
 
-  it("marketing pages never claim the app's manifest or the standalone flag", () => {
-    // Out of the manifest's /hub scope, so the manifest is discarded and only
-    // the capable flag survives — which pins a chrome-less window to a
-    // marketing page (the owner's "it opens the website" iPhone repro).
+  it("the marketing install pages carry all four pieces an iOS install needs", () => {
+    // Any one of these missing and the icon is wrong in a way nobody sees
+    // until it is tapped: no manifest and it is a bookmark; no capable flag
+    // and it opens in Safari chrome; no title and the sheet reads "Thind
+    // Transport"; no apple icon and the app wears the carrier's mark.
     for (const p of MARKETING_APP_PAGES) {
       const src = code(p)
-      expect(src, p).not.toMatch(/manifest:\s*["']\/api\/hub\/manifest["']/)
-      expect(src, p).not.toMatch(/<meta name="apple-mobile-web-app-capable"/)
-      expect(src, p).not.toMatch(/appleWebApp:/)
+      expect(src, p).toMatch(/manifest:\s*["']\/api\/hub\/manifest["']/)
+      expect(src, p).toMatch(/<meta name="apple-mobile-web-app-capable" content="yes" \/>/)
+      expect(src, p).toMatch(/appleWebApp:\s*\{\s*capable:\s*true,\s*title:\s*["']LoadOff["']\s*\}/)
+      expect(src, p).toMatch(/icons:\s*APP_ICONS/)
     }
+    // …and the manifest they point at must actually reach them on iOS, which
+    // is the piece the first attempt at this fix was missing.
+    expect(read("src/app/api/hub/manifest/route.ts")).toMatch(/scope:\s*manifestScope\(/)
   })
 
-  it("marketing pages send an already-installed icon back into the app", () => {
-    // Icons minted before the fix still launch at /app or /loadoff. Landing
-    // there in standalone display-mode means exactly that, so those launches
-    // are handed to /hub rather than left stranded on the website.
-    for (const p of MARKETING_APP_PAGES) {
+  it("every install page hands a standalone launch to the app", () => {
+    // Covers both iOS behaviours (honour start_url, or pin the page it was
+    // installed from) and repairs icons minted before any of this was fixed.
+    for (const p of [...MARKETING_APP_PAGES, "src/app/hub/get-app/page.tsx"]) {
       expect(read(p), p).toMatch(/<InstalledAppRedirect \/>/)
     }
     const guard = read("src/components/shared/InstalledAppRedirect.tsx")
@@ -106,13 +111,26 @@ describe("PWA manifest wiring", () => {
     expect(guard).toMatch(/location\.replace\(["']\/hub["']\)/)
   })
 
-  it("marketing pages funnel to the in-scope install surface", () => {
-    // The only gesture that can install the app is Add to Home Screen from a
-    // page inside /hub, so both pages must offer the way there. /loadoff links
-    // straight to it; /app routes through GetTheApp's platform-aware steps.
+  it("marketing pages also funnel to the in-scope install surface", () => {
+    // Android's install sheet only fires inside the narrow /hub scope, so
+    // /hub/get-app stays the way there. /loadoff links straight to it; /app
+    // routes through GetTheApp's platform-aware steps.
     expect(read("src/app/loadoff/page.tsx")).toMatch(/href="\/hub\/get-app"/)
     expect(read("src/app/app/page.tsx")).toMatch(/<GetTheApp \/>/)
     expect(read("src/components/features/GetTheApp.tsx")).toMatch(/href="\/hub\/get-app"/)
+  })
+
+  it("the in-app install hint is a tap target, not small print", () => {
+    // On /hub/login this was a grey <p>: the one thing on the screen that puts
+    // the app on a driver's phone, styled like a footnote. It is a link now, in
+    // the accent colour, at a thumb-sized height — and never points at the page
+    // it is already on.
+    const src = read("src/components/hub/InstallAppButton.tsx")
+    expect(src).toMatch(/const INSTALL_PAGE = ["']\/hub\/get-app["']/)
+    expect(src).toMatch(/<Link\s+href=\{INSTALL_PAGE\}/)
+    expect(src).toMatch(/const onInstallPage = usePathname\(\) === INSTALL_PAGE/)
+    expect(src).toMatch(/if \(onInstallPage\)/)
+    expect(src).toMatch(/min-h-\[52px\]/)
   })
 
   it("/hub/get-app is proxy-exempt so a logged-out phone can reach the install surface", () => {
@@ -134,7 +152,8 @@ describe("PWA manifest wiring", () => {
     const route = read("src/app/api/hub/manifest/route.ts")
     expect(route).toMatch(/id:\s*["']\/hub["']/)
     expect(route).toMatch(/start_url:\s*["']\/hub["']/)
-    expect(route).toMatch(/scope:\s*["']\/hub["']/)
+    // Scope itself is platform-dependent; install-scope.test.ts pins the values.
+    expect(route).toMatch(/scope:\s*manifestScope\(/)
     expect(route).toMatch(/display:\s*["']standalone["']/)
     // Installability needs a 192 and a 512, plus a maskable icon so Android
     // doesn't letterbox it inside a white rounded square.
