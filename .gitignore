@@ -65,3 +65,4 @@ services/go/hauldesk-worker/hauldesk-worker
 
 # design-qa auditor output
 .design-qa/
+.agent-scratch/
