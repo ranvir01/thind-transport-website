@@ -4,6 +4,8 @@ import { MapPin, Phone } from "lucide-react"
 import { COMPANY_INFO, PAY_RATES } from "@/lib/constants"
 import { STATES } from "@/lib/state-data"
 import { PageBreadcrumb } from "@/components/shared/PageBreadcrumb"
+import { RelatedLinks } from "@/components/shared/RelatedLinks"
+import { driverLinks } from "@/components/shared/link-sets"
 
 export const metadata: Metadata = {
   title: "CDL Truck Driving Jobs in All 48 States | Thind Transport",
@@ -68,6 +70,12 @@ export default function CdlJobsIndexPage() {
           </a>
         </div>
       </div>
+
+      <RelatedLinks
+        title="Before you call"
+        intro="The calculators and records behind everything on this page."
+        links={driverLinks(["/cdl-jobs"])}
+      />
     </div>
   )
 }

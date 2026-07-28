@@ -3,6 +3,8 @@ import Image from "next/image"
 import Link from "next/link"
 import { ArrowRight, CheckCircle2, Fuel, Percent, Wallet } from "lucide-react"
 import { COMPANY_INFO } from "@/lib/constants"
+import { RelatedLinks } from "@/components/shared/RelatedLinks"
+import { driverLinks } from "@/components/shared/link-sets"
 
 export const metadata: Metadata = {
   title: "Owner Operator Pay Breakdown | 90% Split Explained",
@@ -164,6 +166,12 @@ export default function PayBreakdownPage() {
           </p>
         </div>
       </section>
+
+      <RelatedLinks
+        title="Check it yourself"
+        intro="Every number above has a tool or a record behind it."
+        links={driverLinks(["/pay-breakdown"])}
+      />
     </div>
   )
 }

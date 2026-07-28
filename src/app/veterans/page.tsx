@@ -9,6 +9,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { COMPANY_INFO, PAY_RATES } from "@/lib/constants"
 import { PageBreadcrumb } from "@/components/shared/PageBreadcrumb"
+import { RelatedLinks } from "@/components/shared/RelatedLinks"
+import { driverLinks } from "@/components/shared/link-sets"
 
 export const metadata: Metadata = {
   title: `Military Veterans CDL Jobs | ${COMPANY_INFO.name}`,
@@ -428,7 +430,12 @@ export default function VeteransPage() {
           </div>
         </div>
       </section>
+
+      <RelatedLinks
+        title="Useful next"
+        intro="Tools and pages a driver comparing carriers actually needs."
+        links={driverLinks(["/apply"])}
+      />
     </div>
   )
 }
-

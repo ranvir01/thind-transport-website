@@ -4,6 +4,8 @@ import { ApplicationForm } from "@/components/application/ApplicationForm"
 import { COMPANY_INFO, PAY_RATES } from "@/lib/constants"
 import { FAQAccordion } from "@/components/shared/FAQAccordion"
 import { PageBreadcrumb } from "@/components/shared/PageBreadcrumb"
+import { RelatedLinks } from "@/components/shared/RelatedLinks"
+import { driverLinks } from "@/components/shared/link-sets"
 import {
   BadgeCheck,
   CheckCircle2,
@@ -305,6 +307,12 @@ export default function ApplyPage() {
           </div>
         </section>
       </div>
+
+      <RelatedLinks
+        title="While you're deciding"
+        intro="Everything a driver asks in the first phone call, answered on the site."
+        links={driverLinks(["/apply"])}
+      />
     </>
   )
 }

@@ -6,6 +6,8 @@ import { PageBreadcrumb } from "@/components/shared/PageBreadcrumb"
 import { BrokerPacketForm } from "@/components/features/BrokerPacketForm"
 import { Reveal } from "@/components/ui/Reveal"
 import { PersonaRemember } from "@/components/shared/PersonaRemember"
+import { RelatedLinks } from "@/components/shared/RelatedLinks"
+import { freightLinks } from "@/components/shared/link-sets"
 
 export const metadata: Metadata = {
   title: "Carrier packet for brokers | Thind Transport — MC 876103",
@@ -189,6 +191,12 @@ export default function BrokersPage() {
           </p>
         </div>
       </section>
+
+      <RelatedLinks
+        title="Everything else, without asking"
+        intro="The documents and tools brokers normally have to email us for."
+        links={freightLinks(["/brokers"])}
+      />
     </div>
   )
 }

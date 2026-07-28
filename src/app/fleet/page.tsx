@@ -47,6 +47,8 @@ import { cn } from "@/lib/utils"
 import { COMPANY_INFO } from "@/lib/constants"
 import { FAQAccordion } from "@/components/shared/FAQAccordion"
 import { PageBreadcrumb } from "@/components/shared/PageBreadcrumb"
+import { RelatedLinks } from "@/components/shared/RelatedLinks"
+import { freightLinks } from "@/components/shared/link-sets"
 
 // Animation variants
 const containerVariants = {
@@ -1081,6 +1083,12 @@ export default function FleetPage() {
           </motion.div>
         </div>
       </section>
+
+      <RelatedLinks
+        title="Book the equipment"
+        intro="Specs are one thing — here's how you actually put freight on it."
+        links={freightLinks(["/fleet"])}
+      />
     </div>
   )
 }
