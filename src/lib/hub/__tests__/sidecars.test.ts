@@ -290,4 +290,32 @@ describe("iftaSummary", () => {
     const result = await iftaSummary(INPUTS)
     expect(result.source).toBe("typescript")
   })
+
+  // Mirror of goWorkerRouteMiles's secret-header coverage above: iftaSummary
+  // shares the same sidecarHeaders() helper, but nothing pinned that it
+  // actually reaches the fetch call here — a refactor that dropped the
+  // headers arg from this call site alone would pass every other test in
+  // this file (the rust URL just needs to be set for the request to fire).
+  it("sends the shared-secret header when HAULDESK_SIDECAR_SECRET is set", async () => {
+    vi.stubEnv("HAULDESK_RUST_COMPUTE_URL", "http://localhost:8091")
+    vi.stubEnv("HAULDESK_SIDECAR_SECRET", "shh")
+    const rustResult = { fleetMiles: 700, fleetGallons: 100, mpg: 7, rows: [], netTaxCents: 1234, missingRates: [] }
+    const fetchMock = vi.fn(async () => ({ ok: true, json: async () => rustResult }))
+    vi.stubGlobal("fetch", fetchMock)
+    const { iftaSummary } = await loadSidecars()
+    await iftaSummary(INPUTS)
+    const init = fetchMock.mock.calls[0][1] as RequestInit
+    expect((init.headers as Record<string, string>)["X-Hauldesk-Secret"]).toBe("shh")
+  })
+
+  it("omits the secret header when HAULDESK_SIDECAR_SECRET is unset", async () => {
+    vi.stubEnv("HAULDESK_RUST_COMPUTE_URL", "http://localhost:8091")
+    const rustResult = { fleetMiles: 700, fleetGallons: 100, mpg: 7, rows: [], netTaxCents: 1234, missingRates: [] }
+    const fetchMock = vi.fn(async () => ({ ok: true, json: async () => rustResult }))
+    vi.stubGlobal("fetch", fetchMock)
+    const { iftaSummary } = await loadSidecars()
+    await iftaSummary(INPUTS)
+    const init = fetchMock.mock.calls[0][1] as RequestInit
+    expect(init.headers as Record<string, string>).not.toHaveProperty("X-Hauldesk-Secret")
+  })
 })
