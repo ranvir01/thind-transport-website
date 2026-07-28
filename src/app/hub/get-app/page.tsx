@@ -2,7 +2,6 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { Share, Smartphone } from "lucide-react"
 import { InstallAppButton } from "@/components/hub/InstallAppButton"
-import { InstalledAppRedirect } from "@/components/shared/InstalledAppRedirect"
 import { Panel } from "@/components/hub/ui"
 import { PRODUCT } from "@/lib/hub/product"
 
@@ -24,10 +23,6 @@ export const metadata: Metadata = {
 export default function GetAppInstallPage() {
   return (
     <div className="hauldesk-auth flex min-h-screen items-center justify-center p-4">
-      {/* Where iOS pins the icon to the page it was installed from rather than
-          honouring start_url, the icon would otherwise open these instructions
-          forever instead of the app. */}
-      <InstalledAppRedirect />
       <div className="w-full max-w-md">
         <Panel className="w-full p-6 md:p-8">
           <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-fg-3">

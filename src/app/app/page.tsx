@@ -4,7 +4,6 @@ import { CloudOff, Camera, Wallet, Bell, MessageSquare, ArrowRight } from "lucid
 import { COMPANY_INFO } from "@/lib/constants"
 import { PageBreadcrumb } from "@/components/shared/PageBreadcrumb"
 import { GetTheApp } from "@/components/features/GetTheApp"
-import { InstalledAppRedirect } from "@/components/shared/InstalledAppRedirect"
 import { APP_ICONS } from "@/lib/site-icons"
 import { Reveal } from "@/components/ui/Reveal"
 
@@ -78,9 +77,6 @@ export default function GetAppPage() {
           appleWebApp.capable; iOS keys standalone launch off the apple-prefixed
           name. React hoists this into <head>. */}
       <meta name="apple-mobile-web-app-capable" content="yes" />
-      {/* Whether iOS honours the manifest's start_url or pins the page it was
-          installed from, the icon ends up in the app. */}
-      <InstalledAppRedirect />
       <PageBreadcrumb pageName="Driver app" category="Drivers" />
 
       <section className="bg-asphalt py-16 text-paper md:py-24">

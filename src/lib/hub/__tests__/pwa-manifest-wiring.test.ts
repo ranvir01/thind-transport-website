@@ -100,15 +100,19 @@ describe("PWA manifest wiring", () => {
     expect(read("src/app/api/hub/manifest/route.ts")).toMatch(/scope:\s*manifestScope\(/)
   })
 
-  it("every install page hands a standalone launch to the app", () => {
-    // Covers both iOS behaviours (honour start_url, or pin the page it was
-    // installed from) and repairs icons minted before any of this was fixed.
+  it("a standalone launch anywhere on the site is handed to the app", () => {
+    // Mounted once in the ROOT layout, not per-page: an icon iOS pinned to "/"
+    // before any of this was fixed can never be retargeted server-side, so the
+    // rescue has to cover every page the icon might land on.
+    expect(read("src/app/layout.tsx")).toMatch(/<InstalledAppRedirect \/>/)
     for (const p of [...MARKETING_APP_PAGES, "src/app/hub/get-app/page.tsx"]) {
-      expect(read(p), p).toMatch(/<InstalledAppRedirect \/>/)
+      expect(code(p), p).not.toMatch(/<InstalledAppRedirect \/>/)
     }
     const guard = read("src/components/shared/InstalledAppRedirect.tsx")
     expect(guard).toMatch(/display-mode: standalone/)
-    expect(guard).toMatch(/location\.replace\(["']\/hub["']\)/)
+    expect(guard).toMatch(/location\.replace\(APP_HOME\)/)
+    // Which paths it spares is the loop-bearing part — installed-app-redirect.test.ts.
+    expect(guard).toMatch(/export function shouldReturnToApp/)
   })
 
   it("marketing pages also funnel to the in-scope install surface", () => {
