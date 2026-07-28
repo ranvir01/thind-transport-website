@@ -1547,3 +1547,71 @@ Backlog:
   semver-major bump); Rust sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision); TEST_GAPS.md
   row 1 (`draftSettlements` multi-driver/percentage-pay/multi-referral cases); green-as-success convention
   design call (`PreQualificationForm.tsx` vs `ApplicationForm.tsx`).
+
+## QA rig drive on main@11e26839 — 2026-07-28 ~00:30 UTC (owner/dispatcher/driver, read-only prod probe)
+
+Charter (docs/agent-improvement-loop.md §5): no feature work — stood up the local rig from scratch,
+drove owner/dispatcher/driver flows with the existing Puppeteer `e2e-*.mjs` battery, probed
+`thindtransport.com` read-only via the Vercel MCP connector (direct HTTPS still egress-blocked, 403 on
+CONNECT), fixed only outright regressions from the last 3h of commits.
+
+**Rig setup:** Postgres 16 started (was down), `hubapp`/`hubdb` role+database created per AGENTS.md
+pitfall #9, `npm install` (750 packages, canvas native deps via `setup:canvas-deps` + Puppeteer pointed
+at the sandbox's bundled Chromium per pitfall #8), 23 migrations clean through
+`023_lead_attribution.sql`, `seed:demo`, `npm run build` (Next.js 16, zero TS errors) clean, `npm run
+start`. Sidecars untouched this window, skipped per AGENTS.md.
+
+**Last-3h regression review:** commits since `ea143d8f` (21:49 UTC) — `0a12368b`
+(`assignFuelToLoad` test coverage), `3ed19c3` (TEST_GAPS.md doc fix), and the three
+`Merge claude/*-into-integrator` + two stamped `Drain integrator to main` commits through `11e26839` —
+are all test-file or docs-only (`git diff --stat` confirms zero product-code files changed in this
+window). No regression surface existed to check; nothing to fix-forward.
+
+**E2E drive:** full `node scripts/e2e-run-all.mjs` battery (47 `e2e-*-smoke.mjs` scripts + the
+`e2e-sweep.mjs` screen sweep) as owner, dispatcher, and driver — **52/53 passed** in 14.8 minutes. The
+one failure is a pre-existing, already-documented stale test anchor, not a product defect:
+`e2e-sweep.mjs`'s `OWNER_PAGES` entry for `/hub/reports` greps for the literal string `"the operational
+view"` (`scripts/e2e-sweep.mjs:68`), but that copy only renders from the `driverPayCents === 0` branch
+of `src/app/hub/(office)/reports/page.tsx:104`; the seeded demo carrier's settlements fall inside the
+default 92-day range, so the page renders the other branch's copy (`page.tsx:103`, "...the per-truck
+table below stays operational...") instead. Confirmed via screenshot
+(`e2e-sweep/office-reports-1440.png`) that `/hub/reports` renders complete and correct (KPI tiles,
+deadhead panel, per-truck table) — this is a test-anchor/seed-data mismatch, exactly the item this
+doc's own backlog has carried since the 2026-07-27 21:45 UTC cycle. Left unfixed here: `scripts/e2e-*.mjs`
+is `claude/lane-tests` territory per §5's table, not this QA-only routine's charter.
+
+**Production probe (Vercel MCP — direct HTTPS egress-blocked):** found a live, ongoing incident, not
+just staleness math from commit trailers. `get_project` on `prj_QKMg8o77DoEYiVQgQbI0FB5F4tAg`:
+`live: false`, `latestDeployment` CANCELED, `target: null`. `list_deployments` (19 most recent, spanning
+17:53–23:48 UTC): the **only** deployment in the window with `target: "production"` is `6bd92be`'s
+build (`dpl_CtLudx7ruwx33f4EgbyZ9TkbHCf6`, READY, created 17:53:56 UTC) — every one of the 18 commits
+landed on `main` since then, **including two direct `Drain integrator to main` pushes in the final 30
+minutes of this window** (`65e02941`, `11e26839`), produced **zero** deployment record of any kind for
+`githubCommitRef: "main"` — not READY, not CANCELED, not SKIPPED, nothing. This is the same failure
+signature as the 2026-07-23 outage (Vercel's GitHub App webhook silently stops firing production builds
+on push to `main`) and had already been independently found ~30-45 min earlier by a concurrent QA-drive
+session on an unmerged branch (`claude/practical-franklin-h5n8s8`, "production stale 5.5h+"). Staleness
+at the time of this cycle: **6.4 hours**, still growing. `get_runtime_errors` (6h window) shows the
+currently-serving stale build (`dpl_CtLudx7ruwx33f4EgbyZ9TkbHCf6` / `6bd92be`) itself is healthy — the
+one error group is a benign pre-existing pg SSL-mode deprecation warning, last seen 23:27 UTC, not a
+new defect. Notified the owner directly (push notification) since this is a live, actionable, worsening
+production incident with no in-repo fix — it needs a Vercel dashboard check (Git integration/webhook
+health, production-branch setting, Ignored Build Step).
+
+Backlog:
+- **Owner, urgent:** production deploy pipeline stalled again after 17:53 UTC today (`6bd92be`) — 18
+  commits / 6.4h+ stale as of this cycle and growing, with the two most recent direct-to-`main` drain
+  pushes producing zero Vercel deployment record at all (not even canceled). Needs a Vercel dashboard
+  check (Git integration connection, production-branch setting, Ignored Build Step) — same class of
+  issue as the 2026-07-23 outage documented earlier in this file. No in-repo fix is possible.
+- `e2e-sweep.mjs:68`'s `OWNER_PAGES` "reports" anchor (`"the operational view"`) false-fails whenever
+  seeded settlements land inside the default 92-day range (matches `page.tsx:103`'s branch, not the
+  anchor's expected `page.tsx:104` copy) — confirmed again this cycle, now flagged across at least three
+  separate cycles (2026-07-27 ~17:53 and ~19:48 UTC, this one). One-line fix: swap the anchor to
+  `"per-truck p&l, last 92 days"` (already used successfully for the dispatcher-pass "reports" entry at
+  line 52, present in both branches' copy) — `claude/lane-tests` territory, not fixed here.
+- Carried, unchanged: npm audit high-severity findings in the `next`/`sharp` chain (owner-approval-gated
+  semver-major bump); Rust sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision);
+  TEST_GAPS.md row 1 (`draftSettlements` multi-driver/percentage-pay/multi-referral cases); green-as-
+  success convention design call (`PreQualificationForm.tsx` vs `ApplicationForm.tsx`); 200+ pending
+  `claude/*` branches awaiting the meta-governor prune pass.
