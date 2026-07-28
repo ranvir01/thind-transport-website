@@ -5,6 +5,7 @@ import { auth } from "@/lib/auth"
 import { GeistMono } from "geist/font/mono"
 import { GeistSans } from "geist/font/sans"
 import { PRODUCT } from "@/lib/hub/product"
+import { APP_ICONS } from "@/lib/site-icons"
 import { ServiceWorkerBoot } from "@/components/hub/ServiceWorkerBoot"
 import { StandaloneScopeGuard } from "@/components/hub/StandaloneScopeGuard"
 import "./hub-theme.css"
@@ -22,10 +23,7 @@ export const metadata: Metadata = {
   // takes the home-screen icon from apple-touch-icon before it looks at the
   // manifest, so without a LoadOff one here the installed app wore the Thind
   // Transport truck mark.
-  icons: {
-    icon: [{ url: "/hub-icon-192.png", type: "image/png", sizes: "192x192" }],
-    apple: [{ url: "/hub-icon-180.png", sizes: "180x180" }],
-  },
+  icons: { ...APP_ICONS, icon: [{ url: "/hub-icon-192.png", type: "image/png", sizes: "192x192" }] },
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",

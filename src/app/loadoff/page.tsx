@@ -10,6 +10,7 @@ import {
 } from "lucide-react"
 import { PageBreadcrumb } from "@/components/shared/PageBreadcrumb"
 import { InstalledAppRedirect } from "@/components/shared/InstalledAppRedirect"
+import { APP_ICONS } from "@/lib/site-icons"
 
 export const metadata: Metadata = {
   // absolute: the string already carries the carrier name, and the root
@@ -18,11 +19,13 @@ export const metadata: Metadata = {
   description:
     "LoadOff is the transportation management system built in-house at Thind Transport: dispatch, invoicing, driver settlements, fuel + IFTA, compliance, and a driver phone app — one calm place to run a trucking company.",
   alternates: { canonical: "/loadoff" },
-  // No manifest or appleWebApp override — see the long note in src/app/app/page.tsx.
-  // Short version: LoadOff's manifest scope is /hub, iOS ignores a manifest that
-  // does not cover the current page, and the `apple-mobile-web-app-capable` flag
-  // that used to sit here then pinned a chrome-less window to this marketing
-  // page. Installing the app happens at /hub/get-app, which the CTA below links to.
+  // An install surface, same as /app — see the long note there. Share → Add to
+  // Home Screen on the product's own page means the product, and all four
+  // pieces have to agree for iOS to deliver it: the manifest (whose scope now
+  // reaches this page on iOS), the standalone flag, the name, and the icon.
+  manifest: "/api/hub/manifest",
+  appleWebApp: { capable: true, title: "LoadOff" },
+  icons: APP_ICONS,
 }
 
 const MODULES = [
@@ -61,8 +64,11 @@ const MODULES = [
 export default function LoadOffPage() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-50">
-      {/* Sends already-installed home-screen icons that were saved from this
-          page (back when it declared itself app-capable) into the real app. */}
+      {/* iOS keys standalone launch off the apple-prefixed name; Next emits
+          only `mobile-web-app-capable`. React hoists this into <head>. */}
+      <meta name="apple-mobile-web-app-capable" content="yes" />
+      {/* Whether iOS honours the manifest's start_url or pins the page it was
+          installed from, the icon ends up in the app. */}
       <InstalledAppRedirect />
       <PageBreadcrumb pageName="LoadOff TMS" category="Company" />
 
