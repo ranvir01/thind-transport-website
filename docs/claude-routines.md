@@ -1547,3 +1547,64 @@ Backlog:
   semver-major bump); Rust sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision); TEST_GAPS.md
   row 1 (`draftSettlements` multi-driver/percentage-pay/multi-referral cases); green-as-success convention
   design call (`PreQualificationForm.tsx` vs `ApplicationForm.tsx`).
+
+## QA rig drive on main@981b700 — 2026-07-28 ~07:15-07:40 UTC
+
+Charter (docs/agent-improvement-loop.md §5): no feature work — stood up the local rig from scratch,
+drove owner/dispatcher/driver flows against the full Puppeteer `e2e-run-all.mjs` battery, probed
+`thindtransport.com` read-only, fixed only outright regressions from the last 3h of commits.
+
+**Fresh rig:** Postgres 16 started (was down), `loadoff` role + `loadoff_dev` database created (neither
+existed), `npm install` (750 packages), 23 migrations clean, `seed:demo`, `npm run build` clean
+(Turbopack), `npx vitest run` (257 files/2336 tests) green, `npm run lint` clean, `npm run test:sidecars`
+(Go vet+test cached-ok, Rust clippy clean + 29 tests) green.
+
+**Last-3h commit window (92886bb..981b700):** two lane merges (`lane-sidecars`/`sidecars.test.ts`,
+`lane-portal`/`portal-quote-and-users.test.ts`, both test-file-only), one dedicated action test
+(`accept-driver-invite-action.test.ts`), and two drain commits — zero product code changed, no
+regression, nothing to fix-forward.
+
+**Full `e2e-run-all.mjs` battery (52 `*-smoke.mjs` scripts, run in two batches after a 580s shell
+timeout truncated the first pass mid-run — not a script failure) + final `e2e-sweep.mjs`:** 52/52
+smokes green as owner, dispatcher, and driver. The sweep's only problem was the already-well-documented
+`OWNER_PAGES` "reports" anchor (`"the operational view"`) — data-conditional on `hasDriverPay`
+(`src/app/hub/(office)/reports/page.tsx:101-104`), not a stuck page; today's seed renders the
+driver-pay branch. **Did not re-fix**: `git log --all --grep` turned up the identical one-line
+anchor swap already committed on two separate unmerged branches —
+`claude/practical-franklin-nc7io5` (`8ba7b145`) and `claude/eager-babbage-vbk92d` (`8db169a8`), the
+second of which explicitly says it's landing a fix a *third* prior cycle (`e8191354`) had already
+verified. Three independent rediscoveries of a trivial, zero-conflict, `scripts/e2e-*.mjs`-only diff,
+none merged — naming both branches below instead of authoring a fourth copy.
+
+**Production probe (Vercel MCP; direct HTTPS to `thindtransport.com` stayed egress-blocked, confirmed
+via the proxy status endpoint as a 403 policy denial, not a site defect):** `list_deployments` on
+`prj_QKMg8o77DoEYiVQgQbI0FB5F4tAg` shows the `production`-target READY deployment is `dpl_BzFsbH5J`
+at commit `74bc3b5`, deployed 04:41 UTC. `main` HEAD (`981b700`) is one commit / ~3h ahead with no
+newer deployment queued — the same self-healing drain lag prior cycles have logged, not a stall
+worth paging (only 1 commit ahead, well under the 3-commit catch-up threshold).
+
+`get_runtime_errors` (24h window) surfaces the real, unresolved finding: `[cron:owner-digest]` (4/4
+carriers, 2026-07-27 13:13 UTC, weekly Monday job) and `[cron:compliance-scan]` (1/4 carriers,
+2026-07-27 14:13 UTC, daily job) both failed with Gmail `535-5.7.8 BadCredentials` — the production
+`SMTP_PASS` app password is invalid. `compliance-scan` runs again today at 14:00 UTC and will fail
+again unless it's rotated. This has been carried across dozens of prior QA-drive cycles
+(`4526d7ca`, `d4b702d4`, `8ba7b145`, `8db169a8`, and others) since 2026-07-26/27 without a fix —
+each cycle's commit message *claims* the owner was already notified, but that claim lives only in a
+git trailer no human necessarily reads; sent an actual push notification this cycle since staleness
+this long on a customer-visible email failure isn't safe to assume already seen.
+
+Backlog:
+- **Owner action, unresolved 2+ days:** regenerate the Gmail app password for `SMTP_USER` and update
+  `SMTP_PASS` in Vercel's production env — `owner-digest` (next run: Monday) and `compliance-scan`
+  (next run: today 14:00 UTC) will keep silently failing until this is rotated.
+- Integrator: drain `claude/practical-franklin-nc7io5` (`8ba7b145`) or `claude/eager-babbage-vbk92d`
+  (`8db169a8`) for the `e2e-sweep.mjs` `OWNER_PAGES` "reports" anchor fix — both carry the identical
+  verified one-line diff; either closes it. Don't let a fourth copy get authored.
+- Meta-governor: this exact anchor fix has now been independently rediscovered-and-fixed at least
+  three times (`e8191354`, `8db169a8`, `8ba7b145`) across unmerged branches without ever reaching
+  `main` — a concrete instance of the branch-proliferation problem prior cycles have flagged in the
+  abstract (200+ pending `claude/*` branches). Draining small, verified, zero-conflict fixes faster
+  than the QA cadence rediscovers them would remove real (if minor) recurring waste.
+- Carried, unchanged: npm audit high-severity findings in the `next`/`sharp` chain (owner-approval-gated
+  semver-major bump); Rust sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision);
+  200+ pending `claude/*` branches still await the meta-governor prune pass.
