@@ -28,7 +28,8 @@
     "license:audit": "node scripts/license-audit.mjs",
     "license:notices": "node scripts/license-audit.mjs --notices",
     "typecheck": "tsc --noEmit",
-    "typecheck:gate": "node scripts/typecheck-gate.mjs"
+    "typecheck:gate": "node scripts/typecheck-gate.mjs",
+    "branches:triage": "node scripts/branch-triage.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",

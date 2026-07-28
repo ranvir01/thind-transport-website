@@ -122,12 +122,12 @@ describe("getAuthoritySnapshot — never breaks the page", () => {
   })
 
   it("caches for a day rather than calling FMCSA on every page view", async () => {
-    const fetchMock = vi.fn(async () =>
+    const fetchMock = vi.fn(async (_url: string, _init?: RequestInit) =>
       Response.json({ content: [{ carrier: { allowedToOperate: "Y" } }] })
     )
     globalThis.fetch = fetchMock as never
     await getAuthoritySnapshot()
-    const init = fetchMock.mock.calls[0][1] as { next?: { revalidate?: number } }
+    const init = fetchMock.mock.calls[0]![1] as unknown as { next?: { revalidate?: number } }
     expect(init.next?.revalidate).toBe(86_400)
   })
 
