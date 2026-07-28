@@ -1,5 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
+// These exercise parsing + persistence, not throttling. Without this the
+// real guard writes hub.auth_attempts rows whenever POSTGRES_URL is set,
+// and the suite trips its own rate limit on the second run.
+vi.mock("@/lib/public-form-guard", () => ({
+  honeypotTripped: vi.fn(() => false),
+  publicFormBlocked: vi.fn(async () => false),
+}))
 vi.mock("@/lib/hub/website-leads", () => ({ saveWebsiteLead: vi.fn(async () => true) }))
 vi.mock("@/lib/mailer", () => ({
   isEmailConfigured: vi.fn(() => false),

@@ -1,8 +1,16 @@
 "use server"
 
-/** Office-side comms actions: announcements, document requests, time-off decisions. */
+/**
+ * Office-side comms actions: announcements, document requests, time-off
+ * decisions.
+ *
+ * All four direct or affect the workforce — publishing to every driver's
+ * screen, demanding paperwork from a named driver, approving or denying leave
+ * — so they gate on drivers:write, not "any office role". An accountant holds
+ * no drivers:write and has no business deciding a driver's time off.
+ */
 import { revalidatePath } from "next/cache"
-import { requireOfficeUser } from "@/lib/hub/session"
+import { requirePermission } from "@/lib/hub/session"
 import { createAnnouncement } from "@/lib/hub/announcements"
 import { decideTimeOff } from "@/lib/hub/timeoff"
 import { notifyDriver } from "@/lib/hub/notify"
@@ -25,7 +33,7 @@ export async function createAnnouncementAction(input: {
   expiresAt?: string
 }): Promise<Result> {
   try {
-    const user = await requireOfficeUser()
+    const user = await requirePermission("drivers:write")
     if (!input.title.trim() || !input.body.trim()) {
       return { ok: false, error: "Title and message are both needed" }
     }
@@ -66,7 +74,7 @@ export async function requestDocumentAction(input: {
   note?: string
 }): Promise<Result> {
   try {
-    const user = await requireOfficeUser()
+    const user = await requirePermission("drivers:write")
     if (!REQUESTABLE_DOC_KINDS.has(input.kind)) return { ok: false, error: "Pick what you need" }
     const driver = await queryOne<{ id: string; name: string }>(
       `SELECT id, first_name || ' ' || last_name AS name FROM hub.drivers
@@ -99,7 +107,7 @@ export async function requestDocumentAction(input: {
 
 export async function cancelDocumentRequestAction(id: string): Promise<Result> {
   try {
-    const user = await requireOfficeUser()
+    const user = await requirePermission("drivers:write")
     const rows = await query(
       `UPDATE hub.document_requests SET status = 'cancelled'
        WHERE carrier_id = $1 AND id = $2 AND status = 'open' RETURNING id`,
@@ -118,7 +126,7 @@ export async function decideTimeOffAction(
   decision: "approved" | "denied"
 ): Promise<Result> {
   try {
-    const user = await requireOfficeUser()
+    const user = await requirePermission("drivers:write")
     const request = await decideTimeOff(user.carrierId, id, decision, { id: user.id, name: user.name })
     if (!request) return { ok: false, error: "Already decided" }
     await logAudit({
