@@ -47,6 +47,7 @@ jobs:
 
       - name: Delete claude/* branches fully merged into main
         run: |
+          set -euo pipefail
           git fetch origin main --prune
           git branch -r --merged origin/main \
             | sed 's/^ *//' \
@@ -62,11 +63,20 @@ jobs:
           fi
           split -l 40 /tmp/refspecs /tmp/batch-
           DELETED=0
+          FAILED=0
           for f in /tmp/batch-*; do
+            # A rejected push used to be swallowed by `&&`: the step printed a
+            # lower count and still exited 0, so a prune that deleted nothing
+            # was indistinguishable from one that worked.
             # shellcheck disable=SC2046
-            git push origin $(tr '\n' ' ' < "$f") && DELETED=$((DELETED + $(wc -l < "$f")))
+            if git push origin $(tr '\n' ' ' < "$f"); then
+              DELETED=$((DELETED + $(wc -l < "$f")))
+            else
+              FAILED=$((FAILED + $(wc -l < "$f")))
+            fi
           done
           echo "Deleted $DELETED of $TOTAL."
+          [ "$FAILED" -eq 0 ] || { echo "::error::$FAILED branch deletion(s) failed"; exit 1; }
 
       - name: Zero-content-delta branches (dry-run unless armed)
         env:
@@ -75,6 +85,7 @@ jobs:
           # an in-flight session may still be about to push real work onto it.
           AGE_FLOOR_HOURS: "24"
         run: |
+          set -euo pipefail
           git fetch origin --prune
           NOW=$(date +%s)
           FLOOR=$((AGE_FLOOR_HOURS * 3600))
@@ -102,20 +113,42 @@ jobs:
             exit 0
           fi
           if [ "$ARMED" != "yes" ]; then
-            echo "DRY RUN — nothing deleted. Re-dispatch with arm_tree_prune to delete the $COUNT branches above."
+            # The "a human reads one report before arming" gate only works if
+            # the report is somewhere a human passes. The job log of a 06:23 UTC
+            # scheduled run is not that place; the run summary is.
+            {
+              echo "### Zero-content-delta branch prune — DRY RUN"
+              echo
+              echo "**$COUNT** branch(es) carry no content \`main\` does not already have,"
+              echo "and their tip is older than ${AGE_FLOOR_HOURS}h."
+              echo
+              echo "Nothing was deleted. Re-dispatch this workflow with \`arm_tree_prune\` to delete them."
+              echo
+              echo '```'
+              cat /tmp/tree-candidates
+              echo '```'
+            } >> "${GITHUB_STEP_SUMMARY:-/dev/null}"
+            echo "DRY RUN — nothing deleted. Report written to the run summary; re-dispatch with arm_tree_prune to delete the $COUNT branches above."
             exit 0
           fi
           sed 's|^origin/|:refs/heads/|' /tmp/tree-candidates > /tmp/tree-refspecs
           split -l 40 /tmp/tree-refspecs /tmp/treebatch-
           DELETED=0
+          FAILED=0
           for f in /tmp/treebatch-*; do
             # shellcheck disable=SC2046
-            git push origin $(tr '\n' ' ' < "$f") && DELETED=$((DELETED + $(wc -l < "$f")))
+            if git push origin $(tr '\n' ' ' < "$f"); then
+              DELETED=$((DELETED + $(wc -l < "$f")))
+            else
+              FAILED=$((FAILED + $(wc -l < "$f")))
+            fi
           done
           echo "Deleted $DELETED zero-content-delta branches."
+          [ "$FAILED" -eq 0 ] || { echo "::error::$FAILED branch deletion(s) failed"; exit 1; }
 
       - name: Report survivors
         run: |
+          set -euo pipefail
           git fetch origin --prune
           KEPT=$(git branch -r | sed 's/^ *//' | grep -c '^origin/claude/' || true)
           echo "claude/* branches remaining (unique commits or protected): $KEPT"
