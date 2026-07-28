@@ -121,7 +121,7 @@ describe("saveCredentials / hasCredentials / deleteCredentials", () => {
   it("upserts an encrypted envelope keyed by carrier + provider", async () => {
     await saveCredentials(CARRIER, "efs", { apiKey: "sk-live-123" }, "user-1")
     expect(queryMock).toHaveBeenCalledTimes(1)
-    const [sql, params] = queryMock.mock.calls[0]
+    const [sql, params = []] = queryMock.mock.calls[0]
     expect(sql).toContain("ON CONFLICT (carrier_id, provider) DO UPDATE")
     expect(params[0]).toBe(CARRIER)
     expect(params[1]).toBe("efs")

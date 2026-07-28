@@ -47,7 +47,7 @@ import { execSync } from "node:child_process"
  * query params — same fix as the shared fixtures, just inline: give the mock
  * a second parameter.
  */
-const TEST_ERROR_BASELINE = 75
+const TEST_ERROR_BASELINE = 68
 
 const isTestFile = (file) =>
   file.includes("__tests__/") || file.endsWith(".test.ts") || file.endsWith(".test.tsx")
