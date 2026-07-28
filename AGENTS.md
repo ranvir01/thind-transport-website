@@ -67,12 +67,29 @@ full playbook and ready-made prompts:
    sweep to find one.
 3. **Build** — smallest change that ships value; follow the standing rules above.
 4. **Verify** — `npm run build` + `npx vitest run` (+ `npm run test:sidecars` if Go/Rust touched)
-   + visual check of changed screens (local Postgres: `npm run db:migrate && npm run seed:demo`,
-   then drive the real UI — demo logins in `scripts/seed-demo.mjs`).
+   + the gates below + visual check of changed screens (local Postgres:
+   `npm run db:migrate && npm run seed:demo`, then drive the real UI — demo logins in
+   `scripts/seed-demo.mjs`).
 5. **Ship** — commit with a one-line why, push, merge to `main` (Vercel deploys `main`). Background
    fleet automations (`.cursor/automation/README.md`) handle integrator → main drain and prod smoke.
 6. **Record** — end the commit body or PR with a `Backlog:` list of follow-ups you saw but didn't
    take; the next agent starts there. Never leave discovered defects unrecorded.
+
+### Gates
+
+| Command | Fails when | Notes |
+|---|---|---|
+| `npm run typecheck:gate` | ANY type error in app code, or test-file errors above the baseline | App code is zero-tolerance. Test debt is a **ratchet** — lower `TEST_ERROR_BASELINE` when you fix some; never raise it. |
+| `npm run license:audit` | A dependency ships under AGPL/SSPL/GPL/LGPL, directly or transitively | Only MIT / Apache-2.0 / BSD may be added. MPL-2.0 (web-push) is fine unmodified — never fork and edit it. `--notices` regenerates `THIRD_PARTY_NOTICES.md`. |
+| `npm run token-lint` | A raw hex color or raw px value in a **redesigned** marketing component | Scoped to the file list in the script, not repo-wide. Add each file as its redesign pass lands. |
+| `npm run design-qa` | Contrast below 4.5:1 (3:1 for large text), horizontal overflow, undersized tap targets, or missing alt text | Needs the app built and running locally. Audits 23 office screens + the driver app + public routes. |
+| `npm run js-budget` | A marketing route ships more gzipped JS than the ceiling | Needs `npm run build && npm run start` first — it measures the **production** build in a real browser. Also a ratchet: routes may shrink, never grow. Target is 170KB; the site is at 236–280KB, so the ceiling sits above target on purpose rather than shipping a permanently-red gate. |
+
+A ratchet stops being a ratchet the moment you raise its number to make a build pass. If a change
+genuinely needs more budget, say so in the commit body — don't edit the constant quietly.
+
+`npm run branches:triage` is not a gate; it reports which `claude/*` branches add nothing to `main`.
+It never deletes — it prints the commands.
 
 ## Integrations doctrine (everything-app track)
 
