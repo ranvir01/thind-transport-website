@@ -1582,3 +1582,83 @@ Backlog:
   @vercel/analytics/@vercel/speed-insights/geist/eslint-config-next family (owner-approval-gated
   semver-major bump); Rust sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision); 193
   pending `claude/*` branches awaiting the meta-governor prune pass (unchanged from prior cycles).
+
+## QA rig drive on main@5372bb66 — 2026-07-28 ~11:30 UTC (owner/dispatcher/driver, read-only prod probe)
+
+Charter (docs/agent-improvement-loop.md §5): no feature work — stood up the local rig from scratch,
+drove owner/dispatcher/driver flows (Playwright this cycle, standalone-installed against the
+preinstalled `/opt/pw-browsers/chromium-1194` Chromium, plus the repo's own Puppeteer
+`e2e-run-all.mjs` battery), probed `thindtransport.com` read-only via the Vercel MCP connector
+(direct HTTPS still egress-blocked — `curl` exit 56/403 on the CONNECT tunnel, same as every prior
+cycle), fixed only outright regressions from the last 3h of commits.
+
+**Production, via Vercel MCP (`get_project`/`list_deployments`/`get_runtime_errors`):** healthy and
+current. `latestDeployment` is `dpl_HN2M7QFacynCmwvk8FH2B6TKYH3t`, `READY`/`target: production`,
+built from `main@5372bb66` — the drain pipeline is deploying promptly again (contrast with the
+2026-07-23 `~05:30 UTC` cycle's finding that the Git integration had stopped firing production
+builds entirely; that's been resolved since, per the intervening cycles). `live: false` on the
+project object is the known unreliable flag (`docs/agent-improvement-loop.md` §3b) — cross-checked
+against the READY production deployment + alias, not paged on alone. `get_runtime_errors` (6h
+window) returned exactly one group: a `pg`/`pg-connection-string` SSL-mode-alias deprecation
+warning on `/api/version` and `/api/hub/cron/[job]`, first seen 2026-06-26 — long-standing and
+benign, not a new cluster.
+
+**Last-3h commit review** (`887e9049`..`5372bb66`, ~08:18–10:45 UTC): the iOS-install trilogy
+(`6497c4c6` naming the app + fixing the icon-opens-website fault, `a70bcb26` widening manifest scope
+off `/hub` so Add to Home Screen works from any app page, `c0eabcb4` turning the login screen's
+install hint into a tap target) plus a typecheck-gate ratchet, a js-budget-gate commit, a DVIR
+regression-test-only lane merge, and drain/stamp commits — no plain product-code diff outside the
+iOS work. Verified the iOS work specifically with a targeted Playwright pass (iPhone 13 device
+profile, real iOS user-agent): `/hub/login`'s install hint renders as a 358×70px tappable link
+(`min-h-[52px]` honored) linking to `/hub/get-app` with the "Show me how" copy the commit describes;
+`/hub/get-app` itself still renders the plain non-link hint (the one-page exception the component
+codes for); `/api/hub/manifest` resolves `scope: "/"` and `name: "LoadOff"` under an iOS UA, matching
+the widened-scope intent. No regression found — build (`npm run build`), `npx vitest run` (259
+files/2359 tests), `npm run lint`, `npm run typecheck:gate` (0 app-code errors, 78 test-file errors
+at the unchanged ratchet baseline), and `npm run js-budget` (worst route 280KB against a 285KB
+ceiling, unchanged) all green before and confirmed again after the review.
+
+Fresh rig: Postgres started (was down), `hubapp`/`hubdb` role+database created (pitfall #9), 23
+migrations clean, `seed:demo`, `npm run build && npm run start`, `npm run design-qa` (0 hard
+failures, 29 pre-existing warnings — approx-bg contrast/tap-target/alt, unchanged shape from prior
+cycles).
+
+**Playwright drive** (owner + dispatcher at 1440px, driver at 390px with an iPhone 13 profile):
+10 office screens as owner (today/loadboard/loads/fleet/invoices/reports/compliance/safety/messages/
+settings) and 8 driver-app screens (home/messages/pay/more/dvir/docs/incident/timeoff) — all 200,
+zero console errors beyond the expected local-rig `/_vercel/{speed-insights,insights}/script.js` 404s
+(Vercel's platform injects those scripts in production; a local `next start` has no edge layer to
+serve them — long-standing, not a defect).
+
+**Puppeteer `e2e-run-all.mjs` battery:** 52/53 green (15.1m). The one failure, `e2e-sweep`'s owner-
+flavored `/hub/reports` anchor ("the operational view" not found at 1440px or 390px), is a stale test
+fixture, not a page defect or a last-3h regression: `reports/page.tsx`'s subtitle branches on
+`hasDriverPay` (`b30ffb85`, 2026-07-27, and `5c158d72`, 2026-07-25 — both well outside this cycle's
+3h window) — the literal phrase "the operational view" only appears in the `!hasDriverPay` branch,
+but the current demo owner's default 92-day range has settlement driver-pay data, so it renders the
+other branch's copy ("...the per-truck table below stays operational..."). Reproduced manually: the
+page renders complete, correct P&L content either way (per-truck table, KPI tiles, deadhead
+instrumentation) — confirmed by reading the full rendered body text, not just the anchor check. Same
+class of issue as the previously-logged `e2e-ifta-smoke` "fleet MPG credible" threshold mismatch
+(2026-07-27 ~01:40 UTC entry): a smoke-script assertion drifted from intentional product copy/data,
+not a shippable bug — recorded below rather than treated as a fix-forward blocker, consistent with
+this routine's scope (fix only last-3h regressions).
+
+No code fix was available/needed to ship this cycle — draining the unchanged integrator tip would
+just replay `5372bb66` with a fresh `.drain-stamp`, so left `main` as-is rather than manufacture a
+no-op deploy. This is a docs-only commit logging the cycle.
+
+Backlog:
+- `e2e-sweep.mjs`'s `OWNER_PAGES` anchor for `/hub/reports` ("the operational view") only matches the
+  `!hasDriverPay` copy branch in `reports/page.tsx` — with the demo owner's current settlement data,
+  the `hasDriverPay` branch renders instead and the sweep fails on a content check, not a real defect.
+  Fix is mechanical: widen the anchor to a substring both branches share (e.g. "per-truck p&l," is
+  already the OFFICE_PAGES anchor for the dispatcher pass and appears in both branches) or seed data
+  that reliably lands one branch. Whichever lane owns `scripts/e2e-sweep.mjs` (`lane-tests` territory
+  per AGENTS.md) should take this — small, mechanical, non-owner-gated.
+- Carried, unchanged: IFTA due-date roll / holiday handling (owner design call); npm audit's 12
+  high-severity advisories (owner-approval-gated semver-major bump); Rust sidecar `tiny_http`
+  connection-timeout/thread-cap gap (owner decision); TEST_GAPS.md row 1 (`draftSettlements`
+  multi-driver/percentage-pay/multi-referral cases); green-as-success convention design call
+  (`PreQualificationForm.tsx` vs `ApplicationForm.tsx`); ~245 pending `claude/*` branches awaiting the
+  meta-governor prune pass.
