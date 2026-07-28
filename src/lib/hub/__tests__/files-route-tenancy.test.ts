@@ -35,6 +35,9 @@ vi.mock("@/lib/hub/documents", () => ({
 vi.mock("@/lib/hub/portal", () => ({
   portalFileVisible: vi.fn(async () => false),
 }))
+vi.mock("@/lib/hub/driver-app", () => ({
+  driverFileVisible: vi.fn(async () => false),
+}))
 
 import { getHubUser } from "@/lib/hub/session"
 // One factory instead of six hand-built session objects, each of which was
@@ -42,11 +45,13 @@ import { getHubUser } from "@/lib/hub/session"
 import { sessionUser } from "./helpers/session"
 import { resolveHubFile } from "@/lib/hub/documents"
 import { portalFileVisible } from "@/lib/hub/portal"
+import { driverFileVisible } from "@/lib/hub/driver-app"
 import { GET } from "@/app/api/hub/files/[name]/route"
 
 const getHubUserMock = vi.mocked(getHubUser)
 const resolveMock = vi.mocked(resolveHubFile)
 const portalVisibleMock = vi.mocked(portalFileVisible)
+const driverVisibleMock = vi.mocked(driverFileVisible)
 
 const CARRIER_A = "11111111-1111-1111-1111-111111111111"
 const CARRIER_B = "22222222-2222-2222-2222-222222222222"
@@ -70,6 +75,8 @@ beforeEach(() => {
   resolveMock.mockResolvedValue(null)
   portalVisibleMock.mockReset()
   portalVisibleMock.mockResolvedValue(false)
+  driverVisibleMock.mockReset()
+  driverVisibleMock.mockResolvedValue(false)
   readFileMock.mockClear()
   blobGetMock.mockClear()
   delete process.env.BLOB_READ_WRITE_TOKEN
@@ -137,6 +144,54 @@ describe("/api/hub/files/[name] tenancy", () => {
     expect(res.headers.get("Content-Type")).toBe("application/pdf")
   })
 
+  it("404s a SAME-carrier driver for another driver's CDL scan", async () => {
+    // The gap this suite's header described as closed, but wasn't: tenancy
+    // passes (same carrier), and before driverFileVisible the route had no
+    // further check for role 'driver' — so Harpreet's CDL scan was one
+    // filename away from every other driver in the company.
+    getHubUserMock.mockResolvedValue(sessionUser({ id: "u-driver-a", name: "Driver A", role: "driver", carrierId: CARRIER_A }))
+    resolveMock.mockResolvedValue(local(CARRIER_A, "harpreet-cdl.pdf"))
+    driverVisibleMock.mockResolvedValue(false)
+    const res = await request("harpreet-cdl.pdf")
+    expect(res.status).toBe(404)
+    expect(readFileMock).not.toHaveBeenCalled()
+    expect(driverVisibleMock).toHaveBeenCalledWith(CARRIER_A, "u-driver-a", "harpreet-cdl.pdf")
+  })
+
+  it("404s a SAME-carrier driver for another driver's settlement statement", async () => {
+    getHubUserMock.mockResolvedValue(sessionUser({ id: "u-driver-a", name: "Driver A", role: "driver", carrierId: CARRIER_A }))
+    resolveMock.mockResolvedValue(local(CARRIER_A, "uuid-settlement.pdf"))
+    driverVisibleMock.mockResolvedValue(false)
+    const res = await request("uuid-settlement.pdf")
+    expect(res.status).toBe(404)
+    expect(readFileMock).not.toHaveBeenCalled()
+  })
+
+  it("serves a driver their OWN POD", async () => {
+    getHubUserMock.mockResolvedValue(sessionUser({ id: "u-driver-a", name: "Driver A", role: "driver", carrierId: CARRIER_A }))
+    resolveMock.mockResolvedValue(local(CARRIER_A))
+    driverVisibleMock.mockResolvedValue(true)
+    const res = await request()
+    expect(res.status).toBe(200)
+    expect(res.headers.get("Content-Type")).toBe("application/pdf")
+  })
+
+  it("never runs the driver ACL for an office role — tenancy alone governs there", async () => {
+    getHubUserMock.mockResolvedValue(sessionUser({ id: "u1", name: "Dana", role: "owner", carrierId: CARRIER_A }))
+    resolveMock.mockResolvedValue(local(CARRIER_A, "harpreet-cdl.pdf"))
+    const res = await request("harpreet-cdl.pdf")
+    expect(res.status).toBe(200)
+    expect(driverVisibleMock).not.toHaveBeenCalled()
+  })
+
+  it("checks tenancy BEFORE the driver ACL — a foreign-carrier driver never reaches it", async () => {
+    getHubUserMock.mockResolvedValue(sessionUser({ id: "u1", name: "Mallory", role: "driver", carrierId: CARRIER_B }))
+    resolveMock.mockResolvedValue(local(CARRIER_A))
+    const res = await request()
+    expect(res.status).toBe(404)
+    expect(driverVisibleMock).not.toHaveBeenCalled()
+  })
+
   it("serves any claimed file to platform_admin (the one role without a tenant)", async () => {
     // Empty string, not null: getHubUser does `carrierId: user.carrierId ?? ""`
     // (session.ts:29), so a null here modelled a state the app cannot produce.
@@ -160,6 +215,17 @@ describe("/api/hub/files/[name] blob branch — the same guards, in production",
     getHubUserMock.mockResolvedValue(sessionUser({ id: "u1", name: "Mallory", role: "driver", carrierId: CARRIER_B }))
     resolveMock.mockResolvedValue(blob(CARRIER_A))
     const res = await request()
+    expect(res.status).toBe(404)
+    expect(blobGetMock).not.toHaveBeenCalled()
+  })
+
+  it("404s a same-carrier DRIVER the driver ACL refuses, without reaching the blob store", async () => {
+    // Production path: the CDL scans and settlement PDFs this protects live in
+    // blob storage, so the guard has to hold before `get()` is ever called.
+    getHubUserMock.mockResolvedValue(sessionUser({ id: "u-driver-a", name: "Driver A", role: "driver", carrierId: CARRIER_A }))
+    resolveMock.mockResolvedValue(blob(CARRIER_A, "harpreet-cdl.jpg"))
+    driverVisibleMock.mockResolvedValue(false)
+    const res = await request("harpreet-cdl.jpg")
     expect(res.status).toBe(404)
     expect(blobGetMock).not.toHaveBeenCalled()
   })
