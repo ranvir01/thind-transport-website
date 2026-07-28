@@ -1547,3 +1547,91 @@ Backlog:
   semver-major bump); Rust sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision); TEST_GAPS.md
   row 1 (`draftSettlements` multi-driver/percentage-pay/multi-referral cases); green-as-success convention
   design call (`PreQualificationForm.tsx` vs `ApplicationForm.tsx`).
+
+## QA rig drive on main@11e2683: 52/53 E2E green, 0 regressions; production confirmed stale 7.5h+ with zero deployment attempts on the last two drains — 2026-07-28 ~01:25 UTC
+
+Charter (docs/agent-improvement-loop.md §5): no feature work — stood up the local rig
+from scratch, drove owner/dispatcher/driver flows with the full `scripts/e2e-run-all.mjs`
+Puppeteer battery, probed `thindtransport.com` read-only via the Vercel MCP connector
+(direct HTTPS still egress-blocked, `curl` exit 56 on both `/` and `/hub/login`), fixed
+only outright regressions from the last 3h of commits.
+
+Fresh rig: Postgres 16 started (was down), `hubapp`/`hubdb` role+database created per the
+dev-workflow-testing skill's pitfall #9, `npm ci` (750 packages; `npm audit` now flags 12
+high-severity findings, up from 3 in earlier cycles — same `eslint`/`next`/`nodemailer`/
+`sharp` owner-approval-gated semver-major chain, nothing new actionable), `npm run
+db:migrate` through `023_lead_attribution.sql` clean (23 migrations, up from 21 two days
+ago), `npm run seed:demo`, `npm run build` (Next.js 16, turbopack, zero TS errors) clean,
+`npx vitest run` (254 files/2315 tests) green, `npm run test:sidecars` (29 Rust tests +
+Go vet/test, clippy clean).
+
+Reviewed every commit in the last 3 hours (`0a12368`..`11e2683`, ~22:30–23:51 UTC): both
+are test-only additions (`fuel-assign-to-load.test.ts`'s both-sides carrier-scoping
+coverage, `cron-route.test.ts`'s active-carrier WHERE-clause regression pin) plus the
+routine's own merge/drain/log-record commits — `git diff --stat` against product paths
+(`src/`, `services/`, `migrations/`) confirms zero non-test files changed in the window.
+No regression surface, nothing to fix-forward.
+
+Full `e2e-run-all.mjs` battery (53 scripts) as owner, dispatcher, and driver: **52/53
+green in 15.5m**. The one failure, `e2e-sweep`'s `OWNER_PAGES` "reports" anchor, is the
+same pre-existing stale-anchor bug several past cycles have already named (not a
+regression, not fixed here per charter): the hardcoded anchor `"the operational view"`
+(`scripts/e2e-sweep.mjs:68`) only matches the `hasDriverPay === false` subtitle branch in
+`src/app/hub/(office)/reports/page.tsx:104`; the demo seed's settlement data falls inside
+the report's default 92-day range, so `hasDriverPay` is `true` and the real (correct)
+copy is the other branch's `"...stays operational (fuel, maintenance, tolls,
+expenses)..."` (`page.tsx:103`). Verified live rather than trusting the "stuck on a
+spinner?" log message: authenticated `curl` to `/hub/reports` as `owner@demo.thind`
+returns 200 with the `hasDriverPay=true` copy present in the payload — a correctly
+rendered page, not a defect.
+
+Production probe via Vercel MCP (`get_project`/`list_deployments`/`get_runtime_errors`,
+direct HTTPS still blocked): `GET /api/version` on `thindtransport.com` reports
+`{"sha":"6bd92be...","ref":"main","env":"production"}` — the drain that landed at
+17:53:56 UTC (`183b46b1`'s drain). Main HEAD is now `11e2683`, **9 drains and ~7.5 hours
+ahead of what's actually live**. Checked the deployment list around the two most recent
+"Drain integrator to main" pushes (`65e0294` ~23:48 UTC, `11e2683` ~23:51 UTC): **neither
+produced any deployment record at all** — not READY, not CANCELED, nothing — while every
+`main` push before `6bd92be` shows a clean READY `target:"production"` entry. This matches
+the documented Hobby-plan daily-deployment-quota exhaustion pattern (this doc's "Hobby has
+a daily deployment quota" note): the fleet's many lane/session-branch pushes each still
+attempt (then get `ignoreCommand`-canceled) a build, and once the day's quota is spent even
+a `main` push gets silently dropped. No in-repo fix exists; next cycle should re-check once
+the quota window rolls over, and confirm whether `main` catches up automatically (per the
+doc, "the next hourly drain re-triggers it automatically once slots free") or needs a manual
+`.drain-stamp` refresh once the quota resets.
+
+`get_runtime_errors` also reconfirms the still-unresolved production SMTP failure: every
+`cron:owner-digest`/`cron:compliance-scan` run continues to fail all four demo carriers with
+Gmail `535-5.7.8 BadCredentials` — the same recurring-since-2026-07-26 credential issue
+several prior cycles have already flagged, unresolved.
+
+Notified the owner directly (push notification) — production has been silently stuck for
+7.5+ hours with the last two deploy attempts producing no deployment record whatsoever, and
+the SMTP credential failure is still live; both need a Vercel-dashboard/Google-account check
+that no in-repo commit can fix.
+
+Backlog:
+- Owner: production deploy pipeline has produced zero deployment records for the last two
+  `main` pushes (`65e0294`, `11e2683`) — likely the Hobby-plan daily-deployment-quota ceiling
+  from many hourly lane/session-branch preview attempts; needs a dashboard check (deployment
+  count vs. quota, Ignored Build Step) and, if quota-bound, either fewer preview attempts or
+  a Pro upgrade. Re-verify with Vercel MCP next cycle before re-paging.
+- Owner: production Gmail SMTP credentials still return `BadCredentials` on every cron send
+  (owner-digest, compliance-scan) — recurring since 2026-07-26, needs an app-password
+  rotation in the Vercel env, not an in-repo fix.
+- `scripts/e2e-sweep.mjs:68`'s `OWNER_PAGES` "reports" anchor (`"the operational view"`)
+  only matches the `hasDriverPay === false` copy branch in
+  `src/app/hub/(office)/reports/page.tsx:104` — false-fails whenever seeded settlement data
+  intersects the report's default 92-day range (matches the `hasDriverPay === true` branch
+  instead). One-line fix: either widen the anchor to a substring both branches share
+  (`"operational"`) or check both branches' text. `lane-tests` territory
+  (`scripts/e2e-*.mjs`), not fixed here per this routine's regression-only charter.
+- npm audit's high-severity count grew from 3 to 12 (same `eslint`/`next`/`nodemailer`/
+  `sharp` family, still owner-approval-gated semver-major bump) — no new actionable finding,
+  just a larger number to re-confirm once the bump is approved.
+- Carried, unchanged: Rust sidecar `tiny_http` connection-timeout/thread-cap gap (owner
+  decision); TEST_GAPS.md row 1 (`draftSettlements` multi-driver/percentage-pay/multi-referral
+  cases); green-as-success convention design call (`PreQualificationForm.tsx` vs
+  `ApplicationForm.tsx`); `lane-compliance`/`lane-roadmap`-class oversized pending branches
+  still awaiting the meta-governor prune pass.
