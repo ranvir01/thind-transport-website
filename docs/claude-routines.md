@@ -1582,3 +1582,66 @@ Backlog:
   @vercel/analytics/@vercel/speed-insights/geist/eslint-config-next family (owner-approval-gated
   semver-major bump); Rust sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision); 193
   pending `claude/*` branches awaiting the meta-governor prune pass (unchanged from prior cycles).
+
+## QA rig drive on main@5372bb6 — 2026-07-28 ~17:11-17:37 UTC (owner/dispatcher/driver)
+
+Charter (docs/agent-improvement-loop.md §5): no feature work — stood up the local rig from scratch,
+drove owner/dispatcher/driver flows against the full Puppeteer `e2e-run-all.mjs` battery, probed
+`thindtransport.com` read-only, fixed only outright regressions from the last 3h of commits.
+
+**Last-3h commit window:** zero commits landed on `main` since `5372bb6` (10:45 UTC, 6.5h before this
+cycle started) — nothing to regression-check.
+
+**Fresh rig:** Postgres started (was down), `loadoff` role/db created, 23 migrations clean,
+`seed:demo`, `npm run build` clean (Turbopack), `npx vitest run` (259 files/2359 tests) green,
+`npm run lint` clean, `npm run typecheck:gate` clean (0 app-code errors, 78 test-file errors,
+unchanged baseline), `npm run test:sidecars` green (29 Rust tests + Go vet/test, clippy clean),
+`npm run design-qa` 0 hard failures (29 warnings, unchanged), `npm run js-budget` no regression
+(worst route 280KB vs 285KB ceiling), `npm run license:audit` clean (1 MPL-2.0 unmodified dep, no
+strong copyleft).
+
+**Full `e2e-run-all.mjs` battery (59 scripts + sweep) as owner/dispatcher/driver:** 52/53, one
+failure — `e2e-sweep`'s owner-pass "reports: page content missing... stuck on a spinner?" at both
+widths. Confirmed a stale test anchor, not a stuck page (same root cause prior cycles have already
+diagnosed): `/hub/reports`' subtitle is conditional on `hasDriverPay`
+(`src/app/hub/(office)/reports/page.tsx:99-104`), the seeded settlements land inside the 92-day
+default range, so the live subtitle never contains `e2e-sweep.mjs`'s `OWNER_PAGES` anchor
+(`"the operational view"`) — the office-pass anchor for the same route (`"per-truck p&l, last 92
+days"`) passed clean because it matches both subtitle branches. **Not re-fixed here**: the identical
+one-line anchor swap already exists, unmerged, on `origin/claude/practical-franklin-x2cd42` (commit
+`506322cb`, pushed ~30 min before this cycle started) — per the loop rule ("if a fix already exists
+on an unmerged branch, name it instead of writing another copy"), the integrator should drain that
+branch rather than absorb a sixth near-identical fix from a fresh session.
+
+**Production probe (Vercel MCP; direct HTTPS to `thindtransport.com` stayed egress-blocked — `curl`
+exit 56 / proxy `connect_rejected` on unrelated hosts too, consistent with every prior cycle):**
+`get_project` + `list_deployments` on `prj_QKMg8o77DoEYiVQgQbI0FB5F4tAg` confirm the latest READY
+`target: "production"` deployment (`dpl_HN2M7QFacynCmwvk8FH2B6TKYH3t`) is commit `5372bb6` — exactly
+`main`'s tip, no drain gap. (`get_project.latestDeployment` shows a newer `CANCELED` preview deploy
+and `live: false` — both expected per the documented caveats: the field surfaces the most recent
+deployment *of any kind*, and `live` alone isn't a reliable production signal.)
+
+`get_runtime_errors` (24h window) shows two clusters: the long-standing benign `pg` SSL-mode-alias
+warning (unchanged), and **one occurrence of the already-known production SMTP defect** —
+`compliance-scan`'s cron run at 14:53 UTC today failed to email carrier `11111111-…` (Thind
+Transport's real production tenant, not a demo-only row) with `Invalid login: 535 5.7.8 Username and
+Password not accepted` against `smtp.gmail.com`. This is the same Gmail app-password credential
+break multiple prior cycles have already found, fixed-forward isn't possible from this repo (it's a
+Vercel env-var secret, not code), and flagged to the owner repeatedly since 2026-07-26/27 (`4526d7ca`,
+`156a1239`, `4f1f5260`, `01b07840`, `9cbdc81f`, `c96b0827` — "still live after a month"). Not
+re-notifying this cycle since it's unchanged from the standing, already-escalated state — just
+confirming it's still broken, still real, and still owner-gated (rotate the Gmail app password / move
+the `office`/`compliance` mailer to the same OAuth2 path `docs/hub/mailbox.ts` already uses).
+
+Backlog:
+- Integrator: drain `origin/claude/practical-franklin-x2cd42` (commit `506322cb`, one-line
+  `e2e-sweep.mjs` `OWNER_PAGES` anchor fix) ahead of any other pending branch touching that file —
+  it's the fix for the recurring reports-anchor false-failure this and many prior cycles have hit.
+- Owner: production SMTP (Gmail app password for `SMTP_USER`/`SMTP_PASS`) has been rejecting auth
+  since 2026-07-26/27 and is still broken today (14:53 UTC) — `compliance-scan`/`ar-reminders`/owner
+  digest emails are not sending. Needs a rotated app password in Vercel env vars, or a migration to
+  the OAuth2 path the docs-mailbox adapter already has precedent for.
+- Carried, unchanged: npm audit's 3 root high-severity advisories (`nodemailer`, `sharp` via `next`;
+  owner-approval-gated semver-major bump); Rust sidecar `tiny_http` timeout/thread-cap gap (owner
+  decision); ~245 pending `claude/*` branches, meta-governor prune pass still overdue for the
+  no-merge-base/stale cluster (unchanged from the 2026-07-22 triage).
