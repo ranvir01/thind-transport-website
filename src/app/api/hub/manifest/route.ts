@@ -33,6 +33,11 @@ export async function buildManifest() {
     short_name: PRODUCT.shortName,
     description:
       "Dispatch, money, compliance, and driver tools for small and mid-size trucking carriers — all in one place.",
+    // `id` pins the app's identity independently of start_url, so a future
+    // change to the landing path updates the installed app instead of minting
+    // a second one beside it. It resolves to the same value start_url already
+    // defaulted to, so existing installs are unaffected.
+    id: "/hub",
     start_url: "/hub",
     scope: "/hub",
     display: "standalone",

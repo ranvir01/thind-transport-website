@@ -9,18 +9,20 @@ import {
   PlugZap, ArrowRight, CheckCircle2, MapPin, FileText,
 } from "lucide-react"
 import { PageBreadcrumb } from "@/components/shared/PageBreadcrumb"
+import { InstalledAppRedirect } from "@/components/shared/InstalledAppRedirect"
 
 export const metadata: Metadata = {
-  title: "LoadOff TMS | The Software That Runs Thind Transport",
+  // absolute: the string already carries the carrier name, and the root
+  // template would otherwise append it a second time.
+  title: { absolute: "LoadOff TMS | The Software That Runs Thind Transport" },
   description:
     "LoadOff is the transportation management system built in-house at Thind Transport: dispatch, invoicing, driver settlements, fuel + IFTA, compliance, and a driver phone app — one calm place to run a trucking company.",
   alternates: { canonical: "/loadoff" },
-  // Share → Add to Home Screen on the LoadOff product page means LoadOFF the
-  // app, not a website shortcut — iOS binds the icon to the page's manifest,
-  // and the marketing one made this icon open the website (the owner's
-  // exact iPhone repro). Same override as /app.
-  manifest: "/api/hub/manifest",
-  appleWebApp: { capable: true, title: "LoadOff" },
+  // No manifest or appleWebApp override — see the long note in src/app/app/page.tsx.
+  // Short version: LoadOff's manifest scope is /hub, iOS ignores a manifest that
+  // does not cover the current page, and the `apple-mobile-web-app-capable` flag
+  // that used to sit here then pinned a chrome-less window to this marketing
+  // page. Installing the app happens at /hub/get-app, which the CTA below links to.
 }
 
 const MODULES = [
@@ -59,9 +61,9 @@ const MODULES = [
 export default function LoadOffPage() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-50">
-      {/* iOS keys standalone launch off the apple-prefixed name; React hoists
-          this into <head>. Pairs with the manifest override in metadata. */}
-      <meta name="apple-mobile-web-app-capable" content="yes" />
+      {/* Sends already-installed home-screen icons that were saved from this
+          page (back when it declared itself app-capable) into the real app. */}
+      <InstalledAppRedirect />
       <PageBreadcrumb pageName="LoadOff TMS" category="Company" />
 
       {/* Hero — product-first: the real Today screen is the pitch */}
@@ -84,6 +86,15 @@ export default function LoadOffPage() {
               <Button size="lg" className="bg-white text-slate-900 hover:bg-slate-100" asChild>
                 <Link href="/hub">
                   Open LoadOff <ArrowRight className="h-5 w-5 ml-2" />
+                </Link>
+              </Button>
+              {/* iOS only installs the app from a page inside the app's own
+                  manifest scope, so "put it on your phone" has to be a link to
+                  /hub/get-app — Add to Home Screen performed here would save
+                  the website instead. */}
+              <Button size="lg" variant="outline" className="border-white/40 text-white hover:bg-white/10" asChild>
+                <Link href="/hub/get-app">
+                  <Smartphone className="h-5 w-5 mr-2" /> Put it on your phone
                 </Link>
               </Button>
               <Button size="lg" variant="outline" className="border-white/40 text-white hover:bg-white/10" asChild>
@@ -259,6 +270,11 @@ export default function LoadOffPage() {
             <Button size="lg" className="bg-white text-slate-900 hover:bg-slate-100" asChild>
               <Link href="/hub">
                 Open LoadOff <ArrowRight className="h-5 w-5 ml-2" />
+              </Link>
+            </Button>
+            <Button size="lg" variant="outline" className="border-white/40 text-white hover:bg-white/10" asChild>
+              <Link href="/hub/get-app">
+                <Smartphone className="h-5 w-5 mr-2" /> Install it on your phone
               </Link>
             </Button>
             <Button size="lg" variant="outline" className="border-white/40 text-white hover:bg-white/10" asChild>
