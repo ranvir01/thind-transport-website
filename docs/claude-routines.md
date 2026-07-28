@@ -1582,3 +1582,65 @@ Backlog:
   @vercel/analytics/@vercel/speed-insights/geist/eslint-config-next family (owner-approval-gated
   semver-major bump); Rust sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision); 193
   pending `claude/*` branches awaiting the meta-governor prune pass (unchanged from prior cycles).
+
+## QA rig drive on main@5372bb6 — 2026-07-28 ~13:17-13:45 UTC (owner/dispatcher/driver, read-only prod probe)
+
+Charter (docs/agent-improvement-loop.md §5): no feature work — stand up the local rig, drive real
+owner/dispatcher/driver flows against it, probe `thindtransport.com` read-only, fix only outright
+regressions from the last 3h of commits. `main` had not moved since the QA drive ~25 minutes earlier
+in this same cycle window (`d7ddd80a`, logged above) — this run independently re-verifies the same
+head rather than finding fresh drift.
+
+**Fresh rig:** Postgres 16 started (was down), `hauldesk`/`hauldesk` role+db created via the repo's own
+`postgres:16` credentials, 23 migrations clean, `npm run seed:demo`, `npm run build` clean (Turbopack).
+`npx vitest run` 259 files/2359 tests green. `npm run lint` clean. `npm run typecheck:gate` clean (0
+app-code errors, 78 test-file errors — unchanged baseline). `npm run test:sidecars` green (Go vet+test,
+Rust clippy + 29 tests). `npm run design-qa` 0 hard failures (29 warnings, same shape as prior cycles).
+`npm run js-budget` no regression (worst route 280KB vs 285KB ceiling). `npm run license:audit` clean
+(web-push's unmodified MPL-2.0 is the only weak-copyleft dependency, as before).
+
+**Last-3h commit window (10:17–13:17 UTC):** `4930168`/`17b5139`/`5372bb6` — a lane-test merge
+(regression coverage for the already-fixed `truckDvirState` pre-trip grounding filter, no product code)
+and two drain-stamp commits. No new authorship beyond what the prior cycle already reviewed. **No
+regressions in the last-3h window; nothing to fix-forward.**
+
+**Full `e2e-run-all.mjs` battery as owner/dispatcher/driver:** 52/53 in 15.6m. One rig-setup false
+alarm along the way, corrected before the real run: `e2e-detention-alerts-smoke` 401'd against
+`/api/hub/cron/detention-alerts` on a first pass because the `next start` process serving the rig had
+been launched before `CRON_SECRET` was added to `.env.local`; killing and relaunching the server fixed
+it (confirmed the endpoint 200s with the matching bearer token) — a rig artifact, not a product defect,
+and not counted below. The one real failure: `e2e-sweep`'s owner-pass `"reports: page content missing"`
+at both widths — the same stale `OWNER_PAGES` anchor (`"the operational view"`) every recent cycle has
+hit, because `/hub/reports`'s subtitle is conditional on `hasDriverPay` and the seeded demo settlements
+land inside the 92-day window on the current calendar date. **The fix still hasn't landed**: branch
+`claude/practical-franklin-nc7io5` commit `8ba7b14` (2026-07-28 ~06:44 UTC) fixes the one-line anchor in
+`scripts/e2e-sweep.mjs` and re-verifies 53/53; per AGENTS.md's duplicate-work rule, not reimplementing a
+fifth copy here.
+
+**Production probe (Vercel MCP; direct HTTPS to `thindtransport.com` stayed egress-blocked — `curl -v`
+shows `CONNECT tunnel failed, response 403` on the proxy, same as every prior cycle):** latest READY
+`target: "production"` deployment on `prj_QKMg8o77DoEYiVQgQbI0FB5F4tAg` is
+`dpl_HN2M7QFacynCmwvk8FH2B6TKYH3t`, commit `5372bb66` — exactly `main` HEAD, no drain gap.
+`agent:status` confirms steady state (integrator only 1 commit ahead of main). Runtime errors (24h
+window): the long-standing benign pg SSL-mode alias warning, plus one `[cron:compliance-scan]` Gmail
+"535 Bad Credentials" failure at `2026-07-27T14:13:30Z` — the same single, day-old event prior cycles
+already flagged, not a new occurrence, but the daily cron is due to run again around the same time
+today and will fail the same way until the owner rotates the Gmail app password.
+
+`npm audit --omit=dev`: 3 high-severity, same 3 root packages (`nodemailer`, `sharp` via `next`) prior
+cycles have carried — all fixes are semver-major/breaking, still owner-gated.
+
+Backlog:
+- Integrator: absorb `claude/practical-franklin-nc7io5` (commit `8ba7b14`) — the one-line
+  `e2e-sweep.mjs` `OWNER_PAGES` "reports" anchor fix. This is now the *fifth* cycle to re-find and
+  re-carry this exact item (2026-07-23, 2026-07-26, 2026-07-28 06:44 UTC, 2026-07-28 ~12:20 UTC, and
+  this one) — worth a prune-pass priority bump rather than another routine rediscovery.
+- Owner action needed (recurring, not new): the Gmail SMTP app password behind `SMTP_USER`/`SMTP_PASS`
+  in Vercel prod env is still invalid — `[cron:compliance-scan]`/`[cron:owner-digest]` will keep
+  silently failing to send until it's rotated. Last confirmed failure 2026-07-27 14:13 UTC; today's run
+  is imminent.
+- Carried, unchanged: IFTA due-date legal-holiday scope decision (owner-gated); npm audit's 3
+  high-severity advisories (owner-approval-gated semver-major bump); Rust sidecar `tiny_http` has no
+  per-connection timeout/thread-cap (owner decision); ~202 pending `claude/*` branches per
+  `agent:branches` (down from 245) — meta-governor prune pass remains overdue for the large stale
+  lanes.
