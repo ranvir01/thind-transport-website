@@ -1582,3 +1582,67 @@ Backlog:
   @vercel/analytics/@vercel/speed-insights/geist/eslint-config-next family (owner-approval-gated
   semver-major bump); Rust sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision); 193
   pending `claude/*` branches awaiting the meta-governor prune pass (unchanged from prior cycles).
+
+## QA rig drive on main@ca1e5bb — 2026-07-28 ~09:12-09:25 UTC (owner/dispatcher/driver, read-only prod probe)
+
+Charter (docs/agent-improvement-loop.md §5): no feature work — stand up the local rig, drive real
+owner/dispatcher/driver flows against it, probe `thindtransport.com` read-only, fix only outright
+regressions from the last 3h of commits.
+
+**Local rig:** fresh from scratch — Postgres 16 started (was down), `loadoff` role + `loadoff` database
+created (neither existed), `npm install` (750 packages, canvas system deps installed first), 23
+migrations clean, `npm run seed:demo`, `npm run build` (Turbopack, 0 TS errors), `npm run start`
+(production server). `npx vitest run` (258 files/2350 tests) and `npm run lint` both clean.
+
+**Playwright drive (installed standalone in scratchpad against the preinstalled
+`/opt/pw-browsers/chromium-1194` binary; repo's own `e2e-*.mjs` scripts are Puppeteer, not Playwright —
+used Playwright directly per this cycle's instructions):** logged in as `owner@demo.thind`,
+`dispatch@demo.thind`, `driver@demo.thind`. Owner + dispatcher swept all 34 nav-reachable office screens
+at 1440px; driver swept all 8 driver-app screens at 390px. Zero bad HTTP responses, zero uncaught page
+errors, zero JS console errors across all 78 screen loads. Visually spot-checked a sample (dashboard,
+compliance, settings/users, driver home, driver pay): semantic tokens intact on office screens (no
+gold/navy/steel bleed), forced-dark rules intact on the driver app (no invisible text), bottom nav
+correct. Confirmed permission enforcement works as designed: `dispatch@demo.thind` silently redirects
+away from `/hub/settings/*` to `/hub` (owner-only), matching the nav (no Settings entry for dispatcher).
+
+**Last-3h commit window (`bf76443`..`ca1e5bb`, 6 non-drain commits):** reviewed every diff. Five are
+test-fixture/docs/script-only (test-fixture helpers, branch-triage script, js-budget script, AGENTS.md
+gate docs) — no product surface touched. The sixth, `6497c4c` ("iOS install: name the app LoadOff, and
+stop the icon opening the website"), is the one product-code change — fixes the owner's reported iPhone
+bug (home-screen icon installed as "Thind Transport" and opened the marketing site instead of the app).
+Verified live on the rebuilt local prod server: `/app` and `/loadoff` now serve the marketing
+`site.webmanifest` with no `apple-mobile-web-app-capable` flag and the Thind Transport
+`apple-touch-icon.png`; `/hub/get-app` serves the hub manifest (`/api/hub/manifest`),
+`apple-mobile-web-app-capable: yes`, and the new `hub-icon-180.png`; `/hub/login` titles bare `LoadOff`
+(not `LoadOff | Thind Transport`). Matches the commit's stated intent exactly — **no regression, fix
+confirmed working**. Nothing to fix-forward this cycle.
+
+**Production probe:** direct HTTPS to `thindtransport.com` is egress-blocked (proxy returns 403 on the
+CONNECT tunnel, confirmed via `curl -v` and independently via `WebFetch`) — fell back to the Vercel MCP
+connector per AGENTS.md/§5. **Found: production is stale.** `GET /api/version` (via
+`web_fetch_vercel_url`) reports `sha: bf764438c553535a32db3bc1c296b841c0ed1546` — the commit *before*
+the iOS fix — while `main` (confirmed both locally and via `list_commits` against GitHub) sits three
+commits ahead at `ca1e5bb`, pushed 08:52:00 UTC. `list_deployments` on
+`prj_QKMg8o77DoEYiVQgQbI0FB5F4tAg` shows no deployment was ever created for the `ca1e5bb`/`6a0f42d`
+push — the most recent deployment after `bf76443`'s (READY, target production, 08:28) is an unrelated
+feature-branch push at 09:03, nothing for `main`. This isn't the known SHA/tree dedupe bug (the drain
+commit's `.drain-stamp` blob hash differs from `bf76443`'s, confirmed via `git cat-file`) — the
+GitHub→Vercel deploy webhook for this specific push appears to have silently not fired. By the time this
+drive finished, `main` had sat 33+ minutes undeployed, past the 15-minute grace period in
+docs/agent-improvement-loop.md §5's staleness rule. This routine has no deploy authority (branch rules:
+"push directly to main" is deploy-agent-only) and did not attempt a manual Vercel deploy — flagged for
+the owner/deploy agent instead. The prior cycle (`d7e9855d`, 08:33 UTC) confirmed production current at
+`bf76443`, so this is a fresh stall starting after that check, not a continuation of an already-reported
+multi-hour outage.
+
+Backlog:
+- **Production is stale as of this cycle's end (09:25 UTC): live SHA `bf76443`, `main` at `ca1e5bb`
+  (3 commits ahead, 33+ min undeployed), missing the iOS home-screen install fix (`6497c4c`) the owner
+  personally reported. No Vercel deployment was ever queued for the `main` push — not a dedupe artifact,
+  looks like a missed/dropped GitHub→Vercel webhook for this one push. Needs the deploy agent (or a
+  human) to check the Vercel project's Git integration / webhook delivery log and either re-trigger a
+  deployment for `ca1e5bb` or re-drain; owner already notified out-of-band this cycle.
+- Carried, unchanged: npm audit's 12 high-severity advisories (owner-approval-gated semver-major bump);
+  IFTA due-date roll / holiday handling (owner design call on a shared date-util); Rust sidecar
+  `tiny_http` connection-timeout/thread-cap gap (owner decision); ~246 pending `claude/*` branches
+  awaiting the meta-governor prune pass (unchanged from prior cycles).
