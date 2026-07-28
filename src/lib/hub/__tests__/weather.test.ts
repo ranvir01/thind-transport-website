@@ -66,7 +66,7 @@ describe("getActiveAlerts (NWS point alerts)", () => {
   })
 
   it("formats lat/lng to 4 decimal places in the query", async () => {
-    const fetchMock = vi.fn(async () => ({ ok: true, json: async () => ({ features: [] }) }))
+    const fetchMock = vi.fn(async (_url: string) => ({ ok: true, json: async () => ({ features: [] }) }))
     vi.stubGlobal("fetch", fetchMock)
     await getActiveAlerts(47.123456, -122.987654)
     const url = fetchMock.mock.calls[0][0] as string
