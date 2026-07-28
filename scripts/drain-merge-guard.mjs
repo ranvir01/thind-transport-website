@@ -8,9 +8,11 @@
  * the production alias can move with no new build ever queued — production
  * sat 194 commits stale while the drain kept reporting success. The fix is to
  * always drain via a brand-new `--no-ff` merge commit, a SHA Vercel has never
- * built. This module is the pre-merge catch so the drain workflows
- * (`.github/workflows/drain-integrator.yml`, `drain-fallback.yml`) never
- * quietly revert to the broken form.
+ * built. This module is the pre-merge catch so the drain workflow
+ * (`.github/workflows/drain-integrator.yml`) never quietly reverts to the
+ * broken form. The test discovers `.github/workflows/*drain*` rather than
+ * naming files: `main-drain-fallback.yml` shipped the broken form for months
+ * because it was never added to a hand-maintained list.
  *
  * Learned again 2026-07-19 (QA rig drive on main@11c9be2): a --no-ff merge
  * commit alone is still not enough. Its tree is byte-identical to the
