@@ -9,7 +9,6 @@ import {
   PlugZap, ArrowRight, CheckCircle2, MapPin, FileText,
 } from "lucide-react"
 import { PageBreadcrumb } from "@/components/shared/PageBreadcrumb"
-import { InstalledAppRedirect } from "@/components/shared/InstalledAppRedirect"
 import { APP_ICONS } from "@/lib/site-icons"
 
 export const metadata: Metadata = {
@@ -67,9 +66,6 @@ export default function LoadOffPage() {
       {/* iOS keys standalone launch off the apple-prefixed name; Next emits
           only `mobile-web-app-capable`. React hoists this into <head>. */}
       <meta name="apple-mobile-web-app-capable" content="yes" />
-      {/* Whether iOS honours the manifest's start_url or pins the page it was
-          installed from, the icon ends up in the app. */}
-      <InstalledAppRedirect />
       <PageBreadcrumb pageName="LoadOff TMS" category="Company" />
 
       {/* Hero — product-first: the real Today screen is the pitch */}

@@ -13,6 +13,7 @@ import { SkipLink } from "@/components/shared/SkipLink"
 import { COMPANY_INFO } from "@/lib/constants"
 import { SchemaMarkup } from "@/components/features/SchemaMarkup"
 import { SITE_ICONS } from "@/lib/site-icons"
+import { InstalledAppRedirect } from "@/components/shared/InstalledAppRedirect"
 import { Providers } from "./providers"
 import { Analytics } from "@vercel/analytics/next"
 import { SpeedInsights } from "@vercel/speed-insights/next"
@@ -154,6 +155,11 @@ export default function RootLayout({
         suppressHydrationWarning
       >
         <Providers>
+          {/* Any home-screen icon that lands outside the app — including the
+              ones iOS pinned to "/" before the install fix, which no amount of
+              shipping can retarget — is handed to /hub. Renders nothing for an
+              ordinary browser visit. */}
+          <InstalledAppRedirect />
           <ActiveBackground />
 
           {/* Skip to main content - Accessibility */}

@@ -1,28 +1,41 @@
 "use client"
 
 /**
- * Guarantees that a home-screen icon opens the app, whichever page it was
- * installed from.
+ * Guarantees that a home-screen icon opens the app, whatever URL it was saved
+ * with. Mounted once in the root layout, so it covers every page.
  *
- * The manifest asks for `start_url: "/hub"`, and iOS has honoured that only
- * since it began applying manifests to Add to Home Screen; older behaviour pins
- * the icon to the exact URL it was saved at. Both are alive on phones in a
- * fleet, and the difference is invisible until a driver taps the icon and gets
- * the website with no URL bar to escape from — the owner's report. This closes
- * that gap from the page side: an install page reached in standalone
- * display-mode is a launch, not a visit, so it is handed straight to /hub.
+ * iOS never updates an existing home-screen icon: every "Add to Home Screen"
+ * mints a new one, pinned forever to the URL and manifest that were live the
+ * moment it was saved. So an icon created before the install fix — or from a
+ * marketing page, or from the homepage, where the manifest is the WEBSITE's
+ * (start_url "/") — keeps opening the website no matter what we ship after.
+ * That is the owner's "I click it and it goes to the homepage", and no
+ * server-side change can reach it. This can: a page opened in standalone
+ * display-mode is a launch, not a visit, so it is handed to /hub.
  *
- * It also repairs icons already on phones, including the ones minted while
- * these pages carried `apple-mobile-web-app-capable` without a manifest that
- * covered them.
+ * It doubles as insurance on the forward path — iOS resolves an install's start
+ * URL either from the manifest's `start_url` or from the page it was saved at,
+ * both behaviours are alive on phones in a fleet, and this makes the two
+ * indistinguishable.
  *
- * Mounted only on pages an install can start from — never sitewide, where it
- * would hijack an ordinary install of the marketing site (start_url "/").
+ * Deliberately sitewide despite the cost: an ordinary install of the marketing
+ * site (start_url "/") gets pulled into the app too. That is the owner's stated
+ * call — "I want the app only, not able to even go to the website once added".
+ *
+ * Three exemptions, all of them load-bearing:
+ *  - /hub itself, or the app would redirect to itself forever.
+ *  - /hub/get-app is NOT exempt: it is a page an icon can be pinned to, and a
+ *    launch landing on install instructions instead of the app is the bug.
+ *  - /driver and /track are separate surfaces. /driver especially: the proxy
+ *    sends a legacy driver-portal account from /hub to /driver, so bouncing it
+ *    back would be an infinite loop.
+ *
  * Standalone display-mode is never reported for a plain browser visit, so for
- * everyone reading the page in Safari or Chrome this component does nothing.
+ * everyone reading the site in Safari or Chrome this component does nothing.
  */
 
 import { useEffect, useSyncExternalStore } from "react"
+import { usePathname } from "next/navigation"
 
 const subscribeNever = () => () => {}
 
@@ -36,13 +49,33 @@ const readStandalone = () =>
 // the real answer arrives with the first client render.
 const readStandaloneOnServer = () => false
 
+/** The app's landing path — where any stray standalone launch is sent. */
+const APP_HOME = "/hub"
+
+/**
+ * True when a standalone launch that landed here has landed in the wrong place.
+ * Exported for tests: the loop conditions are not something to get wrong twice.
+ */
+export function shouldReturnToApp(pathname: string): boolean {
+  // Separate surfaces — never redirect out of them.
+  if (pathname === "/driver" || pathname.startsWith("/driver/")) return false
+  if (pathname === "/track" || pathname.startsWith("/track/")) return false
+  // Already in the app. /hub/get-app is the exception: an icon pinned to the
+  // install page should open the app, not the instructions for installing it.
+  if (pathname === "/hub/get-app") return true
+  if (pathname === APP_HOME || pathname.startsWith("/hub/")) return false
+  return true
+}
+
 export function InstalledAppRedirect() {
-  const launching = useSyncExternalStore(subscribeNever, readStandalone, readStandaloneOnServer)
+  const standalone = useSyncExternalStore(subscribeNever, readStandalone, readStandaloneOnServer)
+  const pathname = usePathname()
+  const launching = standalone && shouldReturnToApp(pathname)
 
   useEffect(() => {
-    // replace(), not assign(): the marketing page must not sit in the app's
-    // back stack, where a swipe would return the container to the website.
-    if (launching) window.location.replace("/hub")
+    // replace(), not assign(): the website must not sit in the app's back
+    // stack, where a swipe would return the container to it.
+    if (launching) window.location.replace(APP_HOME)
   }, [launching])
 
   if (!launching) return null
