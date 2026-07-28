@@ -33,8 +33,8 @@ import { execSync } from "node:child_process"
  * Test-file tsc errors as of 2026-07-28. Lower this whenever you fix some;
  * never raise it. Raising it is how a ratchet stops being a ratchet.
  *
- * History: 105 → 86 → 78. The drop to 86 came from two shared fixtures rather
- * than per-file patches — helpers/db-mock.ts (a `vi.fn(async () => [])`
+ * History: 105 → 86 → 78 → 72. The drop to 86 came from two shared fixtures
+ * rather than per-file patches — helpers/db-mock.ts (a `vi.fn(async () => [])`
  * declares a ZERO-argument function, so every `const [sql, params] =
  * mock.calls[0]` was a type error) and helpers/session.ts (hand-built session
  * objects all omitted HubSessionUser's required `email`). Use those in new
@@ -45,9 +45,14 @@ import { execSync } from "node:child_process"
  * `mock.calls[0][0]`, and dvir-tenancy.test.ts's local `makeClient()` mock
  * took only `(text: string)` while its assertions read `mock.calls[n][1]` for
  * query params — same fix as the shared fixtures, just inline: give the mock
- * a second parameter.
+ * a second parameter. The drop to 72 fixed portal-invitation-lifecycle.test.ts
+ * (6 errors): it used `vi.mocked(query)` (the real, correctly-typed `db.ts`
+ * export) so the destructure itself was fine, but the real signature's
+ * `params` is optional, so indexing `params[0]` after destructuring was
+ * "possibly undefined" — switched that one assertion block to the existing
+ * `callAt` helper from `helpers/db-mock.ts`, which defaults params to `[]`.
  */
-const TEST_ERROR_BASELINE = 78
+const TEST_ERROR_BASELINE = 72
 
 const isTestFile = (file) =>
   file.includes("__tests__/") || file.endsWith(".test.ts") || file.endsWith(".test.tsx")
