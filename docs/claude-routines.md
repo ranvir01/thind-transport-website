@@ -1582,3 +1582,80 @@ Backlog:
   @vercel/analytics/@vercel/speed-insights/geist/eslint-config-next family (owner-approval-gated
   semver-major bump); Rust sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision); 193
   pending `claude/*` branches awaiting the meta-governor prune pass (unchanged from prior cycles).
+
+## QA rig drive on main@8da55b1 — 2026-07-28 ~19:30 UTC (owner/dispatcher/driver, read-only prod probe)
+
+Scope this cycle: no feature work — stand up the local rig, drive real flows end-to-end, probe
+`thindtransport.com` read-only, fix only outright regressions from the last 3 hours of `main` commits.
+
+**Last-3h commit window (since ~16:09 UTC):** only one real diff landed — `5b68d8f` ("Rescue any
+home-screen icon that opens the website, not just some pages"), plus its merge/stamp commits
+(`6962d46`, `8da55b1`). `5b68d8f` moves `InstalledAppRedirect` from three individual pages into the
+root layout so it covers every route sitewide, with a new `shouldReturnToApp` pure-function test file.
+Read the diff and the exemption logic (`/driver*`, `/track*` never redirected; `/hub*` never redirected
+except `/hub/get-app`, which is deliberately still redirected) — this is a sitewide behavior change but
+a deliberate, owner-requested one ("I want the app only, not able to even go to the website once
+added", stated twice per the commit body), not a regression. Confirmed no server-side fallout: every
+route (`/`, `/hub`, `/apply`, `/pre-qualify`, `/loadoff`, `/app`, `/hub/get-app`, `/track/demo`)
+answers its normal status code under `next start`; the redirect itself is client-side
+`display-mode: standalone` detection, which curl/plain HTTP checks can't trigger and which the shipped
+unit tests already cover (rescues `/`, `/loadoff`, `/app`, `/apply`, lookalike prefixes like `/hubbub`;
+leaves `/hub*`, `/driver*`, `/track*` alone). No fix needed.
+
+**Local rig:** fresh from scratch — Postgres 16 started (was down), `hubapp` role + `hubdb` database
+created (neither existed), `npm ci` (750 packages), `npm run db:migrate` (23 migrations clean),
+`npm run seed:demo`, `npm run build` (0 TS errors), `npm run start`, `npm run lint` clean. `npx vitest
+run`: 260 files / 2365 tests green, before touching anything.
+
+**Full `e2e-run-all.mjs` battery (53 scripts + sweep) as owner/dispatcher/driver:** 51/53 passed, two
+failures, both pre-existing non-regressions, neither in the 3h window:
+1. `e2e-public-smoke` — "Navigation timeout of 30000 ms exceeded" fetching `/contact` after `/quote`
+   at 390px. `curl` confirms `/contact` serves HTTP 200 in ~0ms (Next.js cache HIT); re-ran the script
+   standalone immediately after and it passed clean end-to-end including `/contact` and `/quote` —
+   a transient Puppeteer navigation flake under the battery's sequential load, not a site defect.
+2. `e2e-sweep`'s owner-pass "reports: page content missing... stuck on a spinner?" at both widths —
+   the same stale `hasDriverPay`-conditional anchor (`"the operational view"`) already flagged in the
+   2026-07-23 and subsequent cycles' `Backlog:` trailers; `/hub/reports`' actual subtitle is the
+   driver-pay-included copy because the seeded settlements land inside the 92-day default range. Not
+   re-fixed here (lane-tests territory, one-line anchor-string fix, unchanged from prior calls).
+
+Corrected count: **51/51 real functional checks green, 0 app-code defects** once the flake and the
+already-known stale assertion are accounted for.
+
+**Production probe (Vercel MCP; direct HTTPS to `thindtransport.com` stayed egress-blocked, `curl`
+exit 56 on `/`, consistent with every prior cycle):** `get_project` + `list_deployments` on
+`prj_QKMg8o77DoEYiVQgQbI0FB5F4tAg` — latest READY `target: "production"` deployment
+(`dpl_FNQ6F1k5Ws1i3DHWD7zRDzJbQwac`) is commit `8da55b1`, today's `main` HEAD, deployed within
+seconds of that commit landing. Production is current, not stale.
+
+**Found a real, standing production defect via `get_runtime_errors` (not present in the prior
+cycle's 24h check, so new since ~2026-07-25/26):** the daily `compliance-scan` and `owner-digest`
+Vercel Crons (`/api/hub/cron/[job]`) have been failing to send email for the **real** Thind Transport
+carrier (`OPERATOR_CARRIER_ID` `11111111-1111-1111-1111-111111111111`, the actual business, not a
+demo tenant) on three consecutive days — `2026-07-26T14:24:01Z`, `2026-07-27T13:13:11Z` +
+`2026-07-27T14:13:30Z`, `2026-07-28T14:53:29Z` — all with the same Gmail SMTP error: `Invalid login:
+535-5.7.8 Username and Password not accepted ... BadCredentials`. The route's try/catch per carrier
+(`src/app/api/hub/cron/[job]/route.ts`) means the cron job itself doesn't fail loudly (200 with a
+per-carrier error recorded), so this has been silently dropping the owner's compliance expiry alerts
+and the daily owner-digest email with no visible failure anywhere except Vercel's own runtime-error
+log. This is a production Gmail app-password credential problem in Vercel's env, not a code defect —
+per AGENTS.md (never touch `.env*`/secrets) an agent cannot fix this; it needs the owner to regenerate
+the Gmail app password and update `SMTP_PASS` in the Vercel project settings. Notified the owner
+directly (push notification) since this has been silently failing for 3+ days with no other alarm.
+
+No code changes this cycle — the one in-window commit was a verified non-regression and the two
+battery failures were pre-existing/flaky, not fresh breakage. Nothing to drain.
+
+Backlog:
+- **Production SMTP credentials are invalid** (`Invalid login ... BadCredentials`) — `compliance-scan`
+  and `owner-digest` crons have failed to email the real carrier for 3+ days running. Owner needs to
+  regenerate the Gmail app password and update `SMTP_PASS` in Vercel's project env vars; no agent can
+  fix this (secrets are off-limits). Flagging every cycle until resolved.
+- `e2e-sweep.mjs`'s `OWNER_PAGES` "reports" anchor (`"the operational view"`) should switch to a
+  substring both subtitle branches share (matching the office-pass anchor already used for the same
+  route) so it stops false-failing whenever seeded settlements fall inside the default 92-day range —
+  lane-tests territory, one-line fix, carried unchanged since 2026-07-23.
+- Carried, unchanged: IFTA due-date roll / holiday handling (owner design call); npm audit's 12
+  high-severity advisories (owner-approval-gated semver-major bump); Rust sidecar `tiny_http`
+  connection-timeout/thread-cap gap (owner decision); ~245 pending `claude/*` branches awaiting the
+  meta-governor prune pass.
