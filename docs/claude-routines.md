@@ -1582,3 +1582,94 @@ Backlog:
   @vercel/analytics/@vercel/speed-insights/geist/eslint-config-next family (owner-approval-gated
   semver-major bump); Rust sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision); 193
   pending `claude/*` branches awaiting the meta-governor prune pass (unchanged from prior cycles).
+
+## QA rig drive on main@5372bb6 — 2026-07-28 ~18:00-18:42 UTC (owner/dispatcher/driver, read-only prod probe)
+
+Charter (docs/agent-improvement-loop.md §5): no feature work — stand up the local rig, drive real
+owner/dispatcher/driver flows against it, probe `thindtransport.com` read-only, fix only outright
+regressions from the last 3h of commits.
+
+**Last-3h commit window:** empty. `main`'s HEAD (`5372bb6`) hasn't moved since 10:45:16 UTC, ~8h
+before this cycle started — no commits landed in the trailing 3h, so there was no regression window
+to check against. Confirmed via `git log` on `origin/main` (this session's branch started already
+matching `origin/main` exactly, 0 drift).
+
+**Local rig:** fresh from scratch — Postgres 16 started (was down), `hubapp` role + `hubdb` database
+created (neither existed, per dev-workflow-testing skill pitfall #9), `npm ci` (750 packages),
+`npm run db:migrate` (23 migrations clean — one more than the last logged cycle's 22, confirming a
+new migration landed since), `npm run seed:demo`, `npm run build` (0 TS errors), `npm run start`.
+`npm run lint` clean. `npx vitest run`: 259 files/2359 tests green. `npm run test:sidecars`: 29 Rust
+tests + Go vet/test/clippy all green (ran even though nothing Go/Rust changed this cycle).
+
+**Full `e2e-run-all.mjs` battery (53 scripts incl. sweep) as owner/dispatcher/driver:** 52/53, one
+failure — the same non-regression prior cycles have already carried: `e2e-sweep`'s owner-pass anchor
+"reports: page content missing... stuck on a spinner?" at both 1440px and 390px. Same root cause
+documented on 2026-07-26/27: `/hub/reports`' subtitle is conditional on `hasDriverPay`
+(`src/app/hub/(office)/reports/page.tsx`), the seeded demo settlements land inside the 92-day default
+range, so the live subtitle is the driver-pay-included copy, never the "...this is the operational
+view" string `e2e-sweep.mjs`'s `OWNER_PAGES` anchor still expects. Not re-fixed here — `lane-tests`
+territory (`scripts/e2e-*.mjs`), one-line anchor-string change, carried into the Backlog below for
+the third-plus cycle running.
+
+**Production probe (Vercel MCP; direct HTTPS to `thindtransport.com` stayed egress-blocked, `curl`
+exit 56 on both `/` and `/hub/login`, consistent with every prior cycle):** `get_project` +
+`list_deployments` on `prj_QKMg8o77DoEYiVQgQbI0FB5F4tAg` show the latest READY `target: "production"`
+deployment (`dpl_...` created 10:46:38 UTC) is exactly `main`'s HEAD `5372bb6` — production is
+current, deployed ~1 minute after that commit landed. (`live: false` on `get_project` again, per the
+documented caveat that flag alone isn't reliable — alias + deployment SHA cross-check is what
+confirms healthy here.) Not re-paging.
+
+**New finding — production SMTP credentials are failing (real, currently active):**
+`get_runtime_errors` (24h window) surfaced `[cron:compliance-scan] 1/4 carrier run(s) failed` at
+2026-07-28T14:53:29Z: `Invalid login: 535-5.7.8 Username and Password not accepted` against Gmail,
+for carrier `11111111-1111-1111-1111-111111111111` — that UUID is "Thind (created by migration 002)"
+per `scripts/seed-demo.mjs:32`, i.e. the real primary carrier, not a demo/test tenant. Read the cron
+route's error handling (`src/app/api/hub/cron/[job]/route.ts`): it already catches per-carrier
+failures, records them to `hub.integration_syncs`, and continues with the other carriers — this is
+not a code bug, the try/catch is doing its job. The root cause is a Gmail app password that Google
+has revoked or expired for `SMTP_PASS` in the production Vercel env. `src/lib/mailer.ts`'s
+`createMailTransport()` is the **single shared transport for every outbound email the site sends**
+(compliance alerts, invoice/settlement statements, password resets, and — read
+`src/app/actions/submit-application.ts:337-383` — new driver-application notifications to
+`COMPANY_INFO.email`). Confirmed the driver-facing UX degrades gracefully (the application is
+persisted to Postgres before email is attempted, and the driver still sees a success message even if
+`sendMail` throws), so no applications are being lost — but the office may not be getting
+notified by email of new applications landing, and none of the other SMTP-dependent flows recover
+this quietly. Checked both automated checks that exist for this: `go-live-check.mjs`
+(`scripts/go-live-check.mjs:108`) and `connections-check.mjs` both only assert `SMTP_USER`/`SMTP_PASS`
+are **non-empty** — neither ever calls `transporter.verify()` or attempts a real auth handshake, so a
+revoked/expired app password is invisible to every existing automated check. This is a credentials
+problem in Vercel's production env, not a code regression from the last 3h (the SSL-mode deprecation
+warning also present in the same error log has been recurring since 2026-06-26 and is just Node/pg
+noise, not a real error) — flagged as an owner action item, not fixed here.
+
+The other pg-connection SSL-mode deprecation warning in the same `get_runtime_errors` window
+(`prefer`/`require`/`verify-ca` alias notice) is long-standing noise (first seen 2026-06-26, 19
+occurrences through today), not a new or regression-linked finding.
+
+`npm run agent:status`: steady state, integrator within 3 commits of `main`, three small lane branches
+pending (`lane-docs`, `lane-roadmap`, `lane-integrations`) — left for the integrator routine, out of
+this cycle's scope.
+
+Backlog:
+- **Owner action, high priority:** production `SMTP_PASS` (Gmail app password) is being rejected
+  (`535-5.7.8 BadCredentials`), confirmed live as of 2026-07-28T14:53:29Z against the real Thind
+  carrier via the `compliance-scan` cron. Rotate/regenerate the Gmail app password and update it in
+  Vercel's env vars. Every flow sharing `src/lib/mailer.ts`'s transport is affected: compliance
+  expiry alerts, new-driver-application office notifications, password resets, invoice/settlement
+  statements. Applications aren't being lost (DB-persisted regardless, driver still sees success),
+  but the office may be missing email notice of new applications and other SMTP-dependent alerts
+  until this is rotated.
+- Add a real auth check to `go-live-check.mjs`/`connections-check.mjs` — both currently only verify
+  `SMTP_USER`/`SMTP_PASS` are non-empty, never that they authenticate, so this exact failure mode
+  (credentials present but revoked/expired) is invisible to every automated check until it silently
+  breaks production email. A `transporter.verify()` call (nodemailer) would catch it. `lane-docs`
+  territory (owns `go-live-check.mjs`).
+- `e2e-sweep.mjs`'s `OWNER_PAGES` "reports" anchor (`"the operational view"`) still needs the
+  substring-both-branches-share fix flagged on 2026-07-26/27 — unchanged, `lane-tests` territory.
+- Carried, unchanged: green-as-success convention design call (`PreQualificationForm.tsx` vs
+  `ApplicationForm.tsx`); TEST_GAPS.md row 1 (`draftSettlements` multi-driver/percentage-pay/
+  multi-referral cases); IFTA due-date roll / holiday handling (owner design call); npm audit's 12
+  high-severity advisories (owner-approval-gated semver-major bump); Rust sidecar `tiny_http`
+  connection-timeout/thread-cap gap (owner decision); ~193-245 pending `claude/*` branches awaiting
+  the meta-governor prune pass.
