@@ -1582,3 +1582,66 @@ Backlog:
   @vercel/analytics/@vercel/speed-insights/geist/eslint-config-next family (owner-approval-gated
   semver-major bump); Rust sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision); 193
   pending `claude/*` branches awaiting the meta-governor prune pass (unchanged from prior cycles).
+
+## QA rig drive on main@5372bb6 — 2026-07-28 ~15:45 UTC (owner/dispatcher/driver, read-only prod probe)
+
+Charter this cycle (per the scheduled prompt): no feature work — stand up the local rig, drive
+owner/dispatcher/driver flows with the E2E battery, probe `thindtransport.com` read-only, file every
+defect under `Backlog:`, and fix only outright regressions from the last 3h of commits.
+
+Fresh rig from scratch: Postgres started, `hubapp`/`hubdb` role+db created, 23 migrations clean,
+`seed:demo`, `npm run build` clean (Turbopack), `npx vitest run` (259 files/2359 tests) green, `npm run
+lint` clean, `npm run typecheck:gate` clean (0 app-code errors, 78 test-file errors — unchanged
+baseline), `npm run test:sidecars` green (29 Rust tests + Go vet/test, clippy clean), `npm run
+design-qa` 0 hard failures (29 warnings, unchanged), `npm run js-budget` no regression (worst route
+280KB vs 285KB ceiling), `npm run license:audit` clean (0 strong copyleft), `npm audit` 12 high-severity
+advisories (unchanged — nodemailer/sharp chain, owner-approval-gated). The sandbox container restarted
+mid-cycle after this verify pass; Postgres data, `node_modules`, the `.next` build, and `.env.local` all
+survived the restart, so the rig resumed without re-provisioning.
+
+Reviewed the last 3h of commits (12:15–15:15 UTC): `main` has not moved since `5372bb6` landed at
+10:45 UTC (4.5h stale relative to this drive's start) — nothing on `main` to fix-forward. (Several other
+QA-drive/typecheck cycles pushed session-branch commits in this window, per the git log, but none have
+been drained to `main` yet — that's the integrator's job, not this cycle's.)
+
+Drove the full `e2e-run-all.mjs` battery (59 scripts) as owner, dispatcher, and driver against the fresh
+rig: **52/53 passed**, one known failure — `e2e-sweep`'s OWNER_PAGES `reports` anchor (`"the operational
+view"`) doesn't match at either 1440px or 390px. Traced it precisely rather than assuming: `reports/
+page.tsx`'s subtitle renders one of two text branches depending on `hasDriverPay` (whether any seeded
+settlement's driver pay falls inside the current 92-day default range) — only the `!hasDriverPay` branch
+contains the literal substring `"the operational view"`; the `hasDriverPay` branch says "the per-truck
+table below stays operational" instead, which doesn't match. This is the same flake **6+ QA-drive cycles
+today** have already hit (`b7e5c53d`, `d7ddd80a`, `e4ea4938`, per this doc's own log above) — OFFICE_PAGES's
+identical anchor was already fixed to the shared, both-branches-safe prefix `"per-truck p&l, last 92
+days"` (visible on `main` at `scripts/e2e-sweep.mjs:52`), but OWNER_PAGES's copy of the same anchor
+(`scripts/e2e-sweep.mjs:68`) still has the old exact string. Confirmed the fix already exists, unmerged:
+`claude/practical-franklin-w4loy8` commit `e4ea4938` (pushed 14:55 UTC, ~50 min before this drive)
+changes line 68 to the identical shared-prefix fix. Per AGENTS.md's duplicate-work rule and this cycle's
+narrower charter (fix only last-3h regressions; everything else goes to `Backlog:`), did not reimplement
+it a seventh time — the branch just needs draining.
+
+Production probe: direct HTTPS to `thindtransport.com` is still egress-blocked from this session (`curl`
+exit 56 on `/` and `/hub/login`, CONNECT tunnel 403) — same proxy-policy denial every prior cycle has
+hit, not a site defect. Used the Vercel MCP connector instead: `get_project`/`list_deployments` on
+`prj_QKMg8o77DoEYiVQgQbI0FB5F4tAg` show the latest `target: "production"` / `state: "READY"` deployment
+(`dpl_HN2M7QFacynCmwvk8FH2B6TKYH3t`) is built from `main@5372bb6` — the exact current commit, no drain
+gap (the `live: false` project flag is the known unreliable signal documented above; cross-checked
+against the alias/deployment SHA instead). `get_runtime_errors` (24h window) shows two clusters, both
+already tracked: a long-standing benign `pg` SSL-mode alias warning, and one `cron:compliance-scan` run
+that failed 1/4 carriers at 14:53 UTC with Gmail SMTP `535 5.7.8 BadCredentials` — the same recurring
+owner-gated SMTP-credential issue flagged since 2026-07-26/27, confirmed still occurring today.
+
+No code fix was available to ship (no last-3h regression, and the one known defect's fix already exists
+elsewhere) — left `main` untouched this cycle rather than manufacture a no-op change.
+
+Backlog:
+- `claude/practical-franklin-w4loy8` (commit `e4ea4938`) carries the OWNER_PAGES reports-anchor fix
+  (`scripts/e2e-sweep.mjs:68`, one line) — this is now the 7th cycle to hit the underlying flake; the
+  integrator should prioritize draining this branch over any fresh work to stop the rediscovery loop.
+- Owner action needed (recurring, confirmed again today): Gmail SMTP app password behind
+  `SMTP_USER`/`SMTP_PASS` in Vercel prod env — `compliance-scan` cron failed 1/4 carriers at 14:53 UTC
+  with `535 BadCredentials`; re-check next drive whether it's still recurring.
+- Carried, unchanged: IFTA due-date legal-holiday scope decision (owner-gated); npm audit's 12
+  high-severity advisories in the next/nodemailer/sharp chain (owner-approval-gated semver-major bump);
+  Rust sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision); ~245 pending `claude/*`
+  branches awaiting the meta-governor prune pass (unchanged from prior cycles).
