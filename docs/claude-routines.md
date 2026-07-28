@@ -1547,3 +1547,78 @@ Backlog:
   semver-major bump); Rust sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision); TEST_GAPS.md
   row 1 (`draftSettlements` multi-driver/percentage-pay/multi-referral cases); green-as-success convention
   design call (`PreQualificationForm.tsx` vs `ApplicationForm.tsx`).
+
+## QA rig drive on main@11e26839 — 2026-07-28 ~03:45 UTC (owner/dispatcher/driver, read-only prod probe)
+
+Charter (docs/agent-improvement-loop.md §5): no feature work — stood up the local rig from
+scratch, drove owner/dispatcher/driver flows with the full Puppeteer `e2e-run-all.mjs` battery
+plus the final screen sweep, probed `thindtransport.com` read-only via the Vercel MCP connector
+(direct HTTPS still egress-blocked, 403 on CONNECT), fixed only outright regressions from the
+last 3h of commits.
+
+Fresh rig from scratch: Postgres 16 started (was down), `hubapp`/`hubdb` role+database created
+per the dev-workflow-testing skill's pitfall #9, `npm run setup:canvas-deps` + `npm ci` (750
+packages), all 23 migrations clean, `seed:demo`, `npm run build` (Next.js 16, zero TS errors),
+`npx vitest run` (254 files/2315 tests green), `npm run lint` clean, `npm run test:sidecars` (29
+Rust tests + Go vet/test, clippy clean).
+
+Reviewed the only commit in the last 3 hours (integrator tip `5531d9b3`, not yet drained to
+`main`): a test-only addition (`eia-diesel-price.test.ts`, 87 lines, zero product code) — no
+regression surface, nothing to fix-forward.
+
+Full E2E battery: all 52 `e2e-*-smoke.mjs` scripts green (owner, dispatcher, and driver roles;
+advances, apply, claims, compliance, customers, DAT freight, detention alerts, dispatch +
+dispatch-driver-notify, driver (offline/POD/home), duplicate-load, DVIR, expenses, fleet, fuel,
+funnel, IFTA, import, invoices, load-OSD-chip, loads, login, mailbox OAuth, messages,
+notifications, office, onboarding, planner, portal (+accept), pricebook, public, QBO (IIF+push),
+random-testing, recruiting, recurring lane+rollup, reports (+toll-cost), safety, settings-misc,
+settlements, showcase, statements, tasks, tenant-isolation, tolls, track, users). The final
+`e2e-sweep.mjs` screen sweep (76 screenshots across office/owner/driver/portal/shipper/track at
+1440px and 390px) initially failed on the OWNER_PAGES "reports" anchor — the exact stale-fixture
+bug several prior QA cycles already named but never patched (`scripts/e2e-sweep.mjs:68` expected
+"the operational view", a phrase that only renders in `reports/page.tsx`'s `!hasDriverPay`
+subtitle branch; the current seeded owner tenant has driver-pay settlements, so the page
+correctly renders the *other* branch's copy instead — a demo-data/test-fixture mismatch, not a
+product bug). Fixed the anchor to `"per-truck p&l, last 92 days"` (the phrase common to both
+subtitle branches, already used as the OFFICE_PAGES anchor for the same route) and re-ran: sweep
+clean, 0 problems, every screen has real content, no horizontal overflow at 390px. **53/53 E2E
+green, 0 product defects** — the only change shipped this cycle is the test-fixture fix.
+
+Production probe via Vercel MCP (`get_project`/`list_deployments`/`get_runtime_errors`; direct
+HTTPS to `thindtransport.com` still 403s on CONNECT in this sandbox): the picture is worse than
+every prior cycle's staleness reports. The last **successful** production deployment
+(`state: READY`, `target: production`) is `dpl_CtLudx7ruwx33f4EgbyZ9TkbHCf6`, commit `6bd92be6`
+("Drain integrator to main (183b46b1)"), created **2026-07-27 17:53:56 UTC** — main has since
+advanced through 9 more commits/drains (through `11e26839`) and **every single deployment
+attempt since then is `state: CANCELED` with `target: null`**, not just non-production or stale.
+`get_project` confirms: `live: false`, `latestDeployment` itself `CANCELED`/`target: null`. This
+is a regression from the already-known "production sits stale" pattern several 2026-07-27 cycles
+flagged (5.5h/6.4h/7.5h stale, but still eventually deploying) — as of this cycle it's **~9h50m
+stale and climbing, with zero successful deploys in that entire window**, not merely delayed
+ones. `get_runtime_errors` (24h window) confirms production is still alive and serving traffic,
+just frozen on the stale `6bd92be6` build (last observed request 2026-07-28T02:16:42Z) — this is
+staleness, not an outage, but it means every commit shipped in the last ~10 hours (the toll-P&L
+fold-in, the driver-PWA replayQueue fix, the IFTA surcharge-export guard, this cycle's own fix)
+is sitting undeployed. No in-repo fix is possible — this needs the Vercel dashboard (Git
+integration/webhook health, deployment queue, Ignored Build Step) checked directly. Also
+reconfirmed the already-carried SMTP `BadCredentials` cron failures (`owner-digest`,
+`compliance-scan`) are still firing as of 2026-07-27 13-14 UTC, unchanged.
+
+Backlog:
+- **Owner: production deploy pipeline has gone from "stale" to "not deploying at all"** — every
+  Vercel deployment attempt since 2026-07-27 17:53:56 UTC (9+ commits, 9h50m+) has come back
+  `CANCELED`/`target: null` instead of building; `live: false` on the project. Needs a direct
+  Vercel dashboard check (Git integration connection, deployment queue/concurrency limits,
+  Ignored Build Step) — no code-level fix is possible for this one. Production itself is still
+  up and serving (not a customer-facing outage), just frozen on `6bd92be6`.
+- Owner: SMTP `BadCredentials` on the Gmail app-password cron sends (`owner-digest`,
+  `compliance-scan`) remains broken, unchanged since first flagged 2026-07-26.
+- `scripts/e2e-sweep.mjs`'s OWNER_PAGES "reports" anchor mismatch (flagged by name in at least
+  three prior cycles' backlogs, e.g. 2026-07-27 ~21:45 UTC) is now actually fixed, not just
+  re-flagged — closing that carried line.
+- `claude/lane-compliance` (~1560+ unpicked) and the 200+ other pending `claude/*` branches still
+  await the meta-governor prune pass; unchanged from prior cycles.
+- Carried, unchanged: npm audit high-severity findings in the `next`/`sharp` chain
+  (owner-approval-gated semver-major bump); Rust sidecar `tiny_http` connection-timeout/
+  thread-cap gap (owner decision); TEST_GAPS.md row 1 (`draftSettlements` multi-driver/
+  percentage-pay/multi-referral cases); green-as-success convention design call.
