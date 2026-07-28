@@ -120,6 +120,19 @@ describe("PWA manifest wiring", () => {
     expect(read("src/components/features/GetTheApp.tsx")).toMatch(/href="\/hub\/get-app"/)
   })
 
+  it("the in-app install hint is a tap target, not small print", () => {
+    // On /hub/login this was a grey <p>: the one thing on the screen that puts
+    // the app on a driver's phone, styled like a footnote. It is a link now, in
+    // the accent colour, at a thumb-sized height — and never points at the page
+    // it is already on.
+    const src = read("src/components/hub/InstallAppButton.tsx")
+    expect(src).toMatch(/const INSTALL_PAGE = ["']\/hub\/get-app["']/)
+    expect(src).toMatch(/<Link\s+href=\{INSTALL_PAGE\}/)
+    expect(src).toMatch(/const onInstallPage = usePathname\(\) === INSTALL_PAGE/)
+    expect(src).toMatch(/if \(onInstallPage\)/)
+    expect(src).toMatch(/min-h-\[52px\]/)
+  })
+
   it("/hub/get-app is proxy-exempt so a logged-out phone can reach the install surface", () => {
     const proxy = read("src/proxy.ts")
     expect(proxy).toMatch(/pathname === ["']\/hub\/get-app["']/)
