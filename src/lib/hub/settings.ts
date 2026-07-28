@@ -14,7 +14,22 @@ export interface CarrierSettings {
      */
     autoInvoiceOnPod: boolean
   }
-  pay: { companyDriverPerMile: number; ownerOperatorPercentage: number; payLoadedMilesOnly: boolean }
+  pay: {
+    /**
+     * Default company-driver rate, in INTEGER CENTS per mile (AGENTS.md:
+     * "Money is integer cents everywhere"). Was `companyDriverPerMile`, a
+     * fractional-dollar number — the single most-carried item in the backlog.
+     * pay-rules.ts absorbed it with Math.round(rate * 100), so live loss was
+     * about zero, but every new consumer had to remember the conversion and
+     * a half-cent rate had no representation at all.
+     * Migration 024 rewrites stored settings; getCarrierSettings below still
+     * reads the legacy key so a row written by an older deploy keeps working.
+     */
+    companyDriverPerMileCents: number
+    /** A share of linehaul, not money — 0.9 = 90%. Stays a ratio. */
+    ownerOperatorPercentage: number
+    payLoadedMilesOnly: boolean
+  }
   detention: { freeHours: number; ratePerHourCents: number }
   costPerMileCents: number
   fsc: { baseCentsPerGallon: number; mpg: number }
@@ -28,7 +43,7 @@ export interface CarrierSettings {
 
 export const DEFAULT_SETTINGS: CarrierSettings = {
   invoice: { prefix: "INV-", nextNumber: 1000, defaultTermsDays: 30, autoInvoiceOnPod: true },
-  pay: { companyDriverPerMile: 0.6, ownerOperatorPercentage: 0.9, payLoadedMilesOnly: true },
+  pay: { companyDriverPerMileCents: 60, ownerOperatorPercentage: 0.9, payLoadedMilesOnly: true },
   detention: { freeHours: 2, ratePerHourCents: 6000 },
   costPerMileCents: 185,
   fsc: { baseCentsPerGallon: 125, mpg: 6.0 },
@@ -53,6 +68,23 @@ export async function getCarrier(carrierId: string): Promise<Carrier | null> {
   return queryOne<Carrier>(`SELECT * FROM hub.carriers WHERE id = $1`, [carrierId])
 }
 
+/**
+ * Reads either shape. A tenant whose settings row still holds the legacy
+ * fractional-dollar `companyDriverPerMile` (written before migration 024, or by
+ * an older deploy still live during a rollout) is converted on read rather than
+ * silently falling back to the 60-cent default, which would quietly re-rate
+ * every driver imported afterwards.
+ */
+function mergePay(
+  stored: (Partial<CarrierSettings["pay"]> & { companyDriverPerMile?: number }) | undefined
+): CarrierSettings["pay"] {
+  const merged = { ...DEFAULT_SETTINGS.pay, ...stored }
+  if (stored?.companyDriverPerMileCents == null && typeof stored?.companyDriverPerMile === "number") {
+    merged.companyDriverPerMileCents = Math.round(stored.companyDriverPerMile * 100)
+  }
+  return merged
+}
+
 export async function getCarrierSettings(carrierId: string): Promise<CarrierSettings> {
   const row = await queryOne<{ settings: Partial<CarrierSettings> }>(
     `SELECT settings FROM hub.carrier_settings WHERE carrier_id = $1`,
@@ -63,7 +95,7 @@ export async function getCarrierSettings(carrierId: string): Promise<CarrierSett
     ...DEFAULT_SETTINGS,
     ...stored,
     invoice: { ...DEFAULT_SETTINGS.invoice, ...stored.invoice },
-    pay: { ...DEFAULT_SETTINGS.pay, ...stored.pay },
+    pay: mergePay(stored.pay),
     detention: { ...DEFAULT_SETTINGS.detention, ...stored.detention },
     fsc: { ...DEFAULT_SETTINGS.fsc, ...stored.fsc },
     randomTesting: { ...DEFAULT_SETTINGS.randomTesting, ...stored.randomTesting },

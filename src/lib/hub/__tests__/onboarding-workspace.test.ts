@@ -143,7 +143,7 @@ describe("createWorkspaceAction", () => {
 
     expect(result.ok).toBe(true)
     const pay = seededSettings(client).pay
-    expect(pay.companyDriverPerMile).toBe(0.72)
+    expect(pay.companyDriverPerMileCents).toBe(72)
     expect(pay.ownerOperatorPercentage).toBe(0.88)
     expect(pay.payLoadedMilesOnly).toBe(true)
   })
@@ -154,7 +154,7 @@ describe("createWorkspaceAction", () => {
     await createWorkspaceAction(VALID_INPUT)
 
     const pay = seededSettings(client).pay
-    expect(pay.companyDriverPerMile).toBe(0.6)
+    expect(pay.companyDriverPerMileCents).toBe(60)
     expect(pay.ownerOperatorPercentage).toBe(0.9)
   })
 
@@ -164,7 +164,7 @@ describe("createWorkspaceAction", () => {
     await createWorkspaceAction({ ...VALID_INPUT, payPerMile: 0.6849, ownerOperatorPct: 87.5 })
 
     const pay = seededSettings(client).pay
-    expect(pay.companyDriverPerMile).toBe(0.68)
+    expect(pay.companyDriverPerMileCents).toBe(68)
     expect(pay.ownerOperatorPercentage).toBe(0.875)
   })
 
