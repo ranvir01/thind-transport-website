@@ -37,7 +37,7 @@ describe("createShareLink cross-table tenancy (AGENTS.md both-sides rule)", () =
   it("mints a token when the load belongs to the carrier", async () => {
     queryMock.mockImplementation(async (sql: string) =>
       String(sql).includes("INSERT INTO hub.share_links")
-        ? [{ id: "1", load_id: OWNED_LOAD, token: "tok", revoked_at: null, created_at: "2026-07-07" }]
+        ? [{ id: "1", load_id: OWNED_LOAD, token: "tok", revoked_at: null, expires_at: "2026-08-06", created_at: "2026-07-07" }]
         : [{ id: OWNED_LOAD }]
     )
     const link = await createShareLink(CARRIER, OWNED_LOAD, ACTOR)
