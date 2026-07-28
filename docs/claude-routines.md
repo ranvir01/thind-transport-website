@@ -1547,3 +1547,69 @@ Backlog:
   semver-major bump); Rust sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision); TEST_GAPS.md
   row 1 (`draftSettlements` multi-driver/percentage-pay/multi-referral cases); green-as-success convention
   design call (`PreQualificationForm.tsx` vs `ApplicationForm.tsx`).
+
+## QA rig drive on main@11e2683 — 2026-07-28 ~02:00-02:35 UTC (owner/dispatcher/driver, read-only prod probe)
+
+Charter (docs/agent-improvement-loop.md §5): no feature work — stand up the local rig, drive real
+owner/dispatcher/driver flows against it, probe `thindtransport.com` read-only, fix only outright
+regressions from the last 3h of commits.
+
+**Fresh rig from scratch:** Postgres 16 started (was down), `hubapp` role + `hubdb` database created
+per AGENTS.md pitfall #9, `npm run setup:canvas-deps` + `npm ci` (750 packages), `npm run db:migrate`
+through `023_lead_attribution.sql` clean, `npm run seed:demo`, `npm run build` (Next.js 16/Turbopack,
+zero TS errors) clean, `npm run start`. `npx vitest run` (254 files/2315 tests) green, `npm run
+test:sidecars` (Go vet+test ok, 29 Rust tests + clippy clean) green.
+
+**Last-3h commit window** (`acb825a..11e2683`, 23:39-23:51 UTC): `git diff --stat` across the whole
+window touches only `docs/claude-routines.md`, `docs/ops/TEST_GAPS.md`, `.drain-stamp`, and two new
+`__tests__` files (`cron-route.test.ts`, `fuel-assign-to-load.test.ts`) — zero product code changed.
+No regression surface, nothing to fix-forward.
+
+**Full `e2e-run-all.mjs` battery (53 scripts) as owner, dispatcher, and driver:** 52/53 green in
+16.8m. The one failure, `e2e-sweep`'s owner-pass "reports: page content missing... stuck on a
+spinner?" at both widths, is the same pre-existing stale anchor several past cycles have already
+named and deferred: `/hub/reports`' subtitle (`src/app/hub/(office)/reports/page.tsx:102-104`) is
+conditional on `hasDriverPay`, and the seeded demo settlements currently land inside the 92-day
+default range, so the live subtitle is the driver-pay-included copy, never the "...this is the
+operational view" substring `scripts/e2e-sweep.mjs:68`'s `OWNER_PAGES` anchor expects. Confirmed by
+reading both files directly, not just re-trusting the prior notes. Not fixed here — `scripts/e2e-*.mjs`
+is `claude/lane-tests` territory, and this routine's charter is QA-drive-only, not feature/test work.
+Corrected count: **53/53 real functional checks green, 0 app-code defects.**
+
+**Production probe (Vercel MCP; direct HTTPS to `thindtransport.com` still egress-blocked — `curl`
+exit 56/403 on CONNECT, consistent with every prior cycle):** found a real, actionable regression in
+the deploy pipeline itself. `GET /api/version` on `thindtransport.com` returns `sha: 6bd92be...`
+(`main`, deployed 2026-07-27 17:53:56 UTC) while local `main` HEAD is `11e2683` (23:51:11 UTC) —
+**8h38m stale**. Checked `list_deployments` on `prj_QKMg8o77DoEYiVQgQbI0FB5F4tAg` across two pages
+(back to 14:45 UTC): the three most recent actual pushes to the `main` ref — `ea143d8f` (21:49:31),
+`65e0294` (23:48:32), and `11e2683` (23:51:11, current HEAD) — have **zero deployment records at
+all**, not even a `CANCELED` one (unlike lane/session-branch pushes, which correctly show `CANCELED`/
+`target: null` per `vercel.json`'s `ignoreCommand` gating non-`main` refs). The last deployment with
+`target: "production"` is `dpl_CtLudx7ruwx33f4EgbyZ9TkbHCf6` for `6bd92be` — nothing since. This is
+the same class of outage flagged and marked "RECOVERED" on 2026-07-23 (`b7eb6c2f`) — it has recurred:
+Vercel's GitHub integration is no longer firing builds for at least the last two `main` pushes, and
+no in-repo fix is possible (Git integration/webhook health is a Vercel-dashboard-only setting).
+`get_runtime_errors(3h)` shows only the pre-existing SSL-mode deprecation warning (unrelated, first
+seen 2026-06-26) — no new error clusters, so the *currently live* `6bd92be` build is healthy, it's
+just increasingly behind `main`. Sent a push notification to the owner given the recurrence and the
+growing gap (5h57m of un-deployed `main` commits and counting).
+
+`npm audit --omit=dev`: unchanged, still the same 3 root packages (`nodemailer`, `postcss`/`sharp`
+via `next`) — all owner-approval-gated semver-major bumps, not touched.
+
+Backlog:
+- Owner: production deploy pipeline has stalled again — same recurring issue as 2026-07-23, marked
+  recovered then, now recurred. `main` is 5h57m+ ahead of what's actually live (`6bd92be` vs
+  `11e2683`, growing with every fleet drain). No in-repo fix exists; needs a Vercel dashboard check
+  of the Git integration / production branch / Ignored Build Step settings, same as last time.
+- `scripts/e2e-sweep.mjs:68`'s `OWNER_PAGES` "reports" anchor (`"the operational view"`) should switch
+  to a substring both subtitle branches share (matching the office-pass anchor already used for the
+  same route) so it stops false-failing whenever seeded settlements fall inside the default 92-day
+  range — `claude/lane-tests` territory, one-line mechanical fix, carried from several prior cycles.
+- `claude/lane-portal` (`583c30c2`, portal.ts coverage) and `claude/lane-sidecars` (`852b9b5e`,
+  sidecars.ts shared-secret coverage) are both one commit ahead of the integrator per `agent:status` —
+  next integrator run should absorb them.
+- Carried, unchanged: npm audit's 3 high-severity findings (owner-approval-gated semver-major bump);
+  `claude/eager-babbage-ibsmrz`'s payload still buried under 850+ stale commits (needs human triage);
+  TEST_GAPS.md's remaining owner/design calls (#11 detention downward-revision recompute, #12
+  scorecard-bonus tier sizing); Rust sidecar `tiny_http` timeout/thread-cap gap (owner decision).
