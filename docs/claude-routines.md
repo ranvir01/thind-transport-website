@@ -1547,3 +1547,68 @@ Backlog:
   semver-major bump); Rust sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision); TEST_GAPS.md
   row 1 (`draftSettlements` multi-driver/percentage-pay/multi-referral cases); green-as-success convention
   design call (`PreQualificationForm.tsx` vs `ApplicationForm.tsx`).
+
+## QA rig drive on main@11e26839 — 2026-07-28 ~04:35 UTC (owner/dispatcher/driver, read-only prod probe)
+
+Charter (docs/agent-improvement-loop.md §5): no feature work — stood up the local rig from scratch,
+drove owner/dispatcher/driver flows with the full Puppeteer `e2e-run-all.mjs` battery, probed
+`thindtransport.com` read-only via the Vercel MCP connector (direct HTTPS still egress-blocked, curl
+exit 56 on both `/` and `/hub/login`), fixed only outright regressions from the last 3h of commits.
+
+`git log origin/main --since="3 hours ago"` returned **zero commits** — `main` has sat at `11e26839`
+since 2026-07-27 23:51 UTC, so there was nothing to regression-check this cycle.
+
+Fresh rig: Postgres 16 started (was down), `hubapp`/`hubdb` created (pitfall #9), `npm ci` (750
+packages, 12 high-severity `npm audit` findings in the `nodemailer`/`sharp`-via-`next` chain — same
+owner-approval-gated semver-major item, count grew from the 3 several cycles back carried; not
+re-attempted), `npm run db:migrate` (all 23 migrations clean), `seed:demo`, `npm run build` (Next.js
+16, zero TS errors) clean, `npx vitest run` (254 files/2315 tests green), `npm run lint` clean, `npm
+run test:sidecars` (29 Rust tests + Go vet/test, clippy clean).
+
+Full `e2e-run-all.mjs` battery (52 `e2e-*-smoke.mjs` scripts + the final screen sweep) driven as
+owner, dispatcher, and driver: **52/53 green in 17.3m**. The one failure (`e2e-sweep`'s `reports`
+anchor, `"the operational view"`) is the same pre-existing stale-fixture bug several past cycles have
+already named, re-confirmed at the source this cycle: `src/app/hub/(office)/reports/page.tsx:102-104`
+only renders that exact copy when `hasDriverPay` is false; the current demo seed creates two paid
+settlements (`seed-demo.mjs`), so `hasDriverPay` is true and the page correctly renders the *other*
+branch's copy instead — not a stuck spinner, not a regression, just a stale hard-coded anchor in
+`e2e-sweep.mjs`. Zero other defects, zero console errors across all 52 passing scripts.
+
+**Production probe (Vercel MCP — `get_project`/`list_deployments`/`get_runtime_errors` on
+`prj_QKMg8o77DoEYiVQgQbI0FB5F4tAg`):** confirms this is a real, worsening outage, not just staleness.
+The last `READY`/`target:"production"` deployment is `dpl_CtLudx7ruwx33f4EgbyZ9TkbHCf6`
+(commit `6bd92be6`, "Drain integrator to main (183b46b1)"), created 2026-07-27 17:53:56 UTC. Every one
+of the four `main`-ref drain commits pushed since (`c4912c16`, `ea143d8f`, `65e02941`, `11e26839`)
+produced **no deployment record at all** in `list_deployments` — not READY, not CANCELED, nothing —
+a step worse than the "builds but gets CANCELED" pattern earlier cycles (07-27 ~21:45–23:50 UTC) were
+already flagging under the same incident; the GitHub→Vercel webhook now appears to not be firing for
+`main` pushes at all, not just losing a quota race. Production has been stale **10h41m** as of this
+cycle (04:35 UTC), up from the "9h50m+" a concurrent same-window cycle had already recorded in its own
+push to a sibling session branch. `get_runtime_errors` (24h) shows nothing new beyond the two
+already-carried issues: a `pg` SSL-mode deprecation warning (cosmetic) and the recurring
+`owner-digest`/`compliance-scan` cron SMTP `BadCredentials` failures (broken since 2026-07-26, separate
+from the deploy-pipeline issue). Sent a push notification this cycle — the last one referenced in this
+doc's own commit trail was at the "5h57m+" mark, several hours and roughly double the outage duration
+ago, and this is squarely a "needs the owner's hand on the Vercel dashboard, no in-repo fix possible"
+condition.
+
+No code fix was available to ship (the only finding is a known test-fixture staleness, not a product
+defect, and the production pipeline needs a dashboard-side fix) — this doc entry is the cycle's record.
+
+Backlog:
+- Owner: production Vercel deploy pipeline is not just stale but appears to have stopped triggering
+  builds for `main` pushes entirely as of `c4912c16` (2026-07-27 21:45 UTC) — needs a dashboard check
+  of the Git integration/webhook health, production-branch setting, and Ignored Build Step; no in-repo
+  fix is possible. Now 10h41m+ stale, up from "9h50m+"/"7.5h+"/"6.4h+"/"5h57m+" in concurrent cycles'
+  own trailers this same window.
+- `e2e-sweep.mjs`'s `reports` anchor (`"the operational view"`) only matches the `hasDriverPay:false`
+  copy branch in `src/app/hub/(office)/reports/page.tsx`; the demo seed's two paid settlements make
+  `hasDriverPay` true on every fresh rig, so the anchor should either check for both branches' copy or
+  the seed/sweep should agree on one state — one-line fix, carried across many cycles, still unclaimed
+  (lane-tests territory, `scripts/e2e-sweep.mjs`).
+- Carried, unchanged: npm audit high-severity findings in the `nodemailer`/`sharp`-via-`next` chain
+  (owner-approval-gated semver-major bump, now 12 findings reported vs. 3 several cycles back); Rust
+  sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision); cron SMTP `BadCredentials`
+  (owner-digest/compliance-scan, broken since 2026-07-26, needs real Gmail app-password credentials in
+  Vercel env, not a code fix); TEST_GAPS.md row 1 (`draftSettlements` multi-driver/percentage-pay/
+  multi-referral cases); green-as-success convention design call.
