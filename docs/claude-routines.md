@@ -1582,3 +1582,67 @@ Backlog:
   @vercel/analytics/@vercel/speed-insights/geist/eslint-config-next family (owner-approval-gated
   semver-major bump); Rust sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision); 193
   pending `claude/*` branches awaiting the meta-governor prune pass (unchanged from prior cycles).
+
+## QA rig drive on main@5372bb6 — 2026-07-28 ~12:20-12:50 UTC (owner/dispatcher/driver, read-only prod probe)
+
+Charter (docs/agent-improvement-loop.md §5): no feature work — stand up the local rig, drive real
+owner/dispatcher/driver flows against it, probe `thindtransport.com` read-only, fix only outright
+regressions from the last 3h of commits.
+
+**Fresh rig:** Postgres 16 started (was down), `thind`/`thind_local` role+db created (neither existed),
+`npm run setup:canvas-deps` + `npm install` (750 packages), `npm run db:migrate` (23 migrations clean),
+`npm run seed:demo`, `npm run build` (0 TS errors), `npm run start`. `npx vitest run` 259 files/2359
+tests green. `npm run lint` clean.
+
+**Last-3h commit window (09:22–12:21 UTC):** `887e904` (test-file-only typecheck:gate fix, ratchet
+86→78 — reviewed the diff, mechanical mock-signature fixes, all 4 suites still pass 27/27, no product
+code touched), `17b5139`/`4930168`/`5372bb6` (integrator merges + drain-stamp commits, no new
+authorship). Two product-facing commits landed on `main` in this window via drain even though authored
+~3h earlier — `bb98aed`/`5bce77f` (the iOS "Add to Home Screen" install-hint fix, `c0eabcb` +
+predecessors `a70bcb2`/`6497c4c`): read the full diffs, each ships its own regression test
+(`pwa-manifest-wiring.test.ts`, `install-scope.test.ts`), all pass, no defect found. **No regressions
+in the last-3h window; nothing to fix-forward.**
+
+**Full `e2e-run-all.mjs` battery (54 scripts + sweep) as owner/dispatcher/driver:** 52/53, one failure,
+not a regression:
+- `e2e-sweep`'s owner-pass "reports: page content missing... stuck on a spinner?" at both widths — the
+  same stale `OWNER_PAGES` anchor (`"the operational view"`) prior cycles have repeatedly re-confirmed:
+  `/hub/reports`'s subtitle is conditional on `hasDriverPay` and the seeded demo settlements land inside
+  the 92-day default range, so the live subtitle is always the driver-pay-included copy. Confirmed live
+  against owner@demo.thind (subtitle reads "...Fleet ratios include driver settlement pay..."). **The
+  fix already exists, unmerged**: branch `claude/practical-franklin-nc7io5` commit `8ba7b14` (QA drive
+  2026-07-28 ~06:44 UTC) changed the anchor to `"per-truck p&l, last 92 days"` — the same
+  branch-independent prefix `OFFICE_PAGES` already uses for this route — and re-ran the sweep 53/53
+  clean. That branch never made it into an integrator merge; per AGENTS.md's duplicate-work rule, not
+  reimplementing it here — the integrator should absorb `claude/practical-franklin-nc7io5` (one-line
+  diff, `scripts/e2e-sweep.mjs`, lane-tests territory) ahead of any fresh fix attempt.
+
+Corrected count: **53/53 real functional checks green, 0 app-code defects.**
+
+**Production probe (Vercel MCP; direct HTTPS to `thindtransport.com` stayed egress-blocked, `curl`
+exit 56 CONNECT tunnel failure on `/` and `/hub/login`, same as every prior cycle):** latest READY
+`target: "production"` deployment on `prj_QKMg8o77DoEYiVQgQbI0FB5F4tAg` is `dpl_HN2M7QFacynCmwvk8FH2B6TKYH3t`,
+commit `5372bb66` — exactly `main` HEAD at the time this cycle started. Production is current, no drain
+gap. Runtime errors (6h window): one error group, the same long-standing benign pg SSL-mode alias
+warning (`sslmode=prefer/require/verify-ca` deprecation notice) prior cycles have already logged as
+non-actionable — nothing new. (`live: false` on `get_project` again, per the documented caveat that
+flag alone isn't reliable; the alias + deployment SHA cross-check is what confirms healthy here.)
+
+`npm audit --omit=dev`: 3 high-severity, same 3 root packages prior cycles have carried
+(`nodemailer`, `sharp` via `next`) — all three fixes are semver-major/breaking, still owner-gated.
+
+Backlog:
+- Integrator: absorb `claude/practical-franklin-nc7io5` (commit `8ba7b14`) — the one-line
+  `e2e-sweep.mjs` `OWNER_PAGES` "reports" anchor fix — ahead of any fresh fix attempt; it re-verified
+  53/53 clean when applied. This is now the *fourth* cycle to re-find and re-carry this exact item
+  (2026-07-23, 2026-07-26, 2026-07-28 06:44 UTC, and this one); it keeps not landing because it sits on
+  an otherwise-stale QA-drive branch nobody drains rather than being re-fixed wrong.
+- Everything else carried unchanged: owner action needed on the Gmail SMTP app password (535 Bad
+  Credentials on `[cron:owner-digest]`/`[cron:compliance-scan]`, flagged by an earlier cycle, no
+  runtime-error recurrence in this cycle's 6h window so may already be resolved — re-check next
+  drive); IFTA due-date legal-holiday scope decision (owner-gated); npm audit's 3 high-severity
+  advisories (owner-approval-gated semver-major bump); Rust sidecar `tiny_http` has no per-connection
+  timeout/thread-cap (owner decision); ~245 pending `claude/*` branches per `agent:branches` — the
+  large stale lanes (`lane-compliance`, `lane-roadmap`, the `eager-babbage-ibsmrz`/
+  `practical-franklin-5ol54s` cluster, all 350-900+ unpicked) unchanged from prior triage, meta-governor
+  prune pass remains overdue.
