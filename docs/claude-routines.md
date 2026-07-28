@@ -1582,3 +1582,89 @@ Backlog:
   @vercel/analytics/@vercel/speed-insights/geist/eslint-config-next family (owner-approval-gated
   semver-major bump); Rust sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision); 193
   pending `claude/*` branches awaiting the meta-governor prune pass (unchanged from prior cycles).
+
+## QA rig drive on main@5372bb66 — 2026-07-28 ~10:30-11:00 UTC (owner/dispatcher/driver, read-only prod probe)
+
+Charter (docs/agent-improvement-loop.md §5): no feature work — stood up the local rig from scratch,
+drove owner/dispatcher/driver flows with the full Puppeteer `e2e-run-all.mjs` battery, probed
+`thindtransport.com` read-only via the Vercel MCP connector (direct HTTPS stayed egress-blocked all
+session, curl exit 56), fixed only outright regressions from the last 3h of commits.
+
+Fresh rig: Postgres started (was down), `hubapp`/`hubdb` role+database created, 23 migrations clean,
+`seed:demo`, `npm run build` clean, `npx vitest run` (259 files/2357 tests, then 259/2359 after a
+same-session `origin/main` fast-forward mid-cycle — see below) green, `npm run lint` clean, all five
+AGENTS.md gates green (`typecheck:gate` 86/86 baseline then 78/78 after the fast-forward, `license:audit`
+0 strong-copyleft, `token-lint` clean, `design-qa` 0 hard failures/29 warnings across 27 public routes ×
+3 breakpoints, `js-budget` worst route 280KB against a 285KB ceiling — no regression). `test:sidecars`
+(29 Rust + Go vet/test, clippy clean).
+
+Reviewed every commit in the last 3h (~07:40–09:32 UTC at cycle start): the iOS home-screen-install fix
+(`6497c4c6`/`a70bcb26`/`6a0f42d4`/`c0eabcb4`/`bb98aedf`/`5bce77f3` — manifest scope answered per-platform,
+LoadOff apple-touch-icon, absolute `/hub` title, `InstalledAppRedirect` repair path) plus fuel.ts test
+coverage, shared test fixtures, `branch-triage.mjs`, `js-budget.mjs`, and the AGENTS.md gate docs — all
+already covered above. Verified the iOS fix live rather than trusting the unit tests alone: headless
+Chromium with an iPhone UA against `/`, `/app`, `/loadoff`, `/hub/get-app`, `/hub/login` confirmed
+manifest scope is `/hub` for a default UA and `/` for iOS (matching `install-scope.ts`'s contract),
+`apple-touch-icon` is the LoadOff mark on every hub-adjacent install surface, `/hub/login`'s install
+hint is a real 70px tap target linking to `/hub/get-app` (not a self-link on the install page itself),
+and 0 console errors beyond the known-benign `/_vercel/*/script.js` 404s `e2e-console-filter.mjs`
+already whitelists (Vercel Analytics/Speed Insights only serve from Vercel's edge, not a local rig).
+**No regression found.**
+
+Mid-cycle, `origin/main` moved (887e9049's drain landed, then `c3647dfa` — an old 2026-07-23
+`truckDvirState` pre-trip-grounding fix finally absorbed off a long-stale lane branch — merged and
+drained too). Fast-forwarded, rebuilt, re-ran the full unit suite (green, 259/2359) and
+`e2e-dvir-smoke.mjs` specifically against the new build (post-trip defect grounds the truck, office
+certifies, driver's pre-trip review releases it back to `active` — all 5 steps, 0 defects). No
+regression from the late-arriving DVIR fix either.
+
+Full E2E battery: **52/53 green** (17.3m). The one failure, `e2e-sweep`'s owner-role "reports" screen
+("page content missing... stuck on a spinner?"), is a false failure, not a product defect — confirmed
+by screenshot (`office-reports-1440.png`/`owner-reports-1440.png` both render the full P&L page
+correctly). Root cause: `reports/page.tsx`'s subtitle has two branches keyed on `hasDriverPay`, and
+`e2e-sweep.mjs`'s `OWNER_PAGES` entry anchors on `"the operational view"`, a phrase that only exists in
+the no-driver-pay branch — the current demo seed always carries driver-pay data, so that branch never
+renders. **This is not a new bug**: `git log --all --grep` turns up the identical root cause already
+fixed on an unmerged branch, `claude/eager-babbage-vbk92d` (commit `8db169a8`, one-line change to
+anchor on `"per-truck p&l, last 92 days"` like `OFFICE_PAGES` already does — matches both branches).
+Per AGENTS.md's dedup rule ("if a fix already exists on an unmerged branch, name it instead of writing
+a fourth copy"), did not re-fix it here — at least 5 separate prior QA-drive sessions have independently
+rediscovered and re-fixed this exact line on their own unmerged branches without it ever reaching main;
+the integrator should prioritize draining `eager-babbage-vbk92d` specifically over any fresh duplicate.
+
+Production probe: direct HTTPS to `thindtransport.com` stayed blocked all session (curl exit 56, proxy
+policy — not a site defect). Via Vercel MCP: at the start of this cycle, production was pinned on
+`bf764438` (2h+ stale) and the three most recent pushes to `main` — including a commit specifically
+titled "Stamp main so Vercel builds the iOS install fix" — had produced **zero deployment records at
+all** (not even CANCELED ones), while pushes to unrelated feature/session branches in the same window
+did queue preview builds normally. That looked like a repeat of the documented "Vercel's GitHub App
+webhook stopped firing for `main`" failure mode. Before escalating, checked whether this had already
+been reported: `git log --all --grep` found a prior unmerged session (`practical-franklin-h1q4k1`,
+09:29 UTC, ~1h before this cycle) already caught the same thing and sent a push notification
+("production stale 33+min, missing owner's iOS fix, owner notified"). Rather than re-page on an
+unresolved-but-already-known issue, kept investigating — and by the end of this cycle (after the
+`c3647dfa` drain above), the pipeline had recovered on its own: `latestDeployment` is now `READY`,
+`target: production`, at commit `5372bb66` (this cycle's exact HEAD, includes the full iOS fix), with
+`alias` listing `thindtransport.com` directly. (`get_project.live` still reads `false` — per the
+documented 2026-07-19 caveat, that flag alone is not reliable; the alias + deployment SHA together
+confirm production is current and healthy.) Net: no owner action needed this cycle — the thing the
+prior session flagged has since resolved itself, so per the "silence when nothing new needs their
+attention" rule, no fresh notification sent.
+
+Backlog:
+- `claude/eager-babbage-vbk92d` carries the verified one-line fix for `e2e-sweep.mjs`'s stale
+  `OWNER_PAGES` reports anchor (`8db169a8`) — integrator should drain this one specifically; at least 5
+  prior QA-drive cycles have independently rediscovered and re-fixed the same line on throwaway
+  branches that never landed, which is pure wasted effort repeating every few cycles.
+- Production's auto-deploy-on-push-to-main pipeline had a multi-hour gap (bf764438 → 5372bb66, ~2h20m,
+  zero deployment records for 3 consecutive main pushes including a dedicated force-rebuild attempt)
+  before recovering on its own sometime around 10:46 UTC. Worth a Vercel-dashboard look at whether the
+  Git integration/webhook is flaking intermittently rather than being reliably wired — this is at least
+  the sixth time across the project's history that "main pushed, zero Vercel deployment queued" has
+  been independently observed and self-recovered before an owner had to intervene; if it stops
+  self-recovering, the next cycle should page immediately rather than wait one hour like this one did.
+- Carried, unchanged: npm audit's 12 high-severity advisories (owner-approval-gated semver-major bump);
+  Rust sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision); IFTA due-date roll not
+  accounting for legal holidays (documented scope decision); ~245 pending `claude/*` branches, largest
+  being `eager-babbage-ibsmrz` (915 unpicked) and `practical-franklin-5ol54s` (880) — meta-governor prune
+  pass remains overdue.
