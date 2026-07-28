@@ -1547,3 +1547,68 @@ Backlog:
   semver-major bump); Rust sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision); TEST_GAPS.md
   row 1 (`draftSettlements` multi-driver/percentage-pay/multi-referral cases); green-as-success convention
   design call (`PreQualificationForm.tsx` vs `ApplicationForm.tsx`).
+
+## QA rig drive on main@981b700 — 2026-07-28 ~05:40 UTC (owner/dispatcher/driver, read-only prod probe)
+
+Charter (`docs/agent-improvement-loop.md` §5): no feature work — stood up the local rig from scratch,
+drove owner/dispatcher/driver flows with the full Puppeteer `e2e-run-all.mjs` battery, probed
+`thindtransport.com` read-only via the Vercel MCP connector (direct HTTPS still egress-blocked), fixed
+only outright regressions from the last 3h of commits.
+
+Fresh rig: Postgres up, `hubapp`/`hubdb` role+database created (neither existed), 23 migrations clean,
+`seed:demo`, `npm run build` clean, `npx vitest run` (257 files/2336 tests) green, `npm run lint` clean,
+`npm run test:sidecars` (Go vet+test, 29 Rust tests, clippy clean) green. Reviewed every commit in the
+last 3h (`92886bb`..`981b700`: two lane merges — `lane-portal`/`lane-sidecars`, both test-file-only diffs
+— plus a dedicated `onboarding.ts` action-wrapper test and the two drain commits): zero product code
+changed in the window — no regression surface, nothing to fix-forward.
+
+Full E2E battery (47 `e2e-*-smoke.mjs` scripts + the final `e2e-sweep.mjs` screen sweep) as owner,
+dispatcher, and driver: 52/53 green in 15.3m. The one failure is the same pre-existing stale anchor
+several past cycles have already named (`scripts/e2e-sweep.mjs`'s `OWNER_PAGES` "reports" entry expects
+"the operational view", text that only renders when `hasDriverPay` is false) — re-confirmed at the
+source this cycle by reading `src/app/hub/(office)/reports/page.tsx:100-105` and visually inspecting
+`owner-reports-1440.png`: the page renders fully with real P&L data (the `hasDriverPay: true` subtitle
+branch), not a spinner or blank screen. Not fixed here (predates the last-3h window this routine's
+charter scopes fixes to); recorded again below since it keeps resurfacing across cycles without landing
+on `main`.
+
+Production probe via Vercel MCP (direct HTTPS to `thindtransport.com` still egress-blocked in this
+sandbox — `curl` exit 56 / proxy 403, consistent with every prior cycle):
+- **New finding — production outbound email is broken.** `get_runtime_errors` (24h window) shows every
+  `cron:owner-digest` run (4/4 carriers) and the one `cron:compliance-scan` run that attempted email
+  (1/4 carriers) failing with Gmail SMTP `535 5.7.8 BadCredentials` (`Invalid login: Username and
+  Password not accepted`). `src/lib/mailer.ts` defaults `SMTP_HOST` to `smtp.gmail.com` and reads
+  `SMTP_USER`/`SMTP_PASS` from env — this is a **revoked/expired Gmail app password in the production
+  Vercel env**, not a code defect (nothing in the last-3h window touches `mailer.ts` or cron routes).
+  Real carriers have not received their daily owner-digest email since at least 2026-07-27 13:13 UTC.
+  Not previously flagged in this doc's QA-drive history — owner needs to rotate the app password (or
+  move to OAuth2/XOAUTH2) in the Vercel project's environment variables; no in-repo fix exists per
+  AGENTS.md (`.env*` contents/secrets are off-limits to agents).
+- Deploy latency: the latest main commit (`981b700`, pushed 04:45:28 UTC) has **zero Vercel deployment
+  record** (not even a canceled/skipped one) as of this check (05:36:57 UTC, ~51 min later) — only the
+  prior drain (`74bc3b5`) has a `READY`/`target:production` deployment (04:41:21 UTC). Same
+  zero-deployment-attempt signature this doc has flagged before at 40min/5.5h/6.4h/7.5h/9h50m/10h41m
+  stales before eventually self-clearing or needing a dashboard check (Git integration/webhook health,
+  Ignored Build Step) — recorded here at the ~51min mark in case it's the start of another stall; too
+  early to declare "stalled" outright since several past instances cleared within the hour.
+
+Backlog:
+- **Owner: rotate the production Gmail app password** (or migrate `mailer.ts` to OAuth2/XOAUTH2) —
+  `cron:owner-digest` and `cron:compliance-scan` have been failing to email real carriers since at least
+  2026-07-27 13:13 UTC (`535 5.7.8 BadCredentials`). No in-repo fix possible; needs a Vercel env change.
+- `981b700` (current main HEAD) has no Vercel deployment record ~51min after push — watch next cycle; if
+  still zero deployments and/or `live:false` persists, escalate the same as prior multi-hour stall
+  cycles (dashboard check needed, no in-repo fix).
+- `scripts/e2e-sweep.mjs:68`'s `OWNER_PAGES` "reports" anchor (`"the operational view"`) only matches
+  the `hasDriverPay: false` subtitle branch (`src/app/hub/(office)/reports/page.tsx:104`); the demo
+  seed's settlements land inside the default 92-day range so `hasDriverPay` is true in practice and the
+  anchor never matches — one-line fix is to add the `hasDriverPay: true` branch's anchor text too
+  (`"per-truck table below stays operational"` or similar), but it's `scripts/e2e-*.mjs`
+  (`claude/lane-tests` territory), out of this routine's last-3h-regression-only scope; several past
+  cycles have named this same fix without it landing on `main` — next `lane-tests` run should just ship
+  it instead of re-diagnosing.
+- Carried, unchanged: npm audit high-severity findings in the `next`/`sharp` chain (owner-approval-gated
+  semver-major bump); Rust sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision);
+  TEST_GAPS.md row 1 (`draftSettlements` multi-driver/percentage-pay/multi-referral cases); green-as-
+  success convention design call (`PreQualificationForm.tsx` vs `ApplicationForm.tsx`); 200+ pending
+  `claude/*` branches await the meta-governor prune pass.
