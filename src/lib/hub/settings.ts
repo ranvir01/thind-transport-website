@@ -2,7 +2,18 @@ import { query, queryOne } from "./db"
 
 /** Typed carrier settings (stored as JSONB; merged over defaults on read). */
 export interface CarrierSettings {
-  invoice: { prefix: string; nextNumber: number; defaultTermsDays: number }
+  invoice: {
+    prefix: string
+    nextNumber: number
+    defaultTermsDays: number
+    /**
+     * Draft an invoice automatically once a load has a POD in hand.
+     * The cron only ever CREATES the draft — it never emails the customer;
+     * sending stays a human action on /hub/money. Set false to go back to
+     * invoicing entirely by hand.
+     */
+    autoInvoiceOnPod: boolean
+  }
   pay: { companyDriverPerMile: number; ownerOperatorPercentage: number; payLoadedMilesOnly: boolean }
   detention: { freeHours: number; ratePerHourCents: number }
   costPerMileCents: number
@@ -16,7 +27,7 @@ export interface CarrierSettings {
 }
 
 export const DEFAULT_SETTINGS: CarrierSettings = {
-  invoice: { prefix: "INV-", nextNumber: 1000, defaultTermsDays: 30 },
+  invoice: { prefix: "INV-", nextNumber: 1000, defaultTermsDays: 30, autoInvoiceOnPod: true },
   pay: { companyDriverPerMile: 0.6, ownerOperatorPercentage: 0.9, payLoadedMilesOnly: true },
   detention: { freeHours: 2, ratePerHourCents: 6000 },
   costPerMileCents: 185,

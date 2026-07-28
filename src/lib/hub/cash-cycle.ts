@@ -1,6 +1,12 @@
 /**
  * The real cash cycle, measured (AGENT_TASKS Wave 1, Task 2 / TOP_10 #9).
  *
+ * This IS the DSO report — days sales outstanding, split per leg. It is named
+ * for what it measures rather than the acronym, which is why `grep -rn "DSO"`
+ * finds nothing and the gap has been re-filed more than once. The
+ * delivered → paid median is the headline DSO figure; podToInvoice is the leg
+ * a carrier can fix without asking a customer for anything.
+ *
  * avgDaysToPay (vetting.ts) measures invoice issued → paid only, which
  * excludes the POD → invoice leg — the part the OFFICE controls. Migration
  * 022 stamped delivered_at / pod_received_at on hub.loads, so the whole
