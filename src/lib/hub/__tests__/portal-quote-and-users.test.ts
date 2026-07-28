@@ -7,15 +7,29 @@
  * portal mutations already have.
  */
 import { beforeEach, describe, expect, it, vi } from "vitest"
+import { callAt, callMatching, type QueryFn, type QueryOneFn } from "./helpers/db-mock"
 
+// Explicit signatures: `vi.fn(async () => [])` declares a ZERO-argument
+// function, which types mock.calls[n] as the empty tuple and makes every
+// `const [sql, params] = ...` below a type error. See helpers/db-mock.ts.
 vi.mock("../db", () => ({
-  query: vi.fn(async () => []),
-  queryOne: vi.fn(async () => null),
+  query: vi.fn<QueryFn>(async () => []),
+  queryOne: vi.fn<QueryOneFn>(async () => null),
 }))
-const createLoadMock = vi.fn(async () => ({ id: "load-1", reference: "THD-1001" }))
-vi.mock("../loads", () => ({ createLoad: (...args: unknown[]) => createLoadMock(...args) }))
-const notifyRolesMock = vi.fn(async () => {})
-vi.mock("../notify", () => ({ notifyRoles: (...args: unknown[]) => notifyRolesMock(...args) }))
+type CreateLoadFn = (
+  carrierId: string,
+  input: { stops: { appt_start: string | null }[] } & Record<string, unknown>,
+  actor: { id: string | null; name: string }
+) => Promise<{ id: string; reference: string }>
+const createLoadMock = vi.fn<CreateLoadFn>(async () => ({ id: "load-1", reference: "THD-1001" }))
+vi.mock("../loads", () => ({ createLoad: (...args: Parameters<CreateLoadFn>) => createLoadMock(...args) }))
+type NotifyRolesFn = (
+  carrierId: string,
+  roles: string[],
+  payload: Record<string, unknown>
+) => Promise<void>
+const notifyRolesMock = vi.fn<NotifyRolesFn>(async () => {})
+vi.mock("../notify", () => ({ notifyRoles: (...args: Parameters<NotifyRolesFn>) => notifyRolesMock(...args) }))
 
 import { query } from "../db"
 import { createQuoteRequest, listPortalUsers, portalPacketDocuments } from "../portal"
@@ -71,7 +85,7 @@ describe("createQuoteRequest", () => {
     await createQuoteRequest(CARRIER, CUSTOMER, input)
 
     expect(createLoadMock).toHaveBeenCalledTimes(1)
-    const [carrierArg, loadInput, actor] = createLoadMock.mock.calls[0]
+    const [carrierArg, loadInput, actor] = createLoadMock.mock.calls[0]!
     expect(carrierArg).toBe(CARRIER)
     expect(loadInput).toMatchObject({
       customer_id: CUSTOMER,
@@ -91,14 +105,14 @@ describe("createQuoteRequest", () => {
 
   it("leaves the pickup appointment unset when no pickup date is given", async () => {
     await createQuoteRequest(CARRIER, CUSTOMER, { ...input, pickupDate: null })
-    const [, loadInput] = createLoadMock.mock.calls[0]
+    const [, loadInput] = createLoadMock.mock.calls[0]!
     expect(loadInput.stops[0].appt_start).toBeNull()
   })
 
   it("logs a CRM activity against the new load", async () => {
     await createQuoteRequest(CARRIER, CUSTOMER, input)
-    const [sql, params] = queryMock.mock.calls[0]
-    expect(String(sql)).toContain("INSERT INTO hub.crm_activities")
+    const { sql, params } = callMatching(queryMock, "INSERT INTO hub.crm_activities")
+    expect(sql).toContain("INSERT INTO hub.crm_activities")
     expect(params[0]).toBe(CARRIER)
     expect(params[1]).toBe(CUSTOMER)
     expect(params[2]).toBe("load-1")
@@ -108,7 +122,7 @@ describe("createQuoteRequest", () => {
   it("notifies owner and dispatcher roles with a link to the new load", async () => {
     await createQuoteRequest(CARRIER, CUSTOMER, input)
     expect(notifyRolesMock).toHaveBeenCalledTimes(1)
-    const [carrierArg, roles, payload] = notifyRolesMock.mock.calls[0]
+    const [carrierArg, roles, payload] = notifyRolesMock.mock.calls[0]!
     expect(carrierArg).toBe(CARRIER)
     expect(roles).toEqual(["owner", "dispatcher"])
     expect(payload).toMatchObject({ kind: "quote", link: "/hub/loads/load-1" })

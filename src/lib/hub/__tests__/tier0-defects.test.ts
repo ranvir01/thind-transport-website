@@ -7,9 +7,11 @@
  */
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest"
 
+// Explicit signatures — a zero-arg vi.fn types mock.calls[n] as the empty
+// tuple and breaks every (sql, params) destructure below.
 const { queryOneMock, queryMock } = vi.hoisted(() => ({
-  queryOneMock: vi.fn(async () => null as unknown),
-  queryMock: vi.fn(async () => [] as unknown[]),
+  queryOneMock: vi.fn(async (_sql: string, _params?: unknown[]) => null as unknown),
+  queryMock: vi.fn(async (_sql: string, _params?: unknown[]) => [] as unknown[]),
 }))
 vi.mock("../db", () => ({ queryOne: queryOneMock, query: queryMock, hubDb: vi.fn() }))
 
@@ -77,7 +79,7 @@ describe("§0.4 EFS skips rows with an empty external_id", () => {
   beforeEach(() => {
     // The truck lookup comes first and expects unit_number rows; only the
     // INSERT should answer with an id.
-    queryMock.mockReset().mockImplementation(async (sql: string) =>
+    queryMock.mockReset().mockImplementation(async (sql: string, _params?: unknown[]) =>
       String(sql).includes("hub.trucks") ? [] : [{ id: "row-1" }]
     )
   })
@@ -96,7 +98,7 @@ describe("§0.4 EFS skips rows with an empty external_id", () => {
       String(sql).includes("INSERT INTO hub.fuel_transactions")
     )
     expect(inserts).toHaveLength(1)
-    expect((inserts[0][1] as unknown[])[1]).toBe("efs-2")
+    expect((inserts[0]![1] as unknown[])[1]).toBe("efs-2")
     expect(result.imported).toBe(1)
   })
 })
