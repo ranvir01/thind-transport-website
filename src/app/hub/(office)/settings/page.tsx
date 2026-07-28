@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { Cable, ChevronRight, FileBadge, Palette, Smartphone, Tags, Users } from "lucide-react"
+import { Cable, ChevronRight, FileBadge, Palette, Smartphone, Tags, Users, Wallet } from "lucide-react"
 import { requireOfficeUser } from "@/lib/hub/session"
 import { PageHeader, Panel } from "@/components/hub/ui"
 
@@ -34,6 +34,13 @@ const AREAS = [
     label: "Carrier packet",
     hint: "W-9, COI, authority — the documents brokers ask for, one link",
     icon: FileBadge,
+    ownerOnly: false,
+  },
+  {
+    href: "/hub/settings/pay-rules",
+    label: "Driver pay",
+    hint: "Per-mile, percentage, stop pay and weekly deductions — what settlements compute from",
+    icon: Wallet,
     ownerOnly: false,
   },
   {
