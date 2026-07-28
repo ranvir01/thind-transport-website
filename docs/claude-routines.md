@@ -1547,3 +1547,53 @@ Backlog:
   semver-major bump); Rust sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision); TEST_GAPS.md
   row 1 (`draftSettlements` multi-driver/percentage-pay/multi-referral cases); green-as-success convention
   design call (`PreQualificationForm.tsx` vs `ApplicationForm.tsx`).
+
+## IFTA generate E2E sweep (post surchargeRate-guard fix) — 2026-07-28 ~02:40 UTC (verify-and-build cycle)
+
+`git fetch origin main:main` — local `main` was stale (`de0dcf88`) behind `origin/main` (`11e26839`);
+fast-forwarded. `npm ci` + `npm run build` + `npx vitest run` (254 files/2301 tests, 14 skipped) green
+before touching anything — no fix-forward needed.
+
+Reviewed every commit landed since the last verify-and-build cycle (`077a7643`) against AGENTS.md's
+standing rules: `b30ffb85` (toll spend folded into `truckPnl`/`truckPnlRange`) — `toll_cents` subquery
+guards `x.truck_id = t.id AND x.carrier_id = t.carrier_id`, same both-sides tenancy pattern as
+fuel/maintenance/other, money stays in cents throughout; `183b46b1` (registry.ts QBO/DAT stub labels
+swapped) — matches `docs/ops/STUB_INVENTORY.md`'s actual adapter state; `8fcc537b` (IFTA worksheet
+CSV/PDF exports now guard `surchargeRate ?? 0` against legacy pre-split rows, closing the `NaN`-in-export
+bug flagged in `b30ffb85`'s own backlog) — mirrors the existing on-screen/`staleRateJurisdictions` guard
+pattern exactly; `0838574b` (driver PWA `replayQueue` no longer silently drops `ok:false` replay
+rejections) — logic-only fix, no forced-dark token surface touched. **No standing-rule violations found.**
+
+`npm run agent:status`: integrator in steady state (0-2 drift from `main`), two small lane branches
+(`lane-portal`, `lane-sidecars`) ahead — Routine 1's territory, not touched here. `agent:backlog`'s
+current items are all owner-gated (npm audit major bump) or need a human/integrator (branch-prune
+backlog, shared-file dedup in `reports.ts`/`lanes.ts`, missing driver-lane component-render tooling) —
+nothing agent-guessable to build this cycle.
+
+Per step 6, ran a targeted E2E sweep instead of forcing a guess: **IFTA generate**, chosen because
+`8fcc537b` (surchargeRate export guard) landed with only unit coverage (`ifta-route.test.ts`) and had
+never been driven through the real UI/export endpoints since. Stood up a fresh local rig (Postgres was
+down, no `hubapp` role/`hubdb` database existed yet — created both per the dev-workflow-testing skill's
+pitfall #9), `npm run db:migrate` (23 migrations clean) + `npm run seed:demo`, `npm run build && npm run
+start`. Ran `scripts/e2e-ifta-smoke.mjs`: compute → draft worksheet (credible MPG/miles, 3 jurisdiction
+rows, no missing-rates warning), on-screen net tax reconciles exactly with `worksheet.csv`'s net column,
+`sources.csv` serves data, draft → reviewed → filed status advance, current partial quarter computes
+cleanly — **all checks green, 0 console errors**. The smoke doesn't fetch `worksheet.pdf`, so added a
+one-off manual check (logged in, fetched `/api/hub/ifta/<prior-quarter>/worksheet.pdf`): `200`,
+`application/pdf`, 2699 bytes — confirms the PDF export path `8fcc537b` also touched serves cleanly
+post-fix, not just the unit-tested mapping. **0 defects.**
+
+No code fix was available to ship — draining the unchanged integrator tip would just replay `main`'s
+current tip with a fresh `.drain-stamp`, so left `main`/the integrator as-is this cycle.
+
+Backlog:
+- Remaining unexercised in the named-workflow E2E rotation this cycle: dispatch board, expenses,
+  compliance docs, messages (IFTA generate is now the freshest, having just been re-driven against the
+  surchargeRate fix) — due for their own re-sweep next time `agent:backlog` comes up owner-gated-only
+  again.
+- Carried, unchanged: npm audit's high-severity findings in the `next`/`sharp` chain (owner-approval-gated
+  semver-major bump); Rust sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision);
+  `reports.ts`'s `laneLeaderboardRange*` duplicating `lanes.ts`'s aggregation SQL (integrator/shared-file
+  territory, still unclaimed); driver lane has no jsdom/testing-library component-render tooling (shared
+  `vitest.config.ts` change, needs the integrator); 192 pending `claude/*` branches, meta-governor prune
+  pass still overdue.
