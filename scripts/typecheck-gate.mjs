@@ -45,9 +45,14 @@ import { execSync } from "node:child_process"
  * `mock.calls[0][0]`, and dvir-tenancy.test.ts's local `makeClient()` mock
  * took only `(text: string)` while its assertions read `mock.calls[n][1]` for
  * query params — same fix as the shared fixtures, just inline: give the mock
- * a second parameter.
+ * a second parameter. The drop to 68 fixed prod-smoke-staleness.test.ts (10
+ * errors): `evaluateStaleness` in scripts/prod-smoke.mjs destructures
+ * `behindCount = null, tipAgeMinutes = null` with no JSDoc, so allowJs
+ * inferred both params as the literal type `null` — any real `number` the
+ * test passed in failed to assign. Fixed at the source with a `@param`
+ * JSDoc typedef on the export instead of touching the test file.
  */
-const TEST_ERROR_BASELINE = 78
+const TEST_ERROR_BASELINE = 68
 
 const isTestFile = (file) =>
   file.includes("__tests__/") || file.endsWith(".test.ts") || file.endsWith(".test.tsx")
