@@ -119,6 +119,8 @@ const short = (sha) => (sha ? sha.slice(0, 7) : "?")
  * deploy likely still building, not an alarm. An unknown tip age gets no grace
  * — the rigs running this smoke `git pull` first, so age is normally known,
  * and the failure mode we exist to catch must not hide behind a lookup error.
+ *
+ * @param {{ prodSha?: string|null, mainSha?: string|null, behindCount?: number|null, tipAgeMinutes?: number|null, graceMinutes?: number }} params
  */
 export function evaluateStaleness({ prodSha, mainSha, behindCount = null, tipAgeMinutes = null, graceMinutes = 15 }) {
   if (!mainSha) {
