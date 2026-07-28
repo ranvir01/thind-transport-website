@@ -1547,3 +1547,38 @@ Backlog:
   semver-major bump); Rust sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision); TEST_GAPS.md
   row 1 (`draftSettlements` multi-driver/percentage-pay/multi-referral cases); green-as-success convention
   design call (`PreQualificationForm.tsx` vs `ApplicationForm.tsx`).
+
+## fuel.ts query-wrapper coverage + drain — 2026-07-28 ~07:40 UTC (verify-and-build cycle)
+
+Integrator matched `main` exactly at `981b700b` (0 drift) — `npm ci` + `npm run build` + `npx vitest run`
+(257 files/2322 tests) + `npm run lint` all green before touching anything else.
+
+`agent:backlog`'s top items were all owner-gated (IFTA holiday roll, npm audit major bump, `tiny_http`
+timeout/thread-cap decision, meta-governor prune pass) except one concrete, agent-actionable line from the
+prior cycle's trailer: `fuel.ts`'s five query wrappers (`listUnassignedFuel`, `fuelForLoad`,
+`assignableLoadsForFuel`, `fuelStatsByTruck`, `fuelByProgram`) had zero direct tests despite every other
+fuel.ts export (`assignFuelToLoad`, `setFuelUse`, `fuelFraudFlags`) already having its own carrier-scoping
+test file. Added `fuel-query-wrappers.test.ts` mirroring the existing `fuel-assign-to-load.test.ts` mocked-
+query pattern: asserts each wrapper's SQL scopes by `carrier_id` (including the nested loaded-miles
+subquery inside `fuelStatsByTruck`, which joins back to `hub.loads` on a second `carrier_id = $1`), and
+that caller-supplied `limit`/`days` params flow through (and clamp correctly for `listUnassignedFuel`'s
+200-row cap).
+
+Full verify chain after the change: `npm run build`, `npx vitest run` (258 files/2331 tests, 14 skipped),
+`npm run lint` (clean), `npm run test:sidecars` (29 Rust tests + Go vet/test, clippy clean) — ran sidecars
+even though nothing Go/Rust was touched this cycle. Test-only change (no product code, no UI surface), so
+per the routine's established convention for test-only/docs-only diffs, no local-Postgres/Playwright drive
+this cycle — build + unit-test gates covered everything that changed.
+
+Drained via the stamped `--no-ff` method (`.drain-stamp` → `sha=90ca60dc…`), main pushed alone then the
+integrator fast-forwarded to match; both sit at `6711745e`, 0 drift.
+
+Backlog:
+- fuel.ts's carrier-scoping test coverage is now complete across all its exports (`assignFuelToLoad`,
+  `setFuelUse`, `fuelFraudFlags`, and now the five wrappers here) — drop this line from future rotation
+  triage.
+- Carried, unchanged: IFTA due-date roll / holiday handling (owner design call on a shared date-util);
+  npm audit's 12 high-severity advisories across the next/next-auth/eslint/nodemailer/sharp/
+  @vercel/analytics/@vercel/speed-insights/geist/eslint-config-next family (owner-approval-gated
+  semver-major bump); Rust sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision); 193
+  pending `claude/*` branches awaiting the meta-governor prune pass (unchanged from prior cycles).
