@@ -37,6 +37,11 @@ const out = (name) => path.join(process.cwd(), "public", name)
 await sharp(Buffer.from(iconSvg(512))).png().toFile(out("hub-icon-512.png"))
 await sharp(Buffer.from(iconSvg(192))).png().toFile(out("hub-icon-192.png"))
 await sharp(Buffer.from(iconSvg(512, { padded: true }))).png().toFile(out("hub-icon-512-maskable.png"))
+// 180 is the apple-touch-icon size. iOS uses <link rel="apple-touch-icon"> for
+// the home-screen icon and only falls back to the manifest icons when there is
+// none — without a LoadOff one at this size, an install of the app picked up
+// the marketing site's apple-touch-icon (the Thind Transport mark).
+await sharp(Buffer.from(iconSvg(180))).png().toFile(out("hub-icon-180.png"))
 writeFileSync(out("hub-icon.svg"), iconSvg(512))
 
-console.log("LoadOff hub icons written to public/hub-icon-{192,512,512-maskable}.png + hub-icon.svg")
+console.log("LoadOff hub icons written to public/hub-icon-{180,192,512,512-maskable}.png + hub-icon.svg")

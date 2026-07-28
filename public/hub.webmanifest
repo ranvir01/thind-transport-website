@@ -2,6 +2,7 @@
   "name": "LoadOff",
   "short_name": "LoadOff",
   "description": "Dispatch, money, compliance, and driver tools for small and mid-size trucking carriers — all in one place.",
+  "id": "/hub",
   "start_url": "/hub",
   "scope": "/hub",
   "display": "standalone",
