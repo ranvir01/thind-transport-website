@@ -24,7 +24,14 @@
 
 // A bare ref-to-ref push that moves main straight to another branch/SHA
 // without ever creating a new commit — the pattern that hits Vercel's dedupe.
-const RAW_REF_PUSH = /git push origin ["'`]?\$?\{?[\w./-]*\}?["'`]?:refs\/heads\/main/
+//
+// Match anything up to the refspec rather than trying to spell out the source
+// ref. The previous `[\w./-]*` character class could not express the spaces or
+// braces in `${{ steps.gate.outputs.sha }}`, so the guard reported ok on
+// main-drain-fallback.yml — the one file in the repo that actually violated
+// it. Any `git push` whose refspec targets refs/heads/main is the bad form,
+// however the source ref is written.
+const RAW_REF_PUSH = /git push origin[^\n]*:refs\/heads\/main/
 
 const NO_FF_MERGE = /merge --no-ff/
 

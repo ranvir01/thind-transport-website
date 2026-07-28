@@ -83,6 +83,10 @@ jobs:
           # --ignore-scripts: `canvas` needs system libs to compile and nothing
           # in src/ imports it; Next.js and the test suite don't need postinstall.
           npm ci --ignore-scripts
+          # --ignore-scripts also skips bcrypt's and sharp's postinstall; the
+          # app loads both, so rebuild just those two (from drain-fallback.yml,
+          # deleted in this commit).
+          npm rebuild bcrypt sharp
           npm run build
           npx vitest run
           # Type-soundness + license hygiene, both enforceable today:
