@@ -1582,3 +1582,72 @@ Backlog:
   @vercel/analytics/@vercel/speed-insights/geist/eslint-config-next family (owner-approval-gated
   semver-major bump); Rust sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision); 193
   pending `claude/*` branches awaiting the meta-governor prune pass (unchanged from prior cycles).
+
+## QA rig drive on main@8da55b1 — 2026-07-29 ~06:15-06:40 UTC (integrator-stall finding)
+
+Charter (docs/agent-improvement-loop.md §5): no feature work — stood up the local rig from scratch,
+drove owner/dispatcher/driver flows against it, probed `thindtransport.com` read-only, fix only
+outright regressions from the last 3h of commits.
+
+**Fresh rig:** Postgres 16 started (was down), `hauldesk` role + `hauldesk` database created (neither
+existed), `npm install` (750 packages, canvas native deps via `setup:canvas-deps`), `db:migrate` through
+`023_lead_attribution.sql` clean, `seed:demo`, `npm run build` (zero TS errors, Next 16 App Router) clean,
+`npm run start`. `npx vitest run`: **260 files / 2365 tests green.**
+
+**Last-3h commit window:** `main`'s tip (`8da55b1`, 2026-07-28 18:55:24 UTC) predates this drive by
+~11.5h — nothing landed on `main` in the 3h window, so there was no regression to fix forward.
+
+**Full `node scripts/e2e-run-all.mjs` battery (53 Puppeteer smokes + sweep) as owner/dispatcher/driver:**
+52/53 passed. The one failure, `e2e-sweep`'s owner-pass `reports: page content missing... stuck on a
+spinner?"` at both 1440px and 390px, is **not a real defect** — logged into `/hub/reports` directly as
+`owner@demo.thind` and confirmed the page renders correctly ("Per-truck P&L, last 92 days..." with full
+cost-ratio tiles and per-truck table, no spinner, no error). This is the same stale
+`OWNER_PAGES` "reports" anchor (`"the operational view"`) vs. the seeded demo's actual
+`hasDriverPay`-conditional subtitle (`"per-truck p&l, last 92 days"`, matching `OFFICE_PAGES`'s anchor
+for the same route) first identified 2026-07-26 (`docs/claude-routines.md` "QA rig drive on
+main@c995c66"). **This is not a new finding — it's the same finding for at least the 10th time.**
+
+**The actual finding this cycle: the integrator, not the product, is broken.** `git log --all --oneline
+-- scripts/e2e-sweep.mjs` shows independent, verified one-line fixes for this exact anchor on at least 8
+distinct commits/branches over 3+ days (`131a7af6`, `506322cb`, `8db169a8`, plus inline fixes in
+`e8191354`, `b5f5be3d`, `e366b29b`, `3a21cc65`, `3a3c51cc`, `e1bd5c82`) — none reached `main`. Per §5's own
+rule ("if a fix already exists on an unmerged branch, name it instead of writing a fourth copy"), this
+cycle does **not** add a 9th duplicate fix — naming branches hasn't worked 8 times running, so a 9th name
+isn't the missing ingredient.
+
+`npm run agent:status` this cycle: integrator (`claude/hauldesk-project-setup-l1luoo`) last moved
+**16h ago** (2026-07-28 13:44 UTC) and has **diverged from main** (main is 5 commits ahead, integrator
+carries 2 commits not on main) — the "merge main into the integrator first" step from §"Drain method" has
+not happened this cycle window. `npm run agent:branches`: **241 pending `claude/*` branches**, several
+with 700+ unpicked commits each. This is consistent with — and quantifies — what dozens of prior QA-drive
+`Backlog:` trailers have flagged as "meta-governor prune pass overdue" without resolution: the absorption
+half of the loop has been substantively idle while QA-drive cycles keep re-verifying the same product
+state and re-discovering the same one-line test fix.
+
+**Production probe** (direct HTTPS to `thindtransport.com` stayed egress-blocked from this sandbox, so
+used Vercel MCP per §3b): `get_project` + `list_deployments` on `prj_QKMg8o77DoEYiVQgQbI0FB5F4tAg` — the
+latest deployment with `target: "production"` and `state: "READY"` is commit `8da55b1`, exactly `main`'s
+current HEAD. Production has no drain gap and is healthy. (`live: false` again — the known-unreliable
+flag; every other signal confirms healthy.) `get_runtime_errors` (24h window): only the long-standing
+benign pg SSL-mode-alias deprecation warning and the already-known compliance-scan cron SMTP
+`BadCredentials` failure (both pre-existing, not new).
+
+No code change this cycle — nothing to push beyond this doc entry, since the one thing the drive
+surfaced (the anchor false-failure) is explicitly a "don't duplicate" case, and the real problem
+(integrator stall) is out of this routine's lane per AGENTS.md (`claude/hauldesk-project-setup-l1luoo`
+is integrator-only to push to).
+
+Backlog:
+- **Owner-actionable:** the integrator has been stalled ~16h and has diverged from main; 241 branches are
+  pending, several 700+ commits deep. Recommend checking whether the hourly integrator routine is still
+  enabled/firing — 8+ independent agent cycles re-solving the identical one-line `e2e-sweep.mjs` fix
+  without it landing is a strong signal the absorption step itself needs a human look, not another QA
+  cycle's Backlog line.
+- `e2e-sweep.mjs`'s `OWNER_PAGES` "reports" anchor fix is verified and waiting on 8+ branches
+  (`131a7af6` is a clean, minimal, standalone example) — first branch the integrator picks up should
+  land it; don't re-verify it a 9th time.
+- Owner: rotate production Gmail SMTP app password (SMTP_USER/SMTP_PASS) — compliance-scan cron
+  `BadCredentials` failures are unchanged from prior cycles.
+- 241 pending `claude/*` branches remain; meta-governor prune pass still overdue for the no-merge-base/
+  stale cluster (unchanged conclusion from 2026-07-22 triage, now compounded by the integrator stall
+  above).
