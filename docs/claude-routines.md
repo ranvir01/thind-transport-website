@@ -901,6 +901,52 @@ Backlog:
   sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision); IFTA due-date roll not
   accounting for legal holidays (documented scope decision).
 
+## QA rig drive on main@3b986118 — 2026-07-25 ~10:30 UTC (owner/dispatcher/driver, read-only prod probe)
+
+Charter (docs/agent-improvement-loop.md §5): no feature work — stand up the local rig, drive
+real owner/dispatcher/driver flows, probe `thindtransport.com` read-only, fix only outright
+regressions from the last 3h of commits.
+
+Reviewed the three commits landed in the 07:01–07:14 UTC window by reading each diff directly
+rather than trusting the commit body: the Go worker's OSRM circuit breaker (`dfd06bd`, 343ms →
+1.5ms fallback path, `reset()` fixes the shared-state test-order bug it introduced along the
+way), the root-layout manifest fix (`9607589`, moves the marketing manifest to
+`metadata.manifest` so `/hub`'s own manifest link isn't shadowed by a duplicate — confirmed by
+reading the diff that the hardcoded `<link rel="manifest">` tag is gone from the JSX and only
+the metadata field remains), and the gradient-headline/scrim visual pass (`3b98611`, solid red
+accent replaces `.text-gradient-accent`, responsive scrim easing). No regression in any of the
+three.
+
+Fresh local rig from scratch: Postgres 16 started (was down), `hauldesk` role + database
+created, `npm install` (`PUPPETEER_SKIP_DOWNLOAD=1`, canvas system deps via
+`setup:canvas-deps`), `npm run db:migrate` (21/21 clean), `seed:demo`, `npm run build` clean,
+`npx vitest run` (190 files/1596 tests green), `make test-sidecars` (29 Rust tests +
+`go test -count=1 -shuffle=on` green, clippy clean — specifically re-ran the Go suite shuffled
+given `dfd06bd`'s note about the breaker's shared package-level state making tests
+order-dependent; stayed green). `node scripts/design-qa.mjs` against the freshly built site: 0
+hard contrast/overflow failures across all 19 marketing routes (confirms the visual pass's own
+claim independently).
+
+Drove the full `scripts/e2e-run-all.mjs` battery (49 `e2e-*-smoke.mjs` scripts +
+`e2e-sweep.mjs`) as owner, dispatcher, and driver against a freshly seeded `next start` server:
+**49/49 PASS**, 0 defects, 14.4 minutes, no flakes or retries needed this time.
+
+Production probe: direct HTTPS to `thindtransport.com` stayed egress-blocked (curl exit 56,
+CONNECT tunnel 403) — same as every prior cycle, not new information. Vercel connector
+confirmed the opposite of several recent cycles' staleness worries: the latest
+`target: "production"` / `state: "READY"` deployment is `dpl_6ARpfBF1eG6h9JpPg2tttmLxafdr`,
+commit `3b986118` on `main` — production is exactly current with HEAD, not stale. `get_runtime_errors`
+(6h window) and `get_runtime_logs` grouped by route (3h window) both show only the same
+long-running, benign `pg` SSL-mode deprecation warning on `/api/hub/cron/[job]` (first seen
+2026-06-26, last 09:50 UTC today) — no new error routes, no regression signal.
+
+Backlog:
+- Carried, unchanged: `lane-tests` (1443 unpicked) and `lane-compliance` (1543 unpicked) remain
+  the two largest pending branches by a wide margin; meta-governor prune pass remains overdue
+  across many cycles now. npm audit's high-severity findings (owner-approval-gated semver-major
+  bump); Rust sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision); IFTA
+  due-date roll not accounting for legal holidays (documented scope decision).
+
 ## IFTA generate + dispatch board E2E re-sweep, no code fix this cycle — 2026-07-25 ~04:47 UTC (verify-and-build cycle)
 
 Integrator and `main` matched exactly at `86f5df38` (0 drift) — `npm ci` + `npm run build` + `npx vitest
