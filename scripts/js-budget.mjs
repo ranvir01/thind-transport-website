@@ -30,14 +30,10 @@ import { gzipSync } from "node:zlib"
 import { launchBrowser, BASE } from "./e2e-lib.mjs"
 
 /**
- * The rebuild plan's target, and the site is closer to it than the first run of
- * this script claimed. Measured at the pinned phone viewport on 2026-07-28:
- * 143-193KB per route, with 9 of 12 routes already under 170KB. Only `/`,
- * `/apply` (181KB) and `/pay-rates` (193KB) are over.
- *
- * The earlier "236-280KB" figure was this script measuring at whatever viewport
- * Puppeteer happened to default to, which let the homepage's 3MB hero video and
- * its desktop-only code into the count. See VIEWPORT below.
+ * The rebuild plan's target. Measured at the pinned viewport on 2026-07-28:
+ * 236-280KB per route, `/pay-rates` worst. Over target, so failing at 170 today
+ * would ship a permanently-red gate, and a gate that is always red is a gate
+ * everyone learns to ignore.
  */
 const TARGET_KB = 170
 
@@ -47,19 +43,34 @@ const TARGET_KB = 170
  * stops being a ratchet — if a change genuinely needs more JS, say so in the
  * commit rather than editing the number quietly.
  *
- * 200 sits just above the measured worst route (/pay-rates, 193KB), so a
- * regression of even 8KB on the heaviest page trips it.
+ * 285 sits just above the measured worst route (/pay-rates, 280KB).
  *
- * ONE FAILED EXPERIMENT, RECORDED SO IT ISN'T REPEATED: the obvious idea is to
- * stop mounting sonner's <Toaster> in the root layout — most routes can never
- * fire a toast — by gating it behind usePathname() and next/dynamic. It was
- * tried on 2026-07-28 and measured with a proper A/B: it made EVERY route
- * 74-110KB *worse*, because turning the root layout's provider into a
- * router-subscribed dynamic boundary pulls far more into each page's initial
- * load than the ~12KB of sonner it saves. Reverted. If you try this, A/B it the
- * same way before believing it helped.
+ * READ THIS BEFORE TRUSTING ANY NUMBER FROM THIS SCRIPT. On 2026-07-28 it
+ * produced 143-193KB per route across several consecutive runs, then 236-280KB
+ * for the same routes later the same day — and 236-280 is what both the first
+ * and the last measurement agree on. The low readings came from builds made
+ * during a window that included at least one `next build` interrupted
+ * mid-write, and they were never reproducible afterwards. So:
+ *
+ *   - A number from this script is only meaningful against another number from
+ *     the SAME session, on a build you watched finish.
+ *   - `rm -rf .next && npm run build` and confirm it exits 0 before measuring.
+ *     A partial .next serves pages with chunks missing and reports a flattering
+ *     total rather than an error.
+ *
+ * The pinned VIEWPORT below removes one source of drift but did not cause that
+ * episode, and does not by itself make two runs comparable across builds.
+ *
+ * ONE EXPERIMENT, RECORDED AS INCONCLUSIVE: gating sonner's <Toaster> out of
+ * the root layout behind usePathname() + next/dynamic, so the ~40 routes that
+ * can never fire a toast stop paying for it. Measured 245-289KB against a
+ * 143-193KB baseline and looked like a large regression — but that baseline is
+ * exactly the suspect low reading, and 245-289 is within noise of the real
+ * 236-280. It was reverted as the safe default, NOT because it was shown to be
+ * harmful. Anyone retrying it should A/B against a freshly verified build; the
+ * idea is still sound on paper.
  */
-const CEILING_KB = Number(process.env.JS_BUDGET_KB ?? 200)
+const CEILING_KB = Number(process.env.JS_BUDGET_KB ?? 285)
 
 /** The pages a driver, shipper, or broker actually lands on. */
 const ROUTES = [

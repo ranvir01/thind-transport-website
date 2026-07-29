@@ -269,19 +269,17 @@ session by hand. This lane closes that gap.
 
 Its mission is a ranked list, worked top-down, one finished item per run:
 
-1. **Cut route JS toward the 170KB target.** `npm run js-budget` measures it (build + start first).
-   Measured at the phone viewport: 143–193KB per route, and **9 of 12 routes are already under
-   target**. Only `/` and `/apply` (181KB) and `/pay-rates` (193KB) are over, and all three are
-   over because of one thing — the embedded forms and the earnings calculator. So this is a
-   narrow, three-page job, not a site-wide rewrite. The ceiling is a ratchet: lower `CEILING_KB`
-   as routes shrink, never raise it.
+1. **Cut route JS toward the 170KB target.** `npm run js-budget` measures it. Currently 236–280KB
+   per route, `/pay-rates` worst (it carries the earnings calculator). The ceiling is a ratchet:
+   lower `CEILING_KB` as routes shrink, never raise it.
 
-   Two traps here, both already sprung once:
-   - The "236–280KB" number in earlier commits and docs was wrong — the script had no pinned
-     viewport, so it measured the homepage's desktop path including the 3MB hero video. Always
-     A/B a change against a rebuilt baseline; never compare across script versions.
-   - Gating sonner's `<Toaster>` out of the root layout looks like free weight and is not: it
-     measured 74–110KB *worse* per route. See the note in `scripts/js-budget.mjs`.
+   **Measure carefully — this gate has already produced a false result.** It once reported
+   143–193KB for several consecutive runs against builds made in a window containing an
+   interrupted `next build`, and those numbers were never reproducible. Always
+   `rm -rf .next && npm run build`, confirm it exits 0, then measure; and only compare readings
+   taken in the same session. A partial `.next` serves pages with chunks missing and reports a
+   flattering total instead of failing. Read the header of `scripts/js-budget.mjs` before
+   trusting or acting on any number it prints.
 2. **Homepage collapse** — ~24 screens at 390px down toward 12, without losing the earnings
    calculator moment.
 3. **State page deepening** — 48 `/cdl-jobs/<state>` pages, 1 deepened so far. One state per run,
