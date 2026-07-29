@@ -152,6 +152,30 @@ describe("goWorkerRouteMiles", () => {
     const init = fetchMock.mock.calls[0][1] as RequestInit
     expect(init.headers as Record<string, string>).not.toHaveProperty("X-Hauldesk-Secret")
   })
+
+  // Nothing pinned the actual request URL before: GO_WORKER_URL is read into a
+  // module-level const via `.replace(/\/$/, "")` (sidecars.ts), and every test
+  // above only inspects the response side. A regression that dropped that
+  // strip — or the `/route/miles` suffix itself — would still pass every
+  // other case here, since fetch is mocked and never rejects on the URL it
+  // was called with.
+  it("builds the exact request URL, stripping a trailing slash from HAULDESK_GO_WORKER_URL", async () => {
+    vi.stubEnv("HAULDESK_GO_WORKER_URL", "http://localhost:8090/")
+    const fetchMock = vi.fn(async () => ({ ok: true, json: async () => ({ miles: 100, source: "osrm" }) }))
+    vi.stubGlobal("fetch", fetchMock)
+    const { goWorkerRouteMiles } = await loadSidecars()
+    await goWorkerRouteMiles(ORIGIN, DEST)
+    expect(fetchMock.mock.calls[0][0]).toBe("http://localhost:8090/route/miles")
+  })
+
+  it("builds the exact request URL when HAULDESK_GO_WORKER_URL has no trailing slash", async () => {
+    vi.stubEnv("HAULDESK_GO_WORKER_URL", "http://localhost:8090")
+    const fetchMock = vi.fn(async () => ({ ok: true, json: async () => ({ miles: 100, source: "osrm" }) }))
+    vi.stubGlobal("fetch", fetchMock)
+    const { goWorkerRouteMiles } = await loadSidecars()
+    await goWorkerRouteMiles(ORIGIN, DEST)
+    expect(fetchMock.mock.calls[0][0]).toBe("http://localhost:8090/route/miles")
+  })
 })
 
 describe("routeMiles fallback ladder (go-worker -> mapbox -> haversine)", () => {
@@ -317,5 +341,28 @@ describe("iftaSummary", () => {
     await iftaSummary(INPUTS)
     const init = fetchMock.mock.calls[0][1] as RequestInit
     expect(init.headers as Record<string, string>).not.toHaveProperty("X-Hauldesk-Secret")
+  })
+
+  // Mirror of the go-worker URL-construction pair above: RUST_COMPUTE_URL goes
+  // through the same `.replace(/\/$/, "")` normalization, and nothing pinned
+  // that iftaSummary's fetch call actually lands on the un-doubled path.
+  it("builds the exact request URL, stripping a trailing slash from HAULDESK_RUST_COMPUTE_URL", async () => {
+    vi.stubEnv("HAULDESK_RUST_COMPUTE_URL", "http://localhost:8091/")
+    const rustResult = { fleetMiles: 700, fleetGallons: 100, mpg: 7, rows: [], netTaxCents: 1234, missingRates: [] }
+    const fetchMock = vi.fn(async () => ({ ok: true, json: async () => rustResult }))
+    vi.stubGlobal("fetch", fetchMock)
+    const { iftaSummary } = await loadSidecars()
+    await iftaSummary(INPUTS)
+    expect(fetchMock.mock.calls[0][0]).toBe("http://localhost:8091/ifta/summary")
+  })
+
+  it("builds the exact request URL when HAULDESK_RUST_COMPUTE_URL has no trailing slash", async () => {
+    vi.stubEnv("HAULDESK_RUST_COMPUTE_URL", "http://localhost:8091")
+    const rustResult = { fleetMiles: 700, fleetGallons: 100, mpg: 7, rows: [], netTaxCents: 1234, missingRates: [] }
+    const fetchMock = vi.fn(async () => ({ ok: true, json: async () => rustResult }))
+    vi.stubGlobal("fetch", fetchMock)
+    const { iftaSummary } = await loadSidecars()
+    await iftaSummary(INPUTS)
+    expect(fetchMock.mock.calls[0][0]).toBe("http://localhost:8091/ifta/summary")
   })
 })
