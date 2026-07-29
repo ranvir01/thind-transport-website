@@ -28,6 +28,7 @@
  *   node scripts/typecheck-gate.mjs --list     # show the current offenders
  */
 import { execSync } from "node:child_process"
+import { pathToFileURL } from "node:url"
 
 /**
  * Test-file tsc errors as of 2026-07-27. Lower this whenever you fix some;
@@ -55,12 +56,38 @@ function runTsc() {
   }
 }
 
+/**
+ * Parse `tsc --noEmit` output into diagnostics. Exported so the path handling
+ * is testable without shelling out to tsc — the regex silently dropping a
+ * whole route group is exactly the failure a unit test catches and a
+ * green-looking gate does not.
+ */
+export function parseDiagnostics(output) {
+  return output
+    .split("\n")
+    // Greedy `.+`, not `[^(]+`: Next.js route groups are literal parentheses in
+  // the path (src/app/hub/(office)/...), and a class that excluded "(" failed
+    // to match those lines at all — so 76 of the app's 807 source files, the
+    // whole office route group, were counted as neither app nor test errors and
+    // silently passed a gate whose entire job is "application code must be
+    // clean". Greedy backtracks to the LAST (line,col): pair, which is the real
+    // delimiter.
+    .map((line) => line.match(/^(src\/.+)\((\d+),(\d+)\):\s*(error\s+TS\d+:.*)$/))
+    .filter(Boolean)
+    .map((m) => ({ file: m[1], line: Number(m[2]), message: m[4] }))
+}
+
+export const isTestDiagnostic = (file) => isTestFile(file)
+
+/**
+ * Everything below is the CLI. Guarded so that importing this module — which
+ * the parser test does — neither shells out to tsc nor calls process.exit.
+ */
+const isMain = process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href
+
+if (isMain) {
 const output = runTsc()
-const diagnostics = output
-  .split("\n")
-  .map((line) => line.match(/^(src\/[^(]+)\((\d+),(\d+)\):\s*(error\s+TS\d+:.*)$/))
-  .filter(Boolean)
-  .map((m) => ({ file: m[1], line: Number(m[2]), message: m[4] }))
+const diagnostics = parseDiagnostics(output)
 
 const appErrors = diagnostics.filter((d) => !isTestFile(d.file))
 const testErrors = diagnostics.filter((d) => isTestFile(d.file))
@@ -105,3 +132,4 @@ if (testErrors.length > TEST_ERROR_BASELINE) {
 
 if (failed) process.exit(1)
 console.log("✅ typecheck gate passed.\n")
+}

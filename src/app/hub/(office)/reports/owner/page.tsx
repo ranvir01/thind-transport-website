@@ -7,9 +7,11 @@ import {
   type RevenuePeriod, type AgingTrendPeriod, type SettlementLiability, type FuelSpendSummary, type LaneLeaderboardRow,
 } from "@/lib/hub/reports"
 import { computeFleetKpis, rankTruckPerformance } from "@/lib/hub/kpi"
+import { getDeadheadReport } from "@/lib/hub/deadhead"
 import { complianceEntries, summarize, type ComplianceColor, type ComplianceEntry } from "@/lib/hub/compliance"
 import { requirePermissionPage } from "@/lib/hub/session"
 import { fmtCents } from "@/lib/hub/types"
+import { cn } from "@/lib/utils"
 import { Panel, PageHeader, ExpiryPill, type PillTone } from "@/components/hub/ui"
 
 export const dynamic = "force-dynamic"
@@ -139,7 +141,22 @@ function LaneLeaderboardPanel({ lanes, rangeLabel }: { lanes: LaneLeaderboardRow
   )
 }
 
-function LoadedVsDeadheadPanel({ pnl, rangeLabel }: { pnl: Awaited<ReturnType<typeof truckPnlRange>>; rangeLabel: string }) {
+function LoadedVsDeadheadPanel({
+  pnl,
+  rangeLabel,
+  deadhead,
+}: {
+  pnl: Awaited<ReturnType<typeof truckPnlRange>>
+  rangeLabel: string
+  /**
+   * The fuel-card cross-check. deadhead_miles on a load is free text a
+   * dispatcher types and nothing validates — in the demo seed it is literally
+   * round(loaded × 0.08) on all 27 loads, so a dashboard reading ~7% is
+   * reporting a constant back to itself. /hub/reports already showed the
+   * measured comparison; this is the screen the owner actually opens.
+   */
+  deadhead: Awaited<ReturnType<typeof getDeadheadReport>>
+}) {
   const loadedMiles = pnl.reduce((s, r) => s + Number(r.loaded_miles ?? 0), 0)
   const deadheadMiles = pnl.reduce((s, r) => s + Number(r.deadhead_miles ?? 0), 0)
   // A blank deadhead field is unknown, not zero — SUM() skips NULLs, so a load
@@ -195,6 +212,37 @@ function LoadedVsDeadheadPanel({ pnl, rangeLabel }: { pnl: Awaited<ReturnType<ty
           <p className="mt-1.5 text-[11px] text-warn">
             {deadheadBlankLoads} load{deadheadBlankLoads === 1 ? "" : "s"} left deadhead blank — real empty miles are higher.
           </p>
+        )}
+
+        {deadhead.fleet.measuredDeadheadPct != null && (
+          <div className="mt-3 border-t border-border pt-3">
+            <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+              <span className="text-[11px] text-fg-3">
+                Fuel card says{" "}
+                <span
+                  className={cn(
+                    "font-mono font-semibold tabular-nums",
+                    deadhead.fleet.measuredDeadheadPct > (deadhead.fleet.typedDeadheadPct ?? 0) + 3
+                      ? "text-warn"
+                      : "text-fg"
+                  )}
+                >
+                  {deadhead.fleet.measuredDeadheadPct}%
+                </span>{" "}
+                ({deadhead.fleet.measuredEmptyMiles?.toLocaleString()} mi empty)
+              </span>
+              <span className="text-[11px] text-fg-3">
+                {deadhead.fleet.confidence === "thin" ? "thin sample" : `${deadhead.mpg} mpg basis`}
+              </span>
+            </div>
+            {deadhead.fleet.typedDeadheadPct != null &&
+            deadhead.fleet.measuredDeadheadPct > deadhead.fleet.typedDeadheadPct + 3 ? (
+              <p className="mt-1 text-[11px] text-warn">
+                Dispatch is typing {deadhead.fleet.typedDeadheadPct}% — gallons × MPG say the trucks
+                actually run {deadhead.fleet.measuredDeadheadPct}% empty.
+              </p>
+            ) : null}
+          </div>
         )}
       </div>
 
@@ -387,7 +435,7 @@ export default async function OwnerDashboardPage() {
   const storedRange = parseStoredPnlRange((await cookies()).get(REPORTS_RANGE_COOKIE)?.value)
   const range = storedRange ?? resolvePnlRange()
 
-  const [weekly, monthly, aging, pnl, lanes, liability, compliance, fuel] = await Promise.all([
+  const [weekly, monthly, aging, pnl, lanes, liability, compliance, fuel, deadhead] = await Promise.all([
     weeklyRevenueTrend(user.carrierId, 8),
     monthlyRevenueTrend(user.carrierId, 6),
     arAgingTrend(user.carrierId, 8),
@@ -396,6 +444,9 @@ export default async function OwnerDashboardPage() {
     settlementLiability(user.carrierId),
     complianceEntries(user.carrierId),
     fuelSpendSummary(user.carrierId),
+    // Same range as the P&L, so typed and measured deadhead describe the same
+    // window rather than quietly comparing different months.
+    getDeadheadReport(user.carrierId, range),
   ])
 
   const weekLabel = (iso: string) =>
@@ -436,7 +487,7 @@ export default async function OwnerDashboardPage() {
           <AgingTrendBars periods={aging} />
         </Panel>
         <Panel title={`Loaded vs. deadhead — ${rangeLabel}`}>
-          <LoadedVsDeadheadPanel pnl={pnl} rangeLabel={rangeLabel} />
+          <LoadedVsDeadheadPanel pnl={pnl} rangeLabel={rangeLabel} deadhead={deadhead} />
         </Panel>
       </div>
 
