@@ -5,14 +5,25 @@ import { auth } from "@/lib/auth"
 import { GeistMono } from "geist/font/mono"
 import { GeistSans } from "geist/font/sans"
 import { PRODUCT } from "@/lib/hub/product"
+import { APP_ICONS } from "@/lib/site-icons"
 import { ServiceWorkerBoot } from "@/components/hub/ServiceWorkerBoot"
 import { StandaloneScopeGuard } from "@/components/hub/StandaloneScopeGuard"
 import "./hub-theme.css"
 
 export const metadata: Metadata = {
-  title: { default: PRODUCT.name, template: `%s | ${PRODUCT.name}` },
+  // `absolute`, not `default`: a nested layout's `default` still runs through
+  // the ROOT template, so every hub page without its own title rendered
+  // "LoadOff | Thind Transport" — including /hub/login, the page the installed
+  // app opens on. iOS falls back to <title> when naming a home-screen icon, so
+  // the app's own pages must never carry the carrier's name.
+  title: { absolute: PRODUCT.name, template: `%s | ${PRODUCT.name}` },
   robots: { index: false, follow: false },
   manifest: "/api/hub/manifest",
+  // Overrides the root layout's marketing icons for every /hub route. iOS
+  // takes the home-screen icon from apple-touch-icon before it looks at the
+  // manifest, so without a LoadOff one here the installed app wore the Thind
+  // Transport truck mark.
+  icons: { ...APP_ICONS, icon: [{ url: "/hub-icon-192.png", type: "image/png", sizes: "192x192" }] },
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",

@@ -121,7 +121,7 @@ describe("saveCredentials / hasCredentials / deleteCredentials", () => {
   it("upserts an encrypted envelope keyed by carrier + provider", async () => {
     await saveCredentials(CARRIER, "efs", { apiKey: "sk-live-123" }, "user-1")
     expect(queryMock).toHaveBeenCalledTimes(1)
-    const [sql, params] = queryMock.mock.calls[0]
+    const [sql, params = []] = queryMock.mock.calls[0]
     expect(sql).toContain("ON CONFLICT (carrier_id, provider) DO UPDATE")
     expect(params[0]).toBe(CARRIER)
     expect(params[1]).toBe("efs")
@@ -134,6 +134,17 @@ describe("saveCredentials / hasCredentials / deleteCredentials", () => {
     expect(await hasCredentials(CARRIER, "efs")).toBe(true)
     queryOneMock.mockResolvedValue(null)
     expect(await hasCredentials(CARRIER, "efs")).toBe(false)
+  })
+
+  it("hasCredentials returns false without querying the db when CREDENTIALS_KEY is unset", async () => {
+    // The guard credentials.ts:83 depends on: rotating or dropping
+    // CREDENTIALS_KEY must make every adapter's connected() check report
+    // false again, not keep reporting a stale row exists that can no longer
+    // be decrypted. A row present in the db must not leak through this path.
+    queryOneMock.mockResolvedValue({ id: "row-1" })
+    delete process.env.CREDENTIALS_KEY
+    expect(await hasCredentials(CARRIER, "efs")).toBe(false)
+    expect(queryOneMock).not.toHaveBeenCalled()
   })
 
   it("deleteCredentials scopes the delete to carrier + provider", async () => {

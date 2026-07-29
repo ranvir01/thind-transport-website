@@ -18,10 +18,11 @@ vi.mock("../db", () => ({
   hubDb: vi.fn(),
 }))
 
-import { hubDb } from "../db"
-import { submitDvir } from "../dvir"
+import { hubDb, queryOne } from "../db"
+import { submitDvir, truckDvirState } from "../dvir"
 
 const hubDbMock = vi.mocked(hubDb)
+const queryOneMock = vi.mocked(queryOne)
 
 const CARRIER = "11111111-1111-1111-1111-111111111111"
 const TRUCK = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
@@ -116,5 +117,47 @@ describe("submitDvir grounding is defect/safety driven, not trip-type driven", (
 
     expect(result.grounded).toBe(true)
     expect(calls.some((c) => /SET status = 'shop'/.test(c.sql))).toBe(true)
+  })
+})
+
+describe("truckDvirState surfaces a grounding pre-trip, not just post-trip", () => {
+  // Companion to the grounding fix above: submitDvir grounds the truck on
+  // EITHER trip type, but truckDvirState (read by the driver DVIR page and
+  // the office fleet truck panel) used to filter its "open defect" lookup to
+  // v.type = 'post' only. A truck grounded by a reviewing pre-trip's new
+  // defect then showed as "clear" in both UIs — the driver got the ordinary
+  // "post-trip" prompt instead of "your truck is still parked", and the
+  // office panel showed no repair-certify action — even though hub.trucks
+  // .status was correctly 'shop' the whole time.
+  it("does not filter by DVIR type, so a defective pre-trip is the open record", async () => {
+    const preDefective = {
+      id: "dvir-pre-1",
+      type: "pre",
+      defects: [{ label: "Steering" }],
+      repair_certified_at: null,
+    }
+    queryOneMock.mockReset()
+    queryOneMock.mockResolvedValueOnce(preDefective as never)
+
+    const result = await truckDvirState(CARRIER, TRUCK)
+
+    const sql = String(queryOneMock.mock.calls[0][0])
+    expect(sql).not.toMatch(/v\.type = 'post'/)
+    expect(result.state).toBe("awaiting_repair")
+    expect(result.openDvir).toEqual(preDefective)
+  })
+
+  it("moves to awaiting_review once that pre-trip's repair is certified", async () => {
+    const certifiedPreDefective = {
+      id: "dvir-pre-1",
+      type: "pre",
+      defects: [{ label: "Steering" }],
+      repair_certified_at: "2026-07-20T00:00:00Z",
+    }
+    queryOneMock.mockReset()
+    queryOneMock.mockResolvedValueOnce(certifiedPreDefective as never)
+
+    const result = await truckDvirState(CARRIER, TRUCK)
+    expect(result.state).toBe("awaiting_review")
   })
 })

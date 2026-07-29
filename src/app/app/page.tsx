@@ -4,21 +4,32 @@ import { CloudOff, Camera, Wallet, Bell, MessageSquare, ArrowRight } from "lucid
 import { COMPANY_INFO } from "@/lib/constants"
 import { PageBreadcrumb } from "@/components/shared/PageBreadcrumb"
 import { GetTheApp } from "@/components/features/GetTheApp"
+import { APP_ICONS } from "@/lib/site-icons"
 import { Reveal } from "@/components/ui/Reveal"
 
 export const metadata: Metadata = {
-  title: "Get the driver app | Thind Transport",
+  // absolute: the string already carries the carrier name, and the root
+  // template would otherwise append it a second time.
+  title: { absolute: "Get the driver app | Thind Transport" },
   description:
     "The Thind Transport driver app installs straight from your browser — no app store, no download. Confirm dispatches, send PODs from the camera, check pay, and keep working with no signal.",
   alternates: { canonical: "/app" },
-  // Deliberate override of the root layout's marketing manifest: anyone using
-  // Share → Add to Home Screen ON THIS PAGE means the driver app, and iOS
-  // binds the icon to whatever manifest the current page carries. With the
-  // marketing manifest here, that icon opened the website (start_url "/") —
-  // the exact wrong-app report from the owner's iPhone. With the LoadOff
-  // manifest, the same gesture installs the app (start_url "/hub").
+  // This page IS an install surface: Share → Add to Home Screen here installs
+  // LoadOff, not a bookmark to the website.
+  //
+  // That takes all four of these together, and the version that shipped with
+  // only the first two is why the owner's icon opened the website. A manifest
+  // is applied only to documents inside its `scope`, so the LoadOff manifest —
+  // scoped to /hub — used to be discarded right here, leaving the capable flag
+  // to pin a chrome-less window to this marketing page. The manifest route now
+  // widens its scope to "/" for iOS (see lib/hub/install-scope.ts), so it
+  // survives, and with it the LoadOff name, icon and start_url "/hub".
   manifest: "/api/hub/manifest",
+  // apple-mobile-web-app-title — this is the name iOS pre-fills in the Add to
+  // Home Screen sheet, and the reason it used to read "Thind Transport".
   appleWebApp: { capable: true, title: "LoadOff" },
+  // iOS reads the home-screen icon from apple-touch-icon before the manifest.
+  icons: APP_ICONS,
 }
 
 /**
@@ -62,9 +73,9 @@ const FEATURES = [
 export default function GetAppPage() {
   return (
     <div className="bg-paper">
-      {/* iOS keys standalone launch off the apple-prefixed name; Next's
-          appleWebApp.capable emits only mobile-web-app-capable. React hoists
-          this into <head>. */}
+      {/* Next emits only the standardised `mobile-web-app-capable` from
+          appleWebApp.capable; iOS keys standalone launch off the apple-prefixed
+          name. React hoists this into <head>. */}
       <meta name="apple-mobile-web-app-capable" content="yes" />
       <PageBreadcrumb pageName="Driver app" category="Drivers" />
 

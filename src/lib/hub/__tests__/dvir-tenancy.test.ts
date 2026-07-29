@@ -36,7 +36,7 @@ const PRIOR = "44444444-4444-4444-4444-444444444444"
 
 function makeClient(overrides: { priorRows?: { repair_certified_at: string | null }[] } = {}) {
   const client = {
-    query: vi.fn(async (text: string) => {
+    query: vi.fn(async (text: string, _params?: unknown[]) => {
       const sql = String(text)
       if (sql.includes("SELECT repair_certified_at")) return { rows: overrides.priorRows ?? [] }
       if (sql.includes("INSERT INTO hub.dvirs")) return { rows: [{ id: "dvir-new" }] }

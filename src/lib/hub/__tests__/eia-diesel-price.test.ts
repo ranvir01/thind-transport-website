@@ -75,7 +75,7 @@ describe("eiaDieselPriceCents", () => {
 
   it("includes the API key in the request URL", async () => {
     process.env.EIA_API_KEY = "secret-123"
-    const fetchMock = vi.fn(async () => ({
+    const fetchMock = vi.fn(async (_url: string) => ({
       ok: true,
       json: async () => ({ response: { data: [{ value: 4.0 }] } }),
     }))

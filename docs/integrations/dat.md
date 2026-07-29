@@ -25,14 +25,31 @@ Building that UI against an unconfirmed API shape would mean re-doing it twice. 
 stops at the tested client; `docs/integrations/creds-shopping-list.md` tracks the remaining
 UI + booking slice separately.
 
-## Auth model (researched 2026-07-10; re-scouted 2026-07-20, 2026-07-24 — search-snippet confidence, pages still 403-walled)
+## Auth model (researched 2026-07-10; re-scouted 2026-07-20, 2026-07-24, 2026-07-28 — search-snippet confidence, pages still 403-walled)
 
 DAT's own pages (`dat.com`, `one.support.dat.com`, `developer.dat.com`) and third-party
 integration guides all still 403 against our fetch tooling (same wall as TruckerCloud — every
-direct-fetch attempt across all three passes blocked; `one.support.dat.com` and
-`learn.tai-software.com` both re-tried and 403'd again 2026-07-24), so the facts below come from
+direct-fetch attempt across all four passes blocked; `one.support.dat.com`,
+`learn.tai-software.com`, `cloud.comms.dat.com`, and two TMS-vendor DAT integration pages
+(`ftm.cloud`, `ascendtms.kayako.com`) all 403'd again 2026-07-28), so the facts below come from
 search-result snippets of DAT's official support FAQ and TMS-vendor activation guides — higher
 confidence than a pure guess, but still not a developer packet.
+
+- **2026-07-28 pass (4th): no adapter-breaking change.** The two-level service-account/acting-user
+  auth model, the RateView-Combo scoping (search/post vs. rate-request), the ~28-minute token
+  cache, and the `posting/v2`-style path scheme all re-confirmed with no contradicting source.
+  Two refining finds, neither touching `dat.ts`: (1) DAT's own "Book Now" sales page
+  (`cloud.comms.dat.com/sales-inquiry-book-now`, search-excerpt only, page itself 403'd) states
+  **BookNow is still in beta as a TMS integration** — sharpens the existing 2026-07-24 catalog
+  note that BookNow is the surface for a future "reserve this posting on DAT's side" slice: it
+  isn't GA yet, so that slice shouldn't be scoped as available-today; (2) a search snippet tied
+  to the **Freight Posting** endpoint (`POST .../posting/v2/loads` — the broker-side *posting*
+  API, not the carrier-side *search* API this adapter calls) shows a `contactMethods` array with
+  typed entries (`PRIMARY_PHONE`, `EMAIL`) rather than a flat phone string — if DAT's *search*
+  response follows the same convention, `normalizeDatPosting`'s flat `contactPhone` field
+  assumption would need to change to read from a typed array instead. Single search-snippet
+  source, wrong side of the API (posting vs. search), and the page 403'd on direct fetch — not
+  acted on, flagged below as an open question for the next primary-source pass.
 
 - **Two-level token auth, not per-request Basic.** DAT's official RESTful API FAQ describes
   the flow as: (1) a **service account** (dedicated email + password, provisioned once per
@@ -124,20 +141,27 @@ If the real endpoint, auth flow, or field names differ (likely), only `normalize
 the `/loads/search` path, and the auth header construction in `datSource()` change — the
 `search`/`pull` contract and its tests don't move.
 
-## Rate limits / sandbox / pricing (researched 2026-07-10)
+## Rate limits / sandbox / pricing (researched 2026-07-10; pricing refined 2026-07-28)
 
 - **Rate limits:** still not published anywhere accessible; behind the developer portal.
   Two soft signals: tokens expire ~30 min (see auth), and lower load-board tiers cap usage
   at **500 load searches + truck posts per month** — if that product cap applies to API
   searches too, an interactive dispatcher search panel could exhaust it quickly on a small
-  plan. Confirm with DAT before building periodic polling.
+  plan. Confirm with DAT before building periodic polling. 2026-07-28 pass: a direct
+  `developer.dat.com` rate-limit search still returns nothing — numeric quotas remain
+  developer-portal-only.
 - **Sandbox:** a dedicated **staging environment exists** — `freight.api.staging.dat.com`
   appears in a real TMS integration example (`POST /posting/v2/loads`). Ask for staging
   credentials alongside production ones; wire it through `DAT_API_BASE`.
 - **Pricing (third-party figures, unverified):** DAT subscriptions run roughly
   $50–$300/user/month depending on tier; one integration guide reports developer-portal
   registration is free but production API use carries a **$500–$1,000 one-time setup fee**.
-  Budget for the Connexion seat on top of the load board seat for the API user.
+  Budget for the Connexion seat on top of the load board seat for the API user. 2026-07-28
+  refinement: multiple 2026-dated load-board-review sites converge on named carrier tiers —
+  **Standard ~$49/mo, Enhanced ~$99/mo, Pro ~$149/mo** — narrower than the existing
+  $50–$300 range for the carrier side specifically (the $300 end is shipper/broker-tier
+  pricing); none of these third-party reviews price the Connexion or RateView seat
+  add-ons separately, so the setup-fee figure and seat-stacking story are unchanged.
 - **Legacy note:** DAT's older SOAP freight-matching API (TFMI, `ftp.dat.com/wsdl/
   TfmiFreightMatching.xsd`) is still publicly visible; REST is the current program — don't
   build against the WSDL.
@@ -150,6 +174,10 @@ facing surface for it at all (it's a tested library function, not a feature yet)
 
 ## Open questions for the next pass (the actual remaining slice)
 
+- New 2026-07-28 lead, unconfirmed: does DAT's *search* response represent contact info as a
+  typed `contactMethods` array (`PRIMARY_PHONE`/`EMAIL`) instead of a flat phone string? Seen
+  only on the *posting* (broker POST) side via a search snippet, page 403'd — needs a primary
+  source or the developer packet before touching `normalizeDatPosting`'s `contactPhone` field.
 - Design + build the dispatcher-facing search panel (criteria form → results list) and a
   "book this posting" button that calls `datPostingToLoadDraft` + a customer picker, then
   `createLoad()` — likely office-lane UI territory once designed, coordinate via `Backlog:`.
