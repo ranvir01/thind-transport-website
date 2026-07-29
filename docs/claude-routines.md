@@ -1582,3 +1582,89 @@ Backlog:
   @vercel/analytics/@vercel/speed-insights/geist/eslint-config-next family (owner-approval-gated
   semver-major bump); Rust sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision); 193
   pending `claude/*` branches awaiting the meta-governor prune pass (unchanged from prior cycles).
+
+## QA rig drive (owner/dispatcher/driver) + production SMTP outage found — 2026-07-29 ~00:15-01:00 UTC
+
+No commits landed on `main` in the 3 hours before this cycle started (last commit `8da55b1`,
+2026-07-28 18:55 UTC, ~5h17m stale at kickoff) — nothing in scope for the "fix outright regressions
+from the last 3 hours" mandate. Ran the full QA-drive mandate instead: fresh local rig, full E2E
+battery as owner/dispatcher/driver, read-only production probe.
+
+**Production SMTP is broken and has been for 3+ days — paged the owner.** `mcp__Vercel__get_runtime_errors`
+(direct HTTPS to `thindtransport.com` stayed egress-blocked as in every prior cycle, so used Vercel MCP
+per the established fallback) shows `[cron:compliance-scan]` failing daily at 14:00 UTC on
+2026-07-26/27/28 and `[cron:owner-digest]` failing for all 4 carriers on its one 2026-07-27 Monday run,
+every one with the identical Gmail error: `Invalid login: 535-5.7.8 Username and Password not accepted`.
+`createMailTransport()`/`mailFrom()` (`src/lib/mailer.ts`) is the single shared transport for every
+outbound email in the app — not just cron alerts, but application/lead/meeting-form confirmations,
+HR notifications, portal invites, statements, invoices, password resets. `isEmailConfigured()` only
+checks that `SMTP_USER`/`SMTP_PASS` are non-empty, not that they're valid, so every send attempt is
+actually firing and failing loudly (`route.ts`'s cron handler already does the right thing: logs
+structured errors and 500s so the Vercel Cron dashboard shows red — this is a credentials problem, not
+a code bug). Confirmed production is otherwise healthy and current: `get_project` +
+`list_deployments` show `main`'s tip `8da55b1` deployed and `READY`/`target:"production"` (the
+`live:false` project flag is the known-unreliable-alone signal per §3b, cross-checked against the
+deployment list per that doc's own warning). This is an owner-only fix (rotate the Gmail App Password
+/ SMTP creds in Vercel env vars — out of repo scope, `.env*`/secrets are never agent-touched per
+AGENTS.md) — paged via push notification since three-plus days of silent email failure on the core
+conversion funnel is exactly what this routine exists to catch.
+
+**Fresh local rig, root to running:** Postgres was down (container restart) with no `hubapp`
+role/`hubdb` database — created both per dev-workflow-testing's pitfall #9, wrote a fresh `.env.local`
+(none existed). `npm ci` (750 packages), `npm run db:migrate` (all 23 migrations through
+`023_lead_attribution.sql` clean), `npm run seed:demo`, `npm run build` (zero TS errors), `npx vitest
+run` (260 files/2365 tests green), `npm run lint` (clean). Puppeteer's bundled Chromium won't launch
+as root in this container (`Running as root without --no-sandbox`); `e2e-lib.mjs` already handles this
+(`--no-sandbox` + executable-path fallback per pitfall #8) — pointed `PUPPETEER_EXECUTABLE_PATH` at the
+session's preinstalled `/opt/pw-browsers/chromium-1194/chrome-linux/chrome` and every smoke launched
+clean.
+
+**Full `e2e-run-all.mjs` battery (53 smokes + sweep, 16.5m): 51/53 green, 2 failures — both
+investigated to ground truth, neither is a product regression:**
+
+1. `e2e-driver-offline-smoke` (6 checks failed: no queue toast, 0 IndexedDB rows, no replay, arrival
+   "didn't persist"). Reproduced standalone with console/pageerror capture and direct Postgres/curl
+   verification rather than taking the failure at face value: a **trusted** click (`page.mouse.click()`
+   at real coordinates) queues and replays correctly every time; the smoke's `clickByText` helper's
+   programmatic `element.click()` intermittently doesn't reach the button's React handler in this
+   session's swapped Chromium build (141) — reproduced the exact same silent no-op with a hand-written
+   script using the identical technique. Chased the "arrival didn't persist" claim all the way to
+   ground truth: `SELECT arrived_at FROM hub.stops WHERE …` showed the timestamp WAS written
+   server-side, and a raw authenticated `curl` fetch of `/hub/driver` (bypassing the browser entirely)
+   rendered "Leaving now" correctly — the write and the server render are both correct; only the
+   Puppeteer-driven page's own DOM read lagged/missed it. Conclusion: environment-specific tooling
+   flakiness (programmatic-click reliability and/or PWA service-worker fetch-fallback timing under
+   this container's substituted Chromium), not an offline-queue defect — the subsystem was already
+   audited clean 2026-07-24 and this cycle's ground-truth checks confirm it still is.
+2. `e2e-sweep`'s reports check (`page content missing … stuck on a spinner?`) — the reports screenshot
+   at both widths shows a fully rendered page (P&L tiles, deadhead typed-vs-measured, per-truck table,
+   no spinner). The sweep asserts the literal string "the operational view", which only exists in the
+   `hasDriverPay === false` branch of the page subtitle (`src/app/hub/(office)/reports/page.tsx:104`,
+   added `5c158d72` 2026-07-25); the demo seed's drivers carry settlement pay, so `hasDriverPay` is
+   true and the page correctly renders the *other* subtitle variant, which never contains that phrase.
+   Stale/incomplete test assertion, not a rendering bug — predates this cycle by 4 days, `scripts/e2e-*.mjs`
+   is `claude/lane-tests` territory so left as a Backlog line rather than fixed out-of-lane.
+
+No code change shipped this cycle — the only real defect found (SMTP) is owner/ops-gated, and the two
+smoke failures are both false positives in the test harness, not the product.
+
+Backlog:
+- Owner: production Gmail SMTP credentials are rejected (`535-5.7.8 BadCredentials`) and have been
+  since at least 2026-07-26 — rotate the Gmail App Password (or switch provider) in Vercel's env vars.
+  Every outbound email in the app shares this transport (compliance/owner-digest alerts, application
+  and lead-form confirmations, portal invites, statements/invoices, password resets) — silent failure
+  on all of them until rotated. Paged directly; not re-checked automatically by this doc's automation,
+  needs a human to confirm once fixed.
+- `claude/lane-tests`: `scripts/e2e-sweep.mjs`'s reports check (`ROUTES` table, `"the operational
+  view"`) should assert on text common to both `hasDriverPay` subtitle branches (e.g. `"Per-truck
+  P&L"` or the `REPORTS` heading) instead of a phrase that only exists in one variant — false-fails
+  every run where the viewed carrier's drivers have settlement pay configured (true for the demo seed).
+- `claude/lane-tests`: `e2e-driver-offline-smoke.mjs`'s `clickByText` (`scripts/e2e-lib.mjs`) uses a
+  programmatic `element.click()` that intermittently doesn't reach React's handler for this specific
+  offline-tap button in a swapped-Chromium sandbox (reproduced standalone, see above) — consider
+  switching to a real `page.mouse.click()` at the element's bounding-box center for this smoke
+  specifically, since that reproduced reliably across every attempt in this cycle's investigation.
+- Carried, unchanged: IFTA due-date roll / holiday handling (owner design call); npm audit's 12
+  high-severity advisories (owner-approval-gated semver-major bump); Rust sidecar `tiny_http`
+  connection-timeout/thread-cap gap (owner decision); ~193+ pending `claude/*` branches awaiting the
+  meta-governor prune pass.
