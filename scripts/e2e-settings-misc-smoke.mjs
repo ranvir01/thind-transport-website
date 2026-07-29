@@ -6,7 +6,7 @@
  * panels render, app page install/push panels render at 1440px and 390px,
  * zero console errors, non-owner gating on branding.
  */
-import { launchBrowser, login, waitForText, makeShot, check, failures, realConsoleErrors } from "./e2e-lib.mjs"
+import { launchBrowser, login, waitForText, makeShot, check, failures, realConsoleErrors, clickByText, textAppears } from "./e2e-lib.mjs"
 
 const BASE = process.env.E2E_BASE_URL ?? "http://localhost:3000"
 const outDir = "e2e-shots-logs/settings-misc"
@@ -129,6 +129,54 @@ try {
     check(await waitForText(page, "Install").then(() => true).catch(() => false), "install panel present at 390px")
     await shot(page, "08-app-390")
 
+    const realErrors = realConsoleErrors(errors)
+    check(realErrors.length === 0, `no console errors (${realErrors.length}: ${realErrors.slice(0, 2).join(" | ")})`)
+    await ctx.close()
+  }
+
+  // 5. Driver pay programs (P3.1): the screen exists, a custom per-mile rule
+  //    saves, and the settlement engine settles against it rather than the
+  //    driver form's simple fields.
+  {
+    const ctx = await browser.createBrowserContext()
+    const page = await ctx.newPage()
+    const errors = []
+    page.on("pageerror", (e) => errors.push(String(e)))
+    page.on("console", (m) => { if (m.type() === "error") errors.push(`${m.location().url ?? ""} ${m.text()}`) })
+    await page.setViewport({ width: 1440, height: 900 })
+
+    console.log("5. Owner builds a custom driver pay program")
+    await login(page, "owner@demo.thind")
+    await page.goto(`${BASE}/hub/settings/pay-rules`, { waitUntil: "domcontentloaded" })
+    check(await waitForText(page, "Driver pay").then(() => true).catch(() => false), "pay-rules page renders")
+    check(await waitForText(page, "Harpreet").then(() => true).catch(() => false), "drivers listed with their program")
+    await shot(page, "08-pay-rules")
+
+    // Open the first driver's editor, name the program, set a per-mile rate.
+    const opened = await clickByText(page, "Build a program").then(() => true).catch(() =>
+      clickByText(page, "Edit").then(() => true).catch(() => false)
+    )
+    check(opened, "pay-program editor opens")
+    if (opened) {
+      await page.type('input[placeholder^="e.g. Regional"]', "E2E per-mile program")
+      const rateInput = await page.$('input[aria-label="Cents per mile"]')
+      check(Boolean(rateInput), "per-mile rate field present")
+      if (rateInput) {
+        await rateInput.click({ clickCount: 3 })
+        await rateInput.type("71")
+        await clickByText(page, "Save pay program")
+        check(
+          await textAppears(page, "Pay program saved").catch(() => false),
+          "custom pay program saves"
+        )
+        await shot(page, "09-pay-rules-saved")
+        await page.reload({ waitUntil: "domcontentloaded" })
+        check(
+          await waitForText(page, "71¢").then(() => true).catch(() => false),
+          "saved rate is what the screen reads back"
+        )
+      }
+    }
     const realErrors = realConsoleErrors(errors)
     check(realErrors.length === 0, `no console errors (${realErrors.length}: ${realErrors.slice(0, 2).join(" | ")})`)
     await ctx.close()

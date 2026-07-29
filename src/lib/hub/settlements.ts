@@ -91,23 +91,38 @@ export async function draftSettlements(
   periodStart: string,
   periodEnd: string,
   actor: { id: string; name: string }
-): Promise<{ created: number; skipped: number }> {
+): Promise<{
+  created: number
+  skipped: number
+  /**
+   * Loads paid to a driver that nobody ever billed the customer for. Not a
+   * blocker — the driver hauled the freight and is owed for it — but the
+   * carrier is about to send cash out the door against revenue it never
+   * asked for, and nothing surfaced that before.
+   */
+  uninvoiced: { driverName: string; reference: string; amountCents: number }[]
+}> {
   const drivers = await query<Driver>(
     `SELECT * FROM hub.drivers WHERE carrier_id = $1 AND deleted_at IS NULL AND status = 'active'`,
     [carrierId]
   )
   let created = 0
   let skipped = 0
+  const uninvoiced: { driverName: string; reference: string; amountCents: number }[] = []
 
   for (const driver of drivers) {
     // Loads delivered or beyond, not yet attached to a settlement
     const loads = await query<{
       id: string; reference: string; linehaul_cents: number; fuel_surcharge_cents: number
       accessorials: { label?: string; amount_cents: number }[]; loaded_miles: number | null; deadhead_miles: number | null
-      stops_count: number | null
+      stops_count: number | null; uninvoiced: boolean
     }>(
       `SELECT id, reference, linehaul_cents, fuel_surcharge_cents, accessorials, loaded_miles, deadhead_miles,
-         (SELECT COUNT(*)::int FROM hub.stops s WHERE s.load_id = hub.loads.id) AS stops_count
+         (SELECT COUNT(*)::int FROM hub.stops s WHERE s.load_id = hub.loads.id) AS stops_count,
+         NOT EXISTS (
+           SELECT 1 FROM hub.invoices i
+           WHERE i.carrier_id = hub.loads.carrier_id AND i.load_id = hub.loads.id
+         ) AS uninvoiced
        FROM hub.loads
        WHERE carrier_id = $1 AND driver_id = $2 AND deleted_at IS NULL AND settlement_id IS NULL
          AND status IN ('delivered','pod_received','invoiced','paid')`,
@@ -137,6 +152,21 @@ export async function draftSettlements(
        WHERE carrier_id = $1 AND driver_id = $2 AND status = 'outstanding'`,
       [carrierId, driver.id]
     )
+
+    // Flag before the pay maths: these are loads about to become a driver's
+    // net pay with no invoice on the customer side.
+    for (const load of loads.filter((l) => l.uninvoiced)) {
+      uninvoiced.push({
+        driverName: `${driver.first_name} ${driver.last_name}`,
+        reference: load.reference,
+        amountCents:
+          Number(load.linehaul_cents) +
+          Number(load.fuel_surcharge_cents) +
+          (Array.isArray(load.accessorials)
+            ? load.accessorials.reduce((sum, a) => sum + Number(a.amount_cents || 0), 0)
+            : 0),
+      })
+    }
 
     const loadInputs: PayLoadContext[] = loads.map((load) => {
       const accessorials = Array.isArray(load.accessorials) ? load.accessorials : []
@@ -232,7 +262,7 @@ export async function draftSettlements(
       client.release()
     }
   }
-  return { created, skipped }
+  return { created, skipped, uninvoiced }
 }
 
 /** Approve: advances applied, escrow ledger appended, PDF statement generated + emailed. */

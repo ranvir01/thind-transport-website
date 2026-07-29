@@ -41,15 +41,26 @@ merge integrator → `main`, verify, push — **one merge per run**, no new feat
 
 When caught up, **Phase B** ships one ranked `Backlog:` item per hour.
 
-## Drain fallback (GitHub Action, last resort)
+## Drain backstop (GitHub Action, last resort)
 
-`.github/workflows/drain-fallback.yml` (`:15` UTC hourly) covers the 2026-07-10 failure mode:
+`.github/workflows/drain-integrator.yml` (`:17` and `:47` UTC) covers the 2026-07-10 failure mode:
 both agent platforms down while the integrator sits green ahead of `main`, so production goes
-stale. It fast-forwards `main` to the integrator tip ONLY when integrator is >3 ahead **and**
-`main` hasn't moved in 2h (deploy agent missed a full cycle) **and** the move is a pure
-fast-forward **and** `npm run build` + `npx vitest run` are green on that tip. It never merges,
-never resolves conflicts, and never launches agents. Kill switch: repo variable
-`DRAIN_FALLBACK_DISABLED=1`.
+stale. It publishes to `main` ONLY when the integrator is >3 ahead **and** `main` is still an
+ancestor of it **and** `npm run build`, `npx vitest run`, `typecheck-gate` and `license-audit` are
+green on that exact tip. It never resolves conflicts and never launches agents.
+
+It publishes as a stamped `--no-ff` merge, never a fast-forward ref push — a plain fast-forward
+lands a SHA (and a tree) Vercel has already built as a preview, and the dedupe then skips the
+production build entirely. `scripts/drain-merge-guard.mjs` enforces this. The last step carries the
+merge commit back onto the integrator branch so the next run's gate still sees a linear history.
+
+`drain-fallback.yml` (`:15`) and `main-drain-fallback.yml` (`:20`) were deleted 2026-07-28 — three
+copies of this job under three `concurrency` groups raced each other every hour, and
+`main-drain-fallback.yml` published with the bare ref push the guard exists to prevent.
+
+**No kill switch.** This section previously documented a repo variable `DRAIN_FALLBACK_DISABLED=1`;
+no workflow in this repo has ever read it, so setting it does nothing. To stop the drain, disable
+the workflow from the Actions tab (or delete its `schedule:` trigger).
 
 ## Deprecated (aliases)
 
@@ -64,7 +75,7 @@ Full playbook: [`docs/agent-improvement-loop.md`](../../docs/agent-improvement-l
 
 - `CURSOR_API_KEY` / `api.cursor.com/v1/agents` — bills outside your subscription
 - GitHub Actions to launch agents — removed from this repo for that reason
-  (the drain-fallback Action above is a plain git job, not an agent)
+  (the drain-integrator Action above is a plain git job, not an agent)
 
 ## Manual run
 

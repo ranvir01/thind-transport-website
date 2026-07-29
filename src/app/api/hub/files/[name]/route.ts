@@ -3,6 +3,7 @@ import { NextResponse } from "next/server"
 import { getHubUser } from "@/lib/hub/session"
 import { localUploadPath, resolveHubFile, blobPathnameFor } from "@/lib/hub/documents"
 import { portalFileVisible } from "@/lib/hub/portal"
+import { driverFileVisible } from "@/lib/hub/driver-app"
 
 const isAbsolute = (url: string) => /^https?:\/\//i.test(url)
 
@@ -25,10 +26,17 @@ function isBlobHost(url: string): boolean {
  *
  * Auth required, and the file must belong to the requester's carrier —
  * a signed-in driver or portal user of carrier B must never read carrier A's
- * PODs, CDL scans, or settlement statements by URL. External broker/shipper
- * accounts are held to the portal contract on top of tenancy: only files the
- * portal itself surfaces for THEIR customer (POD/BOL, packet docs, their
- * invoice PDFs) — same-carrier is not enough for an external party.
+ * PODs, CDL scans, or settlement statements by URL.
+ *
+ * Tenancy alone governs office roles only. Two roles carry a second ACL on
+ * top, because same-carrier is not enough for either:
+ *   - broker/shipper -> portalFileVisible: only what the portal surfaces for
+ *     THEIR customer (POD/BOL, packet docs, their own invoice PDFs).
+ *   - driver -> driverFileVisible: only what the driver app surfaces for
+ *     THEM (their loads' documents, their own driver documents, their own
+ *     settlement statements). Without it, any driver could read every other
+ *     driver's CDL and medical-card scan and every settlement statement in
+ *     the company from a filename alone.
  */
 export async function GET(
   _req: Request,
@@ -48,6 +56,9 @@ export async function GET(
     (user.role === "broker" || user.role === "shipper") &&
     !(await portalFileVisible(user.carrierId, user.id, name))
   ) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 })
+  }
+  if (user.role === "driver" && !(await driverFileVisible(user.carrierId, user.id, name))) {
     return NextResponse.json({ error: "Not found" }, { status: 404 })
   }
   const ext = name.split(".").pop()?.toLowerCase() ?? ""

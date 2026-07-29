@@ -1,7 +1,7 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
-import { requireOfficeUser, requirePermission } from "@/lib/hub/session"
+import { requirePermission } from "@/lib/hub/session"
 import { emailPacket, signBrokerAgreement } from "@/lib/hub/packet"
 import { getCarrier, getCarrierSettings } from "@/lib/hub/settings"
 import { isEmailConfigured } from "@/lib/mailer"
@@ -16,7 +16,11 @@ interface Result {
 
 export async function emailPacketAction(to: string, note?: string): Promise<Result & { attached?: number }> {
   try {
-    const user = await requireOfficeUser()
+    // Sends the carrier packet — W-9, COI, authority letter — to an arbitrary
+    // address, from the carrier's own name and MC number. That is broker
+    // onboarding, so customers:write, the same gate signAgreementAction below
+    // already uses. Outbound mail under the MC is not an any-office-role act.
+    const user = await requirePermission("customers:write")
     if (!to.includes("@")) return { ok: false, error: "Enter the broker's email" }
     const result = await emailPacket(user.carrierId, to.trim(), note ?? null)
     if (!result.sent) {
@@ -44,7 +48,11 @@ export async function requestCoiAction(input: {
   certificateHolder: string
 }): Promise<Result> {
   try {
-    const user = await requireOfficeUser()
+    // Emails the carrier's own insurance agent for a COI and remembers the
+    // address in carrier_settings. Compliance paperwork, so compliance:write
+    // — the accountant legitimately holds it; the point is that the matrix
+    // decides rather than the guard defaulting to "any office role".
+    const user = await requirePermission("compliance:write")
     if (!input.agentEmail.includes("@")) return { ok: false, error: "Enter the agent's email" }
     if (!input.certificateHolder.trim()) return { ok: false, error: "Who is the certificate holder?" }
     if (!isEmailConfigured()) {
@@ -113,7 +121,7 @@ export async function signAgreementAction(
 
 export async function savedAgentEmail(): Promise<string> {
   try {
-    const user = await requireOfficeUser()
+    const user = await requirePermission("compliance:read")
     const settings = (await getCarrierSettings(user.carrierId)) as unknown as {
       insurance?: { agentEmail?: string }
     }

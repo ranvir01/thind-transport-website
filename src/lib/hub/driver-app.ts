@@ -3,6 +3,7 @@
  * Drivers never see margins, other drivers' loads, or office-only data —
  * enforced here at the query layer, not in the UI.
  */
+import path from "path"
 import { query, queryOne } from "./db"
 import type { Load, Stop, Settlement, SettlementLine, HubDocument, DocumentRequest } from "./types"
 
@@ -101,6 +102,63 @@ export async function driverSettlementLines(
      WHERE sl.settlement_id = $3 ORDER BY sl.kind, sl.created_at`,
     [carrierId, driverId, settlementId]
   )
+}
+
+/**
+ * May this signed-in driver read this stored file?
+ *
+ * Same-carrier is NOT enough for a driver, exactly as it is not enough for a
+ * broker/shipper (portalFileVisible). Until this existed, /api/hub/files/[name]
+ * let any signed-in driver read every file their carrier owned — another
+ * driver's CDL and medical-card scans, and every settlement statement in the
+ * company — from a filename alone.
+ *
+ * The allowlist is the driver app's own surface, so this grants nothing the UI
+ * does not already show them:
+ *   - documents on loads assigned to them        (driverActiveLoads)
+ *   - their own driver documents                 (driverDocuments)
+ *   - their own approved/paid settlement PDFs    (driverSettlements)
+ *
+ * Note it does NOT filter load documents by kind, so a rate confirmation on
+ * their own load stays readable — drivers are routinely sent theirs, and
+ * driverActiveLoads already lists the kinds attached to each of their loads.
+ * If rate visibility should be withheld from drivers, that is a product call:
+ * add `AND d.kind <> 'rate_confirmation'` to the first branch.
+ */
+export async function driverFileVisible(
+  carrierId: string,
+  userId: string,
+  fileName: string
+): Promise<boolean> {
+  const account = await queryOne<{ driver_id: string | null }>(
+    `SELECT driver_id FROM hub.users
+     WHERE id = $1 AND carrier_id = $2 AND role = 'driver' AND active`,
+    [userId, carrierId]
+  )
+  if (!account?.driver_id) return false
+  // Match both URL forms resolveHubFile accepts: the /api/hub/files/<name>
+  // route form, and legacy rows still holding the absolute blob URL. Matching
+  // only the first would 404 a driver's older PODs and statements.
+  const safeName = path.basename(fileName)
+  const url = `/api/hub/files/${safeName}`
+  const legacySuffix = `/hub/${safeName}`
+  const claim = await queryOne<{ ok: number }>(
+    `SELECT 1 AS ok FROM hub.documents d
+       JOIN hub.loads l ON l.id = d.entity_id AND d.entity_type = 'load' AND l.carrier_id = d.carrier_id
+     WHERE (d.url = $1 OR (d.url LIKE 'https://%' AND right(d.url, $4::int) = $5::text))
+       AND d.carrier_id = $2 AND l.driver_id = $3 AND l.deleted_at IS NULL
+     UNION ALL
+     SELECT 1 AS ok FROM hub.documents
+     WHERE (url = $1 OR (url LIKE 'https://%' AND right(url, $4::int) = $5::text))
+       AND carrier_id = $2 AND entity_type = 'driver' AND entity_id = $3
+     UNION ALL
+     SELECT 1 AS ok FROM hub.settlements
+     WHERE (statement_url = $1 OR (statement_url LIKE 'https://%' AND right(statement_url, $4::int) = $5::text))
+       AND carrier_id = $2 AND driver_id = $3 AND status IN ('approved','paid')
+     LIMIT 1`,
+    [url, carrierId, account.driver_id, legacySuffix.length, legacySuffix]
+  )
+  return Boolean(claim)
 }
 
 export async function driverDocuments(carrierId: string, driverId: string): Promise<HubDocument[]> {

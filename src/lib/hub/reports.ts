@@ -393,7 +393,10 @@ function toLeaderboardRows(rows: LaneAggregateRow[], limit: number): LaneLeaderb
  */
 export async function laneLeaderboardRange(carrierId: string, range: PnlRange, limit = 20): Promise<LaneLeaderboardRow[]> {
   const settings = await getCarrierSettings(carrierId)
-  const costPerMileCents = settings.costPerMileCents ?? 185
+  // No `?? 185` fallback: getCarrierSettings merges over DEFAULT_SETTINGS, so
+  // this is always a number, and a second literal here would quietly
+  // reintroduce the old under-stated constant if it ever did fire.
+  const costPerMileCents = settings.costPerMileCents
   const rows = await aggregateLanes(
     carrierId, costPerMileCents,
     "AND l.created_at >= $2::date AND l.created_at < $3::date + 1", [range.from, range.to]

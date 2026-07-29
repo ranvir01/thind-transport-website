@@ -152,7 +152,7 @@ async function main() {
     if (process.env.CRON_SECRET) {
       pass("CRON_SECRET set — /api/hub/cron/* protected")
     } else {
-      fail("CRON_SECRET not set", "cron routes (compliance scan, AR reminders, mailbox, FMCSA recheck) accept unauthenticated requests")
+      fail("CRON_SECRET not set", "api/hub/cron/[job]/route.ts:41 refuses every request when the secret is unset, so all 17 vercel.json crons 401 silently — including migrate, which is how a deploy's migrations reach production")
     }
 
     // 9. Hobby-safe vercel.json crons (deploy fails before build otherwise)

@@ -297,6 +297,15 @@ first — otherwise they drift again.
 
 ## 4. The 52 e2e smoke scripts are not in CI. Nothing is.
 
+> **Resolved 2026-07-28.** `.github/workflows/e2e-suite.yml` now runs vitest + token-lint on every
+> push and PR, and the full 52-script rig plus the interaction battery nightly, on PRs, and on
+> demand against a `postgres:16` service. Finding 1 (no PR-level CI) and finding 2 (the scripts run
+> only when an agent remembers) are closed. Finding 3 (`fonts.googleapis.com` at build time) is
+> still open — it is P1.6 in the consolidated work order. The evidence below is kept as the record
+> of what was found; the workflow inventory it cites is out of date (`drain-fallback.yml` and
+> `main-drain-fallback.yml` were deleted 2026-07-28, leaving `drain-integrator.yml`,
+> `e2e-suite.yml`, and `prune-merged-branches.yml`).
+
 `ls scripts/e2e-*.mjs` → **52 files** (the brief said 49; 52 is the measured count). They need a running
 Next server plus a live Postgres.
 

@@ -1,7 +1,14 @@
 "use server"
 
+/**
+ * Office task board. Every office role works it, so tasks:write is granted to
+ * all three — the point is that the matrix now says so. These five actions
+ * previously gated on requireOfficeUser alone because permissions.ts had no
+ * tasks:* action to name, which left the "matrix is the single source of
+ * truth" doctrine with a hole exactly where the task board sat.
+ */
 import { revalidatePath } from "next/cache"
-import { requireOfficeUser } from "@/lib/hub/session"
+import { requirePermission } from "@/lib/hub/session"
 import {
   completeTask, createTask, deleteTask, reopenTask, toggleChecklistItem,
 } from "@/lib/hub/tasks"
@@ -23,7 +30,7 @@ export async function createTaskAction(input: {
   checklist?: string[]
 }): Promise<Result> {
   try {
-    const user = await requireOfficeUser()
+    const user = await requirePermission("tasks:write")
     if (!input.title.trim()) return { ok: false, error: "Give the task a name" }
     await createTask(
       user.carrierId,
@@ -47,7 +54,7 @@ export async function createTaskAction(input: {
 
 export async function completeTaskAction(id: string): Promise<Result & { recurred?: boolean }> {
   try {
-    const user = await requireOfficeUser()
+    const user = await requirePermission("tasks:write")
     const { next } = await completeTask(user.carrierId, id, { id: user.id, name: user.name })
     revalidatePath("/hub/tasks")
     revalidatePath("/hub")
@@ -59,7 +66,7 @@ export async function completeTaskAction(id: string): Promise<Result & { recurre
 
 export async function reopenTaskAction(id: string): Promise<Result> {
   try {
-    const user = await requireOfficeUser()
+    const user = await requirePermission("tasks:write")
     await reopenTask(user.carrierId, id)
     revalidatePath("/hub/tasks")
     return { ok: true }
@@ -70,7 +77,7 @@ export async function reopenTaskAction(id: string): Promise<Result> {
 
 export async function toggleChecklistAction(id: string, index: number, done: boolean): Promise<Result> {
   try {
-    const user = await requireOfficeUser()
+    const user = await requirePermission("tasks:write")
     await toggleChecklistItem(user.carrierId, id, index, done)
     revalidatePath("/hub/tasks")
     return { ok: true }
@@ -81,7 +88,7 @@ export async function toggleChecklistAction(id: string, index: number, done: boo
 
 export async function deleteTaskAction(id: string): Promise<Result> {
   try {
-    const user = await requireOfficeUser()
+    const user = await requirePermission("tasks:write")
     await deleteTask(user.carrierId, id)
     revalidatePath("/hub/tasks")
     return { ok: true }

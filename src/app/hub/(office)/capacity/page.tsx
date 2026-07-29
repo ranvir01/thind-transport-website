@@ -1,4 +1,5 @@
-import { requireOfficeUser } from "@/lib/hub/session"
+import { requirePermissionPage } from "@/lib/hub/session"
+import { can } from "@/lib/hub/permissions"
 import { listTrucks } from "@/lib/hub/fleet"
 import { query } from "@/lib/hub/db"
 import { PageHeader } from "@/components/hub/ui"
@@ -7,7 +8,10 @@ import { CapacityPanel, type CapacityRow } from "@/components/hub/CapacityPanel"
 export const dynamic = "force-dynamic"
 
 export default async function CapacityPage() {
-  const user = await requireOfficeUser()
+  // Viewing posted capacity is read-tier; posting or pulling a truck from
+  // the PUBLIC load board is loads:write, matching the actions.
+  const user = await requirePermissionPage("loads:read")
+  const canWrite = can(user.role, "loads:write")
   const [trucks, postings] = await Promise.all([
     listTrucks(user.carrierId),
     query<CapacityRow>(
@@ -30,6 +34,7 @@ export default async function CapacityPage() {
       <CapacityPanel
         trucks={trucks.filter((t) => t.status === "active").map((t) => ({ id: t.id, unit_number: t.unit_number }))}
         postings={postings}
+        canWrite={canWrite}
       />
     </div>
   )

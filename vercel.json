@@ -17,6 +17,10 @@
       "schedule": "0 14 * * *"
     },
     {
+      "path": "/api/hub/cron/auto-invoice",
+      "schedule": "45 13 * * *"
+    },
+    {
       "path": "/api/hub/cron/ar-reminders",
       "schedule": "30 14 * * *"
     },

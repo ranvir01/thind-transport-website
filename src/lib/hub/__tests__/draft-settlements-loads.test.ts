@@ -171,7 +171,7 @@ describe("draftSettlements — settlement_id stamp on loads (TEST_GAPS.md #1/#6)
 
     const result = await draftSettlements(CARRIER, "2026-06-01", "2026-06-07", ACTOR)
 
-    expect(result).toEqual({ created: 1, skipped: 0 })
+    expect(result).toMatchObject({ created: 1, skipped: 0 })
 
     const insertSettlement = calls.find((c) => c.sql.includes("INSERT INTO hub.settlements"))
     expect(insertSettlement).toBeDefined()
@@ -196,12 +196,12 @@ describe("draftSettlements — settlement_id stamp on loads (TEST_GAPS.md #1/#6)
     wireMocks(state)
 
     const first = await draftSettlements(CARRIER, "2026-06-01", "2026-06-07", ACTOR)
-    expect(first).toEqual({ created: 1, skipped: 0 })
+    expect(first).toMatchObject({ created: 1, skipped: 0 })
     expect(state.loads[0].settlement_id).not.toBeNull()
 
     // Next week: same driver, same (now-stamped) load, no new work.
     const second = await draftSettlements(CARRIER, "2026-06-08", "2026-06-14", ACTOR)
-    expect(second).toEqual({ created: 0, skipped: 1 })
+    expect(second).toMatchObject({ created: 0, skipped: 1 })
     expect(state.settlements).toHaveLength(1)
   })
 })
@@ -220,7 +220,7 @@ describe("draftSettlements — payableReferralBonuses + latestScorecardScore (TE
     const calls = wireMocks(state)
 
     const result = await draftSettlements(CARRIER, "2026-06-01", "2026-06-07", ACTOR)
-    expect(result).toEqual({ created: 1, skipped: 0 })
+    expect(result).toMatchObject({ created: 1, skipped: 0 })
 
     // 500 loaded mi × $1.00/mi = $500 + $20 expense reimbursement + $50 referral bonus, minus a $100 advance.
     const insertSettlement = calls.find((c) => c.sql.includes("INSERT INTO hub.settlements"))
@@ -245,7 +245,7 @@ describe("draftSettlements — payableReferralBonuses + latestScorecardScore (TE
     const calls = wireMocks(state)
 
     const result = await draftSettlements(CARRIER, "2026-06-01", "2026-06-07", ACTOR)
-    expect(result).toEqual({ created: 1, skipped: 0 })
+    expect(result).toMatchObject({ created: 1, skipped: 0 })
 
     // 500 loaded mi × $1.00/mi = $500 + $20 expense + $50 + $75 referral bonuses, minus a $100 advance.
     const insertSettlement = calls.find((c) => c.sql.includes("INSERT INTO hub.settlements"))
@@ -271,7 +271,7 @@ describe("draftSettlements — payableReferralBonuses + latestScorecardScore (TE
     const calls = wireMocks(state)
 
     const result = await draftSettlements(CARRIER, "2026-06-01", "2026-06-07", ACTOR)
-    expect(result).toEqual({ created: 1, skipped: 0 })
+    expect(result).toMatchObject({ created: 1, skipped: 0 })
 
     const insertSettlement = calls.find((c) => c.sql.includes("INSERT INTO hub.settlements"))
     // Same totals as the baseline test with no referral rows at all: table exists, just nothing payable.
@@ -293,7 +293,7 @@ describe("draftSettlements — payableReferralBonuses + latestScorecardScore (TE
     const calls = wireMocks(state)
 
     const result = await draftSettlements(CARRIER, "2026-06-01", "2026-06-07", ACTOR)
-    expect(result).toEqual({ created: 1, skipped: 0 })
+    expect(result).toMatchObject({ created: 1, skipped: 0 })
 
     // $500 per-mile + $200 scorecard bonus (92 clears the 90-point tier, not the 80-point one) +
     // $20 expense reimbursement, minus the $100 advance (no escrow/insurance on this custom rule set).
@@ -420,7 +420,7 @@ describe("draftSettlements — multiple drivers in one call, incl. percentage-pa
     const { calls, settlements, loadsByDriver } = wireMultiDriverMocks()
 
     const result = await draftSettlements(CARRIER, "2026-06-01", "2026-06-07", ACTOR)
-    expect(result).toEqual({ created: 2, skipped: 0 })
+    expect(result).toMatchObject({ created: 2, skipped: 0 })
     expect(settlements).toHaveLength(2)
 
     const insertSettlements = calls.filter((c) => c.sql.includes("INSERT INTO hub.settlements"))

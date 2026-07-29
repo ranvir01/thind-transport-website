@@ -64,8 +64,25 @@ export async function getInvoiceForLoad(carrierId: string, loadId: string): Prom
 export async function createInvoiceFromLoad(
   carrierId: string,
   loadId: string,
-  actor: { id: string; name: string }
+  /**
+   * id is nullable because the auto-invoice cron has no user behind it, and
+   * hub.load_events.actor_id / hub.audit_log.actor_id are UUID columns — a
+   * sentinel string like "system" is not a UUID and blows up changeLoadStatus'
+   * transaction (logAudit swallows its own errors, so the failure surfaces
+   * there, several steps away from the cause).
+   */
+  actor: { id: string | null; name: string },
+  options: {
+    /**
+     * Send the invoice to the customer's billing email. True for the office
+     * click; the auto-invoice cron passes false — an unattended job must not
+     * mail a money document to a broker with nobody having looked at it. The
+     * draft it leaves behind is sent from /hub/money like any other.
+     */
+    email?: boolean
+  } = {}
 ): Promise<{ invoice: Invoice; emailed: boolean; error?: string }> {
+  const shouldEmail = options.email ?? true
   const load = await getLoad(carrierId, loadId)
   if (!load) throw new Error("Load not found")
   if (!load.customer_id) throw new Error("Load has no customer")
@@ -150,7 +167,9 @@ export async function createInvoiceFromLoad(
   // Email with POD + BOL attached (best effort; invoice stays usable without SMTP)
   let emailed = false
   let error: string | undefined
-  if (!isEmailConfigured()) {
+  if (!shouldEmail) {
+    // Deliberate, not a failure: the caller asked for a draft only.
+  } else if (!isEmailConfigured()) {
     // Skip sending but DON'T return early — the load must still move to
     // "invoiced" below, or the UI keeps offering invoice creation forever.
     error = "Email not configured (set SMTP_USER/SMTP_PASS) — download the PDF and send it manually."
@@ -591,4 +610,66 @@ export async function sendFactoringPacket(
     newValue: { to: settings.factoring.email },
   })
   return { to: settings.factoring.email }
+}
+
+/**
+ * Loads the carrier has earned money on and never asked to be paid for:
+ * delivered or POD-received, not deleted, with a customer, and no invoice row.
+ *
+ * `hub.invoices` has a unique (carrier_id, load_id) since migration 018, so the
+ * NOT EXISTS is exact rather than a best guess.
+ */
+export async function unbilledLoads(carrierId: string): Promise<
+  { id: string; reference: string; amount_cents: number; pod_at: string | null }[]
+> {
+  return query(
+    `SELECT l.id, l.reference,
+       (l.linehaul_cents + l.fuel_surcharge_cents
+         + COALESCE((SELECT SUM((a->>'amount_cents')::int)
+                     FROM jsonb_array_elements(COALESCE(l.accessorials, '[]'::jsonb)) a), 0))::int AS amount_cents,
+       COALESCE(l.pod_received_at, l.delivered_at) AS pod_at
+     FROM hub.loads l
+     WHERE l.carrier_id = $1 AND l.deleted_at IS NULL AND l.customer_id IS NOT NULL
+       AND l.status IN ('delivered','pod_received')
+       AND NOT EXISTS (
+         SELECT 1 FROM hub.invoices i WHERE i.carrier_id = l.carrier_id AND i.load_id = l.id
+       )
+     ORDER BY COALESCE(l.pod_received_at, l.delivered_at) NULLS LAST`,
+    [carrierId]
+  )
+}
+
+/**
+ * Draft an invoice for every load with a POD in hand and no invoice.
+ *
+ * Until this existed, createInvoiceFromLoad's ONLY caller was a human clicking
+ * "Invoice" on /hub/money — there is no cron in vercel.json that bills anything
+ * — so a load nobody remembered simply never turned into cash, while
+ * draftSettlements happily paid the driver for hauling it.
+ *
+ * Creates drafts only: `email: false`. An unattended job must not mail a money
+ * document under the carrier's name without anyone reading it, and the office
+ * sends from /hub/money exactly as before. Per-load failures are collected, not
+ * thrown — one bad load (no rate, total mismatch) must not stop the rest.
+ */
+export async function runAutoInvoicing(
+  carrierId: string
+): Promise<{ eligible: number; invoiced: number; failed: number; errors: { reference: string; error: string }[]; skipped?: string }> {
+  const settings = await getCarrierSettings(carrierId)
+  const candidates = await unbilledLoads(carrierId)
+  if (!settings.invoice.autoInvoiceOnPod) {
+    return { eligible: candidates.length, invoiced: 0, failed: 0, errors: [], skipped: "autoInvoiceOnPod is off" }
+  }
+  const actor = { id: null, name: "Auto-invoicing" }
+  let invoiced = 0
+  const errors: { reference: string; error: string }[] = []
+  for (const load of candidates) {
+    try {
+      await createInvoiceFromLoad(carrierId, load.id, actor, { email: false })
+      invoiced++
+    } catch (err) {
+      errors.push({ reference: load.reference, error: err instanceof Error ? err.message : "unknown" })
+    }
+  }
+  return { eligible: candidates.length, invoiced, failed: errors.length, errors }
 }

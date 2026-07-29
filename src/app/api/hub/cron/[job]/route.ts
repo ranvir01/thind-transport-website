@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import { query } from "@/lib/hub/db"
 import { complianceEntries } from "@/lib/hub/compliance"
-import { runOverdueReminders } from "@/lib/hub/invoices"
+import { runOverdueReminders, runAutoInvoicing } from "@/lib/hub/invoices"
 import { runDetentionAlerts } from "@/lib/hub/detention"
 import { runTaskAutomations } from "@/lib/hub/tasks"
 import { recomputeLanes } from "@/lib/hub/lanes"
@@ -107,6 +107,12 @@ export async function GET(
         // Roadmap: dedicated weekly lanes book themselves — every enabled
         // "rebook every <weekday>" rule due today lands as a fresh Booked load.
         results[carrier.id] = await runRecurringRebooks(carrier.id)
+      } else if (job === "auto-invoice") {
+        // P2.1: nothing in this repo turned a delivered load into an invoice
+        // except a human clicking "Invoice" on /hub/money. Loads with a POD in
+        // hand and no invoice were pure unasked-for cash, and draftSettlements
+        // paid the driver for them regardless. Drafts only — never emails.
+        results[carrier.id] = await runAutoInvoicing(carrier.id)
       } else if (job === "recompute-lanes") {
         // E1: lane history powers backhaul hints on the planner.
         results[carrier.id] = await recomputeLanes(carrier.id)
