@@ -1076,6 +1076,68 @@ Backlog:
   sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision); IFTA due-date roll not
   accounting for legal holidays (documented scope decision).
 
+## QA rig drive — 2026-07-25 ~19:10 UTC (Analytics/SpeedInsights regression, 51-script battery)
+
+Charter (`docs/agent-improvement-loop.md` §5): no feature work — stand up the local rig, drive real
+owner/dispatcher/driver flows, probe `thindtransport.com` read-only, fix only outright regressions from
+the last 3h of commits (window: ~16:08–19:08 UTC). Commit: `b26b38e`.
+
+**Regression found and fixed.** `229885a` (18:35 UTC, in-window) added `<Analytics />` +
+`<SpeedInsights />` (`@vercel/analytics`, `@vercel/speed-insights`) to the root layout. Both packages
+pick their mode from `NODE_ENV`, so a self-hosted `next build && next start` reads as "production" and
+unconditionally injects `<script src="/_vercel/insights/script.js">` /
+`/_vercel/speed-insights/script.js` — paths only Vercel's own edge network serves. Reproduced directly
+(Puppeteer response listener): 12 404s across 5 page loads, on every single page including `/hub/*`.
+This tripped the "no console errors" check in ~40 of the 50 `e2e-*-smoke.mjs` scripts, which had all
+gone red simultaneously. Fix: gate both components on `process.env.VERCEL === "1"` (Vercel's own system
+env var, set only on its build/runtime) — production is unaffected since it *is* hosted on Vercel; the
+local/self-hosted rig no longer injects the dead script tags. Confirmed 0/12 404s after the fix on the
+same repro.
+
+**Full local rig stood up clean:** `service postgresql start` (role/db already existed from a prior
+cycle), `.env.local` regenerated fresh (fresh `NEXTAUTH_SECRET`/`CREDENTIALS_KEY`), `npm run
+db:migrate` (22 migrations), `npm run seed:demo`, `npm run build` (0 TS errors, 140+ routes) — all
+before the fix. After the fix: rebuilt, `npx vitest run` (207 files/1827 tests) green, then a full fresh
+`scripts/e2e-run-all.mjs` (51 scripts, ~16 min): **49/51 passed**, including every script the regression
+had broken (claims, compliance, customers, dat-freight, dispatch*, driver*, duplicate-load, dvir,
+expenses, fleet, fuel, funnel, ...) — owner/dispatcher/driver personas all exercised across the battery.
+
+**Two pre-existing failures, both confirmed non-regressions (not from the 3h window, not fixed here):**
+1. `e2e-public-smoke`'s `/testimonials` check 404s — the route was deliberately deleted by `9291301`
+   ("Phase 2a: remove the fabricated content...", ~08:04 UTC, ~11h before the window) but
+   `scripts/e2e-public-smoke.mjs` was never updated to drop the check. Test-script drift, not a product
+   bug.
+2. `e2e-sweep`'s reports-page anchor ("no 'the operational view' — stuck on a spinner?") — false alarm.
+   Manually reproduced with a screenshot: the page renders fully and correctly (deadhead panel, P&L
+   table, all KPIs) in well under a second. `ReportsPage` has *two* subtitle strings gated on
+   `hasDriverPay` (whether `kpis.driverPayCents` is non-null for the range); the demo seed's default
+   92-day window currently has driver pay, so it renders the `hasDriverPay: true` copy ("...this is the
+   operational view" only exists in the `false` branch). Pre-existing conditional, untouched by any
+   in-window commit — the sweep's anchor just isn't branch-aware.
+
+**Production confirmed current** via Vercel MCP (`get_project`/`list_deployments`/`get_runtime_errors`
+— this sandbox's egress blocks direct HTTPS to `thindtransport.com`, 403 on CONNECT, per the documented
+fallback): `latestDeployment` READY, target `production`, commit `2b31de3` (this window's own drain).
+No new runtime error clusters — the only one on record is a recurring `pg` SSL-mode deprecation warning
+(`/api/hub/cron/[job]`, first seen 2026-06-26), unrelated to this window.
+
+Backlog:
+- `scripts/e2e-public-smoke.mjs`: drop (or replace) the `/testimonials` check — the route no longer
+  exists (`9291301`). Outside lane-tests' driver/owner scope but a one-line fix for whoever's in there
+  next.
+- `scripts/e2e-sweep.mjs`'s reports-page anchor should branch on `hasDriverPay` the same way the page
+  does (or use a substring stable across both), so a real stuck-spinner regression isn't lost in the
+  noise next time this fires.
+- `src/components/ui/Reveal.tsx` has a pre-existing (pre-window, from `9291301`)
+  `react-hooks/set-state-in-effect` lint error — `npm run build` doesn't catch it (Next's build-time
+  lint config differs from the bare `eslint .` in `npm run lint`) but a plain lint run does.
+- `lane-tests` (1443 unpicked) and `lane-compliance` (1552+ unpicked) remain the two largest pending
+  branches; per `9bc1e0c5` do NOT plain-merge either — meta-governor prune pass remains overdue across
+  many cycles now.
+- Carried, unchanged: npm audit's high-severity findings (owner-approval-gated semver-major bump); Rust
+  sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision); IFTA due-date roll not
+  accounting for legal holidays (documented scope decision).
+
 ## Compliance docs E2E sweep — 2026-07-25 ~17:45 UTC (verify-and-build cycle)
 
 Started from the integrator tip `b0ddf162` (1 commit ahead of main, STEADY STATE): full verify chain
