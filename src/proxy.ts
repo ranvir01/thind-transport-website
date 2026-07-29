@@ -2,8 +2,47 @@ import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 import { getToken } from "next-auth/jwt"
 import { hubLandingPath, LEGACY_DRIVER_HOME } from "@/lib/hub/landing"
+import { isAppHost } from "@/lib/app-origin"
+import { appHostRewrite } from "@/lib/app-host-routing"
 
 export default async function proxy(request: NextRequest) {
+  // On the app's own origin the app owns the root: "/" and "/dispatch" are
+  // served by the /hub routes without the segment showing up in the URL, so
+  // the manifest can claim scope "/" and every page on the origin is the app.
+  // Returns null on the marketing origin, or when APP_HOST is unset — which is
+  // the default, and why this is inert until someone configures a domain.
+  const onAppHost = isAppHost(request.headers.get("host"))
+  const rewriteTo = onAppHost ? appHostRewrite(request.nextUrl.pathname) : null
+  if (rewriteTo) {
+    // Rewrite, not redirect: the browser keeps the clean URL and Next resolves
+    // the /hub route behind it. The rewritten path then falls through to the
+    // auth gate below, so the app origin is protected exactly as /hub is.
+    const url = request.nextUrl.clone()
+    url.pathname = rewriteTo
+    return authGate(request, rewriteTo, NextResponse.rewrite(url))
+  }
+  return authGate(request, request.nextUrl.pathname, null)
+}
+
+/**
+ * The original gate, unchanged in behaviour — it just takes the path to judge
+ * and the response to hand back when nothing blocks. Splitting it out is what
+ * lets the app origin reuse the identical rules rather than a parallel copy
+ * that drifts.
+ */
+async function authGate(
+  request: NextRequest,
+  pathname: string,
+  passthrough: NextResponse | null
+) {
+  // The matcher now covers every route so the app origin's root can be
+  // rewritten, which means marketing pages run through here too. Reading the
+  // session is the expensive part, so it happens only for the paths that gate
+  // on it — a visitor on /pay-rates never pays for a JWT verify.
+  const gated =
+    pathname.startsWith("/driver") || pathname.startsWith("/hub")
+  if (!gated) return passthrough ?? NextResponse.next()
+
   // NextAuth prefixes the cookie with __Secure- only when running over HTTPS,
   // so derive the name from the actual protocol — not NODE_ENV. (Using NODE_ENV
   // broke local production builds and any http deployment.)
@@ -17,8 +56,6 @@ export default async function proxy(request: NextRequest) {
     secret: process.env.NEXTAUTH_SECRET ?? process.env.AUTH_SECRET,
     cookieName: useSecureCookies ? '__Secure-authjs.session-token' : 'authjs.session-token',
   })
-
-  const { pathname } = request.nextUrl
 
   // Protect driver portal and internal admin tooling
   if (
@@ -47,7 +84,7 @@ export default async function proxy(request: NextRequest) {
     pathname === "/hub/signup" ||
     pathname === "/hub/get-app"
   ) {
-    return NextResponse.next()
+    return passthrough ?? NextResponse.next()
   }
   if (pathname.startsWith("/hub") && pathname !== "/hub/login") {
     const role = (token as { role?: string } | null)?.role
@@ -98,9 +135,12 @@ export default async function proxy(request: NextRequest) {
     )
   }
 
-  return NextResponse.next()
+  return passthrough ?? NextResponse.next()
 }
 
 export const config = {
-  matcher: ["/driver/:path*", "/hub/:path*"],
+  // Everything except framework assets: the app origin's "/" has to reach this
+  // middleware to be rewritten, and a matcher limited to /driver and /hub never
+  // sees it. The gated-path check above keeps the cost off marketing routes.
+  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
 }

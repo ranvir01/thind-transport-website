@@ -96,8 +96,9 @@ describe("PWA manifest wiring", () => {
       expect(src, p).toMatch(/icons:\s*APP_ICONS/)
     }
     // …and the manifest they point at must actually reach them on iOS, which
-    // is the piece the first attempt at this fix was missing.
-    expect(read("src/app/api/hub/manifest/route.ts")).toMatch(/scope:\s*manifestScope\(/)
+    // is the piece the first attempt at this fix was missing. The scope values
+    // themselves are asserted behaviourally in manifest-branding.test.ts.
+    expect(read("src/app/api/hub/manifest/route.ts")).toMatch(/manifestScope/)
   })
 
   it("a standalone launch anywhere on the site is handed to the app", () => {
@@ -153,11 +154,10 @@ describe("PWA manifest wiring", () => {
     // Asserted against the route source rather than by importing it: the route
     // pulls next-auth, which needs a Next server runtime vitest doesn't provide.
     // (Rendered manifest values are covered by manifest-branding.test.ts.)
+    // id/start_url/scope now depend on which origin is serving, so they are
+    // asserted against the built manifest in manifest-branding.test.ts rather
+    // than grepped for here. What stays source-level is what cannot vary:
     const route = read("src/app/api/hub/manifest/route.ts")
-    expect(route).toMatch(/id:\s*["']\/hub["']/)
-    expect(route).toMatch(/start_url:\s*["']\/hub["']/)
-    // Scope itself is platform-dependent; install-scope.test.ts pins the values.
-    expect(route).toMatch(/scope:\s*manifestScope\(/)
     expect(route).toMatch(/display:\s*["']standalone["']/)
     // Installability needs a 192 and a 512, plus a maskable icon so Android
     // doesn't letterbox it inside a white rounded square.

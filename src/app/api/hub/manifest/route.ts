@@ -9,6 +9,7 @@ import { getHubUser } from "@/lib/hub/session"
 import { getCarrierSettings } from "@/lib/hub/settings"
 import { PRODUCT } from "@/lib/hub/product"
 import { manifestScope } from "@/lib/hub/install-scope"
+import { isAppHost } from "@/lib/app-origin"
 
 /** Same background/theme as the static fallback (public/hub.webmanifest). */
 const DEFAULT_THEME_COLOR = "#0E1621"
@@ -28,21 +29,25 @@ export async function resolveManifestThemeColor(): Promise<string> {
   return accent && HEX_COLOR.test(accent) ? accent : DEFAULT_THEME_COLOR
 }
 
-export async function buildManifest(userAgent?: string | null) {
+export async function buildManifest(userAgent?: string | null, host?: string | null) {
   const themeColor = await resolveManifestThemeColor()
+  // On the app's own origin there is no marketing page to be out of scope of,
+  // so the manifest claims the whole origin honestly — no per-platform scope,
+  // no user-agent sniffing, and start_url is simply the root. On the shared
+  // marketing origin the transitional behaviour stays until a domain exists.
+  const ownOrigin = isAppHost(host)
+  const home = ownOrigin ? "/" : "/hub"
   return {
     name: PRODUCT.name,
     short_name: PRODUCT.shortName,
     description:
       "Dispatch, money, compliance, and driver tools for small and mid-size trucking carriers — all in one place.",
-    // `id` pins the app's identity independently of start_url and scope, so the
-    // install is the SAME app whether it started from /hub/get-app or from an
-    // install page on the marketing side — one icon, not two.
-    id: "/hub",
-    start_url: "/hub",
-    // Widened to "/" for iOS only, so Add to Home Screen on an install page
-    // outside /hub still resolves to LoadOff. See lib/hub/install-scope.ts.
-    scope: manifestScope(userAgent),
+    // `id` pins the app's identity independently of start_url and scope, so a
+    // later change to either updates the installed app rather than minting a
+    // second one beside it. (Chromium only — iOS mints a fresh icon regardless.)
+    id: home,
+    start_url: home,
+    scope: ownOrigin ? "/" : manifestScope(userAgent),
     display: "standalone",
     background_color: themeColor,
     theme_color: themeColor,
@@ -55,7 +60,8 @@ export async function buildManifest(userAgent?: string | null) {
 }
 
 export async function GET() {
-  const manifest = await buildManifest((await headers()).get("user-agent"))
+  const h = await headers()
+  const manifest = await buildManifest(h.get("user-agent"), h.get("host"))
   return NextResponse.json(manifest, {
     headers: {
       "Content-Type": "application/manifest+json",
