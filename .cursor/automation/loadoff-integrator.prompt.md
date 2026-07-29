@@ -33,7 +33,11 @@ integrator — not only `lane-*`.
 4. **Lane branches:** If no orphan branches are ahead of main, merge any `claude/lane-*` ahead
    of integrator (same verify rules), in order:
    - `lane-office`, `lane-driver`, `lane-portal`, `lane-sidecars`, `lane-tests`, `lane-compliance`,
-     `lane-docs`, `lane-roadmap`, `lane-integrations`, `lane-analytics`, `lane-saas`
+     `lane-docs`, `lane-roadmap`, `lane-integrations`, `lane-analytics`, `lane-saas`,
+     `lane-marketing`
+   - `lane-marketing` touches the public site only. Reject its merge if the diff reaches
+     `src/app/hub/**`, `src/components/hub/**`, or `migrations/**` — that lane has no business
+     there, and a diff that strays is a prompt bug worth surfacing, not absorbing.
 
 5. **Shared files** (`types.ts`, `permissions.ts`, `navigation.ts`, `AGENTS.md`, `migrations/hub/*`)
    may ONLY be edited here when backlogs request it — one coherent change.

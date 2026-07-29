@@ -83,7 +83,7 @@ full playbook and ready-made prompts:
 | `npm run license:audit` | A dependency ships under AGPL/SSPL/GPL/LGPL, directly or transitively | Only MIT / Apache-2.0 / BSD may be added. MPL-2.0 (web-push) is fine unmodified — never fork and edit it. `--notices` regenerates `THIRD_PARTY_NOTICES.md`. |
 | `npm run token-lint` | A raw hex color or raw px value in a **redesigned** marketing component | Scoped to the file list in the script, not repo-wide. Add each file as its redesign pass lands. |
 | `npm run design-qa` | Contrast below 4.5:1 (3:1 for large text), horizontal overflow, undersized tap targets, or missing alt text | Needs the app built and running locally. Audits 23 office screens + the driver app + public routes. |
-| `npm run js-budget` | A marketing route ships more gzipped JS than the ceiling | Needs `npm run build && npm run start` first — it measures the **production** build in a real browser. Also a ratchet: routes may shrink, never grow. Target is 170KB; the site is at 236–280KB, so the ceiling sits above target on purpose rather than shipping a permanently-red gate. |
+| `npm run js-budget` | A marketing route ships more gzipped JS than the ceiling | Needs `npm run build && npm run start` first — it measures the **production** build in a real browser at a pinned 390px phone viewport. Also a ratchet: routes may shrink, never grow. Target is 170KB; measured 143–193KB, 9 of 12 routes already under. |
 
 A ratchet stops being a ratchet the moment you raise its number to make a build pass. If a change
 genuinely needs more budget, say so in the commit body — don't edit the constant quietly.
