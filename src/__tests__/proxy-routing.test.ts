@@ -51,6 +51,31 @@ describe("proxy — signed-out visitor", () => {
     expect(await destination("/hub")).toBe("/hub/login")
     expect(await destination("/driver/application")).toBe("/driver/login")
   })
+
+  // Regression: the PWA's static assets live at the origin root with names that
+  // share the `/hub` prefix (`/hub-sw.js`, `/hub-icon-*.png`, `/hub.webmanifest`).
+  // A bare startsWith("/hub") gate 307'd them to /hub/login — the service worker
+  // fetch (redirect disallowed) and the credential-less manifest icon fetch both
+  // failed, killing the offline shell and installability. They must pass through
+  // untouched even for a signed-out visitor, since an installing browser has no
+  // session cookie yet.
+  it("never gates the /hub-* PWA static assets (service worker, icons, manifest)", async () => {
+    getTokenMock.mockClear()
+    for (const asset of [
+      "/hub-sw.js",
+      "/hub.webmanifest",
+      "/hub-icon-192.png",
+      "/hub-icon-512.png",
+      "/hub-icon-512-maskable.png",
+      "/hub-icon-180.png",
+      "/hub-icon.svg",
+    ]) {
+      expect(await destination(asset), `${asset} must not redirect`).toBeNull()
+    }
+    // getToken must never even be consulted for a static asset — proving the
+    // path never entered the auth gate at all.
+    expect(getTokenMock).not.toHaveBeenCalled()
+  })
 })
 
 describe("proxy — hub roles keep their lanes", () => {

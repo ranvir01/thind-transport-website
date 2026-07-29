@@ -39,8 +39,19 @@ async function authGate(
   // rewritten, which means marketing pages run through here too. Reading the
   // session is the expensive part, so it happens only for the paths that gate
   // on it — a visitor on /pay-rates never pays for a JWT verify.
+  // Match on the route SEGMENT, not a bare prefix: the PWA ships static assets
+  // named `/hub-sw.js`, `/hub-icon-192.png`, `/hub.webmanifest`, `/hub-icon.svg`
+  // (and `/hub-icon-512*.png`) at the origin root. A bare `startsWith("/hub")`
+  // swept those into the auth gate and 307'd them to `/hub/login`, so the
+  // service-worker fetch failed ("script resource is behind a redirect, which
+  // is disallowed") and the manifest icons — fetched without credentials —
+  // resolved to the login HTML ("resource isn't a valid image"): no offline
+  // shell, no installability. Segment boundaries match app-host-routing.ts.
   const gated =
-    pathname.startsWith("/driver") || pathname.startsWith("/hub")
+    pathname === "/driver" ||
+    pathname.startsWith("/driver/") ||
+    pathname === "/hub" ||
+    pathname.startsWith("/hub/")
   if (!gated) return passthrough ?? NextResponse.next()
 
   // NextAuth prefixes the cookie with __Secure- only when running over HTTPS,
