@@ -470,7 +470,7 @@ describe("draftSettlements — multiple drivers in one call, incl. percentage-pa
     })
 
     const result = await draftSettlements(CARRIER, "2026-06-01", "2026-06-07", ACTOR)
-    expect(result).toEqual({ created: 1, skipped: 1 })
+    expect(result).toEqual({ created: 1, skipped: 1, uninvoiced: [] })
     expect(settlements).toHaveLength(1)
     expect(settlements[0].driver_id).toBe(DRIVER_B)
 
