@@ -9,7 +9,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 const { queryMock, isEmailConfigured, sendMail } = vi.hoisted(() => ({
   queryMock: vi.fn(),
   isEmailConfigured: vi.fn(),
-  sendMail: vi.fn(async () => undefined),
+  sendMail: vi.fn(async (_message: Record<string, unknown>) => undefined),
 }))
 
 vi.mock("../db", () => ({

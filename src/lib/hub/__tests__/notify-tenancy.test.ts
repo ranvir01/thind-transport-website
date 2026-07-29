@@ -60,10 +60,10 @@ describe("notify.ts in-app feed is carrier-scoped, not just user-scoped", () => 
     queryMock.mockResolvedValue([])
     await listNotifications(CARRIER_A, USER)
     await listNotifications(CARRIER_B, USER)
-    for (const [, params] of queryMock.mock.calls) {
+    for (const [, params = []] of queryMock.mock.calls) {
       expect(params).toContain(params[0]) // carrier_id is always the first bound param
     }
-    expect(queryMock.mock.calls[0][1][0]).toBe(CARRIER_A)
-    expect(queryMock.mock.calls[1][1][0]).toBe(CARRIER_B)
+    expect(queryMock.mock.calls[0][1]?.[0]).toBe(CARRIER_A)
+    expect(queryMock.mock.calls[1][1]?.[0]).toBe(CARRIER_B)
   })
 })
