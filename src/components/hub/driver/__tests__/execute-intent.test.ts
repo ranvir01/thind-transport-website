@@ -69,7 +69,7 @@ describe("executeIntent", () => {
   })
 
   it("dispatches dvir, incident, facility-note, time-off, and advance straight through as their input object", async () => {
-    const dvirInput = { loadId: "L1" } as Parameters<typeof submitDvirAction>[0]
+    const dvirInput = { loadId: "L1" } as unknown as Parameters<typeof submitDvirAction>[0]
     await executeIntent(baseIntent({ kind: "dvir", payload: dvirInput }))
     expect(submitDvirAction).toHaveBeenCalledWith(dvirInput)
 

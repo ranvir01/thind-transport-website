@@ -161,7 +161,7 @@ describe("goWorkerRouteMiles", () => {
   // was called with.
   it("builds the exact request URL, stripping a trailing slash from HAULDESK_GO_WORKER_URL", async () => {
     vi.stubEnv("HAULDESK_GO_WORKER_URL", "http://localhost:8090/")
-    const fetchMock = vi.fn(async () => ({ ok: true, json: async () => ({ miles: 100, source: "osrm" }) }))
+    const fetchMock = vi.fn(async (_input?: RequestInfo, _init?: RequestInit) => ({ ok: true, json: async () => ({ miles: 100, source: "osrm" }) }))
     vi.stubGlobal("fetch", fetchMock)
     const { goWorkerRouteMiles } = await loadSidecars()
     await goWorkerRouteMiles(ORIGIN, DEST)
@@ -170,7 +170,7 @@ describe("goWorkerRouteMiles", () => {
 
   it("builds the exact request URL when HAULDESK_GO_WORKER_URL has no trailing slash", async () => {
     vi.stubEnv("HAULDESK_GO_WORKER_URL", "http://localhost:8090")
-    const fetchMock = vi.fn(async () => ({ ok: true, json: async () => ({ miles: 100, source: "osrm" }) }))
+    const fetchMock = vi.fn(async (_input?: RequestInfo, _init?: RequestInit) => ({ ok: true, json: async () => ({ miles: 100, source: "osrm" }) }))
     vi.stubGlobal("fetch", fetchMock)
     const { goWorkerRouteMiles } = await loadSidecars()
     await goWorkerRouteMiles(ORIGIN, DEST)
@@ -349,7 +349,7 @@ describe("iftaSummary", () => {
   it("builds the exact request URL, stripping a trailing slash from HAULDESK_RUST_COMPUTE_URL", async () => {
     vi.stubEnv("HAULDESK_RUST_COMPUTE_URL", "http://localhost:8091/")
     const rustResult = { fleetMiles: 700, fleetGallons: 100, mpg: 7, rows: [], netTaxCents: 1234, missingRates: [] }
-    const fetchMock = vi.fn(async () => ({ ok: true, json: async () => rustResult }))
+    const fetchMock = vi.fn(async (_input?: RequestInfo, _init?: RequestInit) => ({ ok: true, json: async () => rustResult }))
     vi.stubGlobal("fetch", fetchMock)
     const { iftaSummary } = await loadSidecars()
     await iftaSummary(INPUTS)
@@ -359,7 +359,7 @@ describe("iftaSummary", () => {
   it("builds the exact request URL when HAULDESK_RUST_COMPUTE_URL has no trailing slash", async () => {
     vi.stubEnv("HAULDESK_RUST_COMPUTE_URL", "http://localhost:8091")
     const rustResult = { fleetMiles: 700, fleetGallons: 100, mpg: 7, rows: [], netTaxCents: 1234, missingRates: [] }
-    const fetchMock = vi.fn(async () => ({ ok: true, json: async () => rustResult }))
+    const fetchMock = vi.fn(async (_input?: RequestInfo, _init?: RequestInit) => ({ ok: true, json: async () => rustResult }))
     vi.stubGlobal("fetch", fetchMock)
     const { iftaSummary } = await loadSidecars()
     await iftaSummary(INPUTS)
