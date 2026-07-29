@@ -65,7 +65,12 @@ const OFFICE_PAGES = [
 // (owner, dispatcher, driver) each get a real logged-in pass.
 const OWNER_PAGES = [
   ["loadboard", "/hub/loadboard", "like excel"],
-  ["reports", "/hub/reports", "the operational view"],
+  // Not "the operational view" — that phrase only renders when the range has
+  // zero driver-pay settlements, but seed-demo's settlements sit 14/30 days
+  // ago, always inside the default 92-day window, so it can never match
+  // seeded data. Use the prefix common to both subtitle variants instead
+  // (same anchor OFFICE_PAGES uses for this URL).
+  ["reports", "/hub/reports", "per-truck p&l, last 92 days"],
   ["owner-dashboard", "/hub/reports/owner", "an owner checks first"],
   ["invoices", "/hub/money/invoices", "every invoice, paid or open"],
   ["settlements", "/hub/money/settlements", "weekly driver pay"],
