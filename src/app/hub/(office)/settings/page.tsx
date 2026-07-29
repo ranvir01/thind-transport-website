@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { Cable, ChevronRight, FileBadge, Palette, Smartphone, Tags, Users, Wallet } from "lucide-react"
+import { Cable, ChevronRight, FileBadge, Palette, Smartphone, Tags, TrendingUp, Users, Wallet } from "lucide-react"
 import { requireOfficeUser } from "@/lib/hub/session"
 import { PageHeader, Panel } from "@/components/hub/ui"
 
@@ -41,6 +41,13 @@ const AREAS = [
     label: "Driver pay",
     hint: "Per-mile, percentage, stop pay and weekly deductions — what settlements compute from",
     icon: Wallet,
+    ownerOnly: false,
+  },
+  {
+    href: "/hub/settings/operating-cost",
+    label: "Cost per mile",
+    hint: "The all-in cost every margin and lane ranking is priced from — measured against your own books",
+    icon: TrendingUp,
     ownerOnly: false,
   },
   {

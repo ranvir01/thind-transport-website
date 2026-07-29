@@ -183,7 +183,7 @@ export async function createWorkspaceAction(input: {
           invoice: { prefix: `${prefix}-INV-`, nextNumber: 1001, defaultTermsDays: 30 },
           pay: { companyDriverPerMileCents: perMileCents, ownerOperatorPercentage: ooShare, payLoadedMilesOnly: true },
           detention: { freeHours: 2, ratePerHourCents: DEFAULT_DETENTION_CENTS_PER_HOUR },
-          costPerMileCents: 185,
+          costPerMileCents: 234,
           fsc: { baseCentsPerGallon: 125, mpg: 6.0 },
           randomTesting: { drugPct: 50, alcoholPct: 10 },
           factoring: { company: null, remitName: null, remitAddress: null, email: null },

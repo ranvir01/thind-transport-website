@@ -49,6 +49,14 @@ export interface FleetKpis {
   totalMiles: number
   /** Operating cost (excl. driver pay) per total mile, in cents. Null when no miles recorded. */
   cpmCents: number | null
+  /**
+   * ALL-IN cost per total mile — operating cost plus driver pay. This is the
+   * measured counterpart to carrier_settings.costPerMileCents, which the
+   * dispatch board and lane margins use as an all-in planning assumption.
+   * Null without driver pay: a cpm that silently omits payroll is not an
+   * all-in number and must not be compared against one.
+   */
+  allInCpmCents: number | null
   /** Revenue per loaded mile, in cents. Null when no loaded miles. */
   rpmCents: number | null
   /** Operating ratio = all-in cost / revenue, percent (<100 is profitable). Null without driver pay. */
@@ -120,6 +128,8 @@ export function computeFleetKpis(input: FleetKpiInput): FleetKpis {
     deadheadMiles,
     totalMiles,
     cpmCents: totalMiles > 0 ? Math.round(operatingCostCents / totalMiles) : null,
+    allInCpmCents:
+      totalMiles > 0 && totalCostCents != null ? Math.round(totalCostCents / totalMiles) : null,
     rpmCents: loadedMiles > 0 ? Math.round(revenueCents / loadedMiles) : null,
     operatingRatioPct:
       revenueCents > 0 && totalCostCents != null ? round1((totalCostCents / revenueCents) * 100) : null,

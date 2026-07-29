@@ -92,7 +92,10 @@ export function avgRpmCents(revenueCents: number, miles: number): number | null 
 /** Rebuild a carrier's lane aggregates from settled/active load history. */
 export async function recomputeLanes(carrierId: string): Promise<{ lanes: number }> {
   const settings = await getCarrierSettings(carrierId)
-  const costPerMileCents = settings.costPerMileCents ?? 185
+  // No `?? 185` fallback: getCarrierSettings merges over DEFAULT_SETTINGS, so
+  // this is always a number, and a second literal here would quietly
+  // reintroduce the old under-stated constant if it ever did fire.
+  const costPerMileCents = settings.costPerMileCents
   const rows = await aggregateLanes(carrierId, costPerMileCents)
 
   await query(`DELETE FROM hub.lanes WHERE carrier_id = $1`, [carrierId])

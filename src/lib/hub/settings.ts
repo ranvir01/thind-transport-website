@@ -31,6 +31,19 @@ export interface CarrierSettings {
     payLoadedMilesOnly: boolean
   }
   detention: { freeHours: number; ratePerHourCents: number }
+  /**
+   * All-in operating cost assumption, integer cents per mile. The dispatch
+   * board prices margin as revenue - miles x this, and lanes.ts ranks every
+   * lane by it, so it is the single constant behind every margin figure in
+   * the product.
+   *
+   * Default is ATRI's 2024 marginal-cost-of-trucking all-in figure ($2.336/mi
+   * -> 234c). It shipped as 185c, which is below driver pay plus fuel alone at
+   * any realistic rate, so every margin the product showed was flattered.
+   * /hub/settings/operating-cost measures the carrier's own figure from their
+   * fuel, maintenance, tolls, expenses and settlements so this can be set from
+   * data rather than from either constant.
+   */
   costPerMileCents: number
   fsc: { baseCentsPerGallon: number; mpg: number }
   randomTesting: { drugPct: number; alcoholPct: number }
@@ -45,7 +58,7 @@ export const DEFAULT_SETTINGS: CarrierSettings = {
   invoice: { prefix: "INV-", nextNumber: 1000, defaultTermsDays: 30, autoInvoiceOnPod: true },
   pay: { companyDriverPerMileCents: 60, ownerOperatorPercentage: 0.9, payLoadedMilesOnly: true },
   detention: { freeHours: 2, ratePerHourCents: 6000 },
-  costPerMileCents: 185,
+  costPerMileCents: 234,
   fsc: { baseCentsPerGallon: 125, mpg: 6.0 },
   randomTesting: { drugPct: 50, alcoholPct: 10 },
   factoring: { company: null, remitName: null, remitAddress: null, email: null },
