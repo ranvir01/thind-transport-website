@@ -210,9 +210,9 @@ export function LoadBoardGrid({ loads, drivers, trucks, canEdit }: LoadBoardGrid
               <th className="px-3 py-2.5 text-left">Driver</th>
               <th className="px-3 py-2.5 text-left">Truck</th>
               <th className="px-3 py-2.5 text-left">Pickup</th>
-              <th className="px-3 py-2.5 text-right">Linehaul</th>
-              <th className="px-3 py-2.5 text-right">FSC</th>
-              <th className="px-3 py-2.5 text-right">Miles</th>
+              <th className="min-w-[120px] px-3 py-2.5 text-right">Linehaul</th>
+              <th className="min-w-[120px] px-3 py-2.5 text-right">FSC</th>
+              <th className="min-w-[90px] px-3 py-2.5 text-right">Miles</th>
               <th className="px-3 py-2.5 text-right">Total</th>
               <th className="px-3 py-2.5 text-left">Notes</th>
               <th className="px-3 py-2.5" />
@@ -328,7 +328,7 @@ export function LoadBoardGrid({ loads, drivers, trucks, canEdit }: LoadBoardGrid
                     onSaved={refresh}
                   />
                 </td>
-                <td className="px-3 py-1.5 text-right">
+                <td className="min-w-[120px] px-3 py-1.5 text-right">
                   <EditableCell
                     loadId={load.id}
                     field="linehaul"
@@ -339,7 +339,7 @@ export function LoadBoardGrid({ loads, drivers, trucks, canEdit }: LoadBoardGrid
                     onSaved={refresh}
                   />
                 </td>
-                <td className="px-3 py-1.5 text-right">
+                <td className="min-w-[120px] px-3 py-1.5 text-right">
                   <EditableCell
                     loadId={load.id}
                     field="fuel_surcharge"
@@ -350,7 +350,7 @@ export function LoadBoardGrid({ loads, drivers, trucks, canEdit }: LoadBoardGrid
                     onSaved={refresh}
                   />
                 </td>
-                <td className="px-3 py-1.5 text-right">
+                <td className="min-w-[90px] px-3 py-1.5 text-right">
                   <div className="flex items-center justify-end gap-0.5">
                     {load.loaded_miles == null && canEdit ? (
                       <SuggestMilesInline loadId={load.id} onSaved={refresh} />
