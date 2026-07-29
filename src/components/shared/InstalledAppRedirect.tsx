@@ -36,6 +36,7 @@
 
 import { useEffect, useSyncExternalStore } from "react"
 import { usePathname } from "next/navigation"
+import { isAppHost } from "@/lib/app-origin"
 
 const subscribeNever = () => () => {}
 
@@ -55,8 +56,13 @@ const APP_HOME = "/hub"
 /**
  * True when a standalone launch that landed here has landed in the wrong place.
  * Exported for tests: the loop conditions are not something to get wrong twice.
+ *
+ * `onAppOrigin` is the app's own domain, where the whole origin is the app and
+ * there is nothing to rescue anyone from — the rescue only has a job while the
+ * app shares an origin with the marketing site.
  */
-export function shouldReturnToApp(pathname: string): boolean {
+export function shouldReturnToApp(pathname: string, onAppOrigin = false): boolean {
+  if (onAppOrigin) return false
   // Separate surfaces — never redirect out of them.
   if (pathname === "/driver" || pathname.startsWith("/driver/")) return false
   if (pathname === "/track" || pathname.startsWith("/track/")) return false
@@ -70,7 +76,10 @@ export function shouldReturnToApp(pathname: string): boolean {
 export function InstalledAppRedirect() {
   const standalone = useSyncExternalStore(subscribeNever, readStandalone, readStandaloneOnServer)
   const pathname = usePathname()
-  const launching = standalone && shouldReturnToApp(pathname)
+  // Read on the client rather than passed as a prop: the root layout is a
+  // server component shared by both origins, so the host is only knowable here.
+  const onAppOrigin = standalone && isAppHost(window.location.host)
+  const launching = standalone && shouldReturnToApp(pathname, onAppOrigin)
 
   useEffect(() => {
     // replace(), not assign(): the website must not sit in the app's back

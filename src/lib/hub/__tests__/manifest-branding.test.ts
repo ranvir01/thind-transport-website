@@ -13,7 +13,7 @@
  * Next's file-convention manifest.ts route is not exempt from route-segment
  * middleware the way robots.ts/sitemap.ts happen to be at the app root).
  */
-import { beforeEach, describe, expect, it, vi } from "vitest"
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
 vi.mock("../session", () => ({ getHubUser: vi.fn() }))
 vi.mock("../settings", () => ({ getCarrierSettings: vi.fn() }))
@@ -111,5 +111,50 @@ describe("manifest()", () => {
     expect(result.short_name).toBe(PRODUCT.shortName)
     expect(result.scope).toBe("/hub")
     expect(result.icons?.length).toBe(3)
+  })
+})
+
+/**
+ * Where the app claims to live. A manifest is only applied to a document
+ * inside its `scope`, so these three fields decide whether Add to Home Screen
+ * yields the app or falls back to the page's title, favicon and URL — i.e. the
+ * website. They now depend on which origin is answering.
+ */
+describe("manifest scope and start_url per origin", () => {
+  const IPHONE = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) Safari/604.1"
+  const ANDROID = "Mozilla/5.0 (Linux; Android 14; Pixel 8) Chrome/125.0.0.0 Mobile Safari/537.36"
+
+  beforeEach(() => {
+    getHubUserMock.mockResolvedValue(null)
+  })
+  afterEach(() => vi.unstubAllEnvs())
+
+  it("owns the whole origin — on the app's own domain, for every platform", async () => {
+    // The point of the split: no per-platform branching, because there is no
+    // marketing page on this origin to be out of scope of.
+    vi.stubEnv("NEXT_PUBLIC_APP_HOST", "app.loadoff.com")
+    for (const ua of [IPHONE, ANDROID]) {
+      const m = await manifest(ua, "app.loadoff.com")
+      expect(m.scope, ua).toBe("/")
+      expect(m.start_url, ua).toBe("/")
+      expect(m.id, ua).toBe("/")
+    }
+  })
+
+  it("keeps the transitional shape on the shared marketing origin", async () => {
+    vi.stubEnv("NEXT_PUBLIC_APP_HOST", "app.loadoff.com")
+    // iOS needs the widened scope to reach /app and /loadoff; Android keeps the
+    // narrow one so Chrome cannot capture marketing links into the app window.
+    expect((await manifest(IPHONE, "thindtransport.com")).scope).toBe("/")
+    expect((await manifest(ANDROID, "thindtransport.com")).scope).toBe("/hub")
+    expect((await manifest(IPHONE, "thindtransport.com")).start_url).toBe("/hub")
+  })
+
+  it("is inert until an app host is configured", async () => {
+    // Shipping the split before a domain exists must change nothing.
+    vi.stubEnv("NEXT_PUBLIC_APP_HOST", "")
+    const m = await manifest(IPHONE, "app.loadoff.com")
+    expect(m.start_url).toBe("/hub")
+    expect(m.id).toBe("/hub")
   })
 })
