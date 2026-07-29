@@ -3,6 +3,7 @@ import { getCarrier, getCarrierSettings } from "@/lib/hub/settings"
 import { PRODUCT } from "@/lib/hub/product"
 import { AcceptInvitationForm } from "@/components/hub/AcceptInvitationForm"
 import { PORTAL_ACCENT_DEFAULT, resolvePortalAccent } from "@/app/hub/portal/accent"
+import { resolveInvitationState } from "./invitationState"
 
 export const dynamic = "force-dynamic"
 
@@ -17,8 +18,7 @@ export default async function AcceptInvitationPage({ params }: { params: Promise
           .catch(() => PORTAL_ACCENT_DEFAULT),
       ])
     : [null, PORTAL_ACCENT_DEFAULT]
-  const expired = invitation ? new Date(invitation.expires_at) < new Date() : false
-  const used = Boolean(invitation?.accepted_user_id)
+  const state = resolveInvitationState(invitation)
 
   return (
     <div className="mx-auto max-w-md">
@@ -31,12 +31,12 @@ export default async function AcceptInvitationPage({ params }: { params: Promise
           <p className="mt-4 text-body-sm text-steel-200">
             This invitation link isn&apos;t valid. Ask {carrier?.name ?? "the carrier"} to send a fresh one.
           </p>
-        ) : used ? (
+        ) : state === "used" ? (
           <p className="mt-4 text-body-sm text-steel-200">
             This invitation was already used —{" "}
             <a href="/hub/login" className="text-[color:var(--portal-accent)] underline">sign in here</a>.
           </p>
-        ) : expired ? (
+        ) : state === "expired" ? (
           <p className="mt-4 text-body-sm text-steel-200">
             This invitation expired. Ask {carrier?.name ?? "the carrier"} to send a fresh one.
           </p>
