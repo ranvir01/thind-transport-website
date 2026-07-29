@@ -30,12 +30,12 @@
 import { execSync } from "node:child_process"
 
 /**
- * Test-file tsc errors as of 2026-07-28. Lower this whenever you fix some;
+ * Test-file tsc errors as of 2026-07-29. Lower this whenever you fix some;
  * never raise it. Raising it is how a ratchet stops being a ratchet.
  *
- * History: 105 → 86 → 78. The drop to 86 came from two shared fixtures rather
- * than per-file patches — helpers/db-mock.ts (a `vi.fn(async () => [])`
- * declares a ZERO-argument function, so every `const [sql, params] =
+ * History: 105 → 86 → 78 → 52. The drop to 86 came from two shared fixtures
+ * rather than per-file patches — helpers/db-mock.ts (a `vi.fn(async () =>
+ * [])` declares a ZERO-argument function, so every `const [sql, params] =
  * mock.calls[0]` was a type error) and helpers/session.ts (hand-built session
  * objects all omitted HubSessionUser's required `email`). Use those in new
  * tests and this number keeps falling on its own. The drop to 78 fixed the
@@ -45,9 +45,17 @@ import { execSync } from "node:child_process"
  * `mock.calls[0][0]`, and dvir-tenancy.test.ts's local `makeClient()` mock
  * took only `(text: string)` while its assertions read `mock.calls[n][1]` for
  * query params — same fix as the shared fixtures, just inline: give the mock
- * a second parameter.
+ * a second parameter. The drop to 52 fixed the worst three offenders:
+ * scripts/prod-smoke.mjs's `evaluateStaleness` had no JSDoc `@param`, so its
+ * `tipAgeMinutes`/`behindCount` params (default `null`) inferred as the bare
+ * type `null` — a JSDoc param annotation fixed all 10 call-site errors in
+ * prod-smoke-staleness.test.ts at once. onboarding-workspace.test.ts and
+ * sidecars.test.ts had the exact single-argument-mock shape described above
+ * (a local `mockClient().query` and four `fetchMock`s each declared with only
+ * one param while assertions read `calls[n][1]`) — same one-line fix, given
+ * the mock its real second parameter.
  */
-const TEST_ERROR_BASELINE = 78
+const TEST_ERROR_BASELINE = 52
 
 const isTestFile = (file) =>
   file.includes("__tests__/") || file.endsWith(".test.ts") || file.endsWith(".test.tsx")
