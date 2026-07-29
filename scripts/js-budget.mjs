@@ -30,23 +30,36 @@ import { gzipSync } from "node:zlib"
 import { launchBrowser, BASE } from "./e2e-lib.mjs"
 
 /**
- * The rebuild plan's target. The site is NOT there yet — measured 236-280KB
- * per route on 2026-07-28 — so failing at 170 would ship a permanently-red
- * gate, and a gate that is always red is a gate everyone learns to ignore.
+ * The rebuild plan's target, and the site is closer to it than the first run of
+ * this script claimed. Measured at the pinned phone viewport on 2026-07-28:
+ * 143-193KB per route, with 9 of 12 routes already under 170KB. Only `/`,
+ * `/apply` (181KB) and `/pay-rates` (193KB) are over.
+ *
+ * The earlier "236-280KB" figure was this script measuring at whatever viewport
+ * Puppeteer happened to default to, which let the homepage's 3MB hero video and
+ * its desktop-only code into the count. See VIEWPORT below.
  */
 const TARGET_KB = 170
 
 /**
- * What the site actually ships today, per route, as a ratchet: a route may get
- * smaller, never larger. Lower these as pages get lighter. Raising one is how
- * a ratchet stops being a ratchet — if a change genuinely needs more JS, say so
- * in the commit rather than editing the number quietly.
+ * What the site actually ships today, as a ratchet: a route may get smaller,
+ * never larger. Lower this as pages get lighter. Raising it is how a ratchet
+ * stops being a ratchet — if a change genuinely needs more JS, say so in the
+ * commit rather than editing the number quietly.
  *
- * The gap to TARGET_KB is real work, not an accounting problem: the largest
- * single lever is that every marketing page currently ships the same client
- * bundle whether or not it has an interactive island on it.
+ * 200 sits just above the measured worst route (/pay-rates, 193KB), so a
+ * regression of even 8KB on the heaviest page trips it.
+ *
+ * ONE FAILED EXPERIMENT, RECORDED SO IT ISN'T REPEATED: the obvious idea is to
+ * stop mounting sonner's <Toaster> in the root layout — most routes can never
+ * fire a toast — by gating it behind usePathname() and next/dynamic. It was
+ * tried on 2026-07-28 and measured with a proper A/B: it made EVERY route
+ * 74-110KB *worse*, because turning the root layout's provider into a
+ * router-subscribed dynamic boundary pulls far more into each page's initial
+ * load than the ~12KB of sonner it saves. Reverted. If you try this, A/B it the
+ * same way before believing it helped.
  */
-const CEILING_KB = Number(process.env.JS_BUDGET_KB ?? 285)
+const CEILING_KB = Number(process.env.JS_BUDGET_KB ?? 200)
 
 /** The pages a driver, shipper, or broker actually lands on. */
 const ROUTES = [
@@ -64,6 +77,25 @@ const ROUTES = [
   "/cdl-jobs/washington",
 ]
 
+/**
+ * The measurement viewport, pinned deliberately.
+ *
+ * This was the bug that made the first version of this script useless: it never
+ * set a viewport, so it inherited whatever Puppeteer defaulted to that run. The
+ * homepage skips its 3MB hero video at phone widths, so the same commit
+ * measured 143KB one run and 236KB the next depending on which side of the
+ * breakpoint the default landed on. A ratchet that moves on its own is worse
+ * than no ratchet — it trains everyone to re-run until it passes.
+ *
+ * 390x844 is the iPhone 14/15 class device and matches the 390px width AGENTS.md
+ * already requires every change to be checked at. It is also the case the budget
+ * is actually about: a driver on cell signal at a truck stop, not a desk.
+ */
+const VIEWPORT = { width: 390, height: 844, deviceScaleFactor: 3, isMobile: true, hasTouch: true }
+const PHONE_UA =
+  "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 " +
+  "(KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1"
+
 const cli = process.argv.slice(2).filter((a) => a.startsWith("/"))
 const routes = cli.length ? cli : ROUTES
 
@@ -75,6 +107,10 @@ try {
     // A fresh context per route so one page's cache can't flatter the next.
     const page = await browser.newPage()
     await page.setCacheEnabled(false)
+    // Pinned before navigating: a viewport change after load would re-run
+    // responsive logic and re-request assets, double-counting them.
+    await page.setViewport(VIEWPORT)
+    await page.setUserAgent(PHONE_UA)
 
     let jsBytes = 0
     let totalBytes = 0

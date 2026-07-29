@@ -260,6 +260,39 @@ can use session branches and must end commits with `Backlog:`.
 | `claude/lane-saas` | onboarding, `hub/admin/**`, per-tenant branding, isolation tests | SaaS-ready hardening — NO billing code |
 | `claude/lane-analytics` | `(office)/reports/**`, new dashboard routes, kpi libs | M10 owner dashboard: revenue, CPM, deadhead %, lane leaderboard, AR trend |
 | `claude/lane-roadmap` | new feature files within any ONE existing territory per run | NEW capability from `docs/hauldesk-gap-report`-style gaps: pick the top unbuilt feature a 15-truck carrier needs, build it complete with tests + E2E |
+| `claude/lane-marketing` | the PUBLIC site only — `src/app/**` except `hub/**`, `track/**`, `api/hub/**`; `src/components/**` except `hub/**`; `src/lib/constants.ts` is READ-ONLY here | see mission below — work the measured gaps in order, never by feel |
+
+**Why `lane-marketing` exists.** Every other lane points at LoadOff. For months the fleet improved
+`/hub` while `thindtransport.com` — the surface that actually recruits drivers and wins shippers —
+had no automation touching it at all, so every website change had to come through an owner-driven
+session by hand. This lane closes that gap.
+
+Its mission is a ranked list, worked top-down, one finished item per run:
+
+1. **Cut route JS toward the 170KB target.** `npm run js-budget` measures it (build + start first).
+   Measured at the phone viewport: 143–193KB per route, and **9 of 12 routes are already under
+   target**. Only `/` and `/apply` (181KB) and `/pay-rates` (193KB) are over, and all three are
+   over because of one thing — the embedded forms and the earnings calculator. So this is a
+   narrow, three-page job, not a site-wide rewrite. The ceiling is a ratchet: lower `CEILING_KB`
+   as routes shrink, never raise it.
+
+   Two traps here, both already sprung once:
+   - The "236–280KB" number in earlier commits and docs was wrong — the script had no pinned
+     viewport, so it measured the homepage's desktop path including the 3MB hero video. Always
+     A/B a change against a rebuilt baseline; never compare across script versions.
+   - Gating sonner's `<Toaster>` out of the root layout looks like free weight and is not: it
+     measured 74–110KB *worse* per route. See the note in `scripts/js-budget.mjs`.
+2. **Homepage collapse** — ~24 screens at 390px down toward 12, without losing the earnings
+   calculator moment.
+3. **State page deepening** — 48 `/cdl-jobs/<state>` pages, 1 deepened so far. One state per run,
+   real market detail (freight corridors, seasonal lanes, chain laws), never generated filler.
+
+**Hard limits for this lane.** It may not touch `/hub` or any TMS code, may not add a dependency
+(the repo's no-heavy-dependencies rule is not negotiable for a page a driver loads on truck-stop
+signal), and may not invent a public trust claim — insurance limits, on-time percentages, customer
+counts and testimonials come from the owner or they do not ship. `src/lib/constants.ts` is the
+single source of company facts and is edited by the integrator, not here, because several lanes
+read it.
 
 **Prod smoke (Cursor automation, :30 UTC):** run `npm run prod:smoke` — `/hub/login` must return 200
 with `LoadOff` in the body; `/hub` must not 5xx; `/api/version` must report `origin/main`'s SHA
