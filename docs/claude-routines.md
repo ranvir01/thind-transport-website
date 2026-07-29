@@ -1582,3 +1582,90 @@ Backlog:
   @vercel/analytics/@vercel/speed-insights/geist/eslint-config-next family (owner-approval-gated
   semver-major bump); Rust sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision); 193
   pending `claude/*` branches awaiting the meta-governor prune pass (unchanged from prior cycles).
+
+## QA rig drive on main@8da55b1 — 2026-07-29 ~04:00-04:40 UTC (owner/dispatcher/driver, read-only prod probe)
+
+Charter (docs/agent-improvement-loop.md §5): no feature work — stand up the local rig, drive real
+owner/dispatcher/driver flows against it, probe `thindtransport.com` read-only, fix only outright
+regressions from the last 3h of commits.
+
+**Last-3h commit window:** empty — the newest commit on `main` (`8da55b1`) landed ~9h before this
+cycle started and nothing has landed since. Nothing to fix-forward under the "outright regression"
+clause this cycle.
+
+**Local rig:** fresh from scratch — Postgres 16 started (was down), `hauldesk` role + database
+created (neither existed), `npm install` (750 packages), `.env.local` generated from `.env.example`
+(fresh `NEXTAUTH_SECRET`/`CREDENTIALS_KEY`/`CRON_SECRET`, `SMTP_USER`/`SMTP_PASS` left blank per
+dev-workflow-testing skill pitfall #6, `POSTGRES_URL` pointed at the local role), `npm run db:migrate`
+(23 migrations clean), `npm run seed:demo`, `npm run build` (Turbopack, 0 TS errors), `npm run start`.
+
+**Full `e2e-run-all.mjs` battery (59 scripts + sweep) as owner/dispatcher/driver/broker/shipper/portal:**
+52/53 passed. The one failure, `e2e-sweep`'s owner-pass `/hub/reports` anchor ("page content missing...
+stuck on a spinner?" at both widths), is the same stale-anchor non-regression the 2026-07-26 and later
+cycles already carried: the sweep's `OWNER_PAGES` check still looks for the literal phrase "the
+operational view", but `/hub/reports`' subtitle is conditional on `hasDriverPay`
+(`src/app/hub/(office)/reports/page.tsx`) and the seeded demo settlements land inside the default
+92-day range, so the live copy is the driver-pay-included variant ("...the per-truck table below
+stays operational..."). Confirmed by hand: logged in as owner and loaded `/hub/reports` directly — real
+content renders immediately, no spinner. Not re-fixed here (lane-tests territory, one-line anchor-string
+change, same call as every prior cycle that hit this).
+
+**Manual Playwright drive on top of the battery** (own scripts, `/tmp/.../scratchpad/pw/drive*.mjs`):
+logged in as owner, dispatcher, driver (390px, forced-dark rules intact — the bottom tab bar's apparent
+mid-page duplication in a `fullPage` screenshot is a known Playwright full-page-screenshot artifact for
+`position: fixed` elements, not a real overlap — confirmed by comparing scrolled viewport-only shots),
+broker, and shipper; clicked into a load detail, invoiced a POD-received load end-to-end (THD-1009 →
+THD-INV-1005, correct amount), drafted weekly settlements (7 created, 3 skipped, all amounts correct),
+confirmed a new dispatch on the driver PWA, and loaded a public `/track/[token]` page. All green, no
+console errors beyond the expected `_vercel/insights` and `_vercel/speed-insights` 404s (those scripts
+don't exist under local `next start`, same artifact every prior cycle has already named).
+
+**Found a real, previously unflagged money-correctness bug** while exercising the "Paste rate con"
+intake (`src/app/hub/(office)/loads/paste`, parser at `src/lib/hub/parser.ts`): `findMoney()` finds the
+line containing a label (e.g. `/fuel|fsc/i`) and then takes the *first* dollar amount on that whole
+line — it never anchors the match to text *after* the label. When Linehaul and Fuel Surcharge share one
+line, e.g. `Linehaul: $3,200.00  FSC: $350.00` (this is verbatim the placeholder text shown in the
+paste-intake textarea itself), `fuelSurchargeCents` comes back as the *linehaul* amount ($3,200.00
+instead of $350.00), roughly doubling the parsed total rate ($6,400 instead of $3,550). Reproduced three
+ways: (1) a standalone Node repro of `findMoney()` against the exact placeholder string, (2) a
+Playwright drive of the actual `/hub/loads/paste` page as the dispatcher demo user — the confidence-chip
+UI visibly shows `FSC $3200.00` and the rate section totals $6,400.00, (3) confirmed the existing
+`parser.test.ts` fixture never catches this because its sample rate-con puts Linehaul and Fuel Surcharge
+on *separate* lines, so the shared-line case is untested. Checked `git log --all --grep` for "FSC",
+"parser", "fuel surcharge" first per AGENTS.md's duplicate-work rule — no existing fix on any branch.
+Did not fix: `parser.ts` isn't in this cycle's charter (QA/probe only, no feature or non-regression
+code changes) and doesn't fall inside any single lane's territory in docs/agent-improvement-loop.md §5.
+
+**Production probe:** direct HTTPS to `thindtransport.com` stayed egress-blocked (`curl` exit 56 on
+`CONNECT`, same as every prior cycle). Via Vercel MCP: `get_deployment("thindtransport.com")` shows the
+aliased production deployment (`dpl_FNQ6F1k5Ws1i3DHWD7zRDzJbQwac`) is `READY`, `target: "production"`,
+commit `8da55b1` — exactly `main`'s current HEAD. Production is healthy and current. (`get_project.live`
+again reads `false` despite this — same documented caveat, not re-paging.) `get_runtime_errors` (24h)
+surfaced two clusters, both already known: a `pg` SSL-mode deprecation warning (cosmetic, not an error)
+and `[cron:compliance-scan] 1/4 carrier run(s) failed` on `Invalid login` against Gmail SMTP — this is
+the same standing defect the 2026-07-28 cycle already found, flagged in its Backlog, and notified the
+owner about directly (secrets are off-limits per AGENTS.md, so it still can't be fixed here); it was
+still failing as of `2026-07-28T20:20:30Z`, i.e. it has not been resolved since that notification. Not
+re-notifying since the owner already knows; still worth another explicit callout because it remains
+unresolved.
+
+`npm audit --omit=dev` still narrows to the same 3 root packages (`nodemailer`, `postcss`/`sharp` via
+`next`) as the last cycle that checked — no new advisories, still owner-gated on a semver-major bump.
+
+Backlog:
+- **New, real bug:** `src/lib/hub/parser.ts`'s `findMoney()` grabs the first dollar amount on a
+  label-matching line instead of the amount nearest the label, so Linehaul + Fuel Surcharge on one line
+  (the paste-intake page's own placeholder example reproduces it) silently doubles the parsed rate. Fix
+  should anchor the money match to the text immediately following the label match within the line (or
+  split multi-label lines before scanning) and add a same-line fixture to `parser.test.ts`. No lane in
+  §5 owns `src/lib/hub/parser.ts` / `src/app/hub/(office)/loads/paste` directly — integrator should
+  route this or claim it directly.
+- `e2e-sweep.mjs`'s `OWNER_PAGES` "reports" anchor (`"the operational view"`) still needs the one-line
+  substring fix prior cycles have already flagged (lane-tests territory) — carried again, unchanged.
+- Gmail SMTP credentials for the real carrier's alert/compliance-scan emails are still failing
+  (`Invalid login`, last seen 2026-07-28T20:20:30Z) since at least the 2026-07-28 cycle's notification —
+  owner needs to rotate the app password; can't be touched here (secrets off-limits per AGENTS.md).
+- Carried, unchanged: npm audit's 3 root high-severity advisories (`nodemailer`, `sharp` via `next`,
+  owner-approval-gated semver-major bump); Rust sidecar `tiny_http` connection-timeout/thread-cap gap
+  (owner decision); IFTA due-date/holiday handling (owner design call); ~193 pending `claude/*` branches
+  awaiting the meta-governor prune pass.
