@@ -53,7 +53,7 @@ import { pathToFileURL } from "node:url"
  * statements fixes (same zero-arg-mock and optional-params-tuple shapes) on
  * top of that.
  */
-const TEST_ERROR_BASELINE = 42
+const TEST_ERROR_BASELINE = 36
 
 const isTestFile = (file) =>
   file.includes("__tests__/") || file.endsWith(".test.ts") || file.endsWith(".test.tsx")

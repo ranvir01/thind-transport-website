@@ -17,6 +17,7 @@ vi.mock("bcrypt", () => ({ default: { hash: vi.fn(async () => "hashed-pw") } }))
 
 import { query, queryOne } from "../db"
 import { acceptInvitation, createPortalInvitation, getInvitation } from "../portal"
+import { callAt } from "./helpers/db-mock"
 
 const queryMock = vi.mocked(query)
 const queryOneMock = vi.mocked(queryOne)
@@ -52,7 +53,7 @@ describe("createPortalInvitation", () => {
     // path is covered below.
     queryMock.mockResolvedValueOnce([{ id: CUSTOMER }])
     await createPortalInvitation(CARRIER, CUSTOMER, "Broker@Example.com", "broker", "Dana")
-    const [sql, params] = queryMock.mock.calls[1]
+    const { sql, params } = callAt(queryMock, 1)
     expect(String(sql)).toContain("INSERT INTO hub.portal_invitations")
     expect(String(sql)).toContain("NOW() + INTERVAL '7 days'")
     expect(params[0]).toBe(CARRIER)
