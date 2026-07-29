@@ -13,7 +13,7 @@ import { getDriver, dispatchLegality } from "@/lib/hub/drivers"
 import { getTruck } from "@/lib/hub/fleet"
 import { saveDocument, deleteDocument } from "@/lib/hub/documents"
 import { assertCarrierRefs, type CarrierRefField } from "@/lib/hub/tenancy"
-import { createShareLink, revokeShareLink } from "@/lib/hub/sharelinks"
+import { createShareLink, revokeShareLink, renewShareLink } from "@/lib/hub/sharelinks"
 import { logAudit } from "@/lib/hub/audit"
 import { geocodeCityState } from "@/lib/hub/geocode"
 import { NEXT_STATUS, STATUS_LABELS, canCancelLoad, dollarsToCents } from "@/lib/hub/types"
@@ -432,5 +432,21 @@ export async function revokeShareLinkAction(linkId: string, loadId: string): Pro
     return { ok: true }
   } catch (err) {
     return actionError(err, "Failed to revoke link")
+  }
+}
+
+export async function renewShareLinkAction(linkId: string, loadId: string): Promise<ActionResult> {
+  let user
+  try {
+    user = await requirePermission("loads:write")
+  } catch (err) {
+    return actionError(err, "Forbidden")
+  }
+  try {
+    await renewShareLink(user.carrierId, linkId)
+    revalidateLoadViews(loadId)
+    return { ok: true }
+  } catch (err) {
+    return actionError(err, "Failed to renew link")
   }
 }

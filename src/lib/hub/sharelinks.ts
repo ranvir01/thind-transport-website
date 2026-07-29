@@ -8,8 +8,14 @@ export interface ShareLink {
   load_id: string
   token: string
   revoked_at: string | null
+  expires_at: string | null
   created_at: string
 }
+
+// How long a freshly-minted or renewed tracking link stays live. Loads
+// clear in days, not weeks — 30 gives brokers room to keep checking a
+// slow-paying or disputed shipment without a link staying reachable forever.
+const SHARE_LINK_TTL_DAYS = 30
 
 export async function listShareLinks(carrierId: string, loadId: string): Promise<ShareLink[]> {
   return query<ShareLink>(
@@ -27,9 +33,9 @@ export async function createShareLink(
   // 32 hex chars = 128 bits of entropy
   const token = randomBytes(16).toString("hex")
   const rows = await query<ShareLink>(
-    `INSERT INTO hub.share_links (carrier_id, load_id, token, created_by)
-     VALUES ($1,$2,$3,$4) RETURNING *`,
-    [carrierId, loadId, token, createdBy]
+    `INSERT INTO hub.share_links (carrier_id, load_id, token, created_by, expires_at)
+     VALUES ($1,$2,$3,$4, NOW() + $5 * INTERVAL '1 day') RETURNING *`,
+    [carrierId, loadId, token, createdBy, SHARE_LINK_TTL_DAYS]
   )
   return rows[0]
 }
@@ -38,6 +44,17 @@ export async function revokeShareLink(carrierId: string, id: string): Promise<vo
   await query(
     `UPDATE hub.share_links SET revoked_at = NOW() WHERE carrier_id = $1 AND id = $2`,
     [carrierId, id]
+  )
+}
+
+/** Push a link's expiry another SHARE_LINK_TTL_DAYS out from now — for a link
+ *  that's about to lapse (or already has) but the broker still needs it. A
+ *  revoked link can't be renewed; revoke is meant to be final. */
+export async function renewShareLink(carrierId: string, id: string): Promise<void> {
+  await query(
+    `UPDATE hub.share_links SET expires_at = NOW() + $3 * INTERVAL '1 day'
+     WHERE carrier_id = $1 AND id = $2 AND revoked_at IS NULL`,
+    [carrierId, id, SHARE_LINK_TTL_DAYS]
   )
 }
 
@@ -58,7 +75,8 @@ export interface TrackedLoad {
 /** Public lookup by token — exposes status + stops + city-level position only. */
 export async function getTrackedLoad(token: string): Promise<TrackedLoad | null> {
   const link = await queryOne<{ load_id: string; carrier_id: string }>(
-    `SELECT load_id, carrier_id FROM hub.share_links WHERE token = $1 AND revoked_at IS NULL`,
+    `SELECT load_id, carrier_id FROM hub.share_links
+     WHERE token = $1 AND revoked_at IS NULL AND (expires_at IS NULL OR expires_at > NOW())`,
     [token]
   )
   if (!link) return null
