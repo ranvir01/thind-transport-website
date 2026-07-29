@@ -47,7 +47,7 @@ const VALID_INPUT = {
 }
 
 function mockClient() {
-  const query = vi.fn(async (sql: string) => {
+  const query = vi.fn(async (sql: string, _params?: unknown[]) => {
     if (sql.includes("INSERT INTO hub.carriers")) return { rows: [{ id: "carrier-1" }] }
     return { rows: [] }
   })
