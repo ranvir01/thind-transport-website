@@ -58,6 +58,11 @@ function AgingTrendBars({ periods }: { periods: AgingTrendPeriod[] }) {
 
   return (
     <div>
+      <div className="flex items-center justify-end px-4 pt-2">
+        <a href="/hub/reports/export/ar-aging?weeks=8" className="text-[11px] font-semibold text-accent-text hover:underline">
+          Download CSV
+        </a>
+      </div>
       <div className="flex items-end gap-2 px-4 pb-2 pt-2" style={{ height: 160 }}>
         {periods.map((p) => (
           <div key={p.periodStart} className="flex flex-1 flex-col items-center gap-1.5">
