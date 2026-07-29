@@ -15,6 +15,8 @@ import { Badge } from "@/components/ui/badge"
 import { COMPANY_INFO, STATS } from "@/lib/constants"
 import { PageBreadcrumb } from "@/components/shared/PageBreadcrumb"
 import { PageHero } from "@/components/shared/PageHero"
+import { RelatedLinks } from "@/components/shared/RelatedLinks"
+import { freightLinks } from "@/components/shared/link-sets"
 
 export const metadata: Metadata = {
   title: `About ${COMPANY_INFO.name}`,
@@ -321,7 +323,12 @@ export default function AboutPage() {
           </div>
         </div>
       </section>
+
+      <RelatedLinks
+        title="See it for yourself"
+        intro="Records, equipment and tools rather than more company history."
+        links={freightLinks(["/about"])}
+      />
     </div>
   )
 }
-

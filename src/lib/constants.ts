@@ -63,10 +63,12 @@ export const PAY_RATES = {
   },
 } as const
 
+// Only benefits we actually offer today. Health/dental/vision, life, disability
+// and 401(k) were removed in July 2026 — we do not carry those plans at the
+// moment, and promising them on a recruiting page is a promise a driver finds
+// out about at orientation. Add them back here first if that ever changes.
 export const BENEFITS = {
   companyDriver: [
-    "Health, dental, and vision insurance",
-    "401(k) retirement plan with company match",
     "$1,000 sign-on bonus (first year)",
     "Weekly direct deposit pay",
     "Home time flexibility - Local/Regional/OTR options",

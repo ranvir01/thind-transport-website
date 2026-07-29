@@ -4,8 +4,55 @@ import {
   Shield, FileText, Fuel, Wrench, AlertTriangle, 
   Clock, MapPin, Phone, BookOpen, Download,
   CheckCircle2, ExternalLink, Scale, HeartPulse,
-  Truck, Navigation, Calculator, FileCheck
+  Truck, Navigation, Calculator, FileCheck, Timer, Route, Smartphone
 } from "lucide-react"
+import { HosClockCalculator } from "@/components/features/HosClockCalculator"
+import { RelatedLinks } from "@/components/shared/RelatedLinks"
+
+const RESOURCE_LINKS = [
+  {
+    href: "/pay-rates",
+    title: "Pay calculator",
+    blurb: "Miles, rate and fuel in — what the week clears, out.",
+    icon: Calculator,
+    kind: "Tool" as const,
+  },
+  {
+    href: "/fuel-program",
+    title: "Fuel savings calculator",
+    blurb: "What the card takes off your cost per mile, on your own MPG.",
+    icon: Fuel,
+    kind: "Tool" as const,
+  },
+  {
+    href: "/tools/freight-class-calculator",
+    title: "Freight class calculator",
+    blurb: "Density to NMFC class — useful when a broker's class looks wrong.",
+    icon: FileCheck,
+    kind: "Tool" as const,
+  },
+  {
+    href: "/routes",
+    title: "Lanes and corridors",
+    blurb: "The runs we actually make, with distances and home time.",
+    icon: Route,
+    kind: "Page" as const,
+  },
+  {
+    href: "/app",
+    title: "Driver app",
+    blurb: "Logs, PODs, pay and fuel prices — works with no signal.",
+    icon: Smartphone,
+    kind: "Tool" as const,
+  },
+  {
+    href: "/benefits",
+    title: "What we offer drivers",
+    blurb: "Including a straight list of what we don't offer yet.",
+    icon: Shield,
+    kind: "Page" as const,
+  },
+]
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { COMPANY_INFO } from "@/lib/constants"
@@ -140,6 +187,8 @@ const resourceCategories = [
           "Emergency response procedures",
           "Hazmat routing restrictions",
         ],
+        link: "https://www.tsa.gov/for-industry/hazmat-endorsement",
+        external: true,
       },
       {
         title: "Accident Procedures",
@@ -169,6 +218,8 @@ const resourceCategories = [
           "Fuel tax reporting assistance",
           "IFTA compliance support",
         ],
+        link: "/fuel-program",
+        internal: true,
       },
       {
         title: "Fuel Efficiency Tips",
@@ -191,6 +242,8 @@ const resourceCategories = [
           "Fuel purchase documentation",
           "State-by-state tax rates",
         ],
+        link: "https://www.iftach.org/",
+        external: true,
       },
     ],
   },
@@ -284,6 +337,8 @@ const resourceCategories = [
           "Stress management techniques",
           "Sleep hygiene improvements",
         ],
+        link: "https://988lifeline.org/",
+        external: true,
       },
     ],
   },
@@ -302,6 +357,8 @@ const resourceCategories = [
           "Quarterly estimated taxes",
           "Business expense tracking",
         ],
+        link: "https://www.irs.gov/businesses/small-businesses-self-employed/trucking-tax-center",
+        external: true,
       },
       {
         title: "Load Profitability Calculator",
@@ -319,6 +376,8 @@ const resourceCategories = [
           "Weather monitoring tools",
           "Load board best practices",
         ],
+        link: "/routes",
+        internal: true,
       },
     ],
   },
@@ -438,6 +497,30 @@ export default function ResourcesPage() {
         </div>
       </section>
 
+      {/* The one thing on this page that does the work for you: the HOS rules
+          were already explained here in bullets, which still left the driver
+          doing clock arithmetic at a truck stop. */}
+      <section className="py-14">
+        <div className="container">
+          <div className="mx-auto max-w-5xl">
+            <div className="mb-8 text-center">
+              <Badge className="mb-4 bg-orange-600 text-white px-4 py-2 text-sm font-bold">
+                <Timer className="h-4 w-4 mr-1.5 inline" />
+                Free tool
+              </Badge>
+              <h2 className="text-3xl md:text-4xl font-black text-gray-900 mb-3">
+                Work out your clock
+              </h2>
+              <p className="mx-auto max-w-2xl text-gray-600">
+                Punch in when you came on duty and how much you&apos;ve driven. It gives you the
+                window, the break, the reset and what&apos;s left in your 70.
+              </p>
+            </div>
+            <HosClockCalculator />
+          </div>
+        </div>
+      </section>
+
       {/* Resource Categories */}
       <section className="py-16">
         <div className="container">
@@ -507,6 +590,12 @@ export default function ResourcesPage() {
           })}
         </div>
       </section>
+
+      <RelatedLinks
+        title="Tools on this site"
+        intro="Calculators and pages that do something, not just describe it."
+        links={RESOURCE_LINKS}
+      />
 
       {/* CTA Section */}
       <section className="py-16 bg-navy">

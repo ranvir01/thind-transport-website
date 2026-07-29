@@ -6,6 +6,8 @@ import { PageBreadcrumb } from "@/components/shared/PageBreadcrumb"
 import { ProfitCalculator } from "@/components/features/ProfitCalculator"
 import { Reveal } from "@/components/ui/Reveal"
 import { PersonaRemember } from "@/components/shared/PersonaRemember"
+import { RelatedLinks } from "@/components/shared/RelatedLinks"
+import { driverLinks } from "@/components/shared/link-sets"
 
 export const metadata: Metadata = {
   title: "Drive for Thind Transport | CDL-A & owner-operators",
@@ -182,6 +184,12 @@ export default function DriversPage() {
           </p>
         </div>
       </section>
+
+      <RelatedLinks
+        title="Useful before you apply"
+        intro="Tools, records and pages that answer the questions the pitch doesn't."
+        links={driverLinks(["/drivers"])}
+      />
     </div>
   )
 }

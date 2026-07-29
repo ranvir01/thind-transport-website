@@ -3,13 +3,60 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { 
-  Fuel, TrendingDown, CreditCard, MapPin, 
+import {
+  Fuel, TrendingDown, CreditCard, MapPin,
   Shield, CheckCircle2, DollarSign, Percent,
-  Phone, FileText, Star, Info
+  Phone, FileText, Calculator,
 } from "lucide-react"
 import { COMPANY_INFO } from "@/lib/constants"
 import { PageBreadcrumb } from "@/components/shared/PageBreadcrumb"
+import { FuelSavingsCalculator } from "@/components/features/FuelSavingsCalculator"
+import { RelatedLinks } from "@/components/shared/RelatedLinks"
+
+const FUEL_LINKS = [
+  {
+    href: "/pay-rates",
+    title: "Pay calculator",
+    blurb: "Miles, rate and fuel price in — what a week actually clears, out.",
+    icon: Calculator,
+    kind: "Tool" as const,
+  },
+  {
+    href: "/pay-breakdown",
+    title: "Settlement, line by line",
+    blurb: "Gross, fuel surcharge, deductions and the number that hits your account.",
+    icon: DollarSign,
+    kind: "Guide" as const,
+  },
+  {
+    href: "/owner-operators",
+    title: "Owner-operator terms",
+    blurb: "The 90% split, no forced dispatch, and what we don't deduct.",
+    icon: Percent,
+    kind: "Page" as const,
+  },
+  {
+    href: "/routes",
+    title: "Lanes and fuel stops",
+    blurb: "The corridors we run — and where the cheap diesel on them tends to be.",
+    icon: MapPin,
+    kind: "Page" as const,
+  },
+  {
+    href: "/app",
+    title: "Fuel prices in the app",
+    blurb: "Best price along your route, on the same screen as your dispatch and PODs.",
+    icon: CreditCard,
+    kind: "Tool" as const,
+  },
+  {
+    href: "/apply",
+    title: "Apply",
+    blurb: "About a minute. Card and fuel network access start at orientation.",
+    icon: FileText,
+    kind: "Form" as const,
+  },
+]
 
 export const metadata: Metadata = {
   title: "Fuel Card Program | Save $0.30-$0.75/Gallon",
@@ -50,7 +97,7 @@ export default function FuelProgramPage() {
       <div className="container py-16 -mt-10">
         {/* Key Benefits */}
         <div className="grid md:grid-cols-3 gap-8 mb-16">
-          <Card className="p-8 text-center hover:shadow-2xl transition-all duration-300 border-gray-100 group hover:-translate-y-2">
+          <Card variant="light" className="p-8 text-center hover:shadow-2xl transition-all duration-300 border-gray-100 group hover:-translate-y-2">
             <div className="bg-gradient-to-br from-green-500/10 to-emerald-600/10 p-5 rounded-2xl inline-flex mb-6 group-hover:from-green-500/20 group-hover:to-emerald-600/20 transition-colors">
               <TrendingDown className="h-10 w-10 text-green-600" />
             </div>
@@ -58,7 +105,7 @@ export default function FuelProgramPage() {
             <p className="text-gray-600 leading-relaxed">Average savings at major truck stops nationwide</p>
           </Card>
           
-          <Card className="p-8 text-center hover:shadow-2xl transition-all duration-300 border-gray-100 group hover:-translate-y-2">
+          <Card variant="light" className="p-8 text-center hover:shadow-2xl transition-all duration-300 border-gray-100 group hover:-translate-y-2">
             <div className="bg-gradient-to-br from-blue-500/10 to-blue-600/10 p-5 rounded-2xl inline-flex mb-6 group-hover:from-blue-500/20 group-hover:to-blue-600/20 transition-colors">
               <MapPin className="h-10 w-10 text-blue-600" />
             </div>
@@ -66,7 +113,7 @@ export default function FuelProgramPage() {
             <p className="text-gray-600 leading-relaxed">Accepted at all major truck stops and fuel stations</p>
           </Card>
           
-          <Card className="p-8 text-center hover:shadow-2xl transition-all duration-300 border-gray-100 group hover:-translate-y-2">
+          <Card variant="light" className="p-8 text-center hover:shadow-2xl transition-all duration-300 border-gray-100 group hover:-translate-y-2">
             <div className="bg-gradient-to-br from-purple-500/10 to-purple-600/10 p-5 rounded-2xl inline-flex mb-6 group-hover:from-purple-500/20 group-hover:to-purple-600/20 transition-colors">
               <CreditCard className="h-10 w-10 text-purple-600" />
             </div>
@@ -75,9 +122,16 @@ export default function FuelProgramPage() {
           </Card>
         </div>
 
+        {/* The instrument: the discount, in the visitor's own numbers.
+            Replaces a static "500 gal × 40¢ = $10,400" card that was true for
+            exactly one truck and nobody else's. */}
+        <div className="mb-16">
+          <FuelSavingsCalculator />
+        </div>
+
         {/* Program Details */}
         <div className="grid lg:grid-cols-2 gap-8 mb-16">
-          <Card className="p-8 shadow-xl border-gray-100 hover:shadow-2xl transition-shadow duration-300">
+          <Card variant="light" className="p-8 shadow-xl border-gray-100 hover:shadow-2xl transition-shadow duration-300">
             <div className="flex items-center gap-3 mb-6">
               <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-500/10 to-orange-600/10 flex items-center justify-center">
                 <Fuel className="h-6 w-6 text-orange-600" />
@@ -138,41 +192,8 @@ export default function FuelProgramPage() {
           </Card>
 
           <div>
-            {/* Savings Calculator */}
-            <Card variant="light" className="p-8 bg-gradient-to-br from-green-50 via-emerald-50 to-slate-50 border-2 border-green-200 mb-6 shadow-xl hover:shadow-2xl transition-shadow duration-300">
-              <h3 className="text-xl font-bold text-gray-900 mb-4">
-                <DollarSign className="inline h-5 w-5 text-green-600 mr-1" />
-                Your Potential Savings
-              </h3>
-              <div className="space-y-3">
-                <div className="flex justify-between items-center p-3 rounded-lg hover:bg-green-50 transition-colors">
-                  <span className="text-gray-600 font-medium">Average weekly gallons:</span>
-                  <span className="font-bold text-lg">500 gal</span>
-                </div>
-                <div className="flex justify-between items-center p-3 rounded-lg hover:bg-green-50 transition-colors">
-                  <span className="text-gray-600 font-medium">Average discount:</span>
-                  <span className="font-bold text-green-700 text-lg">$0.40/gal</span>
-                </div>
-                <div className="h-px bg-gray-300 my-3"></div>
-                <div className="flex justify-between items-center text-lg p-3 rounded-lg hover:bg-green-50 transition-colors">
-                  <span className="font-bold">Weekly savings:</span>
-                  <span className="font-black text-green-700 text-xl">$200</span>
-                </div>
-                <div className="flex justify-between items-center text-xl bg-green-100 p-3 rounded-lg -mx-2">
-                  <span className="font-semibold">Annual savings:</span>
-                  <span className="font-black text-green-700 text-2xl">$10,400</span>
-                </div>
-              </div>
-              <div className="mt-4 p-3 bg-amber-50 rounded-lg border border-amber-200">
-                <p className="text-xs text-amber-800 font-medium">
-                  <Info className="inline h-3 w-3 mr-1" />
-                  Based on average driver consumption. Your savings may vary.
-                </p>
-              </div>
-            </Card>
-
             {/* Network Partners */}
-            <Card className="p-6 shadow-xl border-gray-100 hover:shadow-2xl transition-shadow duration-300">
+            <Card variant="light" className="p-6 shadow-xl border-gray-100 hover:shadow-2xl transition-shadow duration-300">
               <h3 className="font-bold text-gray-900 mb-4 text-lg">Accepted Nationwide At:</h3>
               <div className="grid grid-cols-2 gap-3 text-sm">
                 {[
@@ -197,7 +218,7 @@ export default function FuelProgramPage() {
         </div>
 
         {/* How It Works */}
-        <Card className="p-10 mb-16 shadow-xl border-gray-100">
+        <Card variant="light" className="p-10 mb-16 shadow-xl border-gray-100">
           <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">How It Works</h2>
           <div className="grid md:grid-cols-4 gap-6">
             <div className="text-center">
@@ -231,22 +252,10 @@ export default function FuelProgramPage() {
           </div>
         </Card>
 
-        {/* Testimonial */}
-        <Card className="p-10 mb-16 bg-gradient-to-br from-slate-50 via-gray-50 to-slate-50 shadow-xl border-gray-100">
-          <div className="max-w-3xl mx-auto text-center">
-            <div className="flex justify-center mb-4">
-              {[1, 2, 3, 4, 5].map((star) => (
-                <Star key={star} className="h-5 w-5 text-yellow-500 fill-current" />
-              ))}
-            </div>
-            <p className="text-lg text-gray-700 italic mb-4">
-              "The fuel card program alone saves me over $800 per month. Combined with the high commission rates,
-              Thind Transport really looks out for their drivers' bottom line."
-            </p>
-            <p className="font-semibold text-gray-900">- Mike Johnson, Owner Operator</p>
-            <p className="text-sm text-gray-600">Driving with Thind since 2019</p>
-          </div>
-        </Card>
+        {/* An unattributable testimonial and a 5-star rating used to sit here.
+            TRUST_INDICATORS in src/lib/constants.ts is explicit: verifiable
+            indicators only, no invented ratings. The calculator above makes the
+            same point with the visitor's own numbers. */}
 
         {/* CTA Section */}
         <Card className="p-10 bg-gradient-to-br from-orange-600 via-orange-500 to-orange-700 text-white text-center shadow-2xl relative overflow-hidden">
@@ -291,6 +300,12 @@ export default function FuelProgramPage() {
           </div>
         </Card>
       </div>
+
+      <RelatedLinks
+        title="The rest of the money picture"
+        intro="Fuel is one line on the settlement. Here's every other line, and the tools behind them."
+        links={FUEL_LINKS}
+      />
     </div>
   )
 }

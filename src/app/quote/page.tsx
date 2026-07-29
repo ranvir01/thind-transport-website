@@ -1,9 +1,56 @@
 import { Metadata } from "next"
 import Link from "next/link"
-import { Clock, MapPin, Phone, ShieldCheck } from "lucide-react"
+import { Calculator, Clock, FileCheck, MapPin, Route, ShieldCheck, Truck } from "lucide-react"
 import { COMPANY_INFO, SERVICES, STATS } from "@/lib/constants"
 import { PageBreadcrumb } from "@/components/shared/PageBreadcrumb"
-import { ShipperQuoteForm } from "@/components/features/ShipperQuoteForm"
+import { QuoteFormWithLane } from "@/components/features/QuoteFormWithLane"
+import { LaneTransitEstimator } from "@/components/features/LaneTransitEstimator"
+import { RelatedLinks } from "@/components/shared/RelatedLinks"
+
+const QUOTE_LINKS = [
+  {
+    href: "/tools/freight-class-calculator",
+    title: "Freight class calculator",
+    blurb: "Density in, NMFC class out — before the LTL quote comes back wrong.",
+    icon: Calculator,
+    kind: "Tool" as const,
+  },
+  {
+    href: "/api/carrier-packet",
+    title: "Carrier snapshot PDF",
+    blurb: "Authority, insurance and equipment on one page, downloadable right now.",
+    icon: FileCheck,
+    kind: "Tool" as const,
+  },
+  {
+    href: "/routes",
+    title: "Lanes we run weekly",
+    blurb: "Where our trucks already are — the cheapest freight is a lane we're empty on.",
+    icon: Route,
+    kind: "Page" as const,
+  },
+  {
+    href: "/fleet",
+    title: "The equipment list",
+    blurb: "Every truck and trailer spec, so you know what shows up at your dock.",
+    icon: Truck,
+    kind: "Page" as const,
+  },
+  {
+    href: "/trust",
+    title: "Verify our authority",
+    blurb: `USDOT ${COMPANY_INFO.dot}, MC ${COMPANY_INFO.mc}, $1M liability — with the FMCSA links.`,
+    icon: ShieldCheck,
+    kind: "Verify" as const,
+  },
+  {
+    href: "/shippers",
+    title: "How we ship",
+    blurb: "Tracking links, POD turnaround, and who answers when you call.",
+    icon: MapPin,
+    kind: "Page" as const,
+  },
+]
 
 export const metadata: Metadata = {
   title: "Get a Freight Quote | Flatbed, Reefer & Dry Van — Kent, WA",
@@ -60,7 +107,10 @@ export default function QuotePage() {
                 </a>
                 .
               </p>
-              <ShipperQuoteForm />
+              {/* Prefilled from ?lane= when the visitor arrives from the
+                  estimator; see QuoteFormWithLane for why that read is
+                  client-side. */}
+              <QuoteFormWithLane />
             </div>
           </div>
 
@@ -116,6 +166,11 @@ export default function QuotePage() {
           </aside>
         </div>
 
+        {/* Answer the two questions the form can't: how far, and how long. */}
+        <div className="mt-12">
+          <LaneTransitEstimator />
+        </div>
+
         <p className="mt-8 text-center text-sm text-gray-600">
           Shipping LTL and unsure of the class?{" "}
           <Link
@@ -126,6 +181,12 @@ export default function QuotePage() {
           </Link>
         </p>
       </div>
+
+      <RelatedLinks
+        title="Before you book"
+        intro="Everything a shipper usually has to ask for, already on the site."
+        links={QUOTE_LINKS}
+      />
     </div>
   )
 }

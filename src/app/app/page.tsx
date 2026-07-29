@@ -6,6 +6,8 @@ import { PageBreadcrumb } from "@/components/shared/PageBreadcrumb"
 import { GetTheApp } from "@/components/features/GetTheApp"
 import { APP_ICONS } from "@/lib/site-icons"
 import { Reveal } from "@/components/ui/Reveal"
+import { RelatedLinks } from "@/components/shared/RelatedLinks"
+import { driverLinks } from "@/components/shared/link-sets"
 
 export const metadata: Metadata = {
   // absolute: the string already carries the carrier name, and the root
@@ -156,6 +158,12 @@ export default function GetAppPage() {
           </Reveal>
         </div>
       </section>
+
+      <RelatedLinks
+        title="Keep going"
+        intro="The rest of what the site does for you."
+        links={driverLinks(["/app"])}
+      />
     </div>
   )
 }

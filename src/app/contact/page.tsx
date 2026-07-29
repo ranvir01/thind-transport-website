@@ -1,8 +1,56 @@
 import { Metadata } from "next"
 import Link from "next/link"
-import { BadgeCheck, Mail, MapPin, Phone, Truck, Users } from "lucide-react"
+import { BadgeCheck, Calculator, FileCheck, Mail, MapPin, Phone, Route, Smartphone, Truck, Users } from "lucide-react"
 import { COMPANY_INFO, STATS } from "@/lib/constants"
 import { PageBreadcrumb } from "@/components/shared/PageBreadcrumb"
+import { RelatedLinks } from "@/components/shared/RelatedLinks"
+import { Reveal } from "@/components/ui/Reveal"
+
+/** Things you can get right now without waiting for us to pick up. */
+const SELF_SERVE = [
+  {
+    href: "/api/carrier-packet",
+    title: "Carrier snapshot PDF",
+    blurb: "Authority, insurance and equipment on one page. Downloads instantly.",
+    icon: FileCheck,
+    kind: "Tool" as const,
+  },
+  {
+    href: "/quote",
+    title: "Quote a lane",
+    blurb: "Miles and transit time on the spot, then send the lane to dispatch.",
+    icon: Route,
+    kind: "Tool" as const,
+  },
+  {
+    href: "/tools/freight-class-calculator",
+    title: "Freight class calculator",
+    blurb: "Dimensions and weight in, NMFC class out — before you call about LTL.",
+    icon: Calculator,
+    kind: "Tool" as const,
+  },
+  {
+    href: "/pay-rates",
+    title: "Driver pay calculator",
+    blurb: "Your miles and your rate — what a week here actually clears.",
+    icon: Calculator,
+    kind: "Tool" as const,
+  },
+  {
+    href: "/app",
+    title: "The driver app",
+    blurb: "Dispatch, PODs and pay in one place. Installs from the browser.",
+    icon: Smartphone,
+    kind: "Tool" as const,
+  },
+  {
+    href: "/trust",
+    title: "Verify our authority",
+    blurb: `USDOT ${COMPANY_INFO.dot} and MC ${COMPANY_INFO.mc} against the FMCSA record.`,
+    icon: BadgeCheck,
+    kind: "Verify" as const,
+  },
+]
 
 export const metadata: Metadata = {
   title: "Contact Thind Transport | Kent, WA — (206) 765-6300",
@@ -130,8 +178,13 @@ export default function ContactPage() {
               Same number either way — this just saves you explaining twice.
             </p>
             <ul className="space-y-4">
-              {REACH.map(({ icon: Icon, who, what, href, cta }) => (
-                <li key={who} className="rounded-xl border border-gray-200 bg-white p-4">
+              {REACH.map(({ icon: Icon, who, what, href, cta }, i) => (
+                <Reveal
+                  as="li"
+                  key={who}
+                  index={Math.min(i, 3)}
+                  className="rounded-xl border border-gray-200 bg-white p-4 transition-[transform,border-color] duration-fast ease-entrance motion-safe:hover:-translate-y-0.5 hover:border-orange-300"
+                >
                   <div className="flex items-center gap-2 mb-1">
                     <Icon className="h-4 w-4 text-orange-600" aria-hidden />
                     <p className="font-bold text-gray-900">{who}</p>
@@ -140,7 +193,7 @@ export default function ContactPage() {
                   <Link href={href} className="inline-flex items-center min-h-11 text-sm font-semibold text-orange-600 hover:underline">
                     {cta} →
                   </Link>
-                </li>
+                </Reveal>
               ))}
             </ul>
           </div>
@@ -153,6 +206,12 @@ export default function ContactPage() {
           </Link>
         </p>
       </div>
+
+      <RelatedLinks
+        title="Or do it yourself, right now"
+        intro="Six things you can get off this site without waiting for the phone to be free."
+        links={SELF_SERVE}
+      />
     </div>
   )
 }

@@ -21,6 +21,8 @@ import { FAQAccordion } from "@/components/shared/FAQAccordion"
 import { PageBreadcrumb } from "@/components/shared/PageBreadcrumb"
 import { PageHero } from "@/components/shared/PageHero"
 import { MARKET_DATA } from "@/lib/market-data"
+import { RelatedLinks } from "@/components/shared/RelatedLinks"
+import { driverLinks } from "@/components/shared/link-sets"
 
 export const metadata: Metadata = {
   title: `Routes & Lanes | ${COMPANY_INFO.name}`,
@@ -285,6 +287,12 @@ export default function RoutesPage() {
           </div>
         </section>
       </div>
+
+      <RelatedLinks
+        title="Plan the rest of it"
+        intro="The lanes are half the picture — here's the pay, the clock and the equipment."
+        links={driverLinks(["/routes"])}
+      />
     </>
   )
 }

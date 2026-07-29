@@ -1,9 +1,65 @@
 import { Metadata } from "next"
 import Link from "next/link"
 import { BadgeCheck, ExternalLink, FileText, Phone, ShieldCheck, Truck } from "lucide-react"
-import { COMPANY_INFO, SERVICES, STATS } from "@/lib/constants"
+import { COMPANY_INFO, SERVICES, STATS, FMCSA_LINKS } from "@/lib/constants"
 import { PageBreadcrumb } from "@/components/shared/PageBreadcrumb"
 import { getAuthoritySnapshot, TRUST_FACTS } from "@/lib/fmcsa-authority"
+import { Reveal } from "@/components/ui/Reveal"
+import { RelatedLinks } from "@/components/shared/RelatedLinks"
+
+/** Where to click and what a clean record looks like when you get there. */
+const VERIFY_STEPS = [
+  {
+    title: "Look up the DOT number",
+    body: `Search USDOT ${COMPANY_INFO.dot} on FMCSA SAFER. You want an operating status of AUTHORIZED and an out-of-service date that is blank.`,
+    href: FMCSA_LINKS.safer,
+    cta: "Open SAFER",
+  },
+  {
+    title: "Check the authority and insurance",
+    body: `MC ${COMPANY_INFO.mc} on the FMCSA licensing and insurance record shows common authority as active and the BMC-91 filing behind our $1M liability.`,
+    href: FMCSA_LINKS.portal,
+    cta: "FMCSA portal",
+  },
+  {
+    title: "Read the safety record",
+    body: "The SAFER snapshot lists inspections, out-of-service rates and any crashes for the last 24 months. Compare ours to the national averages printed on the same page.",
+    href: FMCSA_LINKS.safer,
+    cta: "Safety snapshot",
+  },
+] as const
+
+const TRUST_LINKS = [
+  {
+    href: "/api/carrier-packet",
+    title: "Carrier snapshot PDF",
+    blurb: "Authority, insurance and equipment on one page — instant download, no form.",
+    icon: FileText,
+    kind: "Tool" as const,
+  },
+  {
+    href: FMCSA_LINKS.safer,
+    title: "FMCSA SAFER snapshot",
+    blurb: "The government record itself. Don't take our transcription of it.",
+    icon: ExternalLink,
+    kind: "Verify" as const,
+    external: true,
+  },
+  {
+    href: "/fleet",
+    title: "The equipment list",
+    blurb: "Every tractor and trailer we run, with specs — the assets behind the authority.",
+    icon: Truck,
+    kind: "Page" as const,
+  },
+  {
+    href: "/quote",
+    title: "Quote a lane",
+    blurb: "Miles, transit time and a direct line to the dispatch desk that books it.",
+    icon: BadgeCheck,
+    kind: "Form" as const,
+  },
+]
 
 export const metadata: Metadata = {
   title: "Verify Us | USDOT 2523064 · MC 876103 — Authority, Insurance & Safety",
@@ -170,6 +226,34 @@ export default async function TrustPage() {
           </div>
         </div>
 
+        {/* How to actually check us — the page claims "verify us", so it should
+            say where to click and what a good answer looks like. */}
+        <div className="mt-6 max-w-3xl">
+          <h3 className="mb-4 text-lg font-black text-gray-900">Verify us in three steps</h3>
+          <ol className="grid gap-4 md:grid-cols-3 list-none">
+            {VERIFY_STEPS.map((step, i) => (
+              <Reveal as="li" key={step.title} index={Math.min(i, 3)}>
+                <div className="h-full rounded-2xl border border-gray-200 bg-white p-5 transition-[transform,box-shadow] duration-fast ease-entrance motion-safe:hover:-translate-y-1 hover:shadow-md">
+                  <span className="mb-3 inline-flex h-8 w-8 items-center justify-center rounded-lg bg-orange-600/10 font-black text-orange-600">
+                    {i + 1}
+                  </span>
+                  <h4 className="font-bold text-gray-900">{step.title}</h4>
+                  <p className="mt-1.5 text-sm leading-relaxed text-gray-600">{step.body}</p>
+                  <a
+                    href={step.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-3 inline-flex min-h-11 items-center gap-1.5 text-sm font-semibold text-orange-600 hover:underline"
+                  >
+                    {step.cta}
+                    <ExternalLink className="h-3.5 w-3.5" aria-hidden />
+                  </a>
+                </div>
+              </Reveal>
+            ))}
+          </ol>
+        </div>
+
         {/* Navigation, not prose — so these get real 44px tap targets rather
             than relying on WCAG 2.5.8's inline-link exception. */}
         <nav aria-label="Next steps" className="mt-8 flex flex-wrap items-center gap-x-2 gap-y-1 max-w-3xl">
@@ -191,6 +275,13 @@ export default async function TrustPage() {
           </Link>
         </nav>
       </div>
+
+      <RelatedLinks
+        title="Everything else you can check"
+        intro="Documents and records, not assurances."
+        links={TRUST_LINKS}
+        columns={2}
+      />
     </div>
   )
 }
