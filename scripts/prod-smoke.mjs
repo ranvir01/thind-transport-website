@@ -131,6 +131,15 @@ const short = (sha) => (sha ? sha.slice(0, 7) : "?")
  *   graceMinutes?: number,
  * }} params
  */
+/**
+ * @param {{
+ *   prodSha: string | null,
+ *   mainSha: string | null,
+ *   behindCount?: number | null,
+ *   tipAgeMinutes?: number | null,
+ *   graceMinutes?: number,
+ * }} args
+ */
 export function evaluateStaleness({ prodSha, mainSha, behindCount = null, tipAgeMinutes = null, graceMinutes = 15 }) {
   if (!mainSha) {
     return { status: "inconclusive", detail: "could not resolve origin/main — staleness unknown" }
