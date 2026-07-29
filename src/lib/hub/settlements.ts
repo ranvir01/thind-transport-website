@@ -197,15 +197,27 @@ export async function draftSettlements(
        ORDER BY updated_at DESC LIMIT 1`,
       [carrierId, driver.id]
     )
-    const ruleSet = ruleRow
-      ? parseRuleSet(ruleRow)
-      : legacyConfigToRuleSet({
-          payType: driver.pay_type,
-          payRate: Number(driver.pay_rate),
-          payLoadedMilesOnly: driver.pay_loaded_miles_only,
-          escrowWeeklyCents: driver.escrow_weekly_cents,
-          insuranceWeeklyCents: driver.insurance_weekly_cents,
-        })
+    // parseRuleSet throws on a malformed rule (by design — see pay-rules.ts):
+    // that must not crash the batch for every other driver, so a corrupted
+    // row here is a loud, isolated skip rather than an unhandled rejection.
+    let ruleSet
+    try {
+      ruleSet = ruleRow
+        ? parseRuleSet(ruleRow)
+        : legacyConfigToRuleSet({
+            payType: driver.pay_type,
+            payRate: Number(driver.pay_rate),
+            payLoadedMilesOnly: driver.pay_loaded_miles_only,
+            escrowWeeklyCents: driver.escrow_weekly_cents,
+            insuranceWeeklyCents: driver.insurance_weekly_cents,
+          })
+    } catch (err) {
+      console.error(
+        `draftSettlements: skipping driver ${driver.id} (carrier ${carrierId}) — corrupted pay rule: ${(err as Error).message}`
+      )
+      skipped++
+      continue
+    }
 
     const draft = evaluatePayRules(ruleSet, {
       loads: loadInputs,
