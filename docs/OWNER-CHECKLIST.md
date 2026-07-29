@@ -50,6 +50,14 @@ sending**, and **lead alerts**. Without it, LoadOff still works — it just show
 - ☐ Add to Vercel Production: `SMTP_USER` = the address, `SMTP_PASS` = the app password
 - ☐ Redeploy
 
+> **⚠️ Currently failing, not just unset.** Production has `SMTP_USER`/`SMTP_PASS` set to
+> *something*, and Gmail is rejecting it every time: `Invalid login: 535-5.7.8 Username and
+> Password not accepted … BadCredentials`. First seen 2026-07-26 14:24 UTC, still recurring as
+> of 2026-07-27 14:13 UTC — every `owner-digest` and `compliance-scan` cron run, and (same
+> credential) every invoice/outreach/lead-alert send, has been failing silently for over a day.
+> The app password was likely revoked or mistyped. Generate a fresh one and repaste both
+> values above, then redeploy.
+
 ### 1c. Demo accounts — timing decision
 
 `HUB_DEMO_LOGIN=false` disables the demo logins (`owner@demo.thind` etc.).

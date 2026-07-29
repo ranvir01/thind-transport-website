@@ -1,7 +1,8 @@
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import { Clock, MapPin, Warehouse } from "lucide-react"
-import { requireOfficeUser } from "@/lib/hub/session"
+import { requirePermissionPage } from "@/lib/hub/session"
+import { can } from "@/lib/hub/permissions"
 import {
   detentionRisk, formatDwell, getFacility, listFacilityNotes, recentFacilityStops,
 } from "@/lib/hub/facilities"
@@ -13,7 +14,11 @@ import { cn } from "@/lib/utils"
 export const dynamic = "force-dynamic"
 
 export default async function FacilityDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const user = await requireOfficeUser()
+  // Facility history is reference data every office role reads; editing the
+  // hours/lumper/parking that drive booking and detention pricing is
+  // loads:write, matching updateFacilityAction and addOfficeFacilityNoteAction.
+  const user = await requirePermissionPage("loads:read")
+  const canWrite = can(user.role, "loads:write")
   const { id } = await params
   const facility = await getFacility(user.carrierId, id).catch(() => null)
   if (!facility) notFound()
@@ -71,6 +76,7 @@ export default async function FacilityDetailPage({ params }: { params: Promise<{
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+        {canWrite ? (
         <FacilityInfoForm
           facilityId={id}
           initial={{
@@ -81,6 +87,7 @@ export default async function FacilityDetailPage({ params }: { params: Promise<{
             notes: facility.notes ?? "",
           }}
         />
+        ) : null}
 
         <div className="space-y-4">
           {/* Crowd-sourced notes */}
@@ -88,7 +95,7 @@ export default async function FacilityDetailPage({ params }: { params: Promise<{
             <h2 className="text-[13.5px] font-semibold text-fg mb-3">
               Driver tips & office notes ({notes.length})
             </h2>
-            <OfficeNoteComposer facilityId={id} />
+            {canWrite ? <OfficeNoteComposer facilityId={id} /> : null}
             {notes.length === 0 ? (
               <p className="mt-3 text-body-sm text-fg-3">
                 Nothing yet — drivers get a two-tap prompt after every departure here.

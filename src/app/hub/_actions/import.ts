@@ -334,7 +334,9 @@ export async function importDriversAction(
         medical_card_expiry: parseDateSafe(row.medical_card_expiry),
         hire_date: parseDateSafe(row.hire_date),
         pay_type: "per_mile",
-        pay_rate: settings.pay.companyDriverPerMile,
+        // hub.drivers.pay_rate is still a fractional-dollar column (its own
+        // conversion is a separate migration), so convert at the boundary.
+        pay_rate: settings.pay.companyDriverPerMileCents / 100,
         pay_loaded_miles_only: settings.pay.payLoadedMilesOnly,
         status: "active",
       })

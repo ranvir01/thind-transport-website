@@ -19,7 +19,7 @@ vi.mock("@/lib/hub/fleet", () => ({ createTruck: vi.fn(async () => ({ id: "t-new
 vi.mock("@/lib/hub/drivers", () => ({ createDriver: vi.fn(async () => ({ id: "d-new" })) }))
 vi.mock("@/lib/hub/settings", () => ({
   getCarrierSettings: vi.fn(async () => ({
-    pay: { companyDriverPerMile: 0.62, ownerOperatorPercentage: 0.9, payLoadedMilesOnly: false },
+    pay: { companyDriverPerMileCents: 62, ownerOperatorPercentage: 0.9, payLoadedMilesOnly: false },
   })),
   getCarrier: vi.fn(async () => ({ name: "Demo Carrier" })),
 }))

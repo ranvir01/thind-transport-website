@@ -1,4 +1,4 @@
-import { requireOfficeUser } from "@/lib/hub/session"
+import { requirePermissionPage } from "@/lib/hub/session"
 import { listTasks, recentCompletedTasks } from "@/lib/hub/tasks"
 import { PageHeader, EmptyState } from "@/components/hub/ui"
 import { QuickAddTask, TaskItem } from "@/components/hub/TasksBoard"
@@ -30,7 +30,7 @@ const SECTIONS: { key: keyof ReturnType<typeof bucketize>; label: string; tone?:
 ]
 
 export default async function TasksPage() {
-  const user = await requireOfficeUser()
+  const user = await requirePermissionPage("tasks:read")
   const [open, completed] = await Promise.all([
     listTasks(user.carrierId),
     recentCompletedTasks(user.carrierId, 10),

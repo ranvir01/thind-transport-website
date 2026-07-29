@@ -16,7 +16,11 @@ import { HoneypotField } from "@/components/shared/HoneypotField"
 import { AttributionField } from "@/components/shared/AttributionField"
 import { ATTRIBUTION_FIELD } from "@/lib/attribution"
 
-export function ShipperQuoteForm() {
+/**
+ * `defaultLane` carries a lane over from the transit estimator (/quote?lane=…)
+ * so a visitor who just priced out Kent → Denver doesn't retype it.
+ */
+export function ShipperQuoteForm({ defaultLane }: { defaultLane?: string } = {}) {
   const [state, setState] = useState<"idle" | "sending" | "done" | "error">("idle")
   const [errorMsg, setErrorMsg] = useState("")
 
@@ -90,6 +94,7 @@ export function ShipperQuoteForm() {
       <input name="phone" type="tel" inputMode="tel" autoComplete="tel" required minLength={10} placeholder="Phone *" className={field} aria-label="Phone" />
       <input
         name="lane"
+        defaultValue={defaultLane}
         placeholder="Lane (e.g. Seattle, WA → Boise, ID)"
         className={`${field} sm:col-span-2`}
         aria-label="Lane"

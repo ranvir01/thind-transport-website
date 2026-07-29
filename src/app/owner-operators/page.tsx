@@ -6,6 +6,8 @@ import {
 import { COMPANY_INFO, PAY_RATES, STATS } from "@/lib/constants"
 import { PageBreadcrumb } from "@/components/shared/PageBreadcrumb"
 import { PersonaRemember } from "@/components/shared/PersonaRemember"
+import { RelatedLinks } from "@/components/shared/RelatedLinks"
+import { driverLinks } from "@/components/shared/link-sets"
 
 export const metadata: Metadata = {
   title: "Owner Operators | 90% of the Linehaul, 100% of the Fuel Surcharge",
@@ -272,6 +274,12 @@ export default function OwnerOperatorsPage() {
           </p>
         </div>
       </div>
+
+      <RelatedLinks
+        title="Run the numbers yourself"
+        intro="Nothing on this page is a claim you can't check with a tool on this site."
+        links={driverLinks(["/owner-operators"])}
+      />
     </div>
   )
 }

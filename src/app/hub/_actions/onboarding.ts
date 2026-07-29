@@ -172,7 +172,8 @@ export async function createWorkspaceAction(input: {
     const carrierId = carrierRows[0].id as string
     const prefix = input.companyName.trim().replace(/[^A-Za-z]/g, "").slice(0, 3).toUpperCase() || "LD"
     const accent = /^#[0-9a-fA-F]{6}$/.test(input.accent ?? "") ? input.accent : null
-    const perMile = input.payPerMile !== undefined ? Math.round(input.payPerMile * 100) / 100 : 0.6
+    // Cents, per AGENTS.md. input.payPerMile is dollars off the signup form.
+    const perMileCents = input.payPerMile !== undefined ? Math.round(input.payPerMile * 100) : 60
     const ooShare = input.ownerOperatorPct !== undefined ? Math.round(input.ownerOperatorPct * 100) / 10000 : 0.9
     await client.query(
       `INSERT INTO hub.carrier_settings (carrier_id, settings) VALUES ($1, $2)`,
@@ -180,9 +181,9 @@ export async function createWorkspaceAction(input: {
         carrierId,
         JSON.stringify({
           invoice: { prefix: `${prefix}-INV-`, nextNumber: 1001, defaultTermsDays: 30 },
-          pay: { companyDriverPerMile: perMile, ownerOperatorPercentage: ooShare, payLoadedMilesOnly: true },
+          pay: { companyDriverPerMileCents: perMileCents, ownerOperatorPercentage: ooShare, payLoadedMilesOnly: true },
           detention: { freeHours: 2, ratePerHourCents: DEFAULT_DETENTION_CENTS_PER_HOUR },
-          costPerMileCents: 185,
+          costPerMileCents: 234,
           fsc: { baseCentsPerGallon: 125, mpg: 6.0 },
           randomTesting: { drugPct: 50, alcoholPct: 10 },
           factoring: { company: null, remitName: null, remitAddress: null, email: null },

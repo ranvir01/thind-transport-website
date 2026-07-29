@@ -11,6 +11,8 @@ import {
 import { COMPANY_INFO, PAY_RATES } from "@/lib/constants"
 import { PageBreadcrumb } from "@/components/shared/PageBreadcrumb"
 import { PageHero } from "@/components/shared/PageHero"
+import { RelatedLinks } from "@/components/shared/RelatedLinks"
+import { driverLinks } from "@/components/shared/link-sets"
 
 export const metadata: Metadata = {
   title: `Pay Rates - 90% O/O Split, ${PAY_RATES.companyDriver.regional.perMile}/mi Company | ${COMPANY_INFO.name}`,
@@ -233,6 +235,12 @@ export default function PayRatesPage() {
           </section>
         </div>
       </section>
+
+      <RelatedLinks
+        title="The rest of the money picture"
+        intro="Where the money goes after the calculator, and the records behind it."
+        links={driverLinks(["/pay-rates"])}
+      />
     </div>
   )
 }

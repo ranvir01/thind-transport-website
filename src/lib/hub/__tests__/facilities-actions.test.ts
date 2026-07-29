@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }))
-vi.mock("@/lib/hub/session", () => ({ requireOfficeUser: vi.fn(async () => ({ carrierId: "carrier-1" })) }))
+vi.mock("@/lib/hub/session", () => ({ requirePermission: vi.fn(async () => ({ carrierId: "carrier-1" })) }))
 vi.mock("@/lib/hub/facilities", () => ({
   addFacilityNote: vi.fn(),
   detentionRisk: vi.fn(),

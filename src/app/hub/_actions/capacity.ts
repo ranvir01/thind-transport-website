@@ -1,7 +1,7 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
-import { requireOfficeUser } from "@/lib/hub/session"
+import { requirePermission } from "@/lib/hub/session"
 import { query } from "@/lib/hub/db"
 import { assertCarrierRefs } from "@/lib/hub/tenancy"
 import { actionError } from "@/lib/hub/action-error"
@@ -21,7 +21,10 @@ export async function postCapacityAction(input: {
   note?: string
 }): Promise<Result> {
   try {
-    const user = await requireOfficeUser()
+    // Capacity postings render on the PUBLIC /load-board, so this advertises
+    // the fleet to brokers under the carrier's name — dispatch work, not
+    // "any office role" (an accountant holds no loads:write).
+    const user = await requirePermission("loads:write")
     if (!input.availableOn || !input.originCity.trim()) {
       return { ok: false, error: "When and where is the truck available?" }
     }
@@ -45,7 +48,7 @@ export async function postCapacityAction(input: {
 
 export async function removeCapacityAction(id: string): Promise<Result> {
   try {
-    const user = await requireOfficeUser()
+    const user = await requirePermission("loads:write")
     await query(
       `UPDATE hub.capacity_postings SET active = FALSE WHERE carrier_id = $1 AND id = $2`,
       [user.carrierId, id]

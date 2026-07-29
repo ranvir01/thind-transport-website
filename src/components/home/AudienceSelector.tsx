@@ -82,9 +82,13 @@ export function AudienceSelector() {
                   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-signal focus-visible:ring-offset-2 focus-visible:ring-offset-paper",
                   // Border-led surfaces (DIRECTION.md §10). Never bg-white here:
                   // .brand-page-shell force-darkens it to navy on this page.
+                  // Tailwind silently drops an /NN alpha modifier on a var-backed
+                  // color token (AGENTS.md standing rule) — signal/ink are plain
+                  // var(--m-x) values, so opacity is spelled out as an arbitrary
+                  // rgba() using the same hex the token resolves to.
                   a.primary
-                    ? "border-signal/40 bg-signal/[0.04] hover:border-signal"
-                    : "border-ink/20 bg-paper hover:border-ink/40",
+                    ? "border-[rgba(196,40,32,0.4)] bg-[rgba(196,40,32,0.04)] hover:border-signal"
+                    : "border-[rgba(20,22,24,0.2)] bg-paper hover:border-[rgba(20,22,24,0.4)]",
                 ].join(" ")}
               >
                 <a.icon

@@ -1004,7 +1004,7 @@ async function main() {
      ON CONFLICT (carrier_id) DO NOTHING`,
     [CASCADE, JSON.stringify({
       invoice: { prefix: "CAS-INV-", nextNumber: 5001, defaultTermsDays: 30 },
-      pay: { companyDriverPerMile: 0.6, ownerOperatorPercentage: 0.88, payLoadedMilesOnly: true },
+      pay: { companyDriverPerMileCents: 60, ownerOperatorPercentage: 0.88, payLoadedMilesOnly: true },
       detention: { freeHours: 2, ratePerHourCents: 5000 },
       costPerMileCents: 178,
       fsc: { baseCentsPerGallon: 125, mpg: 6.4 },

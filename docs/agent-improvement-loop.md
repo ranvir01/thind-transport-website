@@ -138,32 +138,35 @@ commit must also change the tree — merge with `--no-commit`, write the drained
 `git checkout -B main origin/main && git merge --no-ff --no-commit <integrator-sha> &&
 printf 'sha=%s\ndrained_at=%s\n' <sha> $(date -u +%FT%TZ) > .drain-stamp && git add .drain-stamp &&
 git commit -m "Drain integrator to main (<sha>)" && git push origin main`. Every drain then carries a
-tree Vercel has never built, so a real production deployment is guaranteed. Applied in both
-`.github/workflows/drain-integrator.yml` and `drain-fallback.yml`, enforced by
-`scripts/drain-merge-guard.mjs`; any agent draining by hand (Routine 1, §5) must use the same stamped
-merge form.
+tree Vercel has never built, so a real production deployment is guaranteed. Applied in
+`.github/workflows/drain-integrator.yml` and enforced by `scripts/drain-merge-guard.mjs`; any agent
+draining by hand (Routine 1, §5) must use the same stamped merge form.
 
-**Platform-independent fallback:** the GitHub Action
-[`drain-integrator`](../.github/workflows/drain-integrator.yml) runs hourly at :15 (staggered against
-the Cursor agents at :00/:30/:59). When the integrator is more than `AGENT_CATCHUP_THRESHOLD` (3)
-commits ahead of `main` and fast-forwardable, it builds and tests the integrator tip on a GitHub
-runner and, only if green, pushes the fast-forward. It never merges a diverged integrator (that still
-needs an agent) and does nothing in steady state — the hourly agents keep owning the drain; the Action
-only fires when every agent platform is down at once. It can also be triggered manually from the
-Actions tab (`workflow_dispatch`) when a stale production alias needs healing now.
+**Platform-independent backstop (one workflow, not three):**
+[`drain-integrator`](../.github/workflows/drain-integrator.yml) runs at **:17 and :47 UTC**, staggered
+against the Cursor agent slots (:00/:30/:59). When the integrator is more than
+`AGENT_CATCHUP_THRESHOLD` (3) commits ahead of `main` and `main` is still an ancestor of it, the job
+builds and tests that exact SHA on a GitHub runner (`npm ci --ignore-scripts`, `npm rebuild bcrypt
+sharp`, `npm run build`, `npx vitest run`, `typecheck-gate`, `license-audit`) and, only if green,
+publishes it as a stamped `--no-ff` merge (see the drain method above — never a fast-forward ref
+push). A race with a live agent is rejected by GitHub, never clobbered. Diverged history or drift ≤3
+means the loop is alive, so the job stands down and leaves it to the agents. It can also be triggered
+from the Actions tab (`workflow_dispatch`) when a stale production alias needs healing now.
 
-**Automated backstop:** `.github/workflows/drain-integrator.yml` runs at :17 UTC (offset from the
-agent slots). When the integrator is >3 commits ahead of `main` and still a pure fast-forward, it
-verifies that exact SHA (`npm ci`, `npm run build`, `npx vitest run`) and pushes it to `main` with a
-plain non-force push — a race with a live agent is rejected by GitHub, never clobbered. Diverged
-history or drift ≤3 means the loop is alive (or needs a real merge), so the Action stands down and
-leaves it to the agents. This keeps the drain working even when both agent platforms are down at once.
+The last step pushes the drain's merge commit back onto the integrator branch. That commit exists only
+on `main`, so without it every successful drain leaves `main` no longer an ancestor of the integrator
+and the gate above bails "diverged — cannot drain safely" on the next real drain opportunity — a state
+the job created and could not clear on its own. The integrator tip is the merge's second parent, so
+carrying it back is a fast-forward. If an agent pushed to the integrator mid-build the fast-forward no
+longer applies; the step warns and leaves the merge to an agent rather than failing a drain that
+already succeeded.
 
-**Drain fallback (GitHub Action, shipped 2026-07-10):** `.github/workflows/drain-fallback.yml` runs at
-:20/:50 UTC and fast-forwards `main` from the integrator when it is >3 commits ahead, `main` is strictly
-behind (pure fast-forward, never force, never merge), and build + `vitest` pass on the integrator head.
-It no-ops in a healthy loop and survives both agent platforms being down. Diverged history still needs
-an agent to merge — the workflow only warns.
+Two earlier duplicates of this workflow — `drain-fallback.yml` (:15) and `main-drain-fallback.yml`
+(:20) — were deleted 2026-07-28. All three evaluated identical gates over the same two refs under
+three different `concurrency` groups, so they never blocked each other: any hour the integrator ran
+ahead, all three started the same build and two of them failed on a non-fast-forward.
+`main-drain-fallback.yml` also published with a bare `git push origin <sha>:refs/heads/main`, the
+exact form the drain method above exists to prevent.
 
 Legacy single-automation files (`hauldesk-improvement-cycle.*`) alias to `loadoff-deploy.*`.
 

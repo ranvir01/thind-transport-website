@@ -174,7 +174,13 @@ export async function sendCustomerStatementAction(
   }
 }
 
-export async function draftSettlementsAction(): Promise<ActionResult & { created?: number; skipped?: number }> {
+export async function draftSettlementsAction(): Promise<
+  ActionResult & {
+    created?: number
+    skipped?: number
+    uninvoiced?: { driverName: string; reference: string; amountCents: number }[]
+  }
+> {
   let user
   try {
     user = await requirePermission("money:write")

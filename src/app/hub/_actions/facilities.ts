@@ -2,7 +2,7 @@
 
 /** Facility intelligence actions (E2). */
 import { revalidatePath } from "next/cache"
-import { requireOfficeUser } from "@/lib/hub/session"
+import { requirePermission } from "@/lib/hub/session"
 import {
   addFacilityNote, detentionRisk, formatDwell, updateFacilityInfo,
 } from "@/lib/hub/facilities"
@@ -31,7 +31,8 @@ export async function facilityLookupAction(input: {
   noteCount?: number
 }> {
   try {
-    const user = await requireOfficeUser()
+    // Read-only booking-time lookup; every office role books or prices loads.
+    const user = await requirePermission("loads:read")
     if (!input.name?.trim()) return { found: false }
     const row = await queryOne<{
       id: string
@@ -80,7 +81,9 @@ export async function updateFacilityAction(
   }
 ): Promise<Result> {
   try {
-    const user = await requireOfficeUser()
+    // Facility hours, lumper cost and parking are dispatch reference data that
+    // drive booking and detention pricing — loads:write, not any office role.
+    const user = await requirePermission("loads:write")
     await updateFacilityInfo(user.carrierId, id, {
       hours: patch.hours?.trim() || null,
       phone: patch.phone?.trim() || null,
@@ -103,7 +106,7 @@ export async function addOfficeFacilityNoteAction(
   tags: string[]
 ): Promise<Result> {
   try {
-    const user = await requireOfficeUser()
+    const user = await requirePermission("loads:write")
     if (!body.trim() && tags.length === 0) return { ok: false, error: "Write something first" }
     const added = await addFacilityNote(user.carrierId, facilityId, {
       body: body.trim() || tags.join(", "),

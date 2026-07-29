@@ -38,6 +38,8 @@ import path from "node:path"
 
 const ROOT = process.cwd()
 const HUB_LIB = path.join(ROOT, "src", "lib", "hub")
+const HUB_ACTIONS = path.join(ROOT, "src", "app", "hub", "_actions")
+const HUB_API = path.join(ROOT, "src", "app", "api", "hub")
 const MIGRATIONS = path.join(ROOT, "migrations", "hub")
 
 // ---------------------------------------------------------------------------
@@ -188,10 +190,10 @@ function resolveInterpolations(sql: string, source: string): string {
 }
 
 describe("static scan: every hub.* query carries its own carrier scope", () => {
-  const files = tsFiles(HUB_LIB)
+  const files = [...tsFiles(HUB_LIB), ...tsFiles(HUB_ACTIONS), ...tsFiles(HUB_API)]
 
-  it("finds the hub library to scan (guard against a silently empty scan)", () => {
-    expect(files.length).toBeGreaterThan(30)
+  it("finds the hub library, server actions, and API routes to scan (guard against a silently empty scan)", () => {
+    expect(files.length).toBeGreaterThan(60)
   })
 
   it("no statement touches a carrier-scoped hub table without constraining carrier_id", () => {

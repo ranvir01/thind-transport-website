@@ -111,6 +111,30 @@ export async function arAgingTrend(carrierId: string, weeks = 8): Promise<AgingT
 }
 
 /**
+ * AR aging trend CSV — one row per week-end checkpoint, same bucket columns
+ * the owner-dashboard bars chart. Weeks-only (not a [from, to] range like the
+ * P&L/lanes exports) because arAgingTrend is a reconstructed trailing series
+ * ending today, not a window a user picks a start/end for.
+ */
+export function arAgingTrendCsv(rows: AgingTrendPeriod[], weeks: number): { filename: string; csv: string } {
+  return {
+    filename: `ar-aging-trend_last-${weeks}-weeks.csv`,
+    csv: toCsv(
+      ["WeekOf", "Current", "1-30", "31-60", "61-90", "90+", "TotalOpen"],
+      rows.map((r) => [
+        r.periodStart,
+        (r.currentCents / 100).toFixed(2),
+        (r.bucket1_30Cents / 100).toFixed(2),
+        (r.bucket31_60Cents / 100).toFixed(2),
+        (r.bucket61_90Cents / 100).toFixed(2),
+        (r.bucket90PlusCents / 100).toFixed(2),
+        (r.totalOpenCents / 100).toFixed(2),
+      ])
+    ),
+  }
+}
+
+/**
  * Driver settlement liability (M10) — money owed to drivers not yet paid out:
  * draft settlements (not yet approved) plus approved-but-unpaid settlements.
  */
@@ -393,7 +417,10 @@ function toLeaderboardRows(rows: LaneAggregateRow[], limit: number): LaneLeaderb
  */
 export async function laneLeaderboardRange(carrierId: string, range: PnlRange, limit = 20): Promise<LaneLeaderboardRow[]> {
   const settings = await getCarrierSettings(carrierId)
-  const costPerMileCents = settings.costPerMileCents ?? 185
+  // No `?? 185` fallback: getCarrierSettings merges over DEFAULT_SETTINGS, so
+  // this is always a number, and a second literal here would quietly
+  // reintroduce the old under-stated constant if it ever did fire.
+  const costPerMileCents = settings.costPerMileCents
   const rows = await aggregateLanes(
     carrierId, costPerMileCents,
     "AND l.created_at >= $2::date AND l.created_at < $3::date + 1", [range.from, range.to]

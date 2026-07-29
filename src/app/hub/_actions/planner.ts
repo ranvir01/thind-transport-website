@@ -54,13 +54,16 @@ export async function plannerMoveLoadAction(
     return { ok: false, error: `${load.reference} is ${load.status.replace("_", " ")} — too late to swap trucks from the planner` }
   }
 
-  // Window after the (possible) shift, for conflict checks.
+  // Window after the (possible) shift, for conflict checks. load_id alone is already
+  // tenant-safe here (loadId was just proven to belong to user.carrierId above), but every
+  // hub.stops statement carries its own carrier_id per the cross-tenant harness — no query
+  // should depend on a sibling query's validation to stay scoped.
   const window = await queryOne<{ starts: string; ends: string }>(
     `SELECT
-       (MIN(COALESCE(appt_start, NOW())) + ($2 || ' days')::interval)::date::text AS starts,
-       (MAX(COALESCE(appt_end, appt_start, NOW() + INTERVAL '1 day')) + ($2 || ' days')::interval)::date::text AS ends
-     FROM hub.stops WHERE load_id = $1`,
-    [loadId, dayDelta]
+       (MIN(COALESCE(appt_start, NOW())) + ($3 || ' days')::interval)::date::text AS starts,
+       (MAX(COALESCE(appt_end, appt_start, NOW() + INTERVAL '1 day')) + ($3 || ' days')::interval)::date::text AS ends
+     FROM hub.stops WHERE load_id = $1 AND carrier_id = $2`,
+    [loadId, user.carrierId, dayDelta]
   )
 
   let effectiveDriverId = load.driver_id

@@ -8,7 +8,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }))
 vi.mock("@/lib/hub/session", () => ({
-  requireOfficeUser: vi.fn(async () => ({ id: "u1", name: "Dispatcher", carrierId: "carrier-1" })),
+  // comms actions direct drivers — the gate is drivers:write now.
+  requirePermission: vi.fn(async () => ({ id: "u1", name: "Dispatcher", carrierId: "carrier-1" })),
 }))
 vi.mock("@/lib/hub/announcements", () => ({ createAnnouncement: vi.fn() }))
 vi.mock("@/lib/hub/timeoff", () => ({ decideTimeOff: vi.fn() }))

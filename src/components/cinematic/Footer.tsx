@@ -41,6 +41,7 @@ const FooterLinkSections = () => {
     { href: "/about", label: "About Us" },
     { href: "/fleet", label: "Our Fleet" },
     { href: "/shippers", label: "Ship With Us" },
+    { href: "/brokers", label: "For Brokers" },
     { href: "/loadoff", label: "LoadOff TMS" },
     { href: "/veterans", label: "Veterans Program" },
     {

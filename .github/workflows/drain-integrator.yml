@@ -83,6 +83,10 @@ jobs:
           # --ignore-scripts: `canvas` needs system libs to compile and nothing
           # in src/ imports it; Next.js and the test suite don't need postinstall.
           npm ci --ignore-scripts
+          # --ignore-scripts also skips bcrypt's and sharp's postinstall; the
+          # app loads both, so rebuild just those two (from drain-fallback.yml,
+          # deleted in this commit).
+          npm rebuild bcrypt sharp
           npm run build
           npx vitest run
           # Type-soundness + license hygiene, both enforceable today:
@@ -111,3 +115,27 @@ jobs:
           # side, so a race with another drain fails safely instead of
           # rewriting main.
           git push origin main
+
+      - name: Carry the drain commit back to the integrator
+        if: steps.drift.outputs.drain == 'true'
+        run: |
+          set -euo pipefail
+          # The drain's merge commit exists only on main, so the moment this
+          # job succeeds main stops being an ancestor of the integrator and the
+          # gate above bails with "diverged — cannot drain safely" on every
+          # subsequent run. The backstop is decorative until a human merges
+          # main back by hand, and docs/claude-routines.md records that manual
+          # step recurring across cycles.
+          #
+          # The integrator tip is the second parent of the merge, so moving the
+          # branch onto it is a fast-forward — no rewrite, no new content, and
+          # nothing an agent has on that branch is lost.
+          if git push origin HEAD:refs/heads/"$INTEGRATOR"; then
+            echo "Integrator carried forward to the drain commit — the next run gates clean."
+          else
+            # Someone pushed to the integrator while the build ran, so the
+            # fast-forward no longer applies and a real merge is needed. main
+            # is already drained; failing here would just mail a red run for
+            # work that succeeded.
+            echo "::warning::Could not fast-forward $INTEGRATOR onto the drain commit — new commits landed during the build. Merge main into the integrator to clear the diverged gate."
+          fi

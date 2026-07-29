@@ -117,7 +117,7 @@ Name histogram of the 142 (`awk -F'|' '{n=$2; sub("origin/","",n); split(n,a,"/"
 | Prod smoke | `30 * * * *` | `main` |
 | Deploy + backlog | `59 * * * *` | `main` |
 
-Plus four GitHub Actions in `.github/workflows/`: `drain-integrator.yml` (`17,47 * * * *`), `drain-fallback.yml`, `main-drain-fallback.yml`, `prune-merged-branches.yml` (`23 6 * * *`).
+Plus three GitHub Actions in `.github/workflows/`: `drain-integrator.yml` (`17,47 * * * *`), `prune-merged-branches.yml` (`23 6 * * *`), and `e2e-suite.yml` (push/PR, plus `40 3 * * *` for the full rig). `drain-fallback.yml` and `main-drain-fallback.yml` were deleted 2026-07-28 as duplicates of `drain-integrator.yml`.
 
 None of those create the 142. The session agents do — each Claude Code session pushes its own `claude/<adjective>-<name>-<id>` branch when it finishes, whether or not it produced a diff.
 

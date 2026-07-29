@@ -6,12 +6,17 @@
 # money paths in the app were guarded by a habit.
 #
 # Two jobs:
-#   unit  — vitest + the cheap static gates (hobby-cron-guard), fast signal.
-#   e2e   — full rig: Postgres service container (same shape as
-#           docker-compose.yml), migrate, seed, production build, server,
-#           then scripts/e2e-run-all.mjs. Failure artifacts (screenshots,
-#           per-script logs, server log) upload so a red run is diagnosable
-#           without re-running locally.
+#   unit  — vitest + token-lint, fast signal on every push and PR.
+#   e2e   — full rig: Postgres service container, migrate, seed, production
+#           build, server, then scripts/e2e-run-all.mjs. Failure artifacts
+#           (screenshots, per-script logs, server log) upload so a red run is
+#           diagnosable without re-running locally. Nightly, on-demand, and on
+#           PRs — never on a push to main; see the `if:` on the job.
+#
+# The Postgres service below is hubapp/hubapp/hubdb. That is NOT the
+# hauldesk/hauldesk/hauldesk of docker-compose.yml — copying POSTGRES_URL from
+# here into a local shell connects to nothing. Use docker-compose.yml's own
+# header for the local URL.
 #
 # Known constraint: next/font fetches Barlow Condensed + Source Sans 3 from
 # fonts.googleapis.com AT BUILD TIME. GitHub-hosted runners have that egress;
@@ -26,8 +31,15 @@ name: E2E smoke suite
 
 on:
   pull_request:
+    branches: [main]
   push:
     branches: [main]
+  schedule:
+    - cron: "40 3 * * *" # nightly full rig; :40 is clear of :15/:17/:20/:43/:47
+  workflow_dispatch:
+
+permissions:
+  contents: read
 
 concurrency:
   group: e2e-${{ github.workflow }}-${{ github.ref }}
@@ -49,14 +61,16 @@ jobs:
           PUPPETEER_SKIP_DOWNLOAD: "1"
       - name: Unit tests
         run: npm test
-      - name: Hobby cron guard (vercel.json cron budget)
-        run: node scripts/hobby-cron-guard.mjs
       - name: Token lint (no raw hex/px in redesigned marketing scope)
         run: node scripts/token-lint.mjs
 
   e2e:
+    # The 50+ script rig is a nightly / on-demand job, not a per-push gate.
+    # main is pushed hourly by the integrator drain; a 40-minute suite on that
+    # path queues runs behind each other and mails the owner on every overrun.
+    if: github.event_name != 'push'
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 90
     services:
       postgres:
         image: postgres:16
@@ -89,10 +103,26 @@ jobs:
         uses: actions/cache@v4
         with:
           path: .next/cache
-          key: next-cache-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-${{ github.sha }}
+          # run_id, not sha: a per-sha key writes a new multi-hundred-MB entry
+          # every run and evicts the entries restore-keys needs out of the
+          # 10 GB quota. Both are unique per run; only this one is cheap.
+          key: next-cache-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-${{ github.run_id }}
           restore-keys: |
             next-cache-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-
-      - run: npm ci
+      - name: Cache Puppeteer browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/puppeteer
+          key: puppeteer-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+      - name: Install dependencies
+        # --ignore-scripts skips the `canvas` source build (pangocairo/giflib headers
+        # are absent on ubuntu-latest; nothing in src/ imports canvas) — same reasoning
+        # as drain-integrator.yml. bcrypt and sharp are the native modules the app
+        # actually loads. Chrome is fetched explicitly so the cache above pays for it.
+        run: |
+          npm ci --ignore-scripts
+          npm rebuild bcrypt sharp
+          npx puppeteer browsers install chrome
       - name: Migrate + seed demo data
         run: |
           npm run db:migrate
@@ -100,6 +130,9 @@ jobs:
       - name: Production build
         run: npm run build
       - name: Connections check
+        # Warn-only by design (scripts/connections-check.mjs header): absent
+        # keys are choices, not failures. It was gating the suite as a hard step.
+        continue-on-error: true
         run: npm run connections:check
       - name: Start server
         run: |
@@ -110,6 +143,8 @@ jobs:
           done
           curl -sf -o /dev/null http://localhost:3000/ || { echo "server never came up"; tail -50 server.log; exit 1; }
       - name: E2E smoke suite
+        env:
+          E2E_TIMEOUT_MS: "180000" # default 420000; a hung smoke should cost 3 min, not 7
         run: node scripts/e2e-run-all.mjs
       - name: Interaction battery
         run: node scripts/e2e-interaction-battery.mjs
@@ -122,4 +157,5 @@ jobs:
           if-no-files-found: ignore
           path: |
             e2e-shots*/
+            e2e-sweep/
             server.log

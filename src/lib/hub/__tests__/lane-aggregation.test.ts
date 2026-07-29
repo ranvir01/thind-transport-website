@@ -19,6 +19,7 @@ vi.mock("../db", () => ({ query: vi.fn(async () => []), queryOne: vi.fn(async ()
 import { query, queryOne } from "../db"
 import { aggregateLanes, avgRpmCents, lanesOutOf, recomputeLanes } from "../lanes"
 import { laneLeaderboardRange } from "../reports"
+import { DEFAULT_SETTINGS } from "../settings"
 
 const queryMock = vi.mocked(query)
 const queryOneMock = vi.mocked(queryOne)
@@ -38,7 +39,10 @@ function laneRow(overrides: Partial<Record<string, unknown>> = {}) {
 
 beforeEach(() => {
   queryMock.mockReset().mockResolvedValue([])
-  queryOneMock.mockReset().mockResolvedValue(null) // no stored settings -> default costPerMileCents 185
+  // No stored settings, so DEFAULT_SETTINGS.costPerMileCents flows through.
+  // Referenced, not repeated: this assertion is about the default reaching
+  // the query, not about what the default happens to be today.
+  queryOneMock.mockReset().mockResolvedValue(null)
 })
 
 describe("avgRpmCents", () => {
@@ -162,7 +166,7 @@ describe("laneLeaderboardRange", () => {
     expect(rows.map((r) => r.dest_city)).toEqual(["Boise", "Portland"])
     const [sql, params] = queryMock.mock.calls[0]
     expect(sql).toContain("AND l.created_at >= $2::date AND l.created_at < $3::date + 1")
-    expect(params).toEqual([CARRIER, "2026-01-01", "2026-03-31", 185])
+    expect(params).toEqual([CARRIER, "2026-01-01", "2026-03-31", DEFAULT_SETTINGS.costPerMileCents])
   })
 
   it("computes avg_rpm_cents per row instead of trusting SQL ordering alone", async () => {

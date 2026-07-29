@@ -703,6 +703,61 @@ Backlog:
   accounting for legal holidays (documented scope decision).
 
 
+## Playwright QA drive (owner/dispatcher/driver) + prod probe — 2026-07-24 ~15:20 UTC
+
+Fresh QA-drive routine per `docs/agent-improvement-loop.md` §5 (probe-only, no feature work). Reviewed
+the diff across every commit landed in the prior 3 hours (`159627d1`..`f0facd4c`: the driver-accent
+mechanical swap on `pay/page.tsx` + `OfflineSync.tsx`, plus `.drain-stamp`/docs) for outright
+regressions — none found; the `color-mix()` border/bg pattern correctly avoids the opacity-on-CSS-var
+pitfall (AGENTS.md).
+
+Stood up a clean local rig from scratch (Postgres running but no role/db existed — created both per
+the dev-workflow-testing skill's pitfall #9), `npm run db:migrate` (21 migrations) + `npm run
+seed:demo` + `npm run build` + `npm run start`. `npx vitest run`: 187 files/1555 tests, all green.
+
+Drove real flows with actual Playwright (not the repo's Puppeteer `e2e-*.mjs` scripts) against the
+live rig, screenshotting every page: **owner** (today dashboard, owner reports, fleet, money,
+settlements, settings/users/branding), **dispatcher** (loadboard, load list, a real load detail page,
+planner, messages, tasks, fuel), **driver** at 390px forced-dark (home, pay, docs, dvir, incident,
+messages, timeoff, more). Zero console errors, zero failed navigations, zero HTTP errors across all
+three roles. Visual review of every screenshot found no invisible/ghosted text and no marketing
+gold/navy/steel leaking into `(office)` routes; driver screens correctly show the carrier-accent gold
+via `var(--driver-accent)` per the swap above.
+
+Two harness-only false positives worth recording so the next agent doesn't rediscover them: (1)
+`page.waitForLoadState('networkidle')` immediately after a login-form submit can resolve before the
+async `signIn()` fetch even starts, reading as a failed login when it isn't — wait for the URL to
+leave `/hub/login` first; (2) `a[href^="/hub/loads/"]` also matches the static `/hub/loads/paste` and
+`/hub/loads/new` routes, so a "find a load detail link" regex needs to exclude those before grabbing
+the first match.
+
+Probed `https://thindtransport.com` read-only: direct HTTPS is blocked by this session's egress proxy
+(403 on CONNECT, expected per §3b) — fell back to the Vercel connector. Latest production deployment
+(`dpl_AsUcQZ8FDXfnsiUGFhUj4Ab6LNV7`) is READY, target production, on commit `f0facd4c` — matches
+`main` HEAD, so prod is current. `get_runtime_errors` (24h window) shows exactly one error group, a
+`pg`/`pg-connection-string` deprecation warning ("SSL modes 'prefer'/'require'/'verify-ca' are treated
+as aliases for 'verify-full'") on `/api/hub/cron/[job]`, first seen 2026-06-26 — pre-existing, not a
+regression, not a functional failure, just log noise. No other errors in the window.
+
+No code fix to ship this cycle — the fleet is broadly green and no regression was introduced in the
+audited window.
+
+Backlog:
+- `src/lib/hub/db.ts`'s `Pool({ connectionString: url })` triggers a `pg`/`pg-connection-string`
+  deprecation warning in production logs on every cron invocation (`sslmode=require` etc. will change
+  meaning in pg v9). Low priority (cosmetic log noise, not a functional bug) but a one-line fix —
+  append `&sslmode=verify-full` (or `uselibpqcompat=true&sslmode=require` for current behavior) to the
+  connection string, or set `ssl: { rejectUnauthorized: true }` explicitly instead of relying on the
+  querystring alias. `db.ts` isn't inside any lane's file territory (per §5's table) — the integrator
+  should pick this one up directly rather than assigning it to a lane.
+- `lane-tests` (1443 unpicked) and `lane-compliance` (1536 unpicked, fully superseded by HEAD per the
+  prior cycle's investigation) remain the two largest pending branches; meta-governor prune pass
+  remains overdue across many cycles now.
+- Carried, unchanged: npm audit's 3 high-severity findings (owner-approval-gated semver-major bump);
+  Rust sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision); IFTA due-date roll not
+  accounting for legal holidays (documented scope decision).
+
+
 ## Full 48-script E2E battery on a live rig — 2026-07-24 ~14:00 UTC (verify-and-build cycle)
 
 `git fetch` + `npm run agent:status`: integrator (`claude/hauldesk-project-setup-l1luoo`) had 3 new
@@ -901,6 +956,52 @@ Backlog:
   sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision); IFTA due-date roll not
   accounting for legal holidays (documented scope decision).
 
+## QA rig drive on main@3b986118 — 2026-07-25 ~10:30 UTC (owner/dispatcher/driver, read-only prod probe)
+
+Charter (docs/agent-improvement-loop.md §5): no feature work — stand up the local rig, drive
+real owner/dispatcher/driver flows, probe `thindtransport.com` read-only, fix only outright
+regressions from the last 3h of commits.
+
+Reviewed the three commits landed in the 07:01–07:14 UTC window by reading each diff directly
+rather than trusting the commit body: the Go worker's OSRM circuit breaker (`dfd06bd`, 343ms →
+1.5ms fallback path, `reset()` fixes the shared-state test-order bug it introduced along the
+way), the root-layout manifest fix (`9607589`, moves the marketing manifest to
+`metadata.manifest` so `/hub`'s own manifest link isn't shadowed by a duplicate — confirmed by
+reading the diff that the hardcoded `<link rel="manifest">` tag is gone from the JSX and only
+the metadata field remains), and the gradient-headline/scrim visual pass (`3b98611`, solid red
+accent replaces `.text-gradient-accent`, responsive scrim easing). No regression in any of the
+three.
+
+Fresh local rig from scratch: Postgres 16 started (was down), `hauldesk` role + database
+created, `npm install` (`PUPPETEER_SKIP_DOWNLOAD=1`, canvas system deps via
+`setup:canvas-deps`), `npm run db:migrate` (21/21 clean), `seed:demo`, `npm run build` clean,
+`npx vitest run` (190 files/1596 tests green), `make test-sidecars` (29 Rust tests +
+`go test -count=1 -shuffle=on` green, clippy clean — specifically re-ran the Go suite shuffled
+given `dfd06bd`'s note about the breaker's shared package-level state making tests
+order-dependent; stayed green). `node scripts/design-qa.mjs` against the freshly built site: 0
+hard contrast/overflow failures across all 19 marketing routes (confirms the visual pass's own
+claim independently).
+
+Drove the full `scripts/e2e-run-all.mjs` battery (49 `e2e-*-smoke.mjs` scripts +
+`e2e-sweep.mjs`) as owner, dispatcher, and driver against a freshly seeded `next start` server:
+**49/49 PASS**, 0 defects, 14.4 minutes, no flakes or retries needed this time.
+
+Production probe: direct HTTPS to `thindtransport.com` stayed egress-blocked (curl exit 56,
+CONNECT tunnel 403) — same as every prior cycle, not new information. Vercel connector
+confirmed the opposite of several recent cycles' staleness worries: the latest
+`target: "production"` / `state: "READY"` deployment is `dpl_6ARpfBF1eG6h9JpPg2tttmLxafdr`,
+commit `3b986118` on `main` — production is exactly current with HEAD, not stale. `get_runtime_errors`
+(6h window) and `get_runtime_logs` grouped by route (3h window) both show only the same
+long-running, benign `pg` SSL-mode deprecation warning on `/api/hub/cron/[job]` (first seen
+2026-06-26, last 09:50 UTC today) — no new error routes, no regression signal.
+
+Backlog:
+- Carried, unchanged: `lane-tests` (1443 unpicked) and `lane-compliance` (1543 unpicked) remain
+  the two largest pending branches by a wide margin; meta-governor prune pass remains overdue
+  across many cycles now. npm audit's high-severity findings (owner-approval-gated semver-major
+  bump); Rust sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision); IFTA
+  due-date roll not accounting for legal holidays (documented scope decision).
+
 ## IFTA generate + dispatch board E2E re-sweep, no code fix this cycle — 2026-07-25 ~04:47 UTC (verify-and-build cycle)
 
 Integrator and `main` matched exactly at `86f5df38` (0 drift) — `npm ci` + `npm run build` + `npx vitest
@@ -1072,6 +1173,68 @@ Backlog:
   the meta-governor pass, not re-triage targets): `claude/compassionate-bell-8r88rj`,
   `claude/pensive-allen-smw0re`, `claude/stoic-mccarthy-b5gw3k`, `claude/pensive-allen-kpjskl`,
   `claude/eager-babbage-queewe`.
+- Carried, unchanged: npm audit's high-severity findings (owner-approval-gated semver-major bump); Rust
+  sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision); IFTA due-date roll not
+  accounting for legal holidays (documented scope decision).
+
+## QA rig drive — 2026-07-25 ~19:10 UTC (Analytics/SpeedInsights regression, 51-script battery)
+
+Charter (`docs/agent-improvement-loop.md` §5): no feature work — stand up the local rig, drive real
+owner/dispatcher/driver flows, probe `thindtransport.com` read-only, fix only outright regressions from
+the last 3h of commits (window: ~16:08–19:08 UTC). Commit: `b26b38e`.
+
+**Regression found and fixed.** `229885a` (18:35 UTC, in-window) added `<Analytics />` +
+`<SpeedInsights />` (`@vercel/analytics`, `@vercel/speed-insights`) to the root layout. Both packages
+pick their mode from `NODE_ENV`, so a self-hosted `next build && next start` reads as "production" and
+unconditionally injects `<script src="/_vercel/insights/script.js">` /
+`/_vercel/speed-insights/script.js` — paths only Vercel's own edge network serves. Reproduced directly
+(Puppeteer response listener): 12 404s across 5 page loads, on every single page including `/hub/*`.
+This tripped the "no console errors" check in ~40 of the 50 `e2e-*-smoke.mjs` scripts, which had all
+gone red simultaneously. Fix: gate both components on `process.env.VERCEL === "1"` (Vercel's own system
+env var, set only on its build/runtime) — production is unaffected since it *is* hosted on Vercel; the
+local/self-hosted rig no longer injects the dead script tags. Confirmed 0/12 404s after the fix on the
+same repro.
+
+**Full local rig stood up clean:** `service postgresql start` (role/db already existed from a prior
+cycle), `.env.local` regenerated fresh (fresh `NEXTAUTH_SECRET`/`CREDENTIALS_KEY`), `npm run
+db:migrate` (22 migrations), `npm run seed:demo`, `npm run build` (0 TS errors, 140+ routes) — all
+before the fix. After the fix: rebuilt, `npx vitest run` (207 files/1827 tests) green, then a full fresh
+`scripts/e2e-run-all.mjs` (51 scripts, ~16 min): **49/51 passed**, including every script the regression
+had broken (claims, compliance, customers, dat-freight, dispatch*, driver*, duplicate-load, dvir,
+expenses, fleet, fuel, funnel, ...) — owner/dispatcher/driver personas all exercised across the battery.
+
+**Two pre-existing failures, both confirmed non-regressions (not from the 3h window, not fixed here):**
+1. `e2e-public-smoke`'s `/testimonials` check 404s — the route was deliberately deleted by `9291301`
+   ("Phase 2a: remove the fabricated content...", ~08:04 UTC, ~11h before the window) but
+   `scripts/e2e-public-smoke.mjs` was never updated to drop the check. Test-script drift, not a product
+   bug.
+2. `e2e-sweep`'s reports-page anchor ("no 'the operational view' — stuck on a spinner?") — false alarm.
+   Manually reproduced with a screenshot: the page renders fully and correctly (deadhead panel, P&L
+   table, all KPIs) in well under a second. `ReportsPage` has *two* subtitle strings gated on
+   `hasDriverPay` (whether `kpis.driverPayCents` is non-null for the range); the demo seed's default
+   92-day window currently has driver pay, so it renders the `hasDriverPay: true` copy ("...this is the
+   operational view" only exists in the `false` branch). Pre-existing conditional, untouched by any
+   in-window commit — the sweep's anchor just isn't branch-aware.
+
+**Production confirmed current** via Vercel MCP (`get_project`/`list_deployments`/`get_runtime_errors`
+— this sandbox's egress blocks direct HTTPS to `thindtransport.com`, 403 on CONNECT, per the documented
+fallback): `latestDeployment` READY, target `production`, commit `2b31de3` (this window's own drain).
+No new runtime error clusters — the only one on record is a recurring `pg` SSL-mode deprecation warning
+(`/api/hub/cron/[job]`, first seen 2026-06-26), unrelated to this window.
+
+Backlog:
+- `scripts/e2e-public-smoke.mjs`: drop (or replace) the `/testimonials` check — the route no longer
+  exists (`9291301`). Outside lane-tests' driver/owner scope but a one-line fix for whoever's in there
+  next.
+- `scripts/e2e-sweep.mjs`'s reports-page anchor should branch on `hasDriverPay` the same way the page
+  does (or use a substring stable across both), so a real stuck-spinner regression isn't lost in the
+  noise next time this fires.
+- `src/components/ui/Reveal.tsx` has a pre-existing (pre-window, from `9291301`)
+  `react-hooks/set-state-in-effect` lint error — `npm run build` doesn't catch it (Next's build-time
+  lint config differs from the bare `eslint .` in `npm run lint`) but a plain lint run does.
+- `lane-tests` (1443 unpicked) and `lane-compliance` (1552+ unpicked) remain the two largest pending
+  branches; per `9bc1e0c5` do NOT plain-merge either — meta-governor prune pass remains overdue across
+  many cycles now.
 - Carried, unchanged: npm audit's high-severity findings (owner-approval-gated semver-major bump); Rust
   sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision); IFTA due-date roll not
   accounting for legal holidays (documented scope decision).
@@ -1635,3 +1798,54 @@ Backlog:
   IFTA due-date roll / holiday handling (owner design call); Rust sidecar `tiny_http` connection-timeout/
   thread-cap gap (owner decision); TEST_GAPS.md #11/#12 (owner design call); meta-governor prune pass
   overdue.
+
+## QA rig drive on main@47edc2e — 2026-07-29 ~08:40 UTC (probe-only cycle)
+
+Charter (docs/agent-improvement-loop.md §5): no feature work — stood up the local rig from scratch,
+drove owner/dispatcher/driver/broker/shipper/portal flows with the full Puppeteer battery, probed
+`thindtransport.com` read-only, fixed any outright regression from the last 3h of commits.
+
+Fresh rig: Postgres 16 started (was down), `hauldesk` role + database created per the
+dev-workflow-testing skill's pitfall #9, `npm install` (750 packages; canvas native deps via
+`setup:canvas-deps`), `npm run db:migrate` through `024_share_link_expiry.sql` clean, `seed:demo`,
+`npm run build` (zero TS errors, 140+ routes) clean, `npm run start` serving locally.
+
+Full `node scripts/e2e-run-all.mjs` battery (53 smokes + sweep, split into two batches to fit the
+session's per-command time budget): 52/53 green. The one failure is `e2e-sweep`'s owner-pass `reports`
+anchor — confirmed **not a regression** by curling `/hub/reports` as `owner@demo.thind` directly: 200,
+real P&L content (`Fleet ratios include driver settlement pay...`), just missing the stale literal
+`"the operational view"` the sweep's `OWNER_PAGES` anchor (scripts/e2e-sweep.mjs:68) still checks for.
+This is the same defect first logged 2026-07-26, independently fixed on 9+ unmerged branches since
+(latest: `claude/practical-franklin-cqynu0` @ `131a7af6`, confirmed still unmerged this cycle via
+`git merge-base --is-ancestor`) and never landed on main. Per §"Before fixing a bug found during a QA
+drive," not writing a 10th duplicate fix — naming the branch below instead.
+
+`npx vitest run` (263 files/2387 tests) green — note: an initial run showed 2 failures in
+`sidecars.test.ts` ("omits the secret header when unset") because I'd `source .env.local` into the
+shell first, which leaked `HAULDESK_SIDECAR_SECRET` into the test process; a clean rerun without
+sourcing the env passed both. Not a product bug, just a reminder not to export `.env.local` before
+running vitest. `npm run design-qa`: 0 hard failures, 29 warnings (same baseline shape as prior cycles).
+
+Production probed read-only: direct HTTPS to `thindtransport.com` egress-blocked as expected
+(`scripts/prod-smoke.mjs` correctly classified all 3 checks BLOCKED, exit 2). Vercel MCP fallback:
+latest production deployment (`dpl_FQf9sarqWg4SgeEB4c1qcoTqtDBp`) is READY on commit `47edc2e`, matching
+`origin/main` HEAD exactly — no staleness. `get_runtime_errors` (24h window) shows only two pre-existing
+clusters, neither new: the informational pg `sslmode` deprecation warning, and the known
+`[cron:compliance-scan]` Gmail `BadCredentials` failure for the demo carrier (already an open Backlog
+item below).
+
+Reviewed the last 3h of commits on `main` (04:53–08:00 UTC): all merges/drains/docs, plus one
+self-contained typecheck-gate fix (`6631240`) that already repaired a regression the lane-driver/
+lane-sidecars merges introduced earlier in that same window — nothing left outstanding to fix forward.
+
+Backlog:
+- `e2e-sweep`'s `OWNER_PAGES` "reports" anchor (scripts/e2e-sweep.mjs:68, still `"the operational view"`)
+  is fixed-but-unmerged on `claude/practical-franklin-cqynu0` (`131a7af6`) — integrator should drain that
+  branch directly rather than any lane writing a 10th copy of the same one-line fix.
+- Owner: rotate the production Gmail SMTP app password (`SMTP_USER`/`SMTP_PASS`) — the
+  `compliance-scan` cron is still hitting `BadCredentials` for carrier
+  `11111111-1111-1111-1111-111111111111` (seen again 2026-07-28 14:53 UTC per Vercel runtime errors).
+- Carried, unchanged: npm audit's 12 high-severity advisories (owner-approval-gated semver-major bump);
+  IFTA due-date roll / holiday handling (owner design call); Rust sidecar `tiny_http`
+  connection-timeout/thread-cap gap (owner decision); meta-governor prune pass overdue (234+ pending
+  `claude/*` branches per the last count).

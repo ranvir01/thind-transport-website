@@ -9,7 +9,9 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }))
 vi.mock("@/lib/hub/session", () => ({
-  requireOfficeUser: vi.fn(async () => ({ carrierId: "carrier-1" })),
+  // capacity postings hit the public load board — the action gates on
+  // loads:write now, not "any office role".
+  requirePermission: vi.fn(async () => ({ carrierId: "carrier-1" })),
 }))
 vi.mock("@/lib/hub/db", () => ({ query: vi.fn(async () => []) }))
 vi.mock("@/lib/hub/tenancy", () => ({ assertCarrierRefs: vi.fn(async () => undefined) }))

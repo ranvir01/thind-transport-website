@@ -1,6 +1,6 @@
 import Link from "next/link"
 import { Warehouse } from "lucide-react"
-import { requireOfficeUser } from "@/lib/hub/session"
+import { requirePermissionPage } from "@/lib/hub/session"
 import { listFacilities, detentionRisk, formatDwell } from "@/lib/hub/facilities"
 import { getCarrierSettings } from "@/lib/hub/settings"
 import { PageHeader, Panel, EmptyState } from "@/components/hub/ui"
@@ -13,7 +13,7 @@ export default async function FacilitiesPage({
 }: {
   searchParams: Promise<{ q?: string }>
 }) {
-  const user = await requireOfficeUser()
+  const user = await requirePermissionPage("loads:read")
   const { q } = await searchParams
   const [facilities, settings] = await Promise.all([
     listFacilities(user.carrierId, q),

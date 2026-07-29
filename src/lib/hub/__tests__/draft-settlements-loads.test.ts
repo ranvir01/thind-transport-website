@@ -171,7 +171,7 @@ describe("draftSettlements — settlement_id stamp on loads (TEST_GAPS.md #1/#6)
 
     const result = await draftSettlements(CARRIER, "2026-06-01", "2026-06-07", ACTOR)
 
-    expect(result).toEqual({ created: 1, skipped: 0 })
+    expect(result).toMatchObject({ created: 1, skipped: 0 })
 
     const insertSettlement = calls.find((c) => c.sql.includes("INSERT INTO hub.settlements"))
     expect(insertSettlement).toBeDefined()
@@ -196,12 +196,12 @@ describe("draftSettlements — settlement_id stamp on loads (TEST_GAPS.md #1/#6)
     wireMocks(state)
 
     const first = await draftSettlements(CARRIER, "2026-06-01", "2026-06-07", ACTOR)
-    expect(first).toEqual({ created: 1, skipped: 0 })
+    expect(first).toMatchObject({ created: 1, skipped: 0 })
     expect(state.loads[0].settlement_id).not.toBeNull()
 
     // Next week: same driver, same (now-stamped) load, no new work.
     const second = await draftSettlements(CARRIER, "2026-06-08", "2026-06-14", ACTOR)
-    expect(second).toEqual({ created: 0, skipped: 1 })
+    expect(second).toMatchObject({ created: 0, skipped: 1 })
     expect(state.settlements).toHaveLength(1)
   })
 })
@@ -220,7 +220,7 @@ describe("draftSettlements — payableReferralBonuses + latestScorecardScore (TE
     const calls = wireMocks(state)
 
     const result = await draftSettlements(CARRIER, "2026-06-01", "2026-06-07", ACTOR)
-    expect(result).toEqual({ created: 1, skipped: 0 })
+    expect(result).toMatchObject({ created: 1, skipped: 0 })
 
     // 500 loaded mi × $1.00/mi = $500 + $20 expense reimbursement + $50 referral bonus, minus a $100 advance.
     const insertSettlement = calls.find((c) => c.sql.includes("INSERT INTO hub.settlements"))
@@ -245,7 +245,7 @@ describe("draftSettlements — payableReferralBonuses + latestScorecardScore (TE
     const calls = wireMocks(state)
 
     const result = await draftSettlements(CARRIER, "2026-06-01", "2026-06-07", ACTOR)
-    expect(result).toEqual({ created: 1, skipped: 0 })
+    expect(result).toMatchObject({ created: 1, skipped: 0 })
 
     // 500 loaded mi × $1.00/mi = $500 + $20 expense + $50 + $75 referral bonuses, minus a $100 advance.
     const insertSettlement = calls.find((c) => c.sql.includes("INSERT INTO hub.settlements"))
@@ -271,7 +271,7 @@ describe("draftSettlements — payableReferralBonuses + latestScorecardScore (TE
     const calls = wireMocks(state)
 
     const result = await draftSettlements(CARRIER, "2026-06-01", "2026-06-07", ACTOR)
-    expect(result).toEqual({ created: 1, skipped: 0 })
+    expect(result).toMatchObject({ created: 1, skipped: 0 })
 
     const insertSettlement = calls.find((c) => c.sql.includes("INSERT INTO hub.settlements"))
     // Same totals as the baseline test with no referral rows at all: table exists, just nothing payable.
@@ -293,7 +293,7 @@ describe("draftSettlements — payableReferralBonuses + latestScorecardScore (TE
     const calls = wireMocks(state)
 
     const result = await draftSettlements(CARRIER, "2026-06-01", "2026-06-07", ACTOR)
-    expect(result).toEqual({ created: 1, skipped: 0 })
+    expect(result).toMatchObject({ created: 1, skipped: 0 })
 
     // $500 per-mile + $200 scorecard bonus (92 clears the 90-point tier, not the 80-point one) +
     // $20 expense reimbursement, minus the $100 advance (no escrow/insurance on this custom rule set).
@@ -420,7 +420,7 @@ describe("draftSettlements — multiple drivers in one call, incl. percentage-pa
     const { calls, settlements, loadsByDriver } = wireMultiDriverMocks()
 
     const result = await draftSettlements(CARRIER, "2026-06-01", "2026-06-07", ACTOR)
-    expect(result).toEqual({ created: 2, skipped: 0 })
+    expect(result).toMatchObject({ created: 2, skipped: 0 })
     expect(settlements).toHaveLength(2)
 
     const insertSettlements = calls.filter((c) => c.sql.includes("INSERT INTO hub.settlements"))
@@ -446,5 +446,36 @@ describe("draftSettlements — multiple drivers in one call, incl. percentage-pa
     expect(updateLoadsCalls).toHaveLength(2)
     expect(updateLoadsCalls.find((c) => c.params[0] === idA)!.params).toEqual([idA, [LOAD_A], CARRIER])
     expect(updateLoadsCalls.find((c) => c.params[0] === idB)!.params).toEqual([idB, [LOAD_B], CARRIER])
+  })
+
+  // Regression: parseRuleSet throws on a malformed rule by design (a corrupted
+  // per_mile rate must not silently underpay). Before this fix that throw
+  // escaped draftSettlements' per-driver loop uncaught, so ONE driver's bad
+  // hub.pay_rules row aborted the whole carrier's weekly settlement run —
+  // every other driver, however clean their data, got nothing that week.
+  it("one driver's corrupted pay rule is skipped loudly; it does not block another driver's settlement", async () => {
+    const { calls, settlements } = wireMultiDriverMocks()
+    queryOneMock.mockImplementation(async (sql: string, params: unknown[] = []) => {
+      const s = String(sql)
+      if (s.includes("to_regclass")) return { reg: null }
+      if (s.includes("FROM hub.pay_rules")) {
+        const [, driverId] = params as [string, string]
+        if (driverId === DRIVER_A) {
+          return { name: "Corrupted", rules: [{ type: "per_mile", rateCentsPerMile: "not-a-number" }], deductions: [] }
+        }
+        return null // driver B falls back to its clean legacy pay config
+      }
+      if (s.includes("FROM hub.settlements WHERE carrier_id") && s.includes("period_start")) return null
+      return null
+    })
+
+    const result = await draftSettlements(CARRIER, "2026-06-01", "2026-06-07", ACTOR)
+    expect(result).toEqual({ created: 1, skipped: 1, uninvoiced: [] })
+    expect(settlements).toHaveLength(1)
+    expect(settlements[0].driver_id).toBe(DRIVER_B)
+
+    const insertSettlements = calls.filter((c) => c.sql.includes("INSERT INTO hub.settlements"))
+    expect(insertSettlements).toHaveLength(1)
+    expect(insertSettlements[0].params[1]).toBe(DRIVER_B)
   })
 })

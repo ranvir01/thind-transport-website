@@ -21,9 +21,16 @@ export interface CapacityRow {
 export function CapacityPanel({
   trucks,
   postings,
+  canWrite,
 }: {
   trucks: { id: string; unit_number: string }[]
   postings: CapacityRow[]
+  /**
+   * Mirrors the loads:write gate on postCapacityAction/removeCapacityAction.
+   * The server is the enforcement point; this only stops us rendering a form
+   * whose every submit would come back "Forbidden".
+   */
+  canWrite: boolean
 }) {
   const router = useRouter()
   const [pending, startTransition] = useTransition()
@@ -56,6 +63,7 @@ export function CapacityPanel({
 
   return (
     <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+      {canWrite && (
       <Panel className="p-4 md:p-5">
         <h2 className="flex items-center gap-2 text-[13.5px] font-semibold text-fg mb-3">
           <Megaphone className="h-4 w-4 text-accent-text" /> Post available capacity
@@ -91,6 +99,7 @@ export function CapacityPanel({
           </button>
         </form>
       </Panel>
+      )}
 
       <Panel className="divide-y divide-border">
         {postings.length === 0 ? (
@@ -108,7 +117,7 @@ export function CapacityPanel({
                   {posting.dest_preference ? ` → ${posting.dest_preference}` : ""}
                 </p>
               </div>
-              {confirmingRemoveId === posting.id ? (
+              {!canWrite ? null : confirmingRemoveId === posting.id ? (
                 <span className="flex shrink-0 items-center gap-1">
                   <button
                     onClick={() => remove(posting.id)}
