@@ -51,6 +51,15 @@ describe("shouldReturnToApp", () => {
     expect(shouldReturnToApp("/track/abc123")).toBe(false)
   })
 
+  it("has no job at all on the app's own origin", () => {
+    // There, every page IS the app — the rescue exists only while the app
+    // shares an origin with the marketing site, and once the split is on it
+    // must not fire on the app's own root.
+    for (const p of ["/", "/dispatch", "/hub", "/hub/get-app", "/loadoff"]) {
+      expect(shouldReturnToApp(p, true), p).toBe(false)
+    }
+  })
+
   it("does not treat a lookalike prefix as in-app", () => {
     // "/hubbub" is a marketing URL, not the app — startsWith("/hub") alone
     // would have wrongly exempted it.
