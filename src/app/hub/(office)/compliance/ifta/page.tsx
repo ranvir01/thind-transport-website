@@ -13,7 +13,12 @@ const HISTORY_STRIP_LIMIT = 8
 
 export const dynamic = "force-dynamic"
 
-function quarterOptions(): string[] {
+// The current quarter plus the five before it, newest-first, always including
+// `selected` — a history-strip pill can point at a filing older than six
+// quarters, and a `selected` with no matching <option> leaves the picker
+// showing the newest quarter while the page renders the old one, so "Go"
+// silently jumps the user off the filing they were viewing.
+function quarterOptions(selected: string): string[] {
   const now = new Date()
   const options: string[] = []
   for (let i = 0; i < 6; i++) {
@@ -21,7 +26,11 @@ function quarterOptions(): string[] {
     const key = quarterKey(d)
     if (!options.includes(key)) options.push(key)
   }
-  return options
+  if (!options.includes(selected)) options.push(selected)
+  // Quarter keys sort lexicographically the same as chronologically
+  // ("2026Q2" > "2026Q1" > "2025Q4"), so a descending string sort keeps the
+  // strip newest-first after splicing an older selected quarter in.
+  return options.sort().reverse()
 }
 
 export default async function IftaPage({
@@ -81,8 +90,8 @@ export default async function IftaPage({
       {/* Quarter picker + actions */}
       <div className="flex flex-wrap items-center gap-3 mb-4">
         <form method="GET" className="flex items-center gap-2">
-          <select name="q" defaultValue={quarter} className={`${fieldCls} w-40`}>
-            {quarterOptions().map((q) => <option key={q} value={q}>{q}</option>)}
+          <select name="q" aria-label="Filing quarter" defaultValue={quarter} className={`${fieldCls} w-40`}>
+            {quarterOptions(quarter).map((q) => <option key={q} value={q}>{q}</option>)}
           </select>
           <button type="submit" className="min-h-[44px] rounded-xl border border-border-strong px-4 text-sm font-semibold text-fg-2 hover:bg-hover">
             Go
