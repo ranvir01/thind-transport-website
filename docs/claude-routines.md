@@ -1635,3 +1635,54 @@ Backlog:
   IFTA due-date roll / holiday handling (owner design call); Rust sidecar `tiny_http` connection-timeout/
   thread-cap gap (owner decision); TEST_GAPS.md #11/#12 (owner design call); meta-governor prune pass
   overdue.
+
+## QA rig drive on main@47edc2e — 2026-07-29 ~08:40 UTC (probe-only cycle)
+
+Charter (docs/agent-improvement-loop.md §5): no feature work — stood up the local rig from scratch,
+drove owner/dispatcher/driver/broker/shipper/portal flows with the full Puppeteer battery, probed
+`thindtransport.com` read-only, fixed any outright regression from the last 3h of commits.
+
+Fresh rig: Postgres 16 started (was down), `hauldesk` role + database created per the
+dev-workflow-testing skill's pitfall #9, `npm install` (750 packages; canvas native deps via
+`setup:canvas-deps`), `npm run db:migrate` through `024_share_link_expiry.sql` clean, `seed:demo`,
+`npm run build` (zero TS errors, 140+ routes) clean, `npm run start` serving locally.
+
+Full `node scripts/e2e-run-all.mjs` battery (53 smokes + sweep, split into two batches to fit the
+session's per-command time budget): 52/53 green. The one failure is `e2e-sweep`'s owner-pass `reports`
+anchor — confirmed **not a regression** by curling `/hub/reports` as `owner@demo.thind` directly: 200,
+real P&L content (`Fleet ratios include driver settlement pay...`), just missing the stale literal
+`"the operational view"` the sweep's `OWNER_PAGES` anchor (scripts/e2e-sweep.mjs:68) still checks for.
+This is the same defect first logged 2026-07-26, independently fixed on 9+ unmerged branches since
+(latest: `claude/practical-franklin-cqynu0` @ `131a7af6`, confirmed still unmerged this cycle via
+`git merge-base --is-ancestor`) and never landed on main. Per §"Before fixing a bug found during a QA
+drive," not writing a 10th duplicate fix — naming the branch below instead.
+
+`npx vitest run` (263 files/2387 tests) green — note: an initial run showed 2 failures in
+`sidecars.test.ts` ("omits the secret header when unset") because I'd `source .env.local` into the
+shell first, which leaked `HAULDESK_SIDECAR_SECRET` into the test process; a clean rerun without
+sourcing the env passed both. Not a product bug, just a reminder not to export `.env.local` before
+running vitest. `npm run design-qa`: 0 hard failures, 29 warnings (same baseline shape as prior cycles).
+
+Production probed read-only: direct HTTPS to `thindtransport.com` egress-blocked as expected
+(`scripts/prod-smoke.mjs` correctly classified all 3 checks BLOCKED, exit 2). Vercel MCP fallback:
+latest production deployment (`dpl_FQf9sarqWg4SgeEB4c1qcoTqtDBp`) is READY on commit `47edc2e`, matching
+`origin/main` HEAD exactly — no staleness. `get_runtime_errors` (24h window) shows only two pre-existing
+clusters, neither new: the informational pg `sslmode` deprecation warning, and the known
+`[cron:compliance-scan]` Gmail `BadCredentials` failure for the demo carrier (already an open Backlog
+item below).
+
+Reviewed the last 3h of commits on `main` (04:53–08:00 UTC): all merges/drains/docs, plus one
+self-contained typecheck-gate fix (`6631240`) that already repaired a regression the lane-driver/
+lane-sidecars merges introduced earlier in that same window — nothing left outstanding to fix forward.
+
+Backlog:
+- `e2e-sweep`'s `OWNER_PAGES` "reports" anchor (scripts/e2e-sweep.mjs:68, still `"the operational view"`)
+  is fixed-but-unmerged on `claude/practical-franklin-cqynu0` (`131a7af6`) — integrator should drain that
+  branch directly rather than any lane writing a 10th copy of the same one-line fix.
+- Owner: rotate the production Gmail SMTP app password (`SMTP_USER`/`SMTP_PASS`) — the
+  `compliance-scan` cron is still hitting `BadCredentials` for carrier
+  `11111111-1111-1111-1111-111111111111` (seen again 2026-07-28 14:53 UTC per Vercel runtime errors).
+- Carried, unchanged: npm audit's 12 high-severity advisories (owner-approval-gated semver-major bump);
+  IFTA due-date roll / holiday handling (owner design call); Rust sidecar `tiny_http`
+  connection-timeout/thread-cap gap (owner decision); meta-governor prune pass overdue (234+ pending
+  `claude/*` branches per the last count).
