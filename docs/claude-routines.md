@@ -1582,3 +1582,56 @@ Backlog:
   @vercel/analytics/@vercel/speed-insights/geist/eslint-config-next family (owner-approval-gated
   semver-major bump); Rust sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision); 193
   pending `claude/*` branches awaiting the meta-governor prune pass (unchanged from prior cycles).
+
+## Eight-lane absorb + typecheck-gate reconciliation + drain — 2026-07-29 ~07:40 UTC (verify-and-build cycle)
+
+Integrator (`2482f3c0`) was 2 ahead / 5 behind main (`8da55b12`) — main had absorbed the iOS icon-rescue
+work through a path that bypassed the integrator. `npm ci` + `npm run build` + `npx vitest run` (260
+files/2351 tests) green on the integrator tip before touching anything; `npm run agent:status` reported
+STEADY STATE (drift ≤3 threshold) so no emergency catch-up was needed, but the divergence still needed
+reconciling before more lane work could land cleanly. Merged `origin/main` into the integrator first
+(clean, no conflicts) to close the 5-commit gap.
+
+Absorbed all eight lane branches with real, unmerged commits, rebuilding/retesting after each: `lane-driver`
+(OfflineSync's replay dispatch table extracted into a tested `execute-intent.ts`), `lane-portal`
+(accept-invitation state resolution extracted into a tested pure function), `lane-sidecars` (four new
+sidecar-URL-construction tests, no product change), `lane-compliance` (IFTA quarter picker now splices the
+viewed quarter in so opening an older filing doesn't silently show a mismatched picker), `lane-docs` (dat/wex
+scout re-passes, docs-only), `lane-roadmap` (tracking share links now expire — 30-day TTL + renew action,
+migration 024, `requirePermission`/carrier-scoped throughout), `lane-integrations` (hasCredentials
+CREDENTIALS_KEY-guard test), `lane-tests` (typecheck-gate ratchet work that had diverged from the
+integrator's own chain — see below).
+
+Two typecheck-gate regressions/conflicts surfaced and were fixed inline rather than carried:
+- Merging `lane-driver` + `lane-sidecars` pushed the test-file error count from baseline 52 to 57 (their
+  new test files carried the same zero-arg-mock and needs-`unknown`-cast shapes fixed elsewhere in this
+  cycle's history) — fixed both files immediately, back to 52, own commit before continuing.
+- `lane-tests` carried its own independent ratchet chain (78→75→68) against the same
+  `TEST_ERROR_BASELINE` constant this integrator had already moved 78→68→52 on a different branch. Took
+  both sets of fixes on merge conflict, re-measured with `--list`, and set the baseline to the true
+  post-merge count (42) instead of either side's stale number — a plain `-ours`/`-theirs` pick would have
+  silently reopened debt one side had already closed.
+
+Full verify chain after all absorbs: `npm run build`, `npx vitest run` (263 files/2373 tests, 14 skipped),
+`npm run typecheck:gate` (42, baseline lowered to match), `npm run lint` (clean), `npm run license:audit`
+(clean, only the known unmodified MPL-2.0 web-push), `npm run token-lint` (clean), `npm run test:sidecars`
+(29 Rust tests + Go vet/test, clippy clean).
+
+Drained via the stamped `--no-ff` method (`.drain-stamp` → `sha=792d152c…`), main pushed alone then the
+integrator fast-forwarded to match; both sit at `90e6e062`, 0 drift confirmed via `agent:status`.
+
+Backlog:
+- typecheck:gate: 42 test-file tsc errors remain (worst: portal-invitation-lifecycle.test.ts 6,
+  offline-queue.test.ts 3, pdf-branding.test.ts 3) — same ratchet, keep chipping via
+  `node scripts/typecheck-gate.mjs --list`. Two of these (portal-invitation-lifecycle, pdf-branding) were
+  previously reported fixed-but-unmerged on stale session branches per lane-tests' own commit trailers
+  (`ce598fbb` on `claude/eager-babbage-ph7um7`, `225f7fbd` on `claude/eager-babbage-xt97g7`) — check those
+  branches for a cherry-pick before re-deriving the fix from scratch.
+- 234 pending `claude/*` branches remain per `agent:branches` (down from 243) — the large no-merge-base/
+  stale cluster (`eager-babbage-ibsmrz`, `practical-franklin-5ol54s`, the `inspiring-sagan-*`/
+  `stoic-mccarthy`/`awesome-hypatia`/`compassionate-bell` family, all 350-900+ unpicked) is unchanged from
+  every prior triage — still needs a human prune call, not another absorb attempt.
+- Carried, unchanged: npm audit's 12 high-severity advisories (owner-approval-gated semver-major bump);
+  IFTA due-date roll / holiday handling (owner design call); Rust sidecar `tiny_http` connection-timeout/
+  thread-cap gap (owner decision); TEST_GAPS.md #11/#12 (owner design call); meta-governor prune pass
+  overdue.
