@@ -65,7 +65,10 @@ const OFFICE_PAGES = [
 // (owner, dispatcher, driver) each get a real logged-in pass.
 const OWNER_PAGES = [
   ["loadboard", "/hub/loadboard", "like excel"],
-  ["reports", "/hub/reports", "the operational view"],
+  // Subtitle branches on whether the demo carrier has driver-pay settlements
+  // (it does, once seed-demo.mjs's paid settlements land) — anchor on the
+  // "Per-truck P&L" lead-in both branches share, not the driver-pay-less tail.
+  ["reports", "/hub/reports", "per-truck p&l"],
   ["owner-dashboard", "/hub/reports/owner", "an owner checks first"],
   ["invoices", "/hub/money/invoices", "every invoice, paid or open"],
   ["settlements", "/hub/money/settlements", "weekly driver pay"],
