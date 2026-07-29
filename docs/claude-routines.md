@@ -1582,3 +1582,63 @@ Backlog:
   @vercel/analytics/@vercel/speed-insights/geist/eslint-config-next family (owner-approval-gated
   semver-major bump); Rust sidecar `tiny_http` connection-timeout/thread-cap gap (owner decision); 193
   pending `claude/*` branches awaiting the meta-governor prune pass (unchanged from prior cycles).
+
+## QA rig drive on main@8da55b1 — 2026-07-29 ~05:15-05:35 UTC (owner/dispatcher/driver, read-only prod probe)
+
+Charter (docs/agent-improvement-loop.md §5): no feature work — stood up the local rig from scratch,
+drove owner/dispatcher/driver flows with the full Puppeteer battery, probed `thindtransport.com`
+read-only, fixed only outright regressions from the last 3h of commits.
+
+Fresh rig: Postgres 16 started (was down), `thind` role + `thind` database created per the
+dev-workflow-testing skill's pitfall #9, `npm ci` (750 packages), `npm run db:migrate` through
+`023_lead_attribution.sql` clean, `seed:demo`, `npm run build` (zero TS errors, 140+ routes) clean,
+`npm run start`, `npx vitest run` (260 files/2365 tests) green.
+
+Drove the full `node scripts/e2e-run-all.mjs` battery (50 Puppeteer smokes + screen sweep) as owner,
+dispatcher, driver, broker, and shipper against the local rig: 52/53 in 16.1m. The one failure is the
+same well-documented `e2e-sweep` false positive independently rediscovered and fixed on 9+ branches
+over the past several days without ever landing on main (most recently `131a7af6` on
+`origin/claude/practical-franklin-cqynu0`, following the same fix already verified on
+`origin/claude/practical-franklin-73y1z5`'s `2e1d87a1` ~2h50m before this drive) — `OWNER_PAGES`'s
+`/hub/reports` anchor is `"the operational view"`, a phrase that only renders when the report range has
+zero driver-pay settlements, but `seed-demo.mjs`'s settlements always sit inside the default 92-day
+window, so it can never match seeded data. Per the routine's own "check for an existing unmerged fix
+before writing another copy" rule (§5), did **not** write a 10th duplicate; named the existing branch
+in Backlog instead. No other product defect found — not a regression, pre-existing since before this
+window.
+
+Probed `https://thindtransport.com` read-only: direct HTTPS is still egress-blocked from this sandbox
+(403 on CONNECT), so fell back to the Vercel MCP per §3b. The latest READY deployment with
+`target=production` is commit `8da55b1` — this session's exact main tip, no drain gap. 24h runtime-error
+scan: only the long-standing benign pg `sslmode` deprecation warning, plus the same one-time Gmail SMTP
+`compliance-scan` cron failure from `2026-07-28T14:53:29Z` seen in the last two cycles (still unresolved,
+still owner-gated — not a code defect). 24h runtime-log status-code breakdown: 200 only, no 4xx/5xx.
+
+Reviewed the last 3 hours of commits across all branches: nothing landed on `main` (tip predates this
+drive by ~10h45m) — no regression to fix forward. The 3h window does hold six commits on *other*
+sessions' unmerged branches (typecheck:gate ratchets on `eager-babbage-{l77ttg,m1621q,iksg4o}`, the
+`e2e-sweep` fix noted above, and two entries from a near-duplicate QA drive on `practical-franklin-
+{73y1z5,ouynfs}` at 02:41/04:40 UTC with the same main tip and the same 52/53 result) — none reached
+`main`, so none of them are this drive's concern, but see Backlog on the duplicate-cadence point.
+
+No product code changed this cycle (QA-drive-only, per the routine's charter) — `npm run build` and
+`npx vitest run` re-confirmed green above; no local-Postgres/Playwright drive of a *diff* was needed
+since there was no diff.
+
+Backlog:
+- Owner: rotate production Gmail SMTP app password (`SMTP_USER`/`SMTP_PASS`) — `compliance-scan` cron
+  has been hitting `BadCredentials` for carrier `11111111-1111-1111-1111-111111111111` across at least
+  three QA cycles now (`f9ee2092`, `131a7af6`, this one); needs a fresh app password from the account
+  owner, not a code fix.
+- The `e2e-sweep` `OWNER_PAGES` reports-anchor one-liner is now sitting fixed-but-unmerged on 9+
+  branches (latest: `origin/claude/practical-franklin-cqynu0` @ `131a7af6`) — integrator should drain
+  that branch instead of any lane writing a 10th copy.
+- This routine appears to be firing on a cadence tight enough to produce near-duplicate QA-drive log
+  entries against the same unchanged `main` tip twice in under 3 hours (this cycle vs.
+  `practical-franklin-73y1z5`'s `2e1d87a1`) — meta-governor should check whether the QA-driver routine's
+  schedule interval is shorter than the time it takes `main` to move, and slow it down if so.
+- Carried, unchanged: pg `sslmode` deprecation warning on every `/api/version` and `/api/hub/cron/[job]`
+  call (first seen 2026-06-26); npm audit's 12 high-severity advisories (owner-approval-gated semver-major
+  bump); IFTA due-date roll / holiday handling (owner design call); Rust sidecar `tiny_http`
+  connection-timeout/thread-cap gap (owner decision); 245+ pending `claude/*` branches awaiting the
+  meta-governor prune pass.
