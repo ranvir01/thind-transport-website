@@ -66,7 +66,15 @@ describe("complianceEntries color thresholds (colorFor)", () => {
       drivers: [{ id: "d1", name: "No Card", cdl_expiry: null, medical_card_expiry: null }],
     })
     const entries = await complianceEntries(CARRIER)
-    expect(entries.every((e) => e.color === "amber")).toBe(true)
+    // Scope to the driver's own entries: derived company items (IFTA filing,
+    // Form 2290) are calendar-driven and legitimately go red/green depending on
+    // today's date — an unfiled quarter past its due date is red — so asserting
+    // over the whole wall made this test fail on any day after a filing deadline
+    // (e.g. Aug 1, once the Q2 IFTA return is late). The driver's missing CDL /
+    // medical-card dates are what "missing due date → amber" is actually about.
+    const driverEntries = entries.filter((e) => e.entity === "driver")
+    expect(driverEntries).toHaveLength(2)
+    expect(driverEntries.every((e) => e.color === "amber")).toBe(true)
   })
 
   it("treats a manual company item with no due date as amber (needs a date)", async () => {
