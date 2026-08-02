@@ -10,6 +10,17 @@ const queryOneMock = vi.mocked(queryOne)
 
 const CARRIER = "11111111-1111-1111-1111-111111111111"
 
+// complianceEntries always injects an "IFTA filing <quarter>" wall entry for the
+// most-recently-completed quarter, colored off the REAL wall clock (amber while
+// the filing window is open, red once its due date passes). These driver/truck/
+// manual-item tests seed their own fixtures and reason about their colors and
+// sort order; the injected filing entry is out of scope here (and has its own
+// coverage in ifta.test.ts). Filtering it keeps these assertions deterministic
+// year-round — without it the "every amber" and positional "red before amber"
+// checks flip red for the ~2 months each quarter that the filing is overdue.
+const withoutIftaFiling = <T extends { kind: string }>(entries: T[]): T[] =>
+  entries.filter((e) => !e.kind.startsWith("IFTA filing "))
+
 function mockRowsBySql(rows: {
   drivers?: unknown[]
   trucks?: unknown[]
@@ -65,7 +76,7 @@ describe("complianceEntries color thresholds (colorFor)", () => {
     mockRowsBySql({
       drivers: [{ id: "d1", name: "No Card", cdl_expiry: null, medical_card_expiry: null }],
     })
-    const entries = await complianceEntries(CARRIER)
+    const entries = withoutIftaFiling(await complianceEntries(CARRIER))
     expect(entries.every((e) => e.color === "amber")).toBe(true)
   })
 
@@ -91,7 +102,7 @@ describe("complianceEntries color thresholds (colorFor)", () => {
       ],
       manual: [{ id: "item-1", kind: "2290", due_on: past2, note: null }],
     })
-    const entries = await complianceEntries(CARRIER)
+    const entries = withoutIftaFiling(await complianceEntries(CARRIER))
     const redEntries = entries.filter((e) => e.color === "red")
     expect(redEntries[0].kind).toBe("2290")
     expect(redEntries[1].kind).toBe("CDL")
