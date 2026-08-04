@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
-  <rect width="512" height="512" rx="92.16" fill="#0E1621"/>
-  <g transform="translate(20.47999999999999, 20.47999999999999) scale(4.7104)">
-    <!-- road chevrons: the miles -->
-    <path d="M10 78 L38 22 L46 22 L22 78 Z" fill="#E8650D"/>
-    <path d="M30 78 L58 22 L66 22 L42 78 Z" fill="#D9A441"/>
-    <!-- the load, set down: box dropping onto the ground line -->
-    <rect x="62" y="26" width="24" height="20" rx="4" fill="#FFFFFF" opacity="0.9"/>
-    <path d="M74 52 L74 62 M66 58 L74 68 L82 58" stroke="#FFFFFF" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-    <rect x="56" y="74" width="36" height="7" rx="3.5" fill="#FFFFFF"/>
+  <defs>
+    <linearGradient id="loadoff-bg" x1="0" y1="0" x2="0.35" y2="1">
+      <stop offset="0" stop-color="#6366F1"/>
+      <stop offset="1" stop-color="#3730A3"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="112.64" fill="url(#loadoff-bg)"/>
+  <g transform="translate(0, 0) scale(5.12)">
+    <path d="M24 30.5 a7.5 7.5 0 0 1 15 0 V62 H68.5 a7.5 7.5 0 0 1 0 15 H31.5 a7.5 7.5 0 0 1 -7.5 -7.5 Z" fill="#FFFFFF"/>
   </g>
 </svg>

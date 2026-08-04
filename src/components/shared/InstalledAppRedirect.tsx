@@ -37,6 +37,7 @@
 import { useEffect, useSyncExternalStore } from "react"
 import { usePathname } from "next/navigation"
 import { isAppHost } from "@/lib/app-origin"
+import { LOADOFF_BRAND } from "@/lib/hub/brand"
 
 const subscribeNever = () => () => {}
 
@@ -90,11 +91,14 @@ export function InstalledAppRedirect() {
   if (!launching) return null
 
   // Covers the page for the moment the navigation takes, so the app opens on
-  // LoadOff's own colours rather than a flash of the website.
+  // LoadOff's own colours rather than a flash of the website. Same launch
+  // colour as the manifest's background_color, so this cover and the splash
+  // screen behind it are one continuous surface.
   return (
     <div
       aria-live="polite"
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-[#0E1621] text-white"
+      style={{ backgroundColor: LOADOFF_BRAND.launch }}
+      className="fixed inset-0 z-[100] flex items-center justify-center text-white"
     >
       <p className="text-sm font-medium tracking-wide">Opening LoadOff…</p>
     </div>

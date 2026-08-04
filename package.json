@@ -9,6 +9,7 @@
     "start": "next start",
     "lint": "eslint . --ext .ts,.tsx,.js,.jsx",
     "generate:brand-assets": "node scripts/generate-brand-assets.mjs",
+    "generate:hub-icons": "node scripts/generate-hub-icons.mjs",
     "db:migrate": "node scripts/hub-migrate.mjs",
     "go-live:check": "node scripts/go-live-check.mjs",
     "connections:check": "node scripts/connections-check.mjs",
