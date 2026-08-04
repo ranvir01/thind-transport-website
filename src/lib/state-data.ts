@@ -63,9 +63,71 @@ export const STATES: readonly StateInfo[] = [
       ],
     },
   },
-  { slug: "oregon", name: "Oregon", abbr: "OR", cities: ["Portland", "Salem", "Eugene"], corridors: ["I-5", "I-84"], region: "West" },
+  {
+    slug: "oregon", name: "Oregon", abbr: "OR",
+    cities: ["Portland", "Salem", "Eugene"], corridors: ["I-5", "I-84"], region: "West",
+    deepDive: {
+      markets: [
+        {
+          name: "Portland",
+          note: "Where I-5 meets I-84 at the Columbia River — the freight crossroads of the Northwest. Port of Portland auto and breakbulk traffic plus the metro's distribution cluster (Swan Island, Rivergate, Troutdale) make it our most common Oregon pickup and delivery market, an easy three-hour run down I-5 from the Kent yard.",
+        },
+        {
+          name: "Willamette Valley (Salem–Eugene)",
+          note: "Food processing, nursery stock, and wood products the whole length of I-5 between Portland and Eugene. The valley is also the country's biggest grass-seed producer — summer brings steady outbound ag freight on top of the year-round processed-food lanes.",
+        },
+        {
+          name: "Columbia Gorge & Eastern Oregon (I-84)",
+          note: "Our main eastbound lane out of Portland. Boardman and Hermiston have grown into a real reload market — food processors, cold storage, and the Umatilla-area distribution build-out — before the long climb over Cabbage Hill (Emigrant Hill) into La Grande and on toward Ontario, the onion-and-potato gateway to Idaho's Treasure Valley.",
+        },
+        {
+          name: "Southern Oregon (Medford–Ashland)",
+          note: "The I-5 pinch point: Siskiyou Summit at the California line is the highest point on the entire interstate (4,310 ft), and winter closures or chain restrictions there back freight up through the whole corridor. Medford itself reloads produce and wood products.",
+        },
+      ],
+      seasonal: [
+        "Christmas trees are an Oregon specialty — the state is the nation's number-one producer, and from mid-November into December the Willamette Valley loads out trees by the truckload. A reefer or curtain-side positioned there in late November rarely sits.",
+        "Winter chains: Oregon's chain law is condition-triggered — when ODOT posts the requirement (TripCheck signs), trucks over 26,000 lbs must chain up, and the two places we actually plan around are Siskiyou Summit on I-5 and Cabbage Hill on I-84. Both can flip from bare road to chains-required in an afternoon; we watch TripCheck and time the pass rather than sit in a chain-up line.",
+      ],
+      driverFacts: [
+        "Oregon is not like other states on fuel tax: heavy trucks pay a weight-mile tax instead of the pump tax, reported per mile run in the state. The office handles the filings — what a driver notices is the Green Light weigh-station preclearance transponders and the state's unusually thorough mileage records.",
+        "Watch your speed split: Oregon posts different limits for trucks and cars on much of its interstate network, with trucks slower. Plan trip times off the truck limit, not the car signs.",
+      ],
+    },
+  },
   { slug: "california", name: "California", abbr: "CA", cities: ["Sacramento", "Los Angeles", "Fresno", "Oakland"], corridors: ["I-5", "I-80", "I-10"], region: "West" },
-  { slug: "idaho", name: "Idaho", abbr: "ID", cities: ["Boise", "Twin Falls", "Pocatello"], corridors: ["I-84", "I-15", "I-90"], region: "West" },
+  {
+    slug: "idaho", name: "Idaho", abbr: "ID",
+    cities: ["Boise", "Twin Falls", "Pocatello"], corridors: ["I-84", "I-15", "I-90"], region: "West",
+    deepDive: {
+      markets: [
+        {
+          name: "Treasure Valley (Boise–Nampa–Caldwell)",
+          note: "Idaho's population and distribution center, strung along I-84. Grocery and big-box DCs serve the whole state from here, and the food processors on the valley's west end (onions, dairy, frozen goods around Caldwell and Fruitland) generate the reefer freight we actually haul on this lane.",
+        },
+        {
+          name: "Magic Valley (Twin Falls–Jerome)",
+          note: "One of the densest dairy-processing clusters in the country — yogurt, cheese, and milk-powder plants drawing on southern Idaho's enormous dairy herds. Steady reefer in and out year-round, and barley/sugar-beet ag freight around it.",
+        },
+        {
+          name: "Eastern Idaho (Pocatello–Idaho Falls)",
+          note: "Potato country on I-15. The fresh pack sheds and the processing plants (fries, flakes, dehy) ship nationwide from a fairly small area, which makes it a dependable reefer origin from fall harvest deep into the storage season.",
+        },
+        {
+          name: "The Panhandle (I-90)",
+          note: "Our Spokane→Montana through-lane. Coeur d'Alene is the reload stop; Fourth of July Pass and Lookout Pass at the Montana line are the two winter chokepoints — see the chain notes below.",
+        },
+      ],
+      seasonal: [
+        "Potato harvest runs September into October, and the freight doesn't stop when digging does — Idaho spuds ship out of storage all winter, so eastern Idaho stays a live reefer market from fall through spring. Sugar-beet campaign trucks crowd the Magic Valley's rural roads in October.",
+        "Winter on I-90: Fourth of July Pass and Lookout Pass both carry chain-up areas, and Idaho requires trucks to chain when conditions trigger the posted requirement. Lookout, at the Montana line, is the one that closes hardest — we treat November-to-March crossings as weather-window planning, same as Snoqualmie.",
+      ],
+      driverFacts: [
+        "Idaho's rural interstates post 80 mph for cars but hold trucks to 70 — like Oregon, plan your trip math on the truck limit.",
+        "No ports of entry surprises: Idaho runs conventional weigh stations on I-84 and I-90, and a truck running heavy out of the ag valleys during harvest season should expect them open.",
+      ],
+    },
+  },
   { slug: "nevada", name: "Nevada", abbr: "NV", cities: ["Reno", "Las Vegas", "Elko"], corridors: ["I-80", "I-15"], region: "West" },
   { slug: "montana", name: "Montana", abbr: "MT", cities: ["Billings", "Missoula", "Great Falls"], corridors: ["I-90", "I-15", "I-94"], region: "West" },
   { slug: "wyoming", name: "Wyoming", abbr: "WY", cities: ["Cheyenne", "Casper", "Rock Springs"], corridors: ["I-80", "I-25", "I-90"], region: "West" },

@@ -125,3 +125,56 @@ export function cacPaybackMonths(input: {
   const monthlyContributionCents = (monthlyRevenuePerLogoCents * grossMarginPct) / 100
   return round1(cacCents / monthlyContributionCents)
 }
+
+// ---------------------------------------------------------------------------
+// Simulation bridge — until Stripe billing exists
+// ---------------------------------------------------------------------------
+
+export interface TenantForSimulation {
+  carrierId: string
+  /** ISO date the tenant was created. */
+  createdAt: string
+  trucks: number
+  active: boolean
+}
+
+/** Simulated per-truck list price, integer cents. One constant, one place. */
+export const SIMULATED_PRICE_PER_TRUCK_CENTS = 3000
+
+/**
+ * Derives a deterministic billing history from the REAL tenant list: every
+ * active tenant is treated as having paid per-truck list price each month
+ * since signup (suspended tenants stop billing, which is what makes churn
+ * visible). This is the owner's standing simulation rule — the shape of the
+ * data is real (real tenants, real truck counts, real signup dates), only
+ * the payments are pretend, and the day Stripe goes live the same metrics
+ * run on invoice rows instead of this function.
+ */
+export function simulateBillingFromTenants(
+  tenants: TenantForSimulation[],
+  throughMonth: string,
+  monthsBack = 14
+): BillingRow[] {
+  const rows: BillingRow[] = []
+  const [ty, tm] = throughMonth.split("-").map(Number)
+  for (let i = 0; i < monthsBack; i++) {
+    const d = new Date(Date.UTC(ty!, tm! - 1 - i, 1))
+    const month = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`
+    for (const t of tenants) {
+      const signup = t.createdAt.slice(0, 7)
+      if (signup > month) continue // not a customer yet
+      // A suspended tenant bills nothing this month; historical months keep
+      // their rows (we cannot know when it churned, so the simulation churns
+      // it in the current month — conservative for NRR).
+      if (!t.active && i === 0) continue
+      if (t.trucks <= 0) continue
+      rows.push({
+        carrierId: t.carrierId,
+        month,
+        billedCents: t.trucks * SIMULATED_PRICE_PER_TRUCK_CENTS,
+        trucks: t.trucks,
+      })
+    }
+  }
+  return rows
+}

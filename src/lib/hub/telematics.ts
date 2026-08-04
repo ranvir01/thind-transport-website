@@ -189,16 +189,70 @@ export function truckerCloudSource(carrierId: string): TelematicsSource {
 }
 
 /**
+ * Axle (withaxle.com) — the third aggregator, for long-tail ELD brands the
+ * first two miss. Same interface, its own key; assumed response shape lives
+ * only in the two normalizers below, exactly like TruckerCloud before a real
+ * account confirmed its payloads.
+ */
+export function axleSource(carrierId: string): TelematicsSource {
+  const base = process.env.AXLE_API_BASE ?? "https://api.withaxle.com/v1"
+  const request = async (path: string) => {
+    const creds = await getCredentials(carrierId, "axle")
+    if (!creds?.apiKey) throw new Error("Axle not connected")
+    const response = await fetchWithRetry(
+      `${base}${path}`,
+      { headers: { Authorization: `Bearer ${creds.apiKey}` }, signal: AbortSignal.timeout(15000) },
+      { label: `Axle ${path}` }
+    )
+    if (!response.ok) throw new Error(`Axle ${path} → HTTP ${response.status}`)
+    return response.json() as Promise<Record<string, unknown>>
+  }
+
+  return {
+    provider: "axle",
+    async connected() {
+      return hasCredentials(carrierId, "axle")
+    },
+    async vehicles() {
+      const json = await request("/vehicles")
+      return ((json.vehicles ?? json.data ?? []) as Record<string, unknown>[]).map((v) => ({
+        externalId: String(v.id ?? ""),
+        unitHint: (v.name as string) ?? (v.unit as string) ?? null,
+        lat: typeof v.latitude === "number" ? v.latitude : null,
+        lng: typeof v.longitude === "number" ? v.longitude : null,
+        odometerMiles: typeof v.odometer_miles === "number" ? v.odometer_miles : null,
+        locatedAt: (v.located_at as string) ?? null,
+      }))
+    },
+    async hos() {
+      const json = await request("/hos/clocks")
+      return ((json.clocks ?? json.data ?? []) as Record<string, unknown>[]).map((row) => ({
+        externalDriverId: String(row.driver_id ?? ""),
+        driverNameHint: (row.driver_name as string) ?? null,
+        dutyStatus: (row.duty_status as string) ?? null,
+        driveRemainingMinutes: typeof row.drive_remaining_minutes === "number" ? row.drive_remaining_minutes : null,
+        shiftRemainingMinutes: typeof row.shift_remaining_minutes === "number" ? row.shift_remaining_minutes : null,
+        cycleRemainingMinutes: typeof row.cycle_remaining_minutes === "number" ? row.cycle_remaining_minutes : null,
+        ts: (row.recorded_at as string) ?? new Date().toISOString(),
+      }))
+    },
+  }
+}
+
+/**
  * Whichever aggregator the carrier has actually connected — Terminal first
- * (the longer-lived, confirmed adapter), TruckerCloud as the fallback second
- * choice. A carrier connects one ELD aggregator at a time; if both were ever
- * connected simultaneously, Terminal wins rather than merging two feeds.
+ * (the longer-lived, confirmed adapter), then TruckerCloud, then Axle, the
+ * same order the capability router promises. A carrier connects one ELD
+ * aggregator at a time; if several were ever connected simultaneously, the
+ * earlier one wins rather than merging feeds.
  */
 async function activeTelematicsSource(carrierId: string): Promise<TelematicsSource | null> {
   const terminal = terminalSource(carrierId)
   if (await terminal.connected()) return terminal
   const truckerCloud = truckerCloudSource(carrierId)
   if (await truckerCloud.connected()) return truckerCloud
+  const axle = axleSource(carrierId)
+  if (await axle.connected()) return axle
   return null
 }
 

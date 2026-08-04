@@ -13,6 +13,7 @@ import { runWexSync } from "@/lib/hub/integrations/wex"
 import { runQboSync } from "@/lib/hub/integrations/qbo"
 import { retryUnprocessedEvents } from "@/lib/hub/integrations/event-processors"
 import { pollDocsMailbox } from "@/lib/hub/mailbox"
+import { runUniversalSync } from "@/lib/hub/integrations/universal-sync"
 import { logAudit } from "@/lib/hub/audit"
 import { query } from "@/lib/hub/db"
 import { actionError } from "@/lib/hub/action-error"
@@ -148,9 +149,9 @@ async function runProviderSync(
   provider: IntegrationProvider,
   carrierId: string
 ): Promise<{ connected: boolean; summary?: string }> {
-  if (provider === "terminal" || provider === "truckercloud") {
-    // Both aggregators share one sync loop — runTelematicsSync picks
-    // whichever of the two the carrier actually connected.
+  if (provider === "terminal" || provider === "truckercloud" || provider === "axle") {
+    // All ELD aggregators share one sync loop — runTelematicsSync picks
+    // whichever one the carrier actually connected.
     const result = await runTelematicsSync(carrierId)
     return {
       connected: result.connected,
@@ -193,6 +194,16 @@ async function runProviderSync(
     return {
       connected: result.connected,
       summary: `${result.filed ?? 0} documents filed${result.unmatched ? `, ${result.unmatched} unmatched (notified for hand-filing)` : ""}`,
+    }
+  }
+  if (
+    provider === "atob" || provider === "plaid" || provider === "bestpass" ||
+    provider === "prepass" || provider === "fleetio" || provider === "sambasafety"
+  ) {
+    const result = await runUniversalSync(provider, carrierId)
+    return {
+      connected: result.connected,
+      summary: `${result.summary ?? `${result.imported ?? 0} rows`}${result.skipped ? `, ${result.skipped} already synced` : ""}${result.unmatched?.length ? `, unmatched units: ${result.unmatched.join(", ")}` : ""}`,
     }
   }
   throw new Error(`No sync loop wired for ${provider} yet`)

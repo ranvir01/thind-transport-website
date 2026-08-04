@@ -23,6 +23,7 @@ vi.mock("@/lib/hub/integrations/wex", () => ({ runWexSync: vi.fn() }))
 vi.mock("@/lib/hub/integrations/qbo", () => ({ runQboSync: vi.fn() }))
 vi.mock("@/lib/hub/integrations/event-processors", () => ({ retryUnprocessedEvents: vi.fn() }))
 vi.mock("@/lib/hub/mailbox", () => ({ pollDocsMailbox: vi.fn() }))
+vi.mock("@/lib/hub/integrations/universal-sync", () => ({ runUniversalSync: vi.fn() }))
 
 import { query } from "@/lib/hub/db"
 import { runTelematicsSync } from "@/lib/hub/telematics"
@@ -32,6 +33,7 @@ import { runWexSync } from "@/lib/hub/integrations/wex"
 import { runQboSync } from "@/lib/hub/integrations/qbo"
 import { retryUnprocessedEvents } from "@/lib/hub/integrations/event-processors"
 import { pollDocsMailbox } from "@/lib/hub/mailbox"
+import { runUniversalSync } from "@/lib/hub/integrations/universal-sync"
 import { retryIntegrationEventsAction, syncIntegrationNowAction } from "@/app/hub/_actions/integrations"
 import { PROVIDERS } from "@/lib/hub/integrations/registry"
 import type { IntegrationProvider } from "@/lib/hub/credentials"
@@ -44,6 +46,7 @@ const runWexSyncMock = vi.mocked(runWexSync)
 const runQboSyncMock = vi.mocked(runQboSync)
 const retryUnprocessedEventsMock = vi.mocked(retryUnprocessedEvents)
 const pollDocsMailboxMock = vi.mocked(pollDocsMailbox)
+const runUniversalSyncMock = vi.mocked(runUniversalSync)
 
 beforeEach(() => {
   queryMock.mockReset().mockResolvedValue([])
@@ -54,6 +57,7 @@ beforeEach(() => {
   runQboSyncMock.mockReset()
   retryUnprocessedEventsMock.mockReset()
   pollDocsMailboxMock.mockReset()
+  runUniversalSyncMock.mockReset()
 })
 
 describe("syncIntegrationNowAction", () => {
@@ -151,6 +155,7 @@ describe("registry ↔ runProviderSync dispatch drift", () => {
     runWexSyncMock.mockResolvedValue({ connected: true })
     runQboSyncMock.mockResolvedValue({ connected: true })
     pollDocsMailboxMock.mockResolvedValue({ connected: true })
+    runUniversalSyncMock.mockResolvedValue({ connected: true, imported: 0 })
   })
 
   const pollProviders = PROVIDERS.filter((p) => p.sync === "poll").map((p) => p.id as IntegrationProvider)

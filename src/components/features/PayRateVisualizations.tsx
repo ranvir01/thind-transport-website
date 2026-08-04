@@ -7,8 +7,10 @@ import {
   ArrowUp, ArrowDown, Target, Award
 } from "lucide-react"
 import { PAY_RATES } from "@/lib/constants"
+import { fiveYearProjection } from "@/lib/pay-projections"
 
 export function PayRateVisualizations() {
+  const projection = fiveYearProjection()
   // Calculate data for visualizations (Thind Transport rates)
   const companyDriverData = {
     local: { annual: 57500, weekly: 1106, monthly: 4792 },
@@ -160,26 +162,28 @@ export function PayRateVisualizations() {
         </div>
       </Card>
 
-      {/* 5-Year Earnings Projection */}
+      {/* 5-Year Earnings Projection — every figure derived from PAY_RATES
+          (lib/pay-projections.ts), so a rate change moves this card with it
+          instead of stranding a stale headline number. */}
       <Card className="p-6 border-2 border-gray-200 bg-gradient-to-br from-slate-50 to-green-50">
         <div className="mb-4">
           <div className="flex items-center gap-2 mb-1">
             <div className="w-1 h-6 bg-orange-600 rounded-full"></div>
             <h3 className="text-xl font-black text-gray-900">5-Year Projection</h3>
           </div>
-          <p className="text-sm text-gray-600">Total potential earnings</p>
+          <p className="text-sm text-gray-600">Published annual ranges × 5, at today&apos;s rates</p>
         </div>
 
         <div className="space-y-4">
           <div>
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm font-semibold text-gray-900">Company Driver (OTR)</span>
-              <span className="text-xl font-black text-navy">$425K</span>
+              <span className="text-xl font-black text-navy">{projection.companyOtr.label}</span>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-6">
-              <div 
+              <div
                 className="bg-navy h-6 rounded-full flex items-center justify-end pr-2"
-                style={{ width: '85%' }}
+                style={{ width: `${projection.companyBarPct}%` }}
               >
                 <span className="text-xs text-white font-black">5 Years</span>
               </div>
@@ -188,20 +192,20 @@ export function PayRateVisualizations() {
 
           <div>
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-black text-gray-900">Owner Operator (Average)</span>
-              <span className="text-2xl font-black text-green-600">$1M+</span>
+              <span className="text-sm font-black text-gray-900">Owner Operator (90% gross)</span>
+              <span className="text-2xl font-black text-green-600">{projection.ownerOperator.label}</span>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-7">
-              <div 
+              <div
                 className="bg-gradient-to-r from-green-500 to-green-600 h-7 rounded-full flex items-center justify-end pr-2"
                 style={{ width: '100%' }}
               >
-                <span className="text-xs text-white font-black">$1M+ Potential</span>
+                <span className="text-xs text-white font-black">5 Years</span>
               </div>
             </div>
             <div className="mt-2 flex items-center gap-2 text-xs text-green-700 font-semibold">
               <ArrowUp className="h-3 w-3" />
-              <span>135% more than company driver</span>
+              <span>{projection.ooAdvantagePct}% more than company driver (range midpoints, before expenses)</span>
             </div>
           </div>
         </div>
