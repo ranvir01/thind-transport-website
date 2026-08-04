@@ -408,3 +408,72 @@ describe("summarizePayRules — compact subtitle summary", () => {
     expect(summarizePayRules({ name: "b", rules: [{ type: "referral_bonus" }], deductions: [] })).toBe("")
   })
 })
+
+/**
+ * Golden settlement (2026-08 build addendum acceptance): a mixed program —
+ * per-mile base + percentage on accessorials + hourly yard time — with a
+ * fuel-card deduction and a weekly escrow reserve, reconciling to the cent.
+ * Every figure below is hand-computed from the rule definitions; if the
+ * evaluator drifts by a penny anywhere, the net stops matching.
+ */
+describe("golden settlement — mixed rules, fuel deduction, escrow", () => {
+  const ruleSet: PayRuleSet = {
+    name: "Company driver + yard time",
+    rules: [
+      { type: "per_mile", rateCentsPerMile: 63 },              // loaded only
+      { type: "percent_accessorials", basisPoints: 5000 },     // 50% of accessorials
+      { type: "hourly", rateCentsPerHour: 2200 },              // $22/hr yard time
+    ],
+    deductions: [
+      { kind: "flat_recurring", amountCents: 4850, label: "Fuel card — personal use" },
+      { kind: "escrow", amountCents: 5000 },
+    ],
+  }
+
+  const loads: PayLoadContext[] = [
+    // 512 loaded mi × 63¢ = 32256; accessorials 7500 → 50% = 3750
+    { id: "a", reference: "THD-2001", linehaulCents: 180000, fuelSurchargeCents: 21000, accessorialCents: 7500, loadedMiles: 512, deadheadMiles: 40 },
+    // 487 loaded mi × 63¢ = 30681; odd accessorial forces rounding: 6255 → 3127.5 → 3128
+    { id: "b", reference: "THD-2002", linehaulCents: 165000, fuelSurchargeCents: 19000, accessorialCents: 6255, loadedMiles: 487, deadheadMiles: 65 },
+  ]
+
+  it("reconciles gross, deductions, and net to the cent", () => {
+    const draft = evaluatePayRules(ruleSet, {
+      loads,
+      reimbursements: [{ label: "Scale ticket", amountCents: 1350 }],
+      outstandingAdvances: [{ id: "adv1", reference: "ADV-9", amountCents: 20000 }],
+      hoursWorkedMinutes: 150, // 2h30m × $22 = $55.00
+    })
+
+    // Earnings: 32256 + 3750 + 30681 + 3128 + 5500 = 75315
+    const earnings = draft.lines.filter((l) => l.kind === "earning").reduce((s, l) => s + l.amountCents, 0)
+    expect(earnings).toBe(75315)
+
+    // Gross = earnings + reimbursement
+    expect(draft.grossCents).toBe(75315 + 1350)
+
+    // Deductions: advance 20000 + fuel card 4850 + escrow 5000
+    expect(draft.deductionsCents).toBe(29850)
+
+    // Net, to the cent
+    expect(draft.netCents).toBe(76665 - 29850)
+    expect(draft.netCents).toBe(46815)
+
+    // The statement itemizes the fuel-card and escrow lines by name
+    const labels = draft.lines.map((l) => l.label)
+    expect(labels).toContain("Fuel card — personal use")
+    expect(labels).toContain("Escrow contribution")
+    expect(labels.some((l) => l.includes("2h 30m"))).toBe(true)
+  })
+
+  it("hourly pays nothing on a period with no logged minutes", () => {
+    const draft = evaluatePayRules(ruleSet, { loads: [], reimbursements: [], outstandingAdvances: [] })
+    expect(draft.lines.filter((l) => l.sourceType === "hours")).toHaveLength(0)
+    // And with no earnings at all, recurring deductions stay off the statement.
+    expect(draft.lines.filter((l) => l.kind === "deduction")).toHaveLength(0)
+  })
+
+  it("summary names the hourly rate", () => {
+    expect(summarizePayRules(ruleSet)).toBe("$0.63/loaded mi + 50% accessorials + $22.00/hr")
+  })
+})

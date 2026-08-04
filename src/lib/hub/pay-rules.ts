@@ -20,6 +20,12 @@ export type PayRule =
   | { type: "per_stop"; amountCents: number; afterStops?: number }
   | { type: "referral_bonus" }
   | { type: "scorecard_bonus"; tiers: { minScore: number; amountCents: number }[] }
+  /**
+   * Hourly pay — local/yard drivers and shop time. Period-level, not
+   * per-load: hours come from `PayPeriodContext.hoursWorkedMinutes` (minutes,
+   * same integer discipline as money — never fractional hours).
+   */
+  | { type: "hourly"; rateCentsPerHour: number }
 
 export type PayDeduction =
   | { kind: "escrow"; amountCents: number; label?: string }
@@ -62,6 +68,8 @@ export interface PayPeriodContext {
   referralBonuses?: { label: string; amountCents: number; sourceId?: string }[]
   /** Driver's composite scorecard for the period (E5) — for scorecard_bonus tiers. */
   scorecardScore?: number | null
+  /** Minutes worked this period, for the `hourly` rule. Minutes, not hours. */
+  hoursWorkedMinutes?: number
 }
 
 export interface PayLineDraft {
@@ -221,6 +229,18 @@ export function evaluatePayRules(ruleSet: PayRuleSet, ctx: PayPeriodContext): Pa
           sourceId: bonus.sourceId,
         })
       }
+    }
+    if (rule.type === "hourly" && (ctx.hoursWorkedMinutes ?? 0) > 0) {
+      const minutes = ctx.hoursWorkedMinutes!
+      const amount = roundHalfAwayFromZero((minutes * rule.rateCentsPerHour) / 60)
+      const h = Math.floor(minutes / 60)
+      const m = minutes % 60
+      lines.push({
+        kind: "earning",
+        label: `Hourly — ${h}h${m > 0 ? ` ${m}m` : ""} × ${dollars(rule.rateCentsPerHour)}/hr`,
+        amountCents: amount,
+        sourceType: "hours",
+      })
     }
     if (rule.type === "scorecard_bonus" && ctx.scorecardScore != null) {
       const tier = [...rule.tiers]
@@ -415,6 +435,9 @@ export function summarizePayRules(ruleSet: PayRuleSet): string {
       case "per_stop":
         parts.push(`${dollars(rule.amountCents)}/extra stop`)
         break
+      case "hourly":
+        parts.push(`${dollars(rule.rateCentsPerHour)}/hr`)
+        break
     }
   }
   return parts.join(" + ")
@@ -463,6 +486,11 @@ function parseRule(raw: unknown): PayRule | null {
       return r as PayRule
     case "scorecard_bonus":
       if (!Array.isArray(r.tiers)) bad("tiers")
+      return r as PayRule
+    case "hourly":
+      if (typeof r.rateCentsPerHour !== "number" || !Number.isFinite(r.rateCentsPerHour) || r.rateCentsPerHour < 0) {
+        bad("rateCentsPerHour")
+      }
       return r as PayRule
     default:
       return null

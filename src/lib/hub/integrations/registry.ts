@@ -29,7 +29,9 @@ export interface CredentialField {
 export interface ProviderSpec {
   id: string
   label: string
-  domain: "telematics" | "loadboard" | "fuel" | "accounting" | "factoring" | "docs"
+  domain:
+    | "telematics" | "loadboard" | "fuel" | "accounting" | "factoring" | "docs"
+    | "tolls" | "bypass" | "maintenance" | "safety" | "edi" | "banking"
   blurb: string
   /** Credential fields the connect form may store (keys are the allowlist). */
   fields: CredentialField[]
@@ -146,6 +148,79 @@ export const PROVIDERS: readonly ProviderSpec[] = [
       { key: "webhookSecret", label: "Webhook signing secret", secret: true },
     ],
     fallback: "Email the factor the invoice PDF", sync: "webhook", status: "stub",
+  },
+
+  // ---- Universal-coverage wave (2026-08 integration research) ----------------
+  // All stub-first: the card renders, credentials can be pasted, and the mock
+  // adapter satisfies the contract suite — no client goes live until the
+  // matching human-action-queue step (account signup / signed agreement /
+  // credential paste) is done. See docs/OWNER-CHECKLIST.md.
+  {
+    id: "axle", label: "Axle (telematics aggregator)", domain: "telematics",
+    blurb: "Third ELD aggregator alongside Terminal and TruckerCloud — one more path to a long-tail ELD before falling back to the FMCSA output file. Sign up at withaxle.com.",
+    fields: [{ key: "apiKey", label: "Axle API key", secret: true }],
+    fallback: "FMCSA ELD output-file upload, or positions CSV import", sync: "manual", status: "stub",
+  },
+  {
+    id: "atob", label: "AtoB fuel card", domain: "fuel",
+    blurb: "API-era fuel card on Visa/Mastercard rails — transaction feed straight into MPG, fraud flags, and fuel→load. Ask AtoB for API access (atob.com).",
+    fields: [{ key: "apiKey", label: "AtoB API key", secret: true }],
+    fallback: "Fuel statement CSV import", sync: "manual", status: "stub",
+  },
+  {
+    id: "plaid", label: "Plaid (bank feed)", domain: "banking",
+    blurb: "The universal fuel-spend fallback: when a card issuer has no feed at all, pull the fuel transactions off the bank statement instead. Needs Plaid production keys (dashboard.plaid.com).",
+    fields: [
+      { key: "clientId", label: "Plaid client ID" },
+      { key: "secret", label: "Plaid secret", secret: true },
+      { key: "accessToken", label: "Item access token (per linked account)", secret: true },
+    ],
+    fallback: "Bank statement CSV import", sync: "manual", status: "stub",
+  },
+  {
+    id: "bestpass", label: "Bestpass tolls", domain: "tolls",
+    blurb: "Toll transactions and transponder management over Bestpass's REST API — tolls land as per-truck expenses instead of a monthly surprise. Partner signup at developer.bestpass.com.",
+    fields: [
+      { key: "clientId", label: "Client ID" },
+      { key: "clientSecret", label: "Client secret", secret: true },
+    ],
+    fallback: "Toll statement CSV import", sync: "manual", status: "stub",
+  },
+  {
+    id: "prepass", label: "PrePass", domain: "bypass",
+    blurb: "Weigh-station bypass + toll data (developer.prepass.com; an FTP feed also exists). Bypass events and toll charges per truck.",
+    fields: [{ key: "apiKey", label: "PrePass API key", secret: true }],
+    fallback: "Toll/bypass statement CSV import", sync: "manual", status: "stub",
+  },
+  {
+    id: "drivewyze", label: "Drivewyze", domain: "bypass",
+    blurb: "Weigh-station bypass via the Vehicle Management API (developer.drivewyze.com) — rides on the ELD you already run (80+ providers supported).",
+    fields: [{ key: "apiKey", label: "VMAPI key", secret: true }],
+    fallback: "No feed — bypass still works in-cab; nothing to import", sync: "manual", status: "stub",
+  },
+  {
+    id: "fleetio", label: "Fleetio maintenance", domain: "maintenance",
+    blurb: "Two-way maintenance sync: service reminders and work orders (developer.fleetio.com, 20 req/min). LoadOff's own maintenance panel keeps working without it.",
+    fields: [
+      { key: "apiToken", label: "API token", secret: true },
+      { key: "accountToken", label: "Account token" },
+    ],
+    fallback: "Built-in maintenance panel + CSV import", sync: "manual", status: "stub",
+  },
+  {
+    id: "sambasafety", label: "SambaSafety MVR monitoring", domain: "safety",
+    blurb: "Continuous MVR monitoring — a driver's license status change surfaces in compliance instead of at renewal time. Driver-risk API at developer.sambasafety.com.",
+    fields: [
+      { key: "clientId", label: "Client ID" },
+      { key: "clientSecret", label: "Client secret", secret: true },
+    ],
+    fallback: "Annual MVR pull, filed to the driver's DQ file", sync: "manual", status: "stub",
+  },
+  {
+    id: "stedi", label: "Stedi EDI gateway", domain: "edi",
+    blurb: "EDI-as-API: receive 204 load tenders and send 990/214/210 as JSON — serve enterprise shippers without a VAN. Usage-priced account at stedi.com.",
+    fields: [{ key: "apiKey", label: "Stedi API key", secret: true }],
+    fallback: "Email/portal tender handling + manual load entry", sync: "webhook", status: "stub",
   },
 ] as const
 
