@@ -150,9 +150,13 @@ export function PreQualificationForm() {
           </p>
           <div className="bg-green-50 rounded-xl p-6 mb-8 max-w-md mx-auto border border-green-100">
             <ul className="text-left space-y-3 font-medium text-green-900">
+              {/* Only constants-backed facts here. The priority-processing and
+                  same-day-orientation promises were removed 2026-08-04:
+                  neither was sourced from anything, and a promise the office
+                  can't keep costs the driver who showed up believing it. */}
               <li className="flex items-center gap-2"><CheckCircle2 className="w-5 h-5 text-green-600" /> Eligible for {signOnBonus} Sign-On Bonus</li>
-              <li className="flex items-center gap-2"><CheckCircle2 className="w-5 h-5 text-green-600" /> Priority Application Processing</li>
-              <li className="flex items-center gap-2"><CheckCircle2 className="w-5 h-5 text-green-600" /> Immediate Orientation Available</li>
+              <li className="flex items-center gap-2"><CheckCircle2 className="w-5 h-5 text-green-600" /> Weekly Direct Deposit Pay</li>
+              <li className="flex items-center gap-2"><CheckCircle2 className="w-5 h-5 text-green-600" /> No Forced Dispatch</li>
             </ul>
           </div>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">

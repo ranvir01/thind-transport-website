@@ -4,11 +4,29 @@ vi.mock("../db", () => ({ query: vi.fn(async () => []), queryOne: vi.fn(async ()
 
 import { query, queryOne } from "../db"
 import { addComplianceItem, complianceEntries, resolveComplianceItem, summarize } from "../compliance"
+import { lastCompletedQuarterKey } from "../ifta-core"
 
 const queryMock = vi.mocked(query)
 const queryOneMock = vi.mocked(queryOne)
 
 const CARRIER = "11111111-1111-1111-1111-111111111111"
+
+/**
+ * complianceEntries ALWAYS appends one IFTA-filing entry for the last completed
+ * quarter, whether or not a report row exists (iftaFilingWallEntries), and its
+ * colour is a function of the real wall clock: amber inside the filing window,
+ * red once the due date passes. Left unstubbed it leaked into every assertion
+ * in this file about driver/truck colours, and on 2026-08-01 — the morning
+ * after 2026Q2's due date — it turned two of them red and broke `main`.
+ *
+ * So every test here stubs that quarter as already filed (a deterministic
+ * green) unless it is specifically testing the IFTA wall. The wall's own
+ * colour rules are covered against pinned clocks in ifta-filing-entries.test.ts,
+ * which is where that behaviour belongs.
+ */
+const filedCurrentQuarter = () => [
+  { quarter: lastCompletedQuarterKey(new Date()), status: "filed" },
+]
 
 function mockRowsBySql(rows: {
   drivers?: unknown[]
@@ -30,7 +48,7 @@ function mockRowsBySql(rows: {
     if (s.includes("FROM hub.trucks")) return rows.trucks ?? []
     if (s.includes("FROM hub.trailers")) return rows.trailers ?? []
     if (s.includes("FROM hub.compliance_items")) return rows.manual ?? []
-    if (s.includes("FROM hub.ifta_reports")) return rows.iftaReports ?? []
+    if (s.includes("FROM hub.ifta_reports")) return rows.iftaReports ?? filedCurrentQuarter()
     return []
   })
 }
@@ -66,7 +84,9 @@ describe("complianceEntries color thresholds (colorFor)", () => {
       drivers: [{ id: "d1", name: "No Card", cdl_expiry: null, medical_card_expiry: null }],
     })
     const entries = await complianceEntries(CARRIER)
-    expect(entries.every((e) => e.color === "amber")).toBe(true)
+    const driverEntries = entries.filter((e) => e.entity === "driver")
+    expect(driverEntries.length).toBeGreaterThan(0)
+    expect(driverEntries.every((e) => e.color === "amber")).toBe(true)
   })
 
   it("treats a manual company item with no due date as amber (needs a date)", async () => {
@@ -96,6 +116,70 @@ describe("complianceEntries color thresholds (colorFor)", () => {
     expect(redEntries[0].kind).toBe("2290")
     expect(redEntries[1].kind).toBe("CDL")
     expect(entries[entries.length - 1].color).not.toBe("red")
+  })
+
+  /**
+   * The regression guard for the breakage above: driver/truck colours are
+   * relative to each entry's own due date, so the same fixture must produce the
+   * same colours on any day of the year. Both clocks below are dates the old
+   * code failed on — 2026-08-02 sat one day past 2026Q2's IFTA due date and
+   * injected a red company entry ahead of the driver's CDL.
+   */
+  it("colours driver entries the same whatever day of the quarter it is", async () => {
+    const CLOCKS = [
+      new Date(Date.UTC(2026, 6, 6)), // inside the 2026Q2 filing window
+      new Date(Date.UTC(2026, 7, 2)), // the day the suite went red on main
+      new Date(Date.UTC(2026, 8, 15)), // long past due
+    ]
+    const seen: string[][] = []
+    const iftaColours: string[] = []
+    for (const clock of CLOCKS) {
+      vi.useFakeTimers()
+      try {
+        vi.setSystemTime(clock)
+        const now = clock.getTime()
+        mockRowsBySql({
+          drivers: [
+            {
+              id: "d1",
+              name: "Driver A",
+              cdl_expiry: new Date(now - 86400000).toISOString().slice(0, 10),
+              medical_card_expiry: new Date(now + 10 * 86400000).toISOString().slice(0, 10),
+            },
+            {
+              id: "d2",
+              name: "Driver B",
+              cdl_expiry: new Date(now + 90 * 86400000).toISOString().slice(0, 10),
+              medical_card_expiry: null,
+            },
+          ],
+        })
+        const entries = await complianceEntries(CARRIER)
+        seen.push(
+          entries
+            .filter((e) => e.entity === "driver")
+            .map((e) => `${e.entityId}/${e.kind}=${e.color}`)
+            .sort()
+        )
+        iftaColours.push(
+          entries.filter((e) => e.kind.startsWith("IFTA filing")).map((e) => e.color).join(",")
+        )
+      } finally {
+        vi.useRealTimers()
+      }
+    }
+    expect(seen[0]).toEqual([
+      "d1/CDL=red",
+      "d1/Medical card=amber",
+      "d2/CDL=green",
+      "d2/Medical card=amber",
+    ])
+    expect(seen[1]).toEqual(seen[0])
+    expect(seen[2]).toEqual(seen[0])
+    // And the ambient company entry stays inert on all three clocks. This is
+    // the assertion that fails if mockRowsBySql stops stubbing the quarter as
+    // filed — which is exactly how the wall clock got back into this file.
+    expect(iftaColours).toEqual(["green", "green", "green"])
   })
 })
 

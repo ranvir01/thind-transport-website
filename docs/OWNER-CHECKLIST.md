@@ -1,70 +1,83 @@
-# What we need from you — Thind Transport / LoadOff
+# Owner action queue — Thind Transport / LoadOff
 
-**Updated 23 July 2026.** This replaces the earlier "LoadOff Setup and Sign-Off" PDF.
-Nothing from that document is lost — it's all still here, plus everything that has
-been built since. Work top-down: **Section 1 takes 15 minutes and unblocks the most.**
-
-Legend: ☐ = you · ✅ = already done, no action.
-
----
-
-## Already done for you (don't redo these)
-
-| | |
-|---|---|
-| ✅ | Website live at thindtransport.com — graphite/white/red brand, mobile-optimised |
-| ✅ | 48 state CDL-jobs pages, `/shippers` broker page, lead capture that can't lose a lead |
-| ✅ | LoadOff live at `/hub` — dispatch, money, settlements, fuel/IFTA, compliance, driver phone app |
-| ✅ | Driver leads board, and **Outreach** (`/hub/outreach`) that drafts on-brand emails to brokers/shippers/drivers |
-| ✅ | Help centre at `/hub/help` — searchable tours, videos, playbooks |
-| ✅ | Accessibility: every page passes WCAG AA contrast on phone/tablet/desktop (automated, re-checkable via `npm run design-qa`) |
-| ✅ | 1,487 automated tests, build green, database migrations applied automatically on deploy |
-| ✅ | Database schema, cron jobs, and integration framework all deployed |
+**Updated 2026-08-04.** This file is the **single queue of things only the owner can do**,
+per the autonomous-build plan: agents never block on these, never put them in their own
+task lists, and never write secret *values* here — names and places only. Everything not
+on this page is either done or automatable without you.
 
 ---
 
-## SECTION 1 — Unblock production (15 minutes, highest value)
+## The iOS install / origin split (current headline)
 
-Everything here is copy-paste. **Do this first.**
+The PWA install from **thindtransport.com/hub/get-app already works** — the auth-gate bug
+that served HTML as the service worker was fixed and verified live 2026-07-30. The origin
+split below is the *cleaner* long-term answer (LoadOff on its own host, so an installed
+app can never wander onto the website). The code is on `main`, off until one env var is
+set. Three steps, two still yours:
 
-### 1a. Paste the environment values into Vercel
+| # | Action | Where | Status |
+|---|---|---|---|
+| 1 | Set env var **`NEXT_PUBLIC_APP_HOST`** = `thind-transport-website.vercel.app` (Production; Preview too if offered) | Vercel → project → Settings → Environment Variables | ☐ **you** |
+| 2 | Remove the **domain redirect**: `thind-transport-website.vercel.app` currently 308-redirects every path to `thindtransport.com` (verified live 2026-08-04). Set it to "No Redirect". | Vercel → project → Settings → Domains → that domain | ☐ **you** |
+| 3 | Deployment protection opened for production aliases while previews (which carry the full TMS) stay walled — `prod_deployment_urls_and_all_previews` | — | ✅ agent, 2026-08-04 |
 
-Go to **vercel.com → thind-transport-website → Settings → Environment Variables → Production**.
-The values are in the private **env sheet file** I sent you (Section 1 of it). Add:
+**Then redeploy with the build cache DISABLED** (Deployments → ⋯ → Redeploy → untick "Use
+existing Build Cache") — `NEXT_PUBLIC_*` values are baked in at build time; a cached
+rebuild silently ignores the new value and the split looks broken. Any push to `main`
+also works. Until steps 1–2 are done, both hosts serve the combined site exactly as
+today: nothing is broken, the split is simply off.
 
-- ☐ `CRON_SECRET` — lets the nightly jobs authenticate
-- ☐ `CREDENTIALS_KEY` — encrypts saved integration passwords
-- ☐ `NEXT_PUBLIC_VAPID_PUBLIC_KEY` and `VAPID_PRIVATE_KEY` — driver push notifications
-- ☐ **Redeploy** after saving (Deployments → ⋯ → Redeploy)
+## Production env vars (names only — values were sent to you separately)
 
-> Lost the env sheet? Say so and I'll regenerate it — the keys are generated, not looked up.
+| Name | What it unlocks | Until set |
+|---|---|---|
+| `CRON_SECRET` | All 17 scheduled jobs — currently 401 | Jobs no-op silently |
+| `CREDENTIALS_KEY` | Encrypts stored integration credentials; every provider connect depends on it | Integrations can't be activated |
+| `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_CONTACT` | Driver-app push notifications | No push; app otherwise fine |
+| `SMTP_USER`, `SMTP_PASS` | **Broken, not just missing**: nightly cron fails `535-5.7.8 BadCredentials` daily at 14:00 UTC since 07-26. Generate a fresh Gmail App Password, repaste both. | Invoice email, outreach, lead alerts silently dead |
+| `FMCSA_WEBKEY` (free — mobile.fmcsa.dot.gov → Login.gov → My WebKeys) | Live authority on /trust + broker vetting | Cached snapshot, labeled |
+| `EIA_API_KEY` (free — eia.gov/opendata/register.php) | Live diesel prices in the earnings calculator | Static figure |
+| `HUB_DEMO_LOGIN` | `false` disables demo logins — leave ON until reviewers finish, off before real data | Demo logins active |
 
-### 1b. Company email for sending (unlocks three things at once)
+All set at: Vercel → project → Settings → Environment Variables → Production → Redeploy.
+Note for agents: outbound mail is **nodemailer over SMTP**. Resend is NOT in this stack —
+plans that say otherwise are wrong; verified stack facts live in `docs/portfolio/FACTS.md`.
 
-This is now the single highest-value item: it turns on **invoice emailing**, **outreach
-sending**, and **lead alerts**. Without it, LoadOff still works — it just shows
-"copy this and send it yourself" instead of sending.
+## Claims removed from the site — send the source and they come back
 
-- ☐ Decide the sending address (recommend a real company address, e.g. `dispatch@thindtransport.com`, not a personal Gmail)
-- ☐ Create an **app password** for it (Gmail: Account → Security → 2-Step → App passwords)
-- ☐ Add to Vercel Production: `SMTP_USER` = the address, `SMTP_PASS` = the app password
-- ☐ Redeploy
+Removed 2026-08-04 under the no-unverifiable-claims rule. A guard test
+(`src/__tests__/unverifiable-claims.test.ts`) fails the build if any returns without its
+entry being deleted in a commit that cites the verifying document.
 
-> **⚠️ Currently failing, not just unset.** Production has `SMTP_USER`/`SMTP_PASS` set to
-> *something*, and Gmail is rejecting it every time: `Invalid login: 535-5.7.8 Username and
-> Password not accepted … BadCredentials`. First seen 2026-07-26 14:24 UTC, still recurring as
-> of 2026-07-27 14:13 UTC — every `owner-digest` and `compliance-scan` cron run, and (same
-> credential) every invoice/outreach/lead-alert send, has been failing silently for over a day.
-> The app password was likely revoked or mistyped. Generate a fresh one and repaste both
-> values above, then redeploy.
+| Removed claim | Where it lived | Comes back when you provide |
+|---|---|---|
+| "$1M+ Liability Coverage" (+ homepage Insured tile) | homepage TrustStrip, credentials list | The **COI** — real auto-liability + cargo limits |
+| Published on-time percentage | never published (guarded by `TRUST_FACTS`) | Measured data, only if genuinely ≥95% |
+| "Priority Application Processing" (+ "priority application status") | pre-qualify + 30-second qualifier | A written recruiting policy that says it |
+| "Immediate Orientation …" + "Premium Equipment Assignment" | qualify flows | A written orientation schedule / equipment policy |
 
-### 1c. Demo accounts — timing decision
+Each was replaced with constants-backed facts (sign-on bonus, weekly direct deposit, no
+forced dispatch), so the cards did not thin out. The $425K / $1M+ **five-year projections**
+on /pay-rates stayed — labeled projections — but should derive from `PAY_RATES` constants
+instead of being hardcoded; that is agent backlog, not yours.
 
-`HUB_DEMO_LOGIN=false` disables the demo logins (`owner@demo.thind` etc.).
+## Accounts / money / people
 
-- ☐ **Recommendation: leave demo ON until the fellowship review is finished**, then set it to `false`.
-  Reviewers may want to click into the live product; turning it off first makes that impossible.
-  Set it before real driver/broker data goes in.
+| Action | Why | Added |
+|---|---|---|
+| Vercel Pro ($20/mo) | Hobby is non-commercial-only; its deploy quota froze production once | 07-27 |
+| Enable Web Analytics (Project → Analytics, one click) | Funnel tracking ships to every visitor with nowhere to report | 07-27 |
+| Uptime monitor on `thindtransport.com/api/version`, alert when `"db":true` disappears | Catches "site up, database gone" | 07-27 |
+| File **Form 2290** (~$8,250, due **Aug 31**) | Blocks plate renewal, not a fine | 07-27 |
+| Run `branch-cleanup.sh` from your machine | Sandboxes get 403 on ref deletion; ~113 dead branches | 07-28 |
+| Real photos (shot list: `docs/real-photos-shotlist.md`) | Biggest credibility gap; placeholders until then | 07-27 |
+| Punjabi/Spanish reviewer | i18n scaffolding allowed; no machine-translated page ships | 07-27 |
+| Integration credentials (EFS/WEX/Comdata feeds, Terminal **or** TruckerCloud ELD key, QBO app, DAT/Truckstop seats, factor details, docs-mailbox address) | Pasted in LoadOff → Settings → Integrations (needs `CREDENTIALS_KEY` first). Adapters are contract-tested against mocks; a credential is activation, not development. | 07-30 |
+| DNS record for `app.thindtransport.com` (only when you want the branded app host; the `.vercel.app` alias tests the split first) | The end-state for the origin split | 08-04 |
+
+The interactive worksheet (`loadoff-worksheet.html`, sent 07-30) collects the numbers only
+you have — real cost per mile, 70/8 vs 60/7 dispatch, truck weights, whether ATS is live
+on LoadOff. Estimates are fine; the simulation only needs to behave like your business.
 
 ---
 
@@ -183,7 +196,7 @@ Check on **production with real data** before Excel is retired. Automated ones I
 
 **Automated** *(I run these — current status ✅)*
 - ✅ `npm run build` — zero errors
-- ✅ `npm test` — 1,487 tests green *(was "117" in the old PDF — the suite has grown)*
+- ✅ `npm test` — 2,500+ tests green *(was "117" in the old PDF — the suite has grown)*
 - ✅ `npm run db:migrate` — clean, and now runs automatically on every deploy
 - ✅ `npm run design-qa` — 0 contrast/overflow failures, all devices
 - ☐ Demo accounts disabled *(after fellowship review — see 1c)*
