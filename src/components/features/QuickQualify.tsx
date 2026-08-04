@@ -87,7 +87,7 @@ export const QuickQualify = () => {
             <span className="text-gradient-accent">Top Tier Pay</span>
           </h2>
           <p className="text-xl text-slate-700 max-w-2xl mx-auto">
-            Answer 4 simple questions to unlock priority application status. No
+            Answer 4 simple questions to see if you meet our requirements. No
             commitment required.
           </p>
         </div>
@@ -171,13 +171,15 @@ export const QuickQualify = () => {
                     <CheckCircle2 className="w-4 h-4" /> $1,000 - $2,500 Sign-On
                     Bonus
                   </li>
+                  {/* The same-day-orientation and premium-equipment promises were
+                      removed 2026-08-04 — unsourced. Only constants-backed
+                      facts below. */}
                   <li className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4" /> Immediate Orientation
-                    Scheduling
+                    <CheckCircle2 className="w-4 h-4" /> Weekly Direct Deposit
+                    Pay
                   </li>
                   <li className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4" /> Premium Equipment
-                    Assignment
+                    <CheckCircle2 className="w-4 h-4" /> No Forced Dispatch
                   </li>
                 </ul>
               </div>

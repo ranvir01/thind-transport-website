@@ -2,7 +2,6 @@ import Image from "next/image"
 import {
   ShieldCheck,
   BadgeCheck,
-  Shield,
   Truck,
   MapPin,
   ExternalLink,
@@ -13,7 +12,7 @@ import { Reveal } from "@/components/ui/Reveal"
 /**
  * Editorial trust bar: a real FMCSA compliance badge paired with an inline,
  * divider-separated credential row — every figure shown here is verifiable
- * (USDOT, MC, insurance, fleet size, years in business).
+ * (USDOT, MC, fleet size, years in business).
  */
 
 const credentials = [
@@ -31,13 +30,9 @@ const credentials = [
     sub: "Verified motor carrier",
     href: FMCSA_LINKS.safer,
   },
-  {
-    icon: Shield,
-    value: "$1M+",
-    label: "Insured",
-    sub: "Liability coverage",
-    highlight: true,
-  },
+  // The "$1M+ Insured" tile is deliberately absent: the figure was never
+  // verified against a COI, and a broker checks exactly that number. It comes
+  // back when the owner confirms the real limits (docs/OWNER-CHECKLIST.md).
   {
     icon: Truck,
     value: `${STATS.trucksInFleet}+`,
@@ -102,16 +97,14 @@ export function TrustStrip() {
                 >
                   <div className="mb-1.5 flex items-center gap-2">
                     <Icon
-                      className={`h-4 w-4 ${item.highlight ? "text-orange" : "text-gold"}`}
+                      className="h-4 w-4 text-gold"
                     />
                     <span className="text-[11px] font-semibold uppercase tracking-wide text-steel-400">
                       {item.label}
                     </span>
                   </div>
                   <div
-                    className={`font-display text-2xl font-bold leading-none md:text-3xl ${
-                      item.highlight ? "text-orange" : "text-white"
-                    }`}
+                    className="font-display text-2xl font-bold leading-none md:text-3xl text-white"
                   >
                     {item.value}
                   </div>

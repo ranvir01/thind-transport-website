@@ -115,11 +115,11 @@ export const TRUST_INDICATORS = {
       issuer: "Company policy — you choose your loads",
       icon: "award",
     },
-    {
-      name: "$1M+ Liability Coverage",
-      issuer: "Commercial Insurance Carrier",
-      icon: "shield",
-    },
+    // The $1M+ liability-coverage credential was removed 2026-08-04 under the
+    // no-unverifiable-claims rule: it is a specific number a broker checks
+    // against the COI, and no COI in this repo backs it. It returns the day the
+    // owner confirms the real limits (see docs/OWNER-CHECKLIST.md). A test
+    // fails if it is re-added without that confirmation.
   ],
 } as const
 
