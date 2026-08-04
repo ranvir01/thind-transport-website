@@ -24,7 +24,6 @@
  */
 
 import { useSyncExternalStore } from "react"
-import Link from "next/link"
 import { Share, Smartphone, Check, ArrowRight } from "lucide-react"
 import { track } from "@vercel/analytics"
 
@@ -48,13 +47,16 @@ const numCls =
 
 function OpenAppCta({ label }: { label: string }) {
   return (
-    <Link
+    // Plain <a>, not next/link: a soft navigation leaves the marketing
+    // manifest active and iOS then offers to install the website. See
+    // src/lib/cross-app-link.ts.
+    <a
       href="/hub/get-app"
       onClick={() => track("pwa_install_redirect")}
       className="mt-4 inline-flex min-h-[44px] items-center gap-2 rounded-m-2 bg-signal px-6 py-3 font-display text-m-body font-bold uppercase tracking-wide text-paper transition-colors duration-base ease-entrance hover:bg-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-signal focus-visible:ring-offset-2 focus-visible:ring-offset-paper"
     >
       <Smartphone className="h-4 w-4" aria-hidden /> {label} <ArrowRight className="h-4 w-4" aria-hidden />
-    </Link>
+    </a>
   )
 }
 
