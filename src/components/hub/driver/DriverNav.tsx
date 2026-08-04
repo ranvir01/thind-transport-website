@@ -10,6 +10,7 @@ import { Home, MessageSquare, Wallet, Menu } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { PRODUCT } from "@/lib/hub/product"
 import { NotificationsBell } from "@/components/hub/NotificationsBell"
+import { LoadOffMark } from "@/components/hub/LoadOffMark"
 
 const TABS = [
   { href: "/hub/driver", label: "Home", icon: Home },
@@ -31,7 +32,11 @@ export function DriverNav({ firstName }: { firstName: string }) {
           uses fixed dark colors — the mode-dependent surface/fg tokens resolve
           to light values here and made the wordmark invisible. */}
       <header className="fixed top-0 inset-x-0 z-40 flex h-14 items-center justify-between border-b border-white/10 bg-navy-600/95 px-4 backdrop-blur-sm">
-        <Link href="/hub/driver" className="leading-none">
+        {/* The mark carries its own background, so it reads the same on this
+            dark chrome as it does on the office's light shell and on the home
+            screen the driver launched from. */}
+        <Link href="/hub/driver" className="flex items-center gap-2 leading-none">
+          <LoadOffMark size={24} />
           <span className="brand-wordmark text-base font-semibold text-white tracking-[0.14em]">
             {PRODUCT.wordmark}
           </span>

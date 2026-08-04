@@ -20,13 +20,21 @@ vi.mock("../settings", () => ({ getCarrierSettings: vi.fn() }))
 
 import { getHubUser } from "../session"
 import { getCarrierSettings } from "../settings"
-import { buildManifest as manifest, resolveManifestThemeColor } from "@/app/api/hub/manifest/route"
+import {
+  buildManifest as manifest,
+  DEFAULT_THEME_COLOR,
+  resolveManifestThemeColor,
+} from "@/app/api/hub/manifest/route"
 import { PRODUCT } from "../product"
+import { LOADOFF_BRAND } from "../brand"
 
 const getHubUserMock = vi.mocked(getHubUser)
 const getCarrierSettingsMock = vi.mocked(getCarrierSettings)
 
-const DEFAULT = "#0E1621"
+// Imported, not re-typed: the point of these cases is the fallback path, not
+// one particular hex, and a literal here would silently stop matching the
+// shipped default the next time the brand colour moves.
+const DEFAULT = DEFAULT_THEME_COLOR
 const TENANT_A = "11111111-1111-1111-1111-111111111111"
 const TENANT_B = "22222222-2222-2222-2222-222222222222"
 
@@ -42,6 +50,13 @@ beforeEach(() => {
 })
 
 describe("resolveManifestThemeColor", () => {
+  it("falls back to the product's launch colour, not the website's", async () => {
+    // The splash screen an install opens on. It read the marketing navy for a
+    // while, so tapping the indigo LoadOff icon flashed Thind Transport's
+    // colour before the app painted.
+    expect(DEFAULT_THEME_COLOR).toBe(LOADOFF_BRAND.launch)
+  })
+
   it("defaults when signed out", async () => {
     getHubUserMock.mockResolvedValue(null)
     expect(await resolveManifestThemeColor()).toBe(DEFAULT)

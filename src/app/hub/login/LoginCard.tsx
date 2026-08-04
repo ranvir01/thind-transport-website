@@ -6,6 +6,7 @@ import { toast } from "sonner"
 import { Loader2, LogIn } from "lucide-react"
 import { btnPrimaryCls, fieldCls, labelCls, linkAccentCls, Panel } from "@/components/hub/ui"
 import { PRODUCT } from "@/lib/hub/product"
+import { LoadOffMark } from "@/components/hub/LoadOffMark"
 import { postLoginPath } from "@/lib/hub/landing"
 
 /** Session fetch can race signIn; retry before we pick the landing route. */
@@ -80,7 +81,8 @@ export function LoginCard({ showDemo, installSlot }: { showDemo: boolean; instal
       <div className="w-full max-w-md">
       <Panel className="w-full p-6 md:p-8">
         <div className="mb-6 text-center">
-          <span className="text-2xl font-semibold tracking-tight text-fg">{PRODUCT.name}</span>
+          <LoadOffMark size={52} className="mb-3" />
+          <span className="block text-2xl font-semibold tracking-tight text-fg">{PRODUCT.name}</span>
           <span className="mt-1 block text-sm text-fg-3">{PRODUCT.tagline}</span>
           <p className="mt-3 text-sm text-fg-2">One login for dispatch, drivers, and partners.</p>
         </div>

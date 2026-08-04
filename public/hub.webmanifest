@@ -6,8 +6,8 @@
   "start_url": "/hub",
   "scope": "/hub",
   "display": "standalone",
-  "background_color": "#0E1621",
-  "theme_color": "#0E1621",
+  "background_color": "#1E1B4B",
+  "theme_color": "#1E1B4B",
   "icons": [
     {
       "src": "/hub-icon-192.png",

@@ -225,28 +225,28 @@ export default function FuelProgramPage() {
               <div className="bg-gradient-to-br from-blue-500 to-blue-600 text-white w-16 h-16 rounded-2xl flex items-center justify-center font-black text-xl mx-auto mb-4 shadow-lg">
                 1
               </div>
-              <h4 className="font-bold mb-2 text-lg">Apply & Get Approved</h4>
+              <h4 className="font-bold mb-2 text-lg text-gray-900">Apply & Get Approved</h4>
               <p className="text-sm text-gray-600 leading-relaxed">Quick application process with instant approval</p>
             </div>
             <div className="text-center">
               <div className="bg-gradient-to-br from-blue-500 to-blue-600 text-white w-16 h-16 rounded-2xl flex items-center justify-center font-black text-xl mx-auto mb-4 shadow-lg">
                 2
               </div>
-              <h4 className="font-bold mb-2 text-lg">Receive Your Card</h4>
+              <h4 className="font-bold mb-2 text-lg text-gray-900">Receive Your Card</h4>
               <p className="text-sm text-gray-600 leading-relaxed">Card arrives in 3-5 business days</p>
             </div>
             <div className="text-center">
               <div className="bg-gradient-to-br from-blue-500 to-blue-600 text-white w-16 h-16 rounded-2xl flex items-center justify-center font-black text-xl mx-auto mb-4 shadow-lg">
                 3
               </div>
-              <h4 className="font-bold mb-2 text-lg">Start Saving</h4>
+              <h4 className="font-bold mb-2 text-lg text-gray-900">Start Saving</h4>
               <p className="text-sm text-gray-600 leading-relaxed">Use at any participating location</p>
             </div>
             <div className="text-center">
               <div className="bg-gradient-to-br from-blue-500 to-blue-600 text-white w-16 h-16 rounded-2xl flex items-center justify-center font-black text-xl mx-auto mb-4 shadow-lg">
                 4
               </div>
-              <h4 className="font-bold mb-2 text-lg">Track Savings</h4>
+              <h4 className="font-bold mb-2 text-lg text-gray-900">Track Savings</h4>
               <p className="text-sm text-gray-600 leading-relaxed">Monitor discounts in real-time</p>
             </div>
           </div>

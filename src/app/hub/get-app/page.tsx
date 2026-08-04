@@ -4,6 +4,7 @@ import { Share, Smartphone } from "lucide-react"
 import { InstallAppButton } from "@/components/hub/InstallAppButton"
 import { Panel } from "@/components/hub/ui"
 import { PRODUCT } from "@/lib/hub/product"
+import { LoadOffMark } from "@/components/hub/LoadOffMark"
 
 export const metadata: Metadata = {
   title: `Install ${PRODUCT.name}`,
@@ -25,10 +26,16 @@ export default function GetAppInstallPage() {
     <div className="hauldesk-auth flex min-h-screen items-center justify-center p-4">
       <div className="w-full max-w-md">
         <Panel className="w-full p-6 md:p-8">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-fg-3">
-            You&apos;re on the app&apos;s own page
-          </p>
-          <h1 className="mt-2 text-2xl font-semibold tracking-tight text-fg">
+          {/* Showing the mark here is the second half of the tell-tale below:
+              the driver can match what they are about to add against what they
+              will see on their home screen, before they add it. */}
+          <div className="flex items-center gap-3">
+            <LoadOffMark size={44} />
+            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-fg-3">
+              You&apos;re on the app&apos;s own page
+            </p>
+          </div>
+          <h1 className="mt-3 text-2xl font-semibold tracking-tight text-fg">
             Put {PRODUCT.name} on your phone
           </h1>
           <p className="mt-3 text-sm text-fg-2">

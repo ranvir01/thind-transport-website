@@ -6,6 +6,7 @@ import { OFFICE_ROLES } from "@/lib/hub/types"
 import { PRODUCT } from "@/lib/hub/product"
 import { Panel } from "@/components/hub/ui"
 import { SignOutButton } from "@/components/hub/SignOutButton"
+import { LoadOffMark } from "@/components/hub/LoadOffMark"
 
 const ROLE_COPY: Record<string, { title: string; body: string }> = {
   // The portal shipped — the only way to land on this page is requirePortalUser
@@ -49,7 +50,10 @@ export default async function HubWelcomePage() {
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
       <Panel className="w-full max-w-md p-6 md:p-8 text-center">
-        <span className="brand-wordmark text-2xl font-semibold text-fg tracking-[0.14em]">{PRODUCT.wordmark}</span>
+        <LoadOffMark size={52} className="mb-3" />
+        <span className="block brand-wordmark text-2xl font-semibold text-fg tracking-[0.14em]">
+          {PRODUCT.wordmark}
+        </span>
         <span className="block text-[11px] font-bold uppercase tracking-[0.3em] text-accent-text mt-1">
           {carrier?.name ?? PRODUCT.tagline}
         </span>

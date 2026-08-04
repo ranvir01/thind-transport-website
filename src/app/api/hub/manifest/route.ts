@@ -10,9 +10,15 @@ import { getCarrierSettings } from "@/lib/hub/settings"
 import { PRODUCT } from "@/lib/hub/product"
 import { manifestScope } from "@/lib/hub/install-scope"
 import { isAppHost } from "@/lib/app-origin"
+import { LOADOFF_BRAND } from "@/lib/hub/brand"
 
-/** Same background/theme as the static fallback (public/hub.webmanifest). */
-const DEFAULT_THEME_COLOR = "#0E1621"
+/**
+ * Same background/theme as the static fallback (public/hub.webmanifest) and as
+ * the cover InstalledAppRedirect paints — all three read LOADOFF_BRAND.launch,
+ * so the splash screen, the status bar and the launch flash cannot drift apart
+ * from each other or from the icon.
+ */
+export const DEFAULT_THEME_COLOR = LOADOFF_BRAND.launch
 const HEX_COLOR = /^#[0-9a-fA-F]{6}$/
 
 /**
