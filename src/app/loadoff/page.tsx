@@ -85,19 +85,17 @@ export default function LoadOffPage() {
               app drivers actually use.
             </p>
             <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
+              {/* PLAIN <a>, NOT next/link — deliberate, and load-bearing.
+                  See the note above CROSS_APP_LINK_REASON below. */}
               <Button size="lg" className="bg-white text-slate-900 hover:bg-slate-100" asChild>
-                <Link href="/hub">
+                <a href="/hub">
                   Open LoadOff <ArrowRight className="h-5 w-5 ml-2" />
-                </Link>
+                </a>
               </Button>
-              {/* iOS only installs the app from a page inside the app's own
-                  manifest scope, so "put it on your phone" has to be a link to
-                  /hub/get-app — Add to Home Screen performed here would save
-                  the website instead. */}
               <Button size="lg" variant="outline" className="border-white/40 text-white hover:bg-white/10" asChild>
-                <Link href="/hub/get-app">
+                <a href="/hub/get-app">
                   <Smartphone className="h-5 w-5 mr-2" /> Put it on your phone
-                </Link>
+                </a>
               </Button>
               <Button size="lg" variant="outline" className="border-white/40 text-white hover:bg-white/10" asChild>
                 <Link href="/schedule-meeting">
@@ -269,15 +267,16 @@ export default function LoadOffPage() {
             Open it, or ask us for a walkthrough with demo data.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            {/* Plain <a> — see CROSS_APP_LINK_REASON. */}
             <Button size="lg" className="bg-white text-slate-900 hover:bg-slate-100" asChild>
-              <Link href="/hub">
+              <a href="/hub">
                 Open LoadOff <ArrowRight className="h-5 w-5 ml-2" />
-              </Link>
+              </a>
             </Button>
             <Button size="lg" variant="outline" className="border-white/40 text-white hover:bg-white/10" asChild>
-              <Link href="/hub/get-app">
+              <a href="/hub/get-app">
                 <Smartphone className="h-5 w-5 mr-2" /> Install it on your phone
-              </Link>
+              </a>
             </Button>
             <Button size="lg" variant="outline" className="border-white/40 text-white hover:bg-white/10" asChild>
               <Link href="/schedule-meeting">Schedule a walkthrough</Link>
