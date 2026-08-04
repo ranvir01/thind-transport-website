@@ -98,7 +98,12 @@ export function AudienceSelector() {
                 <span className="mt-4 font-display text-m-h4 font-bold text-ink">
                   {a.who}
                 </span>
-                <span className="mt-1 font-display text-m-micro font-bold uppercase tracking-[0.15em] text-ink-3">
+                {/* ink-2, not ink-3: ink-3 is tuned to clear AA against paper
+                    with almost no margin (4.66:1), and the primary card's red
+                    wash darkens the ground just enough to drop the label to
+                    4.39:1. The eyebrow is already distinguished by case,
+                    weight and tracking, so it loses nothing by being darker. */}
+                <span className="mt-1 font-display text-m-micro font-bold uppercase tracking-[0.15em] text-ink-2">
                   {a.label}
                 </span>
                 <span className="mt-3 flex-1 text-m-body text-ink-2">{a.promise}</span>

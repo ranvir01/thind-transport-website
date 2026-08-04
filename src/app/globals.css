@@ -465,6 +465,14 @@
   .brand-page-shell .text-red-600,
   .brand-page-shell .text-red-700,
   .brand-page-shell .text-orange-400,
+  /* orange-500/600 are the brand red at full and one step down (#E0392F /
+     #C42820). Every other accent class in this list was remapped for the dark
+     shell and these two were missed, so they kept rendering the dark step on a
+     navy panel: 3.09:1 for orange-600, below AA. They are also the two most
+     reached-for shades on these pages, which is why the gap showed up on
+     /benefits and /resources rather than staying theoretical. */
+  .brand-page-shell .text-orange-500,
+  .brand-page-shell .text-orange-600,
   .brand-page-shell .text-orange-700 {
     color: var(--brand-accent-strong) !important;
   }
