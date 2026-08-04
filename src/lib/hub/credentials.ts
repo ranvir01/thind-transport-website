@@ -9,6 +9,9 @@ import { query, queryOne } from "./db"
 export type IntegrationProvider =
   | "terminal" | "truckercloud" | "dat" | "efs" | "wex" | "comdata" | "mailbox"
   | "truckstop" | "qbo" | "factor"
+  // Universal-coverage wave (stub-first, mock-backed until credentials exist):
+  | "axle" | "atob" | "plaid" | "bestpass" | "prepass" | "drivewyze"
+  | "fleetio" | "sambasafety" | "stedi"
 
 export function credentialsConfigured(): boolean {
   return Boolean(process.env.CREDENTIALS_KEY && process.env.CREDENTIALS_KEY.length >= 16)

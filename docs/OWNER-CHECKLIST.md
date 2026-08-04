@@ -188,6 +188,37 @@ the exact shot list is in `docs/real-photos-shotlist.md`, and each maps to a fil
 - ☐ Set up the routines in `docs/design-qa-routines.md` (keeps every page legible on every device)
 - ☐ And `docs/outreach.md` (keeps outreach drafts queued for your review, never auto-sends)
 
+### 4e. Universal integration wave (2026-08) — accounts only you can open
+
+The software side is DONE and waiting: nine new integration cards are live on
+`/hub/settings/integrations` (Axle, AtoB, Plaid, Bestpass, PrePass, Drivewyze, Fleetio,
+SambaSafety, Stedi), each mock-tested and each with a working no-credential fallback —
+including the new **FMCSA ELD output-file parser**, which reads the standardized file every
+registered ELD in America is legally required to export. Nothing below blocks anything else;
+open them in any order, paste the credential into the card, done.
+
+**Sign up / ask for API access** *(each is one account + one credential paste)*
+- ☐ **Axle** (withaxle.com) — third ELD aggregator, catches brands Terminal/TruckerCloud miss
+- ☐ **AtoB** (atob.com) — if you switch fuel cards, this one has a real API
+- ☐ **Plaid** (dashboard.plaid.com) — bank-feed fallback so fuel spend imports even with no card feed
+- ☐ **Bestpass** (developer.bestpass.com) — tolls land as per-truck expenses automatically
+- ☐ **PrePass** (developer.prepass.com) and/or **Drivewyze** — weigh-station bypass data
+- ☐ **Fleetio** (developer.fleetio.com) — only if you want maintenance synced to an outside shop system
+- ☐ **SambaSafety** (developer.sambasafety.com) — continuous MVR monitoring on every driver
+- ☐ **Stedi** (stedi.com) — EDI: receive 204 load tenders from enterprise shippers as data, no VAN
+
+**Partner applications** *(these need a signed agreement or an invite — start the conversation, I do the rest)*
+- ☐ **project44 / FourKites / Descartes MacroPoint** — ask the next broker who demands tracking
+  which one they use, and request carrier-side API credentials from that one first
+- ☐ **Uber Freight** carrier API access (carrier account required)
+- ☐ **Tenstreet or DriverReach** if recruiting volume ever outgrows the built-in board
+- ☐ **Cover Whale / Nirvana** — telematics-based insurance quotes, at renewal time
+
+**Spend decisions** *(not yet — triggers listed so future-you knows when)*
+- ☐ **SOC 2 Type II** (~$25–80k first year): only when an enterprise shipper's security
+  questionnaire demands it. Not needed to sell to small carriers. A Type I unblocks a single deal faster.
+- ☐ **Paid support tooling**: free tier / email is fine until real ticket volume exists.
+
 ---
 
 ## SECTION 5 — Production sign-off gates
