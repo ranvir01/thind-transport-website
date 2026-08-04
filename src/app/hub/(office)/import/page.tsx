@@ -1,5 +1,6 @@
 import { PageHeader } from "@/components/hub/ui"
 import { ImportWizard } from "@/components/hub/ImportWizard"
+import { EldFileImport } from "@/components/hub/EldFileImport"
 
 export default async function ImportPage({
   searchParams,
@@ -14,6 +15,7 @@ export default async function ImportPage({
         subtitle="The universal engine: loads, trucks, drivers, brokers, fuel, tolls, positions, IFTA mileage — map columns once, reuse forever."
       />
       <ImportWizard initialKind={kind ?? "loads"} />
+      <EldFileImport />
     </div>
   )
 }

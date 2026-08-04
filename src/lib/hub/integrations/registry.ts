@@ -159,13 +159,13 @@ export const PROVIDERS: readonly ProviderSpec[] = [
     id: "axle", label: "Axle (telematics aggregator)", domain: "telematics",
     blurb: "Third ELD aggregator alongside Terminal and TruckerCloud — one more path to a long-tail ELD before falling back to the FMCSA output file. Sign up at withaxle.com.",
     fields: [{ key: "apiKey", label: "Axle API key", secret: true }],
-    fallback: "FMCSA ELD output-file upload, or positions CSV import", sync: "manual", status: "stub",
+    fallback: "FMCSA ELD output-file upload, or positions CSV import", sync: "poll", status: "stub", cronJob: "telematics-sync",
   },
   {
     id: "atob", label: "AtoB fuel card", domain: "fuel",
     blurb: "API-era fuel card on Visa/Mastercard rails — transaction feed straight into MPG, fraud flags, and fuel→load. Ask AtoB for API access (atob.com).",
     fields: [{ key: "apiKey", label: "AtoB API key", secret: true }],
-    fallback: "Fuel statement CSV import", sync: "manual", status: "stub",
+    fallback: "Fuel statement CSV import", sync: "poll", status: "stub", cronJob: "universal-sync",
   },
   {
     id: "plaid", label: "Plaid (bank feed)", domain: "banking",
@@ -175,7 +175,7 @@ export const PROVIDERS: readonly ProviderSpec[] = [
       { key: "secret", label: "Plaid secret", secret: true },
       { key: "accessToken", label: "Item access token (per linked account)", secret: true },
     ],
-    fallback: "Bank statement CSV import", sync: "manual", status: "stub",
+    fallback: "Bank statement CSV import", sync: "poll", status: "stub", cronJob: "universal-sync",
   },
   {
     id: "bestpass", label: "Bestpass tolls", domain: "tolls",
@@ -184,13 +184,13 @@ export const PROVIDERS: readonly ProviderSpec[] = [
       { key: "clientId", label: "Client ID" },
       { key: "clientSecret", label: "Client secret", secret: true },
     ],
-    fallback: "Toll statement CSV import", sync: "manual", status: "stub",
+    fallback: "Toll statement CSV import", sync: "poll", status: "stub", cronJob: "universal-sync",
   },
   {
     id: "prepass", label: "PrePass", domain: "bypass",
     blurb: "Weigh-station bypass + toll data (developer.prepass.com; an FTP feed also exists). Bypass events and toll charges per truck.",
     fields: [{ key: "apiKey", label: "PrePass API key", secret: true }],
-    fallback: "Toll/bypass statement CSV import", sync: "manual", status: "stub",
+    fallback: "Toll/bypass statement CSV import", sync: "poll", status: "stub", cronJob: "universal-sync",
   },
   {
     id: "drivewyze", label: "Drivewyze", domain: "bypass",
@@ -205,7 +205,7 @@ export const PROVIDERS: readonly ProviderSpec[] = [
       { key: "apiToken", label: "API token", secret: true },
       { key: "accountToken", label: "Account token" },
     ],
-    fallback: "Built-in maintenance panel + CSV import", sync: "manual", status: "stub",
+    fallback: "Built-in maintenance panel + CSV import", sync: "poll", status: "stub", cronJob: "universal-sync",
   },
   {
     id: "sambasafety", label: "SambaSafety MVR monitoring", domain: "safety",
@@ -214,7 +214,7 @@ export const PROVIDERS: readonly ProviderSpec[] = [
       { key: "clientId", label: "Client ID" },
       { key: "clientSecret", label: "Client secret", secret: true },
     ],
-    fallback: "Annual MVR pull, filed to the driver's DQ file", sync: "manual", status: "stub",
+    fallback: "Annual MVR pull, filed to the driver's DQ file", sync: "poll", status: "stub", cronJob: "universal-sync",
   },
   {
     id: "stedi", label: "Stedi EDI gateway", domain: "edi",

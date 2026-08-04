@@ -12,6 +12,8 @@ import { sendDriverInviteEmail } from "@/lib/hub/driver-invite"
 import { query, hubDb } from "@/lib/hub/db"
 import { logAudit } from "@/lib/hub/audit"
 import { classifyFuelUse } from "@/lib/hub/fuel-core"
+import { parseEldOutputFile } from "@/lib/hub/eld-output-file"
+import { planEldSnapshotRows } from "@/lib/hub/eld-import"
 import { decodeVin, type VinDecodeResult } from "@/lib/hub/vin"
 import { dollarsToCents } from "@/lib/hub/types"
 import {
@@ -665,4 +667,106 @@ export async function importMileageAction(rows: GenericRow[]): Promise<ImportRes
   })
   revalidatePath("/hub/compliance/ifta")
   return { ok: failed.length === 0, imported, failed, rowsReplaced: replaced }
+}
+
+// ---- ELD output file (FMCSA 49 CFR 395 Appendix A) ----
+
+export interface EldImportActionResult {
+  ok: boolean
+  eventsImported: number
+  matchedDrivers: number
+  unmatchedDrivers: string[]
+  skippedDuplicates: number
+  /** Malformed lines the parser skipped inside an otherwise good file. */
+  skippedLines: number
+  error?: string
+}
+
+/** Growth headroom over real files (a quarter's log for a small fleet runs
+ * tens of KB); past this it's the wrong file, not a big file. */
+const MAX_ELD_FILE_BYTES = 5_000_000
+
+/**
+ * The universal HOS fallback, landed: any FMCSA-registered ELD can export
+ * this file, and this action turns it into the same hos_snapshots time
+ * series the live telematics feeds write — duty log + clocks with no
+ * aggregator account anywhere. Compliance-grade (RODS), not live GPS.
+ */
+export async function importEldFileAction(fileText: string): Promise<EldImportActionResult> {
+  const fail = (error: string): EldImportActionResult => ({
+    ok: false, eventsImported: 0, matchedDrivers: 0, unmatchedDrivers: [], skippedDuplicates: 0, skippedLines: 0, error,
+  })
+  let user
+  try {
+    user = await requirePermission("imports:run")
+  } catch (err) {
+    return fail(actionError(err, "Forbidden").error)
+  }
+  if (fileText.length > MAX_ELD_FILE_BYTES) {
+    return fail("File too large for an ELD output file — export a single log period from the device.")
+  }
+
+  const parsed = parseEldOutputFile(fileText)
+  if (!parsed.ok) return fail(parsed.reason)
+
+  const drivers = await driverMap(user.carrierId)
+  // 70/8 — the cycle for a carrier operating every day of the week, which
+  // Thind does. No carrier-level cycle setting exists yet; whether any tenant
+  // runs 60/7 is literally a worksheet question for the owner, and until it
+  // is answered the answer here matches computeHos's own default.
+  const cycle = 70 as const
+
+  const driverIds = [...new Set([...drivers.values()])]
+  const existingRows = driverIds.length
+    ? await query<{ driver_id: string; ts: string }>(
+        `SELECT driver_id, ts FROM hub.hos_snapshots
+         WHERE carrier_id = $1 AND source = 'eld-file' AND driver_id = ANY($2::uuid[])`,
+        [user.carrierId, driverIds]
+      )
+    : []
+  const existingTsByDriver = new Map<string, Set<string>>()
+  for (const row of existingRows) {
+    const set = existingTsByDriver.get(row.driver_id) ?? new Set<string>()
+    set.add(new Date(row.ts).toISOString())
+    existingTsByDriver.set(row.driver_id, set)
+  }
+
+  const plan = planEldSnapshotRows(parsed, drivers, existingTsByDriver, { cycle })
+
+  for (const row of plan.rows) {
+    await query(
+      `INSERT INTO hub.hos_snapshots (carrier_id, driver_id, ts, duty_status,
+         drive_remaining_minutes, shift_remaining_minutes, cycle_remaining_minutes, source)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,'eld-file')`,
+      [
+        user.carrierId, row.driverId, row.ts, row.dutyStatus,
+        row.driveRemainingMinutes ?? null, row.shiftRemainingMinutes ?? null, row.cycleRemainingMinutes ?? null,
+      ]
+    )
+  }
+
+  await logAudit({
+    carrierId: user.carrierId,
+    actorId: user.id,
+    entityType: "hos_snapshots",
+    entityId: "eld-file",
+    action: "import",
+    newValue: {
+      events: plan.rows.length,
+      drivers: plan.matchedDrivers,
+      unmatched: plan.unmatchedDrivers,
+      eld: parsed.header.eldIdentifier,
+    },
+  })
+  revalidatePath("/hub/drivers")
+  revalidatePath("/hub/map")
+
+  return {
+    ok: true,
+    eventsImported: plan.rows.length,
+    matchedDrivers: plan.matchedDrivers,
+    unmatchedDrivers: plan.unmatchedDrivers,
+    skippedDuplicates: plan.skippedDuplicates,
+    skippedLines: parsed.skippedLines,
+  }
 }

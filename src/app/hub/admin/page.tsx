@@ -1,6 +1,11 @@
 import { requirePlatformAdmin } from "@/lib/hub/session"
 import { query } from "@/lib/hub/db"
 import { PRODUCT } from "@/lib/hub/product"
+import {
+  computeSaasMonth,
+  simulateBillingFromTenants,
+  SIMULATED_PRICE_PER_TRUCK_CENTS,
+} from "@/lib/hub/saas-metrics"
 import { Panel } from "@/components/hub/ui"
 import { SignOutButton } from "@/components/hub/SignOutButton"
 import { TenantActions } from "@/components/hub/TenantActions"
@@ -47,6 +52,8 @@ export default async function PlatformAdminPage() {
           Tenants and operational counts only — customer business data stays inside each workspace.
         </p>
 
+        <SaasMetricsPanel tenants={tenants} />
+
         <Panel className="divide-y divide-border">
           {tenants.map((tenant) => (
             <div key={tenant.id} className="flex flex-wrap items-center justify-between gap-2 p-4">
@@ -78,5 +85,67 @@ export default async function PlatformAdminPage() {
         </Panel>
       </div>
     </div>
+  )
+}
+
+/**
+ * Business metrics over SIMULATED billing (per-truck list price applied to
+ * the real tenant list) — the header badge says so, loudly. NRR/churn/Rule
+ * of 40 render only when enough history exists, per the metric definitions
+ * in saas-metrics.ts; a two-tenant platform showing "100% NRR" as if it
+ * meant something would be exactly the fake-KPI theater this avoids.
+ */
+function SaasMetricsPanel({
+  tenants,
+}: {
+  tenants: { id: string; status: string; created_at: string; trucks: string }[]
+}) {
+  const month = new Date().toISOString().slice(0, 7)
+  const rows = simulateBillingFromTenants(
+    tenants.map((t) => ({
+      carrierId: t.id,
+      createdAt: new Date(t.created_at).toISOString(),
+      trucks: Number(t.trucks) || 0,
+      active: t.status === "active",
+    })),
+    month
+  )
+  const m = computeSaasMonth(rows, month)
+  const dollars = (cents: number) => `$${(cents / 100).toLocaleString("en-US", { maximumFractionDigits: 0 })}`
+
+  const tiles: { label: string; value: string; hint?: string }[] = [
+    { label: "MRR", value: dollars(m.mrrCents), hint: `${m.billedLogos} carrier(s)` },
+    { label: "Trucks billed", value: String(m.billedTrucks), hint: `${dollars(SIMULATED_PRICE_PER_TRUCK_CENTS)}/truck list` },
+    {
+      label: "Per-truck ARPU",
+      value: m.arpuPerTruckCents != null ? dollars(m.arpuPerTruckCents) : "—",
+    },
+    { label: "NRR", value: m.nrrPct != null ? `${m.nrrPct}%` : "—", hint: m.nrrPct == null ? "needs 2 months" : undefined },
+    { label: "Logo churn", value: m.logoChurnPct != null ? `${m.logoChurnPct}%` : "—" },
+    { label: "Rule of 40", value: m.ruleOf40 != null ? String(m.ruleOf40) : "—", hint: m.ruleOf40 == null ? "needs 13 months" : undefined },
+  ]
+
+  return (
+    <Panel className="mb-4 p-4">
+      <div className="mb-3 flex items-center gap-2">
+        <h2 className="text-body-sm font-semibold text-fg">Business metrics · {month}</h2>
+        <span className="rounded-full border border-warn-soft bg-warn-soft px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-warn">
+          Simulated billing
+        </span>
+      </div>
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-6">
+        {tiles.map((t) => (
+          <div key={t.label} className="rounded-control border border-border bg-surface-2 px-3 py-2">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-fg-3">{t.label}</p>
+            <p className="mt-0.5 text-lg font-semibold tabular-nums text-fg">{t.value}</p>
+            {t.hint && <p className="text-[10px] text-fg-3">{t.hint}</p>}
+          </div>
+        ))}
+      </div>
+      <p className="mt-3 text-body-xs text-fg-3">
+        Real tenants, real truck counts, pretend payments — swaps to Stripe invoices unchanged when
+        billing goes live. Definitions pinned in <code>src/lib/hub/saas-metrics.ts</code>.
+      </p>
+    </Panel>
   )
 }

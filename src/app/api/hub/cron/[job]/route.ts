@@ -13,6 +13,7 @@ import { runEfsSync } from "@/lib/hub/integrations/efs"
 import { runComdataSync } from "@/lib/hub/integrations/comdata"
 import { runWexSync } from "@/lib/hub/integrations/wex"
 import { runQboSync } from "@/lib/hub/integrations/qbo"
+import { runUniversalSync } from "@/lib/hub/integrations/universal-sync"
 import { pollDocsMailbox } from "@/lib/hub/mailbox"
 import { notifyRandomTestPool, selectRandomTestPool } from "@/lib/hub/random-testing"
 import { sendOwnerDigest } from "@/lib/hub/digest"
@@ -144,6 +145,14 @@ export async function GET(
       } else if (job === "qbo-sync") {
         // Integrations lane: daily QBO payment pull → hub.payments via recordPayment.
         results[carrier.id] = await runQboSync(carrier.id)
+      } else if (job === "universal-sync") {
+        // Universal-coverage wave: one daily slot sweeps every connected
+        // provider (fuel, tolls, maintenance, MVR) instead of one cron each —
+        // an unconnected provider is a cheap `connected(): false` skip.
+        const providers = ["atob", "plaid", "bestpass", "prepass", "fleetio", "sambasafety"] as const
+        const runs: Record<string, unknown> = {}
+        for (const p of providers) runs[p] = await runUniversalSync(p, carrier.id)
+        results[carrier.id] = runs
       } else if (job === "owner-digest") {
         // Phase 6: the Monday-morning numbers email.
         results[carrier.id] = await sendOwnerDigest(carrier.id)
