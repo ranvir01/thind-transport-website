@@ -83,4 +83,15 @@ describe("no bare Math.round(x * 100) money rounding outside the house conventio
       expect(source).not.toMatch(/Math\.round\([^)]*\*\s*100\)/)
     })
   }
+
+  it("onboarding.ts converts the signup form's payPerMile through dollarsToCents, not a bare Math.round", () => {
+    // ownerOperatorPct on the same line legitimately does Math.round(x * 100) for
+    // basis-point math (not a dollars-to-cents conversion), so this file can't join
+    // the blanket sweep above — only the payPerMile conversion itself is guarded here.
+    const source = readFileSync(
+      join(__dirname, "../../../app/hub/_actions/onboarding.ts"), "utf8"
+    )
+    expect(source).not.toMatch(/Math\.round\(\s*input\.payPerMile\s*\*\s*100\s*\)/)
+    expect(source).toMatch(/dollarsToCents\(input\.payPerMile\)/)
+  })
 })
