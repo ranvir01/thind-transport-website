@@ -18,6 +18,7 @@ import {
   carrierAuthorityStatus,
   extractQcCarrier,
 } from "@/lib/hub/vetting-fmcsa"
+import { dollarsToCents } from "@/lib/hub/types"
 
 interface Result {
   ok: boolean

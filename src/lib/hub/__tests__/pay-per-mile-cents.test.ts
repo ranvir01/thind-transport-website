@@ -75,6 +75,16 @@ describe("the half-cent boundary the dollar shape could not express", () => {
     }
   })
 
+  it("keeps the half cent when the binary-float product drifts LOW (2026-08 audit)", () => {
+    // 0.565 * 100 = 56.49999999999999 in IEEE-754: a bare Math.round pays a
+    // $0.565/mi driver 56c on every settled mile. The earlier pins (0.625,
+    // 0.615) only cover ties whose drift lands high.
+    expect(perMile(0.565).rateCentsPerMile).toBe(57)
+    expect(perMile(0.575).rateCentsPerMile).toBe(58)
+    expect(perMile(0.145).rateCentsPerMile).toBe(15)
+    expect(perMile(1.005).rateCentsPerMile).toBe(101)
+  })
+
   it("survives binary-float rates that do not land on a cent", () => {
     // 0.29 * 100 === 28.999999999999996 in IEEE 754; a truncating conversion
     // would pay 28c/mile instead of 29.

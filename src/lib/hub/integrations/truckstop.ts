@@ -17,8 +17,7 @@
  */
 import { getCredentials, hasCredentials } from "../credentials"
 import type { LoadInput, StopInput } from "../loads"
-import { roundHalfAwayFromZero } from "../rounding"
-import type { EquipmentType } from "../types"
+import { dollarsToCents, type EquipmentType } from "../types"
 import type { SyncRowBase, SyncSource } from "./registry"
 
 const SOAP_ACTION = "http://webservices.truckstop.com/v12/ILoadSearch/GetLoadSearchResults"
@@ -70,7 +69,7 @@ export function normalizeTruckstopPosting(record: Record<string, unknown>): Truc
     miles: toNumber(record.TripMiles),
     rateTotalCents: (() => {
       const rate = toNumber(record.TotalRate)
-      return rate === null ? null : roundHalfAwayFromZero(rate * 100)
+      return rate === null ? null : dollarsToCents(rate)
     })(),
     pickupDate: (record.PickupDate as string) ?? null,
     contactPhone: (record.ContactPhone as string) ?? null,
