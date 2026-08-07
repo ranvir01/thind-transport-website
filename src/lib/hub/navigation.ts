@@ -101,6 +101,7 @@ const ALL_UTILITY_LINKS: HubNavLink[] = [
   { href: "/hub/messages", label: "Messages" },
   { href: "/hub/tasks", label: "Tasks" },
   { href: "/hub/guide", label: "Setup guide" },
+  { href: "/hub/toolbox", label: "Toolbox" },
   { href: "/hub/help", label: "Help" },
   { href: "/hub/setup", label: "Smart Setup" },
   { href: "/hub/import", label: "Import" },
