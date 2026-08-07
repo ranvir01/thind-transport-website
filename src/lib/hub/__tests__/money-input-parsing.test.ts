@@ -90,6 +90,8 @@ describe("no bare Math.round(x * 100) money rounding outside the house conventio
     "../integrations/truckstop.ts",
     "../parser.ts",
     "../fuel.ts",
+    "../pay-rules.ts",
+    "../../../components/hub/PayRulesPanel.tsx",
   ]
   for (const file of files) {
     it(`${file} rounds money cents through roundHalfAwayFromZero, not a bare Math.round`, () => {
