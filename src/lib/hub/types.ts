@@ -381,7 +381,11 @@ export function dollarsToCents(value: string | number | null | undefined): numbe
   if (value == null || value === "") return 0
   const num = typeof value === "number" ? value : Number(String(value).replace(/[^0-9.\-]/g, ""))
   if (!Number.isFinite(num)) return 0
-  return roundHalfAwayFromZero(num * 100)
+  // A bare `num * 100` drifts off the decimal the user typed (1.005 * 100 →
+  // 100.49999999999999) and can lose a half-cent tie in either direction;
+  // re-quantizing to 15 significant digits recovers the decimal value before
+  // the house rounding is applied.
+  return roundHalfAwayFromZero(Number((num * 100).toPrecision(15)))
 }
 
 /** Format integer cents as a plain dollar string for CSV export. */
