@@ -12,6 +12,7 @@ import { acceptDriverInvite } from "@/lib/hub/driver-invite"
 import { getHubUser, requireOwner } from "@/lib/hub/session"
 import { logAudit } from "@/lib/hub/audit"
 import { actionError } from "@/lib/hub/action-error"
+import { dollarsToCents } from "@/lib/hub/types"
 import {
   carrierAllowedToOperate,
   carrierAuthorityStatus,
@@ -173,7 +174,7 @@ export async function createWorkspaceAction(input: {
     const prefix = input.companyName.trim().replace(/[^A-Za-z]/g, "").slice(0, 3).toUpperCase() || "LD"
     const accent = /^#[0-9a-fA-F]{6}$/.test(input.accent ?? "") ? input.accent : null
     // Cents, per AGENTS.md. input.payPerMile is dollars off the signup form.
-    const perMileCents = input.payPerMile !== undefined ? Math.round(input.payPerMile * 100) : 60
+    const perMileCents = input.payPerMile !== undefined ? dollarsToCents(input.payPerMile) : 60
     const ooShare = input.ownerOperatorPct !== undefined ? Math.round(input.ownerOperatorPct * 100) / 10000 : 0.9
     await client.query(
       `INSERT INTO hub.carrier_settings (carrier_id, settings) VALUES ($1, $2)`,

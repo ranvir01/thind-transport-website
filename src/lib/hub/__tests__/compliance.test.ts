@@ -83,9 +83,21 @@ describe("complianceEntries color thresholds (colorFor)", () => {
     mockRowsBySql({
       drivers: [{ id: "d1", name: "No Card", cdl_expiry: null, medical_card_expiry: null }],
     })
+    // complianceEntries also appends a calendar-synthesized "IFTA filing <Q>"
+    // company entry whose color tracks the wall clock (red once the last
+    // completed quarter's deadline passes). That entry is unrelated to this
+    // test's concern — missing driver/truck due dates — so scope the assertion
+    // to the driver entries; otherwise the test flips red every post-deadline
+    // window and blocks every push in that window.
     const entries = await complianceEntries(CARRIER)
+    // Scope to the driver's own entries: derived company items (IFTA filing,
+    // Form 2290) are calendar-driven and legitimately go red/green depending on
+    // today's date — an unfiled quarter past its due date is red — so asserting
+    // over the whole wall made this test fail on any day after a filing deadline
+    // (e.g. Aug 1, once the Q2 IFTA return is late). The driver's missing CDL /
+    // medical-card dates are what "missing due date → amber" is actually about.
     const driverEntries = entries.filter((e) => e.entity === "driver")
-    expect(driverEntries.length).toBeGreaterThan(0)
+    expect(driverEntries).toHaveLength(2)
     expect(driverEntries.every((e) => e.color === "amber")).toBe(true)
   })
 
@@ -111,7 +123,14 @@ describe("complianceEntries color thresholds (colorFor)", () => {
       ],
       manual: [{ id: "item-1", kind: "2290", due_on: past2, note: null }],
     })
-    const entries = await complianceEntries(CARRIER)
+    // Exclude the calendar-synthesized "IFTA filing <Q>" company entry: its
+    // color and due date follow the wall clock, so once the last completed
+    // quarter's deadline passes it becomes a red entry that sorts ahead of the
+    // seeded 2290 item (breaking the tie-break assertion) purely because of the
+    // date the suite runs. This test is about ranking the fixtures it created.
+    const entries = (await complianceEntries(CARRIER)).filter(
+      (e) => !e.kind.startsWith("IFTA filing")
+    )
     const redEntries = entries.filter((e) => e.color === "red")
     expect(redEntries[0].kind).toBe("2290")
     expect(redEntries[1].kind).toBe("CDL")
