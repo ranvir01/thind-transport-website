@@ -12,6 +12,7 @@ export const authConfig = {
       credentials: {
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
+        totpCode: { label: "2FA code", type: "text" },
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
@@ -40,6 +41,17 @@ export const authConfig = {
           const valid = await bcrypt.compare(credentials.password as string, hubUser.password_hash)
           await recordAttempt(email, valid)
           if (!valid) return null
+          // Second factor, when the account has one: a TOTP code or an
+          // unused recovery code, from the always-present optional field.
+          // A wrong/missing code fails like a wrong password — counted by
+          // the same throttle, and revealing nothing about whether 2FA is
+          // on for this email.
+          const { totpEnabled, verifyLoginTotp } = await import("@/lib/hub/totp-store")
+          if (await totpEnabled(hubUser.id)) {
+            const second = await verifyLoginTotp(hubUser.id, (credentials.totpCode as string) ?? "")
+            await recordAttempt(email, second.ok)
+            if (!second.ok) return null
+          }
           return {
             id: hubUser.id,
             email: hubUser.email,
