@@ -19,6 +19,20 @@ automation runs `npm run agent:branches` and merges unpicked work into
 **Never:** push directly to `main` (deploy agent only) or `claude/hauldesk-project-setup-l1luoo`
 (integrator only).
 
+## Before fixing ANY bug you find
+
+Check it isn't already fixed on an unmerged branch — with many parallel routines the same
+defect gets found and fixed repeatedly (the wall-clock compliance flake collected FOUR
+independent fixes, 2026-08-01→04; the `NotificationsBell` race collected three in July):
+
+```bash
+npm run agent:branches                                 # branches with unpicked work
+git log --all --oneline --grep="<short description>"   # search every branch, not just main
+```
+
+If a fix already exists, name that branch in your `Backlog:` instead of writing another copy —
+the integrator drains it. This is a hard first step, not a suggestion.
+
 ## Every commit
 
 1. One finished item per run.
