@@ -153,7 +153,9 @@ export async function submitInvoiceToFactor(
         referenceNumber: invoice.number,
         // Formatted, not divided: `amount_cents / 100` puts a float on the wire
         // at the one boundary where a rounding artifact becomes a funding
-        // discrepancy the factor bills back.
+        // discrepancy the factor bills back. `amount` is a string field here —
+        // contrast qbo.ts's Line[].Amount, which QBO's schema types as a
+        // numeric Decimal and must stay a divided number, not a string.
         amount: centsToDecimalString(invoice.amount_cents),
         debtorName: invoice.customer_name,
         documents: docs
