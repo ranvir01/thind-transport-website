@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { Loader2, Plus, RotateCcw, Trash2, Wallet } from "lucide-react"
 import { savePayRulesAction, resetPayRulesAction } from "@/app/hub/_actions/pay-rules"
+import { dollarsToCents } from "@/lib/hub/types"
 import { btnPrimaryCls, btnSecondaryCls, fieldCls, labelCls, Panel, Pill } from "@/components/hub/ui"
 
 /** Mirrors PayRule, but every amount is the string the input holds. */
@@ -119,8 +120,9 @@ export function PayRulesPanel({ drivers, canWrite }: { drivers: PayRulesDriver[]
     )
   }
 
-  const toCents = (dollars: string) => Math.round(Number(dollars) * 100)
-  const toBps = (percent: string) => Math.round(Number(percent) * 100)
+  const toCents = (dollars: string) => dollarsToCents(dollars)
+  // Percent → basis points is the same ×100 decimal quantization as dollars → cents.
+  const toBps = (percent: string) => dollarsToCents(percent)
 
   const save = (driverId: string) => {
     const payloadRules = rules.map((r) => {

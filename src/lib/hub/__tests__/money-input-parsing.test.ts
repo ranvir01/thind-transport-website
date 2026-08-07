@@ -108,4 +108,15 @@ describe("no bare Math.round(x * 100) money rounding outside the house conventio
     expect(source).not.toMatch(/Math\.round\(\s*input\.payPerMile\s*\*\s*100\s*\)/)
     expect(source).toMatch(/dollarsToCents\(input\.payPerMile\)/)
   })
+
+  it("PayRulesPanel.tsx converts dollars and percents through dollarsToCents, not a bare Math.round", () => {
+    // afterStops legitimately uses Math.round(Number(x)) (integer count, no *100),
+    // so only the *100 money/bps conversions are guarded here.
+    const source = readFileSync(
+      join(__dirname, "../../../components/hub/PayRulesPanel.tsx"), "utf8"
+    )
+    expect(source).not.toMatch(/Math\.round\([^)]*\*\s*100\)/)
+    expect(source).toMatch(/dollarsToCents\(dollars\)/)
+    expect(source).toMatch(/dollarsToCents\(percent\)/)
+  })
 })
