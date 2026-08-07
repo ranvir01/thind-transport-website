@@ -2,6 +2,7 @@ import Link from "next/link"
 import { Cable, ChevronRight, FileBadge, Palette, Smartphone, Tags, TrendingUp, Users, Wallet } from "lucide-react"
 import { requireOfficeUser } from "@/lib/hub/session"
 import { PageHeader, Panel } from "@/components/hub/ui"
+import { SecurityPanel } from "@/components/hub/SecurityPanel"
 
 export const dynamic = "force-dynamic"
 
@@ -88,6 +89,12 @@ export default async function SettingsIndexPage() {
             </Panel>
           </Link>
         ))}
+      </div>
+      {/* Personal, not company config: every signed-in user manages their
+          own second factor, so it lives on the index rather than an
+          owner-gated sub-page. */}
+      <div className="mt-4">
+        <SecurityPanel />
       </div>
     </div>
   )
