@@ -115,6 +115,24 @@ const CROSS_CARRIER_BY_DESIGN: { fragment: string; why: string }[] = [
     fragment: "role = 'platform_admin'",
     why: "platform admin impersonation check is cross-carrier by definition (session.ts)",
   },
+  {
+    fragment: "totp_secret_enc",
+    why:
+      "totp-store.ts: 2FA is identity-level, not tenant-level — every statement keys on " +
+      "hub.users.id (a UUID the caller holds only for THEMSELVES: from their session in the " +
+      "settings actions, or from their own email lookup inside authorize(), which runs " +
+      "before any carrier scope exists because it IS authentication). A carrier_id " +
+      "predicate here would break login for carrier-less platform_admin accounts while " +
+      "adding no isolation a primary-key match doesn't already provide.",
+  },
+  {
+    fragment: "totp_recovery_hashes = totp_recovery_hashes - $2",
+    why: "totp-store.ts recovery-code consumption: same identity-level path, keyed on hub.users.id",
+  },
+  {
+    fragment: "SET totp_pending_secret_enc = $2 WHERE id = $1",
+    why: "totp-store.ts enrollment start: same identity-level path, keyed on hub.users.id",
+  },
 ]
 
 // ---------------------------------------------------------------------------

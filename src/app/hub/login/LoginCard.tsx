@@ -33,7 +33,7 @@ async function sessionAfterLogin() {
  *  belongs on this route because /hub/* carries the driver app manifest. */
 export function LoginCard({ showDemo, installSlot }: { showDemo: boolean; installSlot?: React.ReactNode }) {
   const [loading, setLoading] = useState(false)
-  const [form, setForm] = useState({ email: "", password: "" })
+  const [form, setForm] = useState({ email: "", password: "", totpCode: "" })
   const [roleHint, setRoleHint] = useState<string | null>(null)
 
   const displayRoleHint = form.email.trim().includes("@") ? roleHint : null
@@ -60,10 +60,11 @@ export function LoginCard({ showDemo, installSlot }: { showDemo: boolean; instal
       const result = await signIn("credentials", {
         email: form.email,
         password: form.password,
+        totpCode: form.totpCode,
         redirect: false,
       })
       if (result?.error || !result?.ok) {
-        toast.error("Invalid email or password")
+        toast.error(form.totpCode ? "Check your email, password and 2FA code" : "Invalid email, password — or a missing 2FA code")
         setLoading(false)
         return
       }
@@ -121,6 +122,23 @@ export function LoginCard({ showDemo, installSlot }: { showDemo: boolean; instal
               className={fieldCls}
               value={form.password}
               onChange={(e) => setForm({ ...form, password: e.target.value })}
+            />
+          </div>
+          <div>
+            <label htmlFor="totpCode" className={labelCls}>
+              2FA code <span className="font-normal normal-case text-fg-3">(only if you set it up)</span>
+            </label>
+            {/* Always present, never required: no probe can learn whether an
+                email has 2FA, and accounts without it just leave it blank. */}
+            <input
+              id="totpCode"
+              type="text"
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              placeholder="123 456 or recovery code"
+              className={fieldCls}
+              value={form.totpCode}
+              onChange={(e) => setForm({ ...form, totpCode: e.target.value })}
             />
           </div>
           <button type="submit" disabled={loading} className={`w-full ${btnPrimaryCls}`}>
