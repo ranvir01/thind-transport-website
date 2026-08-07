@@ -21,6 +21,13 @@
 # timestamp to `.drain-stamp` inside the merge commit, so every drain carries
 # a tree Vercel has never built and production always gets a real build.
 #
+# Learned 2026-08-07 (meta-governor weekly audit): a count-only gate strands
+# work when the fleet goes quiet. A money-correctness fix sat on the
+# integrator for two days because drift never exceeded the threshold and the
+# :59 deploy agent was dormant. The gate is therefore drift OR age: drain when
+# the integrator is more than AGENT_CATCHUP_THRESHOLD commits ahead, or when
+# ANY pending commit has been waiting longer than MAX_PENDING_AGE_HOURS.
+#
 # Scheduled at :17/:47 to stay clear of the fleet crons (:00 integrator,
 # :30 prod smoke, :59 deploy). See docs/agent-improvement-loop.md §3a/§5.
 
@@ -41,6 +48,7 @@ concurrency:
 env:
   INTEGRATOR: claude/hauldesk-project-setup-l1luoo
   AGENT_CATCHUP_THRESHOLD: "3"
+  MAX_PENDING_AGE_HOURS: "12"
 
 jobs:
   drain:
@@ -51,14 +59,14 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Check drift (catch-up mode only)
+      - name: Check drift (catch-up mode, or pending work older than the age limit)
         id: drift
         run: |
           git fetch origin main "$INTEGRATOR"
           AHEAD=$(git rev-list --count origin/main..origin/"$INTEGRATOR")
           echo "Integrator ahead of main: $AHEAD (threshold: $AGENT_CATCHUP_THRESHOLD)"
-          if [ "$AHEAD" -le "$AGENT_CATCHUP_THRESHOLD" ]; then
-            echo "Steady state — the :59 deploy agent owns the drain. Nothing to do."
+          if [ "$AHEAD" -eq 0 ]; then
+            echo "Integrator and main are level. Nothing to do."
             echo "drain=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
@@ -68,7 +76,53 @@ jobs:
             echo "drain=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
+          REASON=""
+          if [ "$AHEAD" -gt "$AGENT_CATCHUP_THRESHOLD" ]; then
+            REASON="catch-up: drift $AHEAD > threshold $AGENT_CATCHUP_THRESHOLD"
+          else
+            # Age gate: below the drift threshold, green work must still not sit
+            # undeployed for days when the fleet is quiet. Age is the oldest
+            # committer date among pending commits — that can predate the commit's
+            # arrival on the integrator (an old session-branch commit merged just
+            # now keeps its date), but erring old only drains sooner, and every
+            # drain still passes the full verify gate below.
+            OLDEST=$(git log origin/main..origin/"$INTEGRATOR" --format=%ct | sort -n | head -1)
+            AGE_HOURS=$(( ( $(date -u +%s) - OLDEST ) / 3600 ))
+            echo "Oldest pending commit: ${AGE_HOURS}h old (age limit: ${MAX_PENDING_AGE_HOURS}h)"
+            if [ "$AGE_HOURS" -ge "$MAX_PENDING_AGE_HOURS" ]; then
+              REASON="age: oldest pending commit ${AGE_HOURS}h >= ${MAX_PENDING_AGE_HOURS}h"
+            fi
+          fi
+          if [ -z "$REASON" ]; then
+            echo "Steady state — the :59 deploy agent owns the drain. Nothing to do."
+            echo "drain=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "Draining ($REASON)"
           echo "drain=true" >> "$GITHUB_OUTPUT"
+
+      - name: Warn on pending commits missing the Backlog trailer (non-blocking)
+        if: steps.drift.outputs.drain == 'true'
+        run: |
+          # AGENTS.md §4: every commit body ends with a `Backlog:` trailer — the
+          # loop dies without it. The 2026-08-07 meta-governor audit found half a
+          # week's commits shipped without one. Warn-only by design: a missing
+          # trailer must never block a drain that keeps main deployable.
+          MISSING=$(git log origin/main..origin/"$INTEGRATOR" --no-merges --format='%H' | while read -r c; do
+            git log -1 --format=%B "$c" | grep -q '^Backlog:' || git log -1 --format='%h %s' "$c"
+          done)
+          if [ -n "$MISSING" ]; then
+            echo "::warning::Draining commits with no Backlog: trailer (AGENTS.md §4):"
+            echo "$MISSING"
+            {
+              echo "### Commits missing the \`Backlog:\` trailer"
+              echo '```'
+              echo "$MISSING"
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "All pending non-merge commits carry a Backlog: trailer."
+          fi
 
       - uses: actions/setup-node@v4
         if: steps.drift.outputs.drain == 'true'
