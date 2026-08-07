@@ -57,6 +57,20 @@ describe("dollarsToCents replaces Math.round(parseMoney(x) * 100)", () => {
     expect(dollarsToCents("-12.345")).toBe(-1235)
     expect(dollarsToCents("12.345")).toBe(1235)
   })
+
+  it("keeps the half-cent tie when binary-float multiply drifts LOW (2026-08 money-math audit)", () => {
+    // 1.005 * 100 = 100.49999999999999 in IEEE-754, so a bare float multiply
+    // loses the tie entirely and rounds DOWN — the earlier half-cent tests only
+    // covered inputs whose drift happened to land high (12.345 * 100 →
+    // 1234.5000000000002). The decimal the user typed is 100.5 cents, and the
+    // house convention rounds it away from zero.
+    expect(dollarsToCents("1.005")).toBe(101)
+    expect(dollarsToCents("-1.005")).toBe(-101)
+    expect(dollarsToCents(1.005)).toBe(101)
+    // Common trucking forms of the same tie: 61.5 cpm and a half-cent total.
+    expect(dollarsToCents("0.615")).toBe(62)
+    expect(dollarsToCents("2.675")).toBe(268)
+  })
 })
 
 describe("no server action inlines Math.round(parseMoney(...) * 100)", () => {
