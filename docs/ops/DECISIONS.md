@@ -13,6 +13,9 @@ Secrets and variables → Actions → Variables). It deletes ONLY branches whose
 contained in main; unmerged branches are listed, never touched.
 A) Review two Sundays of dry-run output, then arm. [recommended]
 B) Arm immediately (the merged-only policy is conservative by construction).
+C) One-shot now, no arming: GitHub → Actions → "Prune merged agent branches" →
+   Run workflow → check `arm_tree_prune`. Same merged-only policy, runs once
+   from any browser (2 minutes), leaves the weekly reaper in dry-run.
 Deferral cost: integrator keeps re-triaging 200+ dead branches every cycle.
 Answer: ____
 

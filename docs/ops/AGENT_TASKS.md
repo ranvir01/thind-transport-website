@@ -413,3 +413,21 @@ NEXT:     Run Wave 1 Task 1 — it is TOP_10 #3, the largest lever, and it needs
           from you to build
 BLOCKED:  The nine decisions in §4; GitHub write access for any of these to open a PR
 ```
+
+---
+
+## Appendix (2026-08-08): finalize-pass backlog — small, unblocked, any session can take one
+
+From the reconciled 6-patch handoff (FINALIZE.md, session 017JBR7WV8…). Each stands alone:
+
+1. **Ratchet the 35 test-file tsc errors toward 0** — `node scripts/typecheck-gate.mjs --list`
+   names the files; lower the baseline in the gate as they're fixed so it can't regress.
+2. **Settings-UI toggle for `nav.small_carrier_mode`** — the flag resolves per-carrier already;
+   an owner-facing switch in /hub/settings writes the carrier row (flags.ts + migration 026).
+3. **`npm run embed:verify` in a network-enabled CI job** — re-checks the 4 framed Toolbox
+   hosts' live headers; today it's manual/auditor-routine only. The nightly e2e job has egress.
+4. **Renumber the duplicate `024_*` migration pair** — `024_pay_per_mile_cents.sql` +
+   `024_share_link_expiry.sql` both shipped; runner tolerates it (filename-keyed), but the next
+   agent to write `025_` by "increment the last number" collides. Document-only fix acceptable.
+5. **security.txt contact → `security@thindtransport.com`** once domain mail exists
+   (blocked on the owner's SPF/DKIM/DMARC + mailbox task; keep `Expires` a year out).
