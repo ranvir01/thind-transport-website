@@ -60,7 +60,9 @@ describe("workbench registry", () => {
       "www.ecfr.gov", "eld.fmcsa.dot.gov", "safer.fmcsa.dot.gov", "www.eia.gov",
       "www.weather.gov", "wsdot.com", "www.tripcheck.com", "511.idaho.gov", "www.iftach.org",
     ])
-    for (const r of WORKBENCH_RESOURCES.filter((r) => r.embed === "sheet")) {
+    // ALL external resources — framed or sheeted — stay on the curated list;
+    // a framed external that drifted off it would be worse, not exempt.
+    for (const r of WORKBENCH_RESOURCES.filter((r) => r.url.startsWith("https://"))) {
       const host = new URL(r.url).hostname
       expect(ALLOWED_HOSTS.has(host), `${r.id}: ${host} is not on the curated official-source list`).toBe(true)
       expect(OFFICIAL.test(host), r.id).toBe(true)

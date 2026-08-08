@@ -270,7 +270,34 @@ function loadEnvLocal() {
 }
 loadEnvLocal()
 
-const suite = process.env.POSTGRES_URL ? describe : describe.skip
+const hasDb = Boolean(process.env.POSTGRES_URL)
+
+// Same pattern as portal-isolation.test.ts: this live proof is the strongest
+// tenancy evidence in the repo, and a silent describe.skip on it is worse than
+// not having it — everyone assumes it ran. Warn loudly, and fail outright in a
+// CI environment that promised a database but didn't provide one.
+if (!hasDb) {
+  console.warn(
+    "\n⚠️  cross-tenant-harness live proof SKIPPED — no POSTGRES_URL.\n" +
+      "   The static scans above still ran, but the live carrier-B-cannot-see-A\n" +
+      "   proof did not. Set POSTGRES_URL in .env.local to actually exercise it.\n"
+  )
+}
+
+describe("cross-tenant live proof ran", () => {
+  it("executes wherever a database is configured", () => {
+    if (process.env.CI && !hasDb) {
+      throw new Error(
+        "CI ran without POSTGRES_URL, so the live cross-tenant proof was skipped. " +
+          "Provide the postgres service or drop the job — a green build that silently " +
+          "skipped the tenancy proof proves nothing about tenancy."
+      )
+    }
+    expect(true).toBe(true)
+  })
+})
+
+const suite = hasDb ? describe : describe.skip
 
 suite("live proof: carrier B cannot see or address carrier A's rows", () => {
   let db: typeof import("../db")
