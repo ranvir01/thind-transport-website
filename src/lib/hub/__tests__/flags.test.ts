@@ -1,9 +1,17 @@
 /**
  * Flag resolution — the specificity ladder is the whole contract:
  * user > carrier+role > role(all) > carrier > global > code default.
+ * Plus the availability contract: a failed read serves the code default,
+ * because getFlag runs in the office layout on every request.
  */
-import { describe, expect, it } from "vitest"
-import { resolveFlagValue, FLAG_REGISTRY } from "../flags"
+import { describe, expect, it, vi } from "vitest"
+
+vi.mock("../db", () => ({ query: vi.fn() }))
+
+import { query } from "../db"
+import { getFlag, resolveFlagValue, FLAG_REGISTRY } from "../flags"
+
+const queryMock = vi.mocked(query)
 
 const ctx = { carrierId: "c1", userId: "u1", role: "dispatcher" }
 const row = (scope: string, over: Record<string, unknown> = {}) => ({
@@ -53,5 +61,21 @@ describe("resolveFlagValue", () => {
 
   it("non-boolean values read as false, never as accidental true", () => {
     expect(resolveFlagValue("nav.small_carrier_mode", [row("global", { value: "yes" })], ctx)).toBe(false)
+  })
+})
+
+describe("getFlag availability contract", () => {
+  it("a failed read degrades to the code default — flags never take the shell down", async () => {
+    queryMock.mockRejectedValueOnce(new Error('relation "hub.feature_flags" does not exist'))
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {})
+    expect(await getFlag("nav.small_carrier_mode", ctx)).toBe(
+      FLAG_REGISTRY["nav.small_carrier_mode"].defaultValue
+    )
+    warn.mockRestore()
+  })
+
+  it("a successful read still resolves overrides", async () => {
+    queryMock.mockResolvedValueOnce([row("carrier", { carrier_id: "c1", value: false })])
+    expect(await getFlag("nav.small_carrier_mode", ctx)).toBe(false)
   })
 })

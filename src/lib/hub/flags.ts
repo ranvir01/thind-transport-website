@@ -80,24 +80,40 @@ export function resolveFlagValue(key: FlagKey, rows: FlagRow[], ctx: FlagContext
   return FLAG_REGISTRY[key].defaultValue
 }
 
+const readFailureWarned = new Set<string>()
+
 /**
  * Server-side flag read. One query per evaluation — flags gate layout-level
  * choices resolved once per request in a layout, not per-component; if a
  * hot path ever needs one, add per-request memoization there, not here.
+ *
+ * Flags must never take the shell down: getFlag is called from the office
+ * layout on every request, so a read error (table not yet migrated on this
+ * database, transient outage) degrades to the code default — which is
+ * defined to reproduce pre-flags behavior exactly — instead of throwing
+ * a 500 across every office screen at once.
  */
 export async function getFlag(key: FlagKey, ctx: FlagContext): Promise<boolean> {
-  const rows = await query<FlagRow>(
-    `SELECT scope, carrier_id, role, user_id, value
-     FROM hub.feature_flags
-     WHERE flag_key = $1 AND enabled = TRUE
-       AND (expires_at IS NULL OR expires_at > NOW())
-       AND (
-         scope = 'global'
-         OR (scope = 'carrier' AND carrier_id = $2)
-         OR (scope = 'role' AND role = $3 AND (carrier_id = $2 OR carrier_id IS NULL))
-         OR (scope = 'user' AND user_id = $4)
-       )`,
-    [key, ctx.carrierId ?? null, ctx.role ?? null, ctx.userId ?? null]
-  )
-  return resolveFlagValue(key, rows, ctx)
+  try {
+    const rows = await query<FlagRow>(
+      `SELECT scope, carrier_id, role, user_id, value
+       FROM hub.feature_flags
+       WHERE flag_key = $1 AND enabled = TRUE
+         AND (expires_at IS NULL OR expires_at > NOW())
+         AND (
+           scope = 'global'
+           OR (scope = 'carrier' AND carrier_id = $2)
+           OR (scope = 'role' AND role = $3 AND (carrier_id = $2 OR carrier_id IS NULL))
+           OR (scope = 'user' AND user_id = $4)
+         )`,
+      [key, ctx.carrierId ?? null, ctx.role ?? null, ctx.userId ?? null]
+    )
+    return resolveFlagValue(key, rows, ctx)
+  } catch (err) {
+    if (!readFailureWarned.has(key)) {
+      readFailureWarned.add(key)
+      console.warn(`flags: read failed for "${key}" — serving the code default.`, err)
+    }
+    return resolveFlagValue(key, [], ctx)
+  }
 }

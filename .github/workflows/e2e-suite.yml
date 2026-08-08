@@ -6,7 +6,11 @@
 # money paths in the app were guarded by a habit.
 #
 # Two jobs:
-#   unit  — vitest + token-lint, fast signal on every push and PR.
+#   unit  — vitest + token-lint on every push and PR, WITH a Postgres service:
+#           portal-isolation, driver-file-isolation and the cross-tenant
+#           harness hard-fail any CI run that skipped their live proofs, so a
+#           database is part of the fast signal (≈30–60s), not an optional
+#           extra. Without it every push to main was red for days.
 #   e2e   — full rig: Postgres service container, migrate, seed, production
 #           build, server, then scripts/e2e-run-all.mjs. Failure artifacts
 #           (screenshots, per-script logs, server log) upload so a red run is
@@ -49,6 +53,27 @@ jobs:
   unit:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: hubapp
+          POSTGRES_PASSWORD: hubpass
+          POSTGRES_DB: hubdb
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U hubapp -d hubdb"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      POSTGRES_URL: postgres://hubapp:hubpass@localhost:5432/hubdb
+      # CI-only values; nothing here is a real secret and none of it can
+      # reach production. CREDENTIALS_KEY must be 32+ chars for the vault.
+      NEXTAUTH_SECRET: ci-only-nextauth-secret-not-production
+      CREDENTIALS_KEY: ci-only-credentials-key-32-chars-min
+      CRON_SECRET: ci-only-cron-secret
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -59,6 +84,10 @@ jobs:
         env:
           # The unit job never launches a browser; skip the ~130MB download.
           PUPPETEER_SKIP_DOWNLOAD: "1"
+      - name: Migrate + seed demo data
+        run: |
+          npm run db:migrate
+          npm run seed:demo
       - name: Unit tests
         run: npm test
       - name: Token lint (no raw hex/px in redesigned marketing scope)
