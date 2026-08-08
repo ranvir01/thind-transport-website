@@ -55,11 +55,7 @@ describe("decodeVin (NHTSA vPIC)", () => {
   })
 
   it("URL-encodes the VIN into the vPIC path", async () => {
-<<<<<<< HEAD
     const fetchMock = vi.fn(async (_url: string) => ({ ok: true, json: async () => ({ Results: [] }) }))
-=======
-    const fetchMock = vi.fn(async () => ({ ok: true, json: async () => ({ Results: [] }) }))
->>>>>>> origin/claude/lane-tests-qa-sweep
     vi.stubGlobal("fetch", fetchMock)
     await decodeVin("VIN WITH SPACE")
     const url = fetchMock.mock.calls[0][0] as string
