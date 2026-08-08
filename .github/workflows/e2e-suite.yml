@@ -156,6 +156,11 @@ jobs:
         run: |
           npm run db:migrate
           npm run seed:demo
+      - name: Toolbox frame promises still hold (embed:verify)
+        # Exit 1 = a framed external now sends blocking headers — that ships a
+        # grey refusal box, so it fails the run. Exit 2 = nothing reachable
+        # (runner egress problem, not a header regression) — tolerated.
+        run: node scripts/verify-frame-headers.mjs || { c=$?; [ "$c" -eq 2 ] && echo "::warning::embed:verify skipped — no egress from runner"; [ "$c" -eq 2 ]; }
       - name: Production build
         run: npm run build
       - name: Connections check

@@ -66,7 +66,7 @@ describe("isOfflineError", () => {
  * resolve on a microtask so onsuccess handlers attach first, like real IDB.
  */
 function makeFakeIndexedDB() {
-  const rows = new Map<string, { id: string }>()
+  const rows = new Map<string, { id: string; [k: string]: unknown }>()
   const request = <T,>(result: T) => {
     const r = { onsuccess: null as (() => void) | null, onerror: null, error: null, result }
     queueMicrotask(() => r.onsuccess?.())

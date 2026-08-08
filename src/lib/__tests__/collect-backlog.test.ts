@@ -1,5 +1,4 @@
 import { describe, expect, it } from "vitest"
-// @ts-expect-error — plain .mjs script module without type declarations
 import { extractBacklog, parseCommits, rankItem, FIELD_SEP, RECORD_SEP } from "../../../scripts/collect-backlog.mjs"
 
 const HASH_A = "0f6739aabbccddeeff00112233445566778899aa"

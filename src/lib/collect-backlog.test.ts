@@ -44,8 +44,8 @@ describe("splitCurrentAndOlder", () => {
       item("resolved long ago — 500s locally", 2),
     ]
     const { current, older } = splitCurrentAndOlder(items)
-    expect(current.map((i) => i.text)).toEqual(["still open item"])
-    expect(older.map((i) => i.text)).toEqual(["resolved long ago — 500s locally"])
+    expect(current.map((i: { text: string }) => i.text)).toEqual(["still open item"])
+    expect(older.map((i: { text: string }) => i.text)).toEqual(["resolved long ago — 500s locally"])
   })
 })
 

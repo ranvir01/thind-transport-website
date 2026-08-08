@@ -55,7 +55,7 @@ import { pathToFileURL } from "node:url"
  * absorb cycle: merging ~150 pending claude/* branches incidentally picked
  * up a handful of small test-file type fixes bundled with their real changes.
  */
-const TEST_ERROR_BASELINE = 35
+const TEST_ERROR_BASELINE = 23
 
 const isTestFile = (file) =>
   file.includes("__tests__/") || file.endsWith(".test.ts") || file.endsWith(".test.tsx")

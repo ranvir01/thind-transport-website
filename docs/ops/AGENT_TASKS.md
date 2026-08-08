@@ -420,14 +420,17 @@ BLOCKED:  The nine decisions in §4; GitHub write access for any of these to ope
 
 From the reconciled 6-patch handoff (FINALIZE.md, session 017JBR7WV8…). Each stands alone:
 
-1. **Ratchet the 35 test-file tsc errors toward 0** — `node scripts/typecheck-gate.mjs --list`
+1. **Ratchet the test-file tsc errors toward 0** — `node scripts/typecheck-gate.mjs --list`
    names the files; lower the baseline in the gate as they're fixed so it can't regress.
+   *2026-08-08: 35 → 23 (offline-queue, collect-backlog ×2, dat, dat/truckstop-freight-action
+   fixed; baseline ratcheted).*
 2. **Settings-UI toggle for `nav.small_carrier_mode`** — the flag resolves per-carrier already;
    an owner-facing switch in /hub/settings writes the carrier row (flags.ts + migration 026).
-3. **`npm run embed:verify` in a network-enabled CI job** — re-checks the 4 framed Toolbox
-   hosts' live headers; today it's manual/auditor-routine only. The nightly e2e job has egress.
-4. **Renumber the duplicate `024_*` migration pair** — `024_pay_per_mile_cents.sql` +
-   `024_share_link_expiry.sql` both shipped; runner tolerates it (filename-keyed), but the next
-   agent to write `025_` by "increment the last number" collides. Document-only fix acceptable.
+3. ~~**`npm run embed:verify` in a network-enabled CI job**~~ *Done 2026-08-08: e2e job step
+   "Toolbox frame promises still hold" — fails on header regressions (exit 1), tolerates
+   no-egress runners (exit 2).*
+4. ~~**Renumber the duplicate `024_*` migration pair**~~ *Done 2026-08-08 as document-only:
+   migrations/hub/README.md records the rules, why the pair must NOT be renumbered, and the
+   next-number protocol.*
 5. **security.txt contact → `security@thindtransport.com`** once domain mail exists
    (blocked on the owner's SPF/DKIM/DMARC + mailbox task; keep `Expires` a year out).

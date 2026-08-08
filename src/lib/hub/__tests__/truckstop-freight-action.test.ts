@@ -85,6 +85,7 @@ const revalidatePathMock = vi.mocked(revalidatePath)
 const USER = {
   id: "user-1",
   name: "Dispatcher",
+  email: "dispatcher@example.com",
   carrierId: "carrier-1",
   role: "dispatcher" as const,
 }

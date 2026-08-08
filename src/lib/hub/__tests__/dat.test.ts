@@ -173,7 +173,7 @@ describe("datSource (SyncSource<DatLoadPosting> + search contract)", () => {
     vi.stubGlobal("fetch", fetchMock)
     const source = datSource(CARRIER)
     await source.search({ originCity: "Kent", originState: "WA", destState: "ID", equipment: "Reefer", radiusMiles: 50 })
-    const url = fetchMock.mock.calls[0][0] as string
+    const url = String((fetchMock.mock.calls[0] as unknown[])[0])
     expect(url).toContain("originCity=Kent")
     expect(url).toContain("originState=WA")
     expect(url).toContain("destState=ID")
