@@ -1,6 +1,7 @@
 import { query } from "./db"
 import { iftaFilingComplianceEntries } from "./ifta"
 import { form2290ComplianceEntries } from "./hvut-compliance"
+import { filingsComplianceEntries } from "./filings-compliance"
 import { mileageStatus } from "./maintenance-due"
 
 export type ComplianceColor = "red" | "amber" | "green"
@@ -171,6 +172,10 @@ export async function complianceEntries(carrierId: string): Promise<ComplianceEn
   // Form 2290 is derived rather than stored: it is annual, fleet-wide, and
   // nobody enters it anywhere, so it only shows up when someone remembers.
   entries.push(...(await form2290ComplianceEntries(carrierId, now)))
+
+  // MCS-150 biennial + UCR annual: derived the same way, from the carrier's
+  // own USDOT number and the calendar (see filings.ts for the 390.19 rule).
+  entries.push(...(await filingsComplianceEntries(carrierId, now)))
 
   const order = { red: 0, amber: 1, green: 2 }
   return entries.sort((a, b) => order[a.color] - order[b.color] || String(a.due ?? "9999").localeCompare(String(b.due ?? "9999")))

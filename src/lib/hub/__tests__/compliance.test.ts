@@ -78,6 +78,12 @@ function mockRowsBySql(rows: {
     if (s.includes("hub.position_pings") && s.includes("hub.dvirs")) return rows.odometers ?? []
     if (s.includes("FROM hub.trucks")) return rows.trucks ?? []
     if (s.includes("FROM hub.trailers")) return rows.trailers ?? []
+    // The MCS-150/UCR step-aside probes also read hub.compliance_items — route
+    // them before the generic manual-items branch and default them to "already
+    // recorded" (a null due date counts), or their verify entries leak into
+    // every colour assertion here, the same way the always-appended IFTA entry
+    // did. filings.test.ts owns their real behaviour.
+    if (s.includes("mcs-150") || s.includes("%ucr%")) return [{ due_on: null }]
     if (s.includes("FROM hub.compliance_items")) return rows.manual ?? []
     if (s.includes("FROM hub.ifta_reports")) return rows.iftaReports ?? filedCurrentQuarter()
     return []
@@ -387,10 +393,18 @@ describe("complianceEntries carrier scoping", () => {
       expect(String(sql)).toContain("carrier_id = $1")
       expect((params as unknown[])[0]).toBe(CARRIER)
     }
-    expect(queryMock).toHaveBeenCalledTimes(8)
+    // 8 before the MCS-150/UCR step-aside probes; both of those are
+    // carrier-scoped too, so they go through the loop above like the rest.
+    expect(queryMock).toHaveBeenCalledTimes(10)
     const iftaCall = queryMock.mock.calls.find(([sql]) => String(sql).includes("FROM hub.ifta_reports"))
     expect(iftaCall).toBeDefined()
     expect(iftaCall![1]).toEqual([CARRIER])
+    // The filings derivation reads the carrier's OWN row for its USDOT
+    // number — scoped by primary key, which IS the tenant id there.
+    const carrierCall = queryOneMock.mock.calls.find(([sql]) => String(sql).includes("FROM hub.carriers"))
+    expect(carrierCall).toBeDefined()
+    expect(String(carrierCall![0])).toContain("WHERE id = $1")
+    expect(carrierCall![1]).toEqual([CARRIER])
   })
 
   it("excludes soft-deleted drivers/trucks and inactive/retired records", async () => {
