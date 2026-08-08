@@ -22,7 +22,7 @@
  * a GLOBAL env var trimming every tenant's nav at once — carrier #2 could
  * never see the full surface while Thind ran trimmed.
  */
-import { query } from "./db"
+import { query, queryOne } from "./db"
 
 export type FlagKey = keyof typeof FLAG_REGISTRY
 
@@ -93,6 +93,49 @@ const readFailureWarned = new Set<string>()
  * defined to reproduce pre-flags behavior exactly — instead of throwing
  * a 500 across every office screen at once.
  */
+/**
+ * The carrier-scope override row for a flag, or null when none exists and
+ * the code default governs. Read by the settings UI so it can show "explicit
+ * choice" vs "following the default" honestly.
+ */
+export async function getCarrierFlagOverride(key: FlagKey, carrierId: string): Promise<boolean | null> {
+  const row = await queryOne<{ value: unknown }>(
+    `SELECT value FROM hub.feature_flags
+     WHERE flag_key = $1 AND scope = 'carrier' AND carrier_id = $2 AND enabled = TRUE
+       AND (expires_at IS NULL OR expires_at > NOW())`,
+    [key, carrierId]
+  )
+  return row ? row.value === true : null
+}
+
+/**
+ * Write path: one carrier-scope override per (flag, carrier). Passing null
+ * DELETES the override rather than writing enabled = FALSE — "an empty table
+ * means code defaults everywhere" stays literally true, and a cleared choice
+ * can't shadow a future global row.
+ */
+export async function setCarrierFlag(
+  key: FlagKey,
+  carrierId: string,
+  value: boolean | null,
+  actor?: { id: string }
+): Promise<void> {
+  if (value === null) {
+    await query(
+      `DELETE FROM hub.feature_flags WHERE flag_key = $1 AND scope = 'carrier' AND carrier_id = $2`,
+      [key, carrierId]
+    )
+    return
+  }
+  await query(
+    `INSERT INTO hub.feature_flags (flag_key, flag_type, scope, carrier_id, value, created_by)
+     VALUES ($1, $2, 'carrier', $3, to_jsonb($4::boolean), $5)
+     ON CONFLICT (flag_key, scope, carrier_id, role, user_id)
+     DO UPDATE SET value = EXCLUDED.value, enabled = TRUE, expires_at = NULL, updated_at = NOW()`,
+    [key, FLAG_REGISTRY[key].type, carrierId, value, actor?.id ?? null]
+  )
+}
+
 export async function getFlag(key: FlagKey, ctx: FlagContext): Promise<boolean> {
   try {
     const rows = await query<FlagRow>(

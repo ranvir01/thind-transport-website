@@ -13,6 +13,7 @@ import { query } from "@/lib/hub/db"
 import { requireOwner } from "@/lib/hub/session"
 import { logAudit } from "@/lib/hub/audit"
 import { actionError } from "@/lib/hub/action-error"
+import { setCarrierFlag } from "@/lib/hub/flags"
 
 interface Result {
   ok: boolean
@@ -74,6 +75,34 @@ export async function updateOfficeEmailAction(email: string): Promise<Result> {
     return { ok: true }
   } catch (err) {
     return actionError(err, "Could not save the notification email")
+  }
+}
+
+/**
+ * Owner picks this carrier's navigation surface: trimmed small-fleet nav,
+ * the full surface, or "default" (clear the override; the code default —
+ * today the SMALL_CARRIER_MODE env var — governs again). Per-carrier by
+ * construction: this writes only a carrier-scope flag row, so switching
+ * one tenant never touches another's nav.
+ */
+export async function setNavigationModeAction(mode: "trimmed" | "full" | "default"): Promise<Result> {
+  try {
+    const user = await requireOwner()
+    if (mode !== "trimmed" && mode !== "full" && mode !== "default") {
+      return { ok: false, error: "Unknown navigation mode" }
+    }
+    const value = mode === "default" ? null : mode === "trimmed"
+    await setCarrierFlag("nav.small_carrier_mode", user.carrierId, value, { id: user.id })
+    await logAudit({
+      carrierId: user.carrierId, actorId: user.id, actorName: user.name,
+      entityType: "carrier", entityId: user.carrierId, action: "navigation_mode_updated",
+      newValue: { mode },
+    })
+    // The nav renders in the (office) layout on every screen — refresh the tree.
+    revalidatePath("/hub", "layout")
+    return { ok: true }
+  } catch (err) {
+    return actionError(err, "Could not change the navigation mode")
   }
 }
 
