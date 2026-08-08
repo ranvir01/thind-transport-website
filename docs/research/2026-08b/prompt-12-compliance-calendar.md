@@ -9,7 +9,7 @@
 
 - **🚨 MCS-150 biennial update appears OVERDUE.** USDOT 2523064 → last digit **4** = April, next-to-last digit **6** (even) = even years → was due **April 30, 2026**. If it wasn't filed this spring, file today (free, ~15 min online); exposure is USDOT deactivation + up to $1,000/day (max $10,000).
 - **Form 2290 HVUT due Monday, Aug 31, 2026** for period Jul 1 2026–Jun 30 2027 (~$8,250 for 15 trucks at 75,000+ lbs). No weekend roll this year — third-party sites claiming "Sept 1, 2026" are wrong (Aug 31, 2026 is a Monday; Labor Day is Sep 7).
-- **UCR 2027 window opens Oct 1, 2026;** enforcement Jan 1, 2027. 2026 fee for 6–20 power units was **$276**; FMCSA has *proposed* ~20% higher 2027 fees (≈$331 for this bracket) — final rule expected by ~Sep 1, 2026, so check the final number before paying.
+- **UCR 2027 window opens Oct 1, 2026;** enforcement Jan 1, 2027. 2026 fee for 6–20 power units was **$276**; FMCSA has *proposed* ~20% higher 2027 fees — exactly **$333** for this bracket under docket **FMCSA-2025-0655** (corrected on page-verification 2026-08-08; still NOT final as of that date) — final rule expected by ~Sep 1, 2026, so check the final number before paying.
 - **IFTA quarters (weekend-rolled):** Q3-26 → **Mon Nov 2, 2026**; Q4-26 → **Mon Feb 1, 2027**; Q1-27 → **Fri Apr 30, 2027**; Q2-27 → **Mon Aug 2, 2027**. Matches the hub's `iftaDueDate()` engine exactly.
 - **WA IFTA license expires Dec 31, 2026** — submit renewal before **Nov 30, 2026**; grace runs into February 2027 only if the renewal was filed on time.
 - **Random testing 2026: 50% drug / 10% alcohol** of average driver positions (unchanged since 2020, so no new Federal Register notice was required). Watch December 2026 for the CY2027 announcement.
@@ -122,7 +122,7 @@ No WA filing fee; remit net tax due (varies with miles/fuel by jurisdiction). Fi
 | **L&I workers'-comp quarterly report + premium** | Q1 → Apr 30 · Q2 → Jul 31 · Q3 → **Oct 31, 2026** (Sat — file by Fri Oct 30) · Q4 → **Jan 31, 2027** (Sun — file by Fri Jan 29). L&I publishes the fixed dates; no official weekend-roll was verified, so file the business day *before* | lni.wa.gov/insurance/quarterly-reports/file-quarterly-reports (search-verified 2026-08-08) |
 | **WA business license (UBI) renewal** | Annual via DOR Business Licensing Service, on the account's own renewal date (DOR sends notice). Small state renewal fee + any endorsements | dor.wa.gov/manage-business (search-verified 2026-08-08) |
 | **Paid Family & Medical Leave / ESD quarterly** | Same quarter-end cadence as L&I (end of following month) — bundle with L&I filing dates | knowledge — stable practice; verify in Employer Account Management Services |
-| **City of Kent business license** | **Expires Dec 31 each year; renewal ≈ $100/yr** (first year $154 incl. fire-inspection fee); city mails renewal invoices in January | kentwa.gov/pay-and-apply/apply-for-a-business-license (search-verified 2026-08-08) |
+| **City of Kent business license** | **Expires Dec 31 each year; renewal ≈ $214/yr for 0–24 employees** (corrected on page-verification 2026-08-08 — the ~$101 figure is the independent-contractor rate; confirm on Kent's 2026 fee schedule); city mails renewal invoices in January | kentwa.gov/pay-and-apply/apply-for-a-business-license |
 | **WA UTC intrastate authority** | **Only relevant if Thind hauls loads with BOTH origin and destination inside WA.** Intrastate for-hire common carriers of general freight need a UTC common-carrier permit (RCW 81.80) + **Form E** insurance certificate ($750k CSL for >10,000 lb vehicles). As a pure interstate carrier Thind needs none of this; there is no annual UTC date on this calendar unless a permit is ever obtained | utc.wa.gov common-carriers page (search-verified 2026-08-08) |
 
 ### 3d. UCR ↔ WA note
@@ -150,14 +150,14 @@ Legend for "Agent?": **yes** = an agent can complete it end-to-end from hub data
 | Aug 2026 (now) | Verify **BOC-3** blanket agent still on file (one-time filing; re-file only on agent change) | Process-agent co. | $0 (agent ~$20–50 one-time) | 49 CFR Part 366; li-public.fmcsa.dot.gov | yes (verify) |
 | **Mon Aug 31, 2026** | **Form 2290 HVUT**, period 7/1/26–6/30/27, all 15 trucks; e-file → stamped Schedule 1 (needed for IRP renewal) | Owner/accountant | **~$8,250** (15 × $550) + ~$20 e-file fee | 26 U.S.C. 4481; irs.gov/businesses/small-businesses-self-employed/when-form-2290-taxes-are-due | prep |
 | ~Sep 1, 2026 | Check **UCR 2027 final fee rule** (NPRM proposed +20%; final expected by ~Sep 1) | — (watch item) | $0 | 91 FR 17618 (Apr 7, 2026), docket FMCSA-2026-06726 | yes |
-| **Thu Oct 1, 2026** | **UCR 2027 registration window opens** (file any time Oct–Dec) | Owner via plan.ucr.gov | $276 if 2026 fees carry over; **≈$331 proposed** (bracket 6–20) | 49 U.S.C. 14504a; 49 CFR 367.50; plan.ucr.gov/fee-brackets | prep |
+| **Thu Oct 1, 2026** | **UCR 2027 registration window opens** (file any time Oct–Dec) | Owner via plan.ucr.gov | $276 if 2026 fees carry over; **$333 proposed** (bracket 6–20, docket FMCSA-2025-0655) | 49 U.S.C. 14504a; 49 CFR 367.50; plan.ucr.gov/fee-brackets | prep |
 | Fri Oct 30, 2026 | **WA L&I Q3 report + premium** (printed due date Sat Oct 31 — file the business day before) | Owner/bookkeeper | Premium varies (hours × rate) | lni.wa.gov/insurance/quarterly-reports | prep |
 | **Mon Nov 2, 2026** | **IFTA Q3-2026 return** (nominal Oct 31 = Saturday → next business day) | Owner via License eXpress | Net tax varies; $0 filing fee | IFTA Procedures Manual P1040; dol.wa.gov IFTA | prep |
 | **Mon Nov 30, 2026** | **WA IFTA renewal submitted** (license expires Dec 31; on-time filing preserves the Jan–Feb grace) | Owner via License eXpress | Nominal per-vehicle decal fee | dol.wa.gov "Get your license and decals: IFTA" | prep |
 | Tue Dec 1, 2026 | 2027 IFTA decals may go on trucks | Shop | — | dol.wa.gov IFTA | yes (task out) |
 | Dec 2026 | **CY2027 random rates announced** (FMCSA/ODAPC) — update hub `randomTesting` percentages if changed | — (watch item) | $0 | 49 CFR 382.305; transportation.gov/odapc/random-testing-rates | yes |
-| **Thu Dec 31, 2026** | **UCR 2027 registration completed** (recommended by year-end; enforcement starts Jan 1) | Owner | $276 / ≈$331 (see above) | plan.ucr.gov | prep |
-| **Thu Dec 31, 2026** | **City of Kent business license year ends** (~$100 renewal; invoices mailed Jan) + confirm WA UBI/BLS renewal current | Owner | ~$100 (Kent) + state renewal | kentwa.gov business licenses; dor.wa.gov | prep |
+| **Thu Dec 31, 2026** | **UCR 2027 registration completed** (recommended by year-end; enforcement starts Jan 1) | Owner | $276 / $333 proposed (see above) | plan.ucr.gov | prep |
+| **Thu Dec 31, 2026** | **City of Kent business license year ends** (~$214 renewal, 0–24 employees; invoices mailed Jan) + confirm WA UBI/BLS renewal current | Owner | ~$214 (Kent, page-verified) + state renewal | kentwa.gov business licenses; dor.wa.gov | prep |
 | **Thu Dec 31, 2026** | **WA IFTA license expires**; 2027 credentials take over (grace into Feb only if renewed on time) | — | — | dol.wa.gov IFTA | — |
 | **Fri Jan 1, 2027** | UCR 2027 enforcement begins; CY2027 random-testing year opens (Q1 pool draw) | — | — | 49 CFR 382.305 | yes (draw) |
 | ~Fri Jan 15, 2027 | **Annual Clearinghouse limited queries — all ~15 drivers** (satisfies the rolling-365-day rule for the year; general consents on file) | Owner/TPA in portal | **$1.25/driver ≈ $19** | 49 CFR 382.701(b); clearinghouse.fmcsa.dot.gov | prep |
@@ -184,7 +184,7 @@ Legend for "Agent?": **yes** = an agent can complete it end-to-end from hub data
 
 > 1. **TODAY — MCS-150 status check.** Biennial update was due **Apr 30, 2026** (derived from USDOT 2523064). If it wasn't filed this spring it is **~100 days overdue** → file online immediately (free); risk is USDOT deactivation + up to $1,000/day.
 > 2. **File Form 2290 by Monday, Aug 31, 2026** — ~$8,250 for 15 trucks; e-file for the instant stamped Schedule 1 (IRP renewal hostage without it). Ignore "Sept 1" claims on vendor blogs — Aug 31, 2026 is a Monday.
-> 3. **Around Sep 1 — check the UCR 2027 final rule** so the right fee (current $276 vs proposed ≈$331) is budgeted before the Oct 1 window opens.
+> 3. **Around Sep 1 — check the UCR 2027 final rule** (docket FMCSA-2025-0655) so the right fee (current $276 vs proposed $333) is budgeted before the Oct 1 window opens.
 > 4. **Verify insurance filings**: BMC-91/MCS-90 "Active" on li-public.fmcsa.dot.gov, and the policy-renewal date is on the compliance wall.
 > 5. **Quarter hygiene**: Q3 IFTA fuel receipts/mileage flowing into the hub now (quarter closes Sep 30, return due Nov 2); confirm Q3 random-test selections were drawn and collections completed.
 > 6. **Clearinghouse sweep**: every driver has a query dated within the last 365 days and a general consent on file; any hire in progress gets a full pre-employment query before first dispatch.
@@ -214,7 +214,7 @@ Legend for "Agent?": **yes** = an agent can complete it end-to-end from hub data
   agent: prep
   status: firm
 - due: 2026-09-01
-  title: "Check UCR 2027 final fee rule (NPRM proposed ~+20%; bracket 6-20 ~= $331)"
+  title: "Check UCR 2027 final fee rule (docket FMCSA-2025-0655; NPRM proposed ~+20%; bracket 6-20 = $333)"
   cadence: annual
   authority: "91 FR 17618 (FMCSA NPRM 2026-06726)"
   source: "https://www.federalregister.gov/documents/2026/04/07/2026-06726/fees-for-the-unified-carrier-registration-plan-and-agreement"
@@ -260,13 +260,13 @@ Legend for "Agent?": **yes** = an agent can complete it end-to-end from hub data
   source: "https://plan.ucr.gov/"
   fee_usd: 276
   agent: prep
-  status: pending-final-rule   # amount may become ~331 under 2027 final rule
+  status: pending-final-rule   # amount may become $333 under the 2027 final rule (docket FMCSA-2025-0655)
 - due: 2026-12-31
   title: "City of Kent business license renewal (calendar-year; invoices mailed January)"
   cadence: annual
   authority: "Kent City Code; WA BLS"
   source: "https://www.kentwa.gov/pay-and-apply/apply-for-a-business-license"
-  fee_usd: 100
+  fee_usd: 214
   agent: prep
   status: firm
 - due: 2027-01-15

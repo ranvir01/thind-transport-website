@@ -48,7 +48,7 @@ All prices (search-verified 2026-08-08) unless noted. "Demo-gated" = number not 
 - **Loudest complaints (softwareconnect/TruckersReport thread 285791):** (1) cost — "high compared to a lot of other TMSs," though defenders say "costly but absolutely worth it"; (2) poor fit for drayage/intermodal; (3) pricing and support complaints from niche operations [S14].
 
 ### 6. TruckingOffice
-- **Price (published, flat by truck band):** Pro **$30/mo (1–2 trucks)**, **$65/mo (3–7)**, **$110/mo (8+ trucks)**. PC*MILER add-on $5–$25/mo; own ELD $240/yr/truck incl. device [S15].
+- **Price (published, flat by truck band):** Basic/Pro **$25–$35/mo (1–2 trucks)**, **$55–$75/mo (3–7)**, **$90–$130/mo (8+ trucks — 15 trucks lands here)** (corrected on page-verification 2026-08-08; the earlier $30/$65/$110 tiers are stale). PC*MILER add-on $5–$25/mo; own ELD $240/yr/truck incl. device [S15].
 - **Onboarding:** none. **Contract:** monthly.
 - **Loudest complaints (Capterra, 4.4/37 reviews):** (1) QuickBooks integration gaps — carrier pay doesn't integrate with QBO (desktop only per one review; another says no QB integration/import-export at all); (2) dated UI — "needs a face lift"; (3) nickel-and-dime friction ($50 late fee, IFTA service costs extra) [S16].
 
@@ -61,7 +61,7 @@ All prices (search-verified 2026-08-08) unless noted. "Demo-gated" = number not 
 - **Loudest complaints:** (1) onboarding "could be smoother"; (2) accounting-first learning curve; (3) dated interface vs. cloud-native rivals [S19].
 
 ### 9. Tailwind TMS (now under CargoWise/WiseTech umbrella)
-- **Price (published):** **Pro $99/user/mo (25 loads/mo cap), Enterprise $149 (50 loads), Unlimited $199/user/mo**; free trial; no contracts required [S20][S21].
+- **Price (published):** **Pro $135/user/mo (25 loads/mo cap), Enterprise $195 (50 loads), Unlimited $265/user/mo** (corrected on page-verification 2026-08-08 — May 2025 review pricing; vendor site's own page had broken SSL at check time); free trial; no contracts required [S20][S21].
 - **Onboarding:** no upfront fee reported.
 - **Loudest complaints:** (1) **extra users are costly** — per-seat math punishes small back offices (10 users = $990–$1,990/mo); (2) smaller companies find it expensive overall; (3) load caps on lower tiers force upgrades [S20].
 
@@ -80,7 +80,7 @@ All prices (search-verified 2026-08-08) unless noted. "Demo-gated" = number not 
 - **Price:** ELD/fleet platform **$25–$40/vehicle/mo on 1–3-year contracts** + $150 hardware; tiers ~$20–25 Starter → $45–50+ Enterprise [S26b].
 - **Loudest complaints:** (1) **D- BBB rating with contract/auto-renewal disputes**; (2) 1–3-year lock-in; (3) no dispatch order management, settlements, invoicing, or carrier accounting — it cannot replace a TMS [S26][S26b].
 
-**Market anchors:** AscendTMS free Basic (2 users) / Premium ~$99/user/mo reported [S29]; McLeod at ~$2,500+/mo with ~$60k initial (TruckersReport quote — the ceiling small fleets flee) [S27]; Truckpedia "$300/mo flat + $30/truck" [S31]; published market band for full carrier TMSs ~$75–200/truck/mo [S28].
+**Market anchors:** AscendTMS's **free Basic tier is gone** — now $69/$119/$149 per user/mo (corrected on page-verification 2026-08-08; removes the free-anchor threat and strengthens the $30/truck GO) [S29]; McLeod at ~$2,500+/mo with ~$60k initial (TruckersReport quote — the ceiling small fleets flee) [S27]; Truckpedia page-verified: **$299/mo includes 10 trucks, +$30/truck after → $449 at 15 trucks**, near-identical to LoadOff's simulated $450 [S31]; market band restated on page-verification: **$30–100/truck/mo mid-market, $100–300+ enterprise** (the earlier "$75–200" source changed) [S28].
 
 ---
 
@@ -120,7 +120,7 @@ Sources per row: Truckbase [S1][S3][S32]; Alvys [S33]; Toro [S34]; Rose Rocket [
 - TruckersReport thread 1293749 ("Transportation Management System (TMS)"): a ~5-truck operator states they pay **"like $37 per month"** and, shopping upgrades, recoils from a quote of **"$700 startup and $585 per month"** for one user — that quote ended the conversation. Same thread cites **ITS Dispatch ≈ $100/mo** as the sane mid option and McLeod at ~$2,500+/mo + ~$60k initial as the absurd ceiling [S27]. (Thread undated in snippets — lower confidence on recency; consistent with current list prices.)
 - TruckersReport thread 236785 ("TruckingOffice Review(s)"): single-truck operators anchor at **$20/mo ($240/yr)** [S27].
 - Same forum cluster: an operator brags about **$10/mo** software just for POD/receipt capture — the floor of perceived value [S27].
-- Published market framing the buyer sees when they Google: full carrier TMSs "typically $75–200 per truck per month" [S28]; owner-op tools $20–50/truck/mo [S28]; a competitor (Truckpedia) advertises **"$300/mo flat + $30/truck"** as its transparency pitch [S31].
+- Published market framing the buyer sees when they Google (restated on page-verification 2026-08-08 — the earlier cited "typically $75–200/truck" source changed): **$30–100/truck/mo mid-market, $100–300+ enterprise** [S28]; owner-op tools $20–50/truck/mo [S28]; a competitor (Truckpedia) advertises **$299/mo including 10 trucks + $30/truck after — $449 at 15 trucks** as its transparency pitch (page-verified) [S31].
 
 **Per-truck vs. flat:** flat monthly is the stated preference at 3–10 trucks ("the carrier wants predictable monthly costs" [S31]); per-truck is the accepted growth-fair compromise; **per-user and per-load are the resented models** — evidence: Truckbase's seat minimums flagged in comparisons [S3], Tailwind's "extra users are costly" complaint [S20], Rose Rocket's per-load quote "nearly double" [S13]. Unlimited-users-flat "almost always cheaper than per-seat" is now a talking point buyers repeat [S31]. Inference (moderate confidence): **per-truck pricing with unlimited users is the sweet spot** — it reads flat month-to-month but scales with the fleet, and it's the model Toro (quote-based per-truck) and Truckpedia use.
 
@@ -138,7 +138,7 @@ Sources per row: Truckbase [S1][S3][S32]; Alvys [S33]; Toro [S34]; Rose Rocket [
 **Repo fact:** `SIMULATED_PRICE_PER_TRUCK_CENTS = 3000` in `src/lib/hub/saas-metrics.ts` — a simulation constant, not a launched price (repo-verified 2026-08-08).
 
 **The math at 15 trucks (LoadOff's peer ICP):** $450/mo.
-- vs. legacy flat: ITS Dispatch $75–99, TruckingOffice $110 → LoadOff is 4–6x. But those products carry outdated-UI, no-portal, weak-mobile complaints and QBO gaps [S16][S23].
+- vs. legacy flat: ITS Dispatch $75–99, TruckingOffice $90–130 at 15 trucks → LoadOff is 3.5–5x (page-verified numbers). But those products carry outdated-UI, no-portal, weak-mobile complaints and QBO gaps [S16][S23].
 - vs. Truckbase: $290/mo annual-billed entry ($490 monthly-billed) → comparable, and LoadOff adds native IFTA which Truckbase lacks [S1][S2].
 - vs. Alvys at ~120–180 loads/mo (a 15-truck spot fleet): plausibly $600–$1,000+/mo on per-load tiers (inference from the $292/50-load tier [S4]) → LoadOff ~half.
 - vs. LoadOps: 15 drivers × $55–75 = **$825–$1,125/mo** → LoadOff ~40–55%.
@@ -162,10 +162,10 @@ Sources per row: Truckbase [S1][S3][S32]; Alvys [S33]; Toro [S34]; Rose Rocket [
 | Toro TMS | per-truck, quote-only | demo-gated; month-to-month | ✓ | ✓ | ✗ | ✗ (SMS) | ✗ | ✓ | No native driver app |
 | Rose Rocket | per-load, quote-only | demo-gated (~$233/mo+ reported) | ✓ | ~ | ✗ | ✓ | ✓ | ✓ | Quote "nearly double" rivals |
 | Axon | license + quote | demo-gated; $25k+ quote reported | ✓ | ✓ | ✗ | ✗ | ✗ | ~ | Price on the high side |
-| TruckingOffice | flat by truck band | $30/$65/$110/mo | ✓ | ✓ | ✗ | ✓ | ~ | ✓ ($240/yr/truck) | QBO integration gaps; dated UI |
+| TruckingOffice | flat by truck band | $25–35/$55–75/$90–130/mo (page-verified) | ✓ | ✓ | ✗ | ✓ | ~ | ✓ ($240/yr/truck) | QBO integration gaps; dated UI |
 | RigBooks | flat tiers | $19–$149/mo | ✗ | ✓ | ✗ | ✗ | ✗ | ✗ | Not a TMS (no dispatch/ELD) |
 | Q7/Frontline | per-user + implementation | ~$49/user/mo + $1k–5k setup (3rd-party) | ✓ | ✓ | ✗ | ~ | ✗ | ✓ | Rough onboarding, dated |
-| Tailwind TMS | per-user tiers | $99/$149/$199 per user/mo | ✓ | ~ | ~ | ✓ | ~ | ~ | Extra seats costly; load caps |
+| Tailwind TMS | per-user tiers | $135/$195/$265 per user/mo (page-verified) | ✓ | ~ | ~ | ✓ | ~ | ~ | Extra seats costly; load caps |
 | ITS Dispatch | flat | $75–$99/mo unlimited trucks | ✓ | ✓ | ~ | ✗ | ✗ | ~ | Outdated UI; prices rising |
 | LoadOps (Optym) | per-driver | $75/driver/mo ($55 annual w/ minimums) | ✓ | ✓ | ✓ | ✓ | ✗ | ✓ | Overkill/pricey for small fleets |
 | Motive (dispatch) | per-vehicle, 1–3-yr contract | $25–$40/vehicle/mo + $150 hw (ELD, not a TMS) | ✗ | ✓ | ✗ | ✓ | ✗ | native | D- BBB; contract disputes; no TMS |

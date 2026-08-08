@@ -22,6 +22,20 @@ to 20% monthly, not 12%; WA retailing B&O rises to 0.5% on 2027-01-01 (ESHB
 prompt-10 and prompt-12 survived untouched — including every compliance
 deadline and the build-ready YAML.
 
+**Second verification pass (2026-08-08, separate environment with page-fetch
+capability):** the owner's Cowork session ran 6 further agents, one per
+prompt, re-checking 54 load-bearing claims against the primary pages
+themselves — the one thing this environment could not do. ~44 page-verified
+at the source; **10 corrected (applied throughout these files), 0 due dates
+moved, 0 verdicts changed** — the $30/truck GO came out stronger (AscendTMS's
+free tier is gone; Truckpedia page-verifies at $449 for 15 trucks vs
+LoadOff's $450). Notable corrections: DAT Pro $169, Truckstop Pro $159 is
+the API tier, SONAR checkout at sonar.surf/signup, CHR has no named request
+form (go through carrier services), UCR proposed fee exactly $333 under
+docket FMCSA-2025-0655 (still not final), Kent business license ~$214.
+Bonus finding: Cover Whale's required telemetry runs via Terminal, which
+LoadOff already integrates.
+
 **To the owner and any build agent executing against this:** each report is
 self-contained, cited, and ends with the deliverable its brief specified. The
 compliance YAML in prompt-12 is already wired into the product (see below).
@@ -37,10 +51,11 @@ compliance YAML in prompt-12 is already wired into the product (see below).
    $1,000/day. The hub compliance wall now shows this until recorded.
 2. **Form 2290 HVUT by Mon Aug 31, 2026** (~$8,250 for 15 trucks; e-file,
    stamped Schedule 1 back for IRP). Vendor blogs saying "Sep 1" are wrong.
-3. **Load-board door-knocks, in this order:** C.H. Robinson "Request API
-   project" form (free for contract carriers — rank 1, nobody has knocked);
-   DAT service-account email to developersupport@dat.com (any load-board tier
-   allows REST); Truckstop SIA email to tsi@truckstop.com (top tier ~$175/mo).
+3. **Load-board door-knocks, in this order:** C.H. Robinson carrier services
+   team (free Carrier API, "no additional cost" page-verified; no named form —
+   rank 1, nobody has knocked); DAT service-account email to
+   developersupport@dat.com (any load-board tier allows REST; Pro $169/mo);
+   Truckstop SIA email to tsi@truckstop.com (Pro $159/mo is the API tier).
    Say "in-house TMS, single org, MC 876103" — no partner program needed.
 4. **Buy SONAR Quick Rates ($24.99/mo self-serve)** and **create the free
    Highway carrier profile** the same day.
@@ -59,9 +74,10 @@ compliance YAML in prompt-12 is already wired into the product (see below).
   Billing build** (~4–6 agent-days behind owner gates).
 
 **This cycle's decisions (verdicts, stated):**
-- **$30/truck/mo is a GO** — inside the $75–200/truck market band's floor,
-  deliberately above legacy flat tools, half of Alvys/LoadOps at 15 trucks;
-  launch month-to-month, $0 onboarding, published pricing (prompt-11).
+- **$30/truck/mo is a GO** — squarely inside the page-verified $30–100/truck
+  mid-market band, deliberately above legacy flat tools, half of Alvys/LoadOps
+  at 15 trucks, and at parity with Truckpedia's verified $449; launch
+  month-to-month, $0 onboarding, published pricing (prompt-11).
 - **Insurance:** the premium is won 90–120 days before renewal. Quote Nirvana at
   T-90 (10+ unit dry-van fleets, ~20% upfront via ELD connect; WA availability
   unconfirmed — ask first), HDVI backup (up to 20% monthly via Shift 2.0),
@@ -71,7 +87,8 @@ compliance YAML in prompt-12 is already wired into the product (see below).
   payments (prompt-14 hard-lines list).
 
 **Owner-personal deadlines beyond same-day:** UCR 2027 window opens Oct 1 (check
-the final fee rule ~Sep 1 — NPRM proposes ~$331 for 6–20 trucks); WA IFTA
+the final fee rule ~Sep 1 — docket FMCSA-2025-0655 proposes exactly $333 for
+6–20 trucks, not final as of Aug 8); WA IFTA
 license renewal by Nov 30; IFTA Q3 filing by Nov 2; random-testing rates stay
 50%/10% for 2026 (annual Clearinghouse limited queries, $1.25/driver).
 
