@@ -216,3 +216,34 @@ export async function addMaintenanceRecordAction(values: {
     return actionError(err, "Failed to add record")
   }
 }
+
+/**
+ * Assemble the insurance renewal packet (research wave 2, prompt-13): the
+ * ~80% of an underwriting submission LoadOff already holds, as one dated
+ * PDF stored with the carrier's documents. Owner-only — it carries CDL
+ * numbers and loss history in a single file built to leave the building.
+ */
+export async function generateRenewalPacketAction(): Promise<
+  ActionResult & { url?: string; fileName?: string }
+> {
+  let user
+  try {
+    const { requireOwner } = await import("@/lib/hub/session")
+    user = await requireOwner()
+  } catch (err) {
+    return actionError(err, "Forbidden")
+  }
+  try {
+    const { buildRenewalPacket } = await import("@/lib/hub/renewal-packet")
+    const doc = await buildRenewalPacket(user.carrierId, { id: user.id })
+    await logAudit({
+      carrierId: user.carrierId, actorId: user.id, actorName: user.name,
+      entityType: "document", entityId: doc.id, action: "renewal_packet_generated",
+      newValue: { fileName: doc.file_name },
+    })
+    revalidatePath("/hub/compliance")
+    return { ok: true, url: doc.url, fileName: doc.file_name }
+  } catch (err) {
+    return actionError(err, "Could not generate the renewal packet")
+  }
+}

@@ -12,6 +12,8 @@ import {
 import { requirePermissionPage } from "@/lib/hub/session"
 import { Panel, PageHeader, ExpiryPill, Pill, type PillTone } from "@/components/hub/ui"
 import { AddComplianceItemForm, ResolveItemButton } from "@/components/hub/ComplianceForms"
+import { RenewalPacketPanel } from "@/components/hub/RenewalPacketPanel"
+import { latestRenewalPacket } from "@/lib/hub/renewal-packet"
 import { cn } from "@/lib/utils"
 
 import { HelpTip } from "@/components/hub/HelpTip"
@@ -45,6 +47,7 @@ export default async function CompliancePage({
   searchParams: Promise<{ entity?: string; color?: string }>
 }) {
   const user = await requirePermissionPage("compliance:read")
+  const latestPacket = user.role === "owner" ? await latestRenewalPacket(user.carrierId) : null
   const filter = parseWallFilter(await searchParams)
   // complianceEntries() already merges the auto-generated IFTA filing entries
   // (and sorts the wall) — merging them here again rendered every IFTA filing
@@ -170,6 +173,14 @@ export default async function CompliancePage({
       <p className="mt-3 text-body-xs text-fg-3">
         Annual inspections per 49 CFR 396.17 · DQ files per 49 CFR 391.51 · daily scan emails the office at 60/30/7 days.
       </p>
+
+      {/* Owner-only: the packet bundles CDL numbers + loss history into one
+          file built to be sent out, so it isn't offered to every office role. */}
+      {user.role === "owner" ? (
+        <div className="mt-4">
+          <RenewalPacketPanel latest={latestPacket} />
+        </div>
+      ) : null}
     </div>
   )
 }

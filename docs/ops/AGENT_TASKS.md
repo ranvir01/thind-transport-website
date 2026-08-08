@@ -425,8 +425,10 @@ From the reconciled 6-patch handoff (FINALIZE.md, session 017JBR7WV8…). Each s
    cleanliness; kept because drain-integrator.yml and fleet docs invoke it). En route it
    exposed that PROVIDERS' `: readonly ProviderSpec[]` annotation had disarmed
    registry.test.ts's ProviderId ↔ IntegrationProvider canary — now `as const satisfies`.*
-2. **Settings-UI toggle for `nav.small_carrier_mode`** — the flag resolves per-carrier already;
-   an owner-facing switch in /hub/settings writes the carrier row (flags.ts + migration 026).
+2. ~~**Settings-UI toggle for `nav.small_carrier_mode`**~~ *Done 2026-08-08: setCarrierFlag
+   write path in flags.ts (null clears the row — empty table stays "defaults everywhere"),
+   owner-gated setNavigationModeAction, NavModePanel on Settings → Company & users
+   (small-fleet / full / deploy-default radio), flags-write.test.ts.*
 3. ~~**`npm run embed:verify` in a network-enabled CI job**~~ *Done 2026-08-08: e2e job step
    "Toolbox frame promises still hold" — fails on header regressions (exit 1), tolerates
    no-egress runners (exit 2).*
@@ -438,11 +440,12 @@ From the reconciled 6-patch handoff (FINALIZE.md, session 017JBR7WV8…). Each s
 
 From research wave 2 (`docs/research/2026-08b/`, verified 2026-08-08):
 
-6. **Insurance renewal-packet export** — one click assembles the underwriting submission
-   LoadOff already holds ~80% of: drivers + CDL/med dates, VINs, IFTA-derived mileage by
-   state, maintenance history, incidents with DOT-recordable flags, DVIR/HOS posture.
-   Owner uploads only loss runs + dec pages. Build before the T-90 renewal window
-   (prompt-13 §7); pattern: packet.ts already does this shape for factoring.
+6. ~~**Insurance renewal-packet export**~~ *Done 2026-08-08: renewal-packet.ts
+   (collectRenewalData + renderRenewalPdf pure over data + buildRenewalPacket storing a
+   carrier document, kind insurance_renewal), owner-only generateRenewalPacketAction,
+   RenewalPacketPanel on /hub/compliance. Covers fleet w/ VINs, drivers w/ CDL+med dates,
+   IFTA quarters, 24-month incidents w/ DOT-recordable flags, claims, DVIR + maintenance
+   posture; the PDF names loss runs + dec pages as the only missing attachments.*
 7. **Stripe Billing integration (ADR 0004)** — Checkout session + webhook receiver +
    `invoice.paid` → `BillingRow` bridge into `computeSaasMonth` + hosted portal link +
    WA-only Stripe Tax. ~4–6 agent-days. Blocked on owner gates: Stripe account
