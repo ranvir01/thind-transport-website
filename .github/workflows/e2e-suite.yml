@@ -80,10 +80,22 @@ jobs:
         with:
           node-version: 22
           cache: npm
-      - run: npm ci
-        env:
-          # The unit job never launches a browser; skip the ~130MB download.
-          PUPPETEER_SKIP_DOWNLOAD: "1"
+      - name: Install dependencies
+        # --ignore-scripts, aligned with the e2e job below and
+        # drain-integrator.yml. For the record: plain `npm ci` was NOT what
+        # broke this job (the 2026-08-08 red's own step log shows npm ci
+        # green and "Unit tests" failing — a test bug, fixed in c15ab6fb).
+        # But plain npm ci runs canvas's postinstall, which downloads a
+        # prebuilt binary and FALLS BACK TO A SOURCE BUILD on any download
+        # hiccup — and that build dies on ubuntu-latest (pangocairo/giflib
+        # headers absent; nothing in src/ imports canvas). Skipping scripts
+        # closes that flake path and also covers puppeteer's ~130MB browser
+        # download, which the old PUPPETEER_SKIP_DOWNLOAD env handled.
+        # bcrypt + sharp are the native modules this job actually loads
+        # (seed:demo hashes passwords with bcrypt; sharp backs image paths).
+        run: |
+          npm ci --ignore-scripts
+          npm rebuild bcrypt sharp
       - name: Migrate + seed demo data
         run: |
           npm run db:migrate
