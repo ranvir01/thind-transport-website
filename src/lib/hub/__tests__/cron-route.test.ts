@@ -14,7 +14,11 @@ import fs from "node:fs"
 import path from "node:path"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
-vi.mock("@/lib/hub/db", () => ({ query: vi.fn() }))
+// queryOne included: universal-sync's connected() checks run unmocked and
+// reach credentials.ts → queryOne. Without it, environments that set
+// CREDENTIALS_KEY (CI does; a bare local shell doesn't) throw a TypeError
+// inside the route and the drift test reads 500 while local reads 200.
+vi.mock("@/lib/hub/db", () => ({ query: vi.fn(), queryOne: vi.fn(async () => null) }))
 vi.mock("@/lib/hub/compliance", () => ({ complianceEntries: vi.fn() }))
 vi.mock("@/lib/hub/invoices", () => ({ runOverdueReminders: vi.fn() }))
 vi.mock("@/lib/hub/detention", () => ({ runDetentionAlerts: vi.fn() }))
@@ -87,6 +91,10 @@ function syncLogCalls() {
 
 beforeEach(() => {
   vi.stubEnv("CRON_SECRET", SECRET)
+  // Pinned so connected() takes the same path whether or not the shell set a
+  // real key — with queryOne mocked to null, every provider resolves to
+  // "not connected" deterministically (the CI-vs-local 500/200 split above).
+  vi.stubEnv("CREDENTIALS_KEY", "test-credentials-key-32-characters!!")
   queryMock.mockReset().mockImplementation(async (sql: string) =>
     String(sql).includes("FROM hub.carriers") ? (CARRIERS as never) : ([] as never)
   )
