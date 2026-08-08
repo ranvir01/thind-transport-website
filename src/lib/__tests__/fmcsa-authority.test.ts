@@ -4,7 +4,7 @@
  * cached data as live — a shipper who acts on a stale "authority active" and
  * finds otherwise does not come back.
  */
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest"
 
 vi.mock("server-only", () => ({}))
 
@@ -12,6 +12,23 @@ import { getAuthoritySnapshot, saferUrlFor, snapshotFromQc, TRUST_FACTS } from "
 
 const realFetch = globalThis.fetch
 const realKey = process.env.FMCSA_WEBKEY
+
+// Pinned (compliance.test.ts pattern): the live-path test asserts asOf equals
+// today's UTC date computed a second time inside the assertion, which reddened
+// whenever the run straddled UTC midnight between the two `new Date()` calls.
+const PINNED_CLOCK = new Date(Date.UTC(2026, 5, 15, 12)) // 2026-06-15T12:00Z
+
+beforeAll(() => {
+  vi.useFakeTimers({ toFake: ["Date"] })
+})
+
+beforeEach(() => {
+  vi.setSystemTime(PINNED_CLOCK)
+})
+
+afterAll(() => {
+  vi.useRealTimers()
+})
 
 afterEach(() => {
   globalThis.fetch = realFetch
