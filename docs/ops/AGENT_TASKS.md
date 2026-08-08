@@ -435,3 +435,16 @@ From the reconciled 6-patch handoff (FINALIZE.md, session 017JBR7WV8…). Each s
    next-number protocol.*
 5. **security.txt contact → `security@thindtransport.com`** once domain mail exists
    (blocked on the owner's SPF/DKIM/DMARC + mailbox task; keep `Expires` a year out).
+
+From research wave 2 (`docs/research/2026-08b/`, verified 2026-08-08):
+
+6. **Insurance renewal-packet export** — one click assembles the underwriting submission
+   LoadOff already holds ~80% of: drivers + CDL/med dates, VINs, IFTA-derived mileage by
+   state, maintenance history, incidents with DOT-recordable flags, DVIR/HOS posture.
+   Owner uploads only loss runs + dec pages. Build before the T-90 renewal window
+   (prompt-13 §7); pattern: packet.ts already does this shape for factoring.
+7. **Stripe Billing integration (ADR 0004)** — Checkout session + webhook receiver +
+   `invoice.paid` → `BillingRow` bridge into `computeSaasMonth` + hosted portal link +
+   WA-only Stripe Tax. ~4–6 agent-days. Blocked on owner gates: Stripe account
+   activation, WA DOR check, `STRIPE_SECRET_KEY`/`STRIPE_WEBHOOK_SECRET` env-var names
+   in Vercel. Include the NACHA ≥10-day variable-amount notice via `invoice.upcoming`.
