@@ -45,9 +45,12 @@ When caught up, **Phase B** ships one ranked `Backlog:` item per hour.
 
 `.github/workflows/drain-integrator.yml` (`:17` and `:47` UTC) covers the 2026-07-10 failure mode:
 both agent platforms down while the integrator sits green ahead of `main`, so production goes
-stale. It publishes to `main` ONLY when the integrator is >3 ahead **and** `main` is still an
-ancestor of it **and** `npm run build`, `npx vitest run`, `typecheck-gate` and `license-audit` are
-green on that exact tip. It never resolves conflicts and never launches agents.
+stale. It publishes to `main` ONLY when the integrator is >3 ahead — or, since 2026-08-07, when
+the oldest pending commit is ≥12h old (`MAX_PENDING_AGE_HOURS`; a count-only gate stranded a money
+fix for two days while the fleet was quiet) — **and** `main` is still an ancestor of it **and**
+`npm run build`, `npx vitest run`, `typecheck-gate` and `license-audit` are green on that exact
+tip. It never resolves conflicts and never launches agents. Each drain also warns (non-blocking)
+on pending commits missing the `Backlog:` trailer.
 
 It publishes as a stamped `--no-ff` merge, never a fast-forward ref push — a plain fast-forward
 lands a SHA (and a tree) Vercel has already built as a preview, and the dedupe then skips the
