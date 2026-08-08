@@ -161,6 +161,22 @@ For owner-operators: the % they keep, who pays fuel, and any escrow.
 
 ## SECTION 4 — New since the last document
 
+### 4-0. EXPIRES AUG 15 — Overdrive Small Fleet Championship
+- ☐ **Enter Thind Transport before Aug 15, 2026** (fleets 3–30 trucks, overdriveonline.com/small-fleet-champ,
+  ~2 hours). Free earned-media shot; even semifinalist status is a permanent credibility asset for
+  Thind AND the "family carrier built its own TMS" story. Deadline re-verified open as of Aug 8.
+
+### 4-0b. Email authentication (unlocks professional email + blunts invoice spoofing)
+- ☐ Add **SPF, DKIM, DMARC** DNS records for thindtransport.com (start DMARC at p=none with
+  reporting; agents wrote the exact records into the research report
+  docs/research/2026-08/prompt-8-security-roadmap.md §4.1). Microsoft/Google/Yahoo all enforce
+  these now; also the #1 thing an enterprise reviewer checks. ~1 hour at your DNS provider.
+
+### 4-0c. Answer the new DECISIONS queue
+- ☐ Three items await in docs/ops/DECISIONS.md: arm the branch reaper (D-001), npm-audit major
+  bumps (D-002), adopt the 24/7 fleet schedule (D-003).
+
+
 ### 4a. Outreach — feed it prospects
 
 `/hub/outreach` drafts personalised, legally-compliant emails to brokers, shippers, and

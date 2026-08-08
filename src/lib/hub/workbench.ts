@@ -36,6 +36,13 @@ export interface WorkbenchResource {
   url: string
   group: "Calculators & tools" | "Regulations" | "Passes & weather" | "Lookups"
   embed: "frame" | "sheet"
+  /**
+   * External frame rows only: the date the target's response headers were
+   * verified to permit cross-origin framing (no X-Frame-Options, no
+   * frame-ancestors restriction). Required by workbench.test.ts for any
+   * external "frame" row; re-verify with scripts/verify-frame-headers.mjs.
+   */
+  frameVerified?: string
 }
 
 export const WORKBENCH_RESOURCES: readonly WorkbenchResource[] = [
@@ -106,7 +113,8 @@ export const WORKBENCH_RESOURCES: readonly WorkbenchResource[] = [
     blurb: "Snoqualmie chain status before committing to I-90.",
     url: "https://wsdot.com/travel/real-time/mountainpasses",
     group: "Passes & weather",
-    embed: "sheet",
+    embed: "frame",
+    frameVerified: "2026-08-07",
   },
   {
     id: "tripcheck",
@@ -114,7 +122,8 @@ export const WORKBENCH_RESOURCES: readonly WorkbenchResource[] = [
     blurb: "Cabbage Hill and Siskiyou conditions + chain requirements.",
     url: "https://www.tripcheck.com",
     group: "Passes & weather",
-    embed: "sheet",
+    embed: "frame",
+    frameVerified: "2026-08-07",
   },
   {
     id: "idaho-511",
@@ -130,7 +139,8 @@ export const WORKBENCH_RESOURCES: readonly WorkbenchResource[] = [
     blurb: "Route weather straight from the source.",
     url: "https://www.weather.gov",
     group: "Passes & weather",
-    embed: "sheet",
+    embed: "frame",
+    frameVerified: "2026-08-07",
   },
 
   // ---- Lookups ------------------------------------------------------------
@@ -148,7 +158,8 @@ export const WORKBENCH_RESOURCES: readonly WorkbenchResource[] = [
     blurb: "This week's on-highway diesel by region — the FSC anchor.",
     url: "https://www.eia.gov/petroleum/gasdiesel/",
     group: "Lookups",
-    embed: "sheet",
+    embed: "frame",
+    frameVerified: "2026-08-07",
   },
   {
     id: "iftach",

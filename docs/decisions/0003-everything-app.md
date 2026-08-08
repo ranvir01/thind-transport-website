@@ -61,3 +61,28 @@ architecture) properly.
   DAT" want entirely (expected: yes).
 - Carrier count or driver count makes the native-shell webview worth its costs.
 - Any external resource's headers are verified frameable → flip its registry row.
+
+## Addendum 2026-08-08 — the native-shell question is ANSWERED: wait
+
+The queued Capacitor research came back (docs/research/2026-08/prompt-1-native-shell.md,
+91-claim verification pass). Verdict adopted: **stay PWA + APIs + sheets.** The one thing a
+native webview uniquely buys — embedded logged-in DAT/Truckstop — is contractually prohibited
+(Truckstop ToS §3.3 bans "frameset"-ing, eff. 2026-03-13; DAT ToS §1.2 bans plug-in/automated
+access, eff. 2026-07-30), precedent-hostile (*Facebook v. Power Ventures*, 9th Cir. 2016:
+platform revocation makes continued credentialed access a CFAA violation), and self-sabotaging
+(Google OAuth hard-blocks webviews). A shell also breaks today's driver PWA: no service workers
+in WKWebView by default, no Web Push (APNs/FCM rebuild), NextAuth cookies fail on
+capacitor://localhost. Every TMS competitor (Alvys, Rose Rocket, Truckbase) integrates load
+boards via API into their own UI — nobody embeds.
+
+**Revisit triggers (any one reopens this):** (1) DAT/Truckstop API access denied or priced out;
+(2) measured driver-adoption loss attributable to no App Store presence; (3) a native-only
+roadmap feature (background geolocation, CarPlay). If triggered: Capacitor scoped to the DRIVER
+app only, third-party sites still opened via the system browser tier, ~4–8 weeks + ~2–5 hrs/wk
+forever.
+
+Same research batch resolved the Toolbox verification question: wsdot.com, tripcheck.com,
+weather.gov and eia.gov permit framing (header scans 2026-08-07) and are now in-frame rows;
+eCFR/FMCSA/Idaho 511/iftach.org block framing and stay sheets. The stronger play for every
+frameable row is its official API (WSDOT Traveler, api.weather.gov, Idaho 511 v2, eCFR API) —
+queued as integration work in docs/research/2026-08/prompt-5-embeddability.md.
