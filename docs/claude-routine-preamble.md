@@ -23,7 +23,8 @@ automation runs `npm run agent:branches` and merges unpicked work into
 
 Check it isn't already fixed on an unmerged branch — with many parallel routines the same
 defect gets found and fixed repeatedly (the wall-clock compliance flake collected FOUR
-independent fixes, 2026-08-01→04; the `NotificationsBell` race collected three in July):
+independent fixes, 2026-08-01→04; the `NotificationsBell` race was independently re-fixed
+seven-plus times in July — see `c3c5b48b`):
 
 ```bash
 npm run agent:branches                                 # branches with unpicked work

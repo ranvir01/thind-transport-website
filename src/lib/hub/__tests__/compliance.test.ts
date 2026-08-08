@@ -20,8 +20,15 @@ const CARRIER = "11111111-1111-1111-1111-111111111111"
  * Only `Date` is faked (timers stay real, so nothing async stalls); the
  * pinned-clock regression guard below moves the clock itself, and the global
  * beforeEach re-pins it for the next test.
+ *
+ * The pin is NOT a quiet date — no date is. At 2026-06-15 the last completed
+ * quarter (2026Q1, due 2026-04-30) is past due, so the always-appended IFTA
+ * wall entry is RED unless stubbed filed — mockRowsBySql's default does that;
+ * a test passing its own `iftaReports` must stub the current quarter filed
+ * too, or expect the red. The 2025 Form 2290 period (due 2025-08-31) is also
+ * past due for any test seeding trucks without a manual 2290 item.
  */
-const PINNED_CLOCK = new Date(Date.UTC(2026, 5, 15, 12)) // mid-quarter; no IFTA filing window open
+const PINNED_CLOCK = new Date(Date.UTC(2026, 5, 15, 12)) // 2026-06-15T12:00Z
 
 beforeAll(() => {
   vi.useFakeTimers({ toFake: ["Date"] })
@@ -411,12 +418,20 @@ describe("complianceEntries IFTA filing", () => {
   })
 
   it("includes auto-tracked IFTA quarterly filing entries from ifta reports", async () => {
+    // The started-but-never-filed 2025Q3 row is what exercises the report loop:
+    // only the current quarter is seeded unconditionally, so the 2025Q3 entry
+    // exists only if the report rows put it there. (The previous fixture,
+    // "2026Q2 draft", is in the FUTURE under the pinned clock — the loop
+    // ignores it and the test passed vacuously off the ambient entry.)
     mockRowsBySql({
-      iftaReports: [{ quarter: "2026Q2", status: "draft" }],
+      iftaReports: [
+        { quarter: lastCompletedQuarterKey(new Date()), status: "filed" },
+        { quarter: "2025Q3", status: "draft" },
+      ],
     })
     const entries = await complianceEntries(CARRIER)
     const ifta = entries.filter((e) => e.kind.startsWith("IFTA filing"))
-    expect(ifta.length).toBeGreaterThan(0)
+    expect(ifta.some((e) => e.kind === "IFTA filing 2025Q3")).toBe(true)
     expect(ifta.some((e) => e.entity === "company" && e.href.includes("/hub/compliance/ifta"))).toBe(true)
   })
 

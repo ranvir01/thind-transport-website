@@ -151,8 +151,8 @@ after a money-correctness fix sat two days under-threshold with the fleet quiet 
 builds and tests that exact SHA on a GitHub runner (`npm ci --ignore-scripts`, `npm rebuild bcrypt
 sharp`, `npm run build`, `npx vitest run`, `typecheck-gate`, `license-audit`) and, only if green,
 publishes it as a stamped `--no-ff` merge (see the drain method above — never a fast-forward ref
-push). A race with a live agent is rejected by GitHub, never clobbered. Diverged history or drift ≤3
-means the loop is alive, so the job stands down and leaves it to the agents. It can also be triggered
+push). A race with a live agent is rejected by GitHub, never clobbered. Diverged history is always
+left to the agents; drift ≤3 stands down only while nothing pending is older than the age limit. It can also be triggered
 from the Actions tab (`workflow_dispatch`) when a stale production alias needs healing now. Each
 drain also lists any pending non-merge commit missing the §4 `Backlog:` trailer as a workflow
 warning — warn-only by design; hygiene never blocks a drain that keeps `main` deployable.

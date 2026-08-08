@@ -304,7 +304,10 @@ first — otherwise they drift again.
 > still open — it is P1.6 in the consolidated work order. The evidence below is kept as the record
 > of what was found; the workflow inventory it cites is out of date (`drain-fallback.yml` and
 > `main-drain-fallback.yml` were deleted 2026-07-28, leaving `drain-integrator.yml`,
-> `e2e-suite.yml`, and `prune-merged-branches.yml`).
+> `e2e-suite.yml`, and `prune-merged-branches.yml`), and so is the drain gate it describes: since
+> 2026-08-07 `drain-integrator.yml` fires on drift >3 **or** oldest pending commit ≥12h, so the
+> "verification only runs above the threshold / small changes reach production unverified" claims
+> below are historical — unverified exposure is now bounded at ~12h.
 
 `ls scripts/e2e-*.mjs` → **52 files** (the brief said 49; 52 is the measured count). They need a running
 Next server plus a live Postgres.

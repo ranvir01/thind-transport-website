@@ -108,8 +108,13 @@ jobs:
           # loop dies without it. The 2026-08-07 meta-governor audit found half a
           # week's commits shipped without one. Warn-only by design: a missing
           # trailer must never block a drain that keeps main deployable.
+          # %b (body only) so a subject like "Backlog: prune stale items" can't
+          # satisfy the check. NOT %(trailers:...): the repo convention is a
+          # "Backlog:" line followed by "- item" list lines, which git's trailer
+          # parser does not recognize — trailers:key=Backlog is empty on every
+          # compliant commit in history.
           MISSING=$(git log origin/main..origin/"$INTEGRATOR" --no-merges --format='%H' | while read -r c; do
-            git log -1 --format=%B "$c" | grep -q '^Backlog:' || git log -1 --format='%h %s' "$c"
+            git log -1 --format=%b "$c" | grep -q '^Backlog:' || git log -1 --format='%h %s' "$c"
           done)
           if [ -n "$MISSING" ]; then
             echo "::warning::Draining commits with no Backlog: trailer (AGENTS.md §4):"
