@@ -4,8 +4,9 @@ Cursor's subscription ended 2026-07-18; its three automations (integrator :00,
 prod smoke :30, deploy :59) are replaced by **Claude Code routines** (claude.ai
 → Code → Routines, simple Hourly/Daily triggers) plus the platform-independent
 **GitHub Action** `.github/workflows/drain-integrator.yml`, which drains
-`main` at :17/:47 whenever the integrator is >3 ahead and green — so the drain
-survives even every routine being down. (Fixed 2026-07-19: this drains via a
+`main` at :17/:47 whenever the integrator is green and either >3 ahead or has
+a pending commit ≥12h old (age gate added 2026-08-07) — so the drain survives
+even every routine being down. (Fixed 2026-07-19: this drains via a
 `--no-ff` merge commit, not a fast-forward push — see below.)
 
 Each routine fires a fresh session: prompts are standalone. House rules live in
