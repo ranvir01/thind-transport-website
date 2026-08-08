@@ -90,6 +90,8 @@ describe("no bare Math.round(x * 100) money rounding outside the house conventio
     "../integrations/truckstop.ts",
     "../parser.ts",
     "../fuel.ts",
+    "../pay-rules.ts",
+    "../../../components/hub/PayRulesPanel.tsx",
   ]
   for (const file of files) {
     it(`${file} rounds money cents through roundHalfAwayFromZero, not a bare Math.round`, () => {
@@ -116,7 +118,11 @@ describe("no bare Math.round(x * 100) money rounding outside the house conventio
       join(__dirname, "../../../components/hub/PayRulesPanel.tsx"), "utf8"
     )
     expect(source).not.toMatch(/Math\.round\([^)]*\*\s*100\)/)
-    expect(source).toMatch(/dollarsToCents\(dollars\)/)
-    expect(source).toMatch(/dollarsToCents\(percent\)/)
+    // toCents/toBps route through dollarsToCents but check Number.isFinite
+    // first — a non-finite input passes through as NaN for the server to
+    // reject and report, rather than dollarsToCents silently coercing it to $0.
+    expect(source).toMatch(/const toCents = \(dollars: string\) => \{/)
+    expect(source).toMatch(/const toBps = \(percent: string\) => \{/)
+    expect(source).toMatch(/Number\.isFinite\(n\) \? dollarsToCents\(n\) : NaN/)
   })
 })

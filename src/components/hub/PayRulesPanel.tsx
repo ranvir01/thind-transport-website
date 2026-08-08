@@ -120,9 +120,17 @@ export function PayRulesPanel({ drivers, canWrite }: { drivers: PayRulesDriver[]
     )
   }
 
-  const toCents = (dollars: string) => dollarsToCents(dollars)
-  // Percent → basis points is the same ×100 decimal quantization as dollars → cents.
-  const toBps = (percent: string) => dollarsToCents(percent)
+  // NaN must pass through unconverted: the server rejects it and reports the
+  // dropped rule, where dollarsToCents alone would coerce a typo to $0.
+  // (Percent → basis points is the same ×100 decimal quantization.)
+  const toCents = (dollars: string) => {
+    const n = Number(dollars)
+    return Number.isFinite(n) ? dollarsToCents(n) : NaN
+  }
+  const toBps = (percent: string) => {
+    const n = Number(percent)
+    return Number.isFinite(n) ? dollarsToCents(n) : NaN
+  }
 
   const save = (driverId: string) => {
     const payloadRules = rules.map((r) => {

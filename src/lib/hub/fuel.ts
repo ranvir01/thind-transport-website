@@ -1,6 +1,5 @@
 import { query } from "./db"
-import { roundHalfAwayFromZero } from "./rounding"
-import type { FuelTransaction } from "./types"
+import { dollarsToCents, type FuelTransaction } from "./types"
 
 export async function listFuelTransactions(
   carrierId: string,
@@ -234,7 +233,7 @@ export async function eiaDieselPriceCents(): Promise<number | null> {
     if (!res.ok) return null
     const data = await res.json()
     const value = data?.response?.data?.[0]?.value
-    return value ? roundHalfAwayFromZero(Number(value) * 100) : null
+    return value && Number.isFinite(Number(value)) ? dollarsToCents(Number(value)) : null
   } catch {
     return null
   }
