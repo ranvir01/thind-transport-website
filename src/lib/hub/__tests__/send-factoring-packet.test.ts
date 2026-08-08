@@ -15,7 +15,7 @@ const { queryMock, queryOneMock, sendMail, listDocumentsMock, readStoredFileByte
   queryOneMock: vi.fn(async (_sql: string, _params?: unknown[]) => null as unknown),
   sendMail: vi.fn(async (_message: Record<string, unknown>) => undefined),
   listDocumentsMock: vi.fn(async () => [] as unknown[]),
-  readStoredFileBytesMock: vi.fn(async () => null as Buffer | null),
+  readStoredFileBytesMock: vi.fn(async (_url: string) => null as Buffer | null),
 }))
 
 vi.mock("../db", () => ({ query: queryMock, queryOne: queryOneMock, hubDb: vi.fn() }))

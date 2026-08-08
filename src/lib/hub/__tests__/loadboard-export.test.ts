@@ -27,6 +27,8 @@ function makeLoad(overrides: Partial<Load> = {}): Load {
     settlement_id: null,
     notes: null,
     acknowledged_at: null,
+    delivered_at: null,
+    pod_received_at: null,
     created_at: "2026-06-01T00:00:00.000Z",
     ...overrides,
   }

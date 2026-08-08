@@ -1,5 +1,4 @@
 import { describe, it, expect } from "vitest"
-// @ts-expect-error — plain .mjs fleet script, no type declarations
 import { isBenignResourceUrl, BENIGN_RESOURCE_URL } from "../../../../scripts/e2e-console-filter.mjs"
 
 /**

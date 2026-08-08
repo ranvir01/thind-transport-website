@@ -78,7 +78,7 @@ describe("eiaDieselPriceCents", () => {
   })
 
   it("includes the API key and series facet in the request URL", async () => {
-    const fetchMock = vi.fn(async () => ({
+    const fetchMock = vi.fn(async (_url: string) => ({
       ok: true,
       json: async () => ({ response: { data: [{ value: "4" }] } }),
     }))

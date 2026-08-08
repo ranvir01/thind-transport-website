@@ -29,7 +29,7 @@ vi.mock("@/lib/hub/credentials", async () => {
 })
 
 const providerSpecMock = vi.fn()
-const allowedFieldsMock = vi.fn(() => ["clientId", "clientSecret", "refreshToken", "realmId", "apiKey", "apiSecret"])
+const allowedFieldsMock = vi.fn((..._args: unknown[]) => ["clientId", "clientSecret", "refreshToken", "realmId", "apiKey", "apiSecret"])
 
 vi.mock("@/lib/hub/integrations/registry", () => ({
   providerSpec: (...args: unknown[]) => providerSpecMock(...args),

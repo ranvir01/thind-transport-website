@@ -156,7 +156,7 @@ describe("runTelematicsSync provider selection", () => {
     queryMock.mockReset()
     queryMock.mockResolvedValue([])
     getCredentialsMock.mockReset()
-    getCredentialsMock.mockImplementation(async (_carrierId: string, provider: string) => {
+    getCredentialsMock.mockImplementation(async (_carrierId: string, provider: string): Promise<Record<string, string> | null> => {
       if (provider === "terminal") return { apiKey: "term-key", connectionToken: "term-token" }
       if (provider === "truckercloud") return { clientId: "tc-id", clientSecret: "tc-secret" }
       return null

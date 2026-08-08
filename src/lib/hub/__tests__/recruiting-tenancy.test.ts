@@ -91,7 +91,7 @@ describe("convertApplicantToDriver", () => {
     queryOneMock.mockResolvedValueOnce({ status: "signed" } as never)
 
     const client = {
-      query: vi.fn(async (text: string) => {
+      query: vi.fn(async (text: string, _params?: unknown[]) => {
         const sql = String(text)
         if (sql.includes("BEGIN") || sql.includes("COMMIT") || sql.includes("ROLLBACK")) return { rows: [] }
         if (sql.includes("INSERT INTO hub.drivers")) return { rows: [{ id: DRIVER }] }

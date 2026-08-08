@@ -144,7 +144,6 @@ suite("portal + tenant isolation (query layer)", () => {
     await db.query(`DELETE FROM hub.customers WHERE name LIKE $1`, [`IsoTest%${suffix}`])
     await db.query(`DELETE FROM hub.carriers WHERE id = $1`, [tenant2])
     await db.hubDb().end()
-    // @ts-expect-error reset the cached pool for any later suites
     global.__hubPool = undefined
   })
 

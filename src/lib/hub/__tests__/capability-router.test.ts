@@ -24,7 +24,7 @@ describe("chain invariants", () => {
   })
 
   it("every provider a chain names exists in the registry", () => {
-    const known = new Set(PROVIDERS.map((p) => p.id))
+    const known = new Set<string>(PROVIDERS.map((p) => p.id))
     for (const id of chainProviderIds()) {
       expect(known.has(id), `chain references unregistered provider "${id}"`).toBe(true)
     }

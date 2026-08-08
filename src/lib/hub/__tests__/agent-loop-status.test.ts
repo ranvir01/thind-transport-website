@@ -1,5 +1,4 @@
 import { describe, it, expect } from "vitest"
-// @ts-expect-error — plain .mjs fleet script, no type declarations
 import { parsePendingCount, assessLoop } from "../../../../scripts/agent-loop-status.mjs"
 
 /**

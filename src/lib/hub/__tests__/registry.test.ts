@@ -30,7 +30,7 @@ void _providerIdsMatchCredentialsUnion
 
 describe("registry ↔ event-processors drift", () => {
   it("every EVENT_PROCESSORS key is a real provider id", () => {
-    const ids = new Set(PROVIDERS.map((p) => p.id))
+    const ids = new Set<string>(PROVIDERS.map((p) => p.id))
     for (const key of Object.keys(EVENT_PROCESSORS)) {
       expect(ids.has(key), key).toBe(true)
     }

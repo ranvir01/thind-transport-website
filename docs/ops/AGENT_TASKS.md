@@ -420,10 +420,11 @@ BLOCKED:  The nine decisions in §4; GitHub write access for any of these to ope
 
 From the reconciled 6-patch handoff (FINALIZE.md, session 017JBR7WV8…). Each stands alone:
 
-1. **Ratchet the test-file tsc errors toward 0** — `node scripts/typecheck-gate.mjs --list`
-   names the files; lower the baseline in the gate as they're fixed so it can't regress.
-   *2026-08-08: 35 → 23 (offline-queue, collect-backlog ×2, dat, dat/truckstop-freight-action
-   fixed; baseline ratcheted).*
+1. ~~**Ratchet the test-file tsc errors toward 0**~~ *Done 2026-08-08: 35 → 23 → **0**;
+   `npx tsc --noEmit` is clean repo-wide. Baseline locked at 0 (the gate now enforces total
+   cleanliness; kept because drain-integrator.yml and fleet docs invoke it). En route it
+   exposed that PROVIDERS' `: readonly ProviderSpec[]` annotation had disarmed
+   registry.test.ts's ProviderId ↔ IntegrationProvider canary — now `as const satisfies`.*
 2. **Settings-UI toggle for `nav.small_carrier_mode`** — the flag resolves per-carrier already;
    an owner-facing switch in /hub/settings writes the carrier row (flags.ts + migration 026).
 3. ~~**`npm run embed:verify` in a network-enabled CI job**~~ *Done 2026-08-08: e2e job step

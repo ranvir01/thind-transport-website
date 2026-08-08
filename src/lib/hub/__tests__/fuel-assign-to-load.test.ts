@@ -59,7 +59,7 @@ describe("assignFuelToLoad", () => {
     // Both the receipt and the load are checked against the SAME carrier
     // param ($1) — a receipt can never be pointed at another tenant's load.
     expect(params).toEqual([CARRIER, TXN, LOAD])
-    expect(params[0]).not.toBe(OTHER_CARRIER)
+    expect(params?.[0]).not.toBe(OTHER_CARRIER)
     expect(count).toBe(1)
   })
 

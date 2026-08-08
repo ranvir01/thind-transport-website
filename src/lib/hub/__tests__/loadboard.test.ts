@@ -27,6 +27,8 @@ describe("exportLoadsCsv", () => {
     settlement_id: null,
     notes: 'Note with "quotes"',
     acknowledged_at: null,
+    delivered_at: null,
+    pod_received_at: null,
     created_at: "2026-01-01",
     customer_name: "Acme Broker",
     driver_name: "John Smith",

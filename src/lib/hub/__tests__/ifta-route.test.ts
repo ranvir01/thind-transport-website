@@ -31,7 +31,7 @@ const getCarrierMock = vi.mocked(getCarrier)
 const getCarrierSettingsMock = vi.mocked(getCarrierSettings)
 const withIftaWarningsCoverPageMock = vi.mocked(withIftaWarningsCoverPage)
 
-const user = { id: "u1", carrierId: "carrier-1", role: "owner" as const }
+const user = { id: "u1", name: "Owner", email: "owner@example.com", carrierId: "carrier-1", role: "owner" as const }
 
 function call(quarter: string, file: string) {
   return GET(new Request("http://test/api/hub/ifta"), {

@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest"
 import { readFileSync } from "node:fs"
 import path from "node:path"
-// @ts-expect-error — plain .mjs script module without type declarations
 import {
   expandCronField,
   firingsPerMatchingDay,

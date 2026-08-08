@@ -10,7 +10,6 @@ import { mkdtemp, readFile, rm } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import path from "node:path"
 import { PDFDocument } from "pdf-lib"
-// @ts-expect-error — plain .mjs script module without type declarations
 import {
   PACKET_PLACEHOLDER_FILES,
   placeholderPdfBytes,

@@ -95,7 +95,7 @@ describe("prospect-bound actions — accountant is blocked after the fetch", () 
     ["generateDraftAction", () => generateDraftAction("p1"), () => vi.mocked(saveDraft).mock.calls.length],
     ["saveDraftAction", () => saveDraftAction("p1", "s", "b"), () => vi.mocked(saveDraft).mock.calls.length],
     ["approveAndSendAction", () => approveAndSendAction("p1"), () => vi.mocked(sendOutreachEmail).mock.calls.length],
-    ["setProspectStatusAction", () => setProspectStatusAction("p1", "contacted"), () => vi.mocked(setStatus).mock.calls.length],
+    ["setProspectStatusAction", () => setProspectStatusAction("p1", "replied"), () => vi.mocked(setStatus).mock.calls.length],
   ]
 
   for (const [name, run, mutationCalls] of runs) {

@@ -20,8 +20,12 @@
  *      recorded baseline below. Fewer is fine (and prints a nudge to lower the
  *      baseline). More fails. The count can never grow back.
  *
- * When the test count reaches zero, delete this script and gate on plain
- * `npm run typecheck`.
+ * The count reached zero on 2026-08-08. The script stays anyway — deleting it
+ * was the original plan, but drain-integrator.yml and the fleet docs all
+ * invoke `node scripts/typecheck-gate.mjs`, and at baseline 0 this is exactly
+ * "tsc must be clean" with better output: the app/test split names which gate
+ * broke, and the parser (unit-tested) survives route-group paths that a naive
+ * grep drops. If debt ever reappears, the ratchet messaging is already here.
  *
  * USAGE
  *   node scripts/typecheck-gate.mjs            # both gates
@@ -54,8 +58,14 @@ import { pathToFileURL } from "node:url"
  * top of that. The drop to 36 → 35 came from the large 2026-07-29 branch-
  * absorb cycle: merging ~150 pending claude/* branches incidentally picked
  * up a handful of small test-file type fixes bundled with their real changes.
+ * The drop to 0 (2026-08-08) cleared the last 23: six stale @ts-expect-error
+ * directives, the familiar zero-arg-mock shapes, two Load fixtures missing
+ * delivered_at/pod_received_at — and one that was never debt at all:
+ * registry.test.ts's ProviderId ↔ IntegrationProvider equality canary was
+ * firing because PROVIDERS' `: readonly ProviderSpec[]` annotation widened
+ * every id to `string` (now `as const satisfies`, so the canary has teeth).
  */
-const TEST_ERROR_BASELINE = 23
+const TEST_ERROR_BASELINE = 0
 
 const isTestFile = (file) =>
   file.includes("__tests__/") || file.endsWith(".test.ts") || file.endsWith(".test.tsx")

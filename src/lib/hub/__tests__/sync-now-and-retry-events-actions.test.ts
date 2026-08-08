@@ -81,7 +81,7 @@ describe("syncIntegrationNowAction", () => {
     ["mailbox", pollDocsMailboxMock, { connected: true, filed: 3, unmatched: 1 }, /3 documents filed, 1 unmatched/],
     ["mailbox", pollDocsMailboxMock, { connected: true, filed: 0, unmatched: 0 }, /^0 documents filed$/],
   ] as const)("dispatches %s to its sync loop and logs a successful sync", async (provider, mockFn, resolved, summaryPattern) => {
-    mockFn.mockResolvedValue(resolved)
+    mockFn.mockResolvedValue(resolved as never)
     const result = await syncIntegrationNowAction(provider)
     expect(result.ok).toBe(true)
     expect(result.summary).toMatch(summaryPattern)

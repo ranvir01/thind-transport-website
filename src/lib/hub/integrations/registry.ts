@@ -43,7 +43,10 @@ export interface ProviderSpec {
   cronJob?: string
 }
 
-export const PROVIDERS: readonly ProviderSpec[] = [
+// `as const satisfies` (not a `: readonly ProviderSpec[]` annotation): the
+// annotation widened every id to `string`, which silently disarmed
+// registry.test.ts's ProviderId ↔ IntegrationProvider equality canary.
+export const PROVIDERS = [
   {
     id: "terminal", label: "Terminal (TruckX ELD)", domain: "telematics",
     blurb: "Live truck positions + HOS clocks through the Terminal aggregator — open an account at withterminal.com and authorize TruckX.",
@@ -222,7 +225,7 @@ export const PROVIDERS: readonly ProviderSpec[] = [
     fields: [{ key: "apiKey", label: "Stedi API key", secret: true }],
     fallback: "Email/portal tender handling + manual load entry", sync: "webhook", status: "stub",
   },
-] as const
+] as const satisfies readonly ProviderSpec[]
 
 export type RegisteredProvider = (typeof PROVIDERS)[number]["id"]
 

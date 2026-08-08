@@ -54,7 +54,7 @@ import { pollDocsMailbox } from "@/lib/hub/mailbox"
 import { sendOwnerDigest } from "@/lib/hub/digest"
 import { getCarrierSettings } from "@/lib/hub/settings"
 import { runMigrations } from "@/lib/hub/migrate"
-import { PROVIDERS } from "@/lib/hub/integrations/registry"
+import { PROVIDERS, type ProviderSpec } from "@/lib/hub/integrations/registry"
 import { GET } from "@/app/api/hub/cron/[job]/route"
 
 const queryMock = vi.mocked(query)
@@ -216,18 +216,21 @@ describe("GET /api/hub/cron/[job] — suspended tenants are excluded", () => {
 })
 
 describe("registry ↔ vercel.json ↔ route drift", () => {
+  // Widened back to the interface: on the literal union only the entries
+  // that declare cronJob carry the property at all.
+  const specs: readonly ProviderSpec[] = PROVIDERS
   const vercelCronPaths: string[] = JSON.parse(
     fs.readFileSync(path.join(process.cwd(), "vercel.json"), "utf8")
   ).crons.map((c: { path: string }) => c.path)
 
   it("every registry cronJob is scheduled in vercel.json", () => {
-    for (const p of PROVIDERS.filter((p) => p.cronJob)) {
+    for (const p of specs.filter((p) => p.cronJob)) {
       expect(vercelCronPaths, `${p.id} → ${p.cronJob}`).toContain(`/api/hub/cron/${p.cronJob}`)
     }
   })
 
   it("every registry cronJob dispatches in the route (no silent 404 syncs)", async () => {
-    const cronJobs = [...new Set(PROVIDERS.flatMap((p) => (p.cronJob ? [p.cronJob] : [])))]
+    const cronJobs = [...new Set(specs.flatMap((p) => (p.cronJob ? [p.cronJob] : [])))]
     for (const job of cronJobs) {
       const res = await call(job)
       expect(res.status, job).toBe(200)

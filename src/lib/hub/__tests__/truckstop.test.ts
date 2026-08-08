@@ -229,7 +229,7 @@ describe("truckstopSource (SyncSource<TruckstopLoadPosting> + search contract)",
   it("POSTs a SOAP envelope with the SOAPAction header and credentials in the body", async () => {
     hasCredentialsMock.mockResolvedValue(true)
     getCredentialsMock.mockResolvedValue(CREDS)
-    const fetchMock = vi.fn(async () => ({ ok: true, text: async () => loadSearchResponseXml("") }))
+    const fetchMock = vi.fn(async (_url: string, _init: RequestInit) => ({ ok: true, text: async () => loadSearchResponseXml("") }))
     vi.stubGlobal("fetch", fetchMock)
     const source = truckstopSource(CARRIER)
     await source.search({ originState: "WA", destState: "ID", equipment: "Reefer" })
