@@ -106,11 +106,31 @@ function runOne(script) {
   })
 }
 
+/**
+ * Chrome occasionally dies AT LAUNCH on ubuntu-latest runners (register-dump
+ * stack trace in ~1s, before any check runs) — seen 2026-08-08 on
+ * e2e-notifications-smoke, which then passed unchanged locally. That's a
+ * runner crash, not a test result, so it earns exactly one retry. Assertion
+ * failures never match this signature and are never retried.
+ */
+function isBrowserLaunchCrash(logPath) {
+  try {
+    const text = readFileSync(logPath, "utf-8")
+    return /Failed to launch the browser process|pptr\.dev\/troubleshooting/i.test(text)
+  } catch {
+    return false
+  }
+}
+
 const started = Date.now()
 const results = []
 for (const script of scripts) {
   const t0 = Date.now()
-  const r = await runOne(script)
+  let r = await runOne(script)
+  if (!r.ok && isBrowserLaunchCrash(r.logPath)) {
+    console.log(`   ↻ ${r.name}: browser crashed at launch — retrying once`)
+    r = await runOne(script)
+  }
   const secs = Math.round((Date.now() - t0) / 1000)
   console.log(`${r.ok ? "✅ PASS" : "❌ FAIL"} ${r.name} (${secs}s${r.why ? `, ${r.why}` : ""})`)
   if (!r.ok) {

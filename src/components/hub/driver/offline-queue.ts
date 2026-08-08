@@ -176,6 +176,7 @@ export async function replayQueue(
   let failed = 0
   for (const intent of intents) {
     if (intent.schemaVersion !== undefined && intent.schemaVersion !== QUEUE_SCHEMA_VERSION) {
+      console.warn(`offline replay: dropped ${intent.kind} queued under schema v${intent.schemaVersion} (app is v${QUEUE_SCHEMA_VERSION})`)
       await removeIntent(intent.id)
       failed++
       continue
@@ -186,12 +187,18 @@ export async function replayQueue(
       // retrying forever would be worse than telling the office.
       await removeIntent(intent.id)
       if (result.ok) sent++
-      else failed++
+      else {
+        // Every drop says WHY: a drained queue with no server write is
+        // otherwise undiagnosable from a CI artifact or a driver's phone.
+        console.warn(`offline replay: server rejected ${intent.kind} — dropped.`, result.error ?? "(no error text)")
+        failed++
+      }
     } catch (err) {
       if (isOfflineError(err)) break // still offline — try again on the next signal
       // A non-network throw (bad payload, server exception) isn't going to
       // fix itself on retry — drop it so it can't jam every intent queued
       // after it, since replay always starts from the oldest.
+      console.warn(`offline replay: ${intent.kind} threw a non-network error — dropped.`, err)
       await removeIntent(intent.id)
       failed++
     }

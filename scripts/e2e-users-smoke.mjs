@@ -53,7 +53,9 @@ async function loginRefused(page, email, password) {
   await page.type("#email", email)
   await page.type("#password", password)
   await page.click('button[type="submit"]')
-  await waitForText(page, "Invalid email or password")
+  // The hub login's refusal copy became "Invalid email, password — or a
+  // missing 2FA code" when 2FA landed; pin the stable prefix, not the tail.
+  await waitForText(page, "Invalid email, password")
   return page.evaluate(() => location.pathname)
 }
 
