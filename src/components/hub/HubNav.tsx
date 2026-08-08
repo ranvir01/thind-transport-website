@@ -7,12 +7,7 @@ import { LogOut } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { clearShellCache } from "@/lib/hub/pwa"
 import { PRODUCT } from "@/lib/hub/product"
-import {
-  HUB_PRIMARY_SECTIONS,
-  HUB_UTILITY_LINKS,
-  activePrimarySection,
-  isNavActive,
-} from "@/lib/hub/navigation"
+import { hubPrimarySections, hubUtilityLinks, isNavActive } from "@/lib/hub/navigation"
 import { NotificationsBell } from "@/components/hub/NotificationsBell"
 import { OfficeOfflineBanner } from "@/components/hub/OfficeOfflineBanner"
 import { HubAppearanceMenu } from "@/components/hub/HubAppearanceMenu"
@@ -22,16 +17,20 @@ import { LoadOffMark } from "@/components/hub/LoadOffMark"
 
 export function HubShell({
   user,
+  smallCarrier,
   children,
 }: {
   user: { name: string; role: string; carrierName?: string }
+  /** Resolved per tenant by the office layout (nav.small_carrier_mode flag). */
+  smallCarrier: boolean
   children: React.ReactNode
 }) {
   const pathname = usePathname()
-  const section = activePrimarySection(pathname)
+  const sections = hubPrimarySections(smallCarrier)
+  const section = sections.find((s) => s.match(pathname)) ?? sections[0]!
   const isOwner = user.role === "owner"
-  const utility = HUB_UTILITY_LINKS.filter((l) => !l.ownerOnly || isOwner)
-  const mobilePrimaries = HUB_PRIMARY_SECTIONS.slice(0, 5)
+  const utility = hubUtilityLinks(smallCarrier).filter((l) => !l.ownerOnly || isOwner)
+  const mobilePrimaries = sections.slice(0, 5)
 
   return (
     <div className="hauldesk-shell min-h-screen bg-bg text-fg">
@@ -47,7 +46,7 @@ export function HubShell({
         </Link>
 
         <nav className="hidden lg:flex items-center gap-0.5 ml-4 min-w-0 flex-1 overflow-x-auto" data-tour="hub-primary-nav">
-          {HUB_PRIMARY_SECTIONS.map((primary) => {
+          {sections.map((primary) => {
             const active = primary.id === section.id
             const first = primary.sub[0]?.href ?? "/hub"
             return (
@@ -66,7 +65,7 @@ export function HubShell({
         </nav>
 
         <div className="ml-auto flex items-center gap-2 shrink-0" data-tour="hub-command-palette">
-          <CommandPalette isOwner={isOwner} />
+          <CommandPalette isOwner={isOwner} smallCarrier={smallCarrier} />
           <HubAppearanceMenu />
           <NotificationsBell direction="down" />
           <div className="hidden sm:block text-right max-w-[120px]">

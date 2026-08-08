@@ -6,12 +6,12 @@ import { Search } from "lucide-react"
 import { allHubRoutes } from "@/lib/hub/navigation"
 import { cn } from "@/lib/utils"
 
-export function CommandPalette({ isOwner }: { isOwner: boolean }) {
+export function CommandPalette({ isOwner, smallCarrier }: { isOwner: boolean; smallCarrier: boolean }) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState("")
 
-  const routes = useMemo(() => allHubRoutes(isOwner), [isOwner])
+  const routes = useMemo(() => allHubRoutes(isOwner, smallCarrier), [isOwner, smallCarrier])
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
