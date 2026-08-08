@@ -84,7 +84,6 @@ async function main() {
 
   console.log("3. Book the load")
   await clickByText(page, "Book load")
-<<<<<<< HEAD
   // Booking geocodes both stops server-side (geocodeStops -> geocodeCityState),
   // sequentially, against the live rate-limited Nominatim API on a cache miss
   // (src/lib/hub/geocode.ts) — a never-before-booked city pair costs real
@@ -92,11 +91,6 @@ async function main() {
   // budget is tuned for cached/local work and flakes on a cold geocode_cache;
   // give this specific wait room for two live lookups plus rate-limit spacing.
   await waitForText(page, "Load booked", 30000)
-=======
-  // 20s to match sibling post-mutation waits (settlements/safety/driver-pod smokes) —
-  // the 15s default flaked once mid-batch behind a full sequential smoke-suite run.
-  await waitForText(page, "Load booked", 20000)
->>>>>>> origin/claude/lane-tests-qa-sweep
   await page.waitForFunction(
     // createLoadAction awaits geocodeStops() (Nominatim, no hard timeout yet —
     // see backlog) before redirecting; under concurrent headless-browser load
