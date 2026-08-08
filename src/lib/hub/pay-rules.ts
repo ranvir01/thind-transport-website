@@ -7,6 +7,7 @@
  * Pure module: integer cents in, integer cents out, no DB, penny-exact tests.
  */
 import { roundHalfAwayFromZero } from "./rounding"
+import { dollarsToCents } from "./types"
 
 // ---- Rule & deduction shapes (stored as JSONB in hub.pay_rules) ----
 
@@ -333,7 +334,7 @@ export function legacyConfigToRuleSet(config: {
     return {
       name: "Owner-operator percentage",
       rules: [
-        { type: "percent_linehaul", basisPoints: Math.round(config.payRate * 10000) },
+        { type: "percent_linehaul", basisPoints: roundHalfAwayFromZero(Number((config.payRate * 10000).toPrecision(15))) },
         { type: "fsc_passthrough", basisPoints: 10000 },
         { type: "referral_bonus" },
       ],
@@ -345,7 +346,7 @@ export function legacyConfigToRuleSet(config: {
     rules: [
       {
         type: "per_mile",
-        rateCentsPerMile: Math.round(config.payRate * 100),
+        rateCentsPerMile: dollarsToCents(config.payRate),
         loadedOnly: config.payLoadedMilesOnly,
       },
       { type: "referral_bonus" },

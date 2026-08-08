@@ -304,7 +304,10 @@ first — otherwise they drift again.
 > still open — it is P1.6 in the consolidated work order. The evidence below is kept as the record
 > of what was found; the workflow inventory it cites is out of date (`drain-fallback.yml` and
 > `main-drain-fallback.yml` were deleted 2026-07-28, leaving `drain-integrator.yml`,
-> `e2e-suite.yml`, and `prune-merged-branches.yml`).
+> `e2e-suite.yml`, and `prune-merged-branches.yml`), and so is the drain gate it describes: since
+> 2026-08-07 `drain-integrator.yml` fires on drift >3 **or** oldest pending commit ≥12h, so the
+> "verification only runs above the threshold / small changes reach production unverified" claims
+> below are historical — unverified exposure is now bounded at ~12h.
 
 `ls scripts/e2e-*.mjs` → **52 files** (the brief said 49; 52 is the measured count). They need a running
 Next server plus a live Postgres.
@@ -454,3 +457,12 @@ IMPACT:   ~6.5h of tests guards $11.8k/week of payroll, $2.9k of unchaseable AR,
 NEXT:     Write src/lib/hub/__tests__/draft-settlements-loads.test.ts — assert the settlement_id stamp at settlements.ts:217 (20 min)
 BLOCKED:  Three things from Ranvir: (1) production DB read access to confirm real deadhead %, AR book size, real avg settlement net (the seed has n=2), and whether ATS Transport exists as a carrier row — the seed has "Cascade Demo Lines" as tenant 2; (2) the intended scorecard_bonus tier table (0 of the 11 seeded hub.pay_rules rows contain a scorecard_bonus rule); (3) a decision on whether detention may ever be revised downward after a timestamp correction (detention.ts:135-136 currently forbids it)
 ```
+
+## Carried over from closed PR #19 (2026-08-04)
+
+The PR's code was unmergeable (pre-rework offline-queue base), but its concern survives review:
+`submitDvirAction` / `fileDriverIncidentReport` show no server-side idempotency key, so an
+offline-queue replay after a lost ACK could double-file a DVIR or incident. Add a
+client-generated `clientRequestId` + `ON CONFLICT DO NOTHING` unique index, and a test that
+replays the queue twice asserting one row. (~45 min, medium value — the queue's connectivity-error
+handling makes the window small but real.)

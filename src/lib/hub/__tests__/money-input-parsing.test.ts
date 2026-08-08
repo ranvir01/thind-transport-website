@@ -57,6 +57,20 @@ describe("dollarsToCents replaces Math.round(parseMoney(x) * 100)", () => {
     expect(dollarsToCents("-12.345")).toBe(-1235)
     expect(dollarsToCents("12.345")).toBe(1235)
   })
+
+  it("keeps the half-cent tie when binary-float multiply drifts LOW (2026-08 money-math audit)", () => {
+    // 1.005 * 100 = 100.49999999999999 in IEEE-754, so a bare float multiply
+    // loses the tie entirely and rounds DOWN — the earlier half-cent tests only
+    // covered inputs whose drift happened to land high (12.345 * 100 →
+    // 1234.5000000000002). The decimal the user typed is 100.5 cents, and the
+    // house convention rounds it away from zero.
+    expect(dollarsToCents("1.005")).toBe(101)
+    expect(dollarsToCents("-1.005")).toBe(-101)
+    expect(dollarsToCents(1.005)).toBe(101)
+    // Common trucking forms of the same tie: 61.5 cpm and a half-cent total.
+    expect(dollarsToCents("0.615")).toBe(62)
+    expect(dollarsToCents("2.675")).toBe(268)
+  })
 })
 
 describe("no server action inlines Math.round(parseMoney(...) * 100)", () => {
@@ -76,6 +90,8 @@ describe("no bare Math.round(x * 100) money rounding outside the house conventio
     "../integrations/truckstop.ts",
     "../parser.ts",
     "../fuel.ts",
+    "../pay-rules.ts",
+    "../../../components/hub/PayRulesPanel.tsx",
   ]
   for (const file of files) {
     it(`${file} rounds money cents through roundHalfAwayFromZero, not a bare Math.round`, () => {
@@ -93,5 +109,20 @@ describe("no bare Math.round(x * 100) money rounding outside the house conventio
     )
     expect(source).not.toMatch(/Math\.round\(\s*input\.payPerMile\s*\*\s*100\s*\)/)
     expect(source).toMatch(/dollarsToCents\(input\.payPerMile\)/)
+  })
+
+  it("PayRulesPanel.tsx converts dollars and percents through dollarsToCents, not a bare Math.round", () => {
+    // afterStops legitimately uses Math.round(Number(x)) (integer count, no *100),
+    // so only the *100 money/bps conversions are guarded here.
+    const source = readFileSync(
+      join(__dirname, "../../../components/hub/PayRulesPanel.tsx"), "utf8"
+    )
+    expect(source).not.toMatch(/Math\.round\([^)]*\*\s*100\)/)
+    // toCents/toBps route through dollarsToCents but check Number.isFinite
+    // first — a non-finite input passes through as NaN for the server to
+    // reject and report, rather than dollarsToCents silently coercing it to $0.
+    expect(source).toMatch(/const toCents = \(dollars: string\) => \{/)
+    expect(source).toMatch(/const toBps = \(percent: string\) => \{/)
+    expect(source).toMatch(/Number\.isFinite\(n\) \? dollarsToCents\(n\) : NaN/)
   })
 })

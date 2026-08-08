@@ -568,6 +568,9 @@ describe("pushInvoiceToQbo", () => {
       sparse: true,
       Line: [{ Amount: 1500, DetailType: "SalesItemLineDetail", SalesItemLineDetail: { ItemRef: { value: "77" } } }],
     })
+    // A number, not a string: QBO's Line[].Amount is typed Decimal in
+    // Intuit's schema (contrast factor.ts's string `amount`, see factor.test.ts).
+    expect(typeof body.Line[0].Amount).toBe("number")
     expect(queryMock).toHaveBeenCalledWith(expect.stringContaining("UPDATE hub.invoices SET sent_log"), expect.any(Array))
     expect(logAuditMock).toHaveBeenCalledWith(expect.objectContaining({ action: "qbo-push-update" }))
   })
@@ -607,6 +610,9 @@ describe("pushInvoiceToQbo", () => {
       CustomerRef: { value: "501" },
       Line: [{ Amount: 1250.5, DetailType: "SalesItemLineDetail", SalesItemLineDetail: { ItemRef: { value: "77" } } }],
     })
+    // A number, not a string: QBO's Line[].Amount is typed Decimal in
+    // Intuit's schema (contrast factor.ts's string `amount`, see factor.test.ts).
+    expect(typeof body.Line[0].Amount).toBe("number")
     expect(queryMock).toHaveBeenCalledWith(expect.stringContaining("UPDATE hub.invoices SET sent_log"), expect.any(Array))
     expect(logAuditMock).toHaveBeenCalledWith(expect.objectContaining({ action: "qbo-push" }))
   })

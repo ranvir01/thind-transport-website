@@ -101,6 +101,7 @@ const ALL_UTILITY_LINKS: HubNavLink[] = [
   { href: "/hub/messages", label: "Messages" },
   { href: "/hub/tasks", label: "Tasks" },
   { href: "/hub/guide", label: "Setup guide" },
+  { href: "/hub/toolbox", label: "Toolbox" },
   { href: "/hub/help", label: "Help" },
   { href: "/hub/setup", label: "Smart Setup" },
   { href: "/hub/import", label: "Import" },
@@ -111,11 +112,18 @@ const ALL_UTILITY_LINKS: HubNavLink[] = [
 ]
 
 /**
- * Small-carrier mode (default ON) trims the nav + ⌘K down to what a single
- * small trucking company actually runs. The hidden screens are for larger
- * operations (dedicated planners, recruiting pipelines, facility crowd-sourcing);
- * their ROUTES are untouched and still reachable by URL — set
- * SMALL_CARRIER_MODE=false to surface everything again.
+ * Small-carrier mode trims the nav + ⌘K down to what a single small trucking
+ * company actually runs. The hidden screens are for larger operations
+ * (dedicated planners, recruiting pipelines, facility crowd-sourcing); their
+ * ROUTES are untouched and still reachable by URL.
+ *
+ * PER-TENANT since 2026-08: this used to be a global env var, which trimmed
+ * every tenant's nav at once — the moment carrier #2 wanted the full surface
+ * it was a bug (found by the customization-engine research). The env var
+ * survives only as the code DEFAULT behind the `nav.small_carrier_mode` flag
+ * (lib/hub/flags.ts); the office layout resolves the flag per carrier and
+ * passes it down. The module-scope exports below keep the env-default shape
+ * so non-layout consumers and tests behave exactly as before.
  */
 export const SMALL_CARRIER_MODE = process.env.SMALL_CARRIER_MODE !== "false"
 
@@ -131,16 +139,25 @@ const HIDDEN_IN_SMALL_CARRIER = new Set<string>([
   "/hub/setup",
 ])
 
-function shownInNav(href: string): boolean {
-  return !SMALL_CARRIER_MODE || !HIDDEN_IN_SMALL_CARRIER.has(href)
+function shownInNav(href: string, smallCarrier: boolean): boolean {
+  return !smallCarrier || !HIDDEN_IN_SMALL_CARRIER.has(href)
 }
 
-/** Primary sections with hidden sub-links dropped; empty sections removed. */
-export const HUB_PRIMARY_SECTIONS: HubPrimarySection[] = ALL_PRIMARY_SECTIONS
-  .map((section) => ({ ...section, sub: section.sub.filter((link) => shownInNav(link.href)) }))
-  .filter((section) => section.sub.length > 0)
+/** Primary sections for a given mode: hidden sub-links dropped; empty sections removed. */
+export function hubPrimarySections(smallCarrier: boolean): HubPrimarySection[] {
+  return ALL_PRIMARY_SECTIONS
+    .map((section) => ({ ...section, sub: section.sub.filter((link) => shownInNav(link.href, smallCarrier)) }))
+    .filter((section) => section.sub.length > 0)
+}
 
-export const HUB_UTILITY_LINKS: HubNavLink[] = ALL_UTILITY_LINKS.filter((link) => shownInNav(link.href))
+export function hubUtilityLinks(smallCarrier: boolean): HubNavLink[] {
+  return ALL_UTILITY_LINKS.filter((link) => shownInNav(link.href, smallCarrier))
+}
+
+/** Env-default snapshots — non-layout consumers that predate per-tenant flags. */
+export const HUB_PRIMARY_SECTIONS: HubPrimarySection[] = hubPrimarySections(SMALL_CARRIER_MODE)
+
+export const HUB_UTILITY_LINKS: HubNavLink[] = hubUtilityLinks(SMALL_CARRIER_MODE)
 
 export function activePrimarySection(pathname: string): HubPrimarySection {
   return HUB_PRIMARY_SECTIONS.find((s) => s.match(pathname)) ?? HUB_PRIMARY_SECTIONS[0]
@@ -155,14 +172,17 @@ export function isNavActive(pathname: string, href: string): boolean {
 }
 
 /** Flat list for ⌘K palette navigation. */
-export function allHubRoutes(isOwner: boolean): { href: string; label: string; group: string }[] {
+export function allHubRoutes(
+  isOwner: boolean,
+  smallCarrier: boolean = SMALL_CARRIER_MODE
+): { href: string; label: string; group: string }[] {
   const rows: { href: string; label: string; group: string }[] = []
-  for (const section of HUB_PRIMARY_SECTIONS) {
+  for (const section of hubPrimarySections(smallCarrier)) {
     for (const link of section.sub) {
       rows.push({ href: link.href, label: link.label, group: section.label })
     }
   }
-  for (const link of HUB_UTILITY_LINKS) {
+  for (const link of hubUtilityLinks(smallCarrier)) {
     if (link.ownerOnly && !isOwner) continue
     rows.push({ href: link.href, label: link.label, group: "Utility" })
   }

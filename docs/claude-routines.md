@@ -4,8 +4,9 @@ Cursor's subscription ended 2026-07-18; its three automations (integrator :00,
 prod smoke :30, deploy :59) are replaced by **Claude Code routines** (claude.ai
 → Code → Routines, simple Hourly/Daily triggers) plus the platform-independent
 **GitHub Action** `.github/workflows/drain-integrator.yml`, which drains
-`main` at :17/:47 whenever the integrator is >3 ahead and green — so the drain
-survives even every routine being down. (Fixed 2026-07-19: this drains via a
+`main` at :17/:47 whenever the integrator is green and either >3 ahead or has
+a pending commit ≥12h old (age gate added 2026-08-07) — so the drain survives
+even every routine being down. (Fixed 2026-07-19: this drains via a
 `--no-ff` merge commit, not a fast-forward push — see below.)
 
 Each routine fires a fresh session: prompts are standalone. House rules live in
@@ -1849,3 +1850,49 @@ Backlog:
   IFTA due-date roll / holiday handling (owner design call); Rust sidecar `tiny_http`
   connection-timeout/thread-cap gap (owner decision); meta-governor prune pass overdue (234+ pending
   `claude/*` branches per the last count).
+
+## Nightly end-to-end regression on main@3b08d64 — 2026-08-07 ~23:30 UTC (nightly routine run)
+
+Charter (scheduled nightly routine): stand up the rig from scratch and drive the full business
+cycle live — owner billing, settlements, driver PWA at 390px — treating any failed step as a
+production-critical bug. **Result: zero defects, no code fix this cycle.**
+
+Fresh rig: Postgres 16 started, `hauldesk` role + database created, `npm install`,
+`npm run db:migrate` clean through `024_share_link_expiry.sql`, `seed:demo`, `npm run build`
+(zero TS errors), `npm run start`. Full cycle driven twice — once hand-rolled in Playwright
+(11/11 checks green on a fresh seed), then re-verified with the repo's own Puppeteer smokes:
+
+- **Owner billing**: THD-1009 (pod_received) → "Invoice this load" → THD-INV-1005; PDF link
+  served a real `%PDF-1.7`; recorded the prefilled $3,360.00 payment; invoice `paid` in UI and DB.
+- **Settlements**: "Draft this week's settlements" → Harpreet draft; approve → statement `%PDF`
+  served; the $200 EFS advance flipped `outstanding → applied` with the correct
+  `applied_settlement_id`.
+- **Driver PWA @390px**: dispatch confirm on THD-1003 (`acknowledged_at` set); POD via the load
+  card's SEND PAPERWORK input landed a `hub.documents` row (`kind=pod`, `entity_type=load`).
+
+**Learning for future nightly firings — do not hand-roll this drive again.** The repo's existing
+smokes cover the routine's full cycle more thoroughly than a scratch script (partial payments with
+odd cents, cent-exact deduction totals, O/O percentage settlements, doc-request satisfaction,
+read-only role checks):
+
+```
+node scripts/e2e-invoices-smoke.mjs      # invoice → %PDF → partial+final payment → paid
+node scripts/e2e-settlements-smoke.mjs   # draft → approve → statement %PDF → advance applied
+node scripts/e2e-driver-pod-smoke.mjs    # 390px ack + SEND PAPERWORK POD → hub.documents
+```
+
+All three ran green tonight on the same rig (they reseed themselves), plus `npx vitest run`
+(287 files / 2605 tests) green. Two harness pitfalls met while hand-rolling, both already solved
+inside `scripts/e2e-lib.mjs` conventions — recorded here so nobody re-learns them: the driver home
+never fires the browser `load` event (long-lived connections; wait on `networkidle2`/URL commit,
+never `load`), and a pinned DocRequestCard's hidden file input precedes the load card's in the DOM
+(pick the SEND PAPERWORK input by container text, never `input[type=file]` first-match).
+
+Backlog:
+- Owner: update the nightly-regression routine's stored prompt (scheduler-side, not in-repo) to
+  invoke the three smokes above directly instead of instructing a hand-rolled Playwright drive —
+  saves each firing ~30 minutes of rediscovery.
+- Carried, unchanged: production Gmail SMTP app-password rotation (`compliance-scan` BadCredentials);
+  npm audit's high-severity advisories (owner-approval-gated semver-major bump); IFTA due-date
+  roll / holiday handling (owner design call); Rust sidecar `tiny_http` connection-timeout/thread-cap
+  gap (owner decision); meta-governor prune pass overdue (234+ pending `claude/*` branches).

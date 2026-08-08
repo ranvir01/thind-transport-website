@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest"
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest"
 
 vi.mock("../db", () => ({ query: vi.fn(async () => []), queryOne: vi.fn(async () => null) }))
 
@@ -10,6 +10,37 @@ const queryMock = vi.mocked(query)
 const queryOneMock = vi.mocked(queryOne)
 
 const CARRIER = "11111111-1111-1111-1111-111111111111"
+
+/**
+ * The whole file runs under a pinned clock. When the 2026Q2 IFTA deadline
+ * passed, this suite went red on the calendar alone and FOUR separate sessions
+ * independently patched individual assertions (2026-08-01→04); every one of
+ * their backlogs asked for the same class fix — freeze the clock once so no
+ * current or future case in this file can depend on the day the suite runs.
+ * Only `Date` is faked (timers stay real, so nothing async stalls); the
+ * pinned-clock regression guard below moves the clock itself, and the global
+ * beforeEach re-pins it for the next test.
+ *
+ * The pin is NOT a quiet date — no date is. At 2026-06-15 the last completed
+ * quarter (2026Q1, due 2026-04-30) is past due, so the always-appended IFTA
+ * wall entry is RED unless stubbed filed — mockRowsBySql's default does that;
+ * a test passing its own `iftaReports` must stub the current quarter filed
+ * too, or expect the red. The 2025 Form 2290 period (due 2025-08-31) is also
+ * past due for any test seeding trucks without a manual 2290 item.
+ */
+const PINNED_CLOCK = new Date(Date.UTC(2026, 5, 15, 12)) // 2026-06-15T12:00Z
+
+beforeAll(() => {
+  vi.useFakeTimers({ toFake: ["Date"] })
+})
+
+beforeEach(() => {
+  vi.setSystemTime(PINNED_CLOCK)
+})
+
+afterAll(() => {
+  vi.useRealTimers()
+})
 
 /**
  * complianceEntries ALWAYS appends one IFTA-filing entry for the last completed
@@ -90,8 +121,14 @@ describe("complianceEntries color thresholds (colorFor)", () => {
     // to the driver entries; otherwise the test flips red every post-deadline
     // window and blocks every push in that window.
     const entries = await complianceEntries(CARRIER)
+    // Scope to the driver's own entries: derived company items (IFTA filing,
+    // Form 2290) are calendar-driven and legitimately go red/green depending on
+    // today's date — an unfiled quarter past its due date is red — so asserting
+    // over the whole wall made this test fail on any day after a filing deadline
+    // (e.g. Aug 1, once the Q2 IFTA return is late). The driver's missing CDL /
+    // medical-card dates are what "missing due date → amber" is actually about.
     const driverEntries = entries.filter((e) => e.entity === "driver")
-    expect(driverEntries.length).toBeGreaterThan(0)
+    expect(driverEntries).toHaveLength(2)
     expect(driverEntries.every((e) => e.color === "amber")).toBe(true)
   })
 
@@ -147,39 +184,36 @@ describe("complianceEntries color thresholds (colorFor)", () => {
     const seen: string[][] = []
     const iftaColours: string[] = []
     for (const clock of CLOCKS) {
-      vi.useFakeTimers()
-      try {
-        vi.setSystemTime(clock)
-        const now = clock.getTime()
-        mockRowsBySql({
-          drivers: [
-            {
-              id: "d1",
-              name: "Driver A",
-              cdl_expiry: new Date(now - 86400000).toISOString().slice(0, 10),
-              medical_card_expiry: new Date(now + 10 * 86400000).toISOString().slice(0, 10),
-            },
-            {
-              id: "d2",
-              name: "Driver B",
-              cdl_expiry: new Date(now + 90 * 86400000).toISOString().slice(0, 10),
-              medical_card_expiry: null,
-            },
-          ],
-        })
-        const entries = await complianceEntries(CARRIER)
-        seen.push(
-          entries
-            .filter((e) => e.entity === "driver")
-            .map((e) => `${e.entityId}/${e.kind}=${e.color}`)
-            .sort()
-        )
-        iftaColours.push(
-          entries.filter((e) => e.kind.startsWith("IFTA filing")).map((e) => e.color).join(",")
-        )
-      } finally {
-        vi.useRealTimers()
-      }
+      // The file-wide fake clock is already installed — just move it. The
+      // global beforeEach re-pins PINNED_CLOCK before the next test.
+      vi.setSystemTime(clock)
+      const now = clock.getTime()
+      mockRowsBySql({
+        drivers: [
+          {
+            id: "d1",
+            name: "Driver A",
+            cdl_expiry: new Date(now - 86400000).toISOString().slice(0, 10),
+            medical_card_expiry: new Date(now + 10 * 86400000).toISOString().slice(0, 10),
+          },
+          {
+            id: "d2",
+            name: "Driver B",
+            cdl_expiry: new Date(now + 90 * 86400000).toISOString().slice(0, 10),
+            medical_card_expiry: null,
+          },
+        ],
+      })
+      const entries = await complianceEntries(CARRIER)
+      seen.push(
+        entries
+          .filter((e) => e.entity === "driver")
+          .map((e) => `${e.entityId}/${e.kind}=${e.color}`)
+          .sort()
+      )
+      iftaColours.push(
+        entries.filter((e) => e.kind.startsWith("IFTA filing")).map((e) => e.color).join(",")
+      )
     }
     expect(seen[0]).toEqual([
       "d1/CDL=red",
@@ -384,12 +418,20 @@ describe("complianceEntries IFTA filing", () => {
   })
 
   it("includes auto-tracked IFTA quarterly filing entries from ifta reports", async () => {
+    // The started-but-never-filed 2025Q3 row is what exercises the report loop:
+    // only the current quarter is seeded unconditionally, so the 2025Q3 entry
+    // exists only if the report rows put it there. (The previous fixture,
+    // "2026Q2 draft", is in the FUTURE under the pinned clock — the loop
+    // ignores it and the test passed vacuously off the ambient entry.)
     mockRowsBySql({
-      iftaReports: [{ quarter: "2026Q2", status: "draft" }],
+      iftaReports: [
+        { quarter: lastCompletedQuarterKey(new Date()), status: "filed" },
+        { quarter: "2025Q3", status: "draft" },
+      ],
     })
     const entries = await complianceEntries(CARRIER)
     const ifta = entries.filter((e) => e.kind.startsWith("IFTA filing"))
-    expect(ifta.length).toBeGreaterThan(0)
+    expect(ifta.some((e) => e.kind === "IFTA filing 2025Q3")).toBe(true)
     expect(ifta.some((e) => e.entity === "company" && e.href.includes("/hub/compliance/ifta"))).toBe(true)
   })
 

@@ -407,6 +407,13 @@ export async function pushInvoiceToQbo(
         sparse: true,
         Line: [
           {
+            // Divided, not formatted: unlike factor.ts's `amount` (a string
+            // field, where a float caused real funding discrepancies —
+            // implementation brief §0.5), QBO's `Line[].Amount` is typed
+            // Decimal in Intuit's schema and must be a JSON number. Sending
+            // `centsToDecimalString` here would put a quoted string on a
+            // numeric field instead of fixing anything. Locked in by the
+            // `typeof … "number"` assertions in qbo.test.ts.
             Amount: invoice.amount_cents / 100,
             DetailType: "SalesItemLineDetail",
             SalesItemLineDetail: { ItemRef: { value: itemId } },
@@ -445,6 +452,9 @@ export async function pushInvoiceToQbo(
       CustomerRef: { value: customerId },
       Line: [
         {
+          // See the sparse-update branch above: QBO's Line[].Amount is a
+          // numeric Decimal field, not a string one, so this intentionally
+          // diverges from factor.ts's string-amount doctrine.
           Amount: invoice.amount_cents / 100,
           DetailType: "SalesItemLineDetail",
           SalesItemLineDetail: { ItemRef: { value: itemId } },

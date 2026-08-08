@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { Loader2, Plus, RotateCcw, Trash2, Wallet } from "lucide-react"
 import { savePayRulesAction, resetPayRulesAction } from "@/app/hub/_actions/pay-rules"
+import { dollarsToCents } from "@/lib/hub/types"
 import { btnPrimaryCls, btnSecondaryCls, fieldCls, labelCls, Panel, Pill } from "@/components/hub/ui"
 
 /** Mirrors PayRule, but every amount is the string the input holds. */
@@ -119,8 +120,17 @@ export function PayRulesPanel({ drivers, canWrite }: { drivers: PayRulesDriver[]
     )
   }
 
-  const toCents = (dollars: string) => Math.round(Number(dollars) * 100)
-  const toBps = (percent: string) => Math.round(Number(percent) * 100)
+  // NaN must pass through unconverted: the server rejects it and reports the
+  // dropped rule, where dollarsToCents alone would coerce a typo to $0.
+  // (Percent → basis points is the same ×100 decimal quantization.)
+  const toCents = (dollars: string) => {
+    const n = Number(dollars)
+    return Number.isFinite(n) ? dollarsToCents(n) : NaN
+  }
+  const toBps = (percent: string) => {
+    const n = Number(percent)
+    return Number.isFinite(n) ? dollarsToCents(n) : NaN
+  }
 
   const save = (driverId: string) => {
     const payloadRules = rules.map((r) => {

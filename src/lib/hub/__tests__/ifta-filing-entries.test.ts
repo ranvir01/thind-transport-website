@@ -79,4 +79,19 @@ describe("iftaFilingWallEntries", () => {
     expect(color("2026-02-03T07:59:00Z")).toBe("amber")
     expect(color("2026-02-03T08:00:00Z")).toBe("red")
   })
+
+  // Mirrors the load-bearing pattern compliance.test.ts needed for its own
+  // 2025Q3 fixture: a report several quarters behind "now" (not just the one
+  // directly prior) must still surface, red, on the wall — and the assertion
+  // pins the exact entry set so a broken `quarter <= currentQuarter` filter
+  // (e.g. one that only looks one quarter back) fails this test instead of
+  // passing vacuously off the ever-present current-quarter entry.
+  it("still flags a started-but-never-filed quarter from several quarters back, not just the most recent gap", () => {
+    const entries = iftaFilingWallEntries(
+      [{ quarter: "2025Q3", status: "draft" }],
+      INSIDE_WINDOW // current completed quarter is 2026Q2 — three quarters later
+    )
+    expect(entries.map((e) => e.kind)).toEqual(["IFTA filing 2025Q3", "IFTA filing 2026Q2"])
+    expect(entries[0].color).toBe("red")
+  })
 })

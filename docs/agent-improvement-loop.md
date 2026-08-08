@@ -144,14 +144,18 @@ draining by hand (Routine 1, §5) must use the same stamped merge form.
 
 **Platform-independent backstop (one workflow, not three):**
 [`drain-integrator`](../.github/workflows/drain-integrator.yml) runs at **:17 and :47 UTC**, staggered
-against the Cursor agent slots (:00/:30/:59). When the integrator is more than
-`AGENT_CATCHUP_THRESHOLD` (3) commits ahead of `main` and `main` is still an ancestor of it, the job
+against the Cursor agent slots (:00/:30/:59). When the integrator is ahead of `main` with `main`
+still an ancestor of it, AND either drift exceeds `AGENT_CATCHUP_THRESHOLD` (3) commits **or** the
+oldest pending commit is older than `MAX_PENDING_AGE_HOURS` (12) — the age gate was added 2026-08-07
+after a money-correctness fix sat two days under-threshold with the fleet quiet — the job
 builds and tests that exact SHA on a GitHub runner (`npm ci --ignore-scripts`, `npm rebuild bcrypt
 sharp`, `npm run build`, `npx vitest run`, `typecheck-gate`, `license-audit`) and, only if green,
 publishes it as a stamped `--no-ff` merge (see the drain method above — never a fast-forward ref
-push). A race with a live agent is rejected by GitHub, never clobbered. Diverged history or drift ≤3
-means the loop is alive, so the job stands down and leaves it to the agents. It can also be triggered
-from the Actions tab (`workflow_dispatch`) when a stale production alias needs healing now.
+push). A race with a live agent is rejected by GitHub, never clobbered. Diverged history is always
+left to the agents; drift ≤3 stands down only while nothing pending is older than the age limit. It can also be triggered
+from the Actions tab (`workflow_dispatch`) when a stale production alias needs healing now. Each
+drain also lists any pending non-merge commit missing the §4 `Backlog:` trailer as a workflow
+warning — warn-only by design; hygiene never blocks a drain that keeps `main` deployable.
 
 The last step pushes the drain's merge commit back onto the integrator branch. That commit exists only
 on `main`, so without it every successful drain leaves `main` no longer an ancestor of the integrator
@@ -264,6 +268,14 @@ can use session branches and must end commits with `Backlog:`.
 | `claude/lane-analytics` | `(office)/reports/**`, new dashboard routes, kpi libs | M10 owner dashboard: revenue, CPM, deadhead %, lane leaderboard, AR trend |
 | `claude/lane-roadmap` | new feature files within any ONE existing territory per run | NEW capability from `docs/hauldesk-gap-report`-style gaps: pick the top unbuilt feature a 15-truck carrier needs, build it complete with tests + E2E |
 | `claude/lane-marketing` | the PUBLIC site only — `src/app/**` except `hub/**`, `track/**`, `api/hub/**`; `src/components/**` except `hub/**`; `src/lib/constants.ts` is READ-ONLY here | see mission below — work the measured gaps in order, never by feel |
+
+> **Fleet status (meta-governor audit, 2026-08-07):** zero `claude/lane-*` branches pushed in the
+> trailing week — commit velocity fell 387 → 12 week-over-week and all live work arrived on session
+> branches. The lane table above remains the **territory map** (session branches inherit its
+> boundaries), but each lane's schedule is currently dormant. Whether a lane routine is restarted or
+> formally retired is an OWNER decision — record it here when made; agents never change the fleet
+> configuration themselves. Until then the age-gated drain (§3a) keeps under-threshold work flowing
+> to production.
 
 **Why `lane-marketing` exists.** Every other lane points at LoadOff. For months the fleet improved
 `/hub` while `thindtransport.com` — the surface that actually recruits drivers and wins shippers —
