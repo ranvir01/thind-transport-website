@@ -7,7 +7,7 @@
  * validated rather than silently replaced (a tax export for the wrong year is
  * worse than a visible error).
  */
-import { beforeEach, describe, expect, it, vi } from "vitest"
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest"
 
 vi.mock("../db", () => ({ query: vi.fn(async () => []), queryOne: vi.fn(async () => null), hubDb: vi.fn() }))
 vi.mock("../audit", () => ({ logAudit: vi.fn(async () => undefined) }))
@@ -22,8 +22,29 @@ const queryMock = vi.mocked(query)
 const getHubUserMock = vi.mocked(getHubUser)
 
 const CARRIER = "11111111-1111-1111-1111-111111111111"
-const THIS_YEAR = new Date().getFullYear()
+
+/**
+ * Pinned mid-year, midday UTC (compliance.test.ts pattern): THIS_YEAR was
+ * captured from the real clock at module load while the route computed its
+ * default year at call time, so a run straddling New Year midnight asserted
+ * the wrong filing year. Mid-June also keeps the local calendar year equal to
+ * the UTC one for any timezone offset.
+ */
+const PINNED_CLOCK = new Date(Date.UTC(2026, 5, 15, 12)) // 2026-06-15T12:00Z
+const THIS_YEAR = PINNED_CLOCK.getUTCFullYear()
 const LAST_YEAR = THIS_YEAR - 1
+
+beforeAll(() => {
+  vi.useFakeTimers({ toFake: ["Date"] })
+})
+
+beforeEach(() => {
+  vi.setSystemTime(PINNED_CLOCK)
+})
+
+afterAll(() => {
+  vi.useRealTimers()
+})
 
 const PAYEE_ROW = { payee: "Dana Ruiz", nonemployee_compensation: 84210.55 }
 

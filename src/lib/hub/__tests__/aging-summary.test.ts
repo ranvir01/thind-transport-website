@@ -5,7 +5,7 @@
  * bucket or open_cents means the owner chases money already collected, or
  * misses money that's actually open.
  */
-import { beforeEach, describe, expect, it, vi } from "vitest"
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest"
 
 vi.mock("../db", () => ({
   query: vi.fn(async () => []),
@@ -18,8 +18,23 @@ import { getAgingSummary } from "../invoices"
 const queryMock = vi.mocked(query)
 const CARRIER = "11111111-1111-1111-1111-111111111111"
 
+/**
+ * Pinned (compliance.test.ts pattern): daysAgo(0) sits exactly on the
+ * current/1-30 bucket edge, so a run straddling UTC midnight between fixture
+ * creation and agingBucket's own `new Date()` shifted it a bucket.
+ */
+const PINNED_CLOCK = new Date(Date.UTC(2026, 5, 15, 12)) // 2026-06-15T12:00Z
+
+beforeAll(() => {
+  vi.useFakeTimers({ toFake: ["Date"] })
+})
+
+afterAll(() => {
+  vi.useRealTimers()
+})
+
 const daysAgo = (n: number) => {
-  const d = new Date()
+  const d = new Date(PINNED_CLOCK)
   d.setUTCDate(d.getUTCDate() - n)
   return d.toISOString().slice(0, 10)
 }
@@ -33,7 +48,10 @@ function invoiceRow(overrides: Record<string, unknown>) {
   }
 }
 
-beforeEach(() => queryMock.mockClear())
+beforeEach(() => {
+  vi.setSystemTime(PINNED_CLOCK)
+  queryMock.mockClear()
+})
 
 describe("getAgingSummary", () => {
   it("scopes and excludes paid invoices in the query itself", async () => {

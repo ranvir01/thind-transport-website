@@ -7,7 +7,7 @@
  * crossing a rung is enough, sent_log records which rungs have been climbed,
  * and one invoice never gets more than one reminder per run.
  */
-import { beforeEach, describe, expect, it, vi } from "vitest"
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest"
 
 const { queryMock, sendMail } = vi.hoisted(() => ({
   queryMock: vi.fn(async (_sql: string, _params?: unknown[]) => [] as unknown[]),
@@ -46,6 +46,22 @@ import { nextReminderRung, runOverdueReminders } from "../invoices"
 
 const CARRIER = "carrier-1"
 
+/**
+ * Pinned (compliance.test.ts pattern): fixtures like invoiceRow(9) sit exactly
+ * one day below a reminder rung, so a run straddling UTC midnight between
+ * fixture creation and runOverdueReminders' own `new Date()` climbed a rung
+ * the test asserted quiet.
+ */
+const PINNED_CLOCK = new Date(Date.UTC(2026, 5, 15, 12)) // 2026-06-15T12:00Z
+
+beforeAll(() => {
+  vi.useFakeTimers({ toFake: ["Date"] })
+})
+
+afterAll(() => {
+  vi.useRealTimers()
+})
+
 type SentEntry = { to: string; at: string; kind: string }
 
 /** An open invoice N days past due, with whatever has already been mailed on it. */
@@ -54,7 +70,7 @@ function invoiceRow(
   sentLog: SentEntry[] = [],
   overrides: Record<string, unknown> = {}
 ) {
-  const due = new Date(Date.now() - daysPast * 86_400_000).toISOString().slice(0, 10)
+  const due = new Date(PINNED_CLOCK.getTime() - daysPast * 86_400_000).toISOString().slice(0, 10)
   return {
     id: `inv-${daysPast}`, carrier_id: CARRIER, number: `THD-INV-${1000 + daysPast}`,
     customer_id: "cust-1", load_id: "load-1", load_reference: "THD-1042",
@@ -80,6 +96,7 @@ function loggedKinds(): string[] {
 }
 
 beforeEach(() => {
+  vi.setSystemTime(PINNED_CLOCK)
   queryMock.mockClear()
   sendMail.mockClear()
   queryMock.mockImplementation(async () => [])
@@ -176,6 +193,22 @@ describe("runOverdueReminders", () => {
 
     expect(result.sent).toBe(0)
     expect(sendMail).not.toHaveBeenCalled()
+  })
+
+  it("climbs the rung one calendar day later — the edge the pinned clock guards", async () => {
+    // 9 days past due with rung 3 climbed is quiet…
+    withInvoices([invoiceRow(9, [reminder(3)])])
+    expect((await runOverdueReminders(CARRIER)).sent).toBe(0)
+
+    // …but the same invoice crosses rung 10 at the next UTC midnight. Before
+    // the file-wide pin, a live-clock run straddling midnight between fixture
+    // creation and the runner's `new Date()` produced exactly this flip.
+    vi.setSystemTime(new Date(PINNED_CLOCK.getTime() + 86_400_000))
+    queryMock.mockClear()
+    sendMail.mockClear()
+    withInvoices([invoiceRow(9, [reminder(3)])]) // due date re-derived from the pin, so now 10 days past
+    expect((await runOverdueReminders(CARRIER)).sent).toBe(1)
+    expect(loggedKinds()).toEqual(["reminder-10d"])
   })
 
   it("still skips factored and disputed invoices however old they get", async () => {
