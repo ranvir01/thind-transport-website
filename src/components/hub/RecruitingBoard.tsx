@@ -255,9 +255,9 @@ export function AddApplicantForm() {
       />
       <button
         type="submit" disabled={pending || !form.firstName.trim() || !form.lastName.trim()}
-        className="flex min-h-[48px] items-center gap-1.5 rounded-control bg-accent px-4 font-display text-sm font-bold uppercase tracking-[0.06em] text-accent-fg hover:bg-accent-hover disabled:opacity-50"
+        className="flex min-h-[48px] items-center gap-1.5 rounded-control bg-accent px-4 text-sm font-semibold text-accent-fg hover:bg-accent-hover disabled:opacity-50"
       >
-        {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />} Add
+        {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />} Add applicant
       </button>
     </form>
   )
@@ -282,7 +282,7 @@ export function ImportApplicantsButton() {
         })
       }
       disabled={pending}
-      className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-accent px-5 font-display text-sm font-bold uppercase tracking-[0.08em] text-accent-fg hover:bg-accent-hover disabled:opacity-60"
+      className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-accent px-5 text-sm font-semibold text-accent-fg hover:bg-accent-hover disabled:opacity-60"
     >
       {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
       Pull website applications

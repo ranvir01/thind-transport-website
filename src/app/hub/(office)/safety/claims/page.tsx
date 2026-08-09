@@ -65,7 +65,7 @@ export default async function ClaimsPage() {
         />
       ) : (
         <>
-          <h2 className="font-display text-lg font-bold uppercase tracking-wide text-fg mb-3">
+          <h2 className="text-base font-semibold text-fg mb-3">
             Being worked ({active.length})
           </h2>
           {active.length === 0 ? (
@@ -82,7 +82,7 @@ export default async function ClaimsPage() {
 
           {resolved.length > 0 ? (
             <>
-              <h2 className="font-display text-lg font-bold uppercase tracking-wide text-fg mb-3">
+              <h2 className="text-base font-semibold text-fg mb-3">
                 Resolved ({resolved.length})
               </h2>
               <Panel className="divide-y divide-border">

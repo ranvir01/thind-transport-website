@@ -308,7 +308,7 @@ function SettlementLiabilityPanel({ liability }: { liability: SettlementLiabilit
   return (
     <div className="px-4 py-4">
       <span className="text-label text-fg-3 uppercase">Owed to drivers</span>
-      <p className="mt-1 font-display text-2xl font-extrabold text-fg">{fmtCents(liability.totalCents)}</p>
+      <p className="mt-1 text-2xl font-semibold text-fg">{fmtCents(liability.totalCents)}</p>
       <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-fg-3">
         <span className="inline-flex items-center gap-1.5">
           <span className="h-2 w-2 rounded-sm bg-warn" /> Approved, unpaid {fmtCents(liability.approvedCents)}
@@ -337,11 +337,11 @@ function FuelSpendPanel({ fuel }: { fuel: FuelSpendSummary }) {
       <div className="grid grid-cols-2 gap-3 px-4 pt-4">
         <div>
           <span className="text-label text-fg-3 uppercase">Month to date</span>
-          <p className="mt-1 font-display text-2xl font-extrabold text-fg">{fmtCents(fuel.monthCents)}</p>
+          <p className="mt-1 text-2xl font-semibold text-fg">{fmtCents(fuel.monthCents)}</p>
         </div>
         <div>
           <span className="text-label text-fg-3 uppercase">Week to date</span>
-          <p className="mt-1 font-display text-2xl font-extrabold text-fg">{fmtCents(fuel.weekCents)}</p>
+          <p className="mt-1 text-2xl font-semibold text-fg">{fmtCents(fuel.weekCents)}</p>
         </div>
       </div>
 
@@ -386,15 +386,15 @@ function ComplianceRedFlagsPanel({ entries }: { entries: ComplianceEntry[] }) {
       <div className="grid grid-cols-3 gap-3 px-4 pt-4">
         <div>
           <span className="text-label text-bad uppercase">Expired</span>
-          <p className="mt-1 font-display text-2xl font-extrabold text-bad">{summary.red}</p>
+          <p className="mt-1 text-2xl font-semibold text-bad">{summary.red}</p>
         </div>
         <div>
           <span className="text-label text-warn uppercase">Due 30d</span>
-          <p className="mt-1 font-display text-2xl font-extrabold text-warn">{summary.amber}</p>
+          <p className="mt-1 text-2xl font-semibold text-warn">{summary.amber}</p>
         </div>
         <div>
           <span className="text-label text-ok uppercase">Clean</span>
-          <p className="mt-1 font-display text-2xl font-extrabold text-ok">{summary.green}</p>
+          <p className="mt-1 text-2xl font-semibold text-ok">{summary.green}</p>
         </div>
       </div>
 

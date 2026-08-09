@@ -184,7 +184,7 @@ export function PlannerGrid({
             >
               {/* Truck label */}
               <div className="border-r border-border px-3 py-2">
-                <p className="font-display text-sm font-extrabold text-fg">
+                <p className="text-sm font-semibold text-fg">
                   #{truck.unit_number}
                   {truck.status === "shop" ? (
                     <span className="ml-2 rounded-full border border-bad-soft bg-bad-soft px-2 py-0.5 text-[10px] font-bold uppercase text-bad">

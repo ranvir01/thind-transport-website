@@ -196,7 +196,7 @@ export default async function SafetyPage() {
       </Panel>
 
       {/* All incidents */}
-      <h2 className="font-display text-lg font-bold uppercase tracking-wide text-fg mb-3">All incidents</h2>
+      <h2 className="text-base font-semibold text-fg mb-3">All incidents</h2>
       {incidents.length === 0 ? (
         <EmptyState
           title="No incidents on file"

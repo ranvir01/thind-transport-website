@@ -112,7 +112,7 @@ export default async function CompliancePage({
                   <span className="whitespace-nowrap sm:hidden">{tile.shortLabel}</span>
                   <span className="hidden sm:inline">{tile.label}</span>
                 </span>
-                <p className={cn("mt-2 font-display text-3xl font-extrabold", tile.textCls)}>{summary[tile.color]}</p>
+                <p className={cn("mt-2 text-3xl font-semibold", tile.textCls)}>{summary[tile.color]}</p>
               </Panel>
             </Link>
           )

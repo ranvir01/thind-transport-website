@@ -59,7 +59,7 @@ export default async function TasksPage() {
             if (items.length === 0) return null
             return (
               <section key={key}>
-                <h2 className={`mb-2 font-display text-sm font-bold uppercase tracking-wider ${tone ?? "text-fg-3"}`}>
+                <h2 className={`mb-2 text-[15px] font-semibold ${tone ?? "text-fg-3"}`}>
                   {label} ({items.length})
                 </h2>
                 <div className="space-y-2">
@@ -75,7 +75,7 @@ export default async function TasksPage() {
 
       {completed.length > 0 ? (
         <section className="mt-8">
-          <h2 className="mb-2 font-display text-sm font-bold uppercase tracking-wider text-fg-3">
+          <h2 className="mb-2 text-[15px] font-semibold text-fg-3">
             Recently done
           </h2>
           <ul className="space-y-1">

@@ -145,7 +145,7 @@ export default async function IftaPage({
             </Panel>
             <Panel className="p-4">
               <span className="text-label text-fg-3 uppercase">Net tax</span>
-              <p className={`mt-1 font-display text-lg font-extrabold ${Number(report.net_tax_cents) > 0 ? "text-warn" : Number(report.net_tax_cents) < 0 ? "text-ok" : "text-fg"}`}>
+              <p className={`mt-1 text-lg font-semibold ${Number(report.net_tax_cents) > 0 ? "text-warn" : Number(report.net_tax_cents) < 0 ? "text-ok" : "text-fg"}`}>
                 {fmtCentsExact(Number(report.net_tax_cents))}
               </p>
             </Panel>

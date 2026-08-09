@@ -99,7 +99,7 @@ export function CoiRequestForm({ savedAgent }: { savedAgent: string }) {
         </div>
         <button
           type="submit" disabled={pending}
-          className="flex min-h-[48px] items-center gap-2 rounded-xl bg-accent px-6 font-display text-sm font-bold uppercase tracking-[0.08em] text-accent-fg hover:bg-accent-hover disabled:opacity-50"
+          className="flex min-h-[48px] items-center gap-2 rounded-xl bg-accent px-6 text-sm font-semibold text-accent-fg hover:bg-accent-hover disabled:opacity-50"
         >
           {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Mail className="h-4 w-4" />}
           Send the request
@@ -140,7 +140,7 @@ export function AgreementSignPanel({
     return (
       <button
         onClick={() => setOpen(true)}
-        className="flex w-full min-h-[48px] items-center justify-center gap-2 rounded-xl bg-accent font-display text-sm font-bold uppercase tracking-[0.06em] text-accent-fg hover:bg-accent-hover"
+        className="flex w-full min-h-[48px] items-center justify-center gap-2 rounded-xl bg-accent text-sm font-semibold text-accent-fg hover:bg-accent-hover"
       >
         <FileSignature className="h-4 w-4" /> E-sign the broker–carrier agreement
       </button>

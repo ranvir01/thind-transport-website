@@ -88,7 +88,7 @@ export default async function SettlementDetailPage({ params }: { params: Promise
               <div className="flex justify-between"><dt className="text-fg-2">Deductions</dt><dd className="text-bad font-semibold">−{fmtCentsExact(settlement.deductions_cents)}</dd></div>
               <div className="flex justify-between border-t border-border pt-2">
                 <dt className="text-fg font-bold">Net pay</dt>
-                <dd className="font-display text-accent-text font-extrabold text-lg">{fmtCentsExact(settlement.net_cents)}</dd>
+                <dd className="text-accent-text font-semibold text-lg">{fmtCentsExact(settlement.net_cents)}</dd>
               </div>
             </dl>
           </Panel>

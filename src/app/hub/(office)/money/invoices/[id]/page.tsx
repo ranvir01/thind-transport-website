@@ -56,7 +56,7 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
               <div className="flex justify-between"><dt className="text-fg-2">Paid</dt><dd className="text-fg font-semibold">{fmtCentsExact(invoice.paid_cents ?? 0)}</dd></div>
               <div className="flex justify-between border-t border-border pt-2">
                 <dt className="text-fg font-bold">Open balance</dt>
-                <dd className="font-display text-accent-text font-extrabold text-lg">{fmtCentsExact(openCents)}</dd>
+                <dd className="text-accent-text font-semibold text-lg">{fmtCentsExact(openCents)}</dd>
               </div>
             </dl>
             {invoice.remit_to ? (

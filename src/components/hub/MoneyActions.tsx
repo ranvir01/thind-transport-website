@@ -10,16 +10,25 @@ import {
   pushInvoiceToQboAction, recordPaymentAction, submitInvoiceToFactorAction,
 } from "@/app/hub/_actions/money"
 import { fieldCls, labelCls } from "@/components/hub/ui"
+import { MilestoneMoment } from "@/components/hub/MilestoneMoment"
+import { shouldCelebrate } from "@/lib/hub/celebrations"
 
 export function CreateInvoiceButton({ loadId, disabled }: { loadId: string; disabled?: boolean }) {
   const router = useRouter()
   const [pending, startTransition] = useTransition()
+  const [milestone, setMilestone] = useState<{ id: string } | null>(null)
   const create = () =>
     startTransition(async () => {
       const result = await createInvoiceAction(loadId)
       if (result.ok) {
         toast.success(result.emailed ? "Invoice created and emailed" : "Invoice created (email not sent)")
         if (result.error) toast.info(result.error)
+        // First invoice ever sent from this browser → the one full-screen
+        // moment (never repeats; off switch in the avatar menu).
+        if (result.emailed && shouldCelebrate("invoice-sent")) {
+          setMilestone({ id: String(result.id) })
+          return
+        }
         router.push(`/hub/money/invoices/${result.id}`)
         router.refresh()
       } else {
@@ -27,20 +36,35 @@ export function CreateInvoiceButton({ loadId, disabled }: { loadId: string; disa
       }
     })
   return (
-    <button
-      onClick={create}
-      disabled={pending || disabled}
-      className="inline-flex min-h-[44px] items-center gap-2 rounded-control bg-accent px-5 font-semibold text-sm text-accent-fg hover:bg-accent-hover disabled:opacity-60"
-    >
-      {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />}
-      Invoice this load
-    </button>
+    <>
+      <button
+        onClick={create}
+        disabled={pending || disabled}
+        className="inline-flex min-h-[44px] items-center gap-2 rounded-control bg-accent px-5 font-semibold text-sm text-accent-fg hover:bg-accent-hover disabled:opacity-60"
+      >
+        {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />}
+        Invoice this load
+      </button>
+      {milestone ? (
+        <MilestoneMoment
+          title="First invoice out the door"
+          body="PDF built, POD attached, emailed to the broker. This is the whole job."
+          onDone={() => {
+            const id = milestone.id
+            setMilestone(null)
+            router.push(`/hub/money/invoices/${id}`)
+            router.refresh()
+          }}
+        />
+      ) : null}
+    </>
   )
 }
 
 export function RecordPaymentForm({ invoiceId, openCents }: { invoiceId: string; openCents: number }) {
   const router = useRouter()
   const [pending, startTransition] = useTransition()
+  const [celebrating, setCelebrating] = useState(false)
   const [form, setForm] = useState({
     amount: (openCents / 100).toFixed(2),
     paidOn: new Date().toISOString().slice(0, 10),
@@ -53,6 +77,7 @@ export function RecordPaymentForm({ invoiceId, openCents }: { invoiceId: string;
       const result = await recordPaymentAction(invoiceId, form)
       if (result.ok) {
         toast.success("Payment recorded")
+        if (shouldCelebrate("payment-recorded")) setCelebrating(true)
         router.refresh()
       } else {
         toast.error(result.error ?? "Could not record payment")
@@ -60,6 +85,14 @@ export function RecordPaymentForm({ invoiceId, openCents }: { invoiceId: string;
     })
   }
   return (
+    <>
+    {celebrating ? (
+      <MilestoneMoment
+        title="First payment in the bank"
+        body="Delivered, invoiced, paid — the loop is closed."
+        onDone={() => setCelebrating(false)}
+      />
+    ) : null}
     <form onSubmit={submit} className="grid grid-cols-2 gap-3">
       <div>
         <label className={labelCls} htmlFor="pay_amount">Amount ($)</label>
@@ -94,6 +127,7 @@ export function RecordPaymentForm({ invoiceId, openCents }: { invoiceId: string;
         Record payment
       </button>
     </form>
+    </>
   )
 }
 

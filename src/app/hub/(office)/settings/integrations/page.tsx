@@ -94,7 +94,7 @@ export default async function IntegrationsPage() {
 
         {/* Keyed services configured at the environment level, not per carrier */}
         <Panel className="p-4">
-          <h3 className="font-display text-sm font-bold uppercase tracking-wide text-fg">Environment services</h3>
+          <h3 className="text-[15px] font-semibold text-fg">Environment services</h3>
           <ul className="mt-2 space-y-1.5 text-body-sm">
             {envServices.map((svc) => (
               <li key={svc.name} className="flex items-center justify-between">
