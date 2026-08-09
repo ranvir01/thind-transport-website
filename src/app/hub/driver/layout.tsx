@@ -1,5 +1,7 @@
 import { requireDriverUser } from "@/lib/hub/session"
 import { getCarrierSettings } from "@/lib/hub/settings"
+import { isSandboxCarrier } from "@/lib/hub/sandbox"
+import { SandboxBanner } from "@/components/hub/SandboxBanner"
 import { DriverNav } from "@/components/hub/driver/DriverNav"
 import { OfflineSync } from "@/components/hub/driver/OfflineSync"
 import { PORTAL_ACCENT_DEFAULT, resolvePortalAccent } from "@/app/hub/portal/accent"
@@ -18,7 +20,10 @@ export default async function DriverAppLayout({ children }: { children: React.Re
       <DriverNav firstName={user.name.split(" ")[0]} />
       <OfflineSync />
       {/* Top bar 56px, bottom tabs 64px + safe area */}
-      <main className="pt-16 pb-24 px-4 mx-auto w-full max-w-lg">{children}</main>
+      <main className="pt-16 pb-24 px-4 mx-auto w-full max-w-lg">
+        {isSandboxCarrier(user.carrierId) ? <SandboxBanner dark /> : null}
+        {children}
+      </main>
     </div>
   )
 }

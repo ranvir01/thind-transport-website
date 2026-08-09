@@ -84,7 +84,11 @@ surfaces · lorem ipsum seed data · layout shift from late assets.
 · `npm run license:audit` — plus a 390px light **and dark** screenshot sweep,
 viewed and critiqued against this file, before every ship.
 
-Roadmap (tracked in session tasks): `/hub/sandbox` multi-role sandbox at
-master-prompt seed volumes; axe integration into design-qa; 6-viewport
-light/dark matrix; Lighthouse thresholds. Human-blocked items live in
-`loadoff-worksheet.html`.
+Shipped beyond the base app: `/hub/sandbox` — the playable 9-seat company
+(Blue Ridge Haulage, ~40 drivers / 30 trucks / 250 loads / 500 fuel txns /
+safety quarter, one-click reset) — and the Motive-class fleet safety score
+(`lib/hub/safety-score.ts`, panel on /hub/safety).
+
+Roadmap (tracked in session tasks): axe integration into design-qa;
+6-viewport light/dark matrix; Lighthouse thresholds. Human-blocked items
+live in `loadoff-worksheet.html`.

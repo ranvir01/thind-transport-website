@@ -96,7 +96,10 @@ async function authGate(
     pathname === "/hub/get-app" ||
     // The interactive product demo: fabricated data only, no tenant reads —
     // public so prospects (and the owner's phone) can run it pre-login.
-    pathname === "/hub/demo"
+    pathname === "/hub/demo" ||
+    // The playable sandbox seat picker: public entry; picking a seat signs
+    // you into the fabricated Blue Ridge Haulage tenant (lib/hub/sandbox.ts).
+    pathname === "/hub/sandbox"
   ) {
     return passthrough ?? NextResponse.next()
   }

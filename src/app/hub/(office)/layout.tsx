@@ -1,7 +1,9 @@
 import { requireOfficeUser } from "@/lib/hub/session"
 import { getCarrier, getCarrierSettings } from "@/lib/hub/settings"
 import { getFlag } from "@/lib/hub/flags"
+import { isSandboxCarrier } from "@/lib/hub/sandbox"
 import { HubShell } from "@/components/hub/HubNav"
+import { SandboxBanner } from "@/components/hub/SandboxBanner"
 
 export default async function OfficeLayout({ children }: { children: React.ReactNode }) {
   const user = await requireOfficeUser()
@@ -23,6 +25,7 @@ export default async function OfficeLayout({ children }: { children: React.React
       smallCarrier={smallCarrier}
       accent={settings.branding.accent}
     >
+      {isSandboxCarrier(user.carrierId) ? <SandboxBanner /> : null}
       {children}
     </HubShell>
   )
