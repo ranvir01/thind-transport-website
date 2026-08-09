@@ -145,14 +145,14 @@ export function DemoSimulation() {
                 type="button"
                 aria-label="Previous scene"
                 onClick={() => go(index - 1)}
-                className="no-press absolute inset-y-0 left-0 w-1/3 cursor-default"
+                className="no-press touch-manipulation absolute inset-y-0 left-0 w-1/3 cursor-default"
                 tabIndex={-1}
               />
               <button
                 type="button"
                 aria-label="Next scene"
                 onClick={() => go(index + 1)}
-                className="no-press absolute inset-y-0 right-0 w-2/3 cursor-default"
+                className="no-press touch-manipulation absolute inset-y-0 right-0 w-2/3 cursor-default"
                 tabIndex={-1}
               />
             </>

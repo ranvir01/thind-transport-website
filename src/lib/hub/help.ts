@@ -121,7 +121,7 @@ export const HUB_TOURS: HubTour[] = [
         id: "kpis",
         title: "Pulse at a glance",
         target: '[data-tour="today-kpis"]',
-        body: "Active loads, revenue this week, money owed to you, and driver pay queued — tap a card to drill in.",
+        body: "Loads today, unconfirmed drivers, money not yet invoiced, and missing PODs — tap a tile to drill in.",
       },
       {
         id: "due",

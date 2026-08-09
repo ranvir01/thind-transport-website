@@ -14,7 +14,12 @@ function useCountUp(target: number, durationMs = 600): number {
   const ran = useRef(false)
 
   useEffect(() => {
-    if (ran.current) return
+    // Animate on first paint only; later prop changes (router.refresh after
+    // an action) must still land — snap straight to the new value.
+    if (ran.current) {
+      setValue(target)
+      return
+    }
     ran.current = true
     if (target === 0) {
       setValue(0)

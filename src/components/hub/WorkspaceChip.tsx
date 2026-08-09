@@ -58,7 +58,6 @@ export function WorkspaceChip({
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        aria-haspopup="menu"
         aria-expanded={open}
         className="flex min-w-0 items-center gap-1.5 rounded-pill py-1 pl-1 pr-2 hover:bg-hover"
       >
@@ -80,7 +79,6 @@ export function WorkspaceChip({
 
       {open ? (
         <div
-          role="menu"
           className="absolute left-0 top-full z-50 mt-2 w-60 animate-dropdown-in rounded-card border border-border bg-surface p-1.5 shadow-raised"
         >
           <div className="flex items-center gap-2.5 px-2.5 py-2">
@@ -106,7 +104,6 @@ export function WorkspaceChip({
             <Link
               key={href}
               href={href}
-              role="menuitem"
               onClick={() => setOpen(false)}
               className="flex min-h-[40px] items-center gap-2.5 rounded-control px-2.5 text-sm font-medium text-fg-2 hover:bg-hover hover:text-fg"
             >

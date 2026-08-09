@@ -216,7 +216,14 @@ function reviewRows(
   return { ready, attention }
 }
 
-export function ImportHub({ initialKind }: { initialKind?: string }) {
+export function ImportHub({
+  initialKind,
+  canConnect = false,
+}: {
+  initialKind?: string
+  /** Owner only — the integrations page the connect rows lead to is owner-gated. */
+  canConnect?: boolean
+}) {
   const [kind, setKind] = useState<ImportKind | null>(
     KINDS.some((k) => k.key === initialKind) ? (initialKind as ImportKind) : null
   )
@@ -242,9 +249,17 @@ export function ImportHub({ initialKind }: { initialKind?: string }) {
       setTemplates([])
       return
     }
+    let stale = false
     listImportTemplatesAction(def.templateKind)
-      .then(setTemplates)
-      .catch(() => setTemplates([]))
+      .then((t) => {
+        if (!stale) setTemplates(t)
+      })
+      .catch(() => {
+        if (!stale) setTemplates([])
+      })
+    return () => {
+      stale = true
+    }
   }, [def?.templateKind])
 
   const resetFlow = () => {
@@ -259,7 +274,10 @@ export function ImportHub({ initialKind }: { initialKind?: string }) {
 
   const openKind = (key: ImportKind) => {
     const target = KINDS.find((k) => k.key === key)!
-    if (target.connect) {
+    // The connect-first chooser leads to the owner-only integrations page;
+    // everyone else goes straight to the upload flow (positions still gets
+    // the chooser for the ELD output-file option).
+    if (target.connect && (canConnect || key === "positions")) {
       setChooserFor(key)
     } else {
       resetFlow()
@@ -402,21 +420,28 @@ export function ImportHub({ initialKind }: { initialKind?: string }) {
       >
         {chooser ? (
           <div className="space-y-2">
-            <Link
-              href="/hub/settings/integrations"
-              className="flex min-h-[56px] items-center gap-3 rounded-card border border-border bg-surface px-3 shadow-card hover:bg-hover"
-            >
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-control bg-accent-soft text-accent-text">
-                <Cable className="h-4 w-4" />
-              </span>
-              <span className="min-w-0 flex-1">
-                <span className="block text-sm font-semibold text-fg">
-                  {chooser.key === "positions" ? "Connect Terminal or TruckerCloud" : "Connect EFS, WEX or Comdata"}
+            {canConnect ? (
+              <Link
+                href="/hub/settings/integrations"
+                className="flex min-h-[56px] items-center gap-3 rounded-card border border-border bg-surface px-3 shadow-card hover:bg-hover"
+              >
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-control bg-accent-soft text-accent-text">
+                  <Cable className="h-4 w-4" />
                 </span>
-                <span className="block text-[12px] text-fg-3">Set up once — data syncs itself.</span>
-              </span>
-              <ArrowRight className="h-4 w-4 shrink-0 text-fg-3" />
-            </Link>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-sm font-semibold text-fg">
+                    {chooser.key === "positions" ? "Connect Terminal or TruckerCloud" : "Connect EFS, WEX or Comdata"}
+                  </span>
+                  <span className="block text-[12px] text-fg-3">Set up once — data syncs itself.</span>
+                </span>
+                <ArrowRight className="h-4 w-4 shrink-0 text-fg-3" />
+              </Link>
+            ) : (
+              <p className="rounded-control bg-surface-2 px-3 py-2.5 text-[12.5px] text-fg-3">
+                A live {chooser.key === "positions" ? "ELD" : "fuel-card"} feed can sync this
+                automatically — ask the workspace owner to set it up under Integrations.
+              </p>
+            )}
             <button
               type="button"
               onClick={() => startUploadFlow(chooser.key)}
@@ -492,6 +517,9 @@ export function ImportHub({ initialKind }: { initialKind?: string }) {
                     className="sr-only"
                     onChange={(e) => {
                       const file = e.target.files?.[0]
+                      // Clear so re-picking the same file after a failed
+                      // parse fires change again.
+                      e.target.value = ""
                       if (file) handleFile(file)
                     }}
                   />

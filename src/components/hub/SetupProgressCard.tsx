@@ -58,13 +58,9 @@ export function SetupProgressCard({ progress }: { progress: GettingStarted }) {
               Finish setup — {done} of {steps.length}
               <span className="ml-1.5 font-normal text-fg-3">· ~an afternoon</span>
             </p>
-            <div
-              className="mt-2 h-1.5 w-full max-w-[320px] overflow-hidden rounded-pill bg-surface-2"
-              role="progressbar"
-              aria-valuemin={0}
-              aria-valuemax={steps.length}
-              aria-valuenow={done}
-            >
+            {/* Decorative — "X of 7" in the button label carries the state;
+                a progressbar role inside a <button> gets stripped anyway. */}
+            <div aria-hidden className="mt-2 h-1.5 w-full max-w-[320px] overflow-hidden rounded-pill bg-surface-2">
               <div
                 className="h-full rounded-pill bg-accent transition-all duration-slow"
                 style={{ width: `${(done / steps.length) * 100}%` }}

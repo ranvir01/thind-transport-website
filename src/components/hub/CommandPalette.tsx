@@ -95,7 +95,7 @@ export function CommandPalette({ isOwner, smallCarrier }: { isOwner: boolean; sm
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Go to a screen…"
-                className="h-11 flex-1 bg-transparent text-sm text-fg outline-none placeholder:text-fg-3"
+                className="h-11 flex-1 bg-transparent text-base md:text-sm text-fg outline-none placeholder:text-fg-3"
               />
             </div>
             <ul className="max-h-[50vh] overflow-y-auto py-1">

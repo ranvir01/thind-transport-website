@@ -82,7 +82,7 @@ export default async function MoneyPage() {
         }
         action={
           <div className="flex flex-wrap gap-2">
-            <ExportSheet />
+            <ExportSheet canConnect={user.role === "owner"} />
             <Link
               href="/hub/money/settlements"
               className="hidden md:inline-flex min-h-[44px] items-center rounded-control border border-border-strong px-4 text-sm font-semibold text-fg-2 hover:bg-hover"

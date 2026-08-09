@@ -46,7 +46,7 @@ function ExportRow({ kind, label, icon }: { kind: string; label: string; icon: R
   )
 }
 
-export function ExportSheet() {
+export function ExportSheet({ canConnect = false }: { canConnect?: boolean }) {
   const [open, setOpen] = useState(false)
   const [showIif, setShowIif] = useState(false)
 
@@ -83,21 +83,28 @@ export function ExportSheet() {
         </div>
 
         <p className="pb-1 text-[11px] font-semibold uppercase tracking-wide text-fg-3">QuickBooks</p>
-        <Link
-          href="/hub/settings/integrations"
-          onClick={() => setOpen(false)}
-          className="flex min-h-[56px] items-center gap-3 rounded-card border border-border bg-surface px-3 shadow-card hover:bg-hover"
-        >
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-control bg-accent-soft text-accent-text">
-            <Link2 className="h-4 w-4" />
-          </span>
-          <span className="min-w-0 flex-1">
-            <span className="block text-sm font-semibold text-fg">Connect QuickBooks Online</span>
-            <span className="block text-[12px] text-fg-3">
-              Invoices and payments sync automatically — no files.
+        {canConnect ? (
+          <Link
+            href="/hub/settings/integrations"
+            onClick={() => setOpen(false)}
+            className="flex min-h-[56px] items-center gap-3 rounded-card border border-border bg-surface px-3 shadow-card hover:bg-hover"
+          >
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-control bg-accent-soft text-accent-text">
+              <Link2 className="h-4 w-4" />
             </span>
-          </span>
-        </Link>
+            <span className="min-w-0 flex-1">
+              <span className="block text-sm font-semibold text-fg">Connect QuickBooks Online</span>
+              <span className="block text-[12px] text-fg-3">
+                Invoices and payments sync automatically — no files.
+              </span>
+            </span>
+          </Link>
+        ) : (
+          <p className="rounded-control bg-surface-2 px-3 py-2.5 text-[12.5px] text-fg-3">
+            QuickBooks Online can sync invoices and payments automatically — ask the workspace
+            owner to connect it under Integrations.
+          </p>
+        )}
         <button
           type="button"
           onClick={() => setShowIif((v) => !v)}

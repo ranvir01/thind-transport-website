@@ -63,7 +63,6 @@ export function UserMenu({ name, role }: { name: string; role: string }) {
       <button
         type="button"
         aria-label="Account and appearance"
-        aria-haspopup="menu"
         aria-expanded={open}
         onClick={() => setOpen((v) => !v)}
         className="flex h-10 w-10 items-center justify-center rounded-control text-fg-2 hover:bg-hover"
@@ -75,7 +74,6 @@ export function UserMenu({ name, role }: { name: string; role: string }) {
 
       {open ? (
         <div
-          role="menu"
           className="absolute right-0 top-full z-50 mt-2 w-64 animate-dropdown-in rounded-card border border-border bg-surface p-1.5 shadow-raised"
         >
           <div className="px-2.5 py-2">
@@ -123,8 +121,7 @@ export function UserMenu({ name, role }: { name: string; role: string }) {
           <div className="my-1 border-t border-border" />
           <button
             type="button"
-            role="menuitemcheckbox"
-            aria-checked={celebrate}
+            aria-pressed={celebrate}
             onClick={() => {
               const next = !celebrate
               setCelebrate(next)
@@ -154,7 +151,6 @@ export function UserMenu({ name, role }: { name: string; role: string }) {
           <div className="my-1 border-t border-border" />
           <Link
             href="/hub/settings/app"
-            role="menuitem"
             onClick={() => setOpen(false)}
             className="flex w-full min-h-[40px] items-center gap-2.5 rounded-control px-2.5 text-sm font-medium text-fg-2 hover:bg-hover hover:text-fg"
           >
@@ -162,7 +158,6 @@ export function UserMenu({ name, role }: { name: string; role: string }) {
           </Link>
           <button
             type="button"
-            role="menuitem"
             onClick={() => {
               clearShellCache()
               signOut({ callbackUrl: "/hub/login" })
