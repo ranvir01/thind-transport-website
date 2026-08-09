@@ -1,4 +1,5 @@
 import Link from "next/link"
+import { preload } from "react-dom"
 import { MessageCircle, Phone, TrendingUp, ArrowRight } from "lucide-react"
 import { HeroBackground } from "./HeroBackground"
 import { COMPANY_INFO, STATS } from "@/lib/constants"
@@ -9,6 +10,9 @@ import { COMPANY_INFO, STATS } from "@/lib/constants"
  * (no hydration wait), which is what drives the LCP score.
  */
 export const CinematicHero = () => {
+  // The video poster IS the LCP element — without a high-priority preload it
+  // queues behind fonts/scripts and lands ~2s late on throttled mobile.
+  preload("/images/generated/hero-poster.webp", { as: "image", fetchPriority: "high" })
   return (
     <section className="relative min-h-[88vh] w-full flex items-center overflow-hidden bg-navy-800">
       <HeroBackground />

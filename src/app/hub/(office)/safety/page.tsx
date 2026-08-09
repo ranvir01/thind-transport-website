@@ -97,7 +97,7 @@ export default async function SafetyPage() {
         {hosStatus.length === 0 ? (
           <p className="text-body-sm text-fg-3">
             No ELD data yet.{" "}
-            <Link href="/hub/settings/integrations" className="text-accent-text hover:underline">
+            <Link href="/hub/settings/integrations" className="font-semibold text-accent-text underline underline-offset-2">
               Connect Terminal or TruckerCloud
             </Link>{" "}
             to see the fleet&apos;s drive clocks here.

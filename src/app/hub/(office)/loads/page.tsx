@@ -60,7 +60,7 @@ export default async function LoadsPage({
             className={`${fieldCls} pl-9`}
           />
         </div>
-        <select name="status" defaultValue={status} className={`${fieldCls} sm:w-48`}>
+        <select name="status" aria-label="Filter by status" defaultValue={status} className={`${fieldCls} sm:w-48`}>
           <option value="active">Active</option>
           <option value="all">All</option>
           {LOAD_STATUSES.map((s) => (

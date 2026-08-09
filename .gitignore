@@ -72,3 +72,4 @@ services/go/hauldesk-worker/hauldesk-worker
 scratch/
 prompts/
 *.local.md
+qa-matrix/

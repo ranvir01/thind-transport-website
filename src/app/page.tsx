@@ -9,9 +9,7 @@ import { ThindPromise } from "@/components/home/ThindPromise"
 import { OperationSection } from "@/components/home/OperationSection"
 import { DispatchBand } from "@/components/home/DispatchBand"
 import { PhotoBand } from "@/components/home/PhotoBand"
-import { ApplicationForm } from "@/components/application/ApplicationForm"
-import { ProfitCalculator } from "@/components/features/ProfitCalculator"
-import { QuickQualify } from "@/components/features/QuickQualify"
+import { DeferredApplicationForm, DeferredProfitCalculator, DeferredQuickQualify } from "@/components/home/DeferredHomeSections"
 import { WhySwitch } from "@/components/features/WhySwitch"
 import Link from "next/link"
 
@@ -27,7 +25,7 @@ export default function Home() {
       <TrustStrip />
 
       <div className="mb-12 md:mb-20">
-        <ProfitCalculator />
+        <DeferredProfitCalculator />
       </div>
 
       <WhySwitch />
@@ -55,7 +53,7 @@ export default function Home() {
       <RoutesSection />
 
       <EquipmentSection />
-      <QuickQualify />
+      <DeferredQuickQualify />
       <FAQSection />
 
       <section className="brand-section-panel py-20 md:py-28 relative overflow-hidden border-t border-steel-800">
@@ -93,7 +91,7 @@ export default function Home() {
             </div>
 
             <div className="fleet-panel overflow-hidden p-6 md:p-10 border-steel-600" data-light>
-              <ApplicationForm />
+              <DeferredApplicationForm />
             </div>
 
             <p className="text-center text-steel-400 text-sm mt-6">
