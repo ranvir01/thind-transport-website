@@ -77,8 +77,15 @@ export function NotificationsBell({
     const close = (e: MouseEvent) => {
       if (panelRef.current && !panelRef.current.contains(e.target as Node)) setOpen(false)
     }
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false)
+    }
     document.addEventListener("mousedown", close)
-    return () => document.removeEventListener("mousedown", close)
+    document.addEventListener("keydown", onKey)
+    return () => {
+      document.removeEventListener("mousedown", close)
+      document.removeEventListener("keydown", onKey)
+    }
   }, [open])
 
   const toggle = async () => {
@@ -126,9 +133,15 @@ export function NotificationsBell({
       {open ? (
         <div
           className={cn(
-            "absolute right-0 z-50 w-[min(92vw,360px)] overflow-hidden rounded-card border shadow-card",
+            // Phones: pin to the viewport (the bell isn't the rightmost header
+            // item, so a button-anchored 360px panel would run off the left
+            // edge). sm+: anchor to the button like a normal popover.
+            "z-50 overflow-hidden rounded-card border shadow-raised",
+            "fixed inset-x-3 sm:absolute sm:inset-x-auto sm:right-0 sm:w-[min(92vw,360px)]",
             dark ? "border-white/10 bg-navy-600" : "border-border bg-surface",
-            direction === "down" ? "top-11" : "bottom-11"
+            direction === "down"
+              ? "top-[calc(3.5rem+env(safe-area-inset-top,0px)+0.375rem)] sm:top-11"
+              : "bottom-[calc(4rem+env(safe-area-inset-bottom,0px))] sm:bottom-11"
           )}
         >
           <p
