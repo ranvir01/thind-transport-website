@@ -2,9 +2,11 @@ import Link from "next/link"
 import { cn } from "@/lib/utils"
 import { STATUS_LABELS, type LoadStatus } from "@/lib/hub/types"
 
-/** Form controls — light surfaces inside hub cards. */
+/** Form controls — light surfaces inside hub cards.
+ *  16px text on touch widths (iOS zooms into anything smaller on focus);
+ *  compact 34px/14px from md up where a mouse is doing the tapping. */
 export const fieldCls =
-  "flex h-[34px] w-full rounded-control border border-border-strong bg-surface px-3 text-sm text-fg shadow-none transition-colors placeholder:text-fg-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:border-accent disabled:cursor-not-allowed disabled:opacity-50"
+  "flex h-11 md:h-[34px] w-full rounded-control border border-border-strong bg-surface px-3 text-base md:text-sm text-fg shadow-none transition-colors placeholder:text-fg-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:border-accent disabled:cursor-not-allowed disabled:opacity-50"
 
 export const labelCls = "block text-[11px] font-semibold uppercase tracking-wide text-fg-3 mb-1.5"
 
@@ -15,7 +17,7 @@ export const labelCls = "block text-[11px] font-semibold uppercase tracking-wide
  * navy). See AGENTS.md "No mode-dependent tokens on forced-dark surfaces".
  */
 export const fieldDarkCls =
-  "flex h-[34px] w-full rounded-control border border-white/15 bg-white/5 px-3 text-sm text-white shadow-none transition-colors placeholder:text-steel-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/25 focus-visible:border-white/40 disabled:cursor-not-allowed disabled:opacity-50"
+  "flex h-11 md:h-[34px] w-full rounded-control border border-white/15 bg-white/5 px-3 text-base md:text-sm text-white shadow-none transition-colors placeholder:text-steel-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/25 focus-visible:border-white/40 disabled:cursor-not-allowed disabled:opacity-50"
 
 export const labelDarkCls =
   "block text-[11px] font-semibold uppercase tracking-wide text-steel-400 mb-1.5"
@@ -42,7 +44,7 @@ export const moneyCls = "font-mono font-medium text-fg tabular-nums"
 export const linkAccentCls = "font-semibold text-accent-text hover:underline"
 
 const buttonBase =
-  "inline-flex h-[34px] items-center justify-center gap-2 rounded-control px-3.5 text-sm font-semibold transition-colors disabled:pointer-events-none disabled:opacity-50"
+  "inline-flex min-h-11 md:min-h-0 md:h-[34px] items-center justify-center gap-2 rounded-control px-3.5 text-sm font-semibold transition-colors disabled:pointer-events-none disabled:opacity-50"
 
 export function Button({
   variant = "primary",

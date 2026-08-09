@@ -128,6 +128,195 @@
   letter-spacing: -0.006em;
 }
 
+/* ============================================================================
+ * Interaction foundation — every tappable surface physically responds.
+ * Scoped to the software app only; the marketing site keeps its own rules.
+ * ==========================================================================*/
+
+[data-app="hauldesk"] {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Elevation ladder: background < card (--shadow) < raised (menus/popovers)
+   < overlay (sheets/dialogs). Consumed as shadow-card / shadow-raised /
+   shadow-overlay via tailwind.config.ts. */
+[data-app="hauldesk"],
+[data-app="hauldesk"][data-theme="indigo"] {
+  --shadow-raised: 0 2px 6px rgba(16, 18, 29, 0.06), 0 8px 24px rgba(16, 18, 29, 0.09);
+  --shadow-overlay: 0 -4px 16px rgba(16, 18, 29, 0.06), 0 12px 48px rgba(16, 18, 29, 0.18);
+}
+[data-app="hauldesk"][data-mode="dark"] {
+  --shadow-raised: 0 2px 6px rgba(0, 0, 0, 0.35), 0 8px 24px rgba(0, 0, 0, 0.4);
+  --shadow-overlay: 0 -4px 16px rgba(0, 0, 0, 0.35), 0 12px 48px rgba(0, 0, 0, 0.55);
+}
+
+/* 0ms press feedback on everything tappable: scale + opacity, compositor
+   props only. touch-action:manipulation kills the iOS double-tap delay.
+   Opt out with .no-press (e.g. the pressed element manages its own motion). */
+[data-app="hauldesk"] :is(button, [role="button"], a, summary):not(.no-press) {
+  touch-action: manipulation;
+  transition-property: transform, opacity, background-color, border-color, color, box-shadow;
+  transition-duration: 150ms;
+  transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+}
+[data-app="hauldesk"] :is(button, [role="button"], a, summary):not(.no-press):active {
+  transform: scale(0.97);
+  opacity: 0.9;
+}
+/* File-pick labels and other label-as-button patterns get the same feel. */
+[data-app="hauldesk"] label.pressable {
+  touch-action: manipulation;
+  transition: transform 150ms cubic-bezier(0.16, 1, 0.3, 1), opacity 150ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+[data-app="hauldesk"] label.pressable:active {
+  transform: scale(0.97);
+  opacity: 0.9;
+}
+/* Inputs never scale; keep the tap-delay fix only. */
+[data-app="hauldesk"] :is(input, select, textarea) {
+  touch-action: manipulation;
+}
+
+/* Scroll feel: the app never rubber-bands the whole document. */
+[data-app="hauldesk"] body {
+  overscroll-behavior-y: none;
+}
+
+/* Focus ring inside the app uses the theme accent, not the marketing red. */
+[data-app="hauldesk"] :focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Horizontal pill rows: snap, hidden scrollbar, edge fades so clipped items
+   read as "more this way" instead of broken. */
+[data-app="hauldesk"] .snap-row {
+  scroll-snap-type: x proximity;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+  -webkit-mask-image: linear-gradient(to right, transparent, black 14px, black calc(100% - 14px), transparent);
+  mask-image: linear-gradient(to right, transparent, black 14px, black calc(100% - 14px), transparent);
+}
+[data-app="hauldesk"] .snap-row::-webkit-scrollbar {
+  display: none;
+}
+[data-app="hauldesk"] .snap-row > * {
+  scroll-snap-align: start;
+}
+
+/* Skeletons — mirror final layout, shimmer on the compositor only. */
+@keyframes hub-shimmer {
+  to {
+    transform: translateX(100%);
+  }
+}
+[data-app="hauldesk"] .hub-skeleton {
+  position: relative;
+  overflow: hidden;
+  background: var(--surface-2);
+  border-radius: 9px;
+}
+[data-app="hauldesk"] .hub-skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, var(--hover), transparent);
+  animation: hub-shimmer 1.4s ease-in-out infinite;
+}
+
+/* Route-change motion: 200ms shared-axis entrance on the page body.
+   Compositor props only; reduced-motion collapses it globally. */
+@keyframes hub-route-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+[data-app="hauldesk"] .hub-route-enter {
+  animation: hub-route-in 200ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* List enter-stagger, first paint only — cap at 8 children. */
+@keyframes hub-item-in {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+[data-app="hauldesk"] .hub-stagger > * {
+  animation: hub-item-in 260ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
+  animation-delay: 180ms;
+}
+[data-app="hauldesk"] .hub-stagger > *:nth-child(1) { animation-delay: 0ms; }
+[data-app="hauldesk"] .hub-stagger > *:nth-child(2) { animation-delay: 30ms; }
+[data-app="hauldesk"] .hub-stagger > *:nth-child(3) { animation-delay: 60ms; }
+[data-app="hauldesk"] .hub-stagger > *:nth-child(4) { animation-delay: 90ms; }
+[data-app="hauldesk"] .hub-stagger > *:nth-child(5) { animation-delay: 120ms; }
+[data-app="hauldesk"] .hub-stagger > *:nth-child(6) { animation-delay: 150ms; }
+
+/* Bottom sheet + backdrop entrances (used by the Sheet primitive). */
+@keyframes hub-sheet-in {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: none;
+  }
+}
+@keyframes hub-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+[data-app="hauldesk"] .hub-sheet-enter {
+  animation: hub-sheet-in 280ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+[data-app="hauldesk"] .hub-backdrop-enter {
+  animation: hub-fade-in 200ms ease-out both;
+}
+
+/* Checkmark draw for success moments (SVG path with pathLength=1). */
+@keyframes hub-check-draw {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+[data-app="hauldesk"] .hub-check-draw {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: hub-check-draw 450ms cubic-bezier(0.16, 1, 0.3, 1) 120ms forwards;
+}
+
+/* Milestone moment backdrop pop. */
+@keyframes hub-pop-in {
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+[data-app="hauldesk"] .hub-pop-enter {
+  animation: hub-pop-in 260ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
 [data-app="hauldesk"] .hauldesk-shell {
   background: var(--bg);
   color: var(--text);
