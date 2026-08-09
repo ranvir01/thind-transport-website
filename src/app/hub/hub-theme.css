@@ -31,32 +31,36 @@
   --shadow: 0 1px 2px rgba(16, 18, 29, 0.04), 0 1px 3px rgba(16, 18, 29, 0.05);
 }
 
+/* Dark is remastered for OLED phones: the page sits near-black, cards step
+   UP from it visibly (surface ladder, not outlines), borders whisper, and
+   every card carries a 1px inner top highlight — depth reads like iOS dark,
+   not a wireframe. */
 [data-app="hauldesk"][data-mode="dark"],
 [data-app="hauldesk"][data-mode="dark"][data-theme="indigo"] {
-  --bg: #0b0c10;
-  --surface: #131620;
-  --surface-2: #1a1e2a;
-  --border: rgba(255, 255, 255, 0.08);
-  --border-strong: rgba(255, 255, 255, 0.15);
-  --text: #ecedf1;
-  --text-2: #9da2ad;
-  --text-3: #8b91a0;
-  --hover: rgba(255, 255, 255, 0.05);
-  --accent: #7c7dec;
-  --accent-hover: #8e8ff0;
+  --bg: #08090d;
+  --surface: #14161f;
+  --surface-2: #1f222e;
+  --border: rgba(255, 255, 255, 0.065);
+  --border-strong: rgba(255, 255, 255, 0.14);
+  --text: #eef0f4;
+  --text-2: #a3a8b4;
+  --text-3: #8f95a3;
+  --hover: rgba(255, 255, 255, 0.055);
+  --accent: #7f80ee;
+  --accent-hover: #9192f2;
   --accent-fg: #0b0c10;
-  --accent-soft: rgba(124, 125, 236, 0.16);
-  --accent-text: #a6a7f2;
-  --ring: rgba(124, 125, 236, 0.35);
-  --green: #34c77b;
-  --green-soft: rgba(52, 199, 123, 0.14);
-  --amber: #e0a92e;
-  --amber-soft: rgba(224, 169, 46, 0.14);
-  --red: #f2615c;
-  --red-soft: rgba(242, 97, 92, 0.15);
-  --blue: #5e97f0;
-  --blue-soft: rgba(94, 151, 240, 0.15);
-  --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 2px 6px rgba(0, 0, 0, 0.28);
+  --accent-soft: rgba(127, 128, 238, 0.21);
+  --accent-text: #b0b1f6;
+  --ring: rgba(127, 128, 238, 0.4);
+  --green: #3ecd82;
+  --green-soft: rgba(62, 205, 130, 0.16);
+  --amber: #e5b13d;
+  --amber-soft: rgba(229, 177, 61, 0.15);
+  --red: #f46b66;
+  --red-soft: rgba(244, 107, 102, 0.16);
+  --blue: #6ba1f2;
+  --blue-soft: rgba(107, 161, 242, 0.16);
+  --shadow: inset 0 1px 0 rgba(255, 255, 255, 0.045), 0 1px 2px rgba(0, 0, 0, 0.5), 0 4px 16px rgba(0, 0, 0, 0.35);
 }
 
 [data-app="hauldesk"][data-theme="teal"] {
@@ -76,18 +80,18 @@
 }
 
 [data-app="hauldesk"][data-mode="dark"][data-theme="teal"] {
-  --bg: #0a0c0c;
-  --surface: #121615;
-  --surface-2: #19201d;
-  --text: #eaecec;
-  --text-2: #9ba3a0;
-  --text-3: #8a938e;
-  --accent: #22b8a6;
-  --accent-hover: #34c7b5;
+  --bg: #070b0a;
+  --surface: #131917;
+  --surface-2: #1d2521;
+  --text: #ecefee;
+  --text-2: #a0a8a5;
+  --text-3: #8e9793;
+  --accent: #26bfac;
+  --accent-hover: #3accba;
   --accent-fg: #04130f;
-  --accent-soft: rgba(34, 184, 166, 0.16);
-  --accent-text: #46cfbf;
-  --ring: rgba(34, 184, 166, 0.32);
+  --accent-soft: rgba(38, 191, 172, 0.2);
+  --accent-text: #5ad6c6;
+  --ring: rgba(38, 191, 172, 0.38);
 }
 
 [data-app="hauldesk"][data-theme="ink"] {
@@ -107,19 +111,19 @@
 }
 
 [data-app="hauldesk"][data-mode="dark"][data-theme="ink"] {
-  --bg: #0c0b0a;
-  --surface: #141312;
-  --surface-2: #1c1a18;
-  --hover: rgba(255, 255, 255, 0.045);
-  --text: #ece9e4;
-  --text-2: #a29d95;
-  --text-3: #948e83;
-  --accent: #eceae5;
+  --bg: #0a0908;
+  --surface: #171512;
+  --surface-2: #221f1b;
+  --hover: rgba(255, 255, 255, 0.05);
+  --text: #f0ede8;
+  --text-2: #a8a29a;
+  --text-3: #999288;
+  --accent: #f0ede8;
   --accent-hover: #ffffff;
   --accent-fg: #191714;
-  --accent-soft: rgba(255, 255, 255, 0.09);
-  --accent-text: #e7e4de;
-  --ring: rgba(255, 255, 255, 0.16);
+  --accent-soft: rgba(255, 255, 255, 0.11);
+  --accent-text: #ece9e3;
+  --ring: rgba(255, 255, 255, 0.2);
 }
 
 [data-app="hauldesk"] {
@@ -167,8 +171,8 @@
   --shadow-overlay: 0 -4px 16px rgba(16, 18, 29, 0.06), 0 12px 48px rgba(16, 18, 29, 0.18);
 }
 [data-app="hauldesk"][data-mode="dark"] {
-  --shadow-raised: 0 2px 6px rgba(0, 0, 0, 0.35), 0 8px 24px rgba(0, 0, 0, 0.4);
-  --shadow-overlay: 0 -4px 16px rgba(0, 0, 0, 0.35), 0 12px 48px rgba(0, 0, 0, 0.55);
+  --shadow-raised: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 2px 8px rgba(0, 0, 0, 0.45), 0 10px 28px rgba(0, 0, 0, 0.5);
+  --shadow-overlay: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 -4px 16px rgba(0, 0, 0, 0.4), 0 12px 48px rgba(0, 0, 0, 0.6);
 }
 
 /* 0ms press feedback on everything tappable: scale + opacity, compositor
@@ -251,7 +255,7 @@
 @keyframes hub-route-in {
   from {
     opacity: 0;
-    transform: translateY(6px);
+    transform: translateY(10px);
   }
   to {
     opacity: 1;
@@ -259,7 +263,23 @@
   }
 }
 [data-app="hauldesk"] .hub-route-enter {
-  animation: hub-route-in 200ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: hub-route-in 260ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Tab-bar activation pop — the icon springs when its tab becomes current. */
+@keyframes hub-tab-pop {
+  0% {
+    transform: scale(0.82);
+  }
+  60% {
+    transform: scale(1.08);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+[data-app="hauldesk"] .hub-tab-pop {
+  animation: hub-tab-pop 320ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }
 
 /* List enter-stagger, first paint only — cap at 8 children. */
