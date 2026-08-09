@@ -33,7 +33,7 @@ today: nothing is broken, the split is simply off.
 |---|---|---|
 | `CRON_SECRET` | All 17 scheduled jobs — currently 401 | Jobs no-op silently |
 | `CREDENTIALS_KEY` | Encrypts stored integration credentials; every provider connect depends on it | Integrations can't be activated |
-| `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_CONTACT` | Driver-app push notifications | No push; app otherwise fine |
+| `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_CONTACT` | Driver-app push notifications | No push; app otherwise fine |
 | `SMTP_USER`, `SMTP_PASS` | **Broken, not just missing**: nightly cron fails `535-5.7.8 BadCredentials` daily at 14:00 UTC since 07-26. Generate a fresh Gmail App Password, repaste both. | Invoice email, outreach, lead alerts silently dead |
 | `FMCSA_WEBKEY` (free — mobile.fmcsa.dot.gov → Login.gov → My WebKeys) | Live authority on /trust + broker vetting | Cached snapshot, labeled |
 | `EIA_API_KEY` (free — eia.gov/opendata/register.php) | Live diesel prices in the earnings calculator | Static figure |

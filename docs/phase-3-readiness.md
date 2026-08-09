@@ -48,7 +48,7 @@ Existing production requirements: see `docs/hub-go-live-requirements.md`.
 |----------|-------------|
 | `NEXTAUTH_SECRET` | Required — session + proxy JWT |
 | `NEXTAUTH_URL` | Required — cookie security |
-| `POSTGRES_URL` / `DATABASE_URL` | Required — users, role hint lookup |
+| `POSTGRES_URL` | Required — users, role hint lookup |
 | `HUB_DEMO_LOGIN` | Optional — hide demo block on login (Phase 5) |
 
 ## Demo paths after deploy
