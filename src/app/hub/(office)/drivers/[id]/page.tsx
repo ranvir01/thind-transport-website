@@ -1,3 +1,4 @@
+import { CustomDetailsPanel } from "@/components/hub/CustomDetailsPanel"
 import { notFound } from "next/navigation"
 import { getDriver } from "@/lib/hub/drivers"
 import { listDocuments } from "@/lib/hub/documents"
@@ -178,6 +179,9 @@ export default async function DriverDetailPage({ params }: { params: Promise<{ i
             )}
           </Panel>
         </div>
+      </div>
+      <div className="mt-4 max-w-2xl">
+        <CustomDetailsPanel entity="driver" entityId={id} />
       </div>
     </div>
   )

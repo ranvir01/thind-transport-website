@@ -1,3 +1,4 @@
+import { CustomDetailsPanel } from "@/components/hub/CustomDetailsPanel"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import { Pencil, FileText, MapPin, MessageSquare, CloudLightning, Camera, StickyNote, AlertTriangle } from "lucide-react"
@@ -313,6 +314,7 @@ export default async function LoadDetailPage({ params }: { params: Promise<{ id:
               })}
             </ol>
           </Panel>
+          <CustomDetailsPanel entity="load" entityId={id} />
         </div>
       </div>
     </div>

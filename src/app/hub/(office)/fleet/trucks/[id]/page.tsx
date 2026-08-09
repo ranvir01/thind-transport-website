@@ -1,3 +1,4 @@
+import { CustomDetailsPanel } from "@/components/hub/CustomDetailsPanel"
 import { notFound } from "next/navigation"
 import { getTruck } from "@/lib/hub/fleet"
 import { requireOfficeUser } from "@/lib/hub/session"
@@ -69,6 +70,7 @@ export default async function TruckDetailPage({ params }: { params: Promise<{ id
           <DvirPanel truckId={id} dvirs={dvirs} state={dvirState.state} openDvir={dvirState.openDvir} />
           <DocumentsPanel entityType="truck" entityId={id} documents={documents} />
           <MaintenancePanel truckId={id} schedules={schedules} records={records} currentOdometer={odometerByTruck.get(id) ?? null} />
+          <CustomDetailsPanel entity="truck" entityId={id} />
         </div>
       </div>
     </div>

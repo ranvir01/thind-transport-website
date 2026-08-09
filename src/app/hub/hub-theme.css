@@ -138,16 +138,24 @@
 }
 
 /* The marketing base layer uppercases h1–h5 in the condensed display font
-   with hardcoded light-on-dark colors — that's the single biggest source of
-   the app "shouting". Inside the software, headings are body-font, sentence
-   case, weight-based; condensed caps are reserved for 11px eyebrows and the
-   wordmark, applied per-element. */
-[data-app="hauldesk"] :is(h1, h2, h3, h4, h5, h6) {
+   with hardcoded light-on-dark colors, and paints bare <a> tags a light
+   #d6dde6 — that's the single biggest source of the app "shouting" and of
+   light-on-light links. Inside the software, headings are body-font,
+   sentence case, weight-based, and links inherit their surrounding color;
+   condensed caps are reserved for 11px eyebrows and the wordmark.
+   Specificity is deliberate: (0,0,2) via the :not(area) no-op — strictly
+   above the marketing element styles (0,0,1) no matter which stylesheet
+   the bundler emits first, strictly below every utility class (0,1,0)
+   like text-fg / text-accent-text. Do not "simplify" the :not(). */
+:where([data-app="hauldesk"]) :is(h1, h2, h3, h4, h5, h6):not(area) {
   font-family: inherit;
   text-transform: none;
   letter-spacing: inherit;
   color: inherit;
   line-height: 1.3;
+}
+:where([data-app="hauldesk"]) a:not(area) {
+  color: inherit;
 }
 
 /* Elevation ladder: background < card (--shadow) < raised (menus/popovers)

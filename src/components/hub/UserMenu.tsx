@@ -6,8 +6,9 @@
  * (palette / bell / sign-out); only the bell stays exposed in the header.
  */
 import { useEffect, useRef, useState } from "react"
+import Link from "next/link"
 import { signOut } from "next-auth/react"
-import { Check, LogOut, Moon, PartyPopper, Sun } from "lucide-react"
+import { Check, LogOut, MonitorDown, Moon, PartyPopper, Sun } from "lucide-react"
 import { clearShellCache } from "@/lib/hub/pwa"
 import {
   APPEARANCE_LABELS,
@@ -151,6 +152,14 @@ export function UserMenu({ name, role }: { name: string; role: string }) {
           </button>
 
           <div className="my-1 border-t border-border" />
+          <Link
+            href="/hub/settings/app"
+            role="menuitem"
+            onClick={() => setOpen(false)}
+            className="flex w-full min-h-[40px] items-center gap-2.5 rounded-control px-2.5 text-sm font-medium text-fg-2 hover:bg-hover hover:text-fg"
+          >
+            <MonitorDown className="h-4 w-4 text-fg-3" /> Install the app
+          </Link>
           <button
             type="button"
             role="menuitem"

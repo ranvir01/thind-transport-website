@@ -348,7 +348,7 @@ export default async function TodayPage() {
         <span className="inline-flex items-center gap-1.5">
           <DollarSign className="h-3.5 w-3.5" /> {fmtCents(Number(stats.revenue_week_cents))} booked this week
         </span>
-        <Link href="/hub/money" className="inline-flex items-center gap-1.5 hover:text-fg-2 hover:underline">
+        <Link href="/hub/money" className="inline-flex items-center gap-1.5 text-fg-3 hover:text-fg-2 hover:underline">
           <Receipt className="h-3.5 w-3.5" /> {fmtCents(Number(stats.ar_open_cents))} owed to you
         </Link>
         {today.openIncidents > 0 ? (
