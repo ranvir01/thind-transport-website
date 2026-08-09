@@ -462,7 +462,15 @@ export function AutopilotScene({ stage }: { stage: number }) {
 }
 
 /* ---------- 10 · Wrap ---------- */
-export function WrapScene({ stage, onReplay }: { stage: number; onReplay: () => void }) {
+export function WrapScene({
+  stage,
+  onReplay,
+  onSwitchSeat,
+}: {
+  stage: number
+  onReplay: () => void
+  onSwitchSeat?: () => void
+}) {
   return (
     <div className="flex h-full flex-col items-center justify-center text-center">
       <Step on={stage >= 1}>
@@ -485,18 +493,32 @@ export function WrapScene({ stage, onReplay }: { stage: number; onReplay: () => 
       <Step on={stage >= 3} className="mt-5">
         <p className="text-[19px] font-semibold tracking-tight text-fg">Take a load off.</p>
         <div className="mt-4 flex flex-col items-center gap-2">
+          {onSwitchSeat ? (
+            <button
+              type="button"
+              onClick={onSwitchSeat}
+              className="inline-flex min-h-[46px] w-56 items-center justify-center gap-2 rounded-control bg-accent px-5 text-sm font-semibold text-accent-fg hover:bg-accent-hover"
+            >
+              Try another seat
+            </button>
+          ) : null}
           <a
             href="/hub/login"
-            className="inline-flex min-h-[46px] w-56 items-center justify-center gap-2 rounded-control bg-accent px-5 text-sm font-semibold text-accent-fg hover:bg-accent-hover"
+            className={cn(
+              "inline-flex min-h-[46px] w-56 items-center justify-center gap-2 rounded-control px-5 text-sm font-semibold",
+              onSwitchSeat
+                ? "border border-border-strong text-fg-2 hover:bg-hover"
+                : "bg-accent text-accent-fg hover:bg-accent-hover"
+            )}
           >
             Open the real app
           </a>
           <button
             type="button"
             onClick={onReplay}
-            className="inline-flex min-h-[44px] items-center justify-center rounded-control px-5 text-sm font-semibold text-fg-2 hover:bg-hover"
+            className="inline-flex min-h-[40px] items-center justify-center rounded-control px-5 text-[13px] font-medium text-fg-3 hover:bg-hover"
           >
-            Watch it again
+            Watch this seat again
           </button>
         </div>
       </Step>

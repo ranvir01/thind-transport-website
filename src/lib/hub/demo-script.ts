@@ -120,3 +120,175 @@ export function demoScene(id: string): DemoScene | null {
 export function demoRuntimeMs(): number {
   return DEMO_SCENES.reduce((sum, s) => sum + s.durationMs, 0)
 }
+
+/* ============================================================================
+ * Multi-seat tracks — the same fabricated day from every chair in the
+ * business. "office" reuses the original scene list; driver/owner/broker are
+ * their own arcs so a prospect can run the company from all angles.
+ * ==========================================================================*/
+
+export type DemoTrackId = "office" | "driver" | "owner" | "broker"
+
+export interface DemoTrack {
+  id: DemoTrackId
+  label: string
+  role: string
+  blurb: string
+  scenes: DemoScene[]
+}
+
+const DRIVER_SCENES: DemoScene[] = [
+  {
+    id: "d-offer",
+    title: "Load offer",
+    caption: "Loads arrive on the phone — accept from the couch, not a callback queue.",
+    durationMs: 7600,
+    stepsMs: [300, 1400, 3000, 4600],
+  },
+  {
+    id: "d-run",
+    title: "The run",
+    caption: "Everything for the run on one card. No calling dispatch back for the dock number.",
+    durationMs: 8600,
+    stepsMs: [300, 1200, 2200, 3400, 4800],
+  },
+  {
+    id: "d-arrive",
+    title: "Arrival",
+    caption: "The geofence stamps arrival; the detention clock runs without an argument.",
+    durationMs: 7600,
+    stepsMs: [300, 1800, 3400, 5000],
+  },
+  {
+    id: "d-pod",
+    title: "POD",
+    caption: "Photograph the POD before leaving the dock — uploads even if signal drops.",
+    durationMs: 7200,
+    stepsMs: [300, 1600, 3200, 4600],
+  },
+  {
+    id: "d-pay",
+    title: "Pay",
+    caption: "Pay is transparent: every mile, every deduction, on the phone before Friday.",
+    durationMs: 8600,
+    stepsMs: [300, 1400, 2600, 3800, 5200],
+  },
+  {
+    id: "d-wrap",
+    title: "Your seat",
+    caption: "That's a driver's whole day of paperwork — about four taps.",
+    durationMs: 0,
+    stepsMs: [300, 1100],
+  },
+]
+
+const OWNER_SCENES: DemoScene[] = [
+  {
+    id: "o-pulse",
+    title: "The pulse",
+    caption: "The week in four numbers — revenue, margin, unbilled, and who owes you.",
+    durationMs: 8200,
+    stepsMs: [300, 1000, 1700, 2400, 3600],
+  },
+  {
+    id: "o-fraud",
+    title: "Fuel audit",
+    caption: "The fuel audit never sleeps: a 312-gallon buy on a 240-gallon tank gets caught overnight.",
+    durationMs: 8200,
+    stepsMs: [300, 1800, 3400, 5000],
+  },
+  {
+    id: "o-settle",
+    title: "Driver pay",
+    caption: "Settlements draft themselves to the penny — you just approve.",
+    durationMs: 8200,
+    stepsMs: [300, 1400, 2600, 3800, 5200],
+  },
+  {
+    id: "o-books",
+    title: "Books",
+    caption: "Invoices, payments and fuel sync to QuickBooks — nothing typed twice.",
+    durationMs: 7600,
+    stepsMs: [300, 1600, 3200, 4600],
+  },
+  {
+    id: "o-comply",
+    title: "Compliance",
+    caption: "CDLs, med cards, 2290s, IFTA — one wall, watched daily, renewal packet ready.",
+    durationMs: 8200,
+    stepsMs: [300, 1500, 2700, 3900, 5200],
+  },
+  {
+    id: "o-wrap",
+    title: "Your seat",
+    caption: "The back office ran itself. You made two decisions all week.",
+    durationMs: 0,
+    stepsMs: [300, 1100],
+  },
+]
+
+const BROKER_SCENES: DemoScene[] = [
+  {
+    id: "b-track",
+    title: "Tracking link",
+    caption: "\"Where's my truck?\" gets a live link, not a phone call.",
+    durationMs: 8600,
+    stepsMs: [300, 1600, 3200, 4800],
+  },
+  {
+    id: "b-docs",
+    title: "Paperwork",
+    caption: "POD lands with the invoice, minutes after delivery — nothing to chase.",
+    durationMs: 7600,
+    stepsMs: [300, 1600, 3200, 4600],
+  },
+  {
+    id: "b-score",
+    title: "The record",
+    caption: "On-time, tracked, papered — the carrier brokers call back.",
+    durationMs: 7000,
+    stepsMs: [300, 1600, 3200],
+  },
+  {
+    id: "b-wrap",
+    title: "Your seat",
+    caption: "Your broker never waited on anything. That's why the next load comes easy.",
+    durationMs: 0,
+    stepsMs: [300, 1100],
+  },
+]
+
+export const DEMO_TRACKS: DemoTrack[] = [
+  {
+    id: "office",
+    label: "Dispatcher",
+    role: "Run the day",
+    blurb: "Book, dispatch, track, invoice, get paid — the full loop in 90 seconds.",
+    scenes: DEMO_SCENES,
+  },
+  {
+    id: "driver",
+    label: "Driver",
+    role: "Run the load",
+    blurb: "Accept, drive, arrive, photograph the POD, watch the pay math.",
+    scenes: DRIVER_SCENES,
+  },
+  {
+    id: "owner",
+    label: "Owner",
+    role: "Run the money",
+    blurb: "Margins, fuel audit, driver pay, books and compliance — on autopilot.",
+    scenes: OWNER_SCENES,
+  },
+  {
+    id: "broker",
+    label: "Broker view",
+    role: "What customers see",
+    blurb: "The live tracking link, instant paperwork, and why they call back.",
+    scenes: BROKER_SCENES,
+  },
+]
+
+export function demoTrack(id: string): DemoTrack | null {
+  return DEMO_TRACKS.find((t) => t.id === id) ?? null
+}
