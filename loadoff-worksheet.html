@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LoadOff — Human Worksheet</title>
+<style>
+  :root {
+    --bg: #f7f7fb; --surface: #ffffff; --surface-2: #f1f1f7;
+    --fg: #1a1a24; --fg-2: #5a5a6e; --fg-3: #8b8b9e;
+    --border: #e2e2ec; --border-strong: #cfcfdd;
+    --accent: #5b5bd6; --accent-soft: #eceafd; --accent-text: #4a4ac2;
+    --ok: #1a7f4b; --ok-soft: #e0f3e9; --warn: #93610c; --warn-soft: #fdf0d5;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #08090d; --surface: #14161f; --surface-2: #1f222e;
+      --fg: #eef0f6; --fg-2: #a2a7b8; --fg-3: #6d7284;
+      --border: rgba(255,255,255,0.065); --border-strong: rgba(255,255,255,0.12);
+      --accent: #7f80ee; --accent-soft: rgba(127,128,238,0.16); --accent-text: #9b9cf4;
+      --ok: #4ccb8a; --ok-soft: rgba(76,203,138,0.14); --warn: #e5b458; --warn-soft: rgba(229,180,88,0.14);
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.55 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; padding: 32px 16px 80px; }
+  main { max-width: 880px; margin: 0 auto; }
+  h1 { font-size: 24px; margin: 0 0 4px; letter-spacing: -0.02em; }
+  .sub { color: var(--fg-2); margin: 0 0 28px; }
+  .sub code { background: var(--surface-2); border-radius: 6px; padding: 1px 6px; font-size: 13px; }
+  h2 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--fg-3); margin: 36px 0 12px; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 16px 18px; margin-bottom: 12px; box-shadow: 0 1px 2px rgba(10,10,30,0.05); }
+  .card h3 { margin: 0 0 4px; font-size: 15px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .card p { margin: 4px 0 0; color: var(--fg-2); font-size: 14px; }
+  .pill { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; border-radius: 999px; padding: 2px 9px; }
+  .pill.blocked { background: var(--warn-soft); color: var(--warn); }
+  .pill.simulated { background: var(--accent-soft); color: var(--accent-text); }
+  .pill.optional { background: var(--surface-2); color: var(--fg-3); }
+  .pill.done { background: var(--ok-soft); color: var(--ok); }
+  code.env { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 12.5px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 6px; padding: 1px 6px; white-space: nowrap; }
+  .where { margin-top: 8px; font-size: 12.5px; color: var(--fg-3); }
+  .where strong { color: var(--fg-2); font-weight: 600; }
+  ul { margin: 6px 0 0; padding-left: 20px; color: var(--fg-2); font-size: 14px; }
+  li { margin: 3px 0; }
+  .footer { margin-top: 40px; font-size: 12.5px; color: var(--fg-3); border-top: 1px solid var(--border); padding-top: 16px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>LoadOff — Human Worksheet</h1>
+  <p class="sub">Everything that needs a <em>human</em> — real credentials, account signups, photos, decisions.
+  Nothing here blocks the app: every integration ships with a simulated or manual fallback, and the
+  <code>/hub/demo</code> simulation fabricates the rest. Do these to make the fabricated parts real.
+  Last updated <strong>2026-08-09</strong>.</p>
+
+  <h2>1 · Credentials to add in Vercel → Project → Environment Variables (Production)</h2>
+
+  <div class="card">
+    <h3>Live maps &amp; geocoding <span class="pill blocked">needs key</span></h3>
+    <p>Unlocks real map tiles on load tracking, driver ETA, and the shareable tracking link. Today routing falls back to public OSRM and addresses geocode through the fallback geocoder.</p>
+    <div class="where"><strong>Get it:</strong> account.mapbox.com → free tier is fine to start · <strong>Set:</strong> <code class="env">NEXT_PUBLIC_MAPBOX_TOKEN</code> (public, pk.*) and <code class="env">MAPBOX_TOKEN</code> (secret, sk.*)</div>
+  </div>
+
+  <div class="card">
+    <h3>Outbound email (invoices, driver statements, dunning) <span class="pill blocked">needs creds</span></h3>
+    <p>Invoice PDFs, settlement statements, and payment reminders are generated today but only emailed when SMTP is configured. Any provider with SMTP works (Google Workspace, Fastmail, SES SMTP).</p>
+    <div class="where"><strong>Set:</strong> <code class="env">SMTP_HOST</code> <code class="env">SMTP_PORT</code> <code class="env">SMTP_USER</code> <code class="env">SMTP_PASS</code> <code class="env">SMTP_FROM</code> — use a subdomain sender like billing@mail.thindtransport.com and add its SPF/DKIM DNS records at your registrar</div>
+  </div>
+
+  <div class="card">
+    <h3>Push notifications (driver app + office) <span class="pill blocked">needs keys</span></h3>
+    <p>Web push for load assignments, message alerts, and dispatch nudges. Generate a VAPID pair once — one command, no account needed.</p>
+    <div class="where"><strong>Get it:</strong> <code class="env">npx web-push generate-vapid-keys</code> · <strong>Set:</strong> <code class="env">VAPID_PUBLIC_KEY</code> <code class="env">VAPID_PRIVATE_KEY</code> <code class="env">VAPID_CONTACT</code> (mailto:you@…)</div>
+  </div>
+
+  <div class="card">
+    <h3>AI rate-con parser (paste / PDF intake) <span class="pill blocked">needs key</span></h3>
+    <p>The paste-intake box and PDF import use Claude to turn rate confirmations into structured loads. Without the key it falls back to the regex parser (works, less magic).</p>
+    <div class="where"><strong>Get it:</strong> console.anthropic.com → API keys · <strong>Set:</strong> <code class="env">ANTHROPIC_API_KEY</code> (optionally <code class="env">ANTHROPIC_MODEL</code>)</div>
+  </div>
+
+  <div class="card">
+    <h3>FMCSA carrier vetting <span class="pill blocked">needs key</span></h3>
+    <p>Live SAFER lookups when vetting brokers/carriers (authority, insurance, safety rating). Free government key, instant issue.</p>
+    <div class="where"><strong>Get it:</strong> mobile.fmcsa.dot.gov/QCDevsite → register → WebKey · <strong>Set:</strong> <code class="env">FMCSA_WEBKEY</code></div>
+  </div>
+
+  <div class="card">
+    <h3>Diesel price feed <span class="pill optional">optional</span></h3>
+    <p>Weekly EIA on-highway diesel average powering the fuel widgets; a static fallback table ships in the repo.</p>
+    <div class="where"><strong>Get it:</strong> eia.gov/opendata (free) · <strong>Set:</strong> <code class="env">EIA_API_KEY</code></div>
+  </div>
+
+  <div class="card">
+    <h3>File uploads (POD photos, documents) <span class="pill done">verify</span></h3>
+    <p>Vercel Blob token — normally auto-provisioned when Blob storage is attached to the project. Verify it exists in Production; PODs won't persist without it.</p>
+    <div class="where"><strong>Set:</strong> <code class="env">BLOB_READ_WRITE_TOKEN</code> (Vercel → Storage → Blob)</div>
+  </div>
+
+  <h2>2 · Partner accounts (each is simulated until you sign up)</h2>
+
+  <div class="card">
+    <h3>QuickBooks Online <span class="pill simulated">simulated</span></h3>
+    <p>"Push to QBO" currently records the sync locally. Real sync needs an Intuit developer app (OAuth client), then connect from Settings → Integrations.</p>
+  </div>
+  <div class="card">
+    <h3>Fuel cards — WEX / EFS / Comdata / AtoB <span class="pill simulated">simulated</span></h3>
+    <p>Fuel transaction import runs on demo feeds. Each provider issues API/feed credentials to the fleet account holder; request "transaction file/API access" from your rep.</p>
+  </div>
+  <div class="card">
+    <h3>Load boards — DAT / Truckstop <span class="pill simulated">simulated</span></h3>
+    <p>Board search results are fabricated for the demo. Both require a paid subscription plus an API addendum.</p>
+  </div>
+  <div class="card">
+    <h3>ELD / telematics — TruckerCloud, Samsara et al. <span class="pill simulated">simulated</span></h3>
+    <p>HOS clocks and truck GPS in the office views are demo data until an ELD aggregator account is connected.</p>
+  </div>
+  <div class="card">
+    <h3>Factoring partner <span class="pill simulated">simulated</span></h3>
+    <p>"Submit to factor" produces the packet and records submission; electronic submission needs your factor's API credentials (ask your account manager).</p>
+  </div>
+  <div class="card">
+    <h3>Tolls — Bestpass / PrePass · Banking — Plaid · MVR — SambaSafety <span class="pill optional">later</span></h3>
+    <p>Stubs exist behind Settings → Integrations. Sign up only when the workflow matters to you.</p>
+  </div>
+
+  <h2>3 · Real content only you can provide</h2>
+  <div class="card">
+    <ul>
+      <li><strong>Photos:</strong> real truck/driver/yard photos for the marketing site and driver profiles (current ones are placeholders/stock).</li>
+      <li><strong>Tenant branding:</strong> logo + brand accent hex for each carrier tenant (Settings → Appearance applies it to the identity chip, portal, and PDFs).</li>
+      <li><strong>Company facts:</strong> MC/DOT numbers, insurance certs, W-9 — used on invoice PDFs and broker packets. Verify what's seeded is current.</li>
+      <li><strong>Driver invitation code:</strong> rotate <code class="env">DRIVER_INVITATION_CODE</code> before onboarding real drivers.</li>
+    </ul>
+  </div>
+
+  <h2>4 · Decisions waiting on you</h2>
+  <div class="card">
+    <ul>
+      <li>Which partner integrations to make real first (recommendation: SMTP → Mapbox → VAPID → FMCSA, all under an hour combined).</li>
+      <li>Whether LoadOff sells to other carriers soon — if yes, reserve the product domain and a support inbox now.</li>
+      <li>App-store presence: the PWA installs from Safari/Chrome today; a store listing (PWABuilder/TWA) needs a $99/yr Apple and $25 Google developer account.</li>
+    </ul>
+  </div>
+
+  <p class="footer">Maintained by the build agent — updated whenever new human-blocked work appears. Everything not on this list is automated.</p>
+</main>
+</body>
+</html>

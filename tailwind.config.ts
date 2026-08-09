@@ -318,8 +318,11 @@ const config: Config = {
       borderRadius: {
         fleet: "0.875rem",
         "fleet-lg": "1.5rem",
+        // App radius ladder: control 10 (buttons/inputs) < card 14 (cards,
+        // modals) < sheet 20 (large surfaces) < pill (full).
         card: "14px",
-        control: "9px",
+        control: "10px",
+        sheet: "20px",
         pill: "20px",
         // Marketing: 4px × Fibonacci multipliers (1,2,3,5). Nested elements use
         // inner = outer − padding so corners stay concentric.
@@ -348,16 +351,20 @@ const config: Config = {
         "m-e5": elevation(5),
       },
       transitionDuration: {
-        // Three durations. Nothing uses a one-off.
+        // Motion ladder (M3-aligned): micro 120 / standard 220 / entrance 320.
         fast: "120ms",
         base: "200ms",
+        standard: "220ms",
         slow: "320ms",
       },
       transitionTimingFunction: {
-        // Three named curves. Nothing uses bare `ease`.
+        // Named curves only — never bare `ease`. M3 set + the spring.
         entrance: "cubic-bezier(0.16, 1, 0.3, 1)",
         exit: "cubic-bezier(0.4, 0, 1, 1)",
         emphasis: "cubic-bezier(0.34, 1.56, 0.64, 1)",
+        standard: "cubic-bezier(0.2, 0, 0, 1)",
+        decelerate: "cubic-bezier(0.05, 0.7, 0.1, 1)",
+        accelerate: "cubic-bezier(0.3, 0, 0.8, 0.15)",
       },
       maxWidth: {
         // Measure, enforced in ch so it tracks the font, not a guessed px width.

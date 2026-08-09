@@ -112,7 +112,7 @@ export function UserManager({ users, selfId }: { users: HubUser[]; selfId: strin
                 aria-label={user.active ? `Deactivate ${user.name}` : `Reactivate ${user.name}`}
                 onClick={() => toggle(user)}
                 disabled={pending}
-                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-border text-fg-2 hover:bg-hover disabled:opacity-50"
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-control border border-border text-fg-2 hover:bg-hover disabled:opacity-50"
               >
                 {user.active ? <UserX className="h-4 w-4" /> : <UserCheck className="h-4 w-4" />}
               </button>

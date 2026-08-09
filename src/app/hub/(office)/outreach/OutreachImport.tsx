@@ -41,7 +41,7 @@ export function OutreachImport({ audience }: { audience: Audience }) {
   }
 
   return (
-    <div className="rounded-xl border border-border bg-surface p-3">
+    <div className="rounded-card border border-border bg-surface p-3">
       <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wide text-fg-3">
         Paste prospects (CSV or one per line)
       </label>

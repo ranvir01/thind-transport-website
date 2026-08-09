@@ -255,7 +255,7 @@ export function LoadForm({
           </button>
         </div>
         {form.stops.map((stop, i) => (
-          <div key={i} className="rounded-xl border border-border p-3.5 space-y-3">
+          <div key={i} className="rounded-card border border-border p-3.5 space-y-3">
             <div className="flex items-center justify-between gap-2">
               <select
                 aria-label="Stop type"

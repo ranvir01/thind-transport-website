@@ -124,7 +124,7 @@ export function ProspectRow({ prospect }: { prospect: Prospect }) {
       </div>
 
       {open && hasDraft && (
-        <div className="mt-3 rounded-xl border border-border bg-surface-2 p-3">
+        <div className="mt-3 rounded-card border border-border bg-surface-2 p-3">
           <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-fg-3">Subject</label>
           <input
             value={subject}

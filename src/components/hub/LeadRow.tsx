@@ -92,14 +92,14 @@ export function LeadRow({ lead }: { lead: WebsiteLead }) {
         {smsHref ? (
           <a
             href={smsHref}
-            className="flex min-h-[40px] items-center gap-1.5 rounded-xl border border-border-strong px-3 text-sm font-semibold text-fg-2 hover:bg-hover"
+            className="flex min-h-[40px] items-center gap-1.5 rounded-control border border-border-strong px-3 text-sm font-semibold text-fg-2 hover:bg-hover"
           >
             <MessageSquare className="h-4 w-4" /> Text
           </a>
         ) : null}
         <a
           href={`mailto:${lead.email}`}
-          className="flex min-h-[40px] items-center gap-1.5 rounded-xl border border-border-strong px-3 text-sm font-semibold text-fg-2 hover:bg-hover"
+          className="flex min-h-[40px] items-center gap-1.5 rounded-control border border-border-strong px-3 text-sm font-semibold text-fg-2 hover:bg-hover"
           aria-label={`Email ${lead.email}`}
         >
           <Mail className="h-4 w-4" />
@@ -107,7 +107,7 @@ export function LeadRow({ lead }: { lead: WebsiteLead }) {
         <button
           onClick={promote}
           disabled={pending}
-          className="flex min-h-[40px] items-center gap-1.5 rounded-xl border border-accent-soft bg-accent-soft px-3 text-sm font-semibold text-accent-text hover:opacity-90 disabled:opacity-60"
+          className="flex min-h-[40px] items-center gap-1.5 rounded-control border border-accent-soft bg-accent-soft px-3 text-sm font-semibold text-accent-text hover:opacity-90 disabled:opacity-60"
           title="Create an applicant in Recruiting from this lead"
         >
           {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <UserPlus className="h-4 w-4" />} Recruit
@@ -116,7 +116,7 @@ export function LeadRow({ lead }: { lead: WebsiteLead }) {
           <button
             onClick={() => setStatus("contacted")}
             disabled={pending}
-            className="flex min-h-[40px] items-center gap-1.5 rounded-xl border border-ok-soft px-3 text-sm font-semibold text-ok hover:bg-ok-soft disabled:opacity-60"
+            className="flex min-h-[40px] items-center gap-1.5 rounded-control border border-ok-soft px-3 text-sm font-semibold text-ok hover:bg-ok-soft disabled:opacity-60"
           >
             {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />} Contacted
           </button>
@@ -124,7 +124,7 @@ export function LeadRow({ lead }: { lead: WebsiteLead }) {
           <button
             onClick={() => setStatus("closed")}
             disabled={pending}
-            className="flex min-h-[40px] items-center gap-1.5 rounded-xl border border-border-strong px-3 text-sm font-semibold text-fg-3 hover:bg-hover disabled:opacity-60"
+            className="flex min-h-[40px] items-center gap-1.5 rounded-control border border-border-strong px-3 text-sm font-semibold text-fg-3 hover:bg-hover disabled:opacity-60"
           >
             {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <X className="h-4 w-4" />} Close
           </button>

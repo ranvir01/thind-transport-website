@@ -93,7 +93,7 @@ export default async function IftaPage({
           <select name="q" aria-label="Filing quarter" defaultValue={quarter} className={`${fieldCls} w-40`}>
             {quarterOptions(quarter).map((q) => <option key={q} value={q}>{q}</option>)}
           </select>
-          <button type="submit" className="min-h-[44px] rounded-xl border border-border-strong px-4 text-sm font-semibold text-fg-2 hover:bg-hover">
+          <button type="submit" className="min-h-[44px] rounded-control border border-border-strong px-4 text-sm font-semibold text-fg-2 hover:bg-hover">
             Go
           </button>
         </form>
@@ -111,13 +111,13 @@ export default async function IftaPage({
         ) : null}
         {report ? (
           <div className="flex gap-2">
-            <a href={`/api/hub/ifta/${quarter}/worksheet.pdf`} className="inline-flex min-h-[44px] items-center gap-1.5 rounded-xl border border-border-strong bg-surface px-4 text-sm font-semibold text-fg-2 hover:bg-hover">
+            <a href={`/api/hub/ifta/${quarter}/worksheet.pdf`} className="inline-flex min-h-[44px] items-center gap-1.5 rounded-control border border-border-strong bg-surface px-4 text-sm font-semibold text-fg-2 hover:bg-hover">
               <Download className="h-4 w-4" /> Worksheet PDF
             </a>
-            <a href={`/api/hub/ifta/${quarter}/worksheet.csv`} className="inline-flex min-h-[44px] items-center gap-1.5 rounded-xl border border-border-strong px-4 text-sm font-semibold text-fg-2 hover:bg-hover">
+            <a href={`/api/hub/ifta/${quarter}/worksheet.csv`} className="inline-flex min-h-[44px] items-center gap-1.5 rounded-control border border-border-strong px-4 text-sm font-semibold text-fg-2 hover:bg-hover">
               CSV
             </a>
-            <a href={`/api/hub/ifta/${quarter}/sources.csv`} className="inline-flex min-h-[44px] items-center gap-1.5 rounded-xl border border-border-strong px-4 text-sm font-semibold text-fg-2 hover:bg-hover">
+            <a href={`/api/hub/ifta/${quarter}/sources.csv`} className="inline-flex min-h-[44px] items-center gap-1.5 rounded-control border border-border-strong px-4 text-sm font-semibold text-fg-2 hover:bg-hover">
               4-yr source data
             </a>
           </div>

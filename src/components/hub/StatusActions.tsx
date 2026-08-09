@@ -72,7 +72,7 @@ export function CancelLoadButton({ loadId, status }: { loadId: string; status: L
     return (
       <button
         onClick={() => setConfirming(true)}
-        className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-bad-soft px-4 text-sm font-semibold text-bad hover:bg-bad-soft"
+        className="inline-flex min-h-[44px] items-center gap-2 rounded-control border border-bad-soft px-4 text-sm font-semibold text-bad hover:bg-bad-soft"
       >
         <Ban className="h-4 w-4" /> Cancel load
       </button>
@@ -83,14 +83,14 @@ export function CancelLoadButton({ loadId, status }: { loadId: string; status: L
       <button
         onClick={cancel}
         disabled={pending}
-        className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-bad px-4 text-sm font-bold text-white hover:opacity-90 disabled:opacity-60"
+        className="inline-flex min-h-[44px] items-center gap-2 rounded-control bg-bad px-4 text-sm font-bold text-white hover:opacity-90 disabled:opacity-60"
       >
         {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Ban className="h-4 w-4" />}
         Confirm cancel
       </button>
       <button
         onClick={() => setConfirming(false)}
-        className="min-h-[44px] rounded-xl px-3 text-sm font-semibold text-fg-2 hover:bg-hover"
+        className="min-h-[44px] rounded-control px-3 text-sm font-semibold text-fg-2 hover:bg-hover"
       >
         Keep load
       </button>
@@ -123,7 +123,7 @@ export function CheckCallButton({ loadId }: { loadId: string }) {
     return (
       <button
         onClick={() => setOpen(true)}
-        className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-border-strong px-4 text-sm font-semibold text-fg-2 hover:bg-hover"
+        className="inline-flex min-h-[44px] items-center gap-2 rounded-control border border-border-strong px-4 text-sm font-semibold text-fg-2 hover:bg-hover"
       >
         <MessageSquare className="h-4 w-4" /> Check call
       </button>
@@ -142,14 +142,14 @@ export function CheckCallButton({ loadId }: { loadId: string }) {
       <button
         type="submit"
         disabled={pending || !note.trim()}
-        className="min-h-[44px] shrink-0 rounded-xl bg-accent px-4 text-sm font-semibold text-accent-fg hover:bg-accent-hover disabled:opacity-50"
+        className="min-h-[44px] shrink-0 rounded-control bg-accent px-4 text-sm font-semibold text-accent-fg hover:bg-accent-hover disabled:opacity-50"
       >
         {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Log"}
       </button>
       <button
         type="button"
         onClick={() => setOpen(false)}
-        className="min-h-[44px] shrink-0 rounded-xl px-3 text-sm font-semibold text-fg-2 hover:bg-hover"
+        className="min-h-[44px] shrink-0 rounded-control px-3 text-sm font-semibold text-fg-2 hover:bg-hover"
       >
         Cancel
       </button>

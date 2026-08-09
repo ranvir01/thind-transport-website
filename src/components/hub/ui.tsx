@@ -11,6 +11,10 @@ export const fieldCls =
 
 export const labelCls = "block text-[11px] font-semibold uppercase tracking-wide text-fg-3 mb-1.5"
 
+/** Error-state field: danger border + ring; pair with a helper line in text-bad. */
+export const fieldErrorCls =
+  "border-bad focus-visible:ring-[var(--red-soft)] focus-visible:border-bad"
+
 /**
  * Form controls for the forced-dark driver/portal chrome. Those surfaces are
  * always navy regardless of the office mode toggle, so the mode-dependent
@@ -44,30 +48,62 @@ export const moneyCls = "font-mono font-medium text-fg tabular-nums"
 /** Inline link accent. */
 export const linkAccentCls = "font-semibold text-accent-text hover:underline"
 
+/**
+ * Button — four-rung height ladder (32/40/48/56). The 48/56 rungs hold the
+ * touch floor; sm/md are for pointer-dense desktop toolbars only (the global
+ * mobile rule still enforces 44px there). All states: default, hover, press
+ * (global scale + inset via .press-sink), focus-visible ring, disabled,
+ * loading (spinner overlays a hidden label so width never jumps).
+ */
 const buttonBase =
-  "inline-flex min-h-11 md:min-h-0 md:h-[34px] items-center justify-center gap-2 rounded-control px-3.5 text-sm font-semibold transition-colors disabled:pointer-events-none disabled:opacity-50"
+  "press-sink relative inline-flex items-center justify-center gap-2 rounded-control font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:ring-offset-1 disabled:pointer-events-none disabled:opacity-50"
+
+const BUTTON_SIZE = {
+  sm: "h-8 px-3 text-[13px]",
+  md: "h-10 px-3.5 text-sm",
+  lg: "h-12 px-5 text-sm",
+  xl: "h-14 px-6 text-base",
+} as const
+
+const BUTTON_VARIANT = {
+  primary: "bg-accent text-accent-fg shadow-card hover:bg-accent-hover",
+  secondary: "border border-border-strong bg-surface text-fg hover:bg-hover",
+  ghost: "text-fg-2 hover:bg-hover hover:text-fg",
+  danger: "bg-bad text-white shadow-card hover:opacity-90",
+  link: "text-accent-text underline-offset-2 hover:underline",
+} as const
+
+function ButtonSpinner() {
+  return (
+    <span className="absolute inset-0 flex items-center justify-center" aria-hidden>
+      <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+    </span>
+  )
+}
 
 export function Button({
   variant = "primary",
+  size = "md",
+  loading = false,
   className,
   children,
+  disabled,
   ...props
 }: React.ButtonHTMLAttributes<HTMLButtonElement> & {
-  variant?: "primary" | "secondary" | "ghost" | "danger"
+  variant?: keyof typeof BUTTON_VARIANT
+  size?: keyof typeof BUTTON_SIZE
+  /** Swaps the label for a spinner while preserving width — no layout jump. */
+  loading?: boolean
 }) {
   return (
     <button
-      className={cn(
-        buttonBase,
-        variant === "primary" && "bg-accent text-accent-fg hover:bg-accent-hover",
-        variant === "secondary" && "border border-border-strong bg-surface text-fg hover:bg-hover",
-        variant === "ghost" && "text-fg-2 hover:bg-hover hover:text-fg",
-        variant === "danger" && "bg-bad text-fg hover:opacity-90",
-        className
-      )}
+      className={cn(buttonBase, BUTTON_SIZE[size], BUTTON_VARIANT[variant], className)}
+      disabled={disabled || loading}
+      aria-busy={loading || undefined}
       {...props}
     >
-      {children}
+      <span className={cn("inline-flex items-center gap-2", loading && "invisible")}>{children}</span>
+      {loading ? <ButtonSpinner /> : null}
     </button>
   )
 }

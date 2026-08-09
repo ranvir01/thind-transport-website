@@ -89,7 +89,7 @@ export function QuickAddTask() {
           type="button"
           aria-label={expanded ? "Fewer options" : "More options"}
           onClick={() => setExpanded((v) => !v)}
-          className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-border-strong text-fg-2 hover:bg-hover"
+          className="flex h-12 w-12 shrink-0 items-center justify-center rounded-control border border-border-strong text-fg-2 hover:bg-hover"
         >
           {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
         </button>
@@ -178,7 +178,7 @@ export function TaskItem({ task }: { task: Task }) {
     })
 
   return (
-    <div className={cn("rounded-xl border p-3", overdue ? "border-bad-soft bg-bad-soft" : "border-border bg-surface-2")}>
+    <div className={cn("rounded-card border p-3", overdue ? "border-bad-soft bg-bad-soft" : "border-border bg-surface-2")}>
       <div className="flex items-start gap-3">
         <button
           onClick={complete}

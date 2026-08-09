@@ -164,7 +164,7 @@ export function TimeOffDecisionPanel({ requests }: { requests: TimeOffRequest[] 
       </h2>
       <ul className="space-y-2">
         {requests.map((r) => (
-          <li key={r.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border bg-surface-2 p-3">
+          <li key={r.id} className="flex flex-wrap items-center justify-between gap-2 rounded-card border border-border bg-surface-2 p-3">
             <div>
               <p className="font-semibold text-fg">
                 {r.driver_name} — {formatHubDateShort(r.start_date)} to {formatHubDateShort(r.end_date)}
@@ -178,14 +178,14 @@ export function TimeOffDecisionPanel({ requests }: { requests: TimeOffRequest[] 
               <button
                 onClick={() => decide(r.id, "approved")}
                 disabled={pending}
-                className="flex min-h-[44px] items-center gap-1.5 rounded-xl border border-ok-soft bg-ok-soft px-4 text-sm font-bold text-ok hover:opacity-90 disabled:opacity-60"
+                className="flex min-h-[44px] items-center gap-1.5 rounded-control border border-ok-soft bg-ok-soft px-4 text-sm font-bold text-ok hover:opacity-90 disabled:opacity-60"
               >
                 <Check className="h-4 w-4" /> Approve
               </button>
               <button
                 onClick={() => decide(r.id, "denied")}
                 disabled={pending}
-                className="flex min-h-[44px] items-center gap-1.5 rounded-xl border border-border-strong px-4 text-sm font-bold text-fg-2 hover:bg-hover disabled:opacity-60"
+                className="flex min-h-[44px] items-center gap-1.5 rounded-control border border-border-strong px-4 text-sm font-bold text-fg-2 hover:bg-hover disabled:opacity-60"
               >
                 <X className="h-4 w-4" /> Deny
               </button>
@@ -241,7 +241,7 @@ export function DriverAppAccessPanel({
         <button
           onClick={send}
           disabled={pending || !email}
-          className="flex min-h-[36px] shrink-0 items-center gap-1.5 rounded-xl border border-border-strong px-3 text-sm font-bold text-fg-2 hover:bg-hover disabled:opacity-60"
+          className="flex min-h-[36px] shrink-0 items-center gap-1.5 rounded-control border border-border-strong px-3 text-sm font-bold text-fg-2 hover:bg-hover disabled:opacity-60"
         >
           {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Mail className="h-4 w-4" />}
           Send invite

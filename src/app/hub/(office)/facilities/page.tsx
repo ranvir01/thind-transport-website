@@ -34,7 +34,7 @@ export default async function FacilitiesPage({
           name="q"
           defaultValue={q ?? ""}
           placeholder="Search name, city, state…"
-          className="w-full min-h-[48px] rounded-xl border border-border-strong bg-surface px-4 text-sm text-fg placeholder:text-fg-3"
+          className="w-full min-h-[48px] rounded-control border border-border-strong bg-surface px-4 text-sm text-fg placeholder:text-fg-3"
         />
       </form>
 
@@ -49,7 +49,7 @@ export default async function FacilitiesPage({
             const risk = detentionRisk(f.avg_dwell_minutes, freeMinutes)
             return (
               <Link key={f.id} href={`/hub/facilities/${f.id}`} className="flex items-center gap-3 p-3.5 hover:bg-hover">
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-surface-2 text-accent-text">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-control bg-surface-2 text-accent-text">
                   <Warehouse className="h-5 w-5" />
                 </span>
                 <span className="min-w-0 flex-1">

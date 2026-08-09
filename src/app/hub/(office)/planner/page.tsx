@@ -38,20 +38,20 @@ export default async function PlannerPage({
             <Link
               href={`/hub/planner?week=${shiftWeek(data.weekStart, -1)}`}
               aria-label="Previous week"
-              className="flex h-11 w-11 items-center justify-center rounded-xl border border-border-strong text-fg-2 hover:bg-hover"
+              className="flex h-11 w-11 items-center justify-center rounded-control border border-border-strong text-fg-2 hover:bg-hover"
             >
               <ChevronLeft className="h-5 w-5" />
             </Link>
             <Link
               href={data.weekStart === thisWeek ? "/hub/planner" : `/hub/planner?week=${thisWeek}`}
-              className="flex min-h-[44px] items-center rounded-xl border border-border-strong px-4 text-sm font-semibold text-fg-2 hover:bg-hover"
+              className="flex min-h-[44px] items-center rounded-control border border-border-strong px-4 text-sm font-semibold text-fg-2 hover:bg-hover"
             >
               Week of {weekLabel}
             </Link>
             <Link
               href={`/hub/planner?week=${shiftWeek(data.weekStart, 1)}`}
               aria-label="Next week"
-              className="flex h-11 w-11 items-center justify-center rounded-xl border border-border-strong text-fg-2 hover:bg-hover"
+              className="flex h-11 w-11 items-center justify-center rounded-control border border-border-strong text-fg-2 hover:bg-hover"
             >
               <ChevronRight className="h-5 w-5" />
             </Link>
@@ -94,7 +94,7 @@ export default async function PlannerPage({
           </p>
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
             {data.backhaul.map((hint) => (
-              <div key={hint.truckUnit} className="rounded-xl border border-border bg-white/[0.03] p-3">
+              <div key={hint.truckUnit} className="rounded-card border border-border bg-white/[0.03] p-3">
                 <p className="text-[11px] font-bold uppercase tracking-wider text-accent-text">
                   #{hint.truckUnit} · empty in {hint.market}
                 </p>

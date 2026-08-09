@@ -174,14 +174,14 @@ export function IntegrationCard({ card, encryptionReady }: { card: ProviderCard;
             {card.pendingEvents ? (
               <button
                 onClick={retryEvents} disabled={pending}
-                className="flex min-h-[40px] items-center gap-1.5 rounded-xl border border-warn-soft px-4 text-sm font-semibold text-warn hover:bg-warn-soft disabled:opacity-60"
+                className="flex min-h-[40px] items-center gap-1.5 rounded-control border border-warn-soft px-4 text-sm font-semibold text-warn hover:bg-warn-soft disabled:opacity-60"
               >
                 {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />} Retry {card.pendingEvents} event{card.pendingEvents === 1 ? "" : "s"}
               </button>
             ) : null}
             <button
               onClick={() => { setOpen(true); setConfirmingDisconnect(false) }} disabled={pending}
-              className="flex min-h-[40px] items-center gap-1.5 rounded-xl border border-border-strong px-4 text-sm font-semibold text-fg-2 hover:bg-hover disabled:opacity-60"
+              className="flex min-h-[40px] items-center gap-1.5 rounded-control border border-border-strong px-4 text-sm font-semibold text-fg-2 hover:bg-hover disabled:opacity-60"
             >
               Edit
             </button>
@@ -189,13 +189,13 @@ export function IntegrationCard({ card, encryptionReady }: { card: ProviderCard;
               <>
                 <button
                   onClick={disconnect} disabled={pending}
-                  className="flex min-h-[40px] items-center gap-1.5 rounded-xl bg-bad px-4 text-sm font-bold text-white hover:opacity-90 disabled:opacity-60"
+                  className="flex min-h-[40px] items-center gap-1.5 rounded-control bg-bad px-4 text-sm font-bold text-white hover:opacity-90 disabled:opacity-60"
                 >
                   {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Unplug className="h-4 w-4" />} Disconnect it
                 </button>
                 <button
                   onClick={() => setConfirmingDisconnect(false)} disabled={pending}
-                  className="flex min-h-[40px] items-center gap-1.5 rounded-xl border border-border-strong px-4 text-sm font-semibold text-fg-2 hover:bg-hover disabled:opacity-60"
+                  className="flex min-h-[40px] items-center gap-1.5 rounded-control border border-border-strong px-4 text-sm font-semibold text-fg-2 hover:bg-hover disabled:opacity-60"
                 >
                   Keep
                 </button>
@@ -203,7 +203,7 @@ export function IntegrationCard({ card, encryptionReady }: { card: ProviderCard;
             ) : (
               <button
                 onClick={() => setConfirmingDisconnect(true)} disabled={pending}
-                className="flex min-h-[40px] items-center gap-1.5 rounded-xl border border-border-strong px-4 text-sm font-semibold text-fg-2 hover:bg-hover disabled:opacity-60"
+                className="flex min-h-[40px] items-center gap-1.5 rounded-control border border-border-strong px-4 text-sm font-semibold text-fg-2 hover:bg-hover disabled:opacity-60"
               >
                 <Unplug className="h-4 w-4" /> Disconnect
               </button>
@@ -233,7 +233,7 @@ export function IntegrationCard({ card, encryptionReady }: { card: ProviderCard;
             ))}
             <div className="flex gap-2">
               <button type="button" onClick={() => { setOpen(false); setValues({}) }}
-                className="flex-1 min-h-[40px] rounded-xl border border-border-strong text-sm font-semibold text-fg-2 hover:bg-hover">
+                className="flex-1 min-h-[40px] rounded-control border border-border-strong text-sm font-semibold text-fg-2 hover:bg-hover">
                 Cancel
               </button>
               <button type="submit" disabled={pending || !encryptionReady}
@@ -245,7 +245,7 @@ export function IntegrationCard({ card, encryptionReady }: { card: ProviderCard;
         ) : (
           <button
             onClick={() => setOpen(true)}
-            className="flex min-h-[40px] items-center gap-1.5 rounded-xl bg-accent px-4 text-sm font-semibold text-accent-fg hover:bg-accent-hover"
+            className="flex min-h-[40px] items-center gap-1.5 rounded-control bg-accent px-4 text-sm font-semibold text-accent-fg hover:bg-accent-hover"
           >
             Connect
           </button>

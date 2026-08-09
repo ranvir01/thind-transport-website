@@ -106,7 +106,7 @@ export function OfferPanel({
         </form>
       ) : (
         <div className="space-y-3">
-          <div className="rounded-xl border border-border bg-surface-2 p-3">
+          <div className="rounded-card border border-border bg-surface-2 p-3">
             <p className="text-sm font-semibold text-accent-text">{offer.pay_summary}</p>
             {offer.start_date ? (
               <p className="text-body-xs text-fg-3">
@@ -117,7 +117,7 @@ export function OfferPanel({
           </div>
 
           {offer.status === "signed" ? (
-            <p className="flex items-center gap-2 rounded-xl border border-ok-soft bg-ok-soft px-3 py-2.5 text-sm font-semibold text-ok">
+            <p className="flex items-center gap-2 rounded-control border border-ok-soft bg-ok-soft px-3 py-2.5 text-sm font-semibold text-ok">
               <Check className="h-4 w-4" />
               Signed by {offer.signed_name}
               {offer.signed_at
@@ -224,7 +224,7 @@ export function ConvertPanel({
         </p>
         <button
           onClick={() => router.push(`/hub/drivers/${alreadyDriverId}`)}
-          className="mt-3 min-h-[44px] rounded-xl border border-border-strong px-4 text-sm font-semibold text-fg-2 hover:bg-hover"
+          className="mt-3 min-h-[44px] rounded-control border border-border-strong px-4 text-sm font-semibold text-fg-2 hover:bg-hover"
         >
           Open the driver file
         </button>
@@ -310,7 +310,7 @@ export function ReferralPanel({
 
   if (referrerName) {
     return (
-      <p className="rounded-xl border border-accent-soft bg-accent-soft px-3 py-2.5 text-sm text-fg-2">
+      <p className="rounded-control border border-accent-soft bg-accent-soft px-3 py-2.5 text-sm text-fg-2">
         Referred by <span className="font-semibold text-accent-text">{referrerName}</span> — bonus pays
         through their settlement when this applicant is hired.
       </p>
@@ -344,7 +344,7 @@ export function ReferralPanel({
           })
         }
         disabled={pending || !form.driverId}
-        className="min-h-[48px] rounded-xl bg-accent px-4 text-sm font-semibold text-accent-fg hover:bg-accent-hover disabled:opacity-50"
+        className="min-h-[48px] rounded-control bg-accent px-4 text-sm font-semibold text-accent-fg hover:bg-accent-hover disabled:opacity-50"
       >
         Attach referral
       </button>

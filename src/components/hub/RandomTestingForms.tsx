@@ -46,7 +46,7 @@ export function RecordResultForm({ id }: { id: string }) {
     return (
       <button
         onClick={() => setOpen(true)}
-        className="min-h-[36px] rounded-xl border border-border-strong px-3 text-body-xs font-semibold text-fg-2 hover:bg-hover"
+        className="min-h-[36px] rounded-control border border-border-strong px-3 text-body-xs font-semibold text-fg-2 hover:bg-hover"
       >
         Record result
       </button>
@@ -69,7 +69,7 @@ export function RecordResultForm({ id }: { id: string }) {
           } else toast.error(r.error ?? "Failed")
         })
       }}
-      className="flex flex-col gap-2 rounded-xl border border-border p-3 sm:flex-row sm:items-end sm:flex-wrap"
+      className="flex flex-col gap-2 rounded-card border border-border p-3 sm:flex-row sm:items-end sm:flex-wrap"
     >
       <div>
         <label className={labelCls}>Outcome</label>
@@ -104,10 +104,10 @@ export function RecordResultForm({ id }: { id: string }) {
         <input className={fieldCls} value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Collection site, chain-of-custody #…" />
       </div>
       <div className="flex gap-2">
-        <button type="submit" disabled={pending} className="min-h-[36px] rounded-xl bg-accent px-4 text-body-xs font-semibold text-accent-fg hover:bg-accent-hover disabled:opacity-60">
+        <button type="submit" disabled={pending} className="min-h-[36px] rounded-control bg-accent px-4 text-body-xs font-semibold text-accent-fg hover:bg-accent-hover disabled:opacity-60">
           {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save"}
         </button>
-        <button type="button" onClick={() => setOpen(false)} className="min-h-[36px] rounded-xl border border-border-strong px-4 text-body-xs font-semibold text-fg-2 hover:bg-hover">
+        <button type="button" onClick={() => setOpen(false)} className="min-h-[36px] rounded-control border border-border-strong px-4 text-body-xs font-semibold text-fg-2 hover:bg-hover">
           Cancel
         </button>
       </div>

@@ -36,7 +36,7 @@ export default async function OfficeThreadPage({ params }: { params: Promise<{ i
           thread.load_id ? (
             <Link
               href={`/hub/loads/${thread.load_id}`}
-              className="inline-flex min-h-[44px] items-center rounded-xl border border-border-strong px-4 text-sm font-semibold text-fg-2 hover:bg-hover"
+              className="inline-flex min-h-[44px] items-center rounded-control border border-border-strong px-4 text-sm font-semibold text-fg-2 hover:bg-hover"
             >
               Open the load
             </Link>
