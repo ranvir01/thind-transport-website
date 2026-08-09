@@ -63,10 +63,11 @@ export function DemoSimulation() {
     setPlaying(true)
   }, [])
 
-  // Pause-aware auto-advance.
+  // Pause-aware auto-advance. Runs under prefers-reduced-motion too — scene
+  // visuals render fully drawn there, but the slideshow itself isn't motion;
+  // without this the demo stalled with a Play button that did nothing.
   useEffect(() => {
     if (!playing || scene.durationMs === 0) return
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return
     startedAtRef.current = performance.now()
     const remaining = Math.max(250, scene.durationMs - elapsedRef.current)
     const t = window.setTimeout(() => go(index + 1), remaining)
