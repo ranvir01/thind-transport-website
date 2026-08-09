@@ -105,21 +105,29 @@ export function HubShell({
       {/* Mobile sub-nav: the active section's pages. Active gets the one soft
           chip; the rest are quiet text — no gray blob row. */}
       <div className="md:hidden sticky top-[calc(3.5rem+env(safe-area-inset-top,0px))] z-30 border-b border-border bg-surface overflow-x-auto snap-row">
-        <div className="flex gap-0.5 px-3 py-1.5 min-w-max">
-          {section.sub.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className={cn(
-                "shrink-0 rounded-pill px-3 py-1.5 text-[13px] transition-colors duration-fast",
-                isNavActive(pathname, link.href)
-                  ? "bg-accent-soft font-semibold text-accent-text shadow-card"
-                  : "font-medium text-fg-3 hover:text-fg-2 active:bg-hover"
-              )}
-            >
-              {link.label}
-            </Link>
-          ))}
+        <div className="flex gap-1 px-2 min-w-max">
+          {section.sub.map((link) => {
+            const active = isNavActive(pathname, link.href)
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                aria-current={active ? "page" : undefined}
+                className={cn(
+                  "relative shrink-0 px-3 py-2.5 text-[13.5px] transition-colors duration-fast",
+                  active ? "font-semibold text-fg" : "font-medium text-fg-3 active:text-fg-2"
+                )}
+              >
+                {link.label}
+                {active ? (
+                  <span
+                    aria-hidden
+                    className="hub-underline-in absolute inset-x-3 bottom-0 h-[2.5px] rounded-pill bg-accent"
+                  />
+                ) : null}
+              </Link>
+            )
+          })}
         </div>
       </div>
 
