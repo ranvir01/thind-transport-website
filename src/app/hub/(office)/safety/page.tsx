@@ -196,7 +196,7 @@ export default async function SafetyPage() {
       </Panel>
 
       {/* All incidents */}
-      <h2 className="font-display text-lg font-bold uppercase tracking-wide text-fg mb-3">All incidents</h2>
+      <h2 className="text-base font-semibold text-fg mb-3">All incidents</h2>
       {incidents.length === 0 ? (
         <EmptyState
           title="No incidents on file"
@@ -245,7 +245,10 @@ export default async function SafetyPage() {
 function Flag({ label, tone }: { label: string; tone: "red" | "orange" | "warn" }) {
   const tones = {
     red: "border-bad-soft bg-bad-soft text-bad",
-    orange: "border-orange/40 bg-orange/10 text-orange",
+    // "orange" kept as the tone name callers use; the marketing orange token
+    // failed AA (3.8:1) and office screens are semantic-token-only — the DOT
+    // regulatory flag reads as info blue, distinct from red/amber severity.
+    orange: "border-info-soft bg-info-soft text-info",
     warn: "border-warn-soft bg-warn-soft text-warn",
   }
   return (

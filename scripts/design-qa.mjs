@@ -236,6 +236,9 @@ async function collectFindings(page, isMobile) {
         (n) => n.nodeType === 3 && n.textContent.trim().length > 1
       )
       if (!hasDirectText) continue
+      // WCAG 1.4.3 exempts inactive UI components from contrast minimums —
+      // a muted disabled button is design intent, not a failure.
+      if (el.closest("[disabled], [aria-disabled='true']")) continue
       const rect = el.getBoundingClientRect()
       if (!visible(el, rect)) continue
       const cs = getComputedStyle(el)

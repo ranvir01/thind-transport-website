@@ -99,7 +99,7 @@ export default async function TollsPage() {
             </table>
           </Panel>
 
-          <h2 className="font-display text-lg font-bold uppercase tracking-wide text-fg mb-3">Recent transactions</h2>
+          <h2 className="text-base font-semibold text-fg mb-3">Recent transactions</h2>
           <Panel className="divide-y divide-border">
             {transactions.slice(0, 25).map((tx) => (
               <div key={tx.id} className="flex items-center justify-between gap-2 p-3 text-sm">

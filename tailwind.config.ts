@@ -330,6 +330,9 @@ const config: Config = {
       },
       boxShadow: {
         card: "var(--shadow)",
+        // Hub elevation ladder above cards (vars live in hub-theme.css).
+        raised: "var(--shadow-raised)",
+        overlay: "var(--shadow-overlay)",
         brand: "0 10px 34px rgba(0, 0, 0, 0.4)",
         "brand-lg": "0 24px 60px rgba(0, 0, 0, 0.5)",
         cta: "0 10px 30px rgba(224, 57, 47, 0.35)",

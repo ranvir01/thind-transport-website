@@ -100,7 +100,7 @@ export function PasteIntake({
         <textarea
           rows={8}
           placeholder={"PACIFIC CREST LOGISTICS  MC# 784512\nLoad # PCL-99120\nPICKUP: Kent, WA 06/12/2026 08:00\nDELIVERY: Fresno, CA 06/14/2026\nLinehaul: $3,200.00  FSC: $350.00 …"}
-          className={`${fieldCls} h-auto py-3 font-mono text-xs`}
+          className={`${fieldCls} h-auto py-3 font-mono text-base md:text-xs`}
           value={text}
           onChange={(e) => setText(e.target.value)}
         />
@@ -136,7 +136,7 @@ export function PasteIntake({
         <div>
           <div className="flex items-center gap-2 mb-3">
             <ClipboardPaste className="h-4 w-4 text-accent-text" />
-            <h2 className="font-display text-lg font-bold uppercase tracking-wide text-fg">
+            <h2 className="text-base font-semibold text-fg">
               Confirm &amp; book
             </h2>
           </div>

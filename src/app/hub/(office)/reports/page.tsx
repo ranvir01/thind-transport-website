@@ -226,7 +226,7 @@ export default async function ReportsPage({
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-6 gap-3 mb-4">
-        <Panel className="p-4"><span className="text-label text-fg-3 uppercase">Revenue</span><p className="mt-2 font-display text-xl font-extrabold text-accent-text">{fmtCents(totals.revenue)}</p></Panel>
+        <Panel className="p-4"><span className="text-label text-fg-3 uppercase">Revenue</span><p className="mt-2 text-xl font-semibold text-accent-text">{fmtCents(totals.revenue)}</p></Panel>
         <Panel className="p-4"><span className="text-label text-fg-3 uppercase">Fuel</span><p className="mt-2 font-semibold text-xl text-fg">{fmtCents(totals.fuel)}</p></Panel>
         <Panel className="p-4"><span className="text-label text-fg-3 uppercase">Maintenance</span><p className="mt-2 font-semibold text-xl text-fg">{fmtCents(totals.maintenance)}</p></Panel>
         <Panel className="p-4">
@@ -237,13 +237,13 @@ export default async function ReportsPage({
           </Link>
         </Panel>
         <Panel className="p-4"><span className="text-label text-fg-3 uppercase">Other</span><p className="mt-2 font-semibold text-xl text-fg">{fmtCents(totals.other)}</p></Panel>
-        <Panel className="p-4"><span className="text-label text-fg-3 uppercase">Net</span><p className={`mt-2 font-display text-xl font-extrabold ${totals.net >= 0 ? "text-ok" : "text-bad"}`}>{fmtCents(totals.net)}</p></Panel>
+        <Panel className="p-4"><span className="text-label text-fg-3 uppercase">Net</span><p className={`mt-2 text-xl font-semibold ${totals.net >= 0 ? "text-ok" : "text-bad"}`}>{fmtCents(totals.net)}</p></Panel>
       </div>
 
       {/* Deadhead: what dispatch typed vs what the fuel card measured. The two
           numbers disagreeing is the feature, not a bug to reconcile away. */}
       <div className="mb-2 mt-6 flex items-center gap-2">
-        <h2 className="font-display text-lg font-bold uppercase tracking-wide text-fg">
+        <h2 className="text-base font-semibold text-fg">
           Deadhead — typed vs measured
         </h2>
         <HelpTip title="Two numbers on purpose">
@@ -363,7 +363,7 @@ export default async function ReportsPage({
 
       {/* Lane leaderboard (Phase 6/M10) — live from load history, scoped to the range above */}
       <div className="mt-6 flex items-center justify-between gap-2 mb-2">
-        <h2 className="font-display text-lg font-bold uppercase tracking-wide text-fg">
+        <h2 className="text-base font-semibold text-fg">
           Lane leaderboard, {rangeLabel}
         </h2>
         <a

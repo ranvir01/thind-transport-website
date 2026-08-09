@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { Cable, ChevronRight, FileBadge, Palette, Smartphone, Tags, TrendingUp, Users, Wallet } from "lucide-react"
+import { Cable, ChevronRight, FileBadge, Palette, SlidersHorizontal, Smartphone, Tags, TrendingUp, Users, Wallet } from "lucide-react"
 import { requireOfficeUser } from "@/lib/hub/session"
 import { PageHeader, Panel } from "@/components/hub/ui"
 import { SecurityPanel } from "@/components/hub/SecurityPanel"
@@ -57,6 +57,13 @@ const AREAS = [
     hint: "Lane rates and accessorial defaults that prefill quotes",
     icon: Tags,
     ownerOnly: false,
+  },
+  {
+    href: "/hub/settings/fields",
+    label: "Your fields",
+    hint: "Add the fields your loads, drivers, trucks and brokers actually need",
+    icon: SlidersHorizontal,
+    ownerOnly: true,
   },
   {
     href: "/hub/settings/app",

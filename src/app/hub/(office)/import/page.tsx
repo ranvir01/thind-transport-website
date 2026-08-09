@@ -1,21 +1,20 @@
 import { PageHeader } from "@/components/hub/ui"
-import { ImportWizard } from "@/components/hub/ImportWizard"
-import { EldFileImport } from "@/components/hub/EldFileImport"
+import { ImportHub } from "@/components/hub/ImportHub"
+import { requireOfficeUser } from "@/lib/hub/session"
 
 export default async function ImportPage({
   searchParams,
 }: {
   searchParams: Promise<{ kind?: string }>
 }) {
-  const { kind } = await searchParams
+  const [{ kind }, user] = await Promise.all([searchParams, requireOfficeUser()])
   return (
     <div>
       <PageHeader
         title="Import"
-        subtitle="The universal engine: loads, trucks, drivers, brokers, fuel, tolls, positions, IFTA mileage — map columns once, reuse forever."
+        subtitle="Connect a source or bring a file — map columns once, reuse forever."
       />
-      <ImportWizard initialKind={kind ?? "loads"} />
-      <EldFileImport />
+      <ImportHub initialKind={kind} canConnect={user.role === "owner"} />
     </div>
   )
 }

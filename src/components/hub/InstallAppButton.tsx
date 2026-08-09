@@ -136,7 +136,7 @@ export function InstallAppButton({ appearance = "driver" }: { appearance?: "driv
         className={
           office
             ? "flex w-full min-h-[52px] items-center justify-center gap-2 rounded-control border border-border-strong bg-surface-2 px-3 text-sm font-semibold text-fg hover:bg-hover"
-            : "flex w-full min-h-[52px] items-center justify-center gap-2 rounded-xl border border-white/15 bg-navy-800/80 px-3 font-display text-sm font-bold uppercase tracking-[0.08em] text-white hover:bg-white/5"
+            : "flex w-full min-h-[52px] items-center justify-center gap-2 rounded-xl border border-white/15 bg-navy-800/80 px-3 text-sm font-semibold text-white hover:bg-white/5"
         }
       >
         <Smartphone className="h-4 w-4" />

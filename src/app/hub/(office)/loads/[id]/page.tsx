@@ -1,3 +1,4 @@
+import { CustomDetailsPanel } from "@/components/hub/CustomDetailsPanel"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import { Pencil, FileText, MapPin, MessageSquare, CloudLightning, Camera, StickyNote, AlertTriangle } from "lucide-react"
@@ -256,7 +257,7 @@ export default async function LoadDetailPage({ params }: { params: Promise<{ id:
               ))}
               <div className="flex justify-between border-t border-border pt-2">
                 <dt className="text-fg font-bold">Total</dt>
-                <dd className="font-display text-accent-text font-extrabold text-lg">{fmtCents(totalCents)}</dd>
+                <dd className="text-accent-text font-semibold text-lg">{fmtCents(totalCents)}</dd>
               </div>
               {rpmCents ? (
                 <div className="flex justify-between">
@@ -313,6 +314,7 @@ export default async function LoadDetailPage({ params }: { params: Promise<{ id:
               })}
             </ol>
           </Panel>
+          <CustomDetailsPanel entity="load" entityId={id} />
         </div>
       </div>
     </div>

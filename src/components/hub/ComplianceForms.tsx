@@ -37,8 +37,9 @@ export function AddComplianceItemForm() {
         onChange={(e) => setForm({ ...form, dueOn: e.target.value })}
       />
       <button type="submit" disabled={pending}
-        className="min-h-[44px] shrink-0 rounded-control bg-accent px-5 font-semibold text-sm text-accent-fg hover:bg-accent-hover disabled:opacity-60">
+        className="inline-flex min-h-[44px] shrink-0 items-center justify-center gap-2 rounded-control bg-accent px-5 font-semibold text-sm text-accent-fg hover:bg-accent-hover disabled:opacity-60">
         {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+        Track item
       </button>
     </form>
   )

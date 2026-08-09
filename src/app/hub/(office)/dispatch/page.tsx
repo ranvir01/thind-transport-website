@@ -84,7 +84,7 @@ export default async function DispatchBoardPage() {
           return (
             <section key={status} className="lg:w-[300px] lg:shrink-0">
               <div className="flex items-center justify-between mb-2 px-1">
-                <h2 className="text-label-lg uppercase tracking-wider text-fg-2 font-bold">
+                <h2 className="text-[14px] font-semibold text-fg">
                   {STATUS_LABELS[status]}
                 </h2>
                 <span className="rounded-full bg-surface-2 px-2 py-0.5 text-[11px] font-bold text-fg-2">

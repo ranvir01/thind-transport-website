@@ -55,6 +55,17 @@ export function CommandPalette({ isOwner, smallCarrier }: { isOwner: boolean; sm
     <>
       <button
         type="button"
+        aria-label="Search"
+        onClick={() => {
+          setQuery("")
+          setOpen(true)
+        }}
+        className="flex md:hidden h-10 w-10 items-center justify-center rounded-control text-fg-2 hover:bg-hover"
+      >
+        <Search className="h-[18px] w-[18px]" />
+      </button>
+      <button
+        type="button"
         onClick={() => {
           setQuery("")
           setOpen(true)
@@ -84,7 +95,7 @@ export function CommandPalette({ isOwner, smallCarrier }: { isOwner: boolean; sm
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Go to a screen…"
-                className="h-11 flex-1 bg-transparent text-sm text-fg outline-none placeholder:text-fg-3"
+                className="h-11 flex-1 bg-transparent text-base md:text-sm text-fg outline-none placeholder:text-fg-3"
               />
             </div>
             <ul className="max-h-[50vh] overflow-y-auto py-1">

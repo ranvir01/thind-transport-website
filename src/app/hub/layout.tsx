@@ -34,13 +34,20 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  themeColor: "#FBFBFC",
+  // Match the header surface in each mode so the iOS status bar blends in.
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
+    { media: "(prefers-color-scheme: dark)", color: "#131620" },
+  ],
   // Drivers use the app one-handed in a cab; let it fill past the notch/home
   // indicator so the bottom action bar isn't squeezed by the safe-area inset.
   viewportFit: "cover",
 }
 
-const themeBoot = `(function(){try{var p=location.pathname;if(!p.startsWith('/hub'))return;var m=localStorage.getItem('hauldesk-mode')||'light';var t=localStorage.getItem('hauldesk-theme')||'indigo';var r=document.documentElement;r.setAttribute('data-app','hauldesk');r.setAttribute('data-mode',m);r.setAttribute('data-theme',t);}catch(e){}})();`
+// The empty passive touchstart listener is required for iOS Safari to apply
+// :active states on first touch — the CSS press feedback in hub-theme.css
+// does nothing on iPhones without it.
+const themeBoot = `(function(){try{var p=location.pathname;if(!p.startsWith('/hub'))return;var m=localStorage.getItem('hauldesk-mode')||'light';var t=localStorage.getItem('hauldesk-theme')||'indigo';var r=document.documentElement;r.setAttribute('data-app','hauldesk');r.setAttribute('data-mode',m);r.setAttribute('data-theme',t);document.addEventListener('touchstart',function(){},{passive:true});}catch(e){}})();`
 
 export default async function HubLayout({ children }: { children: React.ReactNode }) {
   // Seed the client SessionProvider from the server so it skips its initial

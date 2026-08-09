@@ -42,7 +42,7 @@ export default async function RandomTestingPage() {
             <div className="flex items-center justify-between gap-2 mb-2">
               <span className="text-label uppercase text-fg-3">{type} testing — {summary[type].pct}% annual rate</span>
             </div>
-            <p className="font-display text-2xl font-extrabold text-fg mb-3">
+            <p className="text-2xl font-semibold text-fg mb-3">
               {summary[type].selected} / {summary[type].targetPoolSize} selected this quarter
             </p>
             <RunSelectionButton testType={type} />

@@ -1,3 +1,4 @@
+import { CustomDetailsPanel } from "@/components/hub/CustomDetailsPanel"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import { Pencil } from "lucide-react"
@@ -143,6 +144,7 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
             </ul>
           )}
         </Panel>
+        <CustomDetailsPanel entity="customer" entityId={id} />
       </div>
     </div>
   )

@@ -82,12 +82,12 @@ export default async function SettlementsPage() {
 
       {escrow.length > 0 ? (
         <>
-          <h2 className="font-display text-lg font-bold uppercase tracking-wide text-fg mb-3">Escrow balances</h2>
+          <h2 className="text-base font-semibold text-fg mb-3">Escrow balances</h2>
           <Panel className="divide-y divide-border">
             {escrow.map((entry) => (
               <div key={entry.driver_id} className="flex items-center justify-between p-3.5 text-sm">
                 <span className="text-fg-2 font-semibold">{entry.driver_name}</span>
-                <span className="font-display font-extrabold text-fg">{fmtCents(Number(entry.balance_cents))}</span>
+                <span className="font-semibold text-fg">{fmtCents(Number(entry.balance_cents))}</span>
               </div>
             ))}
           </Panel>

@@ -34,7 +34,7 @@ export function AdvanceStatusButton({
       <button
         onClick={advance}
         disabled={pending}
-        className="inline-flex min-h-[36px] items-center gap-1 rounded-lg bg-accent px-2.5 text-[11px] font-semibold uppercase tracking-wide text-accent-fg hover:bg-accent-hover disabled:opacity-50"
+        className="inline-flex min-h-[36px] items-center gap-1 rounded-control bg-accent px-2.5 text-[12px] font-semibold text-accent-fg hover:bg-accent-hover disabled:opacity-50"
       >
         {pending ? <Loader2 className="h-3 w-3 animate-spin" /> : <ArrowRight className="h-3 w-3" />}
         {STATUS_LABELS[next]}

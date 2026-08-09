@@ -399,7 +399,7 @@ export function SmartSetup({
         ) : (
           <Upload className="h-10 w-10 text-accent-text mx-auto mb-3" />
         )}
-        <p className="font-display font-bold text-fg uppercase tracking-wide">
+        <p className="text-[15px] font-semibold text-fg">
           Drop files here or tap to upload
         </p>
         <p className="text-body-sm text-fg-3 mt-1">
@@ -408,7 +408,7 @@ export function SmartSetup({
       </div>
 
       <Panel className="p-4">
-        <h3 className="font-display text-sm font-bold uppercase text-fg mb-2 flex items-center gap-2">
+        <h3 className="text-[15px] font-semibold text-fg mb-2 flex items-center gap-2">
           <FileUp className="h-4 w-4 text-accent-text" /> Or paste text from an email / PDF
         </h3>
         <textarea
@@ -422,7 +422,7 @@ export function SmartSetup({
           type="button"
           onClick={handlePasteScan}
           disabled={!pasteText.trim()}
-          className="mt-3 inline-flex min-h-[48px] items-center gap-2 rounded-xl border border-border-strong px-5 font-display text-sm font-bold uppercase tracking-wide text-fg hover:bg-hover disabled:opacity-50"
+          className="mt-3 inline-flex min-h-[48px] items-center gap-2 rounded-xl border border-border-strong px-5 text-sm font-semibold text-fg hover:bg-hover disabled:opacity-50"
         >
           <Sparkles className="h-4 w-4 text-accent-text" /> Scan pasted text
         </button>
@@ -430,7 +430,7 @@ export function SmartSetup({
 
       {queue.length > 0 ? (
         <div className="space-y-3">
-          <h3 className="font-display text-sm font-bold uppercase text-fg-2">
+          <h3 className="text-[15px] font-semibold text-fg-2">
             Review &amp; apply ({queue.filter((s) => !s.applied).length} waiting)
           </h3>
           {queue.map((scan) => (

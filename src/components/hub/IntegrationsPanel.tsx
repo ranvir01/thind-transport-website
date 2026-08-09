@@ -14,6 +14,8 @@ import {
   disconnectIntegrationAction, retryIntegrationEventsAction, saveIntegrationCredentialsAction, syncIntegrationNowAction,
 } from "@/app/hub/_actions/integrations"
 import { fieldCls, Panel } from "@/components/hub/ui"
+import { LinkPreviewChip, LinkPreviewDomain } from "@/components/hub/LinkPreviewCard"
+import { linkPreview } from "@/lib/hub/link-previews"
 import type { IntegrationProvider } from "@/lib/hub/credentials"
 import type { CredentialField, ProviderStatus } from "@/lib/hub/integrations/registry"
 
@@ -46,6 +48,9 @@ export function IntegrationCard({ card, encryptionReady }: { card: ProviderCard;
   const [open, setOpen] = useState(false)
   const [values, setValues] = useState<Record<string, string>>({})
   const [confirmingDisconnect, setConfirmingDisconnect] = useState(false)
+  // Link-preview fixture for the header chip + domain row; cards without one
+  // (a future provider added before its fixture) fall back to the Cable chip.
+  const preview = linkPreview(card.provider)
 
   const save = (e: React.FormEvent) => {
     e.preventDefault()
@@ -89,11 +94,22 @@ export function IntegrationCard({ card, encryptionReady }: { card: ProviderCard;
   return (
     <Panel className="p-4">
       <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0">
-          <h3 className="flex items-center gap-2 font-display text-sm font-bold uppercase tracking-wide text-fg">
-            <Cable className="h-4 w-4 text-accent-text" /> {card.title}
-          </h3>
-          <p className="mt-0.5 text-body-xs text-fg-3">{card.blurb}</p>
+        <div className="flex min-w-0 items-start gap-3">
+          {preview ? (
+            <LinkPreviewChip icon={preview.icon} tint={preview.tint} />
+          ) : (
+            <span
+              aria-hidden
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-control bg-accent-soft text-accent-text"
+            >
+              <Cable className="h-5 w-5" />
+            </span>
+          )}
+          <div className="min-w-0">
+            <h3 className="truncate text-sm font-semibold text-fg">{card.title}</h3>
+            {preview?.domain ? <LinkPreviewDomain domain={preview.domain} className="mt-0.5" /> : null}
+            <p className="mt-0.5 text-body-xs text-fg-3">{card.blurb}</p>
+          </div>
         </div>
         <span
           className={cn(
