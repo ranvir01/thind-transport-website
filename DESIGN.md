@@ -84,6 +84,21 @@ surfaces · lorem ipsum seed data · layout shift from late assets.
 · `npm run license:audit` — plus a 390px light **and dark** screenshot sweep,
 viewed and critiqued against this file, before every ship.
 
+The deep rig (run against a local production build with the demo seed):
+- `npm run qa:a11y` — axe-core WCAG 2.2 AA over 25 screen-modes (office,
+  driver, portal, public × light/dark). Gate: **zero serious/critical**.
+- `npm run qa:matrix` — 6 viewports (393/412/768/1280/1440/1920) × light/dark
+  screenshot matrix. Gate: **no horizontal page scroll anywhere**.
+- `npm run qa:lighthouse` — median-of-3 Lighthouse per public route.
+  Gate: perf ≥ 90 · a11y ≥ 95 · bp ≥ 95 · manifest + service worker.
+  Status 2026-08-09 (lab, container, benchmarkIndex ~1600): a11y 96–100 and
+  bp 100 everywhere; perf `/` 86 · `/hub/login` 88 · `/hub/demo` 87 ·
+  `/loadoff` 83 after the hero-poster preload and lazy-mounting the three
+  heavy home-page client components. Remaining levers: marketing CSS split
+  (globals.css animation weight), `/loadoff` bundle diet, ticker audit —
+  and confirm real-world numbers with PageSpeed Insights on the live domain
+  (see loadoff-worksheet.html).
+
 Shipped beyond the base app: `/hub/sandbox` — the playable 9-seat company
 (Blue Ridge Haulage, ~40 drivers / 30 trucks / 250 loads / 500 fuel txns /
 safety quarter, one-click reset) — and the Motive-class fleet safety score

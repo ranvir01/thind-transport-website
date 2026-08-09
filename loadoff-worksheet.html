@@ -133,6 +133,16 @@
     </ul>
   </div>
 
+  <h2>3½ · Five-minute checks only you can run</h2>
+  <div class="card">
+    <h3>PageSpeed Insights on the live site <span class="pill blocked">needs a human (or a free key)</span></h3>
+    <p>The lab rig (<code class="env">npm run qa:lighthouse</code>) scores the local build; real-world scores come from
+    Google's crawlers hitting the CDN. Open pagespeed.web.dev, test <strong>thindtransport.com</strong> and
+    <strong>/hub/login</strong>, and note the mobile Performance number — the container's anonymous API quota is
+    exhausted, so this one needs a browser (or drop a free PageSpeed API key in as
+    <code class="env">PSI_API_KEY</code> and the agent can automate it).</p>
+  </div>
+
   <h2>4 · Decisions waiting on you</h2>
   <div class="card">
     <ul>

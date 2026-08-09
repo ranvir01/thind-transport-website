@@ -207,7 +207,7 @@ export function DriverLoadCard({ load, detentionFreeMinutes }: { load: LoadForDr
                       <Clock className="h-3.5 w-3.5 text-[color:var(--driver-accent)]" /> {fmtAppt(stop.appt_start, stop.appt_end, stop.fcfs)}
                     </p>
                     {slow ? (
-                      <p className="mt-1 inline-flex items-center gap-1 rounded-full border border-orange/40 bg-orange/10 px-2 py-0.5 text-[11px] font-bold text-orange">
+                      <p className="mt-1 inline-flex items-center gap-1 rounded-full border border-orange-300/50 bg-orange/10 px-2 py-0.5 text-[11px] font-bold text-orange-300">
                         Heads up: usually slow here (~{Math.round((stop.facility_avg_dwell ?? 0) / 60 * 10) / 10}h at the dock)
                       </p>
                     ) : null}

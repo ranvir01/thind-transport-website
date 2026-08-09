@@ -33,7 +33,10 @@
     "typecheck": "tsc --noEmit",
     "typecheck:gate": "node scripts/typecheck-gate.mjs",
     "branches:triage": "node scripts/branch-triage.mjs",
-    "js-budget": "node scripts/js-budget.mjs"
+    "js-budget": "node scripts/js-budget.mjs",
+    "qa:a11y": "node scripts/a11y-audit.mjs",
+    "qa:matrix": "node scripts/viewport-matrix.mjs",
+    "qa:lighthouse": "node scripts/lighthouse-audit.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
@@ -95,9 +98,11 @@
     "@types/pg": "^8.20.0",
     "@types/web-push": "^3.6.4",
     "autoprefixer": "^10.4.22",
+    "axe-core": "^4.13.0",
     "eslint": "^9.0.0",
     "eslint-config-next": "^16.0.7",
     "jsqr": "^1.4.0",
+    "lighthouse": "^13.4.1",
     "postcss": "^8.5.15",
     "puppeteer": "^24.38.0",
     "sharp": "^0.34.5",
