@@ -111,7 +111,7 @@ export function MaintenancePanel({
         <input aria-label="Interval days" type="number" placeholder="days" className={fieldCls}
           value={schedule.intervalDays} onChange={(e) => setSchedule({ ...schedule, intervalDays: e.target.value })} />
         <button type="submit" disabled={pending}
-          className="min-h-[44px] rounded-xl border border-border-strong px-3 text-xs font-bold text-fg-2 hover:bg-hover disabled:opacity-50">
+          className="min-h-[44px] rounded-control border border-border-strong px-3 text-xs font-bold text-fg-2 hover:bg-hover disabled:opacity-50">
           {pending ? <Loader2 className="mx-auto h-4 w-4 animate-spin" /> : "Add PM"}
         </button>
       </form>
@@ -142,7 +142,7 @@ export function MaintenancePanel({
           </select>
         </div>
         <button type="submit" disabled={pending}
-          className="col-span-2 flex min-h-[44px] items-center justify-center gap-2 rounded-xl bg-accent px-4 text-sm font-semibold text-accent-fg hover:bg-accent-hover disabled:opacity-50">
+          className="col-span-2 flex min-h-[44px] items-center justify-center gap-2 rounded-control bg-accent px-4 text-sm font-semibold text-accent-fg hover:bg-accent-hover disabled:opacity-50">
           {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
           Record work order
         </button>

@@ -148,7 +148,7 @@ export function IncidentForm({
         </div>
 
         {/* 390.5 qualifiers */}
-        <div className="rounded-xl border border-border bg-surface-2 p-4 space-y-3">
+        <div className="rounded-card border border-border bg-surface-2 p-4 space-y-3">
           <p className="text-[11px] font-bold uppercase tracking-wider text-accent-text">
             Three questions that decide if DOT counts this as an accident
           </p>

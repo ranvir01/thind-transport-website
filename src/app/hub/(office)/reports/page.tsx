@@ -107,13 +107,13 @@ export default async function ReportsPage({
           <div className="flex flex-wrap gap-2">
             <Link
               href="/hub/reports/owner"
-              className="inline-flex min-h-[44px] items-center rounded-xl border border-border-strong bg-surface px-4 text-sm font-semibold text-fg-2 hover:bg-hover"
+              className="inline-flex min-h-[44px] items-center rounded-control border border-border-strong bg-surface px-4 text-sm font-semibold text-fg-2 hover:bg-hover"
             >
               Owner dashboard →
             </Link>
             <a
               href={pnlCsvHref}
-              className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-border-strong bg-surface px-4 text-sm font-semibold text-fg-2 hover:bg-hover"
+              className="inline-flex min-h-[44px] items-center gap-2 rounded-control border border-border-strong bg-surface px-4 text-sm font-semibold text-fg-2 hover:bg-hover"
             >
               <Download className="h-4 w-4" /> P&L CSV
             </a>
@@ -135,7 +135,7 @@ export default async function ReportsPage({
         </label>
         <button
           type="submit"
-          className="inline-flex min-h-[44px] items-center rounded-xl border border-border-strong bg-surface px-4 text-sm font-semibold text-fg-2 hover:bg-hover"
+          className="inline-flex min-h-[44px] items-center rounded-control border border-border-strong bg-surface px-4 text-sm font-semibold text-fg-2 hover:bg-hover"
         >
           Apply
         </button>
@@ -368,7 +368,7 @@ export default async function ReportsPage({
         </h2>
         <a
           href={lanesCsvHref}
-          className="inline-flex min-h-[40px] items-center gap-2 rounded-xl border border-border-strong px-3 text-body-xs font-semibold text-fg-2 hover:bg-hover"
+          className="inline-flex min-h-[40px] items-center gap-2 rounded-control border border-border-strong px-3 text-body-xs font-semibold text-fg-2 hover:bg-hover"
         >
           <Download className="h-3.5 w-3.5" /> Lanes CSV
         </a>

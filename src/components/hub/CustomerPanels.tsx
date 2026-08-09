@@ -60,7 +60,7 @@ export function ContactsPanel({ customerId, contacts }: { customerId: string; co
               onChange={(e) => setForm({ ...form, email: e.target.value })} />
           </div>
           <button type="submit" disabled={pending}
-            className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-accent px-4 text-sm font-semibold text-accent-fg hover:bg-accent-hover disabled:opacity-50">
+            className="inline-flex min-h-[44px] items-center gap-2 rounded-control bg-accent px-4 text-sm font-semibold text-accent-fg hover:bg-accent-hover disabled:opacity-50">
             {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : null} Save contact
           </button>
         </form>
@@ -169,7 +169,7 @@ export function CrmNotesPanel({ customerId, activities }: { customerId: string; 
           className={fieldCls} value={body} onChange={(e) => setBody(e.target.value)}
         />
         <button type="submit" disabled={pending || !body.trim()}
-          className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl bg-accent px-4 text-sm font-semibold text-accent-fg hover:bg-accent-hover disabled:opacity-50">
+          className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-control bg-accent px-4 text-sm font-semibold text-accent-fg hover:bg-accent-hover disabled:opacity-50">
           {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : null} Log
         </button>
       </form>

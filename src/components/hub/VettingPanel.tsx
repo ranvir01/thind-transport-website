@@ -55,7 +55,7 @@ export function VettingPanel({ customerId, view }: { customerId: string; view: V
         <button
           onClick={verify}
           disabled={pending}
-          className="flex min-h-[40px] items-center gap-2 rounded-xl bg-accent px-4 text-sm font-semibold text-accent-fg hover:bg-accent-hover disabled:opacity-60"
+          className="flex min-h-[40px] items-center gap-2 rounded-control bg-accent px-4 text-sm font-semibold text-accent-fg hover:bg-accent-hover disabled:opacity-60"
         >
           {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
           {snapshot ? "Re-check now" : "Verify authority"}
@@ -63,7 +63,7 @@ export function VettingPanel({ customerId, view }: { customerId: string; view: V
       </div>
 
       {!view.configured ? (
-        <p className="mb-3 rounded-xl border border-border bg-surface-2 px-3 py-2 text-body-xs text-fg-3">
+        <p className="mb-3 rounded-control border border-border bg-surface-2 px-3 py-2 text-body-xs text-fg-3">
           Live FMCSA checks need a free webkey (5 minutes at mobile.fmcsa.dot.gov) — set
           <code className="mx-1 text-accent-text">FMCSA_WEBKEY</code> and every broker gets verified
           automatically, plus a nightly re-check.
@@ -100,7 +100,7 @@ export function VettingPanel({ customerId, view }: { customerId: string; view: V
       )}
 
       {/* Own-receivables intelligence */}
-      <div className="mt-3 rounded-xl border border-border bg-surface-2 p-3">
+      <div className="mt-3 rounded-card border border-border bg-surface-2 p-3">
         <p className="text-[11px] font-bold uppercase tracking-wider text-fg-3">How they pay you</p>
         {view.paySpeed.avgDays == null ? (
           <p className="mt-1 text-body-sm text-fg-3">No payment history yet.</p>

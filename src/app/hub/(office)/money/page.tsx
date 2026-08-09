@@ -249,7 +249,7 @@ export default async function MoneyPage() {
       ) : (
         <>
           <Panel className="hidden md:block overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="hub-table w-full text-sm">
               <thead>
                 <tr className="border-b border-border text-left text-[11px] font-semibold uppercase tracking-wide text-fg-3">
                   <th className="px-4 py-3">Invoice</th>

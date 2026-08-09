@@ -53,7 +53,7 @@ export default async function MessagesPage() {
               href={`/hub/messages/${t.id}`}
               className="flex items-center gap-3 p-3.5 hover:bg-hover"
             >
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-surface-2 text-accent-text">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-control bg-surface-2 text-accent-text">
                 {t.kind === "load" ? <Package className="h-5 w-5" /> : <MessageSquare className="h-5 w-5" />}
               </span>
               <span className="min-w-0 flex-1">

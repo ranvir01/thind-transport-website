@@ -31,7 +31,7 @@ export function HelpTip({ title, children }: { title: string; children: React.Re
         <HelpCircle className="h-4 w-4" />
       </button>
       {open ? (
-        <span className="absolute left-1/2 top-8 z-50 w-[min(86vw,320px)] -translate-x-1/2 rounded-xl border border-border bg-surface p-3 shadow-2xl">
+        <span className="absolute left-1/2 top-8 z-50 w-[min(86vw,320px)] -translate-x-1/2 rounded-card border border-border bg-surface p-3 shadow-raised">
           <span className="block text-[11px] font-bold uppercase tracking-wider text-accent-text">{title}</span>
           <span className="mt-1 block text-body-xs leading-relaxed text-fg-2">{children}</span>
         </span>

@@ -422,7 +422,7 @@ export function SmartSetup({
           type="button"
           onClick={handlePasteScan}
           disabled={!pasteText.trim()}
-          className="mt-3 inline-flex min-h-[48px] items-center gap-2 rounded-xl border border-border-strong px-5 text-sm font-semibold text-fg hover:bg-hover disabled:opacity-50"
+          className="mt-3 inline-flex min-h-[48px] items-center gap-2 rounded-control border border-border-strong px-5 text-sm font-semibold text-fg hover:bg-hover disabled:opacity-50"
         >
           <Sparkles className="h-4 w-4 text-accent-text" /> Scan pasted text
         </button>

@@ -80,7 +80,7 @@ export function RecruitingBoard({ applicants }: { applicants: Applicant[] }) {
               onDragLeave={() => setDragOver(null)}
               onDrop={(e) => drop(e, stage)}
               className={cn(
-                "w-[225px] shrink-0 rounded-xl border bg-surface-2 p-2 transition-colors",
+                "w-[225px] shrink-0 rounded-card border bg-surface-2 p-2 transition-colors",
                 dragOver === stage ? "border-accent bg-accent-soft" : "border-border"
               )}
             >
@@ -201,7 +201,7 @@ function RejectSheet({
         <div className="mt-4 flex gap-2">
           <button
             onClick={onCancel}
-            className="flex-1 min-h-[44px] rounded-xl border border-border-strong text-sm font-semibold text-fg-2 hover:bg-hover"
+            className="flex-1 min-h-[44px] rounded-control border border-border-strong text-sm font-semibold text-fg-2 hover:bg-hover"
           >
             Keep them
           </button>
@@ -282,7 +282,7 @@ export function ImportApplicantsButton() {
         })
       }
       disabled={pending}
-      className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-accent px-5 text-sm font-semibold text-accent-fg hover:bg-accent-hover disabled:opacity-60"
+      className="inline-flex min-h-[44px] items-center gap-2 rounded-control bg-accent px-5 text-sm font-semibold text-accent-fg hover:bg-accent-hover disabled:opacity-60"
     >
       {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
       Pull website applications

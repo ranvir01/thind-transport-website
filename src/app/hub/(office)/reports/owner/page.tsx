@@ -471,7 +471,7 @@ export default async function OwnerDashboardPage() {
         action={
           <Link
             href="/hub/reports"
-            className="inline-flex min-h-[44px] items-center rounded-xl border border-border-strong bg-surface px-4 text-sm font-semibold text-fg-2 hover:bg-hover"
+            className="inline-flex min-h-[44px] items-center rounded-control border border-border-strong bg-surface px-4 text-sm font-semibold text-fg-2 hover:bg-hover"
           >
             Full P&amp;L &amp; lanes →
           </Link>

@@ -81,7 +81,7 @@ export default async function IntegrationsPage() {
       />
 
       {!credentialsConfigured() ? (
-        <p className="mb-4 rounded-xl border border-warn-soft bg-warn-soft px-4 py-3 text-body-sm text-warn">
+        <p className="mb-4 rounded-control border border-warn-soft bg-warn-soft px-4 py-3 text-body-sm text-warn">
           Set <code>CREDENTIALS_KEY</code> (32+ random characters) in the environment to enable
           encrypted credential storage. Until then, everything runs on imports — which always work.
         </p>

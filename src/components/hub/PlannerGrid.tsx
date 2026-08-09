@@ -146,7 +146,7 @@ export function PlannerGrid({
 
         {/* Unassigned tray */}
         {unassigned.length > 0 ? (
-          <div className="mb-2 rounded-xl border border-dashed border-warn bg-warn-soft p-2">
+          <div className="mb-2 rounded-card border border-dashed border-warn bg-warn-soft p-2">
             <p className="px-1 pb-1 text-[10px] font-bold uppercase tracking-[0.2em] text-warn">
               Needs a truck — drag onto the grid
             </p>
@@ -179,7 +179,7 @@ export function PlannerGrid({
           {rows.map(({ truck, truckBlocks, lanes, laneCount, offDays, busyDays }) => (
             <div
               key={truck.id}
-              className="grid items-stretch rounded-xl border border-border bg-surface"
+              className="grid items-stretch rounded-card border border-border bg-surface"
               style={{ gridTemplateColumns: "200px repeat(7, 1fr)" }}
             >
               {/* Truck label */}

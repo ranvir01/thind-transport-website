@@ -52,7 +52,7 @@ export default async function FleetPage({
         <Link
           href="/hub/fleet"
           className={cn(
-            "min-h-[44px] inline-flex items-center rounded-xl px-5 text-sm font-bold",
+            "min-h-[44px] inline-flex items-center rounded-control px-5 text-sm font-bold",
             !showTrailers ? "bg-accent-soft text-accent-text border border-accent-soft" : "text-fg-2 hover:bg-hover border border-border"
           )}
         >
@@ -61,7 +61,7 @@ export default async function FleetPage({
         <Link
           href="/hub/fleet?tab=trailers"
           className={cn(
-            "min-h-[44px] inline-flex items-center rounded-xl px-5 text-sm font-bold",
+            "min-h-[44px] inline-flex items-center rounded-control px-5 text-sm font-bold",
             showTrailers ? "bg-accent-soft text-accent-text border border-accent-soft" : "text-fg-2 hover:bg-hover border border-border"
           )}
         >

@@ -65,7 +65,7 @@ export function FuelUseBadge({ id, value }: { id: string; value: FuelUse }) {
         {SHORT[current]}
       </button>
       {open ? (
-        <div className="absolute right-0 top-9 z-30 w-56 overflow-hidden rounded-xl border border-border bg-surface shadow-2xl">
+        <div className="absolute right-0 top-9 z-30 w-56 overflow-hidden rounded-card border border-border bg-surface shadow-raised">
           {FUEL_USES.map((use) => (
             <button
               key={use}

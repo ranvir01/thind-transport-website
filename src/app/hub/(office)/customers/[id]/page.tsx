@@ -54,7 +54,7 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
         action={
           <Link
             href={`/hub/customers/${id}/edit`}
-            className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-border-strong px-4 text-sm font-semibold text-fg-2 hover:bg-hover"
+            className="inline-flex min-h-[44px] items-center gap-2 rounded-control border border-border-strong px-4 text-sm font-semibold text-fg-2 hover:bg-hover"
           >
             <Pencil className="h-4 w-4" /> Edit
           </Link>

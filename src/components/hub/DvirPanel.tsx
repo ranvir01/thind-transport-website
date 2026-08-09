@@ -48,7 +48,7 @@ export function DvirPanel({
       </h2>
 
       {state !== "clear" && openDvir ? (
-        <div className="mb-3 rounded-xl border border-warn bg-warn-soft p-3">
+        <div className="mb-3 rounded-card border border-warn bg-warn-soft p-3">
           <p className="text-sm font-bold text-warn">
             {state === "awaiting_repair"
               ? "Grounded — defects awaiting repair certification (396.13)"

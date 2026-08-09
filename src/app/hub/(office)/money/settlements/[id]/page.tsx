@@ -40,7 +40,7 @@ export default async function SettlementDetailPage({ params }: { params: Promise
               href={settlement.statement_url}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-border-strong bg-surface px-4 text-sm font-semibold text-fg-2 hover:bg-hover"
+              className="inline-flex min-h-[44px] items-center gap-2 rounded-control border border-border-strong bg-surface px-4 text-sm font-semibold text-fg-2 hover:bg-hover"
             >
               <FileText className="h-4 w-4" /> Statement PDF
             </a>

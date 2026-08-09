@@ -1,5 +1,6 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import {
@@ -41,6 +42,14 @@ export function HubShell({
   children: React.ReactNode
 }) {
   const pathname = usePathname()
+  // Header casts a shadow only once content scrolls beneath it.
+  const [scrolled, setScrolled] = useState(false)
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 4)
+    onScroll()
+    window.addEventListener("scroll", onScroll, { passive: true })
+    return () => window.removeEventListener("scroll", onScroll)
+  }, [])
   const sections = hubPrimarySections(smallCarrier)
   const section = sections.find((s) => s.match(pathname)) ?? sections[0]!
   const isOwner = user.role === "owner"
@@ -49,7 +58,12 @@ export function HubShell({
 
   return (
     <div className="hauldesk-shell min-h-screen bg-bg text-fg">
-      <header className="sticky top-0 z-40 flex h-[calc(3.5rem+env(safe-area-inset-top,0px))] items-center gap-2 border-b border-border bg-surface px-3 pt-[env(safe-area-inset-top,0px)] md:px-6">
+      <header
+        className={cn(
+          "sticky top-0 z-40 flex h-[calc(3.5rem+env(safe-area-inset-top,0px))] items-center gap-2 border-b border-border bg-surface px-3 pt-[env(safe-area-inset-top,0px)] transition-shadow duration-standard md:px-6",
+          scrolled && "shadow-card"
+        )}
+      >
         <Link href="/hub" className="flex shrink-0 items-center gap-2" aria-label={PRODUCT.name}>
           <LoadOffMark size={28} />
           <span className="hidden font-semibold tracking-tight text-fg lg:block">{PRODUCT.name}</span>
@@ -116,20 +130,27 @@ export function HubShell({
               {section.label}
             </p>
             <div className="space-y-0.5">
-              {section.sub.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className={cn(
-                    "block rounded-control px-2.5 py-2 text-sm font-medium",
-                    isNavActive(pathname, link.href)
-                      ? "bg-accent-soft text-accent-text"
-                      : "text-fg-2 hover:bg-hover hover:text-fg"
-                  )}
-                >
-                  {link.label}
-                </Link>
-              ))}
+              {section.sub.map((link) => {
+                const active = isNavActive(pathname, link.href)
+                return (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    className={cn(
+                      "relative block rounded-control px-2.5 py-2 text-sm font-medium",
+                      active ? "bg-accent-soft text-accent-text" : "text-fg-2 hover:bg-hover hover:text-fg"
+                    )}
+                  >
+                    {active ? (
+                      <span
+                        aria-hidden
+                        className="hub-pop-enter absolute left-0 top-1/2 h-4 w-[3px] -translate-y-1/2 rounded-pill bg-accent"
+                      />
+                    ) : null}
+                    {link.label}
+                  </Link>
+                )
+              })}
             </div>
             <p className="px-2 pt-4 pb-2 text-[11px] font-semibold uppercase tracking-wide text-fg-3">More</p>
             <div className="space-y-0.5">

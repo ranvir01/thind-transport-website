@@ -109,13 +109,13 @@ export function IftaControls({ quarter, status }: { quarter: string; status: str
       </button>
       {status === "draft" ? (
         <button onClick={() => setStatus("reviewed")} disabled={pending}
-          className="inline-flex min-h-[44px] items-center rounded-xl border border-info-soft bg-info-soft px-4 text-sm font-bold text-info hover:opacity-90 disabled:opacity-50">
+          className="inline-flex min-h-[44px] items-center rounded-control border border-info-soft bg-info-soft px-4 text-sm font-bold text-info hover:opacity-90 disabled:opacity-50">
           Mark reviewed
         </button>
       ) : null}
       {status === "reviewed" ? (
         <button onClick={() => setStatus("filed")} disabled={pending}
-          className="inline-flex min-h-[44px] items-center rounded-xl border border-ok-soft bg-ok-soft px-4 text-sm font-bold text-ok hover:opacity-90 disabled:opacity-50">
+          className="inline-flex min-h-[44px] items-center rounded-control border border-ok-soft bg-ok-soft px-4 text-sm font-bold text-ok hover:opacity-90 disabled:opacity-50">
           Mark filed
         </button>
       ) : null}
@@ -150,7 +150,7 @@ export function IftaRatesImporter({ quarter }: { quarter: string }) {
           })
         }
         disabled={pending || !text.trim()}
-        className="mt-2 inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-accent px-4 text-sm font-semibold text-accent-fg hover:bg-accent-hover disabled:opacity-50"
+        className="mt-2 inline-flex min-h-[44px] items-center gap-2 rounded-control bg-accent px-4 text-sm font-semibold text-accent-fg hover:bg-accent-hover disabled:opacity-50"
       >
         {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
         Save rates

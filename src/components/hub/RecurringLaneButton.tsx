@@ -60,7 +60,7 @@ export function RecurringLaneButton({
         onClick={() => setOpen((o) => !o)}
         disabled={pending}
         aria-expanded={open}
-        className={`inline-flex min-h-[44px] items-center gap-2 rounded-xl border px-4 text-sm font-semibold disabled:opacity-50 ${
+        className={`inline-flex min-h-[44px] items-center gap-2 rounded-control border px-4 text-sm font-semibold disabled:opacity-50 ${
           active
             ? "border-border-strong text-accent-text hover:bg-hover"
             : "border-border-strong text-fg-2 hover:bg-hover"
@@ -70,7 +70,7 @@ export function RecurringLaneButton({
         {active && rule ? `Weekly · ${WEEKDAYS_SHORT[rule.weekday]}` : "Repeat weekly"}
       </button>
       {open ? (
-        <div className="absolute right-0 top-full z-30 mt-2 w-56 rounded-xl border border-border bg-surface p-2 shadow-2xl">
+        <div className="absolute right-0 top-full z-30 mt-2 w-56 rounded-card border border-border bg-surface p-2 shadow-raised">
           <p className="px-2 py-1.5 text-[11px] font-bold uppercase tracking-wider text-fg-3">
             Rebook this lane every…
           </p>

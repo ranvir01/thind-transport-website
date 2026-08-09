@@ -86,7 +86,7 @@ export function ClaimForm({
               <label
                 key={opt.value}
                 className={cn(
-                  "flex cursor-pointer flex-col rounded-xl border p-3 min-h-[44px]",
+                  "flex cursor-pointer flex-col rounded-control border p-3 min-h-[44px]",
                   form.kind === opt.value
                     ? "border-accent bg-accent-soft"
                     : "border-border hover:bg-hover"

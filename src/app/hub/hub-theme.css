@@ -202,6 +202,37 @@
   touch-action: manipulation;
 }
 
+/* Buttons sink on press: the global scale plus a 1px settle and an inset
+   shadow — the surface visibly takes the pressure. */
+[data-app="hauldesk"] .press-sink:active {
+  transform: translateY(1px) scale(0.98);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.16);
+}
+
+/* Themed toasts (sonner) — surface, token border, raised elevation. The
+   .app-toast class is inert on the marketing site (no [data-app] there). */
+[data-app="hauldesk"] .app-toast {
+  background: var(--surface) !important;
+  color: var(--text) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 14px !important;
+  box-shadow: var(--shadow-raised) !important;
+}
+
+/* Data tables: sticky header, zebra rows, hover highlight. */
+[data-app="hauldesk"] .hub-table thead th {
+  position: sticky;
+  top: 0;
+  background: var(--surface);
+  z-index: 1;
+}
+[data-app="hauldesk"] .hub-table tbody tr:nth-child(even) {
+  background: color-mix(in srgb, var(--surface-2) 45%, transparent);
+}
+[data-app="hauldesk"] .hub-table tbody tr:hover {
+  background: var(--hover);
+}
+
 /* Scroll feel: the app never rubber-bands the whole document. */
 [data-app="hauldesk"] body {
   overscroll-behavior-y: none;

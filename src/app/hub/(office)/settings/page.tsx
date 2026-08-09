@@ -85,7 +85,7 @@ export default async function SettingsIndexPage() {
         {areas.map((area) => (
           <Link key={area.href} href={area.href}>
             <Panel className="flex items-center gap-3 p-4 hover:bg-hover transition-colors">
-              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-accent-soft text-accent-text">
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-control bg-accent-soft text-accent-text">
                 <area.icon className="h-5 w-5" />
               </span>
               <span className="min-w-0 flex-1">
