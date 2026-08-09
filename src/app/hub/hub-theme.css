@@ -299,6 +299,19 @@
 [data-app="hauldesk"] .hub-backdrop-enter {
   animation: hub-fade-in 200ms ease-out both;
 }
+/* Sheet content: slides up on touch widths; from md it is a centered card
+   whose position lives in translate transforms, so it must only FADE —
+   a transform-keyframe animation would overwrite the centering. */
+@media (max-width: 767px) {
+  [data-app="hauldesk"] .hub-sheet-content {
+    animation: hub-sheet-in 280ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+}
+@media (min-width: 768px) {
+  [data-app="hauldesk"] .hub-sheet-content {
+    animation: hub-fade-in 180ms ease-out both;
+  }
+}
 
 /* Checkmark draw for success moments (SVG path with pathLength=1). */
 @keyframes hub-check-draw {
