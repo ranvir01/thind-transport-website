@@ -105,16 +105,16 @@ export function HubShell({
       {/* Mobile sub-nav: the active section's pages. Active gets the one soft
           chip; the rest are quiet text — no gray blob row. */}
       <div className="md:hidden sticky top-[calc(3.5rem+env(safe-area-inset-top,0px))] z-30 border-b border-border bg-surface overflow-x-auto snap-row">
-        <div className="flex gap-0.5 px-3 py-2 min-w-max">
+        <div className="flex gap-0.5 px-3 py-1.5 min-w-max">
           {section.sub.map((link) => (
             <Link
               key={link.href}
               href={link.href}
               className={cn(
-                "shrink-0 rounded-pill px-3 py-1.5 text-[13px]",
+                "shrink-0 rounded-pill px-3 py-1.5 text-[13px] transition-colors duration-fast",
                 isNavActive(pathname, link.href)
-                  ? "bg-accent-soft font-semibold text-accent-text"
-                  : "font-medium text-fg-3 hover:text-fg-2"
+                  ? "bg-accent-soft font-semibold text-accent-text shadow-card"
+                  : "font-medium text-fg-3 hover:text-fg-2 active:bg-hover"
               )}
             >
               {link.label}
@@ -180,7 +180,7 @@ export function HubShell({
       </div>
 
       {/* Mobile tab bar: icons above 10px labels, active = accent + heavier stroke */}
-      <nav className="md:hidden fixed bottom-0 inset-x-0 z-40 border-t border-border bg-surface pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]">
+      <nav className="hub-tabbar md:hidden fixed bottom-0 inset-x-0 z-40 pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]">
         <div className="grid grid-cols-5">
           {mobilePrimaries.map((primary) => {
             const active = primary.id === section.id
@@ -191,18 +191,38 @@ export function HubShell({
                 key={primary.id}
                 href={href}
                 aria-current={active ? "page" : undefined}
-                className={cn(
-                  "flex min-h-[56px] flex-col items-center justify-center gap-0.5 px-1 pt-1.5 pb-1 text-[10px] font-semibold",
-                  active ? "text-accent-text" : "text-fg-3"
-                )}
+                className="group flex min-h-[58px] flex-col items-center justify-center gap-[3px] px-1 pt-2 pb-1.5"
               >
-                <Icon
-                  className={cn("h-[22px] w-[22px]", active && "hub-tab-pop")}
-                  strokeWidth={active ? 2.4 : 1.8}
-                  fill={active ? "currentColor" : "none"}
-                  fillOpacity={active ? 0.14 : 0}
-                />
-                {primary.label}
+                {/* The pill is the active indicator — it springs in behind the
+                    icon on tab change; inactive tabs tint it on press so touch
+                    always answers back. */}
+                <span
+                  className={cn(
+                    "relative flex h-8 w-14 items-center justify-center rounded-pill transition-colors duration-fast",
+                    !active && "group-active:bg-hover"
+                  )}
+                >
+                  {active ? (
+                    <span aria-hidden className="hub-pill-in absolute inset-0 rounded-pill bg-accent-soft" />
+                  ) : null}
+                  <Icon
+                    className={cn(
+                      "relative h-[22px] w-[22px] transition-colors duration-fast",
+                      active ? "hub-tab-pop text-accent-text" : "text-fg-3"
+                    )}
+                    strokeWidth={active ? 2.3 : 1.9}
+                    fill={active ? "currentColor" : "none"}
+                    fillOpacity={active ? 0.16 : 0}
+                  />
+                </span>
+                <span
+                  className={cn(
+                    "text-[10.5px] transition-colors duration-fast",
+                    active ? "font-bold text-accent-text" : "font-semibold text-fg-3"
+                  )}
+                >
+                  {primary.label}
+                </span>
               </Link>
             )
           })}

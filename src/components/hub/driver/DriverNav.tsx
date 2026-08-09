@@ -47,23 +47,42 @@ export function DriverNav({ firstName }: { firstName: string }) {
         </div>
       </header>
 
-      <nav className="fixed bottom-0 inset-x-0 z-40 border-t border-white/10 bg-navy-600/95 backdrop-blur-sm pb-[env(safe-area-inset-bottom)]">
+      <nav className="fixed bottom-0 inset-x-0 z-40 border-t border-white/10 bg-navy-600/90 backdrop-blur-xl pb-[env(safe-area-inset-bottom)] shadow-[0_-2px_8px_rgba(0,0,0,0.35),0_-16px_40px_rgba(0,0,0,0.45)]">
         <div className="mx-auto grid max-w-lg grid-cols-4">
-          {TABS.map((tab) => (
-            <Link
-              key={tab.href}
-              href={tab.href}
-              className={cn(
-                "flex min-h-[60px] flex-col items-center justify-center gap-1 text-[10px] font-bold uppercase tracking-wide",
-                isActive(pathname, tab.href)
-                  ? "text-[color:var(--driver-accent)]"
-                  : "text-steel-400 hover:text-white"
-              )}
-            >
-              <tab.icon className="h-5 w-5" />
-              {tab.label}
-            </Link>
-          ))}
+          {TABS.map((tab) => {
+            const active = isActive(pathname, tab.href)
+            return (
+              <Link
+                key={tab.href}
+                href={tab.href}
+                aria-current={active ? "page" : undefined}
+                className="group flex min-h-[60px] flex-col items-center justify-center gap-[3px] pt-2 pb-1.5 text-[10px] font-bold uppercase tracking-wide"
+              >
+                <span
+                  className={cn(
+                    "relative flex h-8 w-14 items-center justify-center rounded-full transition-colors duration-fast",
+                    !active && "group-active:bg-white/5"
+                  )}
+                >
+                  {active ? (
+                    <span aria-hidden className="hub-pill-in absolute inset-0 rounded-full bg-white/10" />
+                  ) : null}
+                  <tab.icon
+                    className={cn(
+                      "relative h-[21px] w-[21px] transition-colors duration-fast",
+                      active ? "hub-tab-pop text-[color:var(--driver-accent)]" : "text-steel-400 group-hover:text-white"
+                    )}
+                    strokeWidth={active ? 2.3 : 1.9}
+                    fill={active ? "currentColor" : "none"}
+                    fillOpacity={active ? 0.15 : 0}
+                  />
+                </span>
+                <span className={active ? "text-[color:var(--driver-accent)]" : "text-steel-400 group-hover:text-white"}>
+                  {tab.label}
+                </span>
+              </Link>
+            )
+          })}
         </div>
       </nav>
     </>
