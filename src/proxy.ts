@@ -93,7 +93,10 @@ async function authGate(
     pathname.startsWith("/hub/portal/accept") ||
     pathname.startsWith("/hub/driver-invite/") ||
     pathname === "/hub/signup" ||
-    pathname === "/hub/get-app"
+    pathname === "/hub/get-app" ||
+    // The interactive product demo: fabricated data only, no tenant reads —
+    // public so prospects (and the owner's phone) can run it pre-login.
+    pathname === "/hub/demo"
   ) {
     return passthrough ?? NextResponse.next()
   }

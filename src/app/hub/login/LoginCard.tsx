@@ -169,6 +169,12 @@ export function LoginCard({ showDemo, installSlot }: { showDemo: boolean; instal
             Create your workspace
           </a>
         </p>
+        <p className="mt-2 text-center text-xs text-fg-3">
+          New here?{" "}
+          <a href="/hub/demo" className={linkAccentCls}>
+            Watch the 90-second demo
+          </a>
+        </p>
       </Panel>
       {installSlot ? <div className="mt-4">{installSlot}</div> : null}
       </div>

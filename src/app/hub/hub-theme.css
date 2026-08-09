@@ -328,6 +328,16 @@
   animation: hub-check-draw 450ms cubic-bezier(0.16, 1, 0.3, 1) 120ms forwards;
 }
 
+/* Demo player: story-style segment fill (scaleX = compositor-only). */
+@keyframes hub-progress {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
 /* Milestone moment backdrop pop. */
 @keyframes hub-pop-in {
   from {
