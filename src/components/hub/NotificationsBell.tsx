@@ -107,11 +107,15 @@ export function NotificationsBell({
         aria-label={unread > 0 ? `Notifications (${unread} unread)` : "Notifications"}
         onClick={toggle}
         className={cn(
-          "relative flex h-9 w-9 items-center justify-center rounded-control border",
-          dark ? "border-white/15 text-steel-200 hover:bg-white/5" : "border-border-strong text-fg-2 hover:bg-hover"
+          "relative flex items-center justify-center rounded-control",
+          // Office header uses borderless ghost icons; the driver chrome keeps
+          // its bordered dark variant.
+          dark
+            ? "h-9 w-9 border border-white/15 text-steel-200 hover:bg-white/5"
+            : "h-10 w-10 text-fg-2 hover:bg-hover"
         )}
       >
-        <Bell className="h-4 w-4" />
+        <Bell className={dark ? "h-4 w-4" : "h-[18px] w-[18px]"} />
         {unread > 0 ? (
           <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-pill bg-accent px-1 text-[10px] font-bold text-accent-fg">
             {unread > 9 ? "9+" : unread}

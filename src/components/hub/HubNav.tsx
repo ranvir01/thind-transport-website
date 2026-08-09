@@ -2,27 +2,42 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { signOut } from "next-auth/react"
-import { LogOut } from "lucide-react"
+import {
+  CalendarClock, CircleDollarSign, House, LayoutGrid, Package, Truck, Users,
+  type LucideIcon,
+} from "lucide-react"
 import { cn } from "@/lib/utils"
-import { clearShellCache } from "@/lib/hub/pwa"
 import { PRODUCT } from "@/lib/hub/product"
 import { hubPrimarySections, hubUtilityLinks, isNavActive } from "@/lib/hub/navigation"
 import { NotificationsBell } from "@/components/hub/NotificationsBell"
 import { OfficeOfflineBanner } from "@/components/hub/OfficeOfflineBanner"
-import { HubAppearanceMenu } from "@/components/hub/HubAppearanceMenu"
 import { CommandPalette } from "@/components/hub/CommandPalette"
 import { HubTourHost } from "@/components/hub/HubTour"
 import { LoadOffMark } from "@/components/hub/LoadOffMark"
+import { WorkspaceChip } from "@/components/hub/WorkspaceChip"
+import { UserMenu } from "@/components/hub/UserMenu"
+
+/** Tab-bar icons by primary-section id; LayoutGrid is the safe fallback. */
+const SECTION_ICONS: Record<string, LucideIcon> = {
+  overview: House,
+  dispatch: CalendarClock,
+  loads: Package,
+  money: CircleDollarSign,
+  fleet: Truck,
+  people: Users,
+}
 
 export function HubShell({
   user,
   smallCarrier,
+  accent,
   children,
 }: {
   user: { name: string; role: string; carrierName?: string }
   /** Resolved per tenant by the office layout (nav.small_carrier_mode flag). */
   smallCarrier: boolean
+  /** Tenant branding accent (validated hex) — identity chip only, never controls. */
+  accent?: string | null
   children: React.ReactNode
 }) {
   const pathname = usePathname()
@@ -34,18 +49,18 @@ export function HubShell({
 
   return (
     <div className="hauldesk-shell min-h-screen bg-bg text-fg">
-      <header className="sticky top-0 z-40 flex h-14 items-center gap-3 border-b border-border bg-surface px-4 md:px-6">
-        <Link href="/hub" className="flex shrink-0 min-w-0 items-center gap-2.5">
-          <LoadOffMark size={30} />
-          <span className="min-w-0">
-            <span className="block font-semibold text-fg tracking-tight truncate">{PRODUCT.name}</span>
-            <span className="block text-[11px] text-fg-3 truncate max-w-[140px]">
-              {user.carrierName || PRODUCT.tagline}
-            </span>
-          </span>
+      <header className="sticky top-0 z-40 flex h-[calc(3.5rem+env(safe-area-inset-top,0px))] items-center gap-2 border-b border-border bg-surface px-3 pt-[env(safe-area-inset-top,0px)] md:px-6">
+        <Link href="/hub" className="flex shrink-0 items-center gap-2" aria-label={PRODUCT.name}>
+          <LoadOffMark size={28} />
+          <span className="hidden font-semibold tracking-tight text-fg lg:block">{PRODUCT.name}</span>
         </Link>
+        <span aria-hidden className="hidden h-5 w-px bg-border lg:block" />
+        <WorkspaceChip name={user.carrierName || PRODUCT.name} accent={accent} isOwner={isOwner} />
 
-        <nav className="hidden lg:flex items-center gap-0.5 ml-4 min-w-0 flex-1 overflow-x-auto" data-tour="hub-primary-nav">
+        <nav
+          className="hidden xl:flex items-center gap-0.5 ml-2 min-w-0 flex-1 overflow-x-auto"
+          data-tour="hub-primary-nav"
+        >
           {sections.map((primary) => {
             const active = primary.id === section.id
             const first = primary.sub[0]?.href ?? "/hub"
@@ -54,7 +69,7 @@ export function HubShell({
                 key={primary.id}
                 href={first}
                 className={cn(
-                  "shrink-0 rounded-control px-3 py-2 text-sm font-medium transition-colors",
+                  "shrink-0 rounded-control px-3 py-2 text-sm font-medium",
                   active ? "bg-accent-soft text-accent-text" : "text-fg-2 hover:bg-hover hover:text-fg"
                 )}
               >
@@ -64,32 +79,17 @@ export function HubShell({
           })}
         </nav>
 
-        <div className="ml-auto flex items-center gap-2 shrink-0" data-tour="hub-command-palette">
+        <div className="ml-auto flex items-center gap-0.5 shrink-0" data-tour="hub-command-palette">
           <CommandPalette isOwner={isOwner} smallCarrier={smallCarrier} />
-          <HubAppearanceMenu />
           <NotificationsBell direction="down" />
-          <div className="hidden sm:block text-right max-w-[120px]">
-            <p className="text-sm font-medium text-fg truncate">{user.name.split(" ")[0]}</p>
-            <p className="text-[10px] uppercase tracking-wide text-fg-3">{user.role}</p>
-          </div>
-          <button
-            type="button"
-            onClick={() => {
-              clearShellCache()
-              signOut({ callbackUrl: "/hub/login" })
-            }}
-            className="flex h-9 w-9 items-center justify-center rounded-control border border-border-strong text-fg-2 hover:bg-hover"
-            aria-label="Sign out"
-          >
-            <LogOut className="h-4 w-4" />
-          </button>
+          <UserMenu name={user.name} role={user.role} />
         </div>
       </header>
 
       <OfficeOfflineBanner />
 
-      {/* Mobile sub-nav */}
-      <div className="md:hidden sticky top-14 z-30 border-b border-border bg-surface overflow-x-auto">
+      {/* Mobile sub-nav: the active section's pages as a snapping pill row */}
+      <div className="md:hidden sticky top-[calc(3.5rem+env(safe-area-inset-top,0px))] z-30 border-b border-border bg-surface overflow-x-auto snap-row">
         <div className="flex gap-1 px-3 py-2 min-w-max">
           {section.sub.map((link) => (
             <Link
@@ -97,7 +97,9 @@ export function HubShell({
               href={link.href}
               className={cn(
                 "shrink-0 rounded-pill px-3 py-1.5 text-xs font-semibold",
-                isNavActive(pathname, link.href) ? "bg-accent-soft text-accent-text" : "bg-surface-2 text-fg-2"
+                isNavActive(pathname, link.href)
+                  ? "bg-accent-soft text-accent-text"
+                  : "bg-surface-2 text-fg-2"
               )}
             >
               {link.label}
@@ -118,7 +120,7 @@ export function HubShell({
                   key={link.href}
                   href={link.href}
                   className={cn(
-                    "block rounded-control px-2.5 py-2 text-sm font-medium transition-colors",
+                    "block rounded-control px-2.5 py-2 text-sm font-medium",
                     isNavActive(pathname, link.href)
                       ? "bg-accent-soft text-accent-text"
                       : "text-fg-2 hover:bg-hover hover:text-fg"
@@ -136,7 +138,7 @@ export function HubShell({
                   href={link.href}
                   data-tour={link.href === "/hub/guide" ? "hub-setup-guide" : undefined}
                   className={cn(
-                    "block rounded-control px-2.5 py-2 text-sm transition-colors",
+                    "block rounded-control px-2.5 py-2 text-sm",
                     isNavActive(pathname, link.href)
                       ? "bg-accent-soft text-accent-text font-medium"
                       : "text-fg-3 hover:bg-hover hover:text-fg-2"
@@ -149,26 +151,35 @@ export function HubShell({
           </div>
         </aside>
 
-        <main className="flex-1 min-w-0 px-4 py-6 md:px-8 md:py-8 pb-24 md:pb-8 max-w-[1400px]">
+        <main className="flex-1 min-w-0 px-4 py-5 md:px-8 md:py-8 pb-28 md:pb-8 max-w-[1400px]">
           <HubTourHost />
           {children}
         </main>
       </div>
 
+      {/* Mobile tab bar: icons above 10px labels, active = accent + heavier stroke */}
       <nav className="md:hidden fixed bottom-0 inset-x-0 z-40 border-t border-border bg-surface pb-[env(safe-area-inset-bottom)]">
         <div className="grid grid-cols-5">
           {mobilePrimaries.map((primary) => {
             const active = primary.id === section.id
             const href = primary.sub[0]?.href ?? "/hub"
+            const Icon = SECTION_ICONS[primary.id] ?? LayoutGrid
             return (
               <Link
                 key={primary.id}
                 href={href}
+                aria-current={active ? "page" : undefined}
                 className={cn(
-                  "flex min-h-[52px] flex-col items-center justify-center px-1 text-[10px] font-semibold",
+                  "flex min-h-[56px] flex-col items-center justify-center gap-0.5 px-1 pt-1.5 pb-1 text-[10px] font-semibold",
                   active ? "text-accent-text" : "text-fg-3"
                 )}
               >
+                <Icon
+                  className="h-[22px] w-[22px]"
+                  strokeWidth={active ? 2.4 : 1.8}
+                  fill={active ? "currentColor" : "none"}
+                  fillOpacity={active ? 0.14 : 0}
+                />
                 {primary.label}
               </Link>
             )

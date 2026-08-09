@@ -137,6 +137,19 @@
   -webkit-tap-highlight-color: transparent;
 }
 
+/* The marketing base layer uppercases h1–h5 in the condensed display font
+   with hardcoded light-on-dark colors — that's the single biggest source of
+   the app "shouting". Inside the software, headings are body-font, sentence
+   case, weight-based; condensed caps are reserved for 11px eyebrows and the
+   wordmark, applied per-element. */
+[data-app="hauldesk"] :is(h1, h2, h3, h4, h5, h6) {
+  font-family: inherit;
+  text-transform: none;
+  letter-spacing: inherit;
+  color: inherit;
+  line-height: 1.3;
+}
+
 /* Elevation ladder: background < card (--shadow) < raised (menus/popovers)
    < overlay (sheets/dialogs). Consumed as shadow-card / shadow-raised /
    shadow-overlay via tailwind.config.ts. */
