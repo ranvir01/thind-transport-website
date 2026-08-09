@@ -3,7 +3,9 @@ import { ChevronRight, Clock, Download, FileWarning, Plus, ShieldAlert } from "l
 import { listIncidents } from "@/lib/hub/incidents"
 import { listClaims, daysToDeadline } from "@/lib/hub/claims"
 import { fleetHosStatus, type HosLevel } from "@/lib/hub/telematics"
+import { driverSafetyBoard, fleetSafetySnapshot } from "@/lib/hub/safety-events-db"
 import { requirePermissionPage } from "@/lib/hub/session"
+import { SafetyScorePanel } from "@/components/hub/SafetyScorePanel"
 import { PageHeader, Panel, EmptyState } from "@/components/hub/ui"
 import { cn } from "@/lib/utils"
 
@@ -35,10 +37,12 @@ function formatMinutes(minutes: number | null): string {
 
 export default async function SafetyPage() {
   const user = await requirePermissionPage("compliance:read")
-  const [incidents, openClaims, hosStatus] = await Promise.all([
+  const [incidents, openClaims, hosStatus, safety, safetyDrivers] = await Promise.all([
     listIncidents(user.carrierId),
     listClaims(user.carrierId, { openOnly: true }),
     fleetHosStatus(user.carrierId),
+    fleetSafetySnapshot(user.carrierId),
+    driverSafetyBoard(user.carrierId),
   ])
   const register = incidents.filter((i) => i.dot_recordable)
   const urgentClaims = openClaims.filter((c) => {
@@ -68,6 +72,13 @@ export default async function SafetyPage() {
             <Plus className="h-4 w-4" /> Log incident
           </Link>
         }
+      />
+
+      <SafetyScorePanel
+        series={safety.series}
+        current={safety.current}
+        kindMix={safety.kindMix}
+        drivers={safetyDrivers}
       />
 
       {/* Hours of service */}
