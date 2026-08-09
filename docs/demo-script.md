@@ -1,5 +1,10 @@
 # HaulDesk — Demo Script (Phases 1–7 + expansion E1–E5, complete)
 
+> **Zero-setup alternative:** `/hub/demo` is a public, self-running 90-second
+> interactive simulation (fabricated data, no database, works signed-out on a
+> phone) — the fastest way to show the product's ceiling. This document remains
+> the full seeded walkthrough against real screens.
+
 HaulDesk is the multi-tenant operations product ("the Hub" in older docs); Thind
 Transport is tenant #1 and supplies the demo data. A phone-first walkthrough showing
 dispatch, money, fuel/IFTA, compliance, the driver app, comms, the planner, and
