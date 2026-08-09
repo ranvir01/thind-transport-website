@@ -15,6 +15,7 @@
     "connections:check": "node scripts/connections-check.mjs",
     "design-qa": "node scripts/design-qa.mjs",
     "embed:verify": "node scripts/verify-frame-headers.mjs",
+    "previews:refresh": "node scripts/refresh-link-previews.mjs",
     "seed:demo": "node scripts/seed-demo.mjs",
     "test": "vitest run",
     "agent:status": "node scripts/agent-loop-status.mjs",
