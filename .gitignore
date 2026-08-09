@@ -66,3 +66,9 @@ services/go/hauldesk-worker/hauldesk-worker
 # design-qa auditor output
 .design-qa/
 .agent-scratch/
+
+# personal working materials (prompts, scratch notes) — see
+# docs/ops/OWNER_DEV_WORKFLOW.md §5; never commit these
+scratch/
+prompts/
+*.local.md
