@@ -1,4 +1,5 @@
 import Link from "next/link"
+import { Inbox } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { STATUS_LABELS, type LoadStatus } from "@/lib/hub/types"
 
@@ -123,16 +124,27 @@ export function PageHeader({
   )
 }
 
-export function EmptyState({ title, hint, action }: { title: string; hint?: string; action?: React.ReactNode }) {
+export function EmptyState({
+  title,
+  hint,
+  action,
+  icon,
+}: {
+  title: string
+  hint?: string
+  action?: React.ReactNode
+  /** Tinted icon for the tile; defaults to an inbox. */
+  icon?: React.ReactNode
+}) {
   return (
-    <Panel className="px-6 py-12 text-center">
-      <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-card bg-surface-2 text-fg-3">
-        <span className="text-lg">—</span>
+    <section className="rounded-card border border-dashed border-border-strong px-6 py-12 text-center">
+      <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-card bg-surface-2 text-fg-3">
+        {icon ?? <Inbox className="h-5 w-5" />}
       </div>
-      <p className="font-medium text-fg">{title}</p>
-      {hint ? <p className="mt-1 text-sm text-fg-3">{hint}</p> : null}
+      <p className="font-semibold text-fg">{title}</p>
+      {hint ? <p className="mx-auto mt-1 max-w-sm text-sm text-fg-3">{hint}</p> : null}
       {action ? <div className="mt-4 flex justify-center">{action}</div> : null}
-    </Panel>
+    </section>
   )
 }
 

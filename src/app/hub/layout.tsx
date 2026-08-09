@@ -37,7 +37,7 @@ export const viewport: Viewport = {
   // Match the header surface in each mode so the iOS status bar blends in.
   themeColor: [
     { media: "(prefers-color-scheme: light)", color: "#ffffff" },
-    { media: "(prefers-color-scheme: dark)", color: "#131620" },
+    { media: "(prefers-color-scheme: dark)", color: "#14161f" },
   ],
   // Drivers use the app one-handed in a cab; let it fill past the notch/home
   // indicator so the bottom action bar isn't squeezed by the safe-area inset.

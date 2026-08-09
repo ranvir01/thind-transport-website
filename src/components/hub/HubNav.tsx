@@ -88,18 +88,19 @@ export function HubShell({
 
       <OfficeOfflineBanner />
 
-      {/* Mobile sub-nav: the active section's pages as a snapping pill row */}
+      {/* Mobile sub-nav: the active section's pages. Active gets the one soft
+          chip; the rest are quiet text — no gray blob row. */}
       <div className="md:hidden sticky top-[calc(3.5rem+env(safe-area-inset-top,0px))] z-30 border-b border-border bg-surface overflow-x-auto snap-row">
-        <div className="flex gap-1 px-3 py-2 min-w-max">
+        <div className="flex gap-0.5 px-3 py-2 min-w-max">
           {section.sub.map((link) => (
             <Link
               key={link.href}
               href={link.href}
               className={cn(
-                "shrink-0 rounded-pill px-3 py-1.5 text-xs font-semibold",
+                "shrink-0 rounded-pill px-3 py-1.5 text-[13px]",
                 isNavActive(pathname, link.href)
-                  ? "bg-accent-soft text-accent-text"
-                  : "bg-surface-2 text-fg-2"
+                  ? "bg-accent-soft font-semibold text-accent-text"
+                  : "font-medium text-fg-3 hover:text-fg-2"
               )}
             >
               {link.label}
@@ -175,7 +176,7 @@ export function HubShell({
                 )}
               >
                 <Icon
-                  className="h-[22px] w-[22px]"
+                  className={cn("h-[22px] w-[22px]", active && "hub-tab-pop")}
                   strokeWidth={active ? 2.4 : 1.8}
                   fill={active ? "currentColor" : "none"}
                   fillOpacity={active ? 0.14 : 0}

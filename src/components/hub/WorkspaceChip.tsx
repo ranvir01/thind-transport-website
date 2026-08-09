@@ -9,7 +9,19 @@
 import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import { BookOpen, Check, ChevronDown, Plug, Settings, Wrench } from "lucide-react"
+import { LOADOFF_BRAND } from "@/lib/hub/brand"
 import { cn } from "@/lib/utils"
+
+/** Tenant accent when set; otherwise the LoadOff indigo gradient — the chip
+ *  always reads as a deliberate identity mark, never a flat gray box. */
+function chipStyle(accent?: string | null): React.CSSProperties {
+  return accent
+    ? { backgroundColor: accent, color: "#fff" }
+    : {
+        backgroundImage: `linear-gradient(150deg, ${LOADOFF_BRAND.indigo}, ${LOADOFF_BRAND.indigoDeep})`,
+        color: "#fff",
+      }
+}
 
 export function WorkspaceChip({
   name,
@@ -63,11 +75,8 @@ export function WorkspaceChip({
       >
         <span
           aria-hidden
-          className={cn(
-            "flex h-6 w-6 shrink-0 items-center justify-center rounded-[8px] text-[12px] font-bold",
-            !accent && "bg-accent-soft text-accent-text"
-          )}
-          style={accent ? { backgroundColor: accent, color: "#fff" } : undefined}
+          className="flex h-6 w-6 shrink-0 items-center justify-center rounded-[8px] text-[12px] font-bold"
+          style={chipStyle(accent)}
         >
           {initial}
         </span>
@@ -84,11 +93,8 @@ export function WorkspaceChip({
           <div className="flex items-center gap-2.5 px-2.5 py-2">
             <span
               aria-hidden
-              className={cn(
-                "flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] text-sm font-bold",
-                !accent && "bg-accent-soft text-accent-text"
-              )}
-              style={accent ? { backgroundColor: accent, color: "#fff" } : undefined}
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] text-sm font-bold"
+              style={chipStyle(accent)}
             >
               {initial}
             </span>
