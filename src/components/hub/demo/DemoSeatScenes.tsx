@@ -13,6 +13,7 @@ import {
 import { fmtCents } from "@/lib/hub/types"
 import { DEMO_DATA } from "@/lib/hub/demo-script"
 import { CheckDraw } from "@/components/hub/CheckDraw"
+import { DemoLiveMap } from "@/components/hub/demo/DemoLiveMap"
 import { cn } from "@/lib/utils"
 
 const card = "rounded-card border border-border bg-surface shadow-card"
@@ -444,16 +445,22 @@ export function BrokerTrackScene({ stage }: { stage: number }) {
               ETA 6:40 PM
             </span>
           </div>
-          <div className="flex h-24 items-center justify-center gap-2 bg-surface-2">
-            <Truck className="h-5 w-5 text-accent-text" />
-            <span className="text-[12.5px] text-fg-2">147 mi out · I-84 E near Baker City</span>
-          </div>
+          {/* The tracking link opens the real map — truck rolling I-84
+              near Baker City, destination geofence pulsing. */}
+          <DemoLiveMap
+            play={stage >= 3}
+            progressCap={0.8}
+            heightClass="h-[150px]"
+            label="Broker tracking view — truck on I-84 near Baker City"
+          />
+          <p className="border-t border-border px-3.5 py-2 text-[12px] text-fg-2">
+            <Truck className="mr-1.5 inline h-3.5 w-3.5 text-accent-text" aria-hidden />
+            147 mi out · I-84 E near Baker City
+          </p>
         </div>
       </Step>
       <Step on={stage >= 4}>
-        <p className="text-center text-[12.5px] text-fg-3">
-          The broker forwards the link to their customer. Nobody calls anybody.
-        </p>
+        <p className="text-center text-[12.5px] text-fg-3">Forwarded to their customer. Nobody calls anybody.</p>
       </Step>
     </div>
   )
