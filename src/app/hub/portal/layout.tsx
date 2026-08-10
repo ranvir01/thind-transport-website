@@ -2,7 +2,7 @@ import { headers } from "next/headers"
 import { PRODUCT } from "@/lib/hub/product"
 import { getHubUser } from "@/lib/hub/session"
 import { getCarrier, getCarrierSettings } from "@/lib/hub/settings"
-import { isSandboxCarrier } from "@/lib/hub/sandbox"
+import { isSandboxCarrier, seatForEmail } from "@/lib/hub/sandbox"
 import { SandboxBanner } from "@/components/hub/SandboxBanner"
 import { SignOutButton } from "@/components/hub/SignOutButton"
 import { PORTAL_ACCENT_DEFAULT, resolvePortalAccent } from "./accent"
@@ -50,7 +50,9 @@ export default async function PortalLayout({ children }: { children: React.React
         </span>
       </header>
       <main className="pt-20 pb-12 px-4 mx-auto w-full max-w-3xl">
-        {user && isSandboxCarrier(user.carrierId) ? <SandboxBanner dark /> : null}
+        {user && isSandboxCarrier(user.carrierId) ? (
+          <SandboxBanner dark seat={seatForEmail(user.email)?.key} />
+        ) : null}
         {children}
       </main>
       <footer className="pb-8 px-4 mx-auto w-full max-w-3xl">

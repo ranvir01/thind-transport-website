@@ -1,6 +1,6 @@
 import { requireDriverUser } from "@/lib/hub/session"
 import { getCarrierSettings } from "@/lib/hub/settings"
-import { isSandboxCarrier } from "@/lib/hub/sandbox"
+import { isSandboxCarrier, seatForEmail } from "@/lib/hub/sandbox"
 import { SandboxBanner } from "@/components/hub/SandboxBanner"
 import { DriverNav } from "@/components/hub/driver/DriverNav"
 import { OfflineSync } from "@/components/hub/driver/OfflineSync"
@@ -21,7 +21,7 @@ export default async function DriverAppLayout({ children }: { children: React.Re
       <OfflineSync />
       {/* Top bar 56px, bottom tabs 64px + safe area */}
       <main className="pt-16 pb-24 px-4 mx-auto w-full max-w-lg">
-        {isSandboxCarrier(user.carrierId) ? <SandboxBanner dark /> : null}
+        {isSandboxCarrier(user.carrierId) ? <SandboxBanner dark seat={seatForEmail(user.email)?.key} /> : null}
         {children}
       </main>
     </div>

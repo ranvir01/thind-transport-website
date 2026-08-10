@@ -5,8 +5,14 @@ import Link from "next/link"
 import { signIn } from "next-auth/react"
 import { ArrowLeft, Building2, Loader2, RotateCcw, Truck, Users } from "lucide-react"
 import { toast } from "sonner"
-import { prepareSandboxAction, resetSandboxAction } from "@/app/hub/_actions/sandbox"
-import { SANDBOX_PASSWORD, SANDBOX_SEATS, type SandboxSeat } from "@/lib/hub/sandbox"
+import { prepareSandboxAction, resetSandboxAction, setSandboxScenarioAction } from "@/app/hub/_actions/sandbox"
+import {
+  SANDBOX_PASSWORD,
+  SANDBOX_SCENARIOS,
+  SANDBOX_SEATS,
+  type SandboxScenario,
+  type SandboxSeat,
+} from "@/lib/hub/sandbox"
 import { cn } from "@/lib/utils"
 
 const GROUPS: { key: SandboxSeat["group"]; label: string; icon: typeof Users; hint: string }[] = [
@@ -18,6 +24,24 @@ const GROUPS: { key: SandboxSeat["group"]; label: string; icon: typeof Users; hi
 export function SeatPicker() {
   const [busy, setBusy] = useState<string | null>(null)
   const [resetting, setResetting] = useState(false)
+  const [scenario, setScenario] = useState<SandboxScenario>("steady")
+  const [settingScenario, setSettingScenario] = useState<SandboxScenario | null>(null)
+
+  const applyScenario = async (key: SandboxScenario) => {
+    if (settingScenario || busy) return
+    setSettingScenario(key)
+    try {
+      const result = await setSandboxScenarioAction(key)
+      if (result.ok) {
+        setScenario(key)
+        toast.success(key === "crunch" ? "Crunch day is live — pick a seat." : "Back to a steady week.")
+      } else {
+        toast.error(result.error ?? "Could not set the scenario")
+      }
+    } finally {
+      setSettingScenario(null)
+    }
+  }
 
   const enter = async (seat: SandboxSeat) => {
     if (busy) return
@@ -87,6 +111,42 @@ export function SeatPicker() {
             <span className="font-semibold text-fg">Reset</span> puts it all back.
           </p>
         </div>
+
+        <section className="mb-7">
+          <div className="mb-2.5 flex items-center gap-2">
+            <h2 className="text-[13.5px] font-semibold text-fg">Scenario</h2>
+            <span className="text-[12px] text-fg-3">rebuilds the company into a situation</span>
+          </div>
+          <div className="grid gap-2.5 sm:grid-cols-2">
+            {SANDBOX_SCENARIOS.map((s) => (
+              <button
+                key={s.key}
+                onClick={() => applyScenario(s.key)}
+                disabled={settingScenario !== null || busy !== null}
+                aria-pressed={scenario === s.key}
+                className={cn(
+                  "flex min-h-[64px] flex-col items-start gap-0.5 rounded-card border p-3.5 text-left shadow-card transition-colors duration-fast",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)]",
+                  scenario === s.key
+                    ? "border-accent bg-accent-soft"
+                    : "border-border bg-surface hover:border-border-strong hover:bg-hover",
+                  "disabled:pointer-events-none",
+                  settingScenario !== null && settingScenario !== s.key && "opacity-40"
+                )}
+              >
+                <span className="flex w-full items-center justify-between gap-2">
+                  <span className={cn("text-[14px] font-semibold", scenario === s.key ? "text-accent-text" : "text-fg")}>
+                    {s.label}
+                  </span>
+                  {settingScenario === s.key ? (
+                    <Loader2 className="h-4 w-4 animate-spin text-accent-text" aria-hidden />
+                  ) : null}
+                </span>
+                <span className="text-[12.5px] leading-snug text-fg-2">{s.blurb}</span>
+              </button>
+            ))}
+          </div>
+        </section>
 
         <div className="space-y-7">
           {GROUPS.map((group) => (
