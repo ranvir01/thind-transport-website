@@ -1,7 +1,15 @@
 import { describe, expect, it } from "vitest"
 import { isDemoEmail } from "../demo"
 import { OFFICE_ROLES, HUB_ROLES } from "../types"
-import { SANDBOX_CARRIER_ID, SANDBOX_SEATS, isSandboxCarrier, sandboxSeat } from "../sandbox"
+import {
+  SANDBOX_CARRIER_ID,
+  SANDBOX_SCENARIOS,
+  SANDBOX_SEATS,
+  SANDBOX_TOURS,
+  isSandboxCarrier,
+  sandboxSeat,
+  seatForEmail,
+} from "../sandbox"
 
 describe("sandbox seats", () => {
   it("offers nine playable seats", () => {
@@ -56,5 +64,42 @@ describe("sandbox seats", () => {
   it("sandboxSeat looks up by key", () => {
     expect(sandboxSeat("owner")?.role).toBe("owner")
     expect(sandboxSeat("nope")).toBeUndefined()
+  })
+
+  it("seatForEmail resolves seats case-insensitively and rejects strangers", () => {
+    expect(seatForEmail("SANDBOX.OWNER@demo.thind")?.key).toBe("owner")
+    expect(seatForEmail("owner@demo.thind")).toBeUndefined()
+    expect(seatForEmail(null)).toBeUndefined()
+  })
+})
+
+describe("sandbox tours", () => {
+  it("every seat has a three-step tour", () => {
+    for (const seat of SANDBOX_SEATS) {
+      const tour = SANDBOX_TOURS[seat.key]
+      expect(tour, `tour for ${seat.key}`).toBeDefined()
+      expect(tour.length).toBe(3)
+    }
+  })
+
+  it("tour steps stay inside the seat's own surface", () => {
+    for (const seat of SANDBOX_SEATS) {
+      for (const step of SANDBOX_TOURS[seat.key]) {
+        if (seat.role === "driver") expect(step.href.startsWith("/hub/driver")).toBe(true)
+        else if (seat.role === "broker" || seat.role === "shipper")
+          expect(step.href.startsWith("/hub/portal")).toBe(true)
+        else {
+          expect(step.href.startsWith("/hub")).toBe(true)
+          expect(step.href.startsWith("/hub/driver")).toBe(false)
+          expect(step.href.startsWith("/hub/portal")).toBe(false)
+        }
+      }
+    }
+  })
+})
+
+describe("sandbox scenarios", () => {
+  it("offers steady and crunch", () => {
+    expect(SANDBOX_SCENARIOS.map((s) => s.key)).toEqual(["steady", "crunch"])
   })
 })

@@ -365,14 +365,19 @@ export async function seedSandbox(): Promise<void> {
         }
         const assigned = status !== "quoted" && status !== "cancelled" && !(status === "booked" && chance(0.4))
         const accessorials = chance(0.08) ? [{ name: "Detention", amountCents: pick([6000, 12000, 18000]) }] : []
-        // The playable broker (Summit) and shipper (Cascade Foods) seats each
-        // get a load on the road so their portals always show live freight.
+        // The playable seats always have something live: the broker (Summit)
+        // and shipper (Cascade Foods) portals each get a load on the road, and
+        // the two driver seats (Jordan, Sam) are behind the wheel of the first
+        // two in-transit loads so their Home screens never open empty.
         const customer = status === "in_transit" && k === 0 ? customerIds[0]
           : status === "in_transit" && k === 1 ? customerIds[BROKERS.length]
           : pick(customerIds)
+        const forcedDriver = status === "in_transit" && k === 0 ? 0
+          : status === "in_transit" && k === 1 ? 1
+          : null
         plans.push({
           idx: loadIdx++, status, lane, customer, equipment,
-          driverIdx: assigned ? pick(activeDriverIdxs) : null,
+          driverIdx: forcedDriver ?? (assigned ? pick(activeDriverIdxs) : null),
           pickupAt, deliveredAt, linehaul, fsc, accessorials, loadedMiles, deadheadMiles: int(15, 120),
         })
       }
@@ -804,6 +809,80 @@ export async function seedSandbox(): Promise<void> {
   }
   for (const m of [month(2), month(1), month(0)]) {
     await computeDriverScores(C, m).catch(() => {})
+  }
+}
+
+/**
+ * Scenario overlays on top of a fresh seed. "steady" is the baseline;
+ * "crunch" turns the morning hostile: late pickups, a truck dead in the
+ * shop with an unsafe DVIR, invoices aging past terms, fresh safety events.
+ * Every statement carrier-scoped, same as the seed itself.
+ */
+export async function applySandboxScenario(scenario: "steady" | "crunch"): Promise<void> {
+  await seedSandbox()
+  if (scenario === "steady") return
+  const client = await hubDb().connect()
+  try {
+    await client.query("BEGIN")
+    await client.query(`SELECT pg_advisory_xact_lock(hashtext('loadoff-sandbox-seed'))`)
+    // Two dispatched pickups now 4 hours late, nobody has arrived.
+    await client.query(
+      `UPDATE hub.stops SET appt_start = NOW() - interval '4 hours'
+        WHERE carrier_id = $1 AND type = 'pickup' AND arrived_at IS NULL
+          AND load_id IN (SELECT id FROM hub.loads WHERE carrier_id = $1 AND status = 'dispatched' LIMIT 2)`,
+      [C]
+    )
+    // Three booked loads suddenly due this afternoon.
+    await client.query(
+      `UPDATE hub.stops SET appt_start = NOW() + interval '3 hours'
+        WHERE carrier_id = $1 AND type = 'pickup' AND arrived_at IS NULL
+          AND load_id IN (SELECT id FROM hub.loads WHERE carrier_id = $1 AND status = 'booked' LIMIT 3)`,
+      [C]
+    )
+    // A truck dies at morning inspection: into the shop, unsafe DVIR on file.
+    await client.query(
+      `INSERT INTO hub.dvirs (carrier_id, truck_id, driver_id, type, odometer, checklist, defects,
+         safe_to_operate, signature, signed_name, created_at)
+       SELECT t.carrier_id, t.id, t.assigned_driver_id, 'pre', 284511, '[]',
+         '[{"item":"Air lines","note":"Audible leak at the glad hands — will not hold pressure"}]',
+         FALSE, $2, d.first_name || ' ' || d.last_name, NOW()
+         FROM hub.trucks t JOIN hub.drivers d ON d.id = t.assigned_driver_id
+        WHERE t.carrier_id = $1 AND t.status = 'active' AND t.assigned_driver_id IS NOT NULL
+        LIMIT 1`,
+      [C, PNG_DOT]
+    )
+    await client.query(
+      `UPDATE hub.trucks SET status = 'shop'
+        WHERE carrier_id = $1 AND id IN (
+          SELECT truck_id FROM hub.dvirs
+           WHERE carrier_id = $1 AND safe_to_operate = FALSE
+           ORDER BY created_at DESC LIMIT 1)`,
+      [C]
+    )
+    // Three invoices age past terms overnight.
+    await client.query(
+      `UPDATE hub.invoices SET status = 'overdue', due_on = CURRENT_DATE - 12
+        WHERE carrier_id = $1 AND id IN (
+          SELECT id FROM hub.invoices WHERE carrier_id = $1 AND status = 'sent' LIMIT 3)`,
+      [C]
+    )
+    // Fresh telematics events this morning for the safety seat to coach.
+    await client.query(
+      `INSERT INTO hub.safety_events (carrier_id, driver_id, truck_id, kind, occurred_at, location, source)
+       SELECT t.carrier_id, t.assigned_driver_id, t.id, kinds.kind, NOW() - interval '2 hours',
+              'I-90 corridor', 'eld'
+         FROM (SELECT id, carrier_id, assigned_driver_id FROM hub.trucks
+                WHERE carrier_id = $1 AND assigned_driver_id IS NOT NULL LIMIT 2) t
+         CROSS JOIN LATERAL (VALUES ('speeding'), ('hard_brake')) AS kinds(kind)
+        LIMIT 3`,
+      [C]
+    )
+    await client.query("COMMIT")
+  } catch (error) {
+    await client.query("ROLLBACK")
+    throw error
+  } finally {
+    client.release()
   }
 }
 

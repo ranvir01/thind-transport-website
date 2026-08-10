@@ -3,8 +3,8 @@
 import { getHubUser } from "@/lib/hub/session"
 import { logAudit } from "@/lib/hub/audit"
 import { demoLoginEnabled } from "@/lib/hub/demo"
-import { isSandboxCarrier } from "@/lib/hub/sandbox"
-import { ensureSandboxSeeded, seedSandbox } from "@/lib/hub/sandbox-seed"
+import { isSandboxCarrier, type SandboxScenario } from "@/lib/hub/sandbox"
+import { applySandboxScenario, ensureSandboxSeeded } from "@/lib/hub/sandbox-seed"
 
 /**
  * First-visit seeding for /hub/sandbox. Public by design (the picker page is
@@ -27,15 +27,23 @@ export async function prepareSandboxAction(): Promise<{ ok: boolean; error?: str
  * signed-in real-tenant user resetting the sandbox keeps their own session.
  */
 export async function resetSandboxAction(): Promise<{ ok: boolean; error?: string }> {
+  return setSandboxScenarioAction("steady")
+}
+
+/** Rebuild the sandbox into a named scenario. Same trust level as reset. */
+export async function setSandboxScenarioAction(
+  scenario: SandboxScenario
+): Promise<{ ok: boolean; error?: string }> {
   if (!demoLoginEnabled()) return { ok: false, error: "The sandbox is disabled on this deployment." }
+  if (scenario !== "steady" && scenario !== "crunch") return { ok: false, error: "Unknown scenario." }
   const user = await getHubUser()
   try {
-    await seedSandbox()
+    await applySandboxScenario(scenario)
     await logAudit({
       carrierId: null,
       actorId: user && isSandboxCarrier(user.carrierId) ? user.id : null,
       actorName: user?.name ?? "sandbox visitor",
-      action: "sandbox.reset",
+      action: `sandbox.scenario.${scenario}`,
       entityType: "carrier",
       entityId: "sandbox",
     })
