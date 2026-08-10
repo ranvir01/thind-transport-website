@@ -14,6 +14,7 @@ import { fmtCents } from "@/lib/hub/types"
 import { DEMO_DATA } from "@/lib/hub/demo-script"
 import { CheckDraw } from "@/components/hub/CheckDraw"
 import { DemoLiveMap } from "@/components/hub/demo/DemoLiveMap"
+import { CountUp, TickingClock, TypingDots } from "@/components/hub/demo/motion"
 import { cn } from "@/lib/utils"
 
 const card = "rounded-card border border-border bg-surface shadow-card"
@@ -144,7 +145,7 @@ export function DriverArriveScene({ stage }: { stage: number }) {
             <p className="text-[14px] font-semibold text-white">Detention clock armed</p>
             <p className="text-[12px] text-steel-300">2 free hours, then $60/hr bills itself</p>
           </div>
-          <span className="font-mono text-[15px] font-semibold tabular-nums text-white">1:34:12</span>
+          <TickingClock from="1:34:12" className="font-mono text-[15px] font-semibold tabular-nums text-white" />
         </div>
       </Step>
       <Step on={stage >= 3}>
@@ -171,9 +172,30 @@ export function DriverPodScene({ stage }: { stage: number }) {
       </Step>
       <Step on={stage >= 2} className="mt-3 w-full">
         <div className={cn(dcard, "mx-auto w-[80%] p-4")}>
-          <div className="flex aspect-[16/10] flex-col items-center justify-center gap-2 rounded-control bg-white/5">
-            <Camera className="h-7 w-7 text-steel-300" />
-            <p className="text-[13px] font-semibold text-white">Photograph the POD</p>
+          <div className="relative flex aspect-[16/10] flex-col items-center justify-center gap-2 overflow-hidden rounded-control bg-white/5">
+            {stage >= 3 ? (
+              <>
+                {/* The "photo": a captured delivery receipt, lines and a signature. */}
+                <div className="absolute inset-3 rounded-[6px] bg-[#e9e5dc] p-2.5 shadow-raised">
+                  <div className="h-1.5 w-2/3 rounded-pill bg-navy-500/70" />
+                  <div className="mt-1.5 h-1 w-1/2 rounded-pill bg-navy-500/40" />
+                  <div className="mt-1 h-1 w-3/5 rounded-pill bg-navy-500/40" />
+                  <div className="mt-1 h-1 w-2/5 rounded-pill bg-navy-500/40" />
+                  <svg viewBox="0 0 120 28" className="absolute bottom-2 right-2.5 h-6 w-24" aria-hidden>
+                    <path
+                      d="M4 20 C 16 6, 26 24, 38 14 S 60 8, 70 16 S 96 24, 116 10"
+                      fill="none" stroke="#1f2a44" strokeWidth="2" strokeLinecap="round"
+                    />
+                  </svg>
+                </div>
+                <span aria-hidden className="demo-flash" />
+              </>
+            ) : (
+              <>
+                <Camera className="h-7 w-7 text-steel-300" />
+                <p className="text-[13px] font-semibold text-white">Photograph the POD</p>
+              </>
+            )}
           </div>
           {stage >= 3 ? (
             <p className="mt-2.5 flex items-center justify-center gap-1.5 text-[12.5px] text-ok">
@@ -218,7 +240,7 @@ export function DriverPayScene({ stage }: { stage: number }) {
               <div className="flex justify-between border-t border-white/10 pt-1.5">
                 <span className="font-semibold text-white">Net for this load · lands Friday</span>
                 <span className="font-mono text-[16px] font-semibold tabular-nums text-ok">
-                  {fmtCents(326_00)}
+                  <CountUp value={fmtCents(326_00)} />
                 </span>
               </div>
             ) : null}
@@ -254,7 +276,7 @@ export function OwnerPulseScene({ stage }: { stage: number }) {
             <div className={cn(card, "p-3.5")}>
               <p className="text-[12px] font-medium text-fg-3">{t.label}</p>
               <p className="mt-0.5 font-mono text-[24px] font-semibold tracking-tight tabular-nums text-fg">
-                {t.value}
+                <CountUp value={t.value} />
               </p>
             </div>
           </Step>
@@ -429,12 +451,16 @@ export function BrokerTrackScene({ stage }: { stage: number }) {
       </Step>
       <Step on={stage >= 2}>
         <div className={cn(card, "p-3.5")}>
-          <p className="text-[13.5px] text-fg-2">
-            Reply — 20 seconds later:{" "}
-            <span className="font-semibold text-accent-text underline underline-offset-2">
-              loadoff.app/track/PCL-88214
-            </span>
-          </p>
+          {stage >= 3 ? (
+            <p className="text-[13.5px] text-fg-2">
+              Reply — 20 seconds later:{" "}
+              <span className="font-semibold text-accent-text underline underline-offset-2">
+                loadoff.app/track/PCL-88214
+              </span>
+            </p>
+          ) : (
+            <TypingDots />
+          )}
         </div>
       </Step>
       <Step on={stage >= 3}>

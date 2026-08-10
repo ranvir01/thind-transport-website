@@ -18,6 +18,7 @@ import { DEMO_DATA } from "@/lib/hub/demo-script"
 import { CheckDraw } from "@/components/hub/CheckDraw"
 import { LoadOffMark } from "@/components/hub/LoadOffMark"
 import { DemoLiveMap } from "@/components/hub/demo/DemoLiveMap"
+import { CountUp } from "@/components/hub/demo/motion"
 import { cn } from "@/lib/utils"
 
 /** How many timeline steps are visible; reduced-motion shows everything. */
@@ -81,7 +82,7 @@ export function TodayScene({ stage }: { stage: number }) {
             <div className={cn(card, "p-3.5")}>
               <p className="text-[12px] font-medium text-fg-3">{t.label}</p>
               <p className={cn("mt-0.5 text-[26px] font-semibold tracking-tight tabular-nums text-fg", t.label === "Not invoiced" && "font-mono")}>
-                {t.value}
+                <CountUp value={t.value} />
               </p>
               {t.tone ? (
                 <span className={cn(
@@ -310,7 +311,7 @@ export function InvoiceScene({ stage }: { stage: number }) {
               <div className="flex justify-between border-t border-border pt-1.5">
                 <span className="font-semibold text-fg">Total · net 30</span>
                 <span className="font-mono text-[16px] font-semibold tabular-nums text-accent-text">
-                  {fmtCents(DEMO_DATA.linehaulCents + DEMO_DATA.detentionCents)}
+                  <CountUp value={fmtCents(DEMO_DATA.linehaulCents + DEMO_DATA.detentionCents)} />
                 </span>
               </div>
             ) : null}

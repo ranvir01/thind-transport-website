@@ -127,14 +127,28 @@ export default async function MoneyPage() {
       {hasInvoices ? (
         <>
           <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4 hub-stagger">
-            {BUCKETS.map((bucket) => (
-              <Panel key={bucket} className="p-4">
-                <span className={cn("text-[12px] font-medium", aging.buckets[bucket] === 0 ? "text-fg-3" : bucket === "current" ? "text-fg-3" : bucket === "90+" ? "text-bad" : "text-warn")}>
-                  {bucket === "current" ? "Current" : `${bucket} days`}
-                </span>
-                <p className="mt-1.5 font-mono text-xl font-medium tabular-nums text-fg">{fmtCents(aging.buckets[bucket])}</p>
-              </Panel>
-            ))}
+            {BUCKETS.map((bucket) => {
+              const cents = aging.buckets[bucket]
+              const share = aging.totalOpenCents > 0 ? cents / aging.totalOpenCents : 0
+              return (
+                <Panel key={bucket} className="p-4">
+                  <span className={cn("text-[12px] font-medium", cents === 0 ? "text-fg-3" : bucket === "current" ? "text-fg-3" : bucket === "90+" ? "text-bad" : "text-warn")}>
+                    {bucket === "current" ? "Current" : `${bucket} days`}
+                  </span>
+                  <p className="mt-1.5 font-mono text-xl font-medium tabular-nums text-fg">{fmtCents(cents)}</p>
+                  {/* Share of open AR at a glance — where the money is stuck. */}
+                  <div className="mt-2 h-1 overflow-hidden rounded-pill bg-surface-2" aria-hidden>
+                    <div
+                      className={cn(
+                        "h-full rounded-pill",
+                        bucket === "current" ? "bg-ok" : bucket === "90+" ? "bg-bad" : "bg-warn"
+                      )}
+                      style={{ width: `${Math.max(cents > 0 ? 4 : 0, Math.round(share * 100))}%` }}
+                    />
+                  </div>
+                </Panel>
+              )
+            })}
           </div>
           <Panel className="p-4 mb-6">
             <p className="text-body-sm text-fg-2">
