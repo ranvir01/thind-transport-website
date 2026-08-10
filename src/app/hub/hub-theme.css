@@ -350,6 +350,53 @@
   animation: hub-pill-in 320ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
+/* Demo live map (Leaflet over OSM): pins, pulsing destination geofence, and
+   the truck chip. Kept here so the map obeys the app's tokens in both modes. */
+[data-app="hauldesk"] .demo-map {
+  z-index: 0; /* keep Leaflet's internal stacking below app chrome */
+}
+[data-app="hauldesk"] .demo-map .leaflet-container {
+  background: var(--surface-2);
+  font: inherit;
+}
+[data-app="hauldesk"] .demo-map-pin {
+  display: block;
+  width: 14px;
+  height: 14px;
+  border-radius: 9999px;
+  border: 2.5px solid var(--surface);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+}
+[data-app="hauldesk"] .demo-map-pin--origin {
+  background: var(--text-3);
+}
+[data-app="hauldesk"] .demo-map-pin--dest {
+  background: var(--green);
+  animation: demo-geofence 2.2s cubic-bezier(0.2, 0, 0, 1) infinite;
+}
+@keyframes demo-geofence {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--green) 45%, transparent);
+  }
+  70% {
+    box-shadow: 0 0 0 14px transparent;
+  }
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+}
+[data-app="hauldesk"] .demo-map-truck {
+  display: block;
+  width: 22px;
+  height: 22px;
+  border-radius: 9999px;
+  background: var(--accent);
+  border: 3px solid var(--surface);
+  box-shadow:
+    0 0 0 4px color-mix(in srgb, var(--accent) 22%, transparent),
+    0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
 /* Sub-nav underline indicator: grows out from center under the active tab
    (the "tab underline slide" of the motion spec, CSS-only). */
 @keyframes hub-underline-in {

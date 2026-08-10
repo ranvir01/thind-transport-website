@@ -7,7 +7,7 @@
  * feed) the scene simulates the answer. Tokens only, so the demo follows the
  * viewer's light/dark mode like the real app.
  */
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useState } from "react"
 import {
   Bell, Building2, CalendarClock, Camera, CheckCircle2, CircleDollarSign,
   FileText, Fuel, Link2, MapPin, Route, Send, ShieldCheck, Sparkles, Truck,
@@ -17,6 +17,7 @@ import { fmtCents } from "@/lib/hub/types"
 import { DEMO_DATA } from "@/lib/hub/demo-script"
 import { CheckDraw } from "@/components/hub/CheckDraw"
 import { LoadOffMark } from "@/components/hub/LoadOffMark"
+import { DemoLiveMap } from "@/components/hub/demo/DemoLiveMap"
 import { cn } from "@/lib/utils"
 
 /** How many timeline steps are visible; reduced-motion shows everything. */
@@ -206,36 +207,8 @@ export function DispatchScene({ stage }: { stage: number }) {
 }
 
 /* ---------- 5 · Live map ---------- */
-const ROUTE_PATH = "M30,60 C110,30 190,52 236,96 C268,128 296,150 312,158"
 
 export function TrackScene({ stage }: { stage: number }) {
-  const pathRef = useRef<SVGPathElement>(null)
-  const dotRef = useRef<SVGGElement>(null)
-  // One clock for the whole scene: stage reveals re-run the effect and must
-  // not restart the truck from Seattle.
-  const startRef = useRef<number | null>(null)
-
-  useEffect(() => {
-    if (stage < 2) return
-    const path = pathRef.current
-    const dot = dotRef.current
-    if (!path || !dot) return
-    const total = path.getTotalLength()
-    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches
-    startRef.current ??= performance.now()
-    const start = startRef.current
-    const durationMs = 7000
-    let raf = 0
-    const tick = (now: number) => {
-      const t = reduce ? 0.72 : Math.min(0.72, ((now - start) / durationMs) * 0.72)
-      const p = path.getPointAtLength(total * t)
-      dot.setAttribute("transform", `translate(${p.x}, ${p.y})`)
-      if (t < 0.72 && !reduce) raf = requestAnimationFrame(tick)
-    }
-    raf = requestAnimationFrame(tick)
-    return () => cancelAnimationFrame(raf)
-  }, [stage])
-
   return (
     <div className="flex h-full flex-col justify-center">
       <Step on={stage >= 1}>
@@ -244,24 +217,9 @@ export function TrackScene({ stage }: { stage: number }) {
             <p className="text-[13.5px] font-semibold text-fg">Truck {DEMO_DATA.truck} · {DEMO_DATA.driver.split(" ")[0]}</p>
             <span className="rounded-pill bg-info-soft px-2 py-0.5 text-[10.5px] font-semibold text-info">In transit</span>
           </div>
-          <svg viewBox="0 0 340 190" className="block w-full bg-surface-2" aria-label="Live truck position on the Seattle to Boise lane">
-            {/* map texture */}
-            {Array.from({ length: 7 }, (_, i) => (
-              <line key={`h${i}`} x1="0" y1={i * 30 + 10} x2="340" y2={i * 30 + 10} stroke="var(--border)" strokeWidth="1" />
-            ))}
-            {Array.from({ length: 11 }, (_, i) => (
-              <line key={`v${i}`} x1={i * 34} y1="0" x2={i * 34} y2="190" stroke="var(--border)" strokeWidth="1" />
-            ))}
-            <path d={ROUTE_PATH} fill="none" stroke="var(--accent)" strokeWidth="2.5" strokeLinecap="round" strokeDasharray="1 6" opacity="0.9" />
-            <circle cx="30" cy="60" r="5" fill="var(--accent)" />
-            <text x="42" y="46" fontSize="11" fill="var(--text-2)" fontWeight="600">Seattle</text>
-            <circle cx="312" cy="158" r="5" fill="var(--text-3)" />
-            <text x="248" y="180" fontSize="11" fill="var(--text-2)" fontWeight="600">Boise</text>
-            <g ref={dotRef} transform="translate(30,60)">
-              <circle r="9" fill="var(--accent)" opacity="0.25" />
-              <circle r="5" fill="var(--accent)" stroke="var(--surface)" strokeWidth="2" />
-            </g>
-          </svg>
+          {/* The real thing: Leaflet + OSM tiles, truck rolling the actual
+              I-90/I-84 corridor, destination geofence pulsing. */}
+          <DemoLiveMap play={stage >= 2} />
         </div>
       </Step>
       <div className="mt-3 space-y-1.5">
