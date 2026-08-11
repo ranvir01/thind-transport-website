@@ -26,6 +26,7 @@ vi.mock("@/lib/hub/sandbox-shift", () => ({
 import { demoLoginEnabled } from "@/lib/hub/demo"
 import { getFlag } from "@/lib/hub/flags"
 import { SANDBOX_CARRIER_ID, SANDBOX_SEATS } from "@/lib/hub/sandbox"
+import { emptyMetrics } from "@/lib/hub/sandbox-objectives"
 import { bumpShiftCounter, readShiftMetrics, readSimEpoch } from "@/lib/hub/sandbox-shift"
 import { getHubUser } from "@/lib/hub/session"
 import { endShiftAction, shiftStatusAction, startShiftAction } from "@/app/hub/_actions/sandbox-shift"
@@ -39,10 +40,8 @@ const mockBump = vi.mocked(bumpShiftCounter)
 
 const dispatcher = SANDBOX_SEATS.find((s) => s.key === "dispatcher")!
 const METRICS = {
-  at: "2026-01-15T18:00:00.000Z",
-  myBookings: 1, myDispatches: 1, quotedCount: 7, myStatusMoves: 1, myPodsSubmitted: 0,
-  myArrivals: 0, myOnTimeArrivals: 0, myInvoices: 0, myInvoicedCents: 0,
-  paymentsRecorded: 0, unbilledCount: 3,
+  ...emptyMetrics("2026-01-15T18:00:00.000Z"),
+  myBookings: 1, myDispatches: 1, quotedCount: 7, myStatusMoves: 1, unbilledCount: 3,
 }
 
 beforeEach(() => {
@@ -77,9 +76,10 @@ describe("kill switches reach the actions, not just the tick route", () => {
     })
     expect(await shiftStatusAction()).toMatchObject({ ok: false, off: true })
 
-    const owner = SANDBOX_SEATS.find((s) => s.key === "owner")!
+    // The broker portal has no scored rubric — it keeps its guided tour.
+    const broker = SANDBOX_SEATS.find((s) => s.key === "broker")!
     mockUser.mockResolvedValue({
-      id: "u3", name: owner.name, email: owner.email, role: "owner", carrierId: SANDBOX_CARRIER_ID,
+      id: "u3", name: broker.name, email: broker.email, role: "broker", carrierId: SANDBOX_CARRIER_ID,
     })
     expect(await shiftStatusAction()).toMatchObject({ ok: false, off: true })
   })

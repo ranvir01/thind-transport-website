@@ -40,9 +40,14 @@ useful information.
 
 # PART 1 — Shift Mode (the new thing)
 
-Three seats can **clock in**: Dispatcher, Company driver, Accountant. You get live
-objectives while you work and a scored recap when you clock out. Every seat you *don't*
-sit in is played by the AI, so the company runs around you either way.
+**Seven of the nine seats can clock in** — Dispatcher, Company driver, Accountant,
+Owner, Safety manager, Recruiter, and Owner-operator. Each gets its own objectives
+drawn from what that job actually does, live progress while you work, and a scored
+recap when you clock out. Every seat you *don't* sit in is played by the AI, so the
+company runs around you either way.
+
+The two portal seats (Broker, Shipper) deliberately have **no** shift — they're your
+customers looking in, not staff doing work. They keep their guided tour.
 
 **Budget about 15 minutes per drill.** Do at least Drill 1 and Drill 2.
 
@@ -147,12 +152,21 @@ What would a dispatcher need that wasn't on screen: ______________________
 
 Quick passes. Tick and comment only where something's off.
 
+**The other four shift seats** — clock in on each, see whether the objectives match
+what that job really does, then clock out. This is the honesty check: if an objective
+doesn't sound like the actual work, say so and I'll change it.
+
+| # | Seat & shift | Objectives sound right? | Notes |
+|---|---|---|---|
+| 6 | **Owner** (Priya, `/hub`) — approve the pay run, pay it, move money, shrink the settlement queue | ☐ yes ☐ no | |
+| 7 | **Safety** (Elena) — certify a repair to release a truck, log an incident, close one out | ☐ yes ☐ no | |
+| 8 | **Recruiter** (Grace) — move 2 applicants forward, get an offer signed, hire through orientation | ☐ yes ☐ no | |
+| 9 | **Owner-operator** (Sam) — move your load, send a receipt, draw an advance, file a DVIR | ☐ yes ☐ no | |
+
+**The rest of the app** — quick passes, comment only where something's off.
+
 | # | Drill | Result | Notes |
 |---|---|---|---|
-| 6 | **Owner seat** (`/hub`) — does the Today screen tell you the truth about the business in one screen? | ☐ ok ☐ off | |
-| 7 | **Safety seat** — fleet safety score, DVIR defects, expiring licences | ☐ ok ☐ off | |
-| 8 | **Recruiter seat** — drag an applicant through to hired | ☐ ok ☐ off | |
-| 9 | **Owner-operator seat** (Sam) — percentage pay, escrow, advances | ☐ ok ☐ off | |
 | 10 | **Broker portal** (Dana) — can your broker self-serve tracking + POD? | ☐ ok ☐ off | |
 | 11 | **Shipper portal** (Alex) — quotes, pickups, delivery proof | ☐ ok ☐ off | |
 | 12 | **Money** — invoices, aging, settlements to the penny | ☐ ok ☐ off | |
@@ -223,8 +237,14 @@ __________________________________________________________________________
 
 ## What I already know is unfinished (don't spend your time on these)
 
-- **Broker and shipper portals are read-mostly.** They can watch and download; they
-  can't do much. Tell me if that's the right call for your customers.
+- **Broker and shipper portals are read-only in practice.** I audited this properly:
+  the broker role has **zero** write permissions — Dana can watch tracking, open PODs
+  and check invoice status, but there is nothing she can *do*. The shipper has exactly
+  one write: submitting a quote request. That's why those two seats have no shift.
+  **This is a real product decision I need you on:** should your brokers be able to
+  do more from the portal — request a quote, upload a rate con, dispute an invoice,
+  book directly — or is watch-only exactly right? ☐ watch-only is right ☐ they need
+  to do more, namely: ______________________________________________
 - **Push notifications, invoice email, live maps, FMCSA lookups** are waiting on keys
   and accounts — see `docs/OWNER-CHECKLIST.md`. Inside the sandbox they're simulated.
 - **Photos are stock.** Real truck/yard/driver photos are the biggest visual upgrade

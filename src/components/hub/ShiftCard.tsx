@@ -43,6 +43,10 @@ const seatPitch: Record<string, string> = {
   dispatcher: "Brokers keep calling while you're on. Book, assign, keep the board tight.",
   driver: "Your truck is rolling. Arrive, load, deliver, shoot the POD.",
   accountant: "PODs keep landing. Bill them out and watch the money come back.",
+  owner: "The week's pay run is waiting. Approve it, pay it, move the money.",
+  safety: "A truck is grounded and the register is open. Get it road-legal.",
+  recruiter: "Seats to fill. Move the pipeline, get an offer signed, hire someone.",
+  owner_operator: "Your truck, your money. Run the load, then get paid for it.",
 }
 
 function recapText(ev: ShiftEvaluation): string {
@@ -236,7 +240,20 @@ export function ShiftCard({ seat, dark = false }: { seat: string; dark?: boolean
       {phase.kind === "recap" ? (
         <div>
           <div className="flex items-start gap-3">
-            <CheckDraw size={44} />
+            {/* The drawn check is the milestone moment for a clean shift.
+                Showing it over a half-finished one would congratulate the
+                player for work the recap itself says is still waiting. */}
+            {phase.evaluation.score === 100 ? (
+              <CheckDraw size={44} />
+            ) : (
+              <span
+                aria-hidden
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border-2 border-border-strong text-[13px] font-bold tabular-nums text-fg-2"
+              >
+                {phase.evaluation.objectives.filter((o) => o.done).length}/
+                {phase.evaluation.objectives.length}
+              </span>
+            )}
             <div className="min-w-0 flex-1">
               <p className="text-[15px] font-semibold text-fg">
                 {phase.evaluation.score}% · {phase.evaluation.minutes} min

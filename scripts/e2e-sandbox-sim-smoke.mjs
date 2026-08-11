@@ -241,6 +241,31 @@ async function main() {
   )
   await shot(page, "shift-voided")
 
+  // ---- 6b · An office seat beyond the original three ----
+  // Safety runs entirely different SQL (incidents, DVIR repair certs) from
+  // the load-board seats; a broken query there shows up as a card stuck on
+  // "Reading the board…", which no unit test can see.
+  console.log("— safety seat shift —")
+  const safety = await browser.newPage()
+  await safety.setViewport({ width: 1280, height: 900 })
+  const safetyErrors = []
+  safety.on("console", (msg) => {
+    if (msg.type() === "error") safetyErrors.push(msg.text())
+  })
+  await safety.goto(`${BASE}/hub/sandbox`, { waitUntil: "networkidle2" })
+  await clickByText(safety, "Safety manager")
+  await safety.waitForFunction(() => location.pathname === "/hub/safety", { timeout: 45_000 })
+  check(await textAppears(safety, "Work a live shift", 30_000), "safety seat offers a shift")
+  check(await clickUntil(safety, "Clock in", "On shift"), "safety clock-in works")
+  check(
+    await textAppears(safety, "Certify a repair", 20_000),
+    "safety objectives are the safety job, not the dispatcher's"
+  )
+  check(await clickUntil(safety, "End shift", "Shift recap"), "safety recap renders")
+  await shot(safety, "safety-shift")
+  const safetyReal = realConsoleErrors(safetyErrors).filter((e) => !/sandbox\/tick/.test(e))
+  check(safetyReal.length === 0, safetyReal.length ? `safety console errors: ${safetyReal[0]}` : "safety seat clean")
+
   // ---- 7 · Driver seat at phone width opens on the live load ----
   console.log("— driver seat —")
   const driver = await browser.newPage()
