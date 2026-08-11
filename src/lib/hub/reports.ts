@@ -5,7 +5,7 @@
 import { query, queryOne } from "./db"
 import { getCarrierSettings } from "./settings"
 import { aggregateLanes, avgRpmCents, type LaneAggregateRow } from "./lanes"
-import { csvEscape, toCsv } from "./csv"
+import { toCsv } from "./csv"
 import type { TruckPnl } from "./expenses"
 
 export interface RevenuePeriod {
@@ -360,7 +360,7 @@ export function truckPnlRangeCsv(rows: TruckPnl[], range: PnlRange): { filename:
   ])
   return {
     filename: `per-truck-pnl_${range.from}_${range.to}.csv`,
-    csv: [headers.join(","), ...body.map((row) => row.map(csvEscape).join(","))].join("\n"),
+    csv: toCsv(headers, body),
   }
 }
 
@@ -450,7 +450,7 @@ export function laneLeaderboardRangeCsv(rows: LaneLeaderboardRow[], range: PnlRa
   ])
   return {
     filename: `lanes_${range.from}_${range.to}.csv`,
-    csv: [headers.join(","), ...body.map((row) => row.map(csvEscape).join(","))].join("\n"),
+    csv: toCsv(headers, body),
   }
 }
 

@@ -40,6 +40,16 @@ const summaryValue = (page, label) =>
 async function recordPayment(page, dollars, expectedOpenCents) {
   await page.evaluate(() => (document.querySelector("#pay_amount").value = ""))
   await page.type("#pay_amount", dollars)
+  // Assert what the field actually holds BEFORE submitting. The milestone
+  // overlay used to mount mid-keystroke and pull focus onto itself, so
+  // "2125.44" left "2" in the field and recorded a $2.00 payment under a
+  // success toast — which surfaced here only as the balance never reaching 0,
+  // three steps and one misleading error message later.
+  const typed = await page.evaluate(() => document.querySelector("#pay_amount")?.value ?? null)
+  check(typed === dollars, `amount field holds the full amount before submit (${JSON.stringify(typed)} vs ${dollars})`)
+  if (typed !== dollars) {
+    throw new Error(`keystrokes lost: field holds ${JSON.stringify(typed)}, expected ${dollars}`)
+  }
   await clickByText(page, "Record payment", { tag: "button" })
   await waitForText(page, "Payment recorded")
   // The Summary block only reflects the new balance after the server action
