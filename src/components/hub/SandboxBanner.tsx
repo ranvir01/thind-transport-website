@@ -7,19 +7,25 @@ import { ArrowRight, FlaskConical, Loader2, RotateCcw, X } from "lucide-react"
 import { toast } from "sonner"
 import { resetSandboxAction } from "@/app/hub/_actions/sandbox"
 import { SANDBOX_TOURS, sandboxSeat } from "@/lib/hub/sandbox"
+import { isShiftSeat } from "@/lib/hub/sandbox-objectives"
+import { ShiftCard } from "@/components/hub/ShiftCard"
+import { SimTicker } from "@/components/hub/SimTicker"
 import { cn } from "@/lib/utils"
 
 /**
- * Slim strip shown on every screen of a sandbox session, plus the per-seat
- * guided tour: the first three moves that make this chair make sense,
- * dismissable once per seat (localStorage). `dark` sits on navy chrome.
+ * Slim strip shown on every screen of a sandbox session. It also hosts the
+ * sim heartbeat (SimTicker — the world only runs while a sandbox tab is
+ * open), and one card under the strip: Shift Mode's clock-in cockpit for the
+ * three core seats, or the per-seat guided tour for the rest (dismissable
+ * once per seat via localStorage). `dark` sits on navy chrome.
  */
 export function SandboxBanner({ dark = false, seat }: { dark?: boolean; seat?: string }) {
   const router = useRouter()
   const [pending, startTransition] = useTransition()
   const [resetting, setResetting] = useState(false)
   const [tourOpen, setTourOpen] = useState(false)
-  const tour = seat ? SANDBOX_TOURS[seat] : undefined
+  const shiftSeat = seat && isShiftSeat(seat)
+  const tour = seat && !shiftSeat ? SANDBOX_TOURS[seat] : undefined
   const seatTitle = seat ? sandboxSeat(seat)?.title : undefined
   const tourKey = `sandbox-tour-${seat}`
 
@@ -57,6 +63,7 @@ export function SandboxBanner({ dark = false, seat }: { dark?: boolean; seat?: s
 
   return (
     <div className="mb-4">
+      <SimTicker />
       <div
         className={cn(
           "flex min-h-[40px] flex-wrap items-center gap-x-3 gap-y-1 rounded-control border px-3 py-1.5 text-[12.5px] font-semibold",
@@ -92,6 +99,8 @@ export function SandboxBanner({ dark = false, seat }: { dark?: boolean; seat?: s
           </button>
         </span>
       </div>
+
+      {shiftSeat && seat ? <ShiftCard seat={seat} dark={dark} /> : null}
 
       {tour && tourOpen ? (
         <div

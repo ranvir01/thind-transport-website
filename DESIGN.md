@@ -104,6 +104,24 @@ Shipped beyond the base app: `/hub/sandbox` — the playable 9-seat company
 safety quarter, one-click reset) — and the Motive-class fleet safety score
 (`lib/hub/safety-score.ts`, panel on /hub/safety).
 
+**Shift Mode** (I8): the sandbox runs on a real-time clock while any sandbox
+tab is open. A browser heartbeat (`SimTicker`, ~25s) POSTs
+`/api/hub/sandbox/tick`; a pure planner (`lib/hub/sandbox-sim-plan.ts`)
+decides what the world should look like *now* (state-convergent — positions
+and NPC statuses derive from timestamps, never elapsed replay) and a thin
+executor (`lib/hub/sandbox-sim.ts`) applies it through the REAL domain
+functions under the seed's advisory lock. NPC trucks roll on the live map,
+brokers top up the quoted board (thermostat, business-hours PT), PODs land,
+the AI back office invoices old PODs and pays past-due receivables — and AI
+teammates stand down per-seat while a human's presence heartbeat covers that
+seat. Dispatcher / company driver / accountant get clock-in shifts:
+per-browser baseline, live objectives, end-of-shift recap
+(`ShiftCard`, `lib/hub/sandbox-objectives.ts` pure scoring); a reset mints a
+fresh sim epoch and voids in-flight shifts. Player-driven loads are sacred —
+the sim clamps them at the receiver and notifies instead of advancing.
+Verify with `scripts/e2e-sandbox-sim-smoke.mjs` (lock contract, live motion,
+thermostat, recap, reset-void, driver 390px).
+
 Roadmap (tracked in session tasks): axe integration into design-qa;
 6-viewport light/dark matrix; Lighthouse thresholds. Human-blocked items
 live in `loadoff-worksheet.html`.

@@ -6,6 +6,8 @@ import { hubDb, query } from "./db"
 import { computeDriverScores } from "./recruiting"
 import { SANDBOX_CARRIER_ID, SANDBOX_CARRIER_NAME, SANDBOX_PASSWORD, SANDBOX_SEATS } from "./sandbox"
 import type { SafetyEventKind } from "./safety-score"
+import { interpolate, progressAt } from "./sandbox-sim-math"
+import { AVG_MPH, BROKERS, CITIES, COMMODITY, LANES, MERCHANTS } from "./sandbox-world"
 
 /**
  * Seeds (or resets) the sandbox tenant — Blue Ridge Haulage — at real-fleet
@@ -46,33 +48,6 @@ const daysAgo = (n: number, hour = 8) => {
 const daysAhead = (n: number, hour = 8) => daysAgo(-n, hour)
 const dateOnly = (d: Date) => d.toISOString().slice(0, 10)
 
-interface City { city: string; state: string; lat: number; lng: number }
-const CITIES: Record<string, City> = {
-  kent: { city: "Kent", state: "WA", lat: 47.3809, lng: -122.2348 },
-  seattle: { city: "Seattle", state: "WA", lat: 47.6062, lng: -122.3321 },
-  spokane: { city: "Spokane", state: "WA", lat: 47.6588, lng: -117.426 },
-  yakima: { city: "Yakima", state: "WA", lat: 46.6021, lng: -120.5059 },
-  portland: { city: "Portland", state: "OR", lat: 45.5152, lng: -122.6784 },
-  medford: { city: "Medford", state: "OR", lat: 42.3265, lng: -122.8756 },
-  boise: { city: "Boise", state: "ID", lat: 43.615, lng: -116.2023 },
-  sacramento: { city: "Sacramento", state: "CA", lat: 38.5816, lng: -121.4944 },
-  oakland: { city: "Oakland", state: "CA", lat: 37.8044, lng: -122.2712 },
-  fresno: { city: "Fresno", state: "CA", lat: 36.7378, lng: -119.7871 },
-  reno: { city: "Reno", state: "NV", lat: 39.5296, lng: -119.8138 },
-  saltlake: { city: "Salt Lake City", state: "UT", lat: 40.7608, lng: -111.891 },
-  denver: { city: "Denver", state: "CO", lat: 39.7392, lng: -104.9903 },
-  phoenix: { city: "Phoenix", state: "AZ", lat: 33.4484, lng: -112.074 },
-  missoula: { city: "Missoula", state: "MT", lat: 46.8721, lng: -113.994 },
-}
-// [origin, destination, loaded miles]
-const LANES: [keyof typeof CITIES, keyof typeof CITIES, number][] = [
-  ["kent", "sacramento", 750], ["kent", "portland", 175], ["seattle", "spokane", 280],
-  ["yakima", "oakland", 780], ["portland", "boise", 430], ["spokane", "missoula", 200],
-  ["boise", "saltlake", 340], ["portland", "reno", 580], ["fresno", "phoenix", 590],
-  ["saltlake", "denver", 520], ["sacramento", "fresno", 170], ["medford", "sacramento", 300],
-  ["reno", "saltlake", 520], ["seattle", "portland", 175], ["spokane", "boise", 425],
-  ["oakland", "medford", 370], ["phoenix", "denver", 820], ["yakima", "portland", 185],
-]
 const FIRST = [
   "Jordan", "Sam", "Harjit", "Gurpreet", "Amar", "Baljit", "Karan", "Navdeep", "Raj", "Sukhi",
   "Miguel", "Carlos", "Luis", "Diego", "Marco", "Andre", "Tyrone", "Dwayne", "Pete", "Frank",
@@ -85,17 +60,7 @@ const LAST = [
   "Boone", "Vance", "Dunn", "Foster", "Petrov", "Kovac", "Ilic", "Novak", "Sorin", "Volkov",
   "Nguyen", "Tran", "Kim", "Park", "Lopez", "Silva", "Costa", "Reed", "Bishop", "Lane",
 ]
-const BROKERS = [
-  "Summit Freight Brokerage", "Echo Peak Logistics", "TQ West Logistics", "Landbridge Freight",
-  "Copper Canyon Freight", "NorthGate Logistics", "Ridgeway Brokerage", "Bluewater Freight Co",
-]
 const SHIPPERS = ["Cascade Foods", "Rainier Beverage Co", "Inland Steel Supply", "Evergreen Paper Products"]
-const COMMODITY: Record<string, string[]> = {
-  dry_van: ["Packaged foods", "Paper products", "Beverages", "Retail freight", "Building materials"],
-  reefer: ["Fresh produce", "Frozen foods", "Dairy", "Berries", "Apples"],
-  flatbed: ["Steel coils", "Lumber", "Machinery", "Rebar"],
-}
-const MERCHANTS = ["Pilot #482", "Love's #229", "TA Ontario", "Petro Boise", "Flying J #611", "Pacific Pride Yakima"]
 const PNG_DOT =
   "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=="
 
@@ -173,6 +138,9 @@ export async function seedSandbox(): Promise<void> {
           company: "Summit Capital Factoring", remitName: "Summit Capital Factoring LLC",
           remitAddress: "PO Box 2200, Phoenix, AZ 85001", email: "funding@summitcapital.demo",
         },
+        // Shift Mode clock. A fresh epoch per reset voids in-flight shifts;
+        // the first tick after seeding initializes its own pacing from here.
+        sim: { epoch: randomUUID(), lastTickAt: null, nextDropAt: null, activeSeats: {} },
       })]
     )
     await wipe(client)
@@ -185,10 +153,16 @@ export async function seedSandbox(): Promise<void> {
     )
 
     // ---- Users (the 9 playable seats) ----
+    // Deterministic ids: a signed-in seat SURVIVES a reset (the session JWT
+    // keeps pointing at a row that exists again), so an in-session "Reset"
+    // lands you back in a fresh company instead of "account deactivated" —
+    // and Shift Mode can void the in-flight shift with its own card.
     const hash = await bcrypt.hash(SANDBOX_PASSWORD, 10)
     const userRows = await bulk(
-      client, "hub.users", ["carrier_id", "email", "password_hash", "name", "role"],
-      SANDBOX_SEATS.map((seat) => [C, seat.email, hash, seat.name, seat.role]),
+      client, "hub.users", ["id", "carrier_id", "email", "password_hash", "name", "role"],
+      SANDBOX_SEATS.map((seat, i) => [
+        `33333333-3333-4333-8333-00000000000${i + 1}`, C, seat.email, hash, seat.name, seat.role,
+      ]),
       "id, email"
     )
     const userId = new Map(userRows.map((r) => [r.email as string, r.id as string]))
@@ -327,6 +301,8 @@ export async function seedSandbox(): Promise<void> {
       equipment: string; driverIdx: number | null; pickupAt: Date; deliveredAt: Date | null
       linehaul: number; fsc: number; accessorials: { name: string; amountCents: number }[]
       loadedMiles: number; deadheadMiles: number
+      // Shift Mode pacing overrides (set by the pacing pass below).
+      departedAt?: Date; dropApptAt?: Date; podAt?: Date; createdAt?: Date
     }
     const STATUS_PLAN: [string, number][] = [
       ["quoted", 8], ["booked", 12], ["dispatched", 8], ["at_pickup", 4], ["in_transit", 8],
@@ -382,6 +358,73 @@ export async function seedSandbox(): Promise<void> {
         })
       }
     }
+
+    // ---- Shift Mode pacing --------------------------------------------------
+    // The sim runs on the wall clock (a 700-mile lane really takes ~13h), so
+    // the seed stages the session's drama through initial conditions: Jordan
+    // delivers ~35 min in and Sam ~75, NPC arrivals drumbeat every ~12 min,
+    // hooks and pickups land on camera, the AI back office gets a
+    // deterministic backlog, and fresh work stays for the players.
+    {
+      const seedNow = now()
+      const MIN = 60_000
+      let transitSlot = 0
+      let quotedSlot = 0
+      let podSlot = 0
+      let invoicedSlot = 0
+      for (const p of plans) {
+        switch (p.status) {
+          case "in_transit": {
+            const etaMin = transitSlot === 0 ? 35 : transitSlot === 1 ? 75 : 10 + transitSlot * 12
+            const eta = new Date(seedNow.getTime() + etaMin * MIN)
+            p.departedAt = new Date(eta.getTime() - (p.loadedMiles / AVG_MPH) * 3_600_000)
+            p.pickupAt = new Date(p.departedAt.getTime() - int(45, 90) * MIN)
+            p.dropApptAt = new Date(eta.getTime() + int(5, 25) * MIN) // arrivals run slightly early
+            p.deliveredAt = null
+            transitSlot++
+            break
+          }
+          case "at_pickup":
+            p.pickupAt = new Date(seedNow.getTime() - int(10, 40) * MIN) // at the dock, rolling within the hour
+            break
+          case "dispatched":
+            p.pickupAt = new Date(seedNow.getTime() + int(30, 240) * MIN) // hooks happen on camera
+            break
+          case "quoted":
+            p.pickupAt = new Date(seedNow.getTime() + int(60, 180) * MIN)
+            // Fresh quotes belong to the player; the last two are stale so
+            // the AI dispatcher (night shift) has something to book.
+            p.createdAt = quotedSlot < 6
+              ? new Date(seedNow.getTime() - int(5, 100) * MIN)
+              : new Date(seedNow.getTime() - int(150, 240) * MIN)
+            quotedSlot++
+            break
+          case "delivered":
+            // PODs land on camera (due 10–20 min after delivery, capped/tick).
+            p.deliveredAt = new Date(seedNow.getTime() - int(15, 300) * MIN)
+            p.pickupAt = new Date(p.deliveredAt.getTime() - Math.max(1, Math.round(p.loadedMiles / 520)) * DAY)
+            break
+          case "pod_received":
+            // Deterministic accountant queue: 4 stale (>24h — the AI back
+            // office may invoice them), the rest fresh — the player's work.
+            p.podAt = new Date(seedNow.getTime() - (podSlot < 4 ? int(26, 60) : int(2, 20)) * 3_600_000)
+            p.deliveredAt = new Date(p.podAt.getTime() - int(20, 90) * MIN)
+            p.pickupAt = new Date(p.deliveredAt.getTime() - Math.max(1, Math.round(p.loadedMiles / 520)) * DAY)
+            podSlot++
+            break
+          case "invoiced":
+            // A deterministic slice of receivables is already past due
+            // (terms are 15/30 days), so AP payments land during the shift
+            // and the accountant watches aging actually move.
+            if (invoicedSlot < 8) {
+              p.deliveredAt = new Date(seedNow.getTime() - int(40, 60) * DAY)
+              p.pickupAt = new Date(p.deliveredAt.getTime() - Math.max(1, Math.round(p.loadedMiles / 520)) * DAY)
+            }
+            invoicedSlot++
+            break
+        }
+      }
+    }
     const loadRows = plans.map((p) => {
       const driverId = p.driverIdx !== null ? driverIds[p.driverIdx] : null
       const truck = driverId ? truckOfDriver.get(driverId) : null
@@ -392,9 +435,9 @@ export async function seedSandbox(): Promise<void> {
         JSON.stringify(p.accessorials), p.loadedMiles, p.deadheadMiles,
         truck?.id ?? null, trailerPool.length ? pick(trailerPool) : null, driverId,
         seatUser("dispatcher"), pick(["direct", "direct", "import", "quote", "dat"]), p.customer.factored === true,
-        new Date(p.pickupAt.getTime() - int(1, 3) * DAY),
+        p.createdAt ?? new Date(p.pickupAt.getTime() - int(1, 3) * DAY),
         p.deliveredAt, p.status === "settled" || p.status === "paid" || p.status === "invoiced" || p.status === "pod_received"
-          ? new Date((p.deliveredAt ?? p.pickupAt).getTime() + int(2, 30) * 3600 * 1000) : null,
+          ? p.podAt ?? new Date((p.deliveredAt ?? p.pickupAt).getTime() + int(2, 30) * 3600 * 1000) : null,
       ]
     })
     const loadIds = (
@@ -414,8 +457,8 @@ export async function seedSandbox(): Promise<void> {
       const done = ["delivered", "pod_received", "invoiced", "paid", "settled"].includes(p.status)
       stopRows.push([C, loadIds[i], 1, "pickup", `${o.city} Distribution`, o.city, o.state, o.lat, o.lng,
         p.pickupAt, progressed ? p.pickupAt : null,
-        progressed && (p.status !== "at_pickup") ? new Date(p.pickupAt.getTime() + int(1, 3) * 3600 * 1000) : null])
-      const dropAppt = p.deliveredAt ?? new Date(p.pickupAt.getTime() + Math.max(1, Math.round(p.loadedMiles / 520)) * DAY)
+        p.departedAt ?? (progressed && (p.status !== "at_pickup") ? new Date(p.pickupAt.getTime() + int(1, 3) * 3600 * 1000) : null)])
+      const dropAppt = p.dropApptAt ?? p.deliveredAt ?? new Date(p.pickupAt.getTime() + Math.max(1, Math.round(p.loadedMiles / 520)) * DAY)
       stopRows.push([C, loadIds[i], 2, "delivery", `${d.city} Receiving`, d.city, d.state, d.lat, d.lng,
         dropAppt, done ? p.deliveredAt : null, done ? p.deliveredAt : null])
     })
@@ -744,20 +787,20 @@ export async function seedSandbox(): Promise<void> {
       `INSERT INTO hub.referrals (carrier_id, referrer_driver_id, applicant_id, bonus_cents, milestone, status)
        VALUES ($1,$2,$3,150000,'hired','pending')`, [C, driverIds[0], applicantRows[2].id])
 
-    // Live map: pings along the lane for in-transit trucks.
+    // Live map: a ping trail per in-transit truck, anchored on the SAME
+    // departure-time math the sim uses (progressAt + interpolate keyed by the
+    // load id) so Shift Mode's first tick continues each trail seamlessly.
     const pingRows: unknown[][] = []
     plans.forEach((p, i) => {
-      if (p.status !== "in_transit" || p.driverIdx === null) return
+      if (p.status !== "in_transit" || p.driverIdx === null || !p.departedAt) return
       const truck = truckOfDriver.get(driverIds[p.driverIdx])
       if (!truck) return
       const o = CITIES[p.lane[0]]; const d = CITIES[p.lane[1]]
-      const progress = 0.3 + rand() * 0.45
-      for (let k = 4; k >= 0; k--) {
-        const f = Math.max(0.02, progress - k * 0.035)
-        pingRows.push([C, truck.id, new Date(Date.now() - k * 45 * 60000),
-          o.lat + (d.lat - o.lat) * f + (rand() - 0.5) * 0.05,
-          o.lng + (d.lng - o.lng) * f + (rand() - 0.5) * 0.05,
-          int(80000, 420000), "demo"])
+      for (let k = 5; k >= 1; k--) {
+        const ts = new Date(Date.now() - k * 60_000)
+        const f = progressAt(p.departedAt, ts, p.loadedMiles)
+        const pos = interpolate(o, d, f, loadIds[i])
+        pingRows.push([C, truck.id, ts, pos.lat, pos.lng, int(80000, 420000), "demo"])
       }
     })
     await bulk(client, "hub.position_pings", ["carrier_id", "truck_id", "ts", "lat", "lng", "odometer", "source"], pingRows)
