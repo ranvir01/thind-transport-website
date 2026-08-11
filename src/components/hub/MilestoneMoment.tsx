@@ -18,17 +18,33 @@ export function MilestoneMoment({
   body: string
   onDone: () => void
 }) {
-  const ref = useRef<HTMLDivElement>(null)
+  // Callers pass an inline arrow (`onDone={() => setCelebrating(false)}`), so
+  // onDone's identity changes on every parent render. Reading it through a ref
+  // keeps the effect below mount-only: with onDone in the dep array the effect
+  // re-ran on every render of the screen underneath, which re-pulled focus and
+  // restarted the 2.6s timer each time — see the comment in the effect.
+  const onDoneRef = useRef(onDone)
+  useEffect(() => {
+    onDoneRef.current = onDone
+  }, [onDone])
 
   useEffect(() => {
-    // Pull keyboard focus off whatever button triggered the moment —
-    // otherwise Enter re-activates it behind the overlay (duplicate submit).
-    ref.current?.focus()
-    const t = window.setTimeout(onDone, 2600)
+    // Pull keyboard focus off whatever button triggered the moment — otherwise
+    // Enter re-activates it behind the overlay (duplicate submit). Blur the
+    // trigger rather than focusing the overlay, and do it ONCE: this effect used
+    // to re-run on every parent render and grab focus back each time, so the
+    // record-payment form sitting beneath the overlay lost the keystrokes typed
+    // into it for the full 2.6s. A $2,125.44 remainder landed as $2.00 with a
+    // "Payment recorded" toast and no complaint from any layer. Focus on <body>
+    // still makes the duplicate submit impossible, and Enter/Space stay
+    // neutralized by the keydown handler below while the moment is up.
+    ;(document.activeElement as HTMLElement | null)?.blur()
+    const done = () => onDoneRef.current()
+    const t = window.setTimeout(done, 2600)
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape" || e.key === "Enter" || e.key === " ") {
         e.preventDefault()
-        onDone()
+        done()
       }
     }
     document.addEventListener("keydown", onKey)
@@ -36,15 +52,13 @@ export function MilestoneMoment({
       window.clearTimeout(t)
       document.removeEventListener("keydown", onKey)
     }
-  }, [onDone])
+  }, [])
 
   return (
     <div
-      ref={ref}
       role="status"
-      tabIndex={-1}
       onClick={onDone}
-      className="hub-backdrop-enter fixed inset-0 z-[120] flex items-center justify-center bg-black/50 p-6 outline-none"
+      className="hub-backdrop-enter fixed inset-0 z-[120] flex items-center justify-center bg-black/50 p-6"
     >
       <div className="hub-pop-enter flex max-w-xs flex-col items-center rounded-card border border-border bg-surface p-8 text-center shadow-overlay">
         <CheckDraw size={72} />

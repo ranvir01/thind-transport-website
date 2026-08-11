@@ -71,6 +71,19 @@ export function RecordPaymentForm({ invoiceId, openCents }: { invoiceId: string;
     method: "ACH",
     reference: "",
   })
+  // The prefill IS the open balance, and openCents drops after every payment's
+  // router.refresh() — but useState only reads its initializer on mount, so a
+  // partial payment left the field showing the amount just recorded (the full
+  // balance, on the first pass). Clicking "Record payment" again then re-sent a
+  // stale figure: an overpay the server action rejects with a baffling error, or
+  // — once the accountant corrects it downward — a silent short payment. React's
+  // documented adjust-state-when-a-prop-changes pattern; only the amount resets,
+  // so a date/method/reference already typed survives the refresh.
+  const [syncedOpenCents, setSyncedOpenCents] = useState(openCents)
+  if (syncedOpenCents !== openCents) {
+    setSyncedOpenCents(openCents)
+    setForm((f) => ({ ...f, amount: (openCents / 100).toFixed(2) }))
+  }
   const submit = (e: React.FormEvent) => {
     e.preventDefault()
     startTransition(async () => {
