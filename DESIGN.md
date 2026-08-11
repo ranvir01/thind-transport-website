@@ -119,8 +119,15 @@ per-browser baseline, live objectives, end-of-shift recap
 (`ShiftCard`, `lib/hub/sandbox-objectives.ts` pure scoring); a reset mints a
 fresh sim epoch and voids in-flight shifts. Player-driven loads are sacred —
 the sim clamps them at the receiver and notifies instead of advancing.
-Verify with `scripts/e2e-sandbox-sim-smoke.mjs` (lock contract, live motion,
-thermostat, recap, reset-void, driver 390px).
+Hardening (outside review folded in): the tick REQUIRES a sandbox session
+(never an unauthenticated cost lever) with a cheap pre-lock lastTickAt gate;
+`sim.shift_mode` feature flag is the redeploy-free soft kill (ticker + card
+unmount, tick 403s); refresh etiquette (no `router.refresh()` over an open
+dialog or focused input); 30-min idle-stop; catch-up op budget frozen by
+test (≤200 ops); LIMITs on every snapshot SELECT; usage telemetry in
+`settings.sim.telemetry`. Verify with `scripts/e2e-sandbox-sim-smoke.mjs`
+(auth contract, lock contract, live motion, thermostat, recap sheet + copy,
+reset-void, driver 390px).
 
 Roadmap (tracked in session tasks): axe integration into design-qa;
 6-viewport light/dark matrix; Lighthouse thresholds. Human-blocked items

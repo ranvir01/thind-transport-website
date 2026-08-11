@@ -35,6 +35,29 @@ account: `ThindDemo1!`.
     workspace. Add a truck tonight, import your load sheet tomorrow morning, and
     you're running on HaulDesk by lunch."
 
+## The 10-minute Shift Mode path (the "try before the integrations" story)
+
+When the prospect wants to *drive*, not watch: `/hub/sandbox` is Blue Ridge
+Haulage — a fully seeded company that **runs in real time** while a tab is
+open. This is the dry run for the pricey integrations (ELD tracking, load
+boards, fuel cards): simulated feeds, real product. No demo password needed —
+seats sign themselves in.
+
+1. **Reset** on the picker — stages a fresh morning (a delivery ~35 min out,
+   arrivals every ~12 min, quotes waiting, an AR backlog).
+2. **Take the Dispatcher seat** (Marcus) and **Clock in** — the shift card
+   states your objectives; brokers drop new rate cons every few minutes.
+3. **Book a fresh quoted load** onto an idle driver — then stop touching it.
+   "Watch: the truck rolls on the live map, arrives, delivers, sends the POD
+   — that's what your ELD feed looks like in here."
+4. Open **/hub/map** — every in-transit truck is moving. "Nobody's typing
+   check calls."
+5. **End shift** — the recap scores the half hour ("3 booked, 96% on-time").
+   Tap **Copy recap** and text it to them on the spot.
+6. The kicker for a two-person prospect: hand them a second phone on the
+   **Company driver** seat — same live world, their booking shows up on that
+   driver's phone. AI teammates cover every seat nobody takes.
+
 ## Objection cheat-sheet
 
 - **"We have an ELD."** Keep it — HaulDesk reads from it through an aggregator and the
