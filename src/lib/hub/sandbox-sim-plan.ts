@@ -161,6 +161,17 @@ export const SIM = {
   payCapCatchUp: 5,
   pingMaxLive: 1,
   pingMaxCatchUp: 12,
+  /** Per-tick ping budget across the WHOLE fleet, not per truck: MOVE is the
+   *  only phase that scales with fleet size, and a 100-truck catch-up would
+   *  otherwise emit >1,200 ops. Trucks are served stalest-first, so a skipped
+   *  truck is simply first in line next tick — and because position is
+   *  derived from departure time, its next ping is still in the right place. */
+  pingBudgetLive: 40,
+  pingBudgetCatchUp: 80,
+  /** NPC arrivals settled per tick (stamp + status). Convergent: the rest
+   *  arrive on the next beat. */
+  arrivalCapLive: 6,
+  arrivalCapCatchUp: 15,
   hosEveryMinutes: 5,
   presenceWindowMinutes: 2,
 } as const
@@ -201,41 +212,69 @@ export function planSandboxTick(
   const truckState = new Map(world.trucks.map((t) => [t.truckId, t]))
   const humanDispatcher = seatActive(sim, "dispatcher", now)
 
-  /* 1 · MOVE — every in-transit truck, player and NPC alike. */
-  for (const load of world.loads) {
-    if (!MOVING.includes(load.status)) continue
-    if (!load.truckId || !load.pickup?.departedAt || !load.delivery) continue
-    const origin = { lat: load.pickup.lat ?? 0, lng: load.pickup.lng ?? 0 }
-    const dest = { lat: load.delivery.lat ?? 0, lng: load.delivery.lng ?? 0 }
-    const departed = load.pickup.departedAt
-    const f = progressAt(departed, now, load.loadedMiles)
-    const eta = etaAt(departed, load.loadedMiles)
-    const last = truckState.get(load.truckId)?.lastPingAt ?? null
-    for (const at of pingTimes(last, eta, now, catchUp ? SIM.pingMaxCatchUp : SIM.pingMaxLive)) {
-      const ft = progressAt(departed, at, load.loadedMiles)
-      ops.push({ op: "movePing", truckId: load.truckId, at, pos: interpolate(origin, dest, ft, load.id) })
-    }
-    if (f >= 1) {
-      if (load.playerDriven) {
-        // Clamp at the receiver; the human marks delivered. Notify once per arrival.
-        const player = world.playerDrivers.find((p) => p.driverId === load.driverId)
-        if (player && !load.delivery.arrivedAt) {
-          ops.push({
-            op: "notifyUser",
-            userId: player.userId,
-            kind: "message",
-            title: "You've arrived",
-            body: `${load.reference} is at the receiver — mark delivered when unloaded.`,
-            link: "/hub/driver",
-          })
-        }
-      } else {
-        if (!load.delivery.arrivedAt) {
-          ops.push({ op: "stampStop", loadId: load.id, stopId: load.delivery.id, field: "arrived_at", at: eta })
-        }
-        ops.push({ op: "advanceStatus", loadId: load.id, to: "delivered" })
+  /* 1 · MOVE — every in-transit truck, player and NPC alike.
+   *
+   * This is the only phase that scales with fleet size, so it runs on a
+   * budget: trails are planned per truck, then served stalest-first until
+   * the tick's ping budget is spent. Arrivals are capped the same way. Both
+   * are safe to defer precisely because the rules are state-convergent —
+   * position and status are derived from timestamps, so a truck skipped this
+   * tick is simply first in line on the next one, in the right place. */
+  const rolling = world.loads
+    .filter((l) => MOVING.includes(l.status) && l.truckId && l.pickup?.departedAt && l.delivery)
+    .map((load) => {
+      const departed = load.pickup!.departedAt as Date
+      return {
+        load,
+        departed,
+        eta: etaAt(departed, load.loadedMiles),
+        f: progressAt(departed, now, load.loadedMiles),
+        last: truckState.get(load.truckId as string)?.lastPingAt ?? null,
       }
+    })
+
+  let pingBudget = catchUp ? SIM.pingBudgetCatchUp : SIM.pingBudgetLive
+  const stalestFirst = [...rolling].sort(
+    (a, b) => (a.last?.getTime() ?? 0) - (b.last?.getTime() ?? 0)
+  )
+  for (const { load, departed, eta, last } of stalestFirst) {
+    if (pingBudget <= 0) break
+    const origin = { lat: load.pickup!.lat ?? 0, lng: load.pickup!.lng ?? 0 }
+    const dest = { lat: load.delivery!.lat ?? 0, lng: load.delivery!.lng ?? 0 }
+    const times = pingTimes(last, eta, now, catchUp ? SIM.pingMaxCatchUp : SIM.pingMaxLive).slice(0, pingBudget)
+    for (const at of times) {
+      const ft = progressAt(departed, at, load.loadedMiles)
+      ops.push({ op: "movePing", truckId: load.truckId as string, at, pos: interpolate(origin, dest, ft, load.id) })
     }
+    pingBudget -= times.length
+  }
+
+  let arrivals = catchUp ? SIM.arrivalCapCatchUp : SIM.arrivalCapLive
+  for (const { load, eta, f } of rolling) {
+    if (f < 1) continue
+    if (load.playerDriven) {
+      // Clamp at the receiver; the human marks delivered. Notify once per
+      // arrival — never budgeted away, there are at most two player drivers
+      // and being told you've arrived is the point of the seat.
+      const player = world.playerDrivers.find((p) => p.driverId === load.driverId)
+      if (player && !load.delivery!.arrivedAt) {
+        ops.push({
+          op: "notifyUser",
+          userId: player.userId,
+          kind: "message",
+          title: "You've arrived",
+          body: `${load.reference} is at the receiver — mark delivered when unloaded.`,
+          link: "/hub/driver",
+        })
+      }
+      continue
+    }
+    if (arrivals <= 0) continue
+    if (!load.delivery!.arrivedAt) {
+      ops.push({ op: "stampStop", loadId: load.id, stopId: load.delivery!.id, field: "arrived_at", at: eta })
+    }
+    ops.push({ op: "advanceStatus", loadId: load.id, to: "delivered" })
+    arrivals--
   }
 
   /* 2 · CONVERGE — NPC lifecycle toward what the clock says. */

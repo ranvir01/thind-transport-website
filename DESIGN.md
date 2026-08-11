@@ -125,9 +125,19 @@ Hardening (outside review folded in): the tick REQUIRES a sandbox session
 tick route AND the shift actions (a tab open when the flag flips stands its
 card down); refresh etiquette (no `router.refresh()` over an open dialog or
 focused input, and never on a tick that changed nothing); 30-min idle-stop
-that a tab-return always overrides; catch-up op budget frozen by test (≤200
-ops); LIMITs on every snapshot SELECT; usage telemetry in
-`settings.sim.telemetry`, surviving resets.
+that a tab-return always overrides; LIMITs on every snapshot SELECT; usage
+telemetry in `settings.sim.telemetry`, surviving resets.
+
+**The op budget is per-tick, not per-truck.** MOVE is the only phase that
+scales with fleet size: one ping trail per rolling truck meant 100 trucks on
+catch-up emitted ~1,200 statements (and the sandbox's own 30 already blew
+the ceiling). Pings run on a whole-fleet budget served stalest-first, and
+NPC arrivals are capped per tick; both defer safely because the rules are
+state-convergent — a truck skipped this tick is first in line on the next
+one and still lands in the right place. Player arrival notifications are
+never budgeted away. Frozen at ≤200 ops by
+`sandbox-sim-plan.test.ts`, which exercises fleets of 8/30/60/100 —
+the earlier version used 8 and passed while the real number was 1,203.
 
 **The sim's state-commit rule** (learned the hard way — an adversarial pass
 caught the violation): `carrier_settings.settings->'sim'` has three writers,
