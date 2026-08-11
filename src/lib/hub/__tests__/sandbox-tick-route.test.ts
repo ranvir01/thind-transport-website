@@ -62,6 +62,25 @@ describe("kill switches", () => {
     expect(mockFlag).toHaveBeenCalledWith("sim.shift_mode", { carrierId: SANDBOX_CARRIER_ID })
     expect(mockTick).not.toHaveBeenCalled()
   })
+
+  // Order matters, not just presence: each gate must answer for itself so a
+  // caller learns WHY it was refused, and the cheaper gate never pays for the
+  // costlier one (the session lookup hits the database; the flag may too).
+  it("gates answer in cost order — demo kill, then flag, then session", async () => {
+    mockEnabled.mockReturnValue(false)
+    mockFlag.mockResolvedValue(false)
+    mockUser.mockResolvedValue(null)
+    expect(await (await POST()).json()).toMatchObject({ reason: "disabled" })
+    expect(mockFlag).not.toHaveBeenCalled()
+    expect(mockUser).not.toHaveBeenCalled()
+
+    vi.clearAllMocks()
+    mockEnabled.mockReturnValue(true)
+    mockFlag.mockResolvedValue(false)
+    mockUser.mockResolvedValue(null)
+    expect(await (await POST()).json()).toMatchObject({ reason: "off" })
+    expect(mockUser).not.toHaveBeenCalled() // flag refusal costs no session lookup
+  })
 })
 
 describe("a sandbox session is required (E1)", () => {

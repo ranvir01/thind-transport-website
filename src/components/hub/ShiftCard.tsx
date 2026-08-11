@@ -62,22 +62,32 @@ export function ShiftCard({ seat, dark = false }: { seat: string; dark?: boolean
   const phaseRef = useRef(phase)
   phaseRef.current = phase
 
+  const forget = useCallback(() => {
+    try {
+      localStorage.removeItem(storageKey)
+    } catch {}
+  }, [storageKey])
+
   const refresh = useCallback(async () => {
     const current = phaseRef.current
     if (current.kind !== "on") return
     const res = await shiftStatusAction()
-    if (!res.ok || !res.metrics || !res.epoch) return
+    if (res.off) {
+      // Shift Mode was switched off under a tab that was already open.
+      forget()
+      setPhase({ kind: "idle" })
+      return
+    }
+    if (!res.ok || !res.metrics || !res.epoch) return // transient — keep the shift
     if (res.epoch !== current.stored.epoch) {
-      try {
-        localStorage.removeItem(storageKey)
-      } catch {}
+      forget()
       setPhase({ kind: "voided" })
       return
     }
     if (isShiftSeat(seat)) {
       setPhase({ kind: "on", stored: current.stored, live: evaluateShift(seat, current.stored.baseline, res.metrics) })
     }
-  }, [seat, storageKey])
+  }, [seat, forget])
 
   // Resume an in-flight shift after a reload; poll live objectives while on.
   useEffect(() => {
@@ -107,28 +117,51 @@ export function ShiftCard({ seat, dark = false }: { seat: string; dark?: boolean
           localStorage.setItem(storageKey, JSON.stringify(stored))
         } catch {}
         setPhase({ kind: "on", stored, live: null })
+      } else {
+        toast.error(res.error ?? "Couldn't start the shift — try again.")
       }
     } finally {
       setBusy(false)
     }
   }
 
+  /**
+   * End the shift. The baseline lives ONLY in this browser, so it is cleared
+   * exactly twice: on a real recap, and on a real epoch mismatch (the world
+   * it happened in is gone). A transient failure — DB hiccup, dropped
+   * connection, a request that never came back — keeps the shift on and
+   * offers a retry; losing someone's shift to a blip and blaming a reset
+   * that never happened is the worse outcome by far.
+   */
   const endShift = async () => {
     const current = phaseRef.current
     if (current.kind !== "on" || !isShiftSeat(seat)) return
     setPhase({ kind: "ending", stored: current.stored }) // sheet opens on skeleton
     try {
-      const res = await endShiftAction()
-      try {
-        localStorage.removeItem(storageKey)
-      } catch {}
+      const res = await Promise.race([
+        endShiftAction(current.stored.epoch),
+        new Promise<never>((_, reject) => setTimeout(() => reject(new Error("timeout")), 20_000)),
+      ])
+      // The user may have dismissed the sheet while this was in flight —
+      // don't yank it back open on top of them.
+      if (phaseRef.current.kind !== "ending") return
       if (res.ok && res.metrics && res.epoch === current.stored.epoch) {
+        forget()
         setPhase({ kind: "recap", evaluation: evaluateShift(seat, current.stored.baseline, res.metrics) })
-      } else {
+      } else if (res.off) {
+        forget()
+        setPhase({ kind: "idle" })
+      } else if (res.ok && res.epoch && res.epoch !== current.stored.epoch) {
+        forget()
         setPhase({ kind: "voided" })
+      } else {
+        setPhase({ kind: "on", stored: current.stored, live: null })
+        toast.error(res.error ?? "Couldn't close out the shift — try again.")
       }
     } catch {
-      setPhase({ kind: "voided" })
+      if (phaseRef.current.kind !== "ending") return
+      setPhase({ kind: "on", stored: current.stored, live: null })
+      toast.error("Couldn't reach the shift board — you're still on shift.")
     }
   }
 
@@ -179,8 +212,12 @@ export function ShiftCard({ seat, dark = false }: { seat: string; dark?: boolean
     <BottomSheet
       open={sheetOpen}
       onOpenChange={(open) => {
-        if (!open && phase.kind === "recap") setPhase({ kind: "idle" })
-        // Mid-"ending" the sheet stays put — the snapshot resolves in a beat.
+        if (open) return
+        if (phase.kind === "recap") setPhase({ kind: "idle" })
+        // Closing mid-"ending" returns you to the shift rather than trapping
+        // you in a focus-locked skeleton if the snapshot is slow; the
+        // in-flight request resolves harmlessly against the phase check.
+        else if (phase.kind === "ending") setPhase({ kind: "on", stored: phase.stored, live: null })
       }}
       title="Shift recap"
       description="How the board looks after your shift."

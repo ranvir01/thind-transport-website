@@ -125,8 +125,19 @@ async function main() {
     const t = (await rows(`SELECT settings->'sim'->'telemetry'->>'ticks' AS n FROM hub.carrier_settings WHERE carrier_id = $1`))[0]
     return Number(t?.n ?? 0) >= 1
   })
-  const [p1, p2] = await Promise.all([pageTick(page), pageTick(page)])
-  check(!(p1.advanced && p2.advanced), "two simultaneous ticks can't both win the lock")
+  // Advisory lock, non-vacuously: wait past the 20s freshness gate so every
+  // caller below is genuinely eligible, then fire three at once. Exactly one
+  // may commit; the rest must be refused by the lock or the in-lock re-check.
+  // (Without this wait the gate alone would refuse them and the check would
+  // pass even with the lock removed.)
+  await sleep(21_000)
+  const racers = await Promise.all([pageTick(page), pageTick(page), pageTick(page)])
+  const winners = racers.filter((r) => r.advanced || r.reason === "quiet")
+  const refused = racers.filter((r) => r.reason === "busy" || r.reason === "fresh")
+  check(
+    winners.length === 1 && refused.length === 2,
+    `exactly one of three simultaneous ticks commits (won ${winners.length}, refused ${refused.length}: ${racers.map((r) => r.reason ?? "advanced").join("/")})`
+  )
   const again = await pageTick(page)
   check(again.advanced === false, `immediate re-tick rate-limited (${again.reason})`)
 
@@ -163,21 +174,42 @@ async function main() {
     const t = (await rows(`SELECT MAX(ts) AS t FROM hub.position_pings WHERE carrier_id = $1`))[0]?.t
     return t && baseline.maxPing && new Date(t) > new Date(baseline.maxPing)
   })
-  await pollDb(
-    "thermostat dropped a fresh rate con (broker notification)",
-    async () => {
-      const n = Number(
-        (
-          await rows(
-            `SELECT COUNT(*)::int AS n FROM hub.notifications
-              WHERE carrier_id = $1 AND title LIKE 'New rate con%'`
-          )
-        )[0].n
-      )
-      return n > 0
-    },
-    { timeoutMs: 90_000 }
+  // The thermostat is deliberately clock-aware: brokers call 06:00–20:00 PT
+  // and the board only rests outside that, down to a starvation floor. So the
+  // invariant that holds at ANY hour is "the dispatcher is never left with
+  // nothing" — and during business hours we additionally demand a live drop.
+  // (An earlier revision asserted the drop unconditionally and failed
+  // overnight against a perfectly healthy sim.)
+  const ptHour = Number(
+    new Intl.DateTimeFormat("en-US", { timeZone: "America/Los_Angeles", hour: "numeric", hour12: false }).format(
+      new Date()
+    )
   )
+  const businessHours = ptHour >= 6 && ptHour < 20
+  const rateCons = async () =>
+    Number(
+      (
+        await rows(
+          `SELECT COUNT(*)::int AS n FROM hub.notifications
+            WHERE carrier_id = $1 AND title LIKE 'New rate con%'`
+        )
+      )[0].n
+    )
+  const quoted = async () =>
+    Number(
+      (await rows(`SELECT COUNT(*)::int AS n FROM hub.loads WHERE carrier_id = $1 AND status = 'quoted'`))[0].n
+    )
+  if (businessHours) {
+    await pollDb(`thermostat dropped a fresh rate con (${ptHour}:00 PT — brokers calling)`, async () => (await rateCons()) > 0, {
+      timeoutMs: 90_000,
+    })
+  } else {
+    const [cons, board] = [await rateCons(), await quoted()]
+    check(
+      cons > 0 || board >= 2,
+      `board never starves overnight (${ptHour}:00 PT — ${board} quoted, ${cons} rate cons; floor is 2)`
+    )
+  }
 
   // ---- 5 · End shift → recap sheet with Copy recap ----
   check(await clickUntil(page, "End shift", "Shift recap"), "ending the shift deals the recap sheet")

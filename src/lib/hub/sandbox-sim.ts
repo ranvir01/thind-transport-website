@@ -89,14 +89,6 @@ export async function tickSandboxSim(seatKey?: string | null, now = new Date()):
 
     const world = await snapshotWorld()
     const { ops, nextSim, catchUp } = planSandboxTick(world, sim, now)
-    // Usage telemetry (review A2): cheap counters the weekly audit reads to
-    // answer "do demo users actually play?" — the planner carries them
-    // through, the executor is the only writer of these two.
-    nextSim.telemetry = {
-      ...(sim.telemetry ?? {}),
-      ticks: (sim.telemetry?.ticks ?? 0) + 1,
-      opsApplied: (sim.telemetry?.opsApplied ?? 0) + ops.length,
-    }
 
     // Telemetry ops batch inside the lock transaction; domain ops commit
     // independently (their own transactions) while the lock is held.
@@ -135,13 +127,40 @@ export async function tickSandboxSim(seatKey?: string | null, now = new Date()):
       )
     }
 
+    // Commit ONLY the keys this tick owns, each with its own jsonb_set, and
+    // increment the counters SQL-side from the row's current value. Writing
+    // the whole '{sim}' subtree from the JS snapshot would silently clobber
+    // anything written since the read — presence stamps (touchPresence, which
+    // runs unlocked before the gate) and shift counters (bumpShiftCounter)
+    // are exactly that, and a catch-up tick's op burst leaves a multi-second
+    // window for them to land. Disjoint write sets, no lost updates.
+    // jsonb_set's create_missing only creates the FINAL key of a path, so the
+    // telemetry object is materialized first (a fresh seed has no telemetry
+    // key — without this the counter writes would silently no-op).
     await client.query(
-      `UPDATE hub.carrier_settings SET settings = jsonb_set(settings, '{sim}', $2::jsonb), updated_at = NOW()
-        WHERE carrier_id = $1`,
-      [C, JSON.stringify(nextSim)]
+      `UPDATE hub.carrier_settings
+          SET settings = jsonb_set(
+                jsonb_set(
+                  jsonb_set(
+                    jsonb_set(
+                      jsonb_set(settings, '{sim,telemetry}',
+                                COALESCE(settings->'sim'->'telemetry', '{}'::jsonb), true),
+                      '{sim,lastTickAt}', COALESCE(to_jsonb($2::text), 'null'::jsonb), true),
+                    '{sim,nextDropAt}', COALESCE(to_jsonb($3::text), 'null'::jsonb), true),
+                  '{sim,telemetry,ticks}',
+                  to_jsonb(COALESCE((settings->'sim'->'telemetry'->>'ticks')::int, 0) + 1), true),
+                '{sim,telemetry,opsApplied}',
+                to_jsonb(COALESCE((settings->'sim'->'telemetry'->>'opsApplied')::int, 0) + $4::int), true),
+              updated_at = NOW()
+        WHERE carrier_id = $1 AND settings ? 'sim'`,
+      [C, nextSim.lastTickAt, nextSim.nextDropAt, ops.length]
     )
     await client.query("COMMIT")
-    return { advanced: true, ops: ops.length, catchUp }
+    // "Advanced" means the world actually changed — a quiet tick must not
+    // make every open sandbox tab router.refresh() on its heartbeat.
+    return ops.length > 0
+      ? { advanced: true, ops: ops.length, catchUp }
+      : { advanced: false, reason: "quiet", ops: 0, catchUp }
   } catch (err) {
     if (locked) await client.query("ROLLBACK").catch(() => {})
     console.error("sandbox sim tick failed:", err)

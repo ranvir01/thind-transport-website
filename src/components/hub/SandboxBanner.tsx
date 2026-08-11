@@ -24,7 +24,9 @@ import { cn } from "@/lib/utils"
 export function SandboxBanner({
   dark = false,
   seat,
-  sim = true,
+  // Fail CLOSED: a caller that forgets to resolve the flag gets no ticker and
+  // no shift card, rather than silently bypassing the kill switch.
+  sim = false,
 }: {
   dark?: boolean
   seat?: string
