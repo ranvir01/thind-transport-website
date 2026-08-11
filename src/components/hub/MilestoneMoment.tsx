@@ -8,6 +8,7 @@
  */
 import { useEffect, useRef } from "react"
 import { CheckDraw } from "@/components/hub/CheckDraw"
+import { isTextEntry, overlayMayTakeFocus } from "@/lib/hub/celebrations"
 
 export function MilestoneMoment({
   title,
@@ -38,10 +39,22 @@ export function MilestoneMoment({
     // "Payment recorded" toast and no complaint from any layer. Focus on <body>
     // still makes the duplicate submit impossible, and Enter/Space stay
     // neutralized by the keydown handler below while the moment is up.
-    ;(document.activeElement as HTMLElement | null)?.blur()
+    //
+    // Never take focus off a field the user is TYPING into, though. The moment
+    // lands a server round-trip after the click, so it can arrive mid-keystroke,
+    // and dropping focus then sends every character that follows to <body> —
+    // the same silent truncation, reached by blur instead of by focus-steal.
+    // The duplicate-submit hazard this exists for is about buttons.
+    if (overlayMayTakeFocus(document.activeElement)) {
+      ;(document.activeElement as HTMLElement | null)?.blur()
+    }
     const done = () => onDoneRef.current()
     const t = window.setTimeout(done, 2600)
     const onKey = (e: KeyboardEvent) => {
+      // Space is a character when focus stayed in a text field — dismissing on
+      // it would eat the space instead of typing it. Enter still dismisses
+      // there (and is prevented), which is what stops the implicit re-submit.
+      if (e.key === " " && isTextEntry(e.target as HTMLElement | null)) return
       if (e.key === "Escape" || e.key === "Enter" || e.key === " ") {
         e.preventDefault()
         done()
