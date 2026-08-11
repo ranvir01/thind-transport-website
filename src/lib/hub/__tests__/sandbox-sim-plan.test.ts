@@ -307,10 +307,73 @@ describe("FLAVOR + commit", () => {
 })
 
 describe("op budget (review E4 — a regression gate, not a hope)", () => {
-  /** The full seeded board at its absolute worst: every NPC appointment
-   *  blown past, every cap eligible to fire in the same tick. Real catch-ups
-   *  are far smaller (the seed staggers appointments into the future) — this
-   *  pins the ceiling the executor can ever be asked to run sequentially. */
+  /**
+   * The REACHABLE worst case, not a comfortable one. MOVE is the only phase
+   * that scales with fleet size, and the executor's snapshot allows up to 400
+   * active loads — so the ceiling has to hold with a large rolling fleet, not
+   * just the handful the seed starts with. An earlier version of this test
+   * used 8 rolling trucks and "passed" while the real number was 1,203 ops at
+   * 100 trucks (and 363 at the sandbox's own 30). The budgets in MOVE exist
+   * because of this test; without them it fails by an order of magnitude.
+   */
+  function rollingFleet(n: number, sinceLastPingHours = 14): WorldSnapshot {
+    const loads: SimLoad[] = []
+    const trucks: WorldSnapshot["trucks"] = []
+    for (let i = 0; i < n; i++) {
+      // Half-way down the lane: pings due, no arrival yet.
+      loads.push(rollingLoad(`F${i}`, 0.5))
+      trucks.push({
+        truckId: `trk-F${i}`,
+        driverId: `drv-F${i}`,
+        lastPingAt: new Date(NOW.getTime() - sinceLastPingHours * HOUR),
+      })
+    }
+    return world({ loads, trucks, quotedCount: 7 })
+  }
+
+  it("holds with a large rolling fleet — MOVE is budgeted, not per-truck", () => {
+    const gap = sim({ lastTickAt: new Date(NOW.getTime() - 14 * HOUR).toISOString() })
+    for (const fleet of [8, 30, 60, 100]) {
+      const { ops } = planSandboxTick(rollingFleet(fleet), gap, NOW)
+      expect(ops.length, `${fleet} rolling trucks on catch-up`).toBeLessThanOrEqual(200)
+    }
+    // And a live tick over the same fleet stays small.
+    const live = planSandboxTick(rollingFleet(100), sim(), NOW)
+    expect(live.ops.length).toBeLessThanOrEqual(80)
+  })
+
+  it("the stalest trucks are served first, so nobody starves across ticks", () => {
+    const w = rollingFleet(100)
+    // Make one truck far staler than the rest; it must make the cut.
+    w.trucks[99].lastPingAt = new Date(NOW.getTime() - 48 * HOUR)
+    const { ops } = planSandboxTick(w, sim(), NOW)
+    const pinged = new Set(ops.filter((o) => o.op === "movePing").map((o) => o.truckId))
+    expect(pinged.has("trk-F99")).toBe(true)
+  })
+
+  it("arrivals are capped but player clamps never are", () => {
+    // A whole fleet past its ETA, including two player drivers.
+    const loads: SimLoad[] = []
+    for (let i = 0; i < 60; i++) loads.push(rollingLoad(`A${i}`, 1.4))
+    loads.push(rollingLoad("P0", 1.4, { playerDriven: true, driverId: "drv-p0" }))
+    loads.push(rollingLoad("P1", 1.4, { playerDriven: true, driverId: "drv-p1" }))
+    const w = world({
+      loads,
+      playerDrivers: [
+        { driverId: "drv-p0", truckId: "trk-P0", userId: "u0", idleSincePodMin: null },
+        { driverId: "drv-p1", truckId: "trk-P1", userId: "u1", idleSincePodMin: null },
+      ],
+    })
+    const { ops } = planSandboxTick(w, sim(), NOW)
+    const delivered = ops.filter((o) => o.op === "advanceStatus" && o.to === "delivered")
+    expect(delivered.length).toBe(SIM.arrivalCapLive)
+    // Both players still hear about their own arrival.
+    expect(ops.filter((o) => o.op === "notifyUser")).toHaveLength(2)
+    expect(ops.length).toBeLessThanOrEqual(200)
+  })
+
+  /** The full seeded board at its worst: every NPC appointment blown past,
+   *  every cap eligible to fire in the same tick. */
   function blownWorld(): WorldSnapshot {
     const loads: SimLoad[] = []
     let n = 0
