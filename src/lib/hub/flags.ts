@@ -46,6 +46,18 @@ export const FLAG_REGISTRY = {
     type: "permission",
     defaultValue: process.env.SMALL_CARRIER_MODE !== "false",
   },
+  /**
+   * Shift Mode: the sandbox's real-time simulation (SimTicker heartbeat,
+   * /api/hub/sandbox/tick, ShiftCard clock-in). HUB_DEMO_LOGIN=false stays
+   * the hard kill for the whole sandbox; this is the soft kill that needs
+   * no redeploy — flag off ⇒ tick 403s, ticker and shift card unmount, the
+   * seeded world simply stands still.
+   */
+  "sim.shift_mode": {
+    description: "Run the sandbox's real-time simulation (Shift Mode)",
+    type: "ops",
+    defaultValue: true,
+  },
 } as const satisfies Record<string, FlagDefinition>
 
 export interface FlagContext {

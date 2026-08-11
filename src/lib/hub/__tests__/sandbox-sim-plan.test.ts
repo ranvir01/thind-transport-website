@@ -306,6 +306,80 @@ describe("FLAVOR + commit", () => {
   })
 })
 
+describe("op budget (review E4 — a regression gate, not a hope)", () => {
+  /** The full seeded board at its absolute worst: every NPC appointment
+   *  blown past, every cap eligible to fire in the same tick. Real catch-ups
+   *  are far smaller (the seed staggers appointments into the future) — this
+   *  pins the ceiling the executor can ever be asked to run sequentially. */
+  function blownWorld(): WorldSnapshot {
+    const loads: SimLoad[] = []
+    let n = 0
+    const mk = (over: Partial<SimLoad>) => loads.push(makeLoad({ id: `L${n++}`, ...over }))
+    for (let i = 0; i < 8; i++) {
+      loads.push(rollingLoad(`R${i}`, 1.2, i < 2 ? { playerDriven: true, driverId: `drv-p${i}` } : {}))
+    }
+    const gone = new Date(NOW.getTime() - 3 * HOUR)
+    for (let i = 0; i < 4; i++) {
+      mk({
+        status: "at_pickup", driverId: `d-a${i}`, truckId: `t-a${i}`,
+        pickup: stop(`pu-a${i}`, { appt: gone, arrivedAt: gone }), delivery: stop(`de-a${i}`),
+      })
+    }
+    for (let i = 0; i < 8; i++) {
+      mk({
+        status: "dispatched", driverId: `d-d${i}`, truckId: `t-d${i}`,
+        pickup: stop(`pu-d${i}`, { appt: gone }), delivery: stop(`de-d${i}`),
+      })
+    }
+    for (let i = 0; i < 12; i++) {
+      mk({
+        status: "booked", driverId: `d-b${i}`, truckId: `t-b${i}`,
+        pickup: stop(`pu-b${i}`, { appt: gone }), delivery: stop(`de-b${i}`),
+      })
+    }
+    for (let i = 0; i < 8; i++) mk({ status: "quoted", createdAt: new Date(NOW.getTime() - 5 * HOUR) })
+    for (let i = 0; i < 10; i++) mk({ status: "delivered", deliveredAt: new Date(NOW.getTime() - 6 * HOUR) })
+    for (let i = 0; i < 10; i++) mk({ status: "pod_received", deliveredAt: new Date(NOW.getTime() - 30 * HOUR) })
+
+    return world({
+      loads,
+      quotedCount: 0, // thermostat sees an empty board — max drop
+      trucks: loads
+        .filter((l) => l.truckId)
+        .map((l) => ({ truckId: l.truckId as string, driverId: l.driverId, lastPingAt: new Date(NOW.getTime() - 14 * HOUR) })),
+      hos: loads
+        .filter((l) => l.driverId)
+        .map((l) => ({
+          driverId: l.driverId as string,
+          driveRemainingMinutes: 400, shiftRemainingMinutes: 500, cycleRemainingMinutes: 2000,
+          at: new Date(NOW.getTime() - 14 * HOUR),
+        })),
+      invoicesPastDue: Array.from({ length: 10 }, (_, i) => ({ id: `inv${i}`, customerName: "X" })),
+      idleNpc: Array.from({ length: 5 }, (_, i) => ({ driverId: `idle-d${i}`, truckId: `idle-t${i}` })),
+      playerDrivers: [
+        { driverId: "drv-p0", truckId: "trk-R0", userId: "u-p0", idleSincePodMin: null },
+        { driverId: "drv-p1", truckId: "trk-R1", userId: "u-p1", idleSincePodMin: 30 },
+      ],
+    })
+  }
+
+  it("a 14-hour catch-up stays under the frozen ceiling", () => {
+    const gap = sim({ lastTickAt: new Date(NOW.getTime() - 14 * HOUR).toISOString() })
+    const { ops, catchUp } = planSandboxTick(blownWorld(), gap, NOW)
+    expect(catchUp).toBe(true)
+    // Frozen after measuring: pings dominate (≤12 × 8 trucks); converge is
+    // capped at 12 walks. Raising this number is a design decision, not a
+    // tweak — it widens the serverless burst the executor must survive.
+    expect(ops.length).toBeLessThanOrEqual(200)
+  })
+
+  it("a live tick on the same blown world stays small", () => {
+    const { ops, catchUp } = planSandboxTick(blownWorld(), sim(), NOW)
+    expect(catchUp).toBe(false)
+    expect(ops.length).toBeLessThanOrEqual(80)
+  })
+})
+
 describe("statusPath", () => {
   it("walks NEXT_STATUS and refuses impossible jumps", () => {
     expect(statusPath("booked", "at_pickup")).toEqual(["dispatched", "at_pickup"])

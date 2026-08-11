@@ -94,6 +94,11 @@ export interface SimState {
   nextDropAt: string | null
   /** seatKey -> ISO lastSeenAt, maintained by the tick heartbeat. */
   activeSeats: Record<string, string>
+  /** Usage counters (ticks, opsApplied, shiftsStarted_<seat>, …) — written
+   *  by the executor and the shift actions, read by the weekly audit to
+   *  answer "do demo users actually play?". Carried through untouched by
+   *  the planner. */
+  telemetry?: Record<string, number>
 }
 
 /* --------------------------------- ops --------------------------------- */
@@ -142,6 +147,11 @@ export const SIM = {
   dropCapCatchUp: 4,
   npcBookAfterMinutes: 120,
   npcBookCap: 1,
+  /** NPC lifecycle walks per tick — state-convergent rules make deferring
+   *  the rest to the next beat invisible, and the cap keeps a blown-
+   *  everything catch-up burst bounded (review E4). */
+  convergeCapLive: 6,
+  convergeCapCatchUp: 12,
   playerOfferIdleMinutes: 5,
   podCapLive: 3,
   podCapCatchUp: 10,
@@ -229,7 +239,10 @@ export function planSandboxTick(
   }
 
   /* 2 · CONVERGE — NPC lifecycle toward what the clock says. */
+  const convergeCap = catchUp ? SIM.convergeCapCatchUp : SIM.convergeCapLive
+  let converged = 0
   for (const load of world.loads) {
+    if (converged >= convergeCap) break
     if (load.playerDriven) continue
     if (!["booked", "dispatched", "at_pickup"].includes(load.status)) continue
     if (!load.driverId || !load.pickup) continue
@@ -256,6 +269,7 @@ export function planSandboxTick(
       }
       ops.push({ op: "advanceStatus", loadId: load.id, to: step })
     }
+    if (path.length > 0) converged++
   }
 
   // AI dispatcher: book stale quoted loads onto idle NPC drivers.

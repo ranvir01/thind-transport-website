@@ -1,5 +1,6 @@
 import { headers } from "next/headers"
 import { PRODUCT } from "@/lib/hub/product"
+import { getFlag } from "@/lib/hub/flags"
 import { getHubUser } from "@/lib/hub/session"
 import { getCarrier, getCarrierSettings } from "@/lib/hub/settings"
 import { isSandboxCarrier, seatForEmail } from "@/lib/hub/sandbox"
@@ -51,7 +52,11 @@ export default async function PortalLayout({ children }: { children: React.React
       </header>
       <main className="pt-20 pb-12 px-4 mx-auto w-full max-w-3xl">
         {user && isSandboxCarrier(user.carrierId) ? (
-          <SandboxBanner dark seat={seatForEmail(user.email)?.key} />
+          <SandboxBanner
+            dark
+            seat={seatForEmail(user.email)?.key}
+            sim={await getFlag("sim.shift_mode", { carrierId: user.carrierId })}
+          />
         ) : null}
         {children}
       </main>

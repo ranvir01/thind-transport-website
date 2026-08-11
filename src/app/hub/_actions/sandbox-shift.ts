@@ -3,7 +3,7 @@
 import { demoLoginEnabled } from "@/lib/hub/demo"
 import { isSandboxCarrier, seatForEmail } from "@/lib/hub/sandbox"
 import { isShiftSeat, type ShiftMetrics } from "@/lib/hub/sandbox-objectives"
-import { readShiftMetrics, readSimEpoch } from "@/lib/hub/sandbox-shift"
+import { bumpShiftCounter, readShiftMetrics, readSimEpoch } from "@/lib/hub/sandbox-shift"
 import { getHubUser } from "@/lib/hub/session"
 
 /**
@@ -40,10 +40,19 @@ async function snapshot(): Promise<ShiftSnapshot> {
 
 /** Clock in: the returned metrics become the browser-held baseline. */
 export async function startShiftAction(): Promise<ShiftSnapshot> {
+  const snap = await snapshot()
+  if (snap.ok && snap.seat) await bumpShiftCounter("shiftsStarted", snap.seat).catch(() => {})
+  return snap
+}
+
+/** Live objectives poll — diffs against the stored baseline client-side. */
+export async function shiftStatusAction(): Promise<ShiftSnapshot> {
   return snapshot()
 }
 
-/** Live objectives + clock-out recap both diff against the stored baseline. */
-export async function shiftStatusAction(): Promise<ShiftSnapshot> {
-  return snapshot()
+/** End shift: same snapshot, plus the completed-shift telemetry bump. */
+export async function endShiftAction(): Promise<ShiftSnapshot> {
+  const snap = await snapshot()
+  if (snap.ok && snap.seat) await bumpShiftCounter("shiftsCompleted", snap.seat).catch(() => {})
+  return snap
 }
