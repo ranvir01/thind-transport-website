@@ -61,6 +61,14 @@ export function ShiftCard({ seat, dark = false }: { seat: string; dark?: boolean
   const [busy, setBusy] = useState(false)
   const phaseRef = useRef(phase)
   phaseRef.current = phase
+  // The sheet's trigger ("End shift") unmounts while the sheet is open, so
+  // Radix has nowhere to return focus on close and it lands on <body>. Park
+  // it on the card's own primary button instead — a keyboard user comes back
+  // to where the shift lives, not to the top of the document.
+  const clockInRef = useRef<HTMLButtonElement>(null)
+  const returnFocus = useCallback(() => {
+    requestAnimationFrame(() => clockInRef.current?.focus())
+  }, [])
 
   const forget = useCallback(() => {
     try {
@@ -213,7 +221,10 @@ export function ShiftCard({ seat, dark = false }: { seat: string; dark?: boolean
       open={sheetOpen}
       onOpenChange={(open) => {
         if (open) return
-        if (phase.kind === "recap") setPhase({ kind: "idle" })
+        if (phase.kind === "recap") {
+          setPhase({ kind: "idle" })
+          returnFocus()
+        }
         // Closing mid-"ending" returns you to the shift rather than trapping
         // you in a focus-locked skeleton if the snapshot is slow; the
         // in-flight request resolves harmlessly against the phase check.
@@ -249,7 +260,10 @@ export function ShiftCard({ seat, dark = false }: { seat: string; dark?: boolean
               Copy recap
             </button>
             <button
-              onClick={() => setPhase({ kind: "idle" })}
+              onClick={() => {
+                setPhase({ kind: "idle" })
+                returnFocus()
+              }}
               className={cn(
                 "inline-flex min-h-[44px] items-center gap-1.5 rounded-control bg-accent px-3.5 text-[13px] font-semibold text-white hover:bg-accent-hover",
                 press
@@ -290,6 +304,7 @@ export function ShiftCard({ seat, dark = false }: { seat: string; dark?: boolean
               </p>
             </div>
             <button
+              ref={clockInRef}
               onClick={clockIn}
               disabled={busy || sheetOpen}
               className={cn(
