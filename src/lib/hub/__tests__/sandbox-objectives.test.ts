@@ -7,11 +7,11 @@
  * seat's work with another seat's rubric.
  */
 import { describe, expect, it } from "vitest"
-import { evaluateShift, isShiftSeat, type ShiftMetrics } from "../sandbox-objectives"
+import { emptyMetrics, evaluateShift, isShiftSeat, SHIFT_SEATS, type ShiftMetrics } from "../sandbox-objectives"
 
 function metrics(over: Partial<ShiftMetrics> = {}): ShiftMetrics {
   return {
-    at: "2026-01-15T18:00:00.000Z",
+    ...emptyMetrics("2026-01-15T18:00:00.000Z"),
     myBookings: 10,
     myDispatches: 5,
     quotedCount: 7,
@@ -23,18 +23,42 @@ function metrics(over: Partial<ShiftMetrics> = {}): ShiftMetrics {
     myInvoicedCents: 5_000_000,
     paymentsRecorded: 100,
     unbilledCount: 10,
+    // office seats
+    mySettlementApprovals: 3,
+    mySettlementPayouts: 2,
+    myAdvances: 1,
+    myPayments: 4,
+    draftSettlements: 6,
+    myIncidents: 2,
+    myIncidentsClosed: 1,
+    myRepairCerts: 1,
+    myRandomTestResults: 0,
+    openIncidents: 5,
     ...over,
   }
 }
 
 describe("isShiftSeat", () => {
-  it("admits exactly the three core seats", () => {
-    expect(isShiftSeat("dispatcher")).toBe(true)
-    expect(isShiftSeat("driver")).toBe(true)
-    expect(isShiftSeat("accountant")).toBe(true)
-    expect(isShiftSeat("owner")).toBe(false)
-    expect(isShiftSeat("broker")).toBe(false)
+  it("admits exactly the seats that have a scored rubric", () => {
+    for (const seat of ["dispatcher", "driver", "accountant", "owner", "safety"]) {
+      expect(isShiftSeat(seat), seat).toBe(true)
+    }
+    for (const seat of ["recruiter", "owner_operator"]) {
+      expect(isShiftSeat(seat), seat).toBe(true)
+    }
+    // The two portal seats are read-mostly — no scored rubric, so they keep
+    // their guided tour instead of a shift they couldn't win.
+    for (const seat of ["broker", "shipper", "nonsense"]) {
+      expect(isShiftSeat(seat), seat).toBe(false)
+    }
     expect(isShiftSeat(undefined)).toBe(false)
+  })
+
+  it("every listed shift seat really has objectives", () => {
+    for (const seat of SHIFT_SEATS) {
+      const ev = evaluateShift(seat, metrics(), metrics())
+      expect(ev.objectives.length, seat).toBeGreaterThan(0)
+    }
   })
 })
 
@@ -117,6 +141,94 @@ describe("accountant shift", () => {
     expect(byKey.get("payment")).toBe(false)
     expect(byKey.get("backlog")).toBe(false)
     expect(ev.score).toBe(25)
+  })
+})
+
+describe("owner shift", () => {
+  it("approve, pay, move money yourself, and leave the pay queue shorter", () => {
+    const base = metrics()
+    const cur = metrics({
+      mySettlementApprovals: 4,
+      mySettlementPayouts: 3,
+      myPayments: 5,
+      draftSettlements: 4,
+    })
+    const ev = evaluateShift("owner", base, cur)
+    expect(ev.score).toBe(100)
+  })
+
+  it("an advance counts for the money objective just as a payment does", () => {
+    const base = metrics()
+    const viaAdvance = evaluateShift("owner", base, metrics({ myAdvances: 2 }))
+    expect(viaAdvance.objectives.find((o) => o.key === "cash")?.done).toBe(true)
+    const neither = evaluateShift("owner", base, metrics())
+    expect(neither.objectives.find((o) => o.key === "cash")?.done).toBe(false)
+  })
+
+  it("a growing pay queue misses the queue objective", () => {
+    const ev = evaluateShift("owner", metrics(), metrics({ draftSettlements: 9 }))
+    expect(ev.objectives.find((o) => o.key === "queue")?.done).toBe(false)
+  })
+})
+
+describe("safety shift", () => {
+  it("release a truck, log an incident, close one, and shrink the open list", () => {
+    const base = metrics()
+    const cur = metrics({
+      myRepairCerts: 2,
+      myIncidents: 3,
+      myIncidentsClosed: 2,
+      openIncidents: 4,
+    })
+    expect(evaluateShift("safety", base, cur).score).toBe(100)
+  })
+
+  it("doing nothing scores nothing, and the open list is compared raw", () => {
+    const ev = evaluateShift("safety", metrics(), metrics())
+    expect(ev.score).toBe(0)
+    expect(ev.objectives.find((o) => o.key === "open")?.done).toBe(false)
+  })
+
+  it("never scores another seat's rubric", () => {
+    // Safety work must not satisfy the owner's objectives and vice versa.
+    const safetyWork = metrics({ myRepairCerts: 5, myIncidents: 5, myIncidentsClosed: 5, openIncidents: 0 })
+    expect(evaluateShift("owner", metrics(), safetyWork).score).toBe(0)
+    const ownerWork = metrics({ mySettlementApprovals: 9, mySettlementPayouts: 9, myPayments: 9, draftSettlements: 0 })
+    expect(evaluateShift("safety", metrics(), ownerWork).score).toBe(0)
+  })
+})
+
+describe("recruiter shift", () => {
+  it("move the pipeline, sign an offer, hire, and shrink the applied pile", () => {
+    const cur = metrics({ myStageAdvances: 2, myOffersSigned: 1, myHires: 1, applicantsWaiting: -1 })
+    // applicantsWaiting is a board depth: start it above the current value.
+    const base = metrics({ applicantsWaiting: 4 })
+    const ev = evaluateShift("recruiter", base, { ...cur, applicantsWaiting: 2 })
+    expect(ev.score).toBe(100)
+  })
+
+  it("stage moves clamp at the target and a stalled pipeline scores zero", () => {
+    const base = metrics({ applicantsWaiting: 4 })
+    const stalled = evaluateShift("recruiter", base, metrics({ applicantsWaiting: 4 }))
+    expect(stalled.score).toBe(0)
+    const overshoot = evaluateShift("recruiter", base, metrics({ myStageAdvances: 9, applicantsWaiting: 4 }))
+    expect(overshoot.objectives.find((o) => o.key === "advance")?.progress).toBe(2)
+  })
+})
+
+describe("owner-operator shift", () => {
+  it("scores his own money and equipment, not just the driving", () => {
+    const cur = metrics({ myStatusMoves: 42, myReceipts: 1, myAdvanceRequests: 1, myDvirs: 2 })
+    expect(evaluateShift("owner_operator", metrics(), cur).score).toBe(100)
+  })
+
+  it("is a different rubric from the company driver's", () => {
+    const ev = evaluateShift("owner_operator", metrics(), metrics())
+    expect(ev.objectives.map((o) => o.key)).toEqual(["legs", "receipt", "advance", "dvir"])
+    // Driving alone doesn't finish an owner-operator's day — the paperwork
+    // that decides what he takes home is the point of this seat.
+    const drivingOnly = evaluateShift("owner_operator", metrics(), metrics({ myStatusMoves: 45 }))
+    expect(drivingOnly.score).toBe(25)
   })
 })
 

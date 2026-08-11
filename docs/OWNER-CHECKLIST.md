@@ -1,5 +1,10 @@
 # Owner action queue — Thind Transport / LoadOff
 
+> **Want to test the software rather than unblock it?** That's a different file:
+> **[`OWNER-TEST-DRIVE.md`](../OWNER-TEST-DRIVE.md)** — drills to run in the live
+> sandbox with blanks to fill in and hand back. This page is only the things that are
+> *blocked on you*; that one is where you tell me what you think.
+
 **Updated 2026-08-04.** This file is the **single queue of things only the owner can do**,
 per the autonomous-build plan: agents never block on these, never put them in their own
 task lists, and never write secret *values* here — names and places only. Everything not

@@ -6,12 +6,27 @@
  * import it, so keep it dependency-free.
  */
 
-export type ShiftSeatKey = "dispatcher" | "driver" | "accountant"
+export type ShiftSeatKey =
+  | "dispatcher"
+  | "driver"
+  | "accountant"
+  | "owner"
+  | "safety"
+  | "recruiter"
+  | "owner_operator"
 
-export const SHIFT_SEATS: ShiftSeatKey[] = ["dispatcher", "driver", "accountant"]
+export const SHIFT_SEATS: ShiftSeatKey[] = [
+  "dispatcher",
+  "driver",
+  "accountant",
+  "owner",
+  "safety",
+  "recruiter",
+  "owner_operator",
+]
 
 export function isShiftSeat(key: string | null | undefined): key is ShiftSeatKey {
-  return key === "dispatcher" || key === "driver" || key === "accountant"
+  return SHIFT_SEATS.includes(key as ShiftSeatKey)
 }
 
 /** Everything a shift can score, snapshot at one instant. Counters are
@@ -19,6 +34,7 @@ export function isShiftSeat(key: string | null | undefined): key is ShiftSeatKey
  *  totals; `quotedCount`/`unbilledCount` are board depths, compared raw. */
 export interface ShiftMetrics {
   at: string
+  // — dispatcher / driver / accountant —
   myBookings: number
   myDispatches: number
   quotedCount: number
@@ -30,6 +46,47 @@ export interface ShiftMetrics {
   myInvoicedCents: number
   paymentsRecorded: number
   unbilledCount: number
+  // — owner — every counter is actor-scoped, because the sim's autopilot
+  // records payments too and must never pad the player's score.
+  mySettlementApprovals: number
+  mySettlementPayouts: number
+  myAdvances: number
+  myPayments: number
+  draftSettlements: number
+  // — safety —
+  myIncidents: number
+  myIncidentsClosed: number
+  myRepairCerts: number
+  myRandomTestResults: number
+  openIncidents: number
+  // — recruiter — note applicant_events carries only actor_name (no
+  // actor_id column), so stage moves match on the seat's name; hires and
+  // signatures use the stronger audit_log actor_id.
+  myStageAdvances: number
+  myOffersSigned: number
+  myHires: number
+  applicantsWaiting: number
+  // — owner-operator — his own truck and his own money, all joined through
+  // drivers.user_id so another driver's paperwork can never count.
+  myReceipts: number
+  myAdvanceRequests: number
+  myDvirs: number
+}
+
+/** Zeroed metrics — seat readers fill only the counters their seat scores. */
+export function emptyMetrics(at: string): ShiftMetrics {
+  return {
+    at,
+    myBookings: 0, myDispatches: 0, quotedCount: 0, myStatusMoves: 0, myPodsSubmitted: 0,
+    myArrivals: 0, myOnTimeArrivals: 0, myInvoices: 0, myInvoicedCents: 0,
+    paymentsRecorded: 0, unbilledCount: 0,
+    mySettlementApprovals: 0, mySettlementPayouts: 0, myAdvances: 0, myPayments: 0,
+    draftSettlements: 0,
+    myIncidents: 0, myIncidentsClosed: 0, myRepairCerts: 0, myRandomTestResults: 0,
+    openIncidents: 0,
+    myStageAdvances: 0, myOffersSigned: 0, myHires: 0, applicantsWaiting: 0,
+    myReceipts: 0, myAdvanceRequests: 0, myDvirs: 0,
+  }
 }
 
 export interface ShiftObjective {
@@ -66,7 +123,12 @@ function objectivesFor(seat: ShiftSeatKey, base: ShiftMetrics, cur: ShiftMetrics
       return [
         make("book", "Book 2 loads off the quoted board", 2, cur.myBookings - base.myBookings),
         make("dispatch", "Dispatch a load to a driver", 1, cur.myDispatches - base.myDispatches),
-        make("board", "Clock out with the quoted board under 6", 1, cur.quotedCount < 6 ? 1 : 0),
+        // Strictly smaller, like every other board objective. Brokers keep
+        // adding to the quoted pile all shift, so ending below where you
+        // started means you booked faster than they called. "At or below"
+        // and the old absolute "under 6" both read as already-won the moment
+        // you clock in, scoring nothing you actually did.
+        make("board", "Book faster than the brokers call", 1, cur.quotedCount < base.quotedCount ? 1 : 0),
       ]
     case "driver":
       return [
@@ -80,6 +142,42 @@ function objectivesFor(seat: ShiftSeatKey, base: ShiftMetrics, cur: ShiftMetrics
         make("billed", "Bill $3,000 or more", 1, cur.myInvoicedCents - base.myInvoicedCents >= 300_000 ? 1 : 0),
         make("payment", "A payment lands on an overdue invoice", 1, cur.paymentsRecorded - base.paymentsRecorded),
         make("backlog", "Shrink the unbilled backlog", 1, cur.unbilledCount < base.unbilledCount ? 1 : 0),
+      ]
+    case "owner":
+      return [
+        make("approve", "Approve a draft settlement", 1, cur.mySettlementApprovals - base.mySettlementApprovals),
+        make("pay", "Pay an approved settlement", 1, cur.mySettlementPayouts - base.mySettlementPayouts),
+        make(
+          "cash",
+          "Move money yourself — a payment or a driver advance",
+          1,
+          cur.myPayments - base.myPayments + (cur.myAdvances - base.myAdvances)
+        ),
+        make("queue", "Shrink the draft settlement queue", 1, cur.draftSettlements < base.draftSettlements ? 1 : 0),
+      ]
+    case "safety":
+      return [
+        make("repair", "Certify a repair and put a truck back on the road", 1, cur.myRepairCerts - base.myRepairCerts),
+        make("incident", "Log an incident on the register", 1, cur.myIncidents - base.myIncidents),
+        make("close", "Close out an open incident", 1, cur.myIncidentsClosed - base.myIncidentsClosed),
+        make("open", "Leave the open-incident list shorter than you found it", 1, cur.openIncidents < base.openIncidents ? 1 : 0),
+      ]
+    case "recruiter":
+      return [
+        make("advance", "Move 2 applicants forward a stage", 2, cur.myStageAdvances - base.myStageAdvances),
+        make("sign", "Get an offer signed", 1, cur.myOffersSigned - base.myOffersSigned),
+        make("hire", "Hire someone through the orientation gate", 1, cur.myHires - base.myHires),
+        make("pipeline", "Clear the applied pile down", 1, cur.applicantsWaiting < base.applicantsWaiting ? 1 : 0),
+      ]
+    case "owner_operator":
+      // Sam owns his truck. The driving is the company driver's rubric; what
+      // makes this seat different is that the money and the equipment are
+      // his — so it scores the paperwork that decides what he takes home.
+      return [
+        make("legs", "Move your load — 2 legs on the clock", 2, cur.myStatusMoves - base.myStatusMoves),
+        make("receipt", "Send a receipt in for reimbursement", 1, cur.myReceipts - base.myReceipts),
+        make("advance", "Draw an advance against your settlement", 1, cur.myAdvanceRequests - base.myAdvanceRequests),
+        make("dvir", "File a DVIR on your own truck", 1, cur.myDvirs - base.myDvirs),
       ]
   }
 }

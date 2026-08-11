@@ -119,6 +119,22 @@ per-browser baseline, live objectives, end-of-shift recap
 (`ShiftCard`, `lib/hub/sandbox-objectives.ts` pure scoring); a reset mints a
 fresh sim epoch and voids in-flight shifts. Player-driven loads are sacred —
 the sim clamps them at the receiver and notifies instead of advancing.
+
+**Seven of the nine seats clock in** (dispatcher · company driver ·
+accountant · owner · safety · recruiter · owner-operator), each scored on
+what that job really does — settlement approvals and cash movement for the
+owner, repair certifications and the incident register for safety, pipeline
+moves and hires for the recruiter, receipts/advances/DVIRs for the
+owner-operator. Every counter is attributable to the PLAYER (row-carried
+`reported_by`/`repair_certified_by`/`drivers.user_id`, or `audit_log.actor_id`)
+so the autopilot's identical actions can never pad a score, and each seat's
+reader runs only its own queries. Board objectives are strictly relative
+(`cur < base`) — an absolute condition reads as already-won at clock-in and
+scores nothing the player did; `sandbox-shift-readers.test.ts` enforces that
+against a real database, which is also the only place the hand-written SQL
+is actually executed. **The broker and shipper portals get no shift**: the
+broker role holds zero write permissions and the shipper exactly one, so
+there is no honest work to score — they keep their guided tour.
 Hardening (outside review folded in): the tick REQUIRES a sandbox session
 (never an unauthenticated cost lever) with a cheap pre-lock lastTickAt gate;
 `sim.shift_mode` feature flag is the redeploy-free soft kill, enforced on the

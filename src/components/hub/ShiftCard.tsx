@@ -43,6 +43,10 @@ const seatPitch: Record<string, string> = {
   dispatcher: "Brokers keep calling while you're on. Book, assign, keep the board tight.",
   driver: "Your truck is rolling. Arrive, load, deliver, shoot the POD.",
   accountant: "PODs keep landing. Bill them out and watch the money come back.",
+  owner: "The week's pay run is waiting. Approve it, pay it, move the money.",
+  safety: "A truck is grounded and the register is open. Get it road-legal.",
+  recruiter: "Seats to fill. Move the pipeline, get an offer signed, hire someone.",
+  owner_operator: "Your truck, your money. Run the load, then get paid for it.",
 }
 
 function recapText(ev: ShiftEvaluation): string {
@@ -61,6 +65,14 @@ export function ShiftCard({ seat, dark = false }: { seat: string; dark?: boolean
   const [busy, setBusy] = useState(false)
   const phaseRef = useRef(phase)
   phaseRef.current = phase
+  // The sheet's trigger ("End shift") unmounts while the sheet is open, so
+  // Radix has nowhere to return focus on close and it lands on <body>. Park
+  // it on the card's own primary button instead — a keyboard user comes back
+  // to where the shift lives, not to the top of the document.
+  const clockInRef = useRef<HTMLButtonElement>(null)
+  const returnFocus = useCallback(() => {
+    requestAnimationFrame(() => clockInRef.current?.focus())
+  }, [])
 
   const forget = useCallback(() => {
     try {
@@ -213,7 +225,10 @@ export function ShiftCard({ seat, dark = false }: { seat: string; dark?: boolean
       open={sheetOpen}
       onOpenChange={(open) => {
         if (open) return
-        if (phase.kind === "recap") setPhase({ kind: "idle" })
+        if (phase.kind === "recap") {
+          setPhase({ kind: "idle" })
+          returnFocus()
+        }
         // Closing mid-"ending" returns you to the shift rather than trapping
         // you in a focus-locked skeleton if the snapshot is slow; the
         // in-flight request resolves harmlessly against the phase check.
@@ -225,7 +240,20 @@ export function ShiftCard({ seat, dark = false }: { seat: string; dark?: boolean
       {phase.kind === "recap" ? (
         <div>
           <div className="flex items-start gap-3">
-            <CheckDraw size={44} />
+            {/* The drawn check is the milestone moment for a clean shift.
+                Showing it over a half-finished one would congratulate the
+                player for work the recap itself says is still waiting. */}
+            {phase.evaluation.score === 100 ? (
+              <CheckDraw size={44} />
+            ) : (
+              <span
+                aria-hidden
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border-2 border-border-strong text-[13px] font-bold tabular-nums text-fg-2"
+              >
+                {phase.evaluation.objectives.filter((o) => o.done).length}/
+                {phase.evaluation.objectives.length}
+              </span>
+            )}
             <div className="min-w-0 flex-1">
               <p className="text-[15px] font-semibold text-fg">
                 {phase.evaluation.score}% · {phase.evaluation.minutes} min
@@ -249,7 +277,10 @@ export function ShiftCard({ seat, dark = false }: { seat: string; dark?: boolean
               Copy recap
             </button>
             <button
-              onClick={() => setPhase({ kind: "idle" })}
+              onClick={() => {
+                setPhase({ kind: "idle" })
+                returnFocus()
+              }}
               className={cn(
                 "inline-flex min-h-[44px] items-center gap-1.5 rounded-control bg-accent px-3.5 text-[13px] font-semibold text-white hover:bg-accent-hover",
                 press
@@ -290,6 +321,7 @@ export function ShiftCard({ seat, dark = false }: { seat: string; dark?: boolean
               </p>
             </div>
             <button
+              ref={clockInRef}
               onClick={clockIn}
               disabled={busy || sheetOpen}
               className={cn(

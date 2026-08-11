@@ -44,7 +44,7 @@ async function snapshot(): Promise<ShiftSnapshot> {
     return { ok: false, off: true, error: "This seat doesn't run shifts." }
   }
   try {
-    const [epoch, metrics] = await Promise.all([readSimEpoch(), readShiftMetrics(user.id)])
+    const [epoch, metrics] = await Promise.all([readSimEpoch(), readShiftMetrics(user.id, seat.key)])
     return { ok: true, seat: seat.key, epoch: epoch ?? "unseeded", metrics }
   } catch (error) {
     console.error("shift snapshot failed:", error)
