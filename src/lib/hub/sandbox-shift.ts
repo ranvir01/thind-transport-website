@@ -13,6 +13,26 @@ import type { ShiftMetrics } from "./sandbox-objectives"
 
 const C = SANDBOX_CARRIER_ID
 
+/**
+ * Bump a shift telemetry counter (review A2) — the weekly audit reads
+ * settings.sim.telemetry to see whether demo users actually play. The seat
+ * key is validated by callers (isShiftSeat) and scrubbed here anyway; the
+ * inner jsonb_set materializes the telemetry object so the bump works on a
+ * freshly-seeded world that has never ticked.
+ */
+export async function bumpShiftCounter(kind: "shiftsStarted" | "shiftsCompleted", seat: string): Promise<void> {
+  const key = `${kind}_${seat}`.replace(/[^a-zA-Z_]/g, "")
+  await query(
+    `UPDATE hub.carrier_settings
+        SET settings = jsonb_set(
+              jsonb_set(settings, '{sim,telemetry}', COALESCE(settings->'sim'->'telemetry', '{}'::jsonb), true),
+              '{sim,telemetry,${key}}',
+              to_jsonb(COALESCE((settings->'sim'->'telemetry'->>'${key}')::int, 0) + 1), true)
+      WHERE carrier_id = $1 AND settings ? 'sim'`,
+    [C]
+  )
+}
+
 /** Current sim epoch — a reset mints a new one, voiding in-flight shifts. */
 export async function readSimEpoch(): Promise<string | null> {
   const rows = await query<{ epoch: string | null }>(

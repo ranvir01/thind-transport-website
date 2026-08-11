@@ -17,14 +17,26 @@ import { cn } from "@/lib/utils"
  * sim heartbeat (SimTicker — the world only runs while a sandbox tab is
  * open), and one card under the strip: Shift Mode's clock-in cockpit for the
  * three core seats, or the per-seat guided tour for the rest (dismissable
- * once per seat via localStorage). `dark` sits on navy chrome.
+ * once per seat via localStorage). `dark` sits on navy chrome. `sim` is the
+ * sim.shift_mode flag resolved by the layout — off ⇒ no ticker, no shift
+ * card, and the core seats fall back to their guided tour.
  */
-export function SandboxBanner({ dark = false, seat }: { dark?: boolean; seat?: string }) {
+export function SandboxBanner({
+  dark = false,
+  seat,
+  // Fail CLOSED: a caller that forgets to resolve the flag gets no ticker and
+  // no shift card, rather than silently bypassing the kill switch.
+  sim = false,
+}: {
+  dark?: boolean
+  seat?: string
+  sim?: boolean
+}) {
   const router = useRouter()
   const [pending, startTransition] = useTransition()
   const [resetting, setResetting] = useState(false)
   const [tourOpen, setTourOpen] = useState(false)
-  const shiftSeat = seat && isShiftSeat(seat)
+  const shiftSeat = sim && seat && isShiftSeat(seat)
   const tour = seat && !shiftSeat ? SANDBOX_TOURS[seat] : undefined
   const seatTitle = seat ? sandboxSeat(seat)?.title : undefined
   const tourKey = `sandbox-tour-${seat}`
@@ -63,7 +75,7 @@ export function SandboxBanner({ dark = false, seat }: { dark?: boolean; seat?: s
 
   return (
     <div className="mb-4">
-      <SimTicker />
+      {sim ? <SimTicker /> : null}
       <div
         className={cn(
           "flex min-h-[40px] flex-wrap items-center gap-x-3 gap-y-1 rounded-control border px-3 py-1.5 text-[12.5px] font-semibold",

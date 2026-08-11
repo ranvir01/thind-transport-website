@@ -7,7 +7,8 @@ import { SandboxBanner } from "@/components/hub/SandboxBanner"
 
 export default async function OfficeLayout({ children }: { children: React.ReactNode }) {
   const user = await requireOfficeUser()
-  const [carrier, settings, smallCarrier] = await Promise.all([
+  const sandbox = isSandboxCarrier(user.carrierId)
+  const [carrier, settings, smallCarrier, sim] = await Promise.all([
     getCarrier(user.carrierId),
     getCarrierSettings(user.carrierId),
     // Per-tenant nav mode: the env var is only the default; a carrier/user
@@ -17,6 +18,8 @@ export default async function OfficeLayout({ children }: { children: React.React
       userId: user.id,
       role: user.role,
     }),
+    // Shift Mode soft kill — only worth resolving inside the sandbox tenant.
+    sandbox ? getFlag("sim.shift_mode", { carrierId: user.carrierId }) : Promise.resolve(false),
   ])
 
   return (
@@ -25,7 +28,7 @@ export default async function OfficeLayout({ children }: { children: React.React
       smallCarrier={smallCarrier}
       accent={settings.branding.accent}
     >
-      {isSandboxCarrier(user.carrierId) ? <SandboxBanner seat={seatForEmail(user.email)?.key} /> : null}
+      {sandbox ? <SandboxBanner seat={seatForEmail(user.email)?.key} sim={sim} /> : null}
       {children}
     </HubShell>
   )

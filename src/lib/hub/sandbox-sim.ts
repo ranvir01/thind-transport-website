@@ -47,6 +47,19 @@ async function touchPresence(seatKey: string | null | undefined, now: Date): Pro
 export async function tickSandboxSim(seatKey?: string | null, now = new Date()): Promise<TickResult> {
   await touchPresence(seatKey, now).catch(() => {})
 
+  // Cheap path first (review E1): one indexed SELECT of lastTickAt — most
+  // heartbeats exit here without ever taking the lock or snapshotting. The
+  // in-lock re-check below stays as the race-safe authority.
+  const pre = await query<{ last: string | null; seeded: boolean }>(
+    `SELECT settings->'sim'->>'lastTickAt' AS last, settings ? 'sim' AS seeded
+       FROM hub.carrier_settings WHERE carrier_id = $1`,
+    [C]
+  )
+  if (!pre[0]?.seeded) return { advanced: false, reason: "unseeded" }
+  if (pre[0].last && now.getTime() - new Date(pre[0].last).getTime() < 20_000) {
+    return { advanced: false, reason: "fresh" }
+  }
+
   const client = await hubDb().connect()
   let locked = false
   try {
@@ -114,13 +127,40 @@ export async function tickSandboxSim(seatKey?: string | null, now = new Date()):
       )
     }
 
+    // Commit ONLY the keys this tick owns, each with its own jsonb_set, and
+    // increment the counters SQL-side from the row's current value. Writing
+    // the whole '{sim}' subtree from the JS snapshot would silently clobber
+    // anything written since the read — presence stamps (touchPresence, which
+    // runs unlocked before the gate) and shift counters (bumpShiftCounter)
+    // are exactly that, and a catch-up tick's op burst leaves a multi-second
+    // window for them to land. Disjoint write sets, no lost updates.
+    // jsonb_set's create_missing only creates the FINAL key of a path, so the
+    // telemetry object is materialized first (a fresh seed has no telemetry
+    // key — without this the counter writes would silently no-op).
     await client.query(
-      `UPDATE hub.carrier_settings SET settings = jsonb_set(settings, '{sim}', $2::jsonb), updated_at = NOW()
-        WHERE carrier_id = $1`,
-      [C, JSON.stringify(nextSim)]
+      `UPDATE hub.carrier_settings
+          SET settings = jsonb_set(
+                jsonb_set(
+                  jsonb_set(
+                    jsonb_set(
+                      jsonb_set(settings, '{sim,telemetry}',
+                                COALESCE(settings->'sim'->'telemetry', '{}'::jsonb), true),
+                      '{sim,lastTickAt}', COALESCE(to_jsonb($2::text), 'null'::jsonb), true),
+                    '{sim,nextDropAt}', COALESCE(to_jsonb($3::text), 'null'::jsonb), true),
+                  '{sim,telemetry,ticks}',
+                  to_jsonb(COALESCE((settings->'sim'->'telemetry'->>'ticks')::int, 0) + 1), true),
+                '{sim,telemetry,opsApplied}',
+                to_jsonb(COALESCE((settings->'sim'->'telemetry'->>'opsApplied')::int, 0) + $4::int), true),
+              updated_at = NOW()
+        WHERE carrier_id = $1 AND settings ? 'sim'`,
+      [C, nextSim.lastTickAt, nextSim.nextDropAt, ops.length]
     )
     await client.query("COMMIT")
-    return { advanced: true, ops: ops.length, catchUp }
+    // "Advanced" means the world actually changed — a quiet tick must not
+    // make every open sandbox tab router.refresh() on its heartbeat.
+    return ops.length > 0
+      ? { advanced: true, ops: ops.length, catchUp }
+      : { advanced: false, reason: "quiet", ops: 0, catchUp }
   } catch (err) {
     if (locked) await client.query("ROLLBACK").catch(() => {})
     console.error("sandbox sim tick failed:", err)
@@ -149,7 +189,8 @@ async function snapshotWorld(): Promise<WorldSnapshot> {
        FROM hub.loads l
        LEFT JOIN hub.drivers d ON d.id = l.driver_id AND d.carrier_id = $1
       WHERE l.carrier_id = $1 AND l.deleted_at IS NULL
-        AND l.status IN ('quoted','booked','dispatched','at_pickup','in_transit','delivered','pod_received')`,
+        AND l.status IN ('quoted','booked','dispatched','at_pickup','in_transit','delivered','pod_received')
+      LIMIT 400`,
     [C]
   )
   const stops = await query<{
@@ -163,7 +204,8 @@ async function snapshotWorld(): Promise<WorldSnapshot> {
     departed_at: Date | null
   }>(
     `SELECT id, load_id, type, lat, lng, appt_start, arrived_at, departed_at
-       FROM hub.stops WHERE carrier_id = $1 AND load_id = ANY($2::uuid[])`,
+       FROM hub.stops WHERE carrier_id = $1 AND load_id = ANY($2::uuid[])
+      LIMIT 1000`,
     [C, loads.map((l) => l.id)]
   )
   const stopsByLoad = new Map<string, typeof stops>()
@@ -186,7 +228,7 @@ async function snapshotWorld(): Promise<WorldSnapshot> {
 
   const trucks = await query<{ truck_id: string; last_ping: Date | null }>(
     `SELECT truck_id, MAX(ts) AS last_ping FROM hub.position_pings
-      WHERE carrier_id = $1 GROUP BY truck_id`,
+      WHERE carrier_id = $1 GROUP BY truck_id LIMIT 100`,
     [C]
   )
   const hos = await query<{
@@ -198,7 +240,7 @@ async function snapshotWorld(): Promise<WorldSnapshot> {
   }>(
     `SELECT DISTINCT ON (driver_id) driver_id, drive_remaining_minutes, shift_remaining_minutes,
             cycle_remaining_minutes, ts
-       FROM hub.hos_snapshots WHERE carrier_id = $1 ORDER BY driver_id, ts DESC`,
+       FROM hub.hos_snapshots WHERE carrier_id = $1 ORDER BY driver_id, ts DESC LIMIT 100`,
     [C]
   )
   const invoicesPastDue = await query<{ id: string; customer_name: string }>(
@@ -239,11 +281,12 @@ async function snapshotWorld(): Promise<WorldSnapshot> {
             END AS idle_min
        FROM hub.drivers d
        LEFT JOIN hub.trucks t ON t.assigned_driver_id = d.id AND t.carrier_id = $1
-      WHERE d.carrier_id = $1 AND d.user_id IS NOT NULL`,
+      WHERE d.carrier_id = $1 AND d.user_id IS NOT NULL
+      LIMIT 10`,
     [C]
   )
   const dispatcherUsers = await query<{ id: string }>(
-    `SELECT id FROM hub.users WHERE carrier_id = $1 AND active AND role IN ('owner','dispatcher')`,
+    `SELECT id FROM hub.users WHERE carrier_id = $1 AND active AND role IN ('owner','dispatcher') LIMIT 20`,
     [C]
   )
   const seq = await query<{ n: number }>(
@@ -298,6 +341,15 @@ async function snapshotWorld(): Promise<WorldSnapshot> {
 
 /* -------------------------------- apply -------------------------------- */
 
+/**
+ * Ops run strictly sequentially (the pool caps at 5 connections and a
+ * catch-up burst must never fan out) — see the for-loop in tickSandboxSim.
+ *
+ * Timestamp honesty (review A7, approved as designed): stop `arrived_at`
+ * is the exact computed instant via setStopTimestamp; `delivered_at` /
+ * `pod_received_at` are NOW()-stamped by changeLoadStatus — "the paperwork
+ * catches up" — and recap on-time math reads stops.arrived_at only.
+ */
 async function applyOp(
   op: SimOp,
   client: import("pg").PoolClient,

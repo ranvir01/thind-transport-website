@@ -117,6 +117,17 @@ export async function seedSandbox(): Promise<void> {
     await client.query("BEGIN")
     await client.query(`SELECT pg_advisory_xact_lock(hashtext('loadoff-sandbox-seed'))`)
 
+    // Usage counters outlive the world they were earned in: a reset rebuilds
+    // the company, but "did anyone actually play?" is a question about the
+    // deployment, and the sales-demo flow starts with a reset every time.
+    const priorTelemetry =
+      (
+        await client.query<{ t: Record<string, number> | null }>(
+          `SELECT settings->'sim'->'telemetry' AS t FROM hub.carrier_settings WHERE carrier_id = $1`,
+          [C]
+        )
+      ).rows[0]?.t ?? {}
+
     // ---- Tenant ----
     await client.query(
       `INSERT INTO hub.carriers (id, name, dot_number, mc_number, phone, email, address)
@@ -140,7 +151,13 @@ export async function seedSandbox(): Promise<void> {
         },
         // Shift Mode clock. A fresh epoch per reset voids in-flight shifts;
         // the first tick after seeding initializes its own pacing from here.
-        sim: { epoch: randomUUID(), lastTickAt: null, nextDropAt: null, activeSeats: {} },
+        sim: {
+          epoch: randomUUID(),
+          lastTickAt: null,
+          nextDropAt: null,
+          activeSeats: {},
+          telemetry: priorTelemetry,
+        },
       })]
     )
     await wipe(client)

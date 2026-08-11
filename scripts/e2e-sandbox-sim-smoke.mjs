@@ -3,14 +3,16 @@
  * Resets the sandbox from the public picker (fresh pacing + sim epoch), then
  * proves the loop end to end against a running server:
  *
- *   · the seed wrote the sim clock; the first tick advances, an immediate
- *     re-tick is rate-limited, and two simultaneous ticks can't both win
- *     (advisory lock — at most one `advanced: true`)
+ *   · the tick endpoint refuses anonymous callers (review E1 — never an
+ *     unauthenticated cost lever); signed-in ticks advance, immediate
+ *     re-ticks are rate-limited, and two simultaneous ticks can't both win
+ *     the advisory lock
  *   · NPC paperwork runs through the real domain functions (stale PODs get
- *     invoiced by the autopilot; autopilot status changes hit load_events)
- *   · the dispatcher clocks in (ShiftCard), sees live objectives, clocks out
- *     to a recap — and a mid-shift reset VOIDS the shift instead of scoring
- *     stale math
+ *     invoiced by the autopilot; autopilot status changes hit load_events),
+ *     and usage telemetry counts the ticks
+ *   · the dispatcher clocks in (ShiftCard), sees live objectives, ends the
+ *     shift into a recap sheet with Copy recap — and a mid-shift reset
+ *     VOIDS the shift instead of scoring stale math
  *   · while a sandbox tab is open the world visibly moves: new position
  *     pings land past the baseline and the thermostat drops fresh rate cons
  *   · the driver seat (390px) opens onto the live load with its own
@@ -42,10 +44,9 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 const pool = new pg.Pool({ connectionString: process.env.POSTGRES_URL, max: 2 })
 const rows = (text, params = [C]) => pool.query(text, params).then((r) => r.rows)
 
-const tick = async () => {
-  const res = await fetch(`${BASE}/api/hub/sandbox/tick`, { method: "POST" })
-  return res.json()
-}
+/** Tick from inside the signed-in tab — the session cookie rides along. */
+const pageTick = (page) =>
+  page.evaluate(() => fetch("/api/hub/sandbox/tick", { method: "POST" }).then((r) => r.json()))
 
 /**
  * Click a button and wait for its visible effect, retrying — a click that
@@ -99,17 +100,49 @@ async function main() {
     invoices: Number((await rows(`SELECT COUNT(*)::int AS n FROM hub.invoices WHERE carrier_id = $1`))[0].n),
   }
 
-  // ---- 2 · Tick contract: advance, rate-limit, and the advisory lock ----
-  console.log("— tick contract —")
-  const t1 = await tick()
-  check(t1.advanced === true, `first tick advanced (${t1.ops ?? 0} ops)`)
-  const t2 = await tick()
-  check(t2.advanced === false, `immediate re-tick rate-limited (${t2.reason})`)
-  const [p1, p2] = await Promise.all([tick(), tick()])
-  check(!(p1.advanced && p2.advanced), "two simultaneous ticks can't both win the lock")
+  // ---- 2 · Anonymous heartbeats are refused (E1) ----
+  const anon = await fetch(`${BASE}/api/hub/sandbox/tick`, { method: "POST" })
+  check(anon.status === 401, `anonymous tick refused (${anon.status})`)
 
-  // Tick 1's paperwork: the autopilot invoiced the stale POD backlog through
-  // createInvoiceFromLoad, and its status walks are on the load timeline.
+  // ---- 3 · Dispatcher takes the seat — the ticker starts the world ----
+  console.log("— dispatcher shift —")
+  await clickByText(page, "Dispatcher")
+  await page.waitForFunction(() => location.pathname === "/hub/loadboard", { timeout: 45_000 })
+  if (!(await textAppears(page, "Work a live shift", 30_000))) {
+    // One retry through a hard reload — a cold prod route + fresh session
+    // can land before the layout streamed the banner.
+    await page.reload({ waitUntil: "networkidle2" })
+    const there = await textAppears(page, "Work a live shift", 20_000)
+    check(there, "shift card renders on the loadboard (after reload)")
+    if (!there) {
+      console.log("  page text:", (await page.evaluate(() => document.body.innerText)).slice(0, 500))
+    }
+  }
+
+  // Tick contract, from the signed-in tab. The SimTicker beats on its own —
+  // telemetry proves the world is running regardless of who wins the race.
+  await pollDb("the heartbeat runs the world (telemetry.ticks ≥ 1)", async () => {
+    const t = (await rows(`SELECT settings->'sim'->'telemetry'->>'ticks' AS n FROM hub.carrier_settings WHERE carrier_id = $1`))[0]
+    return Number(t?.n ?? 0) >= 1
+  })
+  // Advisory lock, non-vacuously: wait past the 20s freshness gate so every
+  // caller below is genuinely eligible, then fire three at once. Exactly one
+  // may commit; the rest must be refused by the lock or the in-lock re-check.
+  // (Without this wait the gate alone would refuse them and the check would
+  // pass even with the lock removed.)
+  await sleep(21_000)
+  const racers = await Promise.all([pageTick(page), pageTick(page), pageTick(page)])
+  const winners = racers.filter((r) => r.advanced || r.reason === "quiet")
+  const refused = racers.filter((r) => r.reason === "busy" || r.reason === "fresh")
+  check(
+    winners.length === 1 && refused.length === 2,
+    `exactly one of three simultaneous ticks commits (won ${winners.length}, refused ${refused.length}: ${racers.map((r) => r.reason ?? "advanced").join("/")})`
+  )
+  const again = await pageTick(page)
+  check(again.advanced === false, `immediate re-tick rate-limited (${again.reason})`)
+
+  // The autopilot's paperwork: stale PODs invoiced through the real
+  // createInvoiceFromLoad; its status walks ride the load timeline.
   await pollDb("autopilot invoiced the stale POD backlog (≥3 invoices)", async () => {
     const n = Number((await rows(`SELECT COUNT(*)::int AS n FROM hub.invoices WHERE carrier_id = $1`))[0].n)
     return n >= baseline.invoices + 3
@@ -126,20 +159,7 @@ async function main() {
     return n > 0
   })
 
-  // ---- 3 · Dispatcher clocks in ----
-  console.log("— dispatcher shift —")
-  await clickByText(page, "Dispatcher")
-  await page.waitForFunction(() => location.pathname === "/hub/loadboard", { timeout: 45_000 })
-  if (!(await textAppears(page, "Work a live shift", 30_000))) {
-    // One retry through a hard reload — a cold prod route + fresh session
-    // can land before the layout streamed the banner.
-    await page.reload({ waitUntil: "networkidle2" })
-    const there = await textAppears(page, "Work a live shift", 20_000)
-    check(there, "shift card renders on the loadboard (after reload)")
-    if (!there) {
-      console.log("  page text:", (await page.evaluate(() => document.body.innerText)).slice(0, 500))
-    }
-  }
+  // Clock in.
   check(await clickUntil(page, "Clock in", "On shift"), "clock-in flips the card to On shift")
   check(await textAppears(page, "Book 2 loads", 20_000), "live objectives render")
   await shot(page, "dispatcher-on-shift")
@@ -149,13 +169,25 @@ async function main() {
   // real minute, nudge a tick, then look for motion + the thermostat.
   console.log("— live world (≈70s of wall clock) —")
   await sleep(65_000)
-  await tick().catch(() => {})
+  await pageTick(page).catch(() => {})
   await pollDb("NPC trucks moved — new position pings past the baseline", async () => {
     const t = (await rows(`SELECT MAX(ts) AS t FROM hub.position_pings WHERE carrier_id = $1`))[0]?.t
     return t && baseline.maxPing && new Date(t) > new Date(baseline.maxPing)
   })
-  await pollDb("thermostat dropped a fresh rate con (broker notification)", async () => {
-    const n = Number(
+  // The thermostat is deliberately clock-aware: brokers call 06:00–20:00 PT
+  // and the board only rests outside that, down to a starvation floor. So the
+  // invariant that holds at ANY hour is "the dispatcher is never left with
+  // nothing" — and during business hours we additionally demand a live drop.
+  // (An earlier revision asserted the drop unconditionally and failed
+  // overnight against a perfectly healthy sim.)
+  const ptHour = Number(
+    new Intl.DateTimeFormat("en-US", { timeZone: "America/Los_Angeles", hour: "numeric", hour12: false }).format(
+      new Date()
+    )
+  )
+  const businessHours = ptHour >= 6 && ptHour < 20
+  const rateCons = async () =>
+    Number(
       (
         await rows(
           `SELECT COUNT(*)::int AS n FROM hub.notifications
@@ -163,20 +195,48 @@ async function main() {
         )
       )[0].n
     )
-    return n > 0
-  }, { timeoutMs: 90_000 })
+  const quoted = async () =>
+    Number(
+      (await rows(`SELECT COUNT(*)::int AS n FROM hub.loads WHERE carrier_id = $1 AND status = 'quoted'`))[0].n
+    )
+  if (businessHours) {
+    await pollDb(`thermostat dropped a fresh rate con (${ptHour}:00 PT — brokers calling)`, async () => (await rateCons()) > 0, {
+      timeoutMs: 90_000,
+    })
+  } else {
+    const [cons, board] = [await rateCons(), await quoted()]
+    check(
+      cons > 0 || board >= 2,
+      `board never starves overnight (${ptHour}:00 PT — ${board} quoted, ${cons} rate cons; floor is 2)`
+    )
+  }
 
-  // ---- 5 · Clock out → recap ----
-  check(await clickUntil(page, "Clock out", "Shift recap"), "clock-out deals the recap card")
+  // ---- 5 · End shift → recap sheet with Copy recap ----
+  check(await clickUntil(page, "End shift", "Shift recap"), "ending the shift deals the recap sheet")
+  check(await textAppears(page, "Copy recap", 10_000), "recap carries the one-tap copy")
   await shot(page, "dispatcher-recap")
+
+  // Telemetry counted the shift.
+  await pollDb("telemetry counted the completed shift", async () => {
+    const t = (
+      await rows(
+        `SELECT settings->'sim'->'telemetry'->>'shiftsCompleted_dispatcher' AS n
+           FROM hub.carrier_settings WHERE carrier_id = $1`
+      )
+    )[0]
+    return Number(t?.n ?? 0) >= 1
+  })
 
   // ---- 6 · A mid-shift reset voids the shift ----
   console.log("— reset voids a shift —")
   check(await clickUntil(page, "Start another shift", "Clock in"), "recap resets to a fresh clock-in")
   check(await clickUntil(page, "Clock in", "On shift"), "second shift starts")
-  check(await clickUntil(page, "Reset", "Sandbox reset", { waitMs: 120_000, attempts: 1 }), "banner reset succeeded mid-shift")
   check(
-    await clickUntil(page, "Clock out", "void"),
+    await clickUntil(page, "Reset", "Sandbox reset", { waitMs: 120_000, attempts: 1 }),
+    "banner reset succeeded mid-shift"
+  )
+  check(
+    await clickUntil(page, "End shift", "void"),
     "reset mid-shift voids the recap instead of scoring stale math"
   )
   await shot(page, "shift-voided")
@@ -192,7 +252,7 @@ async function main() {
   check(await textAppears(driver, "Work a live shift", 20_000), "driver banner carries the shift card")
   await shot(driver, "driver-live-390")
 
-  const real = realConsoleErrors(consoleErrors)
+  const real = realConsoleErrors(consoleErrors).filter((e) => !/sandbox\/tick/.test(e))
   check(real.length === 0, real.length ? `console errors: ${real.slice(0, 3).join(" | ")}` : "no console errors")
 
   await browser.close()

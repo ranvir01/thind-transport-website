@@ -119,8 +119,31 @@ per-browser baseline, live objectives, end-of-shift recap
 (`ShiftCard`, `lib/hub/sandbox-objectives.ts` pure scoring); a reset mints a
 fresh sim epoch and voids in-flight shifts. Player-driven loads are sacred —
 the sim clamps them at the receiver and notifies instead of advancing.
-Verify with `scripts/e2e-sandbox-sim-smoke.mjs` (lock contract, live motion,
-thermostat, recap, reset-void, driver 390px).
+Hardening (outside review folded in): the tick REQUIRES a sandbox session
+(never an unauthenticated cost lever) with a cheap pre-lock lastTickAt gate;
+`sim.shift_mode` feature flag is the redeploy-free soft kill, enforced on the
+tick route AND the shift actions (a tab open when the flag flips stands its
+card down); refresh etiquette (no `router.refresh()` over an open dialog or
+focused input, and never on a tick that changed nothing); 30-min idle-stop
+that a tab-return always overrides; catch-up op budget frozen by test (≤200
+ops); LIMITs on every snapshot SELECT; usage telemetry in
+`settings.sim.telemetry`, surviving resets.
+
+**The sim's state-commit rule** (learned the hard way — an adversarial pass
+caught the violation): `carrier_settings.settings->'sim'` has three writers,
+and only the tick takes the advisory lock. `touchPresence` and
+`bumpShiftCounter` are unlocked single-statement updates that land freely
+during the multi-second window a catch-up tick spends applying ops. So the
+tick commits **only the keys it owns** — per-key `jsonb_set` plus SQL-side
+counter increments — never the whole `{sim}` subtree from its snapshot.
+Disjoint write sets, no lost updates.
+`src/lib/hub/__tests__/sandbox-sim-concurrency.test.ts` pins it against a
+real Postgres by holding a row lock so a write is forced to commit
+mid-tick; it fails if the wholesale write ever comes back.
+
+Verify with `scripts/e2e-sandbox-sim-smoke.mjs` (auth contract, three-way
+lock race, live motion, clock-aware thermostat, recap sheet + copy,
+reset-void, driver 390px).
 
 Roadmap (tracked in session tasks): axe integration into design-qa;
 6-viewport light/dark matrix; Lighthouse thresholds. Human-blocked items
