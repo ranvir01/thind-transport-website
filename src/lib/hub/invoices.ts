@@ -220,7 +220,10 @@ export async function recordPayment(
   carrierId: string,
   invoiceId: string,
   input: { amountCents: number; paidOn: string; method?: string | null; reference?: string | null },
-  actor: { id: string; name: string }
+  // id nullable for unattended payers (sandbox sim NPCs) — same contract as
+  // createInvoiceFromLoad's actor; both sinks (logAudit, changeLoadStatus)
+  // already accept a null actor id.
+  actor: { id: string | null; name: string }
 ): Promise<Invoice> {
   // Every caller (office form, QBO sync, factor webhook) validates upstream,
   // but the status derivation below trusts amountCents blindly — a zero or

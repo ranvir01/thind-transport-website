@@ -107,7 +107,10 @@ export function SeatPicker() {
           </h1>
           <p className="mt-2 max-w-xl text-[15px] leading-relaxed text-fg-2">
             A real trucking company lives in here — 40 drivers, 30 trucks, 250 loads, a quarter of
-            fuel and safety data. Pick a seat and drive the actual app. Break anything;{" "}
+            fuel and safety data — and it <span className="font-semibold text-fg">runs in real time</span>{" "}
+            while you play: brokers keep calling, trucks roll on the live map, money moves. Dispatcher,
+            driver, and accountant seats can <span className="font-semibold text-fg">clock in</span> and
+            work a scored shift; AI teammates cover every seat you leave empty. Break anything;{" "}
             <span className="font-semibold text-fg">Reset</span> puts it all back.
           </p>
         </div>
