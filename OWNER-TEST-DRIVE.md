@@ -184,8 +184,19 @@ __________________________________________________________________________
 
 # PART 3 — The decision this was built for
 
-The whole point of the sandbox is to answer this **before** paying for ELD tracking,
-load boards, and fuel cards. Those cost real money and take real time to wire up.
+**A correction to what I told you earlier.** I said the sandbox was the way to
+de-risk the paid integrations before spending on them. That was wrong, and I'd
+rather say so than let you make a money decision on it. A simulation can only run
+*our* stand-in for DAT or an ELD — never their live API — so it cannot tell you how
+those will behave. What it genuinely proves is the half that's ours: that dispatch →
+delivery → POD → invoice → payment holds up while the world moves under you, with
+nobody typing check calls. That's most of the software, and it's worth knowing. It
+just isn't evidence about anyone else's system.
+
+So the questions below are about **whether the product is worth building on**, and
+which integration you'd want first — not about whether the integrations work. The
+only way to learn that is to connect one, and the cheapest first move there is the
+free ones (FMCSA, diesel prices) before anything with a seat price.
 
 **1. After playing: is this worth connecting the paid integrations to?**
 

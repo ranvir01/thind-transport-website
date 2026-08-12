@@ -179,6 +179,46 @@ Verify with `scripts/e2e-sandbox-sim-smoke.mjs` (auth contract, three-way
 lock race, live motion, clock-aware thermostat, recap sheet + copy,
 reset-void, driver 390px).
 
+**What Shift Mode is, and what it is not.** It is a *demo and training
+harness* that doubles as a load generator: it drives the real domain
+functions through a real database on the wall clock, so the software under
+test is the software. It is **not** deterministic simulation testing, and it
+is not a digital twin. Real DST (FoundationDB, TigerBeetle's VOPR,
+Antithesis) needs three things this does not have: an injected clock, a
+fault-injection layer that can partition and crash things at chosen moments,
+and an ephemeral snapshottable database so a failing run can be replayed
+byte-for-byte. Calling it a twin would also be a claim about DAT, Motive and
+QuickBooks — systems the sandbox only ever stands in for. What it honestly
+proves is our half of the loop, under motion, with nobody typing check calls.
+
+Three properties it *does* hold, each pinned by a test that was made to fail
+before it was trusted:
+
+1. **Deterministic seeding.** `resetRandom()` restarts the PRNG at the top of
+   every `seedSandbox()`. Before it, the generator was module-level, so only
+   the first reset in a process told the seeded story — the second continued
+   the stream and built a different company, which is how a defect could
+   appear on one reset and vanish on the next. A fingerprint over the
+   PRNG-chosen columns (crew, truck, commodity, rate — never timestamps or
+   ids) asserts two consecutive resets are identical.
+2. **Deterministic execution.** No `random()` in sim SQL and no `Math.random()`
+   in the planner; the broker on a generated load comes from
+   `hash01(\`broker-${reference}\`)` over an id-ordered list.
+3. **Invariants asserted every tick.** `sandbox-sim-invariants.ts` runs four
+   carrier-scoped aggregates after any tick that did something: one load per
+   truck, a player's load never auto-completed by the autopilot, no invoice
+   paid past its face value, nothing rolling without a crew. Violations are
+   logged and returned on the tick result but never thrown — halting the demo
+   world is worse for the person playing it than a logged inconsistency.
+
+The first invariant found a real defect the moment it existed: the seed drew
+drivers *with* replacement, so trucks had been carrying two simultaneous loads
+since I2 — visible on the fleet page and the live map, shipped for weeks,
+missed by every test and every review. The seed now draws concurrent work
+without replacement and holds back a crew for every load that cannot exist
+without one. That is the argument for asserting properties continuously rather
+than trusting that a world which keeps moving is a world that is correct.
+
 Roadmap (tracked in session tasks): axe integration into design-qa;
 6-viewport light/dark matrix; Lighthouse thresholds. Human-blocked items
 live in `loadoff-worksheet.html`.
