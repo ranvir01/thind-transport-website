@@ -19,6 +19,8 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest"
 import { existsSync, readFileSync } from "node:fs"
 import path from "node:path"
+import type { PoolClient } from "pg"
+import { lockSandboxTenant, unlockSandboxTenant } from "./sandbox-tenant-lock"
 
 function loadEnvLocal() {
   if (process.env.POSTGRES_URL) return
@@ -48,7 +50,12 @@ suite("sim state commit keeps disjoint write sets", () => {
   let bumpShiftCounter: typeof import("../sandbox-shift").bumpShiftCounter
   let tickSandboxSim: typeof import("../sandbox-sim").tickSandboxSim
 
+  let tenantLock: PoolClient | null = null
+
   beforeAll(async () => {
+    // Hold the tenant for this suite's duration: the live-sim suite reseeds
+    // the same carrier, and vitest runs files in parallel workers.
+    tenantLock = await lockSandboxTenant()
     ;({ query, hubDb } = await import("../db"))
     ;({ bumpShiftCounter } = await import("../sandbox-shift"))
     ;({ tickSandboxSim } = await import("../sandbox-sim"))
@@ -77,6 +84,7 @@ suite("sim state commit keeps disjoint write sets", () => {
     // Leave the fixture carrier's settings behind — the row is inert, and the
     // sandbox seed owns this carrier id anyway (it upserts wholesale).
     await query(`DELETE FROM hub.carrier_settings WHERE carrier_id = $1`, [C]).catch(() => {})
+    await unlockSandboxTenant(tenantLock)
   })
 
   const readSim = async () =>

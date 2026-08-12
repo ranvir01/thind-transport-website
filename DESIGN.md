@@ -88,7 +88,15 @@ The deep rig (run against a local production build with the demo seed):
 - `npm run qa:a11y` — axe-core WCAG 2.2 AA over 25 screen-modes (office,
   driver, portal, public × light/dark). Gate: **zero serious/critical**.
 - `npm run qa:matrix` — 6 viewports (393/412/768/1280/1440/1920) × light/dark
-  screenshot matrix. Gate: **no horizontal page scroll anywhere**.
+  screenshot matrix. Gates: **no horizontal page scroll anywhere**, and
+  **nothing stranded under the mobile tab bar** at the true bottom of any
+  page. That second probe is fussier than it looks and the fussiness is the
+  point — see the comment on `underBarProbe` in `scripts/viewport-matrix.mjs`
+  for the three ways it lied before it was written down (two `<main>`
+  elements, `scroll-smooth` animating the scroll-to-bottom, and
+  `offsetParent` being null for every `position: fixed` element). It reports
+  how many page/viewport combos it actually hit-tested and fails if that is
+  zero, because a gate that silently skipped everything is not a passing one.
 - `npm run qa:lighthouse` — median-of-3 Lighthouse per public route.
   Gate: perf ≥ 90 · a11y ≥ 95 · bp ≥ 95 · manifest + service worker.
   Status 2026-08-09 (lab, container, benchmarkIndex ~1600): a11y 96–100 and

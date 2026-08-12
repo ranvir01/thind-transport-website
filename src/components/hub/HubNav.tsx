@@ -181,7 +181,11 @@ export function HubShell({
           </div>
         </aside>
 
-        <main className="flex-1 min-w-0 px-4 py-5 md:px-8 md:py-8 pb-28 md:pb-8 max-w-[1400px]">
+        {/* Clear the fixed tab bar AND the home-indicator inset it grows by:
+            the bar is ~67px, plus env(safe-area-inset-bottom) (~34px on an
+            installed iPhone PWA). A flat pb-28 left only ~11px of margin
+            there — enough today, but not a property anyone could rely on. */}
+        <main className="flex-1 min-w-0 px-4 py-5 md:px-8 md:py-8 pb-[calc(7rem+env(safe-area-inset-bottom))] md:pb-8 max-w-[1400px]">
           <HubTourHost />
           {children}
         </main>
