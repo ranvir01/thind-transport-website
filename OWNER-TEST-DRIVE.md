@@ -1,6 +1,6 @@
 # LoadOff — test drive & report back
 
-**For: Ranvir.** Updated 2026-08-11.
+**For: Ranvir.** Updated 2026-08-12.
 
 This is the one file to fill in and send back. Everything here is a **drill you run
 yourself** — no setup, no passwords, nothing you can break. Write straight into the
@@ -35,6 +35,22 @@ useful information.
 - **Crunch day** — the morning goes wrong on purpose: pickups 4 hours late, a truck dead
   at inspection, invoices past due. Use this one to see whether the software *helps* when
   it matters.
+
+**One bug I found and fixed — worth 30 seconds of your eyes.** Some trucks were showing
+on **two loads at the same time**, which is physically impossible and would have been the
+first thing a driver of yours noticed. It had been there for weeks; no test caught it,
+because nothing was checking. The world now checks itself after every heartbeat — one
+load per truck, nothing rolling without a driver, no invoice paid twice, and the software
+never finishing a job you were doing. If you *ever* see a truck in two places, that's a
+real bug and I want to know immediately.
+
+☐ Checked the fleet page / live map — every truck on at most one load
+☐ Saw a truck double-booked — where: ______________________________________
+
+**Reset now rebuilds the identical company every time.** Same drivers, same trucks, same
+loads, same rates. If you hit something odd, hit **Reset** and do the same steps again —
+it will happen the same way, which means I can reproduce it from your description instead
+of guessing.
 
 ---
 
@@ -261,6 +277,12 @@ __________________________________________________________________________
 - **Photos are stock.** Real truck/yard/driver photos are the biggest visual upgrade
   left and only you can supply them.
 - **Late-night quiet** — see the three notes at the top.
+- **The sandbox is a training harness, not a crystal ball.** It runs the real software
+  against a real database on the real clock, so what it proves about *our* half —
+  dispatch → delivery → POD → invoice → payment holding up while the world moves — is
+  genuine. It cannot tell you anything about DAT, Motive or QuickBooks, because it only
+  ever runs my stand-in for those. Don't let a good session here talk you into a
+  subscription; that's what Part 3 is for.
 
 ---
 
