@@ -125,18 +125,43 @@ async function main() {
     const t = (await rows(`SELECT settings->'sim'->'telemetry'->>'ticks' AS n FROM hub.carrier_settings WHERE carrier_id = $1`))[0]
     return Number(t?.n ?? 0) >= 1
   })
-  // Advisory lock, non-vacuously: wait past the 20s freshness gate so every
-  // caller below is genuinely eligible, then fire three at once. Exactly one
-  // may commit; the rest must be refused by the lock or the in-lock re-check.
-  // (Without this wait the gate alone would refuse them and the check would
-  // pass even with the lock removed.)
-  await sleep(21_000)
+  // Advisory lock, non-vacuously. Two things have to be true for this check
+  // to mean anything, and getting either wrong makes it flake or pass
+  // vacuously:
+  //   1. The world must be ELIGIBLE — past the 20s freshness gate — or the
+  //      gate alone refuses everyone and the lock is never exercised.
+  //   2. This tab's own SimTicker must be standing down. It beats every ~25s
+  //      and a beat landing inside our wait re-stamps lastTickAt, making all
+  //      three racers "fresh" through no fault of the lock. The ticker is
+  //      visible-tab-only, so hiding the page parks it.
+  await page.evaluate(() => {
+    Object.defineProperty(document, "visibilityState", { value: "hidden", configurable: true })
+    document.dispatchEvent(new Event("visibilitychange"))
+  })
+  // Wait from the world's OWN clock, not a fixed sleep.
+  const lastTick = async () =>
+    new Date(
+      (await rows(`SELECT settings->'sim'->>'lastTickAt' AS t FROM hub.carrier_settings WHERE carrier_id = $1`))[0].t
+    ).getTime()
+  const eligibleAt = (await lastTick()) + 20_500
+  await sleep(Math.max(0, eligibleAt - Date.now()))
   const racers = await Promise.all([pageTick(page), pageTick(page), pageTick(page)])
+  await page.evaluate(() => {
+    Object.defineProperty(document, "visibilityState", { value: "visible", configurable: true })
+    document.dispatchEvent(new Event("visibilitychange"))
+  })
   const winners = racers.filter((r) => r.advanced || r.reason === "quiet")
-  const refused = racers.filter((r) => r.reason === "busy" || r.reason === "fresh")
+  // The invariant the product actually promises is "never more than one" —
+  // "exactly one" additionally requires the world to have been eligible,
+  // which only the two guards above buy us. Assert the real one, and report
+  // the eligible case separately so a zero-winner run is visible, not silent.
   check(
-    winners.length === 1 && refused.length === 2,
-    `exactly one of three simultaneous ticks commits (won ${winners.length}, refused ${refused.length}: ${racers.map((r) => r.reason ?? "advanced").join("/")})`
+    winners.length <= 1,
+    `never more than one of three simultaneous ticks commits (won ${winners.length}: ${racers.map((r) => r.reason ?? "advanced").join("/")})`
+  )
+  check(
+    winners.length === 1,
+    `and with the heartbeat parked, exactly one does (won ${winners.length}, refused ${racers.length - winners.length})`
   )
   const again = await pageTick(page)
   check(again.advanced === false, `immediate re-tick rate-limited (${again.reason})`)

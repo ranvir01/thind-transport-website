@@ -24,8 +24,11 @@ export default async function DriverAppLayout({ children }: { children: React.Re
     <div className="min-h-screen bg-navy" style={{ "--driver-accent": accent.text } as React.CSSProperties}>
       <DriverNav firstName={user.name.split(" ")[0]} />
       <OfflineSync />
-      {/* Top bar 56px, bottom tabs 64px + safe area */}
-      <main className="pt-16 pb-24 px-4 mx-auto w-full max-w-lg">
+      {/* Top bar 56px; bottom tabs ~64px PLUS the home-indicator inset the
+          bar pads itself by. A flat pb-24 (96px) was actually short of
+          64+34=98px on an installed iPhone PWA — the one place a driver
+          would lose the bottom of their load card. */}
+      <main className="pt-16 pb-[calc(6rem+env(safe-area-inset-bottom))] px-4 mx-auto w-full max-w-lg">
         {sandbox ? <SandboxBanner dark seat={seatForEmail(user.email)?.key} sim={sim} /> : null}
         {children}
       </main>
