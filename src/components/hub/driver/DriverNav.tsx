@@ -47,7 +47,10 @@ export function DriverNav({ firstName }: { firstName: string }) {
         </div>
       </header>
 
-      <nav className="fixed bottom-0 inset-x-0 z-40 border-t border-white/10 bg-navy-600/90 backdrop-blur-xl pb-[env(safe-area-inset-bottom)] shadow-[0_-2px_8px_rgba(0,0,0,0.35),0_-16px_40px_rgba(0,0,0,0.45)]">
+      <nav
+        data-bottom-bar="driver"
+        className="fixed bottom-0 inset-x-0 z-40 border-t border-white/10 bg-navy-600/90 backdrop-blur-xl pb-[env(safe-area-inset-bottom)] shadow-[0_-2px_8px_rgba(0,0,0,0.35),0_-16px_40px_rgba(0,0,0,0.45)]"
+      >
         <div className="mx-auto grid max-w-lg grid-cols-4">
           {TABS.map((tab) => {
             const active = isActive(pathname, tab.href)

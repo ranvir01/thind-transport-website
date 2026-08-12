@@ -192,7 +192,10 @@ export function HubShell({
       </div>
 
       {/* Mobile tab bar: icons above 10px labels, active = accent + heavier stroke */}
-      <nav className="hub-tabbar md:hidden fixed bottom-0 inset-x-0 z-40 pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]">
+      <nav
+        data-bottom-bar="office"
+        className="hub-tabbar md:hidden fixed bottom-0 inset-x-0 z-40 pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]"
+      >
         <div className="grid grid-cols-5">
           {mobilePrimaries.map((primary) => {
             const active = primary.id === section.id
