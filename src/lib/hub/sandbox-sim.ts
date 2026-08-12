@@ -4,6 +4,8 @@ import { changeLoadStatus, setStopTimestamp } from "./loads"
 import { createInvoiceFromLoad, recordPayment } from "./invoices"
 import { notifyRoles, notifyUser } from "./notify"
 import { SANDBOX_CARRIER_ID } from "./sandbox"
+import { checkSandboxInvariants } from "./sandbox-sim-invariants"
+import { hash01 } from "./sandbox-sim-math"
 import { planSandboxTick, type SimOp, type SimState, type WorldSnapshot } from "./sandbox-sim-plan"
 import { CITIES, type WorldCityKey } from "./sandbox-world"
 import type { LoadStatus } from "./types"
@@ -30,6 +32,8 @@ export interface TickResult {
   reason?: string
   ops?: number
   catchUp?: boolean
+  /** Invariant rules the world violated after this tick — empty is healthy. */
+  violations?: string[]
 }
 
 /** Refresh a seat's presence stamp (cheap, outside the tick lock). */
@@ -158,8 +162,25 @@ export async function tickSandboxSim(seatKey?: string | null, now = new Date()):
     await client.query("COMMIT")
     // "Advanced" means the world actually changed — a quiet tick must not
     // make every open sandbox tab router.refresh() on its heartbeat.
+    // Check the world against its own rules after every tick that changed
+    // something. A demo that runs unattended for hours is precisely where a
+    // slow corruption would hide; this is what makes the run self-auditing
+    // rather than merely continuous. Never fatal — halting the world is
+    // worse for whoever is playing than a logged inconsistency — but always
+    // visible, and the e2e smoke fails on it.
+    let violations: string[] = []
+    if (ops.length > 0) {
+      try {
+        const found = await checkSandboxInvariants()
+        violations = found.map((v) => v.rule)
+        for (const v of found) console.error(`sandbox sim invariant broken [${v.rule}]: ${v.detail}`)
+      } catch (err) {
+        console.error("sandbox sim invariant check failed:", err)
+      }
+    }
+
     return ops.length > 0
-      ? { advanced: true, ops: ops.length, catchUp }
+      ? { advanced: true, ops: ops.length, catchUp, violations }
       : { advanced: false, reason: "quiet", ops: 0, catchUp }
   } catch (err) {
     if (locked) await client.query("ROLLBACK").catch(() => {})
@@ -388,11 +409,22 @@ async function applyOp(
     case "dropQuotedLoad": {
       const origin = CITIES[op.originKey as WorldCityKey]
       const dest = CITIES[op.destKey as WorldCityKey]
-      const customer = await client.query(
-        `SELECT id, name FROM hub.customers WHERE carrier_id = $1 AND type = 'broker' AND status = 'active'
-          ORDER BY random() LIMIT 1`,
+      // Deterministic broker pick: SQL random() was the last uncontrolled
+      // source of randomness in the tick, and a run you cannot reproduce is
+      // a run you cannot debug. The planner already derives a stable 0..1
+      // from the load's reference, so the same planned op always lands on
+      // the same broker — ordered by id so the row set is stable too.
+      const brokers = await client.query<{ id: string; name: string }>(
+        `SELECT id, name FROM hub.customers
+          WHERE carrier_id = $1 AND type = 'broker' AND status = 'active'
+          ORDER BY id`,
         [C]
       )
+      const customer = {
+        rows: brokers.rows.length
+          ? [brokers.rows[Math.floor(hash01(`broker-${op.reference}`) * brokers.rows.length)]]
+          : [],
+      }
       if (!customer.rows[0] || !origin || !dest) return
       const inserted = await client.query(
         `INSERT INTO hub.loads (carrier_id, reference, customer_id, status, equipment, commodity, weight_lbs,

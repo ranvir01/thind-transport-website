@@ -44,9 +44,24 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 const pool = new pg.Pool({ connectionString: process.env.POSTGRES_URL, max: 2 })
 const rows = (text, params = [C]) => pool.query(text, params).then((r) => r.rows)
 
+/**
+ * Every reported invariant violation, across every tick this run made.
+ *
+ * The tick checks itself and returns what broke rather than throwing (halting
+ * the demo world mid-play would be worse than a logged inconsistency), so
+ * something has to be watching — otherwise "the world asserts itself" is a
+ * comment, not a gate.
+ */
+const seenViolations = new Set()
+
 /** Tick from inside the signed-in tab — the session cookie rides along. */
-const pageTick = (page) =>
-  page.evaluate(() => fetch("/api/hub/sandbox/tick", { method: "POST" }).then((r) => r.json()))
+const pageTick = async (page) => {
+  const result = await page.evaluate(() =>
+    fetch("/api/hub/sandbox/tick", { method: "POST" }).then((r) => r.json())
+  )
+  for (const v of result?.violations ?? []) seenViolations.add(v)
+  return result
+}
 
 /**
  * Click a button and wait for its visible effect, retrying — a click that
@@ -301,6 +316,13 @@ async function main() {
   check(await textAppears(driver, "BRH-", 30_000), "driver home shows the live load")
   check(await textAppears(driver, "Work a live shift", 20_000), "driver banner carries the shift card")
   await shot(driver, "driver-live-390")
+
+  // Whatever else this run proved, the world it played in has to have stayed
+  // physically possible the whole way through.
+  check(
+    seenViolations.size === 0,
+    seenViolations.size ? `sim invariants broke: ${[...seenViolations].join(", ")}` : "no invariant violated across the run"
+  )
 
   const real = realConsoleErrors(consoleErrors).filter((e) => !/sandbox\/tick/.test(e))
   check(real.length === 0, real.length ? `console errors: ${real.slice(0, 3).join(" | ")}` : "no console errors")

@@ -33,7 +33,18 @@ function mulberry32(seed: number) {
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296
   }
 }
-const rand = mulberry32(0xb1e51de)
+const RANDOM_SEED = 0xb1e51de
+let rand = mulberry32(RANDOM_SEED)
+/**
+ * Restart the stream at the top of every seed.
+ *
+ * The generator above was module-level, so only the *first* reset in a process
+ * told the seeded story — the second continued the stream and built a
+ * different company. Harmless-looking, until a defect that only appears in one
+ * of those worlds becomes unreproducible. Reset per call and "reset" means the
+ * same world every time, on every machine.
+ */
+const resetRandom = () => { rand = mulberry32(RANDOM_SEED) }
 const int = (min: number, max: number) => Math.floor(rand() * (max - min + 1)) + min
 const pick = <T,>(arr: readonly T[]): T => arr[Math.floor(rand() * arr.length)]
 const chance = (p: number) => rand() < p
@@ -112,6 +123,7 @@ async function wipe(client: PoolClient) {
 }
 
 export async function seedSandbox(): Promise<void> {
+  resetRandom()
   const client = await hubDb().connect()
   try {
     await client.query("BEGIN")
@@ -329,6 +341,26 @@ export async function seedSandbox(): Promise<void> {
     const plans: LoadPlan[] = []
     let loadIdx = 0
     const activeDriverIdxs = [...Array(40).keys()].filter((i) => truckOfDriver.has(driverIds[i]))
+    /** Statuses where the driver and truck are committed right now. */
+    const CONCURRENT_STATUSES = new Set(["booked", "dispatched", "at_pickup", "in_transit"])
+    /** …and the subset that is physically impossible without a crew. */
+    const CREW_REQUIRED = new Set(["dispatched", "at_pickup", "in_transit"])
+    const busyDrivers = new Set<number>()
+    // Jordan (0) and Sam (1) are force-assigned to the first two in-transit
+    // loads below, and that path deliberately skips the free-list. In-transit
+    // is planned after dispatched/at_pickup, so without this reservation an
+    // earlier status spends their crews first and they end up on two loads at
+    // once — which is exactly how the double-booking survived so long.
+    const PLAYER_DRIVER_IDXS = [0, 1]
+    PLAYER_DRIVER_IDXS.forEach((i) => busyDrivers.add(i))
+    // There are more concurrent loads than crews, and `booked` is planned
+    // first — left alone it drains the yard and the rolling loads that follow
+    // come out driverless. Hold back one seat for every crew-required load
+    // still to come; an unassigned booked load is a real state a dispatcher
+    // sees every morning, a driverless truck on the map is not.
+    let crewSeatsOwed =
+      STATUS_PLAN.filter(([s]) => CREW_REQUIRED.has(s)).reduce((n, [, c]) => n + c, 0) -
+      PLAYER_DRIVER_IDXS.length
     for (const [status, count] of STATUS_PLAN) {
       for (let k = 0; k < count; k++) {
         const lane = pick(LANES)
@@ -368,9 +400,34 @@ export async function seedSandbox(): Promise<void> {
         const forcedDriver = status === "in_transit" && k === 0 ? 0
           : status === "in_transit" && k === 1 ? 1
           : null
+        // A driver (and therefore a truck) can only be on ONE load at a time.
+        // Concurrently-live work draws WITHOUT replacement; historical loads
+        // reuse drivers freely, which is just a career. Picking with
+        // replacement everywhere put trucks on two simultaneous loads —
+        // physically impossible, visible on the fleet page and the live map,
+        // and shipped unnoticed until the per-tick invariant check caught it.
+        const needsCrew = CREW_REQUIRED.has(status)
+        if (needsCrew && forcedDriver === null) crewSeatsOwed--
+        let driverIdx: number | null = forcedDriver
+        if (driverIdx === null && assigned) {
+          if (CONCURRENT_STATUSES.has(status)) {
+            const free = activeDriverIdxs.filter((i) => !busyDrivers.has(i))
+            // Out of crews? Leave it unassigned rather than double-book —
+            // an unassigned booked load is a real state; two loads on one
+            // truck is not.
+            const reserve = needsCrew ? 0 : crewSeatsOwed
+            driverIdx = free.length > reserve ? pick(free) : null
+          } else {
+            driverIdx = pick(activeDriverIdxs)
+          }
+        }
+        if (driverIdx !== null && CONCURRENT_STATUSES.has(status)) busyDrivers.add(driverIdx)
+        // Belt and braces: if the reservation math is ever wrong, the load
+        // stays booked rather than rolling down the highway with nobody in it.
+        const plannedStatus = needsCrew && driverIdx === null ? "booked" : status
         plans.push({
-          idx: loadIdx++, status, lane, customer, equipment,
-          driverIdx: forcedDriver ?? (assigned ? pick(activeDriverIdxs) : null),
+          idx: loadIdx++, status: plannedStatus, lane, customer, equipment,
+          driverIdx,
           pickupAt, deliveredAt, linehaul, fsc, accessorials, loadedMiles, deadheadMiles: int(15, 120),
         })
       }

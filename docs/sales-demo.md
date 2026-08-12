@@ -35,13 +35,25 @@ account: `ThindDemo1!`.
     workspace. Add a truck tonight, import your load sheet tomorrow morning, and
     you're running on HaulDesk by lunch."
 
-## The 10-minute Shift Mode path (the "try before the integrations" story)
+## The 10-minute Shift Mode path
 
 When the prospect wants to *drive*, not watch: `/hub/sandbox` is Blue Ridge
 Haulage — a fully seeded company that **runs in real time** while a tab is
-open. This is the dry run for the pricey integrations (ELD tracking, load
-boards, fuel cards): simulated feeds, real product. No demo password needed —
-seats sign themselves in.
+open. Simulated feeds, real product: every event runs through the same
+functions a paying carrier's data does. No demo password needed — seats sign
+themselves in.
+
+> **Say what it proves, and only that.** It shows the office logic holding up
+> under a moving world — dispatch → delivery → POD → invoice → payment, with
+> nobody typing check calls. It is **not** evidence about the paid
+> integrations. A simulation cannot test a third party: it exercises our stub
+> of DAT or an ELD, never their live API, so it can't tell you those will
+> behave as assumed. Claiming otherwise is the one thing that would get a
+> technical buyer to stop believing the rest. Never call it a "digital twin"
+> either — that term has a formal definition (a virtual model continuously fed
+> by data from a real physical counterpart) and a fictional carrier has none.
+> And keep the engineering numbers out of decks: ops-per-tick and millisecond
+> timings are telemetry, not performance claims.
 
 1. **Reset** on the picker — stages a fresh morning (a delivery ~35 min out,
    arrivals every ~12 min, quotes waiting, an AR backlog).
