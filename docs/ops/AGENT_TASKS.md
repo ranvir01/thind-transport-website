@@ -471,3 +471,26 @@ Ordered — each enables the next:
     construction, and an LLM emitting raw SQL discards that guarantee — the cross-tenant
     harness exists precisely to prevent this class of hole. Write the ADR recording that
     decision before any code. Do not start until 8–10 have landed.
+
+From the OSS-TMS + shell-UX review (`docs/research/2026-08b/oss-tms-and-shell-ux.md`, 2026-08-14):
+
+12. **Collapsible sidebar rail** — `HubNav.tsx` is a fixed 212px with no collapse; on a
+    1280px dispatcher laptop that is 17% of the width permanently spent while reading a
+    dense load board. Add a 56px icon rail toggle, persisted per user in
+    `hub.user_preferences` (table exists, migration 026). Keep 212px expanded — it is
+    deliberately narrower than the 256px convention and that density is a win, not a defect.
+13. **Group the utility links** — `HUB_UTILITY_LINKS` is 13 items in one flat list mixing
+    daily work (Messages, Tasks, Compliance, Safety, Reports) with one-time setup (Smart
+    Setup, Setup guide, Import, Carrier packet) and reference (Toolbox, Help). Group into
+    Work / Reference / Setup, with Setup auto-collapsing once the setup guide completes.
+    Complements small-carrier mode, which only trims; this fixes full mode.
+14. **Pickup verification** — mirror of the customer-side double-broker checklist in
+    `vetting.ts`, aimed at the fastest-growing loss in freight: confirm at pickup that the
+    driver and truck that arrived match the dispatch, using the driver PWA's existing photo
+    capture + geolocation. Concept validated by LoadPartner's "Truck Verify"; build it from
+    LoadOff's own primitives (their code is Fair Core licensed — ideas only, never source).
+
+**Licensing note for anyone researching competitors:** Fleetbase is AGPL-3.0 and
+LoadPartner is Fair Core (source-available). Neither may be vendored into this repo under
+the MIT/Apache/BSD rule — AGPL's network clause alone would force LoadOff's source open.
+Study their design freely; copy no code, schema DDL, or UI copy.
