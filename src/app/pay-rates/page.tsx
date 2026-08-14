@@ -53,7 +53,7 @@ export default function PayRatesPage() {
       <PageHero
         image="/images/generated/truck-night-highway.webp"
         imageAlt="Thind Transport truck running a night lane outside Seattle"
-        eyebrow="Industry-Leading Compensation"
+        eyebrow="What We Actually Pay"
         title={
           <>
             Transparent <span className="text-orange">Pay Rates</span>

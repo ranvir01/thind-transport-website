@@ -129,7 +129,7 @@ const ownerOperatorBenefits = [
     items: [
       {
         title: "90% Gross Commission",
-        description: "Industry-leading rate - you keep 90% of every load",
+        description: "You keep 90% of the linehaul on every load you haul",
         highlight: true,
       },
       {
@@ -603,8 +603,8 @@ export default function BenefitsPage() {
               Ready to Experience These Benefits?
             </h2>
             <p className="text-lg text-white/90 mb-8">
-              Join our team and start enjoying industry-leading pay, benefits, and support.
-              Apply today and hear back within 24 hours.
+              $0.63 a mile for company drivers, 90% of the linehaul for owner-operators,
+              and a real person on the phone in Kent. Apply today and hear back within 24 hours.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link

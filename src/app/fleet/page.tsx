@@ -247,7 +247,7 @@ const trailers = [
     icon: Snowflake,
     count: "4+",
     specs: ["Thermo King Unit", "-20°F to 70°F Range", "Multi-Temp Ready", "GPS Tracking", "Fuel Efficient Units", "Remote Monitoring"],
-    description: "Temperature-controlled units for perishables. State-of-the-art reefer technology.",
+    description: "Temperature-controlled units for perishables, monitored on every load.",
     image: "/images/generated/trailer-reefer.png"
   },
   {

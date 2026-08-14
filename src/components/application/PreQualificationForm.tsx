@@ -234,7 +234,7 @@ export function PreQualificationForm() {
             </div>
             <div className="col-span-2 space-y-2">
               <Label htmlFor="cityState">City / State</Label>
-              <Input id="cityState" {...register("cityState")} placeholder="e.g. Dallas, TX" className="h-12" />
+              <Input id="cityState" {...register("cityState")} placeholder="e.g. Kent, WA" className="h-12" />
               {errors.cityState && <p className="text-red-500 text-xs">{errors.cityState.message}</p>}
             </div>
           </div>
