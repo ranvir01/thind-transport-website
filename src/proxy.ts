@@ -3,23 +3,16 @@ import type { NextRequest } from "next/server"
 import { getToken } from "next-auth/jwt"
 import { hubLandingPath, LEGACY_DRIVER_HOME } from "@/lib/hub/landing"
 import { isAppHost } from "@/lib/app-origin"
-import { appHostRewrite } from "@/lib/app-host-routing"
+import { appHostLanding, inSegment } from "@/lib/app-host-routing"
 
 export default async function proxy(request: NextRequest) {
-  // On the app's own origin the app owns the root: "/" and "/dispatch" are
-  // served by the /hub routes without the segment showing up in the URL, so
-  // the manifest can claim scope "/" and every page on the origin is the app.
-  // Returns null on the marketing origin, or when APP_HOST is unset — which is
-  // the default, and why this is inert until someone configures a domain.
-  const onAppHost = isAppHost(request.headers.get("host"))
-  const rewriteTo = onAppHost ? appHostRewrite(request.nextUrl.pathname) : null
-  if (rewriteTo) {
-    // Rewrite, not redirect: the browser keeps the clean URL and Next resolves
-    // the /hub route behind it. The rewritten path then falls through to the
-    // auth gate below, so the app origin is protected exactly as /hub is.
-    const url = request.nextUrl.clone()
-    url.pathname = rewriteTo
-    return authGate(request, rewriteTo, NextResponse.rewrite(url))
+  // On the app's own origin the root IS the app, so "/" goes to /hub rather
+  // than the carrier's homepage. Only the root moves — see app-host-routing.ts
+  // for why rewriting every path was the wrong trade. Inert on the marketing
+  // origin and when APP_HOST is unset, which is the default.
+  if (isAppHost(request.headers.get("host"))) {
+    const landing = appHostLanding(request.nextUrl.pathname)
+    if (landing) return NextResponse.redirect(new URL(landing, request.url))
   }
   return authGate(request, request.nextUrl.pathname, null)
 }
@@ -35,6 +28,8 @@ async function authGate(
   pathname: string,
   passthrough: NextResponse | null
 ) {
+  const goTo = (path: string) => NextResponse.redirect(new URL(path, request.url))
+
   // The matcher now covers every route so the app origin's root can be
   // rewritten, which means marketing pages run through here too. Reading the
   // session is the expensive part, so it happens only for the paths that gate
@@ -46,12 +41,9 @@ async function authGate(
   // service-worker fetch failed ("script resource is behind a redirect, which
   // is disallowed") and the manifest icons — fetched without credentials —
   // resolved to the login HTML ("resource isn't a valid image"): no offline
-  // shell, no installability. Segment boundaries match app-host-routing.ts.
-  const gated =
-    pathname === "/driver" ||
-    pathname.startsWith("/driver/") ||
-    pathname === "/hub" ||
-    pathname.startsWith("/hub/")
+  // shell, no installability. Segment boundaries match app-host-routing.ts,
+  // which shares the helper so the two can never drift apart.
+  const gated = inSegment(pathname, "/driver") || inSegment(pathname, "/hub")
   if (!gated) return passthrough ?? NextResponse.next()
 
   // NextAuth prefixes the cookie with __Secure- only when running over HTTPS,
@@ -75,13 +67,13 @@ async function authGate(
     pathname.startsWith("/driver/admin")
   ) {
     if (!token) {
-      return NextResponse.redirect(new URL("/driver/login", request.url))
+      return goTo("/driver/login")
     }
   }
 
   // Redirect to application if already logged in and trying to access login/register
   if ((pathname === "/driver/login" || pathname === "/driver/register") && token) {
-    return NextResponse.redirect(new URL("/driver/application", request.url))
+    return goTo("/driver/application")
   }
 
   // ---- Hub (operations system) ----
@@ -103,16 +95,16 @@ async function authGate(
   ) {
     return passthrough ?? NextResponse.next()
   }
-  if (pathname.startsWith("/hub") && pathname !== "/hub/login") {
+  if (inSegment(pathname, "/hub") && pathname !== "/hub/login") {
     const role = (token as { role?: string } | null)?.role
     if (!token) {
-      return NextResponse.redirect(new URL("/hub/login", request.url))
+      return goTo("/hub/login")
     }
     if (!role) {
       // Legacy driver-portal account: signed in but no hub.role on the token.
       // Sending it to /hub/login just bounced forever — its home is the
       // original driver portal.
-      return NextResponse.redirect(new URL(LEGACY_DRIVER_HOME, request.url))
+      return goTo(LEGACY_DRIVER_HOME)
     }
     const officeRoles = ["owner", "dispatcher", "accountant"]
     // NOTE: /hub/driver (the driver app) vs /hub/drivers (office roster).
@@ -124,32 +116,30 @@ async function authGate(
       // straight back to /hub/driver, which redirects to /hub/suspended, forever
       // (the same class of loop /hub/welcome is already exempted from).
       if (!inDriverApp && !pathname.startsWith("/hub/welcome") && !pathname.startsWith("/hub/suspended")) {
-        return NextResponse.redirect(new URL("/hub/driver", request.url))
+        return goTo("/hub/driver")
       }
     } else if (role === "broker" || role === "shipper") {
       // External accounts live in the portal — nothing else, but /hub/suspended
       // needs the same exemption as the driver branch above.
       if (!inPortal && !pathname.startsWith("/hub/welcome") && !pathname.startsWith("/hub/suspended")) {
-        return NextResponse.redirect(new URL("/hub/portal", request.url))
+        return goTo("/hub/portal")
       }
     } else if (role === "platform_admin") {
       // Platform admins see tenant ops only — never a tenant's business data.
       if (!pathname.startsWith("/hub/admin")) {
-        return NextResponse.redirect(new URL("/hub/admin", request.url))
+        return goTo("/hub/admin")
       }
     } else if (!officeRoles.includes(role) && !pathname.startsWith("/hub/welcome")) {
-      return NextResponse.redirect(new URL("/hub/welcome", request.url))
+      return goTo("/hub/welcome")
     } else if (officeRoles.includes(role) && (inDriverApp || inPortal)) {
       // Office accounts don't impersonate drivers or customers.
-      return NextResponse.redirect(new URL("/hub", request.url))
+      return goTo("/hub")
     }
   }
 
   if (pathname === "/hub/login" && token) {
     const role = (token as { role?: string }).role
-    return NextResponse.redirect(
-      new URL(role ? hubLandingPath(role) : LEGACY_DRIVER_HOME, request.url)
-    )
+    return goTo(role ? hubLandingPath(role) : LEGACY_DRIVER_HOME)
   }
 
   return passthrough ?? NextResponse.next()

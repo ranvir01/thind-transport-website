@@ -38,11 +38,11 @@ export async function resolveManifestThemeColor(): Promise<string> {
 export async function buildManifest(userAgent?: string | null, host?: string | null) {
   const themeColor = await resolveManifestThemeColor()
   // On the app's own origin there is no marketing page to be out of scope of,
-  // so the manifest claims the whole origin honestly — no per-platform scope,
-  // no user-agent sniffing, and start_url is simply the root. On the shared
-  // marketing origin the transitional behaviour stays until a domain exists.
+  // so the manifest claims the whole origin honestly — one scope for every
+  // platform, no user-agent sniffing. start_url stays /hub because that is
+  // where the app lives on either origin; the app origin's root redirects
+  // there, and scope "/" covers both.
   const ownOrigin = isAppHost(host)
-  const home = ownOrigin ? "/" : "/hub"
   return {
     name: PRODUCT.name,
     short_name: PRODUCT.shortName,
@@ -51,8 +51,8 @@ export async function buildManifest(userAgent?: string | null, host?: string | n
     // `id` pins the app's identity independently of start_url and scope, so a
     // later change to either updates the installed app rather than minting a
     // second one beside it. (Chromium only — iOS mints a fresh icon regardless.)
-    id: home,
-    start_url: home,
+    id: "/hub",
+    start_url: "/hub",
     scope: ownOrigin ? "/" : manifestScope(userAgent),
     display: "standalone",
     background_color: themeColor,

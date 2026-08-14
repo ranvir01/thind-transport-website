@@ -65,3 +65,4 @@ export function isAppHost(host: string | null | undefined): boolean {
 export function appHome(host: string | null | undefined): string {
   return isAppHost(host) ? APP_ROOT : APP_SEGMENT
 }
+
