@@ -58,14 +58,40 @@ describe("appHostLanding", () => {
     expect(appHostLanding("/")).toBe("/hub")
   })
 
-  it("moves nothing else", () => {
-    // An earlier version rewrote every path to hide the /hub segment. That
-    // broke the theme boot, the marketing chrome's hide rules and the hub's
-    // own active-nav highlighting, all of which compare usePathname() — the
-    // BROWSER path, not the rewritten one — against "/hub".
-    for (const p of ["/hub", "/hub/login", "/dispatch", "/loadoff", "/hub-sw.js"]) {
+  it("keeps the carrier's marketing off the product's domain", () => {
+    // Without this the app origin serves /apply, /pay-rates and the rest
+    // verbatim: a competitor-adjacent carrier's recruiting site on the
+    // product's domain, and two hosts serving identical pages.
+    for (const p of ["/apply", "/loadoff", "/app", "/pay-rates", "/hubbub"]) {
+      expect(appHostLanding(p), p).toBe("/hub")
+    }
+  })
+
+  it("serves the app itself unchanged", () => {
+    // A redirect here would loop; and note these stay /hub/* rather than being
+    // rewritten to clean paths, because usePathname() reports the browser path
+    // and the theme boot, chrome hide-rules and active-nav all compare it.
+    for (const p of ["/hub", "/hub/login", "/hub/get-app", "/hub/dispatch"]) {
       expect(appHostLanding(p), p).toBeNull()
     }
+  })
+
+  it("never redirects the assets an install depends on", () => {
+    // Redirecting /hub-sw.js is exactly how service worker registration died
+    // once already ("the script resource is behind a redirect").
+    for (const p of ["/hub-sw.js", "/hub-icon-180.png", "/site.webmanifest", "/robots.txt", "/favicon.ico"]) {
+      expect(appHostLanding(p), p).toBeNull()
+    }
+    expect(appHostLanding("/api/hub/manifest")).toBeNull()
+    expect(appHostLanding("/_next/static/chunk.js")).toBeNull()
+    expect(appHostLanding("/.well-known/webauthn")).toBeNull()
+  })
+
+  it("leaves the separate surfaces alone", () => {
+    // /driver especially: the proxy sends a legacy driver account from /hub to
+    // /driver, so redirecting it back to /hub closes an infinite loop.
+    expect(appHostLanding("/driver/login")).toBeNull()
+    expect(appHostLanding("/track/abc123")).toBeNull()
   })
 })
 
