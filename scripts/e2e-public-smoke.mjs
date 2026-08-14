@@ -15,9 +15,8 @@
  *
  * Run: node scripts/e2e-public-smoke.mjs [outputDir]
  */
-import puppeteer from "puppeteer"
 import { mkdirSync } from "node:fs"
-import { BASE, check, failures, makeShot, waitForStableText } from "./e2e-lib.mjs"
+import { BASE, check, failures, makeShot, waitForStableText, launchBrowser } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-public"
 mkdirSync(OUT, { recursive: true })
@@ -59,7 +58,7 @@ const ERROR_MARKERS = [
 ]
 
 async function main() {
-  const browser = await puppeteer.launch({ headless: "new", args: ["--no-sandbox", "--disable-dev-shm-usage"] })
+  const browser = await launchBrowser()
   const page = await browser.newPage()
   const shot = makeShot(OUT)
   const pageErrors = []

@@ -15,9 +15,8 @@
  *
  * Usage: node scripts/e2e-users-smoke.mjs [outputDir]
  */
-import puppeteer from "puppeteer"
 import { mkdirSync } from "node:fs"
-import { BASE, failures, check, waitForText, waitForPath, login, makeShot, reseed, realConsoleErrors } from "./e2e-lib.mjs"
+import { BASE, failures, check, waitForText, waitForPath, login, makeShot, reseed, realConsoleErrors, launchBrowser } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-users"
 mkdirSync(OUT, { recursive: true })
@@ -61,10 +60,7 @@ async function loginRefused(page, email, password) {
 
 async function main() {
   reseed()
-  const browser = await puppeteer.launch({
-    headless: "new",
-    args: ["--no-sandbox", "--disable-dev-shm-usage"],
-  })
+  const browser = await launchBrowser()
   const page = await browser.newPage()
   await page.setViewport({ width: 1440, height: 900 })
   const consoleErrors = []

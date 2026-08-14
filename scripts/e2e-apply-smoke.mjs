@@ -28,9 +28,8 @@
  * Usage: node scripts/e2e-apply-smoke.mjs [outputDir]
  * Requires: npm run start on localhost:3000 (no DB needed for the UI flow).
  */
-import puppeteer from "puppeteer"
 import { mkdirSync } from "node:fs"
-import { BASE, sleep, check, failures, makeShot, clickByText, waitForText, realConsoleErrors } from "./e2e-lib.mjs"
+import { BASE, sleep, check, failures, makeShot, clickByText, waitForText, realConsoleErrors, launchBrowser } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-apply"
 mkdirSync(OUT, { recursive: true })
@@ -125,10 +124,7 @@ async function drivePreQualify(page, picks, expectText, label) {
 }
 
 async function main() {
-  const browser = await puppeteer.launch({
-    headless: "new",
-    args: ["--no-sandbox", "--disable-dev-shm-usage"],
-  })
+  const browser = await launchBrowser()
   const page = await browser.newPage()
   await page.setViewport({ width: 390, height: 844 })
   const consoleErrors = []

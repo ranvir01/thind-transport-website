@@ -10,9 +10,8 @@
  *
  * Usage: node scripts/e2e-notifications-smoke.mjs [outputDir]
  */
-import puppeteer from "puppeteer"
 import { mkdirSync } from "node:fs"
-import { sleep, failures, check, login, makeShot, reseed } from "./e2e-lib.mjs"
+import { sleep, failures, check, login, makeShot, reseed, launchBrowser } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-notifications"
 mkdirSync(OUT, { recursive: true })
@@ -24,10 +23,13 @@ const bellLabel = (page) =>
 
 reseed()
 
-// Root containers (cloud agent rigs) need --no-sandbox to launch Chromium.
-const browser = await puppeteer.launch({
-  args: process.getuid?.() === 0 ? ["--no-sandbox"] : [],
-})
+// Use the shared launcher, never a bare puppeteer.launch(). This smoke once
+// gated --no-sandbox behind a root check and omitted --disable-dev-shm-usage,
+// so it passed on root agent rigs and died at launch on GitHub runners (which
+// run as non-root) with a bare register dump — green locally, red in CI, for
+// weeks. launchBrowser() carries the flags and the executable-path resolution
+// for every rig in one place.
+const browser = await launchBrowser()
 try {
   const page = await browser.newPage()
   await page.setViewport({ width: 1440, height: 900 })

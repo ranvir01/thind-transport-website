@@ -21,10 +21,9 @@
  * shell (pitfall 11 — smokes don't read .env.local), seeded demo DB for
  * the /hub login (dispatch@demo.thind).
  */
-import puppeteer from "puppeteer"
 import { mkdirSync } from "node:fs"
 import pg from "pg"
-import { BASE, sleep, check, failures, makeShot, clickByText, waitForText, login, realConsoleErrors } from "./e2e-lib.mjs"
+import { BASE, sleep, check, failures, makeShot, clickByText, waitForText, login, realConsoleErrors, launchBrowser } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-funnel"
 mkdirSync(OUT, { recursive: true })
@@ -46,11 +45,7 @@ async function fill(page, selector, value) {
 }
 
 async function main() {
-  const browser = await puppeteer.launch({
-    headless: "new",
-    executablePath: process.env.PUPPETEER_EXECUTABLE_PATH,
-    args: ["--no-sandbox", "--disable-dev-shm-usage"],
-  })
+  const browser = await launchBrowser()
   const page = await browser.newPage()
   await page.setViewport({ width: 390, height: 844 })
   const consoleErrors = []

@@ -20,10 +20,9 @@
  * POSTGRES_URL (from .env.local on a local rig) is used for the soft-delete.
  * Usage: node scripts/e2e-recurring-rollup-smoke.mjs [outputDir]
  */
-import puppeteer from "puppeteer"
 import pg from "pg"
 import { mkdirSync } from "node:fs"
-import { BASE, failures, check, waitForText, login, makeShot, reseed, clickByText, realConsoleErrors } from "./e2e-lib.mjs"
+import { BASE, failures, check, waitForText, login, makeShot, reseed, clickByText, realConsoleErrors, launchBrowser } from "./e2e-lib.mjs"
 
 // Fail fast on a fresh rig: the cron step authenticates with Bearer CRON_SECRET.
 // Against a localhost BASE, e2e-lib has already loaded .env.local into this
@@ -99,10 +98,7 @@ async function scheduleWeekly(page, href) {
 
 async function main() {
   reseed()
-  const browser = await puppeteer.launch({
-    headless: "new",
-    args: ["--no-sandbox", "--disable-dev-shm-usage"],
-  })
+  const browser = await launchBrowser()
   const page = await browser.newPage()
   await page.setViewport({ width: 1440, height: 900 })
   const consoleErrors = []
