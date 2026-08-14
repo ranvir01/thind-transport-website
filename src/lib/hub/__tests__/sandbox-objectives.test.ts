@@ -239,3 +239,60 @@ describe("the shift clock", () => {
     expect(evaluateShift("dispatcher", base, cur).minutes).toBe(0)
   })
 })
+
+/**
+ * The sim runs the same world the player is scored in, so any objective
+ * measured purely as a board DEPTH can be completed by the simulation's own
+ * autopilot while the player does nothing. sandbox-sim-live caught this for
+ * the dispatcher (an idle seat scored a flat 33 — one of three objectives);
+ * the accountant's backlog had the identical shape, since autoInvoice drains
+ * `pod_received` on its own. Both now require the player's own work as well.
+ *
+ * The owner's draft-settlement queue and safety's open-incident list are
+ * deliberately NOT clamped: the sim never approves settlements or closes
+ * incidents, so those depths only move when a human moves them.
+ */
+describe("board objectives cannot be won by the simulation", () => {
+  it("dispatcher: a shrinking quoted board scores nothing without your booking", () => {
+    const base = metrics({ quotedCount: 12, myBookings: 10 })
+    const simOnly = metrics({ quotedCount: 5, myBookings: 10 })
+    const board = evaluateShift("dispatcher", base, simOnly).objectives.find((o) => o.key === "board")
+    expect(board?.done, "idle dispatcher credited for the sim clearing the board").toBe(false)
+  })
+
+  it("dispatcher: booking one yourself while the board shrinks still counts", () => {
+    const base = metrics({ quotedCount: 12, myBookings: 10 })
+    const worked = metrics({ quotedCount: 5, myBookings: 11 })
+    const board = evaluateShift("dispatcher", base, worked).objectives.find((o) => o.key === "board")
+    expect(board?.done).toBe(true)
+  })
+
+  it("dispatcher: your booking alone is not enough if the pile still grew", () => {
+    const base = metrics({ quotedCount: 12, myBookings: 10 })
+    const outpaced = metrics({ quotedCount: 14, myBookings: 11 })
+    const board = evaluateShift("dispatcher", base, outpaced).objectives.find((o) => o.key === "board")
+    expect(board?.done).toBe(false)
+  })
+
+  it("accountant: autoInvoice draining the backlog scores nothing on its own", () => {
+    const base = metrics({ unbilledCount: 14, myInvoices: 20 })
+    const simOnly = metrics({ unbilledCount: 6, myInvoices: 20 })
+    const backlog = evaluateShift("accountant", base, simOnly).objectives.find((o) => o.key === "backlog")
+    expect(backlog?.done, "idle accountant credited for the sim's invoicing").toBe(false)
+  })
+
+  it("accountant: invoicing one yourself while the backlog falls counts", () => {
+    const base = metrics({ unbilledCount: 14, myInvoices: 20 })
+    const worked = metrics({ unbilledCount: 6, myInvoices: 21 })
+    const backlog = evaluateShift("accountant", base, worked).objectives.find((o) => o.key === "backlog")
+    expect(backlog?.done).toBe(true)
+  })
+
+  it("an idle seat scores a flat zero, not a third of a shift", () => {
+    // The exact regression: six quiet sim ticks, nothing done by the player.
+    const base = metrics({ quotedCount: 12, unbilledCount: 14 })
+    const afterSimTicks = metrics({ quotedCount: 5, unbilledCount: 6 })
+    expect(evaluateShift("dispatcher", base, afterSimTicks).score).toBe(0)
+    expect(evaluateShift("accountant", base, afterSimTicks).score).toBe(0)
+  })
+})
