@@ -136,8 +136,10 @@ describe("manifest scope and start_url per origin", () => {
     for (const ua of [IPHONE, ANDROID]) {
       const m = await manifest(ua, "app.loadoff.com")
       expect(m.scope, ua).toBe("/")
-      expect(m.start_url, ua).toBe("/")
-      expect(m.id, ua).toBe("/")
+      // start_url stays /hub: that is where the app lives on either origin,
+      // and scope "/" covers it plus the root redirect that leads there.
+      expect(m.start_url, ua).toBe("/hub")
+      expect(m.id, ua).toBe("/hub")
     }
   })
 
@@ -154,7 +156,7 @@ describe("manifest scope and start_url per origin", () => {
     // Shipping the split before a domain exists must change nothing.
     vi.stubEnv("NEXT_PUBLIC_APP_HOST", "")
     const m = await manifest(IPHONE, "app.loadoff.com")
+    expect(m.scope).toBe("/")  // iOS still gets the widened transitional scope
     expect(m.start_url).toBe("/hub")
-    expect(m.id).toBe("/hub")
   })
 })

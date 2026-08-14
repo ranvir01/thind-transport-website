@@ -18,10 +18,14 @@
 
 import { useEffect } from "react"
 import { escapesAppScope } from "@/lib/hub/standalone-scope"
+import { isAppHost } from "@/lib/app-origin"
 
 export function StandaloneScopeGuard() {
   useEffect(() => {
     if (!window.matchMedia("(display-mode: standalone)").matches) return
+    // On the app's own domain the whole origin is the app, so there is nothing
+    // to intercept — only the shared-origin case needs a guard at all.
+    const onAppOrigin = isAppHost(window.location.host)
 
     const onClick = (event: MouseEvent) => {
       if (event.defaultPrevented) return
@@ -31,7 +35,7 @@ export function StandaloneScopeGuard() {
       if (!anchor) return
       const href = anchor.getAttribute("href")
       if (!href || anchor.getAttribute("target") === "_blank") return
-      if (!escapesAppScope(href, window.location.origin)) return
+      if (!escapesAppScope(href, window.location.origin, onAppOrigin)) return
       // Retarget rather than preventDefault + window.open: a plain link click
       // with target=_blank rides the user gesture (no popup heuristics), the
       // OS hands it to the real browser, and next/link's own handler bails on

@@ -8,8 +8,9 @@
  * carrier's website.
  */
 import { afterEach, describe, expect, it, vi } from "vitest"
-import { appHostRewrite } from "../app-host-routing"
+import { appHostLanding, inSegment } from "../app-host-routing"
 import { appHome, appOriginConfigured, isAppHost } from "../app-origin"
+import { escapesAppScope } from "../hub/standalone-scope"
 
 afterEach(() => vi.unstubAllEnvs())
 
@@ -52,41 +53,48 @@ describe("isAppHost", () => {
   })
 })
 
-describe("appHostRewrite", () => {
-  it("serves the app at the origin's root", () => {
-    // This is what lets the manifest say scope "/" and start_url "/" honestly.
-    expect(appHostRewrite("/")).toBe("/hub")
-    expect(appHostRewrite("/dispatch")).toBe("/hub/dispatch")
-    expect(appHostRewrite("/money/invoices")).toBe("/hub/money/invoices")
+describe("appHostLanding", () => {
+  it("sends the app origin's root into the app", () => {
+    expect(appHostLanding("/")).toBe("/hub")
   })
 
-  it("leaves app routes alone, or every internal link doubles the segment", () => {
-    // Links and redirects across the codebase all point at /hub/… — rewriting
-    // those again would produce /hub/hub/… and 404 the entire app.
-    expect(appHostRewrite("/hub")).toBeNull()
-    expect(appHostRewrite("/hub/login")).toBeNull()
-    expect(appHostRewrite("/hub/get-app")).toBeNull()
+  it("moves nothing else", () => {
+    // An earlier version rewrote every path to hide the /hub segment. That
+    // broke the theme boot, the marketing chrome's hide rules and the hub's
+    // own active-nav highlighting, all of which compare usePathname() — the
+    // BROWSER path, not the rewritten one — against "/hub".
+    for (const p of ["/hub", "/hub/login", "/dispatch", "/loadoff", "/hub-sw.js"]) {
+      expect(appHostLanding(p), p).toBeNull()
+    }
+  })
+})
+
+describe("inSegment", () => {
+  it("respects the path boundary", () => {
+    // startsWith("/hub") also matches "/hub-sw.js": widening the middleware
+    // matcher put the service worker script behind the auth gate, it 307'd,
+    // and every registration failed with "the script resource is behind a
+    // redirect" — killing the offline shell on both origins, silently.
+    expect(inSegment("/hub", "/hub")).toBe(true)
+    expect(inSegment("/hub/login", "/hub")).toBe(true)
+    expect(inSegment("/hub-sw.js", "/hub")).toBe(false)
+    expect(inSegment("/hubbub", "/hub")).toBe(false)
+  })
+})
+
+describe("escapesAppScope on the app's own origin", () => {
+  const origin = "https://app.loadoff.com"
+
+  it("treats nothing same-origin as an escape", () => {
+    // Including "/" — which is the app's own home page there. Handing that to
+    // the browser would eject the driver on every logo tap.
+    for (const href of ["/", "/dispatch", "/hub/login", "/settings"]) {
+      expect(escapesAppScope(href, origin, true), href).toBe(false)
+    }
   })
 
-  it("leaves API, framework and well-known paths at the root", () => {
-    expect(appHostRewrite("/api/hub/manifest")).toBeNull()
-    expect(appHostRewrite("/api/auth/session")).toBeNull()
-    expect(appHostRewrite("/_next/static/chunk.js")).toBeNull()
-    expect(appHostRewrite("/.well-known/webauthn")).toBeNull()
-  })
-
-  it("leaves static files alone — the install depends on them resolving", () => {
-    // Rewriting /hub-icon-180.png would 404 the icon iOS installs with.
-    expect(appHostRewrite("/hub-icon-180.png")).toBeNull()
-    expect(appHostRewrite("/favicon.ico")).toBeNull()
-    expect(appHostRewrite("/site.webmanifest")).toBeNull()
-    expect(appHostRewrite("/robots.txt")).toBeNull()
-  })
-
-  it("leaves the separate surfaces alone", () => {
-    // The legacy driver portal and public broker tracking are not the app, and
-    // mapping them into /hub/* would silently serve a different page.
-    expect(appHostRewrite("/driver/login")).toBeNull()
-    expect(appHostRewrite("/track/abc123")).toBeNull()
+  it("still keeps the shared-origin behaviour when not on the app origin", () => {
+    expect(escapesAppScope("/", origin, false)).toBe(true)
+    expect(escapesAppScope("/hub/dispatch", origin, false)).toBe(false)
   })
 })

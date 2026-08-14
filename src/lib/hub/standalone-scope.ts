@@ -9,8 +9,18 @@
  * so the app container never leaves /hub.
  */
 
-/** True when a same-origin link would take the app container outside /hub. */
-export function escapesAppScope(href: string, currentOrigin: string): boolean {
+/**
+ * True when a same-origin link would take the app container outside the app.
+ *
+ * `onAppOrigin` is the app's own domain, where the whole origin is the app —
+ * nothing same-origin escapes, and treating "/" as an escape there would hand
+ * the app's own home page to the browser on every logo tap.
+ */
+export function escapesAppScope(
+  href: string,
+  currentOrigin: string,
+  onAppOrigin = false
+): boolean {
   let url: URL
   try {
     url = new URL(href, currentOrigin)
@@ -21,6 +31,8 @@ export function escapesAppScope(href: string, currentOrigin: string): boolean {
   // schemes (tel:, mailto:, sms:) are handed to the OS either way.
   if (url.origin !== currentOrigin) return false
   if (!/^https?:$/.test(url.protocol)) return false
+  // On the app's own origin there is nowhere same-origin to escape TO.
+  if (onAppOrigin) return false
   const p = url.pathname
   // /api stays: the app's own fetches and file downloads live there.
   return !(p === "/hub" || p.startsWith("/hub/") || p === "/api" || p.startsWith("/api/"))

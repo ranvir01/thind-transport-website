@@ -13,6 +13,8 @@ import { useEffect } from "react"
 export function ServiceWorkerBoot() {
   useEffect(() => {
     if ("serviceWorker" in navigator) {
+      // /hub on either origin: the app lives at /hub even on its own domain,
+      // where the root simply redirects there.
       navigator.serviceWorker.register("/hub-sw.js", { scope: "/hub" }).catch(() => {})
     }
   }, [])
