@@ -236,9 +236,19 @@ export async function readShiftMetrics(
           AND a.actor_id = $2`,
       [C, userId]
     ),
+    // Actor-scoped through the audit trail, exactly like ownerMetrics'
+    // myPayments — hub.payments has no actor column, and the sim's autopilot
+    // records payments of its own (sandbox-sim.ts payInvoice →
+    // recordPayment with actor id null). Counting the raw table credited an
+    // idle dispatcher with every invoice the simulation collected: the
+    // "payment lands on an overdue invoice" objective scores this as a diff,
+    // so six quiet ticks were worth 33 points nobody earned.
     query<{ n: number }>(
-      `SELECT COUNT(*)::int AS n FROM hub.payments WHERE carrier_id = $1`,
-      [C]
+      `SELECT COUNT(*)::int AS n
+         FROM hub.audit_log
+        WHERE carrier_id = $1 AND entity_type = 'payment' AND action = 'record'
+          AND actor_id = $2`,
+      [C, userId]
     ),
   ])
 
