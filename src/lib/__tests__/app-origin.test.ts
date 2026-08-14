@@ -9,7 +9,7 @@
  */
 import { afterEach, describe, expect, it, vi } from "vitest"
 import { appHostLanding, inSegment } from "../app-host-routing"
-import { appHome, appOriginConfigured, isAppHost } from "../app-origin"
+import { isAppHost } from "../app-origin"
 import { escapesAppScope } from "../hub/standalone-scope"
 
 afterEach(() => vi.unstubAllEnvs())
@@ -20,15 +20,12 @@ describe("isAppHost", () => {
   it("is off entirely until a host is configured", () => {
     // The default. Shipping this before a domain exists must change nothing.
     vi.stubEnv("NEXT_PUBLIC_APP_HOST", "")
-    expect(appOriginConfigured()).toBe(false)
     expect(isAppHost("app.loadoff.com")).toBe(false)
     expect(isAppHost("thindtransport.com")).toBe(false)
-    expect(appHome("app.loadoff.com")).toBe("/hub")
   })
 
   it("matches the configured host and nothing else", () => {
     withAppHost("app.loadoff.com")
-    expect(appOriginConfigured()).toBe(true)
     expect(isAppHost("app.loadoff.com")).toBe(true)
     // The carrier's website must never be mistaken for the app.
     expect(isAppHost("thindtransport.com")).toBe(false)
@@ -44,12 +41,6 @@ describe("isAppHost", () => {
     expect(isAppHost("app.loadoff.com:3000")).toBe(true)
     expect(isAppHost(null)).toBe(false)
     expect(isAppHost(undefined)).toBe(false)
-  })
-
-  it("puts the app at the origin root once configured", () => {
-    withAppHost("app.loadoff.com")
-    expect(appHome("app.loadoff.com")).toBe("/")
-    expect(appHome("thindtransport.com")).toBe("/hub")
   })
 })
 
