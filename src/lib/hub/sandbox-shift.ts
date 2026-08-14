@@ -236,9 +236,15 @@ export async function readShiftMetrics(
           AND a.actor_id = $2`,
       [C, userId]
     ),
+    // Actor-scoped for the same reason ownerMetrics is: the sim's autopilot
+    // records payments of its own (sandbox-sim.ts payInvoice, actor id null).
+    // Counting every row on the carrier handed the accountant a completed
+    // "a payment lands" objective for the autopilot's collections.
     query<{ n: number }>(
-      `SELECT COUNT(*)::int AS n FROM hub.payments WHERE carrier_id = $1`,
-      [C]
+      `SELECT COUNT(*)::int AS n FROM hub.audit_log
+        WHERE carrier_id = $1 AND actor_id = $2
+          AND entity_type = 'payment' AND action = 'record'`,
+      [C, userId]
     ),
   ])
 
