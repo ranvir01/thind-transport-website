@@ -494,3 +494,41 @@ From the OSS-TMS + shell-UX review (`docs/research/2026-08b/oss-tms-and-shell-ux
 LoadPartner is Fair Core (source-available). Neither may be vendored into this repo under
 the MIT/Apache/BSD rule — AGPL's network clause alone would force LoadOff's source open.
 Study their design freely; copy no code, schema DDL, or UI copy.
+
+## E2E anchor drift after the Today/chrome redesign (found 2026-08-14)
+
+The nightly full rig is at **43/55**. The unit job — the per-push gate — is green; this is
+the e2e job only. Triage done, with the archaeology below so this is a pickup-ready job.
+
+**Cause:** the "Today screen + app chrome" redesign (`d9ceecf4`) and the custom-fields work
+(`f98a3c79`) moved/renamed UI that ~7 smokes assert against. **The product appears intact —
+this is test drift.** Spot-checked the scariest one: `qbo-iif` reports "found 0 export
+links" because the standalone `/hub/reports/export` page was removed and the four
+QuickBooks .IIF exports now live in `ExportSheet.tsx`; the API routes and the feature are
+fine. Do not "fix" the app to match the tests — update each assertion to the new surface,
+and only treat it as a product bug if the affordance genuinely no longer exists anywhere.
+
+Per-smoke findings:
+
+15. **`e2e-sweep` + `e2e-users-smoke` + `e2e-office-smoke`** — all three assert the Today
+    page renders `"in one calm place"` (PRODUCT.tagline). The redesign removed that
+    subtitle from `(office)/page.tsx` ("chrome that recedes"); the string still exists in
+    `product.ts`/`setup-guide.ts`, so grep alone is misleading. Pick a new anchor from
+    always-rendered Today content, and follow e2e-sweep.mjs's own rule: never a word the
+    sidebar renders.
+16. **`e2e-qbo-iif-smoke`** — rewrite to open `ExportSheet` rather than visiting the deleted
+    export page. Assert the four `kind` values from `ExportSheet.tsx`.
+17. **`e2e-compliance-smoke`** — `readSummary()` returns null for all three tiles; the
+    summary-tile markup changed (`font-display text-3xl font-extrabold` → `text-3xl
+    font-semibold`). Re-anchor on something structural, not a font class.
+18. **`e2e-duplicate-load-smoke`** (8 checks null) and **`e2e-tasks-smoke`** (priority badge,
+    checklist) — load-detail and task-card markup drift. Same treatment.
+19. **`e2e-onboarding-smoke`, `e2e-planner-smoke`** — `waitForText` timeouts; anchors moved.
+
+**Not in scope:** `e2e-driver-offline-smoke` and `e2e-dispatch-driver-notify-smoke` appeared
+in the CI failure list but pass locally and consistently — CI-side flake, already covered by
+the launch-crash retry in `e2e-run-all.mjs`.
+
+**Prevention worth considering:** these anchors are stringly-typed across ~55 scripts. A
+shared `ANCHORS` map in `e2e-lib.mjs` (page → text) would turn "redesign broke 7 smokes"
+into a one-file edit.
