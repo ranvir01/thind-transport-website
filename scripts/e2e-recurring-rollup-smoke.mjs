@@ -22,7 +22,7 @@
  */
 import pg from "pg"
 import { mkdirSync } from "node:fs"
-import { BASE, failures, check, waitForText, login, makeShot, reseed, clickByText, realConsoleErrors, launchBrowser } from "./e2e-lib.mjs"
+import { BASE, failures, check, waitForText, login, makeShot, reseed, clickByText, realConsoleErrors, launchBrowser, waitForLoadDetail} from "./e2e-lib.mjs"
 
 // Fail fast on a fresh rig: the cron step authenticates with Bearer CRON_SECRET.
 // Against a localhost BASE, e2e-lib has already loaded .env.local into this
@@ -89,7 +89,7 @@ async function listLoadLinks(page) {
 
 async function scheduleWeekly(page, href) {
   await page.goto(`${BASE}${href}`, { waitUntil: "networkidle2" })
-  await waitForText(page, "Rate")
+  await waitForLoadDetail(page)
   await clickByText(page, "Repeat weekly")
   await waitForText(page, "Rebook this lane every")
   await clickByText(page, localWeekdayName)

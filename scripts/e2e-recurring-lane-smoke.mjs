@@ -20,7 +20,7 @@
  * Usage: node scripts/e2e-recurring-lane-smoke.mjs [outputDir]
  */
 import { mkdirSync } from "node:fs"
-import { BASE, failures, check, waitForText, login, makeShot, reseed, clickByText, realConsoleErrors, launchBrowser } from "./e2e-lib.mjs"
+import { BASE, failures, check, waitForText, login, makeShot, reseed, clickByText, realConsoleErrors, launchBrowser, waitForLoadDetail} from "./e2e-lib.mjs"
 
 // Fail fast on a fresh rig: the cron step authenticates with Bearer CRON_SECRET.
 // Against a localhost BASE, e2e-lib has already loaded .env.local into this
@@ -80,7 +80,7 @@ async function main() {
   })
   check(!!loadHref, `Pipe load found in the loads list (${loadHref})`)
   await page.goto(`${BASE}${loadHref}`, { waitUntil: "networkidle2" })
-  await waitForText(page, "Rate")
+  await waitForLoadDetail(page)
   const sourceRef = await page.evaluate(() => document.querySelector("h1")?.textContent?.trim() ?? "")
   check(/^THD-\d+$/.test(sourceRef), `source load open (${sourceRef})`)
   const hasRepeat = await page.evaluate(() =>
@@ -95,7 +95,7 @@ async function main() {
   await clickByText(page, localWeekdayName)
   await waitForText(page, `Weekly · ${WEEKDAYS_SHORT[weekday]}`)
   await page.reload({ waitUntil: "networkidle2" })
-  await waitForText(page, "Rate")
+  await waitForLoadDetail(page)
   const scheduled = await page.evaluate((short) => ({
     weeklyButton: [...document.querySelectorAll("button")].some((b) => b.textContent.trim() === `Weekly · ${short}`),
     timelineNote: document.body.innerText.includes("Weekly rebook scheduled: every"),
@@ -118,7 +118,7 @@ async function main() {
 
   console.log("4. The rule shows what it booked; the copy is a clean rebook")
   await page.reload({ waitUntil: "networkidle2" })
-  await waitForText(page, "Rate")
+  await waitForLoadDetail(page)
   await clickByText(page, `Weekly · ${WEEKDAYS_SHORT[weekday]}`)
   await waitForText(page, "Last booked:")
   const bookedRef = await page.evaluate(() =>
@@ -136,7 +136,7 @@ async function main() {
   }, bookedRef)
   check(!!copyHref, `booked copy found in the loads list (${copyHref})`)
   await page.goto(`${BASE}${copyHref}`, { waitUntil: "networkidle2" })
-  await waitForText(page, "Rate")
+  await waitForLoadDetail(page)
   const copy = await page.evaluate(() => {
     const body = document.body.innerText
     const sourceDd = [...document.querySelectorAll("dt")]
@@ -163,7 +163,7 @@ async function main() {
 
   console.log("5. Turn the rule off")
   await page.goto(`${BASE}${loadHref}`, { waitUntil: "networkidle2" })
-  await waitForText(page, "Rate")
+  await waitForLoadDetail(page)
   await clickByText(page, `Weekly · ${WEEKDAYS_SHORT[weekday]}`)
   await waitForText(page, "Turn off weekly rebook")
   await clickByText(page, "Turn off weekly rebook")
@@ -183,7 +183,7 @@ async function main() {
   })
   await login(page2, "accounting@demo.thind")
   await page2.goto(`${BASE}${loadHref}`, { waitUntil: "networkidle2" })
-  await waitForText(page2, "Rate")
+  await waitForLoadDetail(page2)
   const accountant = await page2.evaluate(() => ({
     hasRepeat: [...document.querySelectorAll("button")].some((b) => /Repeat weekly|Weekly ·/.test(b.textContent.trim())),
   }))

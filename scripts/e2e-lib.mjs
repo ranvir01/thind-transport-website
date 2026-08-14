@@ -413,3 +413,24 @@ export async function clickByText(page, text, { tag = "button", timeout = 8000 }
   }
   throw new Error(`Could not find ${tag} containing "${text}"`)
 }
+
+/**
+ * Wait for a load-detail page to actually render.
+ *
+ * Do NOT use waitForText(page, "Rate") for this: the sidebar renders "Paste
+ * rate con", so that resolves instantly against a still-blank document and
+ * every subsequent read comes back null. It fails loudest under full-rig
+ * load, where the render loses the race it wins in isolation — which is how
+ * two smokes spent weeks looking like CI flakes instead of the timing bug
+ * they were. Anchors on the load's own THD- heading.
+ */
+export async function waitForLoadDetail(page, timeout = 20000) {
+  await page
+    .waitForFunction(
+      () => /^THD-\d+$/.test(document.querySelector("h1")?.textContent?.trim() ?? ""),
+      { timeout }
+    )
+    .catch(() => {
+      throw new Error("load-detail heading (THD-…) never rendered")
+    })
+}

@@ -17,7 +17,7 @@
  * Reseeds demo data first. Usage: node scripts/e2e-duplicate-load-smoke.mjs [outputDir]
  */
 import { mkdirSync } from "node:fs"
-import { BASE, failures, check, waitForText, login, makeShot, reseed, clickByText, realConsoleErrors, launchBrowser } from "./e2e-lib.mjs"
+import { BASE, failures, check, waitForText, login, makeShot, reseed, clickByText, realConsoleErrors, launchBrowser, waitForLoadDetail} from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-duplicate-load"
 mkdirSync(OUT, { recursive: true })
@@ -47,7 +47,7 @@ async function main() {
   })
   check(!!loadHref, `Pipe load found in the loads list (${loadHref})`)
   await page.goto(`${BASE}${loadHref}`, { waitUntil: "networkidle2" })
-  await waitForText(page, "Rate")
+  await waitForLoadDetail(page)
 
   const source = await page.evaluate(() => {
     const heading = document.querySelector("h1")?.textContent?.trim() ?? ""
@@ -75,17 +75,7 @@ async function main() {
     page.waitForNavigation({ waitUntil: "networkidle2", timeout: 20000 }),
     clickByText(page, "Duplicate"),
   ])
-  // NOT waitForText("Rate"): the sidebar renders "Paste rate con", so that
-  // matched instantly on the still-blank page and every read below came back
-  // empty — which failed the value checks while the absence checks passed by
-  // accident. Wait for the copy's own heading to render.
-  await page
-    .waitForFunction(() => /^THD-\d+$/.test(document.querySelector("h1")?.textContent?.trim() ?? ""), {
-      timeout: 15000,
-    })
-    .catch(() => {
-      throw new Error("duplicated load's detail heading never rendered")
-    })
+  await waitForLoadDetail(page)
   const copy = await page.evaluate(() => {
     const heading = document.querySelector("h1")?.textContent?.trim() ?? ""
     const body = document.body.innerText
@@ -137,7 +127,7 @@ async function main() {
   })
   await login(page2, "accounting@demo.thind")
   await page2.goto(`${BASE}${copy.url}`, { waitUntil: "networkidle2" })
-  await waitForText(page2, "Rate")
+  await waitForLoadDetail(page2)
   const accountant = await page2.evaluate(() => ({
     hasDuplicate: [...document.querySelectorAll("button")].some((b) => b.textContent.trim() === "Duplicate"),
   }))

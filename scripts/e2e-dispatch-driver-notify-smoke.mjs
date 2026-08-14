@@ -14,7 +14,7 @@
  * Usage: node scripts/e2e-dispatch-driver-notify-smoke.mjs [outputDir]
  */
 import { mkdirSync } from "node:fs"
-import { launchBrowser, BASE, failures, check, waitForText, login, makeShot, clickByText, reseed, realConsoleErrors } from "./e2e-lib.mjs"
+import { launchBrowser, BASE, failures, check, waitForText, login, makeShot, clickByText, reseed, realConsoleErrors, waitForLoadDetail } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-dispatch-notify"
 mkdirSync(OUT, { recursive: true })
@@ -78,7 +78,10 @@ async function main() {
   // this saw 15-30s+ round trips locally vs. ~50-300ms in isolation, so give
   // this wait real headroom instead of flaking on a slow but healthy booking.
   await page.waitForFunction(() => /\/hub\/loads\/[0-9a-f-]{36}$/.test(location.pathname), { timeout: 30000 })
-  await waitForText(page, "Rate")
+  // In isolation the render won this race and the smoke passed; inside the
+  // full rig it lost and read null — which is why this looked like a CI
+  // flake rather than the timing bug it is.
+  await waitForLoadDetail(page)
   const reference = await page.evaluate(() => (document.body.innerText.match(/THD-\d+/) ?? [null])[0])
   check(Boolean(reference), `load booked with a carrier reference (${reference})`)
   check(

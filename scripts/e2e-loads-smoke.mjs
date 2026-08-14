@@ -13,7 +13,7 @@
  * Usage: node scripts/e2e-loads-smoke.mjs [outputDir]
  */
 import { mkdirSync } from "node:fs"
-import { launchBrowser, BASE, failures, check, waitForText, textGone, login, makeShot, clickByText, reseed, realConsoleErrors } from "./e2e-lib.mjs"
+import { launchBrowser, BASE, failures, check, waitForText, textGone, login, makeShot, clickByText, reseed, realConsoleErrors, waitForLoadDetail} from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-loads"
 mkdirSync(OUT, { recursive: true })
@@ -99,7 +99,7 @@ async function main() {
     () => /\/hub\/loads\/[0-9a-f-]{36}$/.test(location.pathname),
     { timeout: 30000 }
   )
-  await waitForText(page, "Rate")
+  await waitForLoadDetail(page)
   const detail = await page.evaluate(() => {
     const text = document.body.innerText
     return {
