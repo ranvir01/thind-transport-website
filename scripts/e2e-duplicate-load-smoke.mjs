@@ -75,7 +75,17 @@ async function main() {
     page.waitForNavigation({ waitUntil: "networkidle2", timeout: 20000 }),
     clickByText(page, "Duplicate"),
   ])
-  await waitForText(page, "Rate")
+  // NOT waitForText("Rate"): the sidebar renders "Paste rate con", so that
+  // matched instantly on the still-blank page and every read below came back
+  // empty — which failed the value checks while the absence checks passed by
+  // accident. Wait for the copy's own heading to render.
+  await page
+    .waitForFunction(() => /^THD-\d+$/.test(document.querySelector("h1")?.textContent?.trim() ?? ""), {
+      timeout: 15000,
+    })
+    .catch(() => {
+      throw new Error("duplicated load's detail heading never rendered")
+    })
   const copy = await page.evaluate(() => {
     const heading = document.querySelector("h1")?.textContent?.trim() ?? ""
     const body = document.body.innerText

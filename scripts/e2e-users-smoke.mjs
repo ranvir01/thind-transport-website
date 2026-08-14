@@ -133,7 +133,9 @@ async function main() {
   await hirePage.goto(`${BASE}/hub`, { waitUntil: "networkidle2" })
   const hire = await hirePage.evaluate(() => ({
     path: location.pathname,
-    office: document.body.innerText.includes("in one calm place"),
+    // Today's StatTile row, always rendered — the old "in one calm place"
+    // subtitle was dropped in the app-chrome redesign.
+    office: document.body.innerText.includes("Unconfirmed drivers"),
   }))
   check(hire.path === "/hub" && hire.office, `new dispatcher lands on the office Today page (${hire.path})`)
   await shot(hirePage, "05-new-hire-signed-in")

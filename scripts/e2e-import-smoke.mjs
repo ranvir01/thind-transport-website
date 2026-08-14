@@ -50,19 +50,35 @@ async function main() {
   console.log("2. Upload CSV, confirm auto-mapping")
   const fileInput = await page.$('input[type="file"]')
   await fileInput.uploadFile(fixturePath)
-  await waitForText(page, "1 data rows")
+  // The mapping step gained pluralization, so a single-row fixture renders
+  // "1 data row" — the old assertion hard-coded the plural "1 data rows".
+  // Match the stem so either form passes.
+  await waitForText(page, "1 data row")
   const unitMapped = await page.$eval("#map-unit_number", (el) => el.value !== "")
   check(unitMapped, "unit_number column auto-mapped from 'Unit #' header")
   await shot(page, "02-import-trucks-mapped")
 
-  console.log("3. Run the import")
+  console.log("3. Review, then run the import")
+  // The wizard gained a client-side review step between mapping and import:
+  // "Review rows" → "Import N row(s)". The old smoke clicked a hard-coded
+  // "Import 1 rows" that now neither exists on this step nor matches the
+  // pluralization.
   await page.evaluate(() => {
-    const btn = [...document.querySelectorAll("button")].find((b) => b.textContent?.includes("Import 1 rows"))
-    btn?.click()
+    ;[...document.querySelectorAll("button")]
+      .find((b) => b.textContent?.includes("Review rows"))
+      ?.click()
   })
-  await waitForText(page, "Import finished")
+  await waitForText(page, "1 row ready")
+  await page.evaluate(() => {
+    ;[...document.querySelectorAll("button")]
+      .find((b) => /^Import \d+ rows?$/.test(b.textContent?.trim() ?? ""))
+      ?.click()
+  })
+  await waitForText(page, "row imported")
   const resultText = await page.evaluate(() => document.body.innerText)
-  check(resultText.includes("1 imported"), "result panel reports 1 imported")
+  // "1 <entity label> row imported" — the entity label carries its own
+  // pluralization, so pin the count and the verb, not the noun in between.
+  check(/\b1 \w+ rows? imported/.test(resultText), "result panel reports 1 imported")
   check(!resultText.includes("1 failed"), "no rows failed")
   await shot(page, "03-import-trucks-result")
 

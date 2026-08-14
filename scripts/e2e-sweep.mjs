@@ -29,7 +29,10 @@ mkdirSync(OUT, { recursive: true })
 // [name, url, anchor] — anchor is lowercase page-content text (subtitles,
 // always-rendered labels). Never use a word the sidebar/bottom-nav renders.
 const OFFICE_PAGES = [
-  ["today", "/hub", "in one calm place"],
+  // The Today subtitle (PRODUCT.tagline, "in one calm place") was removed by
+  // the app-chrome redesign — the string still exists in product.ts, so
+  // grepping for it is misleading. The four StatTiles always render.
+  ["today", "/hub", "unconfirmed drivers"],
   ["planner", "/hub/planner", "whole week at a glance"],
   ["dispatch", "/hub/dispatch", "every active load, booking to pod"],
   ["messages", "/hub/messages", "no personal phone numbers"],

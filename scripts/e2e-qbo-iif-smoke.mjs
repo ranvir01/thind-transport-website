@@ -65,11 +65,32 @@ async function main() {
   await page.goto(`${BASE}/hub/money`, { waitUntil: "networkidle2" })
   await waitForText(page, "Customer statements")
 
-  const links = await page.evaluate(() =>
-    [...document.querySelectorAll("a")]
-      .filter((a) => a.textContent.includes("QuickBooks .IIF"))
-      .map((a) => ({ text: a.textContent.trim(), href: a.getAttribute("href") }))
-  )
+  // The nine-chip export wall became one "Export" button opening a sheet
+  // (ExportSheet.tsx), so the four IIF rows are not on the page until it is
+  // open — and they are labelled "Invoices (.IIF)" etc., not the old
+  // "QuickBooks .IIF". Match on the export href, which is the contract that
+  // actually matters and survives relabelling.
+  // Two gates, not one: the "Export" button opens the sheet, and the IIF rows
+  // sit behind a further "Using QuickBooks Desktop?" disclosure inside it
+  // (Desktop-only .IIF is deliberately de-emphasised vs the CSV reports).
+  await page.evaluate(() => {
+    ;[...document.querySelectorAll("button")].find((b) => b.textContent?.trim() === "Export")?.click()
+  })
+  await waitForText(page, "Using QuickBooks Desktop?")
+  await page.evaluate(() => {
+    ;[...document.querySelectorAll("button")]
+      .find((b) => b.textContent?.includes("Using QuickBooks Desktop?"))
+      ?.click()
+  })
+  const links = await page.evaluate(async () => {
+    const read = () =>
+      [...document.querySelectorAll('a[href*="/api/hub/exports/qbo-iif"]')].map((a) => ({
+        text: a.textContent.trim(),
+        href: a.getAttribute("href"),
+      }))
+    for (let i = 0; i < 30 && read().length < 4; i++) await new Promise((r) => setTimeout(r, 100))
+    return read()
+  })
   check(links.length === 4, `all 4 QuickBooks .IIF export links present (found ${links.length})`)
   await shot(page, "01-money-qbo-iif-links")
 
