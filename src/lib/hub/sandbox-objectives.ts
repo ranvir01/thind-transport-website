@@ -128,7 +128,19 @@ function objectivesFor(seat: ShiftSeatKey, base: ShiftMetrics, cur: ShiftMetrics
         // started means you booked faster than they called. "At or below"
         // and the old absolute "under 6" both read as already-won the moment
         // you clock in, scoring nothing you actually did.
-        make("board", "Book faster than the brokers call", 1, cur.quotedCount < base.quotedCount ? 1 : 0),
+        //
+        // The depth alone is not enough, though: the sim books off that same
+        // board (npcBook) and expires stale quotes (dropQuotedLoad), so an
+        // idle dispatcher watched the pile shrink and collected this — one of
+        // three objectives, a flat 33 for doing nothing. Requiring a booking
+        // of your own keeps the "outpace the brokers" meaning while making it
+        // unwinnable from the break room.
+        make(
+          "board",
+          "Book faster than the brokers call",
+          1,
+          cur.myBookings > base.myBookings && cur.quotedCount < base.quotedCount ? 1 : 0
+        ),
       ]
     case "driver":
       return [
@@ -141,7 +153,15 @@ function objectivesFor(seat: ShiftSeatKey, base: ShiftMetrics, cur: ShiftMetrics
         make("invoice", "Invoice 2 delivered loads", 2, cur.myInvoices - base.myInvoices),
         make("billed", "Bill $3,000 or more", 1, cur.myInvoicedCents - base.myInvoicedCents >= 300_000 ? 1 : 0),
         make("payment", "A payment lands on an overdue invoice", 1, cur.paymentsRecorded - base.paymentsRecorded),
-        make("backlog", "Shrink the unbilled backlog", 1, cur.unbilledCount < base.unbilledCount ? 1 : 0),
+        // Same clamp as the dispatcher's board: the sim invoices delivered
+        // loads itself (autoInvoice), which drains this backlog without the
+        // accountant lifting a finger. Your own invoice has to be part of it.
+        make(
+          "backlog",
+          "Shrink the unbilled backlog",
+          1,
+          cur.myInvoices > base.myInvoices && cur.unbilledCount < base.unbilledCount ? 1 : 0
+        ),
       ]
     case "owner":
       return [
