@@ -451,3 +451,23 @@ From research wave 2 (`docs/research/2026-08b/`, verified 2026-08-08):
    WA-only Stripe Tax. ~4–6 agent-days. Blocked on owner gates: Stripe account
    activation, WA DOR check, `STRIPE_SECRET_KEY`/`STRIPE_WEBHOOK_SECRET` env-var names
    in Vercel. Include the NACHA ≥10-day variable-amount notice via `invoice.upcoming`.
+
+From the Datatruck teardown (`docs/research/2026-08b/datatruck-teardown.md`, 2026-08-14).
+Ordered — each enables the next:
+
+8. **ETA from position pings + stop appointments** — `hub.position_pings` and
+   `hub.stops.appt_start` both exist; the derivation doesn't. Feeds broker updates,
+   detention prediction, and late-delivery warnings. Pure module + tests, no schema change.
+9. **Automated broker status updates** — on `load_events` stage transitions, email the
+   broker "picked up / in transit, ETA hh:mm" carrying the existing share link. The single
+   highest-value gap against Datatruck's "AI Updater", and every input already exists.
+   Must respect `isEmailConfigured()` and degrade silently (SMTP is owner-blocked),
+   per-customer opt-out, never on cancelled loads.
+10. **Per-truck / per-driver profit rollup** — compose `lanes.ts` lane RPM with
+    `operating-cost.ts` CPM into a "which truck earned what this month" report view.
+    Mostly assembly of parts already built.
+11. **Natural-language report picker** — NL → parameters over the typed functions in
+    `reports.ts`. **Explicitly NOT text-to-SQL:** every hub query is `carrier_id = $n` by
+    construction, and an LLM emitting raw SQL discards that guarantee — the cross-tenant
+    harness exists precisely to prevent this class of hole. Write the ADR recording that
+    decision before any code. Do not start until 8–10 have landed.
