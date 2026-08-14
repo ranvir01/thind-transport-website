@@ -23,9 +23,8 @@
  *
  * Usage: node scripts/e2e-tenant-isolation-smoke.mjs [outputDir]
  */
-import puppeteer from "puppeteer"
 import { mkdirSync } from "node:fs"
-import { BASE, failures, check, waitForText, textAppears, waitForPath, login, makeShot, reseed, realConsoleErrors } from "./e2e-lib.mjs"
+import { BASE, failures, check, waitForText, textAppears, waitForPath, login, makeShot, reseed, realConsoleErrors, launchBrowser } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-tenant-isolation"
 mkdirSync(OUT, { recursive: true })
@@ -86,7 +85,7 @@ async function waitForTenantStatus(page, tenantName, status, timeout = 10000) {
 
 async function main() {
   reseed()
-  const browser = await puppeteer.launch({ headless: "new", args: ["--no-sandbox", "--disable-dev-shm-usage"] })
+  const browser = await launchBrowser()
 
   // ---- 1. Thind owner: collect real detail URLs + confirm no Cascade refs ----
   console.log("1. Thind owner — list screens show THD- only; collect probe URLs")

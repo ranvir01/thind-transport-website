@@ -15,9 +15,8 @@
  *
  * Run: node scripts/e2e-interaction-battery.mjs [outputDir]
  */
-import puppeteer from "puppeteer"
 import { mkdirSync } from "node:fs"
-import { BASE, check, failures, login, makeShot, sleep, waitForStableText } from "./e2e-lib.mjs"
+import { BASE, check, failures, login, makeShot, sleep, waitForStableText, launchBrowser } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-interaction"
 mkdirSync(OUT, { recursive: true })
@@ -41,7 +40,7 @@ async function scrollByAndSettle(page, y) {
 }
 
 async function main() {
-  const browser = await puppeteer.launch({ headless: "new", args: ["--no-sandbox", "--disable-dev-shm-usage"] })
+  const browser = await launchBrowser()
   const page = await browser.newPage()
   const shot = makeShot(OUT)
 

@@ -31,10 +31,9 @@
  *
  * Usage: node scripts/e2e-showcase-smoke.mjs [outputDir]
  */
-import puppeteer from "puppeteer"
 import { execSync } from "node:child_process"
 import { mkdirSync, readFileSync } from "node:fs"
-import { BASE, failures, check, login, makeShot, realConsoleErrors } from "./e2e-lib.mjs"
+import { BASE, failures, check, login, makeShot, realConsoleErrors, launchBrowser } from "./e2e-lib.mjs"
 
 /**
  * Single source of truth for the settings index: parse href + ownerOnly out
@@ -57,7 +56,7 @@ mkdirSync(OUT, { recursive: true })
 const shot = makeShot(OUT, { fullPage: false })
 
 async function main() {
-  const browser = await puppeteer.launch({ headless: "new", args: ["--no-sandbox", "--disable-dev-shm-usage"] })
+  const browser = await launchBrowser()
 
   async function newPage() {
     const ctx = await browser.createBrowserContext()

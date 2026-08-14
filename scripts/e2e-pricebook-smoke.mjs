@@ -11,10 +11,9 @@
  * State-consuming (edits Detention, inserts Chains) — reseeds first.
  * Usage: node scripts/e2e-pricebook-smoke.mjs [outputDir]
  */
-import puppeteer from "puppeteer"
 import { mkdirSync } from "node:fs"
 import {
-  BASE, login, check, failures, waitForText, waitForPath, makeShot, clickByText, reseed,
+  BASE, login, check, failures, waitForText, waitForPath, makeShot, clickByText, reseed, launchBrowser
 } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-pricebook"
@@ -23,10 +22,7 @@ const shot = makeShot(OUT)
 
 reseed()
 
-const browser = await puppeteer.launch({
-  headless: "new",
-  args: ["--no-sandbox", "--disable-setuid-sandbox"],
-})
+const browser = await launchBrowser()
 
 try {
   const page = await browser.newPage()
