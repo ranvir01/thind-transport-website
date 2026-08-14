@@ -51,7 +51,7 @@ async function clickTaskButton(page, title, ariaLabel) {
     ({ title, ariaLabel }) => {
       const card = [...document.querySelectorAll("p")]
         .find((p) => (p.textContent ?? "").includes(title))
-        ?.closest("div.rounded-xl")
+        ?.closest("div.rounded-card, div.rounded-xl")
       const btn = card?.querySelector(`button[aria-label="${ariaLabel}"]`)
       if (btn) {
         btn.click()
@@ -128,7 +128,7 @@ async function main() {
   const full = await page.evaluate((t) => {
     const card = [...document.querySelectorAll("p")]
       .find((p) => (p.textContent ?? "").includes(t))
-      ?.closest("div.rounded-xl")
+      ?.closest("div.rounded-card, div.rounded-xl")
     const cardText = card?.innerText ?? ""
     return {
       comingUp: document.body.innerText.toUpperCase().includes("COMING UP (1)"),
@@ -144,7 +144,7 @@ async function main() {
   await page.evaluate((t) => {
     const card = [...document.querySelectorAll("p")]
       .find((p) => (p.textContent ?? "").includes(t))
-      ?.closest("div.rounded-xl")
+      ?.closest("div.rounded-card, div.rounded-xl")
     card?.querySelector('input[type="checkbox"]')?.click()
   }, FULL_TASK)
   await waitForText(page, "Checklist 1/2")

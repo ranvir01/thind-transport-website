@@ -56,10 +56,25 @@ async function main() {
     fresh.waitForNavigation({ waitUntil: "networkidle2", timeout: 25000 }),
     clickSelector(fresh, 'button[type="submit"]'),
   ])
-  await waitForText(fresh, "Set up your workspace")
+  // A brand-new workspace has setup STARTED (the wizard supplied company +
+  // pay) but core not done, so Today renders SetupProgressCard. SetupGuide —
+  // which owns "Set up your workspace" — only appears once trucks, drivers,
+  // customers and loads all exist, i.e. never on the first screen a new
+  // owner sees.
+  await waitForText(fresh, "Finish setup")
+  // The card ships collapsed — open it before asserting on the steps.
+  await fresh.evaluate(() => {
+    // The card's own disclosure, not the first aria-expanded on the page —
+    // the shell has its own collapsible bits.
+    const toggle = [...document.querySelectorAll("button[aria-expanded]")].find((b) =>
+      b.textContent?.includes("Finish setup")
+    )
+    toggle?.click()
+  })
+  await waitForText(fresh, "Add your trucks")
   await shot(fresh, "04-getting-started")
   const checklist = await fresh.evaluate(() => document.body.innerText)
-  if (!checklist.includes("Smart Setup")) throw new Error("Getting-started checklist missing")
+  if (!checklist.includes("Add your drivers")) throw new Error("Getting-started checklist missing")
   if (checklist.includes("THD-")) throw new Error("NEW TENANT SEES THIND DATA — isolation broken!")
   console.log("   new workspace is empty + checklist shows ✓")
 

@@ -62,7 +62,7 @@ async function main() {
   // Complete OUR task specifically (automation tasks may sit above it).
   await office.evaluate(() => {
     const button = [...document.querySelectorAll('button[aria-label="Mark done"]')].find((b) =>
-      b.closest("div.rounded-xl")?.textContent?.includes("Morning ops huddle checklist")
+      b.closest("div.rounded-card, div.rounded-xl")?.textContent?.includes("Morning ops huddle checklist")
     )
     button?.click()
   })

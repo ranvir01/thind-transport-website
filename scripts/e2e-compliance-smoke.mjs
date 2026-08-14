@@ -27,7 +27,10 @@ const readSummary = (page) =>
     const panels = [...document.querySelectorAll("section.rounded-card")]
     const nums = panels
       .slice(0, 3)
-      .map((p) => Number(p.querySelector("p.font-display")?.textContent?.trim() ?? "NaN"))
+      // The tile's only <p> is its count. Anchored on structure, not on a
+      // font class: the restyle dropped `font-display` and this read null for
+      // all three tiles, failing four checks with no hint of why.
+      .map((p) => Number(p.querySelector("p")?.textContent?.trim() ?? "NaN"))
     return { red: nums[0], amber: nums[1], green: nums[2] }
   })
 

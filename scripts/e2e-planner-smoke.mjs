@@ -52,10 +52,12 @@ async function main() {
   await login(page, "dispatch@demo.thind")
 
   console.log("2. Today command center")
-  // Dispatchers land on /hub/loadboard since Phase 3 (hubLandingPath) — the
-  // Today page lives at /hub and greets with the product mission line.
+  // Dispatchers land on /hub/loadboard since Phase 3 (hubLandingPath); the
+  // Today page lives at /hub. Anchored on the always-rendered StatTile row —
+  // the mission line it used to greet with was dropped in the app-chrome
+  // redesign (the string survives in product.ts, so grep won't tell you).
   await page.goto(`${BASE}/hub`, { waitUntil: "networkidle2" })
-  await waitForText(page, "first load to last invoice")
+  await waitForText(page, "Unconfirmed drivers")
   await page.screenshot({ path: path.join(OUT, "01-today.png"), fullPage: true })
   console.log("  📸 01-today")
 
