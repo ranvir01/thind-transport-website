@@ -112,7 +112,7 @@ export default function ShippersPage() {
       <div className="relative overflow-hidden bg-[#060607] text-white">
         <Image
           src="/images/generated/truck-night-highway.webp"
-          alt="Thind Transport truck running a night highway lane"
+          alt="Illustration of a tractor-trailer running a night highway lane"
           fill
           sizes="100vw"
           className="object-cover opacity-40"

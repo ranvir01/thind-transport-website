@@ -45,7 +45,7 @@ export default function Home() {
 
       <PhotoBand
         src="/images/generated/truck-mountain-pass.webp"
-        alt="Thind Transport truck crossing a mountain pass at golden hour"
+        alt="Illustration of a tractor-trailer crossing a mountain pass at golden hour"
         eyebrow="All 48 states"
         headline="The lanes you know. The miles you want."
       />

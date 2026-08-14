@@ -364,7 +364,7 @@ export default function FleetPage() {
           <div className="relative h-full">
             <Image
               src="/images/generated/hero-cascadia-highway.webp"
-              alt="Freightliner Cascadia from the Thind Transport fleet rolling on a Pacific Northwest highway"
+              alt="Illustration of a Freightliner Cascadia tractor on a highway"
               fill
               className="object-cover object-center opacity-30 lg:opacity-50"
               priority

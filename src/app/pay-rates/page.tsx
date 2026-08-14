@@ -52,7 +52,7 @@ export default function PayRatesPage() {
       {/* Enhanced Hero Section */}
       <PageHero
         image="/images/generated/truck-night-highway.webp"
-        imageAlt="Thind Transport truck running a night lane outside Seattle"
+        imageAlt="Illustration of a tractor-trailer running a night highway lane"
         eyebrow="What We Actually Pay"
         title={
           <>
