@@ -29,3 +29,43 @@ Guidelines: no filters (the site applies one consistent grade), wipe the
 number plates or leave them — either is fine, get faces only with permission,
 and prefer WebP ≤ 300KB (`npx sharp-cli` or any converter; the fleet can
 compress anything dropped in as PNG/JPG — just keep the filename).
+
+---
+
+## Interim: vetted real photographs (added 2026-08-14)
+
+The site currently ships AI-generated imagery from `public/images/generated/`.
+Until the shots above exist, these are **real photographs** under the
+[Unsplash License](https://unsplash.com/license) — free for commercial use, no
+permission or attribution required (attribution is still good manners, and the
+photographers are named below).
+
+They were selected but **not** installed: this sandbox's network policy blocks
+every image host (`images.unsplash.com`, `res.cloudinary.com`, `picsum.photos`
+all refuse CONNECT), so the bytes could not be fetched. Downloading them is a
+two-minute job on any unrestricted machine.
+
+| Target file | Unsplash ID | What it is | Photographer |
+|---|---|---|---|
+| `hero-cascadia-highway` | `P0bVatS8Jdw` | Two tractor-trailers on a highway, mountains behind | Bhargav Panchal |
+| `truck-mountain-pass` | `g_FizakXz50` | Semi on a scenic highway near mountains | Mason Gemelke |
+| `truck-night-highway` | `lz0guF9OVxU` | Truck headlights at night | paws and prints |
+| `driver-cab-interior` | `TH6IjM_b_vg` | Driver in a cab, large west-coast mirror | Polina Kuzovkova |
+| `fleet-lineup-kent` | `O8dcG8oniJU` | Tractor-trailer parked, three-quarter view | Christopher Paul High |
+
+Download: `https://unsplash.com/photos/<ID>/download` — put them in
+`public/images/stock/` (NOT `generated/`, the folder name is itself a claim)
+and repoint the components.
+
+### The rule that matters more than which photo
+
+A stock photo of somebody else's Peterbilt presented as "our truck" is a
+**worse** problem than an obviously-synthetic one — it is a real, identifiable
+vehicle belonging to another company, captioned as Thind's. Every alt text on
+non-Thind imagery now says "Illustration of…" for exactly this reason. When a
+real photo of a real Thind truck goes in, the caption can name the company
+again — and only then.
+
+Owner photos beat both. Ten minutes with a phone at the yard closes this
+permanently, and a slightly crooked real photo of your own truck sells better
+than a perfect render of a truck that does not exist.

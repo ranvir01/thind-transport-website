@@ -247,7 +247,7 @@ const trailers = [
     icon: Snowflake,
     count: "4+",
     specs: ["Thermo King Unit", "-20°F to 70°F Range", "Multi-Temp Ready", "GPS Tracking", "Fuel Efficient Units", "Remote Monitoring"],
-    description: "Temperature-controlled units for perishables. State-of-the-art reefer technology.",
+    description: "Temperature-controlled units for perishables, monitored on every load.",
     image: "/images/generated/trailer-reefer.png"
   },
   {
@@ -364,7 +364,7 @@ export default function FleetPage() {
           <div className="relative h-full">
             <Image
               src="/images/generated/hero-cascadia-highway.webp"
-              alt="Freightliner Cascadia from the Thind Transport fleet rolling on a Pacific Northwest highway"
+              alt="Illustration of a Freightliner Cascadia tractor on a highway"
               fill
               className="object-cover object-center opacity-30 lg:opacity-50"
               priority

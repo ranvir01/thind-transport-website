@@ -115,7 +115,7 @@ export default function RoutesPage() {
 
         <PageHero
           image="/images/generated/hero-cascadia-highway.webp"
-          imageAlt="Thind Transport truck running a Pacific Northwest highway lane"
+          imageAlt="Illustration of a tractor-trailer on a Pacific Northwest highway"
           eyebrow="CDL-A Route Overview"
           title={
             <>
