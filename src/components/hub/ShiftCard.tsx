@@ -13,9 +13,10 @@
  * check via the global reduce block; everything else is plain layout.
  */
 import { useCallback, useEffect, useRef, useState } from "react"
-import { CheckCircle2, Circle, Clock3, Copy, Loader2, Play, Square, X } from "lucide-react"
+import { Banknote, CheckCircle2, Circle, Clock3, Copy, Loader2, Play, Square, X } from "lucide-react"
 import { toast } from "sonner"
 import { endShiftAction, shiftStatusAction, startShiftAction } from "@/app/hub/_actions/sandbox-shift"
+import type { FeedItem } from "@/lib/hub/sandbox-feed"
 import { BottomSheet } from "@/components/hub/BottomSheet"
 import { CheckDraw } from "@/components/hub/CheckDraw"
 import { SANDBOX_CARRIER_NAME } from "@/lib/hub/sandbox"
@@ -39,6 +40,15 @@ type Phase =
   | { kind: "recap"; evaluation: ShiftEvaluation }
   | { kind: "voided" }
 
+/** "3m ago" — the rail is about recency, and a clock time makes you do maths. */
+function ago(iso: string, now: number): string {
+  const mins = Math.max(0, Math.round((now - new Date(iso).getTime()) / 60_000))
+  if (mins < 1) return "just now"
+  if (mins < 60) return `${mins}m ago`
+  const hours = Math.round(mins / 60)
+  return hours < 24 ? `${hours}h ago` : `${Math.round(hours / 24)}d ago`
+}
+
 const seatPitch: Record<string, string> = {
   dispatcher: "Brokers keep calling while you're on. Book, assign, keep the board tight.",
   driver: "Your truck is rolling. Arrive, load, deliver, shoot the POD.",
@@ -49,11 +59,17 @@ const seatPitch: Record<string, string> = {
   owner_operator: "Your truck, your money. Run the load, then get paid for it.",
 }
 
+/** Whole dollars — cents on a scoreboard is noise, and these are big numbers. */
+const money = (cents: number) =>
+  `$${Math.round(cents / 100).toLocaleString("en-US")}`
+
 function recapText(ev: ShiftEvaluation): string {
   const done = ev.objectives.filter((o) => o.done)
   const parts = [
     `My shift at ${SANDBOX_CARRIER_NAME.replace(" (Sandbox)", "")}: ${done.length}/${ev.objectives.length} objectives in ${ev.minutes} min`,
   ]
+  if (ev.money.personalCents > 0) parts.push(`${ev.money.personalLabel.toLowerCase()} ${money(ev.money.personalCents)}`)
+  if (ev.money.deliveredCents > 0) parts.push(`${money(ev.money.deliveredCents)} delivered company-wide`)
   if (ev.onTimePct !== null) parts.push(`${ev.onTimePct}% on-time`)
   parts.push(`score ${ev.score}%`)
   return `${parts.join(" · ")} — LoadOff Shift Mode`
@@ -62,6 +78,7 @@ function recapText(ev: ShiftEvaluation): string {
 export function ShiftCard({ seat, dark = false }: { seat: string; dark?: boolean }) {
   const storageKey = `sandbox-shift-${seat}`
   const [phase, setPhase] = useState<Phase>({ kind: "idle" })
+  const [feed, setFeed] = useState<FeedItem[]>([])
   const [busy, setBusy] = useState(false)
   const phaseRef = useRef(phase)
   phaseRef.current = phase
@@ -90,6 +107,7 @@ export function ShiftCard({ seat, dark = false }: { seat: string; dark?: boolean
       setPhase({ kind: "idle" })
       return
     }
+    if (res.feed) setFeed(res.feed)
     if (!res.ok || !res.metrics || !res.epoch) return // transient — keep the shift
     if (res.epoch !== current.stored.epoch) {
       forget()
@@ -123,6 +141,7 @@ export function ShiftCard({ seat, dark = false }: { seat: string; dark?: boolean
     setBusy(true)
     try {
       const res = await startShiftAction()
+      if (res.feed) setFeed(res.feed)
       if (res.ok && res.metrics && res.epoch) {
         const stored: StoredShift = { epoch: res.epoch, baseline: res.metrics }
         try {
@@ -219,6 +238,123 @@ export function ShiftCard({ seat, dark = false }: { seat: string; dark?: boolean
     </ul>
   )
 
+  /**
+   * What the shift was worth — yours on the left, the company's underneath.
+   *
+   * This is the answer to "why am I clicking these buttons": the freight you
+   * booked has a rate on it, the legs you drove pay a wage the settlement
+   * engine agrees with, and the company banked money while you did it —
+   * including the money your AI teammates brought in. All real rows; nothing
+   * here is a points system dressed up as dollars.
+   */
+  const moneyStrip = (m: ShiftEvaluation["money"], onSheet = false) => {
+    const co: [string, number][] = [
+      ["delivered", m.deliveredCents],
+      ["billed", m.billedCents],
+      ["collected", m.collectedCents],
+    ]
+    const live = co.filter(([, cents]) => cents > 0)
+    if (m.personalCents <= 0 && live.length === 0 && m.rollingCents <= 0) return null
+    return (
+      <div
+        className={cn(
+          "mt-2.5 rounded-control border px-2.5 py-2",
+          onSheet
+            ? "border-border bg-canvas"
+            : dark
+              ? "border-white/10 bg-white/[0.03]"
+              : "border-border bg-canvas"
+        )}
+      >
+        {m.personalCents > 0 ? (
+          <p className="flex items-baseline gap-1.5">
+            <Banknote
+              className={cn("h-4 w-4 shrink-0 self-center text-ok")}
+              aria-hidden
+            />
+            <span className={cn("text-[12.5px]", onSheet ? "text-fg-2" : soft)}>{m.personalLabel}</span>
+            <span
+              className={cn(
+                "ml-auto text-[15px] font-semibold tabular-nums",
+                onSheet ? "text-fg" : strong
+              )}
+            >
+              {money(m.personalCents)}
+            </span>
+          </p>
+        ) : null}
+        {live.length > 0 || m.rollingCents > 0 ? (
+          <p
+            className={cn(
+              "text-[11.5px] tabular-nums",
+              m.personalCents > 0 && "mt-1.5 border-t pt-1.5",
+              m.personalCents > 0 && (onSheet || !dark ? "border-border" : "border-white/10"),
+              onSheet ? "text-fg-3" : dark ? "text-steel-400" : "text-fg-3"
+            )}
+          >
+            {live.length > 0
+              ? `Blue Ridge this shift: ${live.map(([label, cents]) => `${money(cents)} ${label}`).join(" · ")}`
+              : // Nothing has landed yet — an arrival is minutes away, not
+                // seconds. Say what IS true: the company's money is out there
+                // on the road, which is the reason any of these seats exist.
+                `${money(m.rollingCents)} of freight on the road right now`}
+          </p>
+        ) : null}
+        {m.standing && m.personalCents > 0 ? (
+          <p className={cn("mt-1 text-[11px]", onSheet ? "text-fg-3" : dark ? "text-steel-500" : "text-fg-3")}>
+            On the road right now because of your work — not just this shift.
+          </p>
+        ) : null}
+      </div>
+    )
+  }
+
+  /**
+   * The crew rail: proof you have colleagues.
+   *
+   * The world was always moving — brokers calling, trucks rolling, the back
+   * office billing — but you had to go to the right page to catch any of it,
+   * so a solo shift felt like working an empty building. Every row here is a
+   * committed database row, and anything the simulation did says so.
+   */
+  const crewRail = () => {
+    if (feed.length === 0) return null
+    const now = Date.now()
+    return (
+      <div className={cn("mt-2.5 border-t pt-2", dark ? "border-white/10" : "border-border")}>
+        <p className={cn("text-[11px] font-semibold uppercase tracking-wide", dark ? "text-steel-400" : "text-fg-3")}>
+          Around you
+        </p>
+        <ul className="mt-1 space-y-1">
+          {feed.slice(0, 4).map((f) => (
+            <li key={f.id} className={cn("flex items-baseline gap-1.5 text-[12px]", soft)}>
+              <span className={cn("font-medium", strong)}>{f.who}</span>
+              {f.ai ? (
+                <span
+                  className={cn(
+                    "rounded-pill px-1 text-[9.5px] font-semibold uppercase leading-[1.4]",
+                    dark ? "bg-white/10 text-steel-300" : "bg-hover text-fg-3"
+                  )}
+                  title="Played by the simulation"
+                >
+                  AI
+                </span>
+              ) : null}
+              <span className="min-w-0 flex-1 truncate">
+                {f.text}
+                {f.count > 1 ? <span className="sr-only"> ({f.count} events)</span> : null}
+              </span>
+              {f.cents ? <span className="shrink-0 tabular-nums">{money(f.cents)}</span> : null}
+              <span className={cn("shrink-0 text-[10.5px]", dark ? "text-steel-500" : "text-fg-3")}>
+                {ago(f.at, now)}
+              </span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    )
+  }
+
   const sheetOpen = phase.kind === "ending" || phase.kind === "recap"
   const sheet = (
     <BottomSheet
@@ -261,6 +397,7 @@ export function ShiftCard({ seat, dark = false }: { seat: string; dark?: boolean
               <p className="mt-0.5 text-[13px] text-fg-2">{phase.evaluation.headline}</p>
             </div>
           </div>
+          {moneyStrip(phase.evaluation.money, true)}
           <div className="mt-3">{objectiveRows(phase.evaluation.objectives, true)}</div>
           {phase.evaluation.onTimePct !== null ? (
             <p className="mt-2 text-[12.5px] text-fg-2">On-time deliveries: {phase.evaluation.onTimePct}%</p>
@@ -383,7 +520,11 @@ export function ShiftCard({ seat, dark = false }: { seat: string; dark?: boolean
         </button>
       </div>
       {live ? (
-        <div className="mt-2">{objectiveRows(live.objectives)}</div>
+        <div className="mt-2">
+          {objectiveRows(live.objectives)}
+          {moneyStrip(live.money)}
+          {crewRail()}
+        </div>
       ) : (
         <p className={cn("mt-2 text-[12.5px]", soft)} aria-live="polite">
           Reading the board…
