@@ -208,6 +208,22 @@ export interface ShiftEvaluation {
 
 const clamp = (n: number) => Math.max(0, n)
 
+/**
+ * Board-depth objectives ("leave the pile shorter than you found it") compare
+ * a count the SIMULATION also moves: the autopilot dispatcher books off the
+ * quoted board, the autopilot accountant invoices, and so on. A depth drop on
+ * its own therefore proves nothing about the player — an idle dispatcher who
+ * clocks in, watches six hours of sim ticks and clocks out used to finish the
+ * shift 33% scored, credited for freight the sim booked.
+ *
+ * So a board objective needs both halves: the pile really is smaller AND the
+ * player did the work that shrinks it. That keeps the doctrine the actor-
+ * scoped `my…` counters already follow ("the sim's autopilot records payments
+ * too and must never pad the player's score") true for the depth objectives,
+ * which were the one place it leaked.
+ */
+const shrankByHand = (shrank: boolean, myWork: number) => (shrank && myWork > 0 ? 1 : 0)
+
 function objectivesFor(seat: ShiftSeatKey, base: ShiftMetrics, cur: ShiftMetrics): ShiftObjective[] {
   const make = (key: string, label: string, target: number, progress: number): ShiftObjective => ({
     key,
@@ -237,7 +253,7 @@ function objectivesFor(seat: ShiftSeatKey, base: ShiftMetrics, cur: ShiftMetrics
           "board",
           "Book faster than the brokers call",
           1,
-          cur.myBookings > base.myBookings && cur.quotedCount < base.quotedCount ? 1 : 0
+          shrankByHand(cur.quotedCount < base.quotedCount, cur.myBookings - base.myBookings)
         ),
       ]
     case "driver":
@@ -258,7 +274,7 @@ function objectivesFor(seat: ShiftSeatKey, base: ShiftMetrics, cur: ShiftMetrics
           "backlog",
           "Shrink the unbilled backlog",
           1,
-          cur.myInvoices > base.myInvoices && cur.unbilledCount < base.unbilledCount ? 1 : 0
+          shrankByHand(cur.unbilledCount < base.unbilledCount, cur.myInvoices - base.myInvoices)
         ),
       ]
     case "owner":
@@ -271,21 +287,39 @@ function objectivesFor(seat: ShiftSeatKey, base: ShiftMetrics, cur: ShiftMetrics
           1,
           cur.myPayments - base.myPayments + (cur.myAdvances - base.myAdvances)
         ),
-        make("queue", "Shrink the draft settlement queue", 1, cur.draftSettlements < base.draftSettlements ? 1 : 0),
+        make(
+          "queue",
+          "Shrink the draft settlement queue",
+          1,
+          shrankByHand(
+            cur.draftSettlements < base.draftSettlements,
+            cur.mySettlementApprovals - base.mySettlementApprovals
+          )
+        ),
       ]
     case "safety":
       return [
         make("repair", "Certify a repair and put a truck back on the road", 1, cur.myRepairCerts - base.myRepairCerts),
         make("incident", "Log an incident on the register", 1, cur.myIncidents - base.myIncidents),
         make("close", "Close out an open incident", 1, cur.myIncidentsClosed - base.myIncidentsClosed),
-        make("open", "Leave the open-incident list shorter than you found it", 1, cur.openIncidents < base.openIncidents ? 1 : 0),
+        make(
+          "open",
+          "Leave the open-incident list shorter than you found it",
+          1,
+          shrankByHand(cur.openIncidents < base.openIncidents, cur.myIncidentsClosed - base.myIncidentsClosed)
+        ),
       ]
     case "recruiter":
       return [
         make("advance", "Move 2 applicants forward a stage", 2, cur.myStageAdvances - base.myStageAdvances),
         make("sign", "Get an offer signed", 1, cur.myOffersSigned - base.myOffersSigned),
         make("hire", "Hire someone through the orientation gate", 1, cur.myHires - base.myHires),
-        make("pipeline", "Clear the applied pile down", 1, cur.applicantsWaiting < base.applicantsWaiting ? 1 : 0),
+        make(
+          "pipeline",
+          "Clear the applied pile down",
+          1,
+          shrankByHand(cur.applicantsWaiting < base.applicantsWaiting, cur.myStageAdvances - base.myStageAdvances)
+        ),
       ]
     case "owner_operator":
       // Sam owns his truck. The driving is the company driver's rubric; what

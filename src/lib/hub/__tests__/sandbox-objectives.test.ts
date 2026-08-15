@@ -232,6 +232,55 @@ describe("owner-operator shift", () => {
   })
 })
 
+describe("board-depth objectives never score the simulation's work", () => {
+  // Regression (nightly E2E, 2026-08-12): an idle dispatcher scored 33% — the
+  // sim's autopilot booked the quoted board down while the player did nothing,
+  // and "Book faster than the brokers call" only asked whether the pile got
+  // smaller. Every seat with a depth objective had the same hole, so all five
+  // are pinned here: a shrinking board with no player work behind it is worth
+  // nothing, and the objective still lands the moment the player does the work.
+  const cases: Array<{
+    seat: Parameters<typeof evaluateShift>[0]
+    key: string
+    /** Depth counter the sim can move on its own. */
+    depth: Partial<ShiftMetrics>
+    /** The player action that legitimately shrinks that depth. */
+    work: Partial<ShiftMetrics>
+  }> = [
+    { seat: "dispatcher", key: "board", depth: { quotedCount: 3 }, work: { myBookings: 12 } },
+    { seat: "accountant", key: "backlog", depth: { unbilledCount: 6 }, work: { myInvoices: 21 } },
+    { seat: "owner", key: "queue", depth: { draftSettlements: 2 }, work: { mySettlementApprovals: 4 } },
+    { seat: "safety", key: "open", depth: { openIncidents: 2 }, work: { myIncidentsClosed: 2 } },
+    {
+      seat: "recruiter",
+      key: "pipeline",
+      depth: { applicantsWaiting: 2 },
+      work: { myStageAdvances: 1 },
+    },
+  ]
+
+  for (const { seat, key, depth, work } of cases) {
+    it(`${seat}: the board shrinking by itself does not finish "${key}"`, () => {
+      const base = metrics({ applicantsWaiting: 4 })
+      const simOnly = evaluateShift(seat, base, metrics({ applicantsWaiting: 4, ...depth }))
+      expect(simOnly.objectives.find((o) => o.key === key)?.done).toBe(false)
+      expect(simOnly.score).toBe(0)
+    })
+
+    it(`${seat}: the same drop counts once the player did the work`, () => {
+      const base = metrics({ applicantsWaiting: 4 })
+      const byHand = evaluateShift(seat, base, metrics({ applicantsWaiting: 4, ...depth, ...work }))
+      expect(byHand.objectives.find((o) => o.key === key)?.done).toBe(true)
+    })
+  }
+
+  it("player work with no drop still misses — both halves are required", () => {
+    const base = metrics()
+    const ev = evaluateShift("dispatcher", base, metrics({ myBookings: 12, quotedCount: 9 }))
+    expect(ev.objectives.find((o) => o.key === "board")?.done).toBe(false)
+  })
+})
+
 describe("the shift clock", () => {
   it("never reads negative even if snapshots arrive out of order", () => {
     const base = metrics({ at: "2026-01-15T19:00:00.000Z" })
