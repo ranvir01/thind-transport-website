@@ -22,6 +22,14 @@ describe("shouldHideMobileCommandBar", () => {
     expect(shouldHideMobileCommandBar("/driver/login")).toBe(true)
   })
 
+  it("hides on pre-qualify, whose form the bar's own CTA would discard", () => {
+    // The bar's only CTA is "Apply Now" -> /apply. A driver mid-way through the
+    // nine-field pre-qualify form taps it and loses every answer, because the
+    // form keeps its state in React and persists nothing. /apply was excluded
+    // for this reason on 2026-07-22; /pre-qualify was missed.
+    expect(shouldHideMobileCommandBar("/pre-qualify")).toBe(true)
+  })
+
   it("shows on marketing routes", () => {
     expect(shouldHideMobileCommandBar("/")).toBe(false)
     expect(shouldHideMobileCommandBar("/pay-rates")).toBe(false)
@@ -30,5 +38,6 @@ describe("shouldHideMobileCommandBar", () => {
 
   it("does not treat unrelated routes with matching prefixes as excluded", () => {
     expect(shouldHideMobileCommandBar("/apply-now")).toBe(false)
+    expect(shouldHideMobileCommandBar("/pre-qualify-faq")).toBe(false)
   })
 })
