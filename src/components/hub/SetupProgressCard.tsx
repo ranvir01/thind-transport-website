@@ -3,7 +3,18 @@
 /**
  * The endowed, collapsible setup card on Today. Replaces the wall of empty
  * radio circles: starts at 1/7 with a real progress bar, expands one step at
- * a time, and is X-dismissible (setup lives on at /hub/guide).
+ * a time, and is X-dismissible.
+ *
+ * Dismissing used to remove it permanently — the flag is in localStorage, the
+ * card returned `null`, and nothing on Today mentioned setup again. The owner
+ * of a brand-new workspace tapped the X once and lost the only thing on the
+ * screen telling him what to do next ("there was a useful pop-up guiding me
+ * through setup, it disappeared"). /hub/guide still had it, but a page you
+ * have to already know about is not a recovery path.
+ *
+ * So dismiss now demotes rather than deletes: the card collapses to a single
+ * quiet line that can bring it back. Still out of the way — one line instead of
+ * a panel — and still honest about there being unfinished setup.
  */
 import { useEffect, useState } from "react"
 import Link from "next/link"
@@ -33,7 +44,8 @@ export function SetupProgressCard({ progress }: { progress: GettingStarted }) {
   const activeKey = openStep ?? next?.key ?? null
 
   // null = not hydrated yet; render nothing to avoid a dismiss flash.
-  if (dismissed !== false || !next) return null
+  // No `next` = setup is finished, and a finished checklist has nothing to say.
+  if (dismissed === null || !next) return null
 
   const dismiss = () => {
     setDismissed(true)
@@ -42,6 +54,35 @@ export function SetupProgressCard({ progress }: { progress: GettingStarted }) {
     } catch {
       /* non-persistent dismiss is still a dismiss */
     }
+  }
+
+  const restore = () => {
+    setDismissed(false)
+    setExpanded(true)
+    try {
+      window.localStorage.removeItem(DISMISS_KEY)
+    } catch {
+      /* the in-memory restore is what matters this session */
+    }
+  }
+
+  // Dismissed: one line, not a panel — enough to find your way back.
+  if (dismissed) {
+    return (
+      <button
+        type="button"
+        onClick={restore}
+        className="mb-5 flex min-h-[44px] w-full items-center gap-2 rounded-control px-1 text-left text-body-xs text-fg-3 hover:text-fg-2"
+      >
+        <span className="inline-flex h-1.5 w-16 overflow-hidden rounded-pill bg-surface-2" aria-hidden>
+          <span className="h-full rounded-pill bg-accent" style={{ width: `${(done / steps.length) * 100}%` }} />
+        </span>
+        <span>
+          Setup {done} of {steps.length} — next: {next.label}
+        </span>
+        <span className="font-semibold text-accent-text underline">Show</span>
+      </button>
+    )
   }
 
   return (

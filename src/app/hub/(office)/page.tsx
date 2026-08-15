@@ -10,6 +10,9 @@ import { fmtCents } from "@/lib/hub/types"
 import { Panel } from "@/components/hub/ui"
 import { SetupGuide } from "@/components/hub/SetupGuide"
 import { SetupProgressCard } from "@/components/hub/SetupProgressCard"
+import { SandboxInvite } from "@/components/hub/SandboxInvite"
+import { demoLoginEnabled } from "@/lib/hub/demo"
+import { isSandboxCarrier } from "@/lib/hub/sandbox"
 import { StatTile } from "@/components/hub/StatTile"
 import { TimeOffDecisionPanel } from "@/components/hub/DriverOfficePanels"
 import { requireOfficeUser } from "@/lib/hub/session"
@@ -46,6 +49,7 @@ export default async function TodayPage() {
   const coreDone = started
     ? started.trucks && started.drivers && started.customers && started.loads
     : true
+  const showSandbox = demoLoginEnabled() && !isSandboxCarrier(user.carrierId)
 
   return (
     <div>
@@ -339,6 +343,12 @@ export default async function TodayPage() {
           <SetupGuide compact />
         </div>
       ) : null}
+
+      {/* The sandbox is the safe place to try something. Hidden when the kill
+          switch is off (HUB_DEMO_LOGIN=false disables every sandbox login, so
+          the invite would lead to a door that refuses to open), and hidden
+          inside the sandbox itself, where SandboxBanner already owns this. */}
+      {showSandbox ? <SandboxInvite /> : null}
 
       {/* Footer quick facts */}
       <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-1 text-body-xs text-fg-3">

@@ -203,6 +203,24 @@ export function markTourCompleted(id: string) {
   }
 }
 
+/**
+ * The tour that runs itself the first time someone lands on Today.
+ *
+ * Everything here was reachable only from `?tour=` — set by a link in the Help
+ * Center, which a first-time owner has no reason to open. So the spotlight tour
+ * explaining the six nav areas, the command palette and the KPI row existed and
+ * nobody ever saw it. It runs once now, on the screen it was written for, and
+ * `markTourCompleted` keeps it from running twice.
+ */
+const AUTOSTART_TOUR_ID = "today-desk"
+
+/**
+ * Long enough for the KPI tiles and nav to have laid out — the overlay measures
+ * its targets with getBoundingClientRect, and spotlighting an element that has
+ * not been positioned yet puts the cutout in the wrong place.
+ */
+const AUTOSTART_DELAY_MS = 700
+
 /** Reads ?tour= from URL and runs the matching spotlight tour. */
 function HubTourHostInner() {
   const router = useRouter()
@@ -223,12 +241,25 @@ function HubTourHostInner() {
     return () => window.clearTimeout(t)
   }, [tourId, pathname, router])
 
-  if (!tourId || !active) return null
+  // First visit to Today, no tour explicitly requested: run the one that
+  // explains the screen. An explicit ?tour= always wins over this.
+  useEffect(() => {
+    if (tourId) return
+    const tour = getTour(AUTOSTART_TOUR_ID)
+    if (!tour || pathname !== tour.startPath) return
+    if (tourCompleted(tour.id)) return
+    const t = window.setTimeout(() => setActive(tour), AUTOSTART_DELAY_MS)
+    return () => window.clearTimeout(t)
+  }, [tourId, pathname])
+
+  if (!active) return null
 
   const finish = () => {
     markTourCompleted(active.id)
     setActive(null)
-    router.replace(active.startPath)
+    // Only rewrite the URL when a ?tour= put us here; an auto-started tour has
+    // a clean URL already, and replacing it would discard any other query.
+    if (tourId) router.replace(active.startPath)
   }
 
   return <HubTourOverlay tour={active} onClose={finish} onComplete={finish} />
