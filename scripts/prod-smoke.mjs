@@ -6,9 +6,12 @@
  * Env:   PROD_BASE_URL (default https://thindtransport.com)
  *        PROD_SMOKE_GRACE_MINUTES (default 15 — mismatch younger than this is
  *        "deploy in flight", not stale)
+ *        CRON_SECRET (optional — unlocks the cron-health check; without it that
+ *        one check reports SKIP and the rest run as before)
  *
  * Checks: /hub/login 200 + branding · /hub not-5xx · /api/version SHA matches
- * origin/main (catches a drain whose build Vercel dedupe-swallowed).
+ * origin/main (catches a drain whose build Vercel dedupe-swallowed) · every
+ * scheduled cron's last run succeeded.
  *
  * Exit codes: 0 all checks passed · 1 at least one check got a bad HTTP
  * response (real prod signal) · 2 inconclusive — every request died at the
@@ -271,6 +274,107 @@ async function stalenessCheck() {
   })
 }
 
+/**
+ * Verdict over /api/hub/cron/health's `crons` rows: production is unhealthy if
+ * ANY cron's most recent run failed for ANY carrier.
+ *
+ * Why this check exists: `compliance-scan` 500'd on every daily run from
+ * 2026-08-07 through 2026-08-13 — Gmail rejecting the SMTP app password, all
+ * five carriers, every night — and the hourly smoke reported prod green the
+ * whole week, because a page that returns 200 says nothing about the jobs
+ * behind it. Seven days of unsent CDL/medical/insurance expiry alerts is
+ * exactly the class of failure this fleet has no human watching for.
+ *
+ * Deliberately NOT a staleness check: the schedules in vercel.json run daily,
+ * weekly, and monthly (`driver-scorecards` is `0 10 1 * *`), so one
+ * "hasn't run lately" threshold would false-alarm for most of every month.
+ * Per-cadence staleness needs the schedule table — recorded in the backlog.
+ *
+ * @param {Array<{source: string, failing: number, total: number, sample_error?: string | null}>} crons
+ */
+export function evaluateCronHealth(crons) {
+  if (!Array.isArray(crons)) {
+    return { pass: false, malformed: true, detail: "health endpoint returned no `crons` array" }
+  }
+  if (crons.length === 0) {
+    // A fresh database has no sync rows yet; that is not evidence of failure.
+    return { pass: true, detail: "no cron runs recorded yet" }
+  }
+  const broken = crons.filter((c) => Number(c.failing) > 0)
+  if (broken.length === 0) {
+    return { pass: true, detail: `${crons.length} cron(s), last run of each succeeded` }
+  }
+  const detail = broken
+    .map((c) => {
+      const err = c.sample_error ? ` — ${String(c.sample_error).split("\n")[0]}` : ""
+      return `${c.source}: ${c.failing}/${c.total} carrier run(s) failed${err}`
+    })
+    .join(" · ")
+  return { pass: false, detail }
+}
+
+/** Fetch /api/hub/cron/health and fold the verdict into `checks`. Needs CRON_SECRET. */
+async function cronHealthCheck() {
+  const name = "scheduled crons last ran clean"
+  const url = `${BASE}/api/hub/cron/health`
+  const secret = process.env.CRON_SECRET
+  if (!secret) {
+    checks.push({
+      name,
+      pass: false,
+      skipped: true,
+      detail: "CRON_SECRET not set in this environment — cron health NOT checked",
+      url,
+    })
+    return
+  }
+  try {
+    const res = await fetch(url, { headers: { authorization: `Bearer ${secret}` } })
+    const body = await res.text()
+    if (egressBlocked(res, body)) {
+      checks.push({
+        name,
+        pass: false,
+        blocked: true,
+        detail: `egress-blocked by sandbox proxy (${res.headers.get("x-deny-reason") ?? "host not in allowlist"}) — not a prod response`,
+        url,
+      })
+      return
+    }
+    if (res.status !== 200) {
+      // 401 means the secret this rig holds is not the one production uses —
+      // a misconfigured checker, not a broken cron. Either way it is unchecked.
+      checks.push({
+        name,
+        pass: false,
+        detail: `status=${res.status}${res.status === 401 ? " — CRON_SECRET does not match production" : ""}`,
+        url,
+      })
+      return
+    }
+    let crons = null
+    try {
+      crons = JSON.parse(body)?.crons ?? null
+    } catch {
+      crons = null
+    }
+    const verdict = evaluateCronHealth(crons)
+    checks.push({ name, pass: verdict.pass, detail: verdict.detail, url })
+  } catch (err) {
+    const tunnelRefusal = egressBlockedThrown(err)
+    checks.push({
+      name,
+      pass: false,
+      blocked: Boolean(tunnelRefusal),
+      networkError: !tunnelRefusal,
+      detail: tunnelRefusal
+        ? `egress-blocked at proxy CONNECT (${tunnelRefusal}) — not a prod response`
+        : `${String(err.message ?? err)}${err.cause ? ` (${String(err.cause.message ?? err.cause)})` : ""}`,
+      url,
+    })
+  }
+}
+
 async function main() {
   console.log(`LoadOff production smoke — ${BASE}`)
   console.log("=".repeat(50))
@@ -281,6 +385,7 @@ async function main() {
   })
   await fetchCheck("hub root", "/hub", { expectStatus: "not5xx" })
   await stalenessCheck()
+  await cronHealthCheck()
 
   // A check is "inconclusive" (blocked at the network/proxy layer, never a
   // real prod response) if it hit the sandbox gateway's 403 marker or the
@@ -289,19 +394,25 @@ async function main() {
   // an unrelated inconclusive check either — real failures take priority.
   let realFail = 0
   let inconclusive = 0
+  let skipped = 0
   for (const c of checks) {
     const isInconclusive = c.blocked || c.networkError
-    const mark = isInconclusive ? "BLOCKED" : c.pass ? "PASS" : "FAIL"
+    // SKIP is its own outcome: a check this rig could not perform at all (no
+    // credential) must not read as a prod failure, and must not read as a pass
+    // either — it prints its reason and is counted in the summary.
+    const mark = c.skipped ? "SKIP" : isInconclusive ? "BLOCKED" : c.pass ? "PASS" : "FAIL"
     console.log(`${mark}  ${c.name}`)
     console.log(`      ${c.url}`)
     console.log(`      ${c.detail}`)
     if (!c.pass) {
-      if (isInconclusive) inconclusive++
+      if (c.skipped) skipped++
+      else if (isInconclusive) inconclusive++
       else realFail++
     }
   }
 
   console.log("")
+  if (skipped) console.log(`${skipped} check(s) skipped — see SKIP lines above.`)
   if (realFail) {
     console.log(`${realFail} check(s) failed.`)
     process.exit(1)

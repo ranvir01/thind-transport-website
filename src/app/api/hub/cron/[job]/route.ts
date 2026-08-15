@@ -31,7 +31,9 @@ export const maxDuration = 60
  *   /api/hub/cron/ar-reminders     — daily overdue invoice dunning (skips factored)
  *   /api/hub/cron/detention-alerts — daily dwelling-past-free-time alerts (Hobby: once/day)
  *   /api/hub/cron/recurring-rebook — daily "rebook every <weekday>" lane rules → fresh Booked loads
- * Health lands in hub.integration_syncs either way.
+ * Health lands in hub.integration_syncs either way, and
+ *   /api/hub/cron/health — read-only report of every cron's last run (unscheduled)
+ * reads it back for the production smoke.
  */
 export async function GET(
   req: Request,
@@ -65,6 +67,40 @@ export async function GET(
       ).catch(() => undefined)
       return NextResponse.json({ ok: false, job, error: message }, { status: 500 })
     }
+  }
+
+  // Read-only health report over every cron's most recent run. Not scheduled —
+  // `npm run prod:smoke` calls it so a job that fails every night stops being
+  // invisible. The 500 + console.error below only reach Vercel's cron dashboard
+  // and log drain, and nobody was watching either: compliance-scan failed on
+  // SMTP auth every day from 2026-08-07 to 08-13 before a routine happened to
+  // read the runtime errors by hand. One row per source, latest run per
+  // carrier, so one failing tenant cannot hide behind four healthy ones.
+  if (job === "health") {
+    const crons = await query<{
+      source: string
+      last_run: string
+      failing: number
+      total: number
+      sample_error: string | null
+    }>(
+      `WITH latest AS (
+         SELECT DISTINCT ON (source, carrier_id) source, carrier_id, started_at, ok, error
+           FROM hub.integration_syncs
+          WHERE source LIKE 'cron:%'
+            AND started_at > NOW() - INTERVAL '30 days'
+          ORDER BY source, carrier_id, started_at DESC
+       )
+       SELECT source,
+              MAX(started_at) AS last_run,
+              COUNT(*) FILTER (WHERE NOT ok)::int AS failing,
+              COUNT(*)::int AS total,
+              LEFT((ARRAY_AGG(error) FILTER (WHERE NOT ok))[1], 300) AS sample_error
+         FROM latest
+        GROUP BY source
+        ORDER BY source`
+    )
+    return NextResponse.json({ ok: true, job, crons })
   }
 
   const carriers = await query<{ id: string; name: string }>(

@@ -201,8 +201,15 @@ const FooterLinkSections = () => {
 // Hide on Apply page, in the Hub (own bottom navigation), and the legacy driver
 // portal (its own submit buttons sit where this bar would land, per pitfall
 // found 2026-07-22: it covered the register form's Create Account button)
+//
+// /pre-qualify is excluded for BOTH of those reasons at once. The bar floats
+// over a nine-field multi-step form, and its one CTA is "Apply Now" pointing at
+// /apply — so a driver halfway through pre-qualifying taps it, navigates away,
+// and every answer is gone: the form holds its state in React with nothing
+// persisted. /apply was excluded for exactly this and /pre-qualify was missed.
 export const shouldHideMobileCommandBar = (pathname: string): boolean =>
   pathname === "/apply" ||
+  pathname === "/pre-qualify" ||
   pathname.startsWith("/hub") ||
   pathname.startsWith("/track") ||
   pathname.startsWith("/driver")

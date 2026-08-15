@@ -37,7 +37,7 @@ export default function PayBreakdownPage() {
       <section className="relative overflow-hidden bg-navy pb-20 pt-32 text-white md:pb-28 md:pt-40">
         <Image
           src="/images/generated/truck-night-highway.webp"
-          alt="Thind Transport truck running a night lane outside Seattle"
+          alt="Illustration of a tractor-trailer running a night highway lane"
           fill
           priority
           sizes="100vw"

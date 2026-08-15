@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import { focusableWithin, nextFocusTarget } from "@/lib/focus-trap"
 import {
   ChevronDown,
   Menu,
@@ -227,21 +228,55 @@ function MobileMenuDrawer({
 }) {
   const pathname = usePathname()
   const [expandedSection, setExpandedSection] = useState<string | null>(null)
+  const drawerRef = useRef<HTMLDivElement>(null)
 
-  // Prevent body scroll when menu is open; Escape closes it
+  // Prevent body scroll when menu is open; Escape closes it; Tab stays inside.
+  //
+  // Without the trap, Tab walked out of the drawer into the page behind it —
+  // still interactive, now invisible behind the backdrop — so a keyboard user
+  // tabbed off the end of the menu and landed somewhere they could not see
+  // (WCAG 2.4.3). Focus is moved in on open and restored to whatever opened the
+  // drawer on close, so the menu button does not lose its place.
   useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = "hidden"
-    } else {
+    if (!isOpen) {
       document.body.style.overflow = ""
+      return
     }
+    document.body.style.overflow = "hidden"
+    const previouslyFocused = document.activeElement as HTMLElement | null
+
+    // Focus the first thing in the drawer once it has mounted.
+    const raf = requestAnimationFrame(() => {
+      if (!drawerRef.current) return
+      const focusables = focusableWithin(drawerRef.current)
+      ;(focusables[0] ?? drawerRef.current).focus()
+    })
+
     function handleKey(event: KeyboardEvent) {
-      if (event.key === "Escape") onClose()
+      if (event.key === "Escape") {
+        onClose()
+        return
+      }
+      if (event.key !== "Tab" || !drawerRef.current) return
+      // Re-queried per keypress: the accordion opens and closes while the
+      // drawer is open, so a list captured at open time goes stale.
+      const target = nextFocusTarget(
+        focusableWithin(drawerRef.current),
+        document.activeElement,
+        event.shiftKey
+      )
+      if (target) {
+        event.preventDefault()
+        target.focus()
+      }
     }
-    if (isOpen) document.addEventListener("keydown", handleKey)
+
+    document.addEventListener("keydown", handleKey)
     return () => {
       document.body.style.overflow = ""
       document.removeEventListener("keydown", handleKey)
+      cancelAnimationFrame(raf)
+      previouslyFocused?.focus?.()
     }
   }, [isOpen, onClose])
 
@@ -256,7 +291,14 @@ function MobileMenuDrawer({
           />
 
           {/* Drawer */}
-          <div className="fixed top-0 right-0 bottom-0 w-[85vw] max-w-sm bg-[linear-gradient(180deg,#131418_0%,#0A0B0C_100%)] z-[102] flex flex-col shadow-2xl motion-safe:animate-drawer-in">
+          <div
+            ref={drawerRef}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Site menu"
+            tabIndex={-1}
+            className="fixed top-0 right-0 bottom-0 w-[85vw] max-w-sm bg-[linear-gradient(180deg,#131418_0%,#0A0B0C_100%)] z-[102] flex flex-col shadow-2xl motion-safe:animate-drawer-in"
+          >
             {/* Header */}
             <div className="flex items-center justify-between p-4 border-b border-white/10">
               <Link

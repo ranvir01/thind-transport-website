@@ -67,7 +67,7 @@ export function EquipmentSection() {
             <div className="relative aspect-[4/3]">
               <Image
                 src="/images/generated/truck-cascadia.png"
-                alt="2024 Freightliner Cascadia tractor from the Thind Transport fleet"
+                alt="Illustration of a Freightliner Cascadia tractor"
                 fill
                 sizes="(max-width: 768px) 100vw, 50vw"
                 className="object-cover"
@@ -112,7 +112,7 @@ export function EquipmentSection() {
               <div className="relative aspect-[3/2]">
                 <Image
                   src={trailer.image}
-                  alt={`${trailer.name} trailer in the Thind Transport fleet`}
+                  alt={`Illustration of a ${trailer.name.toLowerCase()} trailer`}
                   fill
                   sizes="(max-width: 640px) 100vw, 33vw"
                   className="object-cover transition-transform duration-500 group-hover:scale-105"

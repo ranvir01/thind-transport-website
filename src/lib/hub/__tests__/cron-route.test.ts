@@ -145,6 +145,51 @@ describe("GET /api/hub/cron/[job] — secret gate", () => {
   })
 })
 
+describe("GET /api/hub/cron/health — read-only report for the prod smoke", () => {
+  const HEALTH_ROWS = [
+    { source: "cron:compliance-scan", last_run: "2026-08-13T14:59:18Z", failing: 5, total: 5, sample_error: "Invalid login: 535-5.7.8" },
+    { source: "cron:efs-sync", last_run: "2026-08-13T06:00:11Z", failing: 0, total: 5, sample_error: null },
+  ]
+
+  function stubHealth() {
+    queryMock.mockReset().mockImplementation(async (sql: string) =>
+      (String(sql).includes("FROM hub.integration_syncs") ? HEALTH_ROWS : []) as never
+    )
+  }
+
+  it("is behind the same secret gate as the jobs it reports on", async () => {
+    const res = await call("health", null)
+    expect(res.status).toBe(401)
+    expect(queryMock).not.toHaveBeenCalled()
+  })
+
+  it("returns one row per cron source with the failure counts the smoke reads", async () => {
+    stubHealth()
+    const res = await call("health")
+    expect(res.status).toBe(200)
+    const body = await res.json()
+    expect(body.crons).toEqual(HEALTH_ROWS)
+  })
+
+  it("reports without running any job — health must never have side effects", async () => {
+    stubHealth()
+    await call("health")
+    // No carrier loop, no adapters, and above all no INSERT: a monitoring read
+    // that writes its own sync rows would pollute the very table it reports on.
+    expect(complianceEntries).not.toHaveBeenCalled()
+    expect(runEfsSync).not.toHaveBeenCalled()
+    expect(syncLogCalls()).toHaveLength(0)
+  })
+
+  it("takes the latest run per carrier so one broken tenant cannot hide", async () => {
+    stubHealth()
+    await call("health")
+    const sql = String(queryMock.mock.calls[0][0])
+    expect(sql).toMatch(/DISTINCT ON \(source, carrier_id\)/)
+    expect(sql).toContain("FILTER (WHERE NOT ok)")
+  })
+})
+
 describe("GET /api/hub/cron/[job] — integration sync dispatch", () => {
   for (const [job, runner] of Object.entries(INTEGRATION_JOBS)) {
     it(`${job} runs its adapter for every active carrier and logs ok sync rows`, async () => {

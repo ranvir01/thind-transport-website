@@ -72,7 +72,7 @@ export default function AboutPage() {
 
       <PageHero
         image="/images/generated/truck-mountain-pass.webp"
-        imageAlt="Thind Transport truck climbing a Washington mountain pass with Mount Rainier in the distance"
+        imageAlt="Illustration of a tractor-trailer climbing a Cascade mountain pass"
         eyebrow={`About ${COMPANY_INFO.name}`}
         title={
           <>
@@ -130,7 +130,7 @@ export default function AboutPage() {
               <div className="relative aspect-[4/3] md:aspect-[4/5]">
                 <Image
                   src="/images/generated/driver-pretrip-walkaround.webp"
-                  alt="Driver completing a pre-trip walkaround inspection beside a Thind Transport truck at the Kent yard"
+                  alt="Illustration of a driver completing a pre-trip walkaround inspection"
                   fill
                   sizes="(max-width: 768px) 100vw, 45vw"
                   className="object-cover"

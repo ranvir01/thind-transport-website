@@ -216,6 +216,52 @@ describe("recruiter shift", () => {
   })
 })
 
+/**
+ * Regression for the nightly's find: an idle dispatcher scored 33/100 because
+ * the simulation drained the quoted board for them (sandbox-sim.ts npcBook /
+ * offerPlayerLoad), and "Book faster than the brokers call" only compared the
+ * board's depth. Every board-state objective had the same shape, and
+ * `autoInvoice` shrinks the unbilled pile the same way. A pile shrinking is
+ * now only worth a point when the player's own actor-scoped counter moved too.
+ */
+describe("board-state objectives are never earned by the simulation", () => {
+  const cases: Array<{ seat: Parameters<typeof evaluateShift>[0]; key: string; idle: Partial<ShiftMetrics>; byHand: Partial<ShiftMetrics> }> = [
+    // The sim books quoted loads on its own clock.
+    { seat: "dispatcher", key: "board", idle: { quotedCount: 2 }, byHand: { quotedCount: 2, myBookings: 11 } },
+    // The sim invoices delivered loads (autoInvoice), draining pod_received.
+    { seat: "accountant", key: "backlog", idle: { unbilledCount: 3 }, byHand: { unbilledCount: 3, myInvoices: 21 } },
+    { seat: "owner", key: "queue", idle: { draftSettlements: 1 }, byHand: { draftSettlements: 1, mySettlementApprovals: 4 } },
+    { seat: "safety", key: "open", idle: { openIncidents: 1 }, byHand: { openIncidents: 1, myIncidentsClosed: 2 } },
+    { seat: "recruiter", key: "pipeline", idle: { applicantsWaiting: 1 }, byHand: { applicantsWaiting: 1, myStageAdvances: 1 } },
+  ]
+
+  for (const { seat, key, idle, byHand } of cases) {
+    it(`${seat}: the pile draining on its own is worth nothing`, () => {
+      const base = metrics({ applicantsWaiting: 4 })
+      const idleEv = evaluateShift(seat, base, metrics({ ...idle, applicantsWaiting: idle.applicantsWaiting ?? 4 }))
+      expect(idleEv.objectives.find((o) => o.key === key)?.done, `${seat}/${key} completed while the player sat still`).toBe(false)
+      expect(idleEv.score, `${seat} scored for work it did not do`).toBe(0)
+    })
+
+    it(`${seat}: the same pile draining still counts when the player pushed`, () => {
+      const base = metrics({ applicantsWaiting: 4 })
+      const worked = evaluateShift(seat, base, metrics({ ...byHand, applicantsWaiting: byHand.applicantsWaiting ?? 4 }))
+      expect(worked.objectives.find((o) => o.key === key)?.done, `${seat}/${key} stopped rewarding real work`).toBe(true)
+    })
+  }
+
+  it("a whole idle shift scores zero for every scored seat", () => {
+    // The sim moves the world for all of them at once; no seat may bank it.
+    const base = metrics({ applicantsWaiting: 9 })
+    const simDidEverything = metrics({
+      quotedCount: 0, unbilledCount: 0, draftSettlements: 0, openIncidents: 0, applicantsWaiting: 0,
+    })
+    for (const seat of SHIFT_SEATS) {
+      expect(evaluateShift(seat, base, simDidEverything).score, seat).toBe(0)
+    }
+  })
+})
+
 describe("owner-operator shift", () => {
   it("scores his own money and equipment, not just the driving", () => {
     const cur = metrics({ myStatusMoves: 42, myReceipts: 1, myAdvanceRequests: 1, myDvirs: 2 })
@@ -229,6 +275,55 @@ describe("owner-operator shift", () => {
     // that decides what he takes home is the point of this seat.
     const drivingOnly = evaluateShift("owner_operator", metrics(), metrics({ myStatusMoves: 45 }))
     expect(drivingOnly.score).toBe(25)
+  })
+})
+
+describe("board-depth objectives never score the simulation's work", () => {
+  // Regression (nightly E2E, 2026-08-12): an idle dispatcher scored 33% — the
+  // sim's autopilot booked the quoted board down while the player did nothing,
+  // and "Book faster than the brokers call" only asked whether the pile got
+  // smaller. Every seat with a depth objective had the same hole, so all five
+  // are pinned here: a shrinking board with no player work behind it is worth
+  // nothing, and the objective still lands the moment the player does the work.
+  const cases: Array<{
+    seat: Parameters<typeof evaluateShift>[0]
+    key: string
+    /** Depth counter the sim can move on its own. */
+    depth: Partial<ShiftMetrics>
+    /** The player action that legitimately shrinks that depth. */
+    work: Partial<ShiftMetrics>
+  }> = [
+    { seat: "dispatcher", key: "board", depth: { quotedCount: 3 }, work: { myBookings: 12 } },
+    { seat: "accountant", key: "backlog", depth: { unbilledCount: 6 }, work: { myInvoices: 21 } },
+    { seat: "owner", key: "queue", depth: { draftSettlements: 2 }, work: { mySettlementApprovals: 4 } },
+    { seat: "safety", key: "open", depth: { openIncidents: 2 }, work: { myIncidentsClosed: 2 } },
+    {
+      seat: "recruiter",
+      key: "pipeline",
+      depth: { applicantsWaiting: 2 },
+      work: { myStageAdvances: 1 },
+    },
+  ]
+
+  for (const { seat, key, depth, work } of cases) {
+    it(`${seat}: the board shrinking by itself does not finish "${key}"`, () => {
+      const base = metrics({ applicantsWaiting: 4 })
+      const simOnly = evaluateShift(seat, base, metrics({ applicantsWaiting: 4, ...depth }))
+      expect(simOnly.objectives.find((o) => o.key === key)?.done).toBe(false)
+      expect(simOnly.score).toBe(0)
+    })
+
+    it(`${seat}: the same drop counts once the player did the work`, () => {
+      const base = metrics({ applicantsWaiting: 4 })
+      const byHand = evaluateShift(seat, base, metrics({ applicantsWaiting: 4, ...depth, ...work }))
+      expect(byHand.objectives.find((o) => o.key === key)?.done).toBe(true)
+    })
+  }
+
+  it("player work with no drop still misses — both halves are required", () => {
+    const base = metrics()
+    const ev = evaluateShift("dispatcher", base, metrics({ myBookings: 12, quotedCount: 9 }))
+    expect(ev.objectives.find((o) => o.key === "board")?.done).toBe(false)
   })
 })
 
