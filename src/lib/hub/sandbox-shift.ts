@@ -1,5 +1,6 @@
 import "server-only"
 import { query } from "./db"
+import { evaluatePayRules, parseRuleSet, type PayLoadContext } from "./pay-rules"
 import { SANDBOX_CARRIER_ID } from "./sandbox"
 import { emptyMetrics, type ShiftMetrics, type ShiftSeatKey } from "./sandbox-objectives"
 
@@ -67,12 +68,32 @@ async function ownerMetrics(userId: string): Promise<Partial<ShiftMetrics>> {
   ])
   const n = (entity: string, action: string) =>
     audits.find((a) => a.entity_type === entity && a.action === action)?.n ?? 0
+  // Cash the owner personally put in motion: settlements they paid out, plus
+  // advances and payments they recorded. The autopilot's own payments carry a
+  // null actor and are excluded by the actor_id filter above, so the number
+  // is the owner's hand on the money and nobody else's.
+  const moved = await query<{ cents: string }>(
+    `SELECT COALESCE((SELECT SUM(s.net_cents) FROM hub.settlements s
+                       JOIN hub.audit_log a ON a.carrier_id = $1 AND a.entity_type = 'settlement'
+                        AND a.action = 'paid' AND a.entity_id = s.id::text AND a.actor_id = $2
+                      WHERE s.carrier_id = $1), 0)
+          + COALESCE((SELECT SUM(ad.amount_cents) FROM hub.advances ad
+                       JOIN hub.audit_log a2 ON a2.carrier_id = $1 AND a2.entity_type = 'advance'
+                        AND a2.action = 'create' AND a2.entity_id = ad.id::text AND a2.actor_id = $2
+                      WHERE ad.carrier_id = $1), 0)
+          + COALESCE((SELECT SUM(p.amount_cents) FROM hub.payments p
+                       JOIN hub.audit_log a3 ON a3.carrier_id = $1 AND a3.entity_type = 'payment'
+                        AND a3.action = 'record' AND a3.entity_id = p.id::text AND a3.actor_id = $2
+                      WHERE p.carrier_id = $1), 0) AS cents`,
+    [C, userId]
+  )
   return {
     mySettlementApprovals: n("settlement", "approve"),
     mySettlementPayouts: n("settlement", "paid"),
     myAdvances: n("advance", "create"),
     myPayments: n("payment", "record"),
     draftSettlements: queue[0]?.drafts ?? 0,
+    myCashMovedCents: Number(moved[0]?.cents ?? 0),
   }
 }
 
@@ -107,12 +128,28 @@ async function safetyMetrics(userId: string): Promise<Partial<ShiftMetrics>> {
       [C, userId]
     ),
   ])
+  // Safety's work pays off on somebody else's wheels: a grounded truck earns
+  // nothing, and certifying its repair is what lets it take freight again.
+  // So the seat's money line is the freight actually riding right now on the
+  // trucks this user released — real loads with real rates, no assumed
+  // day-rate and no credit for trucks that are sitting.
+  const rolling = await query<{ cents: string }>(
+    `SELECT COALESCE(SUM(l.linehaul_cents + l.fuel_surcharge_cents), 0)::bigint AS cents
+       FROM hub.loads l
+      WHERE l.carrier_id = $1 AND l.deleted_at IS NULL
+        AND l.status IN ('dispatched','at_pickup','in_transit')
+        AND l.truck_id IN (SELECT v.truck_id FROM hub.dvirs v
+                            WHERE v.carrier_id = $1 AND v.repair_certified_by = $2
+                              AND v.repair_certified_at IS NOT NULL)`,
+    [C, userId]
+  )
   return {
     myIncidents: incidents[0]?.mine ?? 0,
     openIncidents: incidents[0]?.open ?? 0,
     myRepairCerts: certs[0]?.n ?? 0,
     myIncidentsClosed: audits.find((a) => a.entity_type === "incident")?.closed ?? 0,
     myRandomTestResults: audits.find((a) => a.entity_type === "random_test_event")?.n ?? 0,
+    myReleasedTruckFreightCents: Number(rolling[0]?.cents ?? 0),
   }
 }
 
@@ -146,11 +183,28 @@ async function recruiterMetrics(userId: string): Promise<Partial<ShiftMetrics>> 
       [C]
     ),
   ])
+  // Same shape as safety: a hire is worth what the person hired is hauling.
+  // The applicant row carries `converted_driver_id`, and the hire itself is
+  // audited against the recruiter — so this walks recruiter → applicant they
+  // converted → driver → freight on the road, with no step invented.
+  const rolling = await query<{ cents: string }>(
+    `SELECT COALESCE(SUM(l.linehaul_cents + l.fuel_surcharge_cents), 0)::bigint AS cents
+       FROM hub.loads l
+      WHERE l.carrier_id = $1 AND l.deleted_at IS NULL
+        AND l.status IN ('dispatched','at_pickup','in_transit')
+        AND l.driver_id IN (
+          SELECT ap.converted_driver_id FROM hub.applicants ap
+           JOIN hub.audit_log a ON a.carrier_id = $1 AND a.entity_type = 'applicant'
+            AND a.action = 'converted_to_driver' AND a.entity_id = ap.id::text AND a.actor_id = $2
+          WHERE ap.carrier_id = $1 AND ap.converted_driver_id IS NOT NULL)`,
+    [C, userId]
+  )
   return {
     myStageAdvances: stages[0]?.n ?? 0,
     myOffersSigned: audits.find((a) => a.entity_type === "offer")?.n ?? 0,
     myHires: audits.find((a) => a.entity_type === "applicant")?.n ?? 0,
     applicantsWaiting: pipeline[0]?.waiting ?? 0,
+    myHiredDriverFreightCents: Number(rolling[0]?.cents ?? 0),
   }
 }
 
@@ -190,20 +244,136 @@ async function ownerOperatorMetrics(userId: string): Promise<Partial<ShiftMetric
   }
 }
 
+/**
+ * The company's money, cumulative: what has been delivered, billed and
+ * collected all-time. Diffed against the clock-in baseline these become "what
+ * this company earned while you were on shift" — including everything the AI
+ * teammates did, which is the point. Delivered value is counted off the
+ * delivery event rather than the load's current status so it cannot go
+ * backwards when a load moves on to invoiced or settled.
+ */
+async function companyMoney(): Promise<Partial<ShiftMetrics>> {
+  const [delivered, billed, collected, rolling] = await Promise.all([
+    query<{ cents: string }>(
+      `SELECT COALESCE(SUM(l.linehaul_cents + l.fuel_surcharge_cents), 0)::bigint AS cents
+         FROM hub.loads l
+        WHERE l.carrier_id = $1 AND l.deleted_at IS NULL
+          AND EXISTS (SELECT 1 FROM hub.load_events e
+                       WHERE e.carrier_id = $1 AND e.load_id = l.id
+                         AND e.kind = 'status_change' AND e.payload->>'to' = 'delivered')`,
+      [C]
+    ),
+    query<{ cents: string }>(
+      `SELECT COALESCE(SUM(amount_cents), 0)::bigint AS cents FROM hub.invoices WHERE carrier_id = $1`,
+      [C]
+    ),
+    query<{ cents: string }>(
+      `SELECT COALESCE(SUM(amount_cents), 0)::bigint AS cents FROM hub.payments WHERE carrier_id = $1`,
+      [C]
+    ),
+    // Standing, not cumulative: the freight in motion at this instant.
+    query<{ cents: string }>(
+      `SELECT COALESCE(SUM(linehaul_cents + fuel_surcharge_cents), 0)::bigint AS cents
+         FROM hub.loads
+        WHERE carrier_id = $1 AND deleted_at IS NULL
+          AND status IN ('dispatched','at_pickup','in_transit')`,
+      [C]
+    ),
+  ])
+  return {
+    coDeliveredCents: Number(delivered[0]?.cents ?? 0),
+    coBilledCents: Number(billed[0]?.cents ?? 0),
+    coCollectedCents: Number(collected[0]?.cents ?? 0),
+    coRollingCents: Number(rolling[0]?.cents ?? 0),
+  }
+}
+
+/**
+ * What this driver has earned, run through the REAL pay engine.
+ *
+ * A per-mile number computed by hand here and a per-mile number computed by
+ * settlements would drift the first time someone touches a rule, and the
+ * driver seat would start quoting a wage the software would not actually pay.
+ * So this loads the driver's own active rule set and calls `evaluatePayRules`
+ * — the same function the settlement draft uses — over the loads they have
+ * delivered. Cumulative, so the shift diff is what they earned on shift.
+ *
+ * Falls back to zero (not to a guess) when the driver has no active rule set:
+ * an invented wage is worse than an honest blank.
+ */
+async function driverPay(userId: string): Promise<number> {
+  const [rules, loads] = await Promise.all([
+    query<{ name: string; rules: unknown; deductions: unknown }>(
+      `SELECT p.name, p.rules, p.deductions
+         FROM hub.pay_rules p
+         JOIN hub.drivers d ON d.id = p.driver_id AND d.carrier_id = $1
+        WHERE p.carrier_id = $1 AND d.user_id = $2 AND p.active
+        ORDER BY p.updated_at DESC LIMIT 1`,
+      [C, userId]
+    ),
+    query<{
+      id: string; reference: string; linehaul_cents: number; fuel_surcharge_cents: number
+      accessorial_cents: number; loaded_miles: number; deadhead_miles: number
+    }>(
+      `SELECT l.id, l.reference, l.linehaul_cents, l.fuel_surcharge_cents,
+              COALESCE((SELECT SUM((a->>'amountCents')::int)
+                          FROM jsonb_array_elements(l.accessorials) a), 0)::int AS accessorial_cents,
+              COALESCE(l.loaded_miles, 0) AS loaded_miles,
+              COALESCE(l.deadhead_miles, 0) AS deadhead_miles
+         FROM hub.loads l
+         JOIN hub.drivers d ON d.id = l.driver_id AND d.carrier_id = $1
+        WHERE l.carrier_id = $1 AND l.deleted_at IS NULL AND d.user_id = $2
+          AND EXISTS (SELECT 1 FROM hub.load_events e
+                       WHERE e.carrier_id = $1 AND e.load_id = l.id
+                         AND e.kind = 'status_change' AND e.payload->>'to' = 'delivered')
+        LIMIT 200`,
+      [C, userId]
+    ),
+  ])
+  if (rules.length === 0 || loads.length === 0) return 0
+  const ctx: PayLoadContext[] = loads.map((l) => ({
+    id: l.id,
+    reference: l.reference,
+    linehaulCents: l.linehaul_cents,
+    fuelSurchargeCents: l.fuel_surcharge_cents,
+    accessorialCents: l.accessorial_cents,
+    loadedMiles: l.loaded_miles,
+    deadheadMiles: l.deadhead_miles,
+  }))
+  // Gross, not net: deductions are period things (escrow, insurance) that a
+  // shift did not cause, and docking a player for them would misread as a
+  // penalty for working.
+  return evaluatePayRules(parseRuleSet(rules[0]), {
+    loads: ctx,
+    reimbursements: [],
+    outstandingAdvances: [],
+  }).grossCents
+}
+
 export async function readShiftMetrics(
   userId: string,
   seat: ShiftSeatKey,
   now = new Date()
 ): Promise<ShiftMetrics> {
   // Office seats score entirely different work, so they run their own reads
-  // instead of paying for the load-board counters they never look at.
-  if (seat === "owner") return { ...emptyMetrics(now.toISOString()), ...(await ownerMetrics(userId)) }
-  if (seat === "safety") return { ...emptyMetrics(now.toISOString()), ...(await safetyMetrics(userId)) }
+  // instead of paying for the load-board counters they never look at. Every
+  // seat gets the company's money line, though — the whole argument for the
+  // place is that it pays people, and a seat that only sees its own square of
+  // the board never sees that happen.
+  if (seat === "owner") {
+    const [own, co] = await Promise.all([ownerMetrics(userId), companyMoney()])
+    return { ...emptyMetrics(now.toISOString()), ...own, ...co }
+  }
+  if (seat === "safety") {
+    const [own, co] = await Promise.all([safetyMetrics(userId), companyMoney()])
+    return { ...emptyMetrics(now.toISOString()), ...own, ...co }
+  }
   if (seat === "recruiter") {
-    return { ...emptyMetrics(now.toISOString()), ...(await recruiterMetrics(userId)) }
+    const [own, co] = await Promise.all([recruiterMetrics(userId), companyMoney()])
+    return { ...emptyMetrics(now.toISOString()), ...own, ...co }
   }
 
-  const [moves, boards, arrivals, invoices, payments] = await Promise.all([
+  const [moves, boards, arrivals, invoices, payments, booked, co, pay] = await Promise.all([
     query<{ to_status: string | null; n: number }>(
       `SELECT payload->>'to' AS to_status, COUNT(*)::int AS n
          FROM hub.load_events
@@ -250,6 +420,20 @@ export async function readShiftMetrics(
           AND actor_id = $2`,
       [C, userId]
     ),
+    // Dispatcher's money: the rate on every load this user put on a truck.
+    // Booking is the moment the revenue is real, so it is counted off the
+    // player's own `booked` event rather than the load's current status.
+    query<{ cents: string }>(
+      `SELECT COALESCE(SUM(l.linehaul_cents + l.fuel_surcharge_cents), 0)::bigint AS cents
+         FROM hub.loads l
+        WHERE l.carrier_id = $1 AND l.deleted_at IS NULL
+          AND EXISTS (SELECT 1 FROM hub.load_events e
+                       WHERE e.carrier_id = $1 AND e.load_id = l.id AND e.actor_id = $2
+                         AND e.kind = 'status_change' AND e.payload->>'to' = 'booked')`,
+      [C, userId]
+    ),
+    companyMoney(),
+    driverPay(userId),
   ])
 
   const byStatus = new Map(moves.map((m) => [m.to_status ?? "", m.n]))
@@ -268,6 +452,9 @@ export async function readShiftMetrics(
     myInvoicedCents: Number(invoices[0]?.cents ?? 0),
     paymentsRecorded: payments[0]?.n ?? 0,
     unbilledCount: boards[0]?.unbilled ?? 0,
+    myFreightBookedCents: Number(booked[0]?.cents ?? 0),
+    myPayCents: pay,
+    ...co,
   }
   // The owner-operator drives like the company driver AND runs his own
   // books, so he needs both halves.

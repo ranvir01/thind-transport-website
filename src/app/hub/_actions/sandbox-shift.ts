@@ -3,6 +3,7 @@
 import { demoLoginEnabled } from "@/lib/hub/demo"
 import { getFlag } from "@/lib/hub/flags"
 import { isSandboxCarrier, SANDBOX_CARRIER_ID, seatForEmail } from "@/lib/hub/sandbox"
+import { readCompanyFeed, type FeedItem } from "@/lib/hub/sandbox-feed"
 import { isShiftSeat, type ShiftMetrics } from "@/lib/hub/sandbox-objectives"
 import { bumpShiftCounter, readShiftMetrics, readSimEpoch } from "@/lib/hub/sandbox-shift"
 import { getHubUser } from "@/lib/hub/session"
@@ -26,6 +27,8 @@ export interface ShiftSnapshot {
   seat?: string
   epoch?: string
   metrics?: ShiftMetrics
+  /** The crew rail — what everyone else has been doing while you worked. */
+  feed?: FeedItem[]
 }
 
 async function snapshot(): Promise<ShiftSnapshot> {
@@ -44,8 +47,14 @@ async function snapshot(): Promise<ShiftSnapshot> {
     return { ok: false, off: true, error: "This seat doesn't run shifts." }
   }
   try {
-    const [epoch, metrics] = await Promise.all([readSimEpoch(), readShiftMetrics(user.id, seat.key)])
-    return { ok: true, seat: seat.key, epoch: epoch ?? "unseeded", metrics }
+    // The feed is decoration, not scoring — if it fails, the shift carries on
+    // without it rather than costing the player their objectives.
+    const [epoch, metrics, feed] = await Promise.all([
+      readSimEpoch(),
+      readShiftMetrics(user.id, seat.key),
+      readCompanyFeed(6).catch(() => [] as FeedItem[]),
+    ])
+    return { ok: true, seat: seat.key, epoch: epoch ?? "unseeded", metrics, feed }
   } catch (error) {
     console.error("shift snapshot failed:", error)
     // Retryable: the caller keeps its baseline and tries again.

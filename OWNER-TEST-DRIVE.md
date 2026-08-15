@@ -62,6 +62,37 @@ drawn from what that job actually does, live progress while you work, and a scor
 recap when you clock out. Every seat you *don't* sit in is played by the AI, so the
 company runs around you either way.
 
+**Two things are new — tell me whether they land.**
+
+**1. The money.** Every seat now shows what the work is *worth*, in real dollars off
+real rows:
+
+| Seat | What it shows you |
+|---|---|
+| Dispatcher | the rate on every load you booked |
+| Company driver | **what you earned** — run through the same pay engine that cuts settlements, so it's the wage the software would actually pay |
+| Accountant | what you billed |
+| Owner | cash you personally moved |
+| Owner-operator | your take (90% of linehaul + your fuel surcharge) |
+| Safety | freight riding on trucks *you* put back in service |
+| Recruiter | freight riding with drivers *you* hired |
+
+Underneath, every seat sees the company's shift: what Blue Ridge delivered, billed
+and collected while you worked — including everything the AI teammates brought in.
+Before anything lands, it shows the freight on the road right now. **Nothing here is
+a points system.** If a number looks wrong to you, it's wrong, and I want to know.
+
+**2. "Around you."** A running rail of what your colleagues just did — dispatch
+booking, drivers sending PODs, the back office billing, customers paying. Anything
+the simulation played is tagged **AI** so you always know what was a person and what
+wasn't.
+
+☐ The money made the work feel worth doing ☐ Didn't notice it ☐ Numbers looked wrong
+
+Where a number looked wrong: ______________________________________________
+
+☐ "Around you" made it feel like a real company ☐ Noise ☐ Didn't notice it
+
 The two portal seats (Broker, Shipper) deliberately have **no** shift — they're your
 customers looking in, not staff doing work. They keep their guided tour.
 

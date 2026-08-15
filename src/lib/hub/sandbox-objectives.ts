@@ -71,6 +71,38 @@ export interface ShiftMetrics {
   myReceipts: number
   myAdvanceRequests: number
   myDvirs: number
+  // — money —
+  // Every seat's work is worth something to somebody, and a shift that can't
+  // show you that is just a chore list. These are real cents off real rows —
+  // driver pay runs through the SAME engine settlements use, so the number on
+  // the card is the number the software would actually pay. Cumulative like
+  // every other counter, so a diff is the shift's total.
+  //
+  // Personal — what YOU moved:
+  myFreightBookedCents: number
+  myPayCents: number
+  myCashMovedCents: number
+  /** Safety: freight riding on trucks this user certified back into service. */
+  myReleasedTruckFreightCents: number
+  /** Recruiter: freight riding with drivers this user hired. */
+  myHiredDriverFreightCents: number
+  // The company's shift — everyone's work, human and autopilot alike. The
+  // point of the place is that it pays people; a seat that only ever sees its
+  // own square of the board never sees that.
+  coDeliveredCents: number
+  coBilledCents: number
+  coCollectedCents: number
+  /**
+   * Freight on the road RIGHT NOW — a standing total, not a shift diff.
+   *
+   * The three above are what the shift earned, and for the first few minutes
+   * of any shift they are all honestly zero: nothing has arrived yet. A money
+   * panel that stays blank while you work reads as broken, and padding it
+   * with a fake number would be worse. This is the true thing that is never
+   * zero — there is always freight in motion, and it is the reason everyone
+   * here has a job.
+   */
+  coRollingCents: number
 }
 
 /** Zeroed metrics — seat readers fill only the counters their seat scores. */
@@ -86,6 +118,71 @@ export function emptyMetrics(at: string): ShiftMetrics {
     openIncidents: 0,
     myStageAdvances: 0, myOffersSigned: 0, myHires: 0, applicantsWaiting: 0,
     myReceipts: 0, myAdvanceRequests: 0, myDvirs: 0,
+    myFreightBookedCents: 0, myPayCents: 0, myCashMovedCents: 0,
+    myReleasedTruckFreightCents: 0, myHiredDriverFreightCents: 0,
+    coDeliveredCents: 0, coBilledCents: 0, coCollectedCents: 0, coRollingCents: 0,
+  }
+}
+
+/**
+ * The money a shift moved: one personal line and the company's three.
+ *
+ * `personalCents` is what this player, in this seat, is responsible for — and
+ * it is always a real figure off real rows, never a made-up score. Two seats
+ * take the long way round to get there, because their work pays off through
+ * somebody else's wheels: safety's number is the freight riding on trucks
+ * they put back in service, recruiter's is the freight riding with drivers
+ * they hired. Both are still just loads with rates on them.
+ *
+ * `standing` is true when the figure is a snapshot of what is out there right
+ * now rather than something earned inside the shift window — those two seats
+ * again. Diffing them would show nothing on a short shift and would flatter
+ * a long one, so they are read straight.
+ */
+export interface ShiftMoney {
+  personalCents: number
+  personalLabel: string
+  standing: boolean
+  deliveredCents: number
+  billedCents: number
+  collectedCents: number
+  /** Standing, not a diff — what is on the road at this instant. */
+  rollingCents: number
+}
+
+export function shiftMoney(seat: ShiftSeatKey, base: ShiftMetrics, cur: ShiftMetrics): ShiftMoney {
+  const diff = (pick: (m: ShiftMetrics) => number) => clamp(pick(cur) - pick(base))
+  const company = {
+    deliveredCents: diff((m) => m.coDeliveredCents),
+    billedCents: diff((m) => m.coBilledCents),
+    collectedCents: diff((m) => m.coCollectedCents),
+    rollingCents: clamp(cur.coRollingCents),
+  }
+  switch (seat) {
+    case "dispatcher":
+      return { personalCents: diff((m) => m.myFreightBookedCents), personalLabel: "Freight you booked", standing: false, ...company }
+    case "driver":
+      return { personalCents: diff((m) => m.myPayCents), personalLabel: "You earned", standing: false, ...company }
+    case "accountant":
+      return { personalCents: diff((m) => m.myInvoicedCents), personalLabel: "You billed", standing: false, ...company }
+    case "owner":
+      return { personalCents: diff((m) => m.myCashMovedCents), personalLabel: "Money you moved", standing: false, ...company }
+    case "owner_operator":
+      return { personalCents: diff((m) => m.myPayCents), personalLabel: "Your take", standing: false, ...company }
+    case "safety":
+      return {
+        personalCents: clamp(cur.myReleasedTruckFreightCents),
+        personalLabel: "Rolling on trucks you released",
+        standing: true,
+        ...company,
+      }
+    case "recruiter":
+      return {
+        personalCents: clamp(cur.myHiredDriverFreightCents),
+        personalLabel: "Rolling with drivers you hired",
+        standing: true,
+        ...company,
+      }
   }
 }
 
@@ -106,6 +203,7 @@ export interface ShiftEvaluation {
   /** Delivery on-time percentage across the shift (driver seats), 0–100. */
   onTimePct: number | null
   minutes: number
+  money: ShiftMoney
 }
 
 const clamp = (n: number) => Math.max(0, n)
@@ -226,5 +324,6 @@ export function evaluateShift(seat: ShiftSeatKey, baseline: ShiftMetrics, curren
     headline: headlineFor(score),
     onTimePct: seat === "driver" && arrivals > 0 ? Math.round((onTime / arrivals) * 100) : null,
     minutes,
+    money: shiftMoney(seat, baseline, current),
   }
 }
