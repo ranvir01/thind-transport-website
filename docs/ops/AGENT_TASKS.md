@@ -532,3 +532,25 @@ the launch-crash retry in `e2e-run-all.mjs`.
 **Prevention worth considering:** these anchors are stringly-typed across ~55 scripts. A
 shared `ANCHORS` map in `e2e-lib.mjs` (page → text) would turn "redesign broke 7 smokes"
 into a one-file edit.
+
+## Owner requests from the mobile screenshots (2026-08-14)
+
+20. **Delete or wire `HubAppearanceMenu.tsx`** — it is orphaned: nothing imports it. The
+    only reachable light/dark control is inside `UserMenu` (the avatar). Two controls for
+    one setting is worse than one; pick and remove the other.
+21. **Automation: email → load, finish the last mile.** The pipeline already exists and is
+    NOT a stub — `mailbox` is a live registry provider that polls IMAP and files rate
+    cons/PODs onto loads by reference, `doc-intake/llm-parser.ts` reads the document, and
+    `/hub/loads/paste` is the manual path. What is missing is only the credential and a
+    visible "what got auto-filed" surface. Build the surface: a review queue showing what
+    the mailbox created, with one-tap accept/correct, so automation never writes silently.
+    Manual entry stays first-class — never replace it.
+22. **AI-in-app roadmap** — the honest sequence, cheapest and safest first: (a) the doc
+    parser already in place, surfaced through 21's review queue; (b) ETA + broker
+    auto-updates (tasks 8–9), which need no model at all; (c) the natural-language report
+    picker (task 11), typed params only, never text-to-SQL. Anything that writes to the
+    database from a model output goes through a human-confirm step until it has earned
+    otherwise.
+23. **Practice mode polish** — `/hub/sandbox` is now linked in the nav (was URL-only). Next:
+    a one-line "you are in practice mode, nothing here is real" banner on every sandbox
+    screen, and a reset button that is obvious rather than buried.

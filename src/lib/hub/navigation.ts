@@ -102,6 +102,10 @@ const ALL_UTILITY_LINKS: HubNavLink[] = [
   { href: "/hub/tasks", label: "Tasks" },
   { href: "/hub/guide", label: "Setup guide" },
   { href: "/hub/toolbox", label: "Toolbox" },
+  // The simulation existed at /hub/sandbox with nothing linking to it, so the
+  // only way in was typing the URL. It is the safest place to learn the
+  // product — a seeded world you can break without touching real freight.
+  { href: "/hub/sandbox", label: "Practice mode" },
   { href: "/hub/help", label: "Help" },
   { href: "/hub/setup", label: "Smart Setup" },
   { href: "/hub/import", label: "Import" },
