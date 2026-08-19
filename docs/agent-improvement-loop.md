@@ -172,7 +172,8 @@ ahead, all three started the same build and two of them failed on a non-fast-for
 `main-drain-fallback.yml` also published with a bare `git push origin <sha>:refs/heads/main`, the
 exact form the drain method above exists to prevent.
 
-Legacy single-automation files (`hauldesk-improvement-cycle.*`) alias to `loadoff-deploy.*`.
+Legacy single-automation files (`hauldesk-improvement-cycle.*`) were deleted 2026-08-19 — they
+were the import template for the stray duplicate `main` writer. Use `loadoff-deploy.*`.
 
 ### 3b. Release gate (before any deploy is called done)
 > Verify the release: `npm run build`, `npx vitest run`, `npm run test:sidecars`; then against production

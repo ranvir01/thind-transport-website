@@ -110,12 +110,12 @@ copies of this job under three `concurrency` groups raced each other every hour,
 no workflow in this repo has ever read it, so setting it does nothing. To stop the drain, disable
 the workflow from the Actions tab (or delete its `schedule:` trigger).
 
-## Deprecated (aliases)
+## Deprecated (removed 2026-08-19)
 
-The old single-automation files still work for `@` references but are superseded:
-
-- `hauldesk-improvement-cycle.prompt.md` → use **`loadoff-deploy.prompt.md`**
-- `hauldesk-improvement-cycle.workflow.json` → use **`loadoff-deploy.workflow.json`**
+`hauldesk-improvement-cycle.prompt.md` / `.workflow.json` were deleted — they were the import
+template for the stray "HaulDesk improvement cycle" automation (a second `main` writer that
+raced Deploy + backlog). Use **`loadoff-deploy.*`**. The dashboard copy still exists until the
+owner disables it (Untitled `61b8e855-76b8-11f1-ba66-0e7d0216e441`).
 
 Full playbook: [`docs/agent-improvement-loop.md`](../../docs/agent-improvement-loop.md).
 
