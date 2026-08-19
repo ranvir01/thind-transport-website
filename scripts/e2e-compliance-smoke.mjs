@@ -128,6 +128,7 @@ async function main() {
 
   console.log("4. Upload a driver document on Harpreet's file")
   await page.goto(`${BASE}/hub/drivers`, { waitUntil: "networkidle2" })
+  await waitForText(page, "Roster, pay setup, and qualification files.")
   const driverHref = await page.evaluate(
     () => [...document.querySelectorAll("a")].find((a) => a.textContent.includes("Harpreet"))?.getAttribute("href")
   )
@@ -146,6 +147,7 @@ async function main() {
 
   console.log("5. Truck 102's detail page shows the same mileage-overdue PM")
   await page.goto(`${BASE}/hub/fleet`, { waitUntil: "networkidle2" })
+  await waitForText(page, "Trucks, trailers, and their paperwork.")
   const truckHref = await page.evaluate(
     () => [...document.querySelectorAll("a")].find((a) => a.textContent.includes("#102"))?.getAttribute("href")
   )

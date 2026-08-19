@@ -91,6 +91,7 @@ async function main() {
   console.log("2. Office certifies the repair")
   await login(office, "dispatch@demo.thind")
   await office.goto(`${BASE}/hub/fleet`, { waitUntil: "networkidle2" })
+  await waitForText(office, "Trucks, trailers, and their paperwork.")
   const truckHref = await office.evaluate(() => {
     const link = [...document.querySelectorAll("a")].find((a) => a.getAttribute("href")?.includes("/hub/fleet/trucks/") && a.textContent?.includes("101"))
     return link?.getAttribute("href")

@@ -34,6 +34,7 @@ async function main() {
 
   console.log("3. Office: request a POD from Harpreet")
   await office.goto(`${BASE}/hub/drivers`, { waitUntil: "networkidle2" })
+  await waitForText(office, "Roster, pay setup, and qualification files.")
   const driverHref = await office.evaluate(
     () => [...document.querySelectorAll("a")].find((a) => a.textContent.includes("Harpreet"))?.getAttribute("href")
   )

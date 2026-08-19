@@ -111,6 +111,7 @@ async function main() {
   check(!(await bodyText(thind)).includes("CAS-INV"), "Thind money screen has no CAS-INV reference")
 
   await thind.goto(`${BASE}/hub/fleet`, { waitUntil: "networkidle2" })
+  await waitForText(thind, "Trucks, trailers, and their paperwork.")
   // Fleet is an RSC list page — wait for a real unit number to render
   // (101–107) instead of a blind sleep after networkidle2.
   await thind.waitForFunction(() => /\b10[1-7]\b/.test(document.body.innerText), { timeout: 8000 }).catch(() => {})
@@ -144,6 +145,7 @@ async function main() {
   await shot(cascade, "02-cascade-dispatch")
 
   await cascade.goto(`${BASE}/hub/fleet`, { waitUntil: "networkidle2" })
+  await waitForText(cascade, "Trucks, trailers, and their paperwork.")
   await cascade
     .waitForFunction(() => document.body.innerText.includes("C-01") && document.body.innerText.includes("C-02"), {
       timeout: 8000,

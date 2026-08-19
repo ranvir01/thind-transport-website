@@ -85,9 +85,10 @@ const WAIT_FOR_PATH_COPY: Record<string, string> = {
  * Destination-copy anchors after a hard goto to list pages. `waitUntil:
  * "networkidle2"` still races the streamed body — the nav-bar label is
  * already in the chrome, so waitForText on "Settlements" / "Invoices" /
- * "Planner" / "Advances" / "Expenses" / "Messages" / "Compliance" / "Fuel"
- * is not a render gate. (Fuel's nav label is "Fuel & cards"; waitForText
- * "Fuel" still matches that chrome immediately via substring.)
+ * "Planner" / "Advances" / "Expenses" / "Messages" / "Compliance" / "Fuel" /
+ * "Drivers" / "Fleet" is not a render gate. (Fuel's nav label is
+ * "Fuel & cards"; waitForText "Fuel" still matches that chrome immediately
+ * via substring.)
  */
 const HARD_GOTO_COPY: Record<string, string> = {
   "/hub/money/settlements": "Weekly driver pay",
@@ -98,10 +99,12 @@ const HARD_GOTO_COPY: Record<string, string> = {
   "/hub/messages": "Every driver conversation in one place",
   "/hub/compliance": "CDLs, med cards",
   "/hub/fuel": "Last 92 days across every card program.",
+  "/hub/drivers": "Roster, pay setup, and qualification files.",
+  "/hub/fleet": "Trucks, trailers, and their paperwork.",
 }
 
 const HARD_GOTO_PATH_RE =
-  /\.goto\([^\n]*(\/hub\/money\/settlements|\/hub\/money\/invoices|\/hub\/planner|\/hub\/money\/advances|\/hub\/money\/expenses|\/hub\/messages|\/hub\/compliance|\/hub\/fuel)(?![/\w])/
+  /\.goto\([^\n]*(\/hub\/money\/settlements|\/hub\/money\/invoices|\/hub\/planner|\/hub\/money\/advances|\/hub\/money\/expenses|\/hub\/messages|\/hub\/compliance|\/hub\/fuel|\/hub\/drivers|\/hub\/fleet)(?![/\w])/
 
 /** A hard navigation resets the state — page.goto awaits the destination itself. */
 const HARD_NAV = /\.goto\(/
@@ -282,7 +285,7 @@ describe("e2e soft-nav landing gates wait for render before reading", () => {
         misses.push(`${f}:${i + 1} goto ${pathMatch[1]} never waits for "${copy}"`)
       })
     }
-    expect(gates, "guard is not silently vacuous").toBeGreaterThanOrEqual(24)
+    expect(gates, "guard is not silently vacuous").toBeGreaterThanOrEqual(36)
     expect(misses).toEqual([])
   })
 
