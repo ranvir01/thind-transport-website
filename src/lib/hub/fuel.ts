@@ -74,11 +74,11 @@ export async function assignableLoadsForFuel(carrierId: string, days = 120): Pro
        to_char(fs.appt_start, 'YYYY-MM-DD') AS pickup_date
      FROM hub.loads l
      LEFT JOIN LATERAL (
-       SELECT city, state, appt_start FROM hub.stops WHERE load_id = l.id AND type = 'pickup'
+       SELECT city, state, appt_start FROM hub.stops WHERE load_id = l.id AND carrier_id = l.carrier_id AND type = 'pickup'
        ORDER BY sequence ASC LIMIT 1
      ) fs ON TRUE
      LEFT JOIN LATERAL (
-       SELECT city, state FROM hub.stops WHERE load_id = l.id AND type = 'delivery'
+       SELECT city, state FROM hub.stops WHERE load_id = l.id AND carrier_id = l.carrier_id AND type = 'delivery'
        ORDER BY sequence DESC LIMIT 1
      ) ls ON TRUE
      WHERE l.carrier_id = $1 AND l.deleted_at IS NULL AND l.status <> 'cancelled'

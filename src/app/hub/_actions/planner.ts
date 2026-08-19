@@ -137,7 +137,7 @@ export async function plannerMoveLoadAction(
       `SELECT COUNT(*) AS count FROM hub.loads l
        JOIN LATERAL (SELECT MIN(COALESCE(appt_start, l.created_at))::date AS s,
                             MAX(COALESCE(appt_end, appt_start, l.created_at + INTERVAL '1 day'))::date AS e
-                     FROM hub.stops WHERE load_id = l.id) w ON TRUE
+                     FROM hub.stops WHERE load_id = l.id AND carrier_id = l.carrier_id) w ON TRUE
        WHERE l.carrier_id = $1 AND l.deleted_at IS NULL AND l.id <> $2
          AND l.truck_id = $3 AND l.status IN ('booked','dispatched','at_pickup','in_transit')
          AND w.s <= $5::date AND w.e >= $4::date`,
