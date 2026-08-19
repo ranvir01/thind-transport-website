@@ -104,6 +104,11 @@ jobs:
         run: npm test
       - name: Token lint (no raw hex/px in redesigned marketing scope)
         run: node scripts/token-lint.mjs
+      - name: Cursor agent environment is buildable
+        # Nothing else builds .cursor/Dockerfile, so a broken agent image is
+        # invisible until someone opens Cursor. It shipped without a FROM line
+        # once; this is the cheap static check that would have caught it.
+        run: node scripts/cursor-env-check.mjs
 
   e2e:
     # The 50+ script rig is a nightly / on-demand job, not a per-push gate.

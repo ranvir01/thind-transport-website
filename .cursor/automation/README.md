@@ -80,6 +80,25 @@ Full playbook: [`docs/agent-improvement-loop.md`](../../docs/agent-improvement-l
 - GitHub Actions to launch agents — removed from this repo for that reason
   (the drain-integrator Action above is a plain git job, not an agent)
 
+## Agent environment (`.cursor/environment.json` + `.cursor/Dockerfile`)
+
+Every cloud-compute agent — automations above, and background agents you start by hand — boots the
+image built from [`.cursor/Dockerfile`](../Dockerfile). That is a plain `docker build`: the file has
+to be a complete image (`FROM ubuntu:24.04` + everything the loop needs), **not** a fragment layered
+onto a Cursor base. It shipped as a bare `RUN apt-get ...` with no `FROM` from 2026-07-26 to
+2026-08-19, so every environment build failed at parse time and no agent on this repo could start.
+
+The image carries Node 22 (CI's pin), node-gyp/node-canvas headers, Chrome's shared libraries for
+the puppeteer-backed gates (`design-qa`, `qa:a11y`, `js-budget`), and Go + Rust for
+`npm run test:sidecars`. `install` then runs `scripts/setup-canvas-deps.sh` (a no-op on this image —
+it verifies the headers) and `npm install`.
+
+Changed either file? Run `npm run cursor:env-check` — it catches the mistakes a `docker build` would
+reject (missing `FROM`, a `CMD`/`ENTRYPOINT` Cursor overrides, a context outside the repo, an
+`install` script that isn't there). CI runs it in the `unit` job of `e2e-suite.yml`. It is static
+validation, not a build: after a real change to the toolchain layers, start one agent and watch the
+environment build once.
+
 ## Manual run
 
 In Cursor chat: `@loadoff-deploy.prompt.md`, `@loadoff-integrator.prompt.md`, or `@loadoff-prod-smoke.prompt.md`.

@@ -37,7 +37,8 @@
     "qa:a11y": "node scripts/a11y-audit.mjs",
     "qa:matrix": "node scripts/viewport-matrix.mjs",
     "qa:lighthouse": "node scripts/lighthouse-audit.mjs",
-    "git:identity": "node scripts/git-identity.mjs"
+    "git:identity": "node scripts/git-identity.mjs",
+    "cursor:env-check": "node scripts/cursor-env-check.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",

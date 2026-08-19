@@ -1,7 +1,7 @@
 {
   "build": {
     "dockerfile": "Dockerfile",
-    "context": ".."
+    "context": "."
   },
   "install": "./scripts/setup-canvas-deps.sh && npm install"
 }
