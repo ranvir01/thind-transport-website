@@ -72,14 +72,23 @@ in the Routines list, delete it by trigger id.
 > main must stay deployable. If production is healthy, confirm the latest main
 > SHA has a READY production deployment and stop — no busywork.
 
-## Routine 3 · existing improvement routines — keep them
+## Routine 3 · existing improvement routines — superseded on Cursor import day
 
 The feature/QA routines set up earlier (improvement cycle, integrations lane,
-verifier/red-team, daily deep audit) already cover Cursor's "apply/extend"
-role. Keep them as they are. If duplicates exist in the Routines list
-("Integration Lane Copy", a second "Weekly visual QA sweep", a second
-"Weekly deep audit"), delete the copies — duplicate firings waste plan usage
-and race each other on the branch.
+verifier/red-team, daily deep audit) covered Cursor's "apply/extend" role while
+Cursor was down. As of 2026-08-19 those charters move to Cursor Automations on
+Grok 4.6 (D-003) — when the owner imports each `loadoff-*.workflow.json`, the
+Claude routine with the same charter must be paused/deleted **in the same
+sitting**, per the "One charter, one platform" table in `docs/ops/FLEET.md`.
+One charter on two platforms is two writers on one lane.
+
+What stays on Claude permanently: Routine 1 (`:43` integrator — the deliberate
+redundant pair with Cursor `:00`), Routine 2 (16:49 daily smoke — redundant
+with Cursor `:30`; both read-only unless production is red, and whichever
+fires later on the same incident must fetch and re-check before acting), and
+the 23:23 nightly regression rig (needs a browser the Cursor image lacks).
+As before: if duplicate copies of any routine exist in the Routines list,
+delete the copies — duplicate firings waste plan usage and race each other.
 
 ---
 

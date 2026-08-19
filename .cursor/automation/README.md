@@ -67,7 +67,11 @@ ad-hoc sessions ──────▶ claude/<session> ─┘        prod smoke 
 3. **Import the ten role slots** at [cursor.com/automations](https://cursor.com/automations/new)
    — one per `loadoff-*.workflow.json` in the Role slots table. Keep the cron times exactly as
    written (minutes `:07`/`:13`/`:37` are reserved for these on the AGENT_INTEROP clock;
-   `fleet-clock-guard.test.ts` keeps everything else off them).
+   `fleet-clock-guard.test.ts` keeps everything else off them). **In the same sitting**, pause
+   or delete the Claude routine that covers the same charter — the reconciliation table in
+   [`docs/ops/FLEET.md`](../../docs/ops/FLEET.md) ("One charter, one platform") names each
+   pair. The Claude `:43` integrator, `16:49` smoke, and `23:23` nightly rig stay — they are
+   deliberate cross-platform redundancy, not duplicates.
 4. If the environment still fails to boot (runs ERROR in seconds with no setup logs): Save the
    install-only environment config — dashboard → environments →
    [`5241c374-0579-442f-bf88-309dbcbe37f3`](https://cursor.com/dashboard/cloud-agents/environments/e/5241c374-0579-442f-bf88-309dbcbe37f3).

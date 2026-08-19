@@ -40,6 +40,14 @@ const DASHBOARD_AGENT_MINUTES: Record<number, string> = {
   59: "Cursor Deploy + backlog automation",
 }
 
+// Daily dashboard agents (Claude side of the collaboration — FLEET.md
+// "One charter, one platform"). hh:mm tokens must be on the interop clock,
+// and their minutes must stay clear of every hourly job.
+const DASHBOARD_DAILY_AGENTS: Record<string, string> = {
+  "16:49": "Claude prod smoke + fix-forward (daily)",
+  "23:23": "Claude nightly regression rig",
+}
+
 // D-003 (docs/ops/DECISIONS.md, answered 2026-08-19): the role-slot Cursor
 // automations (.cursor/automation/loadoff-build-*.workflow.json etc.) own
 // these minutes — workflow crons stay off them.
@@ -135,6 +143,27 @@ describe("fleet clock guard (no two schedulers on one minute)", () => {
         ).toBe(false)
       }
     }
+  })
+
+  it("the Claude daily routines are on the clock and clear of hourly minutes", () => {
+    const hourlyMinutes = new Set<number>([
+      ...Object.keys(DASHBOARD_AGENT_MINUTES).map(Number),
+      ...hourly.flatMap((c) => c.minutes),
+    ])
+    for (const [slot, who] of Object.entries(DASHBOARD_DAILY_AGENTS)) {
+      expect(interop, `${who} (${slot}) has no row in AGENT_INTEROP §1`).toContain(slot)
+      const minute = Number(slot.split(":")[1])
+      expect(
+        hourlyMinutes.has(minute),
+        `${who} (${slot}) collides once a day with an hourly job at :${minute}`
+      ).toBe(false)
+    }
+  })
+
+  it("the cross-platform reconciliation table exists (one charter, one platform)", () => {
+    expect(fleet).toMatch(/One charter, one platform/)
+    expect(fleet).toMatch(/16:49/)
+    expect(fleet).toMatch(/23:23/)
   })
 
   it("keeps the reserved D-003 minutes clear until the owner enables those slots", () => {

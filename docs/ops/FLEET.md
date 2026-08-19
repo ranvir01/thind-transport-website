@@ -26,6 +26,8 @@ same branch.
 | `03:40` | E2E smoke suite | GitHub Action | nothing | `e2e-suite.yml` |
 | `06:00 Sun` | Branch reaper (dry-run until `REAPER_ARMED`) | GitHub Action | deletes merged `claude/*`/`cursor/*` only when armed | `branch-reaper.yml` |
 | `06:23` | Prune merged `claude/*` (tier-1 always; tier-2 zero-delta dry-run) | GitHub Action | deletes fully-merged `claude/*` only | `prune-merged-branches.yml` |
+| `16:49` | Prod smoke + fix-forward (daily) | Claude routine | integrator + `main` only when production is red | `docs/claude-routines.md` Routine 2 |
+| `23:23` | Nightly regression rig — fresh rig, full battery, findings only | Claude routine | nothing (findings to docs/backlog) | `docs/claude-routines.md` nightly entries |
 | every push/PR | unit (vitest, token-lint, cursor-env-check) | GitHub Action | nothing | `e2e-suite.yml` `unit` job |
 
 No two rows share a minute-of-hour (reaper's Sunday `06:00` is the one exception — its
@@ -79,6 +81,36 @@ agents duplicate fixes and race the integrator (`docs/research/2026-08/prompt-6-
 The Claude-routine prompt blocks for the same charters remain in
 [`docs/claude-routines.md`](../claude-routines.md) §"Scheduled fleet v2" as the fallback —
 never run a slot on both platforms at once.
+
+## One charter, one platform (Cursor ↔ Claude reconciliation)
+
+The two fleets collaborate through branches and commit bodies, never by sharing a charter.
+A charter running on both platforms is two writers on one lane — the same defect fixed twice,
+or a merge race. When importing each Cursor slot, pause/delete the Claude routine that covers
+the same ground **in the same sitting** (claude.ai → Code → Routines; Routine 3 in
+`docs/claude-routines.md` names them; their schedules were never recorded, so go by name):
+
+| Cursor slot (on import) | Existing Claude routine, same charter | Action |
+|---|---|---|
+| Build D — integrations `14:13` | "integrations lane" | pause/delete the Claude copy |
+| Red-team Sun `09:07` | "verifier/red-team" | pause/delete the Claude copy |
+| Deep-verify Sat `07:07` | "weekly/daily deep audit" | pause/delete the Claude copy |
+| Deploy + backlog `:59` (already live) | "improvement cycle" | pause/delete if it still fires |
+| Build A/B/C/E | (no named Claude twin) | just import |
+
+**Deliberately stays on Claude** (do not duplicate in Cursor):
+
+| Claude job | Why it stays |
+|---|---|
+| `:43` integrator + drain | The one intentional same-branch pair with Cursor `:00` — cross-platform redundancy so merging survives either platform going dark. Different minutes; both fetch+rebase first. |
+| `16:49` daily prod smoke | Redundant with Cursor `:30` by design — both read-only unless production is red. Whichever fires later on the same incident must `git fetch` and re-check prod state before acting; the first fixer wins, the second stops. |
+| `23:23` nightly regression rig | Needs a browser for the 51-script Puppeteer battery — the Cursor image has none. Cursor's Sat deep-verify reads this rig's results instead of re-running it. |
+
+Everything else in the collaboration contract is unchanged: `claude/*` branches are absorbed
+by the `:00`/`:43` integrators, `cursor/*` session work lands via PR, the commit-body
+`Backlog:` trailer with `[needs-browser]`/`[needs-sidecars]`/`[needs-owner]`/`[blocked-by …]`
+tags is the only cross-platform channel, and the first hard step of every session on either
+platform is the search-before-you-fix dedupe (`AGENT_INTEROP.md` §3).
 
 ---
 

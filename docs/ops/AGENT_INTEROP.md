@@ -27,6 +27,8 @@ same branch in the same minute is how a diverged `main` gets made.
 | `03:40` | E2E smoke suite | GitHub Actions | nothing — read-only |
 | `06:00 Sun` | Branch reaper (dry-run until `REAPER_ARMED`) | GitHub Actions | deletes merged `claude/*`/`cursor/*` only when armed |
 | `06:23` | Prune merged agent branches (tier-1 merged-only; tier-2 dry-run) | GitHub Actions | deletes fully-merged `claude/*` only |
+| `16:49` | Prod smoke + fix-forward (daily) | Claude Code routine | integrator + `main`, only when production is red |
+| `23:23` | Nightly regression rig (full battery on a fresh rig; files findings) | Claude Code routine | nothing — findings to docs/backlog |
 | every push / PR | `unit` job (vitest, token-lint, cursor-env-check) | GitHub Actions | nothing — read-only |
 
 **Dormant, reserved (D-003 — answered 2026-08-19: Cursor Automations on Grok 4.6):** the
