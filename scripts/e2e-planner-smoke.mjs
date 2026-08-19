@@ -63,7 +63,7 @@ async function main() {
 
   console.log("3. Planner grid")
   await page.goto(`${BASE}/hub/planner`, { waitUntil: "networkidle2" })
-  await waitForText(page, "Planner")
+  await waitForText(page, "A truck's whole week at a glance")
   await waitForStableText(page)
   await page.screenshot({ path: path.join(OUT, "02-planner.png"), fullPage: true })
   console.log("  📸 02-planner")
@@ -87,6 +87,7 @@ async function main() {
   await page.goto(`${BASE}/hub`, { waitUntil: "networkidle2" })
   await page.screenshot({ path: path.join(OUT, "04-today-mobile.png"), fullPage: true })
   await page.goto(`${BASE}/hub/planner`, { waitUntil: "networkidle2" })
+  await waitForText(page, "A truck's whole week at a glance")
   await page.screenshot({ path: path.join(OUT, "05-planner-mobile.png") })
   console.log("  📸 04/05 mobile")
 

@@ -81,13 +81,14 @@ async function main() {
   console.log("1. Login as owner, open the invoice list")
   await login(page, "owner@demo.thind")
   await page.goto(`${BASE}/hub/money/invoices`, { waitUntil: "networkidle2" })
-  await waitForText(page, "Invoices")
+  await waitForText(page, "Every invoice, paid or open")
   const seeded = await page.evaluate(() => document.body.innerText.match(/THD-INV-\d+/g) ?? [])
   check(seeded.length >= 3, `seeded invoices listed (${seeded.length} numbers visible)`)
   await shot(page, "01-invoice-list")
 
   console.log("2. Status filter narrows the list")
   await page.goto(`${BASE}/hub/money/invoices?status=paid`, { waitUntil: "networkidle2" })
+  await waitForText(page, "Every invoice, paid or open")
   const pills = await page.evaluate(() =>
     [...document.querySelectorAll("table tbody span")]
       .map((s) => s.textContent.trim().toLowerCase())

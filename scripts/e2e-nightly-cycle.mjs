@@ -169,7 +169,7 @@ async function main() {
     // ---------------- PHASE 2: cash out ----------------
     console.log("\n=== PHASE 2: owner drafts settlements and approves one ===")
     await page.goto(`${BASE}/hub/money/settlements`, { waitUntil: "networkidle2" })
-    await waitForText(page, "Settlements")
+    await waitForText(page, "Weekly driver pay")
     await shot(page, "04-settlements-before")
 
     await clickByText(page, "Draft this week", { tag: "button" })

@@ -112,7 +112,7 @@ async function main() {
 
   console.log("4. Draft weekly settlements, approve one, mark it paid")
   await page.goto(`${BASE}/hub/money/settlements`, { waitUntil: "networkidle2" })
-  await waitForText(page, "Settlements")
+  await waitForText(page, "Weekly driver pay")
   await clickByText(page, "Draft this week", { tag: "button" })
   await waitForText(page, "settlement draft(s) created")
   // Completion signal is the draft button re-enabling after router.refresh.

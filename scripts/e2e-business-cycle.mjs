@@ -202,7 +202,7 @@ async function main() {
 
     console.log("3. Owner settles the week — statement PDF, advance applied")
     await office.goto(`${BASE}/hub/money/settlements`, { waitUntil: "networkidle2" })
-    await waitForText(office, "Settlements")
+    await waitForText(office, "Weekly driver pay")
     await clickByText(office, "Draft this week", { tag: "button" })
     await waitForText(office, "settlement draft(s) created")
     check(await draftButtonSettled(office), "draft button re-enabled after router.refresh")
@@ -285,7 +285,7 @@ async function main() {
 
     console.log("6. A second settlement run still pays nobody twice")
     await office.goto(`${BASE}/hub/money/settlements`, { waitUntil: "networkidle2" })
-    await waitForText(office, "Settlements")
+    await waitForText(office, "Weekly driver pay")
     await clickByText(office, "Draft this week", { tag: "button" })
     await waitForText(office, "0 settlement draft(s) created")
     check(await draftButtonSettled(office), "draft button re-enabled after the rerun")

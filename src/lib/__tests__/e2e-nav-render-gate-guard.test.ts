@@ -81,6 +81,21 @@ const WAIT_FOR_PATH_COPY: Record<string, string> = {
   "/hub/suspended": "Workspace suspended",
 }
 
+/**
+ * Destination-copy anchors after a hard goto to the Settlements / Invoices /
+ * Planner list pages. `waitUntil: "networkidle2"` still races the streamed
+ * body — the nav-bar label is already in the chrome, so waitForText on
+ * "Settlements" / "Invoices" / "Planner" is not a render gate.
+ */
+const HARD_GOTO_COPY: Record<string, string> = {
+  "/hub/money/settlements": "Weekly driver pay",
+  "/hub/money/invoices": "Every invoice, paid or open",
+  "/hub/planner": "A truck's whole week at a glance",
+}
+
+const HARD_GOTO_PATH_RE =
+  /\.goto\([^\n]*(\/hub\/money\/settlements|\/hub\/money\/invoices|\/hub\/planner)(?![/\w])/
+
 /** A hard navigation resets the state — page.goto awaits the destination itself. */
 const HARD_NAV = /\.goto\(/
 
@@ -218,6 +233,45 @@ describe("e2e soft-nav landing gates wait for render before reading", () => {
         misses.push(`${f}:${i + 1} waitForPath("${pathMatch[1]}") never waits for "${copy}"`)
       })
     }
+    expect(misses).toEqual([])
+  })
+
+  it("hard-goto Settlements/Invoices/Planner list pages wait for destination copy, not the nav label", () => {
+    const TEXT_RE = /(?:waitForText|textAppears)\(\s*[\w$]+\s*,\s*"([^"]+)"/
+    const misses: string[] = []
+    let gates = 0
+    for (const f of scripts) {
+      const lines = stripComments(readFileSync(path.join(SCRIPTS_DIR, f), "utf-8")).split("\n")
+      lines.forEach((line, i) => {
+        const pathMatch = HARD_GOTO_PATH_RE.exec(line)
+        if (!pathMatch) return
+        gates += 1
+        const copy = HARD_GOTO_COPY[pathMatch[1]]
+        if (!copy) {
+          misses.push(`${f}:${i + 1} goto ${pathMatch[1]} has no destination-copy mapping`)
+          return
+        }
+        for (let j = i + 1; j < lines.length; j++) {
+          const l = lines[j]
+          if (HARD_NAV.test(l) || isContentRead(l)) {
+            misses.push(
+              `${f}:${i + 1} goto ${pathMatch[1]} has no waitForText("${copy}") before a read`
+            )
+            return
+          }
+          const textMatch = TEXT_RE.exec(l)
+          if (textMatch?.[1] === copy) return
+          if (isRenderGate(l)) {
+            misses.push(
+              `${f}:${i + 1} goto ${pathMatch[1]} gated on "${textMatch?.[1] ?? l.trim().slice(0, 40)}" instead of "${copy}"`
+            )
+            return
+          }
+        }
+        misses.push(`${f}:${i + 1} goto ${pathMatch[1]} never waits for "${copy}"`)
+      })
+    }
+    expect(gates, "guard is not silently vacuous").toBeGreaterThanOrEqual(6)
     expect(misses).toEqual([])
   })
 
