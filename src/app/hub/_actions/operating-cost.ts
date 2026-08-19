@@ -39,12 +39,21 @@ export async function saveCostPerMileAction(input: { cents: unknown }): Promise<
       }
     }
     const before = await getCarrierSettings(user.carrierId)
-    await query(
-      `UPDATE hub.carrier_settings
-       SET settings = jsonb_set(settings, '{costPerMileCents}', to_jsonb($2::int), TRUE), updated_at = NOW()
-       WHERE carrier_id = $1`,
+    // Upsert, not a bare UPDATE: a carrier with no settings row (or a row
+    // predating this key) used to match 0 rows, log a success audit, and
+    // return ok while getCarrierSettings kept serving the 234¢ default —
+    // every dispatch-board margin and lane rank silently unchanged.
+    // Same INSERT…ON CONFLICT form as updateOfficeEmailAction / setBrandAccentAction.
+    const rows = await query<{ carrier_id: string }>(
+      `INSERT INTO hub.carrier_settings (carrier_id, settings)
+       VALUES ($1, jsonb_build_object('costPerMileCents', $2::int))
+       ON CONFLICT (carrier_id) DO UPDATE SET
+         settings = jsonb_set(hub.carrier_settings.settings, '{costPerMileCents}', to_jsonb($2::int), TRUE),
+         updated_at = NOW()
+       RETURNING carrier_id`,
       [user.carrierId, cents]
     )
+    if (rows.length === 0) return { ok: false, error: "Could not save the cost per mile" }
     await logAudit({
       carrierId: user.carrierId, actorId: user.id, actorName: user.name,
       entityType: "carrier_settings", entityId: user.carrierId, action: "cost_per_mile_changed",
