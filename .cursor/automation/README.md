@@ -89,35 +89,37 @@ platform that can run it — is [`docs/ops/AGENT_INTEROP.md`](../../docs/ops/AGE
 [`docs/cursor-agent-preamble.md`](../../docs/cursor-agent-preamble.md) at the top of any Cursor agent
 you start by hand.
 
-## Agent environment (`.cursor/environment.json` + `.cursor/Dockerfile`)
+## Agent environment (`.cursor/environment.json`)
 
-Every cloud-compute agent — automations above, and background agents you start by hand — boots the
-image built from [`.cursor/Dockerfile`](../Dockerfile). That is a plain `docker build`: the file has
-to be a complete image (`FROM ubuntu:24.04` + everything the loop needs), **not** a fragment layered
-onto a Cursor base. It shipped as a bare `RUN apt-get ...` with no `FROM` from 2026-07-26 to
-2026-08-19, so every environment build failed at parse time and no agent on this repo could start.
+Every cloud-compute agent — the automations above, and background agents you start by hand — boots
+from [`.cursor/environment.json`](../environment.json). It declares **no custom image on purpose**:
+Cursor boots its own default machine and runs the `install` line, which is the same recipe CI uses
+(`npm ci --ignore-scripts` + `npm rebuild bcrypt sharp`). Nothing in `src/` imports canvas, and CI
+proves that recipe carries a full production build and the whole e2e suite.
 
-The image is deliberately small: Ubuntu 24.04, Node 22 (CI's pin, copied out of the official node
-image), and the node-gyp / node-canvas build headers. `install` then runs
-`scripts/setup-canvas-deps.sh` — a no-op here, it verifies the headers — and `npm install`. Nothing
-in it reaches past the container registry and Ubuntu's archives, so there is no third-party download
-to fail an environment build.
+That default is a scar. A custom `.cursor/Dockerfile` shipped on 2026-07-26 with no `FROM` line, so
+every environment build failed at parse time and **no agent on this repo could start until
+2026-08-19** — three weeks, silently, because nothing here builds that image and the failure never
+reached the repo. A custom image is one more thing between you and a working agent; the bar for
+putting one back is a build you have watched go green.
 
-**What the image cannot run yet:** the puppeteer-backed gates (`design-qa`, `qa:a11y`, `js-budget`,
-`qa:lighthouse`) have no browser or Chrome shared libraries, and `npm run test:sidecars` has no Go or
-Rust toolchain. Run those locally or lean on CI. Both layers are ready to add back once this base is
-proven green — do it one layer at a time so a red build names its own cause.
+[`.cursor/Dockerfile`](../Dockerfile) is still here as the opt-in image (pinned Node 22 + the
+node-canvas headers that `scripts/extract-pdf-pages.mjs` and `fix-legacy-signatures.mjs` need). It is
+valid and unreferenced. To use it, add `"build": { "dockerfile": "Dockerfile", "context": "." }` to
+environment.json and re-import.
 
-**Cursor keeps its own copy.** The environment editor saves the Dockerfile server-side, and that
-saved copy — not the file in this repo — is what builds. After changing either file here, open the
-environment in Cursor and re-import from the repository, or the old one keeps building. A build log
+**Cursor keeps its own copy.** The environment editor saves the config server-side, and that saved
+copy — not the file in this repo — is what runs. After changing anything under `.cursor/`, open the
+environment in Cursor and re-import from the repository, or the old one keeps failing. A build log
 whose `transferring dockerfile: NNNB` does not match `wc -c .cursor/Dockerfile` is that mismatch,
-every time.
+every time — and a build log at all, when environment.json declares no build, means the saved copy is
+stale.
 
-Changed either file? Run `npm run cursor:env-check` — it catches the mistakes a `docker build` would
-reject (missing `FROM`, a `CMD`/`ENTRYPOINT` Cursor overrides, a context outside the repo, an
-`install` script that isn't there). CI runs it in the `unit` job of `e2e-suite.yml`. It is static
-validation, not a build: after a real change, start one agent and watch the environment build once.
+Changed anything under `.cursor/`? Run `npm run cursor:env-check` — it catches what a `docker build`
+would reject (missing `FROM`, a `CMD`/`ENTRYPOINT` Cursor overrides, a context outside the repo, a
+missing install script), and it checks the opt-in Dockerfile too, so the day someone wires it back up
+is not the day they discover it never parsed. CI runs it in the `unit` job of `e2e-suite.yml`. It is
+static validation, not a build: after a real change, start one agent and watch it boot once.
 
 ## Manual run
 

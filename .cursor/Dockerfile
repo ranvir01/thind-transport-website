@@ -1,19 +1,29 @@
-# Cursor background-agent image for this repo.
+# OPT-IN Cursor agent image — NOT referenced by environment.json.
 #
-# WHY THIS FILE IS SELF-CONTAINED: `build.dockerfile` in environment.json is a
-# real `docker build`, not a layer spliced onto a Cursor base image. The first
-# version of this file opened with `RUN apt-get ...` and no `FROM`, on the
-# assumption that Cursor would prepend its own Ubuntu stage. It does not — the
-# build died at parse time ("no build stage in current context"), which is why
-# the Cursor side of this repo was dead. Everything the agent needs is here.
+# environment.json deliberately declares no `build`, so Cursor boots its own
+# default machine and this file builds nothing. That is the point: a custom
+# image is one more thing between you and a working agent, and this repo has
+# already lost three weeks to exactly that. Nothing in `src/` imports canvas, and
+# CI installs with `--ignore-scripts` and still runs a full production build and
+# the whole e2e suite — so the native headers below were never on the critical
+# path.
 #
-# DELIBERATELY SMALL. This image builds the Next.js app and runs vitest — that
-# is the whole brief. It has no browser (the puppeteer-backed design-qa /
-# qa:a11y / js-budget / qa:lighthouse gates) and no Go or Rust (the
-# `npm run test:sidecars` gate); run those locally or in CI until this image is
-# proven green and the layers are added back deliberately. Every line below is
-# either the registry or Ubuntu's own archives — no third-party downloads to
-# 404, rate-limit, or rotate a signing key on us.
+# To use it, add this back to .cursor/environment.json and re-import the
+# environment in Cursor:
+#
+#     "build": { "dockerfile": "Dockerfile", "context": "." }
+#
+# WHY IT IS SELF-CONTAINED: `build.dockerfile` is a real `docker build`, not a
+# layer spliced onto a Cursor base image. The first version of this file opened
+# with `RUN apt-get ...` and no `FROM`, assuming Cursor would prepend its own
+# Ubuntu stage. It does not — the build died at parse time ("no build stage in
+# current context"), and every Cursor agent on this repo failed to start from
+# 2026-07-26 to 2026-08-19.
+#
+# What it adds over the default machine: pinned Node 22 and the node-canvas
+# build headers (for scripts/extract-pdf-pages.mjs and fix-legacy-signatures.mjs,
+# the only two things here that need them). It has no browser (design-qa,
+# qa:a11y, js-budget, qa:lighthouse) and no Go or Rust (test:sidecars).
 #
 # No CMD/ENTRYPOINT on purpose: Cursor starts the container with its own
 # long-running command and runs environment.json's `install` inside it, as the

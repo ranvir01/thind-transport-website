@@ -51,8 +51,10 @@ in three days. This is the only lock the fleet has.
 
 ## What this environment cannot do
 
-The Cursor agent image has **no browser and no Go/Rust toolchain**. `npm run design-qa`, `qa:a11y`,
-`js-budget`, `qa:lighthouse` and `npm run test:sidecars` will not run here. If your change needs one
+This agent runs on Cursor's default machine with dependencies installed the CI way
+(`npm ci --ignore-scripts` + `npm rebuild bcrypt sharp`), so there is **no browser and no Go/Rust
+toolchain**. `npm run design-qa`, `qa:a11y`, `js-budget`, `qa:lighthouse` and
+`npm run test:sidecars` will not run here. If your change needs one
 of those gates, finish the code, say so with a `[needs-browser]` or `[needs-sidecars]` tag in
 `Backlog:`, and leave the gate to CI or a local run. Do not weaken a gate, lower a ratchet, or skip a
 test to get a green run — a ratchet stops being a ratchet the moment its number moves to make a build

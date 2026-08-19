@@ -9,16 +9,22 @@
  * no gate said a word.
  *
  * These are the checks a `docker build` would fail on, minus the daemon:
- *   - environment.json parses and declares either a build or a snapshot
- *   - the referenced Dockerfile exists and its first instruction is FROM
- *     (ARG before FROM is legal and allowed)
+ *   - environment.json parses
+ *   - a referenced Dockerfile exists, and ANY .cursor/Dockerfile present — even
+ *     one environment.json does not reference — starts with FROM (ARG before
+ *     FROM is legal and allowed). An unreferenced one is checked because it is
+ *     opt-in, not dead: the day someone wires it back up is the wrong day to
+ *     discover it never parsed.
  *   - no CMD/ENTRYPOINT — Cursor supplies the container's long-running command
  *   - the build context stays inside the repo
+ *
+ * A `build`-less environment.json is valid and is what this repo ships: Cursor
+ * boots its default machine and runs `install`. That is not a finding.
  *
  * Usage: node scripts/cursor-env-check.mjs   (exit 1 = broken)
  */
 import { existsSync, readFileSync } from 'node:fs';
-import { dirname, relative, resolve } from 'node:path';
+import { relative, resolve } from 'node:path';
 
 const CURSOR_DIR = resolve(process.cwd(), '.cursor');
 const ENV_FILE = resolve(CURSOR_DIR, 'environment.json');
@@ -37,45 +43,49 @@ try {
   process.exit(1);
 }
 
-if (!env.build?.dockerfile && !env.snapshot) {
-  problems.push('environment.json declares neither `build.dockerfile` nor `snapshot`');
+const referenced = env.build?.dockerfile ? resolve(CURSOR_DIR, env.build.dockerfile) : null;
+const defaultDockerfile = resolve(CURSOR_DIR, 'Dockerfile');
+
+if (referenced && !existsSync(referenced)) {
+  problems.push(`build.dockerfile points at ${relative(process.cwd(), referenced)}, which does not exist`);
+}
+
+// Check the referenced Dockerfile, or an unreferenced .cursor/Dockerfile sitting
+// there as the opt-in image.
+const dockerfiles = [...new Set([referenced, defaultDockerfile].filter((f) => f && existsSync(f)))];
+
+for (const dockerfile of dockerfiles) {
+  const instructions = readFileSync(dockerfile, 'utf8')
+    .split('\n')
+    .map((line) => line.trim())
+    .filter((line) => line && !line.startsWith('#'))
+    // A backslash-continued line's tail is an argument, not an instruction.
+    .reduce((acc, line) => {
+      if (acc.continuing) {
+        acc.continuing = line.endsWith('\\');
+        return acc;
+      }
+      acc.continuing = line.endsWith('\\');
+      acc.list.push(line);
+      return acc;
+    }, { list: [], continuing: false })
+    .list.map((line) => line.split(/\s+/)[0].toUpperCase());
+
+  const firstStage = instructions.find((word) => word !== 'ARG');
+  if (firstStage !== 'FROM') {
+    problems.push(
+      `${relative(process.cwd(), dockerfile)} starts with ${firstStage ?? 'nothing'}, not FROM — ` +
+        'Cursor runs a plain `docker build`, it does not prepend a base image',
+    );
+  }
+  for (const banned of ['CMD', 'ENTRYPOINT']) {
+    if (instructions.includes(banned)) {
+      problems.push(`${relative(process.cwd(), dockerfile)} declares ${banned}; Cursor supplies the container command`);
+    }
+  }
 }
 
 if (env.build?.dockerfile) {
-  const dockerfile = resolve(CURSOR_DIR, env.build.dockerfile);
-  if (!existsSync(dockerfile)) {
-    problems.push(`build.dockerfile points at ${relative(process.cwd(), dockerfile)}, which does not exist`);
-  } else {
-    const instructions = readFileSync(dockerfile, 'utf8')
-      .split('\n')
-      .map((line) => line.trim())
-      .filter((line) => line && !line.startsWith('#'))
-      // A backslash-continued line's tail is an argument, not an instruction.
-      .reduce((acc, line) => {
-        if (acc.continuing) {
-          acc.continuing = line.endsWith('\\');
-          return acc;
-        }
-        acc.continuing = line.endsWith('\\');
-        acc.list.push(line);
-        return acc;
-      }, { list: [], continuing: false })
-      .list.map((line) => line.split(/\s+/)[0].toUpperCase());
-
-    const firstStage = instructions.find((word) => word !== 'ARG');
-    if (firstStage !== 'FROM') {
-      problems.push(
-        `${relative(process.cwd(), dockerfile)} starts with ${firstStage ?? 'nothing'}, not FROM — ` +
-          'Cursor runs a plain `docker build`, it does not prepend a base image',
-      );
-    }
-    for (const banned of ['CMD', 'ENTRYPOINT']) {
-      if (instructions.includes(banned)) {
-        problems.push(`${relative(process.cwd(), dockerfile)} declares ${banned}; Cursor supplies the container command`);
-      }
-    }
-  }
-
   const context = env.build.context ?? '.';
   const contextRoot = env.build.context === undefined ? CURSOR_DIR : resolve(CURSOR_DIR, context);
   const outside = relative(process.cwd(), contextRoot).startsWith('..');

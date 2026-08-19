@@ -105,24 +105,31 @@ waits on another agent's reply, because there is no reply — there is only the 
 
 ## 5 · Changing the agent environment
 
-`.cursor/environment.json` and `.cursor/Dockerfile` build the machine every Cursor cloud agent boots
-into. They broke on 2026-07-26 (a Dockerfile with no `FROM`) and stayed broken until 2026-08-19,
-because nothing in this repo builds that image and no gate looked at it. Every Cursor agent — the
-three automations included — failed to start for three weeks, silently.
+`.cursor/environment.json` describes the machine every Cursor cloud agent boots into. It declares
+**no custom image**: Cursor uses its own default machine and runs the `install` line, which mirrors
+CI (`npm ci --ignore-scripts` + `npm rebuild bcrypt sharp`).
 
-The rules that follow from that:
+That is deliberate. A custom `.cursor/Dockerfile` with no `FROM` line shipped on 2026-07-26 and every
+Cursor agent — the three automations included — failed to start until 2026-08-19. Nothing in this
+repo built that image and no gate looked at it, so three weeks of total agent outage produced not one
+red signal here. `.cursor/Dockerfile` remains as a valid, unreferenced, opt-in image; re-enabling it
+means adding `"build": { "dockerfile": "Dockerfile", "context": "." }` back and watching a build go
+green before trusting it.
 
-1. **Run `npm run cursor:env-check` after touching either file.** It asserts what `docker build`
-   would reject: a missing `FROM`, a `CMD`/`ENTRYPOINT` Cursor overrides, a build context outside the
-   repo, an `install` script that isn't there. CI runs it in the `unit` job.
-2. **Cursor keeps its own server-side copy of the Dockerfile, and builds that — not the repo's.**
-   After changing either file, open the environment in Cursor and re-import from the repository.
-   The tell is in the build log's first line: `transferring dockerfile: NNNB` must match
-   `wc -c .cursor/Dockerfile`. If it doesn't, Cursor is building a stale copy and the result says
-   nothing about your change.
+The rules that follow from that outage:
+
+1. **Run `npm run cursor:env-check` after touching anything under `.cursor/`.** It asserts what
+   `docker build` would reject — a missing `FROM`, a `CMD`/`ENTRYPOINT` Cursor overrides, a build
+   context outside the repo, an `install` script that isn't there — and it checks the opt-in
+   Dockerfile even while nothing references it. CI runs it in the `unit` job.
+2. **Cursor keeps its own server-side copy of the environment, and runs that — not the repo's.**
+   After changing either file, open the environment in Cursor and re-import from the repository. Two
+   tells that you are looking at a stale copy: a `transferring dockerfile: NNNB` line whose byte count
+   does not match `wc -c .cursor/Dockerfile`, or any Docker build at all while environment.json
+   declares none.
 3. **Land environment changes on `main` first, then fast-forward the fleet branches.** An agent
-   booted on `claude/lane-*` or the integrator builds the Dockerfile *on that branch*. A fix that
-   exists only on `main` leaves every other branch unbootable:
+   booted on `claude/lane-*` or the integrator reads the config *on that branch*. A fix that exists
+   only on `main` leaves every other branch unbootable:
 
    ```bash
    git push origin main:claude/hauldesk-project-setup-l1luoo
@@ -134,19 +141,16 @@ The rules that follow from that:
    These are fast-forwards while the lane branches carry no commits of their own
    (`git rev-list --count origin/main..origin/claude/lane-<name>` is `0`). If one is non-zero, that
    lane has unmerged work — merge it through the integrator instead of forcing anything.
-4. **Static validation is not a build.** After a real change to the image, start one agent and watch
-   the environment build once. `cursor-env-check` catches parse-level mistakes, not a package that
-   stopped existing.
+4. **Static validation is not a boot.** After a real change, start one agent and watch it come up.
+   `cursor-env-check` catches parse-level mistakes, not a package that stopped existing.
 
-### What the Cursor image can and cannot do today
+### What a Cursor agent can and cannot run
 
-It builds the app and runs vitest: Ubuntu 24.04, Node 22, node-gyp/node-canvas headers. It has **no
-browser** (so no `design-qa`, `qa:a11y`, `js-budget`, `qa:lighthouse`) and **no Go or Rust** (so no
-`npm run test:sidecars`). Work needing those gets tagged per §4 and runs locally or in CI. Both
-layers are ready to add back once the base image is proven green — one layer per commit, so a red
-environment build names its own cause.
-
----
+On Cursor's default machine, with dependencies installed the CI way: `npm run build`, `npx vitest
+run`, `typecheck:gate`, `token-lint`. The puppeteer-backed gates (`design-qa`, `qa:a11y`,
+`js-budget`, `qa:lighthouse`) need a browser that install step does not fetch, and
+`npm run test:sidecars` needs Go and Rust. Work needing those gets tagged per §4 and runs locally or
+in CI.
 
 ## 6 · When a scheduled agent goes quiet
 

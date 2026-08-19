@@ -1,7 +1,3 @@
 {
-  "build": {
-    "dockerfile": "Dockerfile",
-    "context": "."
-  },
-  "install": "./scripts/setup-canvas-deps.sh && npm install"
+  "install": "npm ci --ignore-scripts || npm install --ignore-scripts; npm rebuild bcrypt sharp"
 }
