@@ -183,7 +183,7 @@ export async function driverUploadDocument(formData: FormData): Promise<Result> 
          SELECT $1, $2, 'cargo', 'open',
            (COALESCE(MAX(s.departed_at), MAX(s.arrived_at), NOW())::date + INTERVAL '9 months')::date,
            'Draft claim auto-opened: driver noted OS&D exceptions on the POD.'
-         FROM hub.stops s WHERE s.load_id = $2 AND s.type = 'delivery'`,
+         FROM hub.stops s WHERE s.carrier_id = $1 AND s.load_id = $2 AND s.type = 'delivery'`,
         [user.carrierId, loadId]
       )
     }

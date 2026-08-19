@@ -95,6 +95,31 @@ describe("driverRequestAdvance", () => {
   })
 })
 
+describe("driverUploadDocument — POD with OS&D", () => {
+  it("pins the Carmack filing-deadline stop lookup to the driver's carrier", async () => {
+    const formData = new FormData()
+    formData.set("load_id", "load-1")
+    formData.set("kind", "pod")
+    formData.set("osd", "1")
+    formData.set("file", new File(["x"], "pod.jpg", { type: "image/jpeg" }))
+
+    const result = await driverUploadDocument(formData)
+    expect(result.ok).toBe(true)
+
+    const claimSql = queryMock.mock.calls
+      .map(([sql]) => String(sql))
+      .find((sql) => sql.includes("INSERT INTO hub.claims"))
+    expect(claimSql).toBeTruthy()
+    // A load_id + type filter alone would let a foreign delivery stop's
+    // departed_at set the 9-month filing deadline (hub.stops lateral sweep).
+    expect(claimSql).toContain("FROM hub.stops s WHERE s.carrier_id = $1 AND s.load_id = $2 AND s.type = 'delivery'")
+    const claimArgs = queryMock.mock.calls.find(([sql]) =>
+      String(sql).includes("INSERT INTO hub.claims")
+    )?.[1]
+    expect(claimArgs).toEqual(["carrier-1", "load-1"])
+  })
+})
+
 describe("driverUploadDocument — receipt with an amount", () => {
   it("logs an audit entry for the auto-created reimbursable expense", async () => {
     const formData = new FormData()
