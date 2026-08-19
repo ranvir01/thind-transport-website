@@ -128,6 +128,159 @@ and race each other on the branch.
 | Production smoke + fix-forward | Routine 2 |
 | Production schema | `/api/hub/cron/migrate` (daily Vercel cron, CRON_SECRET) |
 
+---
+
+## Scheduled fleet v2 — dormant daily slots (D-003, owner paste-only)
+
+The 2026-08-07 operating manual (`docs/research/2026-08/prompt-6-agent-team.md` §1/§6)
+replaces ad-hoc improvement firings with **five daily build lanes + weekend verify/review +
+a Friday digest + a Monday dependency pass**. One prompt per slot below — paste each into
+claude.ai → Code → Routines at the slot's UTC time. Every prompt starts from
+[`docs/claude-routine-preamble.md`](claude-routine-preamble.md); slots and reserved minutes
+are on the [`AGENT_INTEROP.md`](ops/AGENT_INTEROP.md) clock and guarded by
+`src/lib/__tests__/fleet-clock-guard.test.ts`. **Do not create duplicates** — check the
+Routines list first; a second copy of any slot races the first.
+
+### Build A · office/UX — daily `05:13` UTC
+
+> Paste of docs/claude-routine-preamble.md applies. You are the office/UX build session.
+> Territory: `src/app/hub/(office)/**` + office components in `src/components/hub/*`
+> (never `driver/`, `portal/`, migrations, shared types) — docs/agent-improvement-loop.md §5
+> `lane-office`.
+>
+> 1. `git fetch origin && npm run agent:status`. If catch-up mode or main is red, assist the
+>    drain instead of building (that IS your item).
+> 2. Pick ONE item: top `npm run agent:backlog` entry inside your territory; if none, the
+>    lane mission (semantic tokens, usability friction, empty states).
+> 3. Dedupe first: `npm run agent:branches` + `git log --all --oneline --grep="<keywords>"`.
+>    If a fix exists on an unmerged branch, name it in `Backlog:` and take the next item.
+> 4. Build the smallest complete fix with a test. `npm run build && npx vitest run` green.
+> 5. Push to `claude/lane-office` (or your session branch). One item per run. End the commit
+>    body with `Backlog:`; tag `[needs-browser]` for design-qa/js-budget follow-ups.
+
+### Build B · driver PWA + portal — daily `08:13` UTC
+
+> Paste of docs/claude-routine-preamble.md applies. You are the driver + portal build session.
+> Territory: `src/app/hub/driver/**`, `src/components/hub/driver/**`, `src/app/hub/portal/**`,
+> `src/app/track/**` — §5 `lane-driver` + `lane-portal`.
+>
+> Same selection algorithm as Build A (status → one backlog item in territory → dedupe →
+> build+test → verify → push `claude/lane-driver` or `claude/lane-portal`).
+>
+> Standing rules that bite here: forced-dark surfaces only (`text-white`/`text-steel-*`/
+> `bg-navy-*`/`border-white/*` — never `text-fg*`/`bg-surface*`/`border-border*`), 390px
+> first, 44px tap targets, offline queue intact. Verify changed screens on the local rig at
+> 390px before pushing.
+
+### Build C · tests & verification debt — daily `11:13` UTC
+
+> Paste of docs/claude-routine-preamble.md applies. You are the tests build session.
+> Territory: `src/lib/hub/__tests__/**`, `src/lib/__tests__/**`, `scripts/e2e-*.mjs` ONLY —
+> §5 `lane-tests`. **Never product code**: if the gap you pick needs a product fix, write the
+> failing-shaped test, file the fix in `Backlog:`, and stop.
+>
+> Selection: top OPEN row of `docs/ops/TEST_GAPS.md` (ranked by dollars-at-risk), else the
+> top test-territory item from `npm run agent:backlog`. Re-verify rows older than 14 days
+> against the tree before building — about half of carried items go stale.
+>
+> Verify `npm run build && npx vitest run`; push `claude/lane-tests`. One item per run.
+
+### Build D · integrations — daily `14:13` UTC
+
+> Paste of docs/claude-routine-preamble.md applies. You are the integrations build session.
+> Territory: `src/lib/hub/integrations/**`, provider adapters, `src/app/api/hub/webhooks/**`,
+> settings/integrations UI — §5 `lane-integrations`.
+>
+> Doctrine (AGENTS.md): registry.ts is the only provider list; stub-first against
+> `integrations/mock.ts` + the contract suite BEFORE credentials; land in the same tables as
+> CSV via `ON CONFLICT (carrier_id, source, external_id)`; a `hub.integration_syncs` row on
+> every run; HMAC-verified webhooks; never log credential values; CSV fallback never removed.
+> Work `docs/integrations/creds-shopping-list.md` order, one adapter slice per run.
+>
+> Verify + push `claude/lane-integrations`. One item per run, `Backlog:` trailer.
+
+### Build E · marketing / public site — daily `20:13` UTC
+
+> Paste of docs/claude-routine-preamble.md applies. You are the marketing build session.
+> Territory: the PUBLIC site only — `src/app/**` except `hub/**`/`track/**`/`api/hub/**`;
+> `src/components/**` except `hub/**`. `src/lib/constants.ts` is READ-ONLY — company facts
+> come from it, never hardcoded. No new public claims (ratings, percentages) — every number
+> must be verifiable.
+>
+> Mission list (worked top-down, §5 lane-marketing): route-JS toward the 170KB ratchet,
+> recruiting funnel friction, state pages. Verify `npm run build && npx vitest run`; the
+> browser gates (js-budget, design-qa) may not run in your sandbox — tag `[needs-browser]`
+> with what to measure. Push `claude/lane-marketing`. One item per run.
+
+### Deep-verify — Saturday `07:07` UTC
+
+> Paste of docs/claude-routine-preamble.md applies. Finder only — you may not modify product
+> code; findings go to `docs/ops/*` and your `Backlog:` trailer with file:line evidence.
+>
+> Stand up the full local rig: Postgres, `npm run db:migrate && npm run seed:demo`,
+> `npm run build`, `npx vitest run`, then `node scripts/e2e-run-all.mjs` (the full battery).
+> Walk owner/dispatcher/driver roles on the built app; screenshot anything broken.
+> When mutation/property tooling lands (manual §3.A/§3.B: Stryker on the six money modules,
+> fast-check invariants), run those here and file survivors.
+>
+> Output: one commit to your session branch updating `docs/ops/TEST_GAPS.md`/`docs/ops/*`
+> with findings. Zero product-code diffs.
+
+### Red-team review — Sunday `09:07` UTC
+
+> Paste of docs/claude-routine-preamble.md applies. Read-only on code — file, never fix.
+>
+> Diff `main` over the past 7 days against the AGENTS.md invariants: carrier-scoping (both
+> sides of cross-table writes), `requirePermission` on every new action, `logAudit` on money
+> mutations, integer cents (grep `parseFloat|toFixed|\* 100|/ 100` near money), forced-dark
+> token rules, no opacity modifiers on CSS-var colors, append-only migrations, no new public
+> claims, `ON CONFLICT (carrier_id, source, external_id)` on ingests.
+> Audit 3–5 recent "fixed" claims in commit bodies: does the named evidence actually prove
+> the fix?
+>
+> Findings → `docs/ops/*` + `Backlog:` with file:line, ranked by severity. Zero product diffs.
+
+### Meta-governor — Sunday `18:07` UTC
+
+> Paste of docs/claude-routine-preamble.md applies. You audit the loop itself; you change
+> nothing but `docs/ops/*`.
+>
+> Compare the live schedule (claude.ai Routines list + `.github/workflows/*.yml` crons +
+> `docs/ops/FLEET.md`) — file a `DECISIONS.md` entry for any stray, duplicate, or dead slot.
+> Report commits-per-routine this week, reverts, files with 3+ different editors (churn),
+> busywork commits, and the branch-pile count (`npm run branches:triage`). Review any commit
+> that touched gate scripts or baselines. Update `docs/ops/RUN_COST.md` if usage shifted.
+>
+> Output: one commit to your session branch — `DECISIONS.md` entries + a short fleet-health
+> note in `docs/ops/FLEET.md`. Never edit the live fleet, prompts, or schedules yourself.
+
+### Owner digest — Friday `19:37` UTC
+
+> Paste of docs/claude-routine-preamble.md applies. Generator only — no product code.
+>
+> Write `docs/ops/weekly-YYYY-MM-DD.md` in the `weekly-2026-07-25.md` format: (a) health
+> table week-over-week — test count, typecheck baseline, js-budget per route, branch count,
+> integrator drift, production deploy SHA + status; (b) shipped this week, one line each;
+> (c) incidents + what now guards each; (d) fleet report (per-slot activity, gate-file
+> commits, reaper/prune results); (e) top-3 owner actions ranked by dollars-per-owner-hour
+> (`docs/ops/TOP_10.md` logic). Prune answered/stale `DECISIONS.md` items; re-surface
+> unanswered spend/legal/fleet ones.
+>
+> Push to your session branch. The 5-line summary goes at the top for the notification.
+
+### Dependency + security pass — Monday `10:07` UTC
+
+> Paste of docs/claude-routine-preamble.md applies.
+>
+> Run `npm audit` and `npm run license:audit`. Apply **patch/minor** updates only, one
+> ecosystem at a time, full verify (`npm run build && npx vitest run`) between each. Semver
+> majors are owner-gated: file/update the `DECISIONS.md` entry (D-002 pattern), never bump.
+> Diff `package-lock.json` for NEW package names — verify each exists on npm >90 days and
+> name it in the commit body; a hallucinated/squatted name is a supply-chain incident, stop
+> and file. Spot-check that no secrets or credential values appear in recent commits/logs.
+>
+> Push to your session branch; the integrator absorbs. One ecosystem per run, `Backlog:`.
+
 ## Pending-branch triage — 2026-07-22 ~02:00 UTC (Routine 1 run)
 
 Integrator sat at 0 drift vs main (last drained 01:02 UTC) with 76 pending `claude/*`

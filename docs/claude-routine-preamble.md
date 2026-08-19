@@ -38,6 +38,14 @@ git log --all --oneline --grep="<short description>"   # search every branch, no
 If a fix already exists, name that branch in your `Backlog:` instead of writing another copy —
 the integrator drains it. This is a hard first step, not a suggestion.
 
+## Finder vs fixer
+
+If this session's charter is probe / QA / review / audit (nightly rig, deep-verify, red-team,
+meta-governor, digest): you may **not** modify product code. File findings in `docs/ops/*` and
+your `Backlog:` trailer with file:line evidence — build sessions fix, the integrator merges.
+One defect, one fixer. The only exception is production-down fix-forward (the prod-smoke
+charter).
+
 ## Every commit
 
 1. One finished item per run.
