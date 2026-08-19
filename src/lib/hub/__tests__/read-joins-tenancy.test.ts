@@ -31,7 +31,7 @@ import { listInvoices } from "../invoices"
 import { listTasks, runTaskAutomations } from "../tasks"
 import { listFacilityNotes } from "../facilities"
 import { driverActiveLoads, driverDocuments, openDocumentRequests } from "../driver-app"
-import { portalLoads, portalLoadDocuments, portalInvoices } from "../portal"
+import { portalLoads, portalLoadDocuments, portalInvoices, getInvitation } from "../portal"
 import { todayData } from "../today"
 import { listTimeOff } from "../timeoff"
 import { listDvirsForTruck, truckDvirState } from "../dvir"
@@ -185,6 +185,16 @@ describe("read queries carrier-guard their joins (both-sides tenancy)", () => {
   it("driver open document requests guard the load-reference join", async () => {
     await openDocumentRequests(CARRIER, "d1")
     expect(lastSql()).toContain("ON l.id = r.load_id AND l.carrier_id = r.carrier_id")
+  })
+
+  it("portal invitation lookup guards the customer-name join", async () => {
+    await getInvitation("tok-123")
+    const sql = lastSql()
+    // Token is the lookup key (public accept page has no carrier_id yet), but
+    // the customer label still has to match the invitation's tenant — an
+    // id-only join would show another carrier's name on this invite.
+    expect(sql).toContain("JOIN hub.customers c ON c.id = i.customer_id AND c.carrier_id = i.carrier_id")
+    expect(sql).toContain("WHERE i.token = $1")
   })
 
   it("portal load list guards its stop laterals", async () => {
