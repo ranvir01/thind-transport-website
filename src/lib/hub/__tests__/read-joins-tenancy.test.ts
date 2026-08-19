@@ -41,6 +41,7 @@ import { complianceEntries } from "../compliance"
 import { truckPnlRange } from "../reports"
 import { truckPnl, exportCsv } from "../expenses"
 import { sendOwnerDigest } from "../digest"
+import { driverSafetyBoard } from "../safety-events-db"
 
 const queryMock = vi.mocked(query)
 const queryOneMock = vi.mocked(queryOne)
@@ -306,5 +307,14 @@ describe("read queries carrier-guard their joins (both-sides tenancy)", () => {
     const sql = allSql()
     expect(sql).toContain("l.truck_id = t.id AND l.carrier_id = t.carrier_id AND l.deleted_at IS NULL")
     expect(sql).toContain("FROM hub.invoices i WHERE i.load_id = l.id AND i.carrier_id = l.carrier_id")
+  })
+
+  it("driver safety board guards both driver-name joins", async () => {
+    await driverSafetyBoard(CARRIER)
+    const sql = allSql()
+    // Events + delivered-miles both label rows from hub.drivers by id alone
+    // would leak another tenant's name onto the office safety ranking.
+    expect(sql).toContain("JOIN hub.drivers d ON d.id = e.driver_id AND d.carrier_id = e.carrier_id")
+    expect(sql).toContain("JOIN hub.drivers d ON d.id = l.driver_id AND d.carrier_id = l.carrier_id")
   })
 })
