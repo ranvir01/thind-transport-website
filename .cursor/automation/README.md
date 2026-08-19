@@ -88,16 +88,27 @@ to be a complete image (`FROM ubuntu:24.04` + everything the loop needs), **not*
 onto a Cursor base. It shipped as a bare `RUN apt-get ...` with no `FROM` from 2026-07-26 to
 2026-08-19, so every environment build failed at parse time and no agent on this repo could start.
 
-The image carries Node 22 (CI's pin), node-gyp/node-canvas headers, Chrome's shared libraries for
-the puppeteer-backed gates (`design-qa`, `qa:a11y`, `js-budget`), and Go + Rust for
-`npm run test:sidecars`. `install` then runs `scripts/setup-canvas-deps.sh` (a no-op on this image —
-it verifies the headers) and `npm install`.
+The image is deliberately small: Ubuntu 24.04, Node 22 (CI's pin, copied out of the official node
+image), and the node-gyp / node-canvas build headers. `install` then runs
+`scripts/setup-canvas-deps.sh` — a no-op here, it verifies the headers — and `npm install`. Nothing
+in it reaches past the container registry and Ubuntu's archives, so there is no third-party download
+to fail an environment build.
+
+**What the image cannot run yet:** the puppeteer-backed gates (`design-qa`, `qa:a11y`, `js-budget`,
+`qa:lighthouse`) have no browser or Chrome shared libraries, and `npm run test:sidecars` has no Go or
+Rust toolchain. Run those locally or lean on CI. Both layers are ready to add back once this base is
+proven green — do it one layer at a time so a red build names its own cause.
+
+**Cursor keeps its own copy.** The environment editor saves the Dockerfile server-side, and that
+saved copy — not the file in this repo — is what builds. After changing either file here, open the
+environment in Cursor and re-import from the repository, or the old one keeps building. A build log
+whose `transferring dockerfile: NNNB` does not match `wc -c .cursor/Dockerfile` is that mismatch,
+every time.
 
 Changed either file? Run `npm run cursor:env-check` — it catches the mistakes a `docker build` would
 reject (missing `FROM`, a `CMD`/`ENTRYPOINT` Cursor overrides, a context outside the repo, an
 `install` script that isn't there). CI runs it in the `unit` job of `e2e-suite.yml`. It is static
-validation, not a build: after a real change to the toolchain layers, start one agent and watch the
-environment build once.
+validation, not a build: after a real change, start one agent and watch the environment build once.
 
 ## Manual run
 
