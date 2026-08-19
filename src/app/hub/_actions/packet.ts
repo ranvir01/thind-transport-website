@@ -64,9 +64,10 @@ export async function requestCoiAction(input: {
     const carrier = await getCarrier(user.carrierId)
     const { createMailTransport, mailFrom } = await import("@/lib/mailer")
     const transport = createMailTransport()
+    const agentEmail = input.agentEmail.trim()
     await transport.sendMail({
       from: mailFrom(carrier?.name ?? "Carrier"),
-      to: input.agentEmail.trim(),
+      to: agentEmail,
       subject: `COI request — certificate holder: ${input.certificateHolder.trim()}`,
       text:
         `Please issue a certificate of insurance for ${carrier?.name ?? "our company"} ` +
@@ -75,11 +76,23 @@ export async function requestCoiAction(input: {
         `Reply to this email with the certificate. Thank you!\n— ${user.name}`,
     })
     // Remember the agent for next time.
+    // Upsert, not a bare UPDATE: jsonb_set('{insurance,agentEmail}') cannot
+    // create the missing insurance parent, and a missing carrier_settings row
+    // matched 0 rows — both paths silently forgot the agent. Same INSERT…
+    // ON CONFLICT + parent-seed form as updateOfficeEmailAction /
+    // setBrandAccentAction / nextInvoiceNumber.
     await query(
-      `UPDATE hub.carrier_settings SET settings = jsonb_set(settings, '{insurance,agentEmail}', to_jsonb($2::text), TRUE), updated_at = NOW()
-       WHERE carrier_id = $1`,
-      [user.carrierId, input.agentEmail.trim()]
+      `INSERT INTO hub.carrier_settings (carrier_id, settings)
+       VALUES ($1, jsonb_build_object('insurance', jsonb_build_object('agentEmail', $2::text)))
+       ON CONFLICT (carrier_id) DO UPDATE SET
+         settings = jsonb_set(
+           jsonb_set(hub.carrier_settings.settings, '{insurance}',
+             COALESCE(hub.carrier_settings.settings->'insurance', '{}'::jsonb), TRUE),
+           '{insurance,agentEmail}', to_jsonb($2::text), TRUE),
+         updated_at = NOW()`,
+      [user.carrierId, agentEmail]
     )
+    revalidatePath("/hub/settings/packet")
     return { ok: true }
   } catch (err) {
     return actionError(err, "Could not send the request")
