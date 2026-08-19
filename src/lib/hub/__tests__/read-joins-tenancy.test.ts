@@ -21,7 +21,7 @@ vi.mock("../settings", () => ({
 import { query, queryOne } from "../db"
 import { listFuelTransactions } from "../fuel"
 import { listIncidents } from "../incidents"
-import { getThread, listMessages, listThreadsForOffice, threadReads } from "../messages"
+import { getThread, listMessages, listThreadsForDriver, listThreadsForOffice, threadReads } from "../messages"
 import { listLoads } from "../loads"
 import { listTrucks, latestTruckPositions } from "../fleet"
 import { listApplicants } from "../recruiting"
@@ -89,7 +89,16 @@ describe("read queries carrier-guard their joins (both-sides tenancy)", () => {
     await getThread(CARRIER, "t1")
     expect(lastSql()).toContain("ON l.id = t.load_id AND l.carrier_id = t.carrier_id")
     await listThreadsForOffice(CARRIER, "u1")
-    expect(lastSql()).toContain("ON ld.id = l.driver_id AND ld.carrier_id = t.carrier_id")
+    const officeSql = lastSql()
+    expect(officeSql).toContain("ON ld.id = l.driver_id AND ld.carrier_id = t.carrier_id")
+    // Unread count + last-body laterals must pin messages to the thread's
+    // carrier — thread_id alone would count/preview another tenant's rows.
+    expect(officeSql).toMatch(/FROM hub\.messages m\s+WHERE m\.thread_id = t\.id\s+AND m\.carrier_id = t\.carrier_id/)
+    expect(officeSql).toMatch(/SELECT body FROM hub\.messages m\s+WHERE m\.thread_id = t\.id AND m\.carrier_id = t\.carrier_id/)
+    await listThreadsForDriver(CARRIER, "d1", "u1")
+    const driverSql = lastSql()
+    expect(driverSql).toMatch(/FROM hub\.messages m\s+WHERE m\.thread_id = t\.id\s+AND m\.carrier_id = t\.carrier_id/)
+    expect(driverSql).toMatch(/SELECT body FROM hub\.messages m\s+WHERE m\.thread_id = t\.id AND m\.carrier_id = t\.carrier_id/)
     await listMessages(CARRIER, "t1")
     expect(lastSql()).toContain("ON doc.id = m.document_id AND doc.carrier_id = m.carrier_id")
     await threadReads(CARRIER, "t1")
