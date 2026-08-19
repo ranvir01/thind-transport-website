@@ -75,7 +75,8 @@ export async function disputeInvoiceAction(invoiceId: string): Promise<ActionRes
     return actionError(err, "Forbidden")
   }
   try {
-    await setInvoiceStatus(user.carrierId, invoiceId, "disputed", user)
+    const touched = await setInvoiceStatus(user.carrierId, invoiceId, "disputed", user)
+    if (touched === 0) return { ok: false, error: "Invoice not found" }
     revalidateMoney()
     revalidatePath(`/hub/money/invoices/${invoiceId}`)
     return { ok: true }

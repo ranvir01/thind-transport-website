@@ -304,20 +304,26 @@ export async function recordPayment(
   return (await getInvoice(carrierId, invoiceId))!
 }
 
+/** Carrier-scoped status write. Returns 0 when id belongs to another tenant (or does not exist). */
 export async function setInvoiceStatus(
   carrierId: string,
   invoiceId: string,
   status: "disputed" | "sent",
   actor: { id: string; name: string }
-): Promise<void> {
-  await query(
-    `UPDATE hub.invoices SET status = $3, updated_at = NOW() WHERE carrier_id = $1 AND id = $2`,
+): Promise<number> {
+  const rows = await query<{ id: string }>(
+    `UPDATE hub.invoices SET status = $3, updated_at = NOW()
+     WHERE carrier_id = $1 AND id = $2
+     RETURNING id`,
     [carrierId, invoiceId, status]
   )
+  if (rows.length === 0) return 0
   await logAudit({
     carrierId, actorId: actor.id, actorName: actor.name,
     entityType: "invoice", entityId: invoiceId, action: `status:${status}`,
+    newValue: { status },
   })
+  return rows.length
 }
 
 // ---- AR aging ----
