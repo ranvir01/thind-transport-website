@@ -25,7 +25,7 @@ const SENDER = { id: "u1", name: "Dee", role: "dispatcher" }
 
 function makeClient(insertRows: Record<string, unknown>[]) {
   const client = {
-    query: vi.fn(async (text: string) => {
+    query: vi.fn(async (text: string, _params?: unknown[]) => {
       const sql = String(text)
       if (sql.includes("INSERT INTO hub.messages")) return { rows: insertRows }
       if (sql.includes("UPDATE hub.message_threads")) {

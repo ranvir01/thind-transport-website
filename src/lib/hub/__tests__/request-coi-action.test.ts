@@ -9,7 +9,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 
 const { isEmailConfigured, sendMail } = vi.hoisted(() => ({
   isEmailConfigured: vi.fn(() => true),
-  sendMail: vi.fn(async () => ({})),
+  sendMail: vi.fn(async (_message: Record<string, unknown>) => ({})),
 }))
 
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }))
