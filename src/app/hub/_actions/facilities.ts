@@ -43,9 +43,11 @@ export async function facilityLookupAction(input: {
       `SELECT f.id,
          (SELECT ROUND(AVG(EXTRACT(EPOCH FROM (s.departed_at - s.arrived_at)) / 60))::int
             FROM hub.stops s
-            WHERE s.facility_id = f.id AND s.arrived_at IS NOT NULL AND s.departed_at IS NOT NULL
+            WHERE s.facility_id = f.id AND s.carrier_id = f.carrier_id
+              AND s.arrived_at IS NOT NULL AND s.departed_at IS NOT NULL
               AND s.departed_at > s.arrived_at) AS avg_dwell,
-         (SELECT COUNT(*)::int FROM hub.facility_notes n WHERE n.facility_id = f.id) AS note_count
+         (SELECT COUNT(*)::int FROM hub.facility_notes n
+            WHERE n.facility_id = f.id AND n.carrier_id = f.carrier_id) AS note_count
        FROM hub.facilities f
        WHERE f.carrier_id = $1 AND lower(f.name) = lower($2)
          AND ($3 = '' OR lower(coalesce(f.city, '')) = lower($3))
