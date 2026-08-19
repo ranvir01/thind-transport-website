@@ -83,18 +83,19 @@ const WAIT_FOR_PATH_COPY: Record<string, string> = {
 
 /**
  * Destination-copy anchors after a hard goto to the Settlements / Invoices /
- * Planner list pages. `waitUntil: "networkidle2"` still races the streamed
- * body — the nav-bar label is already in the chrome, so waitForText on
- * "Settlements" / "Invoices" / "Planner" is not a render gate.
+ * Planner / Advances list pages. `waitUntil: "networkidle2"` still races the
+ * streamed body — the nav-bar label is already in the chrome, so waitForText
+ * on "Settlements" / "Invoices" / "Planner" / "Advances" is not a render gate.
  */
 const HARD_GOTO_COPY: Record<string, string> = {
   "/hub/money/settlements": "Weekly driver pay",
   "/hub/money/invoices": "Every invoice, paid or open",
   "/hub/planner": "A truck's whole week at a glance",
+  "/hub/money/advances": "Cash and EFS-code advances",
 }
 
 const HARD_GOTO_PATH_RE =
-  /\.goto\([^\n]*(\/hub\/money\/settlements|\/hub\/money\/invoices|\/hub\/planner)(?![/\w])/
+  /\.goto\([^\n]*(\/hub\/money\/settlements|\/hub\/money\/invoices|\/hub\/planner|\/hub\/money\/advances)(?![/\w])/
 
 /** A hard navigation resets the state — page.goto awaits the destination itself. */
 const HARD_NAV = /\.goto\(/
@@ -236,7 +237,7 @@ describe("e2e soft-nav landing gates wait for render before reading", () => {
     expect(misses).toEqual([])
   })
 
-  it("hard-goto Settlements/Invoices/Planner list pages wait for destination copy, not the nav label", () => {
+  it("hard-goto Settlements/Invoices/Planner/Advances list pages wait for destination copy, not the nav label", () => {
     const TEXT_RE = /(?:waitForText|textAppears)\(\s*[\w$]+\s*,\s*"([^"]+)"/
     const misses: string[] = []
     let gates = 0
@@ -271,7 +272,7 @@ describe("e2e soft-nav landing gates wait for render before reading", () => {
         misses.push(`${f}:${i + 1} goto ${pathMatch[1]} never waits for "${copy}"`)
       })
     }
-    expect(gates, "guard is not silently vacuous").toBeGreaterThanOrEqual(6)
+    expect(gates, "guard is not silently vacuous").toBeGreaterThanOrEqual(10)
     expect(misses).toEqual([])
   })
 

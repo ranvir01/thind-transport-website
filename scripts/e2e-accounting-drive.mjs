@@ -153,7 +153,7 @@ async function main() {
   // (Pending driver-request decisions are covered end-to-end by
   // e2e-advances-smoke.mjs — the base seed carries no pending requests.)
   await page.goto(`${BASE}/hub/money/advances`, { waitUntil: "networkidle2" })
-  await waitForText(page, "Advances")
+  await waitForText(page, "Cash and EFS-code advances")
   check(
     await page.evaluate(() => /outstanding/i.test(document.body.innerText)),
     "outstanding advance exposure visible"

@@ -231,7 +231,7 @@ async function main() {
 
     // and the office UI agrees with the database
     await page.goto(`${BASE}/hub/money/advances`, { waitUntil: "networkidle2" })
-    await waitForText(page, "Advances")
+    await waitForText(page, "Cash and EFS-code advances")
     const advUi = await page.evaluate((ref) => {
       const el = [...document.querySelectorAll("p")].find((n) => n.textContent.includes(ref))
       return el?.closest("div.flex")?.textContent ?? null

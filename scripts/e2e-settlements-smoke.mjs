@@ -155,7 +155,7 @@ async function main() {
     `statement PDF stored and served (${pdfOk.status} ${pdfOk.type} magic=${pdfOk.magic} ${pdfOk.bytes}B)`)
   await shot(page, "04-approved")
   await page.goto(`${BASE}/hub/money/advances`, { waitUntil: "networkidle2" })
-  await waitForText(page, "Advances")
+  await waitForText(page, "Cash and EFS-code advances")
   const advanceRow = await page.evaluate(() => {
     const el = [...document.querySelectorAll("p")].find((n) => n.textContent.includes("EFS code 4417"))
     return el?.closest("div.flex")?.textContent ?? null

@@ -221,7 +221,7 @@ async function main() {
     await shot(office, "03-settlement-approved")
 
     await office.goto(`${BASE}/hub/money/advances`, { waitUntil: "networkidle2" })
-    await waitForText(office, "Advances")
+    await waitForText(office, "Cash and EFS-code advances")
     const advanceRow = await office.evaluate(() => {
       const el = [...document.querySelectorAll("p")].find((n) => n.textContent.includes("EFS code 4417"))
       return el?.closest("div.flex")?.textContent ?? null
