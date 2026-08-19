@@ -98,6 +98,13 @@ full playbook and ready-made prompts:
 6. **Record** — end the commit body or PR with a `Backlog:` list of follow-ups you saw but didn't
    take; the next agent starts there. Never leave discovered defects unrecorded.
 
+Cursor agents, Claude sessions, scheduled routines and the publishing Actions all share this one
+repo and cannot see each other's transcripts. Who may push where, how work is handed across
+platforms (`[needs-browser]` / `[needs-sidecars]` / `[needs-owner]` / `[blocked-by …]`), and how a
+change to the agent environment itself is rolled out: **[`docs/ops/AGENT_INTEROP.md`](docs/ops/AGENT_INTEROP.md)**.
+Starting an agent? Paste [`docs/cursor-agent-preamble.md`](docs/cursor-agent-preamble.md) (Cursor) or
+[`docs/claude-routine-preamble.md`](docs/claude-routine-preamble.md) (Claude) at the top of it.
+
 ### Gates
 
 | Command | Fails when | Notes |

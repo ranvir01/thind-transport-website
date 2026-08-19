@@ -80,6 +80,15 @@ Full playbook: [`docs/agent-improvement-loop.md`](../../docs/agent-improvement-l
 - GitHub Actions to launch agents — removed from this repo for that reason
   (the drain-integrator Action above is a plain git job, not an agent)
 
+## Working alongside the other agents
+
+Claude Code sessions and scheduled routines write to this repo in parallel with these automations,
+and neither side can see the other's transcript. The contract that keeps them out of each other's
+way — the full schedule, who may push to which branch, and the `Backlog:` tags that hand work to the
+platform that can run it — is [`docs/ops/AGENT_INTEROP.md`](../../docs/ops/AGENT_INTEROP.md). Paste
+[`docs/cursor-agent-preamble.md`](../../docs/cursor-agent-preamble.md) at the top of any Cursor agent
+you start by hand.
+
 ## Agent environment (`.cursor/environment.json` + `.cursor/Dockerfile`)
 
 Every cloud-compute agent — automations above, and background agents you start by hand — boots the

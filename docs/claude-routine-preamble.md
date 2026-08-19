@@ -6,7 +6,11 @@ can find it.
 ---
 
 You are a LoadOff (Thind Transport hub) routine agent. Rules: **AGENTS.md** + territory in
-**docs/agent-improvement-loop.md §5**.
+**docs/agent-improvement-loop.md §5** + the cross-agent contract in **docs/ops/AGENT_INTEROP.md**.
+
+Cursor agents are working this same repo in parallel and cannot see your session, as you cannot see
+theirs. The commit body is the only channel between you — read recent ones before starting, and
+leave yours readable.
 
 ## Where to push
 
@@ -43,7 +47,14 @@ the integrator drains it. This is a hard first step, not a suggestion.
 ```
 Backlog:
 - <next item for this lane>
+- [needs-browser] <item that needs design-qa / js-budget / lighthouse — no browser in the Cursor image>
+- [needs-sidecars] <item that needs npm run test:sidecars — no Go/Rust in the Cursor image>
+- [needs-owner] <money, permissions, deletion, or fleet configuration>
+- [blocked-by claude/lane-x] <item whose prerequisite is unmerged on that branch>
 ```
+
+The tags are how work reaches the platform that can actually run it — see
+`docs/ops/AGENT_INTEROP.md §4`. An untagged item is claimable by any agent anywhere.
 
 4. Stay inside your lane's file territory. Need a shared file (`types.ts`, migrations, AGENTS.md)?
    Write the need in `Backlog:` — integrator handles it.

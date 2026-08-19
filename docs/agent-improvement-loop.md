@@ -225,6 +225,11 @@ Legacy single-automation files (`hauldesk-improvement-cycle.*`) alias to `loadof
 
 ## 5 · Claude routine fleet (parallel Fable agents, collision-proof)
 
+> Cursor agents run against this same map. The cross-platform half of the contract — the full
+> schedule (Cursor automations, Claude routines and the publishing Actions in one table), branch
+> write-ownership, the `Backlog:` hand-off tags, and how a change to `.cursor/**` reaches the fleet —
+> is [`docs/ops/AGENT_INTEROP.md`](ops/AGENT_INTEROP.md).
+
 Many routines run concurrently, so each **lane owns a file territory and its own branch** —
 `claude/lane-<name>`. Nobody edits shared files (`types.ts`, `permissions.ts`, `navigation.ts`,
 `AGENTS.md`, migrations) except through the **integrator**. The flow:
