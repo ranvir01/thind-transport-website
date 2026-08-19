@@ -62,6 +62,7 @@ export async function getFacility(carrierId: string, id: string): Promise<Facili
   ])
 }
 
+/** Carrier-scoped UPDATE. Returns 0 when id belongs to another tenant (or does not exist). */
 export async function updateFacilityInfo(
   carrierId: string,
   id: string,
@@ -72,12 +73,13 @@ export async function updateFacilityInfo(
     typicalLumperCents?: number | null
     notes?: string | null
   }
-): Promise<void> {
-  await query(
+): Promise<number> {
+  const res = await query<{ id: string }>(
     `UPDATE hub.facilities SET
        hours = $3, phone = $4, overnight_parking = $5, typical_lumper_cents = $6,
        notes = $7, updated_at = NOW()
-     WHERE carrier_id = $1 AND id = $2`,
+     WHERE carrier_id = $1 AND id = $2
+     RETURNING id`,
     [
       carrierId,
       id,
@@ -88,6 +90,7 @@ export async function updateFacilityInfo(
       patch.notes ?? null,
     ]
   )
+  return res.length
 }
 
 // ---- Notes ----

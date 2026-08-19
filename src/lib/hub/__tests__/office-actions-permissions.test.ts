@@ -47,7 +47,7 @@ vi.mock("@/lib/hub/tasks", () => ({
 }))
 vi.mock("@/lib/hub/facilities", () => ({
   addFacilityNote: vi.fn(async () => true),
-  updateFacilityInfo: vi.fn(async () => undefined),
+  updateFacilityInfo: vi.fn(async () => 1),
   detentionRisk: vi.fn(() => null),
   formatDwell: vi.fn(() => "2h"),
 }))

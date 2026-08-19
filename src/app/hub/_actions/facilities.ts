@@ -86,7 +86,7 @@ export async function updateFacilityAction(
     // drive booking and detention pricing — loads:write, not any office role.
     const user = await requirePermission("loads:write")
     const typicalLumperCents = patch.typicalLumper ? dollarsToCents(patch.typicalLumper) : null
-    await updateFacilityInfo(user.carrierId, id, {
+    const touched = await updateFacilityInfo(user.carrierId, id, {
       hours: patch.hours?.trim() || null,
       phone: patch.phone?.trim() || null,
       overnightParking:
@@ -94,6 +94,9 @@ export async function updateFacilityAction(
       typicalLumperCents,
       notes: patch.notes?.trim() || null,
     })
+    if (touched === 0) {
+      return { ok: false, error: "Facility not found" }
+    }
     await logAudit({
       carrierId: user.carrierId, actorId: user.id, actorName: user.name,
       entityType: "facility", entityId: id, action: "update",

@@ -8,7 +8,7 @@ vi.mock("@/lib/hub/facilities", () => ({
   addFacilityNote: vi.fn(),
   detentionRisk: vi.fn(),
   formatDwell: vi.fn(),
-  updateFacilityInfo: vi.fn(async () => undefined),
+  updateFacilityInfo: vi.fn(async () => 1),
 }))
 vi.mock("@/lib/hub/settings", () => ({ getCarrierSettings: vi.fn() }))
 vi.mock("@/lib/hub/db", () => ({ queryOne: vi.fn() }))
@@ -23,7 +23,8 @@ const logAuditMock = vi.mocked(logAudit)
 
 describe("updateFacilityAction — typical lumper money parsing", () => {
   beforeEach(() => {
-    updateMock.mockClear()
+    updateMock.mockReset()
+    updateMock.mockResolvedValue(1)
     logAuditMock.mockClear()
   })
 
@@ -68,5 +69,12 @@ describe("updateFacilityAction — typical lumper money parsing", () => {
         newValue: { typicalLumperCents: 12550 },
       })
     )
+  })
+
+  it("reports failure and skips the audit log when 0 rows changed", async () => {
+    updateMock.mockResolvedValueOnce(0)
+    const result = await updateFacilityAction("foreign-facility", { hours: "0600-1400" })
+    expect(result).toEqual({ ok: false, error: "Facility not found" })
+    expect(logAuditMock).not.toHaveBeenCalled()
   })
 })
