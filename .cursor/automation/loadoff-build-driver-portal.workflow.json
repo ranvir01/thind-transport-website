@@ -1,0 +1,26 @@
+{
+  "name": "LoadOff Build B — driver PWA + portal",
+  "description": "Daily 08:13 UTC — one driver-PWA or portal item per run on claude/lane-driver (or lane-portal). Grok 4.6.",
+  "workflow": {
+    "triggers": [
+      {
+        "cron": {
+          "cron": "13 8 * * *"
+        }
+      }
+    ],
+    "actions": [],
+    "prompts": [
+      "You are the LoadOff driver PWA + portal build automation.\n\nRead AGENTS.md and .cursor/automation/loadoff-build-driver-portal.prompt.md for full steps.\n\nCursor starts you on a disposable cursor/* branch: npm run git:identity, git fetch origin, git checkout -B claude/lane-driver (from its origin ref if it exists, else origin/main), merge origin/main. Portal items use claude/lane-portal the same way — one branch per run.\n\nTerritory: src/app/hub/driver/** + src/components/hub/driver/** (or portal/track surfaces). Forced-dark tokens only on these routes: text-white/text-steel-*/bg-navy-*/border-white/* — never text-fg*/bg-surface*/border-border*. 390px first, 44px tap targets, offline queue intact.\n\nnpm run agent:status first (catch-up = assist drain). Ship ONE deduped item with a test, npm run build && npx vitest run green, push the lane branch, Backlog: trailer.\n\nRepo: ranvir01/thind-transport-website."
+    ],
+    "gitConfig": {
+      "repo": "ranvir01/thind-transport-website",
+      "branch": "claude/lane-driver"
+    },
+    "model": "cursor-grok-4.6-high-fast",
+    "agentOptions": {
+      "skipInstall": false
+    },
+    "memoryEnabled": true
+  }
+}

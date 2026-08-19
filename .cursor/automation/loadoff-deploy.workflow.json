@@ -17,7 +17,7 @@
       "repo": "ranvir01/thind-transport-website",
       "branch": "main"
     },
-    "model": "auto",
+    "model": "cursor-grok-4.6-high-fast",
     "agentOptions": {
       "skipInstall": false
     },

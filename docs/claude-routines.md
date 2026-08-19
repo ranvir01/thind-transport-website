@@ -130,16 +130,21 @@ and race each other on the branch.
 
 ---
 
-## Scheduled fleet v2 — dormant daily slots (D-003, owner paste-only)
+## Scheduled fleet v2 — daily role slots (SUPERSEDED for scheduling: D-003 answered)
+
+**2026-08-19: the owner chose Cursor Automations on Grok 4.6 for these ten slots** — the
+import-ready workflow JSONs live in [`.cursor/automation/`](../.cursor/automation/README.md)
+and carry the same charters at the same times. The blocks below remain the canonical charter
+text and the fallback if the fleet ever moves back to claude.ai. Do NOT create these as
+Claude routines while the Cursor automations are live — one slot, one platform, or the two
+copies race each other on the lane branch.
 
 The 2026-08-07 operating manual (`docs/research/2026-08/prompt-6-agent-team.md` §1/§6)
 replaces ad-hoc improvement firings with **five daily build lanes + weekend verify/review +
-a Friday digest + a Monday dependency pass**. One prompt per slot below — paste each into
-claude.ai → Code → Routines at the slot's UTC time. Every prompt starts from
+a Friday digest + a Monday dependency pass**. Every prompt starts from
 [`docs/claude-routine-preamble.md`](claude-routine-preamble.md); slots and reserved minutes
 are on the [`AGENT_INTEROP.md`](ops/AGENT_INTEROP.md) clock and guarded by
-`src/lib/__tests__/fleet-clock-guard.test.ts`. **Do not create duplicates** — check the
-Routines list first; a second copy of any slot races the first.
+`src/lib/__tests__/fleet-clock-guard.test.ts`.
 
 ### Build A · office/UX — daily `05:13` UTC
 

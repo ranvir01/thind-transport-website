@@ -1,0 +1,26 @@
+{
+  "name": "LoadOff Meta-governor",
+  "description": "Sunday 18:07 UTC — audits schedules, churn, gate edits, branch pile; files DECISIONS entries, changes nothing itself. Grok 4.6.",
+  "workflow": {
+    "triggers": [
+      {
+        "cron": {
+          "cron": "7 18 * * 0"
+        }
+      }
+    ],
+    "actions": [],
+    "prompts": [
+      "You are the LoadOff meta-governor automation — you audit the loop and change nothing but docs/ops/*.\n\nRead AGENTS.md and .cursor/automation/loadoff-meta-governor.prompt.md for full steps.\n\nCursor starts you on a disposable cursor/* branch: npm run git:identity, git fetch origin, git checkout -B claude/fleet-meta-governor origin/main.\n\nAudit: schedule drift (workflows vs FLEET.md vs AGENT_INTEROP clock), commits per scheduled job this week, reverts and churn files, branch-pile count via npm run branches:triage, and every commit that touched gate scripts or workflows. Strays/duplicates/dead slots become DECISIONS.md entries — never disable or edit the fleet yourself.\n\nOutput: ONE commit to claude/fleet-meta-governor — DECISIONS entries + dated fleet-health note in docs/ops/FLEET.md + Backlog: trailer. Zero product diffs.\n\nRepo: ranvir01/thind-transport-website."
+    ],
+    "gitConfig": {
+      "repo": "ranvir01/thind-transport-website",
+      "branch": "claude/fleet-meta-governor"
+    },
+    "model": "cursor-grok-4.6-high-fast",
+    "agentOptions": {
+      "skipInstall": false
+    },
+    "memoryEnabled": true
+  }
+}

@@ -30,16 +30,15 @@ Answer: ____
 ## D-003 | filed:2026-08-08 | class:fleet
 Q: Adopt the 24/7 operating manual's fleet schedule (docs/research/2026-08/prompt-6-agent-team.md
 §1): five daily build slots + Saturday deep-verify + Sunday red-team/meta-governor + Friday
-owner digest + Monday dependency pass, replacing ad-hoc firings. Requires you to create the
-routines in claude.ai → Code → Routines (agents cannot modify the fleet — your standing rule).
-2026-08-19: prompt blocks are READY — docs/claude-routines.md §"Scheduled fleet v2", one per
-slot, paste-only (~15 min total). Slots + reserved minutes are on the AGENT_INTEROP clock and
-guarded by fleet-clock-guard.test.ts.
-A) Adopt as written — paste the ten prompts at their slot times. [recommended]
-B) Keep the current fleet shape.
-Deferral cost: none urgent; the mechanical loop works, the manual mainly adds build cadence
-and verification depth.
-Answer: ____
+owner digest + Monday dependency pass, replacing ad-hoc firings.
+Answer: ADOPTED as **Cursor Automations on Grok 4.6** (owner, 2026-08-19, in-session) — not
+Claude routines. Import-ready files: `.cursor/automation/loadoff-build-*.workflow.json` +
+`loadoff-{deep-verify,red-team,meta-governor,owner-digest,dependency-pass}.workflow.json`,
+model pinned `cursor-grok-4.6-high-fast`. Remaining owner step: import the ten JSONs at
+cursor.com/automations and set Model: Grok 4.6 on the three existing automations
+(.cursor/automation/README.md "Activate / fix"). The Claude prompt blocks in
+docs/claude-routines.md §"Scheduled fleet v2" stay as the fallback if the fleet ever moves
+back to claude.ai.
 
 ## D-004 | filed:2026-08-19 | class:fleet
 Q: Cursor automations cannot boot until the tested environment is Saved (personal env

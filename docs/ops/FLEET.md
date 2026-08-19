@@ -34,7 +34,7 @@ merged-only targets are disjoint from the `:00` integrator's unmerged-only set).
 added off this roster or onto a taken minute. The reaper (Sunday, armed-gated) and the
 daily prune overlap in charter — consolidation is a fleet decision, not an agent edit.
 
-**Stray (disable):** Cursor automation [Untitled](https://cursor.com/automations/61b8e855-76b8-11f1-ba66-0e7d0216e441) `61b8e855-76b8-11f1-ba66-0e7d0216e441` is enabled and fires as "HaulDesk improvement cycle" — a second deploy/backlog writer on `main`. Two writers on one branch is the fleet's most expensive mistake. Turn it off; keep Deploy + backlog above.
+**Stray (disable — now URGENT):** Cursor automation [Untitled](https://cursor.com/automations/61b8e855-76b8-11f1-ba66-0e7d0216e441) `61b8e855-76b8-11f1-ba66-0e7d0216e441` fires as "HaulDesk improvement cycle" — a second deploy/backlog writer on `main`. While the environment was broken it died in ~8s; since the 2026-08-19 fix it **actually boots** and was observed RUNNING in the same minute as Deploy + backlog (09:02 UTC). Two writers on one branch is the fleet's most expensive mistake. Turn it off; keep Deploy + backlog above.
 
 Prompts for the three Cursor jobs live in [`.cursor/automation/`](../../.cursor/automation/README.md). Claude's copy-paste prompts live in [`docs/claude-routines.md`](../claude-routines.md).
 
@@ -44,33 +44,41 @@ Prompts for the three Cursor jobs live in [`.cursor/automation/`](../../.cursor/
 
 They cannot see each other's sessions. The **commit body** is the bus (`Backlog:` trailers, `npm run agent:backlog`). **One branch, one writer.** If a fix already exists on another branch, name it in `Backlog:` and take the next item.
 
-Daily/weekly **build** sessions (office, driver, tests, integrations, marketing) are Claude routines in the 2026-08-07 manual (`DECISIONS.md` D-003). They stay off the live table until the owner creates them — agents do not add dashboard schedules. Until then, the `:59` deploy agent ships one ranked backlog item per hour when not in catch-up, and ad-hoc Cursor/Claude sessions push their own branches.
+Daily/weekly **build** sessions (office, driver, tests, integrations, marketing) are **Cursor
+Automations on Grok 4.6** (`DECISIONS.md` D-003, answered 2026-08-19) — import-ready in
+`.cursor/automation/`, table below. They stay off the live table until the owner imports them
+and a first run boots — agents do not add dashboard schedules. Until then, the `:59` deploy
+agent ships one ranked backlog item per hour when not in catch-up, and ad-hoc Cursor/Claude
+sessions push their own branches.
 
 Cursor Cloud Agents on `cursor/*` land via pull request. `claude/<session>` branches are absorbed by the `:00`/`:43` integrators. Do not put two writers on `main` or the integrator.
 
-## Dormant daily slots — ready to enable (D-003)
+## Role slots — import-ready Cursor Automations, Grok 4.6 (D-003 answered 2026-08-19)
 
-Paste-ready prompts live in [`docs/claude-routines.md`](../claude-routines.md) §"Scheduled fleet
-v2" — one per row, each ≤40 lines, each starting from the routine preamble. Creating them is
-paste-only (claude.ai → Code → Routines, ~15 min). Minutes `:07`/`:13`/`:37` are reserved for
-these; the clock guard test keeps them clear.
+Workflow JSONs + full prompts live in [`.cursor/automation/`](../../.cursor/automation/README.md)
+— one import per row (cursor.com/automations, ~15 min total), model pinned
+`cursor-grok-4.6-high-fast`. Minutes `:07`/`:13`/`:37` are reserved for these; the clock
+guard test keeps them clear. Once a slot's first run boots, move its row into the live table.
 
-| Slot (UTC) | Session | Charter (territory per `agent-improvement-loop.md` §5) |
-|---|---|---|
-| `05:13` daily | Build A — office/UX | `claude/lane-office`: office screens, semantic tokens, usability friction, empty states |
-| `08:13` daily | Build B — driver + portal | `claude/lane-driver` + `lane-portal`: 390px forced-dark PWA, offline queue, broker/shipper surface |
-| `11:13` daily | Build C — tests & verification debt | `claude/lane-tests`: `TEST_GAPS.md` top row; never product code |
-| `14:13` daily | Build D — integrations | `claude/lane-integrations`: stub-first adapters, creds shopping-list order |
-| `20:13` daily | Build E — marketing/public site | `claude/lane-marketing`: js-budget ratchet, recruiting funnel, `[needs-browser]` tags |
-| `07:07` Sat | Deep-verify | full local rig + 51-script e2e battery; findings only, no fixes |
-| `09:07` Sun | Red-team review | week's `main` diff vs AGENTS.md invariants; read-only on code |
-| `18:07` Sun | Meta-governor | fleet audit vs this file; commits-per-routine, churn, strays → `DECISIONS.md` |
-| `19:37` Fri | Owner digest | writes `docs/ops/weekly-YYYY-MM-DD.md` + top-3 owner actions |
-| `10:07` Mon | Dependency + security pass | `npm audit`, patch/minor only; majors → `DECISIONS.md` |
+| Slot (UTC) | Automation | Writes | Charter |
+|---|---|---|---|
+| `05:13` daily | Build A — office/UX | `claude/lane-office` | office screens, semantic tokens, usability friction, empty states |
+| `08:13` daily | Build B — driver + portal | `claude/lane-driver` / `lane-portal` | 390px forced-dark PWA, offline queue, broker/shipper surface |
+| `11:13` daily | Build C — tests & verification debt | `claude/lane-tests` | `TEST_GAPS.md` top row; never product code |
+| `14:13` daily | Build D — integrations | `claude/lane-integrations` | stub-first adapters, creds shopping-list order |
+| `20:13` daily | Build E — marketing/public site | `claude/lane-marketing` | js-budget ratchet, recruiting funnel, `[needs-browser]` tags |
+| `07:07` Sat | Deep-verify (finder) | `claude/fleet-deep-verify` (docs only) | local rig + data-integrity audit; reads nightly E2E results |
+| `09:07` Sun | Red-team review (read-only) | `claude/fleet-red-team` (docs only) | week's `main` diff vs AGENTS.md invariants |
+| `18:07` Sun | Meta-governor (audit) | `claude/fleet-meta-governor` (docs only) | fleet audit vs this file; strays → `DECISIONS.md` |
+| `19:37` Fri | Owner digest | `claude/fleet-owner-digest` (docs only) | `docs/ops/weekly-YYYY-MM-DD.md` + top-3 owner actions |
+| `10:07` Mon | Dependency + security pass | `claude/fleet-dependency-pass` | `npm audit`, patch/minor only; majors → `DECISIONS.md` |
 
 Five build lanes + nightly E2E + weekend verify/review + the hourly mechanical loop ≈ the
 manual's ~9 scheduled sessions/day ceiling. That IS the maxed-out shape — more hourly feature
 agents duplicate fixes and race the integrator (`docs/research/2026-08/prompt-6-agent-team.md` §1.1).
+The Claude-routine prompt blocks for the same charters remain in
+[`docs/claude-routines.md`](../claude-routines.md) §"Scheduled fleet v2" as the fallback —
+never run a slot on both platforms at once.
 
 ---
 
@@ -119,7 +127,7 @@ that races the integrator — a seat is a *mechanism*, not another hourly firing
 
 | Seat | Who actually runs it |
 |---|---|
-| Security Engineer | Red-team slot (Sun `09:07`, dormant) + tenancy/permissions audit prompts (`agent-improvement-loop.md` §1c) + `license:audit` + never-log-credentials rule |
+| Security Engineer | Red-team automation (Sun `09:07`, import-ready) + tenancy/permissions audit prompts (`agent-improvement-loop.md` §1c) + `license:audit` + never-log-credentials rule |
 | QA / Test Automation | `claude/lane-tests` + nightly E2E `03:40` + prod smoke `:30` + `TEST_GAPS.md` ranked by dollars-at-risk |
 | Data / Analytics Engineer | `claude/lane-analytics` (reports, KPI libs, owner dashboard) |
 | GIS / Mapping | Rust compute sidecar territory (`lane-sidecars`), `[needs-sidecars]` — not a scheduled seat |
@@ -145,20 +153,17 @@ that races the integrator — a seat is a *mechanism*, not another hourly firing
 
 ## What still blocks unattended 24/7
 
-1. **Promote the green environment build for scheduled agents.** Recurring SYSTEM
-   build [`bld-20260819-e34379d9-3634-4174-b245-e3c81319a7a6`](https://cursor.com/dashboard/cloud-agents/builds/bld-20260819-e34379d9-3634-4174-b245-e3c81319a7a6)
-   **SUCCEEDED** 2026-08-19 08:33 UTC (install-only `npm ci`, no Docker). That is the first
-   healthy SYSTEM image after three weeks of 418-byte Dockerfile failures. This hand-agent
-   pod still reports `no_healthy_builds` because it booted just-in-time before that snapshot.
-   Open [the environment](https://cursor.com/dashboard/cloud-agents/environments/e/5241c374-0579-442f-bf88-309dbcbe37f3),
-   **Save** the install-only config, **Enable builds**, and watch the next `:00` Integrator
-   run — it must leave `ERROR` / `setupStatus: null` behind. Until a scheduled run actually
-   boots, treat Cursor automations as down.
-2. Disable the Untitled duplicate automation (row above). It is still **enabled** and
-   ERROR's on the same hour as Deploy + backlog.
-3. D-003 in `DECISIONS.md` — Claude daily build slots. Optional; mechanical 24/7
-   (integrator, drain, smoke, liveness) does not wait on it. Agents cannot create claude.ai
-   routines.
+1. ~~Fix the environment so scheduled agents boot~~ **FIXED 2026-08-19.** SYSTEM build
+   [`bld-20260819-e34379d9-3634-4174-b245-e3c81319a7a6`](https://cursor.com/dashboard/cloud-agents/builds/bld-20260819-e34379d9-3634-4174-b245-e3c81319a7a6)
+   went green 08:33 UTC (install-only `npm ci`, no Docker — first healthy image after three
+   weeks of 418-byte Dockerfile failures), and the 09:00-hour scheduled runs **booted**:
+   Integrator IDLE-complete, Prod Smoke IDLE-complete, Deploy RUNNING — all on
+   `cursor-grok-4.6-high-fast`, ending the ERROR-in-8s streak.
+2. **Disable the Untitled duplicate automation (row above) — URGENT now that it boots.**
+   Observed RUNNING in the same minute as Deploy + backlog (09:02 UTC, 2026-08-19); both
+   write `main`.
+3. D-003 answered (Cursor Automations, Grok 4.6): **import the ten role-slot JSONs** from
+   `.cursor/automation/` (README "Activate / fix"). Mechanical 24/7 does not wait on them.
 4. D-001 — arm the branch reaper after dry-runs, or the integrator keeps triaging dead branches.
 
 Cursor Cloud starts every automation on a disposable `cursor/<run-name>-*` branch even when

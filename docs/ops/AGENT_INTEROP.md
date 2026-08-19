@@ -29,13 +29,14 @@ same branch in the same minute is how a diverged `main` gets made.
 | `06:23` | Prune merged agent branches (tier-1 merged-only; tier-2 dry-run) | GitHub Actions | deletes fully-merged `claude/*` only |
 | every push / PR | `unit` job (vitest, token-lint, cursor-env-check) | GitHub Actions | nothing — read-only |
 
-**Dormant, reserved (D-003):** the daily Claude build slots — `05:13` office/UX · `08:13`
-driver+portal · `11:13` tests · `14:13` integrations · `20:13` marketing · Sat `07:07`
-deep-verify · Sun `09:07` red-team · Sun `18:07` meta-governor · Fri `19:37` owner digest ·
-Mon `10:07` dependency pass. Paste-ready prompts: [`docs/claude-routines.md`](../claude-routines.md)
-§"Scheduled fleet v2". Only the owner creates them (claude.ai → Code → Routines). Minutes
-`:07` / `:13` / `:37` are **reserved** — schedule nothing else on them
-(`src/lib/__tests__/fleet-clock-guard.test.ts` enforces this).
+**Dormant, reserved (D-003 — answered 2026-08-19: Cursor Automations on Grok 4.6):** the
+daily role slots — `05:13` office/UX · `08:13` driver+portal · `11:13` tests · `14:13`
+integrations · `20:13` marketing · Sat `07:07` deep-verify · Sun `09:07` red-team · Sun
+`18:07` meta-governor · Fri `19:37` owner digest · Mon `10:07` dependency pass. Import-ready
+workflow JSONs: [`.cursor/automation/`](../../.cursor/automation/README.md). Only the owner
+imports them (cursor.com/automations). Once a slot is imported and its first run boots, move
+its row into the table above. Minutes `:07` / `:13` / `:37` are **reserved** — schedule
+nothing else on them (`src/lib/__tests__/fleet-clock-guard.test.ts` enforces this).
 
 Live ids, the role map, and the stray duplicate automation: [`docs/ops/FLEET.md`](FLEET.md).
 

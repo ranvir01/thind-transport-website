@@ -16,8 +16,8 @@ import path from "node:path"
  *   4. daily/weekly crons stay off the hourly minutes (branch-reaper is the
  *      one documented exception — Sunday 06:00 targets only fully-merged
  *      branches, provably disjoint from the :00 integrator's unmerged set)
- *   5. the reserved D-003 minutes (:07/:13/:37, dormant Claude build slots)
- *      stay clear until the owner creates those routines
+ *   5. the reserved D-003 minutes (:07/:13/:37 — the role-slot Cursor
+ *      automations in .cursor/automation/) stay clear of workflow crons
  *
  * prune-merged-branches.yml ran daily at 06:23 for weeks without a row on
  * the clock — found while writing this guard. Rule 1/2 exist so that cannot
@@ -40,8 +40,9 @@ const DASHBOARD_AGENT_MINUTES: Record<number, string> = {
   59: "Cursor Deploy + backlog automation",
 }
 
-// D-003 (docs/ops/DECISIONS.md): dormant daily Claude build slots reserve
-// these minutes so the owner can enable them without a reshuffle.
+// D-003 (docs/ops/DECISIONS.md, answered 2026-08-19): the role-slot Cursor
+// automations (.cursor/automation/loadoff-build-*.workflow.json etc.) own
+// these minutes — workflow crons stay off them.
 const RESERVED_DORMANT_MINUTES = [7, 13, 37]
 
 // Weekly jobs allowed to share an hourly minute because their write targets

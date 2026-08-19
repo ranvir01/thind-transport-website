@@ -1,0 +1,26 @@
+{
+  "name": "LoadOff Dependency + security pass",
+  "description": "Monday 10:07 UTC — npm audit + license audit, patch/minor bumps only with full verify; majors filed to DECISIONS. Grok 4.6.",
+  "workflow": {
+    "triggers": [
+      {
+        "cron": {
+          "cron": "7 10 * * 1"
+        }
+      }
+    ],
+    "actions": [],
+    "prompts": [
+      "You are the LoadOff dependency + security automation.\n\nRead AGENTS.md and .cursor/automation/loadoff-dependency-pass.prompt.md for full steps.\n\nCursor starts you on a disposable cursor/* branch: npm run git:identity, git fetch origin, git checkout -B claude/fleet-dependency-pass origin/main.\n\nRun npm audit + npm run license:audit. Patch/minor updates ONLY, one package family at a time, npm run build && npx vitest run between each; revert red bumps. Semver majors are owner-gated - file the DECISIONS.md entry instead. Verify every NEW package-lock name exists on npm >90 days (hallucinated names are a supply-chain incident - stop and file). Never fork web-push. Only MIT/Apache-2.0/BSD may be added.\n\nPush claude/fleet-dependency-pass, one ecosystem per run, Backlog: trailer.\n\nRepo: ranvir01/thind-transport-website."
+    ],
+    "gitConfig": {
+      "repo": "ranvir01/thind-transport-website",
+      "branch": "claude/fleet-dependency-pass"
+    },
+    "model": "cursor-grok-4.6-high-fast",
+    "agentOptions": {
+      "skipInstall": false
+    },
+    "memoryEnabled": true
+  }
+}

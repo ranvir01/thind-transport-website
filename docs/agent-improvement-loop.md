@@ -274,15 +274,16 @@ can use session branches and must end commits with `Backlog:`.
 | `claude/lane-roadmap` | new feature files within any ONE existing territory per run | NEW capability from `docs/hauldesk-gap-report`-style gaps: pick the top unbuilt feature a 15-truck carrier needs, build it complete with tests + E2E |
 | `claude/lane-marketing` | the PUBLIC site only — `src/app/**` except `hub/**`, `track/**`, `api/hub/**`; `src/components/**` except `hub/**`; `src/lib/constants.ts` is READ-ONLY here | see mission below — work the measured gaps in order, never by feel |
 
-> **Fleet status (2026-08-19):** Cursor's three mechanical jobs (integrator `:00`, prod smoke `:30`,
-> deploy `:59`) are **enabled** — ids in [`docs/ops/FLEET.md`](ops/FLEET.md). A recurring SYSTEM
-> environment build succeeded 08:33 UTC (install-only, no Docker); scheduled runs through 08:00
-> still ERROR in ~8s. GitHub Action at `:10` (`fleet-liveness.yml`) fails when the integrator is
-> stalled so that outage is loud. Lane *schedules* stay dormant; the table above is still the
-> territory map for session branches. Daily Claude build slots remain `DECISIONS.md` D-003. Do
-> not add hourly feature agents — they race the integrator. Until lanes restart, `:59` ships
-> one backlog item per hour when not in catch-up, and the age-gated drain (§3a) keeps
-> under-threshold work flowing.
+> **Fleet status (2026-08-19):** the environment is FIXED — SYSTEM build green 08:33 UTC
+> (install-only, no Docker) and the 09:00-hour scheduled runs booted on
+> `cursor-grok-4.6-high-fast`, ending three weeks of ERROR-in-8s. Ids in
+> [`docs/ops/FLEET.md`](ops/FLEET.md); the stray "HaulDesk improvement cycle" automation now
+> boots too and must be disabled (second writer on `main`). GitHub Action at `:10`
+> (`fleet-liveness.yml`) pages on integrator stall. The daily role slots are **Cursor
+> Automations on Grok 4.6** (D-003 answered) — import-ready in `.cursor/automation/`; the
+> table above stays the territory map. Do not add hourly feature agents — they race the
+> integrator. Until the slots are imported, `:59` ships one backlog item per hour when not
+> in catch-up, and the age-gated drain (§3a) keeps under-threshold work flowing.
 
 **Why `lane-marketing` exists.** Every other lane points at LoadOff. For months the fleet improved
 `/hub` while `thindtransport.com` — the surface that actually recruits drivers and wins shippers —

@@ -1,0 +1,26 @@
+{
+  "name": "LoadOff Deep-verify",
+  "description": "Saturday 07:07 UTC — full local rig + data-integrity audit; files findings, fixes nothing. Grok 4.6.",
+  "workflow": {
+    "triggers": [
+      {
+        "cron": {
+          "cron": "7 7 * * 6"
+        }
+      }
+    ],
+    "actions": [],
+    "prompts": [
+      "You are the LoadOff deep-verify automation — FINDER ONLY, no product-code changes.\n\nRead AGENTS.md and .cursor/automation/loadoff-deep-verify.prompt.md for full steps.\n\nCursor starts you on a disposable cursor/* branch: npm run git:identity, git fetch origin, git checkout -B claude/fleet-deep-verify origin/main.\n\nStand up the rig (local Postgres per dev-workflow-testing pitfall 9), npm run db:migrate && npm run seed:demo, npm run build, npx vitest run, npm run go-live:check, then audit the seeded data: settlement lines sum to totals, invoice/payment residuals, tenancy spot-checks. The Puppeteer battery and browser gates cannot run in this image — read the latest e2e-suite.yml nightly result instead.\n\nOutput: ONE commit to claude/fleet-deep-verify updating docs/ops/TEST_GAPS.md / docs/ops/* with ranked findings + Backlog: trailer. Zero product diffs.\n\nRepo: ranvir01/thind-transport-website."
+    ],
+    "gitConfig": {
+      "repo": "ranvir01/thind-transport-website",
+      "branch": "claude/fleet-deep-verify"
+    },
+    "model": "cursor-grok-4.6-high-fast",
+    "agentOptions": {
+      "skipInstall": false
+    },
+    "memoryEnabled": true
+  }
+}

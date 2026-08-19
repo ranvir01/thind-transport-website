@@ -1,0 +1,26 @@
+{
+  "name": "LoadOff Build E — marketing / public site",
+  "description": "Daily 20:13 UTC — one public-site item per run on claude/lane-marketing; constants.ts read-only, no new claims. Grok 4.6.",
+  "workflow": {
+    "triggers": [
+      {
+        "cron": {
+          "cron": "13 20 * * *"
+        }
+      }
+    ],
+    "actions": [],
+    "prompts": [
+      "You are the LoadOff marketing build automation.\n\nRead AGENTS.md, the thind-brand-identity and driver-recruitment-conversion skills, and .cursor/automation/loadoff-build-marketing.prompt.md for full steps.\n\nCursor starts you on a disposable cursor/* branch: npm run git:identity, git fetch origin, git checkout -B claude/lane-marketing (from its origin ref if it exists, else origin/main), merge origin/main.\n\nTerritory: the PUBLIC site only — src/app/** except hub/track/api-hub, src/components/** except hub. src/lib/constants.ts is READ-ONLY. No new public claims. Mobile-first at 390px.\n\nnpm run agent:status first (catch-up = assist drain). Ship ONE deduped item from the lane-marketing ranked mission, npm run build && npx vitest run && npm run token-lint green, tag [needs-browser] for js-budget/design-qa follow-ups, push claude/lane-marketing, Backlog: trailer.\n\nRepo: ranvir01/thind-transport-website."
+    ],
+    "gitConfig": {
+      "repo": "ranvir01/thind-transport-website",
+      "branch": "claude/lane-marketing"
+    },
+    "model": "cursor-grok-4.6-high-fast",
+    "agentOptions": {
+      "skipInstall": false
+    },
+    "memoryEnabled": true
+  }
+}
