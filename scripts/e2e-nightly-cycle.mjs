@@ -122,6 +122,17 @@ async function main() {
     const invoicePath = await page.evaluate(() => location.pathname)
     check(!!invoicePath, `landed on the new invoice (${invoicePath})`)
 
+    // The pathname flips the instant router.push() fires — before the invoice
+    // detail's server component has streamed in, so the page is still the
+    // loading skeleton (no Summary <dt>s, no "Invoice PDF" link). Reading
+    // summaryValue()/fetchLinkBytes() here raced that skeleton and returned
+    // null on the first cold serve after a build (wider first-serve window:
+    // cold route compile, cold DB pool, cold PDF lib). Gate on the payment
+    // form, which mounts only once the detail has rendered — the same gate the
+    // invoices/business-cycle/accounting smokes already use — so every read
+    // below sees real content regardless of how slow the first serve is.
+    await page.waitForSelector("#pay_amount", { timeout: 20000 })
+
     const amount = parseCents(await summaryValue(page, "Amount"))
     const open = parseCents(await summaryValue(page, "Open balance"))
     check(amount !== null && amount > 0, `invoice amount parses (${amount} cents)`)
