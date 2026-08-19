@@ -177,10 +177,18 @@ export async function savePushSubscription(
   userAgent?: string
 ): Promise<void> {
   await query(
+    // endpoint is globally UNIQUE (005_retrofits_spines.sql), not unique per
+    // carrier, so the conflict row can belong to a different tenant. The upsert
+    // must reassign the WHOLE row — carrier_id included — or it leaves a row
+    // half-owned by two tenants (carrier A's carrier_id, carrier B's user/keys)
+    // that pushToUser's carrier+user read can never match again. A push endpoint
+    // is a capability URL the push service issued to exactly one browser
+    // profile; the signed-in caller holding it now is its owner.
     `INSERT INTO hub.push_subscriptions (carrier_id, user_id, endpoint, p256dh, auth, user_agent)
      VALUES ($1, $2, $3, $4, $5, $6)
      ON CONFLICT (endpoint) DO UPDATE SET
-       user_id = EXCLUDED.user_id, p256dh = EXCLUDED.p256dh, auth = EXCLUDED.auth`,
+       carrier_id = EXCLUDED.carrier_id, user_id = EXCLUDED.user_id,
+       p256dh = EXCLUDED.p256dh, auth = EXCLUDED.auth, user_agent = EXCLUDED.user_agent`,
     [carrierId, userId, sub.endpoint, sub.keys.p256dh, sub.keys.auth, userAgent ?? null]
   )
 }
