@@ -16,18 +16,18 @@ function useCountUp(target: number, durationMs = 600): number {
   useEffect(() => {
     // Animate on first paint only; later prop changes (router.refresh after
     // an action) must still land — snap straight to the new value.
+    // Non-animated snaps go through rAF so setState is not synchronous in the effect.
     if (ran.current) {
-      setValue(target)
-      return
+      const id = requestAnimationFrame(() => setValue(target))
+      return () => cancelAnimationFrame(id)
     }
     ran.current = true
-    if (target === 0) {
-      setValue(0)
-      return
-    }
-    if (typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      setValue(target)
-      return
+    if (
+      target === 0 ||
+      (typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches)
+    ) {
+      const id = requestAnimationFrame(() => setValue(target))
+      return () => cancelAnimationFrame(id)
     }
     const start = performance.now()
     let raf = 0

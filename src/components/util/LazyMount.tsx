@@ -24,7 +24,7 @@ export function LazyMount({
     const el = ref.current
     if (!el) return
     if (!("IntersectionObserver" in window)) {
-      setShow(true)
+      queueMicrotask(() => setShow(true))
       return
     }
     const io = new IntersectionObserver(

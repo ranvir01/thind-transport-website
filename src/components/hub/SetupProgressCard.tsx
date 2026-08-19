@@ -31,11 +31,14 @@ export function SetupProgressCard({ progress }: { progress: GettingStarted }) {
   const [openStep, setOpenStep] = useState<string | null>(null)
 
   useEffect(() => {
-    try {
-      setDismissed(window.localStorage.getItem(DISMISS_KEY) === "1")
-    } catch {
-      setDismissed(false)
-    }
+    // Defer localStorage read so SSR can render null (no dismiss flash) without sync setState-in-effect.
+    queueMicrotask(() => {
+      try {
+        setDismissed(window.localStorage.getItem(DISMISS_KEY) === "1")
+      } catch {
+        setDismissed(false)
+      }
+    })
   }, [])
 
   const steps = setupSteps(progress)

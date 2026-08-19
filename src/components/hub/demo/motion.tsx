@@ -23,8 +23,8 @@ export function CountUp({
   useEffect(() => {
     const match = value.match(/^([^0-9]*)([0-9,]+(?:\.[0-9]+)?)(.*)$/)
     if (!match || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      setDisplay(value)
-      return
+      const id = requestAnimationFrame(() => setDisplay(value))
+      return () => cancelAnimationFrame(id)
     }
     const target = Number(match[2].replace(/,/g, ""))
     const decimals = match[2].includes(".") ? match[2].split(".")[1].length : 0

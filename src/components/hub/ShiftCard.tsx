@@ -134,7 +134,6 @@ export function ShiftCard({ seat, dark = false }: { seat: string; dark?: boolean
     void refresh()
     const interval = setInterval(() => void refresh(), 30_000)
     return () => clearInterval(interval)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase.kind, refresh])
 
   const clockIn = async () => {

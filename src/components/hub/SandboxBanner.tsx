@@ -43,11 +43,14 @@ export function SandboxBanner({
 
   useEffect(() => {
     if (!tour) return
-    try {
-      if (!localStorage.getItem(tourKey)) setTourOpen(true)
-    } catch {
-      /* storage blocked — keep the tour closed rather than nag every load */
-    }
+    // Defer localStorage read — tour stays closed on SSR; open after paint if undismissed.
+    queueMicrotask(() => {
+      try {
+        if (!localStorage.getItem(tourKey)) setTourOpen(true)
+      } catch {
+        /* storage blocked — keep the tour closed rather than nag every load */
+      }
+    })
   }, [tour, tourKey])
 
   const dismissTour = () => {
