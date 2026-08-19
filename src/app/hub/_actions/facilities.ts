@@ -8,6 +8,7 @@ import {
 } from "@/lib/hub/facilities"
 import { getCarrierSettings } from "@/lib/hub/settings"
 import { queryOne } from "@/lib/hub/db"
+import { logAudit } from "@/lib/hub/audit"
 import { dollarsToCents } from "@/lib/hub/types"
 import { actionError } from "@/lib/hub/action-error"
 
@@ -84,13 +85,19 @@ export async function updateFacilityAction(
     // Facility hours, lumper cost and parking are dispatch reference data that
     // drive booking and detention pricing — loads:write, not any office role.
     const user = await requirePermission("loads:write")
+    const typicalLumperCents = patch.typicalLumper ? dollarsToCents(patch.typicalLumper) : null
     await updateFacilityInfo(user.carrierId, id, {
       hours: patch.hours?.trim() || null,
       phone: patch.phone?.trim() || null,
       overnightParking:
         patch.overnightParking === "yes" ? true : patch.overnightParking === "no" ? false : null,
-      typicalLumperCents: patch.typicalLumper ? dollarsToCents(patch.typicalLumper) : null,
+      typicalLumperCents,
       notes: patch.notes?.trim() || null,
+    })
+    await logAudit({
+      carrierId: user.carrierId, actorId: user.id, actorName: user.name,
+      entityType: "facility", entityId: id, action: "update",
+      newValue: { typicalLumperCents },
     })
     revalidatePath(`/hub/facilities/${id}`)
     revalidatePath("/hub/facilities")
