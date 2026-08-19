@@ -377,11 +377,12 @@ export async function savePriceBookEntryAction(values: {
   }
   try {
     if (values.id) {
-      await query(
+      const rows = await query<{ id: string }>(
         `UPDATE hub.accessorial_types SET name = $3, default_amount_cents = $4, unit = $5
-         WHERE carrier_id = $1 AND id = $2`,
+         WHERE carrier_id = $1 AND id = $2 RETURNING id`,
         [user.carrierId, values.id, values.name.trim(), amountCents, values.unit]
       )
+      if (rows.length === 0) return { ok: false, error: "Price book entry not found" }
     } else {
       await query(
         `INSERT INTO hub.accessorial_types (carrier_id, name, default_amount_cents, unit)
