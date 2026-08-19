@@ -42,7 +42,7 @@ async function main() {
   console.log("1. Dispatch opens Compliance and finds the Random testing entry point")
   await login(page, "dispatch@demo.thind")
   await page.goto(`${BASE}/hub/compliance`, { waitUntil: "networkidle2" })
-  await waitForText(page, "Compliance")
+  await waitForText(page, "CDLs, med cards")
   check(await textAppears(page, "Random testing"), "compliance wall links to Random testing")
 
   await clickByText(page, "Random testing", { tag: "a" })

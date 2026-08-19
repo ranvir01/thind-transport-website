@@ -43,7 +43,7 @@ async function main() {
   console.log("1. Login as owner, open the fuel screen, follow the new Tolls link")
   await login(page, "owner@demo.thind")
   await page.goto(`${BASE}/hub/fuel`, { waitUntil: "networkidle2" })
-  await waitForText(page, "Fuel spend")
+  await waitForText(page, "Last 92 days across every card program.")
   await clickByText(page, "Tolls", { tag: "a" })
   await waitForText(page, "Toll spend")
   await shot(page, "01-tolls-dashboard")

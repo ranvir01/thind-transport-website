@@ -168,7 +168,7 @@ async function main() {
 
   console.log("6. Fuel screen readable, transactions render")
   await page.goto(`${BASE}/hub/fuel`, { waitUntil: "networkidle2" })
-  await waitForText(page, "Fuel")
+  await waitForText(page, "Last 92 days across every card program.")
   check(
     await page.evaluate(() => /gallons|transactions/i.test(document.body.innerText)),
     "fuel transactions render for accountant"

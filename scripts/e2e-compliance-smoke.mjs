@@ -81,7 +81,7 @@ async function main() {
   console.log("1. Owner opens the compliance wall")
   await login(page, "owner@demo.thind")
   await page.goto(`${BASE}/hub/compliance`, { waitUntil: "networkidle2" })
-  await waitForText(page, "Compliance")
+  await waitForText(page, "CDLs, med cards")
   const before = await readSummary(page)
   check(Number.isFinite(before.red) && before.red > 0, `red summary > 0 (got ${before.red})`)
   check(Number.isFinite(before.amber) && before.amber > 0, `amber summary > 0 (got ${before.amber})`)

@@ -82,20 +82,26 @@ const WAIT_FOR_PATH_COPY: Record<string, string> = {
 }
 
 /**
- * Destination-copy anchors after a hard goto to the Settlements / Invoices /
- * Planner / Advances list pages. `waitUntil: "networkidle2"` still races the
- * streamed body — the nav-bar label is already in the chrome, so waitForText
- * on "Settlements" / "Invoices" / "Planner" / "Advances" is not a render gate.
+ * Destination-copy anchors after a hard goto to list pages. `waitUntil:
+ * "networkidle2"` still races the streamed body — the nav-bar label is
+ * already in the chrome, so waitForText on "Settlements" / "Invoices" /
+ * "Planner" / "Advances" / "Expenses" / "Messages" / "Compliance" / "Fuel"
+ * is not a render gate. (Fuel's nav label is "Fuel & cards"; waitForText
+ * "Fuel" still matches that chrome immediately via substring.)
  */
 const HARD_GOTO_COPY: Record<string, string> = {
   "/hub/money/settlements": "Weekly driver pay",
   "/hub/money/invoices": "Every invoice, paid or open",
   "/hub/planner": "A truck's whole week at a glance",
   "/hub/money/advances": "Cash and EFS-code advances",
+  "/hub/money/expenses": "Reimbursables flow to settlements",
+  "/hub/messages": "Every driver conversation in one place",
+  "/hub/compliance": "CDLs, med cards",
+  "/hub/fuel": "Last 92 days across every card program.",
 }
 
 const HARD_GOTO_PATH_RE =
-  /\.goto\([^\n]*(\/hub\/money\/settlements|\/hub\/money\/invoices|\/hub\/planner|\/hub\/money\/advances)(?![/\w])/
+  /\.goto\([^\n]*(\/hub\/money\/settlements|\/hub\/money\/invoices|\/hub\/planner|\/hub\/money\/advances|\/hub\/money\/expenses|\/hub\/messages|\/hub\/compliance|\/hub\/fuel)(?![/\w])/
 
 /** A hard navigation resets the state — page.goto awaits the destination itself. */
 const HARD_NAV = /\.goto\(/
@@ -237,7 +243,7 @@ describe("e2e soft-nav landing gates wait for render before reading", () => {
     expect(misses).toEqual([])
   })
 
-  it("hard-goto Settlements/Invoices/Planner/Advances list pages wait for destination copy, not the nav label", () => {
+  it("hard-goto list pages wait for destination copy, not the nav label", () => {
     const TEXT_RE = /(?:waitForText|textAppears)\(\s*[\w$]+\s*,\s*"([^"]+)"/
     const misses: string[] = []
     let gates = 0
@@ -254,7 +260,11 @@ describe("e2e soft-nav landing gates wait for render before reading", () => {
         }
         for (let j = i + 1; j < lines.length; j++) {
           const l = lines[j]
-          if (HARD_NAV.test(l) || isContentRead(l)) {
+          // Driver-blocked gotos must bounce — they never see office subtitles.
+          // A later hard nav, a leaving-path wait, or textGone of office copy
+          // is the bounce, not a missed render gate.
+          if (HARD_NAV.test(l) || LEAVING_GATE.test(l) || /\btextGone\(/.test(l)) return
+          if (isContentRead(l)) {
             misses.push(
               `${f}:${i + 1} goto ${pathMatch[1]} has no waitForText("${copy}") before a read`
             )
@@ -272,7 +282,7 @@ describe("e2e soft-nav landing gates wait for render before reading", () => {
         misses.push(`${f}:${i + 1} goto ${pathMatch[1]} never waits for "${copy}"`)
       })
     }
-    expect(gates, "guard is not silently vacuous").toBeGreaterThanOrEqual(10)
+    expect(gates, "guard is not silently vacuous").toBeGreaterThanOrEqual(24)
     expect(misses).toEqual([])
   })
 

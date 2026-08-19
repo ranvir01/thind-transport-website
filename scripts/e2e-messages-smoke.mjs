@@ -58,7 +58,7 @@ async function main() {
   track(office)
   await login(office, "dispatch@demo.thind")
   await office.goto(`${BASE}/hub/messages`, { waitUntil: "networkidle2" })
-  await waitForText(office, "Messages")
+  await waitForText(office, "Every driver conversation in one place")
   const list = await office.evaluate(() => document.body.innerText)
   check(list.includes("Harpreet Singh"), "thread list shows the seeded Harpreet threads")
   check(list.includes("lumper receipt"), "seeded load-thread preview is the last message body")
@@ -152,7 +152,7 @@ async function main() {
 
   console.log("5. Office sees the reply unread, then the bubble and the read receipt")
   await office.goto(`${BASE}/hub/messages`, { waitUntil: "networkidle2" })
-  await waitForText(office, "Messages")
+  await waitForText(office, "Every driver conversation in one place")
   const officeList2 = await office.evaluate(() => document.body.innerText)
   check(officeList2.includes(driverMarker), "office list previews the driver reply")
   const officeUnread = await office.evaluate((marker) => {
