@@ -61,9 +61,25 @@ function stripComments(src: string): string {
     .join("\n")
 }
 
-/** A landing gate: waits for the URL to BECOME a path (arrival), not leave one. */
-const LANDING_GATE = /waitForFunction\([^\n]*location\.pathname/
+/**
+ * A landing gate: waits for the URL to BECOME a path (arrival), not leave one.
+ *
+ * `waitForPath()` is the named helper for the same waitForFunction pathname
+ * check (defined in e2e-lib.mjs, which this scan excludes). It is NOT a
+ * render gate — the blanket `waitFor*` pass used to treat it as one, which
+ * hid redirect smokes that read destination content against a loading
+ * skeleton. `waitForPathAndText` is a render gate (it also waits on copy)
+ * and does not match `\bwaitForPath\(`.
+ */
+const LANDING_GATE = /waitForFunction\([^\n]*location\.pathname|\bwaitForPath\(/
 const LEAVING_GATE = /!location\.pathname|location\.pathname\s*!==/
+
+/** Destination-copy anchors for redirect smokes that land via waitForPath. */
+const WAIT_FOR_PATH_COPY: Record<string, string> = {
+  "/hub": "Unconfirmed drivers",
+  "/hub/driver": "Last pay",
+  "/hub/suspended": "Workspace suspended",
+}
 
 /** A hard navigation resets the state — page.goto awaits the destination itself. */
 const HARD_NAV = /\.goto\(/
@@ -82,6 +98,7 @@ const READS_LOCATION_ONLY = /location\.(pathname|href|search)/
 /** A gate that actually waits for the destination body to render. */
 function isRenderGate(line: string): boolean {
   // Another URL wait is not a render gate — it proves nothing rendered.
+  // waitForPath is in LANDING_GATE, so this also rejects the named helper.
   if (LANDING_GATE.test(line) || LEAVING_GATE.test(line)) return false
   if (/waitForSelector\(|waitForNetworkIdle|waitForStableText\(|waitForPathAndText\(/.test(line)) {
     return true
@@ -147,7 +164,61 @@ describe("e2e soft-nav landing gates wait for render before reading", () => {
           .filter((l) => LANDING_GATE.test(l) && !LEAVING_GATE.test(l)).length,
       0
     )
-    expect(total).toBeGreaterThanOrEqual(4)
+    expect(total).toBeGreaterThanOrEqual(12)
+  })
+
+  it("counts waitForPath as a landing gate (pathname helper, not a render wait)", () => {
+    let pathWaits = 0
+    let asLanding = 0
+    for (const f of scripts) {
+      for (const line of readFileSync(path.join(SCRIPTS_DIR, f), "utf-8").split("\n")) {
+        if (!/\bwaitForPath\(/.test(line)) continue
+        pathWaits += 1
+        if (LANDING_GATE.test(line) && !LEAVING_GATE.test(line)) asLanding += 1
+        expect(isRenderGate(line), `${f}: waitForPath must not count as a render gate`).toBe(
+          false
+        )
+      }
+    }
+    expect(pathWaits).toBeGreaterThanOrEqual(8)
+    expect(asLanding).toBe(pathWaits)
+  })
+
+  it("redirect smokes wait for destination copy after waitForPath", () => {
+    const PATH_RE = /waitForPath\(\s*[\w$]+\s*,\s*"([^"]+)"/
+    const TEXT_RE = /(?:waitForText|textAppears)\(\s*[\w$]+\s*,\s*"([^"]+)"/
+    const misses: string[] = []
+    for (const f of scripts) {
+      const lines = stripComments(readFileSync(path.join(SCRIPTS_DIR, f), "utf-8")).split("\n")
+      lines.forEach((line, i) => {
+        const pathMatch = PATH_RE.exec(line)
+        if (!pathMatch) return
+        const copy = WAIT_FOR_PATH_COPY[pathMatch[1]]
+        if (!copy) {
+          misses.push(`${f}:${i + 1} waitForPath("${pathMatch[1]}") has no destination-copy mapping`)
+          return
+        }
+        for (let j = i + 1; j < lines.length; j++) {
+          const l = lines[j]
+          if (HARD_NAV.test(l) || isContentRead(l)) {
+            misses.push(
+              `${f}:${i + 1} waitForPath("${pathMatch[1]}") has no waitForText("${copy}") before a read`
+            )
+            return
+          }
+          const textMatch = TEXT_RE.exec(l)
+          if (textMatch?.[1] === copy) return
+          if (isRenderGate(l)) {
+            misses.push(
+              `${f}:${i + 1} waitForPath("${pathMatch[1]}") gated on "${textMatch?.[1] ?? l.trim().slice(0, 40)}" instead of "${copy}"`
+            )
+            return
+          }
+        }
+        misses.push(`${f}:${i + 1} waitForPath("${pathMatch[1]}") never waits for "${copy}"`)
+      })
+    }
+    expect(misses).toEqual([])
   })
 
   it("every landing gate is followed by a render gate before a content read", () => {

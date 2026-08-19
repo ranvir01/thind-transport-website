@@ -95,6 +95,9 @@ try {
   await login(page2, "dispatch@demo.thind")
   await page2.goto(`${BASE}/hub/settings/pricebook`, { waitUntil: "networkidle2" })
   await waitForPath(page2, "/hub")
+  // Pathname flips before the Today screen streams in — wait for a body
+  // tile, not the always-present "Today" nav label.
+  await waitForText(page2, "Unconfirmed drivers")
   const url2 = page2.url()
   const body2 = await page2.evaluate(() => document.body.innerText)
   check(!url2.includes("/settings/pricebook") && !body2.includes("Accessorial Price Book"),

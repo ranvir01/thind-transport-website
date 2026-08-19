@@ -82,6 +82,7 @@ async function main() {
   await clickByText(driver, "File the post-trip")
   await waitForText(driver, "truck is grounded")
   if (!(await waitForPath(driver, "/hub/driver"))) throw new Error("post-trip form did not return to the driver home after grounding the truck")
+  await waitForText(driver, "Last pay")
   console.log("   defect filed, truck grounded ✓")
 
   // Office: sees grounded truck, certifies the repair
@@ -119,6 +120,7 @@ async function main() {
   await clickByText(driver, "File the pre-trip")
   await waitForText(driver, "Inspection filed")
   if (!(await waitForPath(driver, "/hub/driver"))) throw new Error("pre-trip form did not return to the driver home after filing")
+  await waitForText(driver, "Last pay")
 
   // Verify the truck is active again
   await office.reload({ waitUntil: "networkidle2" })

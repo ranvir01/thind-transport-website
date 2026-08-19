@@ -142,6 +142,9 @@ async function main() {
   await login(driverPage, "driver@demo.thind")
   await driverPage.goto(`${BASE}/hub/reports`, { waitUntil: "networkidle2" })
   await waitForPath(driverPage, "/hub/driver")
+  // Pathname flips before the PWA streams in — "Last pay" is home-body copy,
+  // not chrome.
+  await waitForText(driverPage, "Last pay")
   const driverBlocked = await driverPage.evaluate(() => ({
     url: location.pathname,
     seesPnl: document.body.innerText.includes("Per-truck P&L"),

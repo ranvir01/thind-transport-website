@@ -226,6 +226,9 @@ async function main() {
   // per-request isActiveCarrier re-check (src/lib/hub/session.ts) should stop it.
   await cascade.goto(`${BASE}/hub/dispatch`, { waitUntil: "networkidle2" })
   check(await waitForPath(cascade, "/hub/suspended"), "suspended Cascade owner is redirected to /hub/suspended")
+  // Pathname flips before the dead-end streams in. waitForText lowercases,
+  // so the Tailwind `uppercase` h1 still matches.
+  await waitForText(cascade, "Workspace suspended")
   // h1 is `uppercase` via Tailwind, and innerText reflects the rendered
   // (CSS-transformed) case, not the source string — compare lowercased.
   check(
@@ -236,6 +239,7 @@ async function main() {
   // The Cascade driver PWA session must be cut off the same way, not just the office side.
   await driver.goto(`${BASE}/hub/driver`, { waitUntil: "networkidle2" })
   check(await waitForPath(driver, "/hub/suspended"), "suspended Cascade driver is redirected to /hub/suspended")
+  await waitForText(driver, "Workspace suspended")
 
   // ---- 6. Reactivate — access is restored without a fresh login ----
   console.log("6. Platform admin reactivates Cascade — owner access is restored")
