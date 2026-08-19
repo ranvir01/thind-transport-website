@@ -31,6 +31,7 @@ const LANES = [
   "lane-integrations",
   "lane-analytics",
   "lane-saas",
+  "lane-marketing",
 ]
 
 function git(cmd) {

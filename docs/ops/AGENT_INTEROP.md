@@ -19,11 +19,16 @@ same branch in the same minute is how a diverged `main` gets made.
 | Minute | Who | Platform | Branch it writes |
 |---|---|---|---|
 | `:00` | Integrator (lane merge) | Cursor automation | `claude/hauldesk-project-setup-l1luoo` |
+| `:10` | Fleet liveness (`agent:status` stall → red) | GitHub Actions | nothing — read-only |
 | `:17`, `:47` | Drain integrator → main | GitHub Actions | `main` |
 | `:30` | Prod smoke | Cursor automation | `main` (only when production is red) |
+| `:43` | Integrator + stamped drain | Claude Code routine | integrator, then `main` |
 | `:59` | Deploy + backlog | Cursor automation | `main` |
 | `03:40` | E2E smoke suite | GitHub Actions | nothing — read-only |
+| `06:00 Sun` | Branch reaper (dry-run until `REAPER_ARMED`) | GitHub Actions | deletes merged `claude/*`/`cursor/*` only when armed |
 | every push / PR | `unit` job (vitest, token-lint, cursor-env-check) | GitHub Actions | nothing — read-only |
+
+Live ids, the role map, and the stray duplicate automation: [`docs/ops/FLEET.md`](FLEET.md).
 
 **Adding anything scheduled — a Claude routine, a Cursor automation, a cron — means picking a minute
 not in that table and adding a row here in the same change.** A schedule that exists only in a
@@ -41,16 +46,18 @@ broken, it still runs.
 | Branch | Written by | Everyone else |
 |---|---|---|
 | `main` | the `:59` deploy agent, the `:17`/`:47` drain Action, the `:30` smoke agent when production is red, and the owner (or an agent the owner told to) | never push directly |
-| `claude/hauldesk-project-setup-l1luoo` (integrator) | the `:00` integrator agent, and the drain Action carrying the merge back | never push directly |
+| `claude/hauldesk-project-setup-l1luoo` (integrator) | the `:00` Cursor integrator, the `:43` Claude routine, and the drain Action carrying the merge back | never push directly |
 | `claude/lane-*` | the one agent working that lane | never |
 | `claude/<session-name>` | the one agent that created it | never |
+| `cursor/<session-name>` | the one Cursor agent that created it | lands via pull request; `npm run agent:branches` inventories `claude/*` only |
 
 Two agents on one branch is the single most expensive mistake available here — it costs a forced
 push or a conflict resolution nobody asked for. **One branch, one writer.** If you need work that
 lives on someone else's branch, say so in `Backlog:` and let the integrator merge it.
 
-Session branches are fine and preferred for ad-hoc work: the integrator finds them with
-`npm run agent:branches`, so nothing needs a fixed name.
+Session branches are fine and preferred for ad-hoc work. The integrator finds `claude/*`
+with `npm run agent:branches`. Cursor Cloud `cursor/*` session branches land via pull
+request — they are not in that inventory.
 
 ---
 
@@ -161,6 +168,11 @@ doing" — which is how three weeks passed with no Cursor agent able to start.
 - `npm run agent:branches` — pending work nobody has merged.
 - The `:17`/`:47` drain Action is the liveness signal that does not depend on Cursor: if its runs are
   green and `main` is still moving, publishing works even when every agent is down.
+- `.github/workflows/fleet-liveness.yml` (`:10`) fails CI when `npm run agent:status` exits 2
+  (integrator stalled with pending `claude/*` work). Catch-up (exit 1) stays green — the drain
+  Action owns that. This is the alarm that was missing for the three-week environment outage.
+  A Cursor automation that ERROR's in under a minute with `setupStatus: null` is that outage,
+  not an empty backlog.
 
 If two consecutive runs of a scheduled agent produce nothing, check the platform before assuming the
 backlog is empty: a Cursor automation that cannot boot its environment reports no error into this

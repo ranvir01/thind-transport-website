@@ -36,3 +36,21 @@ A) Adopt as written; agents prepare the prompt blocks in docs/claude-routines.md
 B) Keep the current fleet shape.
 Deferral cost: none urgent; current fleet works, the manual mainly adds verification depth.
 Answer: ____
+
+## D-004 | filed:2026-08-19 | class:fleet
+Q: Cursor automations cannot boot until the tested environment is Saved (personal env
+`5241c374-0579-442f-bf88-309dbcbe37f3`). Recurring SYSTEM build
+`bld-20260819-e34379d9-3634-4174-b245-e3c81319a7a6` SUCCEEDED 2026-08-19 08:33 (install-only);
+scheduled runs through the 08:00 hour still ERROR in ~8s with `setupStatus: null`.
+A) Save in the Environment panel, Enable builds, confirm the next Integrator run boots. [required]
+B) Keep just-in-time boots only (hand agents work; scheduled automations keep ERROR'ing).
+Deferral cost: every hourly Cursor job dies in ~8s; fleet-liveness.yml will go red while branches wait.
+Answer: ____
+
+## D-005 | filed:2026-08-19 | class:fleet
+Q: Disable duplicate Cursor automation Untitled `61b8e855-76b8-11f1-ba66-0e7d0216e441` (fires as
+HaulDesk improvement cycle — second writer on `main` next to Deploy + backlog).
+A) Disable it. [recommended]
+B) Keep both (two agents will collide on `main`).
+Deferral cost: forced-push / conflict on the production branch.
+Answer: ____

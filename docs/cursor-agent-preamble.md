@@ -33,11 +33,12 @@ in three days. This is the only lock the fleet has.
 
 ## Where to push
 
-- **Your own branch** — `claude/<something-descriptive>`. The `:00` integrator finds it with
-  `npm run agent:branches` and merges it. You do not need a lane branch.
+- **Your own branch** — `cursor/<something-descriptive>` on Cursor Cloud (lands via pull request).
+  Claude Code sessions use `claude/<something-descriptive>`; the `:00` / `:43` integrators find
+  those with `npm run agent:branches` and merge them. You do not need a lane branch.
 - **Never** `main` (the `:59` deploy agent and the drain Action own it), **never**
   `claude/hauldesk-project-setup-l1luoo` (the integrator owns it), **never** a branch another agent
-  is writing. One branch, one writer.
+  is writing. One branch, one writer. Live roster: [`docs/ops/FLEET.md`](ops/FLEET.md).
 
 ## Before you push
 

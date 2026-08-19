@@ -30,6 +30,16 @@ lane agents ──▶ claude/lane-* ──▶ integrator (:00) ──▶ deploy 
 3. Set **Repository:** `ranvir01/thind-transport-website` with the branch shown in the table above.
 4. Enable **cloud compute** on all three.
 5. Confirm the automation bot has **write access** to the repo.
+
+These three already exist on the dashboard (2026-08-19). Do not create a fourth copy.
+
+| Dashboard name | Id |
+|----------------|-----|
+| Integrator | [`880eec29-78fd-11f1-ba66-0e7d0216e441`](https://cursor.com/automations/880eec29-78fd-11f1-ba66-0e7d0216e441) |
+| Prod Smoke | [`4ad7743c-7900-11f1-ba66-0e7d0216e441`](https://cursor.com/automations/4ad7743c-7900-11f1-ba66-0e7d0216e441) |
+| Deploy + backlog | [`75e8fbf5-7900-11f1-ba66-0e7d0216e441`](https://cursor.com/automations/75e8fbf5-7900-11f1-ba66-0e7d0216e441) |
+
+**Disable** Untitled [`61b8e855-76b8-11f1-ba66-0e7d0216e441`](https://cursor.com/automations/61b8e855-76b8-11f1-ba66-0e7d0216e441) — it fires as "HaulDesk improvement cycle" and is a second writer on `main`. Full roster: [`docs/ops/FLEET.md`](../../docs/ops/FLEET.md).
 6. **Manual first run:** trigger **Deploy + backlog** once to drain integrator → `main` if
    `npm run agent:status` shows catch-up mode.
 7. After Vercel deploys, run `npm run prod:smoke` — expect **LoadOff** on `/hub/login`.
