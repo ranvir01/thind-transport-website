@@ -196,6 +196,7 @@ async function main() {
     "clicking the HOS row opens Harpreet's driver profile"
   )
   await page.goto(`${BASE}/hub/safety`, { waitUntil: "networkidle2" })
+  await waitForText(page, "flow to the register automatically")
   await waitForText(page, "Hours of service")
 
   console.log("2. Close the seeded DOT-recordable incident (stays on the register)")

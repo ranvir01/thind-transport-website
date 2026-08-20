@@ -16,7 +16,7 @@
 import { mkdirSync } from "node:fs"
 import {
   launchBrowser, BASE, failures, check, login, makeShot, reseed,
-  textAppears, textGone, waitForPathAndText, clickByText, realConsoleErrors,
+  textAppears, textGone, waitForText, waitForPathAndText, clickByText, realConsoleErrors,
 } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-claims"
@@ -42,6 +42,7 @@ async function main() {
   console.log("1. Safety page shows the Claims rollup at 0 open")
   await login(page, "owner@demo.thind")
   await page.goto(`${BASE}/hub/safety`, { waitUntil: "networkidle2" })
+  await waitForText(page, "flow to the register automatically")
   await textAppears(page, "Claims")
   check(await textAppears(page, "0 open"), "safety rollup starts at 0 open claims")
   await shot(page, "01-safety-rollup-zero")
@@ -87,6 +88,7 @@ async function main() {
 
   console.log("5. Safety rollup now counts it, with the 30-day warning")
   await page.goto(`${BASE}/hub/safety`, { waitUntil: "networkidle2" })
+  await waitForText(page, "flow to the register automatically")
   check(await textAppears(page, "1 open"), "safety rollup shows 1 open claim")
   check(
     await textAppears(page, "1 inside 30 days of the filing deadline"),
@@ -120,6 +122,7 @@ async function main() {
   check(await textGone(page, "21d to file"), "no deadline badge once resolved")
   await shot(page, "07-claims-resolved")
   await page.goto(`${BASE}/hub/safety`, { waitUntil: "networkidle2" })
+  await waitForText(page, "flow to the register automatically")
   check(await textAppears(page, "0 open"), "safety rollup back to 0 open")
 
   await browser.close()
