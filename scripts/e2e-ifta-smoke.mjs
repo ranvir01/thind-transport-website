@@ -44,6 +44,7 @@ async function main() {
 
   console.log(`2. Open IFTA screen for ${quarter}`)
   await page.goto(`${BASE}/hub/compliance/ifta?q=${quarter}`, { waitUntil: "networkidle2" })
+  await waitForText(page, "IFTA — ")
   await waitForText(page, `IFTA — ${quarter}`)
   await shot(page, "01-ifta-before-compute")
 
@@ -146,6 +147,7 @@ async function main() {
   const currentQuarter = quarterKey()
   console.log(`7. Current partial quarter (${currentQuarter}) computes cleanly`)
   await page.goto(`${BASE}/hub/compliance/ifta?q=${currentQuarter}`, { waitUntil: "networkidle2" })
+  await waitForText(page, "IFTA — ")
   await clickByText(page, "ompute quarter").catch(() => clickByText(page, "Recompute"))
   await waitForText(page, "Quarter computed")
   check(
