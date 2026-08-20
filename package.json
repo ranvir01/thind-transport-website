@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "prepare": "node scripts/install-git-hooks.mjs",
+    "hooks:install": "node scripts/install-git-hooks.mjs",
     "start": "next start",
     "lint": "eslint . --ext .ts,.tsx,.js,.jsx",
     "generate:brand-assets": "node scripts/generate-brand-assets.mjs",

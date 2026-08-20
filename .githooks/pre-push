@@ -1,0 +1,70 @@
+#!/bin/sh
+#
+# pre-push — run the typecheck gate before anything leaves this machine.
+#
+# Why this exists (backlog item, 2026-08-20): `npm run typecheck:gate` is NOT
+# part of `npm run build`. The documented agent verify chain is
+# `npm run build && npx vitest run`, and vitest transpiles with esbuild without
+# typechecking, so a test-file type error passes both commands and reaches
+# `main` unnoticed. The drain GitHub Action does run the gate, but Routine 1
+# agents drain by hand and bypass it entirely — so the Action is not the
+# backstop it looks like.
+#
+# Escape hatches, in order of preference:
+#   git push --no-verify          # git's native bypass, always available
+#   SKIP_TYPECHECK_GATE=1 git push
+#
+# Both exist on purpose. A hook that can wedge the integrator drain is worse
+# than the type debt it prevents — main staying deployable outranks this gate.
+
+if [ "${SKIP_TYPECHECK_GATE:-}" = "1" ]; then
+  echo "pre-push: SKIP_TYPECHECK_GATE=1 — skipping typecheck gate."
+  exit 0
+fi
+
+# The gate is a whole-project `tsc --noEmit`; per-file granularity does not
+# matter. This scan is only a cheap skip so docs-only pushes stay instant.
+ts_touched=no
+while read -r _local_ref local_sha _remote_ref remote_sha; do
+  # Branch deletion — nothing to typecheck.
+  case "$local_sha" in *[!0]*) ;; *) continue ;; esac
+
+  case "$remote_sha" in
+    *[!0]*) range="$remote_sha..$local_sha" ;;
+    # New branch on the remote: diff against main when we have it, else
+    # fall through to running the gate rather than guessing.
+    *) if git rev-parse --verify --quiet origin/main >/dev/null 2>&1; then
+         range="origin/main..$local_sha"
+       else
+         ts_touched=yes
+         continue
+       fi ;;
+  esac
+
+  if ! changed=$(git diff --name-only "$range" 2>/dev/null); then
+    ts_touched=yes   # cannot tell (shallow clone, missing object) — be safe
+    continue
+  fi
+  if printf '%s\n' "$changed" | grep -qE '\.tsx?$|^tsconfig|^package\.json$'; then
+    ts_touched=yes
+  fi
+done
+
+if [ "$ts_touched" != "yes" ]; then
+  exit 0
+fi
+
+# If the toolchain is not installed, warn and allow. A hook that hard-fails on
+# a fresh clone would block pushes for a reason unrelated to type safety.
+if [ ! -x node_modules/.bin/tsc ]; then
+  echo "pre-push: node_modules/.bin/tsc missing — skipping typecheck gate (run npm install to enable it)." >&2
+  exit 0
+fi
+
+echo "pre-push: running typecheck gate (SKIP_TYPECHECK_GATE=1 to bypass)…"
+if ! node scripts/typecheck-gate.mjs; then
+  echo "" >&2
+  echo "pre-push: typecheck gate FAILED — push aborted." >&2
+  echo "Fix the errors above, or bypass with: SKIP_TYPECHECK_GATE=1 git push …" >&2
+  exit 1
+fi
