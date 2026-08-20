@@ -118,7 +118,7 @@ async function main() {
     check(settings.status() === 200, `/hub/settings answers 200 as owner (got ${settings.status()})`)
     // Title "Settings" is the users-page nav label — wait for the index subtitle.
     await waitForText(page, "Company configuration, connections, and shared documents.")
-    const ownerCards = await page.evaluate(() => {
+    const ownerCards = await page.evaluate(() =>
       [...document.querySelectorAll(".grid a[href^='/hub/settings/']")].map((a) => a.getAttribute("href"))
     )
     const allAreas = settingsAreas().map((a) => a.href)
@@ -140,7 +140,7 @@ async function main() {
     const settings = await page.goto(`${BASE}/hub/settings`, { waitUntil: "networkidle2", timeout: 30000 })
     check(settings.status() === 200, `/hub/settings answers 200 as accounting (got ${settings.status()})`)
     await waitForText(page, "Company configuration, connections, and shared documents.")
-    const cards = await page.evaluate(() => {
+    const cards = await page.evaluate(() =>
       [...document.querySelectorAll(".grid a[href^='/hub/settings/']")].map((a) => a.getAttribute("href"))
     )
     const shared = settingsAreas().filter((a) => !a.ownerOnly).map((a) => a.href)
