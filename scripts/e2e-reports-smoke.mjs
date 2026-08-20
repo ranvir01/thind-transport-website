@@ -87,7 +87,9 @@ async function main() {
 
   console.log("4. Owner dashboard revenue charts render")
   await page.goto(`${BASE}/hub/reports/owner`, { waitUntil: "networkidle2" })
-  await waitForText(page, "Owner Dashboard")
+  // Title "Owner Dashboard" is not a nav label, but it still isn't a
+  // render gate — wait for the page subtitle.
+  await waitForText(page, "an owner checks first")
   const ownerDash = await page.evaluate(() => {
     const text = document.body.innerText.toLowerCase()
     return {
