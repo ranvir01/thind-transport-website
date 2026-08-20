@@ -146,6 +146,7 @@ async function main() {
     console.log("1. Owner bills the POD-received load")
     await login(office, "owner@demo.thind")
     await office.goto(`${BASE}/hub/loads?status=pod_received`, { waitUntil: "networkidle2" })
+    await waitForText(office, "Search, filter, and manage every load.")
     const hrefs = await office.evaluate(() => [
       ...new Set(
         [...document.querySelectorAll('a[href^="/hub/loads/"]')]

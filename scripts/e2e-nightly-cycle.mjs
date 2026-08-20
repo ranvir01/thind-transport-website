@@ -92,6 +92,7 @@ async function main() {
     await login(page, "owner@demo.thind")
 
     await page.goto(`${BASE}/hub/loads?status=pod_received`, { waitUntil: "networkidle2" })
+    await waitForText(page, "Search, filter, and manage every load.")
     const podHrefs = await page.evaluate(() =>
       [...new Set(
         [...document.querySelectorAll('a[href^="/hub/loads/"]')]

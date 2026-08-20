@@ -85,6 +85,7 @@ async function main() {
   await login(cascade, "owner@cascademo.example")
   await waitForText(cascade, "Cascade Demo Lines".toUpperCase())
   await cascade.goto(`${BASE}/hub/loads`, { waitUntil: "networkidle2" })
+  await waitForText(cascade, "Search, filter, and manage every load.")
   const loadsText = await cascade.evaluate(() => document.body.innerText)
   if (!loadsText.includes("CAS-5001")) throw new Error("Cascade load missing")
   if (loadsText.includes("THD-")) throw new Error("CASCADE SEES THIND LOADS — isolation broken!")
@@ -102,6 +103,11 @@ async function main() {
   await shot(admin, "06-platform-admin")
   // Bouncing into a tenant surface must redirect back.
   await admin.goto(`${BASE}/hub/loads`, { waitUntil: "networkidle2" })
+  // Platform admin never sees the office subtitle — bounce on leaving
+  // /hub/loads, then confirm they landed back on /hub/admin.
+  await admin.waitForFunction(() => !location.pathname.startsWith("/hub/loads"), {
+    timeout: 20000,
+  })
   if (!admin.url().includes("/hub/admin")) throw new Error("Platform admin reached tenant data!")
   console.log("   platform admin contained ✓")
 

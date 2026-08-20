@@ -36,6 +36,7 @@ async function main() {
   console.log("1. Owner opens the settled Pipe load")
   await login(page, "owner@demo.thind")
   await page.goto(`${BASE}/hub/loads?status=all&q=Pipe`, { waitUntil: "networkidle2" })
+  await waitForText(page, "Search, filter, and manage every load.")
   // The list row shows reference/lane, not the commodity — the q=Pipe filter
   // already narrows the table to the one Pipe load.
   await waitForText(page, "Sacramento")

@@ -93,6 +93,7 @@ async function main() {
   console.log("1. A load with no OS&D exception shows no chip on its detail page")
   await login(ownerPage, "owner@demo.thind")
   await ownerPage.goto(`${BASE}/hub/loads`, { waitUntil: "networkidle2" })
+  await waitForText(ownerPage, "Search, filter, and manage every load.")
   const cleanLoadHref = await ownerPage.evaluate(() =>
     [...document.querySelectorAll("a")]
       .map((a) => a.getAttribute("href") ?? "")

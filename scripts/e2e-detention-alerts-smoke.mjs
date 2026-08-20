@@ -41,6 +41,7 @@ async function main() {
   console.log("1. Login as owner, dispatch board badges the dwelling load")
   await login(page, "owner@demo.thind")
   await page.goto(`${BASE}/hub/dispatch`, { waitUntil: "networkidle2" })
+  await waitForText(page, "Every active load, booking to POD.")
   await waitForText(page, "Dispatch Board")
   const badge = await page.evaluate(() => {
     const el = [...document.querySelectorAll("a")].find((a) => a.textContent.includes("Dwelling"))
@@ -110,6 +111,7 @@ async function main() {
 
   console.log("5. Dispatch board no longer badges the now-closed stop")
   await page.goto(`${BASE}/hub/dispatch`, { waitUntil: "networkidle2" })
+  await waitForText(page, "Every active load, booking to POD.")
   const stillDwelling = await page.evaluate(() =>
     [...document.querySelectorAll("a")].some((a) => a.textContent.includes("Dwelling"))
   )

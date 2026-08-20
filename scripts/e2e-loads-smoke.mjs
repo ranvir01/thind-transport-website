@@ -124,6 +124,7 @@ async function main() {
 
   console.log("4. New load shows on the loads list")
   await page.goto(`${BASE}/hub/loads`, { waitUntil: "networkidle2" })
+  await waitForText(page, "Search, filter, and manage every load.")
   await waitForText(page, detail.reference ?? "THD-")
   const list = await page.evaluate(
     ({ reference, brokerRef }) => {

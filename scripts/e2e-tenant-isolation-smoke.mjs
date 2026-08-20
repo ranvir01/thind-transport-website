@@ -98,6 +98,7 @@ async function main() {
   await login(thind, "owner@demo.thind")
 
   await thind.goto(`${BASE}/hub/loads`, { waitUntil: "networkidle2" })
+  await waitForText(thind, "Search, filter, and manage every load.")
   await waitForText(thind, "THD-")
   const thindLoadsWall = await bodyText(thind)
   check(!thindLoadsWall.includes("CAS-5"), "Thind loads list has no CAS- reference")
@@ -138,7 +139,7 @@ async function main() {
   await login(cascade, "owner@cascademo.example")
 
   await cascade.goto(`${BASE}/hub/dispatch`, { waitUntil: "networkidle2" })
-  await waitForText(cascade, "every active load, booking to pod")
+  await waitForText(cascade, "Every active load, booking to POD.")
   const cascadeDispatchWall = await bodyText(cascade)
   check(cascadeDispatchWall.includes("CAS-5001"), "Cascade dispatch shows its in-transit load CAS-5001")
   check(!cascadeDispatchWall.includes("THD-"), "Cascade dispatch has no THD- reference")
@@ -227,6 +228,11 @@ async function main() {
   // The Cascade owner's session cookie is still a valid JWT — only the
   // per-request isActiveCarrier re-check (src/lib/hub/session.ts) should stop it.
   await cascade.goto(`${BASE}/hub/dispatch`, { waitUntil: "networkidle2" })
+  // Suspended owner never sees the office subtitle — bounce on leaving
+  // /hub/dispatch, then wait for the dead-end copy.
+  await cascade.waitForFunction(() => !location.pathname.startsWith("/hub/dispatch"), {
+    timeout: 20000,
+  })
   check(await waitForPath(cascade, "/hub/suspended"), "suspended Cascade owner is redirected to /hub/suspended")
   // Pathname flips before the dead-end streams in. waitForText lowercases,
   // so the Tailwind `uppercase` h1 still matches.
@@ -250,7 +256,7 @@ async function main() {
 
   await cascade.goto(`${BASE}/hub/dispatch`, { waitUntil: "networkidle2" })
   check(
-    await textAppears(cascade, "every active load, booking to pod"),
+    await textAppears(cascade, "Every active load, booking to POD."),
     "reactivated Cascade owner reaches /hub/dispatch again"
   )
 

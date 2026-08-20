@@ -34,6 +34,10 @@ async function main() {
 
   console.log("2. Broker cannot reach office routes")
   await broker.goto(`${BASE}/hub/loads`, { waitUntil: "networkidle2" })
+  // Broker never sees the office subtitle — bounce on leaving /hub/loads.
+  await broker.waitForFunction(() => !location.pathname.startsWith("/hub/loads"), {
+    timeout: 20000,
+  })
   if (!broker.url().includes("/hub/portal")) throw new Error(`Office route not blocked: ${broker.url()}`)
   console.log("   bounced back to the portal ✓")
 
