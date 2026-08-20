@@ -117,6 +117,11 @@ export function isDeployMetaItem(text) {
   if (/pending claude\/\* branches/i.test(text)) return true
   if (/^next merge:\s*claude\//i.test(text)) return true
   if (/^ops:\s*/i.test(text)) return true
+  // Cycle-status snapshots, not shippable work. The word "money" in
+  // "found no new product money …" otherwise ranks as Money-correctness
+  // and becomes TOP PICK every steady-state hour.
+  if (/^STOP without committing/i.test(text)) return true
+  if (/^Debug-sweep this cycle found no/i.test(text)) return true
   return false
 }
 

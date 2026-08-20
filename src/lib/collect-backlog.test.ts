@@ -113,6 +113,29 @@ describe("topPickItem", () => {
     const { pick } = topPickItem(current, [])
     expect(pick?.text).toContain("caniuse-lite")
   })
+
+  it("skips cycle-status snapshots that mention money so they cannot outrank polish", () => {
+    const debugSweep =
+      "Debug-sweep this cycle found no new product money UPDATE-without-RETURNING or unpinned hub.* joins (known exceptions: totp-store identity-level, website_leads operator table, parent-scoped settlement_lines / announcement_acks)."
+    const stop =
+      "STOP without committing unless a new money/tenancy hole turns up. Remaining items are [needs-owner], [needs-browser], or polish. TOP PICK after this fix is caniuse-lite (polish)."
+    const smtp =
+      "[needs-owner] rotate Gmail app password and repaste SMTP_USER/SMTP_PASS in Vercel Production"
+    const caniuse =
+      "caniuse-lite is 1.0.30001800 vs 1.0.30001809 upstream (cosmetic, lockfile-wide — own cycle)"
+
+    expect(isPickable(item(debugSweep, 0))).toBe(false)
+    expect(isPickable(item(stop, 0))).toBe(false)
+
+    const current = [
+      item(smtp, 0),
+      item(debugSweep, 0),
+      item(stop, 0),
+      item(caniuse, 0),
+    ]
+    const { pick } = topPickItem(current, [])
+    expect(pick?.text).toBe(caniuse)
+  })
 })
 
 describe("rankItem production regex", () => {
@@ -131,7 +154,14 @@ describe("isDeployMetaItem", () => {
     expect(isDeployMetaItem("Next merge: claude/lane-docs (mailbox IMAP scout docs).")).toBe(true)
     expect(isDeployMetaItem("Ops: Cursor Automations + Vercel creds.")).toBe(true)
     expect(isDeployMetaItem("CATCH-UP MODE: draining integrator")).toBe(true)
+    expect(isDeployMetaItem("STOP without committing unless a new money/tenancy hole turns up.")).toBe(true)
+    expect(
+      isDeployMetaItem(
+        "Debug-sweep this cycle found no new product money UPDATE-without-RETURNING or unpinned hub.* joins."
+      )
+    ).toBe(true)
     expect(isDeployMetaItem("wire comdata cron sync")).toBe(false)
+    expect(isDeployMetaItem("invoice cents rounding is off by one")).toBe(false)
   })
 
   it("skips branch-inventory meta so TOP PICK falls through to shippable work", () => {
