@@ -20,6 +20,13 @@
  * gate) fails a test instead of quietly disarming the gate.
  *
  * Shared by vitest (`src/lib/__tests__/typecheck-hook-guard.test.ts`).
+ *
+ * A second gap (same day): Cursor / Claude agent images install with
+ * `npm ci --ignore-scripts`, so `prepare` never runs and the hook never
+ * arms. The routine preambles (`docs/cursor-agent-preamble.md`,
+ * `docs/claude-routine-preamble.md`) must tell agents to run
+ * `npm run hooks:install` at the start of every run — otherwise the
+ * ignore-scripts path stays unprotected between drains.
  */
 
 // The hook must actually invoke the gate — not `tsc` directly, which skips the
@@ -65,6 +72,24 @@ export function checkHookInstall(packageJson) {
   const prepare = packageJson?.scripts?.prepare ?? ""
   if (!/install-git-hooks|hooks:install|core\.hooksPath/.test(prepare)) {
     reasons.push("package.json has no `prepare` script installing the hooks path — a fresh clone would never run .githooks/pre-push")
+  }
+  return { ok: reasons.length === 0, reasons }
+}
+
+/**
+ * Agents that `npm ci --ignore-scripts` never run `prepare`. The pasted
+ * routine preambles are the only start-of-run checklist those agents follow,
+ * so they must mention `hooks:install`.
+ *
+ * @param {string} preambleText raw contents of a routine preamble
+ * @returns {{ ok: boolean, reasons: string[] }}
+ */
+export function checkPreambleArmsHook(preambleText) {
+  const reasons = []
+  if (!/hooks:install/.test(preambleText)) {
+    reasons.push(
+      "preamble does not mention hooks:install — agents using npm ci --ignore-scripts never arm .githooks/pre-push",
+    )
   }
   return { ok: reasons.length === 0, reasons }
 }

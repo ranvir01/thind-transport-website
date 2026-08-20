@@ -17,6 +17,7 @@ thing keeping you out of each other's way.
 ```bash
 npm run git:identity      # commit as the owner, not as Cursor
 git pull
+npm run hooks:install     # core.hooksPath=.githooks — npm ci --ignore-scripts skips prepare
 npm run agent:status      # integrator vs main drift — is the fleet in catch-up mode?
 npm run agent:branches    # what is already pending and unmerged
 ```
@@ -53,7 +54,8 @@ in three days. This is the only lock the fleet has.
 
 This agent runs on Cursor's default machine with dependencies installed the CI way
 (`npm ci --ignore-scripts` + `npm rebuild bcrypt sharp`), so there is **no browser and no Go/Rust
-toolchain**. `npm run design-qa`, `qa:a11y`, `js-budget`, `qa:lighthouse` and
+toolchain**, and `prepare` never arms `.githooks/pre-push`. That is why Start of every run
+includes `npm run hooks:install`. `npm run design-qa`, `qa:a11y`, `js-budget`, `qa:lighthouse` and
 `npm run test:sidecars` will not run here. If your change needs one
 of those gates, finish the code, say so with a `[needs-browser]` or `[needs-sidecars]` tag in
 `Backlog:`, and leave the gate to CI or a local run. Do not weaken a gate, lower a ratchet, or skip a

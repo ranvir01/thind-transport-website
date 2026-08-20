@@ -3,6 +3,7 @@ import { readFileSync, statSync } from "node:fs"
 import path from "node:path"
 import {
   checkHookInstall,
+  checkPreambleArmsHook,
   checkPrePushHook,
 } from "../../../scripts/typecheck-hook-guard.mjs"
 
@@ -74,6 +75,20 @@ describe("checkHookInstall", () => {
   })
 })
 
+describe("checkPreambleArmsHook", () => {
+  it("accepts a preamble that tells agents to run hooks:install", () => {
+    expect(
+      checkPreambleArmsHook("npm run hooks:install     # core.hooksPath=.githooks"),
+    ).toEqual({ ok: true, reasons: [] })
+  })
+
+  it("flags a preamble that never mentions the install command", () => {
+    const result = checkPreambleArmsHook("npm run git:identity\ngit pull\nnpm run agent:status")
+    expect(result.ok).toBe(false)
+    expect(result.reasons.join(" ")).toMatch(/hooks:install/)
+  })
+})
+
 describe("the repo's own hook wiring", () => {
   it(".githooks/pre-push satisfies the guard", () => {
     const hook = readFileSync(path.join(REPO_ROOT, ".githooks/pre-push"), "utf8")
@@ -94,5 +109,13 @@ describe("the repo's own hook wiring", () => {
     expect(() =>
       statSync(path.join(REPO_ROOT, "scripts/typecheck-gate.mjs")),
     ).not.toThrow()
+  })
+
+  it.each([
+    "docs/cursor-agent-preamble.md",
+    "docs/claude-routine-preamble.md",
+  ])("%s tells ignore-scripts agents to arm the hook", (rel) => {
+    const text = readFileSync(path.join(REPO_ROOT, rel), "utf8")
+    expect(checkPreambleArmsHook(text)).toEqual({ ok: true, reasons: [] })
   })
 })

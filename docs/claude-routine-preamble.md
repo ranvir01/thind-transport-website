@@ -12,6 +12,16 @@ Cursor agents are working this same repo in parallel and cannot see your session
 theirs. The commit body is the only channel between you — read recent ones before starting, and
 leave yours readable.
 
+## Start of every run
+
+```bash
+npm run git:identity      # commit as the owner, not as the agent
+git pull
+npm run hooks:install     # core.hooksPath=.githooks — npm ci --ignore-scripts skips prepare
+npm run agent:status
+npm run agent:branches
+```
+
 ## Where to push
 
 **Preferred:** the lane branch for your territory, e.g. `claude/lane-compliance`.
