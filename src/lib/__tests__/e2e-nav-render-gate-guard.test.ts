@@ -87,9 +87,9 @@ const WAIT_FOR_PATH_COPY: Record<string, string> = {
  * already in the chrome, so waitForText on "Settlements" / "Invoices" /
  * "Planner" / "Advances" / "Expenses" / "Messages" / "Compliance" / "Fuel" /
  * "Drivers" / "Fleet" / "Dispatch" / "Loads" / "Customers" / "Safety" /
- * "Tasks" / "Reports" is not a render gate. (Fuel's nav label is "Fuel &
- * cards"; waitForText "Fuel" still matches that chrome immediately via
- * substring.)
+ * "Tasks" / "Reports" / "Driver leads" is not a render gate. (Fuel's nav
+ * label is "Fuel & cards"; waitForText "Fuel" still matches that chrome
+ * immediately via substring. Leads' title is the nav label "Driver leads".)
  */
 const HARD_GOTO_COPY: Record<string, string> = {
   "/hub/money/settlements": "Weekly driver pay",
@@ -108,10 +108,12 @@ const HARD_GOTO_COPY: Record<string, string> = {
   "/hub/safety": "flow to the register automatically",
   "/hub/tasks": "minus the sticky notes",
   "/hub/reports": "Per-truck P&L",
+  // Both subtitle variants (fresh vs empty) contain this; title "Driver leads" is the nav label.
+  "/hub/leads": "the website",
 }
 
 const HARD_GOTO_PATH_RE =
-  /\.goto\([^\n]*(\/hub\/money\/settlements|\/hub\/money\/invoices|\/hub\/planner|\/hub\/money\/advances|\/hub\/money\/expenses|\/hub\/messages|\/hub\/compliance|\/hub\/fuel|\/hub\/drivers|\/hub\/fleet|\/hub\/dispatch|\/hub\/loads|\/hub\/customers|\/hub\/safety|\/hub\/tasks|\/hub\/reports)(?![/\w])/
+  /\.goto\([^\n]*(\/hub\/money\/settlements|\/hub\/money\/invoices|\/hub\/planner|\/hub\/money\/advances|\/hub\/money\/expenses|\/hub\/messages|\/hub\/compliance|\/hub\/fuel|\/hub\/drivers|\/hub\/fleet|\/hub\/dispatch|\/hub\/loads|\/hub\/customers|\/hub\/safety|\/hub\/tasks|\/hub\/reports|\/hub\/leads)(?![/\w])/
 
 /** A hard navigation resets the state — page.goto awaits the destination itself. */
 const HARD_NAV = /\.goto\(/
@@ -297,7 +299,7 @@ describe("e2e soft-nav landing gates wait for render before reading", () => {
         misses.push(`${f}:${i + 1} goto ${pathMatch[1]} never waits for "${copy}"`)
       })
     }
-    expect(gates, "guard is not silently vacuous").toBeGreaterThanOrEqual(89)
+    expect(gates, "guard is not silently vacuous").toBeGreaterThanOrEqual(91)
     expect(misses).toEqual([])
   })
 
