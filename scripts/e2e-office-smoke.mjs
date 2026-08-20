@@ -50,6 +50,7 @@ async function main() {
 
   console.log("4. Office: add + complete a recurring task")
   await office.goto(`${BASE}/hub/tasks`, { waitUntil: "networkidle2" })
+  await waitForText(office, "minus the sticky notes")
   await office.type('input[aria-label="New task"]', "Morning ops huddle checklist")
   await clickByText(office, "", { tag: 'button[aria-label="More options"]' })
   await office.select('select[aria-label="Repeats"]', "weekdays")

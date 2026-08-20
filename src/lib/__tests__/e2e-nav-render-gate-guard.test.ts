@@ -86,9 +86,10 @@ const WAIT_FOR_PATH_COPY: Record<string, string> = {
  * "networkidle2"` still races the streamed body — the nav-bar label is
  * already in the chrome, so waitForText on "Settlements" / "Invoices" /
  * "Planner" / "Advances" / "Expenses" / "Messages" / "Compliance" / "Fuel" /
- * "Drivers" / "Fleet" / "Dispatch" / "Loads" / "Customers" is not a render
- * gate. (Fuel's nav label is "Fuel & cards"; waitForText "Fuel" still
- * matches that chrome immediately via substring.)
+ * "Drivers" / "Fleet" / "Dispatch" / "Loads" / "Customers" / "Safety" /
+ * "Tasks" / "Reports" is not a render gate. (Fuel's nav label is "Fuel &
+ * cards"; waitForText "Fuel" still matches that chrome immediately via
+ * substring.)
  */
 const HARD_GOTO_COPY: Record<string, string> = {
   "/hub/money/settlements": "Weekly driver pay",
@@ -104,10 +105,13 @@ const HARD_GOTO_COPY: Record<string, string> = {
   "/hub/dispatch": "Every active load, booking to POD.",
   "/hub/loads": "Search, filter, and manage every load.",
   "/hub/customers": "Brokers and shippers — your book of business.",
+  "/hub/safety": "flow to the register automatically",
+  "/hub/tasks": "minus the sticky notes",
+  "/hub/reports": "Per-truck P&L",
 }
 
 const HARD_GOTO_PATH_RE =
-  /\.goto\([^\n]*(\/hub\/money\/settlements|\/hub\/money\/invoices|\/hub\/planner|\/hub\/money\/advances|\/hub\/money\/expenses|\/hub\/messages|\/hub\/compliance|\/hub\/fuel|\/hub\/drivers|\/hub\/fleet|\/hub\/dispatch|\/hub\/loads|\/hub\/customers)(?![/\w])/
+  /\.goto\([^\n]*(\/hub\/money\/settlements|\/hub\/money\/invoices|\/hub\/planner|\/hub\/money\/advances|\/hub\/money\/expenses|\/hub\/messages|\/hub\/compliance|\/hub\/fuel|\/hub\/drivers|\/hub\/fleet|\/hub\/dispatch|\/hub\/loads|\/hub\/customers|\/hub\/safety|\/hub\/tasks|\/hub\/reports)(?![/\w])/
 
 /** A hard navigation resets the state — page.goto awaits the destination itself. */
 const HARD_NAV = /\.goto\(/
@@ -267,9 +271,14 @@ describe("e2e soft-nav landing gates wait for render before reading", () => {
         for (let j = i + 1; j < lines.length; j++) {
           const l = lines[j]
           // Driver-blocked gotos must bounce — they never see office subtitles.
-          // A later hard nav, a leaving-path wait, or textGone of office copy
-          // is the bounce, not a missed render gate.
+          // A later hard nav, a leaving-path wait, a textGone of office copy,
+          // or a waitForPath onto a DIFFERENT path is the bounce, not a missed
+          // render gate. (The waitForPath landing then carries its own
+          // destination-copy requirement — see the redirect-smokes test above,
+          // which is what /hub/reports and /hub/tasks driver blocks rely on.)
           if (HARD_NAV.test(l) || LEAVING_GATE.test(l) || /\btextGone\(/.test(l)) return
+          const bounce = /waitForPath\(\s*[\w$]+\s*,\s*"([^"]+)"/.exec(l)
+          if (bounce && bounce[1] !== pathMatch[1]) return
           if (isContentRead(l)) {
             misses.push(
               `${f}:${i + 1} goto ${pathMatch[1]} has no waitForText("${copy}") before a read`
@@ -288,7 +297,7 @@ describe("e2e soft-nav landing gates wait for render before reading", () => {
         misses.push(`${f}:${i + 1} goto ${pathMatch[1]} never waits for "${copy}"`)
       })
     }
-    expect(gates, "guard is not silently vacuous").toBeGreaterThanOrEqual(75)
+    expect(gates, "guard is not silently vacuous").toBeGreaterThanOrEqual(89)
     expect(misses).toEqual([])
   })
 
