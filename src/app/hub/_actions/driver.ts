@@ -170,6 +170,7 @@ export async function driverUploadDocument(formData: FormData): Promise<Result> 
 
     // OS&D on a POD: flag the load and open a draft cargo claim right now —
     // a noted exception starts the claim clock at the moment of capture.
+    let claimId: string | null = null
     if (osd && kind === "pod") {
       await query(
         `UPDATE hub.loads SET osd_flagged = TRUE, updated_at = NOW() WHERE carrier_id = $1 AND id = $2`,
@@ -178,14 +179,16 @@ export async function driverUploadDocument(formData: FormData): Promise<Result> 
       await addLoadEvent(user.carrierId, loadId, "exception", {
         osd: true, by: user.name, note: "Driver noted exceptions on the POD (OS&D)",
       }, { id: user.id, name: user.name })
-      await query(
+      const claimRows = await query<{ id: string }>(
         `INSERT INTO hub.claims (carrier_id, load_id, kind, status, filing_deadline, notes)
          SELECT $1, $2, 'cargo', 'open',
            (COALESCE(MAX(s.departed_at), MAX(s.arrived_at), NOW())::date + INTERVAL '9 months')::date,
            'Draft claim auto-opened: driver noted OS&D exceptions on the POD.'
-         FROM hub.stops s WHERE s.carrier_id = $1 AND s.load_id = $2 AND s.type = 'delivery'`,
+         FROM hub.stops s WHERE s.carrier_id = $1 AND s.load_id = $2 AND s.type = 'delivery'
+         RETURNING id`,
         [user.carrierId, loadId]
       )
+      claimId = claimRows[0]?.id ?? null
     }
 
     // Receipts with an amount become reimbursable expenses for office review.
@@ -226,15 +229,31 @@ export async function driverUploadDocument(formData: FormData): Promise<Result> 
     }
 
     const full = await getLoad(user.carrierId, loadId)
-    await notifyRoles(user.carrierId, ["owner", "dispatcher", "accountant"], {
-      kind: "driver_document",
-      title: osd
-        ? `⚠ ${full?.reference ?? "Load"} — POD with OS&D exceptions from ${user.name} (draft claim opened)`
-        : `${full?.reference ?? "Load"} — ${user.name} sent the ${kind.toUpperCase()}`,
-      link: `/hub/loads/${loadId}`,
-    })
+    const reference = full?.reference ?? "Load"
+    // Lead with "Draft claim opened" — the previous title started with the
+    // load reference and buried the claim in a trailing parenthetical, so the
+    // bell's first line (and e2e-safety-smoke) showed THD- without the words
+    // the office actually needs. Dispatcher/accountant both have
+    // compliance:read, so the claims detail is a legal landing for every
+    // role this notify hits; fall back to the load if RETURNING missed.
+    await notifyRoles(user.carrierId, ["owner", "dispatcher", "accountant"], (osd && kind === "pod")
+      ? {
+          kind: "claim",
+          title: `Draft claim opened — ${reference}`,
+          body: `POD with OS&D exceptions from ${user.name}. Carmack filing clock is running.`,
+          link: claimId ? `/hub/safety/claims/${claimId}` : `/hub/loads/${loadId}`,
+        }
+      : {
+          kind: "driver_document",
+          title: `${reference} — ${user.name} sent the ${kind.toUpperCase()}`,
+          link: `/hub/loads/${loadId}`,
+        })
     revalidatePath("/hub/driver")
     revalidatePath(`/hub/loads/${loadId}`)
+    if (claimId) {
+      revalidatePath("/hub/safety/claims")
+      revalidatePath(`/hub/safety/claims/${claimId}`)
+    }
     return { ok: true, id: doc.id }
   } catch (err) {
     return actionError(err, "Upload failed — try again when you have signal")

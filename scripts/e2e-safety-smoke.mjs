@@ -254,10 +254,20 @@ async function main() {
   await page.goto(`${BASE}/hub`, { waitUntil: "networkidle2" })
   await page.waitForSelector('button[aria-label^="Notifications"]', { timeout: 20000 })
   await page.click('button[aria-label^="Notifications"]')
+  // Read the bell's own panel, not document.body — /hub's dashboard already
+  // prints THD- load refs, so a body-wide check passed the load-reference
+  // assertion even when the feed never mentioned the claim.
+  const panelText = () => page.evaluate(() => {
+    const btn = document.querySelector('button[aria-label^="Notifications"]')
+    return btn?.parentElement?.innerText ?? ""
+  })
   await page
-    .waitForFunction(() => document.body.innerText.toLowerCase().includes("draft claim"), { timeout: 20000 })
+    .waitForFunction(() => {
+      const btn = document.querySelector('button[aria-label^="Notifications"]')
+      return (btn?.parentElement?.innerText ?? "").toLowerCase().includes("draft claim")
+    }, { timeout: 20000 })
     .catch(() => {})
-  const notify = await page.evaluate(() => document.body.innerText)
+  const notify = await panelText()
   check(notify.toLowerCase().includes("draft claim"), "notification mentions the draft claim opened from OS&D POD")
   check(notify.includes("THD-"), "notification references the load")
   await shot(page, "06-draft-claim-notification")
