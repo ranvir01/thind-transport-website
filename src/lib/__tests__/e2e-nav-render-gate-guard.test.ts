@@ -98,7 +98,9 @@ const WAIT_FOR_PATH_COPY: Record<string, string> = {
  * the loading skeleton. Settings users' nav label is "Settings"; packet's is
  * "Carrier packet"; app's is "Phone app"; integrations' is "Integrations".
  * The settings index and pay-rules/pricebook/branding still type or query
- * the DOM after goto against the loading skeleton.)
+ * the DOM after goto against the loading skeleton. Tolls' title is "Tolls";
+ * e2e-tolls-smoke then waits on the KPI label "Toll spend" and reads the
+ * unassigned inbox against the loading skeleton.)
  */
 const HARD_GOTO_COPY: Record<string, string> = {
   "/hub/money/settlements": "Weekly driver pay",
@@ -109,6 +111,10 @@ const HARD_GOTO_COPY: Record<string, string> = {
   "/hub/messages/announcements": "proof everyone saw them",
   "/hub/messages": "Every driver conversation in one place",
   "/hub/compliance": "CDLs, med cards",
+  // Nested tolls path before /hub/fuel so the fuel index still maps to its
+  // own subtitle. Title "Tolls" is not a nav label, but the KPI "Toll spend"
+  // mounts with the streamed body — wait for the page subtitle.
+  "/hub/fuel/tolls": "Last 92 days from every transponder statement.",
   "/hub/fuel": "Last 92 days across every card program.",
   "/hub/drivers": "Roster, pay setup, and qualification files.",
   "/hub/fleet": "Trucks, trailers, and their paperwork.",
@@ -139,7 +145,7 @@ const HARD_GOTO_COPY: Record<string, string> = {
 }
 
 const HARD_GOTO_PATH_RE =
-  /\.goto\([^\n]*(\/hub\/money\/settlements|\/hub\/money\/invoices|\/hub\/planner|\/hub\/money\/advances|\/hub\/money\/expenses|\/hub\/messages\/announcements|\/hub\/messages|\/hub\/compliance|\/hub\/fuel|\/hub\/drivers|\/hub\/fleet|\/hub\/dispatch|\/hub\/loadboard|\/hub\/loads|\/hub\/customers|\/hub\/safety|\/hub\/tasks|\/hub\/reports|\/hub\/leads|\/hub\/import|\/hub\/sandbox|\/hub\/settings\/users|\/hub\/settings\/branding|\/hub\/settings\/packet|\/hub\/settings\/app|\/hub\/settings\/pay-rules|\/hub\/settings\/pricebook|\/hub\/settings\/integrations|\/hub\/settings)(?![/\w])/
+  /\.goto\([^\n]*(\/hub\/money\/settlements|\/hub\/money\/invoices|\/hub\/planner|\/hub\/money\/advances|\/hub\/money\/expenses|\/hub\/messages\/announcements|\/hub\/messages|\/hub\/compliance|\/hub\/fuel\/tolls|\/hub\/fuel|\/hub\/drivers|\/hub\/fleet|\/hub\/dispatch|\/hub\/loadboard|\/hub\/loads|\/hub\/customers|\/hub\/safety|\/hub\/tasks|\/hub\/reports|\/hub\/leads|\/hub\/import|\/hub\/sandbox|\/hub\/settings\/users|\/hub\/settings\/branding|\/hub\/settings\/packet|\/hub\/settings\/app|\/hub\/settings\/pay-rules|\/hub\/settings\/pricebook|\/hub\/settings\/integrations|\/hub\/settings)(?![/\w])/
 
 /** A hard navigation resets the state — page.goto awaits the destination itself. */
 const HARD_NAV = /\.goto\(/
@@ -325,7 +331,7 @@ describe("e2e soft-nav landing gates wait for render before reading", () => {
         misses.push(`${f}:${i + 1} goto ${pathMatch[1]} never waits for "${copy}"`)
       })
     }
-    expect(gates, "guard is not silently vacuous").toBeGreaterThanOrEqual(120)
+    expect(gates, "guard is not silently vacuous").toBeGreaterThanOrEqual(122)
     expect(misses).toEqual([])
   })
 
