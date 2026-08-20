@@ -29,6 +29,9 @@ try {
     console.log("1. Owner opens branding settings")
     await login(page, "owner@demo.thind")
     await page.goto(`${BASE}/hub/settings/branding`, { waitUntil: "networkidle2" })
+    // Title "Branding" is not a nav label, but the color input can still
+    // mount against the loading skeleton — wait for the page subtitle.
+    await waitForText(page, "Your accent color on invoices")
     check(await waitForText(page, "Branding").then(() => true).catch(() => false), "branding page renders")
     await shot(page, "01-branding")
 
@@ -82,6 +85,8 @@ try {
     console.log("2. Dispatcher is bounced off branding settings (owner only)")
     await login(page, "dispatch@demo.thind")
     await page.goto(`${BASE}/hub/settings/branding`, { waitUntil: "networkidle2" })
+    // Owner-only: bounce is leaving-path, not office subtitle.
+    await page.waitForFunction(() => !location.pathname.startsWith("/hub/settings/branding"))
     const path = await page.evaluate(() => location.pathname)
     check(path !== "/hub/settings/branding", `dispatcher redirected away (landed on ${path})`)
     await shot(page, "05-dispatcher-bounced")
@@ -100,6 +105,8 @@ try {
     console.log("3. Office user opens carrier packet")
     await login(page, "accounting@demo.thind")
     await page.goto(`${BASE}/hub/settings/packet`, { waitUntil: "networkidle2" })
+    // Nav label is "Carrier packet" — wait for the page subtitle.
+    await waitForText(page, "stored once, sent in one click")
     check(await waitForText(page, "Carrier packet").then(() => true).catch(() => false), "packet page renders")
     check(await waitForText(page, "COI").then(() => true).catch(() => false), "COI request panel present")
     await shot(page, "06-packet")
@@ -120,6 +127,8 @@ try {
     console.log("4. Office user opens phone-app settings (1440px)")
     await login(page, "owner@demo.thind")
     await page.goto(`${BASE}/hub/settings/app`, { waitUntil: "networkidle2" })
+    // Nav label is "Phone app" — wait for the page subtitle.
+    await waitForText(page, "No app store needed")
     check(await waitForText(page, "Install").then(() => true).catch(() => false), "install panel present")
     check(await waitForText(page, "alerts").then(() => true).catch(() => false), "push-alerts panel present")
     await shot(page, "07-app-1440")
@@ -148,6 +157,9 @@ try {
     console.log("5. Owner builds a custom driver pay program")
     await login(page, "owner@demo.thind")
     await page.goto(`${BASE}/hub/settings/pay-rules`, { waitUntil: "domcontentloaded" })
+    // Title "Driver pay" is in the header before the editor mounts — wait
+    // for the subtitle before typing a program name.
+    await waitForText(page, "Used by every settlement drafted from here on")
     check(await waitForText(page, "Driver pay").then(() => true).catch(() => false), "pay-rules page renders")
     check(await waitForText(page, "Harpreet").then(() => true).catch(() => false), "drivers listed with their program")
     await shot(page, "08-pay-rules")

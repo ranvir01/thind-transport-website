@@ -95,7 +95,10 @@ const WAIT_FOR_PATH_COPY: Record<string, string> = {
  * because the composer `#ann-title` can type against the loading skeleton.
  * Sandbox's nav label is "Practice mode"; the picker still isn't a render
  * gate because e2e-sandbox-sim-smoke clicks "Reset sandbox" / a seat against
- * the loading skeleton.)
+ * the loading skeleton. Settings users' nav label is "Settings"; packet's is
+ * "Carrier packet"; app's is "Phone app"; integrations' is "Integrations".
+ * The settings index and pay-rules/pricebook/branding still type or query
+ * the DOM after goto against the loading skeleton.)
  */
 const HARD_GOTO_COPY: Record<string, string> = {
   "/hub/money/settlements": "Weekly driver pay",
@@ -122,10 +125,21 @@ const HARD_GOTO_COPY: Record<string, string> = {
   // Nav label is "Practice mode"; title "Run the whole company." also lives on the
   // marketing demo. Body copy is unique to the picker.
   "/hub/sandbox": "A real trucking company lives in here",
+  // Nested settings paths before /hub/settings so the index still maps to its
+  // own subtitle. Users' nav label is "Settings"; packet/app/integrations
+  // titles are also nav labels.
+  "/hub/settings/users": "alert emails, and who can sign in",
+  "/hub/settings/branding": "Your accent color on invoices",
+  "/hub/settings/packet": "stored once, sent in one click",
+  "/hub/settings/app": "No app store needed",
+  "/hub/settings/pay-rules": "Used by every settlement drafted from here on",
+  "/hub/settings/pricebook": "Defaults offered when booking",
+  "/hub/settings/integrations": "CSV import as the always-working fallback",
+  "/hub/settings": "Company configuration, connections, and shared documents.",
 }
 
 const HARD_GOTO_PATH_RE =
-  /\.goto\([^\n]*(\/hub\/money\/settlements|\/hub\/money\/invoices|\/hub\/planner|\/hub\/money\/advances|\/hub\/money\/expenses|\/hub\/messages\/announcements|\/hub\/messages|\/hub\/compliance|\/hub\/fuel|\/hub\/drivers|\/hub\/fleet|\/hub\/dispatch|\/hub\/loadboard|\/hub\/loads|\/hub\/customers|\/hub\/safety|\/hub\/tasks|\/hub\/reports|\/hub\/leads|\/hub\/import|\/hub\/sandbox)(?![/\w])/
+  /\.goto\([^\n]*(\/hub\/money\/settlements|\/hub\/money\/invoices|\/hub\/planner|\/hub\/money\/advances|\/hub\/money\/expenses|\/hub\/messages\/announcements|\/hub\/messages|\/hub\/compliance|\/hub\/fuel|\/hub\/drivers|\/hub\/fleet|\/hub\/dispatch|\/hub\/loadboard|\/hub\/loads|\/hub\/customers|\/hub\/safety|\/hub\/tasks|\/hub\/reports|\/hub\/leads|\/hub\/import|\/hub\/sandbox|\/hub\/settings\/users|\/hub\/settings\/branding|\/hub\/settings\/packet|\/hub\/settings\/app|\/hub\/settings\/pay-rules|\/hub\/settings\/pricebook|\/hub\/settings\/integrations|\/hub\/settings)(?![/\w])/
 
 /** A hard navigation resets the state — page.goto awaits the destination itself. */
 const HARD_NAV = /\.goto\(/
@@ -311,7 +325,7 @@ describe("e2e soft-nav landing gates wait for render before reading", () => {
         misses.push(`${f}:${i + 1} goto ${pathMatch[1]} never waits for "${copy}"`)
       })
     }
-    expect(gates, "guard is not silently vacuous").toBeGreaterThanOrEqual(101)
+    expect(gates, "guard is not silently vacuous").toBeGreaterThanOrEqual(120)
     expect(misses).toEqual([])
   })
 

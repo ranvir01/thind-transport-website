@@ -118,6 +118,8 @@ async function main() {
   console.log("1. Owner opens Settings → Integrations, Docs mailbox card is disconnected")
   await login(page, "owner@demo.thind")
   await page.goto(`${BASE}/hub/settings/integrations`, { waitUntil: "networkidle2" })
+  // Nav label is "Integrations" — wait for the page subtitle before reading cards.
+  await waitForText(page, "CSV import as the always-working fallback")
   await waitForText(page, "Docs mailbox")
 
   // Fail fast when the server can't store credentials at all — without this,
@@ -228,6 +230,7 @@ async function main() {
 
   console.log("7. The failed attempt lands in Sync history as a failed mailbox row")
   await page.goto(`${BASE}/hub/settings/integrations`, { waitUntil: "networkidle2" })
+  await waitForText(page, "CSV import as the always-working fallback")
   await waitForText(page, "Sync history")
   const failedRow = await page.evaluate(() => {
     const sources = [...document.querySelectorAll("span > span.font-semibold")]
