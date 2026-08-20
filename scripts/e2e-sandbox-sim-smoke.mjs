@@ -32,6 +32,7 @@ import {
   makeShot,
   realConsoleErrors,
   textAppears,
+  waitForText,
 } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-sandbox-sim"
@@ -103,6 +104,9 @@ async function main() {
   // ---- 1 · Reset from the public picker: fresh pacing, fresh sim epoch ----
   console.log("— reset —")
   await page.goto(`${BASE}/hub/sandbox`, { waitUntil: "networkidle2" })
+  // Nav label is "Practice mode"; clickByText("Reset sandbox") can still fire
+  // against the loading skeleton — wait for the picker body copy.
+  await waitForText(page, "A real trucking company lives in here")
   await clickByText(page, "Reset sandbox")
   check(await textAppears(page, "Sandbox reset", 120_000), "picker reset rebuilt the world")
 
@@ -293,6 +297,7 @@ async function main() {
     if (msg.type() === "error") safetyErrors.push(msg.text())
   })
   await safety.goto(`${BASE}/hub/sandbox`, { waitUntil: "networkidle2" })
+  await waitForText(safety, "A real trucking company lives in here")
   await clickByText(safety, "Safety manager")
   await safety.waitForFunction(() => location.pathname === "/hub/safety", { timeout: 45_000 })
   check(await textAppears(safety, "Work a live shift", 30_000), "safety seat offers a shift")
@@ -311,6 +316,7 @@ async function main() {
   const driver = await browser.newPage()
   await driver.setViewport({ width: 390, height: 844 })
   await driver.goto(`${BASE}/hub/sandbox`, { waitUntil: "networkidle2" })
+  await waitForText(driver, "A real trucking company lives in here")
   await clickByText(driver, "Company driver")
   await driver.waitForFunction(() => location.pathname === "/hub/driver", { timeout: 45_000 })
   check(await textAppears(driver, "BRH-", 30_000), "driver home shows the live load")
