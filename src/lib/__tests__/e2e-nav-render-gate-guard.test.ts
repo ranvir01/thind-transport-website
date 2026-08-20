@@ -90,7 +90,9 @@ const WAIT_FOR_PATH_COPY: Record<string, string> = {
  * "Tasks" / "Reports" / "Driver leads" / "Import" / "Load board" is not a
  * render gate. (Fuel's nav label is "Fuel & cards"; waitForText "Fuel"
  * still matches that chrome immediately via substring. Leads' title is the
- * nav label "Driver leads". Load board's title is the nav label.)
+ * nav label "Driver leads". Load board's title is the nav label.
+ * Announcements is not a nav item; its title still isn't a render gate
+ * because the composer `#ann-title` can type against the loading skeleton.)
  */
 const HARD_GOTO_COPY: Record<string, string> = {
   "/hub/money/settlements": "Weekly driver pay",
@@ -98,6 +100,7 @@ const HARD_GOTO_COPY: Record<string, string> = {
   "/hub/planner": "A truck's whole week at a glance",
   "/hub/money/advances": "Cash and EFS-code advances",
   "/hub/money/expenses": "Reimbursables flow to settlements",
+  "/hub/messages/announcements": "proof everyone saw them",
   "/hub/messages": "Every driver conversation in one place",
   "/hub/compliance": "CDLs, med cards",
   "/hub/fuel": "Last 92 days across every card program.",
@@ -116,7 +119,7 @@ const HARD_GOTO_COPY: Record<string, string> = {
 }
 
 const HARD_GOTO_PATH_RE =
-  /\.goto\([^\n]*(\/hub\/money\/settlements|\/hub\/money\/invoices|\/hub\/planner|\/hub\/money\/advances|\/hub\/money\/expenses|\/hub\/messages|\/hub\/compliance|\/hub\/fuel|\/hub\/drivers|\/hub\/fleet|\/hub\/dispatch|\/hub\/loadboard|\/hub\/loads|\/hub\/customers|\/hub\/safety|\/hub\/tasks|\/hub\/reports|\/hub\/leads|\/hub\/import)(?![/\w])/
+  /\.goto\([^\n]*(\/hub\/money\/settlements|\/hub\/money\/invoices|\/hub\/planner|\/hub\/money\/advances|\/hub\/money\/expenses|\/hub\/messages\/announcements|\/hub\/messages|\/hub\/compliance|\/hub\/fuel|\/hub\/drivers|\/hub\/fleet|\/hub\/dispatch|\/hub\/loadboard|\/hub\/loads|\/hub\/customers|\/hub\/safety|\/hub\/tasks|\/hub\/reports|\/hub\/leads|\/hub\/import)(?![/\w])/
 
 /** A hard navigation resets the state — page.goto awaits the destination itself. */
 const HARD_NAV = /\.goto\(/
@@ -302,7 +305,7 @@ describe("e2e soft-nav landing gates wait for render before reading", () => {
         misses.push(`${f}:${i + 1} goto ${pathMatch[1]} never waits for "${copy}"`)
       })
     }
-    expect(gates, "guard is not silently vacuous").toBeGreaterThanOrEqual(96)
+    expect(gates, "guard is not silently vacuous").toBeGreaterThanOrEqual(98)
     expect(misses).toEqual([])
   })
 

@@ -23,6 +23,9 @@ async function main() {
 
   console.log("2. Office: send ack-required announcement")
   await office.goto(`${BASE}/hub/messages/announcements`, { waitUntil: "networkidle2" })
+  // Title "Announcements" is the page heading, not a nav label, but #ann-title
+  // can still type against the loading skeleton — wait for the subtitle.
+  await waitForText(office, "proof everyone saw them")
   await office.type("#ann-title", "Winter chain policy")
   await office.type("#ann-body", "Chains required over Snoqualmie starting Nov 1. Check your kit before every run.")
   await clickByText(office, "Send announcement")
@@ -116,6 +119,7 @@ async function main() {
 
   console.log("7. Office: ack report shows 100% for drivers... checking")
   await office.goto(`${BASE}/hub/messages/announcements`, { waitUntil: "networkidle2" })
+  await waitForText(office, "proof everyone saw them")
   await clickByText(office, "Winter chain policy", { tag: "a" })
   await waitForText(office, "Acknowledged (")
   await shot(office, "08-ack-report")
