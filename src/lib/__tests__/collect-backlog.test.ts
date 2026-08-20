@@ -77,4 +77,8 @@ describe("rankItem", () => {
     expect(money).toBeLessThan(flow)
     expect(flow).toBeLessThan(polish)
   })
+
+  it("does not treat a Vercel environment name as a production outage", () => {
+    expect(rankItem("rotate SMTP in Vercel Production")).toBe(rankItem("tweak button copy"))
+  })
 })
