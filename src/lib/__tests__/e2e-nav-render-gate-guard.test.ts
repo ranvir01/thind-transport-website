@@ -87,9 +87,10 @@ const WAIT_FOR_PATH_COPY: Record<string, string> = {
  * already in the chrome, so waitForText on "Settlements" / "Invoices" /
  * "Planner" / "Advances" / "Expenses" / "Messages" / "Compliance" / "Fuel" /
  * "Drivers" / "Fleet" / "Dispatch" / "Loads" / "Customers" / "Safety" /
- * "Tasks" / "Reports" / "Driver leads" is not a render gate. (Fuel's nav
- * label is "Fuel & cards"; waitForText "Fuel" still matches that chrome
- * immediately via substring. Leads' title is the nav label "Driver leads".)
+ * "Tasks" / "Reports" / "Driver leads" / "Import" / "Load board" is not a
+ * render gate. (Fuel's nav label is "Fuel & cards"; waitForText "Fuel"
+ * still matches that chrome immediately via substring. Leads' title is the
+ * nav label "Driver leads". Load board's title is the nav label.)
  */
 const HARD_GOTO_COPY: Record<string, string> = {
   "/hub/money/settlements": "Weekly driver pay",
@@ -103,6 +104,7 @@ const HARD_GOTO_COPY: Record<string, string> = {
   "/hub/drivers": "Roster, pay setup, and qualification files.",
   "/hub/fleet": "Trucks, trailers, and their paperwork.",
   "/hub/dispatch": "Every active load, booking to POD.",
+  "/hub/loadboard": "click any cell to edit",
   "/hub/loads": "Search, filter, and manage every load.",
   "/hub/customers": "Brokers and shippers — your book of business.",
   "/hub/safety": "flow to the register automatically",
@@ -110,10 +112,11 @@ const HARD_GOTO_COPY: Record<string, string> = {
   "/hub/reports": "Per-truck P&L",
   // Both subtitle variants (fresh vs empty) contain this; title "Driver leads" is the nav label.
   "/hub/leads": "the website",
+  "/hub/import": "map columns once, reuse forever",
 }
 
 const HARD_GOTO_PATH_RE =
-  /\.goto\([^\n]*(\/hub\/money\/settlements|\/hub\/money\/invoices|\/hub\/planner|\/hub\/money\/advances|\/hub\/money\/expenses|\/hub\/messages|\/hub\/compliance|\/hub\/fuel|\/hub\/drivers|\/hub\/fleet|\/hub\/dispatch|\/hub\/loads|\/hub\/customers|\/hub\/safety|\/hub\/tasks|\/hub\/reports|\/hub\/leads)(?![/\w])/
+  /\.goto\([^\n]*(\/hub\/money\/settlements|\/hub\/money\/invoices|\/hub\/planner|\/hub\/money\/advances|\/hub\/money\/expenses|\/hub\/messages|\/hub\/compliance|\/hub\/fuel|\/hub\/drivers|\/hub\/fleet|\/hub\/dispatch|\/hub\/loadboard|\/hub\/loads|\/hub\/customers|\/hub\/safety|\/hub\/tasks|\/hub\/reports|\/hub\/leads|\/hub\/import)(?![/\w])/
 
 /** A hard navigation resets the state — page.goto awaits the destination itself. */
 const HARD_NAV = /\.goto\(/
@@ -299,7 +302,7 @@ describe("e2e soft-nav landing gates wait for render before reading", () => {
         misses.push(`${f}:${i + 1} goto ${pathMatch[1]} never waits for "${copy}"`)
       })
     }
-    expect(gates, "guard is not silently vacuous").toBeGreaterThanOrEqual(91)
+    expect(gates, "guard is not silently vacuous").toBeGreaterThanOrEqual(96)
     expect(misses).toEqual([])
   })
 

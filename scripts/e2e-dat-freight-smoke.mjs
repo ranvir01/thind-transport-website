@@ -122,6 +122,8 @@ async function main() {
   console.log("1. Dispatcher sees the DAT panel on the load board, disconnected by default")
   await login(page, "dispatch@demo.thind")
   await page.goto(`${BASE}/hub/loadboard`, { waitUntil: "networkidle2" })
+  // Title "Load board" is the nav label — wait for the page subtitle.
+  await waitForText(page, "click any cell to edit")
   await waitForText(page, "External freight search")
   const disconnectedState = await page.evaluate(() => document.body.innerText)
   check(disconnectedState.includes("Connect DAT"), "loadboard shows the Connect DAT prompt before any credentials exist")
@@ -206,6 +208,7 @@ async function main() {
 
     console.log("4. Dispatcher's loadboard search panel opens now that DAT is connected")
     await page.goto(`${BASE}/hub/loadboard`, { waitUntil: "networkidle2" })
+    await waitForText(page, "click any cell to edit")
     const connectedState = await page.evaluate(() => document.body.innerText)
     check(!connectedState.includes("Connect DAT"), "Connect DAT prompt is gone once credentials are saved")
     await clickByText(page, "Search DAT")
