@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest"
 import {
   isDeployMetaItem,
+  isPickable,
   normalizeBullet,
   parseBacklogBullets,
+  rankItem,
   splitCurrentAndOlder,
   topPickItem,
 } from "../../scripts/collect-backlog.mjs"
@@ -90,6 +92,35 @@ describe("topPickItem", () => {
     const current = [item("CATCH-UP MODE: integrator 4 commits ahead", 0)]
     const { pick } = topPickItem(current, [])
     expect(pick).toBeNull()
+  })
+
+  it("skips hyphenated AGENT_INTEROP tags that the prose owner-regex misses", () => {
+    const smtp =
+      "[needs-owner] rotate Gmail app password and repaste SMTP_USER/SMTP_PASS in Vercel Production"
+    const browser = "[needs-browser] Confirm e2e-safety-smoke step 6 on a Chrome rig"
+    const sidecars = "[needs-sidecars] regenerate the Rust golden fixtures to match ifta.test.ts"
+    const blocked = "[blocked-by claude/lane-office] the token migration this depends on is unmerged there"
+    expect(isPickable(item(smtp, 0))).toBe(false)
+    expect(isPickable(item(browser, 0))).toBe(false)
+    expect(isPickable(item(sidecars, 0))).toBe(false)
+    expect(isPickable(item(blocked, 0))).toBe(false)
+
+    const current = [
+      item(smtp, 0),
+      item(browser, 0),
+      item("caniuse-lite is stale (cosmetic, lockfile-wide — own cycle)", 0),
+    ]
+    const { pick } = topPickItem(current, [])
+    expect(pick?.text).toContain("caniuse-lite")
+  })
+})
+
+describe("rankItem production regex", () => {
+  it("does not treat a Vercel environment name as a production outage", () => {
+    const smtp = "rotate Gmail app password and repaste SMTP_USER/SMTP_PASS in Vercel Production"
+    const polish = rankItem("tweak button copy")
+    expect(rankItem(smtp)).toBe(polish)
+    expect(rankItem("login fail on deploy")).toBeLessThan(polish)
   })
 })
 

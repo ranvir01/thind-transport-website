@@ -10,11 +10,21 @@ import { execSync } from "node:child_process"
 import { pathToFileURL } from "node:url"
 
 const PRIORITY = [
-  { key: "production", label: "Production-breaking", test: /prod(uction)?|breaking|deploy|outage|500|crash|login fail/i },
+  // Do not match a bare "Production" / "deploy" — "Vercel Production" and
+  // "pending deploy" are environment names, not outages. "login fail on deploy"
+  // still ranks here via "login fail".
+  {
+    key: "production",
+    label: "Production-breaking",
+    test: /production-breaking|prod(?:uction)?\s+(?:is\s+)?(?:down|broken|red)|deploy(?:ment)?\s+(?:fail|stall|broken)|outage|\b500s?\b|crash|login fail/i,
+  },
   { key: "money", label: "Money-correctness", test: /money|cent|invoice|settlement|ifta|pay rule|audit/i },
   { key: "workflow", label: "Daily-workflow friction", test: /workflow|dispatch|driver|load board|planner|UX|friction/i },
   { key: "polish", label: "Polish", test: /.*/ },
 ]
+
+/** AGENT_INTEROP §4 hand-off tags — not claimable by the deploy agent. */
+const HANDOFF_TAG_RE = /\[needs-(?:owner|browser|sidecars)\]|\[blocked-by\b/i
 
 // ASCII unit/record separators — cannot appear in commit subjects or bodies,
 // unlike "---", which collided with subjects and the ---END--- sentinel and
@@ -126,7 +136,7 @@ export function splitCurrentAndOlder(items) {
 
 export function rankItem(text) {
   // Fleet-configuration items need owner approval — never auto-pick for deploy agent.
-  if (/^owner:/i.test(text)) return PRIORITY.length - 1
+  if (/^owner:/i.test(text) || HANDOFF_TAG_RE.test(text)) return PRIORITY.length - 1
   // Stale catch-up / integrator state — never outrank real product backlog.
   if (isDeployMetaItem(text)) return PRIORITY.length - 1
 
@@ -136,7 +146,11 @@ export function rankItem(text) {
   return PRIORITY.length - 1
 }
 
-function isPickable(item) {
+export function isPickable(item) {
+  // Hyphenated AGENT_INTEROP tags (`[needs-owner]`) do not match
+  // `needs (the )?owner` — that miss is why SMTP-in-Vercel-Production
+  // was TOP PICK for every steady-state cycle.
+  if (HANDOFF_TAG_RE.test(item.text)) return false
   // "owner call on X" / "owner dashboard check" / "needs owner approval" block auto-pick.
   if (/owner (call|approval|decision|dashboard)|needs (the )?owner/i.test(item.text)) return false
   return !/^owner:/i.test(item.text) && !isDeployMetaItem(item.text)
