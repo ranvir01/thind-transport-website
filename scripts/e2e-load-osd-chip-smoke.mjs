@@ -116,6 +116,7 @@ async function main() {
 
   console.log("3. Office finds the new claim on Safety > Claims, follows it back to the load")
   await ownerPage.goto(`${BASE}/hub/safety/claims`, { waitUntil: "networkidle2" })
+  await waitForText(ownerPage, "Cargo, property, and injury claims")
   await waitForText(ownerPage, "Being worked")
   const claimHref = await ownerPage.evaluate(() =>
     [...document.querySelectorAll("a")]

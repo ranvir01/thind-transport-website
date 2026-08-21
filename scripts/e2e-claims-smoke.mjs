@@ -49,6 +49,7 @@ async function main() {
 
   console.log("2. Claims page renders its empty state")
   await page.goto(`${BASE}/hub/safety/claims`, { waitUntil: "networkidle2" })
+  await waitForText(page, "Cargo, property, and injury claims")
   check(await textAppears(page, "No claims on file"), "claims empty state renders")
   await shot(page, "02-claims-empty")
 
@@ -98,6 +99,7 @@ async function main() {
 
   console.log("6. Edit: mark the claim Filed — persists, stays in Being worked")
   await page.goto(`${BASE}/hub/safety/claims`, { waitUntil: "networkidle2" })
+  await waitForText(page, "Cargo, property, and injury claims")
   const detailHref = await page.evaluate(() =>
     [...document.querySelectorAll("a")]
       .map((a) => a.getAttribute("href") ?? "")
