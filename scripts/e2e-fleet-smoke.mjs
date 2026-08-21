@@ -73,7 +73,7 @@ async function main() {
 
   console.log("2. Add a truck")
   await page.goto(`${BASE}/hub/fleet/trucks/new`, { waitUntil: "networkidle2" })
-  await waitForText(page, "Add Truck")
+  await waitForText(page, "Paste the VIN and decode to fill the specs.")
   await page.type("#unit_number", TRUCK_UNIT)
   await page.type("#vin", "1XKAD49X1SJ430911")
   await page.type("#year", "2025")
@@ -162,7 +162,7 @@ async function main() {
 
   console.log("5. Duplicate unit number is rejected")
   await page.goto(`${BASE}/hub/fleet/trucks/new`, { waitUntil: "networkidle2" })
-  await waitForText(page, "Add Truck")
+  await waitForText(page, "Paste the VIN and decode to fill the specs.")
   await page.type("#unit_number", "101") // seeded unit
   await clickByText(page, "Add truck")
   await waitForText(page, "Unit number already exists")
@@ -182,7 +182,7 @@ async function main() {
   await waitForText(acctPage, `Trucks (${SEED_TRUCKS + 1})`)
   check(true, "accountant sees the fleet list (fleet:read)")
   await acctPage.goto(`${BASE}/hub/fleet/trucks/new`, { waitUntil: "networkidle2" })
-  await waitForText(acctPage, "Add Truck")
+  await waitForText(acctPage, "Paste the VIN and decode to fill the specs.")
   await acctPage.type("#unit_number", "SMK-999")
   await clickByText(acctPage, "Add truck")
   await waitForText(acctPage, "cannot fleet:write")
