@@ -16,19 +16,15 @@
  * Requires: npm run start on localhost:3000, POSTGRES_URL (reads .env.local).
  */
 import pg from "pg"
-import { readFileSync, existsSync, mkdirSync } from "node:fs"
+import { mkdirSync } from "node:fs"
 import { launchBrowser, BASE, reseed, makeShot, check, failures, realConsoleErrors } from "./e2e-lib.mjs"
+import { loadEnvLocal } from "./env-local.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-portal-accept"
 mkdirSync(OUT, { recursive: true })
 const shot = makeShot(OUT, { fullPage: true })
 
-if (!process.env.POSTGRES_URL && existsSync(".env.local")) {
-  for (const line of readFileSync(".env.local", "utf-8").split("\n")) {
-    const m = line.match(/^([A-Z0-9_]+)=(.*)$/)
-    if (m && !process.env[m[1]]) process.env[m[1]] = m[2]
-  }
-}
+loadEnvLocal({ skipWhenSet: "POSTGRES_URL" })
 
 /** Parses "rgb(r, g, b)" / "rgba(r, g, b, a)" into a 0-255 brightness estimate. */
 function brightness(rgbString) {

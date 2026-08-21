@@ -13,8 +13,8 @@
  * Usage: node scripts/fix-legacy-signatures.mjs [--apply]
  *   (dry-run by default; reads POSTGRES_URL from env or .env.local)
  */
-import { readFileSync, existsSync } from "node:fs"
 import path from "node:path"
+import { loadEnvLocal } from "./env-local.mjs"
 
 // Legacy detector thresholds. Legacy ink was rgb(244,246,248); antialiasing
 // varies alpha but not color, so any real legacy stroke is uniformly bright.
@@ -79,22 +79,13 @@ const TABLES = [
   { table: "hub.announcement_acks", pk: ["announcement_id", "user_id"] },
 ]
 
-function loadEnvLocal() {
-  if (process.env.POSTGRES_URL) return
-  const envPath = path.join(process.cwd(), ".env.local")
-  if (!existsSync(envPath)) return
-  for (const line of readFileSync(envPath, "utf-8").split("\n")) {
-    const match = line.match(/^([A-Z0-9_]+)=(.*)$/)
-    if (match && !process.env[match[1]]) process.env[match[1]] = match[2]
-  }
-}
 
 async function main() {
   const apply = process.argv.includes("--apply")
   const { createCanvas, loadImage } = await import("canvas")
   const { default: pg } = await import("pg")
 
-  loadEnvLocal()
+  loadEnvLocal({ skipWhenSet: "POSTGRES_URL" })
   const url = process.env.POSTGRES_URL
   if (!url) {
     console.error("POSTGRES_URL is required (set it in the environment or .env.local)")

@@ -40,10 +40,11 @@
  */
 import path from "node:path"
 import os from "node:os"
-import { existsSync, readFileSync, readdirSync } from "node:fs"
+import { existsSync, readdirSync } from "node:fs"
 import { spawnSync } from "node:child_process"
 import puppeteer from "puppeteer"
 import { isBenignResourceUrl } from "./e2e-console-filter.mjs"
+import { loadEnvLocal } from "./env-local.mjs"
 
 export const BASE = process.env.E2E_BASE_URL ?? "http://localhost:3000"
 
@@ -72,13 +73,9 @@ if (!process.env.PUPPETEER_EXECUTABLE_PATH) {
 }
 
 if (/localhost|127\.0\.0\.1/.test(BASE)) {
-  const envPath = path.join(process.cwd(), ".env.local")
-  if (existsSync(envPath)) {
-    for (const line of readFileSync(envPath, "utf-8").split("\n")) {
-      const match = line.match(/^([A-Z0-9_]+)=(.*)$/)
-      if (match && !process.env[match[1]]) process.env[match[1]] = match[2]
-    }
-  }
+  // No skipWhenSet guard here on purpose: the smokes need every key in the
+  // file (seed credentials, CRON_SECRET), not just the database URL.
+  loadEnvLocal()
 }
 
 /**
