@@ -110,6 +110,12 @@ const HARD_GOTO_COPY: Record<string, string> = {
   "/hub/planner": "A truck's whole week at a glance",
   "/hub/money/advances": "Cash and EFS-code advances",
   "/hub/money/expenses": "Reimbursables flow to settlements",
+  // Money index, after all four /hub/money/* children above. Nav label is
+  // "Money" and the title is "Money", so neither anchors a render; the
+  // subtitle does. Lower-cased here to match the anchor the tenant-isolation
+  // smoke already uses — waitForText compares case-insensitively, so it still
+  // matches the rendered "Receivables, invoices, and driver pay."
+  "/hub/money": "receivables, invoices, and driver pay",
   "/hub/messages/announcements": "proof everyone saw them",
   "/hub/messages": "Every driver conversation in one place",
   // Nested IFTA path before /hub/compliance so the compliance wall still
@@ -164,7 +170,7 @@ const HARD_GOTO_COPY: Record<string, string> = {
 }
 
 const HARD_GOTO_PATH_RE =
-  /\.goto\([^\n]*(\/hub\/money\/settlements|\/hub\/money\/invoices|\/hub\/planner|\/hub\/money\/advances|\/hub\/money\/expenses|\/hub\/messages\/announcements|\/hub\/messages|\/hub\/compliance\/ifta|\/hub\/compliance\/random-testing|\/hub\/compliance|\/hub\/fuel\/tolls|\/hub\/fuel|\/hub\/drivers|\/hub\/fleet|\/hub\/dispatch|\/hub\/loadboard|\/hub\/loads|\/hub\/customers|\/hub\/safety|\/hub\/tasks|\/hub\/reports\/owner|\/hub\/reports|\/hub\/leads|\/hub\/import|\/hub\/sandbox|\/hub\/settings\/users|\/hub\/settings\/branding|\/hub\/settings\/packet|\/hub\/settings\/app|\/hub\/settings\/pay-rules|\/hub\/settings\/pricebook|\/hub\/settings\/integrations|\/hub\/settings)(?![/\w])/
+  /\.goto\([^\n]*(\/hub\/money\/settlements|\/hub\/money\/invoices|\/hub\/planner|\/hub\/money\/advances|\/hub\/money\/expenses|\/hub\/money|\/hub\/messages\/announcements|\/hub\/messages|\/hub\/compliance\/ifta|\/hub\/compliance\/random-testing|\/hub\/compliance|\/hub\/fuel\/tolls|\/hub\/fuel|\/hub\/drivers|\/hub\/fleet|\/hub\/dispatch|\/hub\/loadboard|\/hub\/loads|\/hub\/customers|\/hub\/safety|\/hub\/tasks|\/hub\/reports\/owner|\/hub\/reports|\/hub\/leads|\/hub\/import|\/hub\/sandbox|\/hub\/settings\/users|\/hub\/settings\/branding|\/hub\/settings\/packet|\/hub\/settings\/app|\/hub\/settings\/pay-rules|\/hub\/settings\/pricebook|\/hub\/settings\/integrations|\/hub\/settings)(?![/\w])/
 
 /** A hard navigation resets the state — page.goto awaits the destination itself. */
 const HARD_NAV = /\.goto\(/

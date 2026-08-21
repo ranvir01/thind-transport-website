@@ -63,6 +63,7 @@ async function main() {
   console.log("1. Login as owner, open the money page")
   await login(page, "owner@demo.thind")
   await page.goto(`${BASE}/hub/money`, { waitUntil: "networkidle2" })
+  await waitForText(page, "receivables, invoices, and driver pay")
   await waitForText(page, "Customer statements")
 
   // The nine-chip export wall became one "Export" button opening a sheet
@@ -140,8 +141,16 @@ async function main() {
   await page2.setViewport({ width: 390, height: 844 })
   await login(page2, "driver@demo.thind")
   await page2.goto(`${BASE}/hub/money`, { waitUntil: "networkidle2" })
+  // Wait for the bounce rather than reading the URL on the tick after goto —
+  // a client-side redirect can still be in flight at networkidle2. Mirrors
+  // e2e-random-testing-smoke: catch to false so a page that never bounces
+  // reports a failed check instead of throwing out of the drive.
+  const bounced = await page2
+    .waitForFunction(() => !location.pathname.startsWith("/hub/money"), { timeout: 20000 })
+    .then(() => true)
+    .catch(() => false)
   const driverUrl = page2.url()
-  check(!driverUrl.includes("/hub/money"), `driver redirected away from /hub/money (landed on ${driverUrl})`)
+  check(bounced && !driverUrl.includes("/hub/money"), `driver redirected away from /hub/money (landed on ${driverUrl})`)
 
   const realErrors = realConsoleErrors(consoleErrors)
   check(realErrors.length === 0, `no console errors (${realErrors.length}: ${realErrors.slice(0, 2).join(" | ")})`)
