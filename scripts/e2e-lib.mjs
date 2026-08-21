@@ -330,8 +330,53 @@ export async function waitForPathAndText(page, pathname, text, timeout = 20000) 
     .catch(() => false)
 }
 
+/**
+ * localStorage key + tour id that `HubTour.tsx` uses to remember the first-run
+ * spotlight tour has been seen (STORAGE_KEY / AUTOSTART_TOUR_ID there).
+ */
+const TOUR_STORAGE_KEY = "hauldesk-tours-completed"
+const AUTOSTART_TOUR_ID = "today-desk"
+
+/**
+ * Mark the first-run "today-desk" tour as already seen for this browser.
+ *
+ * Every smoke launches a fresh browser profile, so localStorage is empty and
+ * `HubTourHost` auto-starts the spotlight tour ~700ms after any landing on
+ * /hub. Its scrim is a real `fixed inset-0` modal backdrop: the next
+ * `page.click` anywhere on the screen hits the scrim instead of the target and
+ * is spent dismissing the tour. That is invisible in a screenshot taken
+ * afterwards — the tour is gone by then — and it read for a long time as "the
+ * notification never arrived" in e2e-safety-smoke step 6, when the row was in
+ * the database the whole time and only the click had been eaten.
+ *
+ * Suppressing the autostart is not hiding a product defect: dismiss-on-click is
+ * what the tour is meant to do, and a real operator sees it once. An explicit
+ * `?tour=` still opens the tour, so a smoke that wants to drive it can.
+ */
+export async function skipFirstRunTour(page) {
+  await page.evaluate(
+    (key, id) => {
+      try {
+        const raw = localStorage.getItem(key)
+        const list = raw ? JSON.parse(raw) : []
+        if (!list.includes(id)) {
+          list.push(id)
+          localStorage.setItem(key, JSON.stringify(list))
+        }
+      } catch {
+        /* storage disabled — the tour just runs, same as before */
+      }
+    },
+    TOUR_STORAGE_KEY,
+    AUTOSTART_TOUR_ID
+  )
+}
+
 export async function login(page, email, password = "ThindDemo1!") {
   await page.goto(`${BASE}/hub/login`, { waitUntil: "networkidle2" })
+  // Same origin as the app, so this write is already in place before the first
+  // /hub render decides whether to auto-start the tour.
+  await skipFirstRunTour(page)
   await page.type("#email", email)
   await page.type("#password", password)
   await Promise.all([
