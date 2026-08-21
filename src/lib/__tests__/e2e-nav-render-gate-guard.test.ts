@@ -117,6 +117,13 @@ const HARD_GOTO_COPY: Record<string, string> = {
   // the page title is `IFTA — <quarter>`, so wait for the "IFTA — " prefix
   // that renders for every quarter.
   "/hub/compliance/ifta": "IFTA — ",
+  // Nested random-testing path before /hub/compliance for the same reason.
+  // The title `Random testing — <quarter>` moves every quarter and the
+  // compliance wall already renders the words "Random testing" as its link,
+  // so neither anchors a render. The subtitle is unique to this page and
+  // arrives with the streamed body — compliance/loading.tsx is pure skeleton
+  // with no text of its own.
+  "/hub/compliance/random-testing": "Quarterly random-selection pool",
   "/hub/compliance": "CDLs, med cards",
   // Nested tolls path before /hub/fuel so the fuel index still maps to its
   // own subtitle. Title "Tolls" is not a nav label, but the KPI "Toll spend"
@@ -157,7 +164,7 @@ const HARD_GOTO_COPY: Record<string, string> = {
 }
 
 const HARD_GOTO_PATH_RE =
-  /\.goto\([^\n]*(\/hub\/money\/settlements|\/hub\/money\/invoices|\/hub\/planner|\/hub\/money\/advances|\/hub\/money\/expenses|\/hub\/messages\/announcements|\/hub\/messages|\/hub\/compliance\/ifta|\/hub\/compliance|\/hub\/fuel\/tolls|\/hub\/fuel|\/hub\/drivers|\/hub\/fleet|\/hub\/dispatch|\/hub\/loadboard|\/hub\/loads|\/hub\/customers|\/hub\/safety|\/hub\/tasks|\/hub\/reports\/owner|\/hub\/reports|\/hub\/leads|\/hub\/import|\/hub\/sandbox|\/hub\/settings\/users|\/hub\/settings\/branding|\/hub\/settings\/packet|\/hub\/settings\/app|\/hub\/settings\/pay-rules|\/hub\/settings\/pricebook|\/hub\/settings\/integrations|\/hub\/settings)(?![/\w])/
+  /\.goto\([^\n]*(\/hub\/money\/settlements|\/hub\/money\/invoices|\/hub\/planner|\/hub\/money\/advances|\/hub\/money\/expenses|\/hub\/messages\/announcements|\/hub\/messages|\/hub\/compliance\/ifta|\/hub\/compliance\/random-testing|\/hub\/compliance|\/hub\/fuel\/tolls|\/hub\/fuel|\/hub\/drivers|\/hub\/fleet|\/hub\/dispatch|\/hub\/loadboard|\/hub\/loads|\/hub\/customers|\/hub\/safety|\/hub\/tasks|\/hub\/reports\/owner|\/hub\/reports|\/hub\/leads|\/hub\/import|\/hub\/sandbox|\/hub\/settings\/users|\/hub\/settings\/branding|\/hub\/settings\/packet|\/hub\/settings\/app|\/hub\/settings\/pay-rules|\/hub\/settings\/pricebook|\/hub\/settings\/integrations|\/hub\/settings)(?![/\w])/
 
 /** A hard navigation resets the state — page.goto awaits the destination itself. */
 const HARD_NAV = /\.goto\(/
@@ -297,6 +304,42 @@ describe("e2e soft-nav landing gates wait for render before reading", () => {
       })
     }
     expect(misses).toEqual([])
+  })
+
+  /**
+   * The two halves of the hard-goto guard are separate declarations: a path
+   * only gets checked if it is BOTH an alternative in `HARD_GOTO_PATH_RE` and
+   * a key in `HARD_GOTO_COPY`. Add one without the other and the guard goes
+   * quiet for that route instead of failing — the silent-vacuity mode the
+   * `gates` counter exists to catch in aggregate, caught here per route.
+   */
+  const RE_PATHS = (() => {
+    const alternation = /\(([^()]+)\)\(\?!/.exec(HARD_GOTO_PATH_RE.source)
+    if (!alternation) throw new Error("HARD_GOTO_PATH_RE no longer exposes its alternation group")
+    return alternation[1].split("|").map((p) => p.replace(/\\\//g, "/"))
+  })()
+
+  it("every hard-goto path in the regex has a destination-copy mapping", () => {
+    expect(RE_PATHS.filter((p) => !HARD_GOTO_COPY[p])).toEqual([])
+  })
+
+  it("every destination-copy mapping is reachable from the regex", () => {
+    expect(Object.keys(HARD_GOTO_COPY).filter((p) => !RE_PATHS.includes(p))).toEqual([])
+  })
+
+  it("nested hard-goto paths come before their parent in the regex", () => {
+    // Alternation is first-match-wins: with "/hub/compliance" listed first,
+    // "/hub/compliance/random-testing" would match the parent, fail the
+    // `(?![/\w])` lookahead, and drop out of the guard entirely.
+    const misordered: string[] = []
+    RE_PATHS.forEach((parent, i) => {
+      RE_PATHS.forEach((child, j) => {
+        if (child.startsWith(`${parent}/`) && j > i) {
+          misordered.push(`${child} must precede ${parent}`)
+        }
+      })
+    })
+    expect(misordered).toEqual([])
   })
 
   it("hard-goto list pages wait for destination copy, not the nav label", () => {
