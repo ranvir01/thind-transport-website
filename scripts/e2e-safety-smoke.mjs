@@ -252,8 +252,32 @@ async function main() {
 
   console.log("6. Dispatcher sees the draft-claim alert in notifications")
   await page.goto(`${BASE}/hub`, { waitUntil: "networkidle2" })
-  await page.waitForSelector('button[aria-label^="Notifications"]', { timeout: 20000 })
-  await page.click('button[aria-label^="Notifications"]')
+  const BELL = 'button[aria-label^="Notifications"]'
+  await page.waitForSelector(BELL, { timeout: 20000 })
+  // The bell is a client component whose first feed fetch is deferred, so the
+  // SSR button is clickable-looking long before React attaches its onClick. A
+  // click landing in that window is swallowed: the panel never opens, and both
+  // content assertions below fail while the notification sits in the database
+  // exactly as intended. That is the whole of this step's CI red — the OS&D
+  // producer is fine. Wait for the unread badge the way
+  // e2e-notifications-smoke.mjs does; the count only renders once that first
+  // fetch resolved, which is proof the component hydrated.
+  await page.waitForFunction(
+    (sel) => /\(\d+ unread\)/.test(document.querySelector(sel)?.getAttribute("aria-label") ?? ""),
+    { timeout: 20000 },
+    BELL
+  )
+  await page.click(BELL)
+  // Assert the panel opened before asserting what is in it, so a future
+  // regression here names the cause instead of two puzzling content misses.
+  const panelOpen = await page
+    .waitForFunction((sel) => {
+      const btn = document.querySelector(sel)
+      return (btn?.parentElement?.innerText ?? "").toLowerCase().includes("notifications")
+    }, { timeout: 15000 }, BELL)
+    .then(() => true)
+    .catch(() => false)
+  check(panelOpen, "notifications panel opens")
   // Read the bell's own panel, not document.body — /hub's dashboard already
   // prints THD- load refs, so a body-wide check passed the load-reference
   // assertion even when the feed never mentioned the claim.

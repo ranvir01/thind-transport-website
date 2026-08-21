@@ -11,23 +11,14 @@
  * Idempotent: wipes and re-creates hub.* data. Refuses to run on production.
  * Usage: npm run seed:demo
  */
-import { readFileSync, existsSync } from "node:fs"
 import { mkdir, writeFile } from "node:fs/promises"
 import path from "node:path"
 import { randomBytes } from "node:crypto"
 import pg from "pg"
 import bcrypt from "bcrypt"
 import { PDFDocument, StandardFonts } from "pdf-lib"
+import { loadEnvLocal } from "./env-local.mjs"
 
-function loadEnvLocal() {
-  if (process.env.POSTGRES_URL) return
-  const envPath = path.join(process.cwd(), ".env.local")
-  if (!existsSync(envPath)) return
-  for (const line of readFileSync(envPath, "utf-8").split("\n")) {
-    const match = line.match(/^([A-Z0-9_]+)=(.*)$/)
-    if (match && !process.env[match[1]]) process.env[match[1]] = match[2]
-  }
-}
 
 const CARRIER = "11111111-1111-1111-1111-111111111111" // Thind (created by migration 002)
 
@@ -85,7 +76,7 @@ const dateOnly = (iso) => iso.slice(0, 10)
 const quarterKey = (d = new Date()) => `${d.getUTCFullYear()}Q${Math.floor(d.getUTCMonth() / 3) + 1}`
 
 async function main() {
-  loadEnvLocal()
+  loadEnvLocal({ skipWhenSet: "POSTGRES_URL" })
   const url = process.env.POSTGRES_URL
   if (!url) throw new Error("POSTGRES_URL required")
   if (

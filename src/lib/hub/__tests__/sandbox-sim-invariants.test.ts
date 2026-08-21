@@ -11,21 +11,11 @@
  * tenant lock, because it deliberately corrupts that tenant mid-test.
  */
 import { afterAll, beforeAll, describe, expect, it } from "vitest"
-import { existsSync, readFileSync } from "node:fs"
-import path from "node:path"
 import type { PoolClient } from "pg"
 import { lockSandboxTenant, unlockSandboxTenant } from "./sandbox-tenant-lock"
+import { loadEnvLocal } from "../../../../scripts/env-local.mjs"
 
-function loadEnvLocal() {
-  if (process.env.POSTGRES_URL) return
-  const envPath = path.join(process.cwd(), ".env.local")
-  if (!existsSync(envPath)) return
-  for (const line of readFileSync(envPath, "utf-8").split("\n")) {
-    const match = line.match(/^([A-Z0-9_]+)=(.*)$/)
-    if (match && !process.env[match[1]]) process.env[match[1]] = match[2]
-  }
-}
-loadEnvLocal()
+loadEnvLocal({ skipWhenSet: "POSTGRES_URL" })
 
 const hasDb = Boolean(process.env.POSTGRES_URL)
 if (!hasDb) console.warn("\n⚠️  sandbox-sim-invariants.test.ts SKIPPED — no POSTGRES_URL.\n")

@@ -12,19 +12,11 @@
  * Warn-only (exit 0 unless the DB is unreachable): absent keys are choices, not failures —
  * every integration has a CSV/manual fallback by doctrine.
  */
-import { readFileSync, existsSync } from "node:fs"
+import { readFileSync } from "node:fs"
 import path from "node:path"
 import pg from "pg"
+import { loadEnvLocal } from "./env-local.mjs"
 
-function loadEnvLocal() {
-  if (process.env.POSTGRES_URL) return
-  const envPath = path.join(process.cwd(), ".env.local")
-  if (!existsSync(envPath)) return
-  for (const line of readFileSync(envPath, "utf-8").split("\n")) {
-    const match = line.match(/^([A-Z0-9_]+)=(.*)$/)
-    if (match && !process.env[match[1]]) process.env[match[1]] = match[2]
-  }
-}
 
 const ENV_SWITCHES = [
   ["POSTGRES_URL", "the database (everything)"],
@@ -44,7 +36,7 @@ const ENV_SWITCHES = [
 ]
 
 async function main() {
-  loadEnvLocal()
+  loadEnvLocal({ skipWhenSet: "POSTGRES_URL" })
   const url = process.env.POSTGRES_URL
   if (!url) {
     console.error("POSTGRES_URL is required")

@@ -16,17 +16,8 @@
  * isolation proof is worse than not having one, so the skip is loud.
  */
 import { beforeAll, describe, expect, it } from "vitest"
-import { readFileSync, existsSync } from "node:fs"
-import path from "node:path"
+import { loadEnvLocal } from "../../../../scripts/env-local.mjs"
 
-function loadEnvLocal() {
-  const file = path.join(process.cwd(), ".env.local")
-  if (!existsSync(file)) return
-  for (const line of readFileSync(file, "utf-8").split("\n")) {
-    const match = line.match(/^([A-Z0-9_]+)=(.*)$/)
-    if (match && !process.env[match[1]]) process.env[match[1]] = match[2]
-  }
-}
 loadEnvLocal()
 
 const hasDb = Boolean(process.env.POSTGRES_URL)
