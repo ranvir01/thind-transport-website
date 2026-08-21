@@ -122,6 +122,11 @@ export function isDeployMetaItem(text) {
   // and becomes TOP PICK every steady-state hour.
   if (/^STOP without committing/i.test(text)) return true
   if (/^Debug-sweep this cycle found no/i.test(text)) return true
+  // Resolved-list snapshots from older commits. They name invoice / settlement
+  // / audit work that already shipped, so the money ranker otherwise promotes
+  // them to TOP PICK the moment the newest Backlog is all [needs-*] / STOP.
+  if (/^VERIFIED ALREADY FIXED/i.test(text)) return true
+  if (/drop from future backlogs/i.test(text)) return true
   return false
 }
 
@@ -166,6 +171,11 @@ export function isPickable(item) {
 export function topPickItem(current, older) {
   const pick = current.find(isPickable)
   if (pick) return { pick, stale: false }
+  // Newest Backlog already said there is nothing to ship. Do not fish older
+  // "VERIFIED ALREADY FIXED … invoice/audit" snapshots as money TOP PICK.
+  if (current.some((item) => /^STOP without committing/i.test(item.text))) {
+    return { pick: null, stale: false }
+  }
   const fallback = older.find(isPickable)
   if (fallback) return { pick: fallback, stale: true }
   return { pick: null, stale: false }
