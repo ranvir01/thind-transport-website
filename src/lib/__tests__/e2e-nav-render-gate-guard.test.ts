@@ -392,7 +392,7 @@ describe("e2e soft-nav landing gates wait for render before reading", () => {
         misses.push(`${f}:${i + 1} goto ${pathMatch[1]} never waits for "${copy}"`)
       })
     }
-    expect(gates, "guard is not silently vacuous").toBeGreaterThanOrEqual(126)
+    expect(gates, "guard is not silently vacuous").toBeGreaterThanOrEqual(133)
     expect(misses).toEqual([])
   })
 
