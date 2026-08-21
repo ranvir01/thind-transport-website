@@ -136,6 +136,24 @@ describe("topPickItem", () => {
     const { pick } = topPickItem(current, [])
     expect(pick?.text).toBe(caniuse)
   })
+
+  it("skips VERIFIED-ALREADY-FIXED snapshots so invoice/audit names cannot rank as money", () => {
+    const verified =
+      "VERIFIED ALREADY FIXED this cycle, drop from future backlogs: Announcements subtitle waits; getInvitation customer-name join; setInvoiceStatus RETURNING; Smart Setup / facility lumper logAudit."
+    const smtp =
+      "[needs-owner] rotate Gmail app password and repaste SMTP_USER/SMTP_PASS in Vercel Production"
+    const stop =
+      "STOP without committing unless a new money/tenancy hole turns up. Remaining items are [needs-owner], [needs-browser], or polish."
+
+    expect(isDeployMetaItem(verified)).toBe(true)
+    expect(isPickable(item(verified, 1))).toBe(false)
+    expect(rankItem(verified)).toBe(rankItem("tweak button copy"))
+
+    const current = [item(smtp, 0), item(stop, 0)]
+    const older = [item(verified, 1), item("facilityLookupAction still omits settlement stops_count", 2)]
+    const { pick } = topPickItem(current, older)
+    expect(pick).toBeNull()
+  })
 })
 
 describe("rankItem production regex", () => {
@@ -158,6 +176,11 @@ describe("isDeployMetaItem", () => {
     expect(
       isDeployMetaItem(
         "Debug-sweep this cycle found no new product money UPDATE-without-RETURNING or unpinned hub.* joins."
+      )
+    ).toBe(true)
+    expect(
+      isDeployMetaItem(
+        "VERIFIED ALREADY FIXED this cycle, drop from future backlogs: setInvoiceStatus RETURNING; facility lumper logAudit."
       )
     ).toBe(true)
     expect(isDeployMetaItem("wire comdata cron sync")).toBe(false)
