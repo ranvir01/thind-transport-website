@@ -165,6 +165,7 @@ async function main() {
   await shot(office, "05-office-list-unread")
 
   await office.goto(`${BASE}/hub/messages/${threadId}`, { waitUntil: "networkidle2" })
+  await waitForText(office, "Photos and read receipts stay with this thread.")
   await waitForText(office, driverMarker)
   const officeThread2 = await office.evaluate(() => document.body.innerText)
   check(officeThread2.includes(driverMarker), "driver reply bubble renders in the office thread")
@@ -178,6 +179,11 @@ async function main() {
   await driver.goto(`${BASE}/hub/messages`, { waitUntil: "networkidle2" })
   check(!driver.url().includes("/hub/messages"), `driver redirected off the office list (at ${driver.url()})`)
   await driver.goto(`${BASE}/hub/messages/${threadId}`, { waitUntil: "networkidle2" })
+  // Driver tokens bounce off the office thread — they never see the subtitle,
+  // so wait on leaving /hub/messages/<id> rather than the destination copy.
+  await driver.waitForFunction(() => !location.pathname.startsWith("/hub/messages/"), {
+    timeout: 20000,
+  })
   check(
     !driver.url().includes(`/hub/messages/${threadId}`),
     `driver redirected off the office thread deep link (at ${driver.url()})`

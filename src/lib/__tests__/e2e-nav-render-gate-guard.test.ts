@@ -106,6 +106,13 @@ const WAIT_FOR_PATH_COPY: Record<string, string> = {
  */
 const HARD_GOTO_COPY: Record<string, string> = {
   "/hub/money/settlements": "Weekly driver pay",
+  // Id-segment invoice path before /hub/money/invoices so the list still
+  // maps to its own subtitle. Title is the invoice number and the
+  // PageHeader subtitle is customer · load ref — both move. "Open balance"
+  // is unique Summary copy that renders for every role (the #pay_amount
+  // form is money:write only, so it is not the family gate). Trailing-slash
+  // key matches `.goto(\`…/hub/money/invoices/\${id}\`)`.
+  "/hub/money/invoices/": "Open balance",
   "/hub/money/invoices": "Every invoice, paid or open",
   "/hub/planner": "A truck's whole week at a glance",
   "/hub/money/advances": "Cash and EFS-code advances",
@@ -117,6 +124,15 @@ const HARD_GOTO_COPY: Record<string, string> = {
   // matches the rendered "Receivables, invoices, and driver pay."
   "/hub/money": "receivables, invoices, and driver pay",
   "/hub/messages/announcements": "proof everyone saw them",
+  // Id-segment thread path before /hub/messages so the list still maps to
+  // its own subtitle. Title is the driver/load name (moves every thread)
+  // and is not a render gate. The thread page had no unique static copy
+  // in innerText — composer placeholder is not in document.body.innerText
+  // — so the mapping uses the PageHeader subtitle added for this doctrine
+  // (same create-route pattern as trailers/new). Trailing-slash key matches
+  // `.goto(\`…/hub/messages/\${id}\`)` because after `/hub/messages/` the
+  // next source char is `$`, which `(?![/\w])` accepts.
+  "/hub/messages/": "Photos and read receipts stay with this thread.",
   "/hub/messages": "Every driver conversation in one place",
   // Nested IFTA path before /hub/compliance so the compliance wall still
   // maps to its own subtitle. Nav label "IFTA" alone is not a render gate;
@@ -161,6 +177,13 @@ const HARD_GOTO_COPY: Record<string, string> = {
   // list pages. The subtitle arrives with the streamed body;
   // loads/loading.tsx is pure skeleton with no text of its own.
   "/hub/loads/new": "Rate con in hand? Get it on the board.",
+  // Id-segment load path before /hub/loads so the list still maps to its
+  // own subtitle. Title is the THD- reference (waitForLoadDetail already
+  // anchors on that for soft-nav) and the PageHeader subtitle is the
+  // customer name — both move. "Linehaul" is unique Rate-panel copy on
+  // every load detail (do NOT use "Rate": the sidebar renders "Paste
+  // rate con"). Trailing-slash key matches `.goto(\`…/hub/loads/\${id}\`)`.
+  "/hub/loads/": "Linehaul",
   "/hub/loads": "Search, filter, and manage every load.",
   // The one hard-goto target with no office chrome at all, so no nav label
   // can false-pass here — but the wordmark and tagline also render on
@@ -239,7 +262,7 @@ const HARD_GOTO_COPY: Record<string, string> = {
 }
 
 const HARD_GOTO_PATH_RE =
-  /\.goto\([^\n]*(\/hub\/money\/settlements|\/hub\/money\/invoices|\/hub\/planner|\/hub\/money\/advances|\/hub\/money\/expenses|\/hub\/money|\/hub\/messages\/announcements|\/hub\/messages|\/hub\/compliance\/ifta|\/hub\/compliance\/random-testing|\/hub\/compliance|\/hub\/fuel\/tolls|\/hub\/fuel|\/hub\/drivers|\/hub\/fleet\/trailers\/new|\/hub\/fleet\/trucks\/new|\/hub\/fleet|\/hub\/dispatch|\/hub\/loadboard|\/hub\/loads\/new|\/hub\/loads|\/hub\/login|\/hub\/customers|\/hub\/safety\/new|\/hub\/safety\/claims\/new|\/hub\/safety\/claims|\/hub\/safety|\/hub\/tasks|\/hub\/reports\/owner|\/hub\/reports|\/hub\/leads|\/hub\/recruiting|\/hub\/help|\/hub\/admin|\/hub\/signup|\/hub\/import|\/hub\/sandbox|\/hub\/settings\/users|\/hub\/settings\/branding|\/hub\/settings\/packet|\/hub\/settings\/app|\/hub\/settings\/pay-rules|\/hub\/settings\/pricebook|\/hub\/settings\/integrations|\/hub\/settings)(?![/\w])/
+  /\.goto\([^\n]*(\/hub\/money\/settlements|\/hub\/money\/invoices\/|\/hub\/money\/invoices|\/hub\/planner|\/hub\/money\/advances|\/hub\/money\/expenses|\/hub\/money|\/hub\/messages\/announcements|\/hub\/messages\/|\/hub\/messages|\/hub\/compliance\/ifta|\/hub\/compliance\/random-testing|\/hub\/compliance|\/hub\/fuel\/tolls|\/hub\/fuel|\/hub\/drivers|\/hub\/fleet\/trailers\/new|\/hub\/fleet\/trucks\/new|\/hub\/fleet|\/hub\/dispatch|\/hub\/loadboard|\/hub\/loads\/new|\/hub\/loads\/|\/hub\/loads|\/hub\/login|\/hub\/customers|\/hub\/safety\/new|\/hub\/safety\/claims\/new|\/hub\/safety\/claims|\/hub\/safety|\/hub\/tasks|\/hub\/reports\/owner|\/hub\/reports|\/hub\/leads|\/hub\/recruiting|\/hub\/help|\/hub\/admin|\/hub\/signup|\/hub\/import|\/hub\/sandbox|\/hub\/settings\/users|\/hub\/settings\/branding|\/hub\/settings\/packet|\/hub\/settings\/app|\/hub\/settings\/pay-rules|\/hub\/settings\/pricebook|\/hub\/settings\/integrations|\/hub\/settings)(?![/\w])/
 
 /** A hard navigation resets the state — page.goto awaits the destination itself. */
 const HARD_NAV = /\.goto\(/
@@ -402,6 +425,31 @@ describe("e2e soft-nav landing gates wait for render before reading", () => {
     expect(Object.keys(HARD_GOTO_COPY).filter((p) => !RE_PATHS.includes(p))).toEqual([])
   })
 
+  it("id-segment hard-goto keys match template interpolations, not named children", () => {
+    // Doctrine (249ef648 TOP PICK): a trailing-slash key matches
+    // `.goto(\`…/path/\${id}\`)` because after the slash the next source
+    // char is `$`, which `(?![/\w])` accepts. Named children (/new,
+    // /announcements) stay their own keys and are listed first so they
+    // do not fall into the id family. Literal UUIDs in source are not
+    // used by any smoke; do not widen the lookahead to hex.
+    const line = (path: string) => `await page.goto(\`\${BASE}${path}\`, { waitUntil: "networkidle2" })`
+    expect(HARD_GOTO_PATH_RE.exec(line("/hub/loads/${id}"))?.[1]).toBe("/hub/loads/")
+    expect(HARD_GOTO_PATH_RE.exec(line("/hub/loads/new"))?.[1]).toBe("/hub/loads/new")
+    expect(HARD_GOTO_PATH_RE.exec(line("/hub/loads"))?.[1]).toBe("/hub/loads")
+    expect(HARD_GOTO_PATH_RE.exec(line("/hub/messages/${threadId}"))?.[1]).toBe("/hub/messages/")
+    expect(HARD_GOTO_PATH_RE.exec(line("/hub/messages/announcements"))?.[1]).toBe(
+      "/hub/messages/announcements"
+    )
+    expect(HARD_GOTO_PATH_RE.exec(line("/hub/messages"))?.[1]).toBe("/hub/messages")
+    expect(HARD_GOTO_PATH_RE.exec(line("/hub/money/invoices/${invoiceId}"))?.[1]).toBe(
+      "/hub/money/invoices/"
+    )
+    expect(HARD_GOTO_PATH_RE.exec(line("/hub/money/invoices"))?.[1]).toBe("/hub/money/invoices")
+    expect(HARD_GOTO_PATH_RE.exec(line("/hub/money/invoices?status=paid"))?.[1]).toBe(
+      "/hub/money/invoices"
+    )
+  })
+
   it("nested hard-goto paths come before their parent in the regex", () => {
     // Alternation is first-match-wins: with "/hub/compliance" listed first,
     // "/hub/compliance/random-testing" would match the parent, fail the
@@ -461,7 +509,7 @@ describe("e2e soft-nav landing gates wait for render before reading", () => {
         misses.push(`${f}:${i + 1} goto ${pathMatch[1]} never waits for "${copy}"`)
       })
     }
-    expect(gates, "guard is not silently vacuous").toBeGreaterThanOrEqual(156)
+    expect(gates, "guard is not silently vacuous").toBeGreaterThanOrEqual(160)
     expect(misses).toEqual([])
   })
 

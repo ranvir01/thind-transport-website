@@ -96,6 +96,7 @@ async function main() {
 
   console.log("3. Load detail shows the receipt at the same exact cents")
   await page.goto(`${BASE}/hub/loads/${receipt.loadId}`, { waitUntil: "networkidle2" })
+  await waitForText(page, "Linehaul")
   await waitForText(page, "Fuel on this load")
   const onLoad = await page.evaluate((cents) => {
     const section = [...document.querySelectorAll("section")].find((s) =>

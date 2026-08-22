@@ -70,6 +70,7 @@ async function main() {
 
     await login(page, "dispatch@demo.thind")
     await page.goto(`${BASE}/hub/loads/${loadId}`, { waitUntil: "networkidle2" })
+    await waitForText(page, "Linehaul")
     await waitForText(page, "Tracking links")
     const panelText1 = await page.evaluate(() => document.body.innerText)
     check(/Expires in [123] days?/.test(panelText1), `panel shows the soon-to-expire link's countdown (saw: ${panelText1.match(/Expires in [^\n]*/)?.[0] ?? "none"})`)
