@@ -73,6 +73,7 @@ try {
 
   console.log("Load form quick-add chips reflect the pricebook")
   await page.goto(`${BASE}/hub/loads/new`, { waitUntil: "networkidle2" })
+  await waitForText(page, "Rate con in hand? Get it on the board.")
   await waitForText(page, "Chains")
   const chips = await page.evaluate(() =>
     [...document.querySelectorAll("button")]

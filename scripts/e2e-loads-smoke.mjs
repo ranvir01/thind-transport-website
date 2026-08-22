@@ -41,7 +41,7 @@ async function main() {
   console.log("1. Login as dispatcher, open Book a Load")
   await login(page, "dispatch@demo.thind")
   await page.goto(`${BASE}/hub/loads/new`, { waitUntil: "networkidle2" })
-  await waitForText(page, "Book a Load")
+  await waitForText(page, "Rate con in hand? Get it on the board.")
   const form = await page.evaluate(() => ({
     customers: document.querySelectorAll("#customer option").length,
     stopCards: document.querySelectorAll('select[aria-label="Stop type"]').length,

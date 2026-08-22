@@ -37,7 +37,7 @@ async function main() {
   console.log("1. Dispatcher books a load for Harpreet Singh")
   await login(page, "dispatch@demo.thind")
   await page.goto(`${BASE}/hub/loads/new`, { waitUntil: "networkidle2" })
-  await waitForText(page, "Book a Load")
+  await waitForText(page, "Rate con in hand? Get it on the board.")
 
   const customerId = await page.evaluate((name) => {
     const opt = [...document.querySelectorAll("#customer option")].find((o) => o.textContent.includes(name))
