@@ -122,6 +122,7 @@ async function main() {
   track(driver)
   await login(driver, "driver@demo.thind")
   await driver.goto(`${BASE}/hub/driver/messages`, { waitUntil: "networkidle2" })
+  await waitForText(driver, "no phone numbers needed")
   await waitForText(driver, "Dispatch / office")
   const driverList = await driver.evaluate(() => document.body.innerText)
   check(driverList.includes(officeMarker), "driver list previews the office marker")

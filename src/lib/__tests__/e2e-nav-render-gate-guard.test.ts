@@ -162,6 +162,16 @@ const HARD_GOTO_COPY: Record<string, string> = {
   // client-component CTA that hydrates after the server subtitle, so it
   // is not the family gate.
   "/hub/driver/pay": "Every settlement, line by line — tap one to see what's in it.",
+  // Nested /hub/driver/messages before /hub/driver so the PWA home still
+  // maps to its own "Last pay" glance. Title "Messages" is the DriverNav
+  // label (and the office nav label), so waitForText on it is not a
+  // render gate. Unique subtitle fragment is always-on (empty and loaded
+  // lists both show it); sweep already anchors on it. "Dispatch / office"
+  // is the seeded direct-thread row, not the family gate. Forced-dark
+  // surface: never text-fg*/bg-surface*/border-border*. src/app/hub/driver
+  // has no loading.tsx. Thread detail (`/hub/driver/messages/${id}`) stays
+  // uncovered — the lookahead rejects the extra slash.
+  "/hub/driver/messages": "no phone numbers needed",
   // Driver PWA home. Forced-dark surface (AGENTS.md) — DriverNav labels are
   // Home / Messages / Pay / More, so none of those is a render gate. There
   // is no PageHeader; the always-rendered "Last pay" glance card is unique
@@ -299,7 +309,7 @@ const HARD_GOTO_COPY: Record<string, string> = {
 }
 
 const HARD_GOTO_PATH_RE =
-  /\.goto\([^\n]*(\/hub\/money\/settlements|\/hub\/money\/invoices\/|\/hub\/money\/invoices|\/hub\/planner|\/hub\/money\/advances|\/hub\/money\/expenses|\/hub\/money|\/hub\/messages\/announcements|\/hub\/messages\/|\/hub\/messages|\/hub\/compliance\/ifta|\/hub\/compliance\/random-testing|\/hub\/compliance|\/hub\/fuel\/tolls|\/hub\/fuel|\/hub\/drivers|\/hub\/driver\/pay|\/hub\/driver|\/hub\/fleet\/trailers\/new|\/hub\/fleet\/trucks\/new|\/hub\/fleet|\/hub\/dispatch|\/hub\/loadboard|\/hub\/loads\/new|\/hub\/loads\/|\/hub\/loads|\/hub\/login|\/hub\/customers|\/hub\/safety\/new|\/hub\/safety\/claims\/new|\/hub\/safety\/claims|\/hub\/safety|\/hub\/tasks|\/hub\/reports\/owner|\/hub\/reports|\/hub\/leads|\/hub\/recruiting|\/hub\/help|\/hub\/admin|\/hub\/signup|\/hub\/portal\/accept\/|\/hub\/portal|\/hub\/import|\/hub\/sandbox|\/hub\/settings\/users|\/hub\/settings\/branding|\/hub\/settings\/packet|\/hub\/settings\/app|\/hub\/settings\/pay-rules|\/hub\/settings\/pricebook|\/hub\/settings\/integrations|\/hub\/settings)(?![/\w])/
+  /\.goto\([^\n]*(\/hub\/money\/settlements|\/hub\/money\/invoices\/|\/hub\/money\/invoices|\/hub\/planner|\/hub\/money\/advances|\/hub\/money\/expenses|\/hub\/money|\/hub\/messages\/announcements|\/hub\/messages\/|\/hub\/messages|\/hub\/compliance\/ifta|\/hub\/compliance\/random-testing|\/hub\/compliance|\/hub\/fuel\/tolls|\/hub\/fuel|\/hub\/drivers|\/hub\/driver\/pay|\/hub\/driver\/messages|\/hub\/driver|\/hub\/fleet\/trailers\/new|\/hub\/fleet\/trucks\/new|\/hub\/fleet|\/hub\/dispatch|\/hub\/loadboard|\/hub\/loads\/new|\/hub\/loads\/|\/hub\/loads|\/hub\/login|\/hub\/customers|\/hub\/safety\/new|\/hub\/safety\/claims\/new|\/hub\/safety\/claims|\/hub\/safety|\/hub\/tasks|\/hub\/reports\/owner|\/hub\/reports|\/hub\/leads|\/hub\/recruiting|\/hub\/help|\/hub\/admin|\/hub\/signup|\/hub\/portal\/accept\/|\/hub\/portal|\/hub\/import|\/hub\/sandbox|\/hub\/settings\/users|\/hub\/settings\/branding|\/hub\/settings\/packet|\/hub\/settings\/app|\/hub\/settings\/pay-rules|\/hub\/settings\/pricebook|\/hub\/settings\/integrations|\/hub\/settings)(?![/\w])/
 
 /** A hard navigation resets the state — page.goto awaits the destination itself. */
 const HARD_NAV = /\.goto\(/
@@ -486,13 +496,17 @@ describe("e2e soft-nav landing gates wait for render before reading", () => {
       "/hub/money/invoices"
     )
     // /hub/driver is a prefix of /hub/drivers (no extra slash) and of
-    // /hub/driver/pay (extra slash). Office roster must keep its own key;
-    // /hub/driver/pay is listed first so it maps to the pay subtitle, not
-    // the home glance. Remaining nested PWA routes stay uncovered until
-    // their own cycle.
+    // /hub/driver/pay and /hub/driver/messages (extra slash). Office roster
+    // must keep its own key; nested PWA children are listed first so they
+    // map to their own subtitles, not the home glance. Remaining nested
+    // PWA routes (incident/dvir/timeoff/more/docs) stay uncovered until
+    // their own cycle. Thread detail stays uncovered — lookahead rejects
+    // the extra slash.
     expect(HARD_GOTO_PATH_RE.exec(line("/hub/driver"))?.[1]).toBe("/hub/driver")
     expect(HARD_GOTO_PATH_RE.exec(line("/hub/drivers"))?.[1]).toBe("/hub/drivers")
     expect(HARD_GOTO_PATH_RE.exec(line("/hub/driver/pay"))?.[1]).toBe("/hub/driver/pay")
+    expect(HARD_GOTO_PATH_RE.exec(line("/hub/driver/messages"))?.[1]).toBe("/hub/driver/messages")
+    expect(HARD_GOTO_PATH_RE.exec(line("/hub/driver/messages/${id}"))?.[1]).toBeUndefined()
     // Trailing-slash portal-accept matches ${token} interpolations. A
     // literal prefix like /hub/portal/accept/not-a-real-token- does not
     // (next char is \w); keep that smoke on a ${var}. /hub/portal/accept/
@@ -565,7 +579,7 @@ describe("e2e soft-nav landing gates wait for render before reading", () => {
         misses.push(`${f}:${i + 1} goto ${pathMatch[1]} never waits for "${copy}"`)
       })
     }
-    expect(gates, "guard is not silently vacuous").toBeGreaterThanOrEqual(176)
+    expect(gates, "guard is not silently vacuous").toBeGreaterThanOrEqual(178)
     expect(misses).toEqual([])
   })
 

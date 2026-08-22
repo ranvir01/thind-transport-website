@@ -73,6 +73,7 @@ async function main() {
 
     console.log("6. Message dispatch")
     await page.goto(`${BASE}/hub/driver/messages`, { waitUntil: "networkidle2" })
+    await waitForText(page, "no phone numbers needed")
     await shot(page, "07-messages-list")
     await clickByText(page, "Dispatch / office", { tag: "a" })
     await page.waitForSelector("textarea", { timeout: 10000 })
