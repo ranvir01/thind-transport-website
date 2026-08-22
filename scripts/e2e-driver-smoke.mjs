@@ -86,6 +86,7 @@ async function main() {
 
     console.log("7. Pay screen — expand a settlement to see its lines")
     await page.goto(`${BASE}/hub/driver/pay`, { waitUntil: "networkidle2" })
+    await waitForText(page, "Every settlement, line by line — tap one to see what's in it.")
     await shot(page, "09-pay")
     await page.click("details summary")
     await waitForText(page, "Insurance")

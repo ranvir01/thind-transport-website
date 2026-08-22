@@ -73,6 +73,7 @@ async function main() {
   console.log("1. Driver requests an advance from My pay (390px)")
   await login(driver, "driver@demo.thind")
   await driver.goto(`${BASE}/hub/driver/pay`, { waitUntil: "networkidle2" })
+  await waitForText(driver, "Every settlement, line by line — tap one to see what's in it.")
   await waitForText(driver, "Ask for an advance")
   await shot(driver, "01-driver-pay")
 
@@ -182,6 +183,7 @@ async function main() {
   // ---- Driver again: decisions reflected ----
   console.log("6. Driver pay screen reflects the decisions (390px)")
   await driver.goto(`${BASE}/hub/driver/pay`, { waitUntil: "networkidle2" })
+  await waitForText(driver, "Every settlement, line by line — tap one to see what's in it.")
   await waitForText(driver, "Ask for an advance")
   const driverAfter = await driver.evaluate(() => document.body.innerText)
   check(driverAfter.includes("Advance approved — Tires — cash at TA Ontario"), "approved advance reads approved")

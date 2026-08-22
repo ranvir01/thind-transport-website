@@ -206,7 +206,7 @@ async function main() {
   await shot(driver, "05-cascade-driver-home")
 
   await driver.goto(`${BASE}/hub/driver/pay`, { waitUntil: "networkidle2" })
-  await waitForText(driver, "line by line")
+  await waitForText(driver, "Every settlement, line by line — tap one to see what's in it.")
   check(!(await bodyText(driver)).includes("THD-"), "Cascade driver pay has no THD- reference")
   await shot(driver, "06-cascade-driver-pay")
 
