@@ -122,6 +122,7 @@ async function main() {
 
     console.log("10. Incident report")
     await page.goto(`${BASE}/hub/driver/incident`, { waitUntil: "networkidle2" })
+    await waitForText(page, "starts the paper trail")
     await page.type("#inc-location", "I-84 EB MP 213, Baker City OR")
     await page.type("#inc-desc", "Deer strike, front bumper damage. Truck drivable. No injuries.")
     await shot(page, "14-incident-form")

@@ -235,7 +235,7 @@ async function main() {
   await driverPage.setViewport({ width: 390, height: 844 })
   await login(driverPage, "driver@demo.thind")
   await driverPage.goto(`${BASE}/hub/driver/incident`, { waitUntil: "networkidle2" })
-  await waitForText(driverPage, "Report an incident")
+  await waitForText(driverPage, "starts the paper trail")
   await driverPage.type("#inc-location", DRIVER_INCIDENT_LOC)
   await driverPage.type("#inc-desc", "Deer strike — bumper damage only. Everyone safe, truck drivable.")
   await clickByText(driverPage, "File the report")
