@@ -111,6 +111,9 @@ async function main() {
     await login(page, "owner@demo.thind")
     const help = await page.goto(`${BASE}/hub/help`, { waitUntil: "networkidle2", timeout: 30000 })
     check(help.status() === 200, `/hub/help answers 200 as owner (got ${help.status()})`)
+    // Title "How to use LoadOff" is not the nav label "Help" — wait for it
+    // before reading "Video walkthroughs" off the streamed body.
+    await waitForText(page, "How to use LoadOff")
     const hasVids = await page.evaluate(() => document.body.textContent.includes("Video walkthroughs"))
     check(hasVids, "/hub/help has the 'Video walkthroughs' section")
 

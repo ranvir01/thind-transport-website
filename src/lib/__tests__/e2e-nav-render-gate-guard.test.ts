@@ -190,6 +190,11 @@ const HARD_GOTO_COPY: Record<string, string> = {
   // "Recruiting", so neither anchors a render; the subtitle does.
   // (office)/loading.tsx is a pure skeleton (aria-label "Loading" only).
   "/hub/recruiting": "Application to dispatch-legal driver, all in one place — drag between stages.",
+  // Help centre. Nav label is "Help"; title "How to use LoadOff" is unique
+  // to this page (not a nav label), so waitForText on it is a real render
+  // gate. Sweep already anchors on the same copy (case-insensitive).
+  // (office)/loading.tsx is a pure skeleton (aria-label "Loading" only).
+  "/hub/help": "How to use LoadOff",
   "/hub/import": "map columns once, reuse forever",
   // Nav label is "Practice mode"; title "Run the whole company." also lives on the
   // marketing demo. Body copy is unique to the picker.
@@ -208,7 +213,7 @@ const HARD_GOTO_COPY: Record<string, string> = {
 }
 
 const HARD_GOTO_PATH_RE =
-  /\.goto\([^\n]*(\/hub\/money\/settlements|\/hub\/money\/invoices|\/hub\/planner|\/hub\/money\/advances|\/hub\/money\/expenses|\/hub\/money|\/hub\/messages\/announcements|\/hub\/messages|\/hub\/compliance\/ifta|\/hub\/compliance\/random-testing|\/hub\/compliance|\/hub\/fuel\/tolls|\/hub\/fuel|\/hub\/drivers|\/hub\/fleet\/trailers\/new|\/hub\/fleet\/trucks\/new|\/hub\/fleet|\/hub\/dispatch|\/hub\/loadboard|\/hub\/loads\/new|\/hub\/loads|\/hub\/customers|\/hub\/safety\/new|\/hub\/safety\/claims|\/hub\/safety|\/hub\/tasks|\/hub\/reports\/owner|\/hub\/reports|\/hub\/leads|\/hub\/recruiting|\/hub\/import|\/hub\/sandbox|\/hub\/settings\/users|\/hub\/settings\/branding|\/hub\/settings\/packet|\/hub\/settings\/app|\/hub\/settings\/pay-rules|\/hub\/settings\/pricebook|\/hub\/settings\/integrations|\/hub\/settings)(?![/\w])/
+  /\.goto\([^\n]*(\/hub\/money\/settlements|\/hub\/money\/invoices|\/hub\/planner|\/hub\/money\/advances|\/hub\/money\/expenses|\/hub\/money|\/hub\/messages\/announcements|\/hub\/messages|\/hub\/compliance\/ifta|\/hub\/compliance\/random-testing|\/hub\/compliance|\/hub\/fuel\/tolls|\/hub\/fuel|\/hub\/drivers|\/hub\/fleet\/trailers\/new|\/hub\/fleet\/trucks\/new|\/hub\/fleet|\/hub\/dispatch|\/hub\/loadboard|\/hub\/loads\/new|\/hub\/loads|\/hub\/customers|\/hub\/safety\/new|\/hub\/safety\/claims|\/hub\/safety|\/hub\/tasks|\/hub\/reports\/owner|\/hub\/reports|\/hub\/leads|\/hub\/recruiting|\/hub\/help|\/hub\/import|\/hub\/sandbox|\/hub\/settings\/users|\/hub\/settings\/branding|\/hub\/settings\/packet|\/hub\/settings\/app|\/hub\/settings\/pay-rules|\/hub\/settings\/pricebook|\/hub\/settings\/integrations|\/hub\/settings)(?![/\w])/
 
 /** A hard navigation resets the state — page.goto awaits the destination itself. */
 const HARD_NAV = /\.goto\(/
@@ -430,7 +435,7 @@ describe("e2e soft-nav landing gates wait for render before reading", () => {
         misses.push(`${f}:${i + 1} goto ${pathMatch[1]} never waits for "${copy}"`)
       })
     }
-    expect(gates, "guard is not silently vacuous").toBeGreaterThanOrEqual(146)
+    expect(gates, "guard is not silently vacuous").toBeGreaterThanOrEqual(147)
     expect(misses).toEqual([])
   })
 
