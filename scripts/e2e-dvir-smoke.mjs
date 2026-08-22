@@ -51,6 +51,7 @@ async function main() {
   console.log("1. Driver files a defective post-trip")
   await login(driver, "driver@demo.thind")
   await driver.goto(`${BASE}/hub/driver/dvir`, { waitUntil: "networkidle2" })
+  await waitForText(driver, "Tap anything that has a problem.")
   await waitForText(driver, "End-of-day inspection")
   // Regression: "Emergency equipment (triangles, extinguisher)" is long enough
   // to wrap onto two lines at 390px. Without min-w-0 on the label and shrink-0
@@ -114,6 +115,7 @@ async function main() {
   // Driver: pre-trip review releases the truck
   console.log("3. Driver pre-trip review releases the truck")
   await driver.goto(`${BASE}/hub/driver/dvir`, { waitUntil: "networkidle2" })
+  await waitForText(driver, "Tap anything that has a problem.")
   await waitForText(driver, "Review before you roll")
   await waitForText(driver, "Repairs certified by")
   await shot(driver, "04-pre-trip-review")
