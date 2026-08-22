@@ -35,6 +35,10 @@ async function main() {
   const fresh = await signupCtx.newPage()
   await fresh.setViewport({ width: 390, height: 844, deviceScaleFactor: 2 })
   await fresh.goto(`${BASE}/hub/signup`, { waitUntil: "networkidle2" })
+  // Wordmark/tagline also live on /hub/login, so wait for the unique body
+  // copy before typing into #su-company against the streamed body.
+  // src/app/hub/signup has no loading.tsx of its own.
+  await waitForText(fresh, "Create your company's workspace — dispatch, money, compliance, and a driver app, live in an afternoon. No sales call.")
   await shot(fresh, "01-signup")
   // Step 1/4 — company facts (FMCSA verify is optional; skip the network call)
   await fresh.type("#su-company", `Bluebird Freight ${stamp}`)
