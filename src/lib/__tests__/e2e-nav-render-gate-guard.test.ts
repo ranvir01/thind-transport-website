@@ -213,17 +213,17 @@ const HARD_GOTO_COPY: Record<string, string> = {
   // maps to its own "Last pay" glance. Title "Vehicle inspection" is the
   // More-menu link prefix ("Vehicle inspection (DVIR)"), not a DriverNav
   // item (Home / Messages / Pay / More), so waitForText on it is a real
-  // render gate today. The PageHeader subtitle branches (post "End of
-  // day…" vs pre "Before you roll…") so it cannot be the family gate;
-  // the h1 is always-on for both form states the two smoke gotos hit.
-  // Sweep already anchors on "vehicle inspection". "End-of-day
-  // inspection" / "Review before you roll" / "File the post-trip" are
-  // client-component copy that hydrates after the server h1, so they
-  // are not the family gate. Forced-dark surface: never text-fg*/
-  // bg-surface*/border-border*. src/app/hub/driver has no loading.tsx.
-  // No-truck empty state ("No truck on record") is uncovered — the
-  // two hard gotos use the seated demo driver.
-  "/hub/driver/dvir": "Vehicle inspection",
+  // render gate today — still use unique always-on body copy. The two
+  // gotos land on different page states (“End-of-day inspection” vs
+  // “Review before you roll”); family copy is the checklist hint both
+  // states share. State-specific titles and the no-truck empty state
+  // ("No truck on record") are not the family gate. "File the post-trip"
+  // is client-component copy that hydrates after the server body, so it
+  // is not the family gate. Forced-dark surface: never text-fg*/bg-surface*/
+  // border-border*. src/app/hub/driver has no loading.tsx. Sweep already
+  // anchors on the title. No-truck empty state is uncovered — the two
+  // hard gotos use the seated demo driver.
+  "/hub/driver/dvir": "Tap anything that has a problem.",
   // Nested /hub/driver/timeoff before /hub/driver so the PWA home still
   // maps to its own "Last pay" glance. Title "Time off" is the More-menu
   // link label, not a DriverNav item (Home / Messages / Pay / More), so
