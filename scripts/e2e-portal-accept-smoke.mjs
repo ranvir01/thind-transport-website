@@ -17,7 +17,7 @@
  */
 import pg from "pg"
 import { mkdirSync } from "node:fs"
-import { launchBrowser, BASE, reseed, makeShot, check, failures, realConsoleErrors } from "./e2e-lib.mjs"
+import { launchBrowser, BASE, reseed, makeShot, check, failures, realConsoleErrors, waitForText } from "./e2e-lib.mjs"
 import { loadEnvLocal } from "./env-local.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-portal-accept"
@@ -79,6 +79,7 @@ async function main() {
     const valid = await makeInvitation(db, { customerId, carrierId }, { expiresInMs: 24 * 60 * 60 * 1000 })
     const resp1 = await page.goto(`${BASE}/hub/portal/accept/${valid.token}`, { waitUntil: "networkidle2" })
     check(resp1.status() === 200, `GET /hub/portal/accept/[token] -> ${resp1.status()}`)
+    await waitForText(page, "Portal invitation")
     const text1 = await page.evaluate(() => document.body.innerText)
     check(text1.includes(customerName), `page shows the inviting carrier's customer (${customerName})`)
     check(text1.includes(valid.email), "page shows the invited account email")
@@ -118,6 +119,7 @@ async function main() {
     const used = await makeInvitation(db, { customerId, carrierId }, { expiresInMs: 24 * 60 * 60 * 1000, accepted: true })
     const resp2 = await page.goto(`${BASE}/hub/portal/accept/${used.token}`, { waitUntil: "networkidle2" })
     check(resp2.status() === 200, `GET /hub/portal/accept/[token] (used) -> ${resp2.status()}`)
+    await waitForText(page, "Portal invitation")
     const text2 = await page.evaluate(() => document.body.innerText)
     check(/already used/i.test(text2), "used invitation shows the already-used message")
     const usedColor = await page.evaluate(() => {
@@ -132,6 +134,7 @@ async function main() {
     const expired = await makeInvitation(db, { customerId, carrierId }, { expiresInMs: -60 * 1000 })
     const resp3 = await page.goto(`${BASE}/hub/portal/accept/${expired.token}`, { waitUntil: "networkidle2" })
     check(resp3.status() === 200, `GET /hub/portal/accept/[token] (expired) -> ${resp3.status()}`)
+    await waitForText(page, "Portal invitation")
     const text3 = await page.evaluate(() => document.body.innerText)
     check(/expired/i.test(text3), "expired invitation shows the expired message")
     const expiredColor = await page.evaluate(() => {
@@ -143,8 +146,10 @@ async function main() {
     await shot(page, "04-expired")
 
     console.log("4. Unknown token at 390px")
-    const resp4 = await page.goto(`${BASE}/hub/portal/accept/not-a-real-token-${Date.now()}`, { waitUntil: "networkidle2" })
+    const unknownToken = `not-a-real-token-${Date.now()}`
+    const resp4 = await page.goto(`${BASE}/hub/portal/accept/${unknownToken}`, { waitUntil: "networkidle2" })
     check(resp4.status() === 200, `GET /hub/portal/accept/[bad-token] -> ${resp4.status()}`)
+    await waitForText(page, "Portal invitation")
     const text4 = await page.evaluate(() => document.body.innerText)
     check(/isn.t valid/i.test(text4), "unknown token shows the invalid-link message")
     const badColor = await page.evaluate(() => {

@@ -105,4 +105,11 @@ describe("accept invitation page + form accent tokens (sessionless, resolves via
     expect(ACCEPT_FORM_SOURCE).not.toMatch(/bg-accent\b|text-accent-fg\b|bg-accent-hover\b/)
     expect(ACCEPT_FORM_SOURCE).toMatch(/var\(--portal-accent\)/)
   })
+
+  it("the card kicker is family-gate copy outside the invitation-state ternary", () => {
+    const kicker = ACCEPT_PAGE_SOURCE.indexOf("Portal invitation")
+    const ternary = ACCEPT_PAGE_SOURCE.indexOf("{!invitation")
+    expect(kicker).toBeGreaterThan(-1)
+    expect(ternary).toBeGreaterThan(kicker)
+  })
 })

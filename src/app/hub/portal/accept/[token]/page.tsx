@@ -27,6 +27,10 @@ export default async function AcceptInvitationPage({ params }: { params: Promise
         style={{ "--portal-accent": accent.text } as React.CSSProperties}
       >
         <span className="brand-wordmark text-xl font-semibold text-white tracking-[0.14em]">{PRODUCT.wordmark}</span>
+        {/* Always-on card kicker — unique vs layout chrome; do not move into a state branch. */}
+        <p className="mt-2 text-body-xs font-semibold uppercase tracking-[0.18em] text-steel-400">
+          Portal invitation
+        </p>
         {!invitation ? (
           <p className="mt-4 text-body-sm text-steel-200">
             This invitation link isn&apos;t valid. Ask {carrier?.name ?? "the carrier"} to send a fresh one.

@@ -261,6 +261,18 @@ const HARD_GOTO_COPY: Record<string, string> = {
   // body. src/app/hub/signup has no loading.tsx of its own.
   "/hub/signup":
     "Create your company's workspace — dispatch, money, compliance, and a driver app, live in an afternoon. No sales call.",
+  // Trailing-slash id-segment before /hub/portal (when that family is
+  // mapped). Four states (valid / used / expired / unknown) render
+  // different body copy; the layout chrome already has "Customer portal"
+  // and the wordmark, so neither is a render gate. The card kicker
+  // "Portal invitation" is unique, always-on, and arrives with the
+  // streamed body — src/app/hub/portal has no loading.tsx. Forced-dark
+  // surface: never text-fg*/bg-surface*/border-border*. Trailing-slash
+  // key matches `.goto(\`…/hub/portal/accept/\${token}\`)` because after
+  // `/hub/portal/accept/` the next source char is `$`, which `(?![/\w])`
+  // accepts. Literal token prefixes in source do not match — keep the
+  // unknown-token smoke on a ${var} interpolation.
+  "/hub/portal/accept/": "Portal invitation",
   "/hub/import": "map columns once, reuse forever",
   // Nav label is "Practice mode"; title "Run the whole company." also lives on the
   // marketing demo. Body copy is unique to the picker.
@@ -279,7 +291,7 @@ const HARD_GOTO_COPY: Record<string, string> = {
 }
 
 const HARD_GOTO_PATH_RE =
-  /\.goto\([^\n]*(\/hub\/money\/settlements|\/hub\/money\/invoices\/|\/hub\/money\/invoices|\/hub\/planner|\/hub\/money\/advances|\/hub\/money\/expenses|\/hub\/money|\/hub\/messages\/announcements|\/hub\/messages\/|\/hub\/messages|\/hub\/compliance\/ifta|\/hub\/compliance\/random-testing|\/hub\/compliance|\/hub\/fuel\/tolls|\/hub\/fuel|\/hub\/drivers|\/hub\/driver\/pay|\/hub\/driver|\/hub\/fleet\/trailers\/new|\/hub\/fleet\/trucks\/new|\/hub\/fleet|\/hub\/dispatch|\/hub\/loadboard|\/hub\/loads\/new|\/hub\/loads\/|\/hub\/loads|\/hub\/login|\/hub\/customers|\/hub\/safety\/new|\/hub\/safety\/claims\/new|\/hub\/safety\/claims|\/hub\/safety|\/hub\/tasks|\/hub\/reports\/owner|\/hub\/reports|\/hub\/leads|\/hub\/recruiting|\/hub\/help|\/hub\/admin|\/hub\/signup|\/hub\/import|\/hub\/sandbox|\/hub\/settings\/users|\/hub\/settings\/branding|\/hub\/settings\/packet|\/hub\/settings\/app|\/hub\/settings\/pay-rules|\/hub\/settings\/pricebook|\/hub\/settings\/integrations|\/hub\/settings)(?![/\w])/
+  /\.goto\([^\n]*(\/hub\/money\/settlements|\/hub\/money\/invoices\/|\/hub\/money\/invoices|\/hub\/planner|\/hub\/money\/advances|\/hub\/money\/expenses|\/hub\/money|\/hub\/messages\/announcements|\/hub\/messages\/|\/hub\/messages|\/hub\/compliance\/ifta|\/hub\/compliance\/random-testing|\/hub\/compliance|\/hub\/fuel\/tolls|\/hub\/fuel|\/hub\/drivers|\/hub\/driver\/pay|\/hub\/driver|\/hub\/fleet\/trailers\/new|\/hub\/fleet\/trucks\/new|\/hub\/fleet|\/hub\/dispatch|\/hub\/loadboard|\/hub\/loads\/new|\/hub\/loads\/|\/hub\/loads|\/hub\/login|\/hub\/customers|\/hub\/safety\/new|\/hub\/safety\/claims\/new|\/hub\/safety\/claims|\/hub\/safety|\/hub\/tasks|\/hub\/reports\/owner|\/hub\/reports|\/hub\/leads|\/hub\/recruiting|\/hub\/help|\/hub\/admin|\/hub\/signup|\/hub\/portal\/accept\/|\/hub\/import|\/hub\/sandbox|\/hub\/settings\/users|\/hub\/settings\/branding|\/hub\/settings\/packet|\/hub\/settings\/app|\/hub\/settings\/pay-rules|\/hub\/settings\/pricebook|\/hub\/settings\/integrations|\/hub\/settings)(?![/\w])/
 
 /** A hard navigation resets the state — page.goto awaits the destination itself. */
 const HARD_NAV = /\.goto\(/
@@ -473,6 +485,13 @@ describe("e2e soft-nav landing gates wait for render before reading", () => {
     expect(HARD_GOTO_PATH_RE.exec(line("/hub/driver"))?.[1]).toBe("/hub/driver")
     expect(HARD_GOTO_PATH_RE.exec(line("/hub/drivers"))?.[1]).toBe("/hub/drivers")
     expect(HARD_GOTO_PATH_RE.exec(line("/hub/driver/pay"))?.[1]).toBe("/hub/driver/pay")
+    // Trailing-slash portal-accept matches ${token} interpolations. A
+    // literal prefix like /hub/portal/accept/not-a-real-token- does not
+    // (next char is \w); keep that smoke on a ${var}. /hub/portal itself
+    // is still unmapped — list /hub/portal/accept/ first when it lands.
+    expect(HARD_GOTO_PATH_RE.exec(line("/hub/portal/accept/${token}"))?.[1]).toBe(
+      "/hub/portal/accept/"
+    )
   })
 
   it("nested hard-goto paths come before their parent in the regex", () => {
@@ -534,7 +553,7 @@ describe("e2e soft-nav landing gates wait for render before reading", () => {
         misses.push(`${f}:${i + 1} goto ${pathMatch[1]} never waits for "${copy}"`)
       })
     }
-    expect(gates, "guard is not silently vacuous").toBeGreaterThanOrEqual(170)
+    expect(gates, "guard is not silently vacuous").toBeGreaterThanOrEqual(174)
     expect(misses).toEqual([])
   })
 
