@@ -220,6 +220,10 @@ async function main() {
   await admin.setViewport({ width: 1440, height: 950 })
   await login(admin, "admin@hauldesk.app")
   await admin.goto(`${BASE}/hub/admin`, { waitUntil: "networkidle2" })
+  // Title "Platform admin" is unique (this surface has no office nav), but
+  // the subtitle is the destination-copy mapping — wait for it before
+  // reading tenant rows off the streamed body.
+  await waitForText(admin, "Tenants and operational counts only")
   await waitForText(admin, "Cascade Demo Lines")
 
   check(await clickTenantAction(admin, "Cascade Demo Lines"), "clicked Suspend on Cascade Demo Lines")

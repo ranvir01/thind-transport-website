@@ -99,6 +99,10 @@ async function main() {
   await login(admin, "admin@hauldesk.app")
   if (!admin.url().includes("/hub/admin")) throw new Error(`Admin landed on ${admin.url()}`)
   await waitForText(admin, "Platform admin")
+  // Subtitle is the destination-copy mapping (same gate as the
+  // tenant-isolation hard goto). Title wait above is unique too, but the
+  // mapping uses this copy so both smokes share one render anchor.
+  await waitForText(admin, "Tenants and operational counts only")
   await waitForText(admin, "Cascade Demo Lines")
   await shot(admin, "06-platform-admin")
   // Bouncing into a tenant surface must redirect back.
