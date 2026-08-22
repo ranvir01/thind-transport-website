@@ -21,7 +21,7 @@
 import pg from "pg"
 import { mkdirSync } from "node:fs"
 import path from "node:path"
-import { launchBrowser, BASE, login, waitForStableText } from "./e2e-lib.mjs"
+import { launchBrowser, BASE, login, waitForStableText, waitForText } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-sweep"
 mkdirSync(OUT, { recursive: true })
@@ -220,9 +220,8 @@ async function main() {
   await portal.setViewport({ width: 1440, height: 950 })
   await login(portal, "broker@demo.thind")
   await portal.goto(`${BASE}/hub/portal`, { waitUntil: "networkidle2" })
-  const loadHref = await portal.evaluate(
-    () => [...document.querySelectorAll("a")].find((a) => a.getAttribute("href")?.includes("/hub/portal/loads/"))?.getAttribute("href")
-  )
+  await waitForText(portal, "no checking calls needed")
+  const loadHref = await portal.evaluate(() => [...document.querySelectorAll("a")].find((a) => a.getAttribute("href")?.includes("/hub/portal/loads/"))?.getAttribute("href"))
   const portalPages = [...PORTAL_PAGES]
   if (loadHref) portalPages.push(["portal-load", loadHref, "stops"])
   else problems.push("portal-home: no /hub/portal/loads/ link found (broker sees no loads?)")

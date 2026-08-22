@@ -43,9 +43,8 @@ async function main() {
 
   console.log("3. Open a load detail")
   await broker.goto(`${BASE}/hub/portal`, { waitUntil: "networkidle2" })
-  const loadHref = await broker.evaluate(
-    () => [...document.querySelectorAll("a")].find((a) => a.getAttribute("href")?.includes("/hub/portal/loads/"))?.getAttribute("href")
-  )
+  await waitForText(broker, "no checking calls needed")
+  const loadHref = await broker.evaluate(() => [...document.querySelectorAll("a")].find((a) => a.getAttribute("href")?.includes("/hub/portal/loads/"))?.getAttribute("href"))
   if (!loadHref) throw new Error("No load link found")
   await broker.goto(`${BASE}${loadHref}`, { waitUntil: "networkidle2" })
   await shot(broker, "02-broker-load")

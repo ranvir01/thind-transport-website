@@ -65,6 +65,13 @@ describe("portal home page accent tokens", () => {
     expect(HOME_SOURCE).not.toMatch(/text-gold|bg-gold|border-gold/)
     expect(HOME_SOURCE).toMatch(/var\(--portal-accent\)/)
   })
+
+  it("the family-gate subtitle is always-on, outside broker/shipper and empty-state branches", () => {
+    const gate = HOME_SOURCE.indexOf("no checking calls needed")
+    const shipperBranch = HOME_SOURCE.indexOf("{user.portalRole === \"shipper\"")
+    expect(gate).toBeGreaterThan(-1)
+    expect(shipperBranch).toBeGreaterThan(gate)
+  })
 })
 
 describe("shared progress/timeline components (portal + public track)", () => {
