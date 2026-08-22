@@ -218,7 +218,7 @@ async function main() {
 
   console.log("3. Log a new non-recordable incident from the office")
   await page.goto(`${BASE}/hub/safety/new`, { waitUntil: "networkidle2" })
-  await waitForText(page, "Log an incident")
+  await waitForText(page, "Three plain questions decide whether DOT counts it as an accident.")
   await setNativeValue(page, "#occurredAt", new Date().toISOString().slice(0, 16))
   await page.type("#location", OFFICE_INCIDENT)
   await page.type("#description", "Backed into a gate post at 5 mph. No injuries, truck drivable.")
