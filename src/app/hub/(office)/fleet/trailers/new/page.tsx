@@ -6,7 +6,10 @@ export default function NewTrailerPage() {
   return (
     <div>
       <BackLink href="/hub/fleet?tab=trailers" label="Fleet" />
-      <PageHeader title="Add Trailer" />
+      <PageHeader
+        title="Add Trailer"
+        subtitle="Unit number and type first — then plate and inspection dates."
+      />
       <TrailerForm initial={emptyTrailer()} />
     </div>
   )

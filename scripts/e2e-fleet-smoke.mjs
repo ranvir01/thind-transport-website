@@ -120,7 +120,7 @@ async function main() {
 
   console.log("4. Add a trailer")
   await page.goto(`${BASE}/hub/fleet/trailers/new`, { waitUntil: "networkidle2" })
-  await waitForText(page, "Add Trailer")
+  await waitForText(page, "Unit number and type first — then plate and inspection dates.")
   await page.type("#t_unit", TRAILER_UNIT)
   await page.select("#t_type", "reefer")
   await page.type("#t_year", "2024")
