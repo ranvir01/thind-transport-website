@@ -20,6 +20,7 @@ async function main() {
   console.log("1. Login + open recruiting")
   await login(page, "dispatch@demo.thind")
   await page.goto(`${BASE}/hub/recruiting`, { waitUntil: "networkidle2" })
+  await waitForText(page, "Application to dispatch-legal driver, all in one place — drag between stages.")
   await shot(page, "01-board")
 
   console.log("2. Add applicant")
