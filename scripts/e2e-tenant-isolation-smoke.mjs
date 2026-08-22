@@ -199,7 +199,7 @@ async function main() {
   })
   await login(driver, "driver@cascademo.example")
   await driver.goto(`${BASE}/hub/driver`, { waitUntil: "networkidle2" })
-  await waitForText(driver, "my cards")
+  await waitForText(driver, "Last pay")
   const driverHomeWall = await bodyText(driver)
   check(driverHomeWall.length > 40, "Cascade driver home renders real content")
   check(!driverHomeWall.includes("THD-"), "Cascade driver home has no THD- reference")
@@ -250,6 +250,9 @@ async function main() {
 
   // The Cascade driver PWA session must be cut off the same way, not just the office side.
   await driver.goto(`${BASE}/hub/driver`, { waitUntil: "networkidle2" })
+  // Suspended driver never sees the PWA "Last pay" card — bounce on leaving
+  // /hub/driver, then wait for the dead-end copy (same pattern as the
+  // roleless /hub/login bounce).
   check(await waitForPath(driver, "/hub/suspended"), "suspended Cascade driver is redirected to /hub/suspended")
   await waitForText(driver, "Workspace suspended")
 

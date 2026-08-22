@@ -113,6 +113,7 @@ async function main() {
   })
   await login(driverPage, "driver@demo.thind")
   await driverPage.goto(`${BASE}/hub/driver`, { waitUntil: "networkidle2" })
+  await waitForText(driverPage, "Last pay")
   // NotificationsBell's first fetch is deferred off the mount effect (setTimeout(refresh, 0))
   // — wait for the aria-label to actually reflect the unread count instead of guessing how
   // long that GET takes.

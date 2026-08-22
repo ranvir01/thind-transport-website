@@ -246,6 +246,7 @@ async function main() {
 
   console.log("5. Driver delivers lumber load and sends POD with OS&D (opens claim file)")
   await driverPage.goto(`${BASE}/hub/driver`, { waitUntil: "networkidle2" })
+  await waitForText(driverPage, "Last pay")
   await advanceDriverLoadToDelivered(driverPage)
   await uploadOsdPod(driverPage, fixturePath)
   await shot(driverPage, "05-osd-pod-sent")

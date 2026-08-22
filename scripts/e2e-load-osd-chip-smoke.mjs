@@ -110,6 +110,7 @@ async function main() {
   await driverPage.setViewport({ width: 390, height: 844 })
   await login(driverPage, "driver@demo.thind")
   await driverPage.goto(`${BASE}/hub/driver`, { waitUntil: "networkidle2" })
+  await waitForText(driverPage, "Last pay")
   await advanceDriverLoadToDelivered(driverPage)
   await uploadOsdPod(driverPage, fixturePath)
   await shot(driverPage, "02-driver-osd-pod-sent")
