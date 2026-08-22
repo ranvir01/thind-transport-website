@@ -248,6 +248,7 @@ async function main() {
     const { errors: driverErrors } = trackPageErrors(dpage)
 
     await dpage.goto(`${BASE}/hub/login`, { waitUntil: "networkidle2" })
+    await waitForText(dpage, "One login for dispatch, drivers, and partners.")
     await dpage.type("#email", "driver@demo.thind")
     await dpage.type("#password", "ThindDemo1!")
     await Promise.all([

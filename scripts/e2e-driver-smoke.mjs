@@ -31,6 +31,7 @@ async function main() {
   try {
     console.log("1. Login as demo driver")
     await page.goto(`${BASE}/hub/login`, { waitUntil: "networkidle2" })
+    await waitForText(page, "One login for dispatch, drivers, and partners.")
     await page.type("#email", "driver@demo.thind")
     await page.type("#password", "ThindDemo1!")
     await shot(page, "01-login")

@@ -374,6 +374,7 @@ export async function skipFirstRunTour(page) {
 
 export async function login(page, email, password = "ThindDemo1!") {
   await page.goto(`${BASE}/hub/login`, { waitUntil: "networkidle2" })
+  await waitForText(page, "One login for dispatch, drivers, and partners.")
   // Same origin as the app, so this write is already in place before the first
   // /hub render decides whether to auto-start the tour.
   await skipFirstRunTour(page)

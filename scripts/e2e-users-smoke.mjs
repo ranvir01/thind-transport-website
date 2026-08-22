@@ -49,6 +49,7 @@ async function userRow(page, email) {
 /** Attempt a login that is EXPECTED to fail: stays on /hub/login with the toast. */
 async function loginRefused(page, email, password) {
   await page.goto(`${BASE}/hub/login`, { waitUntil: "networkidle2" })
+  await waitForText(page, "One login for dispatch, drivers, and partners.")
   await page.type("#email", email)
   await page.type("#password", password)
   await page.click('button[type="submit"]')
