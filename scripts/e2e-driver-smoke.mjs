@@ -120,6 +120,7 @@ async function main() {
     await waitForText(page, "ask for home time")
     await shot(page, "12-more")
     await page.goto(`${BASE}/hub/driver/docs`, { waitUntil: "networkidle2" })
+    await waitForText(page, "What the office has on file for you — and when it runs out.")
     await shot(page, "13-docs")
 
     console.log("10. Incident report")
