@@ -95,6 +95,7 @@ async function main() {
 
     console.log("8. Time off request")
     await page.goto(`${BASE}/hub/driver/timeoff`, { waitUntil: "networkidle2" })
+    await waitForText(page, "dispatch can't book you over it")
     const nextWeek = new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10)
     const nextWeekEnd = new Date(Date.now() + 9 * 86400000).toISOString().slice(0, 10)
     await page.evaluate((start, end) => {
