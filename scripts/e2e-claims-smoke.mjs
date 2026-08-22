@@ -55,7 +55,10 @@ async function main() {
 
   console.log("3. Open a cargo claim: load, amount, deadline 21 days out")
   await page.goto(`${BASE}/hub/safety/claims/new`, { waitUntil: "networkidle2" })
-  await textAppears(page, "Open a claim")
+  // Title "Open a claim" is unique (not a nav label), but create-route
+  // doctrine uses the PageHeader subtitle — wait for it before typing
+  // into #claimLoad against the streamed body.
+  await waitForText(page, "Get it on file with a deadline before the paperwork scatters.")
   // Pick the first seeded load in the dropdown.
   const pickedLoad = await page.evaluate(() => {
     const sel = document.querySelector("#claimLoad")
