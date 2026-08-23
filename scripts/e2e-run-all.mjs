@@ -21,15 +21,18 @@
  * the summary alone is enough to start diagnosing. E2E_TIMEOUT_MS caps each
  * script (default 420000) so one hung smoke can't stall the whole run.
  *
- * A preflight checks the rig before the ~10-minute run: server answering,
- * NEXTAUTH_SECRET + CREDENTIALS_KEY set, demo seed present. Any miss used
- * to surface only mid-suite (the mailbox smoke's fast-fail, baffling login
- * 401s); now it fails in the first seconds with the fix spelled out.
+ * A preflight checks the rig before the ~10-minute run: server answering AND
+ * serving the build in .next, NEXTAUTH_SECRET + CREDENTIALS_KEY set, demo seed
+ * present. Any miss used to surface only mid-suite (the mailbox smoke's
+ * fast-fail, baffling login 401s); now it fails in the first seconds with the
+ * fix spelled out. The build-id check exists because `next start`'s wrapper is
+ * not what owns the port — see scripts/build-freshness.mjs.
  */
 import { readdirSync, mkdirSync, createWriteStream, readFileSync } from "node:fs"
 import { spawn } from "node:child_process"
 import path from "node:path"
 import { BASE } from "./e2e-lib.mjs" // side effect: loads .env.local for localhost BASE
+import { staleBuildProblem } from "./build-freshness.mjs"
 
 const TIMEOUT_MS = Number(process.env.E2E_TIMEOUT_MS ?? 420000)
 const filters = process.argv.slice(2).map((f) => f.toLowerCase())
@@ -37,8 +40,18 @@ const filters = process.argv.slice(2).map((f) => f.toLowerCase())
 const problems = []
 try {
   const res = await fetch(`${BASE}/hub/login`)
-  if (res.status !== 200)
+  if (res.status !== 200) {
     problems.push(`${BASE}/hub/login answered ${res.status} — is the right app running there?`)
+  } else {
+    let buildId = null
+    try {
+      buildId = readFileSync(".next/BUILD_ID", "utf-8").trim()
+    } catch {
+      /* no local build (remote drive, or the suite is run before a build) */
+    }
+    const stale = staleBuildProblem({ base: BASE, html: await res.text(), buildId })
+    if (stale) problems.push(stale)
+  }
 } catch {
   problems.push(`no server answering at ${BASE} — run: npm run build && npm run start`)
 }
