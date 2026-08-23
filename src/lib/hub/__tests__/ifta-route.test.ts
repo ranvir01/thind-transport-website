@@ -7,14 +7,14 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 import { computeIfta } from "@/lib/hub/ifta-core"
 
-vi.mock("@/lib/hub/session", () => ({ getHubUser: vi.fn() }))
+vi.mock("@/lib/hub/session", () => ({ getActiveHubUser: vi.fn() }))
 vi.mock("@/lib/hub/permissions", () => ({ can: vi.fn() }))
 vi.mock("@/lib/hub/ifta", () => ({ getIftaReport: vi.fn(), exportIftaSources: vi.fn(), listIftaRates: vi.fn() }))
 vi.mock("@/lib/hub/settings", () => ({ getCarrier: vi.fn(), getCarrierSettings: vi.fn() }))
 vi.mock("@/lib/hub/pdf", () => ({ buildIftaPdf: vi.fn(async () => Buffer.from("pdf-bytes")) }))
 vi.mock("@/lib/hub/ifta-pdf", () => ({ withIftaWarningsCoverPage: vi.fn(async (bytes: Uint8Array) => bytes) }))
 
-import { getHubUser } from "@/lib/hub/session"
+import { getActiveHubUser } from "@/lib/hub/session"
 import { can } from "@/lib/hub/permissions"
 import { getIftaReport, exportIftaSources, listIftaRates } from "@/lib/hub/ifta"
 import { getCarrier, getCarrierSettings } from "@/lib/hub/settings"
@@ -22,7 +22,7 @@ import { buildIftaPdf } from "@/lib/hub/pdf"
 import { withIftaWarningsCoverPage } from "@/lib/hub/ifta-pdf"
 import { GET } from "@/app/api/hub/ifta/[quarter]/[file]/route"
 
-const getHubUserMock = vi.mocked(getHubUser)
+const getActiveHubUserMock = vi.mocked(getActiveHubUser)
 const canMock = vi.mocked(can)
 const getIftaReportMock = vi.mocked(getIftaReport)
 const exportIftaSourcesMock = vi.mocked(exportIftaSources)
@@ -40,7 +40,7 @@ function call(quarter: string, file: string) {
 }
 
 beforeEach(() => {
-  getHubUserMock.mockReset().mockResolvedValue(user)
+  getActiveHubUserMock.mockReset().mockResolvedValue(user)
   canMock.mockReset().mockReturnValue(true)
   getIftaReportMock.mockReset()
   exportIftaSourcesMock.mockReset().mockResolvedValue({ pingsCsv: "unit,timestamp\n", fuelCsv: "unit,timestamp\n" })
@@ -52,7 +52,7 @@ beforeEach(() => {
 
 describe("GET /api/hub/ifta/[quarter]/[file]", () => {
   it("403s when unauthenticated", async () => {
-    getHubUserMock.mockResolvedValue(null)
+    getActiveHubUserMock.mockResolvedValue(null)
     const res = await call("2026Q1", "sources.csv")
     expect(res.status).toBe(403)
   })

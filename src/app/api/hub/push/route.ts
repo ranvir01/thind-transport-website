@@ -5,7 +5,7 @@
  * DELETE → remove a subscription (sign-out / disable)
  */
 import { NextResponse } from "next/server"
-import { getHubUser } from "@/lib/hub/session"
+import { getActiveHubUser } from "@/lib/hub/session"
 import { pushConfigured, removePushSubscription, savePushSubscription } from "@/lib/hub/notify"
 
 export async function GET() {
@@ -15,7 +15,7 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const user = await getHubUser()
+  const user = await getActiveHubUser()
   if (!user) return NextResponse.json({ error: "Not signed in" }, { status: 401 })
   const body = (await request.json()) as {
     endpoint?: string
@@ -34,7 +34,7 @@ export async function POST(request: Request) {
 }
 
 export async function DELETE(request: Request) {
-  const user = await getHubUser()
+  const user = await getActiveHubUser()
   if (!user) return NextResponse.json({ error: "Not signed in" }, { status: 401 })
   const body = (await request.json()) as { endpoint?: string }
   if (body.endpoint) await removePushSubscription(user.carrierId, user.id, body.endpoint)

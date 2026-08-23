@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { getHubUser } from "@/lib/hub/session"
+import { getActiveHubUser } from "@/lib/hub/session"
 import { can } from "@/lib/hub/permissions"
 import { getCustomerStatementDetail } from "@/lib/hub/invoices"
 import { getCarrier, getCarrierSettings } from "@/lib/hub/settings"
@@ -9,7 +9,7 @@ export async function GET(
   _req: Request,
   { params }: { params: Promise<{ customerId: string }> }
 ) {
-  const user = await getHubUser()
+  const user = await getActiveHubUser()
   if (!user) return NextResponse.json({ error: "Forbidden" }, { status: 403 })
   if (!can(user.role, "money:read")) return NextResponse.json({ error: "Forbidden" }, { status: 403 })
 
