@@ -31,6 +31,25 @@ export async function getHubUser(): Promise<HubSessionUser | null> {
 }
 
 /**
+ * getHubUser plus the JWT-vs-DB re-checks every guard below performs:
+ * returns null for a deactivated user or a suspended carrier instead of
+ * redirecting or throwing — the right shape for route handlers and actions
+ * that answer 401/403 themselves. Route handlers don't run layouts, so a
+ * bare getHubUser there re-opened the ~30-day-token gap the guards closed;
+ * use this instead (guarded by route-guard-depth.test.ts).
+ */
+export async function getActiveHubUser(): Promise<HubSessionUser | null> {
+  const user = await getHubUser()
+  if (!user) return null
+  if (user.role === "platform_admin") {
+    return (await isActivePlatformAdmin(user.id)) ? user : null
+  }
+  if (!(await isActiveUser(user))) return null
+  if (!(await isActiveCarrier(user.carrierId))) return null
+  return user
+}
+
+/**
  * `active` is part of the guard: login checks it, but sessions are JWTs —
  * without this, a deactivated account keeps access until the token expires
  * (~30 days). Fixed for driver/portal already; office/permission guards

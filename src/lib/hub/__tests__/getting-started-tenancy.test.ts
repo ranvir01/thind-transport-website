@@ -10,7 +10,7 @@
  */
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
-vi.mock("../session", () => ({ getHubUser: vi.fn() }))
+vi.mock("../session", () => ({ getActiveHubUser: vi.fn() }))
 
 vi.mock("../db", () => ({
   query: vi.fn(async () => []),
@@ -18,11 +18,11 @@ vi.mock("../db", () => ({
   hubDb: vi.fn(),
 }))
 
-import { getHubUser } from "../session"
+import { getActiveHubUser } from "../session"
 import { queryOne } from "../db"
 import { gettingStartedState } from "@/app/hub/_actions/onboarding"
 
-const getHubUserMock = vi.mocked(getHubUser)
+const getActiveHubUserMock = vi.mocked(getActiveHubUser)
 const queryOneMock = vi.mocked(queryOne)
 
 const CARRIER_A = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
@@ -33,21 +33,21 @@ function ownerOf(carrierId: string) {
 }
 
 beforeEach(() => {
-  getHubUserMock.mockReset()
+  getActiveHubUserMock.mockReset()
   queryOneMock.mockReset()
   queryOneMock.mockResolvedValue(null)
 })
 
 describe("gettingStartedState", () => {
   it("returns null and never queries the database for a signed-out caller", async () => {
-    getHubUserMock.mockResolvedValue(null)
+    getActiveHubUserMock.mockResolvedValue(null)
     const result = await gettingStartedState()
     expect(result).toBeNull()
     expect(queryOneMock).not.toHaveBeenCalled()
   })
 
   it("scopes every subquery to the caller's own carrier_id, not a wider or client-chosen scope", async () => {
-    getHubUserMock.mockResolvedValue(ownerOf(CARRIER_A))
+    getActiveHubUserMock.mockResolvedValue(ownerOf(CARRIER_A))
     queryOneMock.mockResolvedValue({
       trucks: "0", drivers: "0", customers: "0", loads: "0", packet: "0", fuel: "0",
     })
@@ -65,7 +65,7 @@ describe("gettingStartedState", () => {
   })
 
   it("a different caller's carrier_id is bound, not reused across callers", async () => {
-    getHubUserMock.mockResolvedValue(ownerOf(CARRIER_B))
+    getActiveHubUserMock.mockResolvedValue(ownerOf(CARRIER_B))
     queryOneMock.mockResolvedValue({
       trucks: "1", drivers: "1", customers: "1", loads: "1", packet: "1", fuel: "1",
     })
@@ -78,14 +78,14 @@ describe("gettingStartedState", () => {
   })
 
   it("returns null when the carrier row lookup comes back empty", async () => {
-    getHubUserMock.mockResolvedValue(ownerOf(CARRIER_A))
+    getActiveHubUserMock.mockResolvedValue(ownerOf(CARRIER_A))
     queryOneMock.mockResolvedValue(null)
     const result = await gettingStartedState()
     expect(result).toBeNull()
   })
 
   it("a brand-new tenant with all-zero counts renders every step as not-done", async () => {
-    getHubUserMock.mockResolvedValue(ownerOf(CARRIER_A))
+    getActiveHubUserMock.mockResolvedValue(ownerOf(CARRIER_A))
     queryOneMock.mockResolvedValue({
       trucks: "0", drivers: "0", customers: "0", loads: "0", packet: "0", fuel: "0",
     })
@@ -98,7 +98,7 @@ describe("gettingStartedState", () => {
   })
 
   it("maps each count independently — one populated table doesn't mark unrelated steps done", async () => {
-    getHubUserMock.mockResolvedValue(ownerOf(CARRIER_A))
+    getActiveHubUserMock.mockResolvedValue(ownerOf(CARRIER_A))
     queryOneMock.mockResolvedValue({
       trucks: "3", drivers: "0", customers: "0", loads: "0", packet: "0", fuel: "0",
     })
