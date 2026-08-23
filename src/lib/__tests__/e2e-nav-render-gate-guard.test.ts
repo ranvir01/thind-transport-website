@@ -537,9 +537,10 @@ describe("e2e soft-nav landing gates wait for render before reading", () => {
     // Doctrine (249ef648 TOP PICK): a trailing-slash key matches
     // `.goto(\`…/path/\${id}\`)` because after the slash the next source
     // char is `$`, which `(?![/\w])` accepts. Named children (/new,
-    // /announcements) stay their own keys and are listed first so they
-    // do not fall into the id family. Literal UUIDs in source are not
-    // used by any smoke; do not widen the lookahead to hex.
+    // /announcements) stay their own keys; the lookahead — not their
+    // position in the alternation — is what keeps them out of the id
+    // family (`/hub/loads/` followed by `n` fails it). Literal UUIDs in
+    // source are not used by any smoke; do not widen the lookahead to hex.
     const line = (path: string) => `await page.goto(\`\${BASE}${path}\`, { waitUntil: "networkidle2" })`
     expect(HARD_GOTO_PATH_RE.exec(line("/hub/loads/${id}"))?.[1]).toBe("/hub/loads/")
     expect(HARD_GOTO_PATH_RE.exec(line("/hub/loads/new"))?.[1]).toBe("/hub/loads/new")
@@ -560,10 +561,11 @@ describe("e2e soft-nav landing gates wait for render before reading", () => {
     // /hub/driver/pay, /hub/driver/messages, /hub/driver/incident,
     // /hub/driver/dvir, /hub/driver/timeoff, /hub/driver/more, and
     // /hub/driver/docs (extra slash). Office roster must keep its own
-    // key; nested PWA children are listed first so they map to their
-    // own subtitles, not the home glance. Driver HARD_GOTO children
-    // are complete this cycle. Thread detail stays uncovered —
-    // lookahead rejects the extra slash.
+    // key; nested PWA children map to their own subtitles rather than the
+    // home glance because the lookahead rejects `/hub/driver` in front of
+    // both `s` and `/`, not because of where they sit in the alternation.
+    // Driver HARD_GOTO children are complete this cycle. Thread detail
+    // stays uncovered — lookahead rejects the extra slash.
     expect(HARD_GOTO_PATH_RE.exec(line("/hub/driver"))?.[1]).toBe("/hub/driver")
     expect(HARD_GOTO_PATH_RE.exec(line("/hub/drivers"))?.[1]).toBe("/hub/drivers")
     expect(HARD_GOTO_PATH_RE.exec(line("/hub/driver/pay"))?.[1]).toBe("/hub/driver/pay")
@@ -588,9 +590,15 @@ describe("e2e soft-nav landing gates wait for render before reading", () => {
   })
 
   it("nested hard-goto paths come before their parent in the regex", () => {
-    // Alternation is first-match-wins: with "/hub/compliance" listed first,
-    // "/hub/compliance/random-testing" would match the parent, fail the
-    // `(?![/\w])` lookahead, and drop out of the guard entirely.
+    // READABILITY CONVENTION, not a correctness gate — the ordering is not
+    // what makes nested paths resolve. Alternation is first-match-wins only
+    // among alternatives that actually match: a parent listed first DOES win
+    // the alternation against a nested line, but `(?![/\w])` then rejects it
+    // (the next char is `/`), the engine backtracks into the same position,
+    // and the longer alternative matches. So the child resolves to its own
+    // copy from any position — proved over the real path list by the
+    // order-independence test below. Keep the convention anyway: reading the
+    // alternation top-to-bottom should show the specific before the general.
     const misordered: string[] = []
     RE_PATHS.forEach((parent, i) => {
       RE_PATHS.forEach((child, j) => {
@@ -600,6 +608,39 @@ describe("e2e soft-nav landing gates wait for render before reading", () => {
       })
     })
     expect(misordered).toEqual([])
+  })
+
+  it("hard-goto path resolution does not depend on alternation order", () => {
+    // The correctness guarantee the ordering convention above is often
+    // mistaken for. Every key is either disjoint from the others or a
+    // strict prefix of them; a strict prefix is always followed in source
+    // by `/` or a word char, both of which `(?![/\w])` rejects — so a
+    // shorter alternative can never win against a line carrying the longer
+    // path, whatever order they are listed in. Re-derive the regex from the
+    // live path list in deliberately hostile orders and require every path
+    // to still resolve to itself. If this ever fails, the lookahead (not the
+    // ordering) is what regressed.
+    const build = (paths: string[]) =>
+      new RegExp(
+        `\\.goto\\([^\\n]*(${paths.map((p) => p.replace(/\//g, "\\/")).join("|")})(?![/\\w])`
+      )
+    // Trailing-slash keys are id-segment families — probe them the way a
+    // smoke writes them, with an interpolation after the slash.
+    const probe = (p: string) => (p.endsWith("/") ? `${p}\${id}` : p)
+    const orders: [string, string[]][] = [
+      ["as-listed", RE_PATHS],
+      ["reversed", [...RE_PATHS].reverse()],
+      // Worst case for a first-match-wins reading: every parent precedes
+      // every one of its children.
+      ["shortest-first", [...RE_PATHS].sort((a, b) => a.length - b.length)],
+    ]
+    for (const [label, paths] of orders) {
+      const re = build(paths)
+      const line = (path: string) =>
+        `await page.goto(\`\${BASE}${path}\`, { waitUntil: "networkidle2" })`
+      const mismatches = RE_PATHS.filter((p) => re.exec(line(probe(p)))?.[1] !== p)
+      expect(`${label}: ${mismatches.join(", ")}`).toBe(`${label}: `)
+    }
   })
 
   it("hard-goto list pages wait for destination copy, not the nav label", () => {
