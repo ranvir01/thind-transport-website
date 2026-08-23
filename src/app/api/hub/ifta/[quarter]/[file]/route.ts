@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { getHubUser } from "@/lib/hub/session"
+import { getActiveHubUser } from "@/lib/hub/session"
 import { can } from "@/lib/hub/permissions"
 import { getIftaReport, exportIftaSources, listIftaRates } from "@/lib/hub/ifta"
 import { iftaWorksheetWarnings, iftaRowFuelTaxCents, iftaWorksheetTotals } from "@/lib/hub/ifta-core"
@@ -12,7 +12,7 @@ export async function GET(
   _req: Request,
   { params }: { params: Promise<{ quarter: string; file: string }> }
 ) {
-  const user = await getHubUser()
+  const user = await getActiveHubUser()
   if (!user || !can(user.role, "compliance:read")) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 })
   }

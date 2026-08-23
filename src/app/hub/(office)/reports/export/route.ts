@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { getHubUser } from "@/lib/hub/session"
+import { getActiveHubUser } from "@/lib/hub/session"
 import { can } from "@/lib/hub/permissions"
 import { resolvePnlRange, truckPnlRange, truckPnlRangeCsv } from "@/lib/hub/reports"
 
@@ -12,7 +12,7 @@ export const dynamic = "force-dynamic"
  * /api/hub/exports/[kind].
  */
 export async function GET(req: Request) {
-  const user = await getHubUser()
+  const user = await getActiveHubUser()
   if (!user || !can(user.role, "money:read")) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 })
   }

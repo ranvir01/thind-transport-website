@@ -11,15 +11,15 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vites
 
 vi.mock("../db", () => ({ query: vi.fn(async () => []), queryOne: vi.fn(async () => null), hubDb: vi.fn() }))
 vi.mock("../audit", () => ({ logAudit: vi.fn(async () => undefined) }))
-vi.mock("@/lib/hub/session", () => ({ getHubUser: vi.fn() }))
+vi.mock("@/lib/hub/session", () => ({ getActiveHubUser: vi.fn() }))
 
 import { query } from "../db"
-import { getHubUser } from "@/lib/hub/session"
+import { getActiveHubUser } from "@/lib/hub/session"
 import { exportCsv } from "../expenses"
 import { GET } from "@/app/api/hub/exports/[kind]/route"
 
 const queryMock = vi.mocked(query)
-const getHubUserMock = vi.mocked(getHubUser)
+const getActiveHubUserMock = vi.mocked(getActiveHubUser)
 
 const CARRIER = "11111111-1111-1111-1111-111111111111"
 
@@ -64,8 +64,8 @@ function exportRequest(kind: string, search = "") {
 beforeEach(() => {
   queryMock.mockReset()
   queryMock.mockResolvedValue([PAYEE_ROW])
-  getHubUserMock.mockReset()
-  getHubUserMock.mockResolvedValue({ id: "u1", name: "Ollie", email: "ollie@carrier.test", role: "owner", carrierId: CARRIER })
+  getActiveHubUserMock.mockReset()
+  getActiveHubUserMock.mockResolvedValue({ id: "u1", name: "Ollie", email: "ollie@carrier.test", role: "owner", carrierId: CARRIER })
 })
 
 describe("exportCsv 1099 filing year", () => {
@@ -145,7 +145,7 @@ describe("/api/hub/exports/1099 year threading", () => {
   })
 
   it("still refuses a role without money:read, year or no year", async () => {
-    getHubUserMock.mockResolvedValue({ id: "d1", name: "Dana", email: "dana@driver.test", role: "driver", carrierId: CARRIER })
+    getActiveHubUserMock.mockResolvedValue({ id: "d1", name: "Dana", email: "dana@driver.test", role: "driver", carrierId: CARRIER })
     const res = await exportRequest("1099", "?year=2024")
     expect(res.status).toBe(403)
     expect(queryMock).not.toHaveBeenCalled()

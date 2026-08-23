@@ -6,11 +6,16 @@
  * (an owner resetting a locked-out user's 2FA is deliberately a future,
  * audited admin action — silently strippable 2FA isn't 2FA).
  */
-import { getHubUser, type HubSessionUser } from "@/lib/hub/session"
+import { getActiveHubUser, type HubSessionUser } from "@/lib/hub/session"
 
-/** Any signed-in hub user — drivers included; 2FA is for every account. */
+/**
+ * Any signed-in hub user — drivers included; 2FA is for every account.
+ * getActiveHubUser, not getHubUser: a deactivated account or suspended
+ * workspace must not keep 2FA lifecycle control for the JWT's lifetime
+ * (strip its own second factor, re-enroll a fresh secret).
+ */
 async function requireHubUser(): Promise<HubSessionUser> {
-  const user = await getHubUser()
+  const user = await getActiveHubUser()
   if (!user) throw new Error("Not signed in")
   return user
 }

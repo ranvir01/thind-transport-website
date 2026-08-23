@@ -1,6 +1,6 @@
 import { promises as fs } from "fs"
 import { NextResponse } from "next/server"
-import { getHubUser } from "@/lib/hub/session"
+import { getActiveHubUser } from "@/lib/hub/session"
 import { localUploadPath, resolveHubFile, blobPathnameFor } from "@/lib/hub/documents"
 import { portalFileVisible } from "@/lib/hub/portal"
 import { driverFileVisible } from "@/lib/hub/driver-app"
@@ -42,7 +42,7 @@ export async function GET(
   _req: Request,
   { params }: { params: Promise<{ name: string }> }
 ) {
-  const user = await getHubUser()
+  const user = await getActiveHubUser()
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
