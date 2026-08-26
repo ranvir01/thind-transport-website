@@ -10,7 +10,9 @@ import { OperationSection } from "@/components/home/OperationSection"
 import { DispatchBand } from "@/components/home/DispatchBand"
 import { PhotoBand } from "@/components/home/PhotoBand"
 import { DeferredApplicationForm, DeferredProfitCalculator, DeferredQuickQualify } from "@/components/home/DeferredHomeSections"
+import { HomeTimeLanes } from "@/components/home/HomeTimeLanes"
 import { WhySwitch } from "@/components/features/WhySwitch"
+import { COMPANY_INFO } from "@/lib/constants"
 import Link from "next/link"
 
 export default function Home() {
@@ -21,6 +23,7 @@ export default function Home() {
       {/* Three doors, immediately after the hero — see AudienceSelector for why
           this is inline rather than a blocking gate. */}
       <AudienceSelector />
+      <HomeTimeLanes />
 
       <TrustStrip />
 
@@ -71,16 +74,16 @@ export default function Home() {
 
             <div className="flex flex-wrap justify-center gap-4 mb-8">
               <a 
-                href="tel:+12067656300"
+                href={`tel:${COMPANY_INFO.phoneFormatted}`}
                 className="flex items-center gap-2 px-6 py-3 border border-steel-600 bg-steel-800/50 rounded-fleet text-white font-semibold hover:border-orange/50 hover:text-orange transition-colors"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                 </svg>
-                Call: (206) 765-6300
+                Call: {COMPANY_INFO.phone}
               </a>
               <a 
-                href="mailto:thindcarrier@gmail.com"
+                href={`mailto:${COMPANY_INFO.email}`}
                 className="flex items-center gap-2 px-6 py-3 border border-steel-600 bg-steel-800/50 rounded-fleet text-white font-semibold hover:border-orange/50 hover:text-orange transition-colors"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -10,6 +10,7 @@ import {
   Calendar,
 } from "lucide-react"
 import { Reveal } from "@/components/ui/Reveal"
+import { PAY_RATES } from "@/lib/constants"
 
 export function RoutesSection() {
   return (
@@ -51,14 +52,14 @@ export function RoutesSection() {
                   </h3>
                   <div className="flex flex-col items-center gap-0.5 sm:gap-1 mb-2">
                     <span className="text-2xl sm:text-3xl font-black text-gold">
-                      $57K-$63K
+                      {PAY_RATES.companyDriver.local.annual}
                     </span>
                     <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-steel-400">
                       Target Annual Pay
                     </span>
                   </div>
                   <div className="inline-block px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-lg bg-steel-800/60 border border-steel-700/60 text-xs font-bold text-steel-200">
-                    $0.63 CPM
+                    {PAY_RATES.companyDriver.local.perMile}/mile
                   </div>
                 </div>
 
@@ -140,14 +141,14 @@ export function RoutesSection() {
                   </h3>
                   <div className="flex flex-col items-center gap-0.5 sm:gap-1 mb-2">
                     <span className="text-2xl sm:text-3xl font-black text-gold">
-                      $63K-$73K
+                      {PAY_RATES.companyDriver.regional.annual}
                     </span>
                     <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-steel-400">
                       Target Annual Pay
                     </span>
                   </div>
                   <div className="inline-block px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-lg bg-steel-800/60 border border-steel-700/60 text-xs font-bold text-steel-200">
-                    $0.63 CPM
+                    {PAY_RATES.companyDriver.regional.perMile}/mile
                   </div>
                 </div>
 
@@ -229,14 +230,14 @@ export function RoutesSection() {
                   </h3>
                   <div className="flex flex-col items-center gap-0.5 sm:gap-1 mb-2">
                     <span className="text-2xl sm:text-3xl font-black text-gold">
-                      $65K-$280K
+                      {PAY_RATES.companyDriver.otr.annual}
                     </span>
                     <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-steel-400">
-                      Target Annual Pay
+                      Company driver
                     </span>
                   </div>
                   <div className="inline-block px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-lg bg-steel-800/60 border border-steel-700/60 text-xs font-bold text-steel-200">
-                    $0.55-$0.60 CPM / 90% O/O
+                    {PAY_RATES.companyDriver.otr.perMile}/mile · {PAY_RATES.ownerOperator.commission} O/O
                   </div>
                 </div>
 
@@ -250,7 +251,7 @@ export function RoutesSection() {
                         Schedule
                       </p>
                       <p className="text-xs sm:text-sm text-zinc-200 font-medium">
-                        2-3 Weeks Out, 3-4 Days Home
+                        {PAY_RATES.companyDriver.otr.homeTime} out
                       </p>
                     </div>
                   </div>
@@ -289,10 +290,10 @@ export function RoutesSection() {
                     Owner Operator Benefits:
                   </p>
                   <ul className="text-xs sm:text-sm text-steel-200 space-y-1 sm:space-y-2 font-medium">
-                    <li>• 90% of gross revenue</li>
-                    <li>• Avg $2.25-$3.25/mile</li>
+                    <li>• {PAY_RATES.ownerOperator.commission} of gross revenue</li>
+                    <li>• {PAY_RATES.ownerOperator.perMile}/mile typical freight</li>
                     <li>• Pick your own loads</li>
-                    <li>• $180K-$280K potential</li>
+                    <li>• {PAY_RATES.ownerOperator.annualGross} typical gross</li>
                   </ul>
                 </div>
               </CardContent>

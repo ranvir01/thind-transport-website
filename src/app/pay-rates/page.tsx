@@ -59,7 +59,7 @@ export default function PayRatesPage() {
             Transparent <span className="text-orange">Pay Rates</span>
           </>
         }
-        description="No hidden fees. No surprises. Just straightforward, competitive pay — 90% split for owner-operators, $0.63/mile for company drivers."
+        description={`No hidden fees. Owner-operators keep ${PAY_RATES.ownerOperator.commission} of gross. Company drivers run ${PAY_RATES.companyDriver.local.perMile}/mile — local, regional, or OTR.`}
         primaryLabel="See What You'd Earn"
         primaryHref="/#calculator"
       />
@@ -92,7 +92,7 @@ export default function PayRatesPage() {
                   <Badge className="bg-[#17181B] text-white px-3 py-1 font-bold">Full-Time</Badge>
                 </CardTitle>
                 <CardDescription className="text-base text-gray-700 font-medium">
-                  Competitive pay, excellent benefits, and flexible routes
+                  {PAY_RATES.companyDriver.local.perMile}/mile · weekly pay · home time you pick
                 </CardDescription>
               </CardHeader>
               <CardContent className="pt-6">
@@ -116,7 +116,9 @@ export default function PayRatesPage() {
                       <Home className="h-5 w-5 text-[#17181B]" />
                       <span className="text-sm font-medium text-gray-700">Home Time</span>
                     </div>
-                    <span className="font-black text-xl text-gray-900">Flexible</span>
+                    <span className="font-black text-xl text-gray-900">
+                      {PAY_RATES.companyDriver.local.homeTime} / {PAY_RATES.companyDriver.regional.homeTime} / {PAY_RATES.companyDriver.otr.homeTime}
+                    </span>
                   </div>
                   <div className="flex items-center justify-between p-4 bg-gradient-to-r from-gray-50 to-blue-50 rounded-xl hover:from-blue-50 hover:to-indigo-50 transition-colors group/item">
                     <div className="flex items-center gap-3">
@@ -138,7 +140,7 @@ export default function PayRatesPage() {
                   </div>
                   <div className="flex items-center gap-2 text-sm">
                     <CheckCircle2 className="h-4 w-4 text-green-600" />
-                    <span className="text-gray-800 font-medium">Full benefits package included</span>
+                    <span className="text-gray-800 font-medium">Weekly direct deposit · 24/7 dispatch · no medical plan today</span>
                   </div>
                 </div>
 
@@ -158,7 +160,7 @@ export default function PayRatesPage() {
                   <Badge className="bg-[#17181B] text-white px-3 py-1 font-bold">Independent</Badge>
                 </CardTitle>
                 <CardDescription className="text-base text-gray-700 font-medium">
-                  Highest earning potential with 90% commission
+                  Independent contractor · {PAY_RATES.ownerOperator.commission} of gross
                 </CardDescription>
               </CardHeader>
               <CardContent className="pt-6">

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useForm } from "react-hook-form"
@@ -21,7 +21,7 @@ import { cn } from "@/lib/utils"
 
 import { submitApplication } from "@/app/actions/submit-application"
 import { PAY_RATES, COMPANY_INFO } from "@/lib/constants"
-import { applyProgressPercent } from "./apply-progress"
+import { applyProgressPercent, applyPrefFromSearch } from "./apply-progress"
 import { fireLeadCapture } from "./lead-capture"
 import { HONEYPOT_FIELD, readHoneypotValue } from "@/lib/honeypot"
 import { track } from "@vercel/analytics"
@@ -87,6 +87,19 @@ export function ApplicationForm() {
   })
 
   const watchedFields = watch()
+
+  // Deep links from /veterans, /load-board, and the homepage lane cards
+  // (`?type=company|owner&lane=local|regional|otr`) used to be ignored — the
+  // form always pre-selected owner-operator + regional. Honor them once on mount.
+  useEffect(() => {
+    const pref = applyPrefFromSearch(window.location.search)
+    if (pref.driverType) {
+      setValue("driverType", pref.driverType, { shouldValidate: false })
+    }
+    if (pref.routeType) {
+      setValue("routeType", pref.routeType, { shouldValidate: false })
+    }
+  }, [setValue])
 
   // Phone Mask Logic
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {

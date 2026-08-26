@@ -14,6 +14,7 @@ import {
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
+import { COMPANY_INFO } from "@/lib/constants"
 
 export const QuickQualify = () => {
   const [step, setStep] = useState(0)
@@ -216,7 +217,7 @@ export const QuickQualify = () => {
                     Apply Anyway
                   </Button>
                 </Link>
-                <a href="tel:+12067656300">
+                <a href={`tel:${COMPANY_INFO.phoneFormatted}`}>
                   <Button
                     variant="outline"
                     className="px-8 py-4 rounded-xl w-full sm:w-auto border-slate-300 hover:bg-slate-50"

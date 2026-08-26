@@ -23,6 +23,7 @@ import { join } from "node:path"
 
 const SCOPE = [
   "src/components/home/AudienceSelector.tsx",
+  "src/components/home/HomeTimeLanes.tsx",
   "src/components/ui/Reveal.tsx",
   "src/components/features/GetTheApp.tsx",
   "src/components/features/WhySwitch.tsx",

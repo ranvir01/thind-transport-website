@@ -1,11 +1,15 @@
 import { Metadata } from "next"
 import Link from "next/link"
 import { ApplicationForm } from "@/components/application/ApplicationForm"
-import { COMPANY_INFO, PAY_RATES } from "@/lib/constants"
+import { COMPANY_INFO, PAY_RATES, BENEFITS, WORKPLACE } from "@/lib/constants"
 import { FAQAccordion } from "@/components/shared/FAQAccordion"
 import { PageBreadcrumb } from "@/components/shared/PageBreadcrumb"
 import { RelatedLinks } from "@/components/shared/RelatedLinks"
 import { driverLinks } from "@/components/shared/link-sets"
+import {
+  buildCompanyDriverJobPosting,
+  buildOwnerOperatorJobPosting,
+} from "@/lib/job-posting"
 import {
   BadgeCheck,
   CheckCircle2,
@@ -26,55 +30,8 @@ export const metadata: Metadata = {
   },
 }
 
-const jobPostingSchema = {
-  "@context": "https://schema.org",
-  "@type": "JobPosting",
-  title: "CDL Class A Driver Opportunities",
-  description:
-    "Thind Transport is hiring experienced CDL Class A company drivers and owner operators.",
-  identifier: {
-    "@type": "PropertyValue",
-    name: COMPANY_INFO.name,
-    value: "driver-opportunities",
-  },
-  datePosted: new Date().toISOString().split("T")[0],
-  validThrough: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000)
-    .toISOString()
-    .split("T")[0],
-  employmentType: ["FULL_TIME", "CONTRACTOR"],
-  hiringOrganization: {
-    "@type": "Organization",
-    name: COMPANY_INFO.name,
-    sameAs: "https://thindtransport.com",
-    logo: "https://thindtransport.com/branding/thind-transport-logo.svg",
-  },
-  jobLocation: {
-    "@type": "Place",
-    address: {
-      "@type": "PostalAddress",
-      addressLocality: "Kent",
-      addressRegion: "WA",
-      addressCountry: "US",
-    },
-  },
-  applicantLocationRequirements: {
-    "@type": "Country",
-    name: "United States",
-  },
-  baseSalary: {
-    "@type": "MonetaryAmount",
-    currency: "USD",
-    value: {
-      "@type": "QuantitativeValue",
-      minValue: 65000,
-      maxValue: 250000,
-      unitText: "YEAR",
-    },
-  },
-  qualifications:
-    "Valid CDL Class A license, recent verifiable driving experience, and a clean safety record.",
-  directApply: true,
-}
+const companyJobPosting = buildCompanyDriverJobPosting()
+const ownerJobPosting = buildOwnerOperatorJobPosting()
 
 const faqItems = [
   {
@@ -104,7 +61,11 @@ export default function ApplyPage() {
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jobPostingSchema) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(companyJobPosting) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(ownerJobPosting) }}
       />
 
       <div className="brand-page-shell min-h-screen overflow-x-hidden bg-[#060607]">
@@ -141,7 +102,7 @@ export default function ApplyPage() {
                       Company Drivers
                     </p>
                     <p className="text-3xl font-black text-orange-400">{PAY_RATES.companyDriver.otr.perMile}</p>
-                    <p className="text-sm text-slate-300">OTR pay range</p>
+                    <p className="text-sm text-slate-300">per mile, every lane</p>
                   </div>
                 </div>
 
@@ -160,6 +121,32 @@ export default function ApplyPage() {
                       <span>{item}</span>
                     </div>
                   ))}
+                </div>
+
+                <div className="rounded-2xl border border-white/10 bg-[#0B0C0E] p-6">
+                  <h2 className="mb-4 text-lg font-bold text-white">Open positions — pay and benefits</h2>
+                  <p className="mb-4 text-xs leading-relaxed text-slate-400">
+                    Posted under Washington&apos;s Equal Pay and Opportunities Act. Every figure comes from the same pay plan as /pay-rates.
+                  </p>
+                  <div className="space-y-4 text-sm text-slate-300">
+                    <div>
+                      <p className="font-semibold text-white">Company driver — {PAY_RATES.companyDriver.local.perMile}/mile</p>
+                      <ul className="mt-1 list-disc space-y-1 pl-5">
+                        <li>Local ({PAY_RATES.companyDriver.local.homeTime.toLowerCase()}): {PAY_RATES.companyDriver.local.annual}/year</li>
+                        <li>Regional ({PAY_RATES.companyDriver.regional.homeTime.toLowerCase()}): {PAY_RATES.companyDriver.regional.annual}/year</li>
+                        <li>OTR ({PAY_RATES.companyDriver.otr.homeTime} out): {PAY_RATES.companyDriver.otr.annual}/year</li>
+                      </ul>
+                      <p className="mt-2 text-xs text-slate-400">{BENEFITS.companyDriver.join(" · ")}</p>
+                    </div>
+                    <div>
+                      <p className="font-semibold text-white">Owner-operator — {PAY_RATES.ownerOperator.commission} of gross</p>
+                      <p className="mt-1">Typical {PAY_RATES.ownerOperator.annualGross}/year at {PAY_RATES.ownerOperator.perMile}/mile. Fuel surcharge {PAY_RATES.ownerOperator.fuelSurcharge} pass-through. Sign-on {PAY_RATES.ownerOperator.signOnBonus}.</p>
+                      <p className="mt-2 text-xs text-slate-400">{BENEFITS.ownerOperator.join(" · ")}</p>
+                    </div>
+                    <p className="text-xs text-slate-400">{WORKPLACE.languages}</p>
+                    <p className="text-xs text-slate-400">{WORKPLACE.elp}</p>
+                    <p className="text-xs text-slate-500">{WORKPLACE.eeo}</p>
+                  </div>
                 </div>
 
                 <div className="rounded-2xl border border-white/10 bg-[#0B0C0E] p-6">

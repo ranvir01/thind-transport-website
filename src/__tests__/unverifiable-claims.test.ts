@@ -32,6 +32,11 @@ const BANNED: { claim: string; verifiedBy: string }[] = [
   { claim: "priority application status", verifiedBy: "a written recruiting-office policy" },
   { claim: "Immediate Orientation", verifiedBy: "a written orientation schedule" },
   { claim: "Premium Equipment Assignment", verifiedBy: "a written equipment-assignment policy" },
+  { claim: "A+ safety rating", verifiedBy: "an FMCSA safety rating letter (Satisfactory / Conditional / Unsatisfactory — FMCSA does not issue A+)" },
+  { claim: "Highest commission in the industry", verifiedBy: "a sourced market survey, not a slogan" },
+  { claim: "Industry leading!", verifiedBy: "a sourced market survey — slogans are banned in recruiting copy" },
+  { claim: "founded in 2016", verifiedBy: "nothing — COMPANY_INFO.founded is 2014" },
+  { claim: "Full benefits package", verifiedBy: "a benefits plan we actually carry (medical/dental/401k are not offered today)" },
 ]
 
 function sourceFiles(dir: string): string[] {

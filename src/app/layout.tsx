@@ -10,7 +10,7 @@ import {
 import { BackToTop } from "@/components/shared/BackToTop"
 import { AttributionCapture } from "@/components/shared/AttributionCapture"
 import { SkipLink } from "@/components/shared/SkipLink"
-import { COMPANY_INFO } from "@/lib/constants"
+import { COMPANY_INFO, PAY_RATES } from "@/lib/constants"
 import { SchemaMarkup } from "@/components/features/SchemaMarkup"
 import { SITE_ICONS } from "@/lib/site-icons"
 import { InstalledAppRedirect } from "@/components/shared/InstalledAppRedirect"
@@ -43,14 +43,14 @@ export const metadata: Metadata = {
     default: `${COMPANY_INFO.name} | Family-Run Trucking Company in Kent, WA`,
     template: `%s | ${COMPANY_INFO.name}`,
   },
-  description: `${COMPANY_INFO.name} is a family-run carrier in Kent, WA hiring CDL-A drivers. Owner operators keep 90% of gross; company drivers earn $0.63/mile. 2024 Cascadias, weekly pay, no forced dispatch, and dispatch that actually answers the phone.`,
+  description: `${COMPANY_INFO.name} is a family-run carrier in ${COMPANY_INFO.location} hiring CDL-A drivers. Owner operators keep ${PAY_RATES.ownerOperator.commission} of gross; company drivers earn ${PAY_RATES.companyDriver.local.perMile}/mile. 2024 Cascadias, weekly pay, no forced dispatch, and dispatch that actually answers the phone.`,
   keywords: [
     "Thind Transport",
     "Kent WA trucking company",
     "family owned trucking company",
-    "owner operator jobs 90 percent",
+    `owner operator jobs ${PAY_RATES.ownerOperator.commission}`,
     "CDL Class A jobs Washington",
-    "company driver jobs $0.63 per mile",
+    `company driver jobs ${PAY_RATES.companyDriver.local.perMile} per mile`,
     "flatbed reefer dry van carrier",
     "Pacific Northwest trucking jobs",
     "no forced dispatch trucking",
@@ -64,7 +64,7 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: `${COMPANY_INFO.name} | Drive for a Family-Run Carrier in Kent, WA`,
-    description: `90% gross for owner operators, $0.63/mile for company drivers, 2024 Cascadias, and weekly pay. Flatbed, reefer, and dry van — with dispatch that knows your name.`,
+    description: `${PAY_RATES.ownerOperator.commission} gross for owner operators, ${PAY_RATES.companyDriver.local.perMile}/mile for company drivers, 2024 Cascadias, and weekly pay. Flatbed, reefer, and dry van — with dispatch that knows your name.`,
     url: "https://thindtransport.com",
     siteName: `${COMPANY_INFO.name}`,
     locale: "en_US",
@@ -74,7 +74,7 @@ export const metadata: Metadata = {
         url: "/og-image.png",
         width: 1200,
         height: 630,
-        alt: `${COMPANY_INFO.name} — keep 90% of your gross. Family-run carrier in Kent, WA.`,
+        alt: `${COMPANY_INFO.name} — keep ${PAY_RATES.ownerOperator.commission} of your gross. Family-run carrier in ${COMPANY_INFO.location}.`,
       },
     ],
   },
@@ -82,7 +82,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: `${COMPANY_INFO.name} | Drive for a Family-Run Carrier`,
     description:
-      "90% gross for owner operators, $0.63/mile for company drivers, 2024 Cascadias, weekly pay, no forced dispatch.",
+      `${PAY_RATES.ownerOperator.commission} gross for owner operators, ${PAY_RATES.companyDriver.local.perMile}/mile for company drivers, 2024 Cascadias, weekly pay, no forced dispatch.`,
     images: ["/og-image.png"],
   },
   robots: {

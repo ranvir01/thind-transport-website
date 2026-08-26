@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { APPLY_TOTAL_STEPS, applyProgressPercent } from "../apply-progress"
+import { APPLY_TOTAL_STEPS, applyPrefFromSearch, applyProgressPercent } from "../apply-progress"
 
 /**
  * Regression for the /apply wizard progress bar: the old inline formula
@@ -23,5 +23,35 @@ describe("applyProgressPercent", () => {
   it("clamps out-of-range steps (success step 5, defensive 0) into the bar's domain", () => {
     expect(applyProgressPercent(APPLY_TOTAL_STEPS + 1)).toBe(100)
     expect(applyProgressPercent(0)).toBe(25)
+  })
+})
+
+describe("applyPrefFromSearch", () => {
+  it("maps type=company and lane=local from homepage / veterans deep links", () => {
+    expect(applyPrefFromSearch("?type=company&lane=local")).toEqual({
+      driverType: "regional-company-driver",
+      routeType: "local",
+    })
+  })
+
+  it("maps type=owner the way /veterans and /load-board already link", () => {
+    expect(applyPrefFromSearch("type=owner")).toEqual({
+      driverType: "owner-operator-otr",
+    })
+  })
+
+  it("ignores unknown params rather than inventing a track", () => {
+    expect(applyPrefFromSearch("?utm_source=indeed&foo=bar")).toEqual({})
+  })
+
+  it("accepts owner-operator and company-driver aliases", () => {
+    expect(applyPrefFromSearch("type=owner-operator&lane=otr")).toEqual({
+      driverType: "owner-operator-otr",
+      routeType: "otr",
+    })
+    expect(applyPrefFromSearch("?type=company-driver&lane=regional")).toEqual({
+      driverType: "regional-company-driver",
+      routeType: "regional",
+    })
   })
 })

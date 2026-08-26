@@ -1,18 +1,19 @@
 import { Metadata } from "next"
 import Link from "next/link"
 import { ArrowRight, CalendarCheck, Truck, Wallet, Radio, ShieldCheck, Smartphone } from "lucide-react"
-import { COMPANY_INFO, PAY_RATES, STATS } from "@/lib/constants"
+import { COMPANY_INFO, PAY_RATES, STATS, WORKPLACE } from "@/lib/constants"
 import { PageBreadcrumb } from "@/components/shared/PageBreadcrumb"
 import { ProfitCalculator } from "@/components/features/ProfitCalculator"
 import { Reveal } from "@/components/ui/Reveal"
 import { PersonaRemember } from "@/components/shared/PersonaRemember"
 import { RelatedLinks } from "@/components/shared/RelatedLinks"
 import { driverLinks } from "@/components/shared/link-sets"
+import { HomeTimeLanes } from "@/components/home/HomeTimeLanes"
 
 export const metadata: Metadata = {
   title: "Drive for Thind Transport | CDL-A & owner-operators",
   description:
-    "Owner-operators keep 90% of gross with 100% fuel surcharge pass-through; company drivers earn $0.63/mile with weekly pay. 2024 Cascadias, 48 states, dispatch that picks up. Run your own numbers on the calculator, then apply in about a minute.",
+    `Owner-operators keep ${PAY_RATES.ownerOperator.commission} of gross with ${PAY_RATES.ownerOperator.fuelSurcharge} fuel surcharge pass-through; company drivers earn ${PAY_RATES.companyDriver.local.perMile}/mile with weekly pay. 2024 Cascadias, ${STATS.statesCovered} states, dispatch that picks up. Run your own numbers on the calculator, then apply in about a minute.`,
   alternates: { canonical: "/drivers" },
 }
 
@@ -44,7 +45,7 @@ const PROOF = [
   {
     icon: Radio,
     title: "Dispatch that picks up",
-    body: "You call, a person answers — the same person who booked the load. No load boards to babysit, no telephone game between you and the freight.",
+    body: `You call, a person answers — the same person who booked the load. ${WORKPLACE.languages} No load boards to babysit, no telephone game between you and the freight.`,
   },
   {
     icon: ShieldCheck,
@@ -118,6 +119,8 @@ export default function DriversPage() {
           </div>
         </div>
       </section>
+
+      <HomeTimeLanes />
 
       {/* The signature instrument, front and centre — not buried mid-homepage. */}
       <section id="calculator" className="py-16 md:py-24">

@@ -14,7 +14,7 @@ import { driverLinks } from "@/components/shared/link-sets"
 
 export const metadata: Metadata = {
   title: `Military Veterans CDL Jobs | ${COMPANY_INFO.name}`,
-  description: "Thind Transport proudly hires military veterans. We value your service, discipline, and skills. CDL Class A jobs with 90% commission for O/O, $0.63/mile for company drivers. Special veteran benefits and support.",
+  description: "Thind Transport proudly hires military veterans. We value your service, discipline, and skills. CDL Class A jobs with transparent pay — see /pay-rates for the current plan. Special veteran support and flexible scheduling around reserve commitments.",
   keywords: [
     "veteran truck driver jobs",
     "military CDL jobs",
@@ -33,7 +33,7 @@ const veteranBenefits = [
   {
     icon: DollarSign,
     title: "Competitive Veteran Pay",
-    description: "Same great rates for all: 90% commission for O/O, $0.63/mile for company drivers. Your military experience is valued.",
+    description: `Same rates as every other driver: ${PAY_RATES.ownerOperator.commission} of gross for owner-operators, ${PAY_RATES.companyDriver.local.perMile}/mile for company drivers. Your military experience is valued.`,
   },
   {
     icon: Shield,
@@ -330,25 +330,25 @@ export default function VeteransPage() {
                   <Shield className="h-6 w-6 text-blue-600" />
                   Company Driver
                 </CardTitle>
-                <CardDescription className="!text-gray-600">Stability with great benefits</CardDescription>
+                <CardDescription className="!text-gray-600">Weekly pay · home time you pick</CardDescription>
               </CardHeader>
               <CardContent className="pt-6">
                 <ul className="space-y-3 mb-6">
                   <li className="flex items-center gap-2">
                     <CheckCircle2 className="h-4 w-4 text-green-500" />
-                    <span>$0.63/mile</span>
+                    <span>{PAY_RATES.companyDriver.local.perMile}/mile</span>
                   </li>
                   <li className="flex items-center gap-2">
                     <CheckCircle2 className="h-4 w-4 text-green-500" />
-                    <span>$1,500 sign-on bonus</span>
+                    <span>{PAY_RATES.companyDriver.signOnBonus} sign-on</span>
                   </li>
                   <li className="flex items-center gap-2">
                     <CheckCircle2 className="h-4 w-4 text-green-500" />
-                    <span>Full benefits package</span>
+                    <span>Weekly direct deposit · 24/7 dispatch</span>
                   </li>
                   <li className="flex items-center gap-2">
                     <CheckCircle2 className="h-4 w-4 text-green-500" />
-                    <span>Flexible home time</span>
+                    <span>Local, regional, or OTR home time</span>
                   </li>
                 </ul>
                 <Link
@@ -372,11 +372,11 @@ export default function VeteransPage() {
                 <ul className="space-y-3 mb-6">
                   <li className="flex items-center gap-2">
                     <CheckCircle2 className="h-4 w-4 text-green-500" />
-                    <span className="font-bold">90% commission</span>
+                    <span className="font-bold">{PAY_RATES.ownerOperator.commission} commission</span>
                   </li>
                   <li className="flex items-center gap-2">
                     <CheckCircle2 className="h-4 w-4 text-green-500" />
-                    <span>$2,500 sign-on bonus</span>
+                    <span>{PAY_RATES.ownerOperator.signOnBonus} sign-on bonus</span>
                   </li>
                   <li className="flex items-center gap-2">
                     <CheckCircle2 className="h-4 w-4 text-green-500" />
@@ -384,7 +384,7 @@ export default function VeteransPage() {
                   </li>
                   <li className="flex items-center gap-2">
                     <CheckCircle2 className="h-4 w-4 text-green-500" />
-                    <span>100% fuel surcharge</span>
+                    <span>{PAY_RATES.ownerOperator.fuelSurcharge} fuel surcharge</span>
                   </li>
                 </ul>
                 <Link
