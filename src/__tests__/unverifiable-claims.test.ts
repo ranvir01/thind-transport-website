@@ -37,6 +37,7 @@ const BANNED: { claim: string; verifiedBy: string }[] = [
   { claim: "Industry leading!", verifiedBy: "a sourced market survey — slogans are banned in recruiting copy" },
   { claim: "founded in 2016", verifiedBy: "nothing — COMPANY_INFO.founded is 2014" },
   { claim: "Full benefits package", verifiedBy: "a benefits plan we actually carry (medical/dental/401k are not offered today)" },
+  { claim: "highest paying trucking jobs", verifiedBy: "a sourced market survey — slogans are banned in recruiting copy" },
 ]
 
 function sourceFiles(dir: string): string[] {

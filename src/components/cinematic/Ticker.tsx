@@ -1,16 +1,17 @@
 "use client"
 
+import { COMPANY_INFO, PAY_RATES, SERVICES, STATS } from "@/lib/constants"
 
 export const InfiniteTicker = () => {
   const items = [
-    { label: "Owner operator split:", value: "90%", accent: true },
-    { label: "Company drivers:", value: "$0.63/mi", accent: true },
-    { label: "Fuel surcharge:", value: "100% pass-through" },
+    { label: "Owner operator split:", value: PAY_RATES.ownerOperator.commission, accent: true },
+    { label: "Company drivers:", value: `${PAY_RATES.companyDriver.local.perMile}/mi`, accent: true },
+    { label: "Fuel surcharge:", value: `${PAY_RATES.ownerOperator.fuelSurcharge} pass-through` },
     { label: "Forced dispatch:", value: "Never" },
     { label: "Equipment:", value: "2024 Cascadias" },
-    { label: "Hiring:", value: "48 states" },
-    { label: "Based in:", value: "Kent, WA" },
-    { label: "Freight:", value: "Flatbed · Reefer · Dry Van" },
+    { label: "Hiring:", value: `${STATS.statesCovered} states` },
+    { label: "Based in:", value: COMPANY_INFO.location },
+    { label: "Freight:", value: SERVICES.types.join(" · ") },
   ]
 
   return (

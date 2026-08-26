@@ -2,13 +2,13 @@ import { Metadata } from "next"
 import Image from "next/image"
 import Link from "next/link"
 import { ArrowRight, CheckCircle2, Fuel, Percent, Wallet } from "lucide-react"
-import { COMPANY_INFO } from "@/lib/constants"
+import { COMPANY_INFO, PAY_RATES } from "@/lib/constants"
 import { RelatedLinks } from "@/components/shared/RelatedLinks"
 import { driverLinks } from "@/components/shared/link-sets"
 
 export const metadata: Metadata = {
-  title: "Owner Operator Pay Breakdown | 90% Split Explained",
-  description: "Detailed explanation of how our 90% split works. No hidden fees. 100% fuel surcharge pass-through. See the math behind the highest paying trucking jobs.",
+  title: `Owner Operator Pay Breakdown | ${PAY_RATES.ownerOperator.commission} Split Explained`,
+  description: `Detailed explanation of how our ${PAY_RATES.ownerOperator.commission} split works. No hidden fees. ${PAY_RATES.ownerOperator.fuelSurcharge} fuel surcharge pass-through. See the math on every load.`,
   alternates: { canonical: "/pay-breakdown" },
 }
 
@@ -16,17 +16,17 @@ const payRules = [
   {
     icon: Percent,
     title: "Linehaul",
-    description: "You keep 90% of the gross rate on every load.",
+    description: `You keep ${PAY_RATES.ownerOperator.commission} of the gross rate on every load.`,
   },
   {
     icon: Fuel,
     title: "Fuel surcharge",
-    description: "100% of fuel surcharges pass through to you.",
+    description: `${PAY_RATES.ownerOperator.fuelSurcharge} of fuel surcharges pass through to you.`,
   },
   {
     icon: Wallet,
     title: "Accessorials",
-    description: "You keep 90% of detention, layover, and stop pay.",
+    description: `You keep ${PAY_RATES.ownerOperator.commission} of detention, layover, and stop pay.`,
   },
 ]
 
@@ -47,11 +47,11 @@ export default function PayBreakdownPage() {
         <div className="container relative mx-auto max-w-4xl px-4">
           <p className="mb-4 text-xs font-bold uppercase tracking-[0.3em] text-orange-400">Owner Operators</p>
           <h1 className="mb-6 text-4xl font-black leading-tight md:text-6xl">
-            The 90% Split, <span className="text-orange">Explained</span>
+            The {PAY_RATES.ownerOperator.commission} Split, <span className="text-orange">Explained</span>
           </h1>
           <p className="max-w-2xl text-lg leading-relaxed text-white/90 md:text-xl">
-            It&apos;s simple math, not magic. We take 10% for admin and dispatch — you keep 90% and
-            100% of fuel surcharges. Here&apos;s exactly how the money moves.
+            It&apos;s simple math, not magic. We take 10% for admin and dispatch — you keep {PAY_RATES.ownerOperator.commission} and{" "}
+            {PAY_RATES.ownerOperator.fuelSurcharge} of fuel surcharges. Here&apos;s exactly how the money moves.
           </p>
           <div className="mt-8 inline-flex items-center gap-3 rounded-xl border border-orange/40 bg-navy/60 px-5 py-4 backdrop-blur-sm">
             <CheckCircle2 className="h-6 w-6 flex-shrink-0 text-orange" />
@@ -85,7 +85,7 @@ export default function PayBreakdownPage() {
       {/* How it works + example */}
       <section className="py-14 md:py-20">
         <div className="container mx-auto max-w-4xl px-4">
-          <h2 className="mb-4 text-3xl font-black text-navy">How does the 90% split work?</h2>
+          <h2 className="mb-4 text-3xl font-black text-navy">How does the {PAY_RATES.ownerOperator.commission} split work?</h2>
           <p className="mb-10 max-w-3xl leading-relaxed text-gray-700">
             Unlike many carriers who take 25–30% of your hard-earned money, Thind Transport operates on a
             lean model that puts more profit in your pocket. We handle the billing, collections, and
@@ -104,7 +104,7 @@ export default function PayBreakdownPage() {
               </div>
               <div className="space-y-4">
                 <div className="flex items-center justify-between border-b border-gray-100 pb-3">
-                  <span className="font-medium text-gray-700">Your share (90%)</span>
+                  <span className="font-medium text-gray-700">Your share ({PAY_RATES.ownerOperator.commission})</span>
                   <span className="text-lg font-bold text-navy">$2,700.00</span>
                 </div>
                 <div className="flex items-center justify-between border-b border-gray-100 pb-3 text-gray-500">
@@ -120,7 +120,7 @@ export default function PayBreakdownPage() {
           </div>
 
           <div className="mt-12 max-w-3xl">
-            <h2 className="mb-4 text-2xl font-bold text-navy">Who gets the 90% split?</h2>
+            <h2 className="mb-4 text-2xl font-bold text-navy">Who gets the {PAY_RATES.ownerOperator.commission} split?</h2>
             <p className="leading-relaxed text-gray-700">
               Every owner operator at Thind Transport. We believe that if you own the truck and do the
               driving, you should keep the majority of the revenue. This structure is designed to help

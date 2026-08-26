@@ -7,7 +7,7 @@ import {
 } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { COMPANY_INFO, PAY_RATES } from "@/lib/constants"
+import { COMPANY_INFO, PAY_RATES, STATS } from "@/lib/constants"
 import { PageBreadcrumb } from "@/components/shared/PageBreadcrumb"
 import { RelatedLinks } from "@/components/shared/RelatedLinks"
 import { driverLinks } from "@/components/shared/link-sets"
@@ -171,10 +171,10 @@ export default function VeteransPage() {
         <div className="container">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto">
             {[
-              { value: "90%", label: "Commission", sublabel: "Owner Operators" },
-              { value: "$0.63", label: "Per Mile", sublabel: "Company Drivers" },
+              { value: PAY_RATES.ownerOperator.commission, label: "Commission", sublabel: "Owner Operators" },
+              { value: PAY_RATES.companyDriver.local.perMile, label: "Per Mile", sublabel: "Company Drivers" },
               { value: "24/7", label: "Support", sublabel: "Real People" },
-              { value: "48", label: "States", sublabel: "Nationwide Coverage" },
+              { value: String(STATS.statesCovered), label: "States", sublabel: "Nationwide Coverage" },
             ].map((stat) => (
               <div key={stat.label} className="bg-white rounded-xl p-4 shadow-lg border border-gray-100 text-center">
                 <div className="text-2xl md:text-3xl font-black text-navy">{stat.value}</div>

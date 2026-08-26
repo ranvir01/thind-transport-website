@@ -603,8 +603,8 @@ export default function BenefitsPage() {
               Ready to Experience These Benefits?
             </h2>
             <p className="text-lg text-white/90 mb-8">
-              $0.63 a mile for company drivers, 90% of the linehaul for owner-operators,
-              and a real person on the phone in Kent. Apply today and hear back within 24 hours.
+              {PAY_RATES.companyDriver.local.perMile} a mile for company drivers, {PAY_RATES.ownerOperator.commission} of the linehaul for owner-operators,
+              and a real person on the phone in {COMPANY_INFO.location}. Apply today and hear back within 24 hours.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link

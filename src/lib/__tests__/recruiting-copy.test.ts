@@ -52,6 +52,10 @@ describe("recruiting surfaces source facts from constants", () => {
   const veterans = read("../../app/veterans/page.tsx")
   const applyForm = read("../../components/application/ApplicationForm.tsx")
   const applyPage = read("../../app/apply/page.tsx")
+  const ticker = read("../../components/cinematic/Ticker.tsx")
+  const navbar = read("../../components/cinematic/Navbar.tsx")
+  const benefits = read("../../app/benefits/page.tsx")
+  const payBreakdown = read("../../app/pay-breakdown/page.tsx")
 
   it("hero primary CTA is Apply Now and pay comes from PAY_RATES", () => {
     expect(hero).toContain('href="/apply"')
@@ -93,14 +97,30 @@ describe("recruiting surfaces source facts from constants", () => {
     expect(dialog).not.toContain("$180K-$280K")
     expect(veterans).toContain("PAY_RATES.companyDriver.signOnBonus")
     expect(veterans).toContain("PAY_RATES.companyDriver.local.perMile")
+    expect(veterans).toContain("PAY_RATES.ownerOperator.commission")
+    expect(veterans).toContain("STATS.statesCovered")
     expect(veterans).not.toContain("$1,500")
   })
 
   it("apply form honors ?type= and ?lane= deep links", () => {
     expect(applyForm).toContain("applyPrefFromSearch")
+    expect(applyForm).toContain('"local"')
+    expect(applyForm).toContain("PAY_RATES.ownerOperator.commission")
+    expect(applyForm).not.toContain("90% Gross")
     expect(applyPage).toContain("buildCompanyDriverJobPosting")
     expect(applyPage).toContain("buildOwnerOperatorJobPosting")
     expect(applyPage).toContain("WORKPLACE.eeo")
     expect(applyPage).toContain("BENEFITS.companyDriver")
+  })
+
+  it("ticker, nav, benefits, and pay-breakdown source pay from PAY_RATES", () => {
+    expect(ticker).toContain("PAY_RATES.ownerOperator.commission")
+    expect(ticker).toContain("PAY_RATES.companyDriver.local.perMile")
+    expect(ticker).toContain("COMPANY_INFO.location")
+    expect(navbar).toContain("PAY_RATES.ownerOperator.commission")
+    expect(navbar).not.toContain("Full package")
+    expect(benefits).toContain("PAY_RATES.companyDriver.local.perMile")
+    expect(benefits).toContain("PAY_RATES.ownerOperator.commission")
+    expect(payBreakdown).toContain("PAY_RATES.ownerOperator.commission")
   })
 })
