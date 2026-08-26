@@ -3,8 +3,9 @@
 Four kinds of agent **write git** to this repo: Cursor scheduled automations (currently
 disabled on the dashboard, 2026-08-26), Cursor agents you prompt by hand, Claude Code
 sessions and Claude scheduled routines (the live 14-task Corps), plus GitHub Actions
-that publish history without any agent involved. **Grok Bot watches** (Google, GitHub,
-Dropbox, LinkedIn, Vercel) and never pushes — owner setup is
+that publish history without any agent involved. **Grok Bot** uses job-titled
+specialists (Technical Program Manager + project SEs). Engineering Communications
+Lead publishes HAPPENED / IN FLIGHT / SHOULD for Claude. Never pushes —
 [`docs/grok-bots/SETUP.md`](../grok-bots/SETUP.md).
 They share one `main`, one integrator branch, and one production alias. This file is the
 contract between them.

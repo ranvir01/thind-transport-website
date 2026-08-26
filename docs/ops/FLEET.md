@@ -86,13 +86,14 @@ bus between platforms (`Backlog:` trailers, `npm run agent:backlog`). **One bran
 **Grok Bots among themselves can share a thread.** Put 2–6 named Bots in a group
 chat; they @mention and hand off so the owner is not the router. Standing groups
 and paste files: [`docs/grok-bots/SETUP.md`](../grok-bots/SETUP.md) is the one
-owner file (create the other Bots, open the three groups, cover every project).
+owner file (real job titles, project specialists, Claude stand-up board).
 Grok Bot still never writes git.
 
-**D-007 (final):** do not grow the Grok roster. Claude has the usage and already
-writes this repo (14 live tasks). When a Grok Bot finds code work, it posts a
-short paste-ready Claude prompt in the group and stops — it does not spawn extra
-Bots or iterate long prompts on Grok quota.
+**D-007 (code):** Claude still writes git and long prompts. **D-008 (roster):**
+the Technical Program Manager **does** spawn job-titled specialists for LoadOff,
+BLS, and other `ranvir01` repos. Engineering Communications Lead posts
+HAPPENED / IN FLIGHT / SHOULD in Claude stand-up — that is how Grok communicates
+every implementation that happened or should happen. Setup: [`docs/grok-bots/SETUP.md`](../grok-bots/SETUP.md).
 
 Daily/weekly **build** sessions that Claude does *not* already run (office, driver, tests,
 integrations) remain import-ready Cursor Automations on Grok 4.6 (`DECISIONS.md` D-003) —
@@ -173,10 +174,10 @@ These are redundancy, not duplicates — only if the owner re-enables the Cursor
 | Cursor `:30` smoke + Claude `16:49` smoke | Both read-only unless production is red. Later fixer fetches and re-checks; first fixer wins. |
 | Claude `10:33` nightly E2E | Needs a browser. Cursor image has none. Do not re-create as a Cursor automation. |
 
-Grok Bot (Watcher / Deploy-CI / Airtable coach) has **no git charter**. Named Bots
-collaborate in group chats (2–6), not as extra writers on `main`. If a Bot finds
-a code defect, it names it in the group; a Claude or Cursor agent picks it from
-`Backlog:` or the next session.
+Grok Bot (Technical Program Manager + job-titled specialists) has **no git
+charter**. Named Bots collaborate in group chats (2–6), not as extra writers on
+`main`. Engineering Communications Lead publishes HAPPENED / IN FLIGHT / SHOULD;
+Claude or Cursor picks SHOULD items from that board or `Backlog:`.
 
 Everything else in the collaboration contract is unchanged: `claude/*` branches are absorbed
 by the `:00`/`:43` integrators, `cursor/*` session work lands via PR, the commit-body
@@ -270,8 +271,8 @@ back to a Cursor agent to keep `main` moving. Remaining owner clicks:
 3. Optional: re-enable Integrator / Prod Smoke / Deploy + backlog for Cursor redundancy.
    Import only the Cursor role slots Claude does not already run (office/driver/tests/
    integrations). Do not import marketing / deep-verify / meta-governor twins.
-4. Follow **`docs/grok-bots/SETUP.md`** — create the other Bots, open the three
-   group chats, cover every project. No git.
+4. Follow **`docs/grok-bots/SETUP.md`** — retitle Bots, spawn project specialists,
+   open groups including Claude stand-up. No git.
 5. D-001 — arm the branch reaper after dry-runs, or the integrator keeps triaging dead branches.
 6. Human-dated: Form 2290 by Aug 31; Airtable Team ~Sep 2; SMTP App Password (30+ days dead).
 

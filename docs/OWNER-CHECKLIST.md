@@ -15,7 +15,7 @@ on this page is either done or automatable without you.
 [`docs/ops/FLEET.md`](ops/FLEET.md). Claude Corps is already live; you do not need to come
 back to a Cursor agent to keep the repo moving.
 
-**Create the other Grok Bots, the three group chats, and cover every project:**
+**Create the job-titled Grok Bots, group chats, and Claude stand-up board:**
 [`docs/grok-bots/SETUP.md`](grok-bots/SETUP.md) — that is the one file.
 
 ---

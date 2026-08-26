@@ -74,11 +74,10 @@ deep-verify, or meta-governor while those Claude tasks are live.
 **GitHub Actions** keep `main` moving when Cursor is off: drain `:17`/`:47`,
 liveness `:10`.
 
-**Grok Bot** watches the whole portfolio (home repo
-`thind-transport-website`, other `ranvir01/*` including `bls-website`, AR
-Payments / Dropbox, LinkedIn). Connectors: Google / GitHub / Dropbox /
-LinkedIn / Vercel. Never git. Named Bots collaborate in **group chats
-(2–6 Bots)**. **The one file to set it all up:** `docs/grok-bots/SETUP.md`.
+**Grok Bot** uses real job titles (Technical Program Manager + specialists for
+LoadOff, BLS, other `ranvir01/*`, RevOps). Engineering Communications Lead
+publishes HAPPENED / IN FLIGHT / SHOULD for Claude. Never git. **The one file:**
+`docs/grok-bots/SETUP.md`.
 
 ## AR Payments (Airtable back office)
 

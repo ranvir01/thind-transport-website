@@ -1,37 +1,54 @@
 # Group-chat kickoffs — paste once per Grok Bot group
 
-**Whole setup (create Bots + groups + projects):** [`SETUP.md`](SETUP.md)
+**Whole setup:** [`SETUP.md`](SETUP.md)
 
 This file is only the first message to paste **inside** each group after you
-create it. The Watcher instructions (`watcher.instructions.md`) already explain
-the three groups.
+create it. Canonical copy lives in SETUP.md Step 4.
 
 Grok Bot groups hold **2–6 named Bots**. Official flow: **New chat → select
 2–6 Bots** (iPhone: **+ → New Group Chat**). Then paste the matching block.
 
-Do not create extra named Bots for this. Collaboration scales with groups, not
-a fourth charter. Standing names: **Watcher**, **Deploy / CI**, **Airtable coach**.
+Standing titles: **Technical Program Manager**, **Staff Platform Engineer**,
+**Revenue Operations Analyst**, **Staff Product Engineer (LoadOff)**,
+**Software Engineer (BLS)**, **Engineering Communications Lead**.
+On-demand: **Software Engineer ({repo})**.
 
 ---
 
-## LoadOff ops (Watcher + Deploy / CI)
+## LoadOff engineering
 
 ```
-@Watcher own the portfolio default: github.com/ranvir01/thind-transport-website, LoadOff at thindtransport.com/hub, other ranvir01 repos after that. @Deploy/CI own GitHub Actions and Vercel. Hand off in this thread; one owner per stage. Never git push, never merge, never rewire Cursor/Claude. @everyone only if production is red. Connectors first: Google, GitHub, Dropbox, LinkedIn, Vercel. Code/tests/features: Watcher posts a short paste-ready Claude prompt and stops.
-```
-
----
-
-## Back office (Watcher + Airtable coach)
-
-```
-@Watcher own Dropbox Excel Master (ATS + Thind) and routing. @Airtable coach own Airtable app0RJwxcpO3RS3X7 click paths (≤6 steps, computer not phone). Never tick Highlight. Never rearrange views. Never Omni prompts. Hand off in this thread; one owner per stage. @everyone only if invoice counters or the 1,000-record cap are broken.
+@Technical Program Manager route. @Staff Product Engineer (LoadOff) own github.com/ranvir01/thind-transport-website and LoadOff at thindtransport.com/hub. @Staff Platform Engineer own GitHub Actions and Vercel. @Engineering Communications Lead own the Claude board: HAPPENED / IN FLIGHT / SHOULD, plus paste-ready Claude prompts. Never git push. @everyone only if production is red. Connectors first: Google, GitHub, Dropbox, LinkedIn, Vercel.
 ```
 
 ---
 
-## Big team (Watcher + Deploy / CI + Airtable coach)
+## BLS engineering
 
 ```
-This is the big team — all three standing Bots. Do not add a fourth Bot (D-007: extra prompt/code work goes to Claude). @Watcher routes. @Deploy/CI takes GitHub/Vercel. @Airtable coach takes AR Payments clicks. Default: Thind Transport / LoadOff. Also: other ranvir01 repos (bls-website), Dropbox Excel, LinkedIn career (no posting unless asked). Code/tests/features: Watcher posts a short paste-ready Claude prompt and stops. One owner per stage. Never git push. @everyone sparingly. Come back only for Form 2290, SMTP, Airtable billing, Cursor Untitled.
+@Software Engineer (BLS) own github.com/ranvir01/bls-website. @Staff Platform Engineer own Actions and Vercel for that project. @Technical Program Manager route. Code/tests/features: @Engineering Communications Lead with a SHOULD prompt (goal + files + done when). Never git push.
+```
+
+---
+
+## Back office
+
+```
+@Technical Program Manager own Dropbox Excel Master (ATS + Thind) and routing. @Revenue Operations Analyst own Airtable app0RJwxcpO3RS3X7 click paths (≤6 steps, computer not phone). Never tick Highlight. Never rearrange views. Never Omni prompts. If a fix needs code, @Engineering Communications Lead. @everyone only if invoice counters or the 1,000-record cap are broken.
+```
+
+---
+
+## Claude stand-up
+
+```
+This thread is the implementation board. @Engineering Communications Lead: post HAPPENED (what Claude/Cursor/drain already landed, with PR or sha), IN FLIGHT (open claude/* and cursor/* , red Actions, failed Vercel), and SHOULD (one paste-ready Claude prompt: Goal / Files / Done when). @Technical Program Manager routes. Cover LoadOff first, then BLS, then other ranvir01 repos. OWNER-WORKSHEET items (Form 2290, SMTP, Airtable billing) stay human — do not put those on Claude. Never git push. Never nag. Silence when nothing changed.
+```
+
+---
+
+## Staff
+
+```
+Staff is the six standing roles: Technical Program Manager, Staff Platform Engineer, Revenue Operations Analyst, Staff Product Engineer (LoadOff), Software Engineer (BLS), Engineering Communications Lead. Do not add Software Engineer ({repo}) here — those get their own Engineering — {repo} group (6-Bot cap). Default: Thind Transport / LoadOff. Also: bls-website, other ranvir01 repos, Dropbox Excel, LinkedIn career (no posting unless asked). Claude writes git. Engineering Communications Lead publishes every implementation that happened, is in flight, or should happen. One owner per stage. Never git push. Come back only for Form 2290, SMTP, Airtable billing, Cursor Untitled.
 ```

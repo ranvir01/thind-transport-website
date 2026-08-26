@@ -82,6 +82,19 @@ B) Let Grok spawn more named Bots as work grows (burns the ~4-slot / 6-per-group
 duplicates the 14 live Claude tasks).
 C) Let Grok iterate full implementation prompts (burns Grok usage Claude already covers).
 Deferral cost: Watcher keeps inventing extra Bots and chewing Grok quota on prompt drafts.
-Answer: **A — finalized 2026-08-26.** Do not reverse without editing this file. Watcher
-paste: `docs/grok-bots/watcher.instructions.md` § HAND TO CLAUDE. Owner setup (create
-the other Bots, open the three groups, cover every project): `docs/grok-bots/SETUP.md`.
+Answer: **A on code — still final.** Claude owns prompt engineering and git.
+**Roster cap superseded by D-008** (owner, same day): Grok may spawn job-titled
+specialists; Engineering Communications Lead publishes HAPPENED / IN FLIGHT / SHOULD.
+Watcher paste: `docs/grok-bots/watcher.instructions.md`. Owner setup: `docs/grok-bots/SETUP.md`.
+
+## D-008 | filed:2026-08-26 | class:fleet
+Q: Give the Watcher instruction to create Bots for other projects, retitle every
+Bot with a real technical job title, and have one Bot communicate all Claude
+implementation that happened / is in flight / should happen.
+A) Standing six titles (TPM, Staff Platform Engineer, RevOps Analyst, Staff Product
+Engineer (LoadOff), Software Engineer (BLS), Engineering Communications Lead) plus
+on-demand Software Engineer ({repo}) for other `ranvir01` git. Eng Comms Lead is
+the Claude liaison. Claude still writes git (D-007). [owner request]
+B) Keep three nicknames (Watcher / Deploy-CI / Airtable coach) and no project SEs.
+Deferral cost: other projects have no named owner; Claude work stays invisible in Grok.
+Answer: **A — owner 2026-08-26.** Do not shrink the roster without editing this file.
