@@ -10,8 +10,8 @@ import { PAY_RATES } from "../constants"
 
 describe("parseAnnualRange", () => {
   it("reads the two published range formats", () => {
-    expect(parseAnnualRange("$69K-$82K")).toEqual([69000, 82000])
-    expect(parseAnnualRange("$150K-$250K")).toEqual([150000, 250000])
+    expect(parseAnnualRange("$93K-$110K")).toEqual([93000, 110000])
+    expect(parseAnnualRange("$250K-$300K")).toEqual([250000, 300000])
   })
 
   it("throws on a shape it does not understand instead of guessing", () => {
@@ -38,9 +38,9 @@ describe("fiveYearProjection", () => {
   })
 
   it("labels are compact dollars with an M crossover", () => {
-    // At today's constants: $345K–$410K and $750K–$1.25M.
-    expect(p.companyOtr.label).toBe("$345K–$410K")
-    expect(p.ownerOperator.label).toBe("$750K–$1.25M")
+    // At today's constants: $465K–$550K and $1.25M–$1.5M.
+    expect(p.companyOtr.label).toBe("$465K–$550K")
+    expect(p.ownerOperator.label).toBe("$1.25M–$1.5M")
   })
 
   it("the company bar is proportional, not eyeballed", () => {

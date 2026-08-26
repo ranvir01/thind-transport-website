@@ -102,7 +102,7 @@ const companyDriverBenefits = [
     items: [
       {
         title: "Modern Equipment",
-        description: "2024 Freightliner Cascadias with latest tech",
+        description: "2020-2022 Freightliner Cascadias with latest tech",
         highlight: true,
       },
       {
@@ -128,8 +128,8 @@ const ownerOperatorBenefits = [
     color: "green",
     items: [
       {
-        title: "90% Gross Commission",
-        description: "You keep 90% of the linehaul on every load you haul",
+        title: "91% Gross Payout",
+        description: "You keep 91% of the linehaul on every load you haul",
         highlight: true,
       },
       {
@@ -230,7 +230,7 @@ const ownerOperatorBenefits = [
 ]
 
 const comparisonData = [
-  { feature: "Commission Rate", thind: "90%", industry: "70-85%" },
+  { feature: "Payout Rate", thind: "91%", industry: "70-85%" },
   { feature: "Fuel Surcharge", thind: "100% to driver", industry: "Varies, often split" },
   { feature: "Sign-On Bonus (O/O)", thind: "$2,500", industry: "$500-$1,500" },
   { feature: "Forced Dispatch", thind: "Never", industry: "Common" },
@@ -484,7 +484,7 @@ export default function BenefitsPage() {
               Maximum Earnings, Maximum Freedom
             </h2>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              90% commission, no forced dispatch, complete transparency. Run your business your way.
+              91% payout, no forced dispatch, complete transparency. Run your business your way.
             </p>
           </div>
 
@@ -603,7 +603,7 @@ export default function BenefitsPage() {
               Ready to Experience These Benefits?
             </h2>
             <p className="text-lg text-white/90 mb-8">
-              $0.63 a mile for company drivers, 90% of the linehaul for owner-operators,
+              $0.60-$0.65 a mile for company drivers, 91% of the linehaul for owner-operators,
               and a real person on the phone in Kent. Apply today and hear back within 24 hours.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">

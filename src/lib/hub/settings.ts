@@ -26,7 +26,7 @@ export interface CarrierSettings {
      * reads the legacy key so a row written by an older deploy keeps working.
      */
     companyDriverPerMileCents: number
-    /** A share of linehaul, not money — 0.9 = 90%. Stays a ratio. */
+    /** A share of linehaul, not money — 0.91 = 91%. Stays a ratio. */
     ownerOperatorPercentage: number
     payLoadedMilesOnly: boolean
   }
@@ -56,7 +56,7 @@ export interface CarrierSettings {
 
 export const DEFAULT_SETTINGS: CarrierSettings = {
   invoice: { prefix: "INV-", nextNumber: 1000, defaultTermsDays: 30, autoInvoiceOnPod: true },
-  pay: { companyDriverPerMileCents: 60, ownerOperatorPercentage: 0.9, payLoadedMilesOnly: true },
+  pay: { companyDriverPerMileCents: 60, ownerOperatorPercentage: 0.91, payLoadedMilesOnly: true },
   detention: { freeHours: 2, ratePerHourCents: 6000 },
   costPerMileCents: 234,
   fsc: { baseCentsPerGallon: 125, mpg: 6.0 },

@@ -37,7 +37,7 @@ const credentials = [
     icon: Truck,
     value: `${STATS.trucksInFleet}+`,
     label: "Trucks",
-    sub: "2024 Freightliners",
+    sub: "2020-2022 Freightliners",
   },
   {
     icon: MapPin,

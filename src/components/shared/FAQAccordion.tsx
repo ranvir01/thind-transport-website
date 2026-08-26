@@ -18,15 +18,15 @@ const defaultFaqs = [
   },
   {
     question: "How much can I realistically earn?",
-    answer: "Company Drivers: $57K-$82K annually at $0.63 per mile (based on miles and route type), plus $1,000 sign-on bonus first year. Owner Operators: $150K-$250K gross annually with 90% commission (you keep 90% of gross!), plus $2,500 sign-on bonus. Pay is distributed weekly via direct deposit every Friday."
+    answer: "Company Drivers: $78K-$110K annually at $0.60-$0.65 per mile (based on miles and route type), plus $1,000 sign-on bonus first year. Owner Operators: $250K-$300K gross annually with 91% payout (you keep 91% of gross!), plus $2,500 sign-on bonus. Pay is distributed weekly via direct deposit every Friday."
   },
   {
-    question: "What's this 90% commission for owner operators?",
-    answer: "You keep 90% of the gross revenue from each load - one of the highest rates in the industry! Most companies offer 70-85%. There are NO hidden fees or surprise deductions. Fuel surcharge passes through 100% to you. Your weekly settlement shows exactly where every dollar goes. Transparent accounting, no games."
+    question: "What's this 91% payout for owner operators?",
+    answer: "You keep 91% of the gross revenue from each load - one of the highest rates in the industry! Most companies offer 70-85%. There are NO hidden fees or surprise deductions. Fuel surcharge passes through 100% to you. Your weekly settlement shows exactly where every dollar goes. Transparent accounting, no games."
   },
   {
-    question: "How does the 90% commission work exactly?",
-    answer: "Simple: If a load pays $3,000 gross, you receive $2,700 (90%). We take 10% to cover our back-office, dispatch, insurance, and administrative costs. NO other deductions. Fuel surcharge? You get 100%. Accessorial charges? You get 90%. Detention, layover, TONU - all 90% to you. Clean, transparent, fair."
+    question: "How does the 91% payout work exactly?",
+    answer: "Simple: If a load pays $3,000 gross, you receive $2,730 (91%). We take 9% to cover our back-office, dispatch, insurance, and administrative costs. NO other deductions. Fuel surcharge? You get 100%. Accessorial charges? You get 91%. Detention, layover, TONU - all 91% to you. Clean, transparent, fair."
   },
   {
     question: "What are the sign-on bonuses?",
@@ -69,7 +69,7 @@ const defaultFaqs = [
   // Benefits & Perks
   {
     question: "Do company drivers get benefits?",
-    answer: "Here's the honest list of what we offer today: $1,000 sign-on bonus in your first year; weekly direct deposit every Friday; paid time off and paid holidays; performance and referral bonuses; home time you pick (local, regional, or OTR at the same $0.63/mile); modern 2024 Freightliner Cascadias; rider and pet policy; and 24/7 dispatch you can actually reach. We do NOT currently offer company medical, dental, vision, life or disability insurance, or a 401(k) — we'd rather tell you now than at orientation. If that changes, this page changes with it."
+    answer: "Here's the honest list of what we offer today: $1,000 sign-on bonus in your first year; weekly direct deposit every Friday; paid time off and paid holidays; performance and referral bonuses; home time you pick (local, regional, or OTR at the same $0.60-$0.65/mile); modern 2020-2022 Freightliner Cascadias; rider and pet policy; and 24/7 dispatch you can actually reach. We do NOT currently offer company medical, dental, vision, life or disability insurance, or a 401(k) — we'd rather tell you now than at orientation. If that changes, this page changes with it."
   },
   {
     question: "What fuel programs are available for owner operators?",
@@ -91,13 +91,13 @@ const defaultFaqs = [
   },
   {
     question: "What if I don't have my own truck yet?",
-    answer: "No problem! Start as a company driver ($0.63/mile) while you save up and learn our operations. Many of our current owner operators started as company drivers. We can guide you through the transition when you're ready to purchase your own truck. We don't do lease-purchase (those programs often trap drivers)."
+    answer: "No problem! Start as a company driver ($0.60-$0.65/mile) while you save up and learn our operations. Many of our current owner operators started as company drivers. We can guide you through the transition when you're ready to purchase your own truck. We don't do lease-purchase (those programs often trap drivers)."
   },
   
   // Equipment & Requirements
   {
     question: "What equipment do company drivers use?",
-    answer: "Company drivers operate our 2024 Freightliner Cascadias - fully loaded with APU, refrigerator, inverter, and premium sleeper. Automatic transmission available. All trucks maintained to the highest standards. No junk equipment - we invest in quality because it keeps you safe and efficient."
+    answer: "Company drivers operate our 2020-2022 Freightliner Cascadias - fully loaded with APU, refrigerator, inverter, and premium sleeper. Automatic transmission available. All trucks maintained to the highest standards. No junk equipment - we invest in quality because it keeps you safe and efficient."
   },
   {
     question: "What are the truck requirements for owner operators?",
@@ -121,11 +121,11 @@ const defaultFaqs = [
   // Company Info
   {
     question: "How long has Thind Transport been in business?",
-    answer: "Thind Transport was founded in 2016 in Kent, Washington. Our owner has 20+ years of trucking industry experience. We've grown from 1 truck to 15+ and continue to expand. Family-owned and operated - not a faceless corporation. When you call, you talk to real people who care."
+    answer: "Thind Transport was founded in 2014 in Kent, Washington. Our owner has 25+ years of trucking industry experience. We've grown from 1 truck to 15+ and continue to expand. Family-owned and operated - not a faceless corporation. When you call, you talk to real people who care."
   },
   {
     question: "Why should I choose Thind over bigger carriers?",
-    answer: "At big carriers, you're a number. At Thind, you're family. We offer: Highest commission in the industry (90%), No forced dispatch, Transparent settlements with no hidden fees, Modern equipment, Real 24/7 support from people who know your name, Home time that's actually honored. Many of our drivers came from mega-carriers and say they wish they'd switched sooner."
+    answer: "At big carriers, you're a number. At Thind, you're family. We offer: Highest payout in the industry (91%), No forced dispatch, Transparent settlements with no hidden fees, Modern equipment, Real 24/7 support from people who know your name, Home time that's actually honored. Many of our drivers came from mega-carriers and say they wish they'd switched sooner."
   }
 ]
 

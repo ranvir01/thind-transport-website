@@ -192,7 +192,7 @@ export function PayRateVisualizations() {
 
           <div>
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-black text-gray-900">Owner Operator (90% gross)</span>
+              <span className="text-sm font-black text-gray-900">Owner Operator (91% gross)</span>
               <span className="text-2xl font-black text-green-600">{projection.ownerOperator.label}</span>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-7">
@@ -216,9 +216,9 @@ export function PayRateVisualizations() {
         <div className="mb-4">
           <div className="flex items-center gap-2 mb-1">
             <div className="w-1 h-6 bg-orange-600 rounded-full"></div>
-            <h3 className="text-xl font-black text-gray-900">Commission Rate</h3>
+            <h3 className="text-xl font-black text-gray-900">Payout Rate</h3>
           </div>
-          <p className="text-sm text-gray-600">90% vs industry average</p>
+          <p className="text-sm text-gray-600">91% vs industry average</p>
         </div>
 
         <div className="space-y-4">
@@ -238,14 +238,14 @@ export function PayRateVisualizations() {
           <div>
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm font-black text-gray-900">Thind Transport</span>
-              <span className="font-black text-green-600 text-lg">90%</span>
+              <span className="font-black text-green-600 text-lg">91%</span>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-6">
               <div 
                 className="bg-gradient-to-r from-green-500 to-green-600 h-6 rounded-full flex items-center justify-end pr-2"
-                style={{ width: '90%' }}
+                style={{ width: '91%' }}
               >
-                <span className="text-xs text-white font-black">90%</span>
+                <span className="text-xs text-white font-black">91%</span>
               </div>
             </div>
             <div className="mt-2 flex items-center gap-2 text-xs text-green-700 font-semibold">

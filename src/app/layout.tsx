@@ -43,14 +43,14 @@ export const metadata: Metadata = {
     default: `${COMPANY_INFO.name} | Family-Run Trucking Company in Kent, WA`,
     template: `%s | ${COMPANY_INFO.name}`,
   },
-  description: `${COMPANY_INFO.name} is a family-run carrier in Kent, WA hiring CDL-A drivers. Owner operators keep 90% of gross; company drivers earn $0.63/mile. 2024 Cascadias, weekly pay, no forced dispatch, and dispatch that actually answers the phone.`,
+  description: `${COMPANY_INFO.name} is a family-run carrier in Kent, WA hiring CDL-A drivers. Owner operators keep 91% of gross; company drivers earn $0.60-$0.65/mile. 2020-2022 Cascadias, weekly pay, no forced dispatch, and dispatch that actually answers the phone.`,
   keywords: [
     "Thind Transport",
     "Kent WA trucking company",
     "family owned trucking company",
     "owner operator jobs 90 percent",
     "CDL Class A jobs Washington",
-    "company driver jobs $0.63 per mile",
+    "company driver jobs $0.60-$0.65 per mile",
     "flatbed reefer dry van carrier",
     "Pacific Northwest trucking jobs",
     "no forced dispatch trucking",
@@ -64,7 +64,7 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: `${COMPANY_INFO.name} | Drive for a Family-Run Carrier in Kent, WA`,
-    description: `90% gross for owner operators, $0.63/mile for company drivers, 2024 Cascadias, and weekly pay. Flatbed, reefer, and dry van — with dispatch that knows your name.`,
+    description: `91% gross for owner operators, $0.60-$0.65/mile for company drivers, 2020-2022 Cascadias, and weekly pay. Flatbed, reefer, and dry van — with dispatch that knows your name.`,
     url: "https://thindtransport.com",
     siteName: `${COMPANY_INFO.name}`,
     locale: "en_US",
@@ -74,7 +74,7 @@ export const metadata: Metadata = {
         url: "/og-image.png",
         width: 1200,
         height: 630,
-        alt: `${COMPANY_INFO.name} — keep 90% of your gross. Family-run carrier in Kent, WA.`,
+        alt: `${COMPANY_INFO.name} — keep 91% of your gross. Family-run carrier in Kent, WA.`,
       },
     ],
   },
@@ -82,7 +82,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: `${COMPANY_INFO.name} | Drive for a Family-Run Carrier`,
     description:
-      "90% gross for owner operators, $0.63/mile for company drivers, 2024 Cascadias, weekly pay, no forced dispatch.",
+      "91% gross for owner operators, $0.60-$0.65/mile for company drivers, 2020-2022 Cascadias, weekly pay, no forced dispatch.",
     images: ["/og-image.png"],
   },
   robots: {

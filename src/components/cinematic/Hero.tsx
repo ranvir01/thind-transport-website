@@ -36,16 +36,16 @@ export const CinematicHero = () => {
           </div>
 
           <h1 className="text-left text-white drop-shadow-md mb-5">
-            Keep <span className="text-gradient-accent">90% of your gross.</span>
+            Keep <span className="text-gradient-accent">91% of your gross.</span>
             <span className="block text-xl sm:text-2xl md:text-3xl text-steel-200 font-bold mt-3 normal-case tracking-normal leading-snug">
-              Real dispatch that answers, 2024 Cascadias, and zero forced loads &mdash; from a family that drives, too.
+              Real dispatch that answers, 2020-2022 Cascadias, and zero forced loads &mdash; from a family that drives, too.
             </span>
           </h1>
 
           <p className="text-lg md:text-xl text-steel-200 max-w-2xl mb-8 leading-relaxed">
             {/* One expression, no adjacent bare text — the compiler drops bare
                 spaces next to expression containers (see IntegrationsPanel note). */}
-            {`Owner-operators keep 90% of the gross. Company drivers run new Freightliners at $0.63/mile with weekly pay. ${new Date().getFullYear() - COMPANY_INFO.founded} years out of Kent, WA — you drive, we handle the rest.`}
+            {`Owner-operators keep 91% of the gross. Company drivers run 2020-2022 Freightliners at $0.60-$0.65/mile with weekly pay. ${new Date().getFullYear() - COMPANY_INFO.founded} years out of Kent, WA — you drive, we handle the rest.`}
           </p>
 
           <div className="flex flex-col sm:flex-row flex-wrap gap-3 mb-7">
@@ -82,9 +82,9 @@ export const CinematicHero = () => {
 
           <div className="flex flex-wrap items-center gap-x-6 gap-y-4 rounded-fleet-lg border border-steel-700/50 bg-navy-900/55 px-5 py-4 backdrop-blur-sm sm:gap-x-8 sm:px-7 md:divide-x md:divide-steel-700/50">
             {[
-              { value: "90%", label: "Owner-op gross", tone: "text-orange" },
-              { value: "$0.63", label: "Company / mile", tone: "text-gold" },
-              { value: "2024", label: "Freightliner fleet", tone: "text-white" },
+              { value: "91%", label: "Owner-op gross", tone: "text-orange" },
+              { value: "$0.60–$0.65", label: "Company / mile", tone: "text-gold" },
+              { value: "2020–2022", label: "Freightliner fleet", tone: "text-white" },
               { value: `${STATS.statesCovered}`, label: "States covered", tone: "text-gold" },
             ].map((stat) => (
               <div key={stat.label} className="flex items-baseline gap-2.5 md:block md:pl-6 md:first:pl-0">

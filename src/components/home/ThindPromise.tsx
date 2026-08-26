@@ -81,9 +81,9 @@ export const ThindPromise = () => {
               <p className="pl-5">
                 &ldquo;That&apos;s the reason we run this differently.
                 Owner-operators keep{" "}
-                <strong className="text-white">90% of gross</strong>. Company
+                <strong className="text-white">91% of gross</strong>. Company
                 drivers run{" "}
-                <strong className="text-white">2024 Cascadias</strong>. And when
+                <strong className="text-white">2020-2022 Cascadias</strong>. And when
                 you call, you get a real person who knows your name &mdash; not
                 a queue.&rdquo;
               </p>

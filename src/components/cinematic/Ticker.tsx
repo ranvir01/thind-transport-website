@@ -3,11 +3,11 @@
 
 export const InfiniteTicker = () => {
   const items = [
-    { label: "Owner operator split:", value: "90%", accent: true },
-    { label: "Company drivers:", value: "$0.63/mi", accent: true },
+    { label: "Owner operator split:", value: "91%", accent: true },
+    { label: "Company drivers:", value: "$0.60-$0.65/mi", accent: true },
     { label: "Fuel surcharge:", value: "100% pass-through" },
     { label: "Forced dispatch:", value: "Never" },
-    { label: "Equipment:", value: "2024 Cascadias" },
+    { label: "Equipment:", value: "2020-2022 Cascadias" },
     { label: "Hiring:", value: "48 states" },
     { label: "Based in:", value: "Kent, WA" },
     { label: "Freight:", value: "Flatbed · Reefer · Dry Van" },

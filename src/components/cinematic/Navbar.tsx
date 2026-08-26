@@ -36,7 +36,7 @@ const driverMenuItems = [
   {
     href: "/pay-rates",
     label: "Pay Rates",
-    description: "90% O/O split",
+    description: "91% O/O split",
     icon: DollarSign,
   },
   {
@@ -75,7 +75,7 @@ const companyMenuItems = [
   {
     href: "/fleet",
     label: "Our Fleet",
-    description: "2024 Cascadias",
+    description: "2020-2022 Cascadias",
     icon: Truck,
   },
   {

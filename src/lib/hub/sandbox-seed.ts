@@ -152,7 +152,7 @@ export async function seedSandbox(): Promise<void> {
        ON CONFLICT (carrier_id) DO UPDATE SET settings = EXCLUDED.settings, updated_at = NOW()`,
       [C, JSON.stringify({
         invoice: { prefix: "BRH-INV-", nextNumber: 2500, defaultTermsDays: 30 },
-        pay: { companyDriverPerMileCents: 64, ownerOperatorPercentage: 0.9, payLoadedMilesOnly: true },
+        pay: { companyDriverPerMileCents: 64, ownerOperatorPercentage: 0.91, payLoadedMilesOnly: true },
         detention: { freeHours: 2, ratePerHourCents: 6000 },
         costPerMileCents: 182,
         fsc: { baseCentsPerGallon: 125, mpg: 6.4 },

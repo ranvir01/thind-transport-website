@@ -103,8 +103,8 @@ export const ProfitCalculator = () => {
   const fuelSurcharge = miles * 0.15 // ~$0.15/mile avg fuel surcharge
   const totalGross = grossRevenue + fuelSurcharge
   
-  // Thind 90% split (100% of fuel surcharge passed through)
-  const thindDriverGross = (grossRevenue * 0.90) + fuelSurcharge
+  // Thind 91% split (100% of fuel surcharge passed through)
+  const thindDriverGross = (grossRevenue * 0.91) + fuelSurcharge
   
   // Competitor 70-75% split (typical - using 72% as average, often keep some fuel surcharge)
   const competitorDriverGross = (grossRevenue * 0.72) + (fuelSurcharge * 0.80)
@@ -157,7 +157,7 @@ export const ProfitCalculator = () => {
             Calculate your <span className="text-orange">real</span> take-home
           </h2>
           <p className="text-base md:text-lg text-steel-300 max-w-2xl mx-auto">
-            See the actual difference between our 90% split and the typical 70-75% split. 
+            See the actual difference between our 91% split and the typical 70-75% split. 
             We include real operating expenses so you know exactly what to expect.
           </p>
         </div>
@@ -314,7 +314,7 @@ export const ProfitCalculator = () => {
                     <div className="flex justify-between text-xs text-white/80 mt-1">
                       <span>60%</span>
                       <span>Industry: 70-75%</span>
-                      <span className="text-orange font-bold">90% Thind</span>
+                      <span className="text-orange font-bold">91% Thind</span>
                       <span>95%</span>
                     </div>
                   </div>
@@ -339,7 +339,7 @@ export const ProfitCalculator = () => {
                   {currentWeeklyPay > 0 && (
                     <div className="p-3 bg-green-500/20 border border-green-500/30 rounded-lg">
                       <p className="text-green-400 text-sm font-semibold">
-                        With Thind's 90% split, you could earn approximately{' '}
+                        With Thind's 91% split, you could earn approximately{' '}
                         <span className="text-green-300 font-black text-lg">
                           {formatCurrency(currentWeeklyPay * (90 / currentSplit) - currentWeeklyPay)} more
                         </span>{' '}
@@ -430,10 +430,10 @@ export const ProfitCalculator = () => {
               {/* Thind Card */}
               <div className="bg-gradient-to-br from-orange/10 to-orange/5 rounded-xl p-3 sm:p-4 border-2 border-orange relative overflow-hidden">
                 <div className="absolute top-0 right-0 bg-orange-600 text-white text-[8px] sm:text-[10px] font-bold px-1.5 sm:px-2 py-0.5 rounded-bl-lg z-10">
-                  +{Math.round((0.90 - 0.72) / 0.72 * 100)}% MORE
+                  +{Math.round((0.91 - 0.72) / 0.72 * 100)}% MORE
                 </div>
                 <p className="text-orange-600 text-[10px] sm:text-xs font-semibold uppercase tracking-wider mb-1">Thind Transport</p>
-                <p className="text-xs sm:text-sm text-orange-700 mb-2 sm:mb-3">90% Split</p>
+                <p className="text-xs sm:text-sm text-orange-700 mb-2 sm:mb-3">91% Split</p>
                 
                 <div className="space-y-2 relative z-0">
                   <div>
@@ -464,7 +464,7 @@ export const ProfitCalculator = () => {
                   </div>
                 </div>
                 <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
-                  <span className="text-xs text-orange-600 font-bold w-auto sm:w-16 font-mono shrink-0">90%</span>
+                  <span className="text-xs text-orange-600 font-bold w-auto sm:w-16 font-mono shrink-0">91%</span>
                   <div className="flex-1 min-w-0 bg-orange/20 rounded-full h-6 overflow-hidden w-full">
                     <div 
                       className="h-full bg-gradient-to-r from-orange-700 to-orange-600 rounded-full transition-all duration-500 flex items-center justify-end pr-2"
@@ -597,7 +597,7 @@ export const ProfitCalculator = () => {
         {/* Bottom Context */}
         <div className="mt-8 text-center">
           <p className="text-white/80 text-sm max-w-2xl mx-auto">
-            <strong className="text-white">Why 90%?</strong> Most carriers keep 25-30% of your linehaul. 
+            <strong className="text-white">Why 91%?</strong> Most carriers keep 25-30% of your linehaul. 
             We only take 9% to cover dispatch, billing, and admin — you keep the rest.
             No hidden fees, no surprises.
           </p>

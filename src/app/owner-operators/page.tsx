@@ -10,9 +10,9 @@ import { RelatedLinks } from "@/components/shared/RelatedLinks"
 import { driverLinks } from "@/components/shared/link-sets"
 
 export const metadata: Metadata = {
-  title: "Owner Operators | 90% of the Linehaul, 100% of the Fuel Surcharge",
+  title: "Owner Operators | 91% of the Linehaul, 100% of the Fuel Surcharge",
   description:
-    "Lease on with Thind Transport in Kent, WA. 90% of the linehaul, 100% of the fuel surcharge, and a settlement statement that shows every deduction line by line. No forced dispatch. USDOT 2523064, MC 876103.",
+    "Lease on with Thind Transport in Kent, WA. 91% of the linehaul, 100% of the fuel surcharge, and a settlement statement that shows every deduction line by line. No forced dispatch. USDOT 2523064, MC 876103.",
   alternates: { canonical: "/owner-operators" },
 }
 
@@ -61,7 +61,7 @@ const DEDUCTIONS = [
 const FAQ = [
   {
     q: "Is there forced dispatch?",
-    a: "No. You see the load, the rate, and the lane before you accept it. Turning one down doesn't cost you your place in line — if it did, the 90% split wouldn't mean much.",
+    a: "No. You see the load, the rate, and the lane before you accept it. Turning one down doesn't cost you your place in line — if it did, the 91% split wouldn't mean much.",
   },
   {
     q: "How often do I get paid, and how fast?",

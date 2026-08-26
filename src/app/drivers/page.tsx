@@ -12,7 +12,7 @@ import { driverLinks } from "@/components/shared/link-sets"
 export const metadata: Metadata = {
   title: "Drive for Thind Transport | CDL-A & owner-operators",
   description:
-    "Owner-operators keep 90% of gross with 100% fuel surcharge pass-through; company drivers earn $0.63/mile with weekly pay. 2024 Cascadias, 48 states, dispatch that picks up. Run your own numbers on the calculator, then apply in about a minute.",
+    "Owner-operators keep 91% of gross with 100% fuel surcharge pass-through; company drivers earn $0.60-$0.65/mile with weekly pay. 2020-2022 Cascadias, 48 states, dispatch that picks up. Run your own numbers on the calculator, then apply in about a minute.",
   alternates: { canonical: "/drivers" },
 }
 
@@ -38,7 +38,7 @@ const PROOF = [
   },
   {
     icon: Truck,
-    title: "2024 Cascadias",
+    title: "2020-2022 Cascadias",
     body: `A ${STATS.trucksInFleet}-truck fleet of late-model Freightliner Cascadias — flatbed, reefer and dry van across ${STATS.statesCovered} states. New enough that breakdowns are the exception, small enough that your truck is yours.`,
   },
   {
@@ -111,7 +111,7 @@ export default function DriversPage() {
                 </div>
                 <div>
                   <dt className="text-m-micro font-bold uppercase tracking-[0.15em] text-paper/60">Fleet</dt>
-                  <dd className="mt-1 font-display text-m-h3 font-bold">2024 Cascadias</dd>
+                  <dd className="mt-1 font-display text-m-h3 font-bold">2020-2022 Cascadias</dd>
                 </div>
               </dl>
             </Reveal>

@@ -102,7 +102,7 @@ export async function POST(request: Request) {
           <ul>
             <li>Your CDL information</li>
             <li>Recent driving experience</li>
-            <li>Questions about our 90% owner-operator program</li>
+            <li>Questions about our 91% owner-operator program</li>
           </ul>
           
           <p>If you have urgent questions, call us at ${COMPANY_INFO.phone}.</p>

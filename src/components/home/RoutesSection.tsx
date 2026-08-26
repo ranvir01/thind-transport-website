@@ -58,7 +58,7 @@ export function RoutesSection() {
                     </span>
                   </div>
                   <div className="inline-block px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-lg bg-steel-800/60 border border-steel-700/60 text-xs font-bold text-steel-200">
-                    $0.63 CPM
+                    $0.60-$0.65 CPM
                   </div>
                 </div>
 
@@ -147,7 +147,7 @@ export function RoutesSection() {
                     </span>
                   </div>
                   <div className="inline-block px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-lg bg-steel-800/60 border border-steel-700/60 text-xs font-bold text-steel-200">
-                    $0.63 CPM
+                    $0.60-$0.65 CPM
                   </div>
                 </div>
 
@@ -236,7 +236,7 @@ export function RoutesSection() {
                     </span>
                   </div>
                   <div className="inline-block px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-lg bg-steel-800/60 border border-steel-700/60 text-xs font-bold text-steel-200">
-                    $0.55-$0.60 CPM / 90% O/O
+                    $0.55-$0.60 CPM / 91% O/O
                   </div>
                 </div>
 
@@ -289,10 +289,10 @@ export function RoutesSection() {
                     Owner Operator Benefits:
                   </p>
                   <ul className="text-xs sm:text-sm text-steel-200 space-y-1 sm:space-y-2 font-medium">
-                    <li>• 90% of gross revenue</li>
+                    <li>• 91% of gross revenue</li>
                     <li>• Avg $2.25-$3.25/mile</li>
                     <li>• Pick your own loads</li>
-                    <li>• $180K-$280K potential</li>
+                    <li>• $250K-$300K potential</li>
                   </ul>
                 </div>
               </CardContent>

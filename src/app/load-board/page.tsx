@@ -206,7 +206,7 @@ export default function LoadBoardPage() {
               </Card>
               <Card className="p-5 text-center bg-white/10 backdrop-blur-md border-white/20 hover:bg-white/20 transition-all duration-300 group">
                 <Clock className="h-8 w-8 text-orange-300 mx-auto mb-3 group-hover:scale-110 transition-transform" />
-                <div className="font-black text-2xl text-white">90%</div>
+                <div className="font-black text-2xl text-white">91%</div>
                 <div className="text-sm text-white/95 mt-1 font-semibold">Your Share of Gross</div>
               </Card>
             </div>
@@ -443,7 +443,7 @@ export default function LoadBoardPage() {
             </h2>
             <p className="text-xl text-white/90 mb-8 max-w-2xl mx-auto leading-relaxed">
               Join our fleet and get instant access to premium loads, competitive rates, and 24/7 dispatch support.
-              <span className="font-bold text-yellow-300">Owner operators earn 90% commission!</span>
+              <span className="font-bold text-yellow-300">Owner operators earn 91% payout!</span>
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button size="lg" asChild>

@@ -16,8 +16,8 @@ export async function generateMetadata({ params }: { params: Promise<{ state: st
   const state = stateBySlug(slug)
   if (!state) return {}
   return {
-    title: `CDL Truck Driving Jobs in ${state.name} | Owner Operators Keep 90%`,
-    description: `Thind Transport hires CDL-A drivers and owner operators running through ${state.name} — ${state.cities.slice(0, 3).join(", ")} and the ${state.corridors.join(", ")} corridors. 90% owner-operator split, ${PAY_RATES.companyDriver.otr.perMile}/mi company pay, weekly settlements, no forced dispatch.`,
+    title: `CDL Truck Driving Jobs in ${state.name} | Owner Operators Keep 91%`,
+    description: `Thind Transport hires CDL-A drivers and owner operators running through ${state.name} — ${state.cities.slice(0, 3).join(", ")} and the ${state.corridors.join(", ")} corridors. 91% owner-operator split, ${PAY_RATES.companyDriver.otr.perMile}/mi company pay, weekly settlements, no forced dispatch.`,
     alternates: { canonical: `/cdl-jobs/${state.slug}` },
   }
 }

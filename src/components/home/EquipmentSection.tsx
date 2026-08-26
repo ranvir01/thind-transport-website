@@ -28,7 +28,7 @@ const trailers = [
 ]
 
 const tractorPoints = [
-  "2024 Freightliner Cascadias & Volvos",
+  "2020-2022 Freightliner Cascadias & Volvos",
   "APUs, inverters & modern driver comfort",
   "Collision mitigation + lane-keep safety tech",
   "Preventive maintenance on a fixed schedule",
@@ -76,7 +76,7 @@ export function EquipmentSection() {
             </div>
             <div className="absolute bottom-4 left-4 right-4 flex items-center gap-2">
               <span className="fleet-badge fleet-badge-gold">
-                2024 model year
+                2020–2022 model year
               </span>
             </div>
           </Reveal>

@@ -28,7 +28,7 @@ export function PayCalculator() {
     if (driverType === "owner") {
       const avgRatePerMile = 2.75 // Average of $2.25-$3.25 (Dec 2025 industry avg)
       const grossRevenue = totalMiles * avgRatePerMile
-      const commission = grossRevenue * 0.90
+      const commission = grossRevenue * 0.91
       const weekly = commission / weeks
       const monthly = weekly * 4.33
       const annual = commission
@@ -93,7 +93,7 @@ export function PayCalculator() {
                 }`}
               >
                 <div className="font-black text-white">Company Driver</div>
-                <div className="text-xs text-steel-200 mt-1 font-medium">$0.63/mile</div>
+                <div className="text-xs text-steel-200 mt-1 font-medium">$0.60-$0.65/mile</div>
               </button>
               <button
                 onClick={() => setDriverType("owner")}
@@ -104,7 +104,7 @@ export function PayCalculator() {
                 }`}
               >
                 <div className="font-black text-white">Owner Operator</div>
-                <div className="text-xs text-steel-200 mt-1 font-medium">90% commission</div>
+                <div className="text-xs text-steel-200 mt-1 font-medium">91% payout</div>
               </button>
             </div>
           </div>
@@ -166,7 +166,7 @@ export function PayCalculator() {
               <div className="flex items-start gap-2">
                 <AlertCircle className="h-4 w-4 text-orange-400 mt-0.5" />
                 <div className="text-sm text-steel-200 font-medium">
-                  <strong className="text-white">Note:</strong> Owner operators keep 90% of gross revenue. 
+                  <strong className="text-white">Note:</strong> Owner operators keep 91% of gross revenue. 
                   Expenses (fuel, maintenance, insurance) are your responsibility.
                 </div>
               </div>
@@ -226,7 +226,7 @@ export function PayCalculator() {
                     <span className="font-black text-white">${results.grossRevenue.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
                   </div>
                   <div className="flex justify-between border-t border-white/10 pt-2">
-                    <span className="text-steel-200 font-medium">Your Commission (90%):</span>
+                    <span className="text-steel-200 font-medium">Your Payout (91%):</span>
                     <span className="font-black text-orange-400">${results.commission.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
                   </div>
                 </>

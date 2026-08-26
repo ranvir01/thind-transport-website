@@ -16,11 +16,11 @@ import { Reveal } from "@/components/ui/Reveal"
  */
 
 const comparisonData = [
-  { feature: "Pay split", competitor: "65–75% of gross", thind: "90% of gross" },
+  { feature: "Pay split", competitor: "65–75% of gross", thind: "91% of gross" },
   { feature: "Fuel surcharge", competitor: "Partial pass-through", thind: "100% pass-through" },
   { feature: "Forced dispatch", competitor: "Yes", thind: "Never" },
   { feature: "Home time", competitor: "When convenient", thind: "Your schedule, honored" },
-  { feature: "Equipment age", competitor: "5–10 year old trucks", thind: "2024 Cascadias" },
+  { feature: "Equipment age", competitor: "5–10 year old trucks", thind: "2020-2022 Cascadias" },
   { feature: "Dispatch response", competitor: "Call center queue", thind: "Direct line, real person" },
   { feature: "Pay timeline", competitor: "Net 30–45 days", thind: "Weekly direct deposit" },
   { feature: "Hidden fees", competitor: "ELD, compliance, admin", thind: "None" },

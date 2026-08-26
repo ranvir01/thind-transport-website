@@ -94,7 +94,7 @@ const trucks = [
   {
     id: 1,
     name: "Freightliner Cascadia",
-    year: "2023-2025",
+    year: "2020-2022",
     image: "/images/generated/truck-cascadia.png",
     engine: "Detroit DD15",
     horsepower: "505 HP",
@@ -129,7 +129,7 @@ const trucks = [
   {
     id: 2,
     name: "Volvo VNL 860",
-    year: "2024-2025",
+    year: "2020-2022",
     image: "/images/generated/truck-volvo.png",
     engine: "Volvo D13",
     horsepower: "500 HP",
@@ -164,7 +164,7 @@ const trucks = [
   {
     id: 3,
     name: "Freightliner Cascadia",
-    year: "2023",
+    year: "2021",
     image: "/images/generated/truck-cascadia-2.png",
     engine: "Detroit DD15",
     horsepower: "455 HP",
@@ -199,7 +199,7 @@ const trucks = [
   {
     id: 4,
     name: "Volvo VNL 760",
-    year: "2024",
+    year: "2022",
     image: "/images/generated/truck-volvo-2.png",
     engine: "Volvo D13",
     horsepower: "455 HP",
@@ -285,7 +285,7 @@ const maintenanceFeatures = [
 const faqs = [
   {
     question: "What year models are in the Thind Transport fleet?",
-    answer: "Our fleet consists exclusively of 2023-2025 model year trucks. We operate Freightliner Cascadias and Volvo VNL 860s/760s. No truck in our fleet is older than 3 years, ensuring you always drive reliable, modern equipment."
+    answer: "Our fleet consists of 2020-2022 model year trucks. We operate Freightliner Cascadias and Volvo VNL 860s/760s. All trucks are well-maintained modern equipment with APUs, ensuring you always drive reliable, comfortable trucks."
   },
   {
     question: "Do all trucks come with APUs and inverters?",
@@ -314,7 +314,7 @@ const fleetStats = [
   { value: "15+", label: "Trucks in Fleet", icon: TrendingUp },
   { value: "100%", label: "APU-Equipped", icon: Shield },
   { value: "24/7", label: "Dispatch & Roadside", icon: Clock },
-  { value: "2.5yr", label: "Avg Fleet Age", icon: Calendar }
+  { value: "4-5yr", label: "Avg Fleet Age", icon: Calendar }
 ]
 
 export default function FleetPage() {
@@ -391,7 +391,7 @@ export default function FleetPage() {
             <motion.div variants={fadeInUp} className="flex flex-wrap items-center gap-3 mb-6">
               <Badge variant="outline" className="bg-orange/20 text-orange border-orange/30 px-4 py-2 text-sm font-bold backdrop-blur-sm">
                 <Truck className="h-4 w-4 mr-2 inline" />
-                2023-2025 Model Fleet
+                2020-2022 Model Fleet
               </Badge>
               <Badge variant="outline" className="bg-green-500/20 text-green-400 border-green-500/30 px-4 py-2 text-sm font-bold backdrop-blur-sm">
                 <CheckCircle2 className="h-4 w-4 mr-2 inline" />
@@ -507,8 +507,8 @@ export default function FleetPage() {
               { 
                 icon: Calendar, 
                 title: "Newest Fleet", 
-                desc: "Average fleet age under 2.5 years. No trucks older than 2023.",
-                highlight: "2023-2025 Only"
+                desc: "Well-maintained 2020-2022 model trucks with APUs and current safety features.",
+                highlight: "2020-2022 Only"
               },
               { 
                 icon: Zap, 
