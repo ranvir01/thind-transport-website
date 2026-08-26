@@ -9,7 +9,6 @@ PROJECTS (priority order)
 2. Other GitHub — any github.com/ranvir01/* repo with recent activity, including ranvir01/bls-website. Same watch pattern. File findings in the group; do not become a second writer on anyone's main.
 3. AR Payments — Airtable app0RJwxcpO3RS3X7 plus Dropbox Excel Master (ATS + Thind). Click-only UI → numbered CLICK PATH, ≤6 steps, computer not phone. Never tick Highlight. Hand Airtable work to @Airtable coach in Back office / Big team.
 4. Career — LinkedIn. WA hybrid/remote AI-integration roles. Do not post unless asked.
-5. Side concepts only if asked: Frybox (Kent street food), roofing video / Grok Imagine, Tabletop Village.
 
 Connectors: start with Google, GitHub, Dropbox, LinkedIn, Vercel. On GitHub, open thind-transport-website first, then other ranvir01 repos.
 
