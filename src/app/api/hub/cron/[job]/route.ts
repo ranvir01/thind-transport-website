@@ -132,7 +132,13 @@ export async function GET(
         }
         results[carrier.id] = { alerts: alerts.length }
       } else if (job === "ar-reminders") {
-        results[carrier.id] = await runOverdueReminders(carrier.id)
+        const reminder = await runOverdueReminders(carrier.id)
+        // failed>0 must trip the loud 500 below. Returning {sent:0} with an
+        // empty catch used to write ok:true while no dunning left the building.
+        results[carrier.id] =
+          reminder.failed > 0
+            ? { ...reminder, error: `${reminder.failed} reminder send(s) failed` }
+            : reminder
       } else if (job === "detention-alerts") {
         // Roadmap: alert dispatcher/owner the moment a stop crosses free time
         // dwelling, instead of waiting for someone to notice on the board.

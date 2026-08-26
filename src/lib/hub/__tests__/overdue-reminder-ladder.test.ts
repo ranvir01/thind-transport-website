@@ -262,4 +262,30 @@ describe("runOverdueReminders", () => {
     expect((await runOverdueReminders(CARRIER)).sent).toBe(0)
     expect(sendMail).not.toHaveBeenCalled()
   })
+
+  it("counts send failures instead of swallowing them (cron must go red)", async () => {
+    withInvoices([invoiceRow(4)])
+    sendMail.mockRejectedValueOnce(new Error("535-5.7.8 Username and Password not accepted"))
+
+    const result = await runOverdueReminders(CARRIER)
+
+    expect(result.sent).toBe(0)
+    expect(result.failed).toBe(1)
+    expect(result.deferred).toBe(0)
+    expect(loggedKinds()).toEqual([])
+  })
+
+  it("stops sending after OVERDUE_REMINDER_SEND_CAP failures in one run", async () => {
+    const { OVERDUE_REMINDER_SEND_CAP } = await import("../invoices")
+    const rows = [4, 5, 6, 7, 8, 11].map((d) => invoiceRow(d, [], { id: `inv-cap-${d}` }))
+    withInvoices(rows)
+    sendMail.mockRejectedValue(new Error("535-5.7.8"))
+
+    const result = await runOverdueReminders(CARRIER)
+
+    expect(result.failed).toBe(OVERDUE_REMINDER_SEND_CAP)
+    expect(result.deferred).toBe(rows.length - OVERDUE_REMINDER_SEND_CAP)
+    expect(result.sent).toBe(0)
+    expect(sendMail).toHaveBeenCalledTimes(OVERDUE_REMINDER_SEND_CAP)
+  })
 })
