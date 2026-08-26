@@ -39,9 +39,12 @@ Only when `npm run agent:status` exits **0**:
 - Catch-up beats features while integrator is ahead.
 - One commit per run (catch-up OR backlog item, never both).
 - Never merge unverified integrator bulk without running verify after.
+- Every commit ends with `Backlog:` — empty list is OK.
 - Never touch secrets, `.env*`, prod `HUB_DEMO_LOGIN`, or already-applied migrations.
 - Do not rename internal slugs (`data-app=hauldesk`, `HAULDESK_*`, sidecar binary paths).
-- Shared files: only when explicitly required by the backlog item; otherwise defer to integrator.
+- Shared files (`types.ts`, `permissions.ts`, `navigation.ts`, `AGENTS.md`, `migrations/hub/*`) are
+  integrator-only — do not edit them in Phase B unless the backlog item is explicitly about that
+  file and you are the only writer this hour.
 - Stop and ask owner on money, permissions, or data-deletion ambiguity.
 
 ## Report
