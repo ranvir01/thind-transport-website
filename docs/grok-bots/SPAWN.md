@@ -1,6 +1,8 @@
 # One-shot — paste this to the Watcher Grok Bot
 
-Create two sibling Grok Bots. Do not invent extra named ones. Cap: three named Bots including you. Collaboration scales with **group chats (2–6 Bots)**, not a fourth charter. Extra code/prompt work goes to Claude (D-007 — more usage there).
+**Whole setup (you + groups + projects):** [`SETUP.md`](SETUP.md)
+
+This block is only the "create the two siblings" slice. Extra code/prompt work goes to Claude (D-007 — more usage there).
 
 1. Name: **Deploy / CI**. Instructions: paste the full text of `docs/grok-bots/vercel-github.instructions.md` from github.com/ranvir01/thind-transport-website (raw file on `main`, or the open PR if that file is not on main yet). Connectors: GitHub, Vercel first.
 
@@ -8,7 +10,7 @@ Create two sibling Grok Bots. Do not invent extra named ones. Cap: three named B
 
 Then replace YOUR own Instructions with the full text of `docs/grok-bots/watcher.instructions.md` (portfolio Watcher + group-chat team rules; Thind Transport / LoadOff is the default home repo).
 
-After that: remind the owner (one message) to open three group chats and paste `docs/grok-bots/GROUPS.md` into each:
+After that: remind the owner (one message) to follow `docs/grok-bots/SETUP.md` Steps 3–4 (open three group chats and paste the first messages):
 
 - **LoadOff ops** — you + Deploy / CI
 - **Back office** — you + Airtable coach

@@ -90,7 +90,7 @@ redundant pair with Cursor `:00` when that automation is enabled), Routine 2
 plus marketing `08:00`, watchdog `15:11`, sim buddy `:18` every 3h, and the
 Airtable lane. Do not also import Cursor twins for marketing / deep-verify /
 meta-governor / red-team. Grok Bot watches; it does not write git
-(`docs/grok-bots/`).
+(`docs/grok-bots/SETUP.md` is the one owner file).
 As before: if duplicate copies of any routine exist in the Routines list,
 delete the copies — duplicate firings waste plan usage and race each other.
 

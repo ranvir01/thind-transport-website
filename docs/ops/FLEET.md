@@ -85,8 +85,9 @@ bus between platforms (`Backlog:` trailers, `npm run agent:backlog`). **One bran
 
 **Grok Bots among themselves can share a thread.** Put 2–6 named Bots in a group
 chat; they @mention and hand off so the owner is not the router. Standing groups
-and paste files: [`docs/grok-bots/GROUPS.md`](../grok-bots/GROUPS.md). Grok Bot
-still never writes git.
+and paste files: [`docs/grok-bots/SETUP.md`](../grok-bots/SETUP.md) is the one
+owner file (create the other Bots, open the three groups, cover every project).
+Grok Bot still never writes git.
 
 **D-007 (final):** do not grow the Grok roster. Claude has the usage and already
 writes this repo (14 live tasks). When a Grok Bot finds code work, it posts a
@@ -269,7 +270,8 @@ back to a Cursor agent to keep `main` moving. Remaining owner clicks:
 3. Optional: re-enable Integrator / Prod Smoke / Deploy + backlog for Cursor redundancy.
    Import only the Cursor role slots Claude does not already run (office/driver/tests/
    integrations). Do not import marketing / deep-verify / meta-governor twins.
-4. Paste Grok Bot instructions (`docs/grok-bots/`) — watcher + two siblings. No git.
+4. Follow **`docs/grok-bots/SETUP.md`** — create the other Bots, open the three
+   group chats, cover every project. No git.
 5. D-001 — arm the branch reaper after dry-runs, or the integrator keeps triaging dead branches.
 6. Human-dated: Form 2290 by Aug 31; Airtable Team ~Sep 2; SMTP App Password (30+ days dead).
 

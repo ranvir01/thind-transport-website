@@ -19,14 +19,30 @@ const INSTRUCTION_FILES = [
 ]
 
 describe("grok-bot instruction files (paste-ready, ≤4k)", () => {
-  it("ships the README, spawn one-shot, group kickoffs, and three instruction bodies", () => {
+  it("ships SETUP.md as the one owner file, plus spawn, groups, and three instruction bodies", () => {
     const names = new Set(readdirSync(DIR))
+    expect(names.has("SETUP.md")).toBe(true)
     expect(names.has("README.md")).toBe(true)
     expect(names.has("SPAWN.md")).toBe(true)
     expect(names.has("GROUPS.md")).toBe(true)
     for (const file of INSTRUCTION_FILES) {
       expect(names.has(file), `missing ${file}`).toBe(true)
     }
+    const setup = readFileSync(path.join(DIR, "SETUP.md"), "utf-8")
+    expect(setup).toMatch(/THE FILE/)
+    expect(setup).toMatch(/This is that file/)
+    expect(setup).toMatch(/Deploy \/ CI/)
+    expect(setup).toMatch(/Airtable coach/)
+    expect(setup).toMatch(/LoadOff ops/)
+    expect(setup).toMatch(/Back office/)
+    expect(setup).toMatch(/Big team/)
+    expect(setup).toMatch(/New Group Chat/)
+    expect(setup).toMatch(/bls-website/)
+    expect(setup).toMatch(/app0RJwxcpO3RS3X7/)
+    expect(setup).toMatch(/LinkedIn/)
+    expect(setup).toMatch(/Frybox/)
+    expect(setup).toMatch(/watcher\.instructions\.md/)
+    expect(setup).toMatch(/Projects this team handles/)
   })
 
   it("keeps every instruction body under the 4,000-character product cap", () => {
@@ -72,5 +88,6 @@ describe("grok-bot instruction files (paste-ready, ≤4k)", () => {
     expect(readme).toMatch(/git/)
     expect(readme).toMatch(/group chat/i)
     expect(readme).toMatch(/Big team/)
+    expect(readme).toMatch(/SETUP\.md/)
   })
 })

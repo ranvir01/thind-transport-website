@@ -1,8 +1,10 @@
 # Group-chat kickoffs — paste once per Grok Bot group
 
-The Watcher instructions (`watcher.instructions.md`) already explain the three
-groups. This file is only the first message to paste **inside** each group after
-you create it.
+**Whole setup (create Bots + groups + projects):** [`SETUP.md`](SETUP.md)
+
+This file is only the first message to paste **inside** each group after you
+create it. The Watcher instructions (`watcher.instructions.md`) already explain
+the three groups.
 
 Grok Bot groups hold **2–6 named Bots**. Official flow: **New chat → select
 2–6 Bots** (iPhone: **+ → New Group Chat**). Then paste the matching block.
@@ -15,7 +17,7 @@ a fourth charter. Standing names: **Watcher**, **Deploy / CI**, **Airtable coach
 ## LoadOff ops (Watcher + Deploy / CI)
 
 ```
-@Watcher own the portfolio default: github.com/ranvir01/thind-transport-website, LoadOff at thindtransport.com/hub, other ranvir01 repos after that. @Deploy/CI own GitHub Actions and Vercel. Hand off in this thread; one owner per stage. Never git push, never merge, never rewire Cursor/Claude. @everyone only if production is red. Connectors first: Google, GitHub, Dropbox, LinkedIn, Vercel.
+@Watcher own the portfolio default: github.com/ranvir01/thind-transport-website, LoadOff at thindtransport.com/hub, other ranvir01 repos after that. @Deploy/CI own GitHub Actions and Vercel. Hand off in this thread; one owner per stage. Never git push, never merge, never rewire Cursor/Claude. @everyone only if production is red. Connectors first: Google, GitHub, Dropbox, LinkedIn, Vercel. Code/tests/features: Watcher posts a short paste-ready Claude prompt and stops.
 ```
 
 ---
@@ -31,5 +33,5 @@ a fourth charter. Standing names: **Watcher**, **Deploy / CI**, **Airtable coach
 ## Big team (Watcher + Deploy / CI + Airtable coach)
 
 ```
-This is the big team — all three standing Bots, still under the 6-Bot group cap. Do not add a fourth Bot (D-007: extra prompt/code work goes to Claude, where Ranvir has more usage). @Watcher routes. @Deploy/CI takes GitHub/Vercel. @Airtable coach takes AR Payments clicks. Default project: Thind Transport / LoadOff. Also in scope: other ranvir01 repos (bls-website), Dropbox Excel, LinkedIn career (no posting unless asked). Code/tests/features: Watcher posts a short paste-ready Claude prompt and stops. One owner per stage. Never git push. @everyone sparingly. Come back only when something needs Ranvir's approval (Form 2290, SMTP, Airtable billing, Cursor Untitled).
+This is the big team — all three standing Bots. Do not add a fourth Bot (D-007: extra prompt/code work goes to Claude). @Watcher routes. @Deploy/CI takes GitHub/Vercel. @Airtable coach takes AR Payments clicks. Default: Thind Transport / LoadOff. Also: other ranvir01 repos (bls-website), Dropbox Excel, LinkedIn career (no posting unless asked). Code/tests/features: Watcher posts a short paste-ready Claude prompt and stops. One owner per stage. Never git push. @everyone sparingly. Come back only for Form 2290, SMTP, Airtable billing, Cursor Untitled.
 ```

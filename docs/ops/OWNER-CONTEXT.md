@@ -47,7 +47,7 @@ Marketing: state pages to WA/OR/ID standard; CA next; no unverifiable claims.
 ## Fleet (three platforms)
 
 Full clock: [`FLEET.md`](FLEET.md) + [`AGENT_INTEROP.md`](AGENT_INTEROP.md) §1.
-Grok Bot paste files: [`docs/grok-bots/`](../grok-bots/README.md).
+Grok Bot setup (other Bots, group chats, every project): [`docs/grok-bots/SETUP.md`](../grok-bots/SETUP.md).
 
 **Claude Corps is the live scheduled writer** (14 tasks, all enabled, 2026-08-26):
 
@@ -78,9 +78,7 @@ liveness `:10`.
 `thind-transport-website`, other `ranvir01/*` including `bls-website`, AR
 Payments / Dropbox, LinkedIn). Connectors: Google / GitHub / Dropbox /
 LinkedIn / Vercel. Never git. Named Bots collaborate in **group chats
-(2–6 Bots)** — LoadOff ops, Back office, Big team — see `docs/grok-bots/GROUPS.md`.
-**D-007:** do not spawn extra Grok Bots; code and long prompts go to Claude
-(more usage there).
+(2–6 Bots)**. **The one file to set it all up:** `docs/grok-bots/SETUP.md`.
 
 ## AR Payments (Airtable back office)
 

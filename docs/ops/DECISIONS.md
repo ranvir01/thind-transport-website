@@ -83,4 +83,5 @@ duplicates the 14 live Claude tasks).
 C) Let Grok iterate full implementation prompts (burns Grok usage Claude already covers).
 Deferral cost: Watcher keeps inventing extra Bots and chewing Grok quota on prompt drafts.
 Answer: **A — finalized 2026-08-26.** Do not reverse without editing this file. Watcher
-paste: `docs/grok-bots/watcher.instructions.md` § HAND TO CLAUDE.
+paste: `docs/grok-bots/watcher.instructions.md` § HAND TO CLAUDE. Owner setup (create
+the other Bots, open the three groups, cover every project): `docs/grok-bots/SETUP.md`.

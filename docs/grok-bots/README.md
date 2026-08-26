@@ -1,11 +1,15 @@
 # Grok Bot layer — watchers and connectors, never git
 
+**Start here to create the other Bots, the group chats, and cover every
+project:** [`SETUP.md`](SETUP.md)
+
+That one file is the whole job. The rest of this folder is the paste pieces
+it points at (`watcher.instructions.md`, sibling instruction bodies).
+
 xAI **Grok Bot** (the always-on teammate with its own cloud computer) is the
 third platform in this fleet. It is **not** a Cursor Automation and **not** a
 Claude routine. Agents in this repo cannot create or edit Grok Bots — only you
-can, from the Grok Bot app. These files are paste-ready so any agent can tell
-you exactly what to paste, and so a Grok Bot told to "spawn siblings" copies
-from here instead of inventing charters.
+can, from the Grok Bot app.
 
 Instruction bodies are capped at **4,000 characters** (product limit).
 `src/lib/__tests__/grok-bot-instructions-guard.test.ts` fails if a file here
@@ -60,16 +64,15 @@ Grok Bot. Paste from this folder; do not freehand extra charters.
 
 | Group | Members | Kickoff paste |
 |---|---|---|
-| **LoadOff ops** | Watcher + Deploy / CI | [`GROUPS.md`](GROUPS.md) |
-| **Back office** | Watcher + Airtable coach | [`GROUPS.md`](GROUPS.md) |
-| **Big team** | all three — do not add a fourth (D-007) | [`GROUPS.md`](GROUPS.md) |
+| **LoadOff ops** | Watcher + Deploy / CI | [`SETUP.md`](SETUP.md) Step 4 |
+| **Back office** | Watcher + Airtable coach | [`SETUP.md`](SETUP.md) Step 4 |
+| **Big team** | all three — do not add a fourth (D-007) | [`SETUP.md`](SETUP.md) Step 4 |
 
 Desktop: New chat → select 2–6 Bots. iPhone: **+ → New Group Chat**. Then paste
-the matching kickoff. `@` one Bot when it owns the next step; `@everyone` only
-for a stall. One owner per stage.
+the matching kickoff from SETUP.md. `@` one Bot when it owns the next step;
+`@everyone` only for a stall. One owner per stage.
 
-One-shot to the Watcher: paste [`SPAWN.md`](SPAWN.md) (creates the two siblings,
-then reminds you to open the three groups).
+One-shot to the Watcher: SETUP.md Step 2 (same text as [`SPAWN.md`](SPAWN.md)).
 
 ## What Grok Bot must never do
 
