@@ -79,10 +79,14 @@ context: [`OWNER-CONTEXT.md`](OWNER-CONTEXT.md).
 
 ## How Cursor, Claude, and Grok Bot collaborate (no shared transcript)
 
-They cannot see each other's sessions. The **commit body** is the bus (`Backlog:` trailers, `npm run agent:backlog`). **One branch, one writer.** If a fix already exists on another branch, name it in `Backlog:` and take the next item.
+They cannot see each other's sessions **across platforms** (Cursor cannot read a
+Claude transcript; neither can read a Grok Bot thread). The **commit body** is the
+bus between platforms (`Backlog:` trailers, `npm run agent:backlog`). **One branch, one writer.** If a fix already exists on another branch, name it in `Backlog:` and take the next item.
 
-**Grok Bot never writes git.** It watches Google / GitHub / Dropbox / LinkedIn / Vercel
-and files findings or ≤6-step click paths. Paste files: [`docs/grok-bots/`](../grok-bots/README.md).
+**Grok Bots among themselves can share a thread.** Put 2–6 named Bots in a group
+chat; they @mention and hand off so the owner is not the router. Standing groups
+and paste files: [`docs/grok-bots/GROUPS.md`](../grok-bots/GROUPS.md). Grok Bot
+still never writes git.
 
 Daily/weekly **build** sessions that Claude does *not* already run (office, driver, tests,
 integrations) remain import-ready Cursor Automations on Grok 4.6 (`DECISIONS.md` D-003) —
@@ -163,8 +167,9 @@ These are redundancy, not duplicates — only if the owner re-enables the Cursor
 | Cursor `:30` smoke + Claude `16:49` smoke | Both read-only unless production is red. Later fixer fetches and re-checks; first fixer wins. |
 | Claude `10:33` nightly E2E | Needs a browser. Cursor image has none. Do not re-create as a Cursor automation. |
 
-Grok Bot (Watcher / Deploy-CI / Airtable coach) has **no git charter**. If it finds
-a code defect, it names it in chat; a Claude or Cursor agent picks it from
+Grok Bot (Watcher / Deploy-CI / Airtable coach) has **no git charter**. Named Bots
+collaborate in group chats (2–6), not as extra writers on `main`. If a Bot finds
+a code defect, it names it in the group; a Claude or Cursor agent picks it from
 `Backlog:` or the next session.
 
 Everything else in the collaboration contract is unchanged: `claude/*` branches are absorbed

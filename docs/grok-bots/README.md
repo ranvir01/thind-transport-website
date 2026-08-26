@@ -44,8 +44,10 @@ Vercel/GitHub CI going red while you are on your phone. Grok Bot fills that
 gap without becoming a fourth writer on `main`.
 
 It can create **sibling bots from the Grok Bot app** (not from this repo).
-Cap at three named bots so slots stay useful. Paste from this folder; do not
-freehand extra charters.
+Cap at three named Bots so slots stay useful. **Scale with group chats, not
+extra names** — a group holds 2–6 Bots; they @mention and hand off so you are
+not the router ([xAI: chat and collaboration](https://docs.x.ai/grok-bot/chat-and-collaboration)).
+Paste from this folder; do not freehand extra charters.
 
 | Bot | File | Connectors to start |
 |---|---|---|
@@ -53,7 +55,20 @@ freehand extra charters.
 | **Deploy / CI** | [`vercel-github.instructions.md`](vercel-github.instructions.md) | GitHub, Vercel |
 | **Airtable click-path coach** | [`airtable-coach.instructions.md`](airtable-coach.instructions.md) | none required; Airtable in the browser if signed in |
 
-One-shot to the Watcher: paste [`SPAWN.md`](SPAWN.md).
+### Standing group chats (the big team)
+
+| Group | Members | Kickoff paste |
+|---|---|---|
+| **LoadOff ops** | Watcher + Deploy / CI | [`GROUPS.md`](GROUPS.md) |
+| **Back office** | Watcher + Airtable coach | [`GROUPS.md`](GROUPS.md) |
+| **Big team** | all three (room to add later, max 6) | [`GROUPS.md`](GROUPS.md) |
+
+Desktop: New chat → select 2–6 Bots. iPhone: **+ → New Group Chat**. Then paste
+the matching kickoff. `@` one Bot when it owns the next step; `@everyone` only
+for a stall. One owner per stage.
+
+One-shot to the Watcher: paste [`SPAWN.md`](SPAWN.md) (creates the two siblings,
+then reminds you to open the three groups).
 
 ## What Grok Bot must never do
 

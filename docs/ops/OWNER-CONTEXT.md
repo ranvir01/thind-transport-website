@@ -77,7 +77,8 @@ liveness `:10`.
 **Grok Bot** watches the whole portfolio (home repo
 `thind-transport-website`, other `ranvir01/*` including `bls-website`, AR
 Payments / Dropbox, LinkedIn). Connectors: Google / GitHub / Dropbox /
-LinkedIn / Vercel. Never git.
+LinkedIn / Vercel. Never git. Named Bots collaborate in **group chats
+(2–6 Bots)** — LoadOff ops, Back office, Big team — see `docs/grok-bots/GROUPS.md`.
 
 ## AR Payments (Airtable back office)
 

@@ -19,10 +19,11 @@ const INSTRUCTION_FILES = [
 ]
 
 describe("grok-bot instruction files (paste-ready, ≤4k)", () => {
-  it("ships the README, spawn one-shot, and three instruction bodies", () => {
+  it("ships the README, spawn one-shot, group kickoffs, and three instruction bodies", () => {
     const names = new Set(readdirSync(DIR))
     expect(names.has("README.md")).toBe(true)
     expect(names.has("SPAWN.md")).toBe(true)
+    expect(names.has("GROUPS.md")).toBe(true)
     for (const file of INSTRUCTION_FILES) {
       expect(names.has(file), `missing ${file}`).toBe(true)
     }
@@ -51,6 +52,9 @@ describe("grok-bot instruction files (paste-ready, ≤4k)", () => {
     expect(watcher).toMatch(/ranvir01/)
     expect(watcher).toMatch(/bls-website/)
     expect(watcher).toMatch(/portfolio/)
+    expect(watcher).toMatch(/group chat/i)
+    expect(watcher).toMatch(/2–6|2-6/)
+    expect(watcher).toMatch(/Big team/)
   })
 
   it("the README names the three-platform split and the never-git rule", () => {
@@ -60,5 +64,7 @@ describe("grok-bot instruction files (paste-ready, ≤4k)", () => {
     expect(readme).toMatch(/Grok Bot/)
     expect(readme).toMatch(/Never/)
     expect(readme).toMatch(/git/)
+    expect(readme).toMatch(/group chat/i)
+    expect(readme).toMatch(/Big team/)
   })
 })
