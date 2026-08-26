@@ -4,7 +4,7 @@
  * load by reference number in the subject. Unmatched mail goes to a review
  * note — never silently dropped.
  */
-import { getCredentials } from "./credentials"
+import { getStoredCredentials } from "./credentials"
 import { queryOne } from "./db"
 import { saveDocument } from "./documents"
 import { addLoadEvent } from "./loads"
@@ -67,7 +67,7 @@ export function classifyDocumentKind(
 export async function pollDocsMailbox(
   carrierId: string
 ): Promise<{ connected: boolean; filed?: number; unmatched?: number }> {
-  const creds = await getCredentials(carrierId, "mailbox")
+  const creds = await getStoredCredentials(carrierId, "mailbox")
   if (!creds?.user) return { connected: false }
   // Password (Gmail app password) or OAuth2 (M365 / Google Workspace XOAUTH2) —
   // resolveMailboxAuth picks from the saved fields and mints the token.

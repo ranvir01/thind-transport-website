@@ -355,7 +355,7 @@ const AUTOSTART_TOUR_ID = "today-desk"
  */
 export async function skipFirstRunTour(page) {
   await page.evaluate(
-    (key, id) => {
+    (key, id, celebrationsKey) => {
       try {
         const raw = localStorage.getItem(key)
         const list = raw ? JSON.parse(raw) : []
@@ -366,9 +366,18 @@ export async function skipFirstRunTour(page) {
       } catch {
         /* storage disabled — the tour just runs, same as before */
       }
+      try {
+        // Milestone overlays (first invoice emailed) steal the 20s pathname
+        // wait in invoices-smoke. Smokes assert the business outcome, not the
+        // celebration. Off switch is the same key the avatar menu writes.
+        localStorage.setItem(celebrationsKey, "off")
+      } catch {
+        /* storage disabled */
+      }
     },
     TOUR_STORAGE_KEY,
-    AUTOSTART_TOUR_ID
+    AUTOSTART_TOUR_ID,
+    "hauldesk-celebrations"
   )
 }
 

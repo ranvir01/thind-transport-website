@@ -58,13 +58,11 @@ export async function saveCredentials(
   )
 }
 
-export async function getCredentials(
+async function readStoredEnvelope(
   carrierId: string,
   provider: IntegrationProvider
 ): Promise<Record<string, string> | null> {
   if (!credentialsConfigured()) return null
-  const { liveIntegrationsAllowed } = await import("./mode")
-  if (!(await liveIntegrationsAllowed())) return null
   const row = await queryOne<{ encrypted: string }>(
     `SELECT encrypted FROM hub.api_credentials WHERE carrier_id = $1 AND provider = $2`,
     [carrierId, provider]
@@ -77,17 +75,38 @@ export async function getCredentials(
   }
 }
 
+/**
+ * Decrypt the stored envelope for UI, field-merge, and inbound mailbox poll.
+ * Does not imply a live vendor call is allowed — adapters that hit ELD / fuel /
+ * DAT / QBO / FMCSA use getCredentials(), which is simulation-gated.
+ */
+export async function getStoredCredentials(
+  carrierId: string,
+  provider: IntegrationProvider
+): Promise<Record<string, string> | null> {
+  return readStoredEnvelope(carrierId, provider)
+}
+
+export async function getCredentials(
+  carrierId: string,
+  provider: IntegrationProvider
+): Promise<Record<string, string> | null> {
+  if (!credentialsConfigured()) return null
+  const { liveIntegrationsAllowed } = await import("./mode")
+  if (!(await liveIntegrationsAllowed())) return null
+  return readStoredEnvelope(carrierId, provider)
+}
+
 export async function hasCredentials(
   carrierId: string,
   provider: IntegrationProvider
 ): Promise<boolean> {
-  // Same guard getCredentials carries. Without it, rotating or dropping
-  // CREDENTIALS_KEY leaves every adapter's connected() reporting true while
-  // pull() throws "not connected" on every cron run, forever, with no alert —
-  // the row still exists, it just can no longer be decrypted.
+  // Row existence for the connected UI. Live HTTP still goes through
+  // getCredentials(), which is simulation-gated, so adapters stay on CSV/mock
+  // even when the card shows connected (the owner practiced the connect flow).
+  // CREDENTIALS_KEY remains required: without it the envelope cannot be
+  // decrypted and connected() would lie.
   if (!credentialsConfigured()) return false
-  const { liveIntegrationsAllowed } = await import("./mode")
-  if (!(await liveIntegrationsAllowed())) return false
   const row = await queryOne<{ id: string }>(
     `SELECT id FROM hub.api_credentials WHERE carrier_id = $1 AND provider = $2`,
     [carrierId, provider]

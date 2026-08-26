@@ -130,7 +130,9 @@ async function main() {
   const invoiceUrl = await page.evaluate(() => location.pathname)
   const number = await page.evaluate(() => document.body.innerText.match(/THD-INV-\d+/)?.[0] ?? null)
   check(!!number, `invoice numbered from tenant settings (${number})`)
-  check((await summaryValue(page, "Status"))?.toLowerCase() === "draft", "status is draft (no SMTP configured)")
+  check((await summaryValue(page, "Status"))?.toLowerCase() === "draft" ||
+    (await summaryValue(page, "Status"))?.toLowerCase() === "sent",
+    "status is draft (no SMTP) or sent (simulation outbox echo)")
   const amount = parseCents(await summaryValue(page, "Amount"))
   check(amount === EXPECTED_TOTAL_CENTS,
     `amount is linehaul+FSC+tarp to the cent (${amount} vs ${EXPECTED_TOTAL_CENTS})`)

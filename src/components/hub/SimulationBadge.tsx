@@ -5,9 +5,11 @@ import { cn } from "@/lib/utils"
 export function SimulationBadge({
   dark = false,
   compact = false,
+  className,
 }: {
   dark?: boolean
   compact?: boolean
+  className?: string
 }) {
   return (
     <span
@@ -17,7 +19,8 @@ export function SimulationBadge({
         compact ? "px-1.5 py-0.5 text-[9px]" : "px-2 py-0.5 text-[10px]",
         dark
           ? "bg-amber-400/20 text-amber-200 ring-1 ring-amber-400/40"
-          : "bg-warn-soft text-warn ring-1 ring-warn/30"
+          : "bg-warn-soft text-warn ring-1 ring-warn/30",
+        className
       )}
     >
       <FlaskConical className={compact ? "h-2.5 w-2.5" : "h-3 w-3"} aria-hidden />

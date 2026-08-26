@@ -7,7 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 vi.mock("../db", () => ({ query: vi.fn(async () => []), queryOne: vi.fn(async () => null) }))
 
 import { queryOne } from "../db"
-import { encryptPayload, getCredentials, hasCredentials } from "../credentials"
+import { encryptPayload, getCredentials, getStoredCredentials, hasCredentials } from "../credentials"
 
 const queryOneMock = vi.mocked(queryOne)
 const ORIGINAL_MODE = process.env.HAULDESK_MODE
@@ -35,9 +35,18 @@ describe("simulation blocks live credentials", () => {
     expect(queryOneMock).not.toHaveBeenCalled()
   })
 
-  it("hasCredentials reports disconnected so adapters stay on CSV fallback", async () => {
+  it("hasCredentials still reports the stored row so the owner can practice Connect / Disconnect", async () => {
     queryOneMock.mockResolvedValue({ id: "row-1" })
-    expect(await hasCredentials(CARRIER, "terminal")).toBe(false)
-    expect(queryOneMock).not.toHaveBeenCalled()
+    expect(await hasCredentials(CARRIER, "terminal")).toBe(true)
+    expect(queryOneMock).toHaveBeenCalled()
+  })
+
+  it("getStoredCredentials still decrypts so mailbox poll and field-merge keep working", async () => {
+    const envelope = encryptPayload({ user: "docs@demo.example", pass: "app-pass" })
+    queryOneMock.mockResolvedValue({ encrypted: envelope })
+    expect(await getStoredCredentials(CARRIER, "mailbox")).toEqual({
+      user: "docs@demo.example",
+      pass: "app-pass",
+    })
   })
 })

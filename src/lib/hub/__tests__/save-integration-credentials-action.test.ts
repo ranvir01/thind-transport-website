@@ -12,6 +12,7 @@ vi.mock("@/lib/hub/session", () => ({
 vi.mock("@/lib/hub/credentials", () => ({
   credentialsConfigured: vi.fn(() => true),
   getCredentials: vi.fn(),
+  getStoredCredentials: vi.fn(),
   saveCredentials: vi.fn(async () => undefined),
   deleteCredentials: vi.fn(async () => undefined),
 }))
@@ -24,10 +25,10 @@ vi.mock("@/lib/hub/integrations/wex", () => ({ runWexSync: vi.fn() }))
 vi.mock("@/lib/hub/integrations/qbo", () => ({ runQboSync: vi.fn() }))
 vi.mock("@/lib/hub/integrations/event-processors", () => ({ retryUnprocessedEvents: vi.fn() }))
 
-import { getCredentials, saveCredentials } from "@/lib/hub/credentials"
+import { getStoredCredentials, saveCredentials } from "@/lib/hub/credentials"
 import { saveIntegrationCredentialsAction } from "@/app/hub/_actions/integrations"
 
-const getCredentialsMock = vi.mocked(getCredentials)
+const getCredentialsMock = vi.mocked(getStoredCredentials)
 const saveCredentialsMock = vi.mocked(saveCredentials)
 
 beforeEach(() => {

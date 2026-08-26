@@ -4,7 +4,7 @@ vi.mock("../db", () => ({
   query: vi.fn(async () => []),
   queryOne: vi.fn(async () => null),
 }))
-vi.mock("../credentials", () => ({ getCredentials: vi.fn(async () => null) }))
+vi.mock("../credentials", () => ({ getStoredCredentials: vi.fn(async () => null) }))
 vi.mock("../documents", () => ({ saveDocument: vi.fn(async () => ({})) }))
 vi.mock("../loads", () => ({ addLoadEvent: vi.fn(async () => {}) }))
 vi.mock("../notify", () => ({ notifyRoles: vi.fn(async () => {}) }))
@@ -28,14 +28,14 @@ vi.mock("mailparser", () => ({
   simpleParser: (...args: unknown[]) => simpleParserMock(...(args as [])),
 }))
 
-import { getCredentials } from "../credentials"
+import { getStoredCredentials } from "../credentials"
 import { query, queryOne } from "../db"
 import { saveDocument } from "../documents"
 import { addLoadEvent } from "../loads"
 import { extractReference, pollDocsMailbox } from "../mailbox"
 import { notifyRoles } from "../notify"
 
-const getCredentialsMock = vi.mocked(getCredentials)
+const getCredentialsMock = vi.mocked(getStoredCredentials)
 const queryMock = vi.mocked(query)
 const queryOneMock = vi.mocked(queryOne)
 const saveDocumentMock = vi.mocked(saveDocument)

@@ -18,7 +18,7 @@
  * Usage: node scripts/e2e-dat-freight-smoke.mjs [outputDir]
  */
 import { mkdirSync } from "node:fs"
-import { launchBrowser, BASE, failures, check, waitForText, login, makeShot, clickByText, reseed, sleep, realConsoleErrors } from "./e2e-lib.mjs"
+import { launchBrowser, BASE, failures, check, waitForText, login, makeShot, clickByText, reseed, sleep, realConsoleErrors, textAppears } from "./e2e-lib.mjs"
 
 /**
  * Waits for the DAT card to show a button with the given label. Used after a
@@ -214,27 +214,35 @@ async function main() {
     await waitForText(page, "click any cell to edit")
     const connectedState = await page.evaluate(() => document.body.innerText)
     check(!connectedState.includes("Connect DAT"), "Connect DAT prompt is gone once credentials are saved")
+    const simMode = /SIMULATION/i.test(connectedState)
     await clickByText(page, "Search DAT")
     await page.waitForSelector('button[type="submit"]', { timeout: 5000 })
     await clickByText(page, "Search DAT")
 
-    console.log("5. Search submits and shows a pending state without crashing the page")
-    // dat.ts calls the real freight.api.dat.com directly (AbortSignal.timeout
-    // 15s) — there's no stub/mock path for a "stub" registry provider yet
-    // (see Backlog). How long that fetch actually takes depends on network
-    // reachability the test can't control (fast reject on some hosts, a full
-    // 15s+ hang on others), so asserting on the *outcome* here would make
-    // this smoke flaky across environments. What's reliably testable
-    // everywhere: the click is accepted (button shows its pending spinner)
-    // and the client doesn't throw — the eventual toast is left unobserved.
-    const showsPending = await page.evaluate(() => {
-      const btn = [...document.querySelectorAll('button[type="submit"]')].find((b) =>
-        b.textContent?.includes("Search DAT")
-      )
-      return Boolean(btn?.querySelector("svg.animate-spin")) || btn?.disabled === true
-    })
-    check(showsPending, "search button shows a pending state immediately after submit")
-    await shot(page, "05-dat-search-pending")
+    if (simMode) {
+      console.log("5. Simulation — live DAT.com is not invoked; search fails closed")
+      const blocked = await textAppears(page, "live DAT search is off", 8000)
+      check(blocked, "simulation toast explains live DAT search is off")
+      await shot(page, "05-dat-search-sim-blocked")
+    } else {
+      console.log("5. Search submits and shows a pending state without crashing the page")
+      // dat.ts calls the real freight.api.dat.com directly (AbortSignal.timeout
+      // 15s) — there's no stub/mock path for a "stub" registry provider yet
+      // (see Backlog). How long that fetch actually takes depends on network
+      // reachability the test can't control (fast reject on some hosts, a full
+      // 15s+ hang on others), so asserting on the *outcome* here would make
+      // this smoke flaky across environments. What's reliably testable
+      // everywhere: the click is accepted (button shows its pending spinner)
+      // and the client doesn't throw — the eventual toast is left unobserved.
+      const showsPending = await page.evaluate(() => {
+        const btn = [...document.querySelectorAll('button[type="submit"]')].find((b) =>
+          b.textContent?.includes("Search DAT")
+        )
+        return Boolean(btn?.querySelector("svg.animate-spin")) || btn?.disabled === true
+      })
+      check(showsPending, "search button shows a pending state immediately after submit")
+      await shot(page, "05-dat-search-pending")
+    }
 
     console.log("6. Cleanup — disconnect DAT so the credential doesn't linger between runs")
     await owner.goto(`${BASE}/hub/settings/integrations`, { waitUntil: "networkidle2" })

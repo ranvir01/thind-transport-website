@@ -70,10 +70,12 @@ async function main() {
     return false
   })
   check(sendClicked, "Send statement button found and clicked")
-  const toastAppeared = await textAppears(page, "email not configured")
+  const toastAppeared =
+    (await textAppears(page, "email not configured", 8000)) ||
+    (await textAppears(page, "Statement sent", 8000))
   check(
     toastAppeared,
-    "toast surfaces the email-not-configured message instead of crashing"
+    "toast surfaces the email-not-configured message (or simulation outbox send) instead of crashing"
   )
   await shot(page, "02-money-send-statement-toast")
 

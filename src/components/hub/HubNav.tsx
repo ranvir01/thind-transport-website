@@ -64,10 +64,10 @@ export function HubShell({
   const mobilePrimaries = sections.slice(0, 5)
 
   return (
-    <div className="hauldesk-shell min-h-screen bg-bg text-fg">
+    <div className="hauldesk-shell min-h-screen min-w-0 overflow-x-hidden bg-bg text-fg">
       <header
         className={cn(
-          "sticky top-0 z-40 flex h-[calc(3.5rem+env(safe-area-inset-top,0px))] items-center gap-2 border-b border-border bg-surface px-3 pt-[env(safe-area-inset-top,0px)] transition-shadow duration-standard md:px-6",
+          "sticky top-0 z-40 flex h-[calc(3.5rem+env(safe-area-inset-top,0px))] min-w-0 items-center gap-2 border-b border-border bg-surface px-3 pt-[env(safe-area-inset-top,0px)] transition-shadow duration-standard md:px-6",
           scrolled && "shadow-card"
         )}
       >
@@ -77,8 +77,12 @@ export function HubShell({
         </Link>
         <span aria-hidden className="hidden h-5 w-px bg-border lg:block" />
         <WorkspaceChip name={user.carrierName || PRODUCT.name} accent={accent} isOwner={isOwner} />
-        {simulation ? <SimulationBadge /> : null}
-        {simulation && isOwner && simView ? <SimSwitcher current={simView} /> : null}
+        {simulation ? <SimulationBadge compact className="shrink-0" /> : null}
+        {simulation && isOwner && simView ? (
+          <div className="hidden shrink-0 md:block">
+            <SimSwitcher current={simView} />
+          </div>
+        ) : null}
 
         <nav
           className="hidden lg:flex items-center gap-0.5 ml-2 min-w-0 flex-1 overflow-x-auto"
@@ -198,8 +202,8 @@ export function HubShell({
           <HubTourHost />
           {children}
           {simulation ? (
-            <p className="mt-10 flex items-center gap-2 text-[11px] text-fg-3">
-              <SimulationBadge compact />
+            <p className="mt-10 max-w-full text-[11px] leading-relaxed text-fg-3">
+              <SimulationBadge compact className="mr-2 align-middle" />
               Generated data — invoices, settlements, and 1099s are not real documents.
             </p>
           ) : null}
