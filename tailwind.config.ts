@@ -1,5 +1,69 @@
 import type { Config } from "tailwindcss"
 
+/* ============================================================================
+ * MARKETING DESIGN TOKENS — everything below is DERIVED, nothing is typed.
+ *
+ * Namespaced `m-*` on purpose. The hub (/hub) consumes the shared `fontSize`,
+ * `borderRadius` and `boxShadow` names further down, and the redesign brief
+ * scopes this work to the public marketing site — so mutating those values
+ * would silently restyle the software. New namespace, zero blast radius.
+ * A marketing component uses `text-m-h2`, `rounded-m-2`, `shadow-m-e3`.
+ * ==========================================================================*/
+
+/** Modular type scale: major third (1.250) from a 16px base.
+ *  Chosen over 1.333 because the page is already far too tall — a perfect
+ *  fourth would make every heading taller and worsen the real problem. */
+const RATIO = 1.25
+const step = (n: number) => Math.pow(RATIO, n) // in rem, base 1rem = 16px
+
+/** Fluid interpolation between a 375px and a 1440px viewport.
+ *  Returns a clamp() whose middle term is the line through
+ *  (375px, min) and (1440px, max) — so size tracks viewport linearly
+ *  between the bounds and is pinned outside them. */
+const VW_MIN = 375
+const VW_MAX = 1440
+function fluid(minRem: number, maxRem: number): string {
+  const minPx = minRem * 16
+  const maxPx = maxRem * 16
+  const slope = (maxPx - minPx) / (VW_MAX - VW_MIN)
+  const interceptRem = (minPx - slope * VW_MIN) / 16
+  const vw = slope * 100
+  return `clamp(${minRem.toFixed(4)}rem, ${interceptRem.toFixed(4)}rem + ${vw.toFixed(4)}vw, ${maxRem.toFixed(4)}rem)`
+}
+
+/** Line height is inversely proportional to size: tight display, open body. */
+const leading = (n: number) => (n >= 6 ? "1.05" : n >= 4 ? "1.1" : n >= 2 ? "1.2" : n === 1 ? "1.5" : "1.55")
+
+/** How far a step compresses on mobile: the bigger the type, the more it
+ *  gives back on a phone. Stated rule, not per-value taste. */
+const compress = (n: number) => (n <= 1 ? 0 : n <= 4 ? 1 : 2)
+
+/** One entry of the marketing type scale, fully derived from `n`. */
+function typeStep(n: number): [string, { lineHeight: string; letterSpacing: string }] {
+  const max = step(n)
+  const min = step(n - compress(n))
+  return [
+    fluid(min, max),
+    {
+      lineHeight: leading(n),
+      // Optical tracking: large type needs negative tracking to look even.
+      letterSpacing: n >= 5 ? "-0.02em" : n >= 3 ? "-0.01em" : "0",
+    },
+  ]
+}
+
+/** Layered elevation, one light source directly above.
+ *  Each level doubles offset and blur and adds one point of opacity —
+ *  ambient (soft, wide) plus direct (tight, close), never a single blur. */
+function elevation(k: number): string {
+  const y = Math.pow(2, k - 1)
+  // toFixed rather than string-concatenating the digit: `0.0${3+k}` silently
+  // produces "0.010" once k reaches 7, which reads as a tenth of the opacity.
+  const ambient = `0 ${y * 2}px ${y * 4}px rgba(20, 22, 24, ${(0.03 + k * 0.01).toFixed(3)})`
+  const direct = `0 ${y}px ${y * 2}px rgba(20, 22, 24, ${(0.02 + k * 0.01).toFixed(3)})`
+  return `${ambient}, ${direct}`
+}
+
 const config: Config = {
   darkMode: ["class"],
   content: [
@@ -25,17 +89,17 @@ const config: Config = {
         
         // Primary: Navy Blue - Trust, Authority, Stability
         navy: {
-          DEFAULT: "#0E1621",
-          50: "#E8ECF1",
-          100: "#C5CED8",
-          200: "#9AABB9",
-          300: "#6F8496",
-          400: "#4A6275",
-          500: "#0E1621",
-          600: "#0C121B",
-          700: "#090E15",
-          800: "#060A10",
-          900: "#030508",
+          DEFAULT: "#121316",
+          50: "#EDEDEE",
+          100: "#D2D3D6",
+          200: "#A9ABB0",
+          300: "#7F8187",
+          400: "#54565C",
+          500: "#121316",
+          600: "#0E0F12",
+          700: "#0B0C0E",
+          800: "#08090B",
+          900: "#040405",
         },
         
         // Primary accent: Signal Red - action, urgency, brand energy
@@ -70,17 +134,17 @@ const config: Config = {
         
         // Accent: Silver Steel - Professional, industrial contrast
         steel: {
-          DEFAULT: "#A7B0BD",
-          50: "#F5F7FA",
-          100: "#E6EBF1",
-          200: "#CDD5DF",
-          300: "#A7B0BD",
-          400: "#828C98",
-          500: "#626C79",
-          600: "#4B5563",
-          700: "#343D4A",
-          800: "#202733",
-          900: "#131922",
+          DEFAULT: "#ABADB2",
+          50: "#F6F6F7",
+          100: "#E9EAEB",
+          200: "#D2D3D6",
+          300: "#ABADB2",
+          400: "#85878C",
+          500: "#64666B",
+          600: "#4C4E53",
+          700: "#35373B",
+          800: "#212226",
+          900: "#141518",
         },
 
         // Legacy/Compatibility Aliases
@@ -168,6 +232,40 @@ const config: Config = {
           900: "#7f1d1d",
           950: "#450a0a",
         },
+
+        // HaulDesk software UI (CSS variable tokens — hub only)
+        // ---- Marketing palette (see docs/design/DIRECTION.md §1) ----
+        // Paper ground, graphite ink, one red. Dark is punctuation, not the page.
+        // Every pair below is contrast-verified in DIRECTION.md.
+        paper: "var(--m-paper)",
+        ink: {
+          DEFAULT: "var(--m-ink)",
+          2: "var(--m-ink-2)",
+          3: "var(--m-ink-3)",
+        },
+        signal: {
+          DEFAULT: "var(--m-signal)",
+          up: "var(--m-signal-up)",
+        },
+        asphalt: "var(--m-asphalt)",
+        cedar: "var(--m-cedar)",
+
+        bg: "var(--bg)",
+        surface: { DEFAULT: "var(--surface)", 2: "var(--surface-2)" },
+        border: { DEFAULT: "var(--border)", strong: "var(--border-strong)" },
+        fg: { DEFAULT: "var(--text)", 2: "var(--text-2)", 3: "var(--text-3)" },
+        hover: "var(--hover)",
+        accent: {
+          DEFAULT: "var(--accent)",
+          hover: "var(--accent-hover)",
+          fg: "var(--accent-fg)",
+          soft: "var(--accent-soft)",
+          text: "var(--accent-text)",
+        },
+        ok: { DEFAULT: "var(--green)", soft: "var(--green-soft)" },
+        warn: { DEFAULT: "var(--amber)", soft: "var(--amber-soft)" },
+        bad: { DEFAULT: "var(--red)", soft: "var(--red-soft)" },
+        info: { DEFAULT: "var(--blue)", soft: "var(--blue-soft)" },
       },
       fontSize: {
         // Mobile-first typography (min 16px body)
@@ -189,6 +287,17 @@ const config: Config = {
         "label-lg": ["0.875rem", { lineHeight: "1.5", letterSpacing: "0.01em", fontWeight: "600" }],
         "label": ["0.75rem", { lineHeight: "1.5", letterSpacing: "0.01em", fontWeight: "600" }],
         "label-sm": ["0.625rem", { lineHeight: "1.5", letterSpacing: "0.02em", fontWeight: "600" }],
+
+        // ---- Marketing scale: every value generated from RATIO, none typed ----
+        "m-micro": typeStep(-1), // legal, disclaimers
+        "m-body": typeStep(0),
+        "m-lede": typeStep(1),
+        "m-h4": typeStep(2),
+        "m-h3": typeStep(3),
+        "m-h2": typeStep(4),
+        "m-h1": typeStep(5),
+        "m-display": typeStep(6),
+        "m-hero": typeStep(7),
       },
       fontWeight: {
         thin: "100",
@@ -202,14 +311,31 @@ const config: Config = {
         black: "900",
       },
       fontFamily: {
-        sans: ["var(--font-sans)", "system-ui", "sans-serif"],
+        sans: ["var(--font-geist-sans)", "var(--font-sans)", "system-ui", "sans-serif"],
+        mono: ["var(--font-geist-mono)", "ui-monospace", "monospace"],
         display: ["var(--font-display)", "Arial Narrow", "sans-serif"],
       },
       borderRadius: {
         fleet: "0.875rem",
         "fleet-lg": "1.5rem",
+        // App radius ladder: control 10 (buttons/inputs) < card 14 (cards,
+        // modals) < sheet 20 (large surfaces) < pill (full).
+        card: "14px",
+        control: "10px",
+        sheet: "20px",
+        pill: "20px",
+        // Marketing: 4px × Fibonacci multipliers (1,2,3,5). Nested elements use
+        // inner = outer − padding so corners stay concentric.
+        "m-1": "4px",
+        "m-2": "8px",
+        "m-3": "12px",
+        "m-4": "20px",
       },
       boxShadow: {
+        card: "var(--shadow)",
+        // Hub elevation ladder above cards (vars live in hub-theme.css).
+        raised: "var(--shadow-raised)",
+        overlay: "var(--shadow-overlay)",
         brand: "0 10px 34px rgba(0, 0, 0, 0.4)",
         "brand-lg": "0 24px 60px rgba(0, 0, 0, 0.5)",
         cta: "0 10px 30px rgba(224, 57, 47, 0.35)",
@@ -217,6 +343,33 @@ const config: Config = {
         glow: "0 0 0 1px rgba(224,57,47,0.4), 0 0 40px rgba(224,57,47,0.25)",
         "glow-gold": "0 0 0 1px rgba(242,169,0,0.4), 0 0 40px rgba(242,169,0,0.22)",
         panel: "inset 0 1px 0 rgba(255, 255, 255, 0.06)",
+        // Marketing elevation: 5 derived steps, one light source above.
+        "m-e1": elevation(1),
+        "m-e2": elevation(2),
+        "m-e3": elevation(3),
+        "m-e4": elevation(4),
+        "m-e5": elevation(5),
+      },
+      transitionDuration: {
+        // Motion ladder (M3-aligned): micro 120 / standard 220 / entrance 320.
+        fast: "120ms",
+        base: "200ms",
+        standard: "220ms",
+        slow: "320ms",
+      },
+      transitionTimingFunction: {
+        // Named curves only — never bare `ease`. M3 set + the spring.
+        entrance: "cubic-bezier(0.16, 1, 0.3, 1)",
+        exit: "cubic-bezier(0.4, 0, 1, 1)",
+        emphasis: "cubic-bezier(0.34, 1.56, 0.64, 1)",
+        standard: "cubic-bezier(0.2, 0, 0, 1)",
+        decelerate: "cubic-bezier(0.05, 0.7, 0.1, 1)",
+        accelerate: "cubic-bezier(0.3, 0, 0.8, 0.15)",
+      },
+      maxWidth: {
+        // Measure, enforced in ch so it tracks the font, not a guessed px width.
+        measure: "68ch",
+        "measure-tight": "56ch",
       },
       keyframes: {
         "accordion-down": {
@@ -228,6 +381,21 @@ const config: Config = {
           to: { height: "0" },
         },
         "fade-in": {
+          from: { opacity: "0" },
+          to: { opacity: "1" },
+        },
+        // Nav motion, replacing framer-motion's AnimatePresence. Entry only:
+        // exit animation needs the element kept mounted after close, which is
+        // not worth ~40KB of runtime on every page. Closing is instant.
+        "dropdown-in": {
+          from: { opacity: "0", transform: "translateY(8px) scale(0.96)" },
+          to: { opacity: "1", transform: "translateY(0) scale(1)" },
+        },
+        "drawer-in": {
+          from: { transform: "translateX(100%)" },
+          to: { transform: "translateX(0)" },
+        },
+        "backdrop-in": {
           from: { opacity: "0" },
           to: { opacity: "1" },
         },
@@ -252,6 +420,10 @@ const config: Config = {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
         "fade-in": "fade-in 0.5s ease-out",
+        // Durations/easings from the motion tokens, not one-offs.
+        "dropdown-in": "dropdown-in 120ms cubic-bezier(0.16, 1, 0.3, 1)",
+        "drawer-in": "drawer-in 200ms cubic-bezier(0.16, 1, 0.3, 1)",
+        "backdrop-in": "backdrop-in 200ms cubic-bezier(0.16, 1, 0.3, 1)",
         "slide-up": "slide-up 0.6s ease-out",
         float: "float 6s ease-in-out infinite",
         "pulse-glow": "pulse-glow 3s ease-in-out infinite",

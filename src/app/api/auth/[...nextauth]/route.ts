@@ -3,6 +3,7 @@ import type { NextAuthConfig } from "next-auth"
 import Credentials from "next-auth/providers/credentials"
 import bcrypt from "bcrypt"
 import { findDriverByEmail } from "@/lib/driver-db"
+import { findHubUserByEmail } from "@/lib/hub/users"
 
 export const authConfig = {
   trustHost: true, // Required for Vercel production deployments
@@ -11,15 +12,59 @@ export const authConfig = {
       credentials: {
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
+        totpCode: { label: "2FA code", type: "text" },
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
           return null
         }
 
+        // Security pass (Phase 7): 5 failures in 15 minutes locks the email
+        // for 15 minutes. DB-backed so it holds on serverless.
+        const email = credentials.email as string
+        const { isLockedOut, recordAttempt } = await import("@/lib/hub/auth-throttle")
+        if (await isLockedOut(email)) {
+          return null
+        }
+
+        // Go-live gate: HUB_DEMO_LOGIN=false refuses the seeded demo accounts
+        // outright — the login-screen hint is hidden by the same flag.
+        const { demoLoginEnabled, isDemoEmail } = await import("@/lib/hub/demo")
+        if (isDemoEmail(email) && !demoLoginEnabled()) {
+          return null
+        }
+
+        // Hub accounts (office staff, hub drivers, broker/shipper portals) take
+        // precedence; the legacy driver-portal store is the fallback.
+        const hubUser = await findHubUserByEmail(email)
+        if (hubUser) {
+          const valid = await bcrypt.compare(credentials.password as string, hubUser.password_hash)
+          await recordAttempt(email, valid)
+          if (!valid) return null
+          // Second factor, when the account has one: a TOTP code or an
+          // unused recovery code, from the always-present optional field.
+          // A wrong/missing code fails like a wrong password — counted by
+          // the same throttle, and revealing nothing about whether 2FA is
+          // on for this email.
+          const { totpEnabled, verifyLoginTotp } = await import("@/lib/hub/totp-store")
+          if (await totpEnabled(hubUser.id)) {
+            const second = await verifyLoginTotp(hubUser.id, (credentials.totpCode as string) ?? "")
+            await recordAttempt(email, second.ok)
+            if (!second.ok) return null
+          }
+          return {
+            id: hubUser.id,
+            email: hubUser.email,
+            name: hubUser.name,
+            role: hubUser.role,
+            carrierId: hubUser.carrier_id,
+          } as { id: string; email: string; name: string; role: string; carrierId: string | null }
+        }
+
         const driver = await findDriverByEmail(credentials.email as string)
         
         if (!driver) {
+          await recordAttempt(email, false)
           return null
         }
         
@@ -35,6 +80,7 @@ export const authConfig = {
           passwordHash
         )
 
+        await recordAttempt(email, isValidPassword)
         if (!isValidPassword) {
           return null
         }
@@ -62,12 +108,16 @@ export const authConfig = {
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id
+        token.role = (user as { role?: string }).role ?? null
+        token.carrierId = (user as { carrierId?: string }).carrierId ?? null
       }
       return token
     },
     async session({ session, token }) {
       if (session.user) {
         (session.user as any).id = token.id
+        ;(session.user as any).role = token.role ?? null
+        ;(session.user as any).carrierId = token.carrierId ?? null
       }
       return session
     },

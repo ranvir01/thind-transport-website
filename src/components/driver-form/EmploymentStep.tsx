@@ -27,10 +27,11 @@ const emptyEmployer: EmployerEntry = {
   reason: '',
 }
 
+const RequiredMark = () => <span className="text-red-500 ml-1">*</span>
+
 export function EmploymentStep({ data, onChange, errors = {} }: EmploymentStepProps) {
   const [expandedIndex, setExpandedIndex] = useState<number | null>(0)
   
-  const RequiredMark = () => <span className="text-red-500 ml-1">*</span>
   
   const inputClass = (field: string) => `
     w-full px-3 py-2 border rounded-lg transition-colors
@@ -78,7 +79,7 @@ export function EmploymentStep({ data, onChange, errors = {} }: EmploymentStepPr
             onClick={() => setExpandedIndex(expandedIndex === index ? null : index)}
           >
             <div className="flex items-center gap-3">
-              <span className="bg-orange-500 text-white rounded-full w-8 h-8 flex items-center justify-center font-semibold">
+              <span className="bg-orange-600 text-white rounded-full w-8 h-8 flex items-center justify-center font-semibold">
                 {index + 1}
               </span>
               <div>

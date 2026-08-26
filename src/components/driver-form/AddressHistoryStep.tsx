@@ -12,8 +12,9 @@ interface AddressHistoryStepProps {
   errors?: Record<string, string>
 }
 
+const RequiredMark = () => <span className="text-red-500 ml-1">*</span>
+
 export function AddressHistoryStep({ data, onChange, errors = {} }: AddressHistoryStepProps) {
-  const RequiredMark = () => <span className="text-red-500 ml-1">*</span>
   
   const inputClass = (field: string) => `
     w-full px-3 py-2 border rounded-lg transition-colors
@@ -34,7 +35,7 @@ export function AddressHistoryStep({ data, onChange, errors = {} }: AddressHisto
       {/* Address 1 - Current */}
       <div className="bg-gray-50 p-4 rounded-lg">
         <h3 className="font-semibold text-gray-800 mb-4 flex items-center gap-2">
-          <span className="bg-orange-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm">1</span>
+          <span className="bg-orange-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm">1</span>
           Current Address<RequiredMark />
         </h3>
         <div className="space-y-4">

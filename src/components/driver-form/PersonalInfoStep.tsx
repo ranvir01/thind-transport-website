@@ -1,6 +1,5 @@
 "use client"
 
-import { useEffect } from "react"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -13,8 +12,9 @@ interface PersonalInfoStepProps {
   errors?: Record<string, string>
 }
 
+const RequiredMark = () => <span className="text-red-500 ml-1">*</span>
+
 export function PersonalInfoStep({ data, onChange, errors = {} }: PersonalInfoStepProps) {
-  const RequiredMark = () => <span className="text-red-500 ml-1">*</span>
   
   const inputClass = (field: string) => `
     w-full px-3 py-2 border rounded-lg transition-colors
@@ -22,23 +22,21 @@ export function PersonalInfoStep({ data, onChange, errors = {} }: PersonalInfoSt
     focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent
   `
 
-  // Auto-calculate age from DOB
-  useEffect(() => {
-    if (data.dob) {
-      const birthDate = new Date(data.dob)
-      const today = new Date()
-      let age = today.getFullYear() - birthDate.getFullYear()
-      const monthDiff = today.getMonth() - birthDate.getMonth()
-      
-      if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-        age--
-      }
-      
-      if (age >= 0 && age <= 150) {
-        onChange('age', age.toString())
-      }
+  // Auto-calculate age when DOB changes (handled in the input's onChange — no effect needed)
+  const handleDobChange = (value: string) => {
+    onChange('dob', value)
+    if (!value) return
+    const birthDate = new Date(value)
+    const today = new Date()
+    let age = today.getFullYear() - birthDate.getFullYear()
+    const monthDiff = today.getMonth() - birthDate.getMonth()
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      age--
     }
-  }, [data.dob])
+    if (age >= 0 && age <= 150) {
+      onChange('age', age.toString())
+    }
+  }
 
   // Format SSN: XXX-XX-XXXX
   const formatSSN = (value: string) => {
@@ -211,7 +209,7 @@ export function PersonalInfoStep({ data, onChange, errors = {} }: PersonalInfoSt
             id="dob"
             type="date"
             value={data.dob || ''}
-            onChange={(e) => onChange('dob', e.target.value)}
+            onChange={(e) => handleDobChange(e.target.value)}
             className={inputClass('dob')}
           />
           {errors.dob && (

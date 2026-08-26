@@ -1,9 +1,16 @@
 "use client"
 
+import { usePathname } from "next/navigation"
+
 /** Static industrial backdrop: blueprint grid + soft warm accent glow. No mouse-spotlight. */
 export const ActiveBackground = () => {
+  const pathname = usePathname()
+  // The hub is an app with its own bg (bg-bg / forced navy) and /track carries its
+  // own dark canvas (src/app/track/layout.tsx) — the marketing orbs and grid must
+  // not glow through behind either.
+  if (pathname.startsWith("/hub") || pathname.startsWith("/track")) return null
   return (
-    <div className="fixed inset-0 z-[-1] overflow-hidden bg-[#080d12]" aria-hidden>
+    <div className="fixed inset-0 z-[-1] overflow-hidden bg-[#0B0C0E]" aria-hidden>
       {/* Blueprint grid */}
       <div
         className="absolute inset-0 opacity-[0.3]"
@@ -14,7 +21,7 @@ export const ActiveBackground = () => {
         }}
       />
       {/* Warm accent glows */}
-      <div className="accent-orb -top-32 -right-24 h-[28rem] w-[28rem] bg-orange-600/25 animate-pulse-glow" />
+      <div className="accent-orb -top-32 -right-24 h-[28rem] w-[28rem] bg-orange-600/20" />
       <div className="accent-orb top-1/3 -left-32 h-[24rem] w-[24rem] bg-gold-600/12" />
       <div className="accent-orb bottom-0 right-1/4 h-[22rem] w-[22rem] bg-orange-700/12" />
     </div>

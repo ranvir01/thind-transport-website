@@ -1,32 +1,46 @@
 import { Metadata } from "next"
+import Image from "next/image"
 import Link from "next/link"
-import { 
-  DollarSign, Heart, Shield, Clock, Home, Truck, 
-  Fuel, Wrench, Users, Gift, Calendar, Phone,
-  CheckCircle2, Star, Award, TrendingUp, Wallet,
-  HeartPulse, GraduationCap, Baby, Plane
+import {
+  DollarSign, Shield, Truck, Calendar, Phone,
+  CheckCircle2, Star, Award, TrendingUp,
+  Calculator, Fuel, MapPin, Smartphone, BadgeCheck, ClipboardCheck,
 } from "lucide-react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { COMPANY_INFO, PAY_RATES, BENEFITS } from "@/lib/constants"
+import { COMPANY_INFO, PAY_RATES } from "@/lib/constants"
 import { PageBreadcrumb } from "@/components/shared/PageBreadcrumb"
+import { PageHero } from "@/components/shared/PageHero"
+import { Reveal } from "@/components/ui/Reveal"
+import { CountUp } from "@/components/shared/CountUp"
+import { RelatedLinks } from "@/components/shared/RelatedLinks"
 
 export const metadata: Metadata = {
   title: `Driver Benefits & Perks | ${COMPANY_INFO.name}`,
-  description: "Comprehensive benefits for CDL truck drivers: health insurance, 401k retirement, paid time off, sign-on bonuses, fuel discounts, maintenance programs, and flexible home time. Join our family-owned company.",
+  description: "What Thind Transport actually offers CDL drivers: weekly direct deposit, paid time off and holidays, sign-on and referral bonuses, home time you pick, 2024 equipment, fuel discounts and 24/7 dispatch. Plus a straight answer on what we don't offer yet.",
   keywords: [
     "truck driver benefits",
-    "CDL driver health insurance",
-    "trucking 401k retirement",
     "driver sign on bonus",
     "owner operator benefits",
     "truck driver paid time off",
     "trucking company perks",
     "driver home time",
     "fuel discount program",
+    "weekly settlement trucking",
+    "no forced dispatch carrier",
   ],
+  alternates: { canonical: "/benefits" },
 }
 
+/**
+ * Only what we actually provide today.
+ *
+ * Health/dental/vision, life, disability and the 401(k) came off this page in
+ * July 2026 — we do not carry those plans, and a benefit a driver first hears
+ * is missing at orientation costs more than it ever won at the top of the
+ * funnel. `NOT_YET` below states that outright instead of leaving a gap. If we
+ * ever add a plan, it goes in `BENEFITS` in src/lib/constants.ts first.
+ */
 const companyDriverBenefits = [
   {
     category: "Compensation",
@@ -35,12 +49,12 @@ const companyDriverBenefits = [
     items: [
       {
         title: "Competitive Pay",
-        description: "$0.63 per mile, $57K-$82K annually",
+        description: `${PAY_RATES.companyDriver.otr.perMile} per mile — same rate local, regional or OTR`,
         highlight: true,
       },
       {
         title: "Sign-On Bonus",
-        description: "$1,500 paid during your first year",
+        description: `${PAY_RATES.companyDriver.signOnBonus.replace(" (First Year)", "")} paid during your first year`,
         highlight: true,
       },
       {
@@ -54,53 +68,6 @@ const companyDriverBenefits = [
       {
         title: "Referral Bonuses",
         description: "Earn extra for bringing quality drivers",
-      },
-    ],
-  },
-  {
-    category: "Health & Wellness",
-    icon: HeartPulse,
-    color: "red",
-    items: [
-      {
-        title: "Medical Insurance",
-        description: "Comprehensive health coverage for you and family",
-      },
-      {
-        title: "Dental Insurance",
-        description: "Full dental coverage including major procedures",
-      },
-      {
-        title: "Vision Insurance",
-        description: "Annual eye exams and eyewear coverage",
-      },
-      {
-        title: "Life Insurance",
-        description: "Company-paid life insurance policy",
-      },
-      {
-        title: "Disability Insurance",
-        description: "Short and long-term disability coverage",
-      },
-    ],
-  },
-  {
-    category: "Retirement & Financial",
-    icon: Wallet,
-    color: "blue",
-    items: [
-      {
-        title: "401(k) Plan",
-        description: "Retirement savings with company match",
-        highlight: true,
-      },
-      {
-        title: "Tax Advantages",
-        description: "Per diem pay options to reduce taxable income",
-      },
-      {
-        title: "Financial Planning",
-        description: "Resources for retirement and investment planning",
       },
     ],
   },
@@ -162,7 +129,7 @@ const ownerOperatorBenefits = [
     items: [
       {
         title: "90% Gross Commission",
-        description: "Industry-leading rate - you keep 90% of every load",
+        description: "You keep 90% of the linehaul on every load you haul",
         highlight: true,
       },
       {
@@ -273,6 +240,74 @@ const comparisonData = [
   { feature: "24/7 Support", thind: "Yes, real people", industry: "Limited hours" },
 ]
 
+/**
+ * The other half of an honest benefits page. A driver comparing carriers is
+ * checking for exactly these, and finding out at orientation is how a carrier
+ * loses someone in week two.
+ */
+const NOT_YET = [
+  {
+    title: "No company medical, dental or vision plan",
+    detail:
+      "You'd be arranging your own coverage — through the marketplace, a spouse's plan, or an association plan like OOIDA's. Ask us and we'll tell you what other drivers here ended up doing.",
+  },
+  {
+    title: "No 401(k) or company retirement match",
+    detail:
+      "Nothing stops you opening your own IRA or solo 401(k) — owner-operators here generally do — but there is no company plan and no match today.",
+  },
+  {
+    title: "No company life or disability policy",
+    detail:
+      "Occupational accident coverage is available to owner-operators through our program, and we'll help you navigate it. That is not the same thing as company-paid life or disability insurance, and we won't call it that.",
+  },
+] as const
+
+const BENEFIT_LINKS = [
+  {
+    href: "/pay-rates",
+    title: "Pay calculator",
+    blurb: "Put your own miles, rate and fuel price in and see what a week actually clears.",
+    icon: Calculator,
+    kind: "Tool" as const,
+  },
+  {
+    href: "/pay-breakdown",
+    title: "Where every dollar goes",
+    blurb: "A line-by-line settlement: gross, fuel surcharge, deductions, what lands in the account.",
+    icon: DollarSign,
+    kind: "Guide" as const,
+  },
+  {
+    href: "/fuel-program",
+    title: "Fuel savings calculator",
+    blurb: "What the fuel card takes off your cost per mile, in your own numbers.",
+    icon: Fuel,
+    kind: "Tool" as const,
+  },
+  {
+    href: "/routes",
+    title: "Lanes we actually run",
+    blurb: "The corridors, the frequency, and the home time each one really means.",
+    icon: MapPin,
+    kind: "Page" as const,
+  },
+  {
+    href: "/app",
+    title: "The driver app",
+    blurb: "Dispatch, PODs and pay on one screen — and it keeps working in dead zones.",
+    icon: Smartphone,
+    kind: "Tool" as const,
+  },
+  {
+    href: "/trust",
+    title: "Verify us first",
+    blurb: `USDOT ${COMPANY_INFO.dot}, MC ${COMPANY_INFO.mc}, insurance and safety record — check before you apply.`,
+    icon: BadgeCheck,
+    kind: "Verify" as const,
+  },
+]
+
 const colorClasses = {
   green: "from-green-500/10 to-green-600/5 border-green-500/20 text-green-600",
   red: "from-red-500/10 to-red-600/5 border-red-500/20 text-red-600",
@@ -287,43 +322,42 @@ export default function BenefitsPage() {
       <PageBreadcrumb pageName="Benefits" category="Drivers" />
       
       {/* Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-navy via-blue-900 to-navy text-white py-24">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-orange/20 via-transparent to-transparent" />
-        <div className="absolute -top-24 -right-24 w-96 h-96 bg-orange/10 rounded-full blur-3xl" />
-        <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-blue-400/10 rounded-full blur-3xl" />
-        
-        <div className="container relative">
-          <div className="max-w-4xl mx-auto text-center">
-            <Badge className="mb-6 bg-white/20 backdrop-blur-md text-white border-white/30 px-5 py-2.5 text-sm font-bold">
-              <Gift className="h-4 w-4 mr-1.5 inline" />
-              Industry-Leading Benefits
-            </Badge>
-            <h1 className="text-5xl md:text-6xl font-black mb-6 leading-tight">
-              Benefits That Actually <span className="text-orange">Matter</span>
-            </h1>
-            <p className="text-xl text-white/90 leading-relaxed max-w-3xl mx-auto">
-              We believe drivers deserve more than just a paycheck. From health coverage to retirement plans,
-              from flexible schedules to modern equipment - we invest in your success and wellbeing.
-            </p>
-          </div>
-        </div>
-      </section>
+      <PageHero
+        image="/images/generated/driver-cab-interior.webp"
+        imageAlt="Inside a Thind Transport sleeper cab — the equipment behind the benefits"
+        eyebrow="Driver Benefits"
+        title={
+          <>
+            Benefits That Actually <span className="text-orange">Matter</span>
+          </>
+        }
+        description="Weekly pay, paid time off, home time you choose, and 2024 equipment — plus a straight list of what we don't offer yet, so nothing is a surprise at orientation."
+      />
 
-      {/* Quick Stats */}
+      {/* Quick Stats — the numbers count up once, on first view only */}
       <section className="py-8 -mt-8 relative z-10">
         <div className="container">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto">
             {[
-              { value: "90%", label: "Commission", sublabel: "Owner Operators" },
-              { value: "$69K", label: "Annual Potential", sublabel: "Company Drivers" },
-              { value: "100%", label: "Fuel Surcharge", sublabel: "Passed Through" },
-              { value: "24/7", label: "Support", sublabel: "Real People" },
-            ].map((stat) => (
-              <div key={stat.label} className="bg-white rounded-xl p-4 shadow-lg border border-gray-100 text-center">
-                <div className="text-2xl md:text-3xl font-black text-orange">{stat.value}</div>
-                <div className="text-sm font-bold text-gray-900">{stat.label}</div>
-                <div className="text-xs text-gray-500">{stat.sublabel}</div>
-              </div>
+              { value: 90, suffix: "%", label: "Commission", sublabel: "Owner Operators" },
+              { value: 0.63, prefix: "$", decimals: 2, label: "Per Mile", sublabel: "Company Drivers" },
+              { value: 100, suffix: "%", label: "Fuel Surcharge", sublabel: "Passed Through" },
+              { value: 24, suffix: "/7", label: "Support", sublabel: "Real People" },
+            ].map((stat, i) => (
+              <Reveal key={stat.label} index={Math.min(i, 4)}>
+                <div className="bg-white rounded-xl p-4 shadow-lg border border-gray-100 text-center transition-transform duration-fast ease-entrance motion-safe:hover:-translate-y-1">
+                  <div className="text-2xl md:text-3xl font-black text-orange">
+                    <CountUp
+                      value={stat.value}
+                      prefix={stat.prefix}
+                      suffix={stat.suffix}
+                      decimals={stat.decimals ?? 0}
+                    />
+                  </div>
+                  <div className="text-sm font-bold text-gray-900">{stat.label}</div>
+                  <div className="text-xs text-gray-500">{stat.sublabel}</div>
+                </div>
+              </Reveal>
             ))}
           </div>
         </div>
@@ -333,15 +367,16 @@ export default function BenefitsPage() {
       <section className="py-16">
         <div className="container">
           <div className="text-center mb-12">
-            <Badge className="mb-4 bg-blue-600 text-white px-4 py-2 text-sm font-bold">
+            <Badge className="mb-4 bg-navy text-white px-4 py-2 text-sm font-bold">
               <Shield className="h-4 w-4 mr-1.5 inline" />
               Company Drivers
             </Badge>
             <h2 className="text-3xl md:text-4xl font-black text-gray-900 mb-4">
-              Full Benefits Package
+              What You Actually Get
             </h2>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              Stability, security, and great pay. Everything you need as a company driver.
+              Every line below is something we provide today. The things we don&apos;t offer are
+              listed further down, in their own section, rather than left out.
             </p>
           </div>
 
@@ -360,23 +395,24 @@ export default function BenefitsPage() {
                   </div>
                   
                   <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {section.items.map((item) => (
-                      <div 
-                        key={item.title}
-                        className={`p-4 rounded-xl border transition-all ${
-                          item.highlight 
-                            ? 'bg-gradient-to-br from-orange/5 to-orange/10 border-orange/20 hover:border-orange/40' 
-                            : 'bg-white border-gray-200 hover:border-gray-300 hover:shadow-md'
-                        }`}
-                      >
-                        <div className="flex items-start gap-3">
-                          <CheckCircle2 className={`h-5 w-5 mt-0.5 flex-shrink-0 ${item.highlight ? 'text-orange' : 'text-green-500'}`} />
-                          <div>
-                            <h4 className="font-bold text-gray-900">{item.title}</h4>
-                            <p className="text-sm text-gray-600">{item.description}</p>
+                    {section.items.map((item, i) => (
+                      <Reveal key={item.title} index={Math.min(i, 4)}>
+                        <div
+                          className={`h-full p-4 rounded-xl border transition-[transform,border-color,box-shadow] duration-fast ease-entrance motion-safe:hover:-translate-y-1 ${
+                            item.highlight
+                              ? 'bg-gradient-to-br from-orange/5 to-orange/10 border-orange/20 hover:border-orange/40'
+                              : 'bg-white border-gray-200 hover:border-gray-300 hover:shadow-md'
+                          }`}
+                        >
+                          <div className="flex items-start gap-3">
+                            <CheckCircle2 className={`h-5 w-5 mt-0.5 flex-shrink-0 ${item.highlight ? 'text-orange' : 'text-green-500'}`} />
+                            <div>
+                              <h4 className="font-bold text-gray-900">{item.title}</h4>
+                              <p className="text-sm text-gray-600">{item.description}</p>
+                            </div>
                           </div>
                         </div>
-                      </div>
+                      </Reveal>
                     ))}
                   </div>
                 </div>
@@ -386,11 +422,61 @@ export default function BenefitsPage() {
         </div>
       </section>
 
+      {/* What we don't offer — stated, not omitted */}
+      <section className="py-16 bg-gray-50 border-y border-gray-200">
+        <div className="container">
+          <div className="max-w-4xl mx-auto">
+            <Reveal className="text-center mb-10">
+              <Badge className="mb-4 bg-gray-900 text-white px-4 py-2 text-sm font-bold">
+                <ClipboardCheck className="h-4 w-4 mr-1.5 inline" />
+                Straight answer
+              </Badge>
+              <h2 className="text-3xl md:text-4xl font-black text-gray-900 mb-4">
+                What we don&apos;t offer
+              </h2>
+              <p className="text-lg text-gray-600">
+                Three things a driver comparing carriers will ask about, and we&apos;d rather you
+                heard them here than in your second week.
+              </p>
+            </Reveal>
+
+            <ul className="grid gap-4 md:grid-cols-3 list-none">
+              {NOT_YET.map((item, i) => (
+                <Reveal as="li" key={item.title} index={Math.min(i, 4)}>
+                  <div className="h-full rounded-xl border border-gray-200 bg-white p-5">
+                    <h3 className="font-bold text-gray-900">{item.title}</h3>
+                    <p className="mt-2 text-sm leading-relaxed text-gray-600">{item.detail}</p>
+                  </div>
+                </Reveal>
+              ))}
+            </ul>
+
+            <Reveal className="mt-8 text-center">
+              <p className="text-gray-600">
+                Everything above is what we can offer instead: a higher take-home rate, weekly pay,
+                and no games about it.{" "}
+                <Link href="/pay-breakdown" className="font-semibold text-orange-600 hover:underline">
+                  See where every dollar goes
+                </Link>{" "}
+                or{" "}
+                <a
+                  href={`tel:${COMPANY_INFO.phoneFormatted}`}
+                  className="font-semibold text-orange-600 hover:underline"
+                >
+                  ask us directly at {COMPANY_INFO.phone}
+                </a>
+                .
+              </p>
+            </Reveal>
+          </div>
+        </div>
+      </section>
+
       {/* Owner Operator Benefits */}
       <section className="py-16 bg-gradient-to-b from-gray-50 to-white">
         <div className="container">
           <div className="text-center mb-12">
-            <Badge className="mb-4 bg-green-600 text-white px-4 py-2 text-sm font-bold">
+            <Badge className="mb-4 bg-green-700 text-white px-4 py-2 text-sm font-bold">
               <TrendingUp className="h-4 w-4 mr-1.5 inline" />
               Owner Operators
             </Badge>
@@ -417,23 +503,24 @@ export default function BenefitsPage() {
                   </div>
                   
                   <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {section.items.map((item) => (
-                      <div 
-                        key={item.title}
-                        className={`p-4 rounded-xl border transition-all ${
-                          item.highlight 
-                            ? 'bg-gradient-to-br from-green-50 to-green-100/50 border-green-200 hover:border-green-300' 
-                            : 'bg-white border-gray-200 hover:border-gray-300 hover:shadow-md'
-                        }`}
-                      >
-                        <div className="flex items-start gap-3">
-                          <CheckCircle2 className={`h-5 w-5 mt-0.5 flex-shrink-0 ${item.highlight ? 'text-green-600' : 'text-green-500'}`} />
-                          <div>
-                            <h4 className="font-bold text-gray-900">{item.title}</h4>
-                            <p className="text-sm text-gray-600">{item.description}</p>
+                    {section.items.map((item, i) => (
+                      <Reveal key={item.title} index={Math.min(i, 4)}>
+                        <div
+                          className={`h-full p-4 rounded-xl border transition-[transform,border-color,box-shadow] duration-fast ease-entrance motion-safe:hover:-translate-y-1 ${
+                            item.highlight
+                              ? 'bg-gradient-to-br from-green-50 to-green-100/50 border-green-200 hover:border-green-300'
+                              : 'bg-white border-gray-200 hover:border-gray-300 hover:shadow-md'
+                          }`}
+                        >
+                          <div className="flex items-start gap-3">
+                            <CheckCircle2 className={`h-5 w-5 mt-0.5 flex-shrink-0 ${item.highlight ? 'text-green-600' : 'text-green-500'}`} />
+                            <div>
+                              <h4 className="font-bold text-gray-900">{item.title}</h4>
+                              <p className="text-sm text-gray-600">{item.description}</p>
+                            </div>
                           </div>
                         </div>
-                      </div>
+                      </Reveal>
                     ))}
                   </div>
                 </div>
@@ -466,7 +553,7 @@ export default function BenefitsPage() {
                   <thead>
                     <tr className="bg-navy text-white">
                       <th className="px-6 py-4 text-left font-bold">Feature</th>
-                      <th className="px-6 py-4 text-center font-bold bg-orange">
+                      <th className="px-6 py-4 text-center font-bold bg-orange-600">
                         <div className="flex flex-col items-center">
                           <Star className="h-5 w-5 mb-1" />
                           Thind Transport
@@ -493,21 +580,36 @@ export default function BenefitsPage() {
         </div>
       </section>
 
+      <RelatedLinks
+        title="Check the numbers yourself"
+        intro="Benefits pages are easy to write. These are the tools and records behind ours."
+        links={BENEFIT_LINKS}
+      />
+
       {/* CTA Section */}
-      <section className="py-16 bg-navy">
-        <div className="container">
+      <section className="relative overflow-hidden py-16 md:py-24 bg-navy">
+        <Image
+          src="/images/generated/yard-morning-kent.webp"
+          alt=""
+          aria-hidden
+          fill
+          sizes="100vw"
+          className="object-cover"
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-navy/90 via-navy/70 to-navy/90" />
+        <div className="container relative">
           <div className="max-w-3xl mx-auto text-center">
             <h2 className="text-3xl md:text-4xl font-black text-white mb-4">
               Ready to Experience These Benefits?
             </h2>
             <p className="text-lg text-white/90 mb-8">
-              Join our team and start enjoying industry-leading pay, benefits, and support.
-              Apply today and hear back within 24 hours.
+              $0.63 a mile for company drivers, 90% of the linehaul for owner-operators,
+              and a real person on the phone in Kent. Apply today and hear back within 24 hours.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link
                 href="/apply"
-                className="px-8 py-4 bg-orange hover:bg-orange-600 text-white font-bold rounded-xl transition-colors"
+                className="px-8 py-4 bg-orange-600 hover:bg-orange-500 text-white font-bold rounded-xl transition-colors"
               >
                 Apply Now — Takes 2 Minutes
               </Link>

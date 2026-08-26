@@ -318,6 +318,9 @@ export default function DriverApplicationPage() {
       formDataToSend.append("file", blob, "Thind_Transport_Application.pdf")
       formDataToSend.append("driverName", formData.personal.applicant_name || "Unknown")
       formDataToSend.append("driverEmail", formData.personal.email || session?.user?.email || "")
+      formDataToSend.append("driverPhone", formData.personal.phone || "")
+      // Full form data so the portal stores the application record, not just the PDF
+      formDataToSend.append("applicationData", JSON.stringify(formData))
 
       const uploadResponse = await fetch("/api/driver/upload-application", {
         method: "POST",
@@ -331,8 +334,14 @@ export default function DriverApplicationPage() {
       }
 
       setSubmitSuccess(true)
-      toast.success("Application submitted successfully!")
-      
+      if (result.emailSent) {
+        toast.success("Application submitted successfully!")
+      } else {
+        // Stored in the portal even though the email didn't go out — team can still see it
+        toast.success("Application submitted and saved to your portal!")
+        console.warn("Application email not delivered:", result.emailError)
+      }
+
       // Clear saved form data
       localStorage.removeItem(FORM_STORAGE_KEY)
     } catch (err: any) {
@@ -346,7 +355,7 @@ export default function DriverApplicationPage() {
   // Show loading while checking auth
   if (status === "loading" || !isLoaded) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="portal-light min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="h-8 w-8 animate-spin text-orange-500 mx-auto mb-4" />
           <p className="text-gray-600">Loading...</p>
@@ -363,7 +372,7 @@ export default function DriverApplicationPage() {
   // Success Screen
   if (submitSuccess) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+      <div className="portal-light min-h-screen bg-gray-50 flex items-center justify-center p-4">
         <div className="bg-white rounded-2xl shadow-xl p-8 max-w-lg w-full text-center">
           <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
             <CheckCircle className="w-12 h-12 text-green-500" />
@@ -377,7 +386,7 @@ export default function DriverApplicationPage() {
           </p>
           <div className="space-y-3">
             <Link href="/driver/dashboard">
-              <Button className="w-full bg-orange-500 hover:bg-orange-600 text-white">
+              <Button className="w-full bg-orange-600 hover:bg-orange-500 text-white">
                 <Home className="w-4 h-4 mr-2" />
                 Go to Dashboard
               </Button>
@@ -475,7 +484,7 @@ export default function DriverApplicationPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="portal-light min-h-screen bg-gray-50">
       {/* Header */}
       <header className="bg-white shadow-sm sticky top-0 z-50 border-b">
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
@@ -561,7 +570,7 @@ export default function DriverApplicationPage() {
 
             <Button
               onClick={handleNext}
-              className="bg-orange-500 hover:bg-orange-600 text-white"
+              className="bg-orange-600 hover:bg-orange-500 text-white"
             >
               {currentStep === 8 ? "Review Application" : "Next"}
               <ArrowRight className="w-4 h-4 ml-2" />

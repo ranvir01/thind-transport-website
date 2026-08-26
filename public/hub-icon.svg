@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="loadoff-bg" x1="0" y1="0" x2="0.35" y2="1">
+      <stop offset="0" stop-color="#6366F1"/>
+      <stop offset="1" stop-color="#3730A3"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="112.64" fill="url(#loadoff-bg)"/>
+  <g transform="translate(0, 0) scale(5.12)">
+    <path d="M24 30.5 a7.5 7.5 0 0 1 15 0 V62 H68.5 a7.5 7.5 0 0 1 0 15 H31.5 a7.5 7.5 0 0 1 -7.5 -7.5 Z" fill="#FFFFFF"/>
+  </g>
+</svg>

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useId } from "react"
+import { useId } from "react"
 import {
   Accordion,
   AccordionContent,
@@ -18,7 +18,7 @@ const defaultFaqs = [
   },
   {
     question: "How much can I realistically earn?",
-    answer: "Company Drivers: $57K-$82K annually at $0.63 per mile (based on miles and route type), plus $1,500 sign-on bonus first year. Owner Operators: $180K-$280K gross annually with 90% commission (you keep 90% of gross!), plus $2,500 sign-on bonus. Top O/Os gross over $250K. Pay is distributed weekly via direct deposit every Friday."
+    answer: "Company Drivers: $57K-$82K annually at $0.63 per mile (based on miles and route type), plus $1,000 sign-on bonus first year. Owner Operators: $150K-$250K gross annually with 90% commission (you keep 90% of gross!), plus $2,500 sign-on bonus. Pay is distributed weekly via direct deposit every Friday."
   },
   {
     question: "What's this 90% commission for owner operators?",
@@ -30,7 +30,7 @@ const defaultFaqs = [
   },
   {
     question: "What are the sign-on bonuses?",
-    answer: "Company Drivers: $1,500 sign-on bonus paid during your first year (split across first few paychecks). Owner Operators: $2,500 sign-on bonus. Bonuses are paid according to our schedule. Ask for details during your phone interview."
+    answer: "Company Drivers: $1,000 sign-on bonus paid during your first year (split across first few paychecks). Owner Operators: $2,500 sign-on bonus. Bonuses are paid according to our schedule. Ask for details during your phone interview."
   },
   
   // Freight & Operations
@@ -42,13 +42,18 @@ const defaultFaqs = [
     question: "What's the average length of haul?",
     answer: "Our average length of haul is 800-1,200 miles depending on your route preferences. We have both long-haul cross-country lanes and shorter regional runs. Dedicated lanes available for drivers who prefer consistent routes. OTR drivers average 2,500-3,000 miles per week."
   },
+  // Both answers below previously named specific shippers and brokers as
+  // partners. We can't substantiate those relationships in writing, and naming
+  // a third party as a partner is a claim about them as much as about us — so
+  // these now describe only what we can stand behind: the freight we actually
+  // haul and the boards we actually pay for.
   {
-    question: "Do you have dedicated accounts?",
-    answer: "Yes! We have dedicated lanes with premium shippers like Amazon, Walmart, Home Depot, and more. Dedicated accounts offer consistent schedules and predictable income. Ask about available dedicated positions during your interview."
+    question: "Do you have dedicated lanes?",
+    answer: "Some, and they change with the season. Dedicated work means a consistent route and predictable weeks, so it goes fast. Call dispatch and ask what's open right now — we'll tell you straight rather than promise something that isn't there."
   },
   {
-    question: "What brokers and load boards do you work with?",
-    answer: "We're partnered with top brokers including Landstar, CH Robinson, JB Hunt, Coyote Logistics, and Schneider. We also utilize DAT, Truckstop.com, and direct shipper relationships. Owner operators have access to our entire network - you pick what works for you."
+    question: "Where do your loads come from?",
+    answer: "A mix: DAT and Truckstop.com load boards, brokers we've hauled for repeatedly, and direct shipper freight we book ourselves. Owner-operators can see what's available and choose — no forced dispatch, so you're never made to take a load that doesn't pay."
   },
   
   // Home Time & Schedule
@@ -64,7 +69,7 @@ const defaultFaqs = [
   // Benefits & Perks
   {
     question: "Do company drivers get benefits?",
-    answer: "Yes! Full benefits package includes: Health, dental, and vision insurance (starts after 60 days); 401(k) retirement plan with company match; Paid time off and holiday pay; $1,500 sign-on bonus first year; Weekly direct deposit; Performance bonuses; Referral bonuses ($500+ per driver). Modern, well-maintained 2024 equipment. 24/7 dispatch support."
+    answer: "Here's the honest list of what we offer today: $1,000 sign-on bonus in your first year; weekly direct deposit every Friday; paid time off and paid holidays; performance and referral bonuses; home time you pick (local, regional, or OTR at the same $0.63/mile); modern 2024 Freightliner Cascadias; rider and pet policy; and 24/7 dispatch you can actually reach. We do NOT currently offer company medical, dental, vision, life or disability insurance, or a 401(k) — we'd rather tell you now than at orientation. If that changes, this page changes with it."
   },
   {
     question: "What fuel programs are available for owner operators?",
@@ -131,33 +136,9 @@ interface FAQAccordionProps {
 }
 
 export function FAQAccordion({ items = defaultFaqs, darkBackground = true }: FAQAccordionProps) {
-  const [mounted, setMounted] = useState(false)
+  // Rendered on the server too — questions, answers, and FAQPage schema all
+  // appear in the initial HTML so crawlers and AI assistants can read them.
   const id = useId()
-
-  useEffect(() => {
-    setMounted(true)
-  }, [])
-
-  // Show a skeleton/placeholder until hydrated to prevent mismatch
-  if (!mounted) {
-    return (
-      <div className="w-full space-y-3">
-        {items.slice(0, 5).map((_, index) => (
-          <div 
-            key={index}
-            className={`border rounded-lg px-4 py-5 animate-pulse ${
-              darkBackground ? "border-white/10 bg-white/5" : "border-white/10 bg-[rgba(16,25,38,0.9)]"
-            }`}
-          >
-            <div className="flex items-start gap-3">
-              <div className={`w-5 h-5 rounded ${darkBackground ? "bg-orange-500/30" : "bg-orange-500/20"}`} />
-              <div className={`flex-1 h-5 rounded ${darkBackground ? "bg-white/10" : "bg-white/10"}`} />
-            </div>
-          </div>
-        ))}
-      </div>
-    )
-  }
 
   return (
     <div className="w-full space-y-2">
@@ -184,25 +165,23 @@ export function FAQAccordion({ items = defaultFaqs, darkBackground = true }: FAQ
             key={`${id}-${index}`} 
             value={`item-${id}-${index}`}
             className={`border rounded-fleet mb-2 px-4 transition-colors ${
-              darkBackground 
+              darkBackground
                 ? "border-steel-700 bg-navy-700/50 hover:bg-steel-800/40 data-[state=open]:bg-steel-800/60 data-[state=open]:border-orange/50"
-                : "border-steel-700 bg-navy-700/50 hover:bg-steel-800/40 data-[state=open]:bg-steel-800/60 data-[state=open]:border-orange/50"
+                : "border-gray-200 bg-white hover:bg-orange-50/50 data-[state=open]:bg-orange-50/70 data-[state=open]:border-orange-300 shadow-sm"
             }`}
           >
-            <AccordionTrigger className={`text-left py-5 font-semibold text-base hover:no-underline [&>svg]:text-zinc-400 [&[data-state=open]>svg]:text-orange-400 ${
+            <AccordionTrigger className={`text-left py-5 font-semibold text-base hover:no-underline [&[data-state=open]>svg]:text-orange-500 ${
               darkBackground
-                ? "text-white hover:text-orange-400 [&[data-state=open]]:text-orange-400"
-                : "text-white hover:text-orange-400 [&[data-state=open]]:text-orange-400"
+                ? "text-white hover:text-orange-400 [&[data-state=open]]:text-orange-400 [&>svg]:text-zinc-400"
+                : "text-gray-900 hover:text-orange-600 [&[data-state=open]]:text-orange-700 [&>svg]:text-gray-400"
             }`}>
               <div className="flex items-start gap-3 flex-1 pr-4">
-                <HelpCircle className={`h-5 w-5 mt-0.5 flex-shrink-0 ${
-                  darkBackground ? "text-orange-500" : "text-orange-500"
-                }`} />
+                <HelpCircle className="h-5 w-5 mt-0.5 flex-shrink-0 text-orange-500" />
                 <span className="flex-1">{faq.question}</span>
               </div>
             </AccordionTrigger>
             <AccordionContent className={`text-base leading-relaxed pb-5 pl-8 ${
-              darkBackground ? "text-zinc-300" : "text-steel-200"
+              darkBackground ? "text-zinc-300" : "text-gray-600"
             }`}>
               <p>{faq.answer}</p>
             </AccordionContent>

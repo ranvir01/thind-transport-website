@@ -1,7 +1,7 @@
 import { Metadata } from "next"
+import Image from "next/image"
 import Link from "next/link"
 import {
-  Building2,
   Calendar,
   MapPin,
   Phone,
@@ -14,10 +14,14 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { COMPANY_INFO, STATS } from "@/lib/constants"
 import { PageBreadcrumb } from "@/components/shared/PageBreadcrumb"
+import { PageHero } from "@/components/shared/PageHero"
+import { RelatedLinks } from "@/components/shared/RelatedLinks"
+import { freightLinks } from "@/components/shared/link-sets"
 
 export const metadata: Metadata = {
   title: `About ${COMPANY_INFO.name}`,
   description: `Learn about ${COMPANY_INFO.name}, a family-run trucking company based in Kent, Washington.`,
+  alternates: { canonical: "/about" },
 }
 
 const milestones = [
@@ -66,23 +70,18 @@ export default function AboutPage() {
     <div className="brand-page-shell min-h-screen">
       <PageBreadcrumb pageName="About Us" category="Company" />
 
-      <section className="relative overflow-hidden bg-gradient-to-br from-navy via-blue-900 to-navy py-24 text-white">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-orange/20 via-transparent to-transparent" />
-        <div className="container relative">
-          <div className="mx-auto max-w-4xl text-center">
-            <Badge className="mb-6 border-white/30 bg-white/20 px-5 py-2.5 text-sm font-bold text-white backdrop-blur-md">
-              <Building2 className="mr-1.5 inline h-4 w-4" />
-              About {COMPANY_INFO.name}
-            </Badge>
-            <h1 className="mb-6 text-5xl font-black leading-tight md:text-6xl">
-              Family-Run. <span className="text-orange">Built To Stay Practical.</span>
-            </h1>
-            <p className="mx-auto max-w-3xl text-xl leading-relaxed text-white/90">
-              Since {COMPANY_INFO.founded}, {COMPANY_INFO.name} has focused on direct communication, dependable equipment, and a smaller-team approach that keeps drivers from feeling like numbers.
-            </p>
-          </div>
-        </div>
-      </section>
+      <PageHero
+        image="/images/generated/truck-mountain-pass.webp"
+        imageAlt="Illustration of a tractor-trailer climbing a Cascade mountain pass"
+        eyebrow={`About ${COMPANY_INFO.name}`}
+        title={
+          <>
+            Family-Run. <span className="text-orange">Built To Stay Practical.</span>
+          </>
+        }
+        description={`Since ${COMPANY_INFO.founded}, we've focused on direct communication, dependable equipment, and a smaller-team approach that keeps drivers from feeling like numbers.`}
+        primaryLabel="Drive With Us"
+      />
 
       <section className="relative z-10 -mt-8 py-8">
         <div className="container">
@@ -127,27 +126,41 @@ export default function AboutPage() {
               </div>
             </div>
 
-            <div className="rounded-2xl bg-gradient-to-br from-navy to-blue-900 p-8 text-white shadow-2xl">
-              <h3 className="mb-6 text-2xl font-black">Operating Snapshot</h3>
-              <div className="space-y-4 text-sm text-white/85">
-                <div className="flex items-start gap-3">
-                  <Truck className="mt-0.5 h-4 w-4 flex-shrink-0 text-orange" />
-                  <span>Flatbed, reefer, and dry van freight</span>
-                </div>
-                <div className="flex items-start gap-3">
-                  <MapPin className="mt-0.5 h-4 w-4 flex-shrink-0 text-orange" />
-                  <span>Based in Kent, Washington with nationwide coverage</span>
-                </div>
-                <div className="flex items-start gap-3">
-                  <Shield className="mt-0.5 h-4 w-4 flex-shrink-0 text-orange" />
-                  <span>USDOT #{COMPANY_INFO.dot}, MC-{COMPANY_INFO.mc} — active FMCSA authority (registration moving to Motus in 2026)</span>
-                </div>
-                <div className="flex items-start gap-3">
-                  <Users className="mt-0.5 h-4 w-4 flex-shrink-0 text-orange" />
-                  <span>Direct dispatch and recruiting communication instead of a giant call-center feel</span>
-                </div>
+            <div className="relative overflow-hidden rounded-2xl shadow-2xl">
+              <div className="relative aspect-[4/3] md:aspect-[4/5]">
+                <Image
+                  src="/images/generated/driver-pretrip-walkaround.webp"
+                  alt="Illustration of a driver completing a pre-trip walkaround inspection"
+                  fill
+                  sizes="(max-width: 768px) 100vw, 45vw"
+                  className="object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-navy via-navy/20 to-transparent" />
+              </div>
+              <div className="absolute bottom-5 left-5 right-5">
+                <p className="mb-1 text-xs font-bold uppercase tracking-[0.25em] text-orange-400">The yard, Kent WA</p>
+                <p className="text-sm font-semibold text-white">
+                  Pre-trip done right — equipment checked before every run.
+                </p>
               </div>
             </div>
+          </div>
+
+          <div className="mx-auto mt-12 grid max-w-5xl gap-4 rounded-2xl bg-gradient-to-br from-navy to-blue-900 p-6 text-white shadow-xl sm:grid-cols-2 md:p-8 lg:grid-cols-4">
+            {[
+              { icon: Truck, text: "Flatbed, reefer, and dry van freight" },
+              { icon: MapPin, text: "Based in Kent, WA with nationwide coverage" },
+              { icon: Shield, text: `USDOT #${COMPANY_INFO.dot}, MC-${COMPANY_INFO.mc} — active FMCSA authority` },
+              { icon: Users, text: "Direct dispatch — no giant call-center feel" },
+            ].map((item) => {
+              const Icon = item.icon
+              return (
+                <div key={item.text} className="flex items-start gap-3 text-sm text-white/85">
+                  <Icon className="mt-0.5 h-4 w-4 flex-shrink-0 text-orange" />
+                  <span>{item.text}</span>
+                </div>
+              )
+            })}
           </div>
         </div>
       </section>
@@ -155,7 +168,7 @@ export default function AboutPage() {
       <section className="bg-gradient-to-b from-gray-50 to-white py-16">
         <div className="container">
           <div className="mb-12 text-center">
-            <Badge className="mb-4 bg-orange px-4 py-2 text-sm font-bold text-white">
+            <Badge className="mb-4 bg-orange-600 px-4 py-2 text-sm font-bold text-white">
               <Calendar className="mr-1.5 inline h-4 w-4" />
               Company Timeline
             </Badge>
@@ -242,30 +255,49 @@ export default function AboutPage() {
               </div>
             </div>
 
-            <Card className="border-gray-200 bg-white shadow-lg">
-              <CardContent className="p-8">
-                <h3 className="mb-4 text-2xl font-black text-navy">Service Footprint</h3>
-                <p className="mb-6 text-gray-600">
-                  We kept this visual simple instead of using a fake map widget. The important part is the operating footprint and how to reach the team.
-                </p>
-                <div className="grid grid-cols-2 gap-4 text-center">
-                  <div className="rounded-xl bg-gray-50 p-4">
-                    <div className="text-3xl font-black text-orange">{STATS.statesCovered}</div>
-                    <div className="text-sm font-semibold text-gray-700">States Covered</div>
+            <div className="relative overflow-hidden rounded-2xl shadow-lg">
+              <div className="relative aspect-[3/2] md:h-full md:min-h-[320px]">
+                <Image
+                  src="/images/generated/fleet-lineup-kent.webp"
+                  alt="Row of Thind Transport Freightliner Cascadia and Volvo trucks lined up at the Kent, Washington yard"
+                  fill
+                  sizes="(max-width: 768px) 100vw, 45vw"
+                  className="object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-navy via-navy/20 to-transparent" />
+              </div>
+              <div className="absolute bottom-5 left-5 right-5 flex items-end justify-between gap-4">
+                <div>
+                  <p className="mb-1 text-xs font-bold uppercase tracking-[0.25em] text-orange-400">Home base</p>
+                  <p className="text-sm font-semibold text-white">The lineup in Kent, Washington</p>
+                </div>
+                <div className="flex gap-4 text-right">
+                  <div>
+                    <div className="text-2xl font-black text-white">{STATS.statesCovered}</div>
+                    <div className="text-[11px] font-semibold uppercase tracking-wide text-white/80">States</div>
                   </div>
-                  <div className="rounded-xl bg-gray-50 p-4">
-                    <div className="text-3xl font-black text-orange">{STATS.trucksInFleet}</div>
-                    <div className="text-sm font-semibold text-gray-700">Fleet Units</div>
+                  <div>
+                    <div className="text-2xl font-black text-white">{STATS.trucksInFleet}+</div>
+                    <div className="text-[11px] font-semibold uppercase tracking-wide text-white/80">Trucks</div>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
-      <section className="bg-navy py-16">
-        <div className="container">
+      <section className="relative overflow-hidden bg-navy py-20 md:py-24">
+        <Image
+          src="/images/generated/hero-cascadia-highway.webp"
+          alt=""
+          aria-hidden
+          fill
+          sizes="100vw"
+          className="object-cover"
+        />
+        <div className="absolute inset-0 bg-gradient-to-r from-navy/95 via-navy/85 to-navy/70" />
+        <div className="container relative">
           <div className="mx-auto max-w-3xl text-center">
             <h2 className="mb-4 text-3xl font-black text-white md:text-4xl">
               Ready to Talk With the Team?
@@ -276,7 +308,7 @@ export default function AboutPage() {
             <div className="flex flex-col justify-center gap-4 sm:flex-row">
               <Link
                 href="/apply"
-                className="rounded-xl bg-orange px-8 py-4 font-bold text-white transition-colors hover:bg-orange-600"
+                className="rounded-xl bg-orange-600 px-8 py-4 font-bold text-white transition-colors hover:bg-orange-600"
               >
                 Apply Now
               </Link>
@@ -291,7 +323,12 @@ export default function AboutPage() {
           </div>
         </div>
       </section>
+
+      <RelatedLinks
+        title="See it for yourself"
+        intro="Records, equipment and tools rather than more company history."
+        links={freightLinks(["/about"])}
+      />
     </div>
   )
 }
-

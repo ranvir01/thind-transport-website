@@ -1,0 +1,214 @@
+import { query } from "./db"
+import { iftaFilingComplianceEntries } from "./ifta"
+import { form2290ComplianceEntries } from "./hvut-compliance"
+import { filingsComplianceEntries } from "./filings-compliance"
+import { mileageStatus } from "./maintenance-due"
+
+export type ComplianceColor = "red" | "amber" | "green"
+
+export interface ComplianceEntry {
+  entity: "driver" | "truck" | "trailer" | "company"
+  entityId: string | null
+  name: string
+  kind: string
+  due: string | null
+  /** Miles remaining until a mileage-based PM is due (negative = overdue).
+   *  Only set when there's no usable due date and set to null otherwise. */
+  dueMiles?: number | null
+  color: ComplianceColor
+  href: string
+  manualItemId?: string
+}
+
+function colorFor(due: string | null, now: Date): ComplianceColor {
+  if (!due) return "amber"
+  const dueDate = new Date(due)
+  if (dueDate < now) return "red"
+  if (dueDate.getTime() - now.getTime() < 30 * 86400000) return "amber"
+  return "green"
+}
+
+const COLOR_SEVERITY: Record<ComplianceColor, number> = { red: 0, amber: 1, green: 2 }
+
+/** More urgent of the two colors (nulls are "no signal", not "fine"). */
+function worseColor(a: ComplianceColor | null, b: ComplianceColor | null): ComplianceColor | null {
+  if (a && b) return COLOR_SEVERITY[a] <= COLOR_SEVERITY[b] ? a : b
+  return a ?? b
+}
+
+/**
+ * Best-known current odometer per truck: the highest reading recorded across
+ * telematics pings, work orders, and DVIRs (a real odometer never rolls back,
+ * so MAX is a safe fleet-wide "latest" without needing per-source timestamps).
+ */
+export async function truckOdometers(carrierId: string): Promise<Map<string, number>> {
+  const rows = await query<{ truck_id: string; odometer: string }>(
+    `SELECT truck_id, MAX(odometer) AS odometer FROM (
+       SELECT truck_id, odometer FROM hub.position_pings WHERE carrier_id = $1 AND odometer IS NOT NULL
+       UNION ALL
+       SELECT truck_id, odometer FROM hub.maintenance_records WHERE carrier_id = $1 AND odometer IS NOT NULL
+       UNION ALL
+       SELECT truck_id, odometer FROM hub.dvirs WHERE carrier_id = $1 AND odometer IS NOT NULL
+     ) readings
+     GROUP BY truck_id`,
+    [carrierId]
+  )
+  return new Map(rows.map((r) => [r.truck_id, Number(r.odometer)]))
+}
+
+/**
+ * The compliance surface: derived items (document/credential expiries,
+ * maintenance due) + manual company items (IFTA decals, 2290, UCR, BOC-3…).
+ */
+export async function complianceEntries(carrierId: string): Promise<ComplianceEntry[]> {
+  const now = new Date()
+  const entries: ComplianceEntry[] = []
+
+  const drivers = await query<{
+    id: string; name: string; cdl_expiry: string | null; medical_card_expiry: string | null
+  }>(
+    `SELECT id, first_name || ' ' || last_name AS name, cdl_expiry, medical_card_expiry
+     FROM hub.drivers WHERE carrier_id = $1 AND deleted_at IS NULL AND status = 'active'`,
+    [carrierId]
+  )
+  for (const driver of drivers) {
+    entries.push({
+      entity: "driver", entityId: driver.id, name: driver.name, kind: "CDL",
+      due: driver.cdl_expiry, color: colorFor(driver.cdl_expiry, now),
+      href: `/hub/drivers/${driver.id}`,
+    })
+    entries.push({
+      entity: "driver", entityId: driver.id, name: driver.name, kind: "Medical card",
+      due: driver.medical_card_expiry, color: colorFor(driver.medical_card_expiry, now),
+      href: `/hub/drivers/${driver.id}`,
+    })
+  }
+
+  const trucks = await query<{
+    id: string; unit_number: string
+    registration_expiry: string | null; inspection_due: string | null; insurance_expiry: string | null
+  }>(
+    `SELECT id, unit_number, registration_expiry, inspection_due, insurance_expiry
+     FROM hub.trucks WHERE carrier_id = $1 AND deleted_at IS NULL AND status <> 'retired'`,
+    [carrierId]
+  )
+  for (const truck of trucks) {
+    const name = `Truck #${truck.unit_number}`
+    const href = `/hub/fleet/trucks/${truck.id}`
+    entries.push({ entity: "truck", entityId: truck.id, name, kind: "Registration", due: truck.registration_expiry, color: colorFor(truck.registration_expiry, now), href })
+    entries.push({ entity: "truck", entityId: truck.id, name, kind: "Annual inspection (396.17)", due: truck.inspection_due, color: colorFor(truck.inspection_due, now), href })
+    entries.push({ entity: "truck", entityId: truck.id, name, kind: "Insurance", due: truck.insurance_expiry, color: colorFor(truck.insurance_expiry, now), href })
+  }
+
+  const trailers = await query<{
+    id: string; unit_number: string
+    registration_expiry: string | null; inspection_due: string | null
+  }>(
+    `SELECT id, unit_number, registration_expiry, inspection_due
+     FROM hub.trailers WHERE carrier_id = $1 AND deleted_at IS NULL AND status <> 'retired'`,
+    [carrierId]
+  )
+  for (const trailer of trailers) {
+    const name = `Trailer #${trailer.unit_number}`
+    const href = `/hub/fleet/trailers/${trailer.id}`
+    entries.push({ entity: "trailer", entityId: trailer.id, name, kind: "Registration", due: trailer.registration_expiry, color: colorFor(trailer.registration_expiry, now), href })
+    entries.push({ entity: "trailer", entityId: trailer.id, name, kind: "Annual inspection (396.17)", due: trailer.inspection_due, color: colorFor(trailer.inspection_due, now), href })
+  }
+
+  // Maintenance schedules due by date and/or mileage, whichever is more urgent
+  // — most real PM (oil changes, tire rotations) is "X months or Y miles,
+  // whichever comes first," and a mileage-only schedule used to have no due_on
+  // at all, so it sat amber forever regardless of how overdue it actually was.
+  const maintenance = await query<{
+    id: string; truck_id: string; unit_number: string; name: string
+    due_on: string | null; interval_miles: number | null; last_done_odometer: string | null
+  }>(
+    `SELECT ms.id, ms.truck_id, t.unit_number, ms.name, ms.interval_miles, ms.last_done_odometer,
+       CASE WHEN ms.interval_days IS NOT NULL AND ms.last_done_on IS NOT NULL
+         THEN (ms.last_done_on + (ms.interval_days || ' days')::interval)::date::text
+         ELSE NULL END AS due_on
+     FROM hub.maintenance_schedules ms JOIN hub.trucks t ON t.id = ms.truck_id AND t.carrier_id = ms.carrier_id
+     WHERE ms.carrier_id = $1 AND t.deleted_at IS NULL AND t.status <> 'retired'`,
+    [carrierId]
+  )
+  const odometerByTruck = maintenance.length > 0 ? await truckOdometers(carrierId) : new Map<string, number>()
+  for (const schedule of maintenance) {
+    const dateColor = schedule.due_on ? colorFor(schedule.due_on, now) : null
+    const { color: mileageColor, milesRemaining } = mileageStatus(
+      schedule.interval_miles,
+      odometerByTruck.get(schedule.truck_id),
+      schedule.last_done_odometer != null ? Number(schedule.last_done_odometer) : null
+    )
+    const color = worseColor(dateColor, mileageColor) ?? "amber"
+    const dateGoverns = dateColor !== null && (mileageColor === null || COLOR_SEVERITY[dateColor] <= COLOR_SEVERITY[mileageColor])
+    entries.push({
+      entity: "truck", entityId: schedule.truck_id, name: `Truck #${schedule.unit_number}`,
+      kind: `PM: ${schedule.name}`,
+      due: dateGoverns ? schedule.due_on : null,
+      dueMiles: !dateGoverns && mileageColor !== null ? milesRemaining : null,
+      color,
+      href: `/hub/fleet/trucks/${schedule.truck_id}`,
+    })
+  }
+
+  // Manual company-level items (2290, UCR, IFTA decals, BOC-3, consortium…)
+  const manual = await query<{ id: string; kind: string; due_on: string | null; note: string | null }>(
+    `SELECT id, kind, due_on, note FROM hub.compliance_items
+     WHERE carrier_id = $1 AND status = 'open' AND entity_type = 'company'
+     ORDER BY due_on NULLS LAST`,
+    [carrierId]
+  )
+  for (const item of manual) {
+    entries.push({
+      entity: "company", entityId: null, name: "Company", kind: item.kind,
+      due: item.due_on, color: colorFor(item.due_on, now),
+      href: "/hub/compliance", manualItemId: item.id,
+    })
+  }
+
+  const iftaEntries = await iftaFilingComplianceEntries(carrierId)
+  entries.push(...iftaEntries)
+
+  // Form 2290 is derived rather than stored: it is annual, fleet-wide, and
+  // nobody enters it anywhere, so it only shows up when someone remembers.
+  entries.push(...(await form2290ComplianceEntries(carrierId, now)))
+
+  // MCS-150 biennial + UCR annual: derived the same way, from the carrier's
+  // own USDOT number and the calendar (see filings.ts for the 390.19 rule).
+  entries.push(...(await filingsComplianceEntries(carrierId, now)))
+
+  const order = { red: 0, amber: 1, green: 2 }
+  return entries.sort((a, b) => order[a.color] - order[b.color] || String(a.due ?? "9999").localeCompare(String(b.due ?? "9999")))
+}
+
+export async function addComplianceItem(
+  carrierId: string,
+  input: { kind: string; dueOn: string | null; note?: string | null }
+): Promise<void> {
+  await query(
+    `INSERT INTO hub.compliance_items (carrier_id, entity_type, kind, due_on, note)
+     VALUES ($1, 'company', $2, $3, $4)`,
+    [carrierId, input.kind, input.dueOn, input.note ?? null]
+  )
+}
+
+export async function resolveComplianceItem(carrierId: string, id: string): Promise<void> {
+  await query(
+    `UPDATE hub.compliance_items SET status = 'done', updated_at = NOW() WHERE carrier_id = $1 AND id = $2`,
+    [carrierId, id]
+  )
+}
+
+export interface ComplianceSummary {
+  red: number
+  amber: number
+  green: number
+}
+
+export function summarize(entries: ComplianceEntry[]): ComplianceSummary {
+  return {
+    red: entries.filter((e) => e.color === "red").length,
+    amber: entries.filter((e) => e.color === "amber").length,
+    green: entries.filter((e) => e.color === "green").length,
+  }
+}

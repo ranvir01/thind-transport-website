@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
-import { findDriverById } from "@/lib/driver-db"
+import { findDriverById, getLatestApplicationForDriver } from "@/lib/driver-db"
 
 export async function GET() {
   try {
@@ -22,13 +22,24 @@ export async function GET() {
       )
     }
 
+    const application = await getLatestApplicationForDriver(driver.id)
+
     return NextResponse.json({
       id: driver.id,
       email: driver.email,
       firstName: driver.firstName,
       lastName: driver.lastName,
       phone: driver.phone,
-      applicationCompleted: driver.applicationCompleted,
+      createdAt: driver.createdAt,
+      applicationCompleted: driver.applicationCompleted || Boolean(application),
+      application: application
+        ? {
+            id: application.id,
+            status: application.status,
+            submittedAt: application.submittedAt,
+            hasPdf: application.hasPdf,
+          }
+        : null,
     })
   } catch (error) {
     console.error("Profile fetch error:", error)

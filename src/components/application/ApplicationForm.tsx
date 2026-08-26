@@ -1,6 +1,8 @@
 "use client"
 
 import { useState } from "react"
+import Link from "next/link"
+import { usePathname } from "next/navigation"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
@@ -17,9 +19,13 @@ import {
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
-import { captureLead } from "@/app/actions/capture-lead"
 import { submitApplication } from "@/app/actions/submit-application"
 import { PAY_RATES, COMPANY_INFO } from "@/lib/constants"
+import { applyProgressPercent } from "./apply-progress"
+import { fireLeadCapture } from "./lead-capture"
+import { HONEYPOT_FIELD, readHoneypotValue } from "@/lib/honeypot"
+import { track } from "@vercel/analytics"
+import { HoneypotField } from "@/components/shared/HoneypotField"
 
 // Combined Schema
 const formSchema = z.object({
@@ -49,9 +55,9 @@ const formSchema = z.object({
 type FormData = z.infer<typeof formSchema>
 
 export function ApplicationForm() {
+  const pathname = usePathname()
   const [step, setStep] = useState(1)
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [isCapturingLead, setIsCapturingLead] = useState(false)
   const [serverError, setServerError] = useState<string | null>(null)
   const [errorDetails, setErrorDetails] = useState<string[]>([])
   
@@ -145,26 +151,29 @@ export function ApplicationForm() {
 
     if (isStepValid) {
       if (step === 2) {
-        // Capture Lead
-        setIsCapturingLead(true)
-        try {
-          const formData = new FormData()
-          const values = getValues()
-          formData.append("name", `${values.firstName} ${values.lastName}`)
-          formData.append("phone", values.phone)
-          formData.append("email", values.email)
-          formData.append("driverType", values.driverType)
-          formData.append("experienceYears", values.experienceYears)
-          formData.append("source", "Application Form Step 2")
-          
-          await captureLead({ success: false, message: "" }, formData)
-        } catch (err) {
-          console.error(err)
-        } finally {
-          setIsCapturingLead(false)
-        }
+        // Fire the lead capture in the BACKGROUND — do not await it. The
+        // insert (DB + notification email) is a full server round trip that
+        // can take seconds on truck-stop cell service, and its result never
+        // gates advancement (a failed capture still advances). Blocking the
+        // Continue tap on it stalled drivers at the most abandonment-
+        // sensitive moment of the funnel. Guarded by lead-capture.test.ts.
+        const values = getValues()
+        void fireLeadCapture(
+          {
+            firstName: values.firstName,
+            lastName: values.lastName,
+            email: values.email,
+            phone: values.phone,
+            driverType: values.driverType,
+            experienceYears: values.experienceYears,
+          },
+          readHoneypotValue()
+        ).then((captured) => {
+          if (captured) track("apply_lead_captured")
+        })
       }
-      
+
+      track("apply_step", { step: step + 1 })
       setStep((s) => s + 1)
       // Scroll to top of form container instead of window
       document.getElementById("application-form")?.scrollIntoView({ behavior: 'smooth' })
@@ -191,6 +200,11 @@ export function ApplicationForm() {
         }
       })
       
+      // react-hook-form only serializes registered fields — carry the honeypot
+      // across from the DOM so the server-side check still sees it.
+      const honeypot = readHoneypotValue()
+      if (honeypot) formData.append(HONEYPOT_FIELD, honeypot)
+
       // Append files
       if (uploadedFiles.cdlLicense) formData.append("cdlLicense", uploadedFiles.cdlLicense)
       if (uploadedFiles.medicalCard) formData.append("medicalCard", uploadedFiles.medicalCard)
@@ -199,6 +213,7 @@ export function ApplicationForm() {
       const result = await submitApplication({ success: false, message: "" }, formData)
       
       if (result.success) {
+        track("apply_submit")
         toast.success(result.message)
         // Show success state with next steps
         setStep(5) // Show a success/next steps screen
@@ -250,7 +265,7 @@ export function ApplicationForm() {
       console.error("Submission error:", error)
       const errorMsg = error instanceof Error 
         ? `Error: ${error.message}` 
-        : "An unexpected error occurred. Please call (206) 765-6300 for immediate assistance."
+        : `An unexpected error occurred. Please call ${COMPANY_INFO.phone} for immediate assistance.`
       toast.error(errorMsg)
       setServerError(errorMsg)
     } finally {
@@ -258,59 +273,64 @@ export function ApplicationForm() {
     }
   }
 
-  // Progress Bar
-  const progress = Math.round(((step - 1) / 4) * 100)
+  // Progress Bar — advances every step (25/50/75/100), see apply-progress.ts
+  const progress = applyProgressPercent(step)
 
-  // Sticky Footer Logic
-  const showStickyFooter = true; // Always show on mobile via CSS
-  const isFormStarted = step > 1 || (watchedFields.driverType && watchedFields.driverType !== 'owner-operator-otr');
+  // Only pin the continue bar on the dedicated apply page — on other pages the
+  // site-wide mobile command bar already covers the CTA.
+  const showStickyFooter = pathname === "/apply" && step < 5
 
   return (
-    <div className="space-y-8 relative pb-24 md:pb-0">
+    <div className={cn("space-y-8 relative", showStickyFooter && "pb-24 md:pb-0")}>
       {/* Mobile Sticky Footer */}
-      <div className="fixed bottom-0 left-0 right-0 z-[100] md:hidden bg-gradient-to-r from-[#001F3F] to-[#003366] p-3 border-t border-white/10 shadow-2xl safe-area-bottom">
-        <div className="flex gap-3">
-          <a
-            href={`tel:${COMPANY_INFO.phoneFormatted}`}
-            className="flex items-center justify-center w-12 h-12 bg-white/10 rounded-xl text-white hover:bg-white/20 active:bg-white/30 transition-colors"
-          >
-            <Phone className="h-5 w-5" />
-          </a>
-          <Button
-            onClick={() => {
-               // If valid, go next, otherwise scroll to error
-               if (step === 4) {
-                 handleSubmit(onSubmit)()
-               } else {
-                 nextStep()
-               }
-            }}
-            className="flex-1 h-12 bg-orange-500 hover:bg-orange-600 text-white font-bold text-base rounded-xl shadow-lg shadow-orange-500/30"
-          >
-            {step === 4 ? "Submit Application" : "Continue Application"}
-            <ChevronRight className="ml-2 h-5 w-5" />
-          </Button>
+      {showStickyFooter && (
+        <div className="fixed bottom-0 left-0 right-0 z-[100] md:hidden bg-[#131418] p-3 border-t border-white/10 shadow-2xl safe-area-bottom">
+          <div className="flex gap-3">
+            <a
+              href={`tel:${COMPANY_INFO.phoneFormatted}`}
+              aria-label={`Call recruiting at ${COMPANY_INFO.phone}`}
+              className="flex items-center justify-center w-12 h-12 bg-white/10 rounded-xl text-white hover:bg-white/20 active:bg-white/30 transition-colors"
+            >
+              <Phone className="h-5 w-5" />
+            </a>
+            <Button
+              onClick={() => {
+                 // If valid, go next, otherwise scroll to error
+                 if (step === 4) {
+                   handleSubmit(onSubmit)()
+                 } else {
+                   nextStep()
+                 }
+              }}
+              className="flex-1 h-12 bg-orange-600 hover:bg-orange-500 text-white font-bold text-base rounded-xl shadow-lg shadow-orange-500/30"
+            >
+              {step === 4 ? "Submit Application" : "Continue Application"}
+              <ChevronRight className="ml-2 h-5 w-5" />
+            </Button>
+          </div>
         </div>
-      </div>
+      )}
 
-      {/* Progress Steps */}
-      <div className="mb-8">
-        <div className="md:hidden text-sm font-bold text-orange-600 mb-2">
-          Step {step} of 4: {["Qualify", "Contact", "Details", "Docs"][step - 1]}
+      {/* Progress Steps — wizard chrome only; the success screen (step 5) is not a step */}
+      {step <= 4 && (
+        <div className="mb-8">
+          <div className="md:hidden text-sm font-bold text-orange-600 mb-2">
+            Step {step} of 4: {["Qualify", "Contact", "Details", "Docs"][step - 1]}
+          </div>
+          <div className="hidden md:flex justify-between text-sm font-medium text-gray-500 mb-2">
+            <span className={cn(step >= 1 && "text-orange-600 font-bold")}>1. Qualify</span>
+            <span className={cn(step >= 2 && "text-orange-600 font-bold")}>2. Contact</span>
+            <span className={cn(step >= 3 && "text-orange-600 font-bold")}>3. Details</span>
+            <span className={cn(step >= 4 && "text-orange-600 font-bold")}>4. Docs</span>
+          </div>
+          <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden">
+            <div
+              className="h-full bg-gradient-to-r from-orange-500 to-orange-600 transition-all duration-500 ease-out"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
         </div>
-        <div className="hidden md:flex justify-between text-sm font-medium text-gray-500 mb-2">
-          <span className={cn(step >= 1 && "text-orange-600 font-bold")}>1. Qualify</span>
-          <span className={cn(step >= 2 && "text-orange-600 font-bold")}>2. Contact</span>
-          <span className={cn(step >= 3 && "text-orange-600 font-bold")}>3. Details</span>
-          <span className={cn(step >= 4 && "text-orange-600 font-bold")}>4. Docs</span>
-        </div>
-        <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden">
-          <div 
-            className="h-full bg-gradient-to-r from-orange-500 to-orange-600 transition-all duration-500 ease-out"
-            style={{ width: `${progress === 0 ? 25 : progress}%` }}
-          />
-        </div>
-      </div>
+      )}
 
       {serverError && (
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-start gap-2 mb-6">
@@ -329,7 +349,8 @@ export function ApplicationForm() {
         </div>
       )}
 
-      <form onSubmit={handleSubmit(onSubmit)}>
+      <form onSubmit={handleSubmit(onSubmit)} className="relative">
+        <HoneypotField />
         {/* STEP 1: PREQUALIFICATION */}
         {step === 1 && (
           <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-500">
@@ -351,13 +372,13 @@ export function ApplicationForm() {
                     <div className="flex-1">
                       <div className="flex items-center justify-between">
                         <div className="font-bold text-gray-900 text-base">Owner Operator</div>
-                        <div className="text-xl text-green-600 font-black">90% Gross</div>
+                        <div className="text-xl text-orange-600 font-black">90% Gross</div>
                       </div>
                       <div className="text-sm text-gray-500 mt-1 group-hover:text-gray-700 transition-colors">{PAY_RATES.ownerOperator.annualGross} • 2+ years OTR</div>
                     </div>
                     <div className={cn(
                       "ml-4 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all",
-                      watchedFields.driverType === "owner-operator-otr" ? "border-orange-500 bg-orange-500" : "border-gray-300"
+                      watchedFields.driverType === "owner-operator-otr" ? "border-orange-500 bg-orange-600" : "border-gray-300"
                     )}>
                       {watchedFields.driverType === "owner-operator-otr" && <Check className="w-4 h-4 text-white" />}
                     </div>
@@ -371,13 +392,13 @@ export function ApplicationForm() {
                     <div className="flex-1">
                       <div className="flex items-center justify-between">
                         <div className="font-bold text-gray-900 text-base">Company Driver</div>
-                        <div className="text-xl text-blue-600 font-black">{PAY_RATES.companyDriver.regional.perMile}/mi</div>
+                        <div className="text-xl text-orange-600 font-black">{PAY_RATES.companyDriver.regional.perMile}/mi</div>
                       </div>
                       <div className="text-sm text-gray-500 mt-1 group-hover:text-gray-700 transition-colors">{PAY_RATES.companyDriver.regional.annual} • 1+ year experience</div>
                     </div>
                     <div className={cn(
                       "ml-4 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all",
-                      watchedFields.driverType === "regional-company-driver" ? "border-orange-500 bg-orange-500" : "border-gray-300"
+                      watchedFields.driverType === "regional-company-driver" ? "border-orange-500 bg-orange-600" : "border-gray-300"
                     )}>
                       {watchedFields.driverType === "regional-company-driver" && <Check className="w-4 h-4 text-white" />}
                     </div>
@@ -393,7 +414,7 @@ export function ApplicationForm() {
                     {["Class A", "Class B", "Class C"].map((cls) => (
                       <label key={cls} className={cn(
                         "flex items-center justify-center p-3 border-2 rounded-xl cursor-pointer transition-all font-bold text-center",
-                        watchedFields.cdlClass === cls ? "border-orange-500 bg-orange-500 text-white shadow-md transform scale-[1.02]" : "border-gray-200 bg-white text-gray-700 hover:border-orange-300 hover:bg-orange-50",
+                        watchedFields.cdlClass === cls ? "border-orange-500 bg-orange-600 text-white shadow-md transform scale-[1.02]" : "border-gray-200 bg-white text-gray-700 hover:border-orange-300 hover:bg-orange-50",
                         errors.cdlClass ? "border-red-500" : ""
                       )}>
                         <input type="radio" {...register("cdlClass")} value={cls} className="sr-only" />
@@ -432,8 +453,7 @@ export function ApplicationForm() {
                 <Button 
                   type="button" 
                   onClick={nextStep} 
-                  className="w-full h-14 text-lg font-bold bg-orange-500 hover:bg-orange-600 text-white shadow-lg shadow-orange-500/30 transition-all hover:shadow-xl hover:shadow-orange-500/40 hover:-translate-y-0.5"
-                  disabled={isCapturingLead}
+                  className="w-full h-14 text-lg font-bold bg-orange-600 hover:bg-orange-500 text-white shadow-lg shadow-orange-500/30 transition-all hover:shadow-xl hover:shadow-orange-500/40 hover:-translate-y-0.5"
                 >
                     CHECK MY ELIGIBILITY <ChevronRight className="ml-2 h-5 w-5" />
                 </Button>
@@ -463,6 +483,7 @@ export function ApplicationForm() {
                   <Input
                     id="firstName"
                     {...register("firstName")}
+                    autoComplete="given-name"
                     placeholder="John"
                     className={cn("h-12 py-3 text-base", errors.firstName ? "border-red-500" : "")}
                   />
@@ -474,6 +495,7 @@ export function ApplicationForm() {
                   <Input
                     id="lastName"
                     {...register("lastName")}
+                    autoComplete="family-name"
                     placeholder="Doe"
                     className={cn("h-12 py-3 text-base", errors.lastName ? "border-red-500" : "")}
                   />
@@ -488,6 +510,7 @@ export function ApplicationForm() {
                   {...register("email")}
                   placeholder="john@example.com"
                   type="email"
+                  autoComplete="email"
                   className={cn("h-12 py-3 text-base", errors.email ? "border-red-500" : "")}
                 />
                 {errors.email && <p className="text-xs text-red-500 mt-1">{errors.email.message}</p>}
@@ -516,19 +539,9 @@ export function ApplicationForm() {
                   <Button 
                     type="button" 
                     onClick={nextStep} 
-                    className="flex-[2] h-14 text-lg font-bold bg-orange-500 hover:bg-orange-600 text-white shadow-lg shadow-orange-500/30 transition-all hover:shadow-xl hover:shadow-orange-500/40 hover:-translate-y-0.5"
-                    disabled={isCapturingLead}
+                    className="flex-[2] h-14 text-lg font-bold bg-orange-600 hover:bg-orange-500 text-white shadow-lg shadow-orange-500/30 transition-all hover:shadow-xl hover:shadow-orange-500/40 hover:-translate-y-0.5"
                   >
-                    {isCapturingLead ? (
-                      <>
-                        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                        Saving...
-                      </>
-                    ) : (
-                      <>
-                        CONTINUE <ChevronRight className="ml-2 h-5 w-5" />
-                      </>
-                    )}
+                    CONTINUE <ChevronRight className="ml-2 h-5 w-5" />
                   </Button>
                 </div>
               </div>
@@ -638,7 +651,7 @@ export function ApplicationForm() {
                 <Button type="button" variant="outline" onClick={prevStep} className="flex-1 h-12 border-gray-300 text-gray-700 hover:bg-gray-50">
                   <ArrowLeft className="mr-2 h-4 w-4" /> Back
                 </Button>
-                <Button type="button" onClick={nextStep} className="flex-[2] h-14 text-lg font-bold bg-orange-500 hover:bg-orange-600 text-white shadow-lg shadow-orange-500/30 transition-all hover:shadow-xl hover:shadow-orange-500/40 hover:-translate-y-0.5">
+                <Button type="button" onClick={nextStep} className="flex-[2] h-14 text-lg font-bold bg-orange-600 hover:bg-orange-500 text-white shadow-lg shadow-orange-500/30 transition-all hover:shadow-xl hover:shadow-orange-500/40 hover:-translate-y-0.5">
                   CONTINUE <ChevronRight className="ml-2 h-5 w-5" />
                 </Button>
               </div>
@@ -714,40 +727,23 @@ export function ApplicationForm() {
               />
             </div>
 
-            {/* Recruiter Promise Block */}
-            <div className="bg-gradient-to-br from-[#001F3F] to-[#001326] rounded-xl p-5 text-white border border-slate-700 shadow-xl">
-              <div className="flex items-start gap-4">
-                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center text-white font-bold text-xl flex-shrink-0">
-                  S
-                </div>
-                <div>
-                  <h4 className="font-bold text-base text-orange-400">Your Personal Recruiter</h4>
-                  <p className="text-slate-300 text-sm mt-1 leading-relaxed">
-                    "Hi, I'm Sarah. I review every app personally – no bots, no black holes. I'll text you within 2 hours."
-                  </p>
-                  <div className="flex items-center gap-4 mt-3 text-xs text-slate-400">
-                    <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> &lt; 2hr Response</span>
-                    <span className="flex items-center gap-1"><ShieldCheck className="w-3 h-3" /> Data Secured</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Final Testimonial Before Submit */}
-            <div className="bg-green-50 rounded-xl p-4 border border-green-100">
-              <div className="flex items-start gap-3">
-                <div className="flex gap-0.5 flex-shrink-0">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} className="h-4 w-4 fill-green-500 text-green-500" />
-                  ))}
-                </div>
-                <div>
-                  <p className="text-gray-700 text-sm italic">
-                    "The 90% split is real – no hidden fees. I wish I'd switched sooner."
-                  </p>
-                  <p className="text-xs text-gray-500 mt-1">— James T., Owner Operator • 2 Years</p>
-                </div>
-              </div>
+            {/* What happens next — real process, no inflated promises */}
+            <div className="bg-gradient-to-br from-[#17181B] to-[#0B0C0E] rounded-xl p-5 text-white border border-slate-700 shadow-xl">
+              <h4 className="font-bold text-base text-orange-400 mb-3">What happens after you submit</h4>
+              <ul className="space-y-2 text-sm text-slate-300 leading-relaxed">
+                <li className="flex items-start gap-2">
+                  <Phone className="w-4 h-4 mt-0.5 text-orange-400 flex-shrink-0" />
+                  A real person from our Kent, WA office reviews your application — no bots, no black holes.
+                </li>
+                <li className="flex items-start gap-2">
+                  <Clock className="w-4 h-4 mt-0.5 text-orange-400 flex-shrink-0" />
+                  We call or text you back within one business day to talk pay, lanes, and equipment.
+                </li>
+                <li className="flex items-start gap-2">
+                  <ShieldCheck className="w-4 h-4 mt-0.5 text-orange-400 flex-shrink-0" />
+                  Your information stays with us — it's never sold or shared with other carriers.
+                </li>
+              </ul>
             </div>
 
             <div className="space-y-3">
@@ -791,20 +787,41 @@ export function ApplicationForm() {
               <p className="text-lg text-gray-600 mb-4">
                 We will get back to you shortly, within the next 24 hours.
               </p>
-              <p className="text-base text-gray-600 mb-8 max-w-lg mx-auto leading-relaxed">
+              <p className="text-base text-gray-600 mb-6 max-w-lg mx-auto leading-relaxed">
                 We will give you a call, and you can always call us or email us &mdash; 
                 whatever you prefer to get in touch for further information.
               </p>
 
+              {/* Portal account CTA — applicants can register without an invitation code */}
+              <div className="bg-orange-50 border-2 border-orange-200 rounded-2xl p-6 mb-8 text-left">
+                <h3 className="text-lg font-bold text-gray-900 mb-2 flex items-center gap-2">
+                  <CheckCircle2 className="h-5 w-5 text-orange-600" />
+                  Get a head start: create your driver portal account
+                </h3>
+                <p className="text-sm text-gray-600 mb-4 leading-relaxed">
+                  Track your application status and complete the official DOT paperwork online —
+                  no invitation code needed, just use the email you applied with.
+                </p>
+                <Button
+                  asChild
+                  className="w-full sm:w-auto bg-orange-600 hover:bg-orange-500 text-white font-bold"
+                >
+                  <Link href={`/driver/register?email=${encodeURIComponent(getValues("email") || "")}`}>
+                    Create Portal Account
+                    <ChevronRight className="ml-1 h-4 w-4" />
+                  </Link>
+                </Button>
+              </div>
+
               {/* Contact Options */}
-              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-6 border-2 border-blue-200 text-left mb-8">
+              <div className="bg-gray-50 rounded-2xl p-6 border-2 border-gray-200 text-left mb-8">
                 <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-                  <Phone className="h-5 w-5 text-blue-600" />
+                  <Phone className="h-5 w-5 text-orange-600" />
                   Get In Touch
                 </h3>
                 <div className="space-y-4">
                   <div className="flex gap-3 items-center">
-                    <div className="flex-shrink-0 w-10 h-10 bg-orange-500 text-white rounded-full flex items-center justify-center">
+                    <div className="flex-shrink-0 w-10 h-10 bg-orange-600 text-white rounded-full flex items-center justify-center">
                       <Phone className="h-5 w-5" />
                     </div>
                     <div>
@@ -813,12 +830,12 @@ export function ApplicationForm() {
                     </div>
                   </div>
                   <div className="flex gap-3 items-center">
-                    <div className="flex-shrink-0 w-10 h-10 bg-blue-500 text-white rounded-full flex items-center justify-center">
+                    <div className="flex-shrink-0 w-10 h-10 bg-gray-900 text-white rounded-full flex items-center justify-center">
                       <Star className="h-5 w-5" />
                     </div>
                     <div>
                       <p className="font-semibold text-gray-900">Email Us</p>
-                      <a href={`mailto:${COMPANY_INFO.email}`} className="text-blue-600 font-bold hover:underline">{COMPANY_INFO.email}</a>
+                      <a href={`mailto:${COMPANY_INFO.email}`} className="text-orange-600 font-bold hover:underline">{COMPANY_INFO.email}</a>
                     </div>
                   </div>
                 </div>
@@ -829,7 +846,7 @@ export function ApplicationForm() {
                 <Button 
                   asChild
                   size="lg"
-                  className="flex-1 bg-orange-500 hover:bg-orange-600 text-white font-bold text-lg h-14"
+                  className="flex-1 bg-orange-600 hover:bg-orange-500 text-white font-bold text-lg h-14"
                 >
                   <a href={`tel:${COMPANY_INFO.phoneFormatted}`}>
                     <Phone className="mr-2 h-5 w-5" />
@@ -842,9 +859,9 @@ export function ApplicationForm() {
                   variant="outline"
                   className="flex-1 border-2 border-gray-300 text-gray-700 hover:bg-gray-50 font-bold text-lg h-14"
                 >
-                  <a href="/">
+                  <Link href="/">
                     Return to Home
-                  </a>
+                  </Link>
                 </Button>
               </div>
             </div>

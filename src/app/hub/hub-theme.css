@@ -1,0 +1,590 @@
+/**
+ * HaulDesk software UI tokens — scoped to [data-app="hauldesk"] on <html>.
+ * Marketing site keeps navy/orange/gold; this is the operations product only.
+ */
+
+[data-app="hauldesk"],
+[data-app="hauldesk"][data-theme="indigo"] {
+  --bg: #fbfbfd;
+  --surface: #ffffff;
+  --surface-2: #f5f6f8;
+  --border: #eceef1;
+  --border-strong: #e0e3e8;
+  --text: #16181d;
+  --text-2: #565c66;
+  --text-3: #656c7a;
+  --hover: #f3f4f6;
+  --accent: #5b5bd6;
+  --accent-hover: #4d4dc9;
+  --accent-fg: #ffffff;
+  --accent-soft: #eeeefa;
+  --accent-text: #4842be;
+  --ring: rgba(91, 91, 214, 0.28);
+  --green: #15704a;
+  --green-soft: #e7f4ec;
+  --amber: #8a6108;
+  --amber-soft: #faf0da;
+  --red: #b52d2d;
+  --red-soft: #fbeaea;
+  --blue: #2560c9;
+  --blue-soft: #e9f1fd;
+  --shadow: 0 1px 2px rgba(16, 18, 29, 0.04), 0 1px 3px rgba(16, 18, 29, 0.05);
+}
+
+/* Dark is remastered for OLED phones: the page sits near-black, cards step
+   UP from it visibly (surface ladder, not outlines), borders whisper, and
+   every card carries a 1px inner top highlight — depth reads like iOS dark,
+   not a wireframe. */
+[data-app="hauldesk"][data-mode="dark"],
+[data-app="hauldesk"][data-mode="dark"][data-theme="indigo"] {
+  --bg: #08090d;
+  --surface: #14161f;
+  --surface-2: #1f222e;
+  --border: rgba(255, 255, 255, 0.065);
+  --border-strong: rgba(255, 255, 255, 0.14);
+  --text: #eef0f4;
+  --text-2: #a3a8b4;
+  --text-3: #8f95a3;
+  --hover: rgba(255, 255, 255, 0.055);
+  --accent: #7f80ee;
+  --accent-hover: #9192f2;
+  --accent-fg: #0b0c10;
+  --accent-soft: rgba(127, 128, 238, 0.21);
+  --accent-text: #b0b1f6;
+  --ring: rgba(127, 128, 238, 0.4);
+  --green: #3ecd82;
+  --green-soft: rgba(62, 205, 130, 0.16);
+  --amber: #e5b13d;
+  --amber-soft: rgba(229, 177, 61, 0.15);
+  --red: #f8857f;
+  --red-soft: rgba(244, 107, 102, 0.14);
+  --blue: #6ba1f2;
+  --blue-soft: rgba(107, 161, 242, 0.16);
+  --shadow: inset 0 1px 0 rgba(255, 255, 255, 0.045), 0 1px 2px rgba(0, 0, 0, 0.5), 0 4px 16px rgba(0, 0, 0, 0.35);
+}
+
+[data-app="hauldesk"][data-theme="teal"] {
+  --bg: #fbfbfb;
+  --surface-2: #f5f6f6;
+  --border: #eceeee;
+  --border-strong: #dfe3e3;
+  --text: #16191a;
+  --text-2: #565b5c;
+  --text-3: #6b7273;
+  --hover: #f2f4f3;
+  --accent: #0e9384;
+  --accent-hover: #0c8175;
+  --accent-soft: #e2f3f0;
+  --accent-text: #0b6e66;
+  --ring: rgba(14, 147, 132, 0.26);
+}
+
+[data-app="hauldesk"][data-mode="dark"][data-theme="teal"] {
+  --bg: #070b0a;
+  --surface: #131917;
+  --surface-2: #1d2521;
+  --text: #ecefee;
+  --text-2: #a0a8a5;
+  --text-3: #8e9793;
+  --accent: #26bfac;
+  --accent-hover: #3accba;
+  --accent-fg: #04130f;
+  --accent-soft: rgba(38, 191, 172, 0.2);
+  --accent-text: #5ad6c6;
+  --ring: rgba(38, 191, 172, 0.38);
+}
+
+[data-app="hauldesk"][data-theme="ink"] {
+  --bg: #faf9f7;
+  --surface-2: #f5f4f1;
+  --border: #eae8e4;
+  --border-strong: #dedbd5;
+  --text: #1a1814;
+  --text-2: #57534c;
+  --text-3: #6f6a61;
+  --hover: #f1efeb;
+  --accent: #1c1b19;
+  --accent-hover: #000000;
+  --accent-soft: #eeedea;
+  --accent-text: #1c1b19;
+  --ring: rgba(0, 0, 0, 0.16);
+}
+
+[data-app="hauldesk"][data-mode="dark"][data-theme="ink"] {
+  --bg: #0a0908;
+  --surface: #171512;
+  --surface-2: #221f1b;
+  --hover: rgba(255, 255, 255, 0.05);
+  --text: #f0ede8;
+  --text-2: #a8a29a;
+  --text-3: #999288;
+  --accent: #f0ede8;
+  --accent-hover: #ffffff;
+  --accent-fg: #191714;
+  --accent-soft: rgba(255, 255, 255, 0.11);
+  --accent-text: #ece9e3;
+  --ring: rgba(255, 255, 255, 0.2);
+}
+
+[data-app="hauldesk"] {
+  background: var(--bg);
+  color: var(--text);
+  letter-spacing: -0.006em;
+}
+
+/* ============================================================================
+ * Interaction foundation — every tappable surface physically responds.
+ * Scoped to the software app only; the marketing site keeps its own rules.
+ * ==========================================================================*/
+
+[data-app="hauldesk"] {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* The marketing base layer uppercases h1–h5 in the condensed display font
+   with hardcoded light-on-dark colors, and paints bare <a> tags a light
+   #d6dde6 — that's the single biggest source of the app "shouting" and of
+   light-on-light links. Inside the software, headings are body-font,
+   sentence case, weight-based, and links inherit their surrounding color;
+   condensed caps are reserved for 11px eyebrows and the wordmark.
+   Specificity is deliberate: (0,0,2) via the :not(area) no-op — strictly
+   above the marketing element styles (0,0,1) no matter which stylesheet
+   the bundler emits first, strictly below every utility class (0,1,0)
+   like text-fg / text-accent-text. Do not "simplify" the :not(). */
+:where([data-app="hauldesk"]) :is(h1, h2, h3, h4, h5, h6):not(area) {
+  font-family: inherit;
+  text-transform: none;
+  letter-spacing: inherit;
+  color: inherit;
+  line-height: 1.3;
+}
+:where([data-app="hauldesk"]) a:not(area) {
+  color: inherit;
+}
+
+/* Elevation ladder: background < card (--shadow) < raised (menus/popovers)
+   < overlay (sheets/dialogs). Consumed as shadow-card / shadow-raised /
+   shadow-overlay via tailwind.config.ts. */
+[data-app="hauldesk"],
+[data-app="hauldesk"][data-theme="indigo"] {
+  --shadow-raised: 0 2px 6px rgba(16, 18, 29, 0.06), 0 8px 24px rgba(16, 18, 29, 0.09);
+  --shadow-overlay: 0 -4px 16px rgba(16, 18, 29, 0.06), 0 12px 48px rgba(16, 18, 29, 0.18);
+}
+[data-app="hauldesk"][data-mode="dark"] {
+  --shadow-raised: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 2px 8px rgba(0, 0, 0, 0.45), 0 10px 28px rgba(0, 0, 0, 0.5);
+  --shadow-overlay: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 -4px 16px rgba(0, 0, 0, 0.4), 0 12px 48px rgba(0, 0, 0, 0.6);
+}
+
+/* 0ms press feedback on everything tappable: scale + opacity, compositor
+   props only. touch-action:manipulation kills the iOS double-tap delay.
+   Opt out with .no-press (e.g. the pressed element manages its own motion). */
+[data-app="hauldesk"] :is(button, [role="button"], a, summary):not(.no-press) {
+  touch-action: manipulation;
+  transition-property: transform, opacity, background-color, border-color, color, box-shadow;
+  transition-duration: 150ms;
+  transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+}
+[data-app="hauldesk"] :is(button, [role="button"], a, summary):not(.no-press):active {
+  transform: scale(0.97);
+  opacity: 0.9;
+}
+/* File-pick labels and other label-as-button patterns get the same feel. */
+[data-app="hauldesk"] label.pressable {
+  touch-action: manipulation;
+  transition: transform 150ms cubic-bezier(0.16, 1, 0.3, 1), opacity 150ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+[data-app="hauldesk"] label.pressable:active {
+  transform: scale(0.97);
+  opacity: 0.9;
+}
+/* Inputs never scale; keep the tap-delay fix only. */
+[data-app="hauldesk"] :is(input, select, textarea) {
+  touch-action: manipulation;
+}
+
+/* Buttons sink on press: the global scale plus a 1px settle and an inset
+   shadow — the surface visibly takes the pressure. */
+[data-app="hauldesk"] .press-sink:active {
+  transform: translateY(1px) scale(0.98);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.16);
+}
+
+/* Themed toasts (sonner) — surface, token border, raised elevation. The
+   .app-toast class is inert on the marketing site (no [data-app] there). */
+[data-app="hauldesk"] .app-toast {
+  background: var(--surface) !important;
+  color: var(--text) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 14px !important;
+  box-shadow: var(--shadow-raised) !important;
+}
+
+/* Data tables: sticky header, zebra rows, hover highlight. */
+[data-app="hauldesk"] .hub-table thead th {
+  position: sticky;
+  top: 0;
+  background: var(--surface);
+  z-index: 1;
+}
+[data-app="hauldesk"] .hub-table tbody tr:nth-child(even) {
+  background: color-mix(in srgb, var(--surface-2) 45%, transparent);
+}
+[data-app="hauldesk"] .hub-table tbody tr:hover {
+  background: var(--hover);
+}
+
+/* Scroll feel: the app never rubber-bands the whole document. */
+[data-app="hauldesk"] body {
+  overscroll-behavior-y: none;
+}
+
+/* Focus ring inside the app uses the theme accent, not the marketing red. */
+[data-app="hauldesk"] :focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Horizontal pill rows: snap, hidden scrollbar, edge fades so clipped items
+   read as "more this way" instead of broken. */
+[data-app="hauldesk"] .snap-row {
+  scroll-snap-type: x proximity;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+  -webkit-mask-image: linear-gradient(to right, transparent, black 14px, black calc(100% - 14px), transparent);
+  mask-image: linear-gradient(to right, transparent, black 14px, black calc(100% - 14px), transparent);
+}
+[data-app="hauldesk"] .snap-row::-webkit-scrollbar {
+  display: none;
+}
+[data-app="hauldesk"] .snap-row > * {
+  scroll-snap-align: start;
+}
+
+/* Skeletons — mirror final layout, shimmer on the compositor only. */
+@keyframes hub-shimmer {
+  to {
+    transform: translateX(100%);
+  }
+}
+[data-app="hauldesk"] .hub-skeleton {
+  position: relative;
+  overflow: hidden;
+  background: var(--surface-2);
+  border-radius: 9px;
+}
+[data-app="hauldesk"] .hub-skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, var(--hover), transparent);
+  animation: hub-shimmer 1.4s ease-in-out infinite;
+}
+
+/* Route-change motion: 200ms shared-axis entrance on the page body.
+   Compositor props only; reduced-motion collapses it globally. */
+@keyframes hub-route-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+[data-app="hauldesk"] .hub-route-enter {
+  animation: hub-route-in 260ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Tab-bar activation pop — the icon springs when its tab becomes current. */
+@keyframes hub-tab-pop {
+  0% {
+    transform: scale(0.82);
+  }
+  60% {
+    transform: scale(1.08);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+[data-app="hauldesk"] .hub-tab-pop {
+  animation: hub-tab-pop 320ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+/* Mobile tab bar: frosted glass over the content with layered upward
+   elevation — the bar floats above the page instead of sitting on it as a
+   flat bordered strip. Tokens keep both modes right; dark swaps to deep
+   shadow + the standard 1px inner top highlight. */
+[data-app="hauldesk"] .hub-tabbar {
+  border-top: 1px solid var(--border);
+  background: color-mix(in srgb, var(--surface) 93%, transparent);
+  -webkit-backdrop-filter: blur(18px) saturate(1.5);
+  backdrop-filter: blur(18px) saturate(1.5);
+  box-shadow:
+    0 -1px 2px rgba(15, 18, 34, 0.04),
+    0 -10px 28px rgba(15, 18, 34, 0.07);
+}
+[data-app="hauldesk"][data-mode="dark"] .hub-tabbar {
+  background: color-mix(in srgb, var(--surface) 90%, transparent);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.045),
+    0 -2px 8px rgba(0, 0, 0, 0.35),
+    0 -16px 40px rgba(0, 0, 0, 0.45);
+}
+
+/* Active-tab pill: springs in behind the icon when a tab becomes current
+   (the shared-layout indicator, CSS-only). */
+@keyframes hub-pill-in {
+  from {
+    transform: scale(0.5);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+[data-app="hauldesk"] .hub-pill-in {
+  animation: hub-pill-in 320ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Demo live map (Leaflet over OSM): pins, pulsing destination geofence, and
+   the truck chip. Kept here so the map obeys the app's tokens in both modes. */
+[data-app="hauldesk"] .demo-map {
+  z-index: 0; /* keep Leaflet's internal stacking below app chrome */
+}
+[data-app="hauldesk"] .demo-map .leaflet-container {
+  background: var(--surface-2);
+  font: inherit;
+}
+[data-app="hauldesk"] .demo-map-pin {
+  display: block;
+  width: 14px;
+  height: 14px;
+  border-radius: 9999px;
+  border: 2.5px solid var(--surface);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+}
+[data-app="hauldesk"] .demo-map-pin--origin {
+  background: var(--text-3);
+}
+[data-app="hauldesk"] .demo-map-pin--dest {
+  background: var(--green);
+  animation: demo-geofence 2.2s cubic-bezier(0.2, 0, 0, 1) infinite;
+}
+@keyframes demo-geofence {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--green) 45%, transparent);
+  }
+  70% {
+    box-shadow: 0 0 0 14px transparent;
+  }
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+}
+[data-app="hauldesk"] .demo-map-truck {
+  display: block;
+  width: 22px;
+  height: 22px;
+  border-radius: 9999px;
+  background: var(--accent);
+  border: 3px solid var(--surface);
+  box-shadow:
+    0 0 0 4px color-mix(in srgb, var(--accent) 22%, transparent),
+    0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+/* Typing indicator: three dots taking turns. */
+[data-app="hauldesk"] .demo-typing {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 2px;
+}
+[data-app="hauldesk"] .demo-typing i {
+  display: block;
+  width: 6px;
+  height: 6px;
+  border-radius: 9999px;
+  animation: demo-typing-bounce 1.1s ease-in-out infinite;
+}
+[data-app="hauldesk"] .demo-typing i:nth-child(2) {
+  animation-delay: 0.18s;
+}
+[data-app="hauldesk"] .demo-typing i:nth-child(3) {
+  animation-delay: 0.36s;
+}
+@keyframes demo-typing-bounce {
+  0%,
+  60%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.45;
+  }
+  30% {
+    transform: translateY(-4px);
+    opacity: 1;
+  }
+}
+
+/* Camera capture flash — one white blink over the POD photo. */
+@keyframes demo-flash {
+  0% {
+    opacity: 0.9;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+[data-app="hauldesk"] .demo-flash {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  background: #fff;
+  opacity: 0;
+  animation: demo-flash 480ms cubic-bezier(0.05, 0.7, 0.1, 1) both;
+}
+
+/* Sub-nav underline indicator: grows out from center under the active tab
+   (the "tab underline slide" of the motion spec, CSS-only). */
+@keyframes hub-underline-in {
+  from {
+    transform: scaleX(0.4);
+    opacity: 0;
+  }
+  to {
+    transform: scaleX(1);
+    opacity: 1;
+  }
+}
+[data-app="hauldesk"] .hub-underline-in {
+  transform-origin: center;
+  animation: hub-underline-in 220ms cubic-bezier(0.2, 0, 0, 1) both;
+}
+
+/* List enter-stagger, first paint only — cap at 8 children. */
+@keyframes hub-item-in {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+[data-app="hauldesk"] .hub-stagger > * {
+  animation: hub-item-in 260ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
+  animation-delay: 180ms;
+}
+[data-app="hauldesk"] .hub-stagger > *:nth-child(1) { animation-delay: 0ms; }
+[data-app="hauldesk"] .hub-stagger > *:nth-child(2) { animation-delay: 30ms; }
+[data-app="hauldesk"] .hub-stagger > *:nth-child(3) { animation-delay: 60ms; }
+[data-app="hauldesk"] .hub-stagger > *:nth-child(4) { animation-delay: 90ms; }
+[data-app="hauldesk"] .hub-stagger > *:nth-child(5) { animation-delay: 120ms; }
+[data-app="hauldesk"] .hub-stagger > *:nth-child(6) { animation-delay: 150ms; }
+
+/* Bottom sheet + backdrop entrances (used by the Sheet primitive). */
+@keyframes hub-sheet-in {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: none;
+  }
+}
+@keyframes hub-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+[data-app="hauldesk"] .hub-sheet-enter {
+  animation: hub-sheet-in 280ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+[data-app="hauldesk"] .hub-backdrop-enter {
+  animation: hub-fade-in 200ms ease-out both;
+}
+/* Sheet content: slides up on touch widths; from md it is a centered card
+   whose position lives in translate transforms, so it must only FADE —
+   a transform-keyframe animation would overwrite the centering. */
+@media (max-width: 767px) {
+  [data-app="hauldesk"] .hub-sheet-content {
+    animation: hub-sheet-in 280ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+}
+@media (min-width: 768px) {
+  [data-app="hauldesk"] .hub-sheet-content {
+    animation: hub-fade-in 180ms ease-out both;
+  }
+}
+
+/* Checkmark draw for success moments (SVG path with pathLength=1). */
+@keyframes hub-check-draw {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+[data-app="hauldesk"] .hub-check-draw {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: hub-check-draw 450ms cubic-bezier(0.16, 1, 0.3, 1) 120ms forwards;
+}
+
+/* Demo player: story-style segment fill (scaleX = compositor-only). */
+@keyframes hub-progress {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+/* Milestone moment backdrop pop. */
+@keyframes hub-pop-in {
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+[data-app="hauldesk"] .hub-pop-enter {
+  animation: hub-pop-in 260ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+[data-app="hauldesk"] .hauldesk-shell {
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+}
+
+/* Hub auth pages (login/signup) outside the office shell */
+[data-app="hauldesk"] .hauldesk-auth {
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--text);
+}
+
+/* Disabled accent buttons: the disabled:opacity-* utilities fade the whole
+   control, leaving the label at ~1.4:1 over a light page (white text on
+   half-transparent accent). Paint a solid muted accent instead so the label
+   stays legible in every theme/mode. Selector specificity (attr + element +
+   class + pseudo) intentionally beats the opacity utility. */
+@supports (background-color: color-mix(in srgb, red 50%, white)) {
+  [data-app="hauldesk"] button.bg-accent:disabled {
+    opacity: 1;
+    background-color: color-mix(in srgb, var(--accent) 60%, var(--bg));
+  }
+}

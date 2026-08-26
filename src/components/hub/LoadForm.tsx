@@ -1,0 +1,496 @@
+"use client"
+
+import { useState, useTransition } from "react"
+import { useRouter } from "next/navigation"
+import { toast } from "sonner"
+import { Loader2, Plus, Trash2 } from "lucide-react"
+import { createLoadAction, updateLoadAction } from "@/app/hub/_actions/loads"
+import { facilityLookupAction } from "@/app/hub/_actions/facilities"
+import { customerBookingIntel } from "@/app/hub/_actions/vetting"
+import { fieldCls, labelCls, Panel } from "@/components/hub/ui"
+import { EQUIPMENT_LABELS, EQUIPMENT_TYPES } from "@/lib/hub/types"
+
+export interface Option {
+  id: string
+  label: string
+}
+
+export interface PriceBookOption {
+  id: string
+  name: string
+  default_amount_cents: number
+  unit: string
+}
+
+interface StopForm {
+  type: "pickup" | "delivery"
+  facility: string
+  address: string
+  city: string
+  state: string
+  zip: string
+  pickup_number: string
+  po_number: string
+  fcfs: boolean
+  appt_start: string
+  notes: string
+}
+
+interface AccessorialForm {
+  label: string
+  amount: string
+}
+
+export interface LoadFormInitial {
+  customer_id: string
+  customer_reference: string
+  equipment: string
+  commodity: string
+  weight_lbs: string
+  linehaul: string
+  fuel_surcharge: string
+  loaded_miles: string
+  deadhead_miles: string
+  truck_id: string
+  trailer_id: string
+  driver_id: string
+  factored: boolean
+  notes: string
+  stops: StopForm[]
+  accessorials: AccessorialForm[]
+}
+
+const EMPTY_STOP = (type: "pickup" | "delivery"): StopForm => ({
+  type, facility: "", address: "", city: "", state: "", zip: "",
+  pickup_number: "", po_number: "", fcfs: false, appt_start: "", notes: "",
+})
+
+export function LoadForm({
+  loadId,
+  initial,
+  customers,
+  drivers,
+  trucks,
+  trailers,
+  priceBook = [],
+}: {
+  loadId?: string
+  initial: LoadFormInitial
+  customers: Option[]
+  drivers: Option[]
+  trucks: Option[]
+  trailers: Option[]
+  priceBook?: PriceBookOption[]
+}) {
+  const router = useRouter()
+  const [form, setForm] = useState<LoadFormInitial>(initial)
+  const [pending, startTransition] = useTransition()
+  // E2: per-stop facility intelligence — warns about slow docks at booking time.
+  const [facilityHints, setFacilityHints] = useState<Record<number, string | null>>({})
+  // Phase 5: credit/vetting/payment-speed warnings on the customer pick.
+  const [customerWarnings, setCustomerWarnings] = useState<string[]>([])
+
+  const checkCustomer = async (customerId: string) => {
+    if (!customerId) {
+      setCustomerWarnings([])
+      return
+    }
+    const intel = await customerBookingIntel(customerId)
+    setCustomerWarnings(intel.warnings)
+  }
+
+  const checkFacility = async (index: number) => {
+    const stop = form.stops[index]
+    if (!stop?.facility.trim()) {
+      setFacilityHints((h) => ({ ...h, [index]: null }))
+      return
+    }
+    const result = await facilityLookupAction({
+      name: stop.facility,
+      city: stop.city,
+      state: stop.state,
+    })
+    setFacilityHints((h) => ({ ...h, [index]: result.warning ?? null }))
+  }
+
+  const set = (patch: Partial<LoadFormInitial>) => setForm((f) => ({ ...f, ...patch }))
+  const setStop = (index: number, patch: Partial<StopForm>) =>
+    setForm((f) => ({
+      ...f,
+      stops: f.stops.map((s, i) => (i === index ? { ...s, ...patch } : s)),
+    }))
+
+  const addStop = () => setForm((f) => ({ ...f, stops: [...f.stops, EMPTY_STOP("delivery")] }))
+  const removeStop = (index: number) =>
+    setForm((f) => ({ ...f, stops: f.stops.filter((_, i) => i !== index) }))
+
+  const addFromPriceBook = (entry: PriceBookOption) =>
+    setForm((f) => ({
+      ...f,
+      accessorials: [...f.accessorials, { label: entry.name, amount: (entry.default_amount_cents / 100).toFixed(2) }],
+    }))
+
+  const totalRate =
+    (Number(form.linehaul) || 0) +
+    (Number(form.fuel_surcharge) || 0) +
+    form.accessorials.reduce((sum, a) => sum + (Number(a.amount) || 0), 0)
+
+  const submit = (e: React.FormEvent) => {
+    e.preventDefault()
+    const payload = {
+      customer_id: form.customer_id,
+      customer_reference: form.customer_reference,
+      equipment: form.equipment,
+      commodity: form.commodity,
+      weight_lbs: form.weight_lbs,
+      linehaul: form.linehaul || "0",
+      fuel_surcharge: form.fuel_surcharge || "0",
+      accessorials: form.accessorials
+        .filter((a) => a.label.trim())
+        .map((a) => ({ label: a.label, amount: a.amount || "0" })),
+      loaded_miles: form.loaded_miles,
+      deadhead_miles: form.deadhead_miles,
+      truck_id: form.truck_id,
+      trailer_id: form.trailer_id,
+      driver_id: form.driver_id,
+      factored: form.factored,
+      notes: form.notes,
+      stops: form.stops.map((s) => ({
+        type: s.type, facility: s.facility, address: s.address, city: s.city,
+        state: s.state, zip: s.zip, fcfs: s.fcfs, pickup_number: s.pickup_number,
+        po_number: s.po_number, appt_start: s.appt_start, notes: s.notes,
+      })),
+    }
+    startTransition(async () => {
+      const result = loadId
+        ? await updateLoadAction(loadId, payload)
+        : await createLoadAction(payload)
+      if (result.ok) {
+        toast.success(loadId ? "Load updated" : "Load booked")
+        router.push(`/hub/loads/${result.id}`)
+        router.refresh()
+      } else {
+        toast.error(result.error ?? "Could not save load")
+      }
+    })
+  }
+
+  return (
+    <form onSubmit={submit} className="space-y-4 max-w-3xl">
+      {/* Customer & equipment */}
+      <Panel className="p-4 md:p-5 space-y-4">
+        <h2 className="text-[13.5px] font-semibold text-fg">Booking</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className={labelCls} htmlFor="customer">Customer / broker *</label>
+            <select
+              id="customer" required className={fieldCls} value={form.customer_id}
+              onChange={(e) => {
+                set({ customer_id: e.target.value })
+                checkCustomer(e.target.value)
+              }}
+            >
+              <option value="">Select customer…</option>
+              {customers.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
+            </select>
+            {customerWarnings.map((warning) => (
+              <p key={warning} className="mt-1 inline-flex rounded-full border border-warn-soft bg-warn-soft px-2.5 py-1 text-[11px] font-bold text-warn">
+                {warning}
+              </p>
+            ))}
+          </div>
+          <div>
+            <label className={labelCls} htmlFor="customer_reference">Broker load # / reference</label>
+            <input
+              id="customer_reference" className={fieldCls} value={form.customer_reference}
+              onChange={(e) => set({ customer_reference: e.target.value })}
+            />
+          </div>
+          <div>
+            <label className={labelCls} htmlFor="equipment">Equipment *</label>
+            <select
+              id="equipment" className={fieldCls} value={form.equipment}
+              onChange={(e) => set({ equipment: e.target.value })}
+            >
+              {EQUIPMENT_TYPES.map((eq) => (
+                <option key={eq} value={eq}>{EQUIPMENT_LABELS[eq]}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className={labelCls} htmlFor="commodity">Commodity</label>
+            <input
+              id="commodity" className={fieldCls} value={form.commodity}
+              onChange={(e) => set({ commodity: e.target.value })}
+            />
+          </div>
+          <div>
+            <label className={labelCls} htmlFor="weight">Weight (lbs)</label>
+            <input
+              id="weight" type="number" inputMode="numeric" min="0" className={fieldCls}
+              value={form.weight_lbs} onChange={(e) => set({ weight_lbs: e.target.value })}
+            />
+          </div>
+          <label className="flex items-center gap-3 min-h-[44px] cursor-pointer sm:mt-6">
+            <input
+              type="checkbox"
+              checked={form.factored}
+              onChange={(e) => set({ factored: e.target.checked })}
+              className="h-5 w-5 rounded border-border-strong accent-accent"
+            />
+            <span className="text-sm text-fg-2">Factored (invoice remits to the factor)</span>
+          </label>
+        </div>
+      </Panel>
+
+      {/* Stops */}
+      <Panel className="p-4 md:p-5 space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-[13.5px] font-semibold text-fg">Stops</h2>
+          <button
+            type="button" onClick={addStop}
+            className="inline-flex min-h-[36px] items-center gap-1 rounded-lg border border-border-strong px-3 text-xs font-semibold text-fg-2 hover:bg-hover"
+          >
+            <Plus className="h-3.5 w-3.5" /> Add stop
+          </button>
+        </div>
+        {form.stops.map((stop, i) => (
+          <div key={i} className="rounded-card border border-border p-3.5 space-y-3">
+            <div className="flex items-center justify-between gap-2">
+              <select
+                aria-label="Stop type"
+                className={`${fieldCls} w-40`}
+                value={stop.type}
+                onChange={(e) => setStop(i, { type: e.target.value as "pickup" | "delivery" })}
+              >
+                <option value="pickup">Pickup</option>
+                <option value="delivery">Delivery</option>
+              </select>
+              {form.stops.length > 2 ? (
+                <button
+                  type="button" aria-label="Remove stop" onClick={() => removeStop(i)}
+                  className="flex h-10 w-10 items-center justify-center rounded-lg text-bad hover:bg-bad-soft"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              ) : null}
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <input
+                  aria-label="Facility" placeholder="Facility name" className={fieldCls}
+                  value={stop.facility}
+                  onChange={(e) => setStop(i, { facility: e.target.value })}
+                  onBlur={() => checkFacility(i)}
+                />
+                {facilityHints[i] ? (
+                  <p className="mt-1 inline-flex rounded-full border border-warn-soft bg-warn-soft px-2.5 py-1 text-[11px] font-bold text-warn">
+                    {facilityHints[i]}
+                  </p>
+                ) : null}
+              </div>
+              <input
+                aria-label="Address" placeholder="Street address" className={fieldCls}
+                value={stop.address} onChange={(e) => setStop(i, { address: e.target.value })}
+              />
+              <div className="grid grid-cols-[1fr_72px_96px] gap-2">
+                <input
+                  aria-label="City" placeholder="City *" required className={fieldCls}
+                  value={stop.city} onChange={(e) => setStop(i, { city: e.target.value })}
+                />
+                <input
+                  aria-label="State" placeholder="ST *" required maxLength={2} className={fieldCls}
+                  value={stop.state}
+                  onChange={(e) => setStop(i, { state: e.target.value.toUpperCase() })}
+                />
+                <input
+                  aria-label="ZIP" placeholder="ZIP" className={fieldCls}
+                  value={stop.zip} onChange={(e) => setStop(i, { zip: e.target.value })}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <input
+                  aria-label="Pickup number" placeholder="PU #" className={fieldCls}
+                  value={stop.pickup_number} onChange={(e) => setStop(i, { pickup_number: e.target.value })}
+                />
+                <input
+                  aria-label="PO number" placeholder="PO #" className={fieldCls}
+                  value={stop.po_number} onChange={(e) => setStop(i, { po_number: e.target.value })}
+                />
+              </div>
+              <input
+                aria-label="Appointment" type="datetime-local" className={fieldCls}
+                disabled={stop.fcfs}
+                value={stop.appt_start} onChange={(e) => setStop(i, { appt_start: e.target.value })}
+              />
+              <label className="flex items-center gap-2 min-h-[44px] cursor-pointer">
+                <input
+                  type="checkbox" checked={stop.fcfs}
+                  onChange={(e) => setStop(i, { fcfs: e.target.checked, appt_start: e.target.checked ? "" : stop.appt_start })}
+                  className="h-5 w-5 rounded border-border-strong accent-accent"
+                />
+                <span className="text-sm text-fg-2">FCFS (first come, first served)</span>
+              </label>
+            </div>
+          </div>
+        ))}
+      </Panel>
+
+      {/* Money */}
+      <Panel className="p-4 md:p-5 space-y-4">
+        <h2 className="text-[13.5px] font-semibold text-fg">Rate</h2>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div>
+            <label className={labelCls} htmlFor="linehaul">Linehaul ($) *</label>
+            <input
+              id="linehaul" type="number" inputMode="decimal" min="0" step="0.01" required
+              className={fieldCls} value={form.linehaul}
+              onChange={(e) => set({ linehaul: e.target.value })}
+            />
+          </div>
+          <div>
+            <label className={labelCls} htmlFor="fsc">Fuel surcharge ($)</label>
+            <input
+              id="fsc" type="number" inputMode="decimal" min="0" step="0.01" className={fieldCls}
+              value={form.fuel_surcharge} onChange={(e) => set({ fuel_surcharge: e.target.value })}
+            />
+          </div>
+          <div>
+            <label className={labelCls} htmlFor="loaded_miles">Loaded miles</label>
+            <input
+              id="loaded_miles" type="number" inputMode="numeric" min="0" className={fieldCls}
+              value={form.loaded_miles} onChange={(e) => set({ loaded_miles: e.target.value })}
+            />
+          </div>
+          <div>
+            <label className={labelCls} htmlFor="deadhead">Deadhead miles</label>
+            <input
+              id="deadhead" type="number" inputMode="numeric" min="0" className={fieldCls}
+              value={form.deadhead_miles} onChange={(e) => set({ deadhead_miles: e.target.value })}
+            />
+          </div>
+        </div>
+
+        {/* Accessorials with price book quick-add */}
+        {priceBook.length > 0 ? (
+          <div className="flex flex-wrap gap-1.5">
+            {priceBook.map((entry) => (
+              <button
+                key={entry.id} type="button" onClick={() => addFromPriceBook(entry)}
+                className="rounded-full border border-border-strong bg-surface-2 px-3 py-1.5 text-xs font-semibold text-fg-2 hover:bg-hover min-h-[32px]"
+              >
+                + {entry.name}{entry.default_amount_cents ? ` $${(entry.default_amount_cents / 100).toFixed(0)}` : ""}
+              </button>
+            ))}
+          </div>
+        ) : null}
+        <div className="space-y-2">
+          {form.accessorials.map((acc, i) => (
+            <div key={i} className="flex gap-2">
+              <input
+                aria-label="Accessorial label" placeholder="Detention, lumper…" className={fieldCls}
+                value={acc.label}
+                onChange={(e) =>
+                  setForm((f) => ({
+                    ...f,
+                    accessorials: f.accessorials.map((a, j) => (j === i ? { ...a, label: e.target.value } : a)),
+                  }))
+                }
+              />
+              <input
+                aria-label="Accessorial amount" type="number" inputMode="decimal" step="0.01"
+                placeholder="$" className={`${fieldCls} w-32`}
+                value={acc.amount}
+                onChange={(e) =>
+                  setForm((f) => ({
+                    ...f,
+                    accessorials: f.accessorials.map((a, j) => (j === i ? { ...a, amount: e.target.value } : a)),
+                  }))
+                }
+              />
+              <button
+                type="button" aria-label="Remove accessorial"
+                onClick={() => setForm((f) => ({ ...f, accessorials: f.accessorials.filter((_, j) => j !== i) }))}
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-bad hover:bg-bad-soft"
+              >
+                <Trash2 className="h-4 w-4" />
+              </button>
+            </div>
+          ))}
+          <button
+            type="button"
+            onClick={() => setForm((f) => ({ ...f, accessorials: [...f.accessorials, { label: "", amount: "" }] }))}
+            className="inline-flex min-h-[36px] items-center gap-1 rounded-lg border border-border-strong px-3 text-xs font-semibold text-fg-2 hover:bg-hover"
+          >
+            <Plus className="h-3.5 w-3.5" /> Custom accessorial
+          </button>
+        </div>
+
+        <p className="text-body-sm text-fg-2">
+          Total rate:{" "}
+          <span className="font-mono font-medium text-accent-text tabular-nums text-lg">
+            {totalRate.toLocaleString("en-US", { style: "currency", currency: "USD" })}
+          </span>
+          {form.loaded_miles && Number(form.loaded_miles) > 0 ? (
+            <span className="ml-2 text-fg-3">
+              ({(totalRate / Number(form.loaded_miles)).toFixed(2)}/mi)
+            </span>
+          ) : null}
+        </p>
+      </Panel>
+
+      {/* Assignment */}
+      <Panel className="p-4 md:p-5 space-y-4">
+        <h2 className="text-[13.5px] font-semibold text-fg">Assignment</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div>
+            <label className={labelCls} htmlFor="driver">Driver</label>
+            <select
+              id="driver" className={fieldCls} value={form.driver_id}
+              onChange={(e) => set({ driver_id: e.target.value })}
+            >
+              <option value="">Unassigned</option>
+              {drivers.map((d) => <option key={d.id} value={d.id}>{d.label}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className={labelCls} htmlFor="truck">Truck</label>
+            <select
+              id="truck" className={fieldCls} value={form.truck_id}
+              onChange={(e) => set({ truck_id: e.target.value })}
+            >
+              <option value="">Unassigned</option>
+              {trucks.map((t) => <option key={t.id} value={t.id}>{t.label}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className={labelCls} htmlFor="trailer">Trailer</label>
+            <select
+              id="trailer" className={fieldCls} value={form.trailer_id}
+              onChange={(e) => set({ trailer_id: e.target.value })}
+            >
+              <option value="">Unassigned</option>
+              {trailers.map((t) => <option key={t.id} value={t.id}>{t.label}</option>)}
+            </select>
+          </div>
+        </div>
+        <div>
+          <label className={labelCls} htmlFor="notes">Notes</label>
+          <textarea
+            id="notes" rows={3}
+            className={`${fieldCls} h-auto py-3`}
+            value={form.notes} onChange={(e) => set({ notes: e.target.value })}
+          />
+        </div>
+      </Panel>
+
+      <button
+        type="submit" disabled={pending}
+        className="flex w-full sm:w-auto min-h-[48px] items-center justify-center gap-2 rounded-control bg-accent px-8 font-semibold text-sm text-accent-fg hover:bg-accent-hover disabled:opacity-60"
+      >
+        {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+        {loadId ? "Save changes" : "Book load"}
+      </button>
+    </form>
+  )
+}

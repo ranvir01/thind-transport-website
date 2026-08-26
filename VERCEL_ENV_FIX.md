@@ -41,11 +41,11 @@ Make sure these are set for **Production** environment:
 ```
 SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
-SMTP_USER=thindcarrier@gmail.com
-SMTP_PASS=ctcuolcpwdzkqibm
+SMTP_USER=<gmail address, set in Vercel — never commit>
+SMTP_PASS=<gmail app password, set in Vercel — never commit>
 SMTP_FROM=Thind Transport <noreply@thindtransport.com>
 NEXTAUTH_URL=https://thindtransport.com
-NEXTAUTH_SECRET=eCPX8pZGqJ7vR4mN2wL9sF6hK3tY5jU8aB1cD2eF3gH4
+NEXTAUTH_SECRET=<openssl rand -base64 32, set in Vercel — never commit>
 ```
 
 ---

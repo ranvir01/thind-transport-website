@@ -63,10 +63,12 @@ export const PAY_RATES = {
   },
 } as const
 
+// Only benefits we actually offer today. Health/dental/vision, life, disability
+// and 401(k) were removed in July 2026 — we do not carry those plans at the
+// moment, and promising them on a recruiting page is a promise a driver finds
+// out about at orientation. Add them back here first if that ever changes.
 export const BENEFITS = {
   companyDriver: [
-    "Health, dental, and vision insurance",
-    "401(k) retirement plan with company match",
     "$1,000 sign-on bonus (first year)",
     "Weekly direct deposit pay",
     "Home time flexibility - Local/Regional/OTR options",
@@ -95,58 +97,29 @@ export const BENEFITS = {
   ],
 } as const
 
-// Keeping these for backward compatibility if used elsewhere, but values should align with above
+// Verifiable trust indicators only — no invented ratings or percentages.
 export const TRUST_INDICATORS = {
   certifications: [
     {
-      name: "FMCSA Certified",
+      name: "FMCSA Registered",
       issuer: "Federal Motor Carrier Safety Administration",
       icon: "shield-check",
     },
     {
-      name: "DOT Compliant",
+      name: `USDOT #2523064`,
       issuer: "U.S. Department of Transportation",
       icon: "badge-check",
     },
     {
-      name: "A+ Safety Rating",
-      issuer: "FMCSA CSA Program",
+      name: "No Forced Dispatch",
+      issuer: "Company policy — you choose your loads",
       icon: "award",
     },
-    {
-      name: "$1M+ Liability Coverage",
-      issuer: "Commercial Insurance Carrier",
-      icon: "shield",
-    },
-  ],
-  performance: [
-    { label: "On-Time Delivery", value: "98.5%" },
-    { label: "DOT Violations", value: "0.0%" },
-    { label: "Safe Miles", value: "2M+" },
-    { label: "Safety Rating", value: "A+" },
+    // The $1M+ liability-coverage credential was removed 2026-08-04 under the
+    // no-unverifiable-claims rule: it is a specific number a broker checks
+    // against the COI, and no COI in this repo backs it. It returns the day the
+    // owner confirms the real limits (see docs/OWNER-CHECKLIST.md). A test
+    // fails if it is re-added without that confirmation.
   ],
 } as const
 
-export const PREMIER_BROKERS = [
-  { name: "Landstar Inway", tier: "Premier Partner" },
-  { name: "JB Hunt", tier: "Strategic Partner" },
-  { name: "C.H. Robinson", tier: "Diamond Carrier" },
-  { name: "Schneider National", tier: "Elite Partner" },
-  { name: "Coyote Logistics", tier: "Preferred Carrier" },
-  { name: "DAT Power Network", tier: "Verified Carrier" },
-  { name: "TQL", tier: "Quality Carrier" },
-  { name: "XPO Logistics", tier: "Trusted Partner" },
-  { name: "Uber Freight", tier: "Digital Partner" },
-] as const
-
-export const MAJOR_CLIENTS = [
-  { name: "Amazon Logistics", category: "E-commerce", duration: "4+ years" },
-  { name: "Walmart Supply Chain", category: "Retail", duration: "3+ years" },
-  { name: "Lowe's Home Improvement", category: "Building Materials", duration: "2+ years" },
-  { name: "Target Corporation", category: "Retail", duration: "2+ years" },
-  { name: "PepsiCo Beverages", category: "Food & Beverage", duration: "3+ years" },
-  { name: "The Home Depot", category: "Home Improvement", duration: "1+ years" },
-  { name: "Costco Wholesale", category: "Retail", duration: "2+ years" },
-  { name: "Kroger", category: "Grocery", duration: "2+ years" },
-  { name: "General Mills", category: "Food Production", duration: "1+ years" },
-] as const

@@ -1,384 +1,87 @@
-# Thind Transport Website - Next.js Recruitment Platform 🚛
+# LoadOff + Thind Transport
 
-[![Next.js](https://img.shields.io/badge/Next.js-14.2-black?logo=next.js)](https://nextjs.org/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue?logo=typescript)](https://www.typescriptlang.org/)
-[![Tailwind CSS](https://img.shields.io/badge/Tailwind-3.4-38bdf8?logo=tailwind-css)](https://tailwindcss.com/)
-[![Build](https://img.shields.io/badge/Build-Passing-success)](https://github.com)
+**Live:** [thindtransport.com](https://thindtransport.com) · **TMS:** [/hub](https://thindtransport.com/hub) · **Product:** [/loadoff](https://thindtransport.com/loadoff)
 
-> **A modern, high-converting truck driver recruitment website built with Next.js, TypeScript, and shadcn/ui components**
+One monorepo for a Kent, WA family carrier:
 
-*Last Updated: December 2025*
+1. **LoadOff** (`/hub`) — multi-tenant TMS: dispatch, invoicing, settlements, fuel + IFTA, compliance, customer portals, and an installable driver PWA. Thind Transport is tenant #1. (Older docs may still say HaulDesk.)
+2. **Driver recruitment site** (`/`) — marketing + apply flows that convert CDL drivers into applications.
 
----
+| | |
+|---|---|
+| ![Today command center](docs/screenshots/hub-today.png) | ![Driver phone app](docs/screenshots/driver-mobile.png) |
+| Today: loads due, unconfirmed drivers, money not yet invoiced | Driver PWA: offline shell, status taps, camera PODs |
 
-## 🚀 Quick Start
+![Dispatch board](docs/screenshots/hub-dispatch.png)
+
+## Why this repo matters for Claude / AI work
+
+- **Anthropic Claude in production** — Smart Setup document extraction via the Messages API (`src/lib/hub/doc-intake/llm-parser.ts`): PII redaction, confidence-scored fields, human review, and a heuristic fallback when `ANTHROPIC_API_KEY` is unset.
+- **Hard invariants** — carrier-scoped queries, integer-cent money math, server-action permissions, audit logs, automated tests.
+- **Honest delivery** — Cursor / Claude accelerate the build; humans review, test, and own what ships. Some vendor integrations are stub-first (mock + contract tests) until credentials are live; CSV/manual fallbacks stay available.
+- **Demo path** — [`docs/demo-script.md`](docs/demo-script.md)
+
+## What LoadOff covers
+
+- **Today** — what's due, who hasn't confirmed, missing PODs, money not yet invoiced
+- **Dispatch** — week planner, board, live map when ELD is connected
+- **Money** — rate confirmation → invoice → payment → pay-rules settlements
+- **Fuel + IFTA** — card feeds or CSV → MPG, costing, IFTA quarters
+- **Compliance** — expiries, DOT accident register, authority checks
+- **Driver app** — confirm, status, camera PODs, chat, pay stubs, DVIR, offline shell
+- **Integrations** — ELD, fuel cards, load boards, mailbox, QuickBooks (registry + encrypted credentials)
+
+## Quick start
 
 ```bash
-# Install dependencies
+npm run setup:canvas-deps     # system libs for the `canvas` dep (or: npm install --ignore-scripts)
 npm install
-
-# Run development server
-npm run dev
-
-# Open http://localhost:3000
+cp .env.example .env.local    # POSTGRES_URL + NEXTAUTH_SECRET minimum
+npm run db:migrate
+npm run seed:demo             # optional
+npm run dev                   # http://localhost:3000  (hub at /hub)
 ```
 
-**That's it!** Your site is running! 🎉
-
----
-
-## 📋 Table of Contents
-
-- [Features](#features)
-- [Pages](#pages)
-- [Components](#components)
-- [Documentation](#documentation)
-- [Deployment](#deployment)
-- [Customization](#customization)
-- [Performance](#performance)
-
----
-
-## ✨ Features
-
-### 🎯 Business Features
-- ✅ **High-Converting Design** - Optimized for driver applications
-- ✅ **Multi-Step Application Form** - Easy 60-second application
-- ✅ **Interactive Pay Calculator** - Clear compensation structure
-- ✅ **Social Proof** - Real testimonials with ratings
-- ✅ **FAQ System** - Reduces support calls by 25-35%
-- ✅ **Urgency Elements** - "Limited spots" messaging
-- ✅ **Mobile-First** - 60%+ of traffic is mobile
-- ✅ **SEO Optimized** - Better Google rankings
-
-### 🛠️ Technical Features
-- ⚡ **Next.js 14+** with App Router
-- 📘 **TypeScript** throughout
-- 🎨 **Tailwind CSS** for styling
-- 🧩 **shadcn/ui** components (8 components)
-- 📊 **Recharts** for data visualization
-- 🍞 **Toast Notifications** (Sonner)
-- 🎠 **Embla Carousel** for testimonials
-- 🔍 **SEO Metadata** per page
-- 📱 **Fully Responsive** design
-
----
-
-## 📄 Pages
-
-| Route | Page | Features |
-|-------|------|----------|
-| `/` | Homepage | Hero, Stats, Features, FAQ, Testimonials |
-| `/pay-rates` | Pay Rates | Tabbed rates, Job details, Benefits |
-| `/apply` | Application | Multi-step form, Validation, Toast |
-| `/testimonials` | Reviews | Carousel, Ratings, Social proof |
-| `/showcase` | Components | All components demonstrated |
-
----
-
-## 🧩 Components
-
-### Installed shadcn/ui Components
-
-1. **Accordion** - FAQ sections
-2. **Alert** - Urgent announcements
-3. **Badge** - Status indicators
-4. **Button** - CTAs and actions
-5. **Card** - Content containers
-6. **Carousel** - Testimonials slider
-7. **Dialog** - Job details popup
-8. **Tabs** - Pay rate organization
-9. **Input** - Form fields
-10. **Label** - Form labels
-11. **Select** - Dropdowns
-12. **Textarea** - Multi-line input
-13. **Toast** - Notifications
-14. **Chart** - Data visualization
-
-### Custom Feature Components
-
-1. **FAQAccordion** - 8 common driver questions
-2. **TestimonialsCarousel** - Driver reviews slider
-3. **PayRatesTabs** - Pay structure organizer
-4. **JobDetailsDialog** - Comprehensive job info
-5. **AnnouncementAlert** - Urgency messaging
-6. **ApplicationForm** - Multi-step form with validation
-7. **ChartAreaInteractive** - Application trends
-8. **EnhancedShowcase** - All components together
-
----
-
-## 📚 Documentation
-
-| Document | Description |
-|----------|-------------|
-| **START_HERE_NEXTJS.md** | 👈 **Read this first!** Quick start guide |
-| **README_NEXTJS.md** | Complete Next.js documentation |
-| **NEXTJS_MIGRATION_COMPLETE.md** | Migration details & checklist |
-| **IMPLEMENTATION_SUMMARY.md** | Component specifications |
-| **COMPONENTS_QUICK_START.md** | How to use components |
-| **SHADCN_COMPONENTS_GUIDE.md** | Technical component docs |
-
----
-
-## 🚢 Deployment
-
-### Vercel (Recommended - FREE)
-
-1. **Push to GitHub**:
-   ```bash
-   git add .
-   git commit -m "Initial Next.js deployment"
-   git push
-   ```
-
-2. **Deploy**:
-   - Visit [vercel.com](https://vercel.com)
-   - Import your repository
-   - Click "Deploy"
-
-3. **Live in 2 minutes!** 🎉
-
-### Build Settings
-
-```json
-{
-  "buildCommand": "npm run build",
-  "devCommand": "npm run dev",
-  "framework": "nextjs"
-}
-```
-
-### Environment Variables
-
-Copy `.env.local.example` to `.env.local`:
-```bash
-cp .env.local.example .env.local
-```
-
----
-
-## 🎨 Customization
-
-### Update Company Information
-
-```typescript
-// src/lib/constants.ts
-export const COMPANY_INFO = {
-  name: "Thind Transport",      // Your company name
-  phone: "(206) 765-9218",         // Your phone
-  email: "thindcarrier@gmail.com", // Your email
-  // ... more
-}
-```
-
-### Modify Pay Rates
-
-```typescript
-// src/lib/constants.ts
-export const PAY_RATES = {
-  companyDriver: {
-    local: { perMile: "$0.55-$0.65", annual: "$65K-$75K" },
-    // ... update your rates
-  }
-}
-```
-
-### Add New FAQ
-
-```typescript
-// src/components/FAQAccordion.tsx
-const faqs = [
-  {
-    question: "Your new question?",
-    answer: "Your detailed answer"
-  },
-  // ... more FAQs
-]
-```
-
-### Add Testimonial
-
-```typescript
-// src/components/TestimonialsCarousel.tsx
-const testimonials = [
-  {
-    name: "Driver Name",
-    role: "Company Driver",
-    years: "5 years",
-    rating: 5,
-    text: "Great company to work for!"
-  },
-  // ... more testimonials
-]
-```
-
----
-
-## ⚡ Performance
-
-### Lighthouse Scores (Expected)
-
-- **Performance**: 90-95
-- **Accessibility**: 95-100
-- **Best Practices**: 95-100
-- **SEO**: 95-100
-
-### Page Load Times
-
-| Page | Load Time |
-|------|-----------|
-| Homepage | ~0.5-1s |
-| Pay Rates | ~0.3-0.5s |
-| Apply | ~0.6-1s |
-| Testimonials | ~0.4-0.6s |
-
----
-
-## 🧪 Testing
-
-### Manual Testing Checklist
-
-- [ ] Test all navigation links
-- [ ] Submit application form
-- [ ] Expand FAQ items
-- [ ] Slide testimonials carousel
-- [ ] Open job detail dialogs
-- [ ] Switch pay rate tabs
-- [ ] Test on mobile device
-- [ ] Verify phone links work
-- [ ] Check all images load
-- [ ] Test form validation
-
-### Browser Testing
-
-- ✅ Chrome
-- ✅ Firefox
-- ✅ Safari
-- ✅ Edge
-- ✅ Mobile browsers
-
----
-
-## 📊 Analytics Integration (Optional)
-
-### Google Analytics
-
-1. Create GA4 property
-2. Add to `.env.local`:
-   ```
-   NEXT_PUBLIC_GA_ID=G-XXXXXXXXXX
-   ```
-3. Add to `src/app/layout.tsx`
-
-### Track These Events
-
-- Application submissions
-- Phone clicks
-- Dialog opens
-- FAQ interactions
-- Carousel slides
-- Tab switches
-
----
-
-## 🔧 Development
-
-### Project Structure
-
-```
-├── src/
-│   ├── app/          # Pages (App Router)
-│   ├── components/   # React components
-│   ├── lib/          # Utilities
-│   └── types/        # TypeScript types
-├── public/           # Static assets
-├── package.json      # Dependencies
-├── tsconfig.json     # TypeScript config
-├── tailwind.config.ts # Tailwind config
-└── next.config.mjs   # Next.js config
-```
-
-### Key Technologies
-
-- **Next.js 14+**: React framework
-- **TypeScript 5.9**: Type safety
-- **Tailwind CSS 3.4**: Styling
-- **Radix UI**: Accessible primitives
-- **React Hook Form**: Form handling
-- **Zod**: Schema validation
-- **Recharts**: Data visualization
-- **Sonner**: Toast notifications
-- **Embla**: Carousel functionality
-
----
-
-## 🎯 Business Goals
-
-This website is designed to:
-
-1. **Attract** qualified CDL drivers
-2. **Convert** visitors to applicants
-3. **Reduce** support call volume
-4. **Build** trust with social proof
-5. **Scale** as your business grows
-
-### Expected ROI
-
-- **+15-25%** more applications
-- **-25-35%** fewer support calls
-- **+40-60%** longer engagement
-- **Better** qualified applicants
-- **Higher** Google rankings
-
----
-
-## 🆘 Support
-
-### Get Help
-
-1. **Documentation**: Check the 6 docs files
-2. **Code Comments**: Well-commented source
-3. **Next.js Docs**: https://nextjs.org/docs
-4. **shadcn/ui**: https://ui.shadcn.com
-
-### Community Resources
-
-- [Next.js Discord](https://discord.gg/nextjs)
-- [Vercel Community](https://github.com/vercel/next.js/discussions)
-- [Stack Overflow](https://stackoverflow.com/questions/tagged/next.js)
-
----
-
-## 📝 License
-
-© 2025 Thind Transport. All rights reserved.
-
----
-
-## 🎊 Acknowledgments
-
-Built with these amazing tools:
-- [Next.js](https://nextjs.org/)
-- [shadcn/ui](https://ui.shadcn.com/)
-- [Radix UI](https://www.radix-ui.com/)
-- [Tailwind CSS](https://tailwindcss.com/)
-- [TypeScript](https://www.typescriptlang.org/)
-
----
-
-## 🚀 Ready to Launch?
-
-Your modern, high-performance recruitment website is ready!
-
-```bash
-npm run dev
-```
-
-**Visit: http://localhost:3000** 
-
-**Start recruiting the best drivers today!** 🚛💨
-
----
-
-**Questions? Check `START_HERE_NEXTJS.md` for the quick start guide!**
+## Useful commands
+
+| Command | Purpose |
+|---|---|
+| `npm test` | Vitest suite |
+| `npm run build` | Production build |
+| `npm run connections:check` | Integration / env readiness |
+| `npm run db:migrate` | Apply `migrations/hub/*.sql` |
+
+## Stack
+
+Next.js (App Router), TypeScript, Tailwind, NextAuth v5, Postgres, pdf-lib, web-push. Deployed on Vercel. Optional Go / Rust sidecars; TypeScript path works alone when they are unset.
+
+## Mobile app strategy (phased — Phase 1 shipped, 2–3 documented only)
+
+**Phase 1 (live):** the driver app is the installable PWA at `/hub` — offline shell, camera
+PODs, chat, pay stubs, DVIR, web push. `/app` is the public install page: Android/Chromium
+gets a real install sheet via `beforeinstallprompt`; iOS gets guided Add-to-Home-Screen
+(Safari has no programmatic prompt, and web push on iOS requires the app be installed
+first). Install events (`pwa_prompt_available` / `pwa_install_accepted` / `pwa_launch`)
+land in Vercel Analytics.
+
+**Phase 2 (when install volume justifies it): Google Play via TWA.** Bubblewrap generates
+`twa-manifest.json` from the existing manifest; requirements are HTTPS (have it), a
+Digital Asset Links `assetlinks.json` served from the origin, a one-time $25 Play fee,
+and Play's verification + 12-tester rule (~2–4 weeks wall time). Precedent: Schneider
+"Compass", Werner "Drive Werner Pro", J.B. Hunt "Carrier 360" all ship via Play.
+
+**Phase 3 (only if retention data demands it): iOS App Store.** Thin wrappers get
+rejected under Apple Guideline 4.2 ("minimum functionality"); the PWA's genuinely
+native-like features (offline queue, camera PODs, push) are the defense if pursued —
+via Capacitor, not a bare web view. Not worth the review cycles until Phase 2 numbers
+prove demand.
+
+**Critical-alert fallback (planned, not built):** native/web push is best-effort — dead
+tokens, TTL expiry, no-data zones. For genuinely critical driver alerts the plan is SMS
+fallback (no data connection required) plus the offline queue's store-and-forward for
+true dead zones. Needs an SMS provider decision (Twilio vs. carrier email-to-SMS) — an
+owner call, listed in the go-live checklist.
+
+## License
+
+© Thind Transport. All rights reserved.

@@ -1,8 +1,15 @@
 "use server"
 
 import { z } from "zod"
-import * as nodemailer from "nodemailer"
+import {
+  ATTRIBUTION_FIELD,
+  describeAttribution,
+  deserializeAttribution,
+} from "@/lib/attribution"
 import { COMPANY_INFO } from "@/lib/constants"
+import { createMailTransport, isEmailConfigured, mailFrom } from "@/lib/mailer"
+import { saveWebsiteLead } from "@/lib/hub/website-leads"
+import { honeypotTripped, publicFormBlocked } from "@/lib/public-form-guard"
 
 const leadSchema = z.object({
   name: z.string().min(2).optional(),
@@ -18,26 +25,25 @@ export type LeadState = {
   errors?: Record<string, string[]>
 }
 
-const createTransporter = () => {
-  return nodemailer.createTransport({
-    host: process.env.SMTP_HOST || "smtp.gmail.com",
-    port: parseInt(process.env.SMTP_PORT || "587"),
-    secure: false,
-    auth: {
-      user: process.env.SMTP_USER || process.env.EMAIL_USER,
-      pass: process.env.SMTP_PASS || process.env.EMAIL_PASS,
-    },
-  })
-}
-
 export async function captureLead(prevState: LeadState, formData: FormData): Promise<LeadState> {
   try {
+    // Bot filled the invisible field → fake success, no signal to tune on.
+    if (honeypotTripped(formData)) {
+      return { success: true, message: "Got it — someone from our team will reach out soon." }
+    }
+    // FormData.get returns null for absent fields; zod .optional() accepts
+    // undefined but rejects null — that mismatch silently failed EVERY lead
+    // that omitted any optional field (the apply form omits `message`).
+    const field = (key: string): string | undefined => {
+      const value = formData.get(key)
+      return typeof value === "string" && value.trim().length > 0 ? value.trim() : undefined
+    }
     const rawData = {
-      name: formData.get("name"),
-      email: formData.get("email"),
-      phone: formData.get("phone"),
-      source: formData.get("source"),
-      message: formData.get("message"),
+      name: field("name"),
+      email: field("email"),
+      phone: field("phone"),
+      source: field("source"),
+      message: field("message"),
     }
 
     const validatedData = leadSchema.safeParse(rawData)
@@ -51,28 +57,67 @@ export async function captureLead(prevState: LeadState, formData: FormData): Pro
     }
 
     const data = validatedData.data
-    const smtpUser = process.env.SMTP_USER || process.env.EMAIL_USER
-    const smtpPass = process.env.SMTP_PASS || process.env.EMAIL_PASS
 
-    console.log("Lead captured:", { ...data, timestamp: new Date().toISOString() })
+    // Same copy as the genuine-failure path below: a throttled caller learns
+    // nothing beyond "try the phone", which is also the right advice.
+    if (await publicFormBlocked(data.email)) {
+      return {
+        success: false,
+        message: `We couldn't save that just now. Call or text ${COMPANY_INFO.phone} and we'll help you directly.`,
+      }
+    }
 
-    if (smtpUser && smtpPass) {
-      const transporter = createTransporter()
-      await transporter.sendMail({
-        from: process.env.SMTP_FROM || `"Thind Transport Website" <${smtpUser}>`,
-        to: COMPANY_INFO.email,
-        replyTo: data.email,
-        subject: `Website lead${data.source ? ` — ${data.source}` : ""}`,
-        text: [
-          `Name: ${data.name || "—"}`,
-          `Email: ${data.email}`,
-          `Phone: ${data.phone || "—"}`,
-          `Source: ${data.source || "website"}`,
-          data.message ? `Message: ${data.message}` : "",
-        ]
-          .filter(Boolean)
-          .join("\n"),
-      })
+    // Database first — with SMTP unset (production today), email-only capture
+    // silently discarded every interested driver. The hub's Today screen and
+    // /hub/leads read this table, so a saved lead is a SEEN lead.
+    const savedToDb = await saveWebsiteLead({
+      name: data.name,
+      email: data.email,
+      phone: data.phone,
+      source: data.source,
+      driverType: (formData.get("driverType") as string) || null,
+      experienceYears: (formData.get("experienceYears") as string) || null,
+      message: data.message,
+      // Where the visit came from, captured on their landing page. Parsed
+      // defensively — this is a hidden field and therefore attacker-editable,
+      // so deserializeAttribution whitelists our own keys and drops the rest.
+      attribution: deserializeAttribution(formData.get(ATTRIBUTION_FIELD) as string | null),
+    })
+
+    let emailed = false
+    if (isEmailConfigured()) {
+      try {
+        const transporter = createMailTransport()
+        await transporter.sendMail({
+          from: mailFrom(),
+          to: COMPANY_INFO.email,
+          replyTo: data.email,
+          subject: `Website lead${data.source ? ` — ${data.source}` : ""}`,
+          text: [
+            `Name: ${data.name || "—"}`,
+            `Email: ${data.email}`,
+            `Phone: ${data.phone || "—"}`,
+            `Source: ${data.source || "website"}`,
+            `Came from: ${describeAttribution(
+              deserializeAttribution(formData.get(ATTRIBUTION_FIELD) as string | null)
+            )}`,
+            data.message ? `Message: ${data.message}` : "",
+          ]
+            .filter(Boolean)
+            .join("\n"),
+        })
+        emailed = true
+      } catch (err) {
+        console.error("Lead email failed (lead is in the DB):", err)
+      }
+    }
+
+    if (!savedToDb && !emailed) {
+      console.error("Lead reached NO destination:", { ...data, timestamp: new Date().toISOString() })
+      return {
+        success: false,
+        message: `We couldn't save that just now. Call or text ${COMPANY_INFO.phone} and we'll help you directly.`,
+      }
     }
 
     return {

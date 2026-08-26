@@ -1,0 +1,26 @@
+{
+  "name": "LoadOff deploy + backlog (replaces HaulDesk improvement cycle 3a)",
+  "description": "DEPRECATED prefill — use loadoff-deploy.workflow.json. Hourly at :59 UTC on main.",
+  "workflow": {
+    "triggers": [
+      {
+        "cron": {
+          "cron": "59 * * * *"
+        }
+      }
+    ],
+    "actions": [],
+    "prompts": [
+      "Run one improvement cycle per docs/agent-improvement-loop.md section 3a.\n\nRead AGENTS.md and .cursor/automation/hauldesk-improvement-cycle.prompt.md for full steps.\n\nFirst: if branch claude/hauldesk-project-setup-l1luoo has commits not on main, review them against AGENTS.md and merge them to main. Then git pull, collect \"Backlog:\" lists from recent commits, take the TOP item only, build it under AGENTS.md rules, verify with npm run build + npx vitest run, push to main.\n\nEnd your commit body with an updated \"Backlog:\" list. One item per run — if everything is green and the backlog is empty, stop without changes.\n\nRepo: ranvir01/thind-transport-website, branch main."
+    ],
+    "gitConfig": {
+      "repo": "ranvir01/thind-transport-website",
+      "branch": "main"
+    },
+    "model": "auto",
+    "agentOptions": {
+      "skipInstall": false
+    },
+    "memoryEnabled": true
+  }
+}

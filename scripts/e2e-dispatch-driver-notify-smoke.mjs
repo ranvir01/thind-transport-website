@@ -1,0 +1,176 @@
+/**
+ * Dispatch → driver push-notify smoke: books a new load assigned to Harpreet
+ * Singh (the only seeded driver with a portal login), dispatcher advances it
+ * Booked → Dispatched from the load detail page, and the driver's
+ * NotificationsBell shows the "dispatched to you" alert with an unread badge
+ * and a working deep link — the notifyDriver() best-effort push path added
+ * in loads.ts writes an in-app row regardless of VAPID config, so this is
+ * verifiable without push keys. Requested as a Backlog item after the
+ * push-notify-on-dispatch change (src/lib/hub/loads.ts).
+ *
+ * Reseeds demo data first (see reseed in e2e-lib.mjs) — the run books a new
+ * load, so the THD- reference counter advances.
+ *
+ * Usage: node scripts/e2e-dispatch-driver-notify-smoke.mjs [outputDir]
+ */
+import { mkdirSync } from "node:fs"
+import { launchBrowser, BASE, failures, check, waitForText, login, makeShot, clickByText, reseed, realConsoleErrors, waitForLoadDetail } from "./e2e-lib.mjs"
+
+const OUT = process.argv[2] ?? "e2e-shots-dispatch-notify"
+mkdirSync(OUT, { recursive: true })
+const shot = makeShot(OUT, { fullPage: true })
+
+const CUSTOMER = "Pacific Crest Logistics"
+const DRIVER = "Harpreet Singh"
+const REFERENCE = "NOTIFY-9001"
+
+async function main() {
+  reseed()
+  const browser = await launchBrowser()
+  const page = await browser.newPage()
+  await page.setViewport({ width: 1440, height: 900 })
+  const consoleErrors = []
+  page.on("console", (msg) => {
+    if (msg.type() === "error") consoleErrors.push(`${msg.location().url ?? ""} ${msg.text()}`)
+  })
+
+  console.log("1. Dispatcher books a load for Harpreet Singh")
+  await login(page, "dispatch@demo.thind")
+  await page.goto(`${BASE}/hub/loads/new`, { waitUntil: "networkidle2" })
+  await waitForText(page, "Rate con in hand? Get it on the board.")
+
+  const customerId = await page.evaluate((name) => {
+    const opt = [...document.querySelectorAll("#customer option")].find((o) => o.textContent.includes(name))
+    return opt?.value ?? null
+  }, CUSTOMER)
+  check(Boolean(customerId), `${CUSTOMER} present in the customer dropdown`)
+  await page.select("#customer", customerId)
+  await page.type("#customer_reference", REFERENCE)
+  await page.type("#commodity", "Bottled water")
+  await page.type("#weight", "38000")
+
+  const facilities = await page.$$('input[aria-label="Facility"]')
+  const cities = await page.$$('input[aria-label="City"]')
+  const states = await page.$$('input[aria-label="State"]')
+  await facilities[0].type("Kent Distribution Center")
+  await cities[0].type("Kent")
+  await states[0].type("WA")
+  await facilities[1].type("Spokane Valley Warehouse")
+  await cities[1].type("Spokane")
+  await states[1].type("WA")
+
+  await page.type("#linehaul", "1200.00")
+  await page.type("#fsc", "120.00")
+  await page.type("#loaded_miles", "280")
+
+  const driverId = await page.evaluate((name) => {
+    const opt = [...document.querySelectorAll("#driver option")].find((o) => o.textContent.includes(name))
+    return opt?.value ?? null
+  }, DRIVER)
+  check(Boolean(driverId), `${DRIVER} present in the driver dropdown`)
+  await page.select("#driver", driverId)
+  await shot(page, "01-form-filled")
+
+  await clickByText(page, "Book load")
+  await waitForText(page, "Load booked")
+  // createLoadAction awaits geocodeStops() (Nominatim, no hard timeout yet —
+  // see backlog) before redirecting; under concurrent headless-browser load
+  // this saw 15-30s+ round trips locally vs. ~50-300ms in isolation, so give
+  // this wait real headroom instead of flaking on a slow but healthy booking.
+  await page.waitForFunction(() => /\/hub\/loads\/[0-9a-f-]{36}$/.test(location.pathname), { timeout: 30000 })
+  // In isolation the render won this race and the smoke passed; inside the
+  // full rig it lost and read null — which is why this looked like a CI
+  // flake rather than the timing bug it is.
+  await waitForLoadDetail(page)
+  const reference = await page.evaluate(() => (document.body.innerText.match(/THD-\d+/) ?? [null])[0])
+  check(Boolean(reference), `load booked with a carrier reference (${reference})`)
+  check(
+    await page.evaluate((d) => document.body.innerText.includes(d), DRIVER),
+    `load detail shows the assigned driver (${DRIVER})`
+  )
+  await shot(page, "02-load-booked")
+
+  console.log("2. Dispatcher advances the load to Dispatched")
+  check(await clickByText(page, "Mark Dispatched"), "clicked Mark Dispatched on the load detail page")
+  await waitForText(page, "Moved to Dispatched")
+  // advanceLoadStatusAction awaits changeLoadStatus() (notifyDriver() included)
+  // before returning, so the toast firing already means the status write
+  // committed — the reload below sees it fresh without a settling sleep.
+  await page.reload({ waitUntil: "networkidle2" })
+  check(
+    await page.evaluate(() => document.body.innerText.toLowerCase().includes("dispatched")),
+    "load detail now shows Dispatched status"
+  )
+  await shot(page, "03-load-dispatched")
+
+  console.log("3. Driver sees the dispatch notification")
+  const ctx = await browser.createBrowserContext()
+  const driverPage = await ctx.newPage()
+  await driverPage.setViewport({ width: 390, height: 844 })
+  const driverConsoleErrors = []
+  driverPage.on("console", (msg) => {
+    if (msg.type() === "error") driverConsoleErrors.push(`${msg.location().url ?? ""} ${msg.text()}`)
+  })
+  await login(driverPage, "driver@demo.thind")
+  await driverPage.goto(`${BASE}/hub/driver`, { waitUntil: "networkidle2" })
+  await waitForText(driverPage, "Last pay")
+  // NotificationsBell's first fetch is deferred off the mount effect (setTimeout(refresh, 0))
+  // — wait for the aria-label to actually reflect the unread count instead of guessing how
+  // long that GET takes.
+  await driverPage
+    .waitForFunction(
+      () => document.querySelector('button[aria-label^="Notifications"]')?.getAttribute("aria-label")?.includes("unread"),
+      { timeout: 10000 }
+    )
+    .catch(() => {})
+
+  const badge = await driverPage.evaluate(() => {
+    const btn = document.querySelector('button[aria-label^="Notifications"]')
+    return btn?.getAttribute("aria-label") ?? null
+  })
+  check(Boolean(badge?.includes("unread")), `bell shows an unread badge (${badge})`)
+
+  await driverPage.click('button[aria-label^="Notifications"]')
+  await waitForText(driverPage, "dispatched to you")
+  await shot(driverPage, "04-driver-notification-feed")
+
+  const feedText = await driverPage.evaluate(() => document.body.innerText)
+  check(
+    feedText.toLowerCase().includes(`load ${reference?.toLowerCase()} dispatched to you`),
+    `feed item names the load (${reference})`
+  )
+
+  await driverPage.click('a[href="/hub/driver"]')
+  // NotificationsBell.tsx's toggle() awaits the mark-as-read POST before calling
+  // refresh() (fix for 65fad58's badge-resurrection race) — wait for the aria-label
+  // to actually clear instead of guessing how long that round trip takes.
+  await driverPage
+    .waitForFunction(
+      () => document.querySelector('button[aria-label^="Notifications"]')?.getAttribute("aria-label") === "Notifications",
+      { timeout: 10000 }
+    )
+    .catch(() => {})
+  const badgeAfterOpen = await driverPage.evaluate(() => {
+    const btn = document.querySelector('button[aria-label^="Notifications"]')
+    return btn?.getAttribute("aria-label") ?? null
+  })
+  check(badgeAfterOpen === "Notifications", `opening the feed cleared the unread badge (${badgeAfterOpen})`)
+
+  const realDispatcherErrors = realConsoleErrors(consoleErrors)
+  const realDriverErrors = realConsoleErrors(driverConsoleErrors)
+  check(realDispatcherErrors.length === 0, `no dispatcher console errors (${realDispatcherErrors.length})`)
+  check(realDriverErrors.length === 0, `no driver console errors (${realDriverErrors.length})`)
+
+  await browser.close()
+  if (failures.length > 0) {
+    console.error(`\nDispatch driver-notify smoke FAILED: ${failures.length} check(s):`)
+    for (const f of failures) console.error(`  - ${f}`)
+    process.exit(1)
+  }
+  console.log("\nDispatch driver-notify smoke passed.")
+}
+
+main().catch((err) => {
+  console.error(err)
+  process.exit(1)
+})

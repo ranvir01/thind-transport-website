@@ -1,44 +1,59 @@
 import { CinematicHero } from "@/components/cinematic/Hero"
+import { AudienceSelector } from "@/components/home/AudienceSelector"
 import { InfiniteTicker } from "@/components/cinematic/Ticker"
 import { RoutesSection } from "@/components/home/RoutesSection"
 import { EquipmentSection } from "@/components/home/EquipmentSection"
 import { FAQSection } from "@/components/home/FAQSection"
-import { SuccessStoriesSection } from "@/components/home/SuccessStoriesSection"
 import { TrustStrip } from "@/components/home/TrustStrip"
 import { ThindPromise } from "@/components/home/ThindPromise"
+import { OperationSection } from "@/components/home/OperationSection"
 import { DispatchBand } from "@/components/home/DispatchBand"
-import { FreightYouKnow } from "@/components/home/FreightYouKnow"
-import { ApplicationForm } from "@/components/application/ApplicationForm"
-import { ProfitCalculator } from "@/components/features/ProfitCalculator"
-import { QuickQualify } from "@/components/features/QuickQualify"
+import { PhotoBand } from "@/components/home/PhotoBand"
+import { DeferredApplicationForm, DeferredProfitCalculator, DeferredQuickQualify } from "@/components/home/DeferredHomeSections"
 import { WhySwitch } from "@/components/features/WhySwitch"
 import Link from "next/link"
 
 export default function Home() {
   return (
-    <main className="brand-page-shell relative min-h-screen selection:bg-orange selection:text-white pb-24 md:pb-0">
+    <div className="brand-page-shell relative min-h-screen selection:bg-orange-600 selection:text-white pb-24 md:pb-0">
       <CinematicHero />
+
+      {/* Three doors, immediately after the hero — see AudienceSelector for why
+          this is inline rather than a blocking gate. */}
+      <AudienceSelector />
 
       <TrustStrip />
 
       <div className="mb-12 md:mb-20">
-        <ProfitCalculator />
+        <DeferredProfitCalculator />
       </div>
 
       <WhySwitch />
+
+      <PhotoBand
+        src="/images/generated/fleet-lineup-kent.webp"
+        alt="Thind Transport Freightliner Cascadias lined up at the Kent, WA yard"
+        eyebrow="Kent, WA · Home yard"
+        headline="15 trucks. One family. Zero call centers."
+      />
+
+      <OperationSection />
 
       <DispatchBand />
 
       <ThindPromise />
 
-      <SuccessStoriesSection />
-
-      <FreightYouKnow />
+      <PhotoBand
+        src="/images/generated/truck-mountain-pass.webp"
+        alt="Illustration of a tractor-trailer crossing a mountain pass at golden hour"
+        eyebrow="All 48 states"
+        headline="The lanes you know. The miles you want."
+      />
 
       <RoutesSection />
 
       <EquipmentSection />
-      <QuickQualify />
+      <DeferredQuickQualify />
       <FAQSection />
 
       <section className="brand-section-panel py-20 md:py-28 relative overflow-hidden border-t border-steel-800">
@@ -76,7 +91,7 @@ export default function Home() {
             </div>
 
             <div className="fleet-panel overflow-hidden p-6 md:p-10 border-steel-600" data-light>
-              <ApplicationForm />
+              <DeferredApplicationForm />
             </div>
 
             <p className="text-center text-steel-400 text-sm mt-6">
@@ -88,6 +103,6 @@ export default function Home() {
       </section>
 
       <InfiniteTicker />
-    </main>
+    </div>
   )
 }

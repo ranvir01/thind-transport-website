@@ -1,0 +1,772 @@
+"use server"
+
+import { createHash } from "crypto"
+import { revalidatePath } from "next/cache"
+import { requirePermission } from "@/lib/hub/session"
+import { createLoad } from "@/lib/hub/loads"
+import { findCustomerByName, createCustomer } from "@/lib/hub/customers"
+import { createTruck } from "@/lib/hub/fleet"
+import { createDriver } from "@/lib/hub/drivers"
+import { getCarrier, getCarrierSettings } from "@/lib/hub/settings"
+import { sendDriverInviteEmail } from "@/lib/hub/driver-invite"
+import { query, hubDb } from "@/lib/hub/db"
+import { logAudit } from "@/lib/hub/audit"
+import { classifyFuelUse } from "@/lib/hub/fuel-core"
+import { parseEldOutputFile } from "@/lib/hub/eld-output-file"
+import { planEldSnapshotRows } from "@/lib/hub/eld-import"
+import { decodeVin, type VinDecodeResult } from "@/lib/hub/vin"
+import { dollarsToCents } from "@/lib/hub/types"
+import {
+  parseIntSafe, normalizeEquipment, normalizeState, parseDateSafe, splitFullName,
+  type ImportRow,
+} from "@/lib/hub/csv"
+import { actionError, actionErrorMessage } from "@/lib/hub/action-error"
+
+export interface ImportResult {
+  ok: boolean
+  imported: number
+  failed: { row: number; error: string }[]
+  customersCreated?: number
+  skippedDuplicates?: number
+  vinDecoded?: number
+  invitesSent?: number
+  invitesFailed?: number
+  /** Mileage import only: prior imported rows deleted by this quarter-replace. */
+  rowsReplaced?: number
+}
+
+type GenericRow = Record<string, string>
+
+async function truckMap(carrierId: string): Promise<Map<string, string>> {
+  const trucks = await query<{ id: string; unit_number: string }>(
+    `SELECT id, unit_number FROM hub.trucks WHERE carrier_id = $1 AND deleted_at IS NULL`,
+    [carrierId]
+  )
+  return new Map(trucks.map((t) => [t.unit_number.toLowerCase(), t.id]))
+}
+
+async function driverMap(carrierId: string): Promise<Map<string, string>> {
+  const drivers = await query<{ id: string; name: string }>(
+    `SELECT id, LOWER(first_name || ' ' || last_name) AS name FROM hub.drivers WHERE carrier_id = $1 AND deleted_at IS NULL`,
+    [carrierId]
+  )
+  return new Map(drivers.map((d) => [d.name, d.id]))
+}
+
+function rowFingerprint(row: GenericRow): string {
+  return createHash("sha256").update(JSON.stringify(row)).digest("hex").slice(0, 32)
+}
+
+/** Save/refresh a column-mapping template for one-click re-imports. */
+export async function saveImportTemplateAction(
+  kind: "loads" | "fuel" | "tolls" | "positions",
+  name: string,
+  mapping: Record<string, number | undefined>
+): Promise<{ ok: boolean; error?: string }> {
+  let user
+  try {
+    user = await requirePermission("imports:run")
+  } catch (err) {
+    return actionError(err, "Forbidden")
+  }
+  if (!name.trim()) return { ok: false, error: "Template needs a name" }
+  await query(
+    `INSERT INTO hub.import_templates (carrier_id, kind, name, mapping)
+     VALUES ($1,$2,$3,$4)
+     ON CONFLICT (carrier_id, kind, name) DO UPDATE SET mapping = $4, updated_at = NOW()`,
+    [user.carrierId, kind, name.trim(), JSON.stringify(mapping)]
+  )
+  return { ok: true }
+}
+
+export async function listImportTemplatesAction(kind: string) {
+  const user = await requirePermission("imports:run")
+  return query<{ id: string; name: string; mapping: Record<string, number> }>(
+    `SELECT id, name, mapping FROM hub.import_templates WHERE carrier_id = $1 AND kind = $2 ORDER BY name`,
+    [user.carrierId, kind]
+  )
+}
+
+// ---- Loads (historical Excel) ----
+
+export async function importLoadsAction(
+  rows: ImportRow[],
+  options: { asHistory: boolean }
+): Promise<ImportResult> {
+  let user
+  try {
+    user = await requirePermission("imports:run")
+  } catch (err) {
+    const denied = actionError(err, "Forbidden")
+    return { ok: false, imported: 0, failed: [{ row: 0, error: denied.error }] }
+  }
+  const failed: { row: number; error: string }[] = []
+  let imported = 0
+  let customersCreated = 0
+
+  const customerCache = new Map<string, string>()
+  const drivers = await driverMap(user.carrierId)
+  const trucks = await truckMap(user.carrierId)
+
+  for (let i = 0; i < rows.length; i++) {
+    const row = rows[i]
+    try {
+      const name = row.customer_name?.trim()
+      if (!name) throw new Error("Missing customer name")
+      if (!row.origin_city?.trim() || !row.dest_city?.trim()) throw new Error("Missing origin or destination")
+
+      let customerId = customerCache.get(name.toLowerCase())
+      if (!customerId) {
+        const existing = await findCustomerByName(user.carrierId, name)
+        if (existing) {
+          customerId = existing.id
+        } else {
+          const created = await createCustomer(user.carrierId, {
+            name, type: "broker", payment_terms_days: 30, factored: false, status: "active",
+          })
+          customerId = created.id
+          customersCreated++
+        }
+        customerCache.set(name.toLowerCase(), customerId)
+      }
+
+      await createLoad(
+        user.carrierId,
+        {
+          customer_id: customerId,
+          customer_reference: row.customer_reference?.trim() || null,
+          status: options.asHistory ? "settled" : "booked",
+          equipment: normalizeEquipment(row.equipment),
+          commodity: row.commodity?.trim() || null,
+          weight_lbs: parseIntSafe(row.weight_lbs),
+          linehaul_cents: dollarsToCents(row.linehaul),
+          fuel_surcharge_cents: dollarsToCents(row.fuel_surcharge),
+          accessorials: [],
+          loaded_miles: parseIntSafe(row.loaded_miles),
+          driver_id: row.driver_name ? drivers.get(row.driver_name.trim().toLowerCase()) ?? null : null,
+          truck_id: row.truck_unit ? trucks.get(row.truck_unit.trim().toLowerCase()) ?? null : null,
+          source: "import",
+          notes: row.notes?.trim() || null,
+          stops: [
+            // A stop's state is display/reporting only (it never drives tax),
+            // so an unrecognized value lands blank rather than blocking the
+            // load — but it is never guessed into a wrong-but-valid code.
+            {
+              type: "pickup",
+              city: row.origin_city.trim(),
+              state: normalizeState(row.origin_state ?? "") ?? "",
+              appt_start: parseDateSafe(row.pickup_date),
+            },
+            {
+              type: "delivery",
+              city: row.dest_city.trim(),
+              state: normalizeState(row.dest_state ?? "") ?? "",
+              appt_start: parseDateSafe(row.delivery_date),
+            },
+          ],
+        },
+        { id: user.id, name: user.name }
+      )
+      imported++
+    } catch (err) {
+      failed.push({ row: i + 1, error: actionErrorMessage(err, "Unknown error") })
+    }
+  }
+
+  await logAudit({
+    carrierId: user.carrierId, actorId: user.id, actorName: user.name,
+    entityType: "import", entityId: new Date().toISOString(),
+    action: "import_loads", newValue: { imported, failed: failed.length, customersCreated },
+  })
+
+  revalidatePath("/hub/loads")
+  revalidatePath("/hub/customers")
+  revalidatePath("/hub")
+  return { ok: failed.length === 0, imported, failed, customersCreated }
+}
+
+// ---- Setup entities (M11 onboarding): trucks / drivers / customers ----
+// Idempotent by natural key (unit #, driver name, customer name): re-importing
+// the same list skips what's already on file instead of duplicating it.
+
+export async function importTrucksAction(rows: GenericRow[]): Promise<ImportResult> {
+  let user
+  try {
+    user = await requirePermission("imports:run")
+  } catch (err) {
+    const denied = actionError(err, "Forbidden")
+    return { ok: false, imported: 0, failed: [{ row: 0, error: denied.error }] }
+  }
+  const existing = await truckMap(user.carrierId)
+  const failed: { row: number; error: string }[] = []
+  const vinCache = new Map<string, VinDecodeResult | null>()
+  let imported = 0
+  let skippedDuplicates = 0
+  let vinDecoded = 0
+
+  for (let i = 0; i < rows.length; i++) {
+    const row = rows[i]
+    try {
+      const unit = row.unit_number?.trim()
+      if (!unit) throw new Error("Missing unit #")
+      if (existing.has(unit.toLowerCase())) {
+        skippedDuplicates++
+        continue
+      }
+      const vin = row.vin?.trim().toUpperCase() || null
+      let year = parseIntSafe(row.year)
+      let make = row.make?.trim() || null
+      let model = row.model?.trim() || null
+      // Fleet lists usually carry a VIN but not year/make/model — decode fills
+      // only the gaps (the spreadsheet wins where it has a value), and a null
+      // decode (offline, bad VIN) never blocks the row.
+      if (vin && (year == null || !make || !model)) {
+        let decoded = vinCache.get(vin)
+        if (decoded === undefined) {
+          decoded = await decodeVin(vin)
+          vinCache.set(vin, decoded)
+        }
+        if (decoded) {
+          const filled =
+            (year == null && decoded.year != null) ||
+            (!make && !!decoded.make) ||
+            (!model && !!decoded.model)
+          year ??= decoded.year
+          make ??= decoded.make
+          model ??= decoded.model
+          if (filled) vinDecoded++
+        }
+      }
+      const truck = await createTruck(user.carrierId, {
+        unit_number: unit,
+        vin,
+        plate: row.plate?.trim() || null,
+        plate_state: row.plate_state ? normalizeState(row.plate_state) : null,
+        year,
+        make,
+        model,
+        ownership: /owner|o\/?o/i.test(row.ownership ?? "") ? "owner_operator" : "company",
+        status: "active",
+      })
+      existing.set(unit.toLowerCase(), truck.id)
+      imported++
+    } catch (err) {
+      failed.push({ row: i + 1, error: actionErrorMessage(err, "Unknown error") })
+    }
+  }
+
+  await logAudit({
+    carrierId: user.carrierId, actorId: user.id, actorName: user.name,
+    entityType: "import", entityId: new Date().toISOString(),
+    action: "import_trucks", newValue: { imported, failed: failed.length, skippedDuplicates, vinDecoded },
+  })
+  revalidatePath("/hub/fleet")
+  revalidatePath("/hub")
+  return { ok: failed.length === 0, imported, failed, skippedDuplicates, vinDecoded }
+}
+
+// Sent after the roster loop so one dead SMTP host can't stall row processing;
+// bail on the first failure instead of burning the connection timeout per driver.
+async function sendDriverInvites(
+  carrierId: string,
+  invites: { driverId: string; email: string; firstName: string }[]
+): Promise<number> {
+  const carrier = await getCarrier(carrierId).catch(() => null)
+  const carrierName = carrier?.name ?? "Your carrier"
+  const { createMailTransport, mailFrom } = await import("@/lib/mailer")
+  const transport = createMailTransport()
+  let sent = 0
+  for (const invite of invites) {
+    const ok = await sendDriverInviteEmail(transport, mailFrom, carrierId, carrierName, invite)
+    if (!ok) break // no auth secret configured, or one dead SMTP host — don't burn the timeout on the rest
+    sent++
+  }
+  return sent
+}
+
+export async function importDriversAction(
+  rows: GenericRow[],
+  options?: { sendInvites?: boolean }
+): Promise<ImportResult> {
+  let user
+  try {
+    user = await requirePermission("imports:run")
+  } catch (err) {
+    const denied = actionError(err, "Forbidden")
+    return { ok: false, imported: 0, failed: [{ row: 0, error: denied.error }] }
+  }
+  const existing = await driverMap(user.carrierId)
+  // Pay defaults come from the workspace settings the owner set in the signup
+  // wizard — every imported driver starts on the standard company rate.
+  const settings = await getCarrierSettings(user.carrierId)
+  const failed: { row: number; error: string }[] = []
+  const inviteQueue: { driverId: string; email: string; firstName: string }[] = []
+  let imported = 0
+  let skippedDuplicates = 0
+
+  for (let i = 0; i < rows.length; i++) {
+    const row = rows[i]
+    try {
+      let first = row.first_name?.trim()
+      let last = row.last_name?.trim()
+      // Rosters with one combined "Driver Name" column: split it wherever the
+      // dedicated first/last columns didn't supply a value ("Last, First" and
+      // "First [Middle] Last" both work). Explicit columns always win.
+      if (!first || !last) {
+        const split = splitFullName(row.full_name)
+        if (split) {
+          first ||= split.first
+          last ||= split.last
+        }
+      }
+      if (!first || !last) throw new Error("Missing first or last name")
+      const nameKey = `${first} ${last}`.toLowerCase()
+      if (existing.has(nameKey)) {
+        skippedDuplicates++
+        continue
+      }
+      const driver = await createDriver(user.carrierId, {
+        first_name: first,
+        last_name: last,
+        phone: row.phone?.trim() || null,
+        email: row.email?.trim() || null,
+        cdl_number: row.cdl_number?.trim() || null,
+        cdl_state: row.cdl_state ? normalizeState(row.cdl_state) : null,
+        cdl_expiry: parseDateSafe(row.cdl_expiry),
+        medical_card_expiry: parseDateSafe(row.medical_card_expiry),
+        hire_date: parseDateSafe(row.hire_date),
+        pay_type: "per_mile",
+        // hub.drivers.pay_rate is still a fractional-dollar column (its own
+        // conversion is a separate migration), so convert at the boundary.
+        pay_rate: settings.pay.companyDriverPerMileCents / 100,
+        pay_loaded_miles_only: settings.pay.payLoadedMilesOnly,
+        status: "active",
+      })
+      existing.set(nameKey, driver.id)
+      imported++
+      const email = row.email?.trim().toLowerCase()
+      if (options?.sendInvites && email && email.includes("@")) {
+        inviteQueue.push({ driverId: driver.id, email, firstName: first })
+      }
+    } catch (err) {
+      failed.push({ row: i + 1, error: actionErrorMessage(err, "Unknown error") })
+    }
+  }
+
+  const invitesSent = inviteQueue.length > 0 ? await sendDriverInvites(user.carrierId, inviteQueue) : 0
+  const invitesFailed = inviteQueue.length - invitesSent
+
+  await logAudit({
+    carrierId: user.carrierId, actorId: user.id, actorName: user.name,
+    entityType: "import", entityId: new Date().toISOString(),
+    action: "import_drivers", newValue: { imported, failed: failed.length, skippedDuplicates, invitesSent, invitesFailed },
+  })
+  revalidatePath("/hub/drivers")
+  revalidatePath("/hub")
+  return { ok: failed.length === 0, imported, failed, skippedDuplicates, invitesSent, invitesFailed }
+}
+
+export async function importCustomersAction(rows: GenericRow[]): Promise<ImportResult> {
+  let user
+  try {
+    user = await requirePermission("imports:run")
+  } catch (err) {
+    const denied = actionError(err, "Forbidden")
+    return { ok: false, imported: 0, failed: [{ row: 0, error: denied.error }] }
+  }
+  const failed: { row: number; error: string }[] = []
+  const seen = new Set<string>()
+  let imported = 0
+  let skippedDuplicates = 0
+
+  for (let i = 0; i < rows.length; i++) {
+    const row = rows[i]
+    try {
+      const name = row.name?.trim()
+      if (!name) throw new Error("Missing customer name")
+      const nameKey = name.toLowerCase()
+      if (seen.has(nameKey) || (await findCustomerByName(user.carrierId, name))) {
+        skippedDuplicates++
+        continue
+      }
+      await createCustomer(user.carrierId, {
+        name,
+        type: /ship/i.test(row.customer_type ?? "") ? "shipper" : "broker",
+        mc_number: row.mc_number?.trim() || null,
+        dot_number: row.dot_number?.trim() || null,
+        billing_email: row.billing_email?.trim() || null,
+        phone: row.phone?.trim() || null,
+        payment_terms_days: parseIntSafe(row.payment_terms_days) ?? 30,
+        factored: false,
+        status: "active",
+      })
+      seen.add(nameKey)
+      imported++
+    } catch (err) {
+      failed.push({ row: i + 1, error: actionErrorMessage(err, "Unknown error") })
+    }
+  }
+
+  await logAudit({
+    carrierId: user.carrierId, actorId: user.id, actorName: user.name,
+    entityType: "import", entityId: new Date().toISOString(),
+    action: "import_customers", newValue: { imported, failed: failed.length, skippedDuplicates },
+  })
+  revalidatePath("/hub/customers")
+  revalidatePath("/hub")
+  return { ok: failed.length === 0, imported, failed, skippedDuplicates }
+}
+
+// ---- Fuel ----
+
+export async function importFuelAction(rows: GenericRow[], program: string): Promise<ImportResult> {
+  let user
+  try {
+    user = await requirePermission("imports:run")
+  } catch (err) {
+    const denied = actionError(err, "Forbidden")
+    return { ok: false, imported: 0, failed: [{ row: 0, error: denied.error }] }
+  }
+  const failed: { row: number; error: string }[] = []
+  let imported = 0
+  let skippedDuplicates = 0
+  const trucks = await truckMap(user.carrierId)
+  const drivers = await driverMap(user.carrierId)
+  const source = `csv:${program || "fuel"}`
+
+  for (let i = 0; i < rows.length; i++) {
+    const row = rows[i]
+    try {
+      const ts = parseDateSafe(row.ts)
+      if (!ts) throw new Error("Bad date")
+      const gallons = Number(row.gallons?.replace(/[^0-9.]/g, ""))
+      if (!Number.isFinite(gallons) || gallons <= 0) throw new Error("Bad gallons")
+      const totalCents = dollarsToCents(row.total)
+      if (totalCents <= 0) throw new Error("Bad total")
+      const externalId = row.external_id?.trim() || rowFingerprint(row)
+
+      const result = await query<{ id: string }>(
+        `INSERT INTO hub.fuel_transactions (
+           carrier_id, source, external_id, card_program, truck_id, driver_id, ts, merchant, city,
+           jurisdiction, gallons, fuel_type, fuel_use, unit_price_cents, total_cents, odometer, raw
+         ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)
+         ON CONFLICT (carrier_id, source, external_id) DO NOTHING
+         RETURNING id`,
+        [
+          user.carrierId, source, externalId, program || row.card_program || null,
+          row.truck_unit ? trucks.get(row.truck_unit.trim().toLowerCase()) ?? null : null,
+          row.driver_name ? drivers.get(row.driver_name.trim().toLowerCase()) ?? null : null,
+          ts, row.merchant?.trim() || null, row.city?.trim() || null,
+          row.jurisdiction ? normalizeState(row.jurisdiction) : null,
+          gallons, row.fuel_type?.trim() || "diesel",
+          // Reefer fuel is IFTA-exempt — classify at intake, reviewable later.
+          classifyFuelUse(row.fuel_type),
+          row.unit_price ? dollarsToCents(row.unit_price) : null,
+          totalCents,
+          row.odometer ? Number(row.odometer.replace(/[^0-9.]/g, "")) || null : null,
+          JSON.stringify(row),
+        ]
+      )
+      if (result.length === 0) skippedDuplicates++
+      else imported++
+    } catch (err) {
+      failed.push({ row: i + 1, error: actionErrorMessage(err, "Unknown error") })
+    }
+  }
+  await logAudit({
+    carrierId: user.carrierId, actorId: user.id, actorName: user.name,
+    entityType: "import", entityId: new Date().toISOString(),
+    action: "import_fuel", newValue: { imported, failed: failed.length, skippedDuplicates },
+  })
+  revalidatePath("/hub/fuel")
+  return { ok: failed.length === 0, imported, failed, skippedDuplicates }
+}
+
+// ---- Tolls ----
+
+export async function importTollsAction(rows: GenericRow[], program: string): Promise<ImportResult> {
+  let user
+  try {
+    user = await requirePermission("imports:run")
+  } catch (err) {
+    const denied = actionError(err, "Forbidden")
+    return { ok: false, imported: 0, failed: [{ row: 0, error: denied.error }] }
+  }
+  const failed: { row: number; error: string }[] = []
+  let imported = 0
+  let skippedDuplicates = 0
+  const trucks = await truckMap(user.carrierId)
+  const source = `csv:${program || "tolls"}`
+
+  for (let i = 0; i < rows.length; i++) {
+    const row = rows[i]
+    try {
+      const ts = parseDateSafe(row.ts)
+      if (!ts) throw new Error("Bad date")
+      const amountCents = dollarsToCents(row.total)
+      if (amountCents <= 0) throw new Error("Bad amount")
+      const externalId = row.external_id?.trim() || rowFingerprint(row)
+      const result = await query<{ id: string }>(
+        `INSERT INTO hub.toll_transactions (carrier_id, source, external_id, transponder, truck_id, ts, plaza, jurisdiction, amount_cents, raw)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
+         ON CONFLICT (carrier_id, source, external_id) DO NOTHING RETURNING id`,
+        [
+          user.carrierId, source, externalId, row.transponder?.trim() || null,
+          row.truck_unit ? trucks.get(row.truck_unit.trim().toLowerCase()) ?? null : null,
+          ts, row.plaza?.trim() || null,
+          row.jurisdiction ? normalizeState(row.jurisdiction) : null,
+          amountCents, JSON.stringify(row),
+        ]
+      )
+      if (result.length === 0) skippedDuplicates++
+      else imported++
+    } catch (err) {
+      failed.push({ row: i + 1, error: actionErrorMessage(err, "Unknown error") })
+    }
+  }
+  await logAudit({
+    carrierId: user.carrierId, actorId: user.id, actorName: user.name,
+    entityType: "import", entityId: new Date().toISOString(),
+    action: "import_tolls", newValue: { imported, failed: failed.length, skippedDuplicates },
+  })
+  revalidatePath("/hub/fuel")
+  return { ok: failed.length === 0, imported, failed, skippedDuplicates }
+}
+
+// ---- Positions (ELD export) ----
+
+export async function importPositionsAction(rows: GenericRow[]): Promise<ImportResult> {
+  let user
+  try {
+    user = await requirePermission("imports:run")
+  } catch (err) {
+    const denied = actionError(err, "Forbidden")
+    return { ok: false, imported: 0, failed: [{ row: 0, error: denied.error }] }
+  }
+  const failed: { row: number; error: string }[] = []
+  let imported = 0
+  const trucks = await truckMap(user.carrierId)
+
+  for (let i = 0; i < rows.length; i++) {
+    const row = rows[i]
+    try {
+      const truckId = trucks.get(row.truck_unit?.trim().toLowerCase() ?? "")
+      if (!truckId) throw new Error(`Unknown truck unit "${row.truck_unit}"`)
+      const ts = parseDateSafe(row.ts)
+      if (!ts) throw new Error("Bad date")
+      const lat = Number(row.lat)
+      const lng = Number(row.lng)
+      if (!Number.isFinite(lat) || !Number.isFinite(lng)) throw new Error("Bad coordinates")
+      await query(
+        `INSERT INTO hub.position_pings (carrier_id, truck_id, ts, lat, lng, odometer, source)
+         VALUES ($1,$2,$3,$4,$5,$6,'import')`,
+        [user.carrierId, truckId, ts, lat, lng, row.odometer ? Number(row.odometer) || null : null]
+      )
+      imported++
+    } catch (err) {
+      failed.push({ row: i + 1, error: actionErrorMessage(err, "Unknown error") })
+    }
+  }
+  revalidatePath("/hub/map")
+  return { ok: failed.length === 0, imported, failed }
+}
+
+// ---- IFTA mileage (TruckX-style jurisdiction summary) ----
+
+export async function importMileageAction(rows: GenericRow[]): Promise<ImportResult> {
+  let user
+  try {
+    user = await requirePermission("imports:run")
+  } catch (err) {
+    const denied = actionError(err, "Forbidden")
+    return { ok: false, imported: 0, failed: [{ row: 0, error: denied.error }] }
+  }
+  const failed: { row: number; error: string }[] = []
+  const trucks = await truckMap(user.carrierId)
+  const { randomUUID } = await import("crypto")
+  const runId = randomUUID()
+
+  // Validate the whole file BEFORE touching the table: this import replaces
+  // the quarter's previous import, so a file that turns out to be garbage must
+  // not be able to delete miles that were fine.
+  const valid: { truckId: string; quarter: string; jurisdiction: string; miles: number }[] = []
+  for (let i = 0; i < rows.length; i++) {
+    const row = rows[i]
+    try {
+      const truckId = trucks.get(row.truck_unit?.trim().toLowerCase() ?? "")
+      if (!truckId) throw new Error(`Unknown truck unit "${row.truck_unit}"`)
+      const quarter = row.quarter?.trim().toUpperCase()
+      if (!/^\d{4}Q[1-4]$/.test(quarter ?? "")) throw new Error("Bad quarter (use 2026Q2)")
+      // A jurisdiction that isn't a real state/province is a row error, not a
+      // guess: miles filed under the wrong state hand another state the
+      // fuel-tax credit and are only found in an audit.
+      const jurisdiction = normalizeState(row.jurisdiction ?? "")
+      if (!jurisdiction) {
+        throw new Error(`Unknown jurisdiction "${(row.jurisdiction ?? "").trim()}" — use the 2-letter code (WA, MN, BC)`)
+      }
+      const miles = Number(row.miles?.replace(/[^0-9.]/g, ""))
+      if (!Number.isFinite(miles) || miles < 0) throw new Error("Bad miles")
+      valid.push({ truckId, quarter: quarter!, jurisdiction, miles })
+    } catch (err) {
+      failed.push({ row: i + 1, error: actionErrorMessage(err, "Unknown error") })
+    }
+  }
+
+  // An import REPLACES that quarter's previous import. computeIftaQuarter sums
+  // the quarter's imported rows, so re-uploading the same file used to stack a
+  // second run on top of the first and double the miles — which overpays the
+  // fuel tax. Delete + insert run in ONE transaction so a mid-import failure
+  // can never leave the quarter with no miles at all. Only quarters actually
+  // present in this file are touched.
+  let imported = 0
+  let replaced = 0
+  const quarters = [...new Set(valid.map((v) => v.quarter))].sort()
+  if (valid.length > 0) {
+    const client = await hubDb().connect()
+    try {
+      await client.query("BEGIN")
+      for (const quarter of quarters) {
+        const deleted = await client.query(
+          `DELETE FROM hub.jurisdiction_miles
+           WHERE carrier_id = $1 AND quarter = $2 AND source = 'import'`,
+          [user.carrierId, quarter]
+        )
+        replaced += deleted.rowCount ?? 0
+      }
+      for (const entry of valid) {
+        await client.query(
+          `INSERT INTO hub.jurisdiction_miles (carrier_id, run_id, truck_id, quarter, jurisdiction, miles, source)
+           VALUES ($1,$2,$3,$4,$5,$6,'import')`,
+          [user.carrierId, runId, entry.truckId, entry.quarter, entry.jurisdiction, entry.miles]
+        )
+      }
+      await client.query("COMMIT")
+      imported = valid.length
+    } catch (err) {
+      await client.query("ROLLBACK").catch(() => {})
+      return {
+        ok: false,
+        imported: 0,
+        failed: [
+          ...failed,
+          { row: 0, error: actionErrorMessage(err, "Import failed — the quarter's miles on file were left unchanged") },
+        ],
+      }
+    } finally {
+      client.release()
+    }
+  }
+
+  // This import deletes the quarter's previous mileage rows, and those miles
+  // drive the fuel-tax number — the replacement needs a trail.
+  await logAudit({
+    carrierId: user.carrierId, actorId: user.id, actorName: user.name,
+    entityType: "import", entityId: new Date().toISOString(),
+    action: "import_mileage",
+    newValue: { runId, imported, failed: failed.length, quarters, rowsReplaced: replaced },
+  })
+  revalidatePath("/hub/compliance/ifta")
+  return { ok: failed.length === 0, imported, failed, rowsReplaced: replaced }
+}
+
+// ---- ELD output file (FMCSA 49 CFR 395 Appendix A) ----
+
+export interface EldImportActionResult {
+  ok: boolean
+  eventsImported: number
+  matchedDrivers: number
+  unmatchedDrivers: string[]
+  skippedDuplicates: number
+  /** Malformed lines the parser skipped inside an otherwise good file. */
+  skippedLines: number
+  error?: string
+}
+
+/** Growth headroom over real files (a quarter's log for a small fleet runs
+ * tens of KB); past this it's the wrong file, not a big file. */
+const MAX_ELD_FILE_BYTES = 5_000_000
+
+/**
+ * The universal HOS fallback, landed: any FMCSA-registered ELD can export
+ * this file, and this action turns it into the same hos_snapshots time
+ * series the live telematics feeds write — duty log + clocks with no
+ * aggregator account anywhere. Compliance-grade (RODS), not live GPS.
+ */
+export async function importEldFileAction(fileText: string): Promise<EldImportActionResult> {
+  const fail = (error: string): EldImportActionResult => ({
+    ok: false, eventsImported: 0, matchedDrivers: 0, unmatchedDrivers: [], skippedDuplicates: 0, skippedLines: 0, error,
+  })
+  let user
+  try {
+    user = await requirePermission("imports:run")
+  } catch (err) {
+    return fail(actionError(err, "Forbidden").error)
+  }
+  if (fileText.length > MAX_ELD_FILE_BYTES) {
+    return fail("File too large for an ELD output file — export a single log period from the device.")
+  }
+
+  const parsed = parseEldOutputFile(fileText)
+  if (!parsed.ok) return fail(parsed.reason)
+
+  const drivers = await driverMap(user.carrierId)
+  // 70/8 — the cycle for a carrier operating every day of the week, which
+  // Thind does. No carrier-level cycle setting exists yet; whether any tenant
+  // runs 60/7 is literally a worksheet question for the owner, and until it
+  // is answered the answer here matches computeHos's own default.
+  const cycle = 70 as const
+
+  const driverIds = [...new Set([...drivers.values()])]
+  const existingRows = driverIds.length
+    ? await query<{ driver_id: string; ts: string }>(
+        `SELECT driver_id, ts FROM hub.hos_snapshots
+         WHERE carrier_id = $1 AND source = 'eld-file' AND driver_id = ANY($2::uuid[])`,
+        [user.carrierId, driverIds]
+      )
+    : []
+  const existingTsByDriver = new Map<string, Set<string>>()
+  for (const row of existingRows) {
+    const set = existingTsByDriver.get(row.driver_id) ?? new Set<string>()
+    set.add(new Date(row.ts).toISOString())
+    existingTsByDriver.set(row.driver_id, set)
+  }
+
+  const plan = planEldSnapshotRows(parsed, drivers, existingTsByDriver, { cycle })
+
+  for (const row of plan.rows) {
+    await query(
+      `INSERT INTO hub.hos_snapshots (carrier_id, driver_id, ts, duty_status,
+         drive_remaining_minutes, shift_remaining_minutes, cycle_remaining_minutes, source)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,'eld-file')`,
+      [
+        user.carrierId, row.driverId, row.ts, row.dutyStatus,
+        row.driveRemainingMinutes ?? null, row.shiftRemainingMinutes ?? null, row.cycleRemainingMinutes ?? null,
+      ]
+    )
+  }
+
+  await logAudit({
+    carrierId: user.carrierId,
+    actorId: user.id,
+    entityType: "hos_snapshots",
+    entityId: "eld-file",
+    action: "import",
+    newValue: {
+      events: plan.rows.length,
+      drivers: plan.matchedDrivers,
+      unmatched: plan.unmatchedDrivers,
+      eld: parsed.header.eldIdentifier,
+    },
+  })
+  revalidatePath("/hub/drivers")
+  revalidatePath("/hub/map")
+
+  return {
+    ok: true,
+    eventsImported: plan.rows.length,
+    matchedDrivers: plan.matchedDrivers,
+    unmatchedDrivers: plan.unmatchedDrivers,
+    skippedDuplicates: plan.skippedDuplicates,
+    skippedLines: parsed.skippedLines,
+  }
+}

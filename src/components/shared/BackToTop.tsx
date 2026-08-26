@@ -1,10 +1,11 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { motion, AnimatePresence } from "framer-motion"
+import { usePathname } from "next/navigation"
 import { ChevronUp } from "lucide-react"
 
 export function BackToTop() {
+  const pathname = usePathname()
   const [isVisible, setIsVisible] = useState(false)
 
   useEffect(() => {
@@ -18,28 +19,26 @@ export function BackToTop() {
     return () => window.removeEventListener("scroll", handleScroll)
   }, [])
 
+  if (pathname.startsWith("/hub") || pathname.startsWith("/track")) return null
+
   const scrollToTop = () => {
     window.scrollTo({
       top: 0,
-      behavior: "smooth"
+      behavior: "smooth",
     })
   }
 
   return (
-    <AnimatePresence>
+    <>
       {isVisible && (
-        <motion.button
-          initial={{ opacity: 0, scale: 0.8, y: 20 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.8, y: 20 }}
+        <button
           onClick={scrollToTop}
-          className="fixed bottom-24 right-4 z-40 md:bottom-6 md:right-6 w-12 h-12 bg-navy/90 hover:bg-navy text-white rounded-full shadow-lg flex items-center justify-center transition-colors backdrop-blur-sm border border-white/10"
+          className="motion-safe:animate-dropdown-in fixed bottom-24 right-4 z-40 md:bottom-6 md:right-6 w-12 h-12 bg-navy/90 hover:bg-navy text-white rounded-full shadow-lg flex items-center justify-center transition-colors backdrop-blur-sm border border-white/10"
           aria-label="Back to top"
         >
           <ChevronUp className="w-6 h-6" />
-        </motion.button>
+        </button>
       )}
-    </AnimatePresence>
+    </>
   )
 }
-

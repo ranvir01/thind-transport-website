@@ -29,13 +29,22 @@ yarn-error.log*
 # local env files
 .env*.local
 .env
-
-# local JSON storage (dev without Postgres)
-/data/
-/uploads/
+.env.vercel.*
+vercel-env*.txt
 
 # vercel
 .vercel
+
+# local runtime data (JSON fallback storage + uploads)
+/data
+/uploads
+
+# bundled node distributions (never commit these)
+/node
+node*.tar.xz
+
+# local logs
+dev.log
 
 # typescript
 *.tsbuildinfo
@@ -44,3 +53,23 @@ next-env.d.ts
 # vite (legacy)
 dist-legacy
 
+# HaulDesk local artifacts
+e2e-shots*/
+e2e-sweep/
+e2e-run-all-logs*/
+/bin/
+services/**/target/
+services/go/hauldesk-worker/hauldesk-worker
+
+*.deb
+
+# design-qa auditor output
+.design-qa/
+.agent-scratch/
+
+# personal working materials (prompts, scratch notes) — see
+# docs/ops/OWNER_DEV_WORKFLOW.md §5; never commit these
+scratch/
+prompts/
+*.local.md
+qa-matrix/

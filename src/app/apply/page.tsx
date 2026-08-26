@@ -4,6 +4,8 @@ import { ApplicationForm } from "@/components/application/ApplicationForm"
 import { COMPANY_INFO, PAY_RATES } from "@/lib/constants"
 import { FAQAccordion } from "@/components/shared/FAQAccordion"
 import { PageBreadcrumb } from "@/components/shared/PageBreadcrumb"
+import { RelatedLinks } from "@/components/shared/RelatedLinks"
+import { driverLinks } from "@/components/shared/link-sets"
 import {
   BadgeCheck,
   CheckCircle2,
@@ -105,14 +107,14 @@ export default function ApplyPage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jobPostingSchema) }}
       />
 
-      <div className="brand-page-shell min-h-screen overflow-x-hidden bg-[#00060D]">
+      <div className="brand-page-shell min-h-screen overflow-x-hidden bg-[#060607]">
         <PageBreadcrumb pageName="Apply Now" category="Drivers" />
 
-        <section className="border-b border-white/5 bg-[#00060D] py-10 md:py-20">
+        <section className="border-b border-white/5 bg-[#060607] py-10 md:py-20">
           <div className="container">
             <div className="grid items-start gap-8 lg:grid-cols-12 lg:gap-12">
               <div className="lg:col-span-5 lg:sticky lg:top-24 space-y-6">
-                <div className="inline-flex items-center rounded-full border border-orange-500/30 bg-orange-500/10 px-4 py-2 text-sm font-bold text-orange-300">
+                <div className="inline-flex items-center rounded-full border border-orange-500/30 bg-orange-600/10 px-4 py-2 text-sm font-bold text-orange-300">
                   CDL Class A Opportunities
                 </div>
 
@@ -127,18 +129,18 @@ export default function ApplyPage() {
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="rounded-xl border border-orange-500/30 bg-[#001F3F]/80 p-4">
+                  <div className="rounded-xl border border-orange-500/30 bg-[#17181B]/80 p-4">
                     <p className="text-xs font-bold uppercase tracking-wider text-orange-400">
                       Owner Operators
                     </p>
                     <p className="text-3xl font-black text-orange-400">{PAY_RATES.ownerOperator.commission}</p>
                     <p className="text-sm text-slate-300">gross split</p>
                   </div>
-                  <div className="rounded-xl border border-blue-500/30 bg-[#001F3F]/80 p-4">
-                    <p className="text-xs font-bold uppercase tracking-wider text-blue-400">
+                  <div className="rounded-xl border border-orange-500/30 bg-[#17181B]/80 p-4">
+                    <p className="text-xs font-bold uppercase tracking-wider text-orange-400">
                       Company Drivers
                     </p>
-                    <p className="text-3xl font-black text-blue-400">{PAY_RATES.companyDriver.otr.perMile}</p>
+                    <p className="text-3xl font-black text-orange-400">{PAY_RATES.companyDriver.otr.perMile}</p>
                     <p className="text-sm text-slate-300">OTR pay range</p>
                   </div>
                 </div>
@@ -160,19 +162,19 @@ export default function ApplyPage() {
                   ))}
                 </div>
 
-                <div className="rounded-2xl border border-white/10 bg-[#001326] p-6">
+                <div className="rounded-2xl border border-white/10 bg-[#0B0C0E] p-6">
                   <h2 className="mb-4 text-lg font-bold text-white">Before You Apply</h2>
                   <div className="space-y-3 text-sm text-slate-300">
                     <div className="flex items-start gap-3">
-                      <BadgeCheck className="mt-0.5 h-4 w-4 flex-shrink-0 text-blue-400" />
+                      <BadgeCheck className="mt-0.5 h-4 w-4 flex-shrink-0 text-green-400" />
                       <span>Valid CDL Class A license</span>
                     </div>
                     <div className="flex items-start gap-3">
-                      <BadgeCheck className="mt-0.5 h-4 w-4 flex-shrink-0 text-blue-400" />
+                      <BadgeCheck className="mt-0.5 h-4 w-4 flex-shrink-0 text-green-400" />
                       <span>Recent verifiable driving experience</span>
                     </div>
                     <div className="flex items-start gap-3">
-                      <BadgeCheck className="mt-0.5 h-4 w-4 flex-shrink-0 text-blue-400" />
+                      <BadgeCheck className="mt-0.5 h-4 w-4 flex-shrink-0 text-green-400" />
                       <span>Clean MVR and ability to meet DOT requirements</span>
                     </div>
                   </div>
@@ -181,9 +183,9 @@ export default function ApplyPage() {
 
               <div className="lg:col-span-7 w-full" id="application-form">
                 <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl" data-light>
-                  <div className="border-b border-navy-800 bg-gradient-to-r from-[#001F3F] to-[#003366] px-6 py-4">
+                  <div className="border-b border-white/10 bg-[#131418] px-6 py-4">
                     <h2 className="text-lg font-bold text-white">Start Your Application</h2>
-                    <p className="text-xs text-blue-200">
+                    <p className="text-xs text-slate-300">
                       Share your contact information and driving background. We&apos;ll follow up from there.
                     </p>
                   </div>
@@ -196,11 +198,11 @@ export default function ApplyPage() {
           </div>
         </section>
 
-        <section className="border-t border-white/5 bg-[#001326] py-12 lg:py-16">
+        <section className="border-t border-white/5 bg-[#0B0C0E] py-12 lg:py-16">
           <div className="container">
             <div className="grid gap-8 lg:grid-cols-3 lg:gap-12">
               <div className="space-y-8 lg:col-span-2">
-                <div className="rounded-2xl border border-white/5 bg-[#00060D] p-6 md:p-8">
+                <div className="rounded-2xl border border-white/5 bg-[#060607] p-6 md:p-8">
                   <h2 className="mb-6 text-2xl font-bold text-white">What To Expect</h2>
                   <div className="grid gap-6 md:grid-cols-2">
                     <div className="space-y-3">
@@ -241,14 +243,14 @@ export default function ApplyPage() {
                   </div>
                 </div>
 
-                <div className="rounded-2xl border border-white/5 bg-[#001326] p-6 md:p-8">
+                <div className="rounded-2xl border border-white/5 bg-[#0B0C0E] p-6 md:p-8">
                   <h2 className="mb-6 text-2xl font-bold text-white">Frequently Asked Questions</h2>
-                  <FAQAccordion items={faqItems} darkBackground={true} gradientColor="#001326" />
+                  <FAQAccordion items={faqItems} darkBackground={true} gradientColor="#0B0C0E" />
                 </div>
               </div>
 
               <div className="space-y-6 lg:sticky lg:top-24">
-                <div className="rounded-2xl border border-white/5 bg-[#00060D] p-6">
+                <div className="rounded-2xl border border-white/5 bg-[#060607] p-6">
                   <h3 className="mb-4 text-lg font-bold text-white">Application Notes</h3>
                   <div className="space-y-4">
                     {[
@@ -295,7 +297,7 @@ export default function ApplyPage() {
 
                 <Link
                   href="/pre-qualify"
-                  className="flex items-center justify-center gap-2 rounded-2xl border border-blue-800 bg-blue-900 px-6 py-4 font-bold text-white transition-all hover:bg-blue-800"
+                  className="flex items-center justify-center gap-2 rounded-2xl border border-white/15 bg-[#17181B] px-6 py-4 font-bold text-white transition-all hover:bg-[#212226]"
                 >
                   Not Ready Yet? Pre-Qualify
                   <ChevronRight className="h-4 w-4" />
@@ -305,6 +307,12 @@ export default function ApplyPage() {
           </div>
         </section>
       </div>
+
+      <RelatedLinks
+        title="While you're deciding"
+        intro="Everything a driver asks in the first phone call, answered on the site."
+        links={driverLinks(["/apply"])}
+      />
     </>
   )
 }

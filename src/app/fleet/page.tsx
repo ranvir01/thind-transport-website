@@ -47,6 +47,8 @@ import { cn } from "@/lib/utils"
 import { COMPANY_INFO } from "@/lib/constants"
 import { FAQAccordion } from "@/components/shared/FAQAccordion"
 import { PageBreadcrumb } from "@/components/shared/PageBreadcrumb"
+import { RelatedLinks } from "@/components/shared/RelatedLinks"
+import { freightLinks } from "@/components/shared/link-sets"
 
 // Animation variants
 const containerVariants = {
@@ -245,7 +247,7 @@ const trailers = [
     icon: Snowflake,
     count: "4+",
     specs: ["Thermo King Unit", "-20°F to 70°F Range", "Multi-Temp Ready", "GPS Tracking", "Fuel Efficient Units", "Remote Monitoring"],
-    description: "Temperature-controlled units for perishables. State-of-the-art reefer technology.",
+    description: "Temperature-controlled units for perishables, monitored on every load.",
     image: "/images/generated/trailer-reefer.png"
   },
   {
@@ -279,31 +281,6 @@ const maintenanceFeatures = [
   }
 ]
 
-// Driver testimonials specific to equipment
-const equipmentTestimonials = [
-  {
-    name: "Marcus J.",
-    role: "OTR Driver, 3 Years",
-    quote: "The Cascadia's sleeper is like a hotel room. APU keeps me comfortable all night without idling. Best equipment I've ever driven.",
-    rating: 5,
-    truck: "Freightliner Cascadia"
-  },
-  {
-    name: "Sarah T.",
-    role: "Regional Driver, 2 Years", 
-    quote: "Volvo's I-Shift is incredible. My back thanks me every day. The safety features have saved me twice in bad weather.",
-    rating: 5,
-    truck: "Volvo VNL 860"
-  },
-  {
-    name: "David R.",
-    role: "Owner Operator, 5 Years",
-    quote: "When my truck needed repairs, their shop had me back on the road in 4 hours. Other companies left me sitting for days.",
-    rating: 5,
-    truck: "Fleet Maintenance"
-  }
-]
-
 // FAQ data for SEO
 const faqs = [
   {
@@ -324,7 +301,7 @@ const faqs = [
   },
   {
     question: "How often is preventive maintenance performed?",
-    answer: "Every truck receives a full preventive maintenance inspection every 25,000 miles at our in-house shop. We also perform DOT inspections in advance of due dates. Our 98.5% uptime rate proves this system works."
+    answer: "Every truck receives a full preventive maintenance inspection every 25,000 miles at our in-house shop, and we complete DOT inspections ahead of their due dates so trucks stay on the road."
   },
   {
     question: "Can I personalize my assigned truck?",
@@ -334,9 +311,9 @@ const faqs = [
 
 // Why choose our fleet stats
 const fleetStats = [
-  { value: "98.5%", label: "Fleet Uptime", icon: TrendingUp },
-  { value: "0", label: "DOT Violations (2024)", icon: Shield },
-  { value: "< 4hrs", label: "Avg Repair Response", icon: Clock },
+  { value: "15+", label: "Trucks in Fleet", icon: TrendingUp },
+  { value: "100%", label: "APU-Equipped", icon: Shield },
+  { value: "24/7", label: "Dispatch & Roadside", icon: Clock },
   { value: "2.5yr", label: "Avg Fleet Age", icon: Calendar }
 ]
 
@@ -348,7 +325,7 @@ export default function FleetPage() {
   const [selectedTruck, setSelectedTruck] = useState<number | null>(null)
 
   return (
-    <div className="brand-page-shell min-h-screen selection:bg-orange selection:text-white">
+    <div className="brand-page-shell min-h-screen selection:bg-orange-600 selection:text-white">
       <PageBreadcrumb pageName="Our Fleet" category="Company" />
       
       {/* Hero Section with Video Option */}
@@ -382,18 +359,18 @@ export default function FleetPage() {
           }}
         />
 
-        {/* Hero image - positioned right */}
-        <div className="absolute right-0 top-0 bottom-0 w-1/2 hidden lg:block">
+        {/* Hero image — full-bleed on mobile, right half on desktop */}
+        <div className="absolute inset-0 lg:left-auto lg:right-0 lg:w-1/2">
           <div className="relative h-full">
             <Image
-              src="/images/generated/truck-cascadia.png"
-              alt="2024 Freightliner Cascadia truck - Thind Transport fleet equipment"
+              src="/images/generated/hero-cascadia-highway.webp"
+              alt="Illustration of a Freightliner Cascadia tractor on a highway"
               fill
-              className="object-cover object-center opacity-40"
+              className="object-cover object-center opacity-30 lg:opacity-50"
               priority
-              sizes="50vw"
+              sizes="(max-width: 1024px) 100vw, 50vw"
             />
-            <div className="absolute inset-0 bg-gradient-to-r from-navy via-navy/80 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-b from-navy/70 via-navy/60 to-navy lg:bg-gradient-to-r lg:from-navy lg:via-navy/80 lg:to-transparent" />
           </div>
         </div>
 
@@ -454,7 +431,7 @@ export default function FleetPage() {
               <Button 
                 asChild
                 size="lg" 
-                className="bg-orange hover:bg-orange-600 text-white font-bold text-lg px-8 py-6 shadow-cta hover:shadow-cta-hover transition-all duration-300 group"
+                className="bg-orange-600 hover:bg-orange-500 text-white font-bold text-lg px-8 py-6 shadow-cta hover:shadow-cta-hover transition-all duration-300 group"
               >
                 <Link href="/apply">
                   Apply to Drive This Equipment
@@ -569,6 +546,39 @@ export default function FleetPage() {
         </div>
       </section>
 
+      {/* Full-bleed yard photo band */}
+      <section className="relative overflow-hidden">
+        <div className="relative min-h-[45vh] w-full md:min-h-[60vh]">
+          <Image
+            src="/images/generated/fleet-lineup-kent.webp"
+            alt="Thind Transport Freightliner Cascadias and Volvo VNLs lined up at the Kent, Washington yard"
+            fill
+            sizes="100vw"
+            className="photo-kenburns object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-navy via-navy/30 to-navy/10" />
+          <div className="absolute bottom-0 left-0 right-0">
+            <div className="container px-4 pb-10 md:pb-14">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6 }}
+                className="max-w-2xl"
+              >
+                <Badge className="mb-3 bg-orange-600 text-white px-4 py-1.5 text-xs font-bold">
+                  The Yard — Kent, WA
+                </Badge>
+                <h2 className="text-3xl md:text-5xl font-black text-white leading-tight">
+                  Late-model power,
+                  <span className="text-orange"> lined up and ready.</span>
+                </h2>
+              </motion.div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Featured Equipment Section with Tabs */}
       <section id="fleet-section" className="py-20 bg-white">
         <div className="container px-4">
@@ -663,7 +673,7 @@ export default function FleetPage() {
                       
                       {/* Highlight badge */}
                       <div className="absolute top-4 left-4">
-                        <Badge className="bg-orange text-white font-bold px-3 py-1.5 shadow-lg">
+                        <Badge className="bg-orange-600 text-white font-bold px-3 py-1.5 shadow-lg">
                           {truck.highlight}
                         </Badge>
                       </div>
@@ -770,7 +780,7 @@ export default function FleetPage() {
                         <Button 
                           asChild
                           size="sm"
-                          className="bg-orange hover:bg-orange-600 text-white font-bold shadow-cta"
+                          className="bg-orange-600 hover:bg-orange-500 text-white font-bold shadow-cta"
                           onClick={(e) => e.stopPropagation()}
                         >
                           <Link href="/apply">
@@ -846,61 +856,6 @@ export default function FleetPage() {
         </div>
       </section>
 
-      {/* Driver Testimonials - Equipment Focused */}
-      <section className="py-20 bg-neutral-50">
-        <div className="container px-4">
-          <motion.div 
-            className="text-center mb-12"
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true }}
-            variants={fadeInUp}
-          >
-            <Badge className="mb-4 bg-navy text-white px-4 py-2 text-xs font-bold">
-              <Users className="h-3 w-3 mr-1.5 inline" />
-              Driver Reviews
-            </Badge>
-            <h2 className="text-3xl md:text-4xl font-black text-navy mb-4">
-              What Drivers Say About <span className="text-orange">Our Equipment</span>
-            </h2>
-            <p className="text-lg text-steel max-w-2xl mx-auto">
-              Real feedback from real drivers about the trucks they drive every day.
-            </p>
-          </motion.div>
-
-          <motion.div 
-            className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto"
-            variants={containerVariants}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true }}
-          >
-            {equipmentTestimonials.map((testimonial, idx) => (
-              <motion.div
-                key={idx}
-                variants={cardVariants}
-                className="bg-white rounded-2xl p-6 shadow-brand border border-neutral-100 hover:shadow-brand-lg transition-all duration-300"
-              >
-                <Quote className="h-8 w-8 text-orange/20 mb-4" />
-                <p className="text-steel leading-relaxed mb-6 italic">"{testimonial.quote}"</p>
-                <div className="flex items-center gap-1 mb-4">
-                  {[...Array(testimonial.rating)].map((_, i) => (
-                    <Star key={i} className="h-4 w-4 fill-orange text-orange" />
-                  ))}
-                </div>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="font-bold text-navy">{testimonial.name}</div>
-                    <div className="text-sm text-steel">{testimonial.role}</div>
-                  </div>
-                  <Badge className="bg-orange/10 text-orange text-xs">{testimonial.truck}</Badge>
-                </div>
-              </motion.div>
-            ))}
-          </motion.div>
-        </div>
-      </section>
-
       {/* Maintenance Promise Section */}
       <section className="py-20 md:py-28 bg-navy relative overflow-hidden">
         {/* Background elements */}
@@ -972,7 +927,7 @@ export default function FleetPage() {
             <Button
               asChild
               variant="outline"
-              className="border-2 border-orange text-orange hover:bg-orange hover:text-white font-bold"
+              className="border-2 border-orange text-orange hover:bg-orange-600 hover:text-white font-bold"
             >
               <Link href={`tel:${COMPANY_INFO.phoneFormatted}`}>
                 <Phone className="mr-2 h-4 w-4" />
@@ -1075,18 +1030,8 @@ export default function FleetPage() {
 
       {/* Final CTA Section */}
       <section className="py-20 md:py-28 bg-gradient-to-br from-orange via-orange-500 to-orange-600 relative overflow-hidden">
-        {/* Background pattern */}
-        <div 
-          className="absolute inset-0 opacity-10"
-          style={{
-            backgroundImage: `linear-gradient(45deg, rgba(0,0,0,0.1) 25%, transparent 25%),
-                             linear-gradient(-45deg, rgba(0,0,0,0.1) 25%, transparent 25%),
-                             linear-gradient(45deg, transparent 75%, rgba(0,0,0,0.1) 75%),
-                             linear-gradient(-45deg, transparent 75%, rgba(0,0,0,0.1) 75%)`,
-            backgroundSize: '20px 20px',
-            backgroundPosition: '0 0, 0 10px, 10px -10px, -10px 0px'
-          }}
-        />
+        {/* Soft radial glow instead of patterned backdrop */}
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(255,255,255,0.18),_transparent_60%)]" />
 
         <div className="container relative px-4">
           <motion.div 
@@ -1138,6 +1083,12 @@ export default function FleetPage() {
           </motion.div>
         </div>
       </section>
+
+      <RelatedLinks
+        title="Book the equipment"
+        intro="Specs are one thing — here's how you actually put freight on it."
+        links={freightLinks(["/fleet"])}
+      />
     </div>
   )
 }

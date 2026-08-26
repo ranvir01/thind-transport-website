@@ -31,10 +31,11 @@ export default function FieldMapperPage() {
   const [notification, setNotification] = useState<{ type: "success" | "error"; message: string } | null>(null)
   const [addMode, setAddMode] = useState(false) // Toggle for add field mode
 
-  // Load saved fields from localStorage
+  // Load saved fields from localStorage (deferred a frame to avoid blocking hydration)
   useEffect(() => {
-    const saved = localStorage.getItem(STORAGE_KEY)
-    if (saved) {
+    const frame = requestAnimationFrame(() => {
+      const saved = localStorage.getItem(STORAGE_KEY)
+      if (!saved) return
       try {
         const parsed = JSON.parse(saved)
         if (parsed.fields && Array.isArray(parsed.fields)) {
@@ -43,7 +44,8 @@ export default function FieldMapperPage() {
       } catch (e) {
         console.error("Failed to parse saved fields:", e)
       }
-    }
+    })
+    return () => cancelAnimationFrame(frame)
   }, [])
 
   // Auto-save to localStorage whenever fields change

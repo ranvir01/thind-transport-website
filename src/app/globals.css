@@ -16,15 +16,15 @@
     --mobile-bar-height: 4.5rem;
 
     /* Brand Colors (HSL values for compatibility) */
-    --primary: 217 51% 9%; /* #0B1422 */
+    --primary: 217 51% 9%; /* #131418 */
     --primary-foreground: 210 33% 97%;
     --secondary: 2 66% 56%; /* #D94B45 */
     --secondary-foreground: 210 33% 97%;
-    --brand-bg: #080d12;
-    --brand-bg-soft: #0e1621;
-    --brand-surface: #141c26;
-    --brand-surface-alt: #1a2430;
-    --brand-surface-elevated: #212d3a;
+    --brand-bg: #0B0C0E;
+    --brand-bg-soft: #121316;
+    --brand-surface: #17181b;
+    --brand-surface-alt: #1c1d21;
+    --brand-surface-elevated: #242629;
     --brand-line: rgba(180, 190, 200, 0.12);
     --brand-line-strong: rgba(180, 190, 200, 0.22);
     --brand-copy: #9ca8b6;
@@ -36,13 +36,40 @@
     --brand-gold: #f2a900;
     --brand-gold-soft: rgba(242, 169, 0, 0.13);
     --brand-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
-    --fleet-stripe: repeating-linear-gradient(
-      -45deg,
-      transparent,
-      transparent 8px,
-      rgba(224, 57, 47, 0.05) 8px,
-      rgba(224, 57, 47, 0.05) 16px
-    );
+
+    /* ======================================================================
+     * MARKETING PALETTE — docs/design/DIRECTION.md §1
+     *
+     * Authored in OKLCH so the lightness steps are perceptually even rather
+     * than eyeballed, with hex fallbacks first for any engine without oklch().
+     * The OKLCH values are EXACT conversions of the hex above them, computed
+     * rather than eyeballed — a first pass approximated them by hand and the
+     * rendered colours drifted from the verified ones, which pushed ink-3 to
+     * 4.35:1 (a fail) while the documented hex said 4.66:1.
+     * Contrast for every text/background pair is computed in DIRECTION.md;
+     * ink-3 was darkened from #6E7378 (4.46:1, a fail) to #6B7075 (4.66:1).
+     *
+     * The ground is paper, not near-black: drivers read this outdoors on a
+     * phone, the calculator is a financial instrument, and a real golden-hour
+     * yard photo has to pop rather than disappear. Dark survives as
+     * full-bleed inverted bands (`asphalt`) — punctuation, not the page.
+     * ==================================================================== */
+    --m-paper: #f6f7f7;
+    --m-paper: oklch(97.54% 0.0011 197.1);
+    --m-ink: #141618;
+    --m-ink: oklch(19.89% 0.0051 248.1);
+    --m-ink-2: #4e5257;
+    --m-ink-2: oklch(43.68% 0.0097 253.9);
+    --m-ink-3: #6b7075;
+    --m-ink-3: oklch(54.25% 0.0099 248.0);
+    --m-signal: #c42820;
+    --m-signal: oklch(53.42% 0.1928 28.7);
+    --m-signal-up: #ec5a50;
+    --m-signal-up: oklch(65.74% 0.1825 27.1);
+    --m-asphalt: #1c1f22;
+    --m-asphalt: oklch(23.74% 0.0073 248.1);
+    --m-cedar: #1e6b4f;
+    --m-cedar: oklch(47.35% 0.0872 164.6);
   }
 
   .dark {
@@ -72,8 +99,7 @@
     background-color: var(--brand-bg);
     background-image:
       radial-gradient(900px circle at 78% -5%, rgba(224, 57, 47, 0.12), transparent 45%),
-      radial-gradient(700px circle at 5% 8%, rgba(242, 169, 0, 0.06), transparent 40%),
-      var(--fleet-stripe);
+      radial-gradient(700px circle at 5% 8%, rgba(242, 169, 0, 0.06), transparent 40%);
     background-attachment: fixed;
     color: var(--brand-copy-strong);
     font-family: var(--font-sans), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -149,8 +175,11 @@
     line-height: 1.45;
   }
   
-  /* Enhanced Anchor Tag Styles */
-  a {
+  /* Enhanced Anchor Tag Styles — marketing only. The :where(:not(...)) guard
+     (zero added specificity) keeps these out of the LoadOff app: a:hover at
+     (0,1,1) was beating the app's color utilities (0,1,0), flashing every
+     hovered in-app link marketing red. */
+  a:where(:not([data-app="hauldesk"] *)) {
     color: #d6dde6;
     font-weight: 500;
     text-decoration: none;
@@ -158,7 +187,7 @@
     position: relative;
   }
 
-  a:hover {
+  a:hover:where(:not([data-app="hauldesk"] *)) {
     color: var(--brand-accent-strong);
   }
 
@@ -187,10 +216,12 @@
     margin-bottom: 0.75rem;
   }
 
-  /* Enhanced Strong and Emphasis */
+  /* Strong stays bold and INHERITS its context's color. A fixed light color
+     here (was var(--brand-copy-strong), near-white) turned every <strong> on a
+     light card or light band invisible site-wide — bold weight is the emphasis,
+     the color must follow the surrounding text so contrast holds on any surface. */
   strong {
     font-weight: 700;
-    color: var(--brand-copy-strong);
   }
 
   em {
@@ -210,7 +241,7 @@
   }
   
   .gradient-brand {
-    @apply bg-gradient-to-br from-[#0B1422] via-[#141f2f] to-[#05080e];
+    @apply bg-gradient-to-br from-[#131418] via-[#141f2f] to-[#05080e];
   }
   
   .gradient-accent {
@@ -218,7 +249,7 @@
   }
   
   .hero-cta-button {
-    @apply w-full bg-orange text-white px-8 py-4 rounded-fleet font-bold text-lg shadow-cta hover:bg-orange-400 transition-colors;
+    @apply w-full bg-orange-600 text-white px-8 py-4 rounded-fleet font-bold text-lg shadow-cta hover:bg-orange-400 transition-colors;
     font-family: var(--font-display), sans-serif;
     letter-spacing: 0.06em;
     text-transform: uppercase;
@@ -250,8 +281,7 @@
   .brand-page-shell {
     background-color: var(--brand-bg-soft);
     background-image:
-      radial-gradient(800px circle at 80% 0%, rgba(224, 57, 47, 0.1), transparent 42%),
-      var(--fleet-stripe);
+      radial-gradient(800px circle at 80% 0%, rgba(224, 57, 47, 0.1), transparent 42%);
   }
 
   .brand-section-panel {
@@ -317,33 +347,45 @@
     @apply text-center mb-10 md:mb-14;
   }
 
+  /* The accent phrase in a headline. Deliberately a SOLID colour, not a
+     gradient: this class sits on the five largest headlines on the site, and a
+     red-to-gold sweep both dated them and introduced gold as a third brand
+     colour competing with the graphite/white/red system — the accent word also
+     landed lighter than the white around it, which inverted the emphasis it was
+     supposed to create. One confident red reads as a decision; a gradient reads
+     as an effect. */
   .text-gradient-accent {
-    background: linear-gradient(100deg, var(--brand-accent-strong), var(--brand-gold));
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
-    color: transparent;
+    color: var(--brand-accent-strong);
   }
 
-  /* Hi-vis hazard stripe — red + gold for a working-fleet feel */
-  .fleet-safety-stripe {
-    height: 4px;
-    background: repeating-linear-gradient(
-      -45deg,
-      var(--brand-accent) 0,
-      var(--brand-accent) 16px,
-      var(--brand-gold) 16px,
-      var(--brand-gold) 32px
-    );
-    opacity: 0.85;
+  /* True-white chip for partner/shipper logos — exempt from the dark bg-white override */
+  .logo-chip {
+    background-color: #ffffff !important;
   }
 
-  /* Angled dividers so the page stops feeling like stacked boxes */
-  .section-clip-top {
-    clip-path: polygon(0 2.5vw, 100% 0, 100% 100%, 0 100%);
+  /* Clean horizontal brand accent — replaces the old diagonal hazard stripe */
+  .fleet-accent-line {
+    height: 3px;
+    background: linear-gradient(90deg, var(--brand-accent) 0%, var(--brand-gold) 55%, transparent 100%);
   }
-  .section-clip-bottom {
-    clip-path: polygon(0 0, 100% 0, 100% calc(100% - 2.5vw), 0 100%);
+
+  /* Slow Ken Burns drift for photographic bands. Pairs with overflow-hidden parents. */
+  .photo-kenburns {
+    animation: photo-kenburns 24s ease-in-out infinite alternate;
+    will-change: transform;
+  }
+  @keyframes photo-kenburns {
+    from {
+      transform: scale(1);
+    }
+    to {
+      transform: scale(1.08);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .photo-kenburns {
+      animation: none;
+    }
   }
 
   /* Soft floating accent orbs for section backgrounds */
@@ -426,6 +468,14 @@
   .brand-page-shell .text-red-600,
   .brand-page-shell .text-red-700,
   .brand-page-shell .text-orange-400,
+  /* orange-500/600 are the brand red at full and one step down (#E0392F /
+     #C42820). Every other accent class in this list was remapped for the dark
+     shell and these two were missed, so they kept rendering the dark step on a
+     navy panel: 3.09:1 for orange-600, below AA. They are also the two most
+     reached-for shades on these pages, which is why the gap showed up on
+     /benefits and /resources rather than staying theoretical. */
+  .brand-page-shell .text-orange-500,
+  .brand-page-shell .text-orange-600,
   .brand-page-shell .text-orange-700 {
     color: var(--brand-accent-strong) !important;
   }
@@ -540,13 +590,14 @@
   .brand-page-shell [data-light] .text-green-900,
   .brand-page-shell [data-light] .text-orange-900,
   .brand-page-shell [data-light] .text-neutral-900 {
-    color: #0f172a !important;
+    color: #121316 !important;
   }
 
   .brand-page-shell [data-light] .text-gray-600,
   .brand-page-shell [data-light] .text-gray-500,
   .brand-page-shell [data-light] .text-slate-700,
   .brand-page-shell [data-light] .text-slate-600,
+  .brand-page-shell [data-light] .text-slate-500,
   .brand-page-shell [data-light] .text-steel,
   .brand-page-shell [data-light] .text-green-800,
   .brand-page-shell [data-light] .text-green-700 {
@@ -562,12 +613,13 @@
   }
 
   .brand-page-shell [data-light] .text-orange-700 {
-    color: #c2410c !important;
+    color: #9a3412 !important;
   }
 
+  /* AA contrast on white (4.5:1+) — #c2410c instead of stock #ea580c */
   .brand-page-shell [data-light] .text-orange-600,
   .brand-page-shell [data-light] .text-orange-500 {
-    color: #ea580c !important;
+    color: #c2410c !important;
   }
 
   .brand-page-shell [data-light] .text-orange-400 {
@@ -1105,4 +1157,80 @@ button[aria-label="Contact us"]:hover {
     background: rgba(255, 255, 255, 0.3);
     border-radius: 4px;
   }
+}
+
+/* Light portal pages (dashboard, DOT wizard) — reset dark-theme text colors */
+.portal-light strong {
+  color: inherit;
+}
+.portal-light h1,
+.portal-light h2,
+.portal-light h3,
+.portal-light h4 {
+  color: #121316;
+}
+
+/* Hero entrance — CSS-only stagger so the headline paints before hydration.
+   The headline and lede animate transform only (no opacity) so they register
+   as LCP candidates on first paint. */
+@keyframes hero-rise {
+  from {
+    opacity: 0;
+    transform: translateY(22px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes hero-lift {
+  from {
+    transform: translateY(18px);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+.hero-stagger > * {
+  animation: hero-rise 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.hero-stagger > h1,
+.hero-stagger > p {
+  animation-name: hero-lift;
+}
+
+.hero-stagger > *:nth-child(2) { animation-delay: 0.07s; }
+.hero-stagger > *:nth-child(3) { animation-delay: 0.14s; }
+.hero-stagger > *:nth-child(4) { animation-delay: 0.21s; }
+.hero-stagger > *:nth-child(5) { animation-delay: 0.28s; }
+.hero-stagger > *:nth-child(6) { animation-delay: 0.35s; }
+
+/* ---- HaulDesk planner (E1) ---- */
+/* Empty days are visually loud: a soft diagonal hatch begging for a load. */
+.planner-empty-day {
+  background-image: repeating-linear-gradient(
+    -45deg,
+    transparent,
+    transparent 7px,
+    rgba(217, 164, 65, 0.07) 7px,
+    rgba(217, 164, 65, 0.07) 9px
+  );
+}
+
+/* Authentic-photo treatment: one grade across all imagery so mixed sources
+   (and AI-generated placeholders until real yard photos land) read as a
+   single shoot — slight desaturation kills the synthetic over-saturation,
+   film contrast + warm cast reads documentary, not stock. */
+.img-authentic {
+  filter: saturate(0.88) contrast(1.06) sepia(0.06);
+}
+.grain-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.05;
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="180" height="180"><filter id="g"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2"/></filter><rect width="100%25" height="100%25" filter="url(%23g)"/></svg>');
 }

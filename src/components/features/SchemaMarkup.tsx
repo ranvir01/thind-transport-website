@@ -1,20 +1,47 @@
-import { COMPANY_INFO, PAY_RATES } from "@/lib/constants"
+import { COMPANY_INFO, SERVICES, STATS } from "@/lib/constants"
 
+const SITE_URL = "https://thindtransport.com"
+
+/**
+ * Site-wide structured data: Organization (as a local freight carrier) + WebSite.
+ * Page-specific schemas (JobPosting, FAQPage, Service) live on their own pages
+ * so crawlers never see duplicate or off-topic entities.
+ */
 export function SchemaMarkup() {
   const organizationSchema = {
     "@context": "https://schema.org",
-    "@type": "Organization",
-    "@id": "https://thindtransport.com/#organization",
+    "@type": ["Organization", "LocalBusiness"],
+    "@id": `${SITE_URL}/#organization`,
     name: COMPANY_INFO.name,
-    url: "https://thindtransport.com",
-    logo: "https://thindtransport.com/branding/thind-transport-logo.svg",
+    legalName: `${COMPANY_INFO.name} LLC`,
+    url: SITE_URL,
+    logo: `${SITE_URL}/branding/thind-transport-logo.svg`,
+    image: `${SITE_URL}/og-image.png`,
     description:
-      "Family-run trucking company based in Kent, Washington serving flatbed, reefer, and dry van freight.",
+      "Family-run trucking company based in Kent, Washington. Flatbed, reefer, and dry van freight across the lower 48 — hiring CDL-A company drivers and owner-operators.",
+    slogan: "You drive. We handle the rest.",
     founder: {
       "@type": "Person",
       name: COMPANY_INFO.owner,
     },
     foundingDate: String(COMPANY_INFO.founded),
+    numberOfEmployees: {
+      "@type": "QuantitativeValue",
+      minValue: STATS.activeDrivers,
+    },
+    naics: "484121",
+    identifier: [
+      {
+        "@type": "PropertyValue",
+        propertyID: "USDOT",
+        value: COMPANY_INFO.dot,
+      },
+      {
+        "@type": "PropertyValue",
+        propertyID: "MC",
+        value: COMPANY_INFO.mc,
+      },
+    ],
     address: {
       "@type": "PostalAddress",
       streetAddress: "PO Box 5114",
@@ -23,18 +50,20 @@ export function SchemaMarkup() {
       postalCode: "98064",
       addressCountry: "US",
     },
+    areaServed: {
+      "@type": "Country",
+      name: "United States",
+    },
+    knowsAbout: [...SERVICES.types, "Freight transportation", "CDL Class A driving jobs", "Owner operator programs"],
+    telephone: COMPANY_INFO.phoneFormatted,
+    email: COMPANY_INFO.email,
     contactPoint: [
       {
         "@type": "ContactPoint",
         telephone: COMPANY_INFO.phoneFormatted,
         contactType: "recruiting",
         areaServed: "US",
-        availableLanguage: ["English"],
-      },
-      {
-        "@type": "ContactPoint",
-        email: COMPANY_INFO.email,
-        contactType: "customer support",
+        availableLanguage: ["English", "Punjabi", "Hindi"],
       },
     ],
   }
@@ -42,72 +71,17 @@ export function SchemaMarkup() {
   const websiteSchema = {
     "@context": "https://schema.org",
     "@type": "WebSite",
-    "@id": "https://thindtransport.com/#website",
+    "@id": `${SITE_URL}/#website`,
     name: COMPANY_INFO.name,
-    url: "https://thindtransport.com",
+    url: SITE_URL,
+    inLanguage: "en-US",
     publisher: {
-      "@id": "https://thindtransport.com/#organization",
+      "@id": `${SITE_URL}/#organization`,
     },
-  }
-
-  const jobPostingSchema = {
-    "@context": "https://schema.org",
-    "@type": "JobPosting",
-    title: "CDL Class A Driver Opportunities",
-    description: `${COMPANY_INFO.name} is hiring experienced CDL Class A company drivers and owner operators. Weekly settlements, direct support, and flatbed, reefer, and dry van opportunities are available.`,
-    identifier: {
-      "@type": "PropertyValue",
-      name: COMPANY_INFO.name,
-      value: "driver-opportunities",
-    },
-    datePosted: new Date().toISOString().split("T")[0],
-    validThrough: new Date(new Date().setFullYear(new Date().getFullYear() + 1))
-      .toISOString()
-      .split("T")[0],
-    employmentType: ["FULL_TIME", "CONTRACTOR"],
-    hiringOrganization: {
-      "@id": "https://thindtransport.com/#organization",
-    },
-    jobLocation: {
-      "@type": "Place",
-      address: {
-        "@type": "PostalAddress",
-        addressLocality: "Kent",
-        addressRegion: "WA",
-        postalCode: "98064",
-        addressCountry: "US",
-      },
-    },
-    applicantLocationRequirements: {
-      "@type": "Country",
-      name: "US",
-    },
-    baseSalary: {
-      "@type": "MonetaryAmount",
-      currency: "USD",
-      value: {
-        "@type": "QuantitativeValue",
-        minValue: 65000,
-        maxValue: 250000,
-        unitText: "YEAR",
-      },
-    },
-    jobBenefits: [
-      "Weekly settlements",
-      "Direct dispatch support",
-      "Flatbed, reefer, and dry van opportunities",
-      `${PAY_RATES.ownerOperator.commission} owner operator split`,
-    ],
-    qualifications:
-      "Valid CDL Class A license with recent verifiable driving experience and a clean safety record.",
   }
 
   return (
     <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jobPostingSchema) }}
-      />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }}
@@ -119,4 +93,3 @@ export function SchemaMarkup() {
     </>
   )
 }
-

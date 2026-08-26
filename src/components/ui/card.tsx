@@ -12,6 +12,7 @@ const cardVariants = cva(
         elevated: "border-white/10 bg-[linear-gradient(180deg,rgba(20,31,47,0.98),rgba(11,20,34,0.98))] shadow-xl hover:shadow-2xl hover:-translate-y-1",
         ghost: "border-transparent bg-transparent shadow-none",
         outline: "border-white/10 bg-transparent shadow-sm hover:shadow-md",
+        light: "border-gray-200 bg-white text-gray-900 shadow-sm backdrop-blur-none",
       },
     },
     defaultVariants: {

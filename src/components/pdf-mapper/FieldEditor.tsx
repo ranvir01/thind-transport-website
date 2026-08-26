@@ -272,7 +272,7 @@ export default function FieldEditor({ field, onSave, onCancel, onDelete, existin
             <Button type="button" variant="outline" onClick={onCancel}>
               Cancel
             </Button>
-            <Button type="submit" className="bg-orange hover:bg-orange/90">
+            <Button type="submit" className="bg-orange-600 hover:bg-orange/90">
               Save Field
             </Button>
           </div>

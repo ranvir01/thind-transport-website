@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
-import nodemailer from "nodemailer"
 import { COMPANY_INFO } from "@/lib/constants"
+import { createMailTransport, isEmailConfigured, mailFrom } from "@/lib/mailer"
+import { HONEYPOT_FIELD, publicFormBlocked } from "@/lib/public-form-guard"
 
 export async function POST(request: Request) {
   try {
@@ -12,6 +13,11 @@ export async function POST(request: Request) {
 
     const { name, email, phone, preferredDate, preferredTime, meetingType, notes } = body
 
+    // Bot filled the invisible field → fake success, no signal to tune on.
+    if (typeof body[HONEYPOT_FIELD] === "string" && body[HONEYPOT_FIELD].trim().length > 0) {
+      return NextResponse.json({ success: true })
+    }
+
     // Basic validation so we never email blank requests or crash on missing fields
     const isEmail = typeof email === "string" && /.+@.+\..+/.test(email)
     if (!name || !isEmail || !phone || !preferredDate || !preferredTime) {
@@ -21,29 +27,27 @@ export async function POST(request: Request) {
       )
     }
 
-    const smtpUser = process.env.SMTP_USER || process.env.EMAIL_USER
-    const smtpPass = process.env.SMTP_PASS || process.env.EMAIL_PASS
+    // Throttled: same generic copy and status as any other failure, so a
+    // probe can't tell the limiter from an outage.
+    if (await publicFormBlocked(email)) {
+      return NextResponse.json(
+        { error: `We couldn't process that just now. Please call ${COMPANY_INFO.phone} and we'll set it up directly.` },
+        { status: 400 }
+      )
+    }
 
     // Gracefully degrade when email isn't configured (matches the server actions)
-    if (!smtpUser || !smtpPass) {
+    if (!isEmailConfigured()) {
       console.log("Meeting request received (email not configured):", { name, email, phone, preferredDate, preferredTime })
       return NextResponse.json({ success: true })
     }
 
     // Configure transporter
-    const transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST || "smtp.gmail.com",
-      port: parseInt(process.env.SMTP_PORT || "587"),
-      secure: false,
-      auth: {
-        user: smtpUser,
-        pass: smtpPass,
-      },
-    })
+    const transporter = createMailTransport()
 
     // Send email to owner
     await transporter.sendMail({
-      from: process.env.SMTP_FROM || "noreply@thindtransport.com",
+      from: mailFrom("Thind Transport"),
       to: "thindcarrier@gmail.com",
       subject: `Meeting Request - ${name}`,
       html: `
@@ -76,7 +80,7 @@ export async function POST(request: Request) {
 
     // Send confirmation to driver
     await transporter.sendMail({
-      from: process.env.SMTP_FROM || "noreply@thindtransport.com",
+      from: mailFrom("Thind Transport"),
       to: email,
       subject: "Meeting Request Received - Thind Transport",
       html: `

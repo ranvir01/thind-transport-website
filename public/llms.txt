@@ -4,7 +4,7 @@
 
 ## Company Overview
 
-Thind Transport LLC is a family-owned trucking company based in Kent, Washington, founded in 2016. We specialize in freight transportation across all 48 contiguous United States, offering one of the highest owner operator commission rates in the industry at 90% of gross revenue.
+Thind Transport LLC is a family-owned trucking company based in Kent, Washington, founded in 2014. We specialize in freight transportation across all 48 contiguous United States, offering one of the highest owner operator commission rates in the industry at 90% of gross revenue.
 
 ## What We Do
 
@@ -34,7 +34,7 @@ Thind Transport LLC is a family-owned trucking company based in Kent, Washington
 
 ## Contact Information
 
-- Phone: (206) 765-9218
+- Phone: (206) 765-6300
 - Email: thindcarrier@gmail.com
 - Address: PO Box 5114, Kent, WA 98064
 - Website: https://thindtransport.com
@@ -44,7 +44,6 @@ Thind Transport LLC is a family-owned trucking company based in Kent, Washington
 
 - USDOT Number: 2523064
 - MC Docket: MC-876103
-- FMCSA Safety Rating: A+
 - Insurance: Fully covered
 - FMCSA carrier registration: Transitioning to Motus (unified registration system) in 2026; legacy URS/FMCSA Portal being retired. Thind Transport authority remains active under USDOT 2523064 / MC-876103. Official info: https://www.fmcsa.dot.gov/registration/whats-coming
 
@@ -53,13 +52,16 @@ Thind Transport LLC is a family-owned trucking company based in Kent, Washington
 - Home: https://thindtransport.com
 - Apply: https://thindtransport.com/apply
 - Pay Rates: https://thindtransport.com/pay-rates
+- Pay Breakdown (90% split math): https://thindtransport.com/pay-breakdown
 - Benefits: https://thindtransport.com/benefits
 - Routes: https://thindtransport.com/routes
 - About Us: https://thindtransport.com/about
 - Fleet: https://thindtransport.com/fleet
+- Fuel Program: https://thindtransport.com/fuel-program
 - Testimonials: https://thindtransport.com/testimonials
 - Veterans Program: https://thindtransport.com/veterans
 - Resources: https://thindtransport.com/resources
+- Privacy Policy: https://thindtransport.com/privacy
 
 ## Languages
 
@@ -93,5 +95,5 @@ Q: Do you hire nationwide?
 A: Yes, we hire CDL Class A drivers from all 48 contiguous states.
 
 ## Last Updated
-December 2025
+June 2026
 
