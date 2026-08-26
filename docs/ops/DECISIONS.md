@@ -71,3 +71,16 @@ C) Re-enable Integrator only (merge redundancy); leave smoke/deploy to Claude + 
 Deferral cost: none for publishing — Claude already drains. Cost of A is extra Cursor
 automation minutes; cost of B is a single-platform merge path if Claude.ai goes dark.
 Answer: ____
+
+## D-007 | filed:2026-08-26 | class:fleet
+Q: Eventually have Grok Bots spawn extra named teammates, or write long implementation
+prompts, vs giving that to Claude (more usage already on Claude Corps)?
+A) Claude owns prompt engineering and code. Grok stays three named Bots + group chats.
+When Grok finds work that needs code or a long prompt, it posts a short paste-ready
+Claude prompt in the group and stops. [recommended — Grok Bot quota is scarcer]
+B) Let Grok spawn more named Bots as work grows (burns the ~4-slot / 6-per-group cap;
+duplicates the 14 live Claude tasks).
+C) Let Grok iterate full implementation prompts (burns Grok usage Claude already covers).
+Deferral cost: Watcher keeps inventing extra Bots and chewing Grok quota on prompt drafts.
+Answer: **A — finalized 2026-08-26.** Do not reverse without editing this file. Watcher
+paste: `docs/grok-bots/watcher.instructions.md` § HAND TO CLAUDE.

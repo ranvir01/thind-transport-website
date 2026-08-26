@@ -1,6 +1,6 @@
 # One-shot — paste this to the Watcher Grok Bot
 
-Create two sibling Grok Bots. Do not invent extra named ones. Cap: three named Bots including you. Collaboration scales with **group chats (2–6 Bots)**, not a fourth charter.
+Create two sibling Grok Bots. Do not invent extra named ones. Cap: three named Bots including you. Collaboration scales with **group chats (2–6 Bots)**, not a fourth charter. Extra code/prompt work goes to Claude (D-007 — more usage there).
 
 1. Name: **Deploy / CI**. Instructions: paste the full text of `docs/grok-bots/vercel-github.instructions.md` from github.com/ranvir01/thind-transport-website (raw file on `main`, or the open PR if that file is not on main yet). Connectors: GitHub, Vercel first.
 

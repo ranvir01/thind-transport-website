@@ -88,6 +88,11 @@ chat; they @mention and hand off so the owner is not the router. Standing groups
 and paste files: [`docs/grok-bots/GROUPS.md`](../grok-bots/GROUPS.md). Grok Bot
 still never writes git.
 
+**D-007 (final):** do not grow the Grok roster. Claude has the usage and already
+writes this repo (14 live tasks). When a Grok Bot finds code work, it posts a
+short paste-ready Claude prompt in the group and stops — it does not spawn extra
+Bots or iterate long prompts on Grok quota.
+
 Daily/weekly **build** sessions that Claude does *not* already run (office, driver, tests,
 integrations) remain import-ready Cursor Automations on Grok 4.6 (`DECISIONS.md` D-003) —
 table below. They stay off the live table until the owner imports them. **Do not import

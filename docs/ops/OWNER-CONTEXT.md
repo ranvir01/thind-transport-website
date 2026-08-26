@@ -79,6 +79,8 @@ liveness `:10`.
 Payments / Dropbox, LinkedIn). Connectors: Google / GitHub / Dropbox /
 LinkedIn / Vercel. Never git. Named Bots collaborate in **group chats
 (2–6 Bots)** — LoadOff ops, Back office, Big team — see `docs/grok-bots/GROUPS.md`.
+**D-007:** do not spawn extra Grok Bots; code and long prompts go to Claude
+(more usage there).
 
 ## AR Payments (Airtable back office)
 

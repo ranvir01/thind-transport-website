@@ -59,6 +59,8 @@ describe("grok-bot instruction files (paste-ready, ≤4k)", () => {
     expect(watcher).toMatch(/Back office/)
     expect(watcher).toMatch(/New Group Chat/)
     expect(watcher).toMatch(/@everyone/)
+    expect(watcher).toMatch(/HAND TO CLAUDE/)
+    expect(watcher).toMatch(/D-007/)
   })
 
   it("the README names the three-platform split and the never-git rule", () => {

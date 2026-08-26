@@ -47,7 +47,8 @@ It can create **sibling bots from the Grok Bot app** (not from this repo).
 Cap at three named Bots so slots stay useful. **Scale with group chats, not
 extra names** — a group holds 2–6 Bots; they @mention and hand off so you are
 not the router ([xAI: chat and collaboration](https://docs.x.ai/grok-bot/chat-and-collaboration)).
-Paste from this folder; do not freehand extra charters.
+**D-007:** extra prompt/code work goes to Claude (more usage there), not a fourth
+Grok Bot. Paste from this folder; do not freehand extra charters.
 
 | Bot | File | Connectors to start |
 |---|---|---|
@@ -61,7 +62,7 @@ Paste from this folder; do not freehand extra charters.
 |---|---|---|
 | **LoadOff ops** | Watcher + Deploy / CI | [`GROUPS.md`](GROUPS.md) |
 | **Back office** | Watcher + Airtable coach | [`GROUPS.md`](GROUPS.md) |
-| **Big team** | all three (room to add later, max 6) | [`GROUPS.md`](GROUPS.md) |
+| **Big team** | all three — do not add a fourth (D-007) | [`GROUPS.md`](GROUPS.md) |
 
 Desktop: New chat → select 2–6 Bots. iPhone: **+ → New Group Chat**. Then paste
 the matching kickoff. `@` one Bot when it owns the next step; `@everyone` only
