@@ -55,6 +55,10 @@ describe("grok-bot instruction files (paste-ready, ≤4k)", () => {
     expect(watcher).toMatch(/group chat/i)
     expect(watcher).toMatch(/2–6|2-6/)
     expect(watcher).toMatch(/Big team/)
+    expect(watcher).toMatch(/LoadOff ops/)
+    expect(watcher).toMatch(/Back office/)
+    expect(watcher).toMatch(/New Group Chat/)
+    expect(watcher).toMatch(/@everyone/)
   })
 
   it("the README names the three-platform split and the never-git rule", () => {

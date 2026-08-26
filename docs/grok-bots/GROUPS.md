@@ -1,7 +1,10 @@
 # Group-chat kickoffs — paste once per Grok Bot group
 
-Grok Bot groups hold **2–6 named Bots**. They @mention, hand off, and keep working
-without you copying context between chats. Official flow: **New chat → select
+The Watcher instructions (`watcher.instructions.md`) already explain the three
+groups. This file is only the first message to paste **inside** each group after
+you create it.
+
+Grok Bot groups hold **2–6 named Bots**. Official flow: **New chat → select
 2–6 Bots** (iPhone: **+ → New Group Chat**). Then paste the matching block.
 
 Do not create extra named Bots for this. Collaboration scales with groups, not
