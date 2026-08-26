@@ -39,8 +39,7 @@ per message. Never nag. Never claim verified unless it is.
 Standing product findings (agent-executable):
 
 1. `checkSandboxInvariants()` / `COMMITTED_STATUSES` gap (`booked` omitted).
-2. `runOverdueReminders` must fail loud (`failed` key + cron 500) — empty catch
-   made Vercel Cron green while no dunning went out.
+2. ~~`runOverdueReminders` empty catch~~ **fixed 2026-08-26** (`failed`/`deferred` + cron 500 + send cap 5).
 3. DVIR open defects not surfaced (`dvir-open-defect:` automation_key).
 
 Marketing: state pages to WA/OR/ID standard; CA next; no unverifiable claims.
