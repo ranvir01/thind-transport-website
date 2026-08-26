@@ -178,7 +178,7 @@ export default function AboutPage() {
                 </h2>
                 <div className="space-y-4 text-gray-600 leading-relaxed">
                   <p>
-                    Thind Transport was founded in 2014 by someone who spent over two decades behind the wheel.
+                    Thind Transport was founded in 2014 by someone who spent over 25 years behind the wheel.
                     After years of working for large carriers and seeing how drivers were often treated as
                     numbers rather than people, we knew there had to be a better way.
                   </p>
@@ -200,7 +200,7 @@ export default function AboutPage() {
                   <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-orange/30 via-transparent to-transparent" />
                   <div className="absolute inset-0 flex items-center justify-center">
                     <div className="text-center text-white p-8">
-                      <div className="text-6xl font-black text-orange mb-2">20+</div>
+                      <div className="text-6xl font-black text-orange mb-2">25+</div>
                       <div className="text-xl font-bold">Years of Industry Experience</div>
                       <p className="text-white/70 mt-2">
                         Our founder's hands-on experience shapes every decision we make
