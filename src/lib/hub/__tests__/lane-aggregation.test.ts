@@ -56,6 +56,13 @@ describe("avgRpmCents", () => {
 })
 
 describe("aggregateLanes", () => {
+  it("pins stop laterals to the load's carrier (both-sides tenancy)", async () => {
+    await aggregateLanes(CARRIER, 185)
+    const [sql] = queryMock.mock.calls[0]
+    expect(sql).toContain("FROM hub.stops WHERE load_id = l.id AND carrier_id = l.carrier_id AND type = 'pickup'")
+    expect(sql).toContain("FROM hub.stops WHERE load_id = l.id AND carrier_id = l.carrier_id AND type = 'delivery'")
+  })
+
   it("carrier-scopes and appends the date filter params after the carrier id", async () => {
     await aggregateLanes(CARRIER, 185, "AND l.created_at >= $2::date AND l.created_at < $3::date + 1", ["2026-01-01", "2026-03-31"])
     const [sql, params] = queryMock.mock.calls[0]

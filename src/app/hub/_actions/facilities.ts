@@ -8,6 +8,7 @@ import {
 } from "@/lib/hub/facilities"
 import { getCarrierSettings } from "@/lib/hub/settings"
 import { queryOne } from "@/lib/hub/db"
+import { logAudit } from "@/lib/hub/audit"
 import { dollarsToCents } from "@/lib/hub/types"
 import { actionError } from "@/lib/hub/action-error"
 
@@ -42,9 +43,11 @@ export async function facilityLookupAction(input: {
       `SELECT f.id,
          (SELECT ROUND(AVG(EXTRACT(EPOCH FROM (s.departed_at - s.arrived_at)) / 60))::int
             FROM hub.stops s
-            WHERE s.facility_id = f.id AND s.arrived_at IS NOT NULL AND s.departed_at IS NOT NULL
+            WHERE s.facility_id = f.id AND s.carrier_id = f.carrier_id
+              AND s.arrived_at IS NOT NULL AND s.departed_at IS NOT NULL
               AND s.departed_at > s.arrived_at) AS avg_dwell,
-         (SELECT COUNT(*)::int FROM hub.facility_notes n WHERE n.facility_id = f.id) AS note_count
+         (SELECT COUNT(*)::int FROM hub.facility_notes n
+            WHERE n.facility_id = f.id AND n.carrier_id = f.carrier_id) AS note_count
        FROM hub.facilities f
        WHERE f.carrier_id = $1 AND lower(f.name) = lower($2)
          AND ($3 = '' OR lower(coalesce(f.city, '')) = lower($3))
@@ -84,13 +87,22 @@ export async function updateFacilityAction(
     // Facility hours, lumper cost and parking are dispatch reference data that
     // drive booking and detention pricing — loads:write, not any office role.
     const user = await requirePermission("loads:write")
-    await updateFacilityInfo(user.carrierId, id, {
+    const typicalLumperCents = patch.typicalLumper ? dollarsToCents(patch.typicalLumper) : null
+    const touched = await updateFacilityInfo(user.carrierId, id, {
       hours: patch.hours?.trim() || null,
       phone: patch.phone?.trim() || null,
       overnightParking:
         patch.overnightParking === "yes" ? true : patch.overnightParking === "no" ? false : null,
-      typicalLumperCents: patch.typicalLumper ? dollarsToCents(patch.typicalLumper) : null,
+      typicalLumperCents,
       notes: patch.notes?.trim() || null,
+    })
+    if (touched === 0) {
+      return { ok: false, error: "Facility not found" }
+    }
+    await logAudit({
+      carrierId: user.carrierId, actorId: user.id, actorName: user.name,
+      entityType: "facility", entityId: id, action: "update",
+      newValue: { typicalLumperCents },
     })
     revalidatePath(`/hub/facilities/${id}`)
     revalidatePath("/hub/facilities")

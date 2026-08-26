@@ -58,6 +58,11 @@ async function main() {
     check(loginVisit.startsWith("/driver/application"), `/hub/login routed away, no loop (got ${loginVisit})`)
 
     await page.goto(`${BASE}/hub/loadboard`, { waitUntil: "networkidle2" })
+    // Roleless tokens bounce to the legacy portal — they never see office
+    // copy, so wait on leaving /hub/loadboard rather than the subtitle.
+    await page.waitForFunction(() => !location.pathname.startsWith("/hub/loadboard"), {
+      timeout: 20000,
+    })
     const officeVisit = new URL(page.url()).pathname
     check(officeVisit.startsWith("/driver/application"), `office screen refused for roleless token (got ${officeVisit})`)
     await ctx.close()

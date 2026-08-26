@@ -81,6 +81,16 @@ describe("draftSettlements uninvoiced guard", () => {
     expect(loadsSql).toContain("i.carrier_id = hub.loads.carrier_id")
   })
 
+  it("pins the stops_count subquery to the load's carrier (per_stop pay)", async () => {
+    mockRun([loadRow()])
+    await draftSettlements(CARRIER, "2026-01-05", "2026-01-11", ACTOR)
+    const loadsSql = String(queryMock.mock.calls[1][0])
+    // stopsCount feeds pay-rules per_stop extra-stop pay. An id-only COUNT
+    // would let a foreign stop row inflate the driver's settlement.
+    expect(loadsSql).toContain("FROM hub.stops s")
+    expect(loadsSql).toContain("s.load_id = hub.loads.id AND s.carrier_id = hub.loads.carrier_id")
+  })
+
   it("flags a load being paid to a driver that nobody billed", async () => {
     mockRun([loadRow({ uninvoiced: true })])
     const result = await draftSettlements(CARRIER, "2026-01-05", "2026-01-11", ACTOR)

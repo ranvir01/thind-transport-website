@@ -39,7 +39,7 @@ export async function getInvitation(token: string) {
     customer_name?: string
   }>(
     `SELECT i.*, c.name AS customer_name
-     FROM hub.portal_invitations i JOIN hub.customers c ON c.id = i.customer_id
+     FROM hub.portal_invitations i JOIN hub.customers c ON c.id = i.customer_id AND c.carrier_id = i.carrier_id
      WHERE i.token = $1`,
     [token]
   )

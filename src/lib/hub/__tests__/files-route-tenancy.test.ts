@@ -24,7 +24,7 @@ const { readFileMock, blobGetMock } = vi.hoisted(() => ({
 
 vi.mock("fs", () => ({ promises: { readFile: readFileMock } }))
 vi.mock("@vercel/blob", () => ({ get: blobGetMock }))
-vi.mock("@/lib/hub/session", () => ({ getHubUser: vi.fn() }))
+vi.mock("@/lib/hub/session", () => ({ getActiveHubUser: vi.fn() }))
 vi.mock("@/lib/hub/documents", () => ({
   localUploadPath: vi.fn((name: string) => `/uploads/${name}`),
   blobPathnameFor: vi.fn((url: string) =>
@@ -39,7 +39,7 @@ vi.mock("@/lib/hub/driver-app", () => ({
   driverFileVisible: vi.fn(async () => false),
 }))
 
-import { getHubUser } from "@/lib/hub/session"
+import { getActiveHubUser } from "@/lib/hub/session"
 // One factory instead of six hand-built session objects, each of which was
 // missing HubSessionUser's required `email` — the whole of this file's type debt.
 import { sessionUser } from "./helpers/session"
@@ -48,7 +48,7 @@ import { portalFileVisible } from "@/lib/hub/portal"
 import { driverFileVisible } from "@/lib/hub/driver-app"
 import { GET } from "@/app/api/hub/files/[name]/route"
 
-const getHubUserMock = vi.mocked(getHubUser)
+const getActiveHubUserMock = vi.mocked(getActiveHubUser)
 const resolveMock = vi.mocked(resolveHubFile)
 const portalVisibleMock = vi.mocked(portalFileVisible)
 const driverVisibleMock = vi.mocked(driverFileVisible)
@@ -70,7 +70,7 @@ function request(name = "uuid-pod.pdf") {
 }
 
 beforeEach(() => {
-  getHubUserMock.mockReset()
+  getActiveHubUserMock.mockReset()
   resolveMock.mockReset()
   resolveMock.mockResolvedValue(null)
   portalVisibleMock.mockReset()
@@ -84,14 +84,14 @@ beforeEach(() => {
 
 describe("/api/hub/files/[name] tenancy", () => {
   it("401s when not signed in, without touching disk", async () => {
-    getHubUserMock.mockResolvedValue(null)
+    getActiveHubUserMock.mockResolvedValue(null)
     const res = await request()
     expect(res.status).toBe(401)
     expect(readFileMock).not.toHaveBeenCalled()
   })
 
   it("404s a signed-in user of ANOTHER carrier — cross-tenant read by URL is refused", async () => {
-    getHubUserMock.mockResolvedValue(sessionUser({ id: "u1", name: "Mallory", role: "driver", carrierId: CARRIER_B }))
+    getActiveHubUserMock.mockResolvedValue(sessionUser({ id: "u1", name: "Mallory", role: "driver", carrierId: CARRIER_B }))
     resolveMock.mockResolvedValue(local(CARRIER_A))
     const res = await request()
     expect(res.status).toBe(404)
@@ -99,7 +99,7 @@ describe("/api/hub/files/[name] tenancy", () => {
   })
 
   it("404s a file no table claims, even for a signed-in office user", async () => {
-    getHubUserMock.mockResolvedValue(sessionUser({ id: "u1", name: "Dana", role: "owner", carrierId: CARRIER_A }))
+    getActiveHubUserMock.mockResolvedValue(sessionUser({ id: "u1", name: "Dana", role: "owner", carrierId: CARRIER_A }))
     resolveMock.mockResolvedValue(null)
     const res = await request()
     expect(res.status).toBe(404)
@@ -107,7 +107,7 @@ describe("/api/hub/files/[name] tenancy", () => {
   })
 
   it("serves the file to a user of the owning carrier", async () => {
-    getHubUserMock.mockResolvedValue(sessionUser({ id: "u1", name: "Dana", role: "owner", carrierId: CARRIER_A }))
+    getActiveHubUserMock.mockResolvedValue(sessionUser({ id: "u1", name: "Dana", role: "owner", carrierId: CARRIER_A }))
     resolveMock.mockResolvedValue(local(CARRIER_A))
     const res = await request()
     expect(res.status).toBe(200)
@@ -117,7 +117,7 @@ describe("/api/hub/files/[name] tenancy", () => {
   })
 
   it("404s a SAME-carrier broker for a file the portal does not surface (settlements, CDL scans, other customers' invoices)", async () => {
-    getHubUserMock.mockResolvedValue(sessionUser({ id: "u-broker", name: "Bree", role: "broker", carrierId: CARRIER_A }))
+    getActiveHubUserMock.mockResolvedValue(sessionUser({ id: "u-broker", name: "Bree", role: "broker", carrierId: CARRIER_A }))
     resolveMock.mockResolvedValue(local(CARRIER_A, "uuid-settlement.pdf"))
     portalVisibleMock.mockResolvedValue(false)
     const res = await request("uuid-settlement.pdf")
@@ -127,7 +127,7 @@ describe("/api/hub/files/[name] tenancy", () => {
   })
 
   it("404s a same-carrier shipper too when the portal ACL refuses", async () => {
-    getHubUserMock.mockResolvedValue(sessionUser({ id: "u-ship", name: "Sam", role: "shipper", carrierId: CARRIER_A }))
+    getActiveHubUserMock.mockResolvedValue(sessionUser({ id: "u-ship", name: "Sam", role: "shipper", carrierId: CARRIER_A }))
     resolveMock.mockResolvedValue(local(CARRIER_A))
     portalVisibleMock.mockResolvedValue(false)
     const res = await request()
@@ -136,7 +136,7 @@ describe("/api/hub/files/[name] tenancy", () => {
   })
 
   it("serves a portal-visible file (their customer's POD/invoice, packet docs) to a broker", async () => {
-    getHubUserMock.mockResolvedValue(sessionUser({ id: "u-broker", name: "Bree", role: "broker", carrierId: CARRIER_A }))
+    getActiveHubUserMock.mockResolvedValue(sessionUser({ id: "u-broker", name: "Bree", role: "broker", carrierId: CARRIER_A }))
     resolveMock.mockResolvedValue(local(CARRIER_A))
     portalVisibleMock.mockResolvedValue(true)
     const res = await request()
@@ -149,7 +149,7 @@ describe("/api/hub/files/[name] tenancy", () => {
     // passes (same carrier), and before driverFileVisible the route had no
     // further check for role 'driver' — so Harpreet's CDL scan was one
     // filename away from every other driver in the company.
-    getHubUserMock.mockResolvedValue(sessionUser({ id: "u-driver-a", name: "Driver A", role: "driver", carrierId: CARRIER_A }))
+    getActiveHubUserMock.mockResolvedValue(sessionUser({ id: "u-driver-a", name: "Driver A", role: "driver", carrierId: CARRIER_A }))
     resolveMock.mockResolvedValue(local(CARRIER_A, "harpreet-cdl.pdf"))
     driverVisibleMock.mockResolvedValue(false)
     const res = await request("harpreet-cdl.pdf")
@@ -159,7 +159,7 @@ describe("/api/hub/files/[name] tenancy", () => {
   })
 
   it("404s a SAME-carrier driver for another driver's settlement statement", async () => {
-    getHubUserMock.mockResolvedValue(sessionUser({ id: "u-driver-a", name: "Driver A", role: "driver", carrierId: CARRIER_A }))
+    getActiveHubUserMock.mockResolvedValue(sessionUser({ id: "u-driver-a", name: "Driver A", role: "driver", carrierId: CARRIER_A }))
     resolveMock.mockResolvedValue(local(CARRIER_A, "uuid-settlement.pdf"))
     driverVisibleMock.mockResolvedValue(false)
     const res = await request("uuid-settlement.pdf")
@@ -168,7 +168,7 @@ describe("/api/hub/files/[name] tenancy", () => {
   })
 
   it("serves a driver their OWN POD", async () => {
-    getHubUserMock.mockResolvedValue(sessionUser({ id: "u-driver-a", name: "Driver A", role: "driver", carrierId: CARRIER_A }))
+    getActiveHubUserMock.mockResolvedValue(sessionUser({ id: "u-driver-a", name: "Driver A", role: "driver", carrierId: CARRIER_A }))
     resolveMock.mockResolvedValue(local(CARRIER_A))
     driverVisibleMock.mockResolvedValue(true)
     const res = await request()
@@ -177,7 +177,7 @@ describe("/api/hub/files/[name] tenancy", () => {
   })
 
   it("never runs the driver ACL for an office role — tenancy alone governs there", async () => {
-    getHubUserMock.mockResolvedValue(sessionUser({ id: "u1", name: "Dana", role: "owner", carrierId: CARRIER_A }))
+    getActiveHubUserMock.mockResolvedValue(sessionUser({ id: "u1", name: "Dana", role: "owner", carrierId: CARRIER_A }))
     resolveMock.mockResolvedValue(local(CARRIER_A, "harpreet-cdl.pdf"))
     const res = await request("harpreet-cdl.pdf")
     expect(res.status).toBe(200)
@@ -185,7 +185,7 @@ describe("/api/hub/files/[name] tenancy", () => {
   })
 
   it("checks tenancy BEFORE the driver ACL — a foreign-carrier driver never reaches it", async () => {
-    getHubUserMock.mockResolvedValue(sessionUser({ id: "u1", name: "Mallory", role: "driver", carrierId: CARRIER_B }))
+    getActiveHubUserMock.mockResolvedValue(sessionUser({ id: "u1", name: "Mallory", role: "driver", carrierId: CARRIER_B }))
     resolveMock.mockResolvedValue(local(CARRIER_A))
     const res = await request()
     expect(res.status).toBe(404)
@@ -193,9 +193,9 @@ describe("/api/hub/files/[name] tenancy", () => {
   })
 
   it("serves any claimed file to platform_admin (the one role without a tenant)", async () => {
-    // Empty string, not null: getHubUser does `carrierId: user.carrierId ?? ""`
+    // Empty string, not null: getActiveHubUser does `carrierId: user.carrierId ?? ""`
     // (session.ts:29), so a null here modelled a state the app cannot produce.
-    getHubUserMock.mockResolvedValue(sessionUser({ id: "u1", name: "Admin", role: "platform_admin", carrierId: "" }))
+    getActiveHubUserMock.mockResolvedValue(sessionUser({ id: "u1", name: "Admin", role: "platform_admin", carrierId: "" }))
     resolveMock.mockResolvedValue(local(CARRIER_A))
     const res = await request()
     expect(res.status).toBe(200)
@@ -204,7 +204,7 @@ describe("/api/hub/files/[name] tenancy", () => {
 
 describe("/api/hub/files/[name] blob branch — the same guards, in production", () => {
   it("401s an UNAUTHENTICATED request and never reaches the blob store", async () => {
-    getHubUserMock.mockResolvedValue(null)
+    getActiveHubUserMock.mockResolvedValue(null)
     resolveMock.mockResolvedValue(blob(CARRIER_A))
     const res = await request()
     expect(res.status).toBe(401)
@@ -212,7 +212,7 @@ describe("/api/hub/files/[name] blob branch — the same guards, in production",
   })
 
   it("404s a FOREIGN-CARRIER user and never reaches the blob store", async () => {
-    getHubUserMock.mockResolvedValue(sessionUser({ id: "u1", name: "Mallory", role: "driver", carrierId: CARRIER_B }))
+    getActiveHubUserMock.mockResolvedValue(sessionUser({ id: "u1", name: "Mallory", role: "driver", carrierId: CARRIER_B }))
     resolveMock.mockResolvedValue(blob(CARRIER_A))
     const res = await request()
     expect(res.status).toBe(404)
@@ -222,7 +222,7 @@ describe("/api/hub/files/[name] blob branch — the same guards, in production",
   it("404s a same-carrier DRIVER the driver ACL refuses, without reaching the blob store", async () => {
     // Production path: the CDL scans and settlement PDFs this protects live in
     // blob storage, so the guard has to hold before `get()` is ever called.
-    getHubUserMock.mockResolvedValue(sessionUser({ id: "u-driver-a", name: "Driver A", role: "driver", carrierId: CARRIER_A }))
+    getActiveHubUserMock.mockResolvedValue(sessionUser({ id: "u-driver-a", name: "Driver A", role: "driver", carrierId: CARRIER_A }))
     resolveMock.mockResolvedValue(blob(CARRIER_A, "harpreet-cdl.jpg"))
     driverVisibleMock.mockResolvedValue(false)
     const res = await request("harpreet-cdl.jpg")
@@ -231,7 +231,7 @@ describe("/api/hub/files/[name] blob branch — the same guards, in production",
   })
 
   it("404s a same-carrier broker the portal ACL refuses, without reaching the blob store", async () => {
-    getHubUserMock.mockResolvedValue(sessionUser({ id: "u-broker", name: "Bree", role: "broker", carrierId: CARRIER_A }))
+    getActiveHubUserMock.mockResolvedValue(sessionUser({ id: "u-broker", name: "Bree", role: "broker", carrierId: CARRIER_A }))
     resolveMock.mockResolvedValue(blob(CARRIER_A, "uuid-cdl.jpg"))
     portalVisibleMock.mockResolvedValue(false)
     const res = await request("uuid-cdl.jpg")
@@ -240,7 +240,7 @@ describe("/api/hub/files/[name] blob branch — the same guards, in production",
   })
 
   it("streams the blob to the owning carrier, reading it PRIVATELY by hub/ pathname", async () => {
-    getHubUserMock.mockResolvedValue(sessionUser({ id: "u1", name: "Dana", role: "owner", carrierId: CARRIER_A }))
+    getActiveHubUserMock.mockResolvedValue(sessionUser({ id: "u1", name: "Dana", role: "owner", carrierId: CARRIER_A }))
     resolveMock.mockResolvedValue(blob(CARRIER_A, "uuid-pod.jpg"))
     const res = await request("uuid-pod.jpg")
     expect(res.status).toBe(200)
@@ -256,7 +256,7 @@ describe("/api/hub/files/[name] blob branch — the same guards, in production",
     // "invoice.pdf" can carry contentType text/html. These bytes now leave from the
     // hub's OWN origin (they used to come off *.blob.vercel-storage.com), so echoing
     // that type back would be stored XSS against every signed-in session.
-    getHubUserMock.mockResolvedValue(sessionUser({ id: "u1", name: "Dana", role: "owner", carrierId: CARRIER_A }))
+    getActiveHubUserMock.mockResolvedValue(sessionUser({ id: "u1", name: "Dana", role: "owner", carrierId: CARRIER_A }))
     resolveMock.mockResolvedValue(blob(CARRIER_A, "invoice.pdf"))
     blobGetMock.mockResolvedValueOnce({
       statusCode: 200 as const,
@@ -272,7 +272,7 @@ describe("/api/hub/files/[name] blob branch — the same guards, in production",
   })
 
   it("serves an unrecognised extension as octet-stream, never as the blob's own type", async () => {
-    getHubUserMock.mockResolvedValue(sessionUser({ id: "u1", name: "Dana", role: "owner", carrierId: CARRIER_A }))
+    getActiveHubUserMock.mockResolvedValue(sessionUser({ id: "u1", name: "Dana", role: "owner", carrierId: CARRIER_A }))
     resolveMock.mockResolvedValue(blob(CARRIER_A, "note.html"))
     blobGetMock.mockResolvedValueOnce({
       statusCode: 200 as const,
@@ -287,7 +287,7 @@ describe("/api/hub/files/[name] blob branch — the same guards, in production",
   })
 
   it("404s when the blob is gone instead of throwing", async () => {
-    getHubUserMock.mockResolvedValue(sessionUser({ id: "u1", name: "Dana", role: "owner", carrierId: CARRIER_A }))
+    getActiveHubUserMock.mockResolvedValue(sessionUser({ id: "u1", name: "Dana", role: "owner", carrierId: CARRIER_A }))
     resolveMock.mockResolvedValue(blob(CARRIER_A))
     blobGetMock.mockResolvedValueOnce(null as never)
     expect((await request()).status).toBe(404)
@@ -295,14 +295,14 @@ describe("/api/hub/files/[name] blob branch — the same guards, in production",
 
   it("reads a generated invoice PDF (storage null) from blob when a token is configured", async () => {
     process.env.BLOB_READ_WRITE_TOKEN = "token"
-    getHubUserMock.mockResolvedValue(sessionUser({ id: "u1", name: "Dana", role: "owner", carrierId: CARRIER_A }))
+    getActiveHubUserMock.mockResolvedValue(sessionUser({ id: "u1", name: "Dana", role: "owner", carrierId: CARRIER_A }))
     resolveMock.mockResolvedValue({ carrierId: CARRIER_A, storage: null, url: "/api/hub/files/INV.pdf" })
     expect((await request("INV.pdf")).status).toBe(200)
     expect(blobGetMock).toHaveBeenCalledWith("hub/INV.pdf", { access: "private" })
   })
 
   it("reads a generated invoice PDF from disk when no blob token is configured", async () => {
-    getHubUserMock.mockResolvedValue(sessionUser({ id: "u1", name: "Dana", role: "owner", carrierId: CARRIER_A }))
+    getActiveHubUserMock.mockResolvedValue(sessionUser({ id: "u1", name: "Dana", role: "owner", carrierId: CARRIER_A }))
     resolveMock.mockResolvedValue({ carrierId: CARRIER_A, storage: null, url: "/api/hub/files/INV.pdf" })
     expect((await request("INV.pdf")).status).toBe(200)
     expect(blobGetMock).not.toHaveBeenCalled()
@@ -323,7 +323,7 @@ describe("/api/hub/files/[name] legacy public-blob rows", () => {
   })
 
   it("still serves a row that holds an absolute blob URL, rather than 404ing", async () => {
-    getHubUserMock.mockResolvedValue(sessionUser({ id: "u1", name: "Dana", role: "owner", carrierId: CARRIER_A }))
+    getActiveHubUserMock.mockResolvedValue(sessionUser({ id: "u1", name: "Dana", role: "owner", carrierId: CARRIER_A }))
     resolveMock.mockResolvedValue({ carrierId: CARRIER_A, storage: "blob", url: LEGACY })
     const res = await request()
     expect(res.status).toBe(200)
@@ -332,7 +332,7 @@ describe("/api/hub/files/[name] legacy public-blob rows", () => {
   })
 
   it("still refuses a foreign carrier a legacy row — the guards run before the fetch", async () => {
-    getHubUserMock.mockResolvedValue(sessionUser({ id: "u1", name: "Mallory", role: "driver", carrierId: CARRIER_B }))
+    getActiveHubUserMock.mockResolvedValue(sessionUser({ id: "u1", name: "Mallory", role: "driver", carrierId: CARRIER_B }))
     resolveMock.mockResolvedValue({ carrierId: CARRIER_A, storage: "blob", url: LEGACY })
     const res = await request()
     expect(res.status).toBe(404)
@@ -340,7 +340,7 @@ describe("/api/hub/files/[name] legacy public-blob rows", () => {
   })
 
   it("ignores the legacy response's content type too", async () => {
-    getHubUserMock.mockResolvedValue(sessionUser({ id: "u1", name: "Dana", role: "owner", carrierId: CARRIER_A }))
+    getActiveHubUserMock.mockResolvedValue(sessionUser({ id: "u1", name: "Dana", role: "owner", carrierId: CARRIER_A }))
     resolveMock.mockResolvedValue({ carrierId: CARRIER_A, storage: "blob", url: LEGACY })
     fetchMock.mockResolvedValue(
       new Response(new Uint8Array([9]), { headers: { "content-type": "text/html" } })
@@ -352,7 +352,7 @@ describe("/api/hub/files/[name] legacy public-blob rows", () => {
   })
 
   it("refuses an absolute URL that is not the blob store — this route is not an open proxy", async () => {
-    getHubUserMock.mockResolvedValue(sessionUser({ id: "u1", name: "Dana", role: "owner", carrierId: CARRIER_A }))
+    getActiveHubUserMock.mockResolvedValue(sessionUser({ id: "u1", name: "Dana", role: "owner", carrierId: CARRIER_A }))
     resolveMock.mockResolvedValue({
       carrierId: CARRIER_A, storage: "blob", url: "http://169.254.169.254/latest/meta-data/",
     })

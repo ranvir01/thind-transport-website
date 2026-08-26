@@ -58,6 +58,7 @@ export async function listThreadsForOffice(
        lm.body AS last_body,
        (SELECT COUNT(*)::int FROM hub.messages m
          WHERE m.thread_id = t.id
+           AND m.carrier_id = t.carrier_id
            AND m.id > COALESCE((SELECT r.last_read_message_id FROM hub.message_reads r
                                 WHERE r.thread_id = t.id AND r.user_id = $2), 0)
            AND m.sender_id IS DISTINCT FROM $2) AS unread_count
@@ -66,7 +67,9 @@ export async function listThreadsForOffice(
      LEFT JOIN hub.drivers d ON d.id = t.driver_id AND d.carrier_id = t.carrier_id
      LEFT JOIN hub.drivers ld ON ld.id = l.driver_id AND ld.carrier_id = t.carrier_id
      LEFT JOIN LATERAL (
-       SELECT body FROM hub.messages m WHERE m.thread_id = t.id ORDER BY m.id DESC LIMIT 1
+       SELECT body FROM hub.messages m
+        WHERE m.thread_id = t.id AND m.carrier_id = t.carrier_id
+        ORDER BY m.id DESC LIMIT 1
      ) lm ON TRUE
      WHERE t.carrier_id = $1 AND t.last_message_at IS NOT NULL
      ORDER BY t.last_message_at DESC
@@ -87,6 +90,7 @@ export async function listThreadsForDriver(
        lm.body AS last_body,
        (SELECT COUNT(*)::int FROM hub.messages m
          WHERE m.thread_id = t.id
+           AND m.carrier_id = t.carrier_id
            AND m.id > COALESCE((SELECT r.last_read_message_id FROM hub.message_reads r
                                 WHERE r.thread_id = t.id AND r.user_id = $3), 0)
            AND m.sender_id IS DISTINCT FROM $3) AS unread_count
@@ -94,7 +98,9 @@ export async function listThreadsForDriver(
      LEFT JOIN hub.loads l ON l.id = t.load_id AND l.carrier_id = t.carrier_id
      LEFT JOIN hub.drivers d ON d.id = t.driver_id AND d.carrier_id = t.carrier_id
      LEFT JOIN LATERAL (
-       SELECT body FROM hub.messages m WHERE m.thread_id = t.id ORDER BY m.id DESC LIMIT 1
+       SELECT body FROM hub.messages m
+        WHERE m.thread_id = t.id AND m.carrier_id = t.carrier_id
+        ORDER BY m.id DESC LIMIT 1
      ) lm ON TRUE
      WHERE t.carrier_id = $1
        AND (t.driver_id = $2 OR l.driver_id = $2)
@@ -132,11 +138,19 @@ export async function sendMessage(
   const client = await hubDb().connect()
   try {
     await client.query("BEGIN")
+    // INSERT…SELECT (assignFuelToLoad both-sides pattern): a thread_id the
+    // caller does not own matches 0 rows, so we never write a message whose
+    // carrier_id disagrees with the thread. A following UPDATE that no-ops
+    // is not a tenancy check — the row would already be in hub.messages.
     const { rows } = await client.query(
       `INSERT INTO hub.messages (carrier_id, thread_id, sender_id, sender_name, sender_role, body, document_id)
-       VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *`,
+       SELECT $1, t.id, $3, $4, $5, $6, $7
+         FROM hub.message_threads t
+        WHERE t.id = $2 AND t.carrier_id = $1
+       RETURNING *`,
       [carrierId, threadId, input.sender.id, input.sender.name, input.sender.role, input.body, input.documentId ?? null]
     )
+    if (rows.length === 0) throw new Error("Thread not found")
     const { rows: threadRows } = await client.query(
       `UPDATE hub.message_threads SET last_message_at = NOW() WHERE id = $1 AND carrier_id = $2 RETURNING kind, load_id`,
       [threadId, carrierId]

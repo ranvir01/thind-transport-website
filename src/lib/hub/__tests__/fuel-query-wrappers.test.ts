@@ -75,6 +75,13 @@ describe("assignableLoadsForFuel", () => {
     expect(params).toEqual([CARRIER, 120])
   })
 
+  it("pins origin/dest stop laterals to the load's carrier (both-sides tenancy)", async () => {
+    await assignableLoadsForFuel(CARRIER)
+    const [sql] = queryMock.mock.calls[0]
+    expect(String(sql)).toContain("FROM hub.stops WHERE load_id = l.id AND carrier_id = l.carrier_id AND type = 'pickup'")
+    expect(String(sql)).toContain("FROM hub.stops WHERE load_id = l.id AND carrier_id = l.carrier_id AND type = 'delivery'")
+  })
+
   it("passes a caller-supplied lookback window through as the second param", async () => {
     await assignableLoadsForFuel(CARRIER, 30)
     const [, params] = queryMock.mock.calls[0]

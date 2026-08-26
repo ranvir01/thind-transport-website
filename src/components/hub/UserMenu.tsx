@@ -28,7 +28,8 @@ export function UserMenu({ name, role }: { name: string; role: string }) {
   const ref = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    setCelebrate(celebrationsEnabled())
+    // Defer: celebrationsEnabled() reads localStorage; keep SSR default (true) until after paint.
+    queueMicrotask(() => setCelebrate(celebrationsEnabled()))
   }, [])
 
   useEffect(() => {

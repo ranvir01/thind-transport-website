@@ -92,6 +92,7 @@ async function main() {
     await login(page, "owner@demo.thind")
 
     await page.goto(`${BASE}/hub/loads?status=pod_received`, { waitUntil: "networkidle2" })
+    await waitForText(page, "Search, filter, and manage every load.")
     const podHrefs = await page.evaluate(() =>
       [...new Set(
         [...document.querySelectorAll('a[href^="/hub/loads/"]')]
@@ -121,6 +122,17 @@ async function main() {
     await page.waitForFunction(() => location.pathname.startsWith("/hub/money/invoices/"), { timeout: 20000 })
     const invoicePath = await page.evaluate(() => location.pathname)
     check(!!invoicePath, `landed on the new invoice (${invoicePath})`)
+
+    // The pathname flips the instant router.push() fires — before the invoice
+    // detail's server component has streamed in, so the page is still the
+    // loading skeleton (no Summary <dt>s, no "Invoice PDF" link). Reading
+    // summaryValue()/fetchLinkBytes() here raced that skeleton and returned
+    // null on the first cold serve after a build (wider first-serve window:
+    // cold route compile, cold DB pool, cold PDF lib). Gate on the payment
+    // form, which mounts only once the detail has rendered — the same gate the
+    // invoices/business-cycle/accounting smokes already use — so every read
+    // below sees real content regardless of how slow the first serve is.
+    await page.waitForSelector("#pay_amount", { timeout: 20000 })
 
     const amount = parseCents(await summaryValue(page, "Amount"))
     const open = parseCents(await summaryValue(page, "Open balance"))
@@ -158,7 +170,7 @@ async function main() {
     // ---------------- PHASE 2: cash out ----------------
     console.log("\n=== PHASE 2: owner drafts settlements and approves one ===")
     await page.goto(`${BASE}/hub/money/settlements`, { waitUntil: "networkidle2" })
-    await waitForText(page, "Settlements")
+    await waitForText(page, "Weekly driver pay")
     await shot(page, "04-settlements-before")
 
     await clickByText(page, "Draft this week", { tag: "button" })
@@ -220,7 +232,7 @@ async function main() {
 
     // and the office UI agrees with the database
     await page.goto(`${BASE}/hub/money/advances`, { waitUntil: "networkidle2" })
-    await waitForText(page, "Advances")
+    await waitForText(page, "Cash and EFS-code advances")
     const advUi = await page.evaluate((ref) => {
       const el = [...document.querySelectorAll("p")].find((n) => n.textContent.includes(ref))
       return el?.closest("div.flex")?.textContent ?? null
@@ -236,6 +248,7 @@ async function main() {
     const { errors: driverErrors } = trackPageErrors(dpage)
 
     await dpage.goto(`${BASE}/hub/login`, { waitUntil: "networkidle2" })
+    await waitForText(dpage, "One login for dispatch, drivers, and partners.")
     await dpage.type("#email", "driver@demo.thind")
     await dpage.type("#password", "ThindDemo1!")
     await Promise.all([

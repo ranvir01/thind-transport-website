@@ -56,7 +56,7 @@ async function main() {
   console.log("1. Login as owner, open expenses")
   await login(page, "owner@demo.thind")
   await page.goto(`${BASE}/hub/money/expenses`, { waitUntil: "networkidle2" })
-  await waitForText(page, "Expenses")
+  await waitForText(page, "Reimbursables flow to settlements")
   const ownerHasForm = await page
     .waitForSelector("#exp_cat", { timeout: 10000 })
     .then(() => true)
@@ -150,7 +150,7 @@ async function main() {
   })
   await login(page2, "dispatch@demo.thind")
   await page2.goto(`${BASE}/hub/money/expenses`, { waitUntil: "networkidle2" })
-  await waitForText(page2, "Expenses")
+  await waitForText(page2, "Reimbursables flow to settlements")
   // capitalize on the category row title-cases the memo in innerText.
   const dispatcher = await page2.evaluate((memo) => ({
     hasForm: document.body.innerText.includes("Record expense"),

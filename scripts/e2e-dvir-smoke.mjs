@@ -51,6 +51,7 @@ async function main() {
   console.log("1. Driver files a defective post-trip")
   await login(driver, "driver@demo.thind")
   await driver.goto(`${BASE}/hub/driver/dvir`, { waitUntil: "networkidle2" })
+  await waitForText(driver, "Vehicle inspection")
   await waitForText(driver, "End-of-day inspection")
   // Regression: "Emergency equipment (triangles, extinguisher)" is long enough
   // to wrap onto two lines at 390px. Without min-w-0 on the label and shrink-0
@@ -82,6 +83,7 @@ async function main() {
   await clickByText(driver, "File the post-trip")
   await waitForText(driver, "truck is grounded")
   if (!(await waitForPath(driver, "/hub/driver"))) throw new Error("post-trip form did not return to the driver home after grounding the truck")
+  await waitForText(driver, "Last pay")
   console.log("   defect filed, truck grounded ✓")
 
   // Office: sees grounded truck, certifies the repair
@@ -90,6 +92,7 @@ async function main() {
   console.log("2. Office certifies the repair")
   await login(office, "dispatch@demo.thind")
   await office.goto(`${BASE}/hub/fleet`, { waitUntil: "networkidle2" })
+  await waitForText(office, "Trucks, trailers, and their paperwork.")
   const truckHref = await office.evaluate(() => {
     const link = [...document.querySelectorAll("a")].find((a) => a.getAttribute("href")?.includes("/hub/fleet/trucks/") && a.textContent?.includes("101"))
     return link?.getAttribute("href")
@@ -112,6 +115,7 @@ async function main() {
   // Driver: pre-trip review releases the truck
   console.log("3. Driver pre-trip review releases the truck")
   await driver.goto(`${BASE}/hub/driver/dvir`, { waitUntil: "networkidle2" })
+  await waitForText(driver, "Vehicle inspection")
   await waitForText(driver, "Review before you roll")
   await waitForText(driver, "Repairs certified by")
   await shot(driver, "04-pre-trip-review")
@@ -119,6 +123,7 @@ async function main() {
   await clickByText(driver, "File the pre-trip")
   await waitForText(driver, "Inspection filed")
   if (!(await waitForPath(driver, "/hub/driver"))) throw new Error("pre-trip form did not return to the driver home after filing")
+  await waitForText(driver, "Last pay")
 
   // Verify the truck is active again
   await office.reload({ waitUntil: "networkidle2" })

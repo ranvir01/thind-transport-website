@@ -57,6 +57,7 @@ async function main() {
 
   console.log("2. Invoice the POD-received load")
   await page.goto(`${BASE}/hub/loads?status=pod_received`, { waitUntil: "networkidle2" })
+  await waitForText(page, "Search, filter, and manage every load.")
   const hrefs = await page.evaluate(() =>
     [...new Set(
       [...document.querySelectorAll('a[href^="/hub/loads/"]')]
@@ -112,7 +113,7 @@ async function main() {
 
   console.log("4. Draft weekly settlements, approve one, mark it paid")
   await page.goto(`${BASE}/hub/money/settlements`, { waitUntil: "networkidle2" })
-  await waitForText(page, "Settlements")
+  await waitForText(page, "Weekly driver pay")
   await clickByText(page, "Draft this week", { tag: "button" })
   await waitForText(page, "settlement draft(s) created")
   // Completion signal is the draft button re-enabling after router.refresh.
@@ -153,7 +154,7 @@ async function main() {
   // (Pending driver-request decisions are covered end-to-end by
   // e2e-advances-smoke.mjs — the base seed carries no pending requests.)
   await page.goto(`${BASE}/hub/money/advances`, { waitUntil: "networkidle2" })
-  await waitForText(page, "Advances")
+  await waitForText(page, "Cash and EFS-code advances")
   check(
     await page.evaluate(() => /outstanding/i.test(document.body.innerText)),
     "outstanding advance exposure visible"
@@ -168,7 +169,7 @@ async function main() {
 
   console.log("6. Fuel screen readable, transactions render")
   await page.goto(`${BASE}/hub/fuel`, { waitUntil: "networkidle2" })
-  await waitForText(page, "Fuel")
+  await waitForText(page, "Last 92 days across every card program.")
   check(
     await page.evaluate(() => /gallons|transactions/i.test(document.body.innerText)),
     "fuel transactions render for accountant"

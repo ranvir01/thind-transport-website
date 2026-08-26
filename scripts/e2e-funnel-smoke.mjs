@@ -115,6 +115,7 @@ async function main() {
   await shot(page, "04-hub-today-390")
 
   await page.goto(`${BASE}/hub/leads`, { waitUntil: "networkidle2" })
+  await waitForText(page, "the website")
   const driverLeadShown = await page.evaluate(
     (email) =>
       document.body.innerText.includes("Funnel Driver") ||
@@ -162,6 +163,7 @@ async function main() {
 
   // hub shows the shipper lead too, with tel:
   await page.goto(`${BASE}/hub/leads`, { waitUntil: "networkidle2" })
+  await waitForText(page, "the website")
   const shipperShown = await page.evaluate(
     (email) =>
       document.body.innerText.includes("Funnel Shipper") ||

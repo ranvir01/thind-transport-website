@@ -29,6 +29,7 @@ async function main() {
   console.log("1. Login as owner, open the money page")
   await login(page, "owner@demo.thind")
   await page.goto(`${BASE}/hub/money`, { waitUntil: "networkidle2" })
+  await waitForText(page, "receivables, invoices, and driver pay")
   await waitForText(page, "Customer statements")
   await shot(page, "01-money-statements-panel")
 
@@ -85,6 +86,7 @@ async function main() {
   })
   await login(page2, "dispatch@demo.thind")
   await page2.goto(`${BASE}/hub/money`, { waitUntil: "networkidle2" })
+  await waitForText(page2, "receivables, invoices, and driver pay")
   await waitForText(page2, "Customer statements")
   const dispatcherView = await page2.evaluate(() => {
     const h2 = [...document.querySelectorAll("h2")].find((h) => h.textContent.trim() === "Customer statements")

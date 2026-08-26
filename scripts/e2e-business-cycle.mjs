@@ -146,6 +146,7 @@ async function main() {
     console.log("1. Owner bills the POD-received load")
     await login(office, "owner@demo.thind")
     await office.goto(`${BASE}/hub/loads?status=pod_received`, { waitUntil: "networkidle2" })
+    await waitForText(office, "Search, filter, and manage every load.")
     const hrefs = await office.evaluate(() => [
       ...new Set(
         [...document.querySelectorAll('a[href^="/hub/loads/"]')]
@@ -202,7 +203,7 @@ async function main() {
 
     console.log("3. Owner settles the week — statement PDF, advance applied")
     await office.goto(`${BASE}/hub/money/settlements`, { waitUntil: "networkidle2" })
-    await waitForText(office, "Settlements")
+    await waitForText(office, "Weekly driver pay")
     await clickByText(office, "Draft this week", { tag: "button" })
     await waitForText(office, "settlement draft(s) created")
     check(await draftButtonSettled(office), "draft button re-enabled after router.refresh")
@@ -221,7 +222,7 @@ async function main() {
     await shot(office, "03-settlement-approved")
 
     await office.goto(`${BASE}/hub/money/advances`, { waitUntil: "networkidle2" })
-    await waitForText(office, "Advances")
+    await waitForText(office, "Cash and EFS-code advances")
     const advanceRow = await office.evaluate(() => {
       const el = [...document.querySelectorAll("p")].find((n) => n.textContent.includes("EFS code 4417"))
       return el?.closest("div.flex")?.textContent ?? null
@@ -285,7 +286,7 @@ async function main() {
 
     console.log("6. A second settlement run still pays nobody twice")
     await office.goto(`${BASE}/hub/money/settlements`, { waitUntil: "networkidle2" })
-    await waitForText(office, "Settlements")
+    await waitForText(office, "Weekly driver pay")
     await clickByText(office, "Draft this week", { tag: "button" })
     await waitForText(office, "0 settlement draft(s) created")
     check(await draftButtonSettled(office), "draft button re-enabled after the rerun")

@@ -118,19 +118,37 @@ export async function getCarrierSettings(carrierId: string): Promise<CarrierSett
   }
 }
 
-/** Atomically reserve the next invoice number for a carrier. */
+/**
+ * Atomically reserve the next invoice number for a carrier.
+ *
+ * Upsert, not a bare UPDATE: jsonb_set('{invoice,nextNumber}') cannot create
+ * the missing `invoice` parent, and a missing carrier_settings row matched
+ * 0 rows. Both paths returned INV-1000 every time; the second invoice then
+ * hit UNIQUE (carrier_id, number). Sparse INSERTs from saveCostPerMileAction /
+ * updateOfficeEmailAction / setBrandAccentAction made the parent-missing
+ * case the likely one. Same INSERT…ON CONFLICT + parent-seed form as those.
+ */
 export async function nextInvoiceNumber(carrierId: string): Promise<string> {
-  const rows = await query<{ settings: { invoice?: { prefix?: string; nextNumber?: number } } }>(
-    `UPDATE hub.carrier_settings
-     SET settings = jsonb_set(settings, '{invoice,nextNumber}',
-       (COALESCE((settings->'invoice'->>'nextNumber')::int, 1000) + 1)::text::jsonb),
+  const rows = await query<{ settings: { invoice?: { prefix?: string; nextNumber?: number | string } } }>(
+    `INSERT INTO hub.carrier_settings (carrier_id, settings)
+     VALUES ($1, jsonb_build_object('invoice', jsonb_build_object('nextNumber', 1001)))
+     ON CONFLICT (carrier_id) DO UPDATE SET
+       settings = jsonb_set(
+         jsonb_set(
+           hub.carrier_settings.settings, '{invoice}',
+           COALESCE(hub.carrier_settings.settings->'invoice', '{}'::jsonb), TRUE),
+         '{invoice,nextNumber}',
+         (COALESCE((hub.carrier_settings.settings->'invoice'->>'nextNumber')::int, 1000) + 1)::text::jsonb,
+         TRUE),
        updated_at = NOW()
-     WHERE carrier_id = $1
      RETURNING settings`,
     [carrierId]
   )
   const settings = rows[0]?.settings
-  const reserved = (settings?.invoice?.nextNumber ?? 1001) - 1
-  const prefix = settings?.invoice?.prefix ?? DEFAULT_SETTINGS.invoice.prefix
+  if (!settings) {
+    throw new Error("Could not reserve an invoice number")
+  }
+  const reserved = Number(settings.invoice?.nextNumber ?? 1001) - 1
+  const prefix = settings.invoice?.prefix ?? DEFAULT_SETTINGS.invoice.prefix
   return `${prefix}${reserved}`
 }

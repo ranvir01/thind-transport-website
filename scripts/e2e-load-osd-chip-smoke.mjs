@@ -93,6 +93,7 @@ async function main() {
   console.log("1. A load with no OS&D exception shows no chip on its detail page")
   await login(ownerPage, "owner@demo.thind")
   await ownerPage.goto(`${BASE}/hub/loads`, { waitUntil: "networkidle2" })
+  await waitForText(ownerPage, "Search, filter, and manage every load.")
   const cleanLoadHref = await ownerPage.evaluate(() =>
     [...document.querySelectorAll("a")]
       .map((a) => a.getAttribute("href") ?? "")
@@ -109,12 +110,14 @@ async function main() {
   await driverPage.setViewport({ width: 390, height: 844 })
   await login(driverPage, "driver@demo.thind")
   await driverPage.goto(`${BASE}/hub/driver`, { waitUntil: "networkidle2" })
+  await waitForText(driverPage, "Last pay")
   await advanceDriverLoadToDelivered(driverPage)
   await uploadOsdPod(driverPage, fixturePath)
   await shot(driverPage, "02-driver-osd-pod-sent")
 
   console.log("3. Office finds the new claim on Safety > Claims, follows it back to the load")
   await ownerPage.goto(`${BASE}/hub/safety/claims`, { waitUntil: "networkidle2" })
+  await waitForText(ownerPage, "Cargo, property, and injury claims")
   await waitForText(ownerPage, "Being worked")
   const claimHref = await ownerPage.evaluate(() =>
     [...document.querySelectorAll("a")]

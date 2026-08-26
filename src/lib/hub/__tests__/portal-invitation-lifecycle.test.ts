@@ -78,11 +78,12 @@ describe("createPortalInvitation", () => {
 })
 
 describe("getInvitation", () => {
-  it("joins the customer name and scopes the lookup by token alone", async () => {
+  it("joins the customer name, pins the join to the invitation tenant, and looks up by token", async () => {
     queryOneMock.mockResolvedValueOnce(invitationRow())
     const result = await getInvitation("tok-123")
     expect(result?.customer_name).toBe("Acme Freight")
     const [sql, params] = queryOneMock.mock.calls[0]
+    expect(String(sql)).toContain("JOIN hub.customers c ON c.id = i.customer_id AND c.carrier_id = i.carrier_id")
     expect(String(sql)).toContain("WHERE i.token = $1")
     expect(params).toEqual(["tok-123"])
   })

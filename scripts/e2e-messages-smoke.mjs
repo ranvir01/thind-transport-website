@@ -58,7 +58,7 @@ async function main() {
   track(office)
   await login(office, "dispatch@demo.thind")
   await office.goto(`${BASE}/hub/messages`, { waitUntil: "networkidle2" })
-  await waitForText(office, "Messages")
+  await waitForText(office, "Every driver conversation in one place")
   const list = await office.evaluate(() => document.body.innerText)
   check(list.includes("Harpreet Singh"), "thread list shows the seeded Harpreet threads")
   check(list.includes("lumper receipt"), "seeded load-thread preview is the last message body")
@@ -122,6 +122,7 @@ async function main() {
   track(driver)
   await login(driver, "driver@demo.thind")
   await driver.goto(`${BASE}/hub/driver/messages`, { waitUntil: "networkidle2" })
+  await waitForText(driver, "no phone numbers needed")
   await waitForText(driver, "Dispatch / office")
   const driverList = await driver.evaluate(() => document.body.innerText)
   check(driverList.includes(officeMarker), "driver list previews the office marker")
@@ -152,7 +153,7 @@ async function main() {
 
   console.log("5. Office sees the reply unread, then the bubble and the read receipt")
   await office.goto(`${BASE}/hub/messages`, { waitUntil: "networkidle2" })
-  await waitForText(office, "Messages")
+  await waitForText(office, "Every driver conversation in one place")
   const officeList2 = await office.evaluate(() => document.body.innerText)
   check(officeList2.includes(driverMarker), "office list previews the driver reply")
   const officeUnread = await office.evaluate((marker) => {
@@ -165,6 +166,7 @@ async function main() {
   await shot(office, "05-office-list-unread")
 
   await office.goto(`${BASE}/hub/messages/${threadId}`, { waitUntil: "networkidle2" })
+  await waitForText(office, "Photos and read receipts stay with this thread.")
   await waitForText(office, driverMarker)
   const officeThread2 = await office.evaluate(() => document.body.innerText)
   check(officeThread2.includes(driverMarker), "driver reply bubble renders in the office thread")
@@ -178,6 +180,11 @@ async function main() {
   await driver.goto(`${BASE}/hub/messages`, { waitUntil: "networkidle2" })
   check(!driver.url().includes("/hub/messages"), `driver redirected off the office list (at ${driver.url()})`)
   await driver.goto(`${BASE}/hub/messages/${threadId}`, { waitUntil: "networkidle2" })
+  // Driver tokens bounce off the office thread — they never see the subtitle,
+  // so wait on leaving /hub/messages/<id> rather than the destination copy.
+  await driver.waitForFunction(() => !location.pathname.startsWith("/hub/messages/"), {
+    timeout: 20000,
+  })
   check(
     !driver.url().includes(`/hub/messages/${threadId}`),
     `driver redirected off the office thread deep link (at ${driver.url()})`

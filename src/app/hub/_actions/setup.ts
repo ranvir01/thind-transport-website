@@ -210,6 +210,18 @@ export async function applySmartScanAction(formData: FormData): Promise<ApplySca
             user.id
           )
         }
+        await logAudit({
+          carrierId: user.carrierId, actorId: user.id, actorName: user.name,
+          entityType: "driver", entityId: driver.id, action: "smart_setup_create",
+          newValue: {
+            kind,
+            pay_type: "per_mile",
+            pay_rate: 0.63,
+            pay_loaded_miles_only: true,
+            escrow_weekly_cents: 0,
+            insurance_weekly_cents: 0,
+          },
+        })
         revalidatePath("/hub/drivers")
         revalidatePath("/hub/setup")
         revalidatePath("/hub")

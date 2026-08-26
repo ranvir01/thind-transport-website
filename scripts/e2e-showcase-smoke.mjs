@@ -33,7 +33,7 @@
  */
 import { execSync } from "node:child_process"
 import { mkdirSync, readFileSync } from "node:fs"
-import { BASE, failures, check, login, makeShot, realConsoleErrors, launchBrowser } from "./e2e-lib.mjs"
+import { BASE, failures, check, login, makeShot, realConsoleErrors, launchBrowser, waitForText } from "./e2e-lib.mjs"
 
 /**
  * Single source of truth for the settings index: parse href + ownerOnly out
@@ -111,11 +111,16 @@ async function main() {
     await login(page, "owner@demo.thind")
     const help = await page.goto(`${BASE}/hub/help`, { waitUntil: "networkidle2", timeout: 30000 })
     check(help.status() === 200, `/hub/help answers 200 as owner (got ${help.status()})`)
+    // Title "How to use LoadOff" is not the nav label "Help" — wait for it
+    // before reading "Video walkthroughs" off the streamed body.
+    await waitForText(page, "How to use LoadOff")
     const hasVids = await page.evaluate(() => document.body.textContent.includes("Video walkthroughs"))
     check(hasVids, "/hub/help has the 'Video walkthroughs' section")
 
     const settings = await page.goto(`${BASE}/hub/settings`, { waitUntil: "networkidle2", timeout: 30000 })
     check(settings.status() === 200, `/hub/settings answers 200 as owner (got ${settings.status()})`)
+    // Title "Settings" is the users-page nav label — wait for the index subtitle.
+    await waitForText(page, "Company configuration, connections, and shared documents.")
     const ownerCards = await page.evaluate(() =>
       [...document.querySelectorAll(".grid a[href^='/hub/settings/']")].map((a) => a.getAttribute("href"))
     )
@@ -137,6 +142,7 @@ async function main() {
     await login(page, "accounting@demo.thind")
     const settings = await page.goto(`${BASE}/hub/settings`, { waitUntil: "networkidle2", timeout: 30000 })
     check(settings.status() === 200, `/hub/settings answers 200 as accounting (got ${settings.status()})`)
+    await waitForText(page, "Company configuration, connections, and shared documents.")
     const cards = await page.evaluate(() =>
       [...document.querySelectorAll(".grid a[href^='/hub/settings/']")].map((a) => a.getAttribute("href"))
     )

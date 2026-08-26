@@ -109,7 +109,7 @@ All emails are sent using:
 SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
 SMTP_USER=thindcarrier@gmail.com
-SMTP_PASS=ctcuolcpwdzkqibm
+SMTP_PASS=<gmail app password, set in Vercel — never commit>
 SMTP_FROM=Thind Transport <noreply@thindtransport.com>
 ```
 

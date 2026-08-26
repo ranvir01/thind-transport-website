@@ -73,3 +73,38 @@ describe("first-run guidance is reachable", () => {
     expect(read("src/proxy.ts")).toMatch(/pathname === "\/hub\/sandbox"/)
   })
 })
+
+describe("the first-run tour does not eat the e2e rig's first click", () => {
+  /**
+   * The autostarted tour is a real `fixed inset-0` modal whose scrim closes it
+   * on click. Every smoke launches a fresh browser profile, so localStorage is
+   * empty and the tour opens ~700ms after any landing on /hub — and the next
+   * click anywhere is spent dismissing it instead of hitting its target. That
+   * cost e2e-safety-smoke step 6 a long stretch of CI red that read as "the
+   * OS&D notification never arrived" when the row was in the database all
+   * along. e2e-lib.mjs pre-marks the tour seen; these assertions keep the two
+   * copies of the key and the id from drifting apart, because if they drift
+   * the suppression silently stops working and the reds come back looking like
+   * product bugs again.
+   */
+  it("e2e-lib pre-marks the tour with the exact key and id HubTour reads", () => {
+    const tour = read("src/components/hub/HubTour.tsx")
+    const lib = read("scripts/e2e-lib.mjs")
+
+    const storageKey = tour.match(/const STORAGE_KEY = "([^"]+)"/)?.[1]
+    const autostartId = tour.match(/const AUTOSTART_TOUR_ID = "([^"]+)"/)?.[1]
+    expect(storageKey).toBeTruthy()
+    expect(autostartId).toBeTruthy()
+
+    expect(lib).toContain(`const TOUR_STORAGE_KEY = "${storageKey}"`)
+    expect(lib).toContain(`const AUTOSTART_TOUR_ID = "${autostartId}"`)
+  })
+
+  it("every smoke gets the suppression, because login() applies it", () => {
+    const lib = read("scripts/e2e-lib.mjs")
+    expect(lib).toMatch(/export async function skipFirstRunTour\(page\)/)
+    // Inside login(), before the submit that lands on /hub.
+    const login = lib.slice(lib.indexOf("export async function login("))
+    expect(login.slice(0, login.indexOf("\n}"))).toContain("await skipFirstRunTour(page)")
+  })
+})

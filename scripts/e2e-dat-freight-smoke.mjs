@@ -109,6 +109,8 @@ async function main() {
     await heal.setViewport({ width: 1440, height: 900 })
     await login(heal, "owner@demo.thind")
     await heal.goto(`${BASE}/hub/settings/integrations`, { waitUntil: "networkidle2" })
+    // Nav label is "Integrations" — wait for the page subtitle.
+    await waitForText(heal, "CSV import as the always-working fallback")
     await waitForText(heal, "DAT load board")
     if (await clickInDatCard(heal, "Disconnect")) {
       console.log("   (stale DAT connection from a previous run — disconnecting first)")
@@ -122,6 +124,8 @@ async function main() {
   console.log("1. Dispatcher sees the DAT panel on the load board, disconnected by default")
   await login(page, "dispatch@demo.thind")
   await page.goto(`${BASE}/hub/loadboard`, { waitUntil: "networkidle2" })
+  // Title "Load board" is the nav label — wait for the page subtitle.
+  await waitForText(page, "click any cell to edit")
   await waitForText(page, "External freight search")
   const disconnectedState = await page.evaluate(() => document.body.innerText)
   check(disconnectedState.includes("Connect DAT"), "loadboard shows the Connect DAT prompt before any credentials exist")
@@ -138,6 +142,7 @@ async function main() {
   owner.on("pageerror", (err) => consoleErrors.push(`pageerror: ${err.message}`))
   await login(owner, "owner@demo.thind")
   await owner.goto(`${BASE}/hub/settings/integrations`, { waitUntil: "networkidle2" })
+  await waitForText(owner, "CSV import as the always-working fallback")
   const cardsText = await owner.evaluate(() => document.body.innerText)
   check(/DAT load board/i.test(cardsText), "DAT load board card present")
   check(/Truckstop\.com/i.test(cardsText), "Truckstop.com card present")
@@ -206,6 +211,7 @@ async function main() {
 
     console.log("4. Dispatcher's loadboard search panel opens now that DAT is connected")
     await page.goto(`${BASE}/hub/loadboard`, { waitUntil: "networkidle2" })
+    await waitForText(page, "click any cell to edit")
     const connectedState = await page.evaluate(() => document.body.innerText)
     check(!connectedState.includes("Connect DAT"), "Connect DAT prompt is gone once credentials are saved")
     await clickByText(page, "Search DAT")
@@ -232,6 +238,7 @@ async function main() {
 
     console.log("6. Cleanup — disconnect DAT so the credential doesn't linger between runs")
     await owner.goto(`${BASE}/hub/settings/integrations`, { waitUntil: "networkidle2" })
+    await waitForText(owner, "CSV import as the always-working fallback")
     // Disconnect confirms in place now: arm it, then click "Disconnect it" —
     // scoped to the DAT card so another connected card is never the victim.
     const armed = await clickInDatCard(owner, "Disconnect")

@@ -27,20 +27,12 @@
  *
  * Exit 0 = ready; exit 1 = at least one blocking failure. Warnings don't block.
  */
-import { readFileSync, readdirSync, existsSync } from "node:fs"
+import { readFileSync, readdirSync } from "node:fs"
 import path from "node:path"
 import pg from "pg"
 import { hobbyIllegalCrons, exceedsHobbyJobCount, MAX_CRON_JOBS_PER_PROJECT } from "./hobby-cron-guard.mjs"
+import { loadEnvLocal } from "./env-local.mjs"
 
-function loadEnvLocal() {
-  if (process.env.POSTGRES_URL) return
-  const envPath = path.join(process.cwd(), ".env.local")
-  if (!existsSync(envPath)) return
-  for (const line of readFileSync(envPath, "utf-8").split("\n")) {
-    const match = line.match(/^([A-Z0-9_]+)=(.*)$/)
-    if (match && !process.env[match[1]]) process.env[match[1]] = match[2]
-  }
-}
 
 const results = []
 function pass(name, detail = "") { results.push({ level: "pass", name, detail }) }
@@ -48,7 +40,7 @@ function warn(name, detail = "") { results.push({ level: "warn", name, detail })
 function fail(name, detail = "") { results.push({ level: "fail", name, detail }) }
 
 async function main() {
-  loadEnvLocal()
+  loadEnvLocal({ skipWhenSet: "POSTGRES_URL" })
   const url = process.env.POSTGRES_URL
   if (!url) {
     console.error("POSTGRES_URL is required (point it at the PRODUCTION database)")

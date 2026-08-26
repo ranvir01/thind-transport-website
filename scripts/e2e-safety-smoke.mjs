@@ -196,6 +196,7 @@ async function main() {
     "clicking the HOS row opens Harpreet's driver profile"
   )
   await page.goto(`${BASE}/hub/safety`, { waitUntil: "networkidle2" })
+  await waitForText(page, "flow to the register automatically")
   await waitForText(page, "Hours of service")
 
   console.log("2. Close the seeded DOT-recordable incident (stays on the register)")
@@ -217,7 +218,7 @@ async function main() {
 
   console.log("3. Log a new non-recordable incident from the office")
   await page.goto(`${BASE}/hub/safety/new`, { waitUntil: "networkidle2" })
-  await waitForText(page, "Log an incident")
+  await waitForText(page, "Three plain questions decide whether DOT counts it as an accident.")
   await setNativeValue(page, "#occurredAt", new Date().toISOString().slice(0, 16))
   await page.type("#location", OFFICE_INCIDENT)
   await page.type("#description", "Backed into a gate post at 5 mph. No injuries, truck drivable.")
@@ -234,7 +235,7 @@ async function main() {
   await driverPage.setViewport({ width: 390, height: 844 })
   await login(driverPage, "driver@demo.thind")
   await driverPage.goto(`${BASE}/hub/driver/incident`, { waitUntil: "networkidle2" })
-  await waitForText(driverPage, "Report an incident")
+  await waitForText(driverPage, "starts the paper trail")
   await driverPage.type("#inc-location", DRIVER_INCIDENT_LOC)
   await driverPage.type("#inc-desc", "Deer strike — bumper damage only. Everyone safe, truck drivable.")
   await clickByText(driverPage, "File the report")
@@ -245,18 +246,53 @@ async function main() {
 
   console.log("5. Driver delivers lumber load and sends POD with OS&D (opens claim file)")
   await driverPage.goto(`${BASE}/hub/driver`, { waitUntil: "networkidle2" })
+  await waitForText(driverPage, "Last pay")
   await advanceDriverLoadToDelivered(driverPage)
   await uploadOsdPod(driverPage, fixturePath)
   await shot(driverPage, "05-osd-pod-sent")
 
   console.log("6. Dispatcher sees the draft-claim alert in notifications")
   await page.goto(`${BASE}/hub`, { waitUntil: "networkidle2" })
-  await page.waitForSelector('button[aria-label^="Notifications"]', { timeout: 20000 })
-  await page.click('button[aria-label^="Notifications"]')
+  const BELL = 'button[aria-label^="Notifications"]'
+  await page.waitForSelector(BELL, { timeout: 20000 })
+  // The bell is a client component whose first feed fetch is deferred, so the
+  // SSR button is clickable-looking long before React attaches its onClick. A
+  // click landing in that window is swallowed: the panel never opens, and both
+  // content assertions below fail while the notification sits in the database
+  // exactly as intended. That is the whole of this step's CI red — the OS&D
+  // producer is fine. Wait for the unread badge the way
+  // e2e-notifications-smoke.mjs does; the count only renders once that first
+  // fetch resolved, which is proof the component hydrated.
+  await page.waitForFunction(
+    (sel) => /\(\d+ unread\)/.test(document.querySelector(sel)?.getAttribute("aria-label") ?? ""),
+    { timeout: 20000 },
+    BELL
+  )
+  await page.click(BELL)
+  // Assert the panel opened before asserting what is in it, so a future
+  // regression here names the cause instead of two puzzling content misses.
+  const panelOpen = await page
+    .waitForFunction((sel) => {
+      const btn = document.querySelector(sel)
+      return (btn?.parentElement?.innerText ?? "").toLowerCase().includes("notifications")
+    }, { timeout: 15000 }, BELL)
+    .then(() => true)
+    .catch(() => false)
+  check(panelOpen, "notifications panel opens")
+  // Read the bell's own panel, not document.body — /hub's dashboard already
+  // prints THD- load refs, so a body-wide check passed the load-reference
+  // assertion even when the feed never mentioned the claim.
+  const panelText = () => page.evaluate(() => {
+    const btn = document.querySelector('button[aria-label^="Notifications"]')
+    return btn?.parentElement?.innerText ?? ""
+  })
   await page
-    .waitForFunction(() => document.body.innerText.toLowerCase().includes("draft claim"), { timeout: 20000 })
+    .waitForFunction(() => {
+      const btn = document.querySelector('button[aria-label^="Notifications"]')
+      return (btn?.parentElement?.innerText ?? "").toLowerCase().includes("draft claim")
+    }, { timeout: 20000 })
     .catch(() => {})
-  const notify = await page.evaluate(() => document.body.innerText)
+  const notify = await panelText()
   check(notify.toLowerCase().includes("draft claim"), "notification mentions the draft claim opened from OS&D POD")
   check(notify.includes("THD-"), "notification references the load")
   await shot(page, "06-draft-claim-notification")

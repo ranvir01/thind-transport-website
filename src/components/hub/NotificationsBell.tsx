@@ -169,9 +169,9 @@ export function NotificationsBell({
                     !item.read_at && (dark ? "bg-white/[0.04]" : "bg-accent-soft")
                   )}
                 >
-                  <p className={cn("text-sm font-semibold", dark ? "text-white" : "text-fg")}>{item.title}</p>
+                  <p className={cn("text-sm font-semibold break-words", dark ? "text-white" : "text-fg")}>{item.title}</p>
                   {item.body ? (
-                    <p className={cn("mt-0.5 text-body-xs", dark ? "text-steel-200" : "text-fg-2")}>{item.body}</p>
+                    <p className={cn("mt-0.5 text-body-xs break-words", dark ? "text-steel-200" : "text-fg-2")}>{item.body}</p>
                   ) : null}
                   <p className={cn("mt-1 text-[11px]", dark ? "text-steel-400" : "text-fg-3")}>
                     {timeAgo(item.created_at)}

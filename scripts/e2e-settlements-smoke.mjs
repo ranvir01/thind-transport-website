@@ -89,7 +89,7 @@ async function main() {
   console.log("1. Login as owner, open settlements")
   await login(page, "owner@demo.thind")
   await page.goto(`${BASE}/hub/money/settlements`, { waitUntil: "networkidle2" })
-  await waitForText(page, "Settlements")
+  await waitForText(page, "Weekly driver pay")
   const seededPaid = await settlementLinks(page, ["paid"])
   check(seededPaid.length >= 2, `seeded paid settlements listed (${seededPaid.length})`)
   await waitForText(page, "Escrow balances")
@@ -155,7 +155,7 @@ async function main() {
     `statement PDF stored and served (${pdfOk.status} ${pdfOk.type} magic=${pdfOk.magic} ${pdfOk.bytes}B)`)
   await shot(page, "04-approved")
   await page.goto(`${BASE}/hub/money/advances`, { waitUntil: "networkidle2" })
-  await waitForText(page, "Advances")
+  await waitForText(page, "Cash and EFS-code advances")
   const advanceRow = await page.evaluate(() => {
     const el = [...document.querySelectorAll("p")].find((n) => n.textContent.includes("EFS code 4417"))
     return el?.closest("div.flex")?.textContent ?? null
@@ -189,7 +189,7 @@ async function main() {
   await clickByText(page, "Approve", { tag: "button" })
   await waitForText(page, "Status: approved", 20000)
   await page.goto(`${BASE}/hub/money/settlements`, { waitUntil: "networkidle2" })
-  await waitForText(page, "Escrow balances")
+  await waitForText(page, "Weekly driver pay")
   const escrowAfter = await page.evaluate(() => document.body.innerText)
   check(escrowAfter.includes(ESCROW_AFTER) && !escrowAfter.includes(ESCROW_BEFORE),
     `escrow bumped by exactly one weekly contribution (${ESCROW_AFTER})`)
@@ -202,7 +202,7 @@ async function main() {
   trackPageErrors(page2, consoleErrors)
   await login(page2, "dispatch@demo.thind")
   await page2.goto(`${BASE}/hub/money/settlements`, { waitUntil: "networkidle2" })
-  await waitForText(page2, "Settlements")
+  await waitForText(page2, "Weekly driver pay")
   const dispatcherDraftBtn = await page2.evaluate(() =>
     [...document.querySelectorAll("button")].some((b) => b.textContent.includes("Draft this week"))
   )

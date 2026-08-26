@@ -31,6 +31,7 @@ async function main() {
   try {
     console.log("1. Login as demo driver")
     await page.goto(`${BASE}/hub/login`, { waitUntil: "networkidle2" })
+    await waitForText(page, "One login for dispatch, drivers, and partners.")
     await page.type("#email", "driver@demo.thind")
     await page.type("#password", "ThindDemo1!")
     await shot(page, "01-login")
@@ -72,6 +73,7 @@ async function main() {
 
     console.log("6. Message dispatch")
     await page.goto(`${BASE}/hub/driver/messages`, { waitUntil: "networkidle2" })
+    await waitForText(page, "no phone numbers needed")
     await shot(page, "07-messages-list")
     await clickByText(page, "Dispatch / office", { tag: "a" })
     await page.waitForSelector("textarea", { timeout: 10000 })
@@ -85,6 +87,7 @@ async function main() {
 
     console.log("7. Pay screen — expand a settlement to see its lines")
     await page.goto(`${BASE}/hub/driver/pay`, { waitUntil: "networkidle2" })
+    await waitForText(page, "Every settlement, line by line — tap one to see what's in it.")
     await shot(page, "09-pay")
     await page.click("details summary")
     await waitForText(page, "Insurance")
@@ -92,6 +95,7 @@ async function main() {
 
     console.log("8. Time off request")
     await page.goto(`${BASE}/hub/driver/timeoff`, { waitUntil: "networkidle2" })
+    await waitForText(page, "dispatch can't book you over it")
     const nextWeek = new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10)
     const nextWeekEnd = new Date(Date.now() + 9 * 86400000).toISOString().slice(0, 10)
     await page.evaluate((start, end) => {
@@ -113,12 +117,15 @@ async function main() {
 
     console.log("9. More + docs")
     await page.goto(`${BASE}/hub/driver/more`, { waitUntil: "networkidle2" })
+    await waitForText(page, "ask for home time")
     await shot(page, "12-more")
     await page.goto(`${BASE}/hub/driver/docs`, { waitUntil: "networkidle2" })
+    await waitForText(page, "What the office has on file for you — and when it runs out.")
     await shot(page, "13-docs")
 
     console.log("10. Incident report")
     await page.goto(`${BASE}/hub/driver/incident`, { waitUntil: "networkidle2" })
+    await waitForText(page, "starts the paper trail")
     await page.type("#inc-location", "I-84 EB MP 213, Baker City OR")
     await page.type("#inc-desc", "Deer strike, front bumper damage. Truck drivable. No injuries.")
     await shot(page, "14-incident-form")

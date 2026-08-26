@@ -111,7 +111,9 @@ async function main() {
 
   console.log("5. Owner Dashboard's operating-cost/mi and truck ranking now charge toll spend")
   await page.goto(`${BASE}/hub/reports/owner`, { waitUntil: "networkidle2" })
-  await waitForText(page, "Owner Dashboard")
+  // Title "Owner Dashboard" is not a nav label, but it still isn't a
+  // render gate — wait for the page subtitle.
+  await waitForText(page, "an owner checks first")
   // Panel/label text renders through a global uppercase text-transform — compare lowercased.
   const ownerOk = await page.evaluate(() => document.body.innerText.toLowerCase().includes("operating cost / mi"))
   check(ownerOk, "owner dashboard renders operating cost/mi (toll-inclusive) without erroring")

@@ -49,6 +49,7 @@ async function userRow(page, email) {
 /** Attempt a login that is EXPECTED to fail: stays on /hub/login with the toast. */
 async function loginRefused(page, email, password) {
   await page.goto(`${BASE}/hub/login`, { waitUntil: "networkidle2" })
+  await waitForText(page, "One login for dispatch, drivers, and partners.")
   await page.type("#email", email)
   await page.type("#password", password)
   await page.click('button[type="submit"]')
@@ -188,6 +189,9 @@ async function main() {
   // goto() settles, but poll for the landing path instead of a fixed sleep
   // in case a slow rig leaves the redirect still in flight under contention.
   await waitForPath(dispPage, "/hub")
+  // Pathname flips before the Today screen streams in — wait for a body
+  // tile, not the always-present "Today" nav label.
+  await waitForText(dispPage, "Unconfirmed drivers")
   const disp = await dispPage.evaluate(() => ({
     path: location.pathname,
     seesRoster: document.body.innerText.includes("alert emails, and who can sign in"),

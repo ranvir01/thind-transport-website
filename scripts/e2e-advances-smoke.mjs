@@ -73,6 +73,7 @@ async function main() {
   console.log("1. Driver requests an advance from My pay (390px)")
   await login(driver, "driver@demo.thind")
   await driver.goto(`${BASE}/hub/driver/pay`, { waitUntil: "networkidle2" })
+  await waitForText(driver, "Every settlement, line by line — tap one to see what's in it.")
   await waitForText(driver, "Ask for an advance")
   await shot(driver, "01-driver-pay")
 
@@ -120,7 +121,7 @@ async function main() {
   console.log("2. Owner reviews exposure on /hub/money/advances")
   await login(office, "owner@demo.thind")
   await office.goto(`${BASE}/hub/money/advances`, { waitUntil: "networkidle2" })
-  await waitForText(office, "Owed by driver")
+  await waitForText(office, "Cash and EFS-code advances")
   let body = await office.evaluate(() => document.body.innerText)
   check(body.includes(EXPOSURE_BOTH_PENDING), `Harpreet exposure ${EXPOSURE_BOTH_PENDING} with both requests pending`)
   check(body.includes(AWAITING_BOTH), `pending subtotal exact (${AWAITING_BOTH})`)
@@ -169,7 +170,7 @@ async function main() {
   await dispatch.setViewport({ width: 1440, height: 900 })
   await login(dispatch, "dispatch@demo.thind")
   await dispatch.goto(`${BASE}/hub/money/advances`, { waitUntil: "networkidle2" })
-  await waitForText(dispatch, "Advances")
+  await waitForText(dispatch, "Cash and EFS-code advances")
   const dispatchView = await dispatch.evaluate(() => ({
     text: document.body.innerText,
     decideButtons: document.querySelectorAll('button[aria-label="Approve advance"], button[aria-label="Deny advance"]').length,
@@ -182,6 +183,7 @@ async function main() {
   // ---- Driver again: decisions reflected ----
   console.log("6. Driver pay screen reflects the decisions (390px)")
   await driver.goto(`${BASE}/hub/driver/pay`, { waitUntil: "networkidle2" })
+  await waitForText(driver, "Every settlement, line by line — tap one to see what's in it.")
   await waitForText(driver, "Ask for an advance")
   const driverAfter = await driver.evaluate(() => document.body.innerText)
   check(driverAfter.includes("Advance approved — Tires — cash at TA Ontario"), "approved advance reads approved")

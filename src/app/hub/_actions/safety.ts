@@ -1,7 +1,7 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
-import { requirePermission, getHubUser } from "@/lib/hub/session"
+import { requirePermission, requireDriverUser } from "@/lib/hub/session"
 import { createIncident, updateIncident, type IncidentInput } from "@/lib/hub/incidents"
 import { createClaim, updateClaim, type ClaimKind, type ClaimStatus } from "@/lib/hub/claims"
 import { dollarsToCents } from "@/lib/hub/types"
@@ -63,26 +63,23 @@ export async function fileDriverIncidentReport(input: {
   lat?: number | null
   lng?: number | null
 }): Promise<IncidentFormResult> {
-  const user = await getHubUser()
-  if (!user || user.role !== "driver") return { ok: false, error: "Drivers only" }
-  const { queryOne } = await import("@/lib/hub/db")
-  const me = await queryOne<{ driver_id: string | null }>(
-    `SELECT driver_id FROM hub.users WHERE id = $1 AND carrier_id = $2`,
-    [user.id, user.carrierId]
-  )
-  if (!me?.driver_id) return { ok: false, error: "No driver record linked to this account" }
-
-  // The driver's current truck (if assigned) rides along automatically.
-  const truck = await queryOne<{ id: string }>(
-    `SELECT id FROM hub.trucks WHERE carrier_id = $1 AND assigned_driver_id = $2 AND deleted_at IS NULL LIMIT 1`,
-    [user.carrierId, me.driver_id]
-  )
-
   try {
+    // requireDriverUser re-checks `active` + carrier status on every call
+    // (JWT sessions otherwise keep a deactivated/suspended driver live for
+    // ~30 days). The hand-rolled getHubUser + role check skipped both.
+    const user = await requireDriverUser()
+    const { queryOne } = await import("@/lib/hub/db")
+
+    // The driver's current truck (if assigned) rides along automatically.
+    const truck = await queryOne<{ id: string }>(
+      `SELECT id FROM hub.trucks WHERE carrier_id = $1 AND assigned_driver_id = $2 AND deleted_at IS NULL LIMIT 1`,
+      [user.carrierId, user.driverId]
+    )
+
     const incident = await createIncident(
       user.carrierId,
       {
-        driverId: me.driver_id,
+        driverId: user.driverId,
         truckId: truck?.id ?? null,
         loadId: input.loadId ?? null,
         occurredAt: input.occurredAt,

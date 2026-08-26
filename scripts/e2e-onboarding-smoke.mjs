@@ -35,6 +35,10 @@ async function main() {
   const fresh = await signupCtx.newPage()
   await fresh.setViewport({ width: 390, height: 844, deviceScaleFactor: 2 })
   await fresh.goto(`${BASE}/hub/signup`, { waitUntil: "networkidle2" })
+  // Wordmark/tagline also live on /hub/login, so wait for the unique body
+  // copy before typing into #su-company against the streamed body.
+  // src/app/hub/signup has no loading.tsx of its own.
+  await waitForText(fresh, "Create your company's workspace — dispatch, money, compliance, and a driver app, live in an afternoon. No sales call.")
   await shot(fresh, "01-signup")
   // Step 1/4 — company facts (FMCSA verify is optional; skip the network call)
   await fresh.type("#su-company", `Bluebird Freight ${stamp}`)
@@ -85,6 +89,7 @@ async function main() {
   await login(cascade, "owner@cascademo.example")
   await waitForText(cascade, "Cascade Demo Lines".toUpperCase())
   await cascade.goto(`${BASE}/hub/loads`, { waitUntil: "networkidle2" })
+  await waitForText(cascade, "Search, filter, and manage every load.")
   const loadsText = await cascade.evaluate(() => document.body.innerText)
   if (!loadsText.includes("CAS-5001")) throw new Error("Cascade load missing")
   if (loadsText.includes("THD-")) throw new Error("CASCADE SEES THIND LOADS — isolation broken!")
@@ -98,10 +103,19 @@ async function main() {
   await login(admin, "admin@hauldesk.app")
   if (!admin.url().includes("/hub/admin")) throw new Error(`Admin landed on ${admin.url()}`)
   await waitForText(admin, "Platform admin")
+  // Subtitle is the destination-copy mapping (same gate as the
+  // tenant-isolation hard goto). Title wait above is unique too, but the
+  // mapping uses this copy so both smokes share one render anchor.
+  await waitForText(admin, "Tenants and operational counts only")
   await waitForText(admin, "Cascade Demo Lines")
   await shot(admin, "06-platform-admin")
   // Bouncing into a tenant surface must redirect back.
   await admin.goto(`${BASE}/hub/loads`, { waitUntil: "networkidle2" })
+  // Platform admin never sees the office subtitle — bounce on leaving
+  // /hub/loads, then confirm they landed back on /hub/admin.
+  await admin.waitForFunction(() => !location.pathname.startsWith("/hub/loads"), {
+    timeout: 20000,
+  })
   if (!admin.url().includes("/hub/admin")) throw new Error("Platform admin reached tenant data!")
   console.log("   platform admin contained ✓")
 

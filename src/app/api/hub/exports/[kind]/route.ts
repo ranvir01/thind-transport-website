@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { getHubUser } from "@/lib/hub/session"
+import { getActiveHubUser } from "@/lib/hub/session"
 import { can } from "@/lib/hub/permissions"
 import {
   ExportInputError,
@@ -16,7 +16,7 @@ export async function GET(
   req: Request,
   { params }: { params: Promise<{ kind: string }> }
 ) {
-  const user = await getHubUser()
+  const user = await getActiveHubUser()
   if (!user) return NextResponse.json({ error: "Forbidden" }, { status: 403 })
   const { kind } = await params
 

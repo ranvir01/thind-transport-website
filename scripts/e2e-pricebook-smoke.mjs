@@ -31,6 +31,9 @@ try {
   console.log("Owner: pricebook page")
   await login(page, "owner@demo.thind")
   await page.goto(`${BASE}/hub/settings/pricebook`, { waitUntil: "networkidle2" })
+  // Title "Accessorial Price Book" is not a nav label, but the default
+  // amounts still stream in after — wait for the subtitle.
+  await waitForText(page, "Defaults offered when booking")
   await waitForText(page, "Accessorial Price Book")
   const body = await page.evaluate(() => document.body.innerText)
   for (const name of ["Detention", "Layover", "TONU", "Stop-off", "Tarp", "Lumper"]) {
@@ -51,6 +54,7 @@ try {
   })
   await waitForText(page, "Price book updated")
   await page.goto(`${BASE}/hub/settings/pricebook`, { waitUntil: "networkidle2" })
+  await waitForText(page, "Defaults offered when booking")
   await page.waitForSelector(detentionSel)
   const after = await page.$eval(detentionSel, (el) => el.value)
   check(after === "75.00", `Detention default persisted as 75.00 (got ${after})`)
@@ -61,6 +65,7 @@ try {
   await clickByText(page, "Add")
   await waitForText(page, "Price book updated")
   await page.goto(`${BASE}/hub/settings/pricebook`, { waitUntil: "networkidle2" })
+  await waitForText(page, "Defaults offered when booking")
   await waitForText(page, "Chains")
   const chainsVal = await page.$eval('input[aria-label="Chains default amount"]', (el) => el.value)
   check(chainsVal === "50.00", `Chains persisted at 50.00 (got ${chainsVal})`)
@@ -68,6 +73,7 @@ try {
 
   console.log("Load form quick-add chips reflect the pricebook")
   await page.goto(`${BASE}/hub/loads/new`, { waitUntil: "networkidle2" })
+  await waitForText(page, "Rate con in hand? Get it on the board.")
   await waitForText(page, "Chains")
   const chips = await page.evaluate(() =>
     [...document.querySelectorAll("button")]
@@ -95,6 +101,9 @@ try {
   await login(page2, "dispatch@demo.thind")
   await page2.goto(`${BASE}/hub/settings/pricebook`, { waitUntil: "networkidle2" })
   await waitForPath(page2, "/hub")
+  // Pathname flips before the Today screen streams in — wait for a body
+  // tile, not the always-present "Today" nav label.
+  await waitForText(page2, "Unconfirmed drivers")
   const url2 = page2.url()
   const body2 = await page2.evaluate(() => document.body.innerText)
   check(!url2.includes("/settings/pricebook") && !body2.includes("Accessorial Price Book"),

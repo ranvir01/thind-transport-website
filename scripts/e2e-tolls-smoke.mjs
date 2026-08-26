@@ -43,9 +43,11 @@ async function main() {
   console.log("1. Login as owner, open the fuel screen, follow the new Tolls link")
   await login(page, "owner@demo.thind")
   await page.goto(`${BASE}/hub/fuel`, { waitUntil: "networkidle2" })
-  await waitForText(page, "Fuel spend")
+  await waitForText(page, "Last 92 days across every card program.")
   await clickByText(page, "Tolls", { tag: "a" })
-  await waitForText(page, "Toll spend")
+  // Title "Tolls" is not a nav label, but the KPI "Toll spend" still
+  // streams in with the body — wait for the page subtitle.
+  await waitForText(page, "Last 92 days from every transponder statement.")
   await shot(page, "01-tolls-dashboard")
 
   const stats = await page.evaluate(() => {
@@ -90,7 +92,7 @@ async function main() {
 
   console.log("3. Unassigned count dropped by exactly one, survives a reload")
   await page.goto(`${BASE}/hub/fuel/tolls`, { waitUntil: "networkidle2" })
-  await waitForText(page, "Toll spend")
+  await waitForText(page, "Last 92 days from every transponder statement.")
   const countAfter = await unassignedCount(page)
   check(
     countAfter === countBefore - 1,
@@ -109,6 +111,8 @@ async function main() {
   await page2.setViewport({ width: 390, height: 844 })
   await login(page2, "driver@demo.thind")
   await page2.goto(`${BASE}/hub/fuel/tolls`, { waitUntil: "networkidle2" })
+  // Driver-blocked: bounce is leaving-path, not office subtitle.
+  await page2.waitForFunction(() => !location.pathname.startsWith("/hub/fuel/tolls"))
   const inboxGone = await textGone(page2, "Unassigned tolls")
   check(inboxGone, "driver never sees the unassigned-tolls inbox")
   const driverBlocked = await page2.evaluate(() => ({ url: location.pathname }))

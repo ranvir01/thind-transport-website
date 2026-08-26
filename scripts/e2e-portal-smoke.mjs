@@ -34,14 +34,17 @@ async function main() {
 
   console.log("2. Broker cannot reach office routes")
   await broker.goto(`${BASE}/hub/loads`, { waitUntil: "networkidle2" })
+  // Broker never sees the office subtitle — bounce on leaving /hub/loads.
+  await broker.waitForFunction(() => !location.pathname.startsWith("/hub/loads"), {
+    timeout: 20000,
+  })
   if (!broker.url().includes("/hub/portal")) throw new Error(`Office route not blocked: ${broker.url()}`)
   console.log("   bounced back to the portal ✓")
 
   console.log("3. Open a load detail")
   await broker.goto(`${BASE}/hub/portal`, { waitUntil: "networkidle2" })
-  const loadHref = await broker.evaluate(
-    () => [...document.querySelectorAll("a")].find((a) => a.getAttribute("href")?.includes("/hub/portal/loads/"))?.getAttribute("href")
-  )
+  await waitForText(broker, "no checking calls needed")
+  const loadHref = await broker.evaluate(() => [...document.querySelectorAll("a")].find((a) => a.getAttribute("href")?.includes("/hub/portal/loads/"))?.getAttribute("href"))
   if (!loadHref) throw new Error("No load link found")
   await broker.goto(`${BASE}${loadHref}`, { waitUntil: "networkidle2" })
   await shot(broker, "02-broker-load")

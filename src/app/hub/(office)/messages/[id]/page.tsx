@@ -32,6 +32,7 @@ export default async function OfficeThreadPage({ params }: { params: Promise<{ i
             ? `${thread.load_reference ?? "Load"} — ${thread.driver_name ?? "no driver yet"}`
             : thread.driver_name ?? "Driver"
         }
+        subtitle="Photos and read receipts stay with this thread."
         action={
           thread.load_id ? (
             <Link

@@ -84,6 +84,7 @@ async function main() {
 
   console.log("4. Verify the truck landed on Fleet")
   await page.goto(`${BASE}/hub/fleet`, { waitUntil: "networkidle2" })
+  await waitForText(page, "Trucks, trailers, and their paperwork.")
   await waitForText(page, IMPORTED_UNIT)
   await shot(page, "04-fleet-shows-imported-truck")
 
@@ -93,6 +94,7 @@ async function main() {
   await otherPage.setViewport({ width: 1440, height: 900 })
   await login(otherPage, "owner@cascademo.example")
   await otherPage.goto(`${BASE}/hub/fleet`, { waitUntil: "networkidle2" })
+  await waitForText(otherPage, "Trucks, trailers, and their paperwork.")
   const otherFleetText = await otherPage.evaluate(() => document.body.innerText)
   check(!otherFleetText.includes(IMPORTED_UNIT), "other tenant's Fleet screen never shows the imported unit")
   await shot(otherPage, "05-other-tenant-fleet")
@@ -105,6 +107,9 @@ async function main() {
   await login(driverPage, "driver@demo.thind")
   await driverPage.goto(`${BASE}/hub/import`, { waitUntil: "networkidle2" })
   await waitForPath(driverPage, "/hub/driver")
+  // Pathname flips before the PWA streams in — "Last pay" is home-body copy,
+  // not chrome.
+  await waitForText(driverPage, "Last pay")
   const driverBlocked = await driverPage.evaluate(() => ({
     url: window.location.pathname,
     seesImport: document.body.innerText.includes("Upload"),

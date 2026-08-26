@@ -67,8 +67,8 @@ export async function aggregateLanes(
        ) - (SUM(COALESCE(l.loaded_miles, 0)) + SUM(COALESCE(l.deadhead_miles, 0))) * $${costParamIndex}::int AS margin_cents,
        MAX(l.created_at) AS last_used_at
      FROM hub.loads l
-     JOIN LATERAL (SELECT city, state FROM hub.stops WHERE load_id = l.id AND type = 'pickup' ORDER BY sequence LIMIT 1) fs ON TRUE
-     JOIN LATERAL (SELECT city, state FROM hub.stops WHERE load_id = l.id AND type = 'delivery' ORDER BY sequence DESC LIMIT 1) ls ON TRUE
+     JOIN LATERAL (SELECT city, state FROM hub.stops WHERE load_id = l.id AND carrier_id = l.carrier_id AND type = 'pickup' ORDER BY sequence LIMIT 1) fs ON TRUE
+     JOIN LATERAL (SELECT city, state FROM hub.stops WHERE load_id = l.id AND carrier_id = l.carrier_id AND type = 'delivery' ORDER BY sequence DESC LIMIT 1) ls ON TRUE
      WHERE l.carrier_id = $1 AND l.deleted_at IS NULL AND l.status <> 'cancelled' ${dateFilterSql}
      GROUP BY fs.city, fs.state, ls.city, ls.state`,
     [carrierId, ...dateFilterParams, costPerMileCents]

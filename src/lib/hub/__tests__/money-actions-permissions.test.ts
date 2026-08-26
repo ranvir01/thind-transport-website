@@ -18,7 +18,7 @@ vi.mock("@/lib/hub/invoices", () => ({
   createInvoiceFromLoad: vi.fn(async () => ({ invoice: { id: "inv-1" }, emailed: false })),
   recordPayment: vi.fn(async () => undefined),
   sendFactoringPacket: vi.fn(async () => ({ to: "factor@example.com" })),
-  setInvoiceStatus: vi.fn(async () => undefined),
+  setInvoiceStatus: vi.fn(async () => 1),
   sendCustomerStatement: vi.fn(async () => ({ emailed: false, to: "c@example.com", totalOpenCents: 0, invoiceCount: 0 })),
 }))
 vi.mock("@/lib/hub/settlements", () => ({

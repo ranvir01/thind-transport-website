@@ -156,14 +156,16 @@ export function DemoSimulation() {
   const elapsedRef = useRef(0)
   const startedAtRef = useRef<number | null>(null)
 
-  // Deep link: /hub/demo?seat=driver
+  // Deep link: /hub/demo?seat=driver (defer so SSR stays on the picker; no sync setState-in-effect)
   useEffect(() => {
-    try {
-      const seat = new URLSearchParams(window.location.search).get("seat")
-      if (seat && demoTrack(seat)) setTrackId(seat as DemoTrackId)
-    } catch {
-      /* no deep link */
-    }
+    queueMicrotask(() => {
+      try {
+        const seat = new URLSearchParams(window.location.search).get("seat")
+        if (seat && demoTrack(seat)) setTrackId(seat as DemoTrackId)
+      } catch {
+        /* no deep link */
+      }
+    })
   }, [])
 
   const track = trackId ? demoTrack(trackId) : null

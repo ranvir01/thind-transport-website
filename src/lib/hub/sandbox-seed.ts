@@ -963,7 +963,7 @@ export async function applySandboxScenario(scenario: "steady" | "crunch"): Promi
        SELECT t.carrier_id, t.id, t.assigned_driver_id, 'pre', 284511, '[]',
          '[{"item":"Air lines","note":"Audible leak at the glad hands — will not hold pressure"}]',
          FALSE, $2, d.first_name || ' ' || d.last_name, NOW()
-         FROM hub.trucks t JOIN hub.drivers d ON d.id = t.assigned_driver_id
+         FROM hub.trucks t JOIN hub.drivers d ON d.id = t.assigned_driver_id AND d.carrier_id = t.carrier_id
         WHERE t.carrier_id = $1 AND t.status = 'active' AND t.assigned_driver_id IS NOT NULL
         LIMIT 1`,
       [C, PNG_DOT]

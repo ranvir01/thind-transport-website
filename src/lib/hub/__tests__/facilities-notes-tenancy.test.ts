@@ -13,7 +13,7 @@ vi.mock("../db", () => ({
 }))
 
 import { query } from "../db"
-import { addFacilityNote, listFacilities, recentFacilityStops } from "../facilities"
+import { addFacilityNote, listFacilities, recentFacilityStops, updateFacilityInfo } from "../facilities"
 
 const queryMock = vi.mocked(query)
 
@@ -56,6 +56,24 @@ describe("FACILITY_LIST_SELECT subqueries", () => {
     const sql = String(queryMock.mock.calls[0][0])
     expect(sql).toContain("s.facility_id = f.id AND s.carrier_id = f.carrier_id")
     expect(sql).toContain("n.facility_id = f.id AND n.carrier_id = f.carrier_id")
+  })
+})
+
+describe("updateFacilityInfo", () => {
+  it("returns the RETURNING row count so a foreign facility is a 0-row no-op", async () => {
+    queryMock.mockResolvedValueOnce([])
+    const touched = await updateFacilityInfo(CARRIER, FACILITY, { hours: "0600-1400" })
+    expect(touched).toBe(0)
+    const [sql, params] = queryMock.mock.calls[0]
+    expect(String(sql)).toContain("WHERE carrier_id = $1 AND id = $2")
+    expect(String(sql)).toContain("RETURNING id")
+    expect((params as unknown[]).slice(0, 2)).toEqual([CARRIER, FACILITY])
+  })
+
+  it("returns 1 when the carrier-scoped update matched a row", async () => {
+    queryMock.mockResolvedValueOnce([{ id: FACILITY }])
+    const touched = await updateFacilityInfo(CARRIER, FACILITY, { typicalLumperCents: 12550 })
+    expect(touched).toBe(1)
   })
 })
 

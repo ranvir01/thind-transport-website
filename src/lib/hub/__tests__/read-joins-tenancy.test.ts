@@ -21,7 +21,7 @@ vi.mock("../settings", () => ({
 import { query, queryOne } from "../db"
 import { listFuelTransactions } from "../fuel"
 import { listIncidents } from "../incidents"
-import { getThread, listMessages, listThreadsForOffice, threadReads } from "../messages"
+import { getThread, listMessages, listThreadsForDriver, listThreadsForOffice, threadReads } from "../messages"
 import { listLoads } from "../loads"
 import { listTrucks, latestTruckPositions } from "../fleet"
 import { listApplicants } from "../recruiting"
@@ -31,7 +31,7 @@ import { listInvoices } from "../invoices"
 import { listTasks, runTaskAutomations } from "../tasks"
 import { listFacilityNotes } from "../facilities"
 import { driverActiveLoads, driverDocuments, openDocumentRequests } from "../driver-app"
-import { portalLoads, portalLoadDocuments, portalInvoices } from "../portal"
+import { portalLoads, portalLoadDocuments, portalInvoices, getInvitation } from "../portal"
 import { todayData } from "../today"
 import { listTimeOff } from "../timeoff"
 import { listDvirsForTruck, truckDvirState } from "../dvir"
@@ -41,6 +41,7 @@ import { complianceEntries } from "../compliance"
 import { truckPnlRange } from "../reports"
 import { truckPnl, exportCsv } from "../expenses"
 import { sendOwnerDigest } from "../digest"
+import { driverSafetyBoard } from "../safety-events-db"
 
 const queryMock = vi.mocked(query)
 const queryOneMock = vi.mocked(queryOne)
@@ -89,7 +90,16 @@ describe("read queries carrier-guard their joins (both-sides tenancy)", () => {
     await getThread(CARRIER, "t1")
     expect(lastSql()).toContain("ON l.id = t.load_id AND l.carrier_id = t.carrier_id")
     await listThreadsForOffice(CARRIER, "u1")
-    expect(lastSql()).toContain("ON ld.id = l.driver_id AND ld.carrier_id = t.carrier_id")
+    const officeSql = lastSql()
+    expect(officeSql).toContain("ON ld.id = l.driver_id AND ld.carrier_id = t.carrier_id")
+    // Unread count + last-body laterals must pin messages to the thread's
+    // carrier — thread_id alone would count/preview another tenant's rows.
+    expect(officeSql).toMatch(/FROM hub\.messages m\s+WHERE m\.thread_id = t\.id\s+AND m\.carrier_id = t\.carrier_id/)
+    expect(officeSql).toMatch(/SELECT body FROM hub\.messages m\s+WHERE m\.thread_id = t\.id AND m\.carrier_id = t\.carrier_id/)
+    await listThreadsForDriver(CARRIER, "d1", "u1")
+    const driverSql = lastSql()
+    expect(driverSql).toMatch(/FROM hub\.messages m\s+WHERE m\.thread_id = t\.id\s+AND m\.carrier_id = t\.carrier_id/)
+    expect(driverSql).toMatch(/SELECT body FROM hub\.messages m\s+WHERE m\.thread_id = t\.id AND m\.carrier_id = t\.carrier_id/)
     await listMessages(CARRIER, "t1")
     expect(lastSql()).toContain("ON doc.id = m.document_id AND doc.carrier_id = m.carrier_id")
     await threadReads(CARRIER, "t1")
@@ -175,6 +185,16 @@ describe("read queries carrier-guard their joins (both-sides tenancy)", () => {
   it("driver open document requests guard the load-reference join", async () => {
     await openDocumentRequests(CARRIER, "d1")
     expect(lastSql()).toContain("ON l.id = r.load_id AND l.carrier_id = r.carrier_id")
+  })
+
+  it("portal invitation lookup guards the customer-name join", async () => {
+    await getInvitation("tok-123")
+    const sql = lastSql()
+    // Token is the lookup key (public accept page has no carrier_id yet), but
+    // the customer label still has to match the invitation's tenant — an
+    // id-only join would show another carrier's name on this invite.
+    expect(sql).toContain("JOIN hub.customers c ON c.id = i.customer_id AND c.carrier_id = i.carrier_id")
+    expect(sql).toContain("WHERE i.token = $1")
   })
 
   it("portal load list guards its stop laterals", async () => {
@@ -297,5 +317,14 @@ describe("read queries carrier-guard their joins (both-sides tenancy)", () => {
     const sql = allSql()
     expect(sql).toContain("l.truck_id = t.id AND l.carrier_id = t.carrier_id AND l.deleted_at IS NULL")
     expect(sql).toContain("FROM hub.invoices i WHERE i.load_id = l.id AND i.carrier_id = l.carrier_id")
+  })
+
+  it("driver safety board guards both driver-name joins", async () => {
+    await driverSafetyBoard(CARRIER)
+    const sql = allSql()
+    // Events + delivered-miles both label rows from hub.drivers by id alone
+    // would leak another tenant's name onto the office safety ranking.
+    expect(sql).toContain("JOIN hub.drivers d ON d.id = e.driver_id AND d.carrier_id = e.carrier_id")
+    expect(sql).toContain("JOIN hub.drivers d ON d.id = l.driver_id AND d.carrier_id = l.carrier_id")
   })
 })

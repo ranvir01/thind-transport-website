@@ -81,7 +81,7 @@ async function main() {
   console.log("1. Owner opens the compliance wall")
   await login(page, "owner@demo.thind")
   await page.goto(`${BASE}/hub/compliance`, { waitUntil: "networkidle2" })
-  await waitForText(page, "Compliance")
+  await waitForText(page, "CDLs, med cards")
   const before = await readSummary(page)
   check(Number.isFinite(before.red) && before.red > 0, `red summary > 0 (got ${before.red})`)
   check(Number.isFinite(before.amber) && before.amber > 0, `amber summary > 0 (got ${before.amber})`)
@@ -128,6 +128,7 @@ async function main() {
 
   console.log("4. Upload a driver document on Harpreet's file")
   await page.goto(`${BASE}/hub/drivers`, { waitUntil: "networkidle2" })
+  await waitForText(page, "Roster, pay setup, and qualification files.")
   const driverHref = await page.evaluate(
     () => [...document.querySelectorAll("a")].find((a) => a.textContent.includes("Harpreet"))?.getAttribute("href")
   )
@@ -146,6 +147,7 @@ async function main() {
 
   console.log("5. Truck 102's detail page shows the same mileage-overdue PM")
   await page.goto(`${BASE}/hub/fleet`, { waitUntil: "networkidle2" })
+  await waitForText(page, "Trucks, trailers, and their paperwork.")
   const truckHref = await page.evaluate(
     () => [...document.querySelectorAll("a")].find((a) => a.textContent.includes("#102"))?.getAttribute("href")
   )

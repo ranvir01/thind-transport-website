@@ -26,7 +26,7 @@ export function useStage(stepsMs: number[]): number {
   const [stage, setStage] = useState(0)
   useEffect(() => {
     if (typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      setStage(stepsMs.length)
+      queueMicrotask(() => setStage(stepsMs.length))
       return
     }
     const timers = stepsMs.map((ms, i) => window.setTimeout(() => setStage(i + 1), ms))

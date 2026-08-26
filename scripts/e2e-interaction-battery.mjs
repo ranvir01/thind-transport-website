@@ -16,7 +16,7 @@
  * Run: node scripts/e2e-interaction-battery.mjs [outputDir]
  */
 import { mkdirSync } from "node:fs"
-import { BASE, check, failures, login, makeShot, sleep, waitForStableText, launchBrowser } from "./e2e-lib.mjs"
+import { BASE, check, failures, login, makeShot, sleep, waitForStableText, waitForText, launchBrowser } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-interaction"
 mkdirSync(OUT, { recursive: true })
@@ -205,6 +205,7 @@ async function main() {
   await page.deleteCookie(...(await page.cookies())) // switch users cleanly
   await login(page, "driver@demo.thind")
   await page.goto(`${BASE}/hub/driver`, { waitUntil: "networkidle2", timeout: 45000 })
+  await waitForText(page, "Last pay")
   await waitForStableText(page)
   const TABS = ["/hub/driver/messages", "/hub/driver/pay", "/hub/driver/more", "/hub/driver"]
   let tabTrips = 0

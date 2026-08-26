@@ -35,6 +35,7 @@ async function main() {
   console.log("1. Login as owner, open the customers list")
   await login(page, "owner@demo.thind")
   await page.goto(`${BASE}/hub/customers`, { waitUntil: "networkidle2" })
+  await waitForText(page, "Brokers and shippers — your book of business.")
   await waitForText(page, CUSTOMER)
   const list = await page.evaluate((name) => {
     const card = [...document.querySelectorAll("a[href^='/hub/customers/']")].find((a) =>

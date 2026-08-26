@@ -33,8 +33,9 @@
  * (and for planner index selection), 3 as the regression proof for the policies.
  */
 import { afterAll, beforeAll, describe, expect, it } from "vitest"
-import { readFileSync, existsSync, readdirSync, statSync } from "node:fs"
+import { readFileSync, readdirSync, statSync } from "node:fs"
 import path from "node:path"
+import { loadEnvLocal } from "../../../../scripts/env-local.mjs"
 
 const ROOT = process.cwd()
 const HUB_LIB = path.join(ROOT, "src", "lib", "hub")
@@ -259,16 +260,7 @@ describe("static scan: every hub.* query carries its own carrier scope", () => {
 // 3. Live proof — requires POSTGRES_URL
 // ---------------------------------------------------------------------------
 
-function loadEnvLocal() {
-  if (process.env.POSTGRES_URL) return
-  const envPath = path.join(ROOT, ".env.local")
-  if (!existsSync(envPath)) return
-  for (const line of readFileSync(envPath, "utf-8").split("\n")) {
-    const match = line.match(/^([A-Z0-9_]+)=(.*)$/)
-    if (match && !process.env[match[1]]) process.env[match[1]] = match[2]
-  }
-}
-loadEnvLocal()
+loadEnvLocal({ skipWhenSet: "POSTGRES_URL", cwd: ROOT })
 
 const hasDb = Boolean(process.env.POSTGRES_URL)
 

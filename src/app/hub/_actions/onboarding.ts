@@ -9,7 +9,7 @@ import bcrypt from "bcrypt"
 import { hubDb, queryOne } from "@/lib/hub/db"
 import { isLockedOut, recordAttempt } from "@/lib/hub/auth-throttle"
 import { acceptDriverInvite } from "@/lib/hub/driver-invite"
-import { getHubUser, requireOwner } from "@/lib/hub/session"
+import { getActiveHubUser, requireOwner } from "@/lib/hub/session"
 import { logAudit } from "@/lib/hub/audit"
 import { actionError } from "@/lib/hub/action-error"
 import { dollarsToCents } from "@/lib/hub/types"
@@ -232,7 +232,9 @@ export interface GettingStarted {
 
 /** Which getting-started steps are done (drives the new-carrier checklist). */
 export async function gettingStartedState(): Promise<GettingStarted | null> {
-  const user = await getHubUser()
+  // Active re-check, not bare getHubUser: a suspended tenant's JWT must not
+  // keep reading its carrier's entity counts (session.ts standing rule).
+  const user = await getActiveHubUser()
   if (!user) return null
   const row = await queryOne<{ trucks: string; drivers: string; customers: string; loads: string; packet: string; fuel: string }>(
     `SELECT

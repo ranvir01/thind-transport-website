@@ -65,6 +65,13 @@ describe("portal home page accent tokens", () => {
     expect(HOME_SOURCE).not.toMatch(/text-gold|bg-gold|border-gold/)
     expect(HOME_SOURCE).toMatch(/var\(--portal-accent\)/)
   })
+
+  it("the family-gate subtitle is always-on, outside broker/shipper and empty-state branches", () => {
+    const gate = HOME_SOURCE.indexOf("no checking calls needed")
+    const shipperBranch = HOME_SOURCE.indexOf("{user.portalRole === \"shipper\"")
+    expect(gate).toBeGreaterThan(-1)
+    expect(shipperBranch).toBeGreaterThan(gate)
+  })
 })
 
 describe("shared progress/timeline components (portal + public track)", () => {
@@ -104,5 +111,12 @@ describe("accept invitation page + form accent tokens (sessionless, resolves via
   it("the form's submit button follows --portal-accent, not the internal ops bg-accent/text-accent-fg tokens", () => {
     expect(ACCEPT_FORM_SOURCE).not.toMatch(/bg-accent\b|text-accent-fg\b|bg-accent-hover\b/)
     expect(ACCEPT_FORM_SOURCE).toMatch(/var\(--portal-accent\)/)
+  })
+
+  it("the card kicker is family-gate copy outside the invitation-state ternary", () => {
+    const kicker = ACCEPT_PAGE_SOURCE.indexOf("Portal invitation")
+    const ternary = ACCEPT_PAGE_SOURCE.indexOf("{!invitation")
+    expect(kicker).toBeGreaterThan(-1)
+    expect(ternary).toBeGreaterThan(kicker)
   })
 })

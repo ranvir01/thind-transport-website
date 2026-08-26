@@ -16,7 +16,7 @@
  * Usage: node scripts/e2e-fleet-smoke.mjs [outputDir]
  */
 import { mkdirSync } from "node:fs"
-import { launchBrowser, BASE, failures, check, waitForText, waitForPath, login, makeShot, clickByText, reseed, realConsoleErrors } from "./e2e-lib.mjs"
+import { launchBrowser, BASE, failures, check, waitForText, login, makeShot, clickByText, reseed, realConsoleErrors } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-fleet"
 mkdirSync(OUT, { recursive: true })
@@ -58,6 +58,7 @@ async function main() {
   console.log("1. Login as dispatcher, open Fleet")
   await login(page, "dispatch@demo.thind")
   await page.goto(`${BASE}/hub/fleet`, { waitUntil: "networkidle2" })
+  await waitForText(page, "Trucks, trailers, and their paperwork.")
   await waitForText(page, `Trucks (${SEED_TRUCKS})`)
   const fleet = await page.evaluate(() => {
     const text = document.body.innerText
@@ -72,7 +73,7 @@ async function main() {
 
   console.log("2. Add a truck")
   await page.goto(`${BASE}/hub/fleet/trucks/new`, { waitUntil: "networkidle2" })
-  await waitForText(page, "Add Truck")
+  await waitForText(page, "Paste the VIN and decode to fill the specs.")
   await page.type("#unit_number", TRUCK_UNIT)
   await page.type("#vin", "1XKAD49X1SJ430911")
   await page.type("#year", "2025")
@@ -119,7 +120,7 @@ async function main() {
 
   console.log("4. Add a trailer")
   await page.goto(`${BASE}/hub/fleet/trailers/new`, { waitUntil: "networkidle2" })
-  await waitForText(page, "Add Trailer")
+  await waitForText(page, "Unit number and type first — then plate and inspection dates.")
   await page.type("#t_unit", TRAILER_UNIT)
   await page.select("#t_type", "reefer")
   await page.type("#t_year", "2024")
@@ -161,7 +162,7 @@ async function main() {
 
   console.log("5. Duplicate unit number is rejected")
   await page.goto(`${BASE}/hub/fleet/trucks/new`, { waitUntil: "networkidle2" })
-  await waitForText(page, "Add Truck")
+  await waitForText(page, "Paste the VIN and decode to fill the specs.")
   await page.type("#unit_number", "101") // seeded unit
   await clickByText(page, "Add truck")
   await waitForText(page, "Unit number already exists")
@@ -177,16 +178,18 @@ async function main() {
   await acctPage.setViewport({ width: 1440, height: 900 })
   await login(acctPage, "accounting@demo.thind")
   await acctPage.goto(`${BASE}/hub/fleet`, { waitUntil: "networkidle2" })
+  await waitForText(acctPage, "Trucks, trailers, and their paperwork.")
   await waitForText(acctPage, `Trucks (${SEED_TRUCKS + 1})`)
   check(true, "accountant sees the fleet list (fleet:read)")
   await acctPage.goto(`${BASE}/hub/fleet/trucks/new`, { waitUntil: "networkidle2" })
-  await waitForText(acctPage, "Add Truck")
+  await waitForText(acctPage, "Paste the VIN and decode to fill the specs.")
   await acctPage.type("#unit_number", "SMK-999")
   await clickByText(acctPage, "Add truck")
   await waitForText(acctPage, "cannot fleet:write")
   check(true, "server action refuses accountant (Forbidden: accountant cannot fleet:write)")
   await shot(acctPage, "07-accountant-refused")
   await acctPage.goto(`${BASE}/hub/fleet`, { waitUntil: "networkidle2" })
+  await waitForText(acctPage, "Trucks, trailers, and their paperwork.")
   await waitForText(acctPage, `Trucks (${SEED_TRUCKS + 1})`)
   const noPhantom = await acctPage.evaluate(() => !document.body.innerText.includes("SMK-999"))
   check(noPhantom, `refused save wrote nothing (still ${SEED_TRUCKS + 1} trucks, no SMK-999)`)
@@ -197,7 +200,12 @@ async function main() {
   await driverPage.setViewport({ width: 390, height: 844 })
   await login(driverPage, "driver@demo.thind")
   await driverPage.goto(`${BASE}/hub/fleet`, { waitUntil: "networkidle2" })
-  await waitForPath(driverPage, "/hub/driver")
+  // Driver never sees the office subtitle — bounce on leaving /hub/fleet,
+  // then wait for PWA home copy. Pathname flips before the body streams in.
+  await driverPage.waitForFunction(() => !location.pathname.startsWith("/hub/fleet"), {
+    timeout: 20000,
+  })
+  await waitForText(driverPage, "Last pay")
   const driverBlocked = await driverPage.evaluate(() => ({
     url: location.pathname,
     seesFleet: document.body.innerText.includes("Trucks, trailers, and their paperwork"),

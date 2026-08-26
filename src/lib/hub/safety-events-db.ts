@@ -97,7 +97,9 @@ export interface DriverSafetyRow {
   score: number | null
 }
 
-/** Per-driver scores over the trailing window; riskiest first. */
+/** Per-driver scores over the trailing window; riskiest first.
+ *  Driver-name joins pin carrier_id on both sides — an id-only join would
+ *  label this tenant's events with another carrier's driver row. */
 export async function driverSafetyBoard(carrierId: string, limit = 6): Promise<DriverSafetyRow[]> {
   const windowStarts = recentWeekStarts(new Date(), SAFETY_WINDOW_WEEKS)
   const since = `${windowStarts[0]}T00:00:00Z`
@@ -105,7 +107,7 @@ export async function driverSafetyBoard(carrierId: string, limit = 6): Promise<D
     query<{ driver_id: string; name: string; kind: SafetyEventKind; n: number }>(
       `SELECT e.driver_id, d.first_name || ' ' || d.last_name AS name, e.kind, COUNT(*)::int AS n
          FROM hub.safety_events e
-         JOIN hub.drivers d ON d.id = e.driver_id
+         JOIN hub.drivers d ON d.id = e.driver_id AND d.carrier_id = e.carrier_id
         WHERE e.carrier_id = $1 AND e.occurred_at >= $2 AND e.driver_id IS NOT NULL
         GROUP BY 1, 2, 3`,
       [carrierId, since]
@@ -114,7 +116,7 @@ export async function driverSafetyBoard(carrierId: string, limit = 6): Promise<D
       `SELECT l.driver_id, d.first_name || ' ' || d.last_name AS name,
               COALESCE(SUM(COALESCE(l.loaded_miles, 0) + COALESCE(l.deadhead_miles, 0)), 0)::int AS miles
          FROM hub.loads l
-         JOIN hub.drivers d ON d.id = l.driver_id
+         JOIN hub.drivers d ON d.id = l.driver_id AND d.carrier_id = l.carrier_id
         WHERE l.carrier_id = $1
           AND l.status IN ${DELIVERED_STATUSES}
           AND COALESCE(l.delivered_at, l.created_at) >= $2

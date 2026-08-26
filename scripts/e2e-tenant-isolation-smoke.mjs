@@ -98,6 +98,7 @@ async function main() {
   await login(thind, "owner@demo.thind")
 
   await thind.goto(`${BASE}/hub/loads`, { waitUntil: "networkidle2" })
+  await waitForText(thind, "Search, filter, and manage every load.")
   await waitForText(thind, "THD-")
   const thindLoadsWall = await bodyText(thind)
   check(!thindLoadsWall.includes("CAS-5"), "Thind loads list has no CAS- reference")
@@ -111,6 +112,7 @@ async function main() {
   check(!(await bodyText(thind)).includes("CAS-INV"), "Thind money screen has no CAS-INV reference")
 
   await thind.goto(`${BASE}/hub/fleet`, { waitUntil: "networkidle2" })
+  await waitForText(thind, "Trucks, trailers, and their paperwork.")
   // Fleet is an RSC list page — wait for a real unit number to render
   // (101–107) instead of a blind sleep after networkidle2.
   await thind.waitForFunction(() => /\b10[1-7]\b/.test(document.body.innerText), { timeout: 8000 }).catch(() => {})
@@ -137,13 +139,14 @@ async function main() {
   await login(cascade, "owner@cascademo.example")
 
   await cascade.goto(`${BASE}/hub/dispatch`, { waitUntil: "networkidle2" })
-  await waitForText(cascade, "every active load, booking to pod")
+  await waitForText(cascade, "Every active load, booking to POD.")
   const cascadeDispatchWall = await bodyText(cascade)
   check(cascadeDispatchWall.includes("CAS-5001"), "Cascade dispatch shows its in-transit load CAS-5001")
   check(!cascadeDispatchWall.includes("THD-"), "Cascade dispatch has no THD- reference")
   await shot(cascade, "02-cascade-dispatch")
 
   await cascade.goto(`${BASE}/hub/fleet`, { waitUntil: "networkidle2" })
+  await waitForText(cascade, "Trucks, trailers, and their paperwork.")
   await cascade
     .waitForFunction(() => document.body.innerText.includes("C-01") && document.body.innerText.includes("C-02"), {
       timeout: 8000,
@@ -196,14 +199,14 @@ async function main() {
   })
   await login(driver, "driver@cascademo.example")
   await driver.goto(`${BASE}/hub/driver`, { waitUntil: "networkidle2" })
-  await waitForText(driver, "my cards")
+  await waitForText(driver, "Last pay")
   const driverHomeWall = await bodyText(driver)
   check(driverHomeWall.length > 40, "Cascade driver home renders real content")
   check(!driverHomeWall.includes("THD-"), "Cascade driver home has no THD- reference")
   await shot(driver, "05-cascade-driver-home")
 
   await driver.goto(`${BASE}/hub/driver/pay`, { waitUntil: "networkidle2" })
-  await waitForText(driver, "line by line")
+  await waitForText(driver, "Every settlement, line by line — tap one to see what's in it.")
   check(!(await bodyText(driver)).includes("THD-"), "Cascade driver pay has no THD- reference")
   await shot(driver, "06-cascade-driver-pay")
 
@@ -217,6 +220,10 @@ async function main() {
   await admin.setViewport({ width: 1440, height: 950 })
   await login(admin, "admin@hauldesk.app")
   await admin.goto(`${BASE}/hub/admin`, { waitUntil: "networkidle2" })
+  // Title "Platform admin" is unique (this surface has no office nav), but
+  // the subtitle is the destination-copy mapping — wait for it before
+  // reading tenant rows off the streamed body.
+  await waitForText(admin, "Tenants and operational counts only")
   await waitForText(admin, "Cascade Demo Lines")
 
   check(await clickTenantAction(admin, "Cascade Demo Lines"), "clicked Suspend on Cascade Demo Lines")
@@ -225,7 +232,15 @@ async function main() {
   // The Cascade owner's session cookie is still a valid JWT — only the
   // per-request isActiveCarrier re-check (src/lib/hub/session.ts) should stop it.
   await cascade.goto(`${BASE}/hub/dispatch`, { waitUntil: "networkidle2" })
+  // Suspended owner never sees the office subtitle — bounce on leaving
+  // /hub/dispatch, then wait for the dead-end copy.
+  await cascade.waitForFunction(() => !location.pathname.startsWith("/hub/dispatch"), {
+    timeout: 20000,
+  })
   check(await waitForPath(cascade, "/hub/suspended"), "suspended Cascade owner is redirected to /hub/suspended")
+  // Pathname flips before the dead-end streams in. waitForText lowercases,
+  // so the Tailwind `uppercase` h1 still matches.
+  await waitForText(cascade, "Workspace suspended")
   // h1 is `uppercase` via Tailwind, and innerText reflects the rendered
   // (CSS-transformed) case, not the source string — compare lowercased.
   check(
@@ -235,7 +250,11 @@ async function main() {
 
   // The Cascade driver PWA session must be cut off the same way, not just the office side.
   await driver.goto(`${BASE}/hub/driver`, { waitUntil: "networkidle2" })
+  // Suspended driver never sees the PWA "Last pay" card — bounce on leaving
+  // /hub/driver, then wait for the dead-end copy (same pattern as the
+  // roleless /hub/login bounce).
   check(await waitForPath(driver, "/hub/suspended"), "suspended Cascade driver is redirected to /hub/suspended")
+  await waitForText(driver, "Workspace suspended")
 
   // ---- 6. Reactivate — access is restored without a fresh login ----
   console.log("6. Platform admin reactivates Cascade — owner access is restored")
@@ -244,7 +263,7 @@ async function main() {
 
   await cascade.goto(`${BASE}/hub/dispatch`, { waitUntil: "networkidle2" })
   check(
-    await textAppears(cascade, "every active load, booking to pod"),
+    await textAppears(cascade, "Every active load, booking to POD."),
     "reactivated Cascade owner reaches /hub/dispatch again"
   )
 

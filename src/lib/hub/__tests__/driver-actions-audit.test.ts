@@ -36,6 +36,7 @@ vi.mock("@/lib/hub/db", () => ({
 
 import { hubDb, query, queryOne } from "@/lib/hub/db"
 import { logAudit } from "@/lib/hub/audit"
+import { notifyRoles } from "@/lib/hub/notify"
 import { setStopTimestamp } from "@/lib/hub/loads"
 import { driverRequestAdvance, driverStopTimestamp, driverUploadDocument } from "@/app/hub/_actions/driver"
 
@@ -43,6 +44,7 @@ const queryMock = vi.mocked(query)
 const queryOneMock = vi.mocked(queryOne)
 const hubDbMock = vi.mocked(hubDb)
 const logAuditMock = vi.mocked(logAudit)
+const notifyMock = vi.mocked(notifyRoles)
 const setStopTimestampMock = vi.mocked(setStopTimestamp)
 
 /**
@@ -69,6 +71,7 @@ beforeEach(() => {
   queryMock.mockClear()
   queryOneMock.mockClear()
   logAuditMock.mockClear()
+  notifyMock.mockClear()
   hubDbMock.mockReset()
   setStopTimestampMock.mockClear()
   queryMock.mockResolvedValue([{ id: "row-1" }])
@@ -92,6 +95,74 @@ describe("driverRequestAdvance", () => {
     expect(result.ok).toBe(false)
     expect(result.error).toMatch(/advance limit/i)
     expect(logAuditMock).not.toHaveBeenCalled()
+  })
+})
+
+describe("driverUploadDocument — POD with OS&D", () => {
+  it("pins the Carmack filing-deadline stop lookup to the driver's carrier", async () => {
+    const formData = new FormData()
+    formData.set("load_id", "load-1")
+    formData.set("kind", "pod")
+    formData.set("osd", "1")
+    formData.set("file", new File(["x"], "pod.jpg", { type: "image/jpeg" }))
+
+    const result = await driverUploadDocument(formData)
+    expect(result.ok).toBe(true)
+
+    const claimSql = queryMock.mock.calls
+      .map(([sql]) => String(sql))
+      .find((sql) => sql.includes("INSERT INTO hub.claims"))
+    expect(claimSql).toBeTruthy()
+    // A load_id + type filter alone would let a foreign delivery stop's
+    // departed_at set the 9-month filing deadline (hub.stops lateral sweep).
+    expect(claimSql).toContain("FROM hub.stops s WHERE s.carrier_id = $1 AND s.load_id = $2 AND s.type = 'delivery'")
+    const claimArgs = queryMock.mock.calls.find(([sql]) =>
+      String(sql).includes("INSERT INTO hub.claims")
+    )?.[1]
+    expect(claimArgs).toEqual(["carrier-1", "load-1"])
+    expect(claimSql).toMatch(/RETURNING id/i)
+  })
+
+  it("alerts the office with Draft claim first, not buried after the load reference", async () => {
+    const formData = new FormData()
+    formData.set("load_id", "load-1")
+    formData.set("kind", "pod")
+    formData.set("osd", "1")
+    formData.set("file", new File(["x"], "pod.jpg", { type: "image/jpeg" }))
+
+    const result = await driverUploadDocument(formData)
+    expect(result.ok).toBe(true)
+    expect(notifyMock).toHaveBeenCalledWith(
+      "carrier-1",
+      ["owner", "dispatcher", "accountant"],
+      expect.objectContaining({
+        kind: "claim",
+        title: "Draft claim opened — L-1",
+        body: expect.stringMatching(/OS&D exceptions from Sam Driver/i),
+        link: "/hub/safety/claims/row-1",
+      })
+    )
+  })
+
+  it("a POD without OS&D keeps the paperwork title and load link", async () => {
+    const formData = new FormData()
+    formData.set("load_id", "load-1")
+    formData.set("kind", "pod")
+    formData.set("file", new File(["x"], "pod.jpg", { type: "image/jpeg" }))
+
+    const result = await driverUploadDocument(formData)
+    expect(result.ok).toBe(true)
+    expect(notifyMock).toHaveBeenCalledWith(
+      "carrier-1",
+      ["owner", "dispatcher", "accountant"],
+      expect.objectContaining({
+        kind: "driver_document",
+        title: "L-1 — Sam Driver sent the POD",
+        link: "/hub/loads/load-1",
+      })
+    )
+    const payload = notifyMock.mock.calls[0]?.[2] as { title?: string }
+    expect(payload.title?.toLowerCase()).not.toContain("draft claim")
   })
 })
 

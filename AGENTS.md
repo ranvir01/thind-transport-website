@@ -115,6 +115,14 @@ Starting an agent? Paste [`docs/cursor-agent-preamble.md`](docs/cursor-agent-pre
 | `npm run design-qa` | Contrast below 4.5:1 (3:1 for large text), horizontal overflow, undersized tap targets, or missing alt text | Needs the app built and running locally. Audits 23 office screens + the driver app + public routes. |
 | `npm run js-budget` | A marketing route ships more gzipped JS than the ceiling | Needs a **verified-complete** `rm -rf .next && npm run build`, then `npm run start` — it measures the production build in a real browser at a pinned 390px viewport. A partial `.next` reports a flatteringly low number instead of failing, and has done. Ratchet: routes may shrink, never grow. Target 170KB, currently 236–280KB. |
 
+`typecheck:gate` is NOT part of `npm run build`, and vitest transpiles with esbuild without
+typechecking — so a test-file type error passes the usual `npm run build && npx vitest run` chain and
+reaches `main`. A repo-local `.githooks/pre-push` hook runs the gate before any push that touches
+TypeScript; `npm install` wires it up via `prepare` (`npm run hooks:install` to do it by hand). It is
+bypassable on purpose — `SKIP_TYPECHECK_GATE=1 git push …` or `git push --no-verify` — because a hook
+that can wedge the integrator drain is worse than the debt it prevents. Guarded by
+`src/lib/__tests__/typecheck-hook-guard.test.ts`.
+
 A ratchet stops being a ratchet the moment you raise its number to make a build pass. If a change
 genuinely needs more budget, say so in the commit body — don't edit the constant quietly.
 

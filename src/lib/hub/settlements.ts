@@ -118,7 +118,8 @@ export async function draftSettlements(
       stops_count: number | null; uninvoiced: boolean
     }>(
       `SELECT id, reference, linehaul_cents, fuel_surcharge_cents, accessorials, loaded_miles, deadhead_miles,
-         (SELECT COUNT(*)::int FROM hub.stops s WHERE s.load_id = hub.loads.id) AS stops_count,
+         (SELECT COUNT(*)::int FROM hub.stops s
+           WHERE s.load_id = hub.loads.id AND s.carrier_id = hub.loads.carrier_id) AS stops_count,
          NOT EXISTS (
            SELECT 1 FROM hub.invoices i
            WHERE i.carrier_id = hub.loads.carrier_id AND i.load_id = hub.loads.id

@@ -29,7 +29,7 @@ async function main() {
   console.log("1. Login as owner, open an invoice's detail page")
   await login(page, "owner@demo.thind")
   await page.goto(`${BASE}/hub/money/invoices`, { waitUntil: "networkidle2" })
-  await waitForText(page, "Invoices")
+  await waitForText(page, "Every invoice, paid or open")
   const detailHref = await page.evaluate(() =>
     [...document.querySelectorAll("a")].find((a) => /\/hub\/money\/invoices\/[^/]+$/.test(a.href))?.href ?? null
   )

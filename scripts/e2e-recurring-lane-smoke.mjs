@@ -71,6 +71,7 @@ async function main() {
   console.log("1. Owner opens the settled Pipe load")
   await login(page, "owner@demo.thind")
   await page.goto(`${BASE}/hub/loads?status=all&q=Pipe`, { waitUntil: "networkidle2" })
+  await waitForText(page, "Search, filter, and manage every load.")
   await waitForText(page, "Sacramento")
   const loadHref = await page.evaluate(() => {
     const row = [...document.querySelectorAll("a")].find(
@@ -128,6 +129,7 @@ async function main() {
   await shot(page, "03-rule-last-booked")
 
   await page.goto(`${BASE}/hub/loads?status=all&q=${bookedRef}`, { waitUntil: "networkidle2" })
+  await waitForText(page, "Search, filter, and manage every load.")
   const copyHref = await page.evaluate((ref) => {
     const row = [...document.querySelectorAll("a")].find(
       (a) => /\/hub\/loads\/[0-9a-f-]{36}/.test(a.getAttribute("href") ?? "") && a.textContent.includes(ref)

@@ -246,7 +246,8 @@ export function ImportHub({
 
   useEffect(() => {
     if (!def?.templateKind) {
-      setTemplates([])
+      // Clear stale templates when switching to a kind without templates (async to satisfy set-state-in-effect).
+      queueMicrotask(() => setTemplates([]))
       return
     }
     let stale = false
