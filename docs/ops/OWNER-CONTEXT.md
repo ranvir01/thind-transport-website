@@ -74,7 +74,10 @@ deep-verify, or meta-governor while those Claude tasks are live.
 **GitHub Actions** keep `main` moving when Cursor is off: drain `:17`/`:47`,
 liveness `:10`.
 
-**Grok Bot** watches Google / GitHub / Dropbox / LinkedIn / Vercel. Never git.
+**Grok Bot** watches the whole portfolio (home repo
+`thind-transport-website`, other `ranvir01/*` including `bls-website`, AR
+Payments / Dropbox, LinkedIn). Connectors: Google / GitHub / Dropbox /
+LinkedIn / Vercel. Never git.
 
 ## AR Payments (Airtable back office)
 

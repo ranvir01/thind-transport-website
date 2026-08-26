@@ -38,7 +38,7 @@ describe("grok-bot instruction files (paste-ready, ≤4k)", () => {
     }
   })
 
-  it("the Watcher starts from the daily tools and never writes git", () => {
+  it("the Watcher starts from the daily tools, covers the home repo plus other projects, and never writes git", () => {
     const watcher = readFileSync(path.join(DIR, "watcher.instructions.md"), "utf-8")
     expect(watcher).toMatch(/Google/)
     expect(watcher).toMatch(/GitHub/)
@@ -47,6 +47,10 @@ describe("grok-bot instruction files (paste-ready, ≤4k)", () => {
     expect(watcher).toMatch(/Vercel/)
     expect(watcher).toMatch(/Never git push/i)
     expect(watcher).toMatch(/Watches sites, dashboards, and feeds/)
+    expect(watcher).toMatch(/thind-transport-website/)
+    expect(watcher).toMatch(/ranvir01/)
+    expect(watcher).toMatch(/bls-website/)
+    expect(watcher).toMatch(/portfolio/)
   })
 
   it("the README names the three-platform split and the never-git rule", () => {

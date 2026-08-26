@@ -20,7 +20,7 @@ Updated **2026-08-26**.
 | 1 | File **Form 2290 HVUT** (both EINs) and keep the stamped Schedule 1 | **2026-08-31** | IRS / IRP; ~$8,250; blocks plate renewal |
 | 2 | Airtable **Team** upgrade or accept the 1,000-record cap | **~2026-09-02** | Billing; trial started ~Aug 19 |
 | 3 | Rotate Gmail **App Password** into Vercel `SMTP_USER` / `SMTP_PASS` and redeploy | overdue (SMTP 535 since 2026-07-26) | Credential only you can mint |
-| 4 | Paste Grok Bot instructions from [`docs/grok-bots/`](../grok-bots/README.md), then send [`SPAWN.md`](../grok-bots/SPAWN.md) to the Watcher | whenever | No API to create Grok Bots from this repo |
+| 4 | Paste Grok Bot instructions from [`docs/grok-bots/`](../grok-bots/README.md) (portfolio Watcher: Thind Transport home repo **and** other `ranvir01` projects), then send [`SPAWN.md`](../grok-bots/SPAWN.md) to the Watcher | whenever | No API to create Grok Bots from this repo |
 | 5 | Re-enable Cursor **Integrator**, **Prod Smoke**, **Deploy + backlog** if you want Cursor as redundant drain/smoke — leave **Untitled** off | whenever | Agents cannot toggle cursor.com/automations (read-only). All four were **disabled** 2026-08-26. |
 | 6 | Import Cursor role slots **only** where Claude has no twin: office, driver, tests, integrations (see FLEET.md). Do **not** import marketing / deep-verify / meta-governor while those Claude tasks are live | whenever | Same charter, two platforms = two writers on one lane |
 

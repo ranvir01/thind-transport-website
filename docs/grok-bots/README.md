@@ -11,14 +11,20 @@ Instruction bodies are capped at **4,000 characters** (product limit).
 `src/lib/__tests__/grok-bot-instructions-guard.test.ts` fails if a file here
 goes over.
 
-## Three platforms, one repo
+## Three platforms, many projects
+
+The Watcher covers Ranvir's **whole portfolio**. Default when ambiguous: Thind
+Transport / LoadOff (`github.com/ranvir01/thind-transport-website`). Other
+`github.com/ranvir01/*` repos (including `bls-website`), AR Payments / Dropbox
+Excel, and LinkedIn career watch are in the same charter. Code writers below
+apply to the home repo; Grok Bot still never pushes git anywhere.
 
 | Layer | What it is | Writes git? | Lives |
 |---|---|---|---|
 | **Claude Corps** | 14 scheduled tasks, all enabled (2026-08-26 master context) | Yes — `claude/*` then integrator → main | claude.ai Routines |
 | **Cursor Automations** | Grok 4.6 code agents. Dashboard copies currently **DISABLED** (Integrator, Prod Smoke, Deploy + backlog, Untitled — observed 2026-08-26) | Yes when enabled | cursor.com/automations |
 | **GitHub Actions** | Drain `:17`/`:47`, liveness `:10`, E2E `03:40` | Drain writes `main`; liveness/E2E do not | `.github/workflows/` |
-| **Grok Bot** | Watches sites, dashboards, feeds. Connectors first: **Google, GitHub, Dropbox, LinkedIn, Vercel** | **Never** | Grok Bot app (~4 named slots) |
+| **Grok Bot** | Watches sites, dashboards, feeds across the portfolio. Connectors first: **Google, GitHub, Dropbox, LinkedIn, Vercel**. Home repo first, then other `ranvir01` projects. | **Never** | Grok Bot app (~4 named slots) |
 
 Code changes still land through Claude / Cursor / CI. Grok Bot **files a finding
 in chat** (or a numbered click path ≤6 steps). It does not push, merge, import
