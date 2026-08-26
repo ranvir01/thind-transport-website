@@ -76,7 +76,12 @@ export function HubShell({
           <span className="hidden font-semibold tracking-tight text-fg lg:block">{PRODUCT.name}</span>
         </Link>
         <span aria-hidden className="hidden h-5 w-px bg-border lg:block" />
-        <WorkspaceChip name={user.carrierName || PRODUCT.name} accent={accent} isOwner={isOwner} />
+        <WorkspaceChip
+          name={user.carrierName || PRODUCT.name}
+          accent={accent}
+          isOwner={isOwner}
+          simView={simulation && isOwner ? simView : undefined}
+        />
         {simulation ? <SimulationBadge compact className="shrink-0" /> : null}
         {simulation && isOwner && simView ? (
           <div className="hidden shrink-0 md:block">

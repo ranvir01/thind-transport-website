@@ -12,15 +12,26 @@ const OPTIONS: { id: SimView; label: string }[] = [
   { id: "all", label: "All" },
 ]
 
-export function SimSwitcher({ current }: { current: SimView }) {
+export function SimSwitcher({
+  current,
+  size = "compact",
+}: {
+  current: SimView
+  /** compact = header pill; comfortable = 44px taps in the workspace menu. */
+  size?: "compact" | "comfortable"
+}) {
   const router = useRouter()
   const [pending, start] = useTransition()
+  const comfortable = size === "comfortable"
 
   return (
     <div
       role="group"
       aria-label="Simulation company"
-      className="flex items-center rounded-pill bg-hover p-0.5 text-[11px] font-semibold"
+      className={cn(
+        "flex items-center rounded-pill bg-hover p-0.5 font-semibold",
+        comfortable ? "w-full text-sm" : "text-[11px]"
+      )}
     >
       {OPTIONS.map((opt) => (
         <button
@@ -34,7 +45,8 @@ export function SimSwitcher({ current }: { current: SimView }) {
             })
           }}
           className={cn(
-            "rounded-pill px-2 py-1 min-h-[28px]",
+            "rounded-pill",
+            comfortable ? "min-h-[44px] flex-1 px-3" : "min-h-[28px] px-2 py-1",
             current === opt.id ? "bg-surface text-fg shadow-card" : "text-fg-3 hover:text-fg"
           )}
         >

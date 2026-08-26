@@ -3,12 +3,13 @@ import { isSimulation, readPlatformState } from "@/lib/hub/mode"
 import { PageHeader, Panel } from "@/components/hub/ui"
 import { AdvanceSimDayButton } from "@/components/hub/AdvanceSimDayButton"
 import { SimulationBadge } from "@/components/hub/SimulationBadge"
+import { SimSwitcher } from "@/components/hub/SimSwitcher"
 import Link from "next/link"
 
 export const dynamic = "force-dynamic"
 
 export default async function SimulationSettingsPage() {
-  await requireOwner()
+  const user = await requireOwner()
   const sim = await isSimulation()
   const state = await readPlatformState()
 
@@ -34,6 +35,12 @@ export default async function SimulationSettingsPage() {
                 <dd className="font-mono text-fg">{state?.sim_clock_date ?? "today"}</dd>
               </div>
             </dl>
+            {user.simView ? (
+              <div>
+                <p className="mb-2 text-sm text-fg-3">Company</p>
+                <SimSwitcher current={user.simView} size="comfortable" />
+              </div>
+            ) : null}
             <AdvanceSimDayButton />
             <p className="text-body-xs text-fg-3">
               Advances in-flight loads, nudges ELD positions, ages AR, and may book a new today load.

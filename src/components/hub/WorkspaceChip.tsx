@@ -11,6 +11,8 @@ import Link from "next/link"
 import { BookOpen, Check, ChevronDown, Plug, Settings, Wrench } from "lucide-react"
 import { LOADOFF_BRAND } from "@/lib/hub/brand"
 import { cn } from "@/lib/utils"
+import { SimSwitcher } from "@/components/hub/SimSwitcher"
+import type { SimView } from "@/lib/hub/mode"
 
 /** Tenant accent when set; otherwise the LoadOff indigo gradient — the chip
  *  always reads as a deliberate identity mark, never a flat gray box. */
@@ -27,11 +29,14 @@ export function WorkspaceChip({
   name,
   accent,
   isOwner,
+  simView,
 }: {
   name: string
   /** Carrier branding accent (validated hex) or null for the neutral chip. */
   accent?: string | null
   isOwner: boolean
+  /** Owner-only Thind/ATS/All switcher — lives here on the phone so the header does not overflow. */
+  simView?: SimView
 }) {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
@@ -105,6 +110,24 @@ export function WorkspaceChip({
               </p>
             </div>
           </div>
+          {simView ? (
+            <>
+              <div className="my-1 border-t border-border" />
+              <p className="px-2.5 pt-1 pb-1.5 text-[11px] font-semibold uppercase tracking-wide text-fg-3">
+                Simulation company
+              </p>
+              <div className="px-1.5 pb-1.5">
+                <SimSwitcher current={simView} size="comfortable" />
+              </div>
+              <Link
+                href="/hub/settings/simulation"
+                onClick={() => setOpen(false)}
+                className="flex min-h-[44px] items-center px-2.5 text-sm font-medium text-fg-2 hover:bg-hover hover:text-fg"
+              >
+                Simulation settings
+              </Link>
+            </>
+          ) : null}
           <div className="my-1 border-t border-border" />
           {links.map(({ href, label, icon: Icon }) => (
             <Link

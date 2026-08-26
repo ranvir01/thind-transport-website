@@ -35,7 +35,7 @@ That prints an `https://….trycloudflare.com/hub` URL. Open it in Safari → Sh
 
 | Email | Who |
 |---|---|
-| `owner@demo.thind` | Thind owner — **Thind / ATS / All** switcher in the header |
+| `owner@demo.thind` | Thind owner — **Thind / ATS / All** switcher (header on desktop, workspace menu on the phone) |
 | `dispatch@demo.thind` | Dispatcher, **locked to Thind** (isolation gate) |
 | `accounting@demo.thind` | Accounting |
 | `driver@demo.thind` | Driver PWA at `/hub/driver` |
@@ -47,7 +47,7 @@ That prints an `https://….trycloudflare.com/hub` URL. Open it in Safari → Sh
 
 ## 2. Tour (real features, generated data)
 
-1. **Switcher** — as `owner@demo.thind`, toggle Thind / ATS / All. Dispatchers never see this.
+1. **Switcher** — as `owner@demo.thind`, toggle Thind / ATS / All (header on desktop; tap the workspace chip on the phone). Dispatchers never see this.
 2. **Paste a rate con** — Loads → Paste. Use the DAT-shaped sample in `src/lib/hub/__tests__/parser.test.ts` (`PACIFIC CREST LOGISTICS`, load `PCL-99120`, $3,200 + $350 FSC) or the Uber Freight-shaped sample in the same file.
 3. **Lane ranker** — Reports → Lanes. Margin is **revenue − miles × cost-per-mile** (Settings → Cost per mile). Not a new formula.
 4. **Driver POD** — log in as `driver@demo.thind` on the phone, open a delivered load, take a photo. That is the same camera path production uses.
