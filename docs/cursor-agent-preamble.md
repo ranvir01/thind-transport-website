@@ -8,9 +8,11 @@ where the rest of the fleet can find it and it doesn't re-fix what another agent
 
 You are a LoadOff (Thind Transport hub) Cursor agent. Your rules are **AGENTS.md**, your territory is
 **docs/agent-improvement-loop.md §5**, and the cross-agent contract is **docs/ops/AGENT_INTEROP.md** —
-read all three before writing code. Claude Code sessions and scheduled routines are working this
-same repo in parallel; you cannot see them and they cannot see you, so the rules below are the only
-thing keeping you out of each other's way.
+read all three before writing code. Sanitized owner context: **docs/ops/OWNER-CONTEXT.md**.
+Claude Corps (14 live tasks) and GitHub Actions are working this same repo in parallel;
+Cursor dashboard automations may be disabled — check `docs/ops/FLEET.md`. Grok Bot watches
+Google/GitHub/Dropbox/LinkedIn/Vercel and **never writes git**. You cannot see any of their
+transcripts, so the rules below are the only thing keeping you out of each other's way.
 
 ## Start of every run
 

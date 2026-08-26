@@ -32,13 +32,13 @@ Q: Adopt the 24/7 operating manual's fleet schedule (docs/research/2026-08/promp
 §1): five daily build slots + Saturday deep-verify + Sunday red-team/meta-governor + Friday
 owner digest + Monday dependency pass, replacing ad-hoc firings.
 Answer: ADOPTED as **Cursor Automations on Grok 4.6** (owner, 2026-08-19, in-session) — not
-Claude routines. Import-ready files: `.cursor/automation/loadoff-build-*.workflow.json` +
-`loadoff-{deep-verify,red-team,meta-governor,owner-digest,dependency-pass}.workflow.json`,
-model pinned `cursor-grok-4.6-high-fast`. Remaining owner step: import the ten JSONs at
-cursor.com/automations and set Model: Grok 4.6 on the three existing automations
-(.cursor/automation/README.md "Activate / fix"). The Claude prompt blocks in
-docs/claude-routines.md §"Scheduled fleet v2" stay as the fallback if the fleet ever moves
-back to claude.ai.
+Claude routines. **Alongside live Claude (2026-08-26):** Claude Corps already runs 14 tasks
+including marketing `08:00`, nightly E2E `10:33`, weekly deep audit, meta-governor, and
+outside-auditor. Import only Cursor slots with no Claude twin (office / driver / tests /
+integrations). Skip marketing / deep-verify / meta-governor / red-team. Dashboard copies of
+Integrator / Prod Smoke / Deploy + backlog were **disabled** 2026-08-26; Untitled stays off.
+Grok Bot is the watcher layer (never git) — `docs/grok-bots/`. Fallback Claude prompt blocks
+remain in docs/claude-routines.md §"Scheduled fleet v2".
 
 ## D-004 | filed:2026-08-19 | class:fleet
 Q: Cursor automations cannot boot until the tested environment is Saved (personal env
@@ -48,7 +48,9 @@ scheduled runs through the 08:00 hour still ERROR in ~8s with `setupStatus: null
 A) Save in the Environment panel, Enable builds, confirm the next Integrator run boots. [required]
 B) Keep just-in-time boots only (hand agents work; scheduled automations keep ERROR'ing).
 Deferral cost: every hourly Cursor job dies in ~8s; fleet-liveness.yml will go red while branches wait.
-Answer: ____
+Answer: **Observed resolved 2026-08-19** — SYSTEM build green 08:33 UTC; 09:00-hour runs booted
+on Grok 4.6. As of **2026-08-26** the dashboard automations are disabled (see D-006), so boot
+is no longer the unattended-24/7 blocker. Claude Corps + GitHub drain publish without them.
 
 ## D-005 | filed:2026-08-19 | class:fleet
 Q: Disable duplicate Cursor automation Untitled `61b8e855-76b8-11f1-ba66-0e7d0216e441` (fires as
@@ -56,4 +58,16 @@ HaulDesk improvement cycle — second writer on `main` next to Deploy + backlog)
 A) Disable it. [recommended]
 B) Keep both (two agents will collide on `main`).
 Deferral cost: forced-push / conflict on the production branch.
+Answer: **Disabled** (looked up 2026-08-26 via GetAutomation). Do not re-enable. Keep Deploy +
+backlog as the only Cursor `main` writer if/when that automation is turned back on.
+
+## D-006 | filed:2026-08-26 | class:fleet
+Q: Re-enable Cursor Integrator / Prod Smoke / Deploy + backlog (all three disabled 2026-08-26)
+as redundant drain/smoke next to live Claude Corps (`43 */3`, `16:49` smoke) + GitHub
+`:17`/`:47` drain? Untitled stays off either way.
+A) Re-enable the three; leave Claude twins running (different minutes, fetch-before-write). [recommended if Cursor compute is already paid]
+B) Leave Cursor dashboard off; Claude + GitHub Actions are enough. Use Grok Bot as the watcher.
+C) Re-enable Integrator only (merge redundancy); leave smoke/deploy to Claude + Actions.
+Deferral cost: none for publishing — Claude already drains. Cost of A is extra Cursor
+automation minutes; cost of B is a single-platform merge path if Claude.ai goes dark.
 Answer: ____

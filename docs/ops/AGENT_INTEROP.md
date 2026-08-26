@@ -1,9 +1,12 @@
-# Agent interop — Cursor ↔ Cursor ↔ Claude ↔ CI
+# Agent interop — Cursor ↔ Claude ↔ Grok Bot ↔ CI
 
-Four kinds of agent write to this repo: Cursor scheduled automations, Cursor agents you prompt by
-hand, Claude Code sessions (web, desktop, CLI) and Claude scheduled routines, plus GitHub Actions
-that publish history without any agent involved. They share one `main`, one integrator branch, and
-one production alias. This file is the contract between them.
+Four kinds of agent **write git** to this repo: Cursor scheduled automations (currently
+disabled on the dashboard, 2026-08-26), Cursor agents you prompt by hand, Claude Code
+sessions and Claude scheduled routines (the live 14-task Corps), plus GitHub Actions
+that publish history without any agent involved. **Grok Bot watches** (Google, GitHub,
+Dropbox, LinkedIn, Vercel) and never pushes — [`docs/grok-bots/`](../grok-bots/README.md).
+They share one `main`, one integrator branch, and one production alias. This file is the
+contract between them.
 
 Territory and lane rules live in [`docs/agent-improvement-loop.md §5`](../agent-improvement-loop.md).
 This file covers what that one doesn't: who may push where, how agents hand work to each other
@@ -18,17 +21,26 @@ same branch in the same minute is how a diverged `main` gets made.
 
 | Minute | Who | Platform | Branch it writes |
 |---|---|---|---|
-| `:00` | Integrator (lane merge) | Cursor automation | `claude/hauldesk-project-setup-l1luoo` |
+| `:00` | Integrator (lane merge) — **dashboard DISABLED** 2026-08-26 | Cursor automation | `claude/hauldesk-project-setup-l1luoo` |
 | `:10` | Fleet liveness (`agent:status` stall → red) | GitHub Actions | nothing — read-only |
 | `:17`, `:47` | Drain integrator → main | GitHub Actions | `main` |
-| `:30` | Prod smoke | Cursor automation | `main` (only when production is red) |
-| `:43` | Integrator + stamped drain | Claude Code routine | integrator, then `main` |
-| `:59` | Deploy + backlog | Cursor automation | `main` |
+| `:18` | Sim test buddy (every 3h) | Claude Code routine | nothing — findings |
+| `:30` | Prod smoke — **dashboard DISABLED** 2026-08-26 | Cursor automation | `main` (only when production is red) |
+| `:43` | Integrator + stamped drain (every 3h, `43 */3 * * *`) | Claude Code routine | integrator, then `main` |
+| `:59` | Deploy + backlog — **dashboard DISABLED** 2026-08-26 | Cursor automation | `main` |
+| `01:00` | Airtable infra crew | Claude (Airtable lane) | Airtable, not this git repo |
 | `03:40` | E2E smoke suite | GitHub Actions | nothing — read-only |
 | `06:00 Sun` | Branch reaper (dry-run until `REAPER_ARMED`) | GitHub Actions | deletes merged `claude/*`/`cursor/*` only when armed |
 | `06:23` | Prune merged agent branches (tier-1 merged-only; tier-2 dry-run) | GitHub Actions | deletes fully-merged `claude/*` only |
+| `08:00` | Marketing lane (disjoint from `:00` integrator — writes `claude/lane-marketing`) | Claude Code routine | `claude/lane-marketing` |
+| `09:00` | Airtable human panel | Claude (Airtable lane) | Airtable, not this git repo |
+| `10:33` | Nightly E2E business-cycle (Playwright). Sun also weekly deep audit | Claude Code routine | findings; session branch when fixing |
+| `12:00` Mon | Meta-governor (recommendation only) | Claude Code routine | nothing |
+| `14:00` Mon | Weekly outside-auditor (read-only) | Claude Code routine | nothing |
+| `15:00` | Airtable morning brief | Claude (Airtable lane) | Airtable, not this git repo |
+| `15:11` | LoadOff fleet watchdog (stall detector) | Claude Code routine | nothing |
 | `16:49` | Prod smoke + fix-forward (daily) | Claude Code routine | integrator + `main`, only when production is red |
-| `23:23` | Nightly regression rig (full battery on a fresh rig; files findings) | Claude Code routine | nothing — findings to docs/backlog |
+| `19:30` | Airtable watchdog (disjoint from `:30` Cursor smoke — Airtable only) | Claude (Airtable lane) | Airtable, not this git repo |
 | every push / PR | `unit` job (vitest, token-lint, cursor-env-check) | GitHub Actions | nothing — read-only |
 
 **Dormant, reserved (D-003 — answered 2026-08-19: Cursor Automations on Grok 4.6):** the
@@ -36,9 +48,16 @@ daily role slots — `05:13` office/UX · `08:13` driver+portal · `11:13` tests
 integrations · `20:13` marketing · Sat `07:07` deep-verify · Sun `09:07` red-team · Sun
 `18:07` meta-governor · Fri `19:37` owner digest · Mon `10:07` dependency pass. Import-ready
 workflow JSONs: [`.cursor/automation/`](../../.cursor/automation/README.md). Only the owner
-imports them (cursor.com/automations). Once a slot is imported and its first run boots, move
-its row into the table above. Minutes `:07` / `:13` / `:37` are **reserved** — schedule
-nothing else on them (`src/lib/__tests__/fleet-clock-guard.test.ts` enforces this).
+imports them (cursor.com/automations). **Alongside live Claude:** import office / driver /
+tests / integrations only. Skip marketing (`20:13`), deep-verify, red-team, and
+meta-governor — Claude already runs those charters. Once a slot is imported and its first
+run boots, move its row into the table above. Minutes `:07` / `:13` / `:37` are **reserved**
+— schedule nothing else on them (`src/lib/__tests__/fleet-clock-guard.test.ts` enforces this).
+
+Same-minute **disjoint targets** (not a merge race): Claude marketing `08:00` vs Cursor
+`:00` integrator; Claude meta-governor / auditor on Monday `:00`; Airtable `01:00` /
+`09:00` / `15:00` / `19:30` (Airtable, not git). Documented in FLEET.md. Grok Bot has no
+cron row — it is always-on, not scheduled into this clock.
 
 Live ids, the role map, and the stray duplicate automation: [`docs/ops/FLEET.md`](FLEET.md).
 

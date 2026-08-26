@@ -26,9 +26,11 @@ npm run agent:branches
 
 **Preferred:** the lane branch for your territory, e.g. `claude/lane-compliance`.
 
-**Also OK:** your session branch (`claude/<session-name>`) — the hourly **integrator**
-automation runs `npm run agent:branches` and merges unpicked work into
-`claude/hauldesk-project-setup-l1luoo`. You do **not** need a fixed branch name.
+**Also OK:** your session branch (`claude/<session-name>`) — the **integrator**
+(Claude every 3h at `:43`; Cursor `:00` when enabled) runs `npm run agent:branches`
+and merges unpicked work into `claude/hauldesk-project-setup-l1luoo`. You do
+**not** need a fixed branch name. Live roster: `docs/ops/FLEET.md`. Grok Bot
+never pushes; do not treat it as a writer.
 
 **Never:** push directly to `main` (deploy agent only) or `claude/hauldesk-project-setup-l1luoo`
 (integrator only).

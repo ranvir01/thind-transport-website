@@ -45,7 +45,7 @@ describe("fleet-liveness workflow guard", () => {
   it("schedules at :10 UTC, clear of integrator/drain/smoke/deploy/Claude slots", () => {
     const minute = workflow.match(/cron:\s*"(\d+) \* \* \* \*"/)?.[1]
     expect(minute).toBe("10")
-    for (const taken of ["0", "17", "30", "43", "47", "59"]) {
+    for (const taken of ["0", "17", "18", "30", "43", "47", "59"]) {
       expect(minute).not.toBe(taken)
     }
   })

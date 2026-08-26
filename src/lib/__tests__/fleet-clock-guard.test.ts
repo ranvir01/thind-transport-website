@@ -12,16 +12,23 @@ import path from "node:path"
  *   1. every scheduled workflow is named in FLEET.md (the live roster)
  *   2. every cron minute appears on the AGENT_INTEROP clock
  *   3. hourly minutes never collide — across workflows AND the documented
- *      Cursor automations (:00/:30/:59) and Claude routine (:43)
- *   4. daily/weekly crons stay off the hourly minutes (branch-reaper is the
+ *      Cursor automations (:00/:30/:59) and Claude integrator (:43) / sim buddy (:18)
+ *   4. daily/weekly GitHub crons stay off the hourly minutes (branch-reaper is the
  *      one documented exception — Sunday 06:00 targets only fully-merged
  *      branches, provably disjoint from the :00 integrator's unmerged set)
  *   5. the reserved D-003 minutes (:07/:13/:37 — the role-slot Cursor
  *      automations in .cursor/automation/) stay clear of workflow crons
+ *   6. Claude daily slots that share a minute-of-hour with an hourly job must
+ *      be listed as disjoint-target exceptions (marketing 08:00 vs integrator
+ *      :00; Airtable 19:30 vs Cursor smoke :30) — they must still appear on
+ *      the clock so they are not invisible
  *
  * prune-merged-branches.yml ran daily at 06:23 for weeks without a row on
  * the clock — found while writing this guard. Rule 1/2 exist so that cannot
  * recur.
+ *
+ * 2026-08-26: Claude Corps times come from the owner's master context, not
+ * the older 23:23 nightly / hourly :43 docs.
  */
 
 const WORKFLOWS_DIR = path.join(process.cwd(), ".github/workflows")
@@ -32,20 +39,33 @@ const interop = readFileSync(
 const fleet = readFileSync(path.join(process.cwd(), "docs/ops/FLEET.md"), "utf-8")
 
 // Scheduled agents that live in dashboards, not in .github/workflows.
-// Ids and prompts: docs/ops/FLEET.md.
+// Ids and prompts: docs/ops/FLEET.md. Cursor rows are still reserved while
+// the dashboard copies are disabled — re-enabling must not land on a taken minute.
 const DASHBOARD_AGENT_MINUTES: Record<number, string> = {
   0: "Cursor Integrator automation",
+  18: "Claude sim test buddy (every 3h)",
   30: "Cursor Prod Smoke automation",
-  43: "Claude integrator routine",
+  43: "Claude integrator routine (every 3h)",
   59: "Cursor Deploy + backlog automation",
 }
 
-// Daily dashboard agents (Claude side of the collaboration — FLEET.md
-// "One charter, one platform"). hh:mm tokens must be on the interop clock,
-// and their minutes must stay clear of every hourly job.
+// Daily dashboard agents whose minute is NOT also an hourly job.
 const DASHBOARD_DAILY_AGENTS: Record<string, string> = {
+  "10:33": "Claude nightly E2E business-cycle (daily; Sun also weekly deep audit)",
+  "15:11": "Claude LoadOff fleet watchdog",
   "16:49": "Claude prod smoke + fix-forward (daily)",
-  "23:23": "Claude nightly regression rig",
+}
+
+// Same minute-of-hour as an hourly job, but a different write target (not git,
+// or a different branch). Invisible-to-the-clock is still forbidden.
+const DISJOINT_DAILY_AGENTS: Record<string, string> = {
+  "01:00": "Claude Airtable infra crew (Airtable, not git)",
+  "08:00": "Claude marketing lane → claude/lane-marketing (not the integrator)",
+  "09:00": "Claude Airtable human panel (Airtable, not git)",
+  "12:00": "Claude meta-governor Mon (recommendation only)",
+  "14:00": "Claude weekly outside-auditor Mon (read-only)",
+  "15:00": "Claude Airtable morning brief (Airtable, not git)",
+  "19:30": "Claude Airtable watchdog (Airtable, not Cursor :30 smoke)",
 }
 
 // D-003 (docs/ops/DECISIONS.md, answered 2026-08-19): the role-slot Cursor
@@ -160,10 +180,20 @@ describe("fleet clock guard (no two schedulers on one minute)", () => {
     }
   })
 
+  it("disjoint-target daily slots are on the clock (same minute, different write target)", () => {
+    for (const [slot, who] of Object.entries(DISJOINT_DAILY_AGENTS)) {
+      expect(interop, `${who} (${slot}) has no row in AGENT_INTEROP §1`).toContain(slot)
+      expect(fleet, `${who} (${slot}) is not named in FLEET.md`).toContain(slot)
+    }
+  })
+
   it("the cross-platform reconciliation table exists (one charter, one platform)", () => {
     expect(fleet).toMatch(/One charter, one platform/)
     expect(fleet).toMatch(/16:49/)
-    expect(fleet).toMatch(/23:23/)
+    expect(fleet).toMatch(/10:33/)
+    expect(fleet).not.toMatch(/23:23/)
+    expect(fleet).toMatch(/Grok Bot/)
+    expect(fleet).toMatch(/DISABLED/)
   })
 
   it("keeps the reserved D-003 minutes clear until the owner enables those slots", () => {

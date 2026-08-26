@@ -82,11 +82,15 @@ Claude routine with the same charter must be paused/deleted **in the same
 sitting**, per the "One charter, one platform" table in `docs/ops/FLEET.md`.
 One charter on two platforms is two writers on one lane.
 
-What stays on Claude permanently: Routine 1 (`:43` integrator — the deliberate
-redundant pair with Cursor `:00`), Routine 2 (16:49 daily smoke — redundant
-with Cursor `:30`; both read-only unless production is red, and whichever
-fires later on the same incident must fetch and re-check before acting), and
-the 23:23 nightly regression rig (needs a browser the Cursor image lacks).
+What stays on Claude permanently (live Corps, 2026-08-26 — times were stale in
+older docs): Routine 1 (`43 */3 * * *` integrator — every 3h, the deliberate
+redundant pair with Cursor `:00` when that automation is enabled), Routine 2
+(16:49 daily smoke — redundant with Cursor `:30`), nightly E2E at **10:33**
+(needs a browser the Cursor image lacks; was wrongly documented as 23:23),
+plus marketing `08:00`, watchdog `15:11`, sim buddy `:18` every 3h, and the
+Airtable lane. Do not also import Cursor twins for marketing / deep-verify /
+meta-governor / red-team. Grok Bot watches; it does not write git
+(`docs/grok-bots/`).
 As before: if duplicate copies of any routine exist in the Routines list,
 delete the copies — duplicate firings waste plan usage and race each other.
 

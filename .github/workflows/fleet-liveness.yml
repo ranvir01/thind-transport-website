@@ -11,8 +11,8 @@
 # Catch-up (exit 1) is NOT a liveness failure — drain-integrator.yml owns that.
 # Only stall is red.
 #
-# Scheduled at :10 UTC, clear of :00 integrator, :17/:47 drain, :30 smoke,
-# :43 Claude integrator, :59 deploy. See docs/ops/FLEET.md and
+# Scheduled at :10 UTC, clear of :00 integrator, :17/:47 drain, :18 sim buddy,
+# :30 smoke, :43 Claude integrator, :59 deploy. See docs/ops/FLEET.md and
 # docs/ops/AGENT_INTEROP.md §1.
 
 name: Fleet liveness

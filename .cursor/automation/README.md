@@ -50,10 +50,12 @@ ad-hoc sessions ──────▶ claude/<session> ─┘        prod smoke 
 
 ## Activate / fix (one time, ~15 min)
 
-1. **Fix the three live ones** (they ERROR'd in ~8s all morning until the environment build
-   went green at 08:33 UTC on 2026-08-19): open each id below → set **Model: Grok 4.6** →
-   confirm Repository `ranvir01/thind-transport-website` and cloud compute on. Do NOT import
-   duplicates of these three — edit them in place.
+Claude Corps is the live scheduled writer (14 tasks). These Cursor automations are
+**optional redundancy**. As of 2026-08-26 all four dashboard copies were **disabled**.
+
+1. **If you want Cursor drain/smoke redundancy:** re-enable Integrator, Prod Smoke, and
+   Deploy + backlog (do not import duplicates). Set **Model: Grok 4.6**, repository
+   `ranvir01/thind-transport-website`, cloud compute on.
 
 | Dashboard name | Id |
 |----------------|-----|
@@ -61,22 +63,19 @@ ad-hoc sessions ──────▶ claude/<session> ─┘        prod smoke 
 | Prod Smoke | [`4ad7743c-7900-11f1-ba66-0e7d0216e441`](https://cursor.com/automations/4ad7743c-7900-11f1-ba66-0e7d0216e441) |
 | Deploy + backlog | [`75e8fbf5-7900-11f1-ba66-0e7d0216e441`](https://cursor.com/automations/75e8fbf5-7900-11f1-ba66-0e7d0216e441) |
 
-2. **Disable** Untitled [`61b8e855-76b8-11f1-ba66-0e7d0216e441`](https://cursor.com/automations/61b8e855-76b8-11f1-ba66-0e7d0216e441)
-   — it fires as "HaulDesk improvement cycle", a second writer on `main`. Never two writers on
-   one branch. Full roster: [`docs/ops/FLEET.md`](../../docs/ops/FLEET.md).
-3. **Import the ten role slots** at [cursor.com/automations](https://cursor.com/automations/new)
-   — one per `loadoff-*.workflow.json` in the Role slots table. Keep the cron times exactly as
-   written (minutes `:07`/`:13`/`:37` are reserved for these on the AGENT_INTEROP clock;
-   `fleet-clock-guard.test.ts` keeps everything else off them). **In the same sitting**, pause
-   or delete the Claude routine that covers the same charter — the reconciliation table in
-   [`docs/ops/FLEET.md`](../../docs/ops/FLEET.md) ("One charter, one platform") names each
-   pair. The Claude `:43` integrator, `16:49` smoke, and `23:23` nightly rig stay — they are
-   deliberate cross-platform redundancy, not duplicates.
+2. **Keep Untitled disabled** [`61b8e855-76b8-11f1-ba66-0e7d0216e441`](https://cursor.com/automations/61b8e855-76b8-11f1-ba66-0e7d0216e441)
+   — "HaulDesk improvement cycle", a second writer on `main`. Already off as of 2026-08-26.
+3. **Import only Cursor slots Claude does not already run** (office / driver / tests /
+   integrations) at [cursor.com/automations](https://cursor.com/automations/new). Keep cron
+   minutes `:07`/`:13`/`:37`. **Do not import** marketing / deep-verify / meta-governor /
+   red-team while those Claude tasks are live — full table in
+   [`docs/ops/FLEET.md`](../../docs/ops/FLEET.md) ("One charter, one platform").
+   Grok Bot paste files: [`docs/grok-bots/`](../../docs/grok-bots/README.md).
 4. If the environment still fails to boot (runs ERROR in seconds with no setup logs): Save the
    install-only environment config — dashboard → environments →
    [`5241c374-0579-442f-bf88-309dbcbe37f3`](https://cursor.com/dashboard/cloud-agents/environments/e/5241c374-0579-442f-bf88-309dbcbe37f3).
 5. **Manual first run:** trigger **Deploy + backlog** once to drain integrator → `main` if
-   `npm run agent:status` shows catch-up mode.
+   `npm run agent:status` shows catch-up mode *and* that automation is enabled.
 6. After Vercel deploys, run `npm run prod:smoke` — expect **LoadOff** on `/hub/login`.
 
 ## Catch-up vs steady state

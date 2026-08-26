@@ -13,47 +13,88 @@ same branch.
 
 ---
 
-## Live right now (2026-08-19)
+## Live right now (2026-08-26)
+
+**Claude Corps is the live scheduled writer** (14 tasks, all enabled — owner's
+2026-08-26 master context). **Cursor dashboard automations are currently
+DISABLED** (Integrator, Prod Smoke, Deploy + backlog, Untitled — looked up
+2026-08-26). Untitled stays off. GitHub Actions still drain `main` and page
+stall. Grok Bot watches; it never writes git ([`docs/grok-bots/`](../grok-bots/README.md)).
+
+### Mechanical loop + CI
 
 | Slot (UTC) | Job | Platform | Writes | Dashboard / id |
 |---|---|---|---|---|
-| `:00` | Integrator — absorb one pending `claude/*` | Cursor automation | `claude/hauldesk-project-setup-l1luoo` | [Integrator](https://cursor.com/automations/880eec29-78fd-11f1-ba66-0e7d0216e441) `880eec29-78fd-11f1-ba66-0e7d0216e441` |
+| `:00` | Integrator — absorb one pending `claude/*` | Cursor automation **DISABLED** 2026-08-26 | `claude/hauldesk-project-setup-l1luoo` | [Integrator](https://cursor.com/automations/880eec29-78fd-11f1-ba66-0e7d0216e441) `880eec29-78fd-11f1-ba66-0e7d0216e441` |
 | `:10` | **Fleet liveness** — `npm run agent:status`; red only on stall (exit 2) | GitHub Action | nothing | `.github/workflows/fleet-liveness.yml` |
 | `:17`, `:47` | Drain integrator → main (stamped `--no-ff`) | GitHub Action | `main` | `drain-integrator.yml` |
-| `:30` | Prod smoke — `/hub/login` LoadOff, `/hub` not 5xx, `/api/version` SHA | Cursor automation | `main` (only when production is red) | [Prod Smoke](https://cursor.com/automations/4ad7743c-7900-11f1-ba66-0e7d0216e441) `4ad7743c-7900-11f1-ba66-0e7d0216e441` |
-| `:43` | Integrator + stamped drain | Claude Code routine | integrator, then `main` | `trig_01B99W8MteaPtzwk124DFF4w` (`docs/claude-routines.md`) |
-| `:59` | Deploy + backlog — catch-up drain, else one `Backlog:` item | Cursor automation | `main` | [Deploy + backlog](https://cursor.com/automations/75e8fbf5-7900-11f1-ba66-0e7d0216e441) `75e8fbf5-7900-11f1-ba66-0e7d0216e441` |
+| `:18` every 3h | Sim test buddy — live verification, report unproven as such | Claude routine | nothing (findings) | Claude Corps #9 |
+| `:30` | Prod smoke | Cursor automation **DISABLED** 2026-08-26 | `main` (only when production is red) | [Prod Smoke](https://cursor.com/automations/4ad7743c-7900-11f1-ba66-0e7d0216e441) `4ad7743c-7900-11f1-ba66-0e7d0216e441` |
+| `:43` every 3h | Integrator + stamped drain | Claude Code routine | integrator, then `main` | Claude Corps #1 (`43 */3 * * *` — **not hourly**) |
+| `:59` | Deploy + backlog | Cursor automation **DISABLED** 2026-08-26 | `main` | [Deploy + backlog](https://cursor.com/automations/75e8fbf5-7900-11f1-ba66-0e7d0216e441) `75e8fbf5-7900-11f1-ba66-0e7d0216e441` |
 | `03:40` | E2E smoke suite | GitHub Action | nothing | `e2e-suite.yml` |
 | `06:00 Sun` | Branch reaper (dry-run until `REAPER_ARMED`) | GitHub Action | deletes merged `claude/*`/`cursor/*` only when armed | `branch-reaper.yml` |
-| `06:23` | Prune merged `claude/*` (tier-1 always; tier-2 zero-delta dry-run) | GitHub Action | deletes fully-merged `claude/*` only | `prune-merged-branches.yml` |
-| `16:49` | Prod smoke + fix-forward (daily) | Claude routine | integrator + `main` only when production is red | `docs/claude-routines.md` Routine 2 |
-| `23:23` | Nightly regression rig — fresh rig, full battery, findings only | Claude routine | nothing (findings to docs/backlog) | `docs/claude-routines.md` nightly entries |
+| `06:23` | Prune merged `claude/*` | GitHub Action | deletes fully-merged `claude/*` only | `prune-merged-branches.yml` |
 | every push/PR | unit (vitest, token-lint, cursor-env-check) | GitHub Action | nothing | `e2e-suite.yml` `unit` job |
 
-No two rows share a minute-of-hour (reaper's Sunday `06:00` is the one exception — its
-merged-only targets are disjoint from the `:00` integrator's unmerged-only set).
-`src/lib/__tests__/fleet-clock-guard.test.ts` fails the build if a workflow schedule is
-added off this roster or onto a taken minute. The reaper (Sunday, armed-gated) and the
-daily prune overlap in charter — consolidation is a fleet decision, not an agent edit.
+### Claude LoadOff lane (live)
 
-**Stray (disable — now URGENT):** Cursor automation [Untitled](https://cursor.com/automations/61b8e855-76b8-11f1-ba66-0e7d0216e441) `61b8e855-76b8-11f1-ba66-0e7d0216e441` fires as "HaulDesk improvement cycle" — a second deploy/backlog writer on `main`. While the environment was broken it died in ~8s; since the 2026-08-19 fix it **actually boots** and was observed RUNNING in the same minute as Deploy + backlog (09:02 UTC). Two writers on one branch is the fleet's most expensive mistake. Turn it off; keep Deploy + backlog above.
+| Slot (UTC) | Job | Writes |
+|---|---|---|
+| `08:00` daily | Marketing lane (state pages + funnel) | `claude/lane-marketing` |
+| `10:33` daily | Nightly E2E business-cycle (Playwright; older docs had the wrong hour) | findings; fix-forward when red |
+| `10:33` Sun | Weekly deep audit (rotating 1c/1e/1b) — **same minute as nightly on Sunday** | `claude/*` session |
+| `12:00` Mon | Meta-governor (recommendation only, never edits fleet config) | nothing |
+| `14:00` Mon | Weekly outside-auditor (read-only) | nothing |
+| `15:11` daily | Fleet watchdog (stall detector; push notification is the deliverable) | nothing |
+| `16:49` daily | Prod smoke + fix-forward | integrator + `main` only when production is red |
 
-Prompts for the three Cursor jobs live in [`.cursor/automation/`](../../.cursor/automation/README.md). Claude's copy-paste prompts live in [`docs/claude-routines.md`](../claude-routines.md).
+### Claude Airtable lane (does not write this git repo)
+
+| Slot (UTC) | Job |
+|---|---|
+| `01:00` daily | Infra crew — nightly build + 13-check |
+| `09:00` daily | Human panel — persona walks |
+| `15:00` daily | Morning brief — one task, no nagging |
+| `19:30` daily | Watchdog — silent unless broken |
+| 2026-08-31 15:00 | Trial-decision one-shot |
+
+Same minute-of-hour across **different write targets** is allowed (Claude
+marketing `08:00` vs Cursor integrator `:00`; Airtable `19:30` vs Cursor smoke
+`:30`; meta-governor / auditor on Monday `:00`). Two writers on **one branch**
+in the same minute is not. `src/lib/__tests__/fleet-clock-guard.test.ts`
+encodes both. The reaper (Sunday, armed-gated) and the daily prune overlap in
+charter — consolidation is a fleet decision, not an agent edit.
+
+**Untitled stays off:** [Untitled](https://cursor.com/automations/61b8e855-76b8-11f1-ba66-0e7d0216e441)
+`61b8e855-76b8-11f1-ba66-0e7d0216e441` (HaulDesk improvement cycle) was a second
+`main` writer. Observed **disabled** 2026-08-26. Do not re-enable it.
+
+Prompts for Cursor jobs: [`.cursor/automation/`](../../.cursor/automation/README.md).
+Claude prompts: [`docs/claude-routines.md`](../claude-routines.md). Owner paste
+for Grok Bot: [`docs/grok-bots/`](../grok-bots/README.md). Sanitized owner
+context: [`OWNER-CONTEXT.md`](OWNER-CONTEXT.md).
 
 ---
 
-## How Cursor and Claude collaborate (no shared transcript)
+## How Cursor, Claude, and Grok Bot collaborate (no shared transcript)
 
 They cannot see each other's sessions. The **commit body** is the bus (`Backlog:` trailers, `npm run agent:backlog`). **One branch, one writer.** If a fix already exists on another branch, name it in `Backlog:` and take the next item.
 
-Daily/weekly **build** sessions (office, driver, tests, integrations, marketing) are **Cursor
-Automations on Grok 4.6** (`DECISIONS.md` D-003, answered 2026-08-19) — import-ready in
-`.cursor/automation/`, table below. They stay off the live table until the owner imports them
-and a first run boots — agents do not add dashboard schedules. Until then, the `:59` deploy
-agent ships one ranked backlog item per hour when not in catch-up, and ad-hoc Cursor/Claude
-sessions push their own branches.
+**Grok Bot never writes git.** It watches Google / GitHub / Dropbox / LinkedIn / Vercel
+and files findings or ≤6-step click paths. Paste files: [`docs/grok-bots/`](../grok-bots/README.md).
 
-Cursor Cloud Agents on `cursor/*` land via pull request. `claude/<session>` branches are absorbed by the `:00`/`:43` integrators. Do not put two writers on `main` or the integrator.
+Daily/weekly **build** sessions that Claude does *not* already run (office, driver, tests,
+integrations) remain import-ready Cursor Automations on Grok 4.6 (`DECISIONS.md` D-003) —
+table below. They stay off the live table until the owner imports them. **Do not import
+marketing / deep-verify / meta-governor** while Claude Corps #4/#5/#7 are live — that is
+two writers on one charter.
+
+Until Cursor Integrator / Deploy are re-enabled, GitHub drain `:17`/`:47` plus Claude
+integrator every 3h at `:43` are the path to `main`. Ad-hoc Cursor sessions still land
+via PR on `cursor/*`.
+
+Cursor Cloud Agents on `cursor/*` land via pull request. `claude/<session>` branches are absorbed by the `:00` (when enabled) / `:43` integrators. Do not put two writers on `main` or the integrator.
 
 ## Role slots — import-ready Cursor Automations, Grok 4.6 (D-003 answered 2026-08-19)
 
@@ -82,29 +123,49 @@ The Claude-routine prompt blocks for the same charters remain in
 [`docs/claude-routines.md`](../claude-routines.md) §"Scheduled fleet v2" as the fallback —
 never run a slot on both platforms at once.
 
-## One charter, one platform (Cursor ↔ Claude reconciliation)
+## One charter, one platform (Cursor ↔ Claude ↔ Grok)
 
-The two fleets collaborate through branches and commit bodies, never by sharing a charter.
-A charter running on both platforms is two writers on one lane — the same defect fixed twice,
-or a merge race. When importing each Cursor slot, pause/delete the Claude routine that covers
-the same ground **in the same sitting** (claude.ai → Code → Routines; Routine 3 in
-`docs/claude-routines.md` names them; their schedules were never recorded, so go by name):
+The fleets collaborate through branches and commit bodies, never by sharing a charter.
+A charter running on two code platforms is two writers on one lane. Grok Bot is a
+**watcher**, not a third writer — do not give it a branch.
 
-| Cursor slot (on import) | Existing Claude routine, same charter | Action |
+Claude Corps names and crons below are from the 2026-08-26 master context (older docs
+had the nightly E2E at the wrong hour).
+
+### Safe to import on Cursor (Claude has no twin)
+
+| Cursor slot | Writes | Why it's safe |
 |---|---|---|
-| Build D — integrations `14:13` | "integrations lane" | pause/delete the Claude copy |
-| Red-team Sun `09:07` | "verifier/red-team" | pause/delete the Claude copy |
-| Deep-verify Sat `07:07` | "weekly/daily deep audit" | pause/delete the Claude copy |
-| Deploy + backlog `:59` (already live) | "improvement cycle" | pause/delete if it still fires |
-| Build A/B/C/E | (no named Claude twin) | just import |
+| Build A office `05:13` | `claude/lane-office` | no Claude scheduled twin |
+| Build B driver+portal `08:13` | `claude/lane-driver` | no Claude scheduled twin |
+| Build C tests `11:13` | `claude/lane-tests` | no Claude scheduled twin |
+| Build D integrations `14:13` | `claude/lane-integrations` | no Claude scheduled twin |
+| Owner digest Fri `19:37` | docs only | no Claude twin |
+| Dependency pass Mon `10:07` | `claude/fleet-dependency-pass` | no Claude twin |
 
-**Deliberately stays on Claude** (do not duplicate in Cursor):
+### Do not import while Claude is live
 
-| Claude job | Why it stays |
+| Cursor slot | Live Claude twin | Action |
+|---|---|---|
+| Build E marketing `20:13` | Marketing lane `08:00` → `claude/lane-marketing` | skip Cursor; Claude keeps it |
+| Deep-verify Sat `07:07` | Weekly deep audit Sun `10:33` | skip Cursor |
+| Meta-governor Sun `18:07` | Meta-governor Mon `12:00` | skip Cursor |
+| Red-team Sun `09:07` | Weekly outside-auditor Mon `14:00` | skip Cursor (same read-only charter) |
+| Untitled / improvement cycle | — | **keep disabled** |
+
+### Deliberate same-charter pairs (different minutes, fetch-before-write)
+
+These are redundancy, not duplicates — only if the owner re-enables the Cursor side.
+
+| Pair | Why it stays |
 |---|---|
-| `:43` integrator + drain | The one intentional same-branch pair with Cursor `:00` — cross-platform redundancy so merging survives either platform going dark. Different minutes; both fetch+rebase first. |
-| `16:49` daily prod smoke | Redundant with Cursor `:30` by design — both read-only unless production is red. Whichever fires later on the same incident must `git fetch` and re-check prod state before acting; the first fixer wins, the second stops. |
-| `23:23` nightly regression rig | Needs a browser for the 51-script Puppeteer battery — the Cursor image has none. Cursor's Sat deep-verify reads this rig's results instead of re-running it. |
+| Cursor `:00` integrator + Claude `:43` every 3h | Same integrator branch; different minutes; both fetch+rebase first. Cursor side currently disabled — Claude + GitHub drain cover it. |
+| Cursor `:30` smoke + Claude `16:49` smoke | Both read-only unless production is red. Later fixer fetches and re-checks; first fixer wins. |
+| Claude `10:33` nightly E2E | Needs a browser. Cursor image has none. Do not re-create as a Cursor automation. |
+
+Grok Bot (Watcher / Deploy-CI / Airtable coach) has **no git charter**. If it finds
+a code defect, it names it in chat; a Claude or Cursor agent picks it from
+`Backlog:` or the next session.
 
 Everything else in the collaboration contract is unchanged: `claude/*` branches are absorbed
 by the `:00`/`:43` integrators, `cursor/*` session work lands via PR, the commit-body
@@ -185,18 +246,22 @@ that races the integrator — a seat is a *mechanism*, not another hourly firing
 
 ## What still blocks unattended 24/7
 
+The repo already runs unattended on **Claude + GitHub Actions**. You do not have to come
+back to a Cursor agent to keep `main` moving. Remaining owner clicks:
+[`OWNER-WORKSHEET.md`](OWNER-WORKSHEET.md).
+
 1. ~~Fix the environment so scheduled agents boot~~ **FIXED 2026-08-19.** SYSTEM build
    [`bld-20260819-e34379d9-3634-4174-b245-e3c81319a7a6`](https://cursor.com/dashboard/cloud-agents/builds/bld-20260819-e34379d9-3634-4174-b245-e3c81319a7a6)
-   went green 08:33 UTC (install-only `npm ci`, no Docker — first healthy image after three
-   weeks of 418-byte Dockerfile failures), and the 09:00-hour scheduled runs **booted**:
-   Integrator IDLE-complete, Prod Smoke IDLE-complete, Deploy RUNNING — all on
-   `cursor-grok-4.6-high-fast`, ending the ERROR-in-8s streak.
-2. **Disable the Untitled duplicate automation (row above) — URGENT now that it boots.**
-   Observed RUNNING in the same minute as Deploy + backlog (09:02 UTC, 2026-08-19); both
-   write `main`.
-3. D-003 answered (Cursor Automations, Grok 4.6): **import the ten role-slot JSONs** from
-   `.cursor/automation/` (README "Activate / fix"). Mechanical 24/7 does not wait on them.
-4. D-001 — arm the branch reaper after dry-runs, or the integrator keeps triaging dead branches.
+   went green 08:33 UTC. Then on **2026-08-26** every Cursor dashboard automation was
+   **disabled** (Integrator, Prod Smoke, Deploy + backlog, Untitled). Boot is no longer
+   the blocker — the Cursor side is simply off. Claude `43 */3` + drain `:17`/`:47` cover it.
+2. ~~Disable Untitled~~ **DONE** (disabled as of 2026-08-26). Do not re-enable it.
+3. Optional: re-enable Integrator / Prod Smoke / Deploy + backlog for Cursor redundancy.
+   Import only the Cursor role slots Claude does not already run (office/driver/tests/
+   integrations). Do not import marketing / deep-verify / meta-governor twins.
+4. Paste Grok Bot instructions (`docs/grok-bots/`) — watcher + two siblings. No git.
+5. D-001 — arm the branch reaper after dry-runs, or the integrator keeps triaging dead branches.
+6. Human-dated: Form 2290 by Aug 31; Airtable Team ~Sep 2; SMTP App Password (30+ days dead).
 
 Cursor Cloud starts every automation on a disposable `cursor/<run-name>-*` branch even when
 `loadoff-*.workflow.json` names `claude/hauldesk-project-setup-l1luoo` or `main`. The
