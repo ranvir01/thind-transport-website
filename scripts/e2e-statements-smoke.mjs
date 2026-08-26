@@ -10,7 +10,7 @@
  * Usage: node scripts/e2e-statements-smoke.mjs [outputDir]
  */
 import { mkdirSync } from "node:fs"
-import { launchBrowser, BASE, failures, check, waitForText, textAppears, login, makeShot, reseed, realConsoleErrors } from "./e2e-lib.mjs"
+import { launchBrowser, BASE, failures, check, waitForText, login, makeShot, reseed, realConsoleErrors } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-statements"
 mkdirSync(OUT, { recursive: true })
@@ -70,9 +70,16 @@ async function main() {
     return false
   })
   check(sendClicked, "Send statement button found and clicked")
-  const toastAppeared =
-    (await textAppears(page, "email not configured", 8000)) ||
-    (await textAppears(page, "Statement sent", 8000))
+  const toastAppeared = await page
+    .waitForFunction(
+      () => {
+        const t = document.body.innerText.toLowerCase()
+        return t.includes("email not configured") || t.includes("statement sent")
+      },
+      { timeout: 15000 }
+    )
+    .then(() => true)
+    .catch(() => false)
   check(
     toastAppeared,
     "toast surfaces the email-not-configured message (or simulation outbox send) instead of crashing"
