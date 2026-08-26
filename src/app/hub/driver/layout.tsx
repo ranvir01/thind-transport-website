@@ -2,7 +2,9 @@ import { requireDriverUser } from "@/lib/hub/session"
 import { getCarrierSettings } from "@/lib/hub/settings"
 import { getFlag } from "@/lib/hub/flags"
 import { isSandboxCarrier, seatForEmail } from "@/lib/hub/sandbox"
+import { isSimulation } from "@/lib/hub/mode"
 import { SandboxBanner } from "@/components/hub/SandboxBanner"
+import { SimulationBadge } from "@/components/hub/SimulationBadge"
 import { DriverNav } from "@/components/hub/driver/DriverNav"
 import { OfflineSync } from "@/components/hub/driver/OfflineSync"
 import { PORTAL_ACCENT_DEFAULT, resolvePortalAccent } from "@/app/hub/portal/accent"
@@ -13,11 +15,12 @@ export default async function DriverAppLayout({ children }: { children: React.Re
   // Driver app is a navy-backdrop surface same as the portal, so the same
   // WCAG-contrast resolution applies: reuse resolvePortalAccent rather than
   // re-deriving it.
-  const [accent, sim] = await Promise.all([
+  const [accent, sim, simulation] = await Promise.all([
     getCarrierSettings(user.carrierId)
       .then((s) => resolvePortalAccent(s.branding.accent))
       .catch(() => PORTAL_ACCENT_DEFAULT),
     sandbox ? getFlag("sim.shift_mode", { carrierId: user.carrierId }) : Promise.resolve(false),
+    isSimulation(),
   ])
 
   return (
@@ -29,6 +32,9 @@ export default async function DriverAppLayout({ children }: { children: React.Re
           64+34=98px on an installed iPhone PWA — the one place a driver
           would lose the bottom of their load card. */}
       <main className="pt-16 pb-[calc(6rem+env(safe-area-inset-bottom))] px-4 mx-auto w-full max-w-lg">
+        {!sandbox && simulation ? (
+          <div className="mb-3"><SimulationBadge dark /></div>
+        ) : null}
         {sandbox ? <SandboxBanner dark seat={seatForEmail(user.email)?.key} sim={sim} /> : null}
         {children}
       </main>

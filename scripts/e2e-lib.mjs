@@ -112,7 +112,7 @@ export function reseed() {
   // hub.carriers is likewise absent from the TRUNCATE list (ON CONFLICT DO
   // NOTHING in seed-demo.mjs) — a suspend-flow smoke that dies mid-run (or a
   // manual admin-suspend drive) leaves status = 'suspended' on Thind or
-  // Cascade Demo Lines, and every later local run then bounces every login
+  // ATS Transport LLC, and every later local run then bounces every login
   // to /hub/suspended before it even reaches the screen under test. Force
   // both demo tenants back to 'active' on every reseed.
   const cleanup = spawnSync(process.execPath, ["-e", `

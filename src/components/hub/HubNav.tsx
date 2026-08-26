@@ -17,6 +17,9 @@ import { HubTourHost } from "@/components/hub/HubTour"
 import { LoadOffMark } from "@/components/hub/LoadOffMark"
 import { WorkspaceChip } from "@/components/hub/WorkspaceChip"
 import { UserMenu } from "@/components/hub/UserMenu"
+import { SimulationBadge } from "@/components/hub/SimulationBadge"
+import { SimSwitcher } from "@/components/hub/SimSwitcher"
+import type { SimView } from "@/lib/hub/mode"
 
 /** Tab-bar icons by primary-section id; LayoutGrid is the safe fallback. */
 const SECTION_ICONS: Record<string, LucideIcon> = {
@@ -32,6 +35,8 @@ export function HubShell({
   user,
   smallCarrier,
   accent,
+  simulation = false,
+  simView,
   children,
 }: {
   user: { name: string; role: string; carrierName?: string }
@@ -39,6 +44,8 @@ export function HubShell({
   smallCarrier: boolean
   /** Tenant branding accent (validated hex) — identity chip only, never controls. */
   accent?: string | null
+  simulation?: boolean
+  simView?: SimView
   children: React.ReactNode
 }) {
   const pathname = usePathname()
@@ -70,6 +77,8 @@ export function HubShell({
         </Link>
         <span aria-hidden className="hidden h-5 w-px bg-border lg:block" />
         <WorkspaceChip name={user.carrierName || PRODUCT.name} accent={accent} isOwner={isOwner} />
+        {simulation ? <SimulationBadge /> : null}
+        {simulation && isOwner && simView ? <SimSwitcher current={simView} /> : null}
 
         <nav
           className="hidden lg:flex items-center gap-0.5 ml-2 min-w-0 flex-1 overflow-x-auto"
@@ -188,6 +197,12 @@ export function HubShell({
         <main className="flex-1 min-w-0 px-4 py-5 md:px-8 md:py-8 pb-[calc(7rem+env(safe-area-inset-bottom))] md:pb-8 max-w-[1400px]">
           <HubTourHost />
           {children}
+          {simulation ? (
+            <p className="mt-10 flex items-center gap-2 text-[11px] text-fg-3">
+              <SimulationBadge compact />
+              Generated data — invoices, settlements, and 1099s are not real documents.
+            </p>
+          ) : null}
         </main>
       </div>
 

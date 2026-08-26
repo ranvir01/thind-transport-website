@@ -18,8 +18,10 @@ vi.mock("../settings", () => ({
 vi.mock("@/lib/mailer", () => ({
   createMailTransport: vi.fn(() => ({ sendMail: vi.fn(async () => undefined) })),
   isEmailConfigured: vi.fn(() => false),
+  mailShouldSend: vi.fn(async () => false),
   mailFrom: vi.fn(() => "test@example.com"),
 }))
+vi.mock("../mode", () => ({ isSimulation: vi.fn(async () => false) }))
 
 import { hubDb, query, queryOne } from "../db"
 import { getInvoice, listInvoicePayments, recordPayment } from "../invoices"

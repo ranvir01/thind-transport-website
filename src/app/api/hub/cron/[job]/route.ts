@@ -204,6 +204,14 @@ export async function GET(
           drugSelected: drugSelected.length, alcoholSelected: alcoholSelected.length,
           drugNotified: drugNotified.notified, alcoholNotified: alcoholNotified.notified,
         }
+      } else if (job === "sim-advance") {
+        const { isSimulation } = await import("@/lib/hub/mode")
+        const { advanceSimulatedDay } = await import("@/lib/hub/sim-clock")
+        if (!(await isSimulation())) {
+          results[carrier.id] = { skipped: "not-simulation" }
+        } else {
+          results[carrier.id] = await advanceSimulatedDay(carrier.id)
+        }
       } else {
         return NextResponse.json({ error: "Unknown job" }, { status: 404 })
       }

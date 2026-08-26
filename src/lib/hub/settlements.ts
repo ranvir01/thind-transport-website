@@ -6,10 +6,11 @@ import {
 import { getCarrier, getCarrierSettings } from "./settings"
 import { storeGeneratedPdf } from "./documents"
 import { buildSettlementPdf } from "./pdf"
+import { isSimulation } from "./mode"
 import { logAudit } from "./audit"
 import { assertCarrierRefs } from "./tenancy"
 import { toIsoDateOnly } from "./format-dates"
-import { createMailTransport, isEmailConfigured, mailFrom } from "@/lib/mailer"
+import { createMailTransport, mailShouldSend, mailFrom } from "@/lib/mailer"
 import { advanceExposureExceedsCap, MAX_DRIVER_ADVANCE_EXPOSURE_CENTS } from "./advances-core"
 import type { Advance, Driver, Settlement, SettlementLine } from "./types"
 
@@ -366,6 +367,7 @@ export async function approveSettlement(
     grossCents: settlement.gross_cents,
     deductionsCents: settlement.deductions_cents,
     netCents: settlement.net_cents,
+    simulation: await isSimulation(),
   })
   const statementUrl = await storeGeneratedPdf(`settlement-${settlementId}.pdf`, pdfBytes)
 
@@ -381,7 +383,7 @@ export async function approveSettlement(
   })
 
   let emailed = false
-  if (driver?.email && isEmailConfigured()) {
+  if (driver?.email && (await mailShouldSend())) {
     try {
       const transport = createMailTransport()
       await transport.sendMail({

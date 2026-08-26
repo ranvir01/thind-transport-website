@@ -12,6 +12,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vites
 vi.mock("../db", () => ({ query: vi.fn(async () => []), queryOne: vi.fn(async () => null), hubDb: vi.fn() }))
 vi.mock("../audit", () => ({ logAudit: vi.fn(async () => undefined) }))
 vi.mock("@/lib/hub/session", () => ({ getActiveHubUser: vi.fn() }))
+vi.mock("../mode", () => ({ isSimulation: vi.fn(async () => false) }))
 
 import { query } from "../db"
 import { getActiveHubUser } from "@/lib/hub/session"

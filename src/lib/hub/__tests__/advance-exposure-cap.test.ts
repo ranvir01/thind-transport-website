@@ -28,6 +28,7 @@ vi.mock("../audit", () => ({ logAudit: vi.fn(async () => undefined) }))
 vi.mock("@/lib/mailer", () => ({
   createMailTransport: vi.fn(),
   isEmailConfigured: vi.fn(() => false),
+  mailShouldSend: vi.fn(async () => false),
   mailFrom: vi.fn(() => "payroll@example.com"),
 }))
 

@@ -61,9 +61,11 @@ vi.mock("../types", async (importOriginal) => {
 vi.mock("../audit", () => ({ logAudit: vi.fn(async () => undefined) }))
 vi.mock("@/lib/mailer", () => ({
   isEmailConfigured,
+  mailShouldSend: async () => isEmailConfigured(),
   createMailTransport: vi.fn(),
   mailFrom: vi.fn(() => "billing@test"),
 }))
+vi.mock("../mode", () => ({ isSimulation: vi.fn(async () => false) }))
 
 import { createInvoiceFromLoad } from "../invoices"
 

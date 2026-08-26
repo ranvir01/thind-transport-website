@@ -5,8 +5,9 @@ import { getCustomer } from "./customers"
 import { listDocuments, storeGeneratedPdf, readStoredFileBytes } from "./documents"
 import { buildInvoicePdf, buildStatementPdf } from "./pdf"
 import { invoiceTotalCents, agingBucket, type AgingBucket } from "./money"
+import { isSimulation } from "./mode"
 import { logAudit } from "./audit"
-import { createMailTransport, isEmailConfigured, mailFrom } from "@/lib/mailer"
+import { createMailTransport, mailShouldSend, mailFrom } from "@/lib/mailer"
 import { loadTotalCents, fmtCentsExact, type Invoice, type HubDocument } from "./types"
 
 const INVOICE_SELECT = `
@@ -140,6 +141,7 @@ export async function createInvoiceFromLoad(
     loadReference: load.reference,
     customerReference: load.customer_reference,
     lane, lines, totalCents: amountCents, remitTo, factored,
+    simulation: await isSimulation(),
   })
   const pdfUrl = await storeGeneratedPdf(`${number}.pdf`, pdfBytes)
 
@@ -169,7 +171,7 @@ export async function createInvoiceFromLoad(
   let error: string | undefined
   if (!shouldEmail) {
     // Deliberate, not a failure: the caller asked for a draft only.
-  } else if (!isEmailConfigured()) {
+  } else if (!(await mailShouldSend())) {
     // Skip sending but DON'T return early — the load must still move to
     // "invoiced" below, or the UI keeps offering invoice creation forever.
     error = "Email not configured (set SMTP_USER/SMTP_PASS) — download the PDF and send it manually."
@@ -510,7 +512,7 @@ export async function sendCustomerStatement(
   if (!statement.billingEmail) throw new Error("No billing email on file for this customer")
 
   const carrier = await getCarrier(carrierId)
-  if (!isEmailConfigured()) {
+  if (!(await mailShouldSend())) {
     return {
       emailed: false,
       totalOpenCents: statement.totalOpenCents,
@@ -533,6 +535,7 @@ export async function sendCustomerStatement(
       bucket: inv.bucket, openCents: inv.open_cents,
     })),
     totalOpenCents: statement.totalOpenCents,
+    simulation: await isSimulation(),
   })
 
   const transport = createMailTransport()

@@ -36,6 +36,8 @@ async function fmcsaLookup(customer: {
 }): Promise<{ carrier: QcCarrier; raw: unknown } | null> {
   const webKey = process.env.FMCSA_WEBKEY
   if (!webKey) return null
+  const { liveIntegrationsAllowed } = await import("./mode")
+  if (!(await liveIntegrationsAllowed())) return null
   const base = "https://mobile.fmcsa.dot.gov/qc/services/carriers"
   const urls: string[] = []
   if (customer.mc_number) urls.push(`${base}/docket-number/${encodeURIComponent(customer.mc_number)}?webKey=${webKey}`)

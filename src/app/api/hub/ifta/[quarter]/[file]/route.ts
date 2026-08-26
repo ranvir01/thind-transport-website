@@ -6,6 +6,7 @@ import { iftaWorksheetWarnings, iftaRowFuelTaxCents, iftaWorksheetTotals } from 
 import { withIftaWarningsCoverPage } from "@/lib/hub/ifta-pdf"
 import { getCarrier, getCarrierSettings } from "@/lib/hub/settings"
 import { buildIftaPdf } from "@/lib/hub/pdf"
+import { isSimulation } from "@/lib/hub/mode"
 import type { IftaReportRow } from "@/lib/hub/types"
 
 export async function GET(
@@ -106,6 +107,7 @@ export async function GET(
         netCents: r.netCents,
       })),
       netTaxCents: Number(report.net_tax_cents ?? 0),
+      simulation: await isSimulation(),
     })
     const withWarnings = await withIftaWarningsCoverPage(new Uint8Array(pdf), { quarter, warnings })
     return new NextResponse(new Uint8Array(withWarnings), {

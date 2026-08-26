@@ -63,6 +63,8 @@ export async function getCredentials(
   provider: IntegrationProvider
 ): Promise<Record<string, string> | null> {
   if (!credentialsConfigured()) return null
+  const { liveIntegrationsAllowed } = await import("./mode")
+  if (!(await liveIntegrationsAllowed())) return null
   const row = await queryOne<{ encrypted: string }>(
     `SELECT encrypted FROM hub.api_credentials WHERE carrier_id = $1 AND provider = $2`,
     [carrierId, provider]
@@ -84,6 +86,8 @@ export async function hasCredentials(
   // pull() throws "not connected" on every cron run, forever, with no alert —
   // the row still exists, it just can no longer be decrypted.
   if (!credentialsConfigured()) return false
+  const { liveIntegrationsAllowed } = await import("./mode")
+  if (!(await liveIntegrationsAllowed())) return false
   const row = await queryOne<{ id: string }>(
     `SELECT id FROM hub.api_credentials WHERE carrier_id = $1 AND provider = $2`,
     [carrierId, provider]

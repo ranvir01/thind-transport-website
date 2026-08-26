@@ -18,6 +18,7 @@ import pg from "pg"
 import bcrypt from "bcrypt"
 import { PDFDocument, StandardFonts } from "pdf-lib"
 import { loadEnvLocal } from "./env-local.mjs"
+import { createRng } from "./sim/rng.mjs"
 
 
 const CARRIER = "11111111-1111-1111-1111-111111111111" // Thind (created by migration 002)
@@ -93,6 +94,8 @@ async function main() {
   await client.connect()
   const q = (text, params = []) => client.query(text, params)
 
+  await q(`UPDATE hub.carriers SET name = 'Thind Transport LLC' WHERE id = $1`, [CARRIER])
+
   console.log("Wiping hub data…")
   await q(`TRUNCATE hub.audit_log, hub.integration_syncs, hub.api_credentials, hub.integration_events,
            hub.claims, hub.incidents,
@@ -106,7 +109,7 @@ async function main() {
            hub.facility_notes, hub.facilities, hub.pay_rules, hub.notifications,
            hub.push_subscriptions, hub.tasks, hub.message_reads, hub.messages,
            hub.message_threads, hub.message_templates, hub.announcement_acks, hub.announcements,
-           hub.document_requests, hub.lanes, hub.time_off_requests
+           hub.document_requests, hub.lanes, hub.time_off_requests, hub.email_outbox
            RESTART IDENTITY CASCADE`)
   await q(`DELETE FROM hub.ifta_tax_rates`)
   // Price book back to the 003_money.sql defaults — accessorial_types isn't in
@@ -230,13 +233,15 @@ async function main() {
     const [unit, year, make, model, ownership, status, regDays, inspDays, insDays, tank] = truckSeed[i]
     const { rows } = await q(
       `INSERT INTO hub.trucks (carrier_id, unit_number, vin, plate, plate_state, year, make, model,
-         ownership, status, registration_expiry, inspection_due, insurance_expiry, assigned_driver_id, tank_capacity_gallons)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15) RETURNING id`,
+         ownership, status, registration_expiry, inspection_due, insurance_expiry, assigned_driver_id, tank_capacity_gallons,
+         eld_device_id, fuel_card_last4)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17) RETURNING id`,
       [
         CARRIER, unit, `1FUJGLDR${year}${String(43000 + i * 137)}`, `C${82000 + i * 53}J`, "WA",
         year, make, model, ownership, status,
         dateOnly(daysAhead(regDays)), dateOnly(daysAhead(inspDays)), dateOnly(daysAhead(insDays)),
         driverIds[i] ?? null, tank,
+        `ELD-THD-${String(1000 + i)}`, String(4000 + i * 17).slice(-4),
       ]
     )
     truckIds.push(rows[0].id)
@@ -283,6 +288,15 @@ async function main() {
         `ap@${name.toLowerCase().replace(/[^a-z]/g, "").slice(0, 12)}.demo`,
         "(503) 555-0188", terms, factored,
       ]
+    )
+    customerIds.push(rows[0].id)
+  }
+  // Slow-pay already in the list (High Desert, 60-day terms). One blacklisted broker.
+  {
+    const { rows } = await q(
+      `INSERT INTO hub.customers (carrier_id, name, type, mc_number, billing_email, phone, payment_terms_days, factored, status)
+       VALUES ($1,'Blackwell Freight Brokers','broker','221098','ap@blackwell.demo','(702) 555-0199',30,false,'blacklisted') RETURNING id`,
+      [CARRIER]
     )
     customerIds.push(rows[0].id)
   }
@@ -427,6 +441,18 @@ async function main() {
     }))
   }
   await makeLoad({ customer: 2, status: "quoted", equipment: "reefer", commodity: "Onions", weight: 40000, linehaulCents: 260000, fscCents: 0, miles: 640, origin: CITY.yakima, dest: CITY.oakland, pickupDaysAgo: -4, deliverDaysAgo: -6, source: "quote" })
+
+  // Extra settled history so the lane ranker has ≥5 scored markets out of WA
+  // with margin math (revenue − miles × cost-per-mile) visible on Reports → Lanes.
+  for (let i = 0; i < histLanes.length; i++) {
+    const [cust, origin, dest, equip, lh, fsc, miles] = histLanes[i]
+    await makeLoad({
+      customer: cust, status: "settled", equipment: equip, commodity: "Backhaul freight",
+      weight: 34000 + i * 600, linehaulCents: lh - 8000, fscCents: fsc, miles,
+      driver: (i + 3) % driverIds.length, truck: (i + 2) % truckIds.length, trailer: (i + 1) % trailerIds.length,
+      origin, dest, pickupDaysAgo: 80 + i * 5, deliverDaysAgo: 78 + i * 5, source: "import",
+    })
+  }
 
   // ---- Invoices + payments ----
   console.log("Creating invoices…")
@@ -981,70 +1007,156 @@ async function main() {
     [CARRIER, users.dispatcher, users.owner]
   )
 
-  // ---- Second tenant (Phase 7): Cascade Demo Lines — proves zero bleed ----
-  console.log("Creating second tenant (Cascade Demo Lines)…")
+  // ---- Second tenant: ATS Transport LLC (real phone, SAMPLE DOT/MC) ----
+  console.log("Creating second tenant (ATS Transport LLC)…")
   const CASCADE = "22222222-2222-2222-2222-222222222222"
   await q(
-    `INSERT INTO hub.carriers (id, name, dot_number, mc_number, phone, email, address)
-     VALUES ($1, 'Cascade Demo Lines', '3411908', '991283', '(509) 555-0200', 'ops@cascademo.example', '88 Riverside Dr, Wenatchee, WA 98801')
-     ON CONFLICT (id) DO NOTHING`,
+    `INSERT INTO hub.carriers (id, name, dot_number, mc_number, phone, email, address, sample_authority)
+     VALUES ($1, 'ATS Transport LLC', 'SAMPLE', 'SAMPLE', '(253) 410-7259', 'ops@demo.ats', 'Kent, WA', TRUE)
+     ON CONFLICT (id) DO UPDATE SET
+       name = EXCLUDED.name, dot_number = EXCLUDED.dot_number, mc_number = EXCLUDED.mc_number,
+       phone = EXCLUDED.phone, email = EXCLUDED.email, address = EXCLUDED.address, sample_authority = TRUE`,
     [CASCADE]
   )
   await q(
     `INSERT INTO hub.carrier_settings (carrier_id, settings) VALUES ($1, $2)
-     ON CONFLICT (carrier_id) DO NOTHING`,
+     ON CONFLICT (carrier_id) DO UPDATE SET settings = EXCLUDED.settings`,
     [CASCADE, JSON.stringify({
-      invoice: { prefix: "CAS-INV-", nextNumber: 5001, defaultTermsDays: 30 },
-      pay: { companyDriverPerMileCents: 60, ownerOperatorPercentage: 0.88, payLoadedMilesOnly: true },
+      invoice: { prefix: "ATS-INV-", nextNumber: 5001, defaultTermsDays: 30 },
+      pay: { companyDriverPerMileCents: 62, ownerOperatorPercentage: 0.88, payLoadedMilesOnly: true },
       detention: { freeHours: 2, ratePerHourCents: 5000 },
       costPerMileCents: 178,
       fsc: { baseCentsPerGallon: 125, mpg: 6.4 },
       randomTesting: { drugPct: 50, alcoholPct: 10 },
-      factoring: { company: null, remitName: null, remitAddress: null, email: null },
-      notifications: { officeEmail: "ops@cascademo.example" },
+      factoring: { company: "Apex Factoring", remitName: "Apex Factoring LLC", remitAddress: "PO Box 88, Tacoma, WA 98401", email: "funding@apex.demo" },
+      notifications: { officeEmail: "ops@demo.ats" },
       branding: { accent: "#369C82" },
     })]
   )
-  const cascadeOwner = await q(
-    `INSERT INTO hub.users (carrier_id, email, password_hash, name, role) VALUES ($1,$2,$3,$4,'owner') RETURNING id`,
+  await q(
+    `INSERT INTO hub.users (carrier_id, email, password_hash, name, role) VALUES ($1,$2,$3,$4,'owner')`,
     [CASCADE, "owner@cascademo.example", hash, "Lena Vasquez"]
+  )
+  await q(
+    `INSERT INTO hub.users (carrier_id, email, password_hash, name, role) VALUES ($1,$2,$3,$4,'owner')`,
+    [CASCADE, "owner@demo.ats", hash, "Lena Vasquez"]
+  )
+  await q(
+    `INSERT INTO hub.users (carrier_id, email, password_hash, name, role) VALUES ($1,$2,$3,$4,'dispatcher')`,
+    [CASCADE, "dispatch@demo.ats", hash, "Chris Nguyen"]
   )
   const cascadeDriverUser = await q(
     `INSERT INTO hub.users (carrier_id, email, password_hash, name, role) VALUES ($1,$2,$3,$4,'driver') RETURNING id`,
     [CASCADE, "driver@cascademo.example", hash, "Pete Larson"]
   )
-  const cascadeDriver = await q(
-    `INSERT INTO hub.drivers (carrier_id, first_name, last_name, phone, cdl_number, cdl_state,
-       cdl_expiry, medical_card_expiry, hire_date, pay_type, pay_rate, status, user_id)
-     VALUES ($1,'Pete','Larson','(509) 555-0201','WDL884213','WA',$2,$3,$4,'per_mile',0.60,'active',$5)
-     RETURNING id`,
-    [CASCADE, dateOnly(daysAhead(400)), dateOnly(daysAhead(210)), dateOnly(daysAgo(500)), cascadeDriverUser.rows[0].id]
+  await q(
+    `INSERT INTO hub.users (carrier_id, email, password_hash, name, role) VALUES ($1,$2,$3,$4,'driver')`,
+    [CASCADE, "driver@demo.ats", hash, "Pete Larson"]
   )
-  await q(`UPDATE hub.users SET driver_id = $1 WHERE id = $2`, [cascadeDriver.rows[0].id, cascadeDriverUser.rows[0].id])
-  const cascadeTrucks = []
-  for (const [unit, make] of [["C-01", "Volvo"], ["C-02", "Kenworth"]]) {
+  const atsDrivers = []
+  const atsDriverSeed = [
+    ["Pete", "Larson", "per_mile", 0.62, 400, 210, 0, 6500],
+    ["Aisha", "Khan", "per_mile", 0.62, 180, 40, 0, 6500],
+    ["Diego", "Morales", "percentage", 0.88, 500, 120, 7500, 0],
+    ["Priya", "Nair", "percentage", 0.88, 90, -5, 5000, 0],
+  ]
+  for (let i = 0; i < atsDriverSeed.length; i++) {
+    const [first, last, payType, payRate, cdlDays, medDays, escrowWk, insWk] = atsDriverSeed[i]
     const { rows } = await q(
-      `INSERT INTO hub.trucks (carrier_id, unit_number, year, make, ownership, status, assigned_driver_id, tank_capacity_gallons)
-       VALUES ($1,$2,2022,$3,'company','active',$4,230) RETURNING id`,
-      [CASCADE, unit, make, unit === "C-01" ? cascadeDriver.rows[0].id : null]
+      `INSERT INTO hub.drivers (carrier_id, first_name, last_name, phone, email, cdl_number, cdl_state,
+         cdl_expiry, medical_card_expiry, hire_date, pay_type, pay_rate, pay_loaded_miles_only,
+         escrow_weekly_cents, insurance_weekly_cents, status, user_id)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,TRUE,$13,$14,'active',$15) RETURNING id`,
+      [
+        CASCADE, first, last, `(253) 410-72${String(50 + i).padStart(2, "0")}`,
+        `${first.toLowerCase()}.${last.toLowerCase()}@demo.ats`,
+        `WDL${200000 + i * 91}`, "WA",
+        dateOnly(daysAhead(cdlDays)), dateOnly(daysAhead(medDays)),
+        dateOnly(daysAgo(200 + i * 40)), payType, payRate, escrowWk, insWk,
+        i === 0 ? cascadeDriverUser.rows[0].id : null,
+      ]
     )
-    cascadeTrucks.push(rows[0].id)
+    atsDrivers.push(rows[0].id)
   }
-  const cascadeCustomer = await q(
-    `INSERT INTO hub.customers (carrier_id, name, type, mc_number, billing_email, payment_terms_days, status)
-     VALUES ($1,'Wenatchee Produce Partners','broker','44521','ap@wenatcheeproduce.example',30,'active') RETURNING id`,
+  await q(`UPDATE hub.users SET driver_id = $1 WHERE id = $2`, [atsDrivers[0], cascadeDriverUser.rows[0].id])
+  const atsDriverLogin = await q(`SELECT id FROM hub.users WHERE email = 'driver@demo.ats'`)
+  if (atsDriverLogin.rows[0]) {
+    await q(`UPDATE hub.users SET driver_id = $1 WHERE id = $2`, [atsDrivers[0], atsDriverLogin.rows[0].id])
+  }
+  await q(`
+    INSERT INTO hub.pay_rules (carrier_id, driver_id, name, rules, deductions)
+    SELECT d.carrier_id, d.id,
+      CASE WHEN d.pay_type = 'percentage' THEN 'Owner-operator 88% of linehaul' ELSE 'Company $0.62/loaded mile' END,
+      CASE WHEN d.pay_type = 'percentage' THEN
+        jsonb_build_array(
+          jsonb_build_object('type','percent_linehaul','basisPoints', 8800),
+          jsonb_build_object('type','fsc_passthrough','basisPoints', 10000))
+      ELSE
+        jsonb_build_array(
+          jsonb_build_object('type','per_mile','rateCentsPerMile', 62, 'loadedOnly', TRUE))
+      END,
+      (SELECT COALESCE(jsonb_agg(x), '[]'::jsonb) FROM (
+        SELECT jsonb_build_object('kind','escrow','amountCents', d.escrow_weekly_cents) AS x
+        WHERE d.escrow_weekly_cents > 0
+        UNION ALL
+        SELECT jsonb_build_object('kind','insurance','amountCents', d.insurance_weekly_cents)
+        WHERE d.insurance_weekly_cents > 0
+      ) deductions)
+    FROM hub.drivers d
+    WHERE d.carrier_id = $1 AND d.deleted_at IS NULL`,
     [CASCADE]
   )
+  const atsTrucks = []
+  const atsTruckSeed = [
+    ["C-01", 2023, "Volvo", "VNL", "company", "active"],
+    ["C-02", 2022, "Kenworth", "T680", "company", "active"],
+    ["A-21", 2021, "Peterbilt", "579", "owner_operator", "active"],
+    ["A-22", 2024, "Freightliner", "Cascadia", "owner_operator", "active"],
+  ]
+  for (let i = 0; i < atsTruckSeed.length; i++) {
+    const [unit, year, make, model, ownership, status] = atsTruckSeed[i]
+    const { rows } = await q(
+      `INSERT INTO hub.trucks (carrier_id, unit_number, year, make, model, ownership, status, assigned_driver_id, tank_capacity_gallons, eld_device_id, fuel_card_last4)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,230,$9,$10) RETURNING id`,
+      [CASCADE, unit, year, make, model, ownership, status, atsDrivers[i] ?? null, `ELD-ATS-${1100 + i}`, String(8100 + i * 13).slice(-4)]
+    )
+    atsTrucks.push(rows[0].id)
+  }
+  for (const [unit, type] of [["AT-1", "reefer"], ["AT-2", "dry_van"], ["AT-3", "flatbed"], ["AT-4", "reefer"]]) {
+    await q(
+      `INSERT INTO hub.trailers (carrier_id, unit_number, type, year, status, registration_expiry, inspection_due)
+       VALUES ($1,$2,$3,2022,'active',$4,$5)`,
+      [CASCADE, unit, type, dateOnly(daysAhead(120)), dateOnly(daysAhead(80))]
+    )
+  }
+  const atsCustomerSeed = [
+    ["Sound Logistics", "broker", "334120", 30, false, "active"],
+    ["Tacoma Produce Co.", "shipper", null, 21, false, "active"],
+    ["Harbor Factor Brokers", "broker", "556781", 45, true, "active"],
+    ["Olympic Building Supply", "shipper", null, 30, false, "active"],
+    ["SlowPay Intermodal", "broker", "667210", 60, false, "active"],
+    ["Redline Freight LLC", "broker", "112998", 30, false, "blacklisted"],
+    ["Cascade Fruit Express", "broker", "44521", 30, false, "active"],
+  ]
+  const atsCustomers = []
+  for (const [name, type, mc, terms, factored, status] of atsCustomerSeed) {
+    const { rows } = await q(
+      `INSERT INTO hub.customers (carrier_id, name, type, mc_number, billing_email, payment_terms_days, factored, status)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING id`,
+      [CASCADE, name, type, mc, `ap@${name.toLowerCase().replace(/[^a-z]/g, "").slice(0, 12)}.demo`, terms, factored, status]
+    )
+    atsCustomers.push(rows[0].id)
+  }
   const cascadeLoads = [
-    ["CAS-5001", "in_transit", cascadeTrucks[0], cascadeDriver.rows[0].id, CITY.spokane, CITY.portland, 168000, 14000, 1, 2],
-    ["CAS-5002", "pod_received", cascadeTrucks[1], null, CITY.kent, CITY.boise, 152000, 12000, 4, 3],
+    ["CAS-5001", "in_transit", atsTrucks[0], atsDrivers[0], CITY.spokane, CITY.portland, 168000, 14000, 1, 2],
+    ["CAS-5002", "pod_received", atsTrucks[1], atsDrivers[1], CITY.kent, CITY.boise, 152000, 12000, 4, 3],
   ]
   for (const [ref, status, truckId, driverId, origin, dest, linehaul, fsc, puDays, delDays] of cascadeLoads) {
     const { rows } = await q(
       `INSERT INTO hub.loads (carrier_id, reference, customer_id, status, equipment, commodity,
          linehaul_cents, fuel_surcharge_cents, loaded_miles, truck_id, driver_id, source)
        VALUES ($1,$2,$3,$4,'reefer','Fresh produce',$5,$6,420,$7,$8,'direct') RETURNING id`,
-      [CASCADE, ref, cascadeCustomer.rows[0].id, status, linehaul, fsc, truckId, driverId]
+      [CASCADE, ref, atsCustomers[0], status, linehaul, fsc, truckId, driverId]
     )
     await q(
       `INSERT INTO hub.stops (carrier_id, load_id, sequence, type, facility, city, state, lat, lng, appt_start)
@@ -1058,13 +1170,56 @@ async function main() {
       ]
     )
   }
-  await q(
-    `INSERT INTO hub.pay_rules (carrier_id, driver_id, name, rules, deductions)
-     SELECT $1, $2, 'Company per-mile',
-       '[{"type":"per_mile","rateCentsPerMile":60,"loadedOnly":true},{"type":"referral_bonus"}]', '[]'
-     WHERE NOT EXISTS (SELECT 1 FROM hub.pay_rules WHERE driver_id = $2)`,
-    [CASCADE, cascadeDriver.rows[0].id]
-  )
+  const atsLanes = [
+    [CITY.kent, CITY.portland, "dry_van"], [CITY.seattle, CITY.boise, "reefer"],
+    [CITY.tacoma ?? CITY.kent, CITY.sacramento, "flatbed"], [CITY.portland, CITY.fresno, "reefer"],
+    [CITY.spokane, CITY.saltlake, "dry_van"], [CITY.kent, CITY.losangeles, "reefer"],
+    [CITY.yakima, CITY.oakland, "reefer"], [CITY.seattle, CITY.phoenix, "flatbed"],
+  ]
+  const atsStatuses = ["quoted", "booked", "dispatched", "at_pickup", "in_transit", "delivered", "pod_received", "invoiced", "paid", "settled"]
+  const simSeed = process.env.HAULDESK_SIM_SEED || "hauldesk-default"
+  const rng = createRng(simSeed)
+  const jitter = simSeed === "hauldesk-default" ? () => 0 : () => Math.floor(rng() * 41) - 20
+  for (let i = 0; i < 36; i++) {
+    const lane = atsLanes[i % atsLanes.length]
+    const status = atsStatuses[i % atsStatuses.length]
+    const miles = Math.max(80, 280 + (i % 9) * 95 + jitter())
+    const lh = miles * (210 + (i % 5) * 8)
+    const fsc = Math.round(lh * 0.11)
+    const { rows } = await q(
+      `INSERT INTO hub.loads (carrier_id, reference, customer_id, status, equipment, commodity,
+         linehaul_cents, fuel_surcharge_cents, loaded_miles, deadhead_miles, truck_id, driver_id, source)
+       VALUES ($1,$2,$3,$4,$5,'General freight',$6,$7,$8,$9,$10,$11,'direct') RETURNING id`,
+      [
+        CASCADE, `ATS-${5100 + i}`, atsCustomers[i % 6], status, lane[2],
+        lh, fsc, miles, Math.round(miles * 0.08),
+        atsTrucks[i % atsTrucks.length], atsDrivers[i % atsDrivers.length],
+      ]
+    )
+    const origin = lane[0]
+    const dest = lane[1]
+    const pu = 2 + (i % 20)
+    await q(
+      `INSERT INTO hub.stops (carrier_id, load_id, sequence, type, facility, city, state, lat, lng, appt_start)
+       VALUES ($1,$2,1,'pickup',$3,$4,$5,$6,$7,$8), ($1,$2,2,'delivery',$9,$10,$11,$12,$13,$14)`,
+      [
+        CASCADE, rows[0].id,
+        `${origin.city} Yard`, origin.city, origin.state, origin.lat, origin.lng, daysAgo(pu, 8),
+        `${dest.city} Dock`, dest.city, dest.state, dest.lat, dest.lng, daysAgo(pu - 2, 16),
+      ]
+    )
+  }
+  for (let i = 0; i < 24; i++) {
+    await q(
+      `INSERT INTO hub.fuel_transactions (carrier_id, source, external_id, card_program, truck_id, driver_id, ts,
+         merchant, city, jurisdiction, gallons, fuel_type, unit_price_cents, total_cents)
+       VALUES ($1,'csv:EFS',$2,'EFS',$3,$4,$5,'Pilot ATS','Kent','WA',$6,'diesel',392,$7)`,
+      [
+        CASCADE, `ATS-EFS-${i}`, atsTrucks[i % atsTrucks.length], atsDrivers[i % atsDrivers.length],
+        daysAgo(3 + i * 2, 10), 80 + (i % 4) * 10, (80 + (i % 4) * 10) * 392,
+      ]
+    )
+  }
 
   // Platform admin (no tenant scope — sees tenant ops only).
   await q(
@@ -1072,12 +1227,25 @@ async function main() {
     ["admin@hauldesk.app", hash, "Platform Admin"]
   )
 
-  console.log(`Done. Demo data ready.`)
+  const clockDate = new Date().toISOString().slice(0, 10)
+  await q(
+    `INSERT INTO hub.platform_state (id, mode, sim_seed, sim_clock_date, generated_at, updated_at)
+     VALUES (1, 'simulation', $1, $2, NOW(), NOW())
+     ON CONFLICT (id) DO UPDATE SET
+       mode = 'simulation',
+       sim_seed = EXCLUDED.sim_seed,
+       sim_clock_date = EXCLUDED.sim_clock_date,
+       generated_at = NOW(),
+       updated_at = NOW()`,
+    [simSeed, clockDate]
+  )
+
+  console.log(`Done. SIMULATION world ready (seed ${simSeed}, clock ${clockDate}).`)
   console.log(`  In-transit load: ${inTransit.reference} → tracking: /track/${token}`)
   console.log(`  Cancelled load: ${cancelledLoad.reference} → tracking: /track/${cancelledToken}`)
   console.log(`  Settlement-ready loads: ${settle1.reference}, ${settle2.reference} (company drv), ${settle3.reference} (O/O)`)
   console.log(`  POD-received load awaiting invoice: ${podLoad.reference}`)
-  console.log(`  Tenant 2 (Cascade Demo Lines): owner@cascademo.example / driver@cascademo.example`)
+  console.log(`  Tenant 2 (ATS Transport LLC): owner@demo.ats / owner@cascademo.example / driver@cascademo.example`)
   console.log(`  Platform admin: admin@hauldesk.app`)
   console.log("Logins (password: ThindDemo1!):")
   console.log("  owner@demo.thind / dispatch@demo.thind / accounting@demo.thind")

@@ -88,6 +88,7 @@ const CARRIERLESS_TABLES: Record<string, string> = {
   announcement_acks: "join row (announcement_id, user_id); scoped through hub.announcements",
   message_reads: "read cursor (thread_id, user_id); scoped through hub.message_threads",
   settlement_lines: "line items scoped through their parent hub.settlements row",
+  platform_state: "singleton running mode (simulation|legit) for the whole process — not tenant data",
 }
 
 /**

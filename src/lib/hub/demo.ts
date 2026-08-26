@@ -8,11 +8,11 @@
  * emails, so flipping one env var actually closes the door instead of just
  * hiding it.
  *
- * That promise was only two-thirds true. This matched `@demo.thind` alone,
- * while scripts/seed-demo.mjs creates NINE logins on the same password across
+ * that promise was only two-thirds true. This matched `@demo.thind` alone,
+ * while scripts/seed-demo.mjs creates logins on the same password across
  * three domains — including `admin@hauldesk.app`, whose role is
- * `platform_admin`, the highest privilege in the system, and both
- * `@cascademo.example` users of the second tenant. The kill switch left the
+ * `platform_admin`, the highest privilege in the system, plus `@demo.ats`
+ * and `@cascademo.example` users of the second tenant. The kill switch left the
  * most privileged seeded account open.
  *
  * seed-demo.mjs does refuse to run against production on its own
@@ -33,15 +33,15 @@ export function demoLoginEnabled(): boolean {
 }
 
 /** Domains under which the seed creates login accounts. */
-const SEEDED_LOGIN_DOMAINS = ["@demo.thind", "@cascademo.example"] as const
+const SEEDED_LOGIN_DOMAINS = ["@demo.thind", "@cascademo.example", "@demo.ats"] as const
 
 /** Seeded logins that don't share a demo domain — notably the platform admin. */
 const SEEDED_LOGIN_EMAILS = ["admin@hauldesk.app"] as const
 
 /**
  * True for any identity scripts/seed-demo.mjs can log in as — all six
- * `@demo.thind` roles, both `@cascademo.example` tenant-2 users, and the
- * `admin@hauldesk.app` platform admin.
+ * `@demo.thind` roles, ATS `@demo.ats` / `@cascademo.example` tenant-2 users,
+ * and the `admin@hauldesk.app` platform admin.
  */
 export function isDemoEmail(email: string | null | undefined): boolean {
   const normalized = email?.trim().toLowerCase()

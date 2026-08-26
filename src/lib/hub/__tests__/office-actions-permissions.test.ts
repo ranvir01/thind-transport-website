@@ -61,6 +61,7 @@ vi.mock("@/lib/hub/packet", () => ({
 }))
 vi.mock("@/lib/mailer", () => ({
   isEmailConfigured: vi.fn(() => true),
+  mailShouldSend: vi.fn(async () => true),
   createMailTransport: vi.fn(() => ({ sendMail: vi.fn(async () => undefined) })),
   mailFrom: vi.fn((n: string) => n),
 }))

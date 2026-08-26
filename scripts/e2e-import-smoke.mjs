@@ -88,7 +88,7 @@ async function main() {
   await waitForText(page, IMPORTED_UNIT)
   await shot(page, "04-fleet-shows-imported-truck")
 
-  console.log("5. Cross-tenant isolation: Cascade Demo Lines never sees Thind's imported truck")
+  console.log("5. Cross-tenant isolation: ATS Transport LLC never sees Thind's imported truck")
   const otherCtx = await browser.createBrowserContext()
   const otherPage = await otherCtx.newPage()
   await otherPage.setViewport({ width: 1440, height: 900 })

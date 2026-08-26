@@ -1,5 +1,8 @@
 # Getting started — run LoadOff locally in 10 minutes
 
+**New here?** Start at **[`docs/START-HERE.md`](START-HERE.md)** — HaulDesk’s default state is a labeled SIMULATION of Thind + ATS, with `npm run sim:seed` and one `go-legit` switch. This page is the longer environment checklist.
+
+
 The marketing site (thindtransport.com) and the LoadOff TMS (`/hub`) live in one
 Next.js app. This gets both running on your machine with demo data.
 

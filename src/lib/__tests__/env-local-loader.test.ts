@@ -120,9 +120,13 @@ describe("no file re-introduces its own .env.local parser", () => {
       "scripts/e2e-lib.mjs",
       "scripts/e2e-portal-accept-smoke.mjs",
       "scripts/fix-legacy-signatures.mjs",
+      "scripts/go-legit.mjs",
       "scripts/go-live-check.mjs",
       "scripts/hub-migrate.mjs",
       "scripts/seed-demo.mjs",
+      "scripts/sim/seed.mjs",
+      "scripts/dev-mobile.mjs",
+      "scripts/verify-sim.mjs",
       "src/lib/hub/__tests__/cross-tenant-harness.test.ts",
       "src/lib/hub/__tests__/driver-file-isolation.test.ts",
       "src/lib/hub/__tests__/portal-isolation.test.ts",
@@ -131,6 +135,7 @@ describe("no file re-introduces its own .env.local parser", () => {
       "src/lib/hub/__tests__/sandbox-sim-concurrency.test.ts",
       "src/lib/hub/__tests__/sandbox-sim-invariants.test.ts",
       "src/lib/hub/__tests__/sandbox-sim-live.test.ts",
+      "src/lib/hub/__tests__/simulation-live.test.ts",
     ]
     for (const caller of callers) {
       const src = readFileSync(path.join(process.cwd(), caller), "utf-8")

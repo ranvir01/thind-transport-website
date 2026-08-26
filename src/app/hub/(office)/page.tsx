@@ -17,6 +17,8 @@ import { StatTile } from "@/components/hub/StatTile"
 import { TimeOffDecisionPanel } from "@/components/hub/DriverOfficePanels"
 import { requireOfficeUser } from "@/lib/hub/session"
 import { gettingStartedState } from "@/app/hub/_actions/onboarding"
+import { isSimulation } from "@/lib/hub/mode"
+import { AdvanceSimDayButton } from "@/components/hub/AdvanceSimDayButton"
 import { cn } from "@/lib/utils"
 import { countdown } from "./countdown"
 
@@ -24,6 +26,7 @@ export const dynamic = "force-dynamic"
 
 export default async function TodayPage() {
   const user = await requireOfficeUser()
+  const simulation = await isSimulation()
   const [stats, today, started, newLeads] = await Promise.all([
     getDashboardStats(user.carrierId),
     todayData(user.carrierId),
@@ -59,6 +62,16 @@ export default async function TodayPage() {
         <h1 className="mt-0.5 text-[23px] font-semibold tracking-tight text-fg">
           {greeting}, {user.name.split(" ")[0]}
         </h1>
+        {simulation && user.role === "owner" ? (
+          <div className="mt-3 flex flex-wrap items-center gap-3">
+            <AdvanceSimDayButton />
+            {user.simView === "all" ? (
+              <p className="text-body-xs text-fg-3">
+                Viewing All — this board is {user.homeCarrierId === user.carrierId ? "your home carrier" : "the selected company"}. Switch to Thind or ATS to act.
+              </p>
+            ) : null}
+          </div>
+        ) : null}
       </header>
 
       {started && !coreDone ? (

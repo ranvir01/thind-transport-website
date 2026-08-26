@@ -11,6 +11,7 @@ vi.mock("../db", () => ({
   queryOne: vi.fn(async () => null),
   hubDb: vi.fn(),
 }))
+vi.mock("../mode", () => ({ isSimulation: vi.fn(async () => false) }))
 
 // Digest early-returns without an office email; stub settings so its stats SQL runs.
 vi.mock("../settings", () => ({
