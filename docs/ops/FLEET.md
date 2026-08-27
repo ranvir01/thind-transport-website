@@ -72,8 +72,9 @@ charter — consolidation is a fleet decision, not an agent edit.
 
 Prompts for Cursor jobs: [`.cursor/automation/`](../../.cursor/automation/README.md).
 Claude prompts: [`docs/claude-routines.md`](../claude-routines.md). Owner paste
-for Grok Bot: [`docs/grok-bots/`](../grok-bots/README.md). Sanitized owner
-context: [`OWNER-CONTEXT.md`](OWNER-CONTEXT.md).
+for Grok Bot: [`docs/grok-bots/`](../grok-bots/README.md). Paste for extending
+this operating system to other `ranvir01` repos: [`EXPANSION-PROMPT.md`](EXPANSION-PROMPT.md).
+Sanitized owner context: [`OWNER-CONTEXT.md`](OWNER-CONTEXT.md).
 
 ---
 
