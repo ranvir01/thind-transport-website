@@ -19,12 +19,14 @@ LIVE TRUTH (2026-08-27 — supersedes any older brief you were given)
 - Claude Corps (14 scheduled tasks) is the live scheduled writer on the home
   repo. Cursor dashboard automations were DISABLED 2026-08-26 (Integrator,
   Prod Smoke, Deploy + backlog, Untitled — Untitled stays off permanently).
-- GitHub Actions keep the home repo moving: drain :17/:47, liveness :10,
-  E2E 03:40 UTC. Grok Bot is a job-titled watcher fleet (Technical Program
-  Manager, Staff Platform Engineer, Engineering Communications Lead, etc.)
-  that NEVER writes git. Its Engineering Communications Lead reads
-  github.com/ranvir01 commits and publishes a HAPPENED / IN FLIGHT / SHOULD
-  board — so write commit messages a reader without your transcript can act on.
+- GitHub Actions keep the home repo moving: drain :17/:47, E2E 03:40 UTC.
+  Grok Bot is a four-bot watcher team in one group — gogo (TPM + coding
+  dispatcher), Steve (Deploy/CI), Jeff (RevOps), Rav (Career Coach) — that
+  NEVER writes git. gogo reads github.com/ranvir01 commits and runs a one-item
+  coding board — so write commit messages and PR bodies a reader without your
+  transcript can act on.
+- bls-website is deployed on NETLIFY, not Vercel; its deploy state shows as
+  GitHub commit checks on that repo. Do not change hosting or accounts.
 
 USAGE-EFFICIENCY LADDER (cheapest tool that does the job)
 1. GitHub Actions (free) — on-push CI, mechanical checks.
@@ -68,8 +70,8 @@ CONTEXT YOU MAY NEED
 - Home-repo operating docs (read via GitHub if useful):
   thind-transport-website → AGENTS.md, docs/ops/FLEET.md,
   docs/ops/AGENT_INTEROP.md, docs/grok-bots/SETUP.md.
-- New business ideas with no repo get a Grok Venture Analyst, not an agent
-  session; if this session uncovers one, put it in the Backlog for the owner.
+- New business ideas with no repo have no standing owner — if this session
+  uncovers one, put it in the Backlog tagged [needs-owner]; create nothing for it.
 
 DONE WHEN
 AGENTS.md exists and is accurate, CI is green on your branch, one real defect
@@ -81,14 +83,14 @@ every commit is authored by the owner identity above.
 
 | # | Where to start the agent | Why |
 |---|---|---|
-| 1 | `github.com/ranvir01/bls-website` | Has a standing Grok engineer already; likely live traffic |
-| 2 | Each other `ranvir01` repo with commits in the last 90 days | Matches the TPM's spawn rule |
+| 1 | `github.com/ranvir01/bls-website` | Live client site (bluelandscapingservices.com, Netlify) |
+| 2 | Each other `ranvir01` repo with commits in the last 90 days | Active code with no operating docs |
 | 3 | Quiet repos | On-push CI + README only; no schedules |
 
 Out of charter (same as [`docs/grok-bots/SETUP.md`](../grok-bots/SETUP.md)):
-Frybox, roofing, Tabletop Village. Career search stays on the Grok TPM's Monday
-scan; new ideas go to a Venture Analyst — neither gets a repo agent until a repo
-exists.
+Frybox, roofing, Tabletop Village. Career work stays with Rav (the Grok Career
+Coach) on request; new ideas go to the owner's backlog — neither gets a repo
+agent until a repo exists.
 
 After each rollout: the home repo needs no edit — the Grok board and `Backlog:`
 trailers carry the news. If a repo grows real daily traffic and needs scheduled
