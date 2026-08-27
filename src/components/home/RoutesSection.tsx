@@ -10,6 +10,12 @@ import {
   Calendar,
 } from "lucide-react"
 import { Reveal } from "@/components/ui/Reveal"
+import { PAY_RATES } from "@/lib/constants"
+
+const LOCAL = PAY_RATES.companyDriver.local
+const REGIONAL = PAY_RATES.companyDriver.regional
+const OTR = PAY_RATES.companyDriver.otr
+const OO = PAY_RATES.ownerOperator
 
 export function RoutesSection() {
   return (
@@ -51,14 +57,14 @@ export function RoutesSection() {
                   </h3>
                   <div className="flex flex-col items-center gap-0.5 sm:gap-1 mb-2">
                     <span className="text-2xl sm:text-3xl font-black text-gold">
-                      $57K-$63K
+                      {LOCAL.annual}
                     </span>
                     <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-steel-400">
                       Target Annual Pay
                     </span>
                   </div>
                   <div className="inline-block px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-lg bg-steel-800/60 border border-steel-700/60 text-xs font-bold text-steel-200">
-                    $0.63 CPM
+                    {LOCAL.perMile} CPM
                   </div>
                 </div>
 
@@ -140,14 +146,14 @@ export function RoutesSection() {
                   </h3>
                   <div className="flex flex-col items-center gap-0.5 sm:gap-1 mb-2">
                     <span className="text-2xl sm:text-3xl font-black text-gold">
-                      $63K-$73K
+                      {REGIONAL.annual}
                     </span>
                     <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-steel-400">
                       Target Annual Pay
                     </span>
                   </div>
                   <div className="inline-block px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-lg bg-steel-800/60 border border-steel-700/60 text-xs font-bold text-steel-200">
-                    $0.63 CPM
+                    {REGIONAL.perMile} CPM
                   </div>
                 </div>
 
@@ -229,14 +235,14 @@ export function RoutesSection() {
                   </h3>
                   <div className="flex flex-col items-center gap-0.5 sm:gap-1 mb-2">
                     <span className="text-2xl sm:text-3xl font-black text-gold">
-                      $65K-$280K
+                      {OTR.annual}
                     </span>
                     <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-steel-400">
-                      Target Annual Pay
+                      Company driver
                     </span>
                   </div>
                   <div className="inline-block px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-lg bg-steel-800/60 border border-steel-700/60 text-xs font-bold text-steel-200">
-                    $0.55-$0.60 CPM / 90% O/O
+                    {OTR.perMile} CPM
                   </div>
                 </div>
 
@@ -289,10 +295,10 @@ export function RoutesSection() {
                     Owner Operator Benefits:
                   </p>
                   <ul className="text-xs sm:text-sm text-steel-200 space-y-1 sm:space-y-2 font-medium">
-                    <li>• 90% of gross revenue</li>
-                    <li>• Avg $2.25-$3.25/mile</li>
+                    <li>• {OO.commission} of gross revenue</li>
+                    <li>• {OO.perMile}/mile</li>
                     <li>• Pick your own loads</li>
-                    <li>• $180K-$280K potential</li>
+                    <li>• {OO.annualGross} potential</li>
                   </ul>
                 </div>
               </CardContent>
