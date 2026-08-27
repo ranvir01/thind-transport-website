@@ -102,3 +102,11 @@ when `pivots` is present.
 - So **D-009 recommends defer**, with concrete revisit triggers. The value
   landed now is that the lane is specced: activation is a paste, not a
   project.
+
+## Comms lane — chat bridge (stub-first; D-010)
+
+Cross-platform comms remain the git bus
+([`AGENT_INTEROP.md`](AGENT_INTEROP.md) §4). The 2026-08-27 evaluation of
+Anthropic's Managed Agents × Vercel Chat SDK cookbook as an always-on
+owner↔Claude chat surface — and why nothing can chat *to* Cursor — lives in
+[`CHAT-BRIDGE.md`](CHAT-BRIDGE.md); adoption is D-010.

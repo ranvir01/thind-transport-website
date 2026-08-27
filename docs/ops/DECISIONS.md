@@ -119,3 +119,23 @@ needs Airtable + Postgres + Excel joined. [recommended]
 Deferral cost: none today — agents keep answering cross-source money questions
 by hand in the Claude stand-up.
 Answer: ____
+
+## D-010 | filed:2026-08-27 | class:spend
+Q: Pilot the Managed-Agent chat bridge (Anthropic's new Managed Agents × Vercel
+Chat SDK cookbook — evaluation and runbook in docs/ops/CHAT-BRIDGE.md) as the
+always-on owner↔Claude chat surface? Web adapter needs no Slack app or webhook;
+the only credential is Anthropic auth. Runs on the Claude Platform API —
+metered tokens OUTSIDE the claude.ai subscription Claude Corps uses.
+A) Pilot: clone the quickstart into its own tiny repo, web adapter only,
+read-only charter (drafts SHOULD prompts / Backlog items; never pushes git; no
+schedule), with a hard monthly API budget cap set in the Anthropic console
+before the key is minted. Real gain over Remote Control: no machine of ours
+has to be awake, and sessions keep portfolio memory. [recommended — small
+metered cost, no fleet changes, kill switch is deleting one key]
+B) Defer at zero cost; phone comms stay Remote Control + cursor.com + the Grok
+stand-up board. Revisit when the dispatcher needs a chat surface or
+Grok-drafted handoffs wait on the owner more than ~once a day.
+C) Skip entirely; the git bus plus existing phone paths are enough.
+Deferral cost: low — the owner stays the router between "I want X" said on a
+phone and a well-formed item on the git bus.
+Answer: ____
