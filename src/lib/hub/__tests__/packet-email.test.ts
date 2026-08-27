@@ -7,7 +7,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 
 const { mailShouldSend, sendMail } = vi.hoisted(() => ({
   mailShouldSend: vi.fn(async () => false),
-  sendMail: vi.fn(async () => ({})),
+  sendMail: vi.fn(async (_message: Record<string, unknown>) => ({})),
 }))
 
 vi.mock("@/lib/mailer", () => ({
