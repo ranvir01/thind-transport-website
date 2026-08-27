@@ -87,7 +87,10 @@ bus between platforms (`Backlog:` trailers, `npm run agent:backlog`). **One bran
 chat; they @mention and hand off so the owner is not the router. Standing groups
 and paste files: [`docs/grok-bots/SETUP.md`](../grok-bots/SETUP.md) is the one
 owner file (real job titles, project specialists, Claude stand-up board).
-Grok Bot still never writes git.
+Grok Bot still never writes git. Its four scheduled routines (D-009 — Claude
+board 07:30, platform sweep 07:00, Friday backup reminder, Monday career scan,
+all `America/Los_Angeles`) are read-only and silent-when-healthy, so they do not
+join this table's write clock.
 
 **D-007 (code):** Claude still writes git and long prompts. **D-008 (roster):**
 the Technical Program Manager **does** spawn job-titled specialists for LoadOff,

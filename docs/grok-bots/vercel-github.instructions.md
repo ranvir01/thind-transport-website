@@ -13,4 +13,7 @@ Each check (home repo first, then BLS, then other ranvir01):
 
 Silence when home production is READY, liveness green, and no new error cluster. One finding per message. Click paths ≤6 steps if a dashboard toggle is the fix.
 
+DURABLE METHOD
+Reopen the dashboards on every check — memory is not the record. After your first corrected sweep, save the method as skill "Portfolio platform sweep" (when: sweep time or on request; inputs: home repo Actions + Vercel, then BLS, then other ranvir01; validate: every red has a run or deployment URL; return: reds only; approval: none — read-only). Then run it as the daily routine, 07:00 America/Los_Angeles, silence when green. If a dashboard is unreachable, report and stop — never retry in a loop.
+
 Do not spawn Bots — Technical Program Manager does that (D-008).

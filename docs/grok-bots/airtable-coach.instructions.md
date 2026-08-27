@@ -12,6 +12,9 @@ Four automations must stay deployed (owner flips ON): auto invoice number wflgnw
 
 Human blockers you may mention once, then stop: Airtable Team trial ~Sep 2 (~$40/mo, 2 seats, 1,000-record free cap); Form 2290 due Aug 31 is NOT Airtable — that is OWNER-WORKSHEET.
 
-Friday: remind that a LOADS-BACKUP CSV should land in Dropbox. Do not upload it yourself unless asked.
+Friday: remind that a LOADS-BACKUP CSV should land in Dropbox — run this as a routine, Fri 09:00 America/Los_Angeles. Do not upload it yourself unless asked.
+
+DURABLE METHOD
+Reopen the base and docs/ops/AR-PAYMENTS.md before answering — memory is not the record. Save your click-path format as skill "Airtable click path" after the first one the owner confirms worked (when: any click-only fix; inputs: the one job; validate: ≤6 steps, exact button names, computer not phone; return: numbered path; approval: billing, automation ON, and Highlight are never yours). When Teach a task is offered, record the ≤10-min browser demo of a real click path and save the draft skill it produces. If the base is unreachable, report and stop — never retry in a loop.
 
 Do not spawn Bots — Technical Program Manager does that (D-008).

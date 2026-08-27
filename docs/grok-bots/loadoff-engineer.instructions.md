@@ -11,4 +11,7 @@ LoadOff engineering and Staff. @Technical Program Manager to route. @Staff Platf
 
 Truth: docs/ops/FLEET.md, OWNER-WORKSHEET.md, OWNER-CONTEXT.md. Claude Corps (14 tasks) writes this git; integrator 43 */3 UTC; drain :17/:47. Cursor automations DISABLED 2026-08-26; Untitled stays off.
 
+DURABLE METHOD
+Reopen the live page and FLEET.md before answering — memory is not the record; pay facts come from src/lib/constants.ts each time. After your first corrected bug report, save the method as skill "Hub bug file" (when: any product finding; inputs: the failing URL; validate: expected vs actual + suspected files; return: a SHOULD-ready item; approval: none — read-only). No standing routine — you check when asked or when a group pings.
+
 Never: merge, rewire fleet, spend money, tick Airtable Highlight, spawn extra Bots, skip the Communications Lead on code work.

@@ -20,6 +20,7 @@ const INSTRUCTION_FILES = [
   "bls-engineer.instructions.md",
   "eng-comms.instructions.md",
   "project-engineer.instructions.md",
+  "venture-analyst.instructions.md",
 ]
 
 describe("grok-bot instruction files (paste-ready, ≤4k)", () => {
@@ -55,6 +56,15 @@ describe("grok-bot instruction files (paste-ready, ≤4k)", () => {
     expect(setup).toMatch(/Frybox/)
     expect(setup).toMatch(/watcher\.instructions\.md/)
     expect(setup).toMatch(/Projects this team handles/)
+    // Step 5 durability: skills, routines, memory, on-demand venture coverage
+    expect(setup).toMatch(/Venture Analyst/)
+    expect(setup).toMatch(/venture-analyst\.instructions\.md/)
+    expect(setup).toMatch(/save this method as a skill/i)
+    expect(setup).toMatch(/Teach a task/i)
+    expect(setup).toMatch(/America\/Los_Angeles/)
+    expect(setup).toMatch(/Career scan/)
+    expect(setup).toMatch(/report and stop/i)
+    expect(setup).toMatch(/one persistent cloud computer|one cloud computer/i)
   })
 
   it("keeps every instruction body under the 4,000-character product cap", () => {
@@ -90,6 +100,9 @@ describe("grok-bot instruction files (paste-ready, ≤4k)", () => {
     expect(watcher).toMatch(/Engineering Communications Lead/)
     expect(watcher).toMatch(/SPAWN/)
     expect(watcher).toMatch(/project-engineer\.instructions\.md/)
+    expect(watcher).toMatch(/venture-analyst\.instructions\.md/)
+    expect(watcher).toMatch(/Career scan/)
+    expect(watcher).toMatch(/memory is not the record/i)
     expect(watcher).toMatch(/Claude stand-up/)
     expect(watcher).toMatch(/LoadOff engineering/)
     expect(watcher).toMatch(/BLS engineering/)
@@ -114,6 +127,31 @@ describe("grok-bot instruction files (paste-ready, ≤4k)", () => {
     expect(comms).toMatch(/Done when:/)
     expect(comms).toMatch(/thind-transport-website/)
     expect(comms).toMatch(/bls-website/)
+    expect(comms).toMatch(/skill "Claude stand-up board"/)
+    expect(comms).toMatch(/07:30 America\/Los_Angeles/)
+    expect(comms).toMatch(/report and stop/i)
+  })
+
+  it("every instruction body pins the memory rule so a Bot cannot answer from stale context", () => {
+    for (const file of INSTRUCTION_FILES) {
+      const body = readFileSync(path.join(DIR, file), "utf-8")
+      expect(
+        /memory is not the record/i.test(body),
+        `${file} must carry the reopen-the-source memory rule`
+      ).toBe(true)
+    }
+  })
+
+  it("the Venture Analyst template covers pre-repo ideas without spending or sending", () => {
+    const venture = readFileSync(path.join(DIR, "venture-analyst.instructions.md"), "utf-8")
+    expect(venture).toMatch(/Venture Analyst \(IDEA\)/)
+    expect(venture).toMatch(/no repo yet/i)
+    expect(venture).toMatch(/\/workspace\/ventures\/IDEA\.md/)
+    expect(venture).toMatch(/Engineering Communications Lead/)
+    expect(venture).toMatch(/Venture — IDEA/)
+    expect(venture).toMatch(/spend money/i)
+    expect(venture).toMatch(/git push/i)
+    expect(venture).toMatch(/approval/i)
   })
 
   it("the README names the three-platform split, job titles, and the never-git rule", () => {
@@ -129,5 +167,8 @@ describe("grok-bot instruction files (paste-ready, ≤4k)", () => {
     expect(readme).toMatch(/Claude stand-up/)
     expect(readme).toMatch(/SETUP\.md/)
     expect(readme).toMatch(/D-008/)
+    expect(readme).toMatch(/D-009/)
+    expect(readme).toMatch(/Venture Analyst/)
+    expect(readme).toMatch(/routine/i)
   })
 })

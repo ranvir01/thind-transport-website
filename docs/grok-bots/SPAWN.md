@@ -12,7 +12,7 @@ Rename yourself to **Technical Program Manager** if you are still titled Watcher
 4. **Software Engineer (BLS)** — `bls-engineer.instructions.md`
 5. **Engineering Communications Lead** — `eng-comms.instructions.md` — Claude liaison (HAPPENED / IN FLIGHT / SHOULD). Do not skip.
 
-Then look at `github.com/ranvir01` for other repos with recent activity. Skip `thind-transport-website`, `bls-website`, Frybox, roofing, Tabletop Village. For each remaining repo, create **Software Engineer (REPO)** from `project-engineer.instructions.md` (replace REPO).
+Then look at `github.com/ranvir01` for other repos with recent activity. Skip `thind-transport-website`, `bls-website`, Frybox, roofing, Tabletop Village. For each remaining repo, create **Software Engineer (REPO)** from `project-engineer.instructions.md` (replace REPO). When Ranvir names a business idea with no repo, create **Venture Analyst (IDEA)** from `venture-analyst.instructions.md` (replace IDEA).
 
 If the product refuses another named Bot, stop and list who is missing. Confirm titles and connectors.
 
@@ -24,5 +24,6 @@ After that: remind the owner (one message) to follow `docs/grok-bots/SETUP.md` S
 - **Claude stand-up** — you + Engineering Communications Lead
 - **Staff** — the six standing titles
 - **Engineering — {repo}** — you + each extra project SE
+- **Venture — {idea}** — you + each Venture Analyst
 
-How: desktop New chat → select 2–6 Bots; iPhone **+ → New Group Chat**. Do not git push. Do not change Cursor or Claude schedules.
+How: desktop New chat → select 2–6 Bots; iPhone **+ → New Group Chat**. Then SETUP.md Step 5: skills, the four routines, `America/Los_Angeles`. Do not git push. Do not change Cursor or Claude schedules.

@@ -64,6 +64,7 @@ Paste from this folder; do not freehand extra charters.
 | **Software Engineer (BLS)** | [`bls-engineer.instructions.md`](bls-engineer.instructions.md) | GitHub, Vercel |
 | **Engineering Communications Lead** | [`eng-comms.instructions.md`](eng-comms.instructions.md) | GitHub, Vercel |
 | **Software Engineer ({repo})** (on-demand) | [`project-engineer.instructions.md`](project-engineer.instructions.md) | GitHub |
+| **Venture Analyst ({idea})** (on-demand) | [`venture-analyst.instructions.md`](venture-analyst.instructions.md) | none required |
 
 ### Standing group chats
 
@@ -80,6 +81,20 @@ the matching kickoff from SETUP.md. `@` one Bot when it owns the next step;
 `@everyone` only for a stall. One owner per stage.
 
 One-shot to the TPM: SETUP.md Step 2 (same text as [`SPAWN.md`](SPAWN.md)).
+
+## Durability — skills, routines, memory (SETUP.md Step 5)
+
+All Bots share **one persistent cloud computer** (files, browser sessions,
+logins — [xAI docs](https://docs.x.ai/grok-bot/computer-and-apps)); sign in once
+and the roster can use it, and never treat separate Bots as a security boundary.
+Bot memory holds stable preferences only — changing facts live in this repo and
+the dashboards, which Bots **reopen before every consequential answer**. Each
+Bot saves its repeated method as a named **skill** after one corrected hand run,
+and exactly **four routines** run on schedules (`America/Los_Angeles`): the
+Claude stand-up board (daily 07:30), the platform sweep (daily 07:00), the
+Friday Dropbox-backup reminder, and the Monday career scan. Routines report and
+stop on a missing source; adding a routine means retiring one — Grok quota is
+scarcer than Claude's (D-007/D-009).
 
 ## What Grok Bot must never do
 

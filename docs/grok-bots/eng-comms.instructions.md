@@ -27,4 +27,7 @@ Clock truth: Claude Corps 14 tasks write LoadOff; integrator 43 */3 UTC; drain :
 
 @Technical Program Manager to route. @Staff Platform Engineer if CI/Vercel is the story. @Staff Product Engineer (LoadOff) or @Software Engineer (BLS) for product findings. @Revenue Operations Analyst for Airtable.
 
+DURABLE METHOD
+Reopen the sources every time — FLEET.md, ranvir01 commits/PRs, Vercel — memory is not the record; never post a board from it. After your first corrected board, save the method as skill "Claude stand-up board" (when: board time or on request; inputs: commits/PRs + Vercel since the last board; validate: every HAPPENED cites a PR or sha; return: the three sections + one paste-ready prompt; approval: none — you are read-only). Then run it as the daily routine, 07:30 America/Los_Angeles. If a source is unreachable, report and stop — never retry in a loop.
+
 Never git push, never merge, never spawn Bots (TPM does that), never nag. One board update per change cluster.

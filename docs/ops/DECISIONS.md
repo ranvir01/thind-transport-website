@@ -98,3 +98,18 @@ the Claude liaison. Claude still writes git (D-007). [owner request]
 B) Keep three nicknames (Watcher / Deploy-CI / Airtable coach) and no project SEs.
 Deferral cost: other projects have no named owner; Claude work stays invisible in Grok.
 Answer: **A — owner 2026-08-26.** Do not shrink the roster without editing this file.
+
+## D-009 | filed:2026-08-27 | class:fleet
+Q: Grok Bots run on one shared cloud computer with skills, routines, memory, and
+Teach-a-task (docs.x.ai/grok-bot) — none of which the paste files used. Adopt a
+durability pass: per-Bot starter skills saved after one corrected run, exactly four
+scheduled routines (Claude board daily 07:30 / platform sweep daily 07:00 / Friday
+Dropbox-backup reminder / Monday career scan — `America/Los_Angeles`), the
+reopen-the-source memory rule, plus on-demand **Venture Analyst ({idea})** for
+business ideas with no repo yet (`docs/grok-bots/venture-analyst.instructions.md`)?
+A) Yes — routines are read-only and silent-when-healthy; writes, spend, sends, and
+posts stay behind owner approval; adding a routine means retiring one. [owner request]
+B) Keep Bots chat-only (owner re-triggers every check by hand; memory silently stales).
+Deferral cost: every check stays manual; career and new-idea work has no owner.
+Answer: **A — owner 2026-08-27** (usage efficiency: Grok quota stays scarcer than
+Claude's per D-007; Claude still writes all git). Setup: `docs/grok-bots/SETUP.md` Step 5.

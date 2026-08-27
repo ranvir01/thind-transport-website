@@ -34,11 +34,12 @@ until a slot frees.
 | **Software Engineer (BLS)** | `bls-website` product | [`bls-engineer.instructions.md`](bls-engineer.instructions.md) |
 | **Engineering Communications Lead** | Claude liaison. Board: HAPPENED / IN FLIGHT / SHOULD | [`eng-comms.instructions.md`](eng-comms.instructions.md) |
 
-On-demand (TPM creates when a repo is active; **not** added to Staff):
+On-demand (TPM creates when a repo or idea is active; **not** added to Staff):
 
 | Title | Job | Paste |
 |---|---|---|
 | **Software Engineer ({repo})** | Any other `github.com/ranvir01/{repo}` | [`project-engineer.instructions.md`](project-engineer.instructions.md) — replace `REPO` |
+| **Venture Analyst ({idea})** | A named business idea with no repo yet | [`venture-analyst.instructions.md`](venture-analyst.instructions.md) — replace `IDEA` |
 
 Old nicknames (Watcher, Deploy / CI, Airtable coach) are retired. Use the titles above in the Grok app.
 
@@ -54,6 +55,7 @@ Old nicknames (Watcher, Deploy / CI, Airtable coach) are retired. Use the titles
 | **Claude stand-up** | TPM + Engineering Communications Lead | All implementation: happened / in flight / should |
 | **Staff** | the six standing titles only | Cross-project. Do not add `{repo}` SEs here (cap 6) |
 | **Engineering — {repo}** | TPM + Software Engineer ({repo}) | One extra project |
+| **Venture — {idea}** | TPM + Venture Analyst ({idea}) | One business idea, pre-repo |
 
 ---
 
@@ -66,11 +68,12 @@ Old nicknames (Watcher, Deploy / CI, Airtable coach) are retired. Use the titles
 | **Other `ranvir01` GitHub** | `github.com/ranvir01/*` | TPM spawns Software Engineer ({repo}) | same |
 | **AR Payments** | Airtable `app0RJwxcpO3RS3X7` | Revenue Operations Analyst | only if code/SMTP/cron |
 | **Dropbox Excel** | ATS + Thind Master | Revenue Operations Analyst | same |
-| **LinkedIn career** | WA hybrid/remote AI-integration roles | TPM (watch only; do not post unless asked) | n/a |
+| **Career search** | LinkedIn: WA hybrid/remote AI-integration roles | TPM — weekly **Career scan** routine (Step 5). Watch and report; never apply, message, or post unless asked | n/a |
+| **New business ideas** | anything Ranvir names with no repo yet | TPM spawns Venture Analyst ({idea}) | via SHOULD item once it needs code |
 
 **Out of charter:** Frybox, roofing, Tabletop Village — do not spawn SEs for those.
 
-A later `ranvir01` repo with recent commits is in charter: TPM creates **Software Engineer ({repo})** and group **Engineering — {repo}**.
+A later `ranvir01` repo with recent commits is in charter: TPM creates **Software Engineer ({repo})** and group **Engineering — {repo}**. A named business idea with no repo gets **Venture Analyst ({idea})** and group **Venture — {idea}**.
 
 ---
 
@@ -97,7 +100,7 @@ Rename yourself to Technical Program Manager if you have not. Create these sibli
 4. Software Engineer (BLS) — bls-engineer.instructions.md
 5. Engineering Communications Lead — eng-comms.instructions.md — Claude liaison; do not skip.
 
-Then look at github.com/ranvir01 for other repos with recent activity. Skip thind-transport-website, bls-website, Frybox, roofing, Tabletop Village. For each remaining repo, create Software Engineer (REPO) from project-engineer.instructions.md (replace REPO).
+Then look at github.com/ranvir01 for other repos with recent activity. Skip thind-transport-website, bls-website, Frybox, roofing, Tabletop Village. For each remaining repo, create Software Engineer (REPO) from project-engineer.instructions.md (replace REPO). When Ranvir names a business idea with no repo, create Venture Analyst (IDEA) from venture-analyst.instructions.md (replace IDEA).
 
 If the product refuses another named Bot, stop and list who is missing. Confirm titles, connectors, and stop.
 ```
@@ -119,6 +122,7 @@ Create these (names matter):
 4. **Claude stand-up** — TPM + Engineering Communications Lead
 5. **Staff** — all six standing titles
 6. **Engineering — {repo}** — one per extra project SE the TPM created
+7. **Venture — {idea}** — one per Venture Analyst the TPM created
 
 ---
 
@@ -156,6 +160,58 @@ Staff is the six standing roles: Technical Program Manager, Staff Platform Engin
 
 ---
 
+## Step 5 — make each Bot durable (skills, routines, memory)
+
+This is how the same six Bots get more useful without adding more Bots
+(xAI docs: [bots](https://docs.x.ai/grok-bot/bots), [computer](https://docs.x.ai/grok-bot/computer-and-apps), [FAQ](https://docs.x.ai/grok-bot/faq)).
+
+**One computer.** Every Bot on the account shares one persistent cloud computer —
+files, browser sessions, and command-line logins. Sign in once (GitHub, Vercel,
+Airtable, Google, Dropbox, LinkedIn) and the whole roster can use it. Do not
+treat separate Bots as a security boundary. Prefer a connector over browser
+clicking; in chat, `@` attaches a connector to the task and `/` runs a saved
+skill. Durable shared notes live in `/workspace/` on that computer (the venture
+pages use `/workspace/ventures/`).
+
+**Memory.** A Bot retains stable preferences and role context — not changing
+facts. The repo is the record: before any consequential answer, Bots reopen
+`docs/ops/FLEET.md`, `docs/ops/OWNER-WORKSHEET.md`, and the live dashboard, and
+say so. Correct a stale assumption the moment you see one. Durable boundaries
+("never git push", "never spend money") belong in the Bot **description**;
+task detail stays in chat messages.
+
+**Skills.** Run a job by hand once, correct it until the output is right, then
+reply "save this method as a skill" naming all six parts: when to use it,
+required inputs and access, the sequence, how to validate, what to return, what
+requires approval. Starter skills (one corrected run first — never save untested):
+
+| Bot | Skill to save |
+|---|---|
+| Engineering Communications Lead | **Claude stand-up board** — read `ranvir01` commits/PRs + Vercel since the last board; return HAPPENED / IN FLIGHT / SHOULD with one paste-ready Claude prompt |
+| Staff Platform Engineer | **Portfolio platform sweep** — home repo Actions + Vercel, then BLS, then other `ranvir01`; return reds only, each with a URL |
+| Revenue Operations Analyst | **Airtable click path** — one job, ≤6 numbered steps, computer not phone. When **Teach a task** is offered, record the ≤10-min browser demo and save the draft skill it produces |
+| Staff Product Engineer (LoadOff) | **Hub bug file** — failing URL + expected vs actual + suspected files, ready for the SHOULD board |
+| Technical Program Manager | **Career scan** — LinkedIn WA hybrid/remote AI-integration roles; return top 5 links + one-line fit each; never apply or message |
+
+**Routines.** Set the time zone first (Settings → General → Agent →
+`America/Los_Angeles`). Run the skill once by hand, then "make this a routine"
+with all five details: schedule + time zone, input source, what to return, the
+approval boundary, and — on a missing source — **report and stop** (never retry
+in a loop). Grok quota is scarcer than Claude's (D-007), so exactly four
+standing routines; adding one means retiring one:
+
+| Routine | Bot | Schedule (PT) | Returns |
+|---|---|---|---|
+| Claude stand-up board | Engineering Communications Lead | daily 07:30 | board update, or silence when nothing changed |
+| Portfolio platform sweep | Staff Platform Engineer | daily 07:00 | reds only; silence when green |
+| Dropbox backup reminder | Revenue Operations Analyst | Fri 09:00 | one reminder that the LOADS-BACKUP CSV is due |
+| Career scan | Technical Program Manager | Mon 09:00 | top 5 role links + fit; no applications |
+
+Every skill and routine keeps writes, spends, sends, and posts behind your
+approval — a routine inherits its Bot's blocked actions.
+
+---
+
 ## Done when
 
 - [ ] Existing Watcher renamed to **Technical Program Manager**; instructions = `watcher.instructions.md`
@@ -164,5 +220,7 @@ Staff is the six standing roles: Technical Program Manager, Staff Platform Engin
 - [ ] TPM created **Software Engineer ({repo})** for other active `ranvir01` repos (or listed none)
 - [ ] Groups exist and got the first messages above
 - [ ] Connectors signed in: Google, GitHub, Dropbox, LinkedIn, Vercel
+- [ ] Time zone set to `America/Los_Angeles`; the four Step-5 routines created after one corrected hand run each
+- [ ] Each Bot saved its starter skill; RevOps recorded the first **Teach a task** click path (when the feature is offered)
 
 After this, you do not need to come back to a Cursor agent for Grok setup. Code work still lands in Claude (or a Cursor session). Dated human items stay on [`docs/ops/OWNER-WORKSHEET.md`](../ops/OWNER-WORKSHEET.md).

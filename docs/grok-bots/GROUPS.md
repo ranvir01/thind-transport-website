@@ -11,7 +11,7 @@ Grok Bot groups hold **2–6 named Bots**. Official flow: **New chat → select
 Standing titles: **Technical Program Manager**, **Staff Platform Engineer**,
 **Revenue Operations Analyst**, **Staff Product Engineer (LoadOff)**,
 **Software Engineer (BLS)**, **Engineering Communications Lead**.
-On-demand: **Software Engineer ({repo})**.
+On-demand: **Software Engineer ({repo})** and **Venture Analyst ({idea})**.
 
 ---
 
