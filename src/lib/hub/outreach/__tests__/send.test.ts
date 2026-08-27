@@ -1,6 +1,19 @@
-import { describe, it, expect, beforeEach } from "vitest"
-import { sendOutreachEmail } from "../send"
+import { beforeEach, describe, expect, it, vi } from "vitest"
 import type { Prospect } from "../prospects"
+
+const { mailShouldSend, sendMail } = vi.hoisted(() => ({
+  mailShouldSend: vi.fn(async () => false),
+  sendMail: vi.fn(async () => ({})),
+}))
+
+vi.mock("@/lib/mailer", () => ({
+  isEmailConfigured: vi.fn(() => false),
+  mailShouldSend,
+  createMailTransport: vi.fn(() => ({ sendMail })),
+  mailFrom: vi.fn((name: string) => `"${name}" <noreply@example.com>`),
+}))
+
+import { sendOutreachEmail } from "../send"
 
 function prospect(over: Partial<Prospect> = {}): Prospect {
   return {
@@ -15,22 +28,23 @@ function prospect(over: Partial<Prospect> = {}): Prospect {
 
 describe("sendOutreachEmail — guardrails", () => {
   beforeEach(() => {
-    // Force "email not configured" so we exercise guards without real SMTP.
-    delete process.env.SMTP_USER
-    delete process.env.SMTP_PASS
-    delete process.env.EMAIL_USER
-    delete process.env.EMAIL_PASS
+    mailShouldSend.mockReset()
+    mailShouldSend.mockResolvedValue(false)
+    sendMail.mockReset()
+    sendMail.mockResolvedValue({})
   })
 
   it("refuses a suppressed (unsubscribed) prospect", async () => {
     const r = await sendOutreachEmail(prospect({ status: "unsubscribed" }), "Thind Transport")
     expect(r.sent).toBe(false)
     expect(r.reason).toMatch(/opted out|bounced|suppress/i)
+    expect(sendMail).not.toHaveBeenCalled()
   })
 
   it("refuses a bounced prospect", async () => {
     const r = await sendOutreachEmail(prospect({ status: "bounced" }), "Thind Transport")
     expect(r.sent).toBe(false)
+    expect(sendMail).not.toHaveBeenCalled()
   })
 
   it("refuses a prospect with no email", async () => {
@@ -54,5 +68,24 @@ describe("sendOutreachEmail — guardrails", () => {
     const r = await sendOutreachEmail(prospect(), "Thind Transport")
     expect(r.sent).toBe(false)
     expect(r.reason).toMatch(/configured/i)
+    expect(sendMail).not.toHaveBeenCalled()
+  })
+
+  it("sends in simulation when SMTP is unset (outbox echo)", async () => {
+    mailShouldSend.mockResolvedValue(true)
+    const r = await sendOutreachEmail(prospect(), "Thind Transport")
+    expect(r).toEqual({ sent: true })
+    expect(sendMail).toHaveBeenCalledTimes(1)
+    expect(sendMail.mock.calls[0][0]).toMatchObject({
+      to: "jane@acme.com",
+      subject: "Hello",
+    })
+  })
+
+  it("still suppresses even when simulation echo is on", async () => {
+    mailShouldSend.mockResolvedValue(true)
+    const r = await sendOutreachEmail(prospect({ status: "unsubscribed" }), "Thind Transport")
+    expect(r.sent).toBe(false)
+    expect(sendMail).not.toHaveBeenCalled()
   })
 })

@@ -7,7 +7,7 @@ import { PDFDocument, StandardFonts, rgb } from "pdf-lib"
 import { query } from "./db"
 import { getCarrier } from "./settings"
 import { saveDocument, readStoredFileBytes } from "./documents"
-import { isEmailConfigured } from "@/lib/mailer"
+import { mailShouldSend } from "@/lib/mailer"
 import type { HubDocument } from "./types"
 
 
@@ -59,11 +59,11 @@ export async function emailPacket(
     if (bytes) attachments.push({ filename: doc.file_name, content: bytes })
   }
   if (attachments.length === 0) return { sent: false, attached: 0, missing, reason: "missing_docs" }
-  // Fail fast with a clear reason instead of letting sendMail attempt a real
-  // SMTP connection and time out after 8s (createMailTransport's guard) —
-  // every other mail-sending path in the codebase (invoices.ts, settlements.ts,
-  // the public form actions) checks this first.
-  if (!isEmailConfigured()) return { sent: false, attached: attachments.length, missing, reason: "not_configured" }
+  // Same gate as invoices.ts / settlements.ts: SMTP *or* simulation echo.
+  // isEmailConfigured() alone skipped the in-app outbox in SIMULATION, so
+  // "Email the packet" told the office to send manually even though sendMail
+  // would have echoed. Fail fast only when neither path can deliver.
+  if (!(await mailShouldSend())) return { sent: false, attached: attachments.length, missing, reason: "not_configured" }
 
   const { createMailTransport, mailFrom } = await import("@/lib/mailer")
   const transport = createMailTransport()

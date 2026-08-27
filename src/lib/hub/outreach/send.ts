@@ -5,14 +5,15 @@
  *  - never sends to a suppressed prospect (unsubscribed/bounced) or one with no
  *    email / no draft body;
  *  - the draft already carries a physical address + opt-out footer (draft.ts);
- *  - if SMTP is not configured, returns a clear reason instead of throwing, so
- *    the office UI tells the owner to configure email (or copy the draft) rather
- *    than silently "succeeding".
+ *  - if neither SMTP nor simulation echo can deliver (mailShouldSend), returns
+ *    a clear reason instead of throwing, so the office UI tells the owner to
+ *    configure email (or copy the draft) rather than silently "succeeding".
+ *    SIMULATION still sends — createMailTransport echoes to the in-app outbox.
  *
  * SMS is intentionally NOT sendable here: cold texting contacts who did not opt
  * in is a TCPA risk. The SMS draft is copy-only in the UI.
  */
-import { createMailTransport, isEmailConfigured, mailFrom } from "@/lib/mailer"
+import { createMailTransport, mailShouldSend, mailFrom } from "@/lib/mailer"
 import type { Prospect } from "./prospects"
 
 export interface SendResult {
@@ -36,7 +37,7 @@ export async function sendOutreachEmail(
   if (!prospect.draft_subject || !prospect.draft_body) {
     return { sent: false, reason: "Generate and review a draft first." }
   }
-  if (!isEmailConfigured()) {
+  if (!(await mailShouldSend())) {
     return { sent: false, reason: "Email isn't configured (set SMTP_USER/SMTP_PASS). Copy the draft to send manually for now." }
   }
   try {

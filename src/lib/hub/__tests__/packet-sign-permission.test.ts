@@ -21,7 +21,10 @@ vi.mock("@/lib/hub/settings", () => ({
   getCarrier: vi.fn(async () => null),
   getCarrierSettings: vi.fn(async () => ({})),
 }))
-vi.mock("@/lib/mailer", () => ({ isEmailConfigured: vi.fn(() => false) }))
+vi.mock("@/lib/mailer", () => ({
+  isEmailConfigured: vi.fn(() => false),
+  mailShouldSend: vi.fn(async () => false),
+}))
 vi.mock("@/lib/hub/audit", () => ({ logAudit: vi.fn(async () => undefined) }))
 vi.mock("@/lib/hub/db", () => ({ query: vi.fn(async () => []) }))
 

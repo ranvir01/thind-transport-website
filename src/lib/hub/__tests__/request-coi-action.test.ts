@@ -7,8 +7,8 @@
  */
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
-const { isEmailConfigured, sendMail } = vi.hoisted(() => ({
-  isEmailConfigured: vi.fn(() => true),
+const { mailShouldSend, sendMail } = vi.hoisted(() => ({
+  mailShouldSend: vi.fn(async () => true),
   sendMail: vi.fn(async (_message: Record<string, unknown>) => ({})),
 }))
 
@@ -33,7 +33,8 @@ vi.mock("@/lib/hub/settings", () => ({
 }))
 
 vi.mock("@/lib/mailer", () => ({
-  isEmailConfigured,
+  isEmailConfigured: vi.fn(() => false),
+  mailShouldSend,
   createMailTransport: vi.fn(() => ({ sendMail })),
   mailFrom: vi.fn((name: string) => `"${name}" <noreply@example.com>`),
 }))
@@ -61,8 +62,8 @@ beforeEach(() => {
   queryMock.mockReset()
   queryMock.mockResolvedValue([])
   revalidatePathMock.mockReset()
-  isEmailConfigured.mockReset()
-  isEmailConfigured.mockReturnValue(true)
+  mailShouldSend.mockReset()
+  mailShouldSend.mockResolvedValue(true)
   sendMail.mockReset()
   sendMail.mockResolvedValue({})
 })
@@ -93,7 +94,7 @@ describe("requestCoiAction", () => {
 
   it("does not write when SMTP is not configured", async () => {
     requirePermissionMock.mockResolvedValue(COMPLIANCE)
-    isEmailConfigured.mockReturnValue(false)
+    mailShouldSend.mockResolvedValue(false)
     const result = await requestCoiAction({
       agentEmail: "agent@example.com",
       certificateHolder: "Acme Broker",

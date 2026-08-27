@@ -10,14 +10,28 @@ vi.mock("@/lib/hub/db", () => ({
 }))
 
 import { query } from "@/lib/hub/db"
-import { createMailTransport } from "@/lib/mailer"
+import { createMailTransport, mailShouldSend } from "@/lib/mailer"
 
 const queryMock = vi.mocked(query)
 const ORIGINAL = process.env.HAULDESK_MODE
+const ORIGINAL_SMTP = {
+  SMTP_USER: process.env.SMTP_USER,
+  SMTP_PASS: process.env.SMTP_PASS,
+  EMAIL_USER: process.env.EMAIL_USER,
+  EMAIL_PASS: process.env.EMAIL_PASS,
+}
 
-afterEach(() => {
+function restoreEnv() {
   if (ORIGINAL === undefined) delete process.env.HAULDESK_MODE
   else process.env.HAULDESK_MODE = ORIGINAL
+  for (const [key, value] of Object.entries(ORIGINAL_SMTP)) {
+    if (value === undefined) delete process.env[key]
+    else process.env[key] = value
+  }
+}
+
+afterEach(() => {
+  restoreEnv()
   queryMock.mockReset()
 })
 
@@ -41,5 +55,23 @@ describe("simulation mail echo", () => {
       "Invoice THD-INV-1008",
       "Please remit.",
     ]))
+  })
+
+  it("mailShouldSend is true in simulation without SMTP credentials", async () => {
+    process.env.HAULDESK_MODE = "simulation"
+    delete process.env.SMTP_USER
+    delete process.env.SMTP_PASS
+    delete process.env.EMAIL_USER
+    delete process.env.EMAIL_PASS
+    expect(await mailShouldSend()).toBe(true)
+  })
+
+  it("mailShouldSend is false in legit without SMTP credentials", async () => {
+    process.env.HAULDESK_MODE = "legit"
+    delete process.env.SMTP_USER
+    delete process.env.SMTP_PASS
+    delete process.env.EMAIL_USER
+    delete process.env.EMAIL_PASS
+    expect(await mailShouldSend()).toBe(false)
   })
 })

@@ -1,18 +1,18 @@
 /**
  * Regression for emailPacket() silently attempting a real SMTP send (and
- * eating the 8s connectionTimeout) when SMTP isn't configured — every other
- * mail-sending path in the codebase (invoices.ts, settlements.ts, the public
- * form actions) checks isEmailConfigured() first; packet.ts didn't.
+ * eating the 8s connectionTimeout) when neither SMTP nor simulation echo can
+ * deliver. Same gate as invoices.ts / settlements.ts: mailShouldSend().
  */
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
-const { isEmailConfigured, sendMail } = vi.hoisted(() => ({
-  isEmailConfigured: vi.fn(),
+const { mailShouldSend, sendMail } = vi.hoisted(() => ({
+  mailShouldSend: vi.fn(async () => false),
   sendMail: vi.fn(async () => ({})),
 }))
 
 vi.mock("@/lib/mailer", () => ({
-  isEmailConfigured,
+  isEmailConfigured: vi.fn(() => false),
+  mailShouldSend,
   createMailTransport: vi.fn(() => ({ sendMail })),
   mailFrom: vi.fn((name: string) => `"${name}" <noreply@example.com>`),
 }))
@@ -55,13 +55,13 @@ const doc = (kind: string) => ({
 beforeEach(() => {
   queryMock.mockReset()
   queryMock.mockResolvedValue([doc("w9"), doc("insurance"), doc("authority_letter")])
-  isEmailConfigured.mockReset()
+  mailShouldSend.mockReset()
   sendMail.mockClear()
 })
 
-describe("emailPacket + isEmailConfigured", () => {
+describe("emailPacket + mailShouldSend", () => {
   it("fails fast with reason 'not_configured' instead of attempting a real send", async () => {
-    isEmailConfigured.mockReturnValue(false)
+    mailShouldSend.mockResolvedValue(false)
     const result = await emailPacket(CARRIER, "broker@example.com", null)
     // attached reflects the 3 documents actually read before the SMTP check, not 0 —
     // a caller trusting `attached` on a non-sent response must see the true count.
@@ -70,16 +70,27 @@ describe("emailPacket + isEmailConfigured", () => {
   })
 
   it("sends normally once SMTP is configured and documents are attached", async () => {
-    isEmailConfigured.mockReturnValue(true)
+    mailShouldSend.mockResolvedValue(true)
     const result = await emailPacket(CARRIER, "broker@example.com", null)
     expect(result.sent).toBe(true)
     expect(result.attached).toBe(3)
     expect(sendMail).toHaveBeenCalledTimes(1)
   })
 
+  it("sends in simulation when SMTP is unset (outbox echo)", async () => {
+    mailShouldSend.mockResolvedValue(true)
+    const result = await emailPacket(CARRIER, "broker@example.com", "Packet for MC 876103")
+    expect(result.sent).toBe(true)
+    expect(sendMail).toHaveBeenCalledTimes(1)
+    expect(sendMail.mock.calls[0][0]).toMatchObject({
+      to: "broker@example.com",
+      subject: "Carrier packet — Thind Transport (MC 456)",
+    })
+  })
+
   it("reports 'missing_docs' (not 'not_configured') when no attachments exist, even if SMTP is unset", async () => {
     queryMock.mockResolvedValue([])
-    isEmailConfigured.mockReturnValue(false)
+    mailShouldSend.mockResolvedValue(false)
     const result = await emailPacket(CARRIER, "broker@example.com", null)
     expect(result.reason).toBe("missing_docs")
     expect(sendMail).not.toHaveBeenCalled()
