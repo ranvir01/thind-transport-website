@@ -1,226 +1,80 @@
-# THE FILE — create the other Bots, open group chats, cover every project
+# THE FILE — upgrade the four Grok Bots and the one group
 
 **This is that file.** Path: `docs/grok-bots/SETUP.md`
 
-Do not hunt `SPAWN.md` / `GROUPS.md` / `README.md` first. Those are pieces.
-This page is the whole job: retitle every Bot with a real job title, create
-specialists for LoadOff, BLS, and other `ranvir01` projects, open the group
-chats, and stand up the Claude implementation board.
+Live roster (**D-010**, owner 2026-08-27): **four bots, one group (Big team),
+and that is the ceiling** — more bots or groups just eat usage. The old
+six-title roster, spawn instructions, and venture templates are retired
+(history in [`docs/ops/DECISIONS.md`](../ops/DECISIONS.md) D-008/D-009).
 
-Repo: `github.com/ranvir01/thind-transport-website` (on `main`, or the open fleet PR if this file is not on `main` yet).
+Grok never git-pushes anything. Scheduled code stays on Claude Corps (D-007).
+Bounded ad-hoc fixes go to **Cursor cloud agents** via gogo's board (D-010).
 
-You already have a Bot titled Watcher. **Rename it to Technical Program Manager**,
-then paste the new instructions. That TPM is ordered to **create the rest**.
-Grok never git-pushes. **Claude still writes code** (D-007). D-008: Grok may
-spawn project-titled specialists; **Engineering Communications Lead** publishes
-what Claude did, is doing, and should do next.
+## Roster (the four that exist)
 
-Connectors to start: **Google, GitHub, Dropbox, LinkedIn, Vercel**.
+| Bot | Role | Paste into Instructions | Connectors | Routine |
+|---|---|---|---|---|
+| **gogo** | Technical Program Manager — watcher + coding dispatcher | [`gogo-tpm.instructions.md`](gogo-tpm.instructions.md) | GitHub | GitHub repo watch (event: pr-opened / pr-merged / ci-failed on main) — the only one gogo owns |
+| **Steve** | Deploy / CI — platform | [`steve-deploy-ci.instructions.md`](steve-deploy-ci.instructions.md) | GitHub + Vercel | none — no crons, no polling |
+| **Jeff** | RevOps — company Gmail + two live Dropbox xlsx; Airtable once authed | [`jeff-revops.instructions.md`](jeff-revops.instructions.md) | Gmail, Dropbox (Airtable still needsAuth) | daily loadboard **8:30pm PT**, weekends included |
+| **Rav** | Career Coach — proof-only claims | [`rav-career-coach.instructions.md`](rav-career-coach.instructions.md) | none required (no LinkedIn connector — no scraping) | none |
 
-If the Grok app refuses a 5th or 6th named Bot, stop after the priority list
-in Step 2 and put leftover product work on TPM + Engineering Communications Lead
-until a slot frees.
+Facts baked into the pastes: `bls-website` is on **Netlify** (deploy state =
+GitHub commit checks); `fleet-liveness.yml` is not live on `main` until the
+fleet PR merges; Dropbox is authenticated (no first-overwrite confirmation, no
+lock/Replace steps); Airtable still needsAuth; Form 2290 due **2026-08-31** is
+owner-only.
 
----
+## How work moves (one board)
 
-## Standing roster (real job titles)
+gogo owns **one in-flight SHOULD at a time**, sourced from `Backlog:` trailers
+on commits and open PR bodies:
 
-| Title (exact Bot name) | Job | Paste into Instructions |
-|---|---|---|
-| **Technical Program Manager** (rename Watcher) | Routes the portfolio. Spawns specialists. Default = LoadOff. | [`watcher.instructions.md`](watcher.instructions.md) |
-| **Staff Platform Engineer** | SRE / DevOps: GitHub Actions + Vercel across `ranvir01` | [`vercel-github.instructions.md`](vercel-github.instructions.md) |
-| **Revenue Operations Analyst** | AR Payments click paths + Dropbox Excel | [`airtable-coach.instructions.md`](airtable-coach.instructions.md) |
-| **Staff Product Engineer (LoadOff)** | Home product: hub, apply funnel, production UX | [`loadoff-engineer.instructions.md`](loadoff-engineer.instructions.md) |
-| **Software Engineer (BLS)** | `bls-website` product | [`bls-engineer.instructions.md`](bls-engineer.instructions.md) |
-| **Engineering Communications Lead** | Claude liaison. Board: HAPPENED / IN FLIGHT / SHOULD | [`eng-comms.instructions.md`](eng-comms.instructions.md) |
+- **Bounded repo fix** (clear goal, known files, one PR) → gogo hands Ranvir a
+  **Cursor cloud agent** paste: `Goal / Files / Done when / Verify`. The agent's
+  PR gets reviewed (gogo comments findings) and is **never merged by Grok**.
+- **Bigger than one PR, or Ranvir asks** → Claude paste, same format.
+- **Steve** drafts CI/Vercel fix pastes and sends them **to gogo only**; gogo
+  queues them. New pastes hold while one is in flight, unless production is red.
+- **Never on Claude or a cloud agent:** SMTP 535, Form 2290, Airtable billing —
+  those live on [`docs/ops/OWNER-WORKSHEET.md`](../ops/OWNER-WORKSHEET.md).
 
-On-demand (TPM creates when a repo or idea is active; **not** added to Staff):
+## Step 1 — replace each Bot's instructions
 
-| Title | Job | Paste |
-|---|---|---|
-| **Software Engineer ({repo})** | Any other `github.com/ranvir01/{repo}` | [`project-engineer.instructions.md`](project-engineer.instructions.md) — replace `REPO` |
-| **Venture Analyst ({idea})** | A named business idea with no repo yet | [`venture-analyst.instructions.md`](venture-analyst.instructions.md) — replace `IDEA` |
+Open each Bot's profile → Instructions → replace everything with its file above
+→ Save. The room cannot take attachments, so paste text, and paste each Bot's
+body in its own profile (or 1:1), not in the group.
 
-Old nicknames (Watcher, Deploy / CI, Airtable coach) are retired. Use the titles above in the Grok app.
-
----
-
-## Group chats (2–6 Bots)
-
-| Group | Members | Covers |
-|---|---|---|
-| **LoadOff engineering** | TPM + Staff Product Engineer (LoadOff) + Staff Platform Engineer + Engineering Communications Lead | Home repo product + platform + Claude board |
-| **BLS engineering** | TPM + Software Engineer (BLS) + Staff Platform Engineer | `bls-website` |
-| **Back office** | TPM + Revenue Operations Analyst | Airtable + Dropbox Excel |
-| **Claude stand-up** | TPM + Engineering Communications Lead | All implementation: happened / in flight / should |
-| **Staff** | the six standing titles only | Cross-project. Do not add `{repo}` SEs here (cap 6) |
-| **Engineering — {repo}** | TPM + Software Engineer ({repo}) | One extra project |
-| **Venture — {idea}** | TPM + Venture Analyst ({idea}) | One business idea, pre-repo |
-
----
-
-## Projects this team handles
-
-| Project | Where | Standing owner | Claude |
-|---|---|---|---|
-| **Thind Transport / LoadOff** (default) | `github.com/ranvir01/thind-transport-website`, `thindtransport.com/hub` | Staff Product Engineer (LoadOff) | Corps writes this git |
-| **BLS** | `github.com/ranvir01/bls-website` | Software Engineer (BLS) | paste-ready SHOULD prompt |
-| **Other `ranvir01` GitHub** | `github.com/ranvir01/*` | TPM spawns Software Engineer ({repo}) | same |
-| **AR Payments** | Airtable `app0RJwxcpO3RS3X7` | Revenue Operations Analyst | only if code/SMTP/cron |
-| **Dropbox Excel** | ATS + Thind Master | Revenue Operations Analyst | same |
-| **Career search** | LinkedIn: WA hybrid/remote AI-integration roles | TPM — weekly **Career scan** routine (Step 5). Watch and report; never apply, message, or post unless asked | n/a |
-| **New business ideas** | anything Ranvir names with no repo yet | TPM spawns Venture Analyst ({idea}) | via SHOULD item once it needs code |
-
-**Out of charter:** Frybox, roofing, Tabletop Village — do not spawn SEs for those.
-
-A later `ranvir01` repo with recent commits is in charter: TPM creates **Software Engineer ({repo})** and group **Engineering — {repo}**. A named business idea with no repo gets **Venture Analyst ({idea})** and group **Venture — {idea}**.
-
----
-
-## Step 1 — retitle the Watcher and paste TPM instructions
-
-In the Grok Bot app: open the existing Watcher → rename to **Technical Program Manager** → Instructions → replace everything with [`watcher.instructions.md`](watcher.instructions.md) → Save.
-
-That paste orders the TPM to spawn the rest, including project SEs, and to @Engineering Communications Lead on all Claude work.
-
----
-
-## Step 2 — create the other Bots (or send this to the TPM)
-
-Priority if slots run out: **Engineering Communications Lead first**, then Staff Platform Engineer, Revenue Operations Analyst, Staff Product Engineer (LoadOff), Software Engineer (BLS), then `{repo}` SEs.
-
-Either create them yourself, **or** send the TPM this block (same as [`SPAWN.md`](SPAWN.md)):
+## Step 2 — post the Big team kickoff (the group currently has no charter)
 
 ```
-Rename yourself to Technical Program Manager if you have not. Create these sibling Grok Bots with the exact titles. Paste each instructions file from github.com/ranvir01/thind-transport-website docs/grok-bots/. Claude still writes git. You never git push.
-
-1. Staff Platform Engineer — vercel-github.instructions.md — connectors GitHub, Vercel.
-2. Revenue Operations Analyst — airtable-coach.instructions.md
-3. Staff Product Engineer (LoadOff) — loadoff-engineer.instructions.md
-4. Software Engineer (BLS) — bls-engineer.instructions.md
-5. Engineering Communications Lead — eng-comms.instructions.md — Claude liaison; do not skip.
-
-Then look at github.com/ranvir01 for other repos with recent activity. Skip thind-transport-website, bls-website, Frybox, roofing, Tabletop Village. For each remaining repo, create Software Engineer (REPO) from project-engineer.instructions.md (replace REPO). When Ranvir names a business idea with no repo, create Venture Analyst (IDEA) from venture-analyst.instructions.md (replace IDEA).
-
-If the product refuses another named Bot, stop and list who is missing. Confirm titles, connectors, and stop.
+Big team charter — four bots, this one group, no more of either. @gogo routes everything and owns the coding board: one in-flight SHOULD at a time; bounded repo fixes become a Cursor cloud agent paste (Goal / Files / Done when / Verify), PR review only, never merge; Claude only when Ranvir asks or the work is bigger than one PR. @Steve owns GitHub Actions + Vercel (bls-website is on Netlify — read its GitHub checks); reds go to gogo as draft pastes, not to Ranvir. @Jeff owns company Gmail + the two live Dropbox xlsx — Thind = thindcarrier, ATS = atstransport24, never mixed — loadboard routine 8:30pm PT daily; Airtable waits on auth. @Rav owns career: proof-only claims, no outreach without an ask. Everyone: never git push, never merge, never spawn bots/groups/routines; silent unless something changed or Ranvir asked; one owner per stage; no ack-only replies; the room cannot take attachments. @everyone only if production is red or invoicing is blocked. SMTP 535, Form 2290 (due 8/31), Airtable billing stay with Ranvir — never on Claude or a cloud agent.
 ```
 
----
+## Step 3 — durability (memory + skills; routines stay at two)
 
-## Step 3 — open the group chats
+**Memory.** A Bot keeps stable preferences, not changing facts
+([xAI docs](https://docs.x.ai/grok-bot/bots)). The record is the repo, the live
+dashboard, or the live file — every paste pins "memory is not the record" and
+the reopen-the-source rule. The stale-note pattern the bots already use is now
+formal: when a Bot catches stale text in its own profile, it posts the
+correction once so you can update the paste.
 
-Grok groups hold 2–6 Bots. They @mention and hand off so you are not the router.
+**Skills.** Run the job by hand once, correct it, then say "save this method as
+a skill" (when to use / inputs / steps / validation / return / approval).
+Starter skills named in the pastes: gogo **Dispatch**, Steve **Platform
+sweep**, Jeff **Loadboard entry**, Rav **Fit check**. In chat, `@` attaches a
+connector, `/` runs a saved skill.
 
-**Desktop:** sidebar **New** → **New chat** → select the Bots for that group → open → rename.  
-**iPhone:** **+** → **New Group Chat** → select the Bots → rename.
-
-Create these (names matter):
-
-1. **LoadOff engineering** — TPM + Staff Product Engineer (LoadOff) + Staff Platform Engineer + Engineering Communications Lead
-2. **BLS engineering** — TPM + Software Engineer (BLS) + Staff Platform Engineer
-3. **Back office** — TPM + Revenue Operations Analyst
-4. **Claude stand-up** — TPM + Engineering Communications Lead
-5. **Staff** — all six standing titles
-6. **Engineering — {repo}** — one per extra project SE the TPM created
-7. **Venture — {idea}** — one per Venture Analyst the TPM created
-
----
-
-## Step 4 — first message in each group (paste once)
-
-### LoadOff engineering
-
-```
-@Technical Program Manager route. @Staff Product Engineer (LoadOff) own github.com/ranvir01/thind-transport-website and LoadOff at thindtransport.com/hub. @Staff Platform Engineer own GitHub Actions and Vercel. @Engineering Communications Lead own the Claude board: HAPPENED / IN FLIGHT / SHOULD, plus paste-ready Claude prompts. Never git push. @everyone only if production is red. Connectors first: Google, GitHub, Dropbox, LinkedIn, Vercel.
-```
-
-### BLS engineering
-
-```
-@Software Engineer (BLS) own github.com/ranvir01/bls-website. @Staff Platform Engineer own Actions and Vercel for that project. @Technical Program Manager route. Code/tests/features: @Engineering Communications Lead with a SHOULD prompt (goal + files + done when). Never git push.
-```
-
-### Back office
-
-```
-@Technical Program Manager own Dropbox Excel Master (ATS + Thind) and routing. @Revenue Operations Analyst own Airtable app0RJwxcpO3RS3X7 click paths (≤6 steps, computer not phone). Never tick Highlight. Never rearrange views. Never Omni prompts. If a fix needs code, @Engineering Communications Lead. @everyone only if invoice counters or the 1,000-record cap are broken.
-```
-
-### Claude stand-up
-
-```
-This thread is the implementation board. @Engineering Communications Lead: post HAPPENED (what Claude/Cursor/drain already landed, with PR or sha), IN FLIGHT (open claude/* and cursor/* , red Actions, failed Vercel), and SHOULD (one paste-ready Claude prompt: Goal / Files / Done when). @Technical Program Manager routes. Cover LoadOff first, then BLS, then other ranvir01 repos. OWNER-WORKSHEET items (Form 2290, SMTP, Airtable billing) stay human — do not put those on Claude. Never git push. Never nag. Silence when nothing changed.
-```
-
-### Staff
-
-```
-Staff is the six standing roles: Technical Program Manager, Staff Platform Engineer, Revenue Operations Analyst, Staff Product Engineer (LoadOff), Software Engineer (BLS), Engineering Communications Lead. Do not add Software Engineer ({repo}) here — those get their own Engineering — {repo} group (6-Bot cap). Default: Thind Transport / LoadOff. Also: bls-website, other ranvir01 repos, Dropbox Excel, LinkedIn career (no posting unless asked). Claude writes git. Engineering Communications Lead publishes every implementation that happened, is in flight, or should happen. One owner per stage. Never git push. Come back only for Form 2290, SMTP, Airtable billing, Cursor Untitled.
-```
-
----
-
-## Step 5 — make each Bot durable (skills, routines, memory)
-
-This is how the same six Bots get more useful without adding more Bots
-(xAI docs: [bots](https://docs.x.ai/grok-bot/bots), [computer](https://docs.x.ai/grok-bot/computer-and-apps), [FAQ](https://docs.x.ai/grok-bot/faq)).
-
-**One computer.** Every Bot on the account shares one persistent cloud computer —
-files, browser sessions, and command-line logins. Sign in once (GitHub, Vercel,
-Airtable, Google, Dropbox, LinkedIn) and the whole roster can use it. Do not
-treat separate Bots as a security boundary. Prefer a connector over browser
-clicking; in chat, `@` attaches a connector to the task and `/` runs a saved
-skill. Durable shared notes live in `/workspace/` on that computer (the venture
-pages use `/workspace/ventures/`).
-
-**Memory.** A Bot retains stable preferences and role context — not changing
-facts. The repo is the record: before any consequential answer, Bots reopen
-`docs/ops/FLEET.md`, `docs/ops/OWNER-WORKSHEET.md`, and the live dashboard, and
-say so. Correct a stale assumption the moment you see one. Durable boundaries
-("never git push", "never spend money") belong in the Bot **description**;
-task detail stays in chat messages.
-
-**Skills.** Run a job by hand once, correct it until the output is right, then
-reply "save this method as a skill" naming all six parts: when to use it,
-required inputs and access, the sequence, how to validate, what to return, what
-requires approval. Starter skills (one corrected run first — never save untested):
-
-| Bot | Skill to save |
-|---|---|
-| Engineering Communications Lead | **Claude stand-up board** — read `ranvir01` commits/PRs + Vercel since the last board; return HAPPENED / IN FLIGHT / SHOULD with one paste-ready Claude prompt |
-| Staff Platform Engineer | **Portfolio platform sweep** — home repo Actions + Vercel, then BLS, then other `ranvir01`; return reds only, each with a URL |
-| Revenue Operations Analyst | **Airtable click path** — one job, ≤6 numbered steps, computer not phone. When **Teach a task** is offered, record the ≤10-min browser demo and save the draft skill it produces |
-| Staff Product Engineer (LoadOff) | **Hub bug file** — failing URL + expected vs actual + suspected files, ready for the SHOULD board |
-| Technical Program Manager | **Career scan** — LinkedIn WA hybrid/remote AI-integration roles; return top 5 links + one-line fit each; never apply or message |
-
-**Routines.** Set the time zone first (Settings → General → Agent →
-`America/Los_Angeles`). Run the skill once by hand, then "make this a routine"
-with all five details: schedule + time zone, input source, what to return, the
-approval boundary, and — on a missing source — **report and stop** (never retry
-in a loop). Grok quota is scarcer than Claude's (D-007), so exactly four
-standing routines; adding one means retiring one:
-
-| Routine | Bot | Schedule (PT) | Returns |
-|---|---|---|---|
-| Claude stand-up board | Engineering Communications Lead | daily 07:30 | board update, or silence when nothing changed |
-| Portfolio platform sweep | Staff Platform Engineer | daily 07:00 | reds only; silence when green |
-| Dropbox backup reminder | Revenue Operations Analyst | Fri 09:00 | one reminder that the LOADS-BACKUP CSV is due |
-| Career scan | Technical Program Manager | Mon 09:00 | top 5 role links + fit; no applications |
-
-Every skill and routine keeps writes, spends, sends, and posts behind your
-approval — a routine inherits its Bot's blocked actions.
-
----
+**Routines stay at exactly two** — gogo's GitHub event listener and Jeff's
+8:30pm PT loadboard. Steve and Rav run on events and asks. Do not add a routine
+without retiring one; on a missing source a routine reports and stops, never
+retries in a loop.
 
 ## Done when
 
-- [ ] Existing Watcher renamed to **Technical Program Manager**; instructions = `watcher.instructions.md`
-- [ ] Bots exist with the five other standing titles (Platform, RevOps, LoadOff PE, BLS SE, Eng Comms)
-- [ ] Engineering Communications Lead has posted (or is ready to post) HAPPENED / IN FLIGHT / SHOULD in **Claude stand-up**
-- [ ] TPM created **Software Engineer ({repo})** for other active `ranvir01` repos (or listed none)
-- [ ] Groups exist and got the first messages above
-- [ ] Connectors signed in: Google, GitHub, Dropbox, LinkedIn, Vercel
-- [ ] Time zone set to `America/Los_Angeles`; the four Step-5 routines created after one corrected hand run each
-- [ ] Each Bot saved its starter skill; RevOps recorded the first **Teach a task** click path (when the feature is offered)
-
-After this, you do not need to come back to a Cursor agent for Grok setup. Code work still lands in Claude (or a Cursor session). Dated human items stay on [`docs/ops/OWNER-WORKSHEET.md`](../ops/OWNER-WORKSHEET.md).
+- [ ] All four Bots carry the new pastes (gogo, Steve, Jeff, Rav)
+- [ ] Big team has the kickoff message above
+- [ ] gogo's listener and Jeff's 8:30pm PT loadboard are the only routines
+- [ ] Each Bot saved its starter skill after one corrected hand run
+- [ ] Airtable auth is still the owner's click — Jeff stays off it until then

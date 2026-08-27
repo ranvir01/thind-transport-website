@@ -113,3 +113,30 @@ B) Keep Bots chat-only (owner re-triggers every check by hand; memory silently s
 Deferral cost: every check stays manual; career and new-idea work has no owner.
 Answer: **A — owner 2026-08-27** (usage efficiency: Grok quota stays scarcer than
 Claude's per D-007; Claude still writes all git). Setup: `docs/grok-bots/SETUP.md` Step 5.
+**Roster and routine table superseded by D-010 the same day** — the owner's live
+team is four bots; the durability rules (skills, memory, report-and-stop) carry over.
+
+## D-010 | filed:2026-08-27 | class:fleet
+Q: The Grok roster the owner actually runs (owner dump, 2026-08-27) is FOUR named
+bots in ONE group (Big team): gogo (TPM + coding dispatcher; owns the GitHub event
+listener — pr-opened / pr-merged / ci-failed on main), Steve (Deploy/CI), Jeff
+(RevOps: thindcarrier + atstransport24 Gmails, two live Dropbox xlsx, loadboard
+routine 8:30pm PT), Rav (Career Coach: proof-only claims, no LinkedIn connector).
+Owner: no more bots, groups, or routines — usage. Coding path: one in-flight
+SHOULD; bounded repo fixes go to a CURSOR CLOUD AGENT as a PR (Grok reviews,
+never merges); Claude paste only when the owner asks or the work is bigger than
+one PR. Replace the six-title/spawn/venture roster (D-008) and the four-routine
+table (D-009) with this?
+A) Yes — repo docs mirror the live four; instruction files are now gogo-tpm /
+steve-deploy-ci / jeff-revops / rav-career-coach; SPAWN.md, GROUPS.md, and the
+six retired pastes are deleted. [owner dump 2026-08-27]
+B) Keep documenting the aspirational six-bot roster nobody runs.
+Deferral cost: every doc points at bots that do not exist; pastes drift from the
+bots' real working rules (Netlify BLS, live Dropbox path, proof-only career set).
+Answer: **A — owner 2026-08-27.** D-007 stands for scheduled code (Claude Corps);
+bounded ad-hoc fixes go to Cursor cloud agents via gogo's board. Also recorded as
+live truth: `bls-website` is on **Netlify** (deploy state = GitHub commit checks);
+`fleet-liveness.yml` is not live on `main` until the fleet PR merges; Dropbox is
+authenticated (no first-overwrite / lock / whole-file-Replace steps); Airtable
+still needsAuth; SMTP 535 / Form 2290 / Airtable billing never go to Claude or a
+cloud agent.

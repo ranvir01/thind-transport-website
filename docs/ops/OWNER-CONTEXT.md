@@ -74,10 +74,10 @@ deep-verify, or meta-governor while those Claude tasks are live.
 **GitHub Actions** keep `main` moving when Cursor is off: drain `:17`/`:47`,
 liveness `:10`.
 
-**Grok Bot** uses real job titles (Technical Program Manager + specialists for
-LoadOff, BLS, other `ranvir01/*`, RevOps). Engineering Communications Lead
-publishes HAPPENED / IN FLIGHT / SHOULD for Claude. Never git. **The one file:**
-`docs/grok-bots/SETUP.md`.
+**Grok Bot** is four named bots in one group (D-010): gogo (TPM + coding
+dispatcher), Steve (Deploy/CI), Jeff (RevOps), Rav (Career Coach). gogo runs a
+one-item coding board; bounded fixes go to Cursor cloud agents as PRs. Never
+git. **The one file:** `docs/grok-bots/SETUP.md`.
 
 ## AR Payments (Airtable back office)
 

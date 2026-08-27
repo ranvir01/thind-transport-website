@@ -2,7 +2,7 @@
 
 *Landed in-repo 2026-08-26 from the owner's brief (24 Aug 2026). If you're a
 person joining this, or an AI picking it up cold — start here. Airtable lane
-agents and the Grok Bot Revenue Operations Analyst both read this file.*
+agents and Jeff (the Grok RevOps bot) both read this file.*
 
 ---
 
@@ -117,5 +117,6 @@ On [`OWNER-WORKSHEET.md`](OWNER-WORKSHEET.md). Agents never stall on them:
 | `30 19 * * *` | Watchdog — silent unless broken |
 | 2026-08-31 15:00 | Trial-decision one-shot |
 
-Grok Bot Revenue Operations Analyst: [`docs/grok-bots/airtable-coach.instructions.md`](../grok-bots/airtable-coach.instructions.md).
-It writes click paths; it does not replace this lane.
+Grok RevOps bot (Jeff): [`docs/grok-bots/jeff-revops.instructions.md`](../grok-bots/jeff-revops.instructions.md).
+Jeff enters loadboard rows in the two live Dropbox xlsx and stays off Airtable
+until the owner authenticates it; he does not replace this lane.

@@ -4,72 +4,69 @@ import path from "node:path"
 
 /**
  * Grok Bot instruction bodies are capped at 4,000 characters (product limit).
- * Files in docs/grok-bots/ are what the owner pastes, and what the Technical
- * Program Manager copies when spawning siblings — going over the cap silently
- * truncates the charter. Also pins the "never git push" + daily-connector rule
- * so a rewrite cannot turn Grok Bot into a fourth writer on main.
+ * Files in docs/grok-bots/ are what the owner pastes into the four live Bots
+ * (D-010: gogo, Steve, Jeff, Rav — one Big team group, no spawning). Going
+ * over the cap silently truncates a charter; losing the "never git push" or
+ * the reopen-the-source memory rule turns a watcher into a liability. Also
+ * keeps the retired six-title roster (D-008/D-009) from resurfacing.
  */
 
 const DIR = path.join(process.cwd(), "docs/grok-bots")
 const LIMIT = 4000
 const INSTRUCTION_FILES = [
-  "watcher.instructions.md",
-  "vercel-github.instructions.md",
-  "airtable-coach.instructions.md",
-  "loadoff-engineer.instructions.md",
-  "bls-engineer.instructions.md",
-  "eng-comms.instructions.md",
-  "project-engineer.instructions.md",
-  "venture-analyst.instructions.md",
+  "gogo-tpm.instructions.md",
+  "steve-deploy-ci.instructions.md",
+  "jeff-revops.instructions.md",
+  "rav-career-coach.instructions.md",
 ]
 
-describe("grok-bot instruction files (paste-ready, ≤4k)", () => {
-  it("ships SETUP.md as the one owner file, plus spawn, groups, and instruction bodies", () => {
+const read = (file: string) => readFileSync(path.join(DIR, file), "utf-8")
+
+describe("grok-bot instruction files (four live bots, paste-ready, ≤4k)", () => {
+  it("ships SETUP.md as the one owner file plus the four instruction bodies", () => {
     const names = new Set(readdirSync(DIR))
     expect(names.has("SETUP.md")).toBe(true)
     expect(names.has("README.md")).toBe(true)
-    expect(names.has("SPAWN.md")).toBe(true)
-    expect(names.has("GROUPS.md")).toBe(true)
     for (const file of INSTRUCTION_FILES) {
       expect(names.has(file), `missing ${file}`).toBe(true)
     }
-    const setup = readFileSync(path.join(DIR, "SETUP.md"), "utf-8")
+    // the retired six-title roster must not resurface
+    expect(names.has("SPAWN.md")).toBe(false)
+    expect(names.has("GROUPS.md")).toBe(false)
+    expect(names.has("watcher.instructions.md")).toBe(false)
+    expect(names.has("venture-analyst.instructions.md")).toBe(false)
+    expect(names.has("eng-comms.instructions.md")).toBe(false)
+
+    const setup = read("SETUP.md")
     expect(setup).toMatch(/THE FILE/)
     expect(setup).toMatch(/This is that file/)
-    expect(setup).toMatch(/Technical Program Manager/)
-    expect(setup).toMatch(/Staff Platform Engineer/)
-    expect(setup).toMatch(/Revenue Operations Analyst/)
-    expect(setup).toMatch(/Staff Product Engineer \(LoadOff\)/)
-    expect(setup).toMatch(/Software Engineer \(BLS\)/)
-    expect(setup).toMatch(/Engineering Communications Lead/)
-    expect(setup).toMatch(/Claude stand-up/)
-    expect(setup).toMatch(/HAPPENED/)
-    expect(setup).toMatch(/IN FLIGHT/)
-    expect(setup).toMatch(/SHOULD/)
-    expect(setup).toMatch(/LoadOff engineering/)
-    expect(setup).toMatch(/BLS engineering/)
-    expect(setup).toMatch(/Back office/)
-    expect(setup).toMatch(/New Group Chat/)
-    expect(setup).toMatch(/bls-website/)
-    expect(setup).toMatch(/app0RJwxcpO3RS3X7/)
-    expect(setup).toMatch(/LinkedIn/)
-    expect(setup).toMatch(/Frybox/)
-    expect(setup).toMatch(/watcher\.instructions\.md/)
-    expect(setup).toMatch(/Projects this team handles/)
-    // Step 5 durability: skills, routines, memory, on-demand venture coverage
-    expect(setup).toMatch(/Venture Analyst/)
-    expect(setup).toMatch(/venture-analyst\.instructions\.md/)
-    expect(setup).toMatch(/save this method as a skill/i)
-    expect(setup).toMatch(/Teach a task/i)
-    expect(setup).toMatch(/America\/Los_Angeles/)
-    expect(setup).toMatch(/Career scan/)
-    expect(setup).toMatch(/report and stop/i)
-    expect(setup).toMatch(/one persistent cloud computer|one cloud computer/i)
+    expect(setup).toMatch(/D-010/)
+    expect(setup).toMatch(/gogo/)
+    expect(setup).toMatch(/Steve/)
+    expect(setup).toMatch(/Jeff/)
+    expect(setup).toMatch(/Rav/)
+    expect(setup).toMatch(/Big team/)
+    expect(setup).toMatch(/one in-flight SHOULD/i)
+    expect(setup).toMatch(/Cursor cloud agent/)
+    expect(setup).toMatch(/never merged by Grok/i)
+    expect(setup).toMatch(/Netlify/)
+    expect(setup).toMatch(/8:30pm PT/)
+    expect(setup).toMatch(/needsAuth/)
+    expect(setup).toMatch(/thindcarrier/)
+    expect(setup).toMatch(/atstransport24/)
+    expect(setup).toMatch(/Form 2290/)
+    expect(setup).toMatch(/save this method as\s+a skill/i)
+    expect(setup).toMatch(/reports? and stops?/i)
+    expect(setup).toMatch(/memory is not the record/i)
+    expect(setup).toMatch(/gogo-tpm\.instructions\.md/)
+    expect(setup).toMatch(/steve-deploy-ci\.instructions\.md/)
+    expect(setup).toMatch(/jeff-revops\.instructions\.md/)
+    expect(setup).toMatch(/rav-career-coach\.instructions\.md/)
   })
 
   it("keeps every instruction body under the 4,000-character product cap", () => {
     for (const file of INSTRUCTION_FILES) {
-      const body = readFileSync(path.join(DIR, file), "utf-8")
+      const body = read(file)
       expect(
         body.length,
         `${file} is ${body.length} chars (cap ${LIMIT})`
@@ -77,98 +74,91 @@ describe("grok-bot instruction files (paste-ready, ≤4k)", () => {
     }
   })
 
-  it("the TPM starts from the daily tools, spawns project specialists, and never writes git", () => {
-    const watcher = readFileSync(path.join(DIR, "watcher.instructions.md"), "utf-8")
-    expect(watcher).toMatch(/Google/)
-    expect(watcher).toMatch(/GitHub/)
-    expect(watcher).toMatch(/Dropbox/)
-    expect(watcher).toMatch(/LinkedIn/)
-    expect(watcher).toMatch(/Vercel/)
-    expect(watcher).toMatch(/Never git push/i)
-    expect(watcher).toMatch(/Watches sites, dashboards, and feeds/)
-    expect(watcher).toMatch(/thind-transport-website/)
-    expect(watcher).toMatch(/ranvir01/)
-    expect(watcher).toMatch(/bls-website/)
-    expect(watcher).toMatch(/portfolio/)
-    expect(watcher).toMatch(/group chat/i)
-    expect(watcher).toMatch(/2–6|2-6/)
-    expect(watcher).toMatch(/Technical Program Manager/)
-    expect(watcher).toMatch(/Staff Platform Engineer/)
-    expect(watcher).toMatch(/Revenue Operations Analyst/)
-    expect(watcher).toMatch(/Staff Product Engineer \(LoadOff\)/)
-    expect(watcher).toMatch(/Software Engineer \(BLS\)/)
-    expect(watcher).toMatch(/Engineering Communications Lead/)
-    expect(watcher).toMatch(/SPAWN/)
-    expect(watcher).toMatch(/project-engineer\.instructions\.md/)
-    expect(watcher).toMatch(/venture-analyst\.instructions\.md/)
-    expect(watcher).toMatch(/Career scan/)
-    expect(watcher).toMatch(/memory is not the record/i)
-    expect(watcher).toMatch(/Claude stand-up/)
-    expect(watcher).toMatch(/LoadOff engineering/)
-    expect(watcher).toMatch(/BLS engineering/)
-    expect(watcher).toMatch(/Back office/)
-    expect(watcher).toMatch(/New Group Chat/)
-    expect(watcher).toMatch(/@everyone/)
-    expect(watcher).toMatch(/HAND TO CLAUDE/)
-    expect(watcher).toMatch(/D-007/)
-    expect(watcher).toMatch(/D-008/)
-  })
-
-  it("Engineering Communications Lead publishes HAPPENED / IN FLIGHT / SHOULD for Claude", () => {
-    const comms = readFileSync(path.join(DIR, "eng-comms.instructions.md"), "utf-8")
-    expect(comms).toMatch(/Engineering Communications Lead/)
-    expect(comms).toMatch(/HAPPENED/)
-    expect(comms).toMatch(/IN FLIGHT/)
-    expect(comms).toMatch(/SHOULD/)
-    expect(comms).toMatch(/Claude/)
-    expect(comms).toMatch(/Never git push/i)
-    expect(comms).toMatch(/Goal:/)
-    expect(comms).toMatch(/Files:/)
-    expect(comms).toMatch(/Done when:/)
-    expect(comms).toMatch(/thind-transport-website/)
-    expect(comms).toMatch(/bls-website/)
-    expect(comms).toMatch(/skill "Claude stand-up board"/)
-    expect(comms).toMatch(/07:30 America\/Los_Angeles/)
-    expect(comms).toMatch(/report and stop/i)
-  })
-
-  it("every instruction body pins the memory rule so a Bot cannot answer from stale context", () => {
+  it("every body pins never-git, the memory rule, the frozen roster, and out-of-charter", () => {
     for (const file of INSTRUCTION_FILES) {
-      const body = readFileSync(path.join(DIR, file), "utf-8")
-      expect(
-        /memory is not the record/i.test(body),
-        `${file} must carry the reopen-the-source memory rule`
-      ).toBe(true)
+      const body = read(file)
+      expect(body, `${file} must pin never git push`).toMatch(/never git push/i)
+      expect(body, `${file} must carry the memory rule`).toMatch(/memory is not the record/i)
+      expect(body, `${file} must sit in Big team`).toMatch(/Big team/)
+      expect(body, `${file} must keep Frybox out of charter`).toMatch(/Frybox/)
+      for (const name of ["gogo", "Steve", "Jeff", "Rav"]) {
+        expect(body, `${file} must name ${name} (frozen four-bot roster)`).toContain(name)
+      }
     }
   })
 
-  it("the Venture Analyst template covers pre-repo ideas without spending or sending", () => {
-    const venture = readFileSync(path.join(DIR, "venture-analyst.instructions.md"), "utf-8")
-    expect(venture).toMatch(/Venture Analyst \(IDEA\)/)
-    expect(venture).toMatch(/no repo yet/i)
-    expect(venture).toMatch(/\/workspace\/ventures\/IDEA\.md/)
-    expect(venture).toMatch(/Engineering Communications Lead/)
-    expect(venture).toMatch(/Venture — IDEA/)
-    expect(venture).toMatch(/spend money/i)
-    expect(venture).toMatch(/git push/i)
-    expect(venture).toMatch(/approval/i)
+  it("gogo runs the board: listener events, one SHOULD, Cursor cloud agent dispatch", () => {
+    const gogo = read("gogo-tpm.instructions.md")
+    expect(gogo).toMatch(/pr-opened, pr-merged, ci-failed/)
+    expect(gogo).toMatch(/One in-flight SHOULD/i)
+    expect(gogo).toMatch(/Cursor cloud agent/)
+    expect(gogo).toMatch(/Goal \/ Files \/ Done when \/ Verify/)
+    expect(gogo).toMatch(/never merge/i)
+    expect(gogo).toMatch(/constants\.ts/)
+    expect(gogo).toMatch(/Backlog:/)
+    expect(gogo).toMatch(/Never spawn bots, groups, or routines/i)
+    expect(gogo).toMatch(/2026-08-31/)
+    expect(gogo).toMatch(/Netlify/)
+    expect(gogo).toMatch(/stuck twice/i)
   })
 
-  it("the README names the three-platform split, job titles, and the never-git rule", () => {
-    const readme = readFileSync(path.join(DIR, "README.md"), "utf-8")
+  it("Steve reports platform state to gogo only and knows bls is on Netlify", () => {
+    const steve = read("steve-deploy-ci.instructions.md")
+    expect(steve).toMatch(/NETLIFY/i)
+    expect(steve).toMatch(/Vercel/)
+    expect(steve).toMatch(/drain-integrator\.yml/)
+    expect(steve).toMatch(/e2e-suite\.yml/)
+    expect(steve).toMatch(/fleet-liveness\.yml/)
+    expect(steve).toMatch(/not live on main/i)
+    expect(steve).toMatch(/No crons/i)
+    expect(steve).toMatch(/to gogo only/i)
+    expect(steve).toMatch(/Goal \/ Files \/ Done when/)
+    expect(steve).toMatch(/api\/version/)
+    expect(steve).toMatch(/SMTP 535/)
+  })
+
+  it("Jeff never mixes the two companies and owns the 8:30pm PT loadboard", () => {
+    const jeff = read("jeff-revops.instructions.md")
+    expect(jeff).toMatch(/thindcarrier/)
+    expect(jeff).toMatch(/atstransport24/)
+    expect(jeff).toMatch(/NEVER MIXED/i)
+    expect(jeff).toMatch(/8:30pm PT/)
+    expect(jeff).toMatch(/Excel for the web/)
+    expect(jeff).toMatch(/No copies/i)
+    expect(jeff).toMatch(/no whole-file Replace/i)
+    expect(jeff).toMatch(/needsAuth/)
+    expect(jeff).toMatch(/Highlight/)
+    expect(jeff).toMatch(/never invent a rate/i)
+  })
+
+  it("Rav is proof-only: no outreach, no scraping, claims map to open links", () => {
+    const rav = read("rav-career-coach.instructions.md")
+    expect(rav).toMatch(/proof/i)
+    expect(rav).toMatch(/No LinkedIn connector/i)
+    expect(rav).toMatch(/do not scrape/i)
+    expect(rav).toMatch(/FACTS\.md/)
+    expect(rav).toMatch(/thindtransport\.com\/hub/)
+    expect(rav).toMatch(/bluelandscapingservices\.com/)
+    expect(rav).toMatch(/MyCO/)
+    expect(rav).toMatch(/Salesforce/)
+    expect(rav).toMatch(/Goldstein/)
+    expect(rav).toMatch(/LoadOff-as-AI/)
+    expect(rav).toMatch(/Never post, apply, email/i)
+  })
+
+  it("the README names the platform split, the four bots, and the never-git rule", () => {
+    const readme = read("README.md")
     expect(readme).toMatch(/Claude Corps/)
-    expect(readme).toMatch(/Cursor Automations/)
+    expect(readme).toMatch(/Cursor cloud agents/)
     expect(readme).toMatch(/Grok Bot/)
     expect(readme).toMatch(/Never/)
     expect(readme).toMatch(/git/)
-    expect(readme).toMatch(/group chat/i)
-    expect(readme).toMatch(/Technical Program Manager/)
-    expect(readme).toMatch(/Engineering Communications Lead/)
-    expect(readme).toMatch(/Claude stand-up/)
+    expect(readme).toMatch(/D-010/)
+    expect(readme).toMatch(/Netlify/)
+    expect(readme).toMatch(/Big team/)
     expect(readme).toMatch(/SETUP\.md/)
-    expect(readme).toMatch(/D-008/)
-    expect(readme).toMatch(/D-009/)
-    expect(readme).toMatch(/Venture Analyst/)
-    expect(readme).toMatch(/routine/i)
+    for (const name of ["gogo", "Steve", "Jeff", "Rav"]) {
+      expect(readme).toContain(name)
+    }
   })
 })
