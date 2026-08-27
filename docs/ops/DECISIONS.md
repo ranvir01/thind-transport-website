@@ -98,3 +98,24 @@ the Claude liaison. Claude still writes git (D-007). [owner request]
 B) Keep three nicknames (Watcher / Deploy-CI / Airtable coach) and no project SEs.
 Deferral cost: other projects have no named owner; Claude work stays invisible in Grok.
 Answer: **A — owner 2026-08-26.** Do not shrink the roster without editing this file.
+
+## D-009 | filed:2026-08-27 | class:spend
+Q: Adopt Omni Analytics (omniapp.co — the BI platform, unrelated to Airtable's
+Omni assistant; disambiguation in docs/ops/PORTFOLIO.md) as the portfolio's
+read-only reporting layer? The owner's Cursor install already ships the Omni
+Analytics plugin (model explorer / query / embed over REST), and PORTFOLIO.md
+holds a ready activation runbook. No instance or credentials exist today
+(verified 2026-08-27); Omni is paid, sales-quoted software.
+A) Connect it to LoadOff's Vercel Postgres with read-only credentials: semantic
+model over loads/AR/IFTA, then embed carrier-scoped dashboards in /hub
+(competitors ship reporting modules — docs/research/2026-08b/prompt-11). Cost:
+subscription + ~1h owner setup (org, PAT, `OMNI_BASE_URL`/`OMNI_API_KEY` into
+agent env — values never in git).
+B) Point it at AR Payments for back-office reporting. Weakest case: the Airtable
+Money interface already answers "still owed" daily, and Excel-shaped wins by law.
+C) Defer at zero cost; the lane stays stub-first and paste-ready. Revisit when
+LoadOff has external carrier tenants asking for reports, or a real question
+needs Airtable + Postgres + Excel joined. [recommended]
+Deferral cost: none today — agents keep answering cross-source money questions
+by hand in the Claude stand-up.
+Answer: ____

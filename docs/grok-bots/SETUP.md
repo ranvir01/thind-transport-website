@@ -72,6 +72,10 @@ Old nicknames (Watcher, Deploy / CI, Airtable coach) are retired. Use the titles
 
 A later `ranvir01` repo with recent commits is in charter: TPM creates **Software Engineer ({repo})** and group **Engineering — {repo}**.
 
+Dated inventory of every `ranvir01` repo — who owns it, who writes its git,
+which group, plus the stub-first Omni Analytics reporting lane (D-009):
+[`../ops/PORTFOLIO.md`](../ops/PORTFOLIO.md).
+
 ---
 
 ## Step 1 — retitle the Watcher and paste TPM instructions
