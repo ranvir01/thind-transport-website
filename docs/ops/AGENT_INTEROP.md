@@ -2,7 +2,7 @@
 
 Four kinds of agent **write git** to this repo: Cursor scheduled automations (currently
 disabled on the dashboard, 2026-08-26), Cursor agents you prompt by hand, Claude Code
-sessions and Claude scheduled routines (the live 14-task Corps), plus GitHub Actions
+sessions and Claude scheduled routines (the live 9-task Corps), plus GitHub Actions
 that publish history without any agent involved. **Grok Bot** is four named
 watchers in one group (gogo TPM, Steve Deploy/CI, Jeff RevOps, Rav Career
 Coach); gogo runs a one-item coding board and dispatches bounded fixes to
@@ -27,23 +27,21 @@ same branch in the same minute is how a diverged `main` gets made.
 | `:00` | Integrator (lane merge) — **dashboard DISABLED** 2026-08-26 | Cursor automation | `claude/hauldesk-project-setup-l1luoo` |
 | `:10` | Fleet liveness (`agent:status` stall → red) | GitHub Actions | nothing — read-only |
 | `:17`, `:47` | Drain integrator → main | GitHub Actions | `main` |
-| `:18` | Sim test buddy (every 3h) | Claude Code routine | nothing — findings |
+| `:18` | Sim test buddy (every 6h, `18 */6 * * *` — owner paste; was every 3h) | Claude Code routine | nothing — findings; file each confirmed finding once as a `should` issue |
 | `:30` | Prod smoke — **dashboard DISABLED** 2026-08-26 | Cursor automation | `main` (only when production is red) |
 | `:43` | Integrator + stamped drain (every 3h, `43 */3 * * *`) | Claude Code routine | integrator, then `main` |
 | `:59` | Deploy + backlog — **dashboard DISABLED** 2026-08-26 | Cursor automation | `main` |
-| `01:00` | Airtable infra crew | Claude (Airtable lane) | Airtable, not this git repo |
-| `03:40` | E2E smoke suite | GitHub Actions | nothing — read-only |
+| `03:40` | E2E smoke suite | GitHub Actions | nothing — read-only; on red, files `[fleet] E2E suite red` |
 | `06:00 Sun` | Branch reaper (dry-run until `REAPER_ARMED`) | GitHub Actions | deletes merged `claude/*`/`cursor/*` only when armed |
 | `06:23` | Prune merged agent branches (tier-1 merged-only; tier-2 dry-run) | GitHub Actions | deletes fully-merged `claude/*` only |
 | `08:00` | Marketing lane (disjoint from `:00` integrator — writes `claude/lane-marketing`) | Claude Code routine | `claude/lane-marketing` |
-| `09:00` | Airtable human panel | Claude (Airtable lane) | Airtable, not this git repo |
-| `10:33` | Nightly E2E business-cycle (Playwright). Sun also weekly deep audit | Claude Code routine | findings; session branch when fixing |
-| `12:00` Mon | Meta-governor (recommendation only) | Claude Code routine | nothing |
+| `10:33` | Nightly E2E business-cycle (Playwright) | Claude Code routine | findings; session branch when fixing |
+| `10:53` Sun | Weekly deep audit (rotating) — off the nightly's minute | Claude Code routine | findings; session branch when fixing |
+| `12:00` Mon | Meta-governor (recommendation only; also audits stale `should` issues and PORTFOLIO drift) | Claude Code routine | nothing |
 | `14:00` Mon | Weekly outside-auditor (read-only) | Claude Code routine | nothing |
-| `15:00` | Airtable morning brief | Claude (Airtable lane) | Airtable, not this git repo |
-| `15:11` | LoadOff fleet watchdog (stall detector) | Claude Code routine | nothing |
+| `15:11` | LoadOff fleet watchdog (stall detector; roster = the live 9, no Airtable ghosts) | Claude Code routine | nothing |
 | `16:49` | Prod smoke + fix-forward (daily) | Claude Code routine | integrator + `main`, only when production is red |
-| `19:30` | Airtable watchdog (disjoint from `:30` Cursor smoke — Airtable only) | Claude (Airtable lane) | Airtable, not this git repo |
+| `20:41` Fri | Portfolio digest (`portfolio-digest.yml`) | GitHub Actions | one create-or-update GitHub issue |
 | every push / PR | `unit` job (vitest, token-lint, cursor-env-check) | GitHub Actions | nothing — read-only |
 
 **Dormant, reserved (D-003 — answered 2026-08-19: Cursor Automations on Grok 4.6):** the
@@ -58,10 +56,11 @@ run boots, move its row into the table above. Minutes `:07` / `:13` / `:37` are 
 — schedule nothing else on them (`src/lib/__tests__/fleet-clock-guard.test.ts` enforces this).
 
 Same-minute **disjoint targets** (not a merge race): Claude marketing `08:00` vs Cursor
-`:00` integrator; Claude meta-governor / auditor on Monday `:00`; Airtable `01:00` /
-`09:00` / `15:00` / `19:30` (Airtable, not git). Documented in FLEET.md. Grok Bot has no
-cron row — it is always-on, not scheduled into this clock (its two routines, gogo's GitHub
-event listener and Jeff's 8:30pm PT loadboard, touch GitHub events and Dropbox xlsx, never git).
+`:00` integrator; Claude meta-governor / auditor on Monday `:00`. Documented in FLEET.md.
+Grok Bot has no cron row — it is always-on, not scheduled into this clock (its two
+routines, gogo's GitHub event listener and Jeff's 8:30pm PT loadboard, touch GitHub
+events and Dropbox xlsx, never git). Airtable software is retired (D-014); those
+clock rows are gone.
 
 Live ids, the role map, and the stray duplicate automation: [`docs/ops/FLEET.md`](FLEET.md).
 
@@ -114,10 +113,25 @@ hard first step, not a suggestion — it is also the only cross-platform lock th
 
 ## 4 · How agents talk to each other
 
-The commit body is the message bus. Every agent reads recent commits before starting
-(`npm run agent:backlog` ranks them), so a note in a commit reaches every platform. Nothing else
-does — a Cursor agent cannot read a Claude session's transcript, and neither can read the other's
-dashboard.
+Three layers, all on GitHub (D-012):
+
+1. **Issues queue** — open issues labeled `should` are dispatchable work.
+   `needs-owner` parks a card for Ranvir. `venture:*` routes
+   ([`PORTFOLIO.md`](PORTFOLIO.md)). Anyone can *open* an issue (public repo);
+   only a **collaborator-applied `should` label** is a trigger. A label is
+   metadata, never authorization — writers keep their ceilings (Grok: none;
+   Cursor agent: PR; integrator: `main`). No claim-locks: one integrator + one
+   in-flight SHOULD on gogo's board already serialize. Issues close via
+   `Closes #N` on merge.
+2. **Repo state** — `FLEET.md`, `PORTFOLIO.md`, `DECISIONS.md`. Git writers only.
+3. **`Backlog:` trailers** — per-commit follow-ups. `npm run agent:backlog`
+   prints open `should` issues above trailers and prefers a labeled issue as
+   TOP PICK.
+
+The commit body is still the message bus for work that has not been filed as
+an issue. Every agent reads recent commits before starting, so a note in a
+commit reaches every platform. Nothing else does — a Cursor agent cannot read
+a Claude session's transcript, and neither can read the other's dashboard.
 
 Every commit body ends with a `Backlog:` list. Tag an item when it cannot be picked up by just
 anyone:

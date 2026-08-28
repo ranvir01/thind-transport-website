@@ -30,9 +30,10 @@ npm run agent:branches
 (Claude every 3h at `:43`; Cursor `:00` when enabled) runs `npm run agent:branches`
 and merges unpicked work into `claude/hauldesk-project-setup-l1luoo`. You do
 **not** need a fixed branch name. Live roster: `docs/ops/FLEET.md`. Grok Bot
-(gogo, Steve, Jeff, Rav) never pushes; do not treat it as a writer. gogo dispatches
-bounded fixes to Cursor cloud agents from `Backlog:` trailers — leave yours specific
-enough to dispatch (goal + files + done-when in plain words).
+(gogo Chief of Staff, Steve, Jeff, Rav) never pushes; do not treat it as a writer.
+gogo dispatches bounded fixes to Cursor cloud agents from collaborator-labeled
+`should` issues then `Backlog:` trailers — land with `Closes #N`; leave yours
+specific enough to dispatch (goal + files + done-when in plain words).
 
 **Never:** push directly to `main` (deploy agent only) or `claude/hauldesk-project-setup-l1luoo`
 (integrator only).

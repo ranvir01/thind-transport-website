@@ -159,3 +159,49 @@ B) Leave the four as chat-only descriptions.
 Deferral cost: group stays mute (no attachments), Jeff fails silently on PDFs,
 usage burns on extra bots/routines the directories push.
 Answer: **A — owner 2026-08-28.** Roster ceiling stays D-010.
+
+## D-012 | filed:2026-08-28 | class:fleet
+Q: Wire Claude (9 live tasks), Cursor cloud agents, the Grok four, and GitHub
+Actions into one communication hub. Options: Notion, LangGraph/CrewAI, a
+webhook dispatcher, GitHub Issues as a pull-scan queue, or stay on `Backlog:`
+trailers only. Model routing: keep Cursor agents on `cursor-grok-4.6-high-fast`,
+Claude Opus/Fable for plans + integrator judgment, Sonnet for cheap lanes?
+A) GitHub Issues + repo state + `Backlog:` trailers. Labels: `should` /
+`needs-owner` / `venture:*`. Agents act only on collaborator-labeled `should`
+(public repo — a label is not authorization). No claim-locks, no extra label
+state machine. `npm run agent:backlog` merges open `should` issues above
+trailers. Cursor agents stay `cursor-grok-4.6-high-fast`. Rejected: Notion
+(three new auth surfaces, Grok OAuth already broken, drifts from git),
+LangGraph/CrewAI (schedules + git + issues already orchestrate; a new runtime
+is a fifth writer), webhook-dispatch services, assignee-trigger native agents,
+Airtable software, LoadOff sitting in carrier funds.
+B) Notion hub. C) LangGraph. D) Trailers only.
+Answer: **A — owner 2026-08-28.** Registry: `docs/ops/PORTFOLIO.md`.
+
+## D-013 | filed:2026-08-28 | class:fleet
+Q: Live Claude account has **9** LoadOff-only tasks (snapshot 2026-08-28), not
+the 14 documented with an Airtable lane. Tune the roster: integrator push ON;
+watchdog roster = the real 9 (drop Airtable ghosts); Sunday deep audit
+`33 10 * * 0` → `53 10 * * 0`; sim buddy `18 */3` → `18 */6` and file each
+finding once as a `should` issue; marketing pin `claude-sonnet-5` + push on;
+intake = top `should` else `agent:backlog`; land with `Closes #N`. No new
+tasks. No Airtable task.
+A) Yes — rewrite `docs/claude-routines.md` + FLEET/OWNER-CONTEXT to the live 9;
+owner applies pastes/toggles on claude.ai. [recommended]
+B) Keep documenting 14 tasks nobody runs.
+Answer: **A — owner 2026-08-28.** Paste deltas and toggle checklist live in
+`docs/claude-routines.md` §"Live 9-task fleet".
+
+## D-014 | filed:2026-08-28 | class:fleet
+Q: Airtable software vs AR Payments LLC the legal entity. Owner: Airtable is
+out; AR Payments is the holding/billing company for Thind + ATS — legally
+set up, still needs a bank account and a workflow.
+A) Retire Airtable software everywhere (no Claude lane, Jeff stays off it,
+SETUP/FLEET/worksheets stop asking for Team billing). Rewrite
+`docs/ops/AR-PAYMENTS.md` as the holding-company operating model: Dropbox
+Excel remains SoR; remittance → AR Payments bank once opened; LoadOff never
+holds funds; do not factor other people's freight. [recommended]
+B) Rebuild the Airtable lane. C) Retire the LLC too.
+Answer: **A — owner 2026-08-28.** Bank account is owner-only
+(`OWNER-WORKSHEET.md`).
+

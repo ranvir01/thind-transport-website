@@ -83,4 +83,4 @@ job pattern, not the extra seats.
 
 Four bots. One group. Two routines (gogo's GitHub listener, Jeff's 8:30pm PT
 loadboard). Claude Corps still writes scheduled git. Cursor cloud agents still
-take bounded PRs. Human-only: SMTP, Form 2290, Airtable billing.
+take bounded PRs. Human-only: SMTP, Form 2290, AR Payments bank.

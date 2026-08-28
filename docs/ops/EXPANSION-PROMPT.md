@@ -15,16 +15,21 @@ runs a 24/7 agent fleet. Your job is to give THIS repo the same operating
 system, sized to its actual traffic. Work autonomously; do not wait for
 approval mid-task.
 
-LIVE TRUTH (2026-08-27 — supersedes any older brief you were given)
-- Claude Corps (14 scheduled tasks) is the live scheduled writer on the home
-  repo. Cursor dashboard automations were DISABLED 2026-08-26 (Integrator,
-  Prod Smoke, Deploy + backlog, Untitled — Untitled stays off permanently).
-- GitHub Actions keep the home repo moving: drain :17/:47, E2E 03:40 UTC.
-  Grok Bot is a four-bot watcher team in one group — gogo (TPM + coding
-  dispatcher), Steve (Deploy/CI), Jeff (RevOps), Rav (Career Coach) — that
-  NEVER writes git. gogo reads github.com/ranvir01 commits and runs a one-item
-  coding board — so write commit messages and PR bodies a reader without your
-  transcript can act on.
+LIVE TRUTH (2026-08-28 — supersedes any older brief you were given)
+- Claude Corps (9 scheduled LoadOff-only tasks) is the live scheduled writer on
+  the home repo. Cursor dashboard automations were DISABLED 2026-08-26
+  (Integrator, Prod Smoke, Deploy + backlog, Untitled — Untitled stays off
+  permanently). Airtable software is retired; AR Payments LLC is the legal
+  holding/billing company (Excel in Dropbox is the ops SoR).
+- GitHub Actions keep the home repo moving: drain :17/:47, E2E 03:40 UTC,
+  liveness :10, portfolio digest Fri 20:41 UTC. Collaborator-labeled GitHub
+  `should` issues are the shared queue (`docs/ops/PORTFOLIO.md`); land with
+  `Closes #N`.
+- Grok Bot is a four-bot watcher team in one group — gogo (Chief of Staff + TPM
+  + coding dispatcher), Steve (Staff SRE), Jeff (Head of RevOps), Rav (Talent
+  Scout) — that NEVER writes git. gogo reads github.com/ranvir01 commits and
+  runs a one-item coding board — so write commit messages and PR bodies a
+  reader without your transcript can act on.
 - bls-website is deployed on NETLIFY, not Vercel; its deploy state shows as
   GitHub commit checks on that repo. Do not change hosting or accounts.
 
@@ -63,8 +68,9 @@ HARD NOs
 - Never add paid services, secrets, or heavy dependencies.
 - Never create a scheduled main-writer; quiet repos get on-push CI only.
 - Never duplicate a job the home repo's fleet already runs.
-- Career applications, Airtable, taxes, and spending money are HUMAN work —
-  if you hit one, tag it [needs-owner] in the Backlog and move on.
+- Career applications, AR Payments bank / Form 2290 / taxes, and spending money
+  are HUMAN work — if you hit one, tag it [needs-owner] in the Backlog and
+  move on. Do not recreate Airtable.
 
 CONTEXT YOU MAY NEED
 - Home-repo operating docs (read via GitHub if useful):
