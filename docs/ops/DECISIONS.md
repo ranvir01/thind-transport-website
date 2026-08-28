@@ -138,4 +138,10 @@ Grok-drafted handoffs wait on the owner more than ~once a day.
 C) Skip entirely; the git bus plus existing phone paths are enough.
 Deferral cost: low — the owner stays the router between "I want X" said on a
 phone and a well-formed item on the git bus.
-Answer: ____
+Answer: **A — owner 2026-08-28.** v1 app built the same day: adapted from the
+Anthropic quickstart, charter in setup/agent-config.ts, typecheck clean, boot
+and auth-boundary verified. No agent token here can create a GitHub repo
+(403, verified), so the code travels on courier branch
+`cursor/portfolio-chat-code-53f9` (never merge it) until the owner does
+OWNER-WORKSHEET row 7: create the private repo, transplant, set the budget
+cap, mint the key, `npm run setup`. Charter widening stays a new entry here.

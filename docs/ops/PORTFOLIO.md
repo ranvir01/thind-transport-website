@@ -109,4 +109,7 @@ Cross-platform comms remain the git bus
 ([`AGENT_INTEROP.md`](AGENT_INTEROP.md) §4). The 2026-08-27 evaluation of
 Anthropic's Managed Agents × Vercel Chat SDK cookbook as an always-on
 owner↔Claude chat surface — and why nothing can chat *to* Cursor — lives in
-[`CHAT-BRIDGE.md`](CHAT-BRIDGE.md); adoption is D-010.
+[`CHAT-BRIDGE.md`](CHAT-BRIDGE.md); adoption is D-010, **answered A
+2026-08-28**: the pilot app is staged on courier branch
+`cursor/portfolio-chat-code-53f9` awaiting the owner's repo + key
+(worksheet row 7).

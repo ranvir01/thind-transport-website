@@ -25,6 +25,31 @@ browser for Cursor cloud agents, and the Grok Claude stand-up board for status.
 The bridge's marginal value is the always-on server-side session with memory —
 and, later, a chat surface the dispatcher could use without any accounts of ours.
 
+## Pilot status (2026-08-28) — D-010 = A, code staged
+
+The v1 app exists and is verified: adapted from the quickstart (identity and
+charter in `setup/agent-config.ts`), `npm install` clean, `tsc --noEmit`
+clean, server boots, the page serves, and `/api/sessions` reaches Anthropic's
+auth boundary cleanly on a dummy key (`401 API key is invalid` — the designed
+failure; only the real key is missing). No agent token in this fleet can
+create a GitHub repo (403 on both, verified), so the code travels on the
+courier branch **`cursor/portfolio-chat-code-53f9`** — an orphan branch of
+this repo carrying only the app tree. **Never merge it.** After creating the
+empty private repo (worksheet row 7), transplant with:
+
+```bash
+git clone --branch cursor/portfolio-chat-code-53f9 --single-branch \
+  https://github.com/ranvir01/thind-transport-website.git portfolio-chat
+cd portfolio-chat
+git remote set-url origin https://github.com/ranvir01/portfolio-chat.git
+git push -u origin HEAD:main
+git push https://github.com/ranvir01/thind-transport-website.git --delete cursor/portfolio-chat-code-53f9
+```
+
+Then follow the app's README: budget cap → API key → `npm run setup` →
+`npm run dev`. Any agent session can run the transplant too, once the empty
+repo exists.
+
 ## What it costs, and why this file is not an implementation
 
 Managed Agents run on the **Claude Platform API — metered tokens, outside the
@@ -49,14 +74,15 @@ ready, zero spend, pasting the key is activation.
   credential for the web adapter), plus adapter credentials if Slack/Discord
   come later.
 
-## Activation-day runbook (paste once D-010 = A)
+## Activation-day runbook
 
-1. Clone the quickstart: `anthropics/claude-quickstarts` →
-   `managed-agents/chat-sdk` into a new private repo (e.g. `portfolio-chat`).
-2. Point its provisioning at this portfolio: system prompt = read
-   `AGENTS.md`, `docs/ops/FLEET.md`, `docs/ops/PORTFOLIO.md`,
-   `docs/ops/OWNER-WORKSHEET.md` from the public repo; sandbox may
-   `git clone` this repo **read-only**.
+1. ~~Clone the quickstart~~ **Done 2026-08-28** — adapted code on the courier
+   branch (see Pilot status above), destined for `ranvir01/portfolio-chat`.
+2. ~~Point its provisioning at this portfolio~~ **Done** — the system prompt
+   in `setup/agent-config.ts` fetches `AGENTS.md`, `docs/ops/FLEET.md`,
+   `docs/ops/PORTFOLIO.md`, `docs/ops/OWNER-WORKSHEET.md`, `DECISIONS.md`
+   from this repo (raw URLs; falls back to open PR branches when a doc has
+   not reached `main`).
 3. The whole surface stays one handler (from the quickstart's `src/bot.ts`):
 
    ```ts

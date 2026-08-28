@@ -23,6 +23,7 @@ Updated **2026-08-26**.
 | 4 | Follow **[`docs/grok-bots/SETUP.md`](../grok-bots/SETUP.md)** — retitle Bots to real job titles, spawn project specialists, open Claude stand-up | whenever | No API to create Grok Bots or groups from this repo |
 | 5 | Re-enable Cursor **Integrator**, **Prod Smoke**, **Deploy + backlog** if you want Cursor as redundant drain/smoke — leave **Untitled** off | whenever | Agents cannot toggle cursor.com/automations (read-only). All four were **disabled** 2026-08-26. |
 | 6 | Import Cursor role slots **only** where Claude has no twin: office, driver, tests, integrations (see FLEET.md). Do **not** import marketing / deep-verify / meta-governor while those Claude tasks are live | whenever | Same charter, two platforms = two writers on one lane |
+| 7 | Stand up the **portfolio-chat** pilot (D-010 = A, 2026-08-28): create an empty **private** GitHub repo `portfolio-chat` (no README), run the transplant block in [`CHAT-BRIDGE.md`](CHAT-BRIDGE.md), then follow its README — **budget cap first**, then API key, then `npm run setup` | whenever (pilot idle until then) | Repo creation, the billing cap, and the credential are account actions; both agent tokens here return 403 on repo create (verified 2026-08-28) |
 
 One task per ping. If an agent already asked this week, it stays quiet unless
 the deadline is inside 48 hours.
