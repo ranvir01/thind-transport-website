@@ -140,3 +140,22 @@ live truth: `bls-website` is on **Netlify** (deploy state = GitHub commit checks
 authenticated (no first-overwrite / lock / whole-file-Replace steps); Airtable
 still needsAuth; SMTP 535 / Form 2290 / Airtable billing never go to Claude or a
 cloud agent.
+
+## D-011 | filed:2026-08-28 | class:fleet
+Q: Owner asked to make the *current* four Grok Bots as useful as possible using
+the product's real capabilities and the research links (docs.x.ai/grok-bot,
+Avi masterclass / av1dlive, RongleCat/awesome-grok-bot, usegrokbot.com,
+botdirectory.ai) — without adding bots (usage). Adopt the capability pass:
+shared `/workspace` filing cabinet (board / platform / loadboard / career) so
+Big team can hand off without attachments; connector-over-browser except Jeff
+must use the **browser for Gmail PDFs** (connector cannot download bytes);
+takeover for secrets; Auto Review Require-Approval on send/post/git/overwrite/buy;
+local computer **Never allowed**; Teach a task + Test run; gogo writes Cursor
+pastes but does not start the agents; reject extra directory bots and the
+usegrokbot SSH-tunnel jailbreak?
+A) Yes — enhance the four pastes + SETUP.md Steps 3–4; record took-vs-rejected
+in `docs/grok-bots/RESEARCH.md`. No fifth bot, no third routine. [owner request]
+B) Leave the four as chat-only descriptions.
+Deferral cost: group stays mute (no attachments), Jeff fails silently on PDFs,
+usage burns on extra bots/routines the directories push.
+Answer: **A — owner 2026-08-28.** Roster ceiling stays D-010.

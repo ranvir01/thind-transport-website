@@ -1,7 +1,8 @@
 # Grok Bot layer — four bots, one group, never git
 
 **The one owner file: [`SETUP.md`](SETUP.md)** — upgraded pastes for the four
-live bots, the Big team kickoff, and the two live routines.
+live bots, the Big team kickoff, Auto Review, `/workspace` filing cabinet, and
+the two live routines. Source notes: [`RESEARCH.md`](RESEARCH.md).
 
 xAI **Grok Bot** (the always-on teammate with its own cloud computer) is the
 watcher layer of this fleet. It is **not** a Cursor Automation and **not** a
@@ -19,10 +20,12 @@ goes over, drops the never-git rule, or loses the memory rule.
 |---|---|---|---|
 | **gogo** | Technical Program Manager — watcher + coding dispatcher; owns the GitHub event listener and the one-item coding board | [`gogo-tpm.instructions.md`](gogo-tpm.instructions.md) | GitHub |
 | **Steve** | Deploy / CI — Vercel + Actions; `bls-website` is on **Netlify** (read GitHub checks) | [`steve-deploy-ci.instructions.md`](steve-deploy-ci.instructions.md) | GitHub, Vercel |
-| **Jeff** | RevOps — two company Gmails + two live Dropbox xlsx (never mixed); loadboard routine 8:30pm PT; Airtable once authed | [`jeff-revops.instructions.md`](jeff-revops.instructions.md) | Gmail, Dropbox |
+| **Jeff** | RevOps — two company Gmails + two live Dropbox xlsx (never mixed); loadboard routine 8:30pm PT; Gmail PDFs via **browser** (connector cannot download bytes); Airtable once authed | [`jeff-revops.instructions.md`](jeff-revops.instructions.md) | Gmail (list only), Dropbox |
 | **Rav** | Career Coach — proof-only claims from `docs/portfolio/FACTS.md` and live URLs; no LinkedIn connector, no scraping | [`rav-career-coach.instructions.md`](rav-career-coach.instructions.md) | none required |
 
-One group: **Big team** (all four). Kickoff paste: SETUP.md Step 2.
+One group: **Big team** (all four). Kickoff paste: SETUP.md Step 2. Shared
+files on the cloud computer: `/workspace/board.md`, `platform/last.md`,
+`loadboard/last-run.md`, `career/`. Group handoffs are text-only.
 
 ## Three platforms, one repo
 

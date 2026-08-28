@@ -36,6 +36,7 @@ describe("grok-bot instruction files (four live bots, paste-ready, ≤4k)", () =
     expect(names.has("watcher.instructions.md")).toBe(false)
     expect(names.has("venture-analyst.instructions.md")).toBe(false)
     expect(names.has("eng-comms.instructions.md")).toBe(false)
+    expect(names.has("RESEARCH.md")).toBe(true)
 
     const setup = read("SETUP.md")
     expect(setup).toMatch(/THE FILE/)
@@ -62,6 +63,13 @@ describe("grok-bot instruction files (four live bots, paste-ready, ≤4k)", () =
     expect(setup).toMatch(/steve-deploy-ci\.instructions\.md/)
     expect(setup).toMatch(/jeff-revops\.instructions\.md/)
     expect(setup).toMatch(/rav-career-coach\.instructions\.md/)
+    expect(setup).toMatch(/\/workspace\/board\.md/)
+    expect(setup).toMatch(/Auto-review/)
+    expect(setup).toMatch(/Never allowed/)
+    expect(setup).toMatch(/Teach a task/)
+    expect(setup).toMatch(/cannot download PDF bytes/)
+    expect(setup).toMatch(/D-011/)
+    expect(setup).toMatch(/RESEARCH\.md/)
   })
 
   it("keeps every instruction body under the 4,000-character product cap", () => {
@@ -81,6 +89,8 @@ describe("grok-bot instruction files (four live bots, paste-ready, ≤4k)", () =
       expect(body, `${file} must carry the memory rule`).toMatch(/memory is not the record/i)
       expect(body, `${file} must sit in Big team`).toMatch(/Big team/)
       expect(body, `${file} must keep Frybox out of charter`).toMatch(/Frybox/)
+      expect(body, `${file} must hand over the Agent Computer for secrets`).toMatch(/Agent Computer/)
+      expect(body, `${file} must refuse SSH tunnels of the shared VM`).toMatch(/SSH-tunnel/)
       for (const name of ["gogo", "Steve", "Jeff", "Rav"]) {
         expect(body, `${file} must name ${name} (frozen four-bot roster)`).toContain(name)
       }
@@ -100,6 +110,8 @@ describe("grok-bot instruction files (four live bots, paste-ready, ≤4k)", () =
     expect(gogo).toMatch(/2026-08-31/)
     expect(gogo).toMatch(/Netlify/)
     expect(gogo).toMatch(/stuck twice/i)
+    expect(gogo).toMatch(/\/workspace\/board\.md/)
+    expect(gogo).toMatch(/Never start a Cursor cloud agent yourself/i)
   })
 
   it("Steve reports platform state to gogo only and knows bls is on Netlify", () => {
@@ -115,6 +127,7 @@ describe("grok-bot instruction files (four live bots, paste-ready, ≤4k)", () =
     expect(steve).toMatch(/Goal \/ Files \/ Done when/)
     expect(steve).toMatch(/api\/version/)
     expect(steve).toMatch(/SMTP 535/)
+    expect(steve).toMatch(/\/workspace\/platform\/last\.md/)
   })
 
   it("Jeff never mixes the two companies and owns the 8:30pm PT loadboard", () => {
@@ -129,6 +142,10 @@ describe("grok-bot instruction files (four live bots, paste-ready, ≤4k)", () =
     expect(jeff).toMatch(/needsAuth/)
     expect(jeff).toMatch(/Highlight/)
     expect(jeff).toMatch(/never invent a rate/i)
+    expect(jeff).toMatch(/cannot download PDF bytes/)
+    expect(jeff).toMatch(/BROWSER/)
+    expect(jeff).toMatch(/\/workspace\/loadboard\/last-run\.md/)
+    expect(jeff).toMatch(/Idempotent/)
   })
 
   it("Rav is proof-only: no outreach, no scraping, claims map to open links", () => {
@@ -144,6 +161,8 @@ describe("grok-bot instruction files (four live bots, paste-ready, ≤4k)", () =
     expect(rav).toMatch(/Goldstein/)
     expect(rav).toMatch(/LoadOff-as-AI/)
     expect(rav).toMatch(/Never post, apply, email/i)
+    expect(rav).toMatch(/Talent Scout/)
+    expect(rav).toMatch(/\/workspace\/career\//)
   })
 
   it("the README names the platform split, the four bots, and the never-git rule", () => {
@@ -157,6 +176,8 @@ describe("grok-bot instruction files (four live bots, paste-ready, ≤4k)", () =
     expect(readme).toMatch(/Netlify/)
     expect(readme).toMatch(/Big team/)
     expect(readme).toMatch(/SETUP\.md/)
+    expect(readme).toMatch(/RESEARCH\.md/)
+    expect(readme).toMatch(/\/workspace\/board\.md/)
     for (const name of ["gogo", "Steve", "Jeff", "Rav"]) {
       expect(readme).toContain(name)
     }
