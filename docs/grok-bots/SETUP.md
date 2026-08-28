@@ -41,6 +41,9 @@ shared computer (Big team cannot attach files; bot-to-group is text-only).
 - Bounded repo fix → Cursor cloud agent paste for **you** to fire. Grok reviews
   the PR and it is **never merged by Grok**.
 - Bigger than one PR, or you ask → Claude paste, same format.
+- Free paging, no new machinery: once the fleet PR lands on `main`,
+  `fleet-liveness.yml` going red on a stall is a `ci-failed` event — gogo's
+  existing listener pages your phone. Do not add a webhook or routine for it.
 - Steve drafts CI/Vercel pastes to gogo (and into `/workspace/platform/last.md`).
 - **Never on Claude or a cloud agent:** SMTP 535, Form 2290, Airtable billing —
   [`docs/ops/OWNER-WORKSHEET.md`](../ops/OWNER-WORKSHEET.md).

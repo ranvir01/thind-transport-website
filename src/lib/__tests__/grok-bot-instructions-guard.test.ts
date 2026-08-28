@@ -165,6 +165,21 @@ describe("grok-bot instruction files (four live bots, paste-ready, ≤4k)", () =
     expect(rav).toMatch(/\/workspace\/career\//)
   })
 
+  it("the agent preambles brief future sessions on the live Grok team", () => {
+    const docs = path.join(process.cwd(), "docs")
+    const cursorPreamble = readFileSync(path.join(docs, "cursor-agent-preamble.md"), "utf-8")
+    expect(cursorPreamble).toMatch(/gogo/)
+    expect(cursorPreamble).toMatch(/never writes git/i)
+    expect(cursorPreamble).toMatch(/dispatch board|coding board/i)
+    const claudePreamble = readFileSync(path.join(docs, "claude-routine-preamble.md"), "utf-8")
+    expect(claudePreamble).toMatch(/gogo/)
+    expect(claudePreamble).toMatch(/never pushes/i)
+    for (const preamble of [cursorPreamble, claudePreamble]) {
+      expect(preamble).not.toMatch(/Engineering Communications Lead/)
+      expect(preamble).not.toMatch(/Venture Analyst/)
+    }
+  })
+
   it("the README names the platform split, the four bots, and the never-git rule", () => {
     const readme = read("README.md")
     expect(readme).toMatch(/Claude Corps/)

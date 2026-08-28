@@ -60,7 +60,8 @@ run boots, move its row into the table above. Minutes `:07` / `:13` / `:37` are 
 Same-minute **disjoint targets** (not a merge race): Claude marketing `08:00` vs Cursor
 `:00` integrator; Claude meta-governor / auditor on Monday `:00`; Airtable `01:00` /
 `09:00` / `15:00` / `19:30` (Airtable, not git). Documented in FLEET.md. Grok Bot has no
-cron row — it is always-on, not scheduled into this clock.
+cron row — it is always-on, not scheduled into this clock (its two routines, gogo's GitHub
+event listener and Jeff's 8:30pm PT loadboard, touch GitHub events and Dropbox xlsx, never git).
 
 Live ids, the role map, and the stray duplicate automation: [`docs/ops/FLEET.md`](FLEET.md).
 

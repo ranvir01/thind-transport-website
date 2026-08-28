@@ -27,7 +27,7 @@ git ([`docs/grok-bots/`](../grok-bots/README.md)).
 | Slot (UTC) | Job | Platform | Writes | Dashboard / id |
 |---|---|---|---|---|
 | `:00` | Integrator — absorb one pending `claude/*` | Cursor automation **DISABLED** 2026-08-26 | `claude/hauldesk-project-setup-l1luoo` | [Integrator](https://cursor.com/automations/880eec29-78fd-11f1-ba66-0e7d0216e441) `880eec29-78fd-11f1-ba66-0e7d0216e441` |
-| `:10` | **Fleet liveness** — `npm run agent:status`; red only on stall (exit 2) | GitHub Action | nothing | `.github/workflows/fleet-liveness.yml` |
+| `:10` | **Fleet liveness** — `npm run agent:status`; red only on stall (exit 2). A red run on `main` is a `ci-failed` event, so gogo's Grok listener pages the owner's phone — no extra webhook needed | GitHub Action | nothing | `.github/workflows/fleet-liveness.yml` |
 | `:17`, `:47` | Drain integrator → main (stamped `--no-ff`) | GitHub Action | `main` | `drain-integrator.yml` |
 | `:18` every 3h | Sim test buddy — live verification, report unproven as such | Claude routine | nothing (findings) | Claude Corps #9 |
 | `:30` | Prod smoke | Cursor automation **DISABLED** 2026-08-26 | `main` (only when production is red) | [Prod Smoke](https://cursor.com/automations/4ad7743c-7900-11f1-ba66-0e7d0216e441) `4ad7743c-7900-11f1-ba66-0e7d0216e441` |
@@ -92,15 +92,18 @@ groups. Paste files: [`docs/grok-bots/SETUP.md`](../grok-bots/SETUP.md) is the
 one owner file. Grok never writes git. Its two live routines — gogo's GitHub
 event listener (pr-opened / pr-merged / ci-failed on main) and Jeff's daily
 8:30pm PT loadboard run (writes only the two live Dropbox xlsx, never git) —
-stay off this table's write clock.
+stay off this table's write clock. The Grok-side board lives at
+`/workspace/board.md` on the shared Grok computer (D-011); this repo's
+`Backlog:` trailers and PR bodies are its intake.
 
 **D-007 (scheduled code):** Claude Corps still owns scheduled git and long
 prompts. **D-010 (dispatch):** gogo runs a one-item coding board — a bounded
 repo fix becomes a **Cursor cloud agent** paste (Goal / Files / Done when /
 Verify), lands as a `cursor/*` PR, gets reviewed by Grok and **never merged**
-by it; Claude pastes only when the owner asks or the work is bigger than one
-PR. SMTP 535, Form 2290, and Airtable billing never go to Claude or a cloud
-agent. Setup: [`docs/grok-bots/SETUP.md`](../grok-bots/SETUP.md).
+by it. The owner fires the agent — Grok never starts one itself (agents Grok
+starts burn Cursor plan usage, D-011). Claude pastes only when the owner asks
+or the work is bigger than one PR. SMTP 535, Form 2290, and Airtable billing
+never go to Claude or a cloud agent. Setup: [`docs/grok-bots/SETUP.md`](../grok-bots/SETUP.md).
 
 Daily/weekly **build** sessions that Claude does *not* already run (office, driver, tests,
 integrations) remain import-ready Cursor Automations on Grok 4.6 (`DECISIONS.md` D-003) —
