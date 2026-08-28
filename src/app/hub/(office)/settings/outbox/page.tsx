@@ -33,7 +33,7 @@ export default async function OutboxPage() {
         <p className="text-sm text-fg-3">LEGIT mode — live email uses SMTP, not this echo.</p>
       ) : null}
       {rows.length === 0 ? (
-        <Panel className="p-6 text-sm text-fg-3">No simulated mail yet. Send an invoice or settlement to see a preview.</Panel>
+        <Panel className="p-6 text-sm text-fg-3">No simulated mail yet. Send an invoice, settlement, or packet — or submit apply / pre-qualify / the calculator — to see a preview.</Panel>
       ) : (
         <div className="space-y-3">
           {rows.map((row) => (

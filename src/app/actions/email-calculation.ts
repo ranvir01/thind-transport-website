@@ -2,7 +2,7 @@
 
 import { z } from "zod"
 import { COMPANY_INFO } from "@/lib/constants"
-import { createMailTransport, isEmailConfigured, mailFrom } from "@/lib/mailer"
+import { createMailTransport, mailShouldSend, mailFrom } from "@/lib/mailer"
 
 const calculationSchema = z.object({
   email: z.string().email(),
@@ -32,8 +32,10 @@ export async function emailCalculation(input: z.infer<typeof calculationSchema>)
 
   const data = parsed.data
 
-  if (!isEmailConfigured()) {
-    console.warn("emailCalculation: SMTP not configured — cannot send estimate")
+  // Same gate as invoices/packet: SMTP *or* simulation outbox echo.
+  // In SIMULATION this must succeed so the calculator is testable without SMTP.
+  if (!(await mailShouldSend())) {
+    console.warn("emailCalculation: mail not available — cannot send estimate")
     return {
       success: false,
       message: `Email isn't available right now. Call ${COMPANY_INFO.phone} and we'll walk through the numbers with you.`,

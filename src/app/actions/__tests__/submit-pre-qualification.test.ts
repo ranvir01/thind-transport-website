@@ -8,9 +8,16 @@ vi.mock("@/lib/public-form-guard", () => ({
   publicFormBlocked: vi.fn(async () => false),
 }))
 vi.mock("@/lib/hub/website-leads", () => ({ saveWebsiteLead: vi.fn(async () => true) }))
+
+const { mailShouldSend, sendMail } = vi.hoisted(() => ({
+  mailShouldSend: vi.fn(async () => false),
+  sendMail: vi.fn(async (_message: Record<string, unknown>) => ({})),
+}))
+
 vi.mock("@/lib/mailer", () => ({
   isEmailConfigured: vi.fn(() => false),
-  createMailTransport: vi.fn(),
+  mailShouldSend,
+  createMailTransport: vi.fn(() => ({ sendMail })),
   mailFrom: vi.fn(() => "test@test"),
 }))
 vi.mock("@/lib/driver-db", () => ({
@@ -20,10 +27,12 @@ vi.mock("@/lib/driver-db", () => ({
 
 import { submitPreQualification } from "../submit-pre-qualification"
 import { saveWebsiteLead } from "@/lib/hub/website-leads"
-import { savePublicApplication } from "@/lib/driver-db"
+import { savePublicApplication, markPublicApplicationEmailed } from "@/lib/driver-db"
+import { COMPANY_INFO } from "@/lib/constants"
 
 const leadMock = vi.mocked(saveWebsiteLead)
 const legacyMock = vi.mocked(savePublicApplication)
+const emailedMock = vi.mocked(markPublicApplicationEmailed)
 
 /** A fully valid pre-qualify payload (qualified path unless overridden). */
 function validForm(overrides: Record<string, string> = {}): FormData {
@@ -61,6 +70,10 @@ describe("submitPreQualification — pre-qualify leads must reach hub.website_le
     leadMock.mockResolvedValue(true)
     legacyMock.mockReset()
     legacyMock.mockResolvedValue({ id: "legacy-1" } as never)
+    emailedMock.mockReset()
+    mailShouldSend.mockReset()
+    mailShouldSend.mockResolvedValue(false)
+    sendMail.mockClear()
   })
 
   it("a qualified submission lands on the speed-to-lead surface, source-tagged", async () => {
@@ -77,6 +90,7 @@ describe("submitPreQualification — pre-qualify leads must reach hub.website_le
         experienceYears: "5 years",
       })
     )
+    expect(sendMail).not.toHaveBeenCalled()
   })
 
   it("a needs-review submission (SAP driver) still lands, tagged for review", async () => {
@@ -100,5 +114,19 @@ describe("submitPreQualification — pre-qualify leads must reach hub.website_le
     const result = await submitPreQualification(initial, validForm())
     expect(result.success).toBe(false)
     expect(result.message).toContain("call")
+  })
+
+  it("echoes to sendMail in simulation when SMTP is unset", async () => {
+    mailShouldSend.mockResolvedValue(true)
+    const result = await submitPreQualification(initial, validForm())
+    expect(result.success).toBe(true)
+    expect(result.isQualified).toBe(true)
+    expect(sendMail).toHaveBeenCalledTimes(1)
+    expect(sendMail.mock.calls[0][0]).toMatchObject({
+      to: COMPANY_INFO.email,
+      replyTo: "prequalify@example.com",
+      subject: "✅ QUALIFIED: New Pre-Qualification - Test Driver",
+    })
+    expect(emailedMock).toHaveBeenCalledWith("legacy-1")
   })
 })

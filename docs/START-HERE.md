@@ -56,6 +56,7 @@ That prints an `https://….trycloudflare.com/hub` URL. Open it in Safari → Sh
 7. **Broker portal** — `broker@demo.thind`. Simulated portal, same badge.
 8. **Cmd+K** — command palette. Theme picker is in the user menu (office screens use semantic tokens only).
 9. **Advance simulated day** — Today, or Settings → Simulation. Optional. Moves a few in-flight loads, nudges ELD pings, ages AR. First open is a snapshot; you do not have to advance it.
+10. **Public apply / pre-qualify / calculator / meeting** — SMTP can stay blank. Submissions land in Settings → Simulated outbox, same as invoices and packets.
 
 The `/hub/sandbox` “practice company” is a **separate** Blue Ridge tenant. Do not confuse it with this default Thind+ATS simulation.
 

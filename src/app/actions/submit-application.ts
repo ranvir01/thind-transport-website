@@ -2,7 +2,7 @@
 
 import { z } from "zod"
 import { COMPANY_INFO } from "@/lib/constants"
-import { createMailTransport, isEmailConfigured, mailFrom } from "@/lib/mailer"
+import { createMailTransport, mailShouldSend, mailFrom } from "@/lib/mailer"
 import { savePublicApplication, markPublicApplicationEmailed } from "@/lib/driver-db"
 import { honeypotTripped, publicFormBlocked } from "@/lib/public-form-guard"
 
@@ -333,9 +333,10 @@ export async function submitApplication(prevState: ApplicationState, formData: F
       console.error("Failed to persist public application:", persistError)
     }
 
-    // 2) Then attempt email delivery.
-    if (!isEmailConfigured()) {
-      console.warn("SMTP not configured — application stored but not emailed:", {
+    // 2) Then attempt email delivery. Same gate as invoices/packet:
+    // SMTP *or* simulation outbox echo.
+    if (!(await mailShouldSend())) {
+      console.warn("Mail not available — application stored but not emailed:", {
         name: applicantName,
         email: data.email,
       })
