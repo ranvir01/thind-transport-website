@@ -1,5 +1,15 @@
 import { describe, expect, it } from "vitest"
-import { extractBacklog, parseCommits, rankItem, FIELD_SEP, RECORD_SEP } from "../../../scripts/collect-backlog.mjs"
+import {
+  collectIssueItems,
+  extractBacklog,
+  FIELD_SEP,
+  isPickableIssue,
+  parseCommits,
+  rankIssues,
+  rankItem,
+  RECORD_SEP,
+  topPickItem,
+} from "../../../scripts/collect-backlog.mjs"
 
 const HASH_A = "0f6739aabbccddeeff00112233445566778899aa"
 const HASH_B = "7ad7e16aabbccddeeff00112233445566778899b"
@@ -80,5 +90,65 @@ describe("rankItem", () => {
 
   it("does not treat a Vercel environment name as a production outage", () => {
     expect(rankItem("rotate SMTP in Vercel Production")).toBe(rankItem("tweak button copy"))
+  })
+})
+
+describe("collectIssueItems", () => {
+  it("parses gh JSON and maps label objects to names", () => {
+    const execFn = () =>
+      JSON.stringify([
+        {
+          number: 12,
+          title: "IFTA cents rounding is off by one",
+          labels: [{ name: "should" }, { name: "venture:loadoff" }],
+        },
+      ])
+    expect(collectIssueItems(execFn)).toEqual([
+      {
+        number: 12,
+        title: "IFTA cents rounding is off by one",
+        labels: ["should", "venture:loadoff"],
+      },
+    ])
+  })
+
+  it("returns [] when gh is missing or throws", () => {
+    expect(collectIssueItems(() => {
+      throw new Error("gh: command not found")
+    })).toEqual([])
+  })
+
+  it("returns [] on malformed JSON", () => {
+    expect(collectIssueItems(() => "not-json")).toEqual([])
+  })
+})
+
+describe("should-issue ranking vs trailers", () => {
+  it("ranks a money issue above a polish issue", () => {
+    const ranked = rankIssues([
+      { number: 2, title: "tweak button copy", labels: ["should"] },
+      { number: 1, title: "invoice cents rounding is off by one", labels: ["should"] },
+    ])
+    expect(ranked[0].number).toBe(1)
+  })
+
+  it("does not pick a needs-owner issue", () => {
+    expect(
+      isPickableIssue({
+        number: 3,
+        title: "open the AR Payments bank account",
+        labels: ["should", "needs-owner"],
+      })
+    ).toBe(false)
+  })
+
+  it("lets a collaborator-labeled should-issue outrank a pickable trailer", () => {
+    const current = [{ text: "login fail on deploy", hash: "abc1234", subject: "t", commitIndex: 0 }]
+    const issues = [
+      { number: 9, title: "DVIR awaiting_repair not surfaced at dispatch", labels: ["should"] },
+    ]
+    const { pick, fromIssue } = topPickItem(current, [], issues)
+    expect(fromIssue).toBe(true)
+    expect(pick?.text).toBe("#9 DVIR awaiting_repair not surfaced at dispatch")
   })
 })

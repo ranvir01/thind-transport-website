@@ -166,19 +166,76 @@ export function isPickable(item) {
   return !/^owner:/i.test(item.text) && !isDeployMetaItem(item.text)
 }
 
+/**
+ * Open GitHub issues labeled `should` (D-012). `execFn` is injectable so
+ * unit tests can mock `gh` without a network. Missing `gh`, a public-repo
+ * rate limit, or any other failure returns [] — trailers still rank.
+ */
+export function collectIssueItems(execFn = execSync) {
+  try {
+    const raw = execFn(
+      "gh issue list --label should --state open --json number,title,labels --limit 50",
+      { encoding: "utf-8" }
+    )
+    const parsed = JSON.parse(String(raw ?? "").trim() || "[]")
+    if (!Array.isArray(parsed)) return []
+    return parsed
+      .filter((issue) => issue && typeof issue.number === "number" && typeof issue.title === "string")
+      .map((issue) => ({
+        number: issue.number,
+        title: issue.title,
+        labels: (issue.labels ?? []).map((label) =>
+          typeof label === "string" ? label : String(label?.name ?? "")
+        ).filter(Boolean),
+      }))
+  } catch {
+    return []
+  }
+}
+
+export function issueText(issue) {
+  return `#${issue.number} ${issue.title}`
+}
+
+export function isPickableIssue(issue) {
+  if ((issue.labels ?? []).includes("needs-owner")) return false
+  return isPickable({ text: issue.title })
+}
+
+export function rankIssues(issues) {
+  return [...issues].sort(
+    (a, b) => rankItem(a.title) - rankItem(b.title) || a.number - b.number
+  )
+}
+
+function issueAsPick(issue) {
+  return {
+    text: issueText(issue),
+    hash: `issue`,
+    subject: issue.title,
+    commitIndex: -1,
+    source: "issue",
+    number: issue.number,
+  }
+}
+
 /** Pick from the current list; fall back to older mentions only when the
- * newest Backlog carries nothing pickable (e.g. a narrow integrator commit). */
-export function topPickItem(current, older) {
+ * newest Backlog carries nothing pickable (e.g. a narrow integrator commit).
+ * Collaborator-labeled `should` issues outrank every trailer (D-012). */
+export function topPickItem(current, older, issues = []) {
+  const issuePick = rankIssues(issues).find(isPickableIssue)
+  if (issuePick) return { pick: issueAsPick(issuePick), stale: false, fromIssue: true }
+
   const pick = current.find(isPickable)
-  if (pick) return { pick, stale: false }
+  if (pick) return { pick, stale: false, fromIssue: false }
   // Newest Backlog already said there is nothing to ship. Do not fish older
   // "VERIFIED ALREADY FIXED … invoice/audit" snapshots as money TOP PICK.
   if (current.some((item) => /^STOP without committing/i.test(item.text))) {
-    return { pick: null, stale: false }
+    return { pick: null, stale: false, fromIssue: false }
   }
   const fallback = older.find(isPickable)
-  if (fallback) return { pick: fallback, stale: true }
-  return { pick: null, stale: false }
+  if (fallback) return { pick: fallback, stale: true, fromIssue: false }
+  return { pick: null, stale: false, fromIssue: false }
 }
 
 function main() {
@@ -189,11 +246,20 @@ function main() {
   const items = parseCommits(git(`log ${ref} -n ${limit} --format=${LOG_FORMAT}`))
   items.sort((a, b) => rankItem(a.text) - rankItem(b.text) || a.text.localeCompare(b.text))
   const { current, older } = splitCurrentAndOlder(items)
+  const issues = rankIssues(collectIssueItems())
 
   console.log(`Backlog items from last ${limit} commits on ${ref}`)
   console.log("=".repeat(60))
 
-  if (!items.length) {
+  if (issues.length) {
+    console.log("\n## Open should-issues")
+    for (const issue of issues) {
+      const extra = issue.labels.filter((name) => name !== "should").join(", ")
+      console.log(`- ${issueText(issue)}${extra ? ` [${extra}]` : ""}`)
+    }
+  }
+
+  if (!items.length && !issues.length) {
     console.log("(empty — no Backlog: trailers found)")
     return
   }
@@ -218,9 +284,13 @@ function main() {
   }
 
   console.log("\n--- TOP PICK (steady-state deploy agent) ---")
-  const { pick, stale } = topPickItem(current, older)
+  const { pick, stale, fromIssue } = topPickItem(current, older, issues)
   if (pick) {
-    console.log(stale ? `${pick.text}\n(stale fallback — newest Backlog had nothing pickable; verify still open)` : pick.text)
+    if (fromIssue) {
+      console.log(`${pick.text}\n(should-issue — collaborator-labeled queue outranks trailers)`)
+    } else {
+      console.log(stale ? `${pick.text}\n(stale fallback — newest Backlog had nothing pickable; verify still open)` : pick.text)
+    }
   } else {
     console.log("(none — remaining items are owner-only or deploy/integrator meta; stop without committing)")
   }

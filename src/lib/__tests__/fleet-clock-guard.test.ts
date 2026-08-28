@@ -20,8 +20,7 @@ import path from "node:path"
  *      automations in .cursor/automation/) stay clear of workflow crons
  *   6. Claude daily slots that share a minute-of-hour with an hourly job must
  *      be listed as disjoint-target exceptions (marketing 08:00 vs integrator
- *      :00; Airtable 19:30 vs Cursor smoke :30) — they must still appear on
- *      the clock so they are not invisible
+ *      :00) — they must still appear on the clock so they are not invisible
  *
  * prune-merged-branches.yml ran daily at 06:23 for weeks without a row on
  * the clock — found while writing this guard. Rule 1/2 exist so that cannot
@@ -43,7 +42,7 @@ const fleet = readFileSync(path.join(process.cwd(), "docs/ops/FLEET.md"), "utf-8
 // the dashboard copies are disabled — re-enabling must not land on a taken minute.
 const DASHBOARD_AGENT_MINUTES: Record<number, string> = {
   0: "Cursor Integrator automation",
-  18: "Claude sim test buddy (every 3h)",
+  18: "Claude sim test buddy (every 6h)",
   30: "Cursor Prod Smoke automation",
   43: "Claude integrator routine (every 3h)",
   59: "Cursor Deploy + backlog automation",
@@ -51,7 +50,8 @@ const DASHBOARD_AGENT_MINUTES: Record<number, string> = {
 
 // Daily dashboard agents whose minute is NOT also an hourly job.
 const DASHBOARD_DAILY_AGENTS: Record<string, string> = {
-  "10:33": "Claude nightly E2E business-cycle (daily; Sun also weekly deep audit)",
+  "10:33": "Claude nightly E2E business-cycle (daily)",
+  "10:53": "Claude weekly deep audit (Sun)",
   "15:11": "Claude LoadOff fleet watchdog",
   "16:49": "Claude prod smoke + fix-forward (daily)",
 }
@@ -59,13 +59,9 @@ const DASHBOARD_DAILY_AGENTS: Record<string, string> = {
 // Same minute-of-hour as an hourly job, but a different write target (not git,
 // or a different branch). Invisible-to-the-clock is still forbidden.
 const DISJOINT_DAILY_AGENTS: Record<string, string> = {
-  "01:00": "Claude Airtable infra crew (Airtable, not git)",
   "08:00": "Claude marketing lane → claude/lane-marketing (not the integrator)",
-  "09:00": "Claude Airtable human panel (Airtable, not git)",
   "12:00": "Claude meta-governor Mon (recommendation only)",
   "14:00": "Claude weekly outside-auditor Mon (read-only)",
-  "15:00": "Claude Airtable morning brief (Airtable, not git)",
-  "19:30": "Claude Airtable watchdog (Airtable, not Cursor :30 smoke)",
 }
 
 // D-003 (docs/ops/DECISIONS.md, answered 2026-08-19): the role-slot Cursor
