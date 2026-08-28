@@ -16,6 +16,14 @@
 import { execSync } from "node:child_process"
 import { pathToFileURL } from "node:url"
 
+/**
+ * @typedef {(command: string, options?: { encoding?: string }) => string | Buffer} GhExec
+ * @typedef {{ number?: number, title?: string, state?: string }} GhIssue
+ * @typedef {{ title?: string, body?: string, comment?: string, labels?: string[], mode?: string }} EnsureOpts
+ * @typedef {{ action: string, number?: number, output?: string }} EnsureResult
+ */
+
+/** @param {string | undefined} raw @returns {string[]} */
 export function parseLabels(raw) {
   return String(raw ?? "")
     .split(",")
@@ -23,14 +31,17 @@ export function parseLabels(raw) {
     .filter(Boolean)
 }
 
+/** @param {GhIssue[]} issues @param {string} title @returns {GhIssue | null} */
 export function findExactTitle(issues, title) {
   return (issues ?? []).find((issue) => issue && issue.title === title) ?? null
 }
 
+/** @param {GhExec} execFn @param {string} command */
 function run(execFn, command) {
   return String(execFn(command, { encoding: "utf-8" }) ?? "").trim()
 }
 
+/** @param {string} title @param {GhExec} [execFn] @returns {GhIssue[]} */
 export function listIssuesByTitle(title, execFn = execSync) {
   const escaped = String(title).replace(/"/g, '\\"')
   const raw = run(
@@ -45,6 +56,7 @@ export function listIssuesByTitle(title, execFn = execSync) {
   }
 }
 
+/** @param {EnsureOpts} opts @param {GhExec} [execFn] @returns {EnsureResult} */
 export function ensureGithubIssue(opts, execFn = execSync) {
   const title = String(opts.title ?? "").trim()
   if (!title) throw new Error("GH_ISSUE_TITLE is required")

@@ -5,6 +5,8 @@ import {
   parseLabels,
 } from "../../../scripts/ensure-github-issue.mjs"
 
+type GhExec = (command: string, options?: { encoding?: string }) => string
+
 describe("ensureGithubIssue", () => {
   it("splits comma-separated labels", () => {
     expect(parseLabels("should, venture:loadoff, needs-owner")).toEqual([
@@ -24,8 +26,8 @@ describe("ensureGithubIssue", () => {
   })
 
   it("creates when no exact title exists", () => {
-    const calls = []
-    const execFn = (cmd) => {
+    const calls: string[] = []
+    const execFn: GhExec = (cmd) => {
       calls.push(cmd)
       if (cmd.startsWith("gh issue list")) return "[]"
       return "https://github.com/ranvir01/thind-transport-website/issues/4"
@@ -44,8 +46,8 @@ describe("ensureGithubIssue", () => {
   })
 
   it("comments on an existing open issue (idempotent by title)", () => {
-    const calls = []
-    const execFn = (cmd) => {
+    const calls: string[] = []
+    const execFn: GhExec = (cmd) => {
       calls.push(cmd)
       if (cmd.startsWith("gh issue list")) {
         return JSON.stringify([{ number: 7, title: "[fleet] E2E suite red", state: "OPEN" }])
@@ -62,8 +64,8 @@ describe("ensureGithubIssue", () => {
   })
 
   it("reopens a closed issue before commenting", () => {
-    const calls = []
-    const execFn = (cmd) => {
+    const calls: string[] = []
+    const execFn: GhExec = (cmd) => {
       calls.push(cmd)
       if (cmd.startsWith("gh issue list")) {
         return JSON.stringify([{ number: 8, title: "[fleet] Integrator stalled", state: "CLOSED" }])

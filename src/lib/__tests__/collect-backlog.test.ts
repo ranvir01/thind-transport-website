@@ -14,6 +14,8 @@ import {
 const HASH_A = "0f6739aabbccddeeff00112233445566778899aa"
 const HASH_B = "7ad7e16aabbccddeeff00112233445566778899b"
 
+type GhExec = (command: string, options?: { encoding?: string }) => string
+
 function record(hash: string, subject: string, body: string) {
   return `${hash}${FIELD_SEP}${subject}${FIELD_SEP}${body}${RECORD_SEP}`
 }
@@ -95,7 +97,7 @@ describe("rankItem", () => {
 
 describe("collectIssueItems", () => {
   it("parses gh JSON and maps label objects to names", () => {
-    const execFn = () =>
+    const execFn: GhExec = () =>
       JSON.stringify([
         {
           number: 12,
@@ -113,13 +115,15 @@ describe("collectIssueItems", () => {
   })
 
   it("returns [] when gh is missing or throws", () => {
-    expect(collectIssueItems(() => {
+    const execFn: GhExec = () => {
       throw new Error("gh: command not found")
-    })).toEqual([])
+    }
+    expect(collectIssueItems(execFn)).toEqual([])
   })
 
   it("returns [] on malformed JSON", () => {
-    expect(collectIssueItems(() => "not-json")).toEqual([])
+    const execFn: GhExec = () => "not-json"
+    expect(collectIssueItems(execFn)).toEqual([])
   })
 })
 

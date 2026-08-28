@@ -9,6 +9,12 @@
 import { execSync } from "node:child_process"
 import { pathToFileURL } from "node:url"
 
+/**
+ * Injectable `gh`/`git` runner. Tests pass a `(command) => string`; production
+ * uses `execSync`. Typed looser than Node's overload so mocks typecheck.
+ * @typedef {(command: string, options?: { encoding?: string }) => string | Buffer} GhExec
+ */
+
 const PRIORITY = [
   // Do not match a bare "Production" / "deploy" — "Vercel Production" and
   // "pending deploy" are environment names, not outages. "login fail on deploy"
@@ -170,6 +176,8 @@ export function isPickable(item) {
  * Open GitHub issues labeled `should` (D-012). `execFn` is injectable so
  * unit tests can mock `gh` without a network. Missing `gh`, a public-repo
  * rate limit, or any other failure returns [] — trailers still rank.
+ * @param {GhExec} [execFn]
+ * @returns {{ number: number, title: string, labels: string[] }[]}
  */
 export function collectIssueItems(execFn = execSync) {
   try {
