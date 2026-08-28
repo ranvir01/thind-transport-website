@@ -19,7 +19,7 @@ paste, **Ranvir clicks** (Grok starting those agents burns Cursor usage).
 |---|---|---|---|---|
 | **gogo** | Chief of Staff + TPM — watcher + coding dispatcher | [`gogo-tpm.instructions.md`](gogo-tpm.instructions.md) | GitHub | GitHub repo watch (pr-opened / pr-merged / ci-failed on main) — keep it **narrow** |
 | **Steve** | Staff SRE — Deploy / CI / Bug Reproduction | [`steve-deploy-ci.instructions.md`](steve-deploy-ci.instructions.md) | GitHub + Vercel | none — no crons, no polling |
-| **Jeff** | Head of RevOps — company Gmail + two live Dropbox xlsx; AR Payments billing entity | [`jeff-revops.instructions.md`](jeff-revops.instructions.md) | Gmail (list only), Dropbox; **browser for rate-con PDFs** | daily loadboard **8:30pm PT**, weekends included |
+| **Jeff** | Head of RevOps (Expense Manager analog) — company Gmail + two live Dropbox xlsx; AR Payments billing entity | [`jeff-revops.instructions.md`](jeff-revops.instructions.md) | Gmail (list only), Dropbox; **browser for rate-con PDFs** | daily loadboard **8:30pm PT**, weekends included |
 | **Rav** | Talent Scout / Career Coach — proof-only | [`rav-career-coach.instructions.md`](rav-career-coach.instructions.md) | GitHub (for FACTS.md + Job-Applications); Drive if proof files live there | none |
 
 Facts baked in: `bls-website` is on **Netlify**; `fleet-liveness.yml` is not

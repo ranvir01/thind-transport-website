@@ -25,7 +25,7 @@ Updated **2026-08-28**.
 | 6 | Optional: export a LOADS-BACKUP CSV from the retired Airtable base before ~Sep 2 if you still want a copy | ~2026-09-02 | Not required to run; software is retired (D-014) |
 | 7 | Re-enable Cursor **Integrator**, **Prod Smoke**, **Deploy + backlog** only if you want Cursor as redundant drain/smoke — leave **Untitled** off | whenever | Agents cannot toggle cursor.com/automations (read-only). All four were **disabled** 2026-08-26. |
 | 8 | Import Cursor role slots **only** where Claude has no twin: office, driver, tests, integrations (see FLEET.md). Do **not** import marketing / deep-verify / meta-governor while those Claude tasks are live | whenever | Same charter, two platforms = two writers on one lane |
-| 9 | On GitHub mobile, label **[#65](https://github.com/ranvir01/thind-transport-website/issues/65)** and **[#66](https://github.com/ranvir01/thind-transport-website/issues/66)** with `should` + `venture:loadoff` (labels already exist; the creating token 403s on PATCH) | today | A label is the owner-curated trigger (D-012). Unlabeled issues are not dispatchable. |
+| 9 | On GitHub mobile, label **[#65](https://github.com/ranvir01/thind-transport-website/issues/65)** and **[#66](https://github.com/ranvir01/thind-transport-website/issues/66)** with `should` + `venture:loadoff`, and **[#67](https://github.com/ranvir01/thind-transport-website/issues/67)** with `needs-owner` + `venture:career` (label names exist; the creating token 403s on PATCH) | today | A label is the owner-curated trigger (D-012). Unlabeled issues are not dispatchable; #67 must stay parked, not `should`. |
 
 One task per ping. If an agent already asked this week, it stays quiet unless
 the deadline is inside 48 hours.
