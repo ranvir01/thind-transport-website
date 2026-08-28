@@ -12,6 +12,10 @@
  *
  * `execFn` is injectable for tests. Missing `gh` throws — callers in CI have
  * GITHUB_TOKEN; the backlog collector is the one that must stay silent.
+ *
+ * Fine-grained PATs can create issues (and even create label *names* as a
+ * side-effect) but 403 on PATCH, so Actions must `gh label create` before
+ * `gh issue create --label` — GITHUB_TOKEN can attach labels; the PAT cannot.
  */
 import { execSync } from "node:child_process"
 import { pathToFileURL } from "node:url"
@@ -22,6 +26,32 @@ import { pathToFileURL } from "node:url"
  * @typedef {{ title?: string, body?: string, comment?: string, labels?: string[], mode?: string }} EnsureOpts
  * @typedef {{ action: string, number?: number, output?: string }} EnsureResult
  */
+
+/** Known queue labels (D-012). `--force` is idempotent and paints the first-run greys. */
+export const QUEUE_LABELS = {
+  should: { color: "0E7C7B", description: "Dispatchable fleet work (collaborator-curated)" },
+  "needs-owner": { color: "D97706", description: "Parked for Ranvir — agents do not pick" },
+  "venture:loadoff": { color: "1B3A4B", description: "LoadOff / this repo" },
+  "venture:ar-payments": { color: "0F766E", description: "AR Payments LLC holding/billing" },
+  "venture:myco": { color: "1D4ED8", description: "MyConsulting" },
+  "venture:career": { color: "6D28D9", description: "Career OS / Rav" },
+  "venture:bls": { color: "334155", description: "bls-website proof" },
+}
+
+/** @param {string[]} names @param {GhExec} [execFn] */
+export function ensureQueueLabels(names, execFn = execSync) {
+  for (const name of names) {
+    const meta = QUEUE_LABELS[name] ?? { color: "ededed", description: name }
+    try {
+      run(
+        execFn,
+        `gh label create ${JSON.stringify(name)} --color ${JSON.stringify(meta.color)} --description ${JSON.stringify(meta.description)} --force`
+      )
+    } catch {
+      // no gh / no permission — create still tries --label
+    }
+  }
+}
 
 /** @param {string | undefined} raw @returns {string[]} */
 export function parseLabels(raw) {
@@ -67,6 +97,7 @@ export function ensureGithubIssue(opts, execFn = execSync) {
 
   const existing = findExactTitle(listIssuesByTitle(title, execFn), title)
   if (!existing) {
+    if (labels.length) ensureQueueLabels(labels, execFn)
     const labelFlags = labels.map((name) => `--label ${JSON.stringify(name)}`).join(" ")
     const created = run(
       execFn,

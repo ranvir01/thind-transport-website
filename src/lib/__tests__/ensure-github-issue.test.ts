@@ -41,6 +41,8 @@ describe("ensureGithubIssue", () => {
       execFn
     )
     expect(result.action).toBe("created")
+    expect(calls.some((c) => c.startsWith("gh label create"))).toBe(true)
+    expect(calls.find((c) => c.startsWith("gh label create"))).toMatch(/"should"/)
     expect(calls.some((c) => c.startsWith("gh issue create"))).toBe(true)
     expect(calls.find((c) => c.startsWith("gh issue create"))).toMatch(/--label "should"/)
   })
