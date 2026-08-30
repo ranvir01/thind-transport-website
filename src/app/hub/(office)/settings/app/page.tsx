@@ -46,16 +46,19 @@ export default async function TeamAppPage() {
                 <span className="font-semibold text-fg">Add to Home Screen</span>.
               </div>
             </div>
+            {/* The QR must land on /hub/get-app — the proxy-exempt install page —
+                not on this authed page, where a scanned phone would only meet
+                the login wall. */}
             <div className="hidden items-center gap-4 rounded-control border border-border bg-surface-2 p-3 sm:flex">
               <QrCode
-                value={`${host.startsWith("localhost") || host.startsWith("127.") ? "http" : "https"}://${host}/hub/settings/app`}
-                label="Opens this page on your phone"
+                value={`${host.startsWith("localhost") || host.startsWith("127.") ? "http" : "https"}://${host}/hub/get-app`}
+                label="Opens the install page on your phone"
                 className="h-28 w-28 shrink-0 rounded-md"
               />
               <p className="text-body-xs text-fg-2">
                 <span className="block font-semibold text-fg">Reading this on a computer?</span>
-                Point your phone&apos;s camera here — it opens this page on the phone. Sign in with
-                the same account, then tap install.
+                Point your phone&apos;s camera here — it opens the install page on your phone, no
+                sign-in needed. Install from there, then sign in with the same account.
               </p>
             </div>
             <p className="flex items-start gap-2 text-body-xs text-fg-3 sm:hidden">
