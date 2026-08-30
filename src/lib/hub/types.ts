@@ -108,6 +108,7 @@ export const DOCUMENT_KINDS = [
   "road_test",
   "authority_letter",
   "noa",
+  "insurance_renewal",
 ] as const
 export type DocumentKind = (typeof DOCUMENT_KINDS)[number]
 
@@ -134,6 +135,7 @@ export const DOCUMENT_KIND_LABELS: Record<DocumentKind, string> = {
   road_test: "Road Test",
   authority_letter: "Authority Letter",
   noa: "Factoring NOA",
+  insurance_renewal: "Insurance Renewal Packet",
 }
 
 export interface HubUser {

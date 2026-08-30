@@ -538,15 +538,22 @@ into a one-file edit.
 20. **Delete or wire `HubAppearanceMenu.tsx`** — it is orphaned: nothing imports it. The
     only reachable light/dark control is inside `UserMenu` (the avatar). Two controls for
     one setting is worse than one; pick and remove the other.
-21. **Automation: email → load, finish the last mile.** The pipeline already exists and is
-    NOT a stub — `mailbox` is a live registry provider that polls IMAP and files rate
-    cons/PODs onto loads by reference, `doc-intake/llm-parser.ts` reads the document, and
-    `/hub/loads/paste` is the manual path. What is missing is only the credential and a
-    visible "what got auto-filed" surface. Build the surface: a review queue showing what
-    the mailbox created, with one-tap accept/correct, so automation never writes silently.
-    Manual entry stays first-class — never replace it.
+21. ~~**Automation: email → load, finish the last mile.**~~ **DONE 2026-08-30.** The
+    framing above was half wrong and worth recording: `pollDocsMailbox` filed attachments
+    only onto loads that ALREADY existed. Mail for freight not yet booked hit `if (load)`
+    and its attachments were **discarded** behind a "file it by hand" notification — so
+    the missing piece was not just a surface, it was the staging step underneath one.
+    Shipped: `hub.intake_drafts` (migration 029), server-side PDF text extraction, the
+    `!load` branch staging parsed rate cons instead of dropping them, and `/hub/inbox` —
+    a review queue where nothing becomes a load until a human taps Accept. The
+    `ParsedRateCon → LoadForm` mapping was extracted to `lib/hub/rate-con-to-form.ts` so
+    paste and email prefill through one translation. Manual entry untouched.
+    Still owner-blocked on the Gmail App Password before real mail flows in.
 22. **AI-in-app roadmap** — the honest sequence, cheapest and safest first: (a) the doc
-    parser already in place, surfaced through 21's review queue; (b) ETA + broker
+    parser already in place, surfaced through 21's review queue — **(a) is now shipped**;
+    the Inbox calls `analyzeDocumentEnhanced`, so a set `ANTHROPIC_API_KEY` upgrades every
+    emailed rate con's parse with no code change and no key means a silent heuristic
+    fallback; (b) ETA + broker
     auto-updates (tasks 8–9), which need no model at all; (c) the natural-language report
     picker (task 11), typed params only, never text-to-SQL. Anything that writes to the
     database from a model output goes through a human-confirm step until it has earned
