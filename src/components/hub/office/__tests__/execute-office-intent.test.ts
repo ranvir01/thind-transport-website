@@ -46,9 +46,12 @@ describe("executeOfficeIntent", () => {
   })
 
   it("drops unknown kinds as ok so a future build's rows can't jam the queue", async () => {
-    const result = await executeOfficeIntent(
-      intent({ kind: "from-the-future" as OfficeQueuedIntent["kind"], payload: { loadId: "L9" } })
-    )
+    const result = await executeOfficeIntent({
+      id: "x",
+      queuedAt: 1,
+      kind: "from-the-future",
+      payload: { loadId: "L9" },
+    } as unknown as OfficeQueuedIntent)
     expect(result).toEqual({ ok: true })
     expect(loads.advanceLoadStatusAction).toHaveBeenCalledTimes(1) // only the earlier test's call
   })

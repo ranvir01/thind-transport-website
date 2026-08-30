@@ -96,7 +96,7 @@ describe("createOfflineQueue config seam", () => {
 
     // A row from an older build of THIS queue must be dropped, not executed.
     const stale: TestQueued = { id: "old", kind: "stale", payload: { v: 0 }, queuedAt: 0, schemaVersion: 6 }
-    const execute = vi.fn(async () => ({ ok: true }))
+    const execute = vi.fn(async (_intent: TestQueued) => ({ ok: true }))
     const result = await q.replayQueue([stale, ...rows], execute)
     expect(execute).toHaveBeenCalledTimes(1)
     expect(execute.mock.calls[0][0].kind).toBe("current")

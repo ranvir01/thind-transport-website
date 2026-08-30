@@ -6,6 +6,7 @@ import { ArrowRight, Ban, Loader2, MessageSquare } from "lucide-react"
 import {
   advanceLoadStatusAction, logCheckCallAction, setLoadStatusAction, stopTimestampAction,
 } from "@/app/hub/_actions/loads"
+import { runOrQueue } from "@/components/hub/office/offline-queue"
 import { fieldCls } from "@/components/hub/ui"
 import { NEXT_STATUS, STATUS_LABELS, canCancelLoad, type LoadStatus } from "@/lib/hub/types"
 
@@ -24,8 +25,13 @@ export function AdvanceStatusButton({
 
   const advance = () =>
     startTransition(async () => {
-      const result = await advanceLoadStatusAction(loadId)
-      if (result.ok) toast.success(`Moved to ${STATUS_LABELS[next]}`)
+      // Forward-only lifecycle makes a queued replay conflict-safe.
+      const result = await runOrQueue(
+        { kind: "advance-status", payload: { loadId } },
+        () => advanceLoadStatusAction(loadId)
+      )
+      if ("queued" in result) toast.success("No signal — saved, sends automatically")
+      else if (result.ok) toast.success(`Moved to ${STATUS_LABELS[next]}`)
       else toast.error(result.error ?? "Could not advance status")
     })
 
@@ -108,8 +114,15 @@ export function CheckCallButton({ loadId }: { loadId: string }) {
     e.preventDefault()
     if (!note.trim()) return
     startTransition(async () => {
-      const result = await logCheckCallAction(loadId, note)
-      if (result.ok) {
+      const result = await runOrQueue(
+        { kind: "check-call", payload: { loadId, note } },
+        () => logCheckCallAction(loadId, note)
+      )
+      if ("queued" in result) {
+        toast.success("No signal — call saved, sends automatically")
+        setNote("")
+        setOpen(false)
+      } else if (result.ok) {
         toast.success("Check call logged")
         setNote("")
         setOpen(false)
