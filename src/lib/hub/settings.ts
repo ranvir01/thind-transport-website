@@ -1,4 +1,5 @@
 import { query, queryOne } from "./db"
+import { dollarsToCents } from "./types"
 
 /** Typed carrier settings (stored as JSONB; merged over defaults on read). */
 export interface CarrierSettings {
@@ -93,7 +94,12 @@ function mergePay(
 ): CarrierSettings["pay"] {
   const merged = { ...DEFAULT_SETTINGS.pay, ...stored }
   if (stored?.companyDriverPerMileCents == null && typeof stored?.companyDriverPerMile === "number") {
-    merged.companyDriverPerMileCents = Math.round(stored.companyDriverPerMile * 100)
+    // dollarsToCents, not a bare Math.round(x * 100): this path must agree
+    // with what migration 024 rewrites the same row to (exact numeric
+    // ROUND(x * 100)). A half-cent tie like 0.565 drifts to 56.499… as a
+    // double — bare rounding read 56¢ where the migration writes 57¢, so the
+    // tenant's default rate changed by a cent the day the migration ran.
+    merged.companyDriverPerMileCents = dollarsToCents(stored.companyDriverPerMile)
   }
   return merged
 }
