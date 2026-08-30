@@ -52,11 +52,28 @@ describe("first-paint boot script", () => {
     expect(layout).toContain("(\\\\/|$)")
   })
 
-  it("removes Next's media-matched pair rather than adding a third tag", () => {
-    // A leftover media tag keeps winning on a dark-set phone, which is the
-    // whole bug.
-    expect(layout).toContain('meta[name="theme-color"]')
-    expect(layout).toContain("removeChild")
+  it("keeps the OS-keyed pair out of the hub viewport", () => {
+    expect(layout).not.toMatch(/themeColor:/)
+    expect(layout).not.toContain("prefers-color-scheme: dark")
+  })
+
+  it("rewrites every tag and keeps watching head, because order cannot be won", () => {
+    // The ROOT layout emits its own #121316 and React re-hoists metadata after
+    // hydration. The browser honours whichever tag comes first, so deduping to
+    // one is a race; making them all agree is not.
+    expect(layout).toContain("for(var i=0;i<tags.length;i++)")
+    expect(layout).toContain("MutationObserver")
+    expect(layout).toContain("{childList:true}")
+  })
+
+  it("stamps data-surface so CSS can paint the forced-dark body to match", () => {
+    // Clearing the marketing navy off <body> for the office would otherwise
+    // leave the driver app flashing WHITE on overscroll — the same bug for the
+    // people who use it in a cab.
+    expect(layout).toContain("data-surface")
+    const css = readFileSync(new URL("../../../app/hub/hub-theme.css", import.meta.url), "utf-8")
+    expect(css).toContain('[data-app="hauldesk"] body')
+    expect(css).toContain('[data-app="hauldesk"][data-surface="dark"] body')
   })
 })
 

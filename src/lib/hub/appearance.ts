@@ -44,14 +44,21 @@ export function syncThemeColor(mode: HubColorMode) {
   // localStorage guards above.
   try {
     const color = themeColorFor(mode, window.location?.pathname ?? "")
-    const tags = [...document.querySelectorAll('meta[name="theme-color"]')]
-    // Next renders one tag per media query; collapse them to a single
-    // unmediated tag, otherwise the media-matched one keeps winning.
-    for (const tag of tags.slice(1)) tag.remove()
-    const meta = tags[0] ?? document.head.appendChild(document.createElement("meta"))
-    meta.setAttribute("name", "theme-color")
-    meta.removeAttribute("media")
-    meta.setAttribute("content", color)
+    let tags = [...document.head.querySelectorAll('meta[name="theme-color"]')]
+    if (tags.length === 0) {
+      const meta = document.createElement("meta")
+      meta.setAttribute("name", "theme-color")
+      document.head.appendChild(meta)
+      tags = [meta]
+    }
+    // Rewrite EVERY tag rather than deduping to one. The root layout emits its
+    // own, React re-hoists metadata after hydration, and the browser honours
+    // whichever comes first — so making them all agree is the only version of
+    // this that cannot be raced.
+    for (const tag of tags) {
+      tag.removeAttribute("media")
+      tag.setAttribute("content", color)
+    }
   } catch {
     /* no head, or a locked-down document — the page is still themed */
   }
