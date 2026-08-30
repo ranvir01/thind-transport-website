@@ -28,7 +28,7 @@ export interface InvariantViolation {
 export async function checkSandboxInvariants(): Promise<InvariantViolation[]> {
   const violations: InvariantViolation[] = []
 
-  const [doubleBooked, playerFinished, negativeBalance, orphanRolling] = await Promise.all([
+  const [doubleBooked, playerFinished, negativeBalance, orphanRolling, deadEnded] = await Promise.all([
     // A truck can only pull one load at a time.
     query<{ truck_id: string; n: number }>(
       `SELECT truck_id, COUNT(*)::int AS n
@@ -70,6 +70,23 @@ export async function checkSandboxInvariants(): Promise<InvariantViolation[]> {
           AND (driver_id IS NULL OR truck_id IS NULL)`,
       [C]
     ),
+    // Nothing the simulation does to a player may leave them stuck.
+    //
+    // The sim can now cause trouble — a receiver holding a truck, and more to
+    // come. "Recoverable" is the promise that makes it safe to hand this to a
+    // stranger: every problem has a way out that the player can reach from the
+    // screen they are on. A held load must still have the crew that lets
+    // someone mark it departed (which is also what bills the detention), and
+    // an active load must never sit without a driver AND without being on the
+    // board to assign one. This is the rule that keeps "recoverable" honest in
+    // code instead of in a comment.
+    query<{ id: string; reference: string; status: string }>(
+      `SELECT id, reference, status FROM hub.loads
+        WHERE carrier_id = $1 AND deleted_at IS NULL
+          AND status IN ('dispatched','at_pickup','in_transit')
+          AND (driver_id IS NULL OR truck_id IS NULL)`,
+      [C]
+    ),
   ])
 
   if (doubleBooked.length > 0) {
@@ -88,6 +105,12 @@ export async function checkSandboxInvariants(): Promise<InvariantViolation[]> {
     violations.push({
       rule: "no-overpaid-invoice",
       detail: negativeBalance.map((r) => `${r.number} over by ${r.over}c`).join("; "),
+    })
+  }
+  if (deadEnded.length > 0) {
+    violations.push({
+      rule: "no-dead-ended-load",
+      detail: deadEnded.map((r) => `${r.reference} (${r.status}) has no crew to act with`).join(", "),
     })
   }
   if (orphanRolling.length > 0) {

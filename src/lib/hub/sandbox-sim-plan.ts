@@ -86,12 +86,16 @@ export interface WorldSnapshot {
   playerDrivers: { driverId: string; truckId: string | null; userId: string; idleSincePodMin: number | null }[]
   dispatcherUserIds: string[]
   invoiceSeq: number
+  /** carrier_settings detention.freeHours, in minutes — what a hold must beat. */
+  detentionFreeMinutes?: number
 }
 
 export interface SimState {
   epoch: string
   lastTickAt: string | null
   nextDropAt: string | null
+  /** When the next adversity event is due (paced like nextDropAt). */
+  nextTroubleAt?: string | null
   /** seatKey -> ISO lastSeenAt, maintained by the tick heartbeat. */
   activeSeats: Record<string, string>
   /** Usage counters (ticks, opsApplied, shiftsStarted_<seat>, …) — written
@@ -134,6 +138,24 @@ export type SimOp =
   | { op: "fuelPurchase"; truckId: string; driverId: string | null; gallons: number; unitPriceCents: number; jurisdiction: string; merchant: string; externalId: string }
   | { op: "safetyEvent"; driverId: string; truckId: string; kind: string }
   | { op: "notifyUser"; userId: string; kind: string; title: string; body: string; link: string }
+  | {
+      /**
+       * A receiver keeps the truck waiting. The sim backdates the pickup
+       * arrival past the carrier's free time and leaves the departure open,
+       * which is all it takes: the detention machinery that already ships
+       * (getDwellingStops -> the dispatch board's "~$192, mark departed to
+       * bill it" pill -> applyDetentionAccrual on departure) does the rest.
+       * Recoverable by construction — marking departed BILLS the wait, so
+       * the way out of the problem is also the way it turns into money.
+       */
+      op: "receiverHold"
+      loadId: string
+      stopId: string
+      reference: string
+      arrivedAt: Date
+      needsStatus: boolean
+      notifyUserIds: string[]
+    }
   | { op: "prunePings" }
 
 /* -------------------------------- pacing -------------------------------- */
@@ -174,6 +196,17 @@ export const SIM = {
   arrivalCapCatchUp: 15,
   hosEveryMinutes: 5,
   presenceWindowMinutes: 2,
+  /* -- trouble --------------------------------------------------------- *
+   * Paced exactly like the broker thermostat (nextDropAt): a timestamp in
+   * sim state, not a per-tick dice roll, so the rate is the same whether a
+   * tab beats every 25s or catches up after an hour. One event per 6-10
+   * minutes means a 15-minute shift meets one or two — enough that the job
+   * has weather, not so much that it reads as a disaster movie. */
+  troubleEveryMinutesMin: 6,
+  troubleEveryMinutesMax: 10,
+  /** How far past the free time a held truck sits, so the dwell is worth
+   *  real money the moment the player looks at it. */
+  holdOverFreeMinutes: 45,
 } as const
 
 const MOVING: LoadStatus[] = ["in_transit"]
@@ -448,6 +481,58 @@ export function planSandboxTick(
       externalId: `SIM-F-${now.toISOString().slice(0, 16)}-${(load.truckId as string).slice(0, 8)}`,
     })
   }
+  /* 6 · TROUBLE — the one thing in here that is not the world going right.
+   *
+   * Everything else this planner does advances the company: trucks roll,
+   * brokers call, paperwork lands, money arrives. A dispatcher screen where
+   * every load delivers itself is a screensaver, and — the part that matters
+   * for someone deciding whether to run their business on this — it never
+   * shows the software doing the job it exists to do, which is telling you
+   * something is wrong while there is still time to fix it.
+   *
+   * Recoverable by construction: a hold releases itself, and the player's way
+   * out (mark departed) is the same action that bills the detention. Nothing
+   * here can strand a shift. */
+  const troubleDue = !sim.nextTroubleAt || now >= new Date(sim.nextTroubleAt)
+  let newNextTroubleAt = sim.nextTroubleAt
+  if (troubleDue) {
+    const freeMinutes = world.detentionFreeMinutes ?? 120
+    // Only a truck that is sitting at a shipper can be held, and only one
+    // that is not already dwelling — re-holding a held load would keep
+    // resetting its clock and the dwell would never grow.
+    const holdable = world.loads.filter(
+      (l) =>
+        !l.playerDriven &&
+        l.driverId !== null &&
+        l.truckId !== null &&
+        l.pickup !== null &&
+        !l.pickup.departedAt &&
+        ["dispatched", "at_pickup"].includes(l.status) &&
+        !(l.pickup.arrivedAt && now.getTime() - l.pickup.arrivedAt.getTime() > freeMinutes * 60_000)
+    )
+    if (holdable.length > 0) {
+      // Deterministic pick, like the broker draw — the same world replays the
+      // same trouble, which is the whole point of a reproducible sandbox.
+      const load = holdable[Math.floor(hash01(`hold-${now.toISOString().slice(0, 16)}`) * holdable.length)]
+      if (load?.pickup) {
+        ops.push({
+          op: "receiverHold",
+          loadId: load.id,
+          stopId: load.pickup.id,
+          reference: load.reference,
+          arrivedAt: new Date(now.getTime() - (freeMinutes + SIM.holdOverFreeMinutes) * 60_000),
+          needsStatus: load.status !== "at_pickup",
+          notifyUserIds: world.dispatcherUserIds,
+        })
+      }
+    }
+    const gap =
+      SIM.troubleEveryMinutesMin +
+      hash01(`trouble-${now.toISOString().slice(0, 16)}`) *
+        (SIM.troubleEveryMinutesMax - SIM.troubleEveryMinutesMin)
+    newNextTroubleAt = new Date(now.getTime() + gap * 60_000).toISOString()
+  }
+
   if (movingTrucks.length > 0 && hash01(`safety-${now.toISOString().slice(0, 13)}`) < Math.min(0.3, elapsedMs / 7_200_000)) {
     const load = movingTrucks[0]
     if (load.driverId && load.truckId) {
@@ -463,7 +548,7 @@ export function planSandboxTick(
 
   return {
     ops,
-    nextSim: { ...sim, lastTickAt: now.toISOString(), nextDropAt: newNextDropAt },
+    nextSim: { ...sim, lastTickAt: now.toISOString(), nextDropAt: newNextDropAt, nextTroubleAt: newNextTroubleAt },
     catchUp,
   }
 }
