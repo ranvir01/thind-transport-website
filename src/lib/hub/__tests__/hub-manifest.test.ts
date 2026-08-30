@@ -15,7 +15,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 vi.mock("../session", () => ({ getHubUser: vi.fn() }))
 vi.mock("../settings", () => ({ getCarrierSettings: vi.fn() }))
 
-import { getHubUser } from "../session"
+import { getHubUser, type HubSessionUser } from "../session"
 import { getCarrierSettings } from "../settings"
 import { buildManifest, DRIVER_SHORTCUTS, OFFICE_SHORTCUTS } from "@/app/api/hub/manifest/route"
 
@@ -23,7 +23,7 @@ const getHubUserMock = vi.mocked(getHubUser)
 const getCarrierSettingsMock = vi.mocked(getCarrierSettings)
 const publicDir = join(process.cwd(), "public")
 
-function sessionUser(role: string) {
+function sessionUser(role: HubSessionUser["role"]) {
   return {
     id: "u1",
     name: "Maya",

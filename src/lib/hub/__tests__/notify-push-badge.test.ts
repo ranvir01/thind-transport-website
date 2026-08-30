@@ -12,7 +12,7 @@ vi.mock("../db", () => ({
   query: (text: string, params: unknown[]) => queryMock(text, params),
 }))
 
-const sendNotification = vi.fn(async () => {})
+const sendNotification = vi.fn(async (..._args: unknown[]) => {})
 vi.mock("web-push", () => ({
   default: { setVapidDetails: vi.fn(), sendNotification: (...args: unknown[]) => sendNotification(...args) },
 }))
