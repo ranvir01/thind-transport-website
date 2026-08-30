@@ -13,7 +13,7 @@
  * check via the global reduce block; everything else is plain layout.
  */
 import { useCallback, useEffect, useRef, useState } from "react"
-import { Banknote, CheckCircle2, Circle, Clock3, Copy, Loader2, Play, Square, X } from "lucide-react"
+import { AlertTriangle, Banknote, CheckCircle2, Circle, Clock3, Copy, Loader2, Play, Square, X } from "lucide-react"
 import { toast } from "sonner"
 import { endShiftAction, shiftStatusAction, startShiftAction } from "@/app/hub/_actions/sandbox-shift"
 import type { FeedItem } from "@/lib/hub/sandbox-feed"
@@ -253,7 +253,8 @@ export function ShiftCard({ seat, dark = false }: { seat: string; dark?: boolean
       ["collected", m.collectedCents],
     ]
     const live = co.filter(([, cents]) => cents > 0)
-    if (m.personalCents <= 0 && live.length === 0 && m.rollingCents <= 0) return null
+    if (m.personalCents <= 0 && live.length === 0 && m.rollingCents <= 0 && m.dwellingCents <= 0 && m.overdueCents <= 0)
+      return null
     return (
       <div
         className={cn(
@@ -297,6 +298,26 @@ export function ShiftCard({ seat, dark = false }: { seat: string; dark?: boolean
                 // seconds. Say what IS true: the company's money is out there
                 // on the road, which is the reason any of these seats exist.
                 `${money(m.rollingCents)} of freight on the road right now`}
+          </p>
+        ) : null}
+        {m.dwellingCents > 0 || m.overdueCents > 0 ? (
+          <p
+            className={cn(
+              "mt-1.5 flex items-start gap-1.5 border-t pt-1.5 text-[11.5px] tabular-nums",
+              onSheet || !dark ? "border-border" : "border-white/10",
+              "text-warn"
+            )}
+          >
+            <AlertTriangle className="mt-[1px] h-3.5 w-3.5 shrink-0" aria-hidden />
+            <span>
+              Costing you now:{" "}
+              {[
+                m.dwellingCents > 0 ? `${money(m.dwellingCents)} sitting at docks` : null,
+                m.overdueCents > 0 ? `${money(m.overdueCents)} overdue` : null,
+              ]
+                .filter(Boolean)
+                .join(" · ")}
+            </span>
           </p>
         ) : null}
         {m.standing && m.personalCents > 0 ? (
