@@ -4,13 +4,16 @@
  * mean a blank page. (Action queueing lives in IndexedDB on the page side;
  * see offline-queue.ts.)
  */
-const SHELL_CACHE = "hauldesk-shell-v2"
+const SHELL_CACHE = "hauldesk-shell-v3"
 
 self.addEventListener("install", (event) => {
   self.skipWaiting()
   event.waitUntil(
+    // The live manifest is /api/hub/manifest (per-tenant, no-store) — never
+    // precache it, and the old static /hub.webmanifest no longer belongs here.
+    // The v3 cache bump is what evicts copies stranded in v2.
     caches.open(SHELL_CACHE).then((cache) =>
-      cache.addAll(["/hub-icon-192.png", "/hub-icon-512.png", "/hub.webmanifest"]).catch(() => {})
+      cache.addAll(["/hub-icon-192.png", "/hub-icon-512.png"]).catch(() => {})
     )
   )
 })
