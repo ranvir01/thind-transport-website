@@ -19,7 +19,7 @@ const DRIVER: RelatedLink[] = [
   {
     href: "/pay-rates",
     title: "Pay calculator",
-    blurb: "Your miles, your rate, today's fuel price — what a week actually clears.",
+    blurb: "Your miles and your rate — what a week grosses, before deductions.",
     icon: Calculator,
     kind: "Tool",
   },

@@ -4,47 +4,18 @@ import { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import Image from "next/image"
 import Link from "next/link"
-import { 
-  Truck, 
-  Box, 
-  Snowflake, 
-  Layers,
-  Wrench, 
-  Clock, 
-  Shield, 
-  Gauge,
-  Zap,
-  Wind,
-  AlertTriangle,
-  Refrigerator,
-  ArrowRight,
-  CheckCircle2,
-  Cog,
-  Radio,
-  BatteryCharging,
-  Star,
-  Play,
-  ChevronDown,
-  ChevronUp,
-  Award,
-  Users,
-  MapPin,
-  Heart,
-  ThumbsUp,
-  Quote,
-  TrendingUp,
-  Bed,
-  Wifi,
-  Thermometer,
-  Lock,
-  Eye,
-  Phone,
-  Calendar
+import {
+  Truck, Box, Snowflake, Layers, Wrench,
+  Clock, Shield, Gauge, Zap, Wind,
+  AlertTriangle, Refrigerator, ArrowRight, CheckCircle2, Cog,
+  BatteryCharging, Star, Play, ChevronDown, ChevronUp,
+  TrendingUp, Bed, Wifi, Thermometer, Lock,
+  Eye, Phone, Calendar,
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
-import { COMPANY_INFO } from "@/lib/constants"
+import { COMPANY_INFO, STATS } from "@/lib/constants"
 import { FAQAccordion } from "@/components/shared/FAQAccordion"
 import { PageBreadcrumb } from "@/components/shared/PageBreadcrumb"
 import { RelatedLinks } from "@/components/shared/RelatedLinks"
@@ -263,9 +234,9 @@ const trailers = [
 const maintenanceFeatures = [
   {
     icon: Wrench,
-    title: "In-House Shop",
-    description: "Full-service maintenance facility with ASE-certified technicians. Most repairs done same-day.",
-    stat: "24hr"
+    title: "Maintained on schedule",
+    description: "Every truck goes to our regular shop on a fixed preventive-maintenance interval, not when something breaks.",
+    stat: "PM"
   },
   {
     icon: Clock,
@@ -276,8 +247,8 @@ const maintenanceFeatures = [
   {
     icon: Shield,
     title: "Preventive Care",
-    description: "Scheduled maintenance every 25,000 miles. We fix it before it breaks. You keep rolling.",
-    stat: "25K"
+    description: "Scheduled preventive maintenance. We fix it before it breaks, so you keep rolling.",
+    stat: "PM"
   }
 ]
 
@@ -297,24 +268,24 @@ const faqs = [
   },
   {
     question: "What happens if my truck breaks down on the road?",
-    answer: "Call our 24/7 dispatch line and we'll have roadside assistance to you within 4 hours on average. For repairs we can't do roadside, we'll get you to the nearest certified shop and cover all costs. We also provide rental equipment if repairs take longer than expected."
+    answer: "Call dispatch any hour — we arrange the roadside call and, if it can't be fixed on the shoulder, get you to a shop. We tell you what we cover before you sign anything."
   },
   {
     question: "How often is preventive maintenance performed?",
-    answer: "Every truck receives a full preventive maintenance inspection every 25,000 miles at our in-house shop, and we complete DOT inspections ahead of their due dates so trucks stay on the road."
+    answer: "Every truck runs a scheduled preventive-maintenance inspection, and we complete DOT inspections ahead of their due dates so trucks stay on the road."
   },
   {
     question: "Can I personalize my assigned truck?",
-    answer: "Absolutely! While the truck remains company property, you can add personal touches like seat covers, phone mounts, and non-permanent modifications. For company drivers with good standing, we offer equipment upgrade opportunities after 6 months."
+    answer: "Absolutely! While the truck remains company property, you can add personal touches like seat covers, phone mounts, and non-permanent modifications."
   }
 ]
 
 // Why choose our fleet stats
 const fleetStats = [
-  { value: "15+", label: "Trucks in Fleet", icon: TrendingUp },
+  { value: String(STATS.trucksInFleet), label: "Trucks in Fleet", icon: TrendingUp },
   { value: "100%", label: "APU-Equipped", icon: Shield },
   { value: "24/7", label: "Dispatch & Roadside", icon: Clock },
-  { value: "2.5yr", label: "Avg Fleet Age", icon: Calendar }
+  { value: "2023-2025", label: "Model Years", icon: Calendar }
 ]
 
 export default function FleetPage() {
@@ -420,7 +391,7 @@ export default function FleetPage() {
               variants={fadeInUp}
               className="text-base text-white/80 max-w-xl leading-relaxed mb-8"
             >
-              No old equipment. No excuses. Just premium trucks maintained by our in-house shop 
+              No old equipment. Late-model trucks, maintained on a preventive schedule 
               with 24/7 road support. Your comfort and uptime are our priority.
             </motion.p>
 
@@ -518,15 +489,15 @@ export default function FleetPage() {
               },
               { 
                 icon: Wrench, 
-                title: "In-House Shop", 
-                desc: "Our technicians know our trucks. Most repairs same-day.",
-                highlight: "< 4hr Response"
+                title: "Preventive maintenance", 
+                desc: "Scheduled PM and DOT inspections ahead of their due dates, not after a breakdown.",
+                highlight: "On schedule"
               },
               { 
                 icon: Shield, 
                 title: "Safety First", 
                 desc: "Full safety suites: collision mitigation, lane departure, stability control.",
-                highlight: "0 DOT Violations"
+                highlight: "On the SAFER record"
               },
             ].map((item, idx) => (
               <motion.div
@@ -597,14 +568,14 @@ export default function FleetPage() {
 
           {/* Tab buttons */}
           <div className="flex justify-center mb-12">
-            <div className="inline-flex bg-neutral-100 rounded-2xl p-2 shadow-inner">
+            <div className="inline-flex bg-neutral-50 rounded-2xl p-2 shadow-inner">
               <button
                 onClick={() => setActiveTab("trucks")}
                 className={cn(
                   "flex items-center gap-2 px-8 py-4 rounded-xl font-bold text-sm transition-all duration-300",
                   activeTab === "trucks" 
                     ? "bg-navy text-white shadow-lg" 
-                    : "text-steel hover:bg-white/50"
+                    : "text-steel hover:bg-white/10"
                 )}
               >
                 <Truck className="h-5 w-5" />
@@ -616,7 +587,7 @@ export default function FleetPage() {
                   "flex items-center gap-2 px-8 py-4 rounded-xl font-bold text-sm transition-all duration-300",
                   activeTab === "trailers" 
                     ? "bg-navy text-white shadow-lg" 
-                    : "text-steel hover:bg-white/50"
+                    : "text-steel hover:bg-white/10"
                 )}
               >
                 <Box className="h-5 w-5" />
@@ -1052,7 +1023,7 @@ export default function FleetPage() {
               Ready to Upgrade Your Ride?
             </h2>
             <p className="text-xl text-white/90 mb-10 max-w-xl mx-auto">
-              Join the drivers who chose better equipment, better support, and a better career path.
+              Late-model Freightliners and Volvos, an APU in every truck, and a dispatcher who picks up.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button 
@@ -1085,6 +1056,7 @@ export default function FleetPage() {
       </section>
 
       <RelatedLinks
+        tone="dark"
         title="Book the equipment"
         intro="Specs are one thing — here's how you actually put freight on it."
         links={freightLinks(["/fleet"])}

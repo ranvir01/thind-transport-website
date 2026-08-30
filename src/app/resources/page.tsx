@@ -1,13 +1,18 @@
 import { Metadata } from "next"
 import Link from "next/link"
-import { 
-  Shield, FileText, Fuel, Wrench, AlertTriangle, 
-  Clock, MapPin, Phone, BookOpen, Download,
-  CheckCircle2, ExternalLink, Scale, HeartPulse,
-  Truck, Navigation, Calculator, FileCheck, Timer, Route, Smartphone
+import {
+  Shield, Fuel, Wrench, AlertTriangle, Phone,
+  BookOpen, CheckCircle2, ExternalLink, HeartPulse, Truck,
+  Navigation, Calculator, FileCheck, Timer, Route,
+  Smartphone,
 } from "lucide-react"
 import { HosClockCalculator } from "@/components/features/HosClockCalculator"
 import { RelatedLinks } from "@/components/shared/RelatedLinks"
+
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { COMPANY_INFO } from "@/lib/constants"
+import { PageBreadcrumb } from "@/components/shared/PageBreadcrumb"
 
 const RESOURCE_LINKS = [
   {
@@ -41,7 +46,7 @@ const RESOURCE_LINKS = [
   {
     href: "/app",
     title: "Driver app",
-    blurb: "Logs, PODs, pay and fuel prices — works with no signal.",
+    blurb: "Dispatch, PODs and pay on one screen — works with no signal.",
     icon: Smartphone,
     kind: "Tool" as const,
   },
@@ -53,14 +58,10 @@ const RESOURCE_LINKS = [
     kind: "Page" as const,
   },
 ]
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { COMPANY_INFO } from "@/lib/constants"
-import { PageBreadcrumb } from "@/components/shared/PageBreadcrumb"
 
 export const metadata: Metadata = {
-  title: `Driver Resources & Safety Center | ${COMPANY_INFO.name}`,
-  description: "Comprehensive driver resources including FMCSA compliance guides, HOS regulations, ELD requirements, fuel optimization tips, safety training, and maintenance guidelines for CDL truck drivers.",
+  title: "Driver resources & hours-of-service planner",
+  description: "FMCSA rules a CDL driver actually gets asked about: hours of service, ELD, CSA scores, cargo securement, hazmat and the DOT physical — plus a free hours-of-service clock planner.",
   keywords: [
     "truck driver resources",
     "FMCSA compliance",
@@ -98,7 +99,7 @@ const resourceCategories = [
       },
       {
         title: "Hours of Service (HOS) Guide",
-        description: "Complete breakdown of driving limits, rest requirements, and exceptions. Updated for 2024 regulations.",
+        description: "Complete breakdown of driving limits, rest requirements, and exceptions, straight from the FMCSA rule.",
         details: [
           "11-hour driving limit after 10 consecutive hours off duty",
           "14-hour limit on the time you can drive within",
@@ -437,11 +438,11 @@ export default function ResourcesPage() {
               Driver Resource Center
             </Badge>
             <h1 className="text-5xl md:text-6xl font-black mb-6 leading-tight">
-              Everything You Need to <span className="text-orange">Succeed</span>
+              Driver <span className="text-orange">reference desk</span>
             </h1>
             <p className="text-xl text-white/90 leading-relaxed max-w-3xl mx-auto">
-              Comprehensive resources for FMCSA compliance, safety training, fuel efficiency, 
-              health & wellness, and business tools. Stay informed, stay compliant, stay profitable.
+              The FMCSA rules you get asked about at a scale house, the DOT physical standards, and
+              an hours-of-service planner that does the clock arithmetic for you.
             </p>
           </div>
         </div>
@@ -477,7 +478,7 @@ export default function ResourcesPage() {
         <div className="container">
           <div className="flex flex-col md:flex-row items-center justify-center gap-4 text-center md:text-left">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-full bg-red-500/15 flex items-center justify-center">
                 <Phone className="h-5 w-5 text-red-600" />
               </div>
               <div>
@@ -592,6 +593,7 @@ export default function ResourcesPage() {
       </section>
 
       <RelatedLinks
+        tone="dark"
         title="Tools on this site"
         intro="Calculators and pages that do something, not just describe it."
         links={RESOURCE_LINKS}
@@ -605,8 +607,7 @@ export default function ResourcesPage() {
               Need More Support?
             </h2>
             <p className="text-lg text-white/70 mb-8">
-              Our dispatch team is available 24/7 to help with any questions or concerns.
-              We're here to support your success on the road.
+              Call dispatch — the same desk that books the loads answers the phone.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link

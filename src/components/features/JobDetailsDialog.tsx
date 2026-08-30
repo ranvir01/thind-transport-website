@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { PAY_RATES } from "@/lib/constants"
 import {
   Dialog,
   DialogContent,
@@ -24,8 +25,8 @@ export function JobDetailsDialog({ jobType = "company" }: JobDetailsDialogProps)
     company: {
       title: "Regional Company Truck Driver",
       type: "Full-Time",
-      salary: "$55K-$72K/year",
-      description: "Join our team as a regional company driver. $0.63 per mile with excellent benefits and flexible home time.",
+      salary: `${PAY_RATES.companyDriver.regional.annual}/year`,
+      description: "Join our team as a regional company driver. $0.63 per mile, the same rate local, regional or OTR, with flexible home time.",
       requirements: [
         "Valid CDL Class A license",
         "Minimum 1 year company driver experience (REQUIRED)",
@@ -35,7 +36,7 @@ export function JobDetailsDialog({ jobType = "company" }: JobDetailsDialogProps)
         "Able to pass background check"
       ],
       benefits: [
-        "$1,500 sign-on bonus (first year)",
+        `${PAY_RATES.companyDriver.signOnBonus.replace(" (First Year)", "")} sign-on bonus (first year)`,
         "$0.63 per mile (regional)",
         "Weekly direct deposit pay - Every Friday",
         "Flexible home time - Regional routes",
@@ -48,7 +49,7 @@ export function JobDetailsDialog({ jobType = "company" }: JobDetailsDialogProps)
       routes: [
         "Regional routes: $0.63 per mile",
         "Home on weekends - Work 5 days",
-        "Annual earning potential: $55K-$72K",
+        `Annual earning potential: ${PAY_RATES.companyDriver.regional.annual}`,
         "Consistent miles and freight",
         "Multiple route options available"
       ]
@@ -56,7 +57,7 @@ export function JobDetailsDialog({ jobType = "company" }: JobDetailsDialogProps)
     owner: {
       title: "OTR → Owner Operator",
       type: "Independent Contractor",
-      salary: "$180K-$280K/year",
+      salary: `${PAY_RATES.ownerOperator.annualGross}/year`,
       description: "Run OTR under our authority and keep 90% of the linehaul. No forced dispatch, no hidden deductions — you see the rate con on every load.",
       requirements: [
         "Valid CDL Class A license",

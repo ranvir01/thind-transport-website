@@ -7,9 +7,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
-import { 
-  DollarSign, TrendingUp, Calendar, MapPin, 
-  Fuel, Calculator, AlertCircle, CheckCircle2
+import {
+  TrendingUp, Calendar, Calculator, AlertCircle, CheckCircle2,
 } from "lucide-react"
 import { PAY_RATES } from "@/lib/constants"
 

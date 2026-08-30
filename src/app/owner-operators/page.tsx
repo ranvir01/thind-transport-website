@@ -1,7 +1,8 @@
 import { Metadata } from "next"
 import Link from "next/link"
 import {
-  BadgeCheck, Calculator, FileText, Fuel, Phone, Receipt, ShieldCheck, Wallet,
+  BadgeCheck, Calculator, FileText, Fuel, Phone,
+  Receipt, Wallet,
 } from "lucide-react"
 import { COMPANY_INFO, PAY_RATES, STATS } from "@/lib/constants"
 import { PageBreadcrumb } from "@/components/shared/PageBreadcrumb"
@@ -189,46 +190,6 @@ export default function OwnerOperatorsPage() {
         </div>
       </div>
 
-      {/* Credibility */}
-      <div className="border-t border-gray-200">
-        <div className="container px-4 py-12 md:py-16">
-          <div className="grid gap-6 md:grid-cols-3 max-w-5xl">
-            {[
-              {
-                icon: ShieldCheck,
-                title: "Verify us first",
-                text: `USDOT ${COMPANY_INFO.dot}, MC ${COMPANY_INFO.mc}. Authority, insurance, and safety in one place — check it before you talk to us.`,
-                href: "/trust",
-                cta: "See our credentials",
-              },
-              {
-                icon: Fuel,
-                title: "Fuel program",
-                text: "Our discount at the pump, passed through at cost. No markup, no rebate we keep.",
-                href: "/fuel-program",
-                cta: "How the fuel card works",
-              },
-              {
-                icon: Calculator,
-                title: "Run your own numbers",
-                text: "Put your miles, your rate, and your fuel price in and see what a week actually clears.",
-                href: "/pay-rates",
-                cta: "Open the calculator",
-              },
-            ].map(({ icon: Icon, title, text, href, cta }) => (
-              <div key={title} className="rounded-2xl border border-gray-200 bg-white p-5">
-                <Icon className="h-6 w-6 text-orange-600 mb-3" aria-hidden />
-                <h3 className="font-bold text-gray-900 mb-1.5">{title}</h3>
-                <p className="text-gray-600 text-sm leading-relaxed mb-3">{text}</p>
-                <Link href={href} className="text-sm font-semibold text-orange-600 hover:underline">
-                  {cta} →
-                </Link>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
       {/* FAQ */}
       <div className="border-t border-gray-200 bg-white">
         <div className="container px-4 py-12 md:py-16">
@@ -278,7 +239,7 @@ export default function OwnerOperatorsPage() {
       <RelatedLinks
         title="Run the numbers yourself"
         intro="Nothing on this page is a claim you can't check with a tool on this site."
-        links={driverLinks(["/owner-operators"])}
+        links={driverLinks(["/owner-operators"], 9)}
       />
     </div>
   )

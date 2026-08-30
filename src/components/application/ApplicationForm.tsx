@@ -12,10 +12,10 @@ import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent } from "@/components/ui/card"
 import { toast } from "sonner"
-import { 
-  Loader2, Upload, FileText, CheckCircle2, User, Truck, 
-  FileCheck, ChevronRight, ArrowLeft, ShieldCheck, Clock, 
-  Check, AlertCircle, Lock, Star, Phone
+import {
+  Loader2, Upload, FileText, CheckCircle2, Truck,
+  FileCheck, ChevronRight, ArrowLeft, ShieldCheck, Clock,
+  Check, AlertCircle, Lock, Star, Phone,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 

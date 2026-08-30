@@ -139,14 +139,6 @@ export const ProfitCalculator = () => {
     }).format(value)
   }
 
-  const formatCurrencyDetailed = (value: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2
-    }).format(value)
-  }
 
   return (
     <section id="calculator" className="py-20 md:py-28 brand-section-panel scroll-mt-20 overflow-x-hidden border-t-0">

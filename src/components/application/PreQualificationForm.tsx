@@ -16,7 +16,9 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { toast } from "sonner"
-import { Loader2, CheckCircle2, AlertCircle, XCircle } from "lucide-react"
+import {
+  Loader2, CheckCircle2, AlertCircle,
+} from "lucide-react"
 import { submitPreQualification } from "@/app/actions/submit-pre-qualification"
 import { cn } from "@/lib/utils"
 import { HONEYPOT_FIELD, readHoneypotValue } from "@/lib/honeypot"

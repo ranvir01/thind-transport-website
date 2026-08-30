@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import {
   Fuel, TrendingDown, CreditCard, MapPin,
-  Shield, CheckCircle2, DollarSign, Percent,
+  CheckCircle2, DollarSign, Percent,
   Phone, FileText, Calculator,
 } from "lucide-react"
 import { COMPANY_INFO } from "@/lib/constants"
@@ -38,14 +38,14 @@ const FUEL_LINKS = [
   {
     href: "/routes",
     title: "Lanes and fuel stops",
-    blurb: "The corridors we run — and where the cheap diesel on them tends to be.",
+    blurb: "The corridors we run, with distances and transit times.",
     icon: MapPin,
     kind: "Page" as const,
   },
   {
     href: "/app",
-    title: "Fuel prices in the app",
-    blurb: "Best price along your route, on the same screen as your dispatch and PODs.",
+    title: "The driver app",
+    blurb: "Dispatch, PODs and pay on one screen — and it works with no signal.",
     icon: CreditCard,
     kind: "Tool" as const,
   },
@@ -59,9 +59,9 @@ const FUEL_LINKS = [
 ]
 
 export const metadata: Metadata = {
-  title: "Fuel Card Program | Save $0.30-$0.75/Gallon",
+  title: "Fuel Card Program | Fleet Diesel Discounts for Owner Operators",
   description:
-    "Thind Transport's fuel card program gives owner operators fleet-level diesel discounts at major truck stops nationwide, with 100% fuel surcharge pass-through.",
+    "Thind Transport's fuel card program gives owner operators fleet-level diesel discounts at major truck stop chains nationwide, with 100% fuel surcharge pass-through. Run your own gallons through the calculator.",
   alternates: { canonical: "/fuel-program" },
 }
 
@@ -82,13 +82,13 @@ export default function FuelProgramPage() {
           <div className="text-center max-w-4xl mx-auto">
             <Badge className="mb-6 bg-white/20 backdrop-blur-md text-white border-white/30 px-4 py-2 text-sm font-bold">
               <Fuel className="h-4 w-4 mr-1.5" />
-              Exclusive Fuel Card Program
+              Fuel Card Program
             </Badge>
             <h1 className="text-5xl md:text-6xl font-black mb-6 leading-tight">
-              Save Big on <span className="text-yellow-300">Every Gallon</span>
+              Fleet diesel pricing, <span className="text-yellow-300">passed through at cost</span>
             </h1>
             <p className="text-xl text-white/90 max-w-3xl mx-auto leading-relaxed">
-              Our exclusive fuel card program helps drivers save hundreds per month with nationwide discounts at over 15,000 locations
+              Fleet-level diesel discounts at major truck stop chains nationwide. What it is worth to you depends on your gallons — the calculator below works it out.
             </p>
           </div>
         </div>
@@ -101,21 +101,21 @@ export default function FuelProgramPage() {
             <div className="bg-gradient-to-br from-green-500/10 to-emerald-600/10 p-5 rounded-2xl inline-flex mb-6 group-hover:from-green-500/20 group-hover:to-emerald-600/20 transition-colors">
               <TrendingDown className="h-10 w-10 text-green-600" />
             </div>
-            <h3 className="text-3xl font-black text-gray-900 mb-3">Up to 50¢/gal</h3>
-            <p className="text-gray-600 leading-relaxed">Average savings at major truck stops nationwide</p>
+            <h3 className="text-3xl font-black text-gray-900 mb-3">Fleet pricing</h3>
+            <p className="text-gray-600 leading-relaxed">Our volume discount at the pump, passed through at cost — no markup, no rebate we keep</p>
           </Card>
           
           <Card variant="light" className="p-8 text-center hover:shadow-2xl transition-all duration-300 border-gray-100 group hover:-translate-y-2">
-            <div className="bg-gradient-to-br from-blue-500/10 to-blue-600/10 p-5 rounded-2xl inline-flex mb-6 group-hover:from-blue-500/20 group-hover:to-blue-600/20 transition-colors">
-              <MapPin className="h-10 w-10 text-blue-600" />
+            <div className="bg-gradient-to-br from-orange-500/10 to-orange-600/10 p-5 rounded-2xl inline-flex mb-6 group-hover:from-orange-500/20 group-hover:to-orange-600/20 transition-colors">
+              <MapPin className="h-10 w-10 text-orange-600" />
             </div>
-            <h3 className="text-3xl font-black text-gray-900 mb-3">15,000+ Locations</h3>
-            <p className="text-gray-600 leading-relaxed">Accepted at all major truck stops and fuel stations</p>
+            <h3 className="text-3xl font-black text-gray-900 mb-3">Major chains</h3>
+            <p className="text-gray-600 leading-relaxed">Accepted at the national truck stop chains listed below</p>
           </Card>
           
           <Card variant="light" className="p-8 text-center hover:shadow-2xl transition-all duration-300 border-gray-100 group hover:-translate-y-2">
-            <div className="bg-gradient-to-br from-purple-500/10 to-purple-600/10 p-5 rounded-2xl inline-flex mb-6 group-hover:from-purple-500/20 group-hover:to-purple-600/20 transition-colors">
-              <CreditCard className="h-10 w-10 text-purple-600" />
+            <div className="bg-gradient-to-br from-gold-500/10 to-gold-600/10 p-5 rounded-2xl inline-flex mb-6 group-hover:from-gold-500/20 group-hover:to-gold-600/20 transition-colors">
+              <CreditCard className="h-10 w-10 text-gold-600" />
             </div>
             <h3 className="text-3xl font-black text-gray-900 mb-3">No Fees</h3>
             <p className="text-gray-600 leading-relaxed">Zero transaction fees or hidden charges</p>
@@ -139,16 +139,6 @@ export default function FuelProgramPage() {
               <h2 className="text-2xl font-bold text-gray-900">Program Features</h2>
             </div>
             <div className="space-y-4">
-              <div className="flex items-start gap-4 p-4 rounded-xl hover:bg-gray-50 transition-colors">
-                <CheckCircle2 className="h-6 w-6 text-green-600 mt-0.5 flex-shrink-0" />
-                <div>
-                  <h4 className="font-bold text-gray-900 text-lg">Real-Time Price Optimization</h4>
-                  <p className="text-sm text-gray-600 mt-1 leading-relaxed">
-                    Our app shows you the best fuel prices along your route in real-time
-                  </p>
-                </div>
-              </div>
-              
               <div className="flex items-start gap-4 p-4 rounded-xl hover:bg-gray-50 transition-colors">
                 <CheckCircle2 className="h-6 w-6 text-green-600 mt-0.5 flex-shrink-0" />
                 <div>
@@ -205,7 +195,7 @@ export default function FuelProgramPage() {
                   "Kwik Trip",
                   "Circle K",
                   "Shell",
-                  "And 15,000+ more locations"
+                  "Ask dispatch for the current network list"
                 ].map((partner, index) => (
                   <div key={index} className="flex items-center gap-2">
                     <CheckCircle2 className="h-4 w-4 text-green-600" />
@@ -220,34 +210,27 @@ export default function FuelProgramPage() {
         {/* How It Works */}
         <Card variant="light" className="p-10 mb-16 shadow-xl border-gray-100">
           <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">How It Works</h2>
-          <div className="grid md:grid-cols-4 gap-6">
+          <div className="grid md:grid-cols-3 gap-6">
             <div className="text-center">
-              <div className="bg-gradient-to-br from-blue-500 to-blue-600 text-white w-16 h-16 rounded-2xl flex items-center justify-center font-black text-xl mx-auto mb-4 shadow-lg">
+              <div className="bg-gradient-to-br from-navy to-navy-700 text-white w-16 h-16 rounded-2xl flex items-center justify-center font-black text-xl mx-auto mb-4 shadow-lg">
                 1
               </div>
               <h4 className="font-bold mb-2 text-lg text-gray-900">Apply & Get Approved</h4>
-              <p className="text-sm text-gray-600 leading-relaxed">Quick application process with instant approval</p>
+              <p className="text-sm text-gray-600 leading-relaxed">Apply once, with your onboarding paperwork</p>
             </div>
             <div className="text-center">
-              <div className="bg-gradient-to-br from-blue-500 to-blue-600 text-white w-16 h-16 rounded-2xl flex items-center justify-center font-black text-xl mx-auto mb-4 shadow-lg">
+              <div className="bg-gradient-to-br from-navy to-navy-700 text-white w-16 h-16 rounded-2xl flex items-center justify-center font-black text-xl mx-auto mb-4 shadow-lg">
                 2
               </div>
               <h4 className="font-bold mb-2 text-lg text-gray-900">Receive Your Card</h4>
-              <p className="text-sm text-gray-600 leading-relaxed">Card arrives in 3-5 business days</p>
+              <p className="text-sm text-gray-600 leading-relaxed">Your card is mailed once the issuer approves it</p>
             </div>
             <div className="text-center">
-              <div className="bg-gradient-to-br from-blue-500 to-blue-600 text-white w-16 h-16 rounded-2xl flex items-center justify-center font-black text-xl mx-auto mb-4 shadow-lg">
+              <div className="bg-gradient-to-br from-navy to-navy-700 text-white w-16 h-16 rounded-2xl flex items-center justify-center font-black text-xl mx-auto mb-4 shadow-lg">
                 3
               </div>
               <h4 className="font-bold mb-2 text-lg text-gray-900">Start Saving</h4>
               <p className="text-sm text-gray-600 leading-relaxed">Use at any participating location</p>
-            </div>
-            <div className="text-center">
-              <div className="bg-gradient-to-br from-blue-500 to-blue-600 text-white w-16 h-16 rounded-2xl flex items-center justify-center font-black text-xl mx-auto mb-4 shadow-lg">
-                4
-              </div>
-              <h4 className="font-bold mb-2 text-lg text-gray-900">Track Savings</h4>
-              <p className="text-sm text-gray-600 leading-relaxed">Monitor discounts in real-time</p>
             </div>
           </div>
         </Card>
@@ -265,11 +248,10 @@ export default function FuelProgramPage() {
             Start Saving on Fuel Today
           </h2>
           <p className="text-lg mb-6 text-white/90 max-w-2xl mx-auto">
-            Join our fleet and get instant access to our fuel card program. 
-            No credit checks for company drivers!
+            The card comes with onboarding, and the discount is passed through at cost.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-6">
-            <Button size="lg" className="bg-white text-orange-600 hover:bg-gray-100" asChild>
+            <Button size="lg" className="bg-none bg-white text-orange-600 shadow-none hover:bg-gray-100" asChild>
               <Link href="/apply">
                 <FileText className="h-5 w-5 mr-2" />
                 Apply Now
@@ -288,10 +270,6 @@ export default function FuelProgramPage() {
             </Button>
           </div>
           <div className="flex items-center justify-center gap-6 text-sm text-white/95">
-            <div className="flex items-center gap-2">
-              <Shield className="h-4 w-4" />
-              <span>Secure & Reliable</span>
-            </div>
             <div className="flex items-center gap-2">
               <Percent className="h-4 w-4" />
               <span>No Hidden Fees</span>

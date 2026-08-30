@@ -28,7 +28,7 @@ const trailers = [
 ]
 
 const tractorPoints = [
-  "2024 Freightliner Cascadias & Volvos",
+  "2023-2025 Freightliner Cascadias & Volvo VNLs",
   "APUs, inverters & modern driver comfort",
   "Collision mitigation + lane-keep safety tech",
   "Preventive maintenance on a fixed schedule",

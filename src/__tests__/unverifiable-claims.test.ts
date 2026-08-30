@@ -32,6 +32,28 @@ const BANNED: { claim: string; verifiedBy: string }[] = [
   { claim: "priority application status", verifiedBy: "a written recruiting-office policy" },
   { claim: "Immediate Orientation", verifiedBy: "a written orientation schedule" },
   { claim: "Premium Equipment Assignment", verifiedBy: "a written equipment-assignment policy" },
+
+  // Second sweep, 2026-08-30. The owner reviewed every claim an eight-dimension
+  // audit surfaced and confirmed which are real; these are the ones that are
+  // not, plus the ones only a document can settle.
+  { claim: "Veteran Priority", verifiedBy: "a written veteran hiring-preference policy" },
+  { claim: "Full benefits package", verifiedBy: "the benefit plan documents themselves" },
+  { claim: "Paid Time Off", verifiedBy: "a written PTO policy (owner: not offered as of 2026-08-30)" },
+  { claim: "Paid Holidays", verifiedBy: "a written holiday-pay policy (owner: not offered)" },
+  { claim: "Family Leave", verifiedBy: "a written leave policy (owner: not offered)" },
+  { claim: "A+ safety rating", verifiedBy: "nothing — FMCSA issues Satisfactory/Conditional/Unsatisfactory, never a letter grade" },
+  { claim: "Zero out-of-service violations", verifiedBy: "the SAFER inspection record, which is public and speaks for itself" },
+  { claim: "we track and guarantee it", verifiedBy: "a home-time tracking mechanism that actually exists" },
+  { claim: "instant approval", verifiedBy: "the fuel-card issuer's written terms" },
+  { claim: "No credit checks for company drivers", verifiedBy: "the fuel-card issuer's written terms" },
+  { claim: "In-House Shop", verifiedBy: "a shop lease and the technicians' certifications (owner: no in-house shop)" },
+  { claim: "ASE-certified technicians", verifiedBy: "the technicians' ASE certificates" },
+  { claim: "within 4 hours on average", verifiedBy: "measured roadside response times" },
+  { claim: "cover all costs", verifiedBy: "a written breakdown-cost policy with its exclusions" },
+  { claim: "15,000+ Locations", verifiedBy: "the fuel-card issuer's published network size" },
+  { claim: "save hundreds per month", verifiedBy: "nothing — the calculator computes this from the driver's own gallons" },
+  { claim: "top shippers", verifiedBy: "named shippers who agree to be named" },
+  { claim: "Most companies offer 70-85%", verifiedBy: "a published industry survey, cited inline with its year" },
 ]
 
 function sourceFiles(dir: string): string[] {

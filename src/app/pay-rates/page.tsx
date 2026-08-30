@@ -15,7 +15,7 @@ import { RelatedLinks } from "@/components/shared/RelatedLinks"
 import { driverLinks } from "@/components/shared/link-sets"
 
 export const metadata: Metadata = {
-  title: `Pay Rates - 90% O/O Split, ${PAY_RATES.companyDriver.regional.perMile}/mi Company | ${COMPANY_INFO.name}`,
+  title: `Pay rates — 90% owner-operator split, ${PAY_RATES.companyDriver.regional.perMile}/mile company`,
   description: `Transparent trucking pay: Owner Operators keep 90% gross (${PAY_RATES.ownerOperator.annualGross}/year). Company Drivers ${PAY_RATES.companyDriver.regional.perMile}/mi (${PAY_RATES.companyDriver.regional.annual}/year). Weekly pay, no hidden fees.`,
   keywords: [
     "truck driver pay rates",
@@ -74,9 +74,6 @@ export default function PayRatesPage() {
             <h2 className="text-4xl font-black text-gray-900 mb-4">
               Choose Your Driving Career Path
             </h2>
-            <p className="text-lg text-gray-700 max-w-2xl mx-auto font-medium">
-              Whether you prefer the stability of company driving or the independence of being an owner-operator, we have the perfect opportunity for you
-            </p>
           </div>
 
           <div className="grid md:grid-cols-2 gap-8 mb-12">
@@ -92,7 +89,7 @@ export default function PayRatesPage() {
                   <Badge className="bg-[#17181B] text-white px-3 py-1 font-bold">Full-Time</Badge>
                 </CardTitle>
                 <CardDescription className="text-base text-gray-700 font-medium">
-                  Competitive pay, excellent benefits, and flexible routes
+                  $0.63/mile — the same rate local, regional or OTR
                 </CardDescription>
               </CardHeader>
               <CardContent className="pt-6">
@@ -138,7 +135,7 @@ export default function PayRatesPage() {
                   </div>
                   <div className="flex items-center gap-2 text-sm">
                     <CheckCircle2 className="h-4 w-4 text-green-600" />
-                    <span className="text-gray-800 font-medium">Full benefits package included</span>
+                    <span className="text-gray-800 font-medium">Performance and referral bonuses</span>
                   </div>
                 </div>
 
@@ -237,6 +234,7 @@ export default function PayRatesPage() {
       </section>
 
       <RelatedLinks
+        tone="dark"
         title="The rest of the money picture"
         intro="Where the money goes after the calculator, and the records behind it."
         links={driverLinks(["/pay-rates"])}

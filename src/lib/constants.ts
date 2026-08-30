@@ -97,6 +97,21 @@ export const BENEFITS = {
   ],
 } as const
 
+/**
+ * What we actually run. Added 2026-08-30 because the site told two stories:
+ * /fleet said "exclusively 2023-2025, Freightliner Cascadias and Volvo VNLs"
+ * while nine other surfaces said "2024 Cascadias" with no Volvos. The owner
+ * confirmed the /fleet version, so it lives here and every surface reads it.
+ */
+export const EQUIPMENT = {
+  modelYears: "2023-2025",
+  /** Full phrasing for body copy. */
+  makes: "Freightliner Cascadias and Volvo VNLs",
+  /** Short phrasing for chips, tickers and stat tiles. */
+  short: "2023-2025 Cascadias & VNLs",
+  apu: "APU in every truck",
+} as const
+
 // Verifiable trust indicators only — no invented ratings or percentages.
 export const TRUST_INDICATORS = {
   certifications: [

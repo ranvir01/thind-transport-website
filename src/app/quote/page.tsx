@@ -142,26 +142,6 @@ export default function QuotePage() {
             <div className="rounded-2xl border border-gray-200 bg-gray-50 p-5">
               <p className="text-sm font-semibold text-gray-900 mb-1">Equipment</p>
               <p className="text-sm text-gray-600">{SERVICES.types.join(" · ")}</p>
-              <nav aria-label="Related" className="mt-3 flex flex-wrap gap-x-3 gap-y-1">
-                <Link
-                  href="/trust"
-                  className="inline-flex items-center min-h-11 text-sm font-medium text-orange-600 hover:underline"
-                >
-                  Verify us
-                </Link>
-                <Link
-                  href="/routes"
-                  className="inline-flex items-center min-h-11 text-sm font-medium text-orange-600 hover:underline"
-                >
-                  See our lanes
-                </Link>
-                <Link
-                  href="/contact"
-                  className="inline-flex items-center min-h-11 text-sm font-medium text-orange-600 hover:underline"
-                >
-                  Contact
-                </Link>
-              </nav>
             </div>
           </aside>
         </div>

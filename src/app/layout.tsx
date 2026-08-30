@@ -2,7 +2,6 @@ import type { Metadata, Viewport } from "next"
 import { Barlow_Condensed, Source_Sans_3 } from "next/font/google"
 import "./globals.css"
 import { CinematicNavbar } from "@/components/cinematic/Navbar"
-import { ActiveBackground } from "@/components/ui/ActiveBackground"
 import {
   CinematicFooter,
   MobileCommandBar,
@@ -160,7 +159,6 @@ export default function RootLayout({
               shipping can retarget — is handed to /hub. Renders nothing for an
               ordinary browser visit. */}
           <InstalledAppRedirect />
-          <ActiveBackground />
 
           {/* Skip to main content - Accessibility */}
           <SkipLink />

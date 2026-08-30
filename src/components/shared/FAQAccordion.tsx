@@ -8,7 +8,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion"
 import { HelpCircle } from "lucide-react"
-import { COMPANY_INFO, FMCSA_LINKS } from "@/lib/constants"
+import { COMPANY_INFO, EQUIPMENT, FMCSA_LINKS, STATS } from "@/lib/constants"
 
 const defaultFaqs = [
   // Pay & Compensation
@@ -22,7 +22,7 @@ const defaultFaqs = [
   },
   {
     question: "What's this 90% commission for owner operators?",
-    answer: "You keep 90% of the gross revenue from each load - one of the highest rates in the industry! Most companies offer 70-85%. There are NO hidden fees or surprise deductions. Fuel surcharge passes through 100% to you. Your weekly settlement shows exactly where every dollar goes. Transparent accounting, no games."
+    answer: "You keep 90% of the gross revenue from each load. There are NO hidden fees or surprise deductions. Fuel surcharge passes through 100% to you. Your weekly settlement shows exactly where every dollar goes. Transparent accounting, no games."
   },
   {
     question: "How does the 90% commission work exactly?",
@@ -36,7 +36,7 @@ const defaultFaqs = [
   // Freight & Operations
   {
     question: "What types of freight do you haul?",
-    answer: "We offer three freight types: Flatbed (building materials, steel, machinery), Reefer (temperature-controlled food and pharmaceutical), and Dry Van (general freight and retail goods). You can choose what fits your experience and equipment. Consistent loads year-round across all divisions. No hazmat required."
+    answer: "We offer three freight types: Flatbed (building materials, steel, machinery), Reefer (temperature-controlled food and pharmaceutical), and Dry Van (general freight and retail goods). You can choose what fits your experience and equipment. Freight moves year-round in all three. No hazmat required."
   },
   {
     question: "What's the average length of haul?",
@@ -59,7 +59,7 @@ const defaultFaqs = [
   // Home Time & Schedule
   {
     question: "What about home time?",
-    answer: "We offer flexible schedules: Local routes (home every night), Regional routes (home on weekends - typically 5 days out, 2 days home), or OTR (2-3 weeks out, 3-4 days home). We work around YOUR life and actually honor our home time promises. No broken commitments - we track and guarantee it."
+    answer: "We offer flexible schedules: Local routes (home every night), Regional routes (home on weekends - typically 5 days out, 2 days home), or OTR (2-3 weeks out, 3-4 days home). We work around your schedule, and if a load would break your home time, dispatch tells you before you accept it."
   },
   {
     question: "Is there forced dispatch?",
@@ -69,21 +69,21 @@ const defaultFaqs = [
   // Benefits & Perks
   {
     question: "Do company drivers get benefits?",
-    answer: "Here's the honest list of what we offer today: $1,000 sign-on bonus in your first year; weekly direct deposit every Friday; paid time off and paid holidays; performance and referral bonuses; home time you pick (local, regional, or OTR at the same $0.63/mile); modern 2024 Freightliner Cascadias; rider and pet policy; and 24/7 dispatch you can actually reach. We do NOT currently offer company medical, dental, vision, life or disability insurance, or a 401(k) — we'd rather tell you now than at orientation. If that changes, this page changes with it."
+    answer: "Here's the honest list of what we offer today: $1,000 sign-on bonus in your first year; weekly direct deposit every Friday; performance and referral bonuses; home time you pick (local, regional, or OTR at the same $0.63/mile); modern 2023-2025 Freightliner Cascadias and Volvo VNLs; rider and pet policy; and 24/7 dispatch you can actually reach. We do NOT currently offer company medical, dental, vision, life or disability insurance, or a 401(k) — we'd rather tell you now than at orientation. If that changes, this page changes with it."
   },
   {
     question: "What fuel programs are available for owner operators?",
-    answer: "We offer fuel card programs with discounts at Pilot Flying J, Love's, TA/Petro, and other major chains - typically $0.40-$0.60 off per gallon. IFTA reporting assistance included. 100% of fuel surcharge always passes to you. We help you optimize fuel routes and costs."
+    answer: "We offer fuel card programs with discounts at Pilot Flying J, Love's, TA/Petro, and other major chains - typically $0.30-$0.75 off per gallon depending on the chain and the week. IFTA reporting assistance included. 100% of fuel surcharge always passes to you. We help you optimize fuel routes and costs."
   },
   {
     question: "Do you offer maintenance discounts?",
-    answer: "Yes! Owner operators get preferred pricing at our partner service centers nationwide. Discounts on tires, oil changes, brakes, and major repairs. We've negotiated rates that can save you thousands annually. 24/7 roadside assistance connections available."
+    answer: "Yes! Owner operators get preferred pricing at our partner service centers nationwide. Discounts on tires, oil changes, brakes, and major repairs. 24/7 roadside assistance connections available."
   },
   
   // Getting Started
   {
     question: "How quickly can I start?",
-    answer: "Most drivers start within 1-2 weeks after approval. Process: Phone interview (same day response), Application review (1-2 days), Background check & drug screening (3-5 days), Orientation (1 day in Kent, WA or virtual option), Then you're on the road! We move fast for qualified drivers."
+    answer: "Most drivers start within 1-2 weeks after approval. Process: Phone interview (same day response), Application review (1-2 days), Background check & drug screening (3-5 days), Orientation (1 day in Kent, WA or virtual option), Then you're on the road!"
   },
   {
     question: "Do you hire nationwide?",
@@ -97,7 +97,7 @@ const defaultFaqs = [
   // Equipment & Requirements
   {
     question: "What equipment do company drivers use?",
-    answer: "Company drivers operate our 2024 Freightliner Cascadias - fully loaded with APU, refrigerator, inverter, and premium sleeper. Automatic transmission available. All trucks maintained to the highest standards. No junk equipment - we invest in quality because it keeps you safe and efficient."
+    answer: `Company drivers operate our ${EQUIPMENT.modelYears} ${EQUIPMENT.makes} — fully loaded with APU, refrigerator, inverter, and premium sleeper. Automatic transmission available.`,
   },
   {
     question: "What are the truck requirements for owner operators?",
@@ -107,7 +107,7 @@ const defaultFaqs = [
   // Safety & Compliance
   {
     question: "What's your safety rating?",
-    answer: `We maintain an A+ safety rating with FMCSA. Zero out-of-service violations in our history. Our USDOT number is ${COMPANY_INFO.dot} (MC-${COMPANY_INFO.mc}) — verify our carrier record anytime on SAFER. We take safety seriously because it protects you and keeps our insurance costs down (which means better pay for you).`,
+    answer: `Our USDOT number is ${COMPANY_INFO.dot} (MC-${COMPANY_INFO.mc}), and our full inspection and out-of-service record is public on FMCSA SAFER — we would rather you read it there than take our word for it. Safety protects you first and our insurance costs second, and both end up in what we can pay.`,
   },
   {
     question: "What is FMCSA Motus and does it change Thind Transport's authority?",
@@ -121,7 +121,7 @@ const defaultFaqs = [
   // Company Info
   {
     question: "How long has Thind Transport been in business?",
-    answer: "Thind Transport was founded in 2016 in Kent, Washington. Our owner has 20+ years of trucking industry experience. We've grown from 1 truck to 15+ and continue to expand. Family-owned and operated - not a faceless corporation. When you call, you talk to real people who care."
+    answer: `Thind Transport was founded in ${COMPANY_INFO.founded} in Kent, Washington by ${COMPANY_INFO.owner}, who has ${COMPANY_INFO.ownerExperience} years in trucking. We run ${STATS.trucksInFleet} trucks today. Family-owned — when you call, you talk to the people who dispatch the loads.`
   },
   {
     question: "Why should I choose Thind over bigger carriers?",

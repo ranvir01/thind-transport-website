@@ -7,7 +7,7 @@ export const InfiniteTicker = () => {
     { label: "Company drivers:", value: "$0.63/mi", accent: true },
     { label: "Fuel surcharge:", value: "100% pass-through" },
     { label: "Forced dispatch:", value: "Never" },
-    { label: "Equipment:", value: "2024 Cascadias" },
+    { label: "Equipment:", value: "2023-2025 Cascadias & VNLs" },
     { label: "Hiring:", value: "48 states" },
     { label: "Based in:", value: "Kent, WA" },
     { label: "Freight:", value: "Flatbed · Reefer · Dry Van" },

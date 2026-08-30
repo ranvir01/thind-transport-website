@@ -2,14 +2,7 @@
 
 import { useState } from "react"
 import {
-  CheckCircle2,
-  XCircle,
-  Truck,
-  ShieldCheck,
-  MapPin,
-  Clock,
-  DollarSign,
-  GraduationCap,
+  CheckCircle2, ShieldCheck, MapPin, Clock, GraduationCap,
   AlertTriangle,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
