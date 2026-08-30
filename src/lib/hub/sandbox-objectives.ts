@@ -103,6 +103,18 @@ export interface ShiftMetrics {
    * here has a job.
    */
   coRollingCents: number
+  /**
+   * What is going wrong right now, in money.
+   *
+   * Everything above this line is upside — earned, booked, billed, rolling.
+   * A shift that only ever counts wins teaches the wrong lesson about running
+   * a carrier, and it hides the one thing this software is actually for:
+   * telling you a truck is sitting while there is still time to do something
+   * about it. Both are standing totals read straight, never diffed — a
+   * problem you inherited at clock-in is still costing you money now.
+   */
+  coDwellingCents: number
+  coOverdueCents: number
 }
 
 /** Zeroed metrics — seat readers fill only the counters their seat scores. */
@@ -121,6 +133,7 @@ export function emptyMetrics(at: string): ShiftMetrics {
     myFreightBookedCents: 0, myPayCents: 0, myCashMovedCents: 0,
     myReleasedTruckFreightCents: 0, myHiredDriverFreightCents: 0,
     coDeliveredCents: 0, coBilledCents: 0, coCollectedCents: 0, coRollingCents: 0,
+    coDwellingCents: 0, coOverdueCents: 0,
   }
 }
 
@@ -148,6 +161,9 @@ export interface ShiftMoney {
   collectedCents: number
   /** Standing, not a diff — what is on the road at this instant. */
   rollingCents: number
+  /** Standing — what is costing the company money right now. */
+  dwellingCents: number
+  overdueCents: number
 }
 
 export function shiftMoney(seat: ShiftSeatKey, base: ShiftMetrics, cur: ShiftMetrics): ShiftMoney {
@@ -157,6 +173,8 @@ export function shiftMoney(seat: ShiftSeatKey, base: ShiftMetrics, cur: ShiftMet
     billedCents: diff((m) => m.coBilledCents),
     collectedCents: diff((m) => m.coCollectedCents),
     rollingCents: clamp(cur.coRollingCents),
+    dwellingCents: clamp(cur.coDwellingCents),
+    overdueCents: clamp(cur.coOverdueCents),
   }
   switch (seat) {
     case "dispatcher":
