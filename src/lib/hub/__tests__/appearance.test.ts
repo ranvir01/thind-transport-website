@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest"
-import { APPEARANCE_LABELS, applyAppearance, readAppearance } from "../appearance"
+import { APPEARANCE_LABELS, applyAppearance, readAppearance, syncThemeColor } from "../appearance"
 
 class MemoryStorage {
   private store = new Map<string, string>()
@@ -67,6 +67,20 @@ describe("appearance in a browser-like environment", () => {
     expect(readAppearance()).toEqual({ mode: "light", theme: "indigo" })
     expect(attributes["data-mode"]).toBe("light")
     expect(attributes["data-theme"]).toBe("indigo")
+  })
+
+  // The stub document above has no querySelectorAll and no head — the same
+  // shape as a locked-down or partially-implemented document. The address-bar
+  // tint is cosmetic; the mode is not, so a failure to write the meta tag must
+  // never stop data-mode landing on <html>. See theme-color-sync.test.ts for
+  // the colour rule itself.
+  it("applyAppearance still themes the page when the theme-color tag cannot be written", () => {
+    expect(() => applyAppearance("light", "indigo")).not.toThrow()
+    expect(attributes["data-mode"]).toBe("light")
+  })
+
+  it("syncThemeColor swallows a document it cannot write to", () => {
+    expect(() => syncThemeColor("dark")).not.toThrow()
   })
 })
 

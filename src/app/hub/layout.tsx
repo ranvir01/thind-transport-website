@@ -47,7 +47,13 @@ export const viewport: Viewport = {
 // The empty passive touchstart listener is required for iOS Safari to apply
 // :active states on first touch — the CSS press feedback in hub-theme.css
 // does nothing on iPhones without it.
-const themeBoot = `(function(){try{var p=location.pathname;if(!p.startsWith('/hub'))return;var m=localStorage.getItem('hauldesk-mode')||'light';var t=localStorage.getItem('hauldesk-theme')||'indigo';var r=document.documentElement;r.setAttribute('data-app','hauldesk');r.setAttribute('data-mode',m);r.setAttribute('data-theme',t);document.addEventListener('touchstart',function(){},{passive:true});}catch(e){}})();`
+// The office mode comes from localStorage, NOT from the OS, so the static
+// prefers-color-scheme theme-color pair above is wrong for /hub: an iPhone set
+// to dark showed a #14161f address bar above a white office page, which reads
+// as a half-broken dark mode rather than a light app. Overwrite the meta with
+// the mode we actually resolved. Driver and portal are navy regardless of the
+// stored mode — they are forced-dark surfaces.
+const themeBoot = `(function(){try{var p=location.pathname;if(!p.startsWith('/hub'))return;var m=localStorage.getItem('hauldesk-mode')||'light';var t=localStorage.getItem('hauldesk-theme')||'indigo';var r=document.documentElement;r.setAttribute('data-app','hauldesk');r.setAttribute('data-mode',m);r.setAttribute('data-theme',t);var forcedDark=/^\\/hub\\/(driver|portal)(\\/|$)/.test(p);var bar=forcedDark?'#121316':(m==='dark'?'#08090d':'#fbfbfd');var tags=document.querySelectorAll('meta[name="theme-color"]');for(var i=0;i<tags.length;i++)tags[i].parentNode.removeChild(tags[i]);var meta=document.createElement('meta');meta.setAttribute('name','theme-color');meta.setAttribute('content',bar);document.head.appendChild(meta);document.addEventListener('touchstart',function(){},{passive:true});}catch(e){}})();`
 
 export default async function HubLayout({ children }: { children: React.ReactNode }) {
   // Seed the client SessionProvider from the server so it skips its initial
