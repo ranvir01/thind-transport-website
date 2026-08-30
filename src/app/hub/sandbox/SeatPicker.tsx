@@ -21,7 +21,16 @@ const GROUPS: { key: SandboxSeat["group"]; label: string; icon: typeof Users; hi
   { key: "outside", label: "Your customers", icon: Building2, hint: "What brokers and shippers see" },
 ]
 
-export function SeatPicker() {
+export function SeatPicker({
+  /**
+   * The real carrier this visitor is currently signed into, or null. Taking a
+   * seat signs them OUT of it — the one thing they cannot discover by looking
+   * at the buttons.
+   */
+  signedInAs = null,
+}: {
+  signedInAs?: string | null
+} = {}) {
   const [busy, setBusy] = useState<string | null>(null)
   const [resetting, setResetting] = useState(false)
   const [scenario, setScenario] = useState<SandboxScenario>("steady")
@@ -97,6 +106,24 @@ export function SeatPicker() {
             Reset sandbox
           </button>
         </div>
+
+        {signedInAs ? (
+          <div className="mb-6 rounded-card border border-warn-soft bg-warn-soft p-3.5">
+            <p className="text-[13px] font-semibold text-warn">
+              You are signed in to {signedInAs}.
+            </p>
+            <p className="mt-1 text-[13px] leading-relaxed text-warn">
+              Taking a seat below signs you out of it and into the practice company. Your real data is
+              untouched — you will just need to log back in.
+            </p>
+            <Link
+              href="/hub"
+              className="mt-2.5 inline-flex min-h-[40px] items-center gap-1.5 rounded-control border border-border-strong bg-surface px-3 text-sm font-semibold text-fg hover:bg-hover"
+            >
+              <ArrowLeft className="h-4 w-4" /> Back to {signedInAs}
+            </Link>
+          </div>
+        ) : null}
 
         <div className="hub-route-enter mb-8">
           <p className="mb-2 font-display text-[11px] font-bold uppercase tracking-[0.14em] text-accent-text">

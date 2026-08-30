@@ -535,9 +535,9 @@ into a one-file edit.
 
 ## Owner requests from the mobile screenshots (2026-08-14)
 
-20. **Delete or wire `HubAppearanceMenu.tsx`** — it is orphaned: nothing imports it. The
-    only reachable light/dark control is inside `UserMenu` (the avatar). Two controls for
-    one setting is worse than one; pick and remove the other.
+20. ~~**Delete or wire `HubAppearanceMenu.tsx`**~~ **DONE 2026-08-30** — deleted. It was a
+    strict duplicate of the mode + accent controls `UserMenu` (the avatar) already
+    renders, and nothing imported it. The avatar menu is the one reachable control.
 21. ~~**Automation: email → load, finish the last mile.**~~ **DONE 2026-08-30.** The
     framing above was half wrong and worth recording: `pollDocsMailbox` filed attachments
     only onto loads that ALREADY existed. Mail for freight not yet booked hit `if (load)`
@@ -558,6 +558,12 @@ into a one-file edit.
     picker (task 11), typed params only, never text-to-SQL. Anything that writes to the
     database from a model output goes through a human-confirm step until it has earned
     otherwise.
-23. **Practice mode polish** — `/hub/sandbox` is now linked in the nav (was URL-only). Next:
-    a one-line "you are in practice mode, nothing here is real" banner on every sandbox
-    screen, and a reset button that is obvious rather than buried.
+23. **Practice mode polish** — partly **DONE 2026-08-30**, and the remaining item was
+    already shipped: `SandboxBanner` puts "Sandbox — nothing here is real" plus a Reset
+    button on every sandbox screen, so both asks in the original entry existed already.
+    What the nav link actually introduced was a hazard, now fixed: taking a seat calls
+    `signIn` and REPLACES the session, so an owner mid-shift was one tap from being
+    signed out of their own company. `/hub/sandbox` now resolves the visitor's real
+    carrier and warns before the swap, with a "Back to <carrier>" link
+    (sandbox-seat-swap-warning.test.ts). Still open: nothing — reopen if the seat picker
+    grows a way to preview without signing in.
