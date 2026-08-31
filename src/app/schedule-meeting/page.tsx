@@ -9,6 +9,7 @@ import { Calendar, Clock, CheckCircle2, Phone, Video } from "lucide-react"
 import { toast } from "sonner"
 import { HONEYPOT_FIELD, readHoneypotValue } from "@/lib/honeypot"
 import { HoneypotField } from "@/components/shared/HoneypotField"
+import { COMPANY_INFO } from "@/lib/constants"
 
 export default function ScheduleMeetingPage() {
   const [formData, setFormData] = useState({
@@ -209,7 +210,7 @@ export default function ScheduleMeetingPage() {
               </Button>
 
               <p className="text-sm text-center text-gray-500">
-                Need immediate assistance? Call us at <strong>(206) 765-6300</strong>
+                Need immediate assistance? Call us at <strong>{COMPANY_INFO.phone}</strong>
               </p>
             </form>
           </CardContent>

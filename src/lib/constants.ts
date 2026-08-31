@@ -131,11 +131,17 @@ export const TRUST_INDICATORS = {
       name: "FMCSA Registered",
       issuer: "Federal Motor Carrier Safety Administration",
       icon: "shield-check",
+      // The two credentials a reader can check for themselves link out; the
+      // policy below is ours to state, so it does not. The footer used to test
+      // for a certification named "Safety Rating" that has never existed here,
+      // so no row ever linked and all three carried a hand cursor.
+      href: FMCSA_LINKS.safer,
     },
     {
       name: `USDOT #2523064`,
       issuer: "U.S. Department of Transportation",
       icon: "badge-check",
+      href: FMCSA_LINKS.safer,
     },
     {
       name: "No Forced Dispatch",

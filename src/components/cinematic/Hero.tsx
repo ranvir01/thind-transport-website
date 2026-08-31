@@ -73,7 +73,7 @@ export const CinematicHero = () => {
           </div>
 
           <a
-            href="sms:+12067656300?body=Hi,%20I'm%20interested%20in%20driving%20for%20Thind%20Transport."
+            href={`sms:${COMPANY_INFO.phoneFormatted}?body=Hi,%20I'm%20interested%20in%20driving%20for%20Thind%20Transport.`}
             className="text-sm text-steel-300 hover:text-orange inline-flex items-center gap-2 mb-8"
           >
             <MessageCircle className="w-4 h-4" />
@@ -82,9 +82,9 @@ export const CinematicHero = () => {
 
           <div className="flex flex-wrap items-center gap-x-6 gap-y-4 rounded-fleet-lg border border-steel-700/50 bg-navy-900/55 px-5 py-4 backdrop-blur-sm sm:gap-x-8 sm:px-7 md:divide-x md:divide-steel-700/50">
             {[
-              { value: "90%", label: "Owner-op gross", tone: "text-orange" },
-              { value: "$0.63", label: "Company / mile", tone: "text-gold" },
-              { value: "2024", label: "Freightliner fleet", tone: "text-white" },
+              { value: PAY_RATES.ownerOperator.commission, label: "Owner-op gross", tone: "text-orange" },
+              { value: PAY_RATES.companyDriver.otr.perMile, label: "Company / mile", tone: "text-gold" },
+              { value: EQUIPMENT.modelYears, label: "Freightliner & Volvo", tone: "text-white" },
               { value: `${STATS.statesCovered}`, label: "States covered", tone: "text-gold" },
             ].map((stat) => (
               <div key={stat.label} className="flex items-baseline gap-2.5 md:block md:pl-6 md:first:pl-0">

@@ -224,7 +224,9 @@ const resourceCategories = [
       },
       {
         title: "Fuel Efficiency Tips",
-        description: "Proven techniques to reduce fuel consumption and increase profitability.",
+        description: "Techniques that move the needle on MPG, and what a cent per gallon is worth on your own miles.",
+        link: "/fuel-program",
+        internal: true,
         details: [
           "Optimal cruise speed (62-65 mph sweet spot)",
           "Progressive shifting techniques",
@@ -540,7 +542,12 @@ export default function ResourcesPage() {
                 
                 <div className="grid md:grid-cols-2 gap-6">
                   {category.resources.map((resource) => (
-                    <Card key={resource.title} className="hover:shadow-lg transition-all border-gray-200 hover:border-gray-300">
+                    <Card
+                      key={resource.title}
+                      className={`border-gray-200 ${
+                        resource.link ? "transition-all hover:border-gray-300 hover:shadow-lg" : ""
+                      }`}
+                    >
                       <CardHeader>
                         <CardTitle className="text-lg font-bold text-gray-900 flex items-center justify-between">
                           {resource.title}
@@ -569,14 +576,14 @@ export default function ResourcesPage() {
                               href={resource.link}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="inline-flex items-center gap-2 text-sm font-semibold text-blue-600 hover:text-blue-700"
+                              className="inline-flex items-center gap-2 text-sm font-semibold text-orange-600 hover:text-orange-700"
                             >
                               Learn More <ExternalLink className="h-3 w-3" />
                             </a>
                           ) : (
                             <Link
                               href={resource.link}
-                              className="inline-flex items-center gap-2 text-sm font-semibold text-blue-600 hover:text-blue-700"
+                              className="inline-flex items-center gap-2 text-sm font-semibold text-orange-600 hover:text-orange-700"
                             >
                               View Resource →
                             </Link>

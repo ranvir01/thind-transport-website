@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { PAY_RATES, SUPPORT } from "@/lib/constants"
+import { COMPANY_INFO, PAY_RATES, SUPPORT } from "@/lib/constants"
 import {
   Dialog,
   DialogContent,
@@ -166,10 +166,10 @@ export function JobDetailsDialog({ jobType = "company" }: JobDetailsDialogProps)
         
         <DialogFooter className="flex-col sm:flex-row gap-3">
           <a 
-            href="tel:+12067656300"
+            href={`tel:${COMPANY_INFO.phoneFormatted}`}
             className="w-full sm:w-auto bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors text-center"
           >
-            Call (206) 765-6300
+            Call {COMPANY_INFO.phone}
           </a>
           <Link 
             href="/apply"

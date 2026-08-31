@@ -1,12 +1,15 @@
 "use client"
 
 import { useState } from "react"
+import { COMPANY_INFO } from "@/lib/constants"
 
+// Only the tagline and website are card-specific; the rest shadowed
+// COMPANY_INFO with a second copy of the same three facts.
 const CARD = {
-  owner: "Sukhdev Thind",
+  owner: COMPANY_INFO.owner,
   tagline: "THE TRUCK ROLLS. THE OFFICE NEVER SLEEPS.",
-  phone: "(206) 765-6300",
-  email: "thindcarrier@gmail.com",
+  phone: COMPANY_INFO.phone,
+  email: COMPANY_INFO.email,
   website: "thindtransport.com",
 }
 
