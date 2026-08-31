@@ -1,5 +1,5 @@
 import { Metadata } from "next"
-import { PayCalculator } from "@/components/features/PayCalculator"
+import { ProfitCalculator } from "@/components/features/ProfitCalculator"
 import { PayRateVisualizations } from "@/components/features/PayRateVisualizations"
 import { JobDetailsDialog } from "@/components/features/JobDetailsDialog"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -61,7 +61,7 @@ export default function PayRatesPage() {
         }
         description="No hidden fees. No surprises. Just straightforward, competitive pay — 90% split for owner-operators, $0.63/mile for company drivers."
         primaryLabel="See What You'd Earn"
-        primaryHref="/#calculator"
+        primaryHref="#calculator"
       />
 
       {/* Position Cards */}
@@ -210,9 +210,10 @@ export default function PayRatesPage() {
             </Card>
           </div>
 
-          {/* Interactive Pay Calculator */}
-          <section className="mt-16">
-            <PayCalculator />
+          {/* One instrument site-wide: the same calculator the homepage and
+              /drivers render, reading the same constants. */}
+          <section id="calculator" className="mt-16 scroll-mt-20">
+            <ProfitCalculator />
           </section>
 
           {/* Pay Rate Visualizations */}

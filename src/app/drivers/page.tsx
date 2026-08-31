@@ -120,7 +120,7 @@ export default function DriversPage() {
       </section>
 
       {/* The signature instrument, front and centre — not buried mid-homepage. */}
-      <section id="calculator" className="py-16 md:py-24">
+      <section id="calculator" className="py-16 md:py-24 scroll-mt-20">
         <div className="container px-4">
           <Reveal className="mx-auto max-w-measure text-center">
             <h2 className="font-display text-m-h2 font-bold text-ink">Run your own numbers</h2>

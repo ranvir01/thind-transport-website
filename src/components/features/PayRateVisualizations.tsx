@@ -28,6 +28,8 @@ export function PayRateVisualizations() {
   const otr = fromRange(PAY_RATES.companyDriver.otr.annual)
   const owner = fromRange(PAY_RATES.ownerOperator.annualGross)
   const [ownerLow, ownerHigh] = parseAnnualRange(PAY_RATES.ownerOperator.annualGross)
+  /** Bars are drawn to scale against the largest figure on the chart. */
+  const share = (annual: number) => `${Math.round((annual / owner.annual) * 100)}%`
 
   return (
     <div className="grid lg:grid-cols-2 gap-6">
@@ -46,14 +48,14 @@ export function PayRateVisualizations() {
           <div>
             <div className="flex items-center justify-between mb-1.5">
               <span className="text-sm font-semibold text-gray-900">Company Driver - Local</span>
-              <span className="font-black text-navy">$57.5K</span>
+              <span className="font-black text-navy">{usd(local.annual / 1000)}K</span>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-5">
               <div 
                 className="bg-slate-500 h-5 rounded-full flex items-center justify-end pr-2"
-                style={{ width: '20%' }}
+                style={{ width: share(local.annual) }}
               >
-                <span className="text-xs text-white font-bold">20%</span>
+                <span className="text-xs text-white font-bold">{share(local.annual)}</span>
               </div>
             </div>
           </div>
@@ -61,14 +63,14 @@ export function PayRateVisualizations() {
           <div>
             <div className="flex items-center justify-between mb-1.5">
               <span className="text-sm font-semibold text-gray-900">Company Driver - Regional</span>
-              <span className="font-black text-navy">$63.5K</span>
+              <span className="font-black text-navy">{usd(regional.annual / 1000)}K</span>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-5">
               <div 
                 className="bg-navy h-5 rounded-full flex items-center justify-end pr-2"
-                style={{ width: '23%' }}
+                style={{ width: share(regional.annual) }}
               >
-                <span className="text-xs text-white font-bold">23%</span>
+                <span className="text-xs text-white font-bold">{share(regional.annual)}</span>
               </div>
             </div>
           </div>
@@ -76,14 +78,14 @@ export function PayRateVisualizations() {
           <div>
             <div className="flex items-center justify-between mb-1.5">
               <span className="text-sm font-semibold text-gray-900">Company Driver - OTR</span>
-              <span className="font-black text-navy">$71.5K</span>
+              <span className="font-black text-navy">{usd(otr.annual / 1000)}K</span>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-5">
               <div 
                 className="bg-navy-900 h-5 rounded-full flex items-center justify-end pr-2"
-                style={{ width: '25%' }}
+                style={{ width: share(otr.annual) }}
               >
-                <span className="text-xs text-white font-bold">25%</span>
+                <span className="text-xs text-white font-bold">{share(otr.annual)}</span>
               </div>
             </div>
           </div>
@@ -98,9 +100,9 @@ export function PayRateVisualizations() {
               <div className="w-full bg-gray-200 rounded-full h-6">
                 <div 
                   className="bg-gradient-to-r from-green-500 to-green-600 h-6 rounded-full flex items-center justify-end pr-2"
-                  style={{ width: '82%' }}
+                  style={{ width: '100%' }}
                 >
-                  <span className="text-xs text-white font-black">82%</span>
+                  <span className="text-xs text-white font-black">100%</span>
                 </div>
               </div>
             </div>
@@ -223,27 +225,28 @@ export function PayRateVisualizations() {
             <div className="w-1 h-6 bg-orange-600 rounded-full"></div>
             <h3 className="text-xl font-black text-gray-900">Commission Rate</h3>
           </div>
-          <p className="text-sm text-gray-600">90% vs industry average</p>
+          <p className="text-sm text-gray-600">What {PAY_RATES.ownerOperator.commission} means on a load</p>
         </div>
 
         <div className="space-y-4">
           <div>
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-gray-600">Industry Average</span>
-              <span className="font-semibold text-gray-900">75-85%</span>
+              <span className="text-sm text-gray-600">Our cut, all in</span>
+              <span className="font-semibold text-gray-900">10%</span>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-5">
-              <div 
-                className="bg-gray-400 h-5 rounded-full"
-                style={{ width: '80%' }}
-              />
+              <div className="bg-gray-400 h-5 rounded-full" style={{ width: '10%' }} />
             </div>
+            <p className="mt-1.5 text-xs text-gray-500">
+              Dispatch, billing and admin. On a $3,000 load that is $300 — and the fuel
+              surcharge passes through whole.
+            </p>
           </div>
 
           <div>
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm font-black text-gray-900">Thind Transport</span>
-              <span className="font-black text-green-600 text-lg">90%</span>
+              <span className="font-black text-green-600 text-lg">{PAY_RATES.ownerOperator.commission}</span>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-6">
               <div 
@@ -255,7 +258,7 @@ export function PayRateVisualizations() {
             </div>
             <div className="mt-2 flex items-center gap-2 text-xs text-green-700 font-semibold">
               <ArrowUp className="h-3 w-3" />
-              <span>6-16% above industry average</span>
+              <span>The split, in writing, on every load</span>
             </div>
           </div>
         </div>

@@ -2,7 +2,7 @@ import Link from "next/link"
 import { preload } from "react-dom"
 import { MessageCircle, Phone, TrendingUp, ArrowRight } from "lucide-react"
 import { HeroBackground } from "./HeroBackground"
-import { COMPANY_INFO, STATS } from "@/lib/constants"
+import { COMPANY_INFO, EQUIPMENT, PAY_RATES, STATS } from "@/lib/constants"
 
 /**
  * Server-rendered hero with CSS-only entrance animations.
@@ -45,7 +45,7 @@ export const CinematicHero = () => {
           <p className="text-lg md:text-xl text-steel-200 max-w-2xl mb-8 leading-relaxed">
             {/* One expression, no adjacent bare text — the compiler drops bare
                 spaces next to expression containers (see IntegrationsPanel note). */}
-            {`Owner-operators keep 90% of the gross. Company drivers run new Freightliners at $0.63/mile with weekly pay. ${new Date().getFullYear() - COMPANY_INFO.founded} years out of Kent, WA — you drive, we handle the rest.`}
+            {`Owner-operators keep ${PAY_RATES.ownerOperator.commission} of the gross. Company drivers run ${EQUIPMENT.short} at ${PAY_RATES.companyDriver.otr.perMile}/mile with weekly pay. ${new Date().getFullYear() - COMPANY_INFO.founded} years out of Kent, WA — you drive, we handle the rest.`}
           </p>
 
           <div className="flex flex-col sm:flex-row flex-wrap gap-3 mb-7">
