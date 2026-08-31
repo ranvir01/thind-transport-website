@@ -94,18 +94,41 @@ the repo backs it — same rule, same guard test, same two-step to bring it back
 | "Founded in 2016", "grown to 15+ trucks" | FAQ | Nothing — constants say 2014 and 15; the FAQ was simply wrong |
 | "$1,500 sign-on bonus" | /veterans, JobDetailsDialog | Nothing — `PAY_RATES` says $1,000 and every other page agreed |
 
-**Left standing, but nobody has verified them.** The rider program, the pet policy, and
-"24/7 dispatch" (asserted on more than a dozen surfaces for a 15-truck carrier) are all
-still on the site. None is in `constants.ts` and none was part of the four questions you
-answered. If overnight coverage is really "call the owner's cell and he picks up", say so
-and we will write that instead — it is a better line than "24/7 support" anyway.
+### Third sweep, 2026-08-30 — you answered six more
 
-**Two things still need you.** (1) A **COI** would let the `$1M+ Liability Coverage`
-credential and the homepage Insured tile come back — the prose claim stays on /brokers,
-/shippers, /quote and /trust on your say-so, but the guarded credential needs the
-document. (2) **How long the application really takes and how fast someone calls back** —
-the site says "2 minutes", "60 seconds" and "about a minute" in thirteen places. Tell us
-the real numbers and they go in `constants.ts` once and render everywhere.
+A re-audit after the second sweep found the same class of defect in places the
+sweep hadn't looked, including two on the homepage. Your answers, applied:
+
+| You said | What changed |
+|---|---|
+| "Shippers you already recognize" and DAT verified carrier are **both real** | Kept, unchanged. Recorded here as owner-attested so the next audit stops flagging them — if either is a stretch, say so and they come off |
+| **24/7 dispatch is genuine** | Kept, and now stated once in `SUPPORT` in `constants.ts` instead of hand-typed on eighteen surfaces |
+| **Reword all 48 state pages** | The 45 template pages told every driver "we run {their corridors} every week" — a Maine driver was told we run I-95 through Bangor weekly. Now: we hire drivers who live there, and we run all 48 states. Every page and sitemap entry kept |
+| **No rider or pet policy in writing** | Both cards off /benefits. The pre-qualification form still asks — screening isn't advertising |
+| **Don't publish how long the form takes** | Ten claims ("60 seconds", "about a minute", "2 minutes") replaced with what the form actually asks for |
+| **24-hour callback is real** | Kept, now qualified "on business days" |
+
+Also removed, no question needed: an "A+ safety rating with FMCSA" and "zero
+out-of-service violations" (both served to Google as FAQ rich-result data — FMCSA
+issues Satisfactory/Conditional/Unsatisfactory and never a letter grade), a
+five-stage hiring SLA nothing measures, two fleet averages nothing computes, and
+a "dedicated maintenance team" — the in-house shop you said doesn't exist, in
+softer words. Two banned claims had come back on the **homepage** as paraphrases
+("In-house mechanical support", "FMCSA safety-rated fleet"), so the guard test
+now matches the claim however it is worded, not just the exact string.
+
+**Still needs you.**
+
+1. **The COI.** It restores the `$1M+ Liability Coverage` credential and the
+   homepage Insured tile. The prose claim stays on /brokers, /shippers, /quote and
+   /trust on your say-so; the guarded credential needs the document.
+2. **A 3 MB video, `hero-american-fleet.mp4`,** sits in `public/` referenced by
+   nothing — it was behind a flag that was never switched on. Use it as the /fleet
+   hero or delete it; running a video hero is a real trade against page speed, so
+   it is your call rather than ours.
+3. **The 2023-2025 fleet claim expires on its own.** A 2023 truck is three years
+   old in 2026, so "no truck older than 3 years" stops being true during 2026.
+   Tell us when the roster changes and `EQUIPMENT` in `constants.ts` moves with it.
 
 ## Accounts / money / people
 
