@@ -1,17 +1,42 @@
 # LoadOff agent fleet — Cursor Automations
 
-Three scheduled background agents keep lane work merged, shipped to `main`, and verified live on
-production. All run on your **Cursor subscription** (model **Auto**, cloud compute on) — no API key.
+The whole 24/7 fleet runs as Cursor Automations on your **Cursor subscription** (cloud compute
+on, no API key). Model is pinned to **Grok 4.6** (`cursor-grok-4.6-high-fast`) in every
+workflow JSON — owner decision 2026-08-19 (`docs/ops/DECISIONS.md` D-003). If an import
+rejects that slug, pick **Grok 4.6** in the model dropdown; the slug is the only field to fix.
+
+## Hourly mechanical loop (live on the dashboard)
 
 | Automation | Schedule (UTC) | Branch | Prompt | Workflow JSON |
 |------------|----------------|--------|--------|---------------|
-| **Integrator** | `:00` every hour (`0 * * * *`) | `claude/hauldesk-project-setup-l1luoo` | [`loadoff-integrator.prompt.md`](loadoff-integrator.prompt.md) | [`loadoff-integrator.workflow.json`](loadoff-integrator.workflow.json) |
-| **Prod smoke** | `:30` every hour (`30 * * * *`) | `main` | [`loadoff-prod-smoke.prompt.md`](loadoff-prod-smoke.prompt.md) | [`loadoff-prod-smoke.workflow.json`](loadoff-prod-smoke.workflow.json) |
-| **Deploy + backlog** | `:59` every hour (`59 * * * *`) | `main` | [`loadoff-deploy.prompt.md`](loadoff-deploy.prompt.md) | [`loadoff-deploy.workflow.json`](loadoff-deploy.workflow.json) |
+| **Integrator** | `:00` hourly | `claude/hauldesk-project-setup-l1luoo` | [`loadoff-integrator.prompt.md`](loadoff-integrator.prompt.md) | [`loadoff-integrator.workflow.json`](loadoff-integrator.workflow.json) |
+| **Prod smoke** | `:30` hourly | `main` | [`loadoff-prod-smoke.prompt.md`](loadoff-prod-smoke.prompt.md) | [`loadoff-prod-smoke.workflow.json`](loadoff-prod-smoke.workflow.json) |
+| **Deploy + backlog** | `:59` hourly | `main` | [`loadoff-deploy.prompt.md`](loadoff-deploy.prompt.md) | [`loadoff-deploy.workflow.json`](loadoff-deploy.workflow.json) |
+
+## Role slots (import-ready, D-003)
+
+| Automation | Schedule (UTC) | Branch | Files |
+|------------|----------------|--------|-------|
+| **Build A — office/UX** | `13 5 * * *` | `claude/lane-office` | [`loadoff-build-office.workflow.json`](loadoff-build-office.workflow.json) |
+| **Build B — driver + portal** | `13 8 * * *` | `claude/lane-driver` (or `lane-portal`) | [`loadoff-build-driver-portal.workflow.json`](loadoff-build-driver-portal.workflow.json) |
+| **Build C — tests** | `13 11 * * *` | `claude/lane-tests` | [`loadoff-build-tests.workflow.json`](loadoff-build-tests.workflow.json) |
+| **Build D — integrations** | `13 14 * * *` | `claude/lane-integrations` | [`loadoff-build-integrations.workflow.json`](loadoff-build-integrations.workflow.json) |
+| **Build E — marketing** | `13 20 * * *` | `claude/lane-marketing` | [`loadoff-build-marketing.workflow.json`](loadoff-build-marketing.workflow.json) |
+| **Deep-verify** (finder) | `7 7 * * 6` Sat | `claude/fleet-deep-verify` | [`loadoff-deep-verify.workflow.json`](loadoff-deep-verify.workflow.json) |
+| **Red-team** (read-only) | `7 9 * * 0` Sun | `claude/fleet-red-team` | [`loadoff-red-team.workflow.json`](loadoff-red-team.workflow.json) |
+| **Meta-governor** (audit) | `7 18 * * 0` Sun | `claude/fleet-meta-governor` | [`loadoff-meta-governor.workflow.json`](loadoff-meta-governor.workflow.json) |
+| **Owner digest** | `37 19 * * 5` Fri | `claude/fleet-owner-digest` | [`loadoff-owner-digest.workflow.json`](loadoff-owner-digest.workflow.json) |
+| **Dependency pass** | `7 10 * * 1` Mon | `claude/fleet-dependency-pass` | [`loadoff-dependency-pass.workflow.json`](loadoff-dependency-pass.workflow.json) |
+
+Each has a matching `*.prompt.md` with the full charter. Cursor starts every automation run on
+a disposable `cursor/<run-name>-*` branch regardless of `gitConfig.branch` — the prompts all
+begin with `git checkout -B <target>`, so the work lands on the branch in the table. The `:00`
+integrator absorbs every `claude/*` branch; finders write `docs/ops/*` only.
 
 ```
-lane agents ──▶ claude/lane-* ──▶ integrator (:00) ──▶ deploy (:59) ──▶ main ──▶ Vercel
-                                              prod smoke (:30) checks thindtransport.com/hub
+build lanes (daily) ──▶ claude/lane-* ─┐
+finders (Sat/Sun/Fri/Mon) ─▶ claude/fleet-* ─┤─▶ integrator (:00) ─▶ deploy (:59) ─▶ main ─▶ Vercel
+ad-hoc sessions ──────▶ claude/<session> ─┘        prod smoke (:30) checks thindtransport.com/hub
 ```
 
 ## Helper scripts
@@ -23,16 +48,35 @@ lane agents ──▶ claude/lane-* ──▶ integrator (:00) ──▶ deploy 
 | `npm run agent:backlog` | Ranked backlog from last 30 commits on `main` |
 | `npm run prod:smoke` | HTTP smoke: `/hub/login` shows LoadOff, `/hub` not 5xx |
 
-## Activate (one time, ~5 min)
+## Activate / fix (one time, ~15 min)
 
-1. Open **[cursor.com/automations](https://cursor.com/automations/new)** (or Cursor → Automations → New).
-2. Create **three** automations — import each `loadoff-*.workflow.json` or paste the matching `*.prompt.md`.
-3. Set **Repository:** `ranvir01/thind-transport-website` with the branch shown in the table above.
-4. Enable **cloud compute** on all three.
-5. Confirm the automation bot has **write access** to the repo.
-6. **Manual first run:** trigger **Deploy + backlog** once to drain integrator → `main` if
-   `npm run agent:status` shows catch-up mode.
-7. After Vercel deploys, run `npm run prod:smoke` — expect **LoadOff** on `/hub/login`.
+Claude Corps is the live scheduled writer (9 LoadOff-only tasks). These Cursor automations are
+**optional redundancy**. As of 2026-08-26 all four dashboard copies were **disabled**.
+
+1. **If you want Cursor drain/smoke redundancy:** re-enable Integrator, Prod Smoke, and
+   Deploy + backlog (do not import duplicates). Set **Model: Grok 4.6**, repository
+   `ranvir01/thind-transport-website`, cloud compute on.
+
+| Dashboard name | Id |
+|----------------|-----|
+| Integrator | [`880eec29-78fd-11f1-ba66-0e7d0216e441`](https://cursor.com/automations/880eec29-78fd-11f1-ba66-0e7d0216e441) |
+| Prod Smoke | [`4ad7743c-7900-11f1-ba66-0e7d0216e441`](https://cursor.com/automations/4ad7743c-7900-11f1-ba66-0e7d0216e441) |
+| Deploy + backlog | [`75e8fbf5-7900-11f1-ba66-0e7d0216e441`](https://cursor.com/automations/75e8fbf5-7900-11f1-ba66-0e7d0216e441) |
+
+2. **Keep Untitled disabled** [`61b8e855-76b8-11f1-ba66-0e7d0216e441`](https://cursor.com/automations/61b8e855-76b8-11f1-ba66-0e7d0216e441)
+   — "HaulDesk improvement cycle", a second writer on `main`. Already off as of 2026-08-26.
+3. **Import only Cursor slots Claude does not already run** (office / driver / tests /
+   integrations) at [cursor.com/automations](https://cursor.com/automations/new). Keep cron
+   minutes `:07`/`:13`/`:37`. **Do not import** marketing / deep-verify / meta-governor /
+   red-team while those Claude tasks are live — full table in
+   [`docs/ops/FLEET.md`](../../docs/ops/FLEET.md) ("One charter, one platform").
+   Grok Bot paste files: [`docs/grok-bots/`](../../docs/grok-bots/README.md).
+4. If the environment still fails to boot (runs ERROR in seconds with no setup logs): Save the
+   install-only environment config — dashboard → environments →
+   [`5241c374-0579-442f-bf88-309dbcbe37f3`](https://cursor.com/dashboard/cloud-agents/environments/e/5241c374-0579-442f-bf88-309dbcbe37f3).
+5. **Manual first run:** trigger **Deploy + backlog** once to drain integrator → `main` if
+   `npm run agent:status` shows catch-up mode *and* that automation is enabled.
+6. After Vercel deploys, run `npm run prod:smoke` — expect **LoadOff** on `/hub/login`.
 
 ## Catch-up vs steady state
 
@@ -65,12 +109,12 @@ copies of this job under three `concurrency` groups raced each other every hour,
 no workflow in this repo has ever read it, so setting it does nothing. To stop the drain, disable
 the workflow from the Actions tab (or delete its `schedule:` trigger).
 
-## Deprecated (aliases)
+## Deprecated (removed 2026-08-19)
 
-The old single-automation files still work for `@` references but are superseded:
-
-- `hauldesk-improvement-cycle.prompt.md` → use **`loadoff-deploy.prompt.md`**
-- `hauldesk-improvement-cycle.workflow.json` → use **`loadoff-deploy.workflow.json`**
+`hauldesk-improvement-cycle.prompt.md` / `.workflow.json` were deleted — they were the import
+template for the stray "HaulDesk improvement cycle" automation (a second `main` writer that
+raced Deploy + backlog). Use **`loadoff-deploy.*`**. The dashboard copy still exists until the
+owner disables it (Untitled `61b8e855-76b8-11f1-ba66-0e7d0216e441`).
 
 Full playbook: [`docs/agent-improvement-loop.md`](../../docs/agent-improvement-loop.md).
 

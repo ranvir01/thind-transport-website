@@ -1,5 +1,7 @@
 import { describe, it, expect } from "vitest"
 import { parsePendingCount, assessLoop } from "../../../../scripts/agent-loop-status.mjs"
+import { readFileSync } from "node:fs"
+import path from "node:path"
 
 /**
  * Regression: agent:status once reported "Pending claude/* branches: 0"
@@ -84,5 +86,12 @@ describe("assessLoop", () => {
   it("skips the stall check when the integrator age is unavailable", () => {
     const v = assessLoop({ ...base, integratorAgeHours: null, pendingCount: 12 })
     expect(v.mode).toBe("STEADY")
+  })
+})
+
+describe("lane roster", () => {
+  it("lists lane-marketing next to the other territories", () => {
+    const src = readFileSync(path.join(process.cwd(), "scripts/agent-loop-status.mjs"), "utf-8")
+    expect(src).toMatch(/"lane-marketing"/)
   })
 })

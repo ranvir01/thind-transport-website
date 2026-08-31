@@ -1,0 +1,26 @@
+{
+  "name": "LoadOff Build D — integrations",
+  "description": "Daily 14:13 UTC — one stub-first adapter slice per run on claude/lane-integrations. Grok 4.6.",
+  "workflow": {
+    "triggers": [
+      {
+        "cron": {
+          "cron": "13 14 * * *"
+        }
+      }
+    ],
+    "actions": [],
+    "prompts": [
+      "You are the LoadOff integrations build automation.\n\nRead AGENTS.md (Integrations doctrine) and .cursor/automation/loadoff-build-integrations.prompt.md for full steps.\n\nCursor starts you on a disposable cursor/* branch: npm run git:identity, git fetch origin, git checkout -B claude/lane-integrations (from its origin ref if it exists, else origin/main), merge origin/main.\n\nTerritory: src/lib/hub/integrations/**, provider adapters, src/app/api/hub/webhooks/**, settings/integrations UI. Doctrine: registry.ts is the only provider list; stub-first against mock.ts + the contract suite before credentials; ON CONFLICT (carrier_id, source, external_id); integration_syncs row every run; CSV fallback never removed; never log credential values.\n\nnpm run agent:status first (catch-up = assist drain). Ship ONE deduped adapter slice in docs/integrations/creds-shopping-list.md order, npm run build && npx vitest run green, push claude/lane-integrations, Backlog: trailer.\n\nRepo: ranvir01/thind-transport-website."
+    ],
+    "gitConfig": {
+      "repo": "ranvir01/thind-transport-website",
+      "branch": "claude/lane-integrations"
+    },
+    "model": "cursor-grok-4.6-high-fast",
+    "agentOptions": {
+      "skipInstall": false
+    },
+    "memoryEnabled": true
+  }
+}

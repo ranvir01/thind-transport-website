@@ -1,0 +1,74 @@
+# Fleet liveness (learned 2026-07-26 → 2026-08-19): a dead Cursor automation is
+# silent. The drain Action stays green when there is nothing to drain, so
+# "no agent can start" and "no work to do" look identical from here — which
+# is how three weeks passed with every scheduled agent ERROR'ing in ~8s on a
+# stale Dockerfile and this repo reporting STEADY STATE.
+#
+# `npm run agent:status` already distinguishes the two (exit 2 = STALLED:
+# integrator has not moved while claude/* branches wait). This workflow is
+# that check on a GitHub runner, so silence pages even when Cursor cannot boot.
+#
+# Catch-up (exit 1) is NOT a liveness failure — drain-integrator.yml owns that.
+# Only stall is red.
+#
+# Scheduled at :10 UTC, clear of :00 integrator, :17/:47 drain, :18 sim buddy,
+# :30 smoke, :43 Claude integrator, :59 deploy. See docs/ops/FLEET.md and
+# docs/ops/AGENT_INTEROP.md §1.
+
+name: Fleet liveness
+
+on:
+  schedule:
+    - cron: "10 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: fleet-liveness
+  cancel-in-progress: true
+
+jobs:
+  liveness:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Fetch fleet refs
+        run: git fetch origin --prune --quiet
+
+      - name: Agent loop status (fail on stall only)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set +e
+          node scripts/agent-loop-status.mjs
+          code=$?
+          set -e
+          if [ "$code" -eq 2 ]; then
+            echo "::error::INTEGRATOR STALLED — work is waiting and nothing is merging. Check Cursor automations and the environment build log (docs/ops/FLEET.md)."
+            GH_ISSUE_TITLE="[fleet] Integrator stalled" \
+            GH_ISSUE_BODY="Fleet liveness went red: integrator stalled with pending claude/* work. See this run and docs/ops/FLEET.md." \
+            GH_ISSUE_COMMENT="Liveness still red (stall). Run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}" \
+            GH_ISSUE_LABELS="should,venture:loadoff" \
+            node scripts/ensure-github-issue.mjs || echo "::warning::could not file the stall issue"
+            exit 1
+          fi
+          if [ "$code" -eq 1 ]; then
+            echo "Catch-up mode — drain-integrator.yml owns this. Liveness OK."
+            exit 0
+          fi
+          if [ "$code" -ne 0 ]; then
+            echo "::error::agent:status exited $code (unexpected)."
+            exit 1
+          fi
+          echo "STEADY STATE — fleet is moving."

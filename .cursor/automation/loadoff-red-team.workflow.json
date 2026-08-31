@@ -1,0 +1,26 @@
+{
+  "name": "LoadOff Red-team review",
+  "description": "Sunday 09:07 UTC — week's main diff vs AGENTS.md invariants + hollow-tick audit; read-only on code. Grok 4.6.",
+  "workflow": {
+    "triggers": [
+      {
+        "cron": {
+          "cron": "7 9 * * 0"
+        }
+      }
+    ],
+    "actions": [],
+    "prompts": [
+      "You are the LoadOff red-team automation — READ-ONLY on code, file never fix.\n\nRead AGENTS.md and .cursor/automation/loadoff-red-team.prompt.md for full steps.\n\nCursor starts you on a disposable cursor/* branch: npm run git:identity, git fetch origin, git checkout -B claude/fleet-red-team origin/main.\n\nDiff main over the past 7 days against the AGENTS.md invariants (carrier-scoping both sides, requirePermission, logAudit on money, integer cents, forced-dark tokens, no CSS-var opacity modifiers, append-only migrations, no new public claims, ON CONFLICT ingests). Audit 3-5 recent fixed claims for real evidence.\n\nOutput: ONE commit to claude/fleet-red-team — findings in docs/ops/* with file:line, ranked by severity, Backlog: trailer. Zero product diffs.\n\nRepo: ranvir01/thind-transport-website."
+    ],
+    "gitConfig": {
+      "repo": "ranvir01/thind-transport-website",
+      "branch": "claude/fleet-red-team"
+    },
+    "model": "cursor-grok-4.6-high-fast",
+    "agentOptions": {
+      "skipInstall": false
+    },
+    "memoryEnabled": true
+  }
+}

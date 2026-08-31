@@ -293,3 +293,32 @@ describe("registry ↔ vercel.json ↔ route drift", () => {
     }
   })
 })
+
+describe("GET /api/hub/cron/ar-reminders — send failures are loud", () => {
+  it("returns 500 when a carrier reports failed reminder sends", async () => {
+    vi.mocked(runOverdueReminders).mockResolvedValue({
+      sent: 0,
+      flaggedOverdue: 2,
+      failed: 2,
+      deferred: 0,
+    })
+    const res = await call("ar-reminders")
+    expect(res.status).toBe(500)
+    const body = await res.json()
+    expect(body.ok).toBe(false)
+    expect(body.results[CARRIERS[0].id].error).toMatch(/2 reminder send/)
+  })
+
+  it("returns 200 when every carrier sent with failed: 0", async () => {
+    vi.mocked(runOverdueReminders).mockResolvedValue({
+      sent: 1,
+      flaggedOverdue: 1,
+      failed: 0,
+      deferred: 0,
+    })
+    const res = await call("ar-reminders")
+    expect(res.status).toBe(200)
+    const body = await res.json()
+    expect(body.ok).toBe(true)
+  })
+})

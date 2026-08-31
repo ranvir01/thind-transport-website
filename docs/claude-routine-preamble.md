@@ -26,9 +26,14 @@ npm run agent:branches
 
 **Preferred:** the lane branch for your territory, e.g. `claude/lane-compliance`.
 
-**Also OK:** your session branch (`claude/<session-name>`) — the hourly **integrator**
-automation runs `npm run agent:branches` and merges unpicked work into
-`claude/hauldesk-project-setup-l1luoo`. You do **not** need a fixed branch name.
+**Also OK:** your session branch (`claude/<session-name>`) — the **integrator**
+(Claude every 3h at `:43`; Cursor `:00` when enabled) runs `npm run agent:branches`
+and merges unpicked work into `claude/hauldesk-project-setup-l1luoo`. You do
+**not** need a fixed branch name. Live roster: `docs/ops/FLEET.md`. Grok Bot
+(gogo Chief of Staff, Steve, Jeff, Rav) never pushes; do not treat it as a writer.
+gogo dispatches bounded fixes to Cursor cloud agents from collaborator-labeled
+`should` issues then `Backlog:` trailers — land with `Closes #N`; leave yours
+specific enough to dispatch (goal + files + done-when in plain words).
 
 **Never:** push directly to `main` (deploy agent only) or `claude/hauldesk-project-setup-l1luoo`
 (integrator only).
@@ -47,6 +52,14 @@ git log --all --oneline --grep="<short description>"   # search every branch, no
 
 If a fix already exists, name that branch in your `Backlog:` instead of writing another copy —
 the integrator drains it. This is a hard first step, not a suggestion.
+
+## Finder vs fixer
+
+If this session's charter is probe / QA / review / audit (nightly rig, deep-verify, red-team,
+meta-governor, digest): you may **not** modify product code. File findings in `docs/ops/*` and
+your `Backlog:` trailer with file:line evidence — build sessions fix, the integrator merges.
+One defect, one fixer. The only exception is production-down fix-forward (the prod-smoke
+charter).
 
 ## Every commit
 

@@ -5,10 +5,18 @@
 > sandbox with blanks to fill in and hand back. This page is only the things that are
 > *blocked on you*; that one is where you tell me what you think.
 
-**Updated 2026-08-04.** This file is the **single queue of things only the owner can do**,
+**Updated 2026-08-26.** This file is the **long queue of things only the owner can do**,
 per the autonomous-build plan: agents never block on these, never put them in their own
 task lists, and never write secret *values* here — names and places only. Everything not
 on this page is either done or automatable without you.
+
+**Dated front door (Form 2290, AR Payments bank, SMTP, Claude 9-task toggles, Grok pastes):**
+[`docs/ops/OWNER-WORKSHEET.md`](ops/OWNER-WORKSHEET.md) — one task per ping. Fleet truth:
+[`docs/ops/FLEET.md`](ops/FLEET.md). Claude Corps is already live; you do not need to come
+back to a Cursor agent to keep the repo moving.
+
+**Upgrade the four Grok Bots (gogo, Steve, Jeff, Rav) and the Big team group:**
+[`docs/grok-bots/SETUP.md`](grok-bots/SETUP.md) — that is the one file.
 
 ---
 
@@ -178,8 +186,9 @@ For owner-operators: the % they keep, who pays fuel, and any escrow.
   these now; also the #1 thing an enterprise reviewer checks. ~1 hour at your DNS provider.
 
 ### 4-0c. Answer the new DECISIONS queue
-- ☐ Three items await in docs/ops/DECISIONS.md: arm the branch reaper (D-001), npm-audit major
-  bumps (D-002), adopt the 24/7 fleet schedule (D-003).
+- ☐ DECISIONS.md: D-001 arm the reaper, D-002 npm-audit majors, D-006 re-enable
+  Cursor Integrator/smoke/deploy (D-003 adopted; D-004 boot fixed; D-005 Untitled off).
+  Dated clicks: docs/ops/OWNER-WORKSHEET.md.
 
 
 ### 4a. Outreach — feed it prospects

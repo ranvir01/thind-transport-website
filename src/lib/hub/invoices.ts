@@ -384,13 +384,27 @@ export function nextReminderRung(
   return target !== null && target > highestClimbed ? target : null
 }
 
-/** Overdue reminder runner (cron): due+3/+10/+20 ladder, factored loads skipped. */
-export async function runOverdueReminders(carrierId: string): Promise<{ sent: number; flaggedOverdue: number }> {
+/** Overdue reminder runner (cron): due+3/+10/+20 ladder, factored loads skipped.
+ *  Send failures must not look like success — an empty catch made Vercel Cron
+ *  green while no dunning left the building. Cap sends so a dead SMTP does
+ *  not hammer Gmail for every open invoice in one run. */
+export const OVERDUE_REMINDER_SEND_CAP = 5
+
+export type OverdueReminderResult = {
+  sent: number
+  flaggedOverdue: number
+  failed: number
+  deferred: number
+}
+
+export async function runOverdueReminders(carrierId: string): Promise<OverdueReminderResult> {
   const aging = await getAgingSummary(carrierId)
   const carrier = await getCarrier(carrierId)
   const settings = await getCarrierSettings(carrierId)
   let sent = 0
   let flaggedOverdue = 0
+  let failed = 0
+  let deferred = 0
   const today = new Date()
 
   for (const invoice of aging.invoices) {
@@ -406,6 +420,10 @@ export async function runOverdueReminders(carrierId: string): Promise<{ sent: nu
     if (rung === null) continue
     const customer = await getCustomer(carrierId, invoice.customer_id)
     if (!customer?.billing_email) continue
+    if (failed >= OVERDUE_REMINDER_SEND_CAP) {
+      deferred++
+      continue
+    }
     try {
       const transport = createMailTransport()
       await transport.sendMail({
@@ -420,9 +438,15 @@ export async function runOverdueReminders(carrierId: string): Promise<{ sent: nu
         [invoice.id, JSON.stringify([{ to: customer.billing_email, at: new Date().toISOString(), kind: `reminder-${rung}d` }]), carrierId]
       )
       sent++
-    } catch { /* reminder failures surface via integration_syncs in cron route */ }
+    } catch (err) {
+      failed++
+      console.error(
+        `[ar-reminders] send failed invoice=${invoice.number}`,
+        err instanceof Error ? err.message : "unknown"
+      )
+    }
   }
-  return { sent, flaggedOverdue }
+  return { sent, flaggedOverdue, failed, deferred }
 }
 
 // ---- Customer statements ----

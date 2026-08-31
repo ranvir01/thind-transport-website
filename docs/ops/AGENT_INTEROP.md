@@ -1,9 +1,15 @@
-# Agent interop — Cursor ↔ Cursor ↔ Claude ↔ CI
+# Agent interop — Cursor ↔ Claude ↔ Grok Bot ↔ CI
 
-Four kinds of agent write to this repo: Cursor scheduled automations, Cursor agents you prompt by
-hand, Claude Code sessions (web, desktop, CLI) and Claude scheduled routines, plus GitHub Actions
-that publish history without any agent involved. They share one `main`, one integrator branch, and
-one production alias. This file is the contract between them.
+Four kinds of agent **write git** to this repo: Cursor scheduled automations (currently
+disabled on the dashboard, 2026-08-26), Cursor agents you prompt by hand, Claude Code
+sessions and Claude scheduled routines (the live 9-task Corps), plus GitHub Actions
+that publish history without any agent involved. **Grok Bot** is four named
+watchers in one group (gogo TPM, Steve Deploy/CI, Jeff RevOps, Rav Career
+Coach); gogo runs a one-item coding board and dispatches bounded fixes to
+Cursor cloud agents. Never pushes —
+[`docs/grok-bots/SETUP.md`](../grok-bots/SETUP.md).
+They share one `main`, one integrator branch, and one production alias. This file is the
+contract between them.
 
 Territory and lane rules live in [`docs/agent-improvement-loop.md §5`](../agent-improvement-loop.md).
 This file covers what that one doesn't: who may push where, how agents hand work to each other
@@ -18,12 +24,45 @@ same branch in the same minute is how a diverged `main` gets made.
 
 | Minute | Who | Platform | Branch it writes |
 |---|---|---|---|
-| `:00` | Integrator (lane merge) | Cursor automation | `claude/hauldesk-project-setup-l1luoo` |
+| `:00` | Integrator (lane merge) — **dashboard DISABLED** 2026-08-26 | Cursor automation | `claude/hauldesk-project-setup-l1luoo` |
+| `:10` | Fleet liveness (`agent:status` stall → red) | GitHub Actions | nothing — read-only |
 | `:17`, `:47` | Drain integrator → main | GitHub Actions | `main` |
-| `:30` | Prod smoke | Cursor automation | `main` (only when production is red) |
-| `:59` | Deploy + backlog | Cursor automation | `main` |
-| `03:40` | E2E smoke suite | GitHub Actions | nothing — read-only |
+| `:18` | Sim test buddy (every 6h, `18 */6 * * *` — owner paste; was every 3h) | Claude Code routine | nothing — findings; file each confirmed finding once as a `should` issue |
+| `:30` | Prod smoke — **dashboard DISABLED** 2026-08-26 | Cursor automation | `main` (only when production is red) |
+| `:43` | Integrator + stamped drain (every 3h, `43 */3 * * *`) | Claude Code routine | integrator, then `main` |
+| `:59` | Deploy + backlog — **dashboard DISABLED** 2026-08-26 | Cursor automation | `main` |
+| `03:40` | E2E smoke suite | GitHub Actions | nothing — read-only; on red, files `[fleet] E2E suite red` |
+| `06:00 Sun` | Branch reaper (dry-run until `REAPER_ARMED`) | GitHub Actions | deletes merged `claude/*`/`cursor/*` only when armed |
+| `06:23` | Prune merged agent branches (tier-1 merged-only; tier-2 dry-run) | GitHub Actions | deletes fully-merged `claude/*` only |
+| `08:00` | Marketing lane (disjoint from `:00` integrator — writes `claude/lane-marketing`) | Claude Code routine | `claude/lane-marketing` |
+| `10:33` | Nightly E2E business-cycle (Playwright) | Claude Code routine | findings; session branch when fixing |
+| `10:53` Sun | Weekly deep audit (rotating) — off the nightly's minute | Claude Code routine | findings; session branch when fixing |
+| `12:00` Mon | Meta-governor (recommendation only; also audits stale `should` issues and PORTFOLIO drift) | Claude Code routine | nothing |
+| `14:00` Mon | Weekly outside-auditor (read-only) | Claude Code routine | nothing |
+| `15:11` | LoadOff fleet watchdog (stall detector; roster = the live 9, no Airtable ghosts) | Claude Code routine | nothing |
+| `16:49` | Prod smoke + fix-forward (daily) | Claude Code routine | integrator + `main`, only when production is red |
+| `20:41` Fri | Portfolio digest (`portfolio-digest.yml`) | GitHub Actions | one create-or-update GitHub issue |
 | every push / PR | `unit` job (vitest, token-lint, cursor-env-check) | GitHub Actions | nothing — read-only |
+
+**Dormant, reserved (D-003 — answered 2026-08-19: Cursor Automations on Grok 4.6):** the
+daily role slots — `05:13` office/UX · `08:13` driver+portal · `11:13` tests · `14:13`
+integrations · `20:13` marketing · Sat `07:07` deep-verify · Sun `09:07` red-team · Sun
+`18:07` meta-governor · Fri `19:37` owner digest · Mon `10:07` dependency pass. Import-ready
+workflow JSONs: [`.cursor/automation/`](../../.cursor/automation/README.md). Only the owner
+imports them (cursor.com/automations). **Alongside live Claude:** import office / driver /
+tests / integrations only. Skip marketing (`20:13`), deep-verify, red-team, and
+meta-governor — Claude already runs those charters. Once a slot is imported and its first
+run boots, move its row into the table above. Minutes `:07` / `:13` / `:37` are **reserved**
+— schedule nothing else on them (`src/lib/__tests__/fleet-clock-guard.test.ts` enforces this).
+
+Same-minute **disjoint targets** (not a merge race): Claude marketing `08:00` vs Cursor
+`:00` integrator; Claude meta-governor / auditor on Monday `:00`. Documented in FLEET.md.
+Grok Bot has no cron row — it is always-on, not scheduled into this clock (its two
+routines, gogo's GitHub event listener and Jeff's 8:30pm PT loadboard, touch GitHub
+events and Dropbox xlsx, never git). Airtable software is retired (D-014); those
+clock rows are gone.
+
+Live ids, the role map, and the stray duplicate automation: [`docs/ops/FLEET.md`](FLEET.md).
 
 **Adding anything scheduled — a Claude routine, a Cursor automation, a cron — means picking a minute
 not in that table and adding a row here in the same change.** A schedule that exists only in a
@@ -41,16 +80,18 @@ broken, it still runs.
 | Branch | Written by | Everyone else |
 |---|---|---|
 | `main` | the `:59` deploy agent, the `:17`/`:47` drain Action, the `:30` smoke agent when production is red, and the owner (or an agent the owner told to) | never push directly |
-| `claude/hauldesk-project-setup-l1luoo` (integrator) | the `:00` integrator agent, and the drain Action carrying the merge back | never push directly |
+| `claude/hauldesk-project-setup-l1luoo` (integrator) | the `:00` Cursor integrator, the `:43` Claude routine, and the drain Action carrying the merge back | never push directly |
 | `claude/lane-*` | the one agent working that lane | never |
 | `claude/<session-name>` | the one agent that created it | never |
+| `cursor/<session-name>` | the one Cursor agent that created it | lands via pull request; `npm run agent:branches` inventories `claude/*` only |
 
 Two agents on one branch is the single most expensive mistake available here — it costs a forced
 push or a conflict resolution nobody asked for. **One branch, one writer.** If you need work that
 lives on someone else's branch, say so in `Backlog:` and let the integrator merge it.
 
-Session branches are fine and preferred for ad-hoc work: the integrator finds them with
-`npm run agent:branches`, so nothing needs a fixed name.
+Session branches are fine and preferred for ad-hoc work. The integrator finds `claude/*`
+with `npm run agent:branches`. Cursor Cloud `cursor/*` session branches land via pull
+request — they are not in that inventory.
 
 ---
 
@@ -72,10 +113,25 @@ hard first step, not a suggestion — it is also the only cross-platform lock th
 
 ## 4 · How agents talk to each other
 
-The commit body is the message bus. Every agent reads recent commits before starting
-(`npm run agent:backlog` ranks them), so a note in a commit reaches every platform. Nothing else
-does — a Cursor agent cannot read a Claude session's transcript, and neither can read the other's
-dashboard.
+Three layers, all on GitHub (D-012):
+
+1. **Issues queue** — open issues labeled `should` are dispatchable work.
+   `needs-owner` parks a card for Ranvir. `venture:*` routes
+   ([`PORTFOLIO.md`](PORTFOLIO.md)). Anyone can *open* an issue (public repo);
+   only a **collaborator-applied `should` label** is a trigger. A label is
+   metadata, never authorization — writers keep their ceilings (Grok: none;
+   Cursor agent: PR; integrator: `main`). No claim-locks: one integrator + one
+   in-flight SHOULD on gogo's board already serialize. Issues close via
+   `Closes #N` on merge.
+2. **Repo state** — `FLEET.md`, `PORTFOLIO.md`, `DECISIONS.md`. Git writers only.
+3. **`Backlog:` trailers** — per-commit follow-ups. `npm run agent:backlog`
+   prints open `should` issues above trailers and prefers a labeled issue as
+   TOP PICK.
+
+The commit body is still the message bus for work that has not been filed as
+an issue. Every agent reads recent commits before starting, so a note in a
+commit reaches every platform. Nothing else does — a Cursor agent cannot read
+a Claude session's transcript, and neither can read the other's dashboard.
 
 Every commit body ends with a `Backlog:` list. Tag an item when it cannot be picked up by just
 anyone:
@@ -161,6 +217,11 @@ doing" — which is how three weeks passed with no Cursor agent able to start.
 - `npm run agent:branches` — pending work nobody has merged.
 - The `:17`/`:47` drain Action is the liveness signal that does not depend on Cursor: if its runs are
   green and `main` is still moving, publishing works even when every agent is down.
+- `.github/workflows/fleet-liveness.yml` (`:10`) fails CI when `npm run agent:status` exits 2
+  (integrator stalled with pending `claude/*` work). Catch-up (exit 1) stays green — the drain
+  Action owns that. This is the alarm that was missing for the three-week environment outage.
+  A Cursor automation that ERROR's in under a minute with `setupStatus: null` is that outage,
+  not an empty backlog.
 
 If two consecutive runs of a scheduled agent produce nothing, check the platform before assuming the
 backlog is empty: a Cursor automation that cannot boot its environment reports no error into this
