@@ -15,7 +15,7 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
-import { COMPANY_INFO, STATS } from "@/lib/constants"
+import { COMPANY_INFO, STATS, SUPPORT } from "@/lib/constants"
 import { FAQAccordion } from "@/components/shared/FAQAccordion"
 import { PageBreadcrumb } from "@/components/shared/PageBreadcrumb"
 import { RelatedLinks } from "@/components/shared/RelatedLinks"
@@ -284,7 +284,7 @@ const faqs = [
 const fleetStats = [
   { value: String(STATS.trucksInFleet), label: "Trucks in Fleet", icon: TrendingUp },
   { value: "100%", label: "APU-Equipped", icon: Shield },
-  { value: "24/7", label: "Dispatch & Roadside", icon: Clock },
+  { value: SUPPORT.hours, label: "Dispatch & Roadside", icon: Clock },
   { value: "2023-2025", label: "Model Years", icon: Calendar }
 ]
 
@@ -1049,7 +1049,7 @@ export default function FleetPage() {
               </Button>
             </div>
             <p className="mt-6 text-white/90 text-sm">
-              Takes 2 minutes • Response within 24 hours • No commitment to apply
+              Response within 24 hours on business days • No commitment to apply
             </p>
           </motion.div>
         </div>

@@ -4,7 +4,7 @@ import { useState } from "react"
 import Link from "next/link"
 
 import { usePathname } from "next/navigation"
-import { COMPANY_INFO, TRUST_INDICATORS } from "@/lib/constants"
+import { COMPANY_INFO, SUPPORT, TRUST_INDICATORS } from "@/lib/constants"
 import {
   Award,
   BadgeCheck,
@@ -298,7 +298,7 @@ export const CinematicFooter = () => {
                       {COMPANY_INFO.phone}
                     </a>
                     <p className="text-xs text-zinc-400">
-                      24/7 Dispatch Support
+                      {SUPPORT.dispatch}
                     </p>
                   </div>
                 </div>

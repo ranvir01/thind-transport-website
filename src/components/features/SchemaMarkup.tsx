@@ -44,7 +44,7 @@ export function SchemaMarkup() {
     ],
     address: {
       "@type": "PostalAddress",
-      streetAddress: "PO Box 5114",
+      streetAddress: COMPANY_INFO.address.split(",")[0],
       addressLocality: "Kent",
       addressRegion: "WA",
       postalCode: "98064",

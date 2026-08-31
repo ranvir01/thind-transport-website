@@ -60,7 +60,7 @@ export const CinematicHero = () => {
               href="/apply"
               className="group inline-flex items-center justify-center gap-2 px-7 py-3.5 border border-steel-500 bg-steel-800/40 hover:bg-steel-700/60 hover:border-orange/50 text-white font-semibold rounded-fleet text-sm md:text-base transition-all"
             >
-              Apply in 60 seconds
+              Start your application
               <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
             </Link>
             <a

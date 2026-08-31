@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { PAY_RATES } from "@/lib/constants"
+import { PAY_RATES, SUPPORT } from "@/lib/constants"
 import {
   Dialog,
   DialogContent,
@@ -43,7 +43,7 @@ export function JobDetailsDialog({ jobType = "company" }: JobDetailsDialogProps)
         "Home on weekends",
         "Consistent freight year-round",
         "Modern, well-maintained equipment",
-        "24/7 dispatch support",
+        SUPPORT.dispatch,
         "Fuel card programs available"
       ],
       routes: [
@@ -77,12 +77,12 @@ export function JobDetailsDialog({ jobType = "company" }: JobDetailsDialogProps)
         "Weekly settlements and fast pay options",
         "Fuel card programs with discounts",
         "Maintenance and tire discounts",
-        "24/7 dispatch support",
+        SUPPORT.dispatch,
         "Factoring services available",
         "Consistent quality freight across Flatbed, Reefer, Dry Van"
       ],
       routes: [
-        "OTR loads nationwide: Average $2.25-$3.25 per mile",
+        `OTR loads nationwide: ${PAY_RATES.ownerOperator.perMile} per mile`,
         "90% of gross - YOU keep 90%!",
         "Flatbed, Reefer, or Dry Van freight",
         "No forced dispatch - pick your lanes",

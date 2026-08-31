@@ -143,7 +143,7 @@ export default function PayBreakdownPage() {
         <div className="container relative mx-auto max-w-4xl px-4">
           <h2 className="mb-3 text-3xl font-black text-white md:text-4xl">Ready to start earning more?</h2>
           <p className="mb-8 max-w-xl text-lg text-white/90">
-            Run the numbers on your own lanes, or start the conversation with a 60-second application.
+            Run the numbers on your own lanes, or start the conversation with an application.
           </p>
           <div className="flex flex-col gap-4 sm:flex-row">
             <Link

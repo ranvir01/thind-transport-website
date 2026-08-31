@@ -8,7 +8,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion"
 import { HelpCircle } from "lucide-react"
-import { COMPANY_INFO, EQUIPMENT, FMCSA_LINKS, STATS } from "@/lib/constants"
+import { COMPANY_INFO, EQUIPMENT, FMCSA_LINKS, PAY_RATES, STATS } from "@/lib/constants"
 
 const defaultFaqs = [
   // Pay & Compensation
@@ -40,7 +40,7 @@ const defaultFaqs = [
   },
   {
     question: "What's the average length of haul?",
-    answer: "Our average length of haul is 800-1,200 miles depending on your route preferences. We have both long-haul cross-country lanes and shorter regional runs. Dedicated lanes available for drivers who prefer consistent routes. OTR drivers average 2,500-3,000 miles per week."
+    answer: "It depends on what you take: we run both long-haul cross-country lanes and shorter regional runs, and owner-operators choose. Dedicated lanes come up for drivers who want a consistent route. Ask dispatch what the current mix looks like — they will tell you what is actually on the board."
   },
   // Both answers below previously named specific shippers and brokers as
   // partners. We can't substantiate those relationships in writing, and naming
@@ -59,7 +59,7 @@ const defaultFaqs = [
   // Home Time & Schedule
   {
     question: "What about home time?",
-    answer: "We offer flexible schedules: Local routes (home every night), Regional routes (home on weekends - typically 5 days out, 2 days home), or OTR (2-3 weeks out, 3-4 days home). We work around your schedule, and if a load would break your home time, dispatch tells you before you accept it."
+    answer: "We offer flexible schedules: Local routes (home every night), Regional routes (home on weekends - typically 5 days out, 2 days home), or OTR (2-3 weeks out, 3-4 days home). Tell dispatch the home time you need and they build around it — and you see the delivery date before you accept a load, so you can say no."
   },
   {
     question: "Is there forced dispatch?",
@@ -69,7 +69,7 @@ const defaultFaqs = [
   // Benefits & Perks
   {
     question: "Do company drivers get benefits?",
-    answer: "Here's the honest list of what we offer today: $1,000 sign-on bonus in your first year; weekly direct deposit every Friday; performance and referral bonuses; home time you pick (local, regional, or OTR at the same $0.63/mile); modern 2023-2025 Freightliner Cascadias and Volvo VNLs; rider and pet policy; and 24/7 dispatch you can actually reach. We do NOT currently offer company medical, dental, vision, life or disability insurance, or a 401(k) — we'd rather tell you now than at orientation. If that changes, this page changes with it."
+    answer: "Here's the honest list of what we offer today: $1,000 sign-on bonus in your first year; weekly direct deposit every Friday; performance and referral bonuses; home time you pick (local, regional, or OTR at the same $0.63/mile); modern 2023-2025 Freightliner Cascadias and Volvo VNLs; and 24/7 dispatch you can actually reach. Riders and pets are decided case by case — ask us. We do NOT currently offer company medical, dental, vision, life or disability insurance, or a 401(k) — we'd rather tell you now than at orientation. If that changes, this page changes with it."
   },
   {
     question: "What fuel programs are available for owner operators?",
@@ -83,7 +83,7 @@ const defaultFaqs = [
   // Getting Started
   {
     question: "How quickly can I start?",
-    answer: "Most drivers start within 1-2 weeks after approval. Process: Phone interview (same day response), Application review (1-2 days), Background check & drug screening (3-5 days), Orientation (1 day in Kent, WA or virtual option), Then you're on the road!"
+    answer: "The steps are: a phone interview, application review, background check and drug screening, then orientation in Kent, WA (a virtual option is available). How long each takes depends on how fast your previous employers verify your history — we will tell you where you are at each stage rather than promise a date we do not control."
   },
   {
     question: "Do you hire nationwide?",
@@ -125,7 +125,7 @@ const defaultFaqs = [
   },
   {
     question: "Why should I choose Thind over bigger carriers?",
-    answer: "At big carriers, you're a number. At Thind, you're family. We offer: Highest commission in the industry (90%), No forced dispatch, Transparent settlements with no hidden fees, Modern equipment, Real 24/7 support from people who know your name, Home time that's actually honored. Many of our drivers came from mega-carriers and say they wish they'd switched sooner."
+    answer: `We are ${STATS.trucksInFleet} trucks, so the dispatcher who books your load is the one who answers when you call. What we put in writing: ${PAY_RATES.ownerOperator.commission} of gross, no forced dispatch, settlements every Friday with no deductions beyond our 10%, and ${EQUIPMENT.modelYears} equipment. Compare that line by line against whoever else you are talking to.`
   }
 ]
 

@@ -12,7 +12,7 @@ import { driverLinks } from "@/components/shared/link-sets"
 export const metadata: Metadata = {
   title: "Drive for Thind Transport | CDL-A & owner-operators",
   description:
-    "Owner-operators keep 90% of gross with 100% fuel surcharge pass-through; company drivers earn $0.63/mile with weekly pay. 2023-2025 Cascadias and VNLs, 48 states, dispatch that picks up. Run your own numbers on the calculator, then apply in about a minute.",
+    "Owner-operators keep 90% of gross with 100% fuel surcharge pass-through; company drivers earn $0.63/mile with weekly pay. 2023-2025 Cascadias and VNLs, 48 states, dispatch that picks up. Run your own numbers on the calculator, then start an application.",
   alternates: { canonical: "/drivers" },
 }
 
@@ -84,7 +84,7 @@ export default function DriversPage() {
                   href="/apply"
                   className="inline-flex min-h-[48px] items-center gap-2 rounded-m-2 bg-signal px-7 py-3 font-display text-m-body font-bold uppercase tracking-wide text-paper transition-colors duration-base ease-entrance hover:bg-paper hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-paper focus-visible:ring-offset-2 focus-visible:ring-offset-asphalt"
                 >
-                  Apply — about a minute <ArrowRight className="h-4 w-4" />
+                  Start your application <ArrowRight className="h-4 w-4" />
                 </Link>
                 <a
                   href={`tel:${COMPANY_INFO.phoneFormatted}`}

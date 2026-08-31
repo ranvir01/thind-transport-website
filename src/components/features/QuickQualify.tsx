@@ -182,7 +182,7 @@ export const QuickQualify = () => {
                 </Button>
               </Link>
               <p className="text-sm text-slate-600 mt-4">
-                Takes 2 minutes. No account needed.
+                No account needed.
               </p>
             </div>
           )}

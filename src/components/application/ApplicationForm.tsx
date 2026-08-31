@@ -785,7 +785,7 @@ export function ApplicationForm() {
               </div>
               <h2 className="text-3xl font-bold text-gray-900 mb-3">Thank You for Submitting Your Info</h2>
               <p className="text-lg text-gray-600 mb-4">
-                We will get back to you shortly, within the next 24 hours.
+                We will get back to you within 24 hours on business days.
               </p>
               <p className="text-base text-gray-600 mb-6 max-w-lg mx-auto leading-relaxed">
                 We will give you a call, and you can always call us or email us &mdash; 

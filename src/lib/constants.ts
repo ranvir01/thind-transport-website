@@ -24,7 +24,6 @@ export const STATS = {
   trucksInFleet: 15,
   activeDrivers: 15,
   statesCovered: 48,
-  growthRate: "Fast Growing",
 } as const
 
 export const SERVICES = {
@@ -64,7 +63,7 @@ export const PAY_RATES = {
 } as const
 
 // Only benefits we actually offer today. Health/dental/vision, life, disability
-// and 401(k) were removed in July 2026 — we do not carry those plans at the
+// and 401(k) were removed 2026-08-30 — we do not carry those plans at the
 // moment, and promising them on a recruiting page is a promise a driver finds
 // out about at orientation. Add them back here first if that ever changes.
 export const BENEFITS = {
@@ -78,7 +77,7 @@ export const BENEFITS = {
     "Referral bonuses",
   ],
   ownerOperator: [
-    "90% commission on all loads - Industry leading!",
+    "90% commission on all loads",
     "$2,500 sign-on bonus",
     "No forced dispatch - you choose your loads",
     "Weekly settlements and fast pay options",
@@ -110,6 +109,19 @@ export const EQUIPMENT = {
   /** Short phrasing for chips, tickers and stat tiles. */
   short: "2023-2025 Cascadias & VNLs",
   apu: "APU in every truck",
+} as const
+
+/**
+ * How reachable we actually are. Owner-confirmed 2026-08-30: someone answers
+ * around the clock. It was previously hand-typed on eighteen surfaces and read
+ * from constants on none, which is how a promise like this drifts.
+ */
+export const SUPPORT = {
+  hours: "24/7",
+  dispatch: "24/7 dispatch support",
+  roadside: "24/7 roadside assistance",
+  /** For prose, where "24/7" reads like a slogan. */
+  phrase: "days, nights, and weekends",
 } as const
 
 // Verifiable trust indicators only — no invented ratings or percentages.

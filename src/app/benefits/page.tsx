@@ -8,7 +8,7 @@ import {
 } from "lucide-react"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { COMPANY_INFO, EQUIPMENT, PAY_RATES } from "@/lib/constants"
+import { COMPANY_INFO, EQUIPMENT, PAY_RATES, SUPPORT } from "@/lib/constants"
 import { PageBreadcrumb } from "@/components/shared/PageBreadcrumb"
 import { PageHero } from "@/components/shared/PageHero"
 import { Reveal } from "@/components/ui/Reveal"
@@ -97,16 +97,8 @@ const companyDriverBenefits = [
         highlight: true,
       },
       {
-        title: "24/7 Dispatch Support",
+        title: SUPPORT.dispatch,
         description: "Real people available whenever you need help",
-      },
-      {
-        title: "Rider Program",
-        description: "Bring a companion on the road",
-      },
-      {
-        title: "Pet Policy",
-        description: "Your furry friend can ride along",
       },
     ],
   },
@@ -591,7 +583,7 @@ export default function BenefitsPage() {
             </h2>
             <p className="text-lg text-white/90 mb-8">
               $0.63 a mile for company drivers, 90% of the linehaul for owner-operators,
-              and a real person on the phone in Kent. Apply today and hear back within 24 hours.
+              and a real person on the phone in Kent. Apply today and hear back within 24 hours on business days.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link

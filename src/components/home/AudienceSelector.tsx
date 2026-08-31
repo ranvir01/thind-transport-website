@@ -33,7 +33,7 @@ const AUDIENCES: Audience[] = [
     icon: Truck,
     who: "I drive",
     label: "Driver or owner-operator",
-    promise: "See what you'd take home, then apply in about a minute.",
+    promise: "See what you'd take home, then start an application.",
     primary: true,
   },
   {

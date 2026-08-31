@@ -7,6 +7,7 @@ import {
   ShieldCheck,
   ArrowRight,
 } from "lucide-react"
+import { COMPANY_INFO, EQUIPMENT, STATS, SUPPORT } from "@/lib/constants"
 import { Reveal } from "@/components/ui/Reveal"
 
 const trailers = [
@@ -28,17 +29,22 @@ const trailers = [
 ]
 
 const tractorPoints = [
-  "2023-2025 Freightliner Cascadias & Volvo VNLs",
+  `${EQUIPMENT.modelYears} ${EQUIPMENT.makes}`,
   "APUs, inverters & modern driver comfort",
   "Collision mitigation + lane-keep safety tech",
   "Preventive maintenance on a fixed schedule",
 ]
 
+// "In-house mechanical support" and "FMCSA safety-rated fleet" used to sit
+// here. Both are paraphrases of claims the ratchet already bans — there is no
+// in-house shop (owner, 2026-08-30), and FMCSA issues Satisfactory /
+// Conditional / Unsatisfactory, never a rating a carrier can advertise as a
+// grade. A substring test could not see either one.
 const supportPoints = [
-  { label: "24/7 roadside assistance", icon: Wrench },
-  { label: "In-house mechanical support", icon: Wrench },
+  { label: SUPPORT.roadside, icon: Wrench },
+  { label: "Preventive maintenance on a fixed schedule", icon: Wrench },
   { label: "O/O maintenance & tire discounts", icon: Truck },
-  { label: "DOT-compliant, FMCSA safety-rated fleet", icon: ShieldCheck },
+  { label: `USDOT ${COMPANY_INFO.dot} — read our record on FMCSA SAFER`, icon: ShieldCheck },
 ]
 
 export function EquipmentSection() {
@@ -56,7 +62,7 @@ export function EquipmentSection() {
             <span className="text-gradient-accent">actually new</span>
           </h2>
           <p className="max-w-2xl text-base text-steel-300 md:text-lg">
-            15 trucks and growing — multiple trailer types, all DOT-compliant.
+            {STATS.trucksInFleet} trucks — multiple trailer types, all DOT-compliant.
             No 10-year-old hand-me-downs.
           </p>
         </Reveal>
@@ -76,7 +82,7 @@ export function EquipmentSection() {
             </div>
             <div className="absolute bottom-4 left-4 right-4 flex items-center gap-2">
               <span className="fleet-badge fleet-badge-gold">
-                2024 model year
+                {EQUIPMENT.modelYears} model years
               </span>
             </div>
           </Reveal>

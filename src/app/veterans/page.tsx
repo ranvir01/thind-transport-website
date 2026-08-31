@@ -7,7 +7,7 @@ import {
 } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { COMPANY_INFO, PAY_RATES } from "@/lib/constants"
+import { COMPANY_INFO, PAY_RATES, SUPPORT } from "@/lib/constants"
 import { PageBreadcrumb } from "@/components/shared/PageBreadcrumb"
 import { RelatedLinks } from "@/components/shared/RelatedLinks"
 import { driverLinks } from "@/components/shared/link-sets"
@@ -156,7 +156,7 @@ export default function VeteransPage() {
             {[
               { value: "90%", label: "Commission", sublabel: "Owner Operators" },
               { value: "$0.63", label: "Per Mile", sublabel: "Company Drivers" },
-              { value: "24/7", label: "Support", sublabel: "Real People" },
+              { value: SUPPORT.hours, label: "Support", sublabel: "Real People" },
               { value: "48", label: "States", sublabel: "Nationwide Coverage" },
             ].map((stat) => (
               <div key={stat.label} className="bg-white rounded-xl p-4 shadow-lg border border-gray-100 text-center">

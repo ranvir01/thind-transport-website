@@ -181,7 +181,7 @@ export function PreQualificationForm() {
             Thank You for Your Interest
           </h2>
           <p className="text-lg text-slate-600 max-w-xl mx-auto mb-8">
-            Based on your answers, we need to review your application manually to determine eligibility. A recruiter will review your details and contact you within 24 hours.
+            Based on your answers, we need to review your application manually to determine eligibility. A recruiter will review your details and contact you within 24 hours on business days.
           </p>
           <div className="flex justify-center">
             <Button asChild className="h-14 text-lg font-bold bg-slate-900 hover:bg-slate-800 text-white px-8">
