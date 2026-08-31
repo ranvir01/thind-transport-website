@@ -50,6 +50,24 @@ describe("drain-integrator workflow guard", () => {
     expect(drainAt).toBeGreaterThan(buildAt)
   })
 
+  it("gives Verify integrator the postgres service the isolation proofs require", () => {
+    // Learned 2026-08-30 (run 33332732044): CI=true + no POSTGRES_URL made
+    // portal-isolation / driver-file-isolation / cross-tenant-harness throw
+    // and skipped the merge. Do not regress to a green-looking skip.
+    expect(workflow).toMatch(/image:\s*postgres:16/)
+    expect(workflow).toMatch(
+      /POSTGRES_URL:\s*postgres:\/\/hubapp:hubpass@localhost:5432\/hubdb/
+    )
+    const verify = workflow.split("name: Verify integrator")[1]?.split("name: Merge integrator")[0] ?? ""
+    const migrateAt = verify.indexOf("npm run db:migrate")
+    const seedAt = verify.indexOf("npm run seed:demo")
+    const testAt = verify.indexOf("npx vitest run")
+    expect(migrateAt).toBeGreaterThan(-1)
+    expect(seedAt).toBeGreaterThan(-1)
+    expect(seedAt).toBeGreaterThan(migrateAt)
+    expect(testAt).toBeGreaterThan(seedAt)
+  })
+
   it("only drains a linear (non-diverged) integrator", () => {
     expect(workflow).toMatch(/merge-base --is-ancestor/)
   })
