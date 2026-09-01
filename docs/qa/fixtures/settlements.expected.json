@@ -1,0 +1,121 @@
+{
+  "_note": "Penny-exact outputs mirroring settlement-worksheets/. Diff live hub.settlements.{gross,deductions,net}_cents against these. 1099 Box1 = gross_cents - reimbursement lines for pay_type=percentage, status in (approved,paid).",
+  "settlements": [
+    {
+      "id": "S-MILE-W",
+      "driver_id": "D-MILE",
+      "seed_name": "Harpreet Singh",
+      "company_id": "11111111-1111-1111-1111-111111111111",
+      "tariff": "per_mile",
+      "source": "seed-demo Draft this week",
+      "worksheet": "settlement-worksheets/tariff-01-per-mile.md",
+      "loads": ["THD-1010", "THD-1011"],
+      "earnings": 63000,
+      "reimbursements": 15000,
+      "gross_cents": 78000,
+      "deductions_cents": 27500,
+      "net_cents": 50500,
+      "reportable_comp": 0,
+      "is_1099": false
+    },
+    {
+      "id": "S-OO-HIST",
+      "driver_id": "D-OO",
+      "seed_name": "Jasdeep Brar",
+      "company_id": "11111111-1111-1111-1111-111111111111",
+      "source": "seed-demo already-paid settlement (~30d ago)",
+      "gross_cents": 237500,
+      "deductions_cents": 5000,
+      "net_cents": 232500,
+      "reimbursements": 0,
+      "reportable_comp": 237500,
+      "status": "paid",
+      "is_1099": true
+    },
+    {
+      "id": "S-OO-SEED",
+      "driver_id": "D-OO",
+      "seed_name": "Jasdeep Brar",
+      "company_id": "11111111-1111-1111-1111-111111111111",
+      "tariff": "owner_operator",
+      "source": "seed-demo Draft this week (THD-1012)",
+      "worksheet": "settlement-worksheets/tariff-02-owner-operator.md#period-a",
+      "loads": ["THD-1012"],
+      "earnings": 268500,
+      "reimbursements": 0,
+      "gross_cents": 268500,
+      "deductions_cents": 5000,
+      "net_cents": 263500,
+      "reportable_comp": 268500,
+      "is_1099": true
+    },
+    {
+      "id": "S-OO-W3",
+      "driver_id": "D-OO",
+      "company_id": "11111111-1111-1111-1111-111111111111",
+      "tariff": "owner_operator",
+      "source": "fixture rich week (not in seed-demo)",
+      "worksheet": "settlement-worksheets/tariff-02-owner-operator.md#period-b",
+      "loads": ["L-3001", "L-3002", "L-3003"],
+      "earnings": 841700,
+      "reimbursements": 22500,
+      "gross_cents": 864200,
+      "deductions_cents": 104984,
+      "net_cents": 759216,
+      "reportable_comp": 841700,
+      "is_1099": true
+    },
+    {
+      "id": "S-FLAT-W",
+      "driver_id": "D-FLAT",
+      "company_id": "11111111-1111-1111-1111-111111111111",
+      "tariff": "flat_per_load",
+      "worksheet": "settlement-worksheets/tariff-03-flat-per-load.md",
+      "gross_cents": 152500,
+      "deductions_cents": 2500,
+      "net_cents": 150000,
+      "reportable_comp": 0,
+      "is_1099": false
+    },
+    {
+      "id": "S-MIXED-W",
+      "driver_id": "D-MIXED",
+      "company_id": "11111111-1111-1111-1111-111111111111",
+      "tariff": "hourly_mixed",
+      "worksheet": "settlement-worksheets/tariff-04-hourly-mixed.md",
+      "earnings": 75315,
+      "reimbursements": 1350,
+      "gross_cents": 76665,
+      "deductions_cents": 29850,
+      "net_cents": 46815,
+      "reportable_comp": 0,
+      "is_1099": false
+    }
+  ],
+  "ytd_1099_expected": [
+    {
+      "scenario": "seed-demo as seeded (only S-OO-HIST is approved/paid)",
+      "payee": "Jasdeep Brar",
+      "company_id": "11111111-1111-1111-1111-111111111111",
+      "settlements_summed": ["S-OO-HIST"],
+      "ytd_1099_nec_box1_cents": 237500,
+      "ytd_1099_nec_dollars": "2375.00",
+      "note": "CSV column Box1_NonemployeeCompensation is dollars with 2 dp, not cents"
+    },
+    {
+      "scenario": "seed-demo after Draft+Approve of S-OO-SEED",
+      "payee": "Jasdeep Brar",
+      "settlements_summed": ["S-OO-HIST", "S-OO-SEED"],
+      "ytd_1099_nec_box1_cents": 506000,
+      "ytd_1099_nec_dollars": "5060.00"
+    },
+    {
+      "scenario": "fixture loader: S-OO-HIST + S-OO-W3 both approved/paid",
+      "payee": "D-OO",
+      "settlements_summed": ["S-OO-HIST", "S-OO-W3"],
+      "reportable_components": [237500, 841700],
+      "ytd_1099_nec_box1_cents": 1079200,
+      "ytd_1099_nec_dollars": "10792.00"
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "_note": "Seed-demo already inserts Harpreet's $200 advance and $150 lumper. Rich-week O/O items are fixture-only and must be present on hub.pay_rules.deductions or hub.advances before S-OO-W3 is drafted.",
+  "period": { "id": "PER-OPEN", "note": "whatever week Draft this week uses on seed-demo" },
+  "line_items": [
+    { "id": "DA-MILE-ADV", "driver_id": "D-MILE", "settlement_id": "S-MILE-W", "kind": "advance", "label": "EFS code 4417", "amount_cents": 20000, "source": "seed-demo hub.advances" },
+    { "id": "DA-MILE-LUMPER", "driver_id": "D-MILE", "settlement_id": "S-MILE-W", "kind": "reimbursement", "label": "lumper reimbursement — Lumper at Reno DC — receipt in hand", "amount_cents": 15000, "source": "seed-demo hub.expenses reimbursable" },
+    { "id": "DA-MILE-INS", "driver_id": "D-MILE", "settlement_id": "S-MILE-W", "kind": "insurance", "label": "Insurance", "amount_cents": 7500, "source": "driver.insurance_weekly_cents" },
+
+    { "id": "DA-OO-ESCROW-SEED", "driver_id": "D-OO", "settlement_id": "S-OO-SEED", "kind": "escrow", "label": "Escrow contribution", "amount_cents": 5000 },
+
+    { "id": "DA-OO-FUEL", "driver_id": "D-OO", "settlement_id": "S-OO-W3", "kind": "flat_recurring", "label": "Fuel card", "amount_cents": 61234 },
+    { "id": "DA-OO-TOLL", "driver_id": "D-OO", "settlement_id": "S-OO-W3", "kind": "flat_recurring", "label": "Tolls", "amount_cents": 8750 },
+    { "id": "DA-OO-ESCROW", "driver_id": "D-OO", "settlement_id": "S-OO-W3", "kind": "escrow", "label": "Escrow contribution", "amount_cents": 5000 },
+    { "id": "DA-OO-ADV", "driver_id": "D-OO", "settlement_id": "S-OO-W3", "kind": "advance", "label": "Cash advance", "amount_cents": 30000 },
+    { "id": "DA-OO-LUMPER", "driver_id": "D-OO", "settlement_id": "S-OO-W3", "kind": "reimbursement", "label": "lumper", "amount_cents": 22500 },
+
+    { "id": "DA-FLAT-INS", "driver_id": "D-FLAT", "settlement_id": "S-FLAT-W", "kind": "insurance", "amount_cents": 2500 },
+
+    { "id": "DA-MIX-ADV", "driver_id": "D-MIXED", "settlement_id": "S-MIXED-W", "kind": "advance", "label": "ADV-9", "amount_cents": 20000 },
+    { "id": "DA-MIX-FUEL", "driver_id": "D-MIXED", "settlement_id": "S-MIXED-W", "kind": "flat_recurring", "label": "Fuel card — personal use", "amount_cents": 4850 },
+    { "id": "DA-MIX-ESCROW", "driver_id": "D-MIXED", "settlement_id": "S-MIXED-W", "kind": "escrow", "amount_cents": 5000 },
+    { "id": "DA-MIX-SCALE", "driver_id": "D-MIXED", "settlement_id": "S-MIXED-W", "kind": "reimbursement", "label": "Scale ticket", "amount_cents": 1350 }
+  ]
+}

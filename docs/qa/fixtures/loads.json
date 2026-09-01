@@ -1,0 +1,32 @@
+{
+  "_note": "Seed-demo references (THD-*, CAS-*) are what npm run seed:demo creates. L-* rows are extra fixture loads for the rich O/O / flat weeks. Statuses cover the full LOAD_STATUSES spine. Money integer cents. detention_billable already net of 2 free hours where noted.",
+  "loads": [
+    { "id": "THD-1001", "company_id": "11111111-1111-1111-1111-111111111111", "status": "booked", "lane": "Kent WA -> Sacramento CA" },
+    { "id": "THD-1003", "company_id": "11111111-1111-1111-1111-111111111111", "driver_id": "D-MILE", "status": "dispatched", "lane": "Kent WA -> Boise ID" },
+    { "id": "THD-1004", "company_id": "11111111-1111-1111-1111-111111111111", "status": "at_pickup", "factored": true, "lane": "Spokane WA -> Portland OR" },
+    { "id": "THD-1005", "company_id": "11111111-1111-1111-1111-111111111111", "status": "in_transit", "lane": "Kent WA -> Los Angeles CA", "linehaul_cents": 345000, "fuel_surcharge_cents": 38000 },
+    { "id": "THD-1007", "company_id": "11111111-1111-1111-1111-111111111111", "status": "cancelled", "lane": "Seattle WA -> Boise ID" },
+    { "id": "THD-1008", "company_id": "11111111-1111-1111-1111-111111111111", "status": "delivered", "lane": "Yakima WA -> Medford OR" },
+    { "id": "THD-1009", "company_id": "11111111-1111-1111-1111-111111111111", "status": "pod_received", "lane": "Seattle WA -> Boise ID", "linehaul_cents": 295000, "fuel_surcharge_cents": 31000, "accessorials": [{ "label": "Tarp", "amount_cents": 10000 }], "note": "one-click invoice target" },
+    { "id": "THD-1010", "company_id": "11111111-1111-1111-1111-111111111111", "driver_id": "D-MILE", "status": "pod_received", "lane": "Portland OR -> Reno NV", "loaded_miles": 520, "deadhead_miles": 42, "linehaul_cents": 210000, "fuel_surcharge_cents": 20000, "settlement": "S-MILE-W" },
+    { "id": "THD-1011", "company_id": "11111111-1111-1111-1111-111111111111", "driver_id": "D-MILE", "status": "pod_received", "lane": "Kent WA -> Boise ID", "loaded_miles": 480, "deadhead_miles": 38, "linehaul_cents": 195000, "fuel_surcharge_cents": 18000, "settlement": "S-MILE-W" },
+    { "id": "THD-1012", "company_id": "11111111-1111-1111-1111-111111111111", "driver_id": "D-OO", "status": "pod_received", "factored": true, "lane": "Seattle WA -> Sacramento CA", "loaded_miles": 800, "linehaul_cents": 250000, "fuel_surcharge_cents": 30000, "accessorials": [{ "label": "Detention", "amount_cents": 15000 }], "settlement": "S-OO-SEED" },
+    { "id": "THD-1013", "company_id": "11111111-1111-1111-1111-111111111111", "status": "invoiced", "lane": "Portland OR -> Reno NV" },
+    { "id": "THD-1015", "company_id": "11111111-1111-1111-1111-111111111111", "driver_id": "D-OO", "status": "invoiced", "factored": true, "lane": "Kent WA -> Sacramento CA", "linehaul_cents": 310000, "fuel_surcharge_cents": 34000, "invoice": "INV-F-SEED" },
+    { "id": "THD-1016", "company_id": "11111111-1111-1111-1111-111111111111", "status": "paid", "lane": "Seattle WA -> Los Angeles CA" },
+
+    { "id": "L-3001", "company_id": "11111111-1111-1111-1111-111111111111", "driver_id": "D-OO", "status": "delivered", "lane": "Kent WA -> Sacramento CA", "loaded_miles": 760, "deadhead_miles": 40, "linehaul_cents": 295000, "fuel_surcharge_cents": 31000, "accessorials": [{ "label": "Detention", "amount_cents": 10000 }], "settlement": "S-OO-W3" },
+    { "id": "L-3002", "company_id": "11111111-1111-1111-1111-111111111111", "driver_id": "D-OO", "status": "delivered", "lane": "Sacramento CA -> Reno NV", "loaded_miles": 130, "deadhead_miles": 15, "linehaul_cents": 142000, "fuel_surcharge_cents": 14500, "settlement": "S-OO-W3" },
+    { "id": "L-3003", "company_id": "11111111-1111-1111-1111-111111111111", "driver_id": "D-OO", "status": "paid", "lane": "Reno NV -> Kent WA", "loaded_miles": 805, "deadhead_miles": 18, "linehaul_cents": 378000, "fuel_surcharge_cents": 40200, "accessorials": [{ "label": "Layover", "amount_cents": 15000 }], "lumper_cents": 22500, "settlement": "S-OO-W3" },
+
+    { "id": "L-4001", "company_id": "11111111-1111-1111-1111-111111111111", "driver_id": "D-FLAT", "status": "delivered", "stops_count": 3, "linehaul_cents": 60000, "accessorials": [{ "label": "Detention", "amount_cents": 5000 }], "settlement": "S-FLAT-W" },
+    { "id": "L-4002", "company_id": "11111111-1111-1111-1111-111111111111", "driver_id": "D-FLAT", "status": "delivered", "stops_count": 2, "linehaul_cents": 65000, "settlement": "S-FLAT-W" },
+    { "id": "L-4003", "company_id": "11111111-1111-1111-1111-111111111111", "driver_id": "D-FLAT", "status": "delivered", "stops_count": 2, "linehaul_cents": 62000, "settlement": "S-FLAT-W" },
+
+    { "id": "THD-2001", "company_id": "11111111-1111-1111-1111-111111111111", "driver_id": "D-MIXED", "status": "delivered", "loaded_miles": 512, "deadhead_miles": 40, "linehaul_cents": 180000, "fuel_surcharge_cents": 21000, "accessorials": [{ "label": "Detention", "amount_cents": 7500 }], "settlement": "S-MIXED-W" },
+    { "id": "THD-2002", "company_id": "11111111-1111-1111-1111-111111111111", "driver_id": "D-MIXED", "status": "delivered", "loaded_miles": 487, "deadhead_miles": 65, "linehaul_cents": 165000, "fuel_surcharge_cents": 19000, "accessorials": [{ "label": "Lumper", "amount_cents": 6255 }], "settlement": "S-MIXED-W" },
+
+    { "id": "CAS-5001", "company_id": "22222222-2222-2222-2222-222222222222", "driver_id": "D-CASCADE", "status": "in_transit", "lane": "Spokane WA -> Portland OR", "linehaul_cents": 168000, "fuel_surcharge_cents": 14000 },
+    { "id": "CAS-5002", "company_id": "22222222-2222-2222-2222-222222222222", "status": "pod_received", "lane": "Kent WA -> Boise ID", "linehaul_cents": 152000, "fuel_surcharge_cents": 12000 }
+  ]
+}
