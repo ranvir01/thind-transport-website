@@ -14,13 +14,13 @@ issues by the labels below.
 
 ## Active
 
-| Venture | Label | What it is | Repo / live | Who |
+| Venture | Label | What it is | Repo / live | Who (Grok CoS in bold) |
 |---|---|---|---|---|
-| **LoadOff** | `venture:loadoff` | TMS for small carriers. Primary scale bet. | `ranvir01/thind-transport-website` · thindtransport.com/hub | Claude 9-task fleet + Cursor agents; gogo dispatches |
-| **AR Payments LLC** | `venture:ar-payments` | Legal holding / billing company for Thind + ATS. Not a product. Bank + remittance + two-LLC allocation. | [`AR-PAYMENTS.md`](AR-PAYMENTS.md) · Dropbox Excel SoR | Jeff (ops); owner (bank). LoadOff never holds funds |
-| **MyConsulting Network** | `venture:myco` | Talent / business marketplace. Quiet. | `ranvir01/myco-website` · Pages at `ranvir01.github.io/myco-website` (cite the repo, not a live product, until myconsulting.network is confirmed up) | Owner-fired [`EXPANSION-PROMPT.md`](EXPANSION-PROMPT.md) later. Rav may cite GitHub/Pages as proof |
-| **Career OS** | `venture:career` | Personal WA hybrid/remote AI-integration hunt **now**. Scale *goal* later: the same JD → one-page PDF → tracker loop as a product for millions of applicants. **Do not productize in this repo this sprint.** Parked: [#67](https://github.com/ranvir01/thind-transport-website/issues/67) (`needs-owner`). | private `ranvir01/Job-Applications` + Rav `/workspace/career/` | Rav (drafts only, no outreach unless asked) |
-| **BLS** | `venture:bls` | Live client site. Proof + services revenue, not millions of users. | `ranvir01/bls-website` · bluelandscapingservices.com on **Netlify** | Steve reads GitHub commit checks; expansion paste later |
+| **LoadOff** | `venture:loadoff` | TMS for small carriers. Primary scale bet. | `ranvir01/thind-transport-website` · thindtransport.com/hub | **Em** (Eng Mgr) + Dex/Rex Fire Cursor + Claude 9-task fleet; gogo routes |
+| **AR Payments LLC** | `venture:ar-payments` | Legal holding / billing company for Thind + ATS. Not a product. Bank + remittance + two-LLC allocation. | [`AR-PAYMENTS.md`](AR-PAYMENTS.md) · Dropbox Excel SoR | **Jeff** (ops); owner (bank). LoadOff never holds funds |
+| **MyConsulting Network** | `venture:myco` | Talent / business marketplace. Quiet. | `ranvir01/myco-website` · Pages at `ranvir01.github.io/myco-website` (cite the repo, not a live product, until myconsulting.network is confirmed up) | **My** (quiet CoS). Owner-fired [`EXPANSION-PROMPT.md`](EXPANSION-PROMPT.md) later. Rav may cite GitHub/Pages as proof |
+| **Career OS** | `venture:career` | Personal WA hybrid/remote AI-integration hunt **now**. Scale *goal* later: the same JD → one-page PDF → tracker loop as a product for millions of applicants. **Do not productize in this repo this sprint.** Parked: [#67](https://github.com/ranvir01/thind-transport-website/issues/67) (`needs-owner`). | private `ranvir01/Job-Applications` + Rav `/workspace/career/` | **Rav** (drafts only, no outreach unless asked) |
+| **BLS** | `venture:bls` | Live client site. Proof + services revenue, not millions of users. | `ranvir01/bls-website` · bluelandscapingservices.com on **Netlify** | **Bee** (quiet CoS). Steve reads GitHub commit checks; expansion paste later |
 
 Thind Transport + ATS as *trucking companies* are the cash engine that funds
 LoadOff. They are not a `venture:*` of their own — they run through

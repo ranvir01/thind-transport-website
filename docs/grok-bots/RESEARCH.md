@@ -1,8 +1,9 @@
 # Grok Bot research — what we took, what we rejected
 
-Dated **2026-08-28**. Applied to the **live four** (gogo, Steve, Jeff, Rav — one
-Big team group). No extra bots. Sources the owner named, plus the official docs
-those pages point at.
+Dated **2026-08-28** (four-bot freeze) and **2026-09-01** (D-015 14-seat org).
+The 08-28 took/reject list still applies for product limits (one computer,
+≤4000, never SSH-tunnel, Gmail PDF bytes). D-015 reverses the roster ceiling
+and the “Ranvir clicks” rule.
 
 ## Sources read
 
@@ -79,8 +80,33 @@ job pattern, not the extra seats.
 - Teaching the Bot to Replace Dropbox files, tick Airtable Highlight, or apply
   to jobs.
 
+## Took 2026-09-01 (D-015 — 14-seat org)
+
+Owner asked to go all-out with Grok Bot on Cursor Ultra ($200) + Claude Max 5x
+($100). Sources: the nine X posts plus official `x.ai/bot/guides`.
+
+| Source | Took | Rejected |
+|---|---|---|
+| [XFreeze → x.ai/bot/guides](https://x.ai/bot/guides) | One channel + roster per project; 6-part anatomy (job, connections, computer, routines, skills, handoffs) | Notion as the board |
+| [Mobile studio](https://x.ai/bot/guides/grok-bot-for-mobile-app-development) | Teach-a-task click-paths; overnight handoffs; one owner per finding | Buying media without Ranvir |
+| [sairahul1](https://x.com/sairahul1/status/2089995692874068433) | Role = a job; Ultra unlocks Grok Bot; up to 50 | Treating 50 as a day-1 target |
+| [0xcodez / lingxi](https://x.com/lingxi/status/2094493172516966781) + [design guide](https://x.ai/bot/guides/designing-grok-bot-with-grok-bot) | Labs experiments seat | Shipping every experiment; productizing Career OS here (#67) |
+| [0xcarnagee](https://x.com/0xcarnagee/status/2093861750416265686) | 15–25 bots, CoS routes — we ship 14 | 25 always-on routines day one |
+| [mattyp Templates](https://x.com/mattyp/status/2094046731143164207) | Author our own templates | Random public templates |
+| [saboo / OpenBot](https://github.com/CopilotKit/openbot) | Handoff-as-file, recording | OpenBot as a second runtime |
+| [PM guide](https://x.ai/bot/guides/grok-bot-for-pms) | CoS + EM (does not code) + ICs who Fire Cursor; Friday offload retro | Five LoadOff ICs day one |
+| [GTM guide](https://x.ai/bot/guides/grok-bot-for-gtm) | gogo proposes bots; anti-slop; clean unused routines | LinkedIn/X posting; GTM swarm |
+
+Also took: Finch 70/90 governor so Ultra/Max/Grok meters are used hard and not
+blown; Fire Cursor / Fire Claude teach-a-task (reverses D-011 click rule);
+Wright spawn-after-yes; Scout bookmark → Labs demo factory; Ridge model cards.
+
+Still rejected: SSH-tunnel jailbreak, always-allow-the-browser, Dropbox
+Replace, Airtable, Notion hub, LangGraph/CrewAI, extra Grok on-demand without
+saying so, hourly attention until week 2.
+
 ## What this does not change
 
-Four bots. One group. Two routines (gogo's GitHub listener, Jeff's 8:30pm PT
-loadboard). Claude Corps still writes scheduled git. Cursor cloud agents still
-take bounded PRs. Human-only: SMTP, Form 2290, AR Payments bank.
+Claude Corps still writes scheduled git (9 tasks). Cursor cloud agents still
+land PRs that Grok never merges. Human-only: SMTP, Form 2290, AR Payments bank,
+plan purchases, Grok pastes, `should` labels, merges, yes to each new bot.

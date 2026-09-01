@@ -21,10 +21,12 @@ enabled — live `list_triggers` snapshot 2026-08-28). The Airtable lane is
 automations are currently DISABLED** (Integrator, Prod Smoke, Deploy + backlog,
 Untitled — looked up 2026-08-26). Untitled stays off. GitHub Actions still
 drain `main`, page stall, and (this PR) file `should` issues on red. Grok Bot
-watches (four bots — gogo Chief of Staff + TPM, Steve Staff SRE, Jeff Head of
-RevOps, Rav Talent Scout); it never writes git
+is the 14-seat org (D-015) — gogo org CoS, Finch FinOps, Wright Botwright,
+Scout bookmarks, Em Eng Mgr, Dex/Rex Fire Cursor, Steve SRE, Jeff RevOps,
+Rav Talent Scout, Labs + Ridge, Bee + My; it never writes git
 ([`docs/grok-bots/`](../grok-bots/README.md)). Portfolio registry:
-[`PORTFOLIO.md`](PORTFOLIO.md).
+[`PORTFOLIO.md`](PORTFOLIO.md). Model card:
+[`MODEL-ROUTING.md`](MODEL-ROUTING.md).
 
 ### Mechanical loop + CI
 
@@ -87,24 +89,26 @@ They cannot see each other's sessions **across platforms** (Cursor cannot read a
 Claude transcript; neither can read a Grok Bot thread). The **commit body** is the
 bus between platforms (`Backlog:` trailers, `npm run agent:backlog`). **One branch, one writer.** If a fix already exists on another branch, name it in `Backlog:` and take the next item.
 
-**Grok Bots among themselves can share a thread.** The live team (D-010) is
-**four named Bots in one group, Big team**: gogo (TPM + coding dispatcher),
-Steve (Deploy/CI), Jeff (RevOps), Rav (Career Coach). No spawning, no extra
-groups. Paste files: [`docs/grok-bots/SETUP.md`](../grok-bots/SETUP.md) is the
-one owner file. Grok never writes git. Its two live routines — gogo's GitHub
-event listener (pr-opened / pr-merged / ci-failed on main) and Jeff's daily
-8:30pm PT loadboard run (writes only the two live Dropbox xlsx, never git) —
-stay off this table's write clock. The Grok-side board lives at
-`/workspace/board.md` on the shared Grok computer (D-011); this repo's
-`Backlog:` trailers and PR bodies are its intake.
+**Grok Bots among themselves can share a thread.** The live team (D-015) is
+**14 named Bots in six groups** (HQ, LoadOff, Money, Career, Labs, Clients):
+gogo (org CoS), Finch (FinOps 70/90), Wright (spawn after owner yes), Scout
+(X bookmarks), Em (LoadOff Eng Mgr — only writer of `/workspace/loadoff/board.md`),
+Dex + Rex (ICs, Fire Cursor), Steve (SRE), Jeff (RevOps), Rav (Career), Labs +
+Ridge (demos + models), Bee + My (quiet venture CoS). Paste files:
+[`docs/grok-bots/SETUP.md`](../grok-bots/SETUP.md) is the one owner file. Grok
+never writes git. Live Grok routines (gogo's GitHub listener, Finch's morning
+usage line, Scout weekday 16:00 PT, Jeff's daily 8:30pm PT loadboard) stay off
+this table's write clock. Boards live on the shared Grok computer; this repo's
+`should` issues, `Backlog:` trailers, and PR bodies are intake.
 
 **D-007 (scheduled code):** Claude Corps still owns scheduled git and long
-prompts. **D-010 (dispatch):** gogo runs a one-item coding board — a bounded
-repo fix becomes a **Cursor cloud agent** paste (Goal / Files / Done when /
-Verify), lands as a `cursor/*` PR, gets reviewed by Grok and **never merged**
-by it. The owner fires the agent — Grok never starts one itself (agents Grok
-starts burn Cursor plan usage, D-011). Claude pastes only when the owner asks
-or the work is bigger than one PR. SMTP 535, Form 2290, and the AR Payments
+prompts. **D-015 (dispatch):** Em runs a one-item LoadOff board — a bounded
+repo fix becomes a **Cursor cloud agent** via skill Fire Cursor (Goal / Files /
+Done when / Verify), lands as a `cursor/*` PR, gets reviewed by Grok and
+**never merged** by it. Dex/Rex start the agent in the browser after the
+teach-a-task (D-011's “Ranvir clicks” is reversed). Finch caps the weekly
+count (start 6/week combined) and may raise or cut it. Same ticket never on
+Cursor and the Claude 9-task fleet. SMTP 535, Form 2290, and the AR Payments
 bank account never go to Claude or a cloud agent. Setup:
 [`docs/grok-bots/SETUP.md`](../grok-bots/SETUP.md). Queue: collaborator-labeled
 `should` issues ([`PORTFOLIO.md`](PORTFOLIO.md)).
@@ -187,9 +191,9 @@ These are redundancy, not duplicates — only if the owner re-enables the Cursor
 | Cursor `:30` smoke + Claude `16:49` smoke | Both read-only unless production is red. Later fixer fetches and re-checks; first fixer wins. |
 | Claude `10:33` nightly E2E | Needs a browser. Cursor image has none. Do not re-create as a Cursor automation. |
 
-Grok Bot (gogo, Steve, Jeff, Rav — one Big team group) has **no git charter**.
-gogo publishes one in-flight SHOULD at a time; a Cursor cloud agent (or Claude,
-when the owner asks) picks it up from that board or from `Backlog:` trailers.
+Grok Bot (14 seats, six groups) has **no git charter**. Em publishes one
+in-flight LoadOff SHOULD at a time; Dex/Rex Fire Cursor (or Em Fire Claude
+when Finch says the window is idle). Same ticket never on two plans.
 
 Everything else in the collaboration contract is unchanged: `claude/*` branches are absorbed
 by the `:00`/`:43` integrators, `cursor/*` session work lands via PR, the commit-body
@@ -283,8 +287,9 @@ back to a Cursor agent to keep `main` moving. Remaining owner clicks:
 3. Optional: re-enable Integrator / Prod Smoke / Deploy + backlog for Cursor redundancy.
    Import only the Cursor role slots Claude does not already run (office/driver/tests/
    integrations). Do not import marketing / deep-verify / meta-governor twins.
-4. Follow **`docs/grok-bots/SETUP.md`** — paste the four upgraded Bot bodies
-   (gogo, Steve, Jeff, Rav) and the Big team kickoff. No git, no new bots.
+4. Follow **`docs/grok-bots/SETUP.md`** — paste the 14 Bot bodies and the six
+   group charters on the 5-day apply order. Teach Fire Cursor (and Fire Claude
+   if Finch says the window is idle). Wright does not spawn without a yes.
 5. D-001 — arm the branch reaper after dry-runs, or the integrator keeps triaging dead branches.
 6. Human-dated: Form 2290 by Aug 31; AR Payments bank account; SMTP App Password (30+ days dead).
 7. Dunning (`runOverdueReminders`) is **fixed on this branch** (`add0d627`: `failed`/`deferred` keys, send cap 5, cron 500) and **not on `main` until this PR merges**. Do not write a second fix. The sim buddy must file the finding as a `should` issue once, not re-report daily.

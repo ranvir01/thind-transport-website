@@ -205,3 +205,26 @@ B) Rebuild the Airtable lane. C) Retire the LLC too.
 Answer: **A — owner 2026-08-28.** Bank account is owner-only
 (`OWNER-WORKSHEET.md`).
 
+## D-015 | filed:2026-09-01 | class:fleet
+Q: Owner upgraded to Cursor Ultra ($200/mo) and Claude Max 5x ($100/mo) and
+asked to go all-out with Grok Bot: org-wide Chief of Staff, a leader per
+active venture, workers in a loop, bots that Fire Cursor (`cursor.com/agents`)
+and Fire Claude (`claude.ai/code`) in the browser, a FinOps/model router, a
+bot that creates other bots, X-bookmark → demo factory, researcher for Fable
+vs Opus vs Grok 4.6 vs Composer. Reverse D-010's four-bot freeze and D-011's
+“gogo writes the paste; Ranvir clicks”?
+A) Yes — 14 seats, 6 groups (HQ LoadOff Money Career Labs Clients). gogo is
+the only org-wide CoS. Em is LoadOff Eng Mgr (does not code; only writer of
+`/workspace/loadoff/board.md`). Dex + Rex Fire Cursor (start 6/week combined).
+Finch owns 70/90 meters and MODEL-ROUTING.md. Wright stamps bots from our
+templates only after Ranvir says yes. Scout + Labs + Ridge run the bookmark →
+demo → model-card loop. Bee / My are quiet venture CoS. Spawn only after
+owner yes. Grok never git-pushes or merges. Reject Notion, OpenBot-as-runtime,
+random public templates, hourly attention until week 2, seats for dormant
+ventures. Claude 9-task fleet unchanged; same ticket never on two plans.
+[owner request 2026-09-01]
+B) Keep the four-bot freeze.
+Answer: **A — owner 2026-09-01.** Setup: `docs/grok-bots/SETUP.md`. D-007
+stands for scheduled git. D-012 stands for the GitHub `should` queue. D-014
+stands for Airtable out.
+

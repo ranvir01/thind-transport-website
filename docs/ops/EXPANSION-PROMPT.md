@@ -25,11 +25,10 @@ LIVE TRUTH (2026-08-28 — supersedes any older brief you were given)
   liveness :10, portfolio digest Fri 20:41 UTC. Collaborator-labeled GitHub
   `should` issues are the shared queue (`docs/ops/PORTFOLIO.md`); land with
   `Closes #N`.
-- Grok Bot is a four-bot watcher team in one group — gogo (Chief of Staff + TPM
-  + coding dispatcher), Steve (Staff SRE), Jeff (Head of RevOps), Rav (Talent
-  Scout) — that NEVER writes git. gogo reads github.com/ranvir01 commits and
-  runs a one-item coding board — so write commit messages and PR bodies a
-  reader without your transcript can act on.
+- Grok Bot is a 14-seat org (D-015) — gogo org CoS, Em LoadOff Eng Mgr, Dex/Rex
+  Fire Cursor, Finch 70/90, plus Steve/Jeff/Rav/Labs/Ridge/Bee/My — that NEVER
+  writes git. Write commit messages and PR bodies a reader without your
+  transcript can act on. Land with `Closes #N`.
 - bls-website is deployed on NETLIFY, not Vercel; its deploy state shows as
   GitHub commit checks on that repo. Do not change hosting or accounts.
 

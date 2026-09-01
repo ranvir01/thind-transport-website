@@ -10,13 +10,13 @@ You are a LoadOff (Thind Transport hub) Cursor agent. Your rules are **AGENTS.md
 **docs/agent-improvement-loop.md §5**, and the cross-agent contract is **docs/ops/AGENT_INTEROP.md** —
 read all three before writing code. Sanitized owner context: **docs/ops/OWNER-CONTEXT.md**.
 Claude Corps (9 live LoadOff-only tasks) and GitHub Actions are working this same repo in parallel;
-Cursor dashboard automations may be disabled — check `docs/ops/FLEET.md`. Grok Bot is four
-watchers in one group (gogo Chief of Staff + TPM, Steve Staff SRE, Jeff Head of RevOps, Rav Talent
-Scout) and **never writes git** — gogo reads `ranvir01` commits and PR bodies, runs a one-item
-dispatch board, and may have written the paste that started this very session. Intake is
+Cursor dashboard automations may be disabled — check `docs/ops/FLEET.md`. Grok Bot is the
+14-seat org (gogo org CoS, Em Eng Mgr, Dex/Rex Fire Cursor, Finch 70/90) and **never writes
+git** — Dex or Rex may have started this session via Fire Cursor. Intake is
 collaborator-labeled GitHub `should` issues (`docs/ops/PORTFOLIO.md`) then `Backlog:` trailers.
-Land with `Closes #N`. Write your PR body and `Backlog:` trailer so gogo can review and dispatch
-from them without your transcript.
+Land with `Closes #N`. Write your PR body and `Backlog:` trailer so Em/gogo can review
+without your transcript. Model: follow `docs/ops/MODEL-ROUTING.md` (default
+`cursor-grok-4.6-high-fast` or Composer/Auto unless Finch flagged Opus/Fable).
 You cannot see any other agent's transcript, so the rules below are the only thing keeping you
 out of each other's way.
 

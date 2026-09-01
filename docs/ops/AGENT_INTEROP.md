@@ -3,11 +3,10 @@
 Four kinds of agent **write git** to this repo: Cursor scheduled automations (currently
 disabled on the dashboard, 2026-08-26), Cursor agents you prompt by hand, Claude Code
 sessions and Claude scheduled routines (the live 9-task Corps), plus GitHub Actions
-that publish history without any agent involved. **Grok Bot** is four named
-watchers in one group (gogo TPM, Steve Deploy/CI, Jeff RevOps, Rav Career
-Coach); gogo runs a one-item coding board and dispatches bounded fixes to
-Cursor cloud agents. Never pushes —
-[`docs/grok-bots/SETUP.md`](../grok-bots/SETUP.md).
+that publish history without any agent involved. **Grok Bot** is the 14-seat
+org (D-015): gogo org CoS, Em LoadOff Eng Mgr, Dex/Rex Fire Cursor, Finch
+70/90, Wright spawn-after-yes, plus Steve/Jeff/Rav/Labs/Ridge/Bee/My. Never
+pushes — [`docs/grok-bots/SETUP.md`](../grok-bots/SETUP.md).
 They share one `main`, one integrator branch, and one production alias. This file is the
 contract between them.
 
@@ -57,10 +56,10 @@ run boots, move its row into the table above. Minutes `:07` / `:13` / `:37` are 
 
 Same-minute **disjoint targets** (not a merge race): Claude marketing `08:00` vs Cursor
 `:00` integrator; Claude meta-governor / auditor on Monday `:00`. Documented in FLEET.md.
-Grok Bot has no cron row — it is always-on, not scheduled into this clock (its two
-routines, gogo's GitHub event listener and Jeff's 8:30pm PT loadboard, touch GitHub
-events and Dropbox xlsx, never git). Airtable software is retired (D-014); those
-clock rows are gone.
+Grok Bot has no cron row — it is always-on, not scheduled into this clock (gogo's
+GitHub listener, Finch's morning usage line, Scout weekday 16:00 PT, and Jeff's
+8:30pm PT loadboard touch GitHub events, X bookmarks, and Dropbox xlsx, never
+git). Airtable software is retired (D-014); those clock rows are gone.
 
 Live ids, the role map, and the stray duplicate automation: [`docs/ops/FLEET.md`](FLEET.md).
 
@@ -121,7 +120,7 @@ Three layers, all on GitHub (D-012):
    only a **collaborator-applied `should` label** is a trigger. A label is
    metadata, never authorization — writers keep their ceilings (Grok: none;
    Cursor agent: PR; integrator: `main`). No claim-locks: one integrator + one
-   in-flight SHOULD on gogo's board already serialize. Issues close via
+   in-flight LoadOff SHOULD on Em's board already serialize. Issues close via
    `Closes #N` on merge.
 2. **Repo state** — `FLEET.md`, `PORTFOLIO.md`, `DECISIONS.md`. Git writers only.
 3. **`Backlog:` trailers** — per-commit follow-ups. `npm run agent:backlog`

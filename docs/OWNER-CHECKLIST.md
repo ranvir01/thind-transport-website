@@ -15,7 +15,7 @@ on this page is either done or automatable without you.
 [`docs/ops/FLEET.md`](ops/FLEET.md). Claude Corps is already live; you do not need to come
 back to a Cursor agent to keep the repo moving.
 
-**Upgrade the four Grok Bots (gogo, Steve, Jeff, Rav) and the Big team group:**
+**Upgrade to the 14-seat Grok org (D-015) and the six groups:**
 [`docs/grok-bots/SETUP.md`](grok-bots/SETUP.md) — that is the one file.
 
 ---

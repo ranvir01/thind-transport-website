@@ -9,7 +9,7 @@ The long form (env vars, photos, integrations, sign-off) remains
 queue so a Grok Bot, a Claude routine, or a Cursor agent can all point at the
 same three things without nailing you.
 
-Updated **2026-08-28**.
+Updated **2026-09-01**.
 
 ---
 
@@ -20,7 +20,7 @@ Updated **2026-08-28**.
 | 1 | File **Form 2290 HVUT** (both EINs) and keep the stamped Schedule 1 | **2026-08-31** | IRS / IRP; ~$8,250; blocks plate renewal |
 | 2 | Open a **business checking account in AR Payments LLC's name** and put remittance on invoices | this week after 2290 | Banking; holding-company workflow in [`AR-PAYMENTS.md`](AR-PAYMENTS.md) |
 | 3 | Rotate Gmail **App Password** into Vercel `SMTP_USER` / `SMTP_PASS` and redeploy | overdue (SMTP 535 since 2026-07-26) | Credential only you can mint |
-| 4 | Follow **[`docs/grok-bots/SETUP.md`](../grok-bots/SETUP.md)** — paste the four upgraded Bot bodies (gogo, Steve, Jeff, Rav) + the Big team kickoff | whenever | No API to edit Grok Bots from this repo; roster frozen at four (D-010) |
+| 4 | Follow **[`docs/grok-bots/SETUP.md`](../grok-bots/SETUP.md)** — paste the 14 Bot bodies + six group charters on the 5-day apply order; teach Fire Cursor (and Fire Claude if Finch says the window is idle); connect X for Scout | this week | No API to edit Grok Bots from this repo; D-015 expands the roster — you still paste |
 | 5 | Apply the Claude **9-task** paste deltas + toggles in [`docs/claude-routines.md`](../claude-routines.md) §"Live 9-task fleet" (integrator push ON, watchdog roster, Sunday 10:53, sim buddy 6h, marketing Sonnet) | whenever | No API to edit claude.ai routines from this repo |
 | 6 | Optional: export a LOADS-BACKUP CSV from the retired Airtable base before ~Sep 2 if you still want a copy | ~2026-09-02 | Not required to run; software is retired (D-014) |
 | 7 | Re-enable Cursor **Integrator**, **Prod Smoke**, **Deploy + backlog** only if you want Cursor as redundant drain/smoke — leave **Untitled** off | whenever | Agents cannot toggle cursor.com/automations (read-only). All four were **disabled** 2026-08-26. |
