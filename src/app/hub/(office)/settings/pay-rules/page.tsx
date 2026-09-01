@@ -1,8 +1,10 @@
 import { requirePermissionPage } from "@/lib/hub/session"
 import { can } from "@/lib/hub/permissions"
 import { listDriverPayRules } from "@/lib/hub/pay-rules-db"
+import { getCarrierSettings } from "@/lib/hub/settings"
 import { PageHeader } from "@/components/hub/ui"
 import { PayRulesPanel } from "@/components/hub/PayRulesPanel"
+import { DriverRunPayToggle } from "@/components/hub/DriverRunPayToggle"
 
 export const dynamic = "force-dynamic"
 
@@ -23,7 +25,10 @@ export const dynamic = "force-dynamic"
 export default async function PayRulesSettingsPage() {
   const user = await requirePermissionPage("money:read")
   const canWrite = can(user.role, "drivers:write")
-  const drivers = await listDriverPayRules(user.carrierId)
+  const [drivers, settings] = await Promise.all([
+    listDriverPayRules(user.carrierId),
+    getCarrierSettings(user.carrierId),
+  ])
 
   return (
     <div>
@@ -31,6 +36,7 @@ export default async function PayRulesSettingsPage() {
         title="Driver pay"
         subtitle="What each driver earns per load, and what comes off each week. Used by every settlement drafted from here on."
       />
+      <DriverRunPayToggle showRunPay={settings.driverApp.showRunPay} canWrite={canWrite} />
       <PayRulesPanel drivers={drivers} canWrite={canWrite} />
     </div>
   )
