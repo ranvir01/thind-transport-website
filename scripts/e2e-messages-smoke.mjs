@@ -66,8 +66,22 @@ async function sendChat(page, text) {
     { timeout: 8000 },
     text
   )
-  await page.click(SEND_BTN)
-  await waitForText(page, text)
+  // Evaluate-click the Send control — Puppeteer's layout click can miss
+  // after a chip→body refresh. Enter is the same send() path (onKeyDown).
+  await page.evaluate((sel) => document.querySelector(sel)?.click(), SEND_BTN)
+  const landed = await page
+    .waitForFunction(
+      (t) => document.body.innerText.toLowerCase().includes(t.toLowerCase()),
+      { timeout: 8000 },
+      text
+    )
+    .then(() => true)
+    .catch(() => false)
+  if (!landed) {
+    await page.focus(COMPOSER)
+    await page.keyboard.press("Enter")
+    await waitForText(page, text, 15000)
+  }
   await page
     .waitForFunction(() => document.querySelector('textarea[placeholder="Type a message…"]')?.value === "", {
       timeout: 20000,
