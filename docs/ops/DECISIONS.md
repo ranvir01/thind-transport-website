@@ -253,3 +253,30 @@ B) Keep D-015 names and Rav as draft-only.
 Answer: **A — owner 2026-09-01.** Setup: `docs/grok-bots/SETUP.md` +
 `docs/grok-bots/GOGO-START.md`.
 
+## D-017 | filed:2026-08-27 | class:spend | renumbered:2026-09-01
+Q: Pilot the Managed-Agent chat bridge (Anthropic Managed Agents × Vercel
+Chat SDK cookbook — evaluation and runbook in docs/ops/CHAT-BRIDGE.md) as an
+always-on owner↔Claude chat surface? Web adapter needs no Slack app or
+webhook; the only credential is Anthropic auth. Runs on the Claude Platform
+API — metered tokens OUTSIDE the claude.ai Max 5x the 9-task fleet uses.
+Does **not** replace D-012 (GitHub `should` issues remain the bus) and is
+**not** a 15th Grok seat (D-016).
+A) Pilot: adapted quickstart on courier branch `cursor/portfolio-chat-code-53f9`
+(never merge it); own private repo after owner creates it; web adapter only;
+read-only charter (drafts `should` issue text / Claude prompts / Backlog
+items; never pushes git; no schedule); hard monthly API budget cap in the
+Anthropic console before the key is minted. Finch watches this third meter
+once it exists. [recommended — small metered cost, no fleet-clock row, kill
+switch is deleting one key]
+B) Defer at zero cost; phone comms stay Remote Control + cursor.com + Grok
+Fire Cursor / Fire Claude + the `should` queue.
+C) Skip entirely.
+Deferral cost: low — the owner stays the router between "I want X" on a
+phone and a well-formed item on the D-012 bus.
+Answer: **A — owner 2026-08-28** (this session; originally filed as D-010
+on the stacked PR, renumbered D-017 after the fleet branch reused D-009/D-010
+for the Grok roster). App built and verified the same day (install / tsc /
+boot / Anthropic auth-boundary). Repo create 403s from every agent token
+here — OWNER-WORKSHEET row 10 is the remaining path. Charter widening
+(Slack adapter, write access, a 15th Grok seat) stays a new entry.
+

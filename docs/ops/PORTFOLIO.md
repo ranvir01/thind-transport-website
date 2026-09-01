@@ -53,3 +53,13 @@ automation for any dormant row.
    label state machine.
 
 Issue template: [`.github/ISSUE_TEMPLATE/should-item.md`](../../.github/ISSUE_TEMPLATE/should-item.md).
+
+## Always-on owner chat (optional; D-017)
+
+The `should` queue above is the bus. The 2026-08-27 @ClaudeDevs cookbook
+(Claude Managed Agents × Vercel Chat SDK) was evaluated as a phone-first
+owner↔Claude surface that *drafts* bus items — it does not replace this
+file, D-012, or Fire Cursor / Fire Claude. Owner approved a capped pilot
+2026-08-28. Evaluation, v1 charter, and transplant commands:
+[`CHAT-BRIDGE.md`](CHAT-BRIDGE.md). Code is on courier branch
+`cursor/portfolio-chat-code-53f9` (never merge it) until worksheet row 10.
