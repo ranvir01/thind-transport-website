@@ -25,13 +25,23 @@ vi.mock("@/lib/hub/vetting", () => ({ vetCustomer: vi.fn(), fmcsaConfigured: vi.
 vi.mock("@/lib/hub/audit", () => ({ logAudit: vi.fn(async () => undefined) }))
 vi.mock("@/lib/hub/db", () => ({ query: vi.fn(async () => []), queryOne: vi.fn(async () => null) }))
 
+import { requirePermission } from "@/lib/hub/session"
 import { saveDocument } from "@/lib/hub/documents"
 import { createDriver } from "@/lib/hub/drivers"
+import { createTruck } from "@/lib/hub/fleet"
 import { logAudit } from "@/lib/hub/audit"
 import { applySmartScanAction } from "@/app/hub/_actions/setup"
 
+const ACTOR = {
+  id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+  name: "Dana Dispatcher",
+  carrierId: "11111111-1111-1111-1111-111111111111",
+}
+
+const requirePermissionMock = vi.mocked(requirePermission)
 const saveDocumentMock = vi.mocked(saveDocument)
 const createDriverMock = vi.mocked(createDriver)
+const createTruckMock = vi.mocked(createTruck)
 const logAuditMock = vi.mocked(logAudit)
 
 function formDataFor(kind: string, payload: Record<string, unknown>): FormData {
@@ -43,10 +53,14 @@ function formDataFor(kind: string, payload: Record<string, unknown>): FormData {
 }
 
 beforeEach(() => {
+  requirePermissionMock.mockReset()
+  requirePermissionMock.mockResolvedValue(ACTOR as never)
   saveDocumentMock.mockClear()
   createDriverMock.mockReset()
+  createTruckMock.mockReset()
   logAuditMock.mockClear()
   createDriverMock.mockResolvedValue({ id: "driver-1" } as never)
+  createTruckMock.mockResolvedValue({ id: "truck-1" } as never)
 })
 
 describe("applySmartScanAction files documents under the actor's id, not their name", () => {
@@ -106,5 +120,70 @@ describe("applySmartScanAction audits CDL/med-card hire-rate writes", () => {
         newValue: expect.objectContaining({ kind: "med_card", pay_rate: 0.63 }),
       })
     )
+  })
+})
+
+describe("applySmartScanAction audits the registration truck branch", () => {
+  it("logs fleet identity when a registration scan creates a truck", async () => {
+    const result = await applySmartScanAction(formDataFor("registration", {
+      unit_number: "101",
+      vin: "1XKADP9X0LJ123456",
+      plate: "ABC1234",
+      plate_state: "WA",
+      year: 2022,
+      make: "Kenworth",
+      model: "T680",
+      registration_expiry: "2027-03-31",
+    }))
+    expect(result.ok).toBe(true)
+    expect(createTruckMock).toHaveBeenCalledWith(
+      ACTOR.carrierId,
+      expect.objectContaining({
+        unit_number: "101",
+        vin: "1XKADP9X0LJ123456",
+        plate: "ABC1234",
+        plate_state: "WA",
+        ownership: "company",
+        status: "active",
+        assigned_driver_id: null,
+      })
+    )
+    expect(logAuditMock).toHaveBeenCalledTimes(1)
+    expect(logAuditMock).toHaveBeenCalledWith({
+      carrierId: ACTOR.carrierId,
+      actorId: ACTOR.id,
+      actorName: ACTOR.name,
+      entityType: "truck",
+      entityId: "truck-1",
+      action: "smart_setup_create",
+      newValue: {
+        kind: "registration",
+        unit_number: "101",
+        vin: "1XKADP9X0LJ123456",
+        plate: "ABC1234",
+        plate_state: "WA",
+        year: 2022,
+        make: "Kenworth",
+        model: "T680",
+        ownership: "company",
+        registration_expiry: "2027-03-31",
+      },
+    })
+  })
+
+  it("skips createTruck and the audit when unit number is missing", async () => {
+    const result = await applySmartScanAction(formDataFor("registration", { vin: "1XKADP9X0LJ123456" }))
+    expect(result).toEqual({ ok: false, error: "Unit number is required" })
+    expect(createTruckMock).not.toHaveBeenCalled()
+    expect(logAuditMock).not.toHaveBeenCalled()
+  })
+
+  it("skips the audit log when fleet:write is denied", async () => {
+    requirePermissionMock.mockRejectedValueOnce(new Error("Forbidden: viewer cannot fleet:write"))
+    const result = await applySmartScanAction(formDataFor("registration", { unit_number: "101" }))
+    expect(result.ok).toBe(false)
+    expect(createTruckMock).not.toHaveBeenCalled()
+    expect(logAuditMock).not.toHaveBeenCalled()
+    expect(requirePermissionMock).toHaveBeenCalledWith("fleet:write")
   })
 })

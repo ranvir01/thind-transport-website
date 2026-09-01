@@ -170,6 +170,24 @@ export async function applySmartScanAction(formData: FormData): Promise<ApplySca
             user.id
           )
         }
+        await logAudit({
+          carrierId: user.carrierId, actorId: user.id, actorName: user.name,
+          entityType: "truck", entityId: truck.id, action: "smart_setup_create",
+          newValue: {
+            kind: "registration",
+            unit_number: unit,
+            vin,
+            plate: payload.plate ? String(payload.plate) : null,
+            plate_state: payload.plate_state ? String(payload.plate_state) : null,
+            year,
+            make,
+            model,
+            ownership: "company",
+            registration_expiry: payload.registration_expiry
+              ? String(payload.registration_expiry)
+              : null,
+          },
+        })
         revalidatePath("/hub/fleet")
         revalidatePath("/hub/setup")
         revalidatePath("/hub")
