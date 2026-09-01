@@ -2,7 +2,7 @@ import "server-only"
 import { query } from "./db"
 import { getDwellingStops } from "./detention"
 import { evaluatePayRules, parseRuleSet, type PayLoadContext } from "./pay-rules"
-import { SANDBOX_CARRIER_ID } from "./sandbox"
+import { SANDBOX_CARRIER_ID, type SandboxScenario } from "./sandbox"
 import { emptyMetrics, type ShiftMetrics, type ShiftSeatKey } from "./sandbox-objectives"
 
 /**
@@ -42,6 +42,21 @@ export async function readSimEpoch(): Promise<string | null> {
     [C]
   )
   return rows[0]?.epoch ?? null
+}
+
+/**
+ * Which world is loaded — "steady" or "crunch".
+ *
+ * Defaults to "steady" rather than null: a sandbox seeded before this key
+ * existed IS the steady week, and a banner that says nothing teaches a player
+ * less than one that says the true thing about the common case.
+ */
+export async function readSimScenario(): Promise<SandboxScenario> {
+  const rows = await query<{ scenario: string | null }>(
+    `SELECT settings->'sim'->>'scenario' AS scenario FROM hub.carrier_settings WHERE carrier_id = $1`,
+    [C]
+  )
+  return rows[0]?.scenario === "crunch" ? "crunch" : "steady"
 }
 
 /**
