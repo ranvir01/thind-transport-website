@@ -142,6 +142,37 @@ Anything too small, too hidden, or awkward one-handed: ___________________
 
 Would a driver of yours actually use this? Why / why not: ________________
 
+#### 2b — What the run pays (new)
+
+The load card now carries a line like **THIS RUN PAYS YOU · $95.70 · 165 mi × $0.58/mi**,
+and the *Last pay* tile carries a second line: **$1,071.84 since then, not settled yet**.
+
+Both come out of the same pay engine that cuts your settlements, so the phone can never
+quote a wage payroll would disagree with. The per-run figure is **gross** — escrow and
+insurance come off the week, not off one load, and docking them here would read as a
+penalty for working.
+
+Check three things, because these are the ones that would cost you:
+
+- **Do the numbers hold up?** Multiply the rate by the miles yourself. If a driver of
+  yours can't do that arithmetic on the card, the card is wrong.
+- **Sam (Owner-operator seat) is on a percentage**, so his line reads
+  *90% linehaul + 100% FSC* rather than a single sum — a percentage driver's detention
+  isn't final until the stop closes, so his figure can still move.
+- **No rate, anywhere.** A driver sees their own pay and nothing else — never the
+  linehaul, never the margin. Turn on the office seat and compare: the same load shows
+  you a customer rate it never shows him.
+
+**Turning it off:** Owner seat → **Settings → Driver pay** → the switch at the top,
+*Show drivers what each run pays them*. On by default. Flip it off and re-open the
+driver seat — both lines should be gone, and nothing else about the card changes.
+
+☐ Numbers check out ☐ Off by something ☐ Didn't show at all
+
+Would you leave this ON for your drivers? ________________________________
+
+If off — what would you want them to see instead: ________________________
+
 ---
 
 ### Drill 3 — Accountant
