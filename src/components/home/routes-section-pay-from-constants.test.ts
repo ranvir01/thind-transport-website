@@ -42,13 +42,15 @@ describe("RoutesSection sources pay from PAY_RATES", () => {
   })
 
   it("published OTR and O/O constants are the figures the cards interpolate", () => {
-    expect(PAY_RATES.companyDriver.otr.perMile).toBe("$0.63")
-    expect(PAY_RATES.companyDriver.otr.annual).toBe("$69K-$82K")
+    // This branch publishes the GBP pay/fleet facts. Pin those, not main's
+    // later $0.63 / 90% figures — the merge-ref unit job failed on that drift.
+    expect(PAY_RATES.companyDriver.otr.perMile).toBe("$0.60-$0.65")
+    expect(PAY_RATES.companyDriver.otr.annual).toBe("$93K-$110K")
     expect(PAY_RATES.ownerOperator.perMile).toBe("$2.50-$3.50")
-    expect(PAY_RATES.ownerOperator.annualGross).toBe("$150K-$250K")
-    expect(PAY_RATES.ownerOperator.commission).toBe("90%")
-    expect(PAY_RATES.companyDriver.local.annual).toBe("$57K-$63K")
-    expect(PAY_RATES.companyDriver.regional.annual).toBe("$63K-$73K")
+    expect(PAY_RATES.ownerOperator.annualGross).toBe("$250K-$300K")
+    expect(PAY_RATES.ownerOperator.commission).toBe("91%")
+    expect(PAY_RATES.companyDriver.local.annual).toBe("$78K-$85K")
+    expect(PAY_RATES.companyDriver.regional.annual).toBe("$78K-$95K")
     expect(PAY_RATES.companyDriver).not.toHaveProperty("cpmFloor")
   })
 })
