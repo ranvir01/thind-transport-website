@@ -12,6 +12,7 @@ import { createDriverInviteToken, hasDriverAppAccount, sendDriverInviteEmail } f
 import { logAudit } from "@/lib/hub/audit"
 import { dollarsToCents } from "@/lib/hub/types"
 import { actionError } from "@/lib/hub/action-error"
+import { appPublicOrigin } from "@/lib/app-origin"
 import type { ActionResult } from "./fleet"
 
 function firstError(error: { issues: { path: PropertyKey[]; message: string }[] }): string {
@@ -113,7 +114,7 @@ export async function driverInviteLinkAction(
     }
     const token = createDriverInviteToken({ carrierId: user.carrierId, driverId, email: driver.email })
     if (!token) return { ok: false, error: "Invites need an auth secret configured" }
-    const baseUrl = process.env.NEXTAUTH_URL ?? "http://localhost:3000"
+    const baseUrl = appPublicOrigin()
     await logAudit({
       carrierId: user.carrierId, actorId: user.id, actorName: user.name,
       entityType: "driver", entityId: driverId,

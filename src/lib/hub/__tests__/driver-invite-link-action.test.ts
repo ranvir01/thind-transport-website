@@ -67,6 +67,15 @@ describe("driverInviteLinkAction", () => {
     expect(() => qrMatrix(result.url!)).not.toThrow()
   })
 
+  it("prefers NEXT_PUBLIC_APP_HOST for the QR once the app origin is configured", async () => {
+    vi.stubEnv("NEXT_PUBLIC_APP_HOST", "app.loadoff.com")
+    const result = await driverInviteLinkAction("driver-1")
+    expect(result.ok).toBe(true)
+    expect(result.url).toMatch(/^https:\/\/app\.loadoff\.com\/hub\/driver-invite\//)
+    expect(() => qrMatrix(result.url!)).not.toThrow()
+    vi.stubEnv("NEXT_PUBLIC_APP_HOST", "")
+  })
+
   it("is gated by drivers:write like the emailed invite", async () => {
     requirePermissionMock.mockRejectedValueOnce(new Error("Forbidden"))
     const result = await driverInviteLinkAction("driver-1")
