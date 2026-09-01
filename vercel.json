@@ -83,6 +83,10 @@
     {
       "path": "/api/hub/cron/universal-sync",
       "schedule": "50 6 * * *"
+    },
+    {
+      "path": "/api/hub/cron/sim-advance",
+      "schedule": "10 7 * * *"
     }
   ],
   "headers": [

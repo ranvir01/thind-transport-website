@@ -1,5 +1,5 @@
 import { requireOwner } from "@/lib/hub/session"
-import { credentialsConfigured, getCredentials, hasCredentials, type IntegrationProvider } from "@/lib/hub/credentials"
+import { credentialsConfigured, getStoredCredentials, hasCredentials, type IntegrationProvider } from "@/lib/hub/credentials"
 import { fmcsaConfigured } from "@/lib/hub/vetting"
 import { aiParserConfigured } from "@/lib/hub/doc-intake/analyze-enhanced"
 import { PROVIDERS } from "@/lib/hub/integrations/registry"
@@ -29,7 +29,7 @@ export default async function IntegrationsPage() {
     // Read (not just existence-check) the QBO payload for the refresh-token
     // expiry the sync persists — only the expiry date reaches the card, never
     // a credential value. Null when unconfigured/disconnected.
-    getCredentials(user.carrierId, "qbo"),
+    getStoredCredentials(user.carrierId, "qbo"),
   ])
   const pendingEventsByProvider = new Map(pendingEventRows.map((r) => [r.provider, Number(r.count)]))
 

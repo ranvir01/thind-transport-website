@@ -2,7 +2,7 @@
 
 import { z } from "zod"
 import { COMPANY_INFO } from "@/lib/constants"
-import { createMailTransport, isEmailConfigured, mailFrom } from "@/lib/mailer"
+import { createMailTransport, mailShouldSend, mailFrom } from "@/lib/mailer"
 import { savePublicApplication, markPublicApplicationEmailed } from "@/lib/driver-db"
 import { honeypotTripped, publicFormBlocked } from "@/lib/public-form-guard"
 import { saveWebsiteLead } from "@/lib/hub/website-leads"
@@ -150,7 +150,8 @@ export async function submitPreQualification(prevState: PreQualifyState, formDat
       console.error("Failed to persist pre-qualification:", persistError)
     }
 
-    if (!isEmailConfigured()) {
+    // Same gate as invoices/packet: SMTP *or* simulation outbox echo.
+    if (!(await mailShouldSend())) {
       if (!savedRecordId && !leadSaved) {
         // Nothing persisted and no email path — telling the driver "success"
         // here would silently eat the lead. Same doctrine as captureLead.
@@ -160,7 +161,7 @@ export async function submitPreQualification(prevState: PreQualifyState, formDat
           message: `Something went wrong on our end. Please call ${COMPANY_INFO.phone} and we'll take your info directly.`,
         }
       }
-      console.warn("SMTP not configured — pre-qualification stored but not emailed:", data.email)
+      console.warn("Mail not available — pre-qualification stored but not emailed:", data.email)
       return {
         success: true,
         message: "Pre-qualification submitted successfully! We will contact you shortly.",

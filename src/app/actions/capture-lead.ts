@@ -7,7 +7,7 @@ import {
   deserializeAttribution,
 } from "@/lib/attribution"
 import { COMPANY_INFO } from "@/lib/constants"
-import { createMailTransport, isEmailConfigured, mailFrom } from "@/lib/mailer"
+import { createMailTransport, mailShouldSend, mailFrom } from "@/lib/mailer"
 import { saveWebsiteLead } from "@/lib/hub/website-leads"
 import { honeypotTripped, publicFormBlocked } from "@/lib/public-form-guard"
 
@@ -85,7 +85,8 @@ export async function captureLead(prevState: LeadState, formData: FormData): Pro
     })
 
     let emailed = false
-    if (isEmailConfigured()) {
+    // Same gate as invoices/packet: SMTP *or* simulation outbox echo.
+    if (await mailShouldSend()) {
       try {
         const transporter = createMailTransport()
         await transporter.sendMail({

@@ -65,6 +65,15 @@ async function main() {
     await waitForText(page, "THD-")
     await clickByText(page, "confirm this dispatch")
     await waitForText(page, "Dispatch confirmed")
+    await page.waitForFunction(
+      () => {
+        const btn = [...document.querySelectorAll("button")].find((n) =>
+          (n.textContent ?? "").toLowerCase().includes("i'm here")
+        )
+        return Boolean(btn) && !btn.disabled
+      },
+      { timeout: 10000 }
+    )
     await shot(page, "01-confirmed-online")
 
     console.log("2. Drop the network (CDP), then tap 'I'm here' at the pickup")

@@ -38,6 +38,7 @@ vi.mock("../pdf", () => ({ buildInvoicePdf: vi.fn(), buildStatementPdf: vi.fn() 
 vi.mock("../audit", () => ({ logAudit: vi.fn(async () => undefined) }))
 vi.mock("@/lib/mailer", () => ({
   isEmailConfigured: vi.fn(() => true),
+  mailShouldSend: vi.fn(async () => true),
   createMailTransport: vi.fn(() => ({ sendMail })),
   mailFrom: vi.fn(() => "billing@thind.test"),
 }))

@@ -131,6 +131,13 @@ export async function exportCsv(
   kind: string,
   options: { year?: number } = {}
 ): Promise<{ filename: string; csv: string }> {
+  const { isSimulation } = await import("./mode")
+  const sim = await isSimulation()
+  const wrap = (filename: string, csv: string) =>
+    sim
+      ? { filename: `SIMULATION-${filename}`, csv: `"SIMULATION — NOT A REAL DOCUMENT"\n${csv}` }
+      : { filename, csv }
+
   switch (kind) {
     case "invoices": {
       const rows = await query<Record<string, unknown>>(
@@ -142,13 +149,13 @@ export async function exportCsv(
          WHERE i.carrier_id = $1 ORDER BY i.issued_on`,
         [carrierId]
       )
-      return {
-        filename: "invoices.csv",
-        csv: toCsv(
+      return wrap(
+        "invoices.csv",
+        toCsv(
           ["InvoiceNo", "Customer", "Load", "InvoiceDate", "DueDate", "Amount", "Status", "Factored"],
           rows.map((r) => [r.number, r.customer, r.load, toIsoDateOnly(r.issued_on) ?? "", toIsoDateOnly(r.due_on) ?? "", r.amount, r.status, r.factored])
-        ),
-      }
+        )
+      )
     }
     case "payments": {
       const rows = await query<Record<string, unknown>>(
@@ -209,13 +216,13 @@ export async function exportCsv(
          WHERE s.carrier_id = $1 ORDER BY s.period_end`,
         [carrierId]
       )
-      return {
-        filename: "settlements.csv",
-        csv: toCsv(
+      return wrap(
+        "settlements.csv",
+        toCsv(
           ["Driver", "PeriodStart", "PeriodEnd", "Gross", "Deductions", "NetPay", "Status"],
           rows.map((r) => [r.driver, toIsoDateOnly(r.period_start) ?? "", toIsoDateOnly(r.period_end) ?? "", r.gross, r.deductions, r.net, r.status])
-        ),
-      }
+        )
+      )
     }
     case "1099": {
       const year = resolve1099Year(options.year)
@@ -233,13 +240,13 @@ export async function exportCsv(
          GROUP BY d.id, payee ORDER BY payee`,
         [carrierId, year]
       )
-      return {
-        filename: `1099-nec-${year}.csv`,
-        csv: toCsv(
+      return wrap(
+        `1099-nec-${year}.csv`,
+        toCsv(
           ["Payee", "Box1_NonemployeeCompensation", "Year"],
           rows.map((r) => [r.payee, r.nonemployee_compensation, year])
-        ),
-      }
+        )
+      )
     }
     case "pnl": {
       const rows = await truckPnl(carrierId, 365)

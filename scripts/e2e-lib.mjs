@@ -19,7 +19,7 @@
  *
  * State-consuming smokes (dispatch, invoices, settlements, advances,
  * compliance, messages, expenses, fuel, customers, loads, fleet, tasks,
- * safety, reports) call
+ * office, safety, reports) call
  * reseed() themselves, so no manual seed:demo between runs on a local rig.
  *
  * Copy `.env.example` → `.env.local` for local runs. Against a localhost BASE,
@@ -112,7 +112,7 @@ export function reseed() {
   // hub.carriers is likewise absent from the TRUNCATE list (ON CONFLICT DO
   // NOTHING in seed-demo.mjs) — a suspend-flow smoke that dies mid-run (or a
   // manual admin-suspend drive) leaves status = 'suspended' on Thind or
-  // Cascade Demo Lines, and every later local run then bounces every login
+  // ATS Transport LLC, and every later local run then bounces every login
   // to /hub/suspended before it even reaches the screen under test. Force
   // both demo tenants back to 'active' on every reseed.
   const cleanup = spawnSync(process.execPath, ["-e", `
@@ -355,7 +355,7 @@ const AUTOSTART_TOUR_ID = "today-desk"
  */
 export async function skipFirstRunTour(page) {
   await page.evaluate(
-    (key, id) => {
+    (key, id, celebrationsKey) => {
       try {
         const raw = localStorage.getItem(key)
         const list = raw ? JSON.parse(raw) : []
@@ -366,9 +366,18 @@ export async function skipFirstRunTour(page) {
       } catch {
         /* storage disabled — the tour just runs, same as before */
       }
+      try {
+        // Milestone overlays (first invoice emailed) steal the 20s pathname
+        // wait in invoices-smoke. Smokes assert the business outcome, not the
+        // celebration. Off switch is the same key the avatar menu writes.
+        localStorage.setItem(celebrationsKey, "off")
+      } catch {
+        /* storage disabled */
+      }
     },
     TOUR_STORAGE_KEY,
-    AUTOSTART_TOUR_ID
+    AUTOSTART_TOUR_ID,
+    "hauldesk-celebrations"
   )
 }
 

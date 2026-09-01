@@ -72,3 +72,37 @@ describe("rate confirmation parser", () => {
     expect(parsed.totalCents?.value).toBe(dollarsToCents("19.99"))
   })
 })
+
+const SAMPLE_UBER_FREIGHT = `Uber Freight
+Rate Confirmation
+Load # UF-441902
+Equipment: Dry Van
+Commodity: General freight
+
+Pickup
+Kent, WA 98032
+08/12/2026 07:00
+
+Drop
+Sacramento, CA 95814
+08/13/2026 16:00
+
+Linehaul $2,450.00
+Fuel Surcharge $180.00
+Total $2,630.00`
+
+describe("Uber Freight-shaped rate confirmation", () => {
+  const parsed = parseRateCon(SAMPLE_UBER_FREIGHT)
+
+  it("finds the load id and money", () => {
+    expect(parsed.reference?.value).toMatch(/UF-441902/)
+    expect(parsed.linehaulCents?.value).toBe(245000)
+    expect(parsed.fuelSurchargeCents?.value).toBe(18000)
+    expect(parsed.totalCents?.value).toBe(263000)
+  })
+
+  it("extracts the Kent → Sacramento lane", () => {
+    expect(parsed.stops.find((s) => s.type === "pickup")).toMatchObject({ city: "Kent", state: "WA" })
+    expect(parsed.stops.find((s) => s.type === "delivery")).toMatchObject({ city: "Sacramento", state: "CA" })
+  })
+})

@@ -87,7 +87,7 @@ async function main() {
   const cascade = await cascadeCtx.newPage()
   await cascade.setViewport({ width: 1440, height: 900 })
   await login(cascade, "owner@cascademo.example")
-  await waitForText(cascade, "Cascade Demo Lines".toUpperCase())
+  await waitForText(cascade, "ATS Transport LLC".toUpperCase())
   await cascade.goto(`${BASE}/hub/loads`, { waitUntil: "networkidle2" })
   await waitForText(cascade, "Search, filter, and manage every load.")
   const loadsText = await cascade.evaluate(() => document.body.innerText)
@@ -107,7 +107,7 @@ async function main() {
   // tenant-isolation hard goto). Title wait above is unique too, but the
   // mapping uses this copy so both smokes share one render anchor.
   await waitForText(admin, "Tenants and operational counts only")
-  await waitForText(admin, "Cascade Demo Lines")
+  await waitForText(admin, "ATS Transport LLC")
   await shot(admin, "06-platform-admin")
   // Bouncing into a tenant surface must redirect back.
   await admin.goto(`${BASE}/hub/loads`, { waitUntil: "networkidle2" })

@@ -34,6 +34,7 @@ vi.mock("../pdf", () => ({
 }))
 vi.mock("@/lib/mailer", () => ({
   isEmailConfigured: vi.fn(() => false),
+  mailShouldSend: vi.fn(async () => false),
   createMailTransport: vi.fn(),
   mailFrom: vi.fn(),
 }))

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { COMPANY_INFO } from "@/lib/constants"
-import { createMailTransport, isEmailConfigured, mailFrom } from "@/lib/mailer"
+import { createMailTransport, mailShouldSend, mailFrom } from "@/lib/mailer"
 import { HONEYPOT_FIELD, publicFormBlocked } from "@/lib/public-form-guard"
 
 export async function POST(request: Request) {
@@ -36,9 +36,9 @@ export async function POST(request: Request) {
       )
     }
 
-    // Gracefully degrade when email isn't configured (matches the server actions)
-    if (!isEmailConfigured()) {
-      console.log("Meeting request received (email not configured):", { name, email, phone, preferredDate, preferredTime })
+    // Gracefully degrade when neither SMTP nor simulation echo can deliver.
+    if (!(await mailShouldSend())) {
+      console.log("Meeting request received (mail not available):", { name, email, phone, preferredDate, preferredTime })
       return NextResponse.json({ success: true })
     }
 

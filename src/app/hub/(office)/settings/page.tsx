@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { Cable, ChevronRight, FileBadge, Palette, SlidersHorizontal, Smartphone, Tags, TrendingUp, Users, Wallet } from "lucide-react"
+import { Cable, ChevronRight, FileBadge, FlaskConical, Inbox, Palette, SlidersHorizontal, Smartphone, Tags, TrendingUp, Users, Wallet } from "lucide-react"
 import { requireOfficeUser } from "@/lib/hub/session"
 import { PageHeader, Panel } from "@/components/hub/ui"
 import { SecurityPanel } from "@/components/hub/SecurityPanel"
@@ -63,6 +63,20 @@ const AREAS = [
     label: "Your fields",
     hint: "Add the fields your loads, drivers, trucks and brokers actually need",
     icon: SlidersHorizontal,
+    ownerOnly: true,
+  },
+  {
+    href: "/hub/settings/simulation",
+    label: "Simulation",
+    hint: "SIMULATION badge, clock, go-legit switch — generated world, not live freight",
+    icon: FlaskConical,
+    ownerOnly: true,
+  },
+  {
+    href: "/hub/settings/outbox",
+    label: "Simulated outbox",
+    hint: "Every email the sim would have sent — nothing left the building",
+    icon: Inbox,
     ownerOnly: true,
   },
   {

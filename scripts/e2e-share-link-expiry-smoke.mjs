@@ -39,7 +39,7 @@ async function main() {
   try {
     const loads = await db.query(
       `SELECT id, carrier_id, reference FROM hub.loads WHERE carrier_id = (
-         SELECT id FROM hub.carriers WHERE name = 'Thind Transport'
+         SELECT id FROM hub.carriers WHERE name IN ('Thind Transport', 'Thind Transport LLC')
        ) AND deleted_at IS NULL ORDER BY reference LIMIT 2`
     )
     check(loads.rows.length === 2, "two Thind Transport demo loads exist (kept separate so their panels don't collide)")

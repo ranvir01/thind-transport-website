@@ -4,7 +4,9 @@ import { getFlag } from "@/lib/hub/flags"
 import { getHubUser } from "@/lib/hub/session"
 import { getCarrier, getCarrierSettings } from "@/lib/hub/settings"
 import { isSandboxCarrier, seatForEmail } from "@/lib/hub/sandbox"
+import { isSimulation } from "@/lib/hub/mode"
 import { SandboxBanner } from "@/components/hub/SandboxBanner"
+import { SimulationBadge } from "@/components/hub/SimulationBadge"
 import { SignOutButton } from "@/components/hub/SignOutButton"
 import { PORTAL_ACCENT_DEFAULT, resolvePortalAccent } from "./accent"
 
@@ -20,6 +22,7 @@ export default async function PortalLayout({ children }: { children: React.React
   // and shippers see the carrier they hired (same as /track). The public
   // accept/[token] page has no session, so it keeps the product wordmark.
   const user = await getHubUser()
+  const simulation = await isSimulation()
   const [carrier, accent] =
     (user?.role === "broker" || user?.role === "shipper") && user.carrierId
       ? await Promise.all([
@@ -46,7 +49,8 @@ export default async function PortalLayout({ children }: { children: React.React
             {PRODUCT.wordmark}
           </span>
         )}
-        <span className="shrink-0 text-[10px] font-bold uppercase tracking-[0.25em] text-[color:var(--portal-accent)]">
+        <span className="shrink-0 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.25em] text-[color:var(--portal-accent)]">
+          {simulation ? <SimulationBadge dark compact /> : null}
           Customer portal
         </span>
       </header>
@@ -61,6 +65,12 @@ export default async function PortalLayout({ children }: { children: React.React
         {children}
       </main>
       <footer className="pb-8 px-4 mx-auto w-full max-w-3xl">
+        {simulation ? (
+          <p className="mb-3 flex items-center gap-2 text-[11px] text-steel-300">
+            <SimulationBadge dark compact />
+            Simulated portal — nothing here is a real invoice or payment.
+          </p>
+        ) : null}
         <div className="max-w-[200px]">
           <SignOutButton variant="dark" />
         </div>

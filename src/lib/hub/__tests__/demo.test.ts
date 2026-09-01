@@ -50,6 +50,9 @@ describe("isDemoEmail", () => {
     expect(isDemoEmail("admin@hauldesk.app")).toBe(true)
     expect(isDemoEmail("owner@cascademo.example")).toBe(true)
     expect(isDemoEmail("driver@cascademo.example")).toBe(true)
+    expect(isDemoEmail("owner@demo.ats")).toBe(true)
+    expect(isDemoEmail("driver@demo.ats")).toBe(true)
+    expect(isDemoEmail("dispatch@demo.ats")).toBe(true)
   })
 
   it("matches every login the seed script actually creates", () => {

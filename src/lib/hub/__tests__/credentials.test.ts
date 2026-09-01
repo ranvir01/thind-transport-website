@@ -23,16 +23,22 @@ const queryMock = vi.mocked(query)
 const queryOneMock = vi.mocked(queryOne)
 const CARRIER = "11111111-1111-1111-1111-111111111111"
 const ORIGINAL_KEY = process.env.CREDENTIALS_KEY
+const ORIGINAL_MODE = process.env.HAULDESK_MODE
 
 beforeEach(() => {
   queryMock.mockReset().mockResolvedValue([])
   queryOneMock.mockReset().mockResolvedValue(null)
   process.env.CREDENTIALS_KEY = "a".repeat(32)
+  // getCredentials is simulation-gated; pin legit so a sourced .env.local
+  // HAULDESK_MODE=simulation cannot skip the decrypt assertions.
+  process.env.HAULDESK_MODE = "legit"
 })
 
 afterEach(() => {
   if (ORIGINAL_KEY === undefined) delete process.env.CREDENTIALS_KEY
   else process.env.CREDENTIALS_KEY = ORIGINAL_KEY
+  if (ORIGINAL_MODE === undefined) delete process.env.HAULDESK_MODE
+  else process.env.HAULDESK_MODE = ORIGINAL_MODE
 })
 
 describe("credentialsConfigured", () => {

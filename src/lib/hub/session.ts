@@ -10,6 +10,10 @@ export interface HubSessionUser {
   role: HubRole
   /** Tenant scope — every data call must be scoped to this id. */
   carrierId: string
+  /** Simulation-only: Thind/ATS/All switcher (owners). */
+  simView?: "thind" | "ats" | "all"
+  /** Simulation-only: the user's home tenant before a switcher override. */
+  homeCarrierId?: string
 }
 
 export async function getHubUser(): Promise<HubSessionUser | null> {
@@ -112,7 +116,7 @@ export async function requireOfficeUser(): Promise<HubSessionUser> {
   // redirect loop. /hub/deactivated is a dead end the proxy lets through.
   if (!(await isActiveUser(user))) redirect("/hub/deactivated")
   if (!(await isActiveCarrier(user.carrierId))) redirect("/hub/suspended")
-  return user
+  return applySimView(user)
 }
 
 export interface DriverSessionUser extends HubSessionUser {
@@ -188,7 +192,7 @@ export async function requirePermission(action: HubAction): Promise<HubSessionUs
   if (!can(user.role, action)) throw new Error(`Forbidden: ${user.role} cannot ${action}`)
   if (!(await isActiveUser(user))) throw new Error("Account deactivated")
   if (!(await isActiveCarrier(user.carrierId))) throw new Error("Workspace suspended")
-  return user
+  return applySimView(user)
 }
 
 /** Page-level permission guard (redirects instead of throwing). */
@@ -202,5 +206,39 @@ export async function requirePermissionPage(action: HubAction): Promise<HubSessi
   // Same /hub/login-vs-proxy loop as requireOfficeUser — see comment there.
   if (!(await isActiveUser(user))) redirect("/hub/deactivated")
   if (!(await isActiveCarrier(user.carrierId))) redirect("/hub/suspended")
-  return user
+  return applySimView(user)
+}
+
+/**
+ * Simulation owner switcher: Thind/ATS override. Dispatchers stay locked to
+ * their home carrier — isolation tests use that path.
+ */
+async function applySimView(user: HubSessionUser): Promise<HubSessionUser> {
+  if (user.role !== "owner") return user
+  try {
+    const { isSimulation, carrierIdFromSimView, isSimTenantId } = await import("./mode")
+    if (!(await isSimulation())) return user
+    const { queryOne } = await import("./db")
+    const row = await queryOne<{ sim_view: string | null }>(
+      `SELECT sim_view FROM hub.users WHERE id = $1 AND carrier_id = $2`,
+      [user.id, user.homeCarrierId ?? user.carrierId]
+    )
+    const view = row?.sim_view
+    if (view === "all") {
+      return { ...user, homeCarrierId: user.carrierId, simView: "all" }
+    }
+    if (view === "thind" || view === "ats") {
+      const id = carrierIdFromSimView(view, user.carrierId)
+      if (id !== "all" && isSimTenantId(id)) {
+        return { ...user, homeCarrierId: user.carrierId, carrierId: id, simView: view }
+      }
+    }
+    return {
+      ...user,
+      homeCarrierId: user.carrierId,
+      simView: user.carrierId === "22222222-2222-2222-2222-222222222222" ? "ats" : "thind",
+    }
+  } catch {
+    return user
+  }
 }

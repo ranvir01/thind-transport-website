@@ -17,6 +17,9 @@ import { HubTourHost } from "@/components/hub/HubTour"
 import { LoadOffMark } from "@/components/hub/LoadOffMark"
 import { WorkspaceChip } from "@/components/hub/WorkspaceChip"
 import { UserMenu } from "@/components/hub/UserMenu"
+import { SimulationBadge } from "@/components/hub/SimulationBadge"
+import { SimSwitcher } from "@/components/hub/SimSwitcher"
+import type { SimView } from "@/lib/hub/mode"
 
 /** Tab-bar icons by primary-section id; LayoutGrid is the safe fallback. */
 const SECTION_ICONS: Record<string, LucideIcon> = {
@@ -32,6 +35,8 @@ export function HubShell({
   user,
   smallCarrier,
   accent,
+  simulation = false,
+  simView,
   children,
 }: {
   user: { name: string; role: string; carrierName?: string }
@@ -39,6 +44,8 @@ export function HubShell({
   smallCarrier: boolean
   /** Tenant branding accent (validated hex) — identity chip only, never controls. */
   accent?: string | null
+  simulation?: boolean
+  simView?: SimView
   children: React.ReactNode
 }) {
   const pathname = usePathname()
@@ -57,10 +64,10 @@ export function HubShell({
   const mobilePrimaries = sections.slice(0, 5)
 
   return (
-    <div className="hauldesk-shell min-h-screen bg-bg text-fg">
+    <div className="hauldesk-shell min-h-screen min-w-0 overflow-x-hidden bg-bg text-fg">
       <header
         className={cn(
-          "sticky top-0 z-40 flex h-[calc(3.5rem+env(safe-area-inset-top,0px))] items-center gap-2 border-b border-border bg-surface px-3 pt-[env(safe-area-inset-top,0px)] transition-shadow duration-standard md:px-6",
+          "sticky top-0 z-40 flex h-[calc(3.5rem+env(safe-area-inset-top,0px))] min-w-0 items-center gap-2 border-b border-border bg-surface px-3 pt-[env(safe-area-inset-top,0px)] transition-shadow duration-standard md:px-6",
           scrolled && "shadow-card"
         )}
       >
@@ -69,7 +76,18 @@ export function HubShell({
           <span className="hidden font-semibold tracking-tight text-fg lg:block">{PRODUCT.name}</span>
         </Link>
         <span aria-hidden className="hidden h-5 w-px bg-border lg:block" />
-        <WorkspaceChip name={user.carrierName || PRODUCT.name} accent={accent} isOwner={isOwner} />
+        <WorkspaceChip
+          name={user.carrierName || PRODUCT.name}
+          accent={accent}
+          isOwner={isOwner}
+          simView={simulation && isOwner ? simView : undefined}
+        />
+        {simulation ? <SimulationBadge compact className="shrink-0" /> : null}
+        {simulation && isOwner && simView ? (
+          <div className="hidden shrink-0 md:block">
+            <SimSwitcher current={simView} />
+          </div>
+        ) : null}
 
         <nav
           className="hidden lg:flex items-center gap-0.5 ml-2 min-w-0 flex-1 overflow-x-auto"
@@ -188,6 +206,12 @@ export function HubShell({
         <main className="flex-1 min-w-0 px-4 py-5 md:px-8 md:py-8 pb-[calc(7rem+env(safe-area-inset-bottom))] md:pb-8 max-w-[1400px]">
           <HubTourHost />
           {children}
+          {simulation ? (
+            <p className="mt-10 max-w-full text-[11px] leading-relaxed text-fg-3">
+              <SimulationBadge compact className="mr-2 align-middle" />
+              Generated data — invoices, settlements, and 1099s are not real documents.
+            </p>
+          ) : null}
         </main>
       </div>
 

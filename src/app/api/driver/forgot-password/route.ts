@@ -6,7 +6,7 @@
 import { NextResponse } from "next/server"
 import { findDriverByEmail, setResetToken } from "@/lib/driver-db"
 import crypto from "crypto"
-import { createMailTransport, isEmailConfigured, mailFrom } from "@/lib/mailer"
+import { createMailTransport, mailShouldSend, mailFrom } from "@/lib/mailer"
 
 export async function POST(request: Request) {
   try {
@@ -48,8 +48,10 @@ export async function POST(request: Request) {
     const baseUrl = process.env.NEXTAUTH_URL || 'https://thindtransport.com'
     const resetUrl = `${baseUrl}/driver/reset-password?token=${resetToken}&email=${encodeURIComponent(email)}`
 
-    if (!isEmailConfigured()) {
-      console.warn("[FORGOT-PASSWORD] SMTP not configured — reset email not sent")
+    // Same gate as invoices/packet: SMTP *or* simulation outbox echo.
+    // In SIMULATION the reset link lands in Settings → Simulated outbox.
+    if (!(await mailShouldSend())) {
+      console.warn("[FORGOT-PASSWORD] Mail not available — reset email not sent")
       return NextResponse.json({
         success: true,
         message: "If an account exists with that email, a reset link has been sent.",

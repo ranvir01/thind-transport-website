@@ -4,13 +4,19 @@ vi.mock("../credentials", () => ({
   getCredentials: vi.fn(async () => null),
   hasCredentials: vi.fn(async () => false),
 }))
+vi.mock("../mode", () => ({
+  liveIntegrationsAllowed: vi.fn(async () => true),
+  isSimulation: vi.fn(async () => false),
+}))
 
 import { getCredentials, hasCredentials } from "../credentials"
+import { liveIntegrationsAllowed } from "../mode"
 import { memorySink } from "../integrations/mock"
 import { datPostingToLoadDraft, datSource, normalizeDatPosting } from "../integrations/dat"
 
 const getCredentialsMock = vi.mocked(getCredentials)
 const hasCredentialsMock = vi.mocked(hasCredentials)
+const liveIntegrationsAllowedMock = vi.mocked(liveIntegrationsAllowed)
 const CARRIER = "11111111-1111-1111-1111-111111111111"
 
 describe("normalizeDatPosting (pure — the one place the assumed match shape is read)", () => {
@@ -119,7 +125,21 @@ describe("datSource (SyncSource<DatLoadPosting> + search contract)", () => {
   beforeEach(() => {
     getCredentialsMock.mockReset()
     hasCredentialsMock.mockReset()
+    liveIntegrationsAllowedMock.mockReset()
+    liveIntegrationsAllowedMock.mockResolvedValue(true)
     vi.stubGlobal("fetch", vi.fn())
+  })
+
+  it("does not call DAT.com while simulation has live integrations off", async () => {
+    liveIntegrationsAllowedMock.mockResolvedValue(false)
+    getCredentialsMock.mockResolvedValue({
+      serviceAccountEmail: "u@carrier.com",
+      password: "p",
+      actingUserEmail: "disp@carrier.com",
+    })
+    const fetchMock = vi.mocked(fetch)
+    await expect(datSource(CARRIER).search({ originState: "WA" })).rejects.toThrow(/Simulation/)
+    expect(fetchMock).not.toHaveBeenCalled()
   })
 
   it("reports not connected without credentials, and pull/search refuse instead of guessing", async () => {

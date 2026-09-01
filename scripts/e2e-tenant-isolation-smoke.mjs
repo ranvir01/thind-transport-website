@@ -1,6 +1,6 @@
 /**
  * Two-tenant isolation smoke — proves zero data bleed between the seeded
- * carriers (Thind Transport and Cascade Demo Lines, scripts/seed-demo.mjs
+ * carriers (Thind Transport and ATS Transport LLC, scripts/seed-demo.mjs
  * Phase 7). Four angles:
  *
  *   1. List screens: each owner sees only their tenant's references
@@ -19,7 +19,7 @@
  *
  * Token discipline: Thind seeds a customer literally named "Cascade Produce
  * Co.", so asserting on the bare word "Cascade" would false-positive —
- * assertions use exact refs (CAS-5001, "Cascade Demo Lines", THD-) only.
+ * assertions use exact refs (CAS-5001, "ATS Transport LLC", THD-) only.
  *
  * Usage: node scripts/e2e-tenant-isolation-smoke.mjs [outputDir]
  */
@@ -214,7 +214,7 @@ async function main() {
   check(realErrors.length === 0, `no console errors (${realErrors.length}: ${realErrors.slice(0, 2).join(" | ")})`)
 
   // ---- 5. Platform admin suspends Cascade — its whole workspace is cut off ----
-  console.log("5. Platform admin suspends Cascade Demo Lines — owner session is cut off mid-JWT")
+  console.log("5. Platform admin suspends ATS Transport LLC — owner session is cut off mid-JWT")
   const adminCtx = await browser.createBrowserContext()
   const admin = await adminCtx.newPage()
   await admin.setViewport({ width: 1440, height: 950 })
@@ -224,10 +224,10 @@ async function main() {
   // the subtitle is the destination-copy mapping — wait for it before
   // reading tenant rows off the streamed body.
   await waitForText(admin, "Tenants and operational counts only")
-  await waitForText(admin, "Cascade Demo Lines")
+  await waitForText(admin, "ATS Transport LLC")
 
-  check(await clickTenantAction(admin, "Cascade Demo Lines"), "clicked Suspend on Cascade Demo Lines")
-  check(await waitForTenantStatus(admin, "Cascade Demo Lines", "suspended"), "admin page shows Cascade as suspended")
+  check(await clickTenantAction(admin, "ATS Transport LLC"), "clicked Suspend on ATS Transport LLC")
+  check(await waitForTenantStatus(admin, "ATS Transport LLC", "suspended"), "admin page shows Cascade as suspended")
 
   // The Cascade owner's session cookie is still a valid JWT — only the
   // per-request isActiveCarrier re-check (src/lib/hub/session.ts) should stop it.
@@ -258,8 +258,8 @@ async function main() {
 
   // ---- 6. Reactivate — access is restored without a fresh login ----
   console.log("6. Platform admin reactivates Cascade — owner access is restored")
-  check(await clickTenantAction(admin, "Cascade Demo Lines"), "clicked Reactivate on Cascade Demo Lines")
-  check(await waitForTenantStatus(admin, "Cascade Demo Lines", "active"), "admin page shows Cascade as active")
+  check(await clickTenantAction(admin, "ATS Transport LLC"), "clicked Reactivate on ATS Transport LLC")
+  check(await waitForTenantStatus(admin, "ATS Transport LLC", "active"), "admin page shows Cascade as active")
 
   await cascade.goto(`${BASE}/hub/dispatch`, { waitUntil: "networkidle2" })
   check(

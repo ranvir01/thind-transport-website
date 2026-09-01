@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache"
 import { requireOwner } from "@/lib/hub/session"
 import {
-  credentialsConfigured, deleteCredentials, getCredentials, saveCredentials, type IntegrationProvider,
+  credentialsConfigured, deleteCredentials, getStoredCredentials, saveCredentials, type IntegrationProvider,
 } from "@/lib/hub/credentials"
 import { allowedFields, providerSpec } from "@/lib/hub/integrations/registry"
 import { runTelematicsSync } from "@/lib/hub/telematics"
@@ -51,7 +51,7 @@ export async function saveIntegrationCredentialsAction(
     // leaked webhook secret) never blanks out the others — saveCredentials
     // itself is a full overwrite (see qbo.ts's refresh-token rotation, which
     // follows the same merge-then-save convention).
-    const existing = await getCredentials(user.carrierId, provider)
+    const existing = await getStoredCredentials(user.carrierId, provider)
     await saveCredentials(user.carrierId, provider, { ...existing, ...clean }, user.id)
     await logAudit({
       carrierId: user.carrierId, actorId: user.id, actorName: user.name,

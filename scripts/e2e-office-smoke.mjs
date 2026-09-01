@@ -3,16 +3,45 @@
  * announcement and a document request, adds and completes a recurring task;
  * the driver signs the announcement; the office sees 100% on the ack report.
  *
+ * Reseeds demo data first (see reseed in e2e-lib.mjs) — the run inserts an
+ * announcement, a document request, and a recurring "Morning ops huddle
+ * checklist", then completes it. e2e-run-all executes smokes in sorted name
+ * order, so without its own reseed this script inherits whatever the previous
+ * smoke left behind. Reproduced: step 4 (recurring task) failed on a dirty
+ * database and passed immediately after seed:demo, same code both times.
+ *
  * Usage: node scripts/e2e-office-smoke.mjs [outputDir]
  */
 import { mkdirSync } from "node:fs"
-import { launchBrowser, BASE, clickByText, waitForText, textGone, login, makeShot } from "./e2e-lib.mjs"
+import { launchBrowser, BASE, clickByText, waitForText, textGone, login, makeShot, reseed } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-office"
 mkdirSync(OUT, { recursive: true })
 const shot = makeShot(OUT)
 
+const HUDDLE_CHECKLIST = "Morning ops huddle checklist"
+
+/** Click a per-task icon button (aria-label) inside the card titled `title`. */
+async function clickTaskButton(page, title, ariaLabel) {
+  const clicked = await page.evaluate(
+    ({ title, ariaLabel }) => {
+      const card = [...document.querySelectorAll("p")]
+        .find((p) => (p.textContent ?? "").includes(title))
+        ?.closest("div.rounded-card, div.rounded-xl")
+      const btn = card?.querySelector(`button[aria-label="${ariaLabel}"]`)
+      if (btn) {
+        btn.click()
+        return true
+      }
+      return false
+    },
+    { title, ariaLabel }
+  )
+  if (!clicked) throw new Error(`No "${ariaLabel}" button on a task card titled "${title}"`)
+}
+
 async function main() {
+  reseed()
   const browser = await launchBrowser()
 
   // ---- Office side (desktop) ----
@@ -54,31 +83,35 @@ async function main() {
   console.log("4. Office: add + complete a recurring task")
   await office.goto(`${BASE}/hub/tasks`, { waitUntil: "networkidle2" })
   await waitForText(office, "minus the sticky notes")
-  await office.type('input[aria-label="New task"]', "Morning ops huddle checklist")
-  await clickByText(office, "", { tag: 'button[aria-label="More options"]' })
+  await office.type('input[aria-label="New task"]', HUDDLE_CHECKLIST)
+  // Same composer drive as e2e-tasks-smoke: click the quick-add control
+  // directly. clickByText("", { tag: "button[type=submit]" }) matches the
+  // first submit on the page, which is not always the plus button once a
+  // prior smoke has left extra chrome on the board.
+  await office.click('button[aria-label="More options"]')
+  await office.waitForSelector('select[aria-label="Repeats"]')
   await office.select('select[aria-label="Repeats"]', "weekdays")
   await office.type('textarea[aria-label="Checklist (one item per line)"]', "Check overnight statuses\nReview unacknowledged dispatches")
-  await clickByText(office, "", { tag: 'button[type="submit"]' })
+  await office.click('form button[type="submit"]')
   await waitForText(office, "Recurring task created")
   await office
     .waitForFunction(() => document.querySelector('input[aria-label="New task"]')?.value === "", { timeout: 20000 })
     .catch(() => { throw new Error("task composer did not clear after create") })
+  // Board refresh is async (router.refresh after create). On a dirty board
+  // the toast fires before the new card is in the DOM; clicking Mark done
+  // then no-ops and step 4 dies waiting for the recur toast.
+  await waitForText(office, HUDDLE_CHECKLIST)
   await shot(office, "03-task-created")
-  // Complete OUR task specifically (automation tasks may sit above it).
-  await office.evaluate(() => {
-    const button = [...document.querySelectorAll('button[aria-label="Mark done"]')].find((b) =>
-      b.closest("div.rounded-card, div.rounded-xl")?.textContent?.includes("Morning ops huddle checklist")
-    )
-    button?.click()
-  })
+  await clickTaskButton(office, HUDDLE_CHECKLIST, "Mark done")
   await waitForText(office, "next one is already on the list")
   // Recurrence rolls a fresh task forward under the same title while the
   // completed one drops into "Recently done" — wait for both to render
   // instead of sleeping through the refresh (same check as e2e-tasks-smoke.mjs).
   await office
     .waitForFunction(
-      () => document.body.innerText.split("Morning ops huddle checklist").length - 1 >= 2,
-      { timeout: 15000 }
+      (title) => document.body.innerText.split(title).length - 1 >= 2,
+      { timeout: 15000 },
+      HUDDLE_CHECKLIST
     )
     .catch(() => { throw new Error("recurred task did not roll forward alongside the completed one") })
   await shot(office, "04-task-recurred")

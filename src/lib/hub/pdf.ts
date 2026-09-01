@@ -2,7 +2,7 @@
  * Branded PDF generation (pdf-lib): invoices, settlement statements, and the
  * IFTA quarterly worksheet share one simple document builder.
  */
-import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from "pdf-lib"
+import { PDFDocument, StandardFonts, rgb, degrees, type PDFFont, type PDFPage } from "pdf-lib"
 import { fmtCentsExact } from "./types"
 
 /**
@@ -204,6 +204,39 @@ export class DocBuilder {
     }
     this.y -= height + 6
   }
+
+  /**
+   * Diagonal stamp across every page. Used when HaulDesk is in SIMULATION
+   * so a printed invoice/settlement/1099 can never be mistaken for a real
+   * filing or a bill a broker should pay.
+   */
+  watermark(text = "SIMULATION — NOT A REAL DOCUMENT") {
+    const label = winAnsiSafe(text)
+    const size = 28
+    const width = this.fonts.bold.widthOfTextAtSize(label, size)
+    for (const page of this.doc.getPages()) {
+      page.drawText(label, {
+        x: 170,
+        y: 280,
+        size,
+        font: this.fonts.bold,
+        color: rgb(0.75, 0.15, 0.12),
+        rotate: degrees(32),
+        opacity: 0.22,
+      })
+      // A second lighter pass so the stamp survives a black-and-white print.
+      page.drawText(label, {
+        x: 168,
+        y: 278,
+        size,
+        font: this.fonts.bold,
+        color: rgb(0.55, 0.55, 0.55),
+        rotate: degrees(32),
+        opacity: 0.12,
+      })
+      void width
+    }
+  }
 }
 
 export async function newBuilder(): Promise<DocBuilder> {
@@ -228,6 +261,7 @@ export interface InvoicePdfInput {
   totalCents: number
   remitTo: string
   factored: boolean
+  simulation?: boolean
 }
 
 export async function buildInvoicePdf(input: InvoicePdfInput): Promise<Uint8Array> {
@@ -255,6 +289,7 @@ export async function buildInvoicePdf(input: InvoicePdfInput): Promise<Uint8Arra
   if (input.factored) {
     b.text("This invoice has been assigned. Payment must be made to the factor above.", { size: 8.5, color: GRAY })
   }
+  if (input.simulation) b.watermark()
   return b.doc.save()
 }
 
@@ -266,6 +301,7 @@ export interface StatementPdfInput {
   statementDate: string
   invoices: { number: string; loadReference: string; dueOn: string; bucket: string; openCents: number }[]
   totalOpenCents: number
+  simulation?: boolean
 }
 
 export async function buildStatementPdf(input: StatementPdfInput): Promise<Uint8Array> {
@@ -293,6 +329,7 @@ export async function buildStatementPdf(input: StatementPdfInput): Promise<Uint8
     ])
   )
   b.totalLine("TOTAL DUE", fmtCentsExact(input.totalOpenCents))
+  if (input.simulation) b.watermark()
   return b.doc.save()
 }
 
@@ -307,6 +344,7 @@ export interface SettlementPdfInput {
   grossCents: number
   deductionsCents: number
   netCents: number
+  simulation?: boolean
 }
 
 export async function buildSettlementPdf(input: SettlementPdfInput): Promise<Uint8Array> {
@@ -331,6 +369,7 @@ export async function buildSettlementPdf(input: SettlementPdfInput): Promise<Uin
   b.totalLine("GROSS", fmtCentsExact(input.grossCents))
   b.totalLine("DEDUCTIONS", `-${fmtCentsExact(input.deductionsCents)}`)
   b.totalLine("NET PAY", fmtCentsExact(input.netCents))
+  if (input.simulation) b.watermark()
   return b.doc.save()
 }
 
@@ -355,6 +394,7 @@ export interface IftaPdfInput {
     netCents: number
   }[]
   netTaxCents: number
+  simulation?: boolean
 }
 
 export async function buildIftaPdf(input: IftaPdfInput): Promise<Uint8Array> {
@@ -395,5 +435,32 @@ export async function buildIftaPdf(input: IftaPdfInput): Promise<Uint8Array> {
   b.text("Worksheet for transcription into the WA IFTA filing portal. Source data retained 4 years.", {
     size: 8.5, color: GRAY,
   })
+  if (input.simulation) b.watermark()
+  return b.doc.save()
+}
+
+// ---- 1099-NEC (simulation copy; YTD is the production settlement sum) ----
+
+export interface Nec1099PdfInput {
+  brand: PdfBrand
+  year: number
+  payees: { name: string; compensationCents: number }[]
+  simulation?: boolean
+}
+
+export async function build1099Pdf(input: Nec1099PdfInput): Promise<Uint8Array> {
+  const b = await newBuilder()
+  b.header(input.brand, `1099-NEC ${input.year}`)
+  b.text("Nonemployee compensation (Box 1) — YTD of this payee's settlements.", { size: 9, color: GRAY })
+  b.y -= 4
+  b.table(
+    [
+      { header: "PAYEE", width: 356 },
+      { header: "BOX 1", width: 180, align: "right" },
+    ],
+    input.payees.map((p) => [p.name, fmtCentsExact(p.compensationCents)])
+  )
+  if (input.simulation) b.watermark()
+  else b.text("Not a substitute for the IRS form. Export the CSV to file.", { size: 8.5, color: GRAY })
   return b.doc.save()
 }

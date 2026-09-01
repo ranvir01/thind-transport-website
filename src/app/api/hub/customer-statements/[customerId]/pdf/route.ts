@@ -4,6 +4,7 @@ import { can } from "@/lib/hub/permissions"
 import { getCustomerStatementDetail } from "@/lib/hub/invoices"
 import { getCarrier, getCarrierSettings } from "@/lib/hub/settings"
 import { buildStatementPdf } from "@/lib/hub/pdf"
+import { isSimulation } from "@/lib/hub/mode"
 
 export async function GET(
   _req: Request,
@@ -32,6 +33,7 @@ export async function GET(
       bucket: inv.bucket, openCents: inv.open_cents,
     })),
     totalOpenCents: statement.totalOpenCents,
+    simulation: await isSimulation(),
   })
 
   return new NextResponse(Buffer.from(pdfBytes), {

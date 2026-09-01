@@ -3,7 +3,7 @@ import { writeFile, mkdir } from 'fs/promises'
 import { existsSync } from 'fs'
 import path from 'path'
 import { auth } from '@/app/api/auth/[...nextauth]/route'
-import { createMailTransport, isEmailConfigured, mailFrom } from '@/lib/mailer'
+import { createMailTransport, mailShouldSend, mailFrom } from '@/lib/mailer'
 import { saveApplication, updateApplicationPDFPath } from '@/lib/driver-db'
 import { COMPANY_INFO } from '@/lib/constants'
 
@@ -80,9 +80,9 @@ export async function POST(request: NextRequest) {
     let emailSent = false
     let emailError = ''
 
-    if (!isEmailConfigured()) {
-      emailError = 'SMTP not configured'
-      console.warn('SMTP not configured — DOT application stored but not emailed')
+    if (!(await mailShouldSend())) {
+      emailError = 'Mail not available'
+      console.warn('Mail not available — DOT application stored but not emailed')
     } else {
       try {
         const transporter = createMailTransport()

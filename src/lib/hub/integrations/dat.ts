@@ -123,6 +123,10 @@ export function datSource(carrierId: string): DatSource {
   const base = process.env.DAT_API_BASE ?? "https://freight.api.dat.com/v3"
 
   async function search(criteria: DatSearchCriteria): Promise<DatLoadPosting[]> {
+    const { liveIntegrationsAllowed } = await import("../mode")
+    if (!(await liveIntegrationsAllowed())) {
+      throw new Error("Simulation — live DAT search is off. Paste a rate con instead.")
+    }
     const creds = await getCredentials(carrierId, "dat")
     // DAT's RESTful API FAQ (one.support.dat.com) confirms a two-level model: the service
     // account authenticates the organization, but every request is made AS a regular user who

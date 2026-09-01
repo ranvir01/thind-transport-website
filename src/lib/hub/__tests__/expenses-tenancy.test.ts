@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 
 vi.mock("../db", () => ({ query: vi.fn(async () => []), queryOne: vi.fn(async () => null), hubDb: vi.fn() }))
 vi.mock("../audit", () => ({ logAudit: vi.fn(async () => undefined) }))
+vi.mock("../mode", () => ({ isSimulation: vi.fn(async () => false) }))
 
 import { hubDb, query, queryOne } from "../db"
 import { logAudit } from "../audit"

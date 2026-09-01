@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache"
 import { requirePermission } from "@/lib/hub/session"
 import { emailPacket, signBrokerAgreement } from "@/lib/hub/packet"
 import { getCarrier, getCarrierSettings } from "@/lib/hub/settings"
-import { isEmailConfigured } from "@/lib/mailer"
+import { mailShouldSend } from "@/lib/mailer"
 import { logAudit } from "@/lib/hub/audit"
 import { actionError } from "@/lib/hub/action-error"
 import { query } from "@/lib/hub/db"
@@ -55,7 +55,7 @@ export async function requestCoiAction(input: {
     const user = await requirePermission("compliance:write")
     if (!input.agentEmail.includes("@")) return { ok: false, error: "Enter the agent's email" }
     if (!input.certificateHolder.trim()) return { ok: false, error: "Who is the certificate holder?" }
-    if (!isEmailConfigured()) {
+    if (!(await mailShouldSend())) {
       return {
         ok: false,
         error: "Email not configured (set SMTP_USER/SMTP_PASS) — email your agent directly for now.",
