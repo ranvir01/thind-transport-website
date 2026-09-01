@@ -95,17 +95,18 @@ Launch together, merge in any order.
 
 **Background automation (subscription — no API key):**
 
-> **RETIRED 2026-07-18:** the Cursor subscription ended; these three roles are now owned by
-> **Claude Code routines** (prompts: [`docs/claude-routines.md`](claude-routines.md)) with the
-> GitHub Action `drain-integrator.yml` as the platform-independent drain backstop. The table
-> below is kept for the role definitions the routines inherit.
+Three **Cursor Automations** on staggered hourly schedules (model **Auto**, cloud compute on, repo
+`ranvir01/thind-transport-website`). Activate from [cursor.com/automations](https://cursor.com/automations/new)
+using the `loadoff-*.workflow.json` prefills — checklist in
+[`.cursor/automation/README.md`](../.cursor/automation/README.md).
 
-Three roles on staggered hourly schedules (originally Cursor Automations, repo
-`ranvir01/thind-transport-website`; legacy setup: [`.cursor/automation/README.md`](../.cursor/automation/README.md)).
+Claude Code routines ([`docs/claude-routines.md`](claude-routines.md)) and the GitHub Action
+`drain-integrator.yml` are the **fallback** when Cursor is dark — they run the same three roles,
+they do not replace the subscription fleet.
 
 | Agent | Cron (UTC) | Branch | Job |
 |-------|------------|--------|-----|
-| Integrator | `0 * * * *` | `claude/hauldesk-project-setup-l1luoo` | Merge `claude/lane-*` → integrator; verify after each merge |
+| Integrator | `0 * * * *` | `claude/hauldesk-project-setup-l1luoo` | Merge `claude/lane-*` (and any pending `claude/*` session branch) → integrator; verify after each merge |
 | Prod smoke | `30 * * * *` | `main` | `npm run prod:smoke`; fix-forward if production broken |
 | Deploy + backlog | `59 * * * *` | `main` | **Catch-up:** merge integrator → `main` while drift > threshold. **Steady:** one `Backlog:` item |
 

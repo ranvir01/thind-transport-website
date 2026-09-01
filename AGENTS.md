@@ -93,8 +93,9 @@ full playbook and ready-made prompts:
    + the gates below + visual check of changed screens (local Postgres:
    `npm run db:migrate && npm run seed:demo`, then drive the real UI — demo logins in
    `scripts/seed-demo.mjs`).
-5. **Ship** — commit with a one-line why, push, merge to `main` (Vercel deploys `main`). Background
-   fleet automations (`.cursor/automation/README.md`) handle integrator → main drain and prod smoke.
+5. **Ship** — commit with a one-line why, push, merge to `main` (Vercel deploys `main`). Three
+   Cursor Automations (integrator `:00`, prod smoke `:30`, deploy + backlog `:59`) plus the
+   drain Action keep lane work on `main` — see [`.cursor/automation/README.md`](.cursor/automation/README.md).
 6. **Record** — end the commit body or PR with a `Backlog:` list of follow-ups you saw but didn't
    take; the next agent starts there. Never leave discovered defects unrecorded.
 

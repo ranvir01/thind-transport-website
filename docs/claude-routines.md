@@ -1,12 +1,13 @@
-# Claude routine prompts — the post-Cursor fleet
+# Claude routine prompts — fallback when Cursor is dark
 
-Cursor's subscription ended 2026-07-18; its three automations (integrator :00,
-prod smoke :30, deploy :59) are replaced by **Claude Code routines** (claude.ai
-→ Code → Routines, simple Hourly/Daily triggers) plus the platform-independent
-**GitHub Action** `.github/workflows/drain-integrator.yml`, which drains
-`main` at :17/:47 whenever the integrator is green and either >3 ahead or has
-a pending commit ≥12h old (age gate added 2026-08-07) — so the drain survives
-even every routine being down. (Fixed 2026-07-19: this drains via a
+Cursor Automations (integrator `:00`, prod smoke `:30`, deploy `:59`) are the intended
+subscription fleet — prompts and workflow prefills live in [`.cursor/automation/`](../.cursor/automation/README.md).
+
+Claude Code routines (claude.ai → Code → Routines) plus the GitHub Action
+`.github/workflows/drain-integrator.yml` are the **fallback** when Cursor is dark.
+`drain-integrator.yml` drains `main` at :17/:47 whenever the integrator is green and either
+>3 ahead or has a pending commit ≥12h old (age gate added 2026-08-07) — so the drain survives
+even every agent being down. (Fixed 2026-07-19: this drains via a
 `--no-ff` merge commit, not a fast-forward push — see below.)
 
 Each routine fires a fresh session: prompts are standalone. House rules live in

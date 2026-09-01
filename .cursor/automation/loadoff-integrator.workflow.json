@@ -1,6 +1,6 @@
 {
   "name": "LoadOff integrator (lane merge)",
-  "description": "Hourly at :00 UTC — merges claude/lane-* branches into claude/hauldesk-project-setup-l1luoo with build+test after each merge.",
+  "description": "Hourly at :00 UTC — merges pending claude/* (session or lane-*) into claude/hauldesk-project-setup-l1luoo with build+test after each merge.",
   "workflow": {
     "triggers": [
       {
