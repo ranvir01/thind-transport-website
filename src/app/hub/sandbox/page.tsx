@@ -1,4 +1,7 @@
 import type { Metadata } from "next"
+import { getActiveHubUser } from "@/lib/hub/session"
+import { isSandboxCarrier } from "@/lib/hub/sandbox"
+import { getCarrier } from "@/lib/hub/settings"
 import { SeatPicker } from "./SeatPicker"
 
 export const metadata: Metadata = {
@@ -15,6 +18,16 @@ export const maxDuration = 60
  * (Blue Ridge Haulage). Public (proxy allowlists /hub/sandbox); picking a
  * seat signs you in as that person. One click resets the whole room.
  */
-export default function SandboxPage() {
-  return <SeatPicker />
+export default async function SandboxPage() {
+  // Taking a seat calls signIn, which REPLACES the current session. Since the
+  // nav gained a "Practice mode" link, a real carrier can arrive here mid-shift
+  // — so tell them what the click costs and give them a way back. The page
+  // stays public: no session simply means no warning.
+  const user = await getActiveHubUser()
+  const realCarrier =
+    user && user.carrierId && !isSandboxCarrier(user.carrierId)
+      ? (await getCarrier(user.carrierId))?.name ?? "your company"
+      : null
+
+  return <SeatPicker signedInAs={realCarrier} />
 }

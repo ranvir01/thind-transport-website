@@ -34,11 +34,15 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  // Match the header surface in each mode so the iOS status bar blends in.
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
-    { media: "(prefers-color-scheme: dark)", color: "#14161f" },
-  ],
+  // No themeColor here on purpose. It used to be a prefers-color-scheme pair,
+  // which put a #14161f status bar above a WHITE office page on any phone set
+  // to dark — the office mode comes from localStorage, never the OS.
+  //
+  // The root layout's own "#121316" still reaches /hub, and React re-hoists
+  // metadata after hydration, so neither tag ORDER nor tag COUNT is
+  // controllable from a script. The boot script below therefore rewrites the
+  // content of every theme-color tag it finds and keeps watching <head>, which
+  // makes both moot (lib/hub/appearance.ts does the same on the live toggle).
   // Drivers use the app one-handed in a cab; let it fill past the notch/home
   // indicator so the bottom action bar isn't squeezed by the safe-area inset.
   viewportFit: "cover",
@@ -47,7 +51,13 @@ export const viewport: Viewport = {
 // The empty passive touchstart listener is required for iOS Safari to apply
 // :active states on first touch — the CSS press feedback in hub-theme.css
 // does nothing on iPhones without it.
-const themeBoot = `(function(){try{var p=location.pathname;if(!p.startsWith('/hub'))return;var m=localStorage.getItem('hauldesk-mode')||'light';var t=localStorage.getItem('hauldesk-theme')||'indigo';var r=document.documentElement;r.setAttribute('data-app','hauldesk');r.setAttribute('data-mode',m);r.setAttribute('data-theme',t);document.addEventListener('touchstart',function(){},{passive:true});}catch(e){}})();`
+// The office mode comes from localStorage, NOT from the OS, so the static
+// prefers-color-scheme theme-color pair above is wrong for /hub: an iPhone set
+// to dark showed a #14161f address bar above a white office page, which reads
+// as a half-broken dark mode rather than a light app. Overwrite the meta with
+// the mode we actually resolved. Driver and portal are navy regardless of the
+// stored mode — they are forced-dark surfaces.
+const themeBoot = `(function(){try{var p=location.pathname;if(!p.startsWith('/hub'))return;var m=localStorage.getItem('hauldesk-mode')||'light';var t=localStorage.getItem('hauldesk-theme')||'indigo';var r=document.documentElement;r.setAttribute('data-app','hauldesk');r.setAttribute('data-mode',m);r.setAttribute('data-theme',t);var forcedDark=/^\\/hub\\/(driver|portal)(\\/|$)/.test(p);if(forcedDark)r.setAttribute('data-surface','dark');var bar=forcedDark?'#121316':(m==='dark'?'#08090d':'#fbfbfd');var paint=function(){var tags=document.head.querySelectorAll('meta[name="theme-color"]');if(!tags.length){var meta=document.createElement('meta');meta.setAttribute('name','theme-color');document.head.appendChild(meta);tags=[meta];}for(var i=0;i<tags.length;i++){tags[i].removeAttribute('media');tags[i].setAttribute('content',bar);}};paint();if(window.MutationObserver){new MutationObserver(paint).observe(document.head,{childList:true});}document.addEventListener('touchstart',function(){},{passive:true});}catch(e){}})();`
 
 export default async function HubLayout({ children }: { children: React.ReactNode }) {
   // Seed the client SessionProvider from the server so it skips its initial

@@ -67,7 +67,7 @@ export const PROVIDERS = [
   },
   {
     id: "mailbox", label: "Docs mailbox (IMAP)", domain: "docs",
-    blurb: "Polls an inbox and files rate cons/PODs onto matching loads by reference number in the subject. Auth: Gmail app password, OR OAuth2 for Microsoft 365 (tenant + client ID/secret) / Google Workspace (service account key) — fill one set, leave the rest blank.",
+    blurb: "Polls an inbox and files rate cons/PODs onto matching loads by reference number in the subject. A rate con for freight you have not booked yet goes to the Inbox instead, parsed and waiting for you to review — nothing is booked automatically. Auth: Gmail app password, OR OAuth2 for Microsoft 365 (tenant + client ID/secret) / Google Workspace (service account key) — fill one set, leave the rest blank.",
     fields: [
       { key: "user", label: "Mailbox address" },
       { key: "password", label: "App password (Gmail only — M365/Workspace use OAuth2 below)", secret: true },
