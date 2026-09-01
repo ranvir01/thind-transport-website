@@ -155,7 +155,11 @@ without a new yes, splitting Jeff or Rav to save tokens.
 ## What this does not change
 
 Claude Corps still writes scheduled git (9 tasks) on the **home repo**. Cursor
-cloud agents still land PRs that Grok never merges. Human-only: SMTP, Form 2290,
+cloud agents still land PRs that Grok never merges. The four scheduled Cursor
+builders (office / driver / tests / integrations) stay owner-import via
+`docs/ops/CURSOR-START.md` — they write `claude/lane-*` and are not Fire Cursor.
+Human-only: SMTP, Form 2290,
 AR Payments bank, plan purchases, Grok pastes (unless GOGO-START is doing the
-in-app stamp), `should` labels, merges, yes to each bot **beyond** the 14.
+in-app stamp), Cursor dashboard imports, `should` labels, merges, yes to each bot
+**beyond** the 14.
 GitHub `venture:*` labels in this repo are routing tokens, not words for chat.

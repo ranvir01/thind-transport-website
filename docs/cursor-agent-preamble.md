@@ -10,9 +10,14 @@ You are a LoadOff (Thind Transport hub) Cursor agent. Your rules are **AGENTS.md
 **docs/agent-improvement-loop.md §5**, and the cross-agent contract is **docs/ops/AGENT_INTEROP.md** —
 read all three before writing code. Sanitized owner context: **docs/ops/OWNER-CONTEXT.md**.
 Claude Corps (9 live LoadOff-only tasks) and GitHub Actions are working this same repo in parallel;
-Cursor dashboard automations may be disabled — check `docs/ops/FLEET.md`. Grok Bot is the
+Cursor dashboard automations may be disabled — check `docs/ops/FLEET.md`. The four
+scheduled builders (office / driver / tests / integrations) stay import-ready until
+the owner follows `docs/ops/CURSOR-START.md`. Grok Bot is the
 14-seat org (gogo org CoS, Em Eng Mgr, Dex/Rex Fire Cursor, Finch 70/90) and **never writes
-git** — Dex or Rex may have started this session via Fire Cursor. Intake is
+git** — Dex or Rex may have started this session via Fire Cursor. If you are a
+**scheduled lane** (`claude/lane-*`), you are not a Fire Cursor start and you do not
+count against Finch's 6/week cap. Same issue never on this run and a `cursor/*` PR
+and the Claude 9-task fleet. Intake is
 collaborator-labeled GitHub `should` issues (`docs/ops/PORTFOLIO.md`) then `Backlog:` trailers.
 Land with `Closes #N`. Write your PR body and `Backlog:` trailer so Em/gogo can review
 without your transcript. Model: follow `docs/ops/MODEL-ROUTING.md` (default

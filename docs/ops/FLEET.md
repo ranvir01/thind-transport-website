@@ -120,9 +120,12 @@ collaborator-labeled `should` issues ([`PORTFOLIO.md`](PORTFOLIO.md)).
 
 Daily/weekly **build** sessions that Claude does *not* already run (office, driver, tests,
 integrations) remain import-ready Cursor Automations on Grok 4.6 (`DECISIONS.md` D-003) —
-table below. They stay off the live table until the owner imports them. **Do not import
-marketing / deep-verify / meta-governor** while Claude Corps #4/#5/#7 are live — that is
-two writers on one charter.
+table below. **Owner click pack:** [`CURSOR-START.md`](CURSOR-START.md). They stay off the
+live table until the owner imports them. **Do not import marketing / deep-verify /
+meta-governor / red-team** while Claude Corps twins are live — that is two writers on one
+charter. D-006 (re-enable Integrator / Smoke / Deploy) stays unanswered — leave those
+three disabled. After a lane's first green run, Em must not assign Dex/Rex that
+territory the same UTC day.
 
 Until Cursor Integrator / Deploy are re-enabled, GitHub drain `:17`/`:47` plus Claude
 integrator every 3h at `:43` are the path to `main`. Ad-hoc Cursor sessions still land
@@ -132,10 +135,11 @@ Cursor Cloud Agents on `cursor/*` land via pull request. `claude/<session>` bran
 
 ## Role slots — import-ready Cursor Automations, Grok 4.6 (D-003 answered 2026-08-19)
 
-Workflow JSONs + full prompts live in [`.cursor/automation/`](../../.cursor/automation/README.md)
-— one import per row (cursor.com/automations, ~15 min total), model pinned
-`cursor-grok-4.6-high-fast`. Minutes `:07`/`:13`/`:37` are reserved for these; the clock
-guard test keeps them clear. Once a slot's first run boots, move its row into the live table.
+Workflow JSONs + full prompts live in [`.cursor/automation/`](../../.cursor/automation/README.md).
+**Import via [`CURSOR-START.md`](CURSOR-START.md)** (one import per safe row,
+cursor.com/automations, ~12 min), model pinned `cursor-grok-4.6-high-fast`. Minutes
+`:07`/`:13`/`:37` are reserved for these; the clock guard test keeps them clear. Once a
+slot's first run boots, move its row into the live table and tell gogo/Em.
 
 | Slot (UTC) | Automation | Writes | Charter |
 |---|---|---|---|

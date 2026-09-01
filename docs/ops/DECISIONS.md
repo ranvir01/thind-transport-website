@@ -71,6 +71,9 @@ C) Re-enable Integrator only (merge redundancy); leave smoke/deploy to Claude + 
 Deferral cost: none for publishing — Claude already drains. Cost of A is extra Cursor
 automation minutes; cost of B is a single-platform merge path if Claude.ai goes dark.
 Answer: ____
+Note (2026-09-01): [`CURSOR-START.md`](CURSOR-START.md) is the execute pack
+for the four D-003 builders Claude does not already run. It is **not** an
+answer to this question — Integrator / Prod Smoke / Deploy stay disabled.
 
 ## D-007 | filed:2026-08-26 | class:fleet
 Q: Eventually have Grok Bots spawn extra named teammates, or write long implementation

@@ -150,6 +150,15 @@ on the live 9-task Claude fleet. **Bee never uses this.**
 Review the draft skill; add Finch's cap and "never merge" — a recording will
 miss those.
 
+## Step 6 — Cursor scheduled lanes (you click; bots do not)
+
+After Step 1, import the four builders Claude does not already run:
+[`docs/ops/CURSOR-START.md`](../ops/CURSOR-START.md). Do not re-enable
+Integrator / Prod Smoke / Deploy until you answer D-006. Do not import
+marketing / deep-verify / meta-governor / red-team. After the first green
+lane run, tell gogo and Em so Dex / Rex do not Fire Cursor on that territory
+the same day.
+
 ## Step 5 — durability (skills; routines stay listed)
 
 **Memory.** Stable preferences only. Changing facts live in the repo or
@@ -181,3 +190,5 @@ hard-stop.
 - [ ] Each Bot saved and **enabled** its starter skill
 - [ ] gogo's listener, Finch's morning line, Scout 16:00 PT, Jeff 8:30pm PT
       each had a Test run (existing live routines skip the re-test)
+- [ ] CURSOR-START imported (four builders) or explicitly deferred; D-006
+      three left disabled; Claude twins skipped

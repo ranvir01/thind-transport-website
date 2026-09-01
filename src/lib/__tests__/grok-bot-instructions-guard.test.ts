@@ -89,6 +89,7 @@ describe("grok-bot instruction files (14-seat org, paste-ready, ≤4k)", () => {
     expect(setup).toMatch(/\/workspace\/hub\/board\.md/)
     expect(setup).toMatch(/MODEL-ROUTING/)
     expect(setup).toMatch(/GOGO-START/)
+    expect(setup).toMatch(/CURSOR-START/)
     expect(setup).not.toMatch(/needsAuth/)
     expect(setup).not.toMatch(/gogo-tpm/)
     expect(setup).not.toMatch(/LoadOff/)
@@ -121,6 +122,7 @@ describe("grok-bot instruction files (14-seat org, paste-ready, ≤4k)", () => {
     expect(start).toMatch(/apply-every-2-days/)
     expect(start).toMatch(/rts-payment-recon/)
     expect(start).toMatch(/github-repo-watch/)
+    expect(start).toMatch(/CURSOR-START/)
     expect(start).not.toMatch(/LoadOff/)
   })
 
@@ -355,6 +357,7 @@ describe("grok-bot instruction files (14-seat org, paste-ready, ≤4k)", () => {
     expect(readme).toMatch(/retired/)
     expect(readme).toMatch(/Fire Cursor/)
     expect(readme).toMatch(/GOGO-START/)
+    expect(readme).toMatch(/CURSOR-START/)
     expect(readme).not.toMatch(/LoadOff/)
     for (const name of ["gogo", "Finch", "Wright", "Scout", "Em", "Dex", "Rex", "Steve", "Jeff", "Rav", "Labs", "Ridge", "Bee", "My"]) {
       expect(readme).toContain(name)

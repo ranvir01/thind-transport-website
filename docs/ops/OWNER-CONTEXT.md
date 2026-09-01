@@ -69,9 +69,11 @@ company — [`AR-PAYMENTS.md`](AR-PAYMENTS.md). Excel in Dropbox is the SoR.
 **Cursor Automations** (Grok 4.6) — dashboard copies observed **DISABLED**
 2026-08-26: Integrator `880eec29-…`, Prod Smoke `4ad7743c-…`, Deploy + backlog
 `75e8fbf5-…`, Untitled `61b8e855-…` (Untitled stays off). Import-ready role
-slots live in `.cursor/automation/`. Import **only** slots Claude does not
+slots live in `.cursor/automation/`. **Owner click pack:**
+[`CURSOR-START.md`](CURSOR-START.md). Import **only** slots Claude does not
 already run (office / driver / tests / integrations). Do not import marketing,
-deep-verify, or meta-governor while those Claude tasks are live.
+deep-verify, meta-governor, or red-team while those Claude tasks are live.
+Do not re-enable Integrator / Smoke / Deploy until D-006.
 
 **GitHub Actions** keep `main` moving when Cursor is off: drain `:17`/`:47`,
 liveness `:10`, portfolio digest Fri `20:41`. Red runs file `should` issues.

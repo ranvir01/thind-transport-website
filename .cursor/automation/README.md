@@ -50,11 +50,18 @@ ad-hoc sessions ──────▶ claude/<session> ─┘        prod smoke 
 
 ## Activate / fix (one time, ~15 min)
 
-Claude Corps is the live scheduled writer (9 LoadOff-only tasks). These Cursor automations are
-**optional redundancy**. As of 2026-08-26 all four dashboard copies were **disabled**.
+**Owner import pack:** [`docs/ops/CURSOR-START.md`](../../docs/ops/CURSOR-START.md) —
+paste-equivalent of GOGO-START for these dashboards. Import the four builders
+Claude does not already run. Do **not** re-enable Integrator / Prod Smoke /
+Deploy (D-006 unanswered). Untitled stays off.
 
-1. **If you want Cursor drain/smoke redundancy:** re-enable Integrator, Prod Smoke, and
-   Deploy + backlog (do not import duplicates). Set **Model: Grok 4.6**, repository
+Claude Corps is the live scheduled writer (9 LoadOff-only tasks). The three
+mechanical Cursor copies (Integrator / Prod Smoke / Deploy) are **optional
+redundancy** and were **disabled** 2026-08-26 (still disabled 2026-09-01).
+
+1. **If you want Cursor drain/smoke redundancy:** answer D-006 first, then
+   re-enable Integrator, Prod Smoke, and Deploy + backlog (do not import
+   duplicates). Set **Model: Grok 4.6**, repository
    `ranvir01/thind-transport-website`, cloud compute on.
 
 | Dashboard name | Id |
@@ -65,11 +72,14 @@ Claude Corps is the live scheduled writer (9 LoadOff-only tasks). These Cursor a
 
 2. **Keep Untitled disabled** [`61b8e855-76b8-11f1-ba66-0e7d0216e441`](https://cursor.com/automations/61b8e855-76b8-11f1-ba66-0e7d0216e441)
    — "HaulDesk improvement cycle", a second writer on `main`. Already off as of 2026-08-26.
-3. **Import only Cursor slots Claude does not already run** (office / driver / tests /
-   integrations) at [cursor.com/automations](https://cursor.com/automations/new). Keep cron
-   minutes `:07`/`:13`/`:37`. **Do not import** marketing / deep-verify / meta-governor /
+3. **Import the four builders** using [`docs/ops/CURSOR-START.md`](../../docs/ops/CURSOR-START.md)
+   (office / driver / tests / integrations) at
+   [cursor.com/automations](https://cursor.com/automations/new). Keep cron minutes
+   `:07`/`:13`/`:37`. **Do not import** marketing / deep-verify / meta-governor /
    red-team while those Claude tasks are live — full table in
    [`docs/ops/FLEET.md`](../../docs/ops/FLEET.md) ("One charter, one platform").
+   After the first green run of a lane, tell gogo / Em so Dex / Rex do not Fire
+   Cursor on that territory the same UTC day.
    Grok Bot paste files: [`docs/grok-bots/`](../../docs/grok-bots/README.md).
 4. If the environment still fails to boot (runs ERROR in seconds with no setup logs): Save the
    install-only environment config — dashboard → environments →

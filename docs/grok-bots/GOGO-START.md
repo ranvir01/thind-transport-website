@@ -223,7 +223,18 @@ No hourly attention. If Finch hard-stops (90%), pause routines — do not spawn.
 
 ---
 
-## 8 · Report back (this shape, then go silent)
+## 8 · Cursor lanes (Ranvir clicks; you do not)
+
+Ranvir imports four scheduled Cursor builders via
+`docs/ops/CURSOR-START.md` (office 05:13, driver 08:13, tests 11:13,
+integrations 14:13 UTC). You never open cursor.com/automations. After he
+says a lane is live, Em must not assign Dex/Rex that territory the same
+UTC day. Fire Cursor stays the interrupt path. Leave Integrator / Prod
+Smoke / Deploy disabled until Ranvir answers D-006.
+
+---
+
+## 9 · Report back (this shape, then go silent)
 
 ```
 GOGO-START

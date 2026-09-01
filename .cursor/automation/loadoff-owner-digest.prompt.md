@@ -26,6 +26,10 @@ Write `docs/ops/weekly-YYYY-MM-DD.md` (today's date), format extending
 5. **Fleet report** — per-slot activity (which scheduled jobs actually committed), gate-file
    commits, reaper/prune results.
 6. **Top-3 owner actions** ranked by dollars-per-owner-hour (`docs/ops/TOP_10.md` logic).
+7. **Dispatch layer** — whether the four Cursor scheduled lanes from
+   `docs/ops/CURSOR-START.md` imported this week; open collaborator-labeled
+   `should` count; Finch cap note if `docs/ops/MODEL-ROUTING.md` changed.
+   Do not recommend re-enabling Integrator / Smoke / Deploy (D-006).
 
 Then prune `docs/ops/DECISIONS.md`: mark items answered in commit history, re-surface
 unanswered spend/legal/fleet items at the top.

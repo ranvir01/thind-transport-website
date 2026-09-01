@@ -48,12 +48,15 @@ same branch in the same minute is how a diverged `main` gets made.
 daily role slots — `05:13` office/UX · `08:13` driver+portal · `11:13` tests · `14:13`
 integrations · `20:13` marketing · Sat `07:07` deep-verify · Sun `09:07` red-team · Sun
 `18:07` meta-governor · Fri `19:37` owner digest · Mon `10:07` dependency pass. Import-ready
-workflow JSONs: [`.cursor/automation/`](../../.cursor/automation/README.md). Only the owner
-imports them (cursor.com/automations). **Alongside live Claude:** import office / driver /
-tests / integrations only. Skip marketing (`20:13`), deep-verify, red-team, and
-meta-governor — Claude already runs those charters. Once a slot is imported and its first
-run boots, move its row into the table above. Minutes `:07` / `:13` / `:37` are **reserved**
-— schedule nothing else on them (`src/lib/__tests__/fleet-clock-guard.test.ts` enforces this).
+workflow JSONs: [`.cursor/automation/`](../../.cursor/automation/README.md). **Owner click
+pack:** [`CURSOR-START.md`](CURSOR-START.md). Only the owner imports them
+(cursor.com/automations). **Alongside live Claude:** import office / driver / tests /
+integrations only. Skip marketing (`20:13`), deep-verify, red-team, and meta-governor —
+Claude already runs those charters. Do not re-enable Integrator / Prod Smoke / Deploy
+until D-006 is answered. Once a slot is imported and its first run boots, move its row
+into the table above and tell gogo/Em so Dex/Rex do not Fire Cursor that territory the
+same UTC day. Minutes `:07` / `:13` / `:37` are **reserved** — schedule nothing else on
+them (`src/lib/__tests__/fleet-clock-guard.test.ts` enforces this).
 
 Same-minute **disjoint targets** (not a merge race): Claude marketing `08:00` vs Cursor
 `:00` integrator; Claude meta-governor / auditor on Monday `:00`. Documented in FLEET.md.

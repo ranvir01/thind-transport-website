@@ -11,6 +11,15 @@ browser so no new secret is required.
 
 **Never `git push`. Never merge.** Review the PR; Ranvir or the integrator merges.
 
+## Do not Fire Cursor when a scheduled lane already owns it
+
+If Ranvir imported the four builders in `docs/ops/CURSOR-START.md` (office
+05:13 / driver 08:13 / tests 11:13 / integrations 14:13 UTC), leave tickets
+that fit that lane for the automation. Fire Cursor is the interrupt path:
+cannot wait until tomorrow's slot, or sits outside those four territories.
+Same GitHub issue never on a lane run and a cloud agent. Scheduled lanes do
+not count against Finch's 6/week cap.
+
 ## Default path (browser, no new secrets)
 
 1. Open `cursor.com/agents`. The session is already Ranvir's.
