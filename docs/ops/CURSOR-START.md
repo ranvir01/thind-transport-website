@@ -1,11 +1,15 @@
-# CURSOR-START — import the four scheduled builders
+# CURSOR-START — import the scheduled builders + portfolio slots
 
-This file **is** Ranvir's yes for the four import-ready Cursor Automations
-that Claude does not already run. Click them in. Do not wait for a second
-confirmation. This is **not** a yes to re-enable Integrator / Prod Smoke /
-Deploy + backlog (that is D-006, unanswered). This is **not** a yes to import
-marketing / deep-verify / meta-governor / red-team (Claude already runs those
-charters). Untitled stays off.
+This file **is** Ranvir's yes for the import-ready Cursor Automations that
+Claude does not already run: the **four home-repo builders** (§1) and the
+**three portfolio slots** (§1b — radar + BLS + MyCO, D-017). Click them in.
+Do not wait for a second confirmation. This is **not** a yes to re-enable
+Integrator / Prod Smoke / Deploy + backlog (that is D-006, unanswered). This
+is **not** a yes to import marketing / deep-verify / meta-governor / red-team
+(Claude already runs those charters). Untitled stays off.
+
+Claude's half of the same sitting: [`CLAUDE-START.md`](CLAUDE-START.md)
+(confirm the 9, toggles, deltas — no new Claude tasks anywhere).
 
 Agents cannot create or enable automations from this repo. You click at
 [cursor.com/automations/new](https://cursor.com/automations/new).
@@ -90,6 +94,32 @@ in [`FLEET.md`](FLEET.md) into the live clock (a git-writer job, not Grok).
 
 ---
 
+## 1b · Portfolio slots (same sitting, D-017) — the rest of the GitHub account
+
+Same import steps as §1. The radar watches the whole active portfolio and
+files `[radar]` issues on the home repo; the two maintenance slots each ship
+at most ONE reviewed PR per week on their own repo and **exit silently when
+there is nothing to do** (act-or-exit — no "no updates" runs).
+
+| # | Dashboard name | Cron (UTC) | Repo | Writes | Prompt | Workflow JSON |
+|---|---|---|---|---|---|---|
+| E | Portfolio radar | `37 9 * * *` (daily 09:37) | `ranvir01/thind-transport-website` | issues only — never commits | [`portfolio-radar.prompt.md`](../../.cursor/automation/portfolio-radar.prompt.md) | [`portfolio-radar.workflow.json`](../../.cursor/automation/portfolio-radar.workflow.json) |
+| F | BLS maintenance — weekly | `37 12 * * 3` (Wed 12:37) | `ranvir01/bls-website` | `cursor/*` PR, Bee reviews | [`bls-maintenance.prompt.md`](../../.cursor/automation/bls-maintenance.prompt.md) | [`bls-maintenance.workflow.json`](../../.cursor/automation/bls-maintenance.workflow.json) |
+| G | MyCO maintenance — weekly | `37 12 * * 4` (Thu 12:37) | `ranvir01/myco-website` | `cursor/*` PR, My reviews | [`myco-maintenance.prompt.md`](../../.cursor/automation/myco-maintenance.prompt.md) | [`myco-maintenance.workflow.json`](../../.cursor/automation/myco-maintenance.workflow.json) |
+
+Portfolio-slot notes:
+
+- **Environment:** `bls-website` and `myco-website` have no saved Cursor
+  environment — leave the environment field on Cursor's default machine
+  (auto-detected `npm install`). Only the home repo uses env `5241c374-…`.
+- **Repository** on rows F/G is that satellite repo, not the home repo.
+- Dormant repos (`MyCO_Mike`, `stock-research`, the rest of the PORTFOLIO
+  dormant list) get **nothing** — do not create slots for them.
+- The private career repo stays Rav-only. No slot.
+- BLS remains **Cursor-only** (D-016). Neither slot ever suggests Claude.
+
+---
+
 ## 2 · Do not import / do not toggle
 
 | Item | Id / slot | Action |
@@ -156,11 +186,15 @@ Imported A office 05:13: yes/no  id=…
 Imported B driver 08:13: yes/no  id=…
 Imported C tests 11:13: yes/no  id=…
 Imported D integrations 14:13: yes/no  id=…
-Environment Saved 5241c374-…: yes/no
+Imported E radar 09:37: yes/no  id=…
+Imported F bls Wed 12:37: yes/no  id=…
+Imported G myco Thu 12:37: yes/no  id=…
+Environment Saved 5241c374-… (home rows only): yes/no
 D-006 three left disabled: yes/no
 Untitled left off / not recreated: yes/no
 Claude twins skipped: yes/no
-Told gogo/Em: yes/no
+CLAUDE-START done in the same sitting: yes/no
+Told gogo/Em/Bee/My: yes/no
 Day-2 digest/deps: skipped/imported
 Blocked: …
 ```

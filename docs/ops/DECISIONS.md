@@ -253,3 +253,22 @@ B) Keep D-015 names and Rav as draft-only.
 Answer: **A — owner 2026-09-01.** Setup: `docs/grok-bots/SETUP.md` +
 `docs/grok-bots/GOGO-START.md`.
 
+## D-017 | filed:2026-09-01 | class:fleet
+Q: Extend scheduled automations beyond the home repo so the whole GitHub
+account is covered ("automations to go hand in hand with existing Claude and
+my entire github"), on both platforms?
+Answer: **ADOPTED — owner 2026-09-01, in-session.** Cursor gets the portfolio:
+a daily **portfolio radar** (09:37 UTC, home repo, gh read-only across the
+PORTFOLIO Active list, files `[radar]` issues, zero git writes) plus weekly
+**maintenance builders** on `bls-website` (Wed 12:37, Netlify client site)
+and `myco-website` (Thu 12:37) — act-or-exit, one `cursor/*` PR max per run,
+reviewed by Bee / My, import-ready via `CURSOR-START.md` §1b. **Claude stays
+the 9-task home-repo Corps** (D-007) — no new Claude tasks for any satellite
+repo; its portfolio role is ad-hoc Fire Claude by Em
+(`docs/grok-bots/templates/fire-claude.md`), gated on Finch's idle window.
+BLS never sees Claude Code (D-016). Dormant PORTFOLIO rows and the private
+career repo still get nothing. This is a deliberate owner exception to the
+EXPANSION-PROMPT quiet-repo ladder (weekly, act-or-exit, PR-only — not a
+scheduled main-writer). Owner trio: GOGO-START (Grok) / CURSOR-START (Cursor)
+/ CLAUDE-START (Claude).
+

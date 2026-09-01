@@ -18,6 +18,11 @@ never `seed:demo` against production, fetch+rebase before every push.
 
 ## Live 9-task fleet (D-013) — owner paste / toggle checklist
 
+One-stop owner pack (clicks + deltas only): [`docs/ops/CLAUDE-START.md`](ops/CLAUDE-START.md).
+Claude stays home-repo-only (D-007 / D-017) — satellite repos get Cursor
+slots via [`docs/ops/CURSOR-START.md`](ops/CURSOR-START.md), never a 10th
+Claude task.
+
 Live account snapshot **2026-08-28**: **9 tasks**, all enabled, **no Airtable
 lane**. Docs that still said 14 were stale. Do **not** create a tenth task.
 Owner applies the toggles and paste deltas on claude.ai; agents only update

@@ -47,7 +47,10 @@ same branch in the same minute is how a diverged `main` gets made.
 **Dormant, reserved (D-003 — answered 2026-08-19: Cursor Automations on Grok 4.6):** the
 daily role slots — `05:13` office/UX · `08:13` driver+portal · `11:13` tests · `14:13`
 integrations · `20:13` marketing · Sat `07:07` deep-verify · Sun `09:07` red-team · Sun
-`18:07` meta-governor · Fri `19:37` owner digest · Mon `10:07` dependency pass. Import-ready
+`18:07` meta-governor · Fri `19:37` owner digest · Mon `10:07` dependency pass — plus the
+D-017 portfolio slots: `09:37` daily portfolio radar (issues only, no git) · Wed `12:37`
+BLS maintenance (PR on `bls-website`) · Thu `12:37` MyCO maintenance (PR on
+`myco-website`). Import-ready
 workflow JSONs: [`.cursor/automation/`](../../.cursor/automation/README.md). **Owner click
 pack:** [`CURSOR-START.md`](CURSOR-START.md). Only the owner imports them
 (cursor.com/automations). **Alongside live Claude:** import office / driver / tests /

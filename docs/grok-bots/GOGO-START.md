@@ -106,8 +106,9 @@ reopen the source — memory is not the record):
 - bee-bls.instructions.md
 - my-myco.instructions.md
 
-Also copy `GROUPS.md`, `SETUP.md`, `templates/fire-cursor.md` to
-`/workspace/org/` so you can paste group charters without guessing.
+Also copy `GROUPS.md`, `SETUP.md`, `templates/fire-cursor.md`, and
+`templates/fire-claude.md` to `/workspace/org/` so you can paste group
+charters and dispatch SOPs without guessing.
 
 Seed empty boards if missing:
 
@@ -223,13 +224,18 @@ No hourly attention. If Finch hard-stops (90%), pause routines — do not spawn.
 
 ---
 
-## 8 · Cursor lanes (Ranvir clicks; you do not)
+## 8 · Cursor + Claude automations (Ranvir clicks; you do not)
 
-Ranvir imports four scheduled Cursor builders via
-`docs/ops/CURSOR-START.md` (office 05:13, driver 08:13, tests 11:13,
-integrations 14:13 UTC). You never open cursor.com/automations. After he
-says a lane is live, Em must not assign Dex/Rex that territory the same
-UTC day. Fire Cursor stays the interrupt path. Leave Integrator / Prod
+Ranvir imports the scheduled Cursor slots via `docs/ops/CURSOR-START.md`
+(home builders office 05:13 / driver 08:13 / tests 11:13 / integrations
+14:13; portfolio radar 09:37 daily; BLS maintenance Wed 12:37; MyCO
+maintenance Thu 12:37 UTC) and applies the Claude toggles via
+`docs/ops/CLAUDE-START.md`. You never open cursor.com/automations or edit
+claude.ai routines. After he says a lane is live, Em must not assign
+Dex/Rex that territory the same UTC day; Bee and My review the weekly
+maintenance PRs on their repos; `[radar]` issues on the home repo are
+routing intake like any other. Fire Cursor stays the interrupt path; Em's
+Fire Claude SOP is `templates/fire-claude.md`. Leave Integrator / Prod
 Smoke / Deploy disabled until Ranvir answers D-006.
 
 ---

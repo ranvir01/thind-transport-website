@@ -142,22 +142,32 @@ the first green run, tell the Bot “**save this method as a skill**” named
 Fire Cursor. If **Teach a task** is offered, record that click-path once
 (≤10 min) to lock the skill — optional, not a gate.
 
-**Fire Claude:** open `claude.ai/code` → new session → same brief → Start.
-Save as skill **Fire Claude**. Enable it on **Em only**, hub only, and only
-when Finch says the Max 5x window is idle. Do not duplicate a ticket already
-on the live 9-task Claude fleet. **Bee never uses this.**
+**Fire Claude:** written SOP in [`templates/fire-claude.md`](templates/fire-claude.md)
+— open `claude.ai/code` → new session → paste the repo preamble + the same
+four-line brief → Start. Save as skill **Fire Claude**. Enable it on **Em
+only**, hub only, and only when Finch says the Max 5x window is idle. Do not
+duplicate a ticket already on the live 9-task Claude fleet or an imported
+Cursor lane. **Bee never uses this.**
 
 Review the draft skill; add Finch's cap and "never merge" — a recording will
 miss those.
 
-## Step 6 — Cursor scheduled lanes (you click; bots do not)
+## Step 6 — Cursor + Claude automations (you click; bots do not)
 
-After Step 1, import the four builders Claude does not already run:
-[`docs/ops/CURSOR-START.md`](../ops/CURSOR-START.md). Do not re-enable
-Integrator / Prod Smoke / Deploy until you answer D-006. Do not import
-marketing / deep-verify / meta-governor / red-team. After the first green
-lane run, tell gogo and Em so Dex / Rex do not Fire Cursor on that territory
-the same day.
+After Step 1, do both platform packs in one sitting:
+
+1. **[`docs/ops/CURSOR-START.md`](../ops/CURSOR-START.md)** — the four home
+   builders plus the three D-017 portfolio slots (radar `09:37`, BLS Wed
+   `12:37`, MyCO Thu `12:37`). Do not re-enable Integrator / Prod Smoke /
+   Deploy until you answer D-006. Do not import marketing / deep-verify /
+   meta-governor / red-team.
+2. **[`docs/ops/CLAUDE-START.md`](../ops/CLAUDE-START.md)** — confirm the
+   live 9 Claude tasks, apply the toggles + paste deltas. No 10th task, no
+   Claude on `bls-website` or `myco-website`.
+
+After the first green lane run, tell gogo and Em so Dex / Rex do not Fire
+Cursor on that territory the same day; Bee and My review the weekly
+maintenance PRs on their repos.
 
 ## Step 5 — durability (skills; routines stay listed)
 

@@ -18,9 +18,9 @@ issues by the labels below.
 |---|---|---|---|---|
 | **LoadOff** | `venture:loadoff` | TMS for small carriers. Primary scale bet. | `ranvir01/thind-transport-website` · thindtransport.com/hub | **Em** (Eng Mgr) + Dex/Rex Fire Cursor + Claude 9-task fleet; gogo routes |
 | **AR Payments LLC** | `venture:ar-payments` | Legal holding / billing company for Thind + ATS. Not a product. Bank + remittance + two-LLC allocation. | [`AR-PAYMENTS.md`](AR-PAYMENTS.md) · Dropbox Excel SoR | **Jeff** (ops); owner (bank). LoadOff never holds funds |
-| **MyConsulting Network** | `venture:myco` | Talent / business marketplace. Quiet. | `ranvir01/myco-website` · Pages at `ranvir01.github.io/myco-website` (cite the repo, not a live product, until myconsulting.network is confirmed up) | **My** (quiet CoS). Owner-fired [`EXPANSION-PROMPT.md`](EXPANSION-PROMPT.md) later. Rav may cite GitHub/Pages as proof |
+| **MyConsulting Network** | `venture:myco` | Talent / business marketplace. Quiet. | `ranvir01/myco-website` · Pages at `ranvir01.github.io/myco-website` (cite the repo, not a live product, until myconsulting.network is confirmed up) | **My** (quiet CoS) + weekly Cursor maintenance Thu `12:37` (D-017, import-ready via [`CURSOR-START.md`](CURSOR-START.md) §1b). Owner-fired [`EXPANSION-PROMPT.md`](EXPANSION-PROMPT.md) later. Rav may cite GitHub/Pages as proof |
 | **Career OS** | `venture:career` | Personal WA hybrid/remote AI-integration hunt **now**. Scale *goal* later: the same JD → one-page PDF → tracker loop as a product for millions of applicants. **Do not productize in this repo this sprint.** Parked: [#67](https://github.com/ranvir01/thind-transport-website/issues/67) (`needs-owner`). | private `ranvir01/Job-Applications` + Rav `/workspace/career/` | **Rav** (drafts only, no outreach unless asked) |
-| **BLS** | `venture:bls` | Live client site. Proof + services revenue, not millions of users. | `ranvir01/bls-website` · bluelandscapingservices.com on **Netlify** | **Bee** (quiet CoS). Steve reads GitHub commit checks; expansion paste later |
+| **BLS** | `venture:bls` | Live client site. Proof + services revenue, not millions of users. | `ranvir01/bls-website` · bluelandscapingservices.com on **Netlify** | **Bee** (quiet CoS) + weekly Cursor maintenance Wed `12:37` (D-017, Cursor-only repo). Steve reads GitHub commit checks; expansion paste later |
 
 Thind Transport + ATS as *trucking companies* are the cash engine that funds
 LoadOff. They are not a `venture:*` of their own — they run through
@@ -39,6 +39,15 @@ LoadOff. They are not a `venture:*` of their own — they run through
 
 Grok out-of-charter names these. Do not spawn a Bot, Claude task, or Cursor
 automation for any dormant row.
+
+## Portfolio-wide automation (D-017)
+
+The daily **portfolio radar** (Cursor, `09:37` UTC, import-ready via
+[`CURSOR-START.md`](CURSOR-START.md) §1b) sweeps the Active repos above with
+read-only `gh` and files `[radar] <repo>: <finding>` issues on the home repo
+— `venture:*` for routing, `should` when an agent can fix it, `needs-owner`
+when only Ranvir can. It never commits. Claude adds no satellite-repo tasks
+(D-007); ad-hoc Claude is Em's Fire Claude on the home repo only.
 
 ## How work enters the queue
 

@@ -46,6 +46,31 @@ const SAFE_LANES = [
   },
 ] as const
 
+// D-017: portfolio coverage — radar (issues only) + weekly satellite builders.
+const PORTFOLIO_SLOTS = [
+  {
+    slug: "radar",
+    cron: "37 9 * * *",
+    repo: "ranvir01/thind-transport-website",
+    prompt: "portfolio-radar.prompt.md",
+    workflow: "portfolio-radar.workflow.json",
+  },
+  {
+    slug: "bls",
+    cron: "37 12 * * 3",
+    repo: "ranvir01/bls-website",
+    prompt: "bls-maintenance.prompt.md",
+    workflow: "bls-maintenance.workflow.json",
+  },
+  {
+    slug: "myco",
+    cron: "37 12 * * 4",
+    repo: "ranvir01/myco-website",
+    prompt: "myco-maintenance.prompt.md",
+    workflow: "myco-maintenance.workflow.json",
+  },
+] as const
+
 const DISABLED_MECHANICAL = [
   "880eec29-78fd-11f1-ba66-0e7d0216e441",
   "4ad7743c-7900-11f1-ba66-0e7d0216e441",
@@ -91,6 +116,83 @@ describe("cursor automation pack (CURSOR-START + four import-ready lanes)", () =
     }
   })
 
+  it("ships the D-017 portfolio slots pinned to Grok 4.6 on their own repos", () => {
+    for (const slot of PORTFOLIO_SLOTS) {
+      expect(existsSync(path.join(AUTO, slot.prompt)), slot.prompt).toBe(true)
+      const wf = JSON.parse(readAuto(slot.workflow)) as {
+        workflow: { model: string; gitConfig: { repo: string } }
+      }
+      expect(wf.workflow.model, slot.workflow).toBe("cursor-grok-4.6-high-fast")
+      expect(wf.workflow.gitConfig.repo).toBe(slot.repo)
+      expect(readAuto(slot.workflow)).toContain(`"cron": "${slot.cron}"`)
+    }
+  })
+
+  it("the radar is issues-only and the satellite builders act-or-exit, PR-only, owner-authored", () => {
+    for (const body of [readAuto("portfolio-radar.prompt.md"), readAuto("portfolio-radar.workflow.json")]) {
+      expect(body).toMatch(/issues only|issues-only/i)
+      expect(body).toMatch(/never commits?|no commit/i)
+      expect(body).toMatch(/exit silently/i)
+      expect(body).toMatch(/\[radar\]/)
+      expect(body).toMatch(/needs-owner/)
+      expect(body).toMatch(/dormant/i)
+    }
+    for (const file of ["bls-maintenance", "myco-maintenance"] as const) {
+      for (const body of [readAuto(`${file}.prompt.md`), readAuto(`${file}.workflow.json`)]) {
+        expect(body, file).toMatch(/exit with no PR/i)
+        expect(body, file).toMatch(/never merge/i)
+        expect(body, file).toMatch(/Never push `?main/i)
+        expect(body, file).toMatch(/Closes #N/)
+        expect(body, file).toMatch(/Ranvir Thind/)
+        expect(body, file).toMatch(/130034150\+ranvir01@users\.noreply\.github\.com/)
+        expect(body, file).toMatch(/Backlog:/)
+      }
+    }
+    const bls = readAuto("bls-maintenance.prompt.md")
+    expect(bls).toMatch(/Netlify/i)
+    expect(bls).toMatch(/Cursor-only/i)
+    expect(bls).toMatch(/check:all/)
+    const myco = readAuto("myco-maintenance.prompt.md")
+    expect(myco).toMatch(/owner-only/i)
+    expect(myco).toMatch(/gcloud/i)
+    expect(myco).toMatch(/cloudbuild\.yaml/)
+  })
+
+  it("CLAUDE-START keeps Claude home-repo-only: the 9 tasks, toggles, deltas, no satellites", () => {
+    const start = read("docs/ops/CLAUDE-START.md")
+    expect(start).toMatch(/D-007/)
+    expect(start).toMatch(/10th task/)
+    for (const trig of [
+      "trig_01B99W8MteaPtzwk124DFF4w",
+      "trig_01CHi6xoyJj6J6gnw61kdM6n",
+      "trig_01KkHERF248AGaTKWWn3TnAN",
+      "trig_01DRFH6wxq5A42VHyviZrAgz",
+      "trig_01VDnAmz6dKpgnXo6pqXNXic",
+      "trig_0129DPKKdN2r1SAgkoS7ji9C",
+      "trig_01P4PLJiyBp9xqt8i9ikohr6",
+      "trig_01QogkHyq7M3RqC5SqznGZLA",
+      "trig_01Wq86Kd67ZCgEFYGnEU8sXK",
+    ]) {
+      expect(start, `missing ${trig}`).toContain(trig)
+    }
+    expect(start).toMatch(/bls-website/)
+    expect(start).toMatch(/Cursor-only/i)
+    expect(start).toMatch(/fire-claude\.md/)
+    expect(start).toMatch(/CURSOR-START/)
+    expect(start).toMatch(/Airtable/)
+  })
+
+  it("Fire Claude is a written SOP gated on Em + idle window + home repo", () => {
+    const sop = read("docs/grok-bots/templates/fire-claude.md")
+    expect(sop).toMatch(/Em/)
+    expect(sop).toMatch(/idle/i)
+    expect(sop).toMatch(/thind-transport-website/)
+    expect(sop).toMatch(/Never for `bls-website`/i)
+    expect(sop).toMatch(/never merge/i)
+    expect(sop).toMatch(/claude-routine-preamble/)
+    expect(sop).toMatch(/9-task/)
+  })
+
   it("CURSOR-START imports the four, skips Claude twins, and leaves D-006 disabled", () => {
     const start = read("docs/ops/CURSOR-START.md")
     expect(start).toMatch(/Ranvir's yes|owner click|yes for the four/i)
@@ -98,6 +200,12 @@ describe("cursor automation pack (CURSOR-START + four import-ready lanes)", () =
     expect(start).toMatch(/08:13/)
     expect(start).toMatch(/11:13/)
     expect(start).toMatch(/14:13/)
+    expect(start).toMatch(/09:37/)
+    expect(start).toMatch(/12:37/)
+    expect(start).toMatch(/D-017/)
+    expect(start).toMatch(/CLAUDE-START/)
+    expect(start).toMatch(/bls-website/)
+    expect(start).toMatch(/myco-website/)
     expect(start).toMatch(/Do not import|skip/i)
     expect(start).toMatch(/marketing/)
     expect(start).toMatch(/deep-verify/)

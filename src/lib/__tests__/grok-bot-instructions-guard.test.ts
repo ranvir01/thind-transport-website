@@ -55,6 +55,7 @@ describe("grok-bot instruction files (14-seat org, paste-ready, ≤4k)", () => {
     expect(templates.has("eng-ic.md")).toBe(true)
     expect(templates.has("labs-card.md")).toBe(true)
     expect(templates.has("fire-cursor.md")).toBe(true)
+    expect(templates.has("fire-claude.md")).toBe(true)
 
     const setup = read("SETUP.md")
     expect(setup).toMatch(/THE FILE/)

@@ -145,7 +145,10 @@ slot's first run boots, move its row into the live table and tell gogo/Em.
 |---|---|---|---|
 | `05:13` daily | Build A — office/UX | `claude/lane-office` | office screens, semantic tokens, usability friction, empty states |
 | `08:13` daily | Build B — driver + portal | `claude/lane-driver` / `lane-portal` | 390px forced-dark PWA, offline queue, broker/shipper surface |
+| `09:37` daily | Portfolio radar (D-017) | nothing — `[radar]` issues on the home repo | gh read-only sweep of `bls-website` + `myco-website`; CI red, stale PRs, unlabeled issues |
 | `11:13` daily | Build C — tests & verification debt | `claude/lane-tests` | `TEST_GAPS.md` top row; never product code |
+| `12:37` Wed | BLS maintenance (D-017) | `cursor/*` PR on `ranvir01/bls-website` | act-or-exit; `check:all` green; Bee reviews; Cursor-only repo |
+| `12:37` Thu | MyCO maintenance (D-017) | `cursor/*` PR on `ranvir01/myco-website` | act-or-exit; build+lint green; My reviews; deploy scripts owner-only |
 | `14:13` daily | Build D — integrations | `claude/lane-integrations` | stub-first adapters, creds shopping-list order |
 | `20:13` daily | Build E — marketing/public site | `claude/lane-marketing` | js-budget ratchet, recruiting funnel, `[needs-browser]` tags |
 | `07:07` Sat | Deep-verify (finder) | `claude/fleet-deep-verify` (docs only) | local rig + data-integrity audit; reads nightly E2E results |
@@ -177,6 +180,9 @@ Claude Corps names and crons below are from the 2026-08-28 live 9-task snapshot.
 | Build B driver+portal `08:13` | `claude/lane-driver` | no Claude scheduled twin |
 | Build C tests `11:13` | `claude/lane-tests` | no Claude scheduled twin |
 | Build D integrations `14:13` | `claude/lane-integrations` | no Claude scheduled twin |
+| Portfolio radar `09:37` | issues only | nothing watches the satellite repos (D-017) |
+| BLS maintenance Wed `12:37` | PR on `bls-website` | Claude is banned from that repo (D-016) |
+| MyCO maintenance Thu `12:37` | PR on `myco-website` | no Claude twin; Claude stays home-repo (D-007) |
 | Owner digest Fri `19:37` | docs only | no Claude twin |
 | Dependency pass Mon `10:07` | `claude/fleet-dependency-pass` | no Claude twin |
 

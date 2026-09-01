@@ -21,6 +21,9 @@ rejects that slug, pick **Grok 4.6** in the model dropdown; the slug is the only
 | **Build B — driver + portal** | `13 8 * * *` | `claude/lane-driver` (or `lane-portal`) | [`loadoff-build-driver-portal.workflow.json`](loadoff-build-driver-portal.workflow.json) |
 | **Build C — tests** | `13 11 * * *` | `claude/lane-tests` | [`loadoff-build-tests.workflow.json`](loadoff-build-tests.workflow.json) |
 | **Build D — integrations** | `13 14 * * *` | `claude/lane-integrations` | [`loadoff-build-integrations.workflow.json`](loadoff-build-integrations.workflow.json) |
+| **Portfolio radar** (D-017) | `37 9 * * *` | nothing — `[radar]` issues only | [`portfolio-radar.workflow.json`](portfolio-radar.workflow.json) |
+| **BLS maintenance** (D-017) | `37 12 * * 3` | PR on `ranvir01/bls-website` | [`bls-maintenance.workflow.json`](bls-maintenance.workflow.json) |
+| **MyCO maintenance** (D-017) | `37 12 * * 4` | PR on `ranvir01/myco-website` | [`myco-maintenance.workflow.json`](myco-maintenance.workflow.json) |
 | **Build E — marketing** | `13 20 * * *` | `claude/lane-marketing` | [`loadoff-build-marketing.workflow.json`](loadoff-build-marketing.workflow.json) |
 | **Deep-verify** (finder) | `7 7 * * 6` Sat | `claude/fleet-deep-verify` | [`loadoff-deep-verify.workflow.json`](loadoff-deep-verify.workflow.json) |
 | **Red-team** (read-only) | `7 9 * * 0` Sun | `claude/fleet-red-team` | [`loadoff-red-team.workflow.json`](loadoff-red-team.workflow.json) |

@@ -1,0 +1,26 @@
+{
+  "name": "Portfolio radar",
+  "description": "Daily 09:37 UTC — read-only sweep of active portfolio repos (bls-website, myco-website); files [radar] issues on the home repo. Never commits. Grok 4.6.",
+  "workflow": {
+    "triggers": [
+      {
+        "cron": {
+          "cron": "37 9 * * *"
+        }
+      }
+    ],
+    "actions": [],
+    "prompts": [
+      "You are the portfolio radar — issues only, zero git writes.\n\nRead docs/ops/PORTFOLIO.md (Active table = scan list; Dormant = out of bounds) and .cursor/automation/portfolio-radar.prompt.md for full steps.\n\nScan ranvir01/bls-website and ranvir01/myco-website with the gh CLI (read-only): CI/commit checks red, PRs open >48h with no review, unlabeled issues >7 days, Netlify deploy check on bls. Skip the home repo (liveness/E2E/digest cover it), the private career repo, and every dormant row.\n\nFile findings on ranvir01/thind-transport-website only: create-or-comment, idempotent by title `[radar] <repo>: <finding>`, labels venture:bls / venture:myco plus should (agent-fixable) or needs-owner (hosting/domains/spend/credentials). Max 3 new issues per run. Nothing found = exit silently — no all-clear ping, no commit, no push, no PR, no starting other agents.\n\nRepo: ranvir01/thind-transport-website."
+    ],
+    "gitConfig": {
+      "repo": "ranvir01/thind-transport-website",
+      "branch": "main"
+    },
+    "model": "cursor-grok-4.6-high-fast",
+    "agentOptions": {
+      "skipInstall": true
+    },
+    "memoryEnabled": true
+  }
+}
