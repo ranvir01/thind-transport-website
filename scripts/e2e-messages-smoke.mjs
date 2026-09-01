@@ -15,29 +15,11 @@
  * Usage: node scripts/e2e-messages-smoke.mjs [outputDir]
  */
 import { mkdirSync } from "node:fs"
-import { launchBrowser, BASE, failures, check, waitForText, login, makeShot, reseed, realConsoleErrors } from "./e2e-lib.mjs"
+import { launchBrowser, BASE, failures, check, waitForText, sendComposer, login, makeShot, reseed, realConsoleErrors } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-messages"
 mkdirSync(OUT, { recursive: true })
 const shot = makeShot(OUT, { fullPage: true })
-
-/**
- * Type into the ChatThread composer and press Send. ChatThread's send()
- * awaits sendMessageAction then calls router.refresh() — the sent text only
- * renders once the refresh re-fetches messages from the DB, so waitForText
- * finding it already means the message is persisted server-side; no
- * additional settle time needed.
- */
-async function sendChat(page, text) {
-  await page.click('textarea[placeholder="Type a message…"]')
-  await page.keyboard.down("Control")
-  await page.keyboard.press("KeyA")
-  await page.keyboard.up("Control")
-  await page.keyboard.press("Backspace")
-  await page.type('textarea[placeholder="Type a message…"]', text)
-  await page.click('button[aria-label="Send"]')
-  await waitForText(page, text)
-}
 
 async function main() {
   reseed()
@@ -110,7 +92,7 @@ async function main() {
     () => document.querySelector('textarea[placeholder="Type a message…"]')?.value ?? ""
   )
   check(composerValue.includes("ETA"), `ETA template fills the composer (got "${composerValue}")`)
-  await sendChat(office, officeMarker)
+  await sendComposer(office, officeMarker)
   const officeThread = await office.evaluate(() => document.body.innerText)
   check(officeThread.includes(officeMarker), "office marker message appears in the thread")
   await shot(office, "02-office-sent")
@@ -144,7 +126,7 @@ async function main() {
   check(driverThread.toLowerCase().includes("maya dhillon"), "office sender name shows on the driver bubble")
 
   console.log("4. Driver replies from the phone composer")
-  await sendChat(driver, driverMarker)
+  await sendComposer(driver, driverMarker)
   check(
     (await driver.evaluate(() => document.body.innerText)).includes(driverMarker),
     "driver reply appears in the thread"

@@ -458,6 +458,74 @@ export async function clickByText(page, text, { tag = "button", timeout = 8000 }
 }
 
 /**
+ * Type `text` into a ChatThread composer, press Send, and wait until the
+ * message is persisted AND rendered.
+ *
+ * Send is `disabled={pending || !body.trim()}` and `body` is React state set
+ * onChange — so a click fired straight after the last keystroke can land on a
+ * still-disabled button. Puppeteer does not complain: nothing dispatches,
+ * nothing is sent, and the waitForText that follows times out. Four separate
+ * commits "hardened" one call site each ("stop no-opping", "skip disabled
+ * clicks and flush the messages composer") and the messages smoke still went
+ * red on PR #72 under full-suite CPU contention — a CI flake in appearance,
+ * a timing bug in fact. This is the fix every composer call site inherits:
+ *
+ *   1. wait until the textarea holds `text` AND Send is enabled;
+ *   2. click, then wait for the composer to clear — ChatThread only calls
+ *      setBody("") after sendMessageAction returned ok, so an empty textarea
+ *      proves the click took and the row is in the database;
+ *   3. wait for the text to render — proves router.refresh() re-fetched it.
+ *
+ * Each stage throws its own message, so the next failure names the stage
+ * instead of reading as "TimeoutError: waiting for function failed".
+ */
+export async function sendComposer(
+  page,
+  text,
+  {
+    selector = 'textarea[placeholder="Type a message…"]',
+    sendSelector = 'button[aria-label="Send"]',
+    timeout = 20000,
+  } = {}
+) {
+  await page.waitForSelector(selector, { visible: true, timeout })
+  await page.click(selector)
+  await page.keyboard.down("Control")
+  await page.keyboard.press("KeyA")
+  await page.keyboard.up("Control")
+  await page.keyboard.press("Backspace")
+  await page.type(selector, text)
+
+  // Browser-side predicates. Kept free of closures so puppeteer can serialize them.
+  const armed = (sel, sendSel, t) => {
+    const ta = document.querySelector(sel)
+    const btn = document.querySelector(sendSel)
+    return !!ta && ta.value === t && !!btn && !btn.disabled
+  }
+  const cleared = (sel) => document.querySelector(sel)?.value === ""
+
+  await page.waitForFunction(armed, { timeout: 8000 }, selector, sendSelector, text).catch(() => {
+    throw new Error(`sendComposer: Send never enabled after typing "${text}"`)
+  })
+
+  await page.click(sendSelector)
+  // A re-render can still land between the armed check and the click. If the
+  // composer is untouched a beat later and Send is enabled again (not
+  // pending), the click no-opped — click once more, then wait out the send.
+  const quick = await page.waitForFunction(cleared, { timeout: 2000 }, selector).then(() => true).catch(() => false)
+  if (!quick) {
+    if (await page.evaluate(armed, selector, sendSelector, text)) await page.click(sendSelector)
+    await page.waitForFunction(cleared, { timeout }, selector).catch(() => {
+      throw new Error(`sendComposer: composer did not clear after Send ("${text}")`)
+    })
+  }
+
+  await waitForText(page, text, timeout).catch(() => {
+    throw new Error(`sendComposer: "${text}" was sent (composer cleared) but did not render within ${timeout}ms`)
+  })
+}
+
+/**
  * Wait for a load-detail page to actually render.
  *
  * Do NOT use waitForText(page, "Rate") for this: the sidebar renders "Paste
