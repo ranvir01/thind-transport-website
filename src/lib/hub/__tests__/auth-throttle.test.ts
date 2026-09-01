@@ -164,4 +164,21 @@ describe("throttle scopes", () => {
     queryOneMock.mockResolvedValue({ failures: "5" })
     expect(await isLockedOut("driver@example.com", "public-form", 6)).toBe(false)
   })
+
+  it("namespaces role-hint keys so probing an email cannot lock that person out of login", async () => {
+    await isLockedOut("victim@example.com", "role-hint")
+    await isLockedOut("victim@example.com")
+    const [hintKey] = queryOneMock.mock.calls[0][1] as string[]
+    const [loginKey] = queryOneMock.mock.calls[1][1] as string[]
+    expect(hintKey).toBe("role-hint:victim@example.com")
+    expect(loginKey).toBe("victim@example.com")
+    expect(hintKey).not.toBe(loginKey)
+  })
+
+  it("role-hint email key trips at 5 lookups (same 5-in-15 as login)", async () => {
+    queryOneMock.mockResolvedValue({ failures: "4" })
+    expect(await isLockedOut("dispatch@demo.thind", "role-hint")).toBe(false)
+    queryOneMock.mockResolvedValue({ failures: "5" })
+    expect(await isLockedOut("dispatch@demo.thind", "role-hint")).toBe(true)
+  })
 })

@@ -434,15 +434,20 @@ export async function clickSelector(page, selector, { timeout = 8000 } = {}) {
   throw new Error(`clickSelector: could not click "${selector}": ${lastErr?.message ?? "timed out"}`)
 }
 
-/** Click the first `tag` element whose text contains `text`, polling until timeout. */
+/** Click the first enabled `tag` whose text contains `text`, polling until timeout.
+ *  Disabled buttons swallow HTMLElement.click() — a silent no-op that made
+ *  e2e-driver-offline-smoke look like a CDP flake (confirm and I'm here share
+ *  one useTransition `pending`; the toast appears before pending clears). */
 export async function clickByText(page, text, { tag = "button", timeout = 8000 } = {}) {
   const deadline = Date.now() + timeout
   while (Date.now() < deadline) {
     const clicked = await page.evaluate(
       ({ text, tag }) => {
-        const el = [...document.querySelectorAll(tag)].find((n) =>
-          (n.textContent ?? "").toLowerCase().includes(text.toLowerCase())
-        )
+        const el = [...document.querySelectorAll(tag)].find((n) => {
+          if (!(n.textContent ?? "").toLowerCase().includes(text.toLowerCase())) return false
+          if ("disabled" in n && n.disabled) return false
+          return true
+        })
         if (el) {
           el.click()
           return true

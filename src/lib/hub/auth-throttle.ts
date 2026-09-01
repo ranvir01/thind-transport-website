@@ -12,7 +12,7 @@
  */
 import { hubDbAvailable, query, queryOne } from "./db"
 
-export type ThrottleScope = "login" | "signup" | "public-form"
+export type ThrottleScope = "login" | "signup" | "public-form" | "role-hint"
 
 /**
  * Per-scope budgets. login/signup keep the historical 5-in-15. public-form is
@@ -21,11 +21,19 @@ export type ThrottleScope = "login" | "signup" | "public-form"
  * referrals plus typo-resubmits from a single IP — the budget has to absorb a
  * whole recruiting afternoon while still stopping a bot from burning the SMTP
  * quota, which needs hundreds of sends to matter, not twenty.
+ *
+ * role-hint is the login-page email oracle (`GET /api/hub/role-hint`). Every
+ * lookup is chargeable (found or not — "no such account" is itself the leak).
+ * Email key stays at 5-in-15 so an enumerator can't walk the user table;
+ * callers apply a looser per-IP override (20) so a shift-change NAT isn't
+ * the thing that trips it. Scoped separately from login so probing an
+ * address can never lock that person out of signing in.
  */
 const SCOPE_LIMITS: Record<ThrottleScope, { windowMinutes: number; maxFailures: number }> = {
   login: { windowMinutes: 15, maxFailures: 5 },
   signup: { windowMinutes: 15, maxFailures: 5 },
   "public-form": { windowMinutes: 15, maxFailures: 20 },
+  "role-hint": { windowMinutes: 15, maxFailures: 5 },
 }
 
 function throttleKey(identifier: string, scope: ThrottleScope): string {
