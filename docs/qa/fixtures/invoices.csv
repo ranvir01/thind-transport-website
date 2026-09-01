@@ -1,0 +1,4 @@
+id,company_id,load_id,type,factored,linehaul_cents,fuel_surcharge_cents,accessorials_cents,face_amount_cents,status,dunning
+INV-F-SEED,11111111-1111-1111-1111-111111111111,THD-1015,factored,true,310000,34000,0,344000,sent,skipped
+INV-D-SEED,11111111-1111-1111-1111-111111111111,THD-1013,direct,false,230000,25000,0,255000,sent,enabled
+INV-POD,11111111-1111-1111-1111-111111111111,THD-1009,direct,false,295000,31000,10000,336000,expected_on_one_click,enabled
