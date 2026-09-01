@@ -42,8 +42,13 @@ const ALL_PRIMARY_SECTIONS: HubPrimarySection[] = [
   {
     id: "loads",
     label: "Loads",
-    match: (p) => p.startsWith("/hub/loads") || p.startsWith("/hub/loadboard"),
+    match: (p) =>
+      p.startsWith("/hub/loads") || p.startsWith("/hub/loadboard") || p.startsWith("/hub/inbox"),
     sub: [
+      // Inbox leads because it is the only entry that can be WAITING on you:
+      // emailed rate cons that matched no load. Paste and New load are on
+      // demand; this one accumulates if ignored.
+      { href: "/hub/inbox", label: "Inbox" },
       { href: "/hub/loadboard", label: "Load board" },
       { href: "/hub/loads", label: "All loads" },
       { href: "/hub/loads/paste", label: "Paste rate con" },

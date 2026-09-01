@@ -13,6 +13,12 @@ import path from "node:path"
 import puppeteer from "puppeteer"
 
 const BASE = process.env.BASE_URL || "http://localhost:3000"
+
+/** Every spotlight tour id (src/lib/hub/help.ts) — seeded as "already seen". */
+const ALL_TOUR_IDS = [
+  "today-desk", "daily-rhythm", "paste-rate-con", "dispatch", "invoice",
+  "settlements", "setup", "command-palette", "driver-app",
+]
 const OUT = process.env.OUT_DIR || "qa-matrix"
 const EXECUTABLE = process.env.PUPPETEER_EXECUTABLE_PATH || "/opt/pw-browsers/chromium"
 mkdirSync(OUT, { recursive: true })
@@ -115,7 +121,12 @@ function underBarProbe() {
       for (const dy of [1, 8, Math.round(r.height / 2), Math.round(r.height) - 2]) {
         const el = document.elementFromPoint(r.left + r.width / 2, r.top + dy)
         if (!el) continue
-        const structural = bar.contains(el) || ["MAIN", "BODY", "HTML"].includes(el.tagName)
+        // An intentional modal covering the screen is not stranded content —
+        // it is on top of EVERYTHING by design, the bar included. Without this
+        // the probe reports a dialog's backdrop rectangles as buried content.
+        const inModal = el.closest?.('[role="dialog"][aria-modal="true"]') != null
+        const structural =
+          bar.contains(el) || inModal || ["MAIN", "BODY", "HTML"].includes(el.tagName)
         if (!structural) found.push({ dy, txt: `${el.tagName}: ${(el.textContent || "").trim().slice(0, 50)}` })
       }
       bar.style.pointerEvents = prevPe
@@ -162,9 +173,18 @@ for (const mode of ["light", "dark"]) {
       return false
     }
   }
-  await page.evaluateOnNewDocument((m) => {
+  await page.evaluateOnNewDocument((m, tourIds) => {
     try { localStorage.setItem("hauldesk-mode", m) } catch {}
-  }, mode)
+    // Mark every spotlight tour already seen. The Today tour AUTOSTARTS on a
+    // first visit (HubTour.tsx AUTOSTART_TOUR_ID, 700ms after load), and this
+    // rig runs a fresh browser profile every time — so without this the tour's
+    // `fixed inset-0 z-[100]` overlay lands on top of 130 screenshots AND on
+    // top of the tab bar the under-bar probe hit-tests, which is exactly the
+    // false positive that had this gate crying wolf on /hub. Seeding the app's
+    // own completed-tours key is how a returning user suppresses it, so the rig
+    // now looks like somebody who has been here before.
+    try { localStorage.setItem("hauldesk-tours-completed", JSON.stringify(tourIds)) } catch {}
+  }, mode, ALL_TOUR_IDS)
   // One login covers the authed routes.
   await page.setViewport({ width: 1280, height: 800 })
   await page.goto(`${BASE}/hub/login`, { waitUntil: "networkidle2", timeout: 60000 })
@@ -222,9 +242,18 @@ for (const mode of ["light", "dark"]) {
   const driverCtx = await browser.createBrowserContext()
   const driverPage = await driverCtx.newPage()
   const driverCdp = await driverPage.createCDPSession()
-  await driverPage.evaluateOnNewDocument((m) => {
+  await driverPage.evaluateOnNewDocument((m, tourIds) => {
     try { localStorage.setItem("hauldesk-mode", m) } catch {}
-  }, mode)
+    // Mark every spotlight tour already seen. The Today tour AUTOSTARTS on a
+    // first visit (HubTour.tsx AUTOSTART_TOUR_ID, 700ms after load), and this
+    // rig runs a fresh browser profile every time — so without this the tour's
+    // `fixed inset-0 z-[100]` overlay lands on top of 130 screenshots AND on
+    // top of the tab bar the under-bar probe hit-tests, which is exactly the
+    // false positive that had this gate crying wolf on /hub. Seeding the app's
+    // own completed-tours key is how a returning user suppresses it, so the rig
+    // now looks like somebody who has been here before.
+    try { localStorage.setItem("hauldesk-tours-completed", JSON.stringify(tourIds)) } catch {}
+  }, mode, ALL_TOUR_IDS)
   try {
     await driverPage.setViewport({ width: 393, height: 852, deviceScaleFactor: 2, isMobile: true, hasTouch: true })
     await driverPage.goto(`${BASE}/hub/login`, { waitUntil: "networkidle2", timeout: 60000 })

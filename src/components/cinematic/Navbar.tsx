@@ -5,21 +5,9 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { focusableWithin, nextFocusTarget } from "@/lib/focus-trap"
 import {
-  ChevronDown,
-  Menu,
-  X,
-  Phone,
-  FileText,
-  DollarSign,
-  Heart,
-  MapPin,
-  MessageSquare,
-  BookOpen,
-  Users,
-  Truck,
-  Shield,
-  ChevronRight,
-  LayoutDashboard,
+  ChevronDown, Menu, X, Phone, FileText,
+  DollarSign, Heart, MapPin, BookOpen, Users,
+  Truck, Shield, ChevronRight, LayoutDashboard,
 } from "lucide-react"
 import { COMPANY_INFO, PAY_RATES } from "@/lib/constants"
 import { PersonaSwitcher } from "@/components/shared/PersonaSwitcher"
@@ -75,7 +63,7 @@ const companyMenuItems = [
   {
     href: "/fleet",
     label: "Our Fleet",
-    description: "2024 Cascadias",
+    description: "2023-2025 Cascadias & VNLs",
     icon: Truck,
   },
   {

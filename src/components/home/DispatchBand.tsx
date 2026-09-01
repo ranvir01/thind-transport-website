@@ -52,7 +52,7 @@ export function DispatchBand() {
                 href="/apply"
                 className="group inline-flex items-center justify-center gap-2 rounded-fleet border border-steel-500 bg-steel-800/40 px-7 py-3.5 text-sm font-semibold text-white transition-all hover:border-orange/50 hover:bg-steel-700/60 md:text-base"
               >
-                Apply in 60 seconds
+                Start your application
                 <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
               </Link>
             </div>

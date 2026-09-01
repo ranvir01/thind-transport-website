@@ -1,7 +1,8 @@
 import "server-only"
 import { query } from "./db"
+import { getDwellingStops } from "./detention"
 import { evaluatePayRules, parseRuleSet, type PayLoadContext } from "./pay-rules"
-import { SANDBOX_CARRIER_ID } from "./sandbox"
+import { SANDBOX_CARRIER_ID, type SandboxScenario } from "./sandbox"
 import { emptyMetrics, type ShiftMetrics, type ShiftSeatKey } from "./sandbox-objectives"
 
 /**
@@ -41,6 +42,21 @@ export async function readSimEpoch(): Promise<string | null> {
     [C]
   )
   return rows[0]?.epoch ?? null
+}
+
+/**
+ * Which world is loaded — "steady" or "crunch".
+ *
+ * Defaults to "steady" rather than null: a sandbox seeded before this key
+ * existed IS the steady week, and a banner that says nothing teaches a player
+ * less than one that says the true thing about the common case.
+ */
+export async function readSimScenario(): Promise<SandboxScenario> {
+  const rows = await query<{ scenario: string | null }>(
+    `SELECT settings->'sim'->>'scenario' AS scenario FROM hub.carrier_settings WHERE carrier_id = $1`,
+    [C]
+  )
+  return rows[0]?.scenario === "crunch" ? "crunch" : "steady"
 }
 
 /**
@@ -253,7 +269,7 @@ async function ownerOperatorMetrics(userId: string): Promise<Partial<ShiftMetric
  * backwards when a load moves on to invoiced or settled.
  */
 async function companyMoney(): Promise<Partial<ShiftMetrics>> {
-  const [delivered, billed, collected, rolling] = await Promise.all([
+  const [delivered, billed, collected, rolling, dwelling, overdue] = await Promise.all([
     query<{ cents: string }>(
       `SELECT COALESCE(SUM(l.linehaul_cents + l.fuel_surcharge_cents), 0)::bigint AS cents
          FROM hub.loads l
@@ -279,12 +295,26 @@ async function companyMoney(): Promise<Partial<ShiftMetrics>> {
           AND status IN ('dispatched','at_pickup','in_transit')`,
       [C]
     ),
+    // The cost of trouble, from the same reader the dispatch board uses —
+    // one source for "this truck is sitting and it is costing you $X".
+    getDwellingStops(C),
+    query<{ cents: string }>(
+      `SELECT COALESCE(SUM(i.amount_cents - COALESCE((
+                SELECT SUM(p.amount_cents) FROM hub.payments p
+                 WHERE p.carrier_id = $1 AND p.invoice_id = i.id), 0)), 0)::bigint AS cents
+         FROM hub.invoices i
+        WHERE i.carrier_id = $1 AND i.status IN ('sent','partial','overdue','disputed')
+          AND i.due_on < CURRENT_DATE`,
+      [C]
+    ),
   ])
   return {
     coDeliveredCents: Number(delivered[0]?.cents ?? 0),
     coBilledCents: Number(billed[0]?.cents ?? 0),
     coCollectedCents: Number(collected[0]?.cents ?? 0),
     coRollingCents: Number(rolling[0]?.cents ?? 0),
+    coDwellingCents: dwelling.reduce((sum, d) => sum + d.estimatedCents, 0),
+    coOverdueCents: Number(overdue[0]?.cents ?? 0),
   }
 }
 
@@ -316,7 +346,7 @@ async function driverPay(userId: string): Promise<number> {
       accessorial_cents: number; loaded_miles: number; deadhead_miles: number
     }>(
       `SELECT l.id, l.reference, l.linehaul_cents, l.fuel_surcharge_cents,
-              COALESCE((SELECT SUM((a->>'amountCents')::int)
+              COALESCE((SELECT SUM((a->>'amount_cents')::int)
                           FROM jsonb_array_elements(l.accessorials) a), 0)::int AS accessorial_cents,
               COALESCE(l.loaded_miles, 0) AS loaded_miles,
               COALESCE(l.deadhead_miles, 0) AS deadhead_miles

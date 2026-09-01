@@ -28,10 +28,23 @@ const SECTION_ICONS: Record<string, LucideIcon> = {
   people: Users,
 }
 
+/**
+ * Count badge for a nav item. Capped at 9+ so a neglected queue can never
+ * stretch the sidebar row it sits in.
+ */
+function NavCount({ n }: { n: number }) {
+  return (
+    <span className="ml-1.5 inline-flex min-w-[18px] items-center justify-center rounded-pill bg-accent px-1.5 py-[1px] text-[10.5px] font-bold text-accent-fg align-middle">
+      {n > 9 ? "9+" : n}
+    </span>
+  )
+}
+
 export function HubShell({
   user,
   smallCarrier,
   accent,
+  inboxCount = 0,
   children,
 }: {
   user: { name: string; role: string; carrierName?: string }
@@ -39,6 +52,8 @@ export function HubShell({
   smallCarrier: boolean
   /** Tenant branding accent (validated hex) — identity chip only, never controls. */
   accent?: string | null
+  /** Emailed rate cons waiting for review — badged on Loads → Inbox. */
+  inboxCount?: number
   children: React.ReactNode
 }) {
   const pathname = usePathname()
@@ -119,6 +134,7 @@ export function HubShell({
                 )}
               >
                 {link.label}
+                {link.href === "/hub/inbox" && inboxCount > 0 ? <NavCount n={inboxCount} /> : null}
                 {active ? (
                   <span
                     aria-hidden
@@ -156,6 +172,7 @@ export function HubShell({
                       />
                     ) : null}
                     {link.label}
+                    {link.href === "/hub/inbox" && inboxCount > 0 ? <NavCount n={inboxCount} /> : null}
                   </Link>
                 )
               })}

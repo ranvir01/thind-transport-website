@@ -4,8 +4,6 @@ import { ApplicationForm } from "@/components/application/ApplicationForm"
 import { COMPANY_INFO, PAY_RATES, BENEFITS, WORKPLACE } from "@/lib/constants"
 import { FAQAccordion } from "@/components/shared/FAQAccordion"
 import { PageBreadcrumb } from "@/components/shared/PageBreadcrumb"
-import { RelatedLinks } from "@/components/shared/RelatedLinks"
-import { driverLinks } from "@/components/shared/link-sets"
 import {
   buildCompanyDriverJobPosting,
   buildOwnerOperatorJobPosting,
@@ -23,7 +21,7 @@ import {
 } from "lucide-react"
 
 export const metadata: Metadata = {
-  title: `Apply Now | ${COMPANY_INFO.name}`,
+  title: "Apply now",
   description: `Apply for CDL Class A opportunities with ${COMPANY_INFO.name}. Learn about owner-operator and company driver options, experience requirements, and next steps with our Kent, WA team.`,
   alternates: {
     canonical: "https://thindtransport.com/apply",
@@ -295,11 +293,6 @@ export default function ApplyPage() {
         </section>
       </div>
 
-      <RelatedLinks
-        title="While you're deciding"
-        intro="Everything a driver asks in the first phone call, answered on the site."
-        links={driverLinks(["/apply"])}
-      />
     </>
   )
 }

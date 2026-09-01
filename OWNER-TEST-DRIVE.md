@@ -30,6 +30,11 @@ useful information.
    out, arrivals every ~12 min — but you will not watch a truck cross a state in an
    afternoon.
 
+The app now says the first two of these itself: every seat carries the clock rule
+under its shift card, and the sandbox strip names which of the two worlds is loaded
+("Steady week" / "Crunch day"). You should not need this page to avoid those two
+surprises — if you do, that is a finding worth writing down.
+
 **Two scenarios on the seat-picker page:**
 - **Steady week** — the normal company.
 - **Crunch day** — the morning goes wrong on purpose: pickups 4 hours late, a truck dead
@@ -141,6 +146,61 @@ What I saw: ______________________________________________________________
 Anything too small, too hidden, or awkward one-handed: ___________________
 
 Would a driver of yours actually use this? Why / why not: ________________
+
+#### 2b — What the run pays (new)
+
+The load card now carries a line like **THIS RUN PAYS YOU · $95.70 · 165 mi × $0.58/mi**,
+and the *Last pay* tile carries a second line: **$1,071.84 since then, not settled yet**.
+
+Both come out of the same pay engine that cuts your settlements, so the phone can never
+quote a wage payroll would disagree with. The per-run figure is **gross** — escrow and
+insurance come off the week, not off one load, and docking them here would read as a
+penalty for working.
+
+Check three things, because these are the ones that would cost you:
+
+- **Do the numbers hold up?** Multiply the rate by the miles yourself. If a driver of
+  yours can't do that arithmetic on the card, the card is wrong.
+- **Sam (Owner-operator seat) is on a percentage**, so his line reads
+  *90% linehaul + 100% FSC* rather than a single sum — a percentage driver's detention
+  isn't final until the stop closes, so his figure can still move.
+- **No rate, anywhere.** A driver sees their own pay and nothing else — never the
+  linehaul, never the margin. Turn on the office seat and compare: the same load shows
+  you a customer rate it never shows him.
+
+**Turning it off:** Owner seat → **Settings → Driver pay** → the switch at the top,
+*Show drivers what each run pays them*. On by default. Flip it off and re-open the
+driver seat — both lines should be gone, and nothing else about the card changes.
+
+☐ Numbers check out ☐ Off by something ☐ Didn't show at all
+
+Would you leave this ON for your drivers? ________________________________
+
+If off — what would you want them to see instead: ________________________
+
+---
+
+### Drill 2c — Before you clock in, and beating yourself
+
+Two small things landed on every seat that can work a shift:
+
+- **The first sixty seconds.** The card now lists the three moves this seat is for
+  before you commit to a shift, plus the clock rule above. Seven of the nine seats had
+  never shown any of this — the tour existed in the code and only the two portal seats
+  ever rendered it.
+- **Your best shift here.** Once you finish a shift that actually did something, the
+  card remembers the score and the money and shows it as a number to beat. It is per
+  seat, lives only in that browser, and **deliberately survives a Reset** — a reset
+  throws away the company, not your record of playing it.
+
+An empty shift (clock in, clock straight out) is not remembered. It banked a "0% of
+the job, $0" record in the first version, which is not a target — worth knowing that
+is deliberate rather than a bug.
+
+☐ The three moves told me what the seat was for ☐ Didn't help ☐ Got in the way
+
+Does having a number to beat make you want another shift, or does it cheapen it?
+________________________________________________________________
 
 ---
 

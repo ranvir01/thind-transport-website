@@ -83,7 +83,7 @@ export const ThindPromise = () => {
                 Owner-operators keep{" "}
                 <strong className="text-white">{PAY_RATES.ownerOperator.commission} of gross</strong>. Company
                 drivers run{" "}
-                <strong className="text-white">2024 Cascadias</strong>. And when
+                <strong className="text-white">2023-2025 Cascadias and VNLs</strong>. And when
                 you call, you get a real person who knows your name &mdash; not
                 a queue.&rdquo;
               </p>

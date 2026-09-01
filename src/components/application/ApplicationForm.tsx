@@ -12,10 +12,10 @@ import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent } from "@/components/ui/card"
 import { toast } from "sonner"
-import { 
-  Loader2, Upload, FileText, CheckCircle2, User, Truck, 
-  FileCheck, ChevronRight, ArrowLeft, ShieldCheck, Clock, 
-  Check, AlertCircle, Lock, Star, Phone
+import {
+  Loader2, Upload, FileText, CheckCircle2, Truck,
+  FileCheck, ChevronRight, ArrowLeft, ShieldCheck, Clock,
+  Check, AlertCircle, Lock, Star, Phone,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -800,7 +800,7 @@ export function ApplicationForm() {
               </div>
               <h2 className="text-3xl font-bold text-gray-900 mb-3">Thank You for Submitting Your Info</h2>
               <p className="text-lg text-gray-600 mb-4">
-                We will get back to you shortly, within the next 24 hours.
+                We will get back to you within 24 hours on business days.
               </p>
               <p className="text-base text-gray-600 mb-6 max-w-lg mx-auto leading-relaxed">
                 We will give you a call, and you can always call us or email us &mdash; 

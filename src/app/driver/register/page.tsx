@@ -154,7 +154,7 @@ function RegisterForm() {
                 <Link href="/apply" className="text-orange hover:underline">
                   Apply first
                 </Link>{" "}
-                — it takes 60 seconds.
+                — a couple of fields.
               </p>
             </div>
 

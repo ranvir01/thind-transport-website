@@ -1,5 +1,5 @@
 import { Metadata } from "next"
-import { PayCalculator } from "@/components/features/PayCalculator"
+import { ProfitCalculator } from "@/components/features/ProfitCalculator"
 import { PayRateVisualizations } from "@/components/features/PayRateVisualizations"
 import { JobDetailsDialog } from "@/components/features/JobDetailsDialog"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -15,7 +15,7 @@ import { RelatedLinks } from "@/components/shared/RelatedLinks"
 import { driverLinks } from "@/components/shared/link-sets"
 
 export const metadata: Metadata = {
-  title: `Pay Rates - 90% O/O Split, ${PAY_RATES.companyDriver.regional.perMile}/mi Company | ${COMPANY_INFO.name}`,
+  title: `Pay rates — 90% owner-operator split, ${PAY_RATES.companyDriver.regional.perMile}/mile company`,
   description: `Transparent trucking pay: Owner Operators keep 90% gross (${PAY_RATES.ownerOperator.annualGross}/year). Company Drivers ${PAY_RATES.companyDriver.regional.perMile}/mi (${PAY_RATES.companyDriver.regional.annual}/year). Weekly pay, no hidden fees.`,
   keywords: [
     "truck driver pay rates",
@@ -59,9 +59,9 @@ export default function PayRatesPage() {
             Transparent <span className="text-orange">Pay Rates</span>
           </>
         }
-        description={`No hidden fees. Owner-operators keep ${PAY_RATES.ownerOperator.commission} of gross. Company drivers run ${PAY_RATES.companyDriver.local.perMile}/mile — local, regional, or OTR.`}
+        description="No hidden fees. No surprises. Just straightforward, competitive pay — 90% split for owner-operators, $0.63/mile for company drivers."
         primaryLabel="See What You'd Earn"
-        primaryHref="/#calculator"
+        primaryHref="#calculator"
       />
 
       {/* Position Cards */}
@@ -74,9 +74,6 @@ export default function PayRatesPage() {
             <h2 className="text-4xl font-black text-gray-900 mb-4">
               Choose Your Driving Career Path
             </h2>
-            <p className="text-lg text-gray-700 max-w-2xl mx-auto font-medium">
-              Whether you prefer the stability of company driving or the independence of being an owner-operator, we have the perfect opportunity for you
-            </p>
           </div>
 
           <div className="grid md:grid-cols-2 gap-8 mb-12">
@@ -92,7 +89,7 @@ export default function PayRatesPage() {
                   <Badge className="bg-[#17181B] text-white px-3 py-1 font-bold">Full-Time</Badge>
                 </CardTitle>
                 <CardDescription className="text-base text-gray-700 font-medium">
-                  {PAY_RATES.companyDriver.local.perMile}/mile · weekly pay · home time you pick
+                  $0.63/mile — the same rate local, regional or OTR
                 </CardDescription>
               </CardHeader>
               <CardContent className="pt-6">
@@ -116,9 +113,7 @@ export default function PayRatesPage() {
                       <Home className="h-5 w-5 text-[#17181B]" />
                       <span className="text-sm font-medium text-gray-700">Home Time</span>
                     </div>
-                    <span className="font-black text-xl text-gray-900">
-                      {PAY_RATES.companyDriver.local.homeTime} / {PAY_RATES.companyDriver.regional.homeTime} / {PAY_RATES.companyDriver.otr.homeTime}
-                    </span>
+                    <span className="font-black text-xl text-gray-900">Flexible</span>
                   </div>
                   <div className="flex items-center justify-between p-4 bg-gradient-to-r from-gray-50 to-blue-50 rounded-xl hover:from-blue-50 hover:to-indigo-50 transition-colors group/item">
                     <div className="flex items-center gap-3">
@@ -140,7 +135,7 @@ export default function PayRatesPage() {
                   </div>
                   <div className="flex items-center gap-2 text-sm">
                     <CheckCircle2 className="h-4 w-4 text-green-600" />
-                    <span className="text-gray-800 font-medium">Weekly direct deposit · 24/7 dispatch · no medical plan today</span>
+                    <span className="text-gray-800 font-medium">Performance and referral bonuses</span>
                   </div>
                 </div>
 
@@ -160,7 +155,7 @@ export default function PayRatesPage() {
                   <Badge className="bg-[#17181B] text-white px-3 py-1 font-bold">Independent</Badge>
                 </CardTitle>
                 <CardDescription className="text-base text-gray-700 font-medium">
-                  Independent contractor · {PAY_RATES.ownerOperator.commission} of gross
+                  Highest earning potential with 90% commission
                 </CardDescription>
               </CardHeader>
               <CardContent className="pt-6">
@@ -215,9 +210,10 @@ export default function PayRatesPage() {
             </Card>
           </div>
 
-          {/* Interactive Pay Calculator */}
-          <section className="mt-16">
-            <PayCalculator />
+          {/* One instrument site-wide: the same calculator the homepage and
+              /drivers render, reading the same constants. */}
+          <section id="calculator" className="mt-16 scroll-mt-20">
+            <ProfitCalculator />
           </section>
 
           {/* Pay Rate Visualizations */}
@@ -239,6 +235,7 @@ export default function PayRatesPage() {
       </section>
 
       <RelatedLinks
+        tone="dark"
         title="The rest of the money picture"
         intro="Where the money goes after the calculator, and the records behind it."
         links={driverLinks(["/pay-rates"])}

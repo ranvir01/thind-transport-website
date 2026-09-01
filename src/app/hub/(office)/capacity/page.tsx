@@ -29,7 +29,7 @@ export default async function CapacityPage() {
     <div>
       <PageHeader
         title="Posted capacity"
-        subtitle="Empty trucks, advertised — postings surface on the public load-board page in real time."
+        subtitle="Empty trucks, advertised — postings surface on the public routes page in real time."
       />
       <CapacityPanel
         trucks={trucks.filter((t) => t.status === "active").map((t) => ({ id: t.id, unit_number: t.unit_number }))}

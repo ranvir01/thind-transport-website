@@ -1,6 +1,9 @@
 import { Metadata } from "next"
 import Link from "next/link"
-import { BadgeCheck, Clock, FileCheck, Phone, Radar, ShieldCheck, ArrowRight } from "lucide-react"
+import {
+  BadgeCheck, Clock, FileCheck, Phone, Radar,
+  ShieldCheck,
+} from "lucide-react"
 import { COMPANY_INFO, STATS, FMCSA_LINKS } from "@/lib/constants"
 import { PageBreadcrumb } from "@/components/shared/PageBreadcrumb"
 import { BrokerPacketForm } from "@/components/features/BrokerPacketForm"
@@ -158,44 +161,10 @@ export default function BrokersPage() {
         </div>
       </section>
 
-      {/* One contextual cross-link, not a footer dump */}
-      <section className="border-t border-[rgba(20,22,24,0.1)] py-12">
-        <div className="container px-4">
-          <Reveal className="mx-auto flex max-w-3xl flex-wrap items-center justify-between gap-4">
-            <p className="max-w-measure text-m-body text-ink-2">
-              Want to see the equipment before you book it? Every truck, trailer and spec we run is
-              listed.
-            </p>
-            <Link
-              href="/fleet"
-              className="inline-flex min-h-[44px] items-center gap-2 font-display text-m-body font-bold uppercase tracking-wide text-signal underline-offset-4 transition-colors duration-base ease-entrance hover:text-ink hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-signal focus-visible:ring-offset-2 focus-visible:ring-offset-paper"
-            >
-              See the fleet <ArrowRight className="h-4 w-4" />
-            </Link>
-          </Reveal>
-        </div>
-      </section>
-
-      {/* Escape hatch: nobody gets trapped in the broker lane. */}
-      <section className="border-t border-ink/10 py-10">
-        <div className="container px-4">
-          <p className="text-center text-m-body text-ink-3">
-            Not a broker?{" "}
-            <Link href="/drivers" className="font-semibold text-signal underline-offset-4 hover:underline">
-              For drivers
-            </Link>{" "}
-            ·{" "}
-            <Link href="/shippers" className="font-semibold text-signal underline-offset-4 hover:underline">
-              For shippers
-            </Link>
-          </p>
-        </div>
-      </section>
-
       <RelatedLinks
         title="Everything else, without asking"
         intro="The documents and tools brokers normally have to email us for."
-        links={freightLinks(["/brokers"])}
+        links={freightLinks(["/brokers"], 7)}
       />
     </div>
   )

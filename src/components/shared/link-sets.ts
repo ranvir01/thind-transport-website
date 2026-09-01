@@ -19,7 +19,7 @@ const DRIVER: RelatedLink[] = [
   {
     href: "/pay-rates",
     title: "Pay calculator",
-    blurb: "Your miles, your rate, today's fuel price — what a week actually clears.",
+    blurb: "Your miles and your rate — what a week grosses, before deductions.",
     icon: Calculator,
     kind: "Tool",
   },
@@ -82,7 +82,11 @@ const DRIVER: RelatedLink[] = [
   {
     href: "/apply",
     title: "Apply",
-    blurb: "About a minute, and a person calls you back — usually the same day.",
+    // No callback-speed promise here: how fast recruiting actually calls back
+    // is an open question in docs/OWNER-CHECKLIST.md, and asserting it while
+    // asking the owner what it is would be the same mistake this file just
+    // helped clean up.
+    blurb: "A short form, then a person reviews it and calls you.",
     icon: Users,
     kind: "Form",
   },

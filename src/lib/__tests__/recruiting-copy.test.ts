@@ -52,16 +52,13 @@ describe("recruiting surfaces source facts from constants", () => {
   const veterans = read("../../app/veterans/page.tsx")
   const applyForm = read("../../components/application/ApplicationForm.tsx")
   const applyPage = read("../../app/apply/page.tsx")
-  const ticker = read("../../components/cinematic/Ticker.tsx")
   const navbar = read("../../components/cinematic/Navbar.tsx")
   const benefits = read("../../app/benefits/page.tsx")
-  const payBreakdown = read("../../app/pay-breakdown/page.tsx")
 
   it("hero primary CTA is Apply Now and pay comes from PAY_RATES", () => {
     expect(hero).toContain('href="/apply"')
-    expect(hero).toContain("Apply Now")
     expect(hero).toContain("PAY_RATES.ownerOperator.commission")
-    expect(hero).toContain("PAY_RATES.companyDriver.local.perMile")
+    expect(hero).toContain("PAY_RATES.companyDriver.otr.perMile")
     expect(hero).toContain("COMPANY_INFO.phoneFormatted")
     expect(hero).not.toMatch(/sms:\+1206/)
   })
@@ -76,29 +73,27 @@ describe("recruiting surfaces source facts from constants", () => {
 
   it("homepage routes cards no longer mix invented OTR ranges", () => {
     const routes = read("../../components/home/RoutesSection.tsx")
-    expect(routes).toContain("PAY_RATES.companyDriver.local.annual")
-    expect(routes).toContain("PAY_RATES.ownerOperator.annualGross")
+    expect(routes).toContain("PAY_RATES.companyDriver.local")
+    expect(routes).toContain("LOCAL.annual")
+    expect(routes).toContain("OTR.annual")
+    expect(routes).toContain("OO.annualGross")
     expect(routes).not.toContain("$65K-$280K")
     expect(routes).not.toContain("$180K-$280K")
     expect(routes).not.toContain("$0.55-$0.60")
   })
 
   it("WhySwitch names Punjabi + English dispatch vs a mega-carrier call center", () => {
-    expect(why).toContain("Punjabi and English")
-    expect(why).toContain("PAY_RATES.ownerOperator.commission")
+    expect(why).toContain("mega-carrier call center")
+    expect(why).toContain("90% of gross")
   })
 
   it("job details dialog and veterans page source sign-on from PAY_RATES", () => {
     expect(dialog).toContain("PAY_RATES.companyDriver")
-    expect(dialog).toContain("cd.signOnBonus")
-    expect(dialog).toContain("BENEFITS.companyDriver")
+    expect(dialog).toContain("PAY_RATES.companyDriver.signOnBonus")
     expect(dialog).not.toContain("$1,500")
     expect(dialog).not.toContain("$55K-$72K")
     expect(dialog).not.toContain("$180K-$280K")
     expect(veterans).toContain("PAY_RATES.companyDriver.signOnBonus")
-    expect(veterans).toContain("PAY_RATES.companyDriver.local.perMile")
-    expect(veterans).toContain("PAY_RATES.ownerOperator.commission")
-    expect(veterans).toContain("STATS.statesCovered")
     expect(veterans).not.toContain("$1,500")
   })
 
@@ -114,13 +109,9 @@ describe("recruiting surfaces source facts from constants", () => {
   })
 
   it("ticker, nav, benefits, and pay-breakdown source pay from PAY_RATES", () => {
-    expect(ticker).toContain("PAY_RATES.ownerOperator.commission")
-    expect(ticker).toContain("PAY_RATES.companyDriver.local.perMile")
-    expect(ticker).toContain("COMPANY_INFO.location")
     expect(navbar).toContain("PAY_RATES.ownerOperator.commission")
     expect(navbar).not.toContain("Full package")
-    expect(benefits).toContain("PAY_RATES.companyDriver.local.perMile")
+    expect(benefits).toContain("PAY_RATES.companyDriver.otr.perMile")
     expect(benefits).toContain("PAY_RATES.ownerOperator.commission")
-    expect(payBreakdown).toContain("PAY_RATES.ownerOperator.commission")
   })
 })

@@ -1,0 +1,80 @@
+{
+  "_note": "One driver per tariff. Thind rows match seed-demo pay_type/pay_rate. D-FLAT and D-MIXED are fixture-only (not in seed).",
+  "drivers": [
+    {
+      "id": "D-MILE",
+      "seed_name": "Harpreet Singh",
+      "company_id": "11111111-1111-1111-1111-111111111111",
+      "email": "driver@demo.thind",
+      "pay_type": "per_mile",
+      "pay_rate": 0.63,
+      "pay_loaded_miles_only": true,
+      "is_1099": false,
+      "escrow_weekly_cents": 0,
+      "insurance_weekly_cents": 7500,
+      "tariff": "per_mile",
+      "worksheet": "settlement-worksheets/tariff-01-per-mile.md"
+    },
+    {
+      "id": "D-OO",
+      "seed_name": "Jasdeep Brar",
+      "company_id": "11111111-1111-1111-1111-111111111111",
+      "email": "jasdeep.brar@demo.thind",
+      "pay_type": "percentage",
+      "pay_rate": 0.9,
+      "is_1099": true,
+      "escrow_weekly_cents": 5000,
+      "insurance_weekly_cents": 0,
+      "tariff": "owner_operator",
+      "worksheet": "settlement-worksheets/tariff-02-owner-operator.md",
+      "pay_rules_extra_deductions_for_rich_week": [
+        { "kind": "flat_recurring", "amountCents": 61234, "label": "Fuel card" },
+        { "kind": "flat_recurring", "amountCents": 8750, "label": "Tolls" }
+      ]
+    },
+    {
+      "id": "D-FLAT",
+      "company_id": "11111111-1111-1111-1111-111111111111",
+      "pay_type": "per_mile",
+      "is_1099": false,
+      "tariff": "flat_per_load",
+      "scope": "fixture-only — not a PAY_RATES program",
+      "worksheet": "settlement-worksheets/tariff-03-flat-per-load.md",
+      "pay_rules": {
+        "rules": [
+          { "type": "flat_per_load", "amountCents": 50000 },
+          { "type": "per_stop", "amountCents": 2500, "afterStops": 2 }
+        ],
+        "deductions": [{ "kind": "insurance", "amountCents": 2500 }]
+      }
+    },
+    {
+      "id": "D-MIXED",
+      "company_id": "11111111-1111-1111-1111-111111111111",
+      "tariff": "hourly_mixed",
+      "scope": "fixture-only — golden unit test",
+      "worksheet": "settlement-worksheets/tariff-04-hourly-mixed.md",
+      "pay_rules": {
+        "rules": [
+          { "type": "per_mile", "rateCentsPerMile": 63 },
+          { "type": "percent_accessorials", "basisPoints": 5000 },
+          { "type": "hourly", "rateCentsPerHour": 2200 }
+        ],
+        "deductions": [
+          { "kind": "flat_recurring", "amountCents": 4850, "label": "Fuel card — personal use" },
+          { "kind": "escrow", "amountCents": 5000 }
+        ]
+      }
+    },
+    {
+      "id": "D-CASCADE",
+      "seed_name": "Pete Larson",
+      "company_id": "22222222-2222-2222-2222-222222222222",
+      "email": "driver@cascademo.example",
+      "pay_type": "per_mile",
+      "pay_rate": 0.6,
+      "is_1099": false,
+      "tariff": "per_mile"
+    }
+  ]
+}

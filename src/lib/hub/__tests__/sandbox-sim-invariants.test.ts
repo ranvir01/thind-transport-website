@@ -103,6 +103,21 @@ suite("sandbox invariant checks fire on a broken world", () => {
     expect(rules).toContain("rolling-load-has-crew")
   })
 
+  it("catches a load the player could never dig out of", async () => {
+    // "Recoverable" is the promise that makes it safe to hand the sandbox to
+    // someone else: the sim may cause trouble, but never trouble without a way
+    // out. A dispatched load with no crew is the shape of a dead end — nobody
+    // can mark it departed, nobody can bill the wait.
+    await query(
+      `UPDATE hub.loads SET driver_id = NULL, truck_id = NULL
+        WHERE carrier_id = $1 AND id = (
+          SELECT id FROM hub.loads WHERE carrier_id = $1 AND status = 'dispatched' LIMIT 1)`,
+      [C]
+    )
+    const rules = (await checkSandboxInvariants()).map((v) => v.rule)
+    expect(rules).toContain("no-dead-ended-load")
+  })
+
   it("is clean again once the world is rebuilt", async () => {
     await (await import("../sandbox-seed")).seedSandbox()
     expect(await checkSandboxInvariants()).toEqual([])

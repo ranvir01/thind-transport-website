@@ -74,7 +74,6 @@
     "caniuse-lite": "^1.0.30001809",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.0",
-    "framer-motion": "^12.42.2",
     "geist": "^1.7.2",
     "imapflow": "^1.7.1",
     "leaflet": "^1.9.4",

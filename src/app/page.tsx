@@ -14,6 +14,7 @@ import { HomeTimeLanes } from "@/components/home/HomeTimeLanes"
 import { WhySwitch } from "@/components/features/WhySwitch"
 import { COMPANY_INFO } from "@/lib/constants"
 import Link from "next/link"
+import { COMPANY_INFO } from "@/lib/constants"
 
 export default function Home() {
   return (
