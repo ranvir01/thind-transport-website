@@ -29,13 +29,24 @@ const shot = makeShot(OUT, { fullPage: true })
  * additional settle time needed.
  */
 async function sendChat(page, text) {
-  await page.click('textarea[placeholder="Type a message…"]')
-  await page.keyboard.down("Control")
-  await page.keyboard.press("KeyA")
-  await page.keyboard.up("Control")
-  await page.keyboard.press("Backspace")
-  await page.type('textarea[placeholder="Type a message…"]', text)
-  await page.click('button[aria-label="Send"]')
+  // React-controlled textarea: native select-all + type often leaves `body`
+  // state stale, so Send stays disabled or posts the previous chip text.
+  // Drive the same native-value setter + input event the office driver-picker
+  // already uses, then wait until React has the marker before clicking Send.
+  await page.waitForSelector('textarea[placeholder="Type a message…"]')
+  await page.evaluate((value) => {
+    const ta = document.querySelector('textarea[placeholder="Type a message…"]')
+    if (!ta) return
+    const setter = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, "value").set
+    setter.call(ta, value)
+    ta.dispatchEvent(new Event("input", { bubbles: true }))
+  }, text)
+  await page.waitForFunction(
+    (t) => document.querySelector('textarea[placeholder="Type a message…"]')?.value === t,
+    { timeout: 8000 },
+    text
+  )
+  await page.click('button[aria-label="Send"]:not([disabled])')
   await waitForText(page, text)
 }
 

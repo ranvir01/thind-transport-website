@@ -107,4 +107,11 @@ describe("the first-run tour does not eat the e2e rig's first click", () => {
     const login = lib.slice(lib.indexOf("export async function login("))
     expect(login.slice(0, login.indexOf("\n}"))).toContain("await skipFirstRunTour(page)")
   })
+
+  it("the signup smoke marks the tour seen before the wizard lands on Today", () => {
+    // Signup never calls login(), so the login() suppression does not cover it.
+    const smoke = read("scripts/e2e-onboarding-smoke.mjs")
+    expect(smoke).toContain("await skipFirstRunTour(fresh)")
+    expect(smoke.indexOf("await skipFirstRunTour(fresh)")).toBeLessThan(smoke.indexOf('fresh.type("#su-company"'))
+  })
 })

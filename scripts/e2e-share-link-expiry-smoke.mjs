@@ -37,10 +37,14 @@ async function main() {
   page.on("console", (msg) => { if (msg.type() === "error") consoleErrors.push(`${msg.location().url ?? ""} ${msg.text()}`) })
 
   try {
+    // Tenant #1's id is fixed in migration 002. Do not look up by carriers.name —
+    // migration 005 renamed the row to "Thind Transport LLC" and a name-equals
+    // query returned 0 loads, then crashed on loads.rows[0].
+    const THIND = "11111111-1111-1111-1111-111111111111"
     const loads = await db.query(
-      `SELECT id, carrier_id, reference FROM hub.loads WHERE carrier_id = (
-         SELECT id FROM hub.carriers WHERE name = 'Thind Transport'
-       ) AND deleted_at IS NULL ORDER BY reference LIMIT 2`
+      `SELECT id, carrier_id, reference FROM hub.loads WHERE carrier_id = $1
+       AND deleted_at IS NULL ORDER BY reference LIMIT 2`,
+      [THIND]
     )
     check(loads.rows.length === 2, "two Thind Transport demo loads exist (kept separate so their panels don't collide)")
     const { id: lapsedLoadId, carrier_id: carrierId } = loads.rows[0]

@@ -81,6 +81,38 @@ describe("seeded demo password", () => {
   })
 })
 
+describe("demo seed vs migration 005 two-company shells", () => {
+  const seed = () => readFileSync(path.join(process.cwd(), "scripts", "seed-demo.mjs"), "utf-8")
+
+  it("puts THD-INV- back so one-click invoices match the seeded list prefix", () => {
+    // 005_mobile_sandbox_two_company.sql replaces settings.invoice with
+    // prefix "TT-". e2e-invoices-smoke and the seed's own list rows use THD-INV-.
+    expect(seed()).toMatch(/jsonb_set\(settings, '\{invoice,prefix\}', '"THD-INV-"'\)/)
+  })
+
+  it("overwrites the ATS shell at 2222… with Cascade Demo Lines on reseed", () => {
+    const src = seed()
+    const cascadeBlock = src.slice(src.indexOf("Creating second tenant (Cascade Demo Lines)"))
+    expect(cascadeBlock).toContain("Cascade Demo Lines")
+    expect(cascadeBlock).toMatch(/ON CONFLICT \(id\) DO UPDATE SET/)
+    expect(cascadeBlock).not.toMatch(/ON CONFLICT \(id\) DO NOTHING/)
+  })
+})
+
+describe("e2e smokes that drifted after the two-company rename", () => {
+  it("share-link expiry looks up Thind by the fixed tenant id, not carriers.name", () => {
+    const src = readFileSync(path.join(process.cwd(), "scripts", "e2e-share-link-expiry-smoke.mjs"), "utf-8")
+    expect(src).toContain("11111111-1111-1111-1111-111111111111")
+    expect(src).not.toMatch(/name = 'Thind Transport'/)
+  })
+
+  it("messages sendChat writes the React-controlled composer via the native setter", () => {
+    const src = readFileSync(path.join(process.cwd(), "scripts", "e2e-messages-smoke.mjs"), "utf-8")
+    expect(src).toContain("HTMLTextAreaElement.prototype")
+    expect(src).toContain('button[aria-label="Send"]:not([disabled])')
+  })
+})
+
 describe("demoLoginEnabled", () => {
   it("defaults on; only the literal 'false' disables it", () => {
     delete process.env.HUB_DEMO_LOGIN
