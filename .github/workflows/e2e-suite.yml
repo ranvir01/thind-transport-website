@@ -111,6 +111,9 @@ jobs:
         run: node scripts/cursor-env-check.mjs
 
   e2e:
+    permissions:
+      contents: read
+      issues: write # the red-rig issue below is the whole point of this job
     # The 50+ script rig is a nightly / on-demand job, not a per-push gate.
     # main is pushed hourly by the integrator drain; a 40-minute suite on that
     # path queues runs behind each other and mails the owner on every overrun.
@@ -196,9 +199,84 @@ jobs:
       - name: E2E smoke suite
         env:
           E2E_TIMEOUT_MS: "180000" # default 420000; a hung smoke should cost 3 min, not 7
-        run: node scripts/e2e-run-all.mjs
+        # Tee'd so the alerting step below can name the exact smokes that
+        # failed. pipefail keeps the step's own red status honest through the
+        # pipe — without it `tee` returns 0 and a failing suite reads as green.
+        run: |
+          set -o pipefail
+          node scripts/e2e-run-all.mjs 2>&1 | tee e2e-summary.log
       - name: Interaction battery
         run: node scripts/e2e-interaction-battery.mjs
+
+      # ---- Make red impossible to ignore -------------------------------
+      # This rig has rotted twice now: six nights unnoticed in August, then
+      # again through late August, because a failing SCHEDULED run is a grey
+      # tick on a page nobody opens. A gate nobody sees is not a gate.
+      #
+      # One issue, opened the first red night and UPDATED (never duplicated) on
+      # every later one, closed automatically when the rig goes green — so the
+      # issue existing always means "the rig is red right now", and a stream of
+      # nightly duplicates never becomes its own kind of noise.
+      - name: Open or update the red-rig issue
+        if: failure() && github.event_name == 'schedule'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require("fs")
+            const TITLE = "Nightly e2e rig is red"
+            let summary = ""
+            try { summary = fs.readFileSync("e2e-summary.log", "utf8") } catch {}
+            const failed = (summary.match(/^Failed: .*$/m) || [])[0] ?? "Failed: (see the run log)"
+            const tally = (summary.match(/^\d+\/\d+ passed[^\n]*$/m) || [])[0] ?? ""
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`
+            const body = [
+              `The nightly end-to-end rig failed on \`${context.sha.slice(0, 8)}\`.`,
+              "",
+              tally ? "```\n" + tally + "\n" + failed + "\n```" : "```\n" + failed + "\n```",
+              "",
+              `[Run log and failure artifacts](${runUrl}) — screenshots for each failing smoke are in the \`e2e-failure-${context.runId}\` artifact.`,
+              "",
+              "This issue updates itself each night the rig stays red, and closes itself when it goes green.",
+            ].join("\n")
+            const { data: open } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner, repo: context.repo.repo, state: "open", per_page: 100,
+            })
+            const existing = open.find((i) => i.title === TITLE && !i.pull_request)
+            if (existing) {
+              await github.rest.issues.update({
+                owner: context.repo.owner, repo: context.repo.repo,
+                issue_number: existing.number, body,
+              })
+              core.notice(`Updated #${existing.number} — ${failed}`)
+            } else {
+              const { data: made } = await github.rest.issues.create({
+                owner: context.repo.owner, repo: context.repo.repo, title: TITLE, body,
+              })
+              core.notice(`Opened #${made.number} — ${failed}`)
+            }
+
+      - name: Close the red-rig issue
+        if: success() && github.event_name == 'schedule'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const TITLE = "Nightly e2e rig is red"
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`
+            const { data: open } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner, repo: context.repo.repo, state: "open", per_page: 100,
+            })
+            const existing = open.find((i) => i.title === TITLE && !i.pull_request)
+            if (!existing) return
+            await github.rest.issues.createComment({
+              owner: context.repo.owner, repo: context.repo.repo, issue_number: existing.number,
+              body: `Green again — [run](${runUrl}) on \`${context.sha.slice(0, 8)}\` passed the full rig.`,
+            })
+            await github.rest.issues.update({
+              owner: context.repo.owner, repo: context.repo.repo,
+              issue_number: existing.number, state: "closed", state_reason: "completed",
+            })
+            core.notice(`Closed #${existing.number}`)
+
       - name: Upload failure artifacts
         if: failure()
         uses: actions/upload-artifact@v4
@@ -210,3 +288,4 @@ jobs:
             e2e-shots*/
             e2e-sweep/
             server.log
+            e2e-summary.log
