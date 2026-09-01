@@ -62,6 +62,12 @@ async function main() {
     const text1 = await page.evaluate(() => document.body.innerText)
     check(text1.includes(liveRef), `page shows load reference (${liveRef})`)
     check(/In Transit|last seen near/i.test(text1), "status shows In Transit + last-seen position")
+    // #8: the shared ETA. The seed's trail leaves the truck ~35 min from its
+    // last ping with a geocoded delivery stop, so an estimate must render —
+    // rounded to 5 min and prefixed "~", never a to-the-minute promise.
+    const etaLine = await page.$eval('[data-testid="track-eta"]', (el) => el.textContent.trim()).catch(() => null)
+    check(!!etaLine && /^Arriving ~\S/.test(etaLine), `ETA line renders as an estimate (${etaLine})`)
+    check(!!etaLine && !/\d:\d[1-46-9]\b/.test(etaLine), "ETA is rounded to five minutes")
 
     const headingColor1 = await page.evaluate(() => {
       const h1 = document.querySelector("h1")

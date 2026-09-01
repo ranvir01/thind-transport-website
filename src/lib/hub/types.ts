@@ -217,6 +217,8 @@ export interface Customer {
   billing_email: string | null
   billing_address: string | null
   phone: string | null
+  /** Broker status updates (pickup / rolling + ETA / delivered). NULL = off. */
+  status_updates_email: string | null
   payment_terms_days: number
   credit_limit_cents: number | null
   factored: boolean

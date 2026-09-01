@@ -85,6 +85,7 @@ export const customerSchema = z.object({
   billing_email: optionalString,
   billing_address: optionalString,
   phone: optionalString,
+  status_updates_email: optionalString,
   payment_terms_days: z.coerce.number().int().min(0).max(365).default(30),
   credit_limit: z.coerce.number().nonnegative().nullable().optional().or(z.literal("").transform(() => null)),
   factored: z.coerce.boolean().default(false),
