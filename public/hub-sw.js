@@ -4,13 +4,16 @@
  * mean a blank page. (Action queueing lives in IndexedDB on the page side;
  * see offline-queue.ts.)
  */
-const SHELL_CACHE = "hauldesk-shell-v2"
+const SHELL_CACHE = "hauldesk-shell-v3"
 
 self.addEventListener("install", (event) => {
   self.skipWaiting()
   event.waitUntil(
+    // The live manifest is /api/hub/manifest (per-tenant, no-store) — never
+    // precache it, and the old static /hub.webmanifest no longer belongs here.
+    // The v3 cache bump is what evicts copies stranded in v2.
     caches.open(SHELL_CACHE).then((cache) =>
-      cache.addAll(["/hub-icon-192.png", "/hub-icon-512.png", "/hub.webmanifest"]).catch(() => {})
+      cache.addAll(["/hub-icon-192.png", "/hub-icon-512.png"]).catch(() => {})
     )
   )
 })
@@ -98,9 +101,18 @@ self.addEventListener("push", (event) => {
   } catch {
     /* keep defaults */
   }
-  // Dot the installed app's icon even when no tab is open; the bell clears
-  // it (with the real count) next time the app is opened.
-  if (self.navigator && self.navigator.setAppBadge) self.navigator.setAppBadge().catch(() => {})
+  // Badge the installed app's icon even when no tab is open. The payload
+  // carries the unread total (notify.ts counts it after inserting the row);
+  // an old payload without one still gets the dot. The bell reconciles the
+  // count next time the app is opened.
+  if (self.navigator && self.navigator.setAppBadge) {
+    const unread = Number(data.unread)
+    const badge =
+      Number.isFinite(unread) && unread > 0
+        ? self.navigator.setAppBadge(unread)
+        : self.navigator.setAppBadge()
+    badge.catch(() => {})
+  }
   event.waitUntil(
     self.registration.showNotification(data.title, {
       body: data.body,
