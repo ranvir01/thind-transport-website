@@ -13,13 +13,18 @@ export type HubAction =
   | "money:read" | "money:write" | "money:approve"
   | "fuel:read" | "fuel:write"
   | "compliance:read" | "compliance:write"
+  // The office task board. Every office role works it, so the grant is broad —
+  // but the matrix is the single source of truth for who may do what, and
+  // until these existed src/app/hub/_actions/tasks.ts had nothing to gate on
+  // and fell back to "any office role" by default.
+  | "tasks:read" | "tasks:write"
   | "imports:run"
   | "users:manage"
   | "settings:manage"
 
 const OFFICE_READ: HubAction[] = [
   "loads:read", "fleet:read", "drivers:read", "customers:read", "documents:read",
-  "money:read", "fuel:read", "compliance:read",
+  "money:read", "fuel:read", "compliance:read", "tasks:read",
 ]
 
 const MATRIX: Record<HubRole, ReadonlySet<HubAction>> = {
@@ -27,17 +32,17 @@ const MATRIX: Record<HubRole, ReadonlySet<HubAction>> = {
     ...OFFICE_READ,
     "loads:write", "loads:status", "fleet:write", "drivers:write", "customers:write",
     "documents:write", "money:write", "money:approve", "fuel:write",
-    "compliance:write", "imports:run", "users:manage", "settings:manage",
+    "compliance:write", "tasks:write", "imports:run", "users:manage", "settings:manage",
   ]),
   dispatcher: new Set<HubAction>([
     ...OFFICE_READ,
     "loads:write", "loads:status", "fleet:write", "drivers:write", "customers:write",
-    "documents:write", "fuel:write", "compliance:write", "imports:run",
+    "documents:write", "fuel:write", "compliance:write", "tasks:write", "imports:run",
   ]),
   accountant: new Set<HubAction>([
     ...OFFICE_READ,
     "money:write", "money:approve", "documents:write", "fuel:write",
-    "compliance:write", "imports:run",
+    "compliance:write", "tasks:write", "imports:run",
   ]),
   // Driver/broker/shipper surfaces are scoped views built in Phases 4–5;
   // they hold no office permissions.

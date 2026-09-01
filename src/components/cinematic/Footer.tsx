@@ -1,19 +1,14 @@
 "use client"
 
 import { useState } from "react"
-import { motion, AnimatePresence } from "framer-motion"
 import Link from "next/link"
 
 import { usePathname } from "next/navigation"
-import {
-  COMPANY_INFO,
-  MAJOR_CLIENTS,
-  PREMIER_BROKERS,
-  TRUST_INDICATORS,
-} from "@/lib/constants"
+import { COMPANY_INFO, SUPPORT, TRUST_INDICATORS } from "@/lib/constants"
 import {
   Award,
   BadgeCheck,
+  MessageSquare,
   Shield,
   ShieldCheck,
   Phone,
@@ -26,70 +21,92 @@ import {
 // Collapsible footer link section for mobile
 const FooterLinkSections = () => {
   const [openSection, setOpenSection] = useState<string | null>(null)
-  
+
   const toggleSection = (section: string) => {
     setOpenSection(openSection === section ? null : section)
   }
-  
+
   const driverLinks = [
     { href: "/apply", label: "Apply Now", highlight: true },
     { href: "/pay-rates", label: "Pay Rates" },
     { href: "/benefits", label: "Benefits" },
     { href: "/routes", label: "Routes & Lanes" },
-    { href: "/testimonials", label: "Driver Reviews" },
     { href: "/resources", label: "Driver Resources" },
+    { href: "/cdl-jobs", label: "Jobs by State" },
+    { href: "/app", label: "Get the Driver App" },
     { href: "/driver/login", label: "Driver Login" },
   ]
-  
+
   const companyLinks = [
     { href: "/about", label: "About Us" },
     { href: "/fleet", label: "Our Fleet" },
+    { href: "/shippers", label: "Ship With Us" },
+    { href: "/brokers", label: "For Brokers" },
+    { href: "/loadoff", label: "LoadOff TMS" },
     { href: "/veterans", label: "Veterans Program" },
-    { href: "https://safer.fmcsa.dot.gov/CompanySnapshot.aspx", label: "FMCSA SAFER Record", external: true },
-    { href: "https://www.fmcsa.dot.gov/registration/whats-coming", label: "FMCSA Motus (Registration)", external: true },
+    {
+      href: "https://safer.fmcsa.dot.gov/CompanySnapshot.aspx",
+      label: "FMCSA SAFER Record",
+      external: true,
+    },
+    {
+      href: "https://www.fmcsa.dot.gov/registration/whats-coming",
+      label: "FMCSA Motus (Registration)",
+      external: true,
+    },
   ]
-  
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-0 md:gap-8">
       {/* For Drivers - Collapsible on Mobile */}
       <div className="border-b border-white/10 md:border-0">
-        <button 
-          onClick={() => toggleSection('drivers')}
+        <button
+          onClick={() => toggleSection("drivers")}
           className="w-full flex items-center justify-between py-4 md:py-0 md:cursor-default min-h-[44px]"
         >
           <h4 className="font-display font-bold text-sm uppercase tracking-[0.18em] text-steel-300">
             For Drivers
           </h4>
-          <ChevronDown className={`w-5 h-5 text-zinc-500 md:hidden transition-transform duration-200 ${openSection === 'drivers' ? 'rotate-180' : ''}`} />
+          <ChevronDown
+            className={`w-5 h-5 text-zinc-500 md:hidden transition-transform duration-200 ${openSection === "drivers" ? "rotate-180" : ""}`}
+          />
         </button>
-        
+
         {/* Mobile Collapsible */}
-        <div className={`md:hidden overflow-hidden transition-all duration-300 ease-in-out ${openSection === 'drivers' ? 'max-h-96 pb-4' : 'max-h-0'}`}>
+        <div
+          className={`md:hidden overflow-hidden transition-all duration-300 ease-in-out ${openSection === "drivers" ? "max-h-96 pb-4" : "max-h-0"}`}
+        >
           <ul className="space-y-3 text-sm pl-2">
             {driverLinks.map((link) => (
               <li key={link.href}>
-                <Link 
-                  href={link.href} 
-                  className={`${link.highlight ? 'text-steel-100 font-semibold' : 'text-steel-300'} hover:text-orange-500 transition-colors flex items-center gap-2 group py-1`}
+                <Link
+                  href={link.href}
+                  className={`${link.highlight ? "text-steel-100 font-semibold" : "text-steel-300"} hover:text-orange-500 transition-colors flex items-center gap-2 group py-1`}
                 >
-                  <span className={`w-1 h-1 rounded-full ${link.highlight ? 'bg-orange-500' : 'bg-zinc-700'} group-hover:bg-orange-500 transition-all`} />
+                  <span
+                    className={`w-1 h-1 rounded-full ${link.highlight ? "bg-orange-600" : "bg-zinc-700"} group-hover:bg-orange-500 transition-all`}
+                  />
                   <span>{link.label}</span>
                 </Link>
               </li>
             ))}
           </ul>
         </div>
-        
+
         {/* Desktop Always Visible */}
         <ul className="hidden md:block space-y-3 text-sm mt-6">
           {driverLinks.map((link) => (
             <li key={link.href}>
-              <Link 
-                href={link.href} 
-                className={`${link.highlight ? 'text-zinc-300 font-semibold' : 'text-zinc-400'} hover:text-orange-500 transition-colors flex items-center gap-2 group`}
+              <Link
+                href={link.href}
+                className={`${link.highlight ? "text-zinc-300 font-semibold" : "text-zinc-400"} hover:text-orange-500 transition-colors flex items-center gap-2 group`}
               >
-                <span className={`w-1 h-1 rounded-full ${link.highlight ? 'bg-orange-500' : 'bg-zinc-700'} group-hover:bg-orange-500 group-hover:scale-150 transition-all`} />
-                <span className="group-hover:translate-x-1 transition-transform">{link.label}</span>
+                <span
+                  className={`w-1 h-1 rounded-full ${link.highlight ? "bg-orange-600" : "bg-zinc-700"} group-hover:bg-orange-500 group-hover:scale-150 transition-all`}
+                />
+                <span className="group-hover:translate-x-1 transition-transform">
+                  {link.label}
+                </span>
               </Link>
             </li>
           ))}
@@ -98,23 +115,27 @@ const FooterLinkSections = () => {
 
       {/* Company - Collapsible on Mobile */}
       <div className="border-b border-white/10 md:border-0">
-        <button 
-          onClick={() => toggleSection('company')}
+        <button
+          onClick={() => toggleSection("company")}
           className="w-full flex items-center justify-between py-4 md:py-0 md:cursor-default min-h-[44px]"
         >
           <h4 className="font-display font-bold text-sm uppercase tracking-[0.18em] text-steel-300">
             Company
           </h4>
-          <ChevronDown className={`w-5 h-5 text-zinc-500 md:hidden transition-transform duration-200 ${openSection === 'company' ? 'rotate-180' : ''}`} />
+          <ChevronDown
+            className={`w-5 h-5 text-zinc-500 md:hidden transition-transform duration-200 ${openSection === "company" ? "rotate-180" : ""}`}
+          />
         </button>
-        
+
         {/* Mobile Collapsible */}
-        <div className={`md:hidden overflow-hidden transition-all duration-300 ease-in-out ${openSection === 'company' ? 'max-h-96 pb-4' : 'max-h-0'}`}>
+        <div
+          className={`md:hidden overflow-hidden transition-all duration-300 ease-in-out ${openSection === "company" ? "max-h-96 pb-4" : "max-h-0"}`}
+        >
           <ul className="space-y-3 text-sm pl-2">
             {companyLinks.map((link) => (
               <li key={link.href}>
                 {link.external ? (
-                  <a 
+                  <a
                     href={link.href}
                     target="_blank"
                     rel="noopener noreferrer"
@@ -125,7 +146,7 @@ const FooterLinkSections = () => {
                     <ExternalLink className="w-3 h-3" />
                   </a>
                 ) : (
-                  <Link 
+                  <Link
                     href={link.href}
                     className="text-zinc-400 hover:text-orange-500 transition-colors flex items-center gap-2 group py-1"
                   >
@@ -137,29 +158,33 @@ const FooterLinkSections = () => {
             ))}
           </ul>
         </div>
-        
+
         {/* Desktop Always Visible */}
         <ul className="hidden md:block space-y-3 text-sm mt-6">
           {companyLinks.map((link) => (
             <li key={link.href}>
               {link.external ? (
-                <a 
+                <a
                   href={link.href}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-zinc-400 hover:text-orange-500 transition-colors flex items-center gap-2 group"
                 >
                   <span className="w-1 h-1 rounded-full bg-zinc-700 group-hover:bg-orange-500 transition-colors" />
-                  <span className="group-hover:translate-x-1 transition-transform">{link.label}</span>
+                  <span className="group-hover:translate-x-1 transition-transform">
+                    {link.label}
+                  </span>
                   <ExternalLink className="w-3 h-3" />
                 </a>
               ) : (
-                <Link 
+                <Link
                   href={link.href}
                   className="text-zinc-400 hover:text-orange-500 transition-colors flex items-center gap-2 group"
                 >
                   <span className="w-1 h-1 rounded-full bg-zinc-700 group-hover:bg-orange-500 transition-colors" />
-                  <span className="group-hover:translate-x-1 transition-transform">{link.label}</span>
+                  <span className="group-hover:translate-x-1 transition-transform">
+                    {link.label}
+                  </span>
                 </Link>
               )}
             </li>
@@ -170,110 +195,54 @@ const FooterLinkSections = () => {
   )
 }
 
-// The floating command bar
-export const CommandBar = () => {
-  const pathname = usePathname()
+// (Desktop floating command bar removed: it duplicated the navbar's Apply/
+// Routes/Pay/Login + phone and floated over content on every page.)
 
-  if ((pathname.startsWith("/hub") || pathname.startsWith("/track"))) return null
-
-  const navItems = [
-    { name: 'Routes', href: '/routes' },
-    { name: 'Pay', href: '/pay-rates' },
-    { name: 'Login', href: '/driver/login' }
-  ]
-  
-  return (
-    <motion.div 
-        initial={{ y: 100 }}
-        animate={{ y: 0 }}
-        transition={{ delay: 1, type: "spring", stiffness: 200, damping: 20 }}
-        className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[90] hidden lg:flex items-center gap-2 p-2 bg-[#001F3F]/90 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl ring-1 ring-white/5"
-    >
-        <div className="flex items-center gap-4 px-4 border-r border-white/10">
-            <div className="flex items-center gap-2">
-                <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
-                </span>
-                <span className="text-[10px] font-mono text-white/80 uppercase tracking-widest">USDOT #{COMPANY_INFO.dot}</span>
-            </div>
-        </div>
-
-        <nav className="flex items-center gap-1 px-2">
-            <Link 
-                href="/apply" 
-                className={`px-4 py-2 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all hover:scale-105 active:scale-95 shadow-[0_0_10px_rgba(249,115,22,0.4)]
-                  ${pathname === '/apply' 
-                    ? 'bg-orange-700 text-white ring-2 ring-orange-400/50' 
-                    : 'bg-orange-600 hover:bg-orange-700 text-white'
-                  }
-                `}
-                data-cursor="APPLY"
-            >
-                Apply Now
-            </Link>
-            {navItems.map((item) => {
-              const isActive = pathname === item.href || pathname.startsWith(item.href + '/')
-              return (
-                <Link 
-                    key={item.name}
-                    href={item.href} 
-                    className={`px-4 py-2 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all hover:scale-105 active:scale-95
-                      ${isActive 
-                        ? 'bg-white/20 text-white ring-1 ring-white/30' 
-                        : 'hover:bg-white/10 text-white/80 hover:text-white'
-                      }
-                    `}
-                    data-cursor="VIEW"
-                >
-                    {item.name}
-                </Link>
-              )
-            })}
-        </nav>
-
-        <div className="pl-2 border-l border-white/10">
-            <a 
-              href={`tel:${COMPANY_INFO.phoneFormatted}`} 
-              className="group flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-800 rounded-xl text-[10px] font-black text-white uppercase tracking-widest shadow-[0_0_20px_rgba(224,57,47,0.3)] hover:shadow-[0_0_30px_rgba(224,57,47,0.5)] transition-all hover:-translate-y-0.5 active:translate-y-0" 
-              data-cursor="CALL"
-            >
-                <Phone className="w-3 h-3" />
-                <span>Recruiting</span>
-                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="group-hover:translate-x-1 transition-transform"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
-            </a>
-        </div>
-    </motion.div>
-  )
-}
+// Hide on Apply page, in the Hub (own bottom navigation), and the legacy driver
+// portal (its own submit buttons sit where this bar would land, per pitfall
+// found 2026-07-22: it covered the register form's Create Account button)
+//
+// /pre-qualify is excluded for BOTH of those reasons at once. The bar floats
+// over a nine-field multi-step form, and its one CTA is "Apply Now" pointing at
+// /apply — so a driver halfway through pre-qualifying taps it, navigates away,
+// and every answer is gone: the form holds its state in React with nothing
+// persisted. /apply was excluded for exactly this and /pre-qualify was missed.
+export const shouldHideMobileCommandBar = (pathname: string): boolean =>
+  pathname === "/apply" ||
+  pathname === "/pre-qualify" ||
+  pathname.startsWith("/hub") ||
+  pathname.startsWith("/track") ||
+  pathname.startsWith("/driver")
 
 export const MobileCommandBar = () => {
   const pathname = usePathname()
-  
-  // Hide on Apply page and in the Hub (the Hub has its own bottom navigation)
-  if (pathname === '/apply' || (pathname.startsWith('/hub') || pathname.startsWith('/track'))) return null
+
+  if (shouldHideMobileCommandBar(pathname)) return null
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-[90] md:hidden bg-gradient-to-t from-[#00060D] via-[#00060D]/98 to-[#00060D]/95 backdrop-blur-xl border-t border-white/10 safe-area-bottom">
-       <div className="flex gap-3 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-          <a 
-            href={`tel:${COMPANY_INFO.phoneFormatted}`} 
-            className="flex-1 flex items-center justify-center gap-2 bg-white/10 hover:bg-white/15 active:bg-white/20 text-white font-semibold py-3.5 px-4 rounded-xl transition-all active:scale-[0.98]"
-          >
-             <Phone className="w-4 h-4" />
-             <span className="text-sm">Call Now</span>
-          </a>
-          <Link 
-            href="/apply" 
-            className="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 active:from-orange-700 active:to-orange-800 text-white font-bold py-3.5 px-4 rounded-xl transition-all shadow-lg shadow-orange-500/30 active:scale-[0.98]"
-          >
-             <span className="relative flex h-2 w-2">
-               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
-               <span className="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
-             </span>
-             <span className="text-sm">Apply Now</span>
-          </Link>
-       </div>
+    <div className="fixed bottom-0 left-0 right-0 z-[90] md:hidden bg-gradient-to-t from-[#060607] via-[#060607]/98 to-[#060607]/95 backdrop-blur-xl border-t border-white/10 safe-area-bottom">
+      <div className="flex gap-2 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+        <a
+          href={`tel:${COMPANY_INFO.phoneFormatted}`}
+          className="flex-1 flex items-center justify-center gap-1.5 bg-white/10 hover:bg-white/15 active:bg-white/20 text-white font-semibold py-3.5 px-2 rounded-xl transition-all active:scale-[0.98]"
+        >
+          <Phone className="w-4 h-4" />
+          <span className="text-sm">Call</span>
+        </a>
+        <a
+          href={`sms:${COMPANY_INFO.phoneFormatted}?body=${encodeURIComponent("Hi, I'm interested in driving for Thind Transport.")}`}
+          className="flex-1 flex items-center justify-center gap-1.5 bg-white/10 hover:bg-white/15 active:bg-white/20 text-white font-semibold py-3.5 px-2 rounded-xl transition-all active:scale-[0.98]"
+        >
+          <MessageSquare className="w-4 h-4" />
+          <span className="text-sm">Text</span>
+        </a>
+        <Link
+          href="/apply"
+          className="flex-[1.4] flex items-center justify-center gap-2 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 active:from-orange-700 active:to-orange-800 text-white font-bold py-3.5 px-3 rounded-xl transition-all shadow-lg shadow-orange-500/30 active:scale-[0.98]"
+        >
+          <span className="text-sm">Apply Now</span>
+        </Link>
+      </div>
     </div>
   )
 }
@@ -281,7 +250,7 @@ export const MobileCommandBar = () => {
 // The full revealed footer
 export const CinematicFooter = () => {
   const pathname = usePathname()
-  if ((pathname.startsWith("/hub") || pathname.startsWith("/track"))) return null
+  if (pathname.startsWith("/hub") || pathname.startsWith("/track")) return null
 
   const certificationIconMap = {
     "shield-check": ShieldCheck,
@@ -293,10 +262,10 @@ export const CinematicFooter = () => {
   const currentYear = new Date().getFullYear()
 
   return (
-    <footer className="relative w-full bg-[#00060D] text-white border-t border-white/5 pb-24 md:pb-0">
+    <footer className="relative w-full bg-[#060607] text-white border-t border-white/5 pb-24 md:pb-0">
       {/* Mesh Gradient Background */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-navy-800 via-[#00060D] to-[#00060D] opacity-50" />
-      
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-navy-800 via-[#060607] to-[#060607] opacity-50" />
+
       {/* Noise Overlay — inline SVG turbulence, no external request */}
       <div className="absolute inset-0 opacity-[0.02] pointer-events-none bg-[url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22160%22 height=%22160%22><filter id=%22n%22><feTurbulence type=%22fractalNoise%22 baseFrequency=%220.8%22 numOctaves=%222%22/></filter><rect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23n)%22/></svg>')]" />
 
@@ -307,14 +276,16 @@ export const CinematicFooter = () => {
             {/* Company Info Column */}
             <div className="space-y-6">
               <div className="flex items-center gap-3">
-                <h3 className="brand-wordmark text-3xl leading-none text-white">{COMPANY_INFO.name}</h3>
+                <h3 className="brand-wordmark text-3xl leading-none text-white">
+                  {COMPANY_INFO.name}
+                </h3>
               </div>
               <p className="text-zinc-400 text-sm leading-relaxed">
-                Family-owned trucking company founded in {COMPANY_INFO.founded}. Over{" "}
-                {COMPANY_INFO.ownerExperience} years of owner experience delivering
-                nationwide freight.
+                Family-owned trucking company founded in {COMPANY_INFO.founded}.
+                Over {COMPANY_INFO.ownerExperience} years of owner experience
+                delivering nationwide freight.
               </p>
-              
+
               {/* Contact Info */}
               <div className="space-y-4 pt-4">
                 <div className="flex items-start gap-3">
@@ -326,7 +297,9 @@ export const CinematicFooter = () => {
                     >
                       {COMPANY_INFO.phone}
                     </a>
-                    <p className="text-xs text-zinc-400">24/7 Dispatch Support</p>
+                    <p className="text-xs text-zinc-400">
+                      {SUPPORT.dispatch}
+                    </p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
@@ -344,7 +317,9 @@ export const CinematicFooter = () => {
                 <div className="flex items-start gap-3">
                   <MapPin className="h-4 w-4 text-orange-500 mt-1 flex-shrink-0" />
                   <div>
-                    <p className="text-zinc-300 text-sm">{COMPANY_INFO.address}</p>
+                    <p className="text-zinc-300 text-sm">
+                      {COMPANY_INFO.address}
+                    </p>
                     <p className="text-xs text-zinc-400">Mailing Address</p>
                   </div>
                 </div>
@@ -365,38 +340,50 @@ export const CinematicFooter = () => {
                     certificationIconMap[
                       cert.icon as keyof typeof certificationIconMap
                     ] ?? ShieldCheck
-                  
+
+                  const href = "href" in cert ? cert.href : undefined
                   const content = (
-                     <div className="flex items-start gap-3 group cursor-pointer">
-                      <Icon className="mt-0.5 h-4 w-4 text-zinc-600 group-hover:text-orange-500 transition-colors flex-shrink-0" />
+                    <div
+                      className={`flex items-start gap-3 ${href ? "group cursor-pointer" : ""}`}
+                    >
+                      <Icon className="mt-0.5 h-4 w-4 flex-shrink-0 text-zinc-600 transition-colors group-hover:text-orange-500" />
                       <div>
                         <div className="font-medium text-zinc-200 text-sm group-hover:text-white transition-colors">
-                             {cert.name}
-                             {cert.name.includes("Safety Rating") && <ExternalLink className="inline-block w-3 h-3 ml-1 text-zinc-500" />}
+                          {cert.name}
+                          {href && (
+                            <ExternalLink className="inline-block w-3 h-3 ml-1 text-zinc-500" />
+                          )}
                         </div>
-                        <div className="text-zinc-400 text-xs">{cert.issuer}</div>
+                        <div className="text-zinc-400 text-xs">
+                          {cert.issuer}
+                        </div>
                       </div>
                     </div>
                   )
 
-                  return cert.name.includes("Safety Rating") ? (
-                    <a key={cert.name} href="https://safer.fmcsa.dot.gov/CompanySnapshot.aspx" target="_blank" rel="noopener noreferrer">
-                        {content}
+                  return href ? (
+                    <a key={cert.name} href={href} target="_blank" rel="noopener noreferrer">
+                      {content}
                     </a>
                   ) : (
-                    <div key={cert.name}>
-                        {content}
-                    </div>
+                    <div key={cert.name}>{content}</div>
                   )
                 })}
               </div>
 
               {/* DOT/MC Info */}
               <div className="mt-8 p-4 bg-white/5 rounded-xl border border-white/5 backdrop-blur-sm">
-                <p className="text-xs text-zinc-400 mb-2 uppercase tracking-wider font-display">Licensed & Insured</p>
+                <p className="text-xs text-zinc-400 mb-2 uppercase tracking-wider font-display">
+                  Licensed & Insured
+                </p>
                 <div className="space-y-1 font-display text-sm tracking-[0.08em]">
-                  <p className="text-white">DOT# <span className="text-zinc-400">{COMPANY_INFO.dot}</span></p>
-                  <p className="text-white">MC-<span className="text-zinc-400">{COMPANY_INFO.mc}</span></p>
+                  <p className="text-white">
+                    DOT#{" "}
+                    <span className="text-zinc-400">{COMPANY_INFO.dot}</span>
+                  </p>
+                  <p className="text-white">
+                    MC-<span className="text-zinc-400">{COMPANY_INFO.mc}</span>
+                  </p>
                 </div>
               </div>
             </div>
@@ -405,7 +392,7 @@ export const CinematicFooter = () => {
       </div>
 
       {/* Bottom Bar */}
-      <div className="relative z-10 border-t border-white/5 bg-[#00060D]">
+      <div className="relative z-10 border-t border-white/5 bg-[#060607]">
         <div className="container py-8">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <p className="text-xs text-zinc-400">

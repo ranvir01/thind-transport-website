@@ -15,10 +15,12 @@ import { Badge } from "@/components/ui/badge"
 import { COMPANY_INFO, STATS } from "@/lib/constants"
 import { PageBreadcrumb } from "@/components/shared/PageBreadcrumb"
 import { PageHero } from "@/components/shared/PageHero"
+import { RelatedLinks } from "@/components/shared/RelatedLinks"
+import { freightLinks } from "@/components/shared/link-sets"
 
 export const metadata: Metadata = {
   title: `About ${COMPANY_INFO.name}`,
-  description: `Learn about ${COMPANY_INFO.name}, a family-run trucking company based in Kent, Washington.`,
+  description: `${COMPANY_INFO.name} has hauled flatbed, reefer and dry van freight out of ${COMPANY_INFO.location} since ${COMPANY_INFO.founded} — a ${STATS.trucksInFleet}-truck family carrier run by ${COMPANY_INFO.owner}, who has ${COMPANY_INFO.ownerExperience} years in the business.`,
   alternates: { canonical: "/about" },
 }
 
@@ -70,7 +72,7 @@ export default function AboutPage() {
 
       <PageHero
         image="/images/generated/truck-mountain-pass.webp"
-        imageAlt="Thind Transport truck climbing a Washington mountain pass with Mount Rainier in the distance"
+        imageAlt="Illustration of a tractor-trailer climbing a Cascade mountain pass"
         eyebrow={`About ${COMPANY_INFO.name}`}
         title={
           <>
@@ -128,7 +130,7 @@ export default function AboutPage() {
               <div className="relative aspect-[4/3] md:aspect-[4/5]">
                 <Image
                   src="/images/generated/driver-pretrip-walkaround.webp"
-                  alt="Driver completing a pre-trip walkaround inspection beside a Thind Transport truck at the Kent yard"
+                  alt="Illustration of a driver completing a pre-trip walkaround inspection"
                   fill
                   sizes="(max-width: 768px) 100vw, 45vw"
                   className="object-cover"
@@ -136,7 +138,7 @@ export default function AboutPage() {
                 <div className="absolute inset-0 bg-gradient-to-t from-navy via-navy/20 to-transparent" />
               </div>
               <div className="absolute bottom-5 left-5 right-5">
-                <p className="mb-1 text-xs font-bold uppercase tracking-[0.25em] text-orange">The yard, Kent WA</p>
+                <p className="mb-1 text-xs font-bold uppercase tracking-[0.25em] text-orange-400">The yard, Kent WA</p>
                 <p className="text-sm font-semibold text-white">
                   Pre-trip done right — equipment checked before every run.
                 </p>
@@ -166,14 +168,11 @@ export default function AboutPage() {
       <section className="bg-gradient-to-b from-gray-50 to-white py-16">
         <div className="container">
           <div className="mb-12 text-center">
-            <Badge className="mb-4 bg-orange px-4 py-2 text-sm font-bold text-white">
+            <Badge className="mb-4 bg-orange-600 px-4 py-2 text-sm font-bold text-white">
               <Calendar className="mr-1.5 inline h-4 w-4" />
               Company Timeline
             </Badge>
             <h2 className="mb-4 text-3xl font-black text-gray-900 md:text-4xl">How We&apos;ve Grown</h2>
-            <p className="mx-auto max-w-2xl text-lg text-gray-600">
-              A steady path, a growing fleet, and the same emphasis on practical support.
-            </p>
           </div>
 
           <div className="mx-auto grid max-w-5xl gap-4 md:grid-cols-2">
@@ -195,9 +194,6 @@ export default function AboutPage() {
           <div className="mb-12 text-center">
             <Badge className="mb-4 bg-navy px-4 py-2 text-sm font-bold text-white">How We Operate</Badge>
             <h2 className="mb-4 text-3xl font-black text-gray-900 md:text-4xl">What Matters Day To Day</h2>
-            <p className="mx-auto max-w-2xl text-lg text-gray-600">
-              We replaced generic corporate filler here with the things drivers actually ask about.
-            </p>
           </div>
 
           <div className="mx-auto grid max-w-5xl gap-6 md:grid-cols-3">
@@ -266,7 +262,7 @@ export default function AboutPage() {
               </div>
               <div className="absolute bottom-5 left-5 right-5 flex items-end justify-between gap-4">
                 <div>
-                  <p className="mb-1 text-xs font-bold uppercase tracking-[0.25em] text-orange">Home base</p>
+                  <p className="mb-1 text-xs font-bold uppercase tracking-[0.25em] text-orange-400">Home base</p>
                   <p className="text-sm font-semibold text-white">The lineup in Kent, Washington</p>
                 </div>
                 <div className="flex gap-4 text-right">
@@ -306,7 +302,7 @@ export default function AboutPage() {
             <div className="flex flex-col justify-center gap-4 sm:flex-row">
               <Link
                 href="/apply"
-                className="rounded-xl bg-orange px-8 py-4 font-bold text-white transition-colors hover:bg-orange-600"
+                className="rounded-xl bg-orange-600 px-8 py-4 font-bold text-white transition-colors hover:bg-orange-600"
               >
                 Apply Now
               </Link>
@@ -321,7 +317,13 @@ export default function AboutPage() {
           </div>
         </div>
       </section>
+
+      <RelatedLinks
+        tone="dark"
+        title="See it for yourself"
+        intro="Records, equipment and tools rather than more company history."
+        links={freightLinks(["/about"])}
+      />
     </div>
   )
 }
-

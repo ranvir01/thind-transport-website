@@ -1,22 +1,55 @@
 {
-  "name": "Thind Transport Hub",
-  "short_name": "Thind Hub",
-  "description": "Dispatch, fleet, and operations hub for Thind Transport.",
+  "name": "LoadOff",
+  "short_name": "LoadOff",
+  "description": "Dispatch, money, compliance, and driver tools for small and mid-size trucking carriers — all in one place.",
+  "id": "/hub",
   "start_url": "/hub",
   "scope": "/hub",
   "display": "standalone",
-  "background_color": "#0E1621",
-  "theme_color": "#0E1621",
+  "background_color": "#1E1B4B",
+  "theme_color": "#1E1B4B",
   "icons": [
     {
-      "src": "/android-chrome-192x192.png",
+      "src": "/hub-icon-192.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "/android-chrome-512x512.png",
+      "src": "/hub-icon-512.png",
       "sizes": "512x512",
       "type": "image/png"
+    },
+    {
+      "src": "/hub-icon-512-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Today",
+      "description": "What's due, who hasn't confirmed, money not yet invoiced",
+      "url": "/hub",
+      "icons": [{ "src": "/hub-icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Dispatch board",
+      "description": "Loads by status, drag to assign",
+      "url": "/hub/dispatch",
+      "icons": [{ "src": "/hub-icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Money",
+      "description": "Invoices, settlements, what's owed",
+      "url": "/hub/money",
+      "icons": [{ "src": "/hub-icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Driver app",
+      "description": "Confirm dispatch, PODs, pay",
+      "url": "/hub/driver",
+      "icons": [{ "src": "/hub-icon-192.png", "sizes": "192x192" }]
     }
   ]
 }

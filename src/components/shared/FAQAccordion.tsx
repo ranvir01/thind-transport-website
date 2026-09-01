@@ -8,7 +8,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion"
 import { HelpCircle } from "lucide-react"
-import { COMPANY_INFO, FMCSA_LINKS } from "@/lib/constants"
+import { COMPANY_INFO, EQUIPMENT, FMCSA_LINKS, PAY_RATES, STATS } from "@/lib/constants"
 
 const defaultFaqs = [
   // Pay & Compensation
@@ -22,7 +22,7 @@ const defaultFaqs = [
   },
   {
     question: "What's this 90% commission for owner operators?",
-    answer: "You keep 90% of the gross revenue from each load - one of the highest rates in the industry! Most companies offer 70-85%. There are NO hidden fees or surprise deductions. Fuel surcharge passes through 100% to you. Your weekly settlement shows exactly where every dollar goes. Transparent accounting, no games."
+    answer: "You keep 90% of the gross revenue from each load. There are NO hidden fees or surprise deductions. Fuel surcharge passes through 100% to you. Your weekly settlement shows exactly where every dollar goes. Transparent accounting, no games."
   },
   {
     question: "How does the 90% commission work exactly?",
@@ -36,25 +36,30 @@ const defaultFaqs = [
   // Freight & Operations
   {
     question: "What types of freight do you haul?",
-    answer: "We offer three freight types: Flatbed (building materials, steel, machinery), Reefer (temperature-controlled food and pharmaceutical), and Dry Van (general freight and retail goods). You can choose what fits your experience and equipment. Consistent loads year-round across all divisions. No hazmat required."
+    answer: "We offer three freight types: Flatbed (building materials, steel, machinery), Reefer (temperature-controlled food and pharmaceutical), and Dry Van (general freight and retail goods). You can choose what fits your experience and equipment. Freight moves year-round in all three. No hazmat required."
   },
   {
     question: "What's the average length of haul?",
-    answer: "Our average length of haul is 800-1,200 miles depending on your route preferences. We have both long-haul cross-country lanes and shorter regional runs. Dedicated lanes available for drivers who prefer consistent routes. OTR drivers average 2,500-3,000 miles per week."
+    answer: "It depends on what you take: we run both long-haul cross-country lanes and shorter regional runs, and owner-operators choose. Dedicated lanes come up for drivers who want a consistent route. Ask dispatch what the current mix looks like — they will tell you what is actually on the board."
+  },
+  // Both answers below previously named specific shippers and brokers as
+  // partners. We can't substantiate those relationships in writing, and naming
+  // a third party as a partner is a claim about them as much as about us — so
+  // these now describe only what we can stand behind: the freight we actually
+  // haul and the boards we actually pay for.
+  {
+    question: "Do you have dedicated lanes?",
+    answer: "Some, and they change with the season. Dedicated work means a consistent route and predictable weeks, so it goes fast. Call dispatch and ask what's open right now — we'll tell you straight rather than promise something that isn't there."
   },
   {
-    question: "Do you have dedicated accounts?",
-    answer: "Yes! We have dedicated lanes with premium shippers like Amazon, Walmart, Home Depot, and more. Dedicated accounts offer consistent schedules and predictable income. Ask about available dedicated positions during your interview."
-  },
-  {
-    question: "What brokers and load boards do you work with?",
-    answer: "We're partnered with top brokers including Landstar, CH Robinson, JB Hunt, Coyote Logistics, and Schneider. We also utilize DAT, Truckstop.com, and direct shipper relationships. Owner operators have access to our entire network - you pick what works for you."
+    question: "Where do your loads come from?",
+    answer: "A mix: DAT and Truckstop.com load boards, brokers we've hauled for repeatedly, and direct shipper freight we book ourselves. Owner-operators can see what's available and choose — no forced dispatch, so you're never made to take a load that doesn't pay."
   },
   
   // Home Time & Schedule
   {
     question: "What about home time?",
-    answer: "We offer flexible schedules: Local routes (home every night), Regional routes (home on weekends - typically 5 days out, 2 days home), or OTR (2-3 weeks out, 3-4 days home). We work around YOUR life and actually honor our home time promises. No broken commitments - we track and guarantee it."
+    answer: "We offer flexible schedules: Local routes (home every night), Regional routes (home on weekends - typically 5 days out, 2 days home), or OTR (2-3 weeks out, 3-4 days home). Tell dispatch the home time you need and they build around it — and you see the delivery date before you accept a load, so you can say no."
   },
   {
     question: "Is there forced dispatch?",
@@ -64,21 +69,21 @@ const defaultFaqs = [
   // Benefits & Perks
   {
     question: "Do company drivers get benefits?",
-    answer: "Yes! Full benefits package includes: Health, dental, and vision insurance (starts after 60 days); 401(k) retirement plan with company match; Paid time off and holiday pay; $1,500 sign-on bonus first year; Weekly direct deposit; Performance bonuses; Referral bonuses ($500+ per driver). Modern, well-maintained 2024 equipment. 24/7 dispatch support."
+    answer: "Here's the honest list of what we offer today: $1,000 sign-on bonus in your first year; weekly direct deposit every Friday; performance and referral bonuses; home time you pick (local, regional, or OTR at the same $0.63/mile); modern 2023-2025 Freightliner Cascadias and Volvo VNLs; and 24/7 dispatch you can actually reach. Riders and pets are decided case by case — ask us. We do NOT currently offer company medical, dental, vision, life or disability insurance, or a 401(k) — we'd rather tell you now than at orientation. If that changes, this page changes with it."
   },
   {
     question: "What fuel programs are available for owner operators?",
-    answer: "We offer fuel card programs with discounts at Pilot Flying J, Love's, TA/Petro, and other major chains - typically $0.40-$0.60 off per gallon. IFTA reporting assistance included. 100% of fuel surcharge always passes to you. We help you optimize fuel routes and costs."
+    answer: "We offer fuel card programs with discounts at Pilot Flying J, Love's, TA/Petro, and other major chains - typically $0.30-$0.75 off per gallon depending on the chain and the week. IFTA reporting assistance included. 100% of fuel surcharge always passes to you. We help you optimize fuel routes and costs."
   },
   {
     question: "Do you offer maintenance discounts?",
-    answer: "Yes! Owner operators get preferred pricing at our partner service centers nationwide. Discounts on tires, oil changes, brakes, and major repairs. We've negotiated rates that can save you thousands annually. 24/7 roadside assistance connections available."
+    answer: "Yes! Owner operators get preferred pricing at our partner service centers nationwide. Discounts on tires, oil changes, brakes, and major repairs. 24/7 roadside assistance connections available."
   },
   
   // Getting Started
   {
     question: "How quickly can I start?",
-    answer: "Most drivers start within 1-2 weeks after approval. Process: Phone interview (same day response), Application review (1-2 days), Background check & drug screening (3-5 days), Orientation (1 day in Kent, WA or virtual option), Then you're on the road! We move fast for qualified drivers."
+    answer: "The steps are: a phone interview, application review, background check and drug screening, then orientation in Kent, WA (a virtual option is available). How long each takes depends on how fast your previous employers verify your history — we will tell you where you are at each stage rather than promise a date we do not control."
   },
   {
     question: "Do you hire nationwide?",
@@ -92,7 +97,7 @@ const defaultFaqs = [
   // Equipment & Requirements
   {
     question: "What equipment do company drivers use?",
-    answer: "Company drivers operate our 2024 Freightliner Cascadias - fully loaded with APU, refrigerator, inverter, and premium sleeper. Automatic transmission available. All trucks maintained to the highest standards. No junk equipment - we invest in quality because it keeps you safe and efficient."
+    answer: `Company drivers operate our ${EQUIPMENT.modelYears} ${EQUIPMENT.makes} — fully loaded with APU, refrigerator, inverter, and premium sleeper. Automatic transmission available.`,
   },
   {
     question: "What are the truck requirements for owner operators?",
@@ -102,7 +107,7 @@ const defaultFaqs = [
   // Safety & Compliance
   {
     question: "What's your safety rating?",
-    answer: `We maintain an A+ safety rating with FMCSA. Zero out-of-service violations in our history. Our USDOT number is ${COMPANY_INFO.dot} (MC-${COMPANY_INFO.mc}) — verify our carrier record anytime on SAFER. We take safety seriously because it protects you and keeps our insurance costs down (which means better pay for you).`,
+    answer: `Our USDOT number is ${COMPANY_INFO.dot} (MC-${COMPANY_INFO.mc}), and our full inspection and out-of-service record is public on FMCSA SAFER — we would rather you read it there than take our word for it. Safety protects you first and our insurance costs second, and both end up in what we can pay.`,
   },
   {
     question: "What is FMCSA Motus and does it change Thind Transport's authority?",
@@ -116,11 +121,11 @@ const defaultFaqs = [
   // Company Info
   {
     question: "How long has Thind Transport been in business?",
-    answer: "Thind Transport was founded in 2016 in Kent, Washington. Our owner has 20+ years of trucking industry experience. We've grown from 1 truck to 15+ and continue to expand. Family-owned and operated - not a faceless corporation. When you call, you talk to real people who care."
+    answer: `Thind Transport was founded in ${COMPANY_INFO.founded} in Kent, Washington by ${COMPANY_INFO.owner}, who has ${COMPANY_INFO.ownerExperience} years in trucking. We run ${STATS.trucksInFleet} trucks today. Family-owned — when you call, you talk to the people who dispatch the loads.`
   },
   {
     question: "Why should I choose Thind over bigger carriers?",
-    answer: "At big carriers, you're a number. At Thind, you're family. We offer: Highest commission in the industry (90%), No forced dispatch, Transparent settlements with no hidden fees, Modern equipment, Real 24/7 support from people who know your name, Home time that's actually honored. Many of our drivers came from mega-carriers and say they wish they'd switched sooner."
+    answer: `We are ${STATS.trucksInFleet} trucks, so the dispatcher who books your load is the one who answers when you call. What we put in writing: ${PAY_RATES.ownerOperator.commission} of gross, no forced dispatch, settlements every Friday with no deductions beyond our 10%, and ${EQUIPMENT.modelYears} equipment. Compare that line by line against whoever else you are talking to.`
   }
 ]
 
@@ -160,25 +165,23 @@ export function FAQAccordion({ items = defaultFaqs, darkBackground = true }: FAQ
             key={`${id}-${index}`} 
             value={`item-${id}-${index}`}
             className={`border rounded-fleet mb-2 px-4 transition-colors ${
-              darkBackground 
+              darkBackground
                 ? "border-steel-700 bg-navy-700/50 hover:bg-steel-800/40 data-[state=open]:bg-steel-800/60 data-[state=open]:border-orange/50"
-                : "border-steel-700 bg-navy-700/50 hover:bg-steel-800/40 data-[state=open]:bg-steel-800/60 data-[state=open]:border-orange/50"
+                : "border-gray-200 bg-white hover:bg-orange-50/50 data-[state=open]:bg-orange-50/70 data-[state=open]:border-orange-300 shadow-sm"
             }`}
           >
-            <AccordionTrigger className={`text-left py-5 font-semibold text-base hover:no-underline [&>svg]:text-zinc-400 [&[data-state=open]>svg]:text-orange-400 ${
+            <AccordionTrigger className={`text-left py-5 font-semibold text-base hover:no-underline [&[data-state=open]>svg]:text-orange-500 ${
               darkBackground
-                ? "text-white hover:text-orange-400 [&[data-state=open]]:text-orange-400"
-                : "text-white hover:text-orange-400 [&[data-state=open]]:text-orange-400"
+                ? "text-white hover:text-orange-400 [&[data-state=open]]:text-orange-400 [&>svg]:text-zinc-400"
+                : "text-gray-900 hover:text-orange-600 [&[data-state=open]]:text-orange-700 [&>svg]:text-gray-400"
             }`}>
               <div className="flex items-start gap-3 flex-1 pr-4">
-                <HelpCircle className={`h-5 w-5 mt-0.5 flex-shrink-0 ${
-                  darkBackground ? "text-orange-500" : "text-orange-500"
-                }`} />
+                <HelpCircle className="h-5 w-5 mt-0.5 flex-shrink-0 text-orange-500" />
                 <span className="flex-1">{faq.question}</span>
               </div>
             </AccordionTrigger>
             <AccordionContent className={`text-base leading-relaxed pb-5 pl-8 ${
-              darkBackground ? "text-zinc-300" : "text-steel-200"
+              darkBackground ? "text-zinc-300" : "text-gray-600"
             }`}>
               <p>{faq.answer}</p>
             </AccordionContent>

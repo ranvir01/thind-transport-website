@@ -12,6 +12,13 @@ export const metadata: Metadata = {
 
 const sections = [
   {
+    heading: "Analytics",
+    body: [
+      "This site uses Vercel Web Analytics and Speed Insights — cookieless, anonymous page and performance measurement. No advertising trackers, no cross-site tracking, and no personal information in any analytics event: form events record only which step was reached, never what was typed. If you pick an audience (drivers, shippers, brokers) we remember the choice in a small cookie so the site can lead with the right door next time; it identifies a preference, not a person.",
+    ],
+    items: [],
+  },
+  {
     heading: "Information we collect",
     body: [
       "When you submit an application, pre-qualification form, or contact request on this site, we collect the information you provide: your name, phone number, email address, CDL class, years of driving experience, and any details you include about your equipment or work history.",
@@ -76,12 +83,12 @@ export default function PrivacyPage() {
             <section key={section.heading} className="mb-10">
               <h2 className="text-2xl font-bold text-navy mb-4">{section.heading}</h2>
               {section.body.map((paragraph) => (
-                <p key={paragraph.slice(0, 40)} className="mb-4">
+                <p key={paragraph.slice(0, 40)} className="mb-4 text-gray-700">
                   {paragraph}
                 </p>
               ))}
-              {section.items && (
-                <ul className="list-disc pl-6 space-y-2 marker:text-orange">
+              {section.items && section.items.length > 0 && (
+                <ul className="list-disc pl-6 space-y-2 text-gray-700 marker:text-orange-600">
                   {section.items.map((item) => (
                     <li key={item}>{item}</li>
                   ))}
@@ -92,15 +99,15 @@ export default function PrivacyPage() {
 
           <section className="mb-12 bg-gray-50 p-8 rounded-2xl border border-gray-100">
             <h2 className="text-2xl font-bold text-navy mb-4 mt-0">Questions or requests</h2>
-            <p className="mb-2">
+            <p className="mb-2 text-gray-700">
               Phone:{" "}
-              <a href={`tel:${COMPANY_INFO.phoneFormatted}`} className="text-orange font-semibold">
+              <a href={`tel:${COMPANY_INFO.phoneFormatted}`} className="font-semibold text-orange-700 hover:underline">
                 {COMPANY_INFO.phone}
               </a>
             </p>
-            <p className="mb-0">
+            <p className="mb-0 text-gray-700">
               Email:{" "}
-              <a href={`mailto:${COMPANY_INFO.email}`} className="text-orange font-semibold">
+              <a href={`mailto:${COMPANY_INFO.email}`} className="font-semibold text-orange-700 hover:underline">
                 {COMPANY_INFO.email}
               </a>
             </p>

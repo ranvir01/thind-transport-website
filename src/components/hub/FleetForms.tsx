@@ -95,12 +95,12 @@ export function TruckForm({
               <input id="vin" className={fieldCls} value={form.vin}
                 onChange={(e) => set({ vin: e.target.value.toUpperCase() })} />
               <button type="button" onClick={decode} disabled={decoding}
-                className="inline-flex h-11 shrink-0 items-center gap-1.5 rounded-xl border border-gold/40 bg-gold/10 px-3 text-xs font-bold text-gold hover:bg-gold/20 disabled:opacity-50">
+                className="inline-flex h-11 shrink-0 items-center gap-1.5 rounded-control bg-accent px-3 text-xs font-semibold text-accent-fg hover:bg-accent-hover disabled:opacity-50">
                 {decoding ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ScanSearch className="h-3.5 w-3.5" />}
                 Decode
               </button>
             </div>
-            <p className="mt-1 text-body-xs text-steel-400">Free NHTSA decode fills year/make/model.</p>
+            <p className="mt-1 text-body-xs text-fg-3">Free NHTSA decode fills year/make/model.</p>
           </div>
           <div className="grid grid-cols-3 gap-2 sm:col-span-2">
             <div>
@@ -174,7 +174,7 @@ export function TruckForm({
             <input id="tank_capacity" type="number" inputMode="numeric" min="0" className={fieldCls}
               value={form.tank_capacity_gallons}
               onChange={(e) => set({ tank_capacity_gallons: e.target.value })} />
-            <p className="mt-1 text-body-xs text-steel-400">Powers the fuel fraud flag.</p>
+            <p className="mt-1 text-body-xs text-fg-3">Powers the fuel fraud flag.</p>
           </div>
         </div>
         <div>
@@ -183,7 +183,7 @@ export function TruckForm({
             onChange={(e) => set({ notes: e.target.value })} />
         </div>
         <button type="submit" disabled={pending}
-          className="flex w-full sm:w-auto min-h-[48px] items-center justify-center gap-2 rounded-xl bg-orange px-8 font-display text-sm font-bold uppercase tracking-[0.08em] text-white shadow-cta hover:bg-orange-400 disabled:opacity-60">
+          className="flex w-full sm:w-auto min-h-[48px] items-center justify-center gap-2 rounded-control bg-accent px-8 font-semibold text-sm text-accent-fg hover:bg-accent-hover disabled:opacity-60">
           {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
           {truckId ? "Save truck" : "Add truck"}
         </button>
@@ -298,7 +298,7 @@ export function TrailerForm({
             onChange={(e) => set({ notes: e.target.value })} />
         </div>
         <button type="submit" disabled={pending}
-          className="flex w-full sm:w-auto min-h-[48px] items-center justify-center gap-2 rounded-xl bg-orange px-8 font-display text-sm font-bold uppercase tracking-[0.08em] text-white shadow-cta hover:bg-orange-400 disabled:opacity-60">
+          className="flex w-full sm:w-auto min-h-[48px] items-center justify-center gap-2 rounded-control bg-accent px-8 font-semibold text-sm text-accent-fg hover:bg-accent-hover disabled:opacity-60">
           {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
           {trailerId ? "Save trailer" : "Add trailer"}
         </button>

@@ -1,26 +1,28 @@
 import Link from "next/link"
 import { redirect } from "next/navigation"
 import { getHubUser } from "@/lib/hub/session"
+import { getCarrier } from "@/lib/hub/settings"
 import { OFFICE_ROLES } from "@/lib/hub/types"
-import { COMPANY_INFO } from "@/lib/constants"
+import { PRODUCT } from "@/lib/hub/product"
 import { Panel } from "@/components/hub/ui"
 import { SignOutButton } from "@/components/hub/SignOutButton"
+import { LoadOffMark } from "@/components/hub/LoadOffMark"
 
-const ROLE_COPY: Record<string, { title: string; body: string; phase: string }> = {
-  driver: {
-    title: "Your driver hub is on the way",
-    body: "Soon you'll get dispatches, update load statuses, snap PODs, and see your settlements right here.",
-    phase: "Phase 4",
-  },
+const ROLE_COPY: Record<string, { title: string; body: string }> = {
+  // The portal shipped — the only way to land on this page is requirePortalUser
+  // bouncing an account whose customer_id is null. Say that, the way the driver
+  // copy below already does, instead of telling people a built feature is coming.
   broker: {
-    title: "Your carrier portal is on the way",
-    body: "Soon you'll track your loads with Thind live, download PODs and invoices, and see payment status here.",
-    phase: "Phase 5",
+    title: "Almost there",
+    body: "Your account isn't linked to a customer record yet — ask the office to connect it and your portal unlocks: live load tracking, PODs, invoices, and payment status.",
   },
   shipper: {
-    title: "Your shipper portal is on the way",
-    body: "Soon you'll request quotes, track shipments, and download delivery documents here.",
-    phase: "Phase 5",
+    title: "Almost there",
+    body: "Your account isn't linked to a customer record yet — ask the office to connect it and your portal unlocks: shipment tracking, delivery documents, and quotes.",
+  },
+  driver: {
+    title: "Almost there",
+    body: "Your account isn't linked to a driver record yet — ask the office to connect it and your driver app unlocks.",
   },
 }
 
@@ -28,35 +30,54 @@ export default async function HubWelcomePage() {
   const user = await getHubUser()
   if (!user) redirect("/hub/login")
   if (OFFICE_ROLES.includes(user.role)) redirect("/hub")
+  if (user.role === "driver") {
+    const { queryOne } = await import("@/lib/hub/db")
+    // AND active: without it, a deactivated driver whose driver_id is still
+    // linked bounces straight back to /hub/driver, which requireDriverUser's
+    // own active check bounces right back here — an infinite redirect loop
+    // (confirmed live during a QA drive on 2026-07-20; ERR_TOO_MANY_REDIRECTS).
+    const row = await queryOne<{ driver_id: string | null }>(
+      `SELECT driver_id FROM hub.users WHERE id = $1 AND carrier_id = $2 AND active`,
+      [user.id, user.carrierId]
+    )
+    if (row?.driver_id) redirect("/hub/driver")
+  }
 
-  const copy = ROLE_COPY[user.role] ?? ROLE_COPY.driver
+  const carrier = await getCarrier(user.carrierId)
+  const copy = ROLE_COPY[user.role] ?? ROLE_COPY.broker
+  const phone = carrier?.phone ?? null
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
       <Panel className="w-full max-w-md p-6 md:p-8 text-center">
-        <span className="brand-wordmark text-2xl font-semibold text-white tracking-[0.14em]">THIND</span>
-        <span className="block text-[11px] font-bold uppercase tracking-[0.3em] text-gold mt-1">
-          Transport Hub
+        <LoadOffMark size={52} className="mb-3" />
+        <span className="block brand-wordmark text-2xl font-semibold text-fg tracking-[0.14em]">
+          {PRODUCT.wordmark}
         </span>
-        <p className="mt-6 inline-flex rounded-full border border-gold/40 bg-gold/10 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-gold">
-          Coming in {copy.phase}
+        <span className="block text-[11px] font-bold uppercase tracking-[0.3em] text-accent-text mt-1">
+          {carrier?.name ?? PRODUCT.tagline}
+        </span>
+        <p className="mt-6 inline-flex rounded-full border border-accent-soft bg-accent-soft px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-accent-text">
+          Coming soon
         </p>
-        <h1 className="mt-3 font-display text-xl font-extrabold uppercase tracking-wide text-white">
+        <h1 className="mt-3 font-display text-xl font-extrabold uppercase tracking-wide text-fg">
           {copy.title}
         </h1>
-        <p className="mt-2 text-body-sm text-steel-200">
+        <p className="mt-2 text-body-sm text-fg-2">
           Hi {user.name.split(" ")[0]} — you&apos;re signed in. {copy.body}
         </p>
-        <p className="mt-4 text-body-sm text-steel-200">
-          Until then, dispatch has you covered:{" "}
-          <a href={`tel:${COMPANY_INFO.phoneFormatted}`} className="text-gold font-semibold">
-            {COMPANY_INFO.phone}
-          </a>
-        </p>
+        {phone ? (
+          <p className="mt-4 text-body-sm text-fg-2">
+            Until then, dispatch has you covered:{" "}
+            <a href={`tel:${phone.replace(/[^0-9+]/g, "")}`} className="text-accent-text font-semibold">
+              {phone}
+            </a>
+          </p>
+        ) : null}
         <div className="mt-6 space-y-3">
           <SignOutButton />
-          <Link href="/" className="block text-body-sm text-steel-300 hover:text-white">
-            Back to thindtransport.com
+          <Link href="/" className="block text-body-sm text-fg-3 hover:text-fg">
+            Back to the website
           </Link>
         </div>
       </Panel>

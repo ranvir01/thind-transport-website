@@ -1,52 +1,196 @@
 import Link from "next/link"
-import { redirect } from "next/navigation"
-import { getHubUser } from "@/lib/hub/session"
-import { DriverPwaClient } from "@/components/hub/DriverPwaClient"
-import { DriverBottomTabs } from "@/components/hub/DriverBottomTabs"
+import { CalendarOff, ClipboardCheck, Clock3, CloudLightning, ShieldAlert, Wallet } from "lucide-react"
+import { requireDriverUser } from "@/lib/hub/session"
+import {
+  driverActiveLoads, lastPay, openDocumentRequests, driverExpiries, latestHosSnapshot,
+  driverRunPay, driverUnsettledPay,
+} from "@/lib/hub/driver-app"
+import { getActiveAlerts } from "@/lib/hub/weather"
+import { pendingAnnouncementsForUser } from "@/lib/hub/announcements"
+import { getCarrierSettings } from "@/lib/hub/settings"
+import { fmtCentsExact } from "@/lib/hub/types"
+import { DriverLoadCard } from "@/components/hub/driver/DriverLoadCard"
+import { AnnouncementAckCard } from "@/components/hub/driver/AnnouncementAckCard"
+import { DocRequestCard } from "@/components/hub/driver/DocRequestCard"
+import { PushManager } from "@/components/hub/PushManager"
+import { DriverExpiryPill } from "@/components/hub/driver/ExpiryPill"
 
 export const dynamic = "force-dynamic"
 
-export default async function HubDriverPage() {
-  const user = await getHubUser()
-  if (!user) redirect("/hub/login")
+/** Same border/background mix OfflineSync uses for --driver-accent chrome (opacity modifiers drop silently on CSS-var colors — AGENTS.md). */
+const ACCENT_CARD_STYLE = {
+  borderColor: "color-mix(in srgb, var(--driver-accent) 40%, transparent)",
+  backgroundColor: "color-mix(in srgb, var(--driver-accent) 8%, transparent)",
+} as const
+
+export default async function DriverHomePage() {
+  const user = await requireDriverUser()
+  const [loads, announcements, requests, pay, expiries, settings, hos] = await Promise.all([
+    driverActiveLoads(user.carrierId, user.driverId),
+    pendingAnnouncementsForUser(user.carrierId, user.id, user.role, user.driverId),
+    openDocumentRequests(user.carrierId, user.driverId),
+    lastPay(user.carrierId, user.driverId),
+    driverExpiries(user.carrierId, user.driverId),
+    getCarrierSettings(user.carrierId),
+    latestHosSnapshot(user.carrierId, user.driverId),
+  ])
+  const detentionFreeMinutes = Math.round((settings.detention.freeHours ?? 2) * 60)
+
+  // What the work is worth, if this carrier shows it. Both figures come from
+  // the same engine that drafts settlements, so the phone can never quote a
+  // wage the office would not pay. Needs `loads` first, hence a second await.
+  const showRunPay = settings.driverApp?.showRunPay !== false
+  const [runPay, unsettledCents] = showRunPay
+    ? await Promise.all([
+        driverRunPay(user.carrierId, user.driverId, loads.map((l) => l.id)),
+        driverUnsettledPay(user.carrierId, user.driverId),
+      ])
+    : [new Map(), 0]
+
+  // Weather along the current run (free NWS API, best-effort).
+  const nextStop = loads[0]?.stops?.find((s) => !s.departed_at && s.lat != null && s.lng != null)
+  const weatherAlerts = nextStop ? await getActiveAlerts(nextStop.lat!, nextStop.lng!) : []
 
   return (
-    <main className="min-h-screen bg-navy px-4 pb-28 pt-5 text-white">
-      <div className="mx-auto max-w-[430px]">
-        <div className="mb-5 flex items-start justify-between gap-3">
-          <div>
-            <p className="text-[11px] font-black uppercase tracking-[0.22em] text-gold">
-              {user.dataMode === "sandbox" ? "SANDBOX DRIVER" : "Driver app"}
+    <div className="space-y-4">
+      {/* Pinned: announcements needing eyes, paperwork the office is waiting on */}
+      {announcements.map((a) => (
+        <AnnouncementAckCard key={a.id} announcement={a} />
+      ))}
+      {requests.map((r) => (
+        <DocRequestCard key={r.id} request={r} />
+      ))}
+
+      {weatherAlerts.length > 0 ? (
+        <section className="rounded-2xl border p-4" style={ACCENT_CARD_STYLE}>
+          <p className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-[color:var(--driver-accent)]">
+            <CloudLightning className="h-4 w-4" /> Weather on your route
+          </p>
+          {weatherAlerts.slice(0, 2).map((alert, i) => (
+            <p key={i} className="mt-1 text-body-sm text-steel-200">
+              <span className="font-semibold text-white">{alert.event}:</span> {alert.headline}
             </p>
-            <h1 className="mt-1 font-display text-2xl font-extrabold uppercase tracking-wide text-white">
-              Today&apos;s load
-            </h1>
-            <p className="mt-1 text-sm text-steel-200">Welcome, {user.name}. Confirm status, POD, and pay from the road.</p>
-          </div>
-          <Link href="/hub" className="rounded-xl border border-white/15 px-3 py-2 text-xs font-bold text-steel-100">
-            Office
-          </Link>
-        </div>
-
-        <section className="mb-4 rounded-3xl border border-white/10 bg-white/5 p-4">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-steel-300">Current status</p>
-              <p className="mt-1 text-xl font-bold text-white">In transit to Fresno, CA</p>
-            </div>
-            <span className="rounded-full border border-gold/40 bg-gold/15 px-3 py-1 text-xs font-black uppercase tracking-wide text-gold">
-              Live
-            </span>
-          </div>
-          <button className="mt-4 min-h-[60px] w-full rounded-2xl bg-orange px-5 font-display text-base font-bold uppercase tracking-[0.08em] text-white shadow-cta">
-            Arrived at delivery
-          </button>
+          ))}
         </section>
+      ) : null}
 
-        <DriverPwaClient />
+      {/* The work */}
+      {loads.length === 0 ? (
+        <section className="rounded-2xl border border-white/10 bg-navy-800/80 p-6 text-center">
+          <p className="font-display text-lg font-extrabold text-white">No active load</p>
+          <p className="mt-1 text-body-sm text-steel-400">
+            When dispatch assigns you a load it shows up here — with an alert if you turned them on.
+          </p>
+          <div className="mt-4">
+            <PushManager />
+          </div>
+        </section>
+      ) : (
+        loads.map((load) => (
+          <DriverLoadCard
+            key={load.id}
+            load={load}
+            detentionFreeMinutes={detentionFreeMinutes}
+            pay={runPay.get(load.id) ?? null}
+          />
+        ))
+      )}
+
+      {/* Quick glances */}
+      <div className="grid grid-cols-2 gap-3">
+        <Link
+          href="/hub/driver/pay"
+          className="rounded-2xl border border-white/10 bg-navy-800/80 p-4 hover:bg-white/5"
+        >
+          <p className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-steel-400">
+            <Wallet className="h-3.5 w-3.5" /> Last pay
+          </p>
+          <p className="mt-1 font-display text-xl font-extrabold text-[color:var(--driver-accent)]">
+            {pay ? fmtCentsExact(pay.net_cents) : "—"}
+          </p>
+          {pay ? (
+            <p className="text-body-xs text-steel-400">
+              week of {new Date(pay.period_end).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+            </p>
+          ) : (
+            <p className="text-body-xs text-steel-400">No settlements yet</p>
+          )}
+          {/* Everything earned since that settlement closed. Without this a
+              driver sees nothing at all between delivering on Tuesday and the
+              office approving on Friday. */}
+          {showRunPay && unsettledCents > 0 ? (
+            <p className="mt-2 border-t border-white/10 pt-2 text-body-xs text-steel-300">
+              <span className="font-bold text-white">{fmtCentsExact(unsettledCents)}</span> since
+              then, not settled yet
+            </p>
+          ) : null}
+        </Link>
+        <div className="rounded-2xl border border-white/10 bg-navy-800/80 p-4">
+          <p className="text-[11px] font-bold uppercase tracking-wider text-steel-400">My cards</p>
+          <div className="mt-1.5 space-y-1.5">
+            <p className="flex items-center justify-between gap-1 text-body-xs text-steel-200">
+              CDL <DriverExpiryPill date={expiries.cdl_expiry} />
+            </p>
+            <p className="flex items-center justify-between gap-1 text-body-xs text-steel-200">
+              Med card <DriverExpiryPill date={expiries.medical_card_expiry} />
+            </p>
+          </div>
+        </div>
       </div>
 
-      <DriverBottomTabs />
-    </main>
+      {/* HOS clocks — display only, the ELD is always the legal record */}
+      <div className="rounded-2xl border border-white/10 bg-navy-800/80 p-4">
+        <p className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-steel-400">
+          <Clock3 className="h-3.5 w-3.5" /> Hours of service
+        </p>
+        {hos ? (
+          <div className="mt-2 grid grid-cols-3 gap-2 text-center">
+            {[
+              { label: "Drive", minutes: hos.drive_remaining_minutes },
+              { label: "Shift", minutes: hos.shift_remaining_minutes },
+              { label: "Cycle", minutes: hos.cycle_remaining_minutes },
+            ].map((clock) => (
+              <div key={clock.label} className="rounded-xl bg-white/[0.04] py-2">
+                <p className="font-display text-lg font-extrabold text-[color:var(--driver-accent)]">
+                  {clock.minutes != null ? `${Math.floor(clock.minutes / 60)}h ${clock.minutes % 60}m` : "—"}
+                </p>
+                <p className="text-[10px] font-bold uppercase tracking-wider text-steel-400">{clock.label}</p>
+              </div>
+            ))}
+            <p className="col-span-3 text-[10px] text-steel-400">
+              From the ELD as of {new Date(hos.ts).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })} — the ELD is always the legal record.
+            </p>
+          </div>
+        ) : (
+          <p className="mt-1 text-body-xs text-steel-400">
+            Clocks show here automatically once the ELD sync is connected. Your ELD stays the legal record.
+          </p>
+        )}
+      </div>
+
+      {/* Quick actions */}
+      <div className="grid grid-cols-3 gap-2">
+        <Link
+          href="/hub/driver/dvir"
+          className="flex min-h-[52px] flex-col items-center justify-center gap-1 rounded-xl border border-white/15 px-1 font-display text-[11px] font-bold uppercase tracking-[0.04em] text-steel-200 hover:bg-white/5"
+        >
+          <ClipboardCheck className="h-4 w-4" /> Inspection
+        </Link>
+        <Link
+          href="/hub/driver/timeoff"
+          className="flex min-h-[52px] flex-col items-center justify-center gap-1 rounded-xl border border-white/15 px-1 font-display text-[11px] font-bold uppercase tracking-[0.04em] text-steel-200 hover:bg-white/5"
+        >
+          <CalendarOff className="h-4 w-4" /> Time off
+        </Link>
+        <Link
+          href="/hub/driver/incident"
+          className="flex min-h-[52px] flex-col items-center justify-center gap-1 rounded-xl border border-white/15 px-1 font-display text-[11px] font-bold uppercase tracking-[0.04em] text-steel-200 hover:bg-white/5"
+        >
+          <ShieldAlert className="h-4 w-4" /> Incident
+        </Link>
+      </div>
+
+      {loads.length > 0 ? <PushManager compact /> : null}
+    </div>
   )
 }

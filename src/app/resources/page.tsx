@@ -1,19 +1,67 @@
 import { Metadata } from "next"
 import Link from "next/link"
-import { 
-  Shield, FileText, Fuel, Wrench, AlertTriangle, 
-  Clock, MapPin, Phone, BookOpen, Download,
-  CheckCircle2, ExternalLink, Scale, HeartPulse,
-  Truck, Navigation, Calculator, FileCheck
+import {
+  Shield, Fuel, Wrench, AlertTriangle, Phone,
+  BookOpen, CheckCircle2, ExternalLink, HeartPulse, Truck,
+  Navigation, Calculator, FileCheck, Timer, Route,
+  Smartphone,
 } from "lucide-react"
+import { HosClockCalculator } from "@/components/features/HosClockCalculator"
+import { RelatedLinks } from "@/components/shared/RelatedLinks"
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { COMPANY_INFO } from "@/lib/constants"
 import { PageBreadcrumb } from "@/components/shared/PageBreadcrumb"
 
+const RESOURCE_LINKS = [
+  {
+    href: "/pay-rates",
+    title: "Pay calculator",
+    blurb: "Miles, rate and fuel in — what the week clears, out.",
+    icon: Calculator,
+    kind: "Tool" as const,
+  },
+  {
+    href: "/fuel-program",
+    title: "Fuel savings calculator",
+    blurb: "What the card takes off your cost per mile, on your own MPG.",
+    icon: Fuel,
+    kind: "Tool" as const,
+  },
+  {
+    href: "/tools/freight-class-calculator",
+    title: "Freight class calculator",
+    blurb: "Density to NMFC class — useful when a broker's class looks wrong.",
+    icon: FileCheck,
+    kind: "Tool" as const,
+  },
+  {
+    href: "/routes",
+    title: "Lanes and corridors",
+    blurb: "The runs we actually make, with distances and home time.",
+    icon: Route,
+    kind: "Page" as const,
+  },
+  {
+    href: "/app",
+    title: "Driver app",
+    blurb: "Dispatch, PODs and pay on one screen — works with no signal.",
+    icon: Smartphone,
+    kind: "Tool" as const,
+  },
+  {
+    href: "/benefits",
+    title: "What we offer drivers",
+    blurb: "Including a straight list of what we don't offer yet.",
+    icon: Shield,
+    kind: "Page" as const,
+  },
+]
+
 export const metadata: Metadata = {
-  title: `Driver Resources & Safety Center | ${COMPANY_INFO.name}`,
-  description: "Comprehensive driver resources including FMCSA compliance guides, HOS regulations, ELD requirements, fuel optimization tips, safety training, and maintenance guidelines for CDL truck drivers.",
+  title: "Driver resources & hours-of-service planner",
+  description: "FMCSA rules a CDL driver actually gets asked about: hours of service, ELD, CSA scores, cargo securement, hazmat and the DOT physical — plus a free hours-of-service clock planner.",
   keywords: [
     "truck driver resources",
     "FMCSA compliance",
@@ -51,7 +99,7 @@ const resourceCategories = [
       },
       {
         title: "Hours of Service (HOS) Guide",
-        description: "Complete breakdown of driving limits, rest requirements, and exceptions. Updated for 2024 regulations.",
+        description: "Complete breakdown of driving limits, rest requirements, and exceptions, straight from the FMCSA rule.",
         details: [
           "11-hour driving limit after 10 consecutive hours off duty",
           "14-hour limit on the time you can drive within",
@@ -140,6 +188,8 @@ const resourceCategories = [
           "Emergency response procedures",
           "Hazmat routing restrictions",
         ],
+        link: "https://www.tsa.gov/for-industry/hazmat-endorsement",
+        external: true,
       },
       {
         title: "Accident Procedures",
@@ -169,10 +219,14 @@ const resourceCategories = [
           "Fuel tax reporting assistance",
           "IFTA compliance support",
         ],
+        link: "/fuel-program",
+        internal: true,
       },
       {
         title: "Fuel Efficiency Tips",
-        description: "Proven techniques to reduce fuel consumption and increase profitability.",
+        description: "Techniques that move the needle on MPG, and what a cent per gallon is worth on your own miles.",
+        link: "/fuel-program",
+        internal: true,
         details: [
           "Optimal cruise speed (62-65 mph sweet spot)",
           "Progressive shifting techniques",
@@ -191,6 +245,8 @@ const resourceCategories = [
           "Fuel purchase documentation",
           "State-by-state tax rates",
         ],
+        link: "https://www.iftach.org/",
+        external: true,
       },
     ],
   },
@@ -284,6 +340,8 @@ const resourceCategories = [
           "Stress management techniques",
           "Sleep hygiene improvements",
         ],
+        link: "https://988lifeline.org/",
+        external: true,
       },
     ],
   },
@@ -302,6 +360,8 @@ const resourceCategories = [
           "Quarterly estimated taxes",
           "Business expense tracking",
         ],
+        link: "https://www.irs.gov/businesses/small-businesses-self-employed/trucking-tax-center",
+        external: true,
       },
       {
         title: "Load Profitability Calculator",
@@ -319,6 +379,8 @@ const resourceCategories = [
           "Weather monitoring tools",
           "Load board best practices",
         ],
+        link: "/routes",
+        internal: true,
       },
     ],
   },
@@ -378,11 +440,11 @@ export default function ResourcesPage() {
               Driver Resource Center
             </Badge>
             <h1 className="text-5xl md:text-6xl font-black mb-6 leading-tight">
-              Everything You Need to <span className="text-orange">Succeed</span>
+              Driver <span className="text-orange">reference desk</span>
             </h1>
             <p className="text-xl text-white/90 leading-relaxed max-w-3xl mx-auto">
-              Comprehensive resources for FMCSA compliance, safety training, fuel efficiency, 
-              health & wellness, and business tools. Stay informed, stay compliant, stay profitable.
+              The FMCSA rules you get asked about at a scale house, the DOT physical standards, and
+              an hours-of-service planner that does the clock arithmetic for you.
             </p>
           </div>
         </div>
@@ -418,12 +480,14 @@ export default function ResourcesPage() {
         <div className="container">
           <div className="flex flex-col md:flex-row items-center justify-center gap-4 text-center md:text-left">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-full bg-red-500/15 flex items-center justify-center">
                 <Phone className="h-5 w-5 text-red-600" />
               </div>
               <div>
-                <p className="text-sm font-bold text-red-800">24/7 Emergency Dispatch</p>
-                <p className="text-xs text-red-600">Roadside assistance, accidents, breakdowns</p>
+                {/* text-red-800/600 read as dark-on-dark: .brand-page-shell force-darkens
+                    the bg-red-50 bar but does not flip colored text — use light reds. */}
+                <p className="text-sm font-bold text-red-200">24/7 Emergency Dispatch</p>
+                <p className="text-xs text-red-300">Roadside assistance, accidents, breakdowns</p>
               </div>
             </div>
             <a 
@@ -432,6 +496,30 @@ export default function ResourcesPage() {
             >
               {COMPANY_INFO.phone}
             </a>
+          </div>
+        </div>
+      </section>
+
+      {/* The one thing on this page that does the work for you: the HOS rules
+          were already explained here in bullets, which still left the driver
+          doing clock arithmetic at a truck stop. */}
+      <section className="py-14">
+        <div className="container">
+          <div className="mx-auto max-w-5xl">
+            <div className="mb-8 text-center">
+              <Badge className="mb-4 bg-orange-600 text-white px-4 py-2 text-sm font-bold">
+                <Timer className="h-4 w-4 mr-1.5 inline" />
+                Free tool
+              </Badge>
+              <h2 className="text-3xl md:text-4xl font-black text-gray-900 mb-3">
+                Work out your clock
+              </h2>
+              <p className="mx-auto max-w-2xl text-gray-600">
+                Punch in when you came on duty and how much you&apos;ve driven. It gives you the
+                window, the break, the reset and what&apos;s left in your 70.
+              </p>
+            </div>
+            <HosClockCalculator />
           </div>
         </div>
       </section>
@@ -454,7 +542,12 @@ export default function ResourcesPage() {
                 
                 <div className="grid md:grid-cols-2 gap-6">
                   {category.resources.map((resource) => (
-                    <Card key={resource.title} className="hover:shadow-lg transition-all border-gray-200 hover:border-gray-300">
+                    <Card
+                      key={resource.title}
+                      className={`border-gray-200 ${
+                        resource.link ? "transition-all hover:border-gray-300 hover:shadow-lg" : ""
+                      }`}
+                    >
                       <CardHeader>
                         <CardTitle className="text-lg font-bold text-gray-900 flex items-center justify-between">
                           {resource.title}
@@ -483,14 +576,14 @@ export default function ResourcesPage() {
                               href={resource.link}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="inline-flex items-center gap-2 text-sm font-semibold text-blue-600 hover:text-blue-700"
+                              className="inline-flex items-center gap-2 text-sm font-semibold text-orange-600 hover:text-orange-700"
                             >
                               Learn More <ExternalLink className="h-3 w-3" />
                             </a>
                           ) : (
                             <Link
                               href={resource.link}
-                              className="inline-flex items-center gap-2 text-sm font-semibold text-blue-600 hover:text-blue-700"
+                              className="inline-flex items-center gap-2 text-sm font-semibold text-orange-600 hover:text-orange-700"
                             >
                               View Resource →
                             </Link>
@@ -506,6 +599,13 @@ export default function ResourcesPage() {
         </div>
       </section>
 
+      <RelatedLinks
+        tone="dark"
+        title="Tools on this site"
+        intro="Calculators and pages that do something, not just describe it."
+        links={RESOURCE_LINKS}
+      />
+
       {/* CTA Section */}
       <section className="py-16 bg-navy">
         <div className="container">
@@ -514,13 +614,12 @@ export default function ResourcesPage() {
               Need More Support?
             </h2>
             <p className="text-lg text-white/70 mb-8">
-              Our dispatch team is available 24/7 to help with any questions or concerns.
-              We're here to support your success on the road.
+              Call dispatch — the same desk that books the loads answers the phone.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link
                 href="/apply"
-                className="px-8 py-4 bg-orange hover:bg-orange-600 text-white font-bold rounded-xl transition-colors"
+                className="px-8 py-4 bg-orange-600 hover:bg-orange-500 text-white font-bold rounded-xl transition-colors"
               >
                 Apply to Drive With Us
               </Link>

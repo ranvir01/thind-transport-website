@@ -4,13 +4,12 @@
  * be verified to the penny against hand-computed fixtures.
  */
 import type { Accessorial } from "./types"
+import { evaluatePayRules, legacyConfigToRuleSet } from "./pay-rules"
+import { roundHalfAwayFromZero } from "./rounding"
 
 // ---- Rounding ----
 
-/** Round half away from zero to an integer (money rounding). */
-export function roundHalfAwayFromZero(value: number): number {
-  return Math.sign(value) * Math.round(Math.abs(value))
-}
+export { roundHalfAwayFromZero } from "./rounding"
 
 // ---- Invoice ----
 
@@ -130,12 +129,12 @@ export interface SettlementDraft {
 }
 
 /**
- * Compute a settlement draft.
+ * Compute a settlement draft from the legacy two-pay-type driver config.
  *
- * Company drivers (per_mile): miles × rate per load (loaded miles, or
- * loaded+deadhead when payLoadedMilesOnly is false).
- * Owner-operators (percentage): pct × (linehaul + accessorials) + 100% of FSC.
- * Reimbursements add; advances, escrow, and insurance deduct.
+ * This is now a thin bridge over the generic pay-rules evaluator
+ * (src/lib/hub/pay-rules.ts): the config converts to an equivalent rule set
+ * and the evaluator produces the lines. The settlement engine itself consumes
+ * the evaluator directly — pay programs are data, never code forks.
  */
 export function computeSettlement(
   loads: SettlementLoadInput[],
@@ -143,70 +142,79 @@ export function computeSettlement(
   reimbursements: { label: string; amountCents: number; sourceId?: string }[],
   outstandingAdvances: { id: string; reference: string | null; amountCents: number }[]
 ): SettlementDraft {
-  const lines: SettlementLineDraft[] = []
+  return evaluatePayRules(legacyConfigToRuleSet(config), {
+    loads,
+    reimbursements,
+    outstandingAdvances,
+  })
+}
 
-  for (const load of loads) {
-    let amount: number
-    if (config.payType === "per_mile") {
-      const miles = config.payLoadedMilesOnly
-        ? load.loadedMiles
-        : load.loadedMiles + load.deadheadMiles
-      amount = roundHalfAwayFromZero(miles * config.payRate * 100)
-      lines.push({
-        kind: "earning",
-        label: `${load.reference} — ${miles} mi × $${config.payRate.toFixed(2)}/mi`,
-        amountCents: amount,
-        sourceType: "load",
-        sourceId: load.id,
-      })
-    } else {
-      const revenueBase = load.linehaulCents + load.accessorialCents
-      const commission = roundHalfAwayFromZero(revenueBase * config.payRate)
-      amount = commission + load.fuelSurchargeCents
-      lines.push({
-        kind: "earning",
-        label: `${load.reference} — ${Math.round(config.payRate * 100)}% of $${(revenueBase / 100).toFixed(2)} + FSC $${(load.fuelSurchargeCents / 100).toFixed(2)}`,
-        amountCents: amount,
-        sourceType: "load",
-        sourceId: load.id,
-      })
-    }
-  }
+// ---- Cash cycle ----
 
-  for (const r of reimbursements) {
-    lines.push({
-      kind: "reimbursement",
-      label: r.label,
-      amountCents: r.amountCents,
-      sourceType: "expense",
-      sourceId: r.sourceId,
-    })
-  }
+export interface CashCycleLoadRow {
+  deliveredAt: Date | null
+  podReceivedAt: Date | null
+  invoiceIssuedOn: Date | null
+  paidOn: Date | null
+}
 
-  for (const advance of outstandingAdvances) {
-    lines.push({
-      kind: "deduction",
-      label: `Advance${advance.reference ? ` (${advance.reference})` : ""}`,
-      amountCents: advance.amountCents,
-      sourceType: "advance",
-      sourceId: advance.id,
-    })
-  }
-  if (config.escrowWeeklyCents > 0 && loads.length > 0) {
-    lines.push({ kind: "deduction", label: "Escrow contribution", amountCents: config.escrowWeeklyCents, sourceType: "escrow" })
-  }
-  if (config.insuranceWeeklyCents > 0 && loads.length > 0) {
-    lines.push({ kind: "deduction", label: "Insurance", amountCents: config.insuranceWeeklyCents, sourceType: "insurance" })
-  }
+export interface CashCycleLeg {
+  /** Loads that have completed this leg (both endpoints stamped). */
+  count: number
+  medianDays: number | null
+  meanDays: number | null
+}
 
-  const grossCents = lines
-    .filter((l) => l.kind !== "deduction")
-    .reduce((sum, l) => sum + l.amountCents, 0)
-  const deductionsCents = lines
-    .filter((l) => l.kind === "deduction")
-    .reduce((sum, l) => sum + l.amountCents, 0)
+export interface CashCycleStats {
+  deliveredToPod: CashCycleLeg
+  podToInvoice: CashCycleLeg
+  invoiceToPaid: CashCycleLeg
+  deliveredToPaid: CashCycleLeg
+}
 
-  return { lines, grossCents, deductionsCents, netCents: grossCents - deductionsCents }
+const DAY_MS = 86400000
+
+/**
+ * Days between two stamps, floored at zero — a POD logged with a clock skew
+ * or a backdated invoice must not produce negative days that drag the median
+ * below reality.
+ */
+function legDays(rows: CashCycleLoadRow[], start: keyof CashCycleLoadRow, end: keyof CashCycleLoadRow): number[] {
+  const days: number[] = []
+  for (const row of rows) {
+    const s = row[start]
+    const e = row[end]
+    // A load is EXCLUDED from any leg it has not completed — an unpaid
+    // invoice is not "0 days to pay", it just isn't a datapoint yet.
+    if (!s || !e) continue
+    days.push(Math.max(0, (e.getTime() - s.getTime()) / DAY_MS))
+  }
+  return days
+}
+
+function legStats(days: number[]): CashCycleLeg {
+  if (days.length === 0) return { count: 0, medianDays: null, meanDays: null }
+  const sorted = [...days].sort((a, b) => a - b)
+  const mid = Math.floor(sorted.length / 2)
+  const median = sorted.length % 2 === 1 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2
+  const mean = days.reduce((sum, d) => sum + d, 0) / days.length
+  const round1 = (n: number) => Math.round(n * 10) / 10
+  return { count: days.length, medianDays: round1(median), meanDays: round1(mean) }
+}
+
+/**
+ * The four-segment cash cycle: delivered → POD → invoice → paid, plus the
+ * total. Medians are the headline number — a single 90-day deadbeat must not
+ * move what the owner reads as "how we're doing"; means are provided so the
+ * outliers still show up as a gap between the two.
+ */
+export function cashCycleStats(rows: CashCycleLoadRow[]): CashCycleStats {
+  return {
+    deliveredToPod: legStats(legDays(rows, "deliveredAt", "podReceivedAt")),
+    podToInvoice: legStats(legDays(rows, "podReceivedAt", "invoiceIssuedOn")),
+    invoiceToPaid: legStats(legDays(rows, "invoiceIssuedOn", "paidOn")),
+    deliveredToPaid: legStats(legDays(rows, "deliveredAt", "paidOn")),
+  }
 }
 
 // ---- Detention ----

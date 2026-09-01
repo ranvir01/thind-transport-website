@@ -11,9 +11,10 @@ export interface HubSessionUser {
   role: HubRole
   /** Tenant scope — every data call must be scoped to this id. */
   carrierId: string
-  allowedCarrierIds: string[]
-  companyScope: "single" | "all"
-  dataMode: "production" | "sandbox"
+  /** Present when the owner can switch Thind / ATS / all-companies. */
+  allowedCarrierIds?: string[]
+  companyScope?: "single" | "all"
+  dataMode?: "production" | "sandbox"
 }
 
 export async function getHubUser(): Promise<HubSessionUser | null> {
@@ -26,17 +27,35 @@ export async function getHubUser(): Promise<HubSessionUser | null> {
         dataMode?: "production" | "sandbox" | null
       })
     | undefined
-  if (!user?.role || !user.carrierId) return null
-  const allowedCarrierIds = user.allowedCarrierIds?.length ? user.allowedCarrierIds : [user.carrierId]
-  const cookieStore = await cookies()
-  const requestedCarrier = cookieStore.get("hub_carrier_id")?.value
-  const requestedScope = cookieStore.get("hub_company_scope")?.value
+  if (!user?.role) return null
+  // Platform admins are the one role without a tenant scope — they see
+  // tenant operations only, never a tenant's business data.
+  if (!user.carrierId && user.role !== "platform_admin") return null
+
+  const allowedCarrierIds = user.allowedCarrierIds?.length
+    ? user.allowedCarrierIds
+    : user.carrierId
+      ? [user.carrierId]
+      : []
+  let requestedCarrier: string | undefined
+  let requestedScope: string | undefined
+  try {
+    const cookieStore = await cookies()
+    requestedCarrier = cookieStore.get("hub_carrier_id")?.value
+    requestedScope = cookieStore.get("hub_company_scope")?.value
+  } catch {
+    // Tests and some route handlers have no request cookie store.
+  }
   const selectedCarrierId =
-    requestedCarrier && allowedCarrierIds.includes(requestedCarrier)
-      ? requestedCarrier
-      : user.carrierId
+    user.role === "platform_admin"
+      ? (user.carrierId ?? "")
+      : requestedCarrier && allowedCarrierIds.includes(requestedCarrier)
+        ? requestedCarrier
+        : (user.carrierId ?? "")
   const companyScope =
-    requestedScope === "all" && allowedCarrierIds.length > 1 ? "all" : "single"
+    user.role !== "platform_admin" && requestedScope === "all" && allowedCarrierIds.length > 1
+      ? "all"
+      : "single"
 
   return {
     id: user.id,
@@ -50,12 +69,144 @@ export async function getHubUser(): Promise<HubSessionUser | null> {
   }
 }
 
+/**
+ * getHubUser plus the JWT-vs-DB re-checks every guard below performs:
+ * returns null for a deactivated user or a suspended carrier instead of
+ * redirecting or throwing — the right shape for route handlers and actions
+ * that answer 401/403 themselves. Route handlers don't run layouts, so a
+ * bare getHubUser there re-opened the ~30-day-token gap the guards closed;
+ * use this instead (guarded by route-guard-depth.test.ts).
+ */
+export async function getActiveHubUser(): Promise<HubSessionUser | null> {
+  const user = await getHubUser()
+  if (!user) return null
+  if (user.role === "platform_admin") {
+    return (await isActivePlatformAdmin(user.id)) ? user : null
+  }
+  if (!(await isActiveUser(user))) return null
+  if (!(await isActiveCarrier(user.carrierId))) return null
+  return user
+}
+
+/**
+ * `active` is part of the guard: login checks it, but sessions are JWTs —
+ * without this, a deactivated account keeps access until the token expires
+ * (~30 days). Fixed for driver/portal already; office/permission guards
+ * below now get the same per-request re-check.
+ */
+async function isActiveUser(user: HubSessionUser): Promise<boolean> {
+  const { queryOne } = await import("./db")
+  const row = await queryOne<{ id: string }>(
+    `SELECT id FROM hub.users WHERE id = $1 AND carrier_id = $2 AND active`,
+    [user.id, user.carrierId]
+  )
+  return !!row
+}
+
+/**
+ * Suspending a tenant (platform admin, see setTenantStatusAction) must cut
+ * off that tenant's office/driver/portal access immediately, not just skip
+ * it in crons — same JWT-vs-DB-state gap as isActiveUser, so every guard
+ * below re-checks the carrier's status on every request too.
+ */
+async function isActiveCarrier(carrierId: string): Promise<boolean> {
+  const { queryOne } = await import("./db")
+  const row = await queryOne<{ id: string }>(
+    `SELECT id FROM hub.carriers WHERE id = $1 AND status = 'active'`,
+    [carrierId]
+  )
+  return !!row
+}
+
+/**
+ * Platform admin is the one role without a carrier_id scope (see
+ * getHubUser), so it can't reuse isActiveUser's carrier-scoped query —
+ * it needs its own re-check by id + role instead.
+ */
+export async function isActivePlatformAdmin(userId: string): Promise<boolean> {
+  const { queryOne } = await import("./db")
+  const row = await queryOne<{ id: string }>(
+    `SELECT id FROM hub.users WHERE id = $1 AND role = 'platform_admin' AND active`,
+    [userId]
+  )
+  return !!row
+}
+
+/** Server-side guard for the platform admin page (same active re-check as requireOfficeUser). */
+export async function requirePlatformAdmin(): Promise<HubSessionUser> {
+  const user = await getHubUser()
+  if (!user) redirect("/hub/login")
+  if (user.role !== "platform_admin") redirect("/hub")
+  if (!(await isActivePlatformAdmin(user.id))) redirect("/hub/login")
+  return user
+}
+
 /** Server-side guard for office pages and actions (defense in depth over the proxy). */
 export async function requireOfficeUser(): Promise<HubSessionUser> {
   const user = await getHubUser()
   if (!user) redirect("/hub/login")
   if (!OFFICE_ROLES.includes(user.role)) redirect("/hub/welcome")
+  // Not /hub/login: the proxy still sees a valid token and bounces /hub/login
+  // straight back into the app, which re-hits this same check — an infinite
+  // redirect loop. /hub/deactivated is a dead end the proxy lets through.
+  if (!(await isActiveUser(user))) redirect("/hub/deactivated")
+  if (!(await isActiveCarrier(user.carrierId))) redirect("/hub/suspended")
   return user
+}
+
+export interface DriverSessionUser extends HubSessionUser {
+  driverId: string
+}
+
+/**
+ * Guard for the driver app: signed-in driver role with a linked driver
+ * record. Office roles get bounced to their own home.
+ */
+export async function requireDriverUser(): Promise<DriverSessionUser> {
+  const user = await getHubUser()
+  if (!user) redirect("/hub/login")
+  if (OFFICE_ROLES.includes(user.role)) redirect("/hub")
+  if (user.role !== "driver") redirect("/hub/welcome")
+  const { queryOne } = await import("./db")
+  // `active` is part of the guard: login checks it, but sessions are JWTs —
+  // without this, a deactivated driver keeps app access until the token
+  // expires (same gap fixed for requirePortalUser).
+  const row = await queryOne<{ driver_id: string | null }>(
+    `SELECT driver_id FROM hub.users WHERE id = $1 AND carrier_id = $2 AND active`,
+    [user.id, user.carrierId]
+  )
+  if (!row?.driver_id) redirect("/hub/welcome")
+  if (!(await isActiveCarrier(user.carrierId))) redirect("/hub/suspended")
+  return { ...user, driverId: row.driver_id }
+}
+
+export interface PortalSessionUser extends HubSessionUser {
+  customerId: string
+  portalRole: "broker" | "shipper"
+}
+
+/**
+ * Guard for the external portal: broker/shipper role with a linked customer.
+ * The customerId on the session is the isolation boundary — every portal
+ * query is scoped to it.
+ */
+export async function requirePortalUser(): Promise<PortalSessionUser> {
+  const user = await getHubUser()
+  if (!user) redirect("/hub/login")
+  if (OFFICE_ROLES.includes(user.role)) redirect("/hub")
+  if (user.role === "driver") redirect("/hub/driver")
+  if (user.role !== "broker" && user.role !== "shipper") redirect("/hub/welcome")
+  const { queryOne } = await import("./db")
+  // `active` is part of the guard: login checks it, but sessions are JWTs —
+  // without this, a deactivated external account keeps portal access until
+  // the token expires.
+  const row = await queryOne<{ customer_id: string | null }>(
+    `SELECT customer_id FROM hub.users WHERE id = $1 AND carrier_id = $2 AND active`,
+    [user.id, user.carrierId]
+  )
+  if (!row?.customer_id) redirect("/hub/welcome")
+  if (!(await isActiveCarrier(user.carrierId))) redirect("/hub/suspended")
+  return { ...user, customerId: row.customer_id, portalRole: user.role }
 }
 
 /** Owner-only guard (user management, settings). */
@@ -77,6 +228,12 @@ export async function requirePermission(action: HubAction): Promise<HubSessionUs
   if (user.companyScope === "all" && isWriteAction(action)) {
     throw new Error("Select Thind or ATS before changing data. All-companies mode is read-only.")
   }
+  if (user.role === "platform_admin") {
+    if (!(await isActivePlatformAdmin(user.id))) throw new Error("Account deactivated")
+    return user
+  }
+  if (!(await isActiveUser(user))) throw new Error("Account deactivated")
+  if (!(await isActiveCarrier(user.carrierId))) throw new Error("Workspace suspended")
   return user
 }
 
@@ -89,5 +246,12 @@ export async function requirePermissionPage(action: HubAction): Promise<HubSessi
     redirect("/hub")
   }
   if (user.companyScope === "all" && isWriteAction(action)) redirect("/hub")
+  // Same /hub/login-vs-proxy loop as requireOfficeUser — see comment there.
+  if (user.role === "platform_admin") {
+    if (!(await isActivePlatformAdmin(user.id))) redirect("/hub/login")
+    return user
+  }
+  if (!(await isActiveUser(user))) redirect("/hub/deactivated")
+  if (!(await isActiveCarrier(user.carrierId))) redirect("/hub/suspended")
   return user
 }

@@ -1,6 +1,7 @@
 import { randomBytes } from "crypto"
 import { hubDbAvailable, query, queryOne } from "./db"
 import { THIND_SANDBOX_ID, fallbackCarriers, fallbackLoads } from "./sandbox-fallback"
+import { assertCarrierRefs } from "./tenancy"
 import type { Load, Stop } from "./types"
 
 export interface ShareLink {
@@ -8,8 +9,14 @@ export interface ShareLink {
   load_id: string
   token: string
   revoked_at: string | null
+  expires_at: string | null
   created_at: string
 }
+
+// How long a freshly-minted or renewed tracking link stays live. Loads
+// clear in days, not weeks — 30 gives brokers room to keep checking a
+// slow-paying or disputed shipment without a link staying reachable forever.
+const SHARE_LINK_TTL_DAYS = 30
 
 export async function listShareLinks(carrierId: string, loadId: string): Promise<ShareLink[]> {
   return query<ShareLink>(
@@ -23,12 +30,13 @@ export async function createShareLink(
   loadId: string,
   createdBy: string
 ): Promise<ShareLink> {
+  await assertCarrierRefs(carrierId, { load_id: loadId })
   // 32 hex chars = 128 bits of entropy
   const token = randomBytes(16).toString("hex")
   const rows = await query<ShareLink>(
-    `INSERT INTO hub.share_links (carrier_id, load_id, token, created_by)
-     VALUES ($1,$2,$3,$4) RETURNING *`,
-    [carrierId, loadId, token, createdBy]
+    `INSERT INTO hub.share_links (carrier_id, load_id, token, created_by, expires_at)
+     VALUES ($1,$2,$3,$4, NOW() + $5 * INTERVAL '1 day') RETURNING *`,
+    [carrierId, loadId, token, createdBy, SHARE_LINK_TTL_DAYS]
   )
   return rows[0]
 }
@@ -40,10 +48,28 @@ export async function revokeShareLink(carrierId: string, id: string): Promise<vo
   )
 }
 
+/** Push a link's expiry another SHARE_LINK_TTL_DAYS out from now — for a link
+ *  that's about to lapse (or already has) but the broker still needs it. A
+ *  revoked link can't be renewed; revoke is meant to be final. */
+export async function renewShareLink(carrierId: string, id: string): Promise<void> {
+  await query(
+    `UPDATE hub.share_links SET expires_at = NOW() + $3 * INTERVAL '1 day'
+     WHERE carrier_id = $1 AND id = $2 AND revoked_at IS NULL`,
+    [carrierId, id, SHARE_LINK_TTL_DAYS]
+  )
+}
+
+/** Public-safe stop for the unauthenticated /track page: same discipline as the
+ *  portal's PortalStop — no facility name/address, pickup/PO refs, notes, or raw GPS. */
+export type TrackedStop = Pick<
+  Stop,
+  "id" | "sequence" | "type" | "city" | "state" | "fcfs" | "appt_start" | "appt_end" | "arrived_at" | "departed_at"
+>
+
 export interface TrackedLoad {
   load: Pick<Load, "id" | "reference" | "status" | "equipment" | "truck_id">
   carrierName: string
-  stops: Stop[]
+  stops: TrackedStop[]
   latestPosition: { lat: number; lng: number; ts: string } | null
 }
 
@@ -109,7 +135,8 @@ export async function getTrackedLoad(token: string): Promise<TrackedLoad | null>
   }
 
   const link = await queryOne<{ load_id: string; carrier_id: string }>(
-    `SELECT load_id, carrier_id FROM hub.share_links WHERE token = $1 AND revoked_at IS NULL`,
+    `SELECT load_id, carrier_id FROM hub.share_links
+     WHERE token = $1 AND revoked_at IS NULL AND (expires_at IS NULL OR expires_at > NOW())`,
     [token]
   )
   if (!link) return null
@@ -117,21 +144,22 @@ export async function getTrackedLoad(token: string): Promise<TrackedLoad | null>
   const load = await queryOne<Load & { carrier_name: string }>(
     `SELECT l.id, l.reference, l.status, l.equipment, l.truck_id, c.name AS carrier_name
      FROM hub.loads l JOIN hub.carriers c ON c.id = l.carrier_id
-     WHERE l.id = $1 AND l.deleted_at IS NULL`,
-    [link.load_id]
+     WHERE l.id = $1 AND l.carrier_id = $2 AND l.deleted_at IS NULL`,
+    [link.load_id, link.carrier_id]
   )
   if (!load) return null
 
-  const stops = await query<Stop>(
-    `SELECT * FROM hub.stops WHERE load_id = $1 ORDER BY sequence`,
-    [link.load_id]
+  const stops = await query<TrackedStop>(
+    `SELECT id, sequence, type, city, state, fcfs, appt_start, appt_end, arrived_at, departed_at
+     FROM hub.stops WHERE load_id = $1 AND carrier_id = $2 ORDER BY sequence`,
+    [link.load_id, link.carrier_id]
   )
 
   let latestPosition: { lat: number; lng: number; ts: string } | null = null
   if (load.truck_id && ["dispatched", "at_pickup", "in_transit"].includes(load.status)) {
     const ping = await queryOne<{ lat: number; lng: number; ts: string }>(
-      `SELECT lat, lng, ts FROM hub.position_pings WHERE truck_id = $1 ORDER BY ts DESC LIMIT 1`,
-      [load.truck_id]
+      `SELECT lat, lng, ts FROM hub.position_pings WHERE truck_id = $1 AND carrier_id = $2 ORDER BY ts DESC LIMIT 1`,
+      [load.truck_id, link.carrier_id]
     )
     if (ping) {
       // City-level only: round to ~1.1km so raw GPS history is never exposed

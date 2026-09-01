@@ -1,0 +1,236 @@
+# Drain fallback (learned 2026-07-10): the integrator→main drain must not depend
+# on any single agent platform being alive. Cursor's cloud VMs went read-only,
+# the :59 deploy agent silently stopped merging, and the production alias sat
+# hours behind a green integrator. This Action is the platform-independent
+# backstop: when the integrator is more than AGENT_CATCHUP_THRESHOLD commits
+# ahead of main AND build+tests are green on the integrator SHA, land it on
+# main. It never merges conflicting history — a diverged main is left for the
+# agents, so this workflow only ever publishes history that already exists on
+# the integrator (via a --no-ff merge commit, never a rebase or squash).
+#
+# Learned 2026-07-19 (QA rig drive on main@5218a91): a plain fast-forward push
+# lands the exact commit SHA Vercel already built as an integrator-branch
+# preview. Vercel dedupes deployments by SHA, so the production alias can sit
+# on stale content with no new build ever queued.
+#
+# Learned again 2026-07-19 (QA rig drive on main@11c9be2): a --no-ff merge
+# commit is NOT enough — its TREE is byte-identical to the integrator tip
+# Vercel already built as a preview, and the dedupe keys on content, not just
+# commit SHA (the first --no-ff drain produced no deployment at all). The
+# drain commit must also change the tree: it writes the drained SHA +
+# timestamp to `.drain-stamp` inside the merge commit, so every drain carries
+# a tree Vercel has never built and production always gets a real build.
+#
+# Learned 2026-08-07 (meta-governor weekly audit): a count-only gate strands
+# work when the fleet goes quiet. A money-correctness fix sat on the
+# integrator for two days because drift never exceeded the threshold and the
+# :59 deploy agent was dormant. The gate is therefore drift OR age: drain when
+# the integrator is more than AGENT_CATCHUP_THRESHOLD commits ahead, or when
+# ANY pending commit has been waiting longer than MAX_PENDING_AGE_HOURS.
+#
+# Scheduled at :17/:47 to stay clear of the fleet crons (:00 integrator,
+# :30 prod smoke, :59 deploy). See docs/agent-improvement-loop.md §3a/§5.
+#
+# Learned 2026-08-30 (drain-integrator.yml #789 on main@f234be5): GitHub sets
+# CI=true. Verify ran vitest with no database, and the three
+# isolation proofs (portal / driver-file / cross-tenant) fail-closed when
+# CI is set and POSTGRES_URL is missing — vitest exited 1 and the merge
+# was skipped. The e2e-suite.yml `unit` job already had the working
+# pattern (postgres:16 + migrate + seed:demo); this workflow did not.
+# Do not "fix" this by skipping those tests — they must actually run.
+
+name: Drain integrator to main
+
+on:
+  schedule:
+    - cron: "17,47 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: drain-integrator
+  cancel-in-progress: false
+
+env:
+  INTEGRATOR: claude/hauldesk-project-setup-l1luoo
+  AGENT_CATCHUP_THRESHOLD: "3"
+  MAX_PENDING_AGE_HOURS: "12"
+
+jobs:
+  drain:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    # Same service + URL as e2e-suite.yml `unit`. That is NOT the
+    # hauldesk/hauldesk/hauldesk of docker-compose.yml.
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: hubapp
+          POSTGRES_PASSWORD: hubpass
+          POSTGRES_DB: hubdb
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U hubapp -d hubdb"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      POSTGRES_URL: postgres://hubapp:hubpass@localhost:5432/hubdb
+      # CI-only values; nothing here is a real secret and none of it can
+      # reach production. CREDENTIALS_KEY must be 32+ chars for the vault.
+      NEXTAUTH_SECRET: ci-only-nextauth-secret-not-production
+      CREDENTIALS_KEY: ci-only-credentials-key-32-chars-min
+      CRON_SECRET: ci-only-cron-secret
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check drift (catch-up mode, or pending work older than the age limit)
+        id: drift
+        run: |
+          git fetch origin main "$INTEGRATOR"
+          AHEAD=$(git rev-list --count origin/main..origin/"$INTEGRATOR")
+          echo "Integrator ahead of main: $AHEAD (threshold: $AGENT_CATCHUP_THRESHOLD)"
+          if [ "$AHEAD" -eq 0 ]; then
+            echo "Integrator and main are level. Nothing to do."
+            echo "drain=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if ! git merge-base --is-ancestor origin/main origin/"$INTEGRATOR"; then
+            echo "::warning::Integrator and main have diverged — cannot drain safely."
+            echo "Leaving the merge to the deploy agent / a human; this job only drains linear history."
+            echo "drain=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          REASON=""
+          if [ "$AHEAD" -gt "$AGENT_CATCHUP_THRESHOLD" ]; then
+            REASON="catch-up: drift $AHEAD > threshold $AGENT_CATCHUP_THRESHOLD"
+          else
+            # Age gate: below the drift threshold, green work must still not sit
+            # undeployed for days when the fleet is quiet. Age is the oldest
+            # committer date among pending commits — that can predate the commit's
+            # arrival on the integrator (an old session-branch commit merged just
+            # now keeps its date), but erring old only drains sooner, and every
+            # drain still passes the full verify gate below.
+            OLDEST=$(git log origin/main..origin/"$INTEGRATOR" --format=%ct | sort -n | head -1)
+            AGE_HOURS=$(( ( $(date -u +%s) - OLDEST ) / 3600 ))
+            echo "Oldest pending commit: ${AGE_HOURS}h old (age limit: ${MAX_PENDING_AGE_HOURS}h)"
+            if [ "$AGE_HOURS" -ge "$MAX_PENDING_AGE_HOURS" ]; then
+              REASON="age: oldest pending commit ${AGE_HOURS}h >= ${MAX_PENDING_AGE_HOURS}h"
+            fi
+          fi
+          if [ -z "$REASON" ]; then
+            echo "Steady state — the :59 deploy agent owns the drain. Nothing to do."
+            echo "drain=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "Draining ($REASON)"
+          echo "drain=true" >> "$GITHUB_OUTPUT"
+
+      - name: Warn on pending commits missing the Backlog trailer (non-blocking)
+        if: steps.drift.outputs.drain == 'true'
+        run: |
+          # AGENTS.md §4: every commit body ends with a `Backlog:` trailer — the
+          # loop dies without it. The 2026-08-07 meta-governor audit found half a
+          # week's commits shipped without one. Warn-only by design: a missing
+          # trailer must never block a drain that keeps main deployable.
+          # %b (body only) so a subject like "Backlog: prune stale items" can't
+          # satisfy the check. NOT %(trailers:...): the repo convention is a
+          # "Backlog:" line followed by "- item" list lines, which git's trailer
+          # parser does not recognize — trailers:key=Backlog is empty on every
+          # compliant commit in history.
+          MISSING=$(git log origin/main..origin/"$INTEGRATOR" --no-merges --format='%H' | while read -r c; do
+            git log -1 --format=%b "$c" | grep -q '^Backlog:' || git log -1 --format='%h %s' "$c"
+          done)
+          if [ -n "$MISSING" ]; then
+            echo "::warning::Draining commits with no Backlog: trailer (AGENTS.md §4):"
+            echo "$MISSING"
+            {
+              echo "### Commits missing the \`Backlog:\` trailer"
+              echo '```'
+              echo "$MISSING"
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "All pending non-merge commits carry a Backlog: trailer."
+          fi
+
+      - uses: actions/setup-node@v4
+        if: steps.drift.outputs.drain == 'true'
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Verify integrator (build + tests)
+        if: steps.drift.outputs.drain == 'true'
+        run: |
+          git checkout origin/"$INTEGRATOR"
+          # --ignore-scripts: `canvas` needs system libs to compile and nothing
+          # in src/ imports it; Next.js and the test suite don't need postinstall.
+          npm ci --ignore-scripts
+          # --ignore-scripts also skips bcrypt's and sharp's postinstall; the
+          # app loads both, so rebuild just those two (from drain-fallback.yml,
+          # deleted in this commit).
+          npm rebuild bcrypt sharp
+          # Isolation proofs fail-closed when CI=true and POSTGRES_URL is
+          # missing. driver-file-isolation also needs seeded demo rows
+          # (looks up driver@demo.thind + CDL/POD documents by stable keys).
+          npm run db:migrate
+          npm run seed:demo
+          npm run build
+          npx vitest run
+          # Type-soundness + license hygiene, both enforceable today:
+          # app code must have zero tsc errors, test-file debt may only
+          # shrink, and no GPL/AGPL/SSPL may reach production deps.
+          node scripts/typecheck-gate.mjs
+          node scripts/license-audit.mjs
+
+      - name: Merge integrator into main (new commit + stamped tree — defeats Vercel dedupe)
+        if: steps.drift.outputs.drain == 'true'
+        run: |
+          set -euo pipefail
+          SHA=$(git rev-parse origin/"$INTEGRATOR")
+          echo "Draining $SHA into main via --no-ff merge with .drain-stamp"
+          git checkout -B main origin/main
+          git -c user.name="loadoff-drain-bot" -c user.email="noreply@anthropic.com" \
+            merge --no-ff --no-commit "$SHA"
+          # The stamp gives the merge commit a tree Vercel has never built —
+          # content-level dedupe otherwise skips the production build.
+          printf 'sha=%s\ndrained_at=%s\nrun=%s\n' \
+            "$SHA" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "${GITHUB_RUN_ID:-manual}" > .drain-stamp
+          git add .drain-stamp
+          git -c user.name="loadoff-drain-bot" -c user.email="noreply@anthropic.com" \
+            commit -m "Drain integrator to main ($SHA)"
+          # git push (not a raw ref push) refuses non-fast-forward on the local
+          # side, so a race with another drain fails safely instead of
+          # rewriting main.
+          git push origin main
+
+      - name: Carry the drain commit back to the integrator
+        if: steps.drift.outputs.drain == 'true'
+        run: |
+          set -euo pipefail
+          # The drain's merge commit exists only on main, so the moment this
+          # job succeeds main stops being an ancestor of the integrator and the
+          # gate above bails with "diverged — cannot drain safely" on every
+          # subsequent run. The backstop is decorative until a human merges
+          # main back by hand, and docs/claude-routines.md records that manual
+          # step recurring across cycles.
+          #
+          # The integrator tip is the second parent of the merge, so moving the
+          # branch onto it is a fast-forward — no rewrite, no new content, and
+          # nothing an agent has on that branch is lost.
+          if git push origin HEAD:refs/heads/"$INTEGRATOR"; then
+            echo "Integrator carried forward to the drain commit — the next run gates clean."
+          else
+            # Someone pushed to the integrator while the build ran, so the
+            # fast-forward no longer applies and a real merge is needed. main
+            # is already drained; failing here would just mail a red run for
+            # work that succeeded.
+            echo "::warning::Could not fast-forward $INTEGRATOR onto the drain commit — new commits landed during the build. Merge main into the integrator to clear the diverged gate."
+          fi

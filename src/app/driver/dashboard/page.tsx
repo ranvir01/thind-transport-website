@@ -186,7 +186,7 @@ export default function DriverDashboardPage() {
                   <Button
                     onClick={() => router.push("/driver/application")}
                     size="lg"
-                    className="bg-orange-500 hover:bg-orange-600 text-white font-bold w-full sm:w-auto"
+                    className="bg-orange-600 hover:bg-orange-500 text-white font-bold w-full sm:w-auto"
                   >
                     <FileText className="mr-2 h-4 w-4" />
                     Start DOT Application
@@ -279,7 +279,7 @@ export default function DriverDashboardPage() {
               </p>
               <Button
                 variant={submitted ? "outline" : "default"}
-                className={`w-full ${submitted ? "bg-white border-gray-300 text-gray-700 hover:bg-gray-50 hover:text-gray-900" : "bg-orange-500 hover:bg-orange-600 text-white"}`}
+                className={`w-full ${submitted ? "bg-white border-gray-300 text-gray-700 hover:bg-gray-50 hover:text-gray-900" : "bg-orange-600 hover:bg-orange-500 text-white"}`}
                 size="sm"
                 onClick={() => router.push("/driver/application")}
               >

@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server"
-import { getHubUser } from "@/lib/hub/session"
+import { getActiveHubUser } from "@/lib/hub/session"
 import { can } from "@/lib/hub/permissions"
-import { getIftaReport, exportIftaSources } from "@/lib/hub/ifta"
-import { getCarrier } from "@/lib/hub/settings"
+import { getIftaReport, exportIftaSources, listIftaRates } from "@/lib/hub/ifta"
+import { iftaWorksheetWarnings, iftaRowFuelTaxCents, iftaWorksheetTotals } from "@/lib/hub/ifta-core"
+import { withIftaWarningsCoverPage } from "@/lib/hub/ifta-pdf"
+import { getCarrier, getCarrierSettings } from "@/lib/hub/settings"
 import { buildIftaPdf } from "@/lib/hub/pdf"
 import type { IftaReportRow } from "@/lib/hub/types"
 
@@ -10,7 +12,7 @@ export async function GET(
   _req: Request,
   { params }: { params: Promise<{ quarter: string; file: string }> }
 ) {
-  const user = await getHubUser()
+  const user = await getActiveHubUser()
   if (!user || !can(user.role, "compliance:read")) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 })
   }
@@ -33,14 +35,47 @@ export async function GET(
   const report = await getIftaReport(user.carrierId, quarter)
   if (!report) return NextResponse.json({ error: "No report for that quarter" }, { status: 404 })
   const rows = (report.report?.rows as IftaReportRow[] | undefined) ?? []
+  // The exports must carry the worksheet screen's warnings — a transcriber
+  // working from the download otherwise never sees them.
+  const rates = await listIftaRates(user.carrierId, quarter)
+  const warnings = iftaWorksheetWarnings({
+    status: report.status,
+    rows,
+    missingRates: report.report?.missingRates,
+    unknownJurisdictionGallons: report.report?.unknownJurisdictionGallons,
+    ratesOnFile: Object.fromEntries(
+      rates.map((r) => [
+        r.jurisdiction,
+        { rate: Number(r.rate), surchargeRate: Number(r.surcharge_rate) || undefined },
+      ])
+    ),
+  })
 
   if (file === "worksheet.csv") {
     const csv = [
-      "jurisdiction,miles,taxable_gallons,tax_paid_gallons,rate,surcharge_rate,net_tax_usd",
-      ...rows.map((r) =>
-        `${r.jurisdiction},${r.miles},${r.taxableGallons.toFixed(3)},${r.taxPaidGallons.toFixed(3)},${Number(r.rate).toFixed(4)},${Number(r.surchargeRate).toFixed(4)},${(r.netCents / 100).toFixed(2)}`
-      ),
-      `TOTAL,,,,,,${(Number(report.net_tax_cents) / 100).toFixed(2)}`,
+      // Comment-prefixed like sources.csv, above the header so they open at the top.
+      ...warnings.map((w) => `# WARNING: ${w}`),
+      // Base fuel tax and surcharge are split out (not just the combined net):
+      // IN/KY/VA returns require the surcharge as its own line, and the surcharge
+      // gets no tax-paid credit, so a transcriber can't derive it from the net.
+      "jurisdiction,miles,taxable_gallons,tax_paid_gallons,rate,fuel_tax_usd,surcharge_rate,surcharge_usd,net_tax_usd",
+      ...rows.map((r) => {
+        const surchargeCents = Number(r.surchargeCents ?? 0)
+        const fuelTaxCents = iftaRowFuelTaxCents(r)
+        // `?? 0` mirrors the on-screen table and staleRateJurisdictions: legacy
+        // stored reports predate the surcharge split and omit surchargeRate, so
+        // an unguarded Number(undefined) would print the literal "NaN" here.
+        return `${r.jurisdiction},${r.miles},${r.taxableGallons.toFixed(3)},${r.taxPaidGallons.toFixed(3)},${Number(r.rate).toFixed(4)},${(fuelTaxCents / 100).toFixed(2)},${Number(r.surchargeRate ?? 0).toFixed(4)},${(surchargeCents / 100).toFixed(2)},${(r.netCents / 100).toFixed(2)}`
+      }),
+      // TOTAL row mirrors the on-screen worksheet <tfoot>: sum the columns a
+      // state IFTA return asks for as its own summary lines (taxable/tax-paid
+      // gallons, base fuel tax, surcharge, net). Rate columns stay blank — a
+      // sum of per-jurisdiction rates is meaningless. Miles rounded (no commas
+      // in CSV); net uses the summed rows, which reconciles to net_tax_cents.
+      (() => {
+        const t = iftaWorksheetTotals(rows)
+        return `TOTAL,${Math.round(t.miles)},${t.taxableGallons.toFixed(3)},${t.taxPaidGallons.toFixed(3)},,${(t.taxCents / 100).toFixed(2)},,${(t.surchargeCents / 100).toFixed(2)},${(t.netCents / 100).toFixed(2)}`
+      })(),
     ].join("\n")
     return new NextResponse(csv, {
       headers: {
@@ -52,10 +87,12 @@ export async function GET(
 
   if (file === "worksheet.pdf") {
     const carrier = await getCarrier(user.carrierId)
+    const settings = await getCarrierSettings(user.carrierId)
     const pdf = await buildIftaPdf({
       brand: {
         name: carrier?.name ?? "Carrier", address: carrier?.address, phone: carrier?.phone,
         email: carrier?.email, dot: carrier?.dot_number, mc: carrier?.mc_number,
+        accent: settings.branding.accent,
       },
       quarter,
       mileageSource: report.mileage_source ?? "—",
@@ -64,12 +101,14 @@ export async function GET(
       mpg: Number(report.mpg ?? 0),
       rows: rows.map((r) => ({
         jurisdiction: r.jurisdiction, miles: r.miles, taxableGallons: r.taxableGallons,
-        taxPaidGallons: r.taxPaidGallons, rate: Number(r.rate), surchargeRate: Number(r.surchargeRate),
+        taxPaidGallons: r.taxPaidGallons, rate: Number(r.rate), surchargeRate: Number(r.surchargeRate ?? 0),
+        taxCents: iftaRowFuelTaxCents(r), surchargeCents: Number(r.surchargeCents ?? 0),
         netCents: r.netCents,
       })),
       netTaxCents: Number(report.net_tax_cents ?? 0),
     })
-    return new NextResponse(new Uint8Array(pdf), {
+    const withWarnings = await withIftaWarningsCoverPage(new Uint8Array(pdf), { quarter, warnings })
+    return new NextResponse(new Uint8Array(withWarnings), {
       headers: {
         "Content-Type": "application/pdf",
         "Content-Disposition": `inline; filename="ifta-${quarter}-worksheet.pdf"`,

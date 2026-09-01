@@ -6,6 +6,7 @@ import { truckSchema, trailerSchema } from "@/lib/hub/schemas"
 import { createTruck, updateTruck, createTrailer, updateTrailer } from "@/lib/hub/fleet"
 import { logAudit } from "@/lib/hub/audit"
 import { decodeVin } from "@/lib/hub/vin"
+import { actionError } from "@/lib/hub/action-error"
 
 export interface ActionResult {
   ok: boolean
@@ -26,7 +27,7 @@ export async function saveTruckAction(
   try {
     user = await requirePermission("fleet:write")
   } catch (err) {
-    return { ok: false, error: err instanceof Error ? err.message : "Forbidden" }
+    return actionError(err, "Forbidden")
   }
   const parsed = truckSchema.safeParse(values)
   if (!parsed.success) return { ok: false, error: firstError(parsed.error) }
@@ -49,8 +50,10 @@ export async function saveTruckAction(
     revalidatePath("/hub/fleet")
     return { ok: true, id: truck.id }
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Failed to save truck"
-    return { ok: false, error: message.includes("unique") || message.includes("duplicate") ? "Unit number already exists" : message }
+    if (err instanceof Error && /unique|duplicate/i.test(err.message)) {
+      return { ok: false, error: "Unit number already exists" }
+    }
+    return actionError(err, "Failed to save truck")
   }
 }
 
@@ -62,7 +65,7 @@ export async function saveTrailerAction(
   try {
     user = await requirePermission("fleet:write")
   } catch (err) {
-    return { ok: false, error: err instanceof Error ? err.message : "Forbidden" }
+    return actionError(err, "Forbidden")
   }
   const parsed = trailerSchema.safeParse(values)
   if (!parsed.success) return { ok: false, error: firstError(parsed.error) }
@@ -81,8 +84,10 @@ export async function saveTrailerAction(
     revalidatePath("/hub/fleet")
     return { ok: true, id: trailer.id }
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Failed to save trailer"
-    return { ok: false, error: message.includes("unique") || message.includes("duplicate") ? "Unit number already exists" : message }
+    if (err instanceof Error && /unique|duplicate/i.test(err.message)) {
+      return { ok: false, error: "Unit number already exists" }
+    }
+    return actionError(err, "Failed to save trailer")
   }
 }
 

@@ -247,21 +247,21 @@ export default function PDFPageViewer({
 
               {/* Resize handle - right edge */}
               <div
-                className="absolute top-0 right-0 w-2 h-full cursor-ew-resize opacity-0 group-hover:opacity-100 bg-orange/50 hover:bg-orange"
+                className="absolute top-0 right-0 w-2 h-full cursor-ew-resize opacity-0 group-hover:opacity-100 bg-orange/50 hover:bg-orange-600"
                 onMouseDown={(e) => handleFieldMouseDown(e, field, 'resize-right')}
                 title="Drag to resize width"
               />
 
               {/* Resize handle - bottom edge */}
               <div
-                className="absolute bottom-0 left-0 w-full h-2 cursor-ns-resize opacity-0 group-hover:opacity-100 bg-orange/50 hover:bg-orange"
+                className="absolute bottom-0 left-0 w-full h-2 cursor-ns-resize opacity-0 group-hover:opacity-100 bg-orange/50 hover:bg-orange-600"
                 onMouseDown={(e) => handleFieldMouseDown(e, field, 'resize-bottom')}
                 title="Drag to resize height"
               />
 
               {/* Resize handle - corner */}
               <div
-                className="absolute bottom-0 right-0 w-3 h-3 cursor-nwse-resize opacity-0 group-hover:opacity-100 bg-orange hover:bg-orange-600 rounded-tl"
+                className="absolute bottom-0 right-0 w-3 h-3 cursor-nwse-resize opacity-0 group-hover:opacity-100 bg-orange-600 hover:bg-orange-500 rounded-tl"
                 onMouseDown={(e) => handleFieldMouseDown(e, field, 'resize-corner')}
                 title="Drag to resize"
               />

@@ -18,7 +18,6 @@ export const CONTENT_WIDTH = PAGE_WIDTH - MARGIN_LEFT - MARGIN_RIGHT
 export const NAVY = rgb(0.118, 0.227, 0.373) // #1e3a5f
 export const BLACK = rgb(0, 0, 0)
 export const GRAY = rgb(0.4, 0.4, 0.4)
-export const LIGHT_GRAY = rgb(0.95, 0.95, 0.95)
 export const WHITE = rgb(1, 1, 1)
 export const FIELD_BG = rgb(1, 1, 0.95) // Light yellow for form fields
 export const REQUIRED_FIELD_BG = rgb(1, 0.98, 0.9) // Light orange for required fields
@@ -33,10 +32,8 @@ export const FONT_SMALL = 9
 export const FONT_TINY = 8
 
 // Line heights - increased for better visibility
-export const LINE_HEIGHT = 16
 export const FIELD_HEIGHT = 20
 export const CHECKBOX_SIZE = 14
-export const TABLE_ROW_HEIGHT = 22
 
 const WRAP_LINE_GAP = 2
 
@@ -272,169 +269,6 @@ export function drawCheckbox(
   }
   
   return checkbox
-}
-
-/**
- * Draw a Yes/No checkbox group
- */
-export function drawYesNoCheckboxes(
-  page: PDFPage,
-  ctx: PDFContext,
-  fieldBaseName: string,
-  label: string,
-  x: number,
-  y: number
-): { yes: PDFCheckBox; no: PDFCheckBox } {
-  page.drawText(label, {
-    x: x,
-    y: y + 2,
-    size: FONT_LABEL,
-    font: ctx.font,
-    color: BLACK,
-  })
-  
-  const labelWidth = ctx.font.widthOfTextAtSize(label, FONT_LABEL) + 10
-  
-  // Yes checkbox
-  const yes = ctx.form.createCheckBox(`${fieldBaseName}_yes`)
-  yes.addToPage(page, {
-    x: x + labelWidth,
-    y: y,
-    width: CHECKBOX_SIZE,
-    height: CHECKBOX_SIZE,
-    borderWidth: 1,
-    backgroundColor: WHITE,
-  })
-  page.drawText("Yes", {
-    x: x + labelWidth + CHECKBOX_SIZE + 3,
-    y: y + 2,
-    size: FONT_LABEL,
-    font: ctx.font,
-    color: BLACK,
-  })
-  
-  // No checkbox
-  const no = ctx.form.createCheckBox(`${fieldBaseName}_no`)
-  no.addToPage(page, {
-    x: x + labelWidth + 50,
-    y: y,
-    width: CHECKBOX_SIZE,
-    height: CHECKBOX_SIZE,
-    borderWidth: 1,
-    backgroundColor: WHITE,
-  })
-  page.drawText("No", {
-    x: x + labelWidth + 50 + CHECKBOX_SIZE + 3,
-    y: y + 2,
-    size: FONT_LABEL,
-    font: ctx.font,
-    color: BLACK,
-  })
-  
-  return { yes, no }
-}
-
-/**
- * Draw a table header row
- */
-export function drawTableHeader(
-  page: PDFPage,
-  ctx: PDFContext,
-  columns: { text: string; width: number }[],
-  x: number,
-  y: number,
-  rowHeight: number = 20
-): number {
-  // Background
-  const totalWidth = columns.reduce((sum, col) => sum + col.width, 0)
-  page.drawRectangle({
-    x: x,
-    y: y - rowHeight + 4,
-    width: totalWidth,
-    height: rowHeight,
-    color: NAVY,
-  })
-  
-  // Column headers
-  let currentX = x
-  columns.forEach((col, index) => {
-    page.drawText(col.text, {
-      x: currentX + 3,
-      y: y - rowHeight + 8,
-      size: FONT_SMALL,
-      font: ctx.fontBold,
-      color: WHITE,
-    })
-    
-    // Vertical line (except last)
-    if (index < columns.length - 1) {
-      page.drawLine({
-        start: { x: currentX + col.width, y: y + 4 },
-        end: { x: currentX + col.width, y: y - rowHeight + 4 },
-        thickness: 0.5,
-        color: WHITE,
-      })
-    }
-    
-    currentX += col.width
-  })
-  
-  return y - rowHeight
-}
-
-/**
- * Draw a table row with fields
- */
-export function drawTableRowWithFields(
-  page: PDFPage,
-  ctx: PDFContext,
-  fieldPrefix: string,
-  columns: { fieldName: string; width: number }[],
-  x: number,
-  y: number,
-  rowHeight: number = FIELD_HEIGHT
-): number {
-  const totalWidth = columns.reduce((sum, col) => sum + col.width, 0)
-  
-  // Border
-  page.drawRectangle({
-    x: x,
-    y: y - rowHeight,
-    width: totalWidth,
-    height: rowHeight,
-    borderWidth: 0.5,
-    borderColor: GRAY,
-    color: WHITE,
-  })
-  
-  // Fields
-  let currentX = x
-  columns.forEach((col, index) => {
-    const field = ctx.form.createTextField(`${fieldPrefix}_${col.fieldName}`)
-    field.addToPage(page, {
-      x: currentX + 1,
-      y: y - rowHeight + 1,
-      width: col.width - 2,
-      height: rowHeight - 2,
-      borderWidth: 0,
-      backgroundColor: FIELD_BG,
-    })
-    field.setFontSize(FONT_SMALL)
-    
-    // Vertical line (except last)
-    if (index < columns.length - 1) {
-      page.drawLine({
-        start: { x: currentX + col.width, y: y },
-        end: { x: currentX + col.width, y: y - rowHeight },
-        thickness: 0.5,
-        color: GRAY,
-      })
-    }
-    
-    currentX += col.width
-  })
-  
-  return y - rowHeight
 }
 
 /**
@@ -725,40 +559,4 @@ export function drawText(
   })
 }
 
-/**
- * Draw a multi-line text field (text area)
- */
-export function drawTextArea(
-  page: PDFPage,
-  ctx: PDFContext,
-  fieldName: string,
-  label: string,
-  x: number,
-  y: number,
-  width: number,
-  height: number
-): PDFTextField {
-  // Label above
-  page.drawText(label, {
-    x: x,
-    y: y + height + 3,
-    size: FONT_SMALL,
-    font: ctx.font,
-    color: GRAY,
-  })
-  
-  const field = ctx.form.createTextField(fieldName)
-  field.enableMultiline()
-  field.addToPage(page, {
-    x: x,
-    y: y,
-    width: width,
-    height: height,
-    borderWidth: 1,
-    backgroundColor: FIELD_BG,
-  })
-  field.setFontSize(FONT_SMALL)
-  
-  return field
-}
 

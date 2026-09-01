@@ -1,0 +1,177 @@
+/**
+ * Per-tenant PWA manifest (Phase 7 branding, isolation suite): the Hub's
+ * manifest.webmanifest was a single static file for every tenant, so
+ * carrier_settings.branding.accent — already wired into invoice/settlement/
+ * IFTA PDFs (see pdf-branding.test.ts) — never reached the installed-app
+ * theme color. Pins that the manifest reads each signed-in owner's OWN
+ * carrier's accent (never another tenant's) and falls back to the neutral
+ * default when signed out, unset, or scoped to no carrier (platform_admin).
+ *
+ * Lives at /api/hub/manifest, not /hub/manifest.webmanifest — the latter
+ * would fall inside src/proxy.ts's `/hub/:path*` auth gate and 307-redirect
+ * every unauthenticated manifest fetch to /hub/login (verified empirically:
+ * Next's file-convention manifest.ts route is not exempt from route-segment
+ * middleware the way robots.ts/sitemap.ts happen to be at the app root).
+ */
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
+
+vi.mock("../session", () => ({ getHubUser: vi.fn() }))
+vi.mock("../settings", () => ({ getCarrierSettings: vi.fn() }))
+
+import { getHubUser } from "../session"
+import { getCarrierSettings } from "../settings"
+import {
+  buildManifest as manifest,
+  DEFAULT_THEME_COLOR,
+  resolveManifestThemeColor,
+} from "@/app/api/hub/manifest/route"
+import { PRODUCT } from "../product"
+import { LOADOFF_BRAND } from "../brand"
+
+const getHubUserMock = vi.mocked(getHubUser)
+const getCarrierSettingsMock = vi.mocked(getCarrierSettings)
+
+// Imported, not re-typed: the point of these cases is the fallback path, not
+// one particular hex, and a literal here would silently stop matching the
+// shipped default the next time the brand colour moves.
+const DEFAULT = DEFAULT_THEME_COLOR
+const TENANT_A = "11111111-1111-1111-1111-111111111111"
+const TENANT_B = "22222222-2222-2222-2222-222222222222"
+
+function settingsWithAccent(accent: string | null) {
+  return {
+    branding: { accent },
+  } as Awaited<ReturnType<typeof getCarrierSettings>>
+}
+
+beforeEach(() => {
+  getHubUserMock.mockReset()
+  getCarrierSettingsMock.mockReset()
+})
+
+describe("resolveManifestThemeColor", () => {
+  it("falls back to the product's launch colour, not the website's", async () => {
+    // The splash screen an install opens on. It read the marketing navy for a
+    // while, so tapping the indigo LoadOff icon flashed Thind Transport's
+    // colour before the app painted.
+    expect(DEFAULT_THEME_COLOR).toBe(LOADOFF_BRAND.launch)
+  })
+
+  it("defaults when signed out", async () => {
+    getHubUserMock.mockResolvedValue(null)
+    expect(await resolveManifestThemeColor()).toBe(DEFAULT)
+    expect(getCarrierSettingsMock).not.toHaveBeenCalled()
+  })
+
+  it("defaults for a carrier-less session (platform_admin)", async () => {
+    getHubUserMock.mockResolvedValue({
+      id: "u1", name: "Admin", email: "a@a.com", role: "platform_admin", carrierId: "",
+    })
+    expect(await resolveManifestThemeColor()).toBe(DEFAULT)
+    expect(getCarrierSettingsMock).not.toHaveBeenCalled()
+  })
+
+  it("defaults when the tenant has no accent set", async () => {
+    getHubUserMock.mockResolvedValue({
+      id: "u1", name: "Priya", email: "p@a.com", role: "owner", carrierId: TENANT_A,
+    })
+    getCarrierSettingsMock.mockResolvedValue(settingsWithAccent(null))
+    expect(await resolveManifestThemeColor()).toBe(DEFAULT)
+  })
+
+  it("rejects a malformed stored accent rather than trusting it verbatim", async () => {
+    getHubUserMock.mockResolvedValue({
+      id: "u1", name: "Priya", email: "p@a.com", role: "owner", carrierId: TENANT_A,
+    })
+    getCarrierSettingsMock.mockResolvedValue(settingsWithAccent("javascript:alert(1)"))
+    expect(await resolveManifestThemeColor()).toBe(DEFAULT)
+  })
+
+  it("uses tenant A's own accent, scoped to tenant A's carrierId only", async () => {
+    getHubUserMock.mockResolvedValue({
+      id: "u1", name: "Priya", email: "p@a.com", role: "owner", carrierId: TENANT_A,
+    })
+    getCarrierSettingsMock.mockResolvedValue(settingsWithAccent("#2563EB"))
+    expect(await resolveManifestThemeColor()).toBe("#2563EB")
+    expect(getCarrierSettingsMock).toHaveBeenCalledWith(TENANT_A)
+  })
+
+  it("never leaks tenant A's accent into tenant B's manifest", async () => {
+    getHubUserMock.mockResolvedValue({
+      id: "u1", name: "Priya", email: "p@a.com", role: "owner", carrierId: TENANT_A,
+    })
+    getCarrierSettingsMock.mockResolvedValue(settingsWithAccent("#2563EB"))
+    expect(await resolveManifestThemeColor()).toBe("#2563EB")
+
+    getHubUserMock.mockResolvedValue({
+      id: "u2", name: "Sam", email: "s@b.com", role: "owner", carrierId: TENANT_B,
+    })
+    getCarrierSettingsMock.mockResolvedValue(settingsWithAccent(null))
+    expect(await resolveManifestThemeColor()).toBe(DEFAULT)
+    expect(getCarrierSettingsMock).toHaveBeenLastCalledWith(TENANT_B)
+  })
+})
+
+describe("manifest()", () => {
+  it("carries the resolved theme color into both color fields, product identity unchanged", async () => {
+    getHubUserMock.mockResolvedValue({
+      id: "u1", name: "Priya", email: "p@a.com", role: "owner", carrierId: TENANT_A,
+    })
+    getCarrierSettingsMock.mockResolvedValue(settingsWithAccent("#2563EB"))
+
+    const result = await manifest()
+    expect(result.theme_color).toBe("#2563EB")
+    expect(result.background_color).toBe("#2563EB")
+    expect(result.name).toBe(PRODUCT.name)
+    expect(result.short_name).toBe(PRODUCT.shortName)
+    expect(result.scope).toBe("/hub")
+    expect(result.icons?.length).toBe(3)
+  })
+})
+
+/**
+ * Where the app claims to live. A manifest is only applied to a document
+ * inside its `scope`, so these three fields decide whether Add to Home Screen
+ * yields the app or falls back to the page's title, favicon and URL — i.e. the
+ * website. They now depend on which origin is answering.
+ */
+describe("manifest scope and start_url per origin", () => {
+  const IPHONE = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) Safari/604.1"
+  const ANDROID = "Mozilla/5.0 (Linux; Android 14; Pixel 8) Chrome/125.0.0.0 Mobile Safari/537.36"
+
+  beforeEach(() => {
+    getHubUserMock.mockResolvedValue(null)
+  })
+  afterEach(() => vi.unstubAllEnvs())
+
+  it("owns the whole origin — on the app's own domain, for every platform", async () => {
+    // The point of the split: no per-platform branching, because there is no
+    // marketing page on this origin to be out of scope of.
+    vi.stubEnv("NEXT_PUBLIC_APP_HOST", "app.loadoff.com")
+    for (const ua of [IPHONE, ANDROID]) {
+      const m = await manifest(ua, "app.loadoff.com")
+      expect(m.scope, ua).toBe("/")
+      // start_url stays /hub: that is where the app lives on either origin,
+      // and scope "/" covers it plus the root redirect that leads there.
+      expect(m.start_url, ua).toBe("/hub")
+      expect(m.id, ua).toBe("/hub")
+    }
+  })
+
+  it("keeps the transitional shape on the shared marketing origin", async () => {
+    vi.stubEnv("NEXT_PUBLIC_APP_HOST", "app.loadoff.com")
+    // iOS needs the widened scope to reach /app and /loadoff; Android keeps the
+    // narrow one so Chrome cannot capture marketing links into the app window.
+    expect((await manifest(IPHONE, "thindtransport.com")).scope).toBe("/")
+    expect((await manifest(ANDROID, "thindtransport.com")).scope).toBe("/hub")
+    expect((await manifest(IPHONE, "thindtransport.com")).start_url).toBe("/hub")
+  })
+
+  it("is inert until an app host is configured", async () => {
+    // Shipping the split before a domain exists must change nothing.
+    vi.stubEnv("NEXT_PUBLIC_APP_HOST", "")
+    const m = await manifest(IPHONE, "app.loadoff.com")
+    expect(m.scope).toBe("/")  // iOS still gets the widened transitional scope
+    expect(m.start_url).toBe("/hub")
+  })
+})

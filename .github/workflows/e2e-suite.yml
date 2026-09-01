@@ -1,0 +1,291 @@
+# E2E smokes in CI (AGENT_TASKS Wave 1, Task 4).
+#
+# 50+ scripts/e2e-*-smoke.mjs cover dispatch, invoices, settlements, IFTA,
+# the driver PWA, the portal and tenant isolation — and until this workflow
+# they ran only when an agent remembered to run them. The most expensive
+# money paths in the app were guarded by a habit.
+#
+# Two jobs:
+#   unit  — vitest + token-lint on every push and PR, WITH a Postgres service:
+#           portal-isolation, driver-file-isolation and the cross-tenant
+#           harness hard-fail any CI run that skipped their live proofs, so a
+#           database is part of the fast signal (≈30–60s), not an optional
+#           extra. Without it every push to main was red for days.
+#   e2e   — full rig: Postgres service container, migrate, seed, production
+#           build, server, then scripts/e2e-run-all.mjs. Failure artifacts
+#           (screenshots, per-script logs, server log) upload so a red run is
+#           diagnosable without re-running locally. Nightly, on-demand, and on
+#           PRs — never on a push to main; see the `if:` on the job.
+#
+# The Postgres service below is hubapp/hubapp/hubdb. That is NOT the
+# hauldesk/hauldesk/hauldesk of docker-compose.yml — copying POSTGRES_URL from
+# here into a local shell connects to nothing. Use docker-compose.yml's own
+# header for the local URL.
+#
+# Known constraint: next/font fetches Barlow Condensed + Source Sans 3 from
+# fonts.googleapis.com AT BUILD TIME. GitHub-hosted runners have that egress;
+# a self-hosted or egress-restricted runner will fail the build for a reason
+# unrelated to the change under test. If that starts happening, self-host the
+# two font families under src/app/fonts/ and switch to next/font/local.
+#
+# This workflow deliberately does not touch the drain/prune workflows — they
+# publish history; this one only judges it.
+
+name: E2E smoke suite
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  schedule:
+    - cron: "40 3 * * *" # nightly full rig; :40 is clear of :15/:17/:20/:43/:47
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: e2e-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  unit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: hubapp
+          POSTGRES_PASSWORD: hubpass
+          POSTGRES_DB: hubdb
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U hubapp -d hubdb"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      POSTGRES_URL: postgres://hubapp:hubpass@localhost:5432/hubdb
+      # CI-only values; nothing here is a real secret and none of it can
+      # reach production. CREDENTIALS_KEY must be 32+ chars for the vault.
+      NEXTAUTH_SECRET: ci-only-nextauth-secret-not-production
+      CREDENTIALS_KEY: ci-only-credentials-key-32-chars-min
+      CRON_SECRET: ci-only-cron-secret
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install dependencies
+        # --ignore-scripts, aligned with the e2e job below and
+        # drain-integrator.yml. For the record: plain `npm ci` was NOT what
+        # broke this job (the 2026-08-08 red's own step log shows npm ci
+        # green and "Unit tests" failing — a test bug, fixed in c15ab6fb).
+        # But plain npm ci runs canvas's postinstall, which downloads a
+        # prebuilt binary and FALLS BACK TO A SOURCE BUILD on any download
+        # hiccup — and that build dies on ubuntu-latest (pangocairo/giflib
+        # headers absent; nothing in src/ imports canvas). Skipping scripts
+        # closes that flake path and also covers puppeteer's ~130MB browser
+        # download, which the old PUPPETEER_SKIP_DOWNLOAD env handled.
+        # bcrypt + sharp are the native modules this job actually loads
+        # (seed:demo hashes passwords with bcrypt; sharp backs image paths).
+        run: |
+          npm ci --ignore-scripts
+          npm rebuild bcrypt sharp
+      - name: Migrate + seed demo data
+        run: |
+          npm run db:migrate
+          npm run seed:demo
+      - name: Unit tests
+        run: npm test
+      - name: Token lint (no raw hex/px in redesigned marketing scope)
+        run: node scripts/token-lint.mjs
+      - name: Cursor agent environment is buildable
+        # Nothing else builds .cursor/Dockerfile, so a broken agent image is
+        # invisible until someone opens Cursor. It shipped without a FROM line
+        # once; this is the cheap static check that would have caught it.
+        run: node scripts/cursor-env-check.mjs
+
+  e2e:
+    permissions:
+      contents: read
+      issues: write # the red-rig issue below is the whole point of this job
+    # The 50+ script rig is a nightly / on-demand job, not a per-push gate.
+    # main is pushed hourly by the integrator drain; a 40-minute suite on that
+    # path queues runs behind each other and mails the owner on every overrun.
+    if: github.event_name != 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: hubapp
+          POSTGRES_PASSWORD: hubpass
+          POSTGRES_DB: hubdb
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U hubapp -d hubdb"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      POSTGRES_URL: postgres://hubapp:hubpass@localhost:5432/hubdb
+      NEXTAUTH_URL: http://localhost:3000
+      # CI-only values; nothing here is a real secret and none of it can
+      # reach production. CREDENTIALS_KEY must be 32+ chars for the vault.
+      NEXTAUTH_SECRET: ci-only-nextauth-secret-not-production
+      CREDENTIALS_KEY: ci-only-credentials-key-32-chars-min
+      CRON_SECRET: ci-only-cron-secret
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Cache Next build cache
+        uses: actions/cache@v4
+        with:
+          path: .next/cache
+          # run_id, not sha: a per-sha key writes a new multi-hundred-MB entry
+          # every run and evicts the entries restore-keys needs out of the
+          # 10 GB quota. Both are unique per run; only this one is cheap.
+          key: next-cache-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-${{ github.run_id }}
+          restore-keys: |
+            next-cache-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-
+      - name: Cache Puppeteer browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/puppeteer
+          key: puppeteer-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+      - name: Install dependencies
+        # --ignore-scripts skips the `canvas` source build (pangocairo/giflib headers
+        # are absent on ubuntu-latest; nothing in src/ imports canvas) — same reasoning
+        # as drain-integrator.yml. bcrypt and sharp are the native modules the app
+        # actually loads. Chrome is fetched explicitly so the cache above pays for it.
+        run: |
+          npm ci --ignore-scripts
+          npm rebuild bcrypt sharp
+          npx puppeteer browsers install chrome
+      - name: Migrate + seed demo data
+        run: |
+          npm run db:migrate
+          npm run seed:demo
+      - name: Toolbox frame promises still hold (embed:verify)
+        # Exit 1 = a framed external now sends blocking headers — that ships a
+        # grey refusal box, so it fails the run. Exit 2 = nothing reachable
+        # (runner egress problem, not a header regression) — tolerated.
+        run: node scripts/verify-frame-headers.mjs || { c=$?; [ "$c" -eq 2 ] && echo "::warning::embed:verify skipped — no egress from runner"; [ "$c" -eq 2 ]; }
+      - name: Production build
+        run: npm run build
+      - name: Connections check
+        # Warn-only by design (scripts/connections-check.mjs header): absent
+        # keys are choices, not failures. It was gating the suite as a hard step.
+        continue-on-error: true
+        run: npm run connections:check
+      - name: Start server
+        run: |
+          npm run start > server.log 2>&1 &
+          for i in $(seq 1 30); do
+            curl -sf -o /dev/null http://localhost:3000/ && break
+            sleep 2
+          done
+          curl -sf -o /dev/null http://localhost:3000/ || { echo "server never came up"; tail -50 server.log; exit 1; }
+      - name: E2E smoke suite
+        env:
+          E2E_TIMEOUT_MS: "180000" # default 420000; a hung smoke should cost 3 min, not 7
+        # Tee'd so the alerting step below can name the exact smokes that
+        # failed. pipefail keeps the step's own red status honest through the
+        # pipe — without it `tee` returns 0 and a failing suite reads as green.
+        run: |
+          set -o pipefail
+          node scripts/e2e-run-all.mjs 2>&1 | tee e2e-summary.log
+      - name: Interaction battery
+        run: node scripts/e2e-interaction-battery.mjs
+
+      # ---- Make red impossible to ignore -------------------------------
+      # This rig has rotted twice now: six nights unnoticed in August, then
+      # again through late August, because a failing SCHEDULED run is a grey
+      # tick on a page nobody opens. A gate nobody sees is not a gate.
+      #
+      # One issue, opened the first red night and UPDATED (never duplicated) on
+      # every later one, closed automatically when the rig goes green — so the
+      # issue existing always means "the rig is red right now", and a stream of
+      # nightly duplicates never becomes its own kind of noise.
+      - name: Open or update the red-rig issue
+        if: failure() && github.event_name == 'schedule'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require("fs")
+            const TITLE = "Nightly e2e rig is red"
+            let summary = ""
+            try { summary = fs.readFileSync("e2e-summary.log", "utf8") } catch {}
+            const failed = (summary.match(/^Failed: .*$/m) || [])[0] ?? "Failed: (see the run log)"
+            const tally = (summary.match(/^\d+\/\d+ passed[^\n]*$/m) || [])[0] ?? ""
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`
+            const body = [
+              `The nightly end-to-end rig failed on \`${context.sha.slice(0, 8)}\`.`,
+              "",
+              tally ? "```\n" + tally + "\n" + failed + "\n```" : "```\n" + failed + "\n```",
+              "",
+              `[Run log and failure artifacts](${runUrl}) — screenshots for each failing smoke are in the \`e2e-failure-${context.runId}\` artifact.`,
+              "",
+              "This issue updates itself each night the rig stays red, and closes itself when it goes green.",
+            ].join("\n")
+            const { data: open } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner, repo: context.repo.repo, state: "open", per_page: 100,
+            })
+            const existing = open.find((i) => i.title === TITLE && !i.pull_request)
+            if (existing) {
+              await github.rest.issues.update({
+                owner: context.repo.owner, repo: context.repo.repo,
+                issue_number: existing.number, body,
+              })
+              core.notice(`Updated #${existing.number} — ${failed}`)
+            } else {
+              const { data: made } = await github.rest.issues.create({
+                owner: context.repo.owner, repo: context.repo.repo, title: TITLE, body,
+              })
+              core.notice(`Opened #${made.number} — ${failed}`)
+            }
+
+      - name: Close the red-rig issue
+        if: success() && github.event_name == 'schedule'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const TITLE = "Nightly e2e rig is red"
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`
+            const { data: open } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner, repo: context.repo.repo, state: "open", per_page: 100,
+            })
+            const existing = open.find((i) => i.title === TITLE && !i.pull_request)
+            if (!existing) return
+            await github.rest.issues.createComment({
+              owner: context.repo.owner, repo: context.repo.repo, issue_number: existing.number,
+              body: `Green again — [run](${runUrl}) on \`${context.sha.slice(0, 8)}\` passed the full rig.`,
+            })
+            await github.rest.issues.update({
+              owner: context.repo.owner, repo: context.repo.repo,
+              issue_number: existing.number, state: "closed", state_reason: "completed",
+            })
+            core.notice(`Closed #${existing.number}`)
+
+      - name: Upload failure artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-failure-${{ github.run_id }}
+          retention-days: 7
+          if-no-files-found: ignore
+          path: |
+            e2e-shots*/
+            e2e-sweep/
+            server.log
+            e2e-summary.log

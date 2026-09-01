@@ -3,6 +3,7 @@
  * Pure (no DB, no network) so it is unit-testable; the LLM-backed parser is a
  * Phase 6 drop-in behind the same output shape.
  */
+import { dollarsToCents } from "./types"
 
 export type Confidence = "high" | "medium" | "low"
 
@@ -37,7 +38,7 @@ const CITY_STATE = /([A-Za-z][A-Za-z .'-]{1,30}),\s*([A-Z]{2})\b(?:\s+(\d{5}))?/
 const DATE_RE = /(\d{1,2}\/\d{1,2}\/\d{2,4}|\d{4}-\d{2}-\d{2})/
 
 function moneyToCents(raw: string): number {
-  return Math.round(Number(raw.replace(/,/g, "")) * 100)
+  return dollarsToCents(raw)
 }
 
 /** Strip connector words a loose city regex can swallow ("to Boise" → "Boise"). */

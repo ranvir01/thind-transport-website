@@ -15,16 +15,22 @@ import {
   Route,
   Truck,
 } from "lucide-react"
-import { COMPANY_INFO, PAY_RATES } from "@/lib/constants"
+import { COMPANY_INFO, PAY_RATES, STATS } from "@/lib/constants"
 import { RouteMapVisualization } from "@/components/features/RouteMapVisualization"
 import { FAQAccordion } from "@/components/shared/FAQAccordion"
 import { PageBreadcrumb } from "@/components/shared/PageBreadcrumb"
 import { PageHero } from "@/components/shared/PageHero"
 import { MARKET_DATA } from "@/lib/market-data"
+import { AvailableTrucksStrip } from "@/components/features/AvailableTrucksStrip"
+import { RelatedLinks } from "@/components/shared/RelatedLinks"
+import { driverLinks } from "@/components/shared/link-sets"
 
 export const metadata: Metadata = {
-  title: `Routes & Lanes | ${COMPANY_INFO.name}`,
-  description: `Explore the types of lanes ${COMPANY_INFO.name} discusses with company drivers and owner operators, from local and regional work to over-the-road opportunities.`,
+  // The root layout appends "| Thind Transport" via its title template — a
+  // second one here shipped it twice in the SERP.
+  title: "Routes & lanes — local, regional and OTR",
+  description: `The lanes ${COMPANY_INFO.name} actually runs out of ${COMPANY_INFO.location}: local (home daily), regional (home weekly) and OTR, at ${PAY_RATES.companyDriver.otr.perMile}/mile whichever you pick. Flatbed, reefer and dry van across ${STATS.statesCovered} states.`,
+  alternates: { canonical: "/routes" },
 }
 
 const jsonLd = {
@@ -113,7 +119,7 @@ export default function RoutesPage() {
 
         <PageHero
           image="/images/generated/hero-cascadia-highway.webp"
-          imageAlt="Thind Transport truck running a Pacific Northwest highway lane"
+          imageAlt="Illustration of a tractor-trailer on a Pacific Northwest highway"
           eyebrow="CDL-A Route Overview"
           title={
             <>
@@ -129,6 +135,10 @@ export default function RoutesPage() {
             <span className="rounded-lg border border-white/15 bg-white/10 px-4 py-2">Kent, WA base</span>
           </div>
         </PageHero>
+
+        {/* Real posted capacity, moved here when /load-board (five invented
+            loads) was deleted. Renders nothing when nothing is posted. */}
+        <AvailableTrucksStrip />
 
         <section className="bg-[#101926] py-16">
           <div className="container">
@@ -164,7 +174,7 @@ export default function RoutesPage() {
         <section className="bg-white py-16">
           <div className="container">
             <div className="mb-10 text-center">
-              <Badge className="mb-4 border-0 bg-[#001F3F] px-4 py-2 text-xs font-bold text-white">
+              <Badge className="mb-4 border-0 bg-[#17181B] px-4 py-2 text-xs font-bold text-white">
                 Market Snapshot
               </Badge>
               <h2 className="mb-3 text-3xl font-black text-navy md:text-4xl">
@@ -214,7 +224,7 @@ export default function RoutesPage() {
           <div className="container">
             <div className="mx-auto max-w-4xl">
               <div className="mb-10 text-center">
-                <Badge className="mb-4 border-0 bg-[#001F3F] px-4 py-2 text-xs font-bold text-white">
+                <Badge className="mb-4 border-0 bg-[#17181B] px-4 py-2 text-xs font-bold text-white">
                   Frequently Asked Questions
                 </Badge>
                 <h2 className="mb-3 text-3xl font-black text-white md:text-4xl">
@@ -246,7 +256,7 @@ export default function RoutesPage() {
             <div className="mb-6 flex flex-col justify-center gap-4 sm:flex-row">
               <Button
                 size="lg"
-                className="bg-orange font-bold text-base text-white hover:bg-orange-600"
+                className="bg-orange-600 font-bold text-base text-white hover:bg-orange-600"
                 asChild
               >
                 <Link href="/apply">
@@ -285,6 +295,13 @@ export default function RoutesPage() {
           </div>
         </section>
       </div>
+
+      <RelatedLinks
+        tone="dark"
+        title="Plan the rest of it"
+        intro="The lanes are half the picture — here's the pay, the clock and the equipment."
+        links={driverLinks(["/routes"])}
+      />
     </>
   )
 }

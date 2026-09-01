@@ -79,7 +79,7 @@ export function EmploymentStep({ data, onChange, errors = {} }: EmploymentStepPr
             onClick={() => setExpandedIndex(expandedIndex === index ? null : index)}
           >
             <div className="flex items-center gap-3">
-              <span className="bg-orange-500 text-white rounded-full w-8 h-8 flex items-center justify-center font-semibold">
+              <span className="bg-orange-600 text-white rounded-full w-8 h-8 flex items-center justify-center font-semibold">
                 {index + 1}
               </span>
               <div>

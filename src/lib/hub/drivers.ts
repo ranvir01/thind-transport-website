@@ -1,5 +1,6 @@
 import { hubDbAvailable, query, queryOne } from "./db"
 import { fallbackDrivers } from "./sandbox-fallback"
+import { syncDefaultPayRules } from "./pay-rules-db"
 import type { Driver } from "./types"
 
 export async function listDrivers(carrierId: string): Promise<Driver[]> {
@@ -57,6 +58,13 @@ export async function createDriver(carrierId: string, input: DriverInput): Promi
       input.emergency_contact_name ?? null, input.emergency_contact_phone ?? null, input.notes ?? null,
     ]
   )
+  await syncDefaultPayRules(carrierId, rows[0].id, {
+    payType: input.pay_type,
+    payRate: input.pay_rate,
+    payLoadedMilesOnly: input.pay_loaded_miles_only ?? true,
+    escrowWeeklyCents: input.escrow_weekly_cents ?? 0,
+    insuranceWeeklyCents: input.insurance_weekly_cents ?? 0,
+  })
   return rows[0]
 }
 
@@ -79,6 +87,15 @@ export async function updateDriver(carrierId: string, id: string, input: DriverI
       input.emergency_contact_name ?? null, input.emergency_contact_phone ?? null, input.notes ?? null,
     ]
   )
+  if (rows[0]) {
+    await syncDefaultPayRules(carrierId, id, {
+      payType: input.pay_type,
+      payRate: input.pay_rate,
+      payLoadedMilesOnly: input.pay_loaded_miles_only ?? true,
+      escrowWeeklyCents: input.escrow_weekly_cents ?? 0,
+      insuranceWeeklyCents: input.insurance_weekly_cents ?? 0,
+    })
+  }
   return rows[0] ?? null
 }
 

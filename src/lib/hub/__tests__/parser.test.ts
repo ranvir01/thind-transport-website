@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest"
 import { parseRateCon } from "../parser"
+import { dollarsToCents } from "../types"
 
 const SAMPLE_RATE_CON = `PACIFIC CREST LOGISTICS  MC# 784512
 Rate Confirmation
@@ -58,5 +59,16 @@ describe("rate confirmation parser", () => {
     expect(sparse.stops[0]).toMatchObject({ type: "pickup", city: "Spokane", state: "WA" })
     expect(sparse.stops[1]).toMatchObject({ type: "delivery", city: "Boise", state: "ID" })
     expect(sparse.linehaulCents?.value).toBe(180000)
+  })
+
+  it("agrees with the shared dollarsToCents parser on a float-drift-prone amount", () => {
+    // 19.99 * 100 is 1998.9999999999998 in IEEE754 — the shared money parser
+    // guards this with a toPrecision(15) requantize before rounding. The rate-con
+    // parser used to do its own raw Number(x) * 100 and only got away with it
+    // because its MONEY regex caps input at exactly 2 decimals, so a half-cent
+    // tie (3+ decimals) could never reach it; now it just delegates.
+    const parsed = parseRateCon("Total: $19.99")
+    expect(parsed.totalCents?.value).toBe(1999)
+    expect(parsed.totalCents?.value).toBe(dollarsToCents("19.99"))
   })
 })

@@ -1,21 +1,51 @@
 import { requireOwner } from "@/lib/hub/session"
 import { listHubUsers } from "@/lib/hub/users"
-import { PageHeader } from "@/components/hub/ui"
+import { getCarrier, getCarrierSettings } from "@/lib/hub/settings"
+import { FLAG_REGISTRY, getCarrierFlagOverride } from "@/lib/hub/flags"
+import { PageHeader, sectionTitleCls } from "@/components/hub/ui"
 import { UserManager } from "@/components/hub/UserManager"
+import { CompanyProfilePanel } from "@/components/hub/CompanyProfilePanel"
+import { NotificationsPanel } from "@/components/hub/NotificationsPanel"
+import { NavModePanel } from "@/components/hub/NavModePanel"
 
 export const dynamic = "force-dynamic"
 
 export default async function UsersSettingsPage() {
   const owner = await requireOwner()
-  const users = await listHubUsers(owner.carrierId)
+  const [users, carrier, settings, navOverride] = await Promise.all([
+    listHubUsers(owner.carrierId),
+    getCarrier(owner.carrierId),
+    getCarrierSettings(owner.carrierId),
+    getCarrierFlagOverride("nav.small_carrier_mode", owner.carrierId),
+  ])
 
   return (
     <div>
       <PageHeader
-        title="Users"
-        subtitle="Who can sign in, and what they see. Owner only."
+        title="Company & users"
+        subtitle="Your company profile, alert emails, and who can sign in. Owner only."
       />
-      <UserManager users={users} selfId={owner.id} />
+      {carrier && (
+        <section className="mb-6">
+          <h2 className={`${sectionTitleCls} mb-3`}>Company profile</h2>
+          <CompanyProfilePanel carrier={carrier} />
+        </section>
+      )}
+      <section className="mb-6">
+        <h2 className={`${sectionTitleCls} mb-3`}>Navigation</h2>
+        <NavModePanel
+          override={navOverride}
+          codeDefault={FLAG_REGISTRY["nav.small_carrier_mode"].defaultValue}
+        />
+      </section>
+      <section className="mb-6">
+        <h2 className={`${sectionTitleCls} mb-3`}>Notifications</h2>
+        <NotificationsPanel officeEmail={settings.notifications.officeEmail} />
+      </section>
+      <section>
+        <h2 className={`${sectionTitleCls} mb-3`}>Users</h2>
+        <UserManager users={users} selfId={owner.id} />
+      </section>
     </div>
   )
 }

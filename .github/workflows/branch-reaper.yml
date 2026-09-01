@@ -1,0 +1,59 @@
+# Branch reaper — the fix for the branch pile no agent can clear itself.
+#
+# Sandboxed agent sessions get 403 on ref deletion (proxy guardrail, by
+# design), so 200+ dead claude/* branches accumulate and the integrator
+# re-triages them every cycle. GitHub Actions runs with repo write, so THIS
+# is where deletion belongs (2026-08 agent-team operating manual, §4.E).
+#
+# DRY-RUN BY DEFAULT: prints what it would delete, deletes nothing, until the
+# repository variable REAPER_ARMED is set to "true" — arming it is an owner
+# decision recorded in docs/ops/DECISIONS.md, approved once, mechanical after.
+#
+# Deletion policy (deliberately narrow):
+#   - only branches matching claude/* or cursor/*
+#   - only when the branch tip is fully contained in main (merged/absorbed)
+#   - never main, never the active integrator or lane branches
+# Un-merged stale branches are LISTED for the meta-governor, never deleted.
+name: branch-reaper
+
+on:
+  schedule:
+    - cron: "0 6 * * 0" # Sunday 06:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  reap:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Reap merged agent branches
+        env:
+          ARMED: ${{ vars.REAPER_ARMED }}
+        run: |
+          set -euo pipefail
+          KEEP='^(main|claude/hauldesk-project-setup-l1luoo|claude/lane-marketing|claude/lane-office|claude/lane-tests|claude/lane-integrations)$'
+          git fetch --prune origin '+refs/heads/*:refs/remotes/origin/*'
+          deleted=0; listed=0
+          for ref in $(git for-each-ref --format='%(refname:short)' 'refs/remotes/origin/claude/*' 'refs/remotes/origin/cursor/*'); do
+            branch="${ref#origin/}"
+            if echo "$branch" | grep -qE "$KEEP"; then continue; fi
+            if git merge-base --is-ancestor "$ref" origin/main 2>/dev/null; then
+              if [ "${ARMED:-false}" = "true" ]; then
+                echo "DELETE (merged into main): $branch"
+                git push origin --delete "$branch" || echo "  ! delete failed for $branch"
+                deleted=$((deleted+1))
+              else
+                echo "DRY-RUN would delete (merged into main): $branch"
+                deleted=$((deleted+1))
+              fi
+            else
+              listed=$((listed+1))
+            fi
+          done
+          echo ""
+          echo "Summary: $deleted merged branch(es) $([ "${ARMED:-false}" = "true" ] && echo deleted || echo 'would be deleted (dry-run)'), $listed unmerged branch(es) left for meta-governor triage."

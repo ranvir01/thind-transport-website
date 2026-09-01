@@ -1,9 +1,7 @@
-"use client"
-
-import { motion } from "framer-motion"
 import Image from "next/image"
 import { Phone, Quote, ShieldCheck } from "lucide-react"
 import { COMPANY_INFO } from "@/lib/constants"
+import { Reveal } from "@/components/ui/Reveal"
 
 const yearsRunning = new Date().getFullYear() - COMPANY_INFO.founded
 
@@ -18,13 +16,7 @@ export const ThindPromise = () => {
           {/* Home-base photo of the operation. Honest real imagery of the fleet/yard.
               PLACEHOLDER: to feature a real photo of the owner, swap the src below
               for a portrait of Sukhdev Thind and update the alt + caption. */}
-          <motion.div
-            initial={{ opacity: 0, y: 24 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-            className="relative mx-auto w-full max-w-sm md:max-w-none"
-          >
+          <Reveal className="relative mx-auto w-full max-w-sm md:max-w-none">
             <div className="relative aspect-[4/5] overflow-hidden rounded-fleet-lg border border-steel-700/70 shadow-2xl">
               <Image
                 src="/images/generated/yard-morning-kent.webp"
@@ -40,9 +32,12 @@ export const ThindPromise = () => {
                 <p className="mb-1 font-display text-xs uppercase tracking-[0.25em] text-orange">
                   Home base
                 </p>
-                <h3 className="font-display text-2xl font-bold text-white">{COMPANY_INFO.location}</h3>
+                <h3 className="font-display text-2xl font-bold text-white">
+                  {COMPANY_INFO.location}
+                </h3>
                 <p className="text-sm text-steel-300">
-                  Family-run since {COMPANY_INFO.founded} · {yearsRunning} years on the road
+                  Family-run since {COMPANY_INFO.founded} · {yearsRunning} years
+                  on the road
                 </p>
               </div>
             </div>
@@ -51,51 +46,60 @@ export const ThindPromise = () => {
             <div className="absolute -bottom-5 -right-3 hidden items-center gap-2 rounded-fleet border border-orange/40 bg-navy-800/95 px-4 py-3 shadow-cta backdrop-blur sm:flex">
               <ShieldCheck className="h-5 w-5 text-orange" />
               <div className="leading-tight">
-                <p className="font-display text-lg font-bold text-white">{yearsRunning} yrs</p>
-                <p className="text-[11px] uppercase tracking-wider text-steel-400">family-run</p>
+                <p className="font-display text-lg font-bold text-white">
+                  {yearsRunning} yrs
+                </p>
+                <p className="text-[11px] uppercase tracking-wider text-steel-400">
+                  family-run
+                </p>
               </div>
             </div>
 
-            <div className="absolute -top-5 -left-5 -z-10 h-24 w-24 rounded-full bg-orange-500/20 blur-2xl" />
-          </motion.div>
+            <div className="absolute -top-5 -left-5 -z-10 h-24 w-24 rounded-full bg-orange-600/20 blur-2xl" />
+          </Reveal>
 
           {/* Story */}
-          <motion.div
-            initial={{ opacity: 0, y: 24 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6, delay: 0.1 }}
-            className="space-y-7"
-          >
+          <Reveal className="space-y-7" index={1}>
             <span className="fleet-badge">A note from the owner</span>
 
             <h2 className="text-white">
-              We&apos;re not a call center. <span className="text-gradient-accent">We&apos;re your people.</span>
+              We&apos;re not a call center.{" "}
+              <span className="text-gradient-accent">
+                We&apos;re your people.
+              </span>
             </h2>
 
             <div className="relative space-y-5 text-lg leading-relaxed text-steel-300">
               <Quote className="absolute -left-1 -top-3 h-8 w-8 text-orange/20" />
               <p className="pl-5">
-                &ldquo;I started {COMPANY_INFO.name} in {COMPANY_INFO.founded} out of {COMPANY_INFO.location}. I know
-                what it&apos;s like behind the wheel &mdash; the long hours, the missed dinners, and the feeling of
-                being just another truck number to a dispatcher who&apos;s never met you.&rdquo;
+                &ldquo;I started {COMPANY_INFO.name} in {COMPANY_INFO.founded}{" "}
+                out of {COMPANY_INFO.location}. I know what it&apos;s like
+                behind the wheel &mdash; the long hours, the missed dinners, and
+                the feeling of being just another truck number to a dispatcher
+                who&apos;s never met you.&rdquo;
               </p>
               <p className="pl-5">
-                &ldquo;That&apos;s the reason we run this differently. Owner-operators keep{" "}
-                <strong className="text-white">90% of gross</strong>. Company drivers run{" "}
-                <strong className="text-white">2024 Cascadias</strong>. And when you call, you get a real person who
-                knows your name &mdash; not a queue.&rdquo;
+                &ldquo;That&apos;s the reason we run this differently.
+                Owner-operators keep{" "}
+                <strong className="text-white">90% of gross</strong>. Company
+                drivers run{" "}
+                <strong className="text-white">2023-2025 Cascadias and VNLs</strong>. And when
+                you call, you get a real person who knows your name &mdash; not
+                a queue.&rdquo;
               </p>
               <p className="pl-5">
-                &ldquo;When you drive for us, you&apos;re not moving freight for strangers. You&apos;re building
-                something with a family that&apos;s been doing this for {yearsRunning} years. That&apos;s my
-                promise.&rdquo;
+                &ldquo;When you drive for us, you&apos;re not moving freight for
+                strangers. You&apos;re building something with a family
+                that&apos;s been doing this for {yearsRunning} years.
+                That&apos;s my promise.&rdquo;
               </p>
             </div>
 
             <div className="flex flex-col gap-5 border-t border-steel-700/60 pt-6 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <p className="font-display text-2xl font-bold italic text-white">{COMPANY_INFO.owner}</p>
+                <p className="font-display text-2xl font-bold italic text-white">
+                  {COMPANY_INFO.owner}
+                </p>
                 <p className="text-xs font-bold uppercase tracking-[0.2em] text-steel-400">
                   Founder, {COMPANY_INFO.name}
                 </p>
@@ -103,13 +107,13 @@ export const ThindPromise = () => {
 
               <a
                 href={`tel:${COMPANY_INFO.phoneFormatted}`}
-                className="group inline-flex items-center justify-center gap-2 rounded-fleet bg-orange px-6 py-3.5 font-display font-bold uppercase tracking-wide text-white shadow-cta transition-all hover:bg-orange-400 hover:shadow-cta-hover"
+                className="group inline-flex items-center justify-center gap-2 rounded-fleet bg-orange-600 px-6 py-3.5 font-display font-bold uppercase tracking-wide text-white shadow-cta transition-all hover:bg-orange-400 hover:shadow-cta-hover"
               >
                 <Phone className="h-5 w-5 transition-transform group-hover:rotate-12" />
                 Talk to a real person
               </a>
             </div>
-          </motion.div>
+          </Reveal>
         </div>
       </div>
     </section>

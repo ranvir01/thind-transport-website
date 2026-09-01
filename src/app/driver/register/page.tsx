@@ -76,7 +76,7 @@ function RegisterForm() {
     <div className="min-h-screen bg-gradient-to-br from-navy via-navy-600 to-navy-800 flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <div className="mx-auto w-12 h-12 bg-orange rounded-full flex items-center justify-center mb-4">
+          <div className="mx-auto w-12 h-12 bg-orange-600 rounded-full flex items-center justify-center mb-4">
             <Truck className="w-6 h-6 text-white" />
           </div>
           <CardTitle className="text-2xl">Create Driver Account</CardTitle>
@@ -90,7 +90,7 @@ function RegisterForm() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="firstName">First Name</Label>
+                <Label htmlFor="firstName" className="text-white">First Name</Label>
                 <Input
                   id="firstName"
                   required
@@ -100,7 +100,7 @@ function RegisterForm() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="lastName">Last Name</Label>
+                <Label htmlFor="lastName" className="text-white">Last Name</Label>
                 <Input
                   id="lastName"
                   required
@@ -112,7 +112,7 @@ function RegisterForm() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email" className="text-white">Email</Label>
               <Input
                 id="email"
                 type="email"
@@ -121,13 +121,13 @@ function RegisterForm() {
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
               />
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-steel-400">
                 Use the same email you applied with — no invitation code needed.
               </p>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="phone">Phone Number</Label>
+              <Label htmlFor="phone" className="text-white">Phone Number</Label>
               <Input
                 id="phone"
                 type="tel"
@@ -140,8 +140,8 @@ function RegisterForm() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="invitationCode">
-                Invitation Code <span className="font-normal text-gray-400">(optional)</span>
+              <Label htmlFor="invitationCode" className="text-white">
+                Invitation Code <span className="font-normal text-steel-400">(optional)</span>
               </Label>
               <Input
                 id="invitationCode"
@@ -149,17 +149,17 @@ function RegisterForm() {
                 value={formData.invitationCode}
                 onChange={(e) => setFormData({ ...formData, invitationCode: e.target.value })}
               />
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-steel-400">
                 Haven&apos;t applied yet?{" "}
                 <Link href="/apply" className="text-orange hover:underline">
                   Apply first
                 </Link>{" "}
-                — it takes 60 seconds.
+                — a couple of fields.
               </p>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password" className="text-white">Password</Label>
               <Input
                 id="password"
                 type="password"
@@ -172,7 +172,7 @@ function RegisterForm() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Confirm Password</Label>
+              <Label htmlFor="confirmPassword" className="text-white">Confirm Password</Label>
               <Input
                 id="confirmPassword"
                 type="password"

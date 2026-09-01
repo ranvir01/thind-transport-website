@@ -24,7 +24,6 @@ export const STATS = {
   trucksInFleet: 15,
   activeDrivers: 15,
   statesCovered: 48,
-  growthRate: "Fast Growing",
 } as const
 
 export const SERVICES = {
@@ -63,10 +62,12 @@ export const PAY_RATES = {
   },
 } as const
 
+// Only benefits we actually offer today. Health/dental/vision, life, disability
+// and 401(k) were removed 2026-08-30 — we do not carry those plans at the
+// moment, and promising them on a recruiting page is a promise a driver finds
+// out about at orientation. Add them back here first if that ever changes.
 export const BENEFITS = {
   companyDriver: [
-    "Health, dental, and vision insurance",
-    "401(k) retirement plan with company match",
     "$1,000 sign-on bonus (first year)",
     "Weekly direct deposit pay",
     "Home time flexibility - Local/Regional/OTR options",
@@ -76,7 +77,7 @@ export const BENEFITS = {
     "Referral bonuses",
   ],
   ownerOperator: [
-    "90% commission on all loads - Industry leading!",
+    "90% commission on all loads",
     "$2,500 sign-on bonus",
     "No forced dispatch - you choose your loads",
     "Weekly settlements and fast pay options",
@@ -95,6 +96,34 @@ export const BENEFITS = {
   ],
 } as const
 
+/**
+ * What we actually run. Added 2026-08-30 because the site told two stories:
+ * /fleet said "exclusively 2023-2025, Freightliner Cascadias and Volvo VNLs"
+ * while nine other surfaces said "2024 Cascadias" with no Volvos. The owner
+ * confirmed the /fleet version, so it lives here and every surface reads it.
+ */
+export const EQUIPMENT = {
+  modelYears: "2023-2025",
+  /** Full phrasing for body copy. */
+  makes: "Freightliner Cascadias and Volvo VNLs",
+  /** Short phrasing for chips, tickers and stat tiles. */
+  short: "2023-2025 Cascadias & VNLs",
+  apu: "APU in every truck",
+} as const
+
+/**
+ * How reachable we actually are. Owner-confirmed 2026-08-30: someone answers
+ * around the clock. It was previously hand-typed on eighteen surfaces and read
+ * from constants on none, which is how a promise like this drifts.
+ */
+export const SUPPORT = {
+  hours: "24/7",
+  dispatch: "24/7 dispatch support",
+  roadside: "24/7 roadside assistance",
+  /** For prose, where "24/7" reads like a slogan. */
+  phrase: "days, nights, and weekends",
+} as const
+
 // Verifiable trust indicators only — no invented ratings or percentages.
 export const TRUST_INDICATORS = {
   certifications: [
@@ -102,45 +131,28 @@ export const TRUST_INDICATORS = {
       name: "FMCSA Registered",
       issuer: "Federal Motor Carrier Safety Administration",
       icon: "shield-check",
+      // The two credentials a reader can check for themselves link out; the
+      // policy below is ours to state, so it does not. The footer used to test
+      // for a certification named "Safety Rating" that has never existed here,
+      // so no row ever linked and all three carried a hand cursor.
+      href: FMCSA_LINKS.safer,
     },
     {
       name: `USDOT #2523064`,
       issuer: "U.S. Department of Transportation",
       icon: "badge-check",
+      href: FMCSA_LINKS.safer,
     },
     {
       name: "No Forced Dispatch",
       issuer: "Company policy — you choose your loads",
       icon: "award",
     },
-    {
-      name: "$1M+ Liability Coverage",
-      issuer: "Commercial Insurance Carrier",
-      icon: "shield",
-    },
+    // The $1M+ liability-coverage credential was removed 2026-08-04 under the
+    // no-unverifiable-claims rule: it is a specific number a broker checks
+    // against the COI, and no COI in this repo backs it. It returns the day the
+    // owner confirms the real limits (see docs/OWNER-CHECKLIST.md). A test
+    // fails if it is re-added without that confirmation.
   ],
 } as const
 
-export const PREMIER_BROKERS = [
-  { name: "Landstar Inway", tier: "Premier Partner" },
-  { name: "JB Hunt", tier: "Strategic Partner" },
-  { name: "C.H. Robinson", tier: "Diamond Carrier" },
-  { name: "Schneider National", tier: "Elite Partner" },
-  { name: "Coyote Logistics", tier: "Preferred Carrier" },
-  { name: "DAT Power Network", tier: "Verified Carrier" },
-  { name: "TQL", tier: "Quality Carrier" },
-  { name: "XPO Logistics", tier: "Trusted Partner" },
-  { name: "Uber Freight", tier: "Digital Partner" },
-] as const
-
-export const MAJOR_CLIENTS = [
-  { name: "Amazon Logistics", category: "E-commerce", duration: "4+ years" },
-  { name: "Walmart Supply Chain", category: "Retail", duration: "3+ years" },
-  { name: "Lowe's Home Improvement", category: "Building Materials", duration: "2+ years" },
-  { name: "Target Corporation", category: "Retail", duration: "2+ years" },
-  { name: "PepsiCo Beverages", category: "Food & Beverage", duration: "3+ years" },
-  { name: "The Home Depot", category: "Home Improvement", duration: "1+ years" },
-  { name: "Costco Wholesale", category: "Retail", duration: "2+ years" },
-  { name: "Kroger", category: "Grocery", duration: "2+ years" },
-  { name: "General Mills", category: "Food Production", duration: "1+ years" },
-] as const

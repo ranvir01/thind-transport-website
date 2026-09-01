@@ -1,10 +1,12 @@
 /** Shared Hub types and domain constants. */
 
+import { roundHalfAwayFromZero } from "./rounding"
+
 export const HUB_ROLES = ["owner", "dispatcher", "accountant", "driver", "broker", "shipper", "platform_admin"] as const
 export type HubRole = (typeof HUB_ROLES)[number]
 
-/** Roles assignable from the Users admin (platform_admin is reserved until Phase 7). */
-export const ASSIGNABLE_ROLES = ["owner", "dispatcher", "accountant", "driver", "broker", "shipper"] as const
+/** Roles the owner can invite from Settings → Users (Phase 3 office staff). */
+export const OFFICE_INVITE_ROLES = ["dispatcher", "accountant"] as const
 
 /** Roles allowed into the office side of the Hub (Phase 1). */
 export const OFFICE_ROLES: HubRole[] = ["owner", "dispatcher", "accountant"]
@@ -35,6 +37,19 @@ export const NEXT_STATUS: Partial<Record<LoadStatus, LoadStatus>> = {
   pod_received: "invoiced",
   invoiced: "paid",
   paid: "settled",
+}
+
+/**
+ * Once delivery/money work starts, cancellation is an accounting decision
+ * (void/credit memo through the invoice flow), not a status click. Enforced
+ * server-side in setLoadStatusAction and mirrored by CancelLoadButton.
+ */
+export const CANCEL_LOCKED_STATUSES: readonly LoadStatus[] = [
+  "delivered", "pod_received", "invoiced", "paid", "settled", "cancelled",
+]
+
+export function canCancelLoad(status: LoadStatus): boolean {
+  return !CANCEL_LOCKED_STATUSES.includes(status)
 }
 
 export const STATUS_LABELS: Record<LoadStatus, string> = {
@@ -83,6 +98,17 @@ export const DOCUMENT_KINDS = [
   "w9",
   "agreement",
   "other",
+  "incident_photo",
+  "facility_photo",
+  "message_photo",
+  "psp_report",
+  "mvr",
+  "offer_letter",
+  "drug_test",
+  "road_test",
+  "authority_letter",
+  "noa",
+  "insurance_renewal",
 ] as const
 export type DocumentKind = (typeof DOCUMENT_KINDS)[number]
 
@@ -99,6 +125,17 @@ export const DOCUMENT_KIND_LABELS: Record<DocumentKind, string> = {
   w9: "W-9",
   agreement: "Agreement",
   other: "Other",
+  incident_photo: "Incident Photo",
+  facility_photo: "Facility Photo",
+  message_photo: "Photo",
+  psp_report: "PSP Report",
+  mvr: "MVR",
+  offer_letter: "Offer Letter",
+  drug_test: "Drug Test",
+  road_test: "Road Test",
+  authority_letter: "Authority Letter",
+  noa: "Factoring NOA",
+  insurance_renewal: "Insurance Renewal Packet",
 }
 
 export interface HubUser {
@@ -221,6 +258,11 @@ export interface Stop {
   lat: number | null
   lng: number | null
   notes: string | null
+  facility_id?: string | null
+  /** Joined: historical average dwell at this facility, minutes (E2). */
+  facility_avg_dwell?: number | null
+  /** Joined: latest crowdsourced facility notes (E2). */
+  facility_notes?: { body: string; tags: string[]; author: string | null; role: string | null }[] | null
 }
 
 export interface Accessorial {
@@ -247,10 +289,16 @@ export interface Load {
   trailer_id: string | null
   driver_id: string | null
   dispatcher_id: string | null
-  source: "dat" | "direct" | "import" | "quote"
+  source: "dat" | "direct" | "import" | "quote" | "truckstop"
   factored: boolean
   settlement_id: string | null
   notes: string | null
+  acknowledged_at: string | null
+  /** First transition into delivered / pod_received (migration 022; stamped by
+   *  changeLoadStatus, backfilled from load_events). Null on legacy rows whose
+   *  event trail predates the audit log. */
+  delivered_at: string | null
+  pod_received_at: string | null
   created_at: string
   // joined fields
   customer_name?: string | null
@@ -261,6 +309,8 @@ export interface Load {
   origin_state?: string | null
   dest_city?: string | null
   dest_state?: string | null
+  pickup_appt?: string | null
+  delivery_appt?: string | null
   doc_kinds?: string[] | null
   invoice_id?: string | null
   invoice_status?: string | null
@@ -268,7 +318,7 @@ export interface Load {
 
 export interface HubDocument {
   id: string
-  entity_type: "load" | "truck" | "trailer" | "driver" | "customer"
+  entity_type: "load" | "truck" | "trailer" | "driver" | "customer" | "incident" | "facility" | "applicant" | "message" | "carrier"
   entity_id: string
   kind: DocumentKind
   file_name: string
@@ -281,9 +331,9 @@ export interface HubDocument {
   created_at: string
 }
 
-export const LOAD_EVENT_KINDS = [
+const LOAD_EVENT_KINDS = [
   "status_change", "check_call", "geo", "document", "note",
-  "weather_alert", "detention", "exception",
+  "weather_alert", "detention", "exception", "message", "task", "acknowledged",
 ] as const
 export type LoadEventKind = (typeof LOAD_EVENT_KINDS)[number]
 
@@ -320,12 +370,34 @@ export function fmtCentsExact(cents: number | null | undefined): string {
   })
 }
 
+/**
+ * Integer cents → a plain decimal string for an API boundary ("244690" →
+ * "2446.90"). No currency symbol, no grouping separators, no float: the
+ * division that `cents / 100` performs is exactly what must not happen when
+ * the number is about to be serialized into someone else's system.
+ */
+export function centsToDecimalString(cents: number | null | undefined): string {
+  const value = Math.trunc(cents ?? 0)
+  const sign = value < 0 ? "-" : ""
+  const abs = Math.abs(value)
+  return `${sign}${Math.floor(abs / 100)}.${String(abs % 100).padStart(2, "0")}`
+}
+
 /** Parse a dollars string/number from a form into integer cents (no float drift). */
 export function dollarsToCents(value: string | number | null | undefined): number {
   if (value == null || value === "") return 0
   const num = typeof value === "number" ? value : Number(String(value).replace(/[^0-9.\-]/g, ""))
   if (!Number.isFinite(num)) return 0
-  return Math.round(num * 100)
+  // A bare `num * 100` drifts off the decimal the user typed (1.005 * 100 →
+  // 100.49999999999999) and can lose a half-cent tie in either direction;
+  // re-quantizing to 15 significant digits recovers the decimal value before
+  // the house rounding is applied.
+  return roundHalfAwayFromZero(Number((num * 100).toPrecision(15)))
+}
+
+/** Format integer cents as a plain dollar string for CSV export. */
+export function centsToDollars(cents: number | null | undefined): string {
+  return ((cents ?? 0) / 100).toFixed(2)
 }
 
 // ---- Money domain types (Phase 2) ----
@@ -426,11 +498,15 @@ export interface FuelTransaction {
   jurisdiction: string | null
   gallons: string
   fuel_type: string | null
+  fuel_use: "tractor" | "reefer" | "other"
   unit_price_cents: number | null
   total_cents: number
   odometer: string | null
+  /** Load this pump receipt fueled, once reconciled (Phase 2). Optional. */
+  load_id?: string | null
   truck_unit?: string | null
   driver_name?: string | null
+  load_reference?: string | null
 }
 
 export interface IftaReportRow {
@@ -443,4 +519,204 @@ export interface IftaReportRow {
   taxCents: number
   surchargeCents: number
   netCents: number
+}
+
+// ---- Expansion spines (retrofits + E1–E5) ----
+
+export const FUEL_USES = ["tractor", "reefer", "other"] as const
+export type FuelUse = (typeof FUEL_USES)[number]
+
+export interface Facility {
+  id: string
+  carrier_id: string
+  name: string
+  dedupe_key: string
+  address: string | null
+  city: string | null
+  state: string | null
+  zip: string | null
+  lat: number | null
+  lng: number | null
+  type: "shipper" | "receiver" | "both"
+  hours: string | null
+  phone: string | null
+  overnight_parking: boolean | null
+  typical_lumper_cents: number | null
+  notes: string | null
+  // computed in queries
+  stop_count?: number
+  avg_dwell_minutes?: number | null
+  note_count?: number
+}
+
+export interface FacilityNote {
+  id: string
+  facility_id: string
+  author_id: string | null
+  author_name: string | null
+  author_role: string | null
+  body: string
+  tags: string[]
+  document_id: string | null
+  created_at: string
+}
+
+export const FACILITY_NOTE_TAGS = [
+  "parking", "gate", "lumper", "slow", "fast", "docks", "overnight", "check-in",
+] as const
+
+export interface Incident {
+  id: string
+  carrier_id: string
+  truck_id: string | null
+  driver_id: string | null
+  load_id: string | null
+  occurred_at: string
+  location: string | null
+  description: string | null
+  police_report: string | null
+  fatality: boolean
+  injury_treated_away: boolean
+  tow_away_disabling: boolean
+  dot_recordable: boolean
+  status: "open" | "under_review" | "closed"
+  lat: number | null
+  lng: number | null
+  reported_by_name: string | null
+  created_at: string
+  truck_unit?: string | null
+  driver_name?: string | null
+  load_reference?: string | null
+}
+
+export interface HubNotification {
+  id: number
+  kind: string
+  title: string
+  body: string | null
+  link: string | null
+  read_at: string | null
+  created_at: string
+}
+
+const TASK_PRIORITIES = ["low", "normal", "high", "urgent"] as const
+export type TaskPriority = (typeof TASK_PRIORITIES)[number]
+
+const TASK_RECURRENCES = ["none", "daily", "weekdays", "weekly", "monthly"] as const
+export type TaskRecurrence = (typeof TASK_RECURRENCES)[number]
+
+export interface TaskChecklistItem {
+  label: string
+  done: boolean
+}
+
+export interface Task {
+  id: string
+  title: string
+  notes: string | null
+  assignee_user_id: string | null
+  created_by_name: string | null
+  due_at: string | null
+  priority: TaskPriority
+  entity_type: string | null
+  entity_id: string | null
+  checklist: TaskChecklistItem[]
+  recurrence: TaskRecurrence
+  automation_key: string | null
+  completed_at: string | null
+  completed_by_name: string | null
+  created_at: string
+  assignee_name?: string | null
+}
+
+export interface MessageThread {
+  id: string
+  kind: "load" | "direct"
+  load_id: string | null
+  driver_id: string | null
+  last_message_at: string | null
+  // joined for lists
+  load_reference?: string | null
+  driver_name?: string | null
+  last_body?: string | null
+  unread_count?: number
+}
+
+export interface HubMessage {
+  id: number
+  thread_id: string
+  sender_id: string | null
+  sender_name: string
+  sender_role: string | null
+  body: string
+  document_id: string | null
+  document_url?: string | null
+  document_mime?: string | null
+  created_at: string
+}
+
+export interface Announcement {
+  id: string
+  title: string
+  body: string
+  audience: { all?: boolean; roles?: string[]; driverIds?: string[] }
+  requires_ack: boolean
+  created_by_name: string | null
+  expires_at: string | null
+  created_at: string
+  ack_count?: number
+  audience_count?: number
+  acked?: boolean
+}
+
+export interface DocumentRequest {
+  id: string
+  driver_id: string
+  load_id: string | null
+  kind: string
+  note: string | null
+  status: "open" | "satisfied" | "cancelled"
+  requested_by_name: string | null
+  satisfied_at: string | null
+  created_at: string
+  driver_name?: string | null
+  load_reference?: string | null
+}
+
+export interface Lane {
+  id: string
+  origin_city: string
+  origin_state: string
+  dest_city: string
+  dest_state: string
+  loads_count: number
+  revenue_cents: number
+  miles: number
+  margin_cents: number
+  avg_rpm_cents: number | null
+  last_used_at: string | null
+}
+
+export const TIME_OFF_KINDS = ["home_time", "vacation", "medical", "other"] as const
+export type TimeOffKind = (typeof TIME_OFF_KINDS)[number]
+
+export const TIME_OFF_KIND_LABELS: Record<TimeOffKind, string> = {
+  home_time: "Home time",
+  vacation: "Vacation",
+  medical: "Medical",
+  other: "Other",
+}
+
+export interface TimeOffRequest {
+  id: string
+  driver_id: string
+  start_date: string
+  end_date: string
+  kind: TimeOffKind
+  reason: string | null
+  status: "requested" | "approved" | "denied" | "cancelled"
+  decided_by_name: string | null
+  decided_at: string | null
+  created_at: string
+  driver_name?: string | null
 }

@@ -19,9 +19,9 @@ export default function NotFound() {
             </div>
           </div>
           <div className="mt-4 flex justify-center gap-2">
-            <div className="h-1 w-16 bg-blue-600 rounded-full"></div>
-            <div className="h-1 w-16 bg-red-600 rounded-full"></div>
-            <div className="h-1 w-16 bg-blue-600 rounded-full"></div>
+            <div className="h-1 w-16 rounded-full bg-navy"></div>
+            <div className="h-1 w-16 rounded-full bg-orange-600"></div>
+            <div className="h-1 w-16 rounded-full bg-navy"></div>
           </div>
         </div>
 
@@ -37,7 +37,7 @@ export default function NotFound() {
         <div className="grid sm:grid-cols-2 gap-4 max-w-md mx-auto mb-8">
           <Link href="/" className="group">
             <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-xl transition-all transform hover:-translate-y-1">
-              <Home className="h-8 w-8 text-blue-600 mx-auto mb-3" />
+              <Home className="h-8 w-8 text-orange-600 mx-auto mb-3" />
               <h3 className="font-semibold text-gray-900 mb-1">Return Home</h3>
               <p className="text-sm text-gray-600">Back to main page</p>
             </div>
@@ -52,12 +52,12 @@ export default function NotFound() {
         </div>
 
         {/* Contact Support */}
-        <div className="bg-blue-50 rounded-lg p-6 mb-8">
+        <div className="bg-slate-50 border border-slate-200 rounded-lg p-6 mb-8">
           <p className="text-gray-700 mb-4">
-            Need help finding what you're looking for?
+            Need help finding what you&apos;re looking for?
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button asChild variant="outline">
+            <Button asChild variant="outline" className="border-gray-300 bg-white text-gray-900 hover:bg-gray-50 hover:text-gray-900">
               <Link href="/">
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Go Back
@@ -78,16 +78,13 @@ export default function NotFound() {
             Popular pages you might be looking for:
           </h2>
           <div className="space-y-2">
-            <Link href="/pay-rates" className="block text-blue-600 hover:underline text-sm">
+            <Link href="/pay-rates" className="block text-sm font-medium text-orange-700 hover:underline">
               → Driver Pay Rates & Calculator
             </Link>
-            <Link href="/apply" className="block text-blue-600 hover:underline text-sm">
-              → Quick Application (60 seconds)
+            <Link href="/apply" className="block text-sm font-medium text-orange-700 hover:underline">
+              → Start an application
             </Link>
-            <Link href="/testimonials" className="block text-blue-600 hover:underline text-sm">
-              → Driver Reviews & Testimonials
-            </Link>
-            <Link href="/" className="block text-blue-600 hover:underline text-sm">
+            <Link href="/" className="block text-sm font-medium text-orange-700 hover:underline">
               → Home Page
             </Link>
           </div>

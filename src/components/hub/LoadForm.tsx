@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { Loader2, Plus, Trash2 } from "lucide-react"
 import { createLoadAction, updateLoadAction } from "@/app/hub/_actions/loads"
+import { facilityLookupAction } from "@/app/hub/_actions/facilities"
+import { customerBookingIntel } from "@/app/hub/_actions/vetting"
 import { fieldCls, labelCls, Panel } from "@/components/hub/ui"
 import { EQUIPMENT_LABELS, EQUIPMENT_TYPES } from "@/lib/hub/types"
 
@@ -71,6 +73,7 @@ export function LoadForm({
   trucks,
   trailers,
   priceBook = [],
+  onCreated,
 }: {
   loadId?: string
   initial: LoadFormInitial
@@ -79,10 +82,43 @@ export function LoadForm({
   trucks: Option[]
   trailers: Option[]
   priceBook?: PriceBookOption[]
+  /**
+   * Runs after a successful create, before navigating to the new load. The
+   * Inbox uses it to mark the draft accepted and hang its document off the load
+   * it became — work that must not happen if the booking itself failed.
+   */
+  onCreated?: (loadId: string) => void | Promise<void>
 }) {
   const router = useRouter()
   const [form, setForm] = useState<LoadFormInitial>(initial)
   const [pending, startTransition] = useTransition()
+  // E2: per-stop facility intelligence — warns about slow docks at booking time.
+  const [facilityHints, setFacilityHints] = useState<Record<number, string | null>>({})
+  // Phase 5: credit/vetting/payment-speed warnings on the customer pick.
+  const [customerWarnings, setCustomerWarnings] = useState<string[]>([])
+
+  const checkCustomer = async (customerId: string) => {
+    if (!customerId) {
+      setCustomerWarnings([])
+      return
+    }
+    const intel = await customerBookingIntel(customerId)
+    setCustomerWarnings(intel.warnings)
+  }
+
+  const checkFacility = async (index: number) => {
+    const stop = form.stops[index]
+    if (!stop?.facility.trim()) {
+      setFacilityHints((h) => ({ ...h, [index]: null }))
+      return
+    }
+    const result = await facilityLookupAction({
+      name: stop.facility,
+      city: stop.city,
+      state: stop.state,
+    })
+    setFacilityHints((h) => ({ ...h, [index]: result.warning ?? null }))
+  }
 
   const set = (patch: Partial<LoadFormInitial>) => setForm((f) => ({ ...f, ...patch }))
   const setStop = (index: number, patch: Partial<StopForm>) =>
@@ -137,6 +173,7 @@ export function LoadForm({
         ? await updateLoadAction(loadId, payload)
         : await createLoadAction(payload)
       if (result.ok) {
+        if (!loadId && result.id && onCreated) await onCreated(result.id)
         toast.success(loadId ? "Load updated" : "Load booked")
         router.push(`/hub/loads/${result.id}`)
         router.refresh()
@@ -150,17 +187,25 @@ export function LoadForm({
     <form onSubmit={submit} className="space-y-4 max-w-3xl">
       {/* Customer & equipment */}
       <Panel className="p-4 md:p-5 space-y-4">
-        <h2 className="font-display text-base font-bold uppercase tracking-wide text-white">Booking</h2>
+        <h2 className="text-[13.5px] font-semibold text-fg">Booking</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className={labelCls} htmlFor="customer">Customer / broker *</label>
             <select
               id="customer" required className={fieldCls} value={form.customer_id}
-              onChange={(e) => set({ customer_id: e.target.value })}
+              onChange={(e) => {
+                set({ customer_id: e.target.value })
+                checkCustomer(e.target.value)
+              }}
             >
               <option value="">Select customer…</option>
               {customers.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
             </select>
+            {customerWarnings.map((warning) => (
+              <p key={warning} className="mt-1 inline-flex rounded-full border border-warn-soft bg-warn-soft px-2.5 py-1 text-[11px] font-bold text-warn">
+                {warning}
+              </p>
+            ))}
           </div>
           <div>
             <label className={labelCls} htmlFor="customer_reference">Broker load # / reference</label>
@@ -199,9 +244,9 @@ export function LoadForm({
               type="checkbox"
               checked={form.factored}
               onChange={(e) => set({ factored: e.target.checked })}
-              className="h-5 w-5 rounded accent-[#F2A900]"
+              className="h-5 w-5 rounded border-border-strong accent-accent"
             />
-            <span className="text-sm text-steel-100">Factored (invoice remits to the factor)</span>
+            <span className="text-sm text-fg-2">Factored (invoice remits to the factor)</span>
           </label>
         </div>
       </Panel>
@@ -209,16 +254,16 @@ export function LoadForm({
       {/* Stops */}
       <Panel className="p-4 md:p-5 space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="font-display text-base font-bold uppercase tracking-wide text-white">Stops</h2>
+          <h2 className="text-[13.5px] font-semibold text-fg">Stops</h2>
           <button
             type="button" onClick={addStop}
-            className="inline-flex min-h-[36px] items-center gap-1 rounded-lg border border-white/15 px-3 text-xs font-semibold text-steel-100 hover:bg-white/5"
+            className="inline-flex min-h-[36px] items-center gap-1 rounded-lg border border-border-strong px-3 text-xs font-semibold text-fg-2 hover:bg-hover"
           >
             <Plus className="h-3.5 w-3.5" /> Add stop
           </button>
         </div>
         {form.stops.map((stop, i) => (
-          <div key={i} className="rounded-xl border border-white/10 p-3.5 space-y-3">
+          <div key={i} className="rounded-card border border-border p-3.5 space-y-3">
             <div className="flex items-center justify-between gap-2">
               <select
                 aria-label="Stop type"
@@ -232,17 +277,26 @@ export function LoadForm({
               {form.stops.length > 2 ? (
                 <button
                   type="button" aria-label="Remove stop" onClick={() => removeStop(i)}
-                  className="flex h-10 w-10 items-center justify-center rounded-lg text-red-300 hover:bg-red-500/10"
+                  className="flex h-10 w-10 items-center justify-center rounded-lg text-bad hover:bg-bad-soft"
                 >
                   <Trash2 className="h-4 w-4" />
                 </button>
               ) : null}
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <input
-                aria-label="Facility" placeholder="Facility name" className={fieldCls}
-                value={stop.facility} onChange={(e) => setStop(i, { facility: e.target.value })}
-              />
+              <div>
+                <input
+                  aria-label="Facility" placeholder="Facility name" className={fieldCls}
+                  value={stop.facility}
+                  onChange={(e) => setStop(i, { facility: e.target.value })}
+                  onBlur={() => checkFacility(i)}
+                />
+                {facilityHints[i] ? (
+                  <p className="mt-1 inline-flex rounded-full border border-warn-soft bg-warn-soft px-2.5 py-1 text-[11px] font-bold text-warn">
+                    {facilityHints[i]}
+                  </p>
+                ) : null}
+              </div>
               <input
                 aria-label="Address" placeholder="Street address" className={fieldCls}
                 value={stop.address} onChange={(e) => setStop(i, { address: e.target.value })}
@@ -281,9 +335,9 @@ export function LoadForm({
                 <input
                   type="checkbox" checked={stop.fcfs}
                   onChange={(e) => setStop(i, { fcfs: e.target.checked, appt_start: e.target.checked ? "" : stop.appt_start })}
-                  className="h-5 w-5 rounded accent-[#F2A900]"
+                  className="h-5 w-5 rounded border-border-strong accent-accent"
                 />
-                <span className="text-sm text-steel-100">FCFS (first come, first served)</span>
+                <span className="text-sm text-fg-2">FCFS (first come, first served)</span>
               </label>
             </div>
           </div>
@@ -292,7 +346,7 @@ export function LoadForm({
 
       {/* Money */}
       <Panel className="p-4 md:p-5 space-y-4">
-        <h2 className="font-display text-base font-bold uppercase tracking-wide text-white">Rate</h2>
+        <h2 className="text-[13.5px] font-semibold text-fg">Rate</h2>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <div>
             <label className={labelCls} htmlFor="linehaul">Linehaul ($) *</label>
@@ -331,7 +385,7 @@ export function LoadForm({
             {priceBook.map((entry) => (
               <button
                 key={entry.id} type="button" onClick={() => addFromPriceBook(entry)}
-                className="rounded-full border border-white/15 bg-white/5 px-3 py-1.5 text-xs font-semibold text-steel-100 hover:bg-white/10 min-h-[32px]"
+                className="rounded-full border border-border-strong bg-surface-2 px-3 py-1.5 text-xs font-semibold text-fg-2 hover:bg-hover min-h-[32px]"
               >
                 + {entry.name}{entry.default_amount_cents ? ` $${(entry.default_amount_cents / 100).toFixed(0)}` : ""}
               </button>
@@ -365,7 +419,7 @@ export function LoadForm({
               <button
                 type="button" aria-label="Remove accessorial"
                 onClick={() => setForm((f) => ({ ...f, accessorials: f.accessorials.filter((_, j) => j !== i) }))}
-                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-red-300 hover:bg-red-500/10"
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-bad hover:bg-bad-soft"
               >
                 <Trash2 className="h-4 w-4" />
               </button>
@@ -374,19 +428,19 @@ export function LoadForm({
           <button
             type="button"
             onClick={() => setForm((f) => ({ ...f, accessorials: [...f.accessorials, { label: "", amount: "" }] }))}
-            className="inline-flex min-h-[36px] items-center gap-1 rounded-lg border border-white/15 px-3 text-xs font-semibold text-steel-100 hover:bg-white/5"
+            className="inline-flex min-h-[36px] items-center gap-1 rounded-lg border border-border-strong px-3 text-xs font-semibold text-fg-2 hover:bg-hover"
           >
             <Plus className="h-3.5 w-3.5" /> Custom accessorial
           </button>
         </div>
 
-        <p className="text-body-sm text-steel-200">
+        <p className="text-body-sm text-fg-2">
           Total rate:{" "}
-          <span className="font-display font-extrabold text-gold text-lg">
+          <span className="font-mono font-medium text-accent-text tabular-nums text-lg">
             {totalRate.toLocaleString("en-US", { style: "currency", currency: "USD" })}
           </span>
           {form.loaded_miles && Number(form.loaded_miles) > 0 ? (
-            <span className="ml-2 text-steel-300">
+            <span className="ml-2 text-fg-3">
               ({(totalRate / Number(form.loaded_miles)).toFixed(2)}/mi)
             </span>
           ) : null}
@@ -395,7 +449,7 @@ export function LoadForm({
 
       {/* Assignment */}
       <Panel className="p-4 md:p-5 space-y-4">
-        <h2 className="font-display text-base font-bold uppercase tracking-wide text-white">Assignment</h2>
+        <h2 className="text-[13.5px] font-semibold text-fg">Assignment</h2>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div>
             <label className={labelCls} htmlFor="driver">Driver</label>
@@ -440,7 +494,7 @@ export function LoadForm({
 
       <button
         type="submit" disabled={pending}
-        className="flex w-full sm:w-auto min-h-[48px] items-center justify-center gap-2 rounded-xl bg-orange px-8 font-display text-sm font-bold uppercase tracking-[0.08em] text-white shadow-cta hover:bg-orange-400 disabled:opacity-60"
+        className="flex w-full sm:w-auto min-h-[48px] items-center justify-center gap-2 rounded-control bg-accent px-8 font-semibold text-sm text-accent-fg hover:bg-accent-hover disabled:opacity-60"
       >
         {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
         {loadId ? "Save changes" : "Book load"}

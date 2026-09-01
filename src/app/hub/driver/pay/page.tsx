@@ -1,83 +1,118 @@
-import Link from "next/link"
-import { redirect } from "next/navigation"
-import { getHubUser } from "@/lib/hub/session"
+import { ChevronDown, FileText } from "lucide-react"
+import { requireDriverUser } from "@/lib/hub/session"
+import { driverSettlements, driverSettlementLines } from "@/lib/hub/driver-app"
+import { query } from "@/lib/hub/db"
 import { fmtCentsExact } from "@/lib/hub/types"
-import { DriverBottomTabs } from "@/components/hub/DriverBottomTabs"
+import { AdvanceRequestForm } from "@/components/hub/driver/AdvanceRequestForm"
 
 export const dynamic = "force-dynamic"
 
-const earnings = [
-  { label: "TT-7004 loaded miles", amount: 126750 },
-  { label: "Detention approved", amount: 12000 },
-  { label: "Lumper reimbursement", amount: 4300 },
-]
-const deductions = [
-  { label: "Advance recapture", amount: 15000 },
-  { label: "Escrow contribution", amount: 5000 },
-]
+const LINE_KIND_CLS: Record<string, string> = {
+  earning: "border-green-500/40 bg-green-500/10 text-green-400",
+  reimbursement: "border-sky-500/40 bg-sky-500/10 text-sky-400",
+  deduction: "border-red-500/40 bg-red-500/10 text-red-400",
+}
 
 export default async function DriverPayPage() {
-  const user = await getHubUser()
-  if (!user) redirect("/hub/login")
-  const gross = earnings.reduce((sum, line) => sum + line.amount, 0)
-  const deduct = deductions.reduce((sum, line) => sum + line.amount, 0)
+  const user = await requireDriverUser()
+  const [settlements, advances] = await Promise.all([
+    driverSettlements(user.carrierId, user.driverId),
+    query<{ id: string; amount_cents: number; status: string; issued_on: string; note: string | null }>(
+      `SELECT id, amount_cents, status, issued_on, note FROM hub.advances
+       WHERE carrier_id = $1 AND driver_id = $2 AND status IN ('pending','outstanding')
+       ORDER BY created_at DESC LIMIT 5`,
+      [user.carrierId, user.driverId]
+    ),
+  ])
+  const linesBySettlement = new Map(
+    await Promise.all(
+      settlements.map(async (s) => [s.id, await driverSettlementLines(user.carrierId, user.driverId, s.id)] as const)
+    )
+  )
 
   return (
-    <main className="min-h-screen bg-navy px-4 pb-28 pt-5 text-white">
-      <div className="mx-auto max-w-[430px]">
-        <div className="mb-5 flex items-start justify-between gap-3">
-          <div>
-            <p className="text-[11px] font-black uppercase tracking-[0.22em] text-gold">
-              {user.dataMode === "sandbox" ? "SANDBOX DRIVER" : "Driver app"}
-            </p>
-            <h1 className="mt-1 font-display text-2xl font-extrabold uppercase tracking-wide text-white">Current week pay</h1>
-            <p className="mt-1 text-sm text-steel-200">Live settlement preview. Final pay depends on office approval.</p>
-          </div>
-          <Link href="/hub/driver" className="rounded-xl border border-white/15 px-3 py-2 text-xs font-bold text-steel-100">
-            Load
-          </Link>
-        </div>
+    <div>
+      <h1 className="font-display text-xl font-extrabold uppercase tracking-wide text-white mb-1">My pay</h1>
+      <p className="text-body-sm text-steel-300 mb-4">
+        Every settlement, line by line — tap one to see what&apos;s in it.
+      </p>
 
-        <section className="rounded-3xl border border-white/10 bg-white/5 p-4">
-          <p className="text-xs font-black uppercase tracking-[0.18em] text-steel-300">Estimated net</p>
-          <p className="mt-2 text-4xl font-black tabular-nums text-gold">{fmtCentsExact(gross - deduct)}</p>
-          <div className="mt-4 grid grid-cols-2 gap-3">
-            <div className="rounded-2xl bg-white/5 p-3">
-              <p className="text-xs text-steel-300">Gross</p>
-              <p className="mt-1 text-right font-bold tabular-nums text-white">{fmtCentsExact(gross)}</p>
-            </div>
-            <div className="rounded-2xl bg-white/5 p-3">
-              <p className="text-xs text-steel-300">Deductions</p>
-              <p className="mt-1 text-right font-bold tabular-nums text-white">{fmtCentsExact(deduct)}</p>
-            </div>
-          </div>
-        </section>
-
-        <section className="mt-4 rounded-2xl border border-white/10 bg-white/5 p-4">
-          <h2 className="font-display text-base font-bold uppercase tracking-wide text-white">Earnings</h2>
-          <div className="mt-3 space-y-2">
-            {earnings.map((line) => (
-              <div key={line.label} className="flex items-center justify-between gap-3 text-sm">
-                <span className="text-steel-100">{line.label}</span>
-                <span className="font-bold tabular-nums text-white">{fmtCentsExact(line.amount)}</span>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        <section className="mt-4 rounded-2xl border border-white/10 bg-white/5 p-4">
-          <h2 className="font-display text-base font-bold uppercase tracking-wide text-white">Deductions</h2>
-          <div className="mt-3 space-y-2">
-            {deductions.map((line) => (
-              <div key={line.label} className="flex items-center justify-between gap-3 text-sm">
-                <span className="text-steel-100">{line.label}</span>
-                <span className="font-bold tabular-nums text-white">−{fmtCentsExact(line.amount)}</span>
-              </div>
-            ))}
-          </div>
-        </section>
+      <div className="mb-4 space-y-2">
+        <AdvanceRequestForm />
+        {advances.map((advance) => (
+          <p key={advance.id} className="flex items-center justify-between rounded-xl border border-white/10 bg-navy-800/80 px-3 py-2.5 text-sm">
+            <span className="text-steel-100">
+              Advance {advance.status === "pending" ? "requested" : "approved"}
+              {advance.note ? ` — ${advance.note}` : ""}
+            </span>
+            <span className="font-display font-extrabold text-[color:var(--driver-accent)]">{fmtCentsExact(advance.amount_cents)}</span>
+          </p>
+        ))}
       </div>
-      <DriverBottomTabs />
-    </main>
+
+      {settlements.length === 0 ? (
+        <section className="rounded-2xl border border-white/10 bg-navy-800/80 p-6 text-center">
+          <p className="font-semibold text-white">No settlements yet</p>
+          <p className="mt-1 text-body-sm text-steel-300">
+            Once the office approves your first settlement it shows up here with the PDF statement.
+          </p>
+        </section>
+      ) : (
+        <ul className="space-y-3">
+          {settlements.map((s) => {
+            const lines = linesBySettlement.get(s.id) ?? []
+            return (
+              <li key={s.id}>
+                <details className="group rounded-2xl border border-white/10 bg-navy-800/80">
+                  <summary className="flex min-h-[44px] cursor-pointer list-none items-center justify-between gap-2 p-4 [&::-webkit-details-marker]:hidden">
+                    <div>
+                      <p className="font-semibold text-white">
+                        Week of {new Date(s.period_start).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                        {" – "}
+                        {new Date(s.period_end).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                      </p>
+                      <p className="text-body-xs text-steel-300">
+                        {s.status === "paid" ? "Paid" : "Approved — payment on the way"}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <p className="font-display text-xl font-extrabold text-[color:var(--driver-accent)]">{fmtCentsExact(s.net_cents)}</p>
+                      <ChevronDown className="h-4 w-4 text-steel-400 transition-transform group-open:rotate-180" />
+                    </div>
+                  </summary>
+                  <div className="border-t border-white/10 px-4 pb-4 pt-3 space-y-2">
+                    <ul className="divide-y divide-white/10">
+                      {lines.map((line) => (
+                        <li key={line.id} className="flex items-center justify-between gap-3 py-2 text-sm">
+                          <div className="min-w-0">
+                            <span className={`mr-2 inline-flex rounded-md border px-1.5 py-0.5 text-[10px] font-bold uppercase ${LINE_KIND_CLS[line.kind] ?? "border-white/20 bg-white/5 text-steel-300"}`}>
+                              {line.kind}
+                            </span>
+                            <span className="text-steel-100">{line.label}</span>
+                          </div>
+                          <span className={`shrink-0 font-semibold ${line.kind === "deduction" ? "text-red-400" : "text-white"}`}>
+                            {line.kind === "deduction" ? "−" : ""}{fmtCentsExact(line.amount_cents)}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                    {s.statement_url ? (
+                      <a
+                        href={s.statement_url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="flex min-h-[44px] items-center justify-center gap-2 rounded-xl border border-white/15 font-display text-sm font-bold uppercase tracking-[0.06em] text-steel-100 hover:bg-white/5"
+                      >
+                        <FileText className="h-4 w-4" /> Open statement
+                      </a>
+                    ) : null}
+                  </div>
+                </details>
+              </li>
+            )
+          })}
+        </ul>
+      )}
+    </div>
   )
 }

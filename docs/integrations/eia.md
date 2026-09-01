@@ -1,0 +1,126 @@
+# EIA Open Data — weekly on-highway diesel benchmark (free API key)
+
+Researched: 2026-07-07; re-scouted 2026-07-19, 2026-07-23 (no adapter-breaking change; rate-limit and
+DEMO_KEY corrections below). Status: **built, live** — `eiaDieselPriceCents()` in `src/lib/hub/fuel.ts`,
+surfaced on `/hub/fuel` as "EIA weekly diesel" and on Settings → Integrations under "Environment
+services". Not in `IntegrationProvider` — credentials are a single platform env var
+(`EIA_API_KEY`), not per-carrier stored creds. This doc did not exist before this cycle
+(`scout-rotation.md` listed it "missing — never researched") despite the adapter being shipped
+code.
+
+## What it does today (confirmed from source)
+
+`eiaDieselPriceCents()`:
+1. Returns `null` immediately when `EIA_API_KEY` is unset — the fuel screen shows "—" and a hint
+   to set the key; fleet avg $/gal and fraud flags still work from card transactions alone.
+2. When the key is set, fetches the latest weekly U.S. on-highway diesel retail price from EIA API
+   v2 (`petroleum/pri/gnd` route).
+3. Parses `response.data[0].value` (dollars per gallon), multiplies by 100, rounds to integer
+   **cents per gallon** — consistent with how fuel transactions store `price_cents` / gallon math
+   elsewhere in the hub.
+4. Uses Next.js `fetch` with `{ next: { revalidate: 86400 } }` — at most one upstream call per
+   day per Vercel region; no cron, no `hub.integration_syncs` row (read-only benchmark, not a
+   sync source).
+
+The fuel page compares fleet average $/gal against this national weekly index so dispatch can
+spot cards paying above market. FSC (fuel surcharge) pegging to the DOE/EIA index is documented
+in phase specs but **not wired to this function yet** — today's scope is display-only.
+
+## Auth model
+
+| Item | Detail |
+|---|---|
+| Credential | `EIA_API_KEY` env var (Vercel project env, not per-carrier) |
+| How to obtain | Free — register at [eia.gov/opendata/register.php](https://www.eia.gov/opendata/register.php); key emailed automatically |
+| Auth mechanism | `api_key` query parameter on every request (no OAuth, no signing) |
+| Cost | Free (U.S. government open data; comply with [EIA API Terms of Service](https://www.eia.gov/opendata/terms-of-service.php)) |
+| Sandbox | **None** — a registered key is required for every call. (Correction 2026-07-19: this doc previously claimed `DEMO_KEY` works; no EIA documentation supports that — `DEMO_KEY` is an api.data.gov convention, and api.eia.gov is not behind api.data.gov. For keyless testing use the bulk download facility instead) |
+| Production | Same API — no separate prod/sandbox hosts |
+
+Without the key the fuel module degrades gracefully; no errors are thrown and no user-facing
+failure state beyond the missing benchmark tile.
+
+## API endpoint we use
+
+```
+GET https://api.eia.gov/v2/petroleum/pri/gnd/data/
+  ?api_key={EIA_API_KEY}
+  &frequency=weekly
+  &data[0]=value
+  &facets[series][]=EMD_EPD2D_PTE_NUS_DPG
+  &sort[0][column]=period
+  &sort[0][direction]=desc
+  &length=1
+```
+
+| Parameter | Meaning |
+|---|---|
+| `petroleum/pri/gnd` | Petroleum — Prices — Gasoline and Diesel Fuel Update (weekly retail) |
+| `facets[series][]=EMD_EPM0_PTE_NUS_DPG` | **Not used** — we target `EMD_EPD2D_PTE_NUS_DPG` |
+| `EMD_EPD2D_PTE_NUS_DPG` | U.S. on-highway diesel fuel price, dollars per gallon, weekly |
+| `frequency=weekly` | Matches DOE/EIA's Monday-published national diesel average carriers use for FSC |
+| `length=1` + `sort desc` | Latest period only |
+
+EIA also publishes regional series (PADD districts, states) via different `series` facet values.
+We intentionally use the **national** series today — regional FSC would need a carrier-configured
+PADD/state facet (future enhancement).
+
+## Rate limits and operational notes
+
+**Correction 2026-07-19:** EIA *does* publish throttle numbers (this doc previously said it
+didn't). Per EIA's API technical documentation: keep the sustained rate under **~9,000
+requests/hour** and bursts under **5 requests/second** and the key won't be throttled;
+exceeding either automatically and temporarily suspends the key (a few seconds to a number of
+minutes, not beyond an hour except in extreme cases), with automatic reactivation after the
+cool-down. Some complex routes have slower route-specific restrictions. Our usage is five
+orders of magnitude below this:
+- One cached fetch per day per deployment region (Next revalidate 86400 s)
+- No cron fan-out, no per-carrier multiplication
+
+`fetch` has no explicit timeout — a hung EIA response could delay the fuel page SSR. Failures
+(`!res.ok`, parse errors, network) return `null` silently (same as missing key).
+
+**Response-shape drift risk:** we read `data?.response?.data?.[0]?.value`. EIA v2.1 route
+metadata changes or series retirement would make the benchmark disappear without an error. Worth
+a contract test with `DEMO_KEY` in CI (rate-limited but sufficient for shape checks).
+
+## UI surfacing
+
+- `/hub/fuel` — "EIA weekly diesel" tile next to fleet avg $/gal; `fmtCentsExact` display.
+- `/hub/settings/integrations` — "Environment services" panel shows configured / `set EIA_API_KEY`.
+- `npm run connections:check` — lists `EIA_API_KEY` in the free-services checklist.
+
+## Adapter-breaking changes to watch
+
+| Change | Impact |
+|---|---|
+| `api_key` query param retired or OAuth required | All lookups break until env + code updated |
+| Series `EMD_EPD2D_PTE_NUS_DPG` renamed/retired | Benchmark returns null until facet updated |
+| Response envelope change (`response.data` path) | Parse returns null — silent degradation |
+| v2 route `petroleum/pri/gnd` restructured | URL or facet names may need update |
+| Rate limiting tightened on shared Vercel egress | Daily cache usually absorbs; burst deploys could miss benchmark briefly |
+
+None observed as of 2026-07-19 (re-scout): API v2 (v2.1.x docs) is still current with no
+deprecation notices found; series `EMD_EPD2D_PTE_NUS_DPG` is confirmed alive with weekly data
+points into 2026 (verified via third-party mirrors of the series — fueldatalab.com shows data
+through at least April 2026 — and EIA's own still-live series pages). Caveat: `api.eia.gov` and
+`www.eia.gov` are both unreachable from this scout environment (proxy CONNECT 403 /
+bot-blocking), so the live response envelope could not be re-probed directly this pass; the
+throttle numbers above come from search-indexed excerpts of the official documentation
+corroborated across two independent queries.
+
+**2026-07-23 re-scout:** no adverse change. `api.eia.gov`, `www.eia.gov`, and the
+`APIv2.1.0.pdf`/`APIv2.0.1.pdf` documentation PDFs all still 403 this scout's direct fetch —
+fourth straight environment-level wall on this provider, so this pass is search-excerpt-only
+like the last one. Nothing found contradicts the 2026-07-19 throttle numbers (~9,000 req/hr
+sustained, 5 req/s burst) or the `DEMO_KEY`-not-supported correction. One corroborating,
+non-adapter-affecting find: EIA's legacy v1 API was fully discontinued in November 2022 with
+users redirected to v2 permanently — no v3 announcement or v2 sunset notice exists anywhere in
+this pass's search results, which is the strongest evidence yet that v2 (the version
+`eiaDieselPriceCents()` calls) is not near end-of-life. Series `EMD_EPD2D_PTE_NUS_DPG` and the
+`petroleum/pri/gnd` route are unchanged.
+
+## Shopping list
+
+Not on per-carrier integration cards (platform env, same pattern as FMCSA). Owner action: paste
+`EIA_API_KEY` into Vercel project env — takes ~2 minutes via the open-data registration form.

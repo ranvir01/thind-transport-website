@@ -1,12 +1,15 @@
 "use client"
 
 import { useState } from "react"
+import { COMPANY_INFO } from "@/lib/constants"
 
+// Only the tagline and website are card-specific; the rest shadowed
+// COMPANY_INFO with a second copy of the same three facts.
 const CARD = {
-  owner: "Sukhdev Thind",
+  owner: COMPANY_INFO.owner,
   tagline: "THE TRUCK ROLLS. THE OFFICE NEVER SLEEPS.",
-  phone: "(206) 765-6300",
-  email: "thindcarrier@gmail.com",
+  phone: COMPANY_INFO.phone,
+  email: COMPANY_INFO.email,
   website: "thindtransport.com",
 }
 
@@ -67,7 +70,7 @@ function CardFront() {
         </div>
 
         {/* Orange bar */}
-        <div className="bg-orange px-[6%] py-[2.5%]">
+        <div className="bg-orange-600 px-[6%] py-[2.5%]">
           <p className="text-navy font-extrabold tracking-wide text-center" style={{ fontSize: "clamp(0.55rem, 2cqi, 0.95rem)" }}>
             24/7 Dispatch &bull; Dry Van &bull; Reefer &bull; Flatbed &bull; Serving 48 States
           </p>
@@ -130,7 +133,7 @@ function CardBack() {
         </div>
 
         {/* Bottom: Orange bar */}
-        <div className="bg-orange px-[5%] py-[2%] flex items-center justify-between">
+        <div className="bg-orange-600 px-[5%] py-[2%] flex items-center justify-between">
           <div className="flex items-center gap-[2%] text-navy" style={{ fontSize: "clamp(0.4rem, 1.4cqi, 0.6rem)" }}>
             <span className="font-extrabold tracking-wider">FLATBED</span>
             <span className="text-navy/40">&bull;</span>
@@ -249,9 +252,9 @@ function TruckScene() {
         ))}
         <rect x="0" y="6" width="156" height="9" rx="3" fill="white" opacity="0.06" />
 
-        <text x="78" y="31" fontFamily="Inter, system-ui, sans-serif" fontSize="12" fontWeight="900" fill="#001F3F" textAnchor="middle" letterSpacing="0.5">THIND</text>
-        <rect x="44" y="34" width="68" height="1.5" rx="0.75" fill="#001F3F" opacity="0.2" />
-        <text x="78" y="48" fontFamily="Inter, system-ui, sans-serif" fontSize="7" fontWeight="700" fill="#001F3F" textAnchor="middle" letterSpacing="3">TRANSPORT</text>
+        <text x="78" y="31" fontFamily="Inter, system-ui, sans-serif" fontSize="12" fontWeight="900" fill="#17181B" textAnchor="middle" letterSpacing="0.5">THIND</text>
+        <rect x="44" y="34" width="68" height="1.5" rx="0.75" fill="#17181B" opacity="0.2" />
+        <text x="78" y="48" fontFamily="Inter, system-ui, sans-serif" fontSize="7" fontWeight="700" fill="#17181B" textAnchor="middle" letterSpacing="3">TRANSPORT</text>
 
         {/* Fifth wheel */}
         <rect x="154" y="22" width="8" height="30" rx="1.5" fill="#777" />
@@ -442,7 +445,7 @@ export function BusinessCardShowcase() {
               { label: "Bleed Size", value: '3.46" x 2.32"' },
               { label: "Trim Size", value: '3.30" x 2.16"' },
               { label: "Safe Area", value: '3.14" x 2.02"' },
-              { label: "Primary Color", value: "#001F3F (Navy)" },
+              { label: "Primary Color", value: "#17181B (Navy)" },
               { label: "Accent Color", value: "#FF9500 (Safety Orange)" },
               { label: "Font", value: "Inter (800/700/500)" },
               { label: "Min Font Size", value: "8pt (print)" },
@@ -462,7 +465,7 @@ export function BusinessCardShowcase() {
             {[
               { href: "/branding/business-card-front.svg", label: "Front (SVG)", style: "bg-navy" },
               { href: "/branding/business-card-back.svg", label: "Back (SVG)", style: "bg-navy" },
-              { href: "/branding/thind-transport-logo.svg", label: "Logo (SVG)", style: "bg-orange" },
+              { href: "/branding/thind-transport-logo.svg", label: "Logo (SVG)", style: "bg-orange-600" },
             ].map((d) => (
               <a key={d.href} href={d.href} download className={`inline-flex items-center gap-2 px-5 py-2.5 ${d.style} text-white rounded-lg text-sm font-semibold hover:opacity-90 transition-opacity shadow-brand`}>
                 <svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">

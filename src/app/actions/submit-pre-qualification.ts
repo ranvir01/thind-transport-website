@@ -4,6 +4,9 @@ import { z } from "zod"
 import { COMPANY_INFO } from "@/lib/constants"
 import { createMailTransport, isEmailConfigured, mailFrom } from "@/lib/mailer"
 import { savePublicApplication, markPublicApplicationEmailed } from "@/lib/driver-db"
+import { honeypotTripped, publicFormBlocked } from "@/lib/public-form-guard"
+import { saveWebsiteLead } from "@/lib/hub/website-leads"
+import { ATTRIBUTION_FIELD, deserializeAttribution } from "@/lib/attribution"
 
 const preQualifySchema = z.object({
   firstName: z.string().min(2, "First Name is required"),
@@ -59,6 +62,10 @@ const checkQualification = (data: any): boolean => {
 
 export async function submitPreQualification(prevState: PreQualifyState, formData: FormData): Promise<PreQualifyState> {
   try {
+    // Bot filled the invisible field → fake success, no signal to tune on.
+    if (honeypotTripped(formData)) {
+      return { success: true, message: "Pre-qualification submitted successfully! We will contact you shortly." }
+    }
     const rawData = {
       firstName: formData.get("firstName"),
       lastName: formData.get("lastName"),
@@ -74,7 +81,11 @@ export async function submitPreQualification(prevState: PreQualifyState, formDat
       runWaToAnywhere: formData.get("runWaToAnywhere"),
       homeTimeDuration: formData.get("homeTimeDuration"),
       jobsInLast3Years: formData.get("jobsInLast3Years"),
-      suspensionDetails: formData.get("suspensionDetails"),
+      // FormData.get returns null for absent fields; zod .optional() accepts
+      // undefined but rejects null (the exact bug that once ate every
+      // captureLead submission). The client currently always appends this
+      // field, but don't let the only optional field be a landmine.
+      suspensionDetails: formData.get("suspensionDetails") ?? undefined,
       
       hasRiderOrPet: formData.get("hasRiderOrPet"),
       isSapDriver: formData.get("isSapDriver"),
@@ -94,9 +105,35 @@ export async function submitPreQualification(prevState: PreQualifyState, formDat
     }
 
     const data = validatedData.data
+
+    if (await publicFormBlocked(data.email)) {
+      return {
+        success: false,
+        message: `Something went wrong. Please try again or call ${COMPANY_INFO.phone}.`,
+      }
+    }
+
     const isQualified = checkQualification(data)
 
-    // Persist FIRST — never lose a lead because email is down.
+    // Speed-to-lead surface first: /hub/leads and the Today card read
+    // hub.website_leads. The legacy public_applications row below is only
+    // reachable through a manual "Import" on the recruiting board, so without
+    // this a completed pre-qualification — name + phone + every qualifying
+    // answer, the hottest lead the site produces — never surfaced for the
+    // same-hour callback the funnel is built around (apply step 2 and the
+    // shipper quote form already land here via captureLead).
+    const leadSaved = await saveWebsiteLead({
+      name: `${data.firstName} ${data.lastName}`,
+      email: data.email,
+      phone: data.phone,
+      source: `Pre-qualification (${isQualified ? "qualified" : "needs review"})`,
+      attribution: deserializeAttribution(formData.get(ATTRIBUTION_FIELD) as string | null),
+      driverType: data.ownSleeperTruck === "Yes" ? "owner-operator" : null,
+      experienceYears: data.cdlExperience,
+      message: `${data.cityState} · Home time: ${data.homeTimeDuration}`,
+    })
+
+    // Persist the full answer set — never lose a lead because email is down.
     let savedRecordId: string | null = null
     try {
       const saved = await savePublicApplication({
@@ -114,6 +151,15 @@ export async function submitPreQualification(prevState: PreQualifyState, formDat
     }
 
     if (!isEmailConfigured()) {
+      if (!savedRecordId && !leadSaved) {
+        // Nothing persisted and no email path — telling the driver "success"
+        // here would silently eat the lead. Same doctrine as captureLead.
+        console.error("Pre-qualification reached NO destination:", data.email)
+        return {
+          success: false,
+          message: `Something went wrong on our end. Please call ${COMPANY_INFO.phone} and we'll take your info directly.`,
+        }
+      }
       console.warn("SMTP not configured — pre-qualification stored but not emailed:", data.email)
       return {
         success: true,
@@ -166,7 +212,7 @@ export async function submitPreQualification(prevState: PreQualifyState, formDat
       if (savedRecordId) await markPublicApplicationEmailed(savedRecordId)
     } catch (emailError) {
       console.error("Pre-qualification email delivery failed (record saved):", emailError)
-      if (!savedRecordId) {
+      if (!savedRecordId && !leadSaved) {
         return {
           success: false,
           message: `Something went wrong on our end. Please call ${COMPANY_INFO.phone} and we'll take your info directly.`,

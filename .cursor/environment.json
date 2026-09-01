@@ -1,0 +1,3 @@
+{
+  "install": "npm ci --ignore-scripts || npm install --ignore-scripts; npm rebuild bcrypt sharp"
+}

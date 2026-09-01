@@ -23,7 +23,7 @@ export default async function EditLoadPage({ params }: { params: Promise<{ id: s
   const load = await getLoad(user.carrierId, id).catch(() => null)
   if (!load) notFound()
   const [stops, customers, drivers, trucks, trailers, priceBook] = await Promise.all([
-    getLoadStops(id),
+    getLoadStops(user.carrierId, id),
     listCustomers(user.carrierId),
     listDrivers(user.carrierId),
     listTrucks(user.carrierId),

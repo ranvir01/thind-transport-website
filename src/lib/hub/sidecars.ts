@@ -1,0 +1,160 @@
+/**
+ * Optional Go/Rust sidecar clients.
+ *
+ * When HAULDESK_GO_WORKER_URL / HAULDESK_RUST_COMPUTE_URL are unset, every
+ * function falls back to the existing pure-TypeScript implementations so
+ * production on Vercel behaves exactly as before.
+ */
+
+import { haversineMiles } from "./geo"
+import { computeIfta, type IftaInputs, type IftaResult } from "./ifta-core"
+import { drivingMiles, type LatLng } from "./mapbox"
+
+const GO_WORKER_URL = process.env.HAULDESK_GO_WORKER_URL?.replace(/\/$/, "") ?? ""
+const RUST_COMPUTE_URL = process.env.HAULDESK_RUST_COMPUTE_URL?.replace(/\/$/, "") ?? ""
+
+/** Shared-secret header both sidecars verify when HAULDESK_SIDECAR_SECRET is set. */
+function sidecarHeaders(): Record<string, string> {
+  const headers: Record<string, string> = { "Content-Type": "application/json" }
+  const secret = process.env.HAULDESK_SIDECAR_SECRET
+  if (secret) headers["X-Hauldesk-Secret"] = secret
+  return headers
+}
+
+export function hasGoWorker(): boolean {
+  return Boolean(GO_WORKER_URL)
+}
+
+export function hasRustCompute(): boolean {
+  return Boolean(RUST_COMPUTE_URL)
+}
+
+export interface RouteMilesRequest {
+  origin: LatLng
+  dest: LatLng
+}
+
+export type RouteMilesSource = "go-worker" | "mapbox" | "haversine"
+
+export interface RouteMilesResult {
+  miles: number
+  source: RouteMilesSource
+}
+
+/**
+ * Mirror of the Go worker's WGS84 range check (main.go `latLng.valid`): the
+ * worker answers 400 for out-of-range coordinates, so sending them is a
+ * guaranteed-null round trip against the 15s fetch budget. Out-of-range
+ * values are always a caller bug (swapped lat/lng, meters instead of
+ * degrees); unlike JSON the TS side can also carry NaN/Infinity, so the
+ * finiteness check is not redundant here.
+ */
+function isValidLatLng(p: LatLng): boolean {
+  return (
+    Number.isFinite(p.lat) &&
+    Number.isFinite(p.lng) &&
+    p.lat >= -90 &&
+    p.lat <= 90 &&
+    p.lng >= -180 &&
+    p.lng <= 180
+  )
+}
+
+/**
+ * Drive miles from the Go worker alone. Null when the worker is unset, down,
+ * or answers nonsense — callers pick their own fallback (routing.ts puts this
+ * at the top of the Suggest-miles ladder so the two ladders never drift).
+ */
+export async function goWorkerRouteMiles(origin: LatLng, dest: LatLng): Promise<number | null> {
+  if (!GO_WORKER_URL) return null
+  if (!isValidLatLng(origin) || !isValidLatLng(dest)) return null
+  try {
+    const res = await fetch(`${GO_WORKER_URL}/route/miles`, {
+      method: "POST",
+      headers: sidecarHeaders(),
+      body: JSON.stringify({ origin, dest }),
+      signal: AbortSignal.timeout(15_000),
+    })
+    if (!res.ok) return null
+    const data = (await res.json()) as { miles?: number; source?: string }
+    // The worker labels its OSRM-down floor "haversine-fallback"; treat that as
+    // no answer so the ladder's own estimate (winding factor applied) runs.
+    if (data.source && data.source !== "osrm") return null
+    if (typeof data.miles === "number" && Number.isFinite(data.miles) && data.miles > 0) {
+      return Math.round(data.miles)
+    }
+    return null
+  } catch {
+    return null
+  }
+}
+
+/** Driving miles between two coordinates. Go worker → Mapbox → haversine fallback. */
+export async function routeMiles(req: RouteMilesRequest): Promise<RouteMilesResult> {
+  const workerMiles = await goWorkerRouteMiles(req.origin, req.dest)
+  if (workerMiles != null) {
+    return { miles: workerMiles, source: "go-worker" }
+  }
+
+  const mapboxMiles = await drivingMiles(req.origin, req.dest)
+  if (mapboxMiles != null) {
+    return { miles: mapboxMiles, source: "mapbox" }
+  }
+
+  const miles = Math.round(
+    haversineMiles(req.origin.lat, req.origin.lng, req.dest.lat, req.dest.lng)
+  )
+  return { miles, source: "haversine" }
+}
+
+export type IftaSummarySource = "rust-compute" | "typescript"
+
+export type IftaSummaryResult = IftaResult & { source: IftaSummarySource }
+
+/**
+ * A 200 from the Rust URL is not proof the reply is IFTA math — version skew,
+ * a proxy error page, or the wrong service answering on that port all return
+ * parseable JSON. Filing money must never carry `undefined`/NaN cents, so
+ * anything not shaped like an IftaResult is treated as no answer and the TS
+ * engine runs instead (same doctrine as goWorkerRouteMiles's nonsense guard).
+ */
+function isIftaResult(data: unknown): data is IftaResult {
+  if (typeof data !== "object" || data === null) return false
+  const r = data as Record<string, unknown>
+  const finite = (v: unknown) => typeof v === "number" && Number.isFinite(v)
+  return (
+    [r.fleetMiles, r.fleetGallons, r.mpg, r.netTaxCents].every(finite) &&
+    Array.isArray(r.missingRates) &&
+    Array.isArray(r.rows) &&
+    r.rows.every(
+      (row) =>
+        typeof row === "object" &&
+        row !== null &&
+        finite((row as Record<string, unknown>).netCents)
+    )
+  )
+}
+
+/** Quarterly IFTA tax summary. Rust compute → `computeIfta` fallback. */
+export async function iftaSummary(inputs: IftaInputs): Promise<IftaSummaryResult> {
+  if (RUST_COMPUTE_URL) {
+    try {
+      const res = await fetch(`${RUST_COMPUTE_URL}/ifta/summary`, {
+        method: "POST",
+        headers: sidecarHeaders(),
+        body: JSON.stringify(inputs),
+        signal: AbortSignal.timeout(30_000),
+      })
+      if (res.ok) {
+        const data: unknown = await res.json()
+        if (isIftaResult(data)) {
+          return { ...data, source: "rust-compute" }
+        }
+      }
+    } catch {
+      // fall through to TS
+    }
+  }
+
+  return { ...computeIfta(inputs), source: "typescript" }
+}

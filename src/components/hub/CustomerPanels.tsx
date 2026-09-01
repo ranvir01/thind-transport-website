@@ -9,6 +9,7 @@ import type { Contact } from "@/lib/hub/types"
 
 export function ContactsPanel({ customerId, contacts }: { customerId: string; contacts: Contact[] }) {
   const [adding, setAdding] = useState(false)
+  const [confirmingRemoveId, setConfirmingRemoveId] = useState<string | null>(null)
   const [form, setForm] = useState({ name: "", role: "", phone: "", email: "" })
   const [pending, startTransition] = useTransition()
 
@@ -31,15 +32,16 @@ export function ContactsPanel({ customerId, contacts }: { customerId: string; co
       const result = await removeContactAction(id, customerId)
       if (result.ok) toast.success("Contact removed")
       else toast.error(result.error ?? "Could not remove contact")
+      setConfirmingRemoveId(null)
     })
 
   return (
     <Panel className="p-4 md:p-5">
       <div className="flex items-center justify-between mb-3">
-        <h2 className="font-display text-base font-bold uppercase tracking-wide text-white">Contacts</h2>
+        <h2 className="text-[13.5px] font-semibold text-fg">Contacts</h2>
         <button
           onClick={() => setAdding((v) => !v)}
-          className="inline-flex min-h-[36px] items-center gap-1 rounded-lg border border-white/15 px-3 text-xs font-semibold text-steel-100 hover:bg-white/5"
+          className="inline-flex min-h-[36px] items-center gap-1 rounded-lg border border-border-strong px-3 text-xs font-semibold text-fg-2 hover:bg-hover"
         >
           <Plus className="h-3.5 w-3.5" /> Add
         </button>
@@ -58,44 +60,66 @@ export function ContactsPanel({ customerId, contacts }: { customerId: string; co
               onChange={(e) => setForm({ ...form, email: e.target.value })} />
           </div>
           <button type="submit" disabled={pending}
-            className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-gold/40 bg-gold/10 px-4 text-sm font-bold text-gold hover:bg-gold/20 disabled:opacity-50">
+            className="inline-flex min-h-[44px] items-center gap-2 rounded-control bg-accent px-4 text-sm font-semibold text-accent-fg hover:bg-accent-hover disabled:opacity-50">
             {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : null} Save contact
           </button>
         </form>
       ) : null}
 
       {contacts.length === 0 ? (
-        <p className="text-body-sm text-steel-300">No contacts yet.</p>
+        <p className="text-body-sm text-fg-3">No contacts yet.</p>
       ) : (
-        <ul className="divide-y divide-white/5">
+        <ul className="divide-y divide-border">
           {contacts.map((contact) => (
             <li key={contact.id} className="flex items-center gap-3 py-2.5">
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-semibold text-white">
+                <p className="text-sm font-semibold text-fg">
                   {contact.name}
-                  {contact.role ? <span className="text-steel-300 font-normal"> · {contact.role}</span> : null}
+                  {contact.role ? <span className="text-fg-3 font-normal"> · {contact.role}</span> : null}
                 </p>
                 <div className="flex flex-wrap gap-3 mt-0.5">
                   {contact.phone ? (
-                    <a href={`tel:${contact.phone}`} className="inline-flex items-center gap-1 text-body-xs text-gold">
+                    <a href={`tel:${contact.phone}`} className="inline-flex items-center gap-1 text-body-xs text-accent-text">
                       <Phone className="h-3 w-3" /> {contact.phone}
                     </a>
                   ) : null}
                   {contact.email ? (
-                    <a href={`mailto:${contact.email}`} className="inline-flex items-center gap-1 text-body-xs text-gold">
+                    <a href={`mailto:${contact.email}`} className="inline-flex items-center gap-1 text-body-xs text-accent-text">
                       <Mail className="h-3 w-3" /> {contact.email}
                     </a>
                   ) : null}
                 </div>
               </div>
-              <button
-                aria-label={`Remove ${contact.name}`}
-                onClick={() => remove(contact.id)}
-                disabled={pending}
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-red-300 hover:bg-red-500/10 disabled:opacity-50"
-              >
-                <Trash2 className="h-4 w-4" />
-              </button>
+              {confirmingRemoveId === contact.id ? (
+                <span className="flex shrink-0 items-center gap-1">
+                  <button
+                    onClick={() => remove(contact.id)}
+                    disabled={pending}
+                    aria-label={`Confirm remove ${contact.name}`}
+                    className="flex h-8 items-center gap-1 rounded-lg bg-bad px-2 text-[11px] font-bold uppercase tracking-wide text-white hover:opacity-90 disabled:opacity-60"
+                  >
+                    {pending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
+                    Remove
+                  </button>
+                  <button
+                    onClick={() => setConfirmingRemoveId(null)}
+                    disabled={pending}
+                    aria-label={`Keep ${contact.name}`}
+                    className="flex h-8 items-center rounded-lg px-2 text-[11px] font-semibold text-fg-3 hover:bg-hover"
+                  >
+                    Keep
+                  </button>
+                </span>
+              ) : (
+                <button
+                  onClick={() => setConfirmingRemoveId(contact.id)}
+                  disabled={pending}
+                  aria-label={`Remove ${contact.name}`}
+                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-fg-3 hover:bg-hover hover:text-bad disabled:opacity-50"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              )}
             </li>
           ))}
         </ul>
@@ -132,7 +156,7 @@ export function CrmNotesPanel({ customerId, activities }: { customerId: string; 
 
   return (
     <Panel className="p-4 md:p-5">
-      <h2 className="font-display text-base font-bold uppercase tracking-wide text-white mb-3">Activity</h2>
+      <h2 className="text-[13.5px] font-semibold text-fg mb-3">Activity</h2>
       <form onSubmit={add} className="flex flex-col sm:flex-row gap-2 mb-4">
         <select aria-label="Activity type" className={`${fieldCls} sm:w-28`} value={kind}
           onChange={(e) => setKind(e.target.value as typeof kind)}>
@@ -145,18 +169,18 @@ export function CrmNotesPanel({ customerId, activities }: { customerId: string; 
           className={fieldCls} value={body} onChange={(e) => setBody(e.target.value)}
         />
         <button type="submit" disabled={pending || !body.trim()}
-          className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl border border-gold/40 bg-gold/10 px-4 text-sm font-bold text-gold hover:bg-gold/20 disabled:opacity-50">
+          className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-control bg-accent px-4 text-sm font-semibold text-accent-fg hover:bg-accent-hover disabled:opacity-50">
           {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : null} Log
         </button>
       </form>
       {activities.length === 0 ? (
-        <p className="text-body-sm text-steel-300">Nothing logged yet.</p>
+        <p className="text-body-sm text-fg-3">Nothing logged yet.</p>
       ) : (
         <ul className="space-y-3">
           {activities.map((activity) => (
-            <li key={activity.id} className="rounded-lg bg-white/5 p-3">
-              <p className="text-sm text-steel-100">{activity.body}</p>
-              <p className="mt-1 text-body-xs text-steel-400 uppercase">
+            <li key={activity.id} className="rounded-lg bg-surface-2 p-3">
+              <p className="text-sm text-fg-2">{activity.body}</p>
+              <p className="mt-1 text-body-xs text-fg-3 uppercase">
                 {activity.kind} · {activity.actor_name ?? "—"} ·{" "}
                 {new Date(activity.created_at).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
               </p>

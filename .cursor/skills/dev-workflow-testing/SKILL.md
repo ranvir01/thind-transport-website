@@ -17,14 +17,32 @@ npm run lint                   # ESLint 9 flat config (eslint.config.mjs)
 npm run generate:brand-assets  # regenerate favicons + og-image from the brand system
 ```
 
+## Linux native deps (canvas)
+
+The devDependency `canvas` (used by `scripts/extract-pdf-pages.mjs`) compiles native bindings.
+On Debian/Ubuntu — including Cursor Cloud Agent containers — install system libraries **before**
+`npm ci` / `npm install` or the install fails with missing `pango` / `gif` headers (npm ci rolls
+node_modules back on failure, so it can look like nothing installed at all):
+
+```bash
+npm run setup:canvas-deps   # idempotent wrapper (scripts/setup-canvas-deps.sh) for:
+sudo apt-get update
+sudo apt-get install -y build-essential libcairo2-dev libpango1.0-dev libjpeg-dev libgif-dev librsvg2-dev
+```
+
+macOS: `brew install pkg-config cairo pango libpng jpeg giflib librsvg`. The Next.js app itself
+aliases `canvas` to `false` in `next.config.mjs`; only local scripts need the native module.
+
 ## Local email testing
 
 Run `npx maildev --smtp 1025 --web 1080`, then set `SMTP_HOST=localhost` and `SMTP_PORT=1025` in `.env.local`. Every email the site sends (applications, portal confirmations, password resets) appears at `http://localhost:1080` — no real Gmail needed.
 
 ## Environment
 
-- Copy `.env.example` → `.env.local` (it documents every variable: SMTP, NEXTAUTH, POSTGRES_URL, DRIVER_INVITATION_CODE, SETUP_DB_TOKEN). Without Postgres credentials, public pages still render; only driver-portal/auth/database features fail — don't mistake that for broken code.
+- Copy `.env.example` → `.env.local` (it documents every variable: SMTP, NEXTAUTH, POSTGRES_URL, DRIVER_INVITATION_CODE, SETUP_DB_TOKEN, CRON_SECRET). Without Postgres credentials, public pages still render; only driver-portal/auth/database features fail — don't mistake that for broken code.
+- **Hub login requires a session secret.** Set `NEXTAUTH_SECRET` (or Auth.js v5's `AUTH_SECRET`) in `.env.local` — generate with `openssl rand -base64 32`. If it is blank, `/hub/login` redirects to `/api/auth/error` with Auth.js `MissingSecret`; public marketing pages still work.
 - Never commit secrets. Production env lives in Vercel. `vercel-env*.txt` is gitignored for a reason — a real password was once committed in one.
+- **The legacy `/driver/register` + `/driver/login` portal** (pre-Hub, `src/lib/driver-db-postgres.ts`) reads/writes `drivers`/`applications`/`public_applications` tables that `npm run db:migrate` does **not** create — those come from `setupDatabase()` (`src/lib/db-setup.ts`), exposed at `GET /api/setup-db` and gated by `SETUP_DB_TOKEN`. Set `SETUP_DB_TOKEN` in `.env.local` and hit that endpoint once before exercising this flow locally, or registration 500s with `relation "drivers" does not exist`.
 
 ## Key Map
 
@@ -44,6 +62,14 @@ Run `npx maildev --smtp 1025 --web 1080`, then set `SMTP_HOST=localhost` and `SM
 2. **`trustHost: true`** required in NextAuth config for Vercel, and `NEXTAUTH_URL=https://thindtransport.com` in prod.
 3. **Postgres returns snake_case**, TypeScript uses camelCase. Handle both: `driver.firstName || driver.first_name`.
 4. Zod schemas must stay in sync with React Hook Form fields or steps silently refuse to advance.
+5. **Blank `NEXTAUTH_SECRET` / `AUTH_SECRET`** breaks hub login only (`MissingSecret` on `/api/auth/error`); marketing pages and `/apply` still render. `src/proxy.ts` reads `NEXTAUTH_SECRET ?? AUTH_SECRET` — set at least one in `.env.local` before E2E or Playwright hub drives.
+6. **Don't copy `.env.example`'s placeholder `SMTP_USER`/`SMTP_PASS` verbatim into `.env.local`.** `isEmailConfigured()` (`src/lib/mailer.ts`) only checks that both are non-empty, so the literal placeholders (`your-gmail@gmail.com` / `your-16-character-app-password`) read as "configured" and every send (customer statements, settlement/invoice emails) tries a real SMTP auth against `smtp.gmail.com` and hangs for the full 8s `connectionTimeout` before failing, instead of hitting the graceful "email not configured" toast path. Leave both blank (or point at local maildev) for local rig / E2E runs.
+7. **`/driver/*` (legacy driver portal) uses `@vercel/postgres`** (`src/lib/driver-db-postgres.ts`), Neon's HTTP-fetch driver — pointing `POSTGRES_URL` at a plain local/self-hosted Postgres makes it 500 with `fetch failed / ECONNREFUSED 127.0.0.1:443` on register and login. `/hub/*` is unaffected — it uses `pg` directly. For local `/driver/*` testing either leave `POSTGRES_URL` unset (falls back to local JSON files, per `.env.example`) or point it at a real Neon/Vercel Postgres endpoint. Prefer `GET /api/setup-db` when you do want Postgres-backed legacy tables locally.
+8. **`scripts/e2e-*.mjs` use Puppeteer, not Playwright.** Whether plain `npm install` gets Puppeteer a working bundled Chromium depends on the sandbox's network policy — on some agent images the postinstall download succeeds and it works out of the box; on network-restricted images the download fails or is skipped. If any `e2e-*.mjs` script fails fast with "Could not find Chrome" / "Browser was not found at the configured executablePath", point Puppeteer at whatever Chromium the sandbox already ships (e.g. Anthropic's Claude Code web/cloud containers preinstall one for Playwright at `/opt/pw-browsers/chromium-<rev>/chrome-linux/chrome`): `export PUPPETEER_EXECUTABLE_PATH=/opt/pw-browsers/chromium-<rev>/chrome-linux/chrome` before `npm install` (skip the download with `PUPPETEER_SKIP_DOWNLOAD=true npm install`) or the e2e script itself. Verify first with a one-line launch check.
+9. **Fresh containers ship Postgres running but with no role or database** — `service postgresql start` gives you a server with only `postgres`/`template0`/`template1`. `npm run db:migrate` just errors "POSTGRES_URL is required" or connection-refuses; it doesn't create the role/db for you. Before the first migrate: `sudo -u postgres psql -c "CREATE ROLE <user> WITH LOGIN PASSWORD '<pw>' SUPERUSER;"` and `sudo -u postgres psql -c "CREATE DATABASE <db> OWNER <user>;"`, then set `POSTGRES_URL=postgres://<user>:<pw>@127.0.0.1:5432/<db>` in `.env.local`.
+10. **`pkill -f "next start"` does not kill a `npm run start` server** — the running process is `next-server`, a grandchild `npm` spawns, so the pattern misses it and the old process keeps holding port 3000 with its original env. A second `npm run start` then fails to bind and exits, leaving the stale server serving *stale* `.env.local` values. If you edit `.env.local` mid-session (e.g. blanking placeholder `SMTP_USER`/`SMTP_PASS` per pitfall 6) and the fix doesn't seem to take effect, check `ps aux | grep next-server` for the process start time vs. your edit time, and `kill -9 <pid>` (or `lsof -i:3000`) before restarting — don't assume a real product bug from a server still running old env.
+11. **`scripts/e2e-*-smoke.mjs` don't read `.env.local`** — only `next start` does. The state-consuming smokes call `reseed()`, which `spawnSync`s `scripts/seed-demo.mjs` as a child process, so `POSTGRES_URL`/`NEXTAUTH_SECRET`/etc. must be exported in the shell running the smoke (`set -a; source .env.local; set +a`) or the reseed step throws with a missing-connection error even though the Next.js server itself is up and healthy.
+12. **`e2e-recurring-lane-smoke.mjs` / `e2e-recurring-rollup-smoke.mjs` hard-require `CRON_SECRET`** against a localhost `BASE` — they call the cron endpoints (`/api/hub/cron/recurring-rebook`, the rollup equivalent) with `Bearer ${CRON_SECRET}` and fail fast at startup if it's unset, since the Next.js server would otherwise 401 the cron step and no booking/rollup could ever run. Export `CRON_SECRET` the same way as pitfall 11 (`set -a; source .env.local; set +a`) before running either smoke, and make sure the same value is set in `.env.local` for the running `next start` server to accept it.
 
 ## Pre-Commit Checklist
 

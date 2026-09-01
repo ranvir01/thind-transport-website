@@ -1,0 +1,118 @@
+"use client"
+
+/**
+ * Registers the hub service worker and offers a one-tap "turn on alerts"
+ * subscribe flow. Designed for non-technical users: a single button with
+ * plain words, no settings to understand. Renders nothing when push is
+ * unsupported or not configured on the server.
+ *
+ * appearance="driver" (default) uses the forced-dark driver tokens;
+ * appearance="office" uses semantic tokens for the office/team screens.
+ */
+import { useCallback, useEffect, useState } from "react"
+import { BellRing, Check } from "lucide-react"
+
+function urlBase64ToUint8Array(base64: string): Uint8Array {
+  const padding = "=".repeat((4 - (base64.length % 4)) % 4)
+  const raw = atob((base64 + padding).replace(/-/g, "+").replace(/_/g, "/"))
+  return Uint8Array.from([...raw].map((c) => c.charCodeAt(0)))
+}
+
+type PushState = "unsupported" | "loading" | "off" | "on" | "denied"
+
+export function PushManager({
+  compact = false,
+  appearance = "driver",
+}: {
+  compact?: boolean
+  appearance?: "driver" | "office"
+}) {
+  const [state, setState] = useState<PushState>("loading")
+  const office = appearance === "office"
+
+  useEffect(() => {
+    let cancelled = false
+    async function init() {
+      if (
+        typeof window === "undefined" ||
+        !("serviceWorker" in navigator) ||
+        !("PushManager" in window)
+      ) {
+        setState("unsupported")
+        return
+      }
+      try {
+        const { publicKey } = await fetch("/api/hub/push").then((r) => r.json())
+        if (!publicKey) {
+          if (!cancelled) setState("unsupported")
+          return
+        }
+        const registration = await navigator.serviceWorker.register("/hub-sw.js", { scope: "/hub" })
+        const existing = await registration.pushManager.getSubscription()
+        if (cancelled) return
+        if (Notification.permission === "denied") setState("denied")
+        else setState(existing ? "on" : "off")
+      } catch {
+        if (!cancelled) setState("unsupported")
+      }
+    }
+    init()
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  const subscribe = useCallback(async () => {
+    try {
+      setState("loading")
+      const { publicKey } = await fetch("/api/hub/push").then((r) => r.json())
+      const registration = await navigator.serviceWorker.ready
+      const permission = await Notification.requestPermission()
+      if (permission !== "granted") {
+        setState(permission === "denied" ? "denied" : "off")
+        return
+      }
+      const subscription = await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(publicKey) as BufferSource,
+      })
+      await fetch("/api/hub/push", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(subscription.toJSON()),
+      })
+      setState("on")
+    } catch {
+      setState("off")
+    }
+  }, [])
+
+  if (state === "unsupported" || state === "loading") return null
+  if (state === "on") {
+    return compact ? null : (
+      <p className={office ? "flex items-center gap-2 text-body-xs text-fg-3" : "flex items-center gap-2 text-body-xs text-steel-400"}>
+        <Check className={office ? "h-3.5 w-3.5 text-fg-2" : "h-3.5 w-3.5 text-steel-200"} /> Alerts are on for this device
+      </p>
+    )
+  }
+  if (state === "denied") {
+    return compact ? null : (
+      <p className={office ? "text-body-xs text-fg-3" : "text-body-xs text-steel-400"}>
+        Alerts are blocked — allow notifications for this site in your phone settings.
+      </p>
+    )
+  }
+  return (
+    <button
+      onClick={subscribe}
+      className={
+        office
+          ? "flex w-full min-h-[44px] items-center justify-center gap-2 rounded-control border border-border-strong px-3 py-2 text-sm font-semibold text-fg-2 hover:bg-hover"
+          : "flex w-full min-h-[44px] items-center justify-center gap-2 rounded-xl border border-white/15 px-3 py-2 text-sm font-semibold text-steel-200 hover:bg-white/5"
+      }
+    >
+      <BellRing className="h-4 w-4" />
+      Turn on alerts for this device
+    </button>
+  )
+}

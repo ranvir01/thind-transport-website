@@ -5,10 +5,45 @@
 import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from "pdf-lib"
 import { fmtCentsExact } from "./types"
 
+/**
+ * pdf-lib's StandardFonts use WinAnsi encoding and THROW on characters outside
+ * it ("WinAnsi cannot encode \u{2192}") — which took down invoice creation for
+ * every load, because lanes are rendered "Kent, WA \u{2192} Boise, ID". App strings
+ * keep their typography; this sanitizer runs at the PDF boundary only.
+ */
+const WINANSI_MAP: Record<string, string> = {
+  "\u2192": "->", "\u2190": "<-", "\u2194": "<->",
+  "\u2013": "-", "\u2014": "-", "\u2212": "-",
+  "\u2018": "'", "\u2019": "'", "\u201C": '"', "\u201D": '"',
+  "\u2026": "...", "\u2022": "-", "\u00A0": " ",
+}
+
+export function winAnsiSafe(value: string): string {
+  let out = value.replace(/[\u2190\u2192\u2194\u2013\u2014\u2212\u2018\u2019\u201C\u201D\u2026\u2022\u00A0]/g, (ch) => WINANSI_MAP[ch] ?? "?")
+  // De-accent anything decomposable (NFKD strips combining marks), then drop
+  // whatever still falls outside Latin-1 — a "?" beats a crashed invoice.
+  out = out.normalize("NFKD").replace(/[\u0300-\u036f]/g, "")
+  return out.replace(/[^\x00-\xFF]/g, "?")
+}
+
 const NAVY = rgb(0.055, 0.086, 0.129)
 const GOLD = rgb(0.949, 0.663, 0)
 const GRAY = rgb(0.35, 0.39, 0.45)
 const LIGHT = rgb(0.92, 0.94, 0.96)
+
+/**
+ * Tenant accent override for the PDF title bar. Only `#RRGGBB` (the format
+ * `setBrandAccentAction` validates before storing) is trusted; anything else
+ * — unset, legacy shorthand, garbage — falls back to the Thind gold so a bad
+ * value can never blank out or crash a document.
+ */
+export function resolveAccentColor(hex: string | null | undefined): ReturnType<typeof rgb> {
+  if (!hex || !/^#[0-9a-fA-F]{6}$/.test(hex)) return GOLD
+  const r = parseInt(hex.slice(1, 3), 16) / 255
+  const g = parseInt(hex.slice(3, 5), 16) / 255
+  const b = parseInt(hex.slice(5, 7), 16) / 255
+  return rgb(r, g, b)
+}
 
 export interface PdfBrand {
   name: string
@@ -17,15 +52,17 @@ export interface PdfBrand {
   email?: string | null
   dot?: string | null
   mc?: string | null
+  /** Hex accent from carrier_settings.branding.accent; falls back to gold. */
+  accent?: string | null
 }
 
-interface TableColumn {
+export interface TableColumn {
   header: string
   width: number
   align?: "left" | "right"
 }
 
-class DocBuilder {
+export class DocBuilder {
   page: PDFPage
   y: number
   constructor(
@@ -43,14 +80,23 @@ class DocBuilder {
     }
   }
 
-  header(brand: PdfBrand, title: string) {
+  header(rawBrand: PdfBrand, rawTitle: string) {
+    const brand: PdfBrand = {
+      ...rawBrand,
+      name: winAnsiSafe(rawBrand.name),
+      address: rawBrand.address ? winAnsiSafe(rawBrand.address) : rawBrand.address,
+      phone: rawBrand.phone ? winAnsiSafe(rawBrand.phone) : rawBrand.phone,
+      email: rawBrand.email ? winAnsiSafe(rawBrand.email) : rawBrand.email,
+    }
+    const title = winAnsiSafe(rawTitle)
+    const accent = resolveAccentColor(rawBrand.accent)
     this.page.drawRectangle({ x: 0, y: 752, width: 612, height: 40, color: NAVY })
     this.page.drawText(brand.name.toUpperCase(), {
       x: 40, y: 766, size: 16, font: this.fonts.bold, color: rgb(1, 1, 1),
     })
     this.page.drawText(title.toUpperCase(), {
       x: 612 - 40 - this.fonts.bold.widthOfTextAtSize(title.toUpperCase(), 13),
-      y: 767, size: 13, font: this.fonts.bold, color: GOLD,
+      y: 767, size: 13, font: this.fonts.bold, color: accent,
     })
     this.y = 738
     const meta = [
@@ -64,7 +110,8 @@ class DocBuilder {
     this.y -= 8
   }
 
-  text(value: string, opts: { size?: number; bold?: boolean; color?: ReturnType<typeof rgb>; x?: number } = {}) {
+  text(rawValue: string, opts: { size?: number; bold?: boolean; color?: ReturnType<typeof rgb>; x?: number } = {}) {
+    const value = winAnsiSafe(rawValue)
     this.ensureRoom(16)
     this.page.drawText(value, {
       x: opts.x ?? 40, y: this.y, size: opts.size ?? 10,
@@ -74,7 +121,8 @@ class DocBuilder {
     this.y -= (opts.size ?? 10) + 5
   }
 
-  keyValue(pairs: [string, string][], x = 40) {
+  keyValue(rawPairs: [string, string][], x = 40) {
+    const pairs = rawPairs.map(([k, v]) => [winAnsiSafe(k), winAnsiSafe(v)] as [string, string])
     for (const [key, value] of pairs) {
       this.ensureRoom(14)
       this.page.drawText(key, { x, y: this.y, size: 9, font: this.fonts.bold, color: GRAY })
@@ -84,7 +132,16 @@ class DocBuilder {
     this.y -= 4
   }
 
-  table(columns: TableColumn[], rows: string[][]) {
+  // Columns start at x=40 but the row/header shading spans x=36..576 (540 wide) —
+  // widths must sum to 536, not 540, or right-aligned text in the last column
+  // clips past the shaded band (IFTA's NET TAX column did).
+  table(rawColumns: TableColumn[], rawRows: string[][]) {
+    const totalWidth = rawColumns.reduce((sum, c) => sum + c.width, 0)
+    if (totalWidth !== 536) {
+      throw new Error(`table() columns must sum to 536 (got ${totalWidth}) or the last column clips past the shaded row band`)
+    }
+    const columns = rawColumns.map((c) => ({ ...c, header: winAnsiSafe(c.header) }))
+    const rows = rawRows.map((r) => r.map((v) => winAnsiSafe(v ?? "")))
     this.ensureRoom(24)
     let x = 40
     this.page.drawRectangle({ x: 36, y: this.y - 4, width: 540, height: 17, color: NAVY })
@@ -120,7 +177,9 @@ class DocBuilder {
     this.y -= 6
   }
 
-  totalLine(label: string, value: string) {
+  totalLine(rawLabel: string, rawValue: string) {
+    const label = winAnsiSafe(rawLabel)
+    const value = winAnsiSafe(rawValue)
     this.ensureRoom(20)
     const w = this.fonts.bold.widthOfTextAtSize(value, 12)
     this.page.drawText(label, { x: 360, y: this.y, size: 11, font: this.fonts.bold, color: NAVY })
@@ -128,7 +187,9 @@ class DocBuilder {
     this.y -= 20
   }
 
-  box(title: string, lines: string[]) {
+  box(rawTitle: string, rawLines: string[]) {
+    const title = winAnsiSafe(rawTitle)
+    const lines = rawLines.map((l) => winAnsiSafe(l))
     const height = 16 + lines.length * 12 + 8
     this.ensureRoom(height)
     this.page.drawRectangle({
@@ -145,7 +206,7 @@ class DocBuilder {
   }
 }
 
-async function newBuilder(): Promise<DocBuilder> {
+export async function newBuilder(): Promise<DocBuilder> {
   const doc = await PDFDocument.create()
   const regular = await doc.embedFont(StandardFonts.Helvetica)
   const bold = await doc.embedFont(StandardFonts.HelveticaBold)
@@ -185,7 +246,7 @@ export async function buildInvoicePdf(input: InvoicePdfInput): Promise<Uint8Arra
   b.table(
     [
       { header: "DESCRIPTION", width: 420 },
-      { header: "AMOUNT", width: 120, align: "right" },
+      { header: "AMOUNT", width: 116, align: "right" },
     ],
     input.lines.map((line) => [line.label, fmtCentsExact(line.amountCents)])
   )
@@ -194,6 +255,44 @@ export async function buildInvoicePdf(input: InvoicePdfInput): Promise<Uint8Arra
   if (input.factored) {
     b.text("This invoice has been assigned. Payment must be made to the factor above.", { size: 8.5, color: GRAY })
   }
+  return b.doc.save()
+}
+
+// ---- Customer statement (AR rollup, one PDF per customer) ----
+
+export interface StatementPdfInput {
+  brand: PdfBrand
+  customerName: string
+  statementDate: string
+  invoices: { number: string; loadReference: string; dueOn: string; bucket: string; openCents: number }[]
+  totalOpenCents: number
+}
+
+export async function buildStatementPdf(input: StatementPdfInput): Promise<Uint8Array> {
+  const b = await newBuilder()
+  b.header(input.brand, "Statement of Account")
+  b.keyValue([
+    ["Customer", input.customerName],
+    ["Statement date", input.statementDate],
+    ["Open invoices", String(input.invoices.length)],
+  ])
+  b.table(
+    [
+      { header: "INVOICE", width: 100 },
+      { header: "LOAD", width: 120 },
+      { header: "DUE", width: 90 },
+      { header: "AGING", width: 90 },
+      { header: "OPEN", width: 136, align: "right" },
+    ],
+    input.invoices.map((inv) => [
+      inv.number,
+      inv.loadReference,
+      inv.dueOn,
+      inv.bucket === "current" ? "Current" : `${inv.bucket} days`,
+      fmtCentsExact(inv.openCents),
+    ])
+  )
+  b.totalLine("TOTAL DUE", fmtCentsExact(input.totalOpenCents))
   return b.doc.save()
 }
 
@@ -221,7 +320,7 @@ export async function buildSettlementPdf(input: SettlementPdfInput): Promise<Uin
     [
       { header: "TYPE", width: 90 },
       { header: "DESCRIPTION", width: 330 },
-      { header: "AMOUNT", width: 120, align: "right" },
+      { header: "AMOUNT", width: 116, align: "right" },
     ],
     input.lines.map((line) => [
       line.kind.toUpperCase(),
@@ -251,6 +350,8 @@ export interface IftaPdfInput {
     taxPaidGallons: number
     rate: number
     surchargeRate: number
+    taxCents: number
+    surchargeCents: number
     netCents: number
   }[]
   netTaxCents: number
@@ -268,13 +369,15 @@ export async function buildIftaPdf(input: IftaPdfInput): Promise<Uint8Array> {
   ])
   b.table(
     [
-      { header: "JUR", width: 50 },
-      { header: "MILES", width: 90, align: "right" },
-      { header: "TAXABLE GAL", width: 95, align: "right" },
-      { header: "TAX-PAID GAL", width: 95, align: "right" },
-      { header: "RATE", width: 70, align: "right" },
-      { header: "SURCH", width: 60, align: "right" },
-      { header: "NET TAX", width: 80, align: "right" },
+      { header: "JUR", width: 36 },
+      { header: "MILES", width: 50, align: "right" },
+      { header: "TAXABLE GAL", width: 78, align: "right" },
+      { header: "TAX-PAID GAL", width: 78, align: "right" },
+      { header: "RATE", width: 40, align: "right" },
+      { header: "TAX $", width: 66, align: "right" },
+      { header: "SURCH %", width: 46, align: "right" },
+      { header: "SURCH $", width: 66, align: "right" },
+      { header: "NET TAX", width: 76, align: "right" },
     ],
     input.rows.map((row) => [
       row.jurisdiction,
@@ -282,7 +385,9 @@ export async function buildIftaPdf(input: IftaPdfInput): Promise<Uint8Array> {
       row.taxableGallons.toFixed(3),
       row.taxPaidGallons.toFixed(3),
       row.rate.toFixed(4),
+      fmtCentsExact(row.taxCents),
       row.surchargeRate ? row.surchargeRate.toFixed(4) : "—",
+      row.surchargeCents ? fmtCentsExact(row.surchargeCents) : "—",
       fmtCentsExact(row.netCents),
     ])
   )

@@ -121,9 +121,16 @@ describe("settlement engine — owner-operator week (hand-computed)", () => {
     [], []
   )
 
-  it("earnings per load", () => {
+  it("earnings per load (commission and FSC itemized for statement transparency)", () => {
     const earnings = draft.lines.filter((l) => l.kind === "earning")
-    expect(earnings.map((l) => l.amountCents)).toEqual([268500, 182000])
+    // Load 1: 90% × $2,650.00 = $2,385.00, then FSC $300.00
+    // Load 2: 90% × $1,800.00 = $1,620.00, then FSC $200.00
+    expect(earnings.map((l) => l.amountCents)).toEqual([238500, 30000, 162000, 20000])
+    // Per-load totals match the hand computation exactly.
+    const perLoad = new Map<string, number>()
+    for (const line of earnings) perLoad.set(line.sourceId!, (perLoad.get(line.sourceId!) ?? 0) + line.amountCents)
+    expect(perLoad.get("1")).toBe(268500)
+    expect(perLoad.get("2")).toBe(182000)
   })
   it("gross / deductions / net", () => {
     expect(draft.grossCents).toBe(450500)

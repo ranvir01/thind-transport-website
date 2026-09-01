@@ -52,10 +52,10 @@ export const fallbackCarriers: Carrier[] = [
 ]
 
 export const fallbackSettings: CarrierSettings = {
-  invoice: { prefix: "SB-", nextNumber: 7001, defaultTermsDays: 30 },
-  pay: { companyDriverPerMile: 0.65, ownerOperatorPercentage: 0.88, payLoadedMilesOnly: true },
+  invoice: { prefix: "SB-", nextNumber: 7001, defaultTermsDays: 30, autoInvoiceOnPod: true },
+  pay: { companyDriverPerMileCents: 65, ownerOperatorPercentage: 0.88, payLoadedMilesOnly: true },
   detention: { freeHours: 2, ratePerHourCents: 6000 },
-  costPerMileCents: 185,
+  costPerMileCents: 234,
   fsc: { baseCentsPerGallon: 125, mpg: 6 },
   randomTesting: { drugPct: 50, alcoholPct: 10 },
   factoring: {
@@ -65,6 +65,8 @@ export const fallbackSettings: CarrierSettings = {
     email: "sandbox-factor@example.invalid",
   },
   notifications: { officeEmail: "sandbox-office@example.invalid" },
+  branding: { accent: null },
+  driverApp: { showRunPay: true },
 }
 
 const loadRows = [
@@ -105,6 +107,15 @@ export function fallbackLoads(carrierId: string): Load[] {
     factored: index % 4 === 0,
     settlement_id: row[0] === "settled" ? `${prefix.toLowerCase()}-settlement-1` : null,
     notes: "Local no-database sandbox fallback row.",
+    acknowledged_at: ["dispatched", "at_pickup", "in_transit", "delivered", "pod_received", "invoiced", "paid", "settled"].includes(row[0])
+      ? new Date(Date.now() - index * 86400000).toISOString()
+      : null,
+    delivered_at: ["delivered", "pod_received", "invoiced", "paid", "settled"].includes(row[0])
+      ? new Date(Date.now() - Math.max(index - 1, 0) * 86400000).toISOString()
+      : null,
+    pod_received_at: ["pod_received", "invoiced", "paid", "settled"].includes(row[0])
+      ? new Date(Date.now() - Math.max(index - 2, 0) * 86400000).toISOString()
+      : null,
     created_at: new Date(Date.now() - index * 86400000).toISOString(),
     customer_name: row[11],
     driver_name: row[12],
@@ -271,6 +282,7 @@ export function fallbackFuelTransactions(carrierId: string): FuelTransaction[] {
         jurisdiction: index % 2 ? "OR" : "ID",
         gallons: gallons.toFixed(3),
         fuel_type: "diesel",
+        fuel_use: "tractor",
         unit_price_cents: unit,
         total_cents: Math.round(gallons * unit),
         odometer: String((truck.current_odometer ?? 180000) + index * 450),
@@ -290,6 +302,7 @@ export function fallbackFuelTransactions(carrierId: string): FuelTransaction[] {
         jurisdiction: index % 2 ? "NV" : "WA",
         gallons: (78.2 + index * 5).toFixed(3),
         fuel_type: "diesel",
+        fuel_use: "tractor",
         unit_price_cents: 421 + index * 2,
         total_cents: Math.round((78.2 + index * 5) * (421 + index * 2)),
         odometer: String((truck.current_odometer ?? 180000) + index * 850),

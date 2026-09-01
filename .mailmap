@@ -1,0 +1,31 @@
+# Canonical authorship for this repository.
+#
+# The work here is Ranvir Thind's. Agents — Claude Code, Cowork, Cursor, the
+# drain bot — commit on his behalf, and have historically written themselves
+# into the AUTHOR field. That field is what GitHub credits, what the
+# contribution graph counts, and what `git blame` reports, so the owner was
+# losing attribution on his own repository.
+#
+# The mapping is by EMAIL, not by name, deliberately: every agent so far has
+# invented its own display name ("Claude", "Claude (Cowork)",
+# "Claude (verify-and-build)", "loadoff-drain-bot") while sharing one address.
+# Matching the address catches the next one too, without needing an edit.
+#
+# Read by `git log`, `git blame`, `git shortlog -sn`, and GitHub's contributor
+# views. See AGENTS.md "Commit attribution" for the rule agents must follow at
+# commit time — this file is the safety net, not the primary mechanism.
+#
+# NOTE ON SCOPE: this file fixes DISPLAY in git tooling. GitHub's contribution
+# graph does NOT read mailmap — it matches the raw commit author email to an
+# account. So mailmap is the safety net for history already written; the real
+# fix is committing with a GitHub-linked address in the first place, which is
+# what scripts/git-identity.mjs sets.
+#
+# Format: Canonical Name <canonical@email> <commit@email>
+# Normalises the display name on the owner's own hand-made commits, which
+# carry the same address under the GitHub username rather than his full name.
+Ranvir Thind <130034150+ranvir01@users.noreply.github.com> <130034150+ranvir01@users.noreply.github.com>
+Ranvir Thind <130034150+ranvir01@users.noreply.github.com> <noreply@anthropic.com>
+Ranvir Thind <130034150+ranvir01@users.noreply.github.com> <cursoragent@cursor.com>
+Ranvir Thind <130034150+ranvir01@users.noreply.github.com> <ranvirthind.rst@gmail.com>
+Ranvir Thind <130034150+ranvir01@users.noreply.github.com> <bot@loadoff.local>

@@ -3,19 +3,19 @@
 import { revalidatePath } from "next/cache"
 import { requirePermission } from "@/lib/hub/session"
 import {
-  createInvoiceFromLoad, recordPayment, sendFactoringPacket, setInvoiceStatus,
+  createInvoiceFromLoad, recordPayment, sendCustomerStatement, sendFactoringPacket, setInvoiceStatus,
 } from "@/lib/hub/invoices"
 import {
   approveSettlement, createAdvance, draftSettlements, markSettlementPaid,
 } from "@/lib/hub/settlements"
 import { createExpense } from "@/lib/hub/expenses"
+import { submitInvoiceToFactor } from "@/lib/hub/integrations/factor"
+import { pushInvoiceToQbo } from "@/lib/hub/integrations/qbo"
+import { logAudit } from "@/lib/hub/audit"
 import { query } from "@/lib/hub/db"
 import { dollarsToCents, EXPENSE_CATEGORIES, type ExpenseCategory } from "@/lib/hub/types"
+import { actionError } from "@/lib/hub/action-error"
 import type { ActionResult } from "./fleet"
-
-function asError(err: unknown, fallback: string): ActionResult {
-  return { ok: false, error: err instanceof Error ? err.message : fallback }
-}
 
 function revalidateMoney() {
   revalidatePath("/hub/money")
@@ -28,7 +28,7 @@ export async function createInvoiceAction(loadId: string): Promise<ActionResult 
   try {
     user = await requirePermission("money:write")
   } catch (err) {
-    return asError(err, "Forbidden")
+    return actionError(err, "Forbidden")
   }
   try {
     const { invoice, emailed, error } = await createInvoiceFromLoad(user.carrierId, loadId, user)
@@ -37,7 +37,7 @@ export async function createInvoiceAction(loadId: string): Promise<ActionResult 
     revalidatePath("/hub/dispatch")
     return { ok: true, id: invoice.id, emailed, error }
   } catch (err) {
-    return asError(err, "Failed to create invoice")
+    return actionError(err, "Failed to create invoice")
   }
 }
 
@@ -49,7 +49,7 @@ export async function recordPaymentAction(
   try {
     user = await requirePermission("money:write")
   } catch (err) {
-    return asError(err, "Forbidden")
+    return actionError(err, "Forbidden")
   }
   const amountCents = dollarsToCents(values.amount)
   if (amountCents <= 0) return { ok: false, error: "Payment amount must be positive" }
@@ -63,7 +63,7 @@ export async function recordPaymentAction(
     revalidatePath(`/hub/money/invoices/${invoiceId}`)
     return { ok: true }
   } catch (err) {
-    return asError(err, "Failed to record payment")
+    return actionError(err, "Failed to record payment")
   }
 }
 
@@ -72,15 +72,16 @@ export async function disputeInvoiceAction(invoiceId: string): Promise<ActionRes
   try {
     user = await requirePermission("money:write")
   } catch (err) {
-    return asError(err, "Forbidden")
+    return actionError(err, "Forbidden")
   }
   try {
-    await setInvoiceStatus(user.carrierId, invoiceId, "disputed", user)
+    const touched = await setInvoiceStatus(user.carrierId, invoiceId, "disputed", user)
+    if (touched === 0) return { ok: false, error: "Invoice not found" }
     revalidateMoney()
     revalidatePath(`/hub/money/invoices/${invoiceId}`)
     return { ok: true }
   } catch (err) {
-    return asError(err, "Failed to update invoice")
+    return actionError(err, "Failed to update invoice")
   }
 }
 
@@ -89,23 +90,103 @@ export async function factoringPacketAction(invoiceId: string): Promise<ActionRe
   try {
     user = await requirePermission("money:write")
   } catch (err) {
-    return asError(err, "Forbidden")
+    return actionError(err, "Forbidden")
   }
   try {
     const { to } = await sendFactoringPacket(user.carrierId, invoiceId, user)
     revalidatePath(`/hub/money/invoices/${invoiceId}`)
     return { ok: true, error: undefined, id: to }
   } catch (err) {
-    return asError(err, "Failed to send factoring packet")
+    return actionError(err, "Failed to send factoring packet")
   }
 }
 
-export async function draftSettlementsAction(): Promise<ActionResult & { created?: number; skipped?: number }> {
+export async function submitInvoiceToFactorAction(invoiceId: string): Promise<ActionResult & { alreadySubmitted?: boolean }> {
   let user
   try {
     user = await requirePermission("money:write")
   } catch (err) {
-    return asError(err, "Forbidden")
+    return actionError(err, "Forbidden")
+  }
+  try {
+    const result = await submitInvoiceToFactor(user.carrierId, invoiceId, user)
+    if (!result.connected) {
+      return {
+        ok: false,
+        error: "Factoring API isn't connected yet — save credentials under Settings → Integrations, or email the packet instead.",
+      }
+    }
+    if (result.alreadySubmitted) {
+      return { ok: true, alreadySubmitted: true }
+    }
+    revalidateMoney()
+    revalidatePath(`/hub/money/invoices/${invoiceId}`)
+    return { ok: true }
+  } catch (err) {
+    return actionError(err, "Failed to submit invoice to factor")
+  }
+}
+
+export async function pushInvoiceToQboAction(
+  invoiceId: string
+): Promise<ActionResult & { alreadyPushed?: boolean; updated?: boolean }> {
+  let user
+  try {
+    user = await requirePermission("money:write")
+  } catch (err) {
+    return actionError(err, "Forbidden")
+  }
+  try {
+    const result = await pushInvoiceToQbo(user.carrierId, invoiceId, user)
+    if (!result.connected) {
+      return {
+        ok: false,
+        error: "QuickBooks Online isn't connected yet — save credentials under Settings → Integrations.",
+      }
+    }
+    if (result.alreadyPushed) {
+      return { ok: true, alreadyPushed: true }
+    }
+    revalidateMoney()
+    revalidatePath(`/hub/money/invoices/${invoiceId}`)
+    return { ok: true, updated: result.updated }
+  } catch (err) {
+    return actionError(err, "Failed to push invoice to QuickBooks")
+  }
+}
+
+export async function sendCustomerStatementAction(
+  customerId: string
+): Promise<ActionResult & { emailed?: boolean; to?: string; totalCents?: number; invoiceCount?: number }> {
+  let user
+  try {
+    user = await requirePermission("money:write")
+  } catch (err) {
+    return actionError(err, "Forbidden")
+  }
+  try {
+    const { emailed, to, totalOpenCents, invoiceCount, error } = await sendCustomerStatement(
+      user.carrierId, customerId, user
+    )
+    revalidateMoney()
+    return { ok: true, emailed, to, totalCents: totalOpenCents, invoiceCount, error }
+  } catch (err) {
+    return actionError(err, "Failed to send statement")
+  }
+}
+
+export async function draftSettlementsAction(): Promise<
+  ActionResult & {
+    created?: number
+    skipped?: number
+    uninvoiced?: { driverName: string; reference: string; amountCents: number }[]
+  }
+> {
+  let user
+  try {
+    user = await requirePermission("money:write")
+  } catch (err) {
+    return actionError(err, "Forbidden")
   }
   try {
     // Weekly period: previous Monday → Sunday containing today
@@ -124,7 +205,7 @@ export async function draftSettlementsAction(): Promise<ActionResult & { created
     revalidateMoney()
     return { ok: true, ...result }
   } catch (err) {
-    return asError(err, "Failed to draft settlements")
+    return actionError(err, "Failed to draft settlements")
   }
 }
 
@@ -133,7 +214,7 @@ export async function approveSettlementAction(settlementId: string): Promise<Act
   try {
     user = await requirePermission("money:approve")
   } catch (err) {
-    return asError(err, "Forbidden")
+    return actionError(err, "Forbidden")
   }
   try {
     const { emailed } = await approveSettlement(user.carrierId, settlementId, user)
@@ -141,7 +222,7 @@ export async function approveSettlementAction(settlementId: string): Promise<Act
     revalidatePath(`/hub/money/settlements/${settlementId}`)
     return { ok: true, emailed }
   } catch (err) {
-    return asError(err, "Failed to approve settlement")
+    return actionError(err, "Failed to approve settlement")
   }
 }
 
@@ -150,15 +231,16 @@ export async function markSettlementPaidAction(settlementId: string): Promise<Ac
   try {
     user = await requirePermission("money:approve")
   } catch (err) {
-    return asError(err, "Forbidden")
+    return actionError(err, "Forbidden")
   }
   try {
-    await markSettlementPaid(user.carrierId, settlementId, user)
+    const paid = await markSettlementPaid(user.carrierId, settlementId, user)
+    if (!paid) return { ok: false, error: "Settlement not found or not approved" }
     revalidateMoney()
     revalidatePath(`/hub/money/settlements/${settlementId}`)
     return { ok: true }
   } catch (err) {
-    return asError(err, "Failed to mark paid")
+    return actionError(err, "Failed to mark paid")
   }
 }
 
@@ -172,7 +254,7 @@ export async function createAdvanceAction(values: {
   try {
     user = await requirePermission("money:write")
   } catch (err) {
-    return asError(err, "Forbidden")
+    return actionError(err, "Forbidden")
   }
   const amountCents = dollarsToCents(values.amount)
   if (amountCents <= 0) return { ok: false, error: "Advance amount must be positive" }
@@ -186,7 +268,51 @@ export async function createAdvanceAction(values: {
     revalidatePath("/hub/money/advances")
     return { ok: true }
   } catch (err) {
-    return asError(err, "Failed to create advance")
+    return actionError(err, "Failed to create advance")
+  }
+}
+
+/** Decide a driver-requested advance: approve → deducts on the next settlement. */
+export async function decideAdvanceAction(
+  id: string,
+  decision: "approve" | "deny"
+): Promise<ActionResult> {
+  let user
+  try {
+    user = await requirePermission("money:approve")
+  } catch (err) {
+    return actionError(err, "Forbidden")
+  }
+  try {
+    const { query } = await import("@/lib/hub/db")
+    const rows = await query<{ id: string; driver_id: string; amount_cents: number }>(
+      `UPDATE hub.advances SET status = $3, updated_at = NOW()
+       WHERE carrier_id = $1 AND id = $2 AND status = 'pending'
+       RETURNING id, driver_id, amount_cents`,
+      [user.carrierId, id, decision === "approve" ? "outstanding" : "cancelled"]
+    )
+    if (rows.length === 0) return { ok: false, error: "Already decided" }
+    const { logAudit } = await import("@/lib/hub/audit")
+    await logAudit({
+      carrierId: user.carrierId, actorId: user.id, actorName: user.name,
+      entityType: "advance", entityId: id, action: decision,
+      newValue: { amountCents: rows[0].amount_cents },
+    })
+    const { notifyDriver } = await import("@/lib/hub/notify")
+    await notifyDriver(user.carrierId, rows[0].driver_id, {
+      kind: "advance",
+      title:
+        decision === "approve"
+          ? `Advance approved — $${(rows[0].amount_cents / 100).toFixed(2)} is on its way`
+          : "Advance request denied — call the office",
+      body: decision === "approve" ? "It deducts from your next settlement." : undefined,
+      link: "/hub/driver/pay",
+    })
+    revalidatePath("/hub/money/advances")
+    revalidatePath("/hub/driver/pay")
+    return { ok: true }
+  } catch (err) {
+    return actionError(err, "Failed to decide the advance")
   }
 }
 
@@ -205,7 +331,7 @@ export async function createExpenseAction(values: {
   try {
     user = await requirePermission("money:write")
   } catch (err) {
-    return asError(err, "Forbidden")
+    return actionError(err, "Forbidden")
   }
   if (!EXPENSE_CATEGORIES.includes(values.category as ExpenseCategory)) {
     return { ok: false, error: "Unknown category" }
@@ -227,7 +353,7 @@ export async function createExpenseAction(values: {
     revalidatePath("/hub/money/expenses")
     return { ok: true }
   } catch (err) {
-    return asError(err, "Failed to record expense")
+    return actionError(err, "Failed to record expense")
   }
 }
 
@@ -243,7 +369,7 @@ export async function savePriceBookEntryAction(values: {
   try {
     user = await requirePermission("money:write")
   } catch (err) {
-    return asError(err, "Forbidden")
+    return actionError(err, "Forbidden")
   }
   const amountCents = dollarsToCents(values.amount)
   if (!values.name.trim()) return { ok: false, error: "Name required" }
@@ -252,11 +378,12 @@ export async function savePriceBookEntryAction(values: {
   }
   try {
     if (values.id) {
-      await query(
+      const rows = await query<{ id: string }>(
         `UPDATE hub.accessorial_types SET name = $3, default_amount_cents = $4, unit = $5
-         WHERE carrier_id = $1 AND id = $2`,
+         WHERE carrier_id = $1 AND id = $2 RETURNING id`,
         [user.carrierId, values.id, values.name.trim(), amountCents, values.unit]
       )
+      if (rows.length === 0) return { ok: false, error: "Price book entry not found" }
     } else {
       await query(
         `INSERT INTO hub.accessorial_types (carrier_id, name, default_amount_cents, unit)
@@ -265,9 +392,14 @@ export async function savePriceBookEntryAction(values: {
         [user.carrierId, values.name.trim(), amountCents, values.unit]
       )
     }
+    await logAudit({
+      carrierId: user.carrierId, actorId: user.id, actorName: user.name,
+      entityType: "accessorial_type", entityId: values.id ?? values.name.trim(), action: "saved",
+      newValue: { name: values.name.trim(), amountCents, unit: values.unit },
+    })
     revalidatePath("/hub/settings/pricebook")
     return { ok: true }
   } catch (err) {
-    return asError(err, "Failed to save price book entry")
+    return actionError(err, "Failed to save price book entry")
   }
 }

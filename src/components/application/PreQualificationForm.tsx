@@ -16,10 +16,17 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { toast } from "sonner"
-import { Loader2, CheckCircle2, AlertCircle, XCircle } from "lucide-react"
+import {
+  Loader2, CheckCircle2, AlertCircle,
+} from "lucide-react"
 import { submitPreQualification } from "@/app/actions/submit-pre-qualification"
 import { cn } from "@/lib/utils"
+import { HONEYPOT_FIELD, readHoneypotValue } from "@/lib/honeypot"
+import { track } from "@vercel/analytics"
+import { HoneypotField } from "@/components/shared/HoneypotField"
+import { AttributionField } from "@/components/shared/AttributionField"
 import Link from "next/link"
+import { COMPANY_INFO, PAY_RATES } from "@/lib/constants"
 
 const formSchema = z.object({
   firstName: z.string().min(2, "First Name is required"),
@@ -50,7 +57,11 @@ type FormData = z.infer<typeof formSchema>
 export function PreQualificationForm() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [serverError, setServerError] = useState<string | null>(null)
-  const [submissionResult, setSubmissionResult] = useState<{ success: boolean; isQualified?: boolean } | null>(null)
+  const [submissionResult, setSubmissionResult] = useState<{
+    success: boolean
+    isQualified?: boolean
+    isOwnerOperator?: boolean
+  } | null>(null)
 
   const {
     register,
@@ -92,11 +103,23 @@ export function PreQualificationForm() {
           formData.append(key, value)
         }
       })
+      // react-hook-form only serializes registered fields, so carry the
+      // honeypot's DOM value across by hand.
+      const honeypot = readHoneypotValue()
+      if (honeypot) formData.append(HONEYPOT_FIELD, honeypot)
 
       const result = await submitPreQualification({ success: false, message: "" }, formData)
 
       if (result.success) {
-        setSubmissionResult({ success: true, isQualified: result.isQualified })
+        track("prequalify_submit", { qualified: result.isQualified === true })
+        setSubmissionResult({
+          success: true,
+          isQualified: result.isQualified,
+          // "Own Sleeper Truck? Yes" is the O/O track — the sign-on bonus
+          // promise on the success card must match the track (PAY_RATES has
+          // different bonuses for owner-operators vs company drivers).
+          isOwnerOperator: data.ownSleeperTruck === "Yes",
+        })
         // Scroll to top to show result
         window.scrollTo({ top: 0, behavior: 'smooth' })
       } else {
@@ -113,6 +136,9 @@ export function PreQualificationForm() {
 
   if (submissionResult?.success) {
     if (submissionResult.isQualified) {
+      const signOnBonus = submissionResult.isOwnerOperator
+        ? PAY_RATES.ownerOperator.signOnBonus
+        : PAY_RATES.companyDriver.signOnBonus
       return (
         <div className="bg-white rounded-3xl p-8 md:p-12 shadow-2xl shadow-green-900/20 border border-green-100 text-center animate-in fade-in slide-in-from-bottom-4 duration-500">
           <div className="w-24 h-24 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-8 ring-8 ring-green-50">
@@ -126,9 +152,13 @@ export function PreQualificationForm() {
           </p>
           <div className="bg-green-50 rounded-xl p-6 mb-8 max-w-md mx-auto border border-green-100">
             <ul className="text-left space-y-3 font-medium text-green-900">
-              <li className="flex items-center gap-2"><CheckCircle2 className="w-5 h-5 text-green-600" /> Eligible for $2,500 Sign-On Bonus</li>
-              <li className="flex items-center gap-2"><CheckCircle2 className="w-5 h-5 text-green-600" /> Priority Application Processing</li>
-              <li className="flex items-center gap-2"><CheckCircle2 className="w-5 h-5 text-green-600" /> Immediate Orientation Available</li>
+              {/* Only constants-backed facts here. The priority-processing and
+                  same-day-orientation promises were removed 2026-08-04:
+                  neither was sourced from anything, and a promise the office
+                  can't keep costs the driver who showed up believing it. */}
+              <li className="flex items-center gap-2"><CheckCircle2 className="w-5 h-5 text-green-600" /> Eligible for {signOnBonus} Sign-On Bonus</li>
+              <li className="flex items-center gap-2"><CheckCircle2 className="w-5 h-5 text-green-600" /> Weekly Direct Deposit Pay</li>
+              <li className="flex items-center gap-2"><CheckCircle2 className="w-5 h-5 text-green-600" /> No Forced Dispatch</li>
             </ul>
           </div>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -136,7 +166,7 @@ export function PreQualificationForm() {
               <Link href="/apply">Complete Full Application</Link>
             </Button>
             <Button asChild variant="outline" className="h-14 text-lg font-medium border-slate-300 hover:bg-slate-50">
-              <a href="tel:+12067656300">Call Recruiting</a>
+              <a href={`tel:${COMPANY_INFO.phoneFormatted}`}>Call Recruiting</a>
             </Button>
           </div>
         </div>
@@ -151,7 +181,7 @@ export function PreQualificationForm() {
             Thank You for Your Interest
           </h2>
           <p className="text-lg text-slate-600 max-w-xl mx-auto mb-8">
-            Based on your answers, we need to review your application manually to determine eligibility. A recruiter will review your details and contact you within 24 hours.
+            Based on your answers, we need to review your application manually to determine eligibility. A recruiter will review your details and contact you within 24 hours on business days.
           </p>
           <div className="flex justify-center">
             <Button asChild className="h-14 text-lg font-bold bg-slate-900 hover:bg-slate-800 text-white px-8">
@@ -177,34 +207,36 @@ export function PreQualificationForm() {
         </div>
       )}
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+      <form onSubmit={handleSubmit(onSubmit)} className="relative space-y-8">
+        <HoneypotField />
+      <AttributionField />
         {/* Basic Information */}
         <div className="space-y-6">
           <h3 className="text-xl font-bold text-slate-800 border-b pb-2">Basic Information</h3>
           <div className="grid md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <Label htmlFor="firstName">First Name</Label>
-              <Input id="firstName" {...register("firstName")} placeholder="Enter first name" className="h-12" />
+              <Input id="firstName" {...register("firstName")} autoComplete="given-name" placeholder="Enter first name" className="h-12" />
               {errors.firstName && <p className="text-red-500 text-xs">{errors.firstName.message}</p>}
             </div>
             <div className="space-y-2">
               <Label htmlFor="lastName">Last Name</Label>
-              <Input id="lastName" {...register("lastName")} placeholder="Enter last name" className="h-12" />
+              <Input id="lastName" {...register("lastName")} autoComplete="family-name" placeholder="Enter last name" className="h-12" />
               {errors.lastName && <p className="text-red-500 text-xs">{errors.lastName.message}</p>}
             </div>
             <div className="space-y-2">
               <Label htmlFor="phone">Phone Number</Label>
-              <Input id="phone" {...register("phone")} onChange={handlePhoneChange} placeholder="(555) 555-5555" className="h-12" />
+              <Input id="phone" {...register("phone")} onChange={handlePhoneChange} type="tel" inputMode="tel" autoComplete="tel" placeholder="(555) 555-5555" className="h-12" />
               {errors.phone && <p className="text-red-500 text-xs">{errors.phone.message}</p>}
             </div>
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
-              <Input id="email" {...register("email")} type="email" placeholder="john@example.com" className="h-12" />
+              <Input id="email" {...register("email")} type="email" autoComplete="email" placeholder="john@example.com" className="h-12" />
               {errors.email && <p className="text-red-500 text-xs">{errors.email.message}</p>}
             </div>
             <div className="col-span-2 space-y-2">
               <Label htmlFor="cityState">City / State</Label>
-              <Input id="cityState" {...register("cityState")} placeholder="e.g. Dallas, TX" className="h-12" />
+              <Input id="cityState" {...register("cityState")} placeholder="e.g. Kent, WA" className="h-12" />
               {errors.cityState && <p className="text-red-500 text-xs">{errors.cityState.message}</p>}
             </div>
           </div>
@@ -392,7 +424,7 @@ export function PreQualificationForm() {
         <Button 
           type="submit" 
           disabled={isSubmitting}
-          className="w-full h-14 text-lg font-bold bg-orange-500 hover:bg-orange-600 text-white shadow-xl shadow-orange-500/20"
+          className="w-full h-14 text-lg font-bold bg-orange-600 hover:bg-orange-500 text-white shadow-xl shadow-orange-500/20"
         >
           {isSubmitting ? (
             <>

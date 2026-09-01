@@ -1,0 +1,49 @@
+# Local Postgres for LoadOff development.
+#
+#   docker compose up -d        # start the database in the background
+#   docker compose down         # stop it (data is kept in the named volume)
+#   docker compose down -v      # stop it AND wipe all data (fresh start)
+#
+# Then point the app at it in .env.local:
+#   POSTGRES_URL="postgresql://hauldesk:hauldesk@localhost:5432/hauldesk"
+#
+# The credentials below match that URL on purpose — the migrate/seed scripts
+# connect without SSL for localhost automatically. See docs/getting-started.md.
+#
+# Already have Postgres installed locally? You don't need this file at all:
+# `service postgresql start` and create the role/database once, same URL.
+
+services:
+  db:
+    image: postgres:16
+    container_name: loadoff-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: hauldesk
+      POSTGRES_PASSWORD: hauldesk
+      POSTGRES_DB: hauldesk
+    ports:
+      - "5432:5432"
+    volumes:
+      - loadoff-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hauldesk -d hauldesk"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # Optional web DB browser at http://localhost:8081
+  # (system: PostgreSQL, server: db, user/pass/database: hauldesk).
+  # Delete this block if you don't want it.
+  adminer:
+    image: adminer:4
+    container_name: loadoff-adminer
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8081:8080"
+
+volumes:
+  loadoff-pgdata:

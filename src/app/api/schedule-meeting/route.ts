@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { COMPANY_INFO } from "@/lib/constants"
 import { createMailTransport, isEmailConfigured, mailFrom } from "@/lib/mailer"
+import { HONEYPOT_FIELD, publicFormBlocked } from "@/lib/public-form-guard"
 
 export async function POST(request: Request) {
   try {
@@ -12,11 +13,25 @@ export async function POST(request: Request) {
 
     const { name, email, phone, preferredDate, preferredTime, meetingType, notes } = body
 
+    // Bot filled the invisible field → fake success, no signal to tune on.
+    if (typeof body[HONEYPOT_FIELD] === "string" && body[HONEYPOT_FIELD].trim().length > 0) {
+      return NextResponse.json({ success: true })
+    }
+
     // Basic validation so we never email blank requests or crash on missing fields
     const isEmail = typeof email === "string" && /.+@.+\..+/.test(email)
     if (!name || !isEmail || !phone || !preferredDate || !preferredTime) {
       return NextResponse.json(
         { error: "Please fill in your name, a valid email, phone, and a preferred date and time." },
+        { status: 400 }
+      )
+    }
+
+    // Throttled: same generic copy and status as any other failure, so a
+    // probe can't tell the limiter from an outage.
+    if (await publicFormBlocked(email)) {
+      return NextResponse.json(
+        { error: `We couldn't process that just now. Please call ${COMPANY_INFO.phone} and we'll set it up directly.` },
         { status: 400 }
       )
     }

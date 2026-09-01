@@ -5,12 +5,11 @@ import { requirePermission } from "@/lib/hub/session"
 import { addComplianceItem, resolveComplianceItem } from "@/lib/hub/compliance"
 import { computeIftaQuarter, importIftaRates, setIftaStatus } from "@/lib/hub/ifta"
 import { query } from "@/lib/hub/db"
+import { logAudit } from "@/lib/hub/audit"
+import { assertCarrierRefs } from "@/lib/hub/tenancy"
 import { dollarsToCents } from "@/lib/hub/types"
+import { actionError } from "@/lib/hub/action-error"
 import type { ActionResult } from "./fleet"
-
-function asError(err: unknown, fallback: string): ActionResult {
-  return { ok: false, error: err instanceof Error ? err.message : fallback }
-}
 
 export async function addComplianceItemAction(values: {
   kind: string
@@ -21,7 +20,7 @@ export async function addComplianceItemAction(values: {
   try {
     user = await requirePermission("compliance:write")
   } catch (err) {
-    return asError(err, "Forbidden")
+    return actionError(err, "Forbidden")
   }
   if (!values.kind.trim()) return { ok: false, error: "What is the item?" }
   try {
@@ -31,7 +30,7 @@ export async function addComplianceItemAction(values: {
     revalidatePath("/hub/compliance")
     return { ok: true }
   } catch (err) {
-    return asError(err, "Failed to add item")
+    return actionError(err, "Failed to add item")
   }
 }
 
@@ -40,27 +39,32 @@ export async function resolveComplianceItemAction(id: string): Promise<ActionRes
   try {
     user = await requirePermission("compliance:write")
   } catch (err) {
-    return asError(err, "Forbidden")
+    return actionError(err, "Forbidden")
   }
   try {
     await resolveComplianceItem(user.carrierId, id)
     revalidatePath("/hub/compliance")
     return { ok: true }
   } catch (err) {
-    return asError(err, "Failed to resolve item")
+    return actionError(err, "Failed to resolve item")
   }
 }
 
-export async function computeIftaAction(quarter: string): Promise<ActionResult> {
+export async function computeIftaAction(
+  quarter: string,
+  opts?: { confirmRecompute?: boolean }
+): Promise<ActionResult> {
   let user
   try {
     user = await requirePermission("compliance:write")
   } catch (err) {
-    return asError(err, "Forbidden")
+    return actionError(err, "Forbidden")
   }
   if (!/^\d{4}Q[1-4]$/.test(quarter)) return { ok: false, error: "Bad quarter (use 2026Q2)" }
   try {
-    const { result } = await computeIftaQuarter(user.carrierId, quarter, user)
+    const { result } = await computeIftaQuarter(user.carrierId, quarter, user, {
+      allowRecomputeOfFinalized: opts?.confirmRecompute,
+    })
     revalidatePath("/hub/compliance/ifta")
     return {
       ok: true,
@@ -69,7 +73,7 @@ export async function computeIftaAction(quarter: string): Promise<ActionResult> 
         : undefined,
     }
   } catch (err) {
-    return asError(err, "Failed to compute IFTA")
+    return actionError(err, "Failed to compute IFTA")
   }
 }
 
@@ -81,23 +85,24 @@ export async function setIftaStatusAction(
   try {
     user = await requirePermission("compliance:write")
   } catch (err) {
-    return asError(err, "Forbidden")
+    return actionError(err, "Forbidden")
   }
   try {
     await setIftaStatus(user.carrierId, quarter, status, user)
     revalidatePath("/hub/compliance/ifta")
     return { ok: true }
   } catch (err) {
-    return asError(err, "Failed to update report status")
+    return actionError(err, "Failed to update report status")
   }
 }
 
 /** Rates pasted as lines of "JUR,rate[,surcharge]" (iftach.org matrix transcription). */
 export async function importIftaRatesAction(quarter: string, ratesText: string): Promise<ActionResult> {
+  let user
   try {
-    await requirePermission("compliance:write")
+    user = await requirePermission("compliance:write")
   } catch (err) {
-    return asError(err, "Forbidden")
+    return actionError(err, "Forbidden")
   }
   if (!/^\d{4}Q[1-4]$/.test(quarter)) return { ok: false, error: "Bad quarter" }
   const rows: { jurisdiction: string; rate: number; surchargeRate: number }[] = []
@@ -111,11 +116,11 @@ export async function importIftaRatesAction(quarter: string, ratesText: string):
   }
   if (rows.length === 0) return { ok: false, error: "No rates parsed — use lines like WA,0.4940 or IN,0.5500,0.1100" }
   try {
-    const count = await importIftaRates(rows, quarter)
+    const count = await importIftaRates(user.carrierId, rows, quarter, user)
     revalidatePath("/hub/compliance/ifta")
     return { ok: true, id: String(count) }
   } catch (err) {
-    return asError(err, "Failed to import rates")
+    return actionError(err, "Failed to import rates")
   }
 }
 
@@ -132,10 +137,11 @@ export async function addMaintenanceScheduleAction(values: {
   try {
     user = await requirePermission("fleet:write")
   } catch (err) {
-    return asError(err, "Forbidden")
+    return actionError(err, "Forbidden")
   }
   if (!values.name.trim()) return { ok: false, error: "Name the PM item" }
   try {
+    await assertCarrierRefs(user.carrierId, { truck_id: values.truckId })
     await query(
       `INSERT INTO hub.maintenance_schedules (carrier_id, truck_id, name, interval_miles, interval_days, last_done_on)
        VALUES ($1,$2,$3,$4,$5,$6)`,
@@ -150,7 +156,7 @@ export async function addMaintenanceScheduleAction(values: {
     revalidatePath("/hub/compliance")
     return { ok: true }
   } catch (err) {
-    return asError(err, "Failed to add schedule")
+    return actionError(err, "Failed to add schedule")
   }
 }
 
@@ -167,29 +173,77 @@ export async function addMaintenanceRecordAction(values: {
   try {
     user = await requirePermission("fleet:write")
   } catch (err) {
-    return asError(err, "Forbidden")
+    return actionError(err, "Forbidden")
   }
   try {
-    await query(
+    await assertCarrierRefs(user.carrierId, { truck_id: values.truckId })
+    // A schedule must belong to this truck, not just this carrier — otherwise a
+    // record on truck A could roll another truck's PM clock forward.
+    if (values.scheduleId) {
+      const schedule = await query<{ id: string }>(
+        `SELECT id FROM hub.maintenance_schedules WHERE id = $1 AND carrier_id = $2 AND truck_id = $3`,
+        [values.scheduleId, user.carrierId, values.truckId]
+      )
+      if (schedule.length === 0) return { ok: false, error: "Maintenance schedule not found" }
+    }
+    const doneOn = values.doneOn || new Date().toISOString().slice(0, 10)
+    const costCents = dollarsToCents(values.cost)
+    const rows = await query<{ id: string }>(
       `INSERT INTO hub.maintenance_records (carrier_id, truck_id, schedule_id, done_on, odometer, vendor, cost_cents, notes)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING id`,
       [
-        user.carrierId, values.truckId, values.scheduleId || null,
-        values.doneOn || new Date().toISOString().slice(0, 10),
+        user.carrierId, values.truckId, values.scheduleId || null, doneOn,
         values.odometer ? Number(values.odometer) : null,
-        values.vendor || null, dollarsToCents(values.cost), values.notes || null,
+        values.vendor || null, costCents, values.notes || null,
       ]
     )
+    await logAudit({
+      carrierId: user.carrierId, actorId: user.id, actorName: user.name,
+      entityType: "maintenance_record", entityId: rows[0].id, action: "create",
+      newValue: { truckId: values.truckId, costCents, vendor: values.vendor || null },
+    })
     if (values.scheduleId) {
       await query(
-        `UPDATE hub.maintenance_schedules SET last_done_on = $2, last_done_odometer = $3, updated_at = NOW() WHERE id = $1`,
-        [values.scheduleId, values.doneOn, values.odometer ? Number(values.odometer) : null]
+        `UPDATE hub.maintenance_schedules SET last_done_on = $2, last_done_odometer = $3, updated_at = NOW()
+         WHERE id = $1 AND carrier_id = $4 AND truck_id = $5`,
+        [values.scheduleId, doneOn, values.odometer ? Number(values.odometer) : null, user.carrierId, values.truckId]
       )
     }
     revalidatePath(`/hub/fleet/trucks/${values.truckId}`)
     revalidatePath("/hub/compliance")
     return { ok: true }
   } catch (err) {
-    return asError(err, "Failed to add record")
+    return actionError(err, "Failed to add record")
+  }
+}
+
+/**
+ * Assemble the insurance renewal packet (research wave 2, prompt-13): the
+ * ~80% of an underwriting submission LoadOff already holds, as one dated
+ * PDF stored with the carrier's documents. Owner-only — it carries CDL
+ * numbers and loss history in a single file built to leave the building.
+ */
+export async function generateRenewalPacketAction(): Promise<
+  ActionResult & { url?: string; fileName?: string }
+> {
+  let user
+  try {
+    const { requireOwner } = await import("@/lib/hub/session")
+    user = await requireOwner()
+  } catch (err) {
+    return actionError(err, "Forbidden")
+  }
+  try {
+    const { buildRenewalPacket } = await import("@/lib/hub/renewal-packet")
+    const doc = await buildRenewalPacket(user.carrierId, { id: user.id })
+    await logAudit({
+      carrierId: user.carrierId, actorId: user.id, actorName: user.name,
+      entityType: "document", entityId: doc.id, action: "renewal_packet_generated",
+      newValue: { fileName: doc.file_name },
+    })
+    revalidatePath("/hub/compliance")
+    return { ok: true, url: doc.url, fileName: doc.file_name }
+  } catch (err) {
+    return actionError(err, "Could not generate the renewal packet")
   }
 }

@@ -5,28 +5,45 @@
  * brokers/shippers, loads across the whole lifecycle (integer cents), invoices
  * (sent / overdue / paid / factored), payments, a settlement queue, advances,
  * escrow, expenses, a quarter of fuel transactions + position pings, IFTA tax
- * rates, compliance items in all colors, maintenance, and a live share link.
+ * rates, compliance items in all colors, maintenance, demo documents (CDL,
+ * medical card, POD, carrier packet), and a live share link.
  *
  * Idempotent: wipes and re-creates hub.* data. Refuses to run on production.
  * Usage: npm run seed:demo
  */
-import { readFileSync, existsSync } from "node:fs"
+import { mkdir, writeFile } from "node:fs/promises"
 import path from "node:path"
 import { randomBytes } from "node:crypto"
 import pg from "pg"
 import bcrypt from "bcrypt"
+import { PDFDocument, StandardFonts } from "pdf-lib"
+import { loadEnvLocal } from "./env-local.mjs"
 
-function loadEnvLocal() {
-  if (process.env.POSTGRES_URL) return
-  const envPath = path.join(process.cwd(), ".env.local")
-  if (!existsSync(envPath)) return
-  for (const line of readFileSync(envPath, "utf-8").split("\n")) {
-    const match = line.match(/^([A-Z0-9_]+)=(.*)$/)
-    if (match && !process.env[match[1]]) process.env[match[1]] = match[2]
-  }
-}
 
 const CARRIER = "11111111-1111-1111-1111-111111111111" // Thind (created by migration 002)
+
+// Carrier-packet documents inserted below with storage='local' and a bare
+// /api/hub/files/<name> url — readDocumentBytes() reads UPLOAD_DIR/<name> for
+// those, so the row is a lie unless a real file sits there too (found via
+// "Email the packet" always reporting "Nothing to send yet" on a fresh rig).
+export const PACKET_PLACEHOLDER_FILES = ["thind-w9.pdf", "thind-coi.pdf", "thind-authority.pdf"]
+
+/** A minimal valid one-page PDF so local-storage demo docs are real, readable files. */
+export async function placeholderPdfBytes(label) {
+  const pdf = await PDFDocument.create()
+  const page = pdf.addPage([300, 150])
+  const font = await pdf.embedFont(StandardFonts.Helvetica)
+  page.drawText(`${label} — demo placeholder`, { x: 20, y: 70, size: 12, font })
+  return pdf.save()
+}
+
+/** Write PACKET_PLACEHOLDER_FILES into uploadDir so local "storage" rows resolve to real bytes. */
+export async function writePacketPlaceholders(uploadDir) {
+  await mkdir(uploadDir, { recursive: true })
+  for (const name of PACKET_PLACEHOLDER_FILES) {
+    await writeFile(path.join(uploadDir, name), await placeholderPdfBytes(name))
+  }
+}
 
 const CITY = {
   kent: { city: "Kent", state: "WA", lat: 47.3809, lng: -122.2348 },
@@ -59,11 +76,16 @@ const dateOnly = (iso) => iso.slice(0, 10)
 const quarterKey = (d = new Date()) => `${d.getUTCFullYear()}Q${Math.floor(d.getUTCMonth() / 3) + 1}`
 
 async function main() {
-  loadEnvLocal()
+  loadEnvLocal({ skipWhenSet: "POSTGRES_URL" })
   const url = process.env.POSTGRES_URL
   if (!url) throw new Error("POSTGRES_URL required")
-  if (process.env.VERCEL_ENV === "production" || /thindtransport|prod/i.test(url)) {
-    throw new Error("Refusing to seed demo data into what looks like production")
+  if (
+    !process.env.DEMO_SEED_OK &&
+    (process.env.VERCEL_ENV === "production" || /thindtransport|prod/i.test(url))
+  ) {
+    throw new Error(
+      "Refusing to seed demo data into what looks like production. Set DEMO_SEED_OK=1 to override."
+    )
   }
 
   const ssl = /localhost|127\.0\.0\.1/.test(url) ? undefined : { rejectUnauthorized: false }
@@ -72,15 +94,32 @@ async function main() {
   const q = (text, params = []) => client.query(text, params)
 
   console.log("Wiping hub data…")
-  await q(`TRUNCATE hub.audit_log, hub.integration_syncs, hub.claims, hub.incidents,
+  await q(`TRUNCATE hub.audit_log, hub.integration_syncs, hub.api_credentials, hub.integration_events,
+           hub.claims, hub.incidents,
            hub.maintenance_records, hub.maintenance_schedules, hub.compliance_items,
            hub.ifta_reports, hub.jurisdiction_miles, hub.toll_transactions, hub.fuel_transactions,
            hub.escrow_ledger, hub.advances, hub.settlement_lines, hub.expenses, hub.settlements,
            hub.payments, hub.invoices,
            hub.crm_activities, hub.position_pings, hub.documents, hub.share_links,
            hub.import_templates, hub.load_events, hub.stops, hub.loads, hub.contacts, hub.users,
-           hub.trucks, hub.trailers, hub.drivers, hub.customers RESTART IDENTITY CASCADE`)
+           hub.trucks, hub.trailers, hub.drivers, hub.customers,
+           hub.facility_notes, hub.facilities, hub.pay_rules, hub.notifications,
+           hub.push_subscriptions, hub.tasks, hub.message_reads, hub.messages,
+           hub.message_threads, hub.message_templates, hub.announcement_acks, hub.announcements,
+           hub.document_requests, hub.lanes, hub.time_off_requests, hub.intake_drafts
+           RESTART IDENTITY CASCADE`)
   await q(`DELETE FROM hub.ifta_tax_rates`)
+  // Price book back to the 003_money.sql defaults — accessorial_types isn't in
+  // the TRUNCATE list (its migration seeds via ON CONFLICT DO NOTHING), so
+  // edits made by smokes (e2e-pricebook-smoke) would otherwise leak across reseeds.
+  await q(`DELETE FROM hub.accessorial_types WHERE carrier_id = $1`, [CARRIER])
+  await q(`INSERT INTO hub.accessorial_types (carrier_id, name, default_amount_cents, unit) VALUES
+           ($1, 'Detention', 6000, 'per_hour'),
+           ($1, 'Layover', 25000, 'per_day'),
+           ($1, 'TONU', 20000, 'flat'),
+           ($1, 'Stop-off', 10000, 'flat'),
+           ($1, 'Tarp', 10000, 'flat'),
+           ($1, 'Lumper', 0, 'pass_through')`, [CARRIER])
   // Reset invoice numbering
   await q(`UPDATE hub.carrier_settings SET settings = jsonb_set(settings, '{invoice,nextNumber}', '1001')
            WHERE carrier_id = $1`, [CARRIER])
@@ -142,6 +181,35 @@ async function main() {
     )
     driverIds.push(rows[0].id)
   }
+  // Link the demo driver login to its driver record (driver app guard reads users.driver_id).
+  await q(`UPDATE hub.users SET driver_id = $1 WHERE id = $2`, [driverIds[0], users.driver])
+
+  // Pay rule sets (retrofit E13): every driver settles through the evaluator.
+  await q(`
+    INSERT INTO hub.pay_rules (carrier_id, driver_id, name, rules, deductions)
+    SELECT d.carrier_id, d.id,
+      CASE WHEN d.pay_type = 'percentage' THEN 'Owner-operator percentage' ELSE 'Company per-mile' END,
+      CASE WHEN d.pay_type = 'percentage' THEN
+        jsonb_build_array(
+          jsonb_build_object('type','percent_linehaul','basisPoints', round(d.pay_rate * 10000)::int),
+          jsonb_build_object('type','fsc_passthrough','basisPoints', 10000),
+          jsonb_build_object('type','referral_bonus'))
+      ELSE
+        jsonb_build_array(
+          jsonb_build_object('type','per_mile','rateCentsPerMile', round(d.pay_rate * 100)::int,
+                             'loadedOnly', d.pay_loaded_miles_only),
+          jsonb_build_object('type','referral_bonus'))
+      END,
+      (SELECT COALESCE(jsonb_agg(x), '[]'::jsonb) FROM (
+        SELECT jsonb_build_object('kind','escrow','amountCents', d.escrow_weekly_cents) AS x
+        WHERE d.escrow_weekly_cents > 0
+        UNION ALL
+        SELECT jsonb_build_object('kind','insurance','amountCents', d.insurance_weekly_cents)
+        WHERE d.insurance_weekly_cents > 0
+      ) deductions)
+    FROM hub.drivers d
+    WHERE d.deleted_at IS NULL
+      AND NOT EXISTS (SELECT 1 FROM hub.pay_rules p WHERE p.driver_id = d.id)`)
 
   // ---- Trucks ----
   console.log("Creating trucks…")
@@ -197,13 +265,13 @@ async function main() {
   console.log("Creating customers…")
   const customerSeed = [
     // name, type, mc, terms, factored
-    ["Pacific Crest Logistics", "broker", "MC-784512", 30, false],
-    ["Evergreen Freight Partners", "broker", "MC-651203", 30, false],
+    ["Pacific Crest Logistics", "broker", "784512", 30, false],
+    ["Evergreen Freight Partners", "broker", "651203", 30, false],
     ["Cascade Produce Co.", "shipper", null, 21, false],
-    ["Summit Brokerage Group", "broker", "MC-912844", 45, true], // factored relationship
+    ["Summit Brokerage Group", "broker", "912844", 45, true], // factored relationship
     ["Rainier Building Supply", "shipper", null, 30, false],
-    ["BlueLine Transportation Svcs", "broker", "MC-447190", 30, false],
-    ["High Desert Freight", "broker", "MC-583321", 60, false],
+    ["BlueLine Transportation Svcs", "broker", "447190", 30, false],
+    ["High Desert Freight", "broker", "583321", 60, false],
   ]
   const customerIds = []
   for (const [name, type, mc, terms, factored] of customerSeed) {
@@ -308,10 +376,19 @@ async function main() {
   // Active board
   await makeLoad({ customer: 0, status: "booked", equipment: "reefer", commodity: "Frozen berries", weight: 41000, linehaulCents: 285000, fscCents: 32000, miles: 740, driver: 1, truck: 1, trailer: 2, origin: CITY.kent, dest: CITY.sacramento, pickupDaysAgo: -1, deliverDaysAgo: -3 })
   await makeLoad({ customer: 5, status: "booked", equipment: "dry_van", commodity: "Paper products", weight: 38500, linehaulCents: 198000, fscCents: 21000, miles: 465, driver: 5, truck: 4, origin: CITY.portland, dest: CITY.boise, pickupDaysAgo: -2, deliverDaysAgo: -3 }) // driver 5 has expired med card → legality stop on board
-  await makeLoad({ customer: 1, status: "dispatched", equipment: "flatbed", commodity: "Lumber", weight: 44000, linehaulCents: 240000, fscCents: 26000, miles: 610, driver: 2, truck: 5, trailer: 4, origin: CITY.kent, dest: CITY.boise, pickupDaysAgo: 0, deliverDaysAgo: -2 })
-  await makeLoad({ customer: 3, status: "at_pickup", equipment: "dry_van", commodity: "Retail goods", weight: 36000, linehaulCents: 210000, fscCents: 23000, miles: 520, driver: 3, truck: 3, trailer: 0, origin: CITY.spokane, dest: CITY.portland, pickupDaysAgo: 0, deliverDaysAgo: -1, arrived: true, factored: true })
-  const inTransit = await makeLoad({ customer: 0, status: "in_transit", equipment: "reefer", commodity: "Fresh produce", weight: 42500, linehaulCents: 345000, fscCents: 38000, miles: 920, driver: 0, truck: 0, trailer: 3, origin: CITY.kent, dest: CITY.losangeles, pickupDaysAgo: 1, deliverDaysAgo: -1 })
+  await makeLoad({ customer: 1, status: "dispatched", equipment: "flatbed", commodity: "Lumber", weight: 44000, linehaulCents: 240000, fscCents: 26000, miles: 610, driver: 0, truck: 0, trailer: 4, origin: CITY.kent, dest: CITY.boise, pickupDaysAgo: 0, deliverDaysAgo: -2 })
+  const atPickup = await makeLoad({ customer: 3, status: "at_pickup", equipment: "dry_van", commodity: "Retail goods", weight: 36000, linehaulCents: 210000, fscCents: 23000, miles: 520, driver: 3, truck: 3, trailer: 0, origin: CITY.spokane, dest: CITY.portland, pickupDaysAgo: 0, deliverDaysAgo: -1, arrived: true, factored: true })
+  // "at_pickup" means still sitting there — reopen the pickup stop (arrived, not
+  // yet departed) 5h ago so the detention auto-alert has something to catch.
+  await q(
+    `UPDATE hub.stops SET arrived_at = NOW() - INTERVAL '5 hours', departed_at = NULL
+     WHERE carrier_id = $1 AND load_id = $2 AND type = 'pickup'`,
+    [CARRIER, atPickup.id]
+  )
+  const inTransit = await makeLoad({ customer: 0, status: "in_transit", equipment: "reefer", commodity: "Fresh produce", weight: 42500, linehaulCents: 345000, fscCents: 38000, miles: 920, driver: 1, truck: 1, trailer: 3, origin: CITY.kent, dest: CITY.losangeles, pickupDaysAgo: 1, deliverDaysAgo: -1 })
   await makeLoad({ customer: 6, status: "in_transit", equipment: "dry_van", commodity: "Beverages", weight: 43000, linehaulCents: 275000, fscCents: 30000, miles: 820, driver: 6, truck: 6, trailer: 6, origin: CITY.portland, dest: CITY.saltlake, pickupDaysAgo: 1, deliverDaysAgo: 0 })
+  // Cancelled load — customer bailed after booking; exercises the /track cancelled banner.
+  const cancelledLoad = await makeLoad({ customer: 4, status: "cancelled", equipment: "dry_van", commodity: "Furniture", weight: 34000, linehaulCents: 185000, fscCents: 19000, miles: 430, origin: CITY.seattle, dest: CITY.boise, pickupDaysAgo: -1, deliverDaysAgo: -3 })
   await makeLoad({ customer: 2, status: "delivered", equipment: "reefer", commodity: "Apples", weight: 41800, linehaulCents: 220000, fscCents: 24000, miles: 540, driver: 4, truck: 8, trailer: 2, origin: CITY.yakima, dest: CITY.medford, pickupDaysAgo: 3, deliverDaysAgo: 1 })
   const podLoad = await makeLoad({ customer: 4, status: "pod_received", equipment: "flatbed", commodity: "Steel beams", weight: 45000, linehaulCents: 295000, fscCents: 31000, accessorials: [{ label: "Tarp", amount_cents: 10000 }], miles: 690, driver: 8, truck: 7, trailer: 5, origin: CITY.seattle, dest: CITY.boise, pickupDaysAgo: 4, deliverDaysAgo: 2 })
 
@@ -339,14 +416,15 @@ async function main() {
     [0, CITY.kent, CITY.losangeles, "reefer", 350000, 38000, 1135],
     [3, CITY.spokane, CITY.billings, "dry_van", 145000, 16000, 540],
   ]
+  const histLoads = []
   for (let i = 0; i < histLanes.length; i++) {
     const [cust, origin, dest, equip, lh, fsc, miles] = histLanes[i]
-    await makeLoad({
+    histLoads.push(await makeLoad({
       customer: cust, status: "settled", equipment: equip, commodity: "Mixed freight",
       weight: 36000 + i * 800, linehaulCents: lh, fscCents: fsc, miles,
       driver: i % driverIds.length, truck: i % truckIds.length, trailer: i % trailerIds.length,
       origin, dest, pickupDaysAgo: 20 + i * 6, deliverDaysAgo: 18 + i * 6, source: "import",
-    })
+    }))
   }
   await makeLoad({ customer: 2, status: "quoted", equipment: "reefer", commodity: "Onions", weight: 40000, linehaulCents: 260000, fscCents: 0, miles: 640, origin: CITY.yakima, dest: CITY.oakland, pickupDaysAgo: -4, deliverDaysAgo: -6, source: "quote" })
 
@@ -378,7 +456,7 @@ async function main() {
     return rows[0].id
   }
   await makeInvoice(invoiced1, { issuedDaysAgo: 9, terms: 30, status: "sent" })
-  await makeInvoice(overdue1, { issuedDaysAgo: 52, terms: 60 - 8, status: "overdue" }) // due ~time ago
+  await makeInvoice(overdue1, { issuedDaysAgo: 52, terms: 30, status: "overdue" }) // due 22 days ago
   await makeInvoice(factoredInv, { issuedDaysAgo: 6, terms: 45, factored: true, status: "sent" })
   await makeInvoice(paid1, { issuedDaysAgo: 17, terms: 30, status: "paid", payments: [{ amountCents: paid1.totalCents, daysAgo: 2, ref: "ACH 99812" }] })
 
@@ -410,15 +488,81 @@ async function main() {
     )
   }
 
+  // ---- One completed settlement (Jasdeep Brar, O/O percentage) ----
+  // Lines mirror what evaluatePayRules produces for his rule set
+  // (90% of linehaul + FSC passthrough − weekly escrow) so the demo
+  // matches a real engine run to the penny.
+  console.log("Creating a paid settlement…")
+  const settledLoad = histLoads[2] // Kent → Boise reefer: $2,350.00 + $260.00 FSC
+  const { rows: settlementRows } = await q(
+    `INSERT INTO hub.settlements (carrier_id, driver_id, period_start, period_end, status,
+       gross_cents, deductions_cents, net_cents, approved_by, approved_at)
+     VALUES ($1,$2,$3,$4,'paid',237500,5000,232500,$5,$6) RETURNING id`,
+    [CARRIER, driverIds[2], dateOnly(daysAgo(36)), dateOnly(daysAgo(30)), users.owner, daysAgo(29, 10)]
+  )
+  const settlementId = settlementRows[0].id
+  await q(
+    `INSERT INTO hub.settlement_lines (settlement_id, kind, label, amount_cents, source_type, source_id)
+     VALUES ($1,'earning',$2,211500,'load',$3),
+            ($1,'earning',$4,26000,'load',$3),
+            ($1,'deduction','Escrow contribution',5000,'escrow',NULL)`,
+    [settlementId, `${settledLoad.reference} — 90% of $2350.00`, settledLoad.id,
+     `${settledLoad.reference} — fuel surcharge $260.00`]
+  )
+  await q(`UPDATE hub.loads SET settlement_id = $1 WHERE id = $2`, [settlementId, settledLoad.id])
+  await q(
+    `INSERT INTO hub.escrow_ledger (carrier_id, driver_id, amount_cents, balance_cents, note, settlement_id)
+     VALUES ($1,$2,5000,155000,'Weekly contribution',$3)`,
+    [CARRIER, driverIds[2], settlementId]
+  )
+
+  // ---- Paid settlement for demo driver login (Harpreet, company per-mile) ----
+  // Keeps settle1/settle2 in the office queue; gives the driver PWA a real pay summary.
+  // Lines mirror evaluatePayRules for histLoads[0] (175 loaded mi @ $0.63) minus insurance.
+  console.log("Creating Harpreet's paid settlement…")
+  const harpreetPaidLoad = histLoads[0] // Kent → Portland dry van, 175 mi
+  const { rows: harpreetSettlementRows } = await q(
+    `INSERT INTO hub.settlements (carrier_id, driver_id, period_start, period_end, status,
+       gross_cents, deductions_cents, net_cents, approved_by, approved_at)
+     VALUES ($1,$2,$3,$4,'paid',11025,7500,3525,$5,$6) RETURNING id`,
+    [CARRIER, driverIds[0], dateOnly(daysAgo(20)), dateOnly(daysAgo(14)), users.owner, daysAgo(13, 10)]
+  )
+  const harpreetSettlementId = harpreetSettlementRows[0].id
+  await q(
+    `INSERT INTO hub.settlement_lines (settlement_id, kind, label, amount_cents, source_type, source_id)
+     VALUES ($1,'earning',$2,11025,'load',$3),
+            ($1,'deduction','Insurance',7500,'insurance',NULL)`,
+    [harpreetSettlementId, `${harpreetPaidLoad.reference} — 175 loaded mi @ $0.63/mi`, harpreetPaidLoad.id]
+  )
+  await q(`UPDATE hub.loads SET settlement_id = $1 WHERE id = $2`, [harpreetSettlementId, harpreetPaidLoad.id])
+
   // ---- Fuel: a quarter of transactions ----
   console.log("Creating fuel transactions…")
+  // WA/OR/ID only — pings on truck 102 never enter CA/NV/UT, so fuel here must
+  // match the loop or the IFTA worksheet is dominated by purchases-only credits.
+  // The window used to be a fixed "83→5 days ago" span mirroring the ping loop,
+  // but that drifts relative to calendar-quarter boundaries as real time passes:
+  // these 27 stops are spread EVENLY across the span, while the mileage loop
+  // below is back-loaded into the prior quarter with only a small tail crossing
+  // into the new one. An even split bleeds a growing share of *gallons* (not
+  // miles) into whichever quarter is current as the days-since-quarter-start
+  // grows, inflating fleet MPG for the prior-quarter IFTA report the smoke
+  // strictly validates (seen 2026-07-27: 9.31 vs the intended ~6.5, see
+  // docs/claude-routines.md). Anchor the window's recent edge to the current
+  // quarter's start instead of to "today" so it stays inside the prior quarter
+  // regardless of what day of the quarter the seed runs.
   const fuelStops = [
     ["Pilot #287", CITY.kent, "WA"], ["Loves #441", CITY.portland, "OR"],
-    ["TA Boise", CITY.boise, "ID"], ["Petro Sacramento", CITY.sacramento, "CA"],
-    ["Flying J Reno", CITY.reno, "NV"], ["Pilot SLC", CITY.saltlake, "UT"],
+    ["TA Boise", CITY.boise, "ID"], ["Pilot Spokane", CITY.spokane, "WA"],
+    ["Loves Medford", CITY.medford, "OR"], ["Flying J Yakima", CITY.yakima, "WA"],
   ]
+  const fuelNow = new Date()
+  const fuelQuarterStart = new Date(Date.UTC(fuelNow.getUTCFullYear(), Math.floor(fuelNow.getUTCMonth() / 3) * 3, 1))
+  const daysSinceFuelQuarterStart = Math.floor((fuelNow - fuelQuarterStart) / 86400000)
+  const fuelWindowFloor = Math.max(5, daysSinceFuelQuarterStart + 3)
+  const fuelWindowCeil = fuelWindowFloor + 78
   let fuelN = 0
-  for (let day = 84; day >= 2; day -= 3) {
+  for (let day = fuelWindowCeil; day >= fuelWindowFloor; day -= 3) {
     const truckIdx = fuelN % 8 // active trucks
     const stop = fuelStops[fuelN % fuelStops.length]
     const gallons = 95 + (fuelN % 5) * 12
@@ -430,7 +574,7 @@ async function main() {
       [
         CARRIER, `EFS-${10000 + fuelN}`, truckIds[truckIdx], driverIds[truckIdx] ?? null,
         daysAgo(day, 7 + (fuelN % 9)), stop[0], stop[1].city, stop[2],
-        gallons, ppgCents, Math.round(gallons * ppgCents), 95000 + truckIdx * 8000 + (84 - day) * 450,
+        gallons, ppgCents, Math.round(gallons * ppgCents), 95000 + truckIdx * 8000 + (fuelWindowCeil - day) * 450,
       ]
     )
     fuelN++
@@ -438,9 +582,26 @@ async function main() {
   // One over-capacity transaction → fraud flag (tank 240, gallons 312)
   await q(
     `INSERT INTO hub.fuel_transactions (carrier_id, source, external_id, card_program, truck_id, ts, merchant, city, jurisdiction, gallons, fuel_type, unit_price_cents, total_cents)
-     VALUES ($1,'csv:Comdata','CMD-7781','Comdata',$2,$3,'Unknown stop','Fresno','CA',312,'diesel',410,127920)`,
+     VALUES ($1,'csv:Comdata','CMD-7781','Comdata',$2,$3,'Unknown stop','Yakima','WA',312,'diesel',410,127920)`,
     [CARRIER, truckIds[1], daysAgo(8, 23)]
   )
+  // Reefer + DEF purchases — visibly IFTA-exempt (excluded from MPG and tax-paid gallons).
+  for (let i = 0; i < 8; i++) {
+    const stop = fuelStops[i % fuelStops.length]
+    await q(
+      `INSERT INTO hub.fuel_transactions (carrier_id, source, external_id, card_program, truck_id, driver_id, ts,
+         merchant, city, jurisdiction, gallons, fuel_type, fuel_use, unit_price_cents, total_cents)
+       VALUES ($1,'csv:EFS',$2,'EFS',$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)`,
+      [
+        CARRIER, `EFS-R${2000 + i}`, truckIds[i % 4], driverIds[i % 4] ?? null,
+        daysAgo(80 - i * 9, 9), stop[0], stop[1].city, stop[2],
+        i % 3 === 2 ? 6 : 55 + (i % 3) * 10,
+        i % 3 === 2 ? "DEF" : "REEFER", i % 3 === 2 ? "other" : "reefer",
+        i % 3 === 2 ? 1150 : 392,
+        i % 3 === 2 ? 6900 : Math.round((55 + (i % 3) * 10) * 392),
+      ]
+    )
+  }
 
   // Tolls
   for (let i = 0; i < 8; i++) {
@@ -448,6 +609,15 @@ async function main() {
       `INSERT INTO hub.toll_transactions (carrier_id, source, external_id, transponder, truck_id, ts, plaza, jurisdiction, amount_cents)
        VALUES ($1,'csv:BestPass',$2,'BP-22871',$3,$4,$5,'WA',$6)`,
       [CARRIER, `TOLL-${5000 + i}`, truckIds[i % 4], daysAgo(40 - i * 4, 12), "SR-520 Bridge", 950 + i * 50]
+    )
+  }
+  // A couple of unmatched rows (statement unit number didn't match any truck) —
+  // the toll dashboard's reconciliation inbox needs at least one to demo/drive.
+  for (let i = 0; i < 2; i++) {
+    await q(
+      `INSERT INTO hub.toll_transactions (carrier_id, source, external_id, transponder, truck_id, ts, plaza, jurisdiction, amount_cents)
+       VALUES ($1,'csv:PrePass',$2,'PP-90142',NULL,$3,$4,'OR',$5)`,
+      [CARRIER, `TOLL-${5100 + i}`, daysAgo(15 - i * 5, 8), "I-205 Bridge", 1150 + i * 75]
     )
   }
 
@@ -466,25 +636,40 @@ async function main() {
         i5Trail[i][0], i5Trail[i][1], 182000 + i * 38]
     )
   }
-  // Quarter-long WA/OR/ID loop for IFTA computation on truck 102
+  // Quarter-long WA/OR/ID loops for IFTA computation. The whole active fleet
+  // runs passes (not just truck 102) so ping miles match the diesel the fleet
+  // buys: ~1,720 straight-line mi/pass × 13 passes ≈ 22,300 mi against ~3,500
+  // tax-paid gallons → fleet MPG lands near a real tractor's ~6.5.
+  // Anchored to fuelQuarterStart rather than "today" for the same reason the
+  // fuel window above is: a "now minus N days" span drifts across the Q2/Q3
+  // boundary as real time advances through the quarter, shrinking the miles
+  // counted for the prior-quarter IFTA report the smoke strictly validates
+  // (fleet MPG = miles ÷ fuel gallons; gallons are stable post-anchor, so a
+  // shrinking numerator alone was enough to push MPG outside the credible
+  // 4-9 band). Offsets 1..82 (t + pass*30 + i*3) mapped through "87 - offset"
+  // land 5 to 86 days before the boundary — a fixed 5-day margin on both
+  // sides of the 91-day Q2 window, independent of what day of Q3 this runs.
   const loop = [
     CITY.kent, CITY.portland, CITY.medford, CITY.portland, CITY.kent, CITY.spokane, CITY.boise, CITY.spokane, CITY.kent,
   ]
-  let odo = 142000
-  for (let pass = 0; pass < 4; pass++) {
-    for (let i = 0; i < loop.length - 1; i++) {
-      const a = loop[i]; const b = loop[i + 1]
-      for (let s = 0; s <= 4; s++) {
-        const lat = a.lat + ((b.lat - a.lat) * s) / 4
-        const lng = a.lng + ((b.lng - a.lng) * s) / 4
-        odo += 40
-        await q(
-          `INSERT INTO hub.position_pings (carrier_id, truck_id, ts, lat, lng, odometer, source)
-           VALUES ($1,$2,$3,$4,$5,$6,'demo')`,
-          [CARRIER, truckIds[1],
-            new Date(Date.now() - (80 - pass * 20 - i * 2) * 86400000 + s * 7200000).toISOString(),
-            lat, lng, odo]
-        )
+  const loopPassesByTruck = [0, 3, 2, 2, 2, 2, 1, 1] // truck 102 leads; 13 passes total
+  for (let t = 0; t < loopPassesByTruck.length; t++) {
+    let odo = 118000 + t * 7000
+    for (let pass = 0; pass < loopPassesByTruck[t]; pass++) {
+      for (let i = 0; i < loop.length - 1; i++) {
+        const a = loop[i]; const b = loop[i + 1]
+        for (let s = 0; s <= 4; s++) {
+          const lat = a.lat + ((b.lat - a.lat) * s) / 4
+          const lng = a.lng + ((b.lng - a.lng) * s) / 4
+          odo += 43
+          await q(
+            `INSERT INTO hub.position_pings (carrier_id, truck_id, ts, lat, lng, odometer, source)
+             VALUES ($1,$2,$3,$4,$5,$6,'demo')`,
+            [CARRIER, truckIds[t],
+              new Date(fuelQuarterStart.getTime() - (87 - t - pass * 30 - i * 3) * 86400000 + s * 7200000).toISOString(),
+              lat, lng, odo]
+          )
+        }
       }
     }
   }
@@ -501,23 +686,62 @@ async function main() {
     )
   }
 
-  // ---- IFTA tax rates for the current quarter (plausible demo rates) ----
+  // ---- IFTA tax rates for current + prior quarter (demo pings/fuel span both) ----
   console.log("Creating IFTA rates…")
-  const quarter = quarterKey()
-  const rates = [
+  const rateMatrix = [
     ["WA", 0.494, 0], ["OR", 0, 0], ["ID", 0.33, 0], ["CA", 0.908, 0], ["NV", 0.27, 0],
     ["UT", 0.365, 0], ["CO", 0.225, 0], ["AZ", 0.26, 0], ["MT", 0.2975, 0],
     ["IN", 0.55, 0.11], ["KY", 0.226, 0.102], ["VA", 0.382, 0],
   ]
-  for (const [jur, rate, surcharge] of rates) {
-    await q(
-      `INSERT INTO hub.ifta_tax_rates (jurisdiction, quarter, rate, surcharge_rate) VALUES ($1,$2,$3,$4)
-       ON CONFLICT (jurisdiction, quarter) DO UPDATE SET rate = $3, surcharge_rate = $4`,
-      [jur, quarter, rate, surcharge]
-    )
+  const rateQuarters = [quarterKey()]
+  const priorQuarter = new Date()
+  priorQuarter.setUTCMonth(priorQuarter.getUTCMonth() - 3)
+  rateQuarters.push(quarterKey(priorQuarter))
+  for (const quarter of [...new Set(rateQuarters)]) {
+    for (const [jur, rate, surcharge] of rateMatrix) {
+      await q(
+        `INSERT INTO hub.ifta_tax_rates (carrier_id, jurisdiction, quarter, rate, surcharge_rate) VALUES ($1,$2,$3,$4,$5)
+         ON CONFLICT (carrier_id, jurisdiction, quarter) DO UPDATE SET rate = $4, surcharge_rate = $5`,
+        [CARRIER, jur, quarter, rate, surcharge]
+      )
+    }
   }
 
   // ---- Compliance items (company-level) ----
+  // ---- Facilities (E2): extract from stops exactly like migration 005 ----
+  console.log("Extracting facilities from stops…")
+  await q(`
+    INSERT INTO hub.facilities (carrier_id, name, dedupe_key, address, city, state, zip, lat, lng, type)
+    SELECT DISTINCT ON (s.carrier_id, k.dedupe_key)
+      s.carrier_id, trim(s.facility), k.dedupe_key, s.address, s.city, s.state, s.zip, s.lat, s.lng, 'both'
+    FROM hub.stops s
+    CROSS JOIN LATERAL (
+      SELECT lower(trim(s.facility)) || '|' || CASE
+        WHEN s.lat IS NOT NULL AND s.lng IS NOT NULL
+          THEN round(s.lat::numeric, 2)::text || ',' || round(s.lng::numeric, 2)::text
+        ELSE lower(coalesce(trim(s.city), '')) || ',' || lower(coalesce(trim(s.state), ''))
+      END AS dedupe_key
+    ) k
+    WHERE s.facility IS NOT NULL AND trim(s.facility) <> ''
+    ORDER BY s.carrier_id, k.dedupe_key, s.created_at
+    ON CONFLICT (carrier_id, dedupe_key) DO NOTHING`)
+  await q(`
+    UPDATE hub.stops s SET facility_id = f.id
+    FROM hub.facilities f
+    WHERE s.facility_id IS NULL AND s.facility IS NOT NULL AND trim(s.facility) <> ''
+      AND f.carrier_id = s.carrier_id
+      AND f.dedupe_key = lower(trim(s.facility)) || '|' || CASE
+        WHEN s.lat IS NOT NULL AND s.lng IS NOT NULL
+          THEN round(s.lat::numeric, 2)::text || ',' || round(s.lng::numeric, 2)::text
+        ELSE lower(coalesce(trim(s.city), '')) || ',' || lower(coalesce(trim(s.state), ''))
+      END`)
+  await q(`
+    UPDATE hub.facilities f SET type = u.observed FROM (
+      SELECT facility_id, CASE WHEN bool_and(type = 'pickup') THEN 'shipper'
+        WHEN bool_and(type = 'delivery') THEN 'receiver' ELSE 'both' END AS observed
+      FROM hub.stops WHERE facility_id IS NOT NULL GROUP BY facility_id
+    ) u WHERE f.id = u.facility_id`)
+
   console.log("Creating compliance items…")
   const items = [
     ["2290 HVUT — stamped Schedule 1 (all trucks)", 70],
@@ -546,6 +770,17 @@ async function main() {
     [CARRIER, truckIds[0], dateOnly(daysAgo(75))]
   )
 
+  // Mileage-only PM schedule, overdue by mileage on truck 102 (~130k mi from
+  // its position-ping trail vs. a 20k tire-rotation interval last done at
+  // 100k) — no interval_days at all, so before the odometer-aware due-status
+  // fix this sat on the compliance wall stuck amber forever with no signal of
+  // how overdue it actually was.
+  await q(
+    `INSERT INTO hub.maintenance_schedules (carrier_id, truck_id, name, interval_miles, last_done_odometer)
+     VALUES ($1,$2,'Tire rotation',20000,100000)`,
+    [CARRIER, truckIds[1]]
+  )
+
   // ---- Live share link for the in-transit load ----
   const token = randomBytes(16).toString("hex")
   await q(
@@ -553,17 +788,360 @@ async function main() {
     [CARRIER, inTransit.id, token, users.dispatcher]
   )
 
+  // ---- Share link for the cancelled load (drives the /track cancelled banner) ----
+  const cancelledToken = randomBytes(16).toString("hex")
+  await q(
+    `INSERT INTO hub.share_links (carrier_id, load_id, token, created_by) VALUES ($1,$2,$3,$4)`,
+    [CARRIER, cancelledLoad.id, cancelledToken, users.dispatcher]
+  )
+
+  // ---- Demo documents: driver wallet, load POD, carrier packet (portal + settings) ----
+  console.log("Creating demo documents…")
+  const demoDocUrl = (name) => `/api/hub/files/${name}`
+  await q(
+    `INSERT INTO hub.documents (carrier_id, entity_type, entity_id, kind, file_name, mime_type, storage, url, expiry, uploaded_by)
+     VALUES
+       ($1,'driver',$2,'cdl','harpreet-cdl.pdf','application/pdf','local',$3,$4,$5),
+       ($1,'driver',$2,'medical_card','harpreet-medical.pdf','application/pdf','local',$6,$7,$5),
+       ($1,'load',$8,'pod','${podLoad.reference}-pod.pdf','application/pdf','local',$9,NULL,$5),
+       ($1,'carrier',$1,'w9','thind-w9.pdf','application/pdf','local',$10,NULL,$5),
+       ($1,'carrier',$1,'insurance','thind-coi.pdf','application/pdf','local',$11,NULL,$5),
+       ($1,'carrier',$1,'authority_letter','thind-authority.pdf','application/pdf','local',$12,NULL,$5)`,
+    [
+      CARRIER, driverIds[0],
+      demoDocUrl("harpreet-cdl.pdf"), dateOnly(daysAhead(320)),
+      users.owner,
+      demoDocUrl("harpreet-medical.pdf"), dateOnly(daysAhead(95)),
+      podLoad.id, demoDocUrl(`${podLoad.reference}-pod.pdf`),
+      demoDocUrl("thind-w9.pdf"), demoDocUrl("thind-coi.pdf"), demoDocUrl("thind-authority.pdf"),
+    ]
+  )
+  // These three rows claim storage='local' — back that claim with real files,
+  // or readDocumentBytes() (and "Email the packet") finds nothing to send.
+  await writePacketPlaceholders(path.join(process.cwd(), "data", "uploads"))
+
+  // ---- Expansion modules (E1–E5) demo data ----
+  console.log("Creating comms, tasks, facilities intel, recruiting…")
+
+  // Facility notes: the tips every driver wishes existed (E2).
+  const slowFacility = await q(
+    `SELECT id FROM hub.facilities WHERE carrier_id = $1 AND name ILIKE 'Kent Distribution%' LIMIT 1`,
+    [CARRIER]
+  )
+  if (slowFacility.rows[0]) {
+    const facilityNotes = [
+      [driverIds[0], "Harpreet Singh", "Check in at guard shack first, dock doors 14-22. Lumper runs $150.", ["check-in", "lumper"]],
+      [driverIds[2], "Jasdeep Brar", "Overnight parking OK along the back fence. Receiving is slow after 14:00.", ["parking", "slow"]],
+    ]
+    for (const [driverId, name, body, tags] of facilityNotes) {
+      await q(
+        `INSERT INTO hub.facility_notes (carrier_id, facility_id, author_id, author_name, author_role, body, tags)
+         VALUES ($1,$2,$3,$4,'driver',$5,$6)`,
+        [CARRIER, slowFacility.rows[0].id, null, name, body, JSON.stringify(tags)]
+      )
+    }
+    await q(
+      `UPDATE hub.facilities SET hours = 'Mon–Fri 06:00–14:00', overnight_parking = TRUE,
+         typical_lumper_cents = 15000, notes = 'Gate code 4471. Ask for dock assignment at the shack.'
+       WHERE id = $1`,
+      [slowFacility.rows[0].id]
+    )
+  }
+
+  // Messages: a live load thread + a direct thread (E3).
+  const loadThread = await q(
+    `INSERT INTO hub.message_threads (carrier_id, kind, load_id, last_message_at) VALUES ($1,'load',$2,NOW()) RETURNING id`,
+    [CARRIER, inTransit.id]
+  )
+  const threadMsgs = [
+    [users.dispatcher, "Maya Dhillon", "dispatcher", "Receiver moved the appointment up an hour — can you make 13:00?"],
+    [users.driver, "Harpreet Singh", "driver", "Yeah, I'm ahead of schedule. Making good time through Oregon."],
+    [users.dispatcher, "Maya Dhillon", "dispatcher", "Perfect. Don't forget the lumper receipt when you're unloaded."],
+  ]
+  for (const [senderId, senderName, role, body] of threadMsgs) {
+    await q(
+      `INSERT INTO hub.messages (carrier_id, thread_id, sender_id, sender_name, sender_role, body)
+       VALUES ($1,$2,$3,$4,$5,$6)`,
+      [CARRIER, loadThread.rows[0].id, senderId, senderName, role, body]
+    )
+    await q(
+      `INSERT INTO hub.load_events (carrier_id, load_id, kind, actor_id, actor_name, payload)
+       VALUES ($1,$2,'message',$3,$4,$5)`,
+      [CARRIER, inTransit.id, senderId, senderName, JSON.stringify({ body, hasPhoto: false })]
+    )
+  }
+  await q(
+    `INSERT INTO hub.message_threads (carrier_id, kind, driver_id, last_message_at) VALUES ($1,'direct',$2,NOW() - INTERVAL '1 day')`,
+    [CARRIER, driverIds[0]]
+  )
+
+  // Announcement requiring signature — half acknowledged (E3).
+  const announcement = await q(
+    `INSERT INTO hub.announcements (carrier_id, title, body, audience, requires_ack, created_by, created_by_name)
+     VALUES ($1,'Winter chain policy','Chains required over Snoqualmie and Siskiyou starting Nov 1. Check your chain kit before every run — missing gear is an out-of-service waiting to happen.','{"roles":["driver"]}',TRUE,$2,'Maya Dhillon')
+     RETURNING id`,
+    [CARRIER, users.dispatcher]
+  )
+  await q(
+    `INSERT INTO hub.announcement_acks (announcement_id, user_id, signature) VALUES ($1,$2,'seeded')
+     ON CONFLICT DO NOTHING`,
+    [announcement.rows[0].id, users.driver]
+  )
+
+  // Document request pinned to the driver phone (E3).
+  await q(
+    `INSERT INTO hub.document_requests (carrier_id, driver_id, load_id, kind, note, requested_by, requested_by_name)
+     VALUES ($1,$2,$3,'receipt','Send me the lumper receipt from the LA drop when you have it.',$4,'Priya Kaur')`,
+    [CARRIER, driverIds[0], inTransit.id, users.accountant]
+  )
+
+  // Tasks: the office morning routine + a follow-up (E4).
+  await q(
+    `INSERT INTO hub.tasks (carrier_id, title, notes, due_at, priority, recurrence, checklist, created_by_name)
+     VALUES ($1,'Morning ops huddle','The 8am sweep — five minutes, every weekday.',
+       date_trunc('day', NOW()) + INTERVAL '8 hours', 'high', 'weekdays',
+       '[{"label":"Check overnight statuses","done":false},{"label":"Chase unconfirmed dispatches","done":false},{"label":"Review trucks going empty","done":false}]',
+       'Maya Dhillon')`,
+    [CARRIER]
+  )
+  await q(
+    `INSERT INTO hub.tasks (carrier_id, title, notes, due_at, priority, entity_type, entity_id, created_by_name)
+     VALUES ($1,'Call Pacific Crest about the overdue invoice','They are 12 days past terms — escalate politely.',
+       date_trunc('day', NOW()) + INTERVAL '15 hours', 'normal', 'invoice', 'ar', 'Priya Kaur')`,
+    [CARRIER]
+  )
+
+  // Time off: one approved (blocks the planner), one waiting on the office (E5↔E1).
+  await q(
+    `INSERT INTO hub.time_off_requests (carrier_id, driver_id, start_date, end_date, kind, reason, status, decided_by_name, decided_at)
+     VALUES ($1,$2,CURRENT_DATE + 8, CURRENT_DATE + 10,'home_time','Kid''s birthday','approved','Sukhdev Thind',NOW())`,
+    [CARRIER, driverIds[8]]
+  )
+  await q(
+    `INSERT INTO hub.time_off_requests (carrier_id, driver_id, start_date, end_date, kind, reason, status)
+     VALUES ($1,$2,CURRENT_DATE + 15, CURRENT_DATE + 18,'vacation','Family trip','requested')`,
+    [CARRIER, driverIds[1]]
+  )
+
+  // Safety: a DOT-recordable tow-away + a minor incident (E11 register).
+  await q(
+    `INSERT INTO hub.incidents (carrier_id, truck_id, driver_id, occurred_at, location, description,
+       police_report, fatality, injury_treated_away, tow_away_disabling, status, reported_by_name)
+     VALUES
+       ($1,$2,$3,$4,'I-84 EB MP 213, Baker City OR','Black ice spin-out; trailer axle damage, trailer towed. No injuries.','OSP-26-118842',FALSE,FALSE,TRUE,'under_review','Robert Castillo'),
+       ($1,$5,$6,$7,'Pilot #287, Kent WA','Backed into a bollard at the fuel island. Bumper scuff, drivable.',NULL,FALSE,FALSE,FALSE,'open','Tony Marsh')`,
+    [CARRIER, truckIds[4], driverIds[4], daysAgo(34, 6), truckIds[7], driverIds[7], daysAgo(6, 21)]
+  )
+
+  // Recruiting pipeline across stages + a referral (E5).
+  const applicantSeed = [
+    ["Dana", "Whitfield", "applied", "(206) 555-0341", 4, "public_site"],
+    ["Luis", "Herrera", "screened", "(509) 555-0117", 9, "manual"],
+    ["Pavel", "Morozov", "mvr_psp", "(253) 555-0264", 6, "manual"],
+    ["Tina", "Okafor", "offer", "(360) 555-0190", 11, "referral"],
+  ]
+  let referralApplicantId = null
+  for (const [first, last, stage, phone, years, source] of applicantSeed) {
+    const { rows } = await q(
+      `INSERT INTO hub.applicants (carrier_id, source, first_name, last_name, phone, years_experience, stage, orientation)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,
+         '[{"key":"policies","label":"Policies acknowledged (e-signed)","done":false},
+           {"key":"equipment","label":"Equipment issued (keys, cards, PPE)","done":false},
+           {"key":"eld","label":"ELD account created & login tested","done":false},
+           {"key":"fuel_card","label":"Fuel card assigned","done":false},
+           {"key":"emergency","label":"Emergency contacts on file","done":false}]')
+       RETURNING id`,
+      [CARRIER, source, first, last, phone, years, stage]
+    )
+    await q(
+      `INSERT INTO hub.applicant_events (carrier_id, applicant_id, to_stage, actor_name) VALUES ($1,$2,'applied','Maya Dhillon')`,
+      [CARRIER, rows[0].id]
+    )
+    if (source === "referral") referralApplicantId = rows[0].id
+  }
+  if (referralApplicantId) {
+    await q(
+      `INSERT INTO hub.referrals (carrier_id, referrer_driver_id, applicant_id, bonus_cents, milestone, status)
+       VALUES ($1,$2,$3,50000,'hired','pending')`,
+      [CARRIER, driverIds[0], referralApplicantId]
+    )
+    await q(
+      `INSERT INTO hub.offers (carrier_id, applicant_id, pay_summary, body, status, created_by_name)
+       VALUES ($1,$2,'$0.63/mile loaded, weekly settlements, $1,000 sign-on','We are glad to offer you a driving position. Weekly settlements, home time honored through the planner.','sent','Sukhdev Thind')`,
+      [CARRIER, referralApplicantId]
+    )
+  }
+
+  // Notifications so the bell isn't empty on first login.
+  await q(
+    `INSERT INTO hub.notifications (carrier_id, user_id, kind, title, body, link) VALUES
+       ($1,$2,'driver_document','THD-1008 — Robert Castillo sent the POD','Tap to invoice it','/hub/loads/${podLoad.id}'),
+       ($1,$2,'time_off','Gurjit Sandhu asked for time off','${"" /* body below */}Vacation, 3 days','/hub'),
+       ($1,$3,'message','Message from Harpreet Singh','Making good time through Oregon.','/hub/messages')`,
+    [CARRIER, users.dispatcher, users.owner]
+  )
+
+  // Inbox: two emailed rate cons waiting for review. The queue is the only
+  // office screen that is meaningless when empty — you cannot tell a working
+  // Inbox from a broken one — so the demo tenant starts with something to book
+  // and something to reject.
+  await q(
+    `INSERT INTO hub.intake_drafts (carrier_id, source, subject, from_address, raw_text, parsed, confidence)
+     VALUES
+       ($1,'mailbox','Rate con — Kent WA to Fresno CA 6/12','dispatch@pacificcrestlogistics.example',$2,$3,'high'),
+       ($1,'mailbox','FW: load offer 53ft dry van','ops@midvalleybrokerage.example',$4,$5,'medium')`,
+    [
+      CARRIER,
+      [
+        "RATE CONFIRMATION",
+        "PACIFIC CREST LOGISTICS  MC# 784512",
+        "Load # PCL-99120",
+        "PICKUP: Kent, WA 06/12/2026",
+        "DELIVERY: Fresno, CA 06/14/2026",
+        "Commodity: paper  Weight: 42,000 lbs",
+        "Linehaul: $3,200.00   FSC: $350.00",
+      ].join("\n"),
+      JSON.stringify({
+        brokerName: { value: "Pacific Crest Logistics", confidence: "high" },
+        mcNumber: { value: "784512", confidence: "high" },
+        reference: { value: "PCL-99120", confidence: "high" },
+        equipment: { value: "dry_van", confidence: "medium" },
+        commodity: { value: "paper", confidence: "medium" },
+        weightLbs: { value: 42000, confidence: "high" },
+        linehaulCents: { value: 320000, confidence: "high" },
+        fuelSurchargeCents: { value: 35000, confidence: "high" },
+        stops: [
+          { type: "pickup", city: "Kent", state: "WA", date: "2026-06-12", confidence: "high" },
+          { type: "delivery", city: "Fresno", state: "CA", date: "2026-06-14", confidence: "high" },
+        ],
+      }),
+      [
+        "Load confirmation",
+        "MID VALLEY BROKERAGE",
+        "Pick: Yakima WA   Drop: Portland OR",
+        "Rate: $950",
+      ].join("\n"),
+      JSON.stringify({
+        brokerName: { value: "Mid Valley Brokerage", confidence: "medium" },
+        linehaulCents: { value: 95000, confidence: "medium" },
+        stops: [
+          { type: "pickup", city: "Yakima", state: "WA", confidence: "medium" },
+          { type: "delivery", city: "Portland", state: "OR", confidence: "medium" },
+        ],
+      }),
+    ]
+  )
+
+  // ---- Second tenant (Phase 7): Cascade Demo Lines — proves zero bleed ----
+  console.log("Creating second tenant (Cascade Demo Lines)…")
+  const CASCADE = "22222222-2222-2222-2222-222222222222"
+  await q(
+    `INSERT INTO hub.carriers (id, name, dot_number, mc_number, phone, email, address)
+     VALUES ($1, 'Cascade Demo Lines', '3411908', '991283', '(509) 555-0200', 'ops@cascademo.example', '88 Riverside Dr, Wenatchee, WA 98801')
+     ON CONFLICT (id) DO NOTHING`,
+    [CASCADE]
+  )
+  await q(
+    `INSERT INTO hub.carrier_settings (carrier_id, settings) VALUES ($1, $2)
+     ON CONFLICT (carrier_id) DO NOTHING`,
+    [CASCADE, JSON.stringify({
+      invoice: { prefix: "CAS-INV-", nextNumber: 5001, defaultTermsDays: 30 },
+      pay: { companyDriverPerMileCents: 60, ownerOperatorPercentage: 0.88, payLoadedMilesOnly: true },
+      detention: { freeHours: 2, ratePerHourCents: 5000 },
+      costPerMileCents: 178,
+      fsc: { baseCentsPerGallon: 125, mpg: 6.4 },
+      randomTesting: { drugPct: 50, alcoholPct: 10 },
+      factoring: { company: null, remitName: null, remitAddress: null, email: null },
+      notifications: { officeEmail: "ops@cascademo.example" },
+      branding: { accent: "#369C82" },
+    })]
+  )
+  const cascadeOwner = await q(
+    `INSERT INTO hub.users (carrier_id, email, password_hash, name, role) VALUES ($1,$2,$3,$4,'owner') RETURNING id`,
+    [CASCADE, "owner@cascademo.example", hash, "Lena Vasquez"]
+  )
+  const cascadeDriverUser = await q(
+    `INSERT INTO hub.users (carrier_id, email, password_hash, name, role) VALUES ($1,$2,$3,$4,'driver') RETURNING id`,
+    [CASCADE, "driver@cascademo.example", hash, "Pete Larson"]
+  )
+  const cascadeDriver = await q(
+    `INSERT INTO hub.drivers (carrier_id, first_name, last_name, phone, cdl_number, cdl_state,
+       cdl_expiry, medical_card_expiry, hire_date, pay_type, pay_rate, status, user_id)
+     VALUES ($1,'Pete','Larson','(509) 555-0201','WDL884213','WA',$2,$3,$4,'per_mile',0.60,'active',$5)
+     RETURNING id`,
+    [CASCADE, dateOnly(daysAhead(400)), dateOnly(daysAhead(210)), dateOnly(daysAgo(500)), cascadeDriverUser.rows[0].id]
+  )
+  await q(`UPDATE hub.users SET driver_id = $1 WHERE id = $2`, [cascadeDriver.rows[0].id, cascadeDriverUser.rows[0].id])
+  const cascadeTrucks = []
+  for (const [unit, make] of [["C-01", "Volvo"], ["C-02", "Kenworth"]]) {
+    const { rows } = await q(
+      `INSERT INTO hub.trucks (carrier_id, unit_number, year, make, ownership, status, assigned_driver_id, tank_capacity_gallons)
+       VALUES ($1,$2,2022,$3,'company','active',$4,230) RETURNING id`,
+      [CASCADE, unit, make, unit === "C-01" ? cascadeDriver.rows[0].id : null]
+    )
+    cascadeTrucks.push(rows[0].id)
+  }
+  const cascadeCustomer = await q(
+    `INSERT INTO hub.customers (carrier_id, name, type, mc_number, billing_email, payment_terms_days, status)
+     VALUES ($1,'Wenatchee Produce Partners','broker','44521','ap@wenatcheeproduce.example',30,'active') RETURNING id`,
+    [CASCADE]
+  )
+  const cascadeLoads = [
+    ["CAS-5001", "in_transit", cascadeTrucks[0], cascadeDriver.rows[0].id, CITY.spokane, CITY.portland, 168000, 14000, 1, 2],
+    ["CAS-5002", "pod_received", cascadeTrucks[1], null, CITY.kent, CITY.boise, 152000, 12000, 4, 3],
+  ]
+  for (const [ref, status, truckId, driverId, origin, dest, linehaul, fsc, puDays, delDays] of cascadeLoads) {
+    const { rows } = await q(
+      `INSERT INTO hub.loads (carrier_id, reference, customer_id, status, equipment, commodity,
+         linehaul_cents, fuel_surcharge_cents, loaded_miles, truck_id, driver_id, source)
+       VALUES ($1,$2,$3,$4,'reefer','Fresh produce',$5,$6,420,$7,$8,'direct') RETURNING id`,
+      [CASCADE, ref, cascadeCustomer.rows[0].id, status, linehaul, fsc, truckId, driverId]
+    )
+    await q(
+      `INSERT INTO hub.stops (carrier_id, load_id, sequence, type, facility, city, state, lat, lng, appt_start)
+       VALUES ($1,$2,1,'pickup',$3,$4,$5,$6,$7,$8), ($1,$2,2,'delivery',$9,$10,$11,$12,$13,$14)`,
+      [
+        CASCADE, rows[0].id,
+        `${origin.city} Cold Storage`, origin.city, origin.state, origin.lat, origin.lng,
+        status === "in_transit" ? daysAhead(puDays) : daysAgo(puDays),
+        `${dest.city} Distribution`, dest.city, dest.state, dest.lat, dest.lng,
+        status === "in_transit" ? daysAhead(delDays) : daysAgo(delDays - 1),
+      ]
+    )
+  }
+  await q(
+    `INSERT INTO hub.pay_rules (carrier_id, driver_id, name, rules, deductions)
+     SELECT $1, $2, 'Company per-mile',
+       '[{"type":"per_mile","rateCentsPerMile":60,"loadedOnly":true},{"type":"referral_bonus"}]', '[]'
+     WHERE NOT EXISTS (SELECT 1 FROM hub.pay_rules WHERE driver_id = $2)`,
+    [CASCADE, cascadeDriver.rows[0].id]
+  )
+
+  // Platform admin (no tenant scope — sees tenant ops only).
+  await q(
+    `INSERT INTO hub.users (email, password_hash, name, role) VALUES ($1,$2,$3,'platform_admin')`,
+    ["admin@hauldesk.app", hash, "Platform Admin"]
+  )
+
   console.log(`Done. Demo data ready.`)
   console.log(`  In-transit load: ${inTransit.reference} → tracking: /track/${token}`)
+  console.log(`  Cancelled load: ${cancelledLoad.reference} → tracking: /track/${cancelledToken}`)
   console.log(`  Settlement-ready loads: ${settle1.reference}, ${settle2.reference} (company drv), ${settle3.reference} (O/O)`)
   console.log(`  POD-received load awaiting invoice: ${podLoad.reference}`)
-  console.log("Legacy demo logins (password: LegacyDemoOnly1!):")
+  console.log(`  Tenant 2 (Cascade Demo Lines): owner@cascademo.example / driver@cascademo.example`)
+  console.log(`  Platform admin: admin@hauldesk.app`)
+  console.log("Logins (password: ThindDemo1!):")
   console.log("  owner@demo.thind / dispatch@demo.thind / accounting@demo.thind")
   console.log("  driver@demo.thind / broker@demo.thind / shipper@demo.thind")
   await client.end()
 }
 
-main().catch((err) => {
-  console.error("Seed failed:", err)
-  process.exit(1)
-})
+// Only run when executed directly (`node scripts/seed-demo.mjs`) — importing
+// this module (e.g. from a vitest test to exercise the pure helpers above)
+// must not trigger a live DB connection + process.exit.
+if (import.meta.url === `file://${process.argv[1]}`) {
+  main().catch((err) => {
+    console.error("Seed failed:", err)
+    process.exit(1)
+  })
+}

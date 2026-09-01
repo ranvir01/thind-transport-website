@@ -4,22 +4,21 @@ import { revalidatePath } from "next/cache"
 import bcrypt from "bcrypt"
 import { requirePermission } from "@/lib/hub/session"
 import { driverSchema, customerSchema, contactSchema, hubUserSchema } from "@/lib/hub/schemas"
-import { createDriver, updateDriver } from "@/lib/hub/drivers"
-import { createCustomer, updateCustomer, createContact, deleteContact } from "@/lib/hub/customers"
+import { createDriver, updateDriver, getDriver } from "@/lib/hub/drivers"
+import { createCustomer, updateCustomer, createContact, deleteContact, addCrmActivity } from "@/lib/hub/customers"
 import { createHubUser, setHubUserActive } from "@/lib/hub/users"
+import { getCarrier } from "@/lib/hub/settings"
+import { hasDriverAppAccount, sendDriverInviteEmail } from "@/lib/hub/driver-invite"
 import { logAudit } from "@/lib/hub/audit"
 import { query } from "@/lib/hub/db"
 import { vetCarrierWithFmcsa } from "@/lib/hub/fmcsa"
 import { dollarsToCents } from "@/lib/hub/types"
+import { actionError } from "@/lib/hub/action-error"
 import type { ActionResult } from "./fleet"
 
 function firstError(error: { issues: { path: PropertyKey[]; message: string }[] }): string {
   const issue = error.issues[0]
   return issue ? `${issue.path.join(".")}: ${issue.message}` : "Invalid input"
-}
-
-function asError(err: unknown, fallback: string): ActionResult {
-  return { ok: false, error: err instanceof Error ? err.message : fallback }
 }
 
 export async function saveDriverAction(
@@ -30,7 +29,7 @@ export async function saveDriverAction(
   try {
     user = await requirePermission("drivers:write")
   } catch (err) {
-    return asError(err, "Forbidden")
+    return actionError(err, "Forbidden")
   }
   const parsed = driverSchema.safeParse(values)
   if (!parsed.success) return { ok: false, error: firstError(parsed.error) }
@@ -53,7 +52,41 @@ export async function saveDriverAction(
     revalidatePath("/hub/drivers")
     return { ok: true, id: driver.id }
   } catch (err) {
-    return asError(err, "Failed to save driver")
+    return actionError(err, "Failed to save driver")
+  }
+}
+
+/** First-send or resend the driver-app invite — covers manually-added drivers (no invite yet) and expired links (a fresh token overrides the old one). */
+export async function resendDriverInviteAction(driverId: string): Promise<ActionResult> {
+  let user
+  try {
+    user = await requirePermission("drivers:write")
+  } catch (err) {
+    return actionError(err, "Forbidden")
+  }
+  try {
+    const driver = await getDriver(user.carrierId, driverId)
+    if (!driver) return { ok: false, error: "Driver not found" }
+    if (!driver.email) return { ok: false, error: "Add an email address before sending an app invite" }
+    if (await hasDriverAppAccount(user.carrierId, driverId)) {
+      return { ok: false, error: "This driver already has app access" }
+    }
+    const carrier = await getCarrier(user.carrierId)
+    const { createMailTransport, mailFrom } = await import("@/lib/mailer")
+    const sent = await sendDriverInviteEmail(
+      createMailTransport(), mailFrom, user.carrierId, carrier?.name ?? "Your carrier",
+      { driverId, email: driver.email, firstName: driver.first_name }
+    )
+    if (!sent) return { ok: false, error: "Could not send the invite — check email settings" }
+    await logAudit({
+      carrierId: user.carrierId, actorId: user.id, actorName: user.name,
+      entityType: "driver", entityId: driverId,
+      action: "send_app_invite", newValue: { email: driver.email },
+    })
+    revalidatePath(`/hub/drivers/${driverId}`)
+    return { ok: true }
+  } catch (err) {
+    return actionError(err, "Failed to send invite")
   }
 }
 
@@ -65,7 +98,7 @@ export async function saveCustomerAction(
   try {
     user = await requirePermission("customers:write")
   } catch (err) {
-    return asError(err, "Forbidden")
+    return actionError(err, "Forbidden")
   }
   const parsed = customerSchema.safeParse(values)
   if (!parsed.success) return { ok: false, error: firstError(parsed.error) }
@@ -97,7 +130,7 @@ export async function saveCustomerAction(
     revalidatePath("/hub/customers")
     return { ok: true, id: customer.id }
   } catch (err) {
-    return asError(err, "Failed to save customer")
+    return actionError(err, "Failed to save customer")
   }
 }
 
@@ -106,16 +139,17 @@ export async function addContactAction(values: Record<string, unknown>): Promise
   try {
     user = await requirePermission("customers:write")
   } catch (err) {
-    return asError(err, "Forbidden")
+    return actionError(err, "Forbidden")
   }
   const parsed = contactSchema.safeParse(values)
   if (!parsed.success) return { ok: false, error: firstError(parsed.error) }
   try {
     const contact = await createContact(user.carrierId, parsed.data)
+    if (!contact) return { ok: false, error: "Customer not found" }
     revalidatePath(`/hub/customers/${parsed.data.customer_id}`)
     return { ok: true, id: contact.id }
   } catch (err) {
-    return asError(err, "Failed to add contact")
+    return actionError(err, "Failed to add contact")
   }
 }
 
@@ -124,14 +158,14 @@ export async function removeContactAction(id: string, customerId: string): Promi
   try {
     user = await requirePermission("customers:write")
   } catch (err) {
-    return asError(err, "Forbidden")
+    return actionError(err, "Forbidden")
   }
   try {
     await deleteContact(user.carrierId, id)
     revalidatePath(`/hub/customers/${customerId}`)
     return { ok: true }
   } catch (err) {
-    return asError(err, "Failed to remove contact")
+    return actionError(err, "Failed to remove contact")
   }
 }
 
@@ -144,19 +178,22 @@ export async function addCrmNoteAction(input: {
   try {
     user = await requirePermission("customers:write")
   } catch (err) {
-    return asError(err, "Forbidden")
+    return actionError(err, "Forbidden")
   }
   if (!input.body.trim()) return { ok: false, error: "Note cannot be empty" }
   try {
-    await query(
-      `INSERT INTO hub.crm_activities (carrier_id, customer_id, kind, body, actor_id, actor_name)
-       VALUES ($1, $2, $3, $4, $5, $6)`,
-      [user.carrierId, input.customerId, input.kind, input.body.trim(), user.id, user.name]
-    )
+    const inserted = await addCrmActivity(user.carrierId, {
+      customer_id: input.customerId,
+      kind: input.kind,
+      body: input.body.trim(),
+      actor_id: user.id,
+      actor_name: user.name,
+    })
+    if (!inserted) return { ok: false, error: "Customer not found" }
     revalidatePath(`/hub/customers/${input.customerId}`)
     return { ok: true }
   } catch (err) {
-    return asError(err, "Failed to add note")
+    return actionError(err, "Failed to add note")
   }
 }
 
@@ -167,7 +204,7 @@ export async function createHubUserAction(values: Record<string, unknown>): Prom
   try {
     owner = await requirePermission("users:manage")
   } catch (err) {
-    return asError(err, "Forbidden")
+    return actionError(err, "Forbidden")
   }
   const parsed = hubUserSchema.safeParse(values)
   if (!parsed.success) return { ok: false, error: firstError(parsed.error) }
@@ -200,7 +237,7 @@ export async function setUserActiveAction(id: string, active: boolean): Promise<
   try {
     owner = await requirePermission("users:manage")
   } catch (err) {
-    return asError(err, "Forbidden")
+    return actionError(err, "Forbidden")
   }
   if (id === owner.id) return { ok: false, error: "You cannot deactivate your own account" }
   try {
@@ -213,6 +250,6 @@ export async function setUserActiveAction(id: string, active: boolean): Promise<
     revalidatePath("/hub/settings/users")
     return { ok: true }
   } catch (err) {
-    return asError(err, "Failed to update user")
+    return actionError(err, "Failed to update user")
   }
 }

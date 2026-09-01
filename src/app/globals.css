@@ -16,15 +16,15 @@
     --mobile-bar-height: 4.5rem;
 
     /* Brand Colors (HSL values for compatibility) */
-    --primary: 217 51% 9%; /* #0B1422 */
+    --primary: 217 51% 9%; /* #131418 */
     --primary-foreground: 210 33% 97%;
     --secondary: 2 66% 56%; /* #D94B45 */
     --secondary-foreground: 210 33% 97%;
-    --brand-bg: #080d12;
-    --brand-bg-soft: #0e1621;
-    --brand-surface: #141c26;
-    --brand-surface-alt: #1a2430;
-    --brand-surface-elevated: #212d3a;
+    --brand-bg: #0B0C0E;
+    --brand-bg-soft: #121316;
+    --brand-surface: #17181b;
+    --brand-surface-alt: #1c1d21;
+    --brand-surface-elevated: #242629;
     --brand-line: rgba(180, 190, 200, 0.12);
     --brand-line-strong: rgba(180, 190, 200, 0.22);
     --brand-copy: #9ca8b6;
@@ -36,6 +36,40 @@
     --brand-gold: #f2a900;
     --brand-gold-soft: rgba(242, 169, 0, 0.13);
     --brand-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+
+    /* ======================================================================
+     * MARKETING PALETTE — docs/design/DIRECTION.md §1
+     *
+     * Authored in OKLCH so the lightness steps are perceptually even rather
+     * than eyeballed, with hex fallbacks first for any engine without oklch().
+     * The OKLCH values are EXACT conversions of the hex above them, computed
+     * rather than eyeballed — a first pass approximated them by hand and the
+     * rendered colours drifted from the verified ones, which pushed ink-3 to
+     * 4.35:1 (a fail) while the documented hex said 4.66:1.
+     * Contrast for every text/background pair is computed in DIRECTION.md;
+     * ink-3 was darkened from #6E7378 (4.46:1, a fail) to #6B7075 (4.66:1).
+     *
+     * The ground is paper, not near-black: drivers read this outdoors on a
+     * phone, the calculator is a financial instrument, and a real golden-hour
+     * yard photo has to pop rather than disappear. Dark survives as
+     * full-bleed inverted bands (`asphalt`) — punctuation, not the page.
+     * ==================================================================== */
+    --m-paper: #f6f7f7;
+    --m-paper: oklch(97.54% 0.0011 197.1);
+    --m-ink: #141618;
+    --m-ink: oklch(19.89% 0.0051 248.1);
+    --m-ink-2: #4e5257;
+    --m-ink-2: oklch(43.68% 0.0097 253.9);
+    --m-ink-3: #6b7075;
+    --m-ink-3: oklch(54.25% 0.0099 248.0);
+    --m-signal: #c42820;
+    --m-signal: oklch(53.42% 0.1928 28.7);
+    --m-signal-up: #ec5a50;
+    --m-signal-up: oklch(65.74% 0.1825 27.1);
+    --m-asphalt: #1c1f22;
+    --m-asphalt: oklch(23.74% 0.0073 248.1);
+    --m-cedar: #1e6b4f;
+    --m-cedar: oklch(47.35% 0.0872 164.6);
   }
 
   .dark {
@@ -141,8 +175,11 @@
     line-height: 1.45;
   }
   
-  /* Enhanced Anchor Tag Styles */
-  a {
+  /* Enhanced Anchor Tag Styles — marketing only. The :where(:not(...)) guard
+     (zero added specificity) keeps these out of the LoadOff app: a:hover at
+     (0,1,1) was beating the app's color utilities (0,1,0), flashing every
+     hovered in-app link marketing red. */
+  a:where(:not([data-app="hauldesk"] *)) {
     color: #d6dde6;
     font-weight: 500;
     text-decoration: none;
@@ -150,7 +187,7 @@
     position: relative;
   }
 
-  a:hover {
+  a:hover:where(:not([data-app="hauldesk"] *)) {
     color: var(--brand-accent-strong);
   }
 
@@ -179,10 +216,12 @@
     margin-bottom: 0.75rem;
   }
 
-  /* Enhanced Strong and Emphasis */
+  /* Strong stays bold and INHERITS its context's color. A fixed light color
+     here (was var(--brand-copy-strong), near-white) turned every <strong> on a
+     light card or light band invisible site-wide — bold weight is the emphasis,
+     the color must follow the surrounding text so contrast holds on any surface. */
   strong {
     font-weight: 700;
-    color: var(--brand-copy-strong);
   }
 
   em {
@@ -201,43 +240,13 @@
     @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
   }
   
-  .gradient-brand {
-    @apply bg-gradient-to-br from-[#0B1422] via-[#141f2f] to-[#05080e];
-  }
   
-  .gradient-accent {
-    @apply bg-gradient-to-br from-[#D94B45] via-[#F06B63] to-[#D94B45];
-  }
   
-  .hero-cta-button {
-    @apply w-full bg-orange text-white px-8 py-4 rounded-fleet font-bold text-lg shadow-cta hover:bg-orange-400 transition-colors;
-    font-family: var(--font-display), sans-serif;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-  }
   
   /* Enhanced Card Styles */
-  .card-elevated {
-    @apply rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300;
-    background: linear-gradient(180deg, rgba(20, 31, 47, 0.96), rgba(11, 20, 34, 0.96));
-    border: 1px solid var(--brand-line);
-  }
   
   /* Enhanced Button Styles */
-  .btn-primary-enhanced {
-    @apply text-white px-6 py-3 rounded-fleet font-bold shadow-cta hover:bg-orange-400 transition-colors;
-    background: var(--brand-accent);
-    font-family: var(--font-display), sans-serif;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-  }
   
-  .btn-secondary-enhanced {
-    @apply text-white px-6 py-3 rounded-fleet border-2 border-steel-600 bg-steel-800/50 hover:bg-steel-700/60 transition-colors;
-    font-family: var(--font-display), sans-serif;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-  }
 
   .brand-page-shell {
     background-color: var(--brand-bg-soft);
@@ -265,17 +274,6 @@
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 14px 40px rgba(0, 0, 0, 0.32);
   }
 
-  .fleet-panel-accent {
-    position: relative;
-    overflow: hidden;
-  }
-  .fleet-panel-accent::before {
-    content: "";
-    position: absolute;
-    inset: 0 auto 0 0;
-    width: 4px;
-    background: linear-gradient(180deg, var(--brand-accent), var(--brand-gold));
-  }
 
   .fleet-badge {
     @apply inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider;
@@ -291,29 +289,21 @@
     border-color: rgba(242, 169, 0, 0.4);
   }
 
-  .fleet-stat-card {
-    @apply rounded-fleet-lg border border-steel-700/60 bg-navy-700/70 p-4 transition-transform duration-300;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
-  }
-  .fleet-stat-card:hover {
-    transform: translateY(-4px);
-  }
 
-  .fleet-stat-card--highlight {
-    border-color: rgba(224, 57, 47, 0.5);
-    background: linear-gradient(135deg, rgba(224, 57, 47, 0.16) 0%, rgba(14, 22, 33, 0.95) 100%);
-  }
 
   .fleet-section-heading {
     @apply text-center mb-10 md:mb-14;
   }
 
+  /* The accent phrase in a headline. Deliberately a SOLID colour, not a
+     gradient: this class sits on the five largest headlines on the site, and a
+     red-to-gold sweep both dated them and introduced gold as a third brand
+     colour competing with the graphite/white/red system — the accent word also
+     landed lighter than the white around it, which inverted the emphasis it was
+     supposed to create. One confident red reads as a decision; a gradient reads
+     as an effect. */
   .text-gradient-accent {
-    background: linear-gradient(100deg, var(--brand-accent-strong), var(--brand-gold));
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
-    color: transparent;
+    color: var(--brand-accent-strong);
   }
 
   /* True-white chip for partner/shipper logos — exempt from the dark bg-white override */
@@ -426,6 +416,14 @@
   .brand-page-shell .text-red-600,
   .brand-page-shell .text-red-700,
   .brand-page-shell .text-orange-400,
+  /* orange-500/600 are the brand red at full and one step down (#E0392F /
+     #C42820). Every other accent class in this list was remapped for the dark
+     shell and these two were missed, so they kept rendering the dark step on a
+     navy panel: 3.09:1 for orange-600, below AA. They are also the two most
+     reached-for shades on these pages, which is why the gap showed up on
+     /benefits and /resources rather than staying theoretical. */
+  .brand-page-shell .text-orange-500,
+  .brand-page-shell .text-orange-600,
   .brand-page-shell .text-orange-700 {
     color: var(--brand-accent-strong) !important;
   }
@@ -540,7 +538,7 @@
   .brand-page-shell [data-light] .text-green-900,
   .brand-page-shell [data-light] .text-orange-900,
   .brand-page-shell [data-light] .text-neutral-900 {
-    color: #0f172a !important;
+    color: #121316 !important;
   }
 
   .brand-page-shell [data-light] .text-gray-600,
@@ -746,239 +744,55 @@
 }
 
 /* Enhanced Floating Action Button */
-.fab {
-  @apply fixed bottom-8 right-8 text-white w-16 h-16 rounded-full shadow-2xl transition-all z-40 flex items-center justify-center transform hover:scale-110;
-  background: linear-gradient(135deg, #d94b45, #c53c37);
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-}
 
-.fab:hover {
-  box-shadow: 0 35px 60px -15px rgba(0, 0, 0, 0.3);
-}
 
 /* Advanced Header Animations */
-@keyframes fadeInScale {
-  from {
-    opacity: 0;
-    transform: scale(0.95) translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1) translateY(0);
-  }
-}
 
-@keyframes slideInBottom {
-  from {
-    transform: translateY(100%);
-  }
-  to {
-    transform: translateY(0);
-  }
-}
 
 /* Header Mega Menu */
-.mega-menu-enter {
-  animation: fadeInScale 0.2s ease-out;
-}
 
 /* Live Status Indicators */
-@keyframes pulse-dot {
-  0%, 100% {
-    transform: scale(1);
-    opacity: 1;
-  }
-  50% {
-    transform: scale(1.5);
-    opacity: 0.5;
-  }
-}
 
-.animate-pulse-dot {
-  animation: pulse-dot 2s ease-in-out infinite;
-}
 
 /* Header Scroll Effects */
-.header-shadow-scroll {
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-}
 
 /* Enhanced Badge Animations */
-@keyframes badge-shine {
-  to {
-    background-position: 200% center;
-  }
-}
 
-.badge-shine {
-  background: linear-gradient(
-    to right,
-    transparent 0%,
-    rgba(255, 255, 255, 0.4) 50%,
-    transparent 100%
-  );
-  background-size: 200% auto;
-  animation: badge-shine 3s linear infinite;
-}
 
 /* Glass morphism effect */
-.glass {
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-}
 
-.glass-dark {
-  background: rgba(0, 0, 0, 0.1);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-}
 
 /* Enhanced shadows */
-.shadow-soft {
-  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
-}
 
-.shadow-elevated {
-  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.08), 0 4px 6px -4px rgb(0 0 0 / 0.05);
-}
 
-.shadow-3xl {
-  box-shadow: 0 35px 60px -15px rgba(0, 0, 0, 0.3);
-}
 
 /* Quick Actions Bar */
-.quick-actions-bar {
-  animation: slideInBottom 0.3s ease-out;
-  backdrop-filter: blur(10px);
-  background-color: rgba(11, 20, 34, 0.92);
-}
 
 /* Hover Effects */
-.hover-lift {
-  @apply transition-all duration-200;
-}
 
-.hover-lift:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
 
 /* Loading Skeleton for Real-time Data */
-@keyframes shimmer {
-  0% {
-    background-position: -200px 0;
-  }
-  100% {
-    background-position: calc(200px + 100%) 0;
-  }
-}
 
-.skeleton {
-  background: linear-gradient(
-    90deg,
-    #f0f0f0 25%,
-    #e0e0e0 50%,
-    #f0f0f0 75%
-  );
-  background-size: 200px 100%;
-  animation: shimmer 1.5s infinite;
-}
 
 /* Progress Bar Animation */
-@keyframes progress-bar {
-  from {
-    width: 0%;
-  }
-  to {
-    width: 100%;
-  }
-}
 
-.animate-progress-bar {
-  animation: progress-bar 4s linear;
-}
 
 /* Partner Showcase Marquee */
-@keyframes marquee-left {
-  0% {
-    transform: translateX(0%);
-  }
-  100% {
-    transform: translateX(-50%);
-  }
-}
 
-@keyframes marquee-right {
-  0% {
-    transform: translateX(-50%);
-  }
-  100% {
-    transform: translateX(0%);
-  }
-}
 
-.marquee-track {
-  animation: marquee-left 25s linear infinite;
-}
 
-.marquee-track-reverse {
-  animation: marquee-right 25s linear infinite;
-}
 
-.marquee-gradient {
-  position: relative;
-}
 
 .marquee-gradient::before,
-.marquee-gradient::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  width: 80px;
-  pointer-events: none;
-  z-index: 10;
-}
 
-.marquee-gradient::before {
-  left: 0;
-  background: linear-gradient(to right, rgba(255, 255, 255, 1), rgba(255, 255, 255, 0));
-}
 
-.marquee-gradient::after {
-  right: 0;
-  background: linear-gradient(to left, rgba(255, 255, 255, 1), rgba(255, 255, 255, 0));
-}
 
 /* ========================================= */
 /* CINEMATIC REDESIGN STYLES                 */
 /* ========================================= */
 
-.noise-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  z-index: 50;
-  opacity: 0.05;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
-}
 
-.cinematic-text {
-  text-transform: uppercase;
-  letter-spacing: -0.03em;
-  font-weight: 800;
-}
 
-.stroke-text {
-  -webkit-text-stroke: 1px white;
-  color: transparent;
-}
 
 /* Custom Scrollbar for Cinematic Mode */
 ::-webkit-scrollbar {
@@ -996,49 +810,15 @@
 }
 
 /* Animations for Cinematic Hero */
-@keyframes gradient-x {
-  0%, 100% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
-}
 
-@keyframes pan-image {
-  0% {
-    background-position: 0% 50%;
-  }
-  100% {
-    background-position: 100% 50%;
-  }
-}
 
-.animate-gradient-x {
-  background-size: 200% 200%;
-  animation: gradient-x 15s ease infinite;
-}
 
-.animate-pan-image {
-    animation: pan-image 30s linear infinite alternate;
-}
 
 /* 
    Force Override for Chat Widget 
    Targeting the button by aria-label since we can't edit the component
 */
-button[aria-label="Contact us"] {
-    background: linear-gradient(135deg, #d94b45, #c53c37) !important;
-    color: white !important;
-    font-weight: bold !important;
-    box-shadow: 0 0 24px rgba(217, 75, 69, 0.4) !important;
-}
 
-button[aria-label="Contact us"]:hover {
-    background: linear-gradient(135deg, #f06b63, #d94b45) !important;
-    transform: scale(1.1) !important;
-    box-shadow: 0 0 30px rgba(217, 75, 69, 0.55) !important;
-}
 
 /* ========================================= */
 /* SAFE AREA & MOBILE OPTIMIZATIONS          */
@@ -1049,9 +829,6 @@ button[aria-label="Contact us"]:hover {
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
-.safe-area-top {
-  padding-top: env(safe-area-inset-top, 0px);
-}
 
 /* Mobile footer spacing - accounts for fixed bottom bar */
 @media (max-width: 767px) {
@@ -1117,7 +894,7 @@ button[aria-label="Contact us"]:hover {
 .portal-light h2,
 .portal-light h3,
 .portal-light h4 {
-  color: #0f172a;
+  color: #121316;
 }
 
 /* Hero entrance — CSS-only stagger so the headline paints before hydration.
@@ -1157,3 +934,30 @@ button[aria-label="Contact us"]:hover {
 .hero-stagger > *:nth-child(4) { animation-delay: 0.21s; }
 .hero-stagger > *:nth-child(5) { animation-delay: 0.28s; }
 .hero-stagger > *:nth-child(6) { animation-delay: 0.35s; }
+
+/* ---- HaulDesk planner (E1) ---- */
+/* Empty days are visually loud: a soft diagonal hatch begging for a load. */
+.planner-empty-day {
+  background-image: repeating-linear-gradient(
+    -45deg,
+    transparent,
+    transparent 7px,
+    rgba(217, 164, 65, 0.07) 7px,
+    rgba(217, 164, 65, 0.07) 9px
+  );
+}
+
+/* Authentic-photo treatment: one grade across all imagery so mixed sources
+   (and AI-generated placeholders until real yard photos land) read as a
+   single shoot — slight desaturation kills the synthetic over-saturation,
+   film contrast + warm cast reads documentary, not stock. */
+.img-authentic {
+  filter: saturate(0.88) contrast(1.06) sepia(0.06);
+}
+.grain-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.05;
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="180" height="180"><filter id="g"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2"/></filter><rect width="100%25" height="100%25" filter="url(%23g)"/></svg>');
+}

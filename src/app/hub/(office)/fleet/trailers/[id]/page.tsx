@@ -13,7 +13,7 @@ export default async function TrailerDetailPage({ params }: { params: Promise<{ 
   const { id } = await params
   const trailer = await getTrailer(user.carrierId, id).catch(() => null)
   if (!trailer) notFound()
-  const documents = await listDocuments("trailer", id)
+  const documents = await listDocuments(user.carrierId, "trailer", id)
 
   const initial: TrailerFormState = {
     unit_number: trailer.unit_number,

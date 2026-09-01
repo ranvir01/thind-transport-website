@@ -6,8 +6,9 @@ import { ArrowRight, Ban, Loader2, MessageSquare } from "lucide-react"
 import {
   advanceLoadStatusAction, logCheckCallAction, setLoadStatusAction, stopTimestampAction,
 } from "@/app/hub/_actions/loads"
+import { runOrQueue } from "@/components/hub/office/offline-queue"
 import { fieldCls } from "@/components/hub/ui"
-import { NEXT_STATUS, STATUS_LABELS, type LoadStatus } from "@/lib/hub/types"
+import { NEXT_STATUS, STATUS_LABELS, canCancelLoad, type LoadStatus } from "@/lib/hub/types"
 
 export function AdvanceStatusButton({
   loadId,
@@ -24,8 +25,13 @@ export function AdvanceStatusButton({
 
   const advance = () =>
     startTransition(async () => {
-      const result = await advanceLoadStatusAction(loadId)
-      if (result.ok) toast.success(`Moved to ${STATUS_LABELS[next]}`)
+      // Forward-only lifecycle makes a queued replay conflict-safe.
+      const result = await runOrQueue(
+        { kind: "advance-status", payload: { loadId } },
+        () => advanceLoadStatusAction(loadId)
+      )
+      if ("queued" in result) toast.success("No signal — saved, sends automatically")
+      else if (result.ok) toast.success(`Moved to ${STATUS_LABELS[next]}`)
       else toast.error(result.error ?? "Could not advance status")
     })
 
@@ -34,7 +40,7 @@ export function AdvanceStatusButton({
       <button
         onClick={advance}
         disabled={pending}
-        className="inline-flex min-h-[36px] items-center gap-1 rounded-lg border border-gold/40 bg-gold/10 px-2.5 text-[11px] font-bold uppercase tracking-wide text-gold hover:bg-gold/20 disabled:opacity-50"
+        className="inline-flex min-h-[36px] items-center gap-1 rounded-control bg-accent px-2.5 text-[12px] font-semibold text-accent-fg hover:bg-accent-hover disabled:opacity-50"
       >
         {pending ? <Loader2 className="h-3 w-3 animate-spin" /> : <ArrowRight className="h-3 w-3" />}
         {STATUS_LABELS[next]}
@@ -46,7 +52,7 @@ export function AdvanceStatusButton({
     <button
       onClick={advance}
       disabled={pending}
-      className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-orange px-5 font-display text-sm font-bold uppercase tracking-[0.08em] text-white shadow-cta hover:bg-orange-400 disabled:opacity-60"
+      className="inline-flex min-h-[44px] items-center gap-2 rounded-control bg-accent px-5 font-semibold text-sm text-accent-fg hover:bg-accent-hover disabled:opacity-60"
     >
       {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4" />}
       Mark {STATUS_LABELS[next]}
@@ -58,7 +64,7 @@ export function CancelLoadButton({ loadId, status }: { loadId: string; status: L
   const [pending, startTransition] = useTransition()
   const [confirming, setConfirming] = useState(false)
   // Once money work starts (invoiced+), cancellation is an accounting decision, not a click.
-  if (["delivered", "pod_received", "invoiced", "paid", "settled", "cancelled"].includes(status)) return null
+  if (!canCancelLoad(status)) return null
 
   const cancel = () =>
     startTransition(async () => {
@@ -72,7 +78,7 @@ export function CancelLoadButton({ loadId, status }: { loadId: string; status: L
     return (
       <button
         onClick={() => setConfirming(true)}
-        className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-red-400/30 px-4 text-sm font-semibold text-red-300 hover:bg-red-500/10"
+        className="inline-flex min-h-[44px] items-center gap-2 rounded-control border border-bad-soft px-4 text-sm font-semibold text-bad hover:bg-bad-soft"
       >
         <Ban className="h-4 w-4" /> Cancel load
       </button>
@@ -83,14 +89,14 @@ export function CancelLoadButton({ loadId, status }: { loadId: string; status: L
       <button
         onClick={cancel}
         disabled={pending}
-        className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-red-600 px-4 text-sm font-bold text-white hover:bg-red-500 disabled:opacity-60"
+        className="inline-flex min-h-[44px] items-center gap-2 rounded-control bg-bad px-4 text-sm font-bold text-white hover:opacity-90 disabled:opacity-60"
       >
         {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Ban className="h-4 w-4" />}
         Confirm cancel
       </button>
       <button
         onClick={() => setConfirming(false)}
-        className="min-h-[44px] rounded-xl px-3 text-sm font-semibold text-steel-200 hover:bg-white/5"
+        className="min-h-[44px] rounded-control px-3 text-sm font-semibold text-fg-2 hover:bg-hover"
       >
         Keep load
       </button>
@@ -108,8 +114,15 @@ export function CheckCallButton({ loadId }: { loadId: string }) {
     e.preventDefault()
     if (!note.trim()) return
     startTransition(async () => {
-      const result = await logCheckCallAction(loadId, note)
-      if (result.ok) {
+      const result = await runOrQueue(
+        { kind: "check-call", payload: { loadId, note } },
+        () => logCheckCallAction(loadId, note)
+      )
+      if ("queued" in result) {
+        toast.success("No signal — call saved, sends automatically")
+        setNote("")
+        setOpen(false)
+      } else if (result.ok) {
         toast.success("Check call logged")
         setNote("")
         setOpen(false)
@@ -123,7 +136,7 @@ export function CheckCallButton({ loadId }: { loadId: string }) {
     return (
       <button
         onClick={() => setOpen(true)}
-        className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-white/15 px-4 text-sm font-semibold text-steel-100 hover:bg-white/5"
+        className="inline-flex min-h-[44px] items-center gap-2 rounded-control border border-border-strong px-4 text-sm font-semibold text-fg-2 hover:bg-hover"
       >
         <MessageSquare className="h-4 w-4" /> Check call
       </button>
@@ -142,14 +155,14 @@ export function CheckCallButton({ loadId }: { loadId: string }) {
       <button
         type="submit"
         disabled={pending || !note.trim()}
-        className="min-h-[44px] shrink-0 rounded-xl border border-gold/40 bg-gold/10 px-4 text-sm font-bold text-gold hover:bg-gold/20 disabled:opacity-50"
+        className="min-h-[44px] shrink-0 rounded-control bg-accent px-4 text-sm font-semibold text-accent-fg hover:bg-accent-hover disabled:opacity-50"
       >
         {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Log"}
       </button>
       <button
         type="button"
         onClick={() => setOpen(false)}
-        className="min-h-[44px] shrink-0 rounded-xl px-3 text-sm font-semibold text-steel-200 hover:bg-white/5"
+        className="min-h-[44px] shrink-0 rounded-control px-3 text-sm font-semibold text-fg-2 hover:bg-hover"
       >
         Cancel
       </button>
@@ -175,15 +188,19 @@ export function StopTimestampButton({
   const record = () =>
     startTransition(async () => {
       const result = await stopTimestampAction(stopId, loadId, field)
-      if (result.ok) toast.success(field === "arrived_at" ? "Arrival recorded" : "Departure recorded")
-      else toast.error(result.error ?? "Could not record time")
+      if (result.ok) {
+        const detention = result.detentionAppliedCents
+          ? ` — detention billed: $${(result.detentionAppliedCents / 100).toFixed(2)}`
+          : ""
+        toast.success((field === "arrived_at" ? "Arrival recorded" : "Departure recorded") + detention)
+      } else toast.error(result.error ?? "Could not record time")
     })
 
   return (
     <button
       onClick={record}
       disabled={pending}
-      className="inline-flex min-h-[36px] items-center gap-1.5 rounded-lg border border-white/15 px-3 text-xs font-semibold text-steel-100 hover:bg-white/5 disabled:opacity-50"
+      className="inline-flex min-h-[36px] items-center gap-1.5 rounded-lg border border-border-strong px-3 text-xs font-semibold text-fg-2 hover:bg-hover disabled:opacity-50"
     >
       {pending ? <Loader2 className="h-3 w-3 animate-spin" /> : null}
       {label}

@@ -1,35 +1,47 @@
-# HaulDesk Sign-Off Gates
+# LoadOff Production Sign-Off — Thind Transport
 
-This is the current verification state for the mobile sandbox milestone. Full
-production launch gates remain open until real owner data and credentials are
-entered.
+Check each gate on **production** with **real data** (not demo seed). All must pass before Excel is retired.
 
-| Gate | Status | Evidence |
-|---|---|---|
-| `npm run build` | PASS | Production build completed successfully after latest changes. |
-| `npm test` | PASS | Vitest: 9 files, 65 tests passing. |
-| `npm run lint` | PASS | ESLint completed with zero errors. |
-| `npm run e2e:sweep` | PASS | Against HTTPS tunnel: owner sign-in, Today, loads, dispatch, drivers, customers, money, fleet, fuel, compliance, import, ranker, reports, report builder, onboarding, setup pages, driver PWA tabs/offline page, `/track/sandbox`, manifest, service worker, CSV exports, and import-template downloads all returned success. |
-| HTTPS mobile tunnel | PASS | `npm run dev:mobile` created Cloudflare quick tunnel and printed public HTTPS URL. |
-| Tunnel sign-in | PASS | Script smoke signed in with sandbox driver credentials and loaded `/hub/driver`. |
-| PWA manifest/service worker | PASS | `/hub.webmanifest` and `/hub-sw.js` returned HTTP 200 over the HTTPS tunnel. |
-| Driver PWA at 390px | PASS | Manual browser test showed SANDBOX DRIVER, current load, PWA status, camera POD button, Save POD button, and bottom tabs. |
-| Camera POD path | PARTIAL PASS | Browser called camera API over HTTPS; VM has no camera and returned “Requested device not found.” Owner must confirm on real iPhone hardware. |
-| Owner sandbox pages without local DB | PASS | Manual and fetch smoke verified `/hub`, `/hub/loads`, `/hub/money`, `/hub/ranker`, `/hub/fleet` render populated sandbox fallback content with no `POSTGRES_URL`. |
-| Two-company sandbox switcher | PASS | Manual test showed SANDBOX badge and All companies / Thind / ATS switcher. |
-| Broker tracking portal sandbox | PASS | `/track/sandbox` returned HTTP 200 over the HTTPS tunnel and rendered carrier/load tracking content without local DB. |
-| Production seed safety | PASS | `seed:production` is confirmation-gated and only upserts known carrier facts/blockers; it does not fabricate loads/drivers/money. |
-| Production import templates | PASS | `seed:production` writes 10 CSV templates under `docs/production-intake/templates/` for drivers, trucks, trailers, customers, pay tariffs, recurring transactions, open AR, loadboard, fuel, and tolls. |
-| Sandbox reset safety | PARTIAL PASS | With no `POSTGRES_URL`, reset exits cleanly without touching anything. With Postgres, script is scoped to sandbox carrier IDs/data-mode. |
-| Full seeded sandbox database | FALLBACK PASS | No `POSTGRES_URL` exists in this VM, so `seed:sandbox` now exits successfully and the app uses built-in no-DB sandbox fallback content. With Postgres, it writes the full seeded dataset. |
-| Production go-live data | BLOCKED | Owner must fill the items in `FILL-THESE-NEXT.md`. |
+## Automated
 
-## Current iPhone test URL
+- [ ] `npm run build` — zero errors
+- [ ] `npm test` — 117 tests green (requires Postgres for isolation suite)
+- [ ] `npm run db:migrate` — clean on production DB
+- [ ] Demo accounts disabled; no `ThindDemo1!` in production
 
-The last verified quick tunnel was:
+## Money
 
-```text
-https://apr-shift-scored-volunteer.trycloudflare.com
-```
+- [ ] One real invoice emailed to broker; PDF + POD attached
+- [ ] AR aging matches imported open invoices
+- [ ] Settlement draft penny-matches manual spreadsheet
+- [ ] QuickBooks CSV imports cleanly (accountant confirms)
+- [ ] Factoring remit-to correct on factored invoices
 
-Quick tunnel URLs change every time `npm run dev:mobile` restarts.
+## Operations
+
+- [ ] One real load: book → dispatch → driver POD → office sees timeline
+- [ ] Driver PWA: confirm dispatch → arrive → camera POD → DVIR
+- [ ] Broker portal: tracks in-transit load without dispatcher action
+- [ ] docs@ mailbox auto-files rate con (or unmatched queue monitored)
+- [ ] Fuel quarter imported; IFTA worksheet within tolerance of prior filing
+
+## Compliance & security
+
+- [ ] Red/amber/green reflects real expiries
+- [ ] Login lockout verified (5 fails → 15 min lock)
+- [ ] Documents require auth; share links revocable
+- [ ] Crons running on Vercel (compliance-scan, ar-reminders, integration-sync)
+
+## Mobile
+
+- [ ] Today, dispatch, driver home usable at 390px
+- [ ] No horizontal page overflow on changed screens
+- [ ] `node scripts/e2e-sweep.mjs` against production URL
+
+## Cutover
+
+- [ ] First full week: all new loads booked only in LoadOff
+- [ ] Excel retired
+- [ ] Owner sign-off date: ___________
+
+**Signed:** _________________________ **Date:** ___________

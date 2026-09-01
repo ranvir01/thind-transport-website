@@ -1,194 +1,108 @@
-"use client"
-
-import { motion } from "framer-motion"
-import { Check, X, ArrowRight } from "lucide-react"
+import { ArrowRight } from "lucide-react"
 import Link from "next/link"
+import { Reveal } from "@/components/ui/Reveal"
+
+/**
+ * Archetype C — dense data (docs/design/DIRECTION.md §3).
+ *
+ * Was two full renders of `comparisonData`: a card list at `md:hidden` and a
+ * table at `hidden md:block`. The same eight rows shipped twice in the HTML,
+ * and every edit had to be made in two places. Now one render whose grid
+ * reflows — the only thing that changes across breakpoints is the column
+ * labelling, not the data.
+ *
+ * Also dropped framer-motion, which made this a client component purely to fade
+ * rows in. It is a server component now: the table ships as HTML.
+ */
 
 const comparisonData = [
-  {
-    feature: "Pay Split",
-    competitor: "65-75% Gross",
-    thind: "90% Gross",
-    highlight: true,
-  },
-  {
-    feature: "Fuel Surcharge",
-    competitor: "Partial Pass-through",
-    thind: "100% Pass-through",
-    highlight: true,
-  },
-  {
-    feature: "Forced Dispatch",
-    competitor: "Yes",
-    thind: "Never",
-    competitorBad: true,
-  },
-  {
-    feature: "Home Time",
-    competitor: "When convenient",
-    thind: "Your schedule, honored",
-    competitorBad: true,
-  },
-  {
-    feature: "Equipment Age",
-    competitor: "5-10 year old trucks",
-    thind: "2024 Cascadias",
-    highlight: true,
-  },
-  {
-    feature: "Dispatch Response",
-    competitor: "Call center queue",
-    thind: "Direct line, real person",
-    competitorBad: true,
-  },
-  {
-    feature: "Pay Timeline",
-    competitor: "Net 30-45 days",
-    thind: "Weekly direct deposit",
-    highlight: true,
-  },
-  {
-    feature: "Hidden Fees",
-    competitor: "ELD, compliance, admin",
-    thind: "$0 hidden fees",
-    competitorBad: true,
-  },
-]
+  { feature: "Pay split", competitor: "A cut you have to ask for", thind: "90% of gross, in writing" },
+  { feature: "Fuel surcharge", competitor: "Partial pass-through", thind: "100% pass-through" },
+  { feature: "Forced dispatch", competitor: "Yes", thind: "Never" },
+  { feature: "Home time", competitor: "When convenient", thind: "Your schedule, honored" },
+  { feature: "Equipment age", competitor: "Whatever is on the yard", thind: "2023-2025 Cascadias & VNLs" },
+  { feature: "Dispatch response", competitor: "Call center queue", thind: "Direct line, real person" },
+  { feature: "Pay timeline", competitor: "Whenever the invoice clears", thind: "Weekly direct deposit" },
+  { feature: "Hidden fees", competitor: "ELD, compliance, admin", thind: "None" },
+] as const
 
 export const WhySwitch = () => {
   return (
-    <section className="relative py-20 md:py-28 overflow-hidden">
-      <div className="accent-orb -top-10 right-0 h-72 w-72 bg-orange-600/15" />
-      <div className="accent-orb bottom-0 -left-10 h-72 w-72 bg-gold-600/10" />
-      <div className="container relative px-4">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          className="fleet-section-heading"
-        >
-          <span className="fleet-badge mb-4">Side-by-side comparison</span>
-          <h2 className="text-white mb-4">
-            Why drivers <span className="text-orange">switch</span> to Thind
-          </h2>
-          <p className="text-lg text-steel-300 max-w-2xl mx-auto">
-            We&apos;re not a mega-carrier call center. See how our pay and support compare.
+    <section className="bg-paper py-16 md:py-24">
+      <div className="container px-4">
+        <Reveal className="mx-auto max-w-measure text-center">
+          <p className="font-display text-m-micro font-bold uppercase tracking-[0.2em] text-signal">
+            Side by side
           </p>
-        </motion.div>
+          <h2 className="mt-3 font-display text-m-h2 font-bold text-ink">Why drivers switch</h2>
+          <p className="mt-3 text-m-body text-ink-2">
+            We&apos;re not a mega-carrier call center. Here&apos;s the list every driver asks about.
+          </p>
+        </Reveal>
 
-        {/* Comparison - Card View on Mobile, Table on Desktop */}
-        <div className="max-w-4xl mx-auto">
-          {/* Desktop Table Header - Hidden on Mobile */}
-          <div className="hidden md:grid grid-cols-3 gap-4 mb-4 px-4">
-            <div className="text-sm font-semibold text-steel-300 uppercase tracking-wider font-display">
-              Feature
-            </div>
-            <div className="text-center text-sm font-semibold text-steel-500 uppercase tracking-wider font-display">
-              Mega carriers
-            </div>
-            <div className="text-center text-sm font-semibold text-orange uppercase tracking-wider font-display">
+        <div className="mx-auto mt-10 max-w-3xl">
+          {/* Column headers are desktop-only: a header row scrolled off-screen
+              is useless, so each row carries its own labels on mobile. */}
+          <div className="hidden grid-cols-3 gap-4 border-b border-[rgba(20,22,24,0.15)] pb-2 md:grid">
+            <span className="font-display text-m-micro font-bold uppercase tracking-[0.15em] text-ink-3">
+              What you&apos;re comparing
+            </span>
+            <span className="font-display text-m-micro font-bold uppercase tracking-[0.15em] text-ink-3">
+              What you may be used to
+            </span>
+            <span className="font-display text-m-micro font-bold uppercase tracking-[0.15em] text-signal">
               Thind Transport
-            </div>
+            </span>
           </div>
 
-          {/* Mobile Card View */}
-          <div className="md:hidden space-y-3">
-            {comparisonData.map((row, index) => (
-              <motion.div
+          <ul className="list-none">
+            {comparisonData.map((row, i) => (
+              <Reveal
+                as="li"
                 key={row.feature}
-                initial={{ opacity: 0, y: 10 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: index * 0.03 }}
-                className={`p-4 rounded-fleet-lg border ${
-                  row.highlight ? 'fleet-stat-card--highlight' : 'fleet-stat-card'
-                }`}
+                index={Math.min(i, 4)}
+                className="grid grid-cols-2 items-baseline gap-x-4 gap-y-1 border-b border-[rgba(20,22,24,0.1)] py-4 md:grid-cols-3"
               >
-                <div className="font-bold text-white text-base mb-3 border-b border-steel-700 pb-2 font-display uppercase tracking-wide text-sm">{row.feature}</div>
-                <div className="space-y-3">
-                  {/* Thind Line (First for emphasis) */}
-                  <div className="flex items-center gap-3">
-                    <div className="w-6 h-6 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
-                      <Check className="w-4 h-4 text-green-600" />
-                    </div>
-                    <div>
-                      <span className="text-xs font-bold text-orange uppercase tracking-wider block">Thind Transport</span>
-                      <span className={`text-base font-bold ${row.highlight ? 'text-orange' : 'text-white'}`}>
-                        {row.thind}
-                      </span>
-                    </div>
-                  </div>
+                <span className="col-span-2 text-m-body font-semibold text-ink md:col-span-1">
+                  {row.feature}
+                </span>
 
-                  {/* Competitor Line */}
-                  <div className="flex items-center gap-3 opacity-75">
-                    <div className="w-6 h-6 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
-                      <X className="w-4 h-4 text-red-500" />
-                    </div>
-                    <div>
-                      <span className="text-xs font-bold text-steel-500 uppercase tracking-wider block">Competitors</span>
-                      <span className="text-sm text-steel-400">
-                        {row.competitor}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-
-          {/* Desktop Table Rows - Hidden on Mobile */}
-          <div className="hidden md:block space-y-2">
-            {comparisonData.map((row, index) => (
-              <motion.div
-                key={row.feature}
-                initial={{ opacity: 0, x: -20 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: index * 0.05 }}
-                className={`grid grid-cols-3 gap-4 items-center p-4 rounded-fleet-lg border ${
-                  row.highlight ? 'fleet-stat-card--highlight' : 'fleet-stat-card'
-                }`}
-              >
-                <div className="font-semibold text-white font-display">{row.feature}</div>
-                <div className="text-center flex items-center justify-center gap-2">
-                  {row.competitorBad && (
-                    <X className="w-4 h-4 text-red-500 flex-shrink-0" />
-                  )}
-                  <span className={`text-sm ${row.competitorBad ? 'text-red-400' : 'text-steel-400'}`}>
-                    {row.competitor}
+                <span className="flex flex-col">
+                  <span className="font-display text-m-micro uppercase tracking-[0.12em] text-ink-3 md:hidden">
+                    What you may be used to
                   </span>
-                </div>
-                <div className="text-center flex items-center justify-center gap-2">
-                  <Check className="w-4 h-4 text-green-500 flex-shrink-0" />
-                  <span className={`text-sm font-semibold ${row.highlight ? 'text-orange' : 'text-green-400'}`}>
-                    {row.thind}
-                  </span>
-                </div>
-              </motion.div>
-            ))}
-          </div>
+                  <span className="text-m-body text-ink-3">{row.competitor}</span>
+                </span>
 
-          {/* Bottom Callout */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="mt-8 p-6 fleet-panel fleet-panel-accent text-center"
-          >
-            <p className="text-steel-200 mb-4">
-              On average, owner operators earn <span className="text-orange font-bold">$35,000+ more per year</span> with our 90% split.
+                <span className="flex flex-col">
+                  <span className="font-display text-m-micro uppercase tracking-[0.12em] text-signal md:hidden">
+                    Thind
+                  </span>
+                  <span className="text-m-body font-semibold text-ink">{row.thind}</span>
+                </span>
+              </Reveal>
+            ))}
+          </ul>
+
+          {/* This previously asserted "$35,000+ more per year" — one of the
+              contradicting earnings figures. Every number on the site now comes
+              from the calculator, so this sends people there rather than
+              quoting a delta that depends on an unstated gross. */}
+          <Reveal className="mt-8 text-center">
+            <p className="mx-auto max-w-measure text-m-body text-ink-2">
+              What the split is worth depends on your miles and your lane. Run your own numbers
+              rather than take ours.
             </p>
             <Link
-              href="/apply"
-              className="inline-flex items-center gap-2 px-8 py-4 bg-orange hover:bg-orange-400 text-white font-bold rounded-fleet transition-all hover:shadow-cta-hover shadow-cta font-display uppercase tracking-wide"
+              href="/#calculator"
+              className="mt-4 inline-flex min-h-[44px] items-center gap-2 rounded-m-2 bg-signal px-6 py-3 font-display text-m-body font-bold uppercase tracking-wide text-paper transition-colors duration-base ease-entrance hover:bg-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-signal focus-visible:ring-offset-2 focus-visible:ring-offset-paper"
             >
-              Calculate Your Earnings
-              <ArrowRight className="w-5 h-5" />
+              Work out your take-home
+              <ArrowRight className="h-4 w-4" />
             </Link>
-          </motion.div>
+          </Reveal>
         </div>
       </div>
     </section>
   )
 }
-

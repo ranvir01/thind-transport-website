@@ -2,25 +2,34 @@
 
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { 
-  DollarSign, TrendingUp, BarChart3, PieChart, 
-  ArrowUp, ArrowDown, Target, Award
+import {
+  TrendingUp, ArrowUp,
 } from "lucide-react"
 import { PAY_RATES } from "@/lib/constants"
+import { parseAnnualRange } from "@/lib/job-posting"
+import { fiveYearProjection } from "@/lib/pay-projections"
+
+const usd = (n: number) => `$${Math.round(n).toLocaleString("en-US")}`
+
+/** Midpoint of a published annual range, plus its weekly and monthly split.
+ *  Derived, not typed: the hardcoded figures that used to sit here described a
+ *  $70K local and an $85K OTR year, neither of which is a range this site
+ *  publishes. */
+function fromRange(range: string) {
+  const [min, max] = parseAnnualRange(range)
+  const annual = (min + max) / 2
+  return { annual, weekly: annual / 52, monthly: annual / 12 }
+}
 
 export function PayRateVisualizations() {
-  // Calculate data for visualizations (Thind Transport rates)
-  const companyDriverData = {
-    local: { annual: 57500, weekly: 1106, monthly: 4792 },
-    regional: { annual: 63500, weekly: 1221, monthly: 5292 },
-    otr: { annual: 71500, weekly: 1375, monthly: 5958 }
-  }
-
-  const ownerOperatorData = {
-    low: { annual: 180000, weekly: 3462, monthly: 15000 },
-    avg: { annual: 230000, weekly: 4423, monthly: 19167 },
-    high: { annual: 280000, weekly: 5385, monthly: 23333 }
-  }
+  const projection = fiveYearProjection()
+  const local = fromRange(PAY_RATES.companyDriver.local.annual)
+  const regional = fromRange(PAY_RATES.companyDriver.regional.annual)
+  const otr = fromRange(PAY_RATES.companyDriver.otr.annual)
+  const owner = fromRange(PAY_RATES.ownerOperator.annualGross)
+  const [ownerLow, ownerHigh] = parseAnnualRange(PAY_RATES.ownerOperator.annualGross)
+  /** Bars are drawn to scale against the largest figure on the chart. */
+  const share = (annual: number) => `${Math.round((annual / owner.annual) * 100)}%`
 
   return (
     <div className="grid lg:grid-cols-2 gap-6">
@@ -28,7 +37,7 @@ export function PayRateVisualizations() {
       <Card className="p-6 border-2 border-gray-200 bg-white">
         <div className="mb-4">
           <div className="flex items-center gap-2 mb-1">
-            <div className="w-1 h-6 bg-orange-500 rounded-full"></div>
+            <div className="w-1 h-6 bg-orange-600 rounded-full"></div>
             <h3 className="text-xl font-black text-gray-900">Annual Earnings</h3>
           </div>
           <p className="text-sm text-gray-600">Compare positions at a glance</p>
@@ -39,14 +48,14 @@ export function PayRateVisualizations() {
           <div>
             <div className="flex items-center justify-between mb-1.5">
               <span className="text-sm font-semibold text-gray-900">Company Driver - Local</span>
-              <span className="font-black text-blue-600">$57.5K</span>
+              <span className="font-black text-navy">{usd(local.annual / 1000)}K</span>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-5">
               <div 
-                className="bg-blue-500 h-5 rounded-full flex items-center justify-end pr-2"
-                style={{ width: '20%' }}
+                className="bg-slate-500 h-5 rounded-full flex items-center justify-end pr-2"
+                style={{ width: share(local.annual) }}
               >
-                <span className="text-xs text-white font-bold">20%</span>
+                <span className="text-xs text-white font-bold">{share(local.annual)}</span>
               </div>
             </div>
           </div>
@@ -54,14 +63,14 @@ export function PayRateVisualizations() {
           <div>
             <div className="flex items-center justify-between mb-1.5">
               <span className="text-sm font-semibold text-gray-900">Company Driver - Regional</span>
-              <span className="font-black text-blue-600">$63.5K</span>
+              <span className="font-black text-navy">{usd(regional.annual / 1000)}K</span>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-5">
               <div 
-                className="bg-blue-600 h-5 rounded-full flex items-center justify-end pr-2"
-                style={{ width: '23%' }}
+                className="bg-navy h-5 rounded-full flex items-center justify-end pr-2"
+                style={{ width: share(regional.annual) }}
               >
-                <span className="text-xs text-white font-bold">23%</span>
+                <span className="text-xs text-white font-bold">{share(regional.annual)}</span>
               </div>
             </div>
           </div>
@@ -69,14 +78,14 @@ export function PayRateVisualizations() {
           <div>
             <div className="flex items-center justify-between mb-1.5">
               <span className="text-sm font-semibold text-gray-900">Company Driver - OTR</span>
-              <span className="font-black text-blue-600">$71.5K</span>
+              <span className="font-black text-navy">{usd(otr.annual / 1000)}K</span>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-5">
               <div 
-                className="bg-blue-700 h-5 rounded-full flex items-center justify-end pr-2"
-                style={{ width: '25%' }}
+                className="bg-navy-900 h-5 rounded-full flex items-center justify-end pr-2"
+                style={{ width: share(otr.annual) }}
               >
-                <span className="text-xs text-white font-bold">25%</span>
+                <span className="text-xs text-white font-bold">{share(otr.annual)}</span>
               </div>
             </div>
           </div>
@@ -86,14 +95,14 @@ export function PayRateVisualizations() {
             <div>
               <div className="flex items-center justify-between mb-1.5">
                 <span className="text-sm font-black text-gray-900">Owner Operator - Average</span>
-                <span className="font-black text-green-600 text-lg">$230K</span>
+                <span className="font-black text-green-600 text-lg">{usd(owner.annual / 1000)}K</span>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-6">
                 <div 
                   className="bg-gradient-to-r from-green-500 to-green-600 h-6 rounded-full flex items-center justify-end pr-2"
-                  style={{ width: '82%' }}
+                  style={{ width: '100%' }}
                 >
-                  <span className="text-xs text-white font-black">82%</span>
+                  <span className="text-xs text-white font-black">100%</span>
                 </div>
               </div>
             </div>
@@ -105,10 +114,10 @@ export function PayRateVisualizations() {
       <Card className="p-6 border-2 border-gray-200 bg-white">
         <div className="mb-4">
           <div className="flex items-center gap-2 mb-1">
-            <div className="w-1 h-6 bg-orange-500 rounded-full"></div>
+            <div className="w-1 h-6 bg-orange-600 rounded-full"></div>
             <h3 className="text-xl font-black text-gray-900">Weekly & Monthly</h3>
           </div>
-          <p className="text-sm text-gray-600">Average take-home breakdown</p>
+          <p className="text-sm text-gray-600">Midpoint of each published range, before deductions</p>
         </div>
 
         <div className="space-y-4">
@@ -116,20 +125,20 @@ export function PayRateVisualizations() {
           <div>
             <h4 className="font-black text-gray-900 mb-2 text-sm uppercase tracking-wide">Company Driver</h4>
             <div className="grid grid-cols-3 gap-2">
-              <div className="text-center p-3 bg-blue-50 rounded-lg border border-gray-200">
+              <div className="text-center p-3 bg-slate-50 rounded-lg border border-gray-200">
                 <div className="text-xs text-gray-500 mb-1">Local</div>
-                <div className="font-black text-gray-900">$1,346</div>
-                <div className="text-xs text-gray-500">$5,833/mo</div>
+                <div className="font-black text-gray-900">{usd(local.weekly)}</div>
+                <div className="text-xs text-gray-500">{usd(local.monthly)}/mo</div>
               </div>
-              <div className="text-center p-3 bg-blue-50 rounded-lg border border-gray-200">
+              <div className="text-center p-3 bg-slate-50 rounded-lg border border-gray-200">
                 <div className="text-xs text-gray-500 mb-1">Regional</div>
-                <div className="font-black text-gray-900">$1,442</div>
-                <div className="text-xs text-gray-500">$6,250/mo</div>
+                <div className="font-black text-gray-900">{usd(regional.weekly)}</div>
+                <div className="text-xs text-gray-500">{usd(regional.monthly)}/mo</div>
               </div>
-              <div className="text-center p-3 bg-blue-50 rounded-lg border-2 border-gray-200">
+              <div className="text-center p-3 bg-slate-50 rounded-lg border-2 border-gray-200">
                 <div className="text-xs text-gray-500 mb-1">OTR</div>
-                <div className="font-black text-blue-600">$1,635</div>
-                <div className="text-xs text-gray-500">$7,083/mo</div>
+                <div className="font-black text-navy">{usd(otr.weekly)}</div>
+                <div className="text-xs text-gray-500">{usd(otr.monthly)}/mo</div>
               </div>
             </div>
           </div>
@@ -140,46 +149,48 @@ export function PayRateVisualizations() {
             <div className="grid grid-cols-3 gap-2">
               <div className="text-center p-3 bg-green-50 rounded-lg border border-gray-200">
                 <div className="text-xs text-gray-500 mb-1">Low</div>
-                <div className="font-black text-gray-900">$2,885</div>
-                <div className="text-xs text-gray-500">$12.5K/mo</div>
+                <div className="font-black text-gray-900">{usd(ownerLow / 52)}</div>
+                <div className="text-xs text-gray-500">{usd(ownerLow / 12)}/mo</div>
               </div>
               <div className="text-center p-3 bg-green-50 rounded-lg border-2 border-gray-200">
                 <div className="text-xs text-gray-500 mb-1 flex items-center justify-center gap-1">
                   Avg <TrendingUp className="h-3 w-3" />
                 </div>
-                <div className="font-black text-green-600 text-lg">$3,846</div>
-                <div className="text-xs text-gray-500">$16.7K/mo</div>
+                <div className="font-black text-green-600 text-lg">{usd(owner.weekly)}</div>
+                <div className="text-xs text-gray-500">{usd(owner.monthly)}/mo</div>
               </div>
               <div className="text-center p-3 bg-green-50 rounded-lg border border-gray-200">
                 <div className="text-xs text-gray-500 mb-1">High</div>
-                <div className="font-black text-gray-900">$4,808</div>
-                <div className="text-xs text-gray-500">$20.8K/mo</div>
+                <div className="font-black text-gray-900">{usd(ownerHigh / 52)}</div>
+                <div className="text-xs text-gray-500">{usd(ownerHigh / 12)}/mo</div>
               </div>
             </div>
           </div>
         </div>
       </Card>
 
-      {/* 5-Year Earnings Projection */}
-      <Card className="p-6 border-2 border-gray-200 bg-gradient-to-br from-blue-50 to-green-50">
+      {/* 5-Year Earnings Projection — every figure derived from PAY_RATES
+          (lib/pay-projections.ts), so a rate change moves this card with it
+          instead of stranding a stale headline number. */}
+      <Card className="p-6 border-2 border-gray-200 bg-gradient-to-br from-slate-50 to-green-50">
         <div className="mb-4">
           <div className="flex items-center gap-2 mb-1">
-            <div className="w-1 h-6 bg-orange-500 rounded-full"></div>
+            <div className="w-1 h-6 bg-orange-600 rounded-full"></div>
             <h3 className="text-xl font-black text-gray-900">5-Year Projection</h3>
           </div>
-          <p className="text-sm text-gray-600">Total potential earnings</p>
+          <p className="text-sm text-gray-600">Published annual ranges × 5, at today&apos;s rates</p>
         </div>
 
         <div className="space-y-4">
           <div>
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm font-semibold text-gray-900">Company Driver (OTR)</span>
-              <span className="text-xl font-black text-blue-600">$425K</span>
+              <span className="text-xl font-black text-navy">{projection.companyOtr.label}</span>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-6">
-              <div 
-                className="bg-blue-600 h-6 rounded-full flex items-center justify-end pr-2"
-                style={{ width: '85%' }}
+              <div
+                className="bg-navy h-6 rounded-full flex items-center justify-end pr-2"
+                style={{ width: `${projection.companyBarPct}%` }}
               >
                 <span className="text-xs text-white font-black">5 Years</span>
               </div>
@@ -188,20 +199,20 @@ export function PayRateVisualizations() {
 
           <div>
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-black text-gray-900">Owner Operator (Average)</span>
-              <span className="text-2xl font-black text-green-600">$1M+</span>
+              <span className="text-sm font-black text-gray-900">Owner Operator (90% gross)</span>
+              <span className="text-2xl font-black text-green-600">{projection.ownerOperator.label}</span>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-7">
-              <div 
+              <div
                 className="bg-gradient-to-r from-green-500 to-green-600 h-7 rounded-full flex items-center justify-end pr-2"
                 style={{ width: '100%' }}
               >
-                <span className="text-xs text-white font-black">$1M+ Potential</span>
+                <span className="text-xs text-white font-black">5 Years</span>
               </div>
             </div>
             <div className="mt-2 flex items-center gap-2 text-xs text-green-700 font-semibold">
               <ArrowUp className="h-3 w-3" />
-              <span>135% more than company driver</span>
+              <span>{projection.ooAdvantagePct}% more than company driver (range midpoints, before expenses)</span>
             </div>
           </div>
         </div>
@@ -211,30 +222,31 @@ export function PayRateVisualizations() {
       <Card className="p-6 border-2 border-gray-200 bg-white">
         <div className="mb-4">
           <div className="flex items-center gap-2 mb-1">
-            <div className="w-1 h-6 bg-orange-500 rounded-full"></div>
+            <div className="w-1 h-6 bg-orange-600 rounded-full"></div>
             <h3 className="text-xl font-black text-gray-900">Commission Rate</h3>
           </div>
-          <p className="text-sm text-gray-600">90% vs industry average</p>
+          <p className="text-sm text-gray-600">What {PAY_RATES.ownerOperator.commission} means on a load</p>
         </div>
 
         <div className="space-y-4">
           <div>
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-gray-600">Industry Average</span>
-              <span className="font-semibold text-gray-900">75-85%</span>
+              <span className="text-sm text-gray-600">Our cut, all in</span>
+              <span className="font-semibold text-gray-900">10%</span>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-5">
-              <div 
-                className="bg-gray-400 h-5 rounded-full"
-                style={{ width: '80%' }}
-              />
+              <div className="bg-gray-400 h-5 rounded-full" style={{ width: '10%' }} />
             </div>
+            <p className="mt-1.5 text-xs text-gray-500">
+              Dispatch, billing and admin. On a $3,000 load that is $300 — and the fuel
+              surcharge passes through whole.
+            </p>
           </div>
 
           <div>
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm font-black text-gray-900">Thind Transport</span>
-              <span className="font-black text-green-600 text-lg">90%</span>
+              <span className="font-black text-green-600 text-lg">{PAY_RATES.ownerOperator.commission}</span>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-6">
               <div 
@@ -246,7 +258,7 @@ export function PayRateVisualizations() {
             </div>
             <div className="mt-2 flex items-center gap-2 text-xs text-green-700 font-semibold">
               <ArrowUp className="h-3 w-3" />
-              <span>6-16% above industry average</span>
+              <span>The split, in writing, on every load</span>
             </div>
           </div>
         </div>

@@ -1,32 +1,42 @@
 import { CinematicHero } from "@/components/cinematic/Hero"
+import { AudienceSelector } from "@/components/home/AudienceSelector"
 import { InfiniteTicker } from "@/components/cinematic/Ticker"
 import { RoutesSection } from "@/components/home/RoutesSection"
 import { EquipmentSection } from "@/components/home/EquipmentSection"
 import { FAQSection } from "@/components/home/FAQSection"
-import { SuccessStoriesSection } from "@/components/home/SuccessStoriesSection"
 import { TrustStrip } from "@/components/home/TrustStrip"
 import { ThindPromise } from "@/components/home/ThindPromise"
 import { OperationSection } from "@/components/home/OperationSection"
 import { DispatchBand } from "@/components/home/DispatchBand"
-import { FreightYouKnow } from "@/components/home/FreightYouKnow"
-import { ApplicationForm } from "@/components/application/ApplicationForm"
-import { ProfitCalculator } from "@/components/features/ProfitCalculator"
-import { QuickQualify } from "@/components/features/QuickQualify"
+import { PhotoBand } from "@/components/home/PhotoBand"
+import { DeferredApplicationForm, DeferredProfitCalculator, DeferredQuickQualify } from "@/components/home/DeferredHomeSections"
 import { WhySwitch } from "@/components/features/WhySwitch"
 import Link from "next/link"
+import { COMPANY_INFO } from "@/lib/constants"
 
 export default function Home() {
   return (
-    <div className="brand-page-shell relative min-h-screen selection:bg-orange selection:text-white pb-24 md:pb-0">
+    <div className="brand-page-shell relative min-h-screen selection:bg-orange-600 selection:text-white pb-24 md:pb-0">
       <CinematicHero />
+
+      {/* Three doors, immediately after the hero — see AudienceSelector for why
+          this is inline rather than a blocking gate. */}
+      <AudienceSelector />
 
       <TrustStrip />
 
       <div className="mb-12 md:mb-20">
-        <ProfitCalculator />
+        <DeferredProfitCalculator />
       </div>
 
       <WhySwitch />
+
+      <PhotoBand
+        src="/images/generated/fleet-lineup-kent.webp"
+        alt="Thind Transport Freightliner Cascadias lined up at the Kent, WA yard"
+        eyebrow="Kent, WA · Home yard"
+        headline="15 trucks. One family. Zero call centers."
+      />
 
       <OperationSection />
 
@@ -34,14 +44,17 @@ export default function Home() {
 
       <ThindPromise />
 
-      <SuccessStoriesSection />
-
-      <FreightYouKnow />
+      <PhotoBand
+        src="/images/generated/truck-mountain-pass.webp"
+        alt="Illustration of a tractor-trailer crossing a mountain pass at golden hour"
+        eyebrow="All 48 states"
+        headline="The lanes you know. The miles you want."
+      />
 
       <RoutesSection />
 
       <EquipmentSection />
-      <QuickQualify />
+      <DeferredQuickQualify />
       <FAQSection />
 
       <section className="brand-section-panel py-20 md:py-28 relative overflow-hidden border-t border-steel-800">
@@ -59,16 +72,16 @@ export default function Home() {
 
             <div className="flex flex-wrap justify-center gap-4 mb-8">
               <a 
-                href="tel:+12067656300"
+                href={`tel:${COMPANY_INFO.phoneFormatted}`}
                 className="flex items-center gap-2 px-6 py-3 border border-steel-600 bg-steel-800/50 rounded-fleet text-white font-semibold hover:border-orange/50 hover:text-orange transition-colors"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                 </svg>
-                Call: (206) 765-6300
+                Call: {COMPANY_INFO.phone}
               </a>
               <a 
-                href="mailto:thindcarrier@gmail.com"
+                href={`mailto:${COMPANY_INFO.email}`}
                 className="flex items-center gap-2 px-6 py-3 border border-steel-600 bg-steel-800/50 rounded-fleet text-white font-semibold hover:border-orange/50 hover:text-orange transition-colors"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -79,7 +92,7 @@ export default function Home() {
             </div>
 
             <div className="fleet-panel overflow-hidden p-6 md:p-10 border-steel-600" data-light>
-              <ApplicationForm />
+              <DeferredApplicationForm />
             </div>
 
             <p className="text-center text-steel-400 text-sm mt-6">

@@ -2,8 +2,8 @@ import { Metadata } from "next"
 import { COMPANY_INFO, STATS } from "@/lib/constants"
 
 export const metadata: Metadata = {
-  title: `Fleet & Equipment | 2023-2025 Freightliner & Volvo Trucks | ${COMPANY_INFO.name}`,
-  description: `Drive the newest equipment at ${COMPANY_INFO.name}. Our fleet features 2023-2025 Freightliner Cascadias & Volvo VNL 860s with APU, inverters, and full safety suites. ${STATS.trucksInFleet}+ trucks maintained by our in-house shop. Apply today!`,
+  title: "Fleet & equipment — 2023-2025 Freightliners and Volvos",
+  description: `Drive the newest equipment at ${COMPANY_INFO.name}. Our fleet features 2023-2025 Freightliner Cascadias & Volvo VNL 860s with APU, inverters, and full safety suites. ${STATS.trucksInFleet} trucks, maintained on a preventive schedule.`,
   keywords: [
     "trucking company equipment",
     "Freightliner Cascadia 2024",
@@ -20,7 +20,7 @@ export const metadata: Metadata = {
   ],
   openGraph: {
     title: `Fleet & Equipment | ${COMPANY_INFO.name}`,
-    description: `Drive 2023-2025 Freightliner Cascadias & Volvo VNL 860s. APU, inverters, full safety suites standard. ${STATS.trucksInFleet}+ trucks with 24/7 maintenance support.`,
+    description: `Drive 2023-2025 Freightliner Cascadias & Volvo VNL 860s. APU, inverters, full safety suites standard. ${STATS.trucksInFleet} trucks with 24/7 maintenance support.`,
     url: "https://thindtransport.com/fleet",
     siteName: COMPANY_INFO.name,
     locale: "en_US",
@@ -52,7 +52,7 @@ export default function FleetLayout({
             "@type": "ItemList",
             "name": `${COMPANY_INFO.name} Fleet Equipment`,
             "description": "Modern trucking fleet featuring 2023-2025 Freightliner Cascadias and Volvo VNL trucks",
-            "numberOfItems": STATS.trucksInFleet,
+            "numberOfItems": 2,
             "itemListElement": [
               {
                 "@type": "Vehicle",
@@ -87,58 +87,9 @@ export default function FleetLayout({
         }}
       />
       
-      {/* FAQ Schema */}
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "FAQPage",
-            "mainEntity": [
-              {
-                "@type": "Question",
-                "name": "What year models are in the Thind Transport fleet?",
-                "acceptedAnswer": {
-                  "@type": "Answer",
-                  "text": "Our fleet consists exclusively of 2023-2025 model year trucks. We operate Freightliner Cascadias and Volvo VNL 860s/760s. No truck in our fleet is older than 3 years, ensuring you always drive reliable, modern equipment."
-                }
-              },
-              {
-                "@type": "Question",
-                "name": "Do all trucks come with APUs and inverters?",
-                "acceptedAnswer": {
-                  "@type": "Answer",
-                  "text": "Yes! Every truck in our fleet comes standard with an APU (Auxiliary Power Unit) and a high-power inverter (1800W-2500W). You'll never need to idle for climate control, and you can run all your devices including microwaves, TVs, and gaming systems."
-                }
-              },
-              {
-                "@type": "Question",
-                "name": "What safety features are included?",
-                "acceptedAnswer": {
-                  "@type": "Answer",
-                  "text": "All trucks include Detroit Assurance or Volvo Active Driver Assist safety suites with: Lane Departure Warning, Collision Mitigation, Adaptive Cruise Control, Electronic Stability Control, and ABS with disc brakes."
-                }
-              },
-              {
-                "@type": "Question",
-                "name": "What happens if my truck breaks down on the road?",
-                "acceptedAnswer": {
-                  "@type": "Answer",
-                  "text": "Call our 24/7 dispatch line and we'll have roadside assistance to you within 4 hours on average. For repairs we can't do roadside, we'll get you to the nearest certified shop and cover all costs. We also provide rental equipment if repairs take longer than expected."
-                }
-              },
-              {
-                "@type": "Question",
-                "name": "How often is preventive maintenance performed?",
-                "acceptedAnswer": {
-                  "@type": "Answer",
-                  "text": "Every truck receives a full preventive maintenance inspection every 25,000 miles at our in-house shop, and we complete DOT inspections ahead of their due dates so trucks stay on the road."
-                }
-              }
-            ]
-          })
-        }}
-      />
+      {/* No FAQPage entity here: FAQAccordion on the page emits one from the
+          same `faqs` array that renders on screen, and two top-level FAQPage
+          entities on one URL is a structured-data error. Removed 2026-08-30. */}
       {children}
     </>
   )

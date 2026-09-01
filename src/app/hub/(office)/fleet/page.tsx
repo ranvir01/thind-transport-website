@@ -8,10 +8,10 @@ import { cn } from "@/lib/utils"
 export const dynamic = "force-dynamic"
 
 const STATUS_PILL: Record<string, string> = {
-  active: "bg-emerald-500/15 text-emerald-300 border-emerald-400/30",
-  shop: "bg-gold-500/15 text-gold-300 border-gold-400/30",
-  idle: "bg-steel-700/60 text-steel-200 border-steel-500/40",
-  retired: "bg-red-500/15 text-red-300 border-red-400/30",
+  active: "bg-ok-soft text-ok border-ok-soft",
+  shop: "bg-warn-soft text-warn border-warn-soft",
+  idle: "bg-surface-2 text-fg-3 border-border-strong",
+  retired: "bg-bad-soft text-bad border-bad-soft",
 }
 
 function StatusPill({ status }: { status: string }) {
@@ -40,7 +40,7 @@ export default async function FleetPage({
         action={
           <Link
             href={showTrailers ? "/hub/fleet/trailers/new" : "/hub/fleet/trucks/new"}
-            className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-orange px-5 font-display text-sm font-bold uppercase tracking-[0.08em] text-white shadow-cta hover:bg-orange-400"
+            className="inline-flex min-h-[44px] items-center gap-2 rounded-control bg-accent px-5 font-semibold text-sm text-accent-fg hover:bg-accent-hover"
           >
             <Plus className="h-4 w-4" /> {showTrailers ? "Add trailer" : "Add truck"}
           </Link>
@@ -52,8 +52,8 @@ export default async function FleetPage({
         <Link
           href="/hub/fleet"
           className={cn(
-            "min-h-[44px] inline-flex items-center rounded-xl px-5 text-sm font-bold",
-            !showTrailers ? "bg-orange/15 text-white border border-orange/30" : "text-steel-200 hover:bg-white/5 border border-white/10"
+            "min-h-[44px] inline-flex items-center rounded-control px-5 text-sm font-bold",
+            !showTrailers ? "bg-accent-soft text-accent-text border border-accent-soft" : "text-fg-2 hover:bg-hover border border-border"
           )}
         >
           Trucks ({trucks.length})
@@ -61,8 +61,8 @@ export default async function FleetPage({
         <Link
           href="/hub/fleet?tab=trailers"
           className={cn(
-            "min-h-[44px] inline-flex items-center rounded-xl px-5 text-sm font-bold",
-            showTrailers ? "bg-orange/15 text-white border border-orange/30" : "text-steel-200 hover:bg-white/5 border border-white/10"
+            "min-h-[44px] inline-flex items-center rounded-control px-5 text-sm font-bold",
+            showTrailers ? "bg-accent-soft text-accent-text border border-accent-soft" : "text-fg-2 hover:bg-hover border border-border"
           )}
         >
           Trailers ({trailers.length})
@@ -76,19 +76,19 @@ export default async function FleetPage({
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
             {trucks.map((truck) => (
               <Link key={truck.id} href={`/hub/fleet/trucks/${truck.id}`}>
-                <Panel className="p-4 h-full hover:border-white/20 transition-colors">
+                <Panel className="p-4 h-full hover:border-border-strong transition-colors">
                   <div className="flex items-center justify-between gap-2">
-                    <span className="font-display text-xl font-extrabold text-white">#{truck.unit_number}</span>
+                    <span className="font-semibold text-xl text-fg">#{truck.unit_number}</span>
                     <StatusPill status={truck.status} />
                   </div>
-                  <p className="text-body-sm text-steel-200 mt-1">
+                  <p className="text-body-sm text-fg-2 mt-1">
                     {[truck.year, truck.make, truck.model].filter(Boolean).join(" ") || "Specs not set"}
                   </p>
-                  <p className="text-body-xs text-steel-300 mt-0.5">
+                  <p className="text-body-xs text-fg-3 mt-0.5">
                     {truck.ownership === "owner_operator" ? "Owner-operator" : "Company"} ·{" "}
                     {truck.driver_name ?? "No driver"}
                   </p>
-                  <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-body-xs text-steel-300">
+                  <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-body-xs text-fg-3">
                     <span className="flex items-center gap-1">Reg <ExpiryPill date={truck.registration_expiry} /></span>
                     <span className="flex items-center gap-1">Insp <ExpiryPill date={truck.inspection_due} /></span>
                   </div>
@@ -103,17 +103,17 @@ export default async function FleetPage({
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
           {trailers.map((trailer) => (
             <Link key={trailer.id} href={`/hub/fleet/trailers/${trailer.id}`}>
-              <Panel className="p-4 h-full hover:border-white/20 transition-colors">
+              <Panel className="p-4 h-full hover:border-border-strong transition-colors">
                 <div className="flex items-center justify-between gap-2">
-                  <span className="font-display text-xl font-extrabold text-white">#{trailer.unit_number}</span>
+                  <span className="font-semibold text-xl text-fg">#{trailer.unit_number}</span>
                   <StatusPill status={trailer.status} />
                 </div>
-                <p className="text-body-sm text-steel-200 mt-1 capitalize">
+                <p className="text-body-sm text-fg-2 mt-1 capitalize">
                   {trailer.type.replace("_", " ")}
                   {trailer.year ? ` · ${trailer.year}` : ""}
                   {trailer.make ? ` ${trailer.make}` : ""}
                 </p>
-                <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-body-xs text-steel-300">
+                <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-body-xs text-fg-3">
                   <span className="flex items-center gap-1">Reg <ExpiryPill date={trailer.registration_expiry} /></span>
                   <span className="flex items-center gap-1">Insp <ExpiryPill date={trailer.inspection_due} /></span>
                 </div>

@@ -1,5 +1,6 @@
 import { hubDbAvailable, query, queryOne } from "./db"
 import { fallbackTrailers, fallbackTrucks } from "./sandbox-fallback"
+import { assertCarrierRefs } from "./tenancy"
 import type { Trailer, Truck } from "./types"
 
 // ---- Trucks ----
@@ -9,7 +10,7 @@ export async function listTrucks(carrierId: string): Promise<Truck[]> {
   return query<Truck>(
     `SELECT t.*, d.first_name || ' ' || d.last_name AS driver_name
      FROM hub.trucks t
-     LEFT JOIN hub.drivers d ON d.id = t.assigned_driver_id
+     LEFT JOIN hub.drivers d ON d.id = t.assigned_driver_id AND d.carrier_id = t.carrier_id
      WHERE t.carrier_id = $1 AND t.deleted_at IS NULL
      ORDER BY t.unit_number`,
     [carrierId]
@@ -21,7 +22,7 @@ export async function getTruck(carrierId: string, id: string): Promise<Truck | n
   return queryOne<Truck>(
     `SELECT t.*, d.first_name || ' ' || d.last_name AS driver_name
      FROM hub.trucks t
-     LEFT JOIN hub.drivers d ON d.id = t.assigned_driver_id
+     LEFT JOIN hub.drivers d ON d.id = t.assigned_driver_id AND d.carrier_id = t.carrier_id
      WHERE t.carrier_id = $1 AND t.id = $2 AND t.deleted_at IS NULL`,
     [carrierId, id]
   )
@@ -46,6 +47,7 @@ export interface TruckInput {
 }
 
 export async function createTruck(carrierId: string, input: TruckInput): Promise<Truck> {
+  await assertCarrierRefs(carrierId, { driver_id: input.assigned_driver_id })
   const rows = await query<Truck>(
     `INSERT INTO hub.trucks (
        carrier_id, unit_number, vin, plate, plate_state, year, make, model, ownership, status,
@@ -63,6 +65,7 @@ export async function createTruck(carrierId: string, input: TruckInput): Promise
 }
 
 export async function updateTruck(carrierId: string, id: string, input: TruckInput): Promise<Truck | null> {
+  await assertCarrierRefs(carrierId, { driver_id: input.assigned_driver_id })
   const rows = await query<Truck>(
     `UPDATE hub.trucks SET
        unit_number=$3, vin=$4, plate=$5, plate_state=$6, year=$7, make=$8, model=$9,
@@ -163,18 +166,10 @@ export async function latestTruckPositions(carrierId: string): Promise<TruckPosi
        d.first_name || ' ' || d.last_name AS driver_name,
        p.lat, p.lng, p.ts
      FROM hub.position_pings p
-     JOIN hub.trucks t ON t.id = p.truck_id AND t.deleted_at IS NULL
-     LEFT JOIN hub.drivers d ON d.id = t.assigned_driver_id
+     JOIN hub.trucks t ON t.id = p.truck_id AND t.carrier_id = p.carrier_id AND t.deleted_at IS NULL
+     LEFT JOIN hub.drivers d ON d.id = t.assigned_driver_id AND d.carrier_id = t.carrier_id
      WHERE p.carrier_id = $1
      ORDER BY p.truck_id, p.ts DESC`,
     [carrierId]
-  )
-}
-
-/** Latest position for one truck (used for city-level tracking on share links). */
-export async function latestPositionForTruck(truckId: string): Promise<{ lat: number; lng: number; ts: string } | null> {
-  return queryOne<{ lat: number; lng: number; ts: string }>(
-    `SELECT lat, lng, ts FROM hub.position_pings WHERE truck_id = $1 ORDER BY ts DESC LIMIT 1`,
-    [truckId]
   )
 }

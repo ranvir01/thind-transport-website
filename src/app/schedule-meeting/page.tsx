@@ -7,6 +7,9 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Calendar, Clock, CheckCircle2, Phone, Video } from "lucide-react"
 import { toast } from "sonner"
+import { HONEYPOT_FIELD, readHoneypotValue } from "@/lib/honeypot"
+import { HoneypotField } from "@/components/shared/HoneypotField"
+import { COMPANY_INFO } from "@/lib/constants"
 
 export default function ScheduleMeetingPage() {
   const [formData, setFormData] = useState({
@@ -27,7 +30,7 @@ export default function ScheduleMeetingPage() {
       const response = await fetch("/api/schedule-meeting", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({ ...formData, [HONEYPOT_FIELD]: readHoneypotValue() }),
       })
 
       if (!response.ok) {
@@ -44,20 +47,20 @@ export default function ScheduleMeetingPage() {
   if (isSubmitted) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-navy via-navy-600 to-navy-800 flex items-center justify-center p-4">
-        <Card className="w-full max-w-md">
+        <Card variant="light" className="w-full max-w-md">
           <CardContent className="pt-6 text-center">
             <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
               <CheckCircle2 className="w-8 h-8 text-green-600" />
             </div>
-            <h2 className="text-2xl font-bold mb-2">Meeting Request Received!</h2>
+            <h2 className="text-2xl font-bold mb-2 text-gray-900">Meeting Request Received!</h2>
             <p className="text-gray-600 mb-6">
               Thank you for your interest in joining Thind Transport. We'll review your request and
-              send you a confirmation email within 24 hours.
+              send you a confirmation email within 24 hours on business days.
             </p>
-            <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg mb-6">
-              <p className="text-sm text-blue-900">
-                <strong>What's Next?</strong><br />
-                After our meeting, you'll receive a secure link to complete your full DOT driver application.
+            <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg mb-6 text-left">
+              <p className="text-sm text-slate-700">
+                <strong className="text-gray-900">What&apos;s next?</strong><br />
+                After our meeting, you&apos;ll receive a secure link to complete your full DOT driver application.
               </p>
             </div>
             <Button onClick={() => window.location.href = "/"} className="w-full">
@@ -72,11 +75,15 @@ export default function ScheduleMeetingPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-navy via-navy-600 to-navy-800 py-12 px-4">
       <div className="max-w-2xl mx-auto">
-        <Card>
+        <div className="mb-6 text-center">
+          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-orange-400">Thind Transport</p>
+          <p className="mt-1 text-white/70">One quick call with the owner before your DOT application.</p>
+        </div>
+        <Card variant="light">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-2xl">
-              <Calendar className="h-6 w-6 text-orange" />
-              Schedule Your Meeting
+            <CardTitle className="flex items-center gap-2 text-2xl text-gray-900">
+              <Calendar className="h-6 w-6 text-orange-600" />
+              Schedule your meeting
             </CardTitle>
             <p className="text-gray-600 mt-2">
               Book a call with our owner to discuss opportunities at Thind Transport.
@@ -84,7 +91,8 @@ export default function ScheduleMeetingPage() {
             </p>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form onSubmit={handleSubmit} className="relative space-y-6">
+              <HoneypotField />
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <Label>Full Name *</Label>
@@ -130,7 +138,7 @@ export default function ScheduleMeetingPage() {
                   <Label>Preferred Time *</Label>
                   <select
                     required
-                    className="w-full border rounded-md p-2"
+                    className="mt-1.5 h-11 w-full rounded-xl border-2 border-neutral-200 bg-white px-4 text-sm text-neutral-900 shadow-sm transition-colors focus-visible:border-primary-500 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary-500/25"
                     value={formData.preferredTime}
                     onChange={(e) => setFormData({ ...formData, preferredTime: e.target.value })}
                   >
@@ -152,10 +160,10 @@ export default function ScheduleMeetingPage() {
                 <div className="grid grid-cols-2 gap-4 mt-2">
                   <button
                     type="button"
-                    className={`p-4 border-2 rounded-lg flex items-center gap-3 ${
+                    className={`flex items-center gap-3 rounded-xl border-2 p-4 font-semibold transition-colors ${
                       formData.meetingType === "phone"
-                        ? "border-orange bg-orange/5"
-                        : "border-gray-200 hover:border-gray-300"
+                        ? "border-orange-600 bg-orange-600/10 text-orange-700"
+                        : "border-neutral-200 text-gray-700 hover:border-neutral-300"
                     }`}
                     onClick={() => setFormData({ ...formData, meetingType: "phone" })}
                   >
@@ -164,10 +172,10 @@ export default function ScheduleMeetingPage() {
                   </button>
                   <button
                     type="button"
-                    className={`p-4 border-2 rounded-lg flex items-center gap-3 ${
+                    className={`flex items-center gap-3 rounded-xl border-2 p-4 font-semibold transition-colors ${
                       formData.meetingType === "video"
-                        ? "border-orange bg-orange/5"
-                        : "border-gray-200 hover:border-gray-300"
+                        ? "border-orange-600 bg-orange-600/10 text-orange-700"
+                        : "border-neutral-200 text-gray-700 hover:border-neutral-300"
                     }`}
                     onClick={() => setFormData({ ...formData, meetingType: "video" })}
                   >
@@ -180,19 +188,19 @@ export default function ScheduleMeetingPage() {
               <div>
                 <Label>Additional Notes (Optional)</Label>
                 <textarea
-                  className="w-full border rounded-md p-2 min-h-[100px]"
+                  className="mt-1.5 min-h-[100px] w-full rounded-xl border-2 border-neutral-200 bg-white p-3 text-sm text-neutral-900 shadow-sm transition-colors placeholder:text-neutral-500 focus-visible:border-primary-500 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary-500/25"
                   placeholder="Any specific questions or topics you'd like to discuss?"
                   value={formData.notes}
                   onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                 />
               </div>
 
-              <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
                 <div className="flex gap-2">
-                  <Clock className="h-5 w-5 text-blue-600 flex-shrink-0" />
-                  <p className="text-sm text-blue-900">
-                    <strong>Meeting Duration:</strong> Approximately 15-20 minutes<br />
-                    <strong>Time Zone:</strong> Pacific Time (PST/PDT)
+                  <Clock className="h-5 w-5 flex-shrink-0 text-orange-600" />
+                  <p className="text-sm text-slate-700">
+                    <strong className="text-gray-900">Meeting duration:</strong> approximately 15&ndash;20 minutes<br />
+                    <strong className="text-gray-900">Time zone:</strong> Pacific Time (PST/PDT)
                   </p>
                 </div>
               </div>
@@ -202,7 +210,7 @@ export default function ScheduleMeetingPage() {
               </Button>
 
               <p className="text-sm text-center text-gray-500">
-                Need immediate assistance? Call us at <strong>(206) 765-6300</strong>
+                Need immediate assistance? Call us at <strong>{COMPANY_INFO.phone}</strong>
               </p>
             </form>
           </CardContent>

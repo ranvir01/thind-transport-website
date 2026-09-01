@@ -129,9 +129,9 @@ export function DriverForm({ driverId, initial }: { driverId?: string; initial: 
           </div>
           <label className="flex items-center gap-2 min-h-[44px] cursor-pointer sm:mt-6">
             <input type="checkbox" checked={form.pay_loaded_miles_only}
-              className="h-5 w-5 rounded accent-[#F2A900]"
+              className="h-5 w-5 rounded border-border-strong accent-accent"
               onChange={(e) => set({ pay_loaded_miles_only: e.target.checked })} />
-            <span className="text-sm text-steel-100">Pay loaded miles only</span>
+            <span className="text-sm text-fg-2">Pay loaded miles only</span>
           </label>
           <div>
             <label className={labelCls} htmlFor="d_status">Status</label>
@@ -159,7 +159,7 @@ export function DriverForm({ driverId, initial }: { driverId?: string; initial: 
             onChange={(e) => set({ notes: e.target.value })} />
         </div>
         <button type="submit" disabled={pending}
-          className="flex w-full sm:w-auto min-h-[48px] items-center justify-center gap-2 rounded-xl bg-orange px-8 font-display text-sm font-bold uppercase tracking-[0.08em] text-white shadow-cta hover:bg-orange-400 disabled:opacity-60">
+          className="flex w-full sm:w-auto min-h-[48px] items-center justify-center gap-2 rounded-control bg-accent px-8 font-semibold text-sm text-accent-fg hover:bg-accent-hover disabled:opacity-60">
           {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
           {driverId ? "Save driver" : "Add driver"}
         </button>

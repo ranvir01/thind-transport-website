@@ -4,27 +4,45 @@
  * Phase 7 swaps the implementation behind this same interface.
  */
 import { query, queryOne } from "./db"
+import { PRODUCT } from "./product"
 
 export interface GeocodeSource {
   geocode(city: string, state: string): Promise<{ lat: number; lng: number } | null>
 }
 
-async function nominatimLookup(city: string, state: string): Promise<{ lat: number; lng: number } | null> {
+// Geocoding is best-effort inside the load-booking round trip — a slow or
+// unresponsive geocoder must degrade to `null` (no coords), never stall the
+// dispatcher. Nominatim normally answers in well under a second.
+const GEOCODE_TIMEOUT_MS = 5_000
+
+// null = definitively not found (safe to cache); undefined = transient failure
+// (timeout, network, non-2xx) — never cached, so a slow moment can't poison
+// hub.geocode_cache for that city permanently.
+async function nominatimLookup(
+  city: string,
+  state: string
+): Promise<{ lat: number; lng: number } | null | undefined> {
   try {
     const q = encodeURIComponent(`${city}, ${state}, USA`)
+    // GeocodeSource swap path (Phase 7): the public Nominatim instance's
+    // ~1 req/s policy is fine for one carrier, not a platform — point
+    // GEOCODER_BASE_URL at a self-hosted Nominatim (or compatible) instance
+    // and nothing else changes. The geocode_cache table absorbs repeats.
+    const base = process.env.GEOCODER_BASE_URL ?? "https://nominatim.openstreetmap.org"
     const res = await fetch(
-      `https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=1&countrycodes=us`,
+      `${base}/search?q=${q}&format=json&limit=1&countrycodes=us`,
       {
-        headers: { "User-Agent": "thindtransport.com hub (thindcarrier@gmail.com)" },
+        headers: { "User-Agent": PRODUCT.userAgent },
         next: { revalidate: 86400 * 30 },
+        signal: AbortSignal.timeout(GEOCODE_TIMEOUT_MS),
       }
     )
-    if (!res.ok) return null
+    if (!res.ok) return undefined
     const data = await res.json()
     if (!data?.[0]) return null
     return { lat: Number(data[0].lat), lng: Number(data[0].lon) }
   } catch {
-    return null
+    return undefined
   }
 }
 
@@ -42,12 +60,14 @@ export async function geocodeCityState(
   } catch { /* cache is an optimization, never a blocker */ }
 
   const result = await nominatimLookup(city, state)
-  try {
-    await query(
-      `INSERT INTO hub.geocode_cache (query, lat, lng) VALUES ($1, $2, $3)
-       ON CONFLICT (query) DO NOTHING`,
-      [key, result?.lat ?? null, result?.lng ?? null]
-    )
-  } catch { /* ditto */ }
-  return result
+  if (result !== undefined) {
+    try {
+      await query(
+        `INSERT INTO hub.geocode_cache (query, lat, lng) VALUES ($1, $2, $3)
+         ON CONFLICT (query) DO NOTHING`,
+        [key, result?.lat ?? null, result?.lng ?? null]
+      )
+    } catch { /* ditto */ }
+  }
+  return result ?? null
 }

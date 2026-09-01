@@ -28,9 +28,11 @@ Your website contact form needs to send emails through Gmail. For security, Gmai
 3. Add these lines:
 
 ```
-EMAIL_USER=thindcarrier@gmail.com
-EMAIL_PASS=abcdefghijklmnop
-OWNER_EMAIL=thindcarrier@gmail.com
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=thindcarrier@gmail.com
+SMTP_PASS=abcdefghijklmnop
+HR_EMAIL=thindcarrier@gmail.com
 ```
 
 **IMPORTANT:** Remove the spaces from the app password! Copy: `abcd efgh ijkl mnop` → Paste as: `abcdefghijklmnop`
@@ -60,7 +62,7 @@ npm run dev
 - App passwords are the secure modern method
 
 ### Still not working?
-1. Double-check the EMAIL_USER matches your Gmail exactly
+1. Double-check SMTP_USER matches your Gmail exactly
 2. Regenerate the app password and try again
 3. Make sure you restarted the dev server after changing .env.local
 

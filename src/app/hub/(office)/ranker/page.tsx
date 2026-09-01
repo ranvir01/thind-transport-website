@@ -34,7 +34,9 @@ interface Candidate {
 
 export default async function RankerPage() {
   const user = await requireOfficeUser()
-  const carrierIds = user.companyScope === "all" ? user.allowedCarrierIds : [user.carrierId]
+  const carrierIds = user.companyScope === "all" && user.allowedCarrierIds?.length
+    ? user.allowedCarrierIds
+    : [user.carrierId]
   const candidates = hubDbAvailable()
     ? await query<Candidate>(
         `SELECT * FROM hub.load_candidates

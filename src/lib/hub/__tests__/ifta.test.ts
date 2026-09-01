@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { computeIfta, iftaDueDate, quarterKey, quarterRange } from "../ifta-core"
+import { computeIfta, iftaDueDate, iftaFilingIsLate, iftaLateAfter, lastCompletedQuarterKey, quarterKey, quarterRange } from "../ifta-core"
 import { haversineMiles, jurisdictionMilesFromPings, stateForPoint } from "../geo"
 
 describe("IFTA golden fixture (hand-computed, surcharge state included)", () => {
@@ -49,6 +49,17 @@ describe("IFTA golden fixture (hand-computed, surcharge state included)", () => 
     })
     expect(withMissing.missingRates).toEqual(["MT"])
   })
+
+  it("flags purchases-only jurisdictions without a rate on file", () => {
+    // Fuel bought in CA but no CA miles pinged: without a rate the tax-paid
+    // credit silently becomes $0, so the missing rate must still be surfaced.
+    const withMissing = computeIfta({
+      milesByJurisdiction: { WA: 100 },
+      gallonsByJurisdiction: { WA: 20, CA: 30 },
+      rates: { WA: { rate: 0.494 } },
+    })
+    expect(withMissing.missingRates).toEqual(["CA"])
+  })
 })
 
 describe("quarter helpers", () => {
@@ -57,15 +68,64 @@ describe("quarter helpers", () => {
     expect(quarterKey(new Date(Date.UTC(2026, 0, 1)))).toBe("2026Q1")
     expect(quarterKey(new Date(Date.UTC(2026, 11, 31)))).toBe("2026Q4")
   })
+  it("lastCompletedQuarterKey", () => {
+    expect(lastCompletedQuarterKey(new Date(Date.UTC(2026, 6, 5)))).toBe("2026Q2")
+    expect(lastCompletedQuarterKey(new Date(Date.UTC(2026, 8, 30)))).toBe("2026Q2")
+    expect(lastCompletedQuarterKey(new Date(Date.UTC(2026, 9, 1)))).toBe("2026Q3")
+    expect(lastCompletedQuarterKey(new Date(Date.UTC(2026, 1, 15)))).toBe("2025Q4")
+  })
   it("quarterRange", () => {
     const { start, end } = quarterRange("2026Q2")
     expect(start.toISOString().slice(0, 10)).toBe("2026-04-01")
     expect(end.toISOString().slice(0, 10)).toBe("2026-07-01")
   })
   it("IFTA due date is the last day of the following month", () => {
+    // Weekday last-days pass through unchanged: 2026-04-30 is a Thursday,
+    // 2026-07-31 a Friday.
     expect(iftaDueDate("2026Q1").toISOString().slice(0, 10)).toBe("2026-04-30")
     expect(iftaDueDate("2026Q2").toISOString().slice(0, 10)).toBe("2026-07-31")
-    expect(iftaDueDate("2026Q4").toISOString().slice(0, 10)).toBe("2027-01-31")
+  })
+  it("rolls a weekend due date forward to the next business day (IFTA P1040)", () => {
+    // 2027-01-31 is a Sunday → Monday 2027-02-01.
+    expect(iftaDueDate("2026Q4").toISOString().slice(0, 10)).toBe("2027-02-01")
+    // 2026-01-31 is a Saturday → Monday 2026-02-02.
+    expect(iftaDueDate("2025Q4").toISOString().slice(0, 10)).toBe("2026-02-02")
+  })
+})
+
+/**
+ * Regression: overdue was `iftaDueDate(quarter) < now`, and iftaDueDate is UTC
+ * MIDNIGHT of the due date — so a filing due the 31st was called overdue from
+ * 00:00Z of the 31st, ~31 hours before the deadline actually passed where the
+ * carrier lives. Cutoff is local midnight of the following day, fixed at
+ * UTC−8 (Pacific standard time) so the test is deterministic and the wall can
+ * never go red early.
+ */
+describe("IFTA filing lateness cutoff", () => {
+  it("is late only after the due date has fully passed in local time", () => {
+    // 2026Q2 is due Friday 2026-07-31; local midnight of 08-01 is 08:00Z.
+    expect(iftaLateAfter("2026Q2").toISOString()).toBe("2026-08-01T08:00:00.000Z")
+  })
+
+  it("stays on time all through the due date, including UTC midnight of the deadline", () => {
+    expect(iftaFilingIsLate("2026Q2", new Date("2026-07-30T23:59:00Z"))).toBe(false)
+    // The instant the old `due < now` test flipped red — 31 hours early.
+    expect(iftaFilingIsLate("2026Q2", new Date("2026-07-31T00:00:01Z"))).toBe(false)
+    // 23:00Z on the due date is still only 16:00 local on the 31st.
+    expect(iftaFilingIsLate("2026Q2", new Date("2026-07-31T23:00:00Z"))).toBe(false)
+    // 07:59Z the next day is 23:59 local on the 31st — the last on-time minute.
+    expect(iftaFilingIsLate("2026Q2", new Date("2026-08-01T07:59:00Z"))).toBe(false)
+  })
+
+  it("goes late at local midnight after the due date, and stays late", () => {
+    expect(iftaFilingIsLate("2026Q2", new Date("2026-08-01T08:00:00Z"))).toBe(true)
+    expect(iftaFilingIsLate("2026Q2", new Date("2026-08-02T00:00:00Z"))).toBe(true)
+  })
+
+  it("measures from the weekend-rolled due date, not the calendar last day", () => {
+    // 2025Q4 lands on Saturday 2026-01-31 → really due Monday 2026-02-02.
+    expect(iftaFilingIsLate("2025Q4", new Date("2026-02-02T23:00:00Z"))).toBe(false)
+    expect(iftaFilingIsLate("2025Q4", new Date("2026-02-03T08:00:00Z"))).toBe(true)
   })
 })
 

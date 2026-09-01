@@ -1,268 +1,268 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { signOut } from "next-auth/react"
 import {
-  LayoutDashboard, ClipboardList, Package, Truck, Users, Building2, Map as MapIcon,
-  Upload, Settings, LogOut, Menu, X, DollarSign, Fuel, ShieldCheck, BarChart3, CheckSquare, Gauge,
+  CalendarClock, CircleDollarSign, House, LayoutGrid, Package, Truck, Users,
+  type LucideIcon,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { PRODUCT } from "@/lib/hub/product"
+import { hubPrimarySections, hubUtilityLinks, isNavActive } from "@/lib/hub/navigation"
+import { NotificationsBell } from "@/components/hub/NotificationsBell"
+import { OfficeOfflineBanner } from "@/components/hub/OfficeOfflineBanner"
 import { CommandPalette } from "@/components/hub/CommandPalette"
+import { HubTourHost } from "@/components/hub/HubTour"
+import { LoadOffMark } from "@/components/hub/LoadOffMark"
+import { WorkspaceChip } from "@/components/hub/WorkspaceChip"
+import { UserMenu } from "@/components/hub/UserMenu"
 
-interface NavItem {
-  href: string
-  label: string
-  icon: React.ComponentType<{ className?: string }>
-  ownerOnly?: boolean
+/** Tab-bar icons by primary-section id; LayoutGrid is the safe fallback. */
+const SECTION_ICONS: Record<string, LucideIcon> = {
+  overview: House,
+  dispatch: CalendarClock,
+  loads: Package,
+  money: CircleDollarSign,
+  fleet: Truck,
+  people: Users,
 }
 
-const NAV_ITEMS: NavItem[] = [
-  { href: "/hub", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/hub/onboarding", label: "Onboarding", icon: CheckSquare },
-  { href: "/hub/dispatch", label: "Dispatch", icon: ClipboardList },
-  { href: "/hub/loads", label: "Loads", icon: Package },
-  { href: "/hub/money", label: "Money", icon: DollarSign },
-  { href: "/hub/fuel", label: "Fuel", icon: Fuel },
-  { href: "/hub/compliance", label: "Compliance", icon: ShieldCheck },
-  { href: "/hub/customers", label: "Customers", icon: Building2 },
-  { href: "/hub/drivers", label: "Drivers", icon: Users },
-  { href: "/hub/fleet", label: "Fleet", icon: Truck },
-  { href: "/hub/map", label: "Map", icon: MapIcon },
-  { href: "/hub/reports", label: "Reports", icon: BarChart3 },
-  { href: "/hub/ranker", label: "Ranker", icon: Gauge },
-  { href: "/hub/import", label: "Import", icon: Upload },
-  { href: "/hub/settings/appearance", label: "Appearance", icon: Settings },
-  { href: "/hub/settings/users", label: "Users", icon: Settings, ownerOnly: true },
-]
-
-const MOBILE_TABS = ["/hub", "/hub/dispatch", "/hub/loads", "/hub/fleet"]
-
-function isActive(pathname: string, href: string): boolean {
-  return href === "/hub" ? pathname === "/hub" : pathname.startsWith(href)
-}
-
-export function HubNav({
-  user,
-  carriers,
-  selectedCarrierId,
-  companyScope,
-  dataMode,
-}: {
-  user: { name: string; role: string }
-  carriers: { id: string; name: string; environment: "production" | "sandbox" }[]
-  selectedCarrierId: string
-  companyScope: "single" | "all"
-  dataMode: "production" | "sandbox"
-}) {
-  const pathname = usePathname()
-  const [menuOpen, setMenuOpen] = useState(false)
-  const items = NAV_ITEMS.filter((i) => !i.ownerOnly || user.role === "owner")
-  const mobileTabs = items.filter((i) => MOBILE_TABS.includes(i.href))
-  const moreItems = items.filter((i) => !MOBILE_TABS.includes(i.href))
-
-  const closeAnd = () => setMenuOpen(false)
-
+/**
+ * Count badge for a nav item. Capped at 9+ so a neglected queue can never
+ * stretch the sidebar row it sits in.
+ */
+function NavCount({ n }: { n: number }) {
   return (
-    <>
-      {/* ---- Desktop sidebar ---- */}
-      <aside className="hidden lg:flex fixed inset-y-0 left-0 z-40 w-60 flex-col border-r border-white/10 bg-navy-900/95 backdrop-blur-sm">
-        <div className="px-5 py-5 border-b border-white/10">
-          <Link href="/hub" className="block">
-            <span className="brand-wordmark text-lg font-semibold text-white tracking-[0.14em]">THIND</span>
-            <span className="block text-[10px] font-bold uppercase tracking-[0.3em] text-gold mt-0.5">
-              HaulDesk
-            </span>
-          </Link>
-          <div className="mt-4 space-y-2">
-            {dataMode === "sandbox" ? (
-              <span className="inline-flex rounded-full border border-gold/50 bg-gold/15 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-gold">
-                SANDBOX
-              </span>
-            ) : null}
-            <div className="rounded-xl border border-white/10 bg-white/5 p-1">
-              {carriers.length > 1 ? (
-                <Link
-                  href={`/hub/switch-company?scope=all&next=${encodeURIComponent(pathname)}`}
-                  className={cn(
-                    "mb-1 block rounded-lg px-2.5 py-2 text-xs font-bold",
-                    companyScope === "all" ? "bg-white text-navy" : "text-steel-200 hover:bg-white/10"
-                  )}
-                >
-                  All companies
-                </Link>
-              ) : null}
-              {carriers.map((carrier) => (
-                <Link
-                  key={carrier.id}
-                  href={`/hub/switch-company?carrier=${carrier.id}&next=${encodeURIComponent(pathname)}`}
-                  className={cn(
-                    "block rounded-lg px-2.5 py-2 text-xs font-bold",
-                    companyScope === "single" && selectedCarrierId === carrier.id
-                      ? "bg-white text-navy"
-                      : "text-steel-200 hover:bg-white/10"
-                  )}
-                >
-                  {carrier.name}
-                </Link>
-              ))}
-            </div>
-          </div>
-        </div>
-        <nav className="flex-1 overflow-y-auto py-3 px-3 space-y-0.5">
-          {items.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={cn(
-                "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition-colors",
-                isActive(pathname, item.href)
-                  ? "bg-orange/15 text-white border border-orange/30"
-                  : "text-steel-200 hover:bg-white/5 hover:text-white border border-transparent"
-              )}
-            >
-              <item.icon className="h-[18px] w-[18px]" />
-              {item.label}
-            </Link>
-          ))}
-        </nav>
-        <div className="border-t border-white/10 p-4">
-          <div className="mb-3">
-            <CommandPalette />
-          </div>
-          <p className="text-sm font-semibold text-white truncate">{user.name}</p>
-          <p className="text-[11px] uppercase tracking-wider text-gold font-bold">{user.role}</p>
-          <button
-            onClick={() => signOut({ callbackUrl: "/hub/login" })}
-            className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl border border-white/15 px-3 py-2 text-sm font-semibold text-steel-100 hover:bg-white/5 min-h-[44px]"
-          >
-            <LogOut className="h-4 w-4" /> Sign out
-          </button>
-        </div>
-      </aside>
-
-      {/* ---- Mobile top bar ---- */}
-      <header className="lg:hidden fixed top-0 inset-x-0 z-40 flex h-14 items-center justify-between border-b border-white/10 bg-navy-900/95 px-4 backdrop-blur-sm">
-        <Link href="/hub" className="leading-none">
-          <span className="brand-wordmark text-base font-semibold text-white tracking-[0.14em]">THIND</span>
-          <span className="ml-2 text-[9px] font-bold uppercase tracking-[0.25em] text-gold">
-            {dataMode === "sandbox" ? "SANDBOX" : companyScope === "all" ? "All" : carriers.find((c) => c.id === selectedCarrierId)?.name ?? "Hub"}
-          </span>
-        </Link>
-        <button
-          aria-label={menuOpen ? "Close menu" : "Open menu"}
-          onClick={() => setMenuOpen((v) => !v)}
-          className="flex h-11 w-11 items-center justify-center rounded-xl text-steel-100 hover:bg-white/5"
-        >
-          {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-        </button>
-      </header>
-
-      {/* ---- Mobile full menu ---- */}
-      {menuOpen ? (
-        <div className="lg:hidden fixed inset-0 z-50 bg-navy/98 backdrop-blur-md overflow-y-auto">
-          <div className="flex h-14 items-center justify-between border-b border-white/10 px-4">
-            <span className="brand-wordmark text-base font-semibold text-white tracking-[0.14em]">MENU</span>
-            <button
-              aria-label="Close menu"
-              onClick={closeAnd}
-              className="flex h-11 w-11 items-center justify-center rounded-xl text-steel-100 hover:bg-white/5"
-            >
-              <X className="h-5 w-5" />
-            </button>
-          </div>
-          <nav className="p-4 space-y-1">
-            <div className="mb-4 rounded-2xl border border-white/10 bg-white/5 p-2">
-              <p className="px-2 pb-2 text-[11px] font-black uppercase tracking-[0.18em] text-gold">
-                {dataMode === "sandbox" ? "SANDBOX · " : ""}Company
-              </p>
-              {carriers.length > 1 ? (
-                <Link
-                  href={`/hub/switch-company?scope=all&next=${encodeURIComponent(pathname)}`}
-                  onClick={closeAnd}
-                  className={cn(
-                    "block rounded-xl px-3 py-3 text-sm font-bold",
-                    companyScope === "all" ? "bg-white text-navy" : "text-steel-100 hover:bg-white/10"
-                  )}
-                >
-                  All companies
-                </Link>
-              ) : null}
-              {carriers.map((carrier) => (
-                <Link
-                  key={carrier.id}
-                  href={`/hub/switch-company?carrier=${carrier.id}&next=${encodeURIComponent(pathname)}`}
-                  onClick={closeAnd}
-                  className={cn(
-                    "block rounded-xl px-3 py-3 text-sm font-bold",
-                    companyScope === "single" && selectedCarrierId === carrier.id
-                      ? "bg-white text-navy"
-                      : "text-steel-100 hover:bg-white/10"
-                  )}
-                >
-                  {carrier.name}
-                </Link>
-              ))}
-            </div>
-            {items.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                onClick={closeAnd}
-                className={cn(
-                  "flex items-center gap-3 rounded-xl px-4 py-3.5 text-base font-semibold min-h-[44px]",
-                  isActive(pathname, item.href)
-                    ? "bg-orange/15 text-white border border-orange/30"
-                    : "text-steel-100 hover:bg-white/5 border border-transparent"
-                )}
-              >
-                <item.icon className="h-5 w-5" />
-                {item.label}
-              </Link>
-            ))}
-            <div className="pt-3 mt-3 border-t border-white/10">
-              <p className="px-4 text-sm font-semibold text-white">{user.name}</p>
-              <p className="px-4 text-[11px] uppercase tracking-wider text-gold font-bold">{user.role}</p>
-              <button
-                onClick={() => signOut({ callbackUrl: "/hub/login" })}
-                className="mt-3 flex w-full items-center gap-3 rounded-xl px-4 py-3.5 text-base font-semibold text-steel-100 hover:bg-white/5 min-h-[44px]"
-              >
-                <LogOut className="h-5 w-5" /> Sign out
-              </button>
-            </div>
-          </nav>
-        </div>
-      ) : null}
-
-      {/* ---- Mobile bottom tabs ---- */}
-      <nav className="lg:hidden fixed bottom-0 inset-x-0 z-40 border-t border-white/10 bg-navy-900/98 backdrop-blur-sm pb-[env(safe-area-inset-bottom)]">
-        <div className="grid grid-cols-5">
-          {mobileTabs.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={cn(
-                "flex min-h-[56px] flex-col items-center justify-center gap-1 text-[10px] font-bold uppercase tracking-wide",
-                isActive(pathname, item.href) ? "text-gold" : "text-steel-300 hover:text-white"
-              )}
-            >
-              <item.icon className="h-5 w-5" />
-              {item.label}
-            </Link>
-          ))}
-          <button
-            onClick={() => setMenuOpen(true)}
-            className={cn(
-              "flex min-h-[56px] flex-col items-center justify-center gap-1 text-[10px] font-bold uppercase tracking-wide",
-              moreItems.some((i) => isActive(pathname, i.href)) ? "text-gold" : "text-steel-300 hover:text-white"
-            )}
-          >
-            <Menu className="h-5 w-5" />
-            More
-          </button>
-        </div>
-      </nav>
-    </>
+    <span className="ml-1.5 inline-flex min-w-[18px] items-center justify-center rounded-pill bg-accent px-1.5 py-[1px] text-[10.5px] font-bold text-accent-fg align-middle">
+      {n > 9 ? "9+" : n}
+    </span>
   )
 }
+
+export function HubShell({
+  user,
+  smallCarrier,
+  accent,
+  inboxCount = 0,
+  children,
+}: {
+  user: { name: string; role: string; carrierName?: string }
+  /** Resolved per tenant by the office layout (nav.small_carrier_mode flag). */
+  smallCarrier: boolean
+  /** Tenant branding accent (validated hex) — identity chip only, never controls. */
+  accent?: string | null
+  /** Emailed rate cons waiting for review — badged on Loads → Inbox. */
+  inboxCount?: number
+  children: React.ReactNode
+}) {
+  const pathname = usePathname()
+  // Header casts a shadow only once content scrolls beneath it.
+  const [scrolled, setScrolled] = useState(false)
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 4)
+    onScroll()
+    window.addEventListener("scroll", onScroll, { passive: true })
+    return () => window.removeEventListener("scroll", onScroll)
+  }, [])
+  const sections = hubPrimarySections(smallCarrier)
+  const section = sections.find((s) => s.match(pathname)) ?? sections[0]!
+  const isOwner = user.role === "owner"
+  const utility = hubUtilityLinks(smallCarrier).filter((l) => !l.ownerOnly || isOwner)
+  const mobilePrimaries = sections.slice(0, 5)
+
+  return (
+    <div className="hauldesk-shell min-h-screen bg-bg text-fg">
+      <header
+        className={cn(
+          "sticky top-0 z-40 flex h-[calc(3.5rem+env(safe-area-inset-top,0px))] items-center gap-2 border-b border-border bg-surface px-3 pt-[env(safe-area-inset-top,0px)] transition-shadow duration-standard md:px-6",
+          scrolled && "shadow-card"
+        )}
+      >
+        <Link href="/hub" className="flex shrink-0 items-center gap-2" aria-label={PRODUCT.name}>
+          <LoadOffMark size={28} />
+          <span className="hidden font-semibold tracking-tight text-fg lg:block">{PRODUCT.name}</span>
+        </Link>
+        <span aria-hidden className="hidden h-5 w-px bg-border lg:block" />
+        <WorkspaceChip name={user.carrierName || PRODUCT.name} accent={accent} isOwner={isOwner} />
+
+        <nav
+          className="hidden lg:flex items-center gap-0.5 ml-2 min-w-0 flex-1 overflow-x-auto"
+          data-tour="hub-primary-nav"
+        >
+          {sections.map((primary) => {
+            const active = primary.id === section.id
+            const first = primary.sub[0]?.href ?? "/hub"
+            return (
+              <Link
+                key={primary.id}
+                href={first}
+                className={cn(
+                  "shrink-0 rounded-control px-3 py-2 text-sm font-medium",
+                  active ? "bg-accent-soft text-accent-text" : "text-fg-2 hover:bg-hover hover:text-fg"
+                )}
+              >
+                {primary.label}
+              </Link>
+            )
+          })}
+        </nav>
+
+        <div className="ml-auto flex items-center gap-0.5 shrink-0" data-tour="hub-command-palette">
+          <CommandPalette isOwner={isOwner} smallCarrier={smallCarrier} />
+          <NotificationsBell direction="down" />
+          <UserMenu name={user.name} role={user.role} />
+        </div>
+      </header>
+
+      <OfficeOfflineBanner />
+
+      {/* Mobile sub-nav: the active section's pages. Active gets the one soft
+          chip; the rest are quiet text — no gray blob row. */}
+      <div className="md:hidden sticky top-[calc(3.5rem+env(safe-area-inset-top,0px))] z-30 border-b border-border bg-surface overflow-x-auto snap-row">
+        <div className="flex gap-1 px-2 min-w-max">
+          {section.sub.map((link) => {
+            const active = isNavActive(pathname, link.href)
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                aria-current={active ? "page" : undefined}
+                className={cn(
+                  "relative shrink-0 px-3 py-2.5 text-[13.5px] transition-colors duration-fast",
+                  active ? "font-semibold text-fg" : "font-medium text-fg-3 active:text-fg-2"
+                )}
+              >
+                {link.label}
+                {link.href === "/hub/inbox" && inboxCount > 0 ? <NavCount n={inboxCount} /> : null}
+                {active ? (
+                  <span
+                    aria-hidden
+                    className="hub-underline-in absolute inset-x-3 bottom-0 h-[2.5px] rounded-pill bg-accent"
+                  />
+                ) : null}
+              </Link>
+            )
+          })}
+        </div>
+      </div>
+
+      <div className="flex">
+        <aside className="hidden md:flex w-[212px] shrink-0 flex-col border-r border-border bg-surface sticky top-[calc(3.5rem+env(safe-area-inset-top,0px))] self-start max-h-[calc(100vh-3.5rem-env(safe-area-inset-top,0px))] overflow-y-auto">
+          <div className="p-3">
+            <p className="px-2 pb-2 text-[11px] font-semibold uppercase tracking-wide text-fg-3">
+              {section.label}
+            </p>
+            <div className="space-y-0.5">
+              {section.sub.map((link) => {
+                const active = isNavActive(pathname, link.href)
+                return (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    className={cn(
+                      "relative block rounded-control px-2.5 py-2 text-sm font-medium",
+                      active ? "bg-accent-soft text-accent-text" : "text-fg-2 hover:bg-hover hover:text-fg"
+                    )}
+                  >
+                    {active ? (
+                      <span
+                        aria-hidden
+                        className="hub-pop-enter absolute left-0 top-1/2 h-4 w-[3px] -translate-y-1/2 rounded-pill bg-accent"
+                      />
+                    ) : null}
+                    {link.label}
+                    {link.href === "/hub/inbox" && inboxCount > 0 ? <NavCount n={inboxCount} /> : null}
+                  </Link>
+                )
+              })}
+            </div>
+            <p className="px-2 pt-4 pb-2 text-[11px] font-semibold uppercase tracking-wide text-fg-3">More</p>
+            <div className="space-y-0.5">
+              {utility.map((link) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  data-tour={link.href === "/hub/guide" ? "hub-setup-guide" : undefined}
+                  className={cn(
+                    "block rounded-control px-2.5 py-2 text-sm",
+                    isNavActive(pathname, link.href)
+                      ? "bg-accent-soft text-accent-text font-medium"
+                      : "text-fg-3 hover:bg-hover hover:text-fg-2"
+                  )}
+                >
+                  {link.label}
+                </Link>
+              ))}
+            </div>
+          </div>
+        </aside>
+
+        {/* Clear the fixed tab bar AND the home-indicator inset it grows by:
+            the bar is ~67px, plus env(safe-area-inset-bottom) (~34px on an
+            installed iPhone PWA). A flat pb-28 left only ~11px of margin
+            there — enough today, but not a property anyone could rely on. */}
+        <main className="flex-1 min-w-0 px-4 py-5 md:px-8 md:py-8 pb-[calc(7rem+env(safe-area-inset-bottom))] md:pb-8 max-w-[1400px]">
+          <HubTourHost />
+          {children}
+        </main>
+      </div>
+
+      {/* Mobile tab bar: icons above 10px labels, active = accent + heavier stroke */}
+      <nav
+        data-bottom-bar="office"
+        className="hub-tabbar md:hidden fixed bottom-0 inset-x-0 z-40 pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]"
+      >
+        <div className="grid grid-cols-5">
+          {mobilePrimaries.map((primary) => {
+            const active = primary.id === section.id
+            const href = primary.sub[0]?.href ?? "/hub"
+            const Icon = SECTION_ICONS[primary.id] ?? LayoutGrid
+            return (
+              <Link
+                key={primary.id}
+                href={href}
+                aria-current={active ? "page" : undefined}
+                className="group flex min-h-[58px] flex-col items-center justify-center gap-[3px] px-1 pt-2 pb-1.5"
+              >
+                {/* The pill is the active indicator — it springs in behind the
+                    icon on tab change; inactive tabs tint it on press so touch
+                    always answers back. */}
+                <span
+                  className={cn(
+                    "relative flex h-8 w-14 items-center justify-center rounded-pill transition-colors duration-fast",
+                    !active && "group-active:bg-hover"
+                  )}
+                >
+                  {active ? (
+                    <span aria-hidden className="hub-pill-in absolute inset-0 rounded-pill bg-accent-soft" />
+                  ) : null}
+                  <Icon
+                    className={cn(
+                      "relative h-[22px] w-[22px] transition-colors duration-fast",
+                      active ? "hub-tab-pop text-accent-text" : "text-fg-3"
+                    )}
+                    strokeWidth={active ? 2.3 : 1.9}
+                    fill={active ? "currentColor" : "none"}
+                    fillOpacity={active ? 0.16 : 0}
+                  />
+                </span>
+                <span
+                  className={cn(
+                    "text-[10.5px] transition-colors duration-fast",
+                    active ? "font-bold text-accent-text" : "font-semibold text-fg-3"
+                  )}
+                >
+                  {primary.label}
+                </span>
+              </Link>
+            )
+          })}
+        </div>
+      </nav>
+    </div>
+  )
+}
+
+/** @deprecated use HubShell */
+export const HubNav = HubShell

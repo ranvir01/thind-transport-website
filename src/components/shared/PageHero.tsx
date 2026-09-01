@@ -49,7 +49,7 @@ export function PageHero({
 
       <div className="container relative z-10 px-4">
         <div className="max-w-2xl">
-          <p className="mb-4 font-display text-xs font-bold uppercase tracking-[0.3em] text-orange">
+          <p className="mb-4 font-display text-xs font-bold uppercase tracking-[0.3em] text-orange-400">
             {eyebrow}
           </p>
           <h1 className="mb-5 text-4xl font-black leading-[1.08] tracking-tight md:text-6xl">
@@ -61,7 +61,7 @@ export function PageHero({
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
             <Link
               href={primaryHref}
-              className="group inline-flex items-center justify-center gap-2 rounded-xl bg-orange px-8 py-4 font-bold text-white transition-colors hover:bg-orange-600"
+              className="group inline-flex items-center justify-center gap-2 rounded-xl bg-orange-600 px-8 py-4 font-bold text-white transition-colors hover:bg-orange-500"
             >
               {primaryLabel}
               <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />

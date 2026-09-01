@@ -3,10 +3,12 @@ import Image from "next/image"
 import Link from "next/link"
 import { ArrowRight, CheckCircle2, Fuel, Percent, Wallet } from "lucide-react"
 import { COMPANY_INFO } from "@/lib/constants"
+import { RelatedLinks } from "@/components/shared/RelatedLinks"
+import { driverLinks } from "@/components/shared/link-sets"
 
 export const metadata: Metadata = {
   title: "Owner Operator Pay Breakdown | 90% Split Explained",
-  description: "Detailed explanation of how our 90% split works. No hidden fees. 100% fuel surcharge pass-through. See the math behind the highest paying trucking jobs.",
+  description: "How the 90% owner-operator split works line by line: linehaul, 100% fuel surcharge pass-through, 90% of detention and layover, and what comes out of a weekly settlement.",
   alternates: { canonical: "/pay-breakdown" },
 }
 
@@ -35,7 +37,7 @@ export default function PayBreakdownPage() {
       <section className="relative overflow-hidden bg-navy pb-20 pt-32 text-white md:pb-28 md:pt-40">
         <Image
           src="/images/generated/truck-night-highway.webp"
-          alt="Thind Transport truck running a night lane outside Seattle"
+          alt="Illustration of a tractor-trailer running a night highway lane"
           fill
           priority
           sizes="100vw"
@@ -43,7 +45,7 @@ export default function PayBreakdownPage() {
         />
         <div className="absolute inset-0 bg-gradient-to-b from-navy/70 via-navy/55 to-navy/95" />
         <div className="container relative mx-auto max-w-4xl px-4">
-          <p className="mb-4 text-xs font-bold uppercase tracking-[0.3em] text-orange">Owner Operators</p>
+          <p className="mb-4 text-xs font-bold uppercase tracking-[0.3em] text-orange-400">Owner Operators</p>
           <h1 className="mb-6 text-4xl font-black leading-tight md:text-6xl">
             The 90% Split, <span className="text-orange">Explained</span>
           </h1>
@@ -85,9 +87,8 @@ export default function PayBreakdownPage() {
         <div className="container mx-auto max-w-4xl px-4">
           <h2 className="mb-4 text-3xl font-black text-navy">How does the 90% split work?</h2>
           <p className="mb-10 max-w-3xl leading-relaxed text-gray-700">
-            Unlike many carriers who take 25–30% of your hard-earned money, Thind Transport operates on a
-            lean model that puts more profit in your pocket. We handle the billing, collections, and
-            dispatching, so you can focus on driving.
+            We handle the billing, collections and dispatching, and take 10% of the linehaul for it.
+            Everything below is what that leaves on a real settlement.
           </p>
 
           <div className="overflow-hidden rounded-2xl border border-gray-100 shadow-xl shadow-navy/5">
@@ -142,12 +143,12 @@ export default function PayBreakdownPage() {
         <div className="container relative mx-auto max-w-4xl px-4">
           <h2 className="mb-3 text-3xl font-black text-white md:text-4xl">Ready to start earning more?</h2>
           <p className="mb-8 max-w-xl text-lg text-white/90">
-            Run the numbers on your own lanes, or start the conversation with a 60-second application.
+            Run the numbers on your own lanes, or start the conversation with an application.
           </p>
           <div className="flex flex-col gap-4 sm:flex-row">
             <Link
               href="/apply"
-              className="inline-flex items-center justify-center gap-2 rounded-xl bg-orange px-8 py-4 font-bold text-white transition-colors hover:bg-orange-600"
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-orange-600 px-8 py-4 font-bold text-white transition-colors hover:bg-orange-600"
             >
               Apply Now
               <ArrowRight className="h-5 w-5" />
@@ -164,6 +165,12 @@ export default function PayBreakdownPage() {
           </p>
         </div>
       </section>
+
+      <RelatedLinks
+        title="Check it yourself"
+        intro="Every number above has a tool or a record behind it."
+        links={driverLinks(["/pay-breakdown"])}
+      />
     </div>
   )
 }

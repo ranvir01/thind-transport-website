@@ -100,23 +100,23 @@ function ResetPasswordForm() {
             <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
               <CheckCircle2 className="w-8 h-8 text-green-600" />
             </div>
-            <CardTitle className="text-2xl text-gray-900">Password Reset Complete!</CardTitle>
+            <CardTitle className="text-2xl">Password Reset Complete!</CardTitle>
             <CardDescription className="text-base mt-2">
               Your password has been successfully updated.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <p className="text-center text-gray-600">
+            <p className="text-center text-steel-300">
               You can now log in with your new password.
             </p>
 
             <Link href="/driver/login">
-              <Button className="w-full bg-orange hover:bg-orange/90">
+              <Button className="w-full bg-orange-600 hover:bg-orange/90">
                 Go to Login
               </Button>
             </Link>
 
-            <p className="text-center text-sm text-gray-500">
+            <p className="text-center text-sm text-steel-400">
               Redirecting to login page...
             </p>
           </CardContent>
@@ -129,10 +129,10 @@ function ResetPasswordForm() {
     <div className="min-h-screen bg-gradient-to-br from-navy via-navy-600 to-navy-800 flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <div className="mx-auto w-12 h-12 bg-orange rounded-full flex items-center justify-center mb-4">
+          <div className="mx-auto w-12 h-12 bg-orange-600 rounded-full flex items-center justify-center mb-4">
             <Key className="w-6 h-6 text-white" />
           </div>
-          <CardTitle className="text-2xl text-gray-900">Reset Your Password</CardTitle>
+          <CardTitle className="text-2xl">Reset Your Password</CardTitle>
           <CardDescription>
             Enter a new password for your account
           </CardDescription>
@@ -140,7 +140,7 @@ function ResetPasswordForm() {
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="password" className="text-gray-800">New Password</Label>
+              <Label htmlFor="password" className="text-white">New Password</Label>
               <div className="relative">
                 <Input
                   id="password"
@@ -162,7 +162,7 @@ function ResetPasswordForm() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="confirmPassword" className="text-gray-800">Confirm New Password</Label>
+              <Label htmlFor="confirmPassword" className="text-white">Confirm New Password</Label>
               <div className="relative">
                 <Input
                   id="confirmPassword"
@@ -202,7 +202,7 @@ function ResetPasswordForm() {
               </ul>
             </div>
 
-            <Button type="submit" className="w-full bg-orange hover:bg-orange/90" disabled={loading}>
+            <Button type="submit" className="w-full bg-orange-600 hover:bg-orange/90" disabled={loading}>
               {loading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -218,7 +218,7 @@ function ResetPasswordForm() {
           </form>
 
           <div className="mt-6 text-center">
-            <Link href="/driver/login" className="text-sm text-gray-600 hover:text-gray-900 flex items-center justify-center gap-2">
+            <Link href="/driver/login" className="text-sm text-steel-300 hover:text-white flex items-center justify-center gap-2">
               <ArrowLeft className="h-4 w-4" />
               Back to Login
             </Link>

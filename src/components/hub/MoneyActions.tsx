@@ -3,23 +3,32 @@
 import { useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
-import { CheckCircle2, FileText, Loader2, Send } from "lucide-react"
+import { CheckCircle2, CloudUpload, FileText, Loader2, Send } from "lucide-react"
 import {
   approveSettlementAction, createInvoiceAction, disputeInvoiceAction,
   draftSettlementsAction, factoringPacketAction, markSettlementPaidAction,
-  recordPaymentAction,
+  pushInvoiceToQboAction, recordPaymentAction, submitInvoiceToFactorAction,
 } from "@/app/hub/_actions/money"
 import { fieldCls, labelCls } from "@/components/hub/ui"
+import { MilestoneMoment } from "@/components/hub/MilestoneMoment"
+import { shouldCelebrate } from "@/lib/hub/celebrations"
 
 export function CreateInvoiceButton({ loadId, disabled }: { loadId: string; disabled?: boolean }) {
   const router = useRouter()
   const [pending, startTransition] = useTransition()
+  const [milestone, setMilestone] = useState<{ id: string } | null>(null)
   const create = () =>
     startTransition(async () => {
       const result = await createInvoiceAction(loadId)
       if (result.ok) {
         toast.success(result.emailed ? "Invoice created and emailed" : "Invoice created (email not sent)")
         if (result.error) toast.info(result.error)
+        // First invoice ever sent from this browser → the one full-screen
+        // moment (never repeats; off switch in the avatar menu).
+        if (result.emailed && shouldCelebrate("invoice-sent")) {
+          setMilestone({ id: String(result.id) })
+          return
+        }
         router.push(`/hub/money/invoices/${result.id}`)
         router.refresh()
       } else {
@@ -27,32 +36,61 @@ export function CreateInvoiceButton({ loadId, disabled }: { loadId: string; disa
       }
     })
   return (
-    <button
-      onClick={create}
-      disabled={pending || disabled}
-      className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-orange px-5 font-display text-sm font-bold uppercase tracking-[0.08em] text-white shadow-cta hover:bg-orange-400 disabled:opacity-60"
-    >
-      {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />}
-      Invoice this load
-    </button>
+    <>
+      <button
+        onClick={create}
+        disabled={pending || disabled}
+        className="inline-flex min-h-[44px] items-center gap-2 rounded-control bg-accent px-5 font-semibold text-sm text-accent-fg hover:bg-accent-hover disabled:opacity-60"
+      >
+        {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />}
+        Invoice this load
+      </button>
+      {milestone ? (
+        <MilestoneMoment
+          title="First invoice out the door"
+          body="PDF built, POD attached, emailed to the broker. This is the whole job."
+          onDone={() => {
+            const id = milestone.id
+            setMilestone(null)
+            router.push(`/hub/money/invoices/${id}`)
+            router.refresh()
+          }}
+        />
+      ) : null}
+    </>
   )
 }
 
 export function RecordPaymentForm({ invoiceId, openCents }: { invoiceId: string; openCents: number }) {
   const router = useRouter()
   const [pending, startTransition] = useTransition()
+  const [celebrating, setCelebrating] = useState(false)
   const [form, setForm] = useState({
     amount: (openCents / 100).toFixed(2),
     paidOn: new Date().toISOString().slice(0, 10),
     method: "ACH",
     reference: "",
   })
+  // The prefill IS the open balance, and openCents drops after every payment's
+  // router.refresh() — but useState only reads its initializer on mount, so a
+  // partial payment left the field showing the amount just recorded (the full
+  // balance, on the first pass). Clicking "Record payment" again then re-sent a
+  // stale figure: an overpay the server action rejects with a baffling error, or
+  // — once the accountant corrects it downward — a silent short payment. React's
+  // documented adjust-state-when-a-prop-changes pattern; only the amount resets,
+  // so a date/method/reference already typed survives the refresh.
+  const [syncedOpenCents, setSyncedOpenCents] = useState(openCents)
+  if (syncedOpenCents !== openCents) {
+    setSyncedOpenCents(openCents)
+    setForm((f) => ({ ...f, amount: (openCents / 100).toFixed(2) }))
+  }
   const submit = (e: React.FormEvent) => {
     e.preventDefault()
     startTransition(async () => {
       const result = await recordPaymentAction(invoiceId, form)
       if (result.ok) {
         toast.success("Payment recorded")
+        if (shouldCelebrate("payment-recorded")) setCelebrating(true)
         router.refresh()
       } else {
         toast.error(result.error ?? "Could not record payment")
@@ -60,11 +98,24 @@ export function RecordPaymentForm({ invoiceId, openCents }: { invoiceId: string;
     })
   }
   return (
+    <>
+    {celebrating ? (
+      <MilestoneMoment
+        title="First payment in the bank"
+        body="Delivered, invoiced, paid — the loop is closed."
+        onDone={() => setCelebrating(false)}
+      />
+    ) : null}
     <form onSubmit={submit} className="grid grid-cols-2 gap-3">
       <div>
         <label className={labelCls} htmlFor="pay_amount">Amount ($)</label>
+        {/* Select-on-focus: the amount is prefilled with the full balance, and
+            typing into a focused-but-unselected number input concatenates
+            digits (a second decimal point is silently dropped) — the fat-finger
+            path behind the $10M overpay the accounting drive recorded. */}
         <input id="pay_amount" type="number" step="0.01" min="0.01" required className={fieldCls}
-          value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} />
+          value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })}
+          onFocus={(e) => e.currentTarget.select()} />
       </div>
       <div>
         <label className={labelCls} htmlFor="pay_date">Date</label>
@@ -84,35 +135,94 @@ export function RecordPaymentForm({ invoiceId, openCents }: { invoiceId: string;
           onChange={(e) => setForm({ ...form, reference: e.target.value })} />
       </div>
       <button type="submit" disabled={pending}
-        className="col-span-2 flex min-h-[44px] items-center justify-center gap-2 rounded-xl bg-orange px-5 font-display text-sm font-bold uppercase tracking-[0.08em] text-white shadow-cta hover:bg-orange-400 disabled:opacity-60">
+        className="col-span-2 flex min-h-[44px] items-center justify-center gap-2 rounded-control bg-accent px-5 font-semibold text-sm text-accent-fg hover:bg-accent-hover disabled:opacity-60">
         {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
         Record payment
       </button>
     </form>
+    </>
   )
 }
 
-export function InvoiceActions({ invoiceId, factored, disputed }: { invoiceId: string; factored: boolean; disputed: boolean }) {
+export function InvoiceActions({
+  invoiceId,
+  factored,
+  disputed,
+  factorConnected,
+  factorSubmitted,
+}: {
+  invoiceId: string
+  factored: boolean
+  disputed: boolean
+  factorConnected?: boolean
+  factorSubmitted?: boolean
+}) {
   const router = useRouter()
   const [pending, startTransition] = useTransition()
   return (
     <div className="flex flex-wrap gap-2">
       {factored ? (
-        <button
-          onClick={() =>
-            startTransition(async () => {
-              const result = await factoringPacketAction(invoiceId)
-              if (result.ok) toast.success(`Packet sent to ${result.id}`)
-              else toast.error(result.error ?? "Could not send packet")
-            })
-          }
-          disabled={pending}
-          className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-gold/40 bg-gold/10 px-4 text-sm font-bold text-gold hover:bg-gold/20 disabled:opacity-50"
-        >
-          {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-          Send factoring packet
-        </button>
+        <>
+          <button
+            onClick={() =>
+              startTransition(async () => {
+                const result = await factoringPacketAction(invoiceId)
+                if (result.ok) toast.success(`Packet sent to ${result.id}`)
+                else toast.error(result.error ?? "Could not send packet")
+              })
+            }
+            disabled={pending}
+            className="inline-flex min-h-[44px] items-center gap-2 rounded-control bg-accent px-4 text-sm font-semibold text-accent-fg hover:bg-accent-hover disabled:opacity-50"
+          >
+            {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+            Send factoring packet
+          </button>
+          {factorConnected && !factorSubmitted ? (
+            <button
+              onClick={() =>
+                startTransition(async () => {
+                  const result = await submitInvoiceToFactorAction(invoiceId)
+                  if (result.ok) {
+                    toast.success(
+                      result.alreadySubmitted
+                        ? "Already submitted to the factor electronically"
+                        : "Submitted to factor electronically"
+                    )
+                    router.refresh()
+                  } else toast.error(result.error ?? "Could not submit to factor")
+                })
+              }
+              disabled={pending}
+              className="inline-flex min-h-[44px] items-center gap-2 rounded-control border border-border-strong bg-surface px-4 text-sm font-semibold text-fg-2 hover:bg-hover disabled:opacity-50"
+            >
+              {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+              Submit to factor
+            </button>
+          ) : null}
+        </>
       ) : null}
+      <button
+        onClick={() =>
+          startTransition(async () => {
+            const result = await pushInvoiceToQboAction(invoiceId)
+            if (result.ok) {
+              if (result.alreadyPushed) {
+                toast.success("Already synced to QuickBooks — amount unchanged")
+              } else if (result.updated) {
+                toast.success("Updated in QuickBooks")
+              } else {
+                toast.success("Pushed to QuickBooks")
+              }
+              router.refresh()
+            } else toast.error(result.error ?? "Could not push to QuickBooks")
+          })
+        }
+        disabled={pending}
+        className="inline-flex min-h-[44px] items-center gap-2 rounded-control border border-border-strong bg-surface px-4 text-sm font-semibold text-fg-2 hover:bg-hover disabled:opacity-50"
+      >
+        {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <CloudUpload className="h-4 w-4" />}
+        Push to QBO
+      </button>
       {!disputed ? (
         <button
           onClick={() =>
@@ -125,7 +235,7 @@ export function InvoiceActions({ invoiceId, factored, disputed }: { invoiceId: s
             })
           }
           disabled={pending}
-          className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-red-400/30 px-4 text-sm font-semibold text-red-300 hover:bg-red-500/10 disabled:opacity-50"
+          className="inline-flex min-h-[44px] items-center gap-2 rounded-control border border-bad-soft px-4 text-sm font-semibold text-bad hover:bg-bad-soft disabled:opacity-50"
         >
           Mark disputed
         </button>
@@ -151,7 +261,7 @@ export function DraftSettlementsButton() {
         })
       }
       disabled={pending}
-      className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-orange px-5 font-display text-sm font-bold uppercase tracking-[0.08em] text-white shadow-cta hover:bg-orange-400 disabled:opacity-60"
+      className="inline-flex min-h-[44px] items-center gap-2 rounded-control bg-accent px-5 font-semibold text-sm text-accent-fg hover:bg-accent-hover disabled:opacity-60"
     >
       {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
       Draft this week&apos;s settlements
@@ -177,7 +287,7 @@ export function SettlementActions({ settlementId, status }: { settlementId: stri
             })
           }
           disabled={pending}
-          className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-orange px-5 font-display text-sm font-bold uppercase tracking-[0.08em] text-white shadow-cta hover:bg-orange-400 disabled:opacity-60"
+          className="inline-flex min-h-[44px] items-center gap-2 rounded-control bg-accent px-5 font-semibold text-sm text-accent-fg hover:bg-accent-hover disabled:opacity-60"
         >
           {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
           Approve &amp; send statement
@@ -194,7 +304,7 @@ export function SettlementActions({ settlementId, status }: { settlementId: stri
             })
           }
           disabled={pending}
-          className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-emerald-400/40 bg-emerald-500/10 px-4 text-sm font-bold text-emerald-300 hover:bg-emerald-500/20 disabled:opacity-50"
+          className="inline-flex min-h-[44px] items-center gap-2 rounded-control border border-ok-soft bg-ok-soft px-4 text-sm font-bold text-ok hover:opacity-90 disabled:opacity-50"
         >
           {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
           Mark paid

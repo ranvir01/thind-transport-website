@@ -20,6 +20,11 @@ export function createMailTransport() {
     secure: false,
     // Local catchers (maildev/mailhog) don't use auth — only pass creds when present
     ...(isEmailConfigured() ? { auth: { user: smtpUser(), pass: smtpPass() } } : {}),
+    // Serverless guard: an unreachable SMTP host must fail in seconds, not hang
+    // a Vercel function until its timeout (invoice/settlement actions await this).
+    connectionTimeout: 8_000,
+    greetingTimeout: 8_000,
+    socketTimeout: 15_000,
   })
 }
 

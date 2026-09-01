@@ -117,9 +117,9 @@ export function CustomerForm({
             type="checkbox"
             checked={form.factored}
             onChange={(e) => set({ factored: e.target.checked })}
-            className="h-5 w-5 rounded border-white/20 bg-white/10 accent-[#F2A900]"
+            className="h-5 w-5 rounded border-border-strong bg-surface-2 accent-accent"
           />
-          <span className="text-sm text-steel-100">Loads from this customer are factored</span>
+          <span className="text-sm text-fg-2">Loads from this customer are factored</span>
         </label>
         <div>
           <label className={labelCls} htmlFor="c_notes">Notes</label>
@@ -127,7 +127,7 @@ export function CustomerForm({
             onChange={(e) => set({ notes: e.target.value })} />
         </div>
         <button type="submit" disabled={pending}
-          className="flex w-full sm:w-auto min-h-[48px] items-center justify-center gap-2 rounded-xl bg-orange px-8 font-display text-sm font-bold uppercase tracking-[0.08em] text-white shadow-cta hover:bg-orange-400 disabled:opacity-60">
+          className="flex w-full sm:w-auto min-h-[48px] items-center justify-center gap-2 rounded-control bg-accent px-8 font-semibold text-sm text-accent-fg hover:bg-accent-hover disabled:opacity-60">
           {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
           {customerId ? "Save customer" : "Add customer"}
         </button>

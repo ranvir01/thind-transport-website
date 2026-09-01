@@ -1,16 +1,22 @@
+import type { PoolClient } from "pg"
 import { hubDb, query, queryOne } from "./db"
-import { computeSettlement, type SettlementLoadInput } from "./money"
-import { getCarrier } from "./settings"
+import {
+  evaluatePayRules, legacyConfigToRuleSet, parseRuleSet, type PayLoadContext,
+} from "./pay-rules"
+import { getCarrier, getCarrierSettings } from "./settings"
 import { storeGeneratedPdf } from "./documents"
 import { buildSettlementPdf } from "./pdf"
 import { logAudit } from "./audit"
-import { createMailTransport, mailFrom } from "@/lib/mailer"
+import { assertCarrierRefs } from "./tenancy"
+import { toIsoDateOnly } from "./format-dates"
+import { createMailTransport, isEmailConfigured, mailFrom } from "@/lib/mailer"
+import { advanceExposureExceedsCap, MAX_DRIVER_ADVANCE_EXPOSURE_CENTS } from "./advances-core"
 import type { Advance, Driver, Settlement, SettlementLine } from "./types"
 
 export async function listSettlements(carrierId: string): Promise<Settlement[]> {
   return query<Settlement>(
     `SELECT s.*, d.first_name || ' ' || d.last_name AS driver_name, d.pay_type
-     FROM hub.settlements s JOIN hub.drivers d ON d.id = s.driver_id
+     FROM hub.settlements s JOIN hub.drivers d ON d.id = s.driver_id AND d.carrier_id = s.carrier_id
      WHERE s.carrier_id = $1 ORDER BY s.period_end DESC, driver_name LIMIT 200`,
     [carrierId]
   )
@@ -19,17 +25,60 @@ export async function listSettlements(carrierId: string): Promise<Settlement[]> 
 export async function getSettlement(carrierId: string, id: string): Promise<Settlement | null> {
   return queryOne<Settlement>(
     `SELECT s.*, d.first_name || ' ' || d.last_name AS driver_name, d.pay_type
-     FROM hub.settlements s JOIN hub.drivers d ON d.id = s.driver_id
+     FROM hub.settlements s JOIN hub.drivers d ON d.id = s.driver_id AND d.carrier_id = s.carrier_id
      WHERE s.carrier_id = $1 AND s.id = $2`,
     [carrierId, id]
   )
 }
 
-export async function getSettlementLines(settlementId: string): Promise<SettlementLine[]> {
+export async function getSettlementLines(carrierId: string, settlementId: string): Promise<SettlementLine[]> {
   return query<SettlementLine>(
-    `SELECT * FROM hub.settlement_lines WHERE settlement_id = $1 ORDER BY kind, created_at`,
-    [settlementId]
+    `SELECT sl.* FROM hub.settlement_lines sl
+     JOIN hub.settlements s ON s.id = sl.settlement_id AND s.carrier_id = $1
+     WHERE sl.settlement_id = $2 ORDER BY sl.kind, sl.created_at`,
+    [carrierId, settlementId]
   )
+}
+
+/**
+ * Referral bonuses that became payable and have not yet been paid through a
+ * settlement (E5). Returns [] until the recruiting module's tables exist so
+ * the settlement engine never depends on a later migration.
+ */
+async function payableReferralBonuses(
+  carrierId: string,
+  driverId: string
+): Promise<{ label: string; amountCents: number; sourceId: string }[]> {
+  const exists = await queryOne<{ reg: string | null }>(
+    `SELECT to_regclass('hub.referrals')::text AS reg`
+  )
+  if (!exists?.reg) return []
+  const rows = await query<{ id: string; bonus_cents: number; applicant_name: string; milestone: string }>(
+    `SELECT r.id, r.bonus_cents, COALESCE(a.first_name || ' ' || a.last_name, 'driver') AS applicant_name, r.milestone
+     FROM hub.referrals r
+     LEFT JOIN hub.applicants a ON a.id = r.applicant_id AND a.carrier_id = r.carrier_id
+     WHERE r.carrier_id = $1 AND r.referrer_driver_id = $2 AND r.status = 'payable'`,
+    [carrierId, driverId]
+  )
+  return rows.map((r) => ({
+    label: `Referral bonus — ${r.applicant_name} (${r.milestone.replace(/_/g, " ")})`,
+    amountCents: Number(r.bonus_cents),
+    sourceId: r.id,
+  }))
+}
+
+/** Latest monthly scorecard composite for scorecard_bonus rules (E5). */
+async function latestScorecardScore(carrierId: string, driverId: string): Promise<number | null> {
+  const exists = await queryOne<{ reg: string | null }>(
+    `SELECT to_regclass('hub.driver_scores')::text AS reg`
+  )
+  if (!exists?.reg) return null
+  const row = await queryOne<{ composite: string }>(
+    `SELECT composite FROM hub.driver_scores
+     WHERE carrier_id = $1 AND driver_id = $2 ORDER BY month DESC LIMIT 1`,
+    [carrierId, driverId]
+  )
+  return row ? Number(row.composite) : null
 }
 
 /**
@@ -42,21 +91,39 @@ export async function draftSettlements(
   periodStart: string,
   periodEnd: string,
   actor: { id: string; name: string }
-): Promise<{ created: number; skipped: number }> {
+): Promise<{
+  created: number
+  skipped: number
+  /**
+   * Loads paid to a driver that nobody ever billed the customer for. Not a
+   * blocker — the driver hauled the freight and is owed for it — but the
+   * carrier is about to send cash out the door against revenue it never
+   * asked for, and nothing surfaced that before.
+   */
+  uninvoiced: { driverName: string; reference: string; amountCents: number }[]
+}> {
   const drivers = await query<Driver>(
     `SELECT * FROM hub.drivers WHERE carrier_id = $1 AND deleted_at IS NULL AND status = 'active'`,
     [carrierId]
   )
   let created = 0
   let skipped = 0
+  const uninvoiced: { driverName: string; reference: string; amountCents: number }[] = []
 
   for (const driver of drivers) {
     // Loads delivered or beyond, not yet attached to a settlement
     const loads = await query<{
       id: string; reference: string; linehaul_cents: number; fuel_surcharge_cents: number
-      accessorials: { amount_cents: number }[]; loaded_miles: number | null; deadhead_miles: number | null
+      accessorials: { label?: string; amount_cents: number }[]; loaded_miles: number | null; deadhead_miles: number | null
+      stops_count: number | null; uninvoiced: boolean
     }>(
-      `SELECT id, reference, linehaul_cents, fuel_surcharge_cents, accessorials, loaded_miles, deadhead_miles
+      `SELECT id, reference, linehaul_cents, fuel_surcharge_cents, accessorials, loaded_miles, deadhead_miles,
+         (SELECT COUNT(*)::int FROM hub.stops s
+           WHERE s.load_id = hub.loads.id AND s.carrier_id = hub.loads.carrier_id) AS stops_count,
+         NOT EXISTS (
+           SELECT 1 FROM hub.invoices i
+           WHERE i.carrier_id = hub.loads.carrier_id AND i.load_id = hub.loads.id
+         ) AS uninvoiced
        FROM hub.loads
        WHERE carrier_id = $1 AND driver_id = $2 AND deleted_at IS NULL AND settlement_id IS NULL
          AND status IN ('delivered','pod_received','invoiced','paid')`,
@@ -87,35 +154,85 @@ export async function draftSettlements(
       [carrierId, driver.id]
     )
 
-    const loadInputs: SettlementLoadInput[] = loads.map((load) => ({
-      id: load.id,
-      reference: load.reference,
-      linehaulCents: Number(load.linehaul_cents),
-      fuelSurchargeCents: Number(load.fuel_surcharge_cents),
-      accessorialCents: (Array.isArray(load.accessorials) ? load.accessorials : [])
-        .reduce((sum, a) => sum + Number(a.amount_cents || 0), 0),
-      loadedMiles: load.loaded_miles ?? 0,
-      deadheadMiles: load.deadhead_miles ?? 0,
-    }))
+    // Flag before the pay maths: these are loads about to become a driver's
+    // net pay with no invoice on the customer side.
+    for (const load of loads.filter((l) => l.uninvoiced)) {
+      uninvoiced.push({
+        driverName: `${driver.first_name} ${driver.last_name}`,
+        reference: load.reference,
+        amountCents:
+          Number(load.linehaul_cents) +
+          Number(load.fuel_surcharge_cents) +
+          (Array.isArray(load.accessorials)
+            ? load.accessorials.reduce((sum, a) => sum + Number(a.amount_cents || 0), 0)
+            : 0),
+      })
+    }
 
-    const draft = computeSettlement(
-      loadInputs,
-      {
-        payType: driver.pay_type,
-        payRate: Number(driver.pay_rate),
-        payLoadedMilesOnly: driver.pay_loaded_miles_only,
-        escrowWeeklyCents: driver.escrow_weekly_cents,
-        insuranceWeeklyCents: driver.insurance_weekly_cents,
-      },
-      reimbursables.map((expense) => ({
+    const loadInputs: PayLoadContext[] = loads.map((load) => {
+      const accessorials = Array.isArray(load.accessorials) ? load.accessorials : []
+      return {
+        id: load.id,
+        reference: load.reference,
+        linehaulCents: Number(load.linehaul_cents),
+        fuelSurchargeCents: Number(load.fuel_surcharge_cents),
+        accessorialCents: accessorials.reduce((sum, a) => sum + Number(a.amount_cents || 0), 0),
+        // Same matcher applyDetentionAccrual upserts with — lets percent rules
+        // itemize the detention share as its own settlement line.
+        detentionCents: accessorials
+          .filter((a) => /detention/i.test(String(a.label ?? "")))
+          .reduce((sum, a) => sum + Number(a.amount_cents || 0), 0),
+        loadedMiles: load.loaded_miles ?? 0,
+        deadheadMiles: load.deadhead_miles ?? 0,
+        stopsCount: Number(load.stops_count ?? 0),
+      }
+    })
+
+    // The settlement engine consumes ONLY the generic pay-rules evaluator.
+    // A driver's rule set lives in hub.pay_rules (seeded from the legacy
+    // two-pay-type columns by migration 005); the legacy conversion is the
+    // fallback for drivers created before a rule set exists.
+    const ruleRow = await queryOne<{ name: string; rules: unknown; deductions: unknown }>(
+      `SELECT name, rules, deductions FROM hub.pay_rules
+       WHERE carrier_id = $1 AND driver_id = $2 AND active
+       ORDER BY updated_at DESC LIMIT 1`,
+      [carrierId, driver.id]
+    )
+    // parseRuleSet throws on a malformed rule (by design — see pay-rules.ts):
+    // that must not crash the batch for every other driver, so a corrupted
+    // row here is a loud, isolated skip rather than an unhandled rejection.
+    let ruleSet
+    try {
+      ruleSet = ruleRow
+        ? parseRuleSet(ruleRow)
+        : legacyConfigToRuleSet({
+            payType: driver.pay_type,
+            payRate: Number(driver.pay_rate),
+            payLoadedMilesOnly: driver.pay_loaded_miles_only,
+            escrowWeeklyCents: driver.escrow_weekly_cents,
+            insuranceWeeklyCents: driver.insurance_weekly_cents,
+          })
+    } catch (err) {
+      console.error(
+        `draftSettlements: skipping driver ${driver.id} (carrier ${carrierId}) — corrupted pay rule: ${(err as Error).message}`
+      )
+      skipped++
+      continue
+    }
+
+    const draft = evaluatePayRules(ruleSet, {
+      loads: loadInputs,
+      reimbursements: reimbursables.map((expense) => ({
         label: `${expense.category} reimbursement${expense.memo ? ` — ${expense.memo}` : ""}`,
         amountCents: Number(expense.amount_cents),
         sourceId: expense.id,
       })),
-      advances.map((advance) => ({
+      outstandingAdvances: advances.map((advance) => ({
         id: advance.id, reference: advance.reference, amountCents: Number(advance.amount_cents),
-      }))
-    )
+      })),
+      referralBonuses: await payableReferralBonuses(carrierId, driver.id),
+      scorecardScore: await latestScorecardScore(carrierId, driver.id),
+    })
 
     const client = await hubDb().connect()
     try {
@@ -135,14 +252,14 @@ export async function draftSettlements(
         // Mark reimbursed expenses so they never double-pay
         if (line.sourceType === "expense" && line.sourceId) {
           await client.query(
-            `UPDATE hub.expenses SET settled_line_id = $1, updated_at = NOW() WHERE id = $2`,
-            [lineRows[0].id, line.sourceId]
+            `UPDATE hub.expenses SET settled_line_id = $1, updated_at = NOW() WHERE id = $2 AND carrier_id = $3`,
+            [lineRows[0].id, line.sourceId, carrierId]
           )
         }
       }
       await client.query(
-        `UPDATE hub.loads SET settlement_id = $1, updated_at = NOW() WHERE id = ANY($2::uuid[])`,
-        [settlementId, loads.map((l) => l.id)]
+        `UPDATE hub.loads SET settlement_id = $1, updated_at = NOW() WHERE id = ANY($2::uuid[]) AND carrier_id = $3`,
+        [settlementId, loads.map((l) => l.id), carrierId]
       )
       await client.query("COMMIT")
       created++
@@ -158,7 +275,7 @@ export async function draftSettlements(
       client.release()
     }
   }
-  return { created, skipped }
+  return { created, skipped, uninvoiced }
 }
 
 /** Approve: advances applied, escrow ledger appended, PDF statement generated + emailed. */
@@ -170,40 +287,81 @@ export async function approveSettlement(
   const settlement = await getSettlement(carrierId, settlementId)
   if (!settlement) throw new Error("Settlement not found")
   if (settlement.status !== "draft") throw new Error("Only drafts can be approved")
-  const lines = await getSettlementLines(settlementId)
-  const driver = await queryOne<Driver>(`SELECT * FROM hub.drivers WHERE id = $1`, [settlement.driver_id])
+  const lines = await getSettlementLines(carrierId, settlementId)
+  const driver = await queryOne<Driver>(
+    `SELECT * FROM hub.drivers WHERE id = $1 AND carrier_id = $2`,
+    [settlement.driver_id, carrierId]
+  )
   const carrier = await getCarrier(carrierId)
+  const settings = await getCarrierSettings(carrierId)
+
+  // Claim draft -> approved atomically BEFORE any side effect. The escrow
+  // append below is not idempotent, so a concurrent double-approve (or a
+  // retry after a mid-flight failure) must lose here, not after the ledger
+  // already grew twice.
+  const claimed = await query<{ id: string }>(
+    `UPDATE hub.settlements SET status = 'approved', approved_by = $3, approved_at = NOW(), updated_at = NOW()
+     WHERE carrier_id = $1 AND id = $2 AND status = 'draft' RETURNING id`,
+    [carrierId, settlementId, actor.id]
+  )
+  if (claimed.length === 0) throw new Error("Only drafts can be approved")
 
   // Apply advances
   for (const line of lines.filter((l) => l.source_type === "advance" && l.source_id)) {
     await query(
-      `UPDATE hub.advances SET status = 'applied', applied_settlement_id = $1, updated_at = NOW() WHERE id = $2 AND status = 'outstanding'`,
-      [settlementId, line.source_id]
+      `UPDATE hub.advances SET status = 'applied', applied_settlement_id = $1, updated_at = NOW() WHERE id = $2 AND carrier_id = $3 AND status = 'outstanding'`,
+      [settlementId, line.source_id, carrierId]
     )
   }
-  // Append escrow ledger
+  // Referral bonuses paid through this settlement flip to 'paid' (E5)
+  const referralLines = lines.filter((l) => l.source_type === "referral" && l.source_id)
+  if (referralLines.length > 0) {
+    await query(
+      `UPDATE hub.referrals SET status = 'paid', paid_settlement_id = $1, updated_at = NOW()
+       WHERE carrier_id = $2 AND id = ANY($3::uuid[]) AND status = 'payable'`,
+      [settlementId, carrierId, referralLines.map((l) => l.source_id)]
+    ).catch(() => {}) // table arrives with the recruiting module
+  }
+  // Append escrow ledger. Two settlements for the same driver approved
+  // concurrently (a backlog of unapproved weeks batch-approved together) would
+  // both read the same last balance_cents and insert a wrong running total —
+  // the same stale-read race already fixed in recordPayment. An advisory lock
+  // keyed on driver_id serializes the read+insert per driver across concurrent
+  // approvals without needing a row to lock (the first-ever ledger entry has none).
   const escrowLine = lines.find((l) => l.source_type === "escrow")
   if (escrowLine) {
-    const last = await queryOne<{ balance_cents: number }>(
-      `SELECT balance_cents FROM hub.escrow_ledger WHERE driver_id = $1 ORDER BY id DESC LIMIT 1`,
-      [settlement.driver_id]
-    )
-    const newBalance = Number(last?.balance_cents ?? 0) + escrowLine.amount_cents
-    await query(
-      `INSERT INTO hub.escrow_ledger (carrier_id, driver_id, amount_cents, balance_cents, note, settlement_id)
-       VALUES ($1,$2,$3,$4,$5,$6)`,
-      [carrierId, settlement.driver_id, escrowLine.amount_cents, newBalance, "Weekly contribution", settlementId]
-    )
+    const client = await hubDb().connect()
+    try {
+      await client.query("BEGIN")
+      await client.query(`SELECT pg_advisory_xact_lock(hashtext($1)::bigint)`, [settlement.driver_id])
+      const { rows: lastRows } = await client.query<{ balance_cents: number }>(
+        `SELECT balance_cents FROM hub.escrow_ledger WHERE driver_id = $1 AND carrier_id = $2 ORDER BY id DESC LIMIT 1`,
+        [settlement.driver_id, carrierId]
+      )
+      const newBalance = Number(lastRows[0]?.balance_cents ?? 0) + escrowLine.amount_cents
+      await client.query(
+        `INSERT INTO hub.escrow_ledger (carrier_id, driver_id, amount_cents, balance_cents, note, settlement_id)
+         VALUES ($1,$2,$3,$4,$5,$6)`,
+        [carrierId, settlement.driver_id, escrowLine.amount_cents, newBalance, "Weekly contribution", settlementId]
+      )
+      await client.query("COMMIT")
+    } catch (err) {
+      await client.query("ROLLBACK")
+      throw err
+    } finally {
+      client.release()
+    }
   }
 
   const pdfBytes = await buildSettlementPdf({
     brand: {
       name: carrier?.name ?? "Carrier", address: carrier?.address, phone: carrier?.phone,
       email: carrier?.email, dot: carrier?.dot_number, mc: carrier?.mc_number,
+      accent: settings.branding.accent,
     },
     driverName: settlement.driver_name ?? "Driver",
-    periodStart: String(settlement.period_start).slice(0, 10),
-    periodEnd: String(settlement.period_end).slice(0, 10),
+    periodStart: toIsoDateOnly(settlement.period_start) ?? "",
+    periodEnd: toIsoDateOnly(settlement.period_end) ?? "",
     lines: lines.map((l) => ({ kind: l.kind, label: l.label, amountCents: l.amount_cents })),
     grossCents: settlement.gross_cents,
     deductionsCents: settlement.deductions_cents,
@@ -212,9 +370,9 @@ export async function approveSettlement(
   const statementUrl = await storeGeneratedPdf(`settlement-${settlementId}.pdf`, pdfBytes)
 
   await query(
-    `UPDATE hub.settlements SET status = 'approved', statement_url = $2, approved_by = $3, approved_at = NOW(), updated_at = NOW()
-     WHERE id = $1`,
-    [settlementId, statementUrl, actor.id]
+    `UPDATE hub.settlements SET statement_url = $3, updated_at = NOW()
+     WHERE carrier_id = $1 AND id = $2`,
+    [carrierId, settlementId, statementUrl]
   )
   await logAudit({
     carrierId, actorId: actor.id, actorName: actor.name,
@@ -223,13 +381,13 @@ export async function approveSettlement(
   })
 
   let emailed = false
-  if (driver?.email) {
+  if (driver?.email && isEmailConfigured()) {
     try {
       const transport = createMailTransport()
       await transport.sendMail({
         from: mailFrom(carrier?.name ?? "Payroll"),
         to: driver.email,
-        subject: `Settlement ${String(settlement.period_start).slice(0, 10)} — ${String(settlement.period_end).slice(0, 10)}: $${(settlement.net_cents / 100).toFixed(2)}`,
+        subject: `Settlement ${toIsoDateOnly(settlement.period_start) ?? ""} — ${toIsoDateOnly(settlement.period_end) ?? ""}: $${(settlement.net_cents / 100).toFixed(2)}`,
         text: `Your settlement statement is attached.\n\nGross: $${(settlement.gross_cents / 100).toFixed(2)}\nDeductions: $${(settlement.deductions_cents / 100).toFixed(2)}\nNet pay: $${(settlement.net_cents / 100).toFixed(2)}\n\n${carrier?.name ?? ""}`,
         attachments: [{ filename: "settlement.pdf", content: Buffer.from(pdfBytes), contentType: "application/pdf" }],
       })
@@ -243,25 +401,27 @@ export async function markSettlementPaid(
   carrierId: string,
   settlementId: string,
   actor: { id: string; name: string }
-): Promise<void> {
-  await query(
-    `UPDATE hub.settlements SET status = 'paid', updated_at = NOW() WHERE carrier_id = $1 AND id = $2 AND status = 'approved'`,
+): Promise<boolean> {
+  const updated = await query(
+    `UPDATE hub.settlements SET status = 'paid', updated_at = NOW() WHERE carrier_id = $1 AND id = $2 AND status = 'approved' RETURNING id`,
     [carrierId, settlementId]
   )
+  if (updated.length === 0) return false
   // Close out fully-paid loads attached to this settlement
   const loads = await query<{ id: string; status: string }>(
-    `SELECT id, status FROM hub.loads WHERE settlement_id = $1`,
-    [settlementId]
+    `SELECT id, status FROM hub.loads WHERE settlement_id = $1 AND carrier_id = $2`,
+    [settlementId, carrierId]
   )
   for (const load of loads) {
     if (load.status === "paid") {
-      await query(`UPDATE hub.loads SET status = 'settled', updated_at = NOW() WHERE id = $1`, [load.id])
+      await query(`UPDATE hub.loads SET status = 'settled', updated_at = NOW() WHERE id = $1 AND carrier_id = $2`, [load.id, carrierId])
     }
   }
   await logAudit({
     carrierId, actorId: actor.id, actorName: actor.name,
     entityType: "settlement", entityId: settlementId, action: "paid",
   })
+  return true
 }
 
 // ---- Advances + escrow ----
@@ -269,10 +429,50 @@ export async function markSettlementPaid(
 export async function listAdvances(carrierId: string): Promise<Advance[]> {
   return query<Advance>(
     `SELECT a.*, d.first_name || ' ' || d.last_name AS driver_name
-     FROM hub.advances a JOIN hub.drivers d ON d.id = a.driver_id
+     FROM hub.advances a JOIN hub.drivers d ON d.id = a.driver_id AND d.carrier_id = a.carrier_id
      WHERE a.carrier_id = $1 ORDER BY a.created_at DESC LIMIT 200`,
     [carrierId]
   )
+}
+
+/**
+ * Locks per-driver (advisory xact lock keyed on driver_id, same pattern as the
+ * escrow-ledger race fix in approveSettlement), re-checks exposure inside the
+ * lock, then inserts. Closes the TOCTOU window where two concurrent advance
+ * requests/approvals for the same driver (office create + driver request, or
+ * two drivers-app taps) could both read the same pre-insert exposure and both
+ * pass the cap — each caller supplies its own INSERT and cap-exceeded message
+ * so the two entry points keep their own copy/columns.
+ */
+export async function insertAdvanceWithinExposureCap(
+  carrierId: string,
+  driverId: string,
+  amountCents: number,
+  capExceededMessage: string,
+  insertRow: (client: PoolClient) => Promise<{ id: string }>
+): Promise<{ id: string }> {
+  const client = await hubDb().connect()
+  try {
+    await client.query("BEGIN")
+    await client.query(`SELECT pg_advisory_xact_lock(hashtext($1)::bigint)`, [driverId])
+    const { rows: exposureRows } = await client.query<{ cents: string | number }>(
+      `SELECT COALESCE(SUM(amount_cents), 0) AS cents FROM hub.advances
+       WHERE carrier_id = $1 AND driver_id = $2 AND status IN ('outstanding', 'pending')`,
+      [carrierId, driverId]
+    )
+    const exposure = Number(exposureRows[0]?.cents ?? 0)
+    if (advanceExposureExceedsCap(exposure, amountCents)) {
+      throw new Error(capExceededMessage)
+    }
+    const row = await insertRow(client)
+    await client.query("COMMIT")
+    return row
+  } catch (err) {
+    await client.query("ROLLBACK")
+    throw err
+  } finally {
+    client.release()
+  }
 }
 
 export async function createAdvance(
@@ -280,14 +480,24 @@ export async function createAdvance(
   input: { driverId: string; amountCents: number; issuedOn: string; reference?: string | null },
   actor: { id: string; name: string }
 ): Promise<void> {
-  const rows = await query<{ id: string }>(
-    `INSERT INTO hub.advances (carrier_id, driver_id, amount_cents, issued_on, reference, status)
-     VALUES ($1,$2,$3,$4,$5,'outstanding') RETURNING id`,
-    [carrierId, input.driverId, input.amountCents, input.issuedOn, input.reference ?? null]
+  await assertCarrierRefs(carrierId, { driver_id: input.driverId })
+  const row = await insertAdvanceWithinExposureCap(
+    carrierId,
+    input.driverId,
+    input.amountCents,
+    `Would push this driver's advance exposure past $${(MAX_DRIVER_ADVANCE_EXPOSURE_CENTS / 100).toFixed(0)}`,
+    async (client) => {
+      const { rows } = await client.query<{ id: string }>(
+        `INSERT INTO hub.advances (carrier_id, driver_id, amount_cents, issued_on, reference, status)
+         VALUES ($1,$2,$3,$4,$5,'outstanding') RETURNING id`,
+        [carrierId, input.driverId, input.amountCents, input.issuedOn, input.reference ?? null]
+      )
+      return rows[0]
+    }
   )
   await logAudit({
     carrierId, actorId: actor.id, actorName: actor.name,
-    entityType: "advance", entityId: rows[0].id, action: "create",
+    entityType: "advance", entityId: row.id, action: "create",
     newValue: input,
   })
 }
@@ -302,7 +512,7 @@ export async function escrowBalances(carrierId: string): Promise<EscrowBalance[]
   return query<EscrowBalance>(
     `SELECT DISTINCT ON (e.driver_id) e.driver_id,
        d.first_name || ' ' || d.last_name AS driver_name, e.balance_cents
-     FROM hub.escrow_ledger e JOIN hub.drivers d ON d.id = e.driver_id
+     FROM hub.escrow_ledger e JOIN hub.drivers d ON d.id = e.driver_id AND d.carrier_id = e.carrier_id
      WHERE e.carrier_id = $1
      ORDER BY e.driver_id, e.id DESC`,
     [carrierId]

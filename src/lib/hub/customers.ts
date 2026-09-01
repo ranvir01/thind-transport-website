@@ -15,10 +15,10 @@ export async function listCustomers(carrierId: string): Promise<CustomerWithStat
        COUNT(l.id) FILTER (WHERE l.deleted_at IS NULL)::int AS load_count,
        COALESCE(SUM(l.linehaul_cents + l.fuel_surcharge_cents) FILTER (WHERE l.deleted_at IS NULL AND l.status <> 'cancelled'), 0) AS total_revenue_cents,
        (SELECT AVG(p.paid_on - i.issued_on)
-          FROM hub.invoices i JOIN hub.payments p ON p.invoice_id = i.id
-          WHERE i.customer_id = c.id) AS avg_days_to_pay
+          FROM hub.invoices i JOIN hub.payments p ON p.invoice_id = i.id AND p.carrier_id = i.carrier_id
+          WHERE i.customer_id = c.id AND i.carrier_id = c.carrier_id) AS avg_days_to_pay
      FROM hub.customers c
-     LEFT JOIN hub.loads l ON l.customer_id = c.id
+     LEFT JOIN hub.loads l ON l.customer_id = c.id AND l.carrier_id = c.carrier_id
      WHERE c.carrier_id = $1 AND c.deleted_at IS NULL
      GROUP BY c.id
      ORDER BY c.name`,
@@ -49,6 +49,15 @@ export interface CustomerInput {
   notes?: string | null
 }
 
+/** MC numbers are stored bare ("784512"): UI labels and FMCSA QCMobile docket
+ *  URLs add their own "MC " prefix, so a stored prefix renders doubled and
+ *  breaks authority lookups. Strips a leading "MC" plus separators. */
+export function normalizeMcNumber(value: string | null | undefined): string | null {
+  if (!value) return null
+  const bare = value.trim().replace(/^mc[\s#:.-]*/i, "").trim()
+  return bare.length > 0 ? bare : null
+}
+
 export async function createCustomer(carrierId: string, input: CustomerInput): Promise<Customer> {
   const rows = await query<Customer>(
     `INSERT INTO hub.customers (
@@ -57,7 +66,7 @@ export async function createCustomer(carrierId: string, input: CustomerInput): P
      ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
      RETURNING *`,
     [
-      carrierId, input.name, input.type, input.mc_number ?? null, input.dot_number ?? null,
+      carrierId, input.name, input.type, normalizeMcNumber(input.mc_number), input.dot_number ?? null,
       input.billing_email ?? null, input.billing_address ?? null, input.phone ?? null,
       input.payment_terms_days, input.credit_limit_cents ?? null, input.factored, input.status,
       input.notes ?? null,
@@ -75,7 +84,7 @@ export async function updateCustomer(carrierId: string, id: string, input: Custo
      WHERE carrier_id=$1 AND id=$2 AND deleted_at IS NULL
      RETURNING *`,
     [
-      carrierId, id, input.name, input.type, input.mc_number ?? null, input.dot_number ?? null,
+      carrierId, id, input.name, input.type, normalizeMcNumber(input.mc_number), input.dot_number ?? null,
       input.billing_email ?? null, input.billing_address ?? null, input.phone ?? null,
       input.payment_terms_days, input.credit_limit_cents ?? null, input.factored, input.status,
       input.notes ?? null,
@@ -94,28 +103,71 @@ export async function findCustomerByName(carrierId: string, name: string): Promi
 
 // ---- Contacts ----
 
-export async function listContacts(customerId: string): Promise<Contact[]> {
+export async function listContacts(carrierId: string, customerId: string): Promise<Contact[]> {
   return query<Contact>(
-    `SELECT * FROM hub.contacts WHERE customer_id = $1 ORDER BY name`,
-    [customerId]
+    `SELECT * FROM hub.contacts WHERE carrier_id = $1 AND customer_id = $2 ORDER BY name`,
+    [carrierId, customerId]
   )
 }
 
+/** Insert guarded on the customer side (assignFuelToLoad pattern): a customer_id
+ *  from another carrier matches no row, so the insert is a no-op and we return null. */
 export async function createContact(carrierId: string, input: {
   customer_id: string
   name: string
   role?: string | null
   phone?: string | null
   email?: string | null
-}): Promise<Contact> {
+}): Promise<Contact | null> {
   const rows = await query<Contact>(
     `INSERT INTO hub.contacts (carrier_id, customer_id, name, role, phone, email)
-     VALUES ($1,$2,$3,$4,$5,$6) RETURNING *`,
+     SELECT c.carrier_id, c.id, $3, $4, $5, $6
+     FROM hub.customers c
+     WHERE c.carrier_id = $1 AND c.id = $2 AND c.deleted_at IS NULL
+     RETURNING *`,
     [carrierId, input.customer_id, input.name, input.role ?? null, input.phone ?? null, input.email ?? null]
   )
-  return rows[0]
+  return rows[0] ?? null
 }
 
 export async function deleteContact(carrierId: string, id: string): Promise<void> {
   await query(`DELETE FROM hub.contacts WHERE carrier_id = $1 AND id = $2`, [carrierId, id])
+}
+
+// ---- CRM activities ----
+
+export interface CrmActivityRow {
+  id: string
+  kind: string
+  body: string
+  actor_name: string | null
+  created_at: string
+}
+
+export async function listCrmActivities(carrierId: string, customerId: string): Promise<CrmActivityRow[]> {
+  return query<CrmActivityRow>(
+    `SELECT id, kind, body, actor_name, created_at FROM hub.crm_activities
+     WHERE carrier_id = $1 AND customer_id = $2 ORDER BY created_at DESC LIMIT 25`,
+    [carrierId, customerId]
+  )
+}
+
+/** Same customer-side guard as createContact; returns false when the customer
+ *  is not this carrier's (nothing inserted). */
+export async function addCrmActivity(carrierId: string, input: {
+  customer_id: string
+  kind: "note" | "call" | "email"
+  body: string
+  actor_id: string | null
+  actor_name: string
+}): Promise<boolean> {
+  const rows = await query<{ id: string }>(
+    `INSERT INTO hub.crm_activities (carrier_id, customer_id, kind, body, actor_id, actor_name)
+     SELECT c.carrier_id, c.id, $3, $4, $5, $6
+     FROM hub.customers c
+     WHERE c.carrier_id = $1 AND c.id = $2 AND c.deleted_at IS NULL
+     RETURNING id`,
+    [carrierId, input.customer_id, input.kind, input.body, input.actor_id, input.actor_name]
+  )
+  return rows.length > 0
 }

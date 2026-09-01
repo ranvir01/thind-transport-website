@@ -1,175 +1,273 @@
-# Production Intake — Thind Transport LLC + ATS Transport LLC
+<!--
+  PRINT TO PDF
+  Open Preview (Ctrl+Shift+V) → Print → Save as PDF
+  OR: Markdown PDF extension → Export to PDF
+  Give this to the owner. They check boxes and fill blanks — no software knowledge needed.
+-->
 
-This file records only owner-provided production facts. Anything not provided is
-tagged `PENDING` and must stay blank in production until entered by the owner in
-HaulDesk. Sandbox data is separate and never becomes go-live data.
+# What We Need From You
+## Thind Transport — LoadOff Setup Guide
 
-## 1.1 Two companies
+**Read this once.** You do **not** need to look up VIN numbers, MC numbers, broker addresses,
+or type truck details by hand. **Upload the paperwork you already have.** LoadOff reads it.
 
-| Field | Thind Transport LLC | ATS Transport LLC |
-|---|---|---|
-| Legal name confirmed as on authority | `PENDING` — owner wrote “Thind Transport LLC confirm” | `PENDING` — owner wrote “ATS Transport LLC confirm” |
-| DOT # | `PROVIDED` — `2523064`; active SAFER confirmation still `PENDING` | `PENDING` |
-| MC # | `PROVIDED` — `876103`; confirmation still `PENDING` | `PENDING` |
-| EIN last 4 | `PENDING` | `PENDING` |
-| Ops phone | `PROVIDED` — `(206) 765-6300` | `PROVIDED` — `(253) 410-7259`; confirmation still `PENDING` |
-| Mailing address | `PROVIDED/PENDING CONFIRM` — `PO Box 5114, Kent, WA 98064` from existing constants | `PENDING` |
-| Physical yard | `PENDING` | `PENDING` |
-| Email domain / billing email | `PENDING` | `PENDING` |
-| Logo file | `PENDING` | `PENDING` |
-| Invoice prefix + last invoice # | `PENDING` | `PENDING` |
-| Factoring company | `PENDING` | `PENDING` |
-| Factoring remit-to | `PENDING` | `PENDING` |
-| Factoring fee % + reserve | `PENDING` | `PENDING` |
-| NOA file | `PENDING` | `PENDING` |
-| Insurance agent | `PENDING` | `PENDING` |
-| Driver payout method + bank last 4 | `PENDING` | `PENDING` |
+**Where to upload:** Log in to LoadOff → **Admin → Smart Setup**  
+(or give files to whoever is setting up the system — same list below)
 
-Operating relationship:
+**Company we have on file:** Thind Transport · Phone (206) 765-6300 · Kent, WA  
+**Your name:** _________________________ **Date:** _________________________
 
-- After-hours phones: `PENDING`
-- Can drivers/trucks run under either authority: `PENDING`
-- Customer sharing/split: `PENDING`
-- Reason for two companies: `PENDING`
+---
 
-## 1.2 People and access
+## The simple idea
 
-| Person | Status |
+| You do this | We do this |
 |---|---|
-| Sukhdev Thind | `PROVIDED` as owner for both companies; email/mobile `PENDING`; settlement approval `PROVIDED` yes; invoice send permission `PENDING` |
-| Other office users | `PENDING` |
-| Backup dispatcher | `PENDING` |
-| Settlement chain | `PENDING` |
-| First 3 drivers for phone app | `PENDING` |
-| First 3 brokers for portal invites | `PENDING` |
+| Drop files, photos, or spreadsheets | Read them and fill in trucks, drivers, brokers |
+| Answer a few short questions below | Set up pay, logins, and money the way you run today |
+| Say which fuel card you use | Import the statements — you don't map columns |
+| Scan or photo registration papers | Pull VIN, plate, unit #, expiry — **no digging** |
 
-## 1.3 Fleet
+**You never need to understand** FMCSA, APIs, CSV mapping, or integrations.  
+If you have the paper or file, upload it. If you know the answer in your head, write it below.
 
-All power units, trailers, ELD IDs, fuel-card last 4, tank gallons, ownership, and
-odometers are `PENDING`. Use **Hub → Onboarding → Trucks/Trailers** or the
-fleet import template.
+---
 
-Reefer fuel and toll transponders: `PENDING`.
+<!-- pagebreak -->
 
-## 1.4 Drivers and pay — all 1099
+# PART 1 — Drop these files (check when done)
 
-Owner mandate: every driver and owner-operator is paid as a 1099 contractor.
-Explicit confirmation line still says `<<agreed>>`, so legal/business confirmation
-is tagged `PENDING CONFIRM` while the system is configured for 1099 settlements.
+Upload everything in **Smart Setup** at once if you can.  
+Phone photos are fine. PDFs are best. Old Excel files are fine.
 
-Driver list, CDL/med card expiries, assigned trucks, advance balances, and escrow:
-`PENDING`.
+### Trucks & trailers — **just scan the registration**
 
-Pay tariffs:
+☐ One registration paper (or photo) **per truck**  
+☐ One registration paper (or photo) **per trailer** (if separate from cab)
 
-- Tariff 1: `PENDING`
-- Tariff 2: `PENDING`
-- Tariff 3: `PENDING`
+**You do NOT write:** VIN, year, make, model, plate, expiry — **we pull that from the registration.**
 
-DQ file status: `PENDING`.
+**Only write here if a truck has no registration paper:**
 
-## 1.5 Customers
+| Truck nickname (what dispatch calls it) | Any note |
+|---|---|
+| | |
+| | |
 
-Broker/shipper list, MC numbers, billing emails, terms, credit limits, factoring
-flags, contacts, tracking requirements, slow payer flags: `PENDING`.
+---
 
-`PREMIER_BROKERS` active/removal/addition list: `PENDING`.
+### Drivers — **just scan CDL + med card**
 
-## 1.6 Money state
+☐ Driver's license (CDL) — photo or PDF **per driver**  
+☐ Medical card — photo or PDF **per driver**
 
-- Broker payment methods: `PENDING`
-- Settlement/payroll cycle: `PENDING`
-- Accessorial price book: `PENDING`
-- Cost-per-mile baseline: `PENDING`
-- Revenue types: `PENDING` — defaults can be used only as editable setup labels.
-- Debit/deduction categories: `PENDING` — defaults can be used only as editable setup labels.
-- Recurring weekly transactions: `PENDING`
-- Open AR: `PENDING`
-- Driver advances: `PENDING`
-- Factoring fees YTD: `PENDING`
-- QuickBooks Desktop/Online and export format: `PENDING`
-- QB account mapping: `PENDING`
+**You do NOT write:** CDL number, expiry dates from the card — **we read the scan.**
 
-## 1.7 Files
+**Only write:** cell phone and email if they should get the driver phone app:
 
-No production-intake files were present in the repository at the time this file
-was created. Drop files into `docs/production-intake/files/`.
+| Driver name | Cell | Email for app login |
+|---|---|---|
+| | | |
+| | | |
+| | | |
 
-Required files remain `PENDING`:
+---
 
-- Live Excel loadboard
-- 12–24 month load history
-- Last full quarter fuel card CSVs
-- Last full quarter toll statements
-- Recent factoring remittance reports
-- TruckX IFTA mileage export
-- Real rate confirmations
-- Company compliance PDFs
-- Per-truck documents
-- Per-driver CDL/med/MVR documents
+### Brokers & customers — **drop rate cons or broker packets**
 
-## 1.8 Secrets & vendor accounts
+☐ Old rate confirmations (PDF or email printout)  
+☐ Any broker setup packet you got when you started hauling for them
 
-All credential statuses are `PENDING` until the owner sets them in Vercel
-Production Environment Variables. Never paste secrets into this file.
+**You do NOT look up** broker addresses, MC authority, or legal names — **we find that from the document and government records.**
 
-Required env vars include:
+**Only write if the billing email is NOT on the rate con:**
 
-- `POSTGRES_URL`
-- `NEXTAUTH_SECRET`
-- `NEXTAUTH_URL`
-- `CRON_SECRET`
-- `CREDENTIALS_KEY`
-- `BLOB_READ_WRITE_TOKEN`
-- `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`
-- `FROM_EMAIL`, `HR_EMAIL`
-- IMAP mailbox variables
-- `VAPID_PUBLIC`, `VAPID_PRIVATE`
-- `FMCSA_WEBKEY`
-- `EIA_API_KEY`
+| Broker name (your nickname) | Email where they want invoices sent |
+|---|---|
+| | |
+| | |
 
-Vendor statuses all `PENDING`: TruckX/Terminal, DAT, Uber Freight, other load
-sources, fuel feeds, toll portals, factoring portal, QuickBooks Online OAuth,
-rate-con forwarding process.
+---
 
-## 1.9 Cutover choices
+### Company paperwork — **scan once, file forever**
 
-- Target go-live date: `PENDING`
-- Parallel run with Excel: `PENDING`
-- First load per company in HaulDesk: `PENDING`
-- Explicit not-in-scope list confirmation: `PENDING`
+☐ W-9 (your company)  
+☐ Certificate of insurance (COI)  
+☐ MC authority letter (if you have a PDF)  
+☐ Any other compliance paper in your file cabinet (optional — add later if missing)
 
-## 1.10 Look & feel
+**You do NOT retype** what's on these — upload and we file them.
 
-- Retire current blue + red decoration: `PROVIDED`
-- Red reserved only for errors/overdue/destructive: `PROVIDED`
-- Base surface white/near-white: `PROVIDED`
-- Accent preset: `PENDING`
-- Office screen mode: `PENDING`
-- Table density: `PENDING`
-- Current look to keep: `PENDING`
+---
 
-## 1.11 Load sources and best-load rules
+### Old load records — **drop your Excel or spreadsheet**
 
-Source mix and dispatcher workflow: `PENDING`.
+☐ Your current load sheet (Excel, Google export, whatever you use today)
 
-Owner’s ranker rule text: `PENDING`.
+**You do NOT fix columns or clean it up** — upload as-is. We map it on our side.
 
-Automatic factors mandated by prompt and awaiting data feeds:
+---
 
-- HOS hours remaining
-- current empty location
-- home-time day per driver
-- equipment type
+### Fuel — **tell us the card name + drop the statement**
 
-## System-created known production facts
+Check which fuel cards you use (just check the box — **that's all we need from you**):
 
-These are already prefilled in production carrier settings by
-`CONFIRM_PRODUCTION_SEED=yes npm run seed:production`:
+☐ EFS  
+☐ WEX  
+☐ Comdata  
+☐ Other: _________________________
 
-- Thind Transport LLC DOT `2523064`
-- Thind Transport LLC MC `876103`
-- Thind phone `(206) 765-6300`
-- ATS phone `(253) 410-7259`
+Then drop **one monthly statement export** (CSV or PDF from the fuel card website) in Smart Setup.
 
-Everything else remains blank by policy.
+**You do NOT:** match gallons to trucks line-by-line on this form — we handle import and IFTA math.
+
+☐ Fuel statement file uploaded (last full month or quarter)
+
+---
+
+### ELD (TruckX) — optional at first
+
+☐ We use TruckX for ELD — yes / no: _______
+
+If yes, you can either share portal access with the setup person **or** export a mileage file from TruckX and upload it. **Not required day one** if you upload fuel + load history.
+
+---
+
+### Anything else in a folder
+
+☐ Toll receipts or Bestpass/PrePass statements (optional)  
+☐ Sample invoices you send to brokers (optional)  
+☐ Photos of paperwork that won't scan well — upload anyway; paste text if the app asks
+
+**Links and videos:** If something lives online only, email the link to the setup person with a note what it is. Smart Setup works best with **files and photos**.
+
+---
+
+**PART 1 done?** ☐ All boxes checked that apply · ☐ Files uploaded in Smart Setup
+
+---
+
+<!-- pagebreak -->
+
+# PART 2 — Answer these questions (only you know)
+
+These **cannot** be read from a registration scan. Short answers are fine.
+
+---
+
+## A. Who works in the office?
+
+| Name | Email for login | Job (owner / dispatch / accounting) |
+|---|---|---|
+| Sukhdev Thind | | Owner |
+| | | Dispatch |
+| | | Accounting |
+
+**Who approves driver pay before it goes out?** _________________________
+
+---
+
+## B. How each driver gets paid (IMPORTANT)
+
+Upload the CDL in Part 1. **Here, write pay in plain English** — like you'd explain it on the phone.
+
+**Driver 1 —** _________________________________________________________________
+
+_______________________________________________________________________________
+
+**Driver 2 —** _________________________________________________________________
+
+_______________________________________________________________________________
+
+**Example (copy the style):**  
+*"Company driver. 63 cents loaded mile. Empty miles not paid. Full fuel surcharge. $50/week insurance taken out. Paid every Friday."*
+
+**Owner-operators:** write the % you keep, who pays fuel, and any escrow.
+
+---
+
+## C. Money today (rough is OK)
+
+| Question | Your answer |
+|---|---|
+| What day do you pay drivers? | ☐ Every Friday ☐ Every 2 weeks ☐ Other: ______ |
+| Last invoice number you used | #________ |
+| Anyone who owes you money right now? | Names + rough $: _________________________ |
+| Do you use a factoring company? | ☐ No ☐ Yes — name: _________________________ |
+| Do you use QuickBooks? | ☐ No ☐ Yes — Desktop / Online |
+
+**Detention:** After _____ free hours, you charge $_____ per hour (or "we don't charge" ______)
+
+---
+
+## D. A few company facts (if different from above)
+
+| Item | Correct? | If wrong, write it |
+|---|---|---|
+| Yard address (where trucks park) | ☐ OK | |
+| After-hours phone | ☐ OK | |
+| Insurance agent (for cert requests) | ☐ OK | Name/email: |
+
+---
+
+## E. Email for the system to send from
+
+Invoices and alerts need a **real company email** (not a test account).
+
+**Email address:** _________________________  
+(Password / app setup — tell the setup person privately, **do not write password here**)
+
+---
+
+## F. Go-live
+
+| Question | Answer |
+|---|---|
+| Target date to stop using Excel | __ / __ / 20__ |
+| First 3 drivers to get the phone app | 1. ______ 2. ______ 3. ______ |
+| First 3 brokers to get tracking links (optional) | 1. ______ 2. ______ 3. ______ |
+
+---
+
+**PART 2 done?** ☐ Pay rules written · ☐ Office people listed · ☐ Email given to setup person
+
+---
+
+<!-- pagebreak -->
+
+# One-page cheat sheet (pin this)
+
+### Upload — we read it
+- Truck/trailer **registration** → truck/trailer in system  
+- Driver **CDL + med card** → driver in system  
+- **Rate cons** → brokers in system  
+- **W-9 + COI** → company file cabinet in system  
+- **Load Excel** → history imported  
+- **Fuel statement** + check EFS/WEX/Comdata → fuel + IFTA  
+
+### You answer — we can't guess
+- **Who** logs in (names + emails)  
+- **How drivers get paid** (one paragraph each)  
+- **When** you pay drivers  
+- **Factoring** yes/no  
+- **Email** for sending invoices  
+
+### You never do
+- Look up broker MC authority online  
+- Type VINs from registration by hand  
+- Map spreadsheet columns  
+- Understand "API," "FMCSA webkey," or "CSV" — setup team handles that  
+
+---
+
+## Sign-off
+
+☐ Part 1 files uploaded (Smart Setup)  
+☐ Part 2 questions answered  
+☐ Ready for setup team to finish configuration  
+
+**Signature:** _________________________ **Date:** _________________________
+
+---
+
+*Thind Transport · LoadOff · Upload at Admin → Smart Setup · Questions on this form only*
