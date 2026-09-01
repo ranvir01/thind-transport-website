@@ -1,6 +1,7 @@
 /**
  * Dependency-free QR encoder — byte mode, error-correction level M,
- * versions 1–10 (up to 213 bytes; plenty for any hub URL). Ported from the
+ * versions 1–20 (up to 666 bytes: hub URLs, and the signed driver-invite
+ * links that are three times longer than one). Ported from the
  * ISO/IEC 18004 procedure: bit stream → Reed-Solomon blocks → interleave →
  * module placement → best-penalty mask. The round-trip test decodes the
  * output with a real reader (jsQR), so any regression here fails loudly.
@@ -56,7 +57,12 @@ function rsRemainder(data: number[], ecCount: number): number[] {
 
 // ------------------------------------------------- version tables (ECC M)
 
-/** Per version 1–10 at level M: EC codewords per block + data length of each block. */
+/**
+ * Per version 1–20 at level M: EC codewords per block + data length of each
+ * block (shorter group first, as the spec interleaves them). Each row's
+ * data + ec × blocks sums to the version's total codeword count — the
+ * round-trip test decodes every version, so a wrong row fails loudly.
+ */
 const EC_BLOCKS_M: { ec: number; blocks: number[] }[] = [
   { ec: 10, blocks: [16] },
   { ec: 16, blocks: [28] },
@@ -68,6 +74,16 @@ const EC_BLOCKS_M: { ec: number; blocks: number[] }[] = [
   { ec: 22, blocks: [38, 38, 39, 39] },
   { ec: 22, blocks: [36, 36, 36, 37, 37] },
   { ec: 26, blocks: [43, 43, 43, 43, 44] },
+  { ec: 30, blocks: [50, 51, 51, 51, 51] },
+  { ec: 22, blocks: [36, 36, 36, 36, 36, 36, 37, 37] },
+  { ec: 22, blocks: [37, 37, 37, 37, 37, 37, 37, 37, 38] },
+  { ec: 24, blocks: [40, 40, 40, 40, 41, 41, 41, 41, 41] },
+  { ec: 24, blocks: [41, 41, 41, 41, 41, 42, 42, 42, 42, 42] },
+  { ec: 28, blocks: [45, 45, 45, 45, 45, 45, 45, 46, 46, 46] },
+  { ec: 28, blocks: [46, 46, 46, 46, 46, 46, 46, 46, 46, 46, 47] },
+  { ec: 26, blocks: [43, 43, 43, 43, 43, 43, 43, 43, 43, 44, 44, 44, 44] },
+  { ec: 26, blocks: [44, 44, 44, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45] },
+  { ec: 26, blocks: [41, 41, 41, 42, 42, 42, 42, 42, 42, 42, 42, 42, 42, 42, 42, 42] },
 ]
 
 const ALIGNMENT: number[][] = [
@@ -81,7 +97,19 @@ const ALIGNMENT: number[][] = [
   [6, 24, 42],
   [6, 26, 46],
   [6, 28, 50],
+  [6, 30, 54],
+  [6, 32, 58],
+  [6, 34, 62],
+  [6, 26, 46, 66],
+  [6, 26, 48, 70],
+  [6, 26, 50, 74],
+  [6, 30, 54, 78],
+  [6, 30, 56, 82],
+  [6, 30, 58, 86],
+  [6, 34, 62, 90],
 ]
+
+const MAX_VERSION = EC_BLOCKS_M.length
 
 function dataCapacityBytes(version: number): number {
   return EC_BLOCKS_M[version - 1].blocks.reduce((a, b) => a + b, 0)
@@ -334,18 +362,21 @@ function penalty(m: boolean[][]): number {
 
 // ------------------------------------------------------------------ public
 
-/** Encode text as a QR module matrix (true = dark). Throws if it can't fit v10-M. */
+/** Largest byte payload the encoder accepts (version 20, level M, byte mode). */
+export const QR_MAX_BYTES = Math.floor((dataCapacityBytes(MAX_VERSION) * 8 - 4 - charCountBits(MAX_VERSION)) / 8)
+
+/** Encode text as a QR module matrix (true = dark). Throws past QR_MAX_BYTES. */
 export function qrMatrix(text: string): boolean[][] {
   const bytes = new TextEncoder().encode(text)
   let version = 0
-  for (let v = 1; v <= 10; v++) {
+  for (let v = 1; v <= MAX_VERSION; v++) {
     const bitsNeeded = 4 + charCountBits(v) + bytes.length * 8
     if (bitsNeeded <= dataCapacityBytes(v) * 8) {
       version = v
       break
     }
   }
-  if (version === 0) throw new Error(`QR: input too long (${bytes.length} bytes, max 213)`)
+  if (version === 0) throw new Error(`QR: input too long (${bytes.length} bytes, max ${QR_MAX_BYTES})`)
 
   const codewords = buildCodewords(bytes, version)
   let best: boolean[][] | null = null
