@@ -2,10 +2,9 @@ import { Metadata } from "next"
 import Link from "next/link"
 import { ApplicationForm } from "@/components/application/ApplicationForm"
 import { COMPANY_INFO, PAY_RATES } from "@/lib/constants"
+import { parseAnnualRange } from "@/lib/job-posting"
 import { FAQAccordion } from "@/components/shared/FAQAccordion"
 import { PageBreadcrumb } from "@/components/shared/PageBreadcrumb"
-import { RelatedLinks } from "@/components/shared/RelatedLinks"
-import { driverLinks } from "@/components/shared/link-sets"
 import {
   BadgeCheck,
   CheckCircle2,
@@ -19,7 +18,7 @@ import {
 } from "lucide-react"
 
 export const metadata: Metadata = {
-  title: `Apply Now | ${COMPANY_INFO.name}`,
+  title: "Apply now",
   description: `Apply for CDL Class A opportunities with ${COMPANY_INFO.name}. Learn about owner-operator and company driver options, experience requirements, and next steps with our Kent, WA team.`,
   alternates: {
     canonical: "https://thindtransport.com/apply",
@@ -61,13 +60,15 @@ const jobPostingSchema = {
     "@type": "Country",
     name: "United States",
   },
+  // Company-driver pay only: owner-operator gross is revenue, not salary, and
+  // putting it here told Google the job pays up to $250K.
   baseSalary: {
     "@type": "MonetaryAmount",
     currency: "USD",
     value: {
       "@type": "QuantitativeValue",
-      minValue: 65000,
-      maxValue: 250000,
+      minValue: parseAnnualRange(PAY_RATES.companyDriver.local.annual)[0],
+      maxValue: parseAnnualRange(PAY_RATES.companyDriver.otr.annual)[1],
       unitText: "YEAR",
     },
   },
@@ -308,11 +309,6 @@ export default function ApplyPage() {
         </section>
       </div>
 
-      <RelatedLinks
-        title="While you're deciding"
-        intro="Everything a driver asks in the first phone call, answered on the site."
-        links={driverLinks(["/apply"])}
-      />
     </>
   )
 }

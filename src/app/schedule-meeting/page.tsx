@@ -9,6 +9,7 @@ import { Calendar, Clock, CheckCircle2, Phone, Video } from "lucide-react"
 import { toast } from "sonner"
 import { HONEYPOT_FIELD, readHoneypotValue } from "@/lib/honeypot"
 import { HoneypotField } from "@/components/shared/HoneypotField"
+import { COMPANY_INFO } from "@/lib/constants"
 
 export default function ScheduleMeetingPage() {
   const [formData, setFormData] = useState({
@@ -54,7 +55,7 @@ export default function ScheduleMeetingPage() {
             <h2 className="text-2xl font-bold mb-2 text-gray-900">Meeting Request Received!</h2>
             <p className="text-gray-600 mb-6">
               Thank you for your interest in joining Thind Transport. We'll review your request and
-              send you a confirmation email within 24 hours.
+              send you a confirmation email within 24 hours on business days.
             </p>
             <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg mb-6 text-left">
               <p className="text-sm text-slate-700">
@@ -209,7 +210,7 @@ export default function ScheduleMeetingPage() {
               </Button>
 
               <p className="text-sm text-center text-gray-500">
-                Need immediate assistance? Call us at <strong>(206) 765-6300</strong>
+                Need immediate assistance? Call us at <strong>{COMPANY_INFO.phone}</strong>
               </p>
             </form>
           </CardContent>

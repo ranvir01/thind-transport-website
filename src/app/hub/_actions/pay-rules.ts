@@ -201,3 +201,46 @@ export async function resetPayRulesAction(driverId: string): Promise<Result> {
     return actionError(err, "Could not reset the pay program")
   }
 }
+
+/**
+ * Show or hide per-run pay in the driver app (I15).
+ *
+ * Lives beside the pay programs because it answers the same question from the
+ * other end: the rules above decide what a driver earns, this decides whether
+ * the driver can see it before Friday. Default ON — a driver who cannot see
+ * what the work is worth until payroll is being asked to take it on trust —
+ * but some carriers genuinely keep per-load pay in the office until the
+ * settlement is cut, so it is a switch rather than an assumption.
+ *
+ * Same drivers:write gate as the rules themselves. It never affects the
+ * linehaul, which the driver app does not send to the phone either way.
+ */
+export async function setDriverRunPayAction(show: boolean): Promise<Result> {
+  try {
+    const user = await requirePermission("drivers:write")
+    const { query } = await import("@/lib/hub/db")
+    // Seed the '{driverApp}' parent first — jsonb_set returns the target
+    // unchanged when a parent key is missing. Same shape as setBrandAccentAction.
+    await query(
+      `INSERT INTO hub.carrier_settings (carrier_id, settings)
+       VALUES ($1, jsonb_build_object('driverApp', jsonb_build_object('showRunPay', $2::boolean)))
+       ON CONFLICT (carrier_id) DO UPDATE SET
+         settings = jsonb_set(
+           jsonb_set(hub.carrier_settings.settings, '{driverApp}',
+             COALESCE(hub.carrier_settings.settings->'driverApp', '{}'::jsonb), TRUE),
+           '{driverApp,showRunPay}', to_jsonb($2::boolean), TRUE),
+         updated_at = NOW()`,
+      [user.carrierId, show]
+    )
+    await logAudit({
+      carrierId: user.carrierId, actorId: user.id, actorName: user.name,
+      entityType: "carrier_settings", entityId: user.carrierId, action: "set_driver_run_pay",
+      newValue: { showRunPay: show },
+    })
+    revalidatePath("/hub/settings/pay-rules")
+    revalidatePath("/hub/driver")
+    return { ok: true }
+  } catch (err) {
+    return actionError(err, "Could not save")
+  }
+}

@@ -3,10 +3,10 @@
 import { useEffect, useState, useTransition } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { ArrowRight, FlaskConical, Loader2, RotateCcw, X } from "lucide-react"
+import { ArrowRight, Clock3, FlaskConical, Loader2, RotateCcw, X } from "lucide-react"
 import { toast } from "sonner"
 import { resetSandboxAction } from "@/app/hub/_actions/sandbox"
-import { SANDBOX_TOURS, sandboxSeat } from "@/lib/hub/sandbox"
+import { SANDBOX_SCENARIOS, SANDBOX_TOURS, sandboxSeat, type SandboxScenario } from "@/lib/hub/sandbox"
 import { isShiftSeat } from "@/lib/hub/sandbox-objectives"
 import { ShiftCard } from "@/components/hub/ShiftCard"
 import { SimTicker } from "@/components/hub/SimTicker"
@@ -21,16 +21,23 @@ import { cn } from "@/lib/utils"
  * sim.shift_mode flag resolved by the layout — off ⇒ no ticker, no shift
  * card, and the core seats fall back to their guided tour.
  */
+/** Human name for the loaded world, from the same list the picker renders. */
+function scenarioLabel(key: SandboxScenario): string {
+  return SANDBOX_SCENARIOS.find((s) => s.key === key)?.label ?? "Steady week"
+}
+
 export function SandboxBanner({
   dark = false,
   seat,
   // Fail CLOSED: a caller that forgets to resolve the flag gets no ticker and
   // no shift card, rather than silently bypassing the kill switch.
   sim = false,
+  scenario = "steady",
 }: {
   dark?: boolean
   seat?: string
   sim?: boolean
+  scenario?: SandboxScenario
 }) {
   const router = useRouter()
   const [pending, startTransition] = useTransition()
@@ -90,6 +97,17 @@ export function SandboxBanner({
         <span className="inline-flex items-center gap-1.5">
           <FlaskConical className="h-3.5 w-3.5" aria-hidden />
           Sandbox — nothing here is real
+        </span>
+        {/* Which of the two worlds got loaded. "Crunch day" is a deliberately
+            hostile morning, and a player who does not know they picked it
+            reads the wreckage as the software being broken. */}
+        <span
+          className={cn(
+            "inline-flex items-center whitespace-nowrap rounded-pill px-2 py-[2px] text-[11.5px] font-semibold",
+            dark ? "bg-white/10 text-white" : "bg-surface text-accent-text"
+          )}
+        >
+          {scenarioLabel(scenario)}
         </span>
         <span className="ml-auto inline-flex items-center gap-1">
           <Link
@@ -170,6 +188,21 @@ export function SandboxBanner({
               </li>
             ))}
           </ol>
+          {/* The same clock rule the shift seats get. A broker watching
+              tracking sees the identical "I came back and nothing moved"
+              and has no shift card to explain it. */}
+          <p
+            className={cn(
+              "mt-2 flex items-start gap-1.5 border-t pt-2 text-[12px]",
+              dark ? "border-white/10 text-steel-400" : "border-border text-fg-3"
+            )}
+          >
+            <Clock3 className="mt-[2px] h-3.5 w-3.5 shrink-0" aria-hidden />
+            <span>
+              The company only moves while this tab is open. Close it and time stops; come back
+              and it catches up.
+            </span>
+          </p>
         </div>
       ) : null}
     </div>

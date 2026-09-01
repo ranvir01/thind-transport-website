@@ -106,7 +106,7 @@ async function main() {
            hub.facility_notes, hub.facilities, hub.pay_rules, hub.notifications,
            hub.push_subscriptions, hub.tasks, hub.message_reads, hub.messages,
            hub.message_threads, hub.message_templates, hub.announcement_acks, hub.announcements,
-           hub.document_requests, hub.lanes, hub.time_off_requests
+           hub.document_requests, hub.lanes, hub.time_off_requests, hub.intake_drafts
            RESTART IDENTITY CASCADE`)
   await q(`DELETE FROM hub.ifta_tax_rates`)
   // Price book back to the 003_money.sql defaults — accessorial_types isn't in
@@ -979,6 +979,57 @@ async function main() {
        ($1,$2,'time_off','Gurjit Sandhu asked for time off','${"" /* body below */}Vacation, 3 days','/hub'),
        ($1,$3,'message','Message from Harpreet Singh','Making good time through Oregon.','/hub/messages')`,
     [CARRIER, users.dispatcher, users.owner]
+  )
+
+  // Inbox: two emailed rate cons waiting for review. The queue is the only
+  // office screen that is meaningless when empty — you cannot tell a working
+  // Inbox from a broken one — so the demo tenant starts with something to book
+  // and something to reject.
+  await q(
+    `INSERT INTO hub.intake_drafts (carrier_id, source, subject, from_address, raw_text, parsed, confidence)
+     VALUES
+       ($1,'mailbox','Rate con — Kent WA to Fresno CA 6/12','dispatch@pacificcrestlogistics.example',$2,$3,'high'),
+       ($1,'mailbox','FW: load offer 53ft dry van','ops@midvalleybrokerage.example',$4,$5,'medium')`,
+    [
+      CARRIER,
+      [
+        "RATE CONFIRMATION",
+        "PACIFIC CREST LOGISTICS  MC# 784512",
+        "Load # PCL-99120",
+        "PICKUP: Kent, WA 06/12/2026",
+        "DELIVERY: Fresno, CA 06/14/2026",
+        "Commodity: paper  Weight: 42,000 lbs",
+        "Linehaul: $3,200.00   FSC: $350.00",
+      ].join("\n"),
+      JSON.stringify({
+        brokerName: { value: "Pacific Crest Logistics", confidence: "high" },
+        mcNumber: { value: "784512", confidence: "high" },
+        reference: { value: "PCL-99120", confidence: "high" },
+        equipment: { value: "dry_van", confidence: "medium" },
+        commodity: { value: "paper", confidence: "medium" },
+        weightLbs: { value: 42000, confidence: "high" },
+        linehaulCents: { value: 320000, confidence: "high" },
+        fuelSurchargeCents: { value: 35000, confidence: "high" },
+        stops: [
+          { type: "pickup", city: "Kent", state: "WA", date: "2026-06-12", confidence: "high" },
+          { type: "delivery", city: "Fresno", state: "CA", date: "2026-06-14", confidence: "high" },
+        ],
+      }),
+      [
+        "Load confirmation",
+        "MID VALLEY BROKERAGE",
+        "Pick: Yakima WA   Drop: Portland OR",
+        "Rate: $950",
+      ].join("\n"),
+      JSON.stringify({
+        brokerName: { value: "Mid Valley Brokerage", confidence: "medium" },
+        linehaulCents: { value: 95000, confidence: "medium" },
+        stops: [
+          { type: "pickup", city: "Yakima", state: "WA", confidence: "medium" },
+          { type: "delivery", city: "Portland", state: "OR", confidence: "medium" },
+        ],
+      }),
+    ]
   )
 
   // ---- Second tenant (Phase 7): Cascade Demo Lines — proves zero bleed ----

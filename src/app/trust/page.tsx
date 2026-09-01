@@ -259,7 +259,7 @@ export default async function TrustPage() {
         <nav aria-label="Next steps" className="mt-8 flex flex-wrap items-center gap-x-2 gap-y-1 max-w-3xl">
           <span className="text-sm text-gray-600 py-3">Shipping with us?</span>
           <Link
-            href="/shippers#quote"
+            href="/quote"
             className="inline-flex items-center min-h-11 px-2 py-3 text-sm font-medium text-orange-600 hover:underline"
           >
             Get a quote

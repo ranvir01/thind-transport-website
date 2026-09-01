@@ -2,13 +2,15 @@ import { requireOfficeUser } from "@/lib/hub/session"
 import { getCarrier, getCarrierSettings } from "@/lib/hub/settings"
 import { getFlag } from "@/lib/hub/flags"
 import { isSandboxCarrier, seatForEmail } from "@/lib/hub/sandbox"
+import { pendingIntakeCount } from "@/lib/hub/intake-drafts"
+import { readSimScenario } from "@/lib/hub/sandbox-shift"
 import { HubShell } from "@/components/hub/HubNav"
 import { SandboxBanner } from "@/components/hub/SandboxBanner"
 
 export default async function OfficeLayout({ children }: { children: React.ReactNode }) {
   const user = await requireOfficeUser()
   const sandbox = isSandboxCarrier(user.carrierId)
-  const [carrier, settings, smallCarrier, sim] = await Promise.all([
+  const [carrier, settings, smallCarrier, sim, inboxCount, scenario] = await Promise.all([
     getCarrier(user.carrierId),
     getCarrierSettings(user.carrierId),
     // Per-tenant nav mode: the env var is only the default; a carrier/user
@@ -20,6 +22,12 @@ export default async function OfficeLayout({ children }: { children: React.React
     }),
     // Shift Mode soft kill — only worth resolving inside the sandbox tenant.
     sandbox ? getFlag("sim.shift_mode", { carrierId: user.carrierId }) : Promise.resolve(false),
+    // Nav badge. A COUNT on a carrier-scoped partial index — cheap enough to
+    // run on every office page, and the whole point of the queue is that you
+    // see it without going looking for it.
+    pendingIntakeCount(user.carrierId).catch(() => 0),
+    // Which world is loaded. Only meaningful — and only read — inside the sandbox.
+    sandbox ? readSimScenario() : Promise.resolve("steady" as const),
   ])
 
   return (
@@ -27,8 +35,9 @@ export default async function OfficeLayout({ children }: { children: React.React
       user={{ name: user.name, role: user.role, carrierName: carrier?.name }}
       smallCarrier={smallCarrier}
       accent={settings.branding.accent}
+      inboxCount={inboxCount}
     >
-      {sandbox ? <SandboxBanner seat={seatForEmail(user.email)?.key} sim={sim} /> : null}
+      {sandbox ? <SandboxBanner seat={seatForEmail(user.email)?.key} sim={sim} scenario={scenario} /> : null}
       {children}
     </HubShell>
   )

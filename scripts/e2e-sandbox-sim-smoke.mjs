@@ -323,6 +323,35 @@ async function main() {
   check(await textAppears(driver, "Work a live shift", 20_000), "driver banner carries the shift card")
   await shot(driver, "driver-live-390")
 
+  /* --- trouble, and the way out of it -------------------------------- *
+   * The sim can now cause problems, and an adversity generator that never
+   * generates adversity is the most flattering bug available: the world looks
+   * calm and everyone concludes the software is easy to run. So force the
+   * paced gate open, tick, and prove the whole loop — the hold lands, it costs
+   * real money, and the load is still something a human can act on. That last
+   * one is "recoverable" stated as a test rather than as a promise. */
+  console.log("— trouble is real, and recoverable —")
+  await rows(
+    `UPDATE hub.carrier_settings
+        SET settings = jsonb_set(settings, '{sim,nextTroubleAt}', 'null'::jsonb, true)
+      WHERE carrier_id = $1`
+  )
+  await pageTick(page)
+  const dwelling = await rows(
+    `SELECT l.reference, l.driver_id, l.truck_id,
+            EXTRACT(EPOCH FROM (NOW() - s.arrived_at)) / 3600.0 AS hours_sitting
+       FROM hub.stops s
+       JOIN hub.loads l ON l.id = s.load_id AND l.carrier_id = s.carrier_id
+      WHERE s.carrier_id = $1 AND s.arrived_at IS NOT NULL AND s.departed_at IS NULL
+        AND l.deleted_at IS NULL`
+  )
+  const billable = dwelling.filter((d) => Number(d.hours_sitting) > 2)
+  check(billable.length > 0, `a receiver is holding a truck past the free time (${billable.length} dwelling)`)
+  check(
+    billable.every((d) => d.driver_id && d.truck_id),
+    "every held load still has the crew needed to mark it departed — recoverable, not stranded"
+  )
+
   // Whatever else this run proved, the world it played in has to have stayed
   // physically possible the whole way through.
   check(

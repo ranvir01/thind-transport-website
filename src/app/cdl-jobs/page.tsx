@@ -8,7 +8,7 @@ import { RelatedLinks } from "@/components/shared/RelatedLinks"
 import { driverLinks } from "@/components/shared/link-sets"
 
 export const metadata: Metadata = {
-  title: "CDL Truck Driving Jobs in All 48 States | Thind Transport",
+  title: "CDL truck driving jobs in all 48 states",
   description:
     "Thind Transport hires CDL-A drivers and owner operators nationwide — 90% owner-operator split, weekly pay, no forced dispatch. Find driving jobs in your state.",
   alternates: { canonical: "/cdl-jobs" },

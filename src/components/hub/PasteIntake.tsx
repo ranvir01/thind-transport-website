@@ -6,7 +6,7 @@ import { ClipboardPaste, Sparkles } from "lucide-react"
 import { parseRateCon, type ParsedRateCon, type Confidence } from "@/lib/hub/parser"
 import { fieldCls, Panel } from "@/components/hub/ui"
 import { LoadForm, type LoadFormInitial, type Option, type PriceBookOption } from "@/components/hub/LoadForm"
-import { emptyLoadForm } from "@/lib/hub/form-defaults"
+import { rateConToLoadForm } from "@/lib/hub/rate-con-to-form"
 
 const CONFIDENCE_CLS: Record<Confidence, string> = {
   high: "border-ok-soft bg-ok-soft text-ok",
@@ -20,14 +20,6 @@ function Chip({ label, confidence }: { label: string; confidence: Confidence }) 
       {label}
     </span>
   )
-}
-
-function toDatetimeLocal(date: string | undefined): string {
-  if (!date) return ""
-  const parsed = new Date(date)
-  if (Number.isNaN(parsed.getTime())) return ""
-  const pad = (n: number) => String(n).padStart(2, "0")
-  return `${parsed.getFullYear()}-${pad(parsed.getMonth() + 1)}-${pad(parsed.getDate())}T08:00`
 }
 
 export function PasteIntake({
@@ -51,41 +43,12 @@ export function PasteIntake({
   const setText = (next: string) => setPasteState((s) => ({ ...s, text: next }))
   const setParsed = (next: ParsedRateCon | null) => setPasteState((s) => ({ ...s, parsed: next }))
 
-  const initial: LoadFormInitial | null = useMemo(() => {
-    if (!parsed) return null
-    const base = emptyLoadForm()
-
-    // Match broker: by MC first, then case-insensitive name containment
-    let customerId = ""
-    if (parsed.mcNumber) {
-      customerId = customers.find((c) => c.mc && c.mc.replace(/\D/g, "") === parsed.mcNumber!.value)?.id ?? ""
-    }
-    if (!customerId && parsed.brokerName) {
-      const target = parsed.brokerName.value.toLowerCase()
-      customerId = customers.find(
-        (c) => target.includes(c.label.toLowerCase()) || c.label.toLowerCase().includes(target.split(/\s+/)[0])
-      )?.id ?? ""
-    }
-
-    const stops = parsed.stops.length >= 2
-      ? parsed.stops.map((s) => ({
-          type: s.type, facility: "", address: "", city: s.city, state: s.state, zip: "",
-          pickup_number: "", po_number: "", fcfs: !s.date, appt_start: toDatetimeLocal(s.date), notes: "",
-        }))
-      : base.stops
-
-    return {
-      ...base,
-      customer_id: customerId,
-      customer_reference: parsed.reference?.value ?? "",
-      equipment: parsed.equipment?.value ?? "dry_van",
-      commodity: parsed.commodity?.value ?? "",
-      weight_lbs: parsed.weightLbs ? String(parsed.weightLbs.value) : "",
-      linehaul: parsed.linehaulCents ? (parsed.linehaulCents.value / 100).toFixed(2) : "",
-      fuel_surcharge: parsed.fuelSurchargeCents ? (parsed.fuelSurchargeCents.value / 100).toFixed(2) : "",
-      stops,
-    }
-  }, [parsed, customers])
+  // The ParsedRateCon → form mapping lives in lib/hub/rate-con-to-form so the
+  // Inbox (emailed rate cons) prefills through exactly the same translation.
+  const initial: LoadFormInitial | null = useMemo(
+    () => (parsed ? rateConToLoadForm(parsed, customers) : null),
+    [parsed, customers]
+  )
 
   return (
     <div className="space-y-4">

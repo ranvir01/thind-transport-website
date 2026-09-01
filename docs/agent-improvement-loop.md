@@ -149,7 +149,7 @@ still an ancestor of it, AND either drift exceeds `AGENT_CATCHUP_THRESHOLD` (3) 
 oldest pending commit is older than `MAX_PENDING_AGE_HOURS` (12) — the age gate was added 2026-08-07
 after a money-correctness fix sat two days under-threshold with the fleet quiet — the job
 builds and tests that exact SHA on a GitHub runner (`npm ci --ignore-scripts`, `npm rebuild bcrypt
-sharp`, `npm run build`, `npx vitest run`, `typecheck-gate`, `license-audit`) and, only if green,
+sharp`, `npm run db:migrate`, `npm run seed:demo`, `npm run build`, `npx vitest run`, `typecheck-gate`, `license-audit`) against a `postgres:16` service — the isolation proofs fail-closed when `CI=true` and `POSTGRES_URL` is missing — and, only if green,
 publishes it as a stamped `--no-ff` merge (see the drain method above — never a fast-forward ref
 push). A race with a live agent is rejected by GitHub, never clobbered. Diverged history is always
 left to the agents; drift ≤3 stands down only while nothing pending is older than the age limit. It can also be triggered

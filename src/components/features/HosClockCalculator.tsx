@@ -226,7 +226,7 @@ export function HosClockCalculator() {
               but has no rule for `text-amber-*`, so amber text would go
               dark-on-dark on /resources. The gray scale is force-flipped. */}
           {result.cycleBinding ? (
-            <p className="flex gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-gray-900">
+            <p className="flex gap-2 rounded-xl border border-orange-200 bg-amber-50 px-4 py-3 text-sm text-gray-900">
               <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" aria-hidden />
               Your 70-hour cycle runs out before your daily clock does — that&apos;s the limit that
               stops you today, not the 11.

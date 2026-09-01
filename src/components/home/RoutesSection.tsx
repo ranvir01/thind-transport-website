@@ -228,7 +228,7 @@ export function RoutesSection() {
                     <Globe className="h-7 w-7 sm:h-8 sm:w-8 md:h-10 md:w-10 text-gold" />
                   </div>
                   <span className="fleet-badge fleet-badge-gold mb-2 sm:mb-3">
-                    Highest earnings
+                    Most miles
                   </span>
                   <h3 className="text-xl sm:text-2xl font-black mb-2 sm:mb-3 text-white">
                     OTR Routes
@@ -242,7 +242,7 @@ export function RoutesSection() {
                     </span>
                   </div>
                   <div className="inline-block px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-lg bg-steel-800/60 border border-steel-700/60 text-xs font-bold text-steel-200">
-                    {OTR.perMile} CPM
+                    {OTR.perMile} CPM · {OO.commission} owner-operator
                   </div>
                 </div>
 
@@ -298,7 +298,7 @@ export function RoutesSection() {
                     <li>• {OO.commission} of gross revenue</li>
                     <li>• {OO.perMile}/mile</li>
                     <li>• Pick your own loads</li>
-                    <li>• {OO.annualGross} potential</li>
+                    <li>• {OO.annualGross} gross potential</li>
                   </ul>
                 </div>
               </CardContent>

@@ -1,20 +1,20 @@
 import { Metadata } from "next"
 import Link from "next/link"
-import { 
-  Shield, Award, Users, Truck, DollarSign,
-  Heart, CheckCircle2, Phone, Calendar, MapPin,
-  Medal, Flag, Target, Briefcase, GraduationCap
+import {
+  Shield, Truck, DollarSign, CheckCircle2, Phone,
+  Calendar, Medal, Flag, Target, Briefcase,
+  GraduationCap,
 } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { COMPANY_INFO, PAY_RATES } from "@/lib/constants"
+import { COMPANY_INFO, PAY_RATES, SUPPORT } from "@/lib/constants"
 import { PageBreadcrumb } from "@/components/shared/PageBreadcrumb"
 import { RelatedLinks } from "@/components/shared/RelatedLinks"
 import { driverLinks } from "@/components/shared/link-sets"
 
 export const metadata: Metadata = {
-  title: `Military Veterans CDL Jobs | ${COMPANY_INFO.name}`,
-  description: "Thind Transport proudly hires military veterans. We value your service, discipline, and skills. CDL Class A jobs with 90% commission for O/O, $0.63/mile for company drivers. Special veteran benefits and support.",
+  title: "CDL jobs for military veterans",
+  description: "Thind Transport hires military veterans for CDL Class A work out of Kent, WA — 90% commission for owner-operators, $0.63/mile for company drivers, same terms as every other driver. Guard and reserve schedules accommodated.",
   keywords: [
     "veteran truck driver jobs",
     "military CDL jobs",
@@ -46,19 +46,9 @@ const veteranBenefits = [
     description: "We work with reserve/guard commitments and understand military family needs. Your service doesn't end when you leave active duty.",
   },
   {
-    icon: Users,
-    title: "Veteran Support Network",
-    description: "Connect with other veteran drivers in our fleet. We understand the transition and are here to help you succeed.",
-  },
-  {
     icon: GraduationCap,
     title: "CDL Training Assistance",
     description: "Need your CDL? We can guide you to training programs that accept GI Bill benefits. Start your trucking career the right way.",
-  },
-  {
-    icon: Heart,
-    title: "Family-First Culture",
-    description: "Military families sacrifice too. We honor home time commitments and understand the importance of family.",
   },
 ]
 
@@ -123,14 +113,7 @@ export default function VeteransPage() {
       <PageBreadcrumb pageName="Veterans" category="Company" />
       
       {/* Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-navy via-blue-900 to-navy text-white py-24">
-        <div className="absolute inset-0">
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-red-500/20 via-transparent to-transparent" />
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,_var(--tw-gradient-stops))] from-blue-500/20 via-transparent to-transparent" />
-        </div>
-        <div className="absolute -top-24 -right-24 w-96 h-96 bg-red-500/10 rounded-full blur-3xl" />
-        <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-blue-400/10 rounded-full blur-3xl" />
-        
+      <section className="relative overflow-hidden bg-navy text-white py-24">
         <div className="container relative">
           <div className="max-w-4xl mx-auto text-center">
             <Badge className="mb-6 bg-white/20 backdrop-blur-md text-white border-white/30 px-5 py-2.5 text-sm font-bold">
@@ -149,7 +132,7 @@ export default function VeteransPage() {
                 href="/apply"
                 className="px-8 py-4 bg-orange-600 hover:bg-orange-500 text-white font-bold rounded-xl transition-colors"
               >
-                Apply Now — Veteran Priority
+                Apply Now
               </Link>
               <a
                 href={`tel:${COMPANY_INFO.phoneFormatted}`}
@@ -173,7 +156,7 @@ export default function VeteransPage() {
             {[
               { value: "90%", label: "Commission", sublabel: "Owner Operators" },
               { value: "$0.63", label: "Per Mile", sublabel: "Company Drivers" },
-              { value: "24/7", label: "Support", sublabel: "Real People" },
+              { value: SUPPORT.hours, label: "Support", sublabel: "Real People" },
               { value: "48", label: "States", sublabel: "Nationwide Coverage" },
             ].map((stat) => (
               <div key={stat.label} className="bg-white rounded-xl p-4 shadow-lg border border-gray-100 text-center">
@@ -197,10 +180,6 @@ export default function VeteransPage() {
             <h2 className="text-3xl md:text-4xl font-black text-gray-900 mb-4">
               Military Skills = Trucking Success
             </h2>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              Your military training prepared you for exactly this kind of career.
-              Here's why veterans make exceptional truck drivers.
-            </p>
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
@@ -330,7 +309,6 @@ export default function VeteransPage() {
                   <Shield className="h-6 w-6 text-blue-600" />
                   Company Driver
                 </CardTitle>
-                <CardDescription className="!text-gray-600">Stability with great benefits</CardDescription>
               </CardHeader>
               <CardContent className="pt-6">
                 <ul className="space-y-3 mb-6">
@@ -340,11 +318,11 @@ export default function VeteransPage() {
                   </li>
                   <li className="flex items-center gap-2">
                     <CheckCircle2 className="h-4 w-4 text-green-500" />
-                    <span>$1,500 sign-on bonus</span>
+                    <span>{PAY_RATES.companyDriver.signOnBonus.replace(" (First Year)", "")} sign-on bonus</span>
                   </li>
                   <li className="flex items-center gap-2">
                     <CheckCircle2 className="h-4 w-4 text-green-500" />
-                    <span>Full benefits package</span>
+                    <span>Weekly direct deposit</span>
                   </li>
                   <li className="flex items-center gap-2">
                     <CheckCircle2 className="h-4 w-4 text-green-500" />
@@ -366,7 +344,6 @@ export default function VeteransPage() {
                   <Truck className="h-6 w-6 text-green-600" />
                   Owner Operator
                 </CardTitle>
-                <CardDescription className="!text-gray-600">Maximum earnings, maximum freedom</CardDescription>
               </CardHeader>
               <CardContent className="pt-6">
                 <ul className="space-y-3 mb-6">
@@ -401,23 +378,19 @@ export default function VeteransPage() {
 
       {/* CTA Section */}
       <section className="py-16 bg-navy relative overflow-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-red-500/10 via-transparent to-blue-500/10" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-red-500/10 via-transparent to-transparent" />
         <div className="container relative">
           <div className="max-w-3xl mx-auto text-center">
             <Medal className="h-16 w-16 text-orange mx-auto mb-6" />
             <h2 className="text-3xl md:text-4xl font-black text-white mb-4">
               Your Service Matters to Us
             </h2>
-            <p className="text-lg text-white/70 mb-8">
-              Thank you for your sacrifice and service to our country.
-              Let us show you the same respect and commitment in your trucking career.
-            </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link
                 href="/apply"
                 className="px-8 py-4 bg-orange-600 hover:bg-orange-500 text-white font-bold rounded-xl transition-colors"
               >
-                Apply Now — Veteran Priority Processing
+                Apply Now
               </Link>
               <a
                 href={`tel:${COMPANY_INFO.phoneFormatted}`}
@@ -434,7 +407,7 @@ export default function VeteransPage() {
       <RelatedLinks
         title="Useful next"
         intro="Tools and pages a driver comparing carriers actually needs."
-        links={driverLinks(["/apply"])}
+        links={driverLinks(["/veterans"])}
       />
     </div>
   )

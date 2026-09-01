@@ -48,6 +48,27 @@ describe("getCarrierSettings reads either shape", () => {
     expect(s.pay.companyDriverPerMileCents).toBe(68)
   })
 
+  it("converts a legacy half-cent tie the way migration 024 does (2026-08 audit 1e)", async () => {
+    // The read-compat path exists so "a row written by an older deploy keeps
+    // working" — which means it must agree with what migration 024 rewrites
+    // the row to. The migration rounds in exact Postgres numeric
+    // (ROUND(0.565 * 100) = ROUND(56.5) = 57); a bare Math.round(0.565 * 100)
+    // lands on the drifted-low double 56.49999999999999 and reads 56 —
+    // the tenant's default rate silently changes by a cent when the
+    // migration runs.
+    queryOneMock.mockResolvedValue({ settings: { pay: { companyDriverPerMile: 0.565 } } })
+    const s = await getCarrierSettings("carrier-1")
+    expect(s.pay.companyDriverPerMileCents).toBe(57)
+  })
+
+  it("keeps every half-cent legacy tie in agreement with dollarsToCents", async () => {
+    for (const [dollars, cents] of [[0.575, 58], [0.145, 15], [0.615, 62], [0.625, 63]] as const) {
+      queryOneMock.mockResolvedValue({ settings: { pay: { companyDriverPerMile: dollars } } })
+      const s = await getCarrierSettings("carrier-1")
+      expect(s.pay.companyDriverPerMileCents).toBe(cents)
+    }
+  })
+
   it("falls back to the default only when neither key is present", async () => {
     queryOneMock.mockResolvedValue({ settings: { pay: { payLoadedMilesOnly: false } } })
     const s = await getCarrierSettings("carrier-1")

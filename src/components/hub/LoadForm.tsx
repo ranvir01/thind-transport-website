@@ -73,6 +73,7 @@ export function LoadForm({
   trucks,
   trailers,
   priceBook = [],
+  onCreated,
 }: {
   loadId?: string
   initial: LoadFormInitial
@@ -81,6 +82,12 @@ export function LoadForm({
   trucks: Option[]
   trailers: Option[]
   priceBook?: PriceBookOption[]
+  /**
+   * Runs after a successful create, before navigating to the new load. The
+   * Inbox uses it to mark the draft accepted and hang its document off the load
+   * it became — work that must not happen if the booking itself failed.
+   */
+  onCreated?: (loadId: string) => void | Promise<void>
 }) {
   const router = useRouter()
   const [form, setForm] = useState<LoadFormInitial>(initial)
@@ -166,6 +173,7 @@ export function LoadForm({
         ? await updateLoadAction(loadId, payload)
         : await createLoadAction(payload)
       if (result.ok) {
+        if (!loadId && result.id && onCreated) await onCreated(result.id)
         toast.success(loadId ? "Load updated" : "Load booked")
         router.push(`/hub/loads/${result.id}`)
         router.refresh()

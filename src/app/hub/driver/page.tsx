@@ -3,6 +3,7 @@ import { CalendarOff, ClipboardCheck, Clock3, CloudLightning, ShieldAlert, Walle
 import { requireDriverUser } from "@/lib/hub/session"
 import {
   driverActiveLoads, lastPay, openDocumentRequests, driverExpiries, latestHosSnapshot,
+  driverRunPay, driverUnsettledPay,
 } from "@/lib/hub/driver-app"
 import { getActiveAlerts } from "@/lib/hub/weather"
 import { pendingAnnouncementsForUser } from "@/lib/hub/announcements"
@@ -34,6 +35,17 @@ export default async function DriverHomePage() {
     latestHosSnapshot(user.carrierId, user.driverId),
   ])
   const detentionFreeMinutes = Math.round((settings.detention.freeHours ?? 2) * 60)
+
+  // What the work is worth, if this carrier shows it. Both figures come from
+  // the same engine that drafts settlements, so the phone can never quote a
+  // wage the office would not pay. Needs `loads` first, hence a second await.
+  const showRunPay = settings.driverApp?.showRunPay !== false
+  const [runPay, unsettledCents] = showRunPay
+    ? await Promise.all([
+        driverRunPay(user.carrierId, user.driverId, loads.map((l) => l.id)),
+        driverUnsettledPay(user.carrierId, user.driverId),
+      ])
+    : [new Map(), 0]
 
   // Weather along the current run (free NWS API, best-effort).
   const nextStop = loads[0]?.stops?.find((s) => !s.departed_at && s.lat != null && s.lng != null)
@@ -75,7 +87,12 @@ export default async function DriverHomePage() {
         </section>
       ) : (
         loads.map((load) => (
-          <DriverLoadCard key={load.id} load={load} detentionFreeMinutes={detentionFreeMinutes} />
+          <DriverLoadCard
+            key={load.id}
+            load={load}
+            detentionFreeMinutes={detentionFreeMinutes}
+            pay={runPay.get(load.id) ?? null}
+          />
         ))
       )}
 
@@ -98,6 +115,15 @@ export default async function DriverHomePage() {
           ) : (
             <p className="text-body-xs text-steel-400">No settlements yet</p>
           )}
+          {/* Everything earned since that settlement closed. Without this a
+              driver sees nothing at all between delivering on Tuesday and the
+              office approving on Friday. */}
+          {showRunPay && unsettledCents > 0 ? (
+            <p className="mt-2 border-t border-white/10 pt-2 text-body-xs text-steel-300">
+              <span className="font-bold text-white">{fmtCentsExact(unsettledCents)}</span> since
+              then, not settled yet
+            </p>
+          ) : null}
         </Link>
         <div className="rounded-2xl border border-white/10 bg-navy-800/80 p-4">
           <p className="text-[11px] font-bold uppercase tracking-wider text-steel-400">My cards</p>

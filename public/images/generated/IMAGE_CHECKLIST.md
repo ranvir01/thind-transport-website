@@ -32,7 +32,12 @@ photorealistic, no text baked in, no identifiable faces. New raster assets must 
 | `truck-cascadia.png` | `home/EquipmentSection.tsx`, `fleet/page.tsx` truck card |
 | `truck-cascadia-2.png`, `truck-volvo.png`, `truck-volvo-2.png` | `fleet/page.tsx` truck cards |
 | `trailer-dry-van.png`, `trailer-reefer.png`, `trailer-flatbed.png` | `home/EquipmentSection.tsx`, `fleet/page.tsx` trailer cards |
-| `driver-portrait-1/2/3.png` | `home/SuccessStoriesSection.tsx` |
 | `fmcsa-compliance-badge.png` | `home/TrustStrip.tsx` |
-| `fleet-kent-wa.png` | `testimonials/page.tsx` hero |
-| `hero-fleet-sunset.png`, `fleet-aerial-view.png`, `fleet-manager.png` | Unused — candidates for removal or reuse |
+
+Deleted 2026-08-30 as unreferenced: `driver-portrait-1/2/3.png` (their component,
+`SuccessStoriesSection`, was removed with the fabricated testimonials),
+`fleet-kent-wa.png` (no `/testimonials` route exists), `hero-fleet-sunset.png`,
+`fleet-aerial-view.png`, `fleet-manager.png`, `images/loadoff/driver.png`, the two
+`branding/image_*.png` exports (2.8 MB between them) and the eleven third-party
+carrier/shipper logos. Re-shoot from `docs/real-photos-shotlist.md` if a section
+needs them again.

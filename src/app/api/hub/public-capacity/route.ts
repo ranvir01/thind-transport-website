@@ -1,5 +1,5 @@
 /**
- * Public capacity feed for the marketing load-board page (Phase 5 §8.6).
+ * Public capacity feed for the marketing /routes page (Phase 5 §8.6).
  * Deliberately public: equipment, market, and date only — no truck numbers,
  * no customer data. Returns [] when the hub database isn't configured.
  */

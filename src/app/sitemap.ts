@@ -34,7 +34,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { path: "/loadoff", changeFrequency: "monthly" as const, priority: 0.7 },
     { path: "/fuel-program", changeFrequency: "monthly" as const, priority: 0.65 },
     { path: "/veterans", changeFrequency: "monthly" as const, priority: 0.65 },
-    { path: "/load-board", changeFrequency: "weekly" as const, priority: 0.6 },
     { path: "/pre-qualify", changeFrequency: "monthly" as const, priority: 0.6 },
     { path: "/schedule-meeting", changeFrequency: "monthly" as const, priority: 0.5 },
     { path: "/privacy", changeFrequency: "yearly" as const, priority: 0.3 },

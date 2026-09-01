@@ -1,6 +1,7 @@
 import { FAQAccordion } from "@/components/shared/FAQAccordion"
 import { HelpCircle, MessageCircle } from "lucide-react"
 import { Reveal } from "@/components/ui/Reveal"
+import { COMPANY_INFO } from "@/lib/constants"
 
 export function FAQSection() {
   return (
@@ -39,10 +40,10 @@ export function FAQSection() {
               <p className="text-gray-700 text-sm md:text-base">
                 Still have questions?{" "}
                 <a
-                  href="tel:+12067656300"
+                  href={`tel:${COMPANY_INFO.phoneFormatted}`}
                   className="text-orange-600 font-semibold hover:text-orange-700"
                 >
-                  Call (206) 765-6300
+                  Call {COMPANY_INFO.phone}
                 </a>
               </p>
             </div>

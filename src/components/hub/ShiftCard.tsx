@@ -13,13 +13,21 @@
  * check via the global reduce block; everything else is plain layout.
  */
 import { useCallback, useEffect, useRef, useState } from "react"
-import { Banknote, CheckCircle2, Circle, Clock3, Copy, Loader2, Play, Square, X } from "lucide-react"
+import { AlertTriangle, Banknote, CheckCircle2, Circle, Clock3, Copy, Loader2, Play, Square, X } from "lucide-react"
 import { toast } from "sonner"
 import { endShiftAction, shiftStatusAction, startShiftAction } from "@/app/hub/_actions/sandbox-shift"
 import type { FeedItem } from "@/lib/hub/sandbox-feed"
 import { BottomSheet } from "@/components/hub/BottomSheet"
 import { CheckDraw } from "@/components/hub/CheckDraw"
-import { SANDBOX_CARRIER_NAME } from "@/lib/hub/sandbox"
+import { SANDBOX_CARRIER_NAME, SANDBOX_TOURS } from "@/lib/hub/sandbox"
+import {
+  beatsExisting,
+  bestKey,
+  betterThan,
+  parseBest,
+  worthRemembering,
+  type PersonalBest,
+} from "@/lib/hub/sandbox-best"
 import {
   evaluateShift,
   isShiftSeat,
@@ -31,6 +39,17 @@ import { cn } from "@/lib/utils"
 interface StoredShift {
   epoch: string
   baseline: ShiftMetrics
+}
+
+/** Storage read; the rules themselves live in lib/hub/sandbox-best.ts. */
+function readBest(seat: string): PersonalBest | null {
+  try {
+    return parseBest(localStorage.getItem(bestKey(seat)))
+  } catch {
+    // Storage blocked entirely (private mode, site data off) — no record,
+    // rather than a crash on the way into the banner.
+    return null
+  }
 }
 
 type Phase =
@@ -80,6 +99,11 @@ export function ShiftCard({ seat, dark = false }: { seat: string; dark?: boolean
   const [phase, setPhase] = useState<Phase>({ kind: "idle" })
   const [feed, setFeed] = useState<FeedItem[]>([])
   const [busy, setBusy] = useState(false)
+  // Read after mount, never during render — localStorage does not exist on
+  // the server and a mismatch would hydrate-error the whole banner.
+  const [best, setBest] = useState<PersonalBest | null>(null)
+  /** True only when THIS shift knocked over a record that already existed. */
+  const [beatRecord, setBeatRecord] = useState(false)
   const phaseRef = useRef(phase)
   phaseRef.current = phase
   // The sheet's trigger ("End shift") unmounts while the sheet is open, so
@@ -118,6 +142,14 @@ export function ShiftCard({ seat, dark = false }: { seat: string; dark?: boolean
       setPhase({ kind: "on", stored: current.stored, live: evaluateShift(seat, current.stored.baseline, res.metrics) })
     }
   }, [seat, forget])
+
+  useEffect(() => setBest(readBest(seat)), [seat])
+
+  // The seat's own three moves. SANDBOX_TOURS has carried these since the
+  // tours shipped, but SandboxBanner only rendered them for NON-shift seats —
+  // so the seven seats that can actually clock in were the seven that were
+  // never told what the job was.
+  const moves = SANDBOX_TOURS[seat] ?? []
 
   // Resume an in-flight shift after a reload; poll live objectives while on.
   useEffect(() => {
@@ -177,7 +209,9 @@ export function ShiftCard({ seat, dark = false }: { seat: string; dark?: boolean
       if (phaseRef.current.kind !== "ending") return
       if (res.ok && res.metrics && res.epoch === current.stored.epoch) {
         forget()
-        setPhase({ kind: "recap", evaluation: evaluateShift(seat, current.stored.baseline, res.metrics) })
+        const evaluation = evaluateShift(seat, current.stored.baseline, res.metrics)
+        recordBest(evaluation)
+        setPhase({ kind: "recap", evaluation })
       } else if (res.off) {
         forget()
         setPhase({ kind: "idle" })
@@ -193,6 +227,32 @@ export function ShiftCard({ seat, dark = false }: { seat: string; dark?: boolean
       setPhase({ kind: "on", stored: current.stored, live: null })
       toast.error("Couldn't reach the shift board — you're still on shift.")
     }
+  }
+
+  /**
+   * Bank the shift if it beat the seat's record. Called once, at the recap —
+   * the only moment a shift is finished AND its numbers are final. `beat` is
+   * captured before the write so the recap can say so; reading it back from
+   * storage afterwards would always report a tie with itself.
+   */
+  const recordBest = (ev: ShiftEvaluation) => {
+    const next: PersonalBest = {
+      score: ev.score,
+      cents: ev.money.personalCents,
+      minutes: ev.minutes,
+      at: new Date().toISOString(),
+    }
+    const prev = readBest(seat)
+    // A shift that did nothing is not a record — see worthRemembering.
+    if (!worthRemembering(next)) return
+    setBeatRecord(beatsExisting(prev, next))
+    if (!betterThan(prev, next)) return
+    try {
+      localStorage.setItem(bestKey(seat), JSON.stringify(next))
+    } catch {
+      /* storage blocked — the shift still counted, it just is not remembered */
+    }
+    setBest(next)
   }
 
   const copyRecap = async (ev: ShiftEvaluation) => {
@@ -253,7 +313,8 @@ export function ShiftCard({ seat, dark = false }: { seat: string; dark?: boolean
       ["collected", m.collectedCents],
     ]
     const live = co.filter(([, cents]) => cents > 0)
-    if (m.personalCents <= 0 && live.length === 0 && m.rollingCents <= 0) return null
+    if (m.personalCents <= 0 && live.length === 0 && m.rollingCents <= 0 && m.dwellingCents <= 0 && m.overdueCents <= 0)
+      return null
     return (
       <div
         className={cn(
@@ -297,6 +358,26 @@ export function ShiftCard({ seat, dark = false }: { seat: string; dark?: boolean
                 // seconds. Say what IS true: the company's money is out there
                 // on the road, which is the reason any of these seats exist.
                 `${money(m.rollingCents)} of freight on the road right now`}
+          </p>
+        ) : null}
+        {m.dwellingCents > 0 || m.overdueCents > 0 ? (
+          <p
+            className={cn(
+              "mt-1.5 flex items-start gap-1.5 border-t pt-1.5 text-[11.5px] tabular-nums",
+              onSheet || !dark ? "border-border" : "border-white/10",
+              "text-warn"
+            )}
+          >
+            <AlertTriangle className="mt-[1px] h-3.5 w-3.5 shrink-0" aria-hidden />
+            <span>
+              Costing you now:{" "}
+              {[
+                m.dwellingCents > 0 ? `${money(m.dwellingCents)} sitting at docks` : null,
+                m.overdueCents > 0 ? `${money(m.overdueCents)} overdue` : null,
+              ]
+                .filter(Boolean)
+                .join(" · ")}
+            </span>
           </p>
         ) : null}
         {m.standing && m.personalCents > 0 ? (
@@ -394,6 +475,18 @@ export function ShiftCard({ seat, dark = false }: { seat: string; dark?: boolean
                 {phase.evaluation.score}% · {phase.evaluation.minutes} min
               </p>
               <p className="mt-0.5 text-[13px] text-fg-2">{phase.evaluation.headline}</p>
+              {/* Only when a record that ALREADY EXISTED fell. A first shift
+                  setting the first best is not an achievement, and saying so
+                  would make the banner congratulate everybody for showing up. */}
+              {beatRecord ? (
+                <p className="mt-1 text-[13px] font-semibold text-accent-text">
+                  New best for this seat — you beat your last shift.
+                </p>
+              ) : best ? (
+                <p className="mt-1 text-[13px] text-fg-3">
+                  Your best here is still {best.score}% · {money(best.cents)}.
+                </p>
+              ) : null}
             </div>
           </div>
           {moneyStrip(phase.evaluation.money, true)}
@@ -469,6 +562,48 @@ export function ShiftCard({ seat, dark = false }: { seat: string; dark?: boolean
               Clock in
             </button>
           </div>
+
+          {/* The first sixty seconds. Everything below is what a person needs
+              BEFORE they commit — what this seat actually does, the one rule
+              about the clock that otherwise reads as a bug, and the number to
+              beat. It is gone the moment they clock in; a running shift has
+              live objectives and does not need the briefing again. */}
+          {moves.length > 0 ? (
+            <ol className={cn("mt-3 flex flex-wrap gap-x-4 gap-y-1 text-[12.5px]", soft)}>
+              {moves.map((m, i) => (
+                <li key={m.label} className="inline-flex items-center gap-1.5">
+                  <span
+                    className={cn(
+                      "inline-flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-pill text-[10.5px] font-bold",
+                      dark ? "bg-white/10 text-white" : "bg-hover text-fg-2"
+                    )}
+                  >
+                    {i + 1}
+                  </span>
+                  {m.label}
+                </li>
+              ))}
+            </ol>
+          ) : null}
+
+          <p className={cn("mt-2 flex items-start gap-1.5 text-[12px]", soft)}>
+            <Clock3 className="mt-[2px] h-3.5 w-3.5 shrink-0" aria-hidden />
+            {/* Stated in code comments and the owner handbook since Shift Mode
+                shipped, and never once on screen — so "I closed the tab and
+                came back to nothing" read as a freeze rather than the design. */}
+            <span>
+              The company only moves while this tab is open. Close it and time stops; come back
+              and it catches up.
+            </span>
+          </p>
+
+          {best ? (
+            <p className={cn("mt-2 border-t pt-2 text-[12px]", dark ? "border-white/10" : "border-border", soft)}>
+              Your best shift here: <span className={cn("font-bold", strong)}>{best.score}%</span> of the
+              job, {money(best.cents)}
+              {best.minutes > 0 ? ` in ${best.minutes}m` : ""}.
+            </p>
+          ) : null}
         </div>
         {sheet}
       </>
