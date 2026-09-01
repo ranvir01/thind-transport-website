@@ -87,6 +87,18 @@ export async function portalQuoteRequestAction(input: {
 }): Promise<Result & { reference?: string }> {
   try {
     const user = await requirePortalUser()
+    // Shippers only. requirePortalUser admits BOTH portal roles, so this is
+    // the whole check — and until now it did not exist: the quote form is
+    // hidden from brokers in portal/page.tsx and nothing stopped a broker
+    // calling the action directly. A server action is a public endpoint; a
+    // control that lives only in the JSX is not a control.
+    //
+    // The product decision is written down (OWNER-TEST-DRIVE.md): the broker
+    // role has zero writes, and whether that should change is a question put
+    // to the owner rather than something the software answers on its own.
+    if (user.portalRole !== "shipper") {
+      return { ok: false, error: "Quote requests come from the shipper account" }
+    }
     if (!input.originCity.trim() || !input.destCity.trim()) {
       return { ok: false, error: "Origin and destination cities are needed" }
     }
