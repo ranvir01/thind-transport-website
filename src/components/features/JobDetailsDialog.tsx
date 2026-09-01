@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { COMPANY_INFO, PAY_RATES, SUPPORT } from "@/lib/constants"
 import {
   Dialog,
   DialogContent,
@@ -24,8 +25,8 @@ export function JobDetailsDialog({ jobType = "company" }: JobDetailsDialogProps)
     company: {
       title: "Regional Company Truck Driver",
       type: "Full-Time",
-      salary: "$55K-$72K/year",
-      description: "Join our team as a regional company driver. $0.63 per mile with excellent benefits and flexible home time.",
+      salary: `${PAY_RATES.companyDriver.regional.annual}/year`,
+      description: "Join our team as a regional company driver. $0.63 per mile, the same rate local, regional or OTR, with flexible home time.",
       requirements: [
         "Valid CDL Class A license",
         "Minimum 1 year company driver experience (REQUIRED)",
@@ -35,20 +36,20 @@ export function JobDetailsDialog({ jobType = "company" }: JobDetailsDialogProps)
         "Able to pass background check"
       ],
       benefits: [
-        "$1,500 sign-on bonus (first year)",
+        `${PAY_RATES.companyDriver.signOnBonus.replace(" (First Year)", "")} sign-on bonus (first year)`,
         "$0.63 per mile (regional)",
         "Weekly direct deposit pay - Every Friday",
         "Flexible home time - Regional routes",
         "Home on weekends",
         "Consistent freight year-round",
         "Modern, well-maintained equipment",
-        "24/7 dispatch support",
+        SUPPORT.dispatch,
         "Fuel card programs available"
       ],
       routes: [
         "Regional routes: $0.63 per mile",
         "Home on weekends - Work 5 days",
-        "Annual earning potential: $55K-$72K",
+        `Annual earning potential: ${PAY_RATES.companyDriver.regional.annual}`,
         "Consistent miles and freight",
         "Multiple route options available"
       ]
@@ -56,7 +57,7 @@ export function JobDetailsDialog({ jobType = "company" }: JobDetailsDialogProps)
     owner: {
       title: "OTR → Owner Operator",
       type: "Independent Contractor",
-      salary: "$180K-$280K/year",
+      salary: `${PAY_RATES.ownerOperator.annualGross}/year`,
       description: "Run OTR under our authority and keep 90% of the linehaul. No forced dispatch, no hidden deductions — you see the rate con on every load.",
       requirements: [
         "Valid CDL Class A license",
@@ -76,12 +77,12 @@ export function JobDetailsDialog({ jobType = "company" }: JobDetailsDialogProps)
         "Weekly settlements and fast pay options",
         "Fuel card programs with discounts",
         "Maintenance and tire discounts",
-        "24/7 dispatch support",
+        SUPPORT.dispatch,
         "Factoring services available",
         "Consistent quality freight across Flatbed, Reefer, Dry Van"
       ],
       routes: [
-        "OTR loads nationwide: Average $2.25-$3.25 per mile",
+        `OTR loads nationwide: ${PAY_RATES.ownerOperator.perMile} per mile`,
         "90% of gross - YOU keep 90%!",
         "Flatbed, Reefer, or Dry Van freight",
         "No forced dispatch - pick your lanes",
@@ -165,10 +166,10 @@ export function JobDetailsDialog({ jobType = "company" }: JobDetailsDialogProps)
         
         <DialogFooter className="flex-col sm:flex-row gap-3">
           <a 
-            href="tel:+12067656300"
+            href={`tel:${COMPANY_INFO.phoneFormatted}`}
             className="w-full sm:w-auto bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors text-center"
           >
-            Call (206) 765-6300
+            Call {COMPANY_INFO.phone}
           </a>
           <Link 
             href="/apply"

@@ -1,7 +1,7 @@
 import { Metadata } from "next"
 import Link from "next/link"
 import { ArrowRight, CalendarCheck, Truck, Wallet, Radio, ShieldCheck, Smartphone } from "lucide-react"
-import { COMPANY_INFO, PAY_RATES, STATS } from "@/lib/constants"
+import { COMPANY_INFO, EQUIPMENT, PAY_RATES, STATS } from "@/lib/constants"
 import { PageBreadcrumb } from "@/components/shared/PageBreadcrumb"
 import { ProfitCalculator } from "@/components/features/ProfitCalculator"
 import { Reveal } from "@/components/ui/Reveal"
@@ -12,7 +12,7 @@ import { driverLinks } from "@/components/shared/link-sets"
 export const metadata: Metadata = {
   title: "Drive for Thind Transport | CDL-A & owner-operators",
   description:
-    "Owner-operators keep 90% of gross with 100% fuel surcharge pass-through; company drivers earn $0.63/mile with weekly pay. 2024 Cascadias, 48 states, dispatch that picks up. Run your own numbers on the calculator, then apply in about a minute.",
+    "Owner-operators keep 90% of gross with 100% fuel surcharge pass-through; company drivers earn $0.63/mile with weekly pay. 2023-2025 Cascadias and VNLs, 48 states, dispatch that picks up. Run your own numbers on the calculator, then start an application.",
   alternates: { canonical: "/drivers" },
 }
 
@@ -38,7 +38,7 @@ const PROOF = [
   },
   {
     icon: Truck,
-    title: "2024 Cascadias",
+    title: "Late-model equipment",
     body: `A ${STATS.trucksInFleet}-truck fleet of late-model Freightliner Cascadias — flatbed, reefer and dry van across ${STATS.statesCovered} states. New enough that breakdowns are the exception, small enough that your truck is yours.`,
   },
   {
@@ -84,7 +84,7 @@ export default function DriversPage() {
                   href="/apply"
                   className="inline-flex min-h-[48px] items-center gap-2 rounded-m-2 bg-signal px-7 py-3 font-display text-m-body font-bold uppercase tracking-wide text-paper transition-colors duration-base ease-entrance hover:bg-paper hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-paper focus-visible:ring-offset-2 focus-visible:ring-offset-asphalt"
                 >
-                  Apply — about a minute <ArrowRight className="h-4 w-4" />
+                  Start your application <ArrowRight className="h-4 w-4" />
                 </Link>
                 <a
                   href={`tel:${COMPANY_INFO.phoneFormatted}`}
@@ -111,7 +111,7 @@ export default function DriversPage() {
                 </div>
                 <div>
                   <dt className="text-m-micro font-bold uppercase tracking-[0.15em] text-paper/60">Fleet</dt>
-                  <dd className="mt-1 font-display text-m-h3 font-bold">2024 Cascadias</dd>
+                  <dd className="mt-1 font-display text-m-h3 font-bold">{EQUIPMENT.short}</dd>
                 </div>
               </dl>
             </Reveal>
@@ -120,7 +120,7 @@ export default function DriversPage() {
       </section>
 
       {/* The signature instrument, front and centre — not buried mid-homepage. */}
-      <section id="calculator" className="py-16 md:py-24">
+      <section id="calculator" className="py-16 md:py-24 scroll-mt-20">
         <div className="container px-4">
           <Reveal className="mx-auto max-w-measure text-center">
             <h2 className="font-display text-m-h2 font-bold text-ink">Run your own numbers</h2>
@@ -149,46 +149,13 @@ export default function DriversPage() {
               </Reveal>
             ))}
           </ul>
-          <Reveal className="mx-auto mt-12 flex max-w-4xl flex-wrap items-center justify-center gap-x-8 gap-y-3 text-m-body">
-            <Link href="/pay-rates" className="font-semibold text-signal underline-offset-4 hover:underline">
-              Full pay plan
-            </Link>
-            <Link href="/benefits" className="font-semibold text-signal underline-offset-4 hover:underline">
-              Benefits
-            </Link>
-            <Link href="/veterans" className="font-semibold text-signal underline-offset-4 hover:underline">
-              Veterans
-            </Link>
-            <Link href="/cdl-jobs" className="font-semibold text-signal underline-offset-4 hover:underline">
-              Jobs by state
-            </Link>
-            <Link href="/app" className="font-semibold text-signal underline-offset-4 hover:underline">
-              Get the driver app
-            </Link>
-          </Reveal>
-        </div>
-      </section>
-
-      {/* Escape hatch: nobody gets trapped in the driver lane. */}
-      <section className="border-t border-ink/10 py-10">
-        <div className="container px-4">
-          <p className="text-center text-m-body text-ink-3">
-            Not a driver?{" "}
-            <Link href="/shippers" className="font-semibold text-signal underline-offset-4 hover:underline">
-              For shippers
-            </Link>{" "}
-            ·{" "}
-            <Link href="/brokers" className="font-semibold text-signal underline-offset-4 hover:underline">
-              For brokers
-            </Link>
-          </p>
         </div>
       </section>
 
       <RelatedLinks
         title="Useful before you apply"
         intro="Tools, records and pages that answer the questions the pitch doesn't."
-        links={driverLinks(["/drivers"])}
+        links={driverLinks(["/drivers"], 9)}
       />
     </div>
   )

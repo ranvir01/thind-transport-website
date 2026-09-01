@@ -3,7 +3,7 @@ import { PageBreadcrumb } from "@/components/shared/PageBreadcrumb"
 import { Metadata } from "next"
 
 export const metadata: Metadata = {
-  title: "Driver Pre-Qualification | Thind Transport",
+  title: "Driver pre-qualification",
   description: "Check your eligibility for Thind Transport driver positions. Quick and secure pre-qualification form.",
   alternates: { canonical: "/pre-qualify" },
 }

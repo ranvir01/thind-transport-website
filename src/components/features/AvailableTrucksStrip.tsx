@@ -2,7 +2,7 @@
 
 /**
  * Real posted capacity from the operations system (Phase 5 §8.6) — shown on
- * the public load-board page. Renders nothing when no capacity is posted, so
+ * the public /routes page. Renders nothing when no capacity is posted, so
  * the marketing page never shows an empty or fabricated section.
  */
 import { useEffect, useState } from "react"

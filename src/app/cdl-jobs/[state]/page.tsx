@@ -16,8 +16,8 @@ export async function generateMetadata({ params }: { params: Promise<{ state: st
   const state = stateBySlug(slug)
   if (!state) return {}
   return {
-    title: `CDL Truck Driving Jobs in ${state.name} | Owner Operators Keep 90%`,
-    description: `Thind Transport hires CDL-A drivers and owner operators running through ${state.name} — ${state.cities.slice(0, 3).join(", ")} and the ${state.corridors.join(", ")} corridors. 90% owner-operator split, ${PAY_RATES.companyDriver.otr.perMile}/mi company pay, weekly settlements, no forced dispatch.`,
+    title: `CDL truck driving jobs in ${state.name}`,
+    description: `Thind Transport hires CDL-A drivers and owner operators who live in ${state.name} — ${state.cities.slice(0, 3).join(", ")} and statewide. ${PAY_RATES.ownerOperator.commission} owner-operator split, ${PAY_RATES.companyDriver.otr.perMile}/mi company pay, weekly settlements, no forced dispatch.`,
     alternates: { canonical: `/cdl-jobs/${state.slug}` },
   }
 }
@@ -50,15 +50,16 @@ export default async function StateJobsPage({ params }: { params: Promise<{ stat
               CDL truck driving jobs in <span className="text-orange">{state.name}</span>
             </h1>
             <p className="text-lg text-white/85 leading-relaxed">
-              We run {state.corridors.join(", ")} every week — through {state.cities.slice(0, 3).join(", ")}.
-              Drive them for a {STATS.yearsInBusiness}-year family carrier that pays honestly and answers the phone.
+              We hire CDL-A drivers and owner operators who live in {state.name} — {state.cities.slice(0, 3).join(", ")}
+              and anywhere else in the state. {STATS.statesCovered}-state freight, run by a{" "}
+              {STATS.yearsInBusiness}-year family carrier that pays honestly and answers the phone.
             </p>
             <div className="mt-7 flex flex-wrap gap-3">
               <Link
                 href="/apply"
                 className="rounded-full bg-orange-600 px-6 py-3.5 font-bold uppercase tracking-wide text-white shadow-cta transition-colors hover:bg-orange-500"
               >
-                Apply in 60 seconds
+                Start your application
               </Link>
               <a
                 href={`tel:${COMPANY_INFO.phoneFormatted}`}
@@ -95,15 +96,15 @@ export default async function StateJobsPage({ params }: { params: Promise<{ stat
               Where you&apos;ll run in {state.name}
             </h2>
             <p className="mb-4 leading-relaxed text-gray-600">
-              {state.name} freight moves on {state.corridors.join(" and ")} — we cover{" "}
-              {state.cities.join(", ")} with flatbed, reefer, and dry van loads, dispatched from our
-              Kent, WA home yard. Regional drivers get home weekly; OTR runs 2–3 weeks with real
-              route planning, not forced dispatch.
+              {state.name} freight moves on {state.corridors.join(" and ")}, and our flatbed, reefer
+              and dry van loads run all {STATS.statesCovered} states out of our Kent, WA home yard —
+              so what you run depends on the week and on what you take. Regional drivers get home
+              weekly; OTR runs 2–3 weeks with real route planning, not forced dispatch.
             </p>
             <ul className="space-y-2">
               {[
-                `Consistent freight through ${state.cities[0]}${state.cities[1] ? ` and ${state.cities[1]}` : ""}`,
-                "No-touch or driver-assist clearly stated before you accept",
+                `Flatbed, reefer and dry van — you pick what you're set up for`,
+                "Touch level stated on the load before you accept it",
                 "Fuel card with fleet discounts at major stops",
                 "Dispatch that answers — a direct line, not a call center",
               ].map((point) => (
@@ -134,7 +135,7 @@ export default async function StateJobsPage({ params }: { params: Promise<{ stat
               Start your {state.name} application <ArrowRight className="h-5 w-5" />
             </Link>
             <p className="mt-3 text-center text-sm text-gray-500">
-              60 seconds to raise your hand. Or text us:{" "}
+              Name, CDL, experience, the lanes you want. Or text us:{" "}
               <a
                 href={`sms:${COMPANY_INFO.phoneFormatted}?body=${encodeURIComponent(`Hi, I'm a CDL driver in ${state.name} interested in driving for Thind Transport.`)}`}
                 className="font-semibold text-orange-600"
