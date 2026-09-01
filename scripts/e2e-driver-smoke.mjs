@@ -15,7 +15,7 @@
 import { mkdirSync } from "node:fs"
 import {
   launchBrowser, BASE, clickByText, waitForText, waitForPathAndText,
-  textAppears, textGone, makeShot, reseed,
+  textAppears, textGone, makeShot, reseed, sendComposer,
 } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots"
@@ -76,13 +76,7 @@ async function main() {
     await waitForText(page, "no phone numbers needed")
     await shot(page, "07-messages-list")
     await clickByText(page, "Dispatch / office", { tag: "a" })
-    await page.waitForSelector("textarea", { timeout: 10000 })
-    await page.type("textarea", "Made the pickup, rolling to Boise. ETA tomorrow 14:00.")
-    await clickByText(page, "", { tag: 'button[aria-label="Send"]' })
-    await waitForText(page, "Made the pickup")
-    await page
-      .waitForFunction(() => document.querySelector("textarea")?.value === "", { timeout: 20000 })
-      .catch(() => { throw new Error("composer did not clear after send") })
+    await sendComposer(page, "Made the pickup, rolling to Boise. ETA tomorrow 14:00.")
     await shot(page, "08-chat")
 
     console.log("7. Pay screen — expand a settlement to see its lines")
