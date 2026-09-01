@@ -235,6 +235,25 @@ describe("cursor automation pack (CURSOR-START + four import-ready lanes)", () =
     expect(read("docs/grok-bots/em-engmgr.instructions.md")).toMatch(/CURSOR-START/)
   })
 
+  it("the handoff paste keeps future automation agents inside the contract", () => {
+    const handoff = read("docs/ops/AUTOMATION-HANDOFF.md")
+    expect(handoff).toMatch(/One charter, one platform/i)
+    expect(handoff).toMatch(/Do NOT push to cursor\/fleet-24-7-liveness-931f/)
+    expect(handoff).toMatch(/cursor-grok-4\.6-high-fast/)
+    expect(handoff).toMatch(/PASTE DELTAS/)
+    expect(handoff).toMatch(/retire/i)
+    expect(handoff).toMatch(/D-006/)
+    expect(handoff).toMatch(/D-007/)
+    expect(handoff).toMatch(/D-016/)
+    expect(handoff).toMatch(/D-017/)
+    expect(handoff).toMatch(/CURSOR-START/)
+    expect(handoff).toMatch(/CLAUDE-START/)
+    expect(handoff).toMatch(/cursor-automation-guard\.test\.ts/)
+    expect(handoff).toMatch(/act-or-exit/i)
+    expect(handoff).toMatch(/git:identity/)
+    expect(handoff).toMatch(/:07\/:13\/:37/)
+  })
+
   it("README still forbids importing Claude twins and re-enabling Untitled", () => {
     const readme = read(".cursor/automation/README.md")
     expect(readme).toMatch(/Do not import/)

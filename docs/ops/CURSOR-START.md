@@ -11,6 +11,10 @@ is **not** a yes to import marketing / deep-verify / meta-governor / red-team
 Claude's half of the same sitting: [`CLAUDE-START.md`](CLAUDE-START.md)
 (confirm the 9, toggles, deltas — no new Claude tasks anywhere).
 
+Handing more automation work to another agent? Give it
+[`AUTOMATION-HANDOFF.md`](AUTOMATION-HANDOFF.md) — the combine-don't-duplicate
+paste with the full state and rules.
+
 Agents cannot create or enable automations from this repo. You click at
 [cursor.com/automations/new](https://cursor.com/automations/new).
 
