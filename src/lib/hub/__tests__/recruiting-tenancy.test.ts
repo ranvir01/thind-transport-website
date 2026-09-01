@@ -31,7 +31,10 @@ vi.mock("../pay-rules-db", () => ({ syncDefaultPayRules: vi.fn(async () => undef
 
 import { hubDb, query, queryOne } from "../db"
 import { assertCarrierRefs } from "../tenancy"
-import { attachReferral, convertApplicantToDriver, createOffer, importPublicApplicants } from "../recruiting"
+import {
+  attachReferral, convertApplicantToDriver, createOffer, importPublicApplicants,
+  syncPublicApplicantsOnRecruitingLoad,
+} from "../recruiting"
 
 const queryMock = vi.mocked(query)
 const queryOneMock = vi.mocked(queryOne)
@@ -162,5 +165,43 @@ describe("importPublicApplicants", () => {
     const result = await importPublicApplicants(THIND, "Owner")
     expect(result).toEqual({ imported: 0 })
     expect(queryOneMock).toHaveBeenCalled()
+  })
+})
+
+describe("syncPublicApplicantsOnRecruitingLoad", () => {
+  it("does not import when the viewer lacks drivers:write (accountant)", async () => {
+    const result = await syncPublicApplicantsOnRecruitingLoad({
+      carrierId: THIND, name: "Books", role: "accountant",
+    })
+    expect(result).toEqual({ imported: 0 })
+    expect(queryOneMock).not.toHaveBeenCalled()
+    expect(queryMock).not.toHaveBeenCalled()
+  })
+
+  it("no-ops for a non-Thind dispatcher before any public_applications query", async () => {
+    const result = await syncPublicApplicantsOnRecruitingLoad({
+      carrierId: CARRIER, name: "Dispatcher", role: "dispatcher",
+    })
+    expect(result).toEqual({ imported: 0 })
+    expect(queryOneMock).not.toHaveBeenCalled()
+    expect(queryMock).not.toHaveBeenCalled()
+  })
+
+  it("pulls for a Thind dispatcher so the board is not button-gated", async () => {
+    queryOneMock.mockResolvedValueOnce({ reg: "public.public_applications" } as never)
+    queryMock.mockResolvedValueOnce([])
+    const result = await syncPublicApplicantsOnRecruitingLoad({
+      carrierId: THIND, name: "Dispatcher", role: "dispatcher",
+    })
+    expect(result).toEqual({ imported: 0 })
+    expect(queryOneMock).toHaveBeenCalled()
+  })
+
+  it("swallows a missing-table / transient error so Recruiting still renders", async () => {
+    queryOneMock.mockRejectedValueOnce(new Error("relation does not exist"))
+    const result = await syncPublicApplicantsOnRecruitingLoad({
+      carrierId: THIND, name: "Owner", role: "owner",
+    })
+    expect(result).toEqual({ imported: 0 })
   })
 })

@@ -5,8 +5,10 @@
  * driver is gated by the orientation checklist and pre-populates the DQ file.
  */
 import { hubDb, query, queryOne } from "./db"
+import { can } from "./permissions"
 import { ORIENTATION_TEMPLATE, type Applicant, type ApplicantStage } from "./recruiting-shared"
 import { assertCarrierRefs } from "./tenancy"
+import type { HubRole } from "./types"
 import { getWebsiteLead, setWebsiteLeadStatus, OPERATOR_CARRIER_ID } from "./website-leads"
 
 /** Thind's own carrier row (migration 002) — the only tenant whose real
@@ -381,6 +383,27 @@ export async function importPublicApplicants(
     if (created) imported++
   }
   return { imported }
+}
+
+/**
+ * Best-effort pull of public-site applications when an office user opens
+ * Recruiting. A finished /apply row must not depend on a mailbox plus a
+ * button nobody knows to press. Same tenant + dedupe rules as
+ * importPublicApplicants; drivers:write required (accountants can view the
+ * board but must not mint applicants); never throws — a missing table or
+ * transient error must not 500 the board.
+ */
+export async function syncPublicApplicantsOnRecruitingLoad(user: {
+  carrierId: string
+  name: string
+  role: HubRole
+}): Promise<{ imported: number }> {
+  if (!can(user.role, "drivers:write")) return { imported: 0 }
+  try {
+    return await importPublicApplicants(user.carrierId, user.name)
+  } catch {
+    return { imported: 0 }
+  }
 }
 
 /**
