@@ -5,9 +5,9 @@
  * banner while the signal is down (the offline shell keeps the last loaded
  * screens readable), a pending count for the taps the office queue saved,
  * and an automatic replay + server-component refresh the moment connectivity
- * returns so nobody dispatches off stale data. Status moves, check calls,
- * and task ticks queue (see office/offline-queue.ts for what doesn't, and
- * why); everything else still needs a connection.
+ * returns so nobody dispatches off stale data. Status moves, arrivals and
+ * departures, check calls, and task ticks queue (see office/offline-queue.ts
+ * for what doesn't, and why); everything else still needs a connection.
  */
 import { useCallback, useEffect, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
@@ -86,7 +86,7 @@ export function OfficeOfflineBanner() {
             <CloudOff className="h-3.5 w-3.5 shrink-0" />
             {pending > 0
               ? `No signal — ${pending} update${pending > 1 ? "s" : ""} saved, sends automatically`
-              : "No signal — showing the last loaded screens. Status moves, check calls, and task ticks still save."}
+              : "No signal — showing the last loaded screens. Status moves, arrivals, check calls, and task ticks still save."}
           </>
         ) : (
           <>

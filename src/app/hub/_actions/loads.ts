@@ -18,6 +18,7 @@ import { logAudit } from "@/lib/hub/audit"
 import { geocodeCityState } from "@/lib/hub/geocode"
 import { NEXT_STATUS, STATUS_LABELS, canCancelLoad, dollarsToCents } from "@/lib/hub/types"
 import { actionError } from "@/lib/hub/action-error"
+import { resolveTapTime } from "@/lib/hub/tap-time"
 import type { ActionResult } from "./fleet"
 
 function firstError(error: { issues: { path: PropertyKey[]; message: string }[] }): string {
@@ -227,10 +228,17 @@ export async function setLoadStatusAction(id: string, status: string): Promise<A
   }
 }
 
+/**
+ * `at` is the tap-time from the office phone (ISO). It exists so an offline
+ * tap replayed hours later still records when the truck actually arrived or
+ * departed — detention billing runs off this timestamp. Absent, invalid, or
+ * future values fall back to server time (resolveTapTime).
+ */
 export async function stopTimestampAction(
   stopId: string,
   loadId: string,
-  field: "arrived_at" | "departed_at"
+  field: "arrived_at" | "departed_at",
+  at?: string
 ): Promise<ActionResult & { detentionAppliedCents?: number }> {
   let user
   try {
@@ -239,7 +247,7 @@ export async function stopTimestampAction(
     return actionError(err, "Forbidden")
   }
   try {
-    const stop = await setStopTimestamp(user.carrierId, stopId, loadId, field, new Date().toISOString())
+    const stop = await setStopTimestamp(user.carrierId, stopId, loadId, field, resolveTapTime(at))
     if (stop) {
       await addLoadEvent(user.carrierId, loadId, "geo", {
         stop_id: stopId, field, city: stop.city, state: stop.state,

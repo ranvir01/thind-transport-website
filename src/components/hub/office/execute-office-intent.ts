@@ -8,7 +8,7 @@
  * between queue and replay comes back {ok:false} and surfaces in the
  * "couldn't be sent" toast.
  */
-import { advanceLoadStatusAction, logCheckCallAction } from "@/app/hub/_actions/loads"
+import { advanceLoadStatusAction, logCheckCallAction, stopTimestampAction } from "@/app/hub/_actions/loads"
 import { completeTaskAction, toggleChecklistAction } from "@/app/hub/_actions/tasks"
 import type { OfficeQueuedIntent } from "./offline-queue"
 
@@ -24,6 +24,13 @@ export async function executeOfficeIntent(
       return completeTaskAction(intent.payload.taskId)
     case "task-checklist":
       return toggleChecklistAction(intent.payload.taskId, intent.payload.index, intent.payload.done)
+    case "stop-timestamp":
+      return stopTimestampAction(
+        intent.payload.stopId,
+        intent.payload.loadId,
+        intent.payload.field,
+        intent.payload.at
+      )
     default:
       // An unknown kind is a row from a future build — drop it rather than
       // retry forever (matches the driver table's stance).
