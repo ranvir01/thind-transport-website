@@ -106,6 +106,12 @@ export default async function ReportsPage({
         action={
           <div className="flex flex-wrap gap-2">
             <Link
+              href="/hub/reports/builder"
+              className="inline-flex min-h-[44px] items-center rounded-control border border-border-strong bg-surface px-4 text-sm font-semibold text-fg-2 hover:bg-hover"
+            >
+              Report builder
+            </Link>
+            <Link
               href="/hub/reports/owner"
               className="inline-flex min-h-[44px] items-center rounded-control border border-border-strong bg-surface px-4 text-sm font-semibold text-fg-2 hover:bg-hover"
             >

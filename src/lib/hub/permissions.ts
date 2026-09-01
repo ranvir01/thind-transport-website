@@ -59,3 +59,13 @@ export function can(role: HubRole, action: HubAction): boolean {
 export function rolesAllowed(action: HubAction): HubRole[] {
   return (Object.keys(MATRIX) as HubRole[]).filter((role) => can(role, action))
 }
+
+/** All-companies mode is for owner/accounting review. Mutations must pick one company. */
+export function isWriteAction(action: HubAction): boolean {
+  return action.endsWith(":write") ||
+    action.endsWith(":status") ||
+    action.endsWith(":approve") ||
+    action === "imports:run" ||
+    action === "users:manage" ||
+    action === "settings:manage"
+}

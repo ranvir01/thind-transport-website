@@ -3,7 +3,8 @@
  * hub.outreach_prospects. Every function takes carrierId and filters on it;
  * nothing here is reachable without an office session (see _actions/outreach).
  */
-import { query, queryOne, hubDbAvailable } from "../db"
+import { query, queryOne } from "../db"
+import { hubDbAvailable } from "../db-available"
 import type { Audience, Channel, ProspectInput } from "./draft"
 
 export type ProspectStatus =

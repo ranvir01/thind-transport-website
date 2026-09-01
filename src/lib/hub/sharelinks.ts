@@ -1,5 +1,7 @@
 import { randomBytes } from "crypto"
 import { query, queryOne } from "./db"
+import { hubDbAvailable } from "./db-available"
+import { THIND_SANDBOX_ID, fallbackCarriers, fallbackLoads } from "./sandbox-fallback"
 import { assertCarrierRefs } from "./tenancy"
 import type { Load, Stop } from "./types"
 
@@ -74,6 +76,65 @@ export interface TrackedLoad {
 
 /** Public lookup by token — exposes status + stops + city-level position only. */
 export async function getTrackedLoad(token: string): Promise<TrackedLoad | null> {
+  if (!hubDbAvailable() && token === "sandbox") {
+    const load = fallbackLoads(THIND_SANDBOX_ID).find((item) => item.status === "in_transit") ?? fallbackLoads(THIND_SANDBOX_ID)[0]
+    const carrier = fallbackCarriers.find((item) => item.id === THIND_SANDBOX_ID)
+    const stops: Stop[] = [
+      {
+        id: "sandbox-pickup",
+        load_id: load.id,
+        sequence: 1,
+        type: "pickup",
+        facility: `${load.origin_city} Sample Dock`,
+        address: null,
+        city: load.origin_city ?? "Seattle",
+        state: load.origin_state ?? "WA",
+        zip: null,
+        fcfs: false,
+        pickup_number: "SB-PU-100",
+        po_number: null,
+        appt_start: new Date(Date.now() - 3 * 3600000).toISOString(),
+        appt_end: null,
+        arrived_at: new Date(Date.now() - 2 * 3600000).toISOString(),
+        departed_at: new Date(Date.now() - 90 * 60000).toISOString(),
+        lat: 47.61,
+        lng: -122.33,
+        notes: "Sandbox pickup.",
+      },
+      {
+        id: "sandbox-delivery",
+        load_id: load.id,
+        sequence: 2,
+        type: "delivery",
+        facility: `${load.dest_city} Sample Receiver`,
+        address: null,
+        city: load.dest_city ?? "Fresno",
+        state: load.dest_state ?? "CA",
+        zip: null,
+        fcfs: false,
+        pickup_number: null,
+        po_number: "SB-PO-200",
+        appt_start: new Date(Date.now() + 18 * 3600000).toISOString(),
+        appt_end: null,
+        arrived_at: null,
+        departed_at: null,
+        lat: 36.73,
+        lng: -119.78,
+        notes: "Sandbox delivery.",
+      },
+    ]
+    return {
+      load: { id: load.id, reference: load.reference, status: load.status, equipment: load.equipment, truck_id: load.truck_id },
+      carrierName: carrier?.legal_name ?? "Thind Transport LLC",
+      stops,
+      latestPosition: {
+        lat: 44.58,
+        lng: -121.18,
+        ts: new Date().toISOString(),
+      },
+    }
+  }
+
   const link = await queryOne<{ load_id: string; carrier_id: string }>(
     `SELECT load_id, carrier_id FROM hub.share_links
      WHERE token = $1 AND revoked_at IS NULL AND (expires_at IS NULL OR expires_at > NOW())`,

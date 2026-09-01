@@ -1,4 +1,6 @@
 import { query } from "./db"
+import { hubDbAvailable } from "./db-available"
+import { fallbackComplianceEntries } from "./sandbox-fallback"
 import { iftaFilingComplianceEntries } from "./ifta"
 import { form2290ComplianceEntries } from "./hvut-compliance"
 import { filingsComplianceEntries } from "./filings-compliance"
@@ -61,6 +63,7 @@ export async function truckOdometers(carrierId: string): Promise<Map<string, num
  * maintenance due) + manual company items (IFTA decals, 2290, UCR, BOC-3…).
  */
 export async function complianceEntries(carrierId: string): Promise<ComplianceEntry[]> {
+  if (!hubDbAvailable()) return fallbackComplianceEntries(carrierId)
   const now = new Date()
   const entries: ComplianceEntry[] = []
 

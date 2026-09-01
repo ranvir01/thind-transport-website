@@ -1,0 +1,2 @@
+company,name,contractor_type,pay_type,percent_rate,loaded_rate,empty_rate,fsc_passthrough_percent,plain_english,recurring_deductions,accessorial_rules
+Thind Transport LLC,OO-88,owner_operator_1099,percentage,88,,,100,"Owner-operator gets 88% of linehaul + 100% FSC.","$312 insurance weekly; $45 ELD weekly","Detention/lumper pass through when broker pays"

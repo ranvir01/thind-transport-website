@@ -50,6 +50,4 @@ export async function queryOne<T = Record<string, unknown>>(
   return rows[0] ?? null
 }
 
-export function hubDbAvailable(): boolean {
-  return Boolean(process.env.POSTGRES_URL)
-}
+export { hubDbAvailable } from "./db-available"

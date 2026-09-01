@@ -1,0 +1,2 @@
+company,reference,broker,broker_ref,status,equipment,origin_city,origin_state,dest_city,dest_state,pickup_at,delivery_at,linehaul,fuel_surcharge,loaded_miles,deadhead_miles,driver,truck,trailer,source,notes
+Thind Transport LLC,TT-LOAD-1,Example Broker,BR-1,booked,reefer,Kent,WA,Fresno,CA,2026-06-20 08:00,2026-06-22 14:00,3200.00,350.00,870,25,Example Driver,TT-101,TTR-101,DAT,replace this example row

@@ -17,11 +17,13 @@
  */
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
+vi.mock("../db-available", () => ({
+  hubDbAvailable: vi.fn(() => true),
+}))
 vi.mock("../db", () => ({
   hubDb: vi.fn(),
   query: vi.fn(async () => []),
   queryOne: vi.fn(async () => null),
-  hubDbAvailable: vi.fn(() => true),
 }))
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }))
 vi.mock("@/lib/hub/audit", () => ({ logAudit: vi.fn(async () => undefined) }))

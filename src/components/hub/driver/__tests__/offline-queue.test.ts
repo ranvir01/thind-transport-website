@@ -1,4 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
+import { readFileSync } from "node:fs"
+import path from "node:path"
 
 import {
   enqueueIntent, isOfflineError, listIntents, queueCount, QUEUE_SCHEMA_VERSION, removeIntent,
@@ -384,5 +386,21 @@ describe("enqueueIntent / removeIntent / queueCount", () => {
 
     // 2 enqueues + 1 remove — every write notifies, not just enqueue.
     expect(dispatchEvent).toHaveBeenCalledTimes(3)
+  })
+})
+
+describe("DriverLoadCard arrive/depart stay tappable during refresh", () => {
+  it("I'm here / Leaving now key off acting, not useTransition pending", () => {
+    // router.refresh() inside startTransition keeps `pending` true until the
+    // RSC payload arrives. Going offline mid-refresh used to leave those
+    // buttons disabled, so the offline queue never saw the tap.
+    const src = readFileSync(path.join(process.cwd(), "src/components/hub/driver/DriverLoadCard.tsx"), "utf-8")
+    expect(src).toMatch(/const \[acting, setActing\] = useState\(false\)/)
+    const arrive = src.slice(src.indexOf("I&apos;m here") - 400, src.indexOf("I&apos;m here") + 80)
+    expect(arrive).toContain("disabled={acting}")
+    expect(arrive).not.toContain("disabled={pending}")
+    const depart = src.slice(src.indexOf("Leaving now") - 400, src.indexOf("Leaving now") + 80)
+    expect(depart).toContain("disabled={acting}")
+    expect(depart).not.toContain("disabled={pending}")
   })
 })

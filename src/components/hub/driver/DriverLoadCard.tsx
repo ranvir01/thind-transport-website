@@ -75,6 +75,11 @@ export function DriverLoadCard({
 }) {
   const router = useRouter()
   const [pending, startTransition] = useTransition()
+  // useTransition stays pending for the whole router.refresh() after a tap.
+  // Arrive/depart must not wait on that — a confirm + refresh that then hits
+  // a dead zone left "I'm here" disabled, so the offline queue never ran
+  // (e2e-driver-offline-smoke). `acting` covers only the action itself.
+  const [acting, setActing] = useState(false)
   const [uploadKind, setUploadKind] = useState<"pod" | "receipt" | "bol">("pod")
   const [osdFlag, setOsdFlag] = useState(false)
   const [receiptAmount, setReceiptAmount] = useState("")
@@ -88,13 +93,18 @@ export function DriverLoadCard({
     success: string
   ) =>
     startTransition(async () => {
-      const result = await runOrQueue(intent, action)
-      if ("queued" in result && result.queued) {
-        toast.success("No signal — saved on your phone, sends automatically")
-      } else if (result.ok) {
-        toast.success(success)
-        router.refresh()
-      } else toast.error(("error" in result && result.error) || "Something went wrong")
+      setActing(true)
+      try {
+        const result = await runOrQueue(intent, action)
+        if ("queued" in result && result.queued) {
+          toast.success("No signal — saved on your phone, sends automatically")
+        } else if (result.ok) {
+          toast.success(success)
+          router.refresh()
+        } else toast.error(("error" in result && result.error) || "Something went wrong")
+      } finally {
+        setActing(false)
+      }
     })
 
   const upload = (file: File | undefined) => {
@@ -275,7 +285,7 @@ export function DriverLoadCard({
                           "Arrival recorded"
                         )
                       }}
-                      disabled={pending}
+                      disabled={acting}
                       className="flex flex-1 min-h-[48px] items-center justify-center gap-2 rounded-control bg-accent font-display text-sm font-bold uppercase tracking-[0.06em] text-accent-fg hover:bg-accent-hover disabled:opacity-60"
                     >
                       <MapPin className="h-4 w-4" /> I&apos;m here
@@ -291,7 +301,7 @@ export function DriverLoadCard({
                           "Departure recorded"
                         )
                       }}
-                      disabled={pending}
+                      disabled={acting}
                       className="flex flex-1 min-h-[48px] items-center justify-center gap-2 rounded-control bg-accent font-display text-sm font-bold uppercase tracking-[0.06em] text-accent-fg hover:bg-accent-hover disabled:opacity-60"
                     >
                       <ChevronRight className="h-4 w-4" /> Leaving now

@@ -4,7 +4,8 @@
  * no customer data. Returns [] when the hub database isn't configured.
  */
 import { NextResponse } from "next/server"
-import { hubDbAvailable, query } from "@/lib/hub/db"
+import { query } from "@/lib/hub/db"
+import { hubDbAvailable } from "@/lib/hub/db-available"
 
 const DEFAULT_CARRIER = "11111111-1111-1111-1111-111111111111"
 

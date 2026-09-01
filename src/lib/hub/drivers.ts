@@ -1,8 +1,11 @@
 import { query, queryOne } from "./db"
+import { hubDbAvailable } from "./db-available"
+import { fallbackDrivers } from "./sandbox-fallback"
 import { syncDefaultPayRules } from "./pay-rules-db"
 import type { Driver } from "./types"
 
 export async function listDrivers(carrierId: string): Promise<Driver[]> {
+  if (!hubDbAvailable()) return fallbackDrivers(carrierId)
   return query<Driver>(
     `SELECT * FROM hub.drivers WHERE carrier_id = $1 AND deleted_at IS NULL ORDER BY last_name, first_name`,
     [carrierId]
@@ -10,6 +13,7 @@ export async function listDrivers(carrierId: string): Promise<Driver[]> {
 }
 
 export async function getDriver(carrierId: string, id: string): Promise<Driver | null> {
+  if (!hubDbAvailable()) return fallbackDrivers(carrierId).find((driver) => driver.id === id) ?? null
   return queryOne<Driver>(
     `SELECT * FROM hub.drivers WHERE carrier_id = $1 AND id = $2 AND deleted_at IS NULL`,
     [carrierId, id]
@@ -102,6 +106,12 @@ export interface DriverWithExpiry extends Driver {
 }
 
 export async function listDriversWithExpiry(carrierId: string): Promise<DriverWithExpiry[]> {
+  if (!hubDbAvailable()) {
+    return fallbackDrivers(carrierId).map((driver) => ({
+      ...driver,
+      soonest_expiry: [driver.cdl_expiry, driver.medical_card_expiry].filter(Boolean).sort()[0] ?? null,
+    }))
+  }
   return query<DriverWithExpiry>(
     `SELECT d.*, LEAST(d.cdl_expiry, d.medical_card_expiry) AS soonest_expiry
      FROM hub.drivers d WHERE d.carrier_id = $1 AND d.deleted_at IS NULL

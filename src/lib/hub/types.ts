@@ -144,6 +144,8 @@ export interface HubUser {
   name: string
   role: HubRole
   carrier_id: string | null
+  allowed_carrier_ids?: string[] | null
+  data_mode?: "production" | "sandbox"
   phone: string | null
   customer_id: string | null
   driver_id: string | null
@@ -166,6 +168,9 @@ export interface Truck {
   insurance_expiry: string | null
   assigned_driver_id: string | null
   tank_capacity_gallons: number | null
+  current_odometer?: number | null
+  eld_device_id?: string | null
+  fuel_card_last4?: string | null
   driver_name?: string | null
   notes: string | null
 }
@@ -411,6 +416,9 @@ export interface Invoice {
   status: InvoiceStatus
   factored: boolean
   remit_to: string | null
+  factoring_fee_cents?: number | null
+  factoring_reserve_cents?: number | null
+  expected_net_cents?: number | null
   pdf_url: string | null
   sent_log: { to: string; at: string; kind: string }[]
   customer_name?: string

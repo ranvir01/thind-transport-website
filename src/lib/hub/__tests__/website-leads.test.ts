@@ -1,12 +1,15 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
+vi.mock("../db-available", () => ({
+  hubDbAvailable: vi.fn(() => true),
+}))
 vi.mock("../db", () => ({
   query: vi.fn(async () => []),
   queryOne: vi.fn(async () => null),
-  hubDbAvailable: vi.fn(() => true),
 }))
 
-import { query, queryOne, hubDbAvailable } from "../db"
+import { query, queryOne } from "../db"
+import { hubDbAvailable } from "../db-available"
 import {
   OPERATOR_CARRIER_ID, countNewWebsiteLeads, getWebsiteLead, listWebsiteLeads,
   saveWebsiteLead, setWebsiteLeadStatus,

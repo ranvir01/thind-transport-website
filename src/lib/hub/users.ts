@@ -1,16 +1,40 @@
-import { query, queryOne, hubDbAvailable } from "./db"
+import { query, queryOne } from "./db"
+import { hubDbAvailable } from "./db-available"
 import type { HubRole, HubUser } from "./types"
 
-export async function findHubUserByEmail(email: string): Promise<(HubUser & { password_hash: string }) | null> {
+type HubUserRow = HubUser & { password_hash: string }
+
+/**
+ * Login lookup. Single-table read of hub.users so authorize() cannot be
+ * taken down by a missing two-company switcher table. Carrier-access rows
+ * are attached in a second, best-effort query.
+ */
+export async function findHubUserByEmail(email: string): Promise<HubUserRow | null> {
   if (!hubDbAvailable()) return null
   try {
-    return await queryOne<HubUser & { password_hash: string }>(
-      `SELECT id, email, password_hash, name, role, carrier_id, phone, customer_id, driver_id, active
+    const user = await queryOne<HubUserRow>(
+      `SELECT id, email, password_hash, name, role, carrier_id, phone, customer_id, driver_id, active, data_mode
        FROM hub.users WHERE LOWER(email) = LOWER($1) AND active = TRUE`,
       [email]
     )
-  } catch {
+    if (!user) return null
+
+    const dataMode = user.data_mode === "sandbox" ? "sandbox" : "production"
+    let allowed = user.carrier_id ? [user.carrier_id] : []
+    try {
+      const access = await query<{ carrier_id: string }>(
+        `SELECT carrier_id::text AS carrier_id FROM hub.user_carrier_access WHERE user_id = $1`,
+        [user.id]
+      )
+      if (access.length) allowed = access.map((row) => row.carrier_id)
+    } catch {
+      /* switcher table is optional — default tenant is enough to sign in */
+    }
+
+    return { ...user, allowed_carrier_ids: allowed, data_mode: dataMode }
+  } catch (err) {
     // Hub schema may not exist yet (e.g. fresh deploy) — never break site-wide auth.
+    console.error("findHubUserByEmail failed:", err instanceof Error ? err.message : "unknown")
     return null
   }
 }

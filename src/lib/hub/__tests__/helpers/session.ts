@@ -29,6 +29,9 @@ export function sessionUser(overrides: Partial<HubSessionUser> = {}): HubSession
     email: `${role}@thind.test`,
     role,
     carrierId: CARRIER,
+    allowedCarrierIds: [CARRIER],
+    companyScope: "single",
+    dataMode: "production",
     ...overrides,
   }
 }

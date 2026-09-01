@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 import {
-  agingBucket, computeSettlement, detentionCents, fscCentsPerMile, fscTotalCents,
+  agingBucket, computeSettlement, detentionCents, factoringNetCents, fscCentsPerMile, fscTotalCents,
   invoiceTotalCents, roundHalfAwayFromZero,
 } from "../money"
 
@@ -26,6 +26,22 @@ describe("invoice totals", () => {
         ],
       })
     ).toBe(378950)
+  })
+})
+
+describe("factoring expected net", () => {
+  it("computes fee and reserve to integer cents from bps", () => {
+    const net = factoringNetCents({ grossCents: 378950, feeBps: 300, reserveBps: 1000 })
+    expect(net).toEqual({
+      grossCents: 378950,
+      feeCents: 11369,
+      reserveCents: 37895,
+      expectedNetCents: 329686,
+    })
+  })
+
+  it("rounds half away from zero for odd-cent fees", () => {
+    expect(factoringNetCents({ grossCents: 12345, feeBps: 250 }).feeCents).toBe(309)
   })
 })
 

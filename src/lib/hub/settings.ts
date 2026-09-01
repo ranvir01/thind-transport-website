@@ -1,4 +1,6 @@
 import { query, queryOne } from "./db"
+import { hubDbAvailable } from "./db-available"
+import { fallbackCarriers, fallbackSettings } from "./sandbox-fallback"
 import { dollarsToCents } from "./types"
 
 /** Typed carrier settings (stored as JSONB; merged over defaults on read). */
@@ -48,7 +50,14 @@ export interface CarrierSettings {
   costPerMileCents: number
   fsc: { baseCentsPerGallon: number; mpg: number }
   randomTesting: { drugPct: number; alcoholPct: number }
-  factoring: { company: string | null; remitName: string | null; remitAddress: string | null; email: string | null }
+  factoring: {
+    company: string | null
+    remitName: string | null
+    remitAddress: string | null
+    email: string | null
+    feeBps?: number | null
+    reserveBps?: number | null
+  }
   notifications: { officeEmail: string | null }
   /** Per-tenant branding (Phase 7). Written by setBrandAccentAction; rendered on PDFs, the customer
    * portal chrome, and the driver PWA nav (each via its own accent-resolution helper). */
@@ -85,16 +94,35 @@ export const DEFAULT_SETTINGS: CarrierSettings = {
 export interface Carrier {
   id: string
   name: string
+  legal_name: string | null
+  display_name: string | null
   dot_number: string | null
   mc_number: string | null
   phone: string | null
   email: string | null
   address: string | null
+  environment: "production" | "sandbox"
+  invoice_prefix: string | null
+  logo_url: string | null
+  remit_to: string | null
   status: "active" | "suspended"
 }
 
 export async function getCarrier(carrierId: string): Promise<Carrier | null> {
+  if (!hubDbAvailable()) return fallbackCarriers.find((carrier) => carrier.id === carrierId) ?? fallbackCarriers[0]
   return queryOne<Carrier>(`SELECT * FROM hub.carriers WHERE id = $1`, [carrierId])
+}
+
+export async function listCarriers(carrierIds: string[]): Promise<Carrier[]> {
+  if (!hubDbAvailable()) {
+    const allowed = new Set(carrierIds)
+    return fallbackCarriers.filter((carrier) => allowed.has(carrier.id))
+  }
+  if (carrierIds.length === 0) return []
+  return query<Carrier>(
+    `SELECT * FROM hub.carriers WHERE id = ANY($1::uuid[]) ORDER BY environment DESC, display_name NULLS LAST, name`,
+    [carrierIds]
+  )
 }
 
 /**
@@ -120,6 +148,7 @@ function mergePay(
 }
 
 export async function getCarrierSettings(carrierId: string): Promise<CarrierSettings> {
+  if (!hubDbAvailable()) return fallbackSettings
   const row = await queryOne<{ settings: Partial<CarrierSettings> }>(
     `SELECT settings FROM hub.carrier_settings WHERE carrier_id = $1`,
     [carrierId]

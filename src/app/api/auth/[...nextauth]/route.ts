@@ -5,6 +5,32 @@ import bcrypt from "bcrypt"
 import { findDriverByEmail } from "@/lib/driver-db"
 import { findHubUserByEmail } from "@/lib/hub/users"
 
+const SANDBOX_AUTH = [
+  {
+    email: "owner@sandbox.hauldesk.local",
+    password: "SandboxOwner1!",
+    name: "Sandbox Owner",
+    role: "owner",
+  },
+  {
+    email: "dispatch@sandbox.hauldesk.local",
+    password: "SandboxDispatch1!",
+    name: "Sandbox Dispatcher",
+    role: "dispatcher",
+  },
+  {
+    email: "driver@sandbox.hauldesk.local",
+    password: "SandboxDriver1!",
+    name: "Sandbox Driver",
+    role: "driver",
+  },
+] as const
+
+const SANDBOX_CARRIER_IDS = [
+  "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+  "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
+]
+
 export const authConfig = {
   trustHost: true, // Required for Vercel production deployments
   providers: [
@@ -58,7 +84,44 @@ export const authConfig = {
             name: hubUser.name,
             role: hubUser.role,
             carrierId: hubUser.carrier_id,
-          } as { id: string; email: string; name: string; role: string; carrierId: string | null }
+            allowedCarrierIds: hubUser.allowed_carrier_ids ?? (hubUser.carrier_id ? [hubUser.carrier_id] : []),
+            dataMode: hubUser.data_mode ?? "production",
+          } as {
+            id: string
+            email: string
+            name: string
+            role: string
+            carrierId: string | null
+            allowedCarrierIds: string[]
+            dataMode: string
+          }
+        }
+
+        // Mobile tunnel smoke can run before a local Postgres is configured.
+        // Real sandbox records still come from npm run seed:sandbox when
+        // POSTGRES_URL exists; this fallback only unlocks /hub/driver PWA
+        // camera/service-worker verification in local HTTPS dev.
+        if (!process.env.POSTGRES_URL) {
+          const sandbox = SANDBOX_AUTH.find((entry) => entry.email === String(credentials.email).toLowerCase())
+          if (sandbox && credentials.password === sandbox.password) {
+            return {
+              id: `local-${sandbox.role}`,
+              email: sandbox.email,
+              name: sandbox.name,
+              role: sandbox.role,
+              carrierId: SANDBOX_CARRIER_IDS[0],
+              allowedCarrierIds: SANDBOX_CARRIER_IDS,
+              dataMode: "sandbox",
+            } as {
+              id: string
+              email: string
+              name: string
+              role: string
+              carrierId: string
+              allowedCarrierIds: string[]
+              dataMode: string
+            }
+          }
         }
 
         const driver = await findDriverByEmail(credentials.email as string)
@@ -110,6 +173,8 @@ export const authConfig = {
         token.id = user.id
         token.role = (user as { role?: string }).role ?? null
         token.carrierId = (user as { carrierId?: string }).carrierId ?? null
+        token.allowedCarrierIds = (user as { allowedCarrierIds?: string[] }).allowedCarrierIds ?? []
+        token.dataMode = (user as { dataMode?: string }).dataMode ?? null
       }
       return token
     },
@@ -118,6 +183,8 @@ export const authConfig = {
         (session.user as any).id = token.id
         ;(session.user as any).role = token.role ?? null
         ;(session.user as any).carrierId = token.carrierId ?? null
+        ;(session.user as any).allowedCarrierIds = token.allowedCarrierIds ?? []
+        ;(session.user as any).dataMode = token.dataMode ?? null
       }
       return session
     },

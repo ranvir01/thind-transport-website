@@ -1,7 +1,8 @@
 import { redirect } from "next/navigation"
+import { cookies } from "next/headers"
 import { auth } from "@/lib/auth"
 import { OFFICE_ROLES, type HubRole } from "./types"
-import { can, type HubAction } from "./permissions"
+import { can, isWriteAction, type HubAction } from "./permissions"
 
 export interface HubSessionUser {
   id: string
@@ -10,23 +11,61 @@ export interface HubSessionUser {
   role: HubRole
   /** Tenant scope — every data call must be scoped to this id. */
   carrierId: string
+  /** Present when the owner can switch Thind / ATS / all-companies. */
+  allowedCarrierIds?: string[]
+  companyScope?: "single" | "all"
+  dataMode?: "production" | "sandbox"
 }
 
 export async function getHubUser(): Promise<HubSessionUser | null> {
   const session = await auth()
   const user = session?.user as
-    | (HubSessionUser & { role?: HubRole | null; carrierId?: string | null })
+    | (HubSessionUser & {
+        role?: HubRole | null
+        carrierId?: string | null
+        allowedCarrierIds?: string[] | null
+        dataMode?: "production" | "sandbox" | null
+      })
     | undefined
   if (!user?.role) return null
   // Platform admins are the one role without a tenant scope — they see
   // tenant operations only, never a tenant's business data.
   if (!user.carrierId && user.role !== "platform_admin") return null
+
+  const allowedCarrierIds = user.allowedCarrierIds?.length
+    ? user.allowedCarrierIds
+    : user.carrierId
+      ? [user.carrierId]
+      : []
+  let requestedCarrier: string | undefined
+  let requestedScope: string | undefined
+  try {
+    const cookieStore = await cookies()
+    requestedCarrier = cookieStore.get("hub_carrier_id")?.value
+    requestedScope = cookieStore.get("hub_company_scope")?.value
+  } catch {
+    // Tests and some route handlers have no request cookie store.
+  }
+  const selectedCarrierId =
+    user.role === "platform_admin"
+      ? (user.carrierId ?? "")
+      : requestedCarrier && allowedCarrierIds.includes(requestedCarrier)
+        ? requestedCarrier
+        : (user.carrierId ?? "")
+  const companyScope =
+    user.role !== "platform_admin" && requestedScope === "all" && allowedCarrierIds.length > 1
+      ? "all"
+      : "single"
+
   return {
     id: user.id,
     name: user.name ?? user.email,
     email: user.email,
     role: user.role,
-    carrierId: user.carrierId ?? "",
+    carrierId: selectedCarrierId,
+    allowedCarrierIds,
+    companyScope,
+    dataMode: user.dataMode ?? "production",
   }
 }
 
@@ -186,6 +225,13 @@ export async function requirePermission(action: HubAction): Promise<HubSessionUs
   const user = await getHubUser()
   if (!user) throw new Error("Not signed in")
   if (!can(user.role, action)) throw new Error(`Forbidden: ${user.role} cannot ${action}`)
+  if (user.companyScope === "all" && isWriteAction(action)) {
+    throw new Error("Select Thind or ATS before changing data. All-companies mode is read-only.")
+  }
+  if (user.role === "platform_admin") {
+    if (!(await isActivePlatformAdmin(user.id))) throw new Error("Account deactivated")
+    return user
+  }
   if (!(await isActiveUser(user))) throw new Error("Account deactivated")
   if (!(await isActiveCarrier(user.carrierId))) throw new Error("Workspace suspended")
   return user
@@ -199,7 +245,12 @@ export async function requirePermissionPage(action: HubAction): Promise<HubSessi
     if (!OFFICE_ROLES.includes(user.role)) redirect("/hub/welcome")
     redirect("/hub")
   }
+  if (user.companyScope === "all" && isWriteAction(action)) redirect("/hub")
   // Same /hub/login-vs-proxy loop as requireOfficeUser — see comment there.
+  if (user.role === "platform_admin") {
+    if (!(await isActivePlatformAdmin(user.id))) redirect("/hub/login")
+    return user
+  }
   if (!(await isActiveUser(user))) redirect("/hub/deactivated")
   if (!(await isActiveCarrier(user.carrierId))) redirect("/hub/suspended")
   return user

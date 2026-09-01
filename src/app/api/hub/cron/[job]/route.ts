@@ -19,6 +19,7 @@ import { notifyRandomTestPool, selectRandomTestPool } from "@/lib/hub/random-tes
 import { sendOwnerDigest } from "@/lib/hub/digest"
 import { getCarrierSettings } from "@/lib/hub/settings"
 import { createMailTransport, mailFrom } from "@/lib/mailer"
+import { cronAuthorized } from "@/lib/hub/cron-auth"
 import { runMigrations } from "@/lib/hub/migrate"
 
 // Migrations on a cold backlog can outlive the default limit; 60s is the cap
@@ -41,7 +42,7 @@ export async function GET(
 ) {
   const secret = process.env.CRON_SECRET
   const auth = req.headers.get("authorization")
-  if (!secret || auth !== `Bearer ${secret}`) {
+  if (!cronAuthorized(auth, secret)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
   const { job } = await params

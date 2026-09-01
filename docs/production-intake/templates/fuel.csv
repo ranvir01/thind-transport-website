@@ -1,0 +1,2 @@
+company,transaction_id,date_time,truck_unit,driver_name,merchant,city,jurisdiction,gallons,fuel_type,unit_price,total,odometer,card_program
+Thind Transport LLC,FUEL-1,2026-06-01 10:30,TT-101,Example Driver,Example Fuel Stop,Kent,WA,95.123,diesel,4.35,413.79,100500,EFS

@@ -1,10 +1,13 @@
 import { query, queryOne } from "./db"
+import { hubDbAvailable } from "./db-available"
+import { fallbackTrailers, fallbackTrucks } from "./sandbox-fallback"
 import { assertCarrierRefs } from "./tenancy"
 import type { Trailer, Truck } from "./types"
 
 // ---- Trucks ----
 
 export async function listTrucks(carrierId: string): Promise<Truck[]> {
+  if (!hubDbAvailable()) return fallbackTrucks(carrierId)
   return query<Truck>(
     `SELECT t.*, d.first_name || ' ' || d.last_name AS driver_name
      FROM hub.trucks t
@@ -16,6 +19,7 @@ export async function listTrucks(carrierId: string): Promise<Truck[]> {
 }
 
 export async function getTruck(carrierId: string, id: string): Promise<Truck | null> {
+  if (!hubDbAvailable()) return fallbackTrucks(carrierId).find((truck) => truck.id === id) ?? null
   return queryOne<Truck>(
     `SELECT t.*, d.first_name || ' ' || d.last_name AS driver_name
      FROM hub.trucks t
@@ -83,6 +87,7 @@ export async function updateTruck(carrierId: string, id: string, input: TruckInp
 // ---- Trailers ----
 
 export async function listTrailers(carrierId: string): Promise<Trailer[]> {
+  if (!hubDbAvailable()) return fallbackTrailers(carrierId)
   return query<Trailer>(
     `SELECT * FROM hub.trailers WHERE carrier_id = $1 AND deleted_at IS NULL ORDER BY unit_number`,
     [carrierId]
@@ -90,6 +95,7 @@ export async function listTrailers(carrierId: string): Promise<Trailer[]> {
 }
 
 export async function getTrailer(carrierId: string, id: string): Promise<Trailer | null> {
+  if (!hubDbAvailable()) return fallbackTrailers(carrierId).find((trailer) => trailer.id === id) ?? null
   return queryOne<Trailer>(
     `SELECT * FROM hub.trailers WHERE carrier_id = $1 AND id = $2 AND deleted_at IS NULL`,
     [carrierId, id]

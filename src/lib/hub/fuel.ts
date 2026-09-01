@@ -1,10 +1,17 @@
 import { query } from "./db"
+import { hubDbAvailable } from "./db-available"
+import { fallbackFuelTransactions, fallbackTrucks } from "./sandbox-fallback"
 import { dollarsToCents, type FuelTransaction } from "./types"
 
 export async function listFuelTransactions(
   carrierId: string,
   filters: { truckId?: string; limit?: number } = {}
 ): Promise<FuelTransaction[]> {
+  if (!hubDbAvailable()) {
+    let rows = fallbackFuelTransactions(carrierId)
+    if (filters.truckId) rows = rows.filter((row) => row.truck_id === filters.truckId)
+    return rows.slice(0, filters.limit ?? 200)
+  }
   const params: unknown[] = [carrierId]
   let where = `f.carrier_id = $1`
   if (filters.truckId) {
@@ -135,6 +142,24 @@ export interface FuelTruckStats {
  * reefer fuel is not propulsion fuel and would silently inflate burn rates.
  */
 export async function fuelStatsByTruck(carrierId: string, days = 92): Promise<FuelTruckStats[]> {
+  if (!hubDbAvailable()) {
+    const txs = fallbackFuelTransactions(carrierId)
+    return fallbackTrucks(carrierId).map((truck) => {
+      const mine = txs.filter((tx) => tx.truck_id === truck.id)
+      const gallons = mine.reduce((sum, tx) => sum + Number(tx.gallons), 0)
+      const total = mine.reduce((sum, tx) => sum + tx.total_cents, 0)
+      return {
+        truck_id: truck.id,
+        truck_unit: truck.unit_number,
+        gallons: gallons.toFixed(3),
+        tractor_gallons: gallons.toFixed(3),
+        total_cents: String(total),
+        transactions: mine.length,
+        loaded_miles: "1850",
+        avg_price_cents: gallons > 0 ? String(Math.round(total / gallons)) : null,
+      }
+    })
+  }
   return query<FuelTruckStats>(
     `SELECT f.truck_id, t.unit_number AS truck_unit,
        SUM(f.gallons) AS gallons,
@@ -175,6 +200,22 @@ export interface FuelByProgram {
 }
 
 export async function fuelByProgram(carrierId: string, days = 92): Promise<FuelByProgram[]> {
+  if (!hubDbAvailable()) {
+    const byProgram = new Map<string, { gallons: number; total: number }>()
+    for (const tx of fallbackFuelTransactions(carrierId)) {
+      const key = tx.card_program ?? "Unknown"
+      const current = byProgram.get(key) ?? { gallons: 0, total: 0 }
+      current.gallons += Number(tx.gallons)
+      current.total += tx.total_cents
+      byProgram.set(key, current)
+    }
+    return [...byProgram.entries()].map(([card_program, value]) => ({
+      card_program,
+      gallons: value.gallons.toFixed(3),
+      total_cents: String(value.total),
+      avg_price_cents: value.gallons > 0 ? String(Math.round(value.total / value.gallons)) : null,
+    }))
+  }
   return query<FuelByProgram>(
     `SELECT card_program, SUM(gallons) AS gallons, SUM(total_cents) AS total_cents,
        (SUM(total_cents) / NULLIF(SUM(gallons), 0))::int AS avg_price_cents
@@ -194,6 +235,15 @@ export interface FuelFraudFlag {
 
 /** Fraud flags: duplicates and gallons over tank capacity (position-vs-card lands with live ELD). */
 export async function fuelFraudFlags(carrierId: string, days = 92): Promise<FuelFraudFlag[]> {
+  if (!hubDbAvailable()) {
+    const truck = fallbackTrucks(carrierId)[0]
+    return [{
+      kind: "over_capacity",
+      detail: "Sandbox check: gallons would exceed tank capacity on a bad import row",
+      ts: new Date().toISOString(),
+      truck_unit: truck?.unit_number ?? null,
+    }]
+  }
   const duplicates = await query<FuelFraudFlag>(
     `SELECT 'duplicate' AS kind,
        'Same card/time/amount: ' || COALESCE(f1.merchant, '?') || ' $' || ROUND(f1.total_cents / 100.0, 2) AS detail,

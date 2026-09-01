@@ -73,7 +73,7 @@ If the URL doesn't match the domain you're accessing, authentication will fail s
 ## Testing
 
 **Credentials:**
-- Email: `rjkind01@gmail.com`
+- Email: your driver portal email
 - Password: (your password)
 
 **Expected Flow:**

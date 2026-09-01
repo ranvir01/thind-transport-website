@@ -120,8 +120,13 @@ async function main() {
            ($1, 'Stop-off', 10000, 'flat'),
            ($1, 'Tarp', 10000, 'flat'),
            ($1, 'Lumper', 0, 'pass_through')`, [CARRIER])
-  // Reset invoice numbering
-  await q(`UPDATE hub.carrier_settings SET settings = jsonb_set(settings, '{invoice,nextNumber}', '1001')
+  // Reset invoice numbering. Migration 005 overwrites settings.invoice with
+  // prefix "TT-" (carriers.invoice_prefix); demo invoices and e2e-invoices-smoke
+  // are hardcoded to THD-INV-, so the seed must put that prefix back.
+  await q(`UPDATE hub.carrier_settings SET settings =
+             jsonb_set(
+               jsonb_set(settings, '{invoice,prefix}', '"THD-INV-"'),
+               '{invoice,nextNumber}', '1001')
            WHERE carrier_id = $1`, [CARRIER])
   // Demo factoring config so the factored-invoice path is visible
   await q(`UPDATE hub.carrier_settings SET settings = jsonb_set(settings, '{factoring}',
@@ -1034,16 +1039,26 @@ async function main() {
 
   // ---- Second tenant (Phase 7): Cascade Demo Lines — proves zero bleed ----
   console.log("Creating second tenant (Cascade Demo Lines)…")
+  // Same UUID as the ATS production shell in 005_mobile_sandbox_two_company.sql.
+  // Demo reseed must win: isolation smokes and the admin tenant list look for
+  // the name "Cascade Demo Lines", and ON CONFLICT DO NOTHING left the ATS
+  // legal name in place after that migration landed.
   const CASCADE = "22222222-2222-2222-2222-222222222222"
   await q(
     `INSERT INTO hub.carriers (id, name, dot_number, mc_number, phone, email, address)
      VALUES ($1, 'Cascade Demo Lines', '3411908', '991283', '(509) 555-0200', 'ops@cascademo.example', '88 Riverside Dr, Wenatchee, WA 98801')
-     ON CONFLICT (id) DO NOTHING`,
+     ON CONFLICT (id) DO UPDATE SET
+       name = EXCLUDED.name,
+       dot_number = EXCLUDED.dot_number,
+       mc_number = EXCLUDED.mc_number,
+       phone = EXCLUDED.phone,
+       email = EXCLUDED.email,
+       address = EXCLUDED.address`,
     [CASCADE]
   )
   await q(
     `INSERT INTO hub.carrier_settings (carrier_id, settings) VALUES ($1, $2)
-     ON CONFLICT (carrier_id) DO NOTHING`,
+     ON CONFLICT (carrier_id) DO UPDATE SET settings = EXCLUDED.settings, updated_at = NOW()`,
     [CASCADE, JSON.stringify({
       invoice: { prefix: "CAS-INV-", nextNumber: 5001, defaultTermsDays: 30 },
       pay: { companyDriverPerMileCents: 60, ownerOperatorPercentage: 0.88, payLoadedMilesOnly: true },

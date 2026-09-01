@@ -1,10 +1,12 @@
 import { query, queryOne, hubDb } from "./db"
+import { hubDbAvailable } from "./db-available"
+import { fallbackAgingSummary, fallbackInvoices } from "./sandbox-fallback"
 import { getCarrier, getCarrierSettings, nextInvoiceNumber } from "./settings"
 import { getLoad, getLoadStops, changeLoadStatus } from "./loads"
 import { getCustomer } from "./customers"
 import { listDocuments, storeGeneratedPdf, readStoredFileBytes } from "./documents"
 import { buildInvoicePdf, buildStatementPdf } from "./pdf"
-import { invoiceTotalCents, agingBucket, type AgingBucket } from "./money"
+import { invoiceTotalCents, agingBucket, factoringNetCents, type AgingBucket } from "./money"
 import { logAudit } from "./audit"
 import { createMailTransport, isEmailConfigured, mailFrom } from "@/lib/mailer"
 import { loadTotalCents, fmtCentsExact, type Invoice, type HubDocument } from "./types"
@@ -21,6 +23,12 @@ export async function listInvoices(
   carrierId: string,
   filters: { status?: string } = {}
 ): Promise<Invoice[]> {
+  if (!hubDbAvailable()) {
+    const invoices = fallbackInvoices(carrierId)
+    return filters.status && filters.status !== "all"
+      ? invoices.filter((invoice) => invoice.status === filters.status)
+      : invoices
+  }
   const params: unknown[] = [carrierId]
   let where = `i.carrier_id = $1`
   if (filters.status && filters.status !== "all") {
@@ -31,6 +39,7 @@ export async function listInvoices(
 }
 
 export async function getInvoice(carrierId: string, id: string): Promise<Invoice | null> {
+  if (!hubDbAvailable()) return fallbackInvoices(carrierId).find((invoice) => invoice.id === id) ?? null
   return queryOne<Invoice>(`${INVOICE_SELECT} WHERE i.carrier_id = $1 AND i.id = $2`, [carrierId, id])
 }
 
@@ -115,6 +124,13 @@ export async function createInvoiceFromLoad(
   const dueOn = dueDate.toISOString().slice(0, 10)
 
   const factored = load.factored || customer.factored
+  const factoring = factored
+    ? factoringNetCents({
+        grossCents: amountCents,
+        feeBps: settings.factoring.feeBps,
+        reserveBps: settings.factoring.reserveBps,
+      })
+    : factoringNetCents({ grossCents: amountCents })
   const remitTo = factored && settings.factoring.remitName
     ? `${settings.factoring.remitName}\n${settings.factoring.remitAddress ?? ""}`.trim()
     : `${carrier.name}\n${carrier.address ?? ""}`.trim()
@@ -144,10 +160,28 @@ export async function createInvoiceFromLoad(
   const pdfUrl = await storeGeneratedPdf(`${number}.pdf`, pdfBytes)
 
   const rows = await query<Invoice>(
-    `INSERT INTO hub.invoices (carrier_id, number, customer_id, load_id, amount_cents, issued_on, due_on, status, factored, remit_to, pdf_url)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,'draft',$8,$9,$10)
+    `INSERT INTO hub.invoices (
+       carrier_id, number, customer_id, load_id, amount_cents, issued_on, due_on,
+       status, factored, remit_to, pdf_url, factoring_fee_cents,
+       factoring_reserve_cents, expected_net_cents
+     )
+     VALUES ($1,$2,$3,$4,$5,$6,$7,'draft',$8,$9,$10,$11,$12,$13)
      ON CONFLICT (carrier_id, load_id) DO NOTHING RETURNING *`,
-    [carrierId, number, customer.id, loadId, amountCents, issuedOn, dueOn, factored, remitTo, pdfUrl]
+    [
+      carrierId,
+      number,
+      customer.id,
+      loadId,
+      amountCents,
+      issuedOn,
+      dueOn,
+      factored,
+      remitTo,
+      pdfUrl,
+      factoring.feeCents,
+      factoring.reserveCents,
+      factoring.expectedNetCents,
+    ]
   )
   if (rows.length === 0) {
     // Lost the race to a concurrent createInvoiceFromLoad call for the same load
@@ -335,6 +369,7 @@ export interface AgingSummary {
 }
 
 export async function getAgingSummary(carrierId: string): Promise<AgingSummary> {
+  if (!hubDbAvailable()) return fallbackAgingSummary(carrierId)
   const invoices = await query<Invoice>(
     `${INVOICE_SELECT} WHERE i.carrier_id = $1 AND i.status NOT IN ('paid') ORDER BY i.due_on ASC`,
     [carrierId]

@@ -13,7 +13,7 @@
 import { mkdirSync } from "node:fs"
 import {
   launchBrowser, BASE, clickByText, waitForText, textAppears, textGone,
-  makeShot, reseed, check, failures,
+  makeShot, reseed, check, failures, login,
 } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots"
@@ -53,18 +53,23 @@ async function main() {
 
   try {
     console.log("1. Login as demo driver, confirm dispatch (online)")
-    await page.goto(`${BASE}/hub/login`, { waitUntil: "networkidle2" })
-    await waitForText(page, "One login for dispatch, drivers, and partners.")
-    await page.type("#email", "driver@demo.thind")
-    await page.type("#password", "ThindDemo1!")
-    await Promise.all([
-      page.waitForNavigation({ waitUntil: "networkidle2", timeout: 20000 }),
-      page.click('button[type="submit"]'),
-    ])
+    await login(page, "driver@demo.thind")
     if (!page.url().includes("/hub/driver")) throw new Error(`Expected /hub/driver, got ${page.url()}`)
     await waitForText(page, "THD-")
     await clickByText(page, "confirm this dispatch")
     await waitForText(page, "Dispatch confirmed")
+    // Arrive must be enabled before we drop the network. A confirm that is
+    // still inside useTransition (router.refresh in flight) used to leave
+    // "I'm here" disabled, so the programmatic click was a no-op.
+    await page.waitForFunction(
+      () => {
+        const btn = [...document.querySelectorAll("button")].find((b) =>
+          (b.textContent ?? "").toLowerCase().includes("i'm here")
+        )
+        return Boolean(btn && !btn.disabled)
+      },
+      { timeout: 15000 }
+    )
     await shot(page, "01-confirmed-online")
 
     console.log("2. Drop the network (CDP), then tap 'I'm here' at the pickup")

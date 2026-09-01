@@ -5,7 +5,7 @@
  * Usage: node scripts/e2e-onboarding-smoke.mjs [outputDir]
  */
 import { mkdirSync } from "node:fs"
-import { launchBrowser, BASE, waitForText, login, makeShot, clickSelector } from "./e2e-lib.mjs"
+import { launchBrowser, BASE, waitForText, login, makeShot, clickSelector, skipFirstRunTour } from "./e2e-lib.mjs"
 
 const OUT = process.argv[2] ?? "e2e-shots-onboarding"
 mkdirSync(OUT, { recursive: true })
@@ -39,6 +39,11 @@ async function main() {
   // copy before typing into #su-company against the streamed body.
   // src/app/hub/signup has no loading.tsx of its own.
   await waitForText(fresh, "Create your company's workspace — dispatch, money, compliance, and a driver app, live in an afternoon. No sales call.")
+  // Same origin as Today: mark the autostart tour seen BEFORE the wizard
+  // submits, the way login() does. Otherwise HubTourHost opens a 7-step
+  // modal over the checklist ~700ms after /hub mounts and waitForText
+  // ("Finish setup") times out against the scrim.
+  await skipFirstRunTour(fresh)
   await shot(fresh, "01-signup")
   // Step 1/4 — company facts (FMCSA verify is optional; skip the network call)
   await fresh.type("#su-company", `Bluebird Freight ${stamp}`)
