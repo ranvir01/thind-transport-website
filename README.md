@@ -7,17 +7,17 @@ behind [Vercel's Chat SDK](https://chat-sdk.dev) web adapter. Ask "what landed
 on main today?" from a phone; get status pulled from the live repos; say what
 you want done and get back a paste-ready Claude prompt or a `Backlog:` item.
 
-**The charter (D-010, answered A on 2026-08-28):** read-only. The bridge
-fetches the home repo's ops docs
+**The charter (D-017, answered A on 2026-08-28, renumbered 2026-09-01):**
+read-only. The bridge fetches the home repo's ops docs
 ([`thind-transport-website`](https://github.com/ranvir01/thind-transport-website)
 — `AGENTS.md`, `docs/ops/FLEET.md`, `PORTFOLIO.md`, `OWNER-WORKSHEET.md`,
-`DECISIONS.md`) and the repos' commits/PRs. It never pushes git, never touches
-Airtable, never toggles automations, never spends. Its output is drafts a
-human lands on the git bus — that is how work reaches Claude Corps and Cursor,
-neither of which has a chat inbox. Full evaluation:
-[`docs/ops/CHAT-BRIDGE.md`](https://github.com/ranvir01/thind-transport-website/blob/main/docs/ops/CHAT-BRIDGE.md)
-in the home repo. Widening the charter (write access, Slack/Discord adapters,
-schedules) is a new `DECISIONS.md` entry there, not a code edit here.
+`DECISIONS.md`, `CHAT-BRIDGE.md`) and the repos' commits/PRs/`should` issues.
+It never pushes git, never applies labels, never spends. Its output is drafts
+a human lands on the D-012 bus (labeled `should` issue, `Backlog:` trailer, or
+worksheet row). Not a 15th Grok seat. Full evaluation:
+[`docs/ops/CHAT-BRIDGE.md`](https://github.com/ranvir01/thind-transport-website/blob/cursor/portfolio-omni-analytics-7a1c/docs/ops/CHAT-BRIDGE.md)
+in the home repo (on `main` after that PR merges). Widening the charter is a
+new `DECISIONS.md` entry there, not a code edit here.
 
 Adapted from Anthropic's
 [`managed-agents/chat-sdk` quickstart](https://github.com/anthropics/claude-quickstarts/tree/main/managed-agents/chat-sdk)
@@ -31,7 +31,7 @@ subscription**. The order below is deliberate: the cap exists before the key.
 
 1. **Set a hard monthly budget cap** in the
    [Anthropic Console](https://platform.claude.com/) (Billing → limits) —
-   this is the pilot's kill switch, per D-010.
+   this is the pilot's kill switch, per D-017. Tell Finch the third meter exists.
 2. Mint an API key there. Never commit it anywhere.
 3. `npm install`, copy `.env.example` to `.env`, put the key in it.
 4. `npm run setup` — one-time provisioning of the agent + its sandbox
