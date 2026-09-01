@@ -1,0 +1,51 @@
+{
+  "_note": "HaulDesk invoices do NOT compute a factor fee. Face = invoiceTotalCents = linehaul + FSC + accessorials. Factored invoices change remit-to (NOA) and skip dunning. INV-F-SEED / INV-D-SEED are produced by seed-demo; INV-D-CASCADE is tenant 2.",
+  "invoices": [
+    {
+      "id": "INV-F-SEED",
+      "company_id": "11111111-1111-1111-1111-111111111111",
+      "load_id": "THD-1015",
+      "number_prefix": "THD-INV-",
+      "type": "factored",
+      "factored": true,
+      "components": { "linehaul_cents": 310000, "fuel_surcharge_cents": 34000, "accessorials_cents": 0 },
+      "face_amount_cents": 344000,
+      "remit_to": "factoring company from carrier_settings.factoring (NOA)",
+      "dunning": "skipped",
+      "status": "sent"
+    },
+    {
+      "id": "INV-D-SEED",
+      "company_id": "11111111-1111-1111-1111-111111111111",
+      "load_id": "THD-1013",
+      "type": "direct",
+      "factored": false,
+      "components": { "linehaul_cents": 230000, "fuel_surcharge_cents": 25000, "accessorials_cents": 0 },
+      "face_amount_cents": 255000,
+      "remit_to": "Thind Transport",
+      "dunning": "enabled",
+      "status": "sent"
+    },
+    {
+      "id": "INV-POD",
+      "company_id": "11111111-1111-1111-1111-111111111111",
+      "load_id": "THD-1009",
+      "type": "direct",
+      "factored": false,
+      "components": { "linehaul_cents": 295000, "fuel_surcharge_cents": 31000, "accessorials_cents": 10000 },
+      "face_amount_cents": 336000,
+      "note": "expected total when accountant one-click invoices THD-1009",
+      "status": "not_yet_created_in_seed"
+    },
+    {
+      "id": "INV-D-CASCADE",
+      "company_id": "22222222-2222-2222-2222-222222222222",
+      "load_id": "CAS-5002",
+      "type": "direct",
+      "factored": false,
+      "components": { "linehaul_cents": 152000, "fuel_surcharge_cents": 12000, "accessorials_cents": 0 },
+      "face_amount_cents": 164000,
+      "note": "Cascade has no seeded invoice row — create one in isolation setup, or assert the load itself is invisible. Isolation tests treat CAS-5002 as the foreign load/invoice target."
+    }
+  ]
+}

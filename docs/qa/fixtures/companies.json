@@ -1,0 +1,23 @@
+{
+  "_note": "Two tenants matching scripts/seed-demo.mjs. Isolation tests use these UUIDs/emails. All money integer cents.",
+  "companies": [
+    {
+      "id": "11111111-1111-1111-1111-111111111111",
+      "slug": "C-THIND",
+      "name": "Thind Transport",
+      "dot_number": "2523064",
+      "mc_number": "876103",
+      "login": "owner@demo.thind",
+      "factoring_enabled": true
+    },
+    {
+      "id": "22222222-2222-2222-2222-222222222222",
+      "slug": "C-CASCADE",
+      "name": "Cascade Demo Lines",
+      "dot_number": "3411908",
+      "mc_number": "991283",
+      "login": "owner@cascademo.example",
+      "factoring_enabled": false
+    }
+  ]
+}
