@@ -1,7 +1,7 @@
 import { promises as fs } from "node:fs"
 import path from "node:path"
 import { NextResponse } from "next/server"
-import { getHubUser } from "@/lib/hub/session"
+import { getActiveHubUser } from "@/lib/hub/session"
 import { can } from "@/lib/hub/permissions"
 
 const ALLOWED = new Set([
@@ -21,7 +21,7 @@ export async function GET(
   _request: Request,
   { params }: { params: Promise<{ name: string }> }
 ) {
-  const user = await getHubUser()
+  const user = await getActiveHubUser()
   if (!user || !can(user.role, "imports:run")) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 })
   }
