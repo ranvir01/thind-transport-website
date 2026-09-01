@@ -46,6 +46,11 @@ Raw prefix:
    over polling; one repo, not all. Routines daily-max, only when they can act;
    "no updates" still costs tokens — stay silent. Second time you teach a step
    = skill. Finch flags any of the above as a Grok-meter leak.
+9. **Do not add a 15th seat for tokens.** Jeff stays one writer of both live
+   xlsx (scan vs recon are two skills and two logs, not two bots). Rav stays
+   one Career seat (hunt+apply is one outcome). Rek is week-2 bench only if
+   those two Jeff routines collide in one thread **and** Finch names the Grok
+   meter. Skills first.
 
 Research applied: x.ai/bot/guides (PM, GTM, mobile studio, design), Cursor cloud
 agent docs (browser + `@cursor` + API), GTM "weekly media rundown" state-file loop,
@@ -112,6 +117,8 @@ Seed empty boards if missing:
 - `/workspace/org/models.md` — "Ridge: default bounded PR = Composer/Auto or cursor-grok-4.6-high-fast; launch = clone last green at cursor.com/agents"
 - `/workspace/labs/ideas/_seen.md` — "# tweet-id | date | skip|card|ridge | reason"
 - `/workspace/career/applications.md` — "# date | company | url | status | proof"
+- `/workspace/loadboard/last-scan.md` — "idle"
+- `/workspace/loadboard/last-recon.md` — "idle"
 
 Do **not** invent FACTS.md numbers. Rav reopens `docs/portfolio/FACTS.md` via GitHub.
 

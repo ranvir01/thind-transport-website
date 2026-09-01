@@ -93,7 +93,7 @@ CONNECTIONS
 Gmail (both company accounts), Dropbox. Browser for PDFs and RTS.
 
 COMPUTER
-/workspace/loadboard/last-run.md every run.
+/workspace/loadboard/last-scan.md on the 8:30pm run; /workspace/loadboard/last-recon.md on the 9pm recon. One writer of both live xlsx — do not add a second Money bot.
 
 ROUTINES
 8:30pm PT daily scan; 9pm PT recon wake (every other day). After any edit: Test run, then enable.

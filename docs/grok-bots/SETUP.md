@@ -63,7 +63,8 @@ separate cap Finch names.
 | `/workspace/org/pastes/` | Wright / gogo | copies of the 14 instruction files |
 | `/workspace/hub/board.md` | Em only | one in-flight hub SHOULD |
 | `/workspace/platform/last.md` | Steve | last sweep |
-| `/workspace/loadboard/last-run.md` | Jeff | loadboard run |
+| `/workspace/loadboard/last-scan.md` | Jeff | 8:30pm loadboard (skill Loadboard entry only) |
+| `/workspace/loadboard/last-recon.md` | Jeff | 9pm RTS recon (skill RTS recon only) |
 | `/workspace/career/` | Rav | applications log + packets |
 | `/workspace/labs/ideas/` | Scout | `_seen.md` + bookmark cards |
 | `/workspace/labs/demos/` | Labs | keep-or-kill notes |

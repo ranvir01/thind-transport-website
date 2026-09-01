@@ -180,6 +180,7 @@ describe("grok-bot instruction files (14-seat org, paste-ready, ≤4k)", () => {
     expect(finch).toMatch(/\/workspace\/org\/usage\.md/)
     expect(finch).toMatch(/context bloat/)
     expect(finch).toMatch(/morganlinton/i)
+    expect(finch).toMatch(/15th seat is not a token fix/)
   })
 
   it("Wright stamps the 14 from GOGO-START and a 15th only after owner yes", () => {
@@ -253,7 +254,11 @@ describe("grok-bot instruction files (14-seat org, paste-ready, ≤4k)", () => {
     expect(jeff).toMatch(/never invent a rate/i)
     expect(jeff).toMatch(/cannot download PDF bytes/)
     expect(jeff).toMatch(/BROWSER/)
-    expect(jeff).toMatch(/\/workspace\/loadboard\/last-run\.md/)
+    expect(jeff).toMatch(/\/workspace\/loadboard\/last-scan\.md/)
+    expect(jeff).toMatch(/\/workspace\/loadboard\/last-recon\.md/)
+    expect(jeff).toMatch(/Loadboard entry/)
+    expect(jeff).toMatch(/RTS recon/)
+    expect(jeff).toMatch(/one writer/)
     expect(jeff).toMatch(/Idempotent/)
     expect(jeff).toMatch(/RTS/)
     expect(jeff).toMatch(/every other calendar day/)

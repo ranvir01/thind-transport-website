@@ -30,6 +30,7 @@ under 50%, and Ranvir says yes.
 | **Max** | [`templates/eng-ic.md`](templates/eng-ic.md) | Hub | Third IC (tests / integrations) |
 | **Ash** | venture-cos shaped as data | Hub | Warehouse / KPI charts (PM-guide Ashley analog) |
 | **Pete** | venture-cos shaped as PM | Hub | RFCs / product notes (PM-guide Pete analog) |
+| **Rek** | venture-cos shaped as recon | Money | RTS recon only — propose **only** if Jeff's scan and recon start colliding in one thread **and** Finch names the Grok meter as the cause. Default is no: two writers on one live xlsx is worse than context bloat. |
 
 ## Hard no
 

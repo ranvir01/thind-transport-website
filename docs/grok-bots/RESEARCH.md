@@ -132,10 +132,25 @@ Ridge model cards.
 | Owner: BLS fully Cursor | Bee never opens `claude.ai/code` |
 | Owner: give the start pack to live gogo | `GOGO-START.md` is owner-yes for the 14; it migrates the live four (ids in the pack), reuses the blank stub as Em, and keeps the five live routines |
 
+## Finalize 2026-09-01 — split vs not (token audit of the live + planned roster)
+
+Morgan's "more bots, smaller units" applies **until** a second bot would share
+a write lock or split an end-to-end outcome.
+
+| Seat | Split further? | Why |
+|---|---|---|
+| gogo | No | Event listener on one repo is already cheap. Dispatch, don't implement. |
+| Finch / Wright / Scout / Ridge / Labs | No | Already atomic. |
+| Em / Dex / Rex / Steve | No | EM vs IC vs SRE already split; Dex/Rex already split by lane. |
+| Bee / My | No | Already one site each. |
+| **Jeff** | **No — skills, not a seat** | Scan and recon share the two live xlsx. Two writers on one sheet is worse than context bloat. Isolate via skills "Loadboard entry" / "RTS recon" and `last-scan.md` / `last-recon.md`. Rek stays week-2 bench only. |
+| **Rav** | **No** | Hunt + tailor + apply is one end-to-end outcome (xAI: one bot per outcome). Apply run loads Fit check + Apply packet only — does not rewrite LinkedIn. |
+| 15th seat as a token fix | **No** | Finch: a 15th seat is not a token fix. Owner yes still required. |
+
 Still rejected: SSH-tunnel jailbreak, always-allow-the-browser, Dropbox
 Replace, Airtable, Notion hub, LangGraph/CrewAI, extra Grok on-demand without
 saying so, hourly attention until week 2, Instantly/HeyReach, a 15th seat
-without a new yes.
+without a new yes, splitting Jeff or Rav to save tokens.
 
 ## What this does not change
 
