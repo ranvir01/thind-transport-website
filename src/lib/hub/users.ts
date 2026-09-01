@@ -5,38 +5,21 @@ import type { HubRole, HubUser } from "./types"
 type HubUserRow = HubUser & { password_hash: string }
 
 /**
- * Login lookup. The SELECT must stay a single-table read of hub.users —
- * a JOIN/GROUP BY on hub.user_carrier_access (the two-company switcher)
- * threw on some schemas, the catch below swallowed it, and authorize()
- * returned null. Every hub e2e smoke then sat on /hub/login until
- * waitForNavigation timed out (CredentialsSignin in the server log).
- *
- * Carrier-access rows are attached in a second, best-effort query so a
- * missing switcher table cannot take down sign-in.
+ * Login lookup. Single-table read of hub.users so authorize() cannot be
+ * taken down by a missing two-company switcher table. Carrier-access rows
+ * are attached in a second, best-effort query.
  */
 export async function findHubUserByEmail(email: string): Promise<HubUserRow | null> {
   if (!hubDbAvailable()) return null
   try {
     const user = await queryOne<HubUserRow>(
-      `SELECT id, email, password_hash, name, role, carrier_id, phone, customer_id, driver_id, active
+      `SELECT id, email, password_hash, name, role, carrier_id, phone, customer_id, driver_id, active, data_mode
        FROM hub.users WHERE LOWER(email) = LOWER($1) AND active = TRUE`,
       [email]
     )
     if (!user) return null
 
-    let dataMode: "production" | "sandbox" = "production"
-    try {
-      const extras = await queryOne<{ data_mode: "production" | "sandbox" | null }>(
-        `SELECT data_mode FROM hub.users WHERE id = $1`,
-        [user.id]
-      )
-      if (extras?.data_mode === "sandbox" || extras?.data_mode === "production") {
-        dataMode = extras.data_mode
-      }
-    } catch {
-      /* data_mode ships with the sandbox migration; older DBs still log in */
-    }
-
+    const dataMode = user.data_mode === "sandbox" ? "sandbox" : "production"
     let allowed = user.carrier_id ? [user.carrier_id] : []
     try {
       const access = await query<{ carrier_id: string }>(

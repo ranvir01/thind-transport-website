@@ -69,6 +69,18 @@ describe("isDemoEmail", () => {
   })
 })
 
+describe("seeded demo password", () => {
+  it("hashes the same password the login screen and e2e helper advertise", () => {
+    const seed = readFileSync(path.join(process.cwd(), "scripts", "seed-demo.mjs"), "utf-8")
+    const login = readFileSync(path.join(process.cwd(), "src/app/hub/login/LoginCard.tsx"), "utf-8")
+    const e2e = readFileSync(path.join(process.cwd(), "scripts/e2e-lib.mjs"), "utf-8")
+    expect(seed).toContain('bcrypt.hash("ThindDemo1!"')
+    expect(seed).not.toContain("LegacyDemoOnly1!")
+    expect(login).toContain("ThindDemo1!")
+    expect(e2e).toContain('password = "ThindDemo1!"')
+  })
+})
+
 describe("demoLoginEnabled", () => {
   it("defaults on; only the literal 'false' disables it", () => {
     delete process.env.HUB_DEMO_LOGIN

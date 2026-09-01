@@ -130,7 +130,7 @@ async function main() {
 
   // ---- Users (one per role) ----
   console.log("Creating users…")
-  const hash = await bcrypt.hash("LegacyDemoOnly1!", 10)
+  const hash = await bcrypt.hash("ThindDemo1!", 10)
   const users = {}
   for (const [key, name, email, role] of [
     ["owner", "Sukhdev Thind", "owner@demo.thind", "owner"],

@@ -32,6 +32,7 @@ const ROW = {
   customer_id: null,
   driver_id: null,
   active: true,
+  data_mode: "production" as const,
 }
 
 describe("findHubUserByEmail", () => {
@@ -42,9 +43,7 @@ describe("findHubUserByEmail", () => {
   })
 
   it("returns the user from a single-table hub.users read", async () => {
-    queryOneMock
-      .mockResolvedValueOnce(ROW)
-      .mockResolvedValueOnce({ data_mode: "production" })
+    queryOneMock.mockResolvedValueOnce(ROW)
     queryMock.mockResolvedValueOnce([])
 
     const found = await findHubUserByEmail("Dispatch@Demo.Thind")
@@ -56,9 +55,7 @@ describe("findHubUserByEmail", () => {
   })
 
   it("still signs in when the switcher table query throws", async () => {
-    queryOneMock
-      .mockResolvedValueOnce(ROW)
-      .mockResolvedValueOnce({ data_mode: "sandbox" })
+    queryOneMock.mockResolvedValueOnce({ ...ROW, data_mode: "sandbox" })
     queryMock.mockRejectedValueOnce(new Error('relation "hub.user_carrier_access" does not exist'))
 
     const found = await findHubUserByEmail("dispatch@demo.thind")
@@ -68,9 +65,7 @@ describe("findHubUserByEmail", () => {
   })
 
   it("uses switcher rows when the access table is present", async () => {
-    queryOneMock
-      .mockResolvedValueOnce(ROW)
-      .mockResolvedValueOnce({ data_mode: "production" })
+    queryOneMock.mockResolvedValueOnce(ROW)
     queryMock.mockResolvedValueOnce([
       { carrier_id: ROW.carrier_id },
       { carrier_id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa" },
